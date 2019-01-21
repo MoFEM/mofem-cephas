@@ -63,6 +63,7 @@
 #include <VecManager.hpp>
 #include <FieldBlas.hpp>
 #include <ProblemsManager.hpp>
+#include <MatrixManager.hpp>
 #include <Simple.hpp>
 #include <MeshRefinement.hpp>
 #include <SeriesRecorder.hpp>

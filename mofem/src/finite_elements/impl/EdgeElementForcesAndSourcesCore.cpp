@@ -201,13 +201,13 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
 
   CHKERR calculateEdgeDirection();
   CHKERR getSpacesAndBaseOnEntities(dataH1);
-  CHKERR getEntityFieldDataOrder<MBEDGE>(dataH1, H1);
+  CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
   dataH1.dataOnEntities[MBEDGE][0].getSense() =
       1; // set sense to 1, this is this entity
 
   // Hcurl
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    CHKERR getEntityFieldDataOrder<MBEDGE>(data_curl, HCURL);
+    CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
     data_curl.dataOnEntities[MBEDGE][0].getSense() =
         1; // set sense to 1, this is this entity
     data_curl.spacesOnEntities[MBEDGE].set(HCURL);

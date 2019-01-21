@@ -31,6 +31,7 @@ const static int debug = 1;
 
 // Interfaces
 #include <ProblemsManager.hpp>
+#include <MatrixManager.hpp>
 #include <Simple.hpp>
 #include <ISManager.hpp>
 #include <BitRefManager.hpp>

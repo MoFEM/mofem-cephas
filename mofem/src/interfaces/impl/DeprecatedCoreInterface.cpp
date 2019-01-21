@@ -53,16 +53,15 @@ DeprecatedCoreInterface::seed_finite_elements(const EntityHandle meshset,
   MoFEMFunctionBegin;
   Range entities;
   CHKERR get_moab().get_entities_by_handle(meshset, entities, true);
-  CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(entities,
-                                                           BitRefLevel(), verb);
+  CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(
+      entities, BitRefLevel(), verb);
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
-DeprecatedCoreInterface::seed_finite_elements(const Range &entities,
-                                              int verb) {
-  return getInterface<BitRefManager>()->setElementsBitRefLevel(entities,
-                                                           BitRefLevel(), verb);
+DeprecatedCoreInterface::seed_finite_elements(const Range &entities, int verb) {
+  return getInterface<BitRefManager>()->setElementsBitRefLevel(
+      entities, BitRefLevel(), verb);
 }
 
 MoFEMErrorCode DeprecatedCoreInterface::field_axpy(
@@ -500,49 +499,84 @@ MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_EDGEs(
     const Range &edges, const std::string &name, int verb) {
   return add_ents_to_field_by_type(edges, MBEDGE, name, verb);
 }
+
 MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_EDGEs(
     const EntityHandle meshset, const std::string &name, int verb) {
   return add_ents_to_field_by_type(meshset, MBEDGE, name, true, verb);
 }
+
 MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_TRIs(
     const EntityHandle meshset, const std::string &name, int verb) {
   return add_ents_to_field_by_type(meshset, MBTRI, name, true, verb);
 }
+
 MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_TRIs(
     const Range &tris, const std::string &name, int verb) {
   return add_ents_to_field_by_type(tris, MBTRI, name, verb);
 }
+
 MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_VERTICEs(
     const Range &nodes, const std::string &name, int verb) {
   return add_ents_to_field_by_type(nodes, MBVERTEX, name, verb);
 }
+
 MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_VERTICEs(
     const EntityHandle meshset, const std::string &name, int verb) {
   return add_ents_to_field_by_type(meshset, MBVERTEX, name, true, verb);
 }
+
 MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_TETs(
     const Range &tets, const std::string &name, int verb) {
   return add_ents_to_field_by_type(tets, MBTET, name, verb);
 }
+
 MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_TETs(
     const EntityHandle meshset, const std::string &name, int verb) {
   return add_ents_to_field_by_type(meshset, MBTET, name, true, verb);
 }
+
 MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_QUADs(
     const Range &quads, const std::string &name, int verb) {
   return add_ents_to_field_by_type(quads, MBQUAD, name, verb);
 }
+
 MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_QUADs(
     EntityHandle meshset, const std::string &name, int verb) {
   return add_ents_to_field_by_type(meshset, MBQUAD, name, true, verb);
 }
+
 MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_PRISMs(
     const Range &prisms, const std::string &name, int verb) {
   return add_ents_to_field_by_type(prisms, MBPRISM, name, verb);
 }
+
 MoFEMErrorCode DeprecatedCoreInterface::add_ents_to_field_by_PRISMs(
     EntityHandle meshset, const std::string &name, int verb) {
   return add_ents_to_field_by_type(meshset, MBPRISM, name, true, verb);
+}
+
+MoFEMErrorCode
+DeprecatedCoreInterface::MatCreateMPIAIJWithArrays(const std::string &name,
+                                                   Mat *Aij, int verb) {
+  return getInterface<MatrixManager>()
+      ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(name, Aij, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::MatCreateMPIAdj_with_Idx_mi_tag(
+    const std::string &name, Mat *Adj, int verb) {
+  return getInterface<MatrixManager>()->createMPIAdjWithArrays<Idx_mi_tag>(
+      name, Adj, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::MatCreateSeqAIJWithArrays(
+    const std::string &name, Mat *Aij, PetscInt **i, PetscInt **j,
+    PetscScalar **v, int verb) {
+  MoFEMFunctionBegin;
+  if (i || j || v)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  CHKERR getInterface<MatrixManager>()
+      ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(name, Aij, verb);
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM

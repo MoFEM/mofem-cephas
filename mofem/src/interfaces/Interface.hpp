@@ -1225,21 +1225,6 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode clear_problems(int verb = DEFAULT_VERBOSITY) = 0;
 
-  /** \brief check if matrix fill in correspond to finite element indices
-
-  This is used to check consistency of code. If problem is notices with
-  additional non-zero elements in matrix, this function can help detect
-  problem. Should be used as a part of atom tests
-
-  \param problem_name
-  \param row print info at particular row
-  \param col print info at particular col
-
-  */
-  virtual MoFEMErrorCode
-  partition_check_matrix_fill_in(const std::string &problem_name, int row,
-                                 int col, int verb) = 0;
-
   /**
   * \brief resolve shared entities for finite elements in the problem
   * \ingroup mofem_problems
@@ -1305,48 +1290,6 @@ struct CoreInterface : public UnknownInterface {
   get_problem_finite_elements_entities(const std::string &name,
                                        const std::string &fe_name,
                                        const EntityHandle meshset) = 0;
-
-  /**@}*/
-
-  /** \name Create matrices */
-
-  /**@{*/
-
-  /**
-   * \brief create Mat (MPIAIJ) for problem (collective)
-   *
-   * FIXME: Should be moved to independent interface MatManger
-   *
-   * \param name of the problem
-   */
-  virtual MoFEMErrorCode
-  MatCreateMPIAIJWithArrays(const std::string &name, Mat *Aij,
-                            int verb = DEFAULT_VERBOSITY) = 0;
-  /**
-   * \brief Create Adj matrix
-   *
-   * FIXME: Should be moved to independent interface MatManger
-   *
-   * @param  name [description]
-   * @param  Adj  [description]
-   * @param  verb [description]
-   * @return      [description]
-   */
-  virtual MoFEMErrorCode
-  MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name, Mat *Adj,
-                                  int verb = DEFAULT_VERBOSITY) = 0;
-
-  /**
-   * \brief create Mat (AIJ) for problem
-   *
-   * FIXME: Should be moved to independent interface MatManger
-   *
-   * \param name of the problem
-   */
-  virtual MoFEMErrorCode
-  MatCreateSeqAIJWithArrays(const std::string &name, Mat *Aij, PetscInt **i,
-                            PetscInt **j, PetscScalar **v,
-                            int verb = DEFAULT_VERBOSITY) = 0;
 
   /**@}*/
 

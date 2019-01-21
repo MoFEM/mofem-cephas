@@ -41,6 +41,7 @@
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <ProblemsManager.hpp>
+#include <MatrixManager.hpp>
 #include <ISManager.hpp>
 #include <VecManager.hpp>
 #include <Core.hpp>
@@ -53,12 +54,12 @@
 // #undef PETSC_VERSION_RELEASE
 // #define PETSC_VERSION_RELEASE 1
 
-#if PETSC_VERSION_GE(3,6,0)
-  #include <petsc/private/dmimpl.h> /*I  "petscdm.h"   I*/
-  // #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
+#if PETSC_VERSION_GE(3, 6, 0)
+#include <petsc/private/dmimpl.h> /*I  "petscdm.h"   I*/
+// #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
 #else
-  #include <petsc-private/dmimpl.h> /*I  "petscdm.h"   I*/
-  #include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
+#include <petsc-private/dmimpl.h>  /*I  "petscdm.h"   I*/
+#include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
 #endif
 
 #include <DMMoFEM.hpp>
@@ -540,7 +541,7 @@ PetscErrorCode DMoFEMLoopDofs(DM dm, const char field_name[],
   MoFEMFunctionReturnHot(0);
 }
 
-template <class S, class T0, class T1, class T2 >
+template <class S, class T0, class T1, class T2>
 static PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, S fe_name, T0 method,
                                               T1 pre_only, T2 post_only) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
@@ -617,7 +618,7 @@ DMMoFEMKSPSetComputeOperators(DM dm, const std::string &fe_name,
                               boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                               boost::shared_ptr<MoFEM::BasicMethod> post_only) {
   return DMMoFEMKSPSetComputeOperators<const std::string &,
-                                       boost::shared_ptr<MoFEM::FEMethod> >(
+                                       boost::shared_ptr<MoFEM::FEMethod>>(
       dm, fe_name, method, pre_only, post_only);
 }
 
@@ -719,7 +720,7 @@ static PetscErrorCode DMMoFEMTSSetIFunction(DM dm, S fe_name, T0 method,
   if (post_only) {
     dm_field->tsCtx->get_postProcess_to_do_IFunction().push_back(post_only);
   }
-  CHKERR DMTSSetIFunction(dm, f_TSSetIFunction, dm_field->tsCtx.get());
+  CHKERR DMTSSetIFunction(dm, TsSetIFunction, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
 }
 
@@ -762,7 +763,7 @@ static PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, S fe_name, T0 method,
   if (post_only) {
     dm_field->tsCtx->get_postProcess_to_do_IJacobian().push_back(post_only);
   }
-  CHKERR DMTSSetIJacobian(dm, f_TSSetIJacobian, dm_field->tsCtx.get());
+  CHKERR DMTSSetIJacobian(dm, TsSetIJacobian, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
 }
 
@@ -909,26 +910,13 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   if (strcmp(dm->mattype, MATMPIAIJ) == 0) {
-    CHKERR dm_field->mField_ptr->MatCreateMPIAIJWithArrays(
-        dm_field->problemName, M);
+    CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
+        ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(dm_field->problemName,
+                                                        M);
   } else if (strcmp(dm->mattype, MATAIJ) == 0) {
-    PetscInt *i;
-    PetscInt *j;
-    PetscScalar *v;
-#if PETSC_VERSION_GE(3, 7, 0)
-    CHKERR dm_field->mField_ptr->MatCreateSeqAIJWithArrays(
-        dm_field->problemName, M, &i, &j, &v);
-    CHKERR MatConvert(*M, MATAIJ, MAT_INPLACE_MATRIX, M);
-#else
-    Mat N;
-    CHKERR dm_field->mField_ptr->MatCreateSeqAIJWithArrays(
-        dm_field->problemName, &N, &i, &j, &v);
-    CHKERR MatConvert(N, MATAIJ, MAT_INITIAL_MATRIX, M);
-    CHKERR MatDestroy(&N);
-#endif
-    CHKERR PetscFree(i);
-    CHKERR PetscFree(j);
-    CHKERR PetscFree(v);
+    CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
+        ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(dm_field->problemName,
+                                                       M);
   } else {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Matrix type not implemented");

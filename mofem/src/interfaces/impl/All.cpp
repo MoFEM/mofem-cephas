@@ -32,6 +32,7 @@ const static int debug = 1;
 
 // Interfaces
 #include <ProblemsManager.hpp>
+#include <MatrixManager.hpp>
 #include <Simple.hpp>
 #include <ISManager.hpp>
 #include <BitRefManager.hpp>
@@ -57,10 +58,10 @@ const static int debug = 1;
 #include "impl/LoopMethods.cpp"
 #include "impl/Core.cpp"
 #include "impl/DeprecatedCoreInterface.cpp"
-#include "impl/CreateMat.cpp"
 #include "impl/FieldCore.cpp"
 #include "impl/FECore.cpp"
 #include "impl/ProblemsCore.cpp"
+#include "impl/MatrixManager.cpp"
 #include "impl/CommCore.cpp"
 #include "impl/DeleteCore.cpp"
 #include "impl/ISManager.cpp"

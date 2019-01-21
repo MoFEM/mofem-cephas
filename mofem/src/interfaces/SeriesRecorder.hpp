@@ -1,7 +1,8 @@
 /** \file SeriesRecorder.hpp
  * \brief MoFEM interface
  *
- * Interface for recording and saving data series, for example in time or load stepping problems.
+ * Interface for recording and saving data series, for example in time or load
+ * stepping problems.
  *
  * \ingroup mofem_series
  */
@@ -14,7 +15,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __SERIESRECORDER_HPP__
 #define __SERIESRECORDER_HPP__
@@ -23,7 +24,8 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMSeriesRecorder = MOFEMuuid( BitIntefaceId(SERIES_RECORDER) );
+static const MOFEMuuid IDD_MOFEMSeriesRecorder =
+    MOFEMuuid(BitIntefaceId(SERIES_RECORDER));
 
 /** Record (time) data series
  * \ingroup mofem_series
@@ -33,14 +35,15 @@ static const MOFEMuuid IDD_MOFEMSeriesRecorder = MOFEMuuid( BitIntefaceId(SERIES
   \bug fix names of this interface to follow naming convention
 
  */
-struct SeriesRecorder: public UnknownInterface {
+struct SeriesRecorder : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
 
-  MoFEM::Core& cOre;
+  MoFEM::Core &cOre;
   SeriesRecorder(const MoFEM::Core &core);
 
-  ///destructor
+  /// destructor
   ~SeriesRecorder() {}
 
   /**
@@ -66,104 +69,116 @@ struct SeriesRecorder: public UnknownInterface {
   /**
    * \brief return pointer to meshset manager
    */
-  SeriesRecorder* get_series_recorder_ptr() { return this; }
+  SeriesRecorder *get_series_recorder_ptr() { return this; }
 
   /**
    * \brief return pointer to meshset manager
    */
-  const SeriesRecorder* get_series_recorder_ptr() const { return this; }
-
- /**
-    * \ingroup mofem_series
-    * Add series recorder
-    *
-    * \param name of series
-    */
-  virtual MoFEMErrorCode add_series_recorder(const std::string& series_name);
-
- /**
-    * \ingroup mofem_series
-    * delete recorded series
-    *
-    * \param name of series
-    */
-  virtual MoFEMErrorCode delete_recorder_series(const std::string& series_name);
+  const SeriesRecorder *get_series_recorder_ptr() const { return this; }
 
   /**
-    * \ingroup mofem_series
-    * initialize sries for recording
-    *
-    * \param series name
-    */
-  virtual MoFEMErrorCode initialize_series_recorder(const std::string& serie_name);
+   * \ingroup mofem_series
+   * Add series recorder
+   *
+   * \param name of series
+   */
+  virtual MoFEMErrorCode add_series_recorder(const std::string &series_name);
 
   /**
-    * \ingroup mofem_series
-    * finalize series for recording, recorded data are not accessible until finalize
-    *
-    * \param series name
-    */
-  virtual MoFEMErrorCode finalize_series_recorder(const std::string& serie_name);
+   * \ingroup mofem_series
+   * delete recorded series
+   *
+   * \param name of series
+   */
+  virtual MoFEMErrorCode delete_recorder_series(const std::string &series_name);
 
   /**
-    * \ingroup mofem_series
-    * begin series recording
-    *
-    * \param series name
-    */
-  virtual MoFEMErrorCode record_begin(const std::string& serie_name);
+   * \ingroup mofem_series
+   * initialize sries for recording
+   *
+   * \param series name
+   */
+  virtual MoFEMErrorCode
+  initialize_series_recorder(const std::string &serie_name);
 
   /**
-    * \ingroup mofem_series
-    * record problem
-    *
-    * \param series name
-    * \param problem pointer
-    * \param rc could be Row or Col
-    */
-  virtual MoFEMErrorCode record_problem(const std::string& serie_name,const Problem *problemPtr,RowColData rc);
+   * \ingroup mofem_series
+   * finalize series for recording, recorded data are not accessible until
+   * finalize
+   *
+   * \param series name
+   */
+  virtual MoFEMErrorCode
+  finalize_series_recorder(const std::string &serie_name);
 
   /**
-    * \ingroup mofem_series
-    * record problem
-    *
-    * \param series name
-    * \param problem name
-    * \param rc could be Row or Col
-    */
-  virtual MoFEMErrorCode record_problem(const std::string& serie_name,const std::string& problem_name,RowColData rc);
+   * \ingroup mofem_series
+   * begin series recording
+   *
+   * \param series name
+   */
+  virtual MoFEMErrorCode record_begin(const std::string &serie_name);
 
   /**
-    * \ingroup mofem_series
-    * record field
-    *
-    * \param field name
-    * \param bit ref level
-    * \param mask for bit ref level
-    */
-  virtual MoFEMErrorCode record_field(const std::string& serie_name,const std::string& field_name,const BitRefLevel &bit,const BitRefLevel &mask);
+   * \ingroup mofem_series
+   * record problem
+   *
+   * \param series name
+   * \param problem pointer
+   * \param rc could be Row or Col
+   */
+  virtual MoFEMErrorCode record_problem(const std::string &serie_name,
+                                        const Problem *problemPtr,
+                                        RowColData rc);
 
   /**
-    * \ingroup mofem_series
-    * end series recording
-    *
-    * \param series name
-    */
-  virtual MoFEMErrorCode record_end(const std::string& serie_name,double time = 0);
+   * \ingroup mofem_series
+   * record problem
+   *
+   * \param series name
+   * \param problem name
+   * \param rc could be Row or Col
+   */
+  virtual MoFEMErrorCode record_problem(const std::string &serie_name,
+                                        const std::string &problem_name,
+                                        RowColData rc);
 
   /**
-    * \ingroup mofem_series
-    * load data from series into dofs database
-    *
-    * \param series name
-    * \param step number
-    */
-  virtual MoFEMErrorCode load_series_data(const std::string& serie_name,const int step_number);
+   * \ingroup mofem_series
+   * record field
+   *
+   * \param field name
+   * \param bit ref level
+   * \param mask for bit ref level
+   */
+  virtual MoFEMErrorCode record_field(const std::string &serie_name,
+                                      const std::string &field_name,
+                                      const BitRefLevel &bit,
+                                      const BitRefLevel &mask);
 
   /**
-    * \ingroup mofem_series
-    * print series
-    */
+   * \ingroup mofem_series
+   * end series recording
+   *
+   * \param series name
+   */
+  virtual MoFEMErrorCode record_end(const std::string &serie_name,
+                                    double time = 0);
+
+  /**
+   * \ingroup mofem_series
+   * load data from series into dofs database
+   *
+   * \param series name
+   * \param step number
+   */
+  virtual MoFEMErrorCode load_series_data(const std::string &serie_name,
+                                          const int step_number);
+
+  /**
+   * \ingroup mofem_series
+   * print series
+   */
   virtual MoFEMErrorCode print_series_steps();
 
   /** \brief check if series is in database
@@ -173,48 +188,47 @@ struct SeriesRecorder: public UnknownInterface {
    * \return true if field exist
    *
    */
-  virtual bool check_series(const std::string& name) const;
+  virtual bool check_series(const std::string &name) const;
 
-  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_begin(const std::string& name);
-  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_end(const std::string& name);
+  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator
+  get_series_steps_byName_begin(const std::string &name);
+  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator
+  get_series_steps_byName_end(const std::string &name);
 
 protected:
+  Tag th_SeriesName; ///< Recorded series name
 
-  Tag th_SeriesName;                    ///< Recorded series name
+  Series_multiIndex sEries;          ///< recorded series
+  SeriesStep_multiIndex seriesSteps; ///< recorded series steps
 
-  Series_multiIndex sEries;							///< recorded series
-  SeriesStep_multiIndex seriesSteps;		///< recorded series steps
+/** \brief loop over recorded series step
+  * \ingroup mofem_series
+  *
+  * \param NAME series name
+  * \parma IT iterator variable
+  *
+  * Example: \code
+    for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"TEST_SERIES1",sit)) {
 
-
-  /** \brief loop over recorded series step
-    * \ingroup mofem_series
-    *
-    * \param NAME series name
-    * \parma IT iterator variable
-    *
-    * Example: \code
-      for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"TEST_SERIES1",sit)) {
-
-	ierr = mField.load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRG(ierr);
-    * } \endcode
-    *
-    */
-  #define _IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(RECORDER,NAME,IT) \
-    SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator IT = (RECORDER)->get_series_steps_byName_begin(NAME); \
-    IT!=(RECORDER)->get_series_steps_byName_end(NAME); IT++
-
-
-
-
+      ierr = mField.load_series_data("TEST_SERIES1",sit->get_step_number());
+  CHKERRG(ierr);
+  * } \endcode
+  *
+  */
+#define _IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(RECORDER, NAME, IT)                 \
+  SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator IT =         \
+      (RECORDER)->get_series_steps_byName_begin(NAME);                         \
+  IT != (RECORDER)->get_series_steps_byName_end(NAME);                         \
+  IT++
 };
 
-}
+} // namespace MoFEM
 
 #endif // __SERIESRECORDER_HPP__
 
-/***************************************************************************//**
+/**
  * \defgroup mofem_series Recording and reading series
  * Recorder for time steps and solution sequences
  *
  * \ingroup mofem
- ******************************************************************************/
+ */

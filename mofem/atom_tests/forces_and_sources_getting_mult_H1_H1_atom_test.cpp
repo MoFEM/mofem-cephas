@@ -239,12 +239,12 @@ int main(int argc, char *argv[]) {
         CHKERR getEntitySense<MBEDGE>(data_col);
         CHKERR getEntitySense<MBTRI>(data_col);
 
-        CHKERR getEntityFieldDataOrder<MBEDGE>(data_row, H1);
-        CHKERR getEntityFieldDataOrder<MBEDGE>(data_col, H1);
-        CHKERR getEntityFieldDataOrder<MBTRI>(data_row, H1);
-        CHKERR getEntityFieldDataOrder<MBTRI>(data_col, H1);
-        CHKERR getEntityFieldDataOrder<MBTET>(data_row, H1);
-        CHKERR getEntityFieldDataOrder<MBTET>(data_col, H1);
+        CHKERR getEntityDataOrder<MBEDGE>(data_row, H1);
+        CHKERR getEntityDataOrder<MBEDGE>(data_col, H1);
+        CHKERR getEntityDataOrder<MBTRI>(data_row, H1);
+        CHKERR getEntityDataOrder<MBTRI>(data_col, H1);
+        CHKERR getEntityDataOrder<MBTET>(data_row, H1);
+        CHKERR getEntityDataOrder<MBTET>(data_col, H1);
         data_row.dataOnEntities[MBVERTEX][0].getBase() =
             AINSWORTH_LEGENDRE_BASE;
         CHKERR getEntityFieldData(data_row, "FIELD1", MBEDGE);

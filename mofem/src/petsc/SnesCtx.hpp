@@ -151,7 +151,7 @@ struct SnesCtx {
 
   friend MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes,
                                                 MatAssemblyType type);
-  friend MoFEMErrorCode SNESMoFEMSetBehavior(SNES snes, MoFEMTypes bh);
+  friend MoFEMErrorCode SnesMoFEMSetBehavior(SNES snes, MoFEMTypes bh);
 };
 
 /**
@@ -197,12 +197,7 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx);
  * MAT_FINAL_ASSEMBLY
  * @return      error code
  */
-MoFEMErrorCode SNESMoFEMSetAssemblyType(SNES snes, MatAssemblyType type);
-
-/** \deprecated Function with spelling mistake, do no use this
- */
-DEPRECATED MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes,
-                                                  MatAssemblyType type);
+MoFEMErrorCode SnesMoFEMSetAssemblyType(SNES snes, MatAssemblyType type);
 
 /**
  * \brief Set behavior if finite element in sequence does not exist
@@ -211,7 +206,7 @@ DEPRECATED MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes,
  * Otherwise set MF_ZERO
  * @return      error code
  */
-MoFEMErrorCode SNESMoFEMSetBehavior(SNES snes, MoFEMTypes bh);
+MoFEMErrorCode SnesMoFEMSetBehavior(SNES snes, MoFEMTypes bh);
 
 } // namespace MoFEM
 

@@ -140,111 +140,100 @@ MoFEMErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {
 
 // ** Sense **
 
-MoFEMErrorCode ForcesAndSourcesCore::getSense(
-    EntityType type,
+MoFEMErrorCode ForcesAndSourcesCore::getEntitySense(
+    const EntityType type,
     boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
   MoFEMFunctionBegin;
-  auto &side_table = const_cast<SideNumber_multiIndex &>(
-      numeredEntFiniteElementPtr->getSideNumberTable());
-  if (PetscUnlikely(data.size() < side_table.get<2>().count(type))) {
-    // prims has 9 edges, some of edges for "flat" prism are not active
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "wrong number of sides %u < %u", data.size(),
-             side_table.get<2>().count(type));
-  }
-  const auto &st = side_table.get<2>();
-  auto sit = st.lower_bound(type);
-  auto hi_sit = st.upper_bound(type);
-  for (; sit != hi_sit; sit++) {
-    const auto &side = **sit;
-    data[side.side_number].getSense() = sit->get()->sense;
-    if (side.brother_side_number != -1) {
-      if (PetscUnlikely(data.size() < (unsigned)side.brother_side_number)) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "data struture too small to keep data about brother node");
-      }
-      data[side.brother_side_number].getSense() = side.sense;
-    }
+
+  auto &side_table = numeredEntFiniteElementPtr->getSideNumberTable().get<2>();
+  for (auto r = side_table.equal_range(type); r.first != r.second; ++r.first) {
+
+    const int side_number = (*r.first)->side_number;
+    const int brother_side_number = (*r.first)->brother_side_number;
+    const int sense = (*r.first)->sense;
+
+    data[side_number].getSense() = sense;
+    if (brother_side_number != -1)
+      data[brother_side_number].getSense() = sense;
   }
   MoFEMFunctionReturn(0);
 }
 
 // ** Order **
 
-template <typename DOFMULTIINDEX>
-static int getMaxOrder(const DOFMULTIINDEX &dof_multi_index) {
-  auto dit = dof_multi_index.begin();
-  auto hi_dit = dof_multi_index.end();
+template <typename ENTMULTIINDEX>
+static inline int getMaxOrder(const ENTMULTIINDEX &multi_index) {
   int max_order = 0;
-  for (; dit != hi_dit; dit++) {
-    if ((*dit)->getEntDofIdx() == 0) {
-      const int dit_max_order = (*dit)->getMaxOrder();
-      max_order = (max_order > dit_max_order) ? max_order : dit_max_order;
+  for (auto ent_field_weak_ptr : multi_index)
+    if (auto e = ent_field_weak_ptr.lock()) {
+      const int order = e->getMaxOrder();
+      max_order = (max_order < order) ? order : max_order;
     }
-  }
   return max_order;
 }
 
 int ForcesAndSourcesCore::getMaxDataOrder() const {
-  return getMaxOrder(numeredEntFiniteElementPtr->getDataDofs());
+  int max_order = 0;
+  for (auto e : *dataFieldEntsPtr) {
+      const int order = e->getMaxOrder();
+      max_order = (max_order < order) ? order : max_order;
+    }
+  return max_order;
 }
 
 int ForcesAndSourcesCore::getMaxRowOrder() const {
-  return getMaxOrder(numeredEntFiniteElementPtr->getRowsDofs());
+  return getMaxOrder(*rowFieldEntsPtr);
 }
 
 int ForcesAndSourcesCore::getMaxColOrder() const {
-  return getMaxOrder(numeredEntFiniteElementPtr->getColsDofs());
+  return getMaxOrder(*colFieldEntsPtr);
 }
 
-MoFEMErrorCode ForcesAndSourcesCore::getDataOrder(
+MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
     const EntityType type, const FieldSpace space,
     boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const {
   MoFEMFunctionBegin;
-  SideNumber_multiIndex &side_table = const_cast<SideNumber_multiIndex &>(
-      numeredEntFiniteElementPtr->getSideNumberTable());
-  if (PetscUnlikely(data.size() < side_table.get<2>().count(type))) {
-    // prims has 9 edges, some of edges for "flat" prism are not active
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "data structure too small to keep data %d < %d", data.size(),
-             side_table.get<2>().count(type));
+
+  auto &side_table = numeredEntFiniteElementPtr->getSideNumberTable();
+
+  for (unsigned int s = 0; s != data.size(); ++s)
+    data[s].getDataOrder() = 0;
+
+  auto &fields_ents =
+      dataFieldEntsPtr->get<Composite_EntType_and_Space_mi_tag>();
+
+  for (auto r = fields_ents.equal_range(boost::make_tuple(type, space));
+       r.first != r.second; ++r.first) {
+
+    auto &e = **r.first;
+
+    auto sit = side_table.find(e.getEnt());
+    if (sit != side_table.end()) {
+
+      auto &side = *sit;
+      const int side_number = side->side_number;
+
+      ApproximationOrder ent_order = e.getMaxOrder();
+      auto &dat = data[side_number];
+      const int order = e.getMaxOrder();
+      dat.getDataOrder() =
+          dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+    } else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Entity on side of the element not found");
+
   }
-  for (unsigned int side = 0; side != data.size(); ++side) {
-    data[side].getDataOrder() = 0;
-  }
-  auto &data_dofs = const_cast<FEDofEntity_multiIndex::index<
-      Composite_EntType_and_Space_mi_tag>::type &>(
-      numeredEntFiniteElementPtr->getDataDofs()
-          .get<Composite_EntType_and_Space_mi_tag>());
-  auto tuple = boost::make_tuple(type, space);
-  auto dit = data_dofs.lower_bound(tuple);
-  if (dit != data_dofs.end()) {
-    auto hi_dit = data_dofs.upper_bound(tuple);
-    for (; dit != hi_dit; dit++) {
-      auto &dof = **dit;
-      if (dof.getEntDofIdx() == 0) {
-        ApproximationOrder ent_order = dof.getMaxOrder();
-        int side_number = dof.sideNumberPtr->side_number;
-        if (PetscUnlikely(side_number < 0)) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "side number can not be negative");
-        }
-        auto &dat = data[side_number];
-        dat.getDataOrder() =
-            dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
-        if (dof.sideNumberPtr->brother_side_number != -1) {
-          if (PetscUnlikely(
-                  data.size() <
-                  (unsigned int)(*dit)->sideNumberPtr->brother_side_number)) {
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "data size not big enough to keep brother data");
-          }
-          data[dof.sideNumberPtr->brother_side_number].getDataOrder() =
-              dat.getDataOrder();
-        }
-      }
+
+  for (auto r = side_table.get<2>().equal_range(type); r.first != r.second;
+       ++r.first) {
+    const int brother_side_number = (*r.first)->brother_side_number;
+    if (brother_side_number != -1) {
+      const int side_number = (*r.first)->side_number;
+      data[brother_side_number].getDataOrder() =
+          data[side_number].getDataOrder();
     }
   }
+
   MoFEMFunctionReturn(0);
 }
 
@@ -363,7 +352,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
       if (brother_side != -1) {
         auto &dat_brother = data.dataOnEntities[type][brother_side];
         dat_brother.getIndices().resize(nb_dofs_on_ent, false);
-        dat_brother.getLocalIndices().resize(nb_dofs_on_ent, false); 
+        dat_brother.getLocalIndices().resize(nb_dofs_on_ent, false);
         dat_brother.getIndices()[idx] = dat.getIndices()[idx];
         dat_brother.getLocalIndices()[idx] = dat.getLocalIndices()[idx];
       }
@@ -533,7 +522,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesFieldData(
   auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Type_mi_tag>();
   auto tuple = boost::make_tuple(field_name, MBVERTEX);
   auto dit = dofs_by_name_and_type.lower_bound(tuple);
-  if(dit == dofs_by_name_and_type.end())
+  if (dit == dofs_by_name_and_type.end())
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "No nodal dofs on element");
   auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
@@ -557,7 +546,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesFieldData(
       const auto &sn = *dof.sideNumberPtr;
       const int side_number = sn.side_number;
       const int brother_side_number = sn.brother_side_number;
-      if(brother_side_number != -1)
+      if (brother_side_number != -1)
         brother_dofs_vec.emplace_back(dof_ptr);
 
       int pos = side_number * nb_dof_idx;
@@ -571,17 +560,18 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesFieldData(
     }
 
     for(auto &dof_ptr : brother_dofs_vec) {
-      const auto &dof = *dof_ptr.lock();
-      const auto &sn = *dof.sideNumberPtr;
-      const int side_number = sn.side_number;
-      const int brother_side_number = sn.brother_side_number;
-      int pos = side_number * nb_dof_idx;
-      int brother_pos = brother_side_number * nb_dof_idx;
-      for (int ii = 0; ii != nb_dof_idx; ++ii) {
-        nodes_data[brother_pos] = nodes_data[pos];
-        nodes_dofs[brother_pos] = nodes_dofs[pos];        
-        ++pos;
-        ++brother_pos;
+      if (const auto d = dof_ptr.lock()) {
+        const auto &sn = d->sideNumberPtr;
+        const int side_number = sn->side_number;
+        const int brother_side_number = sn->brother_side_number;
+        int pos = side_number * nb_dof_idx;
+        int brother_pos = brother_side_number * nb_dof_idx;
+        for (int ii = 0; ii != nb_dof_idx; ++ii) {
+          nodes_data[brother_pos] = nodes_data[pos];
+          nodes_dofs[brother_pos] = nodes_dofs[pos];
+          ++pos;
+          ++brother_pos;
+        }
       }
     }
 
@@ -642,7 +632,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
       auto &ent_field_dofs = dat.getFieldDofs();
       auto &ent_field_data = dat.getFieldData();
       const int brother_side = dof.sideNumberPtr->brother_side_number;
-      if (brother_side != -1) 
+      if (brother_side != -1)
         brother_dofs_vec.emplace_back(*dit);
 
       if (ent_field_data.empty()) {
@@ -664,17 +654,19 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
     }
   }
 
-  for(auto &dof_ptr : brother_dofs_vec) {
-    const EntityType type = dof_ptr.lock()->getEntType();
-    const int side = dof_ptr.lock()->sideNumberPtr->side_number;
-    const int brother_side = dof_ptr.lock()->sideNumberPtr->brother_side_number;
-    auto &dat = data.dataOnEntities[type][side];
-    auto &dat_brother = data.dataOnEntities[type][brother_side];
-    dat_brother.getBase() = dat.getBase();
-    dat_brother.getSpace() = dat.getSpace();
-    dat_brother.getDataOrder() = dat.getDataOrder();
-    dat_brother.getFieldData() = dat.getFieldData();
-    dat_brother.getFieldDofs() = dat.getFieldDofs();
+  for (auto &dof_ptr : brother_dofs_vec) {
+    if (auto d = dof_ptr.lock()) {
+      const EntityType type = d->getEntType();
+      const int side = d->sideNumberPtr->side_number;
+      const int brother_side = d->sideNumberPtr->brother_side_number;
+      auto &dat = data.dataOnEntities[type][side];
+      auto &dat_brother = data.dataOnEntities[type][brother_side];
+      dat_brother.getBase() = dat.getBase();
+      dat_brother.getSpace() = dat.getSpace();
+      dat_brother.getDataOrder() = dat.getDataOrder();
+      dat_brother.getFieldData() = dat.getFieldData();
+      dat_brother.getFieldDofs() = dat.getFieldDofs();
+    }
   }
 
   MoFEMFunctionReturn(0);
@@ -811,6 +803,7 @@ ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &data) const {
 MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
     DataForcesAndSourcesCore &data) const {
   MoFEMFunctionBeginHot;
+
   if (nInTheLoop == 0) {
     data.sPace.reset();
     data.bAse.reset();
@@ -822,18 +815,25 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
       data.basesOnSpaces[s].reset();
     }
   }
-  for (_IT_GET_FEDATA_DOFS_FOR_LOOP_(this, dof)) {
-    if (dof->get()->getEntDofIdx() != 0)
-      continue;
-    const EntityType type = dof->get()->getEntType();
-    const FieldSpace space = dof->get()->getSpace();
-    const FieldApproximationBase approx = dof->get()->getApproxBase();
-    data.sPace.set(space);
-    data.bAse.set(approx);
-    data.spacesOnEntities[type].set(space);
-    data.basesOnEntities[type].set(approx);
-    data.basesOnSpaces[space].set(approx);
-  }
+  
+  if (dataFieldEntsPtr)
+    for (auto e : *dataFieldEntsPtr) {
+      // get data from entity
+      const EntityType type = e->getEntType();
+      const FieldSpace space = e->getSpace();
+      const FieldApproximationBase approx = e->getApproxBase();
+
+      // set data
+      data.sPace.set(space);
+      data.bAse.set(approx);
+      data.spacesOnEntities[type].set(space);
+      data.basesOnEntities[type].set(approx);
+      data.basesOnSpaces[space].set(approx);
+    }
+    else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "data fields ents not allocated on element");
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -972,7 +972,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
       // Set field
       switch (oit->sPace) {
       case NOSPACE:
-        SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "unknown space");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Unknown space");
       case NOFIELD:
       case H1:
       case HCURL:
@@ -1012,7 +1012,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
              data_id)
                 .none()) {
-          SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "no data field < %s > on finite element < %s >",
                    field_name.c_str(), feName.c_str());
         }
@@ -1022,8 +1022,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
           switch (space) {
           case NOSPACE:
-            SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                    "unknown space");
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
             break;
           case NOFIELD:
           case H1:
@@ -1046,7 +1045,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
             switch (space) {
             case NOSPACE:
-              SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                       "unknown space");
               break;
             case H1:
@@ -1085,9 +1084,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
                        "Not implemented for this space", space);
             }
             last_eval_field_name[ss] = field_name;
-
           }
-
         }
       }
 

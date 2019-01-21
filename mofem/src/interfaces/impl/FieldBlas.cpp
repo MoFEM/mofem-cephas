@@ -48,15 +48,14 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
   CHKERR m_field.get_fields(&fields_ptr);
   CHKERR m_field.get_field_ents(&field_ents);
   CHKERR m_field.get_dofs(&dofs_ptr);
-  Field_multiIndex::index<FieldName_mi_tag>::type::iterator x_fit =
-      fields_ptr->get<FieldName_mi_tag>().find(field_name_x);
+
+  auto x_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_x);
   if (x_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "x field < %s > not found, (top tip: check spelling)",
              field_name_x.c_str());
   }
-  Field_multiIndex::index<FieldName_mi_tag>::type::iterator y_fit =
-      fields_ptr->get<FieldName_mi_tag>().find(field_name_y);
+  auto y_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_y);
   if (y_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "y field < %s > not found, (top tip: check spelling)",
@@ -72,24 +71,46 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
              "rank for field < %s > and field <%s> are not compatible",
              field_name_x.c_str(), field_name_y.c_str());
   }
-  FieldEntityByFieldName::iterator x_eit;
-  x_eit = field_ents->get<FieldName_mi_tag>().lower_bound(field_name_x.c_str());
-  for (; x_eit !=
-         field_ents->get<FieldName_mi_tag>().upper_bound(field_name_x.c_str());
-       x_eit++) {
+
+  typedef multi_index_container<
+      boost::shared_ptr<DofEntity>,
+      indexed_by<
+
+          hashed_non_unique<
+              tag<Composite_Ent_Order_And_CoeffIdx_mi_tag>,
+              composite_key<
+
+                  DofEntity,
+                  const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>,
+                  const_mem_fun<DofEntity, ApproximationOrder,
+                                &DofEntity::getDofOrder>,
+                  const_mem_fun<DofEntity, FieldCoefficientsNumber,
+                                &DofEntity::getDofCoeffIdx>
+
+                  >>
+
+          >>
+      DofEntity_multiIndex_composite_view;
+
+  auto dof_lo_for_view =
+      dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name_y);
+  auto dof_hi_for_view =
+      dofs_ptr->get<FieldName_mi_tag>().upper_bound(field_name_y);
+  DofEntity_multiIndex_composite_view dof_composite_view;
+  dof_composite_view.insert(dof_lo_for_view, dof_hi_for_view);
+
+  auto x_eit = field_ents->get<FieldName_mi_tag>().lower_bound(field_name_x);
+  auto x_eit_hi = field_ents->get<FieldName_mi_tag>().upper_bound(field_name_x);
+  for (; x_eit != x_eit_hi; x_eit++) {
     int nb_dofs_on_x_entity = (*x_eit)->getNbDofsOnEnt();
     VectorAdaptor field_data = (*x_eit)->getEntFieldData();
     for (int dd = 0; dd != nb_dofs_on_x_entity; ++dd) {
       ApproximationOrder dof_order = (*x_eit)->getDofOrderMap()[dd];
       FieldCoefficientsNumber dof_rank = dd % (*x_eit)->getNbOfCoeffs();
       FieldData data = field_data[dd];
-      DofEntity_multiIndex::index<
-          Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>::type::iterator dit;
-      dit = dofs_ptr->get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().find(
-          boost::make_tuple(field_name_y.c_str(), (*x_eit)->getEnt(), dof_order,
-                            dof_rank));
-      if (dit ==
-          dofs_ptr->get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().end()) {
+      auto dit = dof_composite_view.find(
+          boost::make_tuple((*x_eit)->getEnt(), dof_order, dof_rank));
+      if (dit == dof_composite_view.end()) {
         if (creat_if_missing) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                   "not yet implemented");

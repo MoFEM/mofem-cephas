@@ -114,29 +114,27 @@ struct DeprecatedCoreInterface : public CoreInterface {
                                                    const BitRefLevel &bit,
                                                    int verb = -1);
 
+  /** \deprecated use BitRefManager and setElementsBitRefLevel
+   * Create finite elements based from entities in meshsets. Throw error if
+   * entity is not in database \todo Should be outsourced to separate
+   * interface, i.e. BitLevelManager
+   *
+   * \param EntityHandle meshset
+   *
+   */
+  DEPRECATED MoFEMErrorCode seed_finite_elements(const EntityHandle meshset,
+                                                 int verb = -1);
 
-    /** \deprecated use BitRefManager and setElementsBitRefLevel
-     * Create finite elements based from entities in meshsets. Throw error if
-     * entity is not in database \todo Should be outsourced to separate
-     * interface, i.e. BitLevelManager
-     *
-     * \param EntityHandle meshset
-     *
-     */
-    DEPRECATED MoFEMErrorCode seed_finite_elements(const EntityHandle meshset,
-                                                int verb = -1);
-
-    /** \deprecated use BitRefManager and setElementsBitRefLevel
-     * Create finite elements based from entities in meshsets. Throw error if
-     * entity is not in database \todo Should be outsourced to separate
-     * interface, i.e. BitLevelManager
-     *
-     * \param Range entities
-     *
-     */
-    DEPRECATED MoFEMErrorCode seed_finite_elements(const Range &entities,
-                                                int verb = -1);
-
+  /** \deprecated use BitRefManager and setElementsBitRefLevel
+   * Create finite elements based from entities in meshsets. Throw error if
+   * entity is not in database \todo Should be outsourced to separate
+   * interface, i.e. BitLevelManager
+   *
+   * \param Range entities
+   *
+   */
+  DEPRECATED MoFEMErrorCode seed_finite_elements(const Range &entities,
+                                                 int verb = -1);
 
   /**@}*/
 
@@ -1333,13 +1331,14 @@ struct DeprecatedCoreInterface : public CoreInterface {
   /** \deprecated use clear_ents_fields_by_bit_ref
    */
   DEPRECATED MoFEMErrorCode clear_ents_fields(const BitRefLevel &bit,
-                                             const BitRefLevel &mask,
-                                             int verb = -1);
+                                              const BitRefLevel &mask,
+                                              int verb = -1);
 
   /** \deprecated use clear_finite_elements_by_bit_ref
    */
-  DEPRECATED MoFEMErrorCode clear_finite_elements(
-      const BitRefLevel &bit, const BitRefLevel &mask, int verb = -1);
+  DEPRECATED MoFEMErrorCode clear_finite_elements(const BitRefLevel &bit,
+                                                  const BitRefLevel &mask,
+                                                  int verb = -1);
 
   /**@}*/
 
@@ -1357,9 +1356,8 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param nodes contains set vertices
    * \param name of the field
    */
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,
-                                                       const std::string &name,
-                                                       int verb = -1);
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_VERTICEs(
+      const Range &nodes, const std::string &name, int verb = -1);
 
   /**
    * \brief set field entities on vertices
@@ -1369,9 +1367,8 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param meshset contains set vertices
    * \param name of the field
    */
-  DEPRECATED MoFEMErrorCode
-  add_ents_to_field_by_VERTICEs(const EntityHandle meshset,
-                                const std::string &name, int verb = -1);
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_VERTICEs(
+      const EntityHandle meshset, const std::string &name, int verb = -1);
 
   /**
    * \brief set field entities form adjacencies of edges
@@ -1382,8 +1379,8 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param name of the field
    */
   DEPRECATED MoFEMErrorCode add_ents_to_field_by_EDGEs(const Range &edges,
-                                                    const std::string &name,
-                                                    int verb = -1);
+                                                       const std::string &name,
+                                                       int verb = -1);
 
   /**
    * \brief set field entities form adjacencies of edges
@@ -1393,9 +1390,8 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param meshset contains set edges
    * \param name of the field
    */
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,
-                                                    const std::string &name,
-                                                    int verb = -1);
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_EDGEs(
+      const EntityHandle meshset, const std::string &name, int verb = -1);
 
   /**
    * \brief set field entities form adjacencies of triangles
@@ -1405,9 +1401,8 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param meshset contains set triangles
    * \param name of the field
    */
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,
-                                                   const std::string &name,
-                                                   int verb = -1);
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TRIs(
+      const EntityHandle meshset, const std::string &name, int verb = -1);
 
   /**
    * \brief set field entities form adjacencies of triangles
@@ -1418,8 +1413,8 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param name of the field
    */
   DEPRECATED MoFEMErrorCode add_ents_to_field_by_TRIs(const Range &tris,
-                                                   const std::string &name,
-                                                   int verb = -1);
+                                                      const std::string &name,
+                                                      int verb = -1);
 
   /**
    * \brief set field entities from adjacencies of tetrahedron
@@ -1429,9 +1424,8 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param meshset contains set tetrahedron
    * \param name of the field
    */
-  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,
-                                                   const std::string &name,
-                                                   int verb = -1);
+  DEPRECATED MoFEMErrorCode add_ents_to_field_by_TETs(
+      const EntityHandle meshset, const std::string &name, int verb = -1);
 
   /**
    * \brief set field entities from adjacencies of tetrahedron
@@ -1442,8 +1436,8 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param name of the field
    */
   DEPRECATED MoFEMErrorCode add_ents_to_field_by_TETs(const Range &tets,
-                                                   const std::string &name,
-                                                   int verb = -1);
+                                                      const std::string &name,
+                                                      int verb = -1);
 
   /**
    * \deprecated use add_ents_to_field_by_type
@@ -1455,11 +1449,11 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param name of the field
    */
   DEPRECATED MoFEMErrorCode add_ents_to_field_by_QUADs(const Range &quads,
-                                                    const std::string &name,
-                                                    int verb = -1);
+                                                       const std::string &name,
+                                                       int verb = -1);
 
   /**
-   * \deprecated use add_ents_to_field_by_type 
+   * \deprecated use add_ents_to_field_by_type
    * \brief set field entities from adjacencies of quads
    * \ingroup mofem_field
    *
@@ -1468,8 +1462,8 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param name of the field
    */
   DEPRECATED MoFEMErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,
-                                                    const std::string &name,
-                                                    int verb = -1);
+                                                       const std::string &name,
+                                                       int verb = -1);
 
   /**
    * \deprecated use add_ents_to_field_by_type
@@ -1481,8 +1475,8 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param name of the field
    */
   DEPRECATED MoFEMErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,
-                                                     const std::string &name,
-                                                     int verb = -1);
+                                                        const std::string &name,
+                                                        int verb = -1);
 
   /**
    * \deprecated use add_ents_to_field_by_type
@@ -1494,10 +1488,51 @@ struct DeprecatedCoreInterface : public CoreInterface {
    * \param name of the field
    */
   DEPRECATED MoFEMErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,
-                                                     const std::string &name,
-                                                     int verb = -1);
+                                                        const std::string &name,
+                                                        int verb = -1);
 
-   /**@}*/
+  /**@}*/
+
+  /** \name Create matrices (will be moved to independent interface) */
+
+  /**@{*/
+
+  /**
+   * @deprecated Use MatrixInterface
+   *
+   * \code
+   * CHKERR m_field.getInterface<MatrixManager>()
+   *  ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(name, Aij, verb);
+   * \endcode
+   */
+  DEPRECATED MoFEMErrorCode MatCreateMPIAIJWithArrays(
+      const std::string &name, Mat *Aij, int verb = DEFAULT_VERBOSITY);
+
+  /**
+   * @deprecated Use MatrixInterface
+   *
+   * \code
+   * CHKERR m_field.getInterface<MatrixManager>()
+   *  ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(name, Aij, verb);
+   * \endcode
+   */
+  DEPRECATED MoFEMErrorCode MatCreateMPIAdj_with_Idx_mi_tag(
+      const std::string &name, Mat *Adj, int verb = DEFAULT_VERBOSITY);
+
+  /**
+   * @deprecated Use MatrixInterface
+   *
+   * \code
+   * CHKERR m_field.getInterface<MatrixManager>()
+   *  ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(name, Adj, verb);
+   * \endcode
+   *
+   */
+  DEPRECATED MoFEMErrorCode MatCreateSeqAIJWithArrays(
+      const std::string &name, Mat *Aij, PetscInt **i, PetscInt **j,
+      PetscScalar **v, int verb = DEFAULT_VERBOSITY);
+
+  /**@}*/
 };
 
 } // namespace MoFEM

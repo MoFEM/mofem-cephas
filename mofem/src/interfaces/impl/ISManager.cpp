@@ -72,7 +72,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
             "Has to be ROW or COLUMN");
   }
   // get fields names on the problem
-  map<std::string, std::pair<int, int> > fields_map;
+  map<std::string, std::pair<int, int>> fields_map;
   {
     int field = 0;
     for (Field_multiIndex::iterator fit = fields_ptr->begin();
@@ -86,8 +86,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
   const int proc = m_field.get_comm_rank();
   CHKERR PetscSectionCreate(PETSC_COMM_WORLD, s);
   CHKERR PetscSectionSetNumFields(*s, fields_map.size());
-  for (map<std::string, std::pair<int, int> >::iterator mit =
-           fields_map.begin();
+  for (map<std::string, std::pair<int, int>>::iterator mit = fields_map.begin();
        mit != fields_map.end(); mit++) {
     CHKERR PetscSectionSetFieldName(*s, mit->second.first, mit->first.c_str());
     CHKERR PetscSectionSetFieldComponents(*s, mit->second.first,
@@ -101,7 +100,8 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
     hi_dit = dofs->end();
     for (; dit != hi_dit;) {
       EntityHandle ent = dit->get()->getEnt();
-      if (static_cast<int>(dit->get()->getPart()) == proc && dit->get()->getEntDofIdx() == 0) {
+      if (static_cast<int>(dit->get()->getPart()) == proc &&
+          dit->get()->getEntDofIdx() == 0) {
         while (dit != hi_dit && ent == dit->get()->getEnt()) {
           const int nb_of_dofs_on_ent = dit->get()->getNbDofsOnEnt();
           for (int dd = 0; dd != nb_of_dofs_on_ent; dd++, dit++) {
@@ -132,7 +132,8 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
     int point = rstart;
     for (; dit != hi_dit;) {
       EntityHandle ent = dit->get()->getEnt();
-      if (static_cast<int>(dit->get()->getPart()) == proc && dit->get()->getEntDofIdx() == 0) {
+      if (static_cast<int>(dit->get()->getPart()) == proc &&
+          dit->get()->getEntDofIdx() == 0) {
         // exploit that does are continuously stored on entity
         // that includes fields
         while (dit != hi_dit && ent == dit->get()->getEnt()) {
@@ -179,41 +180,53 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
   const Problem *problem_ptr;
   MoFEMFunctionBegin;
   CHKERR m_field.get_problem(problem, &problem_ptr);
-  typedef NumeredDofEntity_multiIndex::index<
-      Composite_Part_And_Order_mi_tag>::type dofs_order;
-  int rank = m_field.get_comm_rank();
-  dofs_order::iterator it, hi_it;
+
+  typedef multi_index_container<
+      boost::shared_ptr<NumeredDofEntity>,
+
+      indexed_by<
+
+          sequenced<>,
+
+          ordered_non_unique<
+              tag<Order_mi_tag>,
+              const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
+                            ApproximationOrder, &NumeredDofEntity::getDofOrder>>
+
+          >>
+      NumeredDofEntity_order_view_multiIndex;
+
+  const int rank = m_field.get_comm_rank();
+
+  NumeredDofEntity_order_view_multiIndex dofs_part_view;
+  auto insert_part_range = [&dofs_part_view, rank](auto &dofs) {
+    dofs_part_view.insert(dofs_part_view.end(), dofs.lower_bound(rank),
+                          dofs.upper_bound(rank));
+  };
+
   switch (rc) {
   case ROW:
-    it = problem_ptr->numeredDofsRows->get<Composite_Part_And_Order_mi_tag>()
-             .lower_bound(boost::make_tuple(rank, min_order));
-    hi_it = problem_ptr->numeredDofsRows->get<Composite_Part_And_Order_mi_tag>()
-                .upper_bound(boost::make_tuple(rank, max_order));
+    insert_part_range(problem_ptr->numeredDofsRows->get<Part_mi_tag>());
     break;
   case COL:
-    it = problem_ptr->numeredDofsCols->get<Composite_Part_And_Order_mi_tag>()
-             .lower_bound(boost::make_tuple(rank, min_order));
-    hi_it = problem_ptr->numeredDofsCols->get<Composite_Part_And_Order_mi_tag>()
-                .upper_bound(boost::make_tuple(rank, max_order));
+    insert_part_range(problem_ptr->numeredDofsCols->get<Part_mi_tag>());
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
   }
-  NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique
-      dof_idx_view;
-  dof_idx_view.insert(it,hi_it);
-  NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique::iterator
-      vit,
-      hi_vit;
-  vit = dof_idx_view.begin();
-  hi_vit = dof_idx_view.end();
-  int size = std::distance(vit, hi_vit);
+
+  auto lo = dofs_part_view.get<Order_mi_tag>().lower_bound(min_order);
+  auto hi = dofs_part_view.get<Order_mi_tag>().upper_bound(max_order);
+  const int size = std::distance(lo, hi);
   int *id;
   CHKERR PetscMalloc(size * sizeof(int), &id);
-  for (int ii = 0; vit != hi_vit; ++vit, ++ii) {
-    id[ii] = (*vit)->getPetscGlobalDofIdx();
-  }
+  int *id_it = id;
+  for (; lo != hi; ++lo, ++id_it)
+    *id_it = (*lo)->getPetscGlobalDofIdx();
+  sort(id, &id[size]);
+
   CHKERR ISCreateGeneral(PETSC_COMM_WORLD, size, id, PETSC_OWN_POINTER, is);
+
   MoFEMFunctionReturn(0);
 }
 
@@ -260,9 +273,9 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
     dof_loc_idx_view.insert(vit, hi_vit);
   }
 
-  auto true_if_dof_on_entity = [ents](auto & dof) {
-    if(ents) {
-      return ents->find(dof->get()->getEnt())!=ents->end();
+  auto true_if_dof_on_entity = [ents](auto &dof) {
+    if (ents) {
+      return ents->find(dof->get()->getEnt()) != ents->end();
     } else {
       return true;
     }
@@ -292,69 +305,91 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
     RowColData x_rc, const std::string &y_problem,
     const std::string &y_field_name, RowColData y_rc, std::vector<int> &idx,
     std::vector<int> &idy) const {
+
   const MoFEM::Interface &m_field = cOre;
   const Problem *px_ptr;
   const Problem *py_ptr;
   MoFEMFunctionBegin;
+
   CHKERR m_field.get_problem(x_problem, &px_ptr);
   CHKERR m_field.get_problem(y_problem, &py_ptr);
-  NumeredDofEntityByLocalIdx::iterator y_dit, hi_y_dit;
-  switch (y_rc) {
-  case ROW:
-    y_dit = py_ptr->numeredDofsRows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-    hi_y_dit = py_ptr->numeredDofsRows->get<PetscLocalIdx_mi_tag>().upper_bound(
-        py_ptr->getNbLocalDofsRow() - 1);
-    break;
-  case COL:
-    y_dit = py_ptr->numeredDofsCols->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-    hi_y_dit = py_ptr->numeredDofsCols->get<PetscLocalIdx_mi_tag>().upper_bound(
-        py_ptr->getNbLocalDofsCol() - 1);
-    break;
-  default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-            "only makes sense for ROWS and COLS");
-  }
-  typedef NumeredDofEntity_multiIndex::index<
-      Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type DofsByNameAndEntDofIdx;
-  const DofsByNameAndEntDofIdx *x_numered_dofs_by_ent_name_dof;
+
+  typedef multi_index_container<
+      boost::shared_ptr<NumeredDofEntity>,
+
+      indexed_by<
+
+          sequenced<>,
+
+          ordered_non_unique<
+              tag<Composite_Ent_And_EntDofIdx_mi_tag>,
+              composite_key<
+                  NumeredDofEntity,
+                  const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
+                                EntityHandle, &NumeredDofEntity::getEnt>,
+                  const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
+                                DofIdx, &NumeredDofEntity::getEntDofIdx>>>
+
+          >>
+      NumeredDofEntity_view_multiIndex;
+
+  NumeredDofEntity_view_multiIndex dofs_view;
+
   switch (x_rc) {
   case ROW:
-    x_numered_dofs_by_ent_name_dof =
-        &(px_ptr->numeredDofsRows
-              ->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
+    dofs_view.insert(
+        dofs_view.end(),
+        px_ptr->numeredDofsRows->get<FieldName_mi_tag>().lower_bound(
+            x_field_name),
+        px_ptr->numeredDofsRows->get<FieldName_mi_tag>().upper_bound(
+            x_field_name));
     break;
   case COL:
-    x_numered_dofs_by_ent_name_dof =
-        &(px_ptr->numeredDofsCols
-              ->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
+    dofs_view.insert(
+        dofs_view.end(),
+        px_ptr->numeredDofsCols->get<FieldName_mi_tag>().lower_bound(
+            x_field_name),
+        px_ptr->numeredDofsCols->get<FieldName_mi_tag>().upper_bound(
+            x_field_name));
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "only makes sense for ROWS and COLS");
   }
-  std::map<int, int> global_dofs_map;
-  for (; y_dit != hi_y_dit; y_dit++) {
-    if ((*y_dit)->getPart() != (unsigned int)m_field.get_comm_rank()) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-    }
-    if ((*y_dit)->getName() != y_field_name)
-      continue;
-    DofsByNameAndEntDofIdx::iterator x_dit;
-    x_dit = x_numered_dofs_by_ent_name_dof->find(boost::make_tuple(
-        x_field_name, (*y_dit)->getEnt(), (*y_dit)->getEntDofIdx()));
-    if (x_dit == x_numered_dofs_by_ent_name_dof->end())
-      continue;
-    global_dofs_map[(*x_dit)->getPetscGlobalDofIdx()] =
-        (*y_dit)->getPetscGlobalDofIdx();
+
+  decltype(py_ptr->numeredDofsRows) dofs_ptr;
+  switch (y_rc) {
+  case ROW:
+    dofs_ptr = py_ptr->numeredDofsRows;
+    break;
+  case COL:
+    dofs_ptr = py_ptr->numeredDofsCols;
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "only makes sense for ROWS and COLS");
   }
+
+  std::map<int, int> global_dofs_map;
+  for (auto r = dofs_ptr->get<Composite_Name_And_Part_mi_tag>().equal_range(
+           boost::make_tuple(y_field_name, m_field.get_comm_rank()));
+       r.first != r.second; ++r.first) {
+
+    auto x_dit = dofs_view.get<Composite_Ent_And_EntDofIdx_mi_tag>().find(
+        boost::make_tuple((*r.first)->getEnt(), (*r.first)->getEntDofIdx()));
+    if (x_dit != dofs_view.get<Composite_Ent_And_EntDofIdx_mi_tag>().end()) {
+      global_dofs_map[(*x_dit)->getPetscGlobalDofIdx()] =
+          (*r.first)->getPetscGlobalDofIdx();
+    }
+  }
+
   idx.resize(global_dofs_map.size());
   idy.resize(global_dofs_map.size());
   {
-    std::vector<int>::iterator ix, iy;
-    ix = idx.begin();
-    iy = idy.begin();
-    map<int, int>::iterator mit = global_dofs_map.begin();
-    for (; mit != global_dofs_map.end(); mit++, ix++, iy++) {
+    auto ix = idx.begin();
+    auto iy = idy.begin();
+    for (auto mit = global_dofs_map.begin(); mit != global_dofs_map.end();
+         mit++, ix++, iy++) {
       *ix = mit->first;
       *iy = mit->second;
     }

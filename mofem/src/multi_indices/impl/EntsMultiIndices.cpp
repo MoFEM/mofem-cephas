@@ -164,7 +164,7 @@ FieldEntity::FieldEntity(const boost::shared_ptr<Field> &field_ptr,
                          const boost::shared_ptr<RefEntity> &ref_ent_ptr)
     : interface_Field<Field>(field_ptr), interface_RefEntity<RefEntity>(
                                              ref_ent_ptr) {
-  globalUid = getGlobalUniqueIdCalculate();
+  globalUId = getGlobalUniqueIdCalculate();
   getDofOrderMap().resize(MAX_DOFS_ON_ENTITY, -1);
 }
 
@@ -183,8 +183,8 @@ int FieldEntity::getEntFieldDataLastSize = 0;
 int FieldEntity::getEntFieldDataLastTagSize = 0;
 
 VectorAdaptor FieldEntity::getEntFieldData() const {
-  if (getEntFieldDataLastUid != &globalUid) {
-    getEntFieldDataLastUid = const_cast<UId *>(&globalUid);
+  if (getEntFieldDataLastUid != &globalUId) {
+    getEntFieldDataLastUid = const_cast<UId *>(&globalUId);
     switch (getEntType()) {
     case MBVERTEX:
       getEntFieldDataLastSize = getNbOfCoeffs();
@@ -298,5 +298,11 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
   }
   }
 }
+
+// FEFieldEntity::FEFieldEntity(
+//     const boost::shared_ptr<SideNumber> &side_number_ptr,
+//     const boost::shared_ptr<FieldEntity> &entity_ptr)
+//     : BaseFEEntity(side_number_ptr), interface_FieldEntity<FieldEntity>(
+//                                          entity_ptr) {}
 
 } // namespace MoFEM

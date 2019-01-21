@@ -119,29 +119,29 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
   // H1
   if ((dataH1.spacesOnEntities[MBVERTEX]).test(H1)) {
     CHKERR getEntitySense<MBEDGE>(dataH1);
-    CHKERR getEntityFieldDataOrder<MBEDGE>(dataH1, H1);
+    CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
     CHKERR getEntitySense<MBTRI>(dataH1);
-    CHKERR getEntityFieldDataOrder<MBTRI>(dataH1, H1);
+    CHKERR getEntityDataOrder<MBTRI>(dataH1, H1);
   }
 
   // H1
   if ((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
     CHKERR getEntitySense<MBEDGE>(data_curl);
-    CHKERR getEntityFieldDataOrder<MBEDGE>(data_curl, HCURL);
+    CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
     CHKERR getEntitySense<MBTRI>(data_curl);
-    CHKERR getEntityFieldDataOrder<MBTRI>(data_curl, HCURL);
+    CHKERR getEntityDataOrder<MBTRI>(data_curl, HCURL);
   }
 
   // Hdiv
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
     CHKERR getEntitySense<MBTRI>(data_div);
-    CHKERR getEntityFieldDataOrder<MBTRI>(data_div, HDIV);
+    CHKERR getEntityDataOrder<MBTRI>(data_div, HDIV);
   }
 
   // L2
   if ((dataH1.spacesOnEntities[MBTRI]).test(L2)) {
     CHKERR getEntitySense<MBTRI>(data_l2);
-    CHKERR getEntityFieldDataOrder<MBTRI>(data_l2, L2);
+    CHKERR getEntityDataOrder<MBTRI>(data_l2, L2);
   }
 
   int order_data = getMaxDataOrder();

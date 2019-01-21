@@ -123,11 +123,11 @@ FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
     FEByComposite::iterator miit =
         numered_fe.find(boost::make_tuple(fe_name, *vit));
     if (miit != numered_fe.end()) {
-      // cerr << **miit << endl;
-      // cerr << &(**miit) << endl;
-      // cerr << (*miit)->getEnt() << endl;
       method.nInTheLoop = nn++;
       method.numeredEntFiniteElementPtr = *miit;
+      method.dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
+      method.rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
+      method.colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
       method.dataPtr = (*miit)->sPtr->data_dofs;
       method.rowPtr = (*miit)->rows_dofs;
       method.colPtr = (*miit)->cols_dofs;
@@ -242,41 +242,42 @@ FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   // H1
   if (dataH1.spacesOnEntities[MBEDGE].test(H1)) {
     CHKERR getEntitySense<MBEDGE>(dataH1);
-    CHKERR getEntityFieldDataOrder<MBEDGE>(dataH1, H1);
+    CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
   }
   if (dataH1.spacesOnEntities[MBTRI].test(H1)) {
     CHKERR getEntitySense<MBTRI>(dataH1);
-    CHKERR getEntityFieldDataOrder<MBTRI>(dataH1, H1);
+    CHKERR getEntityDataOrder<MBTRI>(dataH1, H1);
   }
 
   // Hcurl
   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     CHKERR getEntitySense<MBEDGE>(dataHcurl);
-    CHKERR getEntityFieldDataOrder<MBEDGE>(dataHcurl, HCURL);
+    CHKERR getEntityDataOrder<MBEDGE>(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
   }
   if (dataH1.spacesOnEntities[MBTRI].test(HCURL)) {
     CHKERR getEntitySense<MBTRI>(dataHcurl);
-    CHKERR getEntityFieldDataOrder<MBTRI>(dataHcurl, HCURL);
+    CHKERR getEntityDataOrder<MBTRI>(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
   }
 
   // Hdiv
   if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
     CHKERR getEntitySense<MBTRI>(dataHdiv);
-    CHKERR getEntityFieldDataOrder<MBTRI>(dataHdiv, HDIV);
+    CHKERR getEntityDataOrder<MBTRI>(dataHdiv, HDIV);
     dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
   }
 
   // L2
   if (dataH1.spacesOnEntities[MBTRI].test(L2)) {
     CHKERR getEntitySense<MBTRI>(dataL2);
-    CHKERR getEntityFieldDataOrder<MBTRI>(dataL2, L2);
+    CHKERR getEntityDataOrder<MBTRI>(dataL2, L2);
     dataL2.spacesOnEntities[MBTRI].set(L2);
   }
 
   MoFEMFunctionReturn(0);
 }
+
 
 MoFEMErrorCode
 FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
@@ -376,42 +377,33 @@ MoFEMErrorCode
 OpCalculateInvJacForFace::doWork(int side, EntityType type,
                                  DataForcesAndSourcesCore::EntData &data) {
 
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "This operator can be used only with element which is triangle");
   }
 
-  try {
-
-    if (type == MBVERTEX) {
-      VectorDouble &coords = getCoords();
-      double *coords_ptr = &*coords.data().begin();
-      double diff_n[6];
-      ierr = ShapeDiffMBTRI(diff_n);
-      CHKERRG(ierr);
-      double j00, j01, j10, j11;
-      for (int gg = 0; gg < 1; gg++) {
-        // this is triangle, derivative of nodal shape functions is constant.
-        // So only need to do one node.
-        j00 = cblas_ddot(3, &coords_ptr[0], 3, &diff_n[0], 2);
-        j01 = cblas_ddot(3, &coords_ptr[0], 3, &diff_n[1], 2);
-        j10 = cblas_ddot(3, &coords_ptr[1], 3, &diff_n[0], 2);
-        j11 = cblas_ddot(3, &coords_ptr[1], 3, &diff_n[1], 2);
-      }
-      double det = j00 * j11 - j01 * j10;
-      invJac.resize(2, 2, false);
-      invJac(0, 0) = j11 / det;
-      invJac(0, 1) = -j01 / det;
-      invJac(1, 0) = -j10 / det;
-      invJac(1, 1) = j00 / det;
+  if (type == MBVERTEX) {
+    VectorDouble &coords = getCoords();
+    double *coords_ptr = &*coords.data().begin();
+    double diff_n[6];
+    CHKERR ShapeDiffMBTRI(diff_n);
+    double j00, j01, j10, j11;
+    for (int gg = 0; gg < 1; gg++) {
+      // this is triangle, derivative of nodal shape functions is constant.
+      // So only need to do one node.
+      j00 = cblas_ddot(3, &coords_ptr[0], 3, &diff_n[0], 2);
+      j01 = cblas_ddot(3, &coords_ptr[0], 3, &diff_n[1], 2);
+      j10 = cblas_ddot(3, &coords_ptr[1], 3, &diff_n[0], 2);
+      j11 = cblas_ddot(3, &coords_ptr[1], 3, &diff_n[1], 2);
     }
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "throw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
+    double det = j00 * j11 - j01 * j10;
+    invJac.resize(2, 2, false);
+    invJac(0, 0) = j11 / det;
+    invJac(0, 1) = -j01 / det;
+    invJac(1, 0) = -j10 / det;
+    invJac(1, 1) = j00 / det;
   }
 
   doVertices = true;
@@ -421,7 +413,7 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
   doTets = false;
   doPrisms = false;
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode

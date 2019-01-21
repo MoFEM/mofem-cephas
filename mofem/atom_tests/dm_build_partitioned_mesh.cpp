@@ -1,5 +1,6 @@
 /** \file dm_build_partitioned_mesh.cpp
-  \brief Testing problem for portioned mesh
+  \example dm_build_partitioned_mesh.cpp
+  \brief Testing problem for partitioned mesh
 
 */
 
@@ -19,159 +20,156 @@
 
 #include <MoFEM.hpp>
 
-
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
-  //initialize petsc
-  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
+  // initialize petsc
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
-  PetscBool flg = PETSC_TRUE;
-  char mesh_file_name[255];
-  #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
-  #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRG(ierr);
-  #endif
-  if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+    PetscBool flg = PETSC_TRUE;
+    char mesh_file_name[255];
+#if PETSC_VERSION_GE(3, 6, 4)
+    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+                                 255, &flg);
+#else
+    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
+                                 mesh_file_name, 255, &flg);
+#endif
+    if (flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
+    }
+
+    // register new dm type, i.e. mofem
+    DMType dm_name = "DMMOFEM";
+    CHKERR DMRegister_MoFEM(dm_name);
+
+    // craete dm instance
+    DM dm;
+    CHKERR DMCreate(PETSC_COMM_WORLD, &dm);
+    CHKERR DMSetType(dm, dm_name);
+
+    // read mesh and create moab and mofem data structures
+    moab::Core mb_instance;
+    moab::Interface &moab = mb_instance;
+
+    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+    if (pcomm == NULL)
+      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+    const char *option;
+    option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION="
+             "PARALLEL_PARTITION;";
+    CHKERR moab.load_file(mesh_file_name, 0, option);
+
+    MoFEM::Core core(moab, PETSC_COMM_WORLD);
+    MoFEM::Interface &m_field = core;
+
+    EntityHandle root_set = moab.get_root_set();
+    // add all entities to database, all of them will be used
+    BitRefLevel bit_level0;
+    bit_level0.set(0);
+    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+        root_set, 3, bit_level0);
+    // define & build field
+    int field_rank = 3;
+#if PETSC_VERSION_GE(3, 6, 4)
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-my_field_rank", &field_rank,
+                              &flg);
+#else
+    CHKERR PetscOptionsGetInt(PETSC_NULL, PETSC_NULL, "-my_field_rank",
+                              &field_rank, &flg);
+#endif
+    CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, field_rank);
+    CHKERR m_field.add_field("FIELD2", L2, AINSWORTH_LEGENDRE_BASE, 1);
+
+    // add entities to field
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "FIELD1");
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "FIELD2");
+
+    // set app. order
+    int order = 4;
+    CHKERR m_field.set_field_order(root_set, MBTET, "FIELD1", order);
+    CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD1", order);
+    CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD1", order);
+    CHKERR m_field.set_field_order(root_set, MBVERTEX, "FIELD1", 1);
+    CHKERR m_field.set_field_order(root_set, MBTET, "FIELD2", order);
+
+    // build data structures for fields
+    CHKERR m_field.build_fields();
+
+    // define & build finite elements
+    CHKERR m_field.add_finite_element("FE");
+    // Define rows/cols and element data
+    CHKERR m_field.modify_finite_element_add_field_row("FE", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_col("FE", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_data("FE", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_row("FE", "FIELD2");
+    CHKERR m_field.modify_finite_element_add_field_col("FE", "FIELD2");
+    CHKERR m_field.modify_finite_element_add_field_data("FE", "FIELD2");
+    // add entities to finite element
+    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "FE");
+    // build finite elemnts
+    CHKERR m_field.build_finite_elements();
+    // build adjacencies
+    CHKERR m_field.build_adjacencies(bit_level0);
+
+    // set dm data structure which created mofem data structures
+    CHKERR DMMoFEMCreateMoFEM(dm, &m_field, "TEST_PROBLEM", bit_level0);
+    CHKERR DMMoFEMSetSquareProblem(
+        dm, PETSC_FALSE); // this is for testing (this problem has the same rows
+                          // and cols)
+    CHKERR DMSetFromOptions(dm);
+    CHKERR DMMoFEMAddElement(dm, "FE");
+    CHKERR DMSetUp(dm);
+
+    // dump data to file, just to check if something was changed
+    Mat m;
+    CHKERR DMCreateMatrix(dm, &m);
+
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
+            "TEST_PROBLEM", -1, -1, 1);
+
+    std::vector<std::string> fields_list;
+    fields_list.push_back("FIELD1");
+
+    // PetscSection section;
+    PetscSection section;
+    CHKERR m_field.getInterface<ISManager>()->sectionCreate("TEST_PROBLEM",
+                                                            &section);
+    CHKERR PetscSectionView(section, PETSC_VIEWER_STDOUT_WORLD);
+    CHKERR DMSetDefaultSection(dm, section);
+    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR PetscSectionDestroy(&section);
+
+    PetscBool save_file = PETSC_TRUE;
+#if PETSC_VERSION_GE(3, 6, 4)
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-my_save_file", &save_file,
+                               &flg);
+#else
+    CHKERR PetscOptionsGetBool(PETSC_NULL, PETSC_NULL, "-my_save_file",
+                               &save_file, &flg);
+#endif
+    if (save_file) {
+      PetscViewer viewer;
+      CHKERR PetscViewerASCIIOpen(PETSC_COMM_WORLD,
+                                  "dm_build_partitioned_mesh.txt", &viewer);
+      CHKERR PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_INFO);
+      MatView(m, viewer);
+      CHKERR PetscViewerDestroy(&viewer);
+    }
+
+    CHKERR MatDestroy(&m);
+    // destry dm
+    CHKERR DMDestroy(&dm);
   }
+  CATCH_ERRORS;
 
-  //register new dm type, i.e. mofem
-  DMType dm_name = "DMMOFEM";
-  ierr = DMRegister_MoFEM(dm_name); CHKERRG(ierr);
-
-  //craete dm instance
-  DM dm;
-  ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRG(ierr);
-  ierr = DMSetType(dm,dm_name);CHKERRG(ierr);
-
-  //read mesh and create moab and mofem datastrutures
-  moab::Core mb_instance;
-  moab::Interface& moab = mb_instance;
-
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-  const char *option;
-  option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRG(rval);
-
-  MoFEM::Core core(moab,PETSC_COMM_WORLD);
-  MoFEM::Interface& m_field = core;
-
-  EntityHandle root_set = moab.get_root_set();
-  //add all entities to database, all of them will be used
-  BitRefLevel bit_level0;
-  bit_level0.set(0);
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(root_set,3,bit_level0); CHKERRG(ierr);
-  //define & build field
-  int field_rank = 3;
-  #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_field_rank",&field_rank,&flg); CHKERRG(ierr);
-  #else
-  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_field_rank",&field_rank,&flg); CHKERRG(ierr);
-  #endif
-  ierr = m_field.add_field("FIELD1",H1,AINSWORTH_LEGENDRE_BASE,field_rank); CHKERRG(ierr);
-  ierr = m_field.add_field("FIELD2",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRG(ierr);
-
-  //add entities to field
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD1"); CHKERRG(ierr);
-  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD2"); CHKERRG(ierr);
-
-  //set app. order
-  int order = 4;
-  ierr = m_field.set_field_order(root_set,MBTET,"FIELD1",order); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRG(ierr);
-  ierr = m_field.set_field_order(root_set,MBTET,"FIELD2",order); CHKERRG(ierr);
-
-  //build data structures for fields
-  ierr = m_field.build_fields(); CHKERRG(ierr);
-
-  //define & build finite elements
-  ierr = m_field.add_finite_element("FE"); CHKERRG(ierr);
-  //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("FE","FIELD1"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("FE","FIELD1"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("FE","FIELD1"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_row("FE","FIELD2"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("FE","FIELD2"); CHKERRG(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("FE","FIELD2"); CHKERRG(ierr);
-  //add entities to finite element
-  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"FE"); CHKERRG(ierr);
-  //build finite elemnts
-  ierr = m_field.build_finite_elements(); CHKERRG(ierr);
-  //build adjacencies
-  ierr = m_field.build_adjacencies(bit_level0); CHKERRG(ierr);
-
-  //set dm data structure which created mofem data structures
-  ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRG(ierr);
-  ierr = DMMoFEMSetSquareProblem(dm,PETSC_FALSE); CHKERRG(ierr); // this is for testing (this problem has the same rows and cols)
-  ierr = DMSetFromOptions(dm); CHKERRG(ierr);
-  ierr = DMMoFEMAddElement(dm,"FE"); CHKERRG(ierr);
-  ierr = DMSetUp(dm); CHKERRG(ierr);
-
-  // dump data to file, just to check if something was changed
-  Mat m;
-  ierr = DMCreateMatrix(dm,&m); CHKERRG(ierr);
-
-  // if(1) {
-  //   MatView(m,PETSC_VIEWER_DRAW_WORLD);
-  //   std::string wait;
-  //   std::cin >> wait;
-  // }
-
-  // const MoFEM::Problem *problem_ptr;
-  // ierr = DMMoFEMGetProblemPtr(dm,&problem_ptr); CHKERRG(ierr);
-  // for(_IT_NUMEREDDOF_COL_FOR_LOOP_(problem_ptr,dit)) {
-  //   cerr << **dit << endl;
-  // }
-
-  ierr = m_field.partition_check_matrix_fill_in("DMMOFEM",-1,-1,1); CHKERRG(ierr);
-
-  std::vector<std::string> fields_list;
-  fields_list.push_back("FIELD1");
-
-  // PetscSection section;
-  PetscSection section;
-  ierr = m_field.getInterface<ISManager>()->sectionCreate(
-    dm_name,&section
-  ); CHKERRG(ierr);
-  ierr = PetscSectionView(section,PETSC_VIEWER_STDOUT_WORLD);
-  ierr = DMSetDefaultSection(dm,section); CHKERRG(ierr);
-  ierr = DMSetDefaultGlobalSection(dm,section); CHKERRG(ierr);
-  ierr = PetscSectionDestroy(&section); CHKERRG(ierr);
-
-  PetscBool save_file = PETSC_TRUE;
-  #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetBool(PETSC_NULL,"","-my_save_fiele",&save_file,&flg); CHKERRG(ierr);
-  #else
-  ierr = PetscOptionsGetBool(PETSC_NULL,PETSC_NULL,"-my_save_fiele",&save_file,&flg); CHKERRG(ierr);
-  #endif
-  if(save_file) {
-    PetscViewer viewer;
-    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"dm_build_partitioned_mesh.txt",&viewer); CHKERRG(ierr);
-    ierr = PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_INFO); CHKERRG(ierr);
-    MatView(m,viewer);
-    ierr = PetscViewerDestroy(&viewer); CHKERRG(ierr);
-  }
-
-  ierr = MatDestroy(&m); CHKERRG(ierr);
-  //destry dm
-  ierr = DMDestroy(&dm); CHKERRG(ierr);
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  }
-
-  //finish work cleaning memory, getting statistics, ect.
-  ierr = MoFEM::Core::Finalize(); CHKERRG(ierr);
+  // finish work cleaning memory, getting statistics, ect.
+  CHKERR MoFEM::Core::Finalize();
 
   return 0;
-
 }

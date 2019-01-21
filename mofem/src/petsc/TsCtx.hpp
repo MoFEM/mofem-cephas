@@ -22,8 +22,8 @@
 namespace MoFEM {
 
 /** \brief Interface for Time Stepping (TS) solver
-  * \ingroup petsc_context_struture
-  */
+ * \ingroup petsc_context_struture
+ */
 struct TsCtx {
 
   MoFEM::Interface &mField;
@@ -33,7 +33,7 @@ struct TsCtx {
   MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
 
   /// \deprecated use PairNameFEMethodPtr
-  DEPRECATED  typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
+  DEPRECATED typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
 
   /// \deprecated use FEMethodsSequence
   DEPRECATED typedef MoFEM::FEMethodsSequence loops_to_do_type;
@@ -62,41 +62,178 @@ struct TsCtx {
   PetscLogEvent MOFEM_EVENT_TsCtxMonitor;
 
   bool zeroMatrix;
-  TsCtx(MoFEM::Interface &m_field,const std::string &problem_name):
-    mField(m_field),
-    moab(m_field.get_moab()),
-    problemName(problem_name),
-    bH(MF_EXIST),
-    zeroMatrix(true) {
-    PetscLogEventRegister("LoopTsIFunction",0,&MOFEM_EVENT_TsCtxIFunction);
-    PetscLogEventRegister("LoopTsIJacobian",0,&MOFEM_EVENT_TsCtxIJacobian);
-    PetscLogEventRegister("LoopTsRHSFunction",0,&MOFEM_EVENT_TsCtxRHSFunction);
-    PetscLogEventRegister("LoopTsRHSJacobian",0,&MOFEM_EVENT_TsCtxRHSJacobian);
-    PetscLogEventRegister("LoopTsMonitor",0,&MOFEM_EVENT_TsCtxMonitor);
+  TsCtx(MoFEM::Interface &m_field, const std::string &problem_name)
+      : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
+        bH(MF_EXIST), zeroMatrix(true) {
+    PetscLogEventRegister("LoopTsIFunction", 0, &MOFEM_EVENT_TsCtxIFunction);
+    PetscLogEventRegister("LoopTsIJacobian", 0, &MOFEM_EVENT_TsCtxIJacobian);
+    PetscLogEventRegister("LoopTsRHSFunction", 0,
+                          &MOFEM_EVENT_TsCtxRHSFunction);
+    PetscLogEventRegister("LoopTsRHSJacobian", 0,
+                          &MOFEM_EVENT_TsCtxRHSJacobian);
+    PetscLogEventRegister("LoopTsMonitor", 0, &MOFEM_EVENT_TsCtxMonitor);
   }
 
-  FEMethodsSequence& get_loops_to_do_IFunction() { return loops_to_do_IFunction; }
-  FEMethodsSequence& get_loops_to_do_IJacobian() { return loops_to_do_IJacobian; }
-  FEMethodsSequence& get_loops_to_do_Monitor() { return loops_to_do_Monitor; }
+  /**
+   * @brief Get the loops to do IFunction object
+   *
+   * It is sequence of finite elements used to evaluate the right hand side of
+   * implicit time solver.
+   *
+   * @return FEMethodsSequence&
+   */
+  FEMethodsSequence &get_loops_to_do_IFunction() {
+    return loops_to_do_IFunction;
+  }
 
-  BasicMethodsSequence& get_preProcess_to_do_IFunction() { return preProcess_IFunction; }
-  BasicMethodsSequence& get_postProcess_to_do_IFunction() { return postProcess_IFunction; }
-  BasicMethodsSequence& get_preProcess_to_do_IJacobian() { return preProcess_IJacobian; }
-  BasicMethodsSequence& get_postProcess_to_do_IJacobian() { return postProcess_IJacobian; }
-  BasicMethodsSequence& get_preProcess_to_do_Monitor() { return preProcess_Monitor; }
-  BasicMethodsSequence& get_postProcess_to_do_Monitor() { return postProcess_Monitor; }
+  /**
+   * @brief Get the loops to do IJacobian object
+   *
+   * It is sequence of finite elements used to evalite the left hand sie of
+   * implimcit time solver.
+   *
+   * @return FEMethodsSequence&
+   */
+  FEMethodsSequence &get_loops_to_do_IJacobian() {
+    return loops_to_do_IJacobian;
+  }
 
-  friend PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx);
-  friend PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec U_t,PetscReal a,Mat A,Mat B,void *ctx);
-  friend PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx);
+  /**
+   * @brief Get the loops to do Monitor object
+   *
+   * It is sequence used to monitor solution of time solver.
+   *
+   * @return FEMethodsSequence&
+   */
+  FEMethodsSequence &get_loops_to_do_Monitor() { return loops_to_do_Monitor; }
 
+  /**
+   * @brief Get the preProcess to do IFunction object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_preProcess_to_do_IFunction() {
+    return preProcess_IFunction;
+  }
+
+  /**
+   * @brief Get the postProcess to do IFunction object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_postProcess_to_do_IFunction() {
+    return postProcess_IFunction;
+  }
+
+  /**
+   * @brief Get the preProcess to do IJacobian object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_preProcess_to_do_IJacobian() {
+    return preProcess_IJacobian;
+  }
+
+  /**
+   * @brief Get the postProcess to do IJacobian object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_postProcess_to_do_IJacobian() {
+    return postProcess_IJacobian;
+  }
+
+  /**
+   * @brief Get the preProcess to do Monitor object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_preProcess_to_do_Monitor() {
+    return preProcess_Monitor;
+  }
+
+  /**
+   * @brief Get the postProcess to do Monitor object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_postProcess_to_do_Monitor() {
+    return postProcess_Monitor;
+  }
+
+  friend PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t,
+                                       Vec F, void *ctx);
+  friend PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec U_t,
+                                       PetscReal a, Mat A, Mat B, void *ctx);
+  friend PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
+                                     void *ctx);
 };
 
-PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx);
-PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat A,Mat B,void *ctx);
-PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx);
+/**
+ * @brief Set IFunction for TS solver
+ *
+ * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetIFunction.html>See petsc for details</a>
+ *
+ * @param ts
+ * @param t
+ * @param u
+ * @param u_t
+ * @param F
+ * @param ctx
+ * @return PetscErrorCode
+ */
+PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
+                              void *ctx);
 
+/**
+ * @brief Set function evaluating jacobina in TS solver
+ *
+ * <a href=https://www.mcs.anl.gov/petsc/petsc-3.1/docs/manualpages/TS/TSSetIJacobian.html>See PETSc for details</a>
+ *
+ * @param ts
+ * @param t
+ * @param u
+ * @param u_t
+ * @param a
+ * @param A
+ * @param B
+ * @param ctx
+ * @return PetscErrorCode
+ */
+PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
+                              Mat A, Mat B, void *ctx);
 
+/**
+ * @brief Set monitor for TS solver
+ *
+ * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSMonitorSet.html>See PETSc for details</a>
+ *
+ * @param ts
+ * @param step
+ * @param t
+ * @param u
+ * @param ctx
+ * @return PetscErrorCode
+ */
+PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
+                            void *ctx);
+
+DEPRECATED inline PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u,
+                                                  Vec u_t, Vec F, void *ctx) {
+  return TsSetIFunction(ts, t, u, u_t, F, ctx);
 }
+
+DEPRECATED inline PetscErrorCode f_TSSetIJacobian(TS ts, PetscReal t, Vec u,
+                                                  Vec u_t, PetscReal a, Mat A,
+                                                  Mat B, void *ctx) {
+  return TsSetIJacobian(ts, t, u, u_t, a, A, B, ctx);
+}
+
+DEPRECATED inline PetscErrorCode f_TSMonitorSet(TS ts, PetscInt step,
+                                                PetscReal t, Vec u, void *ctx) {
+  return TsMonitorSet(ts, step, t, u, ctx);
+}
+
+} // namespace MoFEM
 
 #endif // __TSCTX_HPP__

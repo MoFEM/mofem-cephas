@@ -89,25 +89,46 @@ struct ForcesAndSourcesCore : public FEMethod {
    * @param  data entity data
    * @return      error code
    */
-  MoFEMErrorCode
-  getSense(EntityType type,
-           boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
+  MoFEMErrorCode getEntitySense(
+      const EntityType type,
+      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
 
-  /// \brief get maximal approximation order of approximation on the entity
-  MoFEMErrorCode getDataOrder(
+  /**
+   * @brief Get the entity data order
+   *
+   * @param type
+   * @param space
+   * @param data
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode getEntityDataOrder(
       const EntityType type, const FieldSpace space,
       boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
 
-
+  /**
+   * @brief Get the entity sense (orientation)
+   * 
+   * @tparam type 
+   * @param data 
+   * @return MoFEMErrorCode 
+   */
   template <EntityType type>
-  MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
-    return getSense(type, data.dataOnEntities[type]);
+  inline MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
+    return getEntitySense(type, data.dataOnEntities[type]);
   }
 
+  /**
+   * @brief Get the entity data order for given space
+   * 
+   * @tparam type 
+   * @param data 
+   * @param space 
+   * @return MoFEMErrorCode 
+   */
   template <EntityType type>
-  MoFEMErrorCode getEntityFieldDataOrder(DataForcesAndSourcesCore &data,
-                                    const FieldSpace space) const {
-    return getDataOrder(type, space, data.dataOnEntities[type]);
+  inline MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
+                                           const FieldSpace space) const {
+    return getEntityDataOrder(type, space, data.dataOnEntities[type]);
   }
 
   // ** Indices **
@@ -200,10 +221,11 @@ struct ForcesAndSourcesCore : public FEMethod {
   MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
                                    const std::string &field_name) const;
 
-  MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &data,
-                               const std::string &field_name,
-                               const EntityType type_lo = MBVERTEX,
-                               const EntityType type_hi = MBPOLYHEDRON) const;
+  MoFEMErrorCode
+  getEntityFieldData(DataForcesAndSourcesCore &data,
+                     const std::string &field_name,
+                     const EntityType type_lo = MBVERTEX,
+                     const EntityType type_hi = MBPOLYHEDRON) const;
 
   /// \brief Get nodes on triangles
   MoFEMErrorCode getFaceTriNodes(DataForcesAndSourcesCore &data) const;
@@ -448,13 +470,6 @@ struct ForcesAndSourcesCore : public FEMethod {
                                         const EntityType type, const int side,
                                         VectorInt &indices) const;
 
-    // \deprecated Deprecated function with spelling mistake
-    DEPRECATED inline MoFEMErrorCode
-    getPorblemRowIndices(const std::string filed_name, const EntityType type,
-                         const int side, VectorInt &indices) const {
-      return getProblemRowIndices(filed_name, type, side, indices);
-    }
-
     /** \brief Get col indices
 
     Field could be or not declared for this element but is declared for problem
@@ -476,13 +491,6 @@ struct ForcesAndSourcesCore : public FEMethod {
       MoFEMFunctionBeginHot;
       ptrFE = ptr;
       MoFEMFunctionReturnHot(0);
-    }
-
-    // \deprecated Deprecated function with spelling mistake
-    DEPRECATED inline MoFEMErrorCode
-    getPorblemColIndices(const std::string filed_name, const EntityType type,
-                         const int side, VectorInt &indices) const {
-      return getProblemColIndices(filed_name, type, side, indices);
     }
 
     /** \brief Return raw pointer to Finite Element Method object
@@ -595,6 +603,26 @@ struct ForcesAndSourcesCore : public FEMethod {
     inline auto getFTensor0IntegrationWeight() {
       return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
           &(getGaussPts()(getGaussPts().size1() - 1, 0)));
+    }
+
+    /**@}*/
+
+    /**@{*/
+
+    /** \name Deprecated (do not use) */
+
+    // \deprecated Deprecated function with spelling mistake
+    DEPRECATED inline MoFEMErrorCode
+    getPorblemRowIndices(const std::string filed_name, const EntityType type,
+                         const int side, VectorInt &indices) const {
+      return getProblemRowIndices(filed_name, type, side, indices);
+    }
+
+    // \deprecated Deprecated function with spelling mistake
+    DEPRECATED inline MoFEMErrorCode
+    getPorblemColIndices(const std::string filed_name, const EntityType type,
+                         const int side, VectorInt &indices) const {
+      return getProblemColIndices(filed_name, type, side, indices);
     }
 
     /**@}*/

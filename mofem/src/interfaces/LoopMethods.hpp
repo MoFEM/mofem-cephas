@@ -320,12 +320,24 @@ struct FEMethod : public BasicMethod {
 
   FEMethod();
 
-  std::string feName;
+  std::string feName; ///< Name of finite element
 
-  boost::shared_ptr<const NumeredEntFiniteElement> numeredEntFiniteElementPtr;
-  boost::shared_ptr<const FENumeredDofEntity_multiIndex> rowPtr;
-  boost::shared_ptr<const FENumeredDofEntity_multiIndex> colPtr;
-  boost::shared_ptr<const FEDofEntity_multiIndex> dataPtr;
+  boost::shared_ptr<const NumeredEntFiniteElement>
+      numeredEntFiniteElementPtr; ///< Pointer to finite element database
+                                  ///< structure
+  boost::shared_ptr<const FENumeredDofEntity_multiIndex>
+      rowPtr; ///< Pointer to finite element rows dofs view
+  boost::shared_ptr<const FENumeredDofEntity_multiIndex>
+      colPtr; ///< Pointer to finite element columns dofs view
+  boost::shared_ptr<const FEDofEntity_multiIndex>
+      dataPtr; ///< Pointer to finite element data dofs
+
+  boost::shared_ptr<const FieldEntity_vector_view>
+      rowFieldEntsPtr; ///< Pointer to finite element field entities row view
+  boost::shared_ptr<const FieldEntity_vector_view>
+      colFieldEntsPtr; ///< Pointer to finite element field entities column view
+  boost::shared_ptr<const FieldEntity_multiIndex_spaceType_view>
+      dataFieldEntsPtr; ///< Pointer to finite element field entities data view
 
 /** \brief loop over all dofs which are on a particular FE row
  * \ingroup mofem_loops
@@ -357,6 +369,7 @@ struct FEMethod : public BasicMethod {
             const EntityType type, const int side_number) const {
     return index.lower_bound(boost::make_tuple(field_name, type, side_number));
   }
+  
   template <class MULTIINDEX>
   typename MULTIINDEX::iterator
   get_end(const MULTIINDEX &index, const std::string &field_name,

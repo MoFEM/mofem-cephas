@@ -42,12 +42,6 @@ struct RefElement : public interface_RefEntity<RefEntity> {
     return const_cast<SideNumber_multiIndex &>(side_number_table);
   }
 
-  // /** \deprecated Use getSideNumberTable() instead
-  // */
-  // DEPRECATED SideNumber_multiIndex &get_side_number_table() const {
-  //   return getSideNumberTable();
-  // }
-
   static const boost::shared_ptr<SideNumber> nullSideNumber;
 
   virtual const boost::shared_ptr<SideNumber> &
@@ -55,16 +49,6 @@ struct RefElement : public interface_RefEntity<RefEntity> {
     NOT_USED(ent);
     return nullSideNumber;
   };
-
-  // /**
-  //  * \deprecated First argument is no longer needed
-  //  */
-  // virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
-  //   const moab::Interface &moab,const EntityHandle ent
-  // ) const {
-  //   NOT_USED(moab);
-  //   return getSideNumberPtr(ent);
-  // }
 
   /**
    * \brief Get pointer to RefEntity
@@ -237,27 +221,6 @@ typedef boost::function<MoFEMErrorCode(Interface &moab, const Field &field_ptr,
                                        const EntFiniteElement &fe_ptr,
                                        Range &adjacency)>
     ElementAdjacencyFunct;
-
-// /** \brief user adjacency function table
-//   * \ingroup fe_multi_indices
-//   */
-// typedef ElementAdjacencyFunct[MBMAXTYPE] ElementAdjacencyTable;
-
-// /** \brief user adjacency function table
-//   * \ingroup fe_multi_indices
-//   */
-// typedef MoFEMErrorCode (*ElementAdjacencyTable[MBMAXTYPE])(
-//   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range
-//   &adjacency
-// );
-//
-// /** \brief user adjacency function
-//   * \ingroup fe_multi_indices
-//   */
-// typedef MoFEMErrorCode (*ElementAdjacencyFunct)(
-//   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range
-//   &adjacency
-// );
 
 /**
  * \brief Finite element definition
@@ -463,19 +426,20 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   typedef interface_RefEntity<RefElement> interface_type_RefEntity;
   typedef interface_RefElement<RefElement> interface_type_RefElement;
   typedef interface_FiniteElement<FiniteElement> interface_type_FiniteElement;
-  boost::shared_ptr<DofEntity_multiIndex_uid_view> row_dof_view;
-  boost::shared_ptr<DofEntity_multiIndex_uid_view> col_dof_view;
   boost::shared_ptr<FEDofEntity_multiIndex> data_dofs;
-  UId globalUid;
+  boost::shared_ptr<FieldEntity_vector_view> row_field_ents_view;
+  boost::shared_ptr<FieldEntity_vector_view> col_field_ents_view;
+  boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> data_field_ents_view;
+  UId globalUId;
 
-  EntFiniteElement(const boost::shared_ptr<RefElement> ref_finite_element,
-                   const boost::shared_ptr<FiniteElement> fe_ptr);
+  EntFiniteElement(const boost::shared_ptr<RefElement> &ref_finite_element,
+                   const boost::shared_ptr<FiniteElement> &fe_ptr);
 
   /**
    * \brief Get unique UId for finite element entity
    * @return UId
    */
-  inline const UId &getGlobalUniqueId() const { return globalUid; }
+  inline const UId &getGlobalUniqueId() const { return globalUId; }
 
   /**
    * \brief Generate UId for finite element entity
@@ -502,22 +466,6 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
    */
   inline EntityHandle getEnt() const { return getRefEnt(); }
 
-  // /** \deprecated Use getEnt() instead
-  // */
-  // DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
-
-  /**
-   * \brief Get number of DOFs on row
-   * @return Number of dofs on row
-   */
-  inline DofIdx getNbDofsRow() const { return row_dof_view->size(); }
-
-  /**
-   * \brief Get number of DOFs on col
-   * @return Number of dofs on col
-   */
-  inline DofIdx getNbDofsCol() const { return col_dof_view->size(); }
-
   /**
    * \brief Get number of DOFs on data
    * @return Number of dofs on data
@@ -534,50 +482,39 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
 
   friend std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e);
 
-  MoFEMErrorCode
-  getRowDofView(const DofEntity_multiIndex &dofs,
-                DofEntity_multiIndex_active_view &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
+  template <typename FE_ENTS, typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
+  inline MoFEMErrorCode
+  getDofView(const FE_ENTS &fe_ents_view, const MOFEM_DOFS &mofem_dofs,
+             MOFEM_DOFS_VIEW &dofs_view, const int operation_type) {
+    MoFEMFunctionBeginHot;
+    if (operation_type == moab::Interface::UNION) {
+      for (auto &it : fe_ents_view) {
+        if (auto e = it.lock()) {
+          auto r = mofem_dofs.template get<Unique_Ent_mi_tag>().equal_range(
+              e->getGlobalUniqueId());
+          dofs_view.insert(r.first, r.second);
+        }
+      }
+    } else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    MoFEMFunctionReturnHot(0);
+  }
 
-  MoFEMErrorCode
-  getColDofView(const DofEntity_multiIndex &dofs,
-                DofEntity_multiIndex_active_view &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
+  template <typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
+  inline MoFEMErrorCode
+  getRowDofView(const MOFEM_DOFS &mofem_dofs, MOFEM_DOFS_VIEW &dofs_view,
+                const int operation_type = moab::Interface::UNION) {
+    return getDofView(*row_field_ents_view, mofem_dofs, dofs_view,
+                      operation_type);
+  }
 
-  MoFEMErrorCode
-  getDataDofView(const DofEntity_multiIndex &dofs,
-                 DofEntity_multiIndex_active_view &dofs_view,
-                 const int operation_type = moab::Interface::UNION) const;
-
-  MoFEMErrorCode
-  getRowDofView(const DofEntity_multiIndex &dofs,
-                DofEntity_multiIndex_uid_view &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
-
-  MoFEMErrorCode
-  getColDofView(const DofEntity_multiIndex &dofs,
-                DofEntity_multiIndex_uid_view &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
-
-  MoFEMErrorCode
-  getRowDofView(const NumeredDofEntity_multiIndex &dofs,
-                NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
-
-  MoFEMErrorCode
-  getColDofView(const NumeredDofEntity_multiIndex &dofs,
-                NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
-
-  MoFEMErrorCode
-  getRowDofView(const NumeredDofEntity_multiIndex &dofs,
-                NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
-
-  MoFEMErrorCode
-  getColDofView(const NumeredDofEntity_multiIndex &dofs,
-                NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
-                const int operation_type = moab::Interface::UNION) const;
+  template <typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
+  inline MoFEMErrorCode
+  getColDofView(const MOFEM_DOFS &mofem_dofs, MOFEM_DOFS_VIEW &dofs_view,
+                const int operation_type = moab::Interface::UNION) {
+    return getDofView(*col_field_ents_view, mofem_dofs, dofs_view,
+                      operation_type);
+  }
 
   MoFEMErrorCode getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
                                      Range &adjacency);
@@ -617,18 +554,6 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
   inline const FEDofEntity_multiIndex &getDataDofs() const {
     return this->sPtr->getDataDofs();
   }
-
-  /**
-   * \brief Get number of DOFs on row
-   * @return Number of dofs on row
-   */
-  inline DofIdx getNbDofsRow() const { return this->sPtr->getNbDofsRow(); }
-
-  /**
-   * \brief Get number of DOFs on col
-   * @return Number of dofs on col
-   */
-  inline DofIdx getNbDofsCol() const { return this->sPtr->getNbDofsCol(); }
 
   /**
    * \brief Get number of DOFs on data
@@ -742,32 +667,56 @@ struct NumeredEntFiniteElement
   /** \brief get FE dof by petsc index
    * \ingroup mofem_dofs
    */
-  MoFEMErrorCode
-  getRowDofsByPetscGlobalDofIdx(DofIdx idx,
-                                const FENumeredDofEntity **dof_ptr) const;
-
-  // /** \deprecated Use getRowDofsByPetscGlobalDofIdx() instead
-  // */
-  // inline DEPRECATED MoFEMErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(
-  //   DofIdx idx,const FENumeredDofEntity **dof_ptr
-  // ) const {
-  //   return getRowDofsByPetscGlobalDofIdx(idx,dof_ptr);
-  // }
+  boost::weak_ptr<FENumeredDofEntity>
+  getRowDofsByPetscGlobalDofIdx(const int idx) const;
 
   /** \brief get FE dof by petsc index
    * \ingroup mofem_dofs
    */
-  MoFEMErrorCode
-  getColDofsByPetscGlobalDofIdx(DofIdx idx,
-                                const FENumeredDofEntity **dof_ptr) const;
+  boost::weak_ptr<FENumeredDofEntity>
+  getColDofsByPetscGlobalDofIdx(const int idx) const;
 
-  // /** \deprecated Use getColDofsByPetscGlobalDofIdx() instead
-  // */
-  // inline DEPRECATED MoFEMErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(
-  //   DofIdx idx,const FENumeredDofEntity **dof_ptr
-  // ) const {
-  //   return getColDofsByPetscGlobalDofIdx(idx,dof_ptr);
-  // }
+  /**
+   * @deprecated Unsafe to use, will be removed in future releases.
+   * 
+   * Get the Row Dofs By Petsc Global Dof Idx object
+   * 
+   * @param idx 
+   * @param dof_raw_ptr 
+   * @return MoFEMErrorCode 
+   */
+  DEPRECATED inline MoFEMErrorCode
+  getRowDofsByPetscGlobalDofIdx(const int idx,
+                                const FENumeredDofEntity **dof_raw_ptr) const {
+    MoFEMFunctionBegin;
+    if (auto r = getRowDofsByPetscGlobalDofIdx(idx).lock())
+      *dof_raw_ptr = r.get();
+    else
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+               "dof which index < %d > not found", idx);
+    MoFEMFunctionReturn(0);
+  }
+
+  /**
+   * @deprecated Unsafe to use, will be removed in future releases.
+   * 
+   * Get the Row Dofs By Petsc Global Dof Idx object
+   * 
+   * @param idx 
+   * @param dof_raw_ptr 
+   * @return MoFEMErrorCode 
+   */
+  DEPRECATED inline MoFEMErrorCode
+  getColDofsByPetscGlobalDofIdx(const int idx,
+                                const FENumeredDofEntity **dof_raw_ptr) const {
+    MoFEMFunctionBegin;
+    if (auto r = getColDofsByPetscGlobalDofIdx(idx).lock())
+      *dof_raw_ptr = r.get();
+    else
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+               "dof which index < %d > not found", idx);
+    MoFEMFunctionReturn(0);
+  }
 
   friend std::ostream &operator<<(std::ostream &os,
                                   const NumeredEntFiniteElement &e) {
@@ -849,7 +798,7 @@ typedef multi_index_container<
     indexed_by<
         ordered_unique<
             tag<Unique_mi_tag>,
-            member<EntFiniteElement, UId, &EntFiniteElement::globalUid> >,
+            member<EntFiniteElement, UId, &EntFiniteElement::globalUId> >,
         ordered_non_unique<tag<Ent_mi_tag>,
                            const_mem_fun<EntFiniteElement, EntityHandle,
                                          &EntFiniteElement::getEnt> >,

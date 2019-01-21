@@ -114,7 +114,7 @@ Core::modify_finite_element_adjacency_table(const std::string &fe_name,
 MoFEMErrorCode
 Core::modify_finite_element_add_field_data(const std::string &fe_name,
                                            const std::string &name_data) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
       FiniteElements_by_name;
@@ -124,21 +124,17 @@ Core::modify_finite_element_add_field_data(const std::string &fe_name,
       finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "this FiniteElement is there");
-  try {
-    bool success = finite_element_name_set.modify(
-        it_fe, FiniteElement_change_bit_add(getBitFieldId(name_data)));
-    if (!success)
-      SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm, e.errorCode, e.errorMessage);
-  }
-  MoFEMFunctionReturnHot(0);
+  bool success = finite_element_name_set.modify(
+      it_fe, FiniteElement_change_bit_add(getBitFieldId(name_data)));
+  if (!success)
+    SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 Core::modify_finite_element_add_field_row(const std::string &fe_name,
                                           const std::string &name_row) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
       FiniteElements_by_name;
@@ -149,21 +145,17 @@ Core::modify_finite_element_add_field_row(const std::string &fe_name,
   if (it_fe == finite_element_name_set.end())
     SETERRQ1(cOmm, MOFEM_NOT_FOUND, "this < %s > is not there",
              fe_name.c_str());
-  try {
-    bool success = finite_element_name_set.modify(
-        it_fe, FiniteElement_row_change_bit_add(getBitFieldId(name_row)));
-    if (!success)
-      SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm, e.errorCode, e.errorMessage);
-  }
-  MoFEMFunctionReturnHot(0);
+  bool success = finite_element_name_set.modify(
+      it_fe, FiniteElement_row_change_bit_add(getBitFieldId(name_row)));
+  if (!success)
+    SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 Core::modify_finite_element_add_field_col(const std::string &fe_name,
                                           const std::string &name_col) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
       FiniteElements_by_name;
@@ -173,21 +165,17 @@ Core::modify_finite_element_add_field_col(const std::string &fe_name,
       finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
     SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "this FiniteElement is there");
-  try {
-    bool success = finite_element_name_set.modify(
-        it_fe, FiniteElement_col_change_bit_add(getBitFieldId(name_col)));
-    if (!success)
-      SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm, e.errorCode, e.errorMessage);
-  }
-  MoFEMFunctionReturnHot(0);
+  bool success = finite_element_name_set.modify(
+      it_fe, FiniteElement_col_change_bit_add(getBitFieldId(name_col)));
+  if (!success)
+    SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 Core::modify_finite_element_off_field_data(const std::string &fe_name,
                                            const std::string &name_data) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
       FiniteElements_by_name;
@@ -197,21 +185,17 @@ Core::modify_finite_element_off_field_data(const std::string &fe_name,
       finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "this FiniteElement is there");
-  try {
-    bool success = finite_element_name_set.modify(
-        it_fe, FiniteElement_change_bit_off(getBitFieldId(name_data)));
-    if (!success)
-      SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm, e.errorCode, e.errorMessage);
-  }
-  MoFEMFunctionReturnHot(0);
+  bool success = finite_element_name_set.modify(
+      it_fe, FiniteElement_change_bit_off(getBitFieldId(name_data)));
+  if (!success)
+    SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 Core::modify_finite_element_off_field_row(const std::string &fe_name,
                                           const std::string &name_row) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
       FiniteElements_by_name;
@@ -222,15 +206,11 @@ Core::modify_finite_element_off_field_row(const std::string &fe_name,
   if (it_fe == finite_element_name_set.end())
     SETERRQ1(cOmm, MOFEM_NOT_FOUND, "this < %s > is not there",
              fe_name.c_str());
-  try {
-    bool success = finite_element_name_set.modify(
-        it_fe, FiniteElement_row_change_bit_off(getBitFieldId(name_row)));
-    if (!success)
-      SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm, e.errorCode, e.errorMessage);
-  }
-  MoFEMFunctionReturnHot(0);
+  bool success = finite_element_name_set.modify(
+      it_fe, FiniteElement_row_change_bit_off(getBitFieldId(name_row)));
+  if (!success)
+    SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
@@ -538,11 +518,52 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_MESHSET(
   MoFEMFunctionReturn(0);
 }
 
+template <int I> struct BuildFiniteElements {
+
+  template <typename T1, typename T2>
+  static inline void addToData(T1 &range_dit, T2 &fe_vec) {
+    static_assert(I == DATA, "t should be set to DATA");
+
+    for (auto dit = range_dit.first; dit != range_dit.second; ++dit) {
+      const EntityHandle dof_ent = dit->get()->getEnt();
+      // Fill array
+      for (auto fe_it : fe_vec) {
+        if (auto fe_ptr = fe_it.lock()) {
+          // Add FEDofEntity, first create dofs, one by one, note that memory
+          // is already reserved. Then create shared pointers and finally add
+          // th_FEName to element multi-index
+          // There are data dofs on this element
+          auto &side_number_ptr = fe_ptr->getSideNumberPtr(dof_ent);
+          fe_ptr->getDofsSequence().lock()->emplace_back(side_number_ptr, *dit);
+        }
+      }
+    }
+  }
+
+  template <typename T> static inline void emplaceHint(T &fe_vec) {
+    static_assert(I == DATA, "t should be set to DATA");
+
+    // Add to data in FE
+    for (auto fe_it : fe_vec) {
+      if (auto fe_ptr = fe_it.lock()) {
+        // It is a but unsafe, since if one mess up something in
+        // buildFiniteElements, weak_ptr will not give pointer
+        auto data_dofs_array_vec = fe_ptr->getDofsSequence().lock();
+        // Create shared pointers vector
+        auto hint = fe_ptr->data_dofs->end();
+        for (auto &vit : *data_dofs_array_vec)
+          hint =
+              fe_ptr->data_dofs->emplace_hint(hint, data_dofs_array_vec, &vit);
+      }
+    }
+  }
+};
+
 MoFEMErrorCode
 Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
                           const Range *ents_ptr, int verb) {
   MoFEMFunctionBegin;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
 
   typedef RefElement_multiIndex::index<Ent_mi_tag>::type RefFiniteElementByEnt;
@@ -557,6 +578,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
   // get finite element meshset
   EntityHandle meshset = get_finite_element_meshset(fe.get()->getId());
+
   // get entities from finite element meshset // if meshset
   Range fe_ents;
   CHKERR get_moab().get_entities_by_handle(meshset, fe_ents, false);
@@ -566,18 +588,19 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
   // map entity uid to pointers
   typedef std::vector<boost::weak_ptr<EntFiniteElement>> VecOfWeakFEPtrs;
-  typedef std::pair<const UId *, VecOfWeakFEPtrs> EntUIdAndVecOfWeakFEPtrs;
-  typedef multi_index_container<
-      EntUIdAndVecOfWeakFEPtrs,
-      indexed_by<sequenced<>,
-                 hashed_non_unique<member<EntUIdAndVecOfWeakFEPtrs, const UId *,
-                                          &EntUIdAndVecOfWeakFEPtrs::first>>>>
-      EntUIdAndVecOfWeakFEPtrs_multi_index;
-  EntUIdAndVecOfWeakFEPtrs_multi_index ent_uid_and_fe_vec;
+  typedef std::map<const UId *, VecOfWeakFEPtrs> MapEntUIdAndVecOfWeakFEPtrs;
+  MapEntUIdAndVecOfWeakFEPtrs ent_uid_and_fe_vec;
+  std::map<EntityHandle, boost::shared_ptr<std::vector<FEDofEntity>>>
+      data_dofs_array;
+  VecOfWeakFEPtrs processed_fes;
+  processed_fes.reserve(fe_ents.size());
 
-  std::map<EntityHandle, int> data_dofs_size;
+  int last_row_field_ents_view_size = 0;
+  int last_col_field_ents_view_size = 0;
 
-  // loop meshset Ents and add finite elements
+  FieldEntity_vector_view data_field_ents_view;
+
+  // loop meshset finite element ents and add finite elements
   for (Range::const_pair_iterator peit = fe_ents.const_pair_begin();
        peit != fe_ents.const_pair_end(); peit++) {
 
@@ -593,29 +616,36 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       ss << "refinedFiniteElements not in database ent = " << first;
       ss << " type " << get_moab().type_from_handle(first);
       ss << " " << *fe;
-      SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
     }
     hi_ref_fe_miit =
         refinedFiniteElements.get<Ent_mi_tag>().upper_bound(second);
 
+    EntFiniteElement_multiIndex::iterator hint_p = entsFiniteElements.end();
+
     for (; ref_fe_miit != hi_ref_fe_miit; ref_fe_miit++) {
 
-      std::pair<EntFiniteElement_multiIndex::iterator, bool> p =
-          entsFiniteElements.insert(
-              boost::make_shared<EntFiniteElement>(*ref_fe_miit, fe));
+      hint_p = entsFiniteElements.emplace_hint(
+          hint_p, boost::make_shared<EntFiniteElement>(*ref_fe_miit, fe));
+      processed_fes.emplace_back(*hint_p);
+      auto fe_raw_ptr = hint_p->get();
 
+      // allocate space for etities view
+      data_field_ents_view.clear();
+      fe_raw_ptr->row_field_ents_view->reserve(last_row_field_ents_view_size);
       if (fe_fields[ROW] == fe_fields[COL]) {
-        p.first->get()->col_dof_view = p.first->get()->row_dof_view;
-      } else if (p.first->get()->col_dof_view == p.first->get()->row_dof_view) {
-        p.first->get()->col_dof_view =
-            boost::make_shared<DofEntity_multiIndex_uid_view>();
+        fe_raw_ptr->col_field_ents_view = fe_raw_ptr->row_field_ents_view;
+      } else {
+        if (fe_raw_ptr->col_field_ents_view ==
+                 fe_raw_ptr->row_field_ents_view)
+          fe_raw_ptr->col_field_ents_view =
+              boost::make_shared<FieldEntity_vector_view>();
+        fe_raw_ptr->col_field_ents_view->reserve(last_col_field_ents_view_size);
       }
 
-      p.first->get()->row_dof_view->clear();
-      p.first->get()->col_dof_view->clear();
-      p.first->get()->data_dofs->clear();
+      int nb_dofs_on_data = 0;
 
-      for (unsigned int ii = 0; ii < BitFieldId().size(); ii++) {
+      for (unsigned int ii = 0; ii != BitFieldId().size(); ++ii) {
 
         // Common field id for ROW, COL and DATA
         BitFieldId id_common = 0;
@@ -630,66 +660,114 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         const BitFieldId field_id = BitFieldId().set(ii);
         FieldById::iterator miit = fields_by_id.find(field_id);
         if (miit == fields_by_id.end()) {
-          SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Data inconsistency");
         }
+
+
+        // Loop over adjacencies of element and find field entities on those
+        // adjacencies, that create hash map map_uid_fe which is used later
+        const std::string field_name = miit->get()->getName();
+        const bool add_to_data = (field_id & fe_fields[DATA]).any();
+        const bool add_to_row = (field_id & fe_fields[ROW]).any();
+        const bool add_to_col = (field_id & fe_fields[COL]).any();
 
         // Entities adjacent to entities
         Range adj_ents;
 
         // Resolve entities on element, those entities are used to build tag
         // with dof uids on finite element tag
-        CHKERR p.first->get()->getElementAdjacency(*miit, adj_ents);
+        CHKERR fe_raw_ptr->getElementAdjacency(*miit, adj_ents);
 
-        // Loop over adjacencies of element and find field entities on those
-        // adjacencies, that create hash map map_uid_fe which is used later
-        const std::string field_name = miit->get()->getName();
-        const bool add_to_data =
-            (field_id & p.first->get()->getBitFieldIdData()).any();
-        FieldEntity_multiIndex::index<
-            Composite_Name_And_Ent_mi_tag>::type::iterator meit,
-            hi_meit;
         for (Range::pair_iterator p_eit = adj_ents.pair_begin();
              p_eit != adj_ents.pair_end(); ++p_eit) {
+
           const EntityHandle first = p_eit->first;
           const EntityHandle second = p_eit->second;
-          meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-              boost::make_tuple(field_name, first));
-          if (meit == entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
-            continue;
-          }
-          hi_meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-              boost::make_tuple(field_name, second));
-          for (; meit != hi_meit; ++meit) {
-            const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
-            auto e_uid_vec_fe_it = ent_uid_and_fe_vec.get<1>().find(uid_ptr);
-            if (e_uid_vec_fe_it == ent_uid_and_fe_vec.get<1>().end()) {
-              ent_uid_and_fe_vec.insert(ent_uid_and_fe_vec.end(),
-                                    std::pair<const UId *, VecOfWeakFEPtrs>(
-                                        uid_ptr, VecOfWeakFEPtrs(1, *p.first)));
-            } else {
-              const VecOfWeakFEPtrs &vec_fe_ptrs = e_uid_vec_fe_it->second;
-              const_cast<VecOfWeakFEPtrs &>(vec_fe_ptrs).push_back(*p.first);
-            }
 
-            if (add_to_data) {
-              data_dofs_size[p.first->get()->getEnt()] +=
-                  meit->get()->getNbDofsOnEnt();
+          typedef FieldEntity_multiIndex::index<
+              Composite_Name_And_Ent_mi_tag>::type FieldEntityByComposite;
+          auto &field_ents_by_name_and_ent =
+              entsFields.get<Composite_Name_And_Ent_mi_tag>();
+          FieldEntityByComposite::iterator meit;
+
+          if (first == second)
+            meit = field_ents_by_name_and_ent.find(
+                boost::make_tuple(field_name, first));
+          else
+            meit = field_ents_by_name_and_ent.lower_bound(
+                boost::make_tuple(field_name, first));
+
+          if (meit != field_ents_by_name_and_ent.end()) {
+
+            decltype(meit) hi_meit;
+
+            if (first == second) {
+              hi_meit = meit;
+              ++hi_meit;
+            } else
+              hi_meit = field_ents_by_name_and_ent.upper_bound(
+                  boost::make_tuple(field_name, second));
+
+            // create list of finite elements with this dof UId
+            for (; meit != hi_meit; ++meit) {
+              // Add entity to map with key entity uids pointers  and data
+              // finite elements weak ptrs. I using pointers to uids instead
+              // uids because this is faster.
+              const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
+              auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
+              // get number of dofs on entities to pre-allocate memory for
+              // element
+              const int nb_dofs_on_ent = meit->get()->getNbDofsOnEnt();
+              if (add_to_data) {
+                nb_dofs_on_data += nb_dofs_on_ent;
+                data_field_ents_view.emplace_back(*meit);
+              }
+              if (add_to_row) {
+                fe_raw_ptr->row_field_ents_view->emplace_back(*meit);
+              }
+              if (add_to_col) {
+                if (fe_raw_ptr->col_field_ents_view !=
+                    fe_raw_ptr->row_field_ents_view)
+                  fe_raw_ptr->col_field_ents_view->emplace_back(*meit);
+              }
+              // add finite element to processed list
+              fe_vec.emplace_back(*hint_p);
             }
           }
         }
       }
-    }
-  }
 
-  // Reserve memory
-  std::map<EntityHandle, boost::shared_ptr<std::vector<FEDofEntity>>>
-      data_dofs_array;
-  for (std::map<EntityHandle, int>::iterator mit = data_dofs_size.begin();
-       mit != data_dofs_size.end(); mit++) {
-    if (mit->second > 0) {
-      data_dofs_array[mit->first] =
-          boost::make_shared<std::vector<FEDofEntity>>();
-      data_dofs_array[mit->first]->reserve(mit->second);
+      // Sort field ents by uid
+      auto uid_comp = [](const auto &a, const auto &b) {
+        return a.lock()->getGlobalUniqueId() < b.lock()->getGlobalUniqueId();
+      };
+
+      sort(data_field_ents_view.begin(), data_field_ents_view.end(), uid_comp);
+      for (auto e : data_field_ents_view)
+        fe_raw_ptr->data_field_ents_view->emplace_back(e);
+
+      sort(fe_raw_ptr->row_field_ents_view->begin(),
+           fe_raw_ptr->row_field_ents_view->end(), uid_comp);
+      last_row_field_ents_view_size = fe_raw_ptr->row_field_ents_view->size();
+      
+      if (fe_raw_ptr->col_field_ents_view != fe_raw_ptr->row_field_ents_view) {
+        sort(fe_raw_ptr->col_field_ents_view->begin(),
+             fe_raw_ptr->col_field_ents_view->end(), uid_comp);
+        last_col_field_ents_view_size = fe_raw_ptr->col_field_ents_view->size();
+      }
+
+      // Clear finite element data structures
+      fe_raw_ptr->data_dofs->clear();
+
+      // Reserve memory for data
+      auto data_dofs_array_vec = boost::make_shared<std::vector<FEDofEntity>>();
+      data_dofs_array[fe_raw_ptr->getEnt()] = data_dofs_array_vec;
+      data_dofs_array_vec->reserve(nb_dofs_on_data);
+
+      fe_raw_ptr->getDofsSequence() = data_dofs_array_vec;
+
+
     }
   }
 
@@ -698,66 +776,16 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
   // Loop over hash map, which has all entities on given elemnts
   boost::shared_ptr<SideNumber> side_number_ptr;
-  for (EntUIdAndVecOfWeakFEPtrs_multi_index::iterator mit =
-           ent_uid_and_fe_vec.begin();
-       mit != ent_uid_and_fe_vec.end(); mit++) {
-    DofsByEntUId::iterator dit, hi_dit;
-    dit = dofs_by_ent_uid.lower_bound(*mit->first);
-    hi_dit = dofs_by_ent_uid.upper_bound(*mit->first);
-    for (; dit != hi_dit; dit++) {
-      const BitFieldId field_id = dit->get()->getId();
-      const EntityHandle dof_ent = dit->get()->getEnt();
-      std::vector<boost::weak_ptr<EntFiniteElement>>::const_iterator fe_it,
-          hi_fe_it;
-      fe_it = mit->second.begin();
-      hi_fe_it = mit->second.end();
-      for (; fe_it != hi_fe_it; fe_it++) {
-
-        // if rows and columns of finite element are the same, then
-        // we exploit that case
-        if ((field_id & fe_it->lock().get()->getBitFieldIdRow()).any()) {
-          fe_it->lock().get()->row_dof_view->insert(
-              fe_it->lock().get()->row_dof_view->end(), *dit);
-        }
-        if (fe_it->lock().get()->col_dof_view !=
-            fe_it->lock().get()->row_dof_view) {
-          if ((field_id & fe_it->lock().get()->getBitFieldIdCol()).any()) {
-            fe_it->lock().get()->col_dof_view->insert(
-                fe_it->lock().get()->col_dof_view->end(), *dit);
-          }
-        }
-
-        // Add FEDofEntity, first create dofs, one by one, note that memory
-        // is already reserved. Then create shared pointers and finally add
-        // th_FEName to element multi-index
-        const EntityHandle fe_ent = fe_it->lock().get()->getEnt();
-        boost::shared_ptr<std::vector<FEDofEntity>> &data_dofs_array_vec =
-            data_dofs_array[fe_ent];
-        if (data_dofs_size[fe_ent] != 0 &&
-            (field_id & fe_it->lock().get()->getBitFieldIdData()).any()) {
-
-          // There are data dofs on this element
-          side_number_ptr = fe_it->lock().get()->getSideNumberPtr(dof_ent);
-          data_dofs_array_vec->emplace_back(side_number_ptr, *dit);
-          if (data_dofs_array_vec->size() ==
-              (unsigned int)data_dofs_size[fe_ent]) {
-            // That means that FEDofEntity vector is full, and can be added to
-            // multi-index
-
-            // Create shared pointers vector
-            auto hint = fe_it->lock().get()->data_dofs->end();
-            for (std::vector<FEDofEntity>::iterator vit =
-                     data_dofs_array_vec->begin();
-                 vit != data_dofs_array_vec->end(); vit++) {
-              hint = fe_it->lock().get()->data_dofs->emplace_hint(
-                  hint, data_dofs_array_vec, &(*vit));
-            }
-            fe_it->lock().get()->getDofsSequence() = data_dofs_array_vec;
-          }
-        }
-      }
+  for (auto &mit : ent_uid_and_fe_vec) {
+    auto range_dit = dofs_by_ent_uid.equal_range(*mit.first);
+    if (range_dit.first != range_dit.second) {
+      const BitFieldId field_id = range_dit.first->get()->getId();
+      if ((field_id & fe_fields[DATA]).any())
+        BuildFiniteElements<DATA>::addToData(range_dit, mit.second);
     }
   }
+
+  BuildFiniteElements<DATA>::emplaceHint(processed_fes);
 
   MoFEMFunctionReturn(0);
 }
@@ -847,7 +875,7 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
 
 MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
   MoFEMFunctionBeginHot;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
   if (!((*buildMoFEM) & BUILD_FIELD))
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "field not build");
@@ -869,21 +897,12 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
       if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdData())
         by |= BYDATA;
       FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
-      UId ent_uid = UId(0);
-      for (DofEntity_multiIndex_uid_view::iterator rvit =
-               (*fit)->row_dof_view->begin();
-           rvit != (*fit)->row_dof_view->end(); ++rvit) {
-        if (ent_uid == (*rvit)->getFieldEntityPtr()->getGlobalUniqueId())
-          continue;
-        ent_uid = (*rvit)->getFieldEntityPtr()->getGlobalUniqueId();
-        std::pair<FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
-                  bool>
-            p;
-        p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
-            (*rvit)->getFieldEntityPtr(), *fit));
-        bool success = entFEAdjacencies.modify(p.first, modify_row);
+      auto hint = entFEAdjacencies.end();
+      for (auto e :  *(*fit)->row_field_ents_view) {
+        hint = entFEAdjacencies.emplace_hint(hint, e.lock(), *fit);
+        bool success = entFEAdjacencies.modify(hint, modify_row);
         if (!success)
-          SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                   "modification unsuccessful");
       }
       if ((*fit)->getBitFieldIdRow() != (*fit)->getBitFieldIdCol()) {
@@ -891,22 +910,12 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         if ((*fit)->getBitFieldIdCol() != (*fit)->getBitFieldIdData())
           by |= BYDATA;
         FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_col(by);
-        ent_uid = UId(0);
-        for (DofEntity_multiIndex_uid_view::iterator cvit =
-                 (*fit)->col_dof_view->begin();
-             cvit != (*fit)->col_dof_view->end(); cvit++) {
-          if (ent_uid == (*cvit)->getFieldEntityPtr()->getGlobalUniqueId())
-            continue;
-          ent_uid = (*cvit)->getFieldEntityPtr()->getGlobalUniqueId();
-          std::pair<
-              FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
-              bool>
-              p;
-          p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
-              (*cvit)->getFieldEntityPtr(), *fit));
-          bool success = entFEAdjacencies.modify(p.first, modify_col);
+        auto hint = entFEAdjacencies.end();
+        for (auto e :  *(*fit)->col_field_ents_view) {
+          hint = entFEAdjacencies.emplace_hint(hint, e.lock(), *fit);
+          bool success = entFEAdjacencies.modify(hint, modify_col);
           if (!success)
-            SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "modification unsuccessful");
         }
       }
@@ -914,21 +923,12 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
           (*fit)->getBitFieldIdCol() != (*fit)->getBitFieldIdData()) {
         FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(
             BYDATA);
-        ent_uid = UId(0);
-        for (FEDofEntity_multiIndex::iterator dvit = (*fit)->data_dofs->begin();
-             dvit != (*fit)->data_dofs->end(); dvit++) {
-          if (ent_uid == (*dvit)->getFieldEntityPtr()->getGlobalUniqueId())
-            continue;
-          ent_uid = (*dvit)->getFieldEntityPtr()->getGlobalUniqueId();
-          std::pair<
-              FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,
-              bool>
-              p;
-          p = entFEAdjacencies.insert(FieldEntityEntFiniteElementAdjacencyMap(
-              (*dvit)->getFieldEntityPtr(), *fit));
-          bool success = entFEAdjacencies.modify(p.first, modify_data);
+        auto hint = entFEAdjacencies.end();
+        for (auto &e :  *(*fit)->data_field_ents_view) {
+          hint = entFEAdjacencies.emplace_hint(hint, e, *fit);
+          bool success = entFEAdjacencies.modify(hint, modify_data);
           if (!success)
-            SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL,
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "modification unsuccessful");
         }
       }

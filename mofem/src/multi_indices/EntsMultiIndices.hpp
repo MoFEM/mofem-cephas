@@ -552,7 +552,7 @@ struct FieldEntity : public interface_Field<Field>,
 
   typedef interface_Field<Field> interface_type_Field;
   typedef interface_RefEntity<RefEntity> interface_type_RefEntity;
-  UId globalUid; ///< Global unique id for this entity
+  UId globalUId; ///< Global unique id for this entity
   // const ApproximationOrder *tag_FieldOrder;
   FieldEntity(const boost::shared_ptr<Field> &field_ptr,
               const boost::shared_ptr<RefEntity> &ref_ent_ptr);
@@ -612,7 +612,7 @@ struct FieldEntity : public interface_Field<Field>,
    * \brief Get global unique id
    * @return Global UId
    */
-  const UId &getGlobalUniqueId() const { return globalUid; }
+  const UId &getGlobalUniqueId() const { return globalUId; }
 
   /**
    * \brief Calculate UId for field entity
@@ -806,7 +806,7 @@ typedef multi_index_container<
     boost::shared_ptr<FieldEntity>,
     indexed_by<
         ordered_unique<tag<Unique_mi_tag>,
-                       member<FieldEntity, UId, &FieldEntity::globalUid> >,
+                       member<FieldEntity, UId, &FieldEntity::globalUId> >,
         ordered_non_unique<
             tag<FieldName_mi_tag>,
             const_mem_fun<FieldEntity::interface_type_Field, boost::string_ref,
@@ -824,9 +824,6 @@ typedef multi_index_container<
                               &FieldEntity::getEnt> > > > >
     FieldEntity_multiIndex;
 
-// /// \deprecated use FieldEntity_multiIndex
-// DEPRECATED typedef FieldEntity_multiIndex MoFEMEntity_multiIndex;
-
 /** \brief Entity index by field name
  *
  * \ingroup ent_multi_indices
@@ -836,11 +833,49 @@ typedef FieldEntity_multiIndex::index<FieldName_mi_tag>::type
 
 typedef multi_index_container<
     boost::shared_ptr<FieldEntity>,
-    indexed_by<sequenced<>,
-               ordered_non_unique<tag<Ent_mi_tag>,
-                                  const_mem_fun<FieldEntity, EntityHandle,
-                                                &FieldEntity::getEnt> > > >
+    indexed_by<
+
+        sequenced<>,
+
+        ordered_non_unique<
+            tag<Ent_mi_tag>,
+            const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt>>
+
+        >>
     FieldEntity_multiIndex_ent_view;
+
+typedef multi_index_container<
+    boost::shared_ptr<FieldEntity>,
+    indexed_by<
+
+        sequenced<>,
+
+        ordered_non_unique<
+            tag<Composite_EntType_and_Space_mi_tag>,
+            composite_key<FieldEntity,
+
+                          const_mem_fun<FieldEntity::interface_type_RefEntity,
+                                        EntityType, &FieldEntity::getEntType>,
+
+                          const_mem_fun<FieldEntity::interface_type_Field,
+                                        FieldSpace, &FieldEntity::getSpace>
+
+                          >>
+
+        >>
+    FieldEntity_multiIndex_spaceType_view;
+
+typedef std::vector<boost::weak_ptr<FieldEntity>> FieldEntity_vector_view;
+
+/**
+ * \brief Keeps basic information about entity on the finite element
+ */
+struct BaseFEEntity {
+  BaseFEEntity(const boost::shared_ptr<SideNumber> &side_number_ptr)
+      : sideNumberPtr(side_number_ptr){};
+  boost::shared_ptr<SideNumber> sideNumberPtr;
+  inline int getSideNumber() { return sideNumberPtr->side_number; }
+};
 
 } // namespace MoFEM
 
