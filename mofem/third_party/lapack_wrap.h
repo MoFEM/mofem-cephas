@@ -79,6 +79,11 @@ __CLPK_integer dposv_(char *uplo, __CLPK_integer *n, __CLPK_integer *nrhs,
                       __CLPK_doublereal *a, __CLPK_integer *lda,
                       __CLPK_doublereal *b, __CLPK_integer *ldb,
                       __CLPK_integer *info);
+__CLPK_integer dsysv_(char *uplo, __CLPK_integer *n, __CLPK_integer *nrhs,
+                      __CLPK_doublereal *a, __CLPK_integer *lda,
+                      __CLPK_integer *ipiv, __CLPK_doublereal *b,
+                      __CLPK_integer *ldb, __CLPK_doublereal *work,
+                      __CLPK_integer *lwork, __CLPK_integer *info);
 __CLPK_integer dpotri_(char *uplo, __CLPK_integer *n, __CLPK_doublereal *a,
                        __CLPK_integer *lda, __CLPK_integer *info);
 __CLPK_integer dgesvd_(char *jobu, char *jobvt, __CLPK_integer *m,
@@ -220,6 +225,16 @@ lapack_dposv(char uplo, __CLPK_integer n, __CLPK_integer nrhs,
              __CLPK_integer ldb) {
   __CLPK_integer info;
   dposv_(&uplo, &n, &nrhs, a, &lda, b, &ldb, &info);
+  return info;
+}
+
+inline static __CLPK_integer
+lapack_dsysv(char uplo, __CLPK_integer n, __CLPK_integer nrhs,
+             __CLPK_doublereal *a, __CLPK_integer lda, __CLPK_integer *ipiv,
+             __CLPK_doublereal *b, __CLPK_integer ldb, __CLPK_doublereal *work,
+             __CLPK_integer lwork) {
+  __CLPK_integer info = 0;
+  dsysv_(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, work, &lwork, &info);
   return info;
 }
 
