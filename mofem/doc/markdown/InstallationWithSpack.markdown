@@ -541,9 +541,9 @@ And the same for `users_modules` change:
 DMOFEM_UM_BUILD_TESTS=OFF
 ~~~~~~
 
-The following command will do this:
+The following command will do this. Note this is for `GNU sed` and macOS uses `BSD sed`. To use `GNU sed` install it via `homebrew install gnu-sed` and call it with `gsed` instead of `sed`. Linux defaults to `GNU sed`.
 ~~~~~~
-sed -i -e 's/DMOFEM_UM_BUILD_TESTS=OFF/DMOFEM_UM_BUILD_TESTS=ON/g' spconfig.py & sed -i -e 's/DMOFEM_BUILD_TESTS=OFF/DMOFEM_BUILD_TESTS=ON/g'
+sed -i 's/DMOFEM_UM_BUILD_TESTS=OFF/DMOFEM_UM_BUILD_TESTS=ON/ ; s/DMOFEM_BUILD_TESTS=OFF/DMOFEM_BUILD_TESTS=ON/' spconfig.py
 ~~~~~~
 
 ## Setting build type and compiler flags {#spack_build_type}
