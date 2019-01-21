@@ -318,8 +318,10 @@ file located in the working project. Example \p c_cpp_properties configuration o
     "version": 4
 }
 \endcode
-For debugging the most commonly used extension is <a href="https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb"> CodeLLDB</a> plugin. 
-The configuration is extremely easy: choose \p lldb type, set the path to the executable (compiled with debug flag!) as \p program, arguments for the
+
+\section vs_code_debug How to setup LLDB debugger in Visual Studio Code?
+For debugging on Mac the most commonly used extension is <a href="https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb"> CodeLLDB</a> plugin. 
+The configuration is straightforward: choose \p lldb type, set the path to the executable (compiled with debug flag!) as \p program, arguments for the
 command line put in \p args. Optionally, the path to current working directory can be set (\p cwd). Example configuration for fracture module is presented
 below.
 \code 
@@ -327,7 +329,7 @@ below.
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug",
+      "name": "Debug_my_crack1",
       "program": "/Users/User1/moFEM/users_modules_debug/fracture_mechanics/crack_propagation",
       "args": [
         "-my_file",
@@ -341,8 +343,7 @@ below.
   ]
 \endcode
 
-\section users_modules_changes_affects_mainRepo Why do users_modules changes
-affect mofem-cephas/mofem git repository?
+\section users_modules_changes_affects_mainRepo Why do users_modules changes affect mofem-cephas/mofem git repository?
 
 When making changes in a users_modules, a git submodule, the main git repo
 will register a version change. For example:
