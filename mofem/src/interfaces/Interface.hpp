@@ -1515,12 +1515,70 @@ struct CoreInterface : public UnknownInterface {
                                    DofMethod &method,
                                    int verb = DEFAULT_VERBOSITY) = 0;
 
-  /** \brief Make a loop over entities
-
-  * \ingroup mofem_field
-  */
-  virtual MoFEMErrorCode loop_entities(const std::string &field_name,
+  /**
+   * @brief Loop over field entities
+   * @ingroup mofem_field
+   * 
+   * @param field_name  field entities
+   * @param method user method
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode loop_entities(const std::string field_name,
                                        EntityMethod &method,
+                                       int verb = DEFAULT_VERBOSITY) = 0;
+
+  /**
+   * @brief Loop over field entities in the problem
+   * @ingroup mofem_field
+   * 
+   * @param problem_ptr 
+   * @param field_name 
+   * @param rc 
+   * @param method 
+   * @param lower_rank 
+   * @param upper_rank 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode loop_entities(const Problem *problem_ptr,
+                                       const std::string field_name,
+                                       RowColData rc, EntityMethod &method,
+                                       int lower_rank, int upper_rank,
+                                       int verb = DEFAULT_VERBOSITY) = 0;
+
+  /**
+   * @brief Loop over field entities in the problem
+   * @ingroup mofem_field
+   * 
+   * @param problem_name 
+   * @param field_name 
+   * @param rc 
+   * @param method 
+   * @param lower_rank 
+   * @param upper_rank 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode loop_entities(const std::string problem_name,
+                                       const std::string field_name,
+                                       RowColData rc, EntityMethod &method,
+                                       int lower_rank, int upper_rank,
+                                       int verb = DEFAULT_VERBOSITY) = 0;
+  /**
+   * @brief Loop over field entities in the problem
+   * @ingroup mofem_field
+   * 
+   * @param problem_name 
+   * @param field_name 
+   * @param rc 
+   * @param method 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode loop_entities(const std::string problem_name,
+                                       const std::string field_name,
+                                       RowColData rc, EntityMethod &method,
                                        int verb = DEFAULT_VERBOSITY) = 0;
 
   /**@}*/

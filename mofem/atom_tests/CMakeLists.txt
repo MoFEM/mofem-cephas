@@ -1028,6 +1028,23 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/activate_deactivate_dofs -my_file disp01.h5m
 )
 
+# Tetsing entity loops
+my_add_executable(loop_entities loop_entities.cpp)
+target_link_libraries(loop_entities
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(loop_entities
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${CMAKE_CURRENT_BINARY_DIR}/loop_entities -file_name disp01_2parts.h5m 
+  -dm_is_partitioned
+)
 
 # Projection form and to 10 node tets
 my_add_executable(projection_from_10node_tet_atom projection_from_10node_tet.cpp)
@@ -1221,7 +1238,8 @@ target_link_libraries(simple_interface
 
 add_test(
   simple_interface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
-  ${CMAKE_CURRENT_BINARY_DIR}/simple_interface -file_name disp01_2parts.h5m -log_summary
+  ${CMAKE_CURRENT_BINARY_DIR}/simple_interface -file_name disp01_2parts.h5m 
+  -log_summary
 )
 
 # Tetsing mesh cuttiong

@@ -771,7 +771,19 @@ protected:
                            DofMethod &method, int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode loop_dofs(const std::string &field_name, DofMethod &method,
                            int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode loop_entities(const std::string &field_name,
+  MoFEMErrorCode loop_entities(const Problem *problem_ptr,
+                               const std::string field_name, RowColData rc,
+                               EntityMethod &method, int lower_rank,
+                               int upper_rank, int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode loop_entities(const std::string problem_name,
+                               const std::string field_name, RowColData rc,
+                               EntityMethod &method, int lower_rank,
+                               int upper_rank, int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode loop_entities(const std::string problem_name,
+                               const std::string field_name, RowColData rc,
+                               EntityMethod &method,
+                               int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode loop_entities(const std::string field_name,
                                EntityMethod &method,
                                int verb = DEFAULT_VERBOSITY);
 
