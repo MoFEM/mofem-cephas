@@ -36,7 +36,6 @@ struct TestEntityMethod : EntityMethod {
 
   MoFEMErrorCode operator()() {
     MoFEMFunctionBeginHot;
-    cerr << entPtr->getEnt() << " " << *entsIt << endl;
     if (entPtr->getEnt() != *entsIt)
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "Entity and entity iterator should be the same");
@@ -94,6 +93,7 @@ int main(int argc, char *argv[]) {
 
       Range all_ents;
       CHKERR m_field.get_moab().get_entities_by_handle(root_set, all_ents);
+      all_ents = subtract(all_ents, all_ents.subset_by_type(MBENTITYSET));
 
       auto testingEntitiesInDatabase = [&]() {
         MoFEMFunctionBegin;
