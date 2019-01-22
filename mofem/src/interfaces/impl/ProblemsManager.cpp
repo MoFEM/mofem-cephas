@@ -2797,7 +2797,7 @@ MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string prb_name,
   fe_vec.reserve(std::distance(fit, hi_fe_it));
   for (; fit != hi_fe_it; fit++)
     fe_vec.push_back(fit->get()->getEnt());
-  rval = m_field.get_moab().add_entities(*meshset, &*fe_vec.begin(),
+  CHKERR m_field.get_moab().add_entities(*meshset, &*fe_vec.begin(),
                                          fe_vec.size());
   MoFEMFunctionReturn(0);
 }
@@ -2814,4 +2814,177 @@ ProblemsManager::getProblemElementsLayout(const std::string name,
                                                        fe_name, layout);
   MoFEMFunctionReturn(0);
 }
+
+MoFEMErrorCode
+ProblemsManager::removeDofsOnEntities(const std::string problem_name,
+                                      const std::string field_name,
+                                      const Range ents, int verb) {
+  MoFEM::Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  const Problem *prb_ptr;
+  CHKERR m_field.get_problem(problem_name, &prb_ptr);
+
+  decltype(prb_ptr->numeredDofsRows) numered_dofs[2] = {
+      prb_ptr->numeredDofsRows, nullptr};
+  if (prb_ptr->numeredDofsRows != prb_ptr->numeredDofsCols)
+    numered_dofs[1] = prb_ptr->numeredDofsCols;
+
+  int *nbdof_ptr[] = {&prb_ptr->nbDofsRow, &prb_ptr->nbDofsCol};
+  int *local_nbdof_ptr[] = {&prb_ptr->nbLocDofsRow, &prb_ptr->nbLocDofsCol};
+  int *ghost_nbdof_ptr[] = {&prb_ptr->nbGhostDofsRow, &prb_ptr->nbGhostDofsCol};
+
+  for (int s = 0; s != 2; ++s)
+    if (numered_dofs[s]) {
+
+      typedef multi_index_container<
+
+          NumeredDofEntity_multiIndex::iterator, indexed_by<sequenced<>>
+
+          >
+          NumeredDofEntity_it_view_multiIndex;
+
+      NumeredDofEntity_it_view_multiIndex dofs_it_view;
+
+      // Set -1 to global and local dofs indices
+      for (auto pit = ents.const_pair_begin(); pit != ents.const_pair_end();
+           ++pit) {
+        auto lo =
+            numered_dofs[s]
+                ->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
+                .lower_bound(boost::make_tuple(field_name, pit->first, 0));
+        auto hi =
+            numered_dofs[s]
+                ->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
+                .lower_bound(boost::make_tuple(field_name, pit->second, 1000));
+        for (; lo != hi; ++lo)
+          dofs_it_view.emplace_back(numered_dofs[s]->project<0>(lo));
+      }
+
+      // set negative index
+      auto mod = NumeredDofEntity_part_and_all_indices_change(-1, -1, -1, -1);
+      for (auto dit : dofs_it_view) {
+        bool success = numered_dofs[s]->modify(dit, mod);
+        if (!success)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                  "can not set negative indices");
+      }
+
+      // create weak view
+      std::vector<boost::weak_ptr<NumeredDofEntity>> dosf_weak_view;
+      dosf_weak_view.reserve(dofs_it_view.size());
+      for (auto dit : dofs_it_view)
+        dosf_weak_view.push_back(*dit);
+
+      // erase dofs from problem
+      for (auto weak_dit : dosf_weak_view)
+        if (auto dit = weak_dit.lock()) {
+          numered_dofs[s]->erase(dit->getGlobalUniqueId());
+        }
+
+      // get current number of ghost dofs
+      int nb_local_dofs = 0;
+      int nb_ghost_dofs = 0;
+      for (auto dit = numered_dofs[s]->get<PetscLocalIdx_mi_tag>().begin();
+           dit != numered_dofs[s]->get<PetscLocalIdx_mi_tag>().end(); ++dit) {
+        if ((*dit)->getPetscLocalDofIdx() >= 0 &&
+            (*dit)->getPetscLocalDofIdx() < *(local_nbdof_ptr[s]))
+          ++nb_local_dofs;
+        else if ((*dit)->getPetscLocalDofIdx() >= *(local_nbdof_ptr[s]))
+          ++nb_ghost_dofs;
+        else
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Imposible case");
+      }
+
+      // get indices
+      auto get_indices_by_tag = [&](auto tag, auto &indices, bool only_local) {
+        const int nb_dofs = numered_dofs[s]->size();
+        indices.clear();
+        indices.reserve(nb_dofs);
+        for (auto dit = numered_dofs[s]->get<decltype(tag)>().begin();
+             dit != numered_dofs[s]->get<decltype(tag)>().end(); ++dit) {
+          bool add = true;
+          if (only_local)
+            if ((*dit)->getPetscLocalDofIdx() >= 0 &&
+                (*dit)->getPetscLocalDofIdx() < *(local_nbdof_ptr[s])) {
+              indices.push_back(decltype(tag)::get_index(dit));
+            }
+        }
+      };
+
+      auto get_indices_by_uid = [&](auto tag, auto &indices) {
+        const int nb_dofs = numered_dofs[s]->size();
+        indices.clear();
+        indices.reserve(nb_dofs);
+        for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
+             ++dit) {
+          const int idx = decltype(tag)::get_index(dit);
+          indices.push_back(decltype(tag)::get_index(dit));
+        }
+      };
+
+      auto concatenate_dofs = [&](auto tag, auto &indices,
+                                  const auto local_only) {
+        MoFEMFunctionBegin;
+        get_indices_by_tag(tag, indices, local_only);
+        AO ao;
+        CHKERR AOCreateMapping(m_field.get_comm(), indices.size(),
+                               &*indices.begin(), PETSC_NULL, &ao);
+        get_indices_by_uid(tag, indices);
+        CHKERR AOApplicationToPetsc(ao, indices.size(), &*indices.begin());
+        CHKERR AODestroy(&ao);
+        MoFEMFunctionReturn(0);
+      };
+
+      // set indices index
+      auto set_concatinated_indices = [&]() {
+        std::vector<int> global_indices;
+        std::vector<int> local_indices;
+        MoFEMFunctionBegin;
+        CHKERR concatenate_dofs(PetscGlobalIdx_mi_tag(), global_indices, true);
+        CHKERR concatenate_dofs(PetscLocalIdx_mi_tag(), local_indices, false);
+        auto gi = global_indices.begin();
+        auto li = local_indices.begin();
+        for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
+             ++dit) {
+          auto mod = NumeredDofEntity_part_and_all_indices_change(
+              (*dit)->getPart(), (*dit)->getDofIdx(), *gi, *li);
+          bool success = numered_dofs[s]->modify(dit, mod);
+          if (!success)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "can not set negative indices");
+          ++gi;
+          ++li;
+        }
+        MoFEMFunctionReturn(0);
+      };
+      CHKERR set_concatinated_indices();
+
+      MPI_Allreduce(&nb_local_dofs, nbdof_ptr[s], 1, MPI_INT, MPI_SUM,
+                    m_field.get_comm());
+      *(local_nbdof_ptr[s]) = nb_local_dofs;
+      *(ghost_nbdof_ptr[s]) = nb_ghost_dofs;
+
+    } else {
+
+      *(nbdof_ptr[1]) = *(nbdof_ptr[0]);
+      *(local_nbdof_ptr[1]) = *(local_nbdof_ptr[0]);
+      *(ghost_nbdof_ptr[1]) = *(ghost_nbdof_ptr[0]);
+    }
+
+  if (verb > QUIET) {
+    PetscSynchronizedPrintf(
+        m_field.get_comm(),
+        "removed ents on rank %d from problem %s dofs [ %d / %d local, %d / %d "
+        "ghost, %d / %d global]\n",
+        m_field.get_comm_rank(), prb_ptr->getName().c_str(),
+        prb_ptr->getNbLocalDofsRow(), prb_ptr->getNbLocalDofsCol(),
+        prb_ptr->getNbGhostDofsRow(), prb_ptr->getNbGhostDofsCol(),
+        prb_ptr->getNbDofsRow(), prb_ptr->getNbDofsCol());
+    PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM
