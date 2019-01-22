@@ -1763,57 +1763,6 @@ struct CoreInterface : public UnknownInterface {
   IT++
 
   /**
-   * \brief get field data from entity and field
-   * \ingroup mofem_field
-   *
-   * this function is not recommended to be used in finite element
-   * implementation
-   *
-   */
-  template <typename DIT>
-  MoFEMErrorCode get_field_dof_data(const std::string &name,
-                                    const EntityHandle *ent, const int num_ents,
-                                    DIT dit, int *count = NULL) {
-    MoFEMFunctionBeginHot;
-    if (count != NULL)
-      *count = 0;
-    for (int nn = 0; nn < num_ents; nn++) {
-      for (_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this), name, ent[nn],
-                                                        it)) {
-        *(dit++) = (*it)->getFieldData();
-        if (count != NULL)
-          (*count)++;
-      }
-    }
-    MoFEMFunctionReturnHot(0);
-  }
-
-  /**
-   * \brief get field data from entity and field
-   * \ingroup mofem_field
-   *
-   * this function is not recommended to be used in finite element
-   * implementation
-   *
-   */
-  template <typename DIT>
-  MoFEMErrorCode get_field_dof_data(const std::string &name, const Range &ents,
-                                    DIT dit, int *count = NULL) {
-    MoFEMFunctionBeginHot;
-    if (count != NULL)
-      *count = 0;
-    for (Range::const_iterator eit = ents.begin(); eit != ents.end(); eit++) {
-      for (_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this), name, *eit,
-                                                        it)) {
-        *(dit++) = (*it)->getFieldData();
-        if (count != NULL)
-          (*count)++;
-      }
-    }
-    MoFEMFunctionReturnHot(0);
-  }
-
-  /**
    * \brief get begin iterator of filed dofs of given name and ent type
    * (instead you can use
    * _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
