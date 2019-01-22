@@ -2876,7 +2876,7 @@ ProblemsManager::removeDofsOnEntities(const std::string problem_name,
       for (auto dit : dofs_it_view)
         dosf_weak_view.push_back(*dit);
 
-      // erase dofs form problem
+      // erase dofs from problem
       for (auto weak_dit : dosf_weak_view)
         if (auto dit = weak_dit.lock()) {
           numered_dofs[s]->erase(dit->getGlobalUniqueId());
