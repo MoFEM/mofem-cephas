@@ -660,7 +660,7 @@ protected:
   MoFEMErrorCode build_finite_elements(const BitRefLevel &bit,
                                        int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode build_finite_elements(const string fe_name,
-                                       const Range *ents_ptr = NULL,
+                                       const Range *const ents_ptr = nullptr,
                                        int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
                                      const Range *ents_ptr = NULL,

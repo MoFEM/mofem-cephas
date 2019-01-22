@@ -1088,7 +1088,8 @@ struct CoreInterface : public UnknownInterface {
    * @return      Error code
    */
   virtual MoFEMErrorCode
-  build_finite_elements(const string fe_name, const Range *ents_ptr = NULL,
+  build_finite_elements(const string fe_name,
+                        const Range *const ents_ptr = nullptr,
                         int verb = DEFAULT_VERBOSITY) = 0;
 
   /**@}*/

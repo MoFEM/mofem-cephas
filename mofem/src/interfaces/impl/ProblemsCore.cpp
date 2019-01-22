@@ -716,9 +716,9 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
   else
     for (auto &field_ent : ents_view) {
       method.entPtr = field_ent;
-    CHKERR method();
-    ++method.nInTheLoop;
-  }
+      CHKERR method();
+      ++method.nInTheLoop;
+    }
 
   CHKERR method.postProcess();
   MoFEMFunctionReturn(0);
