@@ -102,7 +102,17 @@ int main(int argc, char *argv[]) {
         MoFEMFunctionReturn(0);
       };
 
-      // CHKERR testingEntitiesInDatabase();
+      CHKERR testingEntitiesInDatabase();
+
+      auto testingEntitiesInDatabaseSubRange = [&]() {
+        MoFEMFunctionBegin;
+        Range edges = all_ents.subset_by_type(MBEDGE);
+        TestEntityMethod method(edges);
+        CHKERR m_field.loop_entities("FIELD1", method, &edges);
+        MoFEMFunctionReturn(0);
+      };
+
+      CHKERR testingEntitiesInDatabaseSubRange();
 
       DM dm;
       // get dm

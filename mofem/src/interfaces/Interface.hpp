@@ -1521,11 +1521,13 @@ struct CoreInterface : public UnknownInterface {
    * 
    * @param field_name  field entities
    * @param method user method
+   * @param ents if given loop only on subset of entities in the field
    * @param verb 
    * @return MoFEMErrorCode 
    */
   virtual MoFEMErrorCode loop_entities(const std::string field_name,
                                        EntityMethod &method,
+                                       Range const *const ents = nullptr,
                                        int verb = DEFAULT_VERBOSITY) = 0;
 
   /**

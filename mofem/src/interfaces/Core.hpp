@@ -785,6 +785,7 @@ protected:
                                int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode loop_entities(const std::string field_name,
                                EntityMethod &method,
+                               Range const *const ents = nullptr,
                                int verb = DEFAULT_VERBOSITY);
 
   /**@}*/

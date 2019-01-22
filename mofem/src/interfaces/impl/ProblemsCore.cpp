@@ -640,8 +640,8 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
   method.loopSize = ents_view.size();
   CHKERR method.preProcess();
   method.nInTheLoop = 0;
-  for (auto &ent : ents_view) {
-    method.entPtr = ent;
+  for (auto &field_ent : ents_view) {
+    method.entPtr = field_ent;
     CHKERR method();
     ++method.nInTheLoop;
   }
@@ -675,7 +675,8 @@ MoFEMErrorCode Core::loop_entities(const std::string problem_name,
 }
 
 MoFEMErrorCode Core::loop_entities(const std::string field_name,
-                                   EntityMethod &method, int verb) {
+                                   EntityMethod &method,
+                                   Range const *const ents, int verb) {
   MoFEMFunctionBegin;
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
@@ -689,14 +690,36 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
       method.fieldPtr = *field_it;
     }
   }
-  method.loopSize = entsFields.size();
+
+  typedef multi_index_container<
+      boost::shared_ptr<FieldEntity>,
+      indexed_by<ordered_unique<
+          tag<Ent_mi_tag>,
+          const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt>>>>
+      FieldEntity_view_multiIndex;
+
+  FieldEntity_view_multiIndex ents_view;
+  ents_view.insert(r.first, r.second);
+
+  method.loopSize = ents_view.size();
   CHKERR method.preProcess();
   method.nInTheLoop = 0;
-  for (; r.first != r.second; r.first++) {
-    method.entPtr = *r.first;
+
+  if (ents)
+    for (auto p = ents->const_pair_begin(); p != ents->const_pair_end(); ++p)
+      for (auto feit = ents_view.lower_bound(p->first);
+           feit != ents_view.upper_bound(p->second); ++feit) {
+        method.entPtr = *feit;
+        CHKERR method();
+        ++method.nInTheLoop;
+      }
+  else
+    for (auto &field_ent : ents_view) {
+      method.entPtr = field_ent;
     CHKERR method();
     ++method.nInTheLoop;
   }
+
   CHKERR method.postProcess();
   MoFEMFunctionReturn(0);
 }
