@@ -218,7 +218,14 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
   BasicMethod();
   virtual ~BasicMethod(){};
 
+  /**
+   * @brief number currently of processed method
+   */
   int nInTheLoop;
+
+  /**
+   * @brief local number oe methods to process
+   */
   int loopSize;
 
   /** \brief get number of evaluated element in the loop
@@ -229,31 +236,56 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
    */
   inline int getLoopSize() const { return loopSize; }
 
-  int rAnk, sIze;
-  const RefEntity_multiIndex *refinedEntitiesPtr;
-  const RefElement_multiIndex *refinedFiniteElementsPtr;
-  const Problem *problemPtr;
-  const Field_multiIndex *fieldsPtr;
-  const FieldEntity_multiIndex *entitiesPtr;
-  const DofEntity_multiIndex *dofsPtr;
-  const FiniteElement_multiIndex *finiteElementsPtr;
-  const EntFiniteElement_multiIndex *finiteElementsEntitiesPtr;
-  const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *adjacenciesPtr;
+  int rAnk; ///< processor rank
 
+  int sIze; ///< number of processors in communicator
+
+  const RefEntity_multiIndex
+      *refinedEntitiesPtr; ///< container of mofem dof entities
+
+  const RefElement_multiIndex
+      *refinedFiniteElementsPtr; ///< container of mofem finite element entities
+
+  const Problem *problemPtr; ///< raw pointer to problem
+
+  const Field_multiIndex *fieldsPtr; ///< raw pointer to fields container
+
+  const FieldEntity_multiIndex
+      *entitiesPtr; ///< raw pointer to container of field entities
+
+  const DofEntity_multiIndex *dofsPtr; ///< raw pointer container of dofs
+
+  const FiniteElement_multiIndex
+      *finiteElementsPtr; ///< raw pointer to container finite elements
+
+  const EntFiniteElement_multiIndex
+      *finiteElementsEntitiesPtr; ///< raw pointer to container finite elements
+                                  ///< entities
+
+  const FieldEntityEntFiniteElementAdjacencyMap_multiIndex
+      *adjacenciesPtr; ///< raw pointer to container to adjacencies between dofs
+                       ///< and finite elements
+
+  /**
+   * @brief Copy data from other base method to this base method
+   * 
+   * @param basic 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode copyBasicMethod(const BasicMethod &basic);
 
   /**
-   * Hook function for pre-processing
+   * @brief Hook function for pre-processing
    */
   boost::function<MoFEMErrorCode()> preProcessHook;
 
   /**
-   * Hook function for post-processing
+   * @brief Hook function for post-processing
    */
   boost::function<MoFEMErrorCode()> postProcessHook;
 
   /**
-   * Hook function for operator
+   * @brief Hook function for operator
    */
   boost::function<MoFEMErrorCode()> operatorHook;
 
