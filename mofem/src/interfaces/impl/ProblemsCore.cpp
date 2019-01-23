@@ -638,6 +638,7 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
     ents_view.emplace_hint(hint, (*miit)->getFieldEntityPtr());
 
   method.loopSize = ents_view.size();
+  SET_BASIC_METHOD(method, problem_ptr);
   CHKERR method.preProcess();
   method.nInTheLoop = 0;
   for (auto &field_ent : ents_view) {
