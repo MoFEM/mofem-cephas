@@ -263,6 +263,16 @@ template <typename T>
 using MatrixShallowArrayAdaptor =
     ublas::matrix<double, ublas::row_major,
                   ublas::shallow_array_adaptor<double>>;
+
+/**
+ * @brief Matrix adaptor.
+ *
+ * \code
+ * MatrixAdaptor mat = MatrixAdaptor(3, 3,
+ *    ublas::shallow_array_adaptor<double>(9, ptr)); 
+ * \endcode
+ *
+ */
 typedef MatrixShallowArrayAdaptor<double> MatrixAdaptor;
 
 template <class X> inline std::string toString(X x) {
