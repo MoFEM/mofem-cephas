@@ -322,17 +322,22 @@ MoFEMErrorCode Core::clear_problems(int verb) {
 
 #define SET_BASIC_METHOD(METHOD, PROBLEM_PTR)                                  \
   {                                                                            \
-    METHOD.rAnk = rAnk;                                                        \
-    METHOD.sIze = sIze;                                                        \
-    METHOD.problemPtr = PROBLEM_PTR;                                           \
-    METHOD.fieldsPtr = &fIelds;                                                \
-    METHOD.refinedEntitiesPtr = &refinedEntities;                              \
-    METHOD.entitiesPtr = &entsFields;                                          \
-    METHOD.dofsPtr = &dofsField;                                               \
-    METHOD.refinedFiniteElementsPtr = &refinedFiniteElements;                  \
-    METHOD.finiteElementsPtr = &finiteElements;                                \
-    METHOD.finiteElementsEntitiesPtr = &entsFiniteElements;                    \
-    METHOD.adjacenciesPtr = &entFEAdjacencies;                                 \
+    BasicMethod::removedConstReferenc(METHOD.rAnk) = rAnk;                     \
+    BasicMethod::removedConstReferenc(METHOD.sIze) = sIze;                     \
+    BasicMethod::removedConstReferenc(METHOD.refinedEntitiesPtr) =             \
+        &refinedEntities;                                                      \
+    BasicMethod::removedConstReferenc(METHOD.refinedFiniteElementsPtr) =       \
+        &refinedFiniteElements;                                                \
+    BasicMethod::removedConstReferenc(METHOD.problemPtr) = PROBLEM_PTR;        \
+    BasicMethod::removedConstReferenc(METHOD.fieldsPtr) = &fIelds;             \
+    BasicMethod::removedConstReferenc(METHOD.entitiesPtr) = &entsFields;       \
+    BasicMethod::removedConstReferenc(METHOD.dofsPtr) = &dofsField;            \
+    BasicMethod::removedConstReferenc(METHOD.finiteElementsPtr) =              \
+        &finiteElements;                                                       \
+    BasicMethod::removedConstReferenc(METHOD.finiteElementsEntitiesPtr) =      \
+        &entsFiniteElements;                                                   \
+    BasicMethod::removedConstReferenc(METHOD.adjacenciesPtr) =                 \
+        &entFEAdjacencies;                                                     \
   }
 
 MoFEMErrorCode Core::problem_basic_method_preProcess(const Problem *problem_ptr,
@@ -571,7 +576,7 @@ MoFEMErrorCode Core::loop_dofs(const std::string &field_name, DofMethod &method,
   MoFEMFunctionBegin;
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
-  SET_BASIC_METHOD(method, NULL);
+  SET_BASIC_METHOD(method, nullptr);
   auto miit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
   auto hi_miit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
   if (miit != hi_miit) {

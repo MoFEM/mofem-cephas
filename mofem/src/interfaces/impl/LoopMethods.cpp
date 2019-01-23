@@ -90,28 +90,33 @@ MoFEMErrorCode TSMethod::copyTs(const TSMethod &ts) {
 // BasicMethod
 BasicMethod::BasicMethod()
     : KspMethod(), SnesMethod(), TSMethod(), nInTheLoop(0), loopSize(0),
-      refinedEntitiesPtr(NULL), refinedFiniteElementsPtr(NULL),
-      problemPtr(NULL), fieldsPtr(NULL), entitiesPtr(NULL), dofsPtr(NULL),
-      finiteElementsPtr(NULL), finiteElementsEntitiesPtr(NULL),
-      adjacenciesPtr(NULL), preProcessHook(NULL), postProcessHook(NULL),
-      operatorHook(NULL) {}
+      rAnk(-1), sIze(-1), refinedEntitiesPtr(nullptr),
+      refinedFiniteElementsPtr(nullptr), problemPtr(nullptr),
+      fieldsPtr(nullptr), entitiesPtr(nullptr), dofsPtr(nullptr),
+      finiteElementsPtr(nullptr), finiteElementsEntitiesPtr(nullptr),
+      adjacenciesPtr(nullptr), preProcessHook(NULL),
+      postProcessHook(NULL), operatorHook(NULL) {}
 
 MoFEMErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
   MoFEMFunctionBeginHot;
-
   this->nInTheLoop = basic.nInTheLoop;
   this->loopSize = basic.loopSize;
-  this->rAnk = basic.rAnk;
-  this->sIze = basic.sIze;
-  this->refinedEntitiesPtr = basic.refinedEntitiesPtr;
-  this->refinedFiniteElementsPtr = basic.refinedFiniteElementsPtr;
-  this->problemPtr = basic.problemPtr;
-  this->fieldsPtr = basic.fieldsPtr;
-  this->entitiesPtr = basic.entitiesPtr;
-  this->dofsPtr = basic.dofsPtr;
-  this->finiteElementsPtr = basic.finiteElementsPtr;
-  this->finiteElementsEntitiesPtr = basic.finiteElementsEntitiesPtr;
-  this->adjacenciesPtr = basic.adjacenciesPtr;
+  BasicMethod::removedConstReferenc(this->rAnk) = basic.rAnk;
+  BasicMethod::removedConstReferenc(this->sIze) = basic.sIze;
+  BasicMethod::removedConstReferenc(this->refinedEntitiesPtr) =
+      basic.refinedEntitiesPtr;
+  BasicMethod::removedConstReferenc(this->refinedFiniteElementsPtr) =
+      basic.refinedFiniteElementsPtr;
+  BasicMethod::removedConstReferenc(this->problemPtr) = basic.problemPtr;
+  BasicMethod::removedConstReferenc(this->fieldsPtr) = basic.fieldsPtr;
+  BasicMethod::removedConstReferenc(this->entitiesPtr) = basic.entitiesPtr;
+  BasicMethod::removedConstReferenc(this->dofsPtr) = basic.dofsPtr;
+  BasicMethod::removedConstReferenc(this->finiteElementsPtr) =
+      basic.finiteElementsPtr;
+  BasicMethod::removedConstReferenc(this->finiteElementsEntitiesPtr) =
+      basic.finiteElementsEntitiesPtr;
+  BasicMethod::removedConstReferenc(this->adjacenciesPtr) =
+      basic.adjacenciesPtr;
 
   MoFEMFunctionReturnHot(0);
 }

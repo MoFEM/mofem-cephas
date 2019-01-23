@@ -229,16 +229,23 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
    */
   inline int getLoopSize() const { return loopSize; }
 
-  int rAnk, sIze;
-  const RefEntity_multiIndex *refinedEntitiesPtr;
-  const RefElement_multiIndex *refinedFiniteElementsPtr;
-  const Problem *problemPtr;
-  const Field_multiIndex *fieldsPtr;
-  const FieldEntity_multiIndex *entitiesPtr;
-  const DofEntity_multiIndex *dofsPtr;
-  const FiniteElement_multiIndex *finiteElementsPtr;
-  const EntFiniteElement_multiIndex *finiteElementsEntitiesPtr;
-  const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *adjacenciesPtr;
+  const int rAnk; ///< Processor rank
+  const int sIze; ///< Communication size
+  const RefEntity_multiIndex *const refinedEntitiesPtr;
+  const RefElement_multiIndex *const refinedFiniteElementsPtr;
+  const Problem *const problemPtr;
+  const Field_multiIndex *const fieldsPtr;
+  const FieldEntity_multiIndex *const entitiesPtr;
+  const DofEntity_multiIndex *const dofsPtr;
+  const FiniteElement_multiIndex *const finiteElementsPtr;
+  const EntFiniteElement_multiIndex *const finiteElementsEntitiesPtr;
+  const FieldEntityEntFiniteElementAdjacencyMap_multiIndex
+      *const adjacenciesPtr;
+
+  template <typename T> 
+  static typename std::remove_const<T>::type &removedConstReferenc(T &t) {
+    return const_cast<typename std::remove_const<T>::type &>(t);
+  }
 
   MoFEMErrorCode copyBasicMethod(const BasicMethod &basic);
 
@@ -284,8 +291,6 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
    */
   virtual MoFEMErrorCode postProcess();
 
-private:
-  void iNit();
 };
 
 /**
