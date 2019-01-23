@@ -140,7 +140,6 @@ struct SnesMethod : virtual public UnknownInterface {
   SNES snes;
   Vec snes_x, snes_f;
   Mat snes_A, snes_B;
-
 };
 
 /**
@@ -193,7 +192,6 @@ struct TSMethod : virtual public UnknownInterface {
 
   PetscInt ts_step;
   PetscReal ts_a, ts_t;
-
 };
 
 /**
@@ -268,9 +266,9 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
 
   /**
    * @brief Copy data from other base method to this base method
-   * 
-   * @param basic 
-   * @return MoFEMErrorCode 
+   *
+   * @param basic
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode copyBasicMethod(const BasicMethod &basic);
 
@@ -315,7 +313,6 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
    *
    */
   virtual MoFEMErrorCode postProcess();
-
 };
 
 /**
@@ -399,7 +396,7 @@ struct FEMethod : public BasicMethod {
             const EntityType type, const int side_number) const {
     return index.lower_bound(boost::make_tuple(field_name, type, side_number));
   }
-  
+
   template <class MULTIINDEX>
   typename MULTIINDEX::iterator
   get_end(const MULTIINDEX &index, const std::string &field_name,
@@ -407,15 +404,15 @@ struct FEMethod : public BasicMethod {
     return index.upper_bound(boost::make_tuple(field_name, type, side_number));
   }
 
-    /** \brief loop over all dofs which are on a particular FE row, field,
-     * entity type and canonical side number \ingroup mofem_loops
-     *
-     * \param FE finite elements
-     * \param Name field name
-     * \param Type moab entity type (MBVERTEX, MBEDGE etc)
-     * \param Side side canonical number
-     * \param IT the interator in use
-     */
+  /** \brief loop over all dofs which are on a particular FE row, field,
+   * entity type and canonical side number \ingroup mofem_loops
+   *
+   * \param FE finite elements
+   * \param Name field name
+   * \param Type moab entity type (MBVERTEX, MBEDGE etc)
+   * \param Side side canonical number
+   * \param IT the interator in use
+   */
 #define _IT_GET_FEROW_BY_SIDE_DOFS_FOR_LOOP_(FE, NAME, TYPE, SIDE, IT)         \
   FENumeredDofEntity_multiIndex::index<Composite_mi_tag>::type::iterator IT =  \
       FE->get_begin<                                                           \
@@ -622,7 +619,7 @@ struct FEMethod : public BasicMethod {
 /**
  * \brief Data structure to exchange data between mofem and User Loop Methods on
  * entities. \ingroup mofem_loops
- * 
+ *
  * It allows to exchange data between MoFEM and user functions. It stores
  * information about multi-indices.
  */
@@ -643,9 +640,7 @@ struct EntityMethod : public BasicMethod {
 
   boost::shared_ptr<Field> fieldPtr;
   boost::shared_ptr<FieldEntity> entPtr;
-
 };
-
 
 /**
  * \brief Data structure to exchange data between mofem and User Loop Methods on
@@ -682,7 +677,7 @@ DEPRECATED typedef DofMethod EntMethod;
 
 #endif // __LOOPMETHODS_HPP__
 
-/***************************************************************************/ /**
-  * \defgroup mofem_loops Loops
-  * \ingroup mofem
- ******************************************************************************/
+/**
+ * \defgroup mofem_loops Loops
+ * \ingroup mofem
+ */
