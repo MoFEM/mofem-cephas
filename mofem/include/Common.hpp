@@ -21,6 +21,12 @@
 namespace MoFEM {
 
 /**
+ * @brief No entity handle is indicated by zero handle, i.e. root meshset
+ * 
+ */
+const EntityHandle no_handle = 0;
+
+/**
  * \brief Exception to catch
  */
 struct MoFEMException : public std::exception {
@@ -130,7 +136,6 @@ typedef int EntPart;                 ///< Partition owning entity
 typedef double FieldData;            ///< Field data type
 typedef int ApproximationOrder;      ///< Approximation on the entity
 typedef int FieldCoefficientsNumber; ///< Number of field coefficients
-const EntityHandle no_handle = 0;
 
 // typedef checked_uint128_t UId;
 typedef uint128_t UId; ///< Unique Id
