@@ -100,7 +100,7 @@ if (...) {
   Use types to indicate what it is, and the name of the variable what it is.
   For example
   \code 
-  std::vector<PetscLocalDodIdx> on_boundary;
+  std::vector<PetscLocalDofIdx> on_boundary;
   \endcode
   In above one can see that you will be going to have local indices, and the
   vector will store indices on indices on boundary only. 

@@ -28,7 +28,7 @@ namespace Types {
 
 typedef int DofIdx;                  ///< Index of DOF
 typedef int MoFEMDofIdx;             ///< Index of DOF using mofem native index
-typedef int PetscLocalDodIdx;        ///< Index of DOF using local petsc index
+typedef int PetscLocalDofIdx;        ///< Index of DOF using local petsc index
 typedef int PetscGlobalDofIdx;       ///< Index of DOF using global pets index
 typedef int FEIdx;                   ///< Index of the element
 typedef int EntIdx;                  ///< Index of DOF on the entity
