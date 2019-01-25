@@ -66,7 +66,7 @@ MoFEMErrorCode Core::Finalize() {
   return PetscFinalize();
 }
 
-// Use SFINAE to decide which template should be run, 
+// Use SFINAE to decide which template should be run,
 // if exist getSubInterfaceOptions run this one.
 template <class T>
 static auto get_sub_iface_options_imp(T *const ptr, int)
@@ -74,7 +74,7 @@ static auto get_sub_iface_options_imp(T *const ptr, int)
   return ptr->getSubInterfaceOptions();
 };
 
-// Use SFINAE to decide which template should be run, 
+// Use SFINAE to decide which template should be run,
 // if getSubInterfaceOptions not exist run this one.
 template <class T>
 static auto get_sub_iface_options_imp(T *const ptr, long) -> MoFEMErrorCode {
@@ -89,7 +89,7 @@ MoFEMErrorCode Core::regSubInterface(const MOFEMuuid &uid) {
   IFACE *ptr = new IFACE(*this);
 
   // If sub interface has function getSubInterfaceOptions run
-  // it after construction. getSubInterfaceOptions is used to 
+  // it after construction. getSubInterfaceOptions is used to
   // get parameters from command line.
   // See SFINAE:
   // https://stackoverflow.com/questions/257288/is-it-possible-to-write-a-template-to-check-for-a-functions-existence
@@ -115,6 +115,16 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
     isGloballyInitialised = true;
   }
 
+  // Create duplicate communicator
+  wrapMPIComm = boost::make_shared<WrapMPIComm>(comm, cOmm);
+  MPI_Comm_size(cOmm, &sIze);
+  MPI_Comm_rank(cOmm, &rAnk);
+  // CHeck if moab has set communicator if not set communicator interbally
+  ParallelComm *pComm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+  if (pComm == NULL) {
+    pComm = new ParallelComm(&moab, cOmm);
+  }
+
   // Register interfaces for this implementation
   ierr = registerInterface<UnknownInterface>(IDD_MOFEMUnknown);
   CHKERRABORT(comm, ierr);
@@ -133,16 +143,6 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
   PetscLogEventRegister("FE_operator", 0, &MOFEM_EVENT_operator);
   PetscLogEventRegister("FE_postProcess", 0, &MOFEM_EVENT_postProcess);
   PetscLogEventRegister("MoFEMCreateMat", 0, &MOFEM_EVENT_createMat);
-
-  // Create duplicate communicator
-  wrapMPIComm = boost::make_shared<WrapMPIComm>(comm,cOmm);
-  MPI_Comm_size(cOmm, &sIze);
-  MPI_Comm_rank(cOmm, &rAnk);
-  // CHeck if moab has set communicator if not set communicator interbally
-  ParallelComm *pComm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-  if (pComm == NULL) {
-    pComm = new ParallelComm(&moab, cOmm);
-  }
 
   // Initialize database
   ierr = getTags();
@@ -350,7 +350,7 @@ MoFEMErrorCode Core::getTags(int verb) {
                                      th_MoFEMBuild, MB_TAG_CREAT | MB_TAG_MESH,
                                      &def_bool);
     CHKERR check_tag_allocated(rval);
-    
+
     CHKERR get_moab().tag_get_by_ptr(th_MoFEMBuild, &root_meshset, 1,
                                      (const void **)&buildMoFEM);
   }

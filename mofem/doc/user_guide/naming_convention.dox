@@ -99,17 +99,17 @@ if (...) {
 
   Use types to indicate what it is, and the name of the variable what it is.
   For example
-  \code 
+\code 
   std::vector<PetscLocalDofIdx> on_boundary;
-  \endcode
+\endcode
   In above one can see that you will be going to have local indices, and the
   vector will store indices on indices on boundary only. 
 
   An alternative to the example above you can see less informative, but
   equivalent definition below
-  \code
+\code
   std::vector<int> local_petsc_indices_on_boundary;
-  \endcode
+\endcode
 
   For MoFEM data types see \ref MoFEM::Types.
 
@@ -137,16 +137,18 @@ if (...) {
 
   - Use a verb-noun method to name routines that perform some
     operation-on-a-given-object. Most names are constructed by concatenating
-    several words, use mixed-case formatting or underscore to ease reading. \code
-    calculateKineticEnergy ( . . . )
-    calculate_kinetic_energy ( . . . )
-    \endcode
+    several words, use mixed-case formatting or underscore to ease reading. 
+\code
+  calculateKineticEnergy ( . . . )
+  calculate_kinetic_energy ( . . . )
+\endcode
     or any other derivatives.
 
-  - Avoid elusive names, open to subjective interpretation like \code
-    Analyze ( . . . ) / / subroutine or function or method
-    nnsmcomp1 / / variable
-    \endcode
+  - Avoid elusive names, open to subjective interpretation like  
+\code
+  Analyze ( . . . ) / / subroutine or function or method
+  nnsmcomp1 / / variable
+\endcode
 
   - Each class header should be fully commented.
 
@@ -164,20 +166,34 @@ if (...) {
   - Local variables and function argument have names with small letters, i.e.
     temperature_val, nodal_position.
 
-  - If variable is a pointer, it should have name as follows \code
+  - If variable is a pointer, it should have name as follows 
+\code
 class A {
   boost::shared_ptr<double> valPtr; ///< class member variable
 };
 
-boost::shared_ptr<double> val_ptr; ///< local variable
+void f() {
+  boost::shared_ptr<double> val_ptr; ///< local variable\
+}
 \endcode
 
+  - All FTensor variables should be name as follows
+\code
+class A {
+  FTensor::Tensor1<double,3> tForce; ///< class member variable
+}
+
+void f() {
+  FTensor::Tensor1<double,3> t_force; ///< local variable
+}
+\endcode
 
   - Append/Prepend computation qualifiers like Av, Sum, Min, Max and Index to
     the end of a variable when appropriate.
 
   - If you commit your code remove are depreciated functions names. Use of OLD function name (or old functions
-    arguments) generate compilation warring, f.e. \code
+    arguments) generate compilation warring, f.e. 
+\code
 In file included from mofem/users_modules/basic_finite_elements/src/impl/DirichletBC.cpp:39:0:
 mofem/src/interfaces/Interface.hpp: In member function 'MoFEMErrorCode MoFEM::Interface::set_other_local_VecCreateGhost(const MoFEM::Problem*, const std::string&, const std::string&, RowColData, Vec, InsertMode, ScatterMode, int)':
 mofem/src/interfaces/Interface.hpp:1300:107: warning: 'MoFEMErrorCode MoFEM::Interface::set_other_local_VecCreateGhost(const MoFEM::Problem*, const std::string&, const std::string&, RowColData, Vec, InsertMode, ScatterMode, int)' is deprecated (declared at mofem/src/interfaces/Interface.hpp:1296) [-Wdeprecated-declarations]
@@ -195,7 +211,8 @@ mofem/src/interfaces/Interface.hpp:1300:107: warning: 'MoFEMErrorCode MoFEM::Int
       For example, use M_PI as defined in math.h rather than defining your own
       constant.
 
-- Each header file should have defined macro, following example \code
+- Each header file should have defined macro, following example 
+\code
 #ifndef __CLASS_NAME_HPP__
 #define __CLASS_NAME_HPP__
 
@@ -206,21 +223,46 @@ class ClassName {
 #endif //__CLASS_NAME_HPP__
 \endcode
 
-- Each function should have build in error checking, following example \code{.cpp}
+- Each function should have build in error checking, following example 
+\code{.cpp}
 MoFEMErrorCode fun() {
-  MoFEMFunctionBeginHot;
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionBegin;
+  MoFEMFunctionReturn(0);
 }
 
-ierr = fun(); CHKERRQ(ierr);
+CHKERR fun();
+\endcode
+
+- About pointers:
+  - Read it backwards (as driven by 
+  <a href=http://c-faq.com/decl/spiral.anderson.html>Clockwise/Spiral Rule</a>):
+\code 
+ int* a; // pointer to int
+ int const * b; // pointer to const int
+ int * const c; // const pointer to int
+ int const * const d; // const pointer to const int
+\endcode
+  - Now the first const can be on either side of the type so:
+\code
+  const int * a; // == int const *
+  const int * const b; // == int const * const
+\endcode
+  - If you want to do pointers to pointers:
+\code
+  int ** a; // pointer to pointer to int
+  int ** const b; // a const pointer to a pointer to an int
+  int * const * c; // a pointer to a const pointer to an int
+  int const ** d; // a pointer to a pointer to a const int
+  int * const * const f; // a const pointer to a const pointer to an int
 \endcode
 
 - Memory allocation
 
   - USE VALGRIND. Valging is powerful tool to find execution errors, use it if your
-    code behave differently on two different computers, or you get segmentation fault, ect. Valgrin can be used as follows \code
-    valgrind --track-origins=yes ./program_name -my_file mesh.cub
-    \endcode
+    code behave differently on two different computers, or you get segmentation fault, ect. Valgrin can be used as follows 
+\code
+  valgrind --track-origins=yes ./program_name -my_file mesh.cub
+\endcode
     Use small mesh, i.e. small problem, when you run valgrind, it take some
     time. YOU NEED TO COMPILE CODE WITH -DCMAKE_BUILD_TYPE=Debug.
 
@@ -233,7 +275,8 @@ ierr = fun(); CHKERRQ(ierr);
     pointer.
 
   - Check program with line command argument -log_view, verifying if number of created PTESc
-    objects is equal to number of destroyed objects \code
+    objects is equal to number of destroyed objects 
+\code
 Memory usage is given in bytes:
 
 Object Type          Creations   Destructions     Memory  Descendants' Mem.
@@ -284,7 +327,8 @@ struct {
   macro. 
 
 - C++ Partial Template Specialization, see <https://stackoverflow.com/a/6142796/8043075>
-  for details. \code
+  for details. 
+\code
   template<typename A, typename B>
   struct TwoTypes { };
 
@@ -305,7 +349,7 @@ struct {
     /* ... */
     }
   };
-  \endcode
+\endcode
   Explicitly specializing functions is never (almost never?) the right way.
   Never explicitly specialized a function template. Overloading and partial
   ordering is superior.

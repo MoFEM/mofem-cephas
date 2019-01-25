@@ -29,13 +29,11 @@ static const MOFEMuuid IDD_MOFEMNodeMerger =
  */
 struct NodeMergerInterface : public UnknownInterface {
 
+
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
 
-  MoFEM::Core &cOre;
-  NodeMergerInterface(const MoFEM::Core &core)
-      : cOre(const_cast<MoFEM::Core &>(core)), successMerge(false),
-        errorIfNoCommonEdge(false) {}
+  NodeMergerInterface(const MoFEM::Core &core);
 
   MoFEMErrorCode getSubInterfaceOptions();
 
@@ -136,6 +134,9 @@ struct NodeMergerInterface : public UnknownInterface {
   inline ParentChildMap &getParentChildMap() { return parentChildMap; }
 
 private:
+  MoFEM::Core &cOre;
+  boost::function<double(const double a, const double b)> minQualityFunction;
+  
   bool successMerge;        ///< True if marge is success
   bool errorIfNoCommonEdge; ///< Send error if no common edge
 
@@ -180,6 +181,7 @@ private:
                    FaceMap, member<FaceMap, EntityHandle, &FaceMap::n0>,
                    member<FaceMap, EntityHandle, &FaceMap::n1>>>>>
       FaceMapIdx;
+
 };
 
 } // namespace MoFEM

@@ -87,7 +87,7 @@ struct BitRefManager : public UnknownInterface {
    * @param  verb      verbosity level
    * @return           error code
    */
-  MoFEMErrorCode setBitRefLevel(const Range &ents, const BitRefLevel &bit,
+  MoFEMErrorCode setBitRefLevel(const Range &ents, const BitRefLevel bit,
                                 const bool only_tets = true,
                                 int verb = 0) const;
 
@@ -130,20 +130,20 @@ struct BitRefManager : public UnknownInterface {
                                     int verb = 0) const;
 
   MoFEMErrorCode addToDatabaseBitRefLevelByType(const EntityType type,
-                                                const BitRefLevel &bit,
+                                                const BitRefLevel bit,
                                                 int verb = 0) const;
 
   MoFEMErrorCode addToDatabaseBitRefLevelByDim(const int dim,
-                                               const BitRefLevel &bit,
+                                               const BitRefLevel bit,
                                                int verb = 0) const;
 
   MoFEMErrorCode setBitRefLevelByDim(const EntityHandle meshset, const int dim,
-                                     const BitRefLevel &bit,
+                                     const BitRefLevel bit,
                                      int verb = 0) const;
 
   MoFEMErrorCode setBitRefLevelByType(const EntityHandle meshset,
                                       const EntityType type,
-                                      const BitRefLevel &bit,
+                                      const BitRefLevel bit,
                                       int verb = 0) const;
 
   /** brief add meshset and set bit ref level
@@ -153,7 +153,7 @@ struct BitRefManager : public UnknownInterface {
    * \param BitRefLevel bitLevel
    */
   MoFEMErrorCode setBitLevelToMeshset(const EntityHandle meshset,
-                                      const BitRefLevel &bit,
+                                      const BitRefLevel bit,
                                       int verb = 0) const;
 
   /**
@@ -164,7 +164,7 @@ struct BitRefManager : public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  MoFEMErrorCode addBitRefLevel(const Range &ents, const BitRefLevel &bit,
+  MoFEMErrorCode addBitRefLevel(const Range &ents, const BitRefLevel bit,
                                 int verb = QUIET) const;
 
   /**
@@ -177,7 +177,7 @@ struct BitRefManager : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode addBitRefLevelByDim(const EntityHandle meshset, const int dim,
-                                     const BitRefLevel &bit,
+                                     const BitRefLevel bit,
                                      int verb = QUIET) const;
 
   /**
@@ -235,8 +235,8 @@ struct BitRefManager : public UnknownInterface {
    * @param QUIET 
    * @return MoFEMErrorCode 
    */
-  MoFEMErrorCode filterEntitiesByRefLevel(const BitRefLevel &bit,
-                                          const BitRefLevel &mask, Range &ents,
+  MoFEMErrorCode filterEntitiesByRefLevel(const BitRefLevel bit,
+                                          const BitRefLevel mask, Range &ents,
                                           int verb = QUIET) const;
 
   /**\brief add all ents from ref level given by bit to meshset
@@ -250,8 +250,8 @@ struct BitRefManager : public UnknownInterface {
     * \retval EntityHandle meshset
     *
     */
-  MoFEMErrorCode getEntitiesByTypeAndRefLevel(const BitRefLevel &bit,
-                                              const BitRefLevel &mask,
+  MoFEMErrorCode getEntitiesByTypeAndRefLevel(const BitRefLevel bit,
+                                              const BitRefLevel mask,
                                               const EntityType type,
                                               const EntityHandle meshset,
                                               int verb = 0) const;
@@ -267,8 +267,8 @@ struct BitRefManager : public UnknownInterface {
    * \retval ents
    *
    */
-  MoFEMErrorCode getEntitiesByTypeAndRefLevel(const BitRefLevel &bit,
-                                              const BitRefLevel &mask,
+  MoFEMErrorCode getEntitiesByTypeAndRefLevel(const BitRefLevel bit,
+                                              const BitRefLevel mask,
                                               const EntityType type,
                                               Range &ents, int verb = 0) const;
 
@@ -283,8 +283,8 @@ struct BitRefManager : public UnknownInterface {
    * \retval ents
    *
    */
-  MoFEMErrorCode getEntitiesByDimAndRefLevel(const BitRefLevel &bit,
-                                             const BitRefLevel &mask,
+  MoFEMErrorCode getEntitiesByDimAndRefLevel(const BitRefLevel bit,
+                                             const BitRefLevel mask,
                                              const int dim,
                                              const EntityHandle meshset,
                                              int verb = 0) const;
@@ -300,8 +300,8 @@ struct BitRefManager : public UnknownInterface {
    * \retval ents
    *
    */
-  MoFEMErrorCode getEntitiesByDimAndRefLevel(const BitRefLevel &bit,
-                                             const BitRefLevel &mask,
+  MoFEMErrorCode getEntitiesByDimAndRefLevel(const BitRefLevel bit,
+                                             const BitRefLevel mask,
                                              const int dim, Range &ents,
                                              int verb = 0) const;
 
@@ -315,8 +315,8 @@ struct BitRefManager : public UnknownInterface {
    * \param EntityHandle meshset
    *
    */
-  MoFEMErrorCode getEntitiesByRefLevel(const BitRefLevel &bit,
-                                       const BitRefLevel &mask,
+  MoFEMErrorCode getEntitiesByRefLevel(const BitRefLevel bit,
+                                       const BitRefLevel mask,
                                        const EntityHandle meshset,
                                        const int verb = QUIET) const;
 
@@ -329,8 +329,8 @@ struct BitRefManager : public UnknownInterface {
    * \param BitRefLevel mask
    * \retval ents
    */
-  MoFEMErrorCode getEntitiesByRefLevel(const BitRefLevel &bit,
-                                       const BitRefLevel &mask, Range &ents,
+  MoFEMErrorCode getEntitiesByRefLevel(const BitRefLevel bit,
+                                       const BitRefLevel mask, Range &ents,
                                        const int verb = QUIET) const;
 
   /**
@@ -344,8 +344,8 @@ struct BitRefManager : public UnknownInterface {
    * @param  ents returned ents
    * @return      error code
    */
-  MoFEMErrorCode getEntitiesByParentType(const BitRefLevel &bit,
-                                         const BitRefLevel &mask,
+  MoFEMErrorCode getEntitiesByParentType(const BitRefLevel bit,
+                                         const BitRefLevel mask,
                                          const EntityType type,
                                          Range &ents) const;
 
@@ -415,7 +415,7 @@ struct BitRefManager : public UnknownInterface {
    * entities
     */
   virtual MoFEMErrorCode
-  getAdjacencies(const BitRefLevel &bit, const EntityHandle *from_entities,
+  getAdjacencies(const BitRefLevel bit, const EntityHandle *from_entities,
                  const int num_entities, const int to_dimension,
                  Range &adj_entities,
                  const int operation_type = moab::Interface::INTERSECT,
@@ -539,7 +539,7 @@ struct BitRefManager : public UnknownInterface {
    * @return           error code
    */
   MoFEMErrorCode
-  writeBitLevelByType(const BitRefLevel &bit, const BitRefLevel &mask,
+  writeBitLevelByType(const BitRefLevel bit, const BitRefLevel mask,
                       const EntityType type, const char *file_name,
                       const char *file_type, const char *options) const;
 

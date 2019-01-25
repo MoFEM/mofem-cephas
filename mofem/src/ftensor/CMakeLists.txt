@@ -11,7 +11,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories("${PROJECT_SOURCE_DIR}/src/ftensor/src")
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 
 if(MOFEM_BUILD_TESTS)
   file(GLOB_RECURSE FTENSOR_CONFORMANCE_TEST_FILES
