@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __COMMON_HPP__
 #define __COMMON_HPP__
@@ -22,7 +22,7 @@ namespace MoFEM {
 
 /**
  * @brief No entity handle is indicated by zero handle, i.e. root meshset
- * 
+ *
  */
 const EntityHandle no_handle = 0;
 
@@ -40,6 +40,7 @@ struct MoFEMException : public std::exception {
     strcpy(errorMessage, error_message);
   }
   const char *what() const throw() { return errorMessage; }
+
 protected:
   MoFEMException(const int error_code) : errorCode(error_code) {
     strcpy(errorMessage, "Huston we have a problem, something is wrong");
@@ -62,8 +63,8 @@ struct MoFEMExceptionInitial : public MoFEMExceptionRepeat {
   }
 };
 
-typedef moab::ErrorCode MoABErrorCode;  ///< MoAB error code
-typedef PetscErrorCode MoFEMErrorCode;  ///< MoFEM/PETSc error code
+typedef moab::ErrorCode MoABErrorCode; ///< MoAB error code
+typedef PetscErrorCode MoFEMErrorCode; ///< MoFEM/PETSc error code
 
 template <typename TYPE> struct MoFEMErrorCodeGeneric {
   MoFEMErrorCodeGeneric(const TYPE) {}
@@ -130,6 +131,9 @@ template <int LINE> struct ErrorCheckerCode {
 };
 
 typedef int DofIdx;                  ///< Index of DOF
+typedef int MoFEMDofIdx;             ///< Index of DOF using mofem native index
+typedef int PetscLocalDodIdx;        ///< Index of DOF using local petsc index
+typedef int PetscLocalDofIdx;        ///< Index of DOF using global pets index
 typedef int FEIdx;                   ///< Index of the element
 typedef int EntIdx;                  ///< Index of DOF on the entity
 typedef int EntPart;                 ///< Partition owning entity
@@ -151,17 +155,17 @@ typedef std::bitset<BITREFEDGES_SIZE> BitRefEdges;
  */
 typedef std::bitset<BITREFLEVEL_SIZE> BitRefLevel;
 
-typedef std::bitset<BITFIELDID_SIZE> BitFieldId;
-typedef std::bitset<BITFEID_SIZE> BitFEId;
-typedef std::bitset<BITPROBLEMID_SIZE> BitProblemId;
+typedef std::bitset<BITFIELDID_SIZE> BitFieldId;     ///< Field Id
+typedef std::bitset<BITFEID_SIZE> BitFEId;           ///< Finite element Id
+typedef std::bitset<BITPROBLEMID_SIZE> BitProblemId; ///< Problem Id
 typedef std::bitset<BITINTERFACEUID_SIZE> BitIntefaceId;
 
 // AUX STRUCTURES
 
 /* This small utility that cascades two key extractors will be
-* used throughout the boost example
-* http://www.boost.org/doc/libs/1_53_0/libs/multi_index/example/complex_structs.cpp
-*/
+ * used throughout the boost example
+ * http://www.boost.org/doc/libs/1_53_0/libs/multi_index/example/complex_structs.cpp
+ */
 template <class KeyExtractor1, class KeyExtractor2> struct KeyFromKey {
 public:
   typedef typename KeyExtractor1::result_type result_type;
@@ -198,20 +202,22 @@ template <typename id_type> struct HashBit {
 };
 
 /**
-* \typedef CubitBCType
-* bc & material meshsets
-*
-*/
+ * \typedef CubitBCType
+ * bc & material meshsets
+ *
+ */
 typedef std::bitset<32> CubitBCType;
 
 // array with std allocators (i.e. concept of capacity is useful here)
 // typedef ublas::unbounded_array<int,std::allocator<int> > IntAllocator;
 // typedef ublas::unbounded_array<double,std::allocator<double> >
 // DoubleAllocator;
-typedef std::vector<int, std::allocator<int> > IntAllocator;
-typedef std::vector<double, std::allocator<double> > DoubleAllocator;
-DEPRECATED typedef IntAllocator IntAllacator; ///< \deprecated Do not use spelling mistake
-DEPRECATED typedef DoubleAllocator DoubleAllacator; ///< \deprecated Do not use spelling mistake
+typedef std::vector<int, std::allocator<int>> IntAllocator;
+typedef std::vector<double, std::allocator<double>> DoubleAllocator;
+DEPRECATED typedef IntAllocator
+    IntAllacator; ///< \deprecated Do not use spelling mistake
+DEPRECATED typedef DoubleAllocator
+    DoubleAllacator; ///< \deprecated Do not use spelling mistake
 typedef ublas::vector<int, IntAllocator> VectorInt;
 typedef ublas::vector<double, DoubleAllocator> VectorDouble;
 typedef ublas::matrix<double, ublas::row_major, DoubleAllocator> MatrixDouble;
@@ -248,12 +254,12 @@ typedef VectorShallowArrayAdaptor<int> VectorIntAdaptor;
  * CHKERR VecGetArray(v,&a);
  *
  * for(int n = 0; n != nodes; ++n) {
- * 
+ *
  *   auto a = getVectorAdaptor(&a[3*n], 3);
  *   double dot = inner_prod(a, a);
- * 
+ *
  * }
- * 
+ *
  * CHKERR VecRetsoreArray(v,&a);
  * \endcode
  *
@@ -274,7 +280,7 @@ using MatrixShallowArrayAdaptor =
  *
  * \code
  * MatrixAdaptor mat = MatrixAdaptor(3, 3,
- *    ublas::shallow_array_adaptor<double>(9, ptr)); 
+ *    ublas::shallow_array_adaptor<double>(9, ptr));
  * \endcode
  *
  */
@@ -285,10 +291,10 @@ template <class X> inline std::string toString(X x) {
   buffer << x;
   return buffer.str();
 }
-}
+} // namespace MoFEM
 
 #endif //__COMMON_HPP__
 
-/***************************************************************************//**
- * \defgroup mofem MoFEM
- ******************************************************************************/
+/***************************************************************************/ /**
+                                                                               * \defgroup mofem MoFEM
+                                                                               ******************************************************************************/
