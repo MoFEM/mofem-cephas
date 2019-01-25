@@ -69,100 +69,19 @@ template <typename id_type> struct HashBit {
   }
 };
 
-/**
- * \typedef CubitBCType
- * bc & material meshsets
- *
- */
-typedef std::bitset<32> CubitBCType;
-
-// array with std allocators (i.e. concept of capacity is useful here)
-// typedef ublas::unbounded_array<int,std::allocator<int> > IntAllocator;
-// typedef ublas::unbounded_array<double,std::allocator<double> >
-// DoubleAllocator;
-typedef std::vector<int, std::allocator<int>> IntAllocator;
-typedef std::vector<double, std::allocator<double>> DoubleAllocator;
-DEPRECATED typedef IntAllocator
-    IntAllacator; ///< \deprecated Do not use spelling mistake
-DEPRECATED typedef DoubleAllocator
-    DoubleAllacator; ///< \deprecated Do not use spelling mistake
-typedef ublas::vector<int, IntAllocator> VectorInt;
-typedef ublas::vector<double, DoubleAllocator> VectorDouble;
-typedef ublas::matrix<double, ublas::row_major, DoubleAllocator> MatrixDouble;
-
-// bounded vector & matrices
-template <typename T, size_t N>
-using VectorBoundedArray = ublas::vector<T, ublas::bounded_array<T, N>>;
-
-typedef VectorBoundedArray<int, 3> VectorInt3;
-typedef VectorBoundedArray<int, 9> VectorInt9;
-typedef VectorBoundedArray<double, 3> VectorDouble3;
-typedef VectorBoundedArray<double, 6> VectorDouble6;
-typedef VectorBoundedArray<double, 9> VectorDouble9;
-typedef VectorBoundedArray<double, 12> VectorDouble12;
-
-template <typename T, size_t N>
-using MatrixBoundedArray =
-    ublas::matrix<T, ublas::row_major, ublas::bounded_array<T, N>>;
-typedef MatrixBoundedArray<double, 9> MatrixDouble3by3;
-
-// shallow adaptor classes
-template <typename T>
-using VectorShallowArrayAdaptor =
-    ublas::vector<T, ublas::shallow_array_adaptor<T>>;
-typedef VectorShallowArrayAdaptor<double> VectorAdaptor;
-typedef VectorShallowArrayAdaptor<int> VectorIntAdaptor;
-
-/**
- * @brief Get Vector adaptor
- *
- * \code
- *
- * double *a;
- * CHKERR VecGetArray(v,&a);
- *
- * for(int n = 0; n != nodes; ++n) {
- *
- *   auto a = getVectorAdaptor(&a[3*n], 3);
- *   double dot = inner_prod(a, a);
- *
- * }
- *
- * CHKERR VecRetsoreArray(v,&a);
- * \endcode
- *
- */
-auto getVectorAdaptor = [](auto ptr, const int n) {
-  typedef typename std::remove_pointer<decltype(ptr)>::type T;
-  return VectorShallowArrayAdaptor<T>(n,
-                                      ublas::shallow_array_adaptor<T>(n, ptr));
-};
-
-template <typename T>
-using MatrixShallowArrayAdaptor =
-    ublas::matrix<double, ublas::row_major,
-                  ublas::shallow_array_adaptor<double>>;
-
-/**
- * @brief Matrix adaptor.
- *
- * \code
- * MatrixAdaptor mat = MatrixAdaptor(3, 3,
- *    ublas::shallow_array_adaptor<double>(9, ptr));
- * \endcode
- *
- */
-typedef MatrixShallowArrayAdaptor<double> MatrixAdaptor;
-
 template <class X> inline std::string toString(X x) {
   std::ostringstream buffer;
   buffer << x;
   return buffer.str();
 }
+
 } // namespace MoFEM
+
+#include <Exceptions.hpp>
+#include <Types.hpp>
 
 #endif //__COMMON_HPP__
 
-/***************************************************************************/ /**
-                                                                               * \defgroup mofem MoFEM
-                                                                               ******************************************************************************/
+/**
+ * \defgroup mofem MoFEM
+ */
