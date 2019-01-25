@@ -104,8 +104,9 @@ if (...) {
   \endcode
   In above one can see that you will be going to have local indices, and the
   vector will store indices on indices on boundary only. 
-  
-  That is less infomative than 
+
+  An alternative to the example above you can see less informative, but
+  equivalent definition below
   \code
   std::vector<int> local_petsc_indices_on_boundary;
   \endcode
