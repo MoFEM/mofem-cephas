@@ -965,7 +965,7 @@ struct DataForcesAndSourcesCore {
      * Tensor1<double*,3> diff_base = data.getFTensor1DiffN<3>(gg,bb);
      * \endcode
      * where bb is base function and gg is integration pt. Operator ++diff_base
-     * will move tensor pointer to next integration point.
+     * will move tensor pointer to next base function.
      *
      * For face element like triangle or quad
      * \code
