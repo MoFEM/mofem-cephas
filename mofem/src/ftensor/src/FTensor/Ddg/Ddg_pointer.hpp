@@ -313,7 +313,7 @@ namespace FTensor
 
     const Ddg &operator++() const {
       for(int i = 0; i < (Tensor_Dim01 * (Tensor_Dim01 + 1)) / 2; ++i)
-        for(int j = 0; j < (Tensor_Dim01 * (Tensor_Dim01 + 1)) / 2; ++j)
+        for(int j = 0; j < (Tensor_Dim23 * (Tensor_Dim23 + 1)) / 2; ++j)
           data[i][j] += inc;
       return *this;
     }
@@ -333,8 +333,8 @@ namespace FTensor
 
     const Ddg &operator++() const {
       for (int i = 0; i < (Tensor_Dim01 * (Tensor_Dim01 + 1)) / 2; ++i)
-        for (int j = 0; j < (Tensor_Dim01 * (Tensor_Dim01 + 1)) / 2; ++j)
-          Ddg<T *, Tensor_Dim01, Tensor_Dim23>::data[i][j] += I;
+        for (int j = 0; j < (Tensor_Dim23 * (Tensor_Dim23 + 1)) / 2; ++j)
+          Ddg<T *, Tensor_Dim23, Tensor_Dim23>::data[i][j] += I;
       return *this;
     }
   };
