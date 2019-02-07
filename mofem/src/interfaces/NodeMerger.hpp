@@ -186,9 +186,9 @@ private:
 
 #endif //__NODE_MERGER_HPP__
 
-/***************************************************************************/ /**
-                                                                               * \defgroup mofem_node_merger NodeMerger
-                                                                               * \brief Node merger interface
-                                                                               *
-                                                                               * \ingroup mofem
-                                                                               ******************************************************************************/
+/**
+ * \defgroup mofem_node_merger NodeMerger
+ * \brief Node merger interface
+ *
+ * \ingroup mofem
+ */
