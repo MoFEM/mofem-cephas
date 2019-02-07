@@ -16,21 +16,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
-#include <Common.hpp>
-#include <Includes.hpp>
-#include <definitions.h>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <BCData.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <MaterialBlocks.hpp>
-#include <TagMultiIndices.hpp>
-
 #define IS_BUILDING_MB
 #include <moab/Error.hpp>
 
@@ -110,7 +95,7 @@ BitRefLevel *RefEntity::getBitRefLevelPtr() const {
       get_tag_ptr(basicDataPtr->moab, basicDataPtr->th_RefBitLevel, ent, NULL));
 }
 
-MoFEMErrorCode getParentEnt(Interface &moab, Range ents,
+MoFEMErrorCode getParentEnt(moab::Interface &moab, Range ents,
                             std::vector<EntityHandle> vec_patent_ent) {
 
   MoFEMFunctionBegin;
@@ -123,7 +108,7 @@ MoFEMErrorCode getParentEnt(Interface &moab, Range ents,
 }
 
 MoFEMErrorCode
-RefEntity::getBitRefLevel(Interface &moab, Range ents,
+RefEntity::getBitRefLevel(moab::Interface &moab, Range ents,
                           std::vector<BitRefLevel> &vec_bit_ref_level) {
 
   MoFEMFunctionBegin;
@@ -135,7 +120,7 @@ RefEntity::getBitRefLevel(Interface &moab, Range ents,
 }
 
 MoFEMErrorCode RefEntity::getBitRefLevel(
-    Interface &moab, Range ents,
+    moab::Interface &moab, Range ents,
     std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level) {
   MoFEMFunctionBegin;
   Tag th_ref_bit_level;

@@ -18,45 +18,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <Common.hpp>
-#include <Includes.hpp>
-#include <definitions.h>
-#include <version.h>
-
-#include <fem_tools.h>
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <UnknownInterface.hpp>
-
-#include <AdjacencyMultiIndices.hpp>
-#include <BCData.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <DofsMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <MaterialBlocks.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <SeriesMultiIndices.hpp>
-#include <TagMultiIndices.hpp>
-
-#include <Core.hpp>
-#include <Interface.hpp>
-#include <LoopMethods.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
-
-#include <BaseFunction.hpp>
-#include <DataOperators.hpp>
-#include <DataStructures.hpp>
-#include <EntPolynomialBaseCtx.hpp>
-#include <FTensor.hpp>
-
-#include <ForcesAndSourcesCore.hpp>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

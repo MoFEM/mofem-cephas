@@ -17,38 +17,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <Includes.hpp>
-#include <version.h>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <UnknownInterface.hpp>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <Core.hpp>
-
-#include <FTensor.hpp>
-#include <DataStructures.hpp>
-
-#include <boost/scoped_ptr.hpp>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -60,73 +28,6 @@ extern "C" {
 #endif
 
 namespace MoFEM {
-
-template <>
-FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
-getFTensor0FromVec<double, DoubleAllocator>(
-    ublas::vector<double, DoubleAllocator> &data) {
-  return FTensor::Tensor0<FTensor::PackPtr<double *, 1> >(
-      &*data.data().begin());
-}
-
-template <>
-FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>
-getFTensor1FromMat<3, double, ublas::row_major, DoubleAllocator>(
-    MatrixDouble &data) {
-  if (data.size1() != 3) {
-    THROW_MESSAGE("Wrong size of data matrix");
-  }
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>(
-      &data(0, 0), &data(1, 0), &data(2, 0));
-}
-
-template <>
-FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2>
-getFTensor1FromMat<2, double, ublas::row_major, DoubleAllocator>(
-    MatrixDouble &data) {
-  if (data.size1() != 2) {
-    THROW_MESSAGE("Wrong size of data matrix");
-  }
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2>(&data(0, 0),
-                                                            &data(1, 0));
-}
-
-template <>
-FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>
-getFTensor2FromMat<3, 3, double, ublas::row_major, DoubleAllocator>(
-    MatrixDouble &data) {
-  if (data.size1() != 9) {
-    THROW_MESSAGE("Wrong size of data matrix; numer of rows is " +
-                  boost::lexical_cast<std::string>(data.size1()));
-  }
-  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>(
-      &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
-      &data(5, 0), &data(6, 0), &data(7, 0), &data(8, 0));
-}
-
-template <>
-FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>
-getFTensor2FromMat<3, 2, double, ublas::row_major, DoubleAllocator>(
-    MatrixDouble &data) {
-  if (data.size1() != 6) {
-    THROW_MESSAGE("Wrong size of data matrix");
-  }
-  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>(
-      &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
-      &data(5, 0));
-}
-
-template <>
-FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3>
-getFTensor2SymmetricFromMat<3, double, ublas::row_major, DoubleAllocator>(
-    MatrixDouble &data) {
-  if (data.size1() != 6) {
-    THROW_MESSAGE("Wrong size of data matrix");
-  }
-  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3>(
-      &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
-      &data(5, 0));
-}
 
 DataForcesAndSourcesCore::EntData::EntData()
     : sEnse(0), oRder(0), bAse(NOBASE) {

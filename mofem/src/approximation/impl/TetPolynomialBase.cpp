@@ -19,36 +19,8 @@ A l2, h1, h-div and h-curl spaces are implemented.
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <Includes.hpp>
-#include <config.h>
-#include <definitions.h>
-#include <version.h>
-
-#include <Common.hpp>
-#include <UnknownInterface.hpp>
-#include <base_functions.h>
-#include <fem_tools.h>
-#include <h1_hdiv_hcurl_l2.h>
 using namespace MoFEM;
 
-#include <AdjacencyMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <DataStructures.hpp>
-#include <DofsMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <FTensor.hpp>
-#include <FieldMultiIndices.hpp>
-#include <LoopMethods.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <TagMultiIndices.hpp>
-
-#include <BaseFunction.hpp>
-#include <EntPolynomialBaseCtx.hpp>
-#include <TetPolynomialBase.hpp>
-
-#include <Hcurl.hpp>
-#include <Hdiv.hpp>
 
 MoFEMErrorCode
 TetPolynomialBase::query_interface(const MOFEMuuid &uuid,

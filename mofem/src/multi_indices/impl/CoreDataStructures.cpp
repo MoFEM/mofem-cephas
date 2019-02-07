@@ -16,23 +16,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
-#include <Includes.hpp>
-
-#include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <Common.hpp>
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
 #include <CoreDataStructures.hpp>
 
 namespace MoFEM {
@@ -45,9 +28,9 @@ const bool PetscGlobalIdx_mi_tag::IamNotPartitioned = false;
 const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 
 // fields
-Field::Field(const Interface &moab, const EntityHandle meshset,
+Field::Field(const moab::Interface &moab, const EntityHandle meshset,
              const boost::shared_ptr<CoordSys> coord_sys_ptr)
-    : moab(const_cast<Interface &>(moab)), meshSet(meshset),
+    : moab(const_cast<moab::Interface &>(moab)), meshSet(meshset),
       coordSysPtr(coord_sys_ptr), tagId(NULL), tagSpaceData(NULL),
       tagNbCoeffData(NULL), tagName(NULL), tagNameSize(0),
       sequenceEntContainer(boost::make_shared<SequenceEntContainer>()),
@@ -108,7 +91,7 @@ Field::Field(const Interface &moab, const EntityHandle meshset,
   rval =
       moab.tag_get_by_ptr(th_rank, &meshSet, 1, (const void **)&tagNbCoeffData);
   MOAB_THROW(rval);
-  
+
   bitNumber = getBitNumberCalculate();
   for (int tt = 0; tt != MBMAXTYPE; ++tt) {
     forderTable[tt] = NULL;
@@ -214,7 +197,7 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
-MoFEMErrorCode test_moab(Interface &moab, const EntityHandle ent) {
+MoFEMErrorCode test_moab(moab::Interface &moab, const EntityHandle ent) {
   MoFEMFunctionBeginHot;
   // tets type
   EntityType type = (EntityType)((ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
