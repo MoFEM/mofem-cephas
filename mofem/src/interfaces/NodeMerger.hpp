@@ -13,29 +13,31 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __NODE_MERGER_HPP__
 #define __NODE_MERGER_HPP__
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMNodeMerger = MOFEMuuid( BitIntefaceId(NODEMERGER_INTERFACE) );
+static const MOFEMuuid IDD_MOFEMNodeMerger =
+    MOFEMuuid(BitIntefaceId(NODEMERGER_INTERFACE));
 
-/** \brief merge node from two bit levels
-  *
-  * \ingroup mofem_node_merger
-  */
-struct NodeMergerInterface: public UnknownInterface {
+/** \brief Merge node by collapsing edge between them
+ *
+ * \ingroup mofem_node_merger
+ */
+struct NodeMergerInterface : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
 
-  MoFEM::Core& cOre;
-  NodeMergerInterface(const MoFEM::Core& core):
-  cOre(const_cast<MoFEM::Core&>(core)),
-  successMerge(false),
-  errorIfNoCommonEdge(false) {
-  }
+  MoFEM::Core &cOre;
+  NodeMergerInterface(const MoFEM::Core &core)
+      : cOre(const_cast<MoFEM::Core &>(core)), successMerge(false),
+        errorIfNoCommonEdge(false) {}
+
+  MoFEMErrorCode getSubInterfaceOptions();
 
   /**
    * \brief Return true if successful merge.
@@ -66,18 +68,11 @@ struct NodeMergerInterface: public UnknownInterface {
     middle.
 
     */
-  MoFEMErrorCode mergeNodes(
-    EntityHandle father,
-    EntityHandle mother,
-    Range &out_tets,
-    Range *tets_ptr = NULL,
-    const bool only_if_improve_quality = false,
-    const double move = 0,
-    const int line_search = 0,
-    Tag th = NULL,
-    const int verb = 0
-  );
-
+  MoFEMErrorCode mergeNodes(EntityHandle father, EntityHandle mother,
+                            Range &out_tets, Range *tets_ptr = NULL,
+                            const bool only_if_improve_quality = false,
+                            const double move = 0, const int line_search = 0,
+                            Tag th = NULL, const int verb = 0);
 
   /** \brief merge nodes which sharing edge
 
@@ -94,15 +89,10 @@ struct NodeMergerInterface: public UnknownInterface {
     middle.
 
     */
-  MoFEMErrorCode mergeNodes(
-    EntityHandle father,
-    EntityHandle mother,
-    BitRefLevel bit,
-    Range *tets_ptr = NULL,
-    const bool only_if_improve_quality = false,
-    const double move = 0,
-    Tag th = NULL
-  );
+  MoFEMErrorCode mergeNodes(EntityHandle father, EntityHandle mother,
+                            BitRefLevel bit, Range *tets_ptr = NULL,
+                            const bool only_if_improve_quality = false,
+                            const double move = 0, Tag th = NULL);
 
   /** \brief merge nodes which sharing edge
 
@@ -118,48 +108,35 @@ struct NodeMergerInterface: public UnknownInterface {
     middle.
 
     */
-  MoFEMErrorCode mergeNodes(
-    EntityHandle father,
-    EntityHandle mother,
-    BitRefLevel bit,
-    BitRefLevel tets_from_bit_ref_level,
-    const bool only_if_improve_quality = false,
-    const double move = 0,
-    Tag th = NULL
-  );
+  MoFEMErrorCode mergeNodes(EntityHandle father, EntityHandle mother,
+                            BitRefLevel bit,
+                            BitRefLevel tets_from_bit_ref_level,
+                            const bool only_if_improve_quality = false,
+                            const double move = 0, Tag th = NULL);
 
   struct ParentChild {
     EntityHandle pArent;
     EntityHandle cHild;
-    ParentChild(const EntityHandle parent,const EntityHandle child):
-    pArent(parent),
-    cHild(child) {
-    }
+    ParentChild(const EntityHandle parent, const EntityHandle child)
+        : pArent(parent), cHild(child) {}
   };
 
   typedef multi_index_container<
-    ParentChild,
-    indexed_by<
-      hashed_unique<
-        member<ParentChild,EntityHandle,&ParentChild::pArent>
-      >,
-      hashed_non_unique<
-        member<ParentChild,EntityHandle,&ParentChild::cHild>
-      >
-    >
-  > ParentChildMap;
+      ParentChild,
+      indexed_by<hashed_unique<
+                     member<ParentChild, EntityHandle, &ParentChild::pArent>>,
+                 hashed_non_unique<
+                     member<ParentChild, EntityHandle, &ParentChild::cHild>>>>
+      ParentChildMap;
 
   /**
    * \brief Get map of parent cand child
    * @return
    */
-  inline ParentChildMap& getParentChildMap() {
-    return parentChildMap;
-  }
+  inline ParentChildMap &getParentChildMap() { return parentChildMap; }
 
 private:
-
-  bool successMerge; ///< True if marge is success
+  bool successMerge;        ///< True if marge is success
   bool errorIfNoCommonEdge; ///< Send error if no common edge
 
   /**
@@ -193,34 +170,25 @@ private:
   ParentChildMap parentChildMap;
 
   struct FaceMap {
-    EntityHandle e,n0,n1;
-    FaceMap(const EntityHandle e,const EntityHandle n0,const EntityHandle n1):
-    e(e),n0(n0),n1(n1) {
-    }
+    EntityHandle e, n0, n1;
+    FaceMap(const EntityHandle e, const EntityHandle n0, const EntityHandle n1)
+        : e(e), n0(n0), n1(n1) {}
   };
 
   typedef multi_index_container<
-    FaceMap,
-    indexed_by<
-      hashed_unique<
-        composite_key<
-          FaceMap,
-          member<FaceMap,EntityHandle,&FaceMap::n0>,
-          member<FaceMap,EntityHandle,&FaceMap::n1>
-        >
-      >
-    >
-  > FaceMapIdx;
-
+      FaceMap, indexed_by<hashed_unique<composite_key<
+                   FaceMap, member<FaceMap, EntityHandle, &FaceMap::n0>,
+                   member<FaceMap, EntityHandle, &FaceMap::n1>>>>>
+      FaceMapIdx;
 };
 
-}
+} // namespace MoFEM
 
 #endif //__NODE_MERGER_HPP__
 
-/***************************************************************************//**
- * \defgroup mofem_node_merger NodeMerger
- * \brief Node merger interface
- *
- * \ingroup mofem
- ******************************************************************************/
+/***************************************************************************/ /**
+                                                                               * \defgroup mofem_node_merger NodeMerger
+                                                                               * \brief Node merger interface
+                                                                               *
+                                                                               * \ingroup mofem
+                                                                               ******************************************************************************/
