@@ -158,7 +158,15 @@ latest changes.
 
 \section faq_profiling Profiling
 
-\subsection prfiling_code_mac_os_x How to profile code using XCode tools?
+\subsection faq_profiling_valgrind How to check for memory leaks and other bugs with Valgrind?
+
+Look to Valgrind <a href=http://valgrind.org>documentatin</a>. However qucik 
+answer is
+\code
+valgrind --dsymutil=yes --track-origins=yes --trace-children=yes ./command args
+\endcode
+
+\subsection faq_profiling_code_mac_os_x How to profile code using XCode tools?
 
 To profile code in MacOS X environment, from line command you execute \em instruments,
 for example
