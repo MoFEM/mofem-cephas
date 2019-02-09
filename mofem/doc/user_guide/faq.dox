@@ -160,8 +160,8 @@ latest changes.
 
 \subsection faq_profiling_valgrind How to check for memory leaks and other bugs with Valgrind?
 
-Look to Valgrind <a href=http://valgrind.org>documentatin</a>. However qucik 
-answer is
+Look to Valgrind <a href=http://valgrind.org>documentatin</a>. However, a
+quick answer is
 \code
 valgrind --dsymutil=yes --track-origins=yes --trace-children=yes ./command args
 \endcode
