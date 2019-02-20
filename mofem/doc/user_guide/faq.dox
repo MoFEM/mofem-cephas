@@ -1,6 +1,10 @@
 /*! \page faqs Frequently Asked Questions
 
-\section mofem_citation How to cite us?
+\tableofcontents
+
+\section faq_general General
+
+\subsection mofem_citation How to cite us?
 
 If you write a paper using results obtained with the help of MoFEM, please
 cite one or more of the following references:
@@ -35,7 +39,7 @@ supplements  MoFEM reference. For example homogenisation module DOI as follows
 
 \endhtmlonly
 
-\section policy_of_for_version How MoFEM version is changed?
+\subsection policy_of_for_version How MoFEM version is changed?
 
 The current MoFEM version can be identified by \e Semantic \e Versioning and \e
 Git \e Commit \e Id. \e Git \e Commit \e Id is unique and points to particular
@@ -83,7 +87,7 @@ set(MoFEM_VERSION_MINOR 3)
 set(MoFEM_VERSION_BUILD 24)
 \endcode
 
-\section validation_and_verfication How MoFEM is developed?
+\subsection validation_and_verfication How MoFEM is developed?
 
 MoFEM is developed continuously, i.e. any merged pull request to the
 CDashTesting branch triggers automatic testing on the development server. The
@@ -91,15 +95,7 @@ code is verified during when a pull request is accepted and merged and validated
 when the test on the development server are passed. If tests are passed
 CDashBranch is merged to master branch.
 
-\section own_documentation How to generate this documentation on your local machine?
-
-In you library directory execute
-\code
-make doc
-\endcode
-This create directory \em html. Open file \em html/index.html to see results in your browser.
-
-\section partition_mesh How to partition mesh?
+\subsection partition_mesh How to partition mesh?
 
 If problem is large, mesh can be partitioned for to save memory and improve efficiency. This can be done using native MoFEM tool,
 \code
@@ -112,7 +108,7 @@ For large meshes, partitioning can be in parallel, for example
 mpirun -np 2 $USER_MODULES/tools/mofem_part -my_file $USER_MODULES/basic_finite_elements/nonlinear_elasticity/examples/cylinder.cub -my_nparts 16
 \endcode
 
-\section running_multi_grid How to run multi-grid solver via approximation orders?
+\subsection running_multi_grid How to run multi-grid solver via approximation orders?
 
 Code is run using direct solver, i.e. \em MUMPS on coarse level. Note that
 loaded mesh is portioned and each processor only reads part of the mesh, i.e.
@@ -137,40 +133,87 @@ mpirun -np 4 ./elasticity \
 -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps
 \endcode a direct solver for coarse mesh is set.
 
-\section how_to_make_2nd_order_geometry How to make 2nd order geometry in cubit and transfer it to MoFEM?
+\section faq_git Git and repository
 
-In cubit you need to generate 10 node tetrahedral. You simply create block
-and set element type to TETRA10, as follows
+\subsection users_modules_changes_affects_mainRepo Why do users_modules changes affect mofem-cephas/mofem git repository?
+
+When making changes in a users_modules, a git submodule, the main git repo
+will register a version change. For example:
 \code
-set duplicate block elements on
-block 2 volume 1
-block 2 element type TETRA10
+cd mofem-cephas/mofem
+git diff
+
+diff --git a/mofem/users_modules b/mofem/users_modules
+index d18f43f88..42bcece0e 160000
+--- a/mofem/users_modules
++++ b/mofem/users_modules
+@@ -1 +1 @@
+-Subproject commit d18f43f884bfbfbce50f0f70155d911a2d361164
++Subproject commit 42bcece0e7e6577b83bb2a5c64d2709a2bc15b47
 \endcode
 
-In the code, you need to create field to keep geometry
-\code
-ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
-ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-\endcode
-Next set order of approximation field. If you have 10 node tetrahedrons, you
-need to have at least 2nd order polynomials to approximate geometry;
-\code
-ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-\endcode
+The commi t ID of the submodule is used to track which version to pull when
+pulling the main repo. Updating to the latest commit will then pull the your
+latest changes.
 
-The last step is to prject information from 10 node terahedrons on
-hierarchical approximation field, as follows
+\section faq_profiling Profiling
+
+\subsection faq_profiling_valgrind How to check for memory leaks and other bugs with Valgrind?
+
+Look to Valgrind <a href=http://valgrind.org>documentatin</a>. However, a
+quick answer is
 \code
-Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
-ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+valgrind --dsymutil=yes --track-origins=yes --trace-children=yes ./command args
 \endcode
 
-Look at examples of use to user modules, for example elasticity.cpp.
+\subsection faq_profiling_code_mac_os_x How to profile code using XCode tools?
 
-\section adding_user_module How to add user module?
+To profile code in MacOS X environment, from line command you execute \em instruments,
+for example
+\code
+instruments -v -t "Time Profiler" \
+./elasticity -my_file LShape.h5m  -ksp_type fgmres -ksp_monitor -my_order 5 \
+-pc_type mg -mofem_mg_verbose 1 -mofem_mg_coarse_order 1 \
+-mofem_mg_levels 5 -mg_coarse_ksp_type preonly \
+-mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps \
+-pc_mg_smoothup 10 -pc_mg_smoothdown 10 -pc_mg_type multiplicative -log_view
+\endcode
+
+This generates directory \em instrumentscli0.trace and for next run
+\em instrumentscli1.trace, and similarly for subsequent runs. You can see changes
+in execution of the code by
+\code
+open instrumentscli0.trace
+\endcode
+
+If you use Linux you can alternatively use Valgrind, see \ref profiling_code_with_valgrind.
+
+\subsection profiling_code_stages How to profile code using PETSc tools?
+
+See PETSc documentation
+<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Profiling/PetscLogStageRegister.html>
+and examples
+<http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex9.c.html>
+
+\subsection profiling_code_with_valgrind How to profile code with Valgrind?
+
+You have to install Valgrind <http://valgrind.org> and graphic user interface
+KCachegrind <http://kcachegrind.sourceforge.net/html/Home.html>. If you using Linux,
+for example ubuntu you can do that executing following commands,
+\code
+sudo apt-get install valgrind kcachegrind
+\endcode
+If you using OS X you can use Homebrew <http://brew.sh> to make installation,
+\code
+brew install valgrind
+brew install qcachegrind --with-graphviz
+\endcode
+
+If you have packages installed, follow instruction from <http://kcachegrind.sourceforge.net/html/Documentation.html>
+
+\section faq_programing Programming
+
+\subsection adding_user_module How to add user module?
 
 MoFEM is a core library providing functionality for implementation of user
 modules where applications for particular finite elements or problems are
@@ -229,52 +272,7 @@ check_mofem_version(0 3 6)
 add_subdirectory(${PROJECT_SOURCE_DIR}/homogenisation)
 \endcode
 
-\section prfiling_code_mac_os_x How to profile code using XCode tools?
-
-To profile code in MacOS X environment, from line command you execute \em instruments,
-for example
-\code
-instruments -v -t "Time Profiler" \
-./elasticity -my_file LShape.h5m  -ksp_type fgmres -ksp_monitor -my_order 5 \
--pc_type mg -mofem_mg_verbose 1 -mofem_mg_coarse_order 1 \
--mofem_mg_levels 5 -mg_coarse_ksp_type preonly \
--mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps \
--pc_mg_smoothup 10 -pc_mg_smoothdown 10 -pc_mg_type multiplicative -log_view
-\endcode
-
-This generates directory \em instrumentscli0.trace and for next run
-\em instrumentscli1.trace, and similarly for subsequent runs. You can see changes
-in execution of the code by
-\code
-open instrumentscli0.trace
-\endcode
-
-If you use Linux you can alternatively use Valgrind, see \ref profiling_code_with_valgrind.
-
-\section profiling_code_stages How to profile code using PETSc tools?
-
-See PETSc documentation
-<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Profiling/PetscLogStageRegister.html>
-and examples
-<http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex9.c.html>
-
-\section profiling_code_with_valgrind How to profile code with Valgrind?
-
-You have to install Valgrind <http://valgrind.org> and graphic user interface
-KCachegrind <http://kcachegrind.sourceforge.net/html/Home.html>. If you using Linux,
-for example ubuntu you can do that executing following commands,
-\code
-sudo apt-get install valgrind kcachegrind
-\endcode
-If you using OS X you can use Homebrew <http://brew.sh> to make installation,
-\code
-brew install valgrind
-brew install qcachegrind --with-graphviz
-\endcode
-
-If you have packages installed, follow instruction from <http://kcachegrind.sourceforge.net/html/Documentation.html>
-
-\section debugging_in_docker How to make debugging in docker?
+\subsection debugging_in_docker How to make debugging in docker?
 
 You can use gdb inside docker, remembering to set cmake with debugging
 build type, for example
@@ -288,7 +286,48 @@ docker, you need to run docker container in \em privileged mode, for example
 docker run --privileged -it --name work --hostname mofem -v $HOME:/mnt/home -v mofem_build:/my_build likask/mofem_build:v0.2 /bin/bash
 \endcode
 
-\section configure_vs_code How to configure MoFEM in Visual Studio Code?
+\subsection how_to_make_2nd_order_geometry How to make 2nd order geometry in cubit and transfer it to MoFEM?
+
+In cubit you need to generate 10 node tetrahedral. You simply create block
+and set element type to TETRA10, as follows
+\code
+set duplicate block elements on
+block 2 volume 1
+block 2 element type TETRA10
+\endcode
+
+In the code, you need to create field to keep geometry
+\code
+CHKERR m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO);
+CHKERR m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",2); 
+\endcode
+Next set order of approximation field. If you have 10 node tetrahedrons, you
+need to have at least 2nd order polynomials to approximate geometry;
+\code
+CHKERR m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2);
+CHKERR m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2);
+CHKERR m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2);
+CHKERR m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1);
+\endcode
+
+The last step is to prject information from 10 node terahedrons on
+hierarchical approximation field, as follows
+\code
+Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
+CHKERR m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); 
+\endcode
+
+Look at examples of use to user modules, for example elasticity.cpp.
+
+\subsection own_documentation How to generate this documentation on your local machine?
+
+In you library directory execute
+\code
+make doc
+\endcode
+This create directory \em html. Open file \em html/index.html to see results in your browser.
+
+\subsection configure_vs_code How to configure MoFEM in Visual Studio Code?
 
 Basic support for C/C++ languages is provided with <a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools"> Microsoft C/C++ extension</a>. 
 To configure IntelliSense code-completion tool add \p -DCMAKE_EXPORT_COMPILE_COMMANDS=1 to users_modules's cmake command. 
@@ -319,11 +358,15 @@ file located in the working project. Example \p c_cpp_properties configuration o
 }
 \endcode
 
-\section vs_code_debug How to setup LLDB debugger in Visual Studio Code?
-For debugging on Mac the most commonly used extension is <a href="https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb"> CodeLLDB</a> plugin. 
-The configuration is straightforward: choose \p lldb type, set the path to the executable (compiled with debug flag!) as \p program, arguments for the
-command line put in \p args. Optionally, the path to current working directory can be set (\p cwd). Example configuration for fracture module is presented
-below.
+\subsection vs_code_debug How to setup LLDB debugger in Visual Studio Code?
+
+For debugging on Mac the most commonly used extension is <a
+href="https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb">
+CodeLLDB</a> plugin. The configuration is straightforward: choose \p lldb
+type, set the path to the executable (compiled with debug flag!) as \p
+program, arguments for the command line put in \p args. Optionally, the path
+to current working directory can be set (\p cwd). Example configuration for
+fracture module is presented below.
 \code 
     "configurations": [
     {
@@ -343,26 +386,20 @@ below.
   ]
 \endcode
 
-\section users_modules_changes_affects_mainRepo Why do users_modules changes affect mofem-cephas/mofem git repository?
+\subsection faq_how_to_view_matrix How to view matrix
 
-When making changes in a users_modules, a git submodule, the main git repo
-will register a version change. For example:
+\note PETSc has to be compiled with X11 library if you like to draw matrix. 
+
+In command line put
 \code
-cd mofem-cephas/mofem
-git diff
-
-diff --git a/mofem/users_modules b/mofem/users_modules
-index d18f43f88..42bcece0e 160000
---- a/mofem/users_modules
-+++ b/mofem/users_modules
-@@ -1 +1 @@
--Subproject commit d18f43f884bfbfbce50f0f70155d911a2d361164
-+Subproject commit 42bcece0e7e6577b83bb2a5c64d2709a2bc15b47
+-mat_view draw -draw_pause -1 
 \endcode
 
-The commit ID of the submodule is used to track which version to pull when
-pulling the main repo. Updating to the latest commit will then pull the your
-latest changes.
+Or you can do that in the code
+\code
+CHKERR MatView(A, PETSC_VIEWER_DRAW_WORLD);
+\endcode
+
 
 \section petsc_print_matrix How to test and print jacobian matrix with PETSc?
 

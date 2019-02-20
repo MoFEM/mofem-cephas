@@ -1,3 +1,5 @@
+#include <MoFEM.hpp>
+
 #include "impl/DataStructures.cpp"
 #include "impl/DataOperators.cpp"
 #include "impl/ForcesAndSourcesCore.cpp"

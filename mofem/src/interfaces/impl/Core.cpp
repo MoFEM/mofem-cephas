@@ -66,12 +66,40 @@ MoFEMErrorCode Core::Finalize() {
   return PetscFinalize();
 }
 
+// Use SFINAE to decide which template should be run, 
+// if exist getSubInterfaceOptions run this one.
+template <class T>
+static auto get_sub_iface_options_imp(T *const ptr, int)
+    -> decltype(ptr->getSubInterfaceOptions()) {
+  return ptr->getSubInterfaceOptions();
+};
+
+// Use SFINAE to decide which template should be run, 
+// if getSubInterfaceOptions not exist run this one.
+template <class T>
+static auto get_sub_iface_options_imp(T *const ptr, long) -> MoFEMErrorCode {
+  return 0;
+};
+
 template <class IFACE>
 MoFEMErrorCode Core::regSubInterface(const MOFEMuuid &uid) {
   MoFEMFunctionBegin;
   CHKERR registerInterface<IFACE>(uid, false);
   unsigned long int id = uid.uUId.to_ulong();
-  iFaces.insert(id, new IFACE(*this));
+  IFACE *ptr = new IFACE(*this);
+
+  // If sub interface has function getSubInterfaceOptions run
+  // it after construction. getSubInterfaceOptions is used to 
+  // get parameters from command line.
+  // See SFINAE:
+  // https://stackoverflow.com/questions/257288/is-it-possible-to-write-a-template-to-check-for-a-functions-existence
+  // https://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
+  auto get_sub_iface_options = [](auto *const ptr) {
+    return get_sub_iface_options_imp(ptr, 0);
+  };
+  CHKERR get_sub_iface_options(ptr);
+
+  iFaces.insert(id, ptr);
   MoFEMFunctionReturn(0);
 }
 

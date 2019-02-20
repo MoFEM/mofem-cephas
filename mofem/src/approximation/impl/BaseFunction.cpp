@@ -15,16 +15,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <version.h>
-#include <config.h>
-#include <definitions.h>
-#include <Includes.hpp>
-#include <Common.hpp>
-#include <UnknownInterface.hpp>
-using namespace MoFEM;
-
-#include <BaseFunction.hpp>
-
 namespace MoFEM {
 
 MoFEMErrorCode BaseFunctionCtx::query_interface(

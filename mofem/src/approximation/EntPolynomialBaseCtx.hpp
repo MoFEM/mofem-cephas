@@ -22,6 +22,9 @@
 
 namespace MoFEM {
 
+struct DataForcesAndSourcesCore;
+struct FEMethod;
+
 static const MOFEMuuid IDD_TET_BASE_FUNCTION =
     MOFEMuuid(BitIntefaceId(TET_BASE_FUNCTION_INTERFACE));
 static const MOFEMuuid IDD_TRI_BASE_FUNCTION =

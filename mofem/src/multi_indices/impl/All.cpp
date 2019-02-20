@@ -1,3 +1,5 @@
+#include <MoFEM.hpp>
+
 #include "impl/CoreDataStructures.cpp"
 #include "impl/EntsMultiIndices.cpp"
 #include "impl/CoordSysMultiIndices.cpp"
