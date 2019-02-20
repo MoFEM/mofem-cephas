@@ -364,4 +364,20 @@ The commit ID of the submodule is used to track which version to pull when
 pulling the main repo. Updating to the latest commit will then pull the your
 latest changes.
 
+\section petsc_print_matrix How to test and print jacobian matrix with PETSc?
+
+When debugging a nonlinear problem, it might be useful to test the jacobian matrix. The command below will print 'Explicit preconditioning Jacobian',
+ 'Finite difference Jacobian' and the most useful 'User-provided matrix minus finite difference Jacobian'.
+\code 
+-snes_compare_explicit
+\endcode
+
+To view those matrices in a graphical form, simply add:
+\code 
+-snes_compare_explicit_draw -draw_save
+\endcode
+
+This will create a folder named \e Draw_0x7f86644**** with 3 image files: user-jacobian (0), finite difference jacobian (1) and the difference (2).
+The draw function works only with one processor.
+
 */
