@@ -106,10 +106,9 @@ struct BitRefManager : public UnknownInterface {
    * @param verb
    * @return MoFEMErrorCode setBitRefLevel
    */
-  explicit MoFEMErrorCode
-  setElementsBitRefLevel(const Range &ents,
-                         const BitRefLevel bit = BitRefLevel(),
-                         int verb = QUIET) const;
+  MoFEMErrorCode setElementsBitRefLevel(const Range &ents,
+                                        const BitRefLevel bit = BitRefLevel(),
+                                        int verb = QUIET) const;
 
   /**
    * @brief add entities to database and set bit ref level
