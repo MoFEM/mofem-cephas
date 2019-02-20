@@ -1519,10 +1519,14 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     edgesToTrim[e].lEngth = length;
     edgesToTrim[e].unitRayDir.resize(3, false);
     edgesToTrim[e].rayPoint.resize(3, false);
-    for (int ii = 0; ii != 3; ++ii) {
-      edgesToTrim[e].unitRayDir[ii] = ray(ii) / dist;
+    if (dist > 0) {
+      for (int ii = 0; ii != 3; ++ii)
+        edgesToTrim[e].unitRayDir[ii] = ray(ii) / dist;
+    } else
+      edgesToTrim[e].unitRayDir.clear();
+    for (int ii = 0; ii != 3; ++ii)
       edgesToTrim[e].rayPoint[ii] = ray_point(ii);
-    }
+    
   };
 
   FTensor::Index<'i', 3> i;
@@ -1632,7 +1636,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
               const double ray_length = sqrt(t_ray(i) * t_ray(i));
               if (check_to_add_edge(e, ray_length)) {
                 cut_this_edge(e, ray_length, edge_length, t_ray, t_e0);
-                if (t_edge < tol)
+                if (fabs(t_edge) < tol)
                   add_vert(conn_edge[0], e, ray_length);
               }
             } else {
@@ -1642,7 +1646,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
               const double ray_length = sqrt(t_ray(i) * t_ray(i));
               if (check_to_add_edge(e, ray_length)) {
                 cut_this_edge(e, ray_length, edge_length, t_ray, t_e1);
-                if (1 - t_edge < tol)
+                if (fabs(1 - t_edge) < tol)
                   add_vert(conn_edge[1], e, ray_length);
               }
             }
@@ -1717,6 +1721,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
               double q0 = 1;
               CHKERR m_field.getInterface<Tools>()->minTetsQuality(adj_tets,
                                                                    q0);
+
               double min_q = 1;
               for (auto t : adj_tets) {
                 int num_nodes;
@@ -1755,10 +1760,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
             CHKERR moab.get_adjacencies(&v, 1, 3, false, adj_tets);
             adj_tets = intersect(adj_tets, cutNewVolumes);
             double q = get_quality_change(adj_tets);
-            if (q > projectEntitiesQualityTrashold) {
+            if (projectEntitiesQualityTrashold) {
               VectorDouble3 unit_ray_dir = new_pos - ray_point;
               double dist = norm_2(unit_ray_dir);
-              unit_ray_dir /= dist;
+              if (dist > 0)
+                unit_ray_dir /= dist;
+              else
+                unit_ray_dir.clear();
               verticesOnTrimEdges[v].dIst = dist;
               verticesOnTrimEdges[v].lEngth = dist;
               verticesOnTrimEdges[v].unitRayDir = unit_ray_dir;
@@ -1786,6 +1794,14 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     if (!fixed_edges_verts_on_corners.empty())
       CHKERR SaveData(moab)("fixed_edges_verts_on_corners.vtk",
                             fixed_edges_verts_on_corners);
+
+  if (debug)
+    if (!trimNewVertices.empty())
+      CHKERR SaveData(moab)("trim_close_vertices.vtk", trimNewVertices);
+
+  if (debug)
+    if (!trimEdges.empty())
+      CHKERR SaveData(moab)("trim_edges.vtk", trimEdges);
 
   MoFEMFunctionReturn(0);
 }
