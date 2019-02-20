@@ -69,7 +69,7 @@ namespace MoFEM {
      * @return             error code
      */
     MoFEMErrorCode minTetsQuality(const Range &tets, double &min_quality,
-                                  Tag th = NULL,
+                                  Tag th = nullptr,
                                   boost::function<double(double, double)> f =
                                       [](double a, double b) -> double {
                                     return std::min(a, b);
@@ -85,7 +85,7 @@ namespace MoFEM {
      * @return MoFEMErrorCode 
      */
     MoFEMErrorCode
-    getTetsWithQuality(Range &out_tets, const Range &tets, Tag th = NULL,
+    getTetsWithQuality(Range &out_tets, const Range &tets, Tag th = nullptr,
                        boost::function<bool(double)> f = [](double q) -> bool {
                          if (q <= 0)
                            return true;
@@ -105,7 +105,7 @@ namespace MoFEM {
      */
     MoFEMErrorCode writeTetsWithQuality(
         const char *file_name, const char *file_type, const char *options,
-        const Range &tets, Tag th = NULL,
+        const Range &tets, Tag th = nullptr,
         boost::function<bool(double)> f = [](double q) -> bool {
           if (q <= 0)
             return true;

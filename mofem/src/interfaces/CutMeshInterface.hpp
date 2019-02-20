@@ -73,6 +73,8 @@ struct CutMeshInterface : public UnknownInterface {
     MoFEMFunctionReturn(0);
   }
 
+  MoFEMErrorCode setFront(const Range &surface);
+
   /**
    * \brief set surface entities
    * @param  surface entities which going to be added
@@ -315,6 +317,8 @@ struct CutMeshInterface : public UnknownInterface {
 
   inline const Range &getVolume() const { return vOlume; }
   inline const Range &getSurface() const { return sUrface; }
+  inline const Range &getFront() const { return fRont; }
+
 
   inline const Range &getCutEdges() const { return cutEdges; }
   inline const Range &getCutVolumes() const { return cutVolumes; }
@@ -346,6 +350,7 @@ struct CutMeshInterface : public UnknownInterface {
   MoFEMErrorCode clearMap();
 
 private:
+  Range fRont;
   Range sUrface;
   Range vOlume;
 
