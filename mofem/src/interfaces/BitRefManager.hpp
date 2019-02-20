@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __BITREFMANAGER_HPP__
 #define __BITREFMANAGER_HPP__
@@ -42,8 +42,8 @@ struct BitRefManager : public UnknownInterface {
   BitRefManager(const MoFEM::Core &core);
 
   /**
-  * \brief Destructor
-  */
+   * \brief Destructor
+   */
   ~BitRefManager();
 
   /** \name Setting and shifting bits */
@@ -95,30 +95,31 @@ struct BitRefManager : public UnknownInterface {
    * @brief add entities to database and set bit ref level
    * \ingroup mofem_bit_ref
    *
-   * \note behaviour of this method is different than when bit ref level is passed
-   * as reference. When is bit ref level is passed by reference lower dimension
-   * entities adjacent to entities are added to database. In THIS variant only
-   * entities in range are added.
-   * 
+   * \note behaviour of this method is different than when bit ref level is
+   * passed as reference. When is bit ref level is passed by reference lower
+   * dimension entities adjacent to entities are added to database. In THIS
+   * variant only entities in range are added.
+   *
    * @param ents
    * @param bit
    * @param only_tets
    * @param verb
    * @return MoFEMErrorCode setBitRefLevel
    */
-  MoFEMErrorCode setElementsBitRefLevel(const Range &ents,
-                                    const BitRefLevel bit = BitRefLevel(),
-                                    int verb = 0) const;
+  explicit MoFEMErrorCode
+  setElementsBitRefLevel(const Range &ents,
+                         const BitRefLevel bit = BitRefLevel(),
+                         int verb = QUIET) const;
 
   /**
    * @brief add entities to database and set bit ref level
    * \ingroup mofem_bit_ref
    *
-   * \note behaviour of this method is different than when bit ref level is passed
-   * as reference. When is bit ref level is passed by reference lower dimension
-   * entities adjacent to entities are added to database. In THIS variant only
-   * entities in range are added. And DO NOT create elements.
-   * 
+   * \note behaviour of this method is different than when bit ref level is
+   * passed as reference. When is bit ref level is passed by reference lower
+   * dimension entities adjacent to entities are added to database. In THIS
+   * variant only entities in range are added. And DO NOT create elements.
+   *
    * @param ents
    * @param bit
    * @param only_tets
@@ -126,28 +127,58 @@ struct BitRefManager : public UnknownInterface {
    * @return MoFEMErrorCode setBitRefLevel
    */
   MoFEMErrorCode setEntitiesBitRefLevel(const Range &ents,
-                                    const BitRefLevel bit = BitRefLevel(),
-                                    int verb = 0) const;
+                                        const BitRefLevel bit = BitRefLevel(),
+                                        int verb = QUIET) const;
 
+  /**
+   * @brief Add entities which exist in MoAB database, and have set appropiate
+   * BitRef level tag, to multi-indices in MoFEM.
+   *
+   * \note Every entity, used for create DoFS, or elements has to have set
+   * BitRefLevel and be added to MoFEM database.
+   *
+   * \note This functions add lower dimension entities by calling
+   * setEntitiesBitRefLevel
+   *
+   * @param type of entity
+   * @param bit bit ref level
+   * @param verb verbosity level
+   * @return MoFEMErrorCode
+   */
   MoFEMErrorCode addToDatabaseBitRefLevelByType(const EntityType type,
                                                 const BitRefLevel bit,
-                                                int verb = 0) const;
+                                                int verb = QUIET) const;
 
+  /**
+   * @brief Add entities which exist in MoAB database, and have set appropiate
+   * BitRef level tag, to multi-indices in MoFEM.
+   *
+   * \note Every entity, used for create DoFS, or elements has to have set
+   * BitRefLevel and be added to MoFEM database.
+   *
+   * \note This functions add lower dimension entities by calling
+   * setEntitiesBitRefLevel
+   *
+   * @param dim dimension of entity
+   * @param bit bit ref level
+   * @param verb verbosity level
+   * @return MoFEMErrorCode
+   */
   MoFEMErrorCode addToDatabaseBitRefLevelByDim(const int dim,
                                                const BitRefLevel bit,
-                                               int verb = 0) const;
+                                               int verb = QUIET) const;
 
   MoFEMErrorCode setBitRefLevelByDim(const EntityHandle meshset, const int dim,
                                      const BitRefLevel bit,
-                                     int verb = 0) const;
+                                     int verb = QUIET) const;
 
   MoFEMErrorCode setBitRefLevelByType(const EntityHandle meshset,
                                       const EntityType type,
                                       const BitRefLevel bit,
-                                      int verb = 0) const;
+                                      int verb = QUIET) const;
 
   /** brief add meshset and set bit ref level
-  * \ingroup mofem_bit_ref
+   * \ingroup mofem_bit_ref
    *
    * \param EntityHandle MeshSet
    * \param BitRefLevel bitLevel
@@ -182,9 +213,9 @@ struct BitRefManager : public UnknownInterface {
 
   /**
    * \brief Set nth bit ref level
-   * 
+   *
    * \note This function modify bits only on entities in RefEntity_multiindex
-   * 
+   *
    * @param  ents entities to set bit ref level
    * @param  n    nth bit
    * @param  b    value to set
@@ -204,21 +235,21 @@ struct BitRefManager : public UnknownInterface {
                                    int verb = 0) const;
 
   /** \brief left shift bit ref level
-    * \ingroup mofem_bit_ref
-    * this results of deletion of entities on far left side
-    *
-    * \note Not implemented
-    */
+   * \ingroup mofem_bit_ref
+   * this results of deletion of entities on far left side
+   *
+   * \note Not implemented
+   */
   MoFEMErrorCode shiftLeftBitRef(const int shift,
                                  const BitRefLevel mask = BitRefLevel().set(),
-                                 int verb               = -1) const;
+                                 int verb = -1) const;
 
   /** \brief right shift bit ref level
-    * \ingroup mofem_bit_ref
-    */
+   * \ingroup mofem_bit_ref
+   */
   MoFEMErrorCode shiftRightBitRef(const int shift,
                                   const BitRefLevel mask = BitRefLevel().set(),
-                                  int verb               = -1) const;
+                                  int verb = -1) const;
 
   /**@}*/
 
@@ -227,29 +258,29 @@ struct BitRefManager : public UnknownInterface {
   /**@{*/
 
   /**
-   * @brief filter entities by bit ref level 
-   * 
-   * @param bit 
+   * @brief filter entities by bit ref level
+   *
+   * @param bit
    * @param mask
-   * @param ents 
-   * @param QUIET 
-   * @return MoFEMErrorCode 
+   * @param ents
+   * @param QUIET
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode filterEntitiesByRefLevel(const BitRefLevel bit,
                                           const BitRefLevel mask, Range &ents,
                                           int verb = QUIET) const;
 
   /**\brief add all ents from ref level given by bit to meshset
-    * \ingroup mofem_bit_ref
-    *
-    * \note Entities NOT have to be added to MoFEM database
-    *
-    * \param BitRefLevel bitLevel
-    * \param BitRefLevel mask
-    * \param EntityType type of entities
-    * \retval EntityHandle meshset
-    *
-    */
+   * \ingroup mofem_bit_ref
+   *
+   * \note Entities NOT have to be added to MoFEM database
+   *
+   * \param BitRefLevel bitLevel
+   * \param BitRefLevel mask
+   * \param EntityType type of entities
+   * \retval EntityHandle meshset
+   *
+   */
   MoFEMErrorCode getEntitiesByTypeAndRefLevel(const BitRefLevel bit,
                                               const BitRefLevel mask,
                                               const EntityType type,
@@ -373,53 +404,53 @@ struct BitRefManager : public UnknownInterface {
 
   /** \brief Get the adjacencies associated with a entity to entities of a
    * specified dimension.
-    * \ingroup mofem_bit_ref
-    *
-    * bit ref level of adjacent entities is equal to bit ref level of adjacent
+   * \ingroup mofem_bit_ref
+   *
+   * bit ref level of adjacent entities is equal to bit ref level of adjacent
    * entities
-    */
+   */
   virtual MoFEMErrorCode getAdjacenciesEquality(const EntityHandle from_entity,
                                                 const int to_dimension,
                                                 Range &adj_entities) const;
 
   /** \brief Get the adjacencies associated with a entity to entities of a
    * specified dimension.
-    * \ingroup mofem_bit_ref
-    *
-    * bit ref level of adjacent entities is any of bit ref level of adjacent
+   * \ingroup mofem_bit_ref
+   *
+   * bit ref level of adjacent entities is any of bit ref level of adjacent
    * entities
-    */
+   */
   virtual MoFEMErrorCode getAdjacenciesAny(const EntityHandle from_entity,
                                            const int to_dimension,
                                            Range &adj_entities) const;
 
   /** \brief Get the adjacencies associated with a entity to entities of a
    * specified dimension.
-    * \ingroup mofem_bit_ref
-    *
-    * bit ref level of adjacent entities is equal to bit ref level of adjacent
+   * \ingroup mofem_bit_ref
+   *
+   * bit ref level of adjacent entities is equal to bit ref level of adjacent
    * entities
-    */
+   */
   virtual MoFEMErrorCode
   getAdjacencies(const Problem *problem_ptr, const EntityHandle *from_entities,
                  const int num_entities, const int to_dimension,
                  Range &adj_entities,
                  const int operation_type = moab::Interface::INTERSECT,
-                 const int verb           = 0) const;
+                 const int verb = 0) const;
 
   /** \brief Get the adjacencies associated with a entity to entities of a
    * specified dimension.
-    * \ingroup mofem_bit_ref
-    *
-    * bit ref level of adjacent entities is equal to bit ref level of adjacent
+   * \ingroup mofem_bit_ref
+   *
+   * bit ref level of adjacent entities is equal to bit ref level of adjacent
    * entities
-    */
+   */
   virtual MoFEMErrorCode
   getAdjacencies(const BitRefLevel bit, const EntityHandle *from_entities,
                  const int num_entities, const int to_dimension,
                  Range &adj_entities,
                  const int operation_type = moab::Interface::INTERSECT,
-                 const int verb           = 0) const;
+                 const int verb = 0) const;
 
   /**@}*/
 
@@ -449,26 +480,22 @@ struct BitRefManager : public UnknownInterface {
    * \param recursive if true parent meshset is searched recursively
    *
    **/
-  MoFEMErrorCode updateMeshsetByEntitiesChildren(const EntityHandle parent,
-                                                 const BitRefLevel &parent_bit,
-                                                 const BitRefLevel &parent_mask,
-                                                 const BitRefLevel &child_bit,
-                                                 const BitRefLevel &child_mask,
-                                                 const EntityHandle child,
-                                                 EntityType child_type,
-                                                 const bool recursive = false,
-                                                 int verb = 0);
+  MoFEMErrorCode updateMeshsetByEntitiesChildren(
+      const EntityHandle parent, const BitRefLevel &parent_bit,
+      const BitRefLevel &parent_mask, const BitRefLevel &child_bit,
+      const BitRefLevel &child_mask, const EntityHandle child,
+      EntityType child_type, const bool recursive = false, int verb = 0);
 
   /** \brief Get child entities form meshset containing parent entities
    * \ingroup mofem_bit_ref
    *
    * \note this calls updateMeshsetByEntitiesChildren with setting masks and
    * parent to parent_bit = parent_mask = BitRefLevel().set() and child_mask =
-   * child_bit. 
+   * child_bit.
    *
    * Search for refined entities of given type whose parent are entities in
-   * the parent meshset. It can be used for example to transfer information about
-   * boundary conditions to refined mesh or split mesh by interface
+   * the parent meshset. It can be used for example to transfer information
+   *about boundary conditions to refined mesh or split mesh by interface
    * elements. It is used by function refine_MESHSET, to update MESHSET
    * finite elements.
    *
@@ -489,18 +516,18 @@ struct BitRefManager : public UnknownInterface {
                                                  int verb = 0);
 
   /** \brief update fields meshesets by child entities
-    * \ingroup mofem_update_meshsets_and_ranges
-    *
-    * \note This calls updateMeshsetByEntitiesChildren for all entity types.
-    *
-    */
+   * \ingroup mofem_update_meshsets_and_ranges
+   *
+   * \note This calls updateMeshsetByEntitiesChildren for all entity types.
+   *
+   */
   MoFEMErrorCode
   updateFieldMeshsetByEntitiesChildren(const BitRefLevel &child_bit,
                                        int verb = 0);
 
   /** \brief update field meshset by child entities
-    * \ingroup mofem_update_meshsets_and_ranges
-    */
+   * \ingroup mofem_update_meshsets_and_ranges
+   */
   MoFEMErrorCode updateFieldMeshsetByEntitiesChildren(
       const std::string name, const BitRefLevel &child_bit, int verb = 0);
 
@@ -556,17 +583,14 @@ struct BitRefManager : public UnknownInterface {
                                             const char *options) const;
 
   /**@}*/
-
-
-  };
-}
+};
+} // namespace MoFEM
 
 #endif //__BITREFMANAGER_HPP__
 
-
-/***************************************************************************//**
+/**
  * \defgroup mofem_bit_ref BitRefManager
  * \brief Managing BitRefLevels
  *
  * \ingroup mofem
- ******************************************************************************/
+ */
