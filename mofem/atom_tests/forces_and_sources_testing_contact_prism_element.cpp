@@ -212,20 +212,29 @@ int main(int argc, char *argv[]) {
       if(data.getFieldData().empty()) MoFEMFunctionReturnHot(0);
 
       const double eps = 1e-4;
-      for(
-        DoubleAllocator::iterator it = getNormal().data().begin();
-        it!=getNormal().data().end();it++
-      ) {
-        *it = fabs(*it)<eps ? 0.0 : *it;
-      }
+      // for(
+      //    VectorAdaptor::iterator it = getNormalMaster().data().begin();
+      //   it!=getNormalMaster().data().end();it++
+      // ) {
+      //   *it = fabs(*it)<eps ? 0.0 : *it;
+      // }
+
+      // for(
+      //   DoubleAllocator::iterator it = (&getNormalSlave()).data().begin();
+      //   it!=getNormalSlave().data().end();it++
+      // ) {
+      //   *it = fabs(*it)<eps ? 0.0 : *it;
+      // }
      
       mySplit << "NH1" << std::endl;
       mySplit << "side: " << side << " type: " << type << std::endl;
       mySplit << data << std::endl;
-      mySplit << std::setprecision(3) << getCoords() << std::endl;
-      mySplit << std::setprecision(3) << getCoordsAtGaussPts() << std::endl;
-      mySplit << std::setprecision(3) << getArea(0) << std::endl;
-      mySplit << std::setprecision(3) << getArea(1) << std::endl;
+      mySplit << std::setprecision(3) << getCoordsSlave() << std::endl;
+      mySplit << std::setprecision(3) << getCoordsMaster() << std::endl;
+      mySplit << std::setprecision(3) << getCoordsAtGaussPtsMaster() << std::endl;
+      mySplit << std::setprecision(3) << getCoordsAtGaussPtsSlave() << std::endl;
+      mySplit << std::setprecision(3) << getAreaMaster() << std::endl;
+      mySplit << std::setprecision(3) << getAreaSlave() << std::endl;
       MoFEMFunctionReturnHot(0);
     }
 

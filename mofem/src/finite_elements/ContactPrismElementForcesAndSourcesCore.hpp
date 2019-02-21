@@ -43,7 +43,6 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   VectorDouble coords;
   MatrixDouble coordsAtGaussPtsMaster;
   MatrixDouble coordsAtGaussPtsSlave;
-  MatrixDouble coordsAtGaussPts;
 
   MatrixDouble gaussPtsMaster;
   MatrixDouble gaussPtsSlave;
@@ -108,31 +107,22 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
         : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
                                                  type) {}
 
-    /** \brief get face aRea
-    \param dd if dd == 0 it is for face Master if dd == 1 is for face Slave
+    /** \brief get face aRea Master
     */
-    inline double getArea(const int dd) {
-      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-          ->aRea[0];
-    }
-
+    
     inline double getAreaMaster() {
       return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
           ->aRea[0];
     }
+
+    /** \brief get face aRea Slave
+    */
+    
     inline double getAreaSlave() {
       return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
           ->aRea[1];
     }
 
-    /** \brief get triangle normal
-
-    Normal has 6 elements, first 3 are for face Master another three for face Slave
-
-     */
-    inline VectorDouble &getNormal() {
-      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->normal;
-    }
 
     inline VectorAdaptor getNormalMaster() {
       double *data =
@@ -150,11 +140,25 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     /** \brief get triangle coordinates
 
-      Vector has 6 elements, i.e. coordinates on face Master and Slave
+      Vector has 9 elements, i.e. coordinates on Master face
 
      */
-    inline VectorDouble &getCoords() {
-      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->coords;
+    inline VectorDouble getCoordsMaster() {
+     double *data =
+          &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->coords[0]);
+      return VectorAdaptor(9, ublas::shallow_array_adaptor<double>(9, data));
+    }
+
+    /** \brief get triangle coordinates
+
+      Vector has 9 elements, i.e. coordinates on Slave face
+
+     */
+
+    inline VectorDouble getCoordsSlave() {
+     double *data =
+          &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->coords[9]);
+      return VectorAdaptor(9, ublas::shallow_array_adaptor<double>(9, data));
     }
 
     /** \brief get coordinates at Gauss pts on full prism.
@@ -163,10 +167,22 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       i.e. coordinates on face Master
 
      */
-    inline MatrixDouble &getCoordsAtGaussPts() {
+    inline MatrixDouble &getCoordsAtGaussPtsMaster() {
       return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-          ->coordsAtGaussPts;
+          ->coordsAtGaussPtsMaster;
     }
+
+    /** \brief get coordinates at Gauss pts on full prism.
+
+      Matrix has size (nb integration points on master)x(3),
+      i.e. coordinates on face Master
+
+     */
+    inline MatrixDouble &getCoordsAtGaussPtsSlave() {
+      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+          ->coordsAtGaussPtsSlave;
+    }
+
 
      /** \brief return pointer to triangle finite element object
      */
@@ -178,50 +194,6 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   MoFEMErrorCode operator()();
 };
-
-/** \brief Calculate inverse of jacobian for face element
-
-  It is assumed that face element is XY plane. Applied
-  only for 2d problems.
-
-  FIXME Generalize function for arbitrary face orientation in 3d space
-  FIXME Calculate to Jacobins for two faces
-
-  \ingroup mofem_forces_and_sources_prism_element
-
-*/
-struct OpCalculateInvJacForContactPrism
-    : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
-
-  MatrixDouble &invJacMaster;
-  OpCalculateInvJacForContactPrism(MatrixDouble &inv_jac_f3)
-      : ContactPrismElementForcesAndSourcesCore::UserDataOperator(H1),
-        invJacMaster(inv_jac_f3) {}
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
-/** \brief Transform local reference derivatives of shape functions to global
-derivatives
-
-FIXME Generalize to curved shapes
-FIXME Generalize to case that top and bottom face has different shape
-
-\ingroup mofem_forces_and_sources_prism_element
-
-*/
-struct OpSetInvJacH1ForContactPrism
-    : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
-  MatrixDouble &invJacMaster;
-  OpSetInvJacH1ForContactPrism(MatrixDouble &inv_jac_f3)
-      : ContactPrismElementForcesAndSourcesCore::UserDataOperator(H1),
-        invJacMaster(inv_jac_f3) {}
-
-  MatrixDouble diffNinvJac;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
 
 } // namespace MoFEM
 
