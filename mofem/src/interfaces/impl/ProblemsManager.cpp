@@ -2859,8 +2859,8 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
                       .lower_bound(boost::make_tuple(field_name, pit->second,
                                                      MAX_DOFS_ON_ENTITY));
         for (; lo != hi; ++lo)
-          if ((*lo)->getDofCoeffIdx() >= lo_coeff &&
-              (*lo)->getDofCoeffIdx() <= hi_coeff)
+          if ((*lo)->getEntDofIdx() >= lo_coeff &&
+              (*lo)->getEntDofIdx() <= hi_coeff)
             dofs_it_view.emplace_back(numered_dofs[s]->project<0>(lo));
       }
 
