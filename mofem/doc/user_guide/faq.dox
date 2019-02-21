@@ -160,10 +160,26 @@ latest changes.
 
 \subsection faq_profiling_valgrind How to check for memory leaks and other bugs with Valgrind?
 
-Look to Valgrind <a href=http://valgrind.org>documentatin</a>. However, a
+Look to Valgrind <a href=http://valgrind.org>documentation</a>. However, a
 quick answer is
 \code
 valgrind --dsymutil=yes --track-origins=yes --trace-children=yes ./command args
+\endcode
+
+\subsection faq_memory_profiling_valgrind How to profile memory usage?
+
+Valgrind comes with a tool for measuring memory usage: 
+<a href=http://valgrind.org/docs/manual/ms-manual.html>massif</a>. Example usage:
+
+\code
+valgrind --trace-children=yes --tool=massif --pages-as-heap=yes ./command args
+\endcode
+
+This generates massif.out files that can be visualised with a graph using 
+<a href=http://valgrind.org/docs/manual/ms-manual.html#ms-manual.running-ms_print>ms_print</a>.
+
+\code
+ms_print massif.out
 \endcode
 
 \subsection faq_profiling_code_mac_os_x How to profile code using XCode tools?
@@ -194,6 +210,32 @@ See PETSc documentation
 <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Profiling/PetscLogStageRegister.html>
 and examples
 <http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex9.c.html>
+
+\subsection faq_profiling_petsc_log_events How to time and log events with PETSC?
+
+PETSC is capable of timing events and displaying their collective output. To create a new event
+requires 
+<a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Profiling/PetscLogEventRegister.html>registering</a>
+the event and add this to run time commands:
+\code -log_view \endcode
+
+Example output:
+
+\code
+------------------------------------------------------------------------------------------------------------------------
+Event                Count      Time (sec)     Flop                             --- Global ---  --- Stage ---   Total
+                   Max Ratio  Max     Ratio   Max  Ratio  Mess   Avg len Reduct  %T %F %M %L %R  %T %F %M %L %R Mflop/s
+------------------------------------------------------------------------------------------------------------------------
+
+--- Event Stage 0: Main Stage
+
+BuildTwoSidedF        17 1.0 1.2918e-04 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+LoadMesh               1 1.0 1.6751e-02 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00 15  0  0  0  0  15  0  0  0  0     0
+buildFields            1 1.0 4.5471e-03 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  4  0  0  0  0   4  0  0  0  0     0
+buildFiniteElements       1 1.0 7.8488e-03 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  7  0  0  0  0   7  0  0  0  0     0
+SimpleSetUp            1 1.0 3.4389e-03 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  3  0  0  0  0   3  0  0  0  0     0
+ProblemsManager        1 1.0 2.9552e-04 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+\endcode
 
 \subsection profiling_code_with_valgrind How to profile code with Valgrind?
 
