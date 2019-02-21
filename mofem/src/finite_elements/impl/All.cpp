@@ -7,4 +7,5 @@
 #include "impl/EdgeElementForcesAndSourcesCore.cpp"
 #include "impl/VertexElementForcesAndSourcesCore.cpp"
 #include "impl/FlatPrismElementForcesAndSourcesCore.cpp"
+#include "impl/ContactPrismElementForcesAndSourcesCore.cpp"
 #include "impl/FatPrismElementForcesAndSourcesCore.cpp"

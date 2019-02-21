@@ -103,6 +103,7 @@
 #include <EdgeElementForcesAndSourcesCore.hpp>
 #include <VertexElementForcesAndSourcesCore.hpp>
 #include <FlatPrismElementForcesAndSourcesCore.hpp>
+#include <ContactPrismElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSourcesCore.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
