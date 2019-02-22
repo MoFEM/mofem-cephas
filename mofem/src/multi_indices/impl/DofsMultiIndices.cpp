@@ -15,20 +15,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
-#include <Common.hpp>
-#include <Includes.hpp>
-#include <definitions.h>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <BCData.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <MaterialBlocks.hpp>
-#include <TagMultiIndices.hpp>
-
 namespace MoFEM {
 
 // moab dof

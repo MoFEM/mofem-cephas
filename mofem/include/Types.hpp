@@ -18,6 +18,8 @@
 #ifndef __TYPES_HPP__
 #define __TYPES_HPP__
 
+#include <FTensor.hpp>
+
 namespace MoFEM {
 
 /**
@@ -139,6 +141,210 @@ using MatrixShallowArrayAdaptor =
  *
  */
 typedef MatrixShallowArrayAdaptor<double> MatrixAdaptor;
+
+/**
+* \brief Get tensor rank 0 (scalar) form data vector
+* \ingroup mofem_forces_and_sources_user_data_operators
+
+Example how to use it.
+\code
+VectorDouble vec;
+vec.resize(nb_gauss_pts,false);
+vec.clear();
+auto t0 = getFTensor0FromData(data);
+for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+
+  ++t0;
+}
+\endcode
+
+*/
+template <class T, class A>
+static inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+getFTensor0FromVec(ublas::vector<T, A> &data) {
+  static_assert(!std::is_same<T, T>::value, "not implemented");
+}
+
+/**
+ * @deprecated Name change to getFTensor0FromVec
+ */
+template <class T, class A>
+DEPRECATED static inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+getTensor0FormData(ublas::vector<T, A> &data) {
+  return getFTensor0FromVec(data);
+}
+
+template <>
+inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+getFTensor0FromVec<double, DoubleAllocator>(
+    ublas::vector<double, DoubleAllocator> &data) {
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(&*data.data().begin());
+}
+
+/**
+ * \brief Get tensor rank 1 (vector) form data matrix
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim, class T, class L, class A>
+static inline FTensor::Tensor1<FTensor::PackPtr<T *, 1>, Tensor_Dim>
+getFTensor1FromMat(ublas::matrix<T, L, A> &data) {
+  static_assert(!std::is_same<T, T>::value, "not implemented");
+}
+
+/**
+ * \brief Get tensor rank 1 (vector) form data matrix (specialization)
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim>
+static inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>, Tensor_Dim>
+getFTensor1FromMat(MatrixDouble &data) {
+  return getFTensor1FromMat<Tensor_Dim, double, ublas::row_major,
+                            DoubleAllocator>(data);
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>
+getFTensor1FromMat<3, double, ublas::row_major, DoubleAllocator>(
+    MatrixDouble &data) {
+  if (data.size1() != 3) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>(
+      &data(0, 0), &data(1, 0), &data(2, 0));
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2>
+getFTensor1FromMat<2, double, ublas::row_major, DoubleAllocator>(
+    MatrixDouble &data) {
+  if (data.size1() != 2) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2>(&data(0, 0),
+                                                            &data(1, 0));
+}
+
+/**
+ * @deprecated Name change to getFTensor1FromMat
+ */
+template <int Tensor_Dim>
+DEPRECATED static inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>,
+                                          Tensor_Dim>
+getTensor1FormData(MatrixDouble &data) {
+  return getFTensor1FromMat<Tensor_Dim>(data);
+}
+
+/**
+ * \brief Get tensor rank 2 (matrix) form data matrix
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
+static inline FTensor::Tensor2<FTensor::PackPtr<T *, 1>, Tensor_Dim0,
+                               Tensor_Dim1>
+getFTensor2FromMat(ublas::matrix<T, L, A> &data) {
+  static_assert(!std::is_same<T, T>::value, "not implemented");
+}
+
+/**
+ * Template specialization for getFTensor2FromMat
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ *
+ */
+template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>
+getFTensor2FromMat(MatrixDouble &data) {
+  if (data.size1() != 9) {
+    THROW_MESSAGE("Wrong size of data matrix; numer of rows is " +
+                  boost::lexical_cast<std::string>(data.size1()));
+  }
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>(
+      &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
+      &data(5, 0), &data(6, 0), &data(7, 0), &data(8, 0));
+}
+
+/**
+ * Template specialization for getFTensor2FromMat
+ */
+template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>
+getFTensor2FromMat(MatrixDouble &data) {
+  if (data.size1() != 6) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 2>(
+      &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
+      &data(5, 0));
+}
+
+/**
+ * \brief Get tensor rank 2 (matrix) form data matrix (specialization)
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim0, int Tensor_Dim1>
+static inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim0,
+                               Tensor_Dim1>
+getFTensor2FromMat(MatrixDouble &data) {
+  return getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
+                            DoubleAllocator>(data);
+}
+
+/**
+ * @deprecated Name change to getFTensor1FromMat
+ */
+template <int Tensor_Dim0, int Tensor_Dim1>
+static inline DEPRECATED
+    FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim0, Tensor_Dim1>
+    getTensor2FormData(MatrixDouble &data) {
+  return getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(data);
+}
+
+/**
+ * \brief Get symmetric tensor rank 2 (matrix) form data matrix
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim, class T, class L, class A>
+static inline FTensor::Tensor2_symmetric<FTensor::PackPtr<T *, 1>, Tensor_Dim>
+getFTensor2SymmetricFromMat(ublas::matrix<T, L, A> &data) {
+  static_assert(!std::is_same<T, T>::value, "not implemented");
+}
+
+/**
+ * @brief Get symmetric tensor rank 2 form matrix of for dimension 3
+ * 
+ * Specialisation for symmetric tensor 2
+ * 
+ * @tparam  
+ * @param data 
+ * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3> 
+ */
+template <>
+inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3>
+getFTensor2SymmetricFromMat(MatrixDouble &data) {
+  if (data.size1() != 6) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3>(
+      &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
+      &data(5, 0));
+}
+
+/**
+ * @brief Get symmetric tensor rank 2 form matrix
+ * 
+ * Specialisation for symmetric tensor 2
+ * 
+ * @tparam Tensor_Dim 
+ * @param data 
+ * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, Tensor_Dim> 
+ */
+template <int Tensor_Dim>
+static inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>,
+                                         Tensor_Dim>
+getFTensor2SymmetricFromMat(MatrixDouble &data) {
+  return getFTensor2SymmetricFromMat<Tensor_Dim, double, ublas::row_major,
+                            DoubleAllocator>(data);
+}
+
 
 } // namespace Types
 

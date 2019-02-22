@@ -8,16 +8,9 @@
 
 */
 
-#include <Includes.hpp>
-#include <FTensor.hpp>
-#include <h1_hdiv_hcurl_l2.h>
-#include <definitions.h>
-#include <Common.hpp>
-#include <Hcurl.hpp>
+#ifndef GENERATE_VTK_WITH_CURL_BASE
 
 using namespace MoFEM;
-
-#ifndef GENERATE_VTK_WITH_CURL_BASE
 
 MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBaseFunctions_MBTET(
     int *sense, int *p, double *N, double *diffN, double *edge_n[],
@@ -1533,6 +1526,7 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_VolumeFunctions_MBTET(
 #ifdef GENERATE_VTK_WITH_CURL_BASE
 
 #include <MoFEM.hpp>
+#include <Hcurl.hpp>
 using namespace MoFEM;
 using namespace boost::numeric;
 

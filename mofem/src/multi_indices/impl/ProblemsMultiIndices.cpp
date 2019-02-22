@@ -16,27 +16,10 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
-#include <Includes.hpp>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-
 namespace MoFEM {
 
 // moab problem
-Problem::Problem(Interface &moab, const EntityHandle meshset)
+Problem::Problem(moab::Interface &moab, const EntityHandle meshset)
     : meshset(meshset),
       numeredDofsRows(boost::shared_ptr<NumeredDofEntity_multiIndex>(
           new NumeredDofEntity_multiIndex())),

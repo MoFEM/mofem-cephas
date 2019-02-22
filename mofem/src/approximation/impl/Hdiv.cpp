@@ -8,12 +8,6 @@
 
 */
 
-#include <FTensor.hpp>
-#include <Hdiv.hpp>
-#include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
-#include <petscsys.h>
-
 using namespace MoFEM;
 
 MoFEMErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
