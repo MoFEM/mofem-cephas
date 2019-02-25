@@ -315,7 +315,9 @@ struct ProblemsManager : public UnknownInterface {
    */
   MoFEMErrorCode removeDofsOnEntities(const std::string problem_name,
                                       const std::string field_name,
-                                      const Range ents, int verb = VERBOSE);
+                                      const Range ents, const int lo_coeff = 0,
+                                      const int hi_coeff = MAX_DOFS_ON_ENTITY,
+                                      int verb = VERBOSE);
 
 private:
   PetscLogEvent MOFEM_EVENT_ProblemsManager;

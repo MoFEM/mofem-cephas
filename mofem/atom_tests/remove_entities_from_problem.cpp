@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
         0, 3, bit_level);
 
     // Fields
-    CHKERR m_field.add_field("F1", HCURL, DEMKOWICZ_JACOBI_BASE, 1);
+    CHKERR m_field.add_field("F1", HCURL, DEMKOWICZ_JACOBI_BASE, 3);
     CHKERR m_field.add_field("F2", HDIV, DEMKOWICZ_JACOBI_BASE, 1);
 
     // meshset consisting all entities in mesh
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 
     Range tets_skin;
     CHKERR get_triangles_on_skin(tets_skin);
-    CHKERR prb_mng_ptr->removeDofsOnEntities("P1", "F1", tets_skin);
+    CHKERR prb_mng_ptr->removeDofsOnEntities("P1", "F1", tets_skin, 0, 1);
 
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P1", -2, -2,
