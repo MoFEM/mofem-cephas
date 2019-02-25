@@ -2815,10 +2815,11 @@ ProblemsManager::getProblemElementsLayout(const std::string name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-ProblemsManager::removeDofsOnEntities(const std::string problem_name,
-                                      const std::string field_name,
-                                      const Range ents, int verb) {
+MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
+    const std::string problem_name, const std::string field_name,
+    const Range ents, const int lo_coeff,
+    const int hi_coeff, int verb) {
+      
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -2853,12 +2854,14 @@ ProblemsManager::removeDofsOnEntities(const std::string problem_name,
             numered_dofs[s]
                 ->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
                 .lower_bound(boost::make_tuple(field_name, pit->first, 0));
-        auto hi =
-            numered_dofs[s]
-                ->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
-                .lower_bound(boost::make_tuple(field_name, pit->second, 1000));
+        auto hi = numered_dofs[s]
+                      ->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
+                      .lower_bound(boost::make_tuple(field_name, pit->second,
+                                                     MAX_DOFS_ON_ENTITY));
         for (; lo != hi; ++lo)
-          dofs_it_view.emplace_back(numered_dofs[s]->project<0>(lo));
+          if ((*lo)->getDofCoeffIdx() >= lo_coeff &&
+              (*lo)->getDofCoeffIdx() <= hi_coeff)
+            dofs_it_view.emplace_back(numered_dofs[s]->project<0>(lo));
       }
 
       // set negative index
