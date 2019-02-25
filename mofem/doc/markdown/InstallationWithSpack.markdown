@@ -222,8 +222,8 @@ installs.
 
 The instructions below will use `mofem-cephas@develop` and
 `mofem-users-modules@develop` to denote the name of an existing installation.
-However, if multiple versions are installed then you will need to specify the
-version ID instead. You can also [change the build_type](#spack_build_type).
+However, if multiple versions are installed then you will need to [specify the
+version ID](#spack_mofem_package_versions) instead. You can also [change the build_type](#spack_build_type).
 
 ## 1. In-situ {#spack_modules_insitu}
 
