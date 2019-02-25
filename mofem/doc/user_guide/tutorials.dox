@@ -51,10 +51,13 @@ Introduction to fundamental MoFEM functionalities and capabilities by solving a 
 
 - \subpage simple_elasticity_1
 
-Tutorial for mixed formulation of imcompressible elasticity problem
+Tutorial for mixed formulation of incompressible elasticity problem
 
 - \subpage elasticity_mixed_formulation
 
+Tutorial for the implementation of Winkler spring elements
+
+- \subpage spring_element
 
 \section snes_nonlinear_tut Nonlinear problem
 
