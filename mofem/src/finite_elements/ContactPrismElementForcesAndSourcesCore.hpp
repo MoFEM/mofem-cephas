@@ -31,8 +31,8 @@ namespace MoFEM {
  \ingroup mofem_forces_and_sources_prism_element
 
  User is implementing own operator at Gauss points level, by own object
- derived from ContactPrismElementForcesAndSourcesCoreL::UserDataOperator. Arbitrary
- number of operator added pushing objects to rowOpPtrVector and
+ derived from ContactPrismElementForcesAndSourcesCoreL::UserDataOperator.
+ Arbitrary number of operator added pushing objects to rowOpPtrVector and
  rowColOpPtrVector.
 
  */
@@ -52,44 +52,132 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   std::string meshPositionsFieldName;
 
+  /**
+   * @brief Entity data on element entity rows fields
+   *
+   *
+   * FIXME: that should be moved to private class data and acessed only by
+   * member function
+   */
+  const boost::shared_ptr<DataForcesAndSourcesCore> dataOnMaster[LASTSPACE];
+  const boost::shared_ptr<DataForcesAndSourcesCore> dataOnSlave[LASTSPACE];
 
-   /**
-     * @brief Entity data on element entity rows fields
-     *
-     *
-     * FIXME: that should be moved to private class data and acessed only by
-     * member function
-     */
-    const boost::shared_ptr<DataForcesAndSourcesCore> dataOnMaster[LASTSPACE];
-    const boost::shared_ptr<DataForcesAndSourcesCore> dataOnSlave[LASTSPACE];
-  
-    /**
-     * @brief Entity data on element entity columns fields
-     *
-     * FIXME: that should be moved to private class data and acessed only by
-     * member function
-     */
-    const boost::shared_ptr<DataForcesAndSourcesCore>
-        derivedDataOnMaster[LASTSPACE];
-    const boost::shared_ptr<DataForcesAndSourcesCore>
-        derivedDataOnSlave[LASTSPACE];
+  /**
+   * @brief Entity data on element entity columns fields
+   *
+   * FIXME: that should be moved to private class data and acessed only by
+   * member function
+   */
+  const boost::shared_ptr<DataForcesAndSourcesCore>
+      derivedDataOnMaster[LASTSPACE];
+  const boost::shared_ptr<DataForcesAndSourcesCore>
+      derivedDataOnSlave[LASTSPACE];
 
-    DataForcesAndSourcesCore &dataH1Master;
-    DataForcesAndSourcesCore &dataH1Slave;
-    // boost::shared_ptr<DataForcesAndSourcesCore> dataH1Master;
-    // boost::shared_ptr<DataForcesAndSourcesCore> dataH1Slave;
+  DataForcesAndSourcesCore &dataH1Master;
+  DataForcesAndSourcesCore &dataH1Slave;
+  // boost::shared_ptr<DataForcesAndSourcesCore> dataH1Master;
+  // boost::shared_ptr<DataForcesAndSourcesCore> dataH1Slave;
 
-    DataForcesAndSourcesCore &dataNoFieldMaster;
-    DataForcesAndSourcesCore &dataNoFieldSlave;
-    DataForcesAndSourcesCore &dataHcurlMaster;
-    DataForcesAndSourcesCore &dataHcurlSlave;
-    DataForcesAndSourcesCore &dataHdivMaster;
-    DataForcesAndSourcesCore &dataHdivSlave;
-    DataForcesAndSourcesCore &dataL2Master;
-    DataForcesAndSourcesCore &dataL2Slave;
-
+  DataForcesAndSourcesCore &dataNoFieldMaster;
+  DataForcesAndSourcesCore &dataNoFieldSlave;
+  DataForcesAndSourcesCore &dataHcurlMaster;
+  DataForcesAndSourcesCore &dataHcurlSlave;
+  DataForcesAndSourcesCore &dataHdivMaster;
+  DataForcesAndSourcesCore &dataHdivSlave;
+  DataForcesAndSourcesCore &dataL2Master;
+  DataForcesAndSourcesCore &dataL2Slave;
 
   ContactPrismElementForcesAndSourcesCore(Interface &m_field);
+
+  /**
+   * @brief Iterate user data operators
+   *
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode loopOverOperators();
+
+  inline MoFEMErrorCode
+  getEntityRowIndices(DataForcesAndSourcesCore &data,
+                      const std::string &field_name,
+                      const EntityType type_lo = MBVERTEX,
+                      const EntityType type_hi = MBPOLYHEDRON,
+                      const bool master_flag = 1) const {
+    return getEntityIndices(data, field_name,
+                            const_cast<FENumeredDofEntity_multiIndex &>(
+                                numeredEntFiniteElementPtr->getRowsDofs()),
+                            type_lo, type_hi, master_flag);
+  }
+
+  inline MoFEMErrorCode
+  getEntityColIndices(DataForcesAndSourcesCore &data,
+                      const std::string &field_name,
+                      const EntityType type_lo = MBVERTEX,
+                      const EntityType type_hi = MBPOLYHEDRON,
+                      const bool master_flag = 1) const {
+    return getEntityIndices(data, field_name,
+                            const_cast<FENumeredDofEntity_multiIndex &>(
+                                numeredEntFiniteElementPtr->getColsDofs()),
+                            type_lo, type_hi, master_flag);
+  }
+
+  MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &data,
+                                    const std::string &field_name,
+                                    const EntityType type_lo = MBVERTEX,
+                                    const EntityType type_hi = MBPOLYHEDRON,
+                                    const bool master_flag = 1) const;
+
+  MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &data,
+                                  const std::string &field_name,
+                                  FENumeredDofEntity_multiIndex &dofs,
+                                  const EntityType type_lo = MBVERTEX,
+                                  const EntityType type_hi = MBPOLYHEDRON,
+                                  const bool master_flag = 1) const;
+
+  // ** Indices **
+
+  /// \brief get node indices
+  MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
+                                 FENumeredDofEntity_multiIndex &dofs,
+                                 VectorInt &nodes_indices,
+                                 VectorInt &local_nodes_indices,
+                                 const bool &master_flag) const;
+
+  /// \brief get row node indices from FENumeredDofEntity_multiIndex
+  MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
+                                    const std::string &field_name,
+                                    const bool &master_flag) const;
+
+  /// \brief get col node indices from FENumeredDofEntity_multiIndex
+  MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
+                                    const std::string &field_name,
+                                    const bool &master_flag) const;
+
+  /**
+   * \brief Get field data on nodes
+   * @param  field_name Name of field
+   * @param  dofs       Dofs (element) multi index
+   * @param  nodes_data Returned DOFs values
+   * @param  nodes_dofs Vector of pointers to DOFs data structure
+   * @param  space      Get space on nodes (Only H! is valid)
+   * @param  base       Get base on nodes
+   * @return            Error code
+   */
+  MoFEMErrorCode getNodesFieldData(const boost::string_ref field_name,
+                                   FEDofEntity_multiIndex &dofs,
+                                   VectorDouble &nodes_data,
+                                   VectorDofs &nodes_dofs, FieldSpace &space,
+                                   FieldApproximationBase &base,
+                                   const bool &master_flag) const;
+
+  /**
+   * \brief Get data on nodes
+   * @param  data       Data structure
+   * @param  field_name Field name
+   * @return            Error code
+   */
+  MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
+                                   const std::string &field_name,
+                                   const bool &master_flag) const;
 
   /** \brief default operator for Contact Prism element
    * \ingroup mofem_forces_and_sources_prism_element
@@ -107,22 +195,51 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
         : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
                                                  type) {}
 
+    UserDataOperator(const std::string &row_field_name,
+                     const std::string &col_field_name, const char type,
+                     const char face_type)
+        : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
+                                                 type),
+          faceType(face_type) {}
+
+    UserDataOperator(const std::string &field_name, const char type,
+                     const char face_type)
+        : ForcesAndSourcesCore::UserDataOperator(field_name, type),
+          faceType(face_type) {}
+
+    enum FaceType {
+      FACEMASTER = 1 << 0,
+      FACESLAVE = 1 << 1,
+      FACEMASTERMASTER = 1 << 2,
+      FACEMASTERSLAVE = 1 << 3,
+      FACESLAVEMASTER = 1 << 4,
+      FACESLAVESLAVE = 1 << 5,
+      FACELAST = 1 << 6
+    };
+
+    char faceType;
+
+    /**
+     * \brief Get operator types
+     * @return Return operator type
+     */
+    inline int getFaceType() const { return faceType; }
+
     /** \brief get face aRea Master
-    */
-    
+     */
+
     inline double getAreaMaster() {
       return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
           ->aRea[0];
     }
 
     /** \brief get face aRea Slave
-    */
-    
+     */
+
     inline double getAreaSlave() {
       return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
           ->aRea[1];
     }
-
 
     inline VectorAdaptor getNormalMaster() {
       double *data =
@@ -144,8 +261,9 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
      */
     inline VectorDouble getCoordsMaster() {
-     double *data =
-          &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->coords[0]);
+      double *data =
+          &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+                ->coords[0]);
       return VectorAdaptor(9, ublas::shallow_array_adaptor<double>(9, data));
     }
 
@@ -156,8 +274,9 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
 
     inline VectorDouble getCoordsSlave() {
-     double *data =
-          &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->coords[9]);
+      double *data =
+          &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+                ->coords[9]);
       return VectorAdaptor(9, ublas::shallow_array_adaptor<double>(9, data));
     }
 
@@ -183,8 +302,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
           ->coordsAtGaussPtsSlave;
     }
 
-
-     /** \brief return pointer to triangle finite element object
+    /** \brief return pointer to triangle finite element object
      */
     inline const ContactPrismElementForcesAndSourcesCore *
     getContactPrismElementForcesAndSourcesCore() {
@@ -199,7 +317,8 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
 #endif //__CONTACTPRISMELEMENTFORCESANDSURCESCORE_HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_forces_and_sources_prism_element Prism Element
-* \ingroup mofem_forces_and_sources
-******************************************************************************/
+/***************************************************************************/
+/**
+ * \defgroup mofem_forces_and_sources_prism_element Prism Element
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/
