@@ -250,10 +250,9 @@ MoFEMErrorCode CutMeshInterface::snapSurfaceToEdges(const Range &surface_edges,
                                                &t) == Tools::SOLUTION_EXIST) {
         auto t_p = get_point(t_f0, t_edge_delta, t);
         auto dist_n = get_distance(t_p, t_n);
-        if (dist_n < min_dist || dist_n < abs_tol) {
+        if (dist_n < min_dist) {
           t_min_coords(i) = t_p(i);
-          if (dist_n < min_dist)
-            min_dist = dist_n;
+          min_dist = dist_n;
         }
       }
     }
@@ -519,7 +518,7 @@ MoFEMErrorCode CutMeshInterface::refCutTrimAndMerge(
   }
 
   for (int ll = 0; ll != ref_before_cut_levels; ++ll) {
-    CHKERR findEdgesToCut(&fixed_edges, &corner_nodes, 1e-4, QUIET);
+    CHKERR findEdgesToCut(&fixed_edges, &corner_nodes, tol_trim, QUIET);
     BitRefLevel bit = get_back_bit_levels();
     CHKERR refineBeforeCut(bit, &fixed_edges, true);
     if (th)
@@ -1223,11 +1222,10 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
       adj_tets = intersect(adj_tets, vOlume);
 
       map<EntityHandle, TreeData> vertices_on_cut_edges;
-      for (int n = 0; n != num_nodes; ++n) 
+      for (int n = 0; n != num_nodes; ++n)
         CHKERR project_node(conn[n], vertices_on_cut_edges);
 
-      const double q =
-          get_quality_change(adj_tets, vertices_on_cut_edges);
+      const double q = get_quality_change(adj_tets, vertices_on_cut_edges);
 
       if (q > projectEntitiesQualityTrashold) {
         EntityHandle type = moab.type_from_handle(f);
@@ -1544,7 +1542,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     if (edge_length == 0)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Zero edge length");
 
-
     FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_edge_face_normal =
         getFTensor1FromMat<3>(edge_face_normal);
 
@@ -1758,7 +1755,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     // for(auto e : adj_vertex_edges) {
     //   edgesToTrim.erase(e);
     //   trimEdges.erase(e);
-    // }                    
+    // }
     auto lo = verts_map.get<1>().lower_bound(v);
     auto hi = verts_map.get<1>().upper_bound(v);
     for (; lo != hi; ++lo) {
@@ -2377,8 +2374,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(surface_front);
         ents_nodes_and_edges.merge(tets_skin_edges_verts);
         ents_nodes_and_edges.merge(tets_skin_edges);
-        CHKERR removeSelfConectingEdges(
-            ents_nodes_and_edges, edges_to_remove, tOL, false);
+        CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
+                                        tOL, false);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
@@ -2468,7 +2465,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   };
 
   Range not_merged_edges;
-  const double tol = 0.2;
+  const double tol = 0.1;
   CHKERR Toplogy(m_field, th, tol * aveLength)
       .edgesToMerge(surface, tets, edges_to_merge);
   CHKERR Toplogy(m_field, th, tol * aveLength)

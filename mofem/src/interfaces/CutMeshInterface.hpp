@@ -157,7 +157,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @return      error code
    */
   MoFEMErrorCode findEdgesToCut(Range *fixed_edges, Range *corner_nodes,
-                                const double low_tol = 0, int verb = 0,
+                                const double low_tol, int verb = QUIET,
                                 const bool debug = false);
 
   MoFEMErrorCode refineBeforeCut(const BitRefLevel &bit, Range *fixed_edges,
