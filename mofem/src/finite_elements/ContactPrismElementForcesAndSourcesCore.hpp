@@ -255,6 +255,16 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
     }
 
+    inline MatrixDouble &getGaussPtsMaster() {
+      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+          ->gaussPtsMaster;
+    }
+
+    inline MatrixDouble &getGaussPtsSlave() {
+      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+          ->gaussPtsSlave;
+    }
+
     /** \brief get triangle coordinates
 
       Vector has 9 elements, i.e. coordinates on Master face
