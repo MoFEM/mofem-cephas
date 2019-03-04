@@ -376,7 +376,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     //                           .getN(NOBASE)
     //                           .data()
     //                           .begin(),
-    //                     &gaussPtsMaster(0, 0), &gaussPts(1, 0), nb_gauss_pts);
+    //                     &gaussPtsMaster(0, 0), &gaussPts(1, 0),
+    //                     nb_gauss_pts);
 
     //   CHKERR ShapeMBTRI(
     //       &*dataH1Slave.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
