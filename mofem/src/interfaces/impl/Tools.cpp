@@ -347,4 +347,61 @@ Tools::minDistanceFromSegments(const double *w_ptr, const double *v_ptr,
   }
 }
 
+MoFEMErrorCode Tools::findMinDistanceFromTheEdges(const double *v_ptr,
+                                                  Range edges,
+                                                  double *min_dist_ptr,
+                                                  double *o_ptr) {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  MoFEMFunctionBegin;
+
+  FTensor::Index<'i', 3> i;
+
+  auto get_point = [i](auto &t_w, auto &t_delta, auto t) {
+    FTensor::Tensor1<double, 3> t_p;
+    t = std::max(0., std::min(1., t));
+    t_p(i) = t_w(i) + t * t_delta(i);
+    return t_p;
+  };
+
+  auto get_distance = [i](auto &t_p, auto &t_n) {
+    FTensor::Tensor1<double, 3> t_dist_vector;
+    t_dist_vector(i) = t_p(i) - t_n(i);
+    return sqrt(t_dist_vector(i) * t_dist_vector(i));
+  };
+
+  FTensor::Tensor1<const double *, 3> t_n(v_ptr, &v_ptr[1], &v_ptr[2]);
+  double &min_dist = *min_dist_ptr;
+  FTensor::Tensor1<double *, 3> t_min_coords(o_ptr, &o_ptr[1], &o_ptr[2]);
+
+  for (auto e : edges) {
+
+    int num_nodes;
+    const EntityHandle *conn_fixed;
+    CHKERR moab.get_connectivity(e, conn_fixed, num_nodes, true);
+    VectorDouble6 coords_fixed(6);
+    CHKERR moab.get_coords(conn_fixed, num_nodes, &coords_fixed[0]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f0(
+        &coords_fixed[0], &coords_fixed[1], &coords_fixed[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f1(
+        &coords_fixed[3], &coords_fixed[4], &coords_fixed[5]);
+
+    FTensor::Tensor1<double, 3> t_edge_delta;
+    t_edge_delta(i) = t_f1(i) - t_f0(i);
+
+    double t;
+    if (Tools::minDistancePointFromOnSegment(&t_f0(0), &t_f1(0), &t_n(0), &t) ==
+        Tools::SOLUTION_EXIST) {
+      auto t_p = get_point(t_f0, t_edge_delta, t);
+      auto dist_n = get_distance(t_p, t_n);
+      if (dist_n < min_dist || min_dist < 0) {
+        t_min_coords(i) = t_p(i);
+        min_dist = dist_n;
+      }
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 } // end of MoFEM name space

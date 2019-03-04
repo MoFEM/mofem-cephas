@@ -229,33 +229,8 @@ MoFEMErrorCode CutMeshInterface::snapSurfaceToEdges(const Range &surface_edges,
 
     double min_dist = rel_tol * m.second;
     FTensor::Tensor1<double, 3> t_min_coords;
-
-    for (auto e : fixed_edges) {
-
-      int num_nodes;
-      const EntityHandle *conn_fixed;
-      CHKERR moab.get_connectivity(e, conn_fixed, num_nodes, true);
-      VectorDouble6 coords_fixed(6);
-      CHKERR moab.get_coords(conn_fixed, num_nodes, &coords_fixed[0]);
-      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f0(
-          &coords_fixed[0], &coords_fixed[1], &coords_fixed[2]);
-      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f1(
-          &coords_fixed[3], &coords_fixed[4], &coords_fixed[5]);
-
-      FTensor::Tensor1<double, 3> t_edge_delta;
-      t_edge_delta(i) = t_f1(i) - t_f0(i);
-
-      double t;
-      if (Tools::minDistancePointFromOnSegment(&t_f0(0), &t_f1(0), &t_n(0),
-                                               &t) == Tools::SOLUTION_EXIST) {
-        auto t_p = get_point(t_f0, t_edge_delta, t);
-        auto dist_n = get_distance(t_p, t_n);
-        if (dist_n < min_dist) {
-          t_min_coords(i) = t_p(i);
-          min_dist = dist_n;
-        }
-      }
-    }
+    CHKERR cOre.getInterface<Tools>()->findMinDistanceFromTheEdges(
+        &t_n(0), fixed_edges, &min_dist, &t_min_coords(0));
 
     if (min_dist < rel_tol * m.second || min_dist < abs_tol) {
       if (th)
@@ -360,7 +335,8 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
     CHKERR setTagData(th);
 
   for (int ll = 0; ll != before_trim_levels; ++ll) {
-    CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim, debug);
+    CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim,
+                           tol_trim_close, debug);
     BitRefLevel bit = get_back_bit_levels();
     CHKERR refineBeforeTrim(bit, fixed_edges, true);
     if (th)
@@ -373,7 +349,8 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   BitRefLevel bit_level2 = get_back_bit_levels();
 
   // trim mesh
-  CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim, debug);
+  CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim,
+                         tol_trim_close, debug);
   CHKERR trimEdgesInTheMiddle(bit_level2, th, tol_trim_close, debug);
   if (fixed_edges) {
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
@@ -1403,6 +1380,7 @@ MoFEMErrorCode CutMeshInterface::moveMidNodesOnTrimmedEdges(Tag th) {
 MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
                                                  Range *corner_nodes, Tag th,
                                                  const double tol,
+                                                 const double tol_close,
                                                  const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
@@ -1655,6 +1633,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   auto hi_m = verts_map.get<0>().lower_bound(tol);
   for (; lo_m != hi_m; ++lo_m) {
 
+    const double dist = lo_m->d;
     EntityHandle v = lo_m->v;
     if (verticesOnTrimEdges.find(v) == verticesOnTrimEdges.end()) {
 
@@ -1724,7 +1703,36 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
 
       if (trimNewVertices.find(v) == trimNewVertices.end()) {
         if (edgesToTrim.find(e) != edgesToTrim.end()) {
-          if (corners.find(v) != corners.end()) {
+          if(dist < tol_close) {
+
+            int rank_vertex = 0;
+            if (corners.find(v) != corners.end())
+              ++rank_vertex;
+            if (fixed_edges_verts.find(v) != fixed_edges_verts.end())
+              ++rank_vertex;
+            if (tets_skin_verts.find(v) != tets_skin_verts.end())
+              ++rank_vertex;
+
+            int rank_edge = 0;
+            if (fix_edges.find(e) != fix_edges.end())
+              ++rank_edge;
+            if (tets_skin_edges.find(e) != tets_skin_edges.end())
+              ++rank_edge;
+
+            if (rank_vertex > rank_edge) {
+              auto &m = edgesToTrim.at(e);
+              verticesOnTrimEdges[v] = m;
+              verticesOnTrimEdges[v].rayPoint = get_point_coords(v);
+              verticesOnTrimEdges[v].lEngth = 0;
+              verticesOnTrimEdges[v].dIst = 0;
+              trimNewVertices.insert(v);
+            } else if(rank_vertex == rank_edge)
+               add_trim_vert();
+            else
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                      "Imposible case");
+
+          } else if (corners.find(v) != corners.end()) {
             auto &m = edgesToTrim.at(e);
             verticesOnTrimEdges[v] = m;
             verticesOnTrimEdges[v].rayPoint = get_point_coords(v);

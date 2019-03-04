@@ -227,6 +227,10 @@ namespace MoFEM {
                             double *const tvw_ptr = nullptr,
                             double *const tlk_ptr = nullptr);
 
+    MoFEMErrorCode findMinDistanceFromTheEdges(const double *v_ptr, Range edges,
+                                               double *min_dist_ptr,
+                                               double *o_ptr);
+
     /**@}*/
 
     /** \name Debugging */
