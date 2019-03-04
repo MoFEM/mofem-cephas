@@ -258,8 +258,9 @@ CHKERR fun();
 
 - Memory allocation
 
-  - USE VALGRIND. Valging is powerful tool to find execution errors, use it if your
-    code behave differently on two different computers, or you get segmentation fault, ect. Valgrin can be used as follows 
+  - USE VALGRIND. Valging is powerful tool to find execution errors, use it
+    if your code behave differently on two different computers, or you get
+    segmentation fault, ect. Valgrind can be used as follows
 \code
   valgrind --track-origins=yes ./program_name -my_file mesh.cub
 \endcode
