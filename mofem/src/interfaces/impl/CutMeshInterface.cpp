@@ -873,18 +873,18 @@ MoFEMErrorCode CutMeshInterface::refineBeforeTrim(const BitRefLevel &bit,
   MoFEMFunctionBegin;
 
   // refine before trim
-  Range volTrimEdges;
-  CHKERR moab.get_adjacencies(trimEdges, 3, true, volTrimEdges,
+  Range vol_trim_edges;
+  CHKERR moab.get_adjacencies(trimEdges, 3, true, vol_trim_edges,
                               moab::Interface::UNION);
-  CHKERR moab.get_adjacencies(trimNewVertices, 3, true, volTrimEdges,
+  CHKERR moab.get_adjacencies(trimNewVertices, 3, true, vol_trim_edges,
                               moab::Interface::UNION);
-  volTrimEdges = intersect(volTrimEdges, cutNewVolumes);
+  vol_trim_edges = intersect(vol_trim_edges, cutNewVolumes);
 
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.getInterface(bit_ref_manager);
 
   Range ref_edges;
-  CHKERR moab.get_adjacencies(volTrimEdges, 1, true, ref_edges,
+  CHKERR moab.get_adjacencies(vol_trim_edges, 1, true, ref_edges,
                               moab::Interface::UNION);
   CHKERR refiner->add_verices_in_the_middel_of_edges(ref_edges, bit);
   CHKERR refiner->refine_TET(cutNewVolumes, bit, false, QUIET,
