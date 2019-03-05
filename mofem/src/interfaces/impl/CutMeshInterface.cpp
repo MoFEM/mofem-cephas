@@ -1703,7 +1703,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
 
       if (trimNewVertices.find(v) == trimNewVertices.end()) {
         if (edgesToTrim.find(e) != edgesToTrim.end()) {
-          if(dist < tol_close) {
+          if (dist < tol_close) {
 
             int rank_vertex = 0;
             if (corners.find(v) != corners.end())
@@ -1726,8 +1726,8 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
               verticesOnTrimEdges[v].lEngth = 0;
               verticesOnTrimEdges[v].dIst = 0;
               trimNewVertices.insert(v);
-            } else if(rank_vertex == rank_edge)
-               add_trim_vert();
+            } else if (rank_vertex == rank_edge)
+              add_trim_vert();
             else
               SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                       "Imposible case");
