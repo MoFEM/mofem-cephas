@@ -343,11 +343,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
       CHKERR setTagData(th);
   }
 
-  if (debug && before_trim_levels)
-    CHKERR saveTrimEdges("ref_before_trim_");
-
   BitRefLevel bit_level2 = get_back_bit_levels();
-
   // trim mesh
   CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim,
                          tol_trim_close, debug);
