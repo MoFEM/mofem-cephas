@@ -279,13 +279,13 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
     return bit_levels.back();
   };
 
-  BitRefLevel bit_level1 = get_back_bit_levels();
+  BitRefLevel bit_cut = get_back_bit_levels();
 
   // cut mesh
   CHKERR findEdgesToCut(fixed_edges, corner_nodes, tol_cut, QUIET, debug);
   CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close,
                                  QUIET, debug);
-  CHKERR cutEdgesInMiddle(bit_level1, debug);
+  CHKERR cutEdgesInMiddle(bit_cut, debug);
   if (fixed_edges) {
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
                                                            *fixed_edges);
@@ -295,7 +295,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
                                                            *corner_nodes);
   }
   if (update_meshsets) {
-    CHKERR UpdateMeshsets()(cOre, bit_level1);
+    CHKERR UpdateMeshsets()(cOre, bit_cut);
   }
   CHKERR moveMidNodesOnCutEdges(th);
 
@@ -309,7 +309,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   };
 
   PetscPrintf(PETSC_COMM_WORLD, "Min quality cut %6.4g\n",
-              get_min_quality(bit_level1, th));
+              get_min_quality(bit_cut, th));
 
   if (debug)
     CHKERR saveCutEdges();
@@ -343,11 +343,11 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
       CHKERR setTagData(th);
   }
 
-  BitRefLevel bit_level2 = get_back_bit_levels();
+  BitRefLevel bit_trim = get_back_bit_levels();
   // trim mesh
   CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim,
                          tol_trim_close, debug);
-  CHKERR trimEdgesInTheMiddle(bit_level2, th, tol_trim_close, debug);
+  CHKERR trimEdgesInTheMiddle(bit_trim, th, tol_trim_close, debug);
   if (fixed_edges) {
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
                                                            *fixed_edges);
@@ -357,18 +357,18 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
                                                            *corner_nodes);
   }
   if (update_meshsets) {
-    CHKERR UpdateMeshsets()(cOre, bit_level2);
+    CHKERR UpdateMeshsets()(cOre, bit_trim);
   }
   CHKERR moveMidNodesOnTrimmedEdges(th);
 
   PetscPrintf(PETSC_COMM_WORLD, "Min quality trim %3.2g\n",
-              get_min_quality(bit_level2, th));
+              get_min_quality(bit_trim, th));
 
   if (debug) {
     CHKERR saveTrimEdges();
     Range bit2_edges;
     CHKERR cOre.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-        bit_level2, BitRefLevel().set(), MBEDGE, bit2_edges);
+        bit_trim, BitRefLevel().set(), MBEDGE, bit2_edges);
     CHKERR SaveData(moab)("trim_fixed_edges.vtk",
                           intersect(*fixed_edges, bit2_edges));
   }
