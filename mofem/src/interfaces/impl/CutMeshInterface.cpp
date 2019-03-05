@@ -502,7 +502,7 @@ MoFEMErrorCode CutMeshInterface::refCutTrimAndMerge(
       CHKERR setTagData(th);
   }
 
-  if (ref_before_cut_levels)
+  if (debug && ref_before_cut_levels)
     CHKERR m_field.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_levels.back(), BitRefLevel().set(), MBTET,
         "out_after_refine_before_cut.vtk", "VTK", "");
