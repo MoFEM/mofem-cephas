@@ -227,9 +227,21 @@ namespace MoFEM {
                             double *const tvw_ptr = nullptr,
                             double *const tlk_ptr = nullptr);
 
+    /**
+     * @brief Find minimal distance to edges
+     * 
+     * \note Finding only edges with have smaller distance than distance
+     * set on the input by min_dist_ptr
+     * 
+     * @param v_ptr point coordinates
+     * @param edges range of edges
+     * @param min_dist_ptr on return minimal distance, on input starting distance
+     * @param o_ptr coordinates of the point on edge
+     * @return MoFEMErrorCode 
+     */
     MoFEMErrorCode findMinDistanceFromTheEdges(const double *v_ptr, Range edges,
                                                double *min_dist_ptr,
-                                               double *o_ptr);
+                                               double *o_ptr) const;
 
     /**@}*/
 

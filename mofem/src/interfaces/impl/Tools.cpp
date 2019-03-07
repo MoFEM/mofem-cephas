@@ -350,7 +350,7 @@ Tools::minDistanceFromSegments(const double *w_ptr, const double *v_ptr,
 MoFEMErrorCode Tools::findMinDistanceFromTheEdges(const double *v_ptr,
                                                   Range edges,
                                                   double *min_dist_ptr,
-                                                  double *o_ptr) {
+                                                  double *o_ptr) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
   MoFEMFunctionBegin;
