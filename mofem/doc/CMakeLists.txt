@@ -72,6 +72,7 @@ if(DOXYGEN_FOUND)
   add_dependencies(doc doxygen_google_site_verification)
 
   # users modules docs
+  # FIXME: This only works if modules are in ${PROJECT_SOURCE_DIR}/users_modules
   file(
     GLOB_RECURSE INSTLLED_DOC_MODULES
     FOLLOW_SYMLINKS
