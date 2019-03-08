@@ -151,8 +151,6 @@ int main(int argc, char *argv[]) {
                                                         "MESH_NODE_POSITIONS");
 
     CHKERR m_field.modify_finite_element_add_field_row("TEST_FE2", "FIELD1");
-    // CHKERR m_field.modify_finite_element_add_field_row("TEST_FE2","FIELD2");
-    // CHKERR m_field.modify_finite_element_add_field_col("TEST_FE2","FIELD1");
     CHKERR m_field.modify_finite_element_add_field_col("TEST_FE2", "FIELD2");
     CHKERR m_field.modify_finite_element_add_field_data("TEST_FE2", "FIELD1");
     CHKERR m_field.modify_finite_element_add_field_data("TEST_FE2", "FIELD2");
@@ -296,13 +294,11 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    struct CallingOp
-        : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
+    struct CallingOp : public ForcesAndSourcesCore::UserDataOperator {
 
       TeeStream &mySplit;
       CallingOp(TeeStream &mySplit, const char type)
-          : ContactPrismElementForcesAndSourcesCore::UserDataOperator(
-                "FIELD1", "FIELD1", type),
+          : ForcesAndSourcesCore::UserDataOperator("FIELD1", "FIELD1", type),
             mySplit(mySplit) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
@@ -315,24 +311,6 @@ int main(int argc, char *argv[]) {
         mySplit << "Calling Operator NH1" << std::endl;
         mySplit << "side: " << side << " type: " << type << std::endl;
         mySplit << data << std::endl;
-
-        mySplit << std::setprecision(3) << "coords Master " << getCoordsMaster()
-                << std::endl;
-        mySplit << std::setprecision(3) << "area Master " << getAreaMaster()
-                << std::endl;
-        mySplit << std::setprecision(3) << "normal Master " << getNormalMaster()
-                << std::endl;
-        mySplit << std::setprecision(3) << "coords at Gauss Pts Master "
-                << getCoordsAtGaussPtsMaster() << std::endl;
-
-        mySplit << std::setprecision(3) << "coords Slave " << getCoordsSlave()
-                << std::endl;
-        mySplit << std::setprecision(3) << "area Slave " << getAreaSlave()
-                << std::endl;
-        mySplit << std::setprecision(3) << "normal Slave " << getNormalSlave()
-                << std::endl;
-        mySplit << std::setprecision(3) << "coords at Gauss Pts Slave "
-                << getCoordsAtGaussPtsSlave() << std::endl;
 
         MoFEMFunctionReturnHot(0);
       }
@@ -359,11 +337,12 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    struct MyOp2 : public FaceElementForcesAndSourcesCore::UserDataOperator {
+    struct MyOp2
+        : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
 
       TeeStream &mySplit;
       MyOp2(TeeStream &my_split, const char type, const char face_type)
-          : FaceElementForcesAndSourcesCore::UserDataOperator(
+          : ContactPrismElementForcesAndSourcesCore::UserDataOperator(
                 "FIELD1", "FIELD2", type, face_type),
             mySplit(my_split) {}
 

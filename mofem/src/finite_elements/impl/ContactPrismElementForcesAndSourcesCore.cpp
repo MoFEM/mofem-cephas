@@ -18,46 +18,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <Includes.hpp>
-#include <version.h>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <base_functions.h>
-#include <h1_hdiv_hcurl_l2.h>
-#include <fem_tools.h>
-
-#include <UnknownInterface.hpp>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
-#include <SeriesMultiIndices.hpp>
-
-#include <LoopMethods.hpp>
-#include <Interface.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
-#include <Core.hpp>
-
-#include <FTensor.hpp>
-#include <DataStructures.hpp>
-#include <DataOperators.hpp>
-#include <ForcesAndSourcesCore.hpp>
-#include <BaseFunction.hpp>
-#include <EntPolynomialBaseCtx.hpp>
-#include <ContactPrismElementForcesAndSourcesCore.hpp>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -149,12 +109,6 @@ ContactPrismElementForcesAndSourcesCore::
   getUserPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
 
-  // Data on elements for proper spaces
-  dataOnMaster[H1]->setElementType(MBTRI);
-  derivedDataOnMaster[H1]->setElementType(MBTRI);
-  dataOnSlave[H1]->setElementType(MBTRI);
-  derivedDataOnSlave[H1]->setElementType(MBTRI);
-
   dataH1Master.dataOnEntities[MBVERTEX].push_back(
       new DataForcesAndSourcesCore::EntData());
   dataH1Slave.dataOnEntities[MBVERTEX].push_back(
@@ -171,6 +125,12 @@ ContactPrismElementForcesAndSourcesCore::
       new DataForcesAndSourcesCore::EntData());
   dataH1Slave.dataOnEntities[MBTRI].push_back(
       new DataForcesAndSourcesCore::EntData());
+
+  // Data on elements for proper spaces
+  dataOnMaster[H1]->setElementType(MBTRI);
+  derivedDataOnMaster[H1]->setElementType(MBTRI);
+  dataOnSlave[H1]->setElementType(MBTRI);
+  derivedDataOnSlave[H1]->setElementType(MBTRI);
 }
 
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
@@ -350,6 +310,11 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     }
   } else {
     // Master-Slave
+    if (gaussPtsMaster.size2() != gaussPtsSlave.size2())
+      SETERRQ(
+          PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          "Number of Gauss Points at Master triangle is different than slave");
+
     CHKERR setGaussPts(order_row, order_col, order_data);
     nb_gauss_pts = gaussPtsMaster.size2();
     dataH1Master.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,
@@ -625,18 +590,14 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
              (type & UserDataOperator::FACEMASTERSLAVE) ||
              (type & UserDataOperator::FACESLAVEMASTER) ||
              (type & UserDataOperator::FACESLAVESLAVE))) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Wrong combination of FaceType and OpType, OPROW or OPCOL "
                   "combined with face-face OpType");
         }
         if (!type) {
-          type = UserDataOperator::FACEMASTER | UserDataOperator::FACESLAVE |
-                 UserDataOperator::FACEMASTERMASTER |
-                 UserDataOperator::FACEMASTERSLAVE |
-                 UserDataOperator::FACESLAVEMASTER |
-                 UserDataOperator::FACESLAVESLAVE;
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Face type is not set");
         }
-
       } else {
         type = UserDataOperator::FACEMASTER | UserDataOperator::FACESLAVE |
                UserDataOperator::FACEMASTERMASTER |
