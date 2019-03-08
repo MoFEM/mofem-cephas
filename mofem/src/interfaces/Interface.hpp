@@ -1088,7 +1088,8 @@ struct CoreInterface : public UnknownInterface {
    * @return      Error code
    */
   virtual MoFEMErrorCode
-  build_finite_elements(const string fe_name, const Range *ents_ptr = NULL,
+  build_finite_elements(const string fe_name,
+                        const Range *const ents_ptr = nullptr,
                         int verb = DEFAULT_VERBOSITY) = 0;
 
   /**@}*/
@@ -1515,12 +1516,72 @@ struct CoreInterface : public UnknownInterface {
                                    DofMethod &method,
                                    int verb = DEFAULT_VERBOSITY) = 0;
 
-  /** \brief Make a loop over entities
-
-  * \ingroup mofem_field
-  */
-  virtual MoFEMErrorCode loop_entities(const std::string &field_name,
+  /**
+   * @brief Loop over field entities
+   * @ingroup mofem_field
+   * 
+   * @param field_name  field entities
+   * @param method user method
+   * @param ents if given loop only on subset of entities in the field
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode loop_entities(const std::string field_name,
                                        EntityMethod &method,
+                                       Range const *const ents = nullptr,
+                                       int verb = DEFAULT_VERBOSITY) = 0;
+
+  /**
+   * @brief Loop over field entities in the problem
+   * @ingroup mofem_field
+   * 
+   * @param problem_ptr 
+   * @param field_name 
+   * @param rc 
+   * @param method 
+   * @param lower_rank 
+   * @param upper_rank 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode loop_entities(const Problem *problem_ptr,
+                                       const std::string field_name,
+                                       RowColData rc, EntityMethod &method,
+                                       int lower_rank, int upper_rank,
+                                       int verb = DEFAULT_VERBOSITY) = 0;
+
+  /**
+   * @brief Loop over field entities in the problem
+   * @ingroup mofem_field
+   * 
+   * @param problem_name 
+   * @param field_name 
+   * @param rc 
+   * @param method 
+   * @param lower_rank 
+   * @param upper_rank 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode loop_entities(const std::string problem_name,
+                                       const std::string field_name,
+                                       RowColData rc, EntityMethod &method,
+                                       int lower_rank, int upper_rank,
+                                       int verb = DEFAULT_VERBOSITY) = 0;
+  /**
+   * @brief Loop over field entities in the problem
+   * @ingroup mofem_field
+   * 
+   * @param problem_name 
+   * @param field_name 
+   * @param rc 
+   * @param method 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode loop_entities(const std::string problem_name,
+                                       const std::string field_name,
+                                       RowColData rc, EntityMethod &method,
                                        int verb = DEFAULT_VERBOSITY) = 0;
 
   /**@}*/
@@ -1701,57 +1762,6 @@ struct CoreInterface : public UnknownInterface {
       (MFIELD).get_dofs_by_name_and_ent_begin(NAME, ENT);                      \
   IT != (MFIELD).get_dofs_by_name_and_ent_end(NAME, ENT);                      \
   IT++
-
-  /**
-   * \brief get field data from entity and field
-   * \ingroup mofem_field
-   *
-   * this function is not recommended to be used in finite element
-   * implementation
-   *
-   */
-  template <typename DIT>
-  MoFEMErrorCode get_field_dof_data(const std::string &name,
-                                    const EntityHandle *ent, const int num_ents,
-                                    DIT dit, int *count = NULL) {
-    MoFEMFunctionBeginHot;
-    if (count != NULL)
-      *count = 0;
-    for (int nn = 0; nn < num_ents; nn++) {
-      for (_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this), name, ent[nn],
-                                                        it)) {
-        *(dit++) = (*it)->getFieldData();
-        if (count != NULL)
-          (*count)++;
-      }
-    }
-    MoFEMFunctionReturnHot(0);
-  }
-
-  /**
-   * \brief get field data from entity and field
-   * \ingroup mofem_field
-   *
-   * this function is not recommended to be used in finite element
-   * implementation
-   *
-   */
-  template <typename DIT>
-  MoFEMErrorCode get_field_dof_data(const std::string &name, const Range &ents,
-                                    DIT dit, int *count = NULL) {
-    MoFEMFunctionBeginHot;
-    if (count != NULL)
-      *count = 0;
-    for (Range::const_iterator eit = ents.begin(); eit != ents.end(); eit++) {
-      for (_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this), name, *eit,
-                                                        it)) {
-        *(dit++) = (*it)->getFieldData();
-        if (count != NULL)
-          (*count)++;
-      }
-    }
-    MoFEMFunctionReturnHot(0);
-  }
 
   /**
    * \brief get begin iterator of filed dofs of given name and ent type

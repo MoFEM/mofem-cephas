@@ -95,6 +95,24 @@ if (...) {
     (\em paragraphs -like structure) help the reader in comprehending the logical
     segmenting.
 
+- Types:
+
+  Use types to indicate what it is, and the name of the variable what it is.
+  For example
+  \code 
+  std::vector<PetscLocalDofIdx> on_boundary;
+  \endcode
+  In above one can see that you will be going to have local indices, and the
+  vector will store indices on indices on boundary only. 
+
+  An alternative to the example above you can see less informative, but
+  equivalent definition below
+  \code
+  std::vector<int> local_petsc_indices_on_boundary;
+  \endcode
+
+  For MoFEM data types see \ref MoFEM::Types.
+
 - Names:
 
   - A name should tell what rather than how, avoid names that expose underlying implementation.

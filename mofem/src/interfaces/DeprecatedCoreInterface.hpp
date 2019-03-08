@@ -454,8 +454,6 @@ struct DeprecatedCoreInterface : public CoreInterface {
   /** \brief update fields meshesets by child entities
    * \deprecated do not us this use BitRefManager interface
    * \ingroup mofem_field
-   * \todo Should be outsourced to separate interface, i.e. BitLevelManage
-   *
    */
   DEPRECATED MoFEMErrorCode update_field_meshset_by_entities_children(
       const BitRefLevel &child_bit, int verb = -1);

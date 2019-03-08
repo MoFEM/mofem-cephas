@@ -660,7 +660,7 @@ protected:
   MoFEMErrorCode build_finite_elements(const BitRefLevel &bit,
                                        int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode build_finite_elements(const string fe_name,
-                                       const Range *ents_ptr = NULL,
+                                       const Range *const ents_ptr = nullptr,
                                        int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
                                      const Range *ents_ptr = NULL,
@@ -771,8 +771,21 @@ protected:
                            DofMethod &method, int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode loop_dofs(const std::string &field_name, DofMethod &method,
                            int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode loop_entities(const std::string &field_name,
+  MoFEMErrorCode loop_entities(const Problem *problem_ptr,
+                               const std::string field_name, RowColData rc,
+                               EntityMethod &method, int lower_rank,
+                               int upper_rank, int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode loop_entities(const std::string problem_name,
+                               const std::string field_name, RowColData rc,
+                               EntityMethod &method, int lower_rank,
+                               int upper_rank, int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode loop_entities(const std::string problem_name,
+                               const std::string field_name, RowColData rc,
                                EntityMethod &method,
+                               int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode loop_entities(const std::string field_name,
+                               EntityMethod &method,
+                               Range const *const ents = nullptr,
                                int verb = DEFAULT_VERBOSITY);
 
   /**@}*/

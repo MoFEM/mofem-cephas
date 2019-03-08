@@ -16,21 +16,10 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
-#include <Includes.hpp>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-
 namespace MoFEM {
 
 // moab base meshsets
-MoFEMErrorCode CubitMeshSets::getTagsHanlders(Interface &moab) {
+MoFEMErrorCode CubitMeshSets::getTagsHanlders(moab::Interface &moab) {
   MoFEMFunctionBegin;
   CHKERR moab.tag_get_handle(DIRICHLET_SET_TAG_NAME, nsTag);
   CHKERR moab.tag_get_handle(NEUMANN_SET_TAG_NAME, ssTag);
@@ -44,7 +33,7 @@ MoFEMErrorCode CubitMeshSets::getTagsHanlders(Interface &moab) {
   CHKERR moab.tag_get_handle(NAME_TAG_NAME, entityNameTag);
   MoFEMFunctionReturn(0);
 }
-CubitMeshSets::CubitMeshSets(Interface &moab, const EntityHandle _meshset)
+CubitMeshSets::CubitMeshSets(moab::Interface &moab, const EntityHandle _meshset)
     : meshset(_meshset), cubitBcType(UNKNOWNSET), msId(NULL), tag_bc_data(NULL),
       tag_bc_size(0), tag_block_header_data(NULL), tag_block_attributes(NULL),
       tag_block_attributes_size(0), tagName(NULL),
@@ -113,8 +102,8 @@ CubitMeshSets::CubitMeshSets(Interface &moab, const EntityHandle _meshset)
     }
   }
 }
-CubitMeshSets::CubitMeshSets(Interface &moab, const CubitBCType _cubit_bc_type,
-                             const int _ms_id)
+CubitMeshSets::CubitMeshSets(moab::Interface &moab,
+                             const CubitBCType _cubit_bc_type, const int _ms_id)
     : cubitBcType(_cubit_bc_type), msId(NULL), tag_bc_data(NULL),
       tag_bc_size(0), tag_block_header_data(NULL), tag_block_attributes(NULL),
       tag_block_attributes_size(0), tagName(NULL),
@@ -149,7 +138,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab, const CubitBCType _cubit_bc_type,
   }
 }
 MoFEMErrorCode CubitMeshSets::getMeshsetIdEntitiesByDimension(
-    Interface &moab, const int dimension, Range &entities,
+    moab::Interface &moab, const int dimension, Range &entities,
     const bool recursive) const {
   MoFEMFunctionBegin;
   rval =
@@ -162,9 +151,8 @@ MoFEMErrorCode CubitMeshSets::getMeshsetIdEntitiesByDimension(
   CHKERR rval;
   MoFEMFunctionReturn(0);
 }
-MoFEMErrorCode
-CubitMeshSets::getMeshsetIdEntitiesByDimension(Interface &moab, Range &entities,
-                                               const bool recursive) const {
+MoFEMErrorCode CubitMeshSets::getMeshsetIdEntitiesByDimension(
+    moab::Interface &moab, Range &entities, const bool recursive) const {
   MoFEMFunctionBegin;
   if ((cubitBcType & CubitBCType(BLOCKSET)).any()) {
     if (tag_block_header_data != NULL) {
@@ -180,7 +168,7 @@ CubitMeshSets::getMeshsetIdEntitiesByDimension(Interface &moab, Range &entities,
   MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode CubitMeshSets::getMeshsetIdEntitiesByType(
-    Interface &moab, const EntityType type, Range &entities,
+    moab::Interface &moab, const EntityType type, Range &entities,
     const bool recursive) const {
   MoFEMFunctionBegin;
   rval = moab.get_entities_by_type(meshset, type, entities, recursive);

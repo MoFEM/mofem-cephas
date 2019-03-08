@@ -24,12 +24,6 @@
 
 // A scheme for Edge-based Adaptive Tetrahedral Subdivision; Delft Ruprecht
 
-
-#include <definitions.h>
-
-#include <Includes.hpp>
-#include <Common.hpp>
-
 namespace MoFEM {
 
 // TET
@@ -46,7 +40,7 @@ static const int cyclic_edge_rotate_face_3[3][6] = {
     {4, 0, 3, 5, 1, 2}, {0, 1, 2, 3, 4, 5}, {1, 4, 5, 2, 0, 3}};
 static const char edge_bits_mark[] = {1, 2, 4, 8, 16, 32};
 
-void tet_type_6(Interface &moab, const EntityHandle *conn,
+void tet_type_6(moab::Interface &moab, const EntityHandle *conn,
                 const EntityHandle *edge_new_nodes,
                 EntityHandle *new_tets_conn) {
   // 0:01 - 4 1:12-5 2:20-6 3:03-7 4:13-8 5:23-9
@@ -148,7 +142,7 @@ void tet_type_6(Interface &moab, const EntityHandle *conn,
   new_tets_conn[7 * 4 + 2] = edge_new_nodes[0];
   new_tets_conn[7 * 4 + 3] = edge_new_nodes[1];
 }
-int tet_type_5(Interface &moab, const EntityHandle *conn,
+int tet_type_5(moab::Interface &moab, const EntityHandle *conn,
                const EntityHandle *edge_new_nodes,
                EntityHandle *new_tets_conn) {
   int free_edge = -1;

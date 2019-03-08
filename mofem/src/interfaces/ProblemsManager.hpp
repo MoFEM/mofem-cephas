@@ -28,7 +28,7 @@ static const MOFEMuuid IDD_MOFEMProblemsManager =
 
 /**
  * \brief Problem manager is used to build and partition problems
- * \mofem_problems_manager
+ * \ingroup mofem_problems_manager
  *
  */
 struct ProblemsManager : public UnknownInterface {
@@ -72,16 +72,6 @@ struct ProblemsManager : public UnknownInterface {
                                Tag *th_edge_weights = nullptr,
                                Tag *th_part_weights = nullptr,
                                int verb = VERBOSE, const bool debug = false);
-
-  /// \deprecated do not use this one
-  // DEPRECATED MoFEMErrorCode partitionMesh(const Range &ents, const int dim,
-  //                                         const int adj_dim, const int
-  //                                         n_parts, int verb = VERBOSE, const
-  //                                         bool debug = false) {
-  //   return partitionMesh(ents, dim, adj_dim, n_parts, nullptr, nullptr,
-  //   nullptr,
-  //                        verb, debug);
-  // }
 
   /** \brief build problem data structures
    * \ingroup mofem_problems_manager
@@ -151,6 +141,8 @@ struct ProblemsManager : public UnknownInterface {
 
   /**
    * \brief build sub problem
+   * \ingroup mofem_problems_manager
+   * 
    * @param  out_name problem
    * @param  fields_row  vector of fields composing problem
    * @param  fields_col  vector of fields composing problem
@@ -166,6 +158,8 @@ struct ProblemsManager : public UnknownInterface {
 
   /**
    * \brief build composite problem
+   * \ingroup mofem_problems_manager
+   * 
    * @param  out_name         name of build problem
    * @param  add_row_problems vector of add row problems
    * @param  add_col_problems vector of add col problems
@@ -260,7 +254,22 @@ struct ProblemsManager : public UnknownInterface {
                                                      int verb = VERBOSE);
 
   /**
-   * \create meshset problem finite elements
+   * \create add entities of finite element in the problem
+   * \ingroup mofem_problems_manager
+   *
+   * \note Meshset entity has to be crated
+   * 
+   */
+
+  /**
+   * @brief create add entities of finite element in the problem
+   *
+   * @note Meshset entity has to be crated
+   * 
+   * @param prb_name name of the problem
+   * @param fe_name name of the entity
+   * @param meshset pointer meshset handle
+   * @return MoFEMErrorCode 
    */
   MoFEMErrorCode getFEMeshset(const std::string prb_name,
                               const std::string fe_name,
@@ -283,6 +292,32 @@ struct ProblemsManager : public UnknownInterface {
   MoFEMErrorCode getProblemElementsLayout(const std::string name,
                                           const std::string fe_name,
                                           PetscLayout *layout) const;
+
+  /**
+   * @brief Remove DOFs from problem
+   * @ingroup mofem_problems_manager
+   *
+   * Remove DOFs from problem which are on entities on the given range and given
+   * field name. On the finite element level, DOFs can be still accessed however
+   * local PETSc indices and global PETSc indices are marked with the index -1.
+   *
+   * @note If the index is marked -1 it is not assembled and dropped by
+   * VecSetValues and MatSetValues.
+   *
+   * @todo Not yet implemented update for AO maps and IS ranges if removed
+   * entities in composite problem or sub-problem
+   *
+   * @param problem_name name of the problem
+   * @param field_name name of the field
+   * @param ents entities on which DOFs are removed
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode removeDofsOnEntities(const std::string problem_name,
+                                      const std::string field_name,
+                                      const Range ents, const int lo_coeff = 0,
+                                      const int hi_coeff = MAX_DOFS_ON_ENTITY,
+                                      int verb = VERBOSE);
 
 private:
   PetscLogEvent MOFEM_EVENT_ProblemsManager;

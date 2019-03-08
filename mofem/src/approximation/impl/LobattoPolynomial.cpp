@@ -15,20 +15,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <version.h>
-#include <config.h>
-#include <definitions.h>
-#include <Includes.hpp>
-
-#include <base_functions.h>
-#include <Common.hpp>
-#include <UnknownInterface.hpp>
-using namespace MoFEM;
-
-#include <BaseFunction.hpp>
-#include <LegendrePolynomial.hpp>
-#include <LobattoPolynomial.hpp>
-
 namespace MoFEM {
 
 MoFEMErrorCode LobattoPolynomialCtx::query_interface(

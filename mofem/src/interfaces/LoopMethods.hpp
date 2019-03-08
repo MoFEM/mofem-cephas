@@ -140,7 +140,6 @@ struct SnesMethod : virtual public UnknownInterface {
   SNES snes;
   Vec snes_x, snes_f;
   Mat snes_A, snes_B;
-
 };
 
 /**
@@ -193,7 +192,6 @@ struct TSMethod : virtual public UnknownInterface {
 
   PetscInt ts_step;
   PetscReal ts_a, ts_t;
-
 };
 
 /**
@@ -218,7 +216,14 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
   BasicMethod();
   virtual ~BasicMethod(){};
 
+  /**
+   * @brief number currently of processed method
+   */
   int nInTheLoop;
+
+  /**
+   * @brief local number oe methods to process
+   */
   int loopSize;
 
   /** \brief get number of evaluated element in the loop
@@ -229,31 +234,56 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
    */
   inline int getLoopSize() const { return loopSize; }
 
-  int rAnk, sIze;
-  const RefEntity_multiIndex *refinedEntitiesPtr;
-  const RefElement_multiIndex *refinedFiniteElementsPtr;
-  const Problem *problemPtr;
-  const Field_multiIndex *fieldsPtr;
-  const FieldEntity_multiIndex *entitiesPtr;
-  const DofEntity_multiIndex *dofsPtr;
-  const FiniteElement_multiIndex *finiteElementsPtr;
-  const EntFiniteElement_multiIndex *finiteElementsEntitiesPtr;
-  const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *adjacenciesPtr;
+  int rAnk; ///< processor rank
 
+  int sIze; ///< number of processors in communicator
+
+  const RefEntity_multiIndex
+      *refinedEntitiesPtr; ///< container of mofem dof entities
+
+  const RefElement_multiIndex
+      *refinedFiniteElementsPtr; ///< container of mofem finite element entities
+
+  const Problem *problemPtr; ///< raw pointer to problem
+
+  const Field_multiIndex *fieldsPtr; ///< raw pointer to fields container
+
+  const FieldEntity_multiIndex
+      *entitiesPtr; ///< raw pointer to container of field entities
+
+  const DofEntity_multiIndex *dofsPtr; ///< raw pointer container of dofs
+
+  const FiniteElement_multiIndex
+      *finiteElementsPtr; ///< raw pointer to container finite elements
+
+  const EntFiniteElement_multiIndex
+      *finiteElementsEntitiesPtr; ///< raw pointer to container finite elements
+                                  ///< entities
+
+  const FieldEntityEntFiniteElementAdjacencyMap_multiIndex
+      *adjacenciesPtr; ///< raw pointer to container to adjacencies between dofs
+                       ///< and finite elements
+
+  /**
+   * @brief Copy data from other base method to this base method
+   *
+   * @param basic
+   * @return MoFEMErrorCode
+   */
   MoFEMErrorCode copyBasicMethod(const BasicMethod &basic);
 
   /**
-   * Hook function for pre-processing
+   * @brief Hook function for pre-processing
    */
   boost::function<MoFEMErrorCode()> preProcessHook;
 
   /**
-   * Hook function for post-processing
+   * @brief Hook function for post-processing
    */
   boost::function<MoFEMErrorCode()> postProcessHook;
 
   /**
-   * Hook function for operator
+   * @brief Hook function for operator
    */
   boost::function<MoFEMErrorCode()> operatorHook;
 
@@ -283,9 +313,6 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
    *
    */
   virtual MoFEMErrorCode postProcess();
-
-private:
-  void iNit();
 };
 
 /**
@@ -369,7 +396,7 @@ struct FEMethod : public BasicMethod {
             const EntityType type, const int side_number) const {
     return index.lower_bound(boost::make_tuple(field_name, type, side_number));
   }
-  
+
   template <class MULTIINDEX>
   typename MULTIINDEX::iterator
   get_end(const MULTIINDEX &index, const std::string &field_name,
@@ -377,15 +404,15 @@ struct FEMethod : public BasicMethod {
     return index.upper_bound(boost::make_tuple(field_name, type, side_number));
   }
 
-    /** \brief loop over all dofs which are on a particular FE row, field,
-     * entity type and canonical side number \ingroup mofem_loops
-     *
-     * \param FE finite elements
-     * \param Name field name
-     * \param Type moab entity type (MBVERTEX, MBEDGE etc)
-     * \param Side side canonical number
-     * \param IT the interator in use
-     */
+  /** \brief loop over all dofs which are on a particular FE row, field,
+   * entity type and canonical side number \ingroup mofem_loops
+   *
+   * \param FE finite elements
+   * \param Name field name
+   * \param Type moab entity type (MBVERTEX, MBEDGE etc)
+   * \param Side side canonical number
+   * \param IT the interator in use
+   */
 #define _IT_GET_FEROW_BY_SIDE_DOFS_FOR_LOOP_(FE, NAME, TYPE, SIDE, IT)         \
   FENumeredDofEntity_multiIndex::index<Composite_mi_tag>::type::iterator IT =  \
       FE->get_begin<                                                           \
@@ -592,8 +619,6 @@ struct FEMethod : public BasicMethod {
 /**
  * \brief Data structure to exchange data between mofem and User Loop Methods on
  * entities. \ingroup mofem_loops
- * 
- * \todo Add implementation to loop over entities in the problem
  *
  * It allows to exchange data between MoFEM and user functions. It stores
  * information about multi-indices.
@@ -615,9 +640,7 @@ struct EntityMethod : public BasicMethod {
 
   boost::shared_ptr<Field> fieldPtr;
   boost::shared_ptr<FieldEntity> entPtr;
-
 };
-
 
 /**
  * \brief Data structure to exchange data between mofem and User Loop Methods on
@@ -654,7 +677,7 @@ DEPRECATED typedef DofMethod EntMethod;
 
 #endif // __LOOPMETHODS_HPP__
 
-/***************************************************************************/ /**
-  * \defgroup mofem_loops Loops
-  * \ingroup mofem
- ******************************************************************************/
+/**
+ * \defgroup mofem_loops Loops
+ * \ingroup mofem
+ */

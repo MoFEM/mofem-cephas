@@ -15,19 +15,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
-#include <Includes.hpp>
-#include <config.h>
-#include <definitions.h>
-#include <version.h>
-
-#include <Common.hpp>
-#include <UnknownInterface.hpp>
-#include <base_functions.h>
-using namespace MoFEM;
-
-#include <BaseFunction.hpp>
-#include <JacobiPolynomial.hpp>
-
 namespace MoFEM {
 
 MoFEMErrorCode

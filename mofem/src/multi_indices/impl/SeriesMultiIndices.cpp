@@ -16,24 +16,9 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
-#include <Includes.hpp>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <SeriesMultiIndices.hpp>
-
 namespace MoFEM {
 
-FieldSeries::FieldSeries(Interface &moab, const EntityHandle _meshset)
+FieldSeries::FieldSeries(moab::Interface &moab, const EntityHandle _meshset)
     : meshset(_meshset), tagName(NULL), tagNameSize(0), record_begin(false),
       record_end(false) {
 
@@ -77,7 +62,8 @@ FieldSeries::FieldSeries(Interface &moab, const EntityHandle _meshset)
   MOAB_THROW(rval);
 }
 
-MoFEMErrorCode FieldSeries::get_nb_steps(Interface &moab, int &nb_steps) const {
+MoFEMErrorCode FieldSeries::get_nb_steps(moab::Interface &moab,
+                                         int &nb_steps) const {
   MoFEMFunctionBegin;
   CHKERR moab.num_contained_meshsets(meshset, &nb_steps);
   MoFEMFunctionReturn(0);
@@ -119,7 +105,7 @@ MoFEMErrorCode FieldSeries::end(double t) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FieldSeries::read(Interface &moab) {
+MoFEMErrorCode FieldSeries::read(moab::Interface &moab) {
   MoFEMFunctionBegin;
 
   if (record_begin) {
@@ -185,7 +171,7 @@ MoFEMErrorCode FieldSeries::read(Interface &moab) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FieldSeries::save(Interface &moab) const {
+MoFEMErrorCode FieldSeries::save(moab::Interface &moab) const {
   MoFEMFunctionBegin;
 
   if (record_begin) {
@@ -250,7 +236,7 @@ MoFEMErrorCode FieldSeries::save(Interface &moab) const {
   MoFEMFunctionReturn(0);
 }
 
-FieldSeriesStep::FieldSeriesStep(Interface &moab,
+FieldSeriesStep::FieldSeriesStep(moab::Interface &moab,
                                  const FieldSeries *_FieldSeries_ptr,
                                  const int _step_number)
     : interface_FieldSeries<FieldSeries>(_FieldSeries_ptr),
@@ -260,7 +246,7 @@ FieldSeriesStep::FieldSeriesStep(Interface &moab,
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
 }
 
-MoFEMErrorCode FieldSeriesStep::get(Interface &moab,
+MoFEMErrorCode FieldSeriesStep::get(moab::Interface &moab,
                                     DofEntity_multiIndex &dofsField) const {
   MoFEMFunctionBegin;
 
@@ -331,7 +317,7 @@ MoFEMErrorCode FieldSeriesStep::get(Interface &moab,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FieldSeriesStep::get_time_init(Interface &moab) {
+MoFEMErrorCode FieldSeriesStep::get_time_init(moab::Interface &moab) {
   MoFEMFunctionBegin;
 
   std::vector<EntityHandle> contained;

@@ -63,6 +63,11 @@ MoFEMErrorCode NodeMergerInterface::query_interface(const MOFEMuuid& uuid, Unkno
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode NodeMergerInterface::getSubInterfaceOptions() {
+  MoFEMFunctionBegin;
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode NodeMergerInterface::mergeNodes(
     EntityHandle father, EntityHandle mother, Range &out_tets, Range *tets_ptr,
     const bool only_if_improve_quality, const double move,

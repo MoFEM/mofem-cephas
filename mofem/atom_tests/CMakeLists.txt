@@ -701,7 +701,8 @@ add_test(forces_and_sources_h1_continuity_check_atom
 )
 
 # Check approximation on Hcurl space in 2d
-my_add_executable(forces_and_sources_polynomoal_approx_on_triangle forces_and_sources_polynomoal_approx_on_triangle.cpp)
+my_add_executable(forces_and_sources_polynomoal_approx_on_triangle 
+  forces_and_sources_polynomoal_approx_on_triangle.cpp)
 target_link_libraries(forces_and_sources_polynomoal_approx_on_triangle
   mofem_finite_elements
   mofem_interfaces
@@ -731,7 +732,8 @@ target_link_libraries(record_series_atom
   ${PROJECT_LIBS}
 )
 
-add_test(record_series_atom_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/record_series_atom
+add_test(record_series_atom_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/record_series_atom
   -my_file elasticity_atom_test_01X_pressure.h5m
 )
 add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files
@@ -740,7 +742,8 @@ add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files
 )
 
 # add test for hcurl space
-my_add_executable(forces_and_sources_hcurl_approximation_functions forces_and_sources_hcurl_approximation_functions.cpp)
+my_add_executable(forces_and_sources_hcurl_approximation_functions 
+  forces_and_sources_hcurl_approximation_functions.cpp)
 target_link_libraries(forces_and_sources_hcurl_approximation_functions
   mofem_finite_elements
   mofem_interfaces
@@ -753,7 +756,8 @@ target_link_libraries(forces_and_sources_hcurl_approximation_functions
 )
 add_test(
   forces_and_sources_hcurl_approximation_functions_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_approximation_functions
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_approximation_functions
 )
 add_test(forces_and_sources_hcurl_approximation_functions_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hcurl_approximation_functions.txt
@@ -783,7 +787,8 @@ add_test(hcurl_demkowicz_continuity_check
 )
 
 # add test for hdiv space
-my_add_executable(forces_and_sources_hdiv_approximation_functions forces_and_sources_hdiv_approximation_functions.cpp)
+my_add_executable(forces_and_sources_hdiv_approximation_functions 
+  forces_and_sources_hdiv_approximation_functions.cpp)
 target_link_libraries(forces_and_sources_hdiv_approximation_functions
   mofem_finite_elements
   mofem_interfaces
@@ -797,7 +802,8 @@ target_link_libraries(forces_and_sources_hdiv_approximation_functions
 
 add_test(
   forces_and_sources_hdiv_approximation_functions_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions
 )
 add_test(forces_and_sources_hdiv_approximation_functions_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_approximation_functions.txt
@@ -905,7 +911,8 @@ target_link_libraries(dm_mofem
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(dm_mofem_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_mofem -my_file disp01.h5m)
+add_test(dm_mofem_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${CMAKE_CURRENT_BINARY_DIR}/dm_mofem -my_file disp01.h5m)
 add_test(dm_mofem_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/dm_mofem.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_mofem.txt
@@ -924,7 +931,9 @@ target_link_libraries(dm_build_partitioned_mesh
   ${PROJECT_LIBS}
 )
 add_test(dm_build_partitioned_mesh_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_build_partitioned_mesh -my_file disp01_2parts.h5m -dm_is_partitioned
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${CMAKE_CURRENT_BINARY_DIR}/dm_build_partitioned_mesh -my_file disp01_2parts.h5m 
+  -dm_is_partitioned
 )
 add_test(dm_build_partitioned_mesh_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/dm_build_partitioned_mesh.txt
@@ -960,7 +969,8 @@ target_link_libraries(serial_matrix
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(serial_matrix ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/serial_matrix -my_file disp01.h5m)
+add_test(serial_matrix ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${CMAKE_CURRENT_BINARY_DIR}/serial_matrix -my_file disp01.h5m)
 add_test(serial_matrix_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/serial_matrix.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/serial_matrix.txt
@@ -982,6 +992,27 @@ add_test(
   build_problems_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m
+)
+
+# tetsing removing enetities from the problem
+cm_export_file("disp01_2parts.h5m" export_atom_tests)
+my_add_executable(remove_entities_from_problem 
+  remove_entities_from_problem.cpp
+)
+target_link_libraries(remove_entities_from_problem
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(remove_entities_from_problem
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${CMAKE_CURRENT_BINARY_DIR}/remove_entities_from_problem 
+  -my_file disp01_2parts.h5m 
 )
 
 # teting build mesh on partinoned (not distributed) mesh and composite problems
@@ -1020,6 +1051,23 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/activate_deactivate_dofs -my_file disp01.h5m
 )
 
+# Tetsing entity loops
+my_add_executable(loop_entities loop_entities.cpp)
+target_link_libraries(loop_entities
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(loop_entities
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${CMAKE_CURRENT_BINARY_DIR}/loop_entities -file_name disp01_2parts.h5m 
+  -dm_is_partitioned
+)
 
 # Projection form and to 10 node tets
 my_add_executable(projection_from_10node_tet_atom projection_from_10node_tet.cpp)
@@ -1035,7 +1083,8 @@ target_link_libraries(projection_from_10node_tet_atom
 )
 
 add_test(
-  projection_from_10node_tet_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.h5m
+  projection_from_10node_tet_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+   ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.h5m
 )
 add_test(projection_from_10node_tet_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/10node_sphere.txt
@@ -1212,7 +1261,8 @@ target_link_libraries(simple_interface
 
 add_test(
   simple_interface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
-  ${CMAKE_CURRENT_BINARY_DIR}/simple_interface -file_name disp01_2parts.h5m -log_summary
+  ${CMAKE_CURRENT_BINARY_DIR}/simple_interface -file_name disp01_2parts.h5m 
+  -log_summary
 )
 
 # Tetsing mesh cuttiong
@@ -1230,6 +1280,7 @@ target_link_libraries(mesh_cut_test
 )
 add_test(
   mesh_cut ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test -my_file test_mesh_cut.cub -side_set 200 -shift -0.2,0.2,0. -test
+  ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test 
+  -my_file test_mesh_cut.cub -side_set 200 -shift -0.2,0.2,0. -test
 )
 

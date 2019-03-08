@@ -32,11 +32,19 @@
 //SRC/APPROXIMATION
 #include <base_functions.h>
 #include <h1_hdiv_hcurl_l2.h>
+#include <Hdiv.hpp>
+#include <Hcurl.hpp>
 #include <fem_tools.h>
 #include <BaseFunction.hpp>
 #include <LegendrePolynomial.hpp>
 #include <LobattoPolynomial.hpp>
 #include <JacobiPolynomial.hpp>
+#include <EntPolynomialBaseCtx.hpp>
+#include <EdgePolynomialBase.hpp>
+#include <TriPolynomialBase.hpp>
+#include <TetPolynomialBase.hpp>
+#include <FatPrismPolynomialBase.hpp>
+#include <FlatPrismPolynomialBase.hpp>
 
 //SRC/MULTI-INDICES
 #include <MaterialBlocks.hpp>

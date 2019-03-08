@@ -16,20 +16,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
-#include <Includes.hpp>
-#include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <Common.hpp>
-#include <BCData.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <MaterialBlocks.hpp>
-#include <TagMultiIndices.hpp>
-
 namespace MoFEM {
 
 const boost::shared_ptr<SideNumber> RefElement::nullSideNumber =
@@ -515,10 +501,9 @@ std::ostream &operator<<(std::ostream &os, const RefElement_VERTEX &e) {
   return os;
 }
 
-MoFEMErrorCode
-DefaultElementAdjacency::defaultVertex(Interface &moab, const Field &field_ptr,
-                                       const EntFiniteElement &fe_ptr,
-                                       Range &adjacency) {
+MoFEMErrorCode DefaultElementAdjacency::defaultVertex(
+    moab::Interface &moab, const Field &field_ptr,
+    const EntFiniteElement &fe_ptr, Range &adjacency) {
   MoFEMFunctionBegin;
   switch (field_ptr.getSpace()) {
   case H1:
@@ -544,10 +529,9 @@ DefaultElementAdjacency::defaultVertex(Interface &moab, const Field &field_ptr,
   }
   MoFEMFunctionReturn(0);
 }
-MoFEMErrorCode
-DefaultElementAdjacency::defaultEdge(Interface &moab, const Field &field_ptr,
-                                     const EntFiniteElement &fe_ptr,
-                                     Range &adjacency) {
+MoFEMErrorCode DefaultElementAdjacency::defaultEdge(
+    moab::Interface &moab, const Field &field_ptr,
+    const EntFiniteElement &fe_ptr, Range &adjacency) {
   MoFEMFunctionBegin;
   EntityHandle fe_ent = fe_ptr.getEnt();
   // Range nodes;
@@ -577,10 +561,9 @@ DefaultElementAdjacency::defaultEdge(Interface &moab, const Field &field_ptr,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-DefaultElementAdjacency::defaultTri(Interface &moab, const Field &field_ptr,
-                                    const EntFiniteElement &fe_ptr,
-                                    Range &adjacency) {
+MoFEMErrorCode DefaultElementAdjacency::defaultTri(
+    moab::Interface &moab, const Field &field_ptr,
+    const EntFiniteElement &fe_ptr, Range &adjacency) {
   MoFEMFunctionBegin;
   // Range nodes,edges;
   const EntityHandle fe_ent = fe_ptr.getEnt();
@@ -615,10 +598,9 @@ DefaultElementAdjacency::defaultTri(Interface &moab, const Field &field_ptr,
     fe_ptr.getSideNumberPtr(*eit);
   MoFEMFunctionReturn(0);
 }
-MoFEMErrorCode
-DefaultElementAdjacency::defaultTet(Interface &moab, const Field &field_ptr,
-                                    const EntFiniteElement &fe_ptr,
-                                    Range &adjacency) {
+MoFEMErrorCode DefaultElementAdjacency::defaultTet(
+    moab::Interface &moab, const Field &field_ptr,
+    const EntFiniteElement &fe_ptr, Range &adjacency) {
   MoFEMFunctionBegin;
   EntityHandle fe_ent = fe_ptr.getEnt();
   switch (field_ptr.getSpace()) {
@@ -653,10 +635,9 @@ DefaultElementAdjacency::defaultTet(Interface &moab, const Field &field_ptr,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-DefaultElementAdjacency::defaultPrism(Interface &moab, const Field &field_ptr,
-                                      const EntFiniteElement &fe_ptr,
-                                      Range &adjacency) {
+MoFEMErrorCode DefaultElementAdjacency::defaultPrism(
+    moab::Interface &moab, const Field &field_ptr,
+    const EntFiniteElement &fe_ptr, Range &adjacency) {
   MoFEMFunctionBegin;
   const EntityHandle prism = fe_ptr.getEnt();
   Range nodes;
@@ -799,10 +780,9 @@ DefaultElementAdjacency::defaultPrism(Interface &moab, const Field &field_ptr,
   }
   MoFEMFunctionReturn(0);
 }
-MoFEMErrorCode
-DefaultElementAdjacency::defaultMeshset(Interface &moab, const Field &field_ptr,
-                                        const EntFiniteElement &fe_ptr,
-                                        Range &adjacency) {
+MoFEMErrorCode DefaultElementAdjacency::defaultMeshset(
+    moab::Interface &moab, const Field &field_ptr,
+    const EntFiniteElement &fe_ptr, Range &adjacency) {
   MoFEMFunctionBegin;
   EntityHandle fe_ent = fe_ptr.getEnt();
   // get all meshsets in finite element meshset
@@ -839,7 +819,7 @@ DefaultElementAdjacency::defaultMeshset(Interface &moab, const Field &field_ptr,
 }
 
 // FiniteElement
-FiniteElement::FiniteElement(Interface &moab, const EntityHandle _meshset)
+FiniteElement::FiniteElement(moab::Interface &moab, const EntityHandle _meshset)
     : meshset(_meshset) {
   Tag th_FEId;
   rval = moab.tag_get_handle("_FEId", th_FEId);
@@ -967,28 +947,24 @@ EntFiniteElement::getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode NumeredEntFiniteElement::getRowDofsByPetscGlobalDofIdx(
-    DofIdx idx, const FENumeredDofEntity **dof_ptr) const {
-  MoFEMFunctionBeginHot;
-  auto dit = rows_dofs->get<PetscGlobalIdx_mi_tag>().find(idx);
-  if (dit == rows_dofs->get<PetscGlobalIdx_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-             "dof which index < %d > not found", idx);
-  }
-  *dof_ptr = &*dit->get();
-  MoFEMFunctionReturnHot(0);
+boost::weak_ptr<FENumeredDofEntity>
+NumeredEntFiniteElement::getRowDofsByPetscGlobalDofIdx(const int idx) const {
+  auto comp = [idx](const auto &a) { return a->getPetscGlobalDofIdx() == idx; };
+  auto dit = std::find_if(rows_dofs->begin(), rows_dofs->end(), comp);
+  if (dit != rows_dofs->end())
+    return *dit;
+  else
+    return boost::weak_ptr<FENumeredDofEntity>();
 }
 
-MoFEMErrorCode NumeredEntFiniteElement::getColDofsByPetscGlobalDofIdx(
-    DofIdx idx, const FENumeredDofEntity **dof_ptr) const {
-  MoFEMFunctionBeginHot;
-  auto dit = rows_dofs->get<PetscGlobalIdx_mi_tag>().find(idx);
-  if (dit == rows_dofs->get<PetscGlobalIdx_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-             "dof which index < %d > not found", idx);
-  }
-  *dof_ptr = &*dit->get();
-  MoFEMFunctionReturnHot(0);
+boost::weak_ptr<FENumeredDofEntity>
+NumeredEntFiniteElement::getColDofsByPetscGlobalDofIdx(const int idx) const {
+  auto comp = [idx](const auto &a) { return a->getPetscGlobalDofIdx() == idx; };
+  auto dit = std::find_if(cols_dofs->begin(), cols_dofs->end(), comp);
+  if (dit != cols_dofs->end())
+    return *dit;
+  else
+    return boost::weak_ptr<FENumeredDofEntity>();
 }
 
 } // namespace MoFEM

@@ -22,16 +22,6 @@ implementation of finite element with users data operators.
 - \subpage hello_world_tut1
 
 
-\section simple_elasticity Solid elasticity problems
-
-Introduction to fundamental MoFEM functionalities and capabilities by solving a simple linear elastic problem.
-
-- \subpage simple_elasticity_1
-
-Tutorial for mixed formulation of imcompressible elasticity problem
-
-- \subpage elasticity_mixed_formulation
-
 \section poisson_problem The Poisson equation
 
 The Poisson equation is solved using MoFEM::Simple interface. The generic
@@ -53,6 +43,21 @@ Using <a href="http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PC
 pre-conditioner to solve problem with Lagrange multipliers
 
 - \subpage poisson_tut3
+
+
+\section simple_elasticity Solid elasticity problems
+
+Introduction to fundamental MoFEM functionalities and capabilities by solving a simple linear elastic problem.
+
+- \subpage simple_elasticity_1
+
+Tutorial for mixed formulation of incompressible elasticity problem
+
+- \subpage elasticity_mixed_formulation
+
+Tutorial for the implementation of Winkler spring elements
+
+- \subpage spring_element
 
 \section snes_nonlinear_tut Nonlinear problem
 

@@ -25,6 +25,8 @@ namespace MoFEM {
 static const MOFEMuuid IDD_FATPRISM_BASE_FUNCTION =
     MOFEMuuid(BitIntefaceId(FATPRISM_BASE_FUNCTION_INTERFACE));
 
+struct NumeredEntFiniteElement;
+
 /**
  * \brief Class used to pass element data to calculate base functions on fat
  * prism

@@ -16,20 +16,9 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <Includes.hpp>
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <MaterialBlocks.hpp>
-#include <BCData.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-
 namespace MoFEM {
 
-  CoordSys::CoordSys(const Interface &moab,const EntityHandle meshset):
+  CoordSys::CoordSys(const moab::Interface &moab,const EntityHandle meshset):
   meshSet(meshset),
   tagCoordSysName(NULL) {
     // Change those tags only by modifiers

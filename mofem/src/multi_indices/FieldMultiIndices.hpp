@@ -144,7 +144,7 @@ struct Field {
    *
    * \param meshset which keeps entities for this field
    */
-  Field(const Interface &moab, const EntityHandle meshset,
+  Field(const moab::Interface &moab, const EntityHandle meshset,
         const boost::shared_ptr<CoordSys> coord_sys_ptr);
 
   /**

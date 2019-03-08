@@ -90,11 +90,11 @@ MoFEMErrorCode TSMethod::copyTs(const TSMethod &ts) {
 // BasicMethod
 BasicMethod::BasicMethod()
     : KspMethod(), SnesMethod(), TSMethod(), nInTheLoop(0), loopSize(0),
-      refinedEntitiesPtr(NULL), refinedFiniteElementsPtr(NULL),
-      problemPtr(NULL), fieldsPtr(NULL), entitiesPtr(NULL), dofsPtr(NULL),
-      finiteElementsPtr(NULL), finiteElementsEntitiesPtr(NULL),
-      adjacenciesPtr(NULL), preProcessHook(NULL), postProcessHook(NULL),
-      operatorHook(NULL) {}
+      rAnk(-1), sIze(-1), refinedEntitiesPtr(nullptr),
+      refinedFiniteElementsPtr(nullptr), problemPtr(nullptr),
+      fieldsPtr(nullptr), entitiesPtr(nullptr), dofsPtr(nullptr),
+      finiteElementsPtr(nullptr), finiteElementsEntitiesPtr(nullptr),
+      adjacenciesPtr(nullptr) {}
 
 MoFEMErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
   MoFEMFunctionBeginHot;

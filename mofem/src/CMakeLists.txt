@@ -18,24 +18,26 @@ include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/ftensor)
 
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 include_directories("${PROJECT_SOURCE_DIR}/src/approximation")
 include_directories("${PROJECT_SOURCE_DIR}/src/approximation/c")
+include_directories("${PROJECT_SOURCE_DIR}/src/multi_indices")
+include_directories("${PROJECT_SOURCE_DIR}/src/interfaces")
+include_directories("${PROJECT_SOURCE_DIR}/src/petsc")
+include_directories("${PROJECT_SOURCE_DIR}/src/finite_elements")
+
 link_directories("${PROJECT_BINARY_DIR}/src/approximation")
 add_subdirectory("${PROJECT_SOURCE_DIR}/src/approximation")
 
-include_directories("${PROJECT_SOURCE_DIR}/src/multi_indices")
 link_directories("${PROJECT_BINARY_DIR}/src/multi_indices")
 add_subdirectory("${PROJECT_SOURCE_DIR}/src/multi_indices")
 
-include_directories("${PROJECT_SOURCE_DIR}/src/interfaces")
 link_directories("${PROJECT_BINARY_DIR}/src/interfaces")
 add_subdirectory("${PROJECT_SOURCE_DIR}/src/interfaces")
 
-include_directories("${PROJECT_SOURCE_DIR}/src/petsc")
 link_directories("${PROJECT_BINARY_DIR}/src/petsc")
 add_subdirectory("${PROJECT_SOURCE_DIR}/src/petsc")
 
-include_directories("${PROJECT_SOURCE_DIR}/src/finite_elements")
 link_directories("${PROJECT_BINARY_DIR}/src/finite_elements")
 add_subdirectory("${PROJECT_SOURCE_DIR}/src/finite_elements")
 

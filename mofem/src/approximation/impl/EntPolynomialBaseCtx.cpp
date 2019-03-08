@@ -17,32 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <version.h>
-#include <config.h>
-#include <definitions.h>
-#include <Includes.hpp>
-
-#include <base_functions.h>
-#include <fem_tools.h>
-#include <h1_hdiv_hcurl_l2.h>
-#include <Common.hpp>
-#include <UnknownInterface.hpp>
 using namespace MoFEM;
-
-#include <FTensor.hpp>
-#include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
-#include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
-#include <DofsMultiIndices.hpp>
-#include <FEMultiIndices.hpp>
-#include <DataStructures.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <LoopMethods.hpp>
-
-#include <BaseFunction.hpp>
-#include <EntPolynomialBaseCtx.hpp>
 
 MoFEMErrorCode
 EntPolynomialBaseCtx::query_interface(const MOFEMuuid &uuid,

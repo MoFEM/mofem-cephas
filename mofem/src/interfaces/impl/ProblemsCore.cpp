@@ -542,7 +542,7 @@ MoFEMErrorCode Core::loop_dofs(
     int verb           // verbosity level
 ) {
   MoFEMFunctionBegin;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   // find p_miit
@@ -560,7 +560,7 @@ MoFEMErrorCode Core::loop_dofs(const std::string &problem_name,
                                const std::string &field_name, RowColData rc,
                                DofMethod &method, int verb) {
   MoFEMFunctionBegin;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
   CHKERR loop_dofs(problem_name, field_name, rc, method, 0, sIze, verb);
   MoFEMFunctionReturn(0);
@@ -569,9 +569,9 @@ MoFEMErrorCode Core::loop_dofs(const std::string &problem_name,
 MoFEMErrorCode Core::loop_dofs(const std::string &field_name, DofMethod &method,
                                int verb) {
   MoFEMFunctionBegin;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
-  SET_BASIC_METHOD(method, NULL);
+  SET_BASIC_METHOD(method, nullptr);
   auto miit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
   auto hi_miit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
   if (miit != hi_miit) {
@@ -593,29 +593,134 @@ MoFEMErrorCode Core::loop_dofs(const std::string &field_name, DofMethod &method,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::loop_entities(const std::string &field_name,
-                                   EntityMethod &method, int verb) {
+MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
+                                   const std::string field_name, RowColData rc,
+                                   EntityMethod &method, int lower_rank,
+                                   int upper_rank, int verb) {
   MoFEMFunctionBegin;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
-  SET_BASIC_METHOD(method, NULL);
-  auto miit = entsFields.get<FieldName_mi_tag>().lower_bound(field_name);
-  auto hi_miit = entsFields.get<FieldName_mi_tag>().upper_bound(field_name);
+  decltype(problem_ptr->numeredDofsRows) dofs;
+  switch (rc) {
+  case ROW:
+    dofs = problem_ptr->numeredDofsRows;
+    break;
+  case COL:
+    dofs = problem_ptr->numeredDofsCols;
+    break;
+  default:
+    SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY,
+            "It works only with rows or columns");
+  }
+  auto miit = dofs->get<Composite_Name_And_Part_mi_tag>().lower_bound(
+      boost::make_tuple(field_name, lower_rank));
+  auto hi_miit = dofs->get<Composite_Name_And_Part_mi_tag>().upper_bound(
+      boost::make_tuple(field_name, upper_rank));
   if (miit != hi_miit) {
     method.fieldPtr = miit->get()->getFieldPtr();
+  } else {
+    Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it =
+        fIelds.get<FieldName_mi_tag>().find(field_name);
+    if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
+      method.fieldPtr = *field_it;
+    }
+  }
+
+  typedef multi_index_container<
+      boost::shared_ptr<FieldEntity>,
+      indexed_by<ordered_unique<
+          tag<Ent_mi_tag>,
+          const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt>>>>
+      FieldEntity_view_multiIndex;
+  FieldEntity_view_multiIndex ents_view;
+  auto hint = ents_view.begin();
+  for (; miit != hi_miit; ++miit)
+    ents_view.emplace_hint(hint, (*miit)->getFieldEntityPtr());
+
+  method.loopSize = ents_view.size();
+  SET_BASIC_METHOD(method, problem_ptr);
+  CHKERR method.preProcess();
+  method.nInTheLoop = 0;
+  for (auto &field_ent : ents_view) {
+    method.entPtr = field_ent;
+    CHKERR method();
+    ++method.nInTheLoop;
+  }
+  CHKERR method.postProcess();
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::loop_entities(const std::string problem_name,
+                                   const std::string field_name, RowColData rc,
+                                   EntityMethod &method, int lower_rank,
+                                   int upper_rank, int verb) {
+  MoFEMFunctionBegin;
+  if (verb == DEFAULT_VERBOSITY)
+    verb = verbose;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  // find p_miit
+  ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  ProblemsByName::iterator p_miit = pRoblems_set.find(problem_name);
+  if (p_miit == pRoblems_set.end())
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem not in database %s",
+             problem_name.c_str());
+  CHKERR loop_entities(&*p_miit, field_name, rc, method, lower_rank, upper_rank,
+                       verb);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::loop_entities(const std::string problem_name,
+                                   const std::string field_name, RowColData rc,
+                                   EntityMethod &method, int verb) {
+  return loop_entities(problem_name, field_name, rc, method, rAnk, rAnk, verb);
+}
+
+MoFEMErrorCode Core::loop_entities(const std::string field_name,
+                                   EntityMethod &method,
+                                   Range const *const ents, int verb) {
+  MoFEMFunctionBegin;
+  if (verb == DEFAULT_VERBOSITY)
+    verb = verbose;
+  SET_BASIC_METHOD(method, nullptr);
+  auto r = entsFields.get<FieldName_mi_tag>().equal_range(field_name);
+  if (r.first != r.second) {
+    method.fieldPtr = (*r.first)->getFieldPtr();
   } else {
     auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
     if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
       method.fieldPtr = *field_it;
     }
   }
-  method.loopSize = std::distance(miit, hi_miit);
+
+  typedef multi_index_container<
+      boost::shared_ptr<FieldEntity>,
+      indexed_by<ordered_unique<
+          tag<Ent_mi_tag>,
+          const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt>>>>
+      FieldEntity_view_multiIndex;
+
+  FieldEntity_view_multiIndex ents_view;
+  ents_view.insert(r.first, r.second);
+
+  method.loopSize = ents_view.size();
   CHKERR method.preProcess();
-  for (int nn = 0; miit != hi_miit; miit++, nn++) {
-    method.nInTheLoop = nn;
-    method.entPtr = *miit;
-    CHKERR method();
-  }
+  method.nInTheLoop = 0;
+
+  if (ents)
+    for (auto p = ents->const_pair_begin(); p != ents->const_pair_end(); ++p)
+      for (auto feit = ents_view.lower_bound(p->first);
+           feit != ents_view.upper_bound(p->second); ++feit) {
+        method.entPtr = *feit;
+        CHKERR method();
+        ++method.nInTheLoop;
+      }
+  else
+    for (auto &field_ent : ents_view) {
+      method.entPtr = field_ent;
+      CHKERR method();
+      ++method.nInTheLoop;
+    }
+
   CHKERR method.postProcess();
   MoFEMFunctionReturn(0);
 }

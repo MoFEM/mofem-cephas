@@ -837,7 +837,8 @@ MoFEMErrorCode Core::build_finite_elements(const BitRefLevel &bit, int verb) {
 }
 
 MoFEMErrorCode Core::build_finite_elements(const string fe_name,
-                                           const Range *ents_ptr, int verb) {
+                                           const Range *const ents_ptr,
+                                           int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
     verb = verbose;
