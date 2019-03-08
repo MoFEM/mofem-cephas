@@ -75,8 +75,6 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   DataForcesAndSourcesCore &dataH1Master;
   DataForcesAndSourcesCore &dataH1Slave;
-  // boost::shared_ptr<DataForcesAndSourcesCore> dataH1Master;
-  // boost::shared_ptr<DataForcesAndSourcesCore> dataH1Slave;
 
   DataForcesAndSourcesCore &dataNoFieldMaster;
   DataForcesAndSourcesCore &dataNoFieldSlave;

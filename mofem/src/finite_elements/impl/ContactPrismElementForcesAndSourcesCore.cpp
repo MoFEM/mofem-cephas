@@ -149,6 +149,12 @@ ContactPrismElementForcesAndSourcesCore::
   getUserPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
 
+  // Data on elements for proper spaces
+  dataOnMaster[H1]->setElementType(MBTRI);
+  derivedDataOnMaster[H1]->setElementType(MBTRI);
+  dataOnSlave[H1]->setElementType(MBTRI);
+  derivedDataOnSlave[H1]->setElementType(MBTRI);
+
   dataH1Master.dataOnEntities[MBVERTEX].push_back(
       new DataForcesAndSourcesCore::EntData());
   dataH1Slave.dataOnEntities[MBVERTEX].push_back(
@@ -165,12 +171,6 @@ ContactPrismElementForcesAndSourcesCore::
       new DataForcesAndSourcesCore::EntData());
   dataH1Slave.dataOnEntities[MBTRI].push_back(
       new DataForcesAndSourcesCore::EntData());
-
-  // Data on elements for proper spaces
-  dataOnMaster[H1]->setElementType(MBTRI);
-  derivedDataOnMaster[H1]->setElementType(MBTRI);
-  dataOnSlave[H1]->setElementType(MBTRI);
-  derivedDataOnSlave[H1]->setElementType(MBTRI);
 }
 
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
