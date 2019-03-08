@@ -352,7 +352,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     // Master-Slave
     CHKERR setGaussPts(order_row, order_col, order_data);
     nb_gauss_pts = gaussPtsMaster.size2();
-    printf("Number of gauss pts %d\n", nb_gauss_pts);
     dataH1Master.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,
                                                                  3, false);
     dataH1Slave.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 3,
@@ -370,19 +369,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
           &*dataH1Slave.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
           &gaussPtsSlave(0, 0), &gaussPtsSlave(1, 0), nb_gauss_pts);
     }
-
-    // if (nb_gauss_pts) {
-    //   CHKERR ShapeMBTRI(&*dataH1Master.dataOnEntities[MBVERTEX][0]
-    //                           .getN(NOBASE)
-    //                           .data()
-    //                           .begin(),
-    //                     &gaussPtsMaster(0, 0), &gaussPts(1, 0),
-    //                     nb_gauss_pts);
-
-    //   CHKERR ShapeMBTRI(
-    //       &*dataH1Slave.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
-    //       &gaussPtsSlave(0, 0), &gaussPts(1, 0), nb_gauss_pts);
-    // }
   }
   if (nb_gauss_pts == 0)
     MoFEMFunctionReturnHot(0);
