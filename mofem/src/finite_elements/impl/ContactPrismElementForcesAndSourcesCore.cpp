@@ -208,7 +208,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
   };
 
   auto copy_data = [](DataForcesAndSourcesCore &data,
-                      DataForcesAndSourcesCore &copy_data, const int &shift) {
+                      DataForcesAndSourcesCore &copy_data, const int shift) {
     MoFEMFunctionBegin;
 
     if (shift != 0 && shift != 6) {
