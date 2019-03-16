@@ -446,7 +446,7 @@ CHKERR MatView(A, PETSC_VIEWER_DRAW_WORLD);
 \endcode
 
 
-\section petsc_print_matrix How to test and print jacobian matrix with PETSc?
+\subsection petsc_print_matrix How to test and print jacobian matrix with PETSc?
 
 When debugging a nonlinear problem, it might be useful to test the jacobian matrix. The command below will print 'Explicit preconditioning Jacobian',
  'Finite difference Jacobian' and the most useful 'User-provided matrix minus finite difference Jacobian'.
@@ -461,5 +461,22 @@ To view those matrices in a graphical form, simply add:
 
 This will create a folder named \e Draw_0x7f86644**** with 3 image files: user-jacobian (0), finite difference jacobian (1) and the difference (2).
 The draw function works only with one processor.
+
+\subsection slack_message_send How to send message to Slack e.g. to report program crash?
+To send a message to your Slack (in mofem.slack.com workspace) 
+from command line or a script on a server, use the following command:
+\code
+curl -X POST "https://slack.com/api/chat.postMessage" -H  "accept: application/json" \
+-d token=TOKEN \
+-d channel=CHANNEL -d text="My analysis crashed!"
+\endcode
+
+Where \e TOKEN is our app authentication token and can be found 
+<a href=https://drive.google.com/uc?export=download&id=11tsc-ePGrsMQ0BDkLKVZxZQkuqRDZB5m> here</a>.
+
+
+As \e CHANNEL one can use desired channel name, user name or user id. User id can be found e.g. by going to
+<https://mofem.slack.com/messages> and searching for \e user_id in the page source.
+On Chrome, right-click and choose \e View \e Page \e Source.
 
 */
