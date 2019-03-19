@@ -603,7 +603,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
         const int ent_order = dof.getMaxOrder();
         dat.getDataOrder() =
             dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
-        const auto dof_ent_field_data = dof.getEntFieldData();
         ent_field_data.resize(nb_dofs_on_ent, false);
         noalias(ent_field_data) = dof.getEntFieldData();
         ent_field_dofs.resize(nb_dofs_on_ent, false);

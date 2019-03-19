@@ -183,11 +183,13 @@ VectorAdaptor FieldEntity::getEntFieldData() const {
           MoFEM::get_tag_ptr(sFieldPtr->moab, sFieldPtr->th_FieldData,
                              sPtr->ent, &getEntFieldDataLastTagSize));
       getEntFieldDataLastTagSize /= sizeof(double);
+      if(PetscUnlikely(getEntFieldDataLastTagSize<getEntFieldDataLastSize)) 
+        THROW_MESSAGE("Data inconsistency");
     }
   }
   return VectorAdaptor(getEntFieldDataLastSize,
                        ublas::shallow_array_adaptor<double>(
-                           getEntFieldDataLastTagSize, getEntFieldDataLastPtr));
+                           getEntFieldDataLastSize, getEntFieldDataLastPtr));
 }
 
 FieldEntity::~FieldEntity() {}
@@ -283,11 +285,5 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
   }
   }
 }
-
-// FEFieldEntity::FEFieldEntity(
-//     const boost::shared_ptr<SideNumber> &side_number_ptr,
-//     const boost::shared_ptr<FieldEntity> &entity_ptr)
-//     : BaseFEEntity(side_number_ptr), interface_FieldEntity<FieldEntity>(
-//                                          entity_ptr) {}
 
 } // namespace MoFEM
