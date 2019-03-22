@@ -310,14 +310,18 @@ struct ProblemsManager : public UnknownInterface {
    * @param problem_name name of the problem
    * @param field_name name of the field
    * @param ents entities on which DOFs are removed
-   * @param verb
+   * @param lo_coeff low dof coefficient (rank)
+   * @param hi_coeff high dof coefficient (rank)
+   * @param verb  verbosity level
+   * @param debug to debug and seek for inconsistencies set to true
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode removeDofsOnEntities(const std::string problem_name,
                                       const std::string field_name,
                                       const Range ents, const int lo_coeff = 0,
                                       const int hi_coeff = MAX_DOFS_ON_ENTITY,
-                                      int verb = VERBOSE);
+                                      int verb = VERBOSE,
+                                      const bool debug = false);
 
 private:
   PetscLogEvent MOFEM_EVENT_ProblemsManager;

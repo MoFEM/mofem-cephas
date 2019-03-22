@@ -130,7 +130,8 @@ int main(int argc, char *argv[]) {
 
     Range tets_skin;
     CHKERR get_triangles_on_skin(tets_skin);
-    CHKERR prb_mng_ptr->removeDofsOnEntities("P1", "F1", tets_skin, 0, 1);
+    CHKERR prb_mng_ptr->removeDofsOnEntities("P1", "F1", tets_skin, 0, 1, NOISY,
+                                             true);
 
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P1", -2, -2,
