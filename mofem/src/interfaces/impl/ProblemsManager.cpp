@@ -1190,7 +1190,10 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 MoFEMErrorCode ProblemsManager::buildSubProblem(
     const std::string out_name, const std::vector<std::string> &fields_row,
     const std::vector<std::string> &fields_col, const std::string main_problem,
-    const bool square_matrix, int verb) {
+    const bool square_matrix,
+    const map<std::string, std::pair<EntityType, EntityType>> *entityMapRow,
+    const map<std::string, std::pair<EntityType, EntityType>> *entityMapCol,
+    int verb) {
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
   MoFEMFunctionBegin;
@@ -1240,6 +1243,8 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
 
   // put rows & columns field names in array
   std::vector<std::string> fields[] = {fields_row, fields_col};
+  const map<std::string, std::pair<EntityType, EntityType>> *entityMap[] = {
+      entityMapRow, entityMapCol};
 
   // make data structure fos sub-problem data
   out_problem_it->subProblemData =
@@ -1277,12 +1282,41 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
           main_problem_dofs[ss]->get<FieldName_mi_tag>().lower_bound(field);
       auto hi_dit =
           main_problem_dofs[ss]->get<FieldName_mi_tag>().upper_bound(field);
-      dofs_array->reserve(std::distance(dit, hi_dit));
-      for (; dit != hi_dit; dit++)
+
+      auto add_dit_to_dofs_array = [&](auto &dit) {
         dofs_array->emplace_back(
             dit->get()->getDofEntityPtr(), dit->get()->getPetscGlobalDofIdx(),
             dit->get()->getPetscGlobalDofIdx(),
             dit->get()->getPetscLocalDofIdx(), dit->get()->getPart());
+      };
+
+      if (entityMap[ss]) {
+        auto mit = entityMap[ss]->find(field);
+        if (mit != entityMap[ss]->end()) {
+          EntityType lo_type = mit->second.first;
+          EntityType hi_type = mit->second.second;
+          int count = 0;
+          for (auto diit = dit; diit != hi_dit; ++diit) {
+            EntityType ent_type = (*diit)->getEntType();
+            if (ent_type >= lo_type && ent_type <= hi_type)
+              ++count;
+          }
+          dofs_array->reserve(count);
+          for (; dit != hi_dit; ++dit) {
+            EntityType ent_type = (*dit)->getEntType();
+            if (ent_type >= lo_type && ent_type <= hi_type)
+              add_dit_to_dofs_array(dit);
+          }
+        } else {
+          dofs_array->reserve(std::distance(dit, hi_dit));
+          for (; dit != hi_dit; dit++)
+            add_dit_to_dofs_array(dit);
+        }
+      } else {
+        dofs_array->reserve(std::distance(dit, hi_dit));
+        for (; dit != hi_dit; dit++)
+          add_dit_to_dofs_array(dit);
+      }
 
       // fill multi-index
       auto hint = out_problem_dofs[ss]->end();

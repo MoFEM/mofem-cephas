@@ -548,13 +548,17 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm);
  * Add field to sub dm problem on rows
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[]);
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm, const char field_name[],
+                                     EntityType lo_type = MBVERTEX,
+                                     EntityType hi_type = MBMAXTYPE);
 
 /**
  * Add field to sub dm problem on columns
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[]);
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm, const char field_name[],
+                                     EntityType lo_type = MBVERTEX,
+                                     EntityType hi_type = MBMAXTYPE);
 
 /**
  * Return true if this DM is sub problem
@@ -761,6 +765,10 @@ struct DMCtx : public UnknownInterface {
   PetscBool isCompDM;
   std::vector<std::string> rowCompPrb;
   std::vector<std::string> colCompPrb;
+  boost::shared_ptr<std::map<std::string, std::pair<EntityType, EntityType>>>
+      mapTypeRow;
+  boost::shared_ptr<std::map<std::string, std::pair<EntityType, EntityType>>>
+      mapTypeCol;
 
   PetscBool destroyProblem; ///< If true destroy problem with DM
 
