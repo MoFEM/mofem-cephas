@@ -64,6 +64,12 @@ if(DOXYGEN_FOUND)
   )
   add_dependencies(doc doxygen_copy_figures)
 
+  add_custom_target(doxygen_copy_avatar_figures
+    ${CMAKE_COMMAND} -E copy_directory
+    ${PROJECT_SOURCE_DIR}/doc/user_guide/figures ${PROJECT_BINARY_DIR}/html
+  )
+  add_dependencies(doc doxygen_copy_avatar_figures)
+
   # copy google site verification file
   add_custom_target(doxygen_google_site_verification
     ${CMAKE_COMMAND} -E copy
