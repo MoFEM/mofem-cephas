@@ -124,7 +124,7 @@ library.
     <th> Von Mises plasticity </th> 
     <td> \image html plasti_christop_ava.png "" width = 80px </td>
     <td> 
-    Von Mises-Plasticity using return mapping algorithm. 
+    Von Mises plasticity using return mapping algorithm. 
     - <a href="https://bitbucket.org/Christophe97233/linear_isotropic_hardening">Bitbucket repository </a></td>
   </tr>
   <tr style="height:20px;">
@@ -153,13 +153,6 @@ library.
     <td> 
     User module for solving Helmholtz equation. 
     - <a href="https://bitbucket.org/likask/mofem_um_helmholtz">Bitbucket repository </a></td>
-  </tr>
-  <tr style="height:20px;">
-    <th> Obsolete </th> 
-    <td> </td>
-    <td> 
-    Obsolete elements and methods used by some modules, no longer developed.
-     - <a href="https://bitbucket.org/likask/mofem_um_obsolete">Bitbucket repository </a>  </td>
   </tr>
 </table>
 
