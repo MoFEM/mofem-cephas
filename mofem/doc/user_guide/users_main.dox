@@ -1,3 +1,9 @@
-/*! \page usersmain Users Main Page
+/*! \page usersmain Getting started
+
+- \subpage installation
+- \subpage userstutorials
+- \subpage general_data_structure
+- <a href=https://www.youtube.com/playlist?list=PLW49at2nN39gsTI1vWxvHBOjFK0q_h83s><b>Youtube MoFEM helpful videos</b></a>
+- \subpage faqs
 
 */

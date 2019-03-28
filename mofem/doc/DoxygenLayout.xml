@@ -3,8 +3,8 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
-    <tab type="user" title="Installation" url="@ref installation" intro=""/>
-    <tab type="user" title="Users" url="@ref usersmain" intro=""/>
+    <!-- <tab type="user" title="Installation" url="@ref installation" intro=""/> -->
+    <tab type="user" title="Getting started" url="@ref usersmain" intro=""/>
     <tab type="user" title="Developers" url="@ref developersmain" intro=""/>
     <!-- <tab type="usergroup" title="Documentation">
       <tab type="user" title="Installation" url="@ref installation" intro=""/>
@@ -48,7 +48,7 @@
     <!-- <tab type="user" url="https://mofem.slack.com" title="Slack"/> -->
     <tab type="user" url="https://bitbucket.org/likask/mofem-cephas" title="Repository"/>
     <!-- <tab type="user" url="http://cdash.eng.gla.ac.uk/cdash" title="CDash testing"/> -->
-    <tab type="user" url="https://zenodo.org/communities/mofem/" title="Zenodo library"/>
+    <tab type="user" url="https://zenodo.org/communities/mofem/" title="About us"/>
   </navindex>
 
   <!-- Layout definition for a class page -->
