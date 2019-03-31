@@ -560,8 +560,9 @@ MoFEMErrorCode BitRefManager::filterEntitiesByRefLevel(const BitRefLevel bit,
   MoFEMFunctionBeginHot;
 
   const BitRefLevel *tag_bit;
+  std::vector<EntityHandle> ents_vec;
+  ents_vec.reserve(ents.size());
 
-  Range swap_ents;
   for (Range::pair_iterator p_eit = ents.pair_begin(); p_eit != ents.pair_end();
        ++p_eit) {
     EntityHandle f = p_eit->first;
@@ -574,39 +575,21 @@ MoFEMErrorCode BitRefManager::filterEntitiesByRefLevel(const BitRefLevel bit,
       // Get entity bit ref level
       rval = moab.tag_get_by_ptr(cOre.get_th_RefBitLevel(), &f, 1,
                                  (const void **)(&tag_bit));
-      if (PetscLikely(rval == MB_SUCCESS)) {
-        if ((mask.any() && tag_bit->none()) ||
-            ((*tag_bit) & mask) != (*tag_bit) || (((*tag_bit) & bit).none())) {
-          // Entity not on BitRefLevel.
-          if (ff != 0) {
-            // Add sub-range
-            swap_ents.insert(ff, ss);
-            ff = ss = 0;
-          }
-        } else {
-          if (ff == 0) {
-            // Start new sub-range
-            ff = ss = f;
-          } else {
-            // Add entity to sub-range
-            ss = f;
-          }
-        }
-      } else {
-        if (ff != 0) {
-          // Add sub-range
-          swap_ents.insert(ff, ss);
-        }
-        // Start new sub-range
-        ff = ss = 0;
-      }
-    }
+      if (rval == MB_SUCCESS) {
+        if (
 
-    if (ff != 0) {
-      swap_ents.insert(ff, ss);
+            ((*tag_bit) & bit).any() &&
+
+            (((*tag_bit) & mask) == (*tag_bit))
+
+        )
+          ents_vec.push_back(f);
+      }
     }
   }
 
+  Range swap_ents;
+  swap_ents.insert_list(ents_vec.begin(), ents_vec.end());
   ents.swap(swap_ents);
 
   MoFEMFunctionReturnHot(0);
@@ -879,11 +862,14 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
        ++pit) {
     const EntityHandle f = pit->first;
     const EntityHandle s = pit->second;
-    for (RefEntsByComposite::iterator mit =
-             ref_ents.lower_bound(boost::make_tuple(child_type, f));
-         mit != ref_ents.upper_bound(boost::make_tuple(child_type, s)); ++mit) {
-      children_ents.insert(mit->get()->getRefEnt());
-    }
+    std::vector<EntityHandle> vec_ents;
+    vec_ents.reserve(s - f + 1);
+
+    auto lo_mit = ref_ents.lower_bound(boost::make_tuple(child_type, f));
+    auto hi_mit = ref_ents.upper_bound(boost::make_tuple(child_type, s));
+    for (; lo_mit != hi_mit; ++lo_mit)
+      vec_ents.push_back(lo_mit->get()->getRefEnt());
+    children_ents.insert_list(vec_ents.begin(), vec_ents.end());
   }
   CHKERR filterEntitiesByRefLevel(child_bit, child_mask, children_ents, verb);
   if (verb >= VERY_VERBOSE) {
