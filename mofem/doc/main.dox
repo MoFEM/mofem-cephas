@@ -2,7 +2,17 @@
 
 \htmlinclude doc/search_tags.html
 
-<br>
+\htmlonly
+<html>
+<head>
+	<title>MoFEM</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<meta name="description" content="MoFEM - An open source, parallel finite
+	element library" />
+
+</head>
+\endhtmlonly
+
 <br>
 <br>
 
@@ -32,107 +42,18 @@
   </tr>
 </table>
 
-<!--
-\htmlonly
-<html>
-<title>W3.CSS</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<style>
-.mySlides {display:none;}
-</style>
-<body>
-
-<h2 class="w3-center">Manual Slideshow</h2>
-
-<div class="w3-content w3-display-container">
-  <img class="mySlides" src="pic1.jpg" style="width:100%">
-  <img class="mySlides" src="pic2.jpg" style="width:100%">
-  <img class="mySlides" src="pic3.jpg" style="width:100%">
-  <img class="mySlides" src="pic3.jpg" style="width:100%">
-
-  <button class="w3-button w3-black w3-display-left" onclick="plusDivs(-1)">&#10094;</button>
-  <button class="w3-button w3-black w3-display-right" onclick="plusDivs(1)">&#10095;</button>
-</div>
-
-<script>
-var slideIndex = 1;
-showDivs(slideIndex);
-
-function plusDivs(n) {
-  showDivs(slideIndex += n);
-}
-
-function showDivs(n) {
-  var i;
-  var x = document.getElementsByClassName("mySlides");
-  if (n > x.length) {slideIndex = 1}
-  if (n < 1) {slideIndex = x.length}
-  for (i = 0; i < x.length; i++) {
-    x[i].style.display = "none";  
-  }
-  x[slideIndex-1].style.display = "block";  
-}
-</script>
-
-</body>
-</html>
-\endhtmlonly
--->
-
-<br>
-<br>
-\htmlonly
-<html>
-<head>
-	<title>Javascript image slider</title>
-	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-	<meta name="description" content="Made with WOW Slider - Create beautiful, responsive image sliders in a few clicks. Awesome skins and animations. Javascript image slider" />
-	
-	<!-- Start WOWSlider.com HEAD section --> <!-- add to the <head> of your page -->
-	<link rel="stylesheet" type="text/css" href="engine1/style.css" />
-  <script type="text/javascript" src="engine1/jquery.js"></script>
-	<!-- End WOWSlider.com HEAD section -->
-
-</head>
-<body style="background-color:#ffffff;margin:auto">
-	
-	<!-- Start WOWSlider.com BODY section --> <!-- add to the <body> of your page -->
-	<div id="wowslider-container1">
-	<div class="ws_images"><ul>
-		<li><a
-		href="https://bitbucket.org/likask/mofem_um_fracture_mechanics/src/master/"><img
-		src="fracture_ava.png" alt="Fracture" title="Fracture"
-		id="wows1_0"/></a>Brief description of this module</li>
-		<li><a href="http://link-for-pic2.com"><img src="contact_ava.png" alt="pic2"
-		title="Contact" id="wows1_1"/></a>Brief description of this module</li>
-		<li><a href="http://link-for-pic3.com"><img src="solid_shell_ava.png"
-		alt="pic3" title="Solid shell" id="wows1_2"/></a>Brief description of this
-		module</li>
-		<li><a href="http://link-for-pic4.com"><img src="topo_ava.png" alt="pic4"
-		title="Topology optimisation" id="wows1_3"/></a>Brief description of this module</li>
-	</ul></div>
-	<div class="ws_bullets"><div>
-		<a href="#" title="Fracture"><span><img src="fracture_ava.png" alt="Fracture"/>1</span></a>
-		<a href="#" title="pic2"><span><img src="contact_ava.png" alt="pic2"/>2</span></a>
-		<a href="#" title="pic3"><span><img src="solid_shell_ava.png" alt="pic3"/>3</span></a>
-		<a href="#" title="pic4"><span><img src="topo_ava.png" alt="pic4"/>4</span></a>
-	</div></div><div class="ws_script" style="position:absolute;left:-99%"><a href="http://wowslider.net">javascript image slider</a> by WOWSlider.com v8.8m</div>
-	<div class="ws_shadow"></div>
-	</div>	
-	<script type="text/javascript" src="engine1/wowslider.js"></script>
-	<script type="text/javascript" src="engine1/script.js"></script>
-	<!-- End WOWSlider.com BODY section -->
-
-</body>
-</html>
-\endhtmlonly
 
 <br>
 <br>
 <br>
 <br>
 
+\htmlinclude doc/slider/module_slider.html
+
+<br>
+<br>
+<br>
+<br>
 
 \htmlinclude doc/twitter_widged.html
 
