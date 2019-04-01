@@ -30,15 +30,20 @@
     <td style="text-align:center"><h2 style="font-weight:200;" >Getting started</h2></td>
   </tr>
   <tr>
-    <td class="tg-zv4m">MoFEM is an open-source (<a href=https://www.gnu.org/licenses/>GNU
+    <td class="tg-zv4m">MoFEM is an open source (<a href=https://www.gnu.org/licenses/>GNU
     LGPL</a>) C++ finite element library. It is capable of
     dealing with complex multi-physics problems with arbitrary levels of
-    approximation and refinement.</td>
-    <td class="tg-zv4m">The library which is designed to suit both ordinary
-    users and experienced developers can be used for parallel processing on
-    high-performance clusters.</td>
+    approximation and refinement. MoFEM can read various input file formats, and work with preprocessors like gMesh, Salome, Cubit, and many more.</td>
+    
+    <td class="tg-zv4m">MoFEM can be used for parallel processing on desktop
+    computers and high-performance clusters. Its modular toolkit-like structure
+    allows for development of open modules and private industrial sensitive
+    projects. At the same time, it is designed to suit both researchers developing computer methods and engineers solving real practical problems.</td>
+    
     <td class="tg-zv4m">\ref usersmain offers a wide range of information
-    including guides on installation, MoFEM design philosophy, basic tutorials, instructive videos, etc.</td>
+    including guides on installation, MoFEM design philosophy, basic tutorials,
+    instructive videos, etc. \ref developersmain section contains tutorials on
+    how to implement problems from solid mechanics to fluid mechanics.</td>
   </tr>
 </table>
 
