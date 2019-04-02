@@ -1,14 +1,14 @@
 /*! \page developersmain Developers Main Page
 
-\section mofem_design MoFEM basic design
+\section mofem_design Design
 
 - \subpage general_data_structure
 
-\section developer_tutorials Developer tutorials
+\section developer_tutorials Tutorials
 
 - \subpage tutorials
 
-\section guide_lines Coding guidelines
+\section guide_lines Coding
   - \subpage coding_practice
   - \subpage guidelines_bug_reporting
   - \subpage a_guide_to_writing_documentation
