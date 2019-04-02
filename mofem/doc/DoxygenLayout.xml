@@ -48,7 +48,9 @@
     <!-- <tab type="user" url="https://mofem.slack.com" title="Slack"/> -->
     <tab type="user" url="https://bitbucket.org/likask/mofem-cephas" title="Repository"/>
     <!-- <tab type="user" url="http://cdash.eng.gla.ac.uk/cdash" title="CDash testing"/> -->
-    <tab type="user" url="https://zenodo.org/communities/mofem/" title="About us"/>
+    <!-- <tab type="user" url="https://zenodo.org/communities/mofem/" title="About us"/> -->
+    <tab type="user" title="About us"url="@ref about_us" intro=""/>
+
   </navindex>
 
   <!-- Layout definition for a class page -->

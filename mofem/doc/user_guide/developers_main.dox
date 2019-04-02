@@ -1,3 +1,21 @@
 /*! \page developersmain Developers Main Page
 
+\section mofem_design MoFEM basic design
+
+- \subpage general_data_structure
+
+\section developer_tutorials Developer tutorials
+
+- \subpage tutorials
+
+\section guide_lines Coding guidelines
+  - \subpage coding_practice
+  - \subpage guidelines_bug_reporting
+  - \subpage a_guide_to_writing_documentation
+  - \subpage being_a_good_citizen
+  - \subpage bug
+  - \subpage todo
+  - \subpage deprecated  
+
+
 */
