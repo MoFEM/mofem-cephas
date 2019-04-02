@@ -316,7 +316,7 @@ _:-ms-input-placeholder, :root #wowslider-container1 a.ws_playpause > span:befor
 #wowslider-container1 a.ws_prev > span {
 	position: absolute;
 	top: 0; left: 0; right: 0; bottom: 0;
-	color: #fff;
+	color: #ffffff;
 	text-align: center;
 	z-index: 2;
 	-webkit-transition: 300ms background ease;

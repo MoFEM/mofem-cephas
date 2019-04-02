@@ -30,10 +30,11 @@
     <td style="text-align:center"><h2 style="font-weight:200;" >Getting started</h2></td>
   </tr>
   <tr>
-    <td class="tg-zv4m">MoFEM is an open source (<a href=https://www.gnu.org/licenses/>GNU
-    LGPL</a>) C++ finite element library. It is capable of
-    dealing with complex multi-physics problems with arbitrary levels of
-    approximation and refinement. MoFEM can read various input file formats, and work with preprocessors like gMesh, Salome, Cubit, and many more.</td>
+    <td class="tg-zv4m">MoFEM is an open source (<a
+    href=https://www.gnu.org/licenses/>GNU LGPL</a>) C++ finite element library.
+    It is capable of dealing with complex multi-physics problems with arbitrary
+    levels of approximation and refinement. MoFEM can read various input file
+    formats, and work with preprocessors like gMesh, Salome, Cubit, and many more.</td>
     
     <td class="tg-zv4m">MoFEM can be used for parallel processing on desktop
     computers and high-performance clusters. Its modular toolkit-like structure
@@ -48,8 +49,6 @@
 </table>
 
 
-<br>
-<br>
 <br>
 <br>
 
