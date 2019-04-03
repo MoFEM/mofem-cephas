@@ -5,7 +5,7 @@
     <tab type="mainpage" visible="yes" title=""/>
     <!-- <tab type="user" title="Installation" url="@ref installation" intro=""/> -->
     <tab type="user" title="Getting started" url="@ref usersmain" intro=""/>
-    <tab type="user" title="Developers" url="@ref developersmain" intro=""/>
+    <tab type="user" title="Developer" url="@ref developersmain" intro=""/>
     <!-- <tab type="usergroup" title="Documentation">
       <tab type="user" title="Installation" url="@ref installation" intro=""/>
       <tab type="user" title="Basic design" url="@ref general_data_structure" intro=""/>
