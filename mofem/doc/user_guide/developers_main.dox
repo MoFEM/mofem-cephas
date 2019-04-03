@@ -1,5 +1,7 @@
 /*! \page developersmain Developer
 
+\tableofcontents
+
 \section developer_useful_links Useful links
 
 - \subpage general_data_structure
@@ -14,6 +16,7 @@
 - \subpage bug
 - \subpage todo
 - \subpage deprecated
+- \subpage citelist
 - <a style="font-weight:bold" href="pages.html">All pages</a>
 
 <br>
