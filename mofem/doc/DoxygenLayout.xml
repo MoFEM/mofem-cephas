@@ -4,14 +4,13 @@
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
     <!-- <tab type="user" title="Installation" url="@ref installation" intro=""/> -->
-    <tab type="usergroup" title="Getting started" url="@ref usersmain">
-        <tab type="user" title="Coding pratice" url="@ref coding_practice" intro=""/>
-        <tab type="user" title="Installation" url="@ref installation" intro=""/>
-        <tab type="user" url="https://www.youtube.com/playlist?list=PLW49at2nN39gsTI1vWxvHBOjFK0q_h83s" title="Video guides on Youtube"/>
+    <tab type="usergroup" title="Getting started" url="@ref usersmain"intro=""/>
+        <!-- <tab type="user" title="Installation" url="@ref installation" intro=""/>
         <tab type="user" title="Users Tutorials" url="@ref userstutorials" intro=""/>
+        <tab type="user" url="https://www.youtube.com/playlist?list=PLW49at2nN39gsTI1vWxvHBOjFK0q_h83s" title="Video guides on Youtube"/>
         <tab type="user" title="Frequently Asked Questions" url="@ref faqs" intro=""/>
         <tab type="user" title="Search" url="@ref google_search" intro=""/>
-    </tab>
+    </tab> -->
     <tab type="user" title="Developers" url="@ref developersmain" intro=""/>
     <!-- <tab type="usergroup" title="Documentation">
       <tab type="user" title="Installation" url="@ref installation" intro=""/>

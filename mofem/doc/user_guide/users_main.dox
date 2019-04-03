@@ -19,6 +19,8 @@ increasingly necessary for engineers, scientists and mathematicians to carry out
 calculations using several mesh refinements, different approximation orders,
 multiple degrees of freedom and/or different scales.
 
+\section links_getting_started Useful links
+
 - \subpage installation
 - \subpage userstutorials
 - <a href=https://www.youtube.com/playlist?list=PLW49at2nN39gsTI1vWxvHBOjFK0q_h83s><b>Video guides on Youtube</b></a>
