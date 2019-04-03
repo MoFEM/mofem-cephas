@@ -2,5 +2,6 @@
 
  - \subpage elastic_dynamics
  - \subpage gel_model_example
+ - \subpage density_map_example
  
 */
