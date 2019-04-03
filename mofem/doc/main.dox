@@ -13,44 +13,11 @@
 </head>
 \endhtmlonly
 
-<br>
-<br>
-
 \image html mofem_logo.png " " width = 500px
 
 <h1 style="font-weight:200;font-size:150%"><center>An open source, parallel finite element library</center></h1>
 
-<br>
-
-<table class="tg">
-
-  <tr>
-    <td style="text-align:center"><h2 style="font-weight:200;" >The library</h2></td>
-    <td style="text-align:center"><h2 style="font-weight:200;" >Scalability</h2></td>
-    <td style="text-align:center"><h2 style="font-weight:200;" >Getting started</h2></td>
-  </tr>
-  <tr>
-    <td class="tg-zv4m">MoFEM is an open source (<a
-    href=https://www.gnu.org/licenses/lgpl.html>GNU LGPL</a>) C++ finite element
-    library. It is capable of dealing with complex multi-physics problems with
-    arbitrary levels of approximation and refinement. MoFEM can read various
-    input file formats, and work with preprocessors like gMesh, Salome, Cubit, and many more.</td>
-    
-    <td class="tg-zv4m">MoFEM can be used for parallel processing on desktop
-    computers and high-performance clusters. Its modular toolkit-like structure
-    allows for development of open modules and private industrial sensitive
-    projects. At the same time, it is designed to suit both researchers developing computer methods and engineers solving real practical problems.</td>
-    
-    <td class="tg-zv4m">\ref usersmain offers a wide range of
-    information including guides on installation, basic tutorials, instructive
-    videos. \ref developersmain section contains MoFEM design philosophy and
-    tutorials on how to implement problems from solid mechanics to fluid mechanics.</td>
-  </tr>
-</table>
-
-
-<br>
-<br>
+\htmlinclude doc/mofem_at_a_glance.html
 
 \htmlinclude doc/slider/module_slider.html
 
