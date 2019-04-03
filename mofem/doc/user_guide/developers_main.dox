@@ -1,24 +1,97 @@
-/*! \page developersmain Developers Main Page
+/*! \page developersmain Developer
 
-\section mofem_design Design
+\section developer_useful_links Useful links
 
 - \subpage general_data_structure
-
-\section developer_tutorials Tutorials
-
+- <a style="font-weight:bold" href="modules.html">Modules</a>
 - \subpage tutorials
+- <a style="font-weight:bold" href="examples.html">Examples</a>
+- <a style="font-weight:bold" href="usergroup2.html">Source code</a>
+- \subpage coding_practice
+- \subpage guidelines_bug_reporting
+- \subpage a_guide_to_writing_documentation
+- \subpage being_a_good_citizen
+- \subpage bug
+- \subpage todo
+- \subpage deprecated
+- <a style="font-weight:bold" href="pages.html">All pages</a>
 
-\section guide_lines Coding
-  - \subpage coding_practice
-  - \subpage guidelines_bug_reporting
-  - \subpage a_guide_to_writing_documentation
-  - \subpage being_a_good_citizen
-  - \subpage bug
-  - \subpage todo
-  - \subpage deprecated  
+<br>
 
-<p><a href="modules.html">Modules</a> <br />
-<p><a href="examples.html">Examples</a> <br />
-<p><a href="usergroup2.html">Source code</a> <br />
+\section mofem_features MoFEM properties and features
+
+\subsection mofem_features_ho Higher-order finite element spaces
+
+- MoFEM supports wide range of spaces, L2, H1, H-div and H-curl
+
+- Numerical trace (interfacial) spaces, on faces and edges
+
+- Integration on skeleton, (enabling easy implementation of Discontinuous Galerkin or Nitsche method)
+
+\subsection mofem_features_discretisation Flexible discretization
+
+- Mixed and coupled finite elements
+
+- Interface (e.g. cohesive) elements and shell elements
+
+- Automatic Differentiation by OverLoading in C++ (<a href=https://projects.coin-or.org/ADOL-C>ADOL-C</a>). 
+	Applied to automatic calculation of consistent tangent
+	matrix for any smooth plastic surface and non-associated plastic flow potential.
+
+\subsection mofem_features_mesh_types Range of mesh types and topological operations
+
+MoFEM is implemented with the use of MoAB and deliver the great flexibility of
+managing meshes. We can manage range elements types, e.g. prisms, triangles,
+quads, bricks and more.
+
+- Unique and extremely flexible \e BitRef Levels (see \ref mix_mesh_refinement)
+
+- Conforming mesh refinement and through MoAB non-conforming mesh refinement.
+
+- Spatial searching and ray tracing (MOAB)
+
+- Distributed meshes (MOAB)
+
+- Arbitrary order definition of mesh geometry
+
+- Readers and writers for many file formats (MOAB)
+
+- Meshing and re-meshing on the flay
+
+- Ability to capture evolving topologies, e.g. implicit crack propagation analysis
+
+- Mesh smoothing and Arbitrary Lagrangian Eulerian Formulation
+
+\subsection mofem_features_hpc Parallel and scalable
+
+MoFEM supports MPI-based parallelism throughout the library, and can readily be
+used as a scalable unstructured finite element problem generator. Algebra is
+building on top of PETSc and geometry description on top of MoAB, both
+implementations are tailored for massive parallel calculations.
+
+- %Number of solvers available from PETSc
+
+- Multi-grid solvers
+
+- Efficient tensor library (see \ref ftenso_readme)
+
+- h/p- mesh adaptivity
+
+
+
+\section thrid_party Third party libraries
+
+List of third party libraries and packages used by MoFEM:
+
+- SIGMA Tools <http://press3.mcs.anl.gov/sigma>
+- MOAB <http://www.mcs.anl.gov/~fathom/moab-docs/html/userguide.html>.
+- PETSc <http://www.mcs.anl.gov/petsc/documentation/index.html>
+- BOOST <http://www.boost.org>
+	- uBlas <http://www.boost.org/doc/libs/release/libs/numeric/>
+- ADOL-C <https://projects.coin-or.org/ADOL-C>
+- CMake <http://www.cmake.org>
+- ParaView <http://www.paraview.org>
+
+
 
 */

@@ -41,10 +41,10 @@
     allows for development of open modules and private industrial sensitive
     projects. At the same time, it is designed to suit both researchers developing computer methods and engineers solving real practical problems.</td>
     
-    <td class="tg-zv4m">\ref usersmain offers a wide range of information
-    including guides on installation, MoFEM design philosophy, basic tutorials,
-    instructive videos, etc. \ref developersmain section contains tutorials on
-    how to implement problems from solid mechanics to fluid mechanics.</td>
+    <td class="tg-zv4m">\ref usersmain offers a wide range of
+    information including guides on installation, basic tutorials, instructive
+    videos. \ref developersmain section contains MoFEM design philosophy and
+    tutorials on how to implement problems from solid mechanics to fluid mechanics.</td>
   </tr>
 </table>
 

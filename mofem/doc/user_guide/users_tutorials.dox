@@ -1,7 +1,31 @@
 /*! \page userstutorials Users Tutorials
 
  - \subpage elastic_dynamics
- - \subpage gel_model_example
+
+<tr style="height:85px;">
+    <th> Gels </th> 
+    <td> \image html gel_ava.png "" width = 80px </td>
+    <td> 
+    User module for gel materials.
+    - \subpage gel_model_example
+    - \subpage gel_creep
+    - \subpage gel_sorption
+    - \subpage gel_layered
+    - \subpage gel_cell
+    - <a href="https://bitbucket.org/likask/mofem_um_gels">Bitbucket repository </a></td>
+  </tr>
+
+  <tr style="height:85px;">
+    <th> Homogenisation </th> 
+    <td> \image html homog_ava.png "" width = 80px </td>
+    <td> 
+    User module for computational homogenisation.
+    - \subpage comp_homo
+    - \subpage convergence_studies
+    - \subpage nitsche_periodic
+    - <a href="https://bitbucket.org/likask/mofem_um_homogenisation">Bitbucket repository </a></td>
+  </tr>
+
  - \subpage density_map_example
  
 */
