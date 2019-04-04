@@ -1,24 +1,5 @@
 /*! \page usersmain Getting started
 
-
-\section mofem_motivation Motivation and unique capabilities
-
-Building a scientific simulation environment for finite element methods is a
-complicated task. The greatest part of finite element code development is often
-expended in dealing with technical problems related to software implementation,
-rather than resolving the underlying physics that the code is intended to
-tackle.
-
-The demand for accurate solution of increasingly complicated real-world problems
-means that the underlying data structures also become increasingly complicated.
-This is particularly evident with multi-physics, hp-adaptivity, and/or evolving
-geometries (e.g. crack propagation). Established commercial software is often
-limited in this respect, or can be relatively slow to adopt new technologies.
-This is the problem that MoFEM attempts to work around, recognising that it is
-increasingly necessary for engineers, scientists and mathematicians to carry out
-calculations using several mesh refinements, different approximation orders,
-multiple degrees of freedom and/or different scales.
-
 \section links_getting_started Useful links
 
 - \subpage installation
