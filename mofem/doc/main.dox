@@ -20,7 +20,7 @@
 \htmlonly
 <style>
     .table-spacing td {
-        padding: 0 15px 0 15px;
+        padding: 10px;
     }
 </style>
 
@@ -38,7 +38,7 @@
         </td>
     </tr>
     <tr>
-        <td class="table-spacing"><a style="font-weight:bold"
+        <td class="tg"><a style="font-weight:bold"
                 href="namespace_mo_f_e_m.html">MoFEM</a> is an open source (<a
                 href=https://www.gnu.org/licenses/lgpl.html>GNU LGPL</a>) C++
                 finite element library. It is capable of dealing with complex
@@ -49,7 +49,7 @@
             preprocessors like Gmsh, Salome, Cubit, and many more.
         </td>
 
-        <td class="table-spacing"><a style="font-weight:bold"
+        <td class="tg"><a style="font-weight:bold"
                 href="namespace_mo_f_e_m.html">MoFEM</a> can be used for
             parallel processing on desktop
             computers and high-performance clusters. Its modular toolkit-like
@@ -61,7 +61,7 @@
             computer methods and engineers solving real practical problems.
         </td>
 
-        <td class="tg-zv4m"><a style="font-weight:bold"
+        <td class="tg"><a style="font-weight:bold"
                 href="usersmain.html">Getting started</a> offers a wide range of
             information including guides on installation, basic tutorials,
             instructive videos. <a style="font-weight:bold"
