@@ -1,0 +1,31 @@
+/*! \page userstutorials Users Tutorials
+
+ \section elasto_dynamics Module for elasto-dynamics.
+ - \subpage elastic_dynamics
+
+\section gel_module Module for gel materials
+<tr style="height:85px;">
+    <td> 
+    User module for gel materials.
+    - \subpage gel_model_example
+    - \subpage gel_creep
+    - \subpage gel_sorption
+    - \subpage gel_layered
+    - \subpage gel_cell
+    - <a href="https://bitbucket.org/likask/mofem_um_gels">Bitbucket repository </a></td>
+  </tr>
+
+\section gel_module Homogenisation module
+  <tr style="height:85px;">
+    <td> 
+    User module for computational homogenisation.
+    - \subpage comp_homo
+    - \subpage convergence_studies
+    - \subpage nitsche_periodic
+    - <a href="https://bitbucket.org/likask/mofem_um_homogenisation">Bitbucket repository </a></td>
+  </tr>
+
+\section gel_module Example of density mapping as part of bone remodelling module
+ - \subpage density_map_example
+ 
+*/
