@@ -6,7 +6,6 @@
 
  - \subpage elastic_dynamics
  - \subpage small_strain_plasticity_plate_with_hole
- - \subpage density_map_example
 
 \section gel_module_gt Gel
 
@@ -24,7 +23,7 @@
   - \subpage nitsche_periodic
   - <a href="https://bitbucket.org/likask/mofem_um_homogenisation">Bitbucket repository </a></td>
 
-\section bone_remodleing_gt Bome rmodeling
+\section bone_remodleing_gt Bone remodelling
 
  - \subpage um_bone_remodelling_readnme
  - \subpage density_map_example
