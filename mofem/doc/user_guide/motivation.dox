@@ -1,6 +1,6 @@
 /*! \page motivation Features 
 
-\section mofem_intro Capabilities
+\tableofcontents
 
 MoFEM (Mesh Oriented Finite Element Method) \cite mofem_v0.5.42 it is C++
 library supporting the solution of finite elements problems. Is developed to
