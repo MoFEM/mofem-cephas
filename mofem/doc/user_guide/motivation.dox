@@ -1,4 +1,4 @@
-/*! \page motivation Capabilities 
+/*! \page motivation Features 
 
 \section mofem_intro Capabilities
 
@@ -45,7 +45,7 @@ increasingly necessary for engineers, scientists and mathematicians to carry out
 calculations using several mesh refinements, different approximation orders,
 multiple degrees of freedom and/or different scales.
 
-\section mofem_features MoFEM properties and features
+\section mofem_features Features
 
 \subsection mofem_features_ho Higher-order finite element spaces
 
