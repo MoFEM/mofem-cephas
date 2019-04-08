@@ -10,9 +10,10 @@
 
 \section developer_source_code Source code
 
-- <a style="font-weight:bold" href="usergroup2.html">Source code</a>
 - <a style="font-weight:bold" href="modules.html">Source groups</a>
 - <a style="font-weight:bold" href="files.html">Source files</a>
+- <a style="font-weight:bold" href="namespaces.html">Name spaces</a>
+- <a style="font-weight:bold" href="annotated.html">Classes</a>
 
 \section mofem_practice Management conventions
 
