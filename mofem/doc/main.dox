@@ -113,6 +113,12 @@
                             src="slider_bone_remodelling.png"
                             alt="Bone Remodelling"
                             title="Bone Remodelling" /></a></li>
+                
+                <li><a
+                        href="http://mofem.eng.gla.ac.uk/mofem/html/"><img
+                            src="slider_navier_stokes.png"
+                            alt="Navier-Stokes Equations"
+                            title="Navier-Stokes Equations" /></a></li>
 
                 <li><a
                         href="https://bitbucket.org/karol41/mofem_um_topology_optimization/src/master/"><img
