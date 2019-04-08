@@ -1,6 +1,8 @@
 /*! \page about_us About
 
-\section info Important information
+\tableofcontents
+
+\section contact Contact
 
 - \ref mofem_citation
 \htmlonly
@@ -10,89 +12,7 @@
 - Discussion channel: <https://mofem.slack.com/>
 - Version repository: <https://bitbucket.org/likask/mofem-cephas>
 
-\section mofem_motivation Motivation and unique capabilities
-
-Building a scientific simulation environment for finite element methods is a
-complicated task. The greatest part of finite element code development is often
-expended in dealing with technical problems related to software implementation,
-rather than resolving the underlying physics that the code is intended to
-tackle.
-
-The demand for accurate solution of increasingly complicated real-world problems
-means that the underlying data structures also become increasingly complicated.
-This is particularly evident with multi-physics, hp-adaptivity, and/or evolving
-geometries (e.g. crack propagation). Established commercial software is often
-limited in this respect, or can be relatively slow to adopt new technologies.
-This is the problem that MoFEM attempts to work around, recognising that it is
-increasingly necessary for engineers, scientists and mathematicians to carry out
-calculations using several mesh refinements, different approximation orders,
-multiple degrees of freedom and/or different scales.
-
-
-\section mofem_features MoFEM properties and features
-
-\subsection mofem_features_ho Higher-order finite element spaces
-
-- MoFEM supports wide range of spaces, L2, H1, H-div and H-curl
-
-- Numerical trace (interfacial) spaces, on faces and edges
-
-- Integration on skeleton, (enabling easy implementation of Discontinuous Galerkin or Nitsche method)
-
-\subsection mofem_features_discretisation Flexible discretization
-
-- Mixed and coupled finite elements
-
-- Interface (e.g. cohesive) elements and shell elements
-
-- Automatic Differentiation by OverLoading in C++ (<a href=https://projects.coin-or.org/ADOL-C>ADOL-C</a>). 
-	Applied to automatic calculation of consistent tangent
-	matrix for any smooth plastic surface and non-associated plastic flow potential.
-
-\subsection mofem_features_mesh_types Range of mesh types and topological operations
-
-MoFEM is implemented with the use of MoAB and deliver the great flexibility of
-managing meshes. We can manage range elements types, e.g. prisms, triangles,
-quads, bricks and more.
-
-- Unique and extremely flexible \e BitRef Levels (see \ref mix_mesh_refinement)
-
-- Conforming mesh refinement and through MoAB non-conforming mesh refinement.
-
-- Spatial searching and ray tracing (MOAB)
-
-- Distributed meshes (MOAB)
-
-- Arbitrary order definition of mesh geometry
-
-- Readers and writers for many file formats (MOAB)
-
-- Meshing and re-meshing on the flay
-
-- Ability to capture evolving topologies, e.g. implicit crack propagation analysis
-
-- Mesh smoothing and Arbitrary Lagrangian Eulerian Formulation
-
-\subsection mofem_features_hpc Parallel and scalable
-
-MoFEM supports MPI-based parallelism throughout the library, and can readily be
-used as a scalable unstructured finite element problem generator. Algebra is
-building on top of PETSc and geometry description on top of MoAB, both
-implementations are tailored for massive parallel calculations.
-
-- %Number of solvers available from PETSc
-
-- Multi-grid solvers
-
-- Efficient tensor library (see \ref ftenso_readme)
-
-- h/p- mesh adaptivity
-
-\section mofem_openhub Stats and long-term development 
-
-- Stable, systematic, continuous and reliable  development. 
-
-- A team of passionate developers and contributors.
+\section mofem_openhub Stats 
 
 \htmlonly
 <script type='text/javascript' src='https://www.openhub.net/p/mofem/widgets/project_basic_stats?format=js'></script>
@@ -110,7 +30,6 @@ List of third party libraries and packages used by MoFEM:
 - ADOL-C <https://projects.coin-or.org/ADOL-C>
 - CMake <http://www.cmake.org>
 - ParaView <http://www.paraview.org>
-
 
 \section Acknowledgments
 

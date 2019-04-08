@@ -1,32 +1,39 @@
 /*! \page developersmain Developer
 
-// \tableofcontents
+\tableofcontents
 
-\section developer_useful_links Guides and information
+\section developer_useful_links Tutorials and examples
 
 - \subpage general_data_structure
-- \subpage mod_gallery
 - \subpage tutorials
 - <a style="font-weight:bold" href="examples.html">Examples</a>
+
+\section developer_source_code Source code
+
 - <a style="font-weight:bold" href="usergroup2.html">Source code</a>
 - <a style="font-weight:bold" href="modules.html">Source groups</a>
+- <a style="font-weight:bold" href="files.html">Source files</a>
 
 \section mofem_practice Management conventions
+
 - \subpage coding_practice
 - \subpage guidelines_bug_reporting
 - \subpage a_guide_to_writing_documentation
 - \subpage being_a_good_citizen
 
 \section mofem_management Improvement and maintenance
+
 - \subpage bug
 - \subpage todo
 - \subpage deprecated
 - <a style="font-weight:bold" href=http://cdash.eng.gla.ac.uk/cdash/>CDash testing</a>
 
 \section bib_mofem Relevant litterature
+
 - \subpage citelist
 
 \section list_pages List of all pages
+
 - <a style="font-weight:bold" href="pages.html">All pages</a>
 
 
