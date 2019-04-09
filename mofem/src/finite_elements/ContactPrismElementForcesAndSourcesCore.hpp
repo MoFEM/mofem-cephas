@@ -46,6 +46,9 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   MatrixDouble gaussPtsMaster;
   MatrixDouble gaussPtsSlave;
+  MatrixDouble rotMat;
+  VectorDouble dJdxMaster;
+  VectorDouble dJdxSlave;
 
   // DataForcesAndSourcesCore &dataH1Master;
   // DataForcesAndSourcesCore &dataH1Slave;
@@ -251,6 +254,20 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
           &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
                 ->normal[3]);
       return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
+    }
+
+    inline VectorAdaptor getJacMasterVec_dx() {
+      double *data =
+          &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+                ->dJdxMaster[0]);
+      return VectorAdaptor(9, ublas::shallow_array_adaptor<double>(9, data));
+    }
+
+    inline VectorAdaptor getJacSlaveVec_dx() {
+      double *data =
+          &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+                ->dJdxSlave[0]);
+      return VectorAdaptor(9, ublas::shallow_array_adaptor<double>(9, data));
     }
 
     inline MatrixDouble &getGaussPtsMaster() {
