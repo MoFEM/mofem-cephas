@@ -581,21 +581,17 @@ struct OpCalculateTensor2SymmetricFieldValues
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
-    const int nb_dofs = data.getFieldData().size();
-    const int nb_gauss_pts = data.getN().size1();
-    if (!nb_dofs && type == this->zeroType && side == zeroSide) {
-      dataPtr->resize((Tensor_Dim * (Tensor_Dim + 1)) / 2, 0, false);
-      MoFEMFunctionReturnHot(0);
+    MatrixDouble &mat = *dataPtr;
+    const int nb_gauss_pts = getGaussPts().size2();
+    if (type == this->zeroType && side == zeroSide) {
+      mat.resize((Tensor_Dim * (Tensor_Dim + 1)) / 2, nb_gauss_pts, false);
+      mat.clear();
     }
+    const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs) {
       MoFEMFunctionReturnHot(0);
     }
     const int nb_base_functions = data.getN().size2();
-    MatrixDouble &mat = *dataPtr;
-    if (type == zeroType && side == zeroSide) {
-      mat.resize((Tensor_Dim * (Tensor_Dim + 1)) / 2, nb_gauss_pts, false);
-      mat.clear();
-    }
     auto base_function = data.getFTensor0N();
     auto values_at_gauss_pts = getFTensor2SymmetricFromMat<Tensor_Dim>(mat);
     FTensor::Index<'i', Tensor_Dim> i;
@@ -644,13 +640,14 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
+    const int nb_gauss_pts = getGaussPts().size2();
+    MatrixDouble &mat = *dataPtr;
+    if (type == zeroType && side == zeroSide) {
+      mat.resize((Tensor_Dim * (Tensor_Dim + 1)) / 2, nb_gauss_pts, false);
+      mat.clear();
+    }
     auto &local_indices = data.getLocalIndices();
     const int nb_dofs = local_indices.size();
-    const int nb_gauss_pts = data.getN().size1();
-    if (!nb_dofs && type == this->zeroType && side == zeroSide) {
-      dataPtr->resize((Tensor_Dim * (Tensor_Dim + 1)) / 2, 0, false);
-      MoFEMFunctionReturnHot(0);
-    }
     if (!nb_dofs) 
       MoFEMFunctionReturnHot(0);
 
@@ -662,11 +659,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
     CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
 
     const int nb_base_functions = data.getN().size2();
-    MatrixDouble &mat = *dataPtr;
-    if (type == zeroType && side == zeroSide) {
-      mat.resize((Tensor_Dim * (Tensor_Dim + 1)) / 2, nb_gauss_pts, false);
-      mat.clear();
-    }
+
     auto base_function = data.getFTensor0N();
     auto values_at_gauss_pts = getFTensor2SymmetricFromMat<Tensor_Dim>(mat);
     FTensor::Index<'i', Tensor_Dim> i;
@@ -1090,15 +1083,15 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
-  const int nb_dofs = data.getFieldData().size();
-  if (!nb_dofs)
-    MoFEMFunctionReturnHot(0);
-  const int nb_base_functions = data.getN().size2() / Tensor_Dim;
-  const int nb_integration_points = data.getN().size1();
+  const int nb_integration_points = getGaussPts().size2();
   if (type == zeroType && side == zeroSide) {
     dataPtr->resize(Tensor_Dim, nb_integration_points,  false);
     dataPtr->clear();
   }
+  const int nb_dofs = data.getFieldData().size();
+  if (!nb_dofs)
+    MoFEMFunctionReturnHot(0);
+  const int nb_base_functions = data.getN().size2() / Tensor_Dim;
   FTensor::Index<'i', Tensor_Dim> i;
   auto t_n_hdiv = data.getFTensor1N<Tensor_Dim>();
   auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
@@ -1163,15 +1156,15 @@ struct OpCalculateHdivVectorDivergence
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
-    const int nb_dofs = data.getFieldData().size();
-    if (!nb_dofs)
-      MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getN().size2() / Tensor_Dim;
-    const int nb_integration_points = data.getN().size1();
+    const int nb_integration_points = getGaussPts().size2();
     if (type == zeroType && side == zeroSide) {
       dataPtr->resize(nb_integration_points, false);
       dataPtr->clear();
     }
+    const int nb_dofs = data.getFieldData().size();
+    if (!nb_dofs)
+      MoFEMFunctionReturnHot(0);
+    const int nb_base_functions = data.getN().size2() / Tensor_Dim;
     FTensor::Index<'i', Tensor_Dim> i;
     auto t_n_diff_hdiv = data.getFTensor2DiffN<Tensor_Dim, Tensor_Dim>();
     auto t_data = getFTensor0FromVec(*dataPtr);
@@ -1221,15 +1214,15 @@ struct OpCalculateHVecTensorField
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
-    const int nb_dofs = data.getFieldData().size();
-    if (!nb_dofs)
-      MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
-    const int nb_integration_points = data.getN().size1();
+    const int nb_integration_points = getGaussPts().size2();
     if (type == zeroType && side == zeroSide) {
       dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, nb_integration_points, false);
       dataPtr->clear();
     }
+    const int nb_dofs = data.getFieldData().size();
+    if (!nb_dofs)
+      MoFEMFunctionReturnHot(0);
+    const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
     FTensor::Index<'i', Tensor_Dim0> i;
     FTensor::Index<'j', Tensor_Dim1> j;
     auto t_n_hvec = data.getFTensor1N<Tensor_Dim1>();
@@ -1279,16 +1272,16 @@ struct OpCalculateHTensorTensorField
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
+    const int nb_integration_points = getGaussPts().size2();
+    if (type == zeroType && side == zeroSide) {
+      dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, nb_integration_points, false);
+      dataPtr->clear();
+    }
     const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
     const int nb_base_functions =
         data.getN().size2() / (Tensor_Dim0 * Tensor_Dim1);
-    const int nb_integration_points = data.getN().size1();
-    if (type == zeroType && side == zeroSide) {
-      dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, nb_integration_points, false);
-      dataPtr->clear();
-    }
     FTensor::Index<'i', Tensor_Dim0> i;
     FTensor::Index<'j', Tensor_Dim1> j;
     auto t_n_hten = data.getFTensor2N<Tensor_Dim0, Tensor_Dim1>();
@@ -1338,15 +1331,15 @@ struct OpCalculateHVecTensorDivergence
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
-    const int nb_dofs = data.getFieldData().size();
-    if (!nb_dofs)
-      MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
-    const int nb_integration_points = data.getN().size1();
+    const int nb_integration_points = getGaussPts().size2();
     if (type == zeroType && side == 0) {
       dataPtr->resize(Tensor_Dim0, nb_integration_points, false);
       dataPtr->clear();
     }
+    const int nb_dofs = data.getFieldData().size();
+    if (!nb_dofs)
+      MoFEMFunctionReturnHot(0);
+    const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
     FTensor::Index<'i', Tensor_Dim0> i;
     FTensor::Index<'j', Tensor_Dim1> j;
     auto t_n_diff_hvec = data.getFTensor2DiffN<Tensor_Dim1, Tensor_Dim1>();
