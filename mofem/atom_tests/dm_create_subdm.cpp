@@ -94,6 +94,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "FIELD1");
     // set app. order
     CHKERR m_field.set_field_order(root_set, MBVERTEX, "FIELD1", 1);
+    CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD1", 2);
 
     // build data structures for fields
     CHKERR m_field.build_fields();
@@ -157,8 +158,8 @@ int main(int argc, char *argv[]) {
     CHKERR DMMoFEMCreateSubDM(subdm0, dm, "SUB0");
     CHKERR DMMoFEMSetSquareProblem(subdm0, PETSC_TRUE);
     CHKERR DMMoFEMAddElement(subdm0, "FE11");
-    CHKERR DMMoFEMAddSubFieldRow(subdm0, "FIELD1");
-    CHKERR DMMoFEMAddSubFieldCol(subdm0, "FIELD1");
+    CHKERR DMMoFEMAddSubFieldRow(subdm0, "FIELD1", MBVERTEX, MBVERTEX);
+    CHKERR DMMoFEMAddSubFieldCol(subdm0, "FIELD1", MBVERTEX, MBVERTEX);
     CHKERR DMSetUp(subdm0);
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("SUB0", -1,

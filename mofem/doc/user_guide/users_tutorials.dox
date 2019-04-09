@@ -1,0 +1,39 @@
+/*! \page runningprograms Examples
+
+\tableofcontents
+
+\section elasto_dynamics Solid mechanics 
+
+ - \subpage elastic_dynamics
+ - \subpage small_strain_plasticity_plate_with_hole
+
+\section gel_module_gt Gel
+
+  - \subpage gel_model_example
+  - \subpage gel_creep
+  - \subpage gel_sorption
+  - \subpage gel_layered
+  - \subpage gel_cell
+  - <a href="https://bitbucket.org/likask/mofem_um_gels">Bitbucket repository </a></td>
+
+\section homogenisation_gt Homogenisation 
+
+  - \subpage comp_homo
+  - \subpage convergence_studies
+  - \subpage nitsche_periodic
+  - <a href="https://bitbucket.org/likask/mofem_um_homogenisation">Bitbucket repository </a></td>
+
+\section bone_remodleing_gt Bone remodelling
+
+ - \subpage um_bone_remodelling_readnme
+ - \subpage density_map_example
+
+\section Pre-processors
+
+This tutorial provides a step-by-step procedure for the use of <a href="http://gmsh.info/">Gmsh</a>
+as an alternative pre-processor for MoFEM.
+
+- \subpage using_Gmsh_tut
+
+ 
+*/

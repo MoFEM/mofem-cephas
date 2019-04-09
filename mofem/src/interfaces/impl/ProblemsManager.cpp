@@ -1190,7 +1190,10 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 MoFEMErrorCode ProblemsManager::buildSubProblem(
     const std::string out_name, const std::vector<std::string> &fields_row,
     const std::vector<std::string> &fields_col, const std::string main_problem,
-    const bool square_matrix, int verb) {
+    const bool square_matrix,
+    const map<std::string, std::pair<EntityType, EntityType>> *entityMapRow,
+    const map<std::string, std::pair<EntityType, EntityType>> *entityMapCol,
+    int verb) {
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
   MoFEMFunctionBegin;
@@ -1240,6 +1243,8 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
 
   // put rows & columns field names in array
   std::vector<std::string> fields[] = {fields_row, fields_col};
+  const map<std::string, std::pair<EntityType, EntityType>> *entityMap[] = {
+      entityMapRow, entityMapCol};
 
   // make data structure fos sub-problem data
   out_problem_it->subProblemData =
@@ -1277,12 +1282,41 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
           main_problem_dofs[ss]->get<FieldName_mi_tag>().lower_bound(field);
       auto hi_dit =
           main_problem_dofs[ss]->get<FieldName_mi_tag>().upper_bound(field);
-      dofs_array->reserve(std::distance(dit, hi_dit));
-      for (; dit != hi_dit; dit++)
+
+      auto add_dit_to_dofs_array = [&](auto &dit) {
         dofs_array->emplace_back(
             dit->get()->getDofEntityPtr(), dit->get()->getPetscGlobalDofIdx(),
             dit->get()->getPetscGlobalDofIdx(),
             dit->get()->getPetscLocalDofIdx(), dit->get()->getPart());
+      };
+
+      if (entityMap[ss]) {
+        auto mit = entityMap[ss]->find(field);
+        if (mit != entityMap[ss]->end()) {
+          EntityType lo_type = mit->second.first;
+          EntityType hi_type = mit->second.second;
+          int count = 0;
+          for (auto diit = dit; diit != hi_dit; ++diit) {
+            EntityType ent_type = (*diit)->getEntType();
+            if (ent_type >= lo_type && ent_type <= hi_type)
+              ++count;
+          }
+          dofs_array->reserve(count);
+          for (; dit != hi_dit; ++dit) {
+            EntityType ent_type = (*dit)->getEntType();
+            if (ent_type >= lo_type && ent_type <= hi_type)
+              add_dit_to_dofs_array(dit);
+          }
+        } else {
+          dofs_array->reserve(std::distance(dit, hi_dit));
+          for (; dit != hi_dit; dit++)
+            add_dit_to_dofs_array(dit);
+        }
+      } else {
+        dofs_array->reserve(std::distance(dit, hi_dit));
+        for (; dit != hi_dit; dit++)
+          add_dit_to_dofs_array(dit);
+      }
 
       // fill multi-index
       auto hint = out_problem_dofs[ss]->end();
@@ -2818,7 +2852,7 @@ ProblemsManager::getProblemElementsLayout(const std::string name,
 MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
     const std::string problem_name, const std::string field_name,
     const Range ents, const int lo_coeff,
-    const int hi_coeff, int verb) {
+    const int hi_coeff, int verb, const bool debug) {
       
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
@@ -2860,8 +2894,17 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
                                                      MAX_DOFS_ON_ENTITY));
         for (; lo != hi; ++lo)
           if ((*lo)->getDofCoeffIdx() >= lo_coeff &&
-              (*lo)->getDofCoeffIdx() <= hi_coeff)
+              (*lo)->getDofCoeffIdx() <= hi_coeff) 
             dofs_it_view.emplace_back(numered_dofs[s]->project<0>(lo));
+      }
+
+      if (verb >= VERY_NOISY) {
+        for (auto &dof : dofs_it_view) {
+          std::ostringstream ss;
+          ss << **dof;
+          PetscSynchronizedPrintf(m_field.get_comm(), "%s\n", ss.str().c_str());
+        }
+        PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
       }
 
       // set negative index
@@ -2879,11 +2922,23 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
       for (auto dit : dofs_it_view)
         dosf_weak_view.push_back(*dit);
 
+      if (verb >= NOISY)
+        PetscSynchronizedPrintf(
+            m_field.get_comm(),
+            "Number of DOFs in multi-index %d and to delete %d\n",
+            numered_dofs[s]->size(), dofs_it_view.size());
+
       // erase dofs from problem
       for (auto weak_dit : dosf_weak_view)
         if (auto dit = weak_dit.lock()) {
           numered_dofs[s]->erase(dit->getGlobalUniqueId());
         }
+
+      if (verb >= NOISY)
+        PetscSynchronizedPrintf(
+            m_field.get_comm(),
+            "Number of DOFs in multi-index after delete %d\n",
+            numered_dofs[s]->size());
 
       // get current number of ghost dofs
       int nb_local_dofs = 0;
@@ -2907,11 +2962,15 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         for (auto dit = numered_dofs[s]->get<decltype(tag)>().begin();
              dit != numered_dofs[s]->get<decltype(tag)>().end(); ++dit) {
           bool add = true;
-          if (only_local)
-            if ((*dit)->getPetscLocalDofIdx() >= 0 &&
-                (*dit)->getPetscLocalDofIdx() < *(local_nbdof_ptr[s])) {
-              indices.push_back(decltype(tag)::get_index(dit));
+          if (only_local) {
+            if ((*dit)->getPetscLocalDofIdx() < 0 ||
+                (*dit)->getPetscLocalDofIdx() >= *(local_nbdof_ptr[s])) {
+              add = false;
             }
+          }
+          if (add)
+            indices.push_back(decltype(tag)::get_index(dit));
+          
         }
       };
 
@@ -2930,9 +2989,15 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
                                   const auto local_only) {
         MoFEMFunctionBegin;
         get_indices_by_tag(tag, indices, local_only);
+
         AO ao;
-        CHKERR AOCreateMapping(m_field.get_comm(), indices.size(),
-                               &*indices.begin(), PETSC_NULL, &ao);
+        if(local_only)
+          CHKERR AOCreateMapping(m_field.get_comm(), indices.size(),
+                                 &*indices.begin(), PETSC_NULL, &ao);
+        else 
+          CHKERR AOCreateMapping(PETSC_COMM_SELF, indices.size(),
+                                 &*indices.begin(), PETSC_NULL, &ao);
+
         get_indices_by_uid(tag, indices);
         CHKERR AOApplicationToPetsc(ao, indices.size(), &*indices.begin());
         CHKERR AODestroy(&ao);
@@ -2967,6 +3032,18 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
                     m_field.get_comm());
       *(local_nbdof_ptr[s]) = nb_local_dofs;
       *(ghost_nbdof_ptr[s]) = nb_ghost_dofs;
+
+      if (debug)
+        for (auto dof : (*numered_dofs[s])) {
+          if (dof->getPetscGlobalDofIdx() < 0) {
+            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "Negative global idx");
+          }
+          if (dof->getPetscLocalDofIdx() < 0) {
+            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "Negative local idx");
+          }
+        }
 
     } else {
 

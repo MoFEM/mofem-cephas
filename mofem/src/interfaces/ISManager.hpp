@@ -29,6 +29,8 @@ static const MOFEMuuid IDD_MOFEMISManager =
 /**
  * \brief Section manager is used to create indexes and sections
  * \ingroup mofem_is_managers
+ * 
+ * FIXME: ISManager is not properly testsed by atom tests.
  *
  */
 struct ISManager : public UnknownInterface {
@@ -98,6 +100,28 @@ struct ISManager : public UnknownInterface {
                                              int min_coeff_idx,
                                              int max_coeff_idx, IS *is,
                                              Range *ents = nullptr) const;
+
+  /**
+   * @brief create IS for given problem, field and type range (collective)
+   * \ingroup mofem_is_managers
+   * 
+   * @param problem 
+   * @param rc 
+   * @param field 
+   * @param low_type 
+   * @param hi_type 
+   * @param min_coeff_idx 
+   * @param max_coeff_idx 
+   * @param is 
+   * @param ents 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode
+  isCreateProblemFieldAndEntityType(const std::string &problem, RowColData rc,
+                                    const std::string &field,
+                                    EntityType low_type, EntityType hi_type,
+                                    int min_coeff_idx, int max_coeff_idx,
+                                    IS *is, Range *ents = nullptr) const;
 
   /** \brief create IS for give two problems and field
     * \ingroup mofem_is_managers

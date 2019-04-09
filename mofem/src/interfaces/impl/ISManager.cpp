@@ -232,7 +232,7 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
 
 MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
     const std::string &problem, RowColData rc, const std::string &field,
-    int min_coeff_idx, int max_coeff_idx, IS *is, Range *ents) const {
+    int min_coeff_idx, int max_coeff_idx, IS *is, Range *ents_ptr) const {
   const MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
   MoFEMFunctionBegin;
@@ -273,9 +273,9 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
     dof_loc_idx_view.insert(vit, hi_vit);
   }
 
-  auto true_if_dof_on_entity = [ents](auto &dof) {
-    if (ents) {
-      return ents->find(dof->get()->getEnt()) != ents->end();
+  auto true_if_dof_on_entity = [ents_ptr](auto &dof) {
+    if (ents_ptr) {
+      return ents_ptr->find(dof->get()->getEnt()) != ents_ptr->end();
     } else {
       return true;
     }
@@ -300,12 +300,29 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode ISManager::isCreateProblemFieldAndEntityType(
+    const std::string &problem, RowColData rc, const std::string &field,
+    EntityType low_type, EntityType hi_type, int min_coeff_idx,
+    int max_coeff_idx, IS *is, Range *ents_ptr) const {
+  const MoFEM::Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  EntityHandle field_meshset = m_field.get_field_meshset(field);
+  Range ents;
+  for (; low_type <= hi_type; ++low_type)
+    CHKERR m_field.get_moab().get_entities_by_type(field_meshset, low_type,
+                                                   ents, true);
+  if (ents_ptr)
+    ents = intersect(ents, *ents_ptr);
+  CHKERR isCreateProblemFieldAndRank(problem, rc, field, min_coeff_idx,
+                                     max_coeff_idx, is, &ents);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem, const std::string &x_field_name,
     RowColData x_rc, const std::string &y_problem,
     const std::string &y_field_name, RowColData y_rc, std::vector<int> &idx,
     std::vector<int> &idy) const {
-
   const MoFEM::Interface &m_field = cOre;
   const Problem *px_ptr;
   const Problem *py_ptr;

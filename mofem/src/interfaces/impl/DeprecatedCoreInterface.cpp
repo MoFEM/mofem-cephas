@@ -440,7 +440,8 @@ MoFEMErrorCode DeprecatedCoreInterface::build_sub_problem(
     const std::vector<std::string> &fields_col, const std::string &main_problem,
     const bool square_matrix, int verb) {
   return getInterface<ProblemsManager>()->buildSubProblem(
-      out_name, fields_row, fields_col, main_problem, square_matrix, verb);
+      out_name, fields_row, fields_col, main_problem, square_matrix, nullptr,
+      nullptr, verb);
 }
 
 MoFEMErrorCode
