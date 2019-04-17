@@ -21,6 +21,7 @@ authors:
   - name: Hoang Nguyen  
   - name: Christophe-Alexandre Chalons-Mouriesse 
   - name: Euan Miur
+  - name: Andrei G. Shvarts
   - name: Chris Pearce  
 affiliations:
  - name: School of Engineering, University of Glasgow, Glasgow, G12 8QQ
