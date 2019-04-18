@@ -14,18 +14,32 @@ authors:
     affiliation: 1 
   - name: Zahur Ullah
     orcid: 0000-0002-1612-9066
+    affiliation: 2
   - name: Karol Lewandowski
+    affiliation: 1 
   - name: Xuan Meng  
+    affiliation: 1 
   - name: Xiao-Yi Zhou 
+    affiliation: 3 
   - name: Ignatios Athanasiadis  
+    affiliation: 1 
   - name: Hoang Nguyen  
+    affiliation: 1 
   - name: Christophe-Alexandre Chalons-Mouriesse 
+    affiliation: 1 
   - name: Euan Miur
+    affiliation: 1 
   - name: Andrei G. Shvarts
+    affiliation: 1 
   - name: Chris Pearce  
+    affiliation: 1 
 affiliations:
  - name: School of Engineering, University of Glasgow, Glasgow, G12 8QQ
    index: 1
+ - name: School of Mechanical & Aerospace Engineering, Queen's University, Belfast, BT7 1NN
+   index: 2
+ - name: School of Civil Engineering & Geosciences, Newcastle University, Newcastle upon Tyne, NE1 7RU
+   index: 3
 date: 15 April 2019
 bibliography: paper.bib
 ---
