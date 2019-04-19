@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 namespace MoFEM {
 
 MoFEMErrorCode Core::synchronise_entities(Range &ents, int verb) {
@@ -23,7 +23,7 @@ MoFEMErrorCode Core::synchronise_entities(Range &ents, int verb) {
     verb = verbose;
 
   // make a buffer
-  std::vector<std::vector<EntityHandle> > sbuffer(sIze);
+  std::vector<std::vector<EntityHandle>> sbuffer(sIze);
 
   Range::iterator eit = ents.begin();
   for (; eit != ents.end(); eit++) {
@@ -210,93 +210,100 @@ MoFEMErrorCode Core::synchronise_field_entities(const BitFieldId id, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-  MoFEMErrorCode Core::synchronise_field_entities(const std::string& name,int verb) {
-    MoFEMFunctionBeginHot;
-    if(verb==-1) verb = verbose;
-    *buildMoFEM = 0;
-    try {
-      ierr = synchronise_field_entities(getBitFieldId(name),verb);  CHKERRG(ierr);
-    } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-    }
-    MoFEMFunctionReturnHot(0);
-  }
-
-  MoFEMErrorCode Core::resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb) {
-    MoFEMFunctionBeginHot;
-    ParallelComm *pcomm =
-        ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
-    std::vector<int> shprocs(MAX_SHARING_PROCS,0);
-    std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS,0);
-    Range ents;
-    Tag th_gid;
-    const int zero =  0;
-    rval = get_moab().tag_get_handle(
-      GLOBAL_ID_TAG_NAME,1,MB_TYPE_INTEGER,th_gid,MB_TAG_DENSE|MB_TAG_CREAT,&zero
-    ); CHKERRQ_MOAB(rval);
-    PetscLayout layout;
-    ierr = problem_ptr->getNumberOfElementsByNameAndPart(get_comm(),fe_name,&layout); CHKERRG(ierr);
-    int gid,last_gid;
-    ierr = PetscLayoutGetRange(layout,&gid,&last_gid); CHKERRG(ierr);
-    ierr = PetscLayoutDestroy(&layout); CHKERRG(ierr);
-    for(_IT_NUMEREDFE_BY_NAME_FOR_LOOP_(problem_ptr,fe_name,fe_it)) {
-      EntityHandle ent = (*fe_it)->getEnt();
-      ents.insert(ent);
-      unsigned int part = (*fe_it)->getPart();
-      rval = get_moab().tag_set_data(pcomm->part_tag(),&ent,1,&part); CHKERRQ_MOAB(rval);
-      if(part == pcomm->rank()) {
-        rval = get_moab().tag_set_data(th_gid,&ent,1,&gid); CHKERRQ_MOAB(rval);
-        gid++;
-      }
-      shprocs.clear();
-      shhandles.clear();
-      if(pcomm->size()>1) {
-        unsigned char pstatus = 0;
-        if(pcomm->rank()!=part) {
-          pstatus = PSTATUS_NOT_OWNED;
-          pstatus |= PSTATUS_GHOST;
-        }
-        if(pcomm->size()>2) {
-          pstatus |= PSTATUS_SHARED;
-          pstatus |= PSTATUS_MULTISHARED;
-        } else {
-          pstatus |= PSTATUS_SHARED;
-        }
-        int rrr = 0;
-        for(unsigned int rr = 0;rr<pcomm->size();rr++) {
-          if(rr!=pcomm->rank()) {
-            shhandles[rrr] = ent;
-            shprocs[rrr] = rr;
-            rrr++;
-          }
-          shprocs[rrr] = -1;
-        }
-        if(pstatus&PSTATUS_SHARED) {
-          rval = get_moab().tag_set_data(pcomm->sharedp_tag(),&ent,1,&shprocs[0]); CHKERRQ_MOAB(rval);
-          rval = get_moab().tag_set_data(pcomm->sharedh_tag(),&ent,1,&shhandles[0]); CHKERRQ_MOAB(rval);
-        }
-        if(PSTATUS_MULTISHARED) {
-          rval = get_moab().tag_set_data(pcomm->sharedps_tag(),&ent,1,&shprocs[0]); CHKERRQ_MOAB(rval);
-          rval = get_moab().tag_set_data(pcomm->sharedhs_tag(),&ent,1,&shhandles[0]); CHKERRQ_MOAB(rval);
-        }
-        rval = get_moab().tag_set_data(pcomm->pstatus_tag(),&ent,1,&pstatus); CHKERRQ_MOAB(rval);
-      }
-    }
-    rval = pcomm->exchange_tags(th_gid,ents); CHKERRQ_MOAB(rval);
-    MoFEMFunctionReturnHot(0);
-  }
-  MoFEMErrorCode Core::resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb) {
-    MoFEMFunctionBeginHot;
-    typedef Problem_multiIndex::index<Problem_mi_tag>::type Problem_multiIndex_by_name;
-    //find p_miit
-    Problem_multiIndex_by_name &problems_set = pRoblems.get<Problem_mi_tag>();
-    Problem_multiIndex_by_name::iterator p_miit = problems_set.find(name);
-    if(p_miit==problems_set.end()) {
-      SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
-    }
-    ierr = resolve_shared_ents(&*p_miit,fe_name,verb); CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
-  }
-
-
+MoFEMErrorCode Core::synchronise_field_entities(const std::string &name,
+                                                int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+  *buildMoFEM = 0;
+  CHKERR synchronise_field_entities(getBitFieldId(name), verb);
+  MoFEMFunctionReturn(0);
 }
+
+MoFEMErrorCode Core::resolve_shared_ents(const Problem *problem_ptr,
+                                         const std::string &fe_name, int verb) {
+  MoFEMFunctionBegin;
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
+  std::vector<int> shprocs(MAX_SHARING_PROCS, 0);
+  std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, 0);
+  Range ents;
+  Tag th_gid;
+  const int zero = 0;
+  CHKERR get_moab().tag_get_handle(GLOBAL_ID_TAG_NAME, 1, MB_TYPE_INTEGER,
+                                   th_gid, MB_TAG_DENSE | MB_TAG_CREAT, &zero);
+  PetscLayout layout;
+  CHKERR problem_ptr->getNumberOfElementsByNameAndPart(get_comm(), fe_name,
+                                                       &layout);
+  int gid, last_gid;
+  CHKERR PetscLayoutGetRange(layout, &gid, &last_gid);
+  CHKERR PetscLayoutDestroy(&layout);
+  for (_IT_NUMEREDFE_BY_NAME_FOR_LOOP_(problem_ptr, fe_name, fe_it)) {
+    EntityHandle ent = (*fe_it)->getEnt();
+    ents.insert(ent);
+    unsigned int part = (*fe_it)->getPart();
+    CHKERR get_moab().tag_set_data(pcomm->part_tag(), &ent, 1, &part);
+    if (part == pcomm->rank()) {
+      CHKERR get_moab().tag_set_data(th_gid, &ent, 1, &gid);
+      gid++;
+    }
+    shprocs.clear();
+    shhandles.clear();
+    if (pcomm->size() > 1) {
+      unsigned char pstatus = 0;
+      if (pcomm->rank() != part) {
+        pstatus = PSTATUS_NOT_OWNED;
+        pstatus |= PSTATUS_GHOST;
+      }
+      if (pcomm->size() > 2) {
+        pstatus |= PSTATUS_SHARED;
+        pstatus |= PSTATUS_MULTISHARED;
+      } else {
+        pstatus |= PSTATUS_SHARED;
+      }
+      int rrr = 0;
+      for (unsigned int rr = 0; rr < pcomm->size(); rr++) {
+        if (rr != pcomm->rank()) {
+          shhandles[rrr] = ent;
+          shprocs[rrr] = rr;
+          rrr++;
+        }
+        shprocs[rrr] = -1;
+      }
+      if (pstatus & PSTATUS_SHARED) {
+        CHKERR
+        get_moab().tag_set_data(pcomm->sharedp_tag(), &ent, 1, &shprocs[0]);
+        CHKERR get_moab().tag_set_data(pcomm->sharedh_tag(), &ent, 1,
+                                       &shhandles[0]);
+      }
+      if (PSTATUS_MULTISHARED) {
+        CHKERR get_moab().tag_set_data(pcomm->sharedps_tag(), &ent, 1,
+                                       &shprocs[0]);
+        CHKERR get_moab().tag_set_data(pcomm->sharedhs_tag(), &ent, 1,
+                                       &shhandles[0]);
+      }
+      CHKERR get_moab().tag_set_data(pcomm->pstatus_tag(), &ent, 1, &pstatus);
+    }
+  }
+  CHKERR pcomm->exchange_tags(th_gid, ents);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::resolve_shared_ents(const std::string &name,
+                                         const std::string &fe_name, int verb) {
+  MoFEMFunctionBegin;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type
+      Problem_multiIndex_by_name;
+  // find p_miit
+  Problem_multiIndex_by_name &problems_set = pRoblems.get<Problem_mi_tag>();
+  Problem_multiIndex_by_name::iterator p_miit = problems_set.find(name);
+  if (p_miit == problems_set.end()) {
+    SETERRQ1(PETSC_COMM_SELF, 1,
+             "problem with name < %s > not defined (top tip check spelling)",
+             name.c_str());
+  }
+  CHKERR resolve_shared_ents(&*p_miit, fe_name, verb);
+  MoFEMFunctionReturn(0);
+}
+
+} // namespace MoFEM
