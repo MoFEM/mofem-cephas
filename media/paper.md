@@ -1,7 +1,7 @@
 ---
 title: 'MoFEM: An open source, parallel finite element library'
 tags:
-  - Finite Element
+  - Finite element method
   - Solid mechanics
   - Fluid mechanics
   - Fracture mechanics
@@ -44,23 +44,16 @@ date: 15 April 2019
 bibliography: paper.bib
 ---
 
-# Summary
 
-``MoFEM`` (Mesh Oriented Finite Element Method) is a C++ library supporting 
-the solution of finite elements problems. It is developed to provide free and
- openß finite element code for engineers, students and academics. ``MoFEM`` 
- is a finite element analysis code tailored for the solution of multi-physics 
- problems with arbitrary levels of approximation, different levels of mesh 
- refinement and optimised for high-performance computing. It is designed to 
- be able to manage complexities related to a heterogeneous order of 
- approximations for L2,H1,H-div and H-curl spaces. ``MoFEM`` is the blend 
- of the Boost MultiIndex containers, MOAB (Mesh Oriented Database)  and 
- PETSc (Portable, Extensible Toolkit for Scientific Computation). 
- ``MoFEM`` is developed in C++ and it is open-source software under the GNU 
- Lesser General Public License. ``MoFEM`` can read and write a number of 
- mesh file formats using functionality provided by MoAB. The current version 
- of MoFEM has full support for CUBIT/TRELIS, TetGEN, Salome/Code_Aster (MED 
- format) for pre-processing and ParaView for post-processing.
+# Introduction
+ ```MoFEM``` (Mesh-Oriented Finite Element Method) is a C++ library for managing complexities related to the finite element method, a popular approach for solving partial differential equations (PDEs) arising in various physical problems and engeeniring applications. The main purpose behind the development of ```MoFEM``` is to enable rapid implementation of the finite element method for solving complex multi-physics and multi-domain engeneering-related problems utilizing modern hierarchical and heterogeneous approximation approaches.  
+ 
+ # Summary
+
+ ```MoFEM``` is a finite element analysis code tailored for the solution of multi-physics problems with arbitrary levels of approximation, different levels of mesh refinement and optimised for high-performance computing. It is designed to be able to manage complexities related to hierarchical basis functions (Legendre,Lobatto or Jacoby polynomials), providing heterogeneous approximation of an arbitary order for L2, H1, H-div and H-curl spaces. ```MoFEM``` incorporates a blend of [Boost Multi-index Containers](https://www.boost.org/doc/libs/1_62_0/libs/multi_index/doc/index.html), [MOAB](https://press3.mcs.anl.gov/sigma/moab-library/) (Mesh Oriented Database) and [PETSc](https://www.mcs.anl.gov/petsc/) (Portable, Extensible Toolkit for Scientific Computation). ```MoFEM``` is developed in C++ and it is an open source software under the [GNU Lesser General Public License](https://www.gnu.org/licenses/lgpl.html). ```MoFEM``` can read and write a number of mesh file formats using functionality provided by [MOAB](https://press3.mcs.anl.gov/sigma/moab-library/). Furthemore, it has full support for [CUBIT/TRELIS](https://www.csimsoft.com/trelis.jsp), [TetGEN](http://wias-berlin.de/software/index.jsp?id=TetGen&lang=1), [Salome-Meca](https://www.code-aster.org/spip.php?article303), [Gmsh](http://gmsh.info) for pre-processing and [ParaView](https://www.paraview.org) for post-processing.
+
+
+```MoFEM``` is created with the financial support of the Royal Academy of Engineering and EDF Energy to solve a problem of crack propagation in the nuclear graphite [@kaczmarczyk2014three],[@kaczmarczyk2017energy]. Over the time the domain of applications expanded to include computational homogenisation (DURACOMP EPSRC Project EP/K026925/1), [@ullah2019unified],[@zhou2017stochastic],[@ullah2017multi] bone remodelling and fracture (Kelvin Smith Scholarship), modelling of the gels reology and acoustics problems. Moreover, ```MoFEM``` includes an extensive library of example applications, such as soap film, solid shell, topology optimisation, phase field fracture, Navier-Stokes flow, cell traction microscopy, bone remodelling, configurational fracture , plasticity, mortar contact and magnetostatics.
 
 # Example users modules
 
