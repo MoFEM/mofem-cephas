@@ -177,6 +177,13 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     dJdxSlave.resize(9, false);
     dJdxMaster.clear();
     dJdxSlave.clear();
+
+    VectorDouble dJdxMaster_help, dJdxSlave_help;
+    dJdxMaster_help.resize(9, false);
+    dJdxSlave_help.resize(9, false);
+    dJdxMaster_help.clear();
+    dJdxSlave_help.clear();
+
     auto dj_master = get_tensor1(dJdxMaster);
     auto dj_slave = get_tensor1(dJdxSlave);
 
@@ -277,6 +284,30 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     ++dj_master;
     ++dj_slave;
     }
+
+    // dJdxMaster(0) = dJdxMaster_help(0);
+    // dJdxMaster(1) = dJdxMaster_help(3);
+    // dJdxMaster(2) = dJdxMaster_help(6);
+
+    // dJdxMaster(3) = dJdxMaster_help(1);
+    // dJdxMaster(4) = dJdxMaster_help(4);
+    // dJdxMaster(5) = dJdxMaster_help(7);
+
+    // dJdxMaster(6) = dJdxMaster_help(2);
+    // dJdxMaster(7) = dJdxMaster_help(5);
+    // dJdxMaster(8) = dJdxMaster_help(8);
+
+    // dJdxSlave(0) = dJdxSlave_help(0);
+    // dJdxSlave(1) = dJdxSlave_help(3);
+    // dJdxSlave(2) = dJdxSlave_help(6);
+
+    // dJdxSlave(3) = dJdxSlave_help(1);
+    // dJdxSlave(4) = dJdxSlave_help(4);
+    // dJdxSlave(5) = dJdxSlave_help(7);
+
+    // dJdxSlave(6) = dJdxSlave_help(2);
+    // dJdxSlave(7) = dJdxSlave_help(5);
+    // dJdxSlave(8) = dJdxSlave_help(8);
 
   }
 

@@ -280,6 +280,11 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
           ->gaussPtsSlave;
     }
 
+    inline MatrixDouble &getRotMat() {
+      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+          ->rotMat;
+    }
+
     /** \brief get triangle coordinates
 
       Vector has 9 elements, i.e. coordinates on Master face
