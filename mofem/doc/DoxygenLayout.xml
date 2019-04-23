@@ -34,15 +34,9 @@
         <tab type="user" url="@ref todo" title="Todo List" intro=""/>
         <tab type="user" url="@ref deprecated" title="Deprecated List" intro=""/>
       </tab>
-      <tab type="user" title="Testing" url="@ref mofem_testing" intro="">
         <tab type="user" url="http://cdash.eng.gla.ac.uk/cdash" title="CDash testing"/>
-      </tab>
-      <tab type="user" title="Bibliography" url="@ref bib_mofem" intro="">
         <tab type="user" url="@ref citelist" title="Bibliography"/>
-      </tab>
-      <tab type="user" title="All pages" url="@ref list_pages" intro="">
        <tab type="pages" visible="yes" title="" intro=""/>
-      </tab>
     </tab>
     <tab type="user" title="Modules" url="@ref mod_gallery" intro=""/>
     <tab type="user" url="https://groups.google.com/forum/#!forum/mofem-group" title="Q&amp;A"/>
