@@ -71,7 +71,7 @@ manager:
 
 Install packages through hombrew:
 ~~~~~
-brew install curl git gfortran
+brew install curl git gcc
 ~~~~~
 
 Check PATH of Fortran compiler:
