@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM ubuntu:18.10
 
 MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 
@@ -8,6 +8,8 @@ RUN echo 'APT::Install-Recommends "0";' > /etc/apt/apt.conf.d/99local
 # ENV http_proxy="http://wwwcache.gla.ac.uk:8080/"
 # ENV ftp_proxy="ftp://wwwcache.gla.ac.uk:8080/"
 # ENV https_proxy="https://wwwcache.gla.ac.uk:8080/"
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install packages
 RUN apt-get update && \
@@ -65,7 +67,7 @@ RUN cd /opt \
 && cd /opt && rm -rf cmake-3.8.2*
 
 # Set petesc version
-ENV PETSC_VERSION 3.8.4
+ENV PETSC_VERSION 3.7.7
 ENV PETSC_ARCH arch-linux2-c-opt
 ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/opt/petsc/arch-linux2-c-opt/lib
 ENV MESHKIT_DIR /opt/petsc/arch-linux2-c-opt/

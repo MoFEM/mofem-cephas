@@ -6,7 +6,7 @@
     <tab type="user" visible="yes" title="Getting started" url="@ref usersmain" intro="">
       <tab type="user" url="@ref installation" title="Installation" intro=""/>
       <tab type="user" url="@ref motivation" title="Features" intro=""/>
-      <tab type="user" url="https://groups.google.com/forum/#!forum/mofem-group" title="Video guides"/>
+      <tab type="user" url="https://www.youtube.com/playlist?list=PLW49at2nN39gsTI1vWxvHBOjFK0q_h83s" title="Video guides"/>
       <tab type="user" url="@ref runningprograms" title="Examples" intro=""/>
       <tab type="user" url="@ref faqs" title="Frequently Asked Questions" intro=""/>
       <tab type="user" url="@ref google_search" title="Search" intro=""/>
@@ -21,7 +21,7 @@
         <tab type="modules" visible="yes" title="Source groups" intro=""/>
         <tab type="files" visible="yes" title="Source files" intro=""/>
         <tab type="namespaces" visible="yes" title="Name spaces" intro=""/>
-        <tab type="annotated" visible="yes" title="Classes" intro=""/>
+        <tab type="classes" visible="yes" title="Classes" intro=""/>
       </tab>
       <tab type="user" title="Coding practice" url="@ref mofem_practice" intro="">
         <tab type="user" url="@ref coding_practice" title="Coding practice" intro=""/>

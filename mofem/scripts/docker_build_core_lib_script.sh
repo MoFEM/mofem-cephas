@@ -33,7 +33,7 @@ cd $MOFEM_BUILD_DIR
 
 # Install and build core library
 echo "Build"
-make -j $NB install
+make -k -j $NB install
 
 # Run tests and send results to CDash
 ctest --output-on-failure -D Experimental
