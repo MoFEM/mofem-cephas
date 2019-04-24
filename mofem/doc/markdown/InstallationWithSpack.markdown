@@ -74,12 +74,12 @@ Install packages through `homebrew`:
 brew install curl git gcc
 ~~~~~
 
-Check PATH of Fortran compiler (shipped with `gcc`):
+Check the path of the Fortran compiler (shipped with `gcc`):
 ~~~~~
 which gfortran
 ~~~~~
 
-If not there, then add to `PATH`.
+If it is not already in the `PATH`, you should add it there.
 
 Note: recent releases of macOS stopped shipping a Fortran compiler and therefore
 require [Mixed
@@ -98,7 +98,7 @@ Initialise Spack's environment variables:
 . spack/share/spack/setup-env.sh
 ~~~~~~
 
-Spack's environment variables will be lost at the close of a terminal session.
+Spack's environment variables will be lost when the terminal session is closed.
 Consider adding the previous command to your `.bashrc` or `.profile`, e.g.:
 ~~~~~~
 echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bashrc
@@ -123,8 +123,9 @@ instructions.
 
 ## Install basic users modules
 
-MoFEM's basic users modules consist of tools for solving a range of common problems, from
-elasticity to the Poisson equation. To install them run the following command:
+MoFEM's basic users modules consist of tools for solving a range of common
+problems, from elasticity to the Poisson equation. To install them run the
+following command:
 
 ~~~~~~
 spack install mofem-users-modules
@@ -147,16 +148,19 @@ spack activate -v um_view mofem-users-modules
 
 This filesystem view is a single directory tree that is the union of the
 directory hierarchies of a number of installed packages; it is similar to the
-directory hierarchy that might exist under `/usr/local`. The files of the
-view's installed MoFEM packages are brought into the view by symbolic or hard
-links, referencing the original Spack installation. Different 'views' can be
-created depending on the MoFEM version you wish to access. To make the new 'view' visible from any directory, add its `bin` directory to your `PATH`, e.g.:
+directory hierarchy that might exist under `/usr/local`. The files of the view's
+installed MoFEM packages are brought into the view by symbolic or hard links,
+referencing the original Spack installation. Different 'views' can be created
+depending on the MoFEM version you wish to access. To make the new 'view'
+visible from any directory, add its `bin` directory to your `PATH`, e.g.: 
+
 ~~~~~~
-export PATH=$PWD/um_view/bin:$PATH
-~~~~~~
-Consider also adding this command to your `.bashrc` or `.profile`, e.g.:
-~~~~~~
-echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bashrc
+export PATH=$PWD/um_view/bin:$PATH 
+~~~~~~ 
+
+Consider also adding this command to your `.bashrc` or `.profile`, e.g.: 
+~~~~~~ 
+echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bashrc 
 ~~~~~~
 
 ## Test elasticity module
@@ -223,9 +227,14 @@ MoFEM can be developed in different ways:
 3. [Basic users modules](#spack_basic_users_modules)
 4. [Core libraries](#spack_core_libraries)
 
-The developer installation requires knowing more about how Spack works. See
-[Spack usage and configuration](#spack_usage_config) before proceeding with
-installation. In particular, the instructions below will use so-called *specs*  to determine a particular build configuration, see [Spack manual page](https://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies) for more details. For example, the default Spack specifier for the build type will be given explicitly here: `build_type=RelWithDebInfo`, however other two build types can be specified in the same way: `build_type=Release` or `build_type=Debug`, see also [Change the build_type](#spack_build_type).
+The developer installation requires knowing more about how Spack works. See [Spack usage and configuration](#spack_usage_config)
+before proceeding with the installation. In particular, the instructions below
+will use so-called *specs* to obtain the desired build configuration, see
+[Spack manual page](https://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies)
+for more details. For example, the default Spack specifier for the build type
+will be given explicitly here: `build_type=RelWithDebInfo`, however keep in mind
+that two other build types can be specified in the same way:
+`build_type=Release` or `build_type=Debug`, see also [Change the build_type](#spack_build_type).
 
 <!-- The instructions below will use `mofem-cephas@develop` and
 `mofem-users-modules@develop` to denote the name of an existing installation.
@@ -262,7 +271,7 @@ To develop a module, you need install mofem-users-modules, clone from the
 repository which you like to work with, set up configuration and build the
 code.
 ~~~~
-spack install mofem-users-modules build_type=RelWithDebInfo
+spack install mofem-users-modules 
 cd $HOME
 spack view --verbose symlink -i um_view mofem-cephas
 export PATH=$PWD/um_view/bin:$PATH
@@ -283,7 +292,7 @@ One needs
 to install mofem-cephas, clone source code, run configuration and finally
 make the code.
 ~~~~
-spack install mofem-cephas build_type=RelWithDebInfo
+spack install mofem-cephas 
 mkdir $HOME/um_developer
 cd $HOME/um_developer/
 git clone -b develop https://likask@bitbucket.org/mofem/users-modules-cephas.git 
@@ -317,7 +326,9 @@ make -j4
 ctest
 make install
 ~~~~~
-Note that in addition to `build_type` another specification of the build configuration (*spec*) was used: `copy_user_modules=False `. Next, install users modules
+Note that in addition to `build_type` another specification of the build configuration (*spec*) was used: `copy_user_modules=False `. 
+
+Next, install users modules
 ~~~~~
 cd $HOME/mofem_install
 mkdir um
@@ -326,27 +337,38 @@ spack view --verbose symlink -i um_view mofem-cephas@develop
 export PATH=$PWD/um_view/bin:$PATH
 mkdir build 
 cd build/
-spack setup mofem-users-modules@develop copy_user_modules=False build_type=RelWithDebInfo ^mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
+spack setup mofem-users-modules@develop copy_user_modules=False build_type=RelWithDebInfo \
+              ^mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
 ./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
 ctest
 make install
 ~~~~~
 
-In the snippet above `^` is a *dependency spec*, i.e a descriptor defining the package on which the currently installed package depends.  Note that `^` is followed by the package name and its own *specs* which define the particular version, e.g. `specs` are defined recursively, see [Spack manual page](https://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies) for more details. For example, if the *Debug* build configuration is desired, `build_type=Debug` must be specified in both entries in the command above. Alternatively, the particular version of *already installed* package can be specified using its unique ID, which can be determined using the instructions given in [MoFEM package versions](#spack_mofem_package_versions). This unique ID is to be provided after the *dependency spec* `^` with a `/` (*slash*) preceding:
-~~~~~
-spack setup mofem-users-modules@develop copy_user_modules=False build_type=Debug ^/yk45ivx
+In the `spack setup` command of the snippet above `^` is a *dependency spec*, i.e. a descriptor defining the dependency of the package that we are currently installing on another package. Note that `^` is
+followed by the package name and its own *specs* for a particular
+version, i.e. *specs* are defined recursively, see
+[Spack manual page](https://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies)
+for more details. For example, if the *Debug* configuration is needed for both the core library and the user modules, then
+`build_type=Debug` must be specified in both entries in the `spack setup` command above.
+Alternatively, a particular version of an *already installed* package can be
+specified by its unique ID, which can be determined using the instructions
+given below in [MoFEM package versions](#spack_mofem_package_versions). This unique ID
+is to be provided after the *dependency spec* `^` with a `/` (*slash*)
+preceding: 
+~~~~~ 
+spack setup mofem-users-modules@develop copy_user_modules=False build_type=Debug ^/yk45ivx 
 ~~~~~
 
-You can add extended users modules to
-*$HOME/mofem_install/mofem-cephas/mofem/users_modules*. To include this in
+<!-- You can add extended users modules to
+`$HOME/mofem_install/mofem-cephas/mofem/users_modules`. To include this in
 the build process:
 ~~~~~
 ./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
 ctest
 make install
-~~~~~
+~~~~~ -->
 
 Alternatively, you can add your users modules to an independent folder and run
 the snippet below
@@ -426,9 +448,9 @@ git clone --single-branch -b mofem https://github.com/likask/spack.git
 . spack/share/spack/setup-env.sh
 ~~~~~
 
-We need to set up compilers since the location of standard gcc@6.4.0 libraries
+We need to set up compilers since the location of standard `gcc@6.4.0` libraries
 is in an unusual place when loaded by the module. In order to do that you have
-to edit file *.spack/linux/compilers.yaml* in your home directory
+to edit file `.spack/linux/compilers.yaml` in your home directory
 ~~~~~
      1	compilers:
      2	- compiler:
@@ -552,7 +574,7 @@ For `mofem-cephas` or core libraries change `OFF` to `ON`:
 ~~~~~~
 DMOFEM_BUILD_TESTS=OFF
 ~~~~~~
-And the same for `users_modules` change:
+And the same change for `users_modules`:
 ~~~~~~
 DMOFEM_UM_BUILD_TESTS=OFF
 ~~~~~~
