@@ -24,8 +24,8 @@ available.
 
 The installation of MoFEM requires
 [git](https://www.atlassian.com/git/tutorials/what-is-git),
-[curl](https://en.wikipedia.org/wiki/CURL) plus C++ and Fortran compilers (GCC
-and/or clang). They must also be available in your PATH.
+[curl](https://en.wikipedia.org/wiki/CURL) and C++ and Fortran compilers (GCC
+and/or clang). They must also be available in your `PATH`.
 
 System requirements: Minimum 8GB RAM. On Linux ensure this RAM is free.
 
@@ -345,22 +345,23 @@ ctest
 make install
 ~~~~~
 
-In the `spack setup` command of the snippet above `^` is a *dependency spec*, i.e. a descriptor defining the dependency of the package that we are currently installing on another package. Note that `^` is
+In the `spack setup` command of the snippet above `^` is a *dependency spec*, i.e. a descriptor defining the dependency of the package that we are currently installing on another package (in this case, on the core library). Note that `^` is
 followed by the package name and its own *specs* for a particular
 version, i.e. *specs* are defined recursively, see
 [Spack manual page](https://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies)
-for more details. For example, if the *Debug* configuration is needed for both the core library and the user modules, then
-`build_type=Debug` must be specified in both entries in the `spack setup` command above.
-Alternatively, a particular version of an *already installed* package can be
-specified by its unique ID, which can be determined using the instructions
+for more details. For example, if the *Debug* configuration is needed for both the core library and for user modules, then
+`build_type=Debug` must be specified for both packages in `spack setup` command above. Note that in the considered case *specs* for `mofem-cephas@develop` package must coincide with the ones provided during the installation of the core library discussed above.
+Alternatively, a particular version of an already installed library can be
+defined by its unique ID, which can be determined using the instructions
 given below in [MoFEM package versions](#spack_mofem_package_versions). This unique ID
 is to be provided after the *dependency spec* `^` with a `/` (*slash*)
-preceding: 
+preceding, e.g.:
 ~~~~~ 
 spack setup mofem-users-modules@develop copy_user_modules=False build_type=Debug ^/yk45ivx 
 ~~~~~
 
-<!-- You can add extended users modules to
+<!-- 
+You can add extended users modules to
 `$HOME/mofem_install/mofem-cephas/mofem/users_modules`. To include this in
 the build process:
 ~~~~~
@@ -368,7 +369,8 @@ the build process:
 make -j4
 ctest
 make install
-~~~~~ -->
+~~~~~ 
+-->
 
 Alternatively, you can add your users modules to an independent folder and run
 the snippet below
