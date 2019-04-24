@@ -60,7 +60,7 @@ bibliography: paper.bib
  multi-physics problems with arbitrary levels of approximation, different 
  levels of mesh refinement and optimised for high-performance computing. 
  It is designed to be able to manage complexities related to hierarchical basis 
- functions (Legendre,Lobatto or Jacoby polynomials), providing heterogeneous 
+ functions (Legendre, Lobatto or Jacobi polynomials), providing heterogeneous 
  approximation of an arbitary order for L2, H1, H-div and H-curl spaces. 
  ```MoFEM``` incorporates a blend of 
  [Boost Multi-index Containers](https://www.boost.org/doc/libs/1_62_0/libs/multi_index/doc/index.html), 
