@@ -355,11 +355,7 @@ struct ForcesAndSourcesCore : public FEMethod {
     */
   virtual MoFEMErrorCode setGaussPts(int order_row, int order_col,
                                      int order_data) {
-
-    MoFEMFunctionBeginHot;
-    ierr = setGaussPts(order_data);
-    CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    return setGaussPts(order_data);
   }
 
   /** \brief Data operator to do calculations at integration points.
