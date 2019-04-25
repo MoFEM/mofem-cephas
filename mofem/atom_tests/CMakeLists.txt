@@ -1291,3 +1291,21 @@ add_test(
   find_local_coordinates_on_tet ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/find_local_coordinates_on_tet 
 )
+
+cm_export_file("disp01_1parts.h5m" export_atom_tests)
+my_add_executable(field_evaluator field_evaluator.cpp)
+target_link_libraries(field_evaluator
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(field_evaluator
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/field_evaluator -file_name disp01_1parts.h5m 
+  -dm_is_partitioned
+)

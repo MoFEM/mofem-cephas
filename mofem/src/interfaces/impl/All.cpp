@@ -19,3 +19,4 @@ const static int debug = 1;
 #include "impl/FieldBlas.cpp"
 #include "impl/BitRefManager.cpp"
 #include "impl/Tools.cpp"
+#include "impl/FieldEvaluator.cpp"

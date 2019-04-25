@@ -114,4 +114,9 @@
 #include <FatPrismElementForcesAndSourcesCore.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
+// More interfaces
+
+#include <FieldEvaluator.hpp>
+
+
 #endif //MOFEM_HPP__
