@@ -62,8 +62,9 @@ bibliography: paper.bib
   insufficient to have total control over numerical errors. A more sophisticated
   approach was paved by Ivo Babuska et al. [@babuska1992version], who showed
   that if one could increase at the same time the polynomial order and the mesh
-  density, i.e. employ *hp-adaptivity*, the exponential convergence is achievable.
-  This has been seen as the 'Holy Grail' of the finite element method.
+  density, i.e. employ *hp-adaptivity*, the exponential convergence is
+  achievable. This has been seen as the 'Holy Grail' of the finite element
+  method.
 
   However, raising the order of approximation comes with a cost where the
   algebraic solver time and the matrix assembly time are increased.
@@ -91,9 +92,9 @@ bibliography: paper.bib
   `MoFEM` is designed to provide all solutions discussed above for
   *hp-adaptivity*, enabling rapid implementation of the finite element method
   for solving complex multi-domain, multi-scale and multi-physics engineering
-  problems. Moreover, it releases users from programming complexities related to the
-  bookkeeping of degrees of freedom (DOFs), finite elements, matrix assembly,
-  etc.
+  problems. Moreover, it releases users from programming complexities related to
+  the bookkeeping of degrees of freedom (DOFs), finite elements, matrix
+  assembly, etc.
   
 
 # Design
@@ -134,18 +135,18 @@ bibliography: paper.bib
   solution of complex, multi-domain, multi-scale and multi-physics problems.  
   -->
 
-  Traditional finite element codes are element-centric meaning the type of
-  an element defines the approximation space and base. Therefore, they are not
-  able to fully exploit the potential of emerging approximation methods. On the
+  Traditional finite element codes are element-centric meaning the type of an
+  element defines the approximation space and base. Therefore, they are not able
+  to fully exploit the potential of emerging approximation methods. On the
   contrary, the design of data structures for approximation of field variables
   in `MoFEM`  is independent of the specific finite element, e.g. Lagrangian,
   Nedelec, Rivart-Thomas, since finite element is constructed by a set of lower
-  dimension entities on which the approximation fields are defined. Consequently,
-  different approximation spaces ($H^1$, $H-curl$, $H-div$, $L^2$) can be
-  arbitrarily mixed in a finite element to create new capabilities for solving
-  complex problems efficiently. It is worth mentioning that the approximation
-  space defines the adjacency of DOFs on entities while the number of DOFs on
-  entity is independent on approximation base.
+  dimension entities on which the approximation fields are defined.
+  Consequently, different approximation spaces ($H^1$, $H-curl$, $H-div$, $L^2$)
+  can be arbitrarily mixed in a finite element to create new capabilities for
+  solving complex problems efficiently. It is worth mentioning that the
+  approximation space defines the adjacency of DOFs on entities while the number
+  of DOFs on entity is independent on approximation base.
 
    ![Basic design of `MoFEM` (Adopted from MoFEM webpage [@MoFEMWebPage]).\label{fig:design}](basic_design.png){width=80%}
   
@@ -158,8 +159,8 @@ bibliography: paper.bib
   transition elements between domains with different problem formulation and
   physics, e.g. from two-field mixed formulation to single-field formulation, or
   elements with anisotropic approximation order, e.g. with arbitrary high order
-  on surface and arbitrary low order through thickness of solid shells).
-  This approach also sets the benchmark in terms of how finite element codes are
+  on surface and arbitrary low order through thickness of solid shells). This
+  approach also sets the benchmark in terms of how finite element codes are
   implemented, introducing a concept of user-defined data operators acting on
   fields that are associated with entities (vertices, edges, faces and volumes)
   rather on the finite element directly. Such an approach simplifies code
@@ -194,7 +195,10 @@ bibliography: paper.bib
 
 # Examples
 
-  `MoFEM` core library provides functionality for developing user modules where applications for particular finite elements or problems are implemented. User module is an independent repository, private or public and independently managed by its owner.
+  `MoFEM` core library provides functionality for developing user modules where
+  applications for particular finite elements or problems are implemented. User
+  module is an independent repository, private or public and independently
+  managed by its owner.
 
   `MoFEM` was initially created with the financial support of the Royal Academy
    of Engineering and EDF Energy to solve the problem of crack propagation in
@@ -214,8 +218,8 @@ bibliography: paper.bib
 
 # Acknowledgements
 
-  `MoFEM` development has been supported by EDF Energy Nuclear Generation Ltd. 
-  (grant no. 4840360333), The Royal Academy of Engineering (grant no. 
+  `MoFEM` development has been supported by EDF Energy Nuclear Generation Ltd.
+  (grant no. 4840360333), The Royal Academy of Engineering (grant no.
   RCSRF1516\2\18), DURACOMP EPSRC Project (EP/K026925/1), and Kelvin Smith
   Scholarship programme at University of Glasgow.
 
