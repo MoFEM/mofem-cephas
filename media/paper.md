@@ -87,8 +87,8 @@ bibliography: paper.bib
 
   `MoFEM` is designed to provide all discussed above solutions for
   *hp-adaptivity*, enabling rapid implementation of the finite element method
-  for solving complex multi-domain, multi-scale and multi-physics engineering
-  freedom (DOFs), finite elements, matrix assembly, etc.
+  for solving complex multi-domain, multi-scale and multi-physics engineering problems, while avoiding complexities related to bookkeeping of degrees of freedom
+ (DOFs), finite elements, matrix assembly, etc.
   
 
 # Basic design of MoFEM
