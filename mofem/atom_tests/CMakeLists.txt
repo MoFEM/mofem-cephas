@@ -1277,3 +1277,17 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/segments_distance 
 )
 
+my_add_executable(find_local_coordinates_on_tet find_local_coordinates_on_tet.cpp)
+target_link_libraries(find_local_coordinates_on_tet
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(
+  find_local_coordinates_on_tet ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/find_local_coordinates_on_tet 
+)

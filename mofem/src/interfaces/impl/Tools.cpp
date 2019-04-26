@@ -86,29 +86,84 @@ Tools::minTetsQuality(const Range &tets, double &min_quality, Tag th,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-Tools::getTetsWithQuality(Range &out_tets, const Range &tets,
-                          Tag th, boost::function<bool(double)> f) {
-  MoFEM::Interface &m_field = cOre;
-  moab::Interface &moab(m_field.get_moab());
-  MoFEMFunctionBegin;
-  Range to_write;
-  const EntityHandle *conn;
-  int num_nodes;
-  double coords[12];
-  for (auto tet : tets) {
-    CHKERR m_field.get_moab().get_connectivity(tet, conn, num_nodes, true);
-    if (th) {
-      CHKERR moab.tag_get_data(th, conn, num_nodes, coords);
-    } else {
-      CHKERR moab.get_coords(conn, num_nodes, coords);
+const std::array<double, 12> Tools::diffNMBTET;
+const std::array<double, 4> Tools::nMBTETAt000;
+
+MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
+    const double *elem_coords, const double *global_coords, const int nb_nodes,
+    double *local_coords) {
+  FTensor::Index<'i', 4> i;
+  MoFEMFunctionBeginHot;
+
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 4> t_elem_coords = {
+      &elem_coords[0], &elem_coords[3], &elem_coords[6], &elem_coords[9]};
+
+  FTensor::Tensor1<const double, 4> t_n = {nMBTETAt000[0], nMBTETAt000[1],
+                                           nMBTETAt000[2], nMBTETAt000[3]};
+  FTensor::Tensor1<double, 3> t_coords_at_0;
+
+  // ii - global coordinates
+  // jj - local direvatives
+  MatrixDouble3by3 a(3, 3);
+  for (auto ii : {0, 1, 2}) {
+    FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 4> t_diff(
+        &diffNMBTET[0], &diffNMBTET[3], &diffNMBTET[6], &diffNMBTET[9]);
+
+    cerr << "e " << t_elem_coords(0) << " " << t_elem_coords(1) << " "
+         << t_elem_coords(2) << " " << t_elem_coords(3) << endl;
+
+    for (auto jj : {0, 1, 2}) {
+      a(jj, ii) = t_diff(i) * t_elem_coords(i);
+      ++t_diff;
     }
-    double q = Tools::volumeLengthQuality(coords);
-    if (f(q)) {
-      out_tets.insert(tet);
-    }
+    t_coords_at_0(ii) = t_n(i) * t_elem_coords(i);
+    ++t_elem_coords;
   }
-  MoFEMFunctionReturn(0);
+
+  cerr << a << endl;
+
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_global_coords = {
+      &global_coords[0], &global_coords[1], &global_coords[2]};
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local_coords = {
+      &local_coords[0], &local_coords[1], &local_coords[2]};
+
+  FTensor::Index<'j', 3> j;
+  for (int ii = 0; ii != nb_nodes; ++ii) {
+    t_local_coords(j) = t_global_coords(j) - t_coords_at_0(j);
+    ++t_local_coords;
+    ++t_global_coords;
+  }
+
+  int IPIV[3];
+  int info = lapack_dgesv(3, nb_nodes, &a(0, 0), 3, IPIV, local_coords, 3);
+  if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"info == %d",info);
+
+  MoFEMFunctionReturnHot(0);
+ }
+
+ MoFEMErrorCode Tools::getTetsWithQuality(Range &out_tets, const Range &tets,
+                                          Tag th,
+                                          boost::function<bool(double)> f) {
+   MoFEM::Interface &m_field = cOre;
+   moab::Interface &moab(m_field.get_moab());
+   MoFEMFunctionBegin;
+   Range to_write;
+   const EntityHandle *conn;
+   int num_nodes;
+   double coords[12];
+   for (auto tet : tets) {
+     CHKERR m_field.get_moab().get_connectivity(tet, conn, num_nodes, true);
+     if (th) {
+       CHKERR moab.tag_get_data(th, conn, num_nodes, coords);
+     } else {
+       CHKERR moab.get_coords(conn, num_nodes, coords);
+     }
+     double q = Tools::volumeLengthQuality(coords);
+     if (f(q)) {
+       out_tets.insert(tet);
+     }
+   }
+   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
