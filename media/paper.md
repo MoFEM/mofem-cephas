@@ -72,7 +72,7 @@ bibliography: paper.bib
   simultaneously. To reduce the algebraic solver time, one way is to use
   multi-grid solvers, which can work more efficiently if a hierarchical
   approximation base is available
-  [@ainsworth2003hierarchic,@fuentes2015orientation]. This approach is ideal for
+  [@ainsworth2003hierarchic],[@fuentes2015orientation]. This approach is ideal for
   elliptic problems such as solid elasticity. However, for hyperbolic problems,
   e.g. acoustic wave propagation, the efficiency bottleneck could be in the time
   of the matrix assembly. For that case heterogeneous approximation bases, e.g.
@@ -84,10 +84,14 @@ bibliography: paper.bib
   efficient as possible, and one possible solution is to use mixed finite
   element formulations, where error estimators become a part of the formulation.
   However, the stability of such elements is an issue, which can be addressed by
-  the appropriate use of a combination of $H^1$, $H-curl$, $H-div$ and $L^2$
+  the appropriate use of a combination of $H^1$,
+  $\mathbf{H}\text{-}\textbf{curl}$, $\mathbf{H}\text{-}\textbf{div}$ and $L^2$
   spaces. Mixed formulations have other advantages including reduced regularity
   of approximation, or the resulting sparse system of equations, that can be
-  exploited by problem-tailored solution algorithms.
+  exploited by problem-tailored solution algorithms. In Fig. \ref{fig:convergence} we show a convergence study for the mixed formulation for a transport/heat conduction problem.  
+
+  ![A convergence study of h-adaptivity for mixed formulation of the stationary transport/heat conduction problem (see inset of the figure for the geometry), with the comparison of different polynomial orders, denoted as '$\text{P}n\text{-}\text{P}m$', where $n$ is order of approximation for the flux and $m$ is the order for the field values (temperature or density). Note that the flux is approximated by the space $\mathbf{H}\text{-}\textbf{div}$, while the field values -- by the space $L^2$, see corresponding [MoFEM tutorial page](http://mofem.eng.gla.ac.uk/mofem/html/mix_transport.html) for more details.\label{fig:convergence}](LShape.pdf){ width=80% }
+
 
   `MoFEM` is designed to provide all solutions discussed above for
   *hp-adaptivity*, enabling rapid implementation of the finite element method
@@ -119,7 +123,7 @@ bibliography: paper.bib
   \ref{fig:ecosystem} shows different components that are employed in the
   ecosystem including popular pre- and post processing software.
 
-  ![Basic design of `MoFEM` (Adopted from `MoFEM` webpage [@MoFEMWebPage]).\label{fig:design}](basic_design.png){width=80%}
+  ![Basic design of `MoFEM` (Adopted from `MoFEM` webpage [@MoFEMWebPage]).\label{fig:design}](basic_design.pdf){width=80%}
 
   <!--  MoFEM makes
   PETSc integral part of code by extending PETSc by DMMOFEM interface (several
@@ -142,11 +146,15 @@ bibliography: paper.bib
   in `MoFEM`  is independent of the specific finite element, e.g. Lagrangian,
   Nedelec, Rivart-Thomas, since finite element is constructed by a set of lower
   dimension entities on which the approximation fields are defined.
-  Consequently, different approximation spaces ($H^1$, $H-curl$, $H-div$, $L^2$)
+  Consequently, different approximation spaces ($H^1$, $\mathbf{H}\text{-}\textbf{curl}$, $\mathbf{H}\text{-}\textbf{div}$, $L^2$)
   can be arbitrarily mixed in a finite element to create new capabilities for
-  solving complex problems efficiently. It is worth mentioning that the
+  solving complex problems efficiently. 
+  
+  <!--   
+  It is worth mentioning that the
   approximation space defines the adjacency of DOFs on entities while the number
-  of DOFs on entity is independent on approximation base.
+  of DOFs on entity is independent on approximation base. 
+  -->
 
   !['Ecosystem' of `MoFEM` (Adopted from MoFEM webpage [@MoFEMWebPage]).\label{fig:ecosystem}](ecosystem.png){width=80%}
    
