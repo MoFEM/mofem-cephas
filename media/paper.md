@@ -51,8 +51,8 @@ bibliography: paper.bib
  complexities related to the finite element method which is a popular numerical
  approach for solving partial differential equations (PDEs) arising in various
  physical problems and engineering applications. `MoFEM` is developed to provide
- free and open source finite element codes, incorporating modern approximation
- approaches and data structures, for engineers, students and academics.
+ free and open source finite element codes with GNU Lesser General Public
+ License, incorporating modern approximation approaches and data structures, for engineers, students and academics.
 
   The need for solutions to increasingly complex problems demands the control
   over numerical errors; otherwise, we will be unable to distinguish
@@ -101,25 +101,25 @@ bibliography: paper.bib
 
   Modern finite element software is an 'ecosystem' managing various complexities
   related to mesh and topology, sparse algebra and approximation, integration
-  and dense tensor algebra at the integration point level. Fig.
-  \ref{fig:ecosystem} shows different components that are employed in `MoFEM`
-  ecosystem. `MoFEM` has not developed and will not develop all these
-  capabilities from scratch. Instead `MoFEM` integrates advanced scientific
-  computing tools for sparse algebra from
+  and dense tensor algebra at the integration point level. `MoFEM` has not
+  developed and will not develop all these capabilities from scratch. Instead
+  `MoFEM` integrates advanced scientific computing tools for sparse algebra from
   [PETSc](https://www.mcs.anl.gov/petsc/) (Portable, Extensible Toolkit for
   Scientific Computation) [@petsc-web-page], components for handling mesh and
   topology from [MOAB](https://press3.mcs.anl.gov/sigma/moab-library/)
   (Mesh-Oriented Database) [@tautges_moab:2004] and data structures from [Boost
-  libraries](https://www.boost.org) [@boost-web-page]. A further illustration of
-  how these packages are utilised in `MoFEM` is shown in Fig. \ref{fig:design}.
+  libraries](https://www.boost.org) [@boost-web-page]. An illustration of how
+  these packages are utilised in `MoFEM` is shown in Fig. \ref{fig:design}.
   Finally, `MoFEM` core library is developed to manage complexities directly
   related to the finite element method. Therefore, each part of this ecosystem
   has its own design objectives and appropriate programming tools from a
   spectrum of solutions can be selected. Resilience of `MoFEM` ecosystem is
   ensured since the underpinning components have sustainable fundings, dynamic
-  and established groups of developers and significant user base.
+  and established groups of developers and significant user base. Fig.
+  \ref{fig:ecosystem} shows different components that are employed in the
+  ecosystem including popular pre- and post processing software.
 
-  !['Ecosystem' of `MoFEM` (Adopted from MoFEM webpage [@MoFEMWebPage]).\label{fig:ecosystem}](ecosystem.png){width=80%}
+  ![Basic design of `MoFEM` (Adopted from `MoFEM` webpage [@MoFEMWebPage]).\label{fig:design}](basic_design.png){width=80%}
 
   <!--  MoFEM makes
   PETSc integral part of code by extending PETSc by DMMOFEM interface (several
@@ -148,7 +148,8 @@ bibliography: paper.bib
   approximation space defines the adjacency of DOFs on entities while the number
   of DOFs on entity is independent on approximation base.
 
-   ![Basic design of `MoFEM` (Adopted from MoFEM webpage [@MoFEMWebPage]).\label{fig:design}](basic_design.png){width=80%}
+  !['Ecosystem' of `MoFEM` (Adopted from MoFEM webpage [@MoFEMWebPage]).\label{fig:ecosystem}](ecosystem.png){width=80%}
+   
   
  <!--  Moreover, the base on entity is a trace of the base on element,
   and opposite relation works, base on entity is extruded into element. -->
@@ -207,7 +208,7 @@ bibliography: paper.bib
    homogenisation (DURACOMP EPSRC Project EP/K026925/1),
    [@ullah2019unified,@zhou2017stochastic],[@ullah2017multi] bone remodelling
    and fracture (Kelvin Smith Scholarship), modelling of the gel rheology and
-   acoustics problems. Moreover, ```MoFEM``` includes an extensive library of
+   acoustics problems. Moreover, `MoFEM` includes an extensive library of
    example applications such as soap film, solid shell, topology optimisation,
    phase field fracture, Navier-Stokes flow, cell traction microscopy, bone
    remodelling, configurational fracture, plasticity, mortar contact,
