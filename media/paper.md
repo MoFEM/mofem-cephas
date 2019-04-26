@@ -83,12 +83,15 @@ bibliography: paper.bib
   the appropriate use of a combination of H1, H-curl, H-div and L2 spaces.
   Mix-formulations have other advantages, such as reduced regularity of
   approximation, or the resulting sparse system of equations, which can be
-  exploited by problem-tailored solution algorithms.
+  exploited by problem-tailored solution algorithms. In Fig. %1% the convergence study for the mixed formulation for a test problem is shown. 
+
+  ![A convergence study of h-adaptivity for mixed formulation of the stationary transport/heat conduction problem, with the comparison of different polynomial orders, denoted as $\text{P}n\text{-}\text{P}m$, where $n$ is order of approximation for the flux and $m$ is the order for the field values (temperature or density). Note that the flux is approximated by the space $\mathbf{H}-\textbf{div}$, while the field values -- by the space $L^2$, see MoFEM tutorial page for more details.\label{fig:convergence}](LShape.pdf){ width=80% }
 
   `MoFEM` is designed to provide all discussed above solutions for
   *hp-adaptivity*, enabling rapid implementation of the finite element method
-  for solving complex multi-domain, multi-scale and multi-physics engineering problems, while avoiding complexities related to bookkeeping of degrees of freedom
- (DOFs), finite elements, matrix assembly, etc.
+  for solving complex multi-domain, multi-scale and multi-physics engineering
+  problems, while avoiding complexities related to bookkeeping of degrees of
+  freedom (DOFs), finite elements, matrix assembly, etc.
   
 
 # Basic design of MoFEM
