@@ -132,6 +132,8 @@ bibliography: paper.bib
   create new capabilities for solving complex problems efficiently (note that
   the approximation space defines adjacency of DOFs on entities, while the
   number of DOFs on entity is independent on approximation base).
+
+  !['Ecosystem' of `MoFEM`.\label{fig:ecosystem}](ecosystem.png){ width=80% }
   
  <!--  Moreover, the base on entity is a trace of the base on element,
   and opposite relation works, base on entity is extruded into element. -->
@@ -148,6 +150,8 @@ bibliography: paper.bib
   associated with entities (vertices, edges, faces and volumes) rather on the
   finite element directly. Such an approach simplifies code writing, testing and
   validation, making the code resilient to bugs.
+
+  ![Basic design of `MoFEM`.\label{fig:design}](basic_design.png){ width=80% }
 
 <!-- 
  ```MoFEM``` is a finite element analysis code tailored for the solution of 
@@ -178,16 +182,12 @@ bibliography: paper.bib
 
   MoFEM core library provides functionality for developing user modules where applications for particular finite elements or problems are implemented. User module is an independent repository, private or public and independently managed by its owner.
 
-  `MoFEM` is created with the financial support of the Royal Academy of Engineering and EDF Energy to solve a problem of crack propagation in the nuclear graphite [@kaczmarczyk2014three],[@kaczmarczyk2017energy]. Over the time the domain of applications expanded to include computational homogenisation (DURACOMP EPSRC Project EP/K026925/1), [@ullah2019unified],[@zhou2017stochastic],[@ullah2017multi] bone remodelling and fracture (Kelvin Smith Scholarship), modelling of the gels reology and acoustics problems. Moreover, ```MoFEM``` includes an extensive library of example applications such as soap film, solid shell, topology optimisation, phase field fracture, Navier-Stokes flow, cell traction microscopy, bone remodelling, configurational fracture, plasticity, mortar contact, magnetostatics and acoustic wave propagation.
+  `MoFEM` is created with the financial support of the Royal Academy of Engineering and EDF Energy to solve a problem of crack propagation in the nuclear graphite [@kaczmarczyk2014three],[@kaczmarczyk2017energy]. Over the time the domain of applications expanded to include computational homogenisation (DURACOMP EPSRC Project EP/K026925/1), [@ullah2019unified],[@zhou2017stochastic],[@ullah2017multi] bone remodelling and fracture (Kelvin Smith Scholarship), modelling of the gels reology and acoustics problems. Moreover, ```MoFEM``` includes an extensive library of example applications such as soap film, solid shell, topology optimisation, phase field fracture, Navier-Stokes flow, cell traction microscopy, bone remodelling, configurational fracture, plasticity, mortar contact, magnetostatics and acoustic wave propagation, see Figure \ref{fig:examples}.
 
-  User modules implemented with `MoFEM`:
-  ![Example modules.](mofem_modules_examples.png)
-  <!-- 
-  Example results of (starting from top left): soap film, solid shell, topology optimisation,
-  phase field fracture, navier stokes, cell traction microscopy, bone remodelling, 
-  configurational fracture, plasticity, mortar contact, magnetostatics, acoustic wave.
- -->
+  ![Examples of user modules implemented with `MoFEM`.\label{fig:examples}](mofem_modules_examples.png){ width=100% }
+
 # Acknowledgements
+
   `MoFEM` development is supported by EDF Energy Nuclear Generation Ltd 
   (grant no. 4840360333), The Royal Academy of Engineering (grant no. 
   RCSRF1516\2\18), DURACOMP EPSRC Project (EP/K026925/1) and Kelvin Smith
