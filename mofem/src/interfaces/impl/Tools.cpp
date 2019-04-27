@@ -102,6 +102,7 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
                                            nMBTETAt000[2], nMBTETAt000[3]};
   FTensor::Tensor1<double, 3> t_coords_at_0;
 
+  // Build matrix and get coordinates of zero point
   // ii - global coordinates
   // jj - local direvatives
   MatrixDouble3by3 a(3, 3);
@@ -121,6 +122,7 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_local_coords = {
       &local_coords[0], &local_coords[1], &local_coords[2]};
 
+  // Calculate right hand side
   FTensor::Index<'j', 3> j;
   for (int ii = 0; ii != nb_nodes; ++ii) {
     t_local_coords(j) = t_global_coords(j) - t_coords_at_0(j);
@@ -128,6 +130,7 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
     ++t_global_coords;
   }
 
+  // Solve problem
   int IPIV[3];
   int info = lapack_dgesv(3, nb_nodes, &a(0, 0), 3, IPIV, local_coords, 3);
   if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"info == %d",info);
