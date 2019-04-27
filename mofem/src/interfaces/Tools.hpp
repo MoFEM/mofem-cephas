@@ -39,6 +39,13 @@ struct Tools : public UnknownInterface {
 
   /**@{*/
 
+  /**
+   * @brief Calculate determinant of matrix/tensor 3 by 3
+   * 
+   * @tparam T 
+   * @param t 
+   * @return double 
+   */
   template <class T> static inline double dEterminant(T &t) {
     return t(0, 0) * t(1, 1) * t(2, 2) + t(1, 0) * t(2, 1) * t(0, 2) +
            t(2, 0) * t(0, 1) * t(1, 2) - t(0, 0) * t(2, 1) * t(1, 2) -
@@ -130,6 +137,29 @@ struct Tools : public UnknownInterface {
   static constexpr double nMBTET2At000 = N_MBTET2(0, 0, 0);
   static constexpr double nMBTET3At000 = N_MBTET3(0, 0, 0);
 
+  static constexpr double nMBTET0AtOneThird =
+      N_MBTET0(1. / 3., 1. / 3., 1. / 3.);
+  static constexpr double nMBTET1AtOneThird =
+      N_MBTET1(1. / 3., 1. / 3., 1. / 3.);
+  static constexpr double nMBTET2AtOneThird =
+      N_MBTET2(1. / 3., 1. / 3., 1. / 3.);
+  static constexpr double nMBTET3AtOneThird =
+      N_MBTET3(1. / 3., 1. / 3., 1. / 3.);
+
+  /**
+   * @brief Calculate shape functions on tetrahedron
+   *
+   * \note Template parameter is leading dimension of point coordinate arrays,
+   * such that \f$ksi_{n+1} = ksi[n + LDB]\f$
+   *
+   * @tparam 1
+   * @param shape shape functions
+   * @param ksi pointer to first local coordinates
+   * @param eta pointer to second local coordinates
+   * @param zeta pointer to first third coordinates
+   * @param nb number of points
+   * @return MoFEMErrorCode
+   */
   template <int LDB = 1>
   static MoFEMErrorCode nMBTET(double *shape, const double *ksi,
                                const double *eta, const double *zeta,
@@ -148,9 +178,41 @@ struct Tools : public UnknownInterface {
     MoFEMFunctionReturnHot(0);
   }
 
+  /**
+   * @brief Array of shape function at zero local point on reference element
+   * 
+   */
   static constexpr std::array<double, 4> nMBTETAt000 = {
       nMBTET0At000, nMBTET1At000, nMBTET2At000, nMBTET3At000};
 
+  /**
+   * @brief Array of shape function at center on reference element
+   *
+   */
+  static constexpr std::array<double, 4> nMBTETAtOneThird = {
+      nMBTET0AtOneThird, nMBTET1AtOneThird, nMBTET2AtOneThird,
+      nMBTET3AtOneThird};
+
+  /**
+   * @brief Get the Local Coordinates On Reference Four Node Tet object
+   *
+   * \code
+   * MatrixDouble elem_coords(4, 3);
+   * // Set nodal coordinates
+   * MatrixDouble global_coords(5, 3);
+   * // Set global coordinates
+   * MatrixDouble local_coords(global_coords.size1(), 3);
+   * CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
+   *     &elem_coords(0, 0), &global_coords(0, 0), global_coords.size1(),
+   *     &local_coords(0, 0))
+   * \endcode
+   *
+   * @param elem_coords Global element node coordinates
+   * @param glob_coords Globale coordinates
+   * @param nb_nodes Number of points
+   * @param local_coords Result
+   * @return MoFEMErrorCode
+   */
   static MoFEMErrorCode getLocalCoordinatesOnReferenceFourNodeTet(
       const double *elem_coords, const double *glob_coords, const int nb_nodes,
       double *local_coords);
