@@ -108,10 +108,6 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
   for (auto ii : {0, 1, 2}) {
     FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 4> t_diff(
         &diffNMBTET[0], &diffNMBTET[3], &diffNMBTET[6], &diffNMBTET[9]);
-
-    cerr << "e " << t_elem_coords(0) << " " << t_elem_coords(1) << " "
-         << t_elem_coords(2) << " " << t_elem_coords(3) << endl;
-
     for (auto jj : {0, 1, 2}) {
       a(jj, ii) = t_diff(i) * t_elem_coords(i);
       ++t_diff;
@@ -119,8 +115,6 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
     t_coords_at_0(ii) = t_n(i) * t_elem_coords(i);
     ++t_elem_coords;
   }
-
-  cerr << a << endl;
 
   FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_global_coords = {
       &global_coords[0], &global_coords[1], &global_coords[2]};

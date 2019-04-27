@@ -33,8 +33,8 @@ int main(int argc, char *argv[]) {
     MatrixDouble elem_coords(4, 3);
 
     elem_coords(0, 0) = -1;
-    elem_coords(0, 1) = 0;
-    elem_coords(0, 2) = 0;
+    elem_coords(0, 1) = -1;
+    elem_coords(0, 2) = -1;
     elem_coords(1, 0) = 2;
     elem_coords(1, 1) = 0;
     elem_coords(1, 2) = 0;
@@ -45,9 +45,7 @@ int main(int argc, char *argv[]) {
     elem_coords(3, 1) = 0;
     elem_coords(3, 2) = 1;
 
-    cerr << elem_coords << endl;
-
-    MatrixDouble init_local_coords(4, 3);
+    MatrixDouble init_local_coords(5, 3);
     init_local_coords(0, 0) = 0;
     init_local_coords(0, 1) = 0;
     init_local_coords(0, 2) = 0;
@@ -60,31 +58,28 @@ int main(int argc, char *argv[]) {
     init_local_coords(3, 0) = 0;
     init_local_coords(3, 1) = 0;
     init_local_coords(3, 2) = 0.5;
+    init_local_coords(4, 0) = 1. / 3.;
+    init_local_coords(4, 1) = 1. / 3.;
+    init_local_coords(4, 2) = 1. / 3.;
 
-    std::cerr << "init" << endl;
-    std::cerr << init_local_coords << endl;
-
-    MatrixDouble shape(4, 4);
+    MatrixDouble shape(init_local_coords.size1(), 4);
     CHKERR Tools::nMBTET<3>(&shape(0, 0), &init_local_coords(0, 0),
                             &init_local_coords(0, 1), &init_local_coords(0, 2),
-                            4);
-
-    std::cerr << "shape" << endl;
-    std::cerr << shape << endl;
+                            5);
 
     MatrixDouble global_coords = prod(shape, elem_coords);
 
-    std::cerr << "glob" << endl;
-    std::cerr << global_coords << endl;
-
-    MatrixDouble local_coords(4, 3);
+    MatrixDouble local_coords(init_local_coords.size1(), 3);
     CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
-        &elem_coords(0, 0), &global_coords(0, 0), 4, &local_coords(0, 0));
+        &elem_coords(0, 0), &global_coords(0, 0), init_local_coords.size1(),
+        &local_coords(0, 0));
 
-    std::cerr << "res" << endl;
-    std::cerr << local_coords << std::endl;
-    std::cerr << local_coords - init_local_coords << std::endl;
-    
+    MatrixDouble residual = local_coords - init_local_coords;
+    std::cout << residual << std::endl;
+    for (auto v : residual.data())
+      if (std::abs(v) > 1e-12)
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Should be zer, but is v = %3.4e", v);
   }
   CATCH_ERRORS;
 
