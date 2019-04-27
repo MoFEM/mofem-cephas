@@ -9,10 +9,10 @@ A community of Spack users and developers contribute to developing package
 configurations for a range of platforms, including macOS and Linux. This creates
 a consistent build setup for supported scientific packages.
 
-MoFEM can be deployed and developed using Spack, and is the recommended way of
+MoFEM can be deployed and developed using Spack, which is the recommended way of
 installing. If you have any problems, feedback or would like to suggest
 corrections,
-please email
+please email to
 [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
 
 Note: Spack compiles packages from source, pre-compiled binaries are not
@@ -22,10 +22,10 @@ available.
 
 # Prerequisites {#spack_prerequisites}
 
-The insallation of MoFEM requires
+The installation of MoFEM requires
 [git](https://www.atlassian.com/git/tutorials/what-is-git),
 [curl](https://en.wikipedia.org/wiki/CURL) and C++ and Fortran compilers (GCC
-and/or clang). They must also be available in your PATH.
+and/or clang). They must also be available in your `PATH`.
 
 System requirements: Minimum 8GB RAM. On Linux ensure this RAM is free.
 
@@ -51,7 +51,7 @@ gfortran
 ## macOS
 
 Xcode contains required compilers for macOS. The last known working version of
-Xcode is 9.4.1 with clang 9.1.0; there may be issues with future/different
+Xcode is 10.2 with clang 10.0.1; there may be issues with future/different
 versions.
 
 To install the latest Xcode for your release of macOS, follow the commands
@@ -63,28 +63,28 @@ xcode-select --install
 sudo xcodebuild -license accept
 ~~~~~
 
-Additonal packages are required - install [homebrew](https://brew.sh) package
+Additional packages are required - install [homebrew](https://brew.sh) package
 manager:
 ~~~~~
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 ~~~~~
 
-Install packages through hombrew:
+Install packages through `homebrew`:
 ~~~~~
 brew install curl git gcc
 ~~~~~
 
-Check PATH of Fortran compiler:
+Check the path of the Fortran compiler (shipped with `gcc`):
 ~~~~~
 which gfortran
 ~~~~~
 
-If not there, then add to PATH.
+If it is not already in the `PATH`, you should add it there.
 
-Note: recent releases of macOS stopped shipping a Fortran compiler and so
-requires [Mixed
+Note: recent releases of macOS stopped shipping a Fortran compiler and therefore
+require [Mixed
 Toolchains](http://spack.readthedocs.io/en/latest/getting_started.html#mixed-toolchains).
-The installing of gfortran through homebrew is one way of solving this.
+The installing of gfortran through homebrew is another way of solving this.
 
 # Spack setup {#spack_setup}
 
@@ -98,19 +98,23 @@ Initialise Spack's environment variables:
 . spack/share/spack/setup-env.sh
 ~~~~~~
 
-Spack's environment variables will be lost at the close of a terminal session.
-Consider adding to `.bashrc` or `.profile`
+Spack's environment variables will be lost when the terminal session is closed.
+Consider adding the previous command to your `.bashrc` or `.profile`, e.g.:
+~~~~~~
+echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bashrc
+~~~~~~
 
-Install packages required by Spack:
+
+Finally, install packages required by Spack:
 ~~~~~~
 spack bootstrap
 ~~~~~~
 
-There are further instructions on [Spack usage and configuration](#spack_usage_config).
+Note that there are further instructions on [Spack usage and configuration](#spack_usage_config).
 
 # User only {#spack_user}
 
-The first time installing MoFEM take considerable time (hours). Spack fetches
+The first time installing MoFEM takes considerable time (hours). Spack fetches
 and compiles MoFEM's dependencies from source and this includes several large
 packages. 
 
@@ -119,14 +123,15 @@ instructions.
 
 ## Install basic users modules
 
-MoFEM's basic users modules consists of solving a range of common problems, from
-elasticity to the Poisson equation. To install them run the following command:
+MoFEM's basic users modules consist of tools for solving a range of common
+problems, from elasticity to the Poisson equation. To install them run the
+following command:
 
 ~~~~~~
 spack install mofem-users-modules
 ~~~~~~
 
-MoFEM is extendable by adding user modules. More modules are available as
+MoFEM can be extended by adding user modules. More modules are available as
 extensions in Spack. This will show available extensions:
 ~~~~~~
 spack extensions mofem-cephas
@@ -143,13 +148,19 @@ spack activate -v um_view mofem-users-modules
 
 This filesystem view is a single directory tree that is the union of the
 directory hierarchies of a number of installed packages; it is similar to the
-directory hierarchy that might exist under */usr/local*. The files of the
-view's installed MoFEM packages are brought into the view by symbolic or hard
-links, referencing the original Spack installation. Different 'views' can be
-created depending on the MoFEM version you wish to access.
-Add the new 'view' *bin* directory to your PATH. e.g.:
+directory hierarchy that might exist under `/usr/local`. The files of the view's
+installed MoFEM packages are brought into the view by symbolic or hard links,
+referencing the original Spack installation. Different 'views' can be created
+depending on the MoFEM version you wish to access. To make the new 'view'
+visible from any directory, add its `bin` directory to your `PATH`, e.g.: 
+
 ~~~~~~
-export PATH=$PWD/um_view/bin:$PATH
+export PATH=$PWD/um_view/bin:$PATH 
+~~~~~~ 
+
+Consider also adding this command to your `.bashrc` or `.profile`, e.g.: 
+~~~~~~ 
+echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bashrc 
 ~~~~~~
 
 ## Test elasticity module
@@ -179,7 +190,7 @@ cd $HOME
 spack view --verbose symlink -i um_view_foo mofem-cephas
 spack activate -v um_view_foo mofem-fracture-module
 ~~~~~~
-or minimal surface equation tutorial module:
+or the minimal surface equation tutorial module:
 ~~~~~~
 spack install mofem-minimal-surface-equation
 spack activate -v um_view_foo mofem-minimal-surface-equation
@@ -216,23 +227,29 @@ MoFEM can be developed in different ways:
 3. [Basic users modules](#spack_basic_users_modules)
 4. [Core libraries](#spack_core_libraries)
 
-The developer installation requires knowing more about how Spack works. See
-[Spack usage and configuration](#spack_usage_config) before proceeding with
-installs.
+The developer installation requires knowing more about how Spack works. See [Spack usage and configuration](#spack_usage_config)
+before proceeding with the installation. In particular, the instructions below
+will use so-called *specs* to obtain the desired build configuration, see
+[Spack manual page](https://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies)
+for more details. For example, the default Spack specifier for the build type
+will be given explicitly here: `build_type=RelWithDebInfo`, however keep in mind
+that two other build types can be specified in the same way:
+`build_type=Release` or `build_type=Debug`, see also [Change the build_type](#spack_build_type).
 
-The instructions below will use `mofem-cephas@develop` and
+<!-- The instructions below will use `mofem-cephas@develop` and
 `mofem-users-modules@develop` to denote the name of an existing installation.
 However, if multiple versions are installed then you will need to [specify the
-version ID](#spack_mofem_package_versions) instead. You can also [change the build_type](#spack_build_type).
+version ID](#spack_mofem_package_versions) instead. You can also [change the build_type](#spack_build_type). -->
 
 ## 1. In-situ {#spack_modules_insitu}
 
 This is the simplest method but also limited. You can work with the code
 provided in modules or add your own directory with your module.
 ~~~~
-spack install mofem-users-modules
+spack install mofem-users-modules build_type=RelWithDebInfo
 cd $HOME
 spack view --verbose symlink -i um_view mofem-cephas
+export PATH=$PWD/um_view/bin:$PATH
 cd um_view
 mkdir build
 cmake \
@@ -242,8 +259,8 @@ cmake \
 ../users_modules
 ~~~~
 
-You can also provide another directory which is pointing to a module your
-developing privately.
+You can also provide another directory which is pointing to a module that you are
+developing privately:
 ~~~~
 -DEXTERNAL_MODULE_SOURCE_DIRS=../ext_users_modules\;$PATH_TO_MY_SECRET_MODULE
 ~~~~
@@ -254,13 +271,14 @@ To develop a module, you need install mofem-users-modules, clone from the
 repository which you like to work with, set up configuration and build the
 code.
 ~~~~
-spack install mofem-users-modules
+spack install mofem-users-modules 
 cd $HOME
 spack view --verbose symlink -i um_view mofem-cephas
+export PATH=$PWD/um_view/bin:$PATH
 mkdir $HOME/mod_developer
 cd mod_developer/
 git clone -b develop https://bitbucket.org/likask/mofem_um_minimal_surface_equation minimal_surface_equation
-spack setup mofem-minimal-surface-equation@develop
+spack setup mofem-minimal-surface-equation@develop build_type=RelWithDebInfo
 ./spconfig.py -DMOFEM_DIR=$HOME/um_view \
 -DEXTERNAL_MODULE_SOURCE_DIRS=$HOME/mod_developer \
 $HOME/um_view/users_modules
@@ -272,14 +290,15 @@ make -j4
 To develop the basic users modules, the procedure is similar to one shown above.
 One needs
 to install mofem-cephas, clone source code, run configuration and finally
-make code.
+make the code.
 ~~~~
-spack install mofem-cephas
+spack install mofem-cephas 
 mkdir $HOME/um_developer
 cd $HOME/um_developer/
 git clone -b develop https://likask@bitbucket.org/mofem/users-modules-cephas.git 
-spack setup mofem-users-modules@develop
+spack setup mofem-users-modules@develop build_type=RelWithDebInfo
 spack view --verbose symlink -i um_view mofem-cephas
+export PATH=$PWD/um_view/bin:$PATH
 ./spconfig.py -DMOFEM_DIR=$HOME/um_view users-modules-cephas/ 
 make -j4
 ~~~~
@@ -289,7 +308,7 @@ make -j4
 If you are going to develop MoFEM's core library, it means that you are a core
 developer and you can install mofem directly from the source.
 
-Create mofem_install folder in the home directory and clone MoFEM respository:
+Create mofem_install folder in the home directory and clone MoFEM repository:
 ~~~~~
 mkdir $HOME/mofem_install
 cd $HOME/mofem_install
@@ -300,40 +319,61 @@ and kick-start installation of the core library:
 cd $HOME/mofem_install
 mkdir lib
 cd lib/
-spack install --only dependencies mofem-cephas
-spack setup mofem-cephas@develop copy_user_modules=False
+spack install --only dependencies mofem-cephas 
+spack setup mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
 ./spconfig.py $HOME/mofem_install/mofem-cephas/mofem/
 make -j4
 ctest
 make install
 ~~~~~
+Note that in addition to `build_type` another specification of the build configuration (*spec*) was used: `copy_user_modules=False `. 
+
 Next, install users modules
 ~~~~~
 cd $HOME/mofem_install
 mkdir um
 cd um/
 spack view --verbose symlink -i um_view mofem-cephas@develop
+export PATH=$PWD/um_view/bin:$PATH
 mkdir build 
 cd build/
-spack setup mofem-users-modules@develop copy_user_modules=False ^mofem-cephas@develop
+spack setup mofem-users-modules@develop copy_user_modules=False build_type=RelWithDebInfo \
+              ^mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
 ./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
 ctest
 make install
 ~~~~~
 
+In the `spack setup` command of the snippet above `^` is a *dependency spec*, i.e. a descriptor defining the dependency of the package that we are currently installing on another package (in this case, on the core library). Note that `^` is
+followed by the package name and its own *specs* for a particular
+version, i.e. *specs* are defined recursively, see
+[Spack manual page](https://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies)
+for more details. For example, if the *Debug* configuration is needed for both the core library and for user modules, then
+`build_type=Debug` must be specified for both packages in `spack setup` command above. Note that in the considered case *specs* for `mofem-cephas@develop` package must coincide with the ones provided during the installation of the core library discussed above.
+Alternatively, a particular version of an already installed library can be
+defined by its unique ID, which can be determined using the instructions
+given below in [MoFEM package versions](#spack_mofem_package_versions). This unique ID
+is to be provided after the *dependency spec* `^` with a `/` (*slash*)
+preceding, e.g.:
+~~~~~ 
+spack setup mofem-users-modules@develop copy_user_modules=False build_type=Debug ^/yk45ivx 
+~~~~~
+
+<!-- 
 You can add extended users modules to
-*$HOME/mofem_install/mofem-cephas/mofem/users_modules*. To include this in
-in build process:
+`$HOME/mofem_install/mofem-cephas/mofem/users_modules`. To include this in
+the build process:
 ~~~~~
 ./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
 ctest
 make install
-~~~~~
+~~~~~ 
+-->
 
 Alternatively, you can add your users modules to an independent folder and run
-snippet below
+the snippet below
 ~~~~~
 ./spconfig.py \
 -DEXTERNAL_MODULE_SOURCE_DIRS=$PATH_TO_MY_SECRET_MODULE \
@@ -410,9 +450,9 @@ git clone --single-branch -b mofem https://github.com/likask/spack.git
 . spack/share/spack/setup-env.sh
 ~~~~~
 
-We need to set up compilers since the location of standard gcc@6.4.0 libraries
+We need to set up compilers since the location of standard `gcc@6.4.0` libraries
 is in an unusual place when loaded by the module. In order to do that you have
-to edit file *.spack/linux/compilers.yaml* in your home directory
+to edit file `.spack/linux/compilers.yaml` in your home directory
 ~~~~~
      1	compilers:
      2	- compiler:
@@ -536,7 +576,7 @@ For `mofem-cephas` or core libraries change `OFF` to `ON`:
 ~~~~~~
 DMOFEM_BUILD_TESTS=OFF
 ~~~~~~
-And the same for `users_modules` change:
+And the same change for `users_modules`:
 ~~~~~~
 DMOFEM_UM_BUILD_TESTS=OFF
 ~~~~~~
@@ -562,12 +602,12 @@ By default Spack will use `RelWithDebInfo`.
 
 For example:
 ~~~~~~
-spack install mofem-cephas build_type="Debug"
+spack install mofem-cephas build_type=Debug
 ~~~~~~
 
 Or when when using `spack setup` for developers:
 ~~~~~~
-spack setup mofem-cephas@develop copy_user_modules=False build_type="Debug"
+spack setup mofem-cephas@develop copy_user_modules=False build_type=Debug
 ~~~~~~
 
 An example compiler flag:

@@ -374,7 +374,8 @@ This create directory \em html. Open file \em html/index.html to see results in 
 Basic support for C/C++ languages is provided with <a
 href="https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools">
 Microsoft C/C++ extension</a>. To configure IntelliSense code-completion tool
-add \p -DCMAKE_EXPORT_COMPILE_COMMANDS=ON to users_modules's cmake command.
+add \p -DCMAKE_EXPORT_COMPILE_COMMANDS=ON to users_modules's `cmake` command 
+(or after `spyconfig.py` if installation with Spack is used).
 This will generate \p compile_commands.json file which has to be added to \p
 .vscode/c_cpp_properties.json file located in the working project. Example \p
 c_cpp_properties configuration on Mac should look like follows:
