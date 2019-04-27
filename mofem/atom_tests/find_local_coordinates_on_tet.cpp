@@ -1,5 +1,5 @@
-/** \file segments_distance.cpp
- * \brief test segments distance
+/** \file find_local_coordinates_on_tet.cpp
+ * \brief testing finding local coordinates on tetrahedron
  *
  * \ingroup mesh_cut
  */
