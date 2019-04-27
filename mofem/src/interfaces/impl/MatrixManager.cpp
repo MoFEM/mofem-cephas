@@ -97,11 +97,11 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
     MoFEMFunctionReturnHot(0);
 
   auto fe_it =
-      p_miit->numeredFiniteElements.find(ent_fe_ptr->getGlobalUniqueId());
+      p_miit->numeredFiniteElements->find(ent_fe_ptr->getGlobalUniqueId());
 
   // Create element if is not there
-  if (fe_it == p_miit->numeredFiniteElements.end()) {
-    auto p = p_miit->numeredFiniteElements.insert(
+  if (fe_it == p_miit->numeredFiniteElements->end()) {
+    auto p = p_miit->numeredFiniteElements->insert(
         boost::make_shared<NumeredEntFiniteElement>(ent_fe_ptr));
     fe_it = p.first;
   }

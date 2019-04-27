@@ -412,8 +412,8 @@ MoFEMErrorCode Core::loop_finite_elements(
   CHKERR method.preProcess();
   PetscLogEventEnd(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
 
-  if(!fe_ptr)
-    fe_ptr = &problem_ptr->numeredFiniteElements;
+  if (!fe_ptr)
+    fe_ptr = problem_ptr->numeredFiniteElements.get();
 
   auto miit = fe_ptr->get<Composite_Name_And_Part_mi_tag>().lower_bound(
       boost::make_tuple(fe_name, lower_rank));
