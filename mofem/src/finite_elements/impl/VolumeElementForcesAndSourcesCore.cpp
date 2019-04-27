@@ -94,7 +94,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 4,
                                                            false);
     if (nbGaussPts > 0) {
-      CHKERR ShapeMBTET(
+      CHKERR Tools::shapeFunMBTET(
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
           &gaussPts(0, 0), &gaussPts(1, 0), &gaussPts(2, 0), nbGaussPts);
     }
