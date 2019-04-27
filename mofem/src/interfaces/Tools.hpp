@@ -80,70 +80,70 @@ struct Tools : public UnknownInterface {
                                   return std::min(a, b);
                                 });
 
-  static constexpr double diffNMBTET0x =
+  static constexpr double diffShapeFunMBTET0x =
       diffN_MBTET0x; ///< derivative of tetrahedral shape function
-  static constexpr double diffNMBTET0y =
+  static constexpr double diffShapeFunMBTET0y =
       diffN_MBTET0y; ///< derivative of tetrahedral shape function
-  static constexpr double diffNMBTET0z =
+  static constexpr double diffShapeFunMBTET0z =
       diffN_MBTET0z; ///< derivative of tetrahedral shape function
-  static constexpr double diffNMBTET1x =
+  static constexpr double diffShapeFunMBTET1x =
       diffN_MBTET1x; ///< derivative of tetrahedral shape function
-  static constexpr double diffNMBTET1y =
+  static constexpr double diffShapeFunMBTET1y =
       diffN_MBTET1y; ///< derivative of tetrahedral shape function
-  static constexpr double diffNMBTET1z =
+  static constexpr double diffShapeFunMBTET1z =
       diffN_MBTET1z; ///< derivative of tetrahedral shape function
-  static constexpr double diffNMBTET2x =
+  static constexpr double diffShapeFunMBTET2x =
       diffN_MBTET2x; ///< derivative of tetrahedral shape function
-  static constexpr double diffNMBTET2y =
+  static constexpr double diffShapeFunMBTET2y =
       diffN_MBTET2y; ///< derivative of tetrahedral shape function
-  static constexpr double diffNMBTET2z =
+  static constexpr double diffShapeFunMBTET2z =
       diffN_MBTET2z; ///< derivative of tetrahedral shape function
-  static constexpr double diffNMBTET3x =
+  static constexpr double diffShapeFunMBTET3x =
       diffN_MBTET3x; ///< derivative of tetrahedral shape function
-  static constexpr double diffNMBTET3y =
+  static constexpr double diffShapeFunMBTET3y =
       diffN_MBTET3y; ///< derivative of tetrahedral shape function
-  static constexpr double diffNMBTET3z =
+  static constexpr double diffShapeFunMBTET3z =
       diffN_MBTET3z; ///< derivative of tetrahedral shape function
 
-  static constexpr std::array<double, 12> diffNMBTET = {
+  static constexpr std::array<double, 12> diffShapeFunMBTET = {
 
-      diffNMBTET0x, diffNMBTET0y, diffNMBTET0z,
+      diffShapeFunMBTET0x, diffShapeFunMBTET0y, diffShapeFunMBTET0z,
 
-      diffNMBTET1x, diffNMBTET1y, diffNMBTET1z,
+      diffShapeFunMBTET1x, diffShapeFunMBTET1y, diffShapeFunMBTET1z,
 
-      diffNMBTET2x, diffNMBTET2y, diffNMBTET2z,
+      diffShapeFunMBTET2x, diffShapeFunMBTET2y, diffShapeFunMBTET2z,
 
-      diffNMBTET3x, diffNMBTET3y, diffNMBTET3z};
+      diffShapeFunMBTET3x, diffShapeFunMBTET3y, diffShapeFunMBTET3z};
 
-  static inline double nMBTET0(const double x, const double y, const double z) {
+  static inline double shapeFunMBTET0(const double x, const double y, const double z) {
     return N_MBTET0(x, y, z);
   }
 
-  static inline double nMBTET1(const double x, const double y, const double z) {
+  static inline double shapeFunMBTET1(const double x, const double y, const double z) {
     return N_MBTET1(x, y, z);
   }
 
-  static inline double nMBTET2(const double x, const double y, const double z) {
+  static inline double shapeFunMBTET2(const double x, const double y, const double z) {
     return N_MBTET2(x, y, z);
   }
 
-  static inline double nMBTET3(const double x, const double y, const double z) {
+  static inline double shapeFunMBTET3(const double x, const double y, const double z) {
     return N_MBTET3(x, y, z);
     ;
   };
 
-  static constexpr double nMBTET0At000 = N_MBTET0(0, 0, 0);
-  static constexpr double nMBTET1At000 = N_MBTET1(0, 0, 0);
-  static constexpr double nMBTET2At000 = N_MBTET2(0, 0, 0);
-  static constexpr double nMBTET3At000 = N_MBTET3(0, 0, 0);
+  static constexpr double shapeFunMBTET0At000 = N_MBTET0(0, 0, 0);
+  static constexpr double shapeFunMBTET1At000 = N_MBTET1(0, 0, 0);
+  static constexpr double shapeFunMBTET2At000 = N_MBTET2(0, 0, 0);
+  static constexpr double shapeFunMBTET3At000 = N_MBTET3(0, 0, 0);
 
-  static constexpr double nMBTET0AtOneThird =
+  static constexpr double shapeFunMBTET0AtOneThird =
       N_MBTET0(1. / 3., 1. / 3., 1. / 3.);
-  static constexpr double nMBTET1AtOneThird =
+  static constexpr double shapeFunMBTET1AtOneThird =
       N_MBTET1(1. / 3., 1. / 3., 1. / 3.);
-  static constexpr double nMBTET2AtOneThird =
+  static constexpr double shapeFunMBTET2AtOneThird =
       N_MBTET2(1. / 3., 1. / 3., 1. / 3.);
-  static constexpr double nMBTET3AtOneThird =
+  static constexpr double shapeFunMBTET3AtOneThird =
       N_MBTET3(1. / 3., 1. / 3., 1. / 3.);
 
   /**
@@ -161,15 +161,15 @@ struct Tools : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   template <int LDB = 1>
-  static MoFEMErrorCode nMBTET(double *shape, const double *ksi,
+  static MoFEMErrorCode shapeFunMBTET(double *shape, const double *ksi,
                                const double *eta, const double *zeta,
                                const double nb) {
     MoFEMFunctionBeginHot;
     for (int n = 0; n != nb; ++n) {
-      shape[0] = nMBTET0(*ksi, *eta, *zeta);
-      shape[1] = nMBTET1(*ksi, *eta, *zeta);
-      shape[2] = nMBTET2(*ksi, *eta, *zeta);
-      shape[3] = nMBTET3(*ksi, *eta, *zeta);
+      shape[0] = shapeFunMBTET0(*ksi, *eta, *zeta);
+      shape[1] = shapeFunMBTET1(*ksi, *eta, *zeta);
+      shape[2] = shapeFunMBTET2(*ksi, *eta, *zeta);
+      shape[3] = shapeFunMBTET3(*ksi, *eta, *zeta);
       shape += 4;
       ksi += LDB;
       eta += LDB;
@@ -182,16 +182,16 @@ struct Tools : public UnknownInterface {
    * @brief Array of shape function at zero local point on reference element
    * 
    */
-  static constexpr std::array<double, 4> nMBTETAt000 = {
-      nMBTET0At000, nMBTET1At000, nMBTET2At000, nMBTET3At000};
+  static constexpr std::array<double, 4> shapeFunMBTETAt000 = {
+      shapeFunMBTET0At000, shapeFunMBTET1At000, shapeFunMBTET2At000, shapeFunMBTET3At000};
 
   /**
    * @brief Array of shape function at center on reference element
    *
    */
-  static constexpr std::array<double, 4> nMBTETAtOneThird = {
-      nMBTET0AtOneThird, nMBTET1AtOneThird, nMBTET2AtOneThird,
-      nMBTET3AtOneThird};
+  static constexpr std::array<double, 4> shapeFunMBTETAtOneThird = {
+      shapeFunMBTET0AtOneThird, shapeFunMBTET1AtOneThird, shapeFunMBTET2AtOneThird,
+      shapeFunMBTET3AtOneThird};
 
   /**
    * @brief Get the Local Coordinates On Reference Four Node Tet object

@@ -86,8 +86,8 @@ Tools::minTetsQuality(const Range &tets, double &min_quality, Tag th,
   MoFEMFunctionReturn(0);
 }
 
-const std::array<double, 12> Tools::diffNMBTET;
-const std::array<double, 4> Tools::nMBTETAt000;
+const std::array<double, 12> Tools::diffShapeFunMBTET;
+const std::array<double, 4> Tools::shapeFunMBTETAt000;
 
 MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
     const double *elem_coords, const double *global_coords, const int nb_nodes,
@@ -98,8 +98,8 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
   FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 4> t_elem_coords = {
       &elem_coords[0], &elem_coords[3], &elem_coords[6], &elem_coords[9]};
 
-  FTensor::Tensor1<const double, 4> t_n = {nMBTETAt000[0], nMBTETAt000[1],
-                                           nMBTETAt000[2], nMBTETAt000[3]};
+  FTensor::Tensor1<const double, 4> t_n = {shapeFunMBTETAt000[0], shapeFunMBTETAt000[1],
+                                           shapeFunMBTETAt000[2], shapeFunMBTETAt000[3]};
   FTensor::Tensor1<double, 3> t_coords_at_0;
 
   // Build matrix and get coordinates of zero point
@@ -108,7 +108,7 @@ MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
   MatrixDouble3by3 a(3, 3);
   for (auto ii : {0, 1, 2}) {
     FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 4> t_diff(
-        &diffNMBTET[0], &diffNMBTET[3], &diffNMBTET[6], &diffNMBTET[9]);
+        &diffShapeFunMBTET[0], &diffShapeFunMBTET[3], &diffShapeFunMBTET[6], &diffShapeFunMBTET[9]);
     for (auto jj : {0, 1, 2}) {
       a(jj, ii) = t_diff(i) * t_elem_coords(i);
       ++t_diff;

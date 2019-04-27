@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     init_local_coords(4, 2) = 1. / 3.;
 
     MatrixDouble shape(init_local_coords.size1(), 4);
-    CHKERR Tools::nMBTET<3>(&shape(0, 0), &init_local_coords(0, 0),
+    CHKERR Tools::shapeFunMBTET<3>(&shape(0, 0), &init_local_coords(0, 0),
                             &init_local_coords(0, 1), &init_local_coords(0, 2),
                             5);
 
