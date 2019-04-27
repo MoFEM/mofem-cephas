@@ -1379,19 +1379,23 @@ struct CoreInterface : public UnknownInterface {
   /** \brief Make a loop over finite elements.
   *
   * This function is like swiss knife, is can be used to post-processing or
-  matrix
-  * and vectors assembly. It makes loop over given finite element for given
+  * matrix and vectors assembly. It makes loop over given finite element for
+  * given
   * problem. The particular methods executed on each element are given by
   * class derived form Interface::FEMethod. At beginning of each loop user
-  defined
-  * function (method)  preProcess() is called, for each element operator() is
+  * defined function (method)  preProcess() is called, for each element
+  * operator() is
   * executed, at the end loop finalizes with user defined function (method)
   * postProcess().
   *
   * Methods are executed only for local elements at given processor.
   *
   * For more details pleas look to examples.
-
+  *
+  * \note If fe_ptr is given it is expected that multi-index is supbes of
+  * problem multi-index. If this is not the case behavior of the code is
+  * undetermined.
+  *
   * @param  problem_name problem consisting set of elements
   * @param  fe_name      name of element in problem
   * @param  method       class derived form Interface::FEMethod
@@ -1420,6 +1424,10 @@ struct CoreInterface : public UnknownInterface {
   * function (method)  preProcess() is called, for each element operator() is
   * executed, at the end loop finalizes with user defined function (method)
   * postProcess().
+  *
+  * \note If fe_ptr is given it is expected that multi-index is supbes of
+  * problem multi-index. If this is not the case behavior of the code is
+  * undetermined.
   *
   * For more details please look to examples.
   *
@@ -1457,10 +1465,13 @@ struct CoreInterface : public UnknownInterface {
   * function (method)  preProcess() is called, for each element operator() is
   * executed, at the end loop finalizes with user defined function (method)
   * postProcess().
+  * 
+  * \note If fe_ptr is given it is expected that multi-index is supbes of
+  * problem multi-index. If this is not the case behavior of the code is
+  * undetermined.
   *
   * For more details please look to examples.
   *
-
   * @param  problem_name pointer to problem consisting set of elements
   * @param  fe_name      name of element in problem
   * @param  method       class derived form Interface::FEMethod
