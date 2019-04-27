@@ -41,10 +41,10 @@ struct Tools : public UnknownInterface {
 
   /**
    * @brief Calculate determinant of matrix/tensor 3 by 3
-   * 
-   * @tparam T 
-   * @param t 
-   * @return double 
+   *
+   * @tparam T
+   * @param t
+   * @return double
    */
   template <class T> static inline double dEterminant(T &t) {
     return t(0, 0) * t(1, 1) * t(2, 2) + t(1, 0) * t(2, 1) * t(0, 2) +
@@ -115,19 +115,23 @@ struct Tools : public UnknownInterface {
 
       diffShapeFunMBTET3x, diffShapeFunMBTET3y, diffShapeFunMBTET3z};
 
-  static inline double shapeFunMBTET0(const double x, const double y, const double z) {
+  static inline double shapeFunMBTET0(const double x, const double y,
+                                      const double z) {
     return N_MBTET0(x, y, z);
   }
 
-  static inline double shapeFunMBTET1(const double x, const double y, const double z) {
+  static inline double shapeFunMBTET1(const double x, const double y,
+                                      const double z) {
     return N_MBTET1(x, y, z);
   }
 
-  static inline double shapeFunMBTET2(const double x, const double y, const double z) {
+  static inline double shapeFunMBTET2(const double x, const double y,
+                                      const double z) {
     return N_MBTET2(x, y, z);
   }
 
-  static inline double shapeFunMBTET3(const double x, const double y, const double z) {
+  static inline double shapeFunMBTET3(const double x, const double y,
+                                      const double z) {
     return N_MBTET3(x, y, z);
     ;
   };
@@ -162,8 +166,8 @@ struct Tools : public UnknownInterface {
    */
   template <int LDB = 1>
   static MoFEMErrorCode shapeFunMBTET(double *shape, const double *ksi,
-                               const double *eta, const double *zeta,
-                               const double nb) {
+                                      const double *eta, const double *zeta,
+                                      const double nb) {
     MoFEMFunctionBeginHot;
     for (int n = 0; n != nb; ++n) {
       shape[0] = shapeFunMBTET0(*ksi, *eta, *zeta);
@@ -180,18 +184,19 @@ struct Tools : public UnknownInterface {
 
   /**
    * @brief Array of shape function at zero local point on reference element
-   * 
+   *
    */
   static constexpr std::array<double, 4> shapeFunMBTETAt000 = {
-      shapeFunMBTET0At000, shapeFunMBTET1At000, shapeFunMBTET2At000, shapeFunMBTET3At000};
+      shapeFunMBTET0At000, shapeFunMBTET1At000, shapeFunMBTET2At000,
+      shapeFunMBTET3At000};
 
   /**
    * @brief Array of shape function at center on reference element
    *
    */
   static constexpr std::array<double, 4> shapeFunMBTETAtOneThird = {
-      shapeFunMBTET0AtOneThird, shapeFunMBTET1AtOneThird, shapeFunMBTET2AtOneThird,
-      shapeFunMBTET3AtOneThird};
+      shapeFunMBTET0AtOneThird, shapeFunMBTET1AtOneThird,
+      shapeFunMBTET2AtOneThird, shapeFunMBTET3AtOneThird};
 
   /**
    * @brief Get the Local Coordinates On Reference Four Node Tet object
