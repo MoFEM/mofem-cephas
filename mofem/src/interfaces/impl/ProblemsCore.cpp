@@ -400,8 +400,9 @@ Core::problem_basic_method_postProcess(const std::string &problem_name,
 
 MoFEMErrorCode Core::loop_finite_elements(
     const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
-    int lower_rank, int upper_rank, NumeredEntFiniteElement_multiIndex *fe_ptr,
-    MoFEMTypes bh, int verb) {
+    int lower_rank, int upper_rank,
+    boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
+    int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -413,7 +414,7 @@ MoFEMErrorCode Core::loop_finite_elements(
   PetscLogEventEnd(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
 
   if (!fe_ptr)
-    fe_ptr = problem_ptr->numeredFiniteElements.get();
+    fe_ptr = problem_ptr->numeredFiniteElements;
 
   auto miit = fe_ptr->get<Composite_Name_And_Part_mi_tag>().lower_bound(
       boost::make_tuple(fe_name, lower_rank));
@@ -451,11 +452,11 @@ MoFEMErrorCode Core::loop_finite_elements(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-Core::loop_finite_elements(const std::string &problem_name,
-                           const std::string &fe_name, FEMethod &method,
-                           NumeredEntFiniteElement_multiIndex *fe_ptr,
-                           MoFEMTypes bh, int verb) {
+MoFEMErrorCode Core::loop_finite_elements(
+    const std::string &problem_name, const std::string &fe_name,
+    FEMethod &method,
+    boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
+    int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -469,7 +470,8 @@ Core::loop_finite_elements(const std::string &problem_name,
 MoFEMErrorCode Core::loop_finite_elements(
     const std::string &problem_name, const std::string &fe_name,
     FEMethod &method, int lower_rank, int upper_rank,
-    NumeredEntFiniteElement_multiIndex *fe_ptr, MoFEMTypes bh, int verb) {
+    boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
+    int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;

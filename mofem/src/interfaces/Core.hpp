@@ -744,22 +744,21 @@ protected:
                                    BasicMethod &method,
                                    int verb = DEFAULT_VERBOSITY);
 
-  MoFEMErrorCode
-  loop_finite_elements(const Problem *problem_ptr, const std::string &fe_name,
-                       FEMethod &method, int lower_rank, int upper_rank,
-                       NumeredEntFiniteElement_multiIndex *fe_ptr = nullptr,
-                       MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode
-  loop_finite_elements(const std::string &problem_name,
-                       const std::string &fe_name, FEMethod &method,
-                       int lower_rank, int upper_rank,
-                       NumeredEntFiniteElement_multiIndex *fe_ptr = nullptr,
-                       MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode
-  loop_finite_elements(const std::string &problem_name,
-                       const std::string &fe_name, FEMethod &method,
-                       NumeredEntFiniteElement_multiIndex *fe_ptr = nullptr,
-                       MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode loop_finite_elements(
+      const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
+      int lower_rank, int upper_rank,
+      boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
+      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode loop_finite_elements(
+      const std::string &problem_name, const std::string &fe_name,
+      FEMethod &method, int lower_rank, int upper_rank,
+      boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
+      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode loop_finite_elements(
+      const std::string &problem_name, const std::string &fe_name,
+      FEMethod &method,
+      boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
+      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode loop_dofs(const Problem *problem_ptr,
                            const std::string &field_name, RowColData rc,

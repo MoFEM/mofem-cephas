@@ -1409,7 +1409,8 @@ struct CoreInterface : public UnknownInterface {
   **/
   virtual MoFEMErrorCode loop_finite_elements(
       const std::string &problem_name, const std::string &fe_name,
-      FEMethod &method, NumeredEntFiniteElement_multiIndex *fe_ptr = nullptr,
+      FEMethod &method,
+      boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
       MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to
@@ -1446,12 +1447,11 @@ struct CoreInterface : public UnknownInterface {
 
   * \ingroup mofem_loops
   **/
-  virtual MoFEMErrorCode
-  loop_finite_elements(const Problem *problem_ptr, const std::string &fe_name,
-                       FEMethod &method, int lower_rank, int upper_rank,
-                       NumeredEntFiniteElement_multiIndex *fe_ptr = nullptr,
-                       MoFEMTypes bh = MF_EXIST,
-                       int verb = DEFAULT_VERBOSITY) = 0;
+  virtual MoFEMErrorCode loop_finite_elements(
+      const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
+      int lower_rank, int upper_rank,
+      boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
+      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to
   lower rank.
@@ -1488,7 +1488,7 @@ struct CoreInterface : public UnknownInterface {
   virtual MoFEMErrorCode loop_finite_elements(
       const std::string &problem_name, const std::string &fe_name,
       FEMethod &method, int lower_rank, int upper_rank,
-      NumeredEntFiniteElement_multiIndex *fe_ptr = nullptr,
+      boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
       MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief Make a loop over dofs
