@@ -1395,6 +1395,7 @@ struct CoreInterface : public UnknownInterface {
   * @param  problem_name problem consisting set of elements
   * @param  fe_name      name of element in problem
   * @param  method       class derived form Interface::FEMethod
+  * @param  fe_ptr       pointer to finite elements multi-index
   * @param  bh           if bH = MF_EXIST, throws error if fe_name does not
   exist
   * @param  verb         verbosity level
@@ -1402,11 +1403,10 @@ struct CoreInterface : public UnknownInterface {
 
   * \ingroup mofem_loops
   **/
-  virtual MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
-                                              const std::string &fe_name,
-                                              FEMethod &method,
-                                              MoFEMTypes bh = MF_EXIST,
-                                              int verb = DEFAULT_VERBOSITY) = 0;
+  virtual MoFEMErrorCode loop_finite_elements(
+      const std::string &problem_name, const std::string &fe_name,
+      FEMethod &method, NumeredEntFiniteElement_multiIndex *fe_ptr = nullptr,
+      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to
   lower rank.
@@ -1430,6 +1430,7 @@ struct CoreInterface : public UnknownInterface {
   * @param  method       class derived form Interface::FEMethod
   * @param  lower_rank   lower rank of process owned by finite element
   * @param  upper_rank   lower rank of process owned by finite element
+  * @param  fe_ptr       pointer to finite elements multi-index
   * @param  bh           if bH = MF_EXIST, throws error if fe_name does not
   exist
   * @param  verb         verbosity level
@@ -1437,12 +1438,12 @@ struct CoreInterface : public UnknownInterface {
 
   * \ingroup mofem_loops
   **/
-  virtual MoFEMErrorCode loop_finite_elements(const Problem *problem_ptr,
-                                              const std::string &fe_name,
-                                              FEMethod &method, int lower_rank,
-                                              int upper_rank,
-                                              MoFEMTypes bh = MF_EXIST,
-                                              int verb = DEFAULT_VERBOSITY) = 0;
+  virtual MoFEMErrorCode
+  loop_finite_elements(const Problem *problem_ptr, const std::string &fe_name,
+                       FEMethod &method, int lower_rank, int upper_rank,
+                       NumeredEntFiniteElement_multiIndex *fe_ptr = nullptr,
+                       MoFEMTypes bh = MF_EXIST,
+                       int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to
   lower rank.
@@ -1465,6 +1466,7 @@ struct CoreInterface : public UnknownInterface {
   * @param  method       class derived form Interface::FEMethod
   * @param  lower_rank   lower rank of process owned by finite element
   * @param  upper_rank   lower rank of process owned by finite element
+  * @param  fe_ptr       pointer to finite elements multi-index
   * @param  bh           if bH = MF_EXIST, throws error if fe_name does not
   exist
   * @param  verb         verbosity level
@@ -1472,12 +1474,11 @@ struct CoreInterface : public UnknownInterface {
 
   * \ingroup mofem_loops
   **/
-  virtual MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
-                                              const std::string &fe_name,
-                                              FEMethod &method, int lower_rank,
-                                              int upper_rank,
-                                              MoFEMTypes bh = MF_EXIST,
-                                              int verb = DEFAULT_VERBOSITY) = 0;
+  virtual MoFEMErrorCode loop_finite_elements(
+      const std::string &problem_name, const std::string &fe_name,
+      FEMethod &method, int lower_rank, int upper_rank,
+      NumeredEntFiniteElement_multiIndex *fe_ptr = nullptr,
+      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief Make a loop over dofs
 

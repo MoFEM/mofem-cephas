@@ -1531,6 +1531,40 @@ struct DeprecatedCoreInterface : public CoreInterface {
       PetscScalar **v, int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
+
+  /** \name Making loops on elements and entities */
+
+  /**@{*/
+
+  /**
+   * @deprecated Use version from core interface
+   */
+  DEPRECATED MoFEMErrorCode loop_finite_elements(const Problem *problem_ptr,
+                                                 const std::string &fe_name,
+                                                 FEMethod &method,
+                                                 int lower_rank, int upper_rank,
+                                                 MoFEMTypes bh = MF_EXIST,
+                                                 int verb = DEFAULT_VERBOSITY);
+
+  /**
+   * @deprecated Use version from core interface
+   */
+  DEPRECATED MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
+                                      const std::string &fe_name,
+                                      FEMethod &method, int lower_rank,
+                                      int upper_rank, MoFEMTypes bh = MF_EXIST,
+                                      int verb = DEFAULT_VERBOSITY);
+
+  /**
+   * @deprecated Use version from core interface
+   */
+  DEPRECATED MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
+                                      const std::string &fe_name,
+                                      FEMethod &method,
+                                      MoFEMTypes bh = MF_EXIST,
+                                      int verb = DEFAULT_VERBOSITY);
+
+  /**@}*/
 };
 
 } // namespace MoFEM

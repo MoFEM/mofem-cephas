@@ -398,29 +398,10 @@ Core::problem_basic_method_postProcess(const std::string &problem_name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::loop_finite_elements(const std::string &problem_name,
-                                          const std::string &fe_name,
-                                          FEMethod &method, MoFEMTypes bh,
-                                          int verb) {
-  MoFEMFunctionBegin;
-  if (verb == -1)
-    verb = verbose;
-
-  CHKERR loop_finite_elements(problem_name, fe_name, method, rAnk, rAnk, bh,
-                              verb);
-
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode Core::loop_finite_elements(
-    const Problem *problem_ptr, const std::string &fe_name,
-    FEMethod &method, // reference to finite element implementation
-    int lower_rank,   // only elements on part between low and up rank are
-                      // processed
-    int upper_rank,
-    MoFEMTypes bh, // is set to MF_EXIST, throw error if element is not declared
-                   // in database
-    int verb) {
+    const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
+    int lower_rank, int upper_rank, NumeredEntFiniteElement_multiIndex *fe_ptr,
+    MoFEMTypes bh, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -431,12 +412,13 @@ MoFEMErrorCode Core::loop_finite_elements(
   CHKERR method.preProcess();
   PetscLogEventEnd(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
 
-  NumeredEntFiniteElementbyNameAndPart &numered_fe =
-      problem_ptr->numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>();
-  NumeredEntFiniteElementbyNameAndPart::iterator miit =
-      numered_fe.lower_bound(boost::make_tuple(fe_name, lower_rank));
-  NumeredEntFiniteElementbyNameAndPart::iterator hi_miit =
-      numered_fe.upper_bound(boost::make_tuple(fe_name, upper_rank));
+  if(!fe_ptr)
+    fe_ptr = &problem_ptr->numeredFiniteElements;
+
+  auto miit = fe_ptr->get<Composite_Name_And_Part_mi_tag>().lower_bound(
+      boost::make_tuple(fe_name, lower_rank));
+  auto hi_miit = fe_ptr->get<Composite_Name_And_Part_mi_tag>().upper_bound(
+      boost::make_tuple(fe_name, upper_rank));
 
   if (miit == hi_miit && (bh & MF_EXIST)) {
     if (!check_finite_element(fe_name)) {
@@ -469,23 +451,37 @@ MoFEMErrorCode Core::loop_finite_elements(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::loop_finite_elements(const std::string &problem_name,
-                                          const std::string &fe_name,
-                                          FEMethod &method, int lower_rank,
-                                          int upper_rank, MoFEMTypes bh,
-                                          int verb) {
+MoFEMErrorCode
+Core::loop_finite_elements(const std::string &problem_name,
+                           const std::string &fe_name, FEMethod &method,
+                           NumeredEntFiniteElement_multiIndex *fe_ptr,
+                           MoFEMTypes bh, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
-  // find p_miit
-  ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
-  ProblemsByName::iterator p_miit = pRoblems_set.find(problem_name);
-  if (p_miit == pRoblems_set.end())
-    SETERRQ1(cOmm, 1, "problem is not in database %s", problem_name.c_str());
+
+  CHKERR loop_finite_elements(problem_name, fe_name, method, rAnk, rAnk, fe_ptr,
+                              bh, verb);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::loop_finite_elements(
+    const std::string &problem_name, const std::string &fe_name,
+    FEMethod &method, int lower_rank, int upper_rank,
+    NumeredEntFiniteElement_multiIndex *fe_ptr, MoFEMTypes bh, int verb) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+
+  auto &prb_by_name = pRoblems.get<Problem_mi_tag>();
+  auto p_miit = prb_by_name.find(problem_name);
+  if (p_miit == prb_by_name.end())
+    SETERRQ1(cOmm, MOFEM_INVALID_DATA, "Problem <%s> is not in database",
+             problem_name.c_str());
 
   CHKERR loop_finite_elements(&*p_miit, fe_name, method, lower_rank, upper_rank,
-                              bh, verb);
+                              fe_ptr, bh, verb);
 
   MoFEMFunctionReturn(0);
 }
