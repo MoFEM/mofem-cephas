@@ -51,14 +51,13 @@ bibliography: paper.bib
  complexities related to the finite element method which is a popular numerical
  approach for solving partial differential equations (PDEs) arising in various
  physical problems and engineering applications. `MoFEM` is developed to provide
- free and open source finite element codes with GNU Lesser General Public
- License, incorporating modern approximation approaches and data structures, for engineers, students and academics.
+ free and open source finite element codes, incorporating modern approximation approaches and data structures, for engineers, students and academics.
 
   The need for solutions to increasingly complex problems demands the control
   over numerical errors; otherwise, we will be unable to distinguish
   discretisation artefacts from the real physical phenomena. A brute force
-  approach based on a pure *h-adaptivity* which relies on the power of parallel
-  computing leads to a low polynomial convergence rate. Therefore, it is
+  approach based on a pure *h-adaptivity*, which relies on the power of parallel
+  computing, leads to a low polynomial convergence rate. Therefore, it is
   insufficient to have total control over numerical errors. A more sophisticated
   approach was paved by Ivo Babuska et al. [@babuska1992version], who showed
   that if one could increase at the same time the polynomial order and the mesh
@@ -80,20 +79,22 @@ bibliography: paper.bib
   integration, could be an optimal solution.
 
   The control of numerical errors is possible if we can estimate the error to
-  drive *hp-adaptivity* algorithm. This error estimator needs to be as much
+  drive the *hp-adaptivity* algorithm. This error estimator needs to be as much
   efficient as possible, and one possible solution is to use mixed finite
-  element formulations, where error estimators become a part of the formulation.
-  However, the stability of such elements is an issue, which can be addressed by
-  the appropriate use of a combination of $H^1$,
-  $\mathbf{H}\text{-}\textbf{curl}$, $\mathbf{H}\text{-}\textbf{div}$ and $L^2$
-  spaces. Mixed formulations have other advantages including reduced regularity
-  of approximation, or the resulting sparse system of equations, that can be
-  exploited by problem-tailored solution algorithms. In Fig. \ref{fig:convergence} we show a convergence study for the mixed formulation for a transport/heat conduction problem.  
+  element formulations, where error estimators become a part of the formulation,
+  see e.g. [@carstensen1997posteriori]. However, the stability of such elements
+  is an issue, which can be addressed by the appropriate use of a combination of
+  $H^1$, $\mathbf{H}\text{-}\textbf{curl}$, $\mathbf{H}\text{-}\textbf{div}$ and
+  $L^2$ spaces. Mixed formulations have other advantages including reduced
+  regularity of approximation, or the resulting sparse system of equations, that
+  can be exploited by problem-tailored solution algorithms. In Fig.
+  \ref{fig:convergence} we show a convergence study for the mixed formulation
+  for a transport/heat conduction problem.  
 
-  ![A convergence study of h-adaptivity for mixed formulation of the stationary transport/heat conduction problem (see inset of the figure for the geometry), with the comparison of different polynomial orders, denoted as '$\text{P}n\text{-}\text{P}m$', where $n$ is order of approximation for the flux and $m$ is the order for the field values (temperature or density). Note that the flux is approximated by the space $\mathbf{H}\text{-}\textbf{div}$, while the field values -- by the space $L^2$, see corresponding [MoFEM tutorial page](http://mofem.eng.gla.ac.uk/mofem/html/mix_transport.html) for more details.\label{fig:convergence}](LShape.pdf){ width=80% }
+  ![A convergence study of h-adaptivity for the mixed formulation of the stationary transport/heat conduction problem (see inset of the figure for the geometry), with the comparison of different polynomial orders, denoted as '$\text{P}n\text{-}\text{P}m$', where $n$ is order of approximation for the flux and $m$ is the order for the field values (temperature or density). Note that the flux is approximated by the space $\mathbf{H}\text{-}\textbf{div}$, while the field values -- by the space $L^2$, see corresponding [MoFEM tutorial page](http://mofem.eng.gla.ac.uk/mofem/html/mix_transport.html) for more details.\label{fig:convergence}](LShape.pdf){ width=80% }
 
 
-  `MoFEM` is designed to provide all solutions discussed above for
+  `MoFEM` is designed to provide all discussed above solutions for
   *hp-adaptivity*, enabling rapid implementation of the finite element method
   for solving complex multi-domain, multi-scale and multi-physics engineering
   problems. Moreover, it releases users from programming complexities related to
@@ -106,7 +107,7 @@ bibliography: paper.bib
   Modern finite element software is an 'ecosystem' managing various complexities
   related to mesh and topology, sparse algebra and approximation, integration
   and dense tensor algebra at the integration point level. `MoFEM` has not
-  developed and will not develop all these capabilities from scratch. Instead
+  developed and will not develop all these capabilities from scratch. Instead,
   `MoFEM` integrates advanced scientific computing tools for sparse algebra from
   [PETSc](https://www.mcs.anl.gov/petsc/) (Portable, Extensible Toolkit for
   Scientific Computation) [@petsc-web-page], components for handling mesh and
@@ -175,7 +176,11 @@ bibliography: paper.bib
   rather on the finite element directly. Such an approach simplifies code
   writing, testing and validation, making the code resilient to bugs.
 
- 
+  Furthermore, `MoFEM` core library provides functionality for developing user
+  modules where applications for particular problems can be
+  implemented. This toolkit-like structure allows for independent development of modules with different repositories, owners and licences, being suitable for both open-access academic research and private industrial sensitive projects.
+
+  `MoFEM` is licensed under the [GNU Lesser General Public License] (https://www.gnu.org/licenses/lgpl.html), can be deployed and developed using the package manager [Spack](https://spack.io), see [MoFEM installation instructions](http://mofem.eng.gla.ac.uk/mofem/html/installation.html) for more details.
 
 <!-- 
  ```MoFEM``` is a finite element analysis code tailored for the solution of 
@@ -193,8 +198,6 @@ bibliography: paper.bib
   -->
  
  <!-- `MoFEM` is developed in C++ and it is an 
- open source software under the 
- [GNU Lesser General Public License](https://www.gnu.org/licenses/lgpl.html). 
  `MoFEM` can read and write a number of mesh file formats using functionality
   provided by [MOAB](https://press3.mcs.anl.gov/sigma/moab-library/). Furthemore,
   it has full support for [CUBIT/TRELIS](https://www.csimsoft.com/trelis.jsp),
@@ -203,11 +206,6 @@ bibliography: paper.bib
   [Gmsh](http://gmsh.info) for pre-processing and [ParaView](https:www.paraview.org) for post-processing. -->
 
 # Examples
-
-  `MoFEM` core library provides functionality for developing user modules where
-  applications for particular finite elements or problems are implemented. User
-  module is an independent repository, private or public and independently
-  managed by its owner.
 
   `MoFEM` was initially created with the financial support of the Royal Academy
    of Engineering and EDF Energy to solve the problem of crack propagation in
