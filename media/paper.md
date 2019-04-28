@@ -123,6 +123,7 @@ auto add_hdiv_field = [&](
     field_name, HDIV, AINSWORTH_LEGENDRE_BASE, dim);
   CHKERR mField.add_ents_to_field_by_type(
     meshset, MBTET, field_name);
+  // set order on entities in given meshset by entity type
   CHKERR mField.set_field_order(meshset, MBTET, field_name, order);
   CHKERR mField.set_field_order(meshset, MBTRI, field_name, order);
   MoFEMFunctionReturn(0);
