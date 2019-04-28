@@ -27,6 +27,8 @@ authors:
     affiliation: 1 
   - name: Christophe-Alexandre Chalons-Mouriesse 
     affiliation: 1 
+  - name: Euan Jame Richardson
+    affiliation: 1 
   - name: Euan Miur
     affiliation: 1 
   - name: Andrei G. Shvarts
@@ -288,7 +290,7 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
    time, the domain of applications expanded to include computational
    homogenisation (DURACOMP EPSRC Project EP/K026925/1),
    [@ullah2019unified] bone remodelling
-   and fracture (Kelvin Smith Scholarship), modelling of the gel rheology and
+   and fracture (Kelvin Smith Scholarship), modelling of the gel rheology [@richardson2018multiphysics] and
    acoustics problems. Moreover, `MoFEM` includes an extensive library of
    example applications such as soap film, solid shell, topology optimisation,
    phase field fracture, Navier-Stokes flow, cell traction microscopy, bone
