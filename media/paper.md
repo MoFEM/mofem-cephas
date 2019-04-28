@@ -48,10 +48,16 @@ bibliography: paper.bib
 # Introduction
 
  `MoFEM` (Mesh-Oriented Finite Element Method) is a C++ library for managing
- complexities related to the finite element method which is a popular numerical
- approach for solving partial differential equations (PDEs) arising in various
- physical problems and engineering applications. `MoFEM` is developed to provide
- free and open source finite element codes, incorporating modern approximation approaches and data structures, for engineers, students and academics.
+ complexities related to the finite element method (FEM). FEM is a widely
+ used numerical approach for solving partial differential equations (PDEs)
+ arising in various physical problems and engineering applications. `MoFEM`
+ is developed to provide free and open source finite element codes,
+ incorporating modern approximation approaches and data structures, for
+ engineers, students and academics. It was primarily designed to solve crack
+ propagation in nuclear graphite bricks (radiated and oxidised) used in
+ Advanced cooled reactors (see Fig. \ref{fig:brick}).
+ 
+ ![Fractured brick made from nuclear graphite.\label{fig:brick}](paper_brick.png){width=80%}
 
   The need for solutions to increasingly complex problems demands the control
   over numerical errors; otherwise, we will be unable to distinguish
@@ -163,7 +169,7 @@ bibliography: paper.bib
   of DOFs on entity is independent on approximation base. 
   -->
 
-  !['Ecosystem' of `MoFEM` (Adopted from MoFEM webpage [@MoFEMWebPage]).\label{fig:ecosystem}](ecosystem.png){width=80%}
+  !['Ecosystem' of `MoFEM`. Adopted from MoFEM webpage [@MoFEMWebPage].\label{fig:ecosystem}](ecosystem.png){width=80%}
    
   
  <!--  Moreover, the base on entity is a trace of the base on element,
