@@ -88,7 +88,7 @@ bibliography: paper.bib
   $L^2$ spaces. Mixed formulations have other advantages including reduced
   regularity of approximation, or the resulting sparse system of equations, that
   can be exploited by problem-tailored solution algorithms. In Fig \ref{fig:shell} is shown p-adaptivity on hierarchical approximation base, with
-  multi-grid solver applied to Scordelis-Lo Roof problem [@kaczmarczyk2016prism].
+  multi-grid solver applied to Scordelis-Lo perforated roof problem [@kaczmarczyk2016prism].
 
   ![Example of p-adaptivity for hierarchical and heterogenous approximation with multi-grid solver applied for solid-shell element.](paper_shell.png) 
   
