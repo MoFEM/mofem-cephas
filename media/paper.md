@@ -72,18 +72,18 @@ bibliography: paper.bib
  exponential convergence is achievable. This has been seen as the 'Holy Grail'
  of the numerical methods.
 
-  However, raising the order of approximation comes with a cost where the
-  algebraic solver time and the matrix assembly time are increased.
-  Unfortunately, there is no universal solution to tackle these two difficulties
-  simultaneously. To reduce the algebraic solver time, one way is to use
-  multi-grid solvers, which can work more efficiently if a hierarchical
-  approximation base is available
-  [@ainsworth2003hierarchic],[@fuentes2015orientation]. This approach is ideal for
-  elliptic problems such as solid elasticity. However, for hyperbolic problems,
-  e.g. acoustic wave propagation, the efficiency bottleneck could be in the time
-  of the matrix assembly. For that case heterogeneous approximation bases, e.g.
-  Bernstein-Bézier base [@ainsworth2011bernstein], allowing for a fast numerical
-  integration, could be an optimal solution.
+ However, raising the order of approximation comes with a cost of the
+ algebraic solver time and the matrix assembly time are increased. Those two
+ issues can be tackled independently. Use of multi-grid solvers can reduce
+ algebraic solver time exploiting a hierarchical approximation base
+ [@ainsworth2003hierarchic, @fuentes2015orientation], available in MoFEM. This
+ approach is ideal for elliptic problems such as solid elasticity, or with
+ synergy with block solvers. However, for some problems efficiency, the
+ bottleneck is assembly time, e.g. acoustic wave propagation. For that case,
+ different approximation bases, e.g. Bernstein-Bézier base
+ [@ainsworth2011bernstein], allowing for fast numerical integration, could be
+ an optimal solution. MoFEM is designed to provide tools that users can tackle
+ such efficiency tradeoff and choose the optimal solution for a given problem.
 
   The control of numerical errors is possible if we can estimate the error to
   drive the *hp-adaptivity* algorithm. This error estimator needs to be as much
