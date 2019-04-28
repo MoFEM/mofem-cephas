@@ -165,7 +165,7 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
   *hp-adaptivity*, enabling rapid implementation of the finite element method
   for solving complex multi-dimension, e.g. solid, shell and beam elements,
   multi-domain, e.g. one part is solid and another part is fluid,
-  multi-scale, e.g. computer homogenisation with FE, and multi-physics, e.g.
+  multi-scale, e.g. computer homogenisation with FE$^2$, and multi-physics, e.g.
   thermo-elasticity, engineering problems on mixed meshes, e.g. meshes consist of
   prism and tetrahedron elements. Moreover, it releases users from
   programming complexities related to the bookkeeping of degrees of freedom
