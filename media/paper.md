@@ -87,12 +87,18 @@ bibliography: paper.bib
   $H^1$, $\mathbf{H}\text{-}\textbf{curl}$, $\mathbf{H}\text{-}\textbf{div}$ and
   $L^2$ spaces. Mixed formulations have other advantages including reduced
   regularity of approximation, or the resulting sparse system of equations, that
-  can be exploited by problem-tailored solution algorithms. In Fig.
+  can be exploited by problem-tailored solution algorithms. In Fig \ref{fig:shell} is shown p-adaptivity on hierarchical approximation base, with
+  multi-grid solver applied to Scordelis-Lo Roof problem [@kaczmarczyk2016prism].
+
+  ![Example of p-adaptivity for hierarchical and heterogenous approximation with multi-grid solver applied for solid-shell element.](paper_shell.png) 
+  
+  <!-- 
+  In Fig.
   \ref{fig:convergence} we show a convergence study for the mixed formulation
   for a transport/heat conduction problem.  
 
   ![A convergence study of h-adaptivity for the mixed formulation of the stationary transport/heat conduction problem (see inset of the figure for the geometry), with the comparison of different polynomial orders, denoted as '$\text{P}n\text{-}\text{P}m$', where $n$ is order of approximation for the flux and $m$ is the order for the field values (temperature or density). Note that the flux is approximated by the space $\mathbf{H}\text{-}\textbf{div}$, while the field values -- by the space $L^2$, see corresponding [MoFEM tutorial page](http://mofem.eng.gla.ac.uk/mofem/html/mix_transport.html) for more details.\label{fig:convergence}](LShape.pdf){ width=80% }
-
+  -->
 
   `MoFEM` is designed to provide all discussed above solutions for
   *hp-adaptivity*, enabling rapid implementation of the finite element method
