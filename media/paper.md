@@ -99,7 +99,8 @@ bibliography: paper.bib
  $\mathbf{H}\text{-}\textbf{curl}$, $\mathbf{H}\text{-}\textbf{div}$ and
  $L^2$. `MoFEM` provides a convenient application programming interface
  allowing user freely to choose approximation base, e.g. Legrende, Jacobi,
- independently from approximation space, and type and dimension of the field, e.g. field of symmetric second-order tensors. One can approximate scalar,
+ independently from approximation space, and type and dimension of the field,
+ e.g. field of symmetric second-order tensors. One can approximate scalar,
  vectorial fields on scalar base functions, or vectorial and tensorial fields
  on vectorial bases. The user of `MoFEM` can freely set approximation order on
  each entity separately, e.g. edge, face, volume, or define field on the
@@ -215,7 +216,8 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
   in `MoFEM`  is independent of the specific finite element, e.g. Lagrangian,
   Nedelec, Rivart-Thomas, since finite element is constructed by a set of lower
   dimension entities on which the approximation fields are defined.
-  Consequently, different approximation spaces ($H^1$, $\mathbf{H}\text{-}\textbf{curl}$, $\mathbf{H}\text{-}\textbf{div}$, $L^2$)
+  Consequently, different approximation spaces ($H^1$,
+  $\mathbf{H}\text{-}\textbf{curl}$, $\mathbf{H}\text{-}\textbf{div}$, $L^2$)
   can be arbitrarily mixed in a finite element to create new capabilities for
   solving complex problems efficiently. 
   
@@ -245,8 +247,10 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
   writing, testing and validation, making the code resilient to bugs.
 
   Furthermore, `MoFEM` core library provides functionality for developing user
-  modules where applications for particular problems can be
-  implemented. This toolkit-like structure allows for independent development of modules with different repositories, owners and licences, being suitable for both open-access academic research and private industrial sensitive projects.
+  modules where applications for particular problems can be implemented. This
+  toolkit-like structure allows for independent development of modules with
+  different repositories, owners and licences, being suitable for both
+  open-access academic research and private industrial sensitive projects.
 
   `MoFEM` is licensed under the [GNU Lesser General Public License](https://www.gnu.org/licenses/lgpl.html) and can be deployed and developed using
   the package manager [Spack](https://spack.io), see [MoFEM installation
