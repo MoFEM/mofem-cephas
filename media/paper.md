@@ -72,19 +72,24 @@ bibliography: paper.bib
  exponential convergence is achievable. This has been seen as the 'Holy Grail'
  of the numerical methods.
 
+ ![Example of p-adaptivity for hierarchical and heterogenous approximation with multi-grid solver applied for solid-shell element..\label{fig:shell}](paper_shell.png) 
+
  However, raising the order of approximation comes with a cost of the
  algebraic solver time and the matrix assembly time are increased. Those two
  issues can be tackled independently. Use of multi-grid solvers can reduce
  algebraic solver time exploiting a hierarchical approximation base
- [@ainsworth2003hierarchic, @fuentes2015orientation], available in MoFEM. This
- approach is ideal for elliptic problems such as solid elasticity, or with
- synergy with block solvers. However, for some problems efficiency, the
+ [@ainsworth2003hierarchic][@fuentes2015orientation], available in MoFEM.
+ This approach is ideal for elliptic problems such as solid elasticity, or
+ with synergy with block solvers. However, for some problems efficiency, the
  bottleneck is assembly time, e.g. acoustic wave propagation. For that case,
  different approximation bases, e.g. Bernstein-Bézier base
  [@ainsworth2011bernstein], allowing for fast numerical integration, could be
- an optimal solution. MoFEM is designed to provide tools that users can tackle
- such efficiency tradeoff and choose the optimal solution for a given problem.
-
+ an optimal solution. MoFEM is designed to provide tools that users can
+ tackle such efficiency tradeoff and choose the optimal solution for a given
+ problem. In Fig \ref{fig:shell} is shown p-adaptivity on hierarchical
+ approximation base, with multi-grid solver applied to Scordelis-Lo
+ perforated roof problem [@kaczmarczyk2016prism].
+ 
   The control of numerical errors is possible if we can estimate the error to
   drive the *hp-adaptivity* algorithm. This error estimator needs to be as much
   efficient as possible, and one possible solution is to use mixed finite
@@ -94,10 +99,8 @@ bibliography: paper.bib
   $H^1$, $\mathbf{H}\text{-}\textbf{curl}$, $\mathbf{H}\text{-}\textbf{div}$ and
   $L^2$ spaces. Mixed formulations have other advantages including reduced
   regularity of approximation, or the resulting sparse system of equations, that
-  can be exploited by problem-tailored solution algorithms. In Fig \ref{fig:shell} is shown p-adaptivity on hierarchical approximation base, with
-  multi-grid solver applied to Scordelis-Lo perforated roof problem [@kaczmarczyk2016prism].
+  can be exploited by problem-tailored solution algorithms. 
 
-  ![Example of p-adaptivity for hierarchical and heterogenous approximation with multi-grid solver applied for solid-shell element.](paper_shell.png) 
   
   <!-- 
   In Fig.
