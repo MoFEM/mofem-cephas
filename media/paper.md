@@ -56,20 +56,21 @@ bibliography: paper.bib
  engineers, students and academics. It was primarily designed to solve crack
  propagation in nuclear graphite bricks (radiated and oxidised) used in
  Advanced cooled reactors (see Fig. \ref{fig:brick}).
- 
+
  ![Fractured brick made from nuclear graphite.\label{fig:brick}](paper_brick.png){width=80%}
 
-  The need for solutions to increasingly complex problems demands the control
-  over numerical errors; otherwise, we will be unable to distinguish
-  discretisation artefacts from the real physical phenomena. A brute force
-  approach based on a pure *h-adaptivity*, which relies on the power of parallel
-  computing, leads to a low polynomial convergence rate. Therefore, it is
-  insufficient to have total control over numerical errors. A more sophisticated
-  approach was paved by Ivo Babuska et al. [@babuska1992version], who showed
-  that if one could increase at the same time the polynomial order and the mesh
-  density, i.e. employ *hp-adaptivity*, the exponential convergence is
-  achievable. This has been seen as the 'Holy Grail' of the finite element
-  method.
+ The need for solutions to increasingly complex problems demands control over
+ numerical errors; otherwise, we will be unable to distinguish discretisation
+ artefacts from the real physical phenomena. A brute force approach based on a
+ pure *h-adaptivity* leads to a low polynomial convergence rate and relies on
+ the machines computing power. Since we like to solve bigger and more complex
+ problems, no matter how big computer we will have, it will be never enough.
+ Therefore, it is insufficient to have total control over numerical errors. A
+ more sophisticated approach was paved by Ivo Babuska et al.
+ [@babuska1992version], who showed that if one could increase at the same time
+ the polynomial order and the mesh density, i.e. employ *hp-adaptivity*, the
+ exponential convergence is achievable. This has been seen as the 'Holy Grail'
+ of the numerical methods.
 
   However, raising the order of approximation comes with a cost where the
   algebraic solver time and the matrix assembly time are increased.
