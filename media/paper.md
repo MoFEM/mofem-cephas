@@ -55,7 +55,7 @@ bibliography: paper.bib
  incorporating modern approximation approaches and data structures, for
  engineers, students and academics. It was primarily designed to solve crack
  propagation in nuclear graphite bricks (radiated and oxidised) used in
- Advanced cooled reactors (see Fig. \ref{fig:brick}).
+ Advanced Gas-cooled reactors (see Fig. \ref{fig:brick}).
 
  ![Fractured brick made from nuclear graphite.\label{fig:brick}](paper_brick.png){width=80%}
 
