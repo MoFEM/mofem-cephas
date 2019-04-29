@@ -46,9 +46,9 @@ date: 25 April 2019
 bibliography: paper.bib
 ---
 
-# Introduction
+# Introduction and Motivation
 
- `MoFEM` (Mesh-Oriented Finite Element Method) is a C++ library for managing
+ `MoFEM` (Mesh-oriented Finite Element Method) is a C++ library for managing
  complexities related to the finite element method (FEM). FEM is a widely
  used numerical approach for solving partial differential equations (PDEs)
  arising in various physical problems and engineering applications. `MoFEM`
@@ -56,65 +56,46 @@ bibliography: paper.bib
  incorporating modern approximation approaches and data structures, for
  engineers, students and academics. It was primarily designed to solve crack
  propagation in nuclear graphite bricks (radiated and oxidised) used in
- Advanced Gas-cooled reactors (see Fig. \ref{fig:brick}).
+ Advanced Gas-cooled Reactors (see Fig. \ref{fig:brick}).
 
- ![Fracture model of a nuclear graphite brick.\label{fig:brick}](paper_brick.png){width=80%}
-
-# Motivation
+ ![Fracture model of a nuclear graphite brick.\label{fig:brick}](paper_brick.png){width=60%}
 
  The need for solutions to increasingly complex problems demands control over
  numerical errors; otherwise, we will be unable to distinguish discretisation
- artefacts from the real physical phenomena. A brute force approach based on
- a pure *h-adaptivity* leads to a low polynomial convergence rate and relies
- on the machines computing power. Since we want to solve bigger and more
- complex problems, no matter how big computer we will have, it will be never
- enough. A more sophisticated approach was paved by Ivo Babuska et al.
- [@babuska1992version], who showed that if one could increase at the same
- time the polynomial order and the mesh density, i.e. employ *hp-adaptivity*,
- the exponential convergence is achievable. This has been seen as the 'Holy
- Grail' of the numerical methods.
+ artefacts from the real physical phenomena. A brute force approach based on the
+ mesh refinement (so-called *h-adaptivity*) leads to a low polynomial
+ convergence rate and, therefore, is severely limited by the current computing
+ capabilities. A more elegant approach was paved by Ivo Babuska et al. [@babuska1992version],
+ who showed that if one could increase at the same time the mesh density and the
+ interpolation order, i.e. employ *hp-adaptivity*, the exponential convergence
+ is achievable. This has been seen as the 'Holy Grail' of numerical methods.
 
- ![Example of *p-adaptivity* for hierarchical and heterogenous approximation with multi-grid solver applied for solid-shell element.\label{fig:shell}](paper_shell.png) 
-
- However, raising the order of approximation comes with a cost; the
- algebraic solver time and the matrix assembly time are increased. Those two
- issues can be tackled independently. Use of multi-grid solvers can reduce
- algebraic solver time exploiting a hierarchical approximation base
- [@ainsworth2003hierarchic][@fuentes2015orientation], available in `MoFEM`.
- This approach is ideal for elliptic problems such as solid elasticity, or
- hyperbolic equations with block solvers. However, for some problems the efficiency
- bottleneck is assembly time, e.g. acoustic wave propagation. For that case,
- different approximation bases, e.g. Bernstein-Bézier base
- [@ainsworth2011bernstein], allowing for fast numerical integration, could be
- an optimal solution. `MoFEM` is designed to provide tools that users can
- tackle such efficiency tradeoff and choose the optimal solution for a given
- problem. Fig. \ref{fig:shell} shows *p-adaptivity* on hierarchical
- approximation base, with multi-grid solver applied to Scordelis-Lo
- perforated roof problem [@kaczmarczyk2016prism].
-
- The adaptive choice of mesh density and approximation order is driven by the
- numerical errors. In principle, the numerical error is unknown since we do
- not know an exact solution. However, a numerical error can be estimated, and
- an efficient way of that is by embedding error evaluators in FE formulation.
- This leads to a family of the mixed or mixed-hybrid finite elements that
- satisfy stability condition using spaces such as $H^1$,
- $\mathbf{H}\text{-}\textbf{curl}$, $\mathbf{H}\text{-}\textbf{div}$ and
- $L^2$. `MoFEM` provides a convenient application programming interface
- allowing user freely to choose approximation base, e.g. Legrende, Jacobi,
- independently from approximation space, and type and dimension of the field,
- e.g. field of symmetric second-order tensors. One can approximate scalar,
- vectorial fields on scalar base functions, or vectorial and tensorial fields
- on vectorial bases. The user of `MoFEM` can freely set approximation order on
- each entity separately, e.g. edge, face, volume, or define field on the
- skeleton. Also, `MoFEM` enables users to construct tensorial field on
+ However, raising the order of approximation comes with a cost: the algebraic
+ solver time and the matrix assembly time are increased. Unfortunately, there is
+ no universal solution to tackle these two difficulties simultaneously. To
+ reduce the algebraic solver time, one way is to use multi-grid solvers, which
+ can work more efficiently if a hierarchical approximation base is available [@ainsworth2003hierarchic],[@fuentes2015orientation],
+ this approach is ideal for elliptic problems such as solid elasticity. <!-- or
+ hyperbolic equations with block solvers. --> However, for some problems the
+ efficiency bottleneck could be in the assembly time, e.g. for acoustic wave
+ propagation. In that case different approximation bases, such as the
+ Bernstein-Bézier base [@ainsworth2011bernstein], allowing for a fast numerical
+ integration, could be an optimal solution. Finally, the adaptive choice of mesh
+ density and approximation order is driven by the numerical errors, which can be
+ effectively estimated if error evaluators are embedded into the FE formulation.
+ This leads to a family of mixed or mixed-hybrid finite elements that satisfy
+ stability condition if combinations of different approximation spaces ($H^1$, $\mathbf{H}\text{-}\textbf{curl}$,
+ $\mathbf{H}\text{-}\textbf{div}$ and $L^2$) are used.
+ 
+ <!-- Also, `MoFEM` enables users to construct tensorial field on
  tensorial bases, e.g. bubble base of zero normal and divergence free base
  functions, see example of such space in [@gopalakrishnan2012second]. The
  example of five-field mixed formulation (with tensorial bubble base) for large
  strain elasticity is presented in [@kaczmarczyk_lukasz_2019_2640903], and
  results are presented in Fig. \ref{fig:mix}, where `MoFEM` code declaring spaces
- is as follows
+ is as follows -->
 
- ``` c++ 
+<!--  ``` c++ 
 auto add_hdiv_field = [&](
      const std::string field_name, const int order,
                             const int dim) {
@@ -152,29 +133,24 @@ CHKERR add_l2_field(streachTensor, spaceOrder + 1, 6);
 CHKERR add_l2_field(spatialDisp, spaceOrder - 1, 3);
 CHKERR add_l2_field(rotAxis, spaceOrder, 3);
 ```
+ -->
+ <!-- ![Mixed formulation on five fields for large strain elasticity.\label{fig:mix}](paper_mix.png)  -->
 
- ![Mixed formulation on five fields for large strain elasticity.\label{fig:mix}](paper_mix.png) 
- 
-
-  <!-- 
-  In Fig.
-  \ref{fig:convergence} we show a convergence study for the mixed formulation
-  for a transport/heat conduction problem.  
-
-  ![A convergence study of h-adaptivity for the mixed formulation of the stationary transport/heat conduction problem (see inset of the figure for the geometry), with the comparison of different polynomial orders, denoted as '$\text{P}n\text{-}\text{P}m$', where $n$ is order of approximation for the flux and $m$ is the order for the field values (temperature or density). Note that the flux is approximated by the space $\mathbf{H}\text{-}\textbf{div}$, while the field values -- by the space $L^2$, see corresponding [MoFEM tutorial page](http://mofem.eng.gla.ac.uk/mofem/html/mix_transport.html) for more details.\label{fig:convergence}](LShape.pdf){ width=80% }
-  -->
-
-  `MoFEM` is designed to provide all discussed above solutions for
+  `MoFEM` incorporates all discussed above solutions for
   *hp-adaptivity*, enabling rapid implementation of the finite element method
-  for solving complex multi-dimension, e.g. solid, shell and beam elements,
-  multi-domain, e.g. one part is solid and another part is fluid,
-  multi-scale, e.g. computer homogenisation with FE$^2$, and multi-physics, e.g.
-  thermo-elasticity, engineering problems on mixed meshes, e.g. meshes consist of
-  prism and tetrahedron elements. Moreover, it releases users from
-  programming complexities related to the bookkeeping of degrees of freedom
-  (DOFs), finite elements, matrix assembly, etc.
+  and avoiding programming complexities related to bookkeeping of degrees of
+  freedom (DOFs), finite elements, matrix assembly, etc. Furthermore, `MoFEM`
+  provides a collection of optimal tools for solving a wide range of complex
+  engineering-related problems: multi-dimensional (involving solid, shell and
+  beam elements), multi-domain (e.g. interaction between solid and
+  fluid), multi-scale  (homogenisation with FE$^2$) and multi-physics
+  (e.g. thermo-elasticity). Finally, `MoFEM` features a possibility to have
+  'mixed' meshes, consisting of different element types, for example, tetrahedra and
+  prisms.
 
 # Design
+
+ ![Basic design of `MoFEM`. Adopted from `MoFEM` webpage [@MoFEMWebPage]).\label{fig:design}](basic_design.pdf){width=80%}
   
   Modern finite element software is an 'ecosystem' managing various complexities
   related to mesh and topology, sparse algebra and approximation, integration
@@ -196,7 +172,7 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
   \ref{fig:ecosystem} shows different components that are employed in the
   ecosystem including popular pre- and post-processing software.
 
-  ![Basic design of `MoFEM`. Adopted from `MoFEM` webpage [@MoFEMWebPage]).\label{fig:design}](basic_design.pdf){width=80%}
+  !['Ecosystem' of `MoFEM`. Adopted from `MoFEM` webpage [@MoFEMWebPage].\label{fig:ecosystem}](ecosystem.png){width=80%}
 
   <!--  MoFEM makes
   PETSc integral part of code by extending PETSc by DMMOFEM interface (several
@@ -230,19 +206,19 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
   of DOFs on entity is independent on approximation base. 
   -->
 
-  !['Ecosystem' of `MoFEM`. Adopted from `MoFEM` webpage [@MoFEMWebPage].\label{fig:ecosystem}](ecosystem.png){width=80%}
+  
    
   
  <!--  Moreover, the base on entity is a trace of the base on element,
   and opposite relation works, base on entity is extruded into element. -->
 
   `MoFEM` data structures enable easy enrichment of approximation fields and
-  modification of base functions, for example, in case of resolving singularity
-  at the crack front. Applying this technology, it is effortless to construct
+  modification of base functions, for example, for resolving singularity
+  at the crack front. Applying this technique, it is effortless to construct
   transition elements between domains with different problem formulation and
-  physics, e.g. from two-field mixed formulation to single-field formulation, or
+  physics, e.g. from two-field mixed formulation to a single-field, or
   elements with anisotropic approximation order, e.g. with arbitrary high order
-  on surface and arbitrary low order through thickness of solid shells). This
+  on surface and arbitrary low order through thickness in case of solid shells. This
   approach also sets the benchmark in terms of how finite element codes are
   implemented, introducing a concept of user-defined data operators acting on
   fields that are associated with entities (vertices, edges, faces and volumes)
@@ -253,9 +229,9 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
   modules where applications for particular problems can be implemented. This
   toolkit-like structure allows for independent development of modules with
   different repositories, owners and licences, being suitable for both
-  open-access academic research and private industrial sensitive projects.
-
-  `MoFEM` is licensed under the [GNU Lesser General Public License](https://www.gnu.org/licenses/lgpl.html) and can be deployed and developed using
+  open-access academic research and private industrial sensitive projects. 
+  
+  `MoFEM` core library is licensed under the [GNU Lesser General Public License](https://www.gnu.org/licenses/lgpl.html) and can be deployed and developed using
   the package manager [Spack](https://spack.io), see [MoFEM installation
   instructions](http://mofem.eng.gla.ac.uk/mofem/html/installation.html) for
   more details.
@@ -283,23 +259,40 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
   [Salome-Meca](https://www.code-aster.org/spip.php?article303), 
   [Gmsh](http://gmsh.info) for pre-processing and [ParaView](https:www.paraview.org) for post-processing. -->
 
-# Examples
+# Examples and Capabilities
 
   `MoFEM` was initially created with the financial support of the Royal Academy
-   of Engineering and EDF Energy to solve the problem of crack propagation in
-   the nuclear graphite [@kaczmarczyk2017energy]. Over
-   time, the domain of applications expanded to include computational
-   homogenisation (DURACOMP EPSRC Project EP/K026925/1),
-   [@ullah2019unified] bone remodelling
-   and fracture (Kelvin Smith Scholarship), modelling of the gel rheology [@richardson2018multiphysics] and
-   acoustics problems. Moreover, `MoFEM` includes an extensive library of
-   example applications such as soap film, solid shell, topology optimisation,
-   phase field fracture, Navier-Stokes flow, cell traction microscopy, bone
-   remodelling, configurational fracture, plasticity, mortar contact,
-   magnetostatics and acoustic wave propagation as shown in Fig.
-   \ref{fig:examples}.
+  of Engineering and EDF Energy to solve the problem of crack propagation in
+  the nuclear graphite [@kaczmarczyk2017energy]. Over
+  time, the domain of applications expanded to include computational
+  homogenisation (DURACOMP EPSRC Project EP/K026925/1),
+  [@ullah2019unified] bone remodelling
+  and fracture (Kelvin Smith Scholarship), modelling of the gel rheology [@richardson2018multiphysics] and
+  acoustics problems. Moreover, `MoFEM` includes an extensive library of
+  example applications such as soap film, solid shell, topology optimisation,
+  phase field fracture, Navier-Stokes flow, cell traction microscopy, bone
+  remodelling, configurational fracture, plasticity, mortar contact,
+  magnetostatics and acoustic wave propagation as shown in Fig.
+  \ref{fig:examples}.
 
   ![Examples of user modules implemented using `MoFEM`.\label{fig:examples}](mofem_modules_examples.png){width=100%}
+
+ `MoFEM` is designed to provide optimal tools for solving a given problem. Fig.
+ \ref{fig:shell} shows an example of error-driven *p-adaptivity* on hierarchical
+ approximation base, with multi-grid solver applied to Scordelis-Lo perforated
+ roof problem [@kaczmarczyk2016prism]. Morteover, `MoFEM` provides a convenient
+ application programming interface allowing user to freely choose approximation
+ base, e.g. Legrende, Jacobi, independently from approximation space, and type
+ and dimension of the field, e.g. field of symmetric second-order tensors. One
+ can approximate scalar, vectorial fields on scalar base functions, or vectorial
+ and tensorial fields on vectorial bases. The user of `MoFEM` can freely set
+ approximation order on each entity separately, e.g. edge, face, volume, or
+ define field on the skeleton. In Fig. \ref{fig:convergence} we show a convergence study for the mixed formulation for a transport/heat conduction problem.  
+
+  ![Example of *p-adaptivity* for hierarchical and heterogenous approximation with multi-grid solver applied for solid-shell element.\label{fig:shell}](paper_shell.pdf) 
+
+  ![A convergence study of h-adaptivity for the mixed formulation of the stationary transport/heat conduction problem (see inset of the figure for the geometry), with the comparison of different polynomial orders, denoted as '$\text{P}n\text{-}\text{P}m$', where $n$ is order of approximation for the flux and $m$ is the order for the field values (temperature or density). Note that the flux is approximated by the space $\mathbf{H}\text{-}\textbf{div}$, while the field values -- by the space $L^2$, see corresponding [MoFEM tutorial page](http://mofem.eng.gla.ac.uk/mofem/html/mix_transport.html) for more details.\label{fig:convergence}](LShape.pdf){ width=80% }
+
 
 # Acknowledgements
 
