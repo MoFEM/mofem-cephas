@@ -145,7 +145,7 @@ bibliography: paper.bib
   to fully exploit the potential of emerging approximation methods. On the
   contrary, the design of data structures for approximation of field variables
   in `MoFEM`  is independent of the specific finite element, e.g. Lagrangian,
-  Nedelec, Rivart-Thomas, since finite element is constructed by a set of lower
+  N{\'e}d{\'e}lec, Raviart-Thomas, since finite element is constructed by a set of lower
   dimension entities on which the approximation fields are defined.
   Consequently, different approximation spaces ($H^1$, $\mathbf{H}\text{-}\textbf{curl}$, $\mathbf{H}\text{-}\textbf{div}$, $L^2$)
   can be arbitrarily mixed in a finite element to create new capabilities for
