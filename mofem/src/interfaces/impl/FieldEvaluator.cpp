@@ -35,7 +35,7 @@ FieldEvaluatorInterface::query_interface(const MOFEMuuid &uuid,
 
 MoFEMErrorCode
 FieldEvaluatorInterface::buildTree3D(const std::string finite_element) {
-  Interface &m_field = cOre;
+  CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
   EntityHandle fe_meshset;
   fe_meshset = m_field.get_finite_element_meshset(finite_element);
