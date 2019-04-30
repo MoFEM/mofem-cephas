@@ -86,7 +86,7 @@ bibliography: paper.bib
  integration, could be an optimal solution. Finally, the adaptive choice of mesh
  density and approximation order is driven by the numerical errors, which can be
  effectively estimated if error evaluators are embedded into the FE formulation.
- This leads to a family of mixed or mixed-hybrid finite elements that satisfies
+ This leads to a family of mixed or mixed-hybrid finite elements that satisfy
  stability condition if combinations of different approximation spaces
  ($\mathit{H}^1$, ${\mathbf{H}}({\textbf{curl}})$,
  ${\mathbf{H}}({\textbf{div}})$ and $\mathit{L}^2$) are used.
@@ -140,7 +140,7 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
  -->
  <!-- ![Mixed formulation on five fields for large strain elasticity.\label{fig:mix}](paper_mix.png)  -->
 
-  `MoFEM` incorporates all aspects discussed above for *hp-adaptivity*, enabling
+  `MoFEM` incorporates all solutions discussed above for *hp-adaptivity*, enabling
   rapid implementation of the finite element method, i.e. relieving the user
   from programming complexities related to bookkeeping of degrees of freedom
   (DOFs), finite elements, matrix assembly, etc. Therefore, `MoFEM` provides
