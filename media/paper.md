@@ -304,7 +304,7 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
   //define approximation space, base and number of coefficients
   CHKERR mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); 
   CHKERR mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); 
-  //get meshset consisting of all entities in mesh
+  //get meshset consisting of all entities in the mesh
   EntityHandle mesh_set = mField.get_moab().get_root_set();
   //add mesh entities of different type to each field
   //adding tetrahedra implies adding lower dimension entities
