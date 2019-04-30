@@ -1,4 +1,6 @@
 /** \file find_local_coordinates_on_tet.cpp
+ * \example find_local_coordinates_on_tet.cpp
+ * 
  * \brief testing finding local coordinates on tetrahedron
  *
  * \ingroup mesh_cut

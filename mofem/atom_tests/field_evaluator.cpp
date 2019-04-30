@@ -1,4 +1,5 @@
-/** \file segments_distance.cpp
+/** \file field_evaluator.cpp.cpp
+ * \example field_evaluator.cpp
  * \brief test segments distance
  *
  * \ingroup mesh_cut
