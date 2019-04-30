@@ -81,7 +81,13 @@ int main(int argc, char *argv[]) {
 
       struct MyOp: public VolOp {
 
-        MyOp(): VolOp("FIELD1",OPROW) {}
+        MatrixShallowArrayAdaptor<double> evalPoints;
+
+        MyOp(std::array<double, 12> &eval_points)
+            : VolOp("FIELD1", OPROW),
+              evalPoints(eval_points.size() / 3, 3,
+                         ublas::shallow_array_adaptor<double>(
+                             eval_points.size(), &eval_points[0])) {}
 
         MoFEMErrorCode doWork(int side, EntityType type,
                               DataForcesAndSourcesCore::EntData &data) {
@@ -94,12 +100,35 @@ int main(int argc, char *argv[]) {
             std::cout << "Global coordinates " << endl;
             std::cout << getCoordsAtGaussPts() << std::endl;
 
+            for (int gg = 0; gg != getCoordsAtGaussPts().size1();++gg) {
+              int pt_number = getGaussPts()(3, gg);
+
+              std::cout << "gg " << gg << std::endl;
+              std::cout << "pt " << pt_number << std::endl;
+
+              ublas::matrix_row<MatrixDouble> coord_at_gauss_pt(
+                  getCoordsAtGaussPts(), gg);
+              ublas::matrix_row<MatrixShallowArrayAdaptor<double>> eval_coord(
+                  evalPoints, pt_number);
+
+              std::cout << "coord_at_gauss_pt ";
+              std::cout << coord_at_gauss_pt << std::endl;
+
+              std::cout << "eval_coord ";
+              std::cout << eval_coord << std::endl;
+
+              double error = norm_2(coord_at_gauss_pt - eval_coord);
+
+              if(error > 1e-12)
+                SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                         "Difference at %d error = %3.4e", pt_number, error);
+            }
           }
           MoFEMFunctionReturn(0);
         }
       };
 
-      vol_ele->getOpPtrVector().push_back(new MyOp());
+      vol_ele->getOpPtrVector().push_back(new MyOp(eval_points));
 
       boost::shared_ptr<FieldEvaluatorInterface::SetGaussPts> set_gauss_pts(
           new FieldEvaluatorInterface::SetGaussPts(
