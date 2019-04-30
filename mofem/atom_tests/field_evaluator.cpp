@@ -1,4 +1,4 @@
-/** \file field_evaluator.cpp.cpp
+/** \file field_evaluator.cpp
  * \example field_evaluator.cpp
  * \brief test segments distance
  *
