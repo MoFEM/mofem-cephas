@@ -74,7 +74,8 @@ int main(int argc, char *argv[]) {
       const MoFEM::Problem *prb_ptr;
       CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
 
-      VolumeElementForcesAndSourcesCore vol_ele(m_field);
+      boost::shared_ptr<VolumeElementForcesAndSourcesCore> vol_ele(
+          new VolumeElementForcesAndSourcesCore(m_field));
 
       using VolOp = VolumeElementForcesAndSourcesCore::UserDataOperator;
 
@@ -98,14 +99,17 @@ int main(int argc, char *argv[]) {
         }
       };
 
-      vol_ele.getOpPtrVector().push_back(new MyOp());
+      vol_ele->getOpPtrVector().push_back(new MyOp());
+
+      boost::shared_ptr<FieldEvaluatorInterface::SetGaussPts> set_gauss_pts(
+          new FieldEvaluatorInterface::SetGaussPts(
+              vol_ele, &eval_points[0], eval_points.size() / 3, 1e-12));
 
       CHKERR m_field.getInterface<FieldEvaluatorInterface>()
-          ->evalFEAtThePoint3D(
-              &point[0], dist, &eval_points[0], eval_points.size() / 3, 1e-12,
-              prb_ptr->getName(), simple_interface->getDomainFEName(), vol_ele,
-              m_field.get_comm_rank(), m_field.get_comm_rank(), MF_EXIST,
-              QUIET);
+          ->evalFEAtThePoint3D(&point[0], dist, prb_ptr->getName(),
+                               simple_interface->getDomainFEName(), vol_ele,
+                               set_gauss_pts, m_field.get_comm_rank(),
+                               m_field.get_comm_rank(), MF_EXIST, QUIET);
     }
   }
   CATCH_ERRORS;

@@ -42,29 +42,11 @@ struct FieldEvaluatorInterface : public UnknownInterface {
 
   MoFEMErrorCode buildTree3D(const std::string finite_element);
 
-  MoFEMErrorCode
-  evalFEAtThePoint3D(const double *const point, const double distance,
-                     const double *const eval_points, const int nb_eval_points,
-                     const double eps, const std::string problem,
-                     const std::string finite_element,
-                     MoFEM::ForcesAndSourcesCore &fe_method, int lower_rank,
-                     int upper_rank, MoFEMTypes bh = MF_EXIST,
-                     VERBOSITY_LEVELS verb = QUIET);
-
-private:
-
-  EntityHandle rooTreeSet;
-  boost::shared_ptr<BVHTree> treePtr;
-
-  boost::function<int(int order_row, int order_col, int order_data)>
-      setGaussPtsHook;
-
   struct SetGaussPts {
 
-    SetGaussPts(MoFEM::ForcesAndSourcesCore &fe_method,
+    SetGaussPts(boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method,
                 const double *eval_points, const int nb_eval_points,
-                const double eps,
-                VERBOSITY_LEVELS verb)
+                const double eps, VERBOSITY_LEVELS verb = QUIET)
         : feMethod(fe_method), evalPoints(eval_points),
           nbEvalPoints(nb_eval_points), eps(eps), verb(verb) {
       localCoords.resize(nbEvalPoints, 3);
@@ -74,8 +56,7 @@ private:
     MoFEMErrorCode operator()(int order_row, int order_col, int order_data);
 
   private:
-
-    MoFEM::ForcesAndSourcesCore &feMethod;
+    boost::shared_ptr<MoFEM::ForcesAndSourcesCore> feMethod;
     const double *evalPoints;
     const int nbEvalPoints;
     const double eps;
@@ -83,9 +64,22 @@ private:
 
     MatrixDouble localCoords;
     MatrixDouble shapeFunctions;
-
   };
 
+  MoFEMErrorCode
+  evalFEAtThePoint3D(const double *const point, const double distance,
+                      const std::string problem,
+                     const std::string finite_element,
+                     boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method, 
+                     boost::shared_ptr<SetGaussPts> set_gauss_pts,
+                     int lower_rank,
+                     int upper_rank, MoFEMTypes bh = MF_EXIST,
+                     VERBOSITY_LEVELS verb = QUIET);
+
+private:
+
+  EntityHandle rooTreeSet;
+  boost::shared_ptr<BVHTree> treePtr;
 
 };
 

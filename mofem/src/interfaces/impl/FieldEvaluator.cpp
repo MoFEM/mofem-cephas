@@ -72,7 +72,7 @@ operator()(int order_row, int order_col, int order_data) {
     std::cout << std::endl << "Next" << std::endl;
 
   const auto &elem_coords =
-      static_cast<VolumeElementForcesAndSourcesCore &>(feMethod).coords;
+      static_cast<VolumeElementForcesAndSourcesCore &>(*feMethod).coords;
 
   if (verb >= VERY_NOISY)
     std::cout << "elem coords: " << elem_coords << std::endl;
@@ -87,7 +87,7 @@ operator()(int order_row, int order_col, int order_data) {
   if (verb >= VERY_NOISY)
     std::cout << "shape: " << shapeFunctions << endl;
 
-  MatrixDouble &gauss_pts = feMethod.gaussPts;
+  MatrixDouble &gauss_pts = feMethod->gaussPts;
   gauss_pts.resize(4, nbEvalPoints, false);
   gauss_pts.clear();
 
@@ -118,7 +118,7 @@ operator()(int order_row, int order_col, int order_data) {
     std::cout << "nbEvalOPoints / nbGaussPts: " << nbEvalPoints << " / "
               << nb_gauss_pts << std::endl;
   gauss_pts.resize(4, nb_gauss_pts, true);
-  static_cast<VolumeElementForcesAndSourcesCore &>(feMethod).nbGaussPts =
+  static_cast<VolumeElementForcesAndSourcesCore &>(*feMethod).nbGaussPts =
       nb_gauss_pts;
 
   if (verb >= VERY_NOISY)
@@ -128,11 +128,11 @@ operator()(int order_row, int order_col, int order_data) {
 }
 
 MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
-    const double *const point, const double distance,
-    const double *const eval_points, const int nb_eval_points, const double eps,
-    const std::string problem, const std::string finite_element,
-    MoFEM::ForcesAndSourcesCore &fe_method, int lower_rank, int upper_rank,
-    MoFEMTypes bh, VERBOSITY_LEVELS verb) {
+    const double *const point, const double distance, const std::string problem,
+    const std::string finite_element,
+    boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method,
+    boost::shared_ptr<SetGaussPts> set_gauss_pts, int lower_rank,
+    int upper_rank, MoFEMTypes bh, VERBOSITY_LEVELS verb) {
   CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -175,16 +175,10 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
   auto get_rule = [&](int order_row, int order_col, int order_data) {
     return -1;
   };
-  fe_method.getRuleHook = get_rule;
+  fe_method->getRuleHook = get_rule;
+  fe_method->setRuleHook = (*set_gauss_pts);
 
-  boost::shared_ptr<SetGaussPts> default_hook_rule;
-  if (!setGaussPtsHook) {
-    default_hook_rule = boost::make_shared<SetGaussPts>(
-        fe_method, eval_points, nb_eval_points, eps, verb);
-    fe_method.setRuleHook = (*default_hook_rule);
-  }
-
-  CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, fe_method,
+  CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, *fe_method,
                                       lower_rank, upper_rank, numered_fes, bh,
                                       verb);
 
