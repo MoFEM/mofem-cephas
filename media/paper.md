@@ -27,13 +27,13 @@ authors:
     affiliation: 1 
   - name: Christophe-Alexandre Chalons-Mouriesse 
     affiliation: 1 
-  - name: Euan Jame Richardson
+  - name: Euan J. Richardson
     affiliation: 1 
   - name: Euan Miur
     affiliation: 1 
   - name: Andrei G. Shvarts
     affiliation: 1 
-  - name: Chris Pearce  
+  - name: Chris J. Pearce  
     affiliation: 1 
 affiliations:
  - name: School of Engineering, University of Glasgow, Glasgow, G12 8QQ, UK
@@ -85,9 +85,9 @@ bibliography: paper.bib
  choice of mesh density and approximation order is driven by the numerical
  errors, which can be effectively estimated if error evaluators are embedded
  into the FE formulation. This leads to a family of mixed or mixed-hybrid finite
- elements that satisfy stability condition if combinations of different
- approximation spaces ($\mathrm{H}^1$, $\mathbf{H}\text{-}\textbf{curl}$,
- $\mathbf{H}\text{-}\textbf{div}$ and $\mathrm{L}^2$) are used.
+ elements that satisfies stability condition if combinations of different
+ approximation spaces ($\mathit{H}^1$, ${\mathbf{H}}({\textbf{curl}})$,
+ ${\mathbf{H}}({\textbf{div}})$ and $\mathit{L}^2$) are used.
  
  <!-- Also, `MoFEM` enables users to construct tensorial field on
  tensorial bases, e.g. bubble base of zero normal and divergence free base
@@ -138,7 +138,7 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
  -->
  <!-- ![Mixed formulation on five fields for large strain elasticity.\label{fig:mix}](paper_mix.png)  -->
 
-  `MoFEM` incorporates all discussed above solutions for *hp-adaptivity*,
+  `MoFEM` incorporates all aspects discussed above for *hp-adaptivity*,
   enabling rapid implementation of the finite element method, i.e. relieving the
   user from programming complexities related to bookkeeping of degrees of
   freedom (DOFs), finite elements, matrix assembly, etc. Therefore, `MoFEM`
@@ -193,13 +193,14 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
   element defines the approximation space and base. Therefore, they are not able
   to fully exploit the potential of emerging approximation methods. On the
   contrary, the design of data structures for approximation of field variables
-  in `MoFEM`  is independent of the specific finite element, e.g. Lagrangian,
-  N\tex{\'{e}}d\tex{\'{e}}lec, Raviart-Thomas, since each finite element is constructed by a set of lower
-  dimension entities on which the approximation fields are defined.
-  Consequently, different approximation spaces ($\mathrm{H}^1$,
-  $\mathbf{H}\text{-}\textbf{curl}$, $\mathbf{H}\text{-}\textbf{div}$, $\mathrm{L}^2$)
-  can be arbitrarily mixed in a finite element to create new capabilities for
-  solving complex problems efficiently. 
+  in `MoFEM` is independent of the specific finite element, e.g. Lagrangian,
+  N\tex{\'{e}}d\tex{\'{e}}lec, Raviart-Thomas, since each finite element is
+  constructed by a set of lower dimension entities on which the approximation
+  fields are defined. Consequently, different approximation spaces
+  ($\mathit{H}^1$, ${\mathbf{H}}({\textbf{curl}})$,
+  ${\mathbf{H}}({\textbf{div}})$ and $\mathit{L}^2$) can be arbitrarily mixed in
+  a finite element to create new capabilities for solving complex problems
+  efficiently. 
   
   <!--   
   It is worth mentioning that the
@@ -231,9 +232,10 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
   toolkit-like structure allows for independent development of modules with
   different repositories, owners and licences, being suitable for both
   open-access academic research and private industrial sensitive projects. At
-  the same time, `MoFEM` core library is licensed under the [GNU Lesser General Public License](https://www.gnu.org/licenses/lgpl.html),ß
-  it can be deployed and developed using the package manager [Spack](https://spack.io),
-  see [MoFEM installation
+  the same time, `MoFEM` core library is licensed under the [GNU Lesser General
+  Public License](https://www.gnu.org/licenses/lgpl.html) and it can be deployed
+  and developed using the package manager [Spack](https://spack.io), see [MoFEM
+  installation
   instructions](http://mofem.eng.gla.ac.uk/mofem/html/installation.html) for
   more details.
 
@@ -285,7 +287,7 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
  
   ![Example of *p-adaptivity* for hierarchical and heterogenous approximation with multi-grid solver applied for to Scordelis-Lo perforated roof problem using a solid shell element.\label{fig:shell}](paper_shell.pdf) 
   
-  Furthemore, `MoFEM` provides a convenient application programming interface
+  In addition, `MoFEM` provides a convenient application programming interface
   allowing a user to freely choose the approximation base (e.g. Legrende or Jacobi
   polynomials) independently from the approximation space, and type and dimension of
   the field. Note that one can approximate scalar and vectorial fields on scalar
@@ -317,7 +319,7 @@ CHKERR add_l2_field(rotAxis, spaceOrder, 3);
   CHKERR mField.set_field_order(mesh_set,MBTET,values,order);
   ```
 
-  ![An *h-adaptivity* convergence study for the mixed formulation of the stationary transport/heat conduction problem (see inset of the figure for the geometry), with the comparison of different polynomial orders, denoted as '$\text{P}n\text{-}\text{P}m$', where $n$ is order of approximation for the flux and $m$ is the order for the field values (temperature or density). Note that the flux is approximated by the space $\mathbf{H}\text{-}\textbf{div}$, while the field values by the space $\mathrm{L}^2$, see corresponding [MoFEM tutorial page](http://mofem.eng.gla.ac.uk/mofem/html/mix_transport.html) for more details.\label{fig:convergence}](LShape.pdf){ width=80% }
+  ![An *h-adaptivity* convergence study for the mixed formulation of the stationary transport/heat conduction problem (see inset of the figure for the geometry), with the comparison of different polynomial orders, denoted as '$\text{P}n\text{-}\text{P}m$', where $n$ is order of approximation for the flux and $m$ is the order for the field values (temperature or density). Note that the flux is approximated by the space ${\mathbf{H}}(\textbf{div})$, while the field values by the space $\mathit{L}^2$, see corresponding [MoFEM tutorial page](http://mofem.eng.gla.ac.uk/mofem/html/mix_transport.html) for more details.\label{fig:convergence}](LShape.pdf){ width=80% }
 
 
 # Acknowledgements
