@@ -23,7 +23,7 @@
 
 using namespace MoFEM;
 
-static char help[] = "testing mesh cut test\n\n";
+static char help[] = "testing field evaluator\n\n";
 
 int main(int argc, char *argv[]) {
 
