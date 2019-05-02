@@ -69,7 +69,7 @@ bibliography: paper.bib
  convergence rate and, therefore, is severely limited by the current computing
  capabilities. A more elegant approach was paved by Ivo Babuska et al.
  [@babuska1992version], who showed that if one could increase at the same time
- the mesh density and the interpolation order, i.e. employ *hp-adaptivity*, the
+ the mesh density and the interpolation order, i.e. employ *hp-adaptivity*, 
  exponential convergence is achievable. This has been seen as the 'Holy Grail'
  of numerical methods.
 
@@ -105,7 +105,7 @@ bibliography: paper.bib
 
 # Design
 
- ![Basic design of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:design}](figures/basic_design.pdf){width=80%}
+ ![Basic design of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:design}](figures/basic_design.pdf){width=100%}
   
   Modern finite element software is an 'ecosystem' managing various complexities
   related to mesh and topology, sparse algebra and approximation, integration
@@ -120,7 +120,7 @@ bibliography: paper.bib
   these packages are utilised in `MoFEM` is shown in Fig. \ref{fig:design}.
   Finally, `MoFEM` core library is developed to manage complexities directly
   related to the finite element method. Therefore, each part of this ecosystem
-  has its own design objectives and appropriate programming tools from a
+  has its own design objectives, and appropriate programming tools from a
   spectrum of solutions can be selected. Resilience of `MoFEM` ecosystem is
   ensured since the underpinning components have sustainable fundings, dynamic
   and established groups of developers and significant user base. Fig.
@@ -144,26 +144,27 @@ bibliography: paper.bib
 
   `MoFEM` data structures enable easy enrichment of approximation fields and
   modification of base functions, for example, for resolving singularity at the
-  crack front. Applying this technique, it is effortless to construct transition
+  crack front. Applying this technique, it is almost effortless to construct transition
   elements between domains with different problem formulation and physics, e.g.
   from two-field mixed formulation to a single-field, or elements with an
   anisotropic approximation order, e.g. solid shells with arbitrary high
   approximation order on the surface and arbitrary low order through the
   thickness of the shell. This approach also sets the benchmark in terms of how
-  finite element codes are implemented, introducing a concept of user-defined
-  data operators acting on fields that are associated with entities (vertices,
+  finite element codes are implemented, introducing a concept of *user-defined
+  data operators* acting on fields that are associated with entities (vertices,
   edges, faces and volumes) rather on the finite element directly. Such an
   approach simplifies code writing, testing and validation, making the code more
   resilient to bugs.
 
-  Furthermore, `MoFEM` core library provides functionality for developing user
-  modules where applications for particular problems can be implemented. This
-  toolkit-like structure allows for independent development of modules with
-  different repositories, owners and licences, being suitable for both
-  open-access academic research and private industrial sensitive projects. At
-  the same time, `MoFEM` core library is licensed under the [GNU Lesser General
-  Public License](https://www.gnu.org/licenses/lgpl.html) and it can be deployed
-  and developed using the package manager [Spack](https://spack.io), see [MoFEM
+  Furthermore, `MoFEM` core library provides functionality for developing *user
+  modules* (see Fig. \ref{fig:design}) where applications for particular
+  problems can be implemented. This toolkit-like structure allows for
+  independent development of modules with different repositories, owners and
+  licences, being suitable for both open-access academic research and private
+  industrial sensitive projects. At the same time, `MoFEM` core library is
+  licensed under the [GNU Lesser General Public
+  License](https://www.gnu.org/licenses/lgpl.html) and it can be deployed and
+  developed using the package manager [Spack](https://spack.io), see [MoFEM
   installation
   instructions](http://mofem.eng.gla.ac.uk/mofem/html/installation.html) for
   more details.
