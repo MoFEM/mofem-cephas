@@ -137,9 +137,13 @@ int main(int argc, char *argv[]) {
 
       vol_ele->getRuleHook = get_rule;
 
-      FieldEvaluatorInterface::SetGaussPts set_gauss_pts(
-          vol_ele, &eval_points[0], eval_points.size() / 3, 1e-12);
-      vol_ele->setRuleHook = set_gauss_pts;
+      // Make aliased shared pointer, class instance is destroyed when finite
+      // element using set_gauss_pts is destroyed
+      boost::shared_ptr<FieldEvaluatorInterface::SetGaussPts> set_gauss_pts(
+          vol_ele,
+          new FieldEvaluatorInterface::SetGaussPts(
+              vol_ele, &eval_points[0], eval_points.size() / 3, 1e-12));
+      vol_ele->setRuleHook = *set_gauss_pts;
 
       CHKERR m_field.getInterface<FieldEvaluatorInterface>()
           ->evalFEAtThePoint3D(&point[0], dist, prb_ptr->getName(),
