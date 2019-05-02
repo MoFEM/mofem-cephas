@@ -1,31 +1,31 @@
 /*! \page installation Installation
 
-We recommend installation preferably with Spack or Docker. Both installation
-methods are a system independent, what minimises the likelihood that
-something goes wrong on your computer.
+We recommend installation preferably with Spack or with Docker. Both installation
+methods are system independent, which minimises the likelihood of
+something going wrong on your computer.
 
 Docker <https://www.docker.com> is a Linux (e.g. Ubuntu) system virtualisation,
-and MoFEM is run in docker container (virtual system) hosted by your native
-OS. The advantage of this approach is that the operating system environment
-is contained on a virtual machine hosted on your computer. For that
-installation method potential errors easy to reproduce. The disadvantage of
-this approach demand from the user understanding how Docker container works,
-relatively slow reading and writing and limited portability for HPC
-computing.
+where MoFEM is launched in a docker container (virtual system) hosted by your
+native OS. The advantage of this approach is that the operating system
+environment is contained on a virtual machine hosted on your computer.
+Therefore, potential errors can be easily reproduced by MoFEM support team, and
+the assistance can be provided easier. However, this installation method demands
+understanding of how Docker container works, furthermore, it provides relatively
+slow reading and writing and a limited portability for HPC computing.
 
-Spack <https://spack.io> from the other hand allows for easy installation on
-the base system and does not have disadvantages of docker solution. Spack is
-not the container is a packaging system for HPC, Linux and OS X. <b>Spack is
+Spack <https://spack.io> on the other hand allows an easy installation on
+the base system and is free from disadvantages of the Docker solution. Spack is
+not a container, it is a packaging system for HPC, Linux and OS X. Therefore, <b>Spack is
 the recommended installation method for MoFEM.</b>
 
-Mac OS X and Ubuntu installation methods are on bare metal OS, and to do
-it well you have to know the location of some libraries installed on your
-system. We do not recommend to follow that installation instruction unless
+Mac OS X and Ubuntu installation methods demand direct interaction with the OS,
+and to do it well you have to know the location of some libraries installed on
+your system. We do not recommend following these installation instructions unless
 you have experience of installing libraries from source.
 
-- \subpage install_spack
-- \subpage install_docker
-- \subpage install_ubuntu - recommened installation method with Spack
-- \subpage install_macosx - recommened installation method with Spack
+- \subpage install_spack  - recommended for all users
+- \subpage install_docker - recommended (has some disadvantages)
+- \subpage install_ubuntu - not recommended for common users
+- \subpage install_macosx - not recommended for common users
 
 */
