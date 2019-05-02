@@ -130,8 +130,7 @@ operator()(int order_row, int order_col, int order_data) {
 MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
     const double *const point, const double distance, const std::string problem,
     const std::string finite_element,
-    boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method,
-    boost::shared_ptr<SetGaussPts> set_gauss_pts, int lower_rank,
+    boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method, int lower_rank,
     int upper_rank, MoFEMTypes bh, VERBOSITY_LEVELS verb) {
   CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
@@ -172,11 +171,8 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
     std::cout << std::endl;
 
   
-  auto get_rule = [&](int order_row, int order_col, int order_data) {
-    return -1;
-  };
-  fe_method->getRuleHook = get_rule;
-  fe_method->setRuleHook = (*set_gauss_pts);
+
+
 
   CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, *fe_method,
                                       lower_rank, upper_rank, numered_fes, bh,

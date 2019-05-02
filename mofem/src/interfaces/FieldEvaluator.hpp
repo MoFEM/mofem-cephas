@@ -132,7 +132,6 @@ struct FieldEvaluatorInterface : public UnknownInterface {
                       const std::string problem,
                      const std::string finite_element,
                      boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method, 
-                     boost::shared_ptr<SetGaussPts> set_gauss_pts,
                      int lower_rank,
                      int upper_rank, MoFEMTypes bh = MF_EXIST,
                      VERBOSITY_LEVELS verb = QUIET);

@@ -131,15 +131,21 @@ int main(int argc, char *argv[]) {
 
       vol_ele->getOpPtrVector().push_back(new MyOp(eval_points));
 
-      boost::shared_ptr<FieldEvaluatorInterface::SetGaussPts> set_gauss_pts(
-          new FieldEvaluatorInterface::SetGaussPts(
-              vol_ele, &eval_points[0], eval_points.size() / 3, 1e-12));
+      auto get_rule = [&](int order_row, int order_col, int order_data) {
+        return -1;
+      };
+
+      vol_ele->getRuleHook = get_rule;
+
+      FieldEvaluatorInterface::SetGaussPts set_gauss_pts(
+          vol_ele, &eval_points[0], eval_points.size() / 3, 1e-12);
+      vol_ele->setRuleHook = set_gauss_pts;
 
       CHKERR m_field.getInterface<FieldEvaluatorInterface>()
           ->evalFEAtThePoint3D(&point[0], dist, prb_ptr->getName(),
                                simple_interface->getDomainFEName(), vol_ele,
-                               set_gauss_pts, m_field.get_comm_rank(),
-                               m_field.get_comm_rank(), MF_EXIST, QUIET);
+                               m_field.get_comm_rank(), m_field.get_comm_rank(),
+                               MF_EXIST, QUIET);
     }
   }
   CATCH_ERRORS;
