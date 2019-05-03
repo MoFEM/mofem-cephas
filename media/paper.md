@@ -116,7 +116,7 @@ bibliography: paper.bib
   `MoFEM` integrates advanced scientific computing tools for sparse algebra from
   [PETSc](https://www.mcs.anl.gov/petsc/) (Portable, Extensible Toolkit for
   Scientific Computation) [@petsc-web-page], components for handling mesh and
-  topology from [MOAB](https://press3.mcs.anl.gov/sigma/MOAB-library/)
+  topology from [MOAB](https://press3.mcs.anl.gov/sigma/moab-library/)
   (Mesh-Oriented Database) [@tautges_moab:2004] and data structures from [Boost
   libraries](https://www.boost.org) [@boost-web-page]. An illustration of how
   these packages are utilised in `MoFEM` is shown in Fig. \ref{fig:design}.
