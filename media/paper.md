@@ -217,7 +217,7 @@ bibliography: paper.bib
   CHKERR mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); 
   CHKERR mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); 
   //get meshset consisting of all entities in the mesh
-  EntityHandle mesh_set = mField.get_MOAB().get_root_set();
+  EntityHandle mesh_set = mField.get_moab().get_root_set();
   //add mesh entities of different type to each field
   //adding tetrahedra implies adding lower dimension entities
   CHKERR mField.add_ents_to_field_by_type(mesh_set,MBTET,fluxes); 
