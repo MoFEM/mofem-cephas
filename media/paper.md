@@ -194,7 +194,7 @@ bibliography: paper.bib
  *p-adaptivity* on hierarchical approximation base with a multi-grid solver
  applied to the Scordelis-Lo perforated roof problem [@kaczmarczyk2016prism]. 
  
-  ![Example of *p-adaptivity* for hierarchical and heterogenous approximation with multi-grid solver applied for to Scordelis-Lo perforated roof problem using a solid shell element.\label{fig:shell}](figures/paper_shell.pdf) 
+  ![Example of *p-adaptivity* for hierarchical and heterogenous approximation with multi-grid solver applied to the Scordelis-Lo perforated roof problem using a solid shell element.\label{fig:shell}](figures/paper_shell.pdf) 
   
   `MoFEM` provides a convenient application programming interface allowing a
   user to freely choose the approximation base (e.g. Legrende or Jacobi
