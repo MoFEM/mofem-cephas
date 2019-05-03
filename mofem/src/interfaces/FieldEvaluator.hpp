@@ -74,6 +74,11 @@ struct FieldEvaluatorInterface : public UnknownInterface {
 
     MoFEMErrorCode operator()(int order_row, int order_col, int order_data);
 
+    inline void setEvalPoints(const int double *ptr, const int nb_eval_points) {
+      evalPoints = ptr;
+      nbEvalPoints = nb_eval_points;
+    }
+
   private:
     boost::shared_ptr<MoFEM::ForcesAndSourcesCore> feMethod;
     const double *evalPoints;
