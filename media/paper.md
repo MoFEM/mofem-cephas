@@ -148,16 +148,16 @@ bibliography: paper.bib
   modification of base functions, for example, for resolving singularity at the
   crack front. Applying this technique, it is almost effortless to construct
   transition elements between domains with different problem formulation and
-  physics, e.g. from two-field mixed formulation to a single-field, or elements
-  with an anisotropic approximation order (e.g. approximation order depends on
-  direction in curvilinear base), e.g. solid shells with arbitrary higher
-  approximation order on the surface and arbitrary lower order through the
-  thickness of the shell. This approach also sets the benchmark in terms of how
-  finite element codes are implemented, introducing a concept of *user-defined
-  data operators* acting on fields that are associated with entities (vertices,
-  edges, faces and volumes) rather on the finite element directly. Such an
-  approach simplifies code writing, testing and validation, making the code more
-  resilient to bugs.
+  physics, e.g. from two-field mixed formulation to a single-field. One can
+  easily implement elements with an anisotropic approximation order, which
+  depends on direction in curvilinear base, e.g. solid shells with arbitrary
+  higher approximation order on the surface and arbitrary lower order through
+  the thickness of the shell. This approach also sets the benchmark in terms of
+  how finite element codes are implemented, introducing a concept of
+  *user-defined data operators* acting on fields that are associated with
+  entities (vertices, edges, faces and volumes) rather on the finite element
+  directly. Such an approach simplifies code writing, testing and validation,
+  making the code more resilient to bugs.
 
   Furthermore, `MoFEM`'s core library provides functionality for developing *user
   modules* (see Fig. \ref{fig:design}) where applications for particular
@@ -233,17 +233,17 @@ bibliography: paper.bib
 
 # Conclusions 
 
-`MoFEM` represents a modern type of FEM codes. It is designed to exploit
-advantages of emerging finite element technologies as well as simplify
-application code design. Additionally, it enables rapid implementation of
-complex engineering problems, involving different physical processes.
+ `MoFEM` introduces a novel architecture of FEM codes, designed to exploit advantages
+ of emerging finite element technologies and to enable rapid implementation of
+ numerical models for complex engineering problems, involving multi-physics and
+ multi-scale processes.
 
 # Acknowledgements
 
-`MoFEM` development has been supported by EDF Energy Nuclear Generation
-Ltd., Glasgow Computational Engineering Centre (grant no. EP/R008531/1),
-The Royal Academy of Engineering (grant no. RCSRF1516\2\18), DURACOMP EPSRC
-Project (grant no. EP/K026925/1), and Lord Kelvin Adam Smith programme at
-University of Glasgow.
+ `MoFEM` development has been supported by EDF Energy Nuclear Generation
+ Ltd., Glasgow Computational Engineering Centre (grant no. EP/R008531/1),
+ The Royal Academy of Engineering (grant no. RCSRF1516\2\18), DURACOMP EPSRC
+ Project (grant no. EP/K026925/1), and Lord Kelvin Adam Smith programme at
+ University of Glasgow.
 
 # References
