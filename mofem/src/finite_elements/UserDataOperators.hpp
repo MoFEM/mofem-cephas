@@ -1187,14 +1187,14 @@ struct OpCalculateHdivVectorDivergence
  * @tparam Tensor_Dim dimension of space
  */
 template <int Tensor_Dim>
-struct OpCalculateHdivVectorCurl
+struct OpCalculateHcurlVectorCurl
     : public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<MatrixDouble> dataPtr;
   const EntityHandle zeroType;
   const int zeroSide;
 
-  OpCalculateHdivVectorCurl(const std::string &field_name,
+  OpCalculateHcurlVectorCurl(const std::string &field_name,
                             boost::shared_ptr<MatrixDouble> &data_ptr,
                             const EntityType zero_type = MBEDGE,
                             const int zero_side = 0)
