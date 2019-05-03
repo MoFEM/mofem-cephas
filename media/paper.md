@@ -129,7 +129,7 @@ bibliography: paper.bib
   \ref{fig:ecosystem} shows different components that are employed in the
   ecosystem including popular pre- and post-processing software.
 
-  !['Ecosystem' of `MoFEM`. Adopted from [@MOABWebPage].\label{fig:ecosystem}](figures/ecosystem.pdf){width=80%}
+  !['Ecosystem' of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:ecosystem}](figures/ecosystem.pdf){width=80%}
 
   Traditional finite element codes are element-centric, i.e. the type of an
   element defines the approximation space and base. Therefore, they are not able
@@ -240,9 +240,10 @@ complex engineering problems, involving different physical processes.
 
 # Acknowledgements
 
-`MoFEM` development has been supported by EDF Energy Nuclear Generation Ltd.
-(grant no. 4840360333), The Royal Academy of Engineering (grant no.
-RCSRF1516\2\18), DURACOMP EPSRC Project (EP/K026925/1), and Lord Kelvin Adam
-Smith programme at University of Glasgow.
+`MoFEM` development has been supported by EDF Energy Nuclear Generation
+Ltd., Glasgow Computational Engineering Centre (grant no. EP/R008531/1),
+The Royal Academy of Engineering (grant no. RCSRF1516\2\18), DURACOMP EPSRC
+Project (grant no. EP/K026925/1), and Lord Kelvin Adam Smith programme at
+University of Glasgow.
 
 # References
