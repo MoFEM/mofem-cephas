@@ -248,10 +248,11 @@ provided in modules or add your own directory with your module.
 ~~~~
 spack install mofem-users-modules build_type=RelWithDebInfo
 cd $HOME
-spack view --verbose symlink -i um_view mofem-cephas
+spack view --verbose symlink -i um_view mofem-users-modules
 export PATH=$PWD/um_view/bin:$PATH
 cd um_view
 mkdir build
+cd build
 cmake \
 -DCMAKE_BUILD_TYPE=Debug \
 -DSTAND_ALLONE_USERS_MODULES=YES \
@@ -273,7 +274,7 @@ code.
 ~~~~
 spack install mofem-users-modules 
 cd $HOME
-spack view --verbose symlink -i um_view mofem-cephas
+spack view --verbose symlink -i um_view mofem-users-modules
 export PATH=$PWD/um_view/bin:$PATH
 mkdir $HOME/mod_developer
 cd mod_developer/
