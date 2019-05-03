@@ -258,6 +258,8 @@ cmake \
 -DSTAND_ALLONE_USERS_MODULES=YES \
 -DEXTERNAL_MODULE_SOURCE_DIRS=../ext_users_modules \
 ../users_modules
+make -j4
+ctest
 ~~~~
 
 You can also provide another directory which is pointing to a module that you are
