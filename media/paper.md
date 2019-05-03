@@ -233,17 +233,10 @@ bibliography: paper.bib
 
 # Conclusions 
 
-<<<<<<< HEAD
  `MoFEM` introduces a novel architecture of FEM codes, designed to exploit advantages
  of emerging finite element technologies and to enable rapid implementation of
  numerical models for complex engineering problems, involving multi-physics and
  multi-scale processes.
-=======
-`MoFEM` represents a modern type of FEM codes. It is designed to utilise the
-advantages of emerging finite element technologies and, enabling rapid
-implementation of complex engineering problems, involving various physical
-processes.
->>>>>>> lukasz/joss
 
 # Acknowledgements
 
