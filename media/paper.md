@@ -238,8 +238,10 @@ involving several physical processes.
 
 # Acknowledgements
 
-  `MoFEM` development has been supported by EDF Energy Nuclear Generation Ltd.
-  (grant no. 4840360333), The Royal Academy of Engineering (grant no.
-  RCSRF1516\2\18), DURACOMP EPSRC Project (EP/K026925/1), and Lord Kelvin Adam Smith programme at University of Glasgow.
+`MoFEM` development has been supported by EDF Energy Nuclear Generation
+Ltd., Glasgow Computational Engineering Centre (grant no. EP/R008531/1),
+The Royal Academy of Engineering (grant no. RCSRF1516\2\18), DURACOMP EPSRC
+Project (grant no. EP/K026925/1), and Lord Kelvin Adam Smith programme at
+University of Glasgow.
 
 # References
