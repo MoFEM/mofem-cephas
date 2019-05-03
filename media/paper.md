@@ -33,6 +33,8 @@ authors:
     affiliation: 1 
   - name: Andrei G. Shvarts
     affiliation: 1 
+  - name: Mebratu Wakeni 
+    affiliation: 1  
   - name: Chris J. Pearce  
     affiliation: 1 
 affiliations:
@@ -147,7 +149,7 @@ bibliography: paper.bib
   crack front. Applying this technique, it is almost effortless to construct transition
   elements between domains with different problem formulation and physics, e.g.
   from two-field mixed formulation to a single-field, or elements with an
-  anisotropic approximation order, e.g. solid shells with arbitrary higher
+  anisotropic approximation order (e.g. approximation order depends on direction in curvilinear base), e.g. solid shells with arbitrary higher
   approximation order on the surface and arbitrary lower order through the
   thickness of the shell. This approach also sets the benchmark in terms of how
   finite element codes are implemented, introducing a concept of *user-defined
