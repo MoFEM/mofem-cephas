@@ -117,7 +117,7 @@ bibliography: paper.bib
   [PETSc](https://www.mcs.anl.gov/petsc/) (Portable, Extensible Toolkit for
   Scientific Computation) [@petsc-web-page], components for handling mesh and
   topology from [MOAB](https://press3.mcs.anl.gov/sigma/MOAB-library/)
-  (Mesh-Oriented Database) [@tautges_MOAB:2004] and data structures from [Boost
+  (Mesh-Oriented Database) [@tautges_moab:2004] and data structures from [Boost
   libraries](https://www.boost.org) [@boost-web-page]. An illustration of how
   these packages are utilised in `MoFEM` is shown in Fig. \ref{fig:design}.
   Finally, `MoFEM`'s core library is developed to manage complexities directly
@@ -233,7 +233,7 @@ bibliography: paper.bib
 
 # Conclusions 
 
-MoFEM represents a modern type of FEM codes. It is designed to exploit
+`MoFEM` represents a modern type of FEM codes. It is designed to exploit
 advantages of emerging finite element technologies as well as simplify
 application code design. Additionally, it enables rapid implementation of
 complex engineering problems, involving different physical processes.
