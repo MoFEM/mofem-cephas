@@ -233,10 +233,10 @@ bibliography: paper.bib
 
 # Conclusions 
 
-`MoFEM` represents a modern type of FEM codes. It is designed to exploit
-advantages of emerging finite element technologies as well as simplify
-application code design. Additionally, it enables rapid implementation of
-complex engineering problems, involving different physical processes.
+`MoFEM` represents a modern type of FEM codes. It is designed to utilise the
+advantages of emerging finite element technologies and, enabling rapid
+implementation of complex engineering problems, involving various physical
+processes.
 
 # Acknowledgements
 
