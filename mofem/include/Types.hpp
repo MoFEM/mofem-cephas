@@ -68,10 +68,10 @@ typedef std::bitset<32> CubitBCType;
 // DoubleAllocator;
 typedef std::vector<int, std::allocator<int>> IntAllocator;
 typedef std::vector<double, std::allocator<double>> DoubleAllocator;
-DEPRECATED typedef IntAllocator
-    IntAllacator; ///< \deprecated Do not use spelling mistake
-DEPRECATED typedef DoubleAllocator
-    DoubleAllacator; ///< \deprecated Do not use spelling mistake
+// DEPRECATED typedef IntAllocator
+//     IntAllacator; ///< \deprecated Do not use spelling mistake
+// DEPRECATED typedef DoubleAllocator
+//     DoubleAllacator; ///< \deprecated Do not use spelling mistake
 typedef ublas::vector<int, IntAllocator> VectorInt;
 typedef ublas::vector<double, DoubleAllocator> VectorDouble;
 typedef ublas::matrix<double, ublas::row_major, DoubleAllocator> MatrixDouble;
@@ -168,14 +168,14 @@ getFTensor0FromVec(ublas::vector<T, A> &data) {
   static_assert(!std::is_same<T, T>::value, "not implemented");
 }
 
-/**
- * @deprecated Name change to getFTensor0FromVec
- */
-template <class T, class A>
-DEPRECATED static inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-getTensor0FormData(ublas::vector<T, A> &data) {
-  return getFTensor0FromVec(data);
-}
+// /**
+//  * @deprecated Name change to getFTensor0FromVec
+//  */
+// template <class T, class A>
+// DEPRECATED static inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+// getTensor0FormData(ublas::vector<T, A> &data) {
+//   return getFTensor0FromVec(data);
+// }
 
 template <>
 inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
@@ -227,15 +227,15 @@ getFTensor1FromMat<2, double, ublas::row_major, DoubleAllocator>(
                                                             &data(1, 0));
 }
 
-/**
- * @deprecated Name change to getFTensor1FromMat
- */
-template <int Tensor_Dim>
-DEPRECATED static inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>,
-                                          Tensor_Dim>
-getTensor1FormData(MatrixDouble &data) {
-  return getFTensor1FromMat<Tensor_Dim>(data);
-}
+// /**
+//  * @deprecated Name change to getFTensor1FromMat
+//  */
+// template <int Tensor_Dim>
+// DEPRECATED static inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>,
+//                                           Tensor_Dim>
+// getTensor1FormData(MatrixDouble &data) {
+//   return getFTensor1FromMat<Tensor_Dim>(data);
+// }
 
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix
@@ -291,15 +291,15 @@ getFTensor2FromMat(MatrixDouble &data) {
                             DoubleAllocator>(data);
 }
 
-/**
- * @deprecated Name change to getFTensor1FromMat
- */
-template <int Tensor_Dim0, int Tensor_Dim1>
-static inline DEPRECATED
-    FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim0, Tensor_Dim1>
-    getTensor2FormData(MatrixDouble &data) {
-  return getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(data);
-}
+// /**
+//  * @deprecated Name change to getFTensor1FromMat
+//  */
+// template <int Tensor_Dim0, int Tensor_Dim1>
+// static inline DEPRECATED
+//     FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim0, Tensor_Dim1>
+//     getTensor2FormData(MatrixDouble &data) {
+//   return getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(data);
+// }
 
 /**
  * \brief Get symmetric tensor rank 2 (matrix) form data matrix
