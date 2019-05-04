@@ -77,6 +77,9 @@ operator()(int order_row, int order_col, int order_data) {
   if (verb >= VERY_NOISY)
     std::cout << "elem coords: " << elem_coords << std::endl;
 
+  if (verb >= VERY_NOISY)
+    std::cout << "nbEvalPoints " << nbEvalPoints << std::endl;
+
   CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
       &elem_coords[0], evalPoints, nbEvalPoints,
       &*localCoords.data().begin());
@@ -169,10 +172,6 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
   }
   if (verb >= VERY_NOISY)
     std::cout << std::endl;
-
-  
-
-
 
   CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, *fe_method,
                                       lower_rank, upper_rank, numered_fes, bh,

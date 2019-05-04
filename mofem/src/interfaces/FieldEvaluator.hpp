@@ -77,6 +77,8 @@ struct FieldEvaluatorInterface : public UnknownInterface {
     inline void setEvalPoints(const double *ptr, const int nb_eval_points) {
       evalPoints = ptr;
       nbEvalPoints = nb_eval_points;
+      localCoords.resize(nbEvalPoints, 3, false);
+      shapeFunctions.resize(nbEvalPoints, 4, false);
     }
 
   private:

@@ -142,8 +142,10 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<FieldEvaluatorInterface::SetGaussPts> set_gauss_pts(
           vol_ele,
           new FieldEvaluatorInterface::SetGaussPts(
-              vol_ele, &eval_points[0], eval_points.size() / 3, 1e-12));
+              vol_ele, nullptr, 0, 1e-12, VERY_NOISY));
       vol_ele->setRuleHook = *set_gauss_pts;
+      vol_ele->setRuleHook.setEvalPoints(&eval_points[0],
+                                         eval_points.size() / 3);
 
       CHKERR m_field.getInterface<FieldEvaluatorInterface>()
           ->evalFEAtThePoint3D(&point[0], dist, prb_ptr->getName(),
