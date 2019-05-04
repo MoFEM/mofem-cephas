@@ -263,7 +263,6 @@ struct ForcesAndSourcesCore : public FEMethod {
   typedef boost::function<int(int order_row, int order_col, int order_data)>
       RuleHookFun;
 
-
   /**
    * \brief Hook to get rule
    *
