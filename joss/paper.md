@@ -61,7 +61,7 @@ bibliography: paper.bib
  academics. It was primarily designed to solve crack propagation for structural
  integrity assessment of safety critical structures (see Fig. \ref{fig:brick}).
 
- ![Brittle crack propagation.\label{fig:brick}](figures/paper_brick.png){width=60%}
+ ![Brittle crack propagation.\label{fig:brick}](paper_brick.png){width=60%}
 
  The need for solutions to increasingly complex problems demands control over
  numerical errors; otherwise, we will be unable to distinguish discretisation
@@ -107,7 +107,7 @@ bibliography: paper.bib
 
 # Design
 
- ![Basic design of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:design}](figures/basic_design.pdf){width=100%}
+ ![Basic design of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:design}](basic_design.pdf){width=100%}
   
   Modern finite element software is an 'ecosystem' managing various complexities
   related to mesh and topology, sparse algebra and approximation, integration
@@ -129,7 +129,7 @@ bibliography: paper.bib
   \ref{fig:ecosystem} shows different components that are employed in the
   ecosystem including popular pre- and post-processing software.
 
-  !['Ecosystem' of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:ecosystem}](figures/ecosystem.pdf){width=80%}
+  !['Ecosystem' of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:ecosystem}](ecosystem.pdf){width=80%}
 
   Traditional finite element codes are element-centric, i.e. the type of an
   element defines the approximation space and base. Therefore, they are not able
@@ -187,14 +187,14 @@ bibliography: paper.bib
   magnetostatics and acoustic wave propagation as shown in Fig.
   \ref{fig:examples}.
 
-  ![Examples of user modules implemented using `MoFEM`.\label{fig:examples}](figures/mofem_modules_examples.png){width=100%}
+  ![Examples of user modules implemented using `MoFEM`.\label{fig:examples}](mofem_modules_examples.png){width=100%}
 
  `MoFEM` is designed to provide efficient tools for solving a wide variety of
  user-defined problems. Fig. \ref{fig:shell} shows an example of error-driven
  *p-adaptivity* on hierarchical approximation base with a multi-grid solver
  applied to the Scordelis-Lo perforated roof problem [@kaczmarczyk2016prism]. 
  
-  ![Example of *p-adaptivity* for hierarchical and heterogenous approximation with multi-grid solver applied to the Scordelis-Lo perforated roof problem using a solid shell element.\label{fig:shell}](figures/paper_shell.pdf) 
+  ![Example of *p-adaptivity* for hierarchical and heterogenous approximation with multi-grid solver applied to the Scordelis-Lo perforated roof problem using a solid shell element.\label{fig:shell}](paper_shell.pdf) 
   
   `MoFEM` provides a convenient application programming interface allowing a
   user to freely choose the approximation base (e.g. Legrende or Jacobi
@@ -229,7 +229,7 @@ bibliography: paper.bib
   CHKERR mField.set_field_order(mesh_set,MBTET,values,order);
   ```
 
-  ![An *h-adaptivity* convergence study for the mixed formulation of the stationary transport/heat conduction problem (see inset of the figure for the geometry), with the comparison of different polynomial orders, denoted as '$\text{P}n\text{-}\text{P}m$', where $n$ is order of approximation for the flux and $m$ is the order for the field values (temperature or density). Note that the flux is approximated by the space ${\mathbf{H}}(\textbf{div})$, while the field values by the space $\mathit{L}^2$, see corresponding [MoFEM tutorial page](http://mofem.eng.gla.ac.uk/mofem/html/mix_transport.html) for more details.\label{fig:convergence}](figures/LShape.pdf){ width=80% }
+  ![An *h-adaptivity* convergence study for the mixed formulation of the stationary transport/heat conduction problem (see inset of the figure for the geometry), with the comparison of different polynomial orders, denoted as '$\text{P}n\text{-}\text{P}m$', where $n$ is order of approximation for the flux and $m$ is the order for the field values (temperature or density). Note that the flux is approximated by the space ${\mathbf{H}}(\textbf{div})$, while the field values by the space $\mathit{L}^2$, see corresponding [MoFEM tutorial page](http://mofem.eng.gla.ac.uk/mofem/html/mix_transport.html) for more details.\label{fig:convergence}](LShape.pdf){ width=80% }
 
 # Conclusions 
 
