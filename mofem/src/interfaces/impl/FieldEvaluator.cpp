@@ -51,6 +51,15 @@ MoFEMErrorCode FieldEvaluatorInterface::SetGaussPts::
 operator()(int order_row, int order_col, int order_data) {
   MoFEMFunctionBegin;
 
+  decltype(dataPtr->feMethod) &feMethod = dataPtr->feMethod;
+  decltype(dataPtr->evalPoints) evalPoints = dataPtr->evalPoints;
+  decltype(dataPtr->nbEvalPoints) nbEvalPoints = dataPtr->nbEvalPoints;
+  decltype(dataPtr->eps) eps = dataPtr->eps;
+  decltype(dataPtr->verb) verb = dataPtr->verb;
+
+  decltype(dataPtr->localCoords) &localCoords = dataPtr->localCoords;
+  decltype(dataPtr->shapeFunctions) &shapeFunctions = dataPtr->shapeFunctions;
+
   auto shape_check = [&](const auto &t_shape) {
     if (
 
@@ -72,7 +81,7 @@ operator()(int order_row, int order_col, int order_data) {
     std::cout << std::endl << "Next" << std::endl;
 
   const auto &elem_coords =
-      static_cast<VolumeElementForcesAndSourcesCore &>(*feMethod).coords;
+      static_cast<VolumeElementForcesAndSourcesCore &>(feMethod).coords;
 
   if (verb >= VERY_NOISY)
     std::cout << "elem coords: " << elem_coords << std::endl;
@@ -90,7 +99,7 @@ operator()(int order_row, int order_col, int order_data) {
   if (verb >= VERY_NOISY)
     std::cout << "shape: " << shapeFunctions << endl;
 
-  MatrixDouble &gauss_pts = feMethod->gaussPts;
+  MatrixDouble &gauss_pts = feMethod.gaussPts;
   gauss_pts.resize(4, nbEvalPoints, false);
   gauss_pts.clear();
 
@@ -121,7 +130,7 @@ operator()(int order_row, int order_col, int order_data) {
     std::cout << "nbEvalOPoints / nbGaussPts: " << nbEvalPoints << " / "
               << nb_gauss_pts << std::endl;
   gauss_pts.resize(4, nb_gauss_pts, true);
-  static_cast<VolumeElementForcesAndSourcesCore &>(*feMethod).nbGaussPts =
+  static_cast<VolumeElementForcesAndSourcesCore &>(feMethod).nbGaussPts =
       nb_gauss_pts;
 
   if (verb >= VERY_NOISY)

@@ -48,31 +48,25 @@ struct FieldEvaluatorInterface : public UnknownInterface {
    */
   MoFEMErrorCode buildTree3D(const std::string finite_element);
 
-  /**
-   * @brief Default evaluator for setting integration points
-   * 
-   */
-  struct SetGaussPts {
+  struct SetGasussData {
 
     /**
-     * @brief Set the Gauss Pts object
-     * 
+     * @brief Set the Gauss Pts data
+     *
      * @param fe_method finite element instance
      * @param eval_points pointer to array with evaluation points
      * @param nb_eval_points number of evaluated points
      * @param eps tolerance used to find if point is in the element
-     * @param verb 
+     * @param verb
      */
-    SetGaussPts(boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method,
-                const double *eval_points, const int nb_eval_points,
-                const double eps, VERBOSITY_LEVELS verb = QUIET)
+    SetGasussData(MoFEM::ForcesAndSourcesCore &fe_method,
+                    const double *eval_points, const int nb_eval_points,
+                    const double eps, VERBOSITY_LEVELS verb = QUIET)
         : feMethod(fe_method), evalPoints(eval_points),
           nbEvalPoints(nb_eval_points), eps(eps), verb(verb) {
       localCoords.resize(nbEvalPoints, 3);
       shapeFunctions.resize(nbEvalPoints, 4);
     }
-
-    MoFEMErrorCode operator()(int order_row, int order_col, int order_data);
 
     inline void setEvalPoints(const double *ptr, const int nb_eval_points) {
       evalPoints = ptr;
@@ -81,8 +75,7 @@ struct FieldEvaluatorInterface : public UnknownInterface {
       shapeFunctions.resize(nbEvalPoints, 4, false);
     }
 
-  private:
-    boost::shared_ptr<MoFEM::ForcesAndSourcesCore> feMethod;
+    MoFEM::ForcesAndSourcesCore &feMethod;
     const double *evalPoints;
     int nbEvalPoints;
     double eps;
@@ -90,6 +83,20 @@ struct FieldEvaluatorInterface : public UnknownInterface {
 
     MatrixDouble localCoords;
     MatrixDouble shapeFunctions;
+  };
+
+  /**
+   * @brief Default evaluator for setting integration points
+   * 
+   */
+  struct SetGaussPts {
+    SetGaussPts() = delete;
+    SetGaussPts(boost::shared_ptr<SetGasussData> data_ptr)
+        : dataPtr(data_ptr) {}
+    MoFEMErrorCode operator()(int order_row, int order_col, int order_data);
+
+  private:
+    boost::shared_ptr<SetGasussData> dataPtr;
   };
 
   /**
@@ -108,9 +115,13 @@ struct FieldEvaluatorInterface : public UnknownInterface {
     vol_ele->getOpPtrVector().push_back(new MyOp());
 
     // use default evaluator for gauss points
-    boost::shared_ptr<FieldEvaluatorInterface::SetGaussPts> set_gauss_pts(
-          new FieldEvaluatorInterface::SetGaussPts(
-              vol_ele, &eval_points[0], eval_points.size() / 3, 1e-12));
+
+    // make aliased shared pointer, data are destroyed when element is destroyed
+    boost::shared_ptr<FieldEvaluatorInterface::SetGasussData> data(
+        vol_ele, new FieldEvaluatorInterface::SetGasussData(
+          *vol_ele, eval_points.data(), eval_points.size() / 3, 1e-12));
+    // set integration rule
+    vol_ele->setRuleHook = FieldEvaluatorInterface::SetGaussPts(data);
 
     // iterate over elemnts with evaluated points
     CHKERR m_field.getInterface<FieldEvaluatorInterface>()
