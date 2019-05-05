@@ -89,6 +89,13 @@ operator()(int order_row, int order_col, int order_data) {
   if (verb >= VERY_NOISY)
     std::cout << "nbEvalPoints " << nbEvalPoints << std::endl;
 
+  if( verb >= VERY_VERBOSE) {
+    std::cout << "evalPoints "
+              << getMatrixAdaptor(const_cast<double *>(evalPoints),
+                                  nbEvalPoints, 3)
+              << std::endl;
+  }
+
   CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
       &elem_coords[0], evalPoints, nbEvalPoints,
       &*localCoords.data().begin());

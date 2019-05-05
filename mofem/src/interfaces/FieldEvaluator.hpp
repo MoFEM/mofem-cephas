@@ -154,6 +154,9 @@ struct FieldEvaluatorInterface : public UnknownInterface {
                      int upper_rank, MoFEMTypes bh = MF_EXIST,
                      VERBOSITY_LEVELS verb = QUIET);
 
+  inline boost::shared_ptr<BVHTree> &getTree() { return treePtr; }
+  inline EntityHandle getRootTreeSet() { return rooTreeSet; }
+
 private:
 
   EntityHandle rooTreeSet;

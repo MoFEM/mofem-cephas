@@ -86,9 +86,8 @@ int main(int argc, char *argv[]) {
 
         MyOp(std::array<double, 12> &eval_points)
             : VolOp("FIELD1", OPROW),
-              evalPoints(eval_points.size() / 3, 3,
-                         ublas::shallow_array_adaptor<double>(
-                             eval_points.size(), &eval_points[0])) {}
+              evalPoints(getMatrixAdaptor(eval_points.data(),
+                                          eval_points.size() / 3, 3)) {}
 
         MoFEMErrorCode doWork(int side, EntityType type,
                               DataForcesAndSourcesCore::EntData &data) {

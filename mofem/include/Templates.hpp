@@ -39,13 +39,40 @@ namespace MoFEM {
  * \endcode
  *
  */
-auto getVectorAdaptor = [](auto ptr, const int n) {
-  typedef typename std::remove_pointer<decltype(ptr)>::type T;
+template <typename T1>
+inline auto getVectorAdaptor(T1 ptr, const size_t n) {
+  typedef typename std::remove_pointer<T1>::type T;
   return VectorShallowArrayAdaptor<T>(n,
                                       ublas::shallow_array_adaptor<T>(n, ptr));
 };
 
-/** 
+/**
+ * @brief Get Matrix adaptor
+ *
+ * \code
+ *
+ * double *a;
+ * CHKERR VecGetArray(v,&a);
+ *
+ * for(int n = 0; n != nodes; ++n) {
+ *
+ *   auto F = getMatrixAdaptor(&a[3*3*n], 3, 3);
+ *   MatrixDouble C = prod(F, trans(F));
+ *
+ * }
+ *
+ * CHKERR VecRetsoreArray(v,&a);
+ * \endcode
+ *
+ */
+template <typename T1>
+inline auto getMatrixAdaptor(T1 ptr, const size_t n, const size_t m) {
+  typedef typename std::remove_pointer<T1>::type T;
+  return MatrixShallowArrayAdaptor<T>(
+      n, m, ublas::shallow_array_adaptor<T>(n * m, ptr));
+};
+
+/**
  * This small utility that cascades two key extractors will be
  * used throughout the boost example
  * <a
@@ -93,7 +120,6 @@ template <class X> inline std::string toString(X x) {
   buffer << x;
   return buffer.str();
 }
-
 
 /**
 * \brief Get tensor rank 0 (scalar) form data vector
@@ -263,12 +289,12 @@ getFTensor2SymmetricFromMat(ublas::matrix<T, L, A> &data) {
 
 /**
  * @brief Get symmetric tensor rank 2 form matrix of for dimension 3
- * 
+ *
  * Specialisation for symmetric tensor 2
- * 
- * @tparam  
- * @param data 
- * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3> 
+ *
+ * @tparam
+ * @param data
+ * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3>
  */
 template <>
 inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 3>
@@ -283,19 +309,19 @@ getFTensor2SymmetricFromMat(MatrixDouble &data) {
 
 /**
  * @brief Get symmetric tensor rank 2 form matrix
- * 
+ *
  * Specialisation for symmetric tensor 2
- * 
- * @tparam Tensor_Dim 
- * @param data 
- * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, Tensor_Dim> 
+ *
+ * @tparam Tensor_Dim
+ * @param data
+ * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, Tensor_Dim>
  */
 template <int Tensor_Dim>
 static inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>,
                                          Tensor_Dim>
 getFTensor2SymmetricFromMat(MatrixDouble &data) {
   return getFTensor2SymmetricFromMat<Tensor_Dim, double, ublas::row_major,
-                            DoubleAllocator>(data);
+                                     DoubleAllocator>(data);
 }
 
 /**
