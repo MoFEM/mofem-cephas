@@ -42,7 +42,7 @@ FieldEvaluatorInterface::buildTree3D(const std::string finite_element) {
   Range entities_3d;
   CHKERR m_field.get_moab().get_entities_by_dimension(fe_meshset, 3,
                                                       entities_3d, true);
-  treePtr = boost::make_shared<BVHTree>(&m_field.get_moab());
+  treePtr = boost::make_shared<AdaptiveKDTree>(&m_field.get_moab());
   CHKERR treePtr->build_tree(entities_3d, &rooTreeSet);
   MoFEMFunctionReturn(0);
 }
@@ -159,7 +159,7 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
   Range tree_ents;
   for (auto lit : leafs_out)
     CHKERR m_field.get_moab().get_entities_by_dimension(lit, 3, tree_ents,
-                                                        false);
+                                                        true);
 
   if (verb >= VERY_NOISY)
     std::cout << "tree entities: " << tree_ents << endl;
