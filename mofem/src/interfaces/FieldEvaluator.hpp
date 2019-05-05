@@ -48,7 +48,7 @@ struct FieldEvaluatorInterface : public UnknownInterface {
    */
   MoFEMErrorCode buildTree3D(const std::string finite_element);
 
-  struct SetGasussData {
+  struct SetPtsData {
 
     /**
      * @brief Set the Gauss Pts data
@@ -59,7 +59,7 @@ struct FieldEvaluatorInterface : public UnknownInterface {
      * @param eps tolerance used to find if point is in the element
      * @param verb
      */
-    SetGasussData(MoFEM::ForcesAndSourcesCore &fe_method,
+    SetPtsData(MoFEM::ForcesAndSourcesCore &fe_method,
                     const double *eval_points, const int nb_eval_points,
                     const double eps, VERBOSITY_LEVELS verb = QUIET)
         : feMethod(fe_method), evalPoints(eval_points),
@@ -89,14 +89,14 @@ struct FieldEvaluatorInterface : public UnknownInterface {
    * @brief Default evaluator for setting integration points
    * 
    */
-  struct SetGaussPts {
-    SetGaussPts() = delete;
-    SetGaussPts(boost::shared_ptr<SetGasussData> data_ptr)
+  struct SetPts {
+    SetPts() = delete;
+    SetPts(boost::shared_ptr<SetPtsData> data_ptr)
         : dataPtr(data_ptr) {}
     MoFEMErrorCode operator()(int order_row, int order_col, int order_data);
 
   private:
-    boost::shared_ptr<SetGasussData> dataPtr;
+    boost::shared_ptr<SetPtsData> dataPtr;
   };
 
   /**
@@ -117,11 +117,11 @@ struct FieldEvaluatorInterface : public UnknownInterface {
     // use default evaluator for gauss points
 
     // make aliased shared pointer, data are destroyed when element is destroyed
-    boost::shared_ptr<FieldEvaluatorInterface::SetGasussData> data(
-        vol_ele, new FieldEvaluatorInterface::SetGasussData(
+    boost::shared_ptr<FieldEvaluatorInterface::SetPtsData> data(
+        vol_ele, new FieldEvaluatorInterface::SetPtsData(
           *vol_ele, eval_points.data(), eval_points.size() / 3, 1e-12));
     // set integration rule
-    vol_ele->setRuleHook = FieldEvaluatorInterface::SetGaussPts(data);
+    vol_ele->setRuleHook = FieldEvaluatorInterface::SetPts(data);
 
     // iterate over elemnts with evaluated points
     CHKERR m_field.getInterface<FieldEvaluatorInterface>()

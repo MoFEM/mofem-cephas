@@ -47,7 +47,7 @@ FieldEvaluatorInterface::buildTree3D(const std::string finite_element) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FieldEvaluatorInterface::SetGaussPts::
+MoFEMErrorCode FieldEvaluatorInterface::SetPts::
 operator()(int order_row, int order_col, int order_data) {
   MoFEMFunctionBegin;
 
