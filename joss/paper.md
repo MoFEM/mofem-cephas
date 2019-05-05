@@ -9,7 +9,7 @@ tags:
   - C++
   - HPC
 authors:
-  - name: Lukasz Kaczmarczyk
+  - name: Łukasz Kaczmarczyk
     orcid: 0000-0002-8468-5435
     affiliation: 1 
   - name: Zahur Ullah
