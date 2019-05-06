@@ -83,6 +83,7 @@ struct FieldEvaluatorInterface : public UnknownInterface {
 
     MatrixDouble localCoords;
     MatrixDouble shapeFunctions;
+    std::vector<EntityHandle> evalPointEntityHandle;
   };
 
   /**
@@ -150,6 +151,7 @@ struct FieldEvaluatorInterface : public UnknownInterface {
                       const std::string problem,
                      const std::string finite_element,
                      boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method, 
+                     boost::shared_ptr<SetPtsData> data_ptr,
                      int lower_rank,
                      int upper_rank, MoFEMTypes bh = MF_EXIST,
                      VERBOSITY_LEVELS verb = QUIET);

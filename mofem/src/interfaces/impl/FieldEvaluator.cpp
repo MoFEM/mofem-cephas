@@ -59,60 +59,12 @@ operator()(int order_row, int order_col, int order_data) {
 
   decltype(dataPtr->localCoords) &localCoords = dataPtr->localCoords;
   decltype(dataPtr->shapeFunctions) &shapeFunctions = dataPtr->shapeFunctions;
-
-  auto shape_check = [&](const auto &t_shape) {
-    if (
-
-        t_shape(0) >= 0 - eps && t_shape(0) <= 1 + eps &&
-
-        t_shape(1) >= 0 - eps && t_shape(1) <= 1 + eps &&
-
-        t_shape(2) >= 0 - eps && t_shape(2) <= 1 + eps &&
-
-        t_shape(3) >= 0 - eps && t_shape(3) <= 1 + eps
-
-    )
-      return true;
-    else
-      return false;
-  };
-
-  if (verb >= VERY_NOISY)
-    std::cout << std::endl << "Next" << std::endl;
-
-  const auto &elem_coords =
-      static_cast<VolumeElementForcesAndSourcesCore &>(feMethod).coords;
-
-  if (verb >= VERY_NOISY)
-    std::cout << "elem coords: " << elem_coords << std::endl;
-
-  if (verb >= VERY_NOISY)
-    std::cout << "nbEvalPoints " << nbEvalPoints << std::endl;
-
-  if( verb >= VERY_VERBOSE) {
-    std::cout << "evalPoints "
-              << getMatrixAdaptor(const_cast<double *>(evalPoints),
-                                  nbEvalPoints, 3)
-              << std::endl;
-  }
-
-  CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
-      &elem_coords[0], evalPoints, nbEvalPoints,
-      &*localCoords.data().begin());
-
-  if (verb >= VERY_NOISY)
-    std::cout << "local_coords: " << localCoords << endl;
-
-  if (verb >= VERY_NOISY)
-    std::cout << "shape: " << shapeFunctions << endl;
+  decltype(dataPtr->evalPointEntityHandle) &evalPointEntityHandle =
+      dataPtr->evalPointEntityHandle;
 
   MatrixDouble &gauss_pts = feMethod.gaussPts;
   gauss_pts.resize(4, nbEvalPoints, false);
   gauss_pts.clear();
-
-  CHKERR Tools::shapeFunMBTET<3>(&shapeFunctions(0, 0), &localCoords(0, 0),
-                                 &localCoords(0, 1), &localCoords(0, 2),
-                                 nbEvalPoints);
 
   FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape = {
       &shapeFunctions(0, 0), &shapeFunctions(0, 1), &shapeFunctions(0, 2),
@@ -122,7 +74,8 @@ operator()(int order_row, int order_col, int order_data) {
 
   int nb_gauss_pts = 0;
   for (int nn = 0; nn != nbEvalPoints; ++nn) {
-    if (shape_check(t_shape)) {
+    if (evalPointEntityHandle[nn] ==
+        feMethod.numeredEntFiniteElementPtr->getEnt()) {
       for (const int i : {0, 1, 2}) {
         t_gauss_pts(i) = t_shape(i + 1);
         gauss_pts(3, nb_gauss_pts) = nn;
@@ -149,8 +102,9 @@ operator()(int order_row, int order_col, int order_data) {
 MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
     const double *const point, const double distance, const std::string problem,
     const std::string finite_element,
-    boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method, int lower_rank,
-    int upper_rank, MoFEMTypes bh, VERBOSITY_LEVELS verb) {
+    boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method,
+    boost::shared_ptr<SetPtsData> data_ptr, int lower_rank, int upper_rank,
+    MoFEMTypes bh, VERBOSITY_LEVELS verb) {
   CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -164,13 +118,58 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
   if (verb >= VERY_NOISY)
     std::cout << "tree entities: " << tree_ents << endl;
 
+  data_ptr->evalPointEntityHandle.resize(data_ptr->nbEvalPoints);
+
+  for (auto tet : tree_ents) {
+
+    const EntityHandle *conn;
+    int num_nodes;
+    CHKERR m_field.get_moab().get_connectivity(tet, conn, num_nodes, true);
+    std::array<double, 12> coords;
+    CHKERR m_field.get_moab().get_coords(conn, num_nodes, coords.data());
+
+    for (int n = 0; n != data_ptr->nbEvalPoints; ++n) {
+
+      std::array<double, 3> local_coords;
+      CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
+          coords.data(), &data_ptr->evalPoints[3 * n], 1,
+          local_coords.data());
+
+      std::array<double, 4> shape;
+      CHKERR Tools::shapeFunMBTET<3>(shape.data(), &local_coords[0],
+                                     &local_coords[1], &local_coords[2], 1);
+
+      const double eps = data_ptr->eps;
+      if (shape[0] >= 0 - eps && shape[0] <= 1 + eps &&
+
+          shape[1] >= 0 - eps && shape[1] <= 1 + eps &&
+
+          shape[2] >= 0 - eps && shape[2] <= 1 + eps &&
+
+          shape[3] >= 0 - eps && shape[3] <= 1 + eps) {
+
+        std::copy(shape.begin(), shape.end(), &data_ptr->shapeFunctions(n, 0));
+        std::copy(local_coords.begin(), local_coords.end(),
+                  &data_ptr->localCoords(n, 0));
+        data_ptr->evalPointEntityHandle[n] = tet;
+      }
+    }
+  }
+
 
   const Problem *prb_ptr;
   CHKERR m_field.get_problem(problem, &prb_ptr);
   boost::shared_ptr<NumeredEntFiniteElement_multiIndex> numered_fes(
       new NumeredEntFiniteElement_multiIndex());
 
-  for (auto peit = tree_ents.pair_begin(); peit != tree_ents.pair_end();
+  Range in_tets;
+  in_tets.insert_list(data_ptr->evalPointEntityHandle.begin(),
+                      data_ptr->evalPointEntityHandle.end());
+
+  if (verb >= VERY_NOISY)
+    std::cout << "in tets: " << in_tets << endl;
+
+  for (auto peit = in_tets.pair_begin(); peit != in_tets.pair_end();
        ++peit) {
     auto lo =
         prb_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>()
