@@ -177,7 +177,7 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
             .lower_bound(boost::make_tuple(finite_element, peit->first));
     auto hi =
         prb_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>()
-            .lower_bound(boost::make_tuple(finite_element, peit->second));
+            .upper_bound(boost::make_tuple(finite_element, peit->second));
     numered_fes->insert(lo, hi);
 
     if (verb >= VERY_NOISY)

@@ -160,7 +160,7 @@ struct FieldEvaluatorInterface : public UnknownInterface {
 private:
 
   EntityHandle rooTreeSet;
-  boost::shared_ptr<BVHTree> treePtr;
+  boost::shared_ptr<AdaptiveKDTree> treePtr;
 
 };
 
