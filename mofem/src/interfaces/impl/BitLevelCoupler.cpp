@@ -517,8 +517,7 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
   std::vector<int> data_size(nb_elems);
 
   const Field_multiIndex *fields_ptr;
-  ierr = m_field.get_fields(&fields_ptr);
-  CHKERRG(ierr);
+  CHKERR m_field.get_fields(&fields_ptr);
   for (Field_multiIndex::iterator fit = fields_ptr->begin();
        fit != fields_ptr->end(); fit++) {
 

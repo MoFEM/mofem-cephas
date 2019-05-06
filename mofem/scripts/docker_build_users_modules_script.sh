@@ -35,7 +35,7 @@ fi
 
 echo "Run basic tests"
 cd $MOFEM_INSTALL_DIR
-make -j $NB
+make -k -j $NB; /bin/true
 ctest --output-on-failure -D Experimental
 make clean
 echo "All done"

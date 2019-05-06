@@ -64,6 +64,19 @@ if(DOXYGEN_FOUND)
   )
   add_dependencies(doc doxygen_copy_figures)
 
+  add_custom_target(doxygen_copy_avatar_figures
+    ${CMAKE_COMMAND} -E copy_directory
+    ${PROJECT_SOURCE_DIR}/doc/user_guide/figures ${PROJECT_BINARY_DIR}/html
+  )
+  add_dependencies(doc doxygen_copy_avatar_figures)
+
+  # copy slider to html directory created by doxygen
+  add_custom_target(doxygen_copy_slider
+    ${CMAKE_COMMAND} -E copy_directory
+    ${PROJECT_SOURCE_DIR}/doc/slider ${PROJECT_BINARY_DIR}/html
+  )
+  add_dependencies(doc doxygen_copy_slider)
+
   # copy google site verification file
   add_custom_target(doxygen_google_site_verification
     ${CMAKE_COMMAND} -E copy
@@ -72,6 +85,7 @@ if(DOXYGEN_FOUND)
   add_dependencies(doc doxygen_google_site_verification)
 
   # users modules docs
+  # FIXME: This only works if modules are in ${PROJECT_SOURCE_DIR}/users_modules
   file(
     GLOB_RECURSE INSTLLED_DOC_MODULES
     FOLLOW_SYMLINKS

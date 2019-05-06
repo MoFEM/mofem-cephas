@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #include <Includes.hpp>
 #include <version.h>
@@ -52,19 +52,37 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode NodeMergerInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
+MoFEMErrorCode
+NodeMergerInterface::query_interface(const MOFEMuuid &uuid,
+                                     UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
-  if(uuid == IDD_MOFEMNodeMerger) {
-    *iface = const_cast<NodeMergerInterface*>(this);
+  if (uuid == IDD_MOFEMNodeMerger) {
+    *iface = const_cast<NodeMergerInterface *>(this);
     MoFEMFunctionReturnHot(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
+  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
   MoFEMFunctionReturnHot(0);
 }
 
+static auto min_non_abs(const double a, const double b) {
+  return std::min(a, b);
+};
+
+NodeMergerInterface::NodeMergerInterface(const MoFEM::Core &core)
+    : cOre(const_cast<MoFEM::Core &>(core)), minQualityFunction(min_non_abs),
+      successMerge(false), errorIfNoCommonEdge(false) {}
+
 MoFEMErrorCode NodeMergerInterface::getSubInterfaceOptions() {
+  Interface &m_field = cOre;
   MoFEMFunctionBegin;
+  ierr = PetscOptionsBegin(m_field.get_comm(), "node_merge",
+                           "Node merge options", "none");
+  CHKERRQ(ierr);
+  
+  ierr = PetscOptionsEnd();
+  CHKERRQ(ierr);
+
   MoFEMFunctionReturn(0);
 }
 
@@ -73,7 +91,7 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
     const bool only_if_improve_quality, const double move,
     const int line_search, Tag th, int verb) {
   Interface &m_field = cOre;
-  FTensor::Index<'i',3> i;
+  FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
 
   // Get edges adjacent to father and mother, i.e. mother is merged to father.
@@ -81,15 +99,15 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
   CHKERR m_field.get_moab().get_adjacencies(&father, 1, 1, false, father_edges);
   Range mother_edges;
   CHKERR m_field.get_moab().get_adjacencies(&mother, 1, 1, false, mother_edges);
-  
+
   // Get tets adjacent to mother and father
   Range father_tets;
   CHKERR m_field.get_moab().get_adjacencies(&father, 1, 3, false, father_tets);
   Range mother_tets;
   CHKERR m_field.get_moab().get_adjacencies(&mother, 1, 3, false, mother_tets);
   if (tets_ptr != NULL) {
-    mother_tets = intersect(mother_tets,*tets_ptr);
-    father_tets = intersect(father_tets,*tets_ptr);
+    mother_tets = intersect(mother_tets, *tets_ptr);
+    father_tets = intersect(father_tets, *tets_ptr);
   }
 
   // Find common edge
@@ -107,7 +125,8 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
 
   // No common edge, merge no possible
   if (errorIfNoCommonEdge && common_edge.empty()) {
-    SETERRQ(PETSC_COMM_SELF, 1, "no common edge between nodes");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "no common edge between nodes");
   } else if (common_edge.empty()) {
     Range seed_tets;
     if (tets_ptr != NULL) {
@@ -130,7 +149,7 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
   father_tets = subtract(father_tets, edge_tets);
 
   auto get_coords = [&m_field](Tag th, const EntityHandle *conn,
-                                     const int num_nodes) {
+                               const int num_nodes) {
     VectorDouble coords(3 * num_nodes);
     if (th == NULL) {
       CHKERR m_field.get_moab().get_coords(conn, num_nodes, &coords[0]);
@@ -140,20 +159,18 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
     return coords;
   };
 
-  auto get_tensor = [](VectorDouble &coords,const int shift) {
+  auto get_tensor = [](VectorDouble &coords, const int shift) {
     return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-        &coords[shift], &coords[shift+1], &coords[shift+2]);
+        &coords[shift], &coords[shift + 1], &coords[shift + 2]);
   };
 
-
-
   // move father coord is move > 0
-  FTensor::Tensor1<double,3> t_move;
+  FTensor::Tensor1<double, 3> t_move;
   if (move > 0) {
     EntityHandle conn[] = {father, mother};
     VectorDouble coords = get_coords(th, conn, 2);
-    auto t_n0 = get_tensor(coords,0);
-    auto t_n1 = get_tensor(coords,3);
+    auto t_n0 = get_tensor(coords, 0);
+    auto t_n1 = get_tensor(coords, 3);
     t_move(i) = t_n0(i) + move * (t_n1(i) - t_n0(i));
   }
 
@@ -169,17 +186,15 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
       check_tests.merge(father_tets);
     }
 
-    auto abs_min = [](double a, double b) {
-      return std::min(fabs(a), fabs(b));
-
-    };
     double min_quality0 = 1;
-    CHKERR minQuality(edge_tets, 0, 0, NULL, min_quality0, th, abs_min);
-    CHKERR minQuality(check_tests, 0, 0, NULL, min_quality0, th, abs_min);
+    CHKERR minQuality(edge_tets, 0, 0, NULL, min_quality0, th,
+                      minQualityFunction);
+    CHKERR minQuality(check_tests, 0, 0, NULL, min_quality0, th,
+                      minQualityFunction);
     double min_quality = 1;
-    CHKERR minQuality(
-        check_tests, father, mother,
-        ((move > 0) || line_search) ? &t_move(0) : NULL, min_quality, th);
+    CHKERR minQuality(check_tests, father, mother,
+                      ((move > 0) || line_search) ? &t_move(0) : NULL,
+                      min_quality, th, minQualityFunction);
     if (min_quality < min_quality0) {
       if (tets_ptr != NULL) {
         out_tets = *tets_ptr;
@@ -187,7 +202,6 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
       successMerge = false;
       MoFEMFunctionReturnHot(0);
     }
-
   }
 
   // Move node
@@ -200,7 +214,7 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
   }
 
   auto get_conn = [&m_field](const EntityHandle ent,
-                               int *ret_num_nodes = nullptr) {
+                             int *ret_num_nodes = nullptr) {
     int num_nodes;
     const EntityHandle *conn;
     CHKERR m_field.get_moab().get_connectivity(ent, conn, num_nodes, true);
@@ -211,75 +225,52 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
 
   auto create_tet = [this, &m_field](const EntityHandle *new_conn,
                                      const EntityHandle parent) {
-      EntityHandle tet;
-      Range tets;
-      CHKERR m_field.get_moab().get_adjacencies(new_conn, 4, 3, false, tets);
-      bool tet_found = false;
-      for (auto it_tet : tets) {
-        const EntityHandle *tet_conn;
-        int num_nodes;
-        CHKERR m_field.get_moab().get_connectivity(it_tet, tet_conn, num_nodes,
-                                                   true);
-        const EntityHandle *p = std::find(tet_conn, &tet_conn[4], new_conn[0]);
-        if (p != &tet_conn[4]) {
-          int s = std::distance(tet_conn, p);
-          int n = 0;
-          for (; n != 4; ++n) {
-            const int idx[] = {0, 1, 2, 3, 0, 1, 2, 3};
-            if (tet_conn[idx[s + n]] != new_conn[n])
-              break;
-          }
-          if (n == 4 && !tet_found) {
-            tet = it_tet;
-            tet_found = true;
-          } else if(n == 4) {
-            THROW_MESSAGE("More that one tet with the same connectivity");
-          }
+    EntityHandle tet;
+    Range tets;
+    CHKERR m_field.get_moab().get_adjacencies(new_conn, 4, 3, false, tets);
+    bool tet_found = false;
+    for (auto it_tet : tets) {
+      const EntityHandle *tet_conn;
+      int num_nodes;
+      CHKERR m_field.get_moab().get_connectivity(it_tet, tet_conn, num_nodes,
+                                                 true);
+      const EntityHandle *p = std::find(tet_conn, &tet_conn[4], new_conn[0]);
+      if (p != tet_conn + 4) {
+        int s = std::distance(tet_conn, p);
+        int n = 0;
+        for (; n != 4; ++n) {
+          const int idx[] = {0, 1, 2, 3, 0, 1, 2, 3};
+          if (tet_conn[idx[s + n]] != new_conn[n])
+            break;
+        }
+        if (n == 4 && !tet_found) {
+          tet = it_tet;
+          tet_found = true;
+        } else if (n == 4) {
+          THROW_MESSAGE("More that one tet with the same connectivity");
         }
       }
-      if (!tet_found) {
-        // Create tet with new connectivity
-        CHKERR m_field.get_moab().create_element(MBTET, new_conn, 4, tet);
-        CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),
-                                               &tet, 1, &parent);
-        parentChildMap.insert(ParentChild(parent, tet));
-      } 
-      return tet;
-  };
-
-  auto swap_conn = [](EntityHandle *new_conn) {
-    EntityHandle n0 = new_conn[0];
-    new_conn[0] = new_conn[1];
-    new_conn[1] = n0;
-    return new_conn;
+    }
+    if (!tet_found) {
+      // Create tet with new connectivity
+      CHKERR m_field.get_moab().create_element(MBTET, new_conn, 4, tet);
+      CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),
+                                             &tet, 1, &parent);
+      parentChildMap.insert(ParentChild(parent, tet));
+    }
+    return tet;
   };
 
   // clear map
   parentChildMap.clear();
 
   Range created_tets;
-  Range negative_volume_tets;
-
-  for (auto f_tet : father_tets) {
-    const EntityHandle *conn = get_conn(f_tet);
-    VectorDouble coords = get_coords(th, conn, 4);
-    double new_v = Tools::tetVolume(&coords[0]);
-    if (new_v < 0) {
-      EntityHandle new_conn[4];
-      copy(conn, &conn[4], new_conn);
-      swap_conn(new_conn);
-      negative_volume_tets.insert(f_tet);
-      // add tet to range
-      created_tets.insert(create_tet(new_conn, f_tet));
-    }
-  }
-
   for (auto m_tet : mother_tets) {
     const EntityHandle *conn = get_conn(m_tet);
     EntityHandle new_conn[4];
     // Replace mother vertices by father vertices
     int nb_mother_verts = 0;
-    for (int nn = 0; nn < 4; nn++) {
+    for (int nn = 0; nn != 4; ++nn) {
       if (conn[nn] == father) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Tet has father vertex, impossible but here it is");
@@ -297,10 +288,6 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
     }
 
     VectorDouble new_coords = get_coords(th, new_conn, 4);
-    double new_v = Tools::tetVolume(&new_coords[0]);
-    if (new_v < 0) {
-      swap_conn(new_conn);
-    }
 
     // add tet to range
     created_tets.insert(create_tet(new_conn, m_tet));
@@ -315,7 +302,7 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
   FaceMapIdx face_map;
   for (auto ent : adj_father_ents) {
     int num_nodes;
-    const EntityHandle *conn = get_conn(ent,&num_nodes);
+    const EntityHandle *conn = get_conn(ent, &num_nodes);
     EntityHandle small_conn[num_nodes];
     int ii = 0;
     int nn = 0;
@@ -393,8 +380,7 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
   Range seed_tets;
   if (tets_ptr != NULL) {
     seed_tets.merge(*tets_ptr);
-    mother_tets.merge(negative_volume_tets);
-    mother_tets.merge(edge_tets);
+    seed_tets = subtract(seed_tets, edge_tets);
     seed_tets = subtract(seed_tets, mother_tets);
   }
   seed_tets.merge(created_tets);
@@ -416,6 +402,7 @@ NodeMergerInterface::minQuality(Range &check_tests, EntityHandle father,
                                 boost::function<double(double, double)> f) {
   Interface &m_field = cOre;
   double coords[12];
+  FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
   for (Range::iterator tit = check_tests.begin(); tit != check_tests.end();
        tit++) {
@@ -426,14 +413,14 @@ NodeMergerInterface::minQuality(Range &check_tests, EntityHandle father,
       EntityHandle new_conn[4];
       // Replace mother vertices by father vertices
       int nb_mother_verts = 0;
-      int father_nn       = 0;
+      int father_nn = 0;
       for (int nn = 0; nn < 4; nn++) {
         if (conn[nn] == father) {
           father_nn = nn;
         }
         if (conn[nn] == mother) {
           new_conn[nn] = father;
-          father_nn    = nn;
+          father_nn = nn;
           nb_mother_verts++;
         } else {
           new_conn[nn] = conn[nn];
@@ -463,7 +450,11 @@ NodeMergerInterface::minQuality(Range &check_tests, EntityHandle father,
       }
     }
     double quality = Tools::volumeLengthQuality(coords);
-    min_quality    = fmin(min_quality, quality);
+    if (!std::isnormal(quality)) {
+      min_quality = 0;
+      MoFEMFunctionReturnHot(0);
+    }
+    min_quality = f(min_quality, quality);
   }
   MoFEMFunctionReturn(0);
 };
@@ -478,45 +469,39 @@ NodeMergerInterface::lineSearch(Range &check_tests, EntityHandle father,
   EntityHandle conn[] = {father, mother};
 
   double coords[6];
-  if(th == NULL) {
-    CHKERR m_field.get_moab().get_coords(conn,2,coords);
+  if (th == NULL) {
+    CHKERR m_field.get_moab().get_coords(conn, 2, coords);
   } else {
-    CHKERR m_field.get_moab().tag_get_data(th,conn,2,coords);
+    CHKERR m_field.get_moab().tag_get_data(th, conn, 2, coords);
   }
 
-  FTensor::Index<'i',3> i;
-  FTensor::Tensor1<double,3> t_coords(
-    coords[0],coords[1],coords[2]
-  );
-  FTensor::Tensor1<double,3> t_delta;
-  for(int nn = 0;nn!=3;nn++) {
-    t_delta(nn) = coords[3+nn]-t_coords(nn);
+  FTensor::Index<'i', 3> i;
+  FTensor::Tensor1<double, 3> t_coords(coords[0], coords[1], coords[2]);
+  FTensor::Tensor1<double, 3> t_delta;
+  for (int nn = 0; nn != 3; nn++) {
+    t_delta(nn) = coords[3 + nn] - t_coords(nn);
   }
 
   t_move(i) = t_coords(i);
   double min_quality_i = 1;
-  auto abs_min = [](double a, double b) { 
-    return std::min(fabs(a), fabs(b)); 
-   };
   CHKERR minQuality(check_tests, father, mother, &t_move(0), min_quality_i, th,
-                    abs_min);
+                    minQualityFunction);
 
   t_move(i) = t_coords(i) + t_delta(i);
   double min_quality_k = 1;
   CHKERR minQuality(check_tests, father, mother, &t_move(0), min_quality_k, th,
-                    abs_min);
+                    minQualityFunction);
 
   double alpha_i = 0;
   double alpha_k = 1;
 
   for (int ii = 0; ii != line_search; ii++) {
     double min_quality = 1;
-    double alpha = (alpha_i+alpha_k)*0.5;
+    double alpha = (alpha_i + alpha_k) * 0.5;
     t_move(i) = t_coords(i) + alpha * t_delta(i);
-    ierr = minQuality(
-      check_tests,father,mother,&t_move(0),min_quality,th
-    ); CHKERRG(ierr);
-    if(min_quality_i >=  min_quality_k) {
+    CHKERR minQuality(check_tests, father, mother, &t_move(0), min_quality, th,
+                      minQualityFunction);
+    if (min_quality_i >= min_quality_k) {
       min_quality_k = min_quality;
       alpha_k = alpha;
     } else {
@@ -525,53 +510,39 @@ NodeMergerInterface::lineSearch(Range &check_tests, EntityHandle father,
     }
   }
 
-  if(min_quality_i > min_quality_k) {
-    t_move(i) = t_coords(i)+alpha_i*t_delta(i);
-    // cerr << min_quality_i << endl << endl;
+  if (min_quality_i > min_quality_k) {
+    t_move(i) = t_coords(i) + alpha_i * t_delta(i);
   } else {
-    t_move(i) = t_coords(i)+alpha_k*t_delta(i);
-    // cerr << min_quality_k << endl << endl;
+    t_move(i) = t_coords(i) + alpha_k * t_delta(i);
   }
 
   MoFEMFunctionReturn(0);
 }
 
-
 MoFEMErrorCode NodeMergerInterface::mergeNodes(
-  EntityHandle father,
-  EntityHandle mother,
-  BitRefLevel bit,
-  Range *tets_ptr,
-  const bool only_if_improve_quality,
-  const double move,Tag th
-) {
-  Interface& m_field = cOre;
-  MoFEMFunctionBeginHot;
+    EntityHandle father, EntityHandle mother, BitRefLevel bit, Range *tets_ptr,
+    const bool only_if_improve_quality, const double move, Tag th) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
   Range out_tets;
-  ierr = mergeNodes(
-    father,mother,out_tets,tets_ptr,only_if_improve_quality,move,0,th
-  ); CHKERRG(ierr);
-  ierr = m_field.getInterface<BitRefManager>()->setBitRefLevel(out_tets,bit); CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR mergeNodes(father, mother, out_tets, tets_ptr, only_if_improve_quality,
+                    move, 0, th);
+  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(out_tets, bit);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode NodeMergerInterface::mergeNodes(
-  EntityHandle father,
-  EntityHandle mother,
-  BitRefLevel bit,
-  BitRefLevel tets_from_bit_ref_level,
-  const bool only_if_improve_quality,
-  const double move,Tag th
-) {
-  Interface& m_field = cOre;
-  MoFEMFunctionBeginHot;
+    EntityHandle father, EntityHandle mother, BitRefLevel bit,
+    BitRefLevel tets_from_bit_ref_level, const bool only_if_improve_quality,
+    const double move, Tag th) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
   Range level_tets;
-  ierr = m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-    tets_from_bit_ref_level,BitRefLevel().set(),MBTET,level_tets
-  ); CHKERRG(ierr);
-  ierr = mergeNodes(father,mother,bit,&level_tets,only_if_improve_quality,move,th); CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+      tets_from_bit_ref_level, BitRefLevel().set(), MBTET, level_tets);
+  CHKERR mergeNodes(father, mother, bit, &level_tets, only_if_improve_quality,
+                    move, th);
+  MoFEMFunctionReturn(0);
 }
 
-
-}
+} // namespace MoFEM

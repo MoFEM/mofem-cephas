@@ -200,6 +200,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   const RefElement_multiIndex *refined_finite_elements_ptr;
   MoFEMFunctionBegin;
 
+  // Check if refinement is correct
   struct Check {
     map<EntityHandle, EntityHandle> entParentMap;
     MoFEMErrorCode operator()(Range *ref_edges,

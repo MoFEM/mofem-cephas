@@ -69,7 +69,7 @@ namespace MoFEM {
      * @return             error code
      */
     MoFEMErrorCode minTetsQuality(const Range &tets, double &min_quality,
-                                  Tag th = NULL,
+                                  Tag th = nullptr,
                                   boost::function<double(double, double)> f =
                                       [](double a, double b) -> double {
                                     return std::min(a, b);
@@ -85,7 +85,7 @@ namespace MoFEM {
      * @return MoFEMErrorCode 
      */
     MoFEMErrorCode
-    getTetsWithQuality(Range &out_tets, const Range &tets, Tag th = NULL,
+    getTetsWithQuality(Range &out_tets, const Range &tets, Tag th = nullptr,
                        boost::function<bool(double)> f = [](double q) -> bool {
                          if (q <= 0)
                            return true;
@@ -105,7 +105,7 @@ namespace MoFEM {
      */
     MoFEMErrorCode writeTetsWithQuality(
         const char *file_name, const char *file_type, const char *options,
-        const Range &tets, Tag th = NULL,
+        const Range &tets, Tag th = nullptr,
         boost::function<bool(double)> f = [](double q) -> bool {
           if (q <= 0)
             return true;
@@ -167,6 +167,81 @@ namespace MoFEM {
      * @return double 
      */
     double getEdgeLength(const EntityHandle edge);
+
+    enum SEGMENT_MIN_DISTANCE {
+      SOLUTION_EXIST,
+      SEGMENT_ONE_IS_POINT,
+      SEGMENT_TWO_IS_POINT,
+      SEGMENT_TWO_AND_TWO_ARE_POINT,
+      NO_SOLUTION
+    };
+
+    /**
+     * @brief Find closet point on the segment from the point
+     *
+     * @param w_ptr segment first vertex coordinate
+     * @param v_ptr segment second vertex coordinate
+     * @param p_ptr coordinate of point
+     * @param t_ptr distance on the segment
+     *
+     * \note If t is outside bounds [ 0,-1 ] point is on the line point beyond
+     * segment.
+     *
+     * \code
+     * 
+     * double w[] = {-1, 0, 0};
+     * double v[] = {1, 0, 0};
+     * double p[] = {0, 1, 0};
+     * double t;
+     * CHKERR Toolas::minDistancePointFromOnSegment(w, v, p, &t);
+     * double point_on_segment[3];
+     * for (int i = 0; i != 3; ++i)
+     *   point_on_segment[i] = w[i] + t * (v[i] - w[i]);
+     *
+     * \endcode
+     *
+     * @return SEGMENT_MIN_DISTANCE
+     */
+    static SEGMENT_MIN_DISTANCE
+    minDistancePointFromOnSegment(const double *w_ptr, const double *v_ptr,
+                                  const double *p_ptr,
+                                  double *const t_ptr = nullptr);
+    /**
+     * @brief Find points on two segments in closest distance
+     * 
+     * @param w_ptr 
+     * @param v_ptr 
+     * @param k_ptr 
+     * @param l_ptr 
+     * @param tvw_ptr 
+     * @param tlk_ptr 
+     * @return SEGMENT_MIN_DISTANCE 
+     * 
+     * \note If tvwk or tlk are outside bound [0,-1], it means that points
+     * are on the lines beyond segments, respectively for segment vw and lk.
+     * 
+     */
+    static SEGMENT_MIN_DISTANCE
+    minDistanceFromSegments(const double *w_ptr, const double *v_ptr,
+                            const double *k_ptr, const double *l_ptr,
+                            double *const tvw_ptr = nullptr,
+                            double *const tlk_ptr = nullptr);
+
+    /**
+     * @brief Find minimal distance to edges
+     * 
+     * \note Finding only edges with have smaller distance than distance
+     * set on the input by min_dist_ptr
+     * 
+     * @param v_ptr point coordinates
+     * @param edges range of edges
+     * @param min_dist_ptr on return minimal distance, on input starting distance
+     * @param o_ptr coordinates of the point on edge
+     * @return MoFEMErrorCode 
+     */
+    MoFEMErrorCode findMinDistanceFromTheEdges(const double *v_ptr, Range edges,
+                                               double *min_dist_ptr,
+                                               double *o_ptr) const;
 
     /**@}*/
 

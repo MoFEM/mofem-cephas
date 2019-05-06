@@ -66,7 +66,7 @@ struct MeshRefinement : public UnknownInterface {
    */
   virtual MoFEMErrorCode add_verices_in_the_middel_of_edges(
       const EntityHandle meshset, const BitRefLevel &bit,
-      const bool recursive = false, int verb = -1, EntityHandle start_v = 0);
+      const bool recursive = false, int verb = QUIET, EntityHandle start_v = 0);
 
   /**
    * \brief make vertices in the middle of edges in meshset and add them to
@@ -85,28 +85,34 @@ struct MeshRefinement : public UnknownInterface {
    */
   virtual MoFEMErrorCode
   add_verices_in_the_middel_of_edges(const Range &edges, const BitRefLevel &bit,
-                                     int verb = 0, EntityHandle start_v = 0);
+                                     int verb = QUIET,
+                                     EntityHandle start_v = 0);
 
   /**\brief refine TET in the meshset
    *
    * \param EntityHandle meshset
    * \param BitRefLevel bitLevel
-   * \param If TRUE, interface elements would be refined too
+   * \param bool respect_interface If TRUE, interface elements would be refined
+   * \param verb verbosity level
+   * \param Range * pointer to range in not null check consistency of refinement
    */
   virtual MoFEMErrorCode refine_TET(const EntityHandle meshset,
                                     const BitRefLevel &bit,
                                     const bool respect_interface = false,
-                                    int verb = 0, Range *ref_edges = NULL);
+                                    int verb = QUIET, Range *ref_edges = NULL);
 
   /**\brief refine TET in the meshset
    *
    * \param Range of tets to refine
    * \param BitRefLevel bitLevel
-   * \param If TRUE, interface elements would be refined too
+   * \param BitRefLevel bitLevel
+   * \param bool respect_interface If TRUE, interface elements would be refined
+   * \param verb verbosity level
+   * \param Range * pointer to range in not null check consistency of refinement
    */
   virtual MoFEMErrorCode refine_TET(const Range &tets, const BitRefLevel &bit,
                                     const bool respect_interface = false,
-                                    int verb = 0, Range *ref_edges = NULL);
+                                    int verb = QUIET, Range *ref_edges = NULL);
 
   /**\brief refine PRISM in the meshset
    *
@@ -114,7 +120,7 @@ struct MeshRefinement : public UnknownInterface {
    * \param BitRefLevel bitLevel
    */
   virtual MoFEMErrorCode refine_PRISM(const EntityHandle meshset,
-                                      const BitRefLevel &bit, int verb = 0);
+                                      const BitRefLevel &bit, int verb = QUIET);
 
   /**\brief refine meshset, i.e. add child of refined entities to meshset
    *
@@ -127,15 +133,15 @@ struct MeshRefinement : public UnknownInterface {
   virtual MoFEMErrorCode refine_MESHSET(const EntityHandle meshset,
                                         const BitRefLevel &bit,
                                         const bool recursive = false,
-                                        int verb = 0);
+                                        int verb = QUIET);
 };
 
 } // namespace MoFEM
 
 #endif // __MESHREFINE_HPP__
 
-/***************************************************************************/ /**
+/**
  * \defgroup mofem_refiner MeshRefinement
  * \brief Refine mesh by splitting edges
  *
- ******************************************************************************/
+ */

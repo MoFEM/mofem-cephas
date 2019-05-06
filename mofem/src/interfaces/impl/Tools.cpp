@@ -79,6 +79,8 @@ Tools::minTetsQuality(const Range &tets, double &min_quality, Tag th,
       CHKERR moab.get_coords(conn, num_nodes, coords);
     }
     double q = Tools::volumeLengthQuality(coords);
+    if(!std::isnormal(q))
+      q = -2;
     min_quality = f(q, min_quality);
   }
   MoFEMFunctionReturn(0);
@@ -253,6 +255,153 @@ double Tools::getEdgeLength(const EntityHandle edge) {
   ierr = get_edge_coords(coords);
   CHKERRABORT(PETSC_COMM_SELF, ierr);
   return getEdgeLength(coords);
+}
+
+Tools::SEGMENT_MIN_DISTANCE
+Tools::minDistancePointFromOnSegment(const double *w_ptr, const double *v_ptr,
+                                     const double *p_ptr, double *const t_ptr) {
+  FTensor::Index<'i', 3> i;
+  FTensor::Tensor1<const double *, 3> t_w(&w_ptr[0], &w_ptr[1], &w_ptr[2]);
+  FTensor::Tensor1<const double *, 3> t_v(&v_ptr[0], &v_ptr[1], &v_ptr[2]);
+  FTensor::Tensor1<const double *, 3> t_p(&p_ptr[0], &p_ptr[1], &p_ptr[2]);
+  FTensor::Tensor1<double, 3> t_vw;
+  t_vw(i) = t_v(i) - t_w(i);
+  const double dot_vw = t_vw(i) * t_vw(i);
+  if (dot_vw == 0) {
+    if (t_ptr)
+      *t_ptr = 0;
+    return SEGMENT_ONE_IS_POINT;
+  }
+  FTensor::Tensor1<double, 3> t_pw;
+  t_pw(i) = t_p(i) - t_w(i);
+  const double t = t_pw(i) * t_vw(i) / dot_vw;
+  if (t_ptr)
+    *t_ptr = t;
+  return SOLUTION_EXIST;
+}
+
+Tools::SEGMENT_MIN_DISTANCE
+Tools::minDistanceFromSegments(const double *w_ptr, const double *v_ptr,
+                            const double *k_ptr, const double *l_ptr,
+                            double *const tvw_ptr, double *const tlk_ptr) {
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Tensor1<const double *, 3> t_w(&w_ptr[0], &w_ptr[1], &w_ptr[2]);
+  FTensor::Tensor1<const double *, 3> t_v(&v_ptr[0], &v_ptr[1], &v_ptr[2]);
+  FTensor::Tensor1<const double *, 3> t_k(&k_ptr[0], &k_ptr[1], &k_ptr[2]);
+  FTensor::Tensor1<const double *, 3> t_l(&l_ptr[0], &l_ptr[1], &l_ptr[2]);
+
+  // First segnent is a point
+  FTensor::Tensor1<double, 3> t_vw;
+  t_vw(i) = t_v(i) - t_w(i);
+  double dot_vw = t_vw(i) * t_vw(i);
+  if (dot_vw == 0) {
+    if (tvw_ptr)
+      *tvw_ptr = 0;
+    if (minDistancePointFromOnSegment(k_ptr, l_ptr, w_ptr, tlk_ptr) ==
+        SEGMENT_ONE_IS_POINT)
+      return SEGMENT_TWO_AND_TWO_ARE_POINT;
+    else
+      return SEGMENT_ONE_IS_POINT;
+  }
+
+  // Second segment is a point
+  FTensor::Tensor1<double, 3> t_lk;
+  t_lk(i) = t_l(i) - t_k(i);
+  double dot_lk = t_lk(i) * t_lk(i);
+  if (dot_lk == 0) {
+    if (tlk_ptr)
+      *tlk_ptr = 0;
+    if (minDistancePointFromOnSegment(w_ptr, v_ptr, k_ptr, tvw_ptr) ==
+        SEGMENT_ONE_IS_POINT)
+      return SEGMENT_TWO_AND_TWO_ARE_POINT;
+    else
+      return SEGMENT_TWO_IS_POINT;
+  }
+
+  const double a = t_vw(i) * t_vw(i);
+  const double b = -t_vw(i) * t_lk(i);
+  const double c = t_lk(i) * t_lk(i);
+
+  const double det = a * c - b * b;
+  if(det == 0) {
+
+    return NO_SOLUTION;
+
+  } else {
+    
+    FTensor::Tensor1<double, 3> t_wk;
+    t_wk(i) = t_w(i) - t_k(i);
+
+    const double ft0 = t_vw(i) * t_wk(i);
+    const double ft1 = -t_lk(i) * t_wk(i);
+    const double t0 = (ft1 * b - ft0 * c) / det;
+    const double t1 = (ft0 * b - ft1 * a) / det;
+
+    if (tvw_ptr)
+      *tvw_ptr = t0;
+    if (tlk_ptr)
+      *tlk_ptr = t1;
+
+    return SOLUTION_EXIST;
+  }
+}
+
+MoFEMErrorCode Tools::findMinDistanceFromTheEdges(const double *v_ptr,
+                                                  Range edges,
+                                                  double *min_dist_ptr,
+                                                  double *o_ptr) const {
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab(m_field.get_moab());
+  MoFEMFunctionBegin;
+
+  FTensor::Index<'i', 3> i;
+
+  auto get_point = [i](auto &t_w, auto &t_delta, auto t) {
+    FTensor::Tensor1<double, 3> t_p;
+    t = std::max(0., std::min(1., t));
+    t_p(i) = t_w(i) + t * t_delta(i);
+    return t_p;
+  };
+
+  auto get_distance = [i](auto &t_p, auto &t_n) {
+    FTensor::Tensor1<double, 3> t_dist_vector;
+    t_dist_vector(i) = t_p(i) - t_n(i);
+    return sqrt(t_dist_vector(i) * t_dist_vector(i));
+  };
+
+  FTensor::Tensor1<const double *, 3> t_n(v_ptr, &v_ptr[1], &v_ptr[2]);
+  double &min_dist = *min_dist_ptr;
+  FTensor::Tensor1<double *, 3> t_min_coords(o_ptr, &o_ptr[1], &o_ptr[2]);
+
+  for (auto e : edges) {
+
+    int num_nodes;
+    const EntityHandle *conn_fixed;
+    CHKERR moab.get_connectivity(e, conn_fixed, num_nodes, true);
+    VectorDouble6 coords_fixed(6);
+    CHKERR moab.get_coords(conn_fixed, num_nodes, &coords_fixed[0]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f0(
+        &coords_fixed[0], &coords_fixed[1], &coords_fixed[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f1(
+        &coords_fixed[3], &coords_fixed[4], &coords_fixed[5]);
+
+    FTensor::Tensor1<double, 3> t_edge_delta;
+    t_edge_delta(i) = t_f1(i) - t_f0(i);
+
+    double t;
+    if (Tools::minDistancePointFromOnSegment(&t_f0(0), &t_f1(0), &t_n(0), &t) ==
+        Tools::SOLUTION_EXIST) {
+      auto t_p = get_point(t_f0, t_edge_delta, t);
+      auto dist_n = get_distance(t_p, t_n);
+      if (dist_n < min_dist || min_dist < 0) {
+        t_min_coords(i) = t_p(i);
+        min_dist = dist_n;
+      }
+    }
+  }
+
+  MoFEMFunctionReturn(0);
 }
 
 } // end of MoFEM name space

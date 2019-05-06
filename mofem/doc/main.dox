@@ -1,185 +1,171 @@
-/*! \mainpage MoFEM landing page
+/*! \mainpage Landing page
 
 \htmlinclude doc/search_tags.html
 
-\section introduction Introduction
-
-MoFEM (Mesh Oriented Finite Element Method) \cite mofem_v0.5.42 it is C++
-library supporting the solution of finite elements problems. Is developed to
-provide free and open, inclusive, participation community finite element code
-for engineers, students and academics.
-
-MoFEM is a finite element analysis code tailored for the solution of
-multi-physics problems with arbitrary levels of approximation, different levels
-of mesh refinement and optimised for high-performance computing. It is designed
-to be able to manage complexities related to a heterogeneous order of
-approximations for L2,H1,H-div and H-curl spaces, see \cite NME:NME847 
-and \cite fuentes2015orientation.
-
-MoFEM manages complexity related to finite element approximation and bookkeeping
-related do degrees of freedom and finite elements. It is part of bigger
-software ecosystem, composed of the Boost MultiIndex containers, MOAB (Mesh
-Oriented Database) \cite tautges_moab:2004 and PETSc (Portable, Extensible
-Toolkit for Scientific Computation) \cite petsc-web-page. MoFEM is developed in
-C++ and it is open-source software under the GNU Lesser General Public License
-(see \ref legal_stuff) Stuff.
-
-MoFEM can read and write a number of mesh file formats using functionality
-provided by MoAB.  The current version of MoFEM has full support for
-CUBIT/TRELIS, TetGEN, Salome/Code_Aster (MED format) for pre-processing and
-ParaView for post-processing.
-
-- \ref mofem_citation
 \htmlonly
-<a href="https://doi.org/10.5281/zenodo.438712"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.438712.svg" alt="DOI"></a>
+<html>
+<head>
+	<title>MoFEM</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<meta name="description" content="MoFEM - An open source, parallel finite
+	element library" />
+
+</head>
 \endhtmlonly
-- All results from testing on the clouds are submitted to <a href=http://cdash.eng.gla.ac.uk/cdash/>CDash</a>
-- Mailing list: <a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a>
-- Discussion channel: <https://mofem.slack.com/>
-- Version repository: <https://bitbucket.org/likask/mofem-cephas>
 
-\tableofcontents
+\image html mofem_logo.png " " width = 500px
 
-\section mofem_motivation Motivation and unique capabilities
+<h1 style="font-weight:200;font-size:150%"><center>An open source, parallel finite element library</center></h1>
 
-Building a scientific simulation environment for finite element methods is a
-complicated task. The greatest part of finite element code development is often
-expended in dealing with technical problems related to software implementation,
-rather than resolving the underlying physics that the code is intended to
-tackle.
+\htmlonly
+<style>
+    .table-spacing td {
+        padding: 10px;
+    }
+</style>
 
-The demand for accurate solution of increasingly complicated real-world problems
-means that the underlying data structures also become increasingly complicated.
-This is particularly evident with multi-physics, hp-adaptivity, and/or evolving
-geometries (e.g. crack propagation). Established commercial software is often
-limited in this respect, or can be relatively slow to adopt new technologies.
-This is the problem that MoFEM attempts to work around, recognising that it is
-increasingly necessary for engineers, scientists and mathematicians to carry out
-calculations using several mesh refinements, different approximation orders,
-multiple degrees of freedom and/or different scales.
+<table class="table-spacing">
 
-\section mofem_applications Examples and applications
+    <tr>
+        <td style="text-align:center">
+            <h2 style="font-weight:200;">The library</h2>
+        </td>
+        <td style="text-align:center">
+            <h2 style="font-weight:200;">Scalability</h2>
+        </td>
+        <td style="text-align:center">
+            <h2 style="font-weight:200;">Getting started</h2>
+        </td>
+    </tr>
+    <tr>
+        <td class="tg"><a style="font-weight:bold"
+                href="namespace_mo_f_e_m.html">MoFEM</a> is an open source (<a
+                href=https://www.gnu.org/licenses/lgpl.html>GNU LGPL</a>) C++
+                finite element library. It is capable of dealing with complex
+                multi-physics problems with arbitrary levels of approximation
+                and refinement. <a style="font-weight:bold"
+                href="namespace_mo_f_e_m.html">MoFEM</a> can read various input
+            file formats, and work with
+            preprocessors like Gmsh, Salome, Cubit, and many more.
+        </td>
 
-MoFEM is continuously applied to new engineering and research problems,
-notably so far has been used to solve
+        <td class="tg"><a style="font-weight:bold"
+                href="namespace_mo_f_e_m.html">MoFEM</a> can be used for
+            parallel processing on desktop
+            computers and high-performance clusters. Its modular toolkit-like
+            structure
+            allows for development of open modules and private industrial
+            sensitive
+            projects. At the same time, it is designed to suit both researchers
+            developing
+            computer methods and engineers solving real practical problems.
+        </td>
 
-- Multi-scale/Multi-physics analysis of composites
-- Fracture mechanics ideally brittle and nonlinear fracture
-- Acoustics and micro-fluidics 
-- Bone remodeling and mapping fields from CT-scans
-- Force identification in cell engineering
-- Multi-physics modelling of gels/cellulose/wood
-- Unsaturated flows with mix formulation
-- Shells and plates
-- Plasticity
-- Magnetics
-- Contact mechanics
-- and more
+        <td class="tg"><a style="font-weight:bold"
+                href="usersmain.html">Getting started</a> offers a wide range of
+            information including guides on installation, basic tutorials,
+            instructive videos. <a style="font-weight:bold"
+                href="developersmain.html">Developer</a> section contains <a
+                style="font-weight:bold"
+                href="namespace_mo_f_e_m.html">MoFEM</a> design
+            philosophy and tutorials on how to implement problems from solid
+            mechanics to fluid
+            mechanics.
+        </td>
+    </tr>
+</table>
+\endhtmlonly
 
-\image html FigExamples.png width=1000px
 
-\section mofem_features Properties and features
+\htmlonly
 
-\subsection mofem_features_ho Higher-order finite element spaces
+<head>
+    <link rel="stylesheet" type="text/css" href="engine1/style.css" />
+</head>
 
-- MoFEM supports wide range of spaces, L2, H1, H-div and H-curl
+<body style="background-color:#ffffff;margin:auto">
 
-- Numerical trace (interfacial) spaces, on faces and edges
+    <div id="wowslider-container1">
+        <div class="ws_images">
+            <ul>
+                <li><a href="benchmarks_edf_tets.html"><img
+                            src="slider_configurational_fracture.png" alt="Configurational
+                Fracture" title="Configurational Fracture" /></a></li>
+                <li><a
+                        href="https://bitbucket.org/karol41/mofem_um_phase_field_fracture/src/master/"><img
+                            src="slider_phase_field_fracture.png"
+                            alt="Phase-field Fracture"
+                            title="Phase-field Fracture" /></a></li>
 
-- Integration on skeleton, (enabling easy implementation of Discontinuous Galerkin or Nitsche method)
+                <li><a
+                        href="https://bitbucket.org/IgnatiosAthanasiadis/mofem_um_contact_mechanics_ignatios/src/master/"><img
+                            src="slider_mortar_contact.png" alt="Mortar Contact"
+                            title="Mortar Contact" /></a></li>
 
-\subsection mofem_features_discretisation Flexible discretization
+                <li><a
+                        href="https://bitbucket.org/likask/mofem_um_solid_shell_prism_element/src/master/"><img
+                            src="slider_solid_shell.png" alt="Solid Shell"
+                            title="Solid Shell" /></a></li>
 
-- Mixed and coupled finite elements
+                <li><a
+                        href="https://bitbucket.org/likask/mofem_um_bone_remodelling/src/master/"><img
+                            src="slider_bone_remodelling.png"
+                            alt="Bone Remodelling"
+                            title="Bone Remodelling" /></a></li>
+                
+                <li><a
+                        href="http://mofem.eng.gla.ac.uk/mofem/html/"><img
+                            src="slider_navier_stokes.png"
+                            alt="Navier-Stokes Equations"
+                            title="Navier-Stokes Equations" /></a></li>
 
-- Interface (e.g. cohesive) elements and shell elements
+                <li><a
+                        href="https://bitbucket.org/karol41/mofem_um_topology_optimization/src/master/"><img
+                            src="slider_topology_optimisation.png"
+                            alt="Topology Optimisation"
+                            title="Topology Optimisation" /></a></li>
 
-- Automatic Differentiation by OverLoading in C++ (<a href=https://projects.coin-or.org/ADOL-C>ADOL-C</a>). 
-	Applied to automatic calculation of consistent tangent
-	matrix for any smooth plastic surface and non-associated plastic flow potential.
+                <li><a
+                        href="https://bitbucket.org/mofem/um_eshelbian_plasticity/src/master/"><img
+                            src="slider_plasticity.png" alt="Plasticity"
+                            title="Plasticity" /></a></li>
 
-\subsection mofem_features_mesh_types Range of mesh types and topological operations
+                <li><a href=""><img src="slider_magnetostatics.png"
+                            alt="Magnetostatics" title="Magnetostatics" /></a>
+                </li>
 
-MoFEM is implemented with the use of MoAB and deliver the great flexibility of
-managing meshes. We can manage range elements types, e.g. prisms, triangles,
-quads, bricks and more.
+                <li><a
+                        href="https://bitbucket.org/karol41/mofem_um_cell_engineering/src/master/"><img
+                            src="slider_cell_traction_microscopy.png"
+                            alt="Cell Traction Microscopy"
+                            title="Cell Traction Microscopy" /></a></li>
 
-- Unique and extremely flexible \e BitRef Levels (see \ref mix_mesh_refinement)
+                <li><a href="mix_transport.html"><img
+                            src="slider_mix_transport_element.png"
+                            alt="Mixed Transport Element"
+                            title="Mixed Transport Element" /></a></li>
 
-- Conforming mesh refinement and through MoAB non-conforming mesh refinement.
+                <li><a href="sope_film.html"><img src="slider_soap_film.png"
+                            alt="Soap Film" title="Soap Film" /></a></li>
 
-- Spatial searching and ray tracing (MOAB)
+                <li><a href="https://bitbucket.org/likask/mofem_um_helmholtz"><img
+                            src="slider_acoustic_wave.png" alt="Acoustic Wave"
+                            title="Acoustic Wave" /></a></li>
 
-- Distributed meshes (MOAB)
+            </ul>
+        </div>
+    </div>
+    <script type="text/javascript" src="engine1/wowslider.js"></script>
+    <script type="text/javascript" src="engine1/script.js"></script>
 
-- Arbitrary order definition of mesh geometry
+</body>
 
-- Readers and writers for many file formats (MOAB)
-
-- Meshing and re-meshing on the flay
-
-- Ability to capture evolving topologies, e.g. implicit crack propagation analysis
-
-- Mesh smoothing and Arbitrary Lagrangian Eulerian Formulation
-
-\subsection mofem_features_hpc Parallel and scalable
-
-MoFEM supports MPI-based parallelism throughout the library, and can readily be
-used as a scalable unstructured finite element problem generator. Algebra is
-building on top of PETSc and geometry description on top of MoAB, both
-implementations are tailored for massive parallel calculations.
-
-- %Number of solvers available from PETSc
-
-- Multi-grid solvers
-
-- Efficient tensor library (see \ref ftenso_readme)
-
-- h/p- mesh adaptivity
-
-\section twitter_and_google_plus Recent developments and news
+\endhtmlonly
+<br>
+<br>
+<br>
+<br>
 
 \htmlinclude doc/twitter_widged.html
-
-\section mofem_openhub Stats and long-term development 
-
-- Stable, systematic, continuous and reliable  development. 
-
-- A team of passionate developers and contributors.
-
-\htmlonly
-<script type='text/javascript' src='https://www.openhub.net/p/mofem/widgets/project_basic_stats?format=js'></script>
-\endhtmlonly
-
-\section thrid_party Third party libraries
-
-List of third party libraries and packages used by MoFEM:
-
-- SIGMA Tools <http://press3.mcs.anl.gov/sigma>
-- MOAB <http://www.mcs.anl.gov/~fathom/moab-docs/html/userguide.html>.
-- PETSc <http://www.mcs.anl.gov/petsc/documentation/index.html>
-- BOOST <http://www.boost.org>
-	- uBlas <http://www.boost.org/doc/libs/release/libs/numeric/>
-- ADOL-C <https://projects.coin-or.org/ADOL-C>
-- CMake <http://www.cmake.org>
-- ParaView <http://www.paraview.org>
-
-\section Acknowledgments
-
-\image html Acknowledgments.png width=1000.px
-
-\section legal_stuff Legal stuff
-
-MoFEM is free software: you can redistribute it and/or modify it under the terms
-of the GNU Lesser General Public License as published by the Free Software
-Foundation, either version 3 of the License, or (at your option) any later
-version.
-
-MoFEM is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 */

@@ -112,8 +112,9 @@ struct TetGenInterface : public UnknownInterface {
   MoFEMErrorCode outData(tetgenio &in, tetgenio &out,
                          moabTetGen_Map &moab_tetgen_map,
                          tetGenMoab_Map &tetgen_moab_map, Range *ents = NULL,
-                         bool id_in_tags = false,
-                         bool error_if_created = false);
+                         bool id_in_tags = false, bool error_if_created = false,
+                         bool assume_first_nodes_the_same = false,
+                         Tag th = nullptr);
 
   /** \brief get entities for TetGen data structure
 
@@ -129,8 +130,9 @@ struct TetGenInterface : public UnknownInterface {
   MoFEMErrorCode outData(tetgenio &in, tetgenio &out,
                          moabTetGen_Map &moab_tetgen_map,
                          tetGenMoab_Map &tetgen_moab_map, BitRefLevel bit,
-                         bool id_in_tags = false,
-                         bool error_if_created = false);
+                         bool id_in_tags = false, bool error_if_created = false,
+                         bool assume_first_nodes_the_same = false,
+                         Tag th = nullptr);
 
   /** \brief set markers to faces
 
@@ -215,9 +217,9 @@ struct TetGenInterface : public UnknownInterface {
 
 #endif //__TETGENINTERFACE_HPP__
 
-/***************************************************************************//**
+/**
  * \defgroup mesh_tetgen TetGen interface
  * \brief Interface to run TetGen
  *
  * \ingroup mofem
- ******************************************************************************/
+ */
