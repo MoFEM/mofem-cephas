@@ -1195,9 +1195,9 @@ struct OpCalculateHcurlVectorCurl
   const int zeroSide;
 
   OpCalculateHcurlVectorCurl(const std::string &field_name,
-                            boost::shared_ptr<MatrixDouble> &data_ptr,
-                            const EntityType zero_type = MBEDGE,
-                            const int zero_side = 0)
+                             boost::shared_ptr<MatrixDouble> &data_ptr,
+                             const EntityType zero_type = MBEDGE,
+                             const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
@@ -1244,7 +1244,7 @@ struct OpCalculateHcurlVectorCurl
         //           << t_base_curl(2) << std::endl;
         // ++t_base_curl;
 
-        t_data(k) += t_dof * levi_civita(j, i, k) * t_n_diff_hcurl(i, j);
+        t_data(k) += t_dof * (levi_civita(j, i, k) * t_n_diff_hcurl(i, j));
         ++t_n_diff_hcurl;
         ++t_dof;
       }
@@ -1253,6 +1253,7 @@ struct OpCalculateHcurlVectorCurl
         ++t_n_diff_hcurl;
       ++t_data;
     }
+
     MoFEMFunctionReturn(0);
   }
 };

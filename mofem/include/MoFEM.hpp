@@ -105,7 +105,6 @@
 #include <FlatPrismPolynomialBase.hpp>  // Base functions on prism
 #include <DataOperators.hpp>
 #include <ForcesAndSourcesCore.hpp>
-#include <UserDataOperators.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
 #include <FaceElementForcesAndSourcesCore.hpp>
 #include <EdgeElementForcesAndSourcesCore.hpp>
@@ -113,6 +112,7 @@
 #include <FlatPrismElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSourcesCore.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
+#include <UserDataOperators.hpp>
 
 // More interfaces
 
