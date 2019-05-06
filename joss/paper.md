@@ -241,7 +241,9 @@ bibliography: paper.bib
   the flux and $m$ is the order for the field values (temperature or
   density). Note that the flux is approximated by the space
   ${\mathbf{H}}(\textbf{div})$, while the field values by the space
-  $\mathit{L}^2$ \label{fig:convergence}](LShape.pdf){width=100%}
+  $\mathit{L}^2$ \label{fig:convergence}. 
+  For more details see *"Mix formulation and integration on skeleton"* tutorial 
+  on [@MoFEMWebPage].](LShape.pdf){width=100%}
 
 # Conclusions 
 
