@@ -118,17 +118,17 @@ struct FieldEvaluatorInterface : public UnknownInterface {
     // use default evaluator for gauss points
 
     // make aliased shared pointer, data are destroyed when element is destroyed
-    boost::shared_ptr<FieldEvaluatorInterface::SetPtsData> data(
+    boost::shared_ptr<FieldEvaluatorInterface::SetPtsData> data_ptr(
         vol_ele, new FieldEvaluatorInterface::SetPtsData(
           *vol_ele, eval_points.data(), eval_points.size() / 3, 1e-12));
     // set integration rule
-    vol_ele->setRuleHook = FieldEvaluatorInterface::SetPts(data);
+    vol_ele->setRuleHook = FieldEvaluatorInterface::SetPts(data_ptr);
 
     // iterate over elemnts with evaluated points
     CHKERR m_field.getInterface<FieldEvaluatorInterface>()
           ->evalFEAtThePoint3D(&point[0], dist, prb_ptr->getName(),
-                               simple_interface->getDomainFEName(), vol_ele,
-                               set_gauss_pts, m_field.get_comm_rank(),
+                               simple_interface->getDomainFEName(), 
+                               data_ptr, m_field.get_comm_rank(),
                                m_field.get_comm_rank(), MF_EXIST, QUIET);
 
    * \endcode
@@ -137,8 +137,7 @@ struct FieldEvaluatorInterface : public UnknownInterface {
    * @param distance distance from the point where tetrahedrons are searched
    * @param problem problem name
    * @param finite_element finite element name
-   * @param fe_method method to evaluate field quantities
-   * @param set_gauss_pts  method to set gauss points
+   * @param data_ptr pointer to data abut gauss points
    * @param lower_rank lower processor
    * @param upper_rank upper process
    * @param bh control looping over entities, e.g. throwing error if element not
@@ -146,15 +145,11 @@ struct FieldEvaluatorInterface : public UnknownInterface {
    * @param verb verbosity level
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode
-  evalFEAtThePoint3D(const double *const point, const double distance,
-                      const std::string problem,
-                     const std::string finite_element,
-                     boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method, 
-                     boost::shared_ptr<SetPtsData> data_ptr,
-                     int lower_rank,
-                     int upper_rank, MoFEMTypes bh = MF_EXIST,
-                     VERBOSITY_LEVELS verb = QUIET);
+  MoFEMErrorCode evalFEAtThePoint3D(
+      const double *const point, const double distance,
+      const std::string problem, const std::string finite_element,
+      boost::shared_ptr<SetPtsData> data_ptr, int lower_rank, int upper_rank,
+      MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
 
   inline boost::shared_ptr<AdaptiveKDTree> &getTree() { return treePtr; }
   inline EntityHandle getRootTreeSet() { return rooTreeSet; }

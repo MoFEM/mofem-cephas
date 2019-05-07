@@ -101,10 +101,8 @@ operator()(int order_row, int order_col, int order_data) {
 
 MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
     const double *const point, const double distance, const std::string problem,
-    const std::string finite_element,
-    boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method,
-    boost::shared_ptr<SetPtsData> data_ptr, int lower_rank, int upper_rank,
-    MoFEMTypes bh, VERBOSITY_LEVELS verb) {
+    const std::string finite_element, boost::shared_ptr<SetPtsData> data_ptr,
+    int lower_rank, int upper_rank, MoFEMTypes bh, VERBOSITY_LEVELS verb) {
   CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -188,9 +186,9 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
   if (verb >= VERY_NOISY)
     std::cout << std::endl;
 
-  CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, *fe_method,
-                                      lower_rank, upper_rank, numered_fes, bh,
-                                      verb);
+  CHKERR m_field.loop_finite_elements(prb_ptr, finite_element,
+                                      data_ptr->feMethod, lower_rank,
+                                      upper_rank, numered_fes, bh, verb);
 
   MoFEMFunctionReturn(0);
 }

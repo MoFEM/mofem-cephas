@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
 
       CHKERR m_field.getInterface<FieldEvaluatorInterface>()
           ->evalFEAtThePoint3D(&point[0], dist, prb_ptr->getName(),
-                               simple_interface->getDomainFEName(), vol_ele,
+                               simple_interface->getDomainFEName(), 
                                data, m_field.get_comm_rank(),
                                m_field.get_comm_rank(), MF_EXIST, VERY_NOISY);
     }
