@@ -126,7 +126,7 @@ struct FieldEvaluatorInterface : public UnknownInterface {
 
     // iterate over elemnts with evaluated points
     CHKERR m_field.getInterface<FieldEvaluatorInterface>()
-          ->evalFEAtThePoint3D(&point[0], dist, prb_ptr->getName(),
+          ->evalFEAtThePoint3D(point.data(), dist, prb_ptr->getName(),
                                simple_interface->getDomainFEName(), 
                                data_ptr, m_field.get_comm_rank(),
                                m_field.get_comm_rank(), MF_EXIST, QUIET);
