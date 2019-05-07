@@ -81,8 +81,13 @@ template <typename T, size_t N>
 using VectorBoundedArray = ublas::vector<T, ublas::bounded_array<T, N>>;
 
 typedef VectorBoundedArray<int, 3> VectorInt3;
+typedef VectorBoundedArray<int, 4> VectorInt4;
+typedef VectorBoundedArray<int, 5> VectorInt5;
+typedef VectorBoundedArray<int, 6> VectorInt6;
 typedef VectorBoundedArray<int, 9> VectorInt9;
 typedef VectorBoundedArray<double, 3> VectorDouble3;
+typedef VectorBoundedArray<double, 4> VectorDouble4;
+typedef VectorBoundedArray<double, 5> VectorDouble5;
 typedef VectorBoundedArray<double, 6> VectorDouble6;
 typedef VectorBoundedArray<double, 9> VectorDouble9;
 typedef VectorBoundedArray<double, 12> VectorDouble12;

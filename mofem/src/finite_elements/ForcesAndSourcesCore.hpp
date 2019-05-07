@@ -299,6 +299,7 @@ struct ForcesAndSourcesCore : public FEMethod {
   typedef boost::function<int(int order_row, int order_col, int order_data)>
       RuleHookFun;
 
+
   /**
    * \brief Hook to get rule
    *
@@ -307,6 +308,12 @@ struct ForcesAndSourcesCore : public FEMethod {
    * <http://www.boost.org/doc/libs/1_64_0/doc/html/function/tutorial.html#idp247873024>
    */
   RuleHookFun getRuleHook;
+
+  /**
+   * @brief Set function to calculate integration rule
+   * 
+   */
+  RuleHookFun setRuleHook;
 
   /**
    * \brief another variant of getRule
@@ -355,11 +362,8 @@ struct ForcesAndSourcesCore : public FEMethod {
     */
   virtual MoFEMErrorCode setGaussPts(int order_row, int order_col,
                                      int order_data) {
-
-    MoFEMFunctionBeginHot;
-    ierr = setGaussPts(order_data);
-    CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    return setRuleHook ? setRuleHook(order_row, order_col, order_data)
+                       : setGaussPts(order_data);
   }
 
   /** \brief Data operator to do calculations at integration points.
