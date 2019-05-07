@@ -61,8 +61,10 @@ int main(int argc, char *argv[]) {
       // setup problem
       CHKERR simple_interface->setUp();
 
-      CHKERR m_field.getInterface<FieldEvaluatorInterface>()->buildTree3D(
-          simple_interface->getDomainFEName());
+      FieldEvaluatorInterface *field_eval_ptr;
+      CHKERR m_field.getInterface(field_eval_ptr);
+
+      CHKERR field_eval_ptr->buildTree3D(simple_interface->getDomainFEName());
 
       std::array<double, 3> point = {0, 0, 0};
       const double dist = 0.1;
@@ -144,11 +146,10 @@ int main(int argc, char *argv[]) {
       vol_ele->setRuleHook = FieldEvaluatorInterface::SetPts(data);
       data->setEvalPoints(&eval_points[0], eval_points.size() / 3);
 
-      CHKERR m_field.getInterface<FieldEvaluatorInterface>()
-          ->evalFEAtThePoint3D(&point[0], dist, prb_ptr->getName(),
-                               simple_interface->getDomainFEName(), 
-                               data, m_field.get_comm_rank(),
-                               m_field.get_comm_rank(), MF_EXIST, VERY_NOISY);
+      CHKERR field_eval_ptr->evalFEAtThePoint3D(
+          &point[0], dist, prb_ptr->getName(),
+          simple_interface->getDomainFEName(), data, m_field.get_comm_rank(),
+          m_field.get_comm_rank(), MF_EXIST, VERY_NOISY);
     }
   }
   CATCH_ERRORS;
