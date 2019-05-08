@@ -336,7 +336,7 @@ Next, install users modules
 cd $HOME/mofem_install
 mkdir um
 cd um/
-spack view --verbose symlink -i um_view mofem-cephas@develop build_type=RelWithDebInfo
+spack view --verbose symlink -i um_view mofem-cephas@develop build_type=RelWithDebInf
 export PATH=$PWD/um_view/bin:$PATH
 mkdir build 
 cd build/
