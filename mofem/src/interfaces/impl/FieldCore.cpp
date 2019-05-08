@@ -758,7 +758,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     // Insert into Multi-Index container
     int dofs_field_size0 = dofsField.size();
     auto hint = dofsField.end();
-    for (auto &v : *dofs_array) 
+    for (auto &v : *dofs_array)
       hint = dofsField.emplace_hint(hint, dofs_array, &v);
 
     // Add Sequence of DOFs to sequence container as weak_ptr
@@ -937,15 +937,10 @@ Core::get_problem_finite_elements_entities(const std::string &problem_name,
   if (p_miit == prb.end())
     SETERRQ1(PETSC_COMM_SELF, 1, "no such problem like < %s >",
              problem_name.c_str());
-  auto &numered_finite_elements =
-      const_cast<NumeredEntFiniteElement_multiIndex &>(
-          p_miit->numeredFiniteElements);
-  auto miit =
-      numered_finite_elements.get<FiniteElement_name_mi_tag>().lower_bound(
-          fe_name);
-  auto hi_miit =
-      numered_finite_elements.get<FiniteElement_name_mi_tag>().upper_bound(
-          fe_name);
+  auto miit = p_miit->numeredFiniteElements->get<FiniteElement_name_mi_tag>()
+                  .lower_bound(fe_name);
+  auto hi_miit = p_miit->numeredFiniteElements->get<FiniteElement_name_mi_tag>()
+                     .upper_bound(fe_name);
   for (; miit != hi_miit; miit++) {
     EntityHandle ent = (*miit)->getEnt();
     CHKERR get_moab().add_entities(meshset, &ent, 1);

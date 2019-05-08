@@ -52,7 +52,8 @@ DeprecatedCoreInterface::seed_finite_elements(const EntityHandle meshset,
 
   MoFEMFunctionBegin;
   Range entities;
-  CHKERR get_moab().get_entities_by_handle(meshset, entities, true);
+  CHKERR getInterface<CoreInterface>()->get_moab().get_entities_by_handle(
+      meshset, entities, true);
   CHKERR getInterface<BitRefManager>()->setElementsBitRefLevel(
       entities, BitRefLevel(), verb);
   MoFEMFunctionReturn(0);
@@ -367,20 +368,14 @@ MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
     const int ms_id, const unsigned int cubit_bc_type, const int dimension,
     Range &entities, const bool recursive) {
-  MoFEMFunctionBeginHot;
-  ierr = get_cubit_msId_entities_by_dimension(ms_id, CubitBCType(cubit_bc_type),
+  return get_cubit_msId_entities_by_dimension(ms_id, CubitBCType(cubit_bc_type),
                                               dimension, entities, recursive);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
 }
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
     const int ms_id, const unsigned int cubit_bc_type, Range &entities,
     const bool recursive) {
-  MoFEMFunctionBeginHot;
-  ierr = get_cubit_msId_entities_by_dimension(ms_id, CubitBCType(cubit_bc_type),
+  return get_cubit_msId_entities_by_dimension(ms_id, CubitBCType(cubit_bc_type),
                                               entities, recursive);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_meshset(
@@ -578,6 +573,28 @@ MoFEMErrorCode DeprecatedCoreInterface::MatCreateSeqAIJWithArrays(
   CHKERR getInterface<MatrixManager>()
       ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(name, Aij, verb);
   MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::loop_finite_elements(
+    const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
+    int lower_rank, int upper_rank, MoFEMTypes bh, int verb) {
+  return getInterface<CoreInterface>()->loop_finite_elements(
+      problem_ptr, fe_name, method, lower_rank, upper_rank, nullptr, bh, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::loop_finite_elements(
+    const std::string &problem_name, const std::string &fe_name,
+    FEMethod &method, int lower_rank, int upper_rank, MoFEMTypes bh, int verb) {
+  return getInterface<CoreInterface>()->loop_finite_elements(
+      problem_name, fe_name, method, lower_rank, upper_rank, nullptr, bh, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::loop_finite_elements(
+    const std::string &problem_name, const std::string &fe_name,
+    FEMethod &method, MoFEMTypes bh, int verb) {
+  return getInterface<CoreInterface>()->loop_finite_elements(
+      problem_name, fe_name, method, get_comm_rank(), get_comm_rank(), nullptr,
+      bh, verb);
 }
 
 } // namespace MoFEM

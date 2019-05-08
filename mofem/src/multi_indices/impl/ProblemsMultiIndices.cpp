@@ -20,13 +20,11 @@ namespace MoFEM {
 
 // moab problem
 Problem::Problem(moab::Interface &moab, const EntityHandle meshset)
-    : meshset(meshset),
-      numeredDofsRows(boost::shared_ptr<NumeredDofEntity_multiIndex>(
-          new NumeredDofEntity_multiIndex())),
-      numeredDofsCols(boost::shared_ptr<NumeredDofEntity_multiIndex>(
-          new NumeredDofEntity_multiIndex())),
-      sequenceRowDofContainer(boost::make_shared<SequenceDofContainer>()),
-      sequenceColDofContainer(boost::make_shared<SequenceDofContainer>()) {
+    : meshset(meshset), numeredDofsRows(new NumeredDofEntity_multiIndex()),
+      numeredDofsCols(new NumeredDofEntity_multiIndex()),
+      numeredFiniteElements(new NumeredEntFiniteElement_multiIndex()),
+      sequenceRowDofContainer(new SequenceDofContainer()),
+      sequenceColDofContainer(new SequenceDofContainer()) {
   ErrorCode rval;
   Tag th_ProblemId;
   rval = moab.tag_get_handle("_ProblemId", th_ProblemId);
@@ -98,44 +96,36 @@ Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx,
 MoFEMErrorCode
 Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm, const std::string name,
                                           PetscLayout *layout) const {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   int size, rank;
   MPI_Comm_size(comm, &size);
   MPI_Comm_rank(comm, &rank);
-  ierr = PetscLayoutCreate(comm, layout);
-  CHKERRG(ierr);
-  ierr = PetscLayoutSetBlockSize(*layout, 1);
-  CHKERRG(ierr);
+  CHKERR PetscLayoutCreate(comm, layout);
+  CHKERR PetscLayoutSetBlockSize(*layout, 1);
   const NumeredEntFiniteElementbyNameAndPart &fe_by_name_and_part =
-      numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>();
+      numeredFiniteElements->get<Composite_Name_And_Part_mi_tag>();
   int nb_elems;
   nb_elems = fe_by_name_and_part.count(boost::make_tuple(name, rank));
-  ierr = PetscLayoutSetLocalSize(*layout, nb_elems);
-  CHKERRG(ierr);
-  ierr = PetscLayoutSetUp(*layout);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR PetscLayoutSetLocalSize(*layout, nb_elems);
+  CHKERR PetscLayoutSetUp(*layout);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Problem::getNumberOfElementsByPart(MPI_Comm comm,
                                                   PetscLayout *layout) const {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   int size, rank;
   MPI_Comm_size(comm, &size);
   MPI_Comm_rank(comm, &rank);
-  ierr = PetscLayoutCreate(comm, layout);
-  CHKERRG(ierr);
-  ierr = PetscLayoutSetBlockSize(*layout, 1);
-  CHKERRG(ierr);
+  CHKERR PetscLayoutCreate(comm, layout);
+  CHKERR PetscLayoutSetBlockSize(*layout, 1);
   typedef NumeredEntFiniteElement_multiIndex::index<Part_mi_tag>::type FeByPart;
-  const FeByPart &fe_by_part = numeredFiniteElements.get<Part_mi_tag>();
+  const FeByPart &fe_by_part = numeredFiniteElements->get<Part_mi_tag>();
   int nb_elems;
   nb_elems = fe_by_part.count(rank);
-  ierr = PetscLayoutSetLocalSize(*layout, nb_elems);
-  CHKERRG(ierr);
-  ierr = PetscLayoutSetUp(*layout);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR PetscLayoutSetLocalSize(*layout, nb_elems);
+  CHKERR PetscLayoutSetUp(*layout);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Problem::getDofByNameEntAndEntDofIdx(
@@ -194,7 +184,7 @@ void ProblemZeroNbColsChange::operator()(Problem &e) {
   e.numeredDofsCols->clear();
 }
 void ProblemClearNumeredFiniteElementsChange::operator()(Problem &e) {
-  e.numeredFiniteElements.clear();
+  e.numeredFiniteElements->clear();
 }
 
 } // namespace MoFEM

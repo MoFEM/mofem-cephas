@@ -43,9 +43,9 @@ struct OpCalculateScalarFieldValues_General
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type) {
-          if(!dataPtr)
-            THROW_MESSAGE("Pointer is not set");
-        }
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
 
   /**
    * \brief calculate values of scalar field at integration points
@@ -283,7 +283,6 @@ struct OpCalculateVectorFieldValuesDot
     static_assert(Dim || !Dim, "not implemented");
   }
 
-
   OpCalculateVectorFieldValuesDot(const std::string field_name,
                                   boost::shared_ptr<MatrixDouble> &data_ptr,
                                   const EntityType zero_at_type = MBVERTEX)
@@ -303,9 +302,8 @@ struct OpCalculateVectorFieldValuesDot
       dataPtr->resize(Tensor_Dim, 0, false);
       MoFEMFunctionReturnHot(0);
     }
-    if (!nb_dofs) 
+    if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    
 
     dotVector.resize(nb_dofs, false);
     const double *array;
@@ -464,9 +462,9 @@ struct OpCalculateTensor2FieldValues
     : public OpCalculateTensor2FieldValues_General<
           Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
 
-  OpCalculateTensor2FieldValues(
-      const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
-      const EntityType zero_type = MBVERTEX)
+  OpCalculateTensor2FieldValues(const std::string &field_name,
+                                boost::shared_ptr<MatrixDouble> &data_ptr,
+                                const EntityType zero_type = MBVERTEX)
       : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
                                               ublas::row_major,
                                               DoubleAllocator>(
@@ -474,7 +472,7 @@ struct OpCalculateTensor2FieldValues
 };
 
 /** \brief Get time direvarive values at integration pts for tensor filed rank
- * 2, i.e. matrix field 
+ * 2, i.e. matrix field
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
@@ -519,7 +517,6 @@ struct OpCalculateTensor2FieldValuesDot
     for (int i = 0; i != local_indices.size(); ++i)
       dotVector[i] = array[local_indices[i]];
     CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
-
 
     const int nb_base_functions = data.getN().size2();
     MatrixDouble &mat = *dataPtr;
@@ -648,7 +645,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
     }
     auto &local_indices = data.getLocalIndices();
     const int nb_dofs = local_indices.size();
-    if (!nb_dofs) 
+    if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
 
     dotVector.resize(nb_dofs, false);
@@ -798,8 +795,7 @@ struct OpCalculateScalarFieldGradient
                                  const EntityType zero_type = MBVERTEX)
       : OpCalculateScalarFieldGradient_General<
             Tensor_Dim, double, ublas::row_major, DoubleAllocator>(
-            field_name, data_ptr, zero_type) {
-  }
+            field_name, data_ptr, zero_type) {}
 };
 
 /**
@@ -921,7 +917,7 @@ struct OpCalculateVectorFieldGradientDot
     : public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<MatrixDouble> &dataPtr; ///< Data computed into this matrix
-  EntityType zeroAtType; ///< Zero values at Gauss point at this type 
+  EntityType zeroAtType;  ///< Zero values at Gauss point at this type
   VectorDouble dotVector; ///< Keeps temoorary values of time directives
 
   template <int Dim> inline auto getFTensorDotData() {
@@ -1085,7 +1081,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
   MoFEMFunctionBegin;
   const int nb_integration_points = getGaussPts().size2();
   if (type == zeroType && side == zeroSide) {
-    dataPtr->resize(Tensor_Dim, nb_integration_points,  false);
+    dataPtr->resize(Tensor_Dim, nb_integration_points, false);
     dataPtr->clear();
   }
   const int nb_dofs = data.getFieldData().size();
@@ -1103,7 +1099,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
       ++t_n_hdiv;
       ++t_dof;
     }
-    for (; bb != nb_base_functions; ++bb) 
+    for (; bb != nb_base_functions; ++bb)
       ++t_n_hdiv;
     ++t_data;
   }
@@ -1131,7 +1127,7 @@ struct OpCalculateHdivVectorField
 
 /**
  * @brief Calculate divergence of vector field
- * 
+ *
  * @tparam Tensor_Dim dimension of space
  */
 template <int Tensor_Dim>
@@ -1186,9 +1182,86 @@ struct OpCalculateHdivVectorDivergence
 };
 
 /**
+ * @brief Calculate curl   of vector field
+ *
+ * @tparam Tensor_Dim dimension of space
+ */
+template <int Tensor_Dim>
+struct OpCalculateHcurlVectorCurl
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  const EntityHandle zeroType;
+  const int zeroSide;
+
+  OpCalculateHcurlVectorCurl(const std::string &field_name,
+                             boost::shared_ptr<MatrixDouble> &data_ptr,
+                             const EntityType zero_type = MBEDGE,
+                             const int zero_side = 0)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+    const int nb_integration_points = getGaussPts().size2();
+    if (type == zeroType && side == zeroSide) {
+      dataPtr->resize(Tensor_Dim, nb_integration_points, false);
+      dataPtr->clear();
+    }
+    const int nb_dofs = data.getFieldData().size();
+    if (!nb_dofs)
+      MoFEMFunctionReturnHot(0);
+
+    MatrixDouble curl_mat;
+
+    const int nb_base_functions = data.getN().size2() / Tensor_Dim;
+    FTensor::Index<'i', Tensor_Dim> i;
+    FTensor::Index<'j', Tensor_Dim> j;
+    FTensor::Index<'k', Tensor_Dim> k;
+    auto t_n_diff_hcurl = data.getFTensor2DiffN<Tensor_Dim, Tensor_Dim>();
+    auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
+    for (int gg = 0; gg != nb_integration_points; ++gg) {
+
+      // // get curl of base functions
+      // CHKERR getCurlOfHCurlBaseFunctions(side, type, data, gg, curl_mat);
+      // FTensor::Tensor1<double *, 3> t_base_curl(
+      //     &curl_mat(0, HVEC0), &curl_mat(0, HVEC1), &curl_mat(0, HVEC2), 3);
+
+      auto t_dof = data.getFTensor0FieldData();
+      int bb = 0;
+      for (; bb != nb_dofs; ++bb) {
+
+        // FTensor::Tensor1<double, 3> t_test;
+        // t_test(k) = levi_civita(j, i, k) * t_n_diff_hcurl(i, j);
+        // t_base_curl(k) -= t_test(k);
+        // std::cerr << "error: " << t_base_curl(0) << " " << t_base_curl(1) <<
+        // " "
+        //           << t_base_curl(2) << std::endl;
+        // ++t_base_curl;
+
+        t_data(k) += t_dof * (levi_civita(j, i, k) * t_n_diff_hcurl(i, j));
+        ++t_n_diff_hcurl;
+        ++t_dof;
+      }
+
+      for (; bb != nb_base_functions; ++bb)
+        ++t_n_diff_hcurl;
+      ++t_data;
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
+/**
  * @brief Calculate tenor field using vectorial base, i.e. Hdiv/Hcurl
  * \ingroup mofem_forces_and_sources_user_data_operators
- * 
+ *
  * @tparam Tensor_Dim0 rank of the filed
  * @tparam Tensor_Dim1 dimension of space
  */
@@ -1246,7 +1319,7 @@ struct OpCalculateHVecTensorField
 /**
  * @brief Calculate tenor field using vectorial base, i.e. Hdiv/Hcurl
  * \ingroup mofem_forces_and_sources_user_data_operators
- * 
+ *
  * @tparam Tensor_Dim0 rank of the filed
  * @tparam Tensor_Dim1 dimension of space
  */
@@ -1259,9 +1332,9 @@ struct OpCalculateHTensorTensorField
   const int zeroSide;
 
   OpCalculateHTensorTensorField(const std::string &field_name,
-                             boost::shared_ptr<MatrixDouble> &data_ptr,
-                             const EntityType zero_type = MBTRI,
-                             const int zero_side = 0)
+                                boost::shared_ptr<MatrixDouble> &data_ptr,
+                                const EntityType zero_type = MBTRI,
+                                const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
@@ -1305,7 +1378,7 @@ struct OpCalculateHTensorTensorField
 /**
  * @brief Calculate divergence of tonsorial field using vectorial base
  * \ingroup mofem_forces_and_sources_user_data_operators
- * 
+ *
  * @tparam Tensor_Dim0 rank of the field
  * @tparam Tensor_Dim1 dimension of space
  */
@@ -1365,10 +1438,11 @@ struct OpCalculateHVecTensorDivergence
 
 #endif // __USER_DATA_OPERATORS_HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_forces_and_sources_user_data_operators Users Operators
-*
-* \brief Classes and functions used to evaluate fields at integration pts, jacobians, etc..
-*
-* \ingroup mofem_forces_and_sources
-******************************************************************************/
+/**
+ * \defgroup mofem_forces_and_sources_user_data_operators Users Operators
+ *
+ * \brief Classes and functions used to evaluate fields at integration pts,
+ *jacobians, etc..
+ *
+ * \ingroup mofem_forces_and_sources
+ **/

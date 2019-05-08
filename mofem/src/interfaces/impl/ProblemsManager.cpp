@@ -432,7 +432,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
   CHKERR m_field.get_dofs(&dofs_field_ptr);
 
   // zero finite elements
-  problem_ptr->numeredFiniteElements.clear();
+  problem_ptr->numeredFiniteElements->clear();
 
   DofEntity_multiIndex_active_view dofs_rows, dofs_cols;
   {
@@ -1260,7 +1260,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
     out_problem_dofs[ss]->clear();
 
     // If DOFs are cleared clear finite elements too.
-    out_problem_it->numeredFiniteElements.clear();
+    out_problem_it->numeredFiniteElements->clear();
 
     // get dofs by field name and insert them in out problem multi-indices
     for (auto field : fields[ss]) {
@@ -2395,7 +2395,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
 
   // Get reference on finite elements multi-index on the problem
   NumeredEntFiniteElement_multiIndex &problem_finite_elements =
-      p_miit->numeredFiniteElements;
+      *p_miit->numeredFiniteElements;
 
   // Clear all elements and data, build it again
   problem_finite_elements.clear();
@@ -2618,7 +2618,7 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
 
     // get elements on this partition
     auto fe_range =
-        p_miit->numeredFiniteElements.get<Part_mi_tag>().equal_range(
+        p_miit->numeredFiniteElements->get<Part_mi_tag>().equal_range(
             m_field.get_comm_rank());
 
     // get dofs on elements which are not part of this partition
@@ -2822,10 +2822,11 @@ MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string prb_name,
   MoFEMFunctionBegin;
   CHKERR m_field.get_moab().create_meshset(MESHSET_SET, *meshset);
   CHKERR m_field.get_problem(prb_name, &problem_ptr);
-  auto fit = problem_ptr->numeredFiniteElements.get<FiniteElement_name_mi_tag>()
-                 .lower_bound(fe_name);
+  auto fit =
+      problem_ptr->numeredFiniteElements->get<FiniteElement_name_mi_tag>()
+          .lower_bound(fe_name);
   auto hi_fe_it =
-      problem_ptr->numeredFiniteElements.get<FiniteElement_name_mi_tag>()
+      problem_ptr->numeredFiniteElements->get<FiniteElement_name_mi_tag>()
           .upper_bound(fe_name);
   std::vector<EntityHandle> fe_vec;
   fe_vec.reserve(std::distance(fit, hi_fe_it));
@@ -2851,9 +2852,9 @@ ProblemsManager::getProblemElementsLayout(const std::string name,
 
 MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
     const std::string problem_name, const std::string field_name,
-    const Range ents, const int lo_coeff,
-    const int hi_coeff, int verb, const bool debug) {
-      
+    const Range ents, const int lo_coeff, const int hi_coeff, int verb,
+    const bool debug) {
+
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -2894,7 +2895,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
                                                      MAX_DOFS_ON_ENTITY));
         for (; lo != hi; ++lo)
           if ((*lo)->getDofCoeffIdx() >= lo_coeff &&
-              (*lo)->getDofCoeffIdx() <= hi_coeff) 
+              (*lo)->getDofCoeffIdx() <= hi_coeff)
             dofs_it_view.emplace_back(numered_dofs[s]->project<0>(lo));
       }
 
@@ -2970,7 +2971,6 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
           }
           if (add)
             indices.push_back(decltype(tag)::get_index(dit));
-          
         }
       };
 
@@ -2991,10 +2991,10 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         get_indices_by_tag(tag, indices, local_only);
 
         AO ao;
-        if(local_only)
+        if (local_only)
           CHKERR AOCreateMapping(m_field.get_comm(), indices.size(),
                                  &*indices.begin(), PETSC_NULL, &ao);
-        else 
+        else
           CHKERR AOCreateMapping(PETSC_COMM_SELF, indices.size(),
                                  &*indices.begin(), PETSC_NULL, &ao);
 

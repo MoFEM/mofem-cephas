@@ -61,7 +61,8 @@ enum Interfaces {
   PRISMSFROMSURFACE_INTERFACE = 1 << 2 | 1 << 7,
   MESHSETSMANAGER_INTERFACE = 1 << 2 | 1 << 8,
   COORDSSYSTEMMANAGER_INTERFACE = 1 << 2 | 1 << 9,
-  CUTMESH_INTERFACE = 1 << 2 | 1 << 10
+  CUTMESH_INTERFACE = 1 << 2 | 1 << 10,
+  FIELDEVALUATOR_INTERFACE = 1 << 2 | 1 << 11
 };
 
 enum LoopInterfaces {

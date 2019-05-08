@@ -57,9 +57,8 @@ FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
       ent, 3, adjacent_volumes);
   typedef NumeredEntFiniteElement_multiIndex::index<
       Composite_Name_And_Ent_mi_tag>::type FEByComposite;
-  FEByComposite &numered_fe = (const_cast<NumeredEntFiniteElement_multiIndex &>(
-                                   problem_ptr->numeredFiniteElements))
-                                  .get<Composite_Name_And_Ent_mi_tag>();
+  FEByComposite &numered_fe =
+      problem_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>();
 
   method.feName = fe_name;
 
