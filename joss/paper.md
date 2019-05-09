@@ -131,7 +131,7 @@ bibliography: paper.bib
   ecosystem including popular pre- and post-processing software.
 
   !['Ecosystem' of `MoFEM`. Adopted from
-  [@MoFEMWebPage].\label{fig:ecosystem}](ecosystem.pdf){width=80%}
+  [@MOABWebPage].\label{fig:ecosystem}](ecosystem.pdf){width=80%}
 
   Traditional finite element codes are element-centric, i.e. the type of an
   element defines the approximation space and base. Therefore, they are not able
