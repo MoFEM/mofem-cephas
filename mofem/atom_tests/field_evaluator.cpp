@@ -150,6 +150,8 @@ int main(int argc, char *argv[]) {
           &point[0], dist, prb_ptr->getName(),
           simple_interface->getDomainFEName(), data, m_field.get_comm_rank(),
           m_field.get_comm_rank(), MF_EXIST, VERY_NOISY);
+
+      CHKERR DMDestroy(&dm);
     }
   }
   CATCH_ERRORS;
