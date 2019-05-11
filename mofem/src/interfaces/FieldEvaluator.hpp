@@ -1,7 +1,7 @@
 /** \file FieldEvaluator.hpp
  * \brief Field Evaluator
  *
- * Evaluate field at given coordinate 
+ * Evaluate field at given coordinate
  *
  *
  * \ingroup field_evaluator
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __FIELD_EVALUATOR_HPP__
 #define __FIELD_EVALUATOR_HPP__
@@ -40,29 +40,21 @@ struct FieldEvaluatorInterface : public UnknownInterface {
   FieldEvaluatorInterface(const MoFEM::Core &core)
       : cOre(const_cast<MoFEM::Core &>(core)) {}
 
-  /**
-   * @brief Build spatial tree
-   * 
-   * @param finite_element finite element name
-   * @return MoFEMErrorCode 
-   */
-  MoFEMErrorCode buildTree3D(const std::string finite_element);
-
   struct SetPtsData {
 
     /**
      * @brief Set the Gauss Pts data
      *
-     * @param fe_method finite element instance
+     * @param fe_method_ptr pointer to finite element instance
      * @param eval_points pointer to array with evaluation points
      * @param nb_eval_points number of evaluated points
      * @param eps tolerance used to find if point is in the element
      * @param verb
      */
-    SetPtsData(MoFEM::ForcesAndSourcesCore &fe_method,
-                    const double *eval_points, const int nb_eval_points,
-                    const double eps, VERBOSITY_LEVELS verb = QUIET)
-        : feMethod(fe_method), evalPoints(eval_points),
+    SetPtsData(boost::shared_ptr<MoFEM::ForcesAndSourcesCore> fe_method_ptr,
+               const double *eval_points, const int nb_eval_points,
+               const double eps, VERBOSITY_LEVELS verb = QUIET)
+        : feMethodPtr(fe_method_ptr), evalPoints(eval_points),
           nbEvalPoints(nb_eval_points), eps(eps), verb(verb) {
       localCoords.resize(nbEvalPoints, 3);
       shapeFunctions.resize(nbEvalPoints, 4);
@@ -75,7 +67,7 @@ struct FieldEvaluatorInterface : public UnknownInterface {
       shapeFunctions.resize(nbEvalPoints, 4, false);
     }
 
-    MoFEM::ForcesAndSourcesCore &feMethod;
+    boost::weak_ptr<MoFEM::ForcesAndSourcesCore> feMethodPtr;
     const double *evalPoints;
     int nbEvalPoints;
     double eps;
@@ -84,21 +76,73 @@ struct FieldEvaluatorInterface : public UnknownInterface {
     MatrixDouble localCoords;
     MatrixDouble shapeFunctions;
     std::vector<EntityHandle> evalPointEntityHandle;
+
+    EntityHandle rooTreeSet;
+    boost::scoped_ptr<AdaptiveKDTree> treePtr;
   };
 
   /**
    * @brief Default evaluator for setting integration points
-   * 
+   *
    */
   struct SetPts {
     SetPts() = delete;
-    SetPts(boost::shared_ptr<SetPtsData> data_ptr)
-        : dataPtr(data_ptr) {}
+    SetPts(boost::shared_ptr<SetPtsData> data_ptr) : dataPtr(data_ptr) {}
     MoFEMErrorCode operator()(int order_row, int order_col, int order_data);
 
   private:
-    boost::shared_ptr<SetPtsData> dataPtr;
+    boost::weak_ptr<SetPtsData> dataPtr;
   };
+
+  /**
+   * @brief Get the Data object
+   *
+   * Pack pointers with data structures for field evaluator and finite
+   * element. Function return shared pointer if returned shared pointer
+   * is reset; all data are destroyed. The idea is to pack all data in
+   * one structure, create shared pointer to it and return aliased shared
+   * pointer to one of the elements of the data structure. It is a bit
+   * complicated, but has great flexibility.
+   *
+   * @tparam VE
+   * @tparam SetPtsData
+   * @tparam SetPts
+   * @param ptr
+   * @param nb_eval_points
+   * @param eps
+   * @param verb
+   * @return boost::shared_ptr<SPD>
+   */
+  template <typename VE, typename SPD = SetPtsData, typename SP = SetPts>
+  boost::shared_ptr<SPD>
+  getData(const double *ptr = nullptr, const int nb_eval_points = 0,
+          const double eps = 1e-12, VERBOSITY_LEVELS verb = QUIET) {
+    struct PackData {
+      boost::scoped_ptr<VE> volElePtr;
+      boost::scoped_ptr<SPD> setPtsDataPtr;
+      boost::scoped_ptr<SP> setPtsPtr;
+    };
+    boost::shared_ptr<PackData> pack_data(new PackData());
+    MoFEM::Interface &m_field = cOre;
+    pack_data->volElePtr.reset(new VE(m_field));
+    pack_data->setPtsDataPtr.reset(
+        new SPD(boost::shared_ptr<VE>(pack_data, pack_data->volElePtr.get()),
+                ptr, nb_eval_points, eps, verb));
+    pack_data->setPtsPtr.reset(new SP(
+        boost::shared_ptr<SPD>(pack_data, pack_data->setPtsDataPtr.get())));
+    pack_data->volElePtr->setRuleHook = boost::ref(*pack_data->setPtsPtr);
+    boost::shared_ptr<SPD> data(pack_data, pack_data->setPtsDataPtr.get());
+    return data;
+  }
+
+  /**
+   * @brief Build spatial tree
+   *
+   * @param finite_element finite element name
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode buildTree3D(boost::shared_ptr<SetPtsData> spd_ptr,
+                             const std::string finite_element);
 
   /**
    * @brief Evaluate field at artbitray position
@@ -109,27 +153,21 @@ struct FieldEvaluatorInterface : public UnknownInterface {
     const double dist = 0.3;
     std::array<double, 6> eval_points = {-1.,  -1., -1., 1., 1., 1. };
 
-    boost::shared_ptr<VolumeElementForcesAndSourcesCore> vol_ele(
-          new VolumeElementForcesAndSourcesCore(m_field));
+    using VolEle = VolumeElementForcesAndSourcesCore;
+    auto data_ptr =
+      m_field.getInterface<FieldEvaluatorInterface>()->
+      getData<VolEle>(point.data(), point.size/3);
 
-    // push operators to finite element instance, e.g.
-    vol_ele->getOpPtrVector().push_back(new MyOp());
-
-    // use default evaluator for gauss points
-
-    // make aliased shared pointer, data are destroyed when element is destroyed
-    boost::shared_ptr<FieldEvaluatorInterface::SetPtsData> data_ptr(
-        vol_ele, new FieldEvaluatorInterface::SetPtsData(
-          *vol_ele, eval_points.data(), eval_points.size() / 3, 1e-12));
-    // set integration rule
-    vol_ele->setRuleHook = FieldEvaluatorInterface::SetPts(data_ptr);
-
-    // iterate over elemnts with evaluated points
-    CHKERR m_field.getInterface<FieldEvaluatorInterface>()
-          ->evalFEAtThePoint3D(point.data(), dist, prb_ptr->getName(),
-                               "FINITE_ELEMENT_NAME", 
-                               data_ptr, m_field.get_comm_rank(),
-                               m_field.get_comm_rank(), MF_EXIST, QUIET);
+    if(auto vol_ele = data_ptr->feMethod.lock()) {
+      // push operators to finite element instance, e.g.
+      vol_ele->getOpPtrVector().push_back(new MyOp());
+      // iterate over elemnts with evaluated points
+      CHKERR m_field.getInterface<FieldEvaluatorInterface>()
+        ->evalFEAtThePoint3D(point.data(), dist, prb_ptr->getName(),
+                             "FINITE_ELEMENT_NAME",
+                             data_ptr, m_field.get_comm_rank(),
+                             m_field.get_comm_rank(), MF_EXIST, QUIET);
+    }
 
    * \endcode
    *
@@ -151,20 +189,11 @@ struct FieldEvaluatorInterface : public UnknownInterface {
       boost::shared_ptr<SetPtsData> data_ptr, int lower_rank, int upper_rank,
       MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
 
-  inline boost::shared_ptr<AdaptiveKDTree> &getTree() { return treePtr; }
-  inline EntityHandle getRootTreeSet() { return rooTreeSet; }
-
-private:
-
-  EntityHandle rooTreeSet;
-  boost::shared_ptr<AdaptiveKDTree> treePtr;
-
 };
 
-}
+} // namespace MoFEM
 
 #endif // __FIELD_EVALUATOR_HPP__
-
 
 /**
  * \defgroup field_evaluator Field Evaluator
