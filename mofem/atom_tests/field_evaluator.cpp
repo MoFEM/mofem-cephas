@@ -133,8 +133,8 @@ int main(int argc, char *argv[]) {
         }
       };
 
-      // Lambda function use to set integration rule -1, that indicates that
-      // finite element instace will use non-standard integration points.
+      // Lambda function is used to set integration rule to -1, that indicates
+      // that finite element instace will use non-standard integration points.
       auto get_rule = [&](int order_row, int order_col, int order_data) {
         return -1;
       };
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
       // set integrating points is destroyed when this pointer is releases
       auto data = field_eval_ptr->getData<VolEle>();
       
-      // Set operators and reset integration rule
+      // Set operators and integration rule
       if (auto fe_method = data->feMethodPtr.lock()) {
         fe_method->getRuleHook = get_rule;
         fe_method->getOpPtrVector().push_back(new MyOp(eval_points));
@@ -151,9 +151,10 @@ int main(int argc, char *argv[]) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Pointer to element does not exists");
 
-      // Set eval points
+      // Build tree for particular element
       CHKERR field_eval_ptr->buildTree3D(data,
                                          simple_interface->getDomainFEName());
+      // Set points to set on finite elements
       data->setEvalPoints(&eval_points[0], eval_points.size() / 3);
 
       // Evaluate points on finite elements
