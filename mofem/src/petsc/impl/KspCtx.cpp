@@ -20,81 +20,87 @@
 
 namespace MoFEM {
 
-PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
+PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
   // PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
-  MoFEMFunctionBeginHot;
-  KspCtx* ksp_ctx = (KspCtx*)ctx;
-  PetscLogEventBegin(ksp_ctx->MOFEM_EVENT_KspRhs,0,0,0,0);
+  MoFEMFunctionBegin;
+  KspCtx *ksp_ctx = (KspCtx *)ctx;
+  PetscLogEventBegin(ksp_ctx->MOFEM_EVENT_KspRhs, 0, 0, 0, 0);
   KspCtx::BasicMethodsSequence::iterator bit = ksp_ctx->preProcess_Rhs.begin();
-  for(;bit!=ksp_ctx->preProcess_Rhs.end();bit++) {
-    ierr = (*bit)->setKsp(ksp); CHKERRG(ierr);
+  for (; bit != ksp_ctx->preProcess_Rhs.end(); bit++) {
+    CHKERR(*bit)->setKsp(ksp);
     (*bit)->ksp_f = f;
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_SETFUNCTION);  CHKERRG(ierr);
-    ierr = ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_KSPNONE);  CHKERRG(ierr);
+    CHKERR(*bit)->setKspCtx(KspMethod::CTX_SETFUNCTION);
+    CHKERR ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,
+                                                           *(*(bit)));
+    CHKERR(*bit)->setKspCtx(KspMethod::CTX_KSPNONE);
   }
   KspCtx::FEMethodsSequence::iterator lit = ksp_ctx->loops_to_do_Rhs.begin();
-  for(;lit!=ksp_ctx->loops_to_do_Rhs.end();lit++) {
-    ierr = lit->second->setKspCtx(KspMethod::CTX_SETFUNCTION);  CHKERRG(ierr);
-    ierr = lit->second->setKsp(ksp); CHKERRG(ierr);
+  for (; lit != ksp_ctx->loops_to_do_Rhs.end(); lit++) {
+    CHKERR lit->second->setKspCtx(KspMethod::CTX_SETFUNCTION);
+    CHKERR lit->second->setKsp(ksp);
     lit->second->ksp_f = f;
-    ierr = ksp_ctx->mField.loop_finite_elements(ksp_ctx->problemName,lit->first,*(lit->second),ksp_ctx->bH);  CHKERRG(ierr);
-    ierr = lit->second->setKspCtx(KspMethod::CTX_KSPNONE);  CHKERRG(ierr);
+    CHKERR ksp_ctx->mField.loop_finite_elements(
+        ksp_ctx->problemName, lit->first, *(lit->second), nullptr, ksp_ctx->bH);
+    CHKERR lit->second->setKspCtx(KspMethod::CTX_KSPNONE);
   }
   bit = ksp_ctx->postProcess_Rhs.begin();
-  for(;bit!=ksp_ctx->postProcess_Rhs.end();bit++) {
-    ierr = (*bit)->setKsp(ksp); CHKERRG(ierr);
+  for (; bit != ksp_ctx->postProcess_Rhs.end(); bit++) {
+    CHKERR(*bit)->setKsp(ksp);
     (*bit)->ksp_f = f;
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_SETFUNCTION);  CHKERRG(ierr);
-    ierr = ksp_ctx->mField.problem_basic_method_postProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_KSPNONE);  CHKERRG(ierr);
+    CHKERR(*bit)->setKspCtx(KspMethod::CTX_SETFUNCTION);
+    CHKERR ksp_ctx->mField.problem_basic_method_postProcess(
+        ksp_ctx->problemName, *(*(bit)));
+    CHKERR(*bit)->setKspCtx(KspMethod::CTX_KSPNONE);
   }
-  ierr = VecGhostUpdateBegin(f,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
-  ierr = VecGhostUpdateEnd(f,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
-  ierr = VecAssemblyBegin(f); CHKERRG(ierr);
-  ierr = VecAssemblyEnd(f); CHKERRG(ierr);
-  PetscLogEventEnd(ksp_ctx->MOFEM_EVENT_KspRhs,0,0,0,0);
-  MoFEMFunctionReturnHot(0);
+  CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
+  CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
+  CHKERR VecAssemblyBegin(f);
+  CHKERR VecAssemblyEnd(f);
+  PetscLogEventEnd(ksp_ctx->MOFEM_EVENT_KspRhs, 0, 0, 0, 0);
+  MoFEMFunctionReturn(0);
 }
-PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx) {
+PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
   // PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
-  MoFEMFunctionBeginHot;
-  KspCtx* ksp_ctx = (KspCtx*)ctx;
-  PetscLogEventBegin(ksp_ctx->MOFEM_EVENT_KspMat,0,0,0,0);
+  MoFEMFunctionBegin;
+  KspCtx *ksp_ctx = (KspCtx *)ctx;
+  PetscLogEventBegin(ksp_ctx->MOFEM_EVENT_KspMat, 0, 0, 0, 0);
   KspCtx::BasicMethodsSequence::iterator bit = ksp_ctx->preProcess_Mat.begin();
-  for(;bit!=ksp_ctx->preProcess_Mat.end();bit++) {
-    ierr = (*bit)->setKsp(ksp); CHKERRG(ierr);
+  for (; bit != ksp_ctx->preProcess_Mat.end(); bit++) {
+    CHKERR(*bit)->setKsp(ksp);
     (*bit)->ksp_A = A;
     (*bit)->ksp_B = B;
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_OPERATORS); CHKERRG(ierr);
-    ierr = ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_KSPNONE);  CHKERRG(ierr);
+    CHKERR(*bit)->setKspCtx(KspMethod::CTX_OPERATORS);
+    CHKERR ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,
+                                                           *(*(bit)));
+    CHKERR(*bit)->setKspCtx(KspMethod::CTX_KSPNONE);
   }
   KspCtx::FEMethodsSequence::iterator lit = ksp_ctx->loops_to_do_Mat.begin();
-  for(;lit!=ksp_ctx->loops_to_do_Mat.end();lit++) {
+  for (; lit != ksp_ctx->loops_to_do_Mat.end(); lit++) {
     lit->second->ksp_A = A;
     lit->second->ksp_B = B;
-    ierr = lit->second->setKsp(ksp); CHKERRG(ierr);
-    ierr = lit->second->setKspCtx(KspMethod::CTX_OPERATORS); CHKERRG(ierr);
-    ierr = ksp_ctx->mField.loop_finite_elements(ksp_ctx->problemName,lit->first,*(lit->second),ksp_ctx->bH);  CHKERRG(ierr);
-    ierr = lit->second->setKspCtx(KspMethod::CTX_KSPNONE);
+    CHKERR lit->second->setKsp(ksp);
+    CHKERR lit->second->setKspCtx(KspMethod::CTX_OPERATORS);
+    CHKERR ksp_ctx->mField.loop_finite_elements(
+        ksp_ctx->problemName, lit->first, *(lit->second), nullptr, ksp_ctx->bH);
+    CHKERR lit->second->setKspCtx(KspMethod::CTX_KSPNONE);
   }
   bit = ksp_ctx->postProcess_Mat.begin();
-  for(;bit!=ksp_ctx->postProcess_Mat.end();bit++) {
-    ierr = (*bit)->setKsp(ksp); CHKERRG(ierr);
+  for (; bit != ksp_ctx->postProcess_Mat.end(); bit++) {
+    CHKERR(*bit)->setKsp(ksp);
     (*bit)->ksp_A = A;
     (*bit)->ksp_B = B;
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_OPERATORS); CHKERRG(ierr);
-    ierr = ksp_ctx->mField.problem_basic_method_postProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_KSPNONE);  CHKERRG(ierr);
+    CHKERR(*bit)->setKspCtx(KspMethod::CTX_OPERATORS);
+    CHKERR ksp_ctx->mField.problem_basic_method_postProcess(
+        ksp_ctx->problemName, *(*(bit)));
+    CHKERR(*bit)->setKspCtx(KspMethod::CTX_KSPNONE);
   }
-  ierr = MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-  ierr = MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
+  CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
+  CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
   // MatView(A,PETSC_VIEWER_DRAW_WORLD);
   // std::string wait;
   // std::cin >> wait;
-  PetscLogEventEnd(ksp_ctx->MOFEM_EVENT_KspMat,0,0,0,0);
-  MoFEMFunctionReturnHot(0);
+  PetscLogEventEnd(ksp_ctx->MOFEM_EVENT_KspMat, 0, 0, 0, 0);
+  MoFEMFunctionReturn(0);
 }
 
-}
+} // namespace MoFEM

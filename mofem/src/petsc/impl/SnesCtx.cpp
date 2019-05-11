@@ -73,7 +73,7 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     lit.second->snes_x = x;
     lit.second->snes_f = f;
     CHKERR snes_ctx->mField.loop_finite_elements(
-        snes_ctx->problemName, lit.first, *lit.second, snes_ctx->bH);
+        snes_ctx->problemName, lit.first, *lit.second, nullptr, snes_ctx->bH);
     CHKERR lit.second->setSnesCtx(SnesMethod::CTX_SNESNONE);
     if (snes_ctx->vErify) {
       // Verify finite elements, check for not a number
@@ -136,7 +136,7 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     lit.second->snes_A = A;
     lit.second->snes_B = B;
     CHKERR snes_ctx->mField.loop_finite_elements(
-        snes_ctx->problemName, lit.first, *(lit.second), snes_ctx->bH);
+        snes_ctx->problemName, lit.first, *(lit.second), nullptr, snes_ctx->bH);
     CHKERR lit.second->setSnesCtx(SnesMethod::CTX_SNESNONE);
   }
   for (auto &bit : snes_ctx->postProcess_Mat) {
