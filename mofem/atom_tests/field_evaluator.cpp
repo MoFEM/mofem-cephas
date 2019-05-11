@@ -2,7 +2,7 @@
  * \example field_evaluator.cpp
  * \brief test segments distance
  *
- * \ingroup mesh_cut
+ * \ingroup 
  */
 
 /* This file is part of MoFEM.
