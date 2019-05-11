@@ -9,7 +9,7 @@ else
   CWD=`pwd`
   CTEST_SCRIPTS_FILE_PATH=$HOME/mofem-cephas/mofem/cmake
   CTEST_USER_MODULES_PATH=$HOME/tmp/cephas_users_modules/users_modules/
-  CTSET_SCRIPT=CTestScript_rdb-srv1_continous.cmake
+  CTSET_SCRIPT=CTestScript_rdb-srv1.cmake
   BUILD_DIR=$HOME/tmp/cephas/build
   touch $HOME/tests_cephas.lock
   cd $CTEST_SCRIPTS_FILE_PATH
