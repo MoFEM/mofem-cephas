@@ -23,7 +23,7 @@ namespace MoFEM {
 PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
   // PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
   MoFEMFunctionBegin;
-  KspCtx *ksp_ctx = (KspCtx *)ctx;
+  KspCtx *ksp_ctx = static_cast<KspCtx *>(ctx);
   PetscLogEventBegin(ksp_ctx->MOFEM_EVENT_KspRhs, 0, 0, 0, 0);
   KspCtx::BasicMethodsSequence::iterator bit = ksp_ctx->preProcess_Rhs.begin();
   for (; bit != ksp_ctx->preProcess_Rhs.end(); bit++) {
@@ -62,7 +62,7 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
 PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
   // PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
   MoFEMFunctionBegin;
-  KspCtx *ksp_ctx = (KspCtx *)ctx;
+  KspCtx *ksp_ctx = static_cast<KspCtx *>(ctx);
   PetscLogEventBegin(ksp_ctx->MOFEM_EVENT_KspMat, 0, 0, 0, 0);
   KspCtx::BasicMethodsSequence::iterator bit = ksp_ctx->preProcess_Mat.begin();
   for (; bit != ksp_ctx->preProcess_Mat.end(); bit++) {
