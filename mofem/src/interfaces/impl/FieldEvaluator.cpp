@@ -132,6 +132,8 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
     std::cout << "tree entities: " << tree_ents << endl;
 
   data_ptr->evalPointEntityHandle.resize(data_ptr->nbEvalPoints);
+  std::fill(data_ptr->evalPointEntityHandle.begin(),
+            data_ptr->evalPointEntityHandle.end(), 0);
 
   for (auto tet : tree_ents) {
 
@@ -176,6 +178,7 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
   Range in_tets;
   in_tets.insert_list(data_ptr->evalPointEntityHandle.begin(),
                       data_ptr->evalPointEntityHandle.end());
+  in_tets = in_tets.subset_by_dimension(3);
 
   if (verb >= VERY_NOISY)
     std::cout << "in tets: " << in_tets << endl;
@@ -199,6 +202,14 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
     std::cout << std::endl;
 
   if (auto fe_ptr = data_ptr->feMethodPtr.lock()) {
+    
+    if(verb >= VERBOSE) {
+      CHKERR PetscSynchronizedPrintf(
+          m_field.get_comm(), "Number elements %d to evaluate at proc %d\n",
+          numered_fes->size(), m_field.get_comm_rank());
+      PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+    }
+
     CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, *fe_ptr,
                                         lower_rank, upper_rank, numered_fes, bh,
                                         verb);
