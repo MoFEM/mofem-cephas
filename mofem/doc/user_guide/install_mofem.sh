@@ -3,22 +3,23 @@
 # Full description of the installation process using spack can be found at:
 # http://mofem.eng.gla.ac.uk/mofem/html/install_spack.html
 # The script should work for both Ubuntu and macOS platforms
+# The last known working platforms are Ubuntu (18.04) and macOS (10.13, 10.14)
 # The installation will take two to three hours
 #
 # Usage:
 #       1. Copy install_mofem.sh to the directory where MoFEM will be instaslled
 #       2. Run install_mofem.sh from the command line
 #
-
+  
 ##############################
 # INITIALISATION
 ##############################
-
+  
 # Setup installation directory
 pwd
 export MOFEM_INSTALL_DIR="$PWD/mofem_install"
 mkdir -p $MOFEM_INSTALL_DIR
-
+  
 # Check operating system
 unameOut="$(uname -s)"
 case "${unameOut}" in
@@ -28,7 +29,7 @@ case "${unameOut}" in
     MINGW*)     machine=MinGw;;
     *)          machine="UNKNOWN:${unameOut}"
 esac
-
+  
 # Get numbers of processor
 if [ ${machine} = "Linux" ]
 then
@@ -37,52 +38,29 @@ elif [ ${machine} = "Mac" ]
 then
     NumberOfProcs=$(($(sysctl -n hw.ncpu)/2))
 fi
-
+  
 if
     [ "$NumberOfProcs" -lt 1 ]
-then 
+then
     NumberOfProcs=1
 fi
-
-echo "There is $NumberOfProcs processor(s)"
-
-
-##############################
-### SPACK
-##############################
-
-echo -e "****************************\nInstalling SPACK...\n****************************"
-
-# Locate home directory
-cd ~
-
-# Retrieve Spack for MoFEM
-git clone --single-branch -b mofem https://github.com/likask/spack.git
-
-# Initialise Spack environment variables:
-. $HOME/spack/share/spack/setup-env.sh
-
-# Add command to .bashrc
-echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bashrc
-
-# Install packages required by Spack
-spack bootstrap
-
-echo -e "Done.\n"
-
-
+  
+echo "The number of processors is $NumberOfProcs"
+  
+  
 ##############################
 ### PREREQUISITES
 ##############################
-
-echo -e "****************************\nInstalling PREREQUISITES...\n****************************"
-echo -e "User password can be asked at some point. Please wait..."
-
+  
+echo -e "\n****************************\nInstalling PREREQUISITES...\n****************************\n"
+echo "User password can be asked at some point. Please wait..."
+  
 # Install appropriate prerequisite packages
 if [ ${machine} = "Linux" ]
 then
-    apt-get update \
-    && apt-get install -y --no-install-recommends \
+    echo "Running in Linux"
+    sudo apt-get update \
+    && sudo apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     ca-certificates \
@@ -92,89 +70,97 @@ then
     git \
     python \
     unzip \
-    vim \ 
+    vim \
     gfortran
-
+  
 elif [ ${machine} = "Mac" ]
 then
+    echo "Running in macOS"
     ## Assuming Xcode already installed
-    # xcode-select --install
-    # sudo xcodebuild -license accept
-    # /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-    # brew install curl git gcc
-
-    spack install -j $NumberOfProcs gcc
-    spack load gcc
-    spack compiler find
-    spack install -j $NumberOfProcs curl
-    spack load curl
+    xcode-select --install
+    sudo xcodebuild -license accept
+    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    brew install curl git gcc
+ 
 fi
-
-echo -e "Done.\n"
-echo -e "No user password will be asked from now on.\nYou can come back and check in few hours."
-
+  
+echo -e "\nFinished installing Prerequisites.\n"
+echo "No user password will be asked from now on."
+  
+echo "Current directory: $PWD"
+  
+  
+##############################
+### SPACK
+##############################
+  
+echo -e "\n****************************\nInstalling SPACK...\n****************************\n"
+  
+# Locate home directory
+cd ~
+echo "$PWD"
+  
+# Retrieve Spack for MoFEM
+git clone https://github.com/likask/spack.git
+  
+# Initialise Spack environment variables:
+. $HOME/spack/share/spack/setup-env.sh
+  
+# Add command to .profile
+echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.profile
+  
+# Install packages required by Spack
+spack bootstrap
+  
+echo -e "\nFinished installing Spack.\n"
+  
+echo "Current directory: $PWD"
+  
 ##############################
 ### MoFEM USER MODULES
 ##############################
-
-echo "****************************\nInstalling MoFEM USER MODULES...\n****************************"
-
+  
+echo -e "\n********************************************************\n"
+echo -e "Installing USER MODULE & FRACTURE MODULE..."
+echo -e "\n********************************************************\n"
+  
 # Locate MoFEM installation directory
 cd $MOFEM_INSTALL_DIR
-
-# Install user modules
-spack install -j $NumberOfProcs mofem-users-modules
-
-# Activate user modules
-spack view --verbose symlink -i um_view mofem-cephas
-spack activate -v um_view mofem-users-modules
-
-# Test elasticity module
-cd um_view/elasticity
+echo "Current directory: $PWD"
+  
+# Install MoFEM packages
+spack install  -j $NumberOfProcs mofem-fracture-module build_type=Release
+  
+# Activate fracture module
+#spack view --verbose symlink -i um_view mofem-cephas
+#spack activate -v um_view mofem-fracture-module
+spack view --verbose symlink -i um_view mofem-fracture-module
+ 
+# Export view and make view visible from any directory
+export PATH=$PWD/um_view/bin:$PATH 
+echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.profile
+ 
+echo -e "\nFinished installing MoFEM User Module and Fracture Module.\n"
+ 
+ 
+# Test elasticity
+cd $MOFEM_INSTALL_DIR/um_view/elasticity
+echo "Current directory: $PWD"
 ./elasticity \
 -my_file LShape.h5m \
 -my_order 2 \
 -ksp_type gmres \
 -pc_type lu -pc_factor_mat_solver_package mumps \
 -ksp_monitor 2>&1 | tee log
-
-export DIR="$PWD/um_view"
-echo -e "Done.\n"
-echo "MoFEM user modules were sucessfully installed and tested in $DIR. "
-
-
-##############################
-### MoFEM FRACTURE MODULES
-##############################
-
-echo "****************************\nInstalling MoFEM FRACTURE MODULE...\n****************************"
-
-# Locate MoFEM installation directory
-cd $MOFEM_INSTALL_DIR
-
-# Install fracture module
-spack install  -j $NumberOfProcs mofem-fracture-module
-
-# Activate fracture module
-spack view --verbose symlink -i um_view_fracture mofem-cephas
-spack activate -v um_view_fracture mofem-fracture-module
-
-# Test fracture module
-cd um_view_fracture/mofem_um_fracture_mechanics 
+  
+echo -e "\nFinished testing elasticity.\n"
+ 
+# Test fracture crack propagation
+cd $MOFEM_INSTALL_DIR/um_view/mofem_um_fracture_mechanics
+echo "Current directory: $PWD"
 ./crack_propagation \
 -my_file examples/analytical_bc/out_10.h5m \
--my_max_post_proc_ref_level 0 \
--is_conservative_force false \
 -my_order 2 \
--my_ref 0\
--my_geom_order 1 \
--my_ref_order 2 \
--material HOOKE \
--mofem_mg_verbose 1 \
--mofem_mg_coarse_order 1 \
--mofem_mg_levels 2 \
--analytical_alpha 0  2>&1 | tee log
-
-export DIR="$PWD/um_view_fracture"
-echo -e "Done.\n"
-echo "MoFEM fracture module was succesfully installed and tested in $DIR... "
+-my_ref 0 2>&1 | tee log
+  
+echo -e "\nFinished testing crack propagation.\n"
