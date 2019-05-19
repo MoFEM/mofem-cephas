@@ -73,7 +73,7 @@ struct CubitMeshSets {
 
   /**
    * \brief get bc meshset type
-   * @return return type as unsigned integer
+   * @return return type as unsigned int
    */
   inline unsigned long int getBcTypeULong() const {
     return cubitBcType.to_ulong();
@@ -85,6 +85,20 @@ struct CubitMeshSets {
    */
   inline unsigned long int getMaksedBcTypeULong() const {
     return (cubitBcType & meshsets_mask).to_ulong();
+  }
+
+  /**
+   * @brief Get the meshset entities dimension
+   *
+   * \note If dimension is -1, then dimension for meshset ins undetermined.
+   *
+   * @return unsigned int
+   */
+  unsigned int getMeshsetEntitiesDimension() const {
+    if (tag_block_header_data)
+      return tag_block_header_data[2];
+    else
+      return -1;
   }
 
   /**
@@ -441,7 +455,7 @@ struct CubitMeshSets_change_bc_data_structure {
 
 #endif // __BCMULTIINDICES_HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_bc Boundary conditions
-* \ingroup mofem
-******************************************************************************/
+/**
+ * \defgroup mofem_bc Boundary conditions
+ * \ingroup mofem
+ */
