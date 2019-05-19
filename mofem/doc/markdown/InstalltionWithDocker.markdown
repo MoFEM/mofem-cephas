@@ -1,4 +1,4 @@
-Installation with Docker (Linux, Mac OS X and some versions of Windows) {#install_docker}
+Installation with Docker (Linux, macOS and some versions of Windows) {#install_docker}
 =======================================================================
 
 Docker is an open platform that allows for the distribution and deployment of
@@ -9,7 +9,7 @@ by the Linux kernel to provide lightweight containers and thereby avoiding the
 need to run costly virtual machines. It’s through the use of containers that
 MoFEM is compiled and run.
 
-In Mac OS X a lightweight Linux distribution is virtualized to run the Docker
+In macOS a lightweight Linux distribution is virtualized to run the Docker
 containers in.
 Entire installation procedure is also presented on [Youtube](https://www.youtube.com/watch?v=6opfKER7JHA) video.
 
@@ -128,9 +128,13 @@ however you can find good alternatives like [VisIt](https://wci.llnl.gov/simulat
 - If you going to write your modules or modify existing MoFEM modules you will need
 text editor. We recommend [Atom](https://atom.io).
 
-- You will need some basic tools make plots (f.e. [gnuplot](http://www.gnuplot.info)) or work with output files, tools like grep, [sed](https://en.wikipedia.org/wiki/Sed) or [awk](https://en.wikipedia.org/wiki/AWK). If you working in Linux simply install appropriate packages. If you are MacOS X user
-we recommend to install [HomeBrew](http://brew.sh), which install missing packages into
-MacOS X system.
+- You will need some basic tools make plots (f.e.
+  [gnuplot](http://www.gnuplot.info)) or work with output files, tools like
+  grep, [sed](https://en.wikipedia.org/wiki/Sed) or
+  [awk](https://en.wikipedia.org/wiki/AWK). If you working in Linux simply
+  install appropriate packages. If you are  a macOS user,
+  we recommend to install [HomeBrew](http://brew.sh), which install missing
+  packages into macOS system.
 
 # Contact {#docker_contact}
 

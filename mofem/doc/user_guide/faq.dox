@@ -182,9 +182,9 @@ This generates massif.out files that can be visualised with a graph using
 ms_print massif.out
 \endcode
 
-\subsection faq_profiling_code_mac_os_x How to profile code using XCode tools?
+\subsection faq_profiling_code_mac_os_x How to profile code using Xcode tools?
 
-To profile code in MacOS X environment, from line command you execute \em instruments,
+To profile code in macOS environment, from line command you execute \em instruments,
 for example
 \code
 instruments -v -t "Time Profiler" \
@@ -245,7 +245,7 @@ for example ubuntu you can do that executing following commands,
 \code
 sudo apt-get install valgrind kcachegrind
 \endcode
-If you using OS X you can use Homebrew <http://brew.sh> to make installation,
+If you are using macOS, you can use Homebrew <http://brew.sh> to make installation,
 \code
 brew install valgrind
 brew install qcachegrind --with-graphviz
