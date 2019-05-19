@@ -325,7 +325,7 @@ getFTensor2SymmetricFromMat(MatrixDouble &data) {
 }
 
 /**
- * @brief Calculate determinant of matrix/tensor 3 by 3
+ * @brief Calculate the determinant of a 3x3 matrix or a tensor of rank 2
  *
  * @tparam T
  * @param t
