@@ -1,10 +1,11 @@
 #!/bin/bash
-# This script automises installation of MoFEM user modules and fracture module
+# This script automises installation of MoFEM user version with basic modules
+# and fracture module
 # Full description of the installation process using spack can be found at:
 # http://mofem.eng.gla.ac.uk/mofem/html/install_spack.html
 # The script should work for both Ubuntu and macOS platforms
 # The last known working platforms are Ubuntu (18.04) and macOS (10.13, 10.14)
-# The installation will take two to three hours
+# The installation may take two to three hours
 #
 # Usage:
 #       1. Copy install_mofem.sh to the directory where MoFEM will be instaslled
@@ -132,8 +133,6 @@ echo "Current directory: $PWD"
 spack install  -j $NumberOfProcs mofem-fracture-module build_type=Release
   
 # Activate fracture module
-#spack view --verbose symlink -i um_view mofem-cephas
-#spack activate -v um_view mofem-fracture-module
 spack view --verbose symlink -i um_view mofem-fracture-module
  
 # Export view and make view visible from any directory
