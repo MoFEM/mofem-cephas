@@ -8,8 +8,8 @@
 # The installation may take two to three hours
 #
 # Usage:
-#       1. Copy install_mofem.sh to the directory where MoFEM will be instaslled
-#       2. Run install_mofem.sh from the command line
+#       1. Copy install_mofem_user.sh to the directory where MoFEM will be installed
+#       2. Run install_mofem_user.sh from the command line
 #
   
 ##############################

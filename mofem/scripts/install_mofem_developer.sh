@@ -7,8 +7,8 @@
 # The installation may take two to three hours
 #
 # Usage:
-#       1. Copy install_mofem.sh to the directory where MoFEM will be instaslled
-#       2. Run install_mofem.sh from the command line
+#       1. Copy install_mofem_developer.sh to the directory where MoFEM will be installed
+#       2. Run install_mofem_developer.sh from the command line
 #
   
 ##############################
@@ -157,11 +157,11 @@ echo -e "CORE LIBRARY: ctest ..."
 echo -e "\n----------------------------\n"
 
 spack load cmake
-ctest
+ctest -D Experimental
 
 # Install the library
 echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY: make -j $NumberOfProcs install ..."
+echo -e "CORE LIBRARY: make install ..."
 echo -e "\n----------------------------\n"
 
 make install
@@ -204,11 +204,11 @@ echo -e "USER MODULE: ctest ..."
 echo -e "\n----------------------------\n"
 
 spack load cmake
-ctest
+ctest -D Experimental
 
 # Install the user module
 echo -e "\n----------------------------\n"
-echo -e "USER MODULE: make -j $NumberOfProcs install ..."
+echo -e "USER MODULE: make install ..."
 echo -e "\n----------------------------\n"
 
 make install
