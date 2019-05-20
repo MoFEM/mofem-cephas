@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script automises installation of MoFEM developer version (Release)
+# This script automises installation of MoFEM developer version (RelWithDebInfo)
 # Full description of the installation process using spack can be found at:
 # http://mofem.eng.gla.ac.uk/mofem/html/install_spack.html
 # The script should work for both Ubuntu and macOS platforms

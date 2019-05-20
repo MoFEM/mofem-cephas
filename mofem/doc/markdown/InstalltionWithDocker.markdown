@@ -128,12 +128,12 @@ however you can find good alternatives like [VisIt](https://wci.llnl.gov/simulat
 - If you going to write your modules or modify existing MoFEM modules you will need
 text editor. We recommend [Atom](https://atom.io).
 
-- You will need some basic tools make plots (f.e.
+- You will need some basic tools to make plots (f.e.
   [gnuplot](http://www.gnuplot.info)) or work with output files, tools like
   grep, [sed](https://en.wikipedia.org/wiki/Sed) or
-  [awk](https://en.wikipedia.org/wiki/AWK). If you working in Linux simply
-  install appropriate packages. If you are  a macOS user,
-  we recommend to install [HomeBrew](http://brew.sh), which install missing
+  [awk](https://en.wikipedia.org/wiki/AWK). If you are working in Linux, simply
+  install appropriate packages. If you are a macOS user,
+  we recommend to install [HomeBrew](http://brew.sh), which installs missing
   packages into macOS system.
 
 # Contact {#docker_contact}
