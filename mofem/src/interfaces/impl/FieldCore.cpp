@@ -146,12 +146,12 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     const std::string Tag_ApproximationOrder_name = "_App_Order_" + name;
     CHKERR get_moab().tag_get_handle(
         Tag_ApproximationOrder_name.c_str(), 1, MB_TYPE_INTEGER, th_app_order,
-        MB_TAG_CREAT | MB_TAG_SPARSE, &def_ApproximationOrder);
+        MB_TAG_CREAT | tag_type, &def_ApproximationOrder);
     // rank
     int def_rank = 1;
     const std::string tag_rank_name = "_Field_Rank_" + name;
     CHKERR get_moab().tag_get_handle(tag_rank_name.c_str(), 1, MB_TYPE_INTEGER,
-                                     th_rank, MB_TAG_CREAT | MB_TAG_SPARSE,
+                                     th_rank, MB_TAG_CREAT | tag_type,
                                      &def_rank);
     CHKERR get_moab().tag_set_data(th_rank, &meshset, 1, &nb_of_coefficients);
 
