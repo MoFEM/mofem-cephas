@@ -1,4 +1,4 @@
-Installation with Spack (Recommended for HPC, Linux & Mac OS X) {#install_spack}
+Installation with Spack (Recommended for Linux, macOS, HPC) {#install_spack}
 ==========================================================
 
 Spack is "A flexible package manager that supports multiple versions,
@@ -14,11 +14,28 @@ installing. If you have any problems, feedback or would like to suggest
 corrections,
 please email to
 [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
-
-Note: Spack compiles packages from source, pre-compiled binaries are not
-available. 
+It should be noted that Spack compiles packages from source, pre-compiled binaries are not
+available.
 
 [TOC]
+
+# Installation using scripts {#installation_scripts}
+
+The remaining of this article presents a step-by-step guidance with
+comments/explanations on how to install MoFEM using Spack in different
+platforms (Linux, macOS, HPC). However, those who prefer to automise the process of the
+installation can use the following scripts for different purposes:
+
+- For user only (just the binary files): [`install_mofem_user.sh`](scripts/install_mofem_user.sh)
+- For developer (full source and binary files): [`install_mofem_developer.sh`](scripts/install_mofem_developer.sh)
+
+After downloading the appropriate file of choice, one should copy the file to
+the directory where MoFEM will be installed. Then simply run the file from the
+terminal by executing the command, for example,
+~~~~~~
+./install_mofem_user.sh
+~~~~~~ 
+It is worth noting that running the scripts may require user password for sudo rights.
 
 # Prerequisites {#spack_prerequisites}
 
@@ -142,8 +159,7 @@ The extensions can be installed using `spack install <extension>`.
 To access the installed users modules, create an `um_view` directory. This
 should be created in an appropriate directory:
 ~~~~~~
-spack view --verbose symlink -i um_view mofem-cephas
-spack activate -v um_view mofem-users-modules
+spack view --verbose symlink -i um_view mofem-users-modules
 ~~~~~~
 
 This filesystem view is a single directory tree that is the union of the
@@ -187,13 +203,16 @@ For example, the fracture module can be installed by:
 ~~~~~~
 spack install mofem-fracture-module
 cd $HOME
-spack view --verbose symlink -i um_view_foo mofem-cephas
-spack activate -v um_view_foo mofem-fracture-module
+<!-- spack view --verbose symlink -i um_view_foo mofem-cephas
+spack activate -v um_view_foo mofem-fracture-module -->
+spack view --verbose symlink -i um_view_foo mofem-fracture-module
 ~~~~~~
 or the minimal surface equation tutorial module:
 ~~~~~~
 spack install mofem-minimal-surface-equation
-spack activate -v um_view_foo mofem-minimal-surface-equation
+cd $HOME
+<!-- spack activate -v um_view_foo mofem-minimal-surface-equation -->
+spack view -v um_view_foo mofem-minimal-surface-equation
 ~~~~~~
 
 You can list all MoFEM packages in Spack 
@@ -309,7 +328,7 @@ make -j4
 ## 4. Core libraries {#spack_core_libraries}
 
 If you are going to develop MoFEM's core library, it means that you are a core
-developer and you can install mofem directly from the source.
+developer and you can install MoFEM directly from the source.
 
 Create mofem_install folder in the home directory and clone MoFEM repository:
 ~~~~~
@@ -588,7 +607,7 @@ The following command will do this. Note this is for `GNU sed` and macOS
 uses `BSD sed`. To use `GNU sed` install it via `homebrew install gnu-sed`
 and call it with `gsed` instead of `sed`. Linux defaults to `GNU sed`.
 ~~~~~~
-sed -i 's/DMOFEM_UM_BUILD_TESTS=OFF/DMOFEM_UM_BUILD_TESTS=ON/ ; s/DMOFEM_BUILD_TESTS=OFF/DMOFEM_BUILD_TESTS=ON/' spconfig.py
+sed -i -- 's/BUILD_TESTS=OFF/BUILD_TESTS=ON/g' spconfig.py
 ~~~~~~
 
 ## Setting build type and compiler flags {#spack_build_type}

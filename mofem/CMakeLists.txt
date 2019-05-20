@@ -306,3 +306,10 @@ install(
   ${PROJECT_BINARY_DIR}/external
   DESTINATION
   ${CMAKE_INSTALL_PREFIX})
+
+# copy scripts to html directory created by doxygen
+  add_custom_target(doxygen_copy_scripts
+    ${CMAKE_COMMAND} -E copy_directory
+    ${PROJECT_SOURCE_DIR}/scripts ${PROJECT_BINARY_DIR}/html/scripts
+  )
+  add_dependencies(doc doxygen_copy_scripts)
