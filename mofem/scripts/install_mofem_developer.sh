@@ -117,12 +117,12 @@ echo -e "\nFinished installing Spack.\n"
   
 echo "Current directory: $PWD"
   
-##############################
-### MoFEM CORE LIBRARY
-##############################
+########################################
+### MoFEM CORE LIBRARY & USER MODULES
+########################################
   
 echo -e "\n********************************************************\n"
-echo -e "Installing CORE LIBRARY & USER MODULES..."
+echo -e "Installing CORE LIBRARY ..."
 echo -e "\n********************************************************\n"
   
 # Locate MoFEM installation directory
@@ -170,7 +170,7 @@ echo -e "\nFinished installing and testing the Core Library.\n"
 
 
 echo -e "\n********************************************************\n"
-echo -e "Installing USER MODULES..."
+echo -e "Installing USER MODULES ..."
 echo -e "\n********************************************************\n"
 
 # Installation of user modules
