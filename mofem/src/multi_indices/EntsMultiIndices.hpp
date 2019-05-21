@@ -761,12 +761,6 @@ struct interface_FieldEntity : public interface_Field<T>,
     return this->sPtr;
   };
 
-  // /// \deprecated use getFieldEntityPtr instead
-  // DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const
-  // {
-  //   return getFieldEntityPtr();
-  // }
-
   /**
    * \brief get hash-map relating dof index on entity with its order
    *
