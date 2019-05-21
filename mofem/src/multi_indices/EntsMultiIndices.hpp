@@ -699,9 +699,6 @@ private:
   static int getEntFieldDataLastTagSize;
 };
 
-// /// \deprecated use FieldEntity
-// DEPRECATED typedef FieldEntity MoFEMEntity;
-
 /**
  * \brief Interface to FieldEntity
  * \ingroup ent_multi_indices
