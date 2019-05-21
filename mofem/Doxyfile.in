@@ -838,6 +838,7 @@ FILE_PATTERNS          = *.c \
                          *.cmake \
                          *.jou \
                          *.geo \
+                         *.sh \
                          *.msh
 
 

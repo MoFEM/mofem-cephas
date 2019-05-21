@@ -15,7 +15,7 @@ slow reading and writing and a limited portability for HPC computing.
 
 Spack <https://spack.io> on the other hand allows an easy installation on
 the base system and is free from disadvantages of the Docker solution. Spack is
-not a container, it is a packaging system for HPC, Linux and OS X. Therefore, <b>Spack is
+not a container, it is a packaging system for HPC, Linux and macOS. Therefore, <b>Spack is
 the recommended installation method for MoFEM.</b>
 
 Ubuntu and macOS installation methods demand direct interaction with the OS,
