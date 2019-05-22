@@ -71,7 +71,7 @@ struct Field {
                                 indexed_by<sequenced<>>>
       SequenceDofContainer;
 
-  typedef std::map<EntityType, std::array<int, MAX_DOFS_ON_ENTITY>>
+  typedef std::array<std::array<int, MAX_DOFS_ON_ENTITY>, MBMAXTYPE>
       DofsOrderMap;
 
   moab::Interface &moab;
