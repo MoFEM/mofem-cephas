@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
       CHKERR field_eval_ptr->buildTree3D(data,
                                          simple_interface->getDomainFEName());
       // Set points to set on finite elements
-      data->setEvalPoints(&eval_points[0], eval_points.size() / 3);
+      data->setEvalPoints(eval_points.data(), eval_points.size() / 3);
 
       // Evaluate points on finite elements
       CHKERR field_eval_ptr->evalFEAtThePoint3D(

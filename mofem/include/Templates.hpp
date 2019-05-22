@@ -325,6 +325,19 @@ getFTensor2SymmetricFromMat(MatrixDouble &data) {
 }
 
 /**
+ * @brief Calculate the determinant of a 3x3 matrix or a tensor of rank 2
+ *
+ * @tparam T
+ * @param t
+ * @return double
+ */
+template <class T> static inline double dEterminant(T &t) {
+  return t(0, 0) * t(1, 1) * t(2, 2) + t(1, 0) * t(2, 1) * t(0, 2) +
+         t(2, 0) * t(0, 1) * t(1, 2) - t(0, 0) * t(2, 1) * t(1, 2) -
+         t(2, 0) * t(1, 1) * t(0, 2) - t(1, 0) * t(0, 1) * t(2, 2);
+}
+
+/**
  * \brief Calculate inverse of tensor rank 2 at integration points
 
  * \ingroup mofem_forces_and_sources
