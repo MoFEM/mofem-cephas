@@ -834,26 +834,19 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
   if (verb == -1)
     verb = verbose;
 
-  FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
-      fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
-  if (fe_miit == finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+  auto fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (fe_miit == finiteElements.get<FiniteElement_name_mi_tag>().end())
     SETERRQ1(cOmm, MOFEM_NOT_FOUND, "Finite element <%s> not found",
              fe_name.c_str());
-  }
 
   if (verb >= VERBOSE)
     PetscPrintf(cOmm, "Build Finite Elements %s\n", fe_name.c_str());
   CHKERR buildFiniteElements(*fe_miit, ents_ptr, verb);
 
   if (verb >= VERBOSE) {
-    typedef EntFiniteElement_multiIndex::index<BitFEId_mi_tag>::type
-        FiniteElementById;
-    FiniteElementById &finite_elements_by_id =
-        entsFiniteElements.get<BitFEId_mi_tag>();
-    FiniteElementById::iterator miit =
-        finite_elements_by_id.lower_bound((*fe_miit)->getId());
-    FiniteElementById::iterator hi_miit =
-        finite_elements_by_id.upper_bound((*fe_miit)->getId());
+    auto &finite_elements_by_id = entsFiniteElements.get<BitFEId_mi_tag>();
+    auto miit = finite_elements_by_id.lower_bound((*fe_miit)->getId());
+    auto hi_miit = finite_elements_by_id.upper_bound((*fe_miit)->getId());
     int count = std::distance(miit, hi_miit);
     std::ostringstream ss;
     ss << *(*fe_miit) << " Nb. FEs " << count << std::endl;
