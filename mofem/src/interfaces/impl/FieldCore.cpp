@@ -473,9 +473,8 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       }
 
       // reserve memory for field  dofs
-      boost::shared_ptr<std::vector<FieldEntity>> ents_array =
-          boost::make_shared<std::vector<FieldEntity>>(
-              std::vector<FieldEntity>());
+      boost::shared_ptr<std::vector<FieldEntity>> ents_array(
+          new std::vector<FieldEntity>());
 
       // Add sequence to field data structure. Note that entities are allocated
       // once into vector. This vector is passed into sequence as a weak_ptr.
