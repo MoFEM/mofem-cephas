@@ -85,14 +85,15 @@ struct SetBitRefLevelTool {
       // add entities to database
       EntityHandle f = pit->first;
       EntityHandle s = pit->second;
-      boost::shared_ptr<std::vector<RefEntity> > ref_ents_vec =
-          boost::make_shared<std::vector<RefEntity> >();
+      boost::shared_ptr<std::vector<RefEntity>> ref_ents_vec(
+          new std::vector<RefEntity>());
       ref_ents_vec->reserve(s - f + 1);
-      for (; f != (s+1); ++f) {
-        ref_ents_vec->push_back(RefEntity(baseEntData, f));
-        *(ref_ents_vec->back().getBitRefLevelPtr()) |= bIt;
-        shared_ref_ents_vec.emplace_back(ref_ents_vec, &ref_ents_vec->back());
-      }
+      for (auto f : Range(f, s))
+        ref_ents_vec->emplace_back(baseEntData, f);
+      for (auto &re : *ref_ents_vec)
+        *(re.getBitRefLevelPtr()) |= bIt;
+      for (auto &re : *ref_ents_vec)
+        shared_ref_ents_vec.emplace_back(ref_ents_vec, &re);
     }
     if (!shared_ref_ents_vec.empty()) {
       int s0 = refEntsPtr->size();
