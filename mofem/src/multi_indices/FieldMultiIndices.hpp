@@ -332,8 +332,7 @@ struct Field {
    *
    * @return MoFEM::Field::SequenceEntContainer
    */
-  inline boost::shared_ptr<SequenceEntContainer> &
-  getEntSequenceContainer() const {
+  inline SequenceEntContainer &getEntSequenceContainer() const {
     return sequenceEntContainer;
   }
 
@@ -356,8 +355,7 @@ struct Field {
 
    * @return MoFEM::Field::SequenceDofContainer
    */
-  inline boost::shared_ptr<SequenceDofContainer> &
-  getDofSequenceContainer() const {
+  inline SequenceDofContainer &getDofSequenceContainer() const {
     return sequenceDofContainer;
   }
 
@@ -389,8 +387,8 @@ struct Field {
   MoFEMErrorCode rebuildDofsOrderMap() const;
 
 private:
-  mutable boost::shared_ptr<SequenceEntContainer> sequenceEntContainer;
-  mutable boost::shared_ptr<SequenceDofContainer> sequenceDofContainer;
+  mutable SequenceEntContainer sequenceEntContainer;
+  mutable SequenceDofContainer sequenceDofContainer;
   mutable DofsOrderMap dofOrderMap;
 };
 

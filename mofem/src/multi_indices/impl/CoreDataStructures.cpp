@@ -32,9 +32,7 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
              const boost::shared_ptr<CoordSys> coord_sys_ptr)
     : moab(const_cast<moab::Interface &>(moab)), meshSet(meshset),
       coordSysPtr(coord_sys_ptr), tagId(NULL), tagSpaceData(NULL),
-      tagNbCoeffData(NULL), tagName(NULL), tagNameSize(0),
-      sequenceEntContainer(boost::make_shared<SequenceEntContainer>()),
-      sequenceDofContainer(boost::make_shared<SequenceDofContainer>()) {
+      tagNbCoeffData(NULL), tagName(NULL), tagNameSize(0) {
 
   auto get_tag_data_ptr = [&](const auto name, auto &tag_data) {
     MoFEMFunctionBegin;

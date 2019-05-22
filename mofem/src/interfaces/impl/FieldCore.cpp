@@ -481,7 +481,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       // once into vector. This vector is passed into sequence as a weak_ptr.
       // Vector is destroyed at the point last entity inside that vector is
       // destroyed.
-      miit->get()->getEntSequenceContainer()->push_back(ents_array);
+      miit->get()->getEntSequenceContainer().push_back(ents_array);
       ents_array->reserve(second - first + 1);
 
       // Entity is not in database and order is changed or reset
@@ -781,7 +781,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
       hint = dofsField.emplace_hint(hint, dofs_array, &v);
 
     // Add Sequence of DOFs to sequence container as weak_ptr
-    field_it->get()->getDofSequenceContainer()->push_back(dofs_array);
+    field_it->get()->getDofSequenceContainer().push_back(dofs_array);
 
     // Check data consistency
     if (PetscUnlikely(static_cast<int>(dofs_array.use_count()) !=
