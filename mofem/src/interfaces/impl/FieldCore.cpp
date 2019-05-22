@@ -463,7 +463,6 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent,
           hi_miit_ref_ent;
       miit_ref_ent = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
-      // hi_miit_ref_ent = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
 
       auto create_tags_for_max_order_and_data = [&]() {
         MoFEMFunctionBegin;
