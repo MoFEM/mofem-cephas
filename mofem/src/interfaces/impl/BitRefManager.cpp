@@ -91,8 +91,7 @@ struct SetBitRefLevelTool {
       for (; f != (s+1); ++f) {
         ref_ents_vec->push_back(RefEntity(baseEntData, f));
         *(ref_ents_vec->back().getBitRefLevelPtr()) |= bIt;
-        shared_ref_ents_vec.push_back(
-            boost::shared_ptr<RefEntity>(ref_ents_vec, &ref_ents_vec->back()));
+        shared_ref_ents_vec.emplace_back(ref_ents_vec, &ref_ents_vec->back());
       }
     }
     if (!shared_ref_ents_vec.empty()) {
