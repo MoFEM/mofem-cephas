@@ -27,11 +27,11 @@ DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
   globalUId = getGlobalUniqueIdCalculate(dof, entity_ptr);
 
   if (PetscUnlikely(!entity_ptr)) 
-    THROW_MESSAGE("FieldEntity pinter not initialized");
+    THROW_MESSAGE("FieldEntity pointer not initialized");
   if (PetscUnlikely(!sPtr)) 
-    THROW_MESSAGE("FieldEntity pinter not initialized");
+    THROW_MESSAGE("FieldEntity pointer not initialized");
   if (PetscUnlikely(!getFieldEntityPtr())) 
-    THROW_MESSAGE("FieldEntity pinter not initialized");
+    THROW_MESSAGE("FieldEntity pointer not initialized");
   // verify dof order
   if (PetscUnlikely(dof_order != getDofOrderMap()[dof]))
     THROW_MESSAGE(
