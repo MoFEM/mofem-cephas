@@ -146,19 +146,28 @@ std::ostream &operator<<(std::ostream &os, const RefEntity &e) {
 
 // moab ent
 FieldEntity::FieldEntity(const boost::shared_ptr<Field> &field_ptr,
-                         const boost::shared_ptr<RefEntity> &ref_ent_ptr)
+                         const boost::shared_ptr<RefEntity> &ref_ent_ptr,
+                         boost::shared_ptr<const int> &&t_max_order_ptr)
     : interface_Field<Field>(field_ptr), interface_RefEntity<RefEntity>(
-                                             ref_ent_ptr) {
+                                             ref_ent_ptr),
+      tagMaxOrderPtr(t_max_order_ptr) {
   globalUId = getGlobalUniqueIdCalculate();
 }
 
-ApproximationOrder *FieldEntity::getMaxOrderPtr() {
-  return static_cast<ApproximationOrder *>(MoFEM::get_tag_ptr(
-      sFieldPtr->moab, sFieldPtr->th_AppOrder, sPtr->ent, NULL));
+const ApproximationOrder *FieldEntity::getMaxOrderPtr() const {
+  if(tagMaxOrderPtr)
+    return tagMaxOrderPtr.get();
+  else
+    return static_cast<ApproximationOrder *>(MoFEM::get_tag_ptr(
+        sFieldPtr->moab, sFieldPtr->th_AppOrder, sPtr->ent, NULL));
 }
+
 ApproximationOrder FieldEntity::getMaxOrder() const {
-  return *static_cast<ApproximationOrder *>(MoFEM::get_tag_ptr(
-      sFieldPtr->moab, sFieldPtr->th_AppOrder, sPtr->ent, NULL));
+  if(tagMaxOrderPtr)
+    return *tagMaxOrderPtr;
+  else
+    return *static_cast<ApproximationOrder *>(MoFEM::get_tag_ptr(
+        sFieldPtr->moab, sFieldPtr->th_AppOrder, sPtr->ent, NULL));
 }
 
 UId *FieldEntity::getEntFieldDataLastUid = NULL;

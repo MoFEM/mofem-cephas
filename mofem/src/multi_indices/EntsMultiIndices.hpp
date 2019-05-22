@@ -555,7 +555,9 @@ struct FieldEntity : public interface_Field<Field>,
   UId globalUId; ///< Global unique id for this entity
   // const ApproximationOrder *tag_FieldOrder;
   FieldEntity(const boost::shared_ptr<Field> &field_ptr,
-              const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+              const boost::shared_ptr<RefEntity> &ref_ent_ptr,
+              boost::shared_ptr<const int> &&t_max_order_ptr =
+                  boost::shared_ptr<const int>());
   ~FieldEntity();
 
   /**
@@ -600,7 +602,7 @@ struct FieldEntity : public interface_Field<Field>,
    * \brief Get pinter to Tag keeping approximation order
    * @return Pointer to Tag
    */
-  ApproximationOrder *getMaxOrderPtr();
+  const ApproximationOrder *getMaxOrderPtr() const;
 
   /**
    * \brief Get order set to the entity (Allocated tag size for such number)
@@ -691,6 +693,8 @@ struct FieldEntity : public interface_Field<Field>,
   }
 
 private:
+
+  boost::shared_ptr<const int> tagMaxOrderPtr;
 
   // Cache variables
   static UId *getEntFieldDataLastUid;

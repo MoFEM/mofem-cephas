@@ -447,7 +447,26 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       EntityHandle first = pit->first;
       EntityHandle second = pit->second;
 
-      if(order>=0) {
+      // reserve memory for field  dofs
+      boost::shared_ptr<std::vector<FieldEntity>> ents_array(
+          new std::vector<FieldEntity>());
+
+      // Add sequence to field data structure. Note that entities are allocated
+      // once into vector. This vector is passed into sequence as a weak_ptr.
+      // Vector is destroyed at the point last entity inside that vector is
+      // destroyed.
+      miit->get()->getEntSequenceContainer().push_back(ents_array);
+      ents_array->reserve(second - first + 1);
+
+;
+      // Entity is not in database and order is changed or reset
+      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent,
+          hi_miit_ref_ent;
+      miit_ref_ent = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
+      // hi_miit_ref_ent = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
+
+      auto create_tags_for_max_order_and_data = [&]() {
+        MoFEMFunctionBegin;
         Range set_ents(first, second);
         std::vector<int> o_vec(second - first + 1, order);
         CHKERR get_moab().tag_set_data((*miit)->th_AppOrder, set_ents,
@@ -470,31 +489,44 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                                            &*d_vec_ptr.begin(),
                                            &*tag_size.begin());
         }
+        MoFEMFunctionReturn(0);
+      };
+      if (order >= 0)
+        CHKERR create_tags_for_max_order_and_data();
+
+      auto get_ents_in_ref_ent = [&](auto miit_ref_ent) {
+        Range ents_in_ref_ent = Range(first, second);
+        for (auto ent : Range(first, second)) {
+          if (ent != miit_ref_ent->get()->getRefEnt())
+            ents_in_ref_ent.erase(ent);
+          else
+            ++miit_ref_ent;
+        }
+        return ents_in_ref_ent;
+      };
+
+      auto get_ents_max_order = [&](const Range &ents) {
+        boost::shared_ptr<std::vector<const void *>> ents_max_order(
+            new std::vector<const void *>());
+        ents_max_order->resize(ents.size());
+        CHKERR get_moab().tag_get_by_ptr((*miit)->th_AppOrder, ents,
+                                         &*ents_max_order->begin());
+        return ents_max_order;
+      };
+
+      auto ents_in_ref_ent = get_ents_in_ref_ent(miit_ref_ent);
+      auto ents_max_order = get_ents_max_order(ents_in_ref_ent);
+
+      auto vit_max_order = ents_max_order->begin();
+      for (auto ent : ents_in_ref_ent) {
+        ents_array->emplace_back(
+            *miit, *miit_ref_ent,
+            boost::shared_ptr<const int>(
+                ents_max_order, static_cast<const int *>(*vit_max_order)));
+        ++miit_ref_ent;
+        ++vit_max_order;
       }
-
-      // reserve memory for field  dofs
-      boost::shared_ptr<std::vector<FieldEntity>> ents_array(
-          new std::vector<FieldEntity>());
-
-      // Add sequence to field data structure. Note that entities are allocated
-      // once into vector. This vector is passed into sequence as a weak_ptr.
-      // Vector is destroyed at the point last entity inside that vector is
-      // destroyed.
-      miit->get()->getEntSequenceContainer().push_back(ents_array);
-      ents_array->reserve(second - first + 1);
-
-      // Entity is not in database and order is changed or reset
-      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent,
-          hi_miit_ref_ent;
-      miit_ref_ent = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
-      hi_miit_ref_ent = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
-      Range ents_in_ref_ent;
-      for (; miit_ref_ent != hi_miit_ref_ent; ++miit_ref_ent) {
-        const EntityHandle ent = miit_ref_ent->get()->getRefEnt();
-        ents_in_ref_ent.insert(ent);
-        ents_array->emplace_back(*miit, *miit_ref_ent);
-        nb_ents_set_order_new++;
-      }
+      nb_ents_set_order_new += ents_in_ref_ent.size();
 
       Range ents_not_in_database =
           subtract(Range(first, second), ents_in_ref_ent);
