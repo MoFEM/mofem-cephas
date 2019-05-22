@@ -71,6 +71,9 @@ struct Field {
                                 indexed_by<sequenced<>>>
       SequenceDofContainer;
 
+  typedef std::map<EntityType, std::array<int, MAX_DOFS_ON_ENTITY>>
+      DofsOrderMap;
+
   moab::Interface &moab;
 
   EntityHandle meshSet; ///< keeps entities for this meshset
@@ -366,16 +369,29 @@ struct Field {
    * coefficients, are sorted in the way.
    *
    */
-  inline std::vector<ApproximationOrder> &
+  inline std::array<int, MAX_DOFS_ON_ENTITY> &
   getDofOrderMap(const EntityType type) const {
     return dofOrderMap[type];
   }
 
+  /**
+   * \brief get hash-map relating dof index on entity with its order
+   *
+   * Dofs of given field are indexed on entity
+   * of the same type, same space, approximation base and number of
+   * coefficients, are sorted in the way.
+   *
+   */
+  inline DofsOrderMap &getDofOrderMap() const {
+    return const_cast<DofsOrderMap&>(dofOrderMap);
+  }
+
+  MoFEMErrorCode rebuildDofsOrderMap() const;
+
 private:
   mutable boost::shared_ptr<SequenceEntContainer> sequenceEntContainer;
   mutable boost::shared_ptr<SequenceDofContainer> sequenceDofContainer;
-
-  mutable std::map<EntityType, std::vector<int>> dofOrderMap;
+  mutable DofsOrderMap dofOrderMap;
 };
 
 /**

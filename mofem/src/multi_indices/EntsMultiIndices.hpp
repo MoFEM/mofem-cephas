@@ -686,7 +686,7 @@ struct FieldEntity : public interface_Field<Field>,
    * coefficients, are sorted in the way.
    *
    */
-  inline std::vector<ApproximationOrder> &getDofOrderMap() const {
+  inline std::array<int, MAX_DOFS_ON_ENTITY> &getDofOrderMap() const {
     return getFieldPtr()->getDofOrderMap(getEntType());
   }
 
@@ -766,7 +766,7 @@ struct interface_FieldEntity : public interface_Field<T>,
    * coefficients, are sorted in the way.
    *
    */
-  inline std::vector<ApproximationOrder> &getDofOrderMap() const {
+  inline std::array<int, MAX_DOFS_ON_ENTITY> &getDofOrderMap() const {
     return this->sPtr->getDofOrderMap();
   }
 };

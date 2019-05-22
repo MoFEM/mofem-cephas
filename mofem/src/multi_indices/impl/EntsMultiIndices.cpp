@@ -150,7 +150,6 @@ FieldEntity::FieldEntity(const boost::shared_ptr<Field> &field_ptr,
     : interface_Field<Field>(field_ptr), interface_RefEntity<RefEntity>(
                                              ref_ent_ptr) {
   globalUId = getGlobalUniqueIdCalculate();
-  getDofOrderMap().resize(MAX_DOFS_ON_ENTITY, -1);
 }
 
 ApproximationOrder *FieldEntity::getMaxOrderPtr() {

@@ -614,7 +614,7 @@ Core::buildFieldForNoField(const BitFieldId id,
     verb = verbose;
   // field it
   auto &set_id = fIelds.get<BitFieldId_mi_tag>();
-  // find fiels
+  // find fields
   auto miit = set_id.find(id);
   if (miit == set_id.end()) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "field not found");
@@ -672,15 +672,13 @@ Core::buildFieldForNoField(const BitFieldId id,
     }
   }
   if (verb > VERY_VERBOSE) {
-    typedef DofEntity_multiIndex::index<FieldName_mi_tag>::type DofsByName;
-    DofsByName &set = dofsField.get<FieldName_mi_tag>();
-    DofsByName::iterator miit2 = set.lower_bound(miit->get()->getNameRef());
-    DofsByName::iterator hi_miit2 = set.upper_bound(miit->get()->getNameRef());
-    assert(miit2 != hi_miit2);
-    for (; miit2 != hi_miit2; miit2++) {
+    auto lo_dof = dofsField.get<FieldName_mi_tag>().lower_bound(
+        miit->get()->getNameRef());
+    auto hi_dof = dofsField.get<FieldName_mi_tag>().upper_bound(
+        miit->get()->getNameRef());
+    for (; lo_dof != hi_dof; lo_dof++) {
       std::ostringstream ss;
-      ss << *miit2 << std::endl;
-      ;
+      ss << *lo_dof << std::endl;
       PetscSynchronizedPrintf(cOmm, ss.str().c_str());
     }
     PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
@@ -812,6 +810,11 @@ MoFEMErrorCode Core::buildField(const boost::shared_ptr<Field> &field,
   }
   std::map<EntityType, int> dof_counter;
   std::map<EntityType, int> inactive_dof_counter;
+
+  // Need to rebuild order table since number of dofs on each order when field
+  // was created.
+  if (field->getApproxBase() == USER_BASE) 
+    CHKERR field->rebuildDofsOrderMap();
 
   switch (field->getSpace()) {
   case NOFIELD:
