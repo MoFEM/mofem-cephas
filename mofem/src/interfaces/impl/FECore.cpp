@@ -792,35 +792,26 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
 MoFEMErrorCode Core::build_finite_elements(int verb) {
   MoFEMFunctionBeginHot;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
 
-  FiniteElement_multiIndex::iterator fe_miit = finiteElements.begin();
-
   // loop Finite Elements
-  for (; fe_miit != finiteElements.end(); fe_miit++) {
-    if (verb > 0)
-      PetscPrintf(cOmm, "Build Finite Elements %s\n",
-                  (*fe_miit)->getName().c_str());
-    CHKERR buildFiniteElements(*fe_miit, NULL, verb);
+  for (auto &fe : finiteElements) {
+    if (verb >= VERBOSE)
+      PetscPrintf(cOmm, "Build Finite Elements %s\n", fe->getName().c_str());
+    CHKERR buildFiniteElements(fe, NULL, verb);
   }
 
-  if (verb > 0) {
+  if (verb >= VERBOSE) {
     PetscSynchronizedPrintf(cOmm, "Nb. FEs %u\n", entsFiniteElements.size());
     PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-    typedef EntFiniteElement_multiIndex::index<BitFEId_mi_tag>::type
-        FiniteElementById;
-    FiniteElementById &finite_elements_by_id =
-        entsFiniteElements.get<BitFEId_mi_tag>();
-    FiniteElement_multiIndex::iterator fe_id_it = finiteElements.begin();
-    for (; fe_id_it != finiteElements.end(); fe_id_it++) {
-      FiniteElementById::iterator miit =
-          finite_elements_by_id.lower_bound((*fe_id_it)->getId());
-      FiniteElementById::iterator hi_miit =
-          finite_elements_by_id.upper_bound((*fe_id_it)->getId());
+    auto &finite_elements_by_id = entsFiniteElements.get<BitFEId_mi_tag>();
+    for (auto &fe : finiteElements) {
+      auto miit = finite_elements_by_id.lower_bound(fe->getId());
+      auto hi_miit = finite_elements_by_id.upper_bound(fe->getId());
       int count = std::distance(miit, hi_miit);
       std::ostringstream ss;
-      ss << *(*fe_id_it) << " Nb. FEs " << count << std::endl;
+      ss << *fe << " Nb. FEs " << count << std::endl;
       PetscSynchronizedPrintf(cOmm, ss.str().c_str());
       PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
     }
