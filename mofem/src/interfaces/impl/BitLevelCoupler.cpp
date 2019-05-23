@@ -518,18 +518,33 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
 
   const Field_multiIndex *fields_ptr;
   CHKERR m_field.get_fields(&fields_ptr);
-  for (Field_multiIndex::iterator fit = fields_ptr->begin();
-       fit != fields_ptr->end(); fit++) {
+  for (auto fit = fields_ptr->begin(); fit != fields_ptr->end(); fit++) {
 
     // Verify consistency with database
     if (verify) {
       // Get pointer to multi-index with field entities
       const FieldEntity_multiIndex *field_ents;
-      ierr = m_field.get_field_ents(&field_ents);
-      CHKERRG(ierr);
-      std::vector<EntityHandle>::const_iterator pit = parents.begin();
-      std::vector<EntityHandle>::const_iterator cit = children.begin();
-      for (; pit != parents.end(); pit++, cit++) {
+      CHKERR m_field.get_field_ents(&field_ents);
+
+      auto get_ents_max_order = [&](const std::vector<EntityHandle> &ents) {
+        boost::shared_ptr<std::vector<const void *>> ents_max_order(
+            new std::vector<const void *>());
+        ents_max_order->resize(ents.size());
+        CHKERR moab.tag_get_by_ptr((*fit)->th_AppOrder, &*ents.begin(),
+                                   ents.size(), &*ents_max_order->begin());
+        return ents_max_order;
+      };
+
+      auto max_order_parents = get_ents_max_order(parents);
+      auto max_order_children = get_ents_max_order(children);
+
+      auto pit = parents.begin();
+      auto cit = children.begin();
+      auto vit_parent_max_order = max_order_parents->begin();
+      auto vit_child_max_order = max_order_children->begin();
+
+      for (; pit != parents.end();
+           ++pit, ++cit, ++vit_parent_max_order, ++vit_child_max_order) {
         // verify entity type
         if (moab.type_from_handle(*pit) != moab.type_from_handle(*cit)) {
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -538,10 +553,16 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
         // create mofem entity objects
         boost::shared_ptr<FieldEntity> mofem_ent_parent(new FieldEntity(
             *fit, boost::shared_ptr<RefEntity>(new RefEntity(
-                      m_field.get_basic_entity_data_ptr(), *pit))));
+                      m_field.get_basic_entity_data_ptr(), *pit)),
+                      boost::shared_ptr<const int>(
+                          max_order_parents,
+                          static_cast<const int *>(*vit_parent_max_order))));
         boost::shared_ptr<FieldEntity> mofem_ent_child(new FieldEntity(
             *fit, boost::shared_ptr<RefEntity>(new RefEntity(
-                      m_field.get_basic_entity_data_ptr(), *cit))));
+                      m_field.get_basic_entity_data_ptr(), *cit)),
+                      boost::shared_ptr<const int>(
+                          max_order_children,
+                          static_cast<const int *>(*vit_child_max_order))));
         // check approximation order
         if (mofem_ent_parent->getMaxOrder() == mofem_ent_child->getMaxOrder()) {
           // approximation order is equal, simply copy data
