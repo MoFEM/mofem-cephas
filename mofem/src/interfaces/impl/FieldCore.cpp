@@ -458,7 +458,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       miit->get()->getEntSequenceContainer().push_back(ents_array);
       ents_array->reserve(second - first + 1);
 
-;
+      ;
       // Entity is not in database and order is changed or reset
       RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent,
           hi_miit_ref_ent;
@@ -659,6 +659,7 @@ Core::buildFieldForNoField(const BitFieldId id,
                             (*miit)->getName().c_str(),
                             ents_of_id_meshset.size());
   }
+  boost::shared_ptr<const int> zero_order(new const int(0));
   for (Range::iterator eit = ents_of_id_meshset.begin();
        eit != ents_of_id_meshset.end(); eit++) {
     // serch if field meshset is in database
@@ -671,13 +672,9 @@ Core::buildFieldForNoField(const BitFieldId id,
     }
     std::pair<FieldEntity_multiIndex::iterator, bool> e_miit;
     // create database entity
-    e_miit = entsFields.insert(
-        boost::make_shared<FieldEntity>(*miit, *miit_ref_ent));
-    // this is nor real field in space (set order to zero)
-    bool success = entsFields.modify(e_miit.first, FieldEntity_change_order(0));
-    if (!success)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-              "modification unsuccessful");
+    e_miit = entsFields.insert(boost::shared_ptr<FieldEntity>(new FieldEntity(
+        *miit, *miit_ref_ent,
+        boost::shared_ptr<const int>(zero_order, zero_order.get()))));
     FieldCoefficientsNumber rank = 0;
     // create dofs on this entity (nb. of dofs is equal to rank)
     for (; rank < (*e_miit.first)->getNbOfCoeffs(); rank++) {
@@ -843,7 +840,7 @@ MoFEMErrorCode Core::buildField(const boost::shared_ptr<Field> &field,
 
   // Need to rebuild order table since number of dofs on each order when field
   // was created.
-  if (field->getApproxBase() == USER_BASE) 
+  if (field->getApproxBase() == USER_BASE)
     CHKERR field->rebuildDofsOrderMap();
 
   switch (field->getSpace()) {
