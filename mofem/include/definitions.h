@@ -618,10 +618,12 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
  */
 #define THROW_MESSAGE(a)                                                       \
   {                                                                            \
-    std::string str("MoFEM error " + boost::lexical_cast<std::string>((a)) +   \
-                    " at line " + boost::lexical_cast<std::string>(__LINE__) + \
-                    " : " + std::string(__FILE__));                            \
-    throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());             \
+    throw MoFEMException(                                                      \
+        MOFEM_MOFEMEXCEPTION_THROW,                                            \
+        ("MoFEM error " + boost::lexical_cast<std::string>((a)) +              \
+         " at line " + boost::lexical_cast<std::string>(__LINE__) + " : " +    \
+         std::string(__FILE__))                                                \
+            .c_str());                                                         \
   }
 
 /**
