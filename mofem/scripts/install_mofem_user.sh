@@ -107,8 +107,8 @@ git clone https://github.com/likask/spack.git
 # Initialise Spack environment variables:
 . $HOME/spack/share/spack/setup-env.sh
   
-# Add command to .profile
-echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.profile
+# Add command to .bash_profile
+echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
   
 # Install packages required by Spack
 spack bootstrap
@@ -137,7 +137,7 @@ spack view --verbose symlink -i um_view mofem-fracture-module
  
 # Export view and make view visible from any directory
 export PATH=$PWD/um_view/bin:$PATH 
-echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.profile
+echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
  
 echo -e "\nFinished installing MoFEM User Module and Fracture Module.\n"
  

@@ -107,8 +107,8 @@ git clone https://github.com/likask/spack.git
 # Initialise Spack environment variables:
 . $HOME/spack/share/spack/setup-env.sh
   
-# Add command to .profile
-echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.profile
+# Add command to configuration file .bash_profile
+echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
   
 # Install packages required by Spack
 spack bootstrap
@@ -180,6 +180,7 @@ mkdir um
 cd um/
 spack view --verbose symlink -i um_view mofem-cephas@develop build_type=RelWithDebInfo 
 export PATH=$PWD/um_view/bin:$PATH
+echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
 
 mkdir build
 cd build/
