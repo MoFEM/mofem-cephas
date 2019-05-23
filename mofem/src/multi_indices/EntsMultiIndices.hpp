@@ -556,8 +556,7 @@ struct FieldEntity : public interface_Field<Field>,
 
   FieldEntity(const boost::shared_ptr<Field> &field_ptr,
               const boost::shared_ptr<RefEntity> &ref_ent_ptr,
-              boost::shared_ptr<const int> &&t_max_order_ptr =
-                  boost::shared_ptr<const int>());
+              boost::shared_ptr<const int> &&t_max_order_ptr);
 
                   
   ~FieldEntity();
