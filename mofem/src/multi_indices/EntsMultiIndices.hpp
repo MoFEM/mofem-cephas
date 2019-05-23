@@ -603,13 +603,15 @@ struct FieldEntity : public interface_Field<Field>,
    * \brief Get pinter to Tag keeping approximation order
    * @return Pointer to Tag
    */
-  const ApproximationOrder *getMaxOrderPtr() const;
+  inline const ApproximationOrder *getMaxOrderPtr() const {
+    return tagMaxOrderPtr.get();
+  }
 
   /**
    * \brief Get order set to the entity (Allocated tag size for such number)
    * @return Approximation order
    */
-  ApproximationOrder getMaxOrder() const;
+  inline ApproximationOrder getMaxOrder() const { return *tagMaxOrderPtr; }
 
   /**
    * \brief Get global unique id

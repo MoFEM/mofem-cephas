@@ -152,22 +152,9 @@ FieldEntity::FieldEntity(const boost::shared_ptr<Field> &field_ptr,
                                              ref_ent_ptr),
       tagMaxOrderPtr(t_max_order_ptr) {
   globalUId = getGlobalUniqueIdCalculate();
-}
 
-const ApproximationOrder *FieldEntity::getMaxOrderPtr() const {
-  if(tagMaxOrderPtr)
-    return tagMaxOrderPtr.get();
-  else
-    return static_cast<ApproximationOrder *>(MoFEM::get_tag_ptr(
-        sFieldPtr->moab, sFieldPtr->th_AppOrder, sPtr->ent, NULL));
-}
-
-ApproximationOrder FieldEntity::getMaxOrder() const {
-  if(tagMaxOrderPtr)
-    return *tagMaxOrderPtr;
-  else
-    return *static_cast<ApproximationOrder *>(MoFEM::get_tag_ptr(
-        sFieldPtr->moab, sFieldPtr->th_AppOrder, sPtr->ent, NULL));
+  if (!tagMaxOrderPtr)
+    THROW_MESSAGE("Pointer to max order not set");
 }
 
 UId *FieldEntity::getEntFieldDataLastUid = NULL;
