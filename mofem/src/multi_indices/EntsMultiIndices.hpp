@@ -553,7 +553,6 @@ struct FieldEntity : public interface_Field<Field>,
   typedef interface_Field<Field> interface_type_Field;
   typedef interface_RefEntity<RefEntity> interface_type_RefEntity;
   UId globalUId; ///< Global unique id for this entity
-  // const ApproximationOrder *tag_FieldOrder;
   FieldEntity(const boost::shared_ptr<Field> &field_ptr,
               const boost::shared_ptr<RefEntity> &ref_ent_ptr,
               boost::shared_ptr<const int> &&t_max_order_ptr =
