@@ -505,12 +505,12 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       };
 
       auto get_ents_max_order = [&](const Range &ents) {
-        boost::shared_ptr<std::vector<const void *>> ents_max_order(
+        boost::shared_ptr<std::vector<const void *>> vec(
             new std::vector<const void *>());
-        ents_max_order->resize(ents.size());
+        vec->resize(ents.size());
         CHKERR get_moab().tag_get_by_ptr((*miit)->th_AppOrder, ents,
-                                         &*ents_max_order->begin());
-        return ents_max_order;
+                                         &*vec->begin());
+        return vec;
       };
 
       auto ents_in_ref_ent = get_ents_in_ref_ent(miit_ref_ent);
@@ -662,7 +662,7 @@ Core::buildFieldForNoField(const BitFieldId id,
   boost::shared_ptr<const int> zero_order(new const int(0));
   for (Range::iterator eit = ents_of_id_meshset.begin();
        eit != ents_of_id_meshset.end(); eit++) {
-    // serch if field meshset is in database
+    // search if field meshset is in database
     RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent;
     miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
     if (miit_ref_ent == refinedEntities.get<Ent_mi_tag>().end()) {
