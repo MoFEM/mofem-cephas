@@ -402,42 +402,44 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         // entity is in database and order is changed or reset
         const ApproximationOrder old_approximation_order =
             (*vit)->getMaxOrder();
-        if (old_approximation_order == order)
-          continue;
-        FieldEntity_multiIndex::iterator miit =
-            entsFields.get<Unique_mi_tag>().find((*vit)->getGlobalUniqueId());
 
-        if ((*miit)->getMaxOrder() < order)
-          nb_ents_set_order_up++;
-        if ((*miit)->getMaxOrder() > order)
-          nb_ents_set_order_down++;
+        if (old_approximation_order != order) {
 
-        // set dofs inactive if order is reduced, and set new order to entity
-        // if order is increased (note that dofs are not build if order is
-        // increased)
+          FieldEntity_multiIndex::iterator miit =
+              entsFields.get<Unique_mi_tag>().find((*vit)->getGlobalUniqueId());
 
-        DofEntityByNameAndEnt &dofs_by_name =
-            dofsField.get<Composite_Name_And_Ent_mi_tag>();
-        DofEntityByNameAndEnt::iterator dit = dofs_by_name.lower_bound(
-            boost::make_tuple((*miit)->getNameRef(), (*miit)->getEnt()));
-        if (dit != dofs_by_name.end()) {
-          DofEntityByNameAndEnt::iterator hi_dit = dofs_by_name.upper_bound(
+          if ((*miit)->getMaxOrder() < order)
+            nb_ents_set_order_up++;
+          if ((*miit)->getMaxOrder() > order)
+            nb_ents_set_order_down++;
+
+          // set dofs inactive if order is reduced, and set new order to entity
+          // if order is increased (note that dofs are not build if order is
+          // increased)
+
+          DofEntityByNameAndEnt &dofs_by_name =
+              dofsField.get<Composite_Name_And_Ent_mi_tag>();
+          DofEntityByNameAndEnt::iterator dit = dofs_by_name.lower_bound(
               boost::make_tuple((*miit)->getNameRef(), (*miit)->getEnt()));
-          for (; dit != hi_dit; dit++) {
-            if ((*dit)->getDofOrder() <= order)
-              continue;
-            bool success = dofsField.modify(dofsField.project<0>(dit),
-                                            DofEntity_active_change(false));
-            if (!success)
-              SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                      "modification unsuccessful");
+          if (dit != dofs_by_name.end()) {
+            DofEntityByNameAndEnt::iterator hi_dit = dofs_by_name.upper_bound(
+                boost::make_tuple((*miit)->getNameRef(), (*miit)->getEnt()));
+            for (; dit != hi_dit; dit++) {
+              if ((*dit)->getDofOrder() > order) {
+                bool success = dofsField.modify(dofsField.project<0>(dit),
+                                                DofEntity_active_change(false));
+                if (!success)
+                  SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                          "modification unsuccessful");
+              }
+            }
           }
+          bool success =
+              entsFields.modify(entsFields.project<0>(miit), modify_order);
+          if (!success)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "modification unsuccessful");
         }
-        bool success =
-            entsFields.modify(entsFields.project<0>(miit), modify_order);
-        if (!success)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                  "modification unsuccessful");
       }
     }
 

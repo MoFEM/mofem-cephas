@@ -576,6 +576,13 @@ struct FieldEntity : public interface_Field<Field>,
   }
 
   /**
+   * @brief Return shared pointer to entity field data vector adaptor
+   * 
+   * @return boost::shared_ptr<VectorAdaptor> 
+   */
+  boost::shared_ptr<VectorAdaptor> makeSharedFieldDataAdaptorPtr() const;
+
+  /**
    * \brief Get vector of DOFs active values on entity
    * @return Vector of DOFs values
    */
@@ -698,6 +705,7 @@ struct FieldEntity : public interface_Field<Field>,
 private:
 
   boost::shared_ptr<const int> tagMaxOrderPtr;
+  boost::shared_ptr<VectorAdaptor> vectorAdaptorPtr;
 
   // Cache variables
   static UId *getEntFieldDataLastUid;
