@@ -313,15 +313,13 @@ MoFEMErrorCode Core::add_ents_to_field_by_type(const EntityHandle meshset,
 MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                                      const ApproximationOrder order, int verb) {
   MoFEMFunctionBegin;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
   *buildMoFEM = 0;
 
   // check field & meshset
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
-  const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
-  FieldSetById::iterator miit = set_id.find(id);
-  if (miit == set_id.end())
+  auto miit = fIelds.get<BitFieldId_mi_tag>().find(id);
+  if (miit == fIelds.get<BitFieldId_mi_tag>().end())
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "no filed found");
 
   EntityHandle idm = get_field_meshset(id);
@@ -336,11 +334,12 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
   }
 
   // ent view by field id (in set all MoabEnts has the same FieldId)
-  auto &set = entsFields.get<FieldName_mi_tag>();
-  auto eiit = set.lower_bound(miit->get()->getNameRef());
+  auto eiit =
+      entsFields.get<FieldName_mi_tag>().lower_bound(miit->get()->getNameRef());
   FieldEntity_multiIndex_ent_view ents_id_view;
-  if (eiit != set.end()) {
-    auto hi_eiit = set.upper_bound(miit->get()->getNameRef());
+  if (eiit != entsFields.get<FieldName_mi_tag>().end()) {
+    auto hi_eiit = entsFields.get<FieldName_mi_tag>().upper_bound(
+        miit->get()->getNameRef());
     std::copy(eiit, hi_eiit, std::back_inserter(ents_id_view));
   }
   if (verb > VERBOSE) {
