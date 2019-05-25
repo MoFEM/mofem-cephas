@@ -272,10 +272,10 @@ target_link_libraries(field_axpy_atom_test
   ${PROJECT_LIBS}
 )
 
-add_test(field_axpy ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test -my_file elasticity_atom_test_01X_pressure.h5m)
-add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/field_axpy_test.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
+add_test(field_axpy 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test 
+  -my_file elasticity_atom_test_01X_pressure.h5m)
 
 #test coord sys
 my_add_executable(test_setting_coordinate_sys test_setting_coordinate_sys.cpp)
