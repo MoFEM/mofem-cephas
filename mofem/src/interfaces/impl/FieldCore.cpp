@@ -462,33 +462,35 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       // Entity is not in database and order is changed or reset
       auto miit_ref_ent = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
 
-      auto create_tags_for_max_order_and_data = [&]() {
+      auto create_tags_for_max_order = [&](const Range &ents) {
         MoFEMFunctionBegin;
-        Range set_ents(first, second);
-        std::vector<int> o_vec(second - first + 1, order);
-        CHKERR get_moab().tag_set_data((*miit)->th_AppOrder, set_ents,
+        std::vector<int> o_vec(ents.size(), order);
+        CHKERR get_moab().tag_set_data((*miit)->th_AppOrder, ents,
                                        &*o_vec.begin());
+        MoFEMFunctionReturn(0);
+      };
+
+      auto create_tags_for_data = [&](const Range &ents) {
+        MoFEMFunctionBegin;
         const EntityType ent_type = get_moab().type_from_handle(first);
         const std::size_t nb_dofs =
             ((*miit)->getFieldOrderTable()[ent_type])(order) *
             (*miit)->getNbOfCoeffs();
         if (ent_type == MBVERTEX) {
           std::vector<double> d_vec(nb_dofs * (second - first + 1), 0);
-          CHKERR get_moab().tag_set_data((*miit)->th_FieldDataVerts, set_ents,
+          CHKERR get_moab().tag_set_data((*miit)->th_FieldDataVerts, ents,
                                          &*d_vec.begin());
         } else {
           std::vector<int> tag_size(second - first + 1, nb_dofs);
           std::vector<double> d_vec(nb_dofs, 0);
           std::vector<void const *> d_vec_ptr(second - first + 1,
                                               &*d_vec.begin());
-          CHKERR get_moab().tag_set_by_ptr((*miit)->th_FieldData, set_ents,
+          CHKERR get_moab().tag_set_by_ptr((*miit)->th_FieldData, ents,
                                            &*d_vec_ptr.begin(),
                                            &*tag_size.begin());
         }
         MoFEMFunctionReturn(0);
       };
-      if (order >= 0)
-        CHKERR create_tags_for_max_order_and_data();
 
       auto get_ents_in_ref_ent = [&](auto miit_ref_ent) {
         auto hi = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
@@ -507,39 +509,45 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         return vec;
       };
 
-      auto ents_in_ref_ent = get_ents_in_ref_ent(miit_ref_ent);
-      auto ents_max_order = get_ents_max_order(ents_in_ref_ent);
+      if (order >= 0) {
 
-      auto vit_max_order = ents_max_order->begin();
-      for (auto ent : ents_in_ref_ent) {
-        ents_array->emplace_back(
-            *miit, *miit_ref_ent,
-            FieldEntity::makeSharedFieldDataAdaptorPtr(*miit, *miit_ref_ent),
-            boost::shared_ptr<const int>(
-                ents_max_order, static_cast<const int *>(*vit_max_order)));
-        ++miit_ref_ent;
-        ++vit_max_order;
-      }
-      nb_ents_set_order_new += ents_in_ref_ent.size();
+        auto ents_in_ref_ent = get_ents_in_ref_ent(miit_ref_ent);
+        CHKERR create_tags_for_max_order(ents_in_ref_ent);
+        CHKERR create_tags_for_data(ents_in_ref_ent);
 
-      Range ents_not_in_database =
-          subtract(Range(first, second), ents_in_ref_ent);
-      for (Range::iterator eit = ents_not_in_database.begin();
-           eit != ents_not_in_database.end(); ++eit) {
-        RefEntity ref_ent(basicEntityDataPtr, *eit);
-        // FIXME: need some consistent policy in that case
-        if (ref_ent.getBitRefLevel().any()) {
-          std::cerr << ref_ent << std::endl;
-          SETERRQ(
-              PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Try to add entities which are not seeded or added to database");
+        auto ents_max_order = get_ents_max_order(ents_in_ref_ent);
+
+        auto vit_max_order = ents_max_order->begin();
+        for (auto ent : ents_in_ref_ent) {
+          ents_array->emplace_back(
+              *miit, *miit_ref_ent,
+              FieldEntity::makeSharedFieldDataAdaptorPtr(*miit, *miit_ref_ent),
+              boost::shared_ptr<const int>(
+                  ents_max_order, static_cast<const int *>(*vit_max_order)));
+          ++miit_ref_ent;
+          ++vit_max_order;
         }
-      }
+        nb_ents_set_order_new += ents_in_ref_ent.size();
 
-      // Add entities to database
-      auto hint = entsFields.end();
-      for (auto &v : *ents_array) {
-        hint = entsFields.emplace_hint(hint, ents_array, &v);
+        Range ents_not_in_database =
+            subtract(Range(first, second), ents_in_ref_ent);
+        for (Range::iterator eit = ents_not_in_database.begin();
+             eit != ents_not_in_database.end(); ++eit) {
+          RefEntity ref_ent(basicEntityDataPtr, *eit);
+          // FIXME: need some consistent policy in that case
+          if (ref_ent.getBitRefLevel().any()) {
+            std::cerr << ref_ent << std::endl;
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Try to add entities which are not seeded or added to "
+                    "database");
+          }
+        }
+
+        // Add entities to database
+        auto hint = entsFields.end();
+        for (auto &v : *ents_array) {
+          hint = entsFields.emplace_hint(hint, ents_array, &v);
+        }
       }
     }
   }
