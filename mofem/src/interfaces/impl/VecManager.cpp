@@ -328,7 +328,7 @@ template <int MODE> struct SetOtherLocalGhostVector {
                                    A4 &cpy_field_name) {
     MoFEMFunctionBegin;
     for (; miit != hi_miit; miit++) {
-      if (!miit->get()->getHasLocalIndex()) {
+      if (miit->get()->getHasLocalIndex()) {
         auto diiiit =
             dofs_ptr
                 ->template get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
