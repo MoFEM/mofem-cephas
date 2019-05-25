@@ -176,35 +176,6 @@ FieldEntity::makeSharedFieldDataAdaptorPtr() const {
       size, ublas::shallow_array_adaptor<double>(size, ptr));
 }
 
-UId *FieldEntity::getEntFieldDataLastUid = NULL;
-double *FieldEntity::getEntFieldDataLastPtr = NULL;
-int FieldEntity::getEntFieldDataLastSize = 0;
-int FieldEntity::getEntFieldDataLastTagSize = 0;
-
-VectorAdaptor FieldEntity::getEntFieldData() const {
-  if (getEntFieldDataLastUid != &globalUId) {
-    getEntFieldDataLastUid = const_cast<UId *>(&globalUId);
-    switch (getEntType()) {
-    case MBVERTEX:
-      getEntFieldDataLastSize = getNbOfCoeffs();
-      getEntFieldDataLastTagSize = getEntFieldDataLastSize;
-      getEntFieldDataLastPtr = static_cast<double *>(MoFEM::get_tag_ptr(
-          sFieldPtr->moab, sFieldPtr->th_FieldDataVerts, sPtr->ent, NULL));
-      break;
-    default:
-      getEntFieldDataLastSize = getNbDofsOnEnt();
-      getEntFieldDataLastPtr = static_cast<double *>(
-          MoFEM::get_tag_ptr(sFieldPtr->moab, sFieldPtr->th_FieldData,
-                             sPtr->ent, &getEntFieldDataLastTagSize));
-      if (PetscUnlikely(getEntFieldDataLastTagSize < getEntFieldDataLastSize))
-        THROW_MESSAGE("Data inconsistency");
-    }
-  }
-  return VectorAdaptor(getEntFieldDataLastSize,
-                       ublas::shallow_array_adaptor<double>(
-                           getEntFieldDataLastSize, getEntFieldDataLastPtr));
-}
-
 FieldEntity::~FieldEntity() {}
 std::ostream &operator<<(std::ostream &os, const FieldEntity &e) {
   os << "ent_global_uid "
