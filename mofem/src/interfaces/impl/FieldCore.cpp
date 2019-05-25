@@ -538,45 +538,44 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         return vec;
       };
 
+      auto ents_in_ref_ent = get_ents_in_ref_ent(miit_ref_ent);
       if (order >= 0) {
-
-        auto ents_in_ref_ent = get_ents_in_ref_ent(miit_ref_ent);
         CHKERR create_tags_for_max_order(ents_in_ref_ent);
         CHKERR create_tags_for_data(ents_in_ref_ent);
+      }
 
-        auto ents_max_order = get_ents_max_order(ents_in_ref_ent);
+      auto ents_max_order = get_ents_max_order(ents_in_ref_ent);
 
-        auto vit_max_order = ents_max_order->begin();
-        for (auto ent : ents_in_ref_ent) {
-          ents_array->emplace_back(
-              *miit, *miit_ref_ent,
-              FieldEntity::makeSharedFieldDataAdaptorPtr(*miit, *miit_ref_ent),
-              boost::shared_ptr<const int>(
-                  ents_max_order, static_cast<const int *>(*vit_max_order)));
-          ++miit_ref_ent;
-          ++vit_max_order;
+      auto vit_max_order = ents_max_order->begin();
+      for (auto ent : ents_in_ref_ent) {
+        ents_array->emplace_back(
+            *miit, *miit_ref_ent,
+            FieldEntity::makeSharedFieldDataAdaptorPtr(*miit, *miit_ref_ent),
+            boost::shared_ptr<const int>(
+                ents_max_order, static_cast<const int *>(*vit_max_order)));
+        ++miit_ref_ent;
+        ++vit_max_order;
+      }
+      nb_ents_set_order_new += ents_in_ref_ent.size();
+
+      Range ents_not_in_database =
+          subtract(Range(first, second), ents_in_ref_ent);
+      for (Range::iterator eit = ents_not_in_database.begin();
+           eit != ents_not_in_database.end(); ++eit) {
+        RefEntity ref_ent(basicEntityDataPtr, *eit);
+        // FIXME: need some consistent policy in that case
+        if (ref_ent.getBitRefLevel().any()) {
+          std::cerr << ref_ent << std::endl;
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Try to add entities which are not seeded or added to "
+                  "database");
         }
-        nb_ents_set_order_new += ents_in_ref_ent.size();
+      }
 
-        Range ents_not_in_database =
-            subtract(Range(first, second), ents_in_ref_ent);
-        for (Range::iterator eit = ents_not_in_database.begin();
-             eit != ents_not_in_database.end(); ++eit) {
-          RefEntity ref_ent(basicEntityDataPtr, *eit);
-          // FIXME: need some consistent policy in that case
-          if (ref_ent.getBitRefLevel().any()) {
-            std::cerr << ref_ent << std::endl;
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Try to add entities which are not seeded or added to "
-                    "database");
-          }
-        }
-
-        // Add entities to database
-        auto hint = entsFields.end();
-        for (auto &v : *ents_array) {
-          hint = entsFields.emplace_hint(hint, ents_array, &v);
-        }
+      // Add entities to database
+      auto hint = entsFields.end();
+      for (auto &v : *ents_array) {
+        hint = entsFields.emplace_hint(hint, ents_array, &v);
       }
     }
   }
