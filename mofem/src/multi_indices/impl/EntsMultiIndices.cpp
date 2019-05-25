@@ -228,8 +228,7 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
   double *tag_field_data;
   int tag_field_data_size;
 
-  switch (e->getEntType()) {
-  case MBVERTEX: {
+  auto set_verts = [&]() {
     if (e->sFieldPtr->th_FieldDataVertsType == MB_TAG_SPARSE) {
       // Get pointer and size of field values tag
       rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
@@ -253,8 +252,9 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
                                tag_field_data);
       MOAB_THROW(rval);
     }
-  } break;
-  default: {
+  };
+
+  auto set_default = [&]() {
     // Get pointer and size of field values tag
     rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldData, &ent, 1,
                                (const void **)&tag_field_data,
@@ -293,7 +293,14 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
                                  &tag_field_data_size);
       MOAB_THROW(rval);
     }
-  }
+  };
+
+  switch (e->getEntType()) {
+  case MBVERTEX:
+    set_verts();
+    break;
+  default:
+    set_default();
   }
 }
 
