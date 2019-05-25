@@ -491,14 +491,11 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         CHKERR create_tags_for_max_order_and_data();
 
       auto get_ents_in_ref_ent = [&](auto miit_ref_ent) {
-        Range ents_in_ref_ent = Range(first, second);
-        for (auto ent : Range(first, second)) {
-          if (ent != miit_ref_ent->get()->getRefEnt())
-            ents_in_ref_ent.erase(ent);
-          else
-            ++miit_ref_ent;
-        }
-        return ents_in_ref_ent;
+        auto hi = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
+        Range in;
+        for (; miit_ref_ent != hi; ++miit_ref_ent)
+          in.insert(miit_ref_ent->get()->getRefEnt());
+        return in;
       };
 
       auto get_ents_max_order = [&](const Range &ents) {
