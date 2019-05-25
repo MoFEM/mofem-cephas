@@ -395,9 +395,9 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
     Range ents_in_database;
     auto vit = ents_id_view.get<1>().lower_bound(first);
     auto hi_vit = ents_id_view.get<1>().upper_bound(second);
-    for (; vit != hi_vit; ++vit) {
-      ents_in_database.insert(vit->get()->getEnt());
-      if (order >= 0) {
+    if (order >= 0) {
+      for (; vit != hi_vit; ++vit) {
+        ents_in_database.insert(vit->get()->getEnt());
         // entity is in database and order is changed or reset
         const ApproximationOrder old_approximation_order =
             (*vit)->getMaxOrder();
@@ -459,7 +459,6 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       miit->get()->getEntSequenceContainer().push_back(ents_array);
       ents_array->reserve(second - first + 1);
 
-      ;
       // Entity is not in database and order is changed or reset
       RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent,
           hi_miit_ref_ent;
