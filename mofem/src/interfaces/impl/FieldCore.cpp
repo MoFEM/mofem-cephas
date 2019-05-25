@@ -416,13 +416,13 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
           // if order is increased (note that dofs are not build if order is
           // increased)
 
-          DofEntityByNameAndEnt &dofs_by_name =
-              dofsField.get<Composite_Name_And_Ent_mi_tag>();
-          DofEntityByNameAndEnt::iterator dit = dofs_by_name.lower_bound(
+          auto dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
               boost::make_tuple((*miit)->getNameRef(), (*miit)->getEnt()));
-          if (dit != dofs_by_name.end()) {
-            DofEntityByNameAndEnt::iterator hi_dit = dofs_by_name.upper_bound(
-                boost::make_tuple((*miit)->getNameRef(), (*miit)->getEnt()));
+          if (dit != dofsField.get<Composite_Name_And_Ent_mi_tag>().end()) {
+            auto hi_dit =
+                dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+                    boost::make_tuple((*miit)->getNameRef(),
+                                      (*miit)->getEnt()));
             for (; dit != hi_dit; dit++) {
               if ((*dit)->getDofOrder() > order) {
                 bool success = dofsField.modify(dofsField.project<0>(dit),
