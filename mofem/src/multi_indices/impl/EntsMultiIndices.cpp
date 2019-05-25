@@ -302,6 +302,10 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
   default:
     set_default();
   }
+
+  *e->getEntFieldDataPtr() = VectorAdaptor(
+      tag_field_data_size, ublas::shallow_array_adaptor<double>(
+                               tag_field_data_size, tag_field_data));
 }
 
 } // namespace MoFEM
