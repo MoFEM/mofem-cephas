@@ -558,19 +558,24 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       }
       nb_ents_set_order_new += ents_in_ref_ent.size();
 
+      // Check if any of entities in the range has bit level but is not added 
+      // to database. That generate data inconsistency and error. 
+      if(ents_in_ref_ent.size() < (second - first + 1)) {
       Range ents_not_in_database =
           subtract(Range(first, second), ents_in_ref_ent);
-      for (Range::iterator eit = ents_not_in_database.begin();
-           eit != ents_not_in_database.end(); ++eit) {
-        RefEntity ref_ent(basicEntityDataPtr, *eit);
-        // FIXME: need some consistent policy in that case
-        if (ref_ent.getBitRefLevel().any()) {
-          std::cerr << ref_ent << std::endl;
+        std::vector<const void *> vec_bits(ents_not_in_database.size());
+        CHKERR get_moab().tag_get_by_ptr(
+            get_basic_entity_data_ptr()->th_RefBitLevel, ents_not_in_database,
+            &*vec_bits.begin());
+        auto cast = [](auto p) {
+          return static_cast<const BitRefLevel *>(p);
+        };
+        for (auto v : vec_bits)
+          if (cast(v)->any())
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Try to add entities which are not seeded or added to "
                   "database");
         }
-      }
 
       // Add entities to database
       auto hint = entsFields.end();
