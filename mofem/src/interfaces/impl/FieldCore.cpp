@@ -521,6 +521,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       for (auto ent : ents_in_ref_ent) {
         ents_array->emplace_back(
             *miit, *miit_ref_ent,
+            FieldEntity::makeSharedFieldDataAdaptorPtr(*miit, *miit_ref_ent),
             boost::shared_ptr<const int>(
                 ents_max_order, static_cast<const int *>(*vit_max_order)));
         ++miit_ref_ent;
@@ -675,6 +676,7 @@ Core::buildFieldForNoField(const BitFieldId id,
     // create database entity
     e_miit = entsFields.insert(boost::shared_ptr<FieldEntity>(new FieldEntity(
         *miit, *miit_ref_ent,
+        FieldEntity::makeSharedFieldDataAdaptorPtr(*miit, *miit_ref_ent),
         boost::shared_ptr<const int>(zero_order, zero_order.get()))));
     FieldCoefficientsNumber rank = 0;
     // create dofs on this entity (nb. of dofs is equal to rank)

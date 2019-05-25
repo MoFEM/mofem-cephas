@@ -550,19 +550,24 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "inconsistent type");
         }
+        // ref ent pointers
+        auto ref_parent_ptr = boost::make_shared<RefEntity>(
+            m_field.get_basic_entity_data_ptr(), *pit);
+        auto ref_child_ptr = boost::make_shared<RefEntity>(
+            m_field.get_basic_entity_data_ptr(), *cit);
         // create mofem entity objects
         boost::shared_ptr<FieldEntity> mofem_ent_parent(new FieldEntity(
-            *fit, boost::shared_ptr<RefEntity>(new RefEntity(
-                      m_field.get_basic_entity_data_ptr(), *pit)),
-                      boost::shared_ptr<const int>(
-                          max_order_parents,
-                          static_cast<const int *>(*vit_parent_max_order))));
+            *fit, ref_parent_ptr,
+            FieldEntity::makeSharedFieldDataAdaptorPtr(*fit, ref_parent_ptr),
+            boost::shared_ptr<const int>(
+                max_order_parents,
+                static_cast<const int *>(*vit_parent_max_order))));
         boost::shared_ptr<FieldEntity> mofem_ent_child(new FieldEntity(
-            *fit, boost::shared_ptr<RefEntity>(new RefEntity(
-                      m_field.get_basic_entity_data_ptr(), *cit)),
-                      boost::shared_ptr<const int>(
-                          max_order_children,
-                          static_cast<const int *>(*vit_child_max_order))));
+            *fit, ref_child_ptr,
+            FieldEntity::makeSharedFieldDataAdaptorPtr(*fit, ref_child_ptr),
+            boost::shared_ptr<const int>(
+                max_order_children,
+                static_cast<const int *>(*vit_child_max_order))));
         // check approximation order
         if (mofem_ent_parent->getMaxOrder() == mofem_ent_child->getMaxOrder()) {
           // approximation order is equal, simply copy data

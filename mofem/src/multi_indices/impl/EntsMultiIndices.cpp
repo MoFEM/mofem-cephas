@@ -145,32 +145,39 @@ std::ostream &operator<<(std::ostream &os, const RefEntity &e) {
 }
 
 // moab ent
-FieldEntity::FieldEntity(const boost::shared_ptr<Field> &field_ptr,
-                         const boost::shared_ptr<RefEntity> &ref_ent_ptr,
-                         boost::shared_ptr<const int> &&t_max_order_ptr)
+FieldEntity::FieldEntity(
+    const boost::shared_ptr<Field> &field_ptr,
+    const boost::shared_ptr<RefEntity> &ref_ent_ptr,
+    boost::shared_ptr<VectorAdaptor> &&field_data_adaptor_ptr,
+    boost::shared_ptr<const int> &&t_max_order_ptr)
     : interface_Field<Field>(field_ptr), interface_RefEntity<RefEntity>(
                                              ref_ent_ptr),
+      fieldDataAdaptorPtr(field_data_adaptor_ptr),
       tagMaxOrderPtr(t_max_order_ptr) {
   globalUId = getGlobalUniqueIdCalculate();
-  vectorAdaptorPtr = makeSharedFieldDataAdaptorPtr();
 
-  if (!tagMaxOrderPtr)
+  if (PetscUnlikely(!fieldDataAdaptorPtr))
+    THROW_MESSAGE("Pointer to field data adaptor not set");
+
+  if (PetscUnlikely(!tagMaxOrderPtr))
     THROW_MESSAGE("Pointer to max order not set");
 }
 
-boost::shared_ptr<VectorAdaptor>
-FieldEntity::makeSharedFieldDataAdaptorPtr() const {
+boost::shared_ptr<VectorAdaptor> FieldEntity::makeSharedFieldDataAdaptorPtr(
+    const boost::shared_ptr<Field> &field_ptr,
+    const boost::shared_ptr<RefEntity> &ref_ent_ptr) {
   int size;
   double *ptr;
-  switch (getEntType()) {
+  switch (ref_ent_ptr->getEntType()) {
   case MBVERTEX:
-    size = getNbOfCoeffs();
-    ptr = static_cast<double *>(MoFEM::get_tag_ptr(
-        sFieldPtr->moab, sFieldPtr->th_FieldDataVerts, sPtr->ent, &size));
+    size = field_ptr->getNbOfCoeffs();
+    ptr = static_cast<double *>(MoFEM::get_tag_ptr(field_ptr->moab,
+                                                   field_ptr->th_FieldDataVerts,
+                                                   ref_ent_ptr->ent, &size));
     break;
   default:
     ptr = static_cast<double *>(MoFEM::get_tag_ptr(
-        sFieldPtr->moab, sFieldPtr->th_FieldData, sPtr->ent, &size));
+        field_ptr->moab, field_ptr->th_FieldData, ref_ent_ptr->ent, &size));
   }
   return boost::make_shared<VectorAdaptor>(
       size, ublas::shallow_array_adaptor<double>(size, ptr));

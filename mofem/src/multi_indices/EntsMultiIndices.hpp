@@ -556,6 +556,7 @@ struct FieldEntity : public interface_Field<Field>,
 
   FieldEntity(const boost::shared_ptr<Field> &field_ptr,
               const boost::shared_ptr<RefEntity> &ref_ent_ptr,
+              boost::shared_ptr<VectorAdaptor> &&field_data_adaptor_ptr,
               boost::shared_ptr<const int> &&t_max_order_ptr);
 
                   
@@ -580,7 +581,9 @@ struct FieldEntity : public interface_Field<Field>,
    * 
    * @return boost::shared_ptr<VectorAdaptor> 
    */
-  boost::shared_ptr<VectorAdaptor> makeSharedFieldDataAdaptorPtr() const;
+  static boost::shared_ptr<VectorAdaptor> makeSharedFieldDataAdaptorPtr(
+      const boost::shared_ptr<Field> &field_ptr,
+      const boost::shared_ptr<RefEntity> &ref_ent_ptr);
 
   /**
    * @brief Get shared ptr to vector adaptor pointing to the field tag data on
@@ -589,14 +592,14 @@ struct FieldEntity : public interface_Field<Field>,
    * @return boost::shared_ptr<VectorAdaptor>&
    */
   inline boost::shared_ptr<VectorAdaptor> &getEntFieldDataPtr() const {
-    return vectorAdaptorPtr;
+    return fieldDataAdaptorPtr;
   }
 
   /**
    * \brief Get vector of DOFs active values on entity
    * @return Vector of DOFs values
    */
-  inline VectorAdaptor &getEntFieldData() const { return *vectorAdaptorPtr; }
+  inline VectorAdaptor &getEntFieldData() const { return *fieldDataAdaptorPtr; }
 
   /**
    * \brief Get number of DOFs on entity for given order of approximation
@@ -715,7 +718,7 @@ struct FieldEntity : public interface_Field<Field>,
 private:
 
   mutable boost::shared_ptr<const int> tagMaxOrderPtr;
-  mutable boost::shared_ptr<VectorAdaptor> vectorAdaptorPtr;
+  mutable boost::shared_ptr<VectorAdaptor> fieldDataAdaptorPtr;
 
 };
 
