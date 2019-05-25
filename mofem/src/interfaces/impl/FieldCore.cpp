@@ -128,19 +128,19 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     tag_prefix_sizes[0] = name_data_prefix.size();
     CHKERR get_moab().tag_set_by_ptr(th_FieldName_DataNamePrefix, &meshset, 1,
                                      tag_prefix_data, tag_prefix_sizes);
-    Tag th_app_order, th_field_data, th_rank;
+    Tag th_app_order, th_field_data, th_field_data_vert, th_rank;
     // data
     std::string tag_data_name = name_data_prefix + name;
     const int def_len = 0;
     CHKERR get_moab().tag_get_handle(
-        tag_data_name.c_str(), def_len, MB_TYPE_OPAQUE, th_field_data,
-        MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
+        tag_data_name.c_str(), def_len, MB_TYPE_DOUBLE, th_field_data,
+        MB_TAG_CREAT | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
     std::string tag_data_name_verts = name_data_prefix + name + "V";
     VectorDouble def_vert_data(nb_of_coefficients);
     def_vert_data.clear();
     CHKERR get_moab().tag_get_handle(
         tag_data_name_verts.c_str(), nb_of_coefficients, MB_TYPE_DOUBLE,
-        th_field_data, MB_TAG_CREAT | tag_type, &*def_vert_data.begin());
+        th_field_data_vert, MB_TAG_CREAT | tag_type, &*def_vert_data.begin());
     // order
     ApproximationOrder def_ApproximationOrder = -1;
     const std::string Tag_ApproximationOrder_name = "_App_Order_" + name;
@@ -481,8 +481,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
           CHKERR get_moab().tag_set_data((*miit)->th_FieldDataVerts, set_ents,
                                          &*d_vec.begin());
         } else {
-          std::vector<int> tag_size(second - first + 1,
-                                    nb_dofs * sizeof(FieldData));
+          std::vector<int> tag_size(second - first + 1, nb_dofs);
           std::vector<double> d_vec(nb_dofs, 0);
           std::vector<void const *> d_vec_ptr(second - first + 1,
                                               &*d_vec.begin());
