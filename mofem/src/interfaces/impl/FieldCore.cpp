@@ -477,14 +477,13 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
             ((*miit)->getFieldOrderTable()[ent_type])(order) *
             (*miit)->getNbOfCoeffs();
         if (ent_type == MBVERTEX) {
-          std::vector<double> d_vec(nb_dofs * (second - first + 1), 0);
+          std::vector<double> d_vec(nb_dofs * ents.size(), 0);
           CHKERR get_moab().tag_set_data((*miit)->th_FieldDataVerts, ents,
                                          &*d_vec.begin());
         } else {
-          std::vector<int> tag_size(second - first + 1, nb_dofs);
+          std::vector<int> tag_size(ents.size(), nb_dofs);
           std::vector<double> d_vec(nb_dofs, 0);
-          std::vector<void const *> d_vec_ptr(second - first + 1,
-                                              &*d_vec.begin());
+          std::vector<void const *> d_vec_ptr(ents.size(), &*d_vec.begin());
           CHKERR get_moab().tag_set_by_ptr((*miit)->th_FieldData, ents,
                                            &*d_vec_ptr.begin(),
                                            &*tag_size.begin());
@@ -506,6 +505,36 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         vec->resize(ents.size());
         CHKERR get_moab().tag_get_by_ptr((*miit)->th_AppOrder, ents,
                                          &*vec->begin());
+        return vec;
+      };
+
+      auto get_ents_field_data_vector_adaptor = [&](const Range &ents) {
+        boost::shared_ptr<std::vector<VectorAdaptor>> vec(
+            new std::vector<VectorAdaptor>());
+        vec->reserve(ents.size());
+
+        std::vector<int> tag_size(ents.size());
+        std::vector<void const *> d_vec_ptr(ents.size());
+        const EntityType ent_type = get_moab().type_from_handle(first);
+        if (ent_type == MBVERTEX)
+          CHKERR get_moab().tag_get_by_ptr((*miit)->th_FieldDataVerts, ents,
+                                           &*d_vec_ptr.begin(),
+                                           &*tag_size.begin());
+        else
+          CHKERR get_moab().tag_get_by_ptr((*miit)->th_FieldData, ents,
+                                           &*d_vec_ptr.begin(),
+                                           &*tag_size.begin());
+
+        auto cast = [](auto p) {
+          return const_cast<double *>(static_cast<const double *>(p));
+        };
+
+        auto sit = tag_size.begin();
+        auto tit = d_vec_ptr.end();
+        for (auto vit = vec->begin(); vit != vec->end(); ++vit, ++sit, ++tit)
+          *vit = VectorAdaptor(
+              *sit, ublas::shallow_array_adaptor<double>(*sit, cast(*tit)));
+
         return vec;
       };
 
