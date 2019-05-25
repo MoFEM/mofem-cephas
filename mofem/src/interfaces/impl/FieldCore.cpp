@@ -460,9 +460,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       ents_array->reserve(second - first + 1);
 
       // Entity is not in database and order is changed or reset
-      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent,
-          hi_miit_ref_ent;
-      miit_ref_ent = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
+      auto miit_ref_ent = refinedEntities.get<Ent_mi_tag>().lower_bound(first);
 
       auto create_tags_for_max_order_and_data = [&]() {
         MoFEMFunctionBegin;
