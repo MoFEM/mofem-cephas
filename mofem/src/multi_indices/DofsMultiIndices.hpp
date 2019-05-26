@@ -94,7 +94,7 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   /// @return get field data on dof
   inline FieldData &getFieldData() const {
     return const_cast<FieldData &>(
-        this->sPtr->getEntFieldData()[getEntDofIdx()]);
+        this->sPtr->getEntFieldData().data()[getEntDofIdx()]);
   }
 
   /// @return get unique dof id
