@@ -464,29 +464,35 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
 
       auto create_tags_for_max_order = [&](const Range &ents) {
         MoFEMFunctionBegin;
-        std::vector<int> o_vec(ents.size(), order);
-        CHKERR get_moab().tag_set_data((*miit)->th_AppOrder, ents,
-                                       &*o_vec.begin());
+        if (order >= 0) {
+          std::vector<int> o_vec(ents.size(), order);
+          CHKERR get_moab().tag_set_data((*miit)->th_AppOrder, ents,
+                                         &*o_vec.begin());
+        }
         MoFEMFunctionReturn(0);
       };
 
       auto create_tags_for_data = [&](const Range &ents) {
         MoFEMFunctionBegin;
-        const EntityType ent_type = get_moab().type_from_handle(first);
-        const std::size_t nb_dofs =
-            ((*miit)->getFieldOrderTable()[ent_type])(order) *
-            (*miit)->getNbOfCoeffs();
-        if (ent_type == MBVERTEX) {
-          std::vector<double> d_vec(nb_dofs * ents.size(), 0);
-          CHKERR get_moab().tag_set_data((*miit)->th_FieldDataVerts, ents,
-                                         &*d_vec.begin());
-        } else {
-          std::vector<int> tag_size(ents.size(), nb_dofs);
-          std::vector<double> d_vec(nb_dofs, 0);
-          std::vector<void const *> d_vec_ptr(ents.size(), &*d_vec.begin());
-          CHKERR get_moab().tag_set_by_ptr((*miit)->th_FieldData, ents,
-                                           &*d_vec_ptr.begin(),
-                                           &*tag_size.begin());
+        if (order >= 0) {
+          const EntityType ent_type = get_moab().type_from_handle(first);
+          const std::size_t nb_dofs =
+              ((*miit)->getFieldOrderTable()[ent_type])(order) *
+              (*miit)->getNbOfCoeffs();
+          if (nb_dofs > 0) {
+            if (ent_type == MBVERTEX) {
+              std::vector<double> d_vec(nb_dofs * ents.size(), 0);
+              CHKERR get_moab().tag_set_data((*miit)->th_FieldDataVerts, ents,
+                                             &*d_vec.begin());
+            } else {
+              std::vector<int> tag_size(ents.size(), nb_dofs);
+              std::vector<double> d_vec(nb_dofs, 0);
+              std::vector<void const *> d_vec_ptr(ents.size(), &*d_vec.begin());
+              CHKERR get_moab().tag_set_by_ptr((*miit)->th_FieldData, ents,
+                                               &*d_vec_ptr.begin(),
+                                               &*tag_size.begin());
+            }
+          }
         }
         MoFEMFunctionReturn(0);
       };
@@ -513,55 +519,75 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
             new std::vector<VectorAdaptor>());
         vec->reserve(ents.size());
 
-        std::vector<int> tag_size(ents.size());
-        std::vector<void const *> d_vec_ptr(ents.size());
-        const EntityType ent_type = get_moab().type_from_handle(first);
-        if (ent_type == MBVERTEX)
-          CHKERR get_moab().tag_get_by_ptr((*miit)->th_FieldDataVerts, ents,
-                                           &*d_vec_ptr.begin(),
-                                           &*tag_size.begin());
-        else
-          CHKERR get_moab().tag_get_by_ptr((*miit)->th_FieldData, ents,
-                                           &*d_vec_ptr.begin(),
-                                           &*tag_size.begin());
+        if (order >= 0) {
 
-        auto cast = [](auto p) {
-          return const_cast<double *>(static_cast<const double *>(p));
-        };
+          const EntityType ent_type = get_moab().type_from_handle(first);
 
-        auto sit = tag_size.begin();
-        auto tit = d_vec_ptr.end();
-        for (auto vit = vec->begin(); vit != vec->end(); ++vit, ++sit, ++tit)
-          *vit = VectorAdaptor(
-              *sit, ublas::shallow_array_adaptor<double>(*sit, cast(*tit)));
+          std::vector<int> tag_size(ents.size());
+          std::vector<void const *> d_vec_ptr(ents.size());
+
+          const std::size_t nb_dofs =
+              ((*miit)->getFieldOrderTable()[ent_type])(order) *
+              (*miit)->getNbOfCoeffs();
+
+          if (nb_dofs) {
+
+            if (ent_type == MBVERTEX)
+              CHKERR
+            get_moab().tag_get_by_ptr((*miit)->th_FieldDataVerts, ents,
+                                      &*d_vec_ptr.begin(), &*tag_size.begin());
+            else CHKERR get_moab().tag_get_by_ptr((*miit)->th_FieldData, ents,
+                                                  &*d_vec_ptr.begin(),
+                                                  &*tag_size.begin());
+
+            auto cast = [](auto p) {
+              return const_cast<double *>(static_cast<const double *>(p));
+            };
+
+
+            auto tit = d_vec_ptr.begin();
+            for (auto sit = tag_size.begin(); sit != tag_size.end();
+                 ++sit, ++tit) {
+              vec->emplace_back(
+                  *sit, ublas::shallow_array_adaptor<double>(*sit, cast(*tit)));
+            }
+
+            return vec;
+          }
+        }
+
+        for (int i = 0; i != ents.size();++i)
+          vec->emplace_back(0,
+                            ublas::shallow_array_adaptor<double>(0, nullptr));
 
         return vec;
       };
 
       auto ents_in_ref_ent = get_ents_in_ref_ent(miit_ref_ent);
-      if (order >= 0) {
-        CHKERR create_tags_for_max_order(ents_in_ref_ent);
-        CHKERR create_tags_for_data(ents_in_ref_ent);
-      }
 
+      CHKERR create_tags_for_max_order(ents_in_ref_ent);
+      CHKERR create_tags_for_data(ents_in_ref_ent);
       auto ents_max_order = get_ents_max_order(ents_in_ref_ent);
+      auto ent_field_data = get_ents_field_data_vector_adaptor(ents_in_ref_ent);
 
       auto vit_max_order = ents_max_order->begin();
+      auto vit_field_data = ent_field_data->begin();
       for (auto ent : ents_in_ref_ent) {
         ents_array->emplace_back(
             *miit, *miit_ref_ent,
-            FieldEntity::makeSharedFieldDataAdaptorPtr(*miit, *miit_ref_ent),
+            boost::shared_ptr<VectorAdaptor>(ent_field_data, &*vit_field_data),
             boost::shared_ptr<const int>(
                 ents_max_order, static_cast<const int *>(*vit_max_order)));
         ++miit_ref_ent;
         ++vit_max_order;
+        ++vit_field_data;
       }
       nb_ents_set_order_new += ents_in_ref_ent.size();
 
       // Check if any of entities in the range has bit level but is not added 
       // to database. That generate data inconsistency and error. 
       if(ents_in_ref_ent.size() < (second - first + 1)) {
-      Range ents_not_in_database =
+        Range ents_not_in_database =
           subtract(Range(first, second), ents_in_ref_ent);
         std::vector<const void *> vec_bits(ents_not_in_database.size());
         CHKERR get_moab().tag_get_by_ptr(
@@ -572,10 +598,10 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         };
         for (auto v : vec_bits)
           if (cast(v)->any())
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Try to add entities which are not seeded or added to "
-                  "database");
-        }
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Try to add entities which are not seeded or added to "
+                    "database");
+      }
 
       // Add entities to database
       auto hint = entsFields.end();
