@@ -554,17 +554,26 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                                             *sit, cast(*tit)));
               }
             } else {
-              for (auto oit = ents_max_orders->begin();
-                   oit != ents_max_orders->end(); ++oit) {
-                if (PetscUnlikely(
-                        get_nb_dofs(*static_cast<const int *>(*oit)))) {
-                  THROW_MESSAGE("Nonzero number of DOFs but tag can can not be "
-                                "set");
-                } else {
-                  vec->emplace_back(
-                      0, ublas::shallow_array_adaptor<double>(0, nullptr));
+
+              for (int i = 0; i != ents.size(); ++i)
+                vec->emplace_back(
+                    0, ublas::shallow_array_adaptor<double>(0, nullptr));
+
+              if (order >= 0 && get_nb_dofs(order != 0)) {
+                THROW_MESSAGE("Nonzero number of DOFs but tag can can not be "
+                              "set");
+              } else {
+                for (auto oit = ents_max_orders->begin();
+                     oit != ents_max_orders->end(); ++oit) {
+                  if (PetscUnlikely(
+                          get_nb_dofs(*static_cast<const int *>(*oit)))) {
+                    THROW_MESSAGE(
+                        "Nonzero number of DOFs but tag can can not be "
+                        "set");
+                  }
                 }
               }
+
             }
             return vec;
           };
