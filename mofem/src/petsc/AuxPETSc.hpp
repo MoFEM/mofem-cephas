@@ -19,6 +19,23 @@
 #ifndef __AUXPETSC_HPP__
 #define __AUXPETSC_HPP__
 
+// intrusive_ptr has to be global
+
+template <typename OBJ> void intrusive_ptr_add_ref(OBJ *obj) {
+  CHKERR PetscObjectReference(reinterpret_cast<PetscObject>(*obj));
+}
+
+template <typename OBJ> void intrusive_ptr_release(OBJ *obj) {
+  int cnt;
+  PetscObjectGetReference(reinterpret_cast<PetscObject>(*obj), &cnt);
+  if (cnt > 1)
+    CHKERR PetscObjectDereference(reinterpret_cast<PetscObject>(*obj));
+  else
+    CHKERR PetscObjectDestroy(reinterpret_cast<PetscObject *>(&*obj));
+  if (cnt == 1)
+    delete obj;
+}
+
 namespace MoFEM {
 
 struct PairNameFEMethodPtr : public std::pair<std::string, FEMethod *> {
@@ -63,6 +80,20 @@ private:
 
 typedef std::vector<PairNameFEMethodPtr> FEMethodsSequence;
 typedef std::vector<BasicMethodPtr> BasicMethodsSequence;
+
+template <typename OBJ>
+struct SmartPetscObj : public boost::intrusive_ptr<Mat> {
+  SmartPetscObj() : boost::intrusive_ptr<OBJ>(new OBJ, false) {}
+  operator OBJ() { return **this; }
+  int use_count() const {
+    if (*this) {
+      int cnt;
+      PetscObjectGetReference(reinterpret_cast<PetscObject>(**this), &cnt);
+      return cnt;
+    } else
+      return 0;
+  }
+};
 
 } // namespace MoFEM
 

@@ -1309,3 +1309,19 @@ add_test(field_evaluator
   ${CMAKE_CURRENT_BINARY_DIR}/field_evaluator -file_name disp01_1parts.h5m 
   -dm_is_partitioned
 )
+
+my_add_executable(petsc_smart_ptr_objects petsc_smart_ptr_objects.cpp)
+target_link_libraries(petsc_smart_ptr_objects
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(petsc_smart_ptr_objects
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/petsc_smart_ptr_objects  
+)
