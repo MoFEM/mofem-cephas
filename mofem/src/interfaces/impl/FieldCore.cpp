@@ -521,59 +521,77 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       auto get_ents_field_data_vector_adaptor =
           [&](const Range &ents,
               boost::shared_ptr<std::vector<const void *>> &ents_max_orders) {
-            moab::ErrorCode rval;
+            // create shared pointer and reserve memory
             boost::shared_ptr<std::vector<VectorAdaptor>> vec(
                 new std::vector<VectorAdaptor>());
             vec->reserve(ents.size());
-
-            std::vector<int> tag_size(ents.size());
-            std::vector<void const *> d_vec_ptr(ents.size());
-
-            if (ent_type == MBVERTEX)
-              rval = get_moab().tag_get_by_ptr((*miit)->th_FieldDataVerts, ents,
-                                               &*d_vec_ptr.begin(),
-                                               &*tag_size.begin());
-            else
-              rval = get_moab().tag_get_by_ptr((*miit)->th_FieldData, ents,
-                                               &*d_vec_ptr.begin(),
-                                               &*tag_size.begin());
-
-            auto cast = [](auto p) {
-              return const_cast<double *>(static_cast<const double *>(p));
-            };
 
             auto get_nb_dofs = [&](const auto order) {
               return get_nb_dofs_on_order(order) * field_rank;
             };
 
-            if (rval == MB_SUCCESS) {
-              auto tit = d_vec_ptr.begin();
-              for (auto sit = tag_size.begin(); sit != tag_size.end();
-                   ++sit, ++tit) {
-                vec->emplace_back(*sit, ublas::shallow_array_adaptor<double>(
-                                            *sit, cast(*tit)));
-              }
-            } else {
-
+            if (order >= 0 && get_nb_dofs(order == 0)) {
+              // set empty vector adaptor
               for (int i = 0; i != ents.size(); ++i)
                 vec->emplace_back(
                     0, ublas::shallow_array_adaptor<double>(0, nullptr));
+            } else {
+              moab::ErrorCode rval;
+              std::vector<int> tag_size(ents.size());
+              std::vector<void const *> d_vec_ptr(ents.size());
 
-              if (order >= 0 && get_nb_dofs(order != 0)) {
-                THROW_MESSAGE("Nonzero number of DOFs but tag can can not be "
-                              "set");
+              // get tags data
+              if (ent_type == MBVERTEX)
+                rval = get_moab().tag_get_by_ptr((*miit)->th_FieldDataVerts,
+                                                 ents, &*d_vec_ptr.begin(),
+                                                 &*tag_size.begin());
+              else
+                rval = get_moab().tag_get_by_ptr((*miit)->th_FieldData, ents,
+                                                 &*d_vec_ptr.begin(),
+                                                 &*tag_size.begin());
+
+              auto cast = [](auto p) {
+                return const_cast<double *>(static_cast<const double *>(p));
+              };
+
+              // some of entities has tag not set or zero dofs on entity
+              if (rval == MB_SUCCESS) {
+                // all is ok, all entities has tag set
+                auto tit = d_vec_ptr.begin();
+                for (auto sit = tag_size.begin(); sit != tag_size.end();
+                     ++sit, ++tit) {
+                  vec->emplace_back(*sit, ublas::shallow_array_adaptor<double>(
+                                              *sit, cast(*tit)));
+                }
               } else {
-                for (auto oit = ents_max_orders->begin();
-                     oit != ents_max_orders->end(); ++oit) {
-                  if (PetscUnlikely(
-                          get_nb_dofs(*static_cast<const int *>(*oit)))) {
-                    THROW_MESSAGE(
-                        "Nonzero number of DOFs but tag can can not be "
-                        "set");
+                // set empty vector adaptor
+                for (int i = 0; i != ents.size(); ++i)
+                  vec->emplace_back(
+                      0, ublas::shallow_array_adaptor<double>(0, nullptr));
+                // check order on all entities, and if for that order non zero
+                // dofs are expected ger pointer to tag data and reset vector
+                // adaptor
+                auto oit = ents_max_orders->begin();
+                auto dit = vec->begin();
+                for (auto eit = ents.begin(); eit != ents.end();
+                     ++eit, ++oit, ++dit) {
+                  if (get_nb_dofs(*static_cast<const int *>(*oit))) {
+                    int tag_size;
+                    const double *ret_val;
+                    if (ent_type == MBVERTEX)
+                      CHKERR get_moab().tag_get_by_ptr(
+                          (*miit)->th_FieldDataVerts, &*eit, 1,
+                          (const void **)&ret_val, &tag_size);
+                    else
+                      CHKERR get_moab().tag_get_by_ptr(
+                          (*miit)->th_FieldData, &*eit, 1,
+                          (const void **)&ret_val, &tag_size);
+                    (*dit) = VectorAdaptor(
+                        tag_size, ublas::shallow_array_adaptor<double>(
+                                      tag_size, const_cast<double *>(ret_val)));
                   }
                 }
               }
-
             }
             return vec;
           };
