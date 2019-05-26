@@ -592,7 +592,7 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
  * \endcode
  *
  */
-#define CHKERR ErrorCheckerCode<__LINE__>() <<
+#define CHKERR MoFEM::ErrorCheckerCode<__LINE__>() <<
 
 /**
  * \brief Check error code of MoAB function and throw MoFEM exception
