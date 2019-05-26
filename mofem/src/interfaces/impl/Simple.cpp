@@ -17,12 +17,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
-#include <AuxPETSc.hpp>
-#include <KspCtx.hpp>
-#include <SnesCtx.hpp>
-#include <TsCtx.hpp>
-#include <DMMoFEM.hpp>
-
 namespace MoFEM {
 
 MoFEMErrorCode Simple::query_interface(const MOFEMuuid &uuid,
