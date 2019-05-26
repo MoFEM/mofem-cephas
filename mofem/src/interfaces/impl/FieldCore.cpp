@@ -530,7 +530,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
               return get_nb_dofs_on_order(order) * field_rank;
             };
 
-            if (order >= 0 && get_nb_dofs(order == 0)) {
+            if (order >= 0 && get_nb_dofs(order) == 0) {
               // set empty vector adaptor
               for (int i = 0; i != ents.size(); ++i)
                 vec->emplace_back(
