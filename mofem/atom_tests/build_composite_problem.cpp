@@ -210,8 +210,8 @@ int main(int argc, char *argv[]) {
     // register new dm type, i.e. mofem
     DMType dm_name = "MOFEM";
     CHKERR DMRegister_MoFEM(dm_name);
-    // craete dm instance
-    auto dm = get_mofem_dm(PETSC_COMM_WORLD, dm_name);
+    // create dm instance
+    auto dm = get_smart_dm(PETSC_COMM_WORLD, dm_name);
 
     CHKERR DMMoFEMCreateMoFEM(dm, &m_field, "COMP", bit_level0);
     CHKERR DMSetFromOptions(dm);

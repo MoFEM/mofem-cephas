@@ -193,6 +193,13 @@ namespace MoFEM {
      */
     MoFEMErrorCode getDM(DM *dm);
 
+    /**
+     * @brief Return smart DM object
+     * 
+     * @return SmartPetscObj<DM> 
+     */
+    SmartPetscObj<DM> getDM();
+
     inline int getDim() const { return dIm; }
     inline const std::string& getDomainFEName() const { return domainFE; }
     inline const std::string& getBoundaryFEName() const { return boundaryFE; }

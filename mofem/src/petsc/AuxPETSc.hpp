@@ -99,12 +99,32 @@ struct SmartPetscObj
   }
 };
 
-auto get_mofem_dm = [](MPI_Comm comm,
-                       const std::string dm_type_name = "MOFEM") {
+auto get_smart_dm = [](MPI_Comm comm, const std::string dm_type_name) {
   DM dm;
-  CHKERR DMCreate(comm, &dm);
-  CHKERR DMSetType(dm, dm_type_name.c_str());
+  ierr = DMCreate(comm, &dm);
+  CHKERRABORT(comm, ierr);
+  ierr = DMSetType(dm, dm_type_name.c_str());
+  CHKERRABORT(comm, ierr);
   return SmartPetscObj<DM>(dm);
+};
+
+auto get_smart_ghost_vector = [](MPI_Comm comm, PetscInt n, PetscInt N,
+                                 PetscInt nghost, const PetscInt ghosts[]) {
+  Vec vv;
+  ierr = VecCreateGhost(comm, n, N, nghost, ghosts, &vv);
+  CHKERRABORT(comm, ierr);
+  return SmartPetscObj<Vec>(vv);
+};
+
+auto get_smart_vector_duplicate = [](SmartPetscObj<Vec> &vec) {
+  if (vec.use_count()) {
+    Vec duplicate;
+    ierr = VecDuplicate(vec, &duplicate);
+    CHKERRABORT(PETSC_COMM_SELF, ierr);
+    return SmartPetscObj<Vec>(duplicate);
+  } else {
+    return SmartPetscObj<Vec>();
+  }
 };
 
 } // namespace MoFEM

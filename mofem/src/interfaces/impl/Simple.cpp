@@ -603,4 +603,12 @@ MoFEMErrorCode Simple::getDM(DM *dm) {
   MoFEMFunctionReturnHot(0);
 }
 
+SmartPetscObj<DM> Simple::getDM() {
+  DM dm;
+  ierr = getDM(&dm);
+  Interface &m_field = cOre;  
+  CHKERRABORT(m_field.get_comm(), ierr);
+  return SmartPetscObj<DM>(dm);
+}
+
 } // namespace MoFEM

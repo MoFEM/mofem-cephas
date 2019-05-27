@@ -50,6 +50,11 @@ int main(int argc, char *argv[]) {
       m_ptr = SmartPetscObj<Mat>(m);
     }
 
+    { 
+      SmartPetscObj<Mat> n_ptr(m_ptr); 
+      CHKERR check(2);
+    }
+
     CHKERR check(1);
 
     // check if casting works well
