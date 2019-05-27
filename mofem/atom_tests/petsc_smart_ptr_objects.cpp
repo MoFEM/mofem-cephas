@@ -31,33 +31,57 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    SmartPetscObj<Mat> m;
+    SmartPetscObj<Mat> m_ptr;
+
+    // check is count is correct
     auto check = [&](const int expected) {
       MoFEMFunctionBegin;
-      if (m.use_count() != expected)
+      if (m_ptr.use_count() != expected)
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "use count should be %d but is %d", expected, m.use_count());
+                 "use count should be %d but is %d", expected,
+                 m_ptr.use_count());
       MoFEMFunctionReturn(0);
     };
 
-    CHKERR MatCreate(PETSC_COMM_SELF, m.get());
-    CHKERR check(1);
-    CHKERR MatSetSizes(m, 2, 2, 2, 2);
-
+    // check copy constructor
     {
-      boost::intrusive_ptr<Mat> n = m;
-      CHKERR check(2);
-    }
-    {
-      boost::intrusive_ptr<Mat> n = m;
-      CHKERR check(2);
+      Mat m;
+      CHKERR MatCreate(PETSC_COMM_SELF, &m);
+      m_ptr = SmartPetscObj<Mat>(m);
     }
 
     CHKERR check(1);
 
-    m.reset();
+    // check if casting works well
+    CHKERR MatSetSizes(m_ptr, 2, 2, 2, 2);
+
+    {
+      // nesting once
+      SmartPetscObj<Mat> n_ptr = m_ptr;
+      CHKERR check(2);
+      {
+        // again
+        SmartPetscObj<Mat> i_ptr = m_ptr;
+        CHKERR check(3);
+      }
+       CHKERR check(2);
+    }
+
+    
+    {
+      // nesting again
+      SmartPetscObj<Mat> n_ptr = m_ptr;
+      CHKERR check(2);
+    }
+
+    // only one now
+    CHKERR check(1);
+
+    // reset, i.e. delete matrix
+    m_ptr.reset();
+
+    // counts should be zero now
     CHKERR check(0);
-
   }
   CATCH_ERRORS;
 

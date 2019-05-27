@@ -20,20 +20,17 @@
 #define __AUXPETSC_HPP__
 
 // intrusive_ptr has to be global
-
-template <typename OBJ> void intrusive_ptr_add_ref(OBJ *obj) {
-  CHKERR PetscObjectReference(reinterpret_cast<PetscObject>(*obj));
+template <typename OBJ> void intrusive_ptr_add_ref(OBJ obj) {
+  CHKERR PetscObjectReference(reinterpret_cast<PetscObject>(obj));
 }
 
-template <typename OBJ> void intrusive_ptr_release(OBJ *obj) {
+template <typename OBJ> void intrusive_ptr_release(OBJ obj) {
   int cnt;
-  PetscObjectGetReference(reinterpret_cast<PetscObject>(*obj), &cnt);
+  PetscObjectGetReference(reinterpret_cast<PetscObject>(obj), &cnt);
   if (cnt > 1)
-    CHKERR PetscObjectDereference(reinterpret_cast<PetscObject>(*obj));
+    CHKERR PetscObjectDereference(reinterpret_cast<PetscObject>(obj));
   else
-    CHKERR PetscObjectDestroy(reinterpret_cast<PetscObject *>(&*obj));
-  if (cnt == 1)
-    delete obj;
+    CHKERR PetscObjectDestroy(reinterpret_cast<PetscObject *>(&obj));
 }
 
 namespace MoFEM {
@@ -82,17 +79,32 @@ typedef std::vector<PairNameFEMethodPtr> FEMethodsSequence;
 typedef std::vector<BasicMethodPtr> BasicMethodsSequence;
 
 template <typename OBJ>
-struct SmartPetscObj : public boost::intrusive_ptr<Mat> {
-  SmartPetscObj() : boost::intrusive_ptr<OBJ>(new OBJ, false) {}
-  operator OBJ() { return **this; }
+struct SmartPetscObj
+    : public boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type> {
+
+  SmartPetscObj()
+      : boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type>() {}
+  SmartPetscObj(OBJ o)
+      : boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type>(o,
+                                                                      false) {}
+  operator OBJ() { return this->get(); }
+
   int use_count() const {
-    if (*this) {
+    if (this->get()) {
       int cnt;
-      PetscObjectGetReference(reinterpret_cast<PetscObject>(**this), &cnt);
+      PetscObjectGetReference(reinterpret_cast<PetscObject>(this->get()), &cnt);
       return cnt;
     } else
       return 0;
   }
+};
+
+auto get_mofem_dm = [](MPI_Comm comm,
+                       const std::string dm_type_name = "MOFEM") {
+  DM dm;
+  CHKERR DMCreate(comm, &dm);
+  CHKERR DMSetType(dm, dm_type_name.c_str());
+  return SmartPetscObj<DM>(dm);
 };
 
 } // namespace MoFEM
