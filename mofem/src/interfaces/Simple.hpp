@@ -195,8 +195,18 @@ namespace MoFEM {
 
     /**
      * @brief Return smart DM object
+     *
+     * \code
+     * {
+     *    auto dm  = simple_interface->getDM();
      * 
-     * @return SmartPetscObj<DM> 
+     *    // ...
+     * 
+     *    // dm is automatically destroyed when out of the scope
+     * }
+     * \endcode
+     *
+     * @return SmartPetscObj<DM>
      */
     SmartPetscObj<DM> getDM();
 
