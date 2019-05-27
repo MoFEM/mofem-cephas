@@ -599,7 +599,9 @@ struct FieldEntity : public interface_Field<Field>,
    * \brief Get vector of DOFs active values on entity
    * @return Vector of DOFs values
    */
-  inline VectorAdaptor &getEntFieldData() const { return *fieldDataAdaptorPtr; }
+  inline VectorAdaptor &getEntFieldData() const {
+    return *fieldDataAdaptorPtr.get();
+  }
 
   /**
    * \brief Get number of DOFs on entity for given order of approximation
@@ -631,7 +633,9 @@ struct FieldEntity : public interface_Field<Field>,
    * \brief Get order set to the entity (Allocated tag size for such number)
    * @return Approximation order
    */
-  inline ApproximationOrder getMaxOrder() const { return *tagMaxOrderPtr; }
+  inline ApproximationOrder getMaxOrder() const {
+    return *tagMaxOrderPtr.get();
+  }
 
   /**
    * \brief Get global unique id
@@ -742,7 +746,7 @@ struct interface_FieldEntity : public interface_Field<T>,
   inline int getNbDofsOnEnt() const { return this->sPtr->getNbDofsOnEnt(); }
 
   /// @return get field data on entity
-  inline VectorAdaptor getEntFieldData() const {
+  inline VectorAdaptor &getEntFieldData() const {
     return this->sPtr->getEntFieldData();
   }
 
