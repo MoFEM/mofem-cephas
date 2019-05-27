@@ -1572,7 +1572,7 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
     MeshRefinement *m_ref;
     ierr = m_field_ref.getInterface(m_ref);
     CHKERRG(ierr);
-    ierr = m_ref->add_verices_in_the_middel_of_edges(edges,
+    ierr = m_ref->add_vertices_in_the_middel_of_edges(edges,
                                                      BitRefLevel().set(ll + 1));
     CHKERRG(ierr);
     ierr = m_ref->refine_TET(tets, BitRefLevel().set(ll + 1));
@@ -3028,7 +3028,7 @@ MoFEMErrorCode VTK_Demkowicz_Hcurl_MBTET(const string file_name) {
     // refine mesh
     MeshRefinement *m_ref;
     CHKERR m_field_ref.getInterface(m_ref);
-    CHKERR m_ref->add_verices_in_the_middel_of_edges(edges,
+    CHKERR m_ref->add_vertices_in_the_middel_of_edges(edges,
                                                      BitRefLevel().set(ll + 1));
     CHKERR m_ref->refine_TET(tets, BitRefLevel().set(ll + 1));
   }

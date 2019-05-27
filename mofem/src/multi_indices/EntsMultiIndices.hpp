@@ -461,6 +461,21 @@ typedef multi_index_container<
 
 typedef multi_index_container<
     boost::shared_ptr<RefEntity>,
+    indexed_by<
+        ordered_non_unique<
+            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt>>,
+        hashed_unique<tag<Composite_EntType_and_ParentEntType_mi_tag>,
+                      composite_key<boost::shared_ptr<RefEntity>,
+                                    const_mem_fun<RefEntity, EntityHandle,
+                                                  &RefEntity::getRefEnt>,
+                                    const_mem_fun<RefEntity, EntityHandle,
+                                                  &RefEntity::getParentEnt>>>>
+
+    >
+    RefEntity_multiIndex_view_by_ordered_parent_entity;
+
+typedef multi_index_container<
+    boost::shared_ptr<RefEntity>,
     indexed_by<sequenced<>,
                ordered_unique<tag<Ent_mi_tag>,
                               member<RefEntity::BasicEntity, EntityHandle,
