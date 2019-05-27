@@ -351,8 +351,6 @@ template <int MODE> struct SetOtherLocalGhostVector {
   }
 };
 
-
-
 MoFEMErrorCode VecManager::setOtherLocalGhostVector(
     const Problem *problem_ptr, const std::string &field_name,
     const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
@@ -401,37 +399,21 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "fields have to have same rank");
   }
+  
   switch (scatter_mode) {
   case SCATTER_REVERSE: {
 
     PetscScalar *array;
-    VecGetArray(V, &array);
-    for (; miit != hi_miit; miit++) {
-      if (!miit->get()->getHasLocalIndex())
-        continue;
-      DofEntity_multiIndex::index<
-          Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator diiiit;
-      diiiit =
-          dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
-              boost::make_tuple(cpy_field_name, (*miit)->getEnt(),
-                                (*miit)->getEntDofIdx()));
-      if (diiiit ==
-          dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().end()) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-                "equivalent dof does not exist, use "
-                "set_other_global_ghost_vector to create dofs entries");
-      }
-
-      if (mode == INSERT_VALUES)
-        CHKERR SetOtherLocalGhostVector<INSERT_VALUES>()(
-            dofs_ptr, array, miit, hi_miit, cpy_field_name);
-      else if (mode == ADD_VALUES)
-        CHKERR SetOtherLocalGhostVector<ADD_VALUES>()(dofs_ptr, array, miit,
-                                                      hi_miit, cpy_field_name);
-      else
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "Operation mode not implemented");
-    }
+    CHKERR VecGetArray(V, &array);
+    if (mode == INSERT_VALUES)
+      CHKERR SetOtherLocalGhostVector<INSERT_VALUES>()(dofs_ptr, array, miit,
+                                                       hi_miit, cpy_field_name);
+    else if (mode == ADD_VALUES)
+      CHKERR SetOtherLocalGhostVector<ADD_VALUES>()(dofs_ptr, array, miit,
+                                                    hi_miit, cpy_field_name);
+    else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "Operation mode not implemented");
     CHKERR VecRestoreArray(V, &array);
   } break;
   case SCATTER_FORWARD: {
