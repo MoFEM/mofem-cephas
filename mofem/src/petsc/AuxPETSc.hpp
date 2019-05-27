@@ -20,10 +20,29 @@
 #define __AUXPETSC_HPP__
 
 // intrusive_ptr has to be global
+
+/**
+ * @brief It is used by intrusive_ptr to bump reference
+ *
+ * \note It should not be used directly, it is internally called by
+ * intrusive_ptr
+ *
+ * @tparam OBJ
+ * @param obj
+ */
 template <typename OBJ> void intrusive_ptr_add_ref(OBJ obj) {
   CHKERR PetscObjectReference(reinterpret_cast<PetscObject>(obj));
 }
 
+/**
+ * @brief It is used by intrusive_ptr to dereference and destroy petsc object
+ * 
+ * \note It should not be used directly, it is internally called by
+ * intrusive_ptr
+ * 
+ * @tparam OBJ 
+ * @param obj 
+ */
 template <typename OBJ> void intrusive_ptr_release(OBJ obj) {
   int cnt;
   PetscObjectGetReference(reinterpret_cast<PetscObject>(obj), &cnt);
@@ -78,6 +97,19 @@ private:
 typedef std::vector<PairNameFEMethodPtr> FEMethodsSequence;
 typedef std::vector<BasicMethodPtr> BasicMethodsSequence;
 
+/**
+ * @brief intrusive_ptr for managing petsc objects
+ *
+ * It manages destruction, referencing and dereferencing petsc objects. It is
+ * similar how smart_ptr pointers works, but applied for petsc objects like Vec,
+ * DM, Mat, etc.
+ *
+ * \code
+ * SmartPetscObj<Vec> smart_vec = get_smart_ghost_vector(...);
+ * \endcode
+ *
+ * @tparam OBJ
+ */
 template <typename OBJ>
 struct SmartPetscObj
     : public boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type> {
@@ -99,6 +131,27 @@ struct SmartPetscObj
   }
 };
 
+/**
+ * @brief Creates smart DM object
+ *
+ * DM object can be used as any other object, but is destroyed as smart pointer
+ * when no loneger used.
+ *
+ * \code
+ * CHKERR DMRegister_MoFEM("MOFEM")
+ * {
+ *    auto dm = get_smart_dm(PETSC_COMM_WORLD, "MOFEM");
+ *  
+ *    // ...
+ *    
+ *    // dm is autmatically destroyed when program goes out of the scope
+ * }
+ * 
+ * 
+ * 
+ * \endcode
+ *
+ */
 auto get_smart_dm = [](MPI_Comm comm, const std::string dm_type_name) {
   DM dm;
   ierr = DMCreate(comm, &dm);
@@ -108,6 +161,17 @@ auto get_smart_dm = [](MPI_Comm comm, const std::string dm_type_name) {
   return SmartPetscObj<DM>(dm);
 };
 
+/**
+ * @brief Create smart ghost vector
+ *
+ * For details abut arguments see here:
+ * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecCreateGhost.html>VecCreateGhost</a>.
+ *
+ * \code
+ * auto vec = get_smart_ghost_vector(...);
+ * \endcode
+ *
+ */
 auto get_smart_ghost_vector = [](MPI_Comm comm, PetscInt n, PetscInt N,
                                  PetscInt nghost, const PetscInt ghosts[]) {
   Vec vv;
@@ -116,6 +180,13 @@ auto get_smart_ghost_vector = [](MPI_Comm comm, PetscInt n, PetscInt N,
   return SmartPetscObj<Vec>(vv);
 };
 
+
+/**
+ * @brief Create duplicate vector of smart vector
+ * 
+ * For details abut arguments see here:
+ * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecDuplicate.html>VecDuplicate</a>.
+ */
 auto get_smart_vector_duplicate = [](SmartPetscObj<Vec> &vec) {
   if (vec.use_count()) {
     Vec duplicate;
