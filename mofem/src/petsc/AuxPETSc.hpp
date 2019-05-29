@@ -105,7 +105,7 @@ typedef std::vector<BasicMethodPtr> BasicMethodsSequence;
  * DM, Mat, etc.
  *
  * \code
- * SmartPetscObj<Vec> smart_vec = get_smart_ghost_vector(...);
+ * SmartPetscObj<Vec> smart_vec = createSmartGhostVector(...);
  * \endcode
  *
  * @tparam OBJ
@@ -140,7 +140,7 @@ struct SmartPetscObj
  * \code
  * CHKERR DMRegister_MoFEM("MOFEM")
  * {
- *    auto dm = get_smart_dm(PETSC_COMM_WORLD, "MOFEM");
+ *    auto dm = createSmartDM(PETSC_COMM_WORLD, "MOFEM");
  *  
  *    // ...
  *    
@@ -152,7 +152,7 @@ struct SmartPetscObj
  * \endcode
  *
  */
-auto get_smart_dm = [](MPI_Comm comm, const std::string dm_type_name) {
+auto createSmartDM = [](MPI_Comm comm, const std::string dm_type_name) {
   DM dm;
   ierr = DMCreate(comm, &dm);
   CHKERRABORT(comm, ierr);
@@ -168,11 +168,11 @@ auto get_smart_dm = [](MPI_Comm comm, const std::string dm_type_name) {
  * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecCreateGhost.html>VecCreateGhost</a>.
  *
  * \code
- * auto vec = get_smart_ghost_vector(...);
+ * auto vec = createSmartGhostVector(...);
  * \endcode
  *
  */
-auto get_smart_ghost_vector = [](MPI_Comm comm, PetscInt n, PetscInt N,
+auto createSmartGhostVector = [](MPI_Comm comm, PetscInt n, PetscInt N,
                                  PetscInt nghost, const PetscInt ghosts[]) {
   Vec vv;
   ierr = VecCreateGhost(comm, n, N, nghost, ghosts, &vv);
@@ -187,7 +187,7 @@ auto get_smart_ghost_vector = [](MPI_Comm comm, PetscInt n, PetscInt N,
  * For details abut arguments see here:
  * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecDuplicate.html>VecDuplicate</a>.
  */
-auto get_smart_vector_duplicate = [](SmartPetscObj<Vec> &vec) {
+auto smartVectorDuplicate = [](SmartPetscObj<Vec> &vec) {
   if (vec.use_count()) {
     Vec duplicate;
     ierr = VecDuplicate(vec, &duplicate);

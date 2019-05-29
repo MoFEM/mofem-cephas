@@ -163,10 +163,10 @@ int main(int argc, char *argv[]) {
       // create distributed vector to accumulate values from processors.
       int ghosts[] = {0};
       
-      auto vol = get_smart_ghost_vector(
+      auto vol = createSmartGhostVector(
           PETSC_COMM_WORLD, m_field.get_comm_rank() == 0 ? 1 : 0, 1,
           m_field.get_comm_rank() == 0 ? 0 : 1, ghosts);
-      auto surf_vol = get_smart_vector_duplicate(vol);
+      auto surf_vol = smartVectorDuplicate(vol);
 
       // set operator to the volume element
       domain_fe->getOpPtrVector().push_back(
