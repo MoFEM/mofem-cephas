@@ -533,6 +533,7 @@ MoFEMErrorCode CutMeshInterface::makeFront() {
 
 MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
                                                  Range *corner_nodes,
+                                                 Range *front_surface,
                                                  const double low_tol, int verb,
                                                  const bool debug) {
   CoreInterface &m_field = cOre;
@@ -540,7 +541,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
   MoFEMFunctionBegin;
 
   double ray_length;
-  std::array<double,3> ray_point, unit_ray_dir;
+  std::array<double, 3> ray_point, unit_ray_dir;
   VectorAdaptor vec_unit_ray_dir(
       3, ublas::shallow_array_adaptor<double>(3, unit_ray_dir.data()));
   VectorAdaptor vec_ray_point(
@@ -570,7 +571,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
   CHKERR moab.get_coords(vol_vertices, &*coords.begin());
   for (auto v : vol_vertices) {
     VectorDouble3 point_in(3);
-    for(int i : {0,1,2})
+    for (int i : {0, 1, 2})
       point_in[i] = coords[3 * vol_vertices.index(v) + i];
     VectorDouble3 point_out(3);
     EntityHandle facets_out;
@@ -597,10 +598,36 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
       &*min_distances_from_front.begin(), &*points_on_edges.begin(),
       &*closest_edges.begin());
 
-  for (int i = 0; i != points_on_edges.size(); ++i) {
-    cerr << "i " << i % 3 << " " << points_on_edges[i] << " " << coords[i]
-         << endl;
-    points_on_edges[i] -= coords[i];
+  if (!points_on_edges.empty()) {
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
+        &coords[0], &coords[1], &coords[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_points_on_edges(
+        &points_on_edges[0], &points_on_edges[1], &points_on_edges[2]);
+    FTensor::Index<'k', 3> k;
+    FTensor::Index<'l', 3> l;
+    for (int i = 0; i != min_distances_from_front.size(); ++i) {
+      Range faces;
+      CHKERR moab.get_adjacencies(&closest_edges[0], 1, 2, false, faces);
+      if (front_surface)
+        faces = intersect(faces, *front_surface);
+      else
+        faces = intersect(faces, sUrface);
+
+      FTensor::Tensor1<double, 3> t_delta;
+      t_delta(k) = t_points_on_edges(k) - t_coords(k);
+
+      FTensor::Tensor1<double, 3> t_n;
+      for (auto f : faces) {
+        Util::normal(&moab, f, t_n(0), t_n(1), t_n(2));
+        t_n(l) /= sqrt(t_n(k) * t_n(k));
+        t_delta(l) -= (t_delta(k) * t_n(k)) * t_n(l);
+      }
+
+      t_points_on_edges(k) = t_delta(k);
+
+      ++t_coords;
+      ++t_points_on_edges;
+    }
   }
 
   auto th_dist_front = create_tag("DIST_FRONT", 1);
@@ -610,7 +637,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
   CHKERR moab.tag_set_data(th_dist_front_vec, vol_vertices,
                            &*points_on_edges.begin());
 
-  if(debug)
+  if (debug)
     CHKERR SaveData(m_field.get_moab())("level_sets.vtk", vOlume);
 
   MoFEMFunctionReturn(0);
@@ -746,7 +773,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
   };
 
   auto get_ave_edge_length = [&](const EntityHandle ent,
-                                   const Range &vol_edges) {
+                                 const Range &vol_edges) {
     Range adj_edges;
     if (moab.type_from_handle(ent) == MBVERTEX) {
       CHKERR moab.get_adjacencies(&ent, 1, 1, false, adj_edges);
