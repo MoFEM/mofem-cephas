@@ -164,6 +164,10 @@ int main(int argc, char *argv[]) {
     // cut or trim.
     CHKERR cut_mesh->buildTree();
 
+    CHKERR cut_mesh->makeFront();
+    CHKERR cut_mesh->createLevelSets(&fixed_edges, &corner_nodes, 1e-12,
+                                     VERBOSE, true);
+
     // Create tag storing nodal positions
     double def_position[] = {0, 0, 0};
     Tag th;

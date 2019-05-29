@@ -369,15 +369,18 @@ struct Tools : public UnknownInterface {
    * set on the input by min_dist_ptr
    *
    * @param v_ptr point coordinates
+   * @param nb nb points
    * @param edges range of edges
    * @param min_dist_ptr on return minimal distance, on input starting
    * distance
    * @param o_ptr coordinates of the point on edge
+   * @param o_segments closest segments
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode findMinDistanceFromTheEdges(const double *v_ptr, Range edges,
-                                             double *min_dist_ptr,
-                                             double *o_ptr) const;
+  MoFEMErrorCode
+  findMinDistanceFromTheEdges(const double *v_ptr, const int nb, Range edges,
+                              double *min_dist_ptr, double *o_ptr = nullptr,
+                              EntityHandle *o_segments = nullptr) const;
 
   /**@}*/
 

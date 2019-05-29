@@ -151,6 +151,12 @@ struct CutMeshInterface : public UnknownInterface {
       const double tol_trim_close, Range &fixed_edges, Range &corner_nodes,
       const bool update_meshsets = false, const bool debug = false);
 
+  MoFEMErrorCode makeFront();
+
+  MoFEMErrorCode createLevelSets(Range *fixed_edges, Range *corner_nodes,
+                                 const double low_tol, int verb = QUIET,
+                                 const bool debug = false);
+
   /**
    * \brief find edges to cut
    * @param  verb verbosity level
@@ -319,7 +325,6 @@ struct CutMeshInterface : public UnknownInterface {
   inline const Range &getVolume() const { return vOlume; }
   inline const Range &getSurface() const { return sUrface; }
   inline const Range &getFront() const { return fRont; }
-
 
   inline const Range &getCutEdges() const { return cutEdges; }
   inline const Range &getCutVolumes() const { return cutVolumes; }
