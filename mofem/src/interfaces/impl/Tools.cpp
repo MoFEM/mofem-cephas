@@ -445,7 +445,10 @@ MoFEMErrorCode Tools::findMinDistanceFromTheEdges(
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_min_coords(
         o_ptr, &o_ptr[1], &o_ptr[2]);
     FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_min_dist(min_dist_ptr);
-    EntityHandle *colsest_segment_it = o_segments;
+
+    EntityHandle *colsest_segment_it = nullptr;
+    if (o_segments)
+      colsest_segment_it = o_segments;
 
     for (int n = 0; n != nb; ++n) {
 
@@ -457,14 +460,16 @@ MoFEMErrorCode Tools::findMinDistanceFromTheEdges(
         if (dist_n < t_min_dist || t_min_dist < 0) {
           t_min_coords(i) = t_p(i);
           t_min_dist = dist_n;
-          *o_segments = e;
+          if (o_segments)
+            *colsest_segment_it = e;
         }
       }
 
       ++t_n;
       ++t_min_coords;
       ++t_min_dist;
-      ++o_segments;
+      if (o_segments)
+        ++colsest_segment_it;
     }
   }
 

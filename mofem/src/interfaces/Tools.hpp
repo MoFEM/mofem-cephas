@@ -379,7 +379,7 @@ struct Tools : public UnknownInterface {
    */
   MoFEMErrorCode
   findMinDistanceFromTheEdges(const double *v_ptr, const int nb, Range edges,
-                              double *min_dist_ptr, double *o_ptr = nullptr,
+                              double *min_dist_ptr, double *o_ptr,
                               EntityHandle *o_segments = nullptr) const;
 
   /**@}*/
