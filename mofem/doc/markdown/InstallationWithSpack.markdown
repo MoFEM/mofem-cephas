@@ -203,15 +203,12 @@ For example, the fracture module can be installed by:
 ~~~~~~
 spack install mofem-fracture-module
 cd $HOME
-<!-- spack view --verbose symlink -i um_view_foo mofem-cephas
-spack activate -v um_view_foo mofem-fracture-module -->
 spack view --verbose symlink -i um_view_foo mofem-fracture-module
 ~~~~~~
 or the minimal surface equation tutorial module:
 ~~~~~~
 spack install mofem-minimal-surface-equation
 cd $HOME
-<!-- spack activate -v um_view_foo mofem-minimal-surface-equation -->
 spack view -v um_view_foo mofem-minimal-surface-equation
 ~~~~~~
 
