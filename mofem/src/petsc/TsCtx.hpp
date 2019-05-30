@@ -84,6 +84,18 @@ struct TsCtx {
   }
 
   /**
+   * @brief Get the loops to do RHSFunction object
+   *
+   * It is sequence of finite elements used to evaluate the right hand side of
+   * implicit time solver.
+   *
+   * @return FEMethodsSequence&
+   */
+  FEMethodsSequence &get_loops_to_do_RHSFunction() {
+    return loops_to_do_RHSFunction;
+  }
+
+  /**
    * @brief Get the loops to do IJacobian object
    *
    * It is sequence of finite elements used to evalite the left hand sie of
@@ -93,6 +105,19 @@ struct TsCtx {
    */
   FEMethodsSequence &get_loops_to_do_IJacobian() {
     return loops_to_do_IJacobian;
+  }
+
+
+    /**
+   * @brief Get the loops to do RHSJacobian object
+   *
+   * It is sequence of finite elements used to evalite the left hand sie of
+   * implimcit time solver.
+   *
+   * @return FEMethodsSequence&
+   */
+  FEMethodsSequence &get_loops_to_do_RHSJacobian() {
+    return loops_to_do_RHSJacobian;
   }
 
   /**
@@ -156,6 +181,42 @@ struct TsCtx {
    */
   BasicMethodsSequence &get_postProcess_to_do_Monitor() {
     return postProcess_Monitor;
+  }
+
+  /**
+   * @brief Get the preProcess to do RHSJacobian object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_preProcess_to_do_RHSJacobian() {
+    return preProcess_RHSJacobian;
+  }
+
+  /**
+   * @brief Get the postProcess to do RHSJacobian object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_postProcess_to_do_RHSJacobian() {
+    return postProcess_RHSJacobian;
+  }
+
+  /**
+   * @brief Get the preProcess to do RHSFunction object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_preProcess_to_do_RHSFunction() {
+    return preProcess_RHSFunction;
+  }
+
+  /**
+   * @brief Get the postProcess to do RHSFunction object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_postProcess_to_do_RHSFunction() {
+    return postProcess_RHSFunction;
   }
 
   friend PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t,
