@@ -116,9 +116,9 @@ Initialise Spack's environment variables:
 ~~~~~~
 
 Spack's environment variables will be lost when the terminal session is closed.
-Consider adding the previous command to your `.bashrc` or `.profile`, e.g.:
+Consider adding the previous command to your `.bash_profile` or `.bashrc`, e.g.:
 ~~~~~~
-echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bashrc
+echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
 ~~~~~~
 
 
@@ -159,7 +159,8 @@ The extensions can be installed using `spack install <extension>`.
 To access the installed users modules, create an `um_view` directory. This
 should be created in an appropriate directory:
 ~~~~~~
-spack view --verbose symlink -i um_view mofem-users-modules
+spack view --verbose symlink -i um_view mofem-cephas
+spack activate -v um_view mofem-users-modules
 ~~~~~~
 
 This filesystem view is a single directory tree that is the union of the
@@ -174,9 +175,9 @@ visible from any directory, add its `bin` directory to your `PATH`, e.g.:
 export PATH=$PWD/um_view/bin:$PATH 
 ~~~~~~ 
 
-Consider also adding this command to your `.bashrc` or `.profile`, e.g.: 
+Consider also adding this command to your `.bash_profile` or `.bashrc`, e.g.: 
 ~~~~~~ 
-echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bashrc 
+echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bash_profile
 ~~~~~~
 
 ## Test elasticity module
@@ -203,13 +204,13 @@ For example, the fracture module can be installed by:
 ~~~~~~
 spack install mofem-fracture-module
 cd $HOME
-spack view --verbose symlink -i um_view_foo mofem-fracture-module
+spack view --verbose symlink -i um_view_foo mofem-cephas
+spack activate -v um_view_foo mofem-fracture-module
 ~~~~~~
 or the minimal surface equation tutorial module:
 ~~~~~~
 spack install mofem-minimal-surface-equation
-cd $HOME
-spack view -v um_view_foo mofem-minimal-surface-equation
+spack activate -v um_view_foo mofem-minimal-surface-equation
 ~~~~~~
 
 You can list all MoFEM packages in Spack 
