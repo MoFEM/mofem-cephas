@@ -404,7 +404,7 @@ MoFEMErrorCode Core::loop_finite_elements(
     boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
     int verb) {
   MoFEMFunctionBegin;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
 
   method.feName = fe_name;
@@ -458,7 +458,7 @@ MoFEMErrorCode Core::loop_finite_elements(
     boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
     int verb) {
   MoFEMFunctionBegin;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
 
   CHKERR loop_finite_elements(problem_name, fe_name, method, rAnk, rAnk, fe_ptr,
@@ -473,7 +473,7 @@ MoFEMErrorCode Core::loop_finite_elements(
     boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
     int verb) {
   MoFEMFunctionBegin;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
 
   auto &prb_by_name = pRoblems.get<Problem_mi_tag>();

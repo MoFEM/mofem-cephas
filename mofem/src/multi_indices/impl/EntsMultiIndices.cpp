@@ -208,7 +208,8 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
 
   moab::Interface &moab = e->sPtr->basicDataPtr->moab;
   const EntityHandle ent = e->getEnt();
-  *(e->getMaxOrderPtr()) = order;
+  rval = moab.tag_set_data(e->sFieldPtr->th_AppOrder, &ent, 1, &order);
+  MOAB_THROW(rval);
   unsigned int nb_dofs = e->getOrderNbDofs(order) * e->getNbOfCoeffs();
 
   double *tag_field_data;
@@ -223,7 +224,6 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
                                  &tag_field_data_size);
       if (nb_dofs) {
         if (nb_dofs != tag_field_data_size) {
-          
           rval = moab.tag_set_data(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
                                    &*data.begin());
           MOAB_THROW(rval);

@@ -1536,6 +1536,8 @@ struct DeprecatedCoreInterface : public CoreInterface {
 
   /**@{*/
 
+  using CoreInterface::loop_finite_elements;
+
   /**
    * @deprecated Use version from core interface
    */
@@ -1543,7 +1545,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
                                                  const std::string &fe_name,
                                                  FEMethod &method,
                                                  int lower_rank, int upper_rank,
-                                                 MoFEMTypes bh = MF_EXIST,
+                                                 MoFEMTypes bh,
                                                  int verb = DEFAULT_VERBOSITY);
 
   /**
@@ -1552,7 +1554,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   DEPRECATED MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
                                       const std::string &fe_name,
                                       FEMethod &method, int lower_rank,
-                                      int upper_rank, MoFEMTypes bh = MF_EXIST,
+                                      int upper_rank, MoFEMTypes bh,
                                       int verb = DEFAULT_VERBOSITY);
 
   /**
@@ -1561,7 +1563,7 @@ struct DeprecatedCoreInterface : public CoreInterface {
   DEPRECATED MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
                                       const std::string &fe_name,
                                       FEMethod &method,
-                                      MoFEMTypes bh = MF_EXIST,
+                                      MoFEMTypes bh,
                                       int verb = DEFAULT_VERBOSITY);
 
   /**@}*/

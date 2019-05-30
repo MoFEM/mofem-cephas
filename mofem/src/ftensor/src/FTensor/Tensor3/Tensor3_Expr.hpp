@@ -100,6 +100,34 @@ namespace FTensor
       return *this;
     }
 
+    template <class U>
+    Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T, Dim0,
+                 Dim1, Dim2, i, j, k> &
+    operator*=(const U &u)
+    {
+      for(int ii = 0; ii < Dim0; ++ii)
+        for(int jj = 0; jj < Dim1; ++jj)
+          for(int kk = 0; kk < Dim2; ++kk)
+            {
+              iter(ii, jj, kk) *= u;
+            }
+      return *this;
+    }
+
+    template <class U>
+    Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T, Dim0,
+                 Dim1, Dim2, i, j, k> &
+    operator/=(const U &u)
+    {
+      for(int ii = 0; ii < Dim0; ++ii)
+        for(int jj = 0; jj < Dim1; ++jj)
+          for(int kk = 0; kk < Dim2; ++kk)
+            {
+              iter(ii, jj, kk) /= u;
+            }
+      return *this;
+    }
+
     template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
               char j_1, char k_1>
     auto &operator+=(

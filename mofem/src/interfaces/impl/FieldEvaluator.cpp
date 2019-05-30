@@ -34,7 +34,8 @@ FieldEvaluatorInterface::query_interface(const MOFEMuuid &uuid,
 }
 
 MoFEMErrorCode
-FieldEvaluatorInterface::buildTree3D(const std::string finite_element) {
+FieldEvaluatorInterface::buildTree3D(boost::shared_ptr<SetPtsData> spd_ptr,
+                                     const std::string finite_element) {
   CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
   EntityHandle fe_meshset;
@@ -42,8 +43,8 @@ FieldEvaluatorInterface::buildTree3D(const std::string finite_element) {
   Range entities_3d;
   CHKERR m_field.get_moab().get_entities_by_dimension(fe_meshset, 3,
                                                       entities_3d, true);
-  treePtr = boost::make_shared<AdaptiveKDTree>(&m_field.get_moab());
-  CHKERR treePtr->build_tree(entities_3d, &rooTreeSet);
+  spd_ptr->treePtr.reset(new AdaptiveKDTree(&m_field.get_moab()));
+  CHKERR spd_ptr->treePtr->build_tree(entities_3d, &spd_ptr->rooTreeSet);
   MoFEMFunctionReturn(0);
 }
 
@@ -51,50 +52,64 @@ MoFEMErrorCode FieldEvaluatorInterface::SetPts::
 operator()(int order_row, int order_col, int order_data) {
   MoFEMFunctionBegin;
 
-  decltype(dataPtr->feMethod) &feMethod = dataPtr->feMethod;
-  decltype(dataPtr->evalPoints) evalPoints = dataPtr->evalPoints;
-  decltype(dataPtr->nbEvalPoints) nbEvalPoints = dataPtr->nbEvalPoints;
-  decltype(dataPtr->eps) eps = dataPtr->eps;
-  decltype(dataPtr->verb) verb = dataPtr->verb;
+  if (auto data_ptr = dataPtr.lock()) {
 
-  decltype(dataPtr->localCoords) &localCoords = dataPtr->localCoords;
-  decltype(dataPtr->shapeFunctions) &shapeFunctions = dataPtr->shapeFunctions;
-  decltype(dataPtr->evalPointEntityHandle) &evalPointEntityHandle =
-      dataPtr->evalPointEntityHandle;
+    decltype(data_ptr->evalPoints) evalPoints = data_ptr->evalPoints;
+    decltype(data_ptr->nbEvalPoints) nbEvalPoints = data_ptr->nbEvalPoints;
+    decltype(data_ptr->eps) eps = data_ptr->eps;
+    decltype(data_ptr->verb) verb = data_ptr->verb;
 
-  MatrixDouble &gauss_pts = feMethod.gaussPts;
-  gauss_pts.resize(4, nbEvalPoints, false);
-  gauss_pts.clear();
+    decltype(data_ptr->localCoords) &localCoords = data_ptr->localCoords;
+    decltype(data_ptr->shapeFunctions) &shapeFunctions =
+        data_ptr->shapeFunctions;
+    decltype(data_ptr->evalPointEntityHandle) &evalPointEntityHandle =
+        data_ptr->evalPointEntityHandle;
 
-  FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape = {
-      &shapeFunctions(0, 0), &shapeFunctions(0, 1), &shapeFunctions(0, 2),
-      &shapeFunctions(0, 3)};
-  FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_gauss_pts = {
-      &gauss_pts(0, 0), &gauss_pts(1, 0), &gauss_pts(2, 0)};
+    if (auto fe_ptr = data_ptr->feMethodPtr.lock()) {
 
-  int nb_gauss_pts = 0;
-  for (int nn = 0; nn != nbEvalPoints; ++nn) {
-    if (evalPointEntityHandle[nn] ==
-        feMethod.numeredEntFiniteElementPtr->getEnt()) {
-      for (const int i : {0, 1, 2}) {
-        t_gauss_pts(i) = t_shape(i + 1);
-        gauss_pts(3, nb_gauss_pts) = nn;
+      VolumeElementForcesAndSourcesCore &fe =
+          static_cast<VolumeElementForcesAndSourcesCore &>(*fe_ptr);
+
+      MatrixDouble &gauss_pts = fe.gaussPts;
+      gauss_pts.resize(4, nbEvalPoints, false);
+      gauss_pts.clear();
+
+      FTensor::Tensor1<FTensor::PackPtr<double *, 4>, 4> t_shape = {
+          &shapeFunctions(0, 0), &shapeFunctions(0, 1), &shapeFunctions(0, 2),
+          &shapeFunctions(0, 3)};
+      FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_gauss_pts = {
+          &gauss_pts(0, 0), &gauss_pts(1, 0), &gauss_pts(2, 0)};
+
+      int nb_gauss_pts = 0;
+      for (int nn = 0; nn != nbEvalPoints; ++nn) {
+        if (evalPointEntityHandle[nn] ==
+            fe.numeredEntFiniteElementPtr->getEnt()) {
+          for (const int i : {0, 1, 2}) {
+            t_gauss_pts(i) = t_shape(i + 1);
+            gauss_pts(3, nb_gauss_pts) = nn;
+          }
+          ++t_gauss_pts;
+          ++nb_gauss_pts;
+        }
+        ++t_shape;
       }
-      ++t_gauss_pts;
-      ++nb_gauss_pts;
-    }
-    ++t_shape;
-  }
 
-  if (verb >= VERY_NOISY)
-    std::cout << "nbEvalOPoints / nbGaussPts: " << nbEvalPoints << " / "
-              << nb_gauss_pts << std::endl;
-  gauss_pts.resize(4, nb_gauss_pts, true);
-  static_cast<VolumeElementForcesAndSourcesCore &>(feMethod).nbGaussPts =
-      nb_gauss_pts;
+      if (verb >= VERY_NOISY)
+        std::cout << "nbEvalOPoints / nbGaussPts: " << nbEvalPoints << " / "
+                  << nb_gauss_pts << std::endl;
+      gauss_pts.resize(4, nb_gauss_pts, true);
+      fe.nbGaussPts = nb_gauss_pts;
 
-  if (verb >= VERY_NOISY)
-    std::cout << "gauss pts: " << gauss_pts << std::endl;
+      if (verb >= VERY_NOISY)
+        std::cout << "gauss pts: " << gauss_pts << std::endl;
+
+    } else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Pointer to element does not exists");
+
+  } else
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer to data does not exists");
 
   MoFEMFunctionReturn(0);
 }
@@ -107,7 +122,7 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
   MoFEMFunctionBegin;
 
   std::vector<EntityHandle> leafs_out;
-  CHKERR treePtr->distance_search(point, distance, leafs_out);
+  CHKERR data_ptr->treePtr->distance_search(point, distance, leafs_out);
   Range tree_ents;
   for (auto lit : leafs_out)
     CHKERR m_field.get_moab().get_entities_by_dimension(lit, 3, tree_ents,
@@ -117,6 +132,8 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
     std::cout << "tree entities: " << tree_ents << endl;
 
   data_ptr->evalPointEntityHandle.resize(data_ptr->nbEvalPoints);
+  std::fill(data_ptr->evalPointEntityHandle.begin(),
+            data_ptr->evalPointEntityHandle.end(), 0);
 
   for (auto tet : tree_ents) {
 
@@ -130,8 +147,7 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
 
       std::array<double, 3> local_coords;
       CHKERR Tools::getLocalCoordinatesOnReferenceFourNodeTet(
-          coords.data(), &data_ptr->evalPoints[3 * n], 1,
-          local_coords.data());
+          coords.data(), &data_ptr->evalPoints[3 * n], 1, local_coords.data());
 
       std::array<double, 4> shape;
       CHKERR Tools::shapeFunMBTET<3>(shape.data(), &local_coords[0],
@@ -154,7 +170,6 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
     }
   }
 
-
   const Problem *prb_ptr;
   CHKERR m_field.get_problem(problem, &prb_ptr);
   boost::shared_ptr<NumeredEntFiniteElement_multiIndex> numered_fes(
@@ -163,12 +178,12 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
   Range in_tets;
   in_tets.insert_list(data_ptr->evalPointEntityHandle.begin(),
                       data_ptr->evalPointEntityHandle.end());
+  in_tets = in_tets.subset_by_dimension(3);
 
   if (verb >= VERY_NOISY)
     std::cout << "in tets: " << in_tets << endl;
 
-  for (auto peit = in_tets.pair_begin(); peit != in_tets.pair_end();
-       ++peit) {
+  for (auto peit = in_tets.pair_begin(); peit != in_tets.pair_end(); ++peit) {
     auto lo =
         prb_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>()
             .lower_bound(boost::make_tuple(finite_element, peit->first));
@@ -186,9 +201,21 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
   if (verb >= VERY_NOISY)
     std::cout << std::endl;
 
-  CHKERR m_field.loop_finite_elements(prb_ptr, finite_element,
-                                      data_ptr->feMethod, lower_rank,
-                                      upper_rank, numered_fes, bh, verb);
+  if (auto fe_ptr = data_ptr->feMethodPtr.lock()) {
+    
+    if(verb >= VERBOSE) {
+      CHKERR PetscSynchronizedPrintf(
+          m_field.get_comm(), "Number elements %d to evaluate at proc %d\n",
+          numered_fes->size(), m_field.get_comm_rank());
+      PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+    }
+
+    CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, *fe_ptr,
+                                        lower_rank, upper_rank, numered_fes, bh,
+                                        verb);
+  } else
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer to element does not exists");
 
   MoFEMFunctionReturn(0);
 }

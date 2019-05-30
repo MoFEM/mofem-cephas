@@ -86,8 +86,8 @@ Tools::minTetsQuality(const Range &tets, double &min_quality, Tag th,
   MoFEMFunctionReturn(0);
 }
 
-const std::array<double, 12> Tools::diffShapeFunMBTET;
-const std::array<double, 4> Tools::shapeFunMBTETAt000;
+constexpr std::array<double, 12> Tools::diffShapeFunMBTET;
+constexpr std::array<double, 4> Tools::shapeFunMBTETAt000;
 
 MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
     const double *elem_coords, const double *global_coords, const int nb_nodes,

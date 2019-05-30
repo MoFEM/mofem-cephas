@@ -74,8 +74,8 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     lit.second->ts_step = step;
     CHKERR lit.second->setTsCtx(TSMethod::CTX_TSSETIFUNCTION);
     CHKERR lit.second->setTs(ts);
-    CHKERR ts_ctx->mField.loop_finite_elements(ts_ctx->problemName, lit.first,
-                                               *(lit.second), ts_ctx->bH);
+    CHKERR ts_ctx->mField.loop_finite_elements(
+        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
     CHKERR lit.second->setTsCtx(TSMethod::CTX_TSNONE);
   }
 
@@ -144,8 +144,8 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     lit.second->ts_step = step;
     CHKERR lit.second->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
     CHKERR lit.second->setTs(ts);
-    CHKERR ts_ctx->mField.loop_finite_elements(ts_ctx->problemName, lit.first,
-                                               *(lit.second), ts_ctx->bH);
+    CHKERR ts_ctx->mField.loop_finite_elements(
+        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
     CHKERR lit.second->setTsCtx(TSMethod::CTX_TSNONE);
   }
 
@@ -203,8 +203,8 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     lit.second->ts_F = PETSC_NULL;
     CHKERR lit.second->setTsCtx(TSMethod::CTX_TSTSMONITORSET);
     CHKERR lit.second->setTs(ts);
-    CHKERR ts_ctx->mField.loop_finite_elements(ts_ctx->problemName, lit.first,
-                                               *(lit.second), ts_ctx->bH);
+    CHKERR ts_ctx->mField.loop_finite_elements(
+        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
     CHKERR lit.second->setTsCtx(TSMethod::CTX_TSNONE);
   }
 

@@ -2,7 +2,7 @@
  * \example field_evaluator.cpp
  * \brief test segments distance
  *
- * \ingroup mesh_cut
+ * \ingroup field_evaluator
  */
 
 /* This file is part of MoFEM.
@@ -64,8 +64,6 @@ int main(int argc, char *argv[]) {
       FieldEvaluatorInterface *field_eval_ptr;
       CHKERR m_field.getInterface(field_eval_ptr);
 
-      CHKERR field_eval_ptr->buildTree3D(simple_interface->getDomainFEName());
-
       std::array<double, 3> point = {0, 0, 0};
       const double dist = 0.1;
 
@@ -77,12 +75,17 @@ int main(int argc, char *argv[]) {
       const MoFEM::Problem *prb_ptr;
       CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
 
-      boost::shared_ptr<VolumeElementForcesAndSourcesCore> vol_ele(
-          new VolumeElementForcesAndSourcesCore(m_field));
-
+      using VolEle = VolumeElementForcesAndSourcesCore;
       using VolOp = VolumeElementForcesAndSourcesCore::UserDataOperator;
+      using SetPtsData = FieldEvaluatorInterface::SetPtsData;
+      using SetPts = FieldEvaluatorInterface::SetPts;
 
-      struct MyOp: public VolOp {
+      /**
+       * @brief Operator used to check consistency between local coordinates and
+       * global cooridnates for integrated points and evaluated points
+       *
+       */
+      struct MyOp : public VolOp {
 
         MatrixShallowArrayAdaptor<double> evalPoints;
 
@@ -102,7 +105,7 @@ int main(int argc, char *argv[]) {
             std::cout << "Global coordinates " << endl;
             std::cout << getCoordsAtGaussPts() << std::endl;
 
-            for (int gg = 0; gg != getCoordsAtGaussPts().size1();++gg) {
+            for (int gg = 0; gg != getCoordsAtGaussPts().size1(); ++gg) {
               int pt_number = getGaussPts()(3, gg);
 
               std::cout << "gg " << gg << std::endl;
@@ -121,7 +124,7 @@ int main(int argc, char *argv[]) {
 
               double error = norm_2(coord_at_gauss_pt - eval_coord);
 
-              if(error > 1e-12)
+              if (error > 1e-12)
                 SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                          "Difference at %d error = %3.4e", pt_number, error);
             }
@@ -130,26 +133,37 @@ int main(int argc, char *argv[]) {
         }
       };
 
-      vol_ele->getOpPtrVector().push_back(new MyOp(eval_points));
-
+      // Lambda function is used to set integration rule to -1, that indicates
+      // that finite element instace will use non-standard integration points.
       auto get_rule = [&](int order_row, int order_col, int order_data) {
         return -1;
       };
 
-      vol_ele->getRuleHook = get_rule;
+      // Get pointer of FieldEvaluator data. Note finite element and method
+      // set integrating points is destroyed when this pointer is releases
+      auto data = field_eval_ptr->getData<VolEle>();
+      
+      // Set operators and integration rule
+      if (auto fe_method = data->feMethodPtr.lock()) {
+        fe_method->getRuleHook = get_rule;
+        fe_method->getOpPtrVector().push_back(new MyOp(eval_points));
+      } else
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Pointer to element does not exists");
 
-      // Make aliased shared pointer, class instance is destroyed when finite
-      // element using set_gauss_pts is destroyed
-      boost::shared_ptr<FieldEvaluatorInterface::SetPtsData> data(
-          vol_ele, new FieldEvaluatorInterface::SetPtsData(
-                       *vol_ele, nullptr, 0, 1e-12, VERY_NOISY));
-      vol_ele->setRuleHook = FieldEvaluatorInterface::SetPts(data);
-      data->setEvalPoints(&eval_points[0], eval_points.size() / 3);
+      // Build tree for particular element
+      CHKERR field_eval_ptr->buildTree3D(data,
+                                         simple_interface->getDomainFEName());
+      // Set points to set on finite elements
+      data->setEvalPoints(eval_points.data(), eval_points.size() / 3);
 
+      // Evaluate points on finite elements
       CHKERR field_eval_ptr->evalFEAtThePoint3D(
           &point[0], dist, prb_ptr->getName(),
           simple_interface->getDomainFEName(), data, m_field.get_comm_rank(),
           m_field.get_comm_rank(), MF_EXIST, VERY_NOISY);
+
+      CHKERR DMDestroy(&dm);
     }
   }
   CATCH_ERRORS;

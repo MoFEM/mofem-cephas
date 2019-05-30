@@ -145,15 +145,14 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     ApproximationOrder def_ApproximationOrder = -1;
     const std::string Tag_ApproximationOrder_name = "_App_Order_" + name;
     CHKERR get_moab().tag_get_handle(
-        Tag_ApproximationOrder_name.c_str(), sizeof(ApproximationOrder),
-        MB_TYPE_OPAQUE, th_app_order,
-        MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_ApproximationOrder);
+        Tag_ApproximationOrder_name.c_str(), 1, MB_TYPE_INTEGER, th_app_order,
+        MB_TAG_CREAT | tag_type, &def_ApproximationOrder);
     // rank
     int def_rank = 1;
     const std::string tag_rank_name = "_Field_Rank_" + name;
-    CHKERR get_moab().tag_get_handle(
-        tag_rank_name.c_str(), sizeof(FieldCoefficientsNumber), MB_TYPE_OPAQUE,
-        th_rank, MB_TAG_CREAT | MB_TAG_BYTES | MB_TAG_SPARSE, &def_rank);
+    CHKERR get_moab().tag_get_handle(tag_rank_name.c_str(), 1, MB_TYPE_INTEGER,
+                                     th_rank, MB_TAG_CREAT | MB_TAG_SPARSE,
+                                     &def_rank);
     CHKERR get_moab().tag_set_data(th_rank, &meshset, 1, &nb_of_coefficients);
 
     // add meshset
@@ -448,6 +447,31 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       EntityHandle first = pit->first;
       EntityHandle second = pit->second;
 
+      if(order>=0) {
+        Range set_ents(first, second);
+        std::vector<int> o_vec(second - first + 1, order);
+        CHKERR get_moab().tag_set_data((*miit)->th_AppOrder, set_ents,
+                                       &*o_vec.begin());
+        const EntityType ent_type = get_moab().type_from_handle(first);
+        const std::size_t nb_dofs =
+            ((*miit)->getFieldOrderTable()[ent_type])(order) *
+            (*miit)->getNbOfCoeffs();
+        if (ent_type == MBVERTEX) {
+          std::vector<double> d_vec(nb_dofs * (second - first + 1), 0);
+          CHKERR get_moab().tag_set_data((*miit)->th_FieldDataVerts, set_ents,
+                                         &*d_vec.begin());
+        } else {
+          std::vector<int> tag_size(second - first + 1,
+                                    nb_dofs * sizeof(FieldData));
+          std::vector<double> d_vec(nb_dofs, 0);
+          std::vector<void const *> d_vec_ptr(second - first + 1,
+                                              &*d_vec.begin());
+          CHKERR get_moab().tag_set_by_ptr((*miit)->th_FieldData, set_ents,
+                                           &*d_vec_ptr.begin(),
+                                           &*tag_size.begin());
+        }
+      }
+
       // reserve memory for field  dofs
       boost::shared_ptr<std::vector<FieldEntity>> ents_array =
           boost::make_shared<std::vector<FieldEntity>>(
@@ -470,9 +494,6 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         const EntityHandle ent = miit_ref_ent->get()->getRefEnt();
         ents_in_ref_ent.insert(ent);
         ents_array->emplace_back(*miit, *miit_ref_ent);
-        if (order >= 0) {
-          modify_order(&(ents_array->back()));
-        }
         nb_ents_set_order_new++;
       }
 
