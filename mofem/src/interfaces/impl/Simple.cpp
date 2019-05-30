@@ -34,7 +34,7 @@ MoFEMErrorCode Simple::query_interface(const MOFEMuuid &uuid,
 Simple::Simple(const Core &core)
     : cOre(const_cast<Core &>(core)), bitLevel(BitRefLevel().set(0)),
       meshSet(0), boundaryMeshset(0), domainFE("dFE"), boundaryFE("bFE"),
-      skeletonFE("sFE"), dIm(-1), dM(PETSC_NULL) {
+      skeletonFE("sFE"), dIm(-1) {
   PetscLogEventRegister("LoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
   PetscLogEventRegister("buildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
   PetscLogEventRegister("buildFiniteElements", 0,
@@ -43,13 +43,7 @@ Simple::Simple(const Core &core)
   PetscLogEventRegister("SimpleKSPSolve", 0, &MOFEM_EVENT_SimpleKSPSolve);
   strcpy(meshFileName, "mesh.h5m");
 }
-Simple::~Simple() {
-
-  if (dM != PETSC_NULL) {
-    ierr = DMDestroy(&dM);
-    CHKERRABORT(PETSC_COMM_WORLD, ierr);
-  }
-}
+Simple::~Simple() {}
 
 MoFEMErrorCode Simple::getOptions() {
 
@@ -279,12 +273,8 @@ MoFEMErrorCode Simple::defineFiniteElements() {
 MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
-  if (dM != PETSC_NULL) {
-    CHKERR DMDestroy(&dM);
-  }
   // Create dm instance
-  CHKERR DMCreate(m_field.get_comm(), &dM);
-  CHKERR DMSetType(dM, "DMMOFEM");
+  dM = createSmartDM(m_field.get_comm(), "DMMOFEM");
   // set dm data structure which created mofem data structures
   CHKERR DMMoFEMCreateMoFEM(dM, &m_field, "SimpleProblem", bitLevel);
   CHKERR DMSetFromOptions(dM);
@@ -597,18 +587,10 @@ MoFEMErrorCode Simple::setUp() {
 }
 
 MoFEMErrorCode Simple::getDM(DM *dm) {
-  MoFEMFunctionBeginHot;
-  PetscObjectReference((PetscObject)dM);
-  *dm = dM;
-  MoFEMFunctionReturnHot(0);
-}
-
-SmartPetscObj<DM> Simple::getDM() {
-  DM dm;
-  ierr = getDM(&dm);
-  Interface &m_field = cOre;  
-  CHKERRABORT(m_field.get_comm(), ierr);
-  return SmartPetscObj<DM>(dm);
+  MoFEMFunctionBegin;
+  CHKERR PetscObjectReference(getPetscObject(dM.get()));
+  *dm = dM.get();
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM

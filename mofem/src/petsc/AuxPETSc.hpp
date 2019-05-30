@@ -19,7 +19,11 @@
 #ifndef __AUXPETSC_HPP__
 #define __AUXPETSC_HPP__
 
-// intrusive_ptr has to be global
+namespace MoFEM {
+template <typename T> inline PetscObject getPetscObject(T obj) {
+  return reinterpret_cast<PetscObject>(obj);
+}
+} // namespace MoFEM
 
 /**
  * @brief It is used by intrusive_ptr to bump reference
@@ -31,25 +35,31 @@
  * @param obj
  */
 template <typename OBJ> void intrusive_ptr_add_ref(OBJ obj) {
-  CHKERR PetscObjectReference(reinterpret_cast<PetscObject>(obj));
+  PetscErrorCode ierr = PetscObjectReference(MoFEM::getPetscObject(obj));
+  CHKERRABORT(PetscObjectComm(MoFEM::getPetscObject(obj)), ierr);
 }
 
 /**
  * @brief It is used by intrusive_ptr to dereference and destroy petsc object
- * 
+ *
  * \note It should not be used directly, it is internally called by
  * intrusive_ptr
- * 
- * @tparam OBJ 
- * @param obj 
+ *
+ * @tparam OBJ
+ * @param obj
  */
 template <typename OBJ> void intrusive_ptr_release(OBJ obj) {
+  PetscErrorCode ierr;
   int cnt;
-  PetscObjectGetReference(reinterpret_cast<PetscObject>(obj), &cnt);
-  if (cnt > 1)
-    CHKERR PetscObjectDereference(reinterpret_cast<PetscObject>(obj));
-  else
-    CHKERR PetscObjectDestroy(reinterpret_cast<PetscObject *>(&obj));
+  ierr = PetscObjectGetReference(reinterpret_cast<PetscObject>(obj), &cnt);
+  CHKERRABORT(PetscObjectComm(MoFEM::getPetscObject(obj)), ierr);
+  if (cnt > 1) {
+    ierr = PetscObjectDereference(MoFEM::getPetscObject(obj));
+    CHKERRABORT(PetscObjectComm(MoFEM::getPetscObject(obj)), ierr);
+  } else {
+    ierr = PetscObjectDestroy(reinterpret_cast<PetscObject *>(&obj));
+    CHKERRABORT(PetscObjectComm(MoFEM::getPetscObject(obj)), ierr);
+  }
 }
 
 namespace MoFEM {
@@ -124,7 +134,8 @@ struct SmartPetscObj
   int use_count() const {
     if (this->get()) {
       int cnt;
-      PetscObjectGetReference(reinterpret_cast<PetscObject>(this->get()), &cnt);
+      ierr = PetscObjectGetReference(getPetscObject(this->get()), &cnt);
+      CHKERRABORT(PetscObjectComm(getPetscObject(this->get())), ierr);
       return cnt;
     } else
       return 0;
@@ -141,14 +152,14 @@ struct SmartPetscObj
  * CHKERR DMRegister_MoFEM("MOFEM")
  * {
  *    auto dm = createSmartDM(PETSC_COMM_WORLD, "MOFEM");
- *  
+ *
  *    // ...
- *    
+ *
  *    // dm is autmatically destroyed when program goes out of the scope
  * }
- * 
- * 
- * 
+ *
+ *
+ *
  * \endcode
  *
  */
@@ -165,7 +176,8 @@ auto createSmartDM = [](MPI_Comm comm, const std::string dm_type_name) {
  * @brief Create smart ghost vector
  *
  * For details abut arguments see here:
- * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecCreateGhost.html>VecCreateGhost</a>.
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecCreateGhost.html>VecCreateGhost</a>.
  *
  * \code
  * auto vec = createSmartGhostVector(...);
@@ -180,12 +192,12 @@ auto createSmartGhostVector = [](MPI_Comm comm, PetscInt n, PetscInt N,
   return SmartPetscObj<Vec>(vv);
 };
 
-
 /**
  * @brief Create duplicate vector of smart vector
- * 
+ *
  * For details abut arguments see here:
- * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecDuplicate.html>VecDuplicate</a>.
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecDuplicate.html>VecDuplicate</a>.
  */
 auto smartVectorDuplicate = [](SmartPetscObj<Vec> &vec) {
   if (vec.use_count()) {
