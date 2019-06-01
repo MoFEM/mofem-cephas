@@ -583,7 +583,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
     // n /= norm_2(n);
     auto dist_normal = getVectorAdaptor(&dist_normal_vec[3 * index], 3);
     // noalias(dist_normal) = inner_prod(delta, n) * n;
-    noalias(dist_normal) = point_out - point_in;
+    noalias(dist_normal) = delta;
   }
 
   auto th_dist_surface = create_tag("DIST", 1);
@@ -612,7 +612,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
 
       auto point_in = getVectorAdaptor(&coords[3 * i], 3);
       auto point_out = getVectorAdaptor(&points_on_edges[3 * i], 3);
-      noalias(point_out) = point_out - point_in;
+      point_out -= point_in;
 
       // VectorDouble3 n(3);
       // FTensor::Tensor1<double, 3> t_n;
@@ -652,7 +652,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
   Range vol_edges;
   CHKERR moab.get_adjacencies(vOlume, 1, true, vol_edges,
                               moab::Interface::UNION);
-  for(auto e : vol_edges) {
+  for (auto e : vol_edges) {
     int num_nodes;
     const EntityHandle *conn;
     CHKERR moab.get_connectivity(e, conn, num_nodes, true);
@@ -660,27 +660,40 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
     const auto normal_dist1 = get_tag_data(th_dist_surface_vec, conn[1]);
     const auto front_dist0 = get_tag_data(th_dist_front_vec, conn[0]);
     const auto front_dist1 = get_tag_data(th_dist_front_vec, conn[1]);
-    //     
+    auto ray = get_edge_ray(conn);
+    ray /= norm_2(ray);
+    auto signed_norm = [&](const auto &v) { return inner_prod(ray, v); };
+    const double dn0 = signed_norm(normal_dist0);
+    const double dn1 = signed_norm(normal_dist1);
 
-    const double dn0 = norm_2(normal_dist0);
-    const double dn1 = norm_2(normal_dist1);
-    const double df0 = norm_2(front_dist0);
-    const double df1 = norm_2(front_dist1);
+    const double an = dn1 - dn0;
+    const double eps_n =
+        std::copysign(std::numeric_limits<float>::epsilon(), an);
 
-    const double sn = dn0 / (dn1 - dn0);
-    const double sf = df0 / (df1 - df0);
-    const double dot_normal_dist =
-        inner_prod(ray, normal_dist0) * inner_prod(ray, normal_dist1);
-    const double dot_front_dist =
-        inner_prod(ray, normal_dist0) * inner_prod(ray, normal_dist1);
-    if (inner_prod(normal_dist0, normal_dist1) < 0 && dot_normal_dist < 0 &&
-        sn > 0 && sn < 1) {
-      crossed_surf_edges.insert(e);
+    const double sn = -dn0 / (an + eps_n);
+
+if ((sn > 0) && (sn < 1) &&
+    (dn0 * dn1 < -std::numeric_limits<float>::epsilon())) {
+  crossed_surf_edges.insert(e);
+  cerr << normal_dist0 << endl;
+  cerr << normal_dist1 << endl;
+  cerr << ray << endl;
+  cerr << dn0 << endl;
+  cerr << dn1 << endl;
+  cerr << an << endl;
+  cerr << sn << endl;
+  cerr << endl;
     }
-    if (inner_prod(front_dist0, front_dist1) < 0 && dot_front_dist < 0 &&
-        sf > 0 && sf < 1) {
+
+    const double df0 = signed_norm(front_dist0);
+    const double df1 = signed_norm(front_dist1);
+    const double af = df1 - df0;
+    const double eps_f =
+        std::copysign(std::numeric_limits<float>::epsilon(), af);
+    const double sf = -df0 / (af + eps_f);
+
+    if ((sf > 0) && (sf < 1) && (df0 * df1 < 0))
       crossed_front_edges.insert(e);
-    }
   }
 
   Range crossed_surf_vols, crossed_front_vols;
