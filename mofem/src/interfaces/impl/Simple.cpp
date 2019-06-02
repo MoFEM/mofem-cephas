@@ -498,10 +498,10 @@ MoFEMErrorCode Simple::buildProblem() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Simple::setUp() {
+MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
   MoFEMFunctionBegin;
   CHKERR defineFiniteElements();
-  CHKERR defineProblem();
+  CHKERR defineProblem(is_partitioned);
   CHKERR buildFields();
   CHKERR buildFiniteElements();
   CHKERR buildProblem();

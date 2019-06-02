@@ -191,7 +191,7 @@ struct Simple : public UnknownInterface {
    * \brief Setup problem
    * @return error code
    */
-  MoFEMErrorCode setUp();
+  MoFEMErrorCode setUp(const PetscBool is_partitioned = PETSC_TRUE);
 
   /**
    * \brief Get DM
