@@ -57,7 +57,10 @@ struct Simple : public UnknownInterface {
    * @param  field_name file name
    * @return            error code
    */
-  MoFEMErrorCode loadFile();
+  MoFEMErrorCode
+  loadFile(const std::string options = "PARALLEL=READ_PART;"
+                                       "PARALLEL_RESOLVE_SHARED_ENTS;"
+                                       "PARTITION=PARALLEL_PARTITION;");
 
   /**
    * \brief Add field on domain
