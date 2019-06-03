@@ -210,6 +210,27 @@ auto smartVectorDuplicate = [](SmartPetscObj<Vec> &vec) {
   }
 };
 
+auto createTS = [](MPI_Comm comm) {
+  TS ts;
+  ierr = TSCreate(PETSC_COMM_WORLD, &ts);
+  CHKERRABORT(comm, ierr);
+  return SmartPetscObj<TS>(ts);
+};
+
+auto createSNES = [](MPI_Comm comm) {
+  SNES snes;
+  ierr = SNESCreate(PETSC_COMM_WORLD, &snes);
+  CHKERRABORT(comm, ierr);
+  return SmartPetscObj<SNES>(snes);
+};
+
+auto createKSP = [](MPI_Comm comm) {
+  KSP ksp;
+  ierr = KSPCreate(PETSC_COMM_WORLD, &ksp);
+  CHKERRABORT(comm, ierr);
+  return SmartPetscObj<KSP>(ksp);
+};
+
 } // namespace MoFEM
 
 #endif // __AUXPETSC_HPP__
