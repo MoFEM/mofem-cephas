@@ -59,6 +59,9 @@ struct TsCtx {
   PetscLogEvent MOFEM_EVENT_TsCtxMonitor;
 
   bool zeroMatrix;
+  boost::movelib::unique_ptr<bool> vecAssembleSwitch;
+  boost::movelib::unique_ptr<bool> matAssembleSwitch;
+
   TsCtx(MoFEM::Interface &m_field, const std::string &problem_name)
       : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
         bH(MF_EXIST), zeroMatrix(true) {
@@ -70,6 +73,7 @@ struct TsCtx {
                           &MOFEM_EVENT_TsCtxRHSJacobian);
     PetscLogEventRegister("LoopTsMonitor", 0, &MOFEM_EVENT_TsCtxMonitor);
   }
+
 
   /**
    * @brief Get the loops to do IFunction object
