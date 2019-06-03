@@ -765,6 +765,86 @@ DMMoFEMTSSetIJacobian(DM dm, const std::string &fe_name,
       dm, fe_name, method, pre_only, post_only);
 }
 
+template <class S, class T0, class T1, class T2>
+static PetscErrorCode DMMoFEMTSSetRHSFunction(DM dm, S fe_name, T0 method,
+                                            T1 pre_only, T2 post_only) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
+  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  if (pre_only) 
+    dm_field->tsCtx->get_preProcess_to_do_RHSFunction().push_back(pre_only);
+  if (method) 
+    dm_field->tsCtx->get_loops_to_do_RHSFunction().push_back(
+        PairNameFEMethodPtr(fe_name, method));
+  if (post_only) 
+    dm_field->tsCtx->get_postProcess_to_do_RHSFunction().push_back(post_only);
+  CHKERR DMTSSetRHSFunction(dm, TSSetRHSFunction, dm_field->tsCtx.get());
+  MoFEMFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMTSSetRHSFunction(DM dm, const char fe_name[],
+                                     MoFEM::FEMethod *method,
+                                     MoFEM::BasicMethod *pre_only,
+                                     MoFEM::BasicMethod *post_only) {
+  return DMMoFEMTSSetRHSFunction<const char *, MoFEM::FEMethod *,
+                               MoFEM::BasicMethod *, MoFEM::BasicMethod *>(
+      dm, fe_name, method, pre_only, post_only);
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode
+DMMoFEMTSSetRHSFunction(DM dm, const std::string &fe_name,
+                      boost::shared_ptr<MoFEM::FEMethod> method,
+                      boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                      boost::shared_ptr<MoFEM::BasicMethod> post_only) {
+  return DMMoFEMTSSetRHSFunction<const std::string,
+                               boost::shared_ptr<MoFEM::FEMethod>,
+                               boost::shared_ptr<MoFEM::BasicMethod>,
+                               boost::shared_ptr<MoFEM::BasicMethod>>(
+      dm, fe_name, method, pre_only, post_only);
+  MoFEMFunctionReturnHot(0);
+}
+
+template <class S, class T0, class T1, class T2>
+static PetscErrorCode DMMoFEMTSSetRHSJacobian(DM dm, S fe_name, T0 method,
+                                              T1 pre_only, T2 post_only) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
+  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  if (pre_only)
+    dm_field->tsCtx->get_preProcess_to_do_RHSFunction().push_back(pre_only);
+  if (method)
+    dm_field->tsCtx->get_loops_to_do_RHSFunction().push_back(
+        PairNameFEMethodPtr(fe_name, method));
+  if (post_only)
+    dm_field->tsCtx->get_postProcess_to_do_RHSFunction().push_back(post_only);
+  CHKERR DMTSSetRHSJacobian(dm, TSSetRHSJacobian, dm_field->tsCtx.get());
+  MoFEMFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMTSSetRHSJacobian(DM dm, const char fe_name[],
+                                       MoFEM::FEMethod *method,
+                                       MoFEM::BasicMethod *pre_only,
+                                       MoFEM::BasicMethod *post_only) {
+  return DMMoFEMTSSetRHSJacobian<const char *, MoFEM::FEMethod *,
+                                 MoFEM::BasicMethod *, MoFEM::BasicMethod *>(
+      dm, fe_name, method, pre_only, post_only);
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode
+DMMoFEMTSSetRHSJacobian(DM dm, const std::string &fe_name,
+                        boost::shared_ptr<MoFEM::FEMethod> method,
+                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                        boost::shared_ptr<MoFEM::BasicMethod> post_only) {
+  return DMMoFEMTSSetRHSJacobian<const std::string,
+                                 boost::shared_ptr<MoFEM::FEMethod>,
+                                 boost::shared_ptr<MoFEM::BasicMethod>,
+                                 boost::shared_ptr<MoFEM::BasicMethod>>(
+      dm, fe_name, method, pre_only, post_only);
+  MoFEMFunctionReturnHot(0);
+}
+
 PetscErrorCode DMMoFEMGetKspCtx(DM dm, MoFEM::KspCtx **ksp_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
@@ -873,6 +953,15 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, Vec *g) {
   MoFEMFunctionReturnHot(0);
 }
 
+PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, SmartPetscObj<Vec> &g_ptr) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBeginHot;
+  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
+      dm_field->problemName, COL, g_ptr);
+  MoFEMFunctionReturnHot(0);
+}
+
 PetscErrorCode DMCreateLocalVector_MoFEM(DM dm, Vec *l) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
@@ -883,6 +972,25 @@ PetscErrorCode DMCreateLocalVector_MoFEM(DM dm, Vec *l) {
 }
 
 PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
+  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  if (strcmp(dm->mattype, MATMPIAIJ) == 0) {
+    CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
+        ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(dm_field->problemName,
+                                                        M);
+  } else if (strcmp(dm->mattype, MATAIJ) == 0) {
+    CHKERR dm_field->mField_ptr->getInterface<MatrixManager>()
+        ->createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(dm_field->problemName,
+                                                       M);
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Matrix type not implemented");
+  }
+  MoFEMFunctionReturn(0);
+}
+
+PetscErrorCode DMCreateMatrix_MoFEM(DM dm, SmartPetscObj<Mat> &M) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBegin;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);

@@ -400,6 +400,84 @@ PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, const char fe_name[],
                                      MoFEM::BasicMethod *post_only);
 
 /**
+ * @brief set TS the right hand side function
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetRHSFunction.html#TSSetRHSFunction>See
+ * petsc documentation</a>
+ *
+ * @param dm
+ * @param fe_name
+ * @param method
+ * @param pre_only
+ * @param post_only
+ * @return PetscErrorCode
+ */
+PetscErrorCode
+DMMoFEMTSSetRHSFunction(DM dm, const std::string &fe_name,
+                      boost::shared_ptr<MoFEM::FEMethod> method,
+                      boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                      boost::shared_ptr<MoFEM::BasicMethod> post_only);
+
+/**
+ * @brief set TS the right hand side function
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetRHSFunction.html#TSSetRHSFunction>See
+ * petsc documentation</a>
+ *
+ * @param dm
+ * @param fe_name
+ * @param method
+ * @param pre_only
+ * @param post_only
+ * @return PetscErrorCode
+ */
+PetscErrorCode DMMoFEMTSSetRHSFunction(DM dm, const char fe_name[],
+                                     MoFEM::FEMethod *method,
+                                     MoFEM::BasicMethod *pre_only,
+                                     MoFEM::BasicMethod *post_only);
+
+/**
+ * @brief set TS the right hand side jacobian
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetRHSJacobian.html>See
+ * petsc documentation</a>
+ *
+ * @param dm
+ * @param fe_name
+ * @param method
+ * @param pre_only
+ * @param post_only
+ * @return PetscErrorCode
+ */
+PetscErrorCode
+DMMoFEMTSSetRHSJacobian(DM dm, const std::string &fe_name,
+                        boost::shared_ptr<MoFEM::FEMethod> method,
+                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                        boost::shared_ptr<MoFEM::BasicMethod> post_only);
+
+/**
+ * @brief set TS the right hand side jacobian
+ * 
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetRHSJacobian.html>See
+ * petsc documentation</a>
+ *
+ * @param dm
+ * @param fe_name
+ * @param method
+ * @param pre_only
+ * @param post_only
+ * @return PetscErrorCode
+ */
+PetscErrorCode DMMoFEMTSSetRHSJacobian(DM dm, const char fe_name[],
+                                       MoFEM::FEMethod *method,
+                                       MoFEM::BasicMethod *pre_only,
+                                       MoFEM::BasicMethod *post_only);
+
+/**
  * \brief get MoFEM::KspCtx data structure
  * \ingroup dm
  */
@@ -503,6 +581,15 @@ PetscErrorCode DMDestroy_MoFEM(DM dm);
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, Vec *g);
 
 /**
+ * \brief DMShellSetCreateGlobalVector
+ * \ingroup dm
+ *
+ * sets the routine to create a global vector
+ * associated with the shell DM
+ */
+PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, SmartPetscObj<Vec> &g_ptr);
+
+/**
  * \brief DMShellSetCreateLocalVector
  * \ingroup dm
  *
@@ -518,6 +605,14 @@ PetscErrorCode DMCreateLocalVector_MoFEM(DM dm, Vec *l);
  * sets the routine to create a matrix associated with the shell DM
  */
 PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M);
+
+/**
+ * DMShellSetCreateMatrix
+ * \ingroup dm
+ *
+ * sets the routine to create a matrix associated with the shell DM
+ */
+PetscErrorCode DMCreateMatrix_MoFEM(DM dm, SmartPetscObj<Mat> &M);
 
 /**
  * Set options for MoFEM DM
