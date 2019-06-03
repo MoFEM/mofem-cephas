@@ -370,7 +370,7 @@ PetscErrorCode TSSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
     CHKERR lit.second->setTsCtx(TSMethod::CTX_TSNONE);
-    ts_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
+    ts_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
 
   // post process
@@ -386,10 +386,10 @@ PetscErrorCode TSSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
     CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
-    ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
+    ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
-  if (ts_ctx->vecAssembleSwitch) {
+  if (ts_ctx->matAssembleSwitch) {
     CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
     CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
   }
