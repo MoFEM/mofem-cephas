@@ -72,6 +72,19 @@ struct VecManager : public UnknownInterface {
                                 Vec *V) const;
 
   /**
+   * \brief create ghost vector for problem (collective)
+   * \ingroup mofem_vectors
+
+  collective - need to be run on all processors in communicator
+
+   * \param name problem name
+   * \param RowColData specify what data is taken from Row, Col or Data
+   * \param Vec the vector where data is stored
+   */
+  MoFEMErrorCode vecCreateGhost(const std::string &name, RowColData rc,
+                                SmartPetscObj<Vec> &v_ptr) const;
+
+  /**
     * \brief create scatter for vectors form one to another problem (collective)
     * \ingroup mofem_vectors
     *
