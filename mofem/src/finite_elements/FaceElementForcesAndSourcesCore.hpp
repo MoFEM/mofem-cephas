@@ -1,9 +1,6 @@
 /** \file FaceElementForcesAndSourcesCore.hpp
   \brief Implementation of face element.
 
-  Those element are inherited by user to implement specific implementation of
-  particular problem.
-
 */
 
 /* This file is part of MoFEM.
@@ -112,7 +109,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       double *ptr = &*getNormal().data().begin();
       return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
     }
-    
+
     /// \deprecated use getFTensor1Normal()
     DEPRECATED inline auto getTensor1Normal() { return getFTensor1Normal(); }
 
@@ -181,9 +178,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     }
 
     /// \deprecated use getFTensor1Coords
-    DEPRECATED inline auto getTensor1Coords() {
-      return getFTensor1Coords(); }
-
+    DEPRECATED inline auto getTensor1Coords() { return getFTensor1Coords(); }
 
     /** \brief Gauss points and weight, matrix (nb. of points x 3)
 
@@ -515,10 +510,6 @@ struct OpSetInvJacHcurlFace
                         DataForcesAndSourcesCore::EntData &data);
 };
 
-/// \deprecated Use FaceElementForcesAndSourcesCore
-DEPRECATED typedef FaceElementForcesAndSourcesCore
-    FaceElementForcesAndSurcesCore;
-
 } // namespace MoFEM
 
 #endif //__FACEELEMENTFORCESANDSOURCESCORE_HPP__
@@ -526,6 +517,6 @@ DEPRECATED typedef FaceElementForcesAndSourcesCore
 /**
  * \defgroup mofem_forces_and_sources_tri_element Face Element
  * \brief Implementation of face element
- * 
+ *
  * \ingroup mofem_forces_and_sources
- ******************************************************************************/
+ **/
