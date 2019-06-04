@@ -404,7 +404,8 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
       switch (type) {
       case MBVERTEX:
       case MBEDGE:
-      case MBTRI: {
+      case MBTRI:
+      case MBQUAD: {
         FTensor::Index<'i', 2> i;
         FTensor::Index<'j', 2> j;
         FTensor::Index<'k', 2> k;
