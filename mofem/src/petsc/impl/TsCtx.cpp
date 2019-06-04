@@ -191,7 +191,7 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
                             void *ctx) {
   MoFEMFunctionBegin;
   TsCtx *ts_ctx = static_cast<TsCtx *>(ctx);
-  PetscLogEventBegin(ts_ctx->MOFEM_EVENT_TsCtxRHSFunction, 0, 0, 0, 0);
+  PetscLogEventBegin(ts_ctx->MOFEM_EVENT_TsCtxMonitor, 0, 0, 0, 0);
   CHKERR VecGhostUpdateBegin(u, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR VecGhostUpdateEnd(u, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR ts_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
@@ -203,7 +203,7 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     bit->ts_t = t;
     bit->ts_step = step;
     bit->ts_F = PETSC_NULL;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
+    CHKERR bit->setTsCtx(TSMethod::CTX_TSTSMONITORSET);
     CHKERR bit->setTs(ts);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
@@ -228,13 +228,13 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     bit->ts_t = t;
     bit->ts_step = step;
     bit->ts_F = PETSC_NULL;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
+    CHKERR bit->setTsCtx(TSMethod::CTX_TSTSMONITORSET);
     CHKERR bit->setTs(ts);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
     CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
   }
-  PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxRHSFunction, 0, 0, 0, 0);
+  PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxMonitor, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
 
