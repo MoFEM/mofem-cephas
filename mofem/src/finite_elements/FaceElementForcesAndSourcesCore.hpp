@@ -476,9 +476,11 @@ struct OpSetInvJacH1ForFace
       : FaceElementForcesAndSourcesCore::UserDataOperator(H1), invJac(inv_jac) {
   }
 
-  MatrixDouble diffNinvJac;
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
+
+private:
+  MatrixDouble diffNinvJac;
 };
 
 /**
@@ -496,10 +498,11 @@ struct OpSetInvJacHcurlFace
       : FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
         invJac(inv_jac) {}
 
-  MatrixDouble diffHcurlInvJac;
-
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
+
+private:
+  MatrixDouble diffHcurlInvJac;
 };
 
 } // namespace MoFEM
