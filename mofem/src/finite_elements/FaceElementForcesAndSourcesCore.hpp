@@ -492,14 +492,6 @@ struct OpSetInvJacHcurlFace
 
   MatrixDouble &invJac;
 
-  // /**
-  //  * \deprecated Field name do not needed to construct class, change v0.5.17.
-  //  */
-  // DEPRECATED OpSetInvJacHcurlFace(const std::string &field_name,MatrixDouble
-  // &inv_jac): FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
-  // invJac(inv_jac) {
-  // }
-
   OpSetInvJacHcurlFace(MatrixDouble &inv_jac)
       : FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
         invJac(inv_jac) {}
