@@ -470,7 +470,6 @@ derivatives
 */
 struct OpSetInvJacH1ForFace
     : public FaceElementForcesAndSourcesCore::UserDataOperator {
-  MatrixDouble &invJac;
 
   OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
       : FaceElementForcesAndSourcesCore::UserDataOperator(H1), invJac(inv_jac) {
@@ -480,6 +479,7 @@ struct OpSetInvJacH1ForFace
                         DataForcesAndSourcesCore::EntData &data);
 
 private:
+  MatrixDouble &invJac;
   MatrixDouble diffNinvJac;
 };
 
@@ -492,8 +492,6 @@ private:
 struct OpSetInvJacHcurlFace
     : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-  MatrixDouble &invJac;
-
   OpSetInvJacHcurlFace(MatrixDouble &inv_jac)
       : FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
         invJac(inv_jac) {}
@@ -502,6 +500,7 @@ struct OpSetInvJacHcurlFace
                         DataForcesAndSourcesCore::EntData &data);
 
 private:
+  MatrixDouble &invJac;
   MatrixDouble diffHcurlInvJac;
 };
 
