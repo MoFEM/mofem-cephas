@@ -107,10 +107,10 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   /**
    * @brief Get the entity sense (orientation)
-   * 
-   * @tparam type 
-   * @param data 
-   * @return MoFEMErrorCode 
+   *
+   * @tparam type
+   * @param data
+   * @return MoFEMErrorCode
    */
   template <EntityType type>
   inline MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
@@ -119,11 +119,11 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   /**
    * @brief Get the entity data order for given space
-   * 
-   * @tparam type 
-   * @param data 
-   * @param space 
-   * @return MoFEMErrorCode 
+   *
+   * @tparam type
+   * @param data
+   * @param space
+   * @return MoFEMErrorCode
    */
   template <EntityType type>
   inline MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
@@ -274,7 +274,7 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   /**
    * @brief Set function to calculate integration rule
-   * 
+   *
    */
   RuleHookFun setRuleHook;
 
@@ -756,11 +756,11 @@ DEPRECATED typedef ForcesAndSourcesCore ForcesAndSurcesCore;
 
 #endif //__FORCES_AND_SOURCES_CORE__HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_forces_and_sources Forces and sources
-* \ingroup mofem
-*
-* \brief Manages complexities related to assembly of vector and matrices at
-* single finite element level.
-*
-******************************************************************************/
+/**
+ * \defgroup mofem_forces_and_sources Forces and sources
+ * \ingroup mofem
+ *
+ * \brief Manages complexities related to assembly of vector and matrices at
+ * single finite element level.
+ *
+ **/
