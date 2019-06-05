@@ -33,8 +33,8 @@ MoFEMErrorCode Simple::query_interface(const MOFEMuuid &uuid,
 
 Simple::Simple(const Core &core)
     : cOre(const_cast<Core &>(core)), bitLevel(BitRefLevel().set(0)),
-      meshSet(0), boundaryMeshset(0), domainFE("dFE"), boundaryFE("bFE"),
-      skeletonFE("sFE"), dIm(-1) {
+      meshSet(0), boundaryMeshset(0), nameOfProblem("SimpleProblem"),
+      domainFE("dFE"), boundaryFE("bFE"), skeletonFE("sFE"), dIm(-1) {
   PetscLogEventRegister("LoadMesh", 0, &MOFEM_EVENT_SimpleLoadMesh);
   PetscLogEventRegister("buildFields", 0, &MOFEM_EVENT_SimpleBuildFields);
   PetscLogEventRegister("buildFiniteElements", 0,
@@ -236,7 +236,7 @@ MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
   // Create dm instance
   dM = createSmartDM(m_field.get_comm(), "DMMOFEM");
   // set dm data structure which created mofem data structures
-  CHKERR DMMoFEMCreateMoFEM(dM, &m_field, "SimpleProblem", bitLevel);
+  CHKERR DMMoFEMCreateMoFEM(dM, &m_field, nameOfProblem.c_str(), bitLevel);
   CHKERR DMSetFromOptions(dM);
   CHKERR DMMoFEMAddElement(dM, domainFE.c_str());
   if (!boundaryFields.empty()) {
@@ -277,8 +277,9 @@ MoFEMErrorCode Simple::buildFields() {
     ParallelComm *pcomm =
         ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
     Range proc_domain_skin;
-    CHKERR pcomm->filter_pstatus(domain_skin, PSTATUS_SHARED | PSTATUS_MULTISHARED,
-                              PSTATUS_NOT, -1, &proc_domain_skin);
+    CHKERR pcomm->filter_pstatus(domain_skin,
+                                 PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                                 PSTATUS_NOT, -1, &proc_domain_skin);
     // create boundary meshset
     if (boundaryMeshset != 0) {
       CHKERR m_field.get_moab().delete_entities(&boundaryMeshset, 1);
@@ -307,7 +308,8 @@ MoFEMErrorCode Simple::buildFields() {
     CHKERR m_field.synchronise_field_entities(boundaryFields[ff], 0);
   }
   for (unsigned int ff = 0; ff != skeletonFields.size(); ff++) {
-    CHKERR m_field.add_ents_to_field_by_dim(meshSet, dIm - 1, skeletonFields[ff]);
+    CHKERR m_field.add_ents_to_field_by_dim(meshSet, dIm - 1,
+                                            skeletonFields[ff]);
     CHKERR m_field.synchronise_field_entities(skeletonFields[ff], 0);
   }
   // Set order
@@ -340,7 +342,8 @@ MoFEMErrorCode Simple::buildFields() {
     }
     for (int dd = dds; dd <= dIm; dd++) {
       Range ents;
-      CHKERR m_field.get_field_entities_by_dimension(domainFields[ff], dd, ents);
+      CHKERR m_field.get_field_entities_by_dimension(domainFields[ff], dd,
+                                                     ents);
       if (!fieldsOrder.at(domainFields[ff]).second.empty()) {
         ents = intersect(ents, fieldsOrder.at(domainFields[ff]).second);
       }
@@ -413,7 +416,8 @@ MoFEMErrorCode Simple::buildFields() {
     }
     for (int dd = dds; dd <= dIm - 1; dd++) {
       Range ents;
-      CHKERR m_field.get_field_entities_by_dimension(boundaryFields[ff], dd, ents);
+      CHKERR m_field.get_field_entities_by_dimension(boundaryFields[ff], dd,
+                                                     ents);
       CHKERR m_field.set_field_order(ents, boundaryFields[ff],
                                      fieldsOrder.at(boundaryFields[ff]).first);
     }
@@ -448,7 +452,8 @@ MoFEMErrorCode Simple::buildFields() {
     }
     for (int dd = dds; dd <= dIm - 1; dd++) {
       Range ents;
-      CHKERR m_field.get_field_entities_by_dimension(skeletonFields[ff], dd, ents);
+      CHKERR m_field.get_field_entities_by_dimension(skeletonFields[ff], dd,
+                                                     ents);
       CHKERR m_field.set_field_order(ents, skeletonFields[ff],
                                      fieldsOrder.at(skeletonFields[ff]).first);
     }
