@@ -64,7 +64,7 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
 
   // fe loops
   for (auto &lit : ts_ctx->loops_to_do_IFunction) {
-    ts_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
+    lit.second->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     lit.second->ts_u = u;
     lit.second->ts_u_t = u_t;
     lit.second->ts_F = F;
