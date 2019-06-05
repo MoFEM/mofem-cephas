@@ -28,7 +28,7 @@ namespace MoFEM {
 
 typedef ublas::unbounded_array<
     boost::shared_ptr<const FEDofEntity>,
-    std::allocator<boost::shared_ptr<const FEDofEntity> > >
+    std::allocator<boost::shared_ptr<const FEDofEntity>>>
     DofsAllocator;
 typedef ublas::vector<boost::shared_ptr<const FEDofEntity>, DofsAllocator>
     VectorDofs;
@@ -158,7 +158,8 @@ struct DataForcesAndSourcesCore {
      *
      * @tparam Tensor_Dim0
      * @tparam Tensor_Dim1
-     * @return FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>, Tensor_Dim0, Tensor_Dim1>
+     * @return FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 *
+     * Tensor_Dim1>, Tensor_Dim0, Tensor_Dim1>
      */
     template <int Tensor_Dim0, int Tensor_Dim1>
     FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
@@ -171,14 +172,16 @@ struct DataForcesAndSourcesCore {
     }
 
     /**
-     * @brief  Return symmetric FTensor rank 2, i.e. matrix from filed data coeffinects
+     * @brief  Return symmetric FTensor rank 2, i.e. matrix from filed data
+     * coeffinects
      *
      * \code
      * auto t_mat = data.getFTensor2SymmetricFieldData<3>();
      * \endcode
      *
      * @tparam Tensor_Dim dimension of the tensor
-     * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, (Tensor_Dim * (Tensor_Dim + 1)) / 2>, Tensor_Dim>
+     * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, (Tensor_Dim
+     * * (Tensor_Dim + 1)) / 2>, Tensor_Dim>
      */
     template <int Tensor_Dim>
     FTensor::Tensor2_symmetric<
@@ -195,7 +198,7 @@ struct DataForcesAndSourcesCore {
      *
      * @return FTensor::Tensor0<FTensor::PackPtr<double *,1> >
      */
-    FTensor::Tensor0<FTensor::PackPtr<double *,1> > getFTensor0FieldData();
+    FTensor::Tensor0<FTensor::PackPtr<double *, 1>> getFTensor0FieldData();
 
     inline VectorDofs &getFieldDofs() { return dOfs; }
 
@@ -365,8 +368,8 @@ struct DataForcesAndSourcesCore {
     inline const MatrixAdaptor getDiffN(const FieldApproximationBase base,
                                         const int gg) {
       // FIXME: That is bug, it will not work if number of integration pts is
-      // equal to number of nodes on entity.  User who not implementing low level
-      // DataOperator will not experience this.
+      // equal to number of nodes on entity.  User who not implementing low
+      // level DataOperator will not experience this.
       if (getN(base).size1() == getDiffN(base).size1()) {
         int size = getN(base).size2();
         int dim = getDiffN(base).size2() / size;
@@ -448,8 +451,8 @@ struct DataForcesAndSourcesCore {
                                         const int gg,
                                         const int nb_base_functions) {
       // FIXME: That is bug, it will not work if number of integration pts is
-      // equal to number of nodes on entity.  User who not implementing low level
-      // DataOperator will not experience this.
+      // equal to number of nodes on entity.  User who not implementing low
+      // level DataOperator will not experience this.
       if (getN(base).size1() == getDiffN(base).size1()) {
         (void)getN(base)(gg,
                          nb_base_functions -
@@ -518,8 +521,7 @@ struct DataForcesAndSourcesCore {
      * \param number of of base functions
      *
      */
-    template<int DIM>
-    inline const MatrixAdaptor getVectorN(const int gg) {
+    template <int DIM> inline const MatrixAdaptor getVectorN(const int gg) {
       return getVectorN<DIM>(bAse, gg);
     }
 
@@ -532,8 +534,8 @@ struct DataForcesAndSourcesCore {
      */
     template <int DIM0, int DIM1>
     inline const MatrixAdaptor getVectorDiffN(FieldApproximationBase base,
-                                            const int gg) {
-      if (PetscUnlikely(getDiffN(base).size2() % (DIM0*DIM1))) {
+                                              const int gg) {
+      if (PetscUnlikely(getDiffN(base).size2() % (DIM0 * DIM1))) {
         THROW_MESSAGE("Wrong dimension");
       }
 
@@ -552,7 +554,7 @@ struct DataForcesAndSourcesCore {
      */
     template <int DIM0, int DIM1>
     inline const MatrixAdaptor getVectorDiffN(const int gg) {
-      return getVectorDiffN<DIM0,DIM1>(bAse, gg);
+      return getVectorDiffN<DIM0, DIM1>(bAse, gg);
     }
 
     /** \brief get DiffHdiv of base functions at Gauss pts
@@ -578,7 +580,7 @@ struct DataForcesAndSourcesCore {
      */
     template <int DIM0, int DIM1>
     inline const MatrixAdaptor getVectorDiffN(const int dof, const int gg) {
-      return getVectorDiffN<DIM0,DIM1>(bAse, dof, gg);
+      return getVectorDiffN<DIM0, DIM1>(bAse, dof, gg);
     }
 
     /**@}*/
@@ -594,10 +596,10 @@ struct DataForcesAndSourcesCore {
      * \return Tensor0
      *
      */
-    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
+    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
     getFTensor0N(const FieldApproximationBase base) {
       double *ptr = &*getN(base).data().begin();
-      return FTensor::Tensor0<FTensor::PackPtr<double *, 1> >(ptr);
+      return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(ptr);
     };
 
     /**
@@ -608,7 +610,7 @@ struct DataForcesAndSourcesCore {
      * \return Tensor0
      *
      */
-    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1> > getFTensor0N() {
+    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>> getFTensor0N() {
       return getFTensor0N(bAse);
     };
 
@@ -667,11 +669,11 @@ struct DataForcesAndSourcesCore {
 
      *
      */
-    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
+    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
     getFTensor0N(const FieldApproximationBase base, const int gg,
                  const int bb) {
       double *ptr = &getN(base)(gg, bb);
-      return FTensor::Tensor0<FTensor::PackPtr<double *, 1> >(ptr);
+      return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(ptr);
     };
 
     /**
@@ -683,7 +685,7 @@ struct DataForcesAndSourcesCore {
      * \return Tensor0
      *
      */
-    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1> >
+    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
     getFTensor0N(const int gg, const int bb) {
       return getFTensor0N(bAse, gg, bb);
     };
@@ -883,8 +885,7 @@ struct DataForcesAndSourcesCore {
     template <int Tensor_Dim0, int Tensor_Dim1>
     FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                      Tensor_Dim0, Tensor_Dim1>
-    getFTensor2DiffN(FieldApproximationBase base, const int gg,
-                         const int bb);
+    getFTensor2DiffN(FieldApproximationBase base, const int gg, const int bb);
 
     /** \brief Get derivatives of base functions for Hdiv space
      */
@@ -1105,7 +1106,7 @@ struct DataForcesAndSourcesCore {
       spacesOnEntities[MBMAXTYPE];                  ///< spaces on entity types
   std::bitset<LASTBASE> basesOnEntities[MBMAXTYPE]; ///< bases on entity types
   std::bitset<LASTBASE> basesOnSpaces[LASTSPACE];   ///< base on spaces
-  
+
   boost::ptr_vector<EntData> dataOnEntities[MBMAXTYPE]; ///< data on nodes, base
                                                         ///< function, dofs
                                                         ///< values, etc.
@@ -1132,6 +1133,7 @@ struct DataForcesAndSourcesCore {
 
   friend std::ostream &operator<<(std::ostream &os,
                                   const DataForcesAndSourcesCore &e);
+
 protected:
   DataForcesAndSourcesCore() {}
 };
@@ -1182,7 +1184,6 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
     getDiffNSharedPtr(const FieldApproximationBase base) const {
       return entDataPtr->getDiffNSharedPtr(base);
     }
-
   };
 
   DerivedDataForcesAndSourcesCore(
@@ -1260,12 +1261,52 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
 
 /**@}*/
 
-/// \deprecated Use DataForcesAndSourcesCore
-DEPRECATED typedef DataForcesAndSourcesCore DataForcesAndSurcesCore;
+/**
+ * @brief Assemble PETSc vector
+ *
+ * Function extract indices from entity data and assemble vector
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecSetValues.html>See
+ * PETSc documentation</a>
+ *
+ * @param V
+ * @param data
+ * @param ptr
+ * @param iora
+ * @return MoFEMErrorCode
+ */
+inline MoFEMErrorCode
+VecSetValues(Vec V, const DataForcesAndSourcesCore::EntData &data,
+             const double *ptr, InsertMode iora) {
+  return VecSetValues(V, data.getIndices().size(), &*data.getIndices().begin(),
+                      ptr, iora);
+}
 
-/// \deprecated use DerivedDataForcesAndSourcesCore
-DEPRECATED typedef DerivedDataForcesAndSourcesCore
-    DerivedDataForcesAndSurcesCore;
+/**
+ * @brief Assemble PETSc matrix
+ *
+ * Function extract indices from entity data and assemble vector
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatSetValues.html>See
+ * PETSc documentation</a>
+ *
+ * @param M
+ * @param row_data
+ * @param col_data
+ * @param ptr
+ * @param iora
+ * @return MoFEMErrorCode
+ */
+inline MoFEMErrorCode
+MatSetValues(Mat M, const DataForcesAndSourcesCore::EntData &row_data,
+             const DataForcesAndSourcesCore::EntData &col_data,
+             const double *ptr, InsertMode iora) {
+  return MatSetValues(
+      M, row_data.getIndices().size(), &*row_data.getIndices().begin(),
+      col_data.getIndices().size(), &*col_data.getIndices().begin(), ptr, iora);
+}
 
 } // namespace MoFEM
 
@@ -1276,8 +1317,8 @@ DEPRECATED typedef DerivedDataForcesAndSourcesCore
  * data structures \ingroup
  *
  * \brief Users data structures and operator
- * 
+ *
  * Data structures passed by argument to MoFEM::DataOperator::doWork and generic
  * user operators operating on those structures.
- * 
+ *
  */
