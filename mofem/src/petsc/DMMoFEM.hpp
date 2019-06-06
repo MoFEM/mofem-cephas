@@ -223,7 +223,7 @@ PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const std::string &fe_name,
+DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const std::string fe_name,
                                      boost::shared_ptr<MoFEM::FEMethod> method,
                                      int low_rank, int up_rank);
 
@@ -247,7 +247,7 @@ PetscErrorCode DMoFEMLoopFiniteElements(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMoFEMLoopFiniteElements(DM dm, const std::string &fe_name,
+DMoFEMLoopFiniteElements(DM dm, const std::string fe_name,
                          boost::shared_ptr<MoFEM::FEMethod> method);
 
 /**
@@ -281,7 +281,7 @@ PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMMoFEMKSPSetComputeRHS(DM dm, const std::string &fe_name,
+DMMoFEMKSPSetComputeRHS(DM dm, const std::string fe_name,
                         boost::shared_ptr<MoFEM::FEMethod> method,
                         boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                         boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -318,7 +318,7 @@ PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMMoFEMKSPSetComputeOperators(DM dm, const std::string &fe_name,
+DMMoFEMKSPSetComputeOperators(DM dm, const std::string fe_name,
                               boost::shared_ptr<MoFEM::FEMethod> method,
                               boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                               boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -337,7 +337,7 @@ PetscErrorCode DMMoFEMSNESSetFunction(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMMoFEMSNESSetFunction(DM dm, const std::string &fe_name,
+DMMoFEMSNESSetFunction(DM dm, const std::string fe_name,
                        boost::shared_ptr<MoFEM::FEMethod> method,
                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                        boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -356,7 +356,7 @@ PetscErrorCode DMMoFEMSNESSetJacobian(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMMoFEMSNESSetJacobian(DM dm, const std::string &fe_name,
+DMMoFEMSNESSetJacobian(DM dm, const std::string fe_name,
                        boost::shared_ptr<MoFEM::FEMethod> method,
                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                        boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -375,7 +375,7 @@ PetscErrorCode DMMoFEMTSSetIFunction(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMMoFEMTSSetIFunction(DM dm, const std::string &fe_name,
+DMMoFEMTSSetIFunction(DM dm, const std::string fe_name,
                       boost::shared_ptr<MoFEM::FEMethod> method,
                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                       boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -385,7 +385,7 @@ DMMoFEMTSSetIFunction(DM dm, const std::string &fe_name,
  * \ingroup dm
  */
 PetscErrorCode
-DMMoFEMTSSetIJacobian(DM dm, const std::string &fe_name,
+DMMoFEMTSSetIJacobian(DM dm, const std::string fe_name,
                       boost::shared_ptr<MoFEM::FEMethod> method,
                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                       boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -414,7 +414,7 @@ PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, const char fe_name[],
  * @return PetscErrorCode
  */
 PetscErrorCode
-DMMoFEMTSSetRHSFunction(DM dm, const std::string &fe_name,
+DMMoFEMTSSetRHSFunction(DM dm, const std::string fe_name,
                       boost::shared_ptr<MoFEM::FEMethod> method,
                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                       boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -453,7 +453,7 @@ PetscErrorCode DMMoFEMTSSetRHSFunction(DM dm, const char fe_name[],
  * @return PetscErrorCode
  */
 PetscErrorCode
-DMMoFEMTSSetRHSJacobian(DM dm, const std::string &fe_name,
+DMMoFEMTSSetRHSJacobian(DM dm, const std::string fe_name,
                         boost::shared_ptr<MoFEM::FEMethod> method,
                         boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                         boost::shared_ptr<MoFEM::BasicMethod> post_only);

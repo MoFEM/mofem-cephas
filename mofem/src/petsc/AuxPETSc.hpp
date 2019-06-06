@@ -68,7 +68,7 @@ struct PairNameFEMethodPtr : public std::pair<std::string, FEMethod *> {
 
   PairNameFEMethodPtr(std::string name, FEMethod *ptr)
       : std::pair<std::string, FEMethod *>(name, ptr) {}
-  PairNameFEMethodPtr(std::string name, boost::shared_ptr<FEMethod> &ptr)
+  PairNameFEMethodPtr(std::string name, boost::shared_ptr<FEMethod> ptr)
       : std::pair<std::string, FEMethod *>(name, ptr.get()), fePtr(ptr) {}
   virtual ~PairNameFEMethodPtr() {}
 
@@ -85,9 +85,7 @@ private:
 
 struct BasicMethodPtr {
   BasicMethodPtr(BasicMethod *ptr) : rawPtr(ptr) {}
-  BasicMethodPtr(boost::shared_ptr<BasicMethod> &ptr)
-      : rawPtr(ptr.get()), bmPtr(ptr) {}
-  BasicMethodPtr(boost::shared_ptr<FEMethod> &ptr)
+  BasicMethodPtr(boost::shared_ptr<BasicMethod> ptr)
       : rawPtr(ptr.get()), bmPtr(ptr) {}
   inline BasicMethod &operator*() const { return *rawPtr; };
   inline BasicMethod *operator->() const { return rawPtr; }
