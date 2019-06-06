@@ -1261,6 +1261,9 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
 
 /**@}*/
 
+/// \deprecated Use DataForcesAndSourcesCore
+DEPRECATED typedef DataForcesAndSourcesCore DataForcesAndSurcesCore;
+
 /**
  * @brief Assemble PETSc vector
  *
