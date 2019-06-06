@@ -15,10 +15,10 @@
 # INITIALISATION
 ##############################
   
+
 # Setup installation directory
 pwd
 export MOFEM_INSTALL_DIR="$PWD/mofem_install"
-#export MOFEM_INSTALL_DIR="$HOME"
 mkdir -p $MOFEM_INSTALL_DIR
   
 # Check operating system
@@ -59,7 +59,7 @@ echo "User password can be asked at some point. Please wait..."
 # Install appropriate prerequisite packages
 if [ ${machine} = "Linux" ]
 then
-    echo "Running in Linux"
+    echo -e "\nRunning in Linux\n"
     sudo apt-get update \
     && sudo apt-get install -y --no-install-recommends \
     autoconf \
@@ -76,13 +76,24 @@ then
   
 elif [ ${machine} = "Mac" ]
 then
-    echo "Running in macOS"
-    ## Assuming Xcode already installed
+    echo -e "\nRunning in macOS\n"
+
+    # Install Xcode
     xcode-select --install
     sudo xcodebuild -license accept
     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
     brew install curl git gcc
  
+    # Install XQuartz
+    if ! which 'xquartz' &>/dev/null
+    then
+        echo -e "\nXQuartz is not installed yet. Installing XQuartz ...\n"
+        brew install caskroom/cask/brew-cask 2> /dev/null
+        brew cask install xquartz
+    else
+        echo -e "\nXQuartz is already installed.\n"
+    fi
+
 fi
   
 echo -e "\nFinished installing Prerequisites.\n"
@@ -107,8 +118,8 @@ git clone https://github.com/likask/spack.git
 # Initialise Spack environment variables:
 . $HOME/spack/share/spack/setup-env.sh
   
-# Add command to .profile
-echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.profile
+# Add command to configuration file .bash_profile
+echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
   
 # Install packages required by Spack
 spack bootstrap
@@ -180,6 +191,7 @@ mkdir um
 cd um/
 spack view --verbose symlink -i um_view mofem-cephas@develop build_type=RelWithDebInfo 
 export PATH=$PWD/um_view/bin:$PATH
+echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
 
 mkdir build
 cd build/
