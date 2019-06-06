@@ -148,9 +148,8 @@ int main(int argc, char *argv[]) {
       // Project mesh coordinate on mesh
       Projection10NodeCoordsOnField ent_method(m_field, "MESH_NODE_POSITIONS");
       CHKERR m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method);
-      DM dm;
       // get dm
-      CHKERR simple_interface->getDM(&dm);
+      auto dm = simple_interface->getDM();
       // create elements
       boost::shared_ptr<ForcesAndSourcesCore> domain_fe =
           boost::shared_ptr<ForcesAndSourcesCore>(
@@ -163,11 +162,12 @@ int main(int argc, char *argv[]) {
       boundary_fe->getRuleHook = FaceRule();
       // create distributed vector to accumulate values from processors.
       int ghosts[] = {0};
-      Vec vol, surf_vol;
-      CHKERR VecCreateGhost(PETSC_COMM_WORLD,
-                            m_field.get_comm_rank() == 0 ? 1 : 0, 1,
-                            m_field.get_comm_rank() == 0 ? 0 : 1, ghosts, &vol);
-      CHKERR VecDuplicate(vol, &surf_vol);
+      
+      auto vol = createSmartGhostVector(
+          PETSC_COMM_WORLD, m_field.get_comm_rank() == 0 ? 1 : 0, 1,
+          m_field.get_comm_rank() == 0 ? 0 : 1, ghosts);
+      auto surf_vol = smartVectorDuplicate(vol);
+
       // set operator to the volume element
       domain_fe->getOpPtrVector().push_back(
           new OpVolume("MESH_NODE_POSITIONS", vol));
@@ -202,11 +202,7 @@ int main(int argc, char *argv[]) {
         CHKERR VecRestoreArray(vol, &a_vol);
         CHKERR VecRestoreArray(vol, &a_surf_vol);
       }
-      // destroy vector
-      CHKERR VecDestroy(&vol);
-      CHKERR VecDestroy(&surf_vol);
-      // destroy dm
-      CHKERR DMDestroy(&dm);
+
     }
   }
   CATCH_ERRORS;

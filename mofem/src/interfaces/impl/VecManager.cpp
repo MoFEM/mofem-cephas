@@ -322,6 +322,35 @@ VecManager::setGlobalGhostVector(const std::string &name, RowColData rc, Vec V,
   MoFEMFunctionReturn(0);
 }
 
+template <int MODE> struct SetOtherLocalGhostVector {
+  template <typename A0, typename A1, typename A2, typename A3, typename A4>
+  inline MoFEMErrorCode operator()(A0 dofs_ptr, A1 array, A2 miit, A3 hi_miit,
+                                   A4 &cpy_field_name) {
+    MoFEMFunctionBegin;
+    for (; miit != hi_miit; miit++) {
+      if (miit->get()->getHasLocalIndex()) {
+        auto diiiit =
+            dofs_ptr
+                ->template get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
+                .find(boost::make_tuple(cpy_field_name, (*miit)->getEnt(),
+                                        (*miit)->getEntDofIdx()));
+        if (diiiit ==
+            dofs_ptr
+                ->template get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
+                .end()) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                  "Automatic creation of entity and dof not implemented");
+        }
+        if (MODE == INSERT_VALUES)
+          (*diiiit)->getFieldData() = array[(*miit)->getPetscLocalDofIdx()];
+        else if (MODE == ADD_VALUES)
+          (*diiiit)->getFieldData() += array[(*miit)->getPetscLocalDofIdx()];
+      }
+    }
+    MoFEMFunctionReturn(0);
+  }
+};
+
 MoFEMErrorCode VecManager::setOtherLocalGhostVector(
     const Problem *problem_ptr, const std::string &field_name,
     const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
@@ -370,41 +399,21 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "fields have to have same rank");
   }
+  
   switch (scatter_mode) {
   case SCATTER_REVERSE: {
-    bool alpha = true;
-    switch (mode) {
-    case INSERT_VALUES:
-      break;
-    case ADD_VALUES:
-      alpha = false;
-      break;
-    default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "not implemented");
-    }
+
     PetscScalar *array;
-    VecGetArray(V, &array);
-    for (; miit != hi_miit; miit++) {
-      if (!miit->get()->getHasLocalIndex())
-        continue;
-      DofEntity_multiIndex::index<
-          Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator diiiit;
-      diiiit =
-          dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
-              boost::make_tuple(cpy_field_name, (*miit)->getEnt(),
-                                (*miit)->getEntDofIdx()));
-      if (diiiit ==
-          dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().end()) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-                "equivalent dof does not exist, use "
-                "set_other_global_ghost_vector to create dofs entries");
-      }
-      if (alpha) {
-        (*diiiit)->getFieldData() = array[(*miit)->getPetscLocalDofIdx()];
-      } else {
-        (*diiiit)->getFieldData() += array[(*miit)->getPetscLocalDofIdx()];
-      }
-    }
+    CHKERR VecGetArray(V, &array);
+    if (mode == INSERT_VALUES)
+      CHKERR SetOtherLocalGhostVector<INSERT_VALUES>()(dofs_ptr, array, miit,
+                                                       hi_miit, cpy_field_name);
+    else if (mode == ADD_VALUES)
+      CHKERR SetOtherLocalGhostVector<ADD_VALUES>()(dofs_ptr, array, miit,
+                                                    hi_miit, cpy_field_name);
+    else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "Operation mode not implemented");
     CHKERR VecRestoreArray(V, &array);
   } break;
   case SCATTER_FORWARD: {
@@ -448,6 +457,31 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
   MoFEMFunctionReturn(0);
 }
 
+template <int MODE> struct SetOtherGlobalGhostVector {
+  template <typename A0, typename A1, typename A2, typename A3, typename A4>
+  inline MoFEMErrorCode operator()(A0 dofs_ptr, A1 array, A2 miit, A3 hi_miit,
+                                   A4 &cpy_field_name) {
+    MoFEMFunctionBegin;
+    for (; miit != hi_miit; miit++) {
+      auto diiiit =
+          dofs_ptr->template get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
+              .find(boost::make_tuple(cpy_field_name, (*miit)->getEnt(),
+                                      (*miit)->getEntDofIdx()));
+      if (diiiit ==
+          dofs_ptr->template get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
+              .end()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "Automatic creation of entity and dof not implemented");
+      }
+      if (MODE == INSERT_VALUES)
+        (*diiiit)->getFieldData() = array[(*miit)->getPetscGlobalDofIdx()];
+      else if (MODE == ADD_VALUES)
+        (*diiiit)->getFieldData() += array[(*miit)->getPetscGlobalDofIdx()];
+    }
+    MoFEMFunctionReturn(0);
+  }
+};
+
 MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
     const Problem *problem_ptr, const std::string &field_name,
     const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
@@ -477,20 +511,19 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "not implemented");
   }
-  Field_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit =
-      fields_ptr->get<FieldName_mi_tag>().find(cpy_field_name);
+  auto cpy_fit = fields_ptr->get<FieldName_mi_tag>().find(cpy_field_name);
   if (cpy_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "cpy field < %s > not found, (top tip: check spelling)",
              cpy_field_name.c_str());
   }
-  DofsByName::iterator miit = dofs->lower_bound(field_name);
+  auto miit = dofs->lower_bound(field_name);
   if (miit == dofs->end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "problem field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
   }
-  DofsByName::iterator hi_miit = dofs->upper_bound(field_name);
+  auto hi_miit = dofs->upper_bound(field_name);
   if ((*miit)->getSpace() != (*cpy_fit)->getSpace()) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "fields have to have same space");
@@ -513,114 +546,32 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
           PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
           "data inconsistency: nb. of dofs and declared nb. dofs in database");
     PetscScalar *array;
-    VecGetArray(V_glob, &array);
-    bool alpha = true;
-    switch (mode) {
-    case INSERT_VALUES:
-      break;
-    case ADD_VALUES:
-      alpha = false;
-      break;
-    default:
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "not implemented");
-    }
-    for (; miit != hi_miit; miit++) {
-      if ((*miit)->getPetscGlobalDofIdx() >= size) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "data inconsistency: nb. of dofs and declared nb. dofs in "
-                "database");
-      }
-      DofEntity_multiIndex::index<
-          Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator diiiit;
-      diiiit =
-          dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
-              boost::make_tuple(cpy_field_name, (*miit)->getEnt(),
-                                (*miit)->getEntDofIdx()));
-      if (diiiit ==
-          dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().end()) {
-        EntityHandle ent = (*miit)->getEnt();
-        rval = const_cast<moab::Interface &>(m_field.get_moab())
-                   .add_entities((*cpy_fit)->getMeshset(), &ent, 1);
-        CHKERRQ_MOAB(rval);
-        // create field moabent
-        ApproximationOrder order = (*miit)->getMaxOrder();
-        std::pair<FieldEntity_multiIndex::iterator, bool> p_e_miit;
-        try {
-          boost::shared_ptr<FieldEntity> moabent(
-              new FieldEntity(*cpy_fit, (*miit)->getRefEntityPtr()));
-          p_e_miit =
-              const_cast<FieldEntity_multiIndex *>(field_ents)->insert(moabent);
-        } catch (const std::exception &ex) {
-          std::ostringstream ss;
-          ss << "throw in method: " << ex.what() << " at line " << __LINE__
-             << " in file " << __FILE__ << std::endl;
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
-        }
-        if ((*p_e_miit.first)->getMaxOrder() < order) {
-          bool success =
-              const_cast<FieldEntity_multiIndex *>(field_ents)
-                  ->modify(p_e_miit.first, FieldEntity_change_order(order));
-          if (!success)
-            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                    "modification unsuccessful");
-        }
-        // create field moabdof
-        DofEntityByNameAndEnt::iterator hi_diit, diit;
-        diit = dofs_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-            boost::make_tuple(field_name, (*miit)->getEnt()));
-        hi_diit = dofs_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-            boost::make_tuple(field_name, (*miit)->getEnt()));
-        for (; diit != hi_diit; diit++) {
-          boost::shared_ptr<DofEntity> mdof =
-              boost::shared_ptr<DofEntity>(new DofEntity(
-                  *(p_e_miit.first), (*diit)->getDofOrder(),
-                  (*diit)->getDofCoeffIdx(), (*diit)->getEntDofIdx()));
-          std::pair<DofEntity_multiIndex::iterator, bool> cpy_p_diit;
-          cpy_p_diit =
-              const_cast<DofEntity_multiIndex *>(dofs_ptr)->insert(mdof);
-          if (cpy_p_diit.second) {
-            bool success = const_cast<DofEntity_multiIndex *>(dofs_ptr)->modify(
-                cpy_p_diit.first, DofEntity_active_change(true));
-            if (!success)
-              SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                      "modification unsuccessful");
-          }
-        }
-        diiiit =
-            dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
-                boost::make_tuple(cpy_field_name, (*miit)->getEnt(),
-                                  (*miit)->getEntDofIdx()));
-        if (diiiit ==
-            dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().end())
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
-      }
-      if (alpha)
-        (*diiiit)->getFieldData() = 0;
-      (*diiiit)->getFieldData() += array[(*miit)->getPetscGlobalDofIdx()];
-      if (dEbug) {
-        std::ostringstream ss;
-        ss << *(*diiiit) << "set " << array[(*miit)->getPetscGlobalDofIdx()]
-           << std::endl;
-        PetscPrintf(PETSC_COMM_WORLD, ss.str().c_str());
-      }
-    }
+    CHKERR VecGetArray(V_glob, &array);
+
+    if (mode == INSERT_VALUES)
+      CHKERR SetOtherGlobalGhostVector<INSERT_VALUES>()(
+          dofs_ptr, array, miit, hi_miit, cpy_field_name);
+    else if (mode == ADD_VALUES)
+      CHKERR SetOtherGlobalGhostVector<ADD_VALUES>()(dofs_ptr, array, miit,
+                                                     hi_miit, cpy_field_name);
+    else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "Operation mode not implemented");
+
     CHKERR VecRestoreArray(V_glob, &array);
     CHKERR VecDestroy(&V_glob);
     CHKERR VecScatterDestroy(&ctx);
   } break;
   case SCATTER_FORWARD: {
     for (; miit != hi_miit; miit++) {
-      DofEntity_multiIndex::index<
-          Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator diiiit;
-      diiiit =
+      auto diiiit =
           dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
               boost::make_tuple(cpy_field_name, (*miit)->getEnt(),
                                 (*miit)->getEntDofIdx()));
       if (diiiit ==
           dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().end()) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "no data to fill the vector (top tip: you want scatter forward "
+                "No data to fill the vector (top tip: you want scatter forward "
                 "or scatter reverse?)");
       }
       CHKERR VecSetValue(V, (*miit)->getPetscGlobalDofIdx(),

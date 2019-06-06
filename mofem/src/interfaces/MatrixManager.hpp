@@ -64,6 +64,29 @@ struct MatrixManager : public UnknownInterface {
   }
 
   /**
+   * @brief Creates a MPI AIJ matrix using arrays that contain in standard CSR
+   * format the local rows.
+   *
+   * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAIJWithArrays.html>See PETSc for details</a>
+
+   * @tparam Tag
+   * @param name
+   * @param Aij (SmartPetscObj)
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  template <class Tag>
+  MoFEMErrorCode createMPIAIJWithArrays(const std::string name,
+                                        SmartPetscObj<Mat> &AijPtr,
+                                        int verb = QUIET) {
+    MoFEMFunctionBegin;
+    Mat Aij;
+    CHKERR createMPIAIJWithArrays<Tag>(name, &Aij, verb);
+    AijPtr.reset(Aij, false);
+    MoFEMFunctionReturn(0);
+  }
+
+  /**
    * @brief Creates a sparse matrix representing an adjacency list.
    *
    * The matrix

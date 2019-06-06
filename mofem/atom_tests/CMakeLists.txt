@@ -272,10 +272,10 @@ target_link_libraries(field_axpy_atom_test
   ${PROJECT_LIBS}
 )
 
-add_test(field_axpy ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test -my_file elasticity_atom_test_01X_pressure.h5m)
-add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/field_axpy_test.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
+add_test(field_axpy 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test 
+  -my_file elasticity_atom_test_01X_pressure.h5m)
 
 #test coord sys
 my_add_executable(test_setting_coordinate_sys test_setting_coordinate_sys.cpp)
@@ -1308,4 +1308,20 @@ add_test(field_evaluator
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/field_evaluator -file_name disp01_1parts.h5m 
   -dm_is_partitioned
+)
+
+my_add_executable(petsc_smart_ptr_objects petsc_smart_ptr_objects.cpp)
+target_link_libraries(petsc_smart_ptr_objects
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(petsc_smart_ptr_objects
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/petsc_smart_ptr_objects  
 )

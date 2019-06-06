@@ -145,51 +145,42 @@ std::ostream &operator<<(std::ostream &os, const RefEntity &e) {
 }
 
 // moab ent
-FieldEntity::FieldEntity(const boost::shared_ptr<Field> &field_ptr,
-                         const boost::shared_ptr<RefEntity> &ref_ent_ptr)
+FieldEntity::FieldEntity(
+    const boost::shared_ptr<Field> &field_ptr,
+    const boost::shared_ptr<RefEntity> &ref_ent_ptr,
+    boost::shared_ptr<VectorAdaptor> &&field_data_adaptor_ptr,
+    boost::shared_ptr<const int> &&t_max_order_ptr)
     : interface_Field<Field>(field_ptr), interface_RefEntity<RefEntity>(
-                                             ref_ent_ptr) {
+                                             ref_ent_ptr),
+      fieldDataAdaptorPtr(field_data_adaptor_ptr),
+      tagMaxOrderPtr(t_max_order_ptr) {
   globalUId = getGlobalUniqueIdCalculate();
-  getDofOrderMap().resize(MAX_DOFS_ON_ENTITY, -1);
+
+  if (PetscUnlikely(!fieldDataAdaptorPtr))
+    THROW_MESSAGE("Pointer to field data adaptor not set");
+
+  if (PetscUnlikely(!tagMaxOrderPtr))
+    THROW_MESSAGE("Pointer to max order not set");
 }
 
-ApproximationOrder *FieldEntity::getMaxOrderPtr() {
-  return static_cast<ApproximationOrder *>(MoFEM::get_tag_ptr(
-      sFieldPtr->moab, sFieldPtr->th_AppOrder, sPtr->ent, NULL));
-}
-ApproximationOrder FieldEntity::getMaxOrder() const {
-  return *static_cast<ApproximationOrder *>(MoFEM::get_tag_ptr(
-      sFieldPtr->moab, sFieldPtr->th_AppOrder, sPtr->ent, NULL));
-}
-
-UId *FieldEntity::getEntFieldDataLastUid = NULL;
-double *FieldEntity::getEntFieldDataLastPtr = NULL;
-int FieldEntity::getEntFieldDataLastSize = 0;
-int FieldEntity::getEntFieldDataLastTagSize = 0;
-
-VectorAdaptor FieldEntity::getEntFieldData() const {
-  if (getEntFieldDataLastUid != &globalUId) {
-    getEntFieldDataLastUid = const_cast<UId *>(&globalUId);
-    switch (getEntType()) {
-    case MBVERTEX:
-      getEntFieldDataLastSize = getNbOfCoeffs();
-      getEntFieldDataLastTagSize = getEntFieldDataLastSize;
-      getEntFieldDataLastPtr = static_cast<double *>(MoFEM::get_tag_ptr(
-          sFieldPtr->moab, sFieldPtr->th_FieldDataVerts, sPtr->ent, NULL));
-      break;
-    default:
-      getEntFieldDataLastSize = getNbDofsOnEnt();
-      getEntFieldDataLastPtr = static_cast<double *>(
-          MoFEM::get_tag_ptr(sFieldPtr->moab, sFieldPtr->th_FieldData,
-                             sPtr->ent, &getEntFieldDataLastTagSize));
-      getEntFieldDataLastTagSize /= sizeof(double);
-      if(PetscUnlikely(getEntFieldDataLastTagSize<getEntFieldDataLastSize)) 
-        THROW_MESSAGE("Data inconsistency");
-    }
+boost::shared_ptr<VectorAdaptor> FieldEntity::makeSharedFieldDataAdaptorPtr(
+    const boost::shared_ptr<Field> &field_ptr,
+    const boost::shared_ptr<RefEntity> &ref_ent_ptr) {
+  int size;
+  double *ptr;
+  switch (ref_ent_ptr->getEntType()) {
+  case MBVERTEX:
+    size = field_ptr->getNbOfCoeffs();
+    ptr = static_cast<double *>(MoFEM::get_tag_ptr(field_ptr->moab,
+                                                   field_ptr->th_FieldDataVerts,
+                                                   ref_ent_ptr->ent, &size));
+    break;
+  default:
+    ptr = static_cast<double *>(MoFEM::get_tag_ptr(
+        field_ptr->moab, field_ptr->th_FieldData, ref_ent_ptr->ent, &size));
   }
-  return VectorAdaptor(getEntFieldDataLastSize,
-                       ublas::shallow_array_adaptor<double>(
-                           getEntFieldDataLastSize, getEntFieldDataLastPtr));
+  return boost::make_shared<VectorAdaptor>(
+      size, ublas::shallow_array_adaptor<double>(size, ptr));
 }
 
 FieldEntity::~FieldEntity() {}
@@ -208,15 +199,13 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
 
   moab::Interface &moab = e->sPtr->basicDataPtr->moab;
   const EntityHandle ent = e->getEnt();
-  rval = moab.tag_set_data(e->sFieldPtr->th_AppOrder, &ent, 1, &order);
-  MOAB_THROW(rval);
-  unsigned int nb_dofs = e->getOrderNbDofs(order) * e->getNbOfCoeffs();
+  *const_cast<ApproximationOrder *>(e->getMaxOrderPtr()) = order;
+  std::size_t nb_dofs = e->getOrderNbDofs(order) * e->getNbOfCoeffs();
 
   double *tag_field_data;
   int tag_field_data_size;
 
-  switch (e->getEntType()) {
-  case MBVERTEX: {
+  auto set_verts = [&]() {
     if (e->sFieldPtr->th_FieldDataVertsType == MB_TAG_SPARSE) {
       // Get pointer and size of field values tag
       rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
@@ -240,8 +229,9 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
                                tag_field_data);
       MOAB_THROW(rval);
     }
-   } break;
-  default: {
+  };
+
+  auto set_default = [&]() {
     // Get pointer and size of field values tag
     rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldData, &ent, 1,
                                (const void **)&tag_field_data,
@@ -249,7 +239,7 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
     // Tag exist and are some data on it
     if (rval == MB_SUCCESS) {
       // Check if size of filed values tag is correct
-      if (nb_dofs * sizeof(FieldData) <= (unsigned int)tag_field_data_size)
+      if (nb_dofs <= (unsigned int)tag_field_data_size)
         return;
       else if (nb_dofs == 0) {
         // Delete data on this entity
@@ -259,10 +249,10 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
       }
       // Size of tag is different than new seize, so copy data to new
       // container
-      data.resize(tag_field_data_size / sizeof(FieldData));
-      FieldData *ptr_begin = (FieldData *)tag_field_data;
+      data.resize(tag_field_data_size);
+      FieldData *ptr_begin = static_cast<FieldData *>(tag_field_data);
       FieldData *ptr_end =
-          (FieldData *)tag_field_data + tag_field_data_size / sizeof(FieldData);
+          static_cast<FieldData *>(tag_field_data) + tag_field_data_size;
       std::copy(ptr_begin, ptr_end, data.begin());
     }
     // Set new data
@@ -270,7 +260,7 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
       // Set field dof data
       data.resize(nb_dofs, 0);
       int tag_size[1];
-      tag_size[0] = data.size() * sizeof(FieldData);
+      tag_size[0] = data.size();
       void const *tag_data[] = {&data[0]};
       rval = moab.tag_set_by_ptr(e->sFieldPtr->th_FieldData, &ent, 1, tag_data,
                                  tag_size);
@@ -279,11 +269,24 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
                                  (const void **)&tag_field_data,
                                  &tag_field_data_size);
       MOAB_THROW(rval);
-      if (nb_dofs != tag_field_data_size / sizeof(FieldData))
-        THROW_MESSAGE("Data inconsistency");
     }
+  };
+
+  switch (e->getEntType()) {
+  case MBVERTEX:
+    set_verts();
+    break;
+  default:
+    set_default();
   }
-  }
+
+  if (nb_dofs)
+    *(e->getEntFieldDataPtr()) = VectorAdaptor(
+        tag_field_data_size, ublas::shallow_array_adaptor<double>(
+                                 tag_field_data_size, tag_field_data));
+  else
+    *(e->getEntFieldDataPtr()) =
+        VectorAdaptor(0, ublas::shallow_array_adaptor<double>(0, nullptr));
 }
 
 } // namespace MoFEM

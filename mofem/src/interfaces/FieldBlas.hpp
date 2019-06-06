@@ -54,7 +54,7 @@ struct FieldBlas : public UnknownInterface {
    * \todo should be moved to independent interface, i.e. FieldAlgebra
    *
    * Do calculation on two fields and save result to field fy
-   * 
+   *
    * \code
    struct Axpy {
     const double aLpha;
@@ -177,9 +177,9 @@ struct FieldBlas : public UnknownInterface {
 
 #endif // __FIELD_BLAS_HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_field_algebra Field Basic Algebra
+/**
+ * \defgroup mofem_field_algebra Field Basic Algebra
  * \brief Basic algebraic operation on fields
  *
  * \ingroup mofem
- ******************************************************************************/
+ */

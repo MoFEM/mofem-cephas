@@ -553,9 +553,13 @@ struct FieldEntity : public interface_Field<Field>,
   typedef interface_Field<Field> interface_type_Field;
   typedef interface_RefEntity<RefEntity> interface_type_RefEntity;
   UId globalUId; ///< Global unique id for this entity
-  // const ApproximationOrder *tag_FieldOrder;
+
   FieldEntity(const boost::shared_ptr<Field> &field_ptr,
-              const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+              const boost::shared_ptr<RefEntity> &ref_ent_ptr,
+              boost::shared_ptr<VectorAdaptor> &&field_data_adaptor_ptr,
+              boost::shared_ptr<const int> &&t_max_order_ptr);
+
+                  
   ~FieldEntity();
 
   /**
@@ -573,10 +577,31 @@ struct FieldEntity : public interface_Field<Field>,
   }
 
   /**
+   * @brief Return shared pointer to entity field data vector adaptor
+   * 
+   * @return boost::shared_ptr<VectorAdaptor> 
+   */
+  static boost::shared_ptr<VectorAdaptor> makeSharedFieldDataAdaptorPtr(
+      const boost::shared_ptr<Field> &field_ptr,
+      const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+
+  /**
+   * @brief Get shared ptr to vector adaptor pointing to the field tag data on
+   * entity
+   *
+   * @return boost::shared_ptr<VectorAdaptor>&
+   */
+  inline boost::shared_ptr<VectorAdaptor> &getEntFieldDataPtr() const {
+    return fieldDataAdaptorPtr;
+  }
+
+  /**
    * \brief Get vector of DOFs active values on entity
    * @return Vector of DOFs values
    */
-  VectorAdaptor getEntFieldData() const;
+  inline VectorAdaptor &getEntFieldData() const {
+    return *fieldDataAdaptorPtr.get();
+  }
 
   /**
    * \brief Get number of DOFs on entity for given order of approximation
@@ -600,13 +625,17 @@ struct FieldEntity : public interface_Field<Field>,
    * \brief Get pinter to Tag keeping approximation order
    * @return Pointer to Tag
    */
-  ApproximationOrder *getMaxOrderPtr();
+  inline const ApproximationOrder *getMaxOrderPtr() const {
+    return tagMaxOrderPtr.get();
+  }
 
   /**
    * \brief Get order set to the entity (Allocated tag size for such number)
    * @return Approximation order
    */
-  ApproximationOrder getMaxOrder() const;
+  inline ApproximationOrder getMaxOrder() const {
+    return *tagMaxOrderPtr.get();
+  }
 
   /**
    * \brief Get global unique id
@@ -686,21 +715,16 @@ struct FieldEntity : public interface_Field<Field>,
    * coefficients, are sorted in the way.
    *
    */
-  inline std::vector<ApproximationOrder> &getDofOrderMap() const {
+  inline std::array<int, MAX_DOFS_ON_ENTITY> &getDofOrderMap() const {
     return getFieldPtr()->getDofOrderMap(getEntType());
   }
 
 private:
 
-  // Cache variables
-  static UId *getEntFieldDataLastUid;
-  static double *getEntFieldDataLastPtr;
-  static int getEntFieldDataLastSize;
-  static int getEntFieldDataLastTagSize;
-};
+  mutable boost::shared_ptr<const int> tagMaxOrderPtr;
+  mutable boost::shared_ptr<VectorAdaptor> fieldDataAdaptorPtr;
 
-// /// \deprecated use FieldEntity
-// DEPRECATED typedef FieldEntity MoFEMEntity;
+};
 
 /**
  * \brief Interface to FieldEntity
@@ -722,7 +746,7 @@ struct interface_FieldEntity : public interface_Field<T>,
   inline int getNbDofsOnEnt() const { return this->sPtr->getNbDofsOnEnt(); }
 
   /// @return get field data on entity
-  inline VectorAdaptor getEntFieldData() const {
+  inline VectorAdaptor &getEntFieldData() const {
     return this->sPtr->getEntFieldData();
   }
 
@@ -761,12 +785,6 @@ struct interface_FieldEntity : public interface_Field<T>,
     return this->sPtr;
   };
 
-  // /// \deprecated use getFieldEntityPtr instead
-  // DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const
-  // {
-  //   return getFieldEntityPtr();
-  // }
-
   /**
    * \brief get hash-map relating dof index on entity with its order
    *
@@ -775,7 +793,7 @@ struct interface_FieldEntity : public interface_Field<T>,
    * coefficients, are sorted in the way.
    *
    */
-  inline std::vector<ApproximationOrder> &getDofOrderMap() const {
+  inline std::array<int, MAX_DOFS_ON_ENTITY> &getDofOrderMap() const {
     return this->sPtr->getDofOrderMap();
   }
 };

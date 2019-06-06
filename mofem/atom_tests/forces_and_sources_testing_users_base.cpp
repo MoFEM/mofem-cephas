@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_field("FILED_RT", HDIV, DEMKOWICZ_JACOBI_BASE, 1);
 
     // get access to "FIELD_CGG" data structure
-    auto field_ptr = m_field.get_field_structure("FILED_CGG");\
+    auto field_ptr = m_field.get_field_structure("FILED_CGG");
     // get table associating number of dofs to entities depending on 
     // approximation order set on those entities.
     auto field_order_table =

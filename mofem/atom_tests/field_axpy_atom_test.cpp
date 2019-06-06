@@ -1,3 +1,10 @@
+/** \file field_axpy_atom_test.cpp
+ * \example field_axpy_atom_test.cpp
+ * \brief test field blas interface
+ *
+ * \ingroup mofem_field_algebra
+ */
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -17,21 +24,6 @@
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
-#define RND_EPS 1e-6
-
-// Rounding
-double roundn(double n) {
-  // break n into fractional part (fract) and integral part (intp)
-  double fract, intp;
-  fract = modf(n, &intp);
-  // case where n approximates zero, set n to "positive" zero
-  if (std::abs(intp) == 0) {
-    if (std::abs(fract) <= RND_EPS) {
-      n = 0.000;
-    }
-  }
-  return n;
-}
 
 int main(int argc, char *argv[]) {
 
@@ -57,42 +49,30 @@ int main(int argc, char *argv[]) {
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
     }
-    PetscInt order;
+    int order = 1;
 #if PETSC_VERSION_GE(3, 6, 4)
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-my_order", &order, &flg);
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-my_order", &order, PETSC_NULL);
 #else
-    CHKERR PetscOptionsGetInt(PETSC_NULL, PETSC_NULL, "-my_order", &order, &flg);
+    CHKERR PetscOptionsGetInt(PETSC_NULL, PETSC_NULL, "-my_order", &order,
+                              PETSC_NULL);
 #endif
-    if (flg != PETSC_TRUE) {
-      order = 1;
-    }
 
     // Read mesh to MOAB
     const char *option;
-    option = ""; 
+    option = "";
     CHKERR moab.load_file(mesh_file_name, 0, option);
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
-    // Create MoFEM (Joseph) database
+    // Create MoFEM database
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
-    // stl::bitset see for more details
-    BitRefLevel bit_level0;
-    bit_level0.set(0);
-    EntityHandle meshset_level0;
-    CHKERR moab.create_meshset(MESHSET_SET, meshset_level0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-        0, 3, bit_level0);
-    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-        bit_level0, BitRefLevel().set(), meshset_level0);
+        0, 3, BitRefLevel().set(0));
 
-    /***/
-    // Define problem
-
-    // Fields
+    // Create fields, add entities to field and set approximation order
     CHKERR m_field.add_field("FIELD_A", H1, AINSWORTH_LEGENDRE_BASE, 3,
                              MB_TAG_DENSE);
     CHKERR m_field.add_field("FIELD_B", H1, AINSWORTH_LEGENDRE_BASE, 3,
@@ -114,46 +94,39 @@ int main(int argc, char *argv[]) {
     // build field
     CHKERR m_field.build_fields();
 
-    CHKERR m_field.getInterface<FieldBlas>()->setField(+1, MBVERTEX, "FIELD_A");
-    CHKERR m_field.getInterface<FieldBlas>()->setField(-2, MBVERTEX, "FIELD_B");
+    // get access to field agebra interface
+    FieldBlas *fb;
+    CHKERR m_field.getInterface(fb);
 
-    CHKERR m_field.getInterface<FieldBlas>()->fieldAxpy(+0.5, "FIELD_B",
-                                                        "FIELD_A");
-    CHKERR m_field.getInterface<FieldBlas>()->fieldScale(-0.5, "FIELD_B");
-
-    // Open mesh_file_name.txt for writing
-    std::ofstream myfile;
-    myfile.open("field_axpy_test.txt");
+    // set value to field
+    CHKERR fb->setField(+1, MBVERTEX, "FIELD_A");
+    CHKERR fb->setField(-2, MBVERTEX, "FIELD_B");
+    
+    // FIELD_A = FIELD_A + 0.5 * FIELD_B 
+    CHKERR fb->fieldAxpy(+0.5, "FIELD_B", "FIELD_A");
+    // FIELD_B *= -0.5
+    CHKERR fb->fieldScale(-0.5, "FIELD_B");
 
     const DofEntity_multiIndex *dofs_ptr;
     CHKERR m_field.get_dofs(&dofs_ptr);
-    for (DofEntity_multiIndex::iterator dit = dofs_ptr->begin();
-         dit != dofs_ptr->end(); dit++) {
+    for (auto dit : *dofs_ptr) {
 
-      if ((*dit)->getEntType() != MBVERTEX)
-        continue;
+      auto check = [&](const std::string name, const double expected) {
+        MoFEMFunctionBegin;
+        if (dit->getName() == name) {
+          cout << name << " " << dit->getFieldData() << " " << expected << endl;
+          if (dit->getFieldData() != expected)
+            SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                     "Wrong DOF value 0 != $4.3e for %s", dit->getFieldData(),
+                     boost::lexical_cast<std::string>(*dit).c_str());
+        }
 
-      if ((*dit)->getDofCoeffIdx() == 0) {
-        // Round and truncate to 3 decimal places
-        double fval = (*dit)->getFieldData();
-        std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
-        myfile << boost::format("%.3lf") % roundn(fval) << "  ";
-      }
-      if ((*dit)->getDofCoeffIdx() == 1) {
-        // Round and truncate to 3 decimal places
-        double fval = (*dit)->getFieldData();
-        std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
-        myfile << boost::format("%.3lf") % roundn(fval) << "  ";
-      }
-      if ((*dit)->getDofCoeffIdx() == 2) {
-        // Round and truncate to 3 decimal places
-        double fval = (*dit)->getFieldData();
-        std::cout << boost::format("%.3lf") % roundn(fval) << std::endl;
-        myfile << boost::format("%.3lf") % roundn(fval) << std::endl;
-      }
+        MoFEMFunctionReturn(0);
+      };
+
+      CHKERR check("FIELD_A", 0);
+      CHKERR check("FIELD_B", 1);
     }
-
-    myfile.close();
   }
   CATCH_ERRORS;
 

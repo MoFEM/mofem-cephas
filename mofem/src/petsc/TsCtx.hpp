@@ -32,15 +32,6 @@ struct TsCtx {
   std::string problemName;
   MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
 
-  /// \deprecated use PairNameFEMethodPtr
-  DEPRECATED typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
-
-  /// \deprecated use FEMethodsSequence
-  DEPRECATED typedef MoFEM::FEMethodsSequence loops_to_do_type;
-
-  /// \deprecated use BasicMethodsSequence
-  DEPRECATED typedef MoFEM::BasicMethodsSequence basic_method_to_do;
-
   typedef MoFEM::PairNameFEMethodPtr PairNameFEMethodPtr;
   typedef MoFEM::FEMethodsSequence FEMethodsSequence;
   typedef MoFEM::BasicMethodsSequence BasicMethodsSequence;
@@ -48,12 +39,18 @@ struct TsCtx {
   FEMethodsSequence loops_to_do_IJacobian;
   FEMethodsSequence loops_to_do_IFunction;
   FEMethodsSequence loops_to_do_Monitor;
+  FEMethodsSequence loops_to_do_RHSJacobian;
+  FEMethodsSequence loops_to_do_RHSFunction;
   BasicMethodsSequence preProcess_IJacobian;
   BasicMethodsSequence postProcess_IJacobian;
   BasicMethodsSequence preProcess_IFunction;
   BasicMethodsSequence postProcess_IFunction;
   BasicMethodsSequence preProcess_Monitor;
   BasicMethodsSequence postProcess_Monitor;
+  BasicMethodsSequence preProcess_RHSJacobian;
+  BasicMethodsSequence preProcess_RHSFunction;
+  BasicMethodsSequence postProcess_RHSJacobian;
+  BasicMethodsSequence postProcess_RHSFunction;
 
   PetscLogEvent MOFEM_EVENT_TsCtxRHSFunction;
   PetscLogEvent MOFEM_EVENT_TsCtxRHSJacobian;
@@ -87,6 +84,18 @@ struct TsCtx {
   }
 
   /**
+   * @brief Get the loops to do RHSFunction object
+   *
+   * It is sequence of finite elements used to evaluate the right hand side of
+   * implicit time solver.
+   *
+   * @return FEMethodsSequence&
+   */
+  FEMethodsSequence &get_loops_to_do_RHSFunction() {
+    return loops_to_do_RHSFunction;
+  }
+
+  /**
    * @brief Get the loops to do IJacobian object
    *
    * It is sequence of finite elements used to evalite the left hand sie of
@@ -96,6 +105,19 @@ struct TsCtx {
    */
   FEMethodsSequence &get_loops_to_do_IJacobian() {
     return loops_to_do_IJacobian;
+  }
+
+
+    /**
+   * @brief Get the loops to do RHSJacobian object
+   *
+   * It is sequence of finite elements used to evalite the left hand sie of
+   * implimcit time solver.
+   *
+   * @return FEMethodsSequence&
+   */
+  FEMethodsSequence &get_loops_to_do_RHSJacobian() {
+    return loops_to_do_RHSJacobian;
   }
 
   /**
@@ -161,18 +183,60 @@ struct TsCtx {
     return postProcess_Monitor;
   }
 
+  /**
+   * @brief Get the preProcess to do RHSJacobian object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_preProcess_to_do_RHSJacobian() {
+    return preProcess_RHSJacobian;
+  }
+
+  /**
+   * @brief Get the postProcess to do RHSJacobian object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_postProcess_to_do_RHSJacobian() {
+    return postProcess_RHSJacobian;
+  }
+
+  /**
+   * @brief Get the preProcess to do RHSFunction object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_preProcess_to_do_RHSFunction() {
+    return preProcess_RHSFunction;
+  }
+
+  /**
+   * @brief Get the postProcess to do RHSFunction object
+   *
+   * @return BasicMethodsSequence&
+   */
+  BasicMethodsSequence &get_postProcess_to_do_RHSFunction() {
+    return postProcess_RHSFunction;
+  }
+
   friend PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t,
                                        Vec F, void *ctx);
   friend PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec U_t,
                                        PetscReal a, Mat A, Mat B, void *ctx);
   friend PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
                                      void *ctx);
+  friend PetscErrorCode TSSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F,
+                                         void *ctx);
+  friend PetscErrorCode TSSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A,
+                                         Mat B, void *ctx);
 };
 
 /**
  * @brief Set IFunction for TS solver
  *
- * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetIFunction.html>See petsc for details</a>
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetIFunction.html>See
+ * petsc for details</a>
  *
  * @param ts
  * @param t
@@ -188,7 +252,9 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
 /**
  * @brief Set function evaluating jacobina in TS solver
  *
- * <a href=https://www.mcs.anl.gov/petsc/petsc-3.1/docs/manualpages/TS/TSSetIJacobian.html>See PETSc for details</a>
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-3.1/docs/manualpages/TS/TSSetIJacobian.html>See
+ * PETSc for details</a>
  *
  * @param ts
  * @param t
@@ -206,7 +272,9 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
 /**
  * @brief Set monitor for TS solver
  *
- * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSMonitorSet.html>See PETSc for details</a>
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSMonitorSet.html>See
+ * PETSc for details</a>
  *
  * @param ts
  * @param step
@@ -218,21 +286,39 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
 PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
                             void *ctx);
 
-DEPRECATED inline PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u,
-                                                  Vec u_t, Vec F, void *ctx) {
-  return TsSetIFunction(ts, t, u, u_t, F, ctx);
-}
+/**
+ * @brief TS solver function
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-3.11/docs/manualpages/TS/TSSetRHSFunction.html#TSSetRHSFunction>See
+ * PETSc for details</a>
+ *
+ * @param ts
+ * @param t
+ * @param u
+ * @param F
+ * @param ctx
+ * @return PetscErrorCode
+ */
+PetscErrorCode TSSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx);
 
-DEPRECATED inline PetscErrorCode f_TSSetIJacobian(TS ts, PetscReal t, Vec u,
-                                                  Vec u_t, PetscReal a, Mat A,
-                                                  Mat B, void *ctx) {
-  return TsSetIJacobian(ts, t, u, u_t, a, A, B, ctx);
-}
-
-DEPRECATED inline PetscErrorCode f_TSMonitorSet(TS ts, PetscInt step,
-                                                PetscReal t, Vec u, void *ctx) {
-  return TsMonitorSet(ts, step, t, u, ctx);
-}
+/**
+ * @brief TS solver function
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-3.11/docs/manualpages/TS/TSSetRHSJacobian.html#TSSetRHSJacobian>See
+ * PETSc for details</a>
+ *
+ * @param ts
+ * @param t
+ * @param u
+ * @param A
+ * @param B
+ * @param ctx
+ * @return PetscErrorCode
+ */
+PetscErrorCode TSSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
+                                void *ctx);
 
 } // namespace MoFEM
 

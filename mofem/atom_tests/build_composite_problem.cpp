@@ -192,13 +192,12 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionGhostDofs("P2", 1);
 
     if (0) {
-      Mat m;
+      SmartPetscObj<Mat> m;
       CHKERR m_field.getInterface<MatrixManager>()
-          ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("P1", &m);
+          ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("P1", m);
       MatView(m, PETSC_VIEWER_DRAW_WORLD);
       std::string wait;
       std::cin >> wait;
-      CHKERR MatDestroy(&m);
     }
 
     CHKERR m_field.getInterface<MatrixManager>()
@@ -211,10 +210,8 @@ int main(int argc, char *argv[]) {
     // register new dm type, i.e. mofem
     DMType dm_name = "MOFEM";
     CHKERR DMRegister_MoFEM(dm_name);
-    // craete dm instance
-    DM dm;
-    CHKERR DMCreate(PETSC_COMM_WORLD, &dm);
-    CHKERR DMSetType(dm, dm_name);
+    // create dm instance
+    auto dm = createSmartDM(PETSC_COMM_WORLD, dm_name);
 
     CHKERR DMMoFEMCreateMoFEM(dm, &m_field, "COMP", bit_level0);
     CHKERR DMSetFromOptions(dm);
@@ -226,20 +223,18 @@ int main(int argc, char *argv[]) {
     CHKERR DMSetUp(dm);
 
     if (0) {
-      Mat m;
+      SmartPetscObj<Mat> m;
       CHKERR m_field.getInterface<MatrixManager>()
-          ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("COMP", &m);
+          ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("COMP", m);
       MatView(m, PETSC_VIEWER_DRAW_WORLD);
       std::string wait;
       std::cin >> wait;
-      CHKERR MatDestroy(&m);
     }
 
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("COMP", -1,
                                                                    -1, 1);
 
-    CHKERR DMDestroy(&dm);
   }
   CATCH_ERRORS;
 

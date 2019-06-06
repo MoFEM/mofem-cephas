@@ -70,8 +70,7 @@ int main(int argc, char *argv[]) {
       std::array<double, 12> eval_points = {0.0,  0.0, 0.0, 0.0, 0.01, 0.0,
                                             -0.1, 0.0, 0.0, 0.1, 0.0,  0.0};
 
-      DM dm;
-      CHKERR simple_interface->getDM(&dm);
+      auto dm = simple_interface->getDM();
       const MoFEM::Problem *prb_ptr;
       CHKERR DMMoFEMGetProblemPtr(dm, &prb_ptr);
 
@@ -163,7 +162,6 @@ int main(int argc, char *argv[]) {
           simple_interface->getDomainFEName(), data, m_field.get_comm_rank(),
           m_field.get_comm_rank(), MF_EXIST, VERY_NOISY);
 
-      CHKERR DMDestroy(&dm);
     }
   }
   CATCH_ERRORS;
