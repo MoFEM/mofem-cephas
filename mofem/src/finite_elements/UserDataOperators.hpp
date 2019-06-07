@@ -128,14 +128,14 @@ struct OpCalculateScalarFieldValues
   }
 };
 
-struct OpCalculateVectorScalarValuesDot
+struct OpCalculateScalarValuesDot
     : public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<VectorDouble> dataPtr;
   const EntityHandle zeroAtType;
   VectorDouble dotVector;
 
-  OpCalculateVectorScalarValuesDot(const std::string field_name,
+  OpCalculateScalarValuesDot(const std::string field_name,
                                   boost::shared_ptr<VectorDouble> &data_ptr,
                                   const EntityType zero_at_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
