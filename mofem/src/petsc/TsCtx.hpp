@@ -61,15 +61,7 @@ struct TsCtx {
   BasicMethodsSequence postProcess_RHSJacobian;
   BasicMethodsSequence postProcess_RHSFunction;
 
-  PetscLogEvent MOFEM_EVENT_TsCtxRHSFunction;
-  PetscLogEvent MOFEM_EVENT_TsCtxRHSJacobian;
-  PetscLogEvent MOFEM_EVENT_TsCtxIFunction;
-  PetscLogEvent MOFEM_EVENT_TsCtxIJacobian;
-  PetscLogEvent MOFEM_EVENT_TsCtxMonitor;
-
   bool zeroMatrix;
-  boost::movelib::unique_ptr<bool> vecAssembleSwitch;
-  boost::movelib::unique_ptr<bool> matAssembleSwitch;
 
   TsCtx(MoFEM::Interface &m_field, const std::string &problem_name)
       : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
@@ -242,6 +234,18 @@ struct TsCtx {
                                          void *ctx);
   friend PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A,
                                          Mat B, void *ctx);
+
+private:
+
+  PetscLogEvent MOFEM_EVENT_TsCtxRHSFunction;
+  PetscLogEvent MOFEM_EVENT_TsCtxRHSJacobian;
+  PetscLogEvent MOFEM_EVENT_TsCtxIFunction;
+  PetscLogEvent MOFEM_EVENT_TsCtxIJacobian;
+  PetscLogEvent MOFEM_EVENT_TsCtxMonitor;
+
+  boost::movelib::unique_ptr<bool> vecAssembleSwitch;
+  boost::movelib::unique_ptr<bool> matAssembleSwitch;
+
 };
 
 /**
