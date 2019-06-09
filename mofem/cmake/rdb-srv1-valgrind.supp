@@ -21,7 +21,6 @@
    fun:PETSC_VIEWER_STDOUT_
    fun:main
 }
-1: H5Fopen (in /home/lukasz/tmp/cephas/build/atom_tests/dm_build_partitioned_mesh)
 {
    &lt;insert_a_suppression_name_here&gt;
    Memcheck:Addr4
