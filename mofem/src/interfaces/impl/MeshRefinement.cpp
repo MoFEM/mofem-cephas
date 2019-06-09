@@ -386,7 +386,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
             }
             if (conn_edge[1] == edge_new_nodes[ee]) {
               SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                      "node 0 on the edges is mid node, that make no sense");
+                      "node 1 on the edges is mid node, that make no sense");
             }
           }
           split_edges[parent_edges_bit.count()] = ee;
