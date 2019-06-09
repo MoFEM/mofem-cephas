@@ -778,7 +778,7 @@ static PetscErrorCode DMMoFEMTSSetRHSFunction(DM dm, S fe_name, T0 method,
         PairNameFEMethodPtr(fe_name, method));
   if (post_only)
     dm_field->tsCtx->get_postProcess_to_do_RHSFunction().push_back(post_only);
-  CHKERR DMTSSetRHSFunction(dm, TSSetRHSFunction, dm_field->tsCtx.get());
+  CHKERR DMTSSetRHSFunction(dm, TsSetRHSFunction, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
 }
 
@@ -818,7 +818,7 @@ static PetscErrorCode DMMoFEMTSSetRHSJacobian(DM dm, S fe_name, T0 method,
         PairNameFEMethodPtr(fe_name, method));
   if (post_only)
     dm_field->tsCtx->get_postProcess_to_do_RHSFunction().push_back(post_only);
-  CHKERR DMTSSetRHSJacobian(dm, TSSetRHSJacobian, dm_field->tsCtx.get());
+  CHKERR DMTSSetRHSJacobian(dm, TsSetRHSJacobian, dm_field->tsCtx.get());
   MoFEMFunctionReturn(0);
 }
 
@@ -842,6 +842,46 @@ DMMoFEMTSSetRHSJacobian(DM dm, const std::string fe_name,
                                  boost::shared_ptr<MoFEM::BasicMethod>,
                                  boost::shared_ptr<MoFEM::BasicMethod>>(
       dm, fe_name, method, pre_only, post_only);
+  MoFEMFunctionReturnHot(0);
+}
+
+template <class S, class T0, class T1, class T2>
+static PetscErrorCode DMMoFEMTSSetMonitor(DM dm, TS ts, S fe_name, T0 method,
+                                          T1 pre_only, T2 post_only) {
+  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
+  MoFEMFunctionBegin;
+  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
+  if (pre_only)
+    dm_field->tsCtx->get_preProcess_to_do_Monitor().push_back(pre_only);
+  if (method)
+    dm_field->tsCtx->get_loops_to_do_Monitor().push_back(
+        PairNameFEMethodPtr(fe_name, method));
+  if (post_only)
+    dm_field->tsCtx->get_postProcess_to_do_Monitor().push_back(post_only);
+  CHKERR TSMonitorSet(ts, TsMonitorSet, dm_field->tsCtx.get(), PETSC_NULL);
+  MoFEMFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMTSSetMonitor(DM dm, TS ts, const char fe_name[],
+                                   MoFEM::FEMethod *method,
+                                   MoFEM::BasicMethod *pre_only,
+                                   MoFEM::BasicMethod *post_only) {
+  return DMMoFEMTSSetMonitor<const char *, MoFEM::FEMethod *,
+                             MoFEM::BasicMethod *, MoFEM::BasicMethod *>(
+      dm, ts, fe_name, method, pre_only, post_only);
+  MoFEMFunctionReturnHot(0);
+}
+
+PetscErrorCode
+DMMoFEMTSSetMonitor(DM dm, TS ts, const std::string fe_name,
+                    boost::shared_ptr<MoFEM::FEMethod> method,
+                    boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                    boost::shared_ptr<MoFEM::BasicMethod> post_only) {
+  return DMMoFEMTSSetMonitor<const std::string,
+                             boost::shared_ptr<MoFEM::FEMethod>,
+                             boost::shared_ptr<MoFEM::BasicMethod>,
+                             boost::shared_ptr<MoFEM::BasicMethod>>(
+      dm, ts, fe_name, method, pre_only, post_only);
   MoFEMFunctionReturnHot(0);
 }
 

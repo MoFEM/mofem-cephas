@@ -238,7 +238,7 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
   MoFEMFunctionReturn(0);
 }
 
-PetscErrorCode TSSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
+PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
   MoFEMFunctionBegin;
   TsCtx *ts_ctx = static_cast<TsCtx *>(ctx);
   PetscLogEventBegin(ts_ctx->MOFEM_EVENT_TsCtxRHSFunction, 0, 0, 0, 0);
@@ -322,7 +322,7 @@ PetscErrorCode TSSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
   MoFEMFunctionReturn(0);
 }
 
-PetscErrorCode TSSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
+PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
                                 void *ctx) {
   MoFEMFunctionBegin;
   TsCtx *ts_ctx = static_cast<TsCtx *>(ctx);

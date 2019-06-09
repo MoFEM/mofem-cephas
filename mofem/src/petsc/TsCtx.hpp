@@ -238,9 +238,9 @@ struct TsCtx {
                                        PetscReal a, Mat A, Mat B, void *ctx);
   friend PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
                                      void *ctx);
-  friend PetscErrorCode TSSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F,
+  friend PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F,
                                          void *ctx);
-  friend PetscErrorCode TSSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A,
+  friend PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A,
                                          Mat B, void *ctx);
 };
 
@@ -332,7 +332,7 @@ DEPRECATED inline PetscErrorCode f_TSMonitorSet(TS ts, PetscInt step,
  * @param ctx
  * @return PetscErrorCode
  */
-PetscErrorCode TSSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx);
+PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx);
 
 /**
  * @brief TS solver function
@@ -349,7 +349,7 @@ PetscErrorCode TSSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx);
  * @param ctx
  * @return PetscErrorCode
  */
-PetscErrorCode TSSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
+PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
                                 void *ctx);
 
 } // namespace MoFEM
