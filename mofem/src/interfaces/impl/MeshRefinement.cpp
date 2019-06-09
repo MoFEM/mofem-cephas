@@ -439,17 +439,6 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     } break;
     case 1:
       sub_type = 0;
-      // for(int nn = 0;nn<4;nn++) {
-      //   if(_conn_[nn] == edge_new_nodes[split_edges[0]]) {
-      //     std::cerr << _conn_[0] << " "
-      //     << _conn_[1] << " "
-      //     << _conn_[2] << " "
-      //     << _conn_[3] << " : "
-      //     << edge_new_nodes[split_edges[0]] << std::endl;
-      //     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data
-      //     inconsistency");
-      //   }
-      // }
       tet_type_1(_conn_, split_edges[0], edge_new_nodes[split_edges[0]],
                  new_tets_conns);
       nb_new_tets = 2;
