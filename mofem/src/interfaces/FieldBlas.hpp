@@ -143,11 +143,14 @@ struct FieldBlas : public UnknownInterface {
    * \note Function works both ways, using it coordinates can be set from field.
    *
    * \param lambda function evaluating field at points
-   * \field_name  is a field name
+   * \param field_name  is a field name
+   * \param verts pointer to vertices if null all vertices in the field are
+   * evaluated)
    *
    */
   MoFEMErrorCode setVertexDofs(VertexCoordsFunction lambda,
-                               const std::string field_name);
+                               const std::string field_name,
+                               Range *verts = nullptr);
 
   /** \brief scale field
    * \ingroup mofem_field_algebra

@@ -173,7 +173,8 @@ MoFEMErrorCode FieldBlas::fieldCopy(const double alpha,
 }
 
 MoFEMErrorCode FieldBlas::setVertexDofs(FieldBlas::VertexCoordsFunction lambda,
-                                        const std::string field_name) {
+                                        const std::string field_name,
+                                        Range *sub_verts) {
   const MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -181,6 +182,8 @@ MoFEMErrorCode FieldBlas::setVertexDofs(FieldBlas::VertexCoordsFunction lambda,
   Range verts;
   CHKERR m_field.get_moab().get_entities_by_type(meshset, MBVERTEX, verts,
                                                  true);
+  if (sub_verts)
+    verts = intersect(*sub_verts, verts);
 
   struct LambdaMethod : EntityMethod {
     LambdaMethod(MoFEM::Interface &m_field, Range &verts,
