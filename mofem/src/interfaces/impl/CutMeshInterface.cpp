@@ -561,11 +561,9 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
     return th;
   };
 
-  // Calculate not signed and not signed distances from nodes to surface
   Range vol_vertices;
   CHKERR moab.get_connectivity(vOlume, vol_vertices, true);
   std::vector<double> coords(3 * vol_vertices.size());
-  std::vector<double> dist_vec(vol_vertices.size());
   std::vector<double> dist_normal_vec(3 * vol_vertices.size());
   CHKERR moab.get_coords(vol_vertices, &*coords.begin());
   for (auto v : vol_vertices) {
@@ -576,14 +574,11 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
     CHKERR treeSurfPtr->closest_to_location(&point_in[0], rootSetSurf,
                                             &point_out[0], facets_out);
     VectorDouble3 delta = point_out - point_in;
-    dist_vec[index] = norm_2(delta);
     auto dist_normal = getVectorAdaptor(&dist_normal_vec[3 * index], 3);
     noalias(dist_normal) = delta;
   }
 
-  auto th_dist_surface = create_tag("DIST", 1);
   auto th_dist_surface_vec = create_tag("DIST_NORMAL", 3);
-  CHKERR moab.tag_set_data(th_dist_surface, vol_vertices, &*dist_vec.begin());
   CHKERR moab.tag_set_data(th_dist_surface_vec, vol_vertices,
                            &*dist_normal_vec.begin());
 
@@ -610,10 +605,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
     }
   }
 
-  auto th_dist_front = create_tag("DIST_FRONT", 1);
   auto th_dist_front_vec = create_tag("DIST_FRONT_VECTOR", 3);
-  CHKERR moab.tag_set_data(th_dist_front, vol_vertices,
-                           &*min_distances_from_front.begin());
   CHKERR moab.tag_set_data(th_dist_front_vec, vol_vertices,
                            &*points_on_edges.begin());
 
