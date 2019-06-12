@@ -125,7 +125,7 @@ struct FieldBlas : public UnknownInterface {
    * \ingroup mofem_field_algebra
    * \todo should be moved to independent interface, i.e. FieldAlgebra
    *
-   * \param alpha is a scaling factor
+   * \param val is a set parameter
    * \field_name  is a field name
    *
    */
