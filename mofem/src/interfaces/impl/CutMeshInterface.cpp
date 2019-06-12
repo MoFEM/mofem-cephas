@@ -689,8 +689,70 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::refineMesh(int verb, const bool debug) {
+MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
+                                            const int surf_levels,
+                                            const int front_levels,
+                                            Range *fixed_edges, int verb,
+                                            const bool debug) {
+  CoreInterface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  MeshRefinement *refiner;
+  BitRefManager *bit_ref_manager;
   MoFEMFunctionBegin;
+  CHKERR m_field.getInterface(refiner);
+  CHKERR m_field.getInterface(bit_ref_manager);
+  CHKERR bit_ref_manager->addBitRefLevel(
+      vOlume, BitRefLevel().set(init_bit_level), verb);
+
+  auto update_range = [&](Range *r_ptr) {
+    MoFEMFunctionBegin;
+    if (r_ptr) {
+      Range childs;
+      CHKERR bit_ref_manager->updateRange(*r_ptr, childs);
+      r_ptr->merge(childs);
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  auto refine = [&](const BitRefLevel bit, const Range tets) {
+    MoFEMFunctionBegin;
+    Range ref_edges;
+    CHKERR moab.get_adjacencies(tets, 1, true, ref_edges,
+                                moab::Interface::UNION);
+    CHKERR refiner->add_vertices_in_the_middel_of_edges(ref_edges, bit);
+    CHKERR refiner->refine_TET(vOlume, bit, false, QUIET,
+                               debug ? &cutEdges : NULL);
+
+    CHKERR update_range(fixed_edges);
+    CHKERR update_range(&vOlume);
+    CHKERR UpdateMeshsets()(cOre, bit);
+
+    Range bit_tets;
+    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+        bit, BitRefLevel().set(), MBTET, bit_tets);
+    vOlume = intersect(vOlume, bit_tets);
+
+    Range bit_edges;
+    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+        bit, BitRefLevel().set(), MBEDGE, bit_edges);
+    if (fixed_edges)
+      *fixed_edges = intersect(*fixed_edges, bit_edges);
+
+    MoFEMFunctionReturn(0);
+  };
+
+  for (int ll = init_bit_level; ll != init_bit_level + surf_levels; ++ll) {
+    CHKERR createLevelSets(verb, true);
+    CHKERR refine(BitRefLevel().set(ll + 1),
+                  unite(cutSurfaceVolumes, cutFrontVolumes));
+  }
+
+  for (int ll = init_bit_level + surf_levels;
+       ll != init_bit_level + surf_levels + front_levels; ++ll) {
+    CHKERR createLevelSets(verb, true);
+    CHKERR refine(BitRefLevel().set(ll + 1), cutFrontVolumes);
+  }
+
   MoFEMFunctionReturn(0);
 }
 
