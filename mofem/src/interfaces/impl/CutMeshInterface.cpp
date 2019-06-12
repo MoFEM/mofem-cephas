@@ -564,7 +564,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
   Range vol_vertices;
   CHKERR moab.get_connectivity(vOlume, vol_vertices, true);
   std::vector<double> coords(3 * vol_vertices.size());
-  std::vector<double> dist_normal_vec(3 * vol_vertices.size());
+  std::vector<double> dist_surface_vec(3 * vol_vertices.size());
   CHKERR moab.get_coords(vol_vertices, &*coords.begin());
   for (auto v : vol_vertices) {
     const int index = vol_vertices.index(v);
@@ -574,13 +574,13 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
     CHKERR treeSurfPtr->closest_to_location(&point_in[0], rootSetSurf,
                                             &point_out[0], facets_out);
     VectorDouble3 delta = point_out - point_in;
-    auto dist_normal = getVectorAdaptor(&dist_normal_vec[3 * index], 3);
+    auto dist_normal = getVectorAdaptor(&dist_surface_vec[3 * index], 3);
     noalias(dist_normal) = delta;
   }
 
   auto th_dist_surface_vec = create_tag("DIST_NORMAL", 3);
   CHKERR moab.tag_set_data(th_dist_surface_vec, vol_vertices,
-                           &*dist_normal_vec.begin());
+                           &*dist_surface_vec.begin());
 
   std::vector<double> min_distances_from_front(vol_vertices.size(), -1);
   std::vector<double> points_on_edges(3 * vol_vertices.size(), 0);
