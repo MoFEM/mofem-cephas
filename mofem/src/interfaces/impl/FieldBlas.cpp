@@ -172,6 +172,71 @@ MoFEMErrorCode FieldBlas::fieldCopy(const double alpha,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode FieldBlas::setVertexDofs(FieldBlas::VertexCoordsFunction lambda,
+                                        const std::string field_name) {
+  const MoFEM::Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  EntityHandle meshset = m_field.get_field_meshset(field_name);
+  Range verts;
+  CHKERR m_field.get_moab().get_entities_by_type(meshset, MBVERTEX, verts,
+                                                 true);
+
+  struct LambdaMethod : EntityMethod {
+    LambdaMethod(MoFEM::Interface &m_field, Range &verts,
+                 FieldBlas::VertexCoordsFunction lambda)
+        : EntityMethod(), mField(m_field), verts(verts), lambda(lambda),
+          total(0), count(0) {}
+    MoFEMErrorCode preProcess() {
+      vit = verts.begin();
+      return 0;
+    }
+    MoFEMErrorCode operator()() {
+      MoFEMFunctionBegin;
+      if (*vit != entPtr->getEnt())
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Inconsistent entity %ld != %ld", *vit, entPtr->getEnt());
+      if(!count)
+        CHKERR mField.get_moab().coords_iterate(vit, verts.end(), xCoord,
+                                                yCoord, zCoord, count);
+      CHKERR lambda(entPtr->getEntFieldData(), xCoord, yCoord, zCoord);
+      ++xCoord;
+      ++yCoord;
+      ++zCoord;
+      ++vit;
+      ++total;
+      --count;
+      MoFEMFunctionReturn(0);
+    }
+    MoFEMErrorCode postProcess() {
+      MoFEMFunctionBegin;
+      if(total != verts.size())
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Inconsistent number of vertices in field meshset and in the "
+                "field %d != %d",
+                total, verts.size());
+      MoFEMFunctionReturn(0);
+    }
+
+  private:
+    MoFEM::Interface &mField;
+    Range &verts;
+    FieldBlas::VertexCoordsFunction lambda;
+    int count;
+    int total;
+    Range::iterator vit;
+    double *xCoord;
+    double *yCoord;
+    double *zCoord;
+  };
+
+  LambdaMethod lambda_method(const_cast<MoFEM::Interface &>(m_field), verts,
+                             lambda);
+  CHKERR const_cast<MoFEM::Interface &>(m_field).loop_entities(
+      field_name, lambda_method, &verts, QUIET);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
                                    const std::string field_name) {
   const MoFEM::Interface &m_field = cOre;

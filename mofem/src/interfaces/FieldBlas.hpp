@@ -121,6 +121,22 @@ struct FieldBlas : public UnknownInterface {
                            bool error_if_missing = false,
                            bool creat_if_missing = false);
 
+  typedef boost::function<MoFEMErrorCode(VectorAdaptor &field_data,
+                                         double *xcoord, double *ycoord,
+                                         double *zcoord)>
+      VertexCoordsFunction;
+
+  /** \brief Set DOFs on vertices using user function
+   * \ingroup mofem_field_algebra
+   * \todo should be moved to independent interface, i.e. FieldAlgebra
+   *
+   * \param lambda function evaluating field at points
+   * \field_name  is a field name
+   *
+   */
+  MoFEMErrorCode setVertexDofs(VertexCoordsFunction lambda,
+                               const std::string field_name);
+
   /** \brief scale field
    * \ingroup mofem_field_algebra
    * \todo should be moved to independent interface, i.e. FieldAlgebra

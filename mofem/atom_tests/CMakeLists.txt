@@ -277,6 +277,23 @@ add_test(field_axpy
   ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test 
   -my_file elasticity_atom_test_01X_pressure.h5m)
 
+
+my_add_executable(field_blas_set_vertex_dofs field_blas_set_vertex_dofs.cpp)
+target_link_libraries(field_blas_set_vertex_dofs
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+  
+add_test(field_blas_set_vertex_dofs
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/field_blas_set_vertex_dofs 
+  -file_name elasticity_atom_test_01X_pressure.h5m)
+
 #test coord sys
 my_add_executable(test_setting_coordinate_sys test_setting_coordinate_sys.cpp)
 target_link_libraries(test_setting_coordinate_sys
