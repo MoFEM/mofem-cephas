@@ -575,13 +575,9 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
     EntityHandle facets_out;
     CHKERR treeSurfPtr->closest_to_location(&point_in[0], rootSetSurf,
                                             &point_out[0], facets_out);
-    // VectorDouble3 n(3);
-    // Util::normal(&moab, facets_out, n[0], n[1], n[2]);
     VectorDouble3 delta = point_out - point_in;
     dist_vec[index] = norm_2(delta);
-    // n /= norm_2(n);
     auto dist_normal = getVectorAdaptor(&dist_normal_vec[3 * index], 3);
-    // noalias(dist_normal) = inner_prod(delta, n) * n;
     noalias(dist_normal) = delta;
   }
 
@@ -608,18 +604,9 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
         faces = intersect(faces, *front_surface);
       else
         faces = intersect(faces, sUrface);
-
       auto point_in = getVectorAdaptor(&coords[3 * i], 3);
       auto point_out = getVectorAdaptor(&points_on_edges[3 * i], 3);
       point_out -= point_in;
-
-      // VectorDouble3 n(3);
-      // FTensor::Tensor1<double, 3> t_n;
-      // for (auto f : faces) {
-      //   Util::normal(&moab, f, n[0], n[1], n[2]);
-      //   n /= norm_2(n);
-      //   noalias(point_out) -= inner_prod(point_out, n) * n;
-      // }
     }
   }
 
