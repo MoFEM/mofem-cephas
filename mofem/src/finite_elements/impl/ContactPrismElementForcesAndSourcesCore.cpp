@@ -161,129 +161,129 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     aRea[0] = cblas_dnrm2(3, &normal[0], 1) * 0.5;
     aRea[1] = cblas_dnrm2(3, &normal[3], 1) * 0.5;
 
-    auto get_tensor1 = [](VectorDouble &m) {
-      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(&m(0), &m(1),
-                                                                &m(2));
-    };
+//     auto get_tensor1 = [](VectorDouble &m) {
+//       return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(&m(0), &m(1),
+//                                                                 &m(2));
+//     };
 
-    auto get_tensor2 = [](VectorDouble &m) {
-      return FTensor::Tensor2<double *, 3, 3>(
-          &m(0), &m(1), &m(2),
-          &m(3), &m(4), &m(5),
-          &m(6), &m(7), &m(8));
-    };
+//     auto get_tensor2 = [](VectorDouble &m) {
+//       return FTensor::Tensor2<double *, 3, 3>(
+//           &m(0), &m(1), &m(2),
+//           &m(3), &m(4), &m(5),
+//           &m(6), &m(7), &m(8));
+//     };
 
-    dJdxMaster.resize(9, false);
-    dJdxSlave.resize(9, false);
-    dJdxMaster.clear();
-    dJdxSlave.clear();
+//     dJdxMaster.resize(9, false);
+//     dJdxSlave.resize(9, false);
+//     dJdxMaster.clear();
+//     dJdxSlave.clear();
 
-    VectorDouble dJdxMaster_help, dJdxSlave_help;
-    dJdxMaster_help.resize(9, false);
-    dJdxSlave_help.resize(9, false);
-    dJdxMaster_help.clear();
-    dJdxSlave_help.clear();
+//     VectorDouble dJdxMaster_help, dJdxSlave_help;
+//     dJdxMaster_help.resize(9, false);
+//     dJdxSlave_help.resize(9, false);
+//     dJdxMaster_help.clear();
+//     dJdxSlave_help.clear();
 
-    auto dj_master = get_tensor1(dJdxMaster);
-    auto dj_slave = get_tensor1(dJdxSlave);
+//     auto dj_master = get_tensor1(dJdxMaster);
+//     auto dj_slave = get_tensor1(dJdxSlave);
 
-    VectorDouble d_n_master, d_n_slave;
+//     VectorDouble d_n_master, d_n_slave;
 
-    d_n_master.resize(9, false);
-    d_n_slave.resize(9, false);
-    d_n_master.clear();
-    d_n_slave.clear();
+//     d_n_master.resize(9, false);
+//     d_n_slave.resize(9, false);
+//     d_n_master.clear();
+//     d_n_slave.clear();
 
-    auto d_n_m = get_tensor1(d_n_master);
-    auto d_n_s = get_tensor1(d_n_slave);
+//     auto d_n_m = get_tensor1(d_n_master);
+//     auto d_n_s = get_tensor1(d_n_slave);
 
-    VectorDouble3 t_1_m(3), t_1_s(3), t_2_m(3), t_2_s(3);
+//     VectorDouble3 t_1_m(3), t_1_s(3), t_2_m(3), t_2_s(3);
 
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_m(
-        &coords[0], &coords[1], &coords[2]);
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_s(
-        &coords[9], &coords[10], &coords[11]);
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> n_master(
-        &normal[0], &normal[1], &normal[2]);
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> n_slave(
-        &normal[3], &normal[4], &normal[5]);
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1_m(
-        &t_1_m[0], &t_1_m[1], &t_1_m[2]);
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1_s(
-        &t_1_s[0], &t_1_s[1], &t_1_s[2]);
+//     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_m(
+//         &coords[0], &coords[1], &coords[2]);
+//     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_s(
+//         &coords[9], &coords[10], &coords[11]);
+//     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> n_master(
+//         &normal[0], &normal[1], &normal[2]);
+//     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> n_slave(
+//         &normal[3], &normal[4], &normal[5]);
+//     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1_m(
+//         &t_1_m[0], &t_1_m[1], &t_1_m[2]);
+//     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1_s(
+//         &t_1_s[0], &t_1_s[1], &t_1_s[2]);
 
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2_m(
-        &t_2_m[0], &t_2_m[1], &t_2_m[2]);
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2_s(
-        &t_2_s[0], &t_2_s[1], &t_2_s[2]);
+//     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2_m(
+//         &t_2_m[0], &t_2_m[1], &t_2_m[2]);
+//     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2_s(
+//         &t_2_s[0], &t_2_s[1], &t_2_s[2]);
 
-    FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff(&diff_n[0],
-                                                              &diff_n[1]);
+//     FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff(&diff_n[0],
+//                                                               &diff_n[1]);
 
-    FTensor::Index<'i', 3> i;
-    FTensor::Index<'j', 3> j;
-    FTensor::Index<'k', 3> k;
-    FTensor::Number<0> N0;
-    FTensor::Number<1> N1;
-    t_t1_m(i) = 0;
-    t_t2_m(i) = 0;
-    t_t1_s(i) = 0;
-    t_t2_s(i) = 0;
+//     FTensor::Index<'i', 3> i;
+//     FTensor::Index<'j', 3> j;
+//     FTensor::Index<'k', 3> k;
+//     FTensor::Number<0> N0;
+//     FTensor::Number<1> N1;
+//     t_t1_m(i) = 0;
+//     t_t2_m(i) = 0;
+//     t_t1_s(i) = 0;
+//     t_t2_s(i) = 0;
 
-    for (int nn = 0; nn != 3; ++nn) {
-      t_t1_m(i) += t_coords_m(i) * t_diff(N0);
-      t_t2_m(i) += t_coords_m(i) * t_diff(N1);
-      t_t1_s(i) += t_coords_s(i) * t_diff(N0);
-      t_t2_s(i) += t_coords_s(i) * t_diff(N1);
-      ++t_coords_s;
-      ++t_coords_m;
-      ++t_diff;
-    }
+//     for (int nn = 0; nn != 3; ++nn) {
+//       t_t1_m(i) += t_coords_m(i) * t_diff(N0);
+//       t_t2_m(i) += t_coords_m(i) * t_diff(N1);
+//       t_t1_s(i) += t_coords_s(i) * t_diff(N0);
+//       t_t2_s(i) += t_coords_s(i) * t_diff(N1);
+//       ++t_coords_s;
+//       ++t_coords_m;
+//       ++t_diff;
+//     }
 
-//    t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
+// //    t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
 
-  FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff_2(&diff_n[0],
-                                                              &diff_n[1]);
+//   FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff_2(&diff_n[0],
+//                                                               &diff_n[1]);
 
-  const double denom_m = n_master(i) * n_master(i);
-  const double denom_s = n_slave(i) * n_slave(i);
+//   const double denom_m = n_master(i) * n_master(i);
+//   const double denom_s = n_slave(i) * n_slave(i);
 
-  VectorDouble ksi_vec, eta_vec;
-  ksi_vec.resize(3, false);
-  eta_vec.resize(3, false);
+//   VectorDouble ksi_vec, eta_vec;
+//   ksi_vec.resize(3, false);
+//   eta_vec.resize(3, false);
 
-  for (int nn = 0; nn != 3; ++nn) {
-    ksi_vec.clear();
-    eta_vec.clear();
-    ksi_vec(nn) = t_diff_2(N0);
-    eta_vec(nn) = t_diff_2(N1);
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> ksi_e(
-        &ksi_vec[0], &ksi_vec[1], &ksi_vec[2]);
+//   for (int nn = 0; nn != 3; ++nn) {
+//     ksi_vec.clear();
+//     eta_vec.clear();
+//     ksi_vec(nn) = t_diff_2(N0);
+//     eta_vec(nn) = t_diff_2(N1);
+//     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> ksi_e(
+//         &ksi_vec[0], &ksi_vec[1], &ksi_vec[2]);
 
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> eta_e(
-        &eta_vec[0], &eta_vec[1], &eta_vec[2]);
+//     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> eta_e(
+//         &eta_vec[0], &eta_vec[1], &eta_vec[2]);
 
-    d_n_m(j) = FTensor::levi_civita(i, j, k) * ksi_e(k) * t_t2_m(i);
-    d_n_m(j) += FTensor::levi_civita(i, j, k) * t_t1_m(k) * eta_e(i);
+//     d_n_m(j) = FTensor::levi_civita(i, j, k) * ksi_e(k) * t_t2_m(i);
+//     d_n_m(j) += FTensor::levi_civita(i, j, k) * t_t1_m(k) * eta_e(i);
 
-    d_n_s(j) = FTensor::levi_civita(i, j, k) * ksi_e(k) * t_t2_s(i);
-    d_n_s(j) += FTensor::levi_civita(i, j, k) * t_t1_s(k) * eta_e(i);
+//     d_n_s(j) = FTensor::levi_civita(i, j, k) * ksi_e(k) * t_t2_s(i);
+//     d_n_s(j) += FTensor::levi_civita(i, j, k) * t_t1_s(k) * eta_e(i);
 
-    ++d_n_m;
-    ++d_n_s;
-    ++t_diff_2;
-  }
+//     ++d_n_m;
+//     ++d_n_s;
+//     ++t_diff_2;
+//   }
 
-  auto d_n_m_2 = get_tensor2(d_n_master);
-  auto d_n_s_2 = get_tensor2(d_n_slave);
+//   auto d_n_m_2 = get_tensor2(d_n_master);
+//   auto d_n_s_2 = get_tensor2(d_n_slave);
 
-  for (int nn = 0; nn != 3; ++nn) {
-    dj_master(j) = d_n_m_2(i, j) * n_master(i) / denom_m;
-    dj_slave(j) = d_n_s_2(i, j) * n_slave(i) / denom_s;
+//   for (int nn = 0; nn != 3; ++nn) {
+//     dj_master(j) = d_n_m_2(i, j) * n_master(i) / denom_m;
+//     dj_slave(j) = d_n_s_2(i, j) * n_slave(i) / denom_s;
 
-    ++dj_master;
-    ++dj_slave;
-    }
+//     ++dj_master;
+//     ++dj_slave;
+//     }
 
     // dJdxMaster(0) = dJdxMaster_help(0);
     // dJdxMaster(1) = dJdxMaster_help(3);
