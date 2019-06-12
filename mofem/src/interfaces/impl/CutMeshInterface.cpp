@@ -631,7 +631,8 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
     return getVectorAdaptor(&coords[0], 3);
   };
 
-  Range crossed_surf_edges, crossed_front_edges;
+  cutSurfaceEdges.clear();
+  cutFrontEdges.clear();
 
   Range vol_edges;
   CHKERR moab.get_adjacencies(vOlume, 1, true, vol_edges,
@@ -666,31 +667,32 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
       MoFEMFunctionReturn(0);
     };
 
-    CHKERR get_cut_edges(th_dist_surface_vec, crossed_surf_edges);
-    CHKERR get_cut_edges(th_dist_front_vec, crossed_front_edges);
+    CHKERR get_cut_edges(th_dist_surface_vec, cutSurfaceEdges);
+    CHKERR get_cut_edges(th_dist_front_vec, cutFrontEdges);
 
   }
 
-  Range crossed_surf_vols, crossed_front_vols;
-  CHKERR moab.get_adjacencies(crossed_surf_edges, 3, false, crossed_surf_vols,
+  cutSurfaceVolumes.clear();
+  CHKERR moab.get_adjacencies(cutSurfaceEdges, 3, false, cutSurfaceVolumes,
                               moab::Interface::UNION);
-  CHKERR moab.get_adjacencies(crossed_front_edges, 3, false, crossed_front_vols,
+  cutFrontVolumes.clear();
+  CHKERR moab.get_adjacencies(cutFrontEdges, 3, false, cutFrontVolumes,
                               moab::Interface::UNION);
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("level_sets.vtk", vOlume);
   if (debug)
-    CHKERR SaveData(m_field.get_moab())("crossed_surf_edges.vtk",
-                                        crossed_surf_edges);
+    CHKERR SaveData(m_field.get_moab())("cutSurfaceEdges.vtk",
+                                        cutSurfaceEdges);
   if (debug)
-    CHKERR SaveData(m_field.get_moab())("crossed_front_edges.vtk",
-                                        crossed_front_edges);
+    CHKERR SaveData(m_field.get_moab())("cutFrontEdges.vtk",
+                                        cutFrontEdges);
   if (debug)
-    CHKERR SaveData(m_field.get_moab())("crossed_surf_vols.vtk",
-                                        crossed_surf_vols);
+    CHKERR SaveData(m_field.get_moab())("cutSurfaceVolumes.vtk",
+                                        cutSurfaceVolumes);
   if (debug)
-    CHKERR SaveData(m_field.get_moab())("crossed_front_vols.vtk",
-                                        crossed_front_vols);
+    CHKERR SaveData(m_field.get_moab())("cutFrontVolumes.vtk",
+                                        cutFrontVolumes);
 
   MoFEMFunctionReturn(0);
 }

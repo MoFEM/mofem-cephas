@@ -403,6 +403,11 @@ private:
 
   double aveLength; ///< Average edge length
   double maxLength; ///< Maximal edge length
+
+  Range cutSurfaceEdges;
+  Range cutSurfaceVolumes;
+  Range cutFrontEdges;
+  Range cutFrontVolumes;
 };
 } // namespace MoFEM
 
