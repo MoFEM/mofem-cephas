@@ -531,11 +531,7 @@ MoFEMErrorCode CutMeshInterface::makeFront() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
-                                                 Range *corner_nodes,
-                                                 Range *front_surface,
-                                                 const double low_tol, int verb,
-                                                 const bool debug) {
+MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -595,10 +591,6 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
     for (int i = 0; i != min_distances_from_front.size(); ++i) {
       Range faces;
       CHKERR moab.get_adjacencies(&closest_edges[0], 1, 2, false, faces);
-      if (front_surface)
-        faces = intersect(faces, *front_surface);
-      else
-        faces = intersect(faces, sUrface);
       auto point_in = getVectorAdaptor(&coords[3 * i], 3);
       auto point_out = getVectorAdaptor(&points_on_edges[3 * i], 3);
       point_out -= point_in;
@@ -694,6 +686,11 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Range *fixed_edges,
     CHKERR SaveData(m_field.get_moab())("cutFrontVolumes.vtk",
                                         cutFrontVolumes);
 
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode CutMeshInterface::refineMesh(int verb, const bool debug) {
+  MoFEMFunctionBegin;
   MoFEMFunctionReturn(0);
 }
 
