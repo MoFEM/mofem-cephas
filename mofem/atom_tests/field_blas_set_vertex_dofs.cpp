@@ -53,7 +53,8 @@ int main(int argc, char *argv[]) {
                                             1);
     // set fields order
     CHKERR simple_interface->setFieldOrder("u", 1);
-    // setup problem
+
+    // build fields (finite elements and problem not needed)
     CHKERR simple_interface->buildFields();
 
     FieldBlas *field_blas;
@@ -69,7 +70,9 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
     CHKERR field_blas->setVertexDofs(set_distance, "u");
+    
 
+    // This is only used for testing
     struct TestMethod : EntityMethod {
       TestMethod(moab::Interface &moab) : EntityMethod(), moab(moab) {}
 
@@ -95,8 +98,8 @@ int main(int argc, char *argv[]) {
     };
 
     TestMethod method(moab);
+    // checking if all is ok
     CHKERR m_field.loop_entities("u", method);
-
   }
   CATCH_ERRORS;
 
