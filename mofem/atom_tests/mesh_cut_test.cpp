@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "*** ERROR -my_file (MESH FILE NEEDED)");
-    
+
     int side_set = 200;
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-side_set", &side_set,
                               PETSC_NULL);
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     double shift[] = {0, 0, 0};
     int nmax = 3;
     CHKERR PetscOptionsGetRealArray("", "-shift", shift, &nmax, &flg);
-    if (flg && nmax != 3) 
+    if (flg && nmax != 3)
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "three values expected");
 
@@ -68,9 +68,8 @@ int main(int argc, char *argv[]) {
     double tol[] = {0, 0, 0, 0};
     int nmax_tol = 4;
     CHKERR PetscOptionsGetRealArray("", "-tol", tol, &nmax_tol, &flg);
-    if (flg && nmax_tol != 4) 
-      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-              "four values expected");
+    if (flg && nmax_tol != 4)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "four values expected");
 
     PetscBool test = PETSC_FALSE;
     CHKERR
@@ -123,11 +122,11 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface(meshset_manager);
     // get surface entities form side set
     Range surface;
-    if (meshset_manager->checkMeshset(side_set, SIDESET)) 
+    if (meshset_manager->checkMeshset(side_set, SIDESET))
       CHKERR meshset_manager->getEntitiesByDimension(side_set, SIDESET, 2,
                                                      surface, true);
 
-    if (surface.empty()) 
+    if (surface.empty())
       SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "No surface to cut");
 
     // Set surface entities. If surface entities are from existing side set,
@@ -165,6 +164,8 @@ int main(int argc, char *argv[]) {
     CHKERR cut_mesh->buildTree();
 
     CHKERR cut_mesh->makeFront();
+    CHKERR cut_mesh->createLevelSets(&fixed_edges, &corner_nodes, nullptr,
+                                     1e-12, VERBOSE, true);
 
     // Create tag storing nodal positions
     double def_position[] = {0, 0, 0};
