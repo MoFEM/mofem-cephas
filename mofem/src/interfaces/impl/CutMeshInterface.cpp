@@ -515,7 +515,7 @@ MoFEMErrorCode CutMeshInterface::refCutTrimAndMerge(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::makeFront() {
+MoFEMErrorCode CutMeshInterface::makeFront(const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -528,6 +528,8 @@ MoFEMErrorCode CutMeshInterface::makeFront() {
   Range surface_skin;
   CHKERR skin.find_skin(0, sUrface, false, surface_skin);
   fRont = subtract(surface_skin, tets_skin_edges);
+  if (debug)
+    CHKERR SaveData(moab)("front.vtk", fRont);
   MoFEMFunctionReturn(0);
 }
 
@@ -667,9 +669,11 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
   cutSurfaceVolumes.clear();
   CHKERR moab.get_adjacencies(cutSurfaceEdges, 3, false, cutSurfaceVolumes,
                               moab::Interface::UNION);
+  cutSurfaceVolumes = intersect(cutSurfaceVolumes, vOlume);
   cutFrontVolumes.clear();
   CHKERR moab.get_adjacencies(cutFrontEdges, 3, false, cutFrontVolumes,
                               moab::Interface::UNION);
+  cutFrontVolumes = intersect(cutFrontVolumes, vOlume);
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("level_sets.vtk", vOlume);
@@ -742,16 +746,21 @@ MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
   };
 
   for (int ll = init_bit_level; ll != init_bit_level + surf_levels; ++ll) {
-    CHKERR createLevelSets(verb, true);
+    CHKERR createLevelSets(verb, debug);
     CHKERR refine(BitRefLevel().set(ll + 1),
                   unite(cutSurfaceVolumes, cutFrontVolumes));
   }
 
   for (int ll = init_bit_level + surf_levels;
        ll != init_bit_level + surf_levels + front_levels; ++ll) {
-    CHKERR createLevelSets(verb, true);
+    CHKERR createLevelSets(verb, debug);
     CHKERR refine(BitRefLevel().set(ll + 1), cutFrontVolumes);
   }
+
+  CHKERR createLevelSets(verb, debug);
+
+  if (debug)
+    CHKERR SaveData(m_field.get_moab())("refinedVolume.vtk", vOlume);
 
   MoFEMFunctionReturn(0);
 }

@@ -151,7 +151,7 @@ struct CutMeshInterface : public UnknownInterface {
       const double tol_trim_close, Range &fixed_edges, Range &corner_nodes,
       const bool update_meshsets = false, const bool debug = false);
 
-  MoFEMErrorCode makeFront();
+  MoFEMErrorCode makeFront(const bool debug = false);
 
   MoFEMErrorCode createLevelSets(int verb = QUIET, const bool debug = false);
 
