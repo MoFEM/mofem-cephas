@@ -165,147 +165,142 @@ int main(int argc, char *argv[]) {
 
     CHKERR cut_mesh->makeFront(true);
     // CHKERR cut_mesh->createLevelSets(VERBOSE, true);
-    CHKERR cut_mesh->refineMesh(10, 1, 2, &fixed_edges, VERBOSE, true);
+    CHKERR cut_mesh->refineMesh(10, 0, 0, &fixed_edges, VERBOSE, true);
 
-    //     // Create tag storing nodal positions
-    //     double def_position[] = {0, 0, 0};
-    //     Tag th;
-    //     CHKERR moab.tag_get_handle("POSITION", 3, MB_TYPE_DOUBLE, th,
-    //                                MB_TAG_CREAT | MB_TAG_SPARSE,
-    //                                def_position);
-    //     // Set tag values with coordinates of nodes
-    //     CHKERR cut_mesh->setTagData(th);
+    // Create tag storing nodal positions
+    double def_position[] = {0, 0, 0};
+    Tag th;
+    CHKERR moab.tag_get_handle("POSITION", 3, MB_TYPE_DOUBLE, th,
+                               MB_TAG_CREAT | MB_TAG_SPARSE, def_position);
+    // Set tag values with coordinates of nodes
+    CHKERR cut_mesh->setTagData(th);
 
-    //     // Get BitRefManager interface,,
-    //     BitRefManager *bit_ref_manager;
-    //     CHKERR m_field.getInterface(bit_ref_manager);
+    // Get BitRefManager interface,,
+    BitRefManager *bit_ref_manager;
+    CHKERR m_field.getInterface(bit_ref_manager);
 
-    //     // Cut mesh, trim surface and merge bad edges
-    //     int first_bit = 1;
-    //     CHKERR cut_mesh->refCutTrimAndMerge(
-    //         first_bit, 1, nb_ref_before, nb_ref_after, th, tol[0], tol[1],
-    //         tol[2], tol[3], fixed_edges, corner_nodes, true, true);
+    // Cut mesh, trim surface and merge bad edges
+    int first_bit = 1;
+    CHKERR cut_mesh->refCutTrimAndMerge(
+        first_bit, 1, nb_ref_before, nb_ref_after, th, tol[0], tol[1], tol[2],
+        tol[3], fixed_edges, corner_nodes, true, true);
 
-    //     if (test) {
-    //       struct TestBitLevel {
-    //         BitRefManager *mngPtr;
-    //         TestBitLevel(BitRefManager *mng_ptr) : mngPtr(mng_ptr) {}
-    //         MoFEMErrorCode operator()(const BitRefLevel &bit,
-    //                                   const int expected_size) {
-    //           MoFEMFunctionBeginHot;
-    //           Range ents;
-    //           CHKERR mngPtr->getEntitiesByRefLevel(bit, bit, ents);
-    //           cout << "bit_level nb ents " << ents.size() << endl;
-    //           if (expected_size != -1 &&
-    //               expected_size != static_cast<int>(ents.size())) {
-    //             SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-    //                      "Wrong bit ref size %d!=%d", expected_size,
-    //                      ents.size());
-    //           }
-    //           MoFEMFunctionReturnHot(0);
-    //         }
-    //       };
-    //       for (int ll = 1; ll != first_bit; ++ll)
-    //         CHKERR TestBitLevel(core.getInterface<BitRefManager>())(
-    //             BitRefLevel().set(ll), -1);
-    //     }
+    if (test) {
+      struct TestBitLevel {
+        BitRefManager *mngPtr;
+        TestBitLevel(BitRefManager *mng_ptr) : mngPtr(mng_ptr) {}
+        MoFEMErrorCode operator()(const BitRefLevel &bit,
+                                  const int expected_size) {
+          MoFEMFunctionBeginHot;
+          Range ents;
+          CHKERR mngPtr->getEntitiesByRefLevel(bit, bit, ents);
+          cout << "bit_level nb ents " << ents.size() << endl;
+          if (expected_size != -1 &&
+              expected_size != static_cast<int>(ents.size())) {
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                     "Wrong bit ref size %d!=%d", expected_size, ents.size());
+          }
+          MoFEMFunctionReturnHot(0);
+        }
+      };
+      for (int ll = 1; ll != first_bit; ++ll)
+        CHKERR TestBitLevel(core.getInterface<BitRefManager>())(
+            BitRefLevel().set(ll), -1);
+    }
 
-    //     // Improve mesh with tetgen
-    // #undef WITH_TETGEN
-    // #ifdef WITH_TETGEN
-    //     int bit_tetgen = first_bit + 1;
-    //     // Switches controling TetGen
-    //     vector<string> switches;
-    //     switches.push_back("YrqOJMS0VV");
-    //     CHKERR cut_mesh->rebuildMeshWithTetGen(
-    //         switches, BitRefLevel().set(first_bit),
-    //         BitRefLevel().set(bit_tetgen), cut_mesh->getMergedSurfaces(),
-    //         fixed_edges, corner_nodes, th, true);
-    //     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-    //         BitRefLevel().set(bit_tetgen), BitRefLevel().set(), MBTET,
-    //         "out_tets_tetgen.vtk", "VTK", "");
-    // #else
-    //     int bit_tetgen = first_bit;
-    //     const_cast<Range &>(cut_mesh->getTetgenSurfaces()) =
-    //         cut_mesh->getMergedSurfaces();
-    // #endif // WITH_TETGEN
+    // Improve mesh with tetgen
+#undef WITH_TETGEN
+#ifdef WITH_TETGEN
+    int bit_tetgen = first_bit + 1;
+    // Switches controling TetGen
+    vector<string> switches;
+    switches.push_back("YrqOJMS0VV");
+    CHKERR cut_mesh->rebuildMeshWithTetGen(
+        switches, BitRefLevel().set(first_bit), BitRefLevel().set(bit_tetgen),
+        cut_mesh->getMergedSurfaces(), fixed_edges, corner_nodes, th, true);
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        BitRefLevel().set(bit_tetgen), BitRefLevel().set(), MBTET,
+        "out_tets_tetgen.vtk", "VTK", "");
+#else
+    int bit_tetgen = first_bit;
+    const_cast<Range &>(cut_mesh->getTetgenSurfaces()) =
+        cut_mesh->getMergedSurfaces();
+#endif // WITH_TETGEN
 
-    //     // Split faces
-    //     CHKERR cut_mesh->splitSides(BitRefLevel().set(bit_tetgen),
-    //                                 BitRefLevel().set(bit_tetgen + 1),
-    //                                 cut_mesh->getTetgenSurfaces(), th);
-    //     CHKERR core.getInterface<MeshsetsManager>()
-    //         ->updateAllMeshsetsByEntitiesChildren(
-    //             BitRefLevel().set(bit_tetgen + 1));
+    // Split faces
+    CHKERR cut_mesh->splitSides(BitRefLevel().set(bit_tetgen),
+                                BitRefLevel().set(bit_tetgen + 1),
+                                cut_mesh->getTetgenSurfaces(), th);
+    CHKERR core.getInterface<MeshsetsManager>()
+        ->updateAllMeshsetsByEntitiesChildren(
+            BitRefLevel().set(bit_tetgen + 1));
 
-    //     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-    //         BitRefLevel().set(bit_tetgen + 1), BitRefLevel().set(), MBTET,
-    //         "out_split.vtk", "VTK", "");
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        BitRefLevel().set(bit_tetgen + 1), BitRefLevel().set(), MBTET,
+        "out_split.vtk", "VTK", "");
 
-    //     // Finally shift bits
-    //     BitRefLevel shift_mask;
-    //     for (int ll = 0; ll != bit_tetgen + 2; ++ll)
-    //       shift_mask.set(ll);
-    //     CHKERR core.getInterface<BitRefManager>()->shiftRightBitRef(
-    //         bit_tetgen, shift_mask, VERBOSE);
+    // Finally shift bits
+    BitRefLevel shift_mask;
+    for (int ll = 0; ll != bit_tetgen + 2; ++ll)
+      shift_mask.set(ll);
+    CHKERR core.getInterface<BitRefManager>()->shiftRightBitRef(
+        bit_tetgen, shift_mask, VERBOSE);
 
-    //     // Set coordinates for tag data
-    //     CHKERR cut_mesh->setCoords(th);
-    //     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-    //         BitRefLevel().set(0), BitRefLevel().set(), MBTET,
-    //         "out_tets_shift_level0.vtk", "VTK", "");
-    //     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-    //         BitRefLevel().set(1), BitRefLevel().set(), MBTET,
-    //         "out_tets_shift_level1.vtk", "VTK", "");
+    // Set coordinates for tag data
+    CHKERR cut_mesh->setCoords(th);
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        BitRefLevel().set(0), BitRefLevel().set(), MBTET,
+        "out_tets_shift_level0.vtk", "VTK", "");
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        BitRefLevel().set(1), BitRefLevel().set(), MBTET,
+        "out_tets_shift_level1.vtk", "VTK", "");
 
-    //     Range surface_verts;
-    //     CHKERR moab.get_connectivity(cut_mesh->getSurface(), surface_verts);
-    //     Range adj_surface_edges;
-    //     CHKERR moab.get_adjacencies(cut_mesh->getSurface(), 1, false,
-    //                                 adj_surface_edges,
-    //                                 moab::Interface::UNION);
-    //     CHKERR moab.delete_entities(cut_mesh->getSurface());
-    //     CHKERR moab.delete_entities(adj_surface_edges);
-    //     CHKERR moab.delete_entities(surface_verts);
-    //     CHKERR m_field.delete_ents_by_bit_ref(
-    //         BitRefLevel().set(0) | BitRefLevel().set(1),
-    //         BitRefLevel().set(0) | BitRefLevel().set(1), true, VERBOSE);
+    Range surface_verts;
+    CHKERR moab.get_connectivity(cut_mesh->getSurface(), surface_verts);
+    Range adj_surface_edges;
+    CHKERR moab.get_adjacencies(cut_mesh->getSurface(), 1, false,
+                                adj_surface_edges, moab::Interface::UNION);
+    CHKERR moab.delete_entities(cut_mesh->getSurface());
+    CHKERR moab.delete_entities(adj_surface_edges);
+    CHKERR moab.delete_entities(surface_verts);
+    CHKERR m_field.delete_ents_by_bit_ref(
+        BitRefLevel().set(0) | BitRefLevel().set(1),
+        BitRefLevel().set(0) | BitRefLevel().set(1), true, VERBOSE);
 
-    //     {
-    //       EntityHandle meshset;
-    //       CHKERR moab.create_meshset(MESHSET_SET, meshset);
-    //       Range tets;
-    //       CHKERR moab.get_entities_by_dimension(0, 3, tets, true);
-    //       CHKERR moab.add_entities(meshset, tets);
-    //       CHKERR moab.write_file("out.vtk", "VTK", "", &meshset, 1);
-    //       CHKERR moab.delete_entities(&meshset, 1);
-    //     }
-    //     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-    //         bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk",
-    //         "VTK",
-    //         "");
-    //     CHKERR
-    //     core.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
-    //         "left_entities.vtk", "VTK", "");
+    {
+      EntityHandle meshset;
+      CHKERR moab.create_meshset(MESHSET_SET, meshset);
+      Range tets;
+      CHKERR moab.get_entities_by_dimension(0, 3, tets, true);
+      CHKERR moab.add_entities(meshset, tets);
+      CHKERR moab.write_file("out.vtk", "VTK", "", &meshset, 1);
+      CHKERR moab.delete_entities(&meshset, 1);
+    }
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk", "VTK",
+        "");
+    CHKERR
+    core.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
+        "left_entities.vtk", "VTK", "");
 
-    //     if (test) {
-    //       Range ents;
-    //       core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(ents);
-    //       if (no_of_ents_not_in_database != static_cast<int>(ents.size())) {
-    //         cerr << subtract(ents, ents_not_in_database) << endl;
-    //         EntityHandle meshset;
-    //         CHKERR moab.create_meshset(MESHSET_SET, meshset);
-    //         Range tets;
-    //         CHKERR moab.get_entities_by_dimension(0, 3, tets, true);
-    //         CHKERR moab.add_entities(meshset, subtract(ents,
-    //         ents_not_in_database)); CHKERR
-    //         moab.write_file("not_cleanded.vtk", "VTK", "", &meshset, 1);
-    //         CHKERR moab.delete_entities(&meshset, 1);
-    //         SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-    //                  "Inconsistent number of ents %d!=%d",
-    //                  no_of_ents_not_in_database, ents.size());
-    //       }
-    //     }
+    if (test) {
+      Range ents;
+      core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(ents);
+      if (no_of_ents_not_in_database != static_cast<int>(ents.size())) {
+        cerr << subtract(ents, ents_not_in_database) << endl;
+        EntityHandle meshset;
+        CHKERR moab.create_meshset(MESHSET_SET, meshset);
+        Range tets;
+        CHKERR moab.get_entities_by_dimension(0, 3, tets, true);
+        CHKERR moab.add_entities(meshset, subtract(ents, ents_not_in_database));
+        CHKERR
+        moab.write_file("not_cleanded.vtk", "VTK", "", &meshset, 1);
+        CHKERR moab.delete_entities(&meshset, 1);
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Inconsistent number of ents %d!=%d",
+                 no_of_ents_not_in_database, ents.size());
+      }
+    }
   }
   CATCH_ERRORS;
 
