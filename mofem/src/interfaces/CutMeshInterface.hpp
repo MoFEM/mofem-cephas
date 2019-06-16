@@ -130,28 +130,29 @@ struct CutMeshInterface : public UnknownInterface {
   MoFEMErrorCode buildTree();
 
   MoFEMErrorCode
-  cutAndTrim(int &first_bit, const int before_trim_levels, Tag th,
+  cutAndTrim(int &first_bit, Tag th,
              const double tol_cut, const double tol_cut_close,
              const double tol_trim, const double tol_trim_close,
              Range *fixed_edges = NULL, Range *corner_nodes = NULL,
              const bool update_meshsets = false, const bool debug = false);
 
   MoFEMErrorCode
-  cutTrimAndMerge(int &first_bit, const int fraction_level,
-                  const int before_trim_levels, Tag th, const double tol_cut,
-                  const double tol_cut_close, const double tol_trim,
-                  const double tol_trim_close, Range &fixed_edges,
-                  Range &corner_nodes, const bool update_meshsets = false,
-                  const bool debug = false);
-
-  MoFEMErrorCode refCutTrimAndMerge(
-      int &first_bit, const int fraction_level, const int ref_before_cut_levels,
-      const int befor_trim_levels, Tag th, const double tol_cut,
-      const double tol_cut_close, const double tol_trim,
-      const double tol_trim_close, Range &fixed_edges, Range &corner_nodes,
-      const bool update_meshsets = false, const bool debug = false);
+  cutTrimAndMerge(int &first_bit, const int fraction_level, Tag th,
+                  const double tol_cut, const double tol_cut_close,
+                  const double tol_trim, const double tol_trim_close,
+                  Range &fixed_edges, Range &corner_nodes,
+                  const bool update_meshsets = false, const bool debug = false);
 
   MoFEMErrorCode makeFront(const bool debug = false);
+
+  MoFEMErrorCode createSurfaceLevelSets(int verb = QUIET,
+                                        const bool debug = false);
+
+  MoFEMErrorCode createFrontLevelSets(int verb = QUIET,
+                                      const bool debug = false);
+
+  MoFEMErrorCode createLevelSets(Tag th, Range &vol_edges, int verb = QUIET,
+                                 const bool debug = false);
 
   MoFEMErrorCode createLevelSets(int verb = QUIET, const bool debug = false);
 
@@ -159,6 +160,8 @@ struct CutMeshInterface : public UnknownInterface {
                             const int front_levels,
                             Range *fixed_edges = nullptr, int verb = QUIET,
                             const bool debug = false);
+
+  MoFEMErrorCode makeSurfaceDistance(const Range &vol);
 
   /**
    * \brief find edges to cut
@@ -168,10 +171,6 @@ struct CutMeshInterface : public UnknownInterface {
   MoFEMErrorCode findEdgesToCut(Range *fixed_edges, Range *corner_nodes,
                                 const double low_tol, int verb = QUIET,
                                 const bool debug = false);
-
-  MoFEMErrorCode refineBeforeCut(const BitRefLevel &bit, Range *fixed_edges,
-                                 const bool update_meshsets,
-                                 const bool debug = false);
 
   MoFEMErrorCode refineBeforeTrim(const BitRefLevel &bit, Range *fixed_edges,
                                   const bool update_meshsets,
@@ -407,9 +406,7 @@ private:
   double aveLength; ///< Average edge length
   double maxLength; ///< Maximal edge length
 
-  Range cutSurfaceEdges;
   Range cutSurfaceVolumes;
-  Range cutFrontEdges;
   Range cutFrontVolumes;
 };
 } // namespace MoFEM

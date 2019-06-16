@@ -181,9 +181,12 @@ int main(int argc, char *argv[]) {
 
     // Cut mesh, trim surface and merge bad edges
     int first_bit = 1;
-    CHKERR cut_mesh->refCutTrimAndMerge(
-        first_bit, 1, nb_ref_before, nb_ref_after, th, tol[0], tol[1], tol[2],
-        tol[3], fixed_edges, corner_nodes, true, true);
+    // CHKERR cut_mesh->refCutTrimAndMerge(
+    //     first_bit, 1, nb_ref_before, nb_ref_after, th, tol[0], tol[1], tol[2],
+    //     tol[3], fixed_edges, corner_nodes, true, true);
+    CHKERR cut_mesh->cutTrimAndMerge(first_bit, 1, th, tol[0],
+                                     tol[1], tol[2], tol[3], fixed_edges,
+                                     corner_nodes, true, true);
 
     if (test) {
       struct TestBitLevel {
