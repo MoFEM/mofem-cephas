@@ -1503,6 +1503,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     ++t_edge_face_normal;
   }
 
+  // iterate over edges on cut surface
   for (auto e : edges) {
 
     // Get edge connectivity and coords
