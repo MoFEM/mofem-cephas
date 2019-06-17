@@ -1560,6 +1560,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       auto t_f0_prj = t_project(t_f0);
       auto t_f1_prj = t_project(t_f1);
 
+      // find point of minilam distance between front and cut surface edge
       double t_edge, t_front;
       auto res = Tools::minDistanceFromSegments(&t_e0_prj(0), &t_e1_prj(0),
                                                 &t_f0_prj(0), &t_f1_prj(0),
@@ -1567,6 +1568,8 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
 
       if (res != Tools::NO_SOLUTION) {
 
+        // check if edges crossing each other in the middle (it not imply that
+        // have common point)
         const double overlap_tol = 1e-2;
         if (t_edge >= 0 && t_edge <= 1 && t_front >= -overlap_tol &&
             t_front <= 1 + overlap_tol) {
@@ -1582,6 +1585,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
           t_ray_prj(i) = t_front_point_prj(i) - t_edge_point_prj(i);
           const double dist = sqrt(t_ray_prj(i) * t_ray_prj(i));
 
+          // that imply that edges have commion point 
           if ((dist / edge_length) < 0.1) {
 
             auto check_to_add_edge = [&](const EntityHandle e,
