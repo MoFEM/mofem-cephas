@@ -172,10 +172,6 @@ struct CutMeshInterface : public UnknownInterface {
                                 const double low_tol, int verb = QUIET,
                                 const bool debug = false);
 
-  MoFEMErrorCode refineBeforeTrim(const BitRefLevel &bit, Range *fixed_edges,
-                                  const bool update_meshsets,
-                                  const bool debug = false);
-
   MoFEMErrorCode projectZeroDistanceEnts(Range *fixed_edges,
                                          Range *corner_nodes,
                                          const double low_tol = 0,
