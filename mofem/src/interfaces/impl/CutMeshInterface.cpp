@@ -860,8 +860,20 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
     const double dist_normal0 = norm_2(dist_vec0);
     const double dist_normal1 = norm_2(dist_vec1);
 
+    // check if cutting point is close to the end of the edges
+    if (dist_normal0 < tol && dist_normal1 < tol) {
+
+      aveLength += norm_2(ray);
+      maxLength = fmax(maxLength, norm_2(ray));
+      ++nb_ave_length;
+
+      for (int n : {0, 1})
+        CHKERR not_project_node(conn[n]);
+      zeroDistanceEnts.insert(e);
+
+    } else if (inner_prod(dist_vec0, dist_vec1) < 0) {
+
     // Edges is on two sides of the surface
-    if (inner_prod(dist_vec0, dist_vec1) < 0) {
 
       const double s = dist_normal0 / (dist_normal1 + dist_normal0);
       edgesToCut[e].dIst = s * ray_length;
@@ -869,17 +881,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
       edgesToCut[e].unitRayDir = ray;
       edgesToCut[e].rayPoint = n0;
       cutEdges.insert(e);
-    }
 
-    // check if cutting point is close to the end of the edges
-    if (dist_normal0 < tol && dist_normal1 < tol) {
       aveLength += norm_2(ray);
       maxLength = fmax(maxLength, norm_2(ray));
       ++nb_ave_length;
-      for (int n : {0, 1})
-        CHKERR not_project_node(conn[n]);
-      zeroDistanceEnts.insert(e);
+
     }
+
   }
   aveLength /= nb_ave_length;
 
