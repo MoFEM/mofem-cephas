@@ -873,7 +873,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
 
     } else if (inner_prod(dist_vec0, dist_vec1) < 0) {
 
-    // Edges is on two sides of the surface
+      // Edges is on two sides of the surface
 
       const double s = dist_normal0 / (dist_normal1 + dist_normal0);
       edgesToCut[e].dIst = s * ray_length;
@@ -1528,13 +1528,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_edge_face_normal =
         getFTensor1FromMat<3>(edge_face_normal);
 
-    auto t_project = [&](auto &t_vec) {
-      FTensor::Tensor1<double, 3> t_prj;
-      t_prj(i) =
-          t_vec(i) - (t_edge_face_normal(i) * t_vec(i)) * t_edge_face_normal(i);
-      return t_prj;
-    };
-
     auto get_edge_coors = [&](const auto e) {
       const EntityHandle *conn;
       CHKERR moab.get_connectivity(e, conn, num_nodes, true);
@@ -1556,16 +1549,22 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       FTensor::Tensor1<double *, 3> t_f1(&coords_front[3], &coords_front[4],
                                          &coords_front[5]);
 
-      auto t_e0_prj = t_project(t_e0);
-      auto t_e1_prj = t_project(t_e1);
-      auto t_f0_prj = t_project(t_f0);
-      auto t_f1_prj = t_project(t_f1);
+      // auto t_project = [&](auto &t_vec) {
+      //   FTensor::Tensor1<double, 3> t_prj;
+      //   t_prj(i) = t_vec(i) -
+      //              (t_edge_face_normal(i) * t_vec(i)) * t_edge_face_normal(i);
+      //   return t_prj;
+      // };
+
+      // auto t_e0_prj = t_project(t_e0);
+      // auto t_e1_prj = t_project(t_e1);
+      // auto t_f0_prj = t_project(t_f0);
+      // auto t_f1_prj = t_project(t_f1);
 
       // find point of minilam distance between front and cut surface edge
-      double t_edge, t_front;
-      auto res = Tools::minDistanceFromSegments(&t_e0_prj(0), &t_e1_prj(0),
-                                                &t_f0_prj(0), &t_f1_prj(0),
-                                                &t_edge, &t_front);
+      double t_edge = -1, t_front = -1;
+      auto res = Tools::minDistanceFromSegments(&t_e0(0), &t_e1(0), &t_f0(0),
+                                                &t_f1(0), &t_edge, &t_front);
 
       if (res != Tools::NO_SOLUTION) {
 
@@ -1575,19 +1574,19 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         if (t_edge >= 0 && t_edge <= 1 && t_front >= -overlap_tol &&
             t_front <= 1 + overlap_tol) {
 
-          FTensor::Tensor1<double, 3> t_front_delta_prj;
-          t_front_delta_prj(i) = t_f1_prj(i) - t_f0_prj(i);
-          FTensor::Tensor1<double, 3> t_edge_delta_prj;
-          t_edge_delta_prj(i) = t_e1_prj(i) - t_e0_prj(i);
-          FTensor::Tensor1<double, 3> t_edge_point_prj, t_front_point_prj;
-          t_edge_point_prj(i) = t_e0_prj(i) + t_edge * t_edge_delta_prj(i);
-          t_front_point_prj(i) = t_f0_prj(i) + t_front * t_front_delta_prj(i);
-          FTensor::Tensor1<double, 3> t_ray_prj;
-          t_ray_prj(i) = t_front_point_prj(i) - t_edge_point_prj(i);
-          const double dist = sqrt(t_ray_prj(i) * t_ray_prj(i));
+          FTensor::Tensor1<double, 3> t_front_delta;
+          t_front_delta(i) = t_f1(i) - t_f0(i);
+          FTensor::Tensor1<double, 3> t_edge_delta;
+          t_edge_delta(i) = t_e1(i) - t_e0(i);
+          FTensor::Tensor1<double, 3> t_edge_point, t_front_point;
+          t_edge_point(i) = t_e0(i) + t_edge * t_edge_delta(i);
+          t_front_point(i) = t_f0(i) + t_front * t_front_delta(i);
+          FTensor::Tensor1<double, 3> t_ray;
+          t_ray(i) = t_front_point(i) - t_edge_point(i);
+          const double dist = sqrt(t_ray(i) * t_ray(i));
 
-          // that imply that edges have commion point
-          if ((dist / edge_length) < 0.1) {
+          // that imply that edges have common point
+          if ((dist / edge_length) < 0.5) {
 
             auto check_to_add_edge = [&](const EntityHandle e,
                                          const double dist) {
