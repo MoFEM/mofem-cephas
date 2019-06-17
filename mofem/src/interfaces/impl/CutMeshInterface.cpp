@@ -1549,18 +1549,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       FTensor::Tensor1<double *, 3> t_f1(&coords_front[3], &coords_front[4],
                                          &coords_front[5]);
 
-      // auto t_project = [&](auto &t_vec) {
-      //   FTensor::Tensor1<double, 3> t_prj;
-      //   t_prj(i) = t_vec(i) -
-      //              (t_edge_face_normal(i) * t_vec(i)) * t_edge_face_normal(i);
-      //   return t_prj;
-      // };
-
-      // auto t_e0_prj = t_project(t_e0);
-      // auto t_e1_prj = t_project(t_e1);
-      // auto t_f0_prj = t_project(t_f0);
-      // auto t_f1_prj = t_project(t_f1);
-
       // find point of minilam distance between front and cut surface edge
       double t_edge = -1, t_front = -1;
       auto res = Tools::minDistanceFromSegments(&t_e0(0), &t_e1(0), &t_f0(0),
