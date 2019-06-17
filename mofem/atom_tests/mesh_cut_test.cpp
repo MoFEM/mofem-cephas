@@ -254,6 +254,9 @@ int main(int argc, char *argv[]) {
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
         BitRefLevel().set(1), BitRefLevel().set(), MBTET,
         "out_tets_shift_level1.vtk", "VTK", "");
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        BitRefLevel().set(1), BitRefLevel().set(), MBPRISM,
+        "out_tets_shift_level1_prism.vtk", "VTK", "");
 
     Range surface_verts;
     CHKERR moab.get_connectivity(cut_mesh->getSurface(), surface_verts);
