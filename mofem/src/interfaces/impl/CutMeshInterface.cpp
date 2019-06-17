@@ -1424,7 +1424,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   else
     surface_skin = fRont;
 
-  auto get_point_coords = [&th, &moab](EntityHandle v) {
+  auto get_point_coords = [&](EntityHandle v) {
     VectorDouble3 point(3);
     if (th)
       CHKERR moab.tag_get_data(th, &v, 1, &point[0]);
