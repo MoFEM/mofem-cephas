@@ -296,16 +296,6 @@ struct CutMeshInterface : public UnknownInterface {
                 const Range &corner_nodes, Tag th = NULL,
                 const bool update_meshsets = false, const bool debug = false);
 
-#ifdef WITH_TETGEN
-
-  MoFEMErrorCode
-  rebuildMeshWithTetGen(vector<string> &switches, const BitRefLevel &mesh_bit,
-                        const BitRefLevel &bit, const Range &surface,
-                        const Range &fixed_edges, const Range &corner_nodes,
-                        Tag th = NULL, const bool debug = false);
-
-#endif
-
   /**
    * \brief set coords to tag
    * @param  th tag handle
@@ -342,8 +332,6 @@ struct CutMeshInterface : public UnknownInterface {
   inline const Range &getMergedVolumes() const { return mergedVolumes; }
   inline const Range &getMergedSurfaces() const { return mergedSurfaces; }
 
-  inline const Range &getTetgenSurfaces() const { return tetgenSurfaces; }
-
   MoFEMErrorCode saveCutEdges(const std::string prefix = "");
 
   MoFEMErrorCode saveTrimEdges();
@@ -378,8 +366,6 @@ private:
   Range mergedVolumes;
   Range mergedSurfaces;
 
-  Range tetgenSurfaces;
-
   struct TreeData {
     double dIst;
     double lEngth;
@@ -391,14 +377,6 @@ private:
   map<EntityHandle, TreeData> verticesOnCutEdges;
   map<EntityHandle, TreeData> edgesToTrim;
   map<EntityHandle, TreeData> verticesOnTrimEdges;
-
-#ifdef WITH_TETGEN
-
-  map<EntityHandle, unsigned long> moabTetGenMap;
-  map<unsigned long, EntityHandle> tetGenMoabMap;
-  boost::ptr_vector<tetgenio> tetGenData;
-
-#endif
 
   double aveLength; ///< Average edge length
   double maxLength; ///< Maximal edge length

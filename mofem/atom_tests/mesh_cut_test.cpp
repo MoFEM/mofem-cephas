@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
 
     CHKERR cut_mesh->makeFront(true);
     // CHKERR cut_mesh->createLevelSets(VERBOSE, true);
-    CHKERR cut_mesh->refineMesh(10, 0, 0, &fixed_edges, VERBOSE, true);
+    CHKERR cut_mesh->refineMesh(10, 0, 1, &fixed_edges, VERBOSE, true);
 
     // Create tag storing nodal positions
     double def_position[] = {0, 0, 0};
@@ -208,43 +208,25 @@ int main(int argc, char *argv[]) {
             BitRefLevel().set(ll), -1);
     }
 
-    // Improve mesh with tetgen
-#undef WITH_TETGEN
-#ifdef WITH_TETGEN
-    int bit_tetgen = first_bit + 1;
-    // Switches controling TetGen
-    vector<string> switches;
-    switches.push_back("YrqOJMS0VV");
-    CHKERR cut_mesh->rebuildMeshWithTetGen(
-        switches, BitRefLevel().set(first_bit), BitRefLevel().set(bit_tetgen),
-        cut_mesh->getMergedSurfaces(), fixed_edges, corner_nodes, th, true);
-    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-        BitRefLevel().set(bit_tetgen), BitRefLevel().set(), MBTET,
-        "out_tets_tetgen.vtk", "VTK", "");
-#else
-    int bit_tetgen = first_bit;
-    const_cast<Range &>(cut_mesh->getTetgenSurfaces()) =
-        cut_mesh->getMergedSurfaces();
-#endif // WITH_TETGEN
 
     // Split faces
-    CHKERR cut_mesh->splitSides(BitRefLevel().set(bit_tetgen),
-                                BitRefLevel().set(bit_tetgen + 1),
-                                cut_mesh->getTetgenSurfaces(), th);
+    CHKERR cut_mesh->splitSides(BitRefLevel().set(first_bit),
+                                BitRefLevel().set(first_bit + 1),
+                                cut_mesh->getMergedSurfaces(), th);
     CHKERR core.getInterface<MeshsetsManager>()
         ->updateAllMeshsetsByEntitiesChildren(
-            BitRefLevel().set(bit_tetgen + 1));
+            BitRefLevel().set(first_bit + 1));
 
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-        BitRefLevel().set(bit_tetgen + 1), BitRefLevel().set(), MBTET,
+        BitRefLevel().set(first_bit + 1), BitRefLevel().set(), MBTET,
         "out_split.vtk", "VTK", "");
 
     // Finally shift bits
     BitRefLevel shift_mask;
-    for (int ll = 0; ll != bit_tetgen + 2; ++ll)
+    for (int ll = 0; ll != first_bit + 2; ++ll)
       shift_mask.set(ll);
     CHKERR core.getInterface<BitRefManager>()->shiftRightBitRef(
-        bit_tetgen, shift_mask, VERBOSE);
+        first_bit, shift_mask, VERBOSE);
 
     // Set coordinates for tag data
     CHKERR cut_mesh->setCoords(th);
