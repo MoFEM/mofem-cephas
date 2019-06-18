@@ -482,7 +482,7 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(Range *intersect_vol,
   };
 
   Range vol;
-  if(intersect_vol)
+  if (intersect_vol)
     vol = intersect(vOlume, *intersect_vol);
   else
     vol = vOlume;
@@ -635,9 +635,9 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(const bool update_front,
   CHKERR moab.tag_get_handle("DIST_FRONT_VECTOR", th_dist_front_vec);
   CHKERR createLevelSets(th_dist_front_vec, cutFrontVolumes, verb, debug);
 
-  if(update_front)
+  if (update_front)
     CHKERR createSurfaceLevelSets(&cutFrontVolumes, verb, debug);
-  else 
+  else
     CHKERR createSurfaceLevelSets(nullptr, verb, debug);
 
   Tag th_dist_surface_vec;
@@ -670,14 +670,14 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
 
   auto add_bit = [&](const int bit) {
     MoFEMFunctionBegin;
-    CHKERR bit_ref_manager->addBitRefLevel(
-        vOlume, BitRefLevel().set(bit), verb);
+    CHKERR bit_ref_manager->addBitRefLevel(vOlume, BitRefLevel().set(bit),
+                                           verb);
     Range adj_ents;
     for (auto d : {2, 1, 0})
       CHKERR moab.get_adjacencies(vOlume, d, false, adj_ents,
                                   moab::Interface::UNION);
-    CHKERR bit_ref_manager->addBitRefLevel(
-        vOlume, BitRefLevel().set(bit), verb);
+    CHKERR bit_ref_manager->addBitRefLevel(vOlume, BitRefLevel().set(bit),
+                                           verb);
     MoFEMFunctionReturn(0);
   };
   CHKERR add_bit(init_bit_level);
@@ -730,7 +730,8 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
   for (int ll = init_bit_level + surf_levels;
        ll != init_bit_level + surf_levels + front_levels; ++ll) {
     CHKERR createLevelSets(update_front, verb, debug);
-    CHKERR refine(BitRefLevel().set(ll + 1).set(very_last_bit), cutFrontVolumes);
+    CHKERR refine(BitRefLevel().set(ll + 1).set(very_last_bit),
+                  cutFrontVolumes);
   }
 
   CHKERR createLevelSets(update_front, verb, debug);
@@ -902,9 +903,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
       aveLength += norm_2(ray);
       maxLength = fmax(maxLength, norm_2(ray));
       ++nb_ave_length;
-
     }
-
   }
   aveLength /= nb_ave_length;
 
