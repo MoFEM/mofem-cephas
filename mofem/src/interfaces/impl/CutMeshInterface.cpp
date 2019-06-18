@@ -1808,7 +1808,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       CHKERR SaveData(moab)("trim_edges.vtk", trimEdges);
 
   MoFEMFunctionReturn(0);
-} // namespace MoFEM
+} 
 
 MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
                                                       Tag th, const double tol,
