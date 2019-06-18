@@ -158,14 +158,17 @@ int main(int argc, char *argv[]) {
     Range tets;
     CHKERR moab.get_entities_by_dimension(0, 3, tets, false);
     CHKERR cut_mesh->setVolume(tets);
+    CHKERR cut_mesh->makeFront(true);
 
     // Build tree, it is used to ask geometrical queries, i.e. to find edges to
     // cut or trim.
     CHKERR cut_mesh->buildTree();
 
-    CHKERR cut_mesh->makeFront(true);
-    // CHKERR cut_mesh->createLevelSets(VERBOSE, true);
-    CHKERR cut_mesh->refineMesh(10, 0, 1, &fixed_edges, VERBOSE, true);
+    CHKERR cut_mesh->refineMesh(false, 10, 0, 1, &fixed_edges, VERBOSE, true);
+
+    CHKERR cut_mesh->setVolume(tets);
+    CHKERR cut_mesh->refineMesh(true, 10, 0, 1, &fixed_edges, VERBOSE, true);
+
 
     // Create tag storing nodal positions
     double def_position[] = {0, 0, 0};

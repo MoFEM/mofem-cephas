@@ -624,7 +624,8 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Tag th, Range &vol_edges,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
+MoFEMErrorCode CutMeshInterface::createLevelSets(const bool update_front,
+                                                 int verb, const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -634,7 +635,11 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
   CHKERR moab.tag_get_handle("DIST_FRONT_VECTOR", th_dist_front_vec);
   CHKERR createLevelSets(th_dist_front_vec, cutFrontVolumes, verb, debug);
 
-  CHKERR createSurfaceLevelSets(nullptr, verb, debug);
+  if(update_front)
+    CHKERR createSurfaceLevelSets(&cutFrontVolumes, verb, debug);
+  else 
+    CHKERR createSurfaceLevelSets(nullptr, verb, debug);
+
   Tag th_dist_surface_vec;
   CHKERR moab.tag_get_handle("DIST_NORMAL", th_dist_surface_vec);
   cutSurfaceVolumes.clear();
@@ -651,11 +656,10 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
-                                            const int surf_levels,
-                                            const int front_levels,
-                                            Range *fixed_edges, int verb,
-                                            const bool debug) {
+MoFEMErrorCode
+CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
+                             const int surf_levels, const int front_levels,
+                             Range *fixed_edges, int verb, const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MeshRefinement *refiner;
@@ -677,6 +681,8 @@ MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
     MoFEMFunctionReturn(0);
   };
   CHKERR add_bit(init_bit_level);
+
+  int very_last_bit = init_bit_level + surf_levels + front_levels + 2;
 
   auto update_range = [&](Range *r_ptr) {
     MoFEMFunctionBegin;
@@ -716,27 +722,18 @@ MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
   };
 
   for (int ll = init_bit_level; ll != init_bit_level + surf_levels; ++ll) {
-    CHKERR createLevelSets(verb, debug);
-    CHKERR refine(BitRefLevel().set(ll + 1),
+    CHKERR createLevelSets(update_front, verb, debug);
+    CHKERR refine(BitRefLevel().set(ll + 1).set(very_last_bit),
                   unite(cutSurfaceVolumes, cutFrontVolumes));
   }
 
   for (int ll = init_bit_level + surf_levels;
        ll != init_bit_level + surf_levels + front_levels; ++ll) {
-    CHKERR createLevelSets(verb, debug);
-    CHKERR refine(BitRefLevel().set(ll + 1), cutFrontVolumes);
+    CHKERR createLevelSets(update_front, verb, debug);
+    CHKERR refine(BitRefLevel().set(ll + 1).set(very_last_bit), cutFrontVolumes);
   }
 
-  if (surf_levels + front_levels) {
-    BitRefLevel shift_mask;
-    for (int ll = init_bit_level + 1;
-         ll <= init_bit_level + surf_levels + front_levels; ++ll)
-      shift_mask.set(ll);
-    CHKERR bit_ref_manager->shiftRightBitRef(surf_levels + front_levels,
-                                             shift_mask, VERBOSE);
-  }
-
-  CHKERR createLevelSets(verb, debug);
+  CHKERR createLevelSets(update_front, verb, debug);
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("refinedVolume.vtk", vOlume);

@@ -155,10 +155,11 @@ struct CutMeshInterface : public UnknownInterface {
   MoFEMErrorCode createLevelSets(Tag th, Range &vol_edges, int verb = QUIET,
                                  const bool debug = false);
 
-  MoFEMErrorCode createLevelSets(int verb = QUIET, const bool debug = false);
+  MoFEMErrorCode createLevelSets(const bool update_front, int verb = QUIET,
+                                 const bool debug = false);
 
-  MoFEMErrorCode refineMesh(const int init_bit_level, const int surf_levels,
-                            const int front_levels,
+  MoFEMErrorCode refineMesh(const bool update_front, const int init_bit_level,
+                            const int surf_levels, const int front_levels,
                             Range *fixed_edges = nullptr, int verb = QUIET,
                             const bool debug = false);
 
