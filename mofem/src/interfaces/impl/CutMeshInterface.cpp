@@ -253,15 +253,6 @@ MoFEMErrorCode CutMeshInterface::buildTree() {
   MoFEMFunctionReturn(0);
 }
 
-struct UpdateMeshsets {
-  MoFEMErrorCode operator()(Core &core, const BitRefLevel &bit) const {
-    MoFEMFunctionBegin;
-    CHKERR core.getInterface<MeshsetsManager>()
-        ->updateAllMeshsetsByEntitiesChildren(bit);
-    MoFEMFunctionReturn(0);
-  }
-};
-
 MoFEMErrorCode CutMeshInterface::cutAndTrim(
     int &first_bit, Tag th, const double tol_cut, const double tol_cut_close,
     const double tol_trim, const double tol_trim_close, Range *fixed_edges,
@@ -294,7 +285,8 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
                                                            *corner_nodes);
   }
   if (update_meshsets) {
-    CHKERR UpdateMeshsets()(cOre, bit_cut);
+    CHKERR m_field.getInterface<MeshsetsManager>()
+        ->updateAllMeshsetsByEntitiesChildren(bit_cut);
   }
   CHKERR moveMidNodesOnCutEdges(th);
 
@@ -347,7 +339,8 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
                                                            *corner_nodes);
   }
   if (update_meshsets) {
-    CHKERR UpdateMeshsets()(cOre, bit_trim);
+    CHKERR m_field.getInterface<MeshsetsManager>()
+        ->updateAllMeshsetsByEntitiesChildren(bit_trim);
   }
   CHKERR moveMidNodesOnTrimmedEdges(th);
 
@@ -705,7 +698,8 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
 
     CHKERR update_range(fixed_edges);
     CHKERR update_range(&vOlume);
-    CHKERR UpdateMeshsets()(cOre, bit);
+    CHKERR m_field.getInterface<MeshsetsManager>()
+        ->updateAllMeshsetsByEntitiesChildren(bit);
 
     Range bit_tets;
     CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
