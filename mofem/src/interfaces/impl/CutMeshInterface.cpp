@@ -473,9 +473,7 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(Range *intersect_vol,
     Tag th;
     rval = moab.tag_get_handle(name.c_str(), th);
     if (rval == MB_SUCCESS)
-      CHKERR moab.tag_delete(th);
-    else
-      rval = MB_SUCCESS;
+      return th;
     std::vector<double> def_val(dim, 0);
     CHKERR moab.tag_get_handle(name.c_str(), dim, MB_TYPE_DOUBLE, th,
                                MB_TAG_CREAT | MB_TAG_SPARSE, &*def_val.begin());
@@ -523,13 +521,10 @@ MoFEMErrorCode CutMeshInterface::createFrontLevelSets(int verb,
     Tag th;
     rval = moab.tag_get_handle(name.c_str(), th);
     if (rval == MB_SUCCESS)
-      CHKERR moab.tag_delete(th);
-    else
-      rval = MB_SUCCESS;
+      return th;
     std::vector<double> def_val(dim, 0);
     CHKERR moab.tag_get_handle(name.c_str(), dim, MB_TYPE_DOUBLE, th,
                                MB_TAG_CREAT | MB_TAG_SPARSE, &*def_val.begin());
-
     return th;
   };
 
@@ -732,6 +727,15 @@ MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
     CHKERR refine(BitRefLevel().set(ll + 1), cutFrontVolumes);
   }
 
+  if (surf_levels + front_levels) {
+    BitRefLevel shift_mask;
+    for (int ll = init_bit_level + 1;
+         ll <= init_bit_level + surf_levels + front_levels; ++ll)
+      shift_mask.set(ll);
+    CHKERR bit_ref_manager->shiftRightBitRef(surf_levels + front_levels,
+                                             shift_mask, VERBOSE);
+  }
+
   CHKERR createLevelSets(verb, debug);
 
   if (debug)
@@ -749,13 +753,10 @@ MoFEMErrorCode CutMeshInterface::makeSurfaceDistance(const Range &vol) {
     Tag th;
     rval = moab.tag_get_handle(name.c_str(), th);
     if (rval == MB_SUCCESS)
-      CHKERR moab.tag_delete(th);
-    else
-      rval = MB_SUCCESS;
+      return th;
     std::vector<double> def_val(dim, 0);
     CHKERR moab.tag_get_handle(name.c_str(), dim, MB_TYPE_DOUBLE, th,
                                MB_TAG_CREAT | MB_TAG_SPARSE, &*def_val.begin());
-
     return th;
   };
 
