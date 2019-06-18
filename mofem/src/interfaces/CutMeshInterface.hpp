@@ -145,7 +145,8 @@ struct CutMeshInterface : public UnknownInterface {
 
   MoFEMErrorCode makeFront(const bool debug = false);
 
-  MoFEMErrorCode createSurfaceLevelSets(int verb = QUIET,
+  MoFEMErrorCode createSurfaceLevelSets(Range *intersect_vol = nullptr,
+                                        int verb = QUIET,
                                         const bool debug = false);
 
   MoFEMErrorCode createFrontLevelSets(int verb = QUIET,

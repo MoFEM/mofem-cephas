@@ -462,7 +462,8 @@ MoFEMErrorCode CutMeshInterface::makeFront(const bool debug) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
+MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(Range *intersect_vol,
+                                                        int verb,
                                                         const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
@@ -482,8 +483,14 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
     return th;
   };
 
+  Range vol;
+  if(intersect_vol)
+    vol = intersect(vOlume, *intersect_vol);
+  else
+    vol = vOlume;
+
   Range vol_vertices;
-  CHKERR moab.get_connectivity(vOlume, vol_vertices, true);
+  CHKERR moab.get_connectivity(vol, vol_vertices, true);
   std::vector<double> coords(3 * vol_vertices.size());
   std::vector<double> dist_surface_vec(3 * vol_vertices.size());
   CHKERR moab.get_coords(vol_vertices, &*coords.begin());
@@ -627,16 +634,16 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
 
-  CHKERR createSurfaceLevelSets(verb, debug);
-  Tag th_dist_surface_vec;
-  CHKERR moab.tag_get_handle("DIST_NORMAL", th_dist_surface_vec);
-  cutSurfaceVolumes.clear();
-  CHKERR createLevelSets(th_dist_surface_vec, cutSurfaceVolumes, verb, debug);
-
   CHKERR createFrontLevelSets(verb, debug);
   Tag th_dist_front_vec;
   CHKERR moab.tag_get_handle("DIST_FRONT_VECTOR", th_dist_front_vec);
   CHKERR createLevelSets(th_dist_front_vec, cutFrontVolumes, verb, debug);
+
+  CHKERR createSurfaceLevelSets(nullptr, verb, debug);
+  Tag th_dist_surface_vec;
+  CHKERR moab.tag_get_handle("DIST_NORMAL", th_dist_surface_vec);
+  cutSurfaceVolumes.clear();
+  CHKERR createLevelSets(th_dist_surface_vec, cutSurfaceVolumes, verb, debug);
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("level_sets.vtk", vOlume);
