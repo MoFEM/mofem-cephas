@@ -668,8 +668,20 @@ MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
   MoFEMFunctionBegin;
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.getInterface(bit_ref_manager);
-  CHKERR bit_ref_manager->addBitRefLevel(
-      vOlume, BitRefLevel().set(init_bit_level), verb);
+
+  auto add_bit = [&](const int bit) {
+    MoFEMFunctionBegin;
+    CHKERR bit_ref_manager->addBitRefLevel(
+        vOlume, BitRefLevel().set(bit), verb);
+    Range adj_ents;
+    for (auto d : {2, 1, 0})
+      CHKERR moab.get_adjacencies(vOlume, d, false, adj_ents,
+                                  moab::Interface::UNION);
+    CHKERR bit_ref_manager->addBitRefLevel(
+        vOlume, BitRefLevel().set(bit), verb);
+    MoFEMFunctionReturn(0);
+  };
+  CHKERR add_bit(init_bit_level);
 
   auto update_range = [&](Range *r_ptr) {
     MoFEMFunctionBegin;
