@@ -3,7 +3,7 @@
 MoFEM is a C++ library for managing complexities related to the hp-adaptive
 finite element method. It can handle multi-physics problems with a
 heterogeneous and hierarchical approximation on H1, H-curl, H-div and L2
-spaces. The objective is to have an implementation with reach abstraction
+spaces. The objective is to have an implementation with rich abstraction
 (able to implement nontrivial finite elements) while being small and
 extendable.
 
