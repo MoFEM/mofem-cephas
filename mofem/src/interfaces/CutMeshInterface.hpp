@@ -174,6 +174,16 @@ struct CutMeshInterface : public UnknownInterface {
                                 const double low_tol, int verb = QUIET,
                                 const bool debug = false);
 
+  /**
+   * @brief Find entities on cut surface which can be projected
+   * 
+   * @param fixed_edges pointer to fix edges
+   * @param corner_nodes pointer to corner nodes
+   * @param low_to is tolerance how close entities has to be
+   * @param verb verbosity level
+   * @param debug true for debuging purposes
+   * 
+   */
   MoFEMErrorCode projectZeroDistanceEnts(Range *fixed_edges,
                                          Range *corner_nodes,
                                          const double low_tol = 0,
@@ -193,6 +203,8 @@ struct CutMeshInterface : public UnknownInterface {
   MoFEMErrorCode cutEdgesInMiddle(const BitRefLevel bit, Range &cut_vols,
                                   Range &cut_surf, Range &cut_verts,
                                   const bool debug = false);
+
+                              
 
   /**
    * \brief projecting of mid edge nodes on new mesh on surface
