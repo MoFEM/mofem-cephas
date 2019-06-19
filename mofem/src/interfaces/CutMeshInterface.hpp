@@ -190,7 +190,8 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  bit BitRefLevel of new mesh created by cutting edges
    * @return     error code
    */
-  MoFEMErrorCode cutEdgesInMiddle(const BitRefLevel bit,
+  MoFEMErrorCode cutEdgesInMiddle(const BitRefLevel bit, Range &cut_vols,
+                                  Range &cut_surf, Range &cut_verts,
                                   const bool debug = false);
 
   /**

@@ -275,7 +275,8 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   CHKERR findEdgesToCut(fixed_edges, corner_nodes, tol_cut, QUIET, debug);
   CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close,
                                  QUIET, debug);
-  CHKERR cutEdgesInMiddle(bit_cut, debug);
+  CHKERR cutEdgesInMiddle(bit_cut, cutNewVolumes, cutNewSurfaces,
+                          cutNewVertices, debug);
   if (fixed_edges) {
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
                                                            *fixed_edges);
@@ -1286,30 +1287,36 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
 }
 
 MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
+                                                  Range &cut_vols,
+                                                  Range &cut_surf,
+                                                  Range &cut_verts,
                                                   const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MeshRefinement *refiner;
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBegin;
-  if (cutEdges.size() != edgesToCut.size()) {
+
+  if (cutEdges.size() != edgesToCut.size()) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
-  }
+  
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   CHKERR refiner->add_vertices_in_the_middel_of_edges(cutEdges, bit);
   CHKERR refiner->refine_TET(vOlume, bit, false, QUIET,
                              debug ? &cutEdges : NULL);
-  cutNewVolumes.clear();
+
+  cut_vols.clear();
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-      bit, BitRefLevel().set(), MBTET, cutNewVolumes);
-  cutNewSurfaces.clear();
+      bit, BitRefLevel().set(), MBTET, cut_vols);
+  cut_surf.clear();
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-      bit, BitRefLevel().set(), MBTRI, cutNewSurfaces);
+      bit, BitRefLevel().set(), MBTRI, cut_surf);
+
   // Find new vertices on cut edges
-  cutNewVertices.clear();
-  CHKERR moab.get_connectivity(zeroDistanceEnts, cutNewVertices, true);
-  cutNewVertices.merge(zeroDistanceVerts);
+  cut_verts.clear();
+  CHKERR moab.get_connectivity(zeroDistanceEnts, cut_verts, true);
+  cut_verts.merge(zeroDistanceVerts);
   for (auto &m : edgesToCut) {
     RefEntity_multiIndex::index<
         Composite_ParentEnt_And_EntType_mi_tag>::type::iterator vit =
@@ -1323,7 +1330,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
     const boost::shared_ptr<RefEntity> &ref_ent = *vit;
     if ((ref_ent->getBitRefLevel() & bit).any()) {
       EntityHandle vert = ref_ent->getRefEnt();
-      cutNewVertices.insert(vert);
+      cut_verts.insert(vert);
       verticesOnCutEdges[vert] = m.second;
     } else {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -1334,22 +1341,22 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   // Add zero distance entities faces
   Range tets_skin;
   Skinner skin(&moab);
-  CHKERR skin.find_skin(0, cutNewVolumes, false, tets_skin);
-  cutNewSurfaces.merge(zeroDistanceEnts.subset_by_type(MBTRI));
+  CHKERR skin.find_skin(0, cut_vols, false, tets_skin);
+  cut_surf.merge(zeroDistanceEnts.subset_by_type(MBTRI));
 
-  // At that point cutNewSurfaces has all newly created faces, now take all
-  // nodes on those faces and subtract nodes on catted edges. Faces adjacent to
+  // At that point cut_surf has all newly created faces, now take all
+  // nodes on those faces and subtract nodes on cut edges. Faces adjacent to
   // nodes which left are not part of surface.
   Range diff_verts;
-  CHKERR moab.get_connectivity(unite(cutNewSurfaces, zeroDistanceEnts),
+  CHKERR moab.get_connectivity(unite(cut_surf, zeroDistanceEnts),
                                diff_verts, true);
-  diff_verts = subtract(diff_verts, cutNewVertices);
+  diff_verts = subtract(diff_verts, cut_verts);
   Range subtract_faces;
   CHKERR moab.get_adjacencies(diff_verts, 2, false, subtract_faces,
                               moab::Interface::UNION);
-  cutNewSurfaces = subtract(cutNewSurfaces, unite(subtract_faces, tets_skin));
-  cutNewVertices.clear();
-  CHKERR moab.get_connectivity(cutNewSurfaces, cutNewVertices, true);
+  cut_surf = subtract(cut_surf, unite(subtract_faces, tets_skin));
+  cut_verts.clear();
+  CHKERR moab.get_connectivity(cut_surf, cut_verts, true);
 
   MoFEMFunctionReturn(0);
 }

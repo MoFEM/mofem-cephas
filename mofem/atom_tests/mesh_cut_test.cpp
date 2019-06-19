@@ -169,7 +169,6 @@ int main(int argc, char *argv[]) {
     CHKERR cut_mesh->setVolume(tets);
     CHKERR cut_mesh->refineMesh(true, 10, 0, 1, &fixed_edges, VERBOSE, true);
 
-
     // Create tag storing nodal positions
     double def_position[] = {0, 0, 0};
     Tag th;
@@ -210,7 +209,6 @@ int main(int argc, char *argv[]) {
         CHKERR TestBitLevel(core.getInterface<BitRefManager>())(
             BitRefLevel().set(ll), -1);
     }
-
 
     // Split faces
     CHKERR cut_mesh->splitSides(BitRefLevel().set(first_bit),
