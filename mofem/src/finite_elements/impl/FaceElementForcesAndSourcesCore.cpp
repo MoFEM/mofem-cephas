@@ -300,8 +300,8 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
   DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
 
   dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
-  CHKERR ShapeDiffMBTRI(
-      &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
+  std::copy(Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+            dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
 
   /// Use the some node base
   CHKERR calculateCoordinatesAtGaussPts();
