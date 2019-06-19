@@ -216,10 +216,12 @@ struct BitRefManager : public UnknownInterface {
    * 
    * @param ents 
    * @param bit 
+   * @param mask
    * @param verb 
    * @return MoFEMErrorCode 
    */
   MoFEMErrorCode resetBitRefLevel(const Range &ents, const BitRefLevel bit,
+                                  const BitRefLevel mask,
                                   int verb = QUIET) const;
 
   /**

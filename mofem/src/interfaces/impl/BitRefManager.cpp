@@ -426,13 +426,14 @@ MoFEMErrorCode BitRefManager::addBitRefLevel(const Range &ents,
 
 MoFEMErrorCode BitRefManager::resetBitRefLevel(const Range &ents,
                                                const BitRefLevel bit,
+                                               const BitRefLevel mask,
                                                int verb) const {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
   std::vector<const BitRefLevel *> ents_bits_vec;
   CHKERR RefEntity::getBitRefLevel(m_field.get_moab(), ents, ents_bits_vec);
   for (auto it : ents_bits_vec)
-    const_cast<BitRefLevel &>(*it) == bit;
+    const_cast<BitRefLevel &>(*it) = (*it & ~mask) | (bit & mask);
   MoFEMFunctionReturn(0);
 }
 

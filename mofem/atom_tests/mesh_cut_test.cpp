@@ -166,7 +166,14 @@ int main(int argc, char *argv[]) {
 
     CHKERR cut_mesh->refineMesh(false, 10, 0, 1, &fixed_edges, VERBOSE, true);
 
+    shift[2] += 0.1;
+    CHKERR cut_mesh->copySurface(surface, NULL, shift, NULL, NULL,
+                                 "surface.vtk");
+     CHKERR cut_mesh->buildTree();
+
     CHKERR cut_mesh->setVolume(tets);
+    CHKERR cut_mesh->makeFront(true);
+
     CHKERR cut_mesh->refineMesh(true, 10, 0, 1, &fixed_edges, VERBOSE, true);
 
     // Create tag storing nodal positions

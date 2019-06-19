@@ -81,6 +81,7 @@ MoFEMErrorCode CutMeshInterface::copySurface(const Range &surface, Tag th,
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
+  sUrface.clear();
   std::map<EntityHandle, EntityHandle> verts_map;
   for (Range::const_iterator tit = surface.begin(); tit != surface.end();
        tit++) {
@@ -721,7 +722,7 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
   };
   CHKERR add_bit(init_bit_level);
 
-  int very_last_bit = init_bit_level + surf_levels + front_levels + 2;
+  int very_last_bit = init_bit_level + surf_levels + front_levels + 1;
 
   auto update_range = [&](Range *r_ptr) {
     MoFEMFunctionBegin;
@@ -761,10 +762,13 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
     MoFEMFunctionReturn(0);
   };
 
+  BitRefLevel mask;
+
   for (int ll = init_bit_level; ll != init_bit_level + surf_levels; ++ll) {
     CHKERR createLevelSets(update_front, verb, debug);
     CHKERR refine(BitRefLevel().set(ll + 1).set(very_last_bit),
                   unite(cutSurfaceVolumes, cutFrontVolumes));
+    mask.set(ll + 1);
   }
 
   for (int ll = init_bit_level + surf_levels;
@@ -772,9 +776,24 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
     CHKERR createLevelSets(update_front, verb, debug);
     CHKERR refine(BitRefLevel().set(ll + 1).set(very_last_bit),
                   cutFrontVolumes);
+    mask.set(ll + 1);
   }
 
   CHKERR createLevelSets(update_front, verb, debug);
+
+  cerr << mask << endl;
+  cerr << BitRefLevel(mask).set(very_last_bit) << endl;
+
+  Range very_last_bit_ents;
+  CHKERR bit_ref_manager->getEntitiesByRefLevel(
+      mask, BitRefLevel(mask).set(very_last_bit), very_last_bit_ents);
+  if (debug)
+    CHKERR SaveData(m_field.get_moab())("very_last_bit_ents.vtk",
+                                        very_last_bit_ents);
+
+  CHKERR bit_ref_manager->resetBitRefLevel(
+      very_last_bit_ents, BitRefLevel().set(very_last_bit),
+      BitRefLevel(mask).set(very_last_bit));
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("refinedVolume.vtk", vOlume);
