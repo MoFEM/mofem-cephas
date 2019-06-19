@@ -129,6 +129,25 @@ struct BitRefManager : public UnknownInterface {
                                         const BitRefLevel bit = BitRefLevel(),
                                         int verb = QUIET) const;
 
+  MoFEMErrorCode setBitRefLevelByDim(const EntityHandle meshset, const int dim,
+                                     const BitRefLevel bit,
+                                     int verb = QUIET) const;
+
+  MoFEMErrorCode setBitRefLevelByType(const EntityHandle meshset,
+                                      const EntityType type,
+                                      const BitRefLevel bit,
+                                      int verb = QUIET) const;
+
+  /** brief add meshset and set bit ref level
+   * \ingroup mofem_bit_ref
+   *
+   * \param EntityHandle MeshSet
+   * \param BitRefLevel bitLevel
+   */
+  MoFEMErrorCode setBitLevelToMeshset(const EntityHandle meshset,
+                                      const BitRefLevel bit,
+                                      int verb = 0) const;
+
   /**
    * @brief Add entities which exist in MoAB database, and have set appropiate
    * BitRef level tag, to multi-indices in MoFEM.
@@ -167,24 +186,6 @@ struct BitRefManager : public UnknownInterface {
                                                const BitRefLevel bit,
                                                int verb = QUIET) const;
 
-  MoFEMErrorCode setBitRefLevelByDim(const EntityHandle meshset, const int dim,
-                                     const BitRefLevel bit,
-                                     int verb = QUIET) const;
-
-  MoFEMErrorCode setBitRefLevelByType(const EntityHandle meshset,
-                                      const EntityType type,
-                                      const BitRefLevel bit,
-                                      int verb = QUIET) const;
-
-  /** brief add meshset and set bit ref level
-   * \ingroup mofem_bit_ref
-   *
-   * \param EntityHandle MeshSet
-   * \param BitRefLevel bitLevel
-   */
-  MoFEMErrorCode setBitLevelToMeshset(const EntityHandle meshset,
-                                      const BitRefLevel bit,
-                                      int verb = 0) const;
 
   /**
    * \brief add bit ref level to ref entity
@@ -209,6 +210,17 @@ struct BitRefManager : public UnknownInterface {
   MoFEMErrorCode addBitRefLevelByDim(const EntityHandle meshset, const int dim,
                                      const BitRefLevel bit,
                                      int verb = QUIET) const;
+
+  /**
+   * @brief reset bit ref level
+   * 
+   * @param ents 
+   * @param bit 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode resetBitRefLevel(const Range &ents, const BitRefLevel bit,
+                                  int verb = QUIET) const;
 
   /**
    * \brief Set nth bit ref level

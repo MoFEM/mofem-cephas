@@ -419,10 +419,20 @@ MoFEMErrorCode BitRefManager::addBitRefLevel(const Range &ents,
   MoFEMFunctionBegin;
   std::vector<const BitRefLevel *> ents_bits_vec;
   CHKERR RefEntity::getBitRefLevel(m_field.get_moab(), ents, ents_bits_vec);
-  for (std::vector<const BitRefLevel *>::iterator it = ents_bits_vec.begin();
-       it != ents_bits_vec.end(); ++it) {
-    const_cast<BitRefLevel&>(**it) |= bit;
-  }
+  for (auto it : ents_bits_vec)
+    const_cast<BitRefLevel &>(*it) |= bit;
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode BitRefManager::resetBitRefLevel(const Range &ents,
+                                               const BitRefLevel bit,
+                                               int verb) const {
+  MoFEM::Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  std::vector<const BitRefLevel *> ents_bits_vec;
+  CHKERR RefEntity::getBitRefLevel(m_field.get_moab(), ents, ents_bits_vec);
+  for (auto it : ents_bits_vec)
+    const_cast<BitRefLevel &>(*it) == bit;
   MoFEMFunctionReturn(0);
 }
 
