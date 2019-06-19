@@ -67,6 +67,27 @@ struct Tools : public UnknownInterface {
                                   return std::min(a, b);
                                 });
 
+  static constexpr double diffShapeFunMBTRI0x =
+      diffN_MBTRI0x; ///< derivative of triangle shape function
+  static constexpr double diffShapeFunMBTRI0y =
+      diffN_MBTRI0y; ///< derivative of triangle shape function
+  static constexpr double diffShapeFunMBTRI1x =
+      diffN_MBTRI1x; ///< derivative of triangle shape function
+  static constexpr double diffShapeFunMBTRI1y =
+      diffN_MBTRI1y; ///< derivative of triangle shape function
+  static constexpr double diffShapeFunMBTRI2x =
+      diffN_MBTRI2x; ///< derivative of triangle shape function
+  static constexpr double diffShapeFunMBTRI2y =
+      diffN_MBTRI2y; ///< derivative of triangle shape function
+
+  static constexpr std::array<double, 6> diffShapeFunMBTRI = {
+
+      diffShapeFunMBTRI0x, diffShapeFunMBTRI0y,
+
+      diffShapeFunMBTRI1x, diffShapeFunMBTRI1y,
+
+      diffShapeFunMBTRI2x, diffShapeFunMBTRI2y};
+
   static constexpr double diffShapeFunMBTET0x =
       diffN_MBTET0x; ///< derivative of tetrahedral shape function
   static constexpr double diffShapeFunMBTET0y =
