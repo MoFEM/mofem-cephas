@@ -529,7 +529,7 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(Range *intersect_vol,
     noalias(dist_normal) = delta;
   }
 
-  auto th_dist_surface_vec = create_tag("DIST_NORMAL", 3);
+  auto th_dist_surface_vec = create_tag("DIST_SURFACE_VECTOR", 3);
   CHKERR moab.tag_set_data(th_dist_surface_vec, vol_vertices,
                            &*dist_surface_vec.begin());
 
@@ -666,7 +666,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(const bool update_front,
     CHKERR createSurfaceLevelSets(nullptr, verb, debug);
 
   Tag th_dist_surface_vec;
-  CHKERR moab.tag_get_handle("DIST_NORMAL", th_dist_surface_vec);
+  CHKERR moab.tag_get_handle("DIST_SURFACE_VECTOR", th_dist_surface_vec);
   cutSurfaceVolumes.clear();
   CHKERR createLevelSets(th_dist_surface_vec, cutSurfaceVolumes, verb, debug);
 
@@ -785,7 +785,7 @@ MoFEMErrorCode CutMeshInterface::makeSurfaceDistance(const Range &vol) {
   };
 
   Tag th_dist_normal;
-  CHKERR moab.tag_get_handle("DIST_NORMAL", th_dist_normal);
+  CHKERR moab.tag_get_handle("DIST_SURFACE_VECTOR", th_dist_normal);
 
   // Calculate not signed and not signed distances from nodes to surface
   Range vol_vertices;
@@ -826,7 +826,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
   verticesOnCutEdges.clear();
 
   Tag th_dist_normal;
-  CHKERR moab.tag_get_handle("DIST_NORMAL", th_dist_normal);
+  CHKERR moab.tag_get_handle("DIST_SURFACE_VECTOR", th_dist_normal);
 
   Range vol = unite(cutSurfaceVolumes, cutFrontVolumes);
   CHKERR makeSurfaceDistance(vol);
@@ -1028,7 +1028,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
     CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_nodes, true);
 
   Tag th_dist_normal;
-  CHKERR moab.tag_get_handle("DIST_NORMAL", th_dist_normal);
+  CHKERR moab.tag_get_handle("DIST_SURFACE_VECTOR", th_dist_normal);
 
   // Create map of closes points to the surface
   enum TYPE { FREE = 0, SKIN, FIXED, CORNER, NOT_MOVE };
