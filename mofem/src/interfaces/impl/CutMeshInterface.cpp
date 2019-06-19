@@ -253,6 +253,79 @@ MoFEMErrorCode CutMeshInterface::buildTree() {
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+CutMeshInterface::cutOnly(const BitRefLevel cut_bit, Tag th,
+                          const double tol_cut, const double tol_cut_close,
+                          Range *fixed_edges, Range *corner_nodes,
+                          const bool update_meshsets, const bool debug) {
+  CoreInterface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  MoFEMFunctionBegin;
+
+  // cut mesh
+  CHKERR findEdgesToCut(fixed_edges, corner_nodes, tol_cut, QUIET, debug);
+  CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close,
+                                 QUIET, debug);
+  CHKERR cutEdgesInMiddle(cut_bit, cutNewVolumes, cutNewSurfaces,
+                          cutNewVertices, debug);
+  if (fixed_edges) {
+    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
+                                                           *fixed_edges);
+  }
+  if (corner_nodes) {
+    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
+                                                           *corner_nodes);
+  }
+  if (update_meshsets) {
+    CHKERR m_field.getInterface<MeshsetsManager>()
+        ->updateAllMeshsetsByEntitiesChildren(cut_bit);
+  }
+  CHKERR moveMidNodesOnCutEdges(th);
+
+  if (debug)
+    CHKERR saveCutEdges();
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode CutMeshInterface::trimOnly(
+    const BitRefLevel trim_bit, Tag th, 
+    const double tol_trim, const double tol_trim_close, Range *fixed_edges,
+    Range *corner_nodes, const bool update_meshsets, const bool debug) {
+  CoreInterface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  MoFEMFunctionBegin;
+
+  // trim mesh
+  CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim,
+                         tol_trim_close, debug);
+  CHKERR trimEdgesInTheMiddle(trim_bit, th, tol_trim_close, debug);
+  if (fixed_edges) {
+    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
+                                                           *fixed_edges);
+  }
+  if (corner_nodes) {
+    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
+                                                           *corner_nodes);
+  }
+  if (update_meshsets) {
+    CHKERR m_field.getInterface<MeshsetsManager>()
+        ->updateAllMeshsetsByEntitiesChildren(trim_bit);
+  }
+  CHKERR moveMidNodesOnTrimmedEdges(th);
+
+  if (debug) {
+    CHKERR saveTrimEdges();
+    Range bit2_edges;
+    CHKERR cOre.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+        trim_bit, BitRefLevel().set(), MBEDGE, bit2_edges);
+    CHKERR SaveData(moab)("trim_fixed_edges.vtk",
+                          intersect(*fixed_edges, bit2_edges));
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode CutMeshInterface::cutAndTrim(
     int &first_bit, Tag th, const double tol_cut, const double tol_cut_close,
     const double tol_trim, const double tol_trim_close, Range *fixed_edges,
@@ -269,27 +342,10 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
     return bit_levels.back();
   };
 
-  BitRefLevel bit_cut = get_back_bit_levels();
+  BitRefLevel cut_bit = get_back_bit_levels();
 
-  // cut mesh
-  CHKERR findEdgesToCut(fixed_edges, corner_nodes, tol_cut, QUIET, debug);
-  CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close,
-                                 QUIET, debug);
-  CHKERR cutEdgesInMiddle(bit_cut, cutNewVolumes, cutNewSurfaces,
-                          cutNewVertices, debug);
-  if (fixed_edges) {
-    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
-                                                           *fixed_edges);
-  }
-  if (corner_nodes) {
-    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
-                                                           *corner_nodes);
-  }
-  if (update_meshsets) {
-    CHKERR m_field.getInterface<MeshsetsManager>()
-        ->updateAllMeshsetsByEntitiesChildren(bit_cut);
-  }
-  CHKERR moveMidNodesOnCutEdges(th);
+  CHKERR cutOnly(cut_bit, th, tol_cut, tol_cut_close, fixed_edges, corner_nodes,
+                 update_meshsets, debug);
 
   auto get_min_quality = [&m_field](const BitRefLevel bit, Tag th) {
     Range tets_level; // test at level
@@ -301,10 +357,8 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   };
 
   PetscPrintf(PETSC_COMM_WORLD, "Min quality cut %6.4g\n",
-              get_min_quality(bit_cut, th));
+              get_min_quality(cut_bit, th));
 
-  if (debug)
-    CHKERR saveCutEdges();
 
   Range starting_volume = cutNewVolumes;
   Range starting_volume_nodes;
@@ -326,36 +380,13 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   if (th)
     CHKERR setTagData(th);
 
-  BitRefLevel bit_trim = get_back_bit_levels();
-  // trim mesh
-  CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim,
-                         tol_trim_close, debug);
-  CHKERR trimEdgesInTheMiddle(bit_trim, th, tol_trim_close, debug);
-  if (fixed_edges) {
-    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
-                                                           *fixed_edges);
-  }
-  if (corner_nodes) {
-    CHKERR cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
-                                                           *corner_nodes);
-  }
-  if (update_meshsets) {
-    CHKERR m_field.getInterface<MeshsetsManager>()
-        ->updateAllMeshsetsByEntitiesChildren(bit_trim);
-  }
-  CHKERR moveMidNodesOnTrimmedEdges(th);
+  BitRefLevel trim_bit = get_back_bit_levels();
+
+  CHKERR trimOnly(trim_bit, th, tol_trim, tol_trim_close, fixed_edges,
+                  corner_nodes, update_meshsets, debug);
 
   PetscPrintf(PETSC_COMM_WORLD, "Min quality trim %3.2g\n",
-              get_min_quality(bit_trim, th));
-
-  if (debug) {
-    CHKERR saveTrimEdges();
-    Range bit2_edges;
-    CHKERR cOre.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-        bit_trim, BitRefLevel().set(), MBEDGE, bit2_edges);
-    CHKERR SaveData(moab)("trim_fixed_edges.vtk",
-                          intersect(*fixed_edges, bit2_edges));
-  }
+              get_min_quality(trim_bit, th));
 
   first_bit += bit_levels.size() - 1;
 

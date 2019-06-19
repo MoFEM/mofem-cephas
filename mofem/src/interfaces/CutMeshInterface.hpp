@@ -129,6 +129,18 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode buildTree();
 
+  MoFEMErrorCode cutOnly(const BitRefLevel cut_bit, Tag th,
+                         const double tol_cut, const double tol_cut_close,
+                         Range *fixed_edges = NULL, Range *corner_nodes = NULL,
+                         const bool update_meshsets = false,
+                         const bool debug = false);
+
+  MoFEMErrorCode trimOnly(const BitRefLevel trim_bit, Tag th,
+                          const double tol_cut, const double tol_cut_close,
+                          Range *fixed_edges = NULL, Range *corner_nodes = NULL,
+                          const bool update_meshsets = false,
+                          const bool debug = false);
+
   MoFEMErrorCode
   cutAndTrim(int &first_bit, Tag th,
              const double tol_cut, const double tol_cut_close,
