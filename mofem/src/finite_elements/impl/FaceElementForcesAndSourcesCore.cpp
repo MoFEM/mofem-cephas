@@ -388,10 +388,11 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
 
       if (type != MBVERTEX) {
         if (nb_functions != data.getDiffN(base).size2() / 2) {
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                   "data inconsistency nb_functions != data.diffN.size2()/2 ( %u != "
-                   "%u/2 )",
-                   nb_functions, data.getDiffN(base).size2());
+          SETERRQ2(
+              PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "data inconsistency nb_functions != data.diffN.size2()/2 ( %u != "
+              "%u/2 )",
+              nb_functions, data.getDiffN(base).size2());
         }
       }
 
@@ -415,7 +416,7 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
             &data.getDiffN(base)(0, 0), &data.getDiffN(base)(0, 1));
         for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
           for (unsigned int dd = 0; dd != nb_functions; ++dd) {
-            t_diff_n(i) = t_inv_jac(i, k) * t_diff_n_ref(k);
+            t_diff_n(i) = t_inv_jac(k, i) * t_diff_n_ref(k);
             ++t_diff_n;
             ++t_diff_n_ref;
           }
