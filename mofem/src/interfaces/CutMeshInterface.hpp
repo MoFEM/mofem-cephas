@@ -175,8 +175,6 @@ struct CutMeshInterface : public UnknownInterface {
                             Range *fixed_edges = nullptr, int verb = QUIET,
                             const bool debug = false);
 
-  MoFEMErrorCode makeSurfaceDistance(const Range &vol);
-
   /**
    * \brief find edges to cut
    * @param  verb verbosity level
