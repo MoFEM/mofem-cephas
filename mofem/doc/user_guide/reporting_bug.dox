@@ -20,7 +20,10 @@ The more information that you convey about a bug, the easier it will be for us t
 
 In some specific cases, additionally you can
 - Send mesh file ( if file is not too big )
-- Run ctest \codectest -D Experimental\endcode.
+- Run ctest 
+\code
+ctest -D Experimental
+\endcode.
 
 \section example_bug_repoty Example bug report
 
