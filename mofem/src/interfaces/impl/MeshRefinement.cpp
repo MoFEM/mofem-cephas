@@ -95,7 +95,6 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middel_of_edges(
   const RefEntity_multiIndex *refined_ents_ptr;
   MoFEMFunctionBegin;
   CHKERR m_field.get_ref_ents(&refined_ents_ptr);
-  Range edges = ents.subset_by_type(MBEDGE);
   auto miit =
       refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>()
           .lower_bound(boost::make_tuple(MBVERTEX, MBEDGE));
@@ -104,6 +103,8 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middel_of_edges(
           .upper_bound(boost::make_tuple(MBVERTEX, MBEDGE));
   RefEntity_multiIndex_view_by_ordered_parent_entity ref_parent_ents_view;
   ref_parent_ents_view.insert(miit, hi_miit);
+
+  Range edges = ents.subset_by_type(MBEDGE);
   if (verb >= VERBOSE) {
     std::ostringstream ss;
     ss << "ref level " << bit << " nb. edges to refine " << edges.size()
@@ -131,9 +132,12 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middel_of_edges(
 
     Range edge_having_parent_vertex;
     if (miit_view != ref_parent_ents_view.end()) {
-      auto hi_miit_view = ref_parent_ents_view.upper_bound(p_eit->second);
-      for (; miit_view != hi_miit_view; ++miit_view)
-        edge_having_parent_vertex.insert(miit_view->get()->getParentEnt());
+      for (auto hi_miit_view = ref_parent_ents_view.upper_bound(p_eit->second);
+           miit_view != hi_miit_view; ++miit_view) {
+        edge_having_parent_vertex.insert(edge_having_parent_vertex.end(),
+                                         miit_view->get()->getParentEnt());
+        add_bit.insert(add_bit.end(), miit_view->get()->getRefEnt());
+      }
     }
 
     Range add_vertex_edges =
@@ -161,6 +165,7 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middel_of_edges(
   }
 
   CHKERR m_field.getInterface<BitRefManager>()->addBitRefLevel(add_bit, bit);
+
   if (!vert_coords[0].empty()) {
     int num_nodes = vert_coords[0].size();
     vector<double *> arrays_coord;
