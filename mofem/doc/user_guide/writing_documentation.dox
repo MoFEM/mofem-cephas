@@ -1,6 +1,8 @@
 /*! \page  a_guide_to_writing_documentation Writing documentation
 \brief A guide why and how to write documentation.
 
+\tableofcontents
+
 \section why_write_documentation Why write documentation?
 
 Code documentation is essential for its future. MoFEM will live only if

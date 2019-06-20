@@ -1,12 +1,15 @@
 /*! \page guidelines_bug_reporting Guidelines for bug reporting
 \brief Instruction how to report bugs.
 
-Send error to <a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a>, you can
+\tableofcontents
+
+Send error to <a href="https://bitbucket.org/likask/mofem-cephas/issues?status=new&status=open">issues</a> on BitBucket, 
+you can
 
 - report bugs,
-- ask for clarification,
 - ask for help in tracking down bugs, and
 - request new features within MoFEM.
+- send us qeustions to <a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a>
 
 \section bug_reporting Guidelines for bug reporting
 
