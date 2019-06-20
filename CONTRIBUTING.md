@@ -12,7 +12,7 @@ you program, make pull requests,  etc. Please follow [link to coding practice](h
 
 * [Writing documentation](http://mofem.eng.gla.ac.uk/mofem/html/a_guide_to_writing_documentation.html) is essential to develop the code successfully; without comments, examples and tutorials code will be difficult or even impossible to use.
 
-* If you seek for support, email us on [Q&A group](https://groups.google.com/forum/#!forum/mofem-group) or join [MoFEM Slack](https://mofem.slack.com).
+* If you seek support, email us on [Q&A group](https://groups.google.com/forum/#!forum/mofem-group) or join [MoFEM Slack](https://mofem.slack.com).
  
 
 
