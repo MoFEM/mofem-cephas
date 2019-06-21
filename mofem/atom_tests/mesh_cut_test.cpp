@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     CHKERR cut_mesh->makeFront(true);
     CHKERR cut_mesh->buildTree();
     Range tmp_fixed_edges = fixed_edges;
-    CHKERR cut_mesh->refineMesh(false, 10, 1, 0, &tmp_fixed_edges, VERBOSE,
+    CHKERR cut_mesh->refineMesh(false, 10, 2, 0, &tmp_fixed_edges, VERBOSE,
                                 true);
 
     // Create tag storing nodal positions
@@ -178,7 +178,9 @@ int main(int argc, char *argv[]) {
     CHKERR cut_mesh->setTagData(th);
 
     BitRefLevel cut_bit = BitRefLevel().set(1);
-    CHKERR cut_mesh->cutOnly(cut_bit, th, tol[0], tol[1], &fixed_edges,
+    CHKERR cut_mesh->cutOnly(subtract(cut_mesh->getCutSurfaceVolumes(),
+                                      cut_mesh->getCutFrontVolumes()),
+                             cut_bit, th, tol[0], tol[1], &fixed_edges,
                              &corner_nodes, true, true);
 
     auto get_min_quality = [&m_field](const BitRefLevel bit, Tag th) {
@@ -210,6 +212,13 @@ int main(int argc, char *argv[]) {
         "merged_surface.vtk", cut_mesh->getMergedSurfaces());
     PetscPrintf(PETSC_COMM_WORLD, "Min quality node merge %6.4g\n",
                 get_min_quality(merge_bit, th));
+
+    // Split faces
+    BitRefLevel split_bit = BitRefLevel().set(3);
+    CHKERR cut_mesh->splitSides(merge_bit, split_bit,
+                                cut_mesh->getMergedSurfaces(), th);
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        split_bit, BitRefLevel().set(), MBPRISM, "split.vtk", "VTK", "");
 
     // shift[2] -= 0.8;
     // CHKERR cut_mesh->copySurface(surface, NULL, shift, NULL, NULL,

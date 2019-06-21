@@ -236,7 +236,7 @@ MoFEMErrorCode CutMeshInterface::buildTree() {
 }
 
 MoFEMErrorCode
-CutMeshInterface::cutOnly(const BitRefLevel cut_bit, Tag th,
+CutMeshInterface::cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
                           const double tol_cut, const double tol_cut_close,
                           Range *fixed_edges, Range *corner_nodes,
                           const bool update_meshsets, const bool debug) {
@@ -245,7 +245,7 @@ CutMeshInterface::cutOnly(const BitRefLevel cut_bit, Tag th,
   MoFEMFunctionBegin;
 
   // cut mesh
-  CHKERR findEdgesToCut(fixed_edges, corner_nodes, tol_cut, QUIET, debug);
+  CHKERR findEdgesToCut(vol, fixed_edges, corner_nodes, tol_cut, QUIET, debug);
   CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close,
                                  QUIET, debug);
   CHKERR cutEdgesInMiddle(cut_bit, cutNewVolumes, cutNewSurfaces,
@@ -326,7 +326,8 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
 
   BitRefLevel cut_bit = get_back_bit_levels();
 
-  CHKERR cutOnly(cut_bit, th, tol_cut, tol_cut_close, fixed_edges, corner_nodes,
+  CHKERR cutOnly(unite(cutSurfaceVolumes, cutFrontVolumes), cut_bit, th,
+                 tol_cut, tol_cut_close, fixed_edges, corner_nodes,
                  update_meshsets, debug);
 
   auto get_min_quality = [&m_field](const BitRefLevel bit, Tag th) {
@@ -784,7 +785,7 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
+MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
                                                 Range *corner_nodes,
                                                 const double low_tol, int verb,
                                                 const bool debug) {
@@ -801,8 +802,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
 
   Tag th_dist_normal;
   CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_VECTOR", th_dist_normal);
-
-  Range vol = unite(cutSurfaceVolumes, cutFrontVolumes);
 
   auto not_project_node = [this, &moab](const EntityHandle v) {
     MoFEMFunctionBeginHot;
@@ -2030,7 +2029,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       Range out_tets;
       CHKERR nodeMergerPtr->mergeNodes(father, mother, out_tets, &vert_tets,
                                        onlyIfImproveQuality, 0, lineSearch, tH);
-      out_tets.merge(subtract(proc_tets, vert_tets));
+      Range subtract_vert_tets = subtract(proc_tets, vert_tets);
+      out_tets.merge(subtract_vert_tets);
       proc_tets.swap(out_tets);
 
       if (add_child && nodeMergerPtr->getSucessMerge()) {
@@ -2069,12 +2069,17 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         not_merged_edges.merge(not_merged_child_edge_ents);
 
         if (updateMehsets) {
+          Range vert_parent_ents(vert_tets);
+          for(auto d : {2,1,0})
+            CHKERR moab.get_adjacencies(vert_tets, d, false, vert_parent_ents,
+                                        moab::Interface::UNION);
           for (_IT_CUBITMESHSETS_FOR_LOOP_(
                    (*mField.getInterface<MeshsetsManager>()), cubit_it)) {
             EntityHandle cubit_meshset = cubit_it->meshset;
             Range parent_ents;
             CHKERR moab.get_entities_by_handle(cubit_meshset, parent_ents,
                                                true);
+            parent_ents = intersect(vert_parent_ents, parent_ents);
             Range child_ents;
             CHKERR updateRangeByChilds(parent_child_map, parent_ents,
                                        child_ents);
@@ -2090,13 +2095,18 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         const NodeMergerInterface::ParentChildMap &parent_child_map,
         const Range &parents, Range &childs) const {
       MoFEMFunctionBeginHot;
-      NodeMergerInterface::ParentChildMap::nth_index<0>::type::iterator it;
-      for (Range::const_iterator eit = parents.begin(); eit != parents.end();
-           eit++) {
-        it = parent_child_map.get<0>().find(*eit);
-        if (it == parent_child_map.get<0>().end())
-          continue;
-        childs.insert(it->cHild);
+      for (auto pit = parents.pair_begin(); pit != parents.pair_end(); pit++) {
+        auto it = parent_child_map.get<0>().lower_bound(pit->first);
+        if (it != parent_child_map.get<0>().end()) {
+          if (pit->first != pit->second) {
+            for (auto hi_it =
+                     parent_child_map.get<0>().upper_bound(pit->second);
+                 it != hi_it; ++it)
+              childs.insert(it->cHild);
+          } else {
+            childs.insert(it->cHild);
+          }
+        }
       }
       MoFEMFunctionReturnHot(0);
     }

@@ -129,7 +129,7 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode buildTree();
 
-  MoFEMErrorCode cutOnly(const BitRefLevel cut_bit, Tag th,
+  MoFEMErrorCode cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
                          const double tol_cut, const double tol_cut_close,
                          Range *fixed_edges = NULL, Range *corner_nodes = NULL,
                          const bool update_meshsets = false,
@@ -180,9 +180,9 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  MoFEMErrorCode findEdgesToCut(Range *fixed_edges, Range *corner_nodes,
-                                const double low_tol, int verb = QUIET,
-                                const bool debug = false);
+  MoFEMErrorCode findEdgesToCut(Range vol, Range *fixed_edges,
+                                Range *corner_nodes, const double low_tol,
+                                int verb = QUIET, const bool debug = false);
 
   /**
    * @brief Find entities on cut surface which can be projected
@@ -355,6 +355,9 @@ struct CutMeshInterface : public UnknownInterface {
 
   inline const Range &getMergedVolumes() const { return mergedVolumes; }
   inline const Range &getMergedSurfaces() const { return mergedSurfaces; }
+
+  inline const Range &getCutSurfaceVolumes() const { return cutSurfaceVolumes; }
+  inline const Range &getCutFrontVolumes() const { return cutFrontVolumes; }
 
   MoFEMErrorCode saveCutEdges(const std::string prefix = "");
 

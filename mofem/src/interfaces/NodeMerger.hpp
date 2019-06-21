@@ -121,7 +121,7 @@ struct NodeMergerInterface : public UnknownInterface {
 
   typedef multi_index_container<
       ParentChild,
-      indexed_by<hashed_unique<
+      indexed_by<ordered_unique<
                      member<ParentChild, EntityHandle, &ParentChild::pArent>>,
                  hashed_non_unique<
                      member<ParentChild, EntityHandle, &ParentChild::cHild>>>>
