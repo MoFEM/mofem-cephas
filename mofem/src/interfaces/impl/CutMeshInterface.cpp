@@ -714,7 +714,7 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
                                            verb);
     Range adj_ents;
     for (auto d : {2, 1, 0})
-      CHKERR moab.get_adjacencies(vOlume, d, false, adj_ents,
+      CHKERR moab.get_adjacencies(vOlume, d, true, adj_ents,
                                   moab::Interface::UNION);
     CHKERR bit_ref_manager->addBitRefLevel(vOlume, BitRefLevel().set(bit),
                                            verb);
@@ -739,9 +739,11 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
     Range ref_edges;
     CHKERR moab.get_adjacencies(tets, 1, true, ref_edges,
                                 moab::Interface::UNION);
+
+    cerr << ref_edges.size() << endl;
+
     CHKERR refiner->add_vertices_in_the_middel_of_edges(ref_edges, bit);
-    CHKERR refiner->refine_TET(vOlume, bit, false, QUIET,
-                               debug ? &cutEdges : NULL);
+    CHKERR refiner->refine_TET(vOlume, bit, false, NOISY);
 
     CHKERR update_range(fixed_edges);
     CHKERR update_range(&vOlume);
@@ -766,7 +768,7 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
 
   for (int ll = init_bit_level; ll != init_bit_level + surf_levels; ++ll) {
     CHKERR createLevelSets(update_front, verb, debug);
-    CHKERR refine(BitRefLevel().set(ll + 1).set(very_last_bit),
+    CHKERR refine(BitRefLevel().set(ll + 1),
                   unite(cutSurfaceVolumes, cutFrontVolumes));
     mask.set(ll + 1);
   }
@@ -774,22 +776,22 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
   for (int ll = init_bit_level + surf_levels;
        ll != init_bit_level + surf_levels + front_levels; ++ll) {
     CHKERR createLevelSets(update_front, verb, debug);
-    CHKERR refine(BitRefLevel().set(ll + 1).set(very_last_bit),
-                  cutFrontVolumes);
+    CHKERR refine(BitRefLevel().set(ll + 1), cutFrontVolumes);
     mask.set(ll + 1);
   }
 
   CHKERR createLevelSets(update_front, verb, debug);
 
   cerr << mask << endl;
-  cerr << BitRefLevel(mask).set(very_last_bit) << endl;
 
   Range very_last_bit_ents;
-  CHKERR bit_ref_manager->getEntitiesByRefLevel(
-      mask, BitRefLevel(mask).set(very_last_bit), very_last_bit_ents);
-  if (debug)
-    CHKERR SaveData(m_field.get_moab())("very_last_bit_ents.vtk",
-                                        very_last_bit_ents);
+  CHKERR bit_ref_manager->getEntitiesByRefLevel(mask, BitRefLevel().set(),
+                                                very_last_bit_ents);
+  // if (debug)
+  //   CHKERR SaveData(m_field.get_moab())("very_last_bit_ents.vtk",
+  //                                       very_last_bit_ents);
+
+  cerr << "very_last_bit " << very_last_bit << endl;
 
   CHKERR bit_ref_manager->resetBitRefLevel(
       very_last_bit_ents, BitRefLevel().set(very_last_bit),
@@ -1327,6 +1329,9 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   CHKERR refiner->refine_TET(vOlume, bit, false, QUIET,
                              debug ? &cutEdges : NULL);
 
+  if (cutEdges.size() != edgesToCut.size())
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
+
   cut_vols.clear();
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       bit, BitRefLevel().set(), MBTET, cut_vols);
@@ -1354,8 +1359,10 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
       cut_verts.insert(vert);
       verticesOnCutEdges[vert] = m.second;
     } else {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Vertex has wrong bit ref level");
+      SETERRQ1(
+          PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          "Vertex has wrong bit ref level %s",
+          boost::lexical_cast<std::string>(ref_ent->getBitRefLevel()).c_str());
     }
   }
 
