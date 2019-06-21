@@ -366,6 +366,45 @@ struct CutMeshInterface : public UnknownInterface {
 
   MoFEMErrorCode clearMap();
 
+  struct SaveData {
+    moab::Interface &moab;
+    SaveData(moab::Interface &moab) : moab(moab) {}
+    MoFEMErrorCode operator()(const std::string name, const Range &ents) {
+      MoFEMFunctionBegin;
+      EntityHandle meshset;
+      CHKERR moab.create_meshset(MESHSET_SET, meshset);
+      CHKERR moab.add_entities(meshset, ents);
+      CHKERR moab.write_file(name.c_str(), "VTK", "", &meshset, 1);
+      CHKERR moab.delete_entities(&meshset, 1);
+      MoFEMFunctionReturn(0);
+    }
+  };
+
+  struct LengthMapData {
+    double lEngth;
+    double qUality;
+    EntityHandle eDge;
+    bool skip;
+    LengthMapData(const double l, double q, const EntityHandle e)
+        : lEngth(l), qUality(q), eDge(e), skip(false) {}
+  };
+
+  typedef multi_index_container<
+      LengthMapData,
+      indexed_by<
+
+          ordered_non_unique<
+              member<LengthMapData, double, &LengthMapData::lEngth>>,
+
+          hashed_unique<
+              member<LengthMapData, EntityHandle, &LengthMapData::eDge>>,
+
+          ordered_non_unique<
+              member<LengthMapData, double, &LengthMapData::qUality>>
+
+          >>
+      LengthMapData_multi_index;
+
 private:
   Range fRont;
   Range sUrface;

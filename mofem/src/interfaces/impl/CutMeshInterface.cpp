@@ -17,25 +17,6 @@
 
 namespace MoFEM {
 
-// FIXME: Some definiton of classes, like SaveData or LengthMapData, can
-// generate conflicts. Those classes has to be packaged, such that will not
-// generate conflicts someware else in the code. In princliple this type
-// implementation is wrong and should be avoided.
-
-struct SaveData {
-  moab::Interface &moab;
-  SaveData(moab::Interface &moab) : moab(moab) {}
-  MoFEMErrorCode operator()(const std::string name, const Range &ents) {
-    MoFEMFunctionBegin;
-    EntityHandle meshset;
-    CHKERR moab.create_meshset(MESHSET_SET, meshset);
-    CHKERR moab.add_entities(meshset, ents);
-    CHKERR moab.write_file(name.c_str(), "VTK", "", &meshset, 1);
-    CHKERR moab.delete_entities(&meshset, 1);
-    MoFEMFunctionReturn(0);
-  }
-};
-
 MoFEMErrorCode
 CutMeshInterface::query_interface(const MOFEMuuid &uuid,
                                   UnknownInterface **iface) const {
@@ -1329,8 +1310,9 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   CHKERR refiner->refine_TET(vOlume, bit, false, QUIET,
                              debug ? &cutEdges : NULL);
 
-  if (cutEdges.size() != edgesToCut.size())
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
+  if (debug)
+    if (cutEdges.size() != edgesToCut.size())
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
 
   cut_vols.clear();
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
@@ -2007,31 +1989,6 @@ MoFEMErrorCode CutMeshInterface::splitSides(const BitRefLevel split_bit,
   }
   MoFEMFunctionReturn(0);
 }
-
-struct LengthMapData {
-  double lEngth;
-  double qUality;
-  EntityHandle eDge;
-  bool skip;
-  LengthMapData(const double l, double q, const EntityHandle e)
-      : lEngth(l), qUality(q), eDge(e), skip(false) {}
-};
-
-typedef multi_index_container<
-    LengthMapData,
-    indexed_by<
-
-        ordered_non_unique<
-            member<LengthMapData, double, &LengthMapData::lEngth>>,
-
-        hashed_unique<
-            member<LengthMapData, EntityHandle, &LengthMapData::eDge>>,
-
-        ordered_non_unique<
-            member<LengthMapData, double, &LengthMapData::qUality>>
-
-        >>
-    LengthMapData_multi_index;
 
 MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     const int fraction_level, const Range &tets, const Range &surface,
@@ -2723,12 +2680,11 @@ MoFEMErrorCode CutMeshInterface::setTagData(Tag th, const BitRefLevel bit) {
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   Range nodes;
-  if (bit.none()) {
+  if (bit.none())
     CHKERR moab.get_entities_by_type(0, MBVERTEX, nodes);
-  } else {
+  else
     CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         bit, BitRefLevel().set(), MBVERTEX, nodes);
-  }
   std::vector<double> coords(3 * nodes.size());
   CHKERR moab.get_coords(nodes, &coords[0]);
   CHKERR moab.tag_set_data(th, nodes, &coords[0]);
@@ -2741,12 +2697,11 @@ MoFEMErrorCode CutMeshInterface::setCoords(Tag th, const BitRefLevel bit,
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   Range nodes;
-  if (bit.none()) {
+  if (bit.none())
     CHKERR moab.get_entities_by_type(0, MBVERTEX, nodes);
-  } else {
+  else
     CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         bit, mask, MBVERTEX, nodes);
-  }
   std::vector<double> coords(3 * nodes.size());
   CHKERR moab.tag_get_data(th, nodes, &coords[0]);
   CHKERR moab.set_coords(nodes, &coords[0]);
