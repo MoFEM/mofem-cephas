@@ -156,18 +156,16 @@ int main(int argc, char *argv[]) {
     else
       CHKERR cut_mesh->setSurface(surface);
 
-   // CHKERR cut_mesh->snapSurfaceToEdges(fixed_edges, 0.5, 0);
+    // CHKERR cut_mesh->snapSurfaceToEdges(fixed_edges, 0.5, 0);
 
     Range tets;
     CHKERR moab.get_entities_by_dimension(0, 3, tets, false);
 
-
     CHKERR cut_mesh->setVolume(tets);
     CHKERR cut_mesh->makeFront(true);
     CHKERR cut_mesh->buildTree();
-    Range tmp_fixed_edges = fixed_edges;
-    CHKERR cut_mesh->refineMesh(false, 10, 2, 0, &tmp_fixed_edges, VERBOSE,
-                                true);
+    CHKERR cut_mesh->refineMesh(false, false, 10, 1, 0, &fixed_edges,
+                                VERBOSE, true);
 
     // Create tag storing nodal positions
     double def_position[] = {0, 0, 0};
@@ -203,7 +201,7 @@ int main(int argc, char *argv[]) {
         "cut_surface.vtk", cut_mesh->getNewCutSurfaces());
 
     BitRefLevel merge_bit = BitRefLevel().set(2);
-    CHKERR cut_mesh->mergeBadEdges(2, cut_bit, cut_bit, merge_bit,
+    CHKERR cut_mesh->mergeBadEdges(4, cut_bit, cut_bit, merge_bit,
                                    cut_mesh->getNewCutSurfaces(), fixed_edges,
                                    corner_nodes, th, true, true);
 
@@ -218,7 +216,16 @@ int main(int argc, char *argv[]) {
     CHKERR cut_mesh->splitSides(merge_bit, split_bit,
                                 cut_mesh->getMergedSurfaces(), th);
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-        split_bit, BitRefLevel().set(), MBPRISM, "split.vtk", "VTK", "");
+        split_bit, BitRefLevel().set(), MBPRISM, "split_prism.vtk", "VTK", "");
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        split_bit, BitRefLevel().set(), MBTET, "split_tets.vtk", "VTK", "");
+
+    tets.clear();
+    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
+        split_bit, BitRefLevel().set(), MBTET, tets);
+    CHKERR cut_mesh->setVolume(tets);
+    CHKERR cut_mesh->refineMesh(true, true, 20, 0, 0, &fixed_edges, VERBOSE,
+                                true);
 
     // shift[2] -= 0.8;
     // CHKERR cut_mesh->copySurface(surface, NULL, shift, NULL, NULL,

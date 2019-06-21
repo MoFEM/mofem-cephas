@@ -608,6 +608,16 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Tag th, Range &vol_edges,
 
   Range edges;
   CHKERR moab.get_adjacencies(vOlume, 1, true, edges, moab::Interface::UNION);
+  Range prisms;
+  CHKERR moab.get_adjacencies(edges, 3, false, prisms, moab::Interface::UNION);
+  prisms = prisms.subset_by_type(MBPRISM);
+  Range prisms_verts;
+  CHKERR moab.get_connectivity(prisms, prisms_verts, true);
+  Range prism_edges;
+  CHKERR moab.get_adjacencies(prisms_verts, 1, false, prism_edges,
+                              moab::Interface::UNION);
+  edges = subtract(edges, prism_edges);
+
   for (auto e : edges) {
 
     int num_nodes;
@@ -624,12 +634,12 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Tag th, Range &vol_edges,
       const auto dist0 = get_tag_data(th, conn[0]);
       const auto dist1 = get_tag_data(th, conn[1]);
       const double max_dist = std::max(norm_2(dist0), norm_2(dist1));
-      if (max_dist < length) {
+      if (max_dist <= length) {
         auto opposite = inner_prod(dist0, dist1);
-        if (opposite < 0) {
+        if (opposite <= 0) {
           const double sign_dist0 = signed_norm(dist0);
           const double sign_dist1 = signed_norm(dist1);
-          if (sign_dist0 > 0 && sign_dist1 < 0)
+          if (sign_dist0 >= 0 && sign_dist1 <= 0)
             cut_edges.insert(e);
         }
       }
@@ -679,9 +689,10 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(const bool update_front,
 }
 
 MoFEMErrorCode
-CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
-                             const int surf_levels, const int front_levels,
-                             Range *fixed_edges, int verb, const bool debug) {
+CutMeshInterface::refineMesh(const bool refine_front, const bool update_front,
+                             const int init_bit_level, const int surf_levels,
+                             const int front_levels, Range *fixed_edges,
+                             int verb, const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MeshRefinement *refiner;
@@ -718,8 +729,10 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
 
   auto refine = [&](const BitRefLevel bit, const Range tets) {
     MoFEMFunctionBegin;
+    Range verts;
+    CHKERR moab.get_connectivity(tets, verts, true);
     Range ref_edges;
-    CHKERR moab.get_adjacencies(tets, 1, true, ref_edges,
+    CHKERR moab.get_adjacencies(verts, 1, true, ref_edges,
                                 moab::Interface::UNION);
 
     cerr << ref_edges.size() << endl;
@@ -750,16 +763,22 @@ CutMeshInterface::refineMesh(const bool update_front, const int init_bit_level,
 
   for (int ll = init_bit_level; ll != init_bit_level + surf_levels; ++ll) {
     CHKERR createLevelSets(update_front, verb, debug);
-    CHKERR refine(BitRefLevel().set(ll + 1),
-                  unite(cutSurfaceVolumes, cutFrontVolumes));
+    if (refine_front)
+      CHKERR refine(BitRefLevel().set(ll + 1),
+                    unite(cutSurfaceVolumes, cutFrontVolumes));
+    else
+      CHKERR refine(BitRefLevel().set(ll + 1),
+                    subtract(cutSurfaceVolumes, cutFrontVolumes));
     mask.set(ll + 1);
   }
 
-  for (int ll = init_bit_level + surf_levels;
-       ll != init_bit_level + surf_levels + front_levels; ++ll) {
-    CHKERR createLevelSets(update_front, verb, debug);
-    CHKERR refine(BitRefLevel().set(ll + 1), cutFrontVolumes);
-    mask.set(ll + 1);
+  if (refine_front) {
+    for (int ll = init_bit_level + surf_levels;
+         ll != init_bit_level + surf_levels + front_levels; ++ll) {
+      CHKERR createLevelSets(update_front, verb, debug);
+      CHKERR refine(BitRefLevel().set(ll + 1), cutFrontVolumes);
+      mask.set(ll + 1);
+    }
   }
 
   CHKERR createLevelSets(update_front, verb, debug);
