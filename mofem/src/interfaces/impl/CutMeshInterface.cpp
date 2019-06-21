@@ -2029,9 +2029,11 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       Range out_tets;
       CHKERR nodeMergerPtr->mergeNodes(father, mother, out_tets, &vert_tets,
                                        onlyIfImproveQuality, 0, lineSearch, tH);
-      Range subtract_vert_tets = subtract(proc_tets, vert_tets);
-      out_tets.merge(subtract_vert_tets);
-      proc_tets.swap(out_tets);
+
+      for(auto t : vert_tets)
+        proc_tets.erase(t);
+      out_tets.insert(proc_tets.begin(), proc_tets.end());
+      proc_tets.swap(out_tets); 
 
       if (add_child && nodeMergerPtr->getSucessMerge()) {
 
