@@ -113,7 +113,7 @@ cd ~
 echo "$PWD"
   
 # Retrieve Spack for MoFEM
-git clone https://github.com/likask/spack.git
+git clone --single-branch -b mofem https://github.com/likask/spack.git
   
 # Initialise Spack environment variables:
 . $HOME/spack/share/spack/setup-env.sh
