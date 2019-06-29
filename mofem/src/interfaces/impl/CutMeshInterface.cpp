@@ -230,7 +230,7 @@ MoFEMErrorCode CutMeshInterface::snapSurfaceToEdges(const Range &surface_edges,
     double min_dist = rel_tol * m.second;
     FTensor::Tensor1<double, 3> t_min_coords;
     CHKERR cOre.getInterface<Tools>()->findMinDistanceFromTheEdges(
-        &t_n(0), fixed_edges, &min_dist, &t_min_coords(0));
+        &t_n(0), 1, fixed_edges, &min_dist, &t_min_coords(0));
 
     if (min_dist < rel_tol * m.second || min_dist < abs_tol) {
       if (th)
@@ -515,6 +515,21 @@ MoFEMErrorCode CutMeshInterface::refCutTrimAndMerge(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode CutMeshInterface::makeFront() {
+  CoreInterface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  MoFEMFunctionBegin;
+  Skinner skin(&moab);
+  Range tets_skin;
+  CHKERR skin.find_skin(0, vOlume, false, tets_skin);
+  Range tets_skin_edges;
+  CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
+                              moab::Interface::UNION);
+  Range surface_skin;
+  CHKERR skin.find_skin(0, sUrface, false, surface_skin);
+  fRont = subtract(surface_skin, tets_skin_edges);
+  MoFEMFunctionReturn(0);
+}
 
 MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
                                                 Range *corner_nodes,
@@ -646,7 +661,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range *fixed_edges,
   };
 
   auto get_ave_edge_length = [&](const EntityHandle ent,
-                                   const Range &vol_edges) {
+                                 const Range &vol_edges) {
     Range adj_edges;
     if (moab.type_from_handle(ent) == MBVERTEX) {
       CHKERR moab.get_adjacencies(&ent, 1, 1, false, adj_edges);
@@ -827,7 +842,7 @@ MoFEMErrorCode CutMeshInterface::refineBeforeCut(const BitRefLevel &bit,
   Range ref_edges;
   CHKERR moab.get_adjacencies(ref_edges_tets, 1, true, ref_edges,
                               moab::Interface::UNION);
-  CHKERR refiner->add_verices_in_the_middel_of_edges(ref_edges, bit);
+  CHKERR refiner->add_vertices_in_the_middel_of_edges(ref_edges, bit);
   CHKERR refiner->refine_TET(vOlume, bit, false, QUIET,
                              debug ? &cutEdges : NULL);
 
@@ -884,7 +899,7 @@ MoFEMErrorCode CutMeshInterface::refineBeforeTrim(const BitRefLevel &bit,
   Range ref_edges;
   CHKERR moab.get_adjacencies(vol_trim_edges, 1, true, ref_edges,
                               moab::Interface::UNION);
-  CHKERR refiner->add_verices_in_the_middel_of_edges(ref_edges, bit);
+  CHKERR refiner->add_vertices_in_the_middel_of_edges(ref_edges, bit);
   CHKERR refiner->refine_TET(cutNewVolumes, bit, false, QUIET,
                              debug ? &cutEdges : NULL);
 
@@ -1281,7 +1296,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   }
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR refiner->add_verices_in_the_middel_of_edges(cutEdges, bit);
+  CHKERR refiner->add_vertices_in_the_middel_of_edges(cutEdges, bit);
   CHKERR refiner->refine_TET(vOlume, bit, false, QUIET,
                              debug ? &cutEdges : NULL);
   cutNewVolumes.clear();
@@ -1820,7 +1835,7 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
 
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR refiner->add_verices_in_the_middel_of_edges(trimEdges, bit);
+  CHKERR refiner->add_vertices_in_the_middel_of_edges(trimEdges, bit);
   CHKERR refiner->refine_TET(cutNewVolumes, bit, false, QUIET,
                              debug ? &trimEdges : NULL);
 
@@ -1930,7 +1945,7 @@ CutMeshInterface::removePathologicalFrontTris(const BitRefLevel split_bit,
   // Remove entities on skin
   Skinner skin(&moab);
   Range tets_skin;
-  rval = skin.find_skin(0, tets, false, tets_skin);
+  CHKERR skin.find_skin(0, tets, false, tets_skin);
   ents = subtract(ents, tets_skin);
 
   MoFEMFunctionReturn(0);
@@ -2437,7 +2452,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
           int num_nodes;
           const EntityHandle *conn;
-          rval = moab.get_connectivity(*eit, conn, num_nodes, true);
+          CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
           double coords[6];
           if (tH)
             CHKERR moab.tag_get_data(tH, conn, num_nodes, coords);
@@ -2781,7 +2796,7 @@ MoFEMErrorCode CutMeshInterface::rebuildMeshWithTetGen(
       moab::Interface &moab = mField.get_moab();
       MoFEMFunctionBeginHot;
       Skinner skin(&moab);
-      rval = skin.find_skin(0, sVols, false, vSkin);
+      CHKERR skin.find_skin(0, sVols, false, vSkin);
       for (int ll = 0; ll != levels; ll++) {
         CHKERR moab.get_adjacencies(vSkin, 3, false, sVols,
                                     moab::Interface::UNION);

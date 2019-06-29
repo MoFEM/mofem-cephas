@@ -78,13 +78,11 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
     // create one tet
-    double tri_coords[] = {
-        0, 0, 0,  .5, 0,
-        0, 0, 1., 0
-        // 0,0,0,
-        // 1,0,0,
-        // 0,1,0
-    };
+    double tri_coords[] = {0,   0,   0,
+
+                           0.5, 0,   0,
+
+                           0,   2., 0};
     EntityHandle nodes[3];
     for (int nn = 0; nn < 3; nn++) {
       CHKERR moab.create_vertex(&tri_coords[3 * nn], nodes[nn]);
@@ -215,7 +213,7 @@ int main(int argc, char *argv[]) {
             const double dksi =
                 (data.getN()(1, dd) - data.getN()(0, dd)) / (eps);
             const double deta =
-                (data.getN()(3, dd) - data.getN()(2, dd)) / (2 * eps);
+                (data.getN()(3, dd) - data.getN()(2, dd)) / (4 * eps);
             mySplit << "DKsi " << dksi << std::endl;
             mySplit << "DEta " << deta << std::endl;
             mySplit << "diffN " << data.getDiffN()(4, 2 * dd + 0) << std::endl;
@@ -269,7 +267,7 @@ int main(int argc, char *argv[]) {
             FTensor::Tensor1<double, 3> dksi;
             dksi(i) = (base_ksi_p(i) - base_ksi_m(i)) / (eps);
             FTensor::Tensor1<double, 3> deta;
-            deta(i) = (base_eta_p(i) - base_eta_m(i)) / (2 * eps);
+            deta(i) = (base_eta_p(i) - base_eta_m(i)) / (4 * eps);
             mySplit << "Finite difference dKsi " << dksi(0) << "  " << dksi(1)
                     << " " << dksi(2) << endl;
             mySplit << "Finite difference dEta " << deta(0) << "  " << deta(1)
@@ -361,7 +359,7 @@ int main(int argc, char *argv[]) {
     tri_fe.getOpPtrVector().push_back(new OpCheckingDirevatives(my_split));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TRI_FE", tri_fe);
     
-    // cerr << inv_jac << endl;
+    cerr << inv_jac << endl;
   }
   CATCH_ERRORS;
 

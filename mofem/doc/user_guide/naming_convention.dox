@@ -275,6 +275,10 @@ CHKERR fun();
     existing code uses regular pointer, take opportunity and change it to smart
     pointer.
 
+  - Use \ref MoFEM::SmartPetscObj to create PETSc objects. SmartPetscObj will mangage
+    ownership and destrcution of PETSc objects like Vec, Mat, KSP, SNES, IS and
+    all others.
+
   - Check program with line command argument -log_view, verifying if number of created PTESc
     objects is equal to number of destroyed objects 
 \code

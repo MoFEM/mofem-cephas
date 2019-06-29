@@ -57,7 +57,10 @@ struct Simple : public UnknownInterface {
    * @param  field_name file name
    * @return            error code
    */
-  MoFEMErrorCode loadFile();
+  MoFEMErrorCode
+  loadFile(const std::string options = "PARALLEL=READ_PART;"
+                                       "PARALLEL_RESOLVE_SHARED_ENTS;"
+                                       "PARTITION=PARALLEL_PARTITION;");
 
   /**
    * \brief Add field on domain
@@ -188,7 +191,7 @@ struct Simple : public UnknownInterface {
    * \brief Setup problem
    * @return error code
    */
-  MoFEMErrorCode setUp();
+  MoFEMErrorCode setUp(const PetscBool is_partitioned = PETSC_TRUE);
 
   /**
    * \brief Get DM
@@ -215,13 +218,15 @@ struct Simple : public UnknownInterface {
   inline SmartPetscObj<DM> getDM() { return dM; }
 
   inline int getDim() const { return dIm; }
-  inline const std::string &getDomainFEName() const { return domainFE; }
-  inline const std::string &getBoundaryFEName() const { return boundaryFE; }
-  inline const std::string &getSkeletonFEName() const { return skeletonFE; }
+  inline const std::string getDomainFEName() const { return domainFE; }
+  inline const std::string getBoundaryFEName() const { return boundaryFE; }
+  inline const std::string getSkeletonFEName() const { return skeletonFE; }
+  inline const std::string getProblemName() const { return nameOfProblem; }
 
   inline std::string &getDomainFEName() { return domainFE; }
   inline std::string &getBoundaryFEName() { return boundaryFE; }
   inline std::string &getSkeletonFEName() { return skeletonFE; }
+  inline std::string &getProblemName() { return nameOfProblem; }
 
   inline std::vector<std::string> &getOtherFiniteElements() { return otherFEs; }
 
@@ -236,7 +241,6 @@ private:
 
   EntityHandle meshSet;                    ///< domain meshset
   EntityHandle boundaryMeshset;            ///< meshset with boundary
-  std::string nameOfProblem;               ///< problem name
   std::vector<std::string> domainFields;   ///< domain fields
   std::vector<std::string> boundaryFields; ///< boundary fields
   std::vector<std::string> skeletonFields; ///< fields on the skeleton
@@ -244,6 +248,7 @@ private:
 
   std::map<std::string, std::pair<int, Range>> fieldsOrder; ///< fields order
 
+  std::string nameOfProblem; ///< problem name
   std::string domainFE;   ///< domain finite element
   std::string boundaryFE; ///< boundary finite element
   std::string skeletonFE; ///< skeleton finite element

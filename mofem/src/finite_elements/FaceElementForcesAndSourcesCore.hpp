@@ -1,9 +1,6 @@
 /** \file FaceElementForcesAndSourcesCore.hpp
   \brief Implementation of face element.
 
-  Those element are inherited by user to implement specific implementation of
-  particular problem.
-
 */
 
 /* This file is part of MoFEM.
@@ -112,7 +109,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       double *ptr = &*getNormal().data().begin();
       return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
     }
-    
+
     /// \deprecated use getFTensor1Normal()
     DEPRECATED inline auto getTensor1Normal() { return getFTensor1Normal(); }
 
@@ -181,9 +178,7 @@ struct FaceElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     }
 
     /// \deprecated use getFTensor1Coords
-    DEPRECATED inline auto getTensor1Coords() {
-      return getFTensor1Coords(); }
-
+    DEPRECATED inline auto getTensor1Coords() { return getFTensor1Coords(); }
 
     /** \brief Gauss points and weight, matrix (nb. of points x 3)
 
@@ -475,15 +470,17 @@ derivatives
 */
 struct OpSetInvJacH1ForFace
     : public FaceElementForcesAndSourcesCore::UserDataOperator {
-  MatrixDouble &invJac;
 
   OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
       : FaceElementForcesAndSourcesCore::UserDataOperator(H1), invJac(inv_jac) {
   }
 
-  MatrixDouble diffNinvJac;
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
+
+private:
+  MatrixDouble &invJac;
+  MatrixDouble diffNinvJac;
 };
 
 /**
@@ -495,29 +492,17 @@ struct OpSetInvJacH1ForFace
 struct OpSetInvJacHcurlFace
     : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-  MatrixDouble &invJac;
-
-  // /**
-  //  * \deprecated Field name do not needed to construct class, change v0.5.17.
-  //  */
-  // DEPRECATED OpSetInvJacHcurlFace(const std::string &field_name,MatrixDouble
-  // &inv_jac): FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
-  // invJac(inv_jac) {
-  // }
-
   OpSetInvJacHcurlFace(MatrixDouble &inv_jac)
       : FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
         invJac(inv_jac) {}
 
-  MatrixDouble diffHcurlInvJac;
-
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
-};
 
-/// \deprecated Use FaceElementForcesAndSourcesCore
-DEPRECATED typedef FaceElementForcesAndSourcesCore
-    FaceElementForcesAndSurcesCore;
+private:
+  MatrixDouble &invJac;
+  MatrixDouble diffHcurlInvJac;
+};
 
 } // namespace MoFEM
 
@@ -526,6 +511,6 @@ DEPRECATED typedef FaceElementForcesAndSourcesCore
 /**
  * \defgroup mofem_forces_and_sources_tri_element Face Element
  * \brief Implementation of face element
- * 
+ *
  * \ingroup mofem_forces_and_sources
- ******************************************************************************/
+ **/

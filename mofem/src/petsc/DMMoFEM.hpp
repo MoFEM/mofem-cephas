@@ -223,7 +223,7 @@ PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const std::string &fe_name,
+DMoFEMLoopFiniteElementsUpAndLowRank(DM dm, const std::string fe_name,
                                      boost::shared_ptr<MoFEM::FEMethod> method,
                                      int low_rank, int up_rank);
 
@@ -247,7 +247,7 @@ PetscErrorCode DMoFEMLoopFiniteElements(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMoFEMLoopFiniteElements(DM dm, const std::string &fe_name,
+DMoFEMLoopFiniteElements(DM dm, const std::string fe_name,
                          boost::shared_ptr<MoFEM::FEMethod> method);
 
 /**
@@ -281,7 +281,7 @@ PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMMoFEMKSPSetComputeRHS(DM dm, const std::string &fe_name,
+DMMoFEMKSPSetComputeRHS(DM dm, const std::string fe_name,
                         boost::shared_ptr<MoFEM::FEMethod> method,
                         boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                         boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -318,7 +318,7 @@ PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMMoFEMKSPSetComputeOperators(DM dm, const std::string &fe_name,
+DMMoFEMKSPSetComputeOperators(DM dm, const std::string fe_name,
                               boost::shared_ptr<MoFEM::FEMethod> method,
                               boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                               boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -337,7 +337,7 @@ PetscErrorCode DMMoFEMSNESSetFunction(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMMoFEMSNESSetFunction(DM dm, const std::string &fe_name,
+DMMoFEMSNESSetFunction(DM dm, const std::string fe_name,
                        boost::shared_ptr<MoFEM::FEMethod> method,
                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                        boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -356,7 +356,7 @@ PetscErrorCode DMMoFEMSNESSetJacobian(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMMoFEMSNESSetJacobian(DM dm, const std::string &fe_name,
+DMMoFEMSNESSetJacobian(DM dm, const std::string fe_name,
                        boost::shared_ptr<MoFEM::FEMethod> method,
                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                        boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -375,7 +375,7 @@ PetscErrorCode DMMoFEMTSSetIFunction(DM dm, const char fe_name[],
  * \ingroup dm
  */
 PetscErrorCode
-DMMoFEMTSSetIFunction(DM dm, const std::string &fe_name,
+DMMoFEMTSSetIFunction(DM dm, const std::string fe_name,
                       boost::shared_ptr<MoFEM::FEMethod> method,
                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                       boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -385,7 +385,7 @@ DMMoFEMTSSetIFunction(DM dm, const std::string &fe_name,
  * \ingroup dm
  */
 PetscErrorCode
-DMMoFEMTSSetIJacobian(DM dm, const std::string &fe_name,
+DMMoFEMTSSetIJacobian(DM dm, const std::string fe_name,
                       boost::shared_ptr<MoFEM::FEMethod> method,
                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
                       boost::shared_ptr<MoFEM::BasicMethod> post_only);
@@ -398,6 +398,125 @@ PetscErrorCode DMMoFEMTSSetIJacobian(DM dm, const char fe_name[],
                                      MoFEM::FEMethod *method,
                                      MoFEM::BasicMethod *pre_only,
                                      MoFEM::BasicMethod *post_only);
+
+/**
+ * @brief set TS the right hand side function
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetRHSFunction.html#TSSetRHSFunction>See
+ * petsc documentation</a>
+ *
+ * @param dm
+ * @param fe_name
+ * @param method
+ * @param pre_only
+ * @param post_only
+ * @return PetscErrorCode
+ */
+PetscErrorCode
+DMMoFEMTSSetRHSFunction(DM dm, const std::string fe_name,
+                        boost::shared_ptr<MoFEM::FEMethod> method,
+                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                        boost::shared_ptr<MoFEM::BasicMethod> post_only);
+
+/**
+ * @brief set TS the right hand side function
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetRHSFunction.html#TSSetRHSFunction>See
+ * petsc documentation</a>
+ *
+ * @param dm
+ * @param fe_name
+ * @param method
+ * @param pre_only
+ * @param post_only
+ * @return PetscErrorCode
+ */
+PetscErrorCode DMMoFEMTSSetRHSFunction(DM dm, const char fe_name[],
+                                       MoFEM::FEMethod *method,
+                                       MoFEM::BasicMethod *pre_only,
+                                       MoFEM::BasicMethod *post_only);
+
+/**
+ * @brief set TS the right hand side jacobian
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetRHSJacobian.html>See
+ * petsc documentation</a>
+ *
+ * @param dm
+ * @param fe_name
+ * @param method
+ * @param pre_only
+ * @param post_only
+ * @return PetscErrorCode
+ */
+PetscErrorCode
+DMMoFEMTSSetRHSJacobian(DM dm, const std::string fe_name,
+                        boost::shared_ptr<MoFEM::FEMethod> method,
+                        boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                        boost::shared_ptr<MoFEM::BasicMethod> post_only);
+
+/**
+ * @brief set TS the right hand side jacobian
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetRHSJacobian.html>See
+ * petsc documentation</a>
+ *
+ * @param dm
+ * @param fe_name
+ * @param method
+ * @param pre_only
+ * @param post_only
+ * @return PetscErrorCode
+ */
+PetscErrorCode DMMoFEMTSSetRHSJacobian(DM dm, const char fe_name[],
+                                       MoFEM::FEMethod *method,
+                                       MoFEM::BasicMethod *pre_only,
+                                       MoFEM::BasicMethod *post_only);
+
+/**
+ * @brief Set Monitor To TS solver
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSMonitorSet.html>See
+ * PETSc documentaton here</a>
+ *
+ * @param dm
+ * @param ts time solver
+ * @param fe_name
+ * @param method
+ * @param pre_only
+ * @param post_only
+ * @return PetscErrorCod
+ */
+PetscErrorCode
+DMMoFEMTSSetMonitor(DM dm, TS ts, const std::string fe_name,
+                    boost::shared_ptr<MoFEM::FEMethod> method,
+                    boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                    boost::shared_ptr<MoFEM::BasicMethod> post_only);
+
+/**
+ * @brief Set Monitor To TS solver
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSMonitorSet.html>See
+ * PETSc documentaton here</a>
+ *
+ * @param dm
+ * @param ts time solver
+ * @param fe_name
+ * @param method
+ * @param pre_only
+ * @param post_only
+ * @return PetscErrorCod
+ */
+PetscErrorCode DMMoFEMTSSetMonitor(DM dm, TS ts, const char fe_name[],
+                                   MoFEM::FEMethod *method,
+                                   MoFEM::BasicMethod *pre_only,
+                                   MoFEM::BasicMethod *post_only);
 
 /**
  * \brief get MoFEM::KspCtx data structure
@@ -503,6 +622,15 @@ PetscErrorCode DMDestroy_MoFEM(DM dm);
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, Vec *g);
 
 /**
+ * \brief DMShellSetCreateGlobalVector
+ * \ingroup dm
+ *
+ * sets the routine to create a global vector
+ * associated with the shell DM
+ */
+PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, SmartPetscObj<Vec> &g_ptr);
+
+/**
  * \brief DMShellSetCreateLocalVector
  * \ingroup dm
  *
@@ -518,6 +646,14 @@ PetscErrorCode DMCreateLocalVector_MoFEM(DM dm, Vec *l);
  * sets the routine to create a matrix associated with the shell DM
  */
 PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M);
+
+/**
+ * DMShellSetCreateMatrix
+ * \ingroup dm
+ *
+ * sets the routine to create a matrix associated with the shell DM
+ */
+PetscErrorCode DMCreateMatrix_MoFEM(DM dm, SmartPetscObj<Mat> &M);
 
 /**
  * Set options for MoFEM DM
@@ -787,14 +923,14 @@ struct DMCtx : public UnknownInterface {
 #endif //__DMMMOFEM_H
 
 /***************************************************************************/ /**
- * \defgroup dm Distributed mesh manager
- * \brief Implementation of PETSc DM, managing interactions between mesh data structures and vectors and matrices
- *
- * DM objects are used to manage communication between the algebraic structures in
- * PETSc (Vec and Mat) and mesh data structures in PDE-based (or other)
- * simulations.
- *
- * DM is abstract interface, here is it particular implementation for MoFEM code.
- *
- * \ingroup mofem
- ******************************************************************************/
+                                                                               * \defgroup dm Distributed mesh manager
+                                                                               * \brief Implementation of PETSc DM, managing interactions between mesh data structures and vectors and matrices
+                                                                               *
+                                                                               * DM objects are used to manage communication between the algebraic structures in
+                                                                               * PETSc (Vec and Mat) and mesh data structures in PDE-based (or other)
+                                                                               * simulations.
+                                                                               *
+                                                                               * DM is abstract interface, here is it particular implementation for MoFEM code.
+                                                                               *
+                                                                               * \ingroup mofem
+                                                                               ******************************************************************************/

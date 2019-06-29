@@ -32,6 +32,15 @@ struct TsCtx {
   std::string problemName;
   MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
 
+  /// \deprecated use PairNameFEMethodPtr
+  DEPRECATED typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
+
+  /// \deprecated use FEMethodsSequence
+  DEPRECATED typedef MoFEM::FEMethodsSequence loops_to_do_type;
+
+  /// \deprecated use BasicMethodsSequence
+  DEPRECATED typedef MoFEM::BasicMethodsSequence basic_method_to_do;
+
   typedef MoFEM::PairNameFEMethodPtr PairNameFEMethodPtr;
   typedef MoFEM::FEMethodsSequence FEMethodsSequence;
   typedef MoFEM::BasicMethodsSequence BasicMethodsSequence;
@@ -52,13 +61,8 @@ struct TsCtx {
   BasicMethodsSequence postProcess_RHSJacobian;
   BasicMethodsSequence postProcess_RHSFunction;
 
-  PetscLogEvent MOFEM_EVENT_TsCtxRHSFunction;
-  PetscLogEvent MOFEM_EVENT_TsCtxRHSJacobian;
-  PetscLogEvent MOFEM_EVENT_TsCtxIFunction;
-  PetscLogEvent MOFEM_EVENT_TsCtxIJacobian;
-  PetscLogEvent MOFEM_EVENT_TsCtxMonitor;
-
   bool zeroMatrix;
+
   TsCtx(MoFEM::Interface &m_field, const std::string &problem_name)
       : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
         bH(MF_EXIST), zeroMatrix(true) {
@@ -70,6 +74,7 @@ struct TsCtx {
                           &MOFEM_EVENT_TsCtxRHSJacobian);
     PetscLogEventRegister("LoopTsMonitor", 0, &MOFEM_EVENT_TsCtxMonitor);
   }
+
 
   /**
    * @brief Get the loops to do IFunction object
@@ -225,10 +230,22 @@ struct TsCtx {
                                        PetscReal a, Mat A, Mat B, void *ctx);
   friend PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
                                      void *ctx);
-  friend PetscErrorCode TSSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F,
+  friend PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F,
                                          void *ctx);
-  friend PetscErrorCode TSSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A,
+  friend PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A,
                                          Mat B, void *ctx);
+
+private:
+
+  PetscLogEvent MOFEM_EVENT_TsCtxRHSFunction;
+  PetscLogEvent MOFEM_EVENT_TsCtxRHSJacobian;
+  PetscLogEvent MOFEM_EVENT_TsCtxIFunction;
+  PetscLogEvent MOFEM_EVENT_TsCtxIJacobian;
+  PetscLogEvent MOFEM_EVENT_TsCtxMonitor;
+
+  boost::movelib::unique_ptr<bool> vecAssembleSwitch;
+  boost::movelib::unique_ptr<bool> matAssembleSwitch;
+
 };
 
 /**
@@ -286,6 +303,25 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
 PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
                             void *ctx);
 
+/// \deprecate Do not use, change to TsSetIFunction
+DEPRECATED inline PetscErrorCode f_TSSetIFunction(TS ts, PetscReal t, Vec u,
+                                                  Vec u_t, Vec F, void *ctx) {
+  return TsSetIFunction(ts, t, u, u_t, F, ctx);
+}
+
+/// \deprecated Do not use, change to TsSetIJacobian
+DEPRECATED inline PetscErrorCode f_TSSetIJacobian(TS ts, PetscReal t, Vec u,
+                                                  Vec u_t, PetscReal a, Mat A,
+                                                  Mat B, void *ctx) {
+  return TsSetIJacobian(ts, t, u, u_t, a, A, B, ctx);
+}
+
+/// \deprecated Do not use, change to TsMonitorSet
+DEPRECATED inline PetscErrorCode f_TSMonitorSet(TS ts, PetscInt step,
+                                                PetscReal t, Vec u, void *ctx) {
+  return TsMonitorSet(ts, step, t, u, ctx);
+}
+
 /**
  * @brief TS solver function
  *
@@ -300,7 +336,7 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
  * @param ctx
  * @return PetscErrorCode
  */
-PetscErrorCode TSSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx);
+PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx);
 
 /**
  * @brief TS solver function
@@ -317,7 +353,7 @@ PetscErrorCode TSSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx);
  * @param ctx
  * @return PetscErrorCode
  */
-PetscErrorCode TSSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
+PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
                                 void *ctx);
 
 } // namespace MoFEM

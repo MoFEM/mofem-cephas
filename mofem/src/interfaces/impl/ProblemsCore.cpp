@@ -692,9 +692,10 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
 
   typedef multi_index_container<
       boost::shared_ptr<FieldEntity>,
-      indexed_by<ordered_unique<
-          tag<Ent_mi_tag>,
-          const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt>>>>
+      indexed_by<
+          ordered_unique<tag<Ent_mi_tag>,
+                         const_mem_fun<FieldEntity::interface_RefEntity,
+                                       EntityHandle, &FieldEntity::getRefEnt>>>>
       FieldEntity_view_multiIndex;
 
   FieldEntity_view_multiIndex ents_view;
@@ -705,7 +706,7 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
   method.nInTheLoop = 0;
 
   if (ents)
-    for (auto p = ents->const_pair_begin(); p != ents->const_pair_end(); ++p)
+    for (auto p = ents->const_pair_begin(); p != ents->const_pair_end(); ++p) 
       for (auto feit = ents_view.lower_bound(p->first);
            feit != ents_view.upper_bound(p->second); ++feit) {
         method.entPtr = *feit;

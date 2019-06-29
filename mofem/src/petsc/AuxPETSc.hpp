@@ -68,7 +68,8 @@ struct PairNameFEMethodPtr : public std::pair<std::string, FEMethod *> {
 
   PairNameFEMethodPtr(std::string name, FEMethod *ptr)
       : std::pair<std::string, FEMethod *>(name, ptr) {}
-  PairNameFEMethodPtr(std::string name, boost::shared_ptr<FEMethod> &ptr)
+  template <typename FEMETHOD>
+  PairNameFEMethodPtr(std::string name, boost::shared_ptr<FEMETHOD> ptr)
       : std::pair<std::string, FEMethod *>(name, ptr.get()), fePtr(ptr) {}
   virtual ~PairNameFEMethodPtr() {}
 
@@ -85,9 +86,8 @@ private:
 
 struct BasicMethodPtr {
   BasicMethodPtr(BasicMethod *ptr) : rawPtr(ptr) {}
-  BasicMethodPtr(boost::shared_ptr<BasicMethod> &ptr)
-      : rawPtr(ptr.get()), bmPtr(ptr) {}
-  BasicMethodPtr(boost::shared_ptr<FEMethod> &ptr)
+  template <typename BASICMETHOD>
+  BasicMethodPtr(boost::shared_ptr<BASICMETHOD> ptr)
       : rawPtr(ptr.get()), bmPtr(ptr) {}
   inline BasicMethod &operator*() const { return *rawPtr; };
   inline BasicMethod *operator->() const { return rawPtr; }
@@ -208,6 +208,27 @@ auto smartVectorDuplicate = [](SmartPetscObj<Vec> &vec) {
   } else {
     return SmartPetscObj<Vec>();
   }
+};
+
+auto createTS = [](MPI_Comm comm) {
+  TS ts;
+  ierr = TSCreate(PETSC_COMM_WORLD, &ts);
+  CHKERRABORT(comm, ierr);
+  return SmartPetscObj<TS>(ts);
+};
+
+auto createSNES = [](MPI_Comm comm) {
+  SNES snes;
+  ierr = SNESCreate(PETSC_COMM_WORLD, &snes);
+  CHKERRABORT(comm, ierr);
+  return SmartPetscObj<SNES>(snes);
+};
+
+auto createKSP = [](MPI_Comm comm) {
+  KSP ksp;
+  ierr = KSPCreate(PETSC_COMM_WORLD, &ksp);
+  CHKERRABORT(comm, ierr);
+  return SmartPetscObj<KSP>(ksp);
 };
 
 } // namespace MoFEM

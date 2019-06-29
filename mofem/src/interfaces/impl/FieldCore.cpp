@@ -342,11 +342,10 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         miit->get()->getNameRef());
     std::copy(eiit, hi_eiit, std::back_inserter(ents_id_view));
   }
-  if (verb > VERBOSE) {
+  if (verb > VERBOSE)
     PetscSynchronizedPrintf(
         cOmm, "nb. of ents in the multi index field <%s> %d\n",
         miit->get()->getName().c_str(), ents_id_view.size());
-  }
 
   // loop over ents
   int nb_ents_set_order_up = 0;
@@ -740,20 +739,30 @@ Core::buildFieldForNoField(const BitFieldId id,
   auto &set_id = fIelds.get<BitFieldId_mi_tag>();
   // find fields
   auto miit = set_id.find(id);
-  if (miit == set_id.end()) {
+  if (miit == set_id.end())
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "field not found");
-  }
 
   // ents in the field meshset
   Range ents_of_id_meshset;
   CHKERR get_moab().get_entities_by_handle((*miit)->meshSet, ents_of_id_meshset,
                                            false);
-  if (verb > VERY_NOISY) {
+  if (verb > VERY_NOISY)
     PetscSynchronizedPrintf(cOmm, "ents in field %s meshset %d\n",
                             (*miit)->getName().c_str(),
                             ents_of_id_meshset.size());
+
+  // ent view by field id (in set all MoabEnts has the same FieldId)
+  auto eiit =
+      entsFields.get<FieldName_mi_tag>().lower_bound(miit->get()->getNameRef());
+  FieldEntity_multiIndex_ent_view ents_id_view;
+  if (eiit != entsFields.get<FieldName_mi_tag>().end()) {
+    auto hi_eiit = entsFields.get<FieldName_mi_tag>().upper_bound(
+        miit->get()->getNameRef());
+    std::copy(eiit, hi_eiit, std::back_inserter(ents_id_view));
   }
+
   boost::shared_ptr<const int> zero_order(new const int(0));
+
   for (Range::iterator eit = ents_of_id_meshset.begin();
        eit != ents_of_id_meshset.end(); eit++) {
     // search if field meshset is in database
@@ -764,35 +773,57 @@ Core::buildFieldForNoField(const BitFieldId id,
               "Entity is not in MoFEM database, entities in field meshset need "
               "to be seeded (i.e. bit ref level add to them)");
     }
-    std::pair<FieldEntity_multiIndex::iterator, bool> e_miit;
-    // create database entity
-    e_miit = entsFields.insert(boost::shared_ptr<FieldEntity>(new FieldEntity(
-        *miit, *miit_ref_ent,
-        FieldEntity::makeSharedFieldDataAdaptorPtr(*miit, *miit_ref_ent),
-        boost::shared_ptr<const int>(zero_order, zero_order.get()))));
-    FieldCoefficientsNumber rank = 0;
-    // create dofs on this entity (nb. of dofs is equal to rank)
-    for (; rank < (*e_miit.first)->getNbOfCoeffs(); rank++) {
-      std::pair<DofEntity_multiIndex::iterator, bool> d_miit;
-      // check if dof is in darabase
-      d_miit.first = dofsField.project<0>(dofsField.get<Unique_mi_tag>().find(
-          DofEntity::getGlobalUniqueIdCalculate(rank, *(e_miit.first))));
-      // if dof is not in database
-      if (d_miit.first == dofsField.end()) {
+
+    auto add_dofs = [&](auto field_eit) {
+      MoFEMFunctionBegin;
+      // create dofs on this entity (nb. of dofs is equal to rank)
+      for (FieldCoefficientsNumber rank = 0; rank < (*miit)->getNbOfCoeffs();
+           rank++) {
+        std::pair<DofEntity_multiIndex::iterator, bool> d_miit;
         // insert dof
         d_miit = dofsField.insert(
-            boost::make_shared<DofEntity>(*(e_miit.first), 0, rank, rank));
+            boost::make_shared<DofEntity>(field_eit, 0, rank, rank, true));
         if (d_miit.second) {
           dof_counter[MBENTITYSET]++; // Count entities in the meshset
-        }
-        bool success =
-            dofsField.modify(d_miit.first, DofEntity_active_change(true));
-        if (!success)
+        } else {
           SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                  "modification unsuccessful");
+                  "Dof should be created");
+        }
       }
+      MoFEMFunctionReturn(0);
+    };
+
+    // create database entity
+    auto field_eit = ents_id_view.get<1>().find(*eit);
+    if (field_eit == ents_id_view.get<1>().end()) {
+
+      std::pair<FieldEntity_multiIndex::iterator, bool> e_miit;
+      e_miit = entsFields.insert(boost::make_shared<FieldEntity>(
+          *miit, *miit_ref_ent,
+          FieldEntity::makeSharedFieldDataAdaptorPtr(*miit, *miit_ref_ent),
+          boost::shared_ptr<const int>(zero_order, zero_order.get())));
+
+      if (!e_miit.second)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Entity should be created");
+
+      CHKERR add_dofs(*(e_miit.first));
+     
+
+    } else {
+
+      // If there are DOFs in that range is more pragmatic to remove them
+      // rather than to find sub-ranges or make them inactive
+      auto dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
+          boost::make_tuple((*miit)->getNameRef(), *eit));
+      auto hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+          boost::make_tuple((*miit)->getNameRef(), *eit));
+      dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
+
+      CHKERR add_dofs(*field_eit);
     }
   }
+
   if (verb > VERY_VERBOSE) {
     auto lo_dof = dofsField.get<FieldName_mi_tag>().lower_bound(
         miit->get()->getNameRef());
@@ -805,6 +836,7 @@ Core::buildFieldForNoField(const BitFieldId id,
     }
     PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
   }
+
   MoFEMFunctionReturn(0);
 }
 
@@ -847,8 +879,8 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
     auto hi_feit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
         boost::make_tuple(field_name, second));
 
-    // If there are DOFs in that range is more pragmatic to remove them rather
-    // than to find sub-ranges or make them inactive
+    // If there are DOFs in that range is more pragmatic to remove them
+    // rather than to find sub-ranges or make them inactive
     auto dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
         boost::make_tuple(field_name, first));
     auto hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
@@ -933,8 +965,8 @@ MoFEMErrorCode Core::buildField(const boost::shared_ptr<Field> &field,
   std::map<EntityType, int> dof_counter;
   std::map<EntityType, int> inactive_dof_counter;
 
-  // Need to rebuild order table since number of dofs on each order when field
-  // was created.
+  // Need to rebuild order table since number of dofs on each order when
+  // field was created.
   if (field->getApproxBase() == USER_BASE)
     CHKERR field->rebuildDofsOrderMap();
 

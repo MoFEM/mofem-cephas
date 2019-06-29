@@ -58,9 +58,6 @@ struct KspCtx {
   BasicMethodsSequence
       postProcess_Rhs; ///< Sequence of methods run after residual is assembled
 
-  PetscLogEvent MOFEM_EVENT_KspRhs;
-  PetscLogEvent MOFEM_EVENT_KspMat;
-
   KspCtx(MoFEM::Interface &m_field, const std::string &_problem_name)
       : mField(m_field), moab(m_field.get_moab()), problemName(_problem_name),
         bH(MF_EXIST) {
@@ -113,6 +110,15 @@ struct KspCtx {
 
   friend PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx);
   friend PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx);
+
+private:
+
+  PetscLogEvent MOFEM_EVENT_KspRhs;
+  PetscLogEvent MOFEM_EVENT_KspMat;
+
+  boost::movelib::unique_ptr<bool> vecAssembleSwitch;
+  boost::movelib::unique_ptr<bool> matAssembleSwitch;
+
 };
 
 /**

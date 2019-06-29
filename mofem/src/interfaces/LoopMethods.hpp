@@ -313,6 +313,10 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
    *
    */
   virtual MoFEMErrorCode postProcess();
+
+  boost::movelib::unique_ptr<bool> vecAssembleSwitch;
+  boost::movelib::unique_ptr<bool> matAssembleSwitch;
+
 };
 
 /**

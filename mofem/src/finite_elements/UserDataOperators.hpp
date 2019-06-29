@@ -98,34 +98,96 @@ struct OpCalculateScalarFieldValues
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
-    const int nb_dofs = data.getFieldData().size();
-    if (!nb_dofs && type == this->zeroType) {
-      dataPtr->resize(0, false);
-    }
-    if (!nb_dofs) {
-      MoFEMFunctionReturnHot(0);
-    }
-    const int nb_gauss_pts = data.getN().size1();
-    const int nb_base_functions = data.getN().size2();
     VectorDouble &vec = *dataPtr;
+    const int nb_gauss_pts = getGaussPts().size2();
     if (type == zeroType) {
       vec.resize(nb_gauss_pts, false);
       vec.clear();
     }
-    auto base_function = data.getFTensor0N();
-    auto values_at_gauss_pts = getFTensor0FromVec(vec);
-    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-      auto field_data = data.getFTensor0FieldData();
-      int bb = 0;
-      for (; bb != nb_dofs; ++bb) {
-        values_at_gauss_pts += field_data * base_function;
-        ++field_data;
-        ++base_function;
+    const int nb_dofs = data.getFieldData().size();
+    if (nb_dofs) {
+      const int nb_gauss_pts = getGaussPts().size2();
+      const int nb_base_functions = data.getN().size2();
+      auto base_function = data.getFTensor0N();
+      auto values_at_gauss_pts = getFTensor0FromVec(vec);
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        auto field_data = data.getFTensor0FieldData();
+        int bb = 0;
+        for (; bb != nb_dofs; ++bb) {
+          values_at_gauss_pts += field_data * base_function;
+          ++field_data;
+          ++base_function;
+        }
+        // It is possible to have more base functions than dofs
+        for (; bb != nb_base_functions; ++bb)
+          ++base_function;
+        ++values_at_gauss_pts;
       }
-      // It is possible to have more base functions than dofs
-      for (; bb != nb_base_functions; ++bb)
-        ++base_function;
-      ++values_at_gauss_pts;
+    }
+    MoFEMFunctionReturn(0);
+  }
+};
+
+struct OpCalculateScalarValuesDot
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  boost::shared_ptr<VectorDouble> dataPtr;
+  const EntityHandle zeroAtType;
+  VectorDouble dotVector;
+
+  OpCalculateScalarValuesDot(const std::string field_name,
+                                  boost::shared_ptr<VectorDouble> &data_ptr,
+                                  const EntityType zero_at_type = MBVERTEX)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroAtType(zero_at_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+
+    const int nb_gauss_pts = getGaussPts().size2();
+    VectorDouble &vec = *dataPtr;
+    if (type == zeroAtType) {
+      vec.resize(nb_gauss_pts, false);
+      vec.clear();
+    }
+
+    auto &local_indices = data.getLocalIndices();
+    const int nb_dofs = local_indices.size();
+    if (nb_dofs) {
+
+      dotVector.resize(nb_dofs, false);
+      const double *array;
+      CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
+      for (int i = 0; i != local_indices.size(); ++i)
+        if (local_indices[i] != -1)
+          dotVector[i] = array[local_indices[i]];
+        else
+          dotVector[i] = 0;
+      CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
+
+      const int nb_base_functions = data.getN().size2();
+      auto base_function = data.getFTensor0N();
+      auto values_at_gauss_pts = getFTensor0FromVec(vec);
+
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        auto field_data = getFTensor0FromVec(dotVector);
+        int bb = 0;
+        for (; bb != nb_dofs; ++bb) {
+          values_at_gauss_pts += field_data * base_function;
+          ++field_data;
+          ++base_function;
+        }
+        // Number of dofs can be smaller than number of Tensor_Dim x base
+        // functions
+        for (; bb != nb_base_functions; ++bb)
+          ++base_function;
+        ++values_at_gauss_pts;
+      }
     }
     MoFEMFunctionReturn(0);
   }
@@ -309,7 +371,10 @@ struct OpCalculateVectorFieldValuesDot
     const double *array;
     CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
     for (int i = 0; i != local_indices.size(); ++i)
-      dotVector[i] = array[local_indices[i]];
+      if (local_indices[i] != -1)
+        dotVector[i] = array[local_indices[i]];
+      else
+        dotVector[i] = 0;
     CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
 
     const int nb_gauss_pts = data.getN().size1();
@@ -515,7 +580,10 @@ struct OpCalculateTensor2FieldValuesDot
     const double *array;
     CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
     for (int i = 0; i != local_indices.size(); ++i)
-      dotVector[i] = array[local_indices[i]];
+      if (local_indices[i] != -1)
+        dotVector[i] = array[local_indices[i]];
+      else
+        dotVector[i] = 0;
     CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
 
     const int nb_base_functions = data.getN().size2();
@@ -652,7 +720,10 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
     const double *array;
     CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
     for (int i = 0; i != local_indices.size(); ++i)
-      dotVector[i] = array[local_indices[i]];
+      if (local_indices[i] != -1)
+        dotVector[i] = array[local_indices[i]];
+      else
+        dotVector[i] = 0;
     CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
 
     const int nb_base_functions = data.getN().size2();
@@ -951,7 +1022,10 @@ struct OpCalculateVectorFieldGradientDot
     const double *array;
     CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
     for (int i = 0; i != local_indices.size(); ++i)
-      dotVector[i] = array[local_indices[i]];
+      if (local_indices[i] != -1)
+        dotVector[i] = array[local_indices[i]];
+      else
+        dotVector[i] = 0;
     CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
 
     const int nb_gauss_pts = data.getN().size1();
