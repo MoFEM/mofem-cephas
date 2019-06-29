@@ -90,9 +90,6 @@ struct SnesCtx {
     MoFEMFunctionReturnHot(0);
   }
 
-  PetscLogEvent MOFEM_EVENT_SnesRhs; ///< Log events to assemble residual
-  PetscLogEvent MOFEM_EVENT_SnesMat; ///< Log events to assemble tangent matrix
-
   SnesCtx(Interface &m_field, const std::string &problem_name)
       : mField(m_field), moab(m_field.get_moab()), problemName(problem_name),
         bH(MF_EXIST), zeroPreCondMatrixB(true),
@@ -152,6 +149,14 @@ struct SnesCtx {
   friend MoFEMErrorCode SNESMoFEMSetAssmblyType(SNES snes,
                                                 MatAssemblyType type);
   friend MoFEMErrorCode SnesMoFEMSetBehavior(SNES snes, MoFEMTypes bh);
+
+private:
+
+  boost::movelib::unique_ptr<bool> vecAssembleSwitch;
+  boost::movelib::unique_ptr<bool> matAssembleSwitch;
+  PetscLogEvent MOFEM_EVENT_SnesRhs; ///< Log events to assemble residual
+  PetscLogEvent MOFEM_EVENT_SnesMat; ///< Log events to assemble tangent matrix
+
 };
 
 /**

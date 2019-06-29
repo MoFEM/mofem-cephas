@@ -98,6 +98,16 @@ MoFEMErrorCode VecManager::vecCreateGhost(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode VecManager::vecCreateGhost(const std::string &name,
+                                          RowColData rc,
+                                          SmartPetscObj<Vec> &v_ptr) const {
+  MoFEMFunctionBegin;
+  Vec vec;
+  CHKERR vecCreateGhost(name, rc, &vec);
+  v_ptr.reset(vec, false);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode
 VecManager::vecScatterCreate(Vec xin, const std::string &x_problem,
                              const std::string &x_field_name, RowColData x_rc,

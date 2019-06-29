@@ -86,6 +86,7 @@ Tools::minTetsQuality(const Range &tets, double &min_quality, Tag th,
   MoFEMFunctionReturn(0);
 }
 
+constexpr std::array<double, 6> Tools::diffShapeFunMBTRI;
 constexpr std::array<double, 12> Tools::diffShapeFunMBTET;
 constexpr std::array<double, 4> Tools::shapeFunMBTETAt000;
 
@@ -403,10 +404,9 @@ Tools::minDistanceFromSegments(const double *w_ptr, const double *v_ptr,
   }
 }
 
-MoFEMErrorCode Tools::findMinDistanceFromTheEdges(const double *v_ptr,
-                                                  Range edges,
-                                                  double *min_dist_ptr,
-                                                  double *o_ptr) const {
+MoFEMErrorCode Tools::findMinDistanceFromTheEdges(
+    const double *v_ptr, const int nb, Range edges, double *min_dist_ptr,
+    double *o_ptr, EntityHandle *o_segments) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab(m_field.get_moab());
   MoFEMFunctionBegin;
@@ -426,10 +426,6 @@ MoFEMErrorCode Tools::findMinDistanceFromTheEdges(const double *v_ptr,
     return sqrt(t_dist_vector(i) * t_dist_vector(i));
   };
 
-  FTensor::Tensor1<const double *, 3> t_n(v_ptr, &v_ptr[1], &v_ptr[2]);
-  double &min_dist = *min_dist_ptr;
-  FTensor::Tensor1<double *, 3> t_min_coords(o_ptr, &o_ptr[1], &o_ptr[2]);
-
   for (auto e : edges) {
 
     int num_nodes;
@@ -445,15 +441,36 @@ MoFEMErrorCode Tools::findMinDistanceFromTheEdges(const double *v_ptr,
     FTensor::Tensor1<double, 3> t_edge_delta;
     t_edge_delta(i) = t_f1(i) - t_f0(i);
 
-    double t;
-    if (Tools::minDistancePointFromOnSegment(&t_f0(0), &t_f1(0), &t_n(0), &t) ==
-        Tools::SOLUTION_EXIST) {
-      auto t_p = get_point(t_f0, t_edge_delta, t);
-      auto dist_n = get_distance(t_p, t_n);
-      if (dist_n < min_dist || min_dist < 0) {
-        t_min_coords(i) = t_p(i);
-        min_dist = dist_n;
+    FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_n(
+        v_ptr, &v_ptr[1], &v_ptr[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_min_coords(
+        o_ptr, &o_ptr[1], &o_ptr[2]);
+    FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_min_dist(min_dist_ptr);
+
+    EntityHandle *colsest_segment_it = nullptr;
+    if (o_segments)
+      colsest_segment_it = o_segments;
+
+    for (int n = 0; n != nb; ++n) {
+
+      double t;
+      if (Tools::minDistancePointFromOnSegment(&t_f0(0), &t_f1(0), &t_n(0),
+                                               &t) == Tools::SOLUTION_EXIST) {
+        auto t_p = get_point(t_f0, t_edge_delta, t);
+        auto dist_n = get_distance(t_p, t_n);
+        if (dist_n < t_min_dist || t_min_dist < 0) {
+          t_min_coords(i) = t_p(i);
+          t_min_dist = dist_n;
+          if (o_segments)
+            *colsest_segment_it = e;
+        }
       }
+
+      ++t_n;
+      ++t_min_coords;
+      ++t_min_dist;
+      if (o_segments)
+        ++colsest_segment_it;
     }
   }
 

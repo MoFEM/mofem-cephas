@@ -67,6 +67,27 @@ struct Tools : public UnknownInterface {
                                   return std::min(a, b);
                                 });
 
+  static constexpr double diffShapeFunMBTRI0x =
+      diffN_MBTRI0x; ///< derivative of triangle shape function
+  static constexpr double diffShapeFunMBTRI0y =
+      diffN_MBTRI0y; ///< derivative of triangle shape function
+  static constexpr double diffShapeFunMBTRI1x =
+      diffN_MBTRI1x; ///< derivative of triangle shape function
+  static constexpr double diffShapeFunMBTRI1y =
+      diffN_MBTRI1y; ///< derivative of triangle shape function
+  static constexpr double diffShapeFunMBTRI2x =
+      diffN_MBTRI2x; ///< derivative of triangle shape function
+  static constexpr double diffShapeFunMBTRI2y =
+      diffN_MBTRI2y; ///< derivative of triangle shape function
+
+  static constexpr std::array<double, 6> diffShapeFunMBTRI = {
+
+      diffShapeFunMBTRI0x, diffShapeFunMBTRI0y,
+
+      diffShapeFunMBTRI1x, diffShapeFunMBTRI1y,
+
+      diffShapeFunMBTRI2x, diffShapeFunMBTRI2y};
+
   static constexpr double diffShapeFunMBTET0x =
       diffN_MBTET0x; ///< derivative of tetrahedral shape function
   static constexpr double diffShapeFunMBTET0y =
@@ -369,15 +390,18 @@ struct Tools : public UnknownInterface {
    * set on the input by min_dist_ptr
    *
    * @param v_ptr point coordinates
+   * @param nb nb points
    * @param edges range of edges
    * @param min_dist_ptr on return minimal distance, on input starting
    * distance
    * @param o_ptr coordinates of the point on edge
+   * @param o_segments closest segments
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode findMinDistanceFromTheEdges(const double *v_ptr, Range edges,
-                                             double *min_dist_ptr,
-                                             double *o_ptr) const;
+  MoFEMErrorCode
+  findMinDistanceFromTheEdges(const double *v_ptr, const int nb, Range edges,
+                              double *min_dist_ptr, double *o_ptr,
+                              EntityHandle *o_segments = nullptr) const;
 
   /**@}*/
 

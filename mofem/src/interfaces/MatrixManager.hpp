@@ -48,7 +48,9 @@ struct MatrixManager : public UnknownInterface {
    * @brief Creates a MPI AIJ matrix using arrays that contain in standard CSR
    * format the local rows.
    *
-   * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAIJWithArrays.html>See PETSc for details</a>
+   * <a
+   href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAIJWithArrays.html>See
+   PETSc for details</a>
 
    * @tparam Tag
    * @param name
@@ -67,7 +69,9 @@ struct MatrixManager : public UnknownInterface {
    * @brief Creates a MPI AIJ matrix using arrays that contain in standard CSR
    * format the local rows.
    *
-   * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAIJWithArrays.html>See PETSc for details</a>
+   * <a
+   href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAIJWithArrays.html>See
+   PETSc for details</a>
 
    * @tparam Tag
    * @param name
@@ -77,12 +81,12 @@ struct MatrixManager : public UnknownInterface {
    */
   template <class Tag>
   MoFEMErrorCode createMPIAIJWithArrays(const std::string name,
-                                        SmartPetscObj<Mat> &AijPtr,
+                                        SmartPetscObj<Mat> &aij_ptr,
                                         int verb = QUIET) {
     MoFEMFunctionBegin;
-    Mat Aij;
-    CHKERR createMPIAIJWithArrays<Tag>(name, &Aij, verb);
-    AijPtr.reset(Aij, false);
+    Mat aij;
+    CHKERR createMPIAIJWithArrays<Tag>(name, &aij, verb);
+    aij_ptr.reset(aij, false);
     MoFEMFunctionReturn(0);
   }
 
@@ -92,8 +96,10 @@ struct MatrixManager : public UnknownInterface {
    * The matrix
    * does not have numerical values associated with it, but is intended for
    * ordering (to reduce bandwidth etc) and partitioning.
-   * 
-   * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAdj.html>See PETSc for details</a>
+   *
+   * <a
+   * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAdj.html>See
+   * PETSc for details</a>
    *
    * \note This matrix object does not support most matrix operations, include
    * MatSetValues(). You must NOT free the ii, values and jj arrays yourself.
@@ -121,8 +127,10 @@ struct MatrixManager : public UnknownInterface {
    * should preallocate the matrix storage by setting the parameter nz (or the
    * array nnz). By setting these parameters accurately, performance during
    * matrix assembly can be increased by more than a factor of 50.
-   * 
-   * <a href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateSeqAIJ.html>See PETSc for details</a>
+   *
+   * <a
+   * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateSeqAIJ.html>See
+   * PETSc for details</a>
    *
    * @tparam Tag
    * @param name
@@ -138,6 +146,39 @@ struct MatrixManager : public UnknownInterface {
                                         int verb = QUIET) {
     static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
     return 0;
+  }
+
+    /**
+   * @brief Create sequencial matrix
+   *
+   * Creates a sparse matrix in AIJ (compressed row) format (the default
+   * parallel PETSc format). For good matrix assembly performance the user
+   * should preallocate the matrix storage by setting the parameter nz (or the
+   * array nnz). By setting these parameters accurately, performance during
+   * matrix assembly can be increased by more than a factor of 50.
+   *
+   * <a
+   * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateSeqAIJ.html>See
+   * PETSc for details</a>
+   *
+   * @tparam Tag
+   * @param name
+   * @param Aij (SmartPetscObj)
+   * @param i
+   * @param j
+   * @param v
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  template <class Tag>
+  MoFEMErrorCode createSeqAIJWithArrays(const std::string name,
+                                        SmartPetscObj<Mat> &aij_ptr,
+                                        int verb = QUIET) {
+    MoFEMFunctionBegin;
+    Mat aij;
+    CHKERR createSeqAIJWithArrays<Tag>(name, &aij, verb);
+    aij_ptr.reset(aij, false);
+    MoFEMFunctionReturn(0);
   }
 
   /** \brief check if matrix fill in correspond to finite element indices

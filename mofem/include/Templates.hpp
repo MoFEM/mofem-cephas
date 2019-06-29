@@ -144,15 +144,6 @@ getFTensor0FromVec(ublas::vector<T, A> &data) {
   static_assert(!std::is_same<T, T>::value, "not implemented");
 }
 
-// /**
-//  * @deprecated Name change to getFTensor0FromVec
-//  */
-// template <class T, class A>
-// DEPRECATED static inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-// getTensor0FormData(ublas::vector<T, A> &data) {
-//   return getFTensor0FromVec(data);
-// }
-
 template <>
 inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
 getFTensor0FromVec<double, DoubleAllocator>(

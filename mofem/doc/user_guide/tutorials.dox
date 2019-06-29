@@ -22,7 +22,7 @@ implementation of finite element with users data operators.
 - \subpage hello_world_tut1
 
 
-\section poisson_problem The Poisson equation
+\section poisson_problem The Poisson equation and difussion problems
 
 The Poisson equation is solved using MoFEM::Simple interface. The generic
 procedure is applied to one of the simples PDEs. In order to make the problem instructional,
@@ -44,6 +44,9 @@ pre-conditioner to solve problem with Lagrange multipliers
 
 - \subpage poisson_tut3
 
+Implementation of Fisher's reaction-diffusion equation
+
+- \subpage reaction_diffusion_imp
 
 \section simple_elasticity Solid elasticity problems
 
