@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
     CHKERR cut_mesh->setVolume(tets);
     CHKERR cut_mesh->makeFront(true);
     CHKERR cut_mesh->buildTree();
-    CHKERR cut_mesh->refineMesh(false, false, 10, 1, 0, &fixed_edges,
+    CHKERR cut_mesh->refineMesh(true, false, 10, 1, 3, &fixed_edges,
                                 VERBOSE, true);
 
     // Create tag storing nodal positions
@@ -219,21 +219,6 @@ int main(int argc, char *argv[]) {
         split_bit, BitRefLevel().set(), MBPRISM, "split_prism.vtk", "VTK", "");
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
         split_bit, BitRefLevel().set(), MBTET, "split_tets.vtk", "VTK", "");
-
-    tets.clear();
-    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-        split_bit, BitRefLevel().set(), MBTET, tets);
-    CHKERR cut_mesh->setVolume(tets);
-    CHKERR cut_mesh->refineMesh(true, true, 20, 0, 0, &fixed_edges, VERBOSE,
-                                true);
-
-    // shift[2] -= 0.8;
-    // CHKERR cut_mesh->copySurface(surface, NULL, shift, NULL, NULL,
-    //                              "surface.vtk");
-    // CHKERR cut_mesh->setVolume(tets);
-    // CHKERR cut_mesh->makeFront(true);
-    // CHKERR cut_mesh->buildTree();
-    // CHKERR cut_mesh->refineMesh(true, 10, 1, 0, &fixed_edges, VERBOSE, true);
 
     // // Create tag storing nodal positions
     // double def_position[] = {0, 0, 0};

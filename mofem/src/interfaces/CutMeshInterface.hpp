@@ -164,8 +164,10 @@ struct CutMeshInterface : public UnknownInterface {
   MoFEMErrorCode createFrontLevelSets(int verb = QUIET,
                                       const bool debug = false);
 
-  MoFEMErrorCode createLevelSets(Tag th, Range &vol_edges, int verb = QUIET,
-                                 const bool debug = false);
+  MoFEMErrorCode createLevelSets(Tag th, Range &vol_edges,
+                                 const bool remove_adj_prims_edges,
+                                 int verb = QUIET, const bool debug = false,
+                                 const std::string edges_file_name = string());
 
   MoFEMErrorCode createLevelSets(const bool update_front, int verb = QUIET,
                                  const bool debug = false);

@@ -582,8 +582,9 @@ MoFEMErrorCode CutMeshInterface::createFrontLevelSets(int verb,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::createLevelSets(Tag th, Range &vol_edges,
-                                                 int verb, const bool debug) {
+MoFEMErrorCode CutMeshInterface::createLevelSets(
+    Tag th, Range &vol_edges, const bool remove_adj_prims_edges, int verb,
+    const bool debug, const std::string edges_file_name) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -608,15 +609,23 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Tag th, Range &vol_edges,
 
   Range edges;
   CHKERR moab.get_adjacencies(vOlume, 1, true, edges, moab::Interface::UNION);
-  Range prisms;
-  CHKERR moab.get_adjacencies(edges, 3, false, prisms, moab::Interface::UNION);
-  prisms = prisms.subset_by_type(MBPRISM);
-  Range prisms_verts;
-  CHKERR moab.get_connectivity(prisms, prisms_verts, true);
-  Range prism_edges;
-  CHKERR moab.get_adjacencies(prisms_verts, 1, false, prism_edges,
-                              moab::Interface::UNION);
-  edges = subtract(edges, prism_edges);
+
+  auto remove_prisms_edges = [&](Range &edges) {
+    MoFEMFunctionBegin;
+    Range prisms;
+    CHKERR moab.get_adjacencies(edges, 3, false, prisms,
+                                moab::Interface::UNION);
+    prisms = prisms.subset_by_type(MBPRISM);
+    Range prisms_verts;
+    CHKERR moab.get_connectivity(prisms, prisms_verts, true);
+    Range prism_edges;
+    CHKERR moab.get_adjacencies(prisms_verts, 1, false, prism_edges,
+                                moab::Interface::UNION);
+    edges = subtract(edges, prism_edges);
+    MoFEMFunctionReturn(0);
+  };
+  if (remove_adj_prims_edges)
+    CHKERR remove_prisms_edges(edges);
 
   for (auto e : edges) {
 
@@ -651,6 +660,10 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(Tag th, Range &vol_edges,
 
   CHKERR moab.get_adjacencies(cut_edges, 3, false, vol_edges,
                               moab::Interface::UNION);
+
+  if(debug && !edges_file_name.empty())
+    CHKERR SaveData(m_field.get_moab())(edges_file_name, cut_edges);
+
   vol_edges = intersect(vol_edges, vOlume);
 
   MoFEMFunctionReturn(0);
@@ -665,7 +678,8 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(const bool update_front,
   CHKERR createFrontLevelSets(verb, debug);
   Tag th_dist_front_vec;
   CHKERR moab.tag_get_handle("DIST_FRONT_VECTOR", th_dist_front_vec);
-  CHKERR createLevelSets(th_dist_front_vec, cutFrontVolumes, verb, debug);
+  CHKERR createLevelSets(th_dist_front_vec, cutFrontVolumes, true, verb, debug,
+                         "cutFrontEdges.vtk");
 
   if (update_front)
     CHKERR createSurfaceLevelSets(&cutFrontVolumes, verb, debug);
@@ -675,7 +689,8 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(const bool update_front,
   Tag th_dist_surface_vec;
   CHKERR moab.tag_get_handle("DIST_SURFACE_VECTOR", th_dist_surface_vec);
   cutSurfaceVolumes.clear();
-  CHKERR createLevelSets(th_dist_surface_vec, cutSurfaceVolumes, verb, debug);
+  CHKERR createLevelSets(th_dist_surface_vec, cutSurfaceVolumes, true, verb,
+                         debug, "cutSurfaceEdges.vtk");
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("level_sets.vtk", vOlume);
@@ -976,7 +991,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
   // Get entities on body skin
   Skinner skin(&moab);
   Range tets_skin;
-  rval = skin.find_skin(0, vOlume, false, tets_skin);
+  CHKERR skin.find_skin(0, vOlume, false, tets_skin);
   Range tets_skin_edges;
   CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
                               moab::Interface::UNION);
