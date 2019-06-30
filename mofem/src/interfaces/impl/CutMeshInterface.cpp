@@ -661,10 +661,10 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(
   CHKERR moab.get_adjacencies(cut_edges, 3, false, vol_edges,
                               moab::Interface::UNION);
 
-  if(debug && !edges_file_name.empty())
-    CHKERR SaveData(m_field.get_moab())(edges_file_name, cut_edges);
-
   vol_edges = intersect(vol_edges, vOlume);
+
+  if (debug && !edges_file_name.empty())
+    CHKERR SaveData(m_field.get_moab())(edges_file_name, cut_edges);
 
   MoFEMFunctionReturn(0);
 }
