@@ -981,16 +981,15 @@ MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBegin;
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  typedef RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type RefEntsByParent;
-  RefEntsByParent &ref_ents =
+  auto &ref_ents =
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)->get<Ent_Ent_mi_tag>();
   std::vector<EntityHandle> child_ents_vec;
   child_ents_vec.reserve(ref_ents.size());
   for (Range::const_pair_iterator pit = parent_ents.const_pair_begin();
        pit != parent_ents.const_pair_end(); pit++) {
-    RefEntsByParent::iterator it = ref_ents.lower_bound(pit->first);
-    if (pit->first != pit->second) {
-      RefEntsByParent::iterator hi_it = ref_ents.upper_bound(pit->second);
+    auto it = ref_ents.lower_bound(pit->first);
+    if (it != ref_ents.end()) {
+      auto hi_it = ref_ents.upper_bound(pit->second);
       for (; it != hi_it; it++) {
         if (it->get()->getEntType() == MBENTITYSET) {
           SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
@@ -998,12 +997,6 @@ MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
         }
         child_ents_vec.emplace_back((*it)->getRefEnt());
       }
-    } else {
-      if (it->get()->getEntType() == MBENTITYSET) {
-        SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
-                "this should not happen");
-      }
-      child_ents_vec.emplace_back((*it)->getRefEnt());
     }
   }
   child_ents.insert_list(child_ents_vec.begin(), child_ents_vec.end());
