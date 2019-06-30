@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
     CHKERR cut_mesh->setVolume(tets);
     CHKERR cut_mesh->makeFront(true);
     CHKERR cut_mesh->buildTree();
-    CHKERR cut_mesh->refineMesh(true, false, 10, 3, 1, &fixed_edges,
+    CHKERR cut_mesh->refineMesh(true, false, 10, 1, 1, &fixed_edges,
                                 VERBOSE, true);
 
     // Create tag storing nodal positions
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
         "cut_surface.vtk", cut_mesh->getNewCutSurfaces());
 
     BitRefLevel merge_bit = BitRefLevel().set(2);
-    CHKERR cut_mesh->mergeBadEdges(4, cut_bit, cut_bit, merge_bit,
+    CHKERR cut_mesh->mergeBadEdges(10, cut_bit, cut_bit, merge_bit,
                                    cut_mesh->getNewCutSurfaces(), fixed_edges,
                                    corner_nodes, th, true, true);
 
