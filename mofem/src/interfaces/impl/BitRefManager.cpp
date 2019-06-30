@@ -682,9 +682,8 @@ MoFEMErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel bit,
   MoFEM::Interface &m_field = cOre;
   // moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *ref_ents_ptr;
-  MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   typedef RefEntity_multiIndex::index<ParentEntType_mi_tag>::type
       RefEntsByParentType;
   const RefEntsByParentType &ref_ents =
@@ -692,13 +691,16 @@ MoFEMErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel bit,
   RefEntsByParentType::iterator it, hi_it;
   it = ref_ents.lower_bound(type);
   hi_it = ref_ents.upper_bound(type);
+  std::vector<EntityHandle> ents_vec;
+  ents_vec.reserve(std::distance(it, hi_it));
   for (; it != hi_it; it++) {
     const BitRefLevel &ent_bit = it->get()->getBitRefLevel();
     if ((ent_bit & mask) == ent_bit && (ent_bit & bit).any()) {
-      ents.insert(it->get()->getRefEnt());
+      ents_vec.emplace_back(it->get()->getRefEnt());
     }
   }
-  MoFEMFunctionReturnHot(0);
+  ents.insert_list(ents_vec.begin(), ents_vec.end());
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::getAllEntitiesNotInDatabase(Range &ents) const {
@@ -982,18 +984,29 @@ MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
   typedef RefEntity_multiIndex::index<Ent_Ent_mi_tag>::type RefEntsByParent;
   RefEntsByParent &ref_ents =
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)->get<Ent_Ent_mi_tag>();
+  std::vector<EntityHandle> child_ents_vec;
+  child_ents_vec.reserve(ref_ents.size());
   for (Range::const_pair_iterator pit = parent_ents.const_pair_begin();
        pit != parent_ents.const_pair_end(); pit++) {
     RefEntsByParent::iterator it = ref_ents.lower_bound(pit->first);
-    RefEntsByParent::iterator hi_it = ref_ents.upper_bound(pit->second);
-    for (; it != hi_it; it++) {
+    if (pit->first != pit->second) {
+      RefEntsByParent::iterator hi_it = ref_ents.upper_bound(pit->second);
+      for (; it != hi_it; it++) {
+        if (it->get()->getEntType() == MBENTITYSET) {
+          SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
+                  "this should not happen");
+        }
+        child_ents_vec.emplace_back((*it)->getRefEnt());
+      }
+    } else {
       if (it->get()->getEntType() == MBENTITYSET) {
         SETERRQ(m_field.get_comm(), MOFEM_IMPOSIBLE_CASE,
                 "this should not happen");
       }
-      child_ents.insert((*it)->getRefEnt());
+      child_ents_vec.emplace_back((*it)->getRefEnt());
     }
   }
+  child_ents.insert_list(child_ents_vec.begin(), child_ents_vec.end());
   MoFEMFunctionReturn(0);
 }
 } // namespace MoFEM

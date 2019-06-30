@@ -192,20 +192,22 @@ MoFEMFunctionReturn(0);
 MoFEMErrorCode MeshRefinement::refine_TET(const EntityHandle meshset,
                                           const BitRefLevel &bit,
                                           const bool respect_interface,
-                                          int verb, Range *ref_edges_ptr) {
+                                          int verb, Range *ref_edges_ptr,
+                                          const bool debug) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   Range tets;
   CHKERR moab.get_entities_by_type(meshset, MBTET, tets, false);
-  CHKERR refine_TET(tets, bit, respect_interface, verb, ref_edges_ptr);
+  CHKERR refine_TET(tets, bit, respect_interface, verb, ref_edges_ptr, debug);
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
                                           const BitRefLevel &bit,
                                           const bool respect_interface,
-                                          int verb, Range *ref_edges_ptr) {
+                                          int verb, Range *ref_edges_ptr,
+                                          const bool debug) {
 
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
@@ -315,8 +317,10 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   CHKERR m_field.get_ref_ents(&refined_ents_ptr);
   CHKERR m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
+
   Check check;
-  CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
+  if (debug)
+    CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
 
   // FIXME: refinement is based on entity handlers, should work on global ids of
   // nodes, this will allow parallelise algorithm in the future
@@ -503,7 +507,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     RefEntByParentAndRefEdges::iterator hi_it_by_ref_edges =
         ref_ele_by_parent_and_ref_edges.upper_bound(
             boost::make_tuple(*tit, parent_edges_bit.to_ulong()));
-    // check if tet with this refinement shame already exits
+    // check if tet with this refinement scheme already exits
     if (std::distance(it_by_ref_edges, hi_it_by_ref_edges) ==
         (unsigned int)nb_new_tets) {
       for (int tt = 0; it_by_ref_edges != hi_it_by_ref_edges;
@@ -683,12 +687,15 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     }
   }
 
-  CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
+  if(debug)
+    CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
   CHKERR set_parent(refined_ents_ptr);
-  CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
+  if(debug)
+    CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents_to_set_bit,
                                                                bit, true, verb);
-  CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
+  if(debug)
+    CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
 
   MoFEMFunctionReturn(0);
 }
@@ -703,11 +710,10 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
   // FIXME: refinement is based on entity handlers, should work on global ids of
   // nodes, this will allow parallelise algorithm in the future
 
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
-  ierr = m_field.get_ref_ents(&refined_ents_ptr);
-  CHKERRG(ierr);
-  ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
+  CHKERR m_field.get_ref_ents(&refined_ents_ptr);
+  CHKERR m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
   typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
 
@@ -731,8 +737,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
       ref_ents_by_comp.lower_bound(boost::make_tuple(MBVERTEX, MBEDGE)),
       ref_ents_by_comp.upper_bound(boost::make_tuple(MBVERTEX, MBEDGE)));
   Range prisms;
-  rval = moab.get_entities_by_type(meshset, MBPRISM, prisms, false);
-  CHKERRQ_MOAB(rval);
+  CHKERR moab.get_entities_by_type(meshset, MBPRISM, prisms, false);
   Range::iterator pit = prisms.begin();
   for (; pit != prisms.end(); pit++) {
     RefEntsByEnt::iterator miit_prism =
@@ -749,18 +754,15 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
     // prism connectivity
     int num_nodes;
     const EntityHandle *conn;
-    rval = moab.get_connectivity(*pit, conn, num_nodes, true);
-    CHKERRQ_MOAB(rval);
+    CHKERR moab.get_connectivity(*pit, conn, num_nodes, true);
     assert(num_nodes == 6);
     // edges connectivity
     EntityHandle edges[6];
     for (int ee = 0; ee < 3; ee++) {
-      rval = moab.side_element(*pit, 1, ee, edges[ee]);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.side_element(*pit, 1, ee, edges[ee]);
     }
     for (int ee = 6; ee < 9; ee++) {
-      rval = moab.side_element(*pit, 1, ee, edges[ee - 3]);
-      CHKERRQ_MOAB(rval);
+      CHKERR moab.side_element(*pit, 1, ee, edges[ee - 3]);
     }
     // detect split edges
     BitRefEdges split_edges(0);
@@ -797,18 +799,15 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
     case 0:
       break;
     case 2:
-      ierr = prism_type_1(conn, split_edges, edge_nodes, new_prism_conn);
-      CHKERRG(ierr);
+      CHKERR prism_type_1(conn, split_edges, edge_nodes, new_prism_conn);
       nb_new_prisms = 2;
       break;
     case 4:
-      ierr = prism_type_2(conn, split_edges, edge_nodes, new_prism_conn);
-      CHKERRG(ierr);
+      CHKERR prism_type_2(conn, split_edges, edge_nodes, new_prism_conn);
       nb_new_prisms = 3;
       break;
     case 6:
-      ierr = prism_type_3(conn, split_edges, edge_nodes, new_prism_conn);
-      CHKERRG(ierr);
+      CHKERR prism_type_3(conn, split_edges, edge_nodes, new_prism_conn);
       nb_new_prisms = 4;
       break;
     default:
@@ -853,18 +852,14 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
           PetscPrintf(m_field.get_comm(), ss.str().c_str());
         }
         if (!ref_prism_bit.test(pp)) {
-          rval = moab.create_element(MBPRISM, &new_prism_conn[6 * pp], 6,
+          CHKERR moab.create_element(MBPRISM, &new_prism_conn[6 * pp], 6,
                                      ref_prisms[pp]);
-          CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),
+          CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(),
                                    &ref_prisms[pp], 1, &*pit);
-          CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(cOre.get_th_RefBitLevel(), &ref_prisms[pp],
+          CHKERR moab.tag_set_data(cOre.get_th_RefBitLevel(), &ref_prisms[pp],
                                    1, &bit);
-          CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(cOre.get_th_RefBitEdge(), &ref_prisms[pp], 1,
+          CHKERR moab.tag_set_data(cOre.get_th_RefBitEdge(), &ref_prisms[pp], 1,
                                    &split_edges);
-          CHKERRQ_MOAB(rval);
           std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
               const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
                   ->insert(boost::shared_ptr<RefEntity>(new RefEntity(
@@ -879,8 +874,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
             SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
           }
           ref_prism_bit.set(pp);
-          ierr = cOre.addPrismToDatabase(ref_prisms[pp]);
-          CHKERRG(ierr);
+          CHKERR cOre.addPrismToDatabase(ref_prisms[pp]);
           if (verb > 2) {
             std::ostringstream ss;
             ss << "add prism: " << **p_fe.first << std::endl;
@@ -896,7 +890,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
       }
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode MeshRefinement::refine_MESHSET(const EntityHandle meshset,
                                               const BitRefLevel &bit,
