@@ -515,20 +515,16 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     }
 
     // find that tets
-    RefEntByParentAndRefEdges::iterator it_by_ref_edges =
-        ref_ele_by_parent_and_ref_edges.lower_bound(
-            boost::make_tuple(tit, parent_edges_bit.to_ulong()));
-    RefEntByParentAndRefEdges::iterator hi_it_by_ref_edges =
-        ref_ele_by_parent_and_ref_edges.upper_bound(
-            boost::make_tuple(tit, parent_edges_bit.to_ulong()));
+    auto it_by_ref_edges = ref_ele_by_parent_and_ref_edges.equal_range(
+        boost::make_tuple(tit, parent_edges_bit.to_ulong()));
     // check if tet with this refinement scheme already exits
     std::vector<EntityHandle> ents_to_set_bit_vec;
-    if (std::distance(it_by_ref_edges, hi_it_by_ref_edges) ==
-        (unsigned int)nb_new_tets) {
+    if (std::distance(it_by_ref_edges.first, it_by_ref_edges.second) ==
+        static_cast<size_t>(nb_new_tets)) {
       ents_to_set_bit_vec.reserve(nb_new_tets);
-      for (int tt = 0; it_by_ref_edges != hi_it_by_ref_edges;
-           it_by_ref_edges++, tt++) {
-        auto tet = it_by_ref_edges->get()->getRefEnt();
+      for (int tt = 0; it_by_ref_edges.first != it_by_ref_edges.second;
+           it_by_ref_edges.first++, tt++) {
+        auto tet = (*it_by_ref_edges.first)->getRefEnt();
         ents_to_set_bit_vec.emplace_back(tet);
         // set ref tets entities
         if (debug) {
@@ -578,7 +574,6 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   }
 
   // Set parrents and adjacencies
-  int new_tet_idx = 0;
   for (int idx = 0; idx != parent_ents_refined_and_created.size(); ++idx) {
 
     const EntityHandle tit = parent_ents_refined_and_created[idx];
@@ -586,28 +581,12 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     const int nb_new_tets = nb_new_tets_vec[idx];
     const int sub_type = sub_type_vec[idx];
 
-        // hash map of nodes (RefEntity) by edges (EntityHandle)
-    std::map<EntityHandle /*edge*/, EntityHandle /*node*/>
-        map_ref_nodes_by_edges;
-
-    for (int ee = 0; ee != 6; ++ee) {
-      EntityHandle edge;
-      CHKERR moab.side_element(tit, 1, ee, edge);
-      RefEntity_multiIndex_view_by_hashed_parent_entity::iterator eit =
-          ref_parent_ents_view.find(edge);
-      if (eit != ref_parent_ents_view.end()) {
-        if (((*eit)->getBitRefLevel() & bit).any()) {
-          map_ref_nodes_by_edges[(*eit)->getParentEnt()] =
-              eit->get()->getRefEnt();
-        }
-      }
-    }
-
     std::array<EntityHandle, 8> ref_tets;
     for (int tt = 0; tt != nb_new_tets; ++tt, ++starte)
       ref_tets[tt] = starte;
 
     if (nb_new_tets) {
+
       int ref_type[2];
       ref_type[0] = parent_edges_bit.count();
       ref_type[1] = sub_type;
@@ -619,6 +598,23 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
                                  &parent_edges_bit);
         CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(), &ref_tets[tt],
                                  1, &tit);
+      }
+
+      // hash map of nodes (RefEntity) by edges (EntityHandle)
+      std::map<EntityHandle /*edge*/, EntityHandle /*node*/>
+          map_ref_nodes_by_edges;
+
+      Range tet_edges;
+      CHKERR moab.get_adjacencies(&tit, 1, 1, false, tet_edges);
+      for (auto edge : tet_edges) {
+        RefEntity_multiIndex_view_by_hashed_parent_entity::iterator eit =
+            ref_parent_ents_view.find(edge);
+        if (eit != ref_parent_ents_view.end()) {
+          if (((*eit)->getBitRefLevel() & bit).any()) {
+            map_ref_nodes_by_edges[(*eit)->getParentEnt()] =
+                eit->get()->getRefEnt();
+          }
+        }
       }
 
       // find parents for new edges and faces
