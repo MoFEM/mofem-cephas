@@ -2509,7 +2509,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   };
 
   Range not_merged_edges;
-  const double tol = 0.1;
+  const double tol = 1e-1;
   CHKERR Toplogy(m_field, th, tol * aveLength)
       .edgesToMerge(surface, tets, edges_to_merge);
   CHKERR Toplogy(m_field, th, tol * aveLength)
@@ -2518,6 +2518,15 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   Toplogy::SetsMap sets_map;
   CHKERR Toplogy(m_field, th, tol * aveLength)
       .classifyVerts(surface, tets, fixed_edges, corner_nodes, sets_map);
+  if (debug) {
+    for (Toplogy::SetsMap::reverse_iterator sit = sets_map.rbegin();
+         sit != sets_map.rend(); sit++) {
+      std::string name = "classification_verts_" +
+                         boost::lexical_cast<std::string>(sit->first) + ".vtk";
+      if (!sit->second.empty())
+        CHKERR SaveData(moab)(name, sit->second);
+    }
+  }
   Range proc_tets;
   CHKERR Toplogy(m_field, th, tol * aveLength)
       .getProcTets(tets, edges_to_merge, proc_tets);
@@ -2564,9 +2573,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
               int num_nodes;
               const EntityHandle *conn;
               CHKERR moab.get_connectivity(mit->eDge, conn, num_nodes, true);
-              int conn_type[2] = {0, 0};
+              std::array<int, 2> conn_type = {0, 0};
               for (int nn = 0; nn != 2; nn++) {
-                conn_type[nn] = 0;
                 for (Toplogy::SetsMap::reverse_iterator sit = sets_map.rbegin();
                      sit != sets_map.rend(); sit++) {
                   if (sit->second.find(conn[nn]) != sit->second.end()) {
