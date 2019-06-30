@@ -213,7 +213,10 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
   const RefElement_multiIndex *refined_finite_elements_ptr;
+  ReadUtilIface *read_util;
   MoFEMFunctionBegin;
+
+  CHKERR m_field.get_moab().query_interface(read_util);
 
   // Check if refinement is correct
   struct Check {
@@ -508,46 +511,80 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         ref_ele_by_parent_and_ref_edges.upper_bound(
             boost::make_tuple(*tit, parent_edges_bit.to_ulong()));
     // check if tet with this refinement scheme already exits
+    std::vector<EntityHandle> ents_to_set_bit_vec;
     if (std::distance(it_by_ref_edges, hi_it_by_ref_edges) ==
         (unsigned int)nb_new_tets) {
+      ents_to_set_bit_vec.reserve(nb_new_tets);
       for (int tt = 0; it_by_ref_edges != hi_it_by_ref_edges;
            it_by_ref_edges++, tt++) {
         EntityHandle tet = it_by_ref_edges->get()->getRefEnt();
         // set ref tets entities
         ref_tets[tt] = tet;
         ref_tets_bit.set(tt, 1);
-        // add this tet if exist to this ref level
-        RefEntity_multiIndex::iterator ref_tet_it;
-        ref_tet_it = refined_ents_ptr->find(tet);
-        if (ref_tet_it == refined_ents_ptr->end()) {
-          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "data inconsistency");
+        if (debug) {
+          // add this tet if exist to this ref level
+          RefEntity_multiIndex::iterator ref_tet_it;
+          ref_tet_it = refined_ents_ptr->find(tet);
+          if (ref_tet_it == refined_ents_ptr->end()) {
+            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "Tetrahedron should be in database");
+          }
         }
-        ents_to_set_bit.insert(tet);
+        ents_to_set_bit_vec.emplace_back(tet);
       }
+      ents_to_set_bit.insert_list(ents_to_set_bit_vec.begin(),
+                                  ents_to_set_bit_vec.end());
+
     } else {
       // if this element was not refined or was refined with different patterns
       // of split edges create new elements
-      for (int tt = 0; tt < nb_new_tets; tt++) {
-        if (!ref_tets_bit.test(tt)) {
-          CHKERR moab.create_element(MBTET, &new_tets_conns[4 * tt], 4,
-                                     ref_tets[tt]);
-          ents_to_set_bit.insert(ref_tets[tt]);
-          Range ref_tet_nodes;
-          CHKERR moab.get_connectivity(&ref_tets[tt], 1, ref_tet_nodes, true);
-          int ref_type[2];
-          ref_type[0] = parent_edges_bit.count();
-          ref_type[1] = sub_type;
-          CHKERR moab.tag_set_data(cOre.get_th_RefType(), &ref_tets[tt], 1,
-                                   ref_type);
-          CHKERR moab.tag_set_data(cOre.get_th_RefBitEdge(), &ref_tets[tt], 1,
-                                   &parent_edges_bit);
-          CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(), &ref_tets[tt],
-                                   1, &*tit);
-          // set bit that this element is now in database
-          ref_tets_bit.set(tt);
+
+      int num_ele = 0;
+      for (int tt = 0; tt != nb_new_tets; ++tt) {
+        if (!ref_tets_bit.test(tt))
+          ++num_ele;
+      }
+
+      EntityHandle starte;
+      if (num_ele) {
+
+        EntityHandle *conn_moab;
+        read_util->get_element_connect(num_ele, 4, MBTET, 0, starte, conn_moab);
+        int ii = 0;
+        for (int tt = 0; tt != nb_new_tets; ++tt) {
+          if (!ref_tets_bit.test(tt)) {
+            for (int nn = 0; nn != 4; ++nn) {
+              conn_moab[ii] = new_tets_conns[4 * tt + nn];
+              ++ii;
+            }
+          }
+        }
+        CHKERR read_util->update_adjacencies(starte, num_ele, 4, conn_moab);
+        ents_to_set_bit.insert(starte, starte + num_ele - 1);
+
+      }
+
+      if (num_ele) {
+        int ref_type[2];
+        ref_type[0] = parent_edges_bit.count();
+        ref_type[1] = sub_type;
+        int ii = 0;
+        for (int tt = 0; tt != nb_new_tets; ++tt) {
+          if (!ref_tets_bit.test(tt)) {
+            ref_tets[tt] = starte + ii;
+            ++ii;
+            CHKERR moab.tag_set_data(cOre.get_th_RefType(), &ref_tets[tt], 1,
+                                     ref_type);
+            CHKERR moab.tag_set_data(cOre.get_th_RefBitEdge(), &ref_tets[tt], 1,
+                                     &parent_edges_bit);
+            CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(),
+                                     &ref_tets[tt], 1, &*tit);
+            // set bit that this element is now in database
+            ref_tets_bit.set(tt);
+          }
         }
       }
+
     }
     // find parents for new edges and faces
     // get tet edges and faces
