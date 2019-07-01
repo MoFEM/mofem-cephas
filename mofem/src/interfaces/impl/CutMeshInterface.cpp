@@ -2037,21 +2037,19 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   struct MergeNodes {
     CoreInterface &mField;
     const bool onlyIfImproveQuality;
-    const int lineSearch;
     Tag tH;
     bool updateMehsets;
 
     MergeNodes(CoreInterface &m_field, const bool only_if_improve_quality,
-               const int line_search, Tag th, bool update_mehsets)
+               Tag th, bool update_mehsets)
         : mField(m_field), onlyIfImproveQuality(only_if_improve_quality),
-          lineSearch(line_search), tH(th), updateMehsets(update_mehsets) {
+          tH(th), updateMehsets(update_mehsets) {
       mField.getInterface(nodeMergerPtr);
     }
     NodeMergerInterface *nodeMergerPtr;
-    MoFEMErrorCode operator()(EntityHandle father, EntityHandle mother,
-                              Range &proc_tets, Range &new_surf,
-                              Range &edges_to_merge, Range &not_merged_edges,
-                              bool add_child = true) const {
+    MoFEMErrorCode mergeNodes(int line_search, EntityHandle father,
+                              EntityHandle mother, Range &proc_tets,
+                              bool add_child = true) {
       moab::Interface &moab = mField.get_moab();
       MoFEMFunctionBegin;
       const EntityHandle conn[] = {father, mother};
@@ -2061,41 +2059,85 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       vert_tets = intersect(vert_tets, proc_tets);
       Range out_tets;
       CHKERR nodeMergerPtr->mergeNodes(father, mother, out_tets, &vert_tets,
-                                       onlyIfImproveQuality, 0, lineSearch, tH);
-
-      for (auto t : vert_tets)
-        proc_tets.erase(t);
-      out_tets.insert(proc_tets.begin(), proc_tets.end());
-      proc_tets.swap(out_tets);
+                                       onlyIfImproveQuality, 0, line_search,
+                                       tH);
 
       if (add_child && nodeMergerPtr->getSuccessMerge()) {
 
+        for (auto t : vert_tets)
+          proc_tets.erase(t);
+        out_tets.insert(proc_tets.begin(), proc_tets.end());
+        proc_tets.swap(out_tets);
+
         auto &parent_child_map = nodeMergerPtr->getParentChildMap();
 
-        Range child_ents;
-        for (auto &it : parent_child_map)
-          child_ents.insert(it.pArent);
+        struct ChangeChild {
+          EntityHandle child;
+          ChangeChild(const EntityHandle child): child(child) {}
+          void operator()(NodeMergerInterface::ParentChild &p) {
+            p.cHild = child;
+          }
+        };
 
-        Range new_surf_child_ents = intersect(new_surf, child_ents);
-        new_surf = subtract(new_surf, new_surf_child_ents);
+        std::vector<decltype(parentsChildMap.get<0>().begin())> it_vec;
+        it_vec.reserve(parentsChildMap.size());
+
+        for (auto &p : parent_child_map) {
+
+          it_vec.clear();
+          for (auto it = parentsChildMap.get<0>().equal_range(p.pArent);
+               it.first != it.second; ++it.first)
+            it_vec.emplace_back(it.first);
+
+          for (auto it = parentsChildMap.get<1>().equal_range(p.pArent);
+               it.first != it.second; ++it.first)
+            it_vec.emplace_back(parentsChildMap.project<0>(it.first));
+
+          for(auto &it : it_vec)
+            parentsChildMap.modify(it, ChangeChild(p.cHild));
+
+        }
+
+        parentsChildMap.insert(parent_child_map.begin(),
+                               parent_child_map.end());
+      }
+      MoFEMFunctionReturn(0);
+    }
+
+    MoFEMErrorCode updateRangeByChilds(Range &new_surf, Range &edges_to_merge,
+                                       Range &not_merged_edges,
+                                       bool add_child) {
+      moab::Interface &moab = mField.get_moab();
+      MoFEMFunctionBegin;
+      if (add_child) {
+
+        std::vector<EntityHandle> parents_ents_vec(parentsChildMap.size());
+        for (auto &it : parentsChildMap)
+          parents_ents_vec.emplace_back(it.pArent);
+        Range parent_ents;
+        parent_ents.insert_list(parents_ents_vec.begin(),
+                                parents_ents_vec.end());
+
+        Range surf_parent_ents = intersect(new_surf, parent_ents);
+        new_surf = subtract(new_surf, surf_parent_ents);
         Range child_surf_ents;
-        CHKERR updateRangeByChilds(parent_child_map, new_surf_child_ents,
+        CHKERR updateRangeByChilds(parentsChildMap, surf_parent_ents,
                                    child_surf_ents);
         new_surf.merge(child_surf_ents);
 
-        Range edges_to_merge_child_ents = intersect(edges_to_merge, child_ents);
-        edges_to_merge = subtract(edges_to_merge, edges_to_merge_child_ents);
+        Range edges_to_merge_parent_ents =
+            intersect(edges_to_merge, parent_ents);
+        edges_to_merge = subtract(edges_to_merge, edges_to_merge_parent_ents);
         Range merged_child_edge_ents;
-        CHKERR updateRangeByChilds(parent_child_map, edges_to_merge_child_ents,
+        CHKERR updateRangeByChilds(parentsChildMap, edges_to_merge_parent_ents,
                                    merged_child_edge_ents);
 
         Range not_merged_edges_child_ents =
-            intersect(not_merged_edges, child_ents);
+            intersect(not_merged_edges, parent_ents);
         not_merged_edges =
             subtract(not_merged_edges, not_merged_edges_child_ents);
         Range not_merged_child_edge_ents;
-        CHKERR updateRangeByChilds(parent_child_map,
-                                   not_merged_edges_child_ents,
+        CHKERR updateRangeByChilds(parentsChildMap, not_merged_edges_child_ents,
                                    not_merged_child_edge_ents);
 
         merged_child_edge_ents =
@@ -2104,45 +2146,43 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         not_merged_edges.merge(not_merged_child_edge_ents);
 
         if (updateMehsets) {
-          Range vert_parent_ents(vert_tets);
-          for (auto d : {2, 1, 0})
-            CHKERR moab.get_adjacencies(vert_tets, d, false, vert_parent_ents,
-                                        moab::Interface::UNION);
           for (_IT_CUBITMESHSETS_FOR_LOOP_(
                    (*mField.getInterface<MeshsetsManager>()), cubit_it)) {
             EntityHandle cubit_meshset = cubit_it->meshset;
-            Range parent_ents;
-            CHKERR moab.get_entities_by_handle(cubit_meshset, parent_ents,
+            Range meshset_ents;
+            CHKERR moab.get_entities_by_handle(cubit_meshset, meshset_ents,
                                                true);
-            parent_ents = intersect(vert_parent_ents, parent_ents);
             Range child_ents;
-            CHKERR updateRangeByChilds(parent_child_map, parent_ents,
+            CHKERR updateRangeByChilds(parentsChildMap, meshset_ents,
                                        child_ents);
             CHKERR moab.add_entities(cubit_meshset, child_ents);
           }
         }
       }
+
       MoFEMFunctionReturn(0);
-    }
+    };
 
   private:
-    MoFEMErrorCode updateRangeByChilds(
+
+    NodeMergerInterface::ParentChildMap parentsChildMap;
+    std::vector<EntityHandle> childsVec;
+
+    inline MoFEMErrorCode updateRangeByChilds(
         const NodeMergerInterface::ParentChildMap &parent_child_map,
-        const Range &parents, Range &childs) const {
+        const Range &parents, Range &childs) {
       MoFEMFunctionBeginHot;
+      childsVec.clear();
+      childsVec.reserve(parents.size());
       for (auto pit = parents.pair_begin(); pit != parents.pair_end(); pit++) {
-        auto it = parent_child_map.get<0>().lower_bound(pit->first);
-        if (it != parent_child_map.get<0>().end()) {
-          if (pit->first != pit->second) {
-            for (auto hi_it =
-                     parent_child_map.get<0>().upper_bound(pit->second);
-                 it != hi_it; ++it)
-              childs.insert(it->cHild);
-          } else {
-            childs.insert(it->cHild);
-          }
+        auto it = parent_child_map.lower_bound(pit->first);
+        if (it != parent_child_map.end()) {
+          for (auto hi_it = parent_child_map.upper_bound(pit->second);
+               it != hi_it; ++it)
+            childsVec.emplace_back(it->cHild);
         }
       }
+      childs.insert_list(childsVec.begin(), childsVec.end());
       MoFEMFunctionReturnHot(0);
     }
   };
@@ -2562,6 +2602,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
     int nn = 0;
     Range collapsed_edges;
+    MergeNodes merge_nodes(m_field, true, th, update_meshsets);
+
     for (auto mit = length_map.get<0>().begin();
          mit != length_map.get<0>().end(); mit++, nn++) {
 
@@ -2603,10 +2645,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         int line_search = 0;
         EntityHandle father, mother;
         CHKERR get_father_and_mother(father, mother, line_search);
-        CHKERR MergeNodes(m_field, true, line_search, th,
-                          update_meshsets)(father, mother, proc_tets, new_surf,
-                                           edges_to_merge, not_merged_edges);
-
+        CHKERR merge_nodes.mergeNodes(line_search, father, mother, proc_tets);
         if (m_field.getInterface<NodeMergerInterface>()->getSuccessMerge()) {
           Range adj_mother_tets;
           CHKERR moab.get_adjacencies(&mother, 1, 3, false, adj_mother_tets);
@@ -2636,6 +2675,9 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
           break;
       }
     }
+
+    CHKERR merge_nodes.updateRangeByChilds(new_surf, edges_to_merge,
+                                           not_merged_edges, true);
 
     Range adj_faces, adj_edges;
     CHKERR moab.get_adjacencies(proc_tets, 2, false, adj_faces,

@@ -123,7 +123,7 @@ struct NodeMergerInterface : public UnknownInterface {
       ParentChild,
       indexed_by<ordered_unique<
                      member<ParentChild, EntityHandle, &ParentChild::pArent>>,
-                 hashed_non_unique<
+                 ordered_non_unique<
                      member<ParentChild, EntityHandle, &ParentChild::cHild>>>>
       ParentChildMap;
 
@@ -194,3 +194,5 @@ private:
  *
  * \ingroup mofem
  */
+
+                               
