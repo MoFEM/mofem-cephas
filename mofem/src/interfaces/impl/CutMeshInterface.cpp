@@ -2068,7 +2068,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       out_tets.insert(proc_tets.begin(), proc_tets.end());
       proc_tets.swap(out_tets);
 
-      if (add_child && nodeMergerPtr->getSucessMerge()) {
+      if (add_child && nodeMergerPtr->getSuccessMerge()) {
 
         auto &parent_child_map = nodeMergerPtr->getParentChildMap();
 
@@ -2607,7 +2607,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                           update_meshsets)(father, mother, proc_tets, new_surf,
                                            edges_to_merge, not_merged_edges);
 
-        if (m_field.getInterface<NodeMergerInterface>()->getSucessMerge()) {
+        if (m_field.getInterface<NodeMergerInterface>()->getSuccessMerge()) {
           Range adj_mother_tets;
           CHKERR moab.get_adjacencies(&mother, 1, 3, false, adj_mother_tets);
           Range adj_mother_tets_nodes;

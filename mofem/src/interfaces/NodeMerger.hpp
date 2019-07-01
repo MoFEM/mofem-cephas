@@ -41,7 +41,7 @@ struct NodeMergerInterface : public UnknownInterface {
    * \brief Return true if successful merge.
    * @return Error code
    */
-  inline bool getSucessMerge() { return successMerge; }
+  inline bool getSuccessMerge() { return successMerge; }
 
   /**
    * \brief Set error if no common edge
