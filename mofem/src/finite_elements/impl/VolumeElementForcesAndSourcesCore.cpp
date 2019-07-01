@@ -58,7 +58,6 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
   int order_col = getMaxColOrder();
   int rule = getRule(order_row, order_col, order_data);
 
-  // rule << std::endl;
   if (rule >= 0) {
     if (rule < QUAD_3D_TABLE_SIZE) {
       if (QUAD_3D_TABLE[rule]->dim != 3) {
@@ -94,7 +93,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 4,
                                                            false);
     if (nbGaussPts > 0) {
-      CHKERR ShapeMBTET(
+      CHKERR Tools::shapeFunMBTET(
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
           &gaussPts(0, 0), &gaussPts(1, 0), &gaussPts(2, 0), nbGaussPts);
     }
@@ -107,16 +106,15 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
   CHKERR mField.get_moab().get_coords(conn, num_nodes, &*coords.data().begin());
-  double diff_n[12];
-  CHKERR ShapeDiffMBTET(diff_n);
-  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
-      &diff_n[0], &diff_n[1], &diff_n[2]);
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_diff_n(
+      &Tools::diffShapeFunMBTET[0], &Tools::diffShapeFunMBTET[1],
+      &Tools::diffShapeFunMBTET[2]);
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
       &coords[0], &coords[1], &coords[2]);
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
   jAc.clear();
-  for (int nn = 0; nn != 4; nn++) {
+  for (auto n : {0, 1, 2, 3}) {
     tJac(i, j) += t_coords(i) * t_diff_n(j);
     ++t_coords;
     ++t_diff_n;

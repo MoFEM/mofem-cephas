@@ -76,8 +76,6 @@ struct SetBitRefLevelTool {
   /// add entities to database
   MoFEMErrorCode addEntsToDatabase(const Range &seed_ents_range) const {
     MoFEMFunctionBeginHot;
-    // if (bIt.none())
-      // MoFEMFunctionReturnHot(0);
     std::vector<boost::shared_ptr<RefEntity> > shared_ref_ents_vec;
     shared_ref_ents_vec.reserve(seed_ents_range.size());
     for (Range::const_pair_iterator pit = seed_ents_range.pair_begin();
@@ -85,15 +83,24 @@ struct SetBitRefLevelTool {
       // add entities to database
       EntityHandle f = pit->first;
       EntityHandle s = pit->second;
-      boost::shared_ptr<std::vector<RefEntity> > ref_ents_vec =
-          boost::make_shared<std::vector<RefEntity> >();
+      boost::shared_ptr<std::vector<RefEntity>> ref_ents_vec(
+          new std::vector<RefEntity>());
       ref_ents_vec->reserve(s - f + 1);
-      for (; f != (s+1); ++f) {
-        ref_ents_vec->push_back(RefEntity(baseEntData, f));
-        *(ref_ents_vec->back().getBitRefLevelPtr()) |= bIt;
-        shared_ref_ents_vec.push_back(
-            boost::shared_ptr<RefEntity>(ref_ents_vec, &ref_ents_vec->back()));
-      }
+      for (auto f : Range(f, s))
+        ref_ents_vec->emplace_back(baseEntData, f);
+
+      // Set bits to range
+      boost::shared_ptr<std::vector<const void *>> bits_by_ptr(
+          new std::vector<const void *>());
+      bits_by_ptr->resize(s - f + 1);
+      CHKERR baseEntData->moab.tag_get_by_ptr(
+          baseEntData->th_RefBitLevel, Range(f, s), &*bits_by_ptr->begin());
+      for (auto &v_bit_ptr : *bits_by_ptr)
+        const_cast<BitRefLevel &>(
+            *(static_cast<const BitRefLevel *>(v_bit_ptr))) |= bIt;
+
+      for (auto &re : *ref_ents_vec)
+        shared_ref_ents_vec.emplace_back(ref_ents_vec, &re);
     }
     if (!shared_ref_ents_vec.empty()) {
       int s0 = refEntsPtr->size();

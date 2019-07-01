@@ -51,10 +51,9 @@ struct FieldBlas : public UnknownInterface {
 
   /** \brief filed lambda
    * \ingroup mofem_field_algebra
-   * \todo should be moved to independent interface, i.e. FieldAlgebra
    *
    * Do calculation on two fields and save result to field fy
-   * 
+   *
    * \code
    struct Axpy {
     const double aLpha;
@@ -85,7 +84,6 @@ struct FieldBlas : public UnknownInterface {
 
   /** \brief axpy fields
    * \ingroup mofem_field_algebra
-   * \todo should be moved to independent interface, i.e. FieldAlgebra
    *
    * field_y = field_y + alpha*field_x
    *
@@ -104,7 +102,6 @@ struct FieldBlas : public UnknownInterface {
 
   /** \brief copy and scale fields
    * \ingroup mofem_field_algebra
-   * \todo should be moved to independent interface, i.e. FieldAlgebra
    *
    * field_y = alpha*field_x
    *
@@ -121,11 +118,44 @@ struct FieldBlas : public UnknownInterface {
                            bool error_if_missing = false,
                            bool creat_if_missing = false);
 
+  typedef boost::function<MoFEMErrorCode(VectorAdaptor &field_data,
+                                         double *xcoord, double *ycoord,
+                                         double *zcoord)>
+      VertexCoordsFunction;
+
+  /** \brief Set DOFs on vertices using user function
+   * \ingroup mofem_field_algebra
+   *
+   * Example:
+   *
+   * \code
+   * auto do_something = [&](VectorAdaptor &field_data, double *x,
+   *                         double *y, double *z) {
+   *   MoFEMFunctionBegin;
+   *   field_data[0] = (*x);
+   *   field_data[1] = (*y);
+   *   field_data[2] = (*z);
+   *   MoFEMFunctionReturn(0);
+   * };
+   * CHKERR m_field.getInterface<FieldBlas>()->setVertexDofs(set_distance,
+   * "DISP"); \endcode
+   *
+   * \note Function works both ways, using it coordinates can be set from field.
+   *
+   * \param lambda function evaluating field at points
+   * \param field_name  is a field name
+   * \param verts pointer to vertices if null all vertices in the field are
+   * evaluated)
+   *
+   */
+  MoFEMErrorCode setVertexDofs(VertexCoordsFunction lambda,
+                               const std::string field_name,
+                               Range *verts = nullptr);
+
   /** \brief scale field
    * \ingroup mofem_field_algebra
-   * \todo should be moved to independent interface, i.e. FieldAlgebra
    *
-   * \param alpha is a scaling factor
+   * \param val is a set parameter
    * \field_name  is a field name
    *
    */
@@ -134,7 +164,6 @@ struct FieldBlas : public UnknownInterface {
 
   /** \brief set field
    * \ingroup mofem_field_algebra
-   * \todo should be moved to independent interface, i.e. FieldAlgebra
    *
    * field_y = val
    *
@@ -148,7 +177,6 @@ struct FieldBlas : public UnknownInterface {
 
   /** \brief set field
    * \ingroup mofem_field_algebra
-   * \todo should be moved to independent interface, i.e. FieldAlgebra
    *
    * field_y = val
    *
@@ -160,7 +188,6 @@ struct FieldBlas : public UnknownInterface {
 
   /** \brief set field
    * \ingroup mofem_field_algebra
-   * \todo should be moved to independent interface, i.e. FieldAlgebra
    *
    * field_y = val
    *
@@ -177,9 +204,9 @@ struct FieldBlas : public UnknownInterface {
 
 #endif // __FIELD_BLAS_HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_field_algebra Field Basic Algebra
+/**
+ * \defgroup mofem_field_algebra Field Basic Algebra
  * \brief Basic algebraic operation on fields
  *
  * \ingroup mofem
- ******************************************************************************/
+ */

@@ -272,10 +272,27 @@ target_link_libraries(field_axpy_atom_test
   ${PROJECT_LIBS}
 )
 
-add_test(field_axpy ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test -my_file elasticity_atom_test_01X_pressure.h5m)
-add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/field_axpy_test.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
+add_test(field_axpy 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test 
+  -my_file elasticity_atom_test_01X_pressure.h5m)
+
+
+my_add_executable(field_blas_set_vertex_dofs field_blas_set_vertex_dofs.cpp)
+target_link_libraries(field_blas_set_vertex_dofs
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+  
+add_test(field_blas_set_vertex_dofs
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/field_blas_set_vertex_dofs 
+  -file_name elasticity_atom_test_01X_pressure.h5m)
 
 #test coord sys
 my_add_executable(test_setting_coordinate_sys test_setting_coordinate_sys.cpp)
@@ -1300,3 +1317,51 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/segments_distance 
 )
 
+my_add_executable(find_local_coordinates_on_tet find_local_coordinates_on_tet.cpp)
+target_link_libraries(find_local_coordinates_on_tet
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(
+  find_local_coordinates_on_tet ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/find_local_coordinates_on_tet 
+)
+
+cm_export_file("disp01_1parts.h5m" export_atom_tests)
+my_add_executable(field_evaluator field_evaluator.cpp)
+target_link_libraries(field_evaluator
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(field_evaluator
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/field_evaluator -file_name disp01_1parts.h5m 
+  -dm_is_partitioned
+)
+
+my_add_executable(petsc_smart_ptr_objects petsc_smart_ptr_objects.cpp)
+target_link_libraries(petsc_smart_ptr_objects
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(petsc_smart_ptr_objects
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/petsc_smart_ptr_objects  
+)

@@ -65,6 +65,8 @@
 #include <Interface.hpp>
 #include <Core.hpp>
 
+#include <AuxPETSc.hpp>
+
 #include <BitRefManager.hpp>
 #include <Tools.hpp>
 #include <ISManager.hpp>
@@ -90,7 +92,6 @@
 #include <PrismsFromSurfaceInterface.hpp>
 
 //SRC/PETSC
-#include <AuxPETSc.hpp>
 #include <KspCtx.hpp>
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>
@@ -105,7 +106,6 @@
 #include <FlatPrismPolynomialBase.hpp>  // Base functions on prism
 #include <DataOperators.hpp>
 #include <ForcesAndSourcesCore.hpp>
-#include <UserDataOperators.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
 #include <FaceElementForcesAndSourcesCore.hpp>
 #include <EdgeElementForcesAndSourcesCore.hpp>
@@ -114,5 +114,11 @@
 #include <ContactPrismElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSourcesCore.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
+#include <UserDataOperators.hpp>
+
+// More interfaces
+
+#include <FieldEvaluator.hpp>
+
 
 #endif //MOFEM_HPP__

@@ -114,9 +114,7 @@ int main(int argc, char *argv[]) {
 
       CHKERR testingEntitiesInDatabaseSubRange();
 
-      DM dm;
-      // get dm
-      CHKERR simple_interface->getDM(&dm);
+      auto dm = simple_interface->getDM();
 
       auto testingEntitiesInDM = [&]() {
         MoFEMFunctionBegin;
@@ -130,8 +128,6 @@ int main(int argc, char *argv[]) {
 
       CHKERR testingEntitiesInDM();
 
-      // destroy dm
-      CHKERR DMDestroy(&dm);
     }
   }
   CATCH_ERRORS;

@@ -216,6 +216,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
 #ifdef WITH_MED
   CHKERR regSubInterface<MedInterface>(IDD_MOFEMMedInterface);
 #endif
+  CHKERR regSubInterface<FieldEvaluatorInterface>(IDD_MOFEMFieldEvaluator);
 
   MoFEMFunctionReturn(0);
 };
@@ -667,10 +668,12 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   // Build field entities
   for (Field_multiIndex::iterator fit = fIelds.begin(); fit != fIelds.end();
        ++fit) {
-    Range ents_of_id_meshset;
-    CHKERR get_moab().get_entities_by_handle(fit->get()->getMeshset(),
-                                             ents_of_id_meshset, false);
-    CHKERR set_field_order(ents_of_id_meshset, fit->get()->getId(), -1);
+    if ((*fit)->getSpace() != NOSPACE) {
+      Range ents_of_id_meshset;
+      CHKERR get_moab().get_entities_by_handle(fit->get()->getMeshset(),
+                                               ents_of_id_meshset, false);
+      CHKERR set_field_order(ents_of_id_meshset, fit->get()->getId(), -1);
+    }
   }
 
   if (initaliseAndBuildField || initaliseAndBuildFiniteElements) {

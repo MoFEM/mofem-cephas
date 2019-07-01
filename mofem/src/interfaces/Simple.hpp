@@ -4,7 +4,9 @@
  *
  * Make simplified interface, to speedup problem setup and analysts.
  * See discussion here
- * <a href=https://groups.google.com/d/msg/mofem-group/Vkc00aia4dU/o9RF3ZmPAAAJ>link to google groups</a>
+ * <a
+ * href=https://groups.google.com/d/msg/mofem-group/Vkc00aia4dU/o9RF3ZmPAAAJ>link
+ * to google groups</a>
  *
  */
 
@@ -15,7 +17,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __SIMPLE_HPP__
 #define __SIMPLE_HPP__
@@ -24,228 +26,248 @@
 
 namespace MoFEM {
 
-  static const MOFEMuuid IDD_MOFEMSimple = MOFEMuuid( BitIntefaceId(SIMPLE_INTERFACE) );
+static const MOFEMuuid IDD_MOFEMSimple =
+    MOFEMuuid(BitIntefaceId(SIMPLE_INTERFACE));
+
+/**
+ * \brief Simple interface for fast problem set-up
+ * \ingroup mofem_simple_interface
+ */
+struct Simple : public UnknownInterface {
+
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
+
+  MoFEM::Core &cOre;
+  Simple(const MoFEM::Core &core);
 
   /**
-   * \brief Simple interface for fast problem set-up
-   * \ingroup mofem_simple_interface
+   * \brief Destructor
    */
-  struct Simple: public UnknownInterface {
+  ~Simple();
 
-    MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+  /**
+   * \brief get options
+   * @return error code
+   */
+  MoFEMErrorCode getOptions();
 
-    MoFEM::Core& cOre;
-    Simple(const MoFEM::Core& core);
+  /**
+   * \brief Load mesh file
+   * @param  field_name file name
+   * @return            error code
+   */
+  MoFEMErrorCode
+  loadFile(const std::string options = "PARALLEL=READ_PART;"
+                                       "PARALLEL_RESOLVE_SHARED_ENTS;"
+                                       "PARTITION=PARALLEL_PARTITION;");
 
-    /**
-    * \brief Destructor
-    */
-    ~Simple();
+  /**
+   * \brief Add field on domain
+   * @param  name              name of the filed
+   * @param  space             space (L2,H1,Hdiv,Hcurl)
+   * @param  base              approximation base, see FieldApproximationBase
+   * @param  nb_of_coefficients number of field coefficients
+   * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE
+   * (DENSE is faster and uses less memory, SPARSE is more flexible if you
+   * define field on subdomains)
+   * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO
+   * no error if field exist
+   * @param  verb              verbosity level
+   * @return                   error code
+   */
+  MoFEMErrorCode
+  addDomainField(const std::string &name, const FieldSpace space,
+                 const FieldApproximationBase base,
+                 const FieldCoefficientsNumber nb_of_coefficients,
+                 const TagType tag_type = MB_TAG_SPARSE,
+                 const enum MoFEMTypes bh = MF_ZERO, int verb = -1);
 
-    /**
-     * \brief get options
-     * @return error code
-     */
-    MoFEMErrorCode getOptions();
+  /**
+   * \brief Add field on boundary
+   * @param  name              name of the filed
+   * @param  space             space (L2,H1,Hdiv,Hcurl)
+   * @param  base              approximation base, see FieldApproximationBase
+   * @param  nb_of_coefficients number of field coefficients
+   * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE
+   * (DENSE is faster and uses less memory, SPARSE is more flexible if you
+   * define field on subdomains)
+   * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO
+   * no error if field exist
+   * @param  verb              verbosity level
+   * @return                   error code
+   */
+  MoFEMErrorCode
+  addBoundaryField(const std::string &name, const FieldSpace space,
+                   const FieldApproximationBase base,
+                   const FieldCoefficientsNumber nb_of_coefficients,
+                   const TagType tag_type = MB_TAG_SPARSE,
+                   const enum MoFEMTypes bh = MF_ZERO, int verb = -1);
 
-    /**
-     * \brief Load mesh file
-     * @param  field_name file name
-     * @return            error code
-     */
-    MoFEMErrorCode loadFile();
+  /**
+   * \brief Add field on skeleton
+   * @param  name              name of the filed
+   * @param  space             space (L2,H1,Hdiv,Hcurl)
+   * @param  base              approximation base, see FieldApproximationBase
+   * @param  nb_of_coefficients number of field coefficients
+   * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE
+   * (DENSE is faster and uses less memory, SPARSE is more flexible if you
+   * define field on subdomains)
+   * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO
+   * no error if field exist
+   * @param  verb              verbosity level
+   * @return                   error code
+   */
+  MoFEMErrorCode
+  addSkeletonField(const std::string &name, const FieldSpace space,
+                   const FieldApproximationBase base,
+                   const FieldCoefficientsNumber nb_of_coefficients,
+                   const TagType tag_type = MB_TAG_SPARSE,
+                   const enum MoFEMTypes bh = MF_ZERO, int verb = -1);
 
-    /**
-     * \brief Add field on domain
-     * @param  name              name of the filed
-     * @param  space             space (L2,H1,Hdiv,Hcurl)
-     * @param  base              approximation base, see FieldApproximationBase
-     * @param  nb_of_coefficients number of field coefficients
-     * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
-     * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
-     * @param  verb              verbosity level
-     * @return                   error code
-     */
-    MoFEMErrorCode addDomainField(
-      const std::string& name,
-      const FieldSpace space,
-      const FieldApproximationBase base,
-      const FieldCoefficientsNumber nb_of_coefficients,
-      const TagType tag_type = MB_TAG_SPARSE,
-      const enum MoFEMTypes bh = MF_ZERO,
-      int verb = -1
-    );
+  /**
+   * \brief Add field on domain
+   * @param  name              name of the filed
+   * @param  space             space (L2,H1,Hdiv,Hcurl)
+   * @param  base              approximation base, see FieldApproximationBase
+   * @param  nb_of_coefficients number of field coefficients
+   * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE
+   * (DENSE is faster and uses less memory, SPARSE is more flexible if you
+   * define field on subdomains)
+   * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO
+   * no error if field exist
+   * @param  verb              verbosity level
+   * @return                   error code
+   */
+  MoFEMErrorCode addDataField(const std::string &name, const FieldSpace space,
+                              const FieldApproximationBase base,
+                              const FieldCoefficientsNumber nb_of_coefficients,
+                              const TagType tag_type = MB_TAG_SPARSE,
+                              const enum MoFEMTypes bh = MF_ZERO,
+                              int verb = -1);
 
-    /**
-     * \brief Add field on boundary
-     * @param  name              name of the filed
-     * @param  space             space (L2,H1,Hdiv,Hcurl)
-     * @param  base              approximation base, see FieldApproximationBase
-     * @param  nb_of_coefficients number of field coefficients
-     * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
-     * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
-     * @param  verb              verbosity level
-     * @return                   error code
-     */
-    MoFEMErrorCode addBoundaryField(
-      const std::string& name,
-      const FieldSpace space,
-      const FieldApproximationBase base,
-      const FieldCoefficientsNumber nb_of_coefficients,
-      const TagType tag_type = MB_TAG_SPARSE,
-      const enum MoFEMTypes bh = MF_ZERO,
-      int verb = -1
-    );
+  /**
+   * \brief Define finite elements
+   * @return         Error code
+   */
+  MoFEMErrorCode defineFiniteElements();
 
-    /**
-     * \brief Add field on skeleton
-     * @param  name              name of the filed
-     * @param  space             space (L2,H1,Hdiv,Hcurl)
-     * @param  base              approximation base, see FieldApproximationBase
-     * @param  nb_of_coefficients number of field coefficients
-     * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
-     * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
-     * @param  verb              verbosity level
-     * @return                   error code
-     */
-    MoFEMErrorCode addSkeletonField(
-      const std::string& name,
-      const FieldSpace space,
-      const FieldApproximationBase base,
-      const FieldCoefficientsNumber nb_of_coefficients,
-      const TagType tag_type = MB_TAG_SPARSE,
-      const enum MoFEMTypes bh = MF_ZERO,
-      int verb = -1
-    );
+  /**
+   * \brief define problem
+   * @return error code
+   */
+  MoFEMErrorCode defineProblem(const PetscBool is_partitioned = PETSC_TRUE);
 
-    /**
-     * \brief Add field on domain
-     * @param  name              name of the filed
-     * @param  space             space (L2,H1,Hdiv,Hcurl)
-     * @param  base              approximation base, see FieldApproximationBase
-     * @param  nb_of_coefficients number of field coefficients
-     * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
-     * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
-     * @param  verb              verbosity level
-     * @return                   error code
-     */
-    MoFEMErrorCode addDataField(
-      const std::string& name,
-      const FieldSpace space,
-      const FieldApproximationBase base,
-      const FieldCoefficientsNumber nb_of_coefficients,
-      const TagType tag_type = MB_TAG_SPARSE,
-      const enum MoFEMTypes bh = MF_ZERO,
-      int verb = -1
-    );
+  /**
+   * \brief Set field order
+   * @param  std::field_name field name
+   * @param  order           order
+   * @param  range of entities to which order is set (If null it sat to all
+   * entities)
+   * @return                 error code
+   */
+  MoFEMErrorCode setFieldOrder(const std::string field_name, const int order,
+                               const Range *ents = NULL);
 
+  /**
+   * \brief Build fields
+   * @return error code
+   */
+  MoFEMErrorCode buildFields();
 
-    /**
-     * \brief Define finite elements
-     * @return         Error code
-     */
-    MoFEMErrorCode defineFiniteElements();
+  /**
+   * \brief Build finite elements
+   * @return error code
+   */
+  MoFEMErrorCode buildFiniteElements();
 
-    /**
-     * \brief define problem
-     * @return error code
-     */
-    MoFEMErrorCode defineProblem(const PetscBool is_partitioned = PETSC_TRUE);
+  /**
+   * \brief Build problem
+   * @return error code
+   */
+  MoFEMErrorCode buildProblem();
 
-    /**
-     * \brief Set field order
-     * @param  std::field_name field name
-     * @param  order           order
-     * @param  range of entities to which order is set (If null it sat to all entities)
-     * @return                 error code
-     */
-    MoFEMErrorCode setFieldOrder(const std::string field_name, const int order,
-                                 const Range *ents = NULL);
+  /**
+   * \brief Setup problem
+   * @return error code
+   */
+  MoFEMErrorCode setUp(const PetscBool is_partitioned = PETSC_TRUE);
 
-    /**
-     * \brief Build fields
-     * @return error code
-     */
-    MoFEMErrorCode buildFields();
+  /**
+   * \brief Get DM
+   * @param  dm discrete manager
+   * @return    error code
+   */
+  MoFEMErrorCode getDM(DM *dm);
 
-    /**
-     * \brief Build finite elements
-     * @return error code
-     */
-    MoFEMErrorCode buildFiniteElements();
+  /**
+   * @brief Return smart DM object
+   *
+   * \code
+   * {
+   *    auto dm  = simple_interface->getDM();
+   *
+   *    // ...
+   *
+   *    // dm is automatically destroyed when out of the scope
+   * }
+   * \endcode
+   *
+   * @return SmartPetscObj<DM>
+   */
+  inline SmartPetscObj<DM> getDM() { return dM; }
 
-    /**
-     * \brief Build problem
-     * @return error code
-     */
-    MoFEMErrorCode buildProblem();
+  inline int getDim() const { return dIm; }
+  inline const std::string getDomainFEName() const { return domainFE; }
+  inline const std::string getBoundaryFEName() const { return boundaryFE; }
+  inline const std::string getSkeletonFEName() const { return skeletonFE; }
+  inline const std::string getProblemName() const { return nameOfProblem; }
 
-    /**
-     * \brief Setup problem
-     * @return error code
-     */
-    MoFEMErrorCode setUp();
+  inline std::string &getDomainFEName() { return domainFE; }
+  inline std::string &getBoundaryFEName() { return boundaryFE; }
+  inline std::string &getSkeletonFEName() { return skeletonFE; }
+  inline std::string &getProblemName() { return nameOfProblem; }
 
-    /**
-     * \brief Get DM
-     * @param  dm discrete manager
-     * @return    error code
-     */
-    MoFEMErrorCode getDM(DM *dm);
+  inline std::vector<std::string> &getOtherFiniteElements() { return otherFEs; }
 
-    inline int getDim() const { return dIm; }
-    inline const std::string& getDomainFEName() const { return domainFE; }
-    inline const std::string& getBoundaryFEName() const { return boundaryFE; }
-    inline const std::string& getSkeletonFEName() const { return skeletonFE; }
+private:
+  const BitRefLevel bitLevel;
 
-    inline std::string &getDomainFEName() { return domainFE; }
-    inline std::string &getBoundaryFEName() { return boundaryFE; }
-    inline std::string &getSkeletonFEName() { return skeletonFE; }
+  PetscLogEvent MOFEM_EVENT_SimpleLoadMesh;
+  PetscLogEvent MOFEM_EVENT_SimpleBuildFields;
+  PetscLogEvent MOFEM_EVENT_SimpleBuildFiniteElements;
+  PetscLogEvent MOFEM_EVENT_SimpleBuildProblem;
+  PetscLogEvent MOFEM_EVENT_SimpleKSPSolve;
 
-    inline std::vector<std::string>& getOtherFiniteElements() {
-      return otherFEs;
-    }
+  EntityHandle meshSet;                    ///< domain meshset
+  EntityHandle boundaryMeshset;            ///< meshset with boundary
+  std::vector<std::string> domainFields;   ///< domain fields
+  std::vector<std::string> boundaryFields; ///< boundary fields
+  std::vector<std::string> skeletonFields; ///< fields on the skeleton
+  std::vector<std::string> dataFields;     ///< Data fields
 
-  private:
+  std::map<std::string, std::pair<int, Range>> fieldsOrder; ///< fields order
 
-    const BitRefLevel bitLevel;
+  std::string nameOfProblem; ///< problem name
+  std::string domainFE;   ///< domain finite element
+  std::string boundaryFE; ///< boundary finite element
+  std::string skeletonFE; ///< skeleton finite element
 
-    PetscLogEvent MOFEM_EVENT_SimpleLoadMesh;
-    PetscLogEvent MOFEM_EVENT_SimpleBuildFields;
-    PetscLogEvent MOFEM_EVENT_SimpleBuildFiniteElements;
-    PetscLogEvent MOFEM_EVENT_SimpleBuildProblem;
-    PetscLogEvent MOFEM_EVENT_SimpleKSPSolve;
+  std::vector<std::string> otherFEs; ///< Other finite elements
 
-    EntityHandle meshSet;                     ///< domain meshset
-    EntityHandle boundaryMeshset;             ///< meshset with boundary
-    std::string nameOfProblem;                ///< problem name
-    std::vector<std::string> domainFields;    ///< domain fields
-    std::vector<std::string> boundaryFields;  ///< boundary fields
-    std::vector<std::string> skeletonFields;  ///< fields on the skeleton
-    std::vector<std::string> dataFields;      ///< Data fields
+  char meshFileName[255]; ///< mesh file name
+  int dIm;                ///< dimension of problem
 
-    std::map<std::string,std::pair<int,Range> > fieldsOrder;    ///< fields order
+  SmartPetscObj<DM> dM;
+};
 
-    std::string domainFE;      ///< domain finite element
-    std::string boundaryFE;    ///< boundary finite element
-    std::string skeletonFE;    ///< skeleton finite element
-
-    std::vector<std::string> otherFEs; ///< Other finite elements
-
-    char meshFileName[255]; ///< mesh file name
-    int dIm;                ///< dimension of problem
-
-    DM dM;
-
-  };
-
-}
+} // namespace MoFEM
 
 #endif // __SIMPLE_HPP__
 
-/***************************************************************************//**
+/**
  * \defgroup mofem_simple_interface Simple interface
  * \brief Implementation of simple interface for fast problem set-up.
  *
  * \ingroup mofem
- ******************************************************************************/
+ **/

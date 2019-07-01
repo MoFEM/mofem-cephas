@@ -61,7 +61,8 @@ enum Interfaces {
   PRISMSFROMSURFACE_INTERFACE = 1 << 2 | 1 << 7,
   MESHSETSMANAGER_INTERFACE = 1 << 2 | 1 << 8,
   COORDSSYSTEMMANAGER_INTERFACE = 1 << 2 | 1 << 9,
-  CUTMESH_INTERFACE = 1 << 2 | 1 << 10
+  CUTMESH_INTERFACE = 1 << 2 | 1 << 10,
+  FIELDEVALUATOR_INTERFACE = 1 << 2 | 1 << 11
 };
 
 enum LoopInterfaces {
@@ -591,7 +592,7 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
  * \endcode
  *
  */
-#define CHKERR ErrorCheckerCode<__LINE__>() <<
+#define CHKERR MoFEM::ErrorCheckerCode<__LINE__>() <<
 
 /**
  * \brief Check error code of MoAB function and throw MoFEM exception
@@ -617,10 +618,12 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
  */
 #define THROW_MESSAGE(a)                                                       \
   {                                                                            \
-    std::string str("MoFEM error " + boost::lexical_cast<std::string>((a)) +   \
-                    " at line " + boost::lexical_cast<std::string>(__LINE__) + \
-                    " : " + std::string(__FILE__));                            \
-    throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW, str.c_str());             \
+    throw MoFEMException(                                                      \
+        MOFEM_MOFEMEXCEPTION_THROW,                                            \
+        ("MoFEM error " + boost::lexical_cast<std::string>((a)) +              \
+         " at line " + boost::lexical_cast<std::string>(__LINE__) + " : " +    \
+         std::string(__FILE__))                                                \
+            .c_str());                                                         \
   }
 
 /**

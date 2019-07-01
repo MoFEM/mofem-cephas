@@ -1,7 +1,7 @@
-Installation on OS X (Advanced) {#install_macosx}
+Installation on macOS (Advanced) {#install_macosx}
 ===============================
 
-This type of installation is not advised, some dependent libraries like MoAB
+This type of installation is not advised, some dependent libraries like MOAB
 or PETSc have very complex dependencies and success of installation depends
 on the state of your OS, i.e. versions of compilers, installed packages and
 location of libraries. Installation could be time-consuming. In order to

@@ -1,12 +1,14 @@
 /*! \page  a_guide_to_writing_documentation Writing documentation
 \brief A guide why and how to write documentation.
 
+\tableofcontents
+
 \section why_write_documentation Why write documentation?
 
 Code documentation is essential for its future. MoFEM will live only if
 others know how to use it. It is believed that not necessarily the best code
-will survive but that one with the best documentation. Because all of that
-always document what you are doing in MoFEM.
+will survive but that one with the best documentation. Therefore, you should
+always document always document what you are doing in MoFEM.
 
 - Good documentation helps to revise your code
 
@@ -14,14 +16,14 @@ always document what you are doing in MoFEM.
 
 - Report assumptions, limitations and bugs in your code
 
-- Think about different kind of users, f.e. end-user who execute only code,
+- Think about different kinds of users, f.e. end-user who only executess code,
   beginner programmers and advanced developers
 
-- Link different part and your work in \em modules
+- Link different parts of your work in \em modules
 
 - Follow <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html>
 
-- Think about yourself; you will forget. Documentation helps to remind what
+- Think about yourself; you might forget. Documentation helps to remind what
   you have done
 
 \section genaral_about_writting About writing manual
@@ -33,7 +35,7 @@ always document what you are doing in MoFEM.
 - First, you need to ask yourself who you’re writing for. At first, you
 generally need to appeal to two audiences: Developers or Users.
 
-- In the first paragraph indicate to who you write this documentation what is proposed if it
+- In the first paragraph indicate to whom you write this documentation what is proposed if it
 
 - Try to indicate a level of difficulty.
 

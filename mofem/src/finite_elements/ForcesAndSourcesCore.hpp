@@ -107,10 +107,10 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   /**
    * @brief Get the entity sense (orientation)
-   * 
-   * @tparam type 
-   * @param data 
-   * @return MoFEMErrorCode 
+   *
+   * @tparam type
+   * @param data
+   * @return MoFEMErrorCode
    */
   template <EntityType type>
   inline MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
@@ -119,11 +119,11 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   /**
    * @brief Get the entity data order for given space
-   * 
-   * @tparam type 
-   * @param data 
-   * @param space 
-   * @return MoFEMErrorCode 
+   *
+   * @tparam type
+   * @param data
+   * @param space
+   * @return MoFEMErrorCode
    */
   template <EntityType type>
   inline MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
@@ -260,7 +260,30 @@ struct ForcesAndSourcesCore : public FEMethod {
                                           EntityType type, int side_number,
                                           VectorInt &indices) const;
 
-  /** \brief set integration rule for finite element
+  typedef boost::function<int(int order_row, int order_col, int order_data)>
+      RuleHookFun;
+
+  /**
+   * \brief Hook to get rule
+   *
+   * \todo check preferred format how works with gcc and clang,
+   * see
+   * <http://www.boost.org/doc/libs/1_64_0/doc/html/function/tutorial.html#idp247873024>
+   */
+  RuleHookFun getRuleHook;
+
+  /**
+   * @brief Set function to calculate integration rule
+   *
+   */
+  RuleHookFun setRuleHook;
+
+  /**
+   * \brief another variant of getRule
+   * @param  order_row  order of base function on row
+   * @param  order_col  order of base function on columns
+   * @param  order_data order of base function approximating data
+   * @return            integration rule
    *
    * This function is overloaded by the user. The integration rule
    * is set such that specific operator implemented by the user is integrated
@@ -292,42 +315,10 @@ struct ForcesAndSourcesCore : public FEMethod {
    * implement own (specific) integration method.
    *
    * \bug this function should be const
-   *
-   */
-  virtual int getRule(int order) { return 2 * order; }
-
-  typedef boost::function<int(int order_row, int order_col, int order_data)>
-      RuleHookFun;
-
-  /**
-   * \brief Hook to get rule
-   *
-   * \todo check preferred format how works with gcc and clang,
-   * see
-   * <http://www.boost.org/doc/libs/1_64_0/doc/html/function/tutorial.html#idp247873024>
-   */
-  RuleHookFun getRuleHook;
-
-  /**
-   * \brief another variant of getRule
-   * @param  order_row  order of base function on row
-   * @param  order_col  order of base function on columns
-   * @param  order_data order of base function approximating data
-   * @return            integration rule
-   *
-   * \bug this function should be const
    */
   virtual int getRule(int order_row, int order_col, int order_data) {
     return getRuleHook ? getRuleHook(order_row, order_col, order_data)
                        : getRule(order_data);
-  }
-
-  /** \brief It will be removed in the future use other variant
-   */
-  virtual MoFEMErrorCode setGaussPts(int order) {
-    MoFEMFunctionBeginHot;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "sorry, not implemented");
-    MoFEMFunctionReturnHot(0);
   }
 
   /** \brief set user specific integration rule
@@ -355,11 +346,8 @@ struct ForcesAndSourcesCore : public FEMethod {
     */
   virtual MoFEMErrorCode setGaussPts(int order_row, int order_col,
                                      int order_data) {
-
-    MoFEMFunctionBeginHot;
-    ierr = setGaussPts(order_data);
-    CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    return setRuleHook ? setRuleHook(order_row, order_col, order_data)
+                       : setGaussPts(order_data);
   }
 
   /** \brief Data operator to do calculations at integration points.
@@ -724,6 +712,24 @@ struct ForcesAndSourcesCore : public FEMethod {
    */
   MoFEMErrorCode loopOverOperators();
 
+  /**@{*/
+
+  /** \name Deprecated (do not use) */
+
+  /** \deprecated Use getRule(int row_order, int col_order, int data order)
+   */
+  virtual int getRule(int order) { return 2 * order; }
+
+  /** \deprecated setGaussPts(int row_order, int col_order, int data order);
+   */
+  virtual MoFEMErrorCode setGaussPts(int order) {
+    MoFEMFunctionBeginHot;
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "sorry, not implemented");
+    MoFEMFunctionReturnHot(0);
+  }
+
+  /**@/}*/
+
 private:
   /**
    * @brief Last evaluated type of element entity
@@ -750,11 +756,11 @@ DEPRECATED typedef ForcesAndSourcesCore ForcesAndSurcesCore;
 
 #endif //__FORCES_AND_SOURCES_CORE__HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_forces_and_sources Forces and sources
-* \ingroup mofem
-*
-* \brief Manages complexities related to assembly of vector and matrices at
-* single finite element level.
-*
-******************************************************************************/
+/**
+ * \defgroup mofem_forces_and_sources Forces and sources
+ * \ingroup mofem
+ *
+ * \brief Manages complexities related to assembly of vector and matrices at
+ * single finite element level.
+ *
+ **/

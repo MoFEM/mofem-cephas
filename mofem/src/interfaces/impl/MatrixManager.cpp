@@ -97,11 +97,11 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
     MoFEMFunctionReturnHot(0);
 
   auto fe_it =
-      p_miit->numeredFiniteElements.find(ent_fe_ptr->getGlobalUniqueId());
+      p_miit->numeredFiniteElements->find(ent_fe_ptr->getGlobalUniqueId());
 
   // Create element if is not there
-  if (fe_it == p_miit->numeredFiniteElements.end()) {
-    auto p = p_miit->numeredFiniteElements.insert(
+  if (fe_it == p_miit->numeredFiniteElements->end()) {
+    auto p = p_miit->numeredFiniteElements->insert(
         boost::make_shared<NumeredEntFiniteElement>(ent_fe_ptr));
     fe_it = p.first;
   }
@@ -638,7 +638,7 @@ MatrixManager::~MatrixManager() {}
 template <>
 MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
     const std::string name, Mat *Aij, int verb) {
-  MoFEM::Interface &m_field = cOre;
+  MoFEM::CoreInterface &m_field = cOre;
   CreateRowComressedADJMatrix *core_ptr =
       static_cast<CreateRowComressedADJMatrix *>(&cOre);
   MoFEMFunctionBegin;
@@ -675,7 +675,7 @@ template <>
 MoFEMErrorCode
 MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
                                                   Mat *Adj, int verb) {
-  MoFEM::Interface &m_field = cOre;
+  MoFEM::CoreInterface &m_field = cOre;
   CreateRowComressedADJMatrix *core_ptr =
       static_cast<CreateRowComressedADJMatrix *>(&cOre);
   MoFEMFunctionBegin;
@@ -712,7 +712,7 @@ MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
 template <>
 MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
     const std::string name, Mat *Aij, int verb) {
-  MoFEM::Interface &m_field = cOre;
+  MoFEM::CoreInterface &m_field = cOre;
   CreateRowComressedADJMatrix *core_ptr =
       static_cast<CreateRowComressedADJMatrix *>(&cOre);
   MoFEMFunctionBegin;
@@ -755,18 +755,18 @@ template <>
 MoFEMErrorCode
 MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
     const std::string problem_name, int row_print, int col_print, int verb) {
-  MoFEM::Interface &m_field = cOre;
+  MoFEM::CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn, 0, 0, 0, 0);
 
   struct TestMatrixFillIn : public FEMethod {
-    Interface *mFieldPtr;
+    CoreInterface *mFieldPtr;
 
     Mat A;
 
     int rowPrint, colPrint;
 
-    TestMatrixFillIn(Interface *m_field_ptr, Mat a, int row_print,
+    TestMatrixFillIn(CoreInterface *m_field_ptr, Mat a, int row_print,
                      int col_print)
         : mFieldPtr(m_field_ptr), A(a), rowPrint(row_print),
           colPrint(col_print){};
@@ -995,7 +995,7 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
       PetscPrintf(m_field.get_comm(), "\tcheck element %s\n",
                   fe->getName().c_str());
     CHKERR m_field.loop_finite_elements(problem_name, fe->getName(), method,
-                                        MF_EXIST, verb);
+                                        nullptr, MF_EXIST, verb);
   }
 
   CHKERR MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);

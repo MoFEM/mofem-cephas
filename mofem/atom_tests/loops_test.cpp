@@ -26,8 +26,6 @@ int main(int argc, char *argv[]) {
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
-    int rank;
-    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
     // Read parameters from line command
     PetscBool flg = PETSC_TRUE;
@@ -48,8 +46,7 @@ int main(int argc, char *argv[]) {
     // Read mesh to MOAB
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option);
-    CHKERRG(rval);
+    CHKERR moab.load_file(mesh_file_name, 0, option);
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);

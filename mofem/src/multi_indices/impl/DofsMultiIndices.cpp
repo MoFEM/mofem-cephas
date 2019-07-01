@@ -24,37 +24,26 @@ DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
                      const bool is_active)
     : interface_FieldEntity<FieldEntity>(entity_ptr), active(is_active) {
 
-  if (!entity_ptr) {
-    THROW_MESSAGE("FieldEntity pinter not initialized");
-  }
-  if (!sPtr) {
-    THROW_MESSAGE("FieldEntity pinter not initialized");
-  }
-  if (!getFieldEntityPtr()) {
-    THROW_MESSAGE("FieldEntity pinter not initialized");
-  }
-
   globalUId = getGlobalUniqueIdCalculate(dof, entity_ptr);
 
-  // set order to DOF
-  ApproximationOrder &order = getDofOrderMap()[dof];
-  if (order != dof_order) {
-    if (order != -1) {
-      cerr << dof << " " << dof_order << " " << order;
-      THROW_MESSAGE(
-          "Order of DOFs inconsistent with order set before for entity");
-    }
-    order = dof_order;
-  }
-
-  // verify data consistency
-  if (dof_rank != dof % getNbOfCoeffs()) {
-    std::ostringstream ss;
-    ss << dof_rank << " " << dof << " " << getNbOfCoeffs() << endl;
-    ss << *entity_ptr;
-    cerr << ss.str() << endl;
-    THROW_MESSAGE("Inconsitent DOFs rank with index of DOF on entity");
-  }
+  if (PetscUnlikely(!entity_ptr)) 
+    THROW_MESSAGE("FieldEntity pointer not initialized");
+  if (PetscUnlikely(!sPtr)) 
+    THROW_MESSAGE("FieldEntity pointer not initialized");
+  if (PetscUnlikely(!getFieldEntityPtr())) 
+    THROW_MESSAGE("FieldEntity pointer not initialized");
+  // verify dof order
+  if (PetscUnlikely(dof_order != getDofOrderMap()[dof]))
+    THROW_MESSAGE(
+        "Inconsistent DOF order with order set before for entity " +
+        boost::lexical_cast<std::string>(*entity_ptr) + " dof_order->" +
+        boost::lexical_cast<std::string>(dof_order) +
+        " != " + boost::lexical_cast<std::string>(getDofOrderMap()[dof]) +
+        "<-getDofOrderMap()[dof]");
+  // verify dof rank
+  if (PetscUnlikely(dof_rank != dof % getNbOfCoeffs()))
+    THROW_MESSAGE("Inconsistent DOFs rank with index of DOF on entity");
+    
 }
 
 std::ostream &operator<<(std::ostream &os, const DofEntity &e) {

@@ -1,12 +1,15 @@
 /*! \page guidelines_bug_reporting Guidelines for bug reporting
 \brief Instruction how to report bugs.
 
-Send error to <a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a>, you can
+\tableofcontents
+
+Send error to <a href="https://bitbucket.org/likask/mofem-cephas/issues?status=new&status=open">issues</a> on BitBucket, 
+you can
 
 - report bugs,
-- ask for clarification,
 - ask for help in tracking down bugs, and
 - request new features within MoFEM.
+- send us questions to <a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a>
 
 \section bug_reporting Guidelines for bug reporting
 
@@ -17,7 +20,10 @@ The more information that you convey about a bug, the easier it will be for us t
 
 In some specific cases, additionally you can
 - Send mesh file ( if file is not too big )
-- Run ctest \codectest -D Experimental\endcode.
+- Run ctest 
+\code
+ctest -D Experimental
+\endcode.
 
 \section example_bug_repoty Example bug report
 

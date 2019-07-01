@@ -29,7 +29,7 @@ namespace MoFEM {
 static const MOFEMuuid IDD_MOFEMTetGegInterface =
     MOFEMuuid(BitIntefaceId(TETGEN_INTERFACE));
 
-/** \brief use TetGen to generate mesh
+/** \brief TetGen interface
 
   * \ingroup mesh_tetgen
   */

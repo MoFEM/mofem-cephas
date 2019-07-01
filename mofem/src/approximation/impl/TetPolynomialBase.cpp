@@ -899,7 +899,7 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
   DataForcesAndSourcesCore &data = cTx->dAta;
   if (cTx->copyNodeBase == LASTBASE) {
     data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 4, false);
-    CHKERR ShapeMBTET(
+    CHKERR Tools::shapeFunMBTET(
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &pts(0, 0), &pts(1, 0), &pts(2, 0), nb_gauss_pts);
   } else {
@@ -914,8 +914,8 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
              ApproximationBaseNames[base]);
   }
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4, 3, false);
-  CHKERR ShapeDiffMBTET(
-      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
+  std::copy(Tools::diffShapeFunMBTET.begin(), Tools::diffShapeFunMBTET.end(),
+            data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
 
   switch (cTx->sPace) {
   case H1:

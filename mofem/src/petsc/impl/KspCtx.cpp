@@ -20,81 +20,102 @@
 
 namespace MoFEM {
 
-PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
+PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
   // PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
-  MoFEMFunctionBeginHot;
-  KspCtx* ksp_ctx = (KspCtx*)ctx;
-  PetscLogEventBegin(ksp_ctx->MOFEM_EVENT_KspRhs,0,0,0,0);
-  KspCtx::BasicMethodsSequence::iterator bit = ksp_ctx->preProcess_Rhs.begin();
-  for(;bit!=ksp_ctx->preProcess_Rhs.end();bit++) {
-    ierr = (*bit)->setKsp(ksp); CHKERRG(ierr);
-    (*bit)->ksp_f = f;
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_SETFUNCTION);  CHKERRG(ierr);
-    ierr = ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_KSPNONE);  CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  KspCtx *ksp_ctx = static_cast<KspCtx *>(ctx);
+  PetscLogEventBegin(ksp_ctx->MOFEM_EVENT_KspRhs, 0, 0, 0, 0);
+
+  ksp_ctx->vecAssembleSwitch = boost::movelib::make_unique<bool>(true);
+
+  for (auto &bit : ksp_ctx->preProcess_Rhs) {
+    bit->vecAssembleSwitch = boost::move(ksp_ctx->vecAssembleSwitch);
+    CHKERR bit->setKsp(ksp);
+    bit->ksp_f = f;
+    CHKERR bit->setKspCtx(KspMethod::CTX_SETFUNCTION);
+    CHKERR ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,
+                                                           *bit);
+    CHKERR bit->setKspCtx(KspMethod::CTX_KSPNONE);
+    ksp_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
-  KspCtx::FEMethodsSequence::iterator lit = ksp_ctx->loops_to_do_Rhs.begin();
-  for(;lit!=ksp_ctx->loops_to_do_Rhs.end();lit++) {
-    ierr = lit->second->setKspCtx(KspMethod::CTX_SETFUNCTION);  CHKERRG(ierr);
-    ierr = lit->second->setKsp(ksp); CHKERRG(ierr);
-    lit->second->ksp_f = f;
-    ierr = ksp_ctx->mField.loop_finite_elements(ksp_ctx->problemName,lit->first,*(lit->second),ksp_ctx->bH);  CHKERRG(ierr);
-    ierr = lit->second->setKspCtx(KspMethod::CTX_KSPNONE);  CHKERRG(ierr);
+  for (auto &lit : ksp_ctx->loops_to_do_Rhs) {
+    lit.second->vecAssembleSwitch = boost::move(ksp_ctx->vecAssembleSwitch);
+    CHKERR lit.second->setKspCtx(KspMethod::CTX_SETFUNCTION);
+    CHKERR lit.second->setKsp(ksp);
+    lit.second->ksp_f = f;
+    CHKERR ksp_ctx->mField.loop_finite_elements(
+        ksp_ctx->problemName, lit.first, *(lit.second), nullptr, ksp_ctx->bH);
+    CHKERR lit.second->setKspCtx(KspMethod::CTX_KSPNONE);
+    ksp_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
-  bit = ksp_ctx->postProcess_Rhs.begin();
-  for(;bit!=ksp_ctx->postProcess_Rhs.end();bit++) {
-    ierr = (*bit)->setKsp(ksp); CHKERRG(ierr);
-    (*bit)->ksp_f = f;
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_SETFUNCTION);  CHKERRG(ierr);
-    ierr = ksp_ctx->mField.problem_basic_method_postProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_KSPNONE);  CHKERRG(ierr);
+  for (auto &bit : ksp_ctx->postProcess_Rhs) {
+    bit->vecAssembleSwitch = boost::move(ksp_ctx->vecAssembleSwitch);
+    CHKERR bit->setKsp(ksp);
+    bit->ksp_f = f;
+    CHKERR bit->setKspCtx(KspMethod::CTX_SETFUNCTION);
+    CHKERR ksp_ctx->mField.problem_basic_method_postProcess(
+        ksp_ctx->problemName, *bit);
+    CHKERR bit->setKspCtx(KspMethod::CTX_KSPNONE);
+    ksp_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
-  ierr = VecGhostUpdateBegin(f,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
-  ierr = VecGhostUpdateEnd(f,ADD_VALUES,SCATTER_REVERSE); CHKERRG(ierr);
-  ierr = VecAssemblyBegin(f); CHKERRG(ierr);
-  ierr = VecAssemblyEnd(f); CHKERRG(ierr);
-  PetscLogEventEnd(ksp_ctx->MOFEM_EVENT_KspRhs,0,0,0,0);
-  MoFEMFunctionReturnHot(0);
+
+  if (*ksp_ctx->vecAssembleSwitch) {
+    CHKERR VecGhostUpdateBegin(f, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecGhostUpdateEnd(f, ADD_VALUES, SCATTER_REVERSE);
+    CHKERR VecAssemblyBegin(f);
+    CHKERR VecAssemblyEnd(f);
+  }
+  PetscLogEventEnd(ksp_ctx->MOFEM_EVENT_KspRhs, 0, 0, 0, 0);
+  MoFEMFunctionReturn(0);
 }
-PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx) {
+PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
   // PetscValidHeaderSpecific(ksp,KSP_CLASSID,1);
-  MoFEMFunctionBeginHot;
-  KspCtx* ksp_ctx = (KspCtx*)ctx;
-  PetscLogEventBegin(ksp_ctx->MOFEM_EVENT_KspMat,0,0,0,0);
-  KspCtx::BasicMethodsSequence::iterator bit = ksp_ctx->preProcess_Mat.begin();
-  for(;bit!=ksp_ctx->preProcess_Mat.end();bit++) {
-    ierr = (*bit)->setKsp(ksp); CHKERRG(ierr);
-    (*bit)->ksp_A = A;
-    (*bit)->ksp_B = B;
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_OPERATORS); CHKERRG(ierr);
-    ierr = ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_KSPNONE);  CHKERRG(ierr);
+  MoFEMFunctionBegin;
+  KspCtx *ksp_ctx = static_cast<KspCtx *>(ctx);
+  PetscLogEventBegin(ksp_ctx->MOFEM_EVENT_KspMat, 0, 0, 0, 0);
+
+  ksp_ctx->matAssembleSwitch = boost::movelib::make_unique<bool>(true);
+
+  for (auto &bit : ksp_ctx->preProcess_Mat) {
+    bit->matAssembleSwitch = boost::move(ksp_ctx->matAssembleSwitch);
+    CHKERR bit->setKsp(ksp);
+    bit->ksp_A = A;
+    bit->ksp_B = B;
+    CHKERR bit->setKspCtx(KspMethod::CTX_OPERATORS);
+    CHKERR ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,
+                                                           *bit);
+    CHKERR bit->setKspCtx(KspMethod::CTX_KSPNONE);
+    ksp_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
-  KspCtx::FEMethodsSequence::iterator lit = ksp_ctx->loops_to_do_Mat.begin();
-  for(;lit!=ksp_ctx->loops_to_do_Mat.end();lit++) {
-    lit->second->ksp_A = A;
-    lit->second->ksp_B = B;
-    ierr = lit->second->setKsp(ksp); CHKERRG(ierr);
-    ierr = lit->second->setKspCtx(KspMethod::CTX_OPERATORS); CHKERRG(ierr);
-    ierr = ksp_ctx->mField.loop_finite_elements(ksp_ctx->problemName,lit->first,*(lit->second),ksp_ctx->bH);  CHKERRG(ierr);
-    ierr = lit->second->setKspCtx(KspMethod::CTX_KSPNONE);
+  for (auto &lit : ksp_ctx->loops_to_do_Mat) {
+    lit.second->matAssembleSwitch = boost::move(ksp_ctx->matAssembleSwitch);
+    lit.second->ksp_A = A;
+    lit.second->ksp_B = B;
+    CHKERR lit.second->setKsp(ksp);
+    CHKERR lit.second->setKspCtx(KspMethod::CTX_OPERATORS);
+    CHKERR ksp_ctx->mField.loop_finite_elements(
+        ksp_ctx->problemName, lit.first, *(lit.second), nullptr, ksp_ctx->bH);
+    CHKERR lit.second->setKspCtx(KspMethod::CTX_KSPNONE);
+    ksp_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
-  bit = ksp_ctx->postProcess_Mat.begin();
-  for(;bit!=ksp_ctx->postProcess_Mat.end();bit++) {
-    ierr = (*bit)->setKsp(ksp); CHKERRG(ierr);
-    (*bit)->ksp_A = A;
-    (*bit)->ksp_B = B;
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_OPERATORS); CHKERRG(ierr);
-    ierr = ksp_ctx->mField.problem_basic_method_postProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRG(ierr);
-    ierr = (*bit)->setKspCtx(KspMethod::CTX_KSPNONE);  CHKERRG(ierr);
+  for (auto &bit : ksp_ctx->postProcess_Mat) {
+    bit->matAssembleSwitch = boost::move(ksp_ctx->matAssembleSwitch);
+    CHKERR bit->setKsp(ksp);
+    bit->ksp_A = A;
+    bit->ksp_B = B;
+    CHKERR bit->setKspCtx(KspMethod::CTX_OPERATORS);
+    CHKERR ksp_ctx->mField.problem_basic_method_postProcess(
+        ksp_ctx->problemName, *bit);
+    CHKERR bit->setKspCtx(KspMethod::CTX_KSPNONE);
+    ksp_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
-  ierr = MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-  ierr = MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY); CHKERRG(ierr);
-  // MatView(A,PETSC_VIEWER_DRAW_WORLD);
-  // std::string wait;
-  // std::cin >> wait;
-  PetscLogEventEnd(ksp_ctx->MOFEM_EVENT_KspMat,0,0,0,0);
-  MoFEMFunctionReturnHot(0);
+
+  if (ksp_ctx->matAssembleSwitch) {
+    CHKERR MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
+    CHKERR MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
+  }
+  PetscLogEventEnd(ksp_ctx->MOFEM_EVENT_KspMat, 0, 0, 0, 0);
+  MoFEMFunctionReturn(0);
 }
 
-}
+} // namespace MoFEM

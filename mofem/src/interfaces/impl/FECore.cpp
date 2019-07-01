@@ -566,27 +566,25 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
 
-  typedef RefElement_multiIndex::index<Ent_mi_tag>::type RefFiniteElementByEnt;
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldById;
-  FieldById &fields_by_id = fIelds.get<BitFieldId_mi_tag>();
+  auto &fields_by_id = fIelds.get<BitFieldId_mi_tag>();
 
-  // get id of mofem fields for row, col and data
+  // Get id of mofem fields for row, col and data
   enum IntLoop { ROW = 0, COL, DATA, LAST };
-  BitFieldId fe_fields[LAST] = {fe.get()->getBitFieldIdRow(),
-                                fe.get()->getBitFieldIdCol(),
-                                fe.get()->getBitFieldIdData()};
+  std::array<BitFieldId, LAST> fe_fields = {fe.get()->getBitFieldIdRow(),
+                                            fe.get()->getBitFieldIdCol(),
+                                            fe.get()->getBitFieldIdData()};
 
-  // get finite element meshset
+  // Get finite element meshset
   EntityHandle meshset = get_finite_element_meshset(fe.get()->getId());
 
-  // get entities from finite element meshset // if meshset
+  // Get entities from finite element meshset // if meshset
   Range fe_ents;
   CHKERR get_moab().get_entities_by_handle(meshset, fe_ents, false);
 
   if (ents_ptr)
     fe_ents = intersect(fe_ents, *ents_ptr);
 
-  // map entity uid to pointers
+  // Map entity uid to pointers
   typedef std::vector<boost::weak_ptr<EntFiniteElement>> VecOfWeakFEPtrs;
   typedef std::map<const UId *, VecOfWeakFEPtrs> MapEntUIdAndVecOfWeakFEPtrs;
   MapEntUIdAndVecOfWeakFEPtrs ent_uid_and_fe_vec;
@@ -598,19 +596,21 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   int last_row_field_ents_view_size = 0;
   int last_col_field_ents_view_size = 0;
 
+  // View of field entities on element
   FieldEntity_vector_view data_field_ents_view;
 
-  // loop meshset finite element ents and add finite elements
+  // Loop meshset finite element ents and add finite elements
   for (Range::const_pair_iterator peit = fe_ents.const_pair_begin();
        peit != fe_ents.const_pair_end(); peit++) {
 
     EntityHandle first = peit->first;
     EntityHandle second = peit->second;
 
+    // Find range of ref entities that is sequence
     // note: iterator is a wrapper
     // check if is in refinedFiniteElements database
-    RefFiniteElementByEnt::iterator ref_fe_miit, hi_ref_fe_miit;
-    ref_fe_miit = refinedFiniteElements.get<Ent_mi_tag>().lower_bound(first);
+    auto ref_fe_miit =
+        refinedFiniteElements.get<Ent_mi_tag>().lower_bound(first);
     if (ref_fe_miit == refinedFiniteElements.get<Ent_mi_tag>().end()) {
       std::ostringstream ss;
       ss << "refinedFiniteElements not in database ent = " << first;
@@ -618,24 +618,26 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       ss << " " << *fe;
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, ss.str().c_str());
     }
-    hi_ref_fe_miit =
+    auto hi_ref_fe_miit =
         refinedFiniteElements.get<Ent_mi_tag>().upper_bound(second);
 
     EntFiniteElement_multiIndex::iterator hint_p = entsFiniteElements.end();
-
     for (; ref_fe_miit != hi_ref_fe_miit; ref_fe_miit++) {
 
+      // Add finite element to database
       hint_p = entsFiniteElements.emplace_hint(
           hint_p, boost::make_shared<EntFiniteElement>(*ref_fe_miit, fe));
       processed_fes.emplace_back(*hint_p);
       auto fe_raw_ptr = hint_p->get();
 
-      // allocate space for etities view
+      // Allocate space for etities view
       data_field_ents_view.clear();
       fe_raw_ptr->row_field_ents_view->reserve(last_row_field_ents_view_size);
+      // Create shared pointer for entities view
       if (fe_fields[ROW] == fe_fields[COL]) {
         fe_raw_ptr->col_field_ents_view = fe_raw_ptr->row_field_ents_view;
       } else {
+        // row and columns are diffent
         if (fe_raw_ptr->col_field_ents_view ==
                  fe_raw_ptr->row_field_ents_view)
           fe_raw_ptr->col_field_ents_view =
@@ -645,6 +647,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
       int nb_dofs_on_data = 0;
 
+      // Iterate over all field and check which one is on the element
       for (unsigned int ii = 0; ii != BitFieldId().size(); ++ii) {
 
         // Common field id for ROW, COL and DATA
@@ -658,7 +661,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
         // Find in database data associated with the field (ii)
         const BitFieldId field_id = BitFieldId().set(ii);
-        FieldById::iterator miit = fields_by_id.find(field_id);
+        auto miit = fields_by_id.find(field_id);
         if (miit == fields_by_id.end()) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Data inconsistency");
@@ -691,6 +694,8 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
               entsFields.get<Composite_Name_And_Ent_mi_tag>();
           FieldEntityByComposite::iterator meit;
 
+          // If one entity in the pair search for one, otherwise search for
+          // range
           if (first == second)
             meit = field_ents_by_name_and_ent.find(
                 boost::make_tuple(field_name, first));
@@ -709,7 +714,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
               hi_meit = field_ents_by_name_and_ent.upper_bound(
                   boost::make_tuple(field_name, second));
 
-            // create list of finite elements with this dof UId
+            // Add to view and create list of finite elements with this dof UId
             for (; meit != hi_meit; ++meit) {
               // Add entity to map with key entity uids pointers  and data
               // finite elements weak ptrs. I using pointers to uids instead
@@ -743,14 +748,19 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         return a.lock()->getGlobalUniqueId() < b.lock()->getGlobalUniqueId();
       };
 
+      // Sort all views
+
+      // Data
       sort(data_field_ents_view.begin(), data_field_ents_view.end(), uid_comp);
       for (auto e : data_field_ents_view)
         fe_raw_ptr->data_field_ents_view->emplace_back(e);
 
+      // Row
       sort(fe_raw_ptr->row_field_ents_view->begin(),
            fe_raw_ptr->row_field_ents_view->end(), uid_comp);
       last_row_field_ents_view_size = fe_raw_ptr->row_field_ents_view->size();
       
+      // Column
       if (fe_raw_ptr->col_field_ents_view != fe_raw_ptr->row_field_ents_view) {
         sort(fe_raw_ptr->col_field_ents_view->begin(),
              fe_raw_ptr->col_field_ents_view->end(), uid_comp);
@@ -760,7 +770,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       // Clear finite element data structures
       fe_raw_ptr->data_dofs->clear();
 
-      // Reserve memory for data
+      // Reserve memory for data FE Dofs
       auto data_dofs_array_vec = boost::make_shared<std::vector<FEDofEntity>>();
       data_dofs_array[fe_raw_ptr->getEnt()] = data_dofs_array_vec;
       data_dofs_array_vec->reserve(nb_dofs_on_data);
@@ -771,8 +781,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
     }
   }
 
-  typedef DofEntity_multiIndex::index<Unique_Ent_mi_tag>::type DofsByEntUId;
-  DofsByEntUId &dofs_by_ent_uid = dofsField.get<Unique_Ent_mi_tag>();
+  auto &dofs_by_ent_uid = dofsField.get<Unique_Ent_mi_tag>();
 
   // Loop over hash map, which has all entities on given elemnts
   boost::shared_ptr<SideNumber> side_number_ptr;
@@ -792,35 +801,26 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
 MoFEMErrorCode Core::build_finite_elements(int verb) {
   MoFEMFunctionBeginHot;
-  if (verb == -1)
+  if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
 
-  FiniteElement_multiIndex::iterator fe_miit = finiteElements.begin();
-
   // loop Finite Elements
-  for (; fe_miit != finiteElements.end(); fe_miit++) {
-    if (verb > 0)
-      PetscPrintf(cOmm, "Build Finite Elements %s\n",
-                  (*fe_miit)->getName().c_str());
-    CHKERR buildFiniteElements(*fe_miit, NULL, verb);
+  for (auto &fe : finiteElements) {
+    if (verb >= VERBOSE)
+      PetscPrintf(cOmm, "Build Finite Elements %s\n", fe->getName().c_str());
+    CHKERR buildFiniteElements(fe, NULL, verb);
   }
 
-  if (verb > 0) {
+  if (verb >= VERBOSE) {
     PetscSynchronizedPrintf(cOmm, "Nb. FEs %u\n", entsFiniteElements.size());
     PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-    typedef EntFiniteElement_multiIndex::index<BitFEId_mi_tag>::type
-        FiniteElementById;
-    FiniteElementById &finite_elements_by_id =
-        entsFiniteElements.get<BitFEId_mi_tag>();
-    FiniteElement_multiIndex::iterator fe_id_it = finiteElements.begin();
-    for (; fe_id_it != finiteElements.end(); fe_id_it++) {
-      FiniteElementById::iterator miit =
-          finite_elements_by_id.lower_bound((*fe_id_it)->getId());
-      FiniteElementById::iterator hi_miit =
-          finite_elements_by_id.upper_bound((*fe_id_it)->getId());
+    auto &finite_elements_by_id = entsFiniteElements.get<BitFEId_mi_tag>();
+    for (auto &fe : finiteElements) {
+      auto miit = finite_elements_by_id.lower_bound(fe->getId());
+      auto hi_miit = finite_elements_by_id.upper_bound(fe->getId());
       int count = std::distance(miit, hi_miit);
       std::ostringstream ss;
-      ss << *(*fe_id_it) << " Nb. FEs " << count << std::endl;
+      ss << *fe << " Nb. FEs " << count << std::endl;
       PetscSynchronizedPrintf(cOmm, ss.str().c_str());
       PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
     }
@@ -843,26 +843,19 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
   if (verb == -1)
     verb = verbose;
 
-  FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
-      fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
-  if (fe_miit == finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+  auto fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (fe_miit == finiteElements.get<FiniteElement_name_mi_tag>().end())
     SETERRQ1(cOmm, MOFEM_NOT_FOUND, "Finite element <%s> not found",
              fe_name.c_str());
-  }
 
   if (verb >= VERBOSE)
     PetscPrintf(cOmm, "Build Finite Elements %s\n", fe_name.c_str());
   CHKERR buildFiniteElements(*fe_miit, ents_ptr, verb);
 
   if (verb >= VERBOSE) {
-    typedef EntFiniteElement_multiIndex::index<BitFEId_mi_tag>::type
-        FiniteElementById;
-    FiniteElementById &finite_elements_by_id =
-        entsFiniteElements.get<BitFEId_mi_tag>();
-    FiniteElementById::iterator miit =
-        finite_elements_by_id.lower_bound((*fe_miit)->getId());
-    FiniteElementById::iterator hi_miit =
-        finite_elements_by_id.upper_bound((*fe_miit)->getId());
+    auto &finite_elements_by_id = entsFiniteElements.get<BitFEId_mi_tag>();
+    auto miit = finite_elements_by_id.lower_bound((*fe_miit)->getId());
+    auto hi_miit = finite_elements_by_id.upper_bound((*fe_miit)->getId());
     int count = std::distance(miit, hi_miit);
     std::ostringstream ss;
     ss << *(*fe_miit) << " Nb. FEs " << count << std::endl;

@@ -98,7 +98,7 @@ struct Problem {
       numeredDofsRows; ///< store DOFs on rows for this problem
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex>
       numeredDofsCols; ///< store DOFs on columns for this problem
-  mutable NumeredEntFiniteElement_multiIndex
+  mutable boost::shared_ptr<NumeredEntFiniteElement_multiIndex>
       numeredFiniteElements; ///< store finite elements
 
   /**
@@ -120,7 +120,8 @@ struct Problem {
   /**
    * \brief get access to reference for multi-index storing finite elements
    */
-  const NumeredEntFiniteElement_multiIndex &getNumeredFiniteElements() const {
+  const boost::shared_ptr<NumeredEntFiniteElement_multiIndex> &
+  getNumeredFiniteElements() const {
     return numeredFiniteElements;
   }
 
@@ -260,13 +261,13 @@ struct Problem {
 
   NumeredEntFiniteElementbyName::iterator
   getNumeredFEsBegin(std::string fe_name) const {
-    return numeredFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(
+    return numeredFiniteElements->get<FiniteElement_name_mi_tag>().lower_bound(
         fe_name);
   }
 
   NumeredEntFiniteElementbyName::iterator
   getNumeredFEsEnd(std::string fe_name) const {
-    return numeredFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(
+    return numeredFiniteElements->get<FiniteElement_name_mi_tag>().upper_bound(
         fe_name);
   }
 
