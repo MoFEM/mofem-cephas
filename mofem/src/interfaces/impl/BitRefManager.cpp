@@ -913,24 +913,32 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
 MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
     const BitRefLevel &child_bit, int verb) {
   MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
   const Field_multiIndex *fields_ptr;
+  const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBegin;
   CHKERR m_field.get_fields(&fields_ptr);
-  Field_multiIndex::iterator fit = fields_ptr->begin();
-  for (; fit != fields_ptr->end(); fit++) {
-    EntityHandle meshset = (*fit)->getMeshset();
-    CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBPRISM,
-                                           false, verb);
-    CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTET,
-                                           false, verb);
-    CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBQUAD,
-                                           false, verb);
-    CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTRI,
-                                           false, verb);
-    CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBEDGE,
-                                           false, verb);
-    CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset,
-                                           MBVERTEX, false, verb);
+  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
+
+  for (auto &fit : (*fields_ptr)) {
+
+    const EntityHandle meshset = fit->getMeshset();
+    Range parent_ents;
+    CHKERR moab.get_entities_by_handle(meshset, parent_ents, true);
+
+    if (verb >= VERY_VERBOSE) 
+      std::cerr << "Parnets:" << endl << parent_ents << std::endl;
+
+    Range children_ents;
+    CHKERR updateRange(parent_ents, children_ents);
+    CHKERR filterEntitiesByRefLevel(child_bit, BitRefLevel().set(),
+                                    children_ents, verb);
+
+    CHKERR moab.add_entities(meshset, children_ents);
+
+    if (verb >= VERY_VERBOSE)
+      std::cerr << "Children: " << endl << children_ents << std::endl;
+    
   }
   MoFEMFunctionReturn(0);
 }
@@ -938,16 +946,27 @@ MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
 MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
     const std::string name, const BitRefLevel &child_bit, int verb) {
   MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
-  EntityHandle meshset = m_field.get_field_structure(name)->getMeshset();
-  CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTET,
-                                         false, verb);
-  CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBTRI,
-                                         false, verb);
-  CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBEDGE,
-                                         false, verb);
-  CHKERR updateMeshsetByEntitiesChildren(meshset, child_bit, meshset, MBVERTEX,
-                                         false, verb);
+
+  EntityHandle field_meshset = m_field.get_field_structure(name)->getMeshset();
+
+  Range parent_ents;
+  CHKERR moab.get_entities_by_handle(field_meshset, parent_ents, true);
+
+  if (verb >= VERY_VERBOSE)
+    std::cerr << "Parnets:" << endl << parent_ents << std::endl;
+
+  Range children_ents;
+  CHKERR updateRange(parent_ents, children_ents);
+  CHKERR filterEntitiesByRefLevel(child_bit, BitRefLevel().set(), children_ents,
+                                  verb);
+
+  CHKERR moab.add_entities(field_meshset, children_ents);
+
+  if (verb >= VERY_VERBOSE)
+    std::cerr << "Children: " << endl << children_ents << std::endl;
+
   MoFEMFunctionReturn(0);
 }
 
