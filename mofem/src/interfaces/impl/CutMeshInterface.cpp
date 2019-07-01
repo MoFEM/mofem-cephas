@@ -2064,16 +2064,23 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
       if (add_child && nodeMergerPtr->getSuccessMerge()) {
 
-        for (auto t : vert_tets)
-          proc_tets.erase(t);
-        out_tets.insert(proc_tets.begin(), proc_tets.end());
-        proc_tets.swap(out_tets);
+        Range::iterator lo, hi = proc_tets.begin();
+        for (auto pt = vert_tets.pair_begin(); pt != vert_tets.pair_end();
+             ++pt) {
+          lo = proc_tets.lower_bound(hi, proc_tets.end(), pt->first);
+          if(lo != proc_tets.end()) {
+            hi = proc_tets.upper_bound(lo, proc_tets.end(), pt->second);
+            proc_tets.erase(lo, hi);
+          } else
+            break;
+        }
+        proc_tets.merge(out_tets);
 
         auto &parent_child_map = nodeMergerPtr->getParentChildMap();
 
         struct ChangeChild {
           EntityHandle child;
-          ChangeChild(const EntityHandle child): child(child) {}
+          ChangeChild(const EntityHandle child) : child(child) {}
           void operator()(NodeMergerInterface::ParentChild &p) {
             p.cHild = child;
           }
