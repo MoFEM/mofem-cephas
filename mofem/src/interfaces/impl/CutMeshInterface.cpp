@@ -2068,7 +2068,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         for (auto pt = vert_tets.pair_begin(); pt != vert_tets.pair_end();
              ++pt) {
           lo = proc_tets.lower_bound(hi, proc_tets.end(), pt->first);
-          if(lo != proc_tets.end()) {
+          if (lo != proc_tets.end()) {
             hi = proc_tets.upper_bound(lo, proc_tets.end(), pt->second);
             proc_tets.erase(lo, hi);
           } else
@@ -2100,9 +2100,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                it.first != it.second; ++it.first)
             it_vec.emplace_back(parentsChildMap.project<0>(it.first));
 
-          for(auto &it : it_vec)
+          for (auto &it : it_vec)
             parentsChildMap.modify(it, ChangeChild(p.cHild));
-
         }
 
         parentsChildMap.insert(parent_child_map.begin(),
@@ -2171,7 +2170,6 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     };
 
   private:
-
     NodeMergerInterface::ParentChildMap parentsChildMap;
     std::vector<EntityHandle> childsVec;
 
@@ -2235,16 +2233,15 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       };
 
       typedef multi_index_container<
-          NodeQuality,
-          indexed_by<
+          NodeQuality, indexed_by<
 
-              sequenced<>,
+                           sequenced<>,
 
-              hashed_non_unique<
-                  tag<Ent_mi_tag>,
-                  member<NodeQuality, EntityHandle, &NodeQuality::node>>
+                           hashed_non_unique<tag<Ent_mi_tag>,
+                                             member<NodeQuality, EntityHandle,
+                                                    &NodeQuality::node>>
 
-              >>
+                           >>
           NodeQuality_sequence;
 
       NodeQuality_sequence node_quality_sequence;
@@ -2259,7 +2256,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       for (auto node : edges_nodes)
         node_quality_sequence.emplace_back(node);
 
-      for(auto tet : edges_tets) {
+      for (auto tet : edges_tets) {
 
         CHKERR moab.get_connectivity(tet, conn, num_nodes, true);
         if (tH)
@@ -2269,12 +2266,11 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
         const double q = Tools::volumeLengthQuality(coords.data());
 
-        for(auto n : {0,1,2,3}) {
+        for (auto n : {0, 1, 2, 3}) {
           auto it = node_quality_sequence.get<1>().find(conn[n]);
-          if(it != node_quality_sequence.get<1>().end())
+          if (it != node_quality_sequence.get<1>().end())
             const_cast<double &>(it->quality) = std::min(q, it->quality);
         }
-
       }
 
       for (auto edge : edges) {
