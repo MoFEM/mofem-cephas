@@ -749,8 +749,6 @@ CutMeshInterface::refineMesh(const bool refine_front, const bool update_front,
     CHKERR moab.get_adjacencies(verts, 1, true, ref_edges,
                                 moab::Interface::UNION);
 
-    cerr << ref_edges.size() << endl;
-
     CHKERR refiner->add_vertices_in_the_middel_of_edges(ref_edges, bit);
     CHKERR refiner->refine_TET(vOlume, bit, false, NOISY);
 
@@ -797,16 +795,12 @@ CutMeshInterface::refineMesh(const bool refine_front, const bool update_front,
 
   CHKERR createLevelSets(update_front, verb, debug);
 
-  cerr << mask << endl;
-
   Range very_last_bit_ents;
   CHKERR bit_ref_manager->getEntitiesByRefLevel(mask, BitRefLevel().set(),
                                                 very_last_bit_ents);
-  // if (debug)
-  //   CHKERR SaveData(m_field.get_moab())("very_last_bit_ents.vtk",
-  //                                       very_last_bit_ents);
-
-  cerr << "very_last_bit " << very_last_bit << endl;
+  if (debug)
+    CHKERR SaveData(m_field.get_moab())("very_last_bit_ents.vtk",
+                                        very_last_bit_ents);
 
   CHKERR bit_ref_manager->resetBitRefLevel(
       very_last_bit_ents, BitRefLevel().set(very_last_bit),
@@ -2793,7 +2787,13 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
   Range edges_to_merge;
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByParentType(
-      trim_bit, cut_bit | trim_bit, MBEDGE, edges_to_merge);
+      trim_bit, BitRefLevel().set(), MBEDGE, edges_to_merge);
+  Range surface_nodes;
+  CHKERR m_field.get_moab().get_connectivity(surface, surface_nodes, false);
+  Range surface_edges;
+  CHKERR m_field.get_moab().get_adjacencies(
+      surface_nodes, 1, false, surface_edges, moab::Interface::UNION);
+  edges_to_merge = intersect(edges_to_merge, surface_edges);
 
   // get all entities not in database
   Range all_ents_not_in_database_before;
