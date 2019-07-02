@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk", "VTK",
         "");
-        
+
     int no_of_ents_not_in_database = -1;
     Range ents_not_in_database;
     if (test) {
@@ -197,17 +197,16 @@ int main(int argc, char *argv[]) {
 
     // Cut mesh, trim surface and merge bad edges
     int first_bit = 1;
-    CHKERR cut_mesh->cutTrimAndMerge(first_bit, 5, th, tol[0],
-                                     tol[1], tol[2], tol[3], fixed_edges,
-                                     corner_nodes, true, true);
+    CHKERR cut_mesh->cutTrimAndMerge(first_bit, 5, th, tol[0], tol[1], tol[2],
+                                     tol[3], fixed_edges, corner_nodes, true,
+                                     true);
 
     // Split faces
     CHKERR cut_mesh->splitSides(BitRefLevel().set(first_bit),
                                 BitRefLevel().set(first_bit + 1),
                                 cut_mesh->getMergedSurfaces(), th);
     CHKERR core.getInterface<MeshsetsManager>()
-        ->updateAllMeshsetsByEntitiesChildren(
-            BitRefLevel().set(first_bit + 1));
+        ->updateAllMeshsetsByEntitiesChildren(BitRefLevel().set(first_bit + 1));
 
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
         BitRefLevel().set(first_bit + 1), BitRefLevel().set(), MBTET,
