@@ -124,7 +124,6 @@ int main(int argc, char *argv[]) {
     CutMeshInterface *cut_mesh;
     CHKERR m_field.getInterface(cut_mesh);
 
-
     // Get geometric corner nodes and corner edges
     Range fixed_edges, corner_nodes;
     if (meshset_manager->checkMeshset(fixed_edges_blockset, SIDESET)) {
@@ -164,8 +163,8 @@ int main(int argc, char *argv[]) {
     CHKERR cut_mesh->setVolume(tets);
     CHKERR cut_mesh->makeFront(true);
     CHKERR cut_mesh->buildTree();
-    CHKERR cut_mesh->refineMesh(true, false, 10, 1, 1, &fixed_edges,
-                                VERBOSE, true);
+    CHKERR cut_mesh->refineMesh(true, false, 10, 3, 1, &fixed_edges, VERBOSE,
+                                true);
 
     // Create tag storing nodal positions
     double def_position[] = {0, 0, 0};
@@ -203,7 +202,7 @@ int main(int argc, char *argv[]) {
     BitRefLevel merge_bit = BitRefLevel().set(2);
     CHKERR cut_mesh->mergeBadEdges(10, cut_bit, cut_bit, merge_bit,
                                    cut_mesh->getNewCutSurfaces(), fixed_edges,
-                                   corner_nodes, th, true, true);
+                                   corner_nodes, th, true, false);
 
     CHKERR cut_mesh->setCoords(th, merge_bit, BitRefLevel().set());
     CHKERR CutMeshInterface::SaveData(m_field.get_moab())(
@@ -247,7 +246,8 @@ int main(int argc, char *argv[]) {
     //       if (expected_size != -1 &&
     //           expected_size != static_cast<int>(ents.size())) {
     //         SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-    //                  "Wrong bit ref size %d!=%d", expected_size, ents.size());
+    //                  "Wrong bit ref size %d!=%d", expected_size,
+    //                  ents.size());
     //       }
     //       MoFEMFunctionReturnHot(0);
     //     }
@@ -292,7 +292,8 @@ int main(int argc, char *argv[]) {
     // // CHKERR moab.get_connectivity(cut_mesh->getSurface(), surface_verts);
     // // Range adj_surface_edges;
     // // CHKERR moab.get_adjacencies(cut_mesh->getSurface(), 1, false,
-    // //                             adj_surface_edges, moab::Interface::UNION);
+    // //                             adj_surface_edges,
+    // moab::Interface::UNION);
     // // CHKERR moab.delete_entities(cut_mesh->getSurface());
     // // CHKERR moab.delete_entities(adj_surface_edges);
     // // CHKERR moab.delete_entities(surface_verts);
@@ -310,7 +311,8 @@ int main(int argc, char *argv[]) {
     // //   CHKERR moab.delete_entities(&meshset, 1);
     // // }
     // // CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-    // //     bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk", "VTK",
+    // //     bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk",
+    // "VTK",
     // //     "");
     // // CHKERR
     // // core.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
@@ -318,14 +320,15 @@ int main(int argc, char *argv[]) {
 
     // // if (test) {
     // //   Range ents;
-    // //   core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(ents);
+    // // core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(ents);
     // //   if (no_of_ents_not_in_database != static_cast<int>(ents.size())) {
     // //     cerr << subtract(ents, ents_not_in_database) << endl;
     // //     EntityHandle meshset;
     // //     CHKERR moab.create_meshset(MESHSET_SET, meshset);
     // //     Range tets;
     // //     CHKERR moab.get_entities_by_dimension(0, 3, tets, true);
-    // //     CHKERR moab.add_entities(meshset, subtract(ents, ents_not_in_database));
+    // //     CHKERR moab.add_entities(meshset, subtract(ents,
+    // ents_not_in_database));
     // //     CHKERR
     // //     moab.write_file("not_cleanded.vtk", "VTK", "", &meshset, 1);
     // //     CHKERR moab.delete_entities(&meshset, 1);
