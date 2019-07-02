@@ -2222,23 +2222,77 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                               double &ave) const {
       int num_nodes;
       const EntityHandle *conn;
-      double coords[6];
+      std::array<double, 12> coords;
       MoFEMFunctionBegin;
       VectorAdaptor s0(3, ublas::shallow_array_adaptor<double>(3, &coords[0]));
       VectorAdaptor s1(3, ublas::shallow_array_adaptor<double>(3, &coords[3]));
       VectorDouble3 delta(3);
-      for (auto edge : edges) {
-        CHKERR moab.get_connectivity(edge, conn, num_nodes, true);
-        Range adj_tet;
-        CHKERR moab.get_adjacencies(conn, num_nodes, 3, false, adj_tet);
-        adj_tet = intersect(adj_tet, tets);
-        if (tH) {
-          CHKERR moab.tag_get_data(tH, conn, num_nodes, coords);
-        } else {
-          CHKERR moab.get_coords(conn, num_nodes, coords);
+
+      struct NodeQuality {
+        EntityHandle node;
+        double quality;
+        NodeQuality(const EntityHandle node) : node(node), quality(1) {}
+      };
+
+      typedef multi_index_container<
+          NodeQuality,
+          indexed_by<
+
+              sequenced<>,
+
+              hashed_non_unique<
+                  tag<Ent_mi_tag>,
+                  member<NodeQuality, EntityHandle, &NodeQuality::node>>
+
+              >>
+          NodeQuality_sequence;
+
+      NodeQuality_sequence node_quality_sequence;
+
+      Range edges_nodes;
+      CHKERR moab.get_connectivity(tets, edges_nodes, false);
+      Range edges_tets;
+      CHKERR moab.get_adjacencies(edges, 3, false, edges_tets,
+                                  moab::Interface::UNION);
+      edges_tets = intersect(edges_tets, tets);
+
+      for (auto node : edges_nodes)
+        node_quality_sequence.emplace_back(node);
+
+      for(auto tet : edges_tets) {
+
+        CHKERR moab.get_connectivity(tet, conn, num_nodes, true);
+        if (tH)
+          CHKERR moab.tag_get_data(tH, conn, num_nodes, coords.data());
+        else
+          CHKERR moab.get_coords(conn, num_nodes, coords.data());
+
+        const double q = Tools::volumeLengthQuality(coords.data());
+
+        for(auto n : {0,1,2,3}) {
+          auto it = node_quality_sequence.get<1>().find(conn[n]);
+          if(it != node_quality_sequence.get<1>().end())
+            const_cast<double &>(it->quality) = std::min(q, it->quality);
         }
+
+      }
+
+      for (auto edge : edges) {
+
+        CHKERR moab.get_connectivity(edge, conn, num_nodes, true);
+
+        if (tH)
+          CHKERR moab.tag_get_data(tH, conn, num_nodes, coords.data());
+        else
+          CHKERR moab.get_coords(conn, num_nodes, coords.data());
+
         double q = 1;
-        CHKERR mField.getInterface<Tools>()->minTetsQuality(adj_tet, q, tH);
+        for (auto n : {0, 1}) {
+          auto it = node_quality_sequence.get<1>().find(conn[n]);
+          if (it != node_quality_sequence.get<1>().end())
+            q = std::min(q, it->quality);
+        }
+
         if (q < acceptedThrasholdMergeQuality) {
           noalias(delta) = (s0 - s1) / maxLength;
           double dot = inner_prod(delta, delta);
@@ -2246,6 +2300,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
           length_map.insert(LengthMapData(val, q, edge));
         }
       }
+
       ave = 0;
       for (LengthMapData_multi_index::nth_index<0>::type::iterator mit =
                length_map.get<0>().begin();
