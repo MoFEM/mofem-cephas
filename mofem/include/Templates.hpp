@@ -416,7 +416,7 @@ inline MoFEMErrorCode invertTensor2by2(T1 &t, T2 &det, T3 &inv_t) {
   inv_t(0, 0) = t(1, 1) * inv_det;
   inv_t(0, 1) = -t(0, 1) * inv_det;
   inv_t(1, 0) = -t(1, 0) * inv_det;
-  inv_t(1, 1) = t(1, 1) * inv_det;
+  inv_t(1, 1) = t(0, 0) * inv_det;
   MoFEMFunctionReturnHot(0);
 }
 
