@@ -123,7 +123,6 @@ template <class X> inline std::string toString(X x) {
 
 /**
 * \brief Get tensor rank 0 (scalar) form data vector
-* \ingroup mofem_forces_and_sources_user_data_operators
 
 Example how to use it.
 \code
@@ -153,7 +152,6 @@ getFTensor0FromVec<double, DoubleAllocator>(
 
 /**
  * \brief Get tensor rank 1 (vector) form data matrix
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim, class T, class L, class A>
 static inline FTensor::Tensor1<FTensor::PackPtr<T *, 1>, Tensor_Dim>
@@ -163,7 +161,6 @@ getFTensor1FromMat(ublas::matrix<T, L, A> &data) {
 
 /**
  * \brief Get tensor rank 1 (vector) form data matrix (specialization)
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 static inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>, Tensor_Dim>
@@ -206,7 +203,6 @@ getFTensor1FromMat<2, double, ublas::row_major, DoubleAllocator>(
 
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 static inline FTensor::Tensor2<FTensor::PackPtr<T *, 1>, Tensor_Dim0,
@@ -217,7 +213,6 @@ getFTensor2FromMat(ublas::matrix<T, L, A> &data) {
 
 /**
  * Template specialization for getFTensor2FromMat
- * \ingroup mofem_forces_and_sources_user_data_operators
  *
  */
 template <>
@@ -261,7 +256,6 @@ getFTensor2FromMat(MatrixDouble &data) {
 
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix (specialization)
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
 static inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim0,
@@ -283,7 +277,6 @@ getFTensor2FromMat(MatrixDouble &data) {
 
 /**
  * \brief Get symmetric tensor rank 2 (matrix) form data matrix
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim, class T, class L, class A>
 static inline FTensor::Tensor2_symmetric<FTensor::PackPtr<T *, 1>, Tensor_Dim>
@@ -344,7 +337,6 @@ template <class T> static inline double dEterminant(T &t) {
 /**
  * \brief Calculate inverse of tensor rank 2 at integration points
 
- * \ingroup mofem_forces_and_sources
  */
 template <int Tensor_Dim, class T, class L, class A>
 inline MoFEMErrorCode invertTensor3by3(ublas::matrix<T, L, A> &jac_data,
@@ -364,7 +356,6 @@ invertTensor3by3<3, double, ublas::row_major, DoubleAllocator>(
 /**
  * \brief Calculate determinant
 
- * \ingroup mofem_forces_and_sources
  */
 template <class T1, class T2>
 inline MoFEMErrorCode determinantTensor3by3(T1 &t, T2 &det) {
@@ -378,7 +369,6 @@ inline MoFEMErrorCode determinantTensor3by3(T1 &t, T2 &det) {
 /**
  * \brief Calculate matrix inverse
 
- * \ingroup mofem_forces_and_sources
  */
 template <class T1, class T2, class T3>
 inline MoFEMErrorCode invertTensor3by3(T1 &t, T2 &det, T3 &inv_t) {
@@ -401,7 +391,6 @@ inline MoFEMErrorCode invertTensor3by3(T1 &t, T2 &det, T3 &inv_t) {
 /**
  * \brief Calculate matrix inverse, specialization for adouble tensor
 
- * \ingroup mofem_forces_and_sources
  */
 template <>
 inline MoFEMErrorCode invertTensor3by3<FTensor::Tensor2<adouble, 3, 3>, adouble,
@@ -426,7 +415,6 @@ inline MoFEMErrorCode invertTensor3by3<FTensor::Tensor2<adouble, 3, 3>, adouble,
 /**
  * \brief Calculate matrix inverse, specialization for symmetric tensor
 
- * \ingroup mofem_forces_and_sources
  */
 template <>
 inline MoFEMErrorCode
@@ -450,7 +438,6 @@ invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
 /**
  * \brief Calculate matrix inverse, specialization for adouble symmetric tensor
 
- * \ingroup mofem_forces_and_sources
  */
 template <>
 inline MoFEMErrorCode
@@ -474,7 +461,6 @@ invertTensor3by3<FTensor::Tensor2_symmetric<adouble, 3>, adouble,
  * \brief Calculate matrix inverse, specialization for symmetric (pointer)
  tensor
 
- * \ingroup mofem_forces_and_sources
  */
 template <>
 inline MoFEMErrorCode
