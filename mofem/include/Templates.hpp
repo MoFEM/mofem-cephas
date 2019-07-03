@@ -247,6 +247,19 @@ getFTensor2FromMat(MatrixDouble &data) {
 }
 
 /**
+ * Template specialization for getFTensor2FromMat
+ */
+template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2>
+getFTensor2FromMat(MatrixDouble &data) {
+  if (data.size1() != 4) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2>(
+      &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0));
+}
+
+/**
  * \brief Get tensor rank 2 (matrix) form data matrix (specialization)
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
