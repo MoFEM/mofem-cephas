@@ -423,7 +423,9 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
         "");
     CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "cut_trim_merge_ents_not_in_database.vtk", "VTK", "");
+
     CHKERR SaveData(m_field.get_moab())("merged_surface.vtk", mergedSurfaces);
+
   }
 
   auto get_min_quality = [&m_field, debug](const BitRefLevel bit, Tag th) {
@@ -2619,6 +2621,20 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   LengthMapData_multi_index length_map;
   new_surf = surface;
 
+  auto save_merge_step = [&](const int pp) {
+    MoFEMFunctionBegin;
+    std::string name;
+    name = "node_merge_step_" + boost::lexical_cast<std::string>(pp) + ".vtk";
+    CHKERR SaveData(moab)(name, new_surf);
+    name =
+        "edges_to_merge_step_" + boost::lexical_cast<std::string>(pp) + ".vtk";
+    CHKERR SaveData(moab)(name, unite(new_surf, edges_to_merge));
+    MoFEMFunctionReturn(0);
+  };
+
+  if (debug)
+    CHKERR save_merge_step(0);
+
   double ave0 = 0, ave = 0, min = 0, min_p = 0, min_pp;
   for (int pp = 0; pp != nbMaxMergingCycles; ++pp) {
 
@@ -2712,24 +2728,12 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     CHKERR merge_nodes.updateRangeByChilds(new_surf, edges_to_merge,
                                            not_merged_edges, true);
 
-    Range adj_faces, adj_edges;
-    CHKERR moab.get_adjacencies(proc_tets, 2, false, adj_faces,
-                                moab::Interface::UNION);
-    new_surf = intersect(new_surf, adj_faces);
-
     PetscPrintf(m_field.get_comm(),
                 "(%d) Number of nodes merged %d ave q %3.4e min q %3.4e\n", pp,
                 nb_nodes_merged, ave, min);
 
-    if (debug) {
-      // current surface and merged edges in step
-      std::string name;
-      name = "node_merge_step_" + boost::lexical_cast<std::string>(pp) + ".vtk";
-      CHKERR SaveData(moab)(name, unite(new_surf, collapsed_edges));
-      name = "edges_to_merge_step_" + boost::lexical_cast<std::string>(pp) +
-             ".vtk";
-      CHKERR SaveData(moab)(name, unite(new_surf, edges_to_merge));
-    }
+    if (debug)
+      CHKERR save_merge_step(pp + 1);
 
     if (nb_nodes_merged == nb_nodes_merged_p)
       break;
@@ -2738,6 +2742,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     if (min > ave0)
       break;
 
+    Range adj_edges;
     CHKERR moab.get_adjacencies(proc_tets, 1, false, adj_edges,
                                 moab::Interface::UNION);
     edges_to_merge = intersect(edges_to_merge, adj_edges);
@@ -2746,11 +2751,15 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                         edges_to_merge, not_merged_edges);
   }
 
-  if (bit_ptr) {
+  if (bit_ptr)
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(proc_tets,
                                                                  *bit_ptr);
-  }
+
   out_tets.merge(proc_tets);
+  Range adj_faces;
+  CHKERR moab.get_adjacencies(out_tets, 2, false, adj_faces,
+                              moab::Interface::UNION);
+  new_surf = intersect(new_surf, adj_faces);
 
   MoFEMFunctionReturn(0);
 }

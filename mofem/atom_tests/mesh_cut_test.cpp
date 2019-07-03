@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     CHKERR cut_mesh->setVolume(tets);
     CHKERR cut_mesh->buildTree();
     CHKERR cut_mesh->makeFront(true);
-    CHKERR cut_mesh->refineMesh(true, false, 10, 2, 1, &fixed_edges, VERBOSE,
+    CHKERR cut_mesh->refineMesh(true, false, 10, 1, 1, &fixed_edges, VERBOSE,
                                 true);
 
     // Create tag storing nodal positions
