@@ -354,7 +354,7 @@ invertTensor3by3<3, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &jac_data, VectorDouble &det_data, MatrixDouble &inv_jac_data);
 
 /**
- * \brief Calculate determinant
+ * \brief Calculate determinant 3 by 3
 
  */
 template <class T1, class T2>
@@ -367,7 +367,18 @@ inline MoFEMErrorCode determinantTensor3by3(T1 &t, T2 &det) {
 }
 
 /**
- * \brief Calculate matrix inverse
+ * \brief Calculate determinant 2 by 2
+
+ */
+template <class T1, class T2>
+inline MoFEMErrorCode determinantTensor2by2(T1 &t, T2 &det) {
+  MoFEMFunctionBeginHot;
+  det = t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0);
+  MoFEMFunctionReturnHot(0);
+}
+
+/**
+ * \brief Calculate matrix inverse 3 by 3
 
  */
 template <class T1, class T2, class T3>
@@ -383,6 +394,21 @@ inline MoFEMErrorCode invertTensor3by3(T1 &t, T2 &det, T3 &inv_t) {
   inv_t(2, 0) = (t(1, 0) * t(2, 1) - t(1, 1) * t(2, 0)) * inv_det;
   inv_t(2, 1) = (t(0, 1) * t(2, 0) - t(0, 0) * t(2, 1)) * inv_det;
   inv_t(2, 2) = (t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0)) * inv_det;
+  MoFEMFunctionReturnHot(0);
+}
+
+/**
+ * \brief Calculate matrix inverse 2 by 2
+
+ */
+template <class T1, class T2, class T3>
+inline MoFEMErrorCode invertTensor2by2(T1 &t, T2 &det, T3 &inv_t) {
+  MoFEMFunctionBeginHot;
+  const auto inv_det = 1. / det;
+  inv_t(0, 0) = t(1, 1) * inv_det;
+  inv_t(0, 1) = -t(0, 1) * inv_det;
+  inv_t(1, 0) = -t(1, 0) * inv_det;
+  inv_t(1, 1) = t(0, 0) * inv_det;
   MoFEMFunctionReturnHot(0);
 }
 
