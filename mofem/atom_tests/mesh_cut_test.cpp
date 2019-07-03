@@ -182,9 +182,9 @@ int main(int argc, char *argv[]) {
     CHKERR moab.get_entities_by_dimension(0, 3, tets, false);
 
     CHKERR cut_mesh->setVolume(tets);
-    CHKERR cut_mesh->makeFront(true);
     CHKERR cut_mesh->buildTree();
-    CHKERR cut_mesh->refineMesh(true, false, 10, 1, 1, &fixed_edges, VERBOSE,
+    CHKERR cut_mesh->makeFront(true);
+    CHKERR cut_mesh->refineMesh(true, false, 10, 2, 1, &fixed_edges, VERBOSE,
                                 true);
 
     // Create tag storing nodal positions

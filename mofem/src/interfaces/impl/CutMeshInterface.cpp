@@ -2389,23 +2389,6 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       MoFEMFunctionReturn(0);
     }
 
-    MoFEMErrorCode edgesToMerge(const Range &surface, const Range &tets,
-                                Range &edges_to_merge) const {
-      moab::Interface &moab(mField.get_moab());
-      MoFEMFunctionBegin;
-      Range surface_verts;
-      CHKERR moab.get_connectivity(surface, surface_verts, true);
-      Range surface_verts_edges;
-      CHKERR moab.get_adjacencies(surface_verts, 1, false, surface_verts_edges,
-                                  moab::Interface::UNION);
-      edges_to_merge.merge(surface_verts_edges);
-      Range tets_edges;
-      CHKERR moab.get_adjacencies(tets, 1, false, tets_edges,
-                                  moab::Interface::UNION);
-      edges_to_merge = intersect(edges_to_merge, tets_edges);
-      MoFEMFunctionReturn(0);
-    }
-
     MoFEMErrorCode removeBadEdges(const Range &surface, const Range &tets,
                                   const Range &fixed_edges,
                                   const Range &corner_nodes,
@@ -2603,8 +2586,6 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   Range not_merged_edges;
   const double tol = 1e-1;
   CHKERR Toplogy(m_field, th, tol * aveLength)
-      .edgesToMerge(surface, tets, edges_to_merge);
-  CHKERR Toplogy(m_field, th, tol * aveLength)
       .removeBadEdges(surface, tets, fixed_edges, corner_nodes, edges_to_merge,
                       not_merged_edges);
   Toplogy::SetsMap sets_map;
@@ -2786,19 +2767,16 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       trim_bit, BitRefLevel().set(), MBTET, tets_level);
 
   Range edges_to_merge;
-  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByParentType(
-      trim_bit, BitRefLevel().set(), MBEDGE, edges_to_merge);
-  Range surface_nodes;
-  CHKERR m_field.get_moab().get_connectivity(surface, surface_nodes, false);
-  Range surface_edges;
-  CHKERR m_field.get_moab().get_adjacencies(
-      surface_nodes, 1, false, surface_edges, moab::Interface::UNION);
-  edges_to_merge = intersect(edges_to_merge, surface_edges);
+  CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
+      trim_bit, cut_bit | trim_bit, edges_to_merge);
 
   // get all entities not in database
   Range all_ents_not_in_database_before;
   CHKERR cOre.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(
       all_ents_not_in_database_before);
+
+  edges_to_merge = edges_to_merge.subset_by_type(MBEDGE);
+  CHKERR SaveData(m_field.get_moab())("edges_to_merge.vtk", edges_to_merge);
 
   Range out_new_tets, out_new_surf;
   CHKERR mergeBadEdges(fraction_level, tets_level, surface, fixed_edges,
