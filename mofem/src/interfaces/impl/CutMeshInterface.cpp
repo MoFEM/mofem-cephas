@@ -311,8 +311,8 @@ MoFEMErrorCode CutMeshInterface::trimOnly(const BitRefLevel trim_bit, Tag th,
 
 MoFEMErrorCode CutMeshInterface::cutAndTrim(
     int &first_bit, Tag th, const double tol_cut, const double tol_cut_close,
-    const double tol_trim, const double tol_trim_close, Range *fixed_edges,
-    Range *corner_nodes, const bool update_meshsets, const bool debug) {
+    const double tol_trim_close, Range *fixed_edges, Range *corner_nodes,
+    const bool update_meshsets, const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -401,9 +401,8 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
         "ents_not_in_database.vtk", "VTK", "");
   }
 
-  CHKERR cutAndTrim(first_bit, th, tol_cut, tol_cut_close, tol_trim,
-                    tol_trim_close, &fixed_edges, &corner_nodes,
-                    update_meshsets, debug);
+  CHKERR cutAndTrim(first_bit, th, tol_cut, tol_cut_close, tol_trim_close,
+                    &fixed_edges, &corner_nodes, update_meshsets, debug);
   if (debug) {
     CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "cut_trim_ents_not_in_database.vtk", "VTK", "");

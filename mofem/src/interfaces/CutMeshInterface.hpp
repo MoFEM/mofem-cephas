@@ -142,9 +142,8 @@ struct CutMeshInterface : public UnknownInterface {
                           const bool debug = false);
 
   MoFEMErrorCode
-  cutAndTrim(int &first_bit, Tag th,
-             const double tol_cut, const double tol_cut_close,
-             const double tol_trim, const double tol_trim_close,
+  cutAndTrim(int &first_bit, Tag th, const double tol_cut,
+             const double tol_cut_close, const double tol_trim_close,
              Range *fixed_edges = NULL, Range *corner_nodes = NULL,
              const bool update_meshsets = false, const bool debug = false);
 
