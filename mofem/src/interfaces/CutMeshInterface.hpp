@@ -279,7 +279,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  bit bit level of the trimmed mesh
    * @return     error code
    */
-  MoFEMErrorCode trimEdgesInTheMiddle(const BitRefLevel bit, Tag th = NULL,
+  MoFEMErrorCode trimEdgesInTheMiddle(const BitRefLevel bit,
                                       const bool debug = false);
 
   /**
@@ -287,6 +287,17 @@ struct CutMeshInterface : public UnknownInterface {
    * @return error code
    */
   MoFEMErrorCode moveMidNodesOnTrimmedEdges(Tag th = NULL);
+
+  /**
+   * @brief Trim surface from faces beyond front
+   * 
+   * @param fixed_edge 
+   * @param corner_nodes 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode trimSurface(Range *fixed_edge, Range *corner_nodes,
+                             const bool debug = false);
 
   /**
    * \brief Remove pathological elements on surface internal front

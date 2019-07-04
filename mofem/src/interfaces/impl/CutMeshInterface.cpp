@@ -282,7 +282,7 @@ MoFEMErrorCode CutMeshInterface::trimOnly(const BitRefLevel trim_bit, Tag th,
 
   // trim mesh
   CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim_close, debug);
-  CHKERR trimEdgesInTheMiddle(trim_bit, th, debug);
+  CHKERR trimEdgesInTheMiddle(trim_bit, debug);
   if (fixed_edges) {
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
                                                            *fixed_edges);
@@ -295,7 +295,12 @@ MoFEMErrorCode CutMeshInterface::trimOnly(const BitRefLevel trim_bit, Tag th,
     CHKERR m_field.getInterface<MeshsetsManager>()
         ->updateAllMeshsetsByEntitiesChildren(trim_bit);
   }
+
+  // move nodes
   CHKERR moveMidNodesOnTrimmedEdges(th);
+
+  // remove faces
+  CHKERR trimSurface(fixed_edges, corner_nodes, debug);
 
   if (debug) {
     CHKERR saveTrimEdges();
@@ -797,13 +802,14 @@ CutMeshInterface::refineMesh(const bool refine_front, const bool update_front,
   Range very_last_bit_ents;
   CHKERR bit_ref_manager->getEntitiesByRefLevel(mask, BitRefLevel().set(),
                                                 very_last_bit_ents);
-  if (debug)
-    CHKERR SaveData(m_field.get_moab())("very_last_bit_ents.vtk",
-                                        very_last_bit_ents);
-
-  CHKERR bit_ref_manager->resetBitRefLevel(
-      very_last_bit_ents, BitRefLevel().set(very_last_bit),
-      BitRefLevel(mask).set(very_last_bit));
+  if (!very_last_bit_ents.empty()) {
+    if (debug)
+      CHKERR SaveData(m_field.get_moab())("very_last_bit_ents.vtk",
+                                          very_last_bit_ents);
+    CHKERR bit_ref_manager->resetBitRefLevel(
+        very_last_bit_ents, BitRefLevel().set(very_last_bit),
+        BitRefLevel(mask).set(very_last_bit));
+  }
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("refinedVolume.vtk", vOlume);
@@ -1623,7 +1629,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
           const double dist = sqrt(t_ray(i) * t_ray(i));
 
           // that imply that edges have common point
-          if ((dist / edge_length) < 0.5) {
+          if ((dist / edge_length) < 1.) {
 
             auto check_to_add_edge = [&](const EntityHandle e,
                                          const double dist) {
@@ -1850,7 +1856,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
 }
 
 MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
-                                                      Tag th,
                                                       const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
@@ -1917,6 +1922,16 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
   trim_new_vertices_faces = intersect(trimNewSurfaces, trim_new_vertices_faces);
   CHKERR SaveData(moab)("trim_new_surfaces2.vtk", trim_new_vertices_faces);
 
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edge,
+                                             Range *corner_nodes,
+                                             const bool debug) {
+  CoreInterface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  MoFEMFunctionBegin;
+
   Skinner skin(&moab);
   Range trim_tets_skin;
   CHKERR skin.find_skin(0, trimNewVolumes, false, trim_tets_skin);
@@ -1940,7 +1955,7 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
                                 moab::Interface::UNION);
     trimNewSurfaces = subtract(trimNewSurfaces, outside_faces);
   }
-
+  
   MoFEMFunctionReturn(0);
 }
 
