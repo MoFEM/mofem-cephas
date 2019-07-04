@@ -150,7 +150,7 @@ struct CutMeshInterface : public UnknownInterface {
   MoFEMErrorCode
   cutTrimAndMerge(int &first_bit, const int fraction_level, Tag th,
                   const double tol_cut, const double tol_cut_close,
-                  const double tol_trim, const double tol_trim_close,
+                  const double tol_trim_close,
                   Range &fixed_edges, Range &corner_nodes,
                   const bool update_meshsets = false, const bool debug = false);
 

@@ -81,10 +81,10 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-corner_nodes_blockset",
                               &corner_nodes_blockset, PETSC_NULL);
 
-    double tol[] = {0, 0, 0, 0};
-    int nmax_tol = 4;
+    double tol[] = {0, 0, 0};
+    int nmax_tol = 3;
     CHKERR PetscOptionsGetRealArray("", "-tol", tol, &nmax_tol, &flg);
-    if (flg && nmax_tol != 4)
+    if (flg && nmax_tol != 3)
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "four values expected");
 
     PetscBool test = PETSC_FALSE;
@@ -176,8 +176,6 @@ int main(int argc, char *argv[]) {
     else
       CHKERR cut_mesh->setSurface(surface);
 
-    // CHKERR cut_mesh->snapSurfaceToEdges(fixed_edges, 0.5, 0);
-
     Range tets;
     CHKERR moab.get_entities_by_dimension(0, 3, tets, false);
 
@@ -198,8 +196,7 @@ int main(int argc, char *argv[]) {
     // Cut mesh, trim surface and merge bad edges
     int first_bit = 1;
     CHKERR cut_mesh->cutTrimAndMerge(first_bit, 5, th, tol[0], tol[1], tol[2],
-                                     tol[3], fixed_edges, corner_nodes, true,
-                                     true);
+                                     fixed_edges, corner_nodes, true, true);
 
     // Split faces
     CHKERR cut_mesh->splitSides(BitRefLevel().set(first_bit),

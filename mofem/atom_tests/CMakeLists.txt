@@ -1276,7 +1276,7 @@ add_test(
   mesh_cut ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test 
   -my_file test_mesh_cut.cub -side_set 200 -shift -0.2,0.2,0. -nb_ref_before 1 
-  -nb_ref_after 0 -tol 1e-4,4e-1,4e-1,1e-4  -test
+  -nb_ref_after 0 -tol 1e-4,2e-1,2e-1 -test
 )
 
 my_add_executable(segments_distance segments_distance.cpp)
