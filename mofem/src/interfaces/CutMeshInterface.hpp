@@ -147,6 +147,21 @@ struct CutMeshInterface : public UnknownInterface {
              Range *fixed_edges = NULL, Range *corner_nodes = NULL,
              const bool update_meshsets = false, const bool debug = false);
 
+  /**
+   * @brief Cut, trim and merge 
+   * 
+   * @param first_bit first bit of bit revel, subsequent set bits are for trim and merge
+   * @param fraction_level fraction of edges merged at each merge step
+   * @param th tag storring mesh node positions
+   * @param tol_cut tolerance how mesh node should be close to cut surface (mesh node is moved), should be small
+   * @param tol_cut_close how crack node should be close to mesh (cut surface node is moved), can be big
+   * @param tol_trim_close how front node should be close to mesh, can be big
+   * @param fixed_edges edges on which nodes can not be moved
+   * @param corner_nodes nodes which can not be moved
+   * @param update_meshsets update meshsets by parents
+   * @param debug swich on debugging
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode
   cutTrimAndMerge(int &first_bit, const int fraction_level, Tag th,
                   const double tol_cut, const double tol_cut_close,
@@ -154,6 +169,12 @@ struct CutMeshInterface : public UnknownInterface {
                   Range &fixed_edges, Range &corner_nodes,
                   const bool update_meshsets = false, const bool debug = false);
 
+  /**
+   * @brief Create front from the surface
+   * 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode makeFront(const bool debug = false);
 
   MoFEMErrorCode createSurfaceLevelSets(Range *intersect_vol = nullptr,
@@ -171,6 +192,21 @@ struct CutMeshInterface : public UnknownInterface {
   MoFEMErrorCode createLevelSets(const bool update_front, int verb = QUIET,
                                  const bool debug = false);
 
+  /**
+   * @brief Refine and set level sets
+   * 
+   * \note Should be run befor cutting
+   * 
+   * @param refine_front refine nodes at front
+   * @param update_front update level set at front
+   * @param init_bit_level inital bit ref level to store refined meshes
+   * @param surf_levels number of mesh surface refinement 
+   * @param front_levels 
+   * @param fixed_edges 
+   * @param verb 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode refineMesh(const bool refine_front, const bool update_front,
                             const int init_bit_level, const int surf_levels,
                             const int front_levels,
