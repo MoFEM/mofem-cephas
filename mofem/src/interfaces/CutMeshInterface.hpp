@@ -136,7 +136,7 @@ struct CutMeshInterface : public UnknownInterface {
                          const bool debug = false);
 
   MoFEMErrorCode trimOnly(const BitRefLevel trim_bit, Tag th,
-                          const double tol_cut, const double tol_cut_close,
+                          const double tol_cut_close,
                           Range *fixed_edges = NULL, Range *corner_nodes = NULL,
                           const bool update_meshsets = false,
                           const bool debug = false);
@@ -237,7 +237,6 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode findEdgesToTrim(Range *fixed_edges, Range *corner_nodes,
                                  Tag th = NULL, const double tol = 1e-4,
-                                 const double tol_close = 0,
                                  const bool debug = false);
 
   /**
@@ -246,7 +245,6 @@ struct CutMeshInterface : public UnknownInterface {
    * @return     error code
    */
   MoFEMErrorCode trimEdgesInTheMiddle(const BitRefLevel bit, Tag th = NULL,
-                                      const double tol = 1e-4,
                                       const bool debug = false);
 
   /**
