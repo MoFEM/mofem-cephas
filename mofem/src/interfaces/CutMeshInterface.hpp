@@ -406,6 +406,8 @@ struct CutMeshInterface : public UnknownInterface {
   inline const Range &getCutSurfaceVolumes() const { return cutSurfaceVolumes; }
   inline const Range &getCutFrontVolumes() const { return cutFrontVolumes; }
 
+  inline void setTrimFixedEdges(const bool b) { trimFixedEdges = b; };
+
   MoFEMErrorCode saveCutEdges(const std::string prefix = "");
 
   MoFEMErrorCode saveTrimEdges();
@@ -459,6 +461,8 @@ private:
   Range fRont;
   Range sUrface;
   Range vOlume;
+
+  bool trimFixedEdges;
 
   boost::shared_ptr<OrientedBoxTreeTool> treeSurfPtr;
   EntityHandle rootSetSurf;
