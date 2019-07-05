@@ -652,7 +652,8 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(
         if (opposite <= 0) {
           const double sign_dist0 = signed_norm(dist0);
           const double sign_dist1 = signed_norm(dist1);
-          if (sign_dist0 >= 0 && sign_dist1 <= 0)
+          if (sign_dist0 > -std::numeric_limits<double>::epsilon() &&
+              sign_dist1 < std::numeric_limits<double>::epsilon())
             cut_edges.insert(e);
         }
       }
@@ -1615,8 +1616,9 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         // check if edges crossing each other in the middle (it not imply that
         // have common point)
         const double overlap_tol = 1e-2;
-        if (t_edge >= 0 && t_edge <= 1 && t_front >= -overlap_tol &&
-            t_front <= 1 + overlap_tol) {
+        if (t_edge > -std::numeric_limits<float>::epsilon() &&
+            t_edge < 1 + std::numeric_limits<float>::epsilon() &&
+            t_front >= -overlap_tol && t_front <= 1 + overlap_tol) {
 
           FTensor::Tensor1<double, 3> t_front_delta;
           t_front_delta(i) = t_f1(i) - t_f0(i);
@@ -1963,11 +1965,11 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
     // get vertices on fixed edges
     Range fixed_edges_vertices;
     CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_vertices, false);
-    if(corner_nodes)
-      fixed_edges_vertices.merge(*corner_nodes);
     fixed_edges_vertices = intersect(barrier_vertices, fixed_edges_vertices);
     fixed_edges_vertices =
         subtract(fixed_edges_vertices, fixed_edges_on_trim_surface_verts);
+    if (corner_nodes)
+      fixed_edges_vertices.merge(intersect(barrier_vertices, *corner_nodes));
 
     // get faces adjacent to vertices on fixed edges 
     Range fixed_edges_faces;
@@ -1975,7 +1977,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
                                 fixed_edges_faces, moab::Interface::UNION);
     fixed_edges_faces = intersect(fixed_edges_faces, barrier_vertices_faces);
 
-    if(debug)
+    if(debug && !fixed_edges_faces.empty())
       CHKERR SaveData(m_field.get_moab())("fixed_edges_faces.vtk",
                                           fixed_edges_faces);
 
@@ -1985,6 +1987,10 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
                                  false);
     barrier_vertices.merge(fixed_edges_faces_vertices);
   }
+
+  if (debug && !barrier_vertices.empty())
+    CHKERR SaveData(m_field.get_moab())("barrier_vertices.vtk",
+                                        barrier_vertices);
 
   auto get_trim_skin_verts = [&]() {
     Range trim_surf_skin;
@@ -1996,14 +2002,21 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
     return trim_surf_skin_verts;
   };
 
+  int nn = 0;
+
   Range outside_verts;
   while (!(outside_verts = get_trim_skin_verts()).empty()) {
     Range outside_faces;
     CHKERR moab.get_adjacencies(outside_verts, 2, false, outside_faces,
                                 moab::Interface::UNION);
     trimNewSurfaces = subtract(trimNewSurfaces, outside_faces);
+    if (debug && !trimNewSurfaces.empty())
+      CHKERR SaveData(m_field.get_moab())(
+          "trimNewSurfaces_" + boost::lexical_cast<std::string>(nn) + ".vtk",
+          trimNewSurfaces);
+    ++nn;
   }
-  
+
   MoFEMFunctionReturn(0);
 }
 
