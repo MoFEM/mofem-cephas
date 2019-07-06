@@ -735,7 +735,7 @@ CutMeshInterface::refineMesh(const bool refine_front, const bool update_front,
   };
   CHKERR add_bit(init_bit_level);
 
-  int very_last_bit = init_bit_level + surf_levels + front_levels + 1;
+  int very_last_bit = init_bit_level + surf_levels + front_levels + 2;
 
   auto update_range = [&](Range *r_ptr) {
     MoFEMFunctionBegin;
@@ -800,6 +800,10 @@ CutMeshInterface::refineMesh(const bool refine_front, const bool update_front,
   }
 
   CHKERR createLevelSets(update_front, verb, debug);
+
+  // remove entities on ver last bit ref level from previous refinement
+  CHKERR m_field.delete_ents_by_bit_ref(
+      BitRefLevel().set(), BitRefLevel().set(very_last_bit), true, verb);
 
   Range very_last_bit_ents;
   CHKERR bit_ref_manager->getEntitiesByRefLevel(mask, BitRefLevel().set(),
@@ -1542,25 +1546,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   FTensor::Index<'i', 3> i;
   int num_nodes;
 
-  MatrixDouble edge_face_normal(3, surface_skin.size());
-  FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_edge_face_normal =
-      getFTensor1FromMat<3>(edge_face_normal);
-  for (auto s : surface_skin) {
-    Range adj_face;
-    moab.get_adjacencies(&s, 1, 2, false, adj_face, moab::Interface::UNION);
-    adj_face = intersect(adj_face, sUrface);
-    if (adj_face.size() == 1)
-      Util::normal(&moab, adj_face[0], t_edge_face_normal(0),
-                   t_edge_face_normal(1), t_edge_face_normal(2));
-    else
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Should be only one face in the range");
-
-    t_edge_face_normal(i) /=
-        sqrt(t_edge_face_normal(i) * t_edge_face_normal(i));
-    ++t_edge_face_normal;
-  }
-
   // iterate over edges on cut surface
   for (auto e : edges) {
 
@@ -1581,9 +1566,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     const double edge_length = sqrt(edge_length2);
     if (edge_length == 0)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Zero edge length");
-
-    FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_edge_face_normal =
-        getFTensor1FromMat<3>(edge_face_normal);
 
     auto get_edge_coors = [&](const auto e) {
       const EntityHandle *conn;
@@ -1667,7 +1649,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         }
       }
 
-      ++t_edge_face_normal;
     }
   }
 
