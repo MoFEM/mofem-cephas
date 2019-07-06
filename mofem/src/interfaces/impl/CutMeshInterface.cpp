@@ -756,7 +756,7 @@ CutMeshInterface::refineMesh(const bool refine_front, const bool update_front,
                                 moab::Interface::UNION);
 
     CHKERR refiner->add_vertices_in_the_middel_of_edges(ref_edges, bit);
-    CHKERR refiner->refine_TET(vOlume, bit, false, NOISY);
+    CHKERR refiner->refine_TET(vOlume, bit, false, verb);
 
     CHKERR update_range(fixed_edges);
     CHKERR update_range(&vOlume);
