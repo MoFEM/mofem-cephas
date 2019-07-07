@@ -479,24 +479,31 @@ invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
   MoFEMFunctionReturnHot(0);
 }
 
+struct RefEntExtractor {
+  template <typename Iterator>
+  static inline EntityHandle extract(const Iterator &it) {
+    return (*it)->getRefEnt();
+  }
+};
+
 /**
  * @brief Insert ordered mofem multi-index into range
- * 
- * @tparam Iterator 
- * @param r 
- * @param begin_iter 
- * @param end_iter 
- * @return moab::Range::iterator 
+ *
+ * @tparam Iterator
+ * @param r
+ * @param begin_iter
+ * @param end_iter
+ * @return moab::Range::iterator
  */
-template <typename Iterator>
-moab::Range::iterator insertOrderedRefEnt(Range &r, Iterator begin_iter,
-                                          Iterator end_iter) {
+template <typename Extractor, typename Iterator>
+moab::Range::iterator insertOrdered(Range &r, Extractor, Iterator begin_iter,
+                                    Iterator end_iter) {
   moab::Range::iterator hint = r.begin();
   while (begin_iter != end_iter) {
     size_t j = 0;
-    auto bi = (*begin_iter)->getRefEnt();
+    auto bi = Extractor::extract(begin_iter);
     Iterator pj = begin_iter;
-    while (pj != end_iter && (bi + j) == (*pj)->getRefEnt()) {
+    while (pj != end_iter && (bi + j) == Extractor::extract(pj)) {
       ++pj;
       ++j;
     }

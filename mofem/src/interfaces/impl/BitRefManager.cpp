@@ -63,14 +63,17 @@ struct SetBitRefLevelTool {
       // all enties in range are added to database
       MoFEMFunctionReturnHot(0);
     } else {
-      
+
       // some entities from range are in database
       auto hi_rit = refEntsPtr->upper_bound(s);
 
       Range to_erase;
-      insertOrderedRefEnt(to_erase, rit, hi_rit);
+      insertOrdered(to_erase, RefEntExtractor(), rit, hi_rit);
+      if (bIt.any())
+        for (; rit != hi_rit; ++rit)
       for (; rit != hi_rit; ++rit) 
-        const_cast<BitRefLevel &>((*rit)->getBitRefLevel()) |= bIt;
+        for (; rit != hi_rit; ++rit)
+          const_cast<BitRefLevel &>((*rit)->getBitRefLevel()) |= bIt;
 
       // to_erase.insert_list(to_erase_vec.begin(), to_erase_vec.end());
       Range::iterator lo, hi = seed_ents_range.begin();
