@@ -55,21 +55,37 @@ struct SetBitRefLevelTool {
   MoFEMErrorCode findEntsToAdd(EntityHandle f, EntityHandle s,
                                Range &seed_ents_range) const {
     MoFEMFunctionBeginHot;
+
     seed_ents_range.insert(f, s);
-    RefEntity_multiIndex::iterator rit, hi_rit;
     // get lower bound of multi-index
-    rit = refEntsPtr->lower_bound(f);
+    auto rit = refEntsPtr->lower_bound(f);
     if (rit == refEntsPtr->end()) {
       // all enties in range are added to database
       MoFEMFunctionReturnHot(0);
     } else {
+      
       // some entities from range are in database
-      hi_rit = refEntsPtr->upper_bound(s);
-      for (; rit != hi_rit; ++rit) {
-        *(const_cast<RefEntity *>(rit->get())->getBitRefLevelPtr()) |= bIt;
-        seed_ents_range.erase(rit->get()->getRefEnt());
+      auto hi_rit = refEntsPtr->upper_bound(s);
+
+      Range to_erase;
+      insertOrderedRefEnt(to_erase, rit, hi_rit);
+      for (; rit != hi_rit; ++rit) 
+        const_cast<BitRefLevel &>((*rit)->getBitRefLevel()) |= bIt;
+
+      // to_erase.insert_list(to_erase_vec.begin(), to_erase_vec.end());
+      Range::iterator lo, hi = seed_ents_range.begin();
+      for (auto pt = to_erase.pair_begin(); pt != to_erase.pair_end(); ++pt) {
+        lo = seed_ents_range.lower_bound(hi, seed_ents_range.end(), pt->first);
+        if (lo != seed_ents_range.end()) {
+          hi = seed_ents_range.upper_bound(lo, seed_ents_range.end(),
+                                           pt->second);
+          seed_ents_range.erase(lo, hi);
+        } else
+          break;
       }
+
     }
+
     MoFEMFunctionReturnHot(0);
   }
 
