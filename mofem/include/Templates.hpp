@@ -492,17 +492,15 @@ template <typename Iterator>
 moab::Range::iterator insertOrderedRefEnt(Range &r, Iterator begin_iter,
                                           Iterator end_iter) {
   moab::Range::iterator hint = r.begin();
-  Iterator pj = begin_iter;
-  ++pj;
   while (begin_iter != end_iter) {
-    size_t j = 1;
-    while (pj != end_iter &&
-           ((*begin_iter)->getRefEnt() + j) == (*pj)->getRefEnt()) {
+    size_t j = 0;
+    auto bi = (*begin_iter)->getRefEnt();
+    Iterator pj = begin_iter;
+    while (pj != end_iter && (bi + j) == (*pj)->getRefEnt()) {
       ++pj;
       ++j;
     }
-    hint = r.insert(hint, (*begin_iter)->getRefEnt(),
-                    (*begin_iter)->getRefEnt() + j - 1);
+    hint = r.insert(hint, bi, bi + (j - 1));
     begin_iter = pj;
   }
   return hint;
