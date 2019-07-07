@@ -479,6 +479,10 @@ invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
   MoFEMFunctionReturnHot(0);
 }
 
+/**
+ * @brief Extract entity handle form multi-index container
+ * 
+ */
 struct RefEntExtractor {
   template <typename Iterator>
   static inline EntityHandle extract(const Iterator &it) {
@@ -488,6 +492,13 @@ struct RefEntExtractor {
 
 /**
  * @brief Insert ordered mofem multi-index into range
+ * 
+ * \code
+ * auto hi_rit = refEntsPtr->upper_bound(start);
+ * auto hi_rit = refEntsPtr->upper_bound(end);
+ * Range to_erase;
+ * insertOrdered(to_erase, RefEntExtractor(), rit, hi_rit);
+ * \endcode
  *
  * @tparam Iterator
  * @param r
