@@ -129,18 +129,58 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode buildTree();
 
+  /**
+   * @brief Cut mesh onlu
+   * 
+   * @param vol 
+   * @param cut_bit 
+   * @param th 
+   * @param tol_cut 
+   * @param tol_cut_close 
+   * @param fixed_edges 
+   * @param corner_nodes 
+   * @param update_meshsets 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
                          const double tol_cut, const double tol_cut_close,
                          Range *fixed_edges = NULL, Range *corner_nodes = NULL,
                          const bool update_meshsets = false,
                          const bool debug = false);
 
+  /**
+   * @brief Trim mesh only
+   * 
+   * @param trim_bit 
+   * @param th 
+   * @param tol_cut_close 
+   * @param fixed_edges 
+   * @param corner_nodes 
+   * @param update_meshsets 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode trimOnly(const BitRefLevel trim_bit, Tag th,
                           const double tol_cut_close,
                           Range *fixed_edges = NULL, Range *corner_nodes = NULL,
                           const bool update_meshsets = false,
                           const bool debug = false);
 
+  /**
+   * @brief Cut and trim
+   * 
+   * @param first_bit 
+   * @param th 
+   * @param tol_cut 
+   * @param tol_cut_close 
+   * @param tol_trim_close 
+   * @param fixed_edges 
+   * @param corner_nodes 
+   * @param update_meshsets 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode
   cutAndTrim(int &first_bit, Tag th, const double tol_cut,
              const double tol_cut_close, const double tol_trim_close,
@@ -177,18 +217,52 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode makeFront(const bool debug = false);
 
+  /**
+   * @brief Calculate distance from mesh nodes to cut surface
+   * 
+   * @param intersect_vol 
+   * @param verb 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode createSurfaceLevelSets(Range *intersect_vol = nullptr,
                                         int verb = QUIET,
                                         const bool debug = false);
 
+  /**
+   * @brief Calculate distance from mesh nodes to surface front
+   * 
+   * @param verb 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode createFrontLevelSets(int verb = QUIET,
                                       const bool debug = false);
 
+  /**
+   * @brief Create a level sets, i.e. distances from surface and surface front
+   * 
+   * @param th 
+   * @param vol_edges 
+   * @param remove_adj_prims_edges 
+   * @param verb 
+   * @param debug 
+   * @param edges_file_name 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode createLevelSets(Tag th, Range &vol_edges,
                                  const bool remove_adj_prims_edges,
                                  int verb = QUIET, const bool debug = false,
                                  const std::string edges_file_name = string());
 
+  /**
+   * @brief Create a level sets, i.e. distances from surface and surface front
+   * 
+   * @param update_front 
+   * @param verb 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode createLevelSets(const bool update_front, int verb = QUIET,
                                  const bool debug = false);
 
