@@ -479,6 +479,35 @@ invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
   MoFEMFunctionReturnHot(0);
 }
 
+/**
+ * @brief Insert ordered mofem multi-index into range
+ * 
+ * @tparam Iterator 
+ * @param r 
+ * @param begin_iter 
+ * @param end_iter 
+ * @return moab::Range::iterator 
+ */
+template <typename Iterator>
+moab::Range::iterator insertOrderedRefEnt(Range &r, Iterator begin_iter,
+                                          Iterator end_iter) {
+  moab::Range::iterator hint = r.begin();
+  Iterator pj = begin_iter;
+  ++pj;
+  while (begin_iter != end_iter) {
+    size_t j = 1;
+    while (pj != end_iter &&
+           ((*begin_iter)->getRefEnt() + j) == (*pj)->getRefEnt()) {
+      ++pj;
+      ++j;
+    }
+    hint = r.insert(hint, (*begin_iter)->getRefEnt(),
+                    (*begin_iter)->getRefEnt() + j - 1);
+    begin_iter = pj;
+  }
+  return hint;
+};
+
 } // namespace MoFEM
 
 #endif //__TEMPLATES_HPP__
