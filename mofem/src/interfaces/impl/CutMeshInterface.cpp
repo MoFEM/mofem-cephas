@@ -777,8 +777,6 @@ CutMeshInterface::refineMesh(const bool refine_front, const bool update_front,
     MoFEMFunctionReturn(0);
   };
 
-  BitRefLevel mask;
-
   for (int ll = init_bit_level; ll != init_bit_level + surf_levels; ++ll) {
     CHKERR createLevelSets(update_front, verb, debug);
     if (refine_front)
@@ -787,7 +785,6 @@ CutMeshInterface::refineMesh(const bool refine_front, const bool update_front,
     else
       CHKERR refine(BitRefLevel().set(ll + 1),
                     subtract(cutSurfaceVolumes, cutFrontVolumes));
-    mask.set(ll + 1);
   }
 
   if (refine_front) {
@@ -795,27 +792,10 @@ CutMeshInterface::refineMesh(const bool refine_front, const bool update_front,
          ll != init_bit_level + surf_levels + front_levels; ++ll) {
       CHKERR createLevelSets(update_front, verb, debug);
       CHKERR refine(BitRefLevel().set(ll + 1), cutFrontVolumes);
-      mask.set(ll + 1);
     }
   }
 
   CHKERR createLevelSets(update_front, verb, debug);
-
-  // remove entities on ver last bit ref level from previous refinement
-  CHKERR m_field.delete_ents_by_bit_ref(
-      BitRefLevel().set(), BitRefLevel().set(very_last_bit), true, verb);
-
-  Range very_last_bit_ents;
-  CHKERR bit_ref_manager->getEntitiesByRefLevel(mask, BitRefLevel().set(),
-                                                very_last_bit_ents);
-  if (!very_last_bit_ents.empty()) {
-    if (debug)
-      CHKERR SaveData(m_field.get_moab())("very_last_bit_ents.vtk",
-                                          very_last_bit_ents);
-    CHKERR bit_ref_manager->resetBitRefLevel(
-        very_last_bit_ents, BitRefLevel().set(very_last_bit),
-        BitRefLevel(mask).set(very_last_bit));
-  }
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("refinedVolume.vtk", vOlume);
