@@ -160,12 +160,14 @@ struct BitRefManager : public UnknownInterface {
    *
    * @param type of entity
    * @param bit bit ref level
+   * @param mask 
    * @param verb verbosity level
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode addToDatabaseBitRefLevelByType(const EntityType type,
-                                                const BitRefLevel bit,
-                                                int verb = QUIET) const;
+  MoFEMErrorCode
+  addToDatabaseBitRefLevelByType(const EntityType type, const BitRefLevel bit,
+                                 const BitRefLevel mask = BitRefLevel().set(),
+                                 int verb = QUIET) const;
 
   /**
    * @brief Add entities which exist in MoAB database, and have set appropiate
@@ -182,10 +184,10 @@ struct BitRefManager : public UnknownInterface {
    * @param verb verbosity level
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode addToDatabaseBitRefLevelByDim(const int dim,
-                                               const BitRefLevel bit,
-                                               int verb = QUIET) const;
-
+  MoFEMErrorCode
+  addToDatabaseBitRefLevelByDim(const int dim, const BitRefLevel bit,
+                                const BitRefLevel mask = BitRefLevel().set(),
+                                int verb = QUIET) const;
 
   /**
    * \brief add bit ref level to ref entity
@@ -210,19 +212,6 @@ struct BitRefManager : public UnknownInterface {
   MoFEMErrorCode addBitRefLevelByDim(const EntityHandle meshset, const int dim,
                                      const BitRefLevel bit,
                                      int verb = QUIET) const;
-
-  /**
-   * @brief reset bit ref level
-   * 
-   * @param ents 
-   * @param bit 
-   * @param mask
-   * @param verb 
-   * @return MoFEMErrorCode 
-   */
-  MoFEMErrorCode resetBitRefLevel(const Range &ents, const BitRefLevel bit,
-                                  const BitRefLevel mask,
-                                  int verb = QUIET) const;
 
   /**
    * \brief Set nth bit ref level
@@ -578,10 +567,12 @@ struct BitRefManager : public UnknownInterface {
    * @param  options   file options (see moab documentation)
    * @return           error code
    */
-  MoFEMErrorCode
-  writeBitLevelByType(const BitRefLevel bit, const BitRefLevel mask,
-                      const EntityType type, const char *file_name,
-                      const char *file_type, const char *options) const;
+  MoFEMErrorCode writeBitLevelByType(const BitRefLevel bit,
+                                     const BitRefLevel mask,
+                                     const EntityType type,
+                                     const char *file_name,
+                                     const char *file_type, const char *options,
+                                     const bool check_for_empty = true) const;
 
   /**
    * @brief Write ents not in database
@@ -589,11 +580,29 @@ struct BitRefManager : public UnknownInterface {
    * @param file_name
    * @param file_type for example "VTK"
    * @param options
+   * @param check_for_empty
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode writeEntitiesNotInDatabase(const char *file_name,
-                                            const char *file_type,
-                                            const char *options) const;
+  MoFEMErrorCode
+  writeEntitiesNotInDatabase(const char *file_name, const char *file_type,
+                             const char *options,
+                             const bool check_for_empty = true) const;
+
+  /**
+   * @brief Write all entities by bit levels and type
+   * 
+   * @param mask 
+   * @param type 
+   * @param file_name 
+   * @param file_type 
+   * @param options 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode writeEntitiesAllBitLevelsByType(const BitRefLevel mask,
+                                                 const EntityType type,
+                                                 const char *file_name,
+                                                 const char *file_type,
+                                                 const char *options);
 
   /**@}*/
 };
