@@ -601,37 +601,59 @@ MoFEMErrorCode BitRefManager::filterEntitiesByRefLevel(const BitRefLevel bit,
   moab::Interface &moab(m_field.get_moab());
   MoFEMFunctionBeginHot;
 
-  const BitRefLevel *tag_bit;
   std::vector<EntityHandle> ents_vec;
   ents_vec.reserve(ents.size());
 
+  std::vector<BitRefLevel *> tags_bits_ptr_vec(ents.size());
+
+  Range swap_ents;
+  auto hint = swap_ents.begin();
+
   for (Range::pair_iterator p_eit = ents.pair_begin(); p_eit != ents.pair_end();
        ++p_eit) {
+
     EntityHandle f = p_eit->first;
-    EntityHandle s = p_eit->second;
+    const EntityHandle s = p_eit->second;
 
-    EntityHandle ff = 0;
-    EntityHandle ss = 0;
+    // get bits on entities
+    rval = moab.tag_get_by_ptr(cOre.get_th_RefBitLevel(), Range(f, s),
+                             (const void **)(&*tags_bits_ptr_vec.begin()));
 
-    for (; f != (s + 1); ++f) {
-      // Get entity bit ref level
-      rval = moab.tag_get_by_ptr(cOre.get_th_RefBitLevel(), &f, 1,
-                                 (const void **)(&tag_bit));
-      if (rval == MB_SUCCESS) {
-        if (
+    if (rval == MB_SUCCESS) {
 
-            ((*tag_bit) & bit).any() &&
+      auto bit_it = tags_bits_ptr_vec.begin();
 
-            (((*tag_bit) & mask) == (*tag_bit))
+      auto check = [&bit, &mask](const auto &entity_bit) -> bool {
+        return
 
-        )
-          ents_vec.push_back(f);
+            (entity_bit & bit).any() &&
+
+            ((entity_bit & mask) == entity_bit);
+      };
+
+      while (f != s + 1) {
+
+        while (f != s + 1 && !check(**bit_it)) {
+          ++bit_it;
+          ++f;
+        }
+
+        if (f != s + 1) {
+
+          const EntityHandle start = f;
+
+          while (f != (s + 1) && check(**bit_it)) {
+            ++bit_it;
+            ++f;
+          };
+
+          hint = swap_ents.insert(hint, start, f - 1);
+        }
+
       }
     }
   }
 
-  Range swap_ents;
-  swap_ents.insert_list(ents_vec.begin(), ents_vec.end());
   ents.swap(swap_ents);
 
   MoFEMFunctionReturnHot(0);
