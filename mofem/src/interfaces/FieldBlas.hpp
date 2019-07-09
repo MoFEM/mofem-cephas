@@ -118,7 +118,7 @@ struct FieldBlas : public UnknownInterface {
                            bool error_if_missing = false,
                            bool creat_if_missing = false);
 
-  typedef boost::function<MoFEMErrorCode(VectorAdaptor &field_data,
+  typedef boost::function<MoFEMErrorCode(VectorAdaptor &&field_data,
                                          double *xcoord, double *ycoord,
                                          double *zcoord)>
       VertexCoordsFunction;

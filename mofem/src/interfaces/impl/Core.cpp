@@ -672,7 +672,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       Range ents_of_id_meshset;
       CHKERR get_moab().get_entities_by_handle(fit->get()->getMeshset(),
                                                ents_of_id_meshset, false);
-      CHKERR set_field_order(ents_of_id_meshset, fit->get()->getId(), -1);
+      CHKERR set_field_order(ents_of_id_meshset, fit->get()->getId(), -1, verb);
     }
   }
 
