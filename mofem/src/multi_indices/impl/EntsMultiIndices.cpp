@@ -163,7 +163,7 @@ FieldEntity::FieldEntity(
     THROW_MESSAGE("Pointer to max order not set");
 }
 
-boost::shared_ptr<double *const> FieldEntity::makeSharedFieldDataAdaptorPtr(
+boost::shared_ptr<FieldData *const> FieldEntity::makeSharedFieldDataAdaptorPtr(
     const boost::shared_ptr<Field> &field_ptr,
     const boost::shared_ptr<RefEntity> &ref_ent_ptr) {
   int size;
@@ -171,15 +171,15 @@ boost::shared_ptr<double *const> FieldEntity::makeSharedFieldDataAdaptorPtr(
   switch (ref_ent_ptr->getEntType()) {
   case MBVERTEX:
     size = field_ptr->getNbOfCoeffs();
-    ptr = static_cast<double *>(MoFEM::get_tag_ptr(field_ptr->moab,
-                                                   field_ptr->th_FieldDataVerts,
-                                                   ref_ent_ptr->ent, &size));
+    ptr = static_cast<FieldData *>(
+        MoFEM::get_tag_ptr(field_ptr->moab, field_ptr->th_FieldDataVerts,
+                           ref_ent_ptr->ent, &size));
     break;
   default:
-    ptr = static_cast<double *>(MoFEM::get_tag_ptr(
+    ptr = static_cast<FieldData *>(MoFEM::get_tag_ptr(
         field_ptr->moab, field_ptr->th_FieldData, ref_ent_ptr->ent, &size));
   }
-  return boost::make_shared<double *const>(ptr);
+  return boost::make_shared<FieldData *const>(ptr);
 }
 
 FieldEntity::~FieldEntity() {}

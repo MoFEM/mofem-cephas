@@ -472,7 +472,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       auto create_tags_for_max_order = [&](const Range &ents) {
         MoFEMFunctionBegin;
         if (order >= 0) {
-          std::vector<int> o_vec(ents.size(), order);
+          std::vector<ApproximationOrder> o_vec(ents.size(), order);
           CHKERR get_moab().tag_set_data((*miit)->th_AppOrder, ents,
                                          &*o_vec.begin());
         }
@@ -484,12 +484,12 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         if (order >= 0) {
           if (nb_dofs > 0) {
             if (ent_type == MBVERTEX) {
-              std::vector<double> d_vec(nb_dofs * ents.size(), 0);
+              std::vector<FieldData> d_vec(nb_dofs * ents.size(), 0);
               CHKERR get_moab().tag_set_data((*miit)->th_FieldDataVerts, ents,
                                              &*d_vec.begin());
             } else {
               std::vector<int> tag_size(ents.size(), nb_dofs);
-              std::vector<double> d_vec(nb_dofs, 0);
+              std::vector<FieldData> d_vec(nb_dofs, 0);
               std::vector<void const *> d_vec_ptr(ents.size(), &*d_vec.begin());
               CHKERR get_moab().tag_set_by_ptr((*miit)->th_FieldData, ents,
                                                &*d_vec_ptr.begin(),
@@ -536,7 +536,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
             } else {
               moab::ErrorCode rval;
               std::vector<int> tag_size(ents.size());
-              std::vector<void const *> d_vec_ptr(ents.size());
+              std::vector<const void *> d_vec_ptr(ents.size());
 
               // get tags data
               if (ent_type == MBVERTEX)
@@ -549,8 +549,8 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                                                  &*tag_size.begin());
 
               auto cast = [](auto p) {
-                return const_cast<double *const>(
-                    static_cast<const double *>(p));
+                return const_cast<FieldData *const>(
+                    static_cast<const FieldData *>(p));
               };
 
               // some of entities has tag not set or zero dofs on entity
@@ -573,7 +573,8 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                 auto dit = vec->begin();
                 for (auto eit = ents.begin(); eit != ents.end();
                      ++eit, ++oit, ++dit) {
-                  if (get_nb_dofs(*static_cast<const int *>(*oit))) {
+                  if (get_nb_dofs(
+                          *static_cast<const ApproximationOrder *>(*oit))) {
                     int tag_size;
                     const void *ret_val;
                     if (ent_type == MBVERTEX)
@@ -583,7 +584,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                     else
                       CHKERR get_moab().tag_get_by_ptr(
                           (*miit)->th_FieldData, &*eit, 1, &ret_val, &tag_size);
-                    const_cast<double *&>(*dit) = cast(ret_val);
+                    const_cast<FieldData *&>(*dit) = cast(ret_val);
                   }
                 }
               }

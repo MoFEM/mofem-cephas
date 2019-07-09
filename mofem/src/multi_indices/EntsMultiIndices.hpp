@@ -596,7 +596,7 @@ struct FieldEntity : public interface_Field<Field>,
    * 
    * @return boost::shared_ptr<VectorAdaptor> 
    */
-  static boost::shared_ptr<double *const> makeSharedFieldDataAdaptorPtr(
+  static boost::shared_ptr<FieldData *const> makeSharedFieldDataAdaptorPtr(
       const boost::shared_ptr<Field> &field_ptr,
       const boost::shared_ptr<RefEntity> &ref_ent_ptr);
 
@@ -606,7 +606,7 @@ struct FieldEntity : public interface_Field<Field>,
    *
    * @return boost::shared_ptr<VectorAdaptor>&
    */
-  inline boost::shared_ptr<double * const> &getEntFieldDataPtr() const {
+  inline boost::shared_ptr<FieldData * const> &getEntFieldDataPtr() const {
     return fieldDataAdaptorPtr;
   }
 
@@ -736,8 +736,8 @@ struct FieldEntity : public interface_Field<Field>,
 
 private:
 
-  mutable boost::shared_ptr<const int> tagMaxOrderPtr;
-  mutable boost::shared_ptr<double * const> fieldDataAdaptorPtr;
+  mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
+  mutable boost::shared_ptr<FieldData * const> fieldDataAdaptorPtr;
 };
 
 /**
