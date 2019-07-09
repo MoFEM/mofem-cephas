@@ -521,8 +521,8 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
           [&](const Range &ents,
               boost::shared_ptr<std::vector<const void *>> &ents_max_orders) {
             // create shared pointer and reserve memory
-            boost::shared_ptr<std::vector<VectorAdaptor>> vec(
-                new std::vector<VectorAdaptor>());
+            boost::shared_ptr<std::vector<double *>> vec(
+                new std::vector<double *>());
             vec->reserve(ents.size());
 
             auto get_nb_dofs = [&](const auto order) {
@@ -532,8 +532,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
             if (order >= 0 && get_nb_dofs(order) == 0) {
               // set empty vector adaptor
               for (int i = 0; i != ents.size(); ++i)
-                vec->emplace_back(
-                    0, ublas::shallow_array_adaptor<double>(0, nullptr));
+                vec->emplace_back(nullptr);
             } else {
               moab::ErrorCode rval;
               std::vector<int> tag_size(ents.size());
@@ -550,25 +549,25 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                                                  &*tag_size.begin());
 
               auto cast = [](auto p) {
-                return const_cast<double *>(static_cast<const double *>(p));
+                return const_cast<double *const>(
+                    static_cast<const double *>(p));
               };
 
               // some of entities has tag not set or zero dofs on entity
               if (rval == MB_SUCCESS) {
                 // all is ok, all entities has tag set
                 auto tit = d_vec_ptr.begin();
+                auto oit = ents_max_orders->begin();
                 for (auto sit = tag_size.begin(); sit != tag_size.end();
-                     ++sit, ++tit) {
-                  vec->emplace_back(*sit, ublas::shallow_array_adaptor<double>(
-                                              *sit, cast(*tit)));
-                }
+                     ++sit, ++tit, ++oit) 
+                  vec->emplace_back(cast(*tit));
+                
               } else {
                 // set empty vector adaptor
                 for (int i = 0; i != ents.size(); ++i)
-                  vec->emplace_back(
-                      0, ublas::shallow_array_adaptor<double>(0, nullptr));
+                  vec->emplace_back(nullptr);
                 // check order on all entities, and if for that order non zero
-                // dofs are expected ger pointer to tag data and reset vector
+                // dofs are expected get pointer to tag data and reset vector
                 // adaptor
                 auto oit = ents_max_orders->begin();
                 auto dit = vec->begin();
@@ -576,18 +575,15 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                      ++eit, ++oit, ++dit) {
                   if (get_nb_dofs(*static_cast<const int *>(*oit))) {
                     int tag_size;
-                    const double *ret_val;
+                    const void *ret_val;
                     if (ent_type == MBVERTEX)
                       CHKERR get_moab().tag_get_by_ptr(
-                          (*miit)->th_FieldDataVerts, &*eit, 1,
-                          (const void **)&ret_val, &tag_size);
+                          (*miit)->th_FieldDataVerts, &*eit, 1, &ret_val,
+                          &tag_size);
                     else
                       CHKERR get_moab().tag_get_by_ptr(
-                          (*miit)->th_FieldData, &*eit, 1,
-                          (const void **)&ret_val, &tag_size);
-                    (*dit) = VectorAdaptor(
-                        tag_size, ublas::shallow_array_adaptor<double>(
-                                      tag_size, const_cast<double *>(ret_val)));
+                          (*miit)->th_FieldData, &*eit, 1, &ret_val, &tag_size);
+                    const_cast<double *&>(*dit) = cast(ret_val);
                   }
                 }
               }
@@ -608,7 +604,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       for (auto ent : ents_in_ref_ent) {
         ents_array->emplace_back(
             *miit, *miit_ref_ent,
-            boost::shared_ptr<VectorAdaptor>(ent_field_data, &*vit_field_data),
+            boost::shared_ptr<double *const>(ent_field_data, &*vit_field_data),
             boost::shared_ptr<const int>(
                 ents_max_order, static_cast<const int *>(*vit_max_order)));
         ++miit_ref_ent;

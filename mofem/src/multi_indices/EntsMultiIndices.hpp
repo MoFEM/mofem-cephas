@@ -571,7 +571,7 @@ struct FieldEntity : public interface_Field<Field>,
 
   FieldEntity(const boost::shared_ptr<Field> &field_ptr,
               const boost::shared_ptr<RefEntity> &ref_ent_ptr,
-              boost::shared_ptr<VectorAdaptor> &&field_data_adaptor_ptr,
+              boost::shared_ptr<double *const> &&field_data_adaptor_ptr,
               boost::shared_ptr<const int> &&t_max_order_ptr);
 
                   
@@ -596,7 +596,7 @@ struct FieldEntity : public interface_Field<Field>,
    * 
    * @return boost::shared_ptr<VectorAdaptor> 
    */
-  static boost::shared_ptr<VectorAdaptor> makeSharedFieldDataAdaptorPtr(
+  static boost::shared_ptr<double *const> makeSharedFieldDataAdaptorPtr(
       const boost::shared_ptr<Field> &field_ptr,
       const boost::shared_ptr<RefEntity> &ref_ent_ptr);
 
@@ -606,7 +606,7 @@ struct FieldEntity : public interface_Field<Field>,
    *
    * @return boost::shared_ptr<VectorAdaptor>&
    */
-  inline boost::shared_ptr<VectorAdaptor> &getEntFieldDataPtr() const {
+  inline boost::shared_ptr<double * const> &getEntFieldDataPtr() const {
     return fieldDataAdaptorPtr;
   }
 
@@ -614,8 +614,8 @@ struct FieldEntity : public interface_Field<Field>,
    * \brief Get vector of DOFs active values on entity
    * @return Vector of DOFs values
    */
-  inline VectorAdaptor &getEntFieldData() const {
-    return *fieldDataAdaptorPtr.get();
+  inline VectorAdaptor getEntFieldData() const {
+    return getVectorAdaptor(*fieldDataAdaptorPtr, getNbDofsOnEnt());
   }
 
   /**
@@ -737,8 +737,7 @@ struct FieldEntity : public interface_Field<Field>,
 private:
 
   mutable boost::shared_ptr<const int> tagMaxOrderPtr;
-  mutable boost::shared_ptr<VectorAdaptor> fieldDataAdaptorPtr;
-
+  mutable boost::shared_ptr<double * const> fieldDataAdaptorPtr;
 };
 
 /**
@@ -761,7 +760,7 @@ struct interface_FieldEntity : public interface_Field<T>,
   inline int getNbDofsOnEnt() const { return this->sPtr->getNbDofsOnEnt(); }
 
   /// @return get field data on entity
-  inline VectorAdaptor &getEntFieldData() const {
+  inline VectorAdaptor getEntFieldData() const {
     return this->sPtr->getEntFieldData();
   }
 
