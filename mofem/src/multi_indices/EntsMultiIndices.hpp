@@ -817,15 +817,18 @@ struct interface_FieldEntity : public interface_Field<T>,
  * \ingroup ent_multi_indices
  */
 struct FieldEntity_change_order {
-  ApproximationOrder order;
-  std::vector<FieldData> data;
-  std::vector<ApproximationOrder> data_dof_order;
-  std::vector<FieldCoefficientsNumber> data_dof_rank;
-  FieldEntity_change_order(ApproximationOrder order) : order(order) {}
+
+  FieldEntity_change_order(const int order, const bool reduce_tag_size = false)
+      : order(order), reduceTagSize(reduce_tag_size) {}
   inline void operator()(boost::shared_ptr<FieldEntity> &e) {
     (*this)(e.get());
   }
   void operator()(FieldEntity *e);
+
+private:
+  const ApproximationOrder order;
+  const bool reduceTagSize;
+  std::vector<FieldData> data;
 };
 
 /**

@@ -201,8 +201,8 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
   *const_cast<ApproximationOrder *>(e->getMaxOrderPtr()) = order;
   std::size_t nb_dofs = e->getOrderNbDofs(order) * e->getNbOfCoeffs();
 
-  double *tag_field_data;
-  int tag_field_data_size;
+  double *tag_field_data = nullptr;
+  int tag_field_data_size = 0;
 
   auto set_verts = [&]() {
     if (e->sFieldPtr->th_FieldDataVertsType == MB_TAG_SPARSE) {
@@ -231,41 +231,48 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
   };
 
   auto set_default = [&]() {
-    // Get pointer and size of field values tag
-    rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldData, &ent, 1,
-                               (const void **)&tag_field_data,
-                               &tag_field_data_size);
-    // Tag exist and are some data on it
-    if (rval == MB_SUCCESS) {
-      // Check if size of filed values tag is correct
-      if (nb_dofs == 0) {
-        // Delete data on this entity
-        rval = moab.tag_delete_data(e->sFieldPtr->th_FieldData, &ent, 1);
-        MOAB_THROW(rval);
-      } else {
-        // Size of tag is different than new seize, so copy data to new
-        // container
-        data.resize(tag_field_data_size);
-        FieldData *ptr_begin = static_cast<FieldData *>(tag_field_data);
-        FieldData *ptr_end =
-            static_cast<FieldData *>(tag_field_data) + tag_field_data_size;
-        std::copy(ptr_begin, ptr_end, data.begin());
-      }
-    }
-    // Set new data
-    if (nb_dofs > 0) {
-      // Set field dof data
-      data.resize(nb_dofs, 0);
-      int tag_size[1];
-      tag_size[0] = data.size();
-      void const *tag_data[] = {&data[0]};
-      rval = moab.tag_set_by_ptr(e->sFieldPtr->th_FieldData, &ent, 1, tag_data,
-                                 tag_size);
-      MOAB_THROW(rval);
+    if (reduceTagSize || nb_dofs) {
+
+      // Get pointer and size of field values tag
       rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldData, &ent, 1,
                                  (const void **)&tag_field_data,
                                  &tag_field_data_size);
-      MOAB_THROW(rval);
+
+      if ((reduceTagSize && nb_dofs != tag_field_data_size) ||
+          nb_dofs > tag_field_data_size) {
+
+        // Tag exist and are some data on it
+        if (rval == MB_SUCCESS) {
+          // Size of tag is different than new size, so copy data to new
+          // container
+          data.resize(tag_field_data_size);
+          FieldData *ptr_begin = static_cast<FieldData *>(tag_field_data);
+          FieldData *ptr_end =
+              static_cast<FieldData *>(tag_field_data) + tag_field_data_size;
+          std::copy(ptr_begin, ptr_end, data.begin());
+        }
+
+        if (rval != MB_SUCCESS || nb_dofs) {
+
+          // Set field dof data
+          data.resize(nb_dofs, 0);
+          int tag_size[1];
+          tag_size[0] = data.size();
+          void const *tag_data[] = {&data[0]};
+          rval = moab.tag_set_by_ptr(e->sFieldPtr->th_FieldData, &ent, 1,
+                                     tag_data, tag_size);
+          MOAB_THROW(rval);
+          rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldData, &ent, 1,
+                                     (const void **)&tag_field_data,
+                                     &tag_field_data_size);
+          MOAB_THROW(rval);
+
+        } else {
+
+          rval = moab.tag_delete_data(e->sFieldPtr->th_FieldData, &ent, 1);
+          MOAB_THROW(rval);
+        }
+      }
     }
   };
 

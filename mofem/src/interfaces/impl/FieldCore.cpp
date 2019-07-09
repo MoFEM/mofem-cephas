@@ -352,7 +352,8 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
   int nb_ents_set_order_down = 0;
   int nb_ents_set_order_new = 0;
 
-  FieldEntity_change_order modify_order(order);
+  FieldEntity_change_order modify_order_no_size_change(order, false);
+  FieldEntity_change_order modify_order_size_change(order, true);
 
   for (auto pit = field_ents.const_pair_begin();
        pit != field_ents.const_pair_end(); pit++) {
@@ -415,6 +416,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
           // if order is increased (note that dofs are not build if order is
           // increased)
 
+          bool can_change_size = true;
           auto dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
               boost::make_tuple((*miit)->getNameRef(), (*miit)->getEnt()));
           if (dit != dofsField.get<Composite_Name_And_Ent_mi_tag>().end()) {
@@ -422,6 +424,8 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                 dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
                     boost::make_tuple((*miit)->getNameRef(),
                                       (*miit)->getEnt()));
+            if(dit != hi_dit)
+              can_change_size = false;
             for (; dit != hi_dit; dit++) {
               if ((*dit)->getDofOrder() > order) {
                 bool success = dofsField.modify(dofsField.project<0>(dit),
@@ -432,8 +436,11 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
               }
             }
           }
+
           bool success =
-              entsFields.modify(entsFields.project<0>(miit), modify_order);
+              entsFields.modify(entsFields.project<0>(miit),
+                                can_change_size ? modify_order_size_change
+                                                : modify_order_no_size_change);
           if (!success)
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "modification unsuccessful");
@@ -482,6 +489,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       auto create_tags_for_data = [&](const Range &ents) {
         MoFEMFunctionBegin;
         if (order >= 0) {
+
           if (nb_dofs > 0) {
             if (ent_type == MBVERTEX) {
               std::vector<FieldData> d_vec(nb_dofs * ents.size(), 0);
@@ -496,7 +504,8 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                                                &*tag_size.begin());
             }
           }
-        }
+
+        } 
         MoFEMFunctionReturn(0);
       };
 
