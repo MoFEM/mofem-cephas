@@ -1278,6 +1278,27 @@ struct CoreInterface : public UnknownInterface {
   virtual MoFEMErrorCode resolve_shared_ents(const std::string &name,
                                              const std::string &fe_name,
                                              int verb = DEFAULT_VERBOSITY) = 0;
+/**
+ * @brief make entities from proc 0 shared on all proc
+ * 
+ * @param entities 
+ * @param num_entities 
+ * @param verb 
+ * @return MoFEMErrorCode 
+ */
+  virtual MoFEMErrorCode
+  make_entities_multishared(const EntityHandle *entities,
+                            const int num_entities,
+                            int verb = DEFAULT_VERBOSITY) = 0;
+  /**
+   * @brief make entities from proc 0 shared on all proc
+   *
+   * @param entities
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  virtual MoFEMErrorCode
+  make_entities_multishared(Range &entities, int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
    * \brief add finite elements to the meshset

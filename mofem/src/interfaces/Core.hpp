@@ -344,7 +344,11 @@ protected:
                                             int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode synchronise_field_entities(const std::string &name,
                                             int verb = DEFAULT_VERBOSITY);
-
+  MoFEMErrorCode make_entities_multishared(const EntityHandle *entities,
+                                           const int num_entities,
+                                           int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode make_entities_multishared(Range &entities,
+                                           int verb = DEFAULT_VERBOSITY);
   /**@}*/
 
   /** \name Fields */

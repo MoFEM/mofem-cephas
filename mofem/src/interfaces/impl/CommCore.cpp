@@ -306,4 +306,79 @@ MoFEMErrorCode Core::resolve_shared_ents(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
+                                               const int num_entities,
+                                               int verb) {
+  MoFEMFunctionBegin;
+
+  const EntityHandle *ent = entities;
+  const EntityHandle *const end = entities + num_entities;
+  std::vector<EntityHandle> all_ents_vec(ent, end);
+  // Range all_ents;
+  // all_ents.insert(ent, end);
+
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
+  CHKERR MPI_Bcast(&*all_ents_vec.begin(), num_entities, MPI_UNSIGNED, 0,
+                   MPI_COMM_WORLD);
+  cerr << "my ent is: 1" << pcomm->rank() << " - " << all_ents_vec[0]
+       << endl;
+  if (pcomm->size() == 1)
+    ;
+  MoFEMFunctionReturnHot(0);
+
+  // CHKERR pcomm->broadcast_entities(0, all_ents);
+
+  std::vector<int> shprocs(MAX_SHARING_PROCS, 0);
+  std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, 0);
+
+  //   if (pcomm->rank() == 0) {
+  //  }
+  // loop entities
+  unsigned char pstatus = 0;
+
+  if (pcomm->size() > 1) {
+    pstatus = PSTATUS_NOT_OWNED;
+    pstatus |= PSTATUS_SHARED;
+  } else {
+    pstatus = PSTATUS_NOT_OWNED;
+    pstatus |= PSTATUS_MULTISHARED;
+  }
+
+  for (auto &eit : all_ents_vec) {
+
+    int rrr = 0;
+    for (unsigned int rr = 0; rr < pcomm->size(); rr++) {
+      if (rr != pcomm->rank()) {
+        shhandles[rrr] = eit;
+        shprocs[rrr] = rr;
+        rrr++;
+      }
+      shprocs[rrr] = -1;
+    }
+    if (pstatus & PSTATUS_SHARED) {
+      CHKERR
+      get_moab().tag_set_data(pcomm->sharedp_tag(), &eit, 1, &shprocs[0]);
+      CHKERR get_moab().tag_set_data(pcomm->sharedh_tag(), &eit, 1,
+                                     &shhandles[0]);
+    }
+    if (PSTATUS_MULTISHARED) {
+      CHKERR get_moab().tag_set_data(pcomm->sharedps_tag(), &eit, 1,
+                                     &shprocs[0]);
+      CHKERR get_moab().tag_set_data(pcomm->sharedhs_tag(), &eit, 1,
+                                     &shhandles[0]);
+    }
+    CHKERR get_moab().tag_set_data(pcomm->pstatus_tag(), &eit, 1, &pstatus);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::make_entities_multishared(Range &entities, int verb) {
+  MoFEMFunctionBegin;
+  const int num_ents = entities.size();
+  CHKERR Core::make_entities_multishared(&*entities.begin(), num_ents, verb);
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM
