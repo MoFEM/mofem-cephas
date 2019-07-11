@@ -421,16 +421,6 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
                        getNewTrimSurfaces(), fixed_edges, corner_nodes, th,
                        update_meshsets, debug);
 
-  if (debug) {
-    CHKERR cOre.getInterface<BitRefManager>()->writeBitLevelByType(
-        bit_level3, BitRefLevel().set(), MBTET, "out_tets_merged.vtk", "VTK",
-        "");
-    CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
-        "cut_trim_merge_ents_not_in_database.vtk", "VTK", "");
-
-    CHKERR SaveData(m_field.get_moab())("merged_surface.vtk", mergedSurfaces);
-  }
-
   auto get_min_quality = [&m_field, debug](const BitRefLevel bit, Tag th) {
     Range tets_level; // test at level
     CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
@@ -453,6 +443,15 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
                                                          corner_nodes);
 
   first_bit += bit_levels.size() - 1;
+
+  if (debug) {
+    CHKERR cOre.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level3, BitRefLevel().set(), MBTET, "out_tets_merged.vtk", "VTK",
+        "");
+    CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
+        "cut_trim_merge_ents_not_in_database.vtk", "VTK", "");
+    CHKERR SaveData(m_field.get_moab())("merged_surface.vtk", mergedSurfaces);
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -2513,6 +2512,17 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
+      // remove edges connecting crack front and fixed edges, except those short
+      {
+        Range ents_nodes_and_edges;
+        ents_nodes_and_edges.merge(surface_skin.subset_by_type(MBEDGE));
+        ents_nodes_and_edges.merge(fixed_edges.subset_by_type(MBEDGE));
+        CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
+                                        0, false);
+      }
+      edges_to_merge = subtract(edges_to_merge, edges_to_remove);
+      not_merged_edges.merge(edges_to_remove);
+
       // remove crack front nodes connected to the surface, except those short
       {
         Range ents_nodes_and_edges;
@@ -2520,17 +2530,6 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(surface_front);
         ents_nodes_and_edges.merge(tets_skin_edges_verts);
         ents_nodes_and_edges.merge(tets_skin_edges);
-        CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        tOL, false);
-      }
-      edges_to_merge = subtract(edges_to_merge, edges_to_remove);
-      not_merged_edges.merge(edges_to_remove);
-
-      // remove edges connecting crack front and fixed edges, except those short
-      {
-        Range ents_nodes_and_edges;
-        ents_nodes_and_edges.merge(surface_skin.subset_by_type(MBEDGE));
-        ents_nodes_and_edges.merge(fixed_edges.subset_by_type(MBEDGE));
         CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
                                         tOL, false);
       }
@@ -2611,7 +2610,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   };
 
   Range not_merged_edges;
-  const double tol = 1e-1;
+  const double tol = 1e-2;
   CHKERR Toplogy(m_field, th, tol * aveLength)
       .removeBadEdges(surface, tets, fixed_edges, corner_nodes, edges_to_merge,
                       not_merged_edges);
@@ -2646,19 +2645,24 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   LengthMapData_multi_index length_map;
   new_surf = surface;
 
-  auto save_merge_step = [&](const int pp) {
+  auto save_merge_step = [&](const int pp, const Range collapsed_edges) {
     MoFEMFunctionBegin;
+    Range adj_faces;
+    CHKERR moab.get_adjacencies(proc_tets, 2, false, adj_faces,
+                                moab::Interface::UNION);
     std::string name;
     name = "node_merge_step_" + boost::lexical_cast<std::string>(pp) + ".vtk";
-    CHKERR SaveData(moab)(name, new_surf);
+    CHKERR SaveData(moab)(
+        name, unite(intersect(new_surf, adj_faces), collapsed_edges));
     name =
         "edges_to_merge_step_" + boost::lexical_cast<std::string>(pp) + ".vtk";
-    CHKERR SaveData(moab)(name, unite(new_surf, edges_to_merge));
+    CHKERR SaveData(moab)(
+        name, unite(intersect(new_surf, adj_faces), edges_to_merge));
     MoFEMFunctionReturn(0);
   };
 
   if (debug)
-    CHKERR save_merge_step(0);
+    CHKERR save_merge_step(0, Range());
 
   double ave0 = 0, ave = 0, min = 0, min_p = 0, min_pp;
   for (int pp = 0; pp != nbMaxMergingCycles; ++pp) {
@@ -2758,7 +2762,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                 nb_nodes_merged, ave, min);
 
     if (debug)
-      CHKERR save_merge_step(pp + 1);
+      CHKERR save_merge_step(pp + 1, collapsed_edges);
 
     if (nb_nodes_merged == nb_nodes_merged_p)
       break;
