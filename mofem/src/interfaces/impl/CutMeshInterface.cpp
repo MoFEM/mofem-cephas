@@ -251,22 +251,22 @@ CutMeshInterface::cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
                                  QUIET, debug);
   CHKERR cutEdgesInMiddle(cut_bit, cutNewVolumes, cutNewSurfaces,
                           cutNewVertices, debug);
-  if (fixed_edges) {
+  if (fixed_edges) 
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
                                                            *fixed_edges);
-  }
-  if (corner_nodes) {
+  if (corner_nodes) 
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
                                                            *corner_nodes);
-  }
-  if (update_meshsets) {
+  if (update_meshsets) 
     CHKERR m_field.getInterface<MeshsetsManager>()
         ->updateAllMeshsetsByEntitiesChildren(cut_bit);
-  }
   CHKERR moveMidNodesOnCutEdges(th);
 
-  if (debug)
+  if (debug) {
     CHKERR saveCutEdges();
+    if(fixed_edges)
+      CHKERR SaveData(moab)("out_cut_new_fixed_edges.vtk", *fixed_edges);
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -1435,6 +1435,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   Skinner skin(&moab);
   Range tets_skin;
   CHKERR skin.find_skin(0, cutNewVolumes, false, tets_skin);
+
   // vertices on the skin
   Range tets_skin_verts;
   CHKERR moab.get_connectivity(tets_skin, tets_skin_verts, true);
@@ -1446,14 +1447,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   Range edges;
   CHKERR moab.get_adjacencies(cutNewSurfaces, 1, false, edges,
                               moab::Interface::UNION);
+  Range corners;
+  if (corner_nodes)
+    corners = *corner_nodes;
 
-  Range cut_surface_edges_on_fixed_edges;
+  Range fix_edges;
   if (fixed_edges)
-    cut_surface_edges_on_fixed_edges = intersect(edges, *fixed_edges);
-
-  Range cut_surface_edges_on_fixed_edges_verts;
-  CHKERR moab.get_connectivity(cut_surface_edges_on_fixed_edges,
-                               cut_surface_edges_on_fixed_edges_verts, true);
+    fix_edges = *fixed_edges;
 
   Range fixed_edges_verts;
   if (fixed_edges)
@@ -1486,7 +1486,8 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       VertMap,
       indexed_by<
           ordered_non_unique<member<VertMap, const double, &VertMap::d>>,
-          ordered_non_unique<member<VertMap, const EntityHandle, &VertMap::v>>
+          ordered_non_unique<member<VertMap, const EntityHandle, &VertMap::v>>,
+          ordered_non_unique<member<VertMap, const EntityHandle, &VertMap::e>>
 
           >>
       VertMapMultiIndex;
@@ -1635,174 +1636,167 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   if (debug)
     CHKERR SaveData(moab)("edges_selected_to_trim.vtk", trimEdges);
 
-  Range corners;
-  if (corner_nodes)
-    corners = *corner_nodes;
-  Range fix_edges;
-  if (fixed_edges)
-    fix_edges = *fixed_edges;
+  auto get_quality_change = [&](const Range &adj_tets, const EntityHandle &v,
+                                const VectorDouble3 &new_pos) {
+    double q0 = 1;
+    CHKERR m_field.getInterface<Tools>()->minTetsQuality(adj_tets, q0, th);
+
+    double min_q = 1;
+    for (auto t : adj_tets) {
+      int num_nodes;
+      const EntityHandle *conn;
+      CHKERR m_field.get_moab().get_connectivity(t, conn, num_nodes, true);
+      VectorDouble12 coords(12);
+      if (th)
+        CHKERR moab.tag_get_data(th, conn, num_nodes, &coords[0]);
+      else
+        CHKERR moab.get_coords(conn, num_nodes, &coords[0]);
+
+      for (int n = 0; n != 4; ++n) {
+        auto n_coords = getVectorAdaptor(&coords[3 * n], 3);
+        if (conn[n] == v) {
+          noalias(n_coords) = new_pos;
+        } else {
+          auto m = verticesOnTrimEdges.find(conn[n]);
+          if (m != verticesOnTrimEdges.end())
+            noalias(n_coords) =
+                m->second.rayPoint + m->second.dIst * m->second.unitRayDir;
+        }
+      }
+
+      const double q = Tools::volumeLengthQuality(&coords[0]);
+      if (!std::isnormal(q)) {
+        min_q = -2;
+        break;
+      }
+      min_q = std::min(min_q, q);
+    }
+    return min_q / q0;
+  };
+
+  auto add_trim_vert = [&](const EntityHandle v, const EntityHandle e) {
+    if (!(trimNewVertices.find(v) != trimNewVertices.end())) {
+      auto &r = edgesToTrim.at(e);
+      VectorDouble3 ray_point = get_point_coords(v);
+      VectorDouble3 new_pos = r.rayPoint + r.dIst * r.unitRayDir;
+      VectorDouble3 unit_ray_dir = ray_point - new_pos;
+      Range adj_tets;
+      CHKERR moab.get_adjacencies(&v, 1, 3, false, adj_tets);
+      adj_tets = intersect(adj_tets, cutNewVolumes);
+      double q = get_quality_change(adj_tets, v, new_pos);
+      if (q > projectEntitiesQualityTrashold) {
+        VectorDouble3 ray_dir = new_pos - ray_point;
+        double dist = norm_2(ray_dir);
+        verticesOnTrimEdges[v].dIst = 1;
+        verticesOnTrimEdges[v].lEngth = dist;
+        verticesOnTrimEdges[v].unitRayDir = ray_dir;
+        verticesOnTrimEdges[v].rayPoint = ray_point;
+        trimNewVertices.insert(v);
+      }
+    }
+  };
+
+  auto add_no_move_trim = [&](const EntityHandle v, const EntityHandle e) {
+    if (!(trimNewVertices.find(v) != trimNewVertices.end())) {
+      auto &m = edgesToTrim.at(e);
+      verticesOnTrimEdges[v] = m;
+      verticesOnTrimEdges[v].rayPoint = get_point_coords(v);
+      verticesOnTrimEdges[v].lEngth = 0;
+      verticesOnTrimEdges[v].dIst = 0;
+      trimNewVertices.insert(v);
+    }
+  };
 
   // Iterate over all vertives close to surface front and check if those can be
   // moved
-  auto lo_m = verts_map.get<0>().lower_bound(0);
-  auto hi_m = verts_map.get<0>().lower_bound(tol);
-  for (; lo_m != hi_m; ++lo_m) {
 
-    const double dist = lo_m->d;
-    EntityHandle v = lo_m->v;
-    if (verticesOnTrimEdges.find(v) == verticesOnTrimEdges.end()) {
+  // filer nodes which distance is in given tolerance
+  auto hi = verts_map.get<0>().upper_bound(tol);
+  verts_map.get<0>().erase(hi, verts_map.end());
 
-      VectorDouble3 ray_point = get_point_coords(v);
-      EntityHandle e = lo_m->e;
-
-      VectorDouble3 new_pos(3);
-      new_pos.clear();
-
-      auto get_quality_change = [&](const Range &adj_tets) {
-        double q0 = 1;
-        CHKERR m_field.getInterface<Tools>()->minTetsQuality(adj_tets, q0, th);
-
-        double min_q = 1;
-        for (auto t : adj_tets) {
-          int num_nodes;
-          const EntityHandle *conn;
-          CHKERR m_field.get_moab().get_connectivity(t, conn, num_nodes, true);
-          VectorDouble12 coords(12);
-          if (th)
-            CHKERR moab.tag_get_data(th, conn, num_nodes, &coords[0]);
-          else
-            CHKERR moab.get_coords(conn, num_nodes, &coords[0]);
-
-          for (int n = 0; n != 4; ++n) {
-            auto n_coords = getVectorAdaptor(&coords[3 * n], 3);
-            if (conn[n] == v) {
-              noalias(n_coords) = new_pos;
-            } else {
-              auto m = verticesOnTrimEdges.find(conn[n]);
-              if (m != verticesOnTrimEdges.end())
-                noalias(n_coords) =
-                    m->second.rayPoint + m->second.dIst * m->second.unitRayDir;
-            }
-          }
-
-          const double q = Tools::volumeLengthQuality(&coords[0]);
-          if (!std::isnormal(q)) {
-            min_q = -2;
-            break;
-          }
-          min_q = std::min(min_q, q);
-        }
-        return min_q / q0;
-      };
-
-      auto add_trim_vert = [&]() {
-        auto &r = edgesToTrim.at(e);
-        noalias(new_pos) = r.rayPoint + r.dIst * r.unitRayDir;
-        VectorDouble3 unit_ray_dir = ray_point - new_pos;
-
-        Range adj_tets;
-        CHKERR moab.get_adjacencies(&v, 1, 3, false, adj_tets);
-        adj_tets = intersect(adj_tets, cutNewVolumes);
-
-        double q = get_quality_change(adj_tets);
-        if (q > projectEntitiesQualityTrashold) {
-          VectorDouble3 ray_dir = new_pos - ray_point;
-          double dist = norm_2(ray_dir);
-          verticesOnTrimEdges[v].dIst = 1;
-          verticesOnTrimEdges[v].lEngth = dist;
-          verticesOnTrimEdges[v].unitRayDir = ray_dir;
-          verticesOnTrimEdges[v].rayPoint = ray_point;
-          trimNewVertices.insert(v);
-        }
-      };
-
-      if (trimNewVertices.find(v) == trimNewVertices.end()) {
-        if (edgesToTrim.find(e) != edgesToTrim.end()) {
-          if (dist < tol) {
-
-            int rank_vertex = 0;
-            if (corners.find(v) != corners.end())
-              ++rank_vertex;
-            if (fixed_edges_verts.find(v) != fixed_edges_verts.end())
-              ++rank_vertex;
-            if (tets_skin_verts.find(v) != tets_skin_verts.end())
-              ++rank_vertex;
-
-            int rank_edge = 0;
-            if (fix_edges.find(e) != fix_edges.end())
-              ++rank_edge;
-            if (tets_skin_edges.find(e) != tets_skin_edges.end())
-              ++rank_edge;
-
-            if (rank_vertex > rank_edge) {
-              auto &m = edgesToTrim.at(e);
-              verticesOnTrimEdges[v] = m;
-              verticesOnTrimEdges[v].rayPoint = get_point_coords(v);
-              verticesOnTrimEdges[v].lEngth = 0;
-              verticesOnTrimEdges[v].dIst = 0;
-              trimNewVertices.insert(v);
-            } else if (rank_vertex == rank_edge)
-              add_trim_vert();
-            else
-              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                      "Imposible case");
-
-          } else if (corners.find(v) != corners.end()) {
-            auto &m = edgesToTrim.at(e);
-            verticesOnTrimEdges[v] = m;
-            verticesOnTrimEdges[v].rayPoint = get_point_coords(v);
-            verticesOnTrimEdges[v].lEngth = 0;
-            verticesOnTrimEdges[v].dIst = 0;
-            trimNewVertices.insert(v);
-          } else if (fixed_edges_verts.find(v) != fixed_edges_verts.end()) {
-            if (fix_edges.find(e) != fix_edges.end()) {
-              add_trim_vert();
-            }
-          } else if (tets_skin_verts.find(v) != tets_skin_verts.end()) {
-            if (tets_skin_edges.find(e) != tets_skin_edges.end()) {
-              add_trim_vert();
-            }
-          } else {
-            add_trim_vert();
-          }
-        }
-      }
+  auto remove_verts = [&](Range nodes) {
+    for (auto n : nodes) {
+      auto r = verts_map.get<1>().equal_range(n);
+      verts_map.get<1>().erase(r.first, r.second);
     }
-  }
+  };
+
+  auto remove_edges = [&](Range edges) {
+    for (auto e : edges) {
+      auto r = verts_map.get<2>().equal_range(e);
+      verts_map.get<2>().erase(r.first, r.second);
+    }
+  };
+
+  auto trim_verts = [&](const Range verts, const bool move) {
+    VertMapMultiIndex verts_map_tmp;
+    for (auto p = corners.pair_begin(); p != corners.pair_end(); ++p) {
+      auto lo = verts_map.get<1>().lower_bound(p->first);
+      auto hi = verts_map.get<1>().upper_bound(p->second);
+      verts_map_tmp.insert(lo, hi);
+    }
+    if(move) {
+      for (auto &m : verts_map_tmp.get<0>())
+        add_trim_vert(m.v, m.e);
+    } else {
+      for (auto &m : verts_map_tmp.get<0>())
+        add_no_move_trim(m.v, m.e);
+    }
+  };
+
+  auto trim_edges = [&](const Range ents, const bool move) {
+    VertMapMultiIndex verts_map_tmp;
+    for (auto p = ents.pair_begin(); p != ents.pair_end(); ++p) {
+      auto lo = verts_map.get<2>().lower_bound(p->first);
+      auto hi = verts_map.get<2>().upper_bound(p->second);
+      verts_map_tmp.insert(lo, hi);
+      verts_map.get<2>().erase(lo, hi);
+    }
+    if (move) {
+      for (auto &m : verts_map_tmp.get<0>()) 
+        add_trim_vert(m.v, m.e);
+    } else {
+      for (auto &m : verts_map_tmp.get<0>()) 
+        add_no_move_trim(m.v, m.e);
+    }
+  };
+
+  auto intersect_self = [&](Range &a, const Range b) { a = intersect(a, b); };
+
+  map<std::string, Range> range_maps;
+  CHKERR skin.find_skin(0, cutNewSurfaces, false, range_maps["surface_skin"]);
+  intersect_self(range_maps["surface_skin"], trimEdges);
+  range_maps["fixed_edges_on_surface_skin"] =
+      intersect(range_maps["surface_skin"], fix_edges);
+  CHKERR moab.get_adjacencies(range_maps["fixed_edges_verts"], 1, false,
+                              range_maps["fixed_edges_verts_edges"],
+                              moab::Interface::UNION);
+  intersect_self(range_maps["fixed_edges_verts_edges"], trimEdges);
+  CHKERR moab.get_connectivity(
+      range_maps["fixed_edges_verts_edges"],
+      range_maps["fixed_edges_verts_edges_verts_on_the_skin"], false);
+  intersect_self(range_maps["fixed_edges_verts_edges_verts_on_the_skin"],
+                 tets_skin_verts);
+
+  // do not move nodes at the corners 
+  trim_verts(corners, false);
+  remove_verts(corners);
+  trim_edges(range_maps["fixed_edges_on_surface_skin"], true);
+  remove_verts(range_maps["fixed_edges_on_surface_skin_verts"]);
+  trim_verts(range_maps["fixed_edges_verts_edges_verts_on_the_skin"], false);
+  remove_verts(range_maps["fixed_edges_verts_edges_verts_on_the_skin"]);
+  trim_edges(range_maps["surface_skin"], true);
+  trim_verts(tets_skin_verts, false);
+  remove_verts(tets_skin_verts);
+
+  for (auto &m : verts_map.get<0>())
+    add_trim_vert(m.v, m.e);
 
   for (auto m : verticesOnTrimEdges) {
     EntityHandle v = m.first;
-    auto lo = verts_map.get<1>().lower_bound(v);
-    auto hi = verts_map.get<1>().upper_bound(v);
-    for (; lo != hi; ++lo) {
-      edgesToTrim.erase(lo->e);
-      trimEdges.erase(lo->e);
-    }
-  }
-
-  if (!trimNewVertices.empty()) {
-    Range adj_trim_vertex_edges;
-    CHKERR moab.get_adjacencies(trimNewVertices, 1, false,
-                                adj_trim_vertex_edges, moab::Interface::UNION);
-    adj_trim_vertex_edges = intersect(adj_trim_vertex_edges, trimEdges);
-    Range adj_trim_vertex_edges_verts;
-    CHKERR moab.get_connectivity(adj_trim_vertex_edges,
-                                 adj_trim_vertex_edges_verts, true);
-    adj_trim_vertex_edges_verts =
-        subtract(adj_trim_vertex_edges_verts, trimNewVertices);
-    Range edges_connected_to_close_verts;
-    CHKERR moab.get_adjacencies(adj_trim_vertex_edges_verts, 1, false,
-                                edges_connected_to_close_verts,
-                                moab::Interface::UNION);
-    edges_connected_to_close_verts =
-        subtract(adj_trim_vertex_edges, edges_connected_to_close_verts);
-
-    if (debug)
-      if (!edges_connected_to_close_verts.empty())
-        CHKERR SaveData(moab)("trim_edges_connected_to_close_verts.vtk",
-                              edges_connected_to_close_verts);
-
-    for (auto e : edges_connected_to_close_verts) {
+    Range adj;
+    CHKERR moab.get_adjacencies(&v, 1, 1, false, adj);
+    for (auto e : adj) {
       edgesToTrim.erase(e);
       trimEdges.erase(e);
     }
