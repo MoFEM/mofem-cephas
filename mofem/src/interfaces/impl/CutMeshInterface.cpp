@@ -1960,14 +1960,16 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
 
   Range outside_verts;
   while (!(outside_verts = get_trim_skin_verts()).empty()) {
+
+    if (debug && !trimNewSurfaces.empty())
+      CHKERR SaveData(m_field.get_moab())(
+          "trimNewSurfaces_" + boost::lexical_cast<std::string>(nn) + ".vtk",
+          unite(trimNewSurfaces, outside_verts));
+
     Range outside_faces;
     CHKERR moab.get_adjacencies(outside_verts, 2, false, outside_faces,
                                 moab::Interface::UNION);
     trimNewSurfaces = subtract(trimNewSurfaces, outside_faces);
-    if (debug && !trimNewSurfaces.empty())
-      CHKERR SaveData(m_field.get_moab())(
-          "trimNewSurfaces_" + boost::lexical_cast<std::string>(nn) + ".vtk",
-          trimNewSurfaces);
     ++nn;
   }
 
@@ -2610,7 +2612,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   };
 
   Range not_merged_edges;
-  const double tol = 1e-2;
+  const double tol = 1e-3;
   CHKERR Toplogy(m_field, th, tol * aveLength)
       .removeBadEdges(surface, tets, fixed_edges, corner_nodes, edges_to_merge,
                       not_merged_edges);
