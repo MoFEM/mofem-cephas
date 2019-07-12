@@ -1567,6 +1567,20 @@ struct DeprecatedCoreInterface : public CoreInterface {
                                       int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
+
+  /** \name Comm */
+
+  /**@{*/
+
+  MoFEMErrorCode resolve_shared_ents(const Problem *problem_ptr,
+                                     const std::string &fe_name,
+                                     int verb = DEFAULT_VERBOSITY);
+                                     
+  MoFEMErrorCode resolve_shared_ents(const std::string &name,
+                                     const std::string &fe_name,
+                                     int verb = DEFAULT_VERBOSITY);
+
+  /**@}*/
 };
 
 } // namespace MoFEM

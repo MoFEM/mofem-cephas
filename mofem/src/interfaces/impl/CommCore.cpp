@@ -220,8 +220,9 @@ MoFEMErrorCode Core::synchronise_field_entities(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::resolve_shared_ents(const Problem *problem_ptr,
-                                         const std::string &fe_name, int verb) {
+MoFEMErrorCode Core::resolve_shared_finite_elements(const Problem *problem_ptr,
+                                                    const std::string &fe_name,
+                                                    int verb) {
   MoFEMFunctionBegin;
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
@@ -289,8 +290,9 @@ MoFEMErrorCode Core::resolve_shared_ents(const Problem *problem_ptr,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::resolve_shared_ents(const std::string &name,
-                                         const std::string &fe_name, int verb) {
+MoFEMErrorCode Core::resolve_shared_finite_elements(const std::string &name,
+                                                    const std::string &fe_name,
+                                                    int verb) {
   MoFEMFunctionBegin;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type
       Problem_multiIndex_by_name;
@@ -302,7 +304,7 @@ MoFEMErrorCode Core::resolve_shared_ents(const std::string &name,
              "problem with name < %s > not defined (top tip check spelling)",
              name.c_str());
   }
-  CHKERR resolve_shared_ents(&*p_miit, fe_name, verb);
+  CHKERR resolve_shared_finite_elements(&*p_miit, fe_name, verb);
   MoFEMFunctionReturn(0);
 }
 

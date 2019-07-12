@@ -334,19 +334,6 @@ protected:
                                         int verb = DEFAULT_VERBOSITY);
   /**@}*/
 
-  /** \name Synchronize entities (Following functions in future will be
-   * deprecated) */
-
-  /**@{*/
-
-  MoFEMErrorCode synchronise_entities(Range &ent, int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode synchronise_field_entities(const BitFieldId id,
-                                            int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode synchronise_field_entities(const std::string &name,
-                                            int verb = DEFAULT_VERBOSITY);
-
-  /**@}*/
-
   /** \name Fields */
 
   /**@{*/
@@ -673,12 +660,7 @@ protected:
   MoFEMErrorCode clear_finite_elements(const std::string name,
                                        const Range ents,
                                        int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode resolve_shared_ents(const Problem *problem_ptr,
-                                     const std::string &fe_name,
-                                     int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode resolve_shared_ents(const std::string &name,
-                                     const std::string &fe_name,
-                                     int verb = DEFAULT_VERBOSITY);
+
   MoFEMErrorCode
   get_problem_finite_elements_entities(const std::string &name,
                                        const std::string &fe_name,
@@ -877,6 +859,28 @@ protected:
    * @return return communicator rank/processor
    */
   inline int get_comm_rank() const { return rAnk; }
+
+  MoFEMErrorCode resolve_shared_finite_elements(const Problem *problem_ptr,
+                                                const std::string &fe_name,
+                                                int verb = DEFAULT_VERBOSITY);
+                                                
+  MoFEMErrorCode resolve_shared_finite_elements(const std::string &name,
+                                     const std::string &fe_name,
+                                     int verb = DEFAULT_VERBOSITY);
+
+  /**@}*/
+
+
+  /** \name Synchronize entities (Following functions in future will be
+   * deprecated) */
+
+  /**@{*/
+
+  MoFEMErrorCode synchronise_entities(Range &ent, int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode synchronise_field_entities(const BitFieldId id,
+                                            int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode synchronise_field_entities(const std::string &name,
+                                            int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
 

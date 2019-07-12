@@ -597,4 +597,14 @@ MoFEMErrorCode DeprecatedCoreInterface::loop_finite_elements(
       bh, verb);
 }
 
+MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_ents(
+    const Problem *problem_ptr, const std::string &fe_name, int verb) {
+  return resolve_shared_finite_elements(problem_ptr, fe_name, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_ents(
+    const std::string &name, const std::string &fe_name, int verb) {
+  return resolve_shared_finite_elements(name, fe_name, verb);
+}
+
 } // namespace MoFEM

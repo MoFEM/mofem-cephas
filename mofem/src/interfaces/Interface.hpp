@@ -57,11 +57,11 @@ struct CoreInterface : public UnknownInterface {
 
   /**
    * @brief Set the moab interface object
-   * 
-   * @param new_moab 
-   * @param verb 
-   * @param distributed_mesh 
-   * @return MoFEMErrorCode 
+   *
+   * @param new_moab
+   * @param verb
+   * @param distributed_mesh
+   * @return MoFEMErrorCode
    */
   virtual MoFEMErrorCode
   set_moab_interface(moab::Interface &new_moab, int verb = VERBOSE,
@@ -120,6 +120,102 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual int get_comm_rank() const = 0;
 
+  /**
+  * \brief resolve shared entities for finite elements in the problem
+  * \ingroup mofem_problems
+
+  * @param  problem_ptr  problem pointer
+  * @param  fe_name     finite element name
+  * @param  verb        verbosity level
+  * @return             error code
+  *
+  * This allows for tag reduction or tag exchange, f.e.
+
+  \code
+  CHKERR m_field.resolve_shared_finite_elements(problem_ptr,"SHELL_ELEMENT");
+  Tag th;
+  CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th);
+  CHKERR ParallelComm* pcomm =
+  ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  CHKERR pcomm->exchange_tags(th,prisms);
+  \endcode
+
+  *
+  */
+  virtual MoFEMErrorCode
+  resolve_shared_finite_elements(const Problem *problem_ptr,
+                                 const std::string &fe_name,
+                                 int verb = DEFAULT_VERBOSITY) = 0;
+
+  /**
+  * \brief resolve shared entities for finite elements in the problem
+  * \ingroup mofem_problems
+
+  * @param  name        problem name
+  * @param  fe_name     finite element name
+  * @param  verb        verbosity level
+  * @return             error code
+  *
+  * This allows for tag reduction or tag exchange, f.e.
+
+  \code
+  CHKERR m_field.resolve_shared_finite_elements(problem_ptr,"SHELL_ELEMENT");
+  Tag th;
+  CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
+  ParallelComm* pcomm =
+  ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  // CHKERR pcomm->reduce_tags(th,MPI_SUM,prisms);
+  CHKERR pcomm->exchange_tags(th,prisms);
+  \endcode
+
+  *
+  */
+  virtual MoFEMErrorCode
+  resolve_shared_finite_elements(const std::string &name,
+                                 const std::string &fe_name,
+                                 int verb = DEFAULT_VERBOSITY) = 0;
+
+
+  /**@}*/
+
+    /** \name Synchronize */
+
+  /**@{*/
+
+  /** synchronize entity range on processors (collective)
+
+  collective - need tu be run on all processors in communicator
+
+  */
+  virtual MoFEMErrorCode synchronise_entities(Range &ent,
+                                              int verb = DEFAULT_VERBOSITY) = 0;
+
+  /** synchronize entity range on processors (collective)
+  * \ingroup mofem_field
+
+  collective - need tu be run on all processors in communicator
+
+  \param id field
+  \param verbose level
+
+  */
+  virtual MoFEMErrorCode
+  synchronise_field_entities(const BitFieldId id,
+                             int verb = DEFAULT_VERBOSITY) = 0;
+
+  /** synchronize entity range on processors (collective)
+  * \ingroup mofem_field
+
+  collective - need tu be run on all processors in communicator
+
+  \param name field
+  \param verbose level
+
+  */
+  virtual MoFEMErrorCode
+  synchronise_field_entities(const std::string &name,
+                             int verb = DEFAULT_VERBOSITY) = 0;
+
   /**@}*/
 
   /** \name Check consistency */
@@ -170,46 +266,6 @@ struct CoreInterface : public UnknownInterface {
    * @return      Error code
    */
   virtual MoFEMErrorCode rebuild_database(int verb = DEFAULT_VERBOSITY) = 0;
-
-  /**@}*/
-
-  /** \name Synchronize */
-
-  /**@{*/
-
-  /** synchronize entity range on processors (collective)
-
-  collective - need tu be run on all processors in communicator
-
-  */
-  virtual MoFEMErrorCode synchronise_entities(Range &ent,
-                                              int verb = DEFAULT_VERBOSITY) = 0;
-
-  /** synchronize entity range on processors (collective)
-  * \ingroup mofem_field
-
-  collective - need tu be run on all processors in communicator
-
-  \param id field
-  \param verbose level
-
-  */
-  virtual MoFEMErrorCode
-  synchronise_field_entities(const BitFieldId id,
-                             int verb = DEFAULT_VERBOSITY) = 0;
-
-  /** synchronize entity range on processors (collective)
-  * \ingroup mofem_field
-
-  collective - need tu be run on all processors in communicator
-
-  \param name field
-  \param verbose level
-
-  */
-  virtual MoFEMErrorCode
-  synchronise_field_entities(const std::string &name,
-                             int verb = DEFAULT_VERBOSITY) = 0;
 
   /**@}*/
 
@@ -475,10 +531,10 @@ struct CoreInterface : public UnknownInterface {
 
   /**
    * @brief build field by name
-   * 
-   * @param field_name 
-   * @param verb 
-   * m@return MoFEMErrorCode 
+   *
+   * @param field_name
+   * @param verb
+   * m@return MoFEMErrorCode
    */
   virtual MoFEMErrorCode build_field(const std::string field_name,
                                      int verb = DEFAULT_VERBOSITY) = 0;
@@ -815,8 +871,8 @@ struct CoreInterface : public UnknownInterface {
    *
    */
   virtual MoFEMErrorCode remove_ents_from_finite_element(
-      const std::string name, const EntityHandle meshset,
-      const EntityType type, int verb = DEFAULT_VERBOSITY) = 0;
+      const std::string name, const EntityHandle meshset, const EntityType type,
+      int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief remove entities from finite element database
    * \ingroup mofem_fe
@@ -1009,7 +1065,6 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode
   list_dofs_by_field_name(const std::string &name) const = 0;
-
 
   /** Clear inactive dofs
    * \ingroup mofem_field
@@ -1227,59 +1282,6 @@ struct CoreInterface : public UnknownInterface {
   virtual MoFEMErrorCode clear_problems(int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
-  * \brief resolve shared entities for finite elements in the problem
-  * \ingroup mofem_problems
-
-  * @param  problem_ptr  problem pointer
-  * @param  fe_name     finite element name
-  * @param  verb        verbosity level
-  * @return             error code
-  *
-  * This allows for tag reduction or tag exchange, f.e.
-
-  \code
-  Tag th;
-  rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th);
-  CHKERRQ_MOAB(rval); ParallelComm* pcomm =
-  ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-  // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
-  rval = pcomm->exchange_tags(th,prisms);
-  \endcode
-
-  *
-  */
-  virtual MoFEMErrorCode resolve_shared_ents(const Problem *problem_ptr,
-                                             const std::string &fe_name,
-                                             int verb = DEFAULT_VERBOSITY) = 0;
-
-  /**
-  * \brief resolve shared entities for finite elements in the problem
-  * \ingroup mofem_problems
-
-  * @param  name        problem name
-  * @param  fe_name     finite element name
-  * @param  verb        verbosity level
-  * @return             error code
-  *
-  * This allows for tag reduction or tag exchange, f.e.
-
-  \code
-  CHKERR m_field.resolve_shared_ents(problem_ptr,"SHELL_ELEMENT");
-  Tag th;
-  CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
-  ParallelComm* pcomm =
-  ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-  // CHKERR pcomm->reduce_tags(th,MPI_SUM,prisms);
-  CHKERR pcomm->exchange_tags(th,prisms);
-  \endcode
-
-  *
-  */
-  virtual MoFEMErrorCode resolve_shared_ents(const std::string &name,
-                                             const std::string &fe_name,
-                                             int verb = DEFAULT_VERBOSITY) = 0;
-
-  /**
    * \brief add finite elements to the meshset
    * \ingroup mofem_problems
    *
@@ -1465,7 +1467,7 @@ struct CoreInterface : public UnknownInterface {
   * function (method)  preProcess() is called, for each element operator() is
   * executed, at the end loop finalizes with user defined function (method)
   * postProcess().
-  * 
+  *
   * \note If fe_ptr is given it is expected that multi-index is supbes of
   * problem multi-index. If this is not the case behavior of the code is
   * undetermined.
@@ -1531,12 +1533,12 @@ struct CoreInterface : public UnknownInterface {
   /**
    * @brief Loop over field entities
    * @ingroup mofem_field
-   * 
+   *
    * @param field_name  field entities
    * @param method user method
    * @param ents if given loop only on subset of entities in the field
-   * @param verb 
-   * @return MoFEMErrorCode 
+   * @param verb
+   * @return MoFEMErrorCode
    */
   virtual MoFEMErrorCode loop_entities(const std::string field_name,
                                        EntityMethod &method,
@@ -1546,15 +1548,15 @@ struct CoreInterface : public UnknownInterface {
   /**
    * @brief Loop over field entities in the problem
    * @ingroup mofem_field
-   * 
-   * @param problem_ptr 
-   * @param field_name 
-   * @param rc 
-   * @param method 
-   * @param lower_rank 
-   * @param upper_rank 
-   * @param verb 
-   * @return MoFEMErrorCode 
+   *
+   * @param problem_ptr
+   * @param field_name
+   * @param rc
+   * @param method
+   * @param lower_rank
+   * @param upper_rank
+   * @param verb
+   * @return MoFEMErrorCode
    */
   virtual MoFEMErrorCode loop_entities(const Problem *problem_ptr,
                                        const std::string field_name,
@@ -1565,15 +1567,15 @@ struct CoreInterface : public UnknownInterface {
   /**
    * @brief Loop over field entities in the problem
    * @ingroup mofem_field
-   * 
-   * @param problem_name 
-   * @param field_name 
-   * @param rc 
-   * @param method 
-   * @param lower_rank 
-   * @param upper_rank 
-   * @param verb 
-   * @return MoFEMErrorCode 
+   *
+   * @param problem_name
+   * @param field_name
+   * @param rc
+   * @param method
+   * @param lower_rank
+   * @param upper_rank
+   * @param verb
+   * @return MoFEMErrorCode
    */
   virtual MoFEMErrorCode loop_entities(const std::string problem_name,
                                        const std::string field_name,
@@ -1583,13 +1585,13 @@ struct CoreInterface : public UnknownInterface {
   /**
    * @brief Loop over field entities in the problem
    * @ingroup mofem_field
-   * 
-   * @param problem_name 
-   * @param field_name 
-   * @param rc 
-   * @param method 
-   * @param verb 
-   * @return MoFEMErrorCode 
+   *
+   * @param problem_name
+   * @param field_name
+   * @param rc
+   * @param method
+   * @param verb
+   * @return MoFEMErrorCode
    */
   virtual MoFEMErrorCode loop_entities(const std::string problem_name,
                                        const std::string field_name,
@@ -1867,7 +1869,7 @@ struct Interface : public DeprecatedCoreInterface {};
 #else
 using Interface = DeprecatedCoreInterface;
 #endif
-}
+} // namespace MoFEM
 
 #endif // __INTERFACE_HPP__
 
