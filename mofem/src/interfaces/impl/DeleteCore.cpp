@@ -47,8 +47,8 @@ MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_dofs_fields_by_bit_ref(const BitRefLevel &bit,
-                                       const BitRefLevel &mask, int verb) {
+MoFEMErrorCode Core::clear_dofs_fields_by_bit_ref(const BitRefLevel bit,
+                                       const BitRefLevel mask, int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
     verb = verbose;
@@ -58,7 +58,7 @@ MoFEMErrorCode Core::clear_dofs_fields_by_bit_ref(const BitRefLevel &bit,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::clear_dofs_fields(const Range &ents, int verb) {
+MoFEMErrorCode Core::clear_dofs_fields(const Range ents, int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
     verb = verbose;
@@ -79,8 +79,8 @@ MoFEMErrorCode Core::clear_dofs_fields(const Range &ents, int verb) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::clear_dofs_fields(const std::string &name,
-                                       const Range &ents, int verb) {
+MoFEMErrorCode Core::clear_dofs_fields(const std::string name,
+                                       const Range ents, int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
     verb = verbose;
@@ -99,8 +99,8 @@ MoFEMErrorCode Core::clear_dofs_fields(const std::string &name,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::clear_ents_fields_by_bit_ref(const BitRefLevel &bit,
-                                       const BitRefLevel &mask, int verb) {
+MoFEMErrorCode Core::clear_ents_fields_by_bit_ref(const BitRefLevel bit,
+                                       const BitRefLevel mask, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -112,7 +112,7 @@ MoFEMErrorCode Core::clear_ents_fields_by_bit_ref(const BitRefLevel &bit,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_ents_fields(const Range &ents, int verb) {
+MoFEMErrorCode Core::clear_ents_fields(const Range ents, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -130,8 +130,8 @@ MoFEMErrorCode Core::clear_ents_fields(const Range &ents, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_ents_fields(const std::string &name,
-                                       const Range &ents, int verb) {
+MoFEMErrorCode Core::clear_ents_fields(const std::string name,
+                                       const Range ents, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -153,7 +153,7 @@ MoFEMErrorCode Core::clear_ents_fields(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::remove_ents_from_field(const std::string &name,
+MoFEMErrorCode Core::remove_ents_from_field(const std::string name,
                                             const EntityHandle meshset,
                                             const EntityType type, int verb) {
   MoFEMFunctionBegin;
@@ -165,8 +165,8 @@ MoFEMErrorCode Core::remove_ents_from_field(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::remove_ents_from_field(const std::string &name,
-                                            const Range &ents, int verb) {
+MoFEMErrorCode Core::remove_ents_from_field(const std::string name,
+                                            const Range ents, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -177,7 +177,7 @@ MoFEMErrorCode Core::remove_ents_from_field(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::remove_ents_from_field(const Range &ents, int verb) {
+MoFEMErrorCode Core::remove_ents_from_field(const Range ents, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -190,8 +190,8 @@ MoFEMErrorCode Core::remove_ents_from_field(const Range &ents, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
-                                                       const BitRefLevel &mask,
+MoFEMErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel bit,
+                                                       const BitRefLevel mask,
                                                        int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
@@ -202,8 +202,8 @@ MoFEMErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,
-                                                const BitRefLevel &mask,
+MoFEMErrorCode Core::clear_adjacencies_entities(const BitRefLevel bit,
+                                                const BitRefLevel mask,
                                                 int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
@@ -214,7 +214,7 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_adjacencies_entities(const Range &ents, int verb) {
+MoFEMErrorCode Core::clear_adjacencies_entities(const Range ents, int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
     verb = verbose;
@@ -232,8 +232,8 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const Range &ents, int verb) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::clear_adjacencies_entities(const std::string &name,
-                                                const Range &ents, int verb) {
+MoFEMErrorCode Core::clear_adjacencies_entities(const std::string name,
+                                                const Range ents, int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
     verb = verbose;
@@ -278,8 +278,8 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string &name,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::clear_finite_elements_by_bit_ref(const BitRefLevel &bit,
-                                                      const BitRefLevel &mask,
+MoFEMErrorCode Core::clear_finite_elements_by_bit_ref(const BitRefLevel bit,
+                                                      const BitRefLevel mask,
                                                       int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
@@ -290,7 +290,7 @@ MoFEMErrorCode Core::clear_finite_elements_by_bit_ref(const BitRefLevel &bit,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_finite_elements(const Range &ents, int verb) {
+MoFEMErrorCode Core::clear_finite_elements(const Range ents, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -307,8 +307,8 @@ MoFEMErrorCode Core::clear_finite_elements(const Range &ents, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_finite_elements(const std::string &name,
-                                           const Range &ents, int verb) {
+MoFEMErrorCode Core::clear_finite_elements(const std::string name,
+                                           const Range ents, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -331,8 +331,8 @@ MoFEMErrorCode Core::clear_finite_elements(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_adjacencies_finite_elements(const BitRefLevel &bit,
-                                                       const BitRefLevel &mask,
+MoFEMErrorCode Core::clear_adjacencies_finite_elements(const BitRefLevel bit,
+                                                       const BitRefLevel mask,
                                                        int verb) {
   MoFEMFunctionBegin;
   Range ents;                                                       
@@ -341,7 +341,7 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const BitRefLevel &bit,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_adjacencies_finite_elements(const Range &ents,
+MoFEMErrorCode Core::clear_adjacencies_finite_elements(const Range ents,
                                                        int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
@@ -360,8 +360,8 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const Range &ents,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string &name,
-                                                       const Range &ents,
+MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string name,
+                                                       const Range ents,
                                                        int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
@@ -398,7 +398,7 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string &name,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string& name,
+MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string name,
                                                      const EntityHandle meshset,
                                                      const EntityType type,
                                                      int verb) {
@@ -411,8 +411,8 @@ MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string& name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string& name,
-                                                     const Range &ents,
+MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string name,
+                                                     const Range ents,
                                                      int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
@@ -423,7 +423,7 @@ MoFEMErrorCode Core::remove_ents_from_finite_element(const std::string& name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::remove_ents_from_finite_element(const Range &ents,
+MoFEMErrorCode Core::remove_ents_from_finite_element(const Range ents,
                                                      int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
@@ -438,7 +438,7 @@ MoFEMErrorCode Core::remove_ents_from_finite_element(const Range &ents,
 }
 
 MoFEMErrorCode Core::remove_ents_from_finite_element_by_bit_ref(
-    const BitRefLevel &bit, const BitRefLevel &mask, int verb) {
+    const BitRefLevel bit, const BitRefLevel mask, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -448,7 +448,7 @@ MoFEMErrorCode Core::remove_ents_from_finite_element_by_bit_ref(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::remove_ents(const Range &ents, int verb) {
+MoFEMErrorCode Core::remove_ents(const Range ents, int verb) {
    MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -474,8 +474,8 @@ MoFEMErrorCode Core::remove_ents(const Range &ents, int verb) {
   MoFEMFunctionReturn(0); 
 }
 
-MoFEMErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel &bit,
-                                            const BitRefLevel &mask, int verb) {
+MoFEMErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel bit,
+                                            const BitRefLevel mask, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -538,8 +538,8 @@ MoFEMErrorCode Core::remove_parents_by_parents(const Range &ents, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,
-                                            const BitRefLevel &mask,
+MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
+                                            const BitRefLevel mask,
                                             const bool remove_parent,
                                             int verb) {
 

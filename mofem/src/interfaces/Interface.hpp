@@ -240,19 +240,19 @@ struct CoreInterface : public UnknownInterface {
    *
    */
   virtual MoFEMErrorCode
-  delete_ents_by_bit_ref(const BitRefLevel &bit, const BitRefLevel &mask,
+  delete_ents_by_bit_ref(const BitRefLevel bit, const BitRefLevel mask,
                          const bool remove_parent = false,
                          int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief remove entities form mofem database
    */
-  virtual MoFEMErrorCode remove_ents(const Range &ents,
+  virtual MoFEMErrorCode remove_ents(const Range ents,
                                      int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief remove entities form mofem database
    */
   virtual MoFEMErrorCode
-  remove_ents_by_bit_ref(const BitRefLevel &bit, const BitRefLevel &mask,
+  remove_ents_by_bit_ref(const BitRefLevel bit, const BitRefLevel mask,
                          int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief delete finite element from mofem database
@@ -378,8 +378,8 @@ struct CoreInterface : public UnknownInterface {
    *
    */
   virtual MoFEMErrorCode
-  remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,
-                                    const BitRefLevel &mask,
+  remove_ents_from_field_by_bit_ref(const BitRefLevel bit,
+                                    const BitRefLevel mask,
                                     int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
@@ -390,7 +390,7 @@ struct CoreInterface : public UnknownInterface {
    *
    */
   virtual MoFEMErrorCode
-  remove_ents_from_field(const std::string &name, const EntityHandle meshset,
+  remove_ents_from_field(const std::string name, const EntityHandle meshset,
                          const EntityType type,
                          int verb = DEFAULT_VERBOSITY) = 0;
 
@@ -402,7 +402,7 @@ struct CoreInterface : public UnknownInterface {
    *
    */
   virtual MoFEMErrorCode
-  remove_ents_from_field(const std::string &name, const Range &ents,
+  remove_ents_from_field(const std::string name, const Range ents,
                          int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
@@ -413,7 +413,7 @@ struct CoreInterface : public UnknownInterface {
    *
    */
   virtual MoFEMErrorCode
-  remove_ents_from_field(const Range &ents, int verb = DEFAULT_VERBOSITY) = 0;
+  remove_ents_from_field(const Range ents, int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
    * \brief Set order approximation of the entities in the field
@@ -806,8 +806,8 @@ struct CoreInterface : public UnknownInterface {
    * \param verbose level
    */
   virtual MoFEMErrorCode
-  remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,
-                                             const BitRefLevel &mask,
+  remove_ents_from_finite_element_by_bit_ref(const BitRefLevel bit,
+                                             const BitRefLevel mask,
                                              int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief remove entities from given refinement level to finite element
@@ -815,7 +815,7 @@ struct CoreInterface : public UnknownInterface {
    *
    */
   virtual MoFEMErrorCode remove_ents_from_finite_element(
-      const std::string &name, const EntityHandle meshset,
+      const std::string name, const EntityHandle meshset,
       const EntityType type, int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief remove entities from finite element database
@@ -823,7 +823,7 @@ struct CoreInterface : public UnknownInterface {
    *
    */
   virtual MoFEMErrorCode
-  remove_ents_from_finite_element(const std::string &name, const Range &ents,
+  remove_ents_from_finite_element(const std::string name, const Range ents,
                                   int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief remove entities from finite elements in database
@@ -831,7 +831,7 @@ struct CoreInterface : public UnknownInterface {
    *
    */
   virtual MoFEMErrorCode
-  remove_ents_from_finite_element(const Range &ents,
+  remove_ents_from_finite_element(const Range ents,
                                   int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief add MESHSET element to finite element database given by name
@@ -1020,40 +1020,40 @@ struct CoreInterface : public UnknownInterface {
    * \ingroup mofem_field
    */
   virtual MoFEMErrorCode
-  clear_dofs_fields_by_bit_ref(const BitRefLevel &bit, const BitRefLevel &mask,
+  clear_dofs_fields_by_bit_ref(const BitRefLevel bit, const BitRefLevel mask,
                                int verb = DEFAULT_VERBOSITY) = 0;
 
   /** Clear dofs by ents
    * \ingroup mofem_field
    */
-  virtual MoFEMErrorCode clear_dofs_fields(const Range &ents,
+  virtual MoFEMErrorCode clear_dofs_fields(const Range ents,
                                            int verb = DEFAULT_VERBOSITY) = 0;
 
   /** Clear dofs by field name and ents
    * \ingroup mofem_field
    */
-  virtual MoFEMErrorCode clear_dofs_fields(const std::string &name,
-                                           const Range &ents,
+  virtual MoFEMErrorCode clear_dofs_fields(const std::string name,
+                                           const Range ents,
                                            int verb = DEFAULT_VERBOSITY) = 0;
 
   /** Clear entities by field name
    * \ingroup mofem_field
    */
-  virtual MoFEMErrorCode clear_ents_fields(const Range &ents,
+  virtual MoFEMErrorCode clear_ents_fields(const Range ents,
                                            int verb = DEFAULT_VERBOSITY) = 0;
 
   /** Clear entities by field name
    * \ingroup mofem_field
    */
-  virtual MoFEMErrorCode clear_ents_fields(const std::string &name,
-                                           const Range &ents,
+  virtual MoFEMErrorCode clear_ents_fields(const std::string name,
+                                           const Range ents,
                                            int verb = DEFAULT_VERBOSITY) = 0;
 
   /** Clear ents by bit level
    * \ingroup mofem_field
    */
   virtual MoFEMErrorCode
-  clear_ents_fields_by_bit_ref(const BitRefLevel &bit, const BitRefLevel &mask,
+  clear_ents_fields_by_bit_ref(const BitRefLevel bit, const BitRefLevel mask,
                                int verb = DEFAULT_VERBOSITY) = 0;
 
   /**@}*/
@@ -1101,19 +1101,19 @@ struct CoreInterface : public UnknownInterface {
   /** clear finite elements
    */
   virtual MoFEMErrorCode
-  clear_finite_elements_by_bit_ref(const BitRefLevel &bit,
-                                   const BitRefLevel &mask,
+  clear_finite_elements_by_bit_ref(const BitRefLevel bit,
+                                   const BitRefLevel mask,
                                    int verb = DEFAULT_VERBOSITY) = 0;
 
   /** clear finite elements
    */
   virtual MoFEMErrorCode
-  clear_finite_elements(const Range &ents, int verb = DEFAULT_VERBOSITY) = 0;
+  clear_finite_elements(const Range ents, int verb = DEFAULT_VERBOSITY) = 0;
 
   /** clear finite elements
    */
   virtual MoFEMErrorCode
-  clear_finite_elements(const std::string &name, const Range &ents,
+  clear_finite_elements(const std::string name, const Range ents,
                         int verb = DEFAULT_VERBOSITY) = 0;
 
   /**@}*/
@@ -1184,8 +1184,8 @@ struct CoreInterface : public UnknownInterface {
    * \param mask
    */
   virtual MoFEMErrorCode
-  clear_adjacencies_finite_elements(const BitRefLevel &bit,
-                                    const BitRefLevel &mask,
+  clear_adjacencies_finite_elements(const BitRefLevel bit,
+                                    const BitRefLevel mask,
                                     int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief clear adjacency map for entities on given bit level
@@ -1194,19 +1194,19 @@ struct CoreInterface : public UnknownInterface {
    * \param mask
    */
   virtual MoFEMErrorCode
-  clear_adjacencies_entities(const BitRefLevel &bit, const BitRefLevel &mask,
+  clear_adjacencies_entities(const BitRefLevel bit, const BitRefLevel mask,
                              int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief clear adjacencies for field entities by entities
    */
   virtual MoFEMErrorCode
-  clear_adjacencies_entities(const Range &ents,
+  clear_adjacencies_entities(const Range ents,
                              int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief clear adjacencies for field entities by entities and field namd
    */
   virtual MoFEMErrorCode
-  clear_adjacencies_entities(const std::string &name, const Range &ents,
+  clear_adjacencies_entities(const std::string name, const Range ents,
                              int verb = DEFAULT_VERBOSITY) = 0;
 
   /**@}*/
@@ -1218,7 +1218,7 @@ struct CoreInterface : public UnknownInterface {
   /** \brief clear problem
    * \ingroup mofem_problems
    */
-  virtual MoFEMErrorCode clear_problem(const std::string &name,
+  virtual MoFEMErrorCode clear_problem(const std::string name,
                                        int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief clear problems
