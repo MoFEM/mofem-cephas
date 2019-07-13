@@ -301,10 +301,9 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
                                                 moab::Interface::UNION);
     return adj;
   };
-  auto adj_father_ents = get_adj_father_ents(created_tets, true);
-
-  //subtract(get_adj_father_ents(created_tets, true),
-    //                              get_adj_father_ents(created_tets, false));
+  auto adj_father_ents_existing = get_adj_father_ents(created_tets, false);
+  auto adj_father_ents = subtract(get_adj_father_ents(created_tets, true),
+                                  adj_father_ents_existing);
 
   FaceMapIdx face_map;
   for (auto ent : adj_father_ents) {
@@ -354,21 +353,20 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
         n1 = small_conn[1];
       
       FaceMapIdx::iterator fit = face_map.find(boost::make_tuple(n0, n1));
-      if (fit == face_map.end()) 
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Entity not found");
-      
-      const EntityHandle child = fit->e;
-      const EntityHandle parent = ent;
-      if (m_field.get_moab().dimension_from_handle(parent) !=
-          m_field.get_moab().dimension_from_handle(child)) 
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Huston we have a problem!");
-      
-      // Set parent child relation
-      CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),
-                                             &child, 1, &parent);
-      // Create map
-      parentChildMap.insert(ParentChild(parent, child));
+      if (fit != face_map.end()) {
+        const EntityHandle child = fit->e;
+        const EntityHandle parent = ent;
+        if (m_field.get_moab().dimension_from_handle(parent) !=
+            m_field.get_moab().dimension_from_handle(child))
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Huston we have a problem!");
+
+        // Set parent child relation
+        CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),
+                                               &child, 1, &parent);
+        // Create map
+        parentChildMap.insert(ParentChild(parent, child));
+      }
     }
   }
 
