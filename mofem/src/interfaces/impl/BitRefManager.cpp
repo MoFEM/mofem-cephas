@@ -724,28 +724,25 @@ MoFEMErrorCode BitRefManager::getEntitiesByRefLevel(const BitRefLevel bit,
 MoFEMErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel bit,
                                                       const BitRefLevel mask,
                                                       const EntityType type,
-                                                      Range &ents) const {
+                                                      Range &ents,
+                                                      const int verb) const {
   MoFEM::Interface &m_field = cOre;
-  // moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *ref_ents_ptr;
   MoFEMFunctionBegin;
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  typedef RefEntity_multiIndex::index<ParentEntType_mi_tag>::type
-      RefEntsByParentType;
-  const RefEntsByParentType &ref_ents =
-      ref_ents_ptr->get<ParentEntType_mi_tag>();
-  RefEntsByParentType::iterator it, hi_it;
-  it = ref_ents.lower_bound(type);
-  hi_it = ref_ents.upper_bound(type);
+  auto &ref_ents = ref_ents_ptr->get<ParentEntType_mi_tag>();
+  auto it = ref_ents.lower_bound(type);
+  auto hi_it = ref_ents.upper_bound(type);
   std::vector<EntityHandle> ents_vec;
   ents_vec.reserve(std::distance(it, hi_it));
   for (; it != hi_it; it++) {
     const BitRefLevel &ent_bit = it->get()->getBitRefLevel();
-    if ((ent_bit & mask) == ent_bit && (ent_bit & bit).any()) {
+    if ((ent_bit & mask) == ent_bit && (ent_bit & bit).any())
       ents_vec.emplace_back(it->get()->getRefEnt());
-    }
   }
   ents.insert_list(ents_vec.begin(), ents_vec.end());
+  if (verb > NOISY)
+    cerr << "getEntitiesByParentType: " << ents << endl;
   MoFEMFunctionReturn(0);
 }
 
@@ -754,7 +751,7 @@ MoFEMErrorCode BitRefManager::getAllEntitiesNotInDatabase(Range &ents) const {
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBeginHot;
   rval = moab.get_entities_by_handle(0, ents, false);
-  CHKERRQ_MOAB(rval);
+  CHKERRG(rval);
   ents = subtract(ents, ents.subset_by_type(MBENTITYSET));
   ierr = filterEntitiesNotInDatabase(ents);
   CHKERRG(ierr);

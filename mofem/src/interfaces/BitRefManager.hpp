@@ -379,8 +379,8 @@ struct BitRefManager : public UnknownInterface {
    */
   MoFEMErrorCode getEntitiesByParentType(const BitRefLevel bit,
                                          const BitRefLevel mask,
-                                         const EntityType type,
-                                         Range &ents) const;
+                                         const EntityType type, Range &ents,
+                                         const int verb = QUIET) const;
 
   /**
    * @brief Get all entities not in database
