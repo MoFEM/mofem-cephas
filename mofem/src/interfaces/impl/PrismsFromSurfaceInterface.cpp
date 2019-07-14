@@ -13,86 +13,99 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 namespace MoFEM {
 
-MoFEMErrorCode PrismsFromSurfaceInterface::query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const {
-  MoFEMFunctionBeginHot;
+MoFEMErrorCode
+PrismsFromSurfaceInterface::query_interface(const MOFEMuuid &uuid,
+                                            UnknownInterface **iface) const {
+  MoFEMFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_MOFEMPrismsFromSurface) {
-    *iface = const_cast<PrismsFromSurfaceInterface*>(this);
+  if (uuid == IDD_MOFEMPrismsFromSurface) {
+    *iface = const_cast<PrismsFromSurfaceInterface *>(this);
     MoFEMFunctionReturnHot(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
-  MoFEMFunctionReturnHot(0);
+  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range &prisms,int verb) {
-  MoFEMFunctionBeginHot;
+MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,
+                                                        Range &prisms,
+                                                        int verb) {
+  MoFEMFunctionBegin;
 
-  Interface& m_field = cOre;
+  Interface &m_field = cOre;
   Range tris = ents.subset_by_type(MBTRI);
-  for(Range::iterator tit = tris.begin();tit!=tris.end();tit++) {
-    const EntityHandle* conn;
+  for (Range::iterator tit = tris.begin(); tit != tris.end(); tit++) {
+    const EntityHandle *conn;
     int number_nodes = 0;
-    rval = m_field.get_moab().get_connectivity(*tit,conn,number_nodes,false); CHKERRQ_MOAB(rval);
-    double coords[3*number_nodes];
-    rval = m_field.get_moab().get_coords(conn,number_nodes,coords); CHKERRQ_MOAB(rval);
+    CHKERR m_field.get_moab().get_connectivity(*tit, conn, number_nodes, false);
+    double coords[3 * number_nodes];
+    CHKERR m_field.get_moab().get_coords(conn, number_nodes, coords);
     EntityHandle prism_nodes[6];
-    for(int nn = 0;nn<3;nn++) {
+    for (int nn = 0; nn < 3; nn++) {
       prism_nodes[nn] = conn[nn];
-      if(createdVertices.find(conn[nn])!=createdVertices.end()) {
-        prism_nodes[3+nn] = createdVertices[prism_nodes[nn]];
+      if (createdVertices.find(conn[nn]) != createdVertices.end()) {
+        prism_nodes[3 + nn] = createdVertices[prism_nodes[nn]];
       } else {
-        rval = m_field.get_moab().create_vertex(&coords[3*nn],prism_nodes[3+nn]); CHKERRQ_MOAB(rval);
-        createdVertices[conn[nn]] = prism_nodes[3+nn];
-        rval = m_field.get_moab().tag_set_data(
-          cOre.get_th_RefParentHandle(),&prism_nodes[3+nn],1,&prism_nodes[nn]
-        ); CHKERRQ_MOAB(rval);
+        CHKERR m_field.get_moab().create_vertex(&coords[3 * nn],
+                                                prism_nodes[3 + nn]);
+        createdVertices[conn[nn]] = prism_nodes[3 + nn];
+        CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),
+                                               &prism_nodes[3 + nn], 1,
+                                               &prism_nodes[nn]);
       }
     }
     EntityHandle prism;
-    rval = m_field.get_moab().create_element(MBPRISM,prism_nodes,6,prism); CHKERRG(rval);
+    CHKERR m_field.get_moab().create_element(MBPRISM, prism_nodes, 6, prism);
+    CHKERRG(rval);
     Range edges;
-    rval = m_field.get_moab().get_adjacencies(&prism,1,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+    CHKERR m_field.get_moab().get_adjacencies(&prism, 1, 1, true, edges,
+                                              moab::Interface::UNION);
     Range faces;
-    rval = m_field.get_moab().get_adjacencies(&prism,1,2,true,faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+    CHKERR m_field.get_moab().get_adjacencies(&prism, 1, 2, true, faces,
+                                              moab::Interface::UNION);
     prisms.insert(prism);
-    for(int ee = 0;ee<=2;ee++) {
+    for (int ee = 0; ee <= 2; ee++) {
       EntityHandle e1;
-      rval = m_field.get_moab().side_element(prism,1,ee,e1);
+      CHKERR m_field.get_moab().side_element(prism, 1, ee, e1);
       EntityHandle e2;
-      rval = m_field.get_moab().side_element(prism,1,ee+6,e2); CHKERRQ_MOAB(rval);
-      rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&e2,1,&e1); CHKERRQ_MOAB(rval);
+      CHKERR m_field.get_moab().side_element(prism, 1, ee + 6, e2);
+      CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(), &e2,
+                                             1, &e1);
     }
-    EntityHandle f3,f4;
+    EntityHandle f3, f4;
     {
-      rval = m_field.get_moab().side_element(prism,2,3,f3);
-      rval = m_field.get_moab().side_element(prism,2,4,f4);
-      rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&f4,1,&f3); CHKERRQ_MOAB(rval);
+      CHKERR m_field.get_moab().side_element(prism, 2, 3, f3);
+      CHKERR m_field.get_moab().side_element(prism, 2, 4, f4);
+      CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(), &f4,
+                                             1, &f3);
     }
-    if(number_nodes>3) {
+    if (number_nodes > 3) {
       EntityHandle meshset;
-      rval = m_field.get_moab().create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
-      rval = m_field.get_moab().add_entities(meshset,&f4,1); CHKERRQ_MOAB(rval);
-      for(int ee = 0;ee<=2;ee++) {
+      CHKERR m_field.get_moab().create_meshset(
+          MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+      CHKERR m_field.get_moab().add_entities(meshset, &f4, 1);
+      for (int ee = 0; ee <= 2; ee++) {
         EntityHandle e2;
-        rval = m_field.get_moab().side_element(prism,1,ee+6,e2); CHKERRQ_MOAB(rval);
-        rval = m_field.get_moab().add_entities(meshset,&e2,1); CHKERRQ_MOAB(rval);
+        CHKERR m_field.get_moab().side_element(prism, 1, ee + 6, e2);
+        CHKERR m_field.get_moab().add_entities(meshset, &e2, 1);
       }
-      rval = m_field.get_moab().convert_entities(meshset,true,false,false); CHKERRQ_MOAB(rval);
-      rval = m_field.get_moab().delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
-      const EntityHandle* conn_f4;
+      CHKERR m_field.get_moab().convert_entities(meshset, true, false, false);
+      CHKERR m_field.get_moab().delete_entities(&meshset, 1);
+      const EntityHandle *conn_f4;
       int number_nodes_f4 = 0;
-      rval = m_field.get_moab().get_connectivity(f4,conn_f4,number_nodes_f4,false); CHKERRQ_MOAB(rval);
-      if(number_nodes_f4 != number_nodes) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+      CHKERR m_field.get_moab().get_connectivity(f4, conn_f4, number_nodes_f4,
+                                                 false);
+      if (number_nodes_f4 != number_nodes) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "data inconsistency");
       }
-      rval = m_field.get_moab().set_coords(&conn_f4[3],3,&coords[9]); CHKERRQ_MOAB(rval);
+      CHKERR m_field.get_moab().set_coords(&conn_f4[3], 3, &coords[9]);
     }
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(
@@ -129,54 +142,56 @@ MoFEMErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb) {
-  MoFEMFunctionBeginHot;
-  Interface& m_field = cOre;
+MoFEMErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(
+    const Range &prisms, bool from_down, Range &out_prisms, int verb) {
+  MoFEMFunctionBegin;
+  Interface &m_field = cOre;
   Range tris;
-  for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
+  for (Range::iterator pit = prisms.begin(); pit != prisms.end(); pit++) {
     EntityHandle face;
-    if(from_down) {
-      rval = m_field.get_moab().side_element(*pit,2,3,face); CHKERRQ_MOAB(rval);
+    if (from_down) {
+      CHKERR m_field.get_moab().side_element(*pit, 2, 3, face);
     } else {
-      rval = m_field.get_moab().side_element(*pit,2,4,face); CHKERRQ_MOAB(rval);
+      CHKERR m_field.get_moab().side_element(*pit, 2, 4, face);
     }
     tris.insert(face);
   }
-  ierr = createPrisms(tris,out_prisms,verb); CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR createPrisms(tris, out_prisms, verb);
+  MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode PrismsFromSurfaceInterface::setThickness(const Range &prisms,const double director3[],const double director4[]) {
-
-  MoFEMFunctionBeginHot;
-  Interface& m_field = cOre;
-  Range nodes_f3,nodes_f4;
-  for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
-    for(int ff = 3;ff<=4;ff++) {
+MoFEMErrorCode PrismsFromSurfaceInterface::setThickness(
+    const Range &prisms, const double director3[], const double director4[]) {
+  MoFEMFunctionBegin;
+  Interface &m_field = cOre;
+  Range nodes_f3, nodes_f4;
+  for (Range::iterator pit = prisms.begin(); pit != prisms.end(); pit++) {
+    for (int ff = 3; ff <= 4; ff++) {
       EntityHandle face;
-      rval = m_field.get_moab().side_element(*pit,2,ff,face); CHKERRQ_MOAB(rval);
-      const EntityHandle* conn;
+      CHKERR m_field.get_moab().side_element(*pit, 2, ff, face);
+      const EntityHandle *conn;
       int number_nodes = 0;
-      rval = m_field.get_moab().get_connectivity(face,conn,number_nodes,false); CHKERRQ_MOAB(rval);
-      if(ff == 3) {
-        nodes_f3.insert(&conn[0],&conn[number_nodes]);
+      CHKERR m_field.get_moab().get_connectivity(face, conn, number_nodes,
+                                                 false);
+      if (ff == 3) {
+        nodes_f3.insert(&conn[0], &conn[number_nodes]);
       } else {
-        nodes_f4.insert(&conn[0],&conn[number_nodes]);
+        nodes_f4.insert(&conn[0], &conn[number_nodes]);
       }
     }
   }
   double coords[3];
-  for(Range::iterator nit = nodes_f3.begin();nit!=nodes_f3.end();nit++) {
-    rval = m_field.get_moab().get_coords(&*nit,1,coords); CHKERRQ_MOAB(rval);
-    cblas_daxpy(3,1,director3,1,coords,1);
-    rval = m_field.get_moab().set_coords(&*nit,1,coords); CHKERRQ_MOAB(rval);
+  for (Range::iterator nit = nodes_f3.begin(); nit != nodes_f3.end(); nit++) {
+    CHKERR m_field.get_moab().get_coords(&*nit, 1, coords);
+    cblas_daxpy(3, 1, director3, 1, coords, 1);
+    CHKERR m_field.get_moab().set_coords(&*nit, 1, coords);
   }
-  for(Range::iterator nit = nodes_f4.begin();nit!=nodes_f4.end();nit++) {
-    rval = m_field.get_moab().get_coords(&*nit,1,coords); CHKERRQ_MOAB(rval);
-    cblas_daxpy(3,1,director4,1,coords,1);
-    rval = m_field.get_moab().set_coords(&*nit,1,coords); CHKERRQ_MOAB(rval);
+  for (Range::iterator nit = nodes_f4.begin(); nit != nodes_f4.end(); nit++) {
+    CHKERR m_field.get_moab().get_coords(&*nit, 1, coords);
+    cblas_daxpy(3, 1, director4, 1, coords, 1);
+    CHKERR m_field.get_moab().set_coords(&*nit, 1, coords);
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
-}
+} // namespace MoFEM

@@ -764,12 +764,11 @@ MoFEMErrorCode PrismInterface::splitSides(
   Range new_3d_ents;
   for (Range::iterator eit3d = side_ents3d.begin(); eit3d != side_ents3d.end();
        eit3d++) {
-    RefEntity_multiIndex::iterator miit_ref_ent =
-        refined_ents_ptr->find(*eit3d);
-    if (miit_ref_ent == refined_ents_ptr->end()) {
+    auto miit_ref_ent = refined_ents_ptr->find(*eit3d);
+    if (miit_ref_ent == refined_ents_ptr->end())
       SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
-              "tet not in database");
-    }
+              "Tetrahedron not in database");
+
     int num_nodes;
     const EntityHandle *conn;
     CHKERR moab.get_connectivity(*eit3d, conn, num_nodes, true);
@@ -905,7 +904,7 @@ MoFEMErrorCode PrismInterface::splitSides(
                               MoFEM::Core &cOre) {
       MoFEM::Interface &m_field = cOre;
       MoFEMFunctionBegin;
-      RefEntity_multiIndex::iterator it = ref_ents_ptr->find(ent);
+      auto it = ref_ents_ptr->find(ent);
       if (it != ref_ents_ptr->end()) {
         if (it->get()->getParentEnt() != parent && ent != parent)
           parentsToChange[ent] = parent;
@@ -918,10 +917,9 @@ MoFEMErrorCode PrismInterface::splitSides(
     }
     MoFEMErrorCode operator()(const RefEntity_multiIndex *ref_ents_ptr) {
       MoFEMFunctionBegin;
-      for (map<EntityHandle, EntityHandle>::iterator mit =
-               parentsToChange.begin();
-           mit != parentsToChange.end(); ++mit) {
-        RefEntity_multiIndex::iterator it = ref_ents_ptr->find(mit->first);
+      for (auto mit = parentsToChange.begin(); mit != parentsToChange.end();
+           ++mit) {
+        auto it = ref_ents_ptr->find(mit->first);
         bool success = const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
                            ->modify(it, RefEntity_change_parent(mit->second));
         if (!success)
