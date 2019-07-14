@@ -594,11 +594,11 @@ MoFEMErrorCode PrismInterface::splitSides(
   std::vector<EntityHandle> children;
   // get children meshsets
   CHKERR moab.get_child_meshsets(sideset, children);
-  if (children.size() != 3) {
+  if (children.size() != 3) 
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
             "should be 3 child meshsets, each of them contains tets on two "
             "sides of interface");
-  }
+  
   // 3d ents on "father" side
   Range side_ents3d;
   CHKERR moab.get_entities_by_handle(children[0], side_ents3d, false);
@@ -650,42 +650,35 @@ MoFEMErrorCode PrismInterface::splitSides(
       CreateSideNodes(MoFEM::Core &core, int split_size = 0)
           : cOre(core), m_field(core) {
         splitNodes.reserve(split_size);
-        for (int dd = 0; dd != 3; ++dd) {
+        for (auto dd : {0, 1, 2})
           splitCoords[dd].reserve(split_size);
-        }
       }
       MoFEMErrorCode operator()(const double coords[], const EntityHandle n) {
         MoFEMFunctionBegin;
-        splitNodes.push_back(n);
-        for (int dd = 0; dd != 3; ++dd) {
-          splitCoords[dd].push_back(coords[dd]);
-        }
+        splitNodes.emplace_back(n);
+        for (auto dd : {0, 1, 2})
+          splitCoords[dd].emplace_back(coords[dd]);
         MoFEMFunctionReturn(0);
       }
 
       MoFEMErrorCode operator()(const BitRefLevel &bit, MapNodes &map_nodes) {
+        ReadUtilIface *iface;
         MoFEMFunctionBegin;
         int num_nodes = splitNodes.size();
-        vector<double *> arrays_coord;
+        std::vector<double *> arrays_coord;
         EntityHandle startv;
-        {
-          ReadUtilIface *iface;
-          CHKERR m_field.get_moab().query_interface(iface);
-          CHKERR iface->get_node_coords(3, num_nodes, 0, startv, arrays_coord);
-        }
+        CHKERR m_field.get_moab().query_interface(iface);
+        CHKERR iface->get_node_coords(3, num_nodes, 0, startv, arrays_coord);
         Range verts(startv, startv + num_nodes - 1);
-        for (int dd = 0; dd != 3; ++dd) {
+        for (int dd = 0; dd != 3; ++dd) 
           std::copy(splitCoords[dd].begin(), splitCoords[dd].end(),
                     arrays_coord[dd]);
-        }
-        for (int nn = 0; nn != num_nodes; ++nn) {
+        for (int nn = 0; nn != num_nodes; ++nn) 
           map_nodes[splitNodes[nn]] = verts[nn];
-        }
         CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),
                                                verts, &*splitNodes.begin());
         CHKERR m_field.getInterface<BitRefManager>()->setEntitiesBitRefLevel(
             verts, bit, QUIET);
-
         MoFEMFunctionReturn(0);
       }
     };
@@ -701,60 +694,55 @@ MoFEMErrorCode PrismInterface::splitSides(
                  RefEntity_multiIndex_view_by_hashed_parent_entity
                      &ref_parent_ents_view) const {
         MoFEMFunctionBegin;
-        const RefEntsByComposite &ref_ents =
+        auto &ref_ents =
             refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
-        RefEntsByComposite::iterator miit;
-        RefEntsByComposite::iterator hi_miit;
         // view by parent type (VERTEX)
-        miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBVERTEX));
-        hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBVERTEX));
+        auto miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX, MBVERTEX));
+        auto hi_miit =
+            ref_ents.upper_bound(boost::make_tuple(MBVERTEX, MBVERTEX));
         for (; miit != hi_miit; miit++) {
-          if (((*miit)->getBitRefLevel() & mask) == (*miit)->getBitRefLevel()) {
-            if (((*miit)->getBitRefLevel() & bit).any()) {
-              std::pair<
-                  RefEntity_multiIndex_view_by_hashed_parent_entity::iterator,
-                  bool>
-                  p_ref_ent_view;
-              p_ref_ent_view = ref_parent_ents_view.insert(*miit);
-              if (!p_ref_ent_view.second) {
-                SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                        "non unique insertion");
-              }
-            }
+          const auto &ent_bit = (*miit)->getBitRefLevel();
+          if ((ent_bit & bit).any() && (ent_bit & mask) == ent_bit) {
+            auto p_ref_ent_view = ref_parent_ents_view.insert(*miit);
+            if (!p_ref_ent_view.second) 
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                      "non unique insertion");
           }
         }
         MoFEMFunctionReturn(0);
       }
     };
-    CHKERR CreateParentEntView()(inhered_from_bit_level,
-                                 inhered_from_bit_level_mask, refined_ents_ptr,
-                                 ref_parent_ents_view);
+    if (inhered_from_bit_level.any() && inhered_from_bit_level_mask.any())
+      CHKERR CreateParentEntView()(inhered_from_bit_level,
+                                   inhered_from_bit_level_mask,
+                                   refined_ents_ptr, ref_parent_ents_view);
 
     // add new nodes on interface and create map
     Range add_bit_nodes;
-    for (Range::const_iterator nit = nodes.begin(); nit != nodes.end(); ++nit) {
-
-      // find ref enet by parent node
-      RefEntity_multiIndex::iterator miit_ref_ent =
-          refined_ents_ptr->find(*nit);
-      if (miit_ref_ent == refined_ents_ptr->end()) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "can not find node in MoFEM database");
-      }
-      EntityHandle child_entity = 0;
-      RefEntity_multiIndex_view_by_hashed_parent_entity::iterator child_it =
-          ref_parent_ents_view.find(*nit);
-      if (child_it != ref_parent_ents_view.end()) {
-        child_entity = (*child_it)->getRefEnt();
-      }
-
-      if (child_entity == 0) {
-        double coords[3];
-        CHKERR moab.get_coords(&*nit, 1, coords);
-        CHKERR create_side_nodes(coords, *nit);
-      } else {
-        map_nodes[*nit] = child_entity;
-        add_bit_nodes.insert(child_entity);
+    for (auto pnit = nodes.pair_begin(); pnit != nodes.pair_end(); ++pnit) {
+      auto lo = refined_ents_ptr->lower_bound(pnit->first);
+      auto hi = refined_ents_ptr->upper_bound(pnit->second);
+      if(std::distance(lo, hi)!= (pnit->second - pnit->first + 1))
+        SETERRQ(
+            PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Can not find some nodes in database that are split on interface");
+      Range nodes_in_range;
+      insertOrdered(nodes_in_range, RefEntExtractor(), lo, hi);
+      std::vector<double> coords_range(nodes_in_range.size()*3);
+      CHKERR moab.get_coords(nodes_in_range, &*coords_range.begin());
+      int pos = 0;
+      for (; lo != hi; ++lo, pos += 3) {
+        const EntityHandle node = (*lo)->getRefEnt();
+        EntityHandle child_entity = 0;
+        auto child_it = ref_parent_ents_view.find(node);
+        if (child_it != ref_parent_ents_view.end())
+          child_entity = (*child_it)->getRefEnt();
+        if (child_entity == 0) {
+          CHKERR create_side_nodes(&coords_range[pos], node);
+        } else {
+          map_nodes[node] = child_entity;
+          add_bit_nodes.insert(child_entity);
+        }
       }
     }
     add_bit_nodes.merge(nodes);
@@ -895,12 +883,18 @@ MoFEMErrorCode PrismInterface::splitSides(
     }
   }
 
-  Range new_ents;
-  // create new entities by adjacencies form new tets
-  CHKERR moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET), 2, true,
-                              new_ents, moab::Interface::UNION);
-  CHKERR moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET), 1, true,
-                              new_ents, moab::Interface::UNION);
+  auto get_adj_ents = [&](const bool create) {
+    Range adj;
+    // create new entities by adjacencies form new tets
+    CHKERR moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET), 2, create,
+                                adj, moab::Interface::UNION);
+    CHKERR moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET), 1, create,
+                                adj, moab::Interface::UNION);
+    return adj;
+  };
+
+  Range new_ents_existing = get_adj_ents(false);
+  Range new_ents = subtract(get_adj_ents(true), new_ents_existing);
 
   // Tags for setting side
   Tag th_interface_side;
@@ -1024,7 +1018,7 @@ MoFEMErrorCode PrismInterface::splitSides(
       SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "new_ent.size() = %u, size always should be 1", new_ent.size());
     }
-    CHKERR set_parent(new_ent[0], *eit, refined_ents_ptr, cOre);
+    // CHKERR set_parent(new_ent[0], *eit, refined_ents_ptr, cOre);
   }
 
   // all other entities, some ents like triangles and faces on the side of tets
