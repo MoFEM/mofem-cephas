@@ -1,3 +1,9 @@
+/** \file mesh_insert_interface_atom.cpp
+  \example mesh_insert_interface_atom.cpp
+  \brief Adding prims on the interface
+
+*/
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the

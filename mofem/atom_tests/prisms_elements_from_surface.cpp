@@ -1,3 +1,9 @@
+/** \file prisms_elements_from_surface.cpp
+  \example prisms_elements_from_surface.cpp
+  \brief Adding prims on the surface
+
+*/
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -67,12 +73,10 @@ int main(int argc, char *argv[]) {
     CHKERR moab.get_entities_by_type(0, MBTRI, tris, false);
     Range prisms;
     CHKERR prisms_from_surface_interface->createPrisms(tris, prisms);
-    CHKERRG(ierr);
     prisms_from_surface_interface->createdVertices.clear();
     Range add_prims_layer;
     CHKERR prisms_from_surface_interface->createPrismsFromPrisms(
         prisms, true, add_prims_layer);
-    CHKERRG(ierr);
     prisms.merge(add_prims_layer);
 
     EntityHandle meshset;

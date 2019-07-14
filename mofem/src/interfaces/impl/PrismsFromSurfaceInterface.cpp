@@ -34,7 +34,6 @@ MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,
                                                         Range &prisms,
                                                         int verb) {
   MoFEMFunctionBegin;
-
   Interface &m_field = cOre;
   Range tris = ents.subset_by_type(MBTRI);
   for (Range::iterator tit = tris.begin(); tit != tris.end(); tit++) {
@@ -59,7 +58,6 @@ MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,
     }
     EntityHandle prism;
     CHKERR m_field.get_moab().create_element(MBPRISM, prism_nodes, 6, prism);
-    CHKERRG(rval);
     Range edges;
     CHKERR m_field.get_moab().get_adjacencies(&prism, 1, 1, true, edges,
                                               moab::Interface::UNION);
