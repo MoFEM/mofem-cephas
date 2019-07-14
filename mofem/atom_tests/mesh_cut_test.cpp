@@ -184,8 +184,8 @@ int main(int argc, char *argv[]) {
     CHKERR cut_mesh->makeFront(true);
     const int nb_ref_cut = 1;
     const int nb_ref_trim = 1;
-    CHKERR cut_mesh->refineMesh(true, false, 0, nb_ref_cut, nb_ref_trim,
-                                &fixed_edges, VERBOSE, true);
+    CHKERR cut_mesh->refineMesh(0, nb_ref_cut, nb_ref_trim, &fixed_edges, VERBOSE,
+                                true);
     auto shift_after_ref = [&]() {
       MoFEMFunctionBegin;
       BitRefLevel mask;

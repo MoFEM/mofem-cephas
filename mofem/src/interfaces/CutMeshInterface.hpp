@@ -225,8 +225,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @param debug 
    * @return MoFEMErrorCode 
    */
-  MoFEMErrorCode createSurfaceLevelSets(Range *intersect_vol = nullptr,
-                                        int verb = QUIET,
+  MoFEMErrorCode createSurfaceLevelSets(int verb = QUIET,
                                         const bool debug = false);
 
   /**
@@ -263,8 +262,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @param debug 
    * @return MoFEMErrorCode 
    */
-  MoFEMErrorCode createLevelSets(const bool update_front, int verb = QUIET,
-                                 const bool debug = false);
+  MoFEMErrorCode createLevelSets(int verb = QUIET, const bool debug = false);
 
   /**
    * @brief Refine and set level sets
@@ -281,8 +279,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @param debug 
    * @return MoFEMErrorCode 
    */
-  MoFEMErrorCode refineMesh(const bool refine_front, const bool update_front,
-                            const int init_bit_level, const int surf_levels,
+  MoFEMErrorCode refineMesh(const int init_bit_level, const int surf_levels,
                             const int front_levels,
                             Range *fixed_edges = nullptr, int verb = QUIET,
                             const bool debug = false);

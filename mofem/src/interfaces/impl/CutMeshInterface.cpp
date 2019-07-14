@@ -474,8 +474,7 @@ MoFEMErrorCode CutMeshInterface::makeFront(const bool debug) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(Range *intersect_vol,
-                                                        int verb,
+MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
                                                         const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
@@ -493,44 +492,53 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(Range *intersect_vol,
     return th;
   };
 
-  Range vol;
-  if (intersect_vol)
-    vol = intersect(vOlume, *intersect_vol);
-  else
-    vol = vOlume;
+  auto set_vol = [&](const Range &vol_verts, std::vector<double> &coords,
+                     std::vector<double> &dist_surface_vec,
+                     std::vector<double> &dist_surface_normal_vec) {
+    MoFEMFunctionBegin;
 
-  Range vol_vertices;
-  CHKERR moab.get_connectivity(vol, vol_vertices, true);
-  std::vector<double> coords(3 * vol_vertices.size());
-  std::vector<double> dist_surface_vec(3 * vol_vertices.size());
-  std::vector<double> dist_surface_normal_vec(3 * vol_vertices.size());
-  CHKERR moab.get_coords(vol_vertices, &*coords.begin());
-  for (auto v : vol_vertices) {
-    const int index = vol_vertices.index(v);
-    auto point_in = getVectorAdaptor(&coords[3 * index], 3);
-    VectorDouble3 point_out(3);
-    EntityHandle facets_out;
-    CHKERR treeSurfPtr->closest_to_location(&point_in[0], rootSetSurf,
-                                            &point_out[0], facets_out);
+    coords.resize(3 * vol_verts.size());
+    dist_surface_vec.resize(3 * vol_verts.size());
+    dist_surface_normal_vec.resize(3 * vol_verts.size());
+    CHKERR moab.get_coords(vol_verts, &*coords.begin());
+    for (auto v : vol_verts) {
+      
+      const int index = vol_verts.index(v);
+      auto point_in = getVectorAdaptor(&coords[3 * index], 3);
+      VectorDouble3 point_out(3);
+      EntityHandle facets_out;
+      CHKERR treeSurfPtr->closest_to_location(&point_in[0], rootSetSurf,
+                                              &point_out[0], facets_out);
 
-    VectorDouble3 delta = point_out - point_in;
-    auto dist_vec = getVectorAdaptor(&dist_surface_vec[3 * index], 3);
-    noalias(dist_vec) = delta;
+      VectorDouble3 delta = point_out - point_in;
+      auto dist_vec = getVectorAdaptor(&dist_surface_vec[3 * index], 3);
+      noalias(dist_vec) = delta;
 
-    VectorDouble3 n(3);
-    Util::normal(&moab, facets_out, n[0], n[1], n[2]);
-    n /= norm_2(n);
-    auto dist_normal_vec =
-        getVectorAdaptor(&dist_surface_normal_vec[3 * index], 3);
-    noalias(dist_normal_vec) = inner_prod(delta, n) * n;
-  }
+      VectorDouble3 n(3);
+      Util::normal(&moab, facets_out, n[0], n[1], n[2]);
+      n /= norm_2(n);
+      auto dist_normal_vec =
+          getVectorAdaptor(&dist_surface_normal_vec[3 * index], 3);
+      noalias(dist_normal_vec) = inner_prod(delta, n) * n;
+
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  std::vector<double> coords;
+  std::vector<double> dist_surface_vec;
+  std::vector<double> dist_surface_normal_vec;
+  Range vol_verts;
+  CHKERR moab.get_connectivity(vOlume, vol_verts, true);
+
+  CHKERR set_vol(vol_verts, coords, dist_surface_vec, dist_surface_normal_vec);
 
   auto th_dist_surface_vec = create_tag("DIST_SURFACE_VECTOR", 3);
   auto th_dist_surface_normal_vec = create_tag("DIST_SURFACE_NORMAL_VECTOR", 3);
-
-  CHKERR moab.tag_set_data(th_dist_surface_vec, vol_vertices,
+  CHKERR moab.tag_set_data(th_dist_surface_vec, vol_verts,
                            &*dist_surface_vec.begin());
-  CHKERR moab.tag_set_data(th_dist_surface_normal_vec, vol_vertices,
+  CHKERR moab.tag_set_data(th_dist_surface_normal_vec, vol_verts,
                            &*dist_surface_normal_vec.begin());
 
   MoFEMFunctionReturn(0);
@@ -673,8 +681,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::createLevelSets(const bool update_front,
-                                                 int verb, const bool debug) {
+MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -685,10 +692,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(const bool update_front,
   CHKERR createLevelSets(th_dist_front_vec, cutFrontVolumes, true, verb, debug,
                          "cutFrontEdges.vtk");
 
-  if (update_front)
-    CHKERR createSurfaceLevelSets(&cutFrontVolumes, verb, debug);
-  else
-    CHKERR createSurfaceLevelSets(nullptr, verb, debug);
+  CHKERR createSurfaceLevelSets(verb, debug);
 
   Tag th_dist_surface_vec;
   CHKERR moab.tag_get_handle("DIST_SURFACE_VECTOR", th_dist_surface_vec);
@@ -708,8 +712,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(const bool update_front,
 }
 
 MoFEMErrorCode
-CutMeshInterface::refineMesh(const bool refine_front, const bool update_front,
-                             const int init_bit_level, const int surf_levels,
+CutMeshInterface::refineMesh(const int init_bit_level, const int surf_levels,
                              const int front_levels, Range *fixed_edges,
                              int verb, const bool debug) {
   CoreInterface &m_field = cOre;
@@ -777,24 +780,18 @@ CutMeshInterface::refineMesh(const bool refine_front, const bool update_front,
   };
 
   for (int ll = init_bit_level; ll != init_bit_level + surf_levels; ++ll) {
-    CHKERR createLevelSets(update_front, verb, debug);
-    if (refine_front)
-      CHKERR refine(BitRefLevel().set(ll + 1),
-                    unite(cutSurfaceVolumes, cutFrontVolumes));
-    else
-      CHKERR refine(BitRefLevel().set(ll + 1),
-                    subtract(cutSurfaceVolumes, cutFrontVolumes));
+    CHKERR createLevelSets(verb, debug);
+    CHKERR refine(BitRefLevel().set(ll + 1),
+                  unite(cutSurfaceVolumes, cutFrontVolumes));
   }
 
-  if (refine_front) {
-    for (int ll = init_bit_level + surf_levels;
-         ll != init_bit_level + surf_levels + front_levels; ++ll) {
-      CHKERR createLevelSets(update_front, verb, debug);
-      CHKERR refine(BitRefLevel().set(ll + 1), cutFrontVolumes);
-    }
+  for (int ll = init_bit_level + surf_levels;
+       ll != init_bit_level + surf_levels + front_levels; ++ll) {
+    CHKERR createLevelSets(verb, debug);
+    CHKERR refine(BitRefLevel().set(ll + 1), cutFrontVolumes);
   }
 
-  CHKERR createLevelSets(update_front, verb, debug);
+  CHKERR createLevelSets(verb, debug);
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("refinedVolume.vtk", vOlume);
