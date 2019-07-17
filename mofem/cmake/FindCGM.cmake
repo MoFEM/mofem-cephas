@@ -6,14 +6,14 @@ if(NOT CGM_DIR)
   set(CGM_DIR $ENV{CGM_DIR})
 endif(NOT CGM_DIR)
 
-find_file(CGM_VARIBLES_FILE cgm.make HINTS ${CGM_DIR}/lib)
+find_file(CGM_VARIABLES_FILE cgm.make HINTS ${CGM_DIR}/lib)
 
-if(CGM_VARIBLES_FILE)
+if(CGM_VARIABLES_FILE)
 
   set(CGM_INCLUDES_COUNTER 0)
 
-  file(STRINGS ${CGM_VARIBLES_FILE} CGM_VARIBLES)
-  foreach(LINE ${CGM_VARIBLES})
+  file(STRINGS ${CGM_VARIABLES_FILE} CGM_VARIABLES)
+  foreach(LINE ${CGM_VARIABLES})
     if(NOT LINE MATCHES "^#.*")
       string(REGEX REPLACE "=" ";" FIELDS ${LINE})
       list(GET FIELDS 0 VAR)
@@ -34,7 +34,7 @@ if(CGM_VARIBLES_FILE)
       endif(${VARSTRIP} STREQUAL CGM_INCLUDES)
 
     endif(NOT LINE MATCHES "^#.*")
-  endforeach(LINE ${CGM_VARIBLES})
+  endforeach(LINE ${CGM_VARIABLES})
 
   # Add moab definitions
   if(CGM_DEFINITIONS)
@@ -43,4 +43,4 @@ if(CGM_VARIBLES_FILE)
     add_definitions(${CGM_DEFINITIONS})
   endif(CGM_DEFINITIONS)
 
-endif(CGM_VARIBLES_FILE)
+endif(CGM_VARIABLES_FILE)
