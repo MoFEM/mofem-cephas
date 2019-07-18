@@ -325,9 +325,9 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
                                           dofs_col_view, verb);
           // Sort, unique and resize dofs_col_view
           {
-            sort(dofs_col_view.begin(), dofs_col_view.end());
+            std::sort(dofs_col_view.begin(), dofs_col_view.end());
             std::vector<int>::iterator new_end =
-                unique(dofs_col_view.begin(), dofs_col_view.end());
+                std::unique(dofs_col_view.begin(), dofs_col_view.end());
             int new_size = std::distance(dofs_col_view.begin(), new_end);
             dofs_col_view.resize(new_size);
           }
