@@ -26,8 +26,24 @@ to clone repository
 cd $HOME
 git clone --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git
 ~~~~~~
+You can clone specific branch, for example development branch with most up to
+date bug fixes, new features, efficiency and functionality improvements
+~~~~~~
+git clone -b develop --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git
+~~~~~~
 
 # Build docker image {#docker_image}
+
+The propose of docker is to build MoFEM in the controlled programming
+environment. Such an environment allows to reduce errors quickly, and make
+subsequent updates ]of libraries
+
+MoFEM is building in two stages; the first build is the core library docker
+image, and the second is built docker volume which users modules. This
+environment is dedicated to the user who likes to add user module or modify
+an existing one. Is less likely for the end-user, which want to run
+simulations, in such case we can cate precompiled image which can be
+downloaded from docker hub,
 
 Next step of installation is to configure and compile MoFEM. First command creates
 *mofem build image*. Second command creates *mofem build container* which
