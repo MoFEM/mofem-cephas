@@ -1865,16 +1865,12 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
   all_surfaces_on_bit_level =
       intersect(all_surfaces_on_bit_level, cutNewSurfaces);
 
-  CHKERR SaveData(moab)("trim_new_surfaces1.vtk", trimNewSurfaces);
-  CHKERR SaveData(moab)("trim_new_surfaces0.vtk", all_surfaces_on_bit_level);
-
   trimNewSurfaces = unite(trimNewSurfaces, all_surfaces_on_bit_level);
 
   Range trim_new_vertices_faces;
   CHKERR moab.get_adjacencies(trimNewVertices, 2, false,
                               trim_new_vertices_faces, moab::Interface::UNION);
   trim_new_vertices_faces = intersect(trimNewSurfaces, trim_new_vertices_faces);
-  CHKERR SaveData(moab)("trim_new_surfaces2.vtk", trim_new_vertices_faces);
 
   MoFEMFunctionReturn(0);
 }
