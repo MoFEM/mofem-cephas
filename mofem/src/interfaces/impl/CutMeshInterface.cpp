@@ -2813,7 +2813,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       all_ents_not_in_database_before);
 
   edges_to_merge = edges_to_merge.subset_by_type(MBEDGE);
-  CHKERR SaveData(m_field.get_moab())("edges_to_merge.vtk", edges_to_merge);
+  if(debug)
+    CHKERR SaveData(m_field.get_moab())("edges_to_merge.vtk", edges_to_merge);
 
   Range out_new_tets, out_new_surf;
   CHKERR mergeBadEdges(fraction_level, tets_level, surface, fixed_edges,
