@@ -36,7 +36,7 @@ git clone -b develop --recurse-submodules https://bitbucket.org/likask/mofem-cep
 
 The propose of docker is to build MoFEM in the controlled programming
 environment. Such an environment allows to reduce errors quickly, and make
-subsequent updates ]of libraries
+subsequent updates of libraries.
 
 MoFEM is building in two stages; the first build is the core library docker
 image, and the second is built docker volume which users modules. This
@@ -46,11 +46,14 @@ simulations, in such case we can cate precompiled image which can be
 downloaded from docker hub,
 
 Next step of installation is to configure and compile MoFEM. First command creates
-*mofem build image*. Second command creates *mofem build container* which
+*mofem build image*; 
+~~~~~~
+docker build -t mofem_build --force-rm=true --file=$HOME/mofem-cephas/Dockerfile-build $HOME/mofem-cephas
+~~~~~~
+Second command creates *mofem build container* which
 contains *mofem_build volume*. Volume in container will be shared between other
 containers were MoFEM is compiled and run;
 ~~~~~~
-docker build -t mofem_build --force-rm=true --file=$HOME/mofem-cephas/Dockerfile-build $HOME/mofem-cephas
 docker run --name mofem_build mofem_build
 ~~~~~~
 
@@ -67,9 +70,18 @@ run some code.
 
 To run code a *work container* need to be started, container mount *mofem build
 volume* from container which has been created in the previous step
-
 ~~~~~~
-docker run --rm=true -it --volumes-from mofem_build  -v $HOME/mofem-cephas/mofem:/mofem -v $HOME:$HOME -e HOSTHOME=$HOME mofem_build /bin/bash
+docker run --rm=true -it --volumes-from mofem_build mofem_build /bin/bash
+~~~~~~
+However, if you need access or exchange data with home directory, or you like
+to recompile MoFEM with source changes on your host hard drive, you can *run*
+docker container as follows
+~~~~~~
+docker run --rm=true -it \
+--volumes-from mofem_build \
+-v $HOME/mofem-cephas/mofem:/mofem \
+-v $HOME:$HOME \
+-e HOSTHOME=$HOME mofem_build /bin/bash
 ~~~~~~
 After execution of above command you are working inside docker, this is isolated
 system hosted by your OS (MacOSX, Linux or Windows). You can run several
