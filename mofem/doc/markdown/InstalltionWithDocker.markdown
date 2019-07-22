@@ -56,6 +56,10 @@ containers were MoFEM is compiled and run;
 ~~~~~~
 docker run --name mofem_build mofem_build
 ~~~~~~
+This command compiles users modules and runs tests. However, results of
+compilation are not part of the container but are stored in the volume.
+Several docker containers can share volume, by the option, *--volumes-from
+mofem_build*, and use it as space where data can be easily exchanged.
 
 If you do not exactly understand what is *docker image*, *docker container* and
 *docker volume* do not worry. You do need to only know how to run and develop
