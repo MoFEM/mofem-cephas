@@ -757,7 +757,7 @@ CutMeshInterface::refineMesh(const int init_bit_level, const int surf_levels,
     CHKERR moab.get_adjacencies(verts, 1, true, ref_edges,
                                 moab::Interface::UNION);
 
-    CHKERR refiner->add_vertices_in_the_ middle_of_edges(ref_edges, bit);
+    CHKERR refiner->add_vertices_in_the_middle_of_edges(ref_edges, bit);
     CHKERR refiner->refine_TET(vOlume, bit, false, verb);
 
     CHKERR update_range(fixed_edges);
@@ -1319,7 +1319,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
 
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR refiner->add_vertices_in_the_ middle_of_edges(cutEdges, bit);
+  CHKERR refiner->add_vertices_in_the_middle_of_edges(cutEdges, bit);
   CHKERR refiner->refine_TET(vOlume, bit, false, QUIET,
                              debug ? &cutEdges : NULL);
 
@@ -1819,7 +1819,7 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
 
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR refiner->add_vertices_in_the_ middle_of_edges(trimEdges, bit);
+  CHKERR refiner->add_vertices_in_the_middle_of_edges(trimEdges, bit);
   CHKERR refiner->refine_TET(cutNewVolumes, bit, false, QUIET,
                              debug ? &trimEdges : NULL);
 
