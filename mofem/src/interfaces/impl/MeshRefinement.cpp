@@ -34,7 +34,7 @@ MoFEMErrorCode MeshRefinement::query_interface(const MOFEMuuid &uuid,
 MeshRefinement::MeshRefinement(const Core &core)
     : cOre(const_cast<Core &>(core)) {}
 
-MoFEMErrorCode MeshRefinement::add_vertices_in_the_middel_of_edges(
+MoFEMErrorCode MeshRefinement::add_vertices_in_the_ middle_of_edges(
     const EntityHandle meshset, const BitRefLevel &bit, const bool recursive,
     int verb, EntityHandle start_v) {
   Interface &m_field = cOre;
@@ -85,10 +85,10 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middel_of_edges(
       }
     }
   }
-  CHKERR add_vertices_in_the_middel_of_edges(edges, bit, verb, start_v);
+  CHKERR add_vertices_in_the_ middle_of_edges(edges, bit, verb, start_v);
   MoFEMFunctionReturn(0);
 }
-MoFEMErrorCode MeshRefinement::add_vertices_in_the_middel_of_edges(
+MoFEMErrorCode MeshRefinement::add_vertices_in_the_ middle_of_edges(
     const Range &ents, const BitRefLevel &bit, int verb, EntityHandle start_v) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
