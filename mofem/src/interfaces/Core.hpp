@@ -346,8 +346,10 @@ protected:
                                             int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode make_entities_multishared(const EntityHandle *entities,
                                            const int num_entities,
+                                           const int my_proc = 0,
                                            int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode make_entities_multishared(Range &entities,
+                                           const int my_proc = 0,
                                            int verb = DEFAULT_VERBOSITY);
   /**@}*/
 

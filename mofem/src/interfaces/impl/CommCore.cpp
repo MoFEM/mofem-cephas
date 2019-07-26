@@ -307,7 +307,7 @@ MoFEMErrorCode Core::resolve_shared_ents(const std::string &name,
 }
 
 MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
-                                               const int num_entities,
+                                               const int num_entities, const int my_proc,
                                                int verb) {
   MoFEMFunctionBegin;
 
@@ -319,10 +319,10 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
 
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
-  CHKERR MPI_Bcast(&*all_ents_vec.begin(), num_entities, MPI_UNSIGNED, 0,
-                   MPI_COMM_WORLD);
-  cerr << "my ent is: 1" << pcomm->rank() << " - " << all_ents_vec[0]
-       << endl;
+  CHKERR MPI_Bcast(&*all_ents_vec.begin(), num_entities, MPI_UNSIGNED_LONG, my_proc,
+                   get_comm());
+                   
+  cerr << "my ent is: 1" << pcomm->rank() << " - " << all_ents_vec[0] << endl;
   if (pcomm->size() == 1)
     ;
   MoFEMFunctionReturnHot(0);
@@ -374,10 +374,10 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::make_entities_multishared(Range &entities, int verb) {
+MoFEMErrorCode Core::make_entities_multishared(Range &entities, const int my_proc, int verb) {
   MoFEMFunctionBegin;
   const int num_ents = entities.size();
-  CHKERR Core::make_entities_multishared(&*entities.begin(), num_ents, verb);
+  CHKERR Core::make_entities_multishared(&*entities.begin(), num_ents, my_proc, verb);
   MoFEMFunctionReturn(0);
 }
 

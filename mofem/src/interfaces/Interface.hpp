@@ -1283,22 +1283,25 @@ struct CoreInterface : public UnknownInterface {
  * 
  * @param entities 
  * @param num_entities 
+ * @param my_proc default proc id to share from 
  * @param verb 
  * @return MoFEMErrorCode 
  */
   virtual MoFEMErrorCode
   make_entities_multishared(const EntityHandle *entities,
-                            const int num_entities,
+                            const int num_entities, const int my_proc = 0,
                             int verb = DEFAULT_VERBOSITY) = 0;
   /**
    * @brief make entities from proc 0 shared on all proc
    *
    * @param entities
+   * @param my_proc default proc id to share from 
    * @param verb
    * @return MoFEMErrorCode
    */
   virtual MoFEMErrorCode
-  make_entities_multishared(Range &entities, int verb = DEFAULT_VERBOSITY) = 0;
+  make_entities_multishared(Range &entities, const int my_proc = 0,
+                            int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
    * \brief add finite elements to the meshset
