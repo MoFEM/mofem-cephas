@@ -388,6 +388,12 @@ protected:
                                            const bool recursive = true,
                                            int verb = DEFAULT_VERBOSITY);
 
+  MoFEMErrorCode create_vertices_and_add_to_field(const std::string name,
+                                                  const BitRefLevel bit,
+                                                  const double coords[],
+                                                  int size,
+                                                  int verb = DEFAULT_VERBOSITY);
+
   /// \name Set approximation order
 
   MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,

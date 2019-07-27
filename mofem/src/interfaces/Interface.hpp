@@ -426,6 +426,28 @@ struct CoreInterface : public UnknownInterface {
                             int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
+   * @brief Create a vertices and add to field object
+   *
+   * Create vertices and add them to field. Those vertices would be carring
+   * DOFs of the filed.
+   * 
+   * \note This function is typically used when NOFIELD is created, for example
+   * load factor in arc-length control.
+   *
+   * @param name name of the field
+   * @param bit bit ref level of the created vertices
+   * @param coords of the vertices
+   * @param size number of vertices
+   * @param verb verbosity level
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode create_vertices_and_add_to_field(const std::string name,
+                                                  const BitRefLevel bit,
+                                                  const double coords[],
+                                                  int size,
+                                                  int verb = DEFAULT_VERBOSITY);
+
+  /**
    * \brief remove entities from field
    * \ingroup mofem_field
    *
