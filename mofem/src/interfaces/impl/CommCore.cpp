@@ -52,25 +52,24 @@ MoFEMErrorCode Core::synchronise_entities(Range &ents, int verb) {
     for (int proc = 0;
          proc < MAX_SHARING_PROCS && -1 != (*meit)->getSharingProcsPtr()[proc];
          proc++) {
-      if ((*meit)->getSharingProcsPtr()[proc] == -1) {
+      if ((*meit)->getSharingProcsPtr()[proc] == -1)
         SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
                 "sharing processor not set");
-      }
-      if ((*meit)->getSharingProcsPtr()[proc] == rAnk) {
+
+      if ((*meit)->getSharingProcsPtr()[proc] == rAnk)
         continue;
-      }
+
       EntityHandle handle_on_sharing_proc =
           (*meit)->getSharingHandlersPtr()[proc];
       sbuffer[(*meit)->getSharingProcsPtr()[proc]].push_back(
           handle_on_sharing_proc);
-      if (verb >= NOISY) {
+      if (verb >= NOISY)
         PetscSynchronizedPrintf(cOmm, "send %lu (%lu) to %d at %d\n",
                                 (*meit)->getRefEnt(), handle_on_sharing_proc,
                                 (*meit)->getSharingProcsPtr()[proc], rAnk);
-      }
-      if (!(pstatus & PSTATUS_MULTISHARED)) {
+
+      if (!(pstatus & PSTATUS_MULTISHARED))
         break;
-      }
     }
   }
 
@@ -138,13 +137,12 @@ MoFEMErrorCode Core::synchronise_entities(Range &ents, int verb) {
   }
 
   // Wait for received
-  if (nrecvs) {
+  if (nrecvs)
     CHKERR MPI_Waitall(nrecvs, r_waits, &status[0]);
-  }
+
   // Wait for send messages
-  if (nsends) {
+  if (nsends)
     CHKERR MPI_Waitall(nsends, s_waits, &status[0]);
-  }
 
   if (verb >= VERY_VERBOSE) {
     PetscSynchronizedPrintf(cOmm, "Rank %d nb. before ents %u\n", rAnk,
@@ -163,24 +161,23 @@ MoFEMErrorCode Core::synchronise_entities(Range &ents, int verb) {
       bcopy(&data_from_proc[ee], &ent, sizeof(EntityHandle));
       RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator meit;
       meit = refinedEntities.get<Ent_mi_tag>().find(ent);
-      if (meit == refinedEntities.get<Ent_mi_tag>().end()) {
+      if (meit == refinedEntities.get<Ent_mi_tag>().end())
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "rank %d entity %lu not exist on database, local entity can "
                  "not be found for this owner",
                  rAnk, ent);
-      }
-      if (verb >= VERY_VERBOSE) {
+
+      if (verb >= VERY_VERBOSE)
         PetscSynchronizedPrintf(cOmm, "received %ul (%ul) from %d at %d\n",
                                 (*meit)->getRefEnt(), ent, onodes[kk], rAnk);
-      }
+
       ents.insert((*meit)->getRefEnt());
     }
   }
 
-  if (verb >= VERBOSE) {
+  if (verb >= VERBOSE)
     PetscSynchronizedPrintf(cOmm, "Rank %d nb. after ents %u\n", rAnk,
                             ents.size());
-  }
 
   // Cleaning
   CHKERR PetscFree(s_waits);
@@ -190,9 +187,8 @@ MoFEMErrorCode Core::synchronise_entities(Range &ents, int verb) {
   CHKERR PetscFree(onodes);
   CHKERR PetscFree(olengths);
 
-  if (verb >= VERBOSE) {
+  if (verb >= VERBOSE)
     PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-  }
 
   MoFEMFunctionReturn(0);
 }
@@ -215,7 +211,6 @@ MoFEMErrorCode Core::synchronise_field_entities(const std::string &name,
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  *buildMoFEM = 0;
   CHKERR synchronise_field_entities(getBitFieldId(name), verb);
   MoFEMFunctionReturn(0);
 }
@@ -262,18 +257,20 @@ MoFEMErrorCode Core::resolve_shared_finite_elements(const Problem *problem_ptr,
       } else {
         pstatus |= PSTATUS_SHARED;
       }
-      int rrr = 0;
-      for (unsigned int rr = 0; rr < pcomm->size(); rr++) {
+      size_t rrr = 0;
+      for (size_t rr = 0; rr < pcomm->size(); ++rr) {
         if (rr != pcomm->rank()) {
           shhandles[rrr] = ent;
           shprocs[rrr] = rr;
-          rrr++;
+          ++rrr;
         }
-        shprocs[rrr] = -1;
       }
+      for (; rrr != pcomm->size(); ++rrr)
+        shprocs[rrr] = -1;
+
       if (pstatus & PSTATUS_SHARED) {
-        CHKERR
-        get_moab().tag_set_data(pcomm->sharedp_tag(), &ent, 1, &shprocs[0]);
+        CHKERR get_moab().tag_set_data(pcomm->sharedp_tag(), &ent, 1,
+                                       &shprocs[0]);
         CHKERR get_moab().tag_set_data(pcomm->sharedh_tag(), &ent, 1,
                                        &shhandles[0]);
       }
@@ -294,92 +291,131 @@ MoFEMErrorCode Core::resolve_shared_finite_elements(const std::string &name,
                                                     const std::string &fe_name,
                                                     int verb) {
   MoFEMFunctionBegin;
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type
-      Problem_multiIndex_by_name;
   // find p_miit
-  Problem_multiIndex_by_name &problems_set = pRoblems.get<Problem_mi_tag>();
-  Problem_multiIndex_by_name::iterator p_miit = problems_set.find(name);
-  if (p_miit == problems_set.end()) {
-    SETERRQ1(PETSC_COMM_SELF, 1,
+  auto p_miit = pRoblems.get<Problem_mi_tag>().find(name);
+  if (p_miit == pRoblems.get<Problem_mi_tag>().end())
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "problem with name < %s > not defined (top tip check spelling)",
              name.c_str());
-  }
   CHKERR resolve_shared_finite_elements(&*p_miit, fe_name, verb);
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
-                                               const int num_entities, const int my_proc,
-                                               int verb) {
+                                               const int num_entities,
+                                               const int own_proc, int verb) {
   MoFEMFunctionBegin;
 
-  const EntityHandle *ent = entities;
-  const EntityHandle *const end = entities + num_entities;
-  std::vector<EntityHandle> all_ents_vec(ent, end);
-  // Range all_ents;
-  // all_ents.insert(ent, end);
+  if (sIze > 1) {
 
-  ParallelComm *pcomm =
-      ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
-  CHKERR MPI_Bcast(&*all_ents_vec.begin(), num_entities, MPI_UNSIGNED_LONG, my_proc,
-                   get_comm());
-                   
-  cerr << "my ent is: 1" << pcomm->rank() << " - " << all_ents_vec[0] << endl;
-  if (pcomm->size() == 1)
-    ;
-  MoFEMFunctionReturnHot(0);
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
 
-  // CHKERR pcomm->broadcast_entities(0, all_ents);
+    const EntityHandle *ent = entities;
+    const EntityHandle *const end = entities + num_entities;
+    std::vector<EntityHandle> all_ents_vec(ent, end);
 
-  std::vector<int> shprocs(MAX_SHARING_PROCS, 0);
-  std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, 0);
+    const size_t block_size = sizeof(EntityHandle) / sizeof(int);
 
-  //   if (pcomm->rank() == 0) {
-  //  }
-  // loop entities
-  unsigned char pstatus = 0;
+    int tag;
+    CHKERR PetscCommGetNewTag(cOmm, &tag);
 
-  if (pcomm->size() > 1) {
-    pstatus = PSTATUS_NOT_OWNED;
-    pstatus |= PSTATUS_SHARED;
-  } else {
-    pstatus = PSTATUS_NOT_OWNED;
-    pstatus |= PSTATUS_MULTISHARED;
-  }
-
-  for (auto &eit : all_ents_vec) {
-
-    int rrr = 0;
-    for (unsigned int rr = 0; rr < pcomm->size(); rr++) {
-      if (rr != pcomm->rank()) {
-        shhandles[rrr] = eit;
-        shprocs[rrr] = rr;
-        rrr++;
+    std::vector<EntityHandle> recv_ents_vec[sIze];
+    std::vector<MPI_Request> r_waits(sIze); // must bee freed by user
+    for (int proc = 0, kk = 0; proc < sIze; ++proc) {
+      if (proc != rAnk) {
+        recv_ents_vec[proc].resize(all_ents_vec.size());
+        CHKERR MPI_Irecv(&*recv_ents_vec[proc].begin(), // buffer to send
+                         recv_ents_vec[proc].size() *
+                             block_size, // message length
+                         MPIU_INT, proc, // to proc
+                         tag, cOmm, &r_waits[kk]);
+        ++kk;
       }
-      shprocs[rrr] = -1;
     }
-    if (pstatus & PSTATUS_SHARED) {
-      CHKERR
-      get_moab().tag_set_data(pcomm->sharedp_tag(), &eit, 1, &shprocs[0]);
-      CHKERR get_moab().tag_set_data(pcomm->sharedh_tag(), &eit, 1,
-                                     &shhandles[0]);
+
+    std::vector<MPI_Request> s_waits(sIze); // status of sens messages
+    for (int proc = 0, kk = 0; proc < sIze; ++proc) {
+      if (proc != rAnk) {
+        CHKERR MPI_Isend(&*all_ents_vec.begin(),           // buffer to send
+                         all_ents_vec.size() * block_size, // message length
+                         MPIU_INT, proc,                   // to proc
+                         tag, cOmm, &s_waits[kk]);
+        ++kk;
+      }
     }
-    if (PSTATUS_MULTISHARED) {
-      CHKERR get_moab().tag_set_data(pcomm->sharedps_tag(), &eit, 1,
-                                     &shprocs[0]);
-      CHKERR get_moab().tag_set_data(pcomm->sharedhs_tag(), &eit, 1,
-                                     &shhandles[0]);
+
+    std::vector<MPI_Status> status(sIze);
+
+    // Wait for received
+    CHKERR MPI_Waitall(sIze - 1, &*r_waits.begin(), &*status.begin());
+
+    // Wait for send messages
+    CHKERR MPI_Waitall(sIze - 1, &*s_waits.begin(), &*status.begin());
+
+    unsigned char pstatus = 0;
+
+    if (rAnk != own_proc) {
+      pstatus = PSTATUS_NOT_OWNED;
+      pstatus |= PSTATUS_SHARED;
+    } else {
+      pstatus = PSTATUS_NOT_OWNED;
+      pstatus |= PSTATUS_MULTISHARED;
     }
-    CHKERR get_moab().tag_set_data(pcomm->pstatus_tag(), &eit, 1, &pstatus);
+
+    if (pcomm->size() != sIze)
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_NOT_IMPLEMENTED,
+              "Implementation that size of PComm and MoFEM are diffrent not "
+              "implemented");
+
+    std::vector<int> shprocs(MAX_SHARING_PROCS, 0);
+    std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, 0);
+
+    for (int e = 0; e != all_ents_vec.size(); ++e) {
+
+      size_t rrr = 0;
+      for (size_t rr = 0; rr < sIze; ++rr) {
+        if (rr != rAnk) {
+          shhandles[rrr] = (recv_ents_vec[rr])[e];
+          shprocs[rrr] = rr;
+          ++rrr;
+        }
+      }
+      for (; rrr != sIze; ++rrr)
+        shprocs[rrr] = -1;
+
+      if (pstatus & PSTATUS_SHARED) {
+        CHKERR get_moab().tag_set_data(pcomm->sharedp_tag(), &all_ents_vec[e],
+                                       1, &shprocs[0]);
+        CHKERR get_moab().tag_set_data(pcomm->sharedh_tag(), &all_ents_vec[e],
+                                       1, &shhandles[0]);
+      }
+
+      if (PSTATUS_MULTISHARED) {
+        CHKERR get_moab().tag_set_data(pcomm->sharedps_tag(), &all_ents_vec[e],
+                                       1, &shprocs[0]);
+        CHKERR get_moab().tag_set_data(pcomm->sharedhs_tag(), &all_ents_vec[e],
+                                       1, &shhandles[0]);
+      }
+
+      CHKERR get_moab().tag_set_data(pcomm->pstatus_tag(), &all_ents_vec[e], 1,
+                                     &pstatus);
+    }
   }
 
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::make_entities_multishared(Range &entities, const int my_proc, int verb) {
+MoFEMErrorCode Core::make_entities_multishared(Range &entities,
+                                               const int own_proc, int verb) {
   MoFEMFunctionBegin;
-  const int num_ents = entities.size();
-  CHKERR Core::make_entities_multishared(&*entities.begin(), num_ents, my_proc, verb);
+  if (sIze > 1) {
+    const int num_ents = entities.size();
+    std::vector<EntityHandle> vec_ents(num_ents);
+    std::copy(entities.begin(), entities.end(), vec_ents.begin());
+    CHKERR make_entities_multishared(&*vec_ents.begin(), num_ents, own_proc,
+                                     verb);
+  }
   MoFEMFunctionReturn(0);
 }
 
