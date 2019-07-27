@@ -173,7 +173,7 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middle_of_edges(
     {
       ReadUtilIface *iface;
       CHKERR moab.query_interface(iface);
-      CHKERR iface->get_node_coords(3, num_nodes, start_v, startv,
+      CHKERR iface->get_node_coords(3, num_nodes, 0, startv,
                                     arrays_coord);
     }
     Range verts(startv, startv + num_nodes - 1);
