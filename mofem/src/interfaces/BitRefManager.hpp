@@ -95,10 +95,8 @@ struct BitRefManager : public UnknownInterface {
    * @brief add entities to database and set bit ref level
    * \ingroup mofem_bit_ref
    *
-   * \note behaviour of this method is different than when bit ref level is
-   * passed as reference. When is bit ref level is passed by reference lower
-   * dimension entities adjacent to entities are added to database. In THIS
-   * variant only entities in range are added.
+   * \note In THIS variant only entities in range are added and ref finite
+   * elements reated.
    *
    * @param ents
    * @param bit
@@ -114,10 +112,8 @@ struct BitRefManager : public UnknownInterface {
    * @brief add entities to database and set bit ref level
    * \ingroup mofem_bit_ref
    *
-   * \note behaviour of this method is different than when bit ref level is
-   * passed as reference. When is bit ref level is passed by reference lower
-   * dimension entities adjacent to entities are added to database. In THIS
-   * variant only entities in range are added. And DO NOT create elements.
+   * \note In THIS variant only entities in range are added. And DO NOT create
+   * elements.
    *
    * @param ents
    * @param bit
@@ -129,10 +125,34 @@ struct BitRefManager : public UnknownInterface {
                                         const BitRefLevel bit = BitRefLevel(),
                                         int verb = QUIET) const;
 
+  /**
+   * @brief Set the Bit Ref Level By Dim object
+   *
+   * \note In THIS variant only entities in range are added. And DO NOT create
+   * elements.
+   *
+   * @param meshset
+   * @param dim
+   * @param bit
+   * @param verb
+   * @return MoFEMErrorCode
+   */
   MoFEMErrorCode setBitRefLevelByDim(const EntityHandle meshset, const int dim,
                                      const BitRefLevel bit,
                                      int verb = QUIET) const;
 
+  /**
+   * @brief Set the Bit Ref Level By Type object
+   * 
+   * \note In THIS variant only entities in range are added. And DO NOT create
+   * elements.
+   * 
+   * @param meshset 
+   * @param type 
+   * @param bit 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode setBitRefLevelByType(const EntityHandle meshset,
                                       const EntityType type,
                                       const BitRefLevel bit,
