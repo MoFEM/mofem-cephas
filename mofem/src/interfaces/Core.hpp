@@ -657,8 +657,7 @@ protected:
                                                   int verb = DEFAULT_VERBOSITY);
   MoFEMErrorCode clear_finite_elements(const Range ents,
                                        int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode clear_finite_elements(const std::string name,
-                                       const Range ents,
+  MoFEMErrorCode clear_finite_elements(const std::string name, const Range ents,
                                        int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode
@@ -863,13 +862,21 @@ protected:
   MoFEMErrorCode resolve_shared_finite_elements(const Problem *problem_ptr,
                                                 const std::string &fe_name,
                                                 int verb = DEFAULT_VERBOSITY);
-                                                
+
   MoFEMErrorCode resolve_shared_finite_elements(const std::string &name,
-                                     const std::string &fe_name,
-                                     int verb = DEFAULT_VERBOSITY);
+                                                const std::string &fe_name,
+                                                int verb = DEFAULT_VERBOSITY);
+
+  MoFEMErrorCode make_entities_multishared(const EntityHandle *entities,
+                                           const int num_entities,
+                                           const int my_proc = 0,
+                                           int verb = DEFAULT_VERBOSITY);
+                                           
+  MoFEMErrorCode make_entities_multishared(Range &entities,
+                                           const int my_proc = 0,
+                                           int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
-
 
   /** \name Synchronize entities (Following functions in future will be
    * deprecated) */
@@ -885,7 +892,6 @@ protected:
   /**@}*/
 
 private:
-
   struct WrapMPIComm {
     WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm)
         : comm(comm), duplicatedComm(duplicated_comm) {
@@ -896,6 +902,7 @@ private:
       ierr = PetscCommDestroy(&duplicatedComm);
       CHKERRABORT(comm, ierr);
     }
+
   private:
     MPI_Comm &comm;
     MPI_Comm &duplicatedComm;
@@ -949,8 +956,8 @@ private:
 
   /**
    * @brief Register insterfaces
-   * 
-   * @return MoFEMErrorCode 
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode registerSubInterfaces();
 
