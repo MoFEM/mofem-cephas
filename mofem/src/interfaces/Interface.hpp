@@ -178,6 +178,8 @@ struct CoreInterface : public UnknownInterface {
   /**
    * @brief make entities from proc 0 shared on all proc
    *
+   * \note collective - need tu be run on all processors in communicator
+   * 
    * @param entities
    * @param num_entities
    * @param my_proc default proc id to share from
@@ -191,6 +193,8 @@ struct CoreInterface : public UnknownInterface {
   /**
    * @brief make entities from proc 0 shared on all proc
    *
+   * \note collective - need tu be run on all processors in communicator
+   * 
    * @param entities
    * @param my_proc default proc id to share from
    * @param verb
@@ -202,6 +206,8 @@ struct CoreInterface : public UnknownInterface {
 
   /**
    * @brief make field entities multi shared
+   * 
+   * \note collective - need tu be run on all processors in communicator
    * 
    * @param field_name 
    * @param owner_proc 
@@ -221,6 +227,8 @@ struct CoreInterface : public UnknownInterface {
    * entities vector is empty, all shared entities participate in the exchange.
    * If a proc has no owned entities this function must still be called since it
    * is collective.
+   * 
+   * \note collective - need tu be run on all processors in communicator
    * 
    * \todo It is not working if field has entities diffrent than vertices. 
    * 
@@ -247,7 +255,7 @@ struct CoreInterface : public UnknownInterface {
   /** synchronize entity range on processors (collective)
   * \ingroup mofem_field
 
-  collective - need tu be run on all processors in communicator
+  \note collective - need tu be run on all processors in communicator
 
   \param id field
   \param verbose level

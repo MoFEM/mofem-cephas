@@ -245,18 +245,22 @@ MoFEMErrorCode Core::resolve_shared_finite_elements(const Problem *problem_ptr,
     }
     shprocs.clear();
     shhandles.clear();
+
     if (pcomm->size() > 1) {
+
       unsigned char pstatus = 0;
       if (pcomm->rank() != part) {
         pstatus = PSTATUS_NOT_OWNED;
         pstatus |= PSTATUS_GHOST;
       }
+
       if (pcomm->size() > 2) {
         pstatus |= PSTATUS_SHARED;
         pstatus |= PSTATUS_MULTISHARED;
       } else {
         pstatus |= PSTATUS_SHARED;
       }
+      
       size_t rrr = 0;
       for (size_t rr = 0; rr < pcomm->size(); ++rr) {
         if (rr != pcomm->rank()) {
@@ -274,7 +278,8 @@ MoFEMErrorCode Core::resolve_shared_finite_elements(const Problem *problem_ptr,
         CHKERR get_moab().tag_set_data(pcomm->sharedh_tag(), &ent, 1,
                                        &shhandles[0]);
       }
-      if (PSTATUS_MULTISHARED) {
+
+      if (pstatus & PSTATUS_MULTISHARED) {
         CHKERR get_moab().tag_set_data(pcomm->sharedps_tag(), &ent, 1,
                                        &shprocs[0]);
         CHKERR get_moab().tag_set_data(pcomm->sharedhs_tag(), &ent, 1,
