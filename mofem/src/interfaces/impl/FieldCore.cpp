@@ -339,7 +339,6 @@ MoFEMErrorCode Core::add_ents_to_field_by_type(const EntityHandle meshset,
 }
 
 MoFEMErrorCode Core::create_vertices_and_add_to_field(const std::string name,
-                                                      const BitRefLevel bit,
                                                       const double coords[],
                                                       int size, int verb) {
   MoFEMFunctionBegin;
@@ -367,16 +366,13 @@ MoFEMErrorCode Core::create_vertices_and_add_to_field(const std::string name,
 
   auto add_verts_to_field = [&]() {
     MoFEMFunctionBegin;
-    EntityHandle field_meshset = get_field_meshset("LAMBDA");
+    EntityHandle field_meshset = get_field_meshset(name);
     CHKERR get_moab().add_entities(field_meshset, verts);
     MoFEMFunctionReturn(0);
   };
 
   CHKERR create_vertices();
   CHKERR add_verts_to_field();
-
-  if(bit.any())
-    getInterface<BitRefManager>()->setEntitiesBitRefLevel(verts, bit, verb);
 
   MoFEMFunctionReturn(0);
  }

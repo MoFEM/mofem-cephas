@@ -389,7 +389,6 @@ protected:
                                            int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode create_vertices_and_add_to_field(const std::string name,
-                                                  const BitRefLevel bit,
                                                   const double coords[],
                                                   int size,
                                                   int verb = DEFAULT_VERBOSITY);
@@ -875,12 +874,16 @@ protected:
 
   MoFEMErrorCode make_entities_multishared(const EntityHandle *entities,
                                            const int num_entities,
-                                           const int own_proc = 0,
+                                           const int owner_proc = 0,
                                            int verb = DEFAULT_VERBOSITY);
                                            
   MoFEMErrorCode make_entities_multishared(Range &entities,
-                                           const int own_proc = 0,
+                                           const int owner_proc = 0,
                                            int verb = DEFAULT_VERBOSITY);
+
+  MoFEMErrorCode make_field_entities_multishared(const std::string field_name,
+                                                 const int owner_proc = 0,
+                                                 int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
 

@@ -126,6 +126,19 @@ struct BitRefManager : public UnknownInterface {
                                         int verb = QUIET) const;
 
   /**
+   * @brief Set the bit ref level to entities in the field meshset
+   * 
+   * @param field_name 
+   * @param bit 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode
+  setFieldEntitiesBitRefLevel(const std::string field_name,
+                              const BitRefLevel bit = BitRefLevel(),
+                              int verb = QUIET) const;
+
+  /**
    * @brief Set the Bit Ref Level By Dim object
    *
    * \note In THIS variant only entities in range are added. And DO NOT create

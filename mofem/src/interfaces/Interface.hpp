@@ -441,11 +441,10 @@ struct CoreInterface : public UnknownInterface {
    * @param verb verbosity level
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode create_vertices_and_add_to_field(const std::string name,
-                                                  const BitRefLevel bit,
-                                                  const double coords[],
-                                                  int size,
-                                                  int verb = DEFAULT_VERBOSITY);
+  virtual MoFEMErrorCode
+  create_vertices_and_add_to_field(const std::string name,
+                                   const double coords[], int size,
+                                   int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
    * \brief remove entities from field
@@ -1326,6 +1325,19 @@ struct CoreInterface : public UnknownInterface {
   virtual MoFEMErrorCode
   make_entities_multishared(Range &entities, const int my_proc = 0,
                             int verb = DEFAULT_VERBOSITY) = 0;
+
+  /**
+   * @brief make field entities multi shared
+   * 
+   * @param field_name 
+   * @param owner_proc 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode
+  make_field_entities_multishared(const std::string field_name,
+                                  const int owner_proc = 0,
+                                  int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
    * \brief add finite elements to the meshset

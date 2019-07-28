@@ -356,6 +356,18 @@ MoFEMErrorCode BitRefManager::setEntitiesBitRefLevel(const Range &ents,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode BitRefManager::setFieldEntitiesBitRefLevel(
+    const std::string field_name, const BitRefLevel bit, int verb) const {
+  MoFEM::Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  EntityHandle field_meshset = m_field.get_field_meshset(field_name);
+  Range field_ents;
+  CHKERR m_field.get_moab().get_entities_by_handle(field_meshset, field_ents,
+                                                   true);
+  CHKERR setEntitiesBitRefLevel(field_ents, bit, verb);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByType(
     const EntityType type, const BitRefLevel bit, const BitRefLevel mask,
     int verb) const {

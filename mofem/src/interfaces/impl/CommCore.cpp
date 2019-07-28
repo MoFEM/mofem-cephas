@@ -303,17 +303,30 @@ MoFEMErrorCode Core::resolve_shared_finite_elements(const std::string &name,
 
 MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
                                                const int num_entities,
-                                               const int own_proc, int verb) {
+                                               const int owner_proc, int verb) {
   MoFEMFunctionBegin;
 
   if (sIze > 1) {
 
     ParallelComm *pcomm =
         ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
-
     const EntityHandle *ent = entities;
     const EntityHandle *const end = entities + num_entities;
     std::vector<EntityHandle> all_ents_vec(ent, end);
+    
+    auto print_vec = [&](auto name, auto &vec) {
+      std::ostringstream ss;
+      ss << "Proc " << rAnk << " ";
+      ss << "vector " << name << " [ ";
+      for (auto v : vec)
+        ss << v << " ";
+      ss << "]" << endl;
+      PetscSynchronizedPrintf(cOmm, "%s", ss.str().c_str());
+      PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+    };
+
+    if (verb >= NOISY)
+      print_vec("all_ents_vec", all_ents_vec);
 
     const size_t block_size = sizeof(EntityHandle) / sizeof(int);
 
@@ -353,15 +366,25 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
     // Wait for send messages
     CHKERR MPI_Waitall(sIze - 1, &*s_waits.begin(), &*status.begin());
 
+    if (verb >= NOISY) {
+      for (int proc = 0, kk = 0; proc < sIze; ++proc) {
+        if (proc != rAnk) {
+          print_vec("recv_ents_vec received from " +
+                        boost::lexical_cast<std::string>(proc),
+                    recv_ents_vec[proc]);
+        }
+      }
+    }
+
     unsigned char pstatus = 0;
 
-    if (rAnk != own_proc) {
+    if (rAnk != owner_proc)
       pstatus = PSTATUS_NOT_OWNED;
+
+    if (sIze == 2)
       pstatus |= PSTATUS_SHARED;
-    } else {
-      pstatus = PSTATUS_NOT_OWNED;
+    else
       pstatus |= PSTATUS_MULTISHARED;
-    }
 
     if (pcomm->size() != sIze)
       SETERRQ(PETSC_COMM_WORLD, MOFEM_NOT_IMPLEMENTED,
@@ -374,14 +397,21 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
     for (int e = 0; e != all_ents_vec.size(); ++e) {
 
       size_t rrr = 0;
+      if (rAnk != owner_proc) {
+        shhandles[rrr] = (recv_ents_vec[owner_proc])[e];
+        shprocs[rrr] = owner_proc;
+        ++rrr;
+      }
+
       for (size_t rr = 0; rr < sIze; ++rr) {
-        if (rr != rAnk) {
+        if (rr != owner_proc && rr != rAnk) {
           shhandles[rrr] = (recv_ents_vec[rr])[e];
           shprocs[rrr] = rr;
           ++rrr;
         }
       }
-      for (; rrr != sIze; ++rrr)
+
+      for (; rrr != MAX_SHARING_PROCS; ++rrr)
         shprocs[rrr] = -1;
 
       if (pstatus & PSTATUS_SHARED) {
@@ -389,9 +419,7 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
                                        1, &shprocs[0]);
         CHKERR get_moab().tag_set_data(pcomm->sharedh_tag(), &all_ents_vec[e],
                                        1, &shhandles[0]);
-      }
-
-      if (PSTATUS_MULTISHARED) {
+      } else if (pstatus & PSTATUS_MULTISHARED) {
         CHKERR get_moab().tag_set_data(pcomm->sharedps_tag(), &all_ents_vec[e],
                                        1, &shprocs[0]);
         CHKERR get_moab().tag_set_data(pcomm->sharedhs_tag(), &all_ents_vec[e],
@@ -400,6 +428,53 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
 
       CHKERR get_moab().tag_set_data(pcomm->pstatus_tag(), &all_ents_vec[e], 1,
                                      &pstatus);
+
+      auto check_owner = [&]() {
+        MoFEMFunctionBegin;
+        int moab_owner_proc;
+        EntityHandle moab_owner_handle;
+        CHKERR pcomm->get_owner_handle(all_ents_vec[e], moab_owner_proc,
+                                       moab_owner_handle);
+        if (owner_proc != moab_owner_proc)
+          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "%d != %d",
+                   owner_proc, moab_owner_proc);
+        if (rAnk != owner_proc)
+          if (recv_ents_vec[owner_proc][e] != moab_owner_handle)
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "%lu != %lu",
+                     recv_ents_vec[owner_proc][e], moab_owner_handle);
+        MoFEMFunctionReturn(0);
+      };
+
+      auto print_owner = [&]() {
+        MoFEMFunctionBegin;
+        int moab_owner_proc;
+        EntityHandle moab_owner_handle;
+        CHKERR pcomm->get_owner_handle(all_ents_vec[e], moab_owner_proc,
+                                       moab_owner_handle);
+
+        std::ostringstream ss;
+
+        ss << "Rank " << rAnk << " ";
+        if (!(pstatus & PSTATUS_NOT_OWNED))
+          ss << "OWNER ";
+        if (pstatus & PSTATUS_SHARED)
+          ss << "PSTATUS_SHARED ";
+        else if (pstatus & PSTATUS_MULTISHARED)
+          ss << "PSTATUS_MULTISHARED ";
+
+        ss << "owner " << moab_owner_proc << " (" << owner_proc << ") ";
+
+        ss << std::endl;
+        PetscSynchronizedPrintf(cOmm, "%s", ss.str().c_str());
+        PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+
+        MoFEMFunctionReturn(0);
+      };
+
+      if (verb >= NOISY)
+        CHKERR print_owner();
+
+      CHKERR check_owner();
     }
   }
 
@@ -407,14 +482,28 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
 }
 
 MoFEMErrorCode Core::make_entities_multishared(Range &entities,
-                                               const int own_proc, int verb) {
+                                               const int owner_proc, int verb) {
   MoFEMFunctionBegin;
   if (sIze > 1) {
     const int num_ents = entities.size();
     std::vector<EntityHandle> vec_ents(num_ents);
     std::copy(entities.begin(), entities.end(), vec_ents.begin());
-    CHKERR make_entities_multishared(&*vec_ents.begin(), num_ents, own_proc,
+    CHKERR make_entities_multishared(&*vec_ents.begin(), num_ents, owner_proc,
                                      verb);
+  }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+Core::make_field_entities_multishared(const std::string field_name,
+                                      const int owner_proc, int verb) {
+  MoFEMFunctionBegin;
+  if (sIze > 1) {
+    EntityHandle field_meshset = get_field_meshset(field_name);
+    std::vector<EntityHandle> field_ents;
+    CHKERR get_moab().get_entities_by_handle(field_meshset, field_ents, true);
+    CHKERR make_entities_multishared(&*field_ents.begin(), field_ents.size(),
+                                     owner_proc, verb);
   }
   MoFEMFunctionReturn(0);
 }
