@@ -934,6 +934,7 @@ add_test(dm_build_partitioned_mesh_atom_compare ${CMAKE_COMMAND} -E compare_file
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_build_partitioned_mesh.txt
 )
 
+cm_export_file("disp01_3parts.h5m" export_atom_tests)
 my_add_executable(dm_partitioned_no_field dm_partitioned_no_field.cpp)
 target_link_libraries(dm_partitioned_no_field
   mofem_finite_elements
@@ -945,9 +946,14 @@ target_link_libraries(dm_partitioned_no_field
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(dm_partitioned_noi_field_atom
+add_test(dm_partitioned_no_field_2parts
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
   ${CMAKE_CURRENT_BINARY_DIR}/dm_partitioned_no_field -my_file disp01_2parts.h5m 
+  -dm_is_partitioned
+)
+add_test(dm_partitioned_no_field_3parts
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 3
+  ${CMAKE_CURRENT_BINARY_DIR}/dm_partitioned_no_field -my_file disp01_3parts.h5m 
   -dm_is_partitioned
 )
 

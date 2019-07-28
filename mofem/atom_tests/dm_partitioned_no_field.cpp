@@ -1,6 +1,6 @@
 /** \file dm_build_partitioned_mesh.cpp
-  \example dm_build_partitioned_mesh.cpp
-  \brief Testing problem for partitioned mesh with no field
+  \example dm_partitioned_no_field.cpp
+  \brief Testing problem for partitioned mesh with NOFIELD field
 
 */
 
@@ -53,10 +53,10 @@ int main(int argc, char *argv[]) {
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
-    const char *option;
-    option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION="
-             "PARALLEL_PARTITION;";
-    CHKERR moab.load_file(mesh_file_name, 0, option);
+    const std::string options = "PARALLEL=READ_PART;"
+                                "PARALLEL_RESOLVE_SHARED_ENTS;"
+                                "PARTITION=PARALLEL_PARTITION;";
+    CHKERR moab.load_file(mesh_file_name, 0, options.c_str());
 
     MoFEM::Core core(moab, PETSC_COMM_WORLD);
     MoFEM::Interface &m_field = core;
