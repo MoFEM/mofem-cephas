@@ -334,11 +334,11 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
     CHKERR PetscCommGetNewTag(cOmm, &tag);
 
     std::vector<EntityHandle> recv_ents_vec[sIze];
-    std::vector<MPI_Request> r_waits(sIze); // must bee freed by user
+    std::vector<MPI_Request> r_waits(sIze); 
     for (int proc = 0, kk = 0; proc < sIze; ++proc) {
       if (proc != rAnk) {
         recv_ents_vec[proc].resize(all_ents_vec.size());
-        CHKERR MPI_Irecv(&*recv_ents_vec[proc].begin(), // buffer to send
+        CHKERR MPI_Irecv(&*recv_ents_vec[proc].begin(), // buffer to receive
                          recv_ents_vec[proc].size() *
                              block_size, // message length
                          MPIU_INT, proc, // to proc
@@ -347,7 +347,7 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
       }
     }
 
-    std::vector<MPI_Request> s_waits(sIze); // status of sens messages
+    std::vector<MPI_Request> s_waits(sIze); // status of send messages
     for (int proc = 0, kk = 0; proc < sIze; ++proc) {
       if (proc != rAnk) {
         CHKERR MPI_Isend(&*all_ents_vec.begin(),           // buffer to send
@@ -429,22 +429,6 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
       CHKERR get_moab().tag_set_data(pcomm->pstatus_tag(), &all_ents_vec[e], 1,
                                      &pstatus);
 
-      auto check_owner = [&]() {
-        MoFEMFunctionBegin;
-        int moab_owner_proc;
-        EntityHandle moab_owner_handle;
-        CHKERR pcomm->get_owner_handle(all_ents_vec[e], moab_owner_proc,
-                                       moab_owner_handle);
-        if (owner_proc != moab_owner_proc)
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "%d != %d",
-                   owner_proc, moab_owner_proc);
-        if (rAnk != owner_proc)
-          if (recv_ents_vec[owner_proc][e] != moab_owner_handle)
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "%lu != %lu",
-                     recv_ents_vec[owner_proc][e], moab_owner_handle);
-        MoFEMFunctionReturn(0);
-      };
-
       auto print_owner = [&]() {
         MoFEMFunctionBegin;
         int moab_owner_proc;
@@ -473,6 +457,22 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
 
       if (verb >= NOISY)
         CHKERR print_owner();
+
+      auto check_owner = [&]() {
+        MoFEMFunctionBegin;
+        int moab_owner_proc;
+        EntityHandle moab_owner_handle;
+        CHKERR pcomm->get_owner_handle(all_ents_vec[e], moab_owner_proc,
+                                       moab_owner_handle);
+        if (owner_proc != moab_owner_proc)
+          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "%d != %d",
+                   owner_proc, moab_owner_proc);
+        if (rAnk != owner_proc)
+          if (recv_ents_vec[owner_proc][e] != moab_owner_handle)
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "%lu != %lu",
+                     recv_ents_vec[owner_proc][e], moab_owner_handle);
+        MoFEMFunctionReturn(0);
+      };
 
       CHKERR check_owner();
     }
