@@ -934,8 +934,8 @@ add_test(dm_build_partitioned_mesh_atom_compare ${CMAKE_COMMAND} -E compare_file
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_build_partitioned_mesh.txt
 )
 
-my_add_executable(dm_partitioned_noi_field dm_partitioned_noi_field.cpp)
-target_link_libraries(dm_partitioned_noi_field
+my_add_executable(dm_partitioned_no_field dm_partitioned_no_field.cpp)
+target_link_libraries(dm_partitioned_no_field
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -947,7 +947,7 @@ target_link_libraries(dm_partitioned_noi_field
 )
 add_test(dm_partitioned_noi_field_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
-  ${CMAKE_CURRENT_BINARY_DIR}/dm_partitioned_noi_field -my_file disp01_2parts.h5m 
+  ${CMAKE_CURRENT_BINARY_DIR}/dm_partitioned_no_field -my_file disp01_2parts.h5m 
   -dm_is_partitioned
 )
 
