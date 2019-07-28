@@ -75,6 +75,7 @@ int main(int argc, char *argv[]) {
 
     // set app. order
     CHKERR m_field.set_field_order(root_set, MBVERTEX, "FIELD", 1);
+
     // Create vertices for NOFILE
     std::array<double, 6> coords = {0, 0, 0, 0, 0, 0};
     CHKERR m_field.create_vertices_and_add_to_field("LAMBDA", coords.data(), 2);
@@ -85,18 +86,51 @@ int main(int argc, char *argv[]) {
     // build data structures for fields
     CHKERR m_field.build_fields();
 
-    const FieldEntity_multiIndex *field_ents;
-    CHKERR m_field.get_field_ents(&field_ents);
-    for (auto it = field_ents->get<FieldName_mi_tag>().lower_bound("LAMBDA");
-         it != field_ents->get<FieldName_mi_tag>().upper_bound("LAMBDA");
-         ++it) {
+    auto print_field_ents = [&](const std::string field_name) {
+      const FieldEntity_multiIndex *field_ents;
+      CHKERR m_field.get_field_ents(&field_ents);
+      for (auto it =
+               field_ents->get<FieldName_mi_tag>().lower_bound(field_name);
+           it != field_ents->get<FieldName_mi_tag>().upper_bound(field_name);
+           ++it) {
 
-      std::ostringstream ss;
-      ss << "Rank " << m_field.get_comm_rank() << " -> " << **it << endl;
-      PetscSynchronizedPrintf(m_field.get_comm(), "%s", ss.str().c_str());
-      PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+        std::ostringstream ss;
+        ss << "Rank " << m_field.get_comm_rank() << " -> " << **it << endl;
+        PetscSynchronizedPrintf(m_field.get_comm(), "%s", ss.str().c_str());
+        PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+      }
+    };
 
+    print_field_ents("LAMBDA");
+
+    if (m_field.get_comm_rank() == 0) {
+      CHKERR m_field.getInterface<FieldBlas>()->setField(1, "LAMBDA");
+      CHKERR m_field.getInterface<FieldBlas>()->setField(1, "FILED");
     }
+
+    CHKERR m_field.exchange_field_data("LAMBDA");
+    CHKERR m_field.exchange_field_data("FIELD");
+
+    auto check_exchanged_values = [&](const std::string field_name) {
+      MoFEMFunctionBegin;
+      if (m_field.get_comm_rank() != 0) {
+        const FieldEntity_multiIndex *field_ents;
+        CHKERR m_field.get_field_ents(&field_ents);
+        for (auto it =
+                 field_ents->get<FieldName_mi_tag>().lower_bound(field_name);
+             it != field_ents->get<FieldName_mi_tag>().upper_bound(field_name);
+             ++it) {
+          VectorDouble field_data = (*it)->getEntFieldData();
+          for (auto v : field_data)
+            if (v != 1)
+              SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                       "Wrong value on field %4.3f", v);
+        }
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR check_exchanged_values("LAMBDA");
 
     // define & build finite elements
     CHKERR m_field.add_finite_element("FE");

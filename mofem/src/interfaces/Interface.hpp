@@ -161,7 +161,7 @@ struct CoreInterface : public UnknownInterface {
   \code
   CHKERR m_field.resolve_shared_finite_elements(problem_ptr,"SHELL_ELEMENT");
   Tag th;
-  CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
+  CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th); 
   ParallelComm* pcomm =
   ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
   // CHKERR pcomm->reduce_tags(th,MPI_SUM,prisms);
@@ -175,6 +175,61 @@ struct CoreInterface : public UnknownInterface {
                                  const std::string &fe_name,
                                  int verb = DEFAULT_VERBOSITY) = 0;
 
+  /**
+   * @brief make entities from proc 0 shared on all proc
+   *
+   * @param entities
+   * @param num_entities
+   * @param my_proc default proc id to share from
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  virtual MoFEMErrorCode
+  make_entities_multishared(const EntityHandle *entities,
+                            const int num_entities, const int my_proc = 0,
+                            int verb = DEFAULT_VERBOSITY) = 0;
+  /**
+   * @brief make entities from proc 0 shared on all proc
+   *
+   * @param entities
+   * @param my_proc default proc id to share from
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  virtual MoFEMErrorCode
+  make_entities_multishared(Range &entities, const int my_proc = 0,
+                            int verb = DEFAULT_VERBOSITY) = 0;
+
+  /**
+   * @brief make field entities multi shared
+   * 
+   * @param field_name 
+   * @param owner_proc 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode
+  make_field_entities_multishared(const std::string field_name,
+                                  const int owner_proc = 0,
+                                  int verb = DEFAULT_VERBOSITY) = 0;
+
+  /** 
+   * @brief Exchange field data
+   * 
+   * Exchange field for all shared and ghosted entities. This function should be
+   * called collectively over the communicator for this ParallelComm. If the
+   * entities vector is empty, all shared entities participate in the exchange.
+   * If a proc has no owned entities this function must still be called since it
+   * is collective.
+   * 
+   * \todo It is not working if field has entities diffrent than vertices. 
+   * 
+   * @param verb 
+   * @param field_name @return MoFEMErrorCode
+   */
+  virtual MoFEMErrorCode exchange_field_data(const std::string field_name,
+                                             int verb = DEFAULT_VERBOSITY) = 0;
+                                             
   /**@}*/
 
   /** \name Synchronize */
@@ -1300,44 +1355,6 @@ struct CoreInterface : public UnknownInterface {
    * \ingroup mofem_problems
    */
   virtual MoFEMErrorCode clear_problems(int verb = DEFAULT_VERBOSITY) = 0;
-
-  /**
-   * @brief make entities from proc 0 shared on all proc
-   *
-   * @param entities
-   * @param num_entities
-   * @param my_proc default proc id to share from
-   * @param verb
-   * @return MoFEMErrorCode
-   */
-  virtual MoFEMErrorCode
-  make_entities_multishared(const EntityHandle *entities,
-                            const int num_entities, const int my_proc = 0,
-                            int verb = DEFAULT_VERBOSITY) = 0;
-  /**
-   * @brief make entities from proc 0 shared on all proc
-   *
-   * @param entities
-   * @param my_proc default proc id to share from
-   * @param verb
-   * @return MoFEMErrorCode
-   */
-  virtual MoFEMErrorCode
-  make_entities_multishared(Range &entities, const int my_proc = 0,
-                            int verb = DEFAULT_VERBOSITY) = 0;
-
-  /**
-   * @brief make field entities multi shared
-   * 
-   * @param field_name 
-   * @param owner_proc 
-   * @param verb 
-   * @return MoFEMErrorCode 
-   */
-  virtual MoFEMErrorCode
-  make_field_entities_multishared(const std::string field_name,
-                                  const int owner_proc = 0,
-                                  int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
    * \brief add finite elements to the meshset

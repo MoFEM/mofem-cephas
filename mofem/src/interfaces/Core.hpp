@@ -885,6 +885,9 @@ protected:
                                                  const int owner_proc = 0,
                                                  int verb = DEFAULT_VERBOSITY);
 
+  MoFEMErrorCode exchange_field_data(const std::string field_name,
+                                     int verb = DEFAULT_VERBOSITY);
+
   /**@}*/
 
   /** \name Synchronize entities (Following functions in future will be

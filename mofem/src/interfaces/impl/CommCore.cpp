@@ -313,7 +313,7 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
     const EntityHandle *ent = entities;
     const EntityHandle *const end = entities + num_entities;
     std::vector<EntityHandle> all_ents_vec(ent, end);
-    
+
     auto print_vec = [&](auto name, auto &vec) {
       std::ostringstream ss;
       ss << "Proc " << rAnk << " ";
@@ -334,7 +334,7 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
     CHKERR PetscCommGetNewTag(cOmm, &tag);
 
     std::vector<EntityHandle> recv_ents_vec[sIze];
-    std::vector<MPI_Request> r_waits(sIze); 
+    std::vector<MPI_Request> r_waits(sIze);
     for (int proc = 0, kk = 0; proc < sIze; ++proc) {
       if (proc != rAnk) {
         recv_ents_vec[proc].resize(all_ents_vec.size());
@@ -381,9 +381,8 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
     if (rAnk != owner_proc)
       pstatus = PSTATUS_NOT_OWNED;
 
-    if (sIze == 2)
-      pstatus |= PSTATUS_SHARED;
-    else
+    pstatus |= PSTATUS_SHARED;
+    if(sIze > 2)
       pstatus |= PSTATUS_MULTISHARED;
 
     if (pcomm->size() != sIze)
@@ -414,12 +413,11 @@ MoFEMErrorCode Core::make_entities_multishared(const EntityHandle *entities,
       for (; rrr != MAX_SHARING_PROCS; ++rrr)
         shprocs[rrr] = -1;
 
-      if (pstatus & PSTATUS_SHARED) {
-        CHKERR get_moab().tag_set_data(pcomm->sharedp_tag(), &all_ents_vec[e],
-                                       1, &shprocs[0]);
-        CHKERR get_moab().tag_set_data(pcomm->sharedh_tag(), &all_ents_vec[e],
-                                       1, &shhandles[0]);
-      } else if (pstatus & PSTATUS_MULTISHARED) {
+      CHKERR get_moab().tag_set_data(pcomm->sharedp_tag(), &all_ents_vec[e], 1,
+                                     &shprocs[0]);
+      CHKERR get_moab().tag_set_data(pcomm->sharedh_tag(), &all_ents_vec[e], 1,
+                                     &shhandles[0]);
+      if (pstatus & PSTATUS_MULTISHARED) {
         CHKERR get_moab().tag_set_data(pcomm->sharedps_tag(), &all_ents_vec[e],
                                        1, &shprocs[0]);
         CHKERR get_moab().tag_set_data(pcomm->sharedhs_tag(), &all_ents_vec[e],
@@ -504,6 +502,49 @@ Core::make_field_entities_multishared(const std::string field_name,
     CHKERR get_moab().get_entities_by_handle(field_meshset, field_ents, true);
     CHKERR make_entities_multishared(&*field_ents.begin(), field_ents.size(),
                                      owner_proc, verb);
+  }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::exchange_field_data(const std::string field_name,
+                                         int verb) {
+  MoFEMFunctionBegin;
+  if (sIze > 1) {
+
+    Range exchange_ents_data_verts, exchange_ents_data;
+
+    for (auto it = entsFields.get<FieldName_mi_tag>().lower_bound(field_name);
+         it != entsFields.get<FieldName_mi_tag>().upper_bound(field_name); ++it)
+      if (
+
+          ((*it)->getPStatus()) &&
+
+          (*it)->getNbDofsOnEnt()
+
+      ) {
+        if ((*it)->getEntType() == MBVERTEX)
+          exchange_ents_data_verts.insert((*it)->getRefEnt());
+        else 
+          exchange_ents_data.insert((*it)->getRefEnt());  
+      }
+
+    auto field_ptr = get_field_structure(field_name);
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
+
+    auto exchange = [&](const Range &ents, Tag th) {
+      MoFEMFunctionBegin;
+      if (!ents.empty()) {
+        std::vector<Tag> tags;
+        tags.push_back(th);
+        CHKERR pcomm->exchange_tags(tags, tags, ents);
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR exchange(exchange_ents_data_verts, field_ptr->th_FieldDataVerts);
+    CHKERR exchange(exchange_ents_data, field_ptr->th_FieldData);
+
   }
   MoFEMFunctionReturn(0);
 }
