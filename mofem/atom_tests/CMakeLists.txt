@@ -606,6 +606,29 @@ add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMM
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_flat_prism_element.txt
 )
 
+#contact prism element
+my_add_executable(forces_and_sources_testing_contact_prism_element forces_and_sources_testing_contact_prism_element.cpp)
+target_link_libraries(forces_and_sources_testing_contact_prism_element
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
+add_test(forces_and_sources_testing_contact_prism_element_test
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_contact_prism_element
+  -my_file templar.h5m
+)
+add_test(forces_and_sources_testing_contact_prism_element_test_compare ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_contact_prism_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_contact_prism_element.txt
+)
+
 # Checking direvatives
 my_add_executable(
   check_base_functions_direvatives_on_tet
