@@ -99,7 +99,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
                       const EntityType type_hi = MBPOLYHEDRON,
-                      const bool master_flag = 1) const {
+                      const bool master_flag = true) const {
     return getEntityIndices(data, field_name,
                             const_cast<FENumeredDofEntity_multiIndex &>(
                                 numeredEntFiniteElementPtr->getRowsDofs()),
@@ -111,7 +111,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
                       const EntityType type_hi = MBPOLYHEDRON,
-                      const bool master_flag = 1) const {
+                      const bool master_flag = true) const {
     return getEntityIndices(data, field_name,
                             const_cast<FENumeredDofEntity_multiIndex &>(
                                 numeredEntFiniteElementPtr->getColsDofs()),
@@ -122,14 +122,14 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
                                     const std::string &field_name,
                                     const EntityType type_lo = MBVERTEX,
                                     const EntityType type_hi = MBPOLYHEDRON,
-                                    const bool master_flag = 1) const;
+                                    const bool master_flag = true) const;
 
   MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &data,
                                   const std::string &field_name,
                                   FENumeredDofEntity_multiIndex &dofs,
                                   const EntityType type_lo = MBVERTEX,
                                   const EntityType type_hi = MBPOLYHEDRON,
-                                  const bool master_flag = 1) const;
+                                  const bool master_flag = true) const;
 
   // ** Indices **
 
@@ -325,8 +325,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
 #endif //__CONTACTPRISMELEMENTFORCESANDSURCESCORE_HPP__
 
-/***************************************************************************/
 /**
  * \defgroup mofem_forces_and_sources_prism_element Prism Element
  * \ingroup mofem_forces_and_sources
- ******************************************************************************/
+ **/
