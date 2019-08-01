@@ -12,7 +12,6 @@ const static int debug = 0;
 #include "impl/FECore.cpp"
 #include "impl/ProblemsCore.cpp"
 #include "impl/MatrixManager.cpp"
-#include "impl/CommCore.cpp"
 #include "impl/DeleteCore.cpp"
 #include "impl/ISManager.cpp"
 #include "impl/VecManager.cpp"

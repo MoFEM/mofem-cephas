@@ -61,10 +61,12 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab, PETSC_COMM_WORLD);
     MoFEM::Interface &m_field = core;
 
+    auto *bit_ref_ptr = m_field.getInterface<BitRefManager>();
+    auto *comm_interface_ptr = m_field.getInterface<CommInterface>();
+
     EntityHandle root_set = moab.get_root_set();
     // add all entities to database, all of them will be used
-    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-        root_set, 3, BitRefLevel().set(0));
+    CHKERR bit_ref_ptr->setBitRefLevelByDim(root_set, 3, BitRefLevel().set(0));
 
     // add field
     CHKERR m_field.add_field("FIELD", H1, AINSWORTH_LEGENDRE_BASE, 1);
@@ -79,9 +81,10 @@ int main(int argc, char *argv[]) {
     // Create vertices for NOFILE
     std::array<double, 6> coords = {0, 0, 0, 0, 0, 0};
     CHKERR m_field.create_vertices_and_add_to_field("LAMBDA", coords.data(), 2);
-    CHKERR m_field.make_field_entities_multishared("LAMBDA", 0, NOISY);
-    CHKERR m_field.getInterface<BitRefManager>()->setFieldEntitiesBitRefLevel(
-        "LAMBDA", BitRefLevel().set(0));
+    CHKERR comm_interface_ptr->makeFieldEntitiesMultishared("LAMBDA", 0,
+                                                               NOISY);
+    CHKERR bit_ref_ptr->setFieldEntitiesBitRefLevel("LAMBDA",
+                                                    BitRefLevel().set(0));
 
     // build data structures for fields
     CHKERR m_field.build_fields();
@@ -108,8 +111,8 @@ int main(int argc, char *argv[]) {
       CHKERR m_field.getInterface<FieldBlas>()->setField(1, "FILED");
     }
 
-    CHKERR m_field.exchange_field_data("LAMBDA");
-    CHKERR m_field.exchange_field_data("FIELD");
+    CHKERR comm_interface_ptr->exchangeFieldData("LAMBDA");
+    CHKERR comm_interface_ptr->exchangeFieldData("FIELD");
 
     auto check_exchanged_values = [&](const std::string field_name) {
       MoFEMFunctionBegin;
