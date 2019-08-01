@@ -811,7 +811,8 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
         ents_to_synchronise.insert(miit->get()->getEnt());
       }
       Range tmp_ents = ents_to_synchronise;
-      CHKERR m_field.synchronise_entities(ents_to_synchronise, verb);
+      CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+          ents_to_synchronise, verb);
       ents_to_synchronise = subtract(ents_to_synchronise, tmp_ents);
       for (Field_multiIndex::iterator fit = fields_ptr->begin();
            fit != fields_ptr->end(); fit++) {
