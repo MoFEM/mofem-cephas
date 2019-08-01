@@ -200,6 +200,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   CHKERR regSubInterface<FieldBlas>(IDD_MOFEMFieldBlas);
   CHKERR regSubInterface<BitRefManager>(IDD_MOFEMBitRefManager);
   CHKERR regSubInterface<Tools>(IDD_MOFEMTools);
+  CHKERR regSubInterface<Tools>(IDD_MOFEMComm);
   CHKERR regSubInterface<MeshsetsManager>(IDD_MOFEMMeshsetsManager);
   CHKERR regSubInterface<CoordSystemsManager>(IDD_MOFEMCoordsSystemsManager);
   CHKERR regSubInterface<NodeMergerInterface>(IDD_MOFEMNodeMerger);
