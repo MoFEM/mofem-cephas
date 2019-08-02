@@ -1940,12 +1940,17 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
                                         barrier_vertices);
 
   auto get_trim_skin_verts = [&]() {
+
+    // get current surface skin
     Range trim_surf_skin;
     CHKERR skin.find_skin(0, trimNewSurfaces, false, trim_surf_skin);
     trim_surf_skin = subtract(trim_surf_skin, trim_tets_skin_edges);
+
     Range trim_surf_skin_verts;
     CHKERR moab.get_connectivity(trim_surf_skin, trim_surf_skin_verts, true);
-    trim_surf_skin_verts = subtract(trim_surf_skin_verts, barrier_vertices);
+    for (auto e : barrier_vertices)
+      trim_surf_skin_verts.erase(e);
+
     return trim_surf_skin_verts;
   };
 
@@ -1957,7 +1962,13 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
     if (debug && !trimNewSurfaces.empty())
       CHKERR SaveData(m_field.get_moab())(
           "trimNewSurfaces_" + boost::lexical_cast<std::string>(nn) + ".vtk",
-          unite(trimNewSurfaces, outside_verts));
+          trimNewSurfaces);
+
+    if (debug && !outside_verts.empty())
+      CHKERR SaveData(m_field.get_moab())(
+          "trimNewSurfacesOutsideVerts_" +
+              boost::lexical_cast<std::string>(nn) + ".vtk",
+          outside_verts);
 
     Range outside_faces;
     CHKERR moab.get_adjacencies(outside_verts, 2, false, outside_faces,
