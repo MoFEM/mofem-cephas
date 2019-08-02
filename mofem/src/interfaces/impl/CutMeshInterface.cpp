@@ -2720,19 +2720,15 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         CHKERR get_father_and_mother(father, mother, line_search);
         CHKERR merge_nodes.mergeNodes(line_search, father, mother, proc_tets);
         if (m_field.getInterface<NodeMergerInterface>()->getSuccessMerge()) {
-          Range adj_mother_tets;
-          CHKERR moab.get_adjacencies(&mother, 1, 3, false, adj_mother_tets);
-          Range adj_mother_tets_nodes;
-          CHKERR moab.get_connectivity(adj_mother_tets, adj_mother_tets_nodes,
+          const EntityHandle father_and_mother[] = {father, mother};
+          Range adj_tets;
+          CHKERR moab.get_adjacencies(father_and_mother, 1, 3, false, adj_tets);
+          Range adj_tets_nodes;
+          CHKERR moab.get_connectivity(adj_tets, adj_tets_nodes,
                                        true);
           Range adj_edges;
-          CHKERR moab.get_adjacencies(adj_mother_tets_nodes, 1, false,
+          CHKERR moab.get_adjacencies(adj_tets_nodes, 1, false,
                                       adj_edges, moab::Interface::UNION);
-          CHKERR moab.get_adjacencies(&father, 1, 1, false, adj_edges,
-                                      moab::Interface::UNION);
-          Range proc_edges;
-          CHKERR moab.get_adjacencies(proc_tets, 1, true, proc_edges);
-          adj_edges = intersect(proc_edges, adj_edges);
           for (auto ait : adj_edges) {
             auto miit = length_map.get<1>().find(ait);
             if (miit != length_map.get<1>().end())
