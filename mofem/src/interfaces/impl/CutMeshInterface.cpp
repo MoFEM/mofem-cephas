@@ -284,18 +284,18 @@ MoFEMErrorCode CutMeshInterface::trimOnly(const BitRefLevel trim_bit, Tag th,
   // trim mesh
   CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim_close, debug);
   CHKERR trimEdgesInTheMiddle(trim_bit, debug);
-  if (fixed_edges) {
+  if (fixed_edges) 
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
                                                            *fixed_edges);
-  }
-  if (corner_nodes) {
+  
+  if (corner_nodes) 
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*corner_nodes,
                                                            *corner_nodes);
-  }
-  if (update_meshsets) {
+  
+  if (update_meshsets) 
     CHKERR m_field.getInterface<MeshsetsManager>()
         ->updateAllMeshsetsByEntitiesChildren(trim_bit);
-  }
+  
 
   // move nodes
   CHKERR moveMidNodesOnTrimmedEdges(th);
