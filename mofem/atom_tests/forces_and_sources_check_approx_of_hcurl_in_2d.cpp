@@ -1,3 +1,14 @@
+/**
+ * \file forces_and_sources_check_approx_of_hcurl_in_2d
+ * \example forces_and_sources_check_approx_of_hcurl_in_2d.cpp
+ *
+ * Approximate polynomial in 2D and check direvatives
+ *
+ * \todo Add polynomial which is divergence free then Demkowicz truncated h-curl
+ * space could be tested as well.
+ *
+ */
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -13,10 +24,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-
-namespace bio = boost::iostreams;
-using bio::stream;
-using bio::tee_device;
 
 using namespace MoFEM;
 
@@ -194,11 +201,12 @@ struct OpCheckValsDiffVals
         double err_val = sqrt(delta_val(i) * delta_val(i));
         double err_diff_val = sqrt(delta_diff_val(i, j) * delta_diff_val(i, j));
         if (err_val > eps) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Wrong value");
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong value %4.3e", err_val);
         }
         if (err_diff_val > eps) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                  "Wrong derivative of value");
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "Wrong derivative of value %4.3e", err_diff_val);
         }
         ++t_vals;
         ++t_diff_vals;
@@ -229,14 +237,29 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
-    // set entitities bit level
+    // set entities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 2, bit_level0);
 
     // Declare elements
-    CHKERR m_field.add_field("FIELD1", HCURL, AINSWORTH_LEGENDRE_BASE, 1);
+    enum bases { AINSWORTH, DEMKOWICZ, LASBASETOP };
+    const char *list_bases[] = {"ainsworth", "demkowicz"};
+    PetscBool flg;
+    PetscInt choice_base_value = AINSWORTH;
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+                                LASBASETOP, &choice_base_value, &flg);
+
+    if (flg != PETSC_TRUE)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+    FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
+    if (choice_base_value == AINSWORTH)
+      base = AINSWORTH_LEGENDRE_BASE;
+    else if (choice_base_value == DEMKOWICZ)
+      base = DEMKOWICZ_JACOBI_BASE;
+
+    CHKERR m_field.add_field("FIELD1", HCURL, base, 1);
     CHKERR m_field.add_finite_element("TEST_FE1");
     // Define rows/cols and element data
     CHKERR m_field.modify_finite_element_add_field_row("TEST_FE1", "FIELD1");
@@ -275,15 +298,15 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
     // Create matrices
-    Mat A;
+    SmartPetscObj<Mat> A;
     CHKERR m_field.getInterface<MatrixManager>()
-        ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("TEST_PROBLEM", &A);
-    Vec F;
+        ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("TEST_PROBLEM", A);
+    SmartPetscObj<Vec> F;
     CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
-                                                              ROW, &F);
-    Vec D;
+                                                              ROW, F);
+    SmartPetscObj<Vec> D;
     CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
-                                                              COL, &D);
+                                                              COL, D);
 
     {
       TestFE fe(m_field);
@@ -296,8 +319,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Solver problem
-    KSP solver;
-    CHKERR KSPCreate(PETSC_COMM_WORLD, &solver);
+    auto solver = createKSP(PETSC_COMM_WORLD);
     CHKERR KSPSetOperators(solver, A, A);
     CHKERR KSPSetFromOptions(solver);
     CHKERR KSPSetUp(solver);
@@ -306,7 +328,6 @@ int main(int argc, char *argv[]) {
     CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
     CHKERR m_field.getInterface<VecManager>()->setLocalGhostVector(
         "TEST_PROBLEM", COL, D, INSERT_VALUES, SCATTER_REVERSE);
-    CHKERR KSPDestroy(&solver);
 
     {
       TestFE fe(m_field);
@@ -318,9 +339,6 @@ int main(int argc, char *argv[]) {
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE1", fe);
     }
 
-    CHKERR VecDestroy(&F);
-    CHKERR VecDestroy(&D);
-    CHKERR MatDestroy(&A);
   }
   CATCH_ERRORS;
 
