@@ -1575,9 +1575,16 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         // check if edges crossing each other in the middle (it not imply that
         // have common point)
         const double overlap_tol = 1e-2;
-        if (t_edge > -std::numeric_limits<float>::epsilon() &&
-            t_edge < 1 + std::numeric_limits<float>::epsilon() &&
-            t_front >= -overlap_tol && t_front <= 1 + overlap_tol) {
+        if (
+
+            (t_edge > -std::numeric_limits<float>::epsilon() &&
+             t_edge < 1 + std::numeric_limits<float>::epsilon())
+
+            &&
+
+            (t_front >= -overlap_tol && t_front <= 1 + overlap_tol)
+
+        ) {
 
           FTensor::Tensor1<double, 3> t_front_delta;
           t_front_delta(i) = t_f1(i) - t_f0(i);
