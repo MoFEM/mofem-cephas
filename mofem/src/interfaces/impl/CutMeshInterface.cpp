@@ -989,15 +989,15 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
   double ave_cut_edge_length = 0;
   for (auto e : cutEdges) {
 
-    TYPE edge_type = FREE;
-    if (tets_skin_edges.find(e) != tets_skin_edges.end())
-      edge_type = SKIN;
-    if (fixed_edges)
-      if (fixed_edges->find(e) != fixed_edges->end())
-        edge_type = FIXED;
-
     auto eit = edgesToCut.find(e);
     if (eit != edgesToCut.end()) {
+
+      TYPE edge_type = FREE;
+      if (tets_skin_edges.find(e) != tets_skin_edges.end())
+        edge_type = SKIN;
+      if (fixed_edges)
+        if (fixed_edges->find(e) != fixed_edges->end())
+          edge_type = FIXED;
 
       int num_nodes;
       const EntityHandle *conn;
