@@ -1598,7 +1598,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
           const double dist = sqrt(t_ray(i) * t_ray(i));
 
           // that imply that edges have common point
-          if ((dist / edge_length) < 1.) {
+          if ((dist / edge_length) < 0.25) {
 
             auto check_to_add_edge = [&](const EntityHandle e,
                                          const double dist) {
