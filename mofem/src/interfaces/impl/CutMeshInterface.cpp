@@ -246,7 +246,7 @@ CutMeshInterface::cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
   MoFEMFunctionBegin;
 
   // cut mesh
-  CHKERR findEdgesToCut(vol, fixed_edges, corner_nodes, tol_cut, QUIET, debug);
+  CHKERR findEdgesToCut(vol, fixed_edges, corner_nodes, QUIET, debug);
   CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close,
                                  QUIET, debug);
   CHKERR cutEdgesInMiddle(cut_bit, cutNewVolumes, cutNewSurfaces,
@@ -811,8 +811,7 @@ CutMeshInterface::refineMesh(const int init_bit_level, const int surf_levels,
 }
 
 MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
-                                                Range *corner_nodes,
-                                                const double low_tol, int verb,
+                                                Range *corner_nodes, int verb,
                                                 const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
@@ -879,7 +878,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     int num_nodes;
     const EntityHandle *conn;
     CHKERR moab.get_connectivity(e, conn, num_nodes, true);
-    const double tol = get_ave_edge_length(e, vol_edges) * low_tol;
 
     VectorDouble6 coords(6);
     CHKERR moab.get_coords(conn, 2, &coords[0]);
