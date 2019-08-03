@@ -1555,7 +1555,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       return coords;
     };
 
-    // iterate entities on inner surface font to find that edge cross
+    // iterate entities surface front to find cross to trim
     for (auto s : surface_skin) {
 
       auto coords_front = get_edge_coors(s);
