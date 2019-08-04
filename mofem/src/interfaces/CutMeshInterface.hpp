@@ -465,7 +465,6 @@ struct CutMeshInterface : public UnknownInterface {
   inline const Range &getFront() const { return fRont; }
 
   inline const Range &getCutEdges() const { return cutEdges; }
-  inline const Range &getCutVolumes() const { return cutVolumes; }
   inline const Range &getNewCutVolumes() const { return cutNewVolumes; }
   inline const Range &getNewCutSurfaces() const { return cutNewSurfaces; }
   inline const Range &getNewCutVertices() const { return cutNewVertices; }
@@ -546,7 +545,6 @@ private:
   EntityHandle rootSetSurf;
 
   Range cutEdges;
-  Range cutVolumes;
   Range cutNewVolumes;
   Range cutNewSurfaces;
   Range zeroDistanceEnts;
