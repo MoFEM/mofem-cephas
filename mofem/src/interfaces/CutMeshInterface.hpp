@@ -288,12 +288,18 @@ struct CutMeshInterface : public UnknownInterface {
                             const bool debug = false);
 
   /**
-   * \brief find edges to cut
-   * @param  verb verbosity level
-   * @return      error code
+   * @brief find edges to cut
+   *
+   * @param vol is tetrahedrons search to cut
+   * @param fixed_edges pointer to fixed edges
+   * @param corner_nodes pointer to corner edges
+   * @param geometry_tol tolerance for close geometry fetchers
+   * @param verb verbosity level
+   * @param debug debugging
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode findEdgesToCut(Range vol, Range *fixed_edges,
-                                Range *corner_nodes, const double low_tol,
+                                Range *corner_nodes, const double geometry_tol,
                                 int verb = QUIET, const bool debug = false);
 
   /**
@@ -301,14 +307,14 @@ struct CutMeshInterface : public UnknownInterface {
    *
    * @param fixed_edges pointer to fix edges
    * @param corner_nodes pointer to corner nodes
-   * @param low_to is tolerance how close entities has to be
+   * @param close tolerance is tolerance how close entities has to be
    * @param verb verbosity level
    * @param debug true for debuging purposes
    *
    */
   MoFEMErrorCode projectZeroDistanceEnts(Range *fixed_edges,
                                          Range *corner_nodes,
-                                         const double low_tol = 0,
+                                         const double close_tol = 0,
                                          const int verb = QUIET,
                                          const bool debug = false);
 
