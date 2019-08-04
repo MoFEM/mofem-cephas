@@ -518,8 +518,9 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
 
       VectorDouble3 delta = point_out - point_in;
       if (norm_2(delta) < std::numeric_limits<double>::epsilon()) {
-        const double eps = (static_cast<double>(std::rand()) / RAND_MAX) *
-                           std::numeric_limits<double>::epsilon();
+        const double eps =
+            (static_cast<double>((2 * std::rand()) - RAND_MAX) / RAND_MAX) *
+            std::numeric_limits<float>::epsilon();
         delta += n * eps;
       }
 
