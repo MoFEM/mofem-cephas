@@ -293,8 +293,8 @@ struct CutMeshInterface : public UnknownInterface {
    * @return      error code
    */
   MoFEMErrorCode findEdgesToCut(Range vol, Range *fixed_edges,
-                                Range *corner_nodes, int verb = QUIET,
-                                const bool debug = false);
+                                Range *corner_nodes, const double low_tol,
+                                int verb = QUIET, const bool debug = false);
 
   /**
    * @brief Find entities on cut surface which can be projected

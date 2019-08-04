@@ -66,13 +66,6 @@ int main(int argc, char *argv[]) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "three values expected");
 
-    int nb_ref_before = 0;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-nb_ref_before", &nb_ref_before,
-                              PETSC_NULL);
-    int nb_ref_after = 0;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-nb_ref_after", &nb_ref_after,
-                              PETSC_NULL);
-
     int fixed_edges_blockset = 100;
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-fixed_edges_blockset",
                               &fixed_edges_blockset, PETSC_NULL);
@@ -184,8 +177,8 @@ int main(int argc, char *argv[]) {
     CHKERR cut_mesh->makeFront(true);
     const int nb_ref_cut = 1;
     const int nb_ref_trim = 1;
-    CHKERR cut_mesh->refineMesh(0, nb_ref_cut, nb_ref_trim, &fixed_edges, VERBOSE,
-                                true);
+    CHKERR cut_mesh->refineMesh(0, nb_ref_cut, nb_ref_trim, &fixed_edges,
+                                VERBOSE, true);
     auto shift_after_ref = [&]() {
       MoFEMFunctionBegin;
       BitRefLevel mask;

@@ -246,7 +246,7 @@ CutMeshInterface::cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
   MoFEMFunctionBegin;
 
   // cut mesh
-  CHKERR findEdgesToCut(vol, fixed_edges, corner_nodes, QUIET, debug);
+  CHKERR findEdgesToCut(vol, fixed_edges, corner_nodes, tol_cut, QUIET, debug);
   CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close,
                                  QUIET, debug);
   CHKERR cutEdgesInMiddle(cut_bit, cutNewVolumes, cutNewSurfaces,
@@ -812,17 +812,12 @@ CutMeshInterface::refineMesh(const int init_bit_level, const int surf_levels,
 }
 
 MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
-                                                Range *corner_nodes, int verb,
+                                                Range *corner_nodes,
+                                                const double low_tol, int verb,
                                                 const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
-
-  Range fixed_edges_verts;
-  if(fixed_edges)
-     CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_verts, true);
-  if(corner_nodes)
-    fixed_edges_verts.merge(*corner_nodes);
 
   edgesToCut.clear();
   cutEdges.clear();
@@ -837,11 +832,11 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
   auto get_ave_edge_length = [&](const EntityHandle ent,
                                  const Range &vol_edges) {
     Range adj_edges;
-    if (moab.type_from_handle(ent) == MBVERTEX) {
+    if (moab.type_from_handle(ent) == MBVERTEX) 
       CHKERR moab.get_adjacencies(&ent, 1, 1, false, adj_edges);
-    } else {
+    else 
       adj_edges.insert(ent);
-    }
+    
     adj_edges = intersect(adj_edges, vol_edges);
     double ave_l = 0;
     for (auto e : adj_edges) {
@@ -913,13 +908,57 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
   }
   aveLength /= nb_ave_length;
 
+  auto not_project_node = [this, &moab](const EntityHandle v) {
+    MoFEMFunctionBeginHot;
+    VectorDouble3 s0(3);
+    CHKERR moab.get_coords(&v, 1, &s0[0]);
+    verticesOnCutEdges[v].dIst = 0;
+    verticesOnCutEdges[v].lEngth = 0;
+    verticesOnCutEdges[v].unitRayDir.resize(3, false);
+    verticesOnCutEdges[v].unitRayDir.clear();
+    verticesOnCutEdges[v].rayPoint = s0;
+    MoFEMFunctionReturnHot(0);
+  };
+
+  auto project_vertices_close_to_geometry_features = [&]() {
+    MoFEMFunctionBegin;
+
+    Range fixed_edges_verts;
+    if (fixed_edges)
+      CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_verts, true);
+    if (corner_nodes)
+      fixed_edges_verts.merge(*corner_nodes);
+
+    Range vol_vertices;
+    CHKERR moab.get_connectivity(vol, vol_vertices, true);
+    vol_vertices = intersect(fixed_edges_verts, vol_vertices);
+
+    for (auto v : vol_vertices) {
+
+      VectorDouble3 dist_normal(3);
+      CHKERR moab.tag_get_data(th_dist_normal, &v, 1, &*dist_normal.begin());
+      const double dist = norm_2(dist_normal);
+
+      const double tol = get_ave_edge_length(v, vol_edges) * low_tol;
+      if (dist < tol) {
+        CHKERR not_project_node(v);
+        zeroDistanceVerts.insert(v);
+      }
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR project_vertices_close_to_geometry_features();
+
   cutVolumes.clear();
   CHKERR moab.get_adjacencies(unite(cutEdges, zeroDistanceVerts), 3, false,
                               cutVolumes, moab::Interface::UNION);
   cutVolumes = intersect(cutVolumes, vOlume);
 
   if (debug)
-    CHKERR SaveData(m_field.get_moab())("cut_edges.vtk", cutEdges);
+    CHKERR SaveData(m_field.get_moab())("cut_edges.vtk",
+                                        unite(cutEdges, zeroDistanceVerts));
 
   MoFEMFunctionReturn(0);
 }
