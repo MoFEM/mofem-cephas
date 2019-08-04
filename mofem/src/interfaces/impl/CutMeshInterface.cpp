@@ -813,8 +813,8 @@ CutMeshInterface::refineMesh(const int init_bit_level, const int surf_levels,
 
 MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
                                                 Range *corner_nodes,
-                                                const double low_tol, int verb,
-                                                const bool debug) {
+                                                const double geometry_tol,
+                                                int verb, const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -939,7 +939,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
       CHKERR moab.tag_get_data(th_dist_normal, &v, 1, &*dist_normal.begin());
       const double dist = norm_2(dist_normal);
 
-      const double tol = get_ave_edge_length(v, vol_edges) * low_tol;
+      const double tol = get_ave_edge_length(v, vol_edges) * geometry_tol;
       if (dist < tol) {
         CHKERR not_project_node(v);
         zeroDistanceVerts.insert(v);
@@ -965,7 +965,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
 
 MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
                                                          Range *corner_nodes,
-                                                         const double low_tol,
+                                                         const double close_tol,
                                                          const int verb,
                                                          const bool debug) {
   CoreInterface &m_field = cOre;
@@ -1208,7 +1208,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
         double max_dist = 0;
         for (int n = 0; n != num_nodes; ++n)
           max_dist = std::max(max_dist, fabs(dist[n]));
-        if (max_dist < low_tol * ave_cut_edge_length)
+        if (max_dist < close_tol * ave_cut_edge_length)
           ents_to_check.insert(std::pair<double, EntityHandle>(max_dist, f));
       }
     }
