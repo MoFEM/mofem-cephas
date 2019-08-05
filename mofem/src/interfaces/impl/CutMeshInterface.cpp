@@ -296,7 +296,6 @@ MoFEMErrorCode CutMeshInterface::trimOnly(const BitRefLevel trim_bit, Tag th,
     CHKERR m_field.getInterface<MeshsetsManager>()
         ->updateAllMeshsetsByEntitiesChildren(trim_bit);
   
-
   // move nodes
   CHKERR moveMidNodesOnTrimmedEdges(th);
 
@@ -723,10 +722,11 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-CutMeshInterface::refineMesh(const int init_bit_level, const int surf_levels,
-                             const int front_levels, Range *fixed_edges,
-                             int verb, const bool debug) {
+MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
+                                            const int surf_levels,
+                                            const int front_levels,
+                                            Range *fixed_edges, int verb,
+                                            const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MeshRefinement *refiner;
@@ -970,7 +970,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
   if (debug)
     CHKERR SaveData(m_field.get_moab())("cut_edges.vtk", cutEdges);
 
-  if(debug)
+  if (debug)
     CHKERR SaveData(m_field.get_moab())("cut_edges_zero_distance_verts.vtk",
                                         zeroDistanceVerts);
 
@@ -1078,7 +1078,6 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
             if (vit->second.second.dIst < dist)
               add_node = false;
           }
-          
         }
 
         if (add_node) {
@@ -1690,7 +1689,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
           }
         }
       }
-
     }
   }
 
@@ -1796,7 +1794,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       auto hi = verts_map.get<1>().upper_bound(p->second);
       verts_map_tmp.insert(lo, hi);
     }
-    if(move) {
+    if (move) {
       for (auto &m : verts_map_tmp.get<0>())
         add_trim_vert(m.v, m.e);
     } else {
@@ -1989,7 +1987,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
                                 fixed_edges_faces, moab::Interface::UNION);
     fixed_edges_faces = intersect(fixed_edges_faces, barrier_vertices_faces);
 
-    if(debug && !fixed_edges_faces.empty())
+    if (debug && !fixed_edges_faces.empty())
       CHKERR SaveData(m_field.get_moab())("fixed_edges_faces.vtk",
                                           fixed_edges_faces);
 
@@ -2005,7 +2003,6 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
                                         barrier_vertices);
 
   auto get_trim_skin_verts = [&]() {
-
     // get current surface skin
     Range trim_surf_skin;
     CHKERR skin.find_skin(0, trimNewSurfaces, false, trim_surf_skin);
@@ -2800,11 +2797,10 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
           Range adj_tets;
           CHKERR moab.get_adjacencies(father_and_mother, 1, 3, false, adj_tets);
           Range adj_tets_nodes;
-          CHKERR moab.get_connectivity(adj_tets, adj_tets_nodes,
-                                       true);
+          CHKERR moab.get_connectivity(adj_tets, adj_tets_nodes, true);
           Range adj_edges;
-          CHKERR moab.get_adjacencies(adj_tets_nodes, 1, false,
-                                      adj_edges, moab::Interface::UNION);
+          CHKERR moab.get_adjacencies(adj_tets_nodes, 1, false, adj_edges,
+                                      moab::Interface::UNION);
           for (auto ait : adj_edges) {
             auto miit = length_map.get<1>().find(ait);
             if (miit != length_map.get<1>().end())
@@ -2881,7 +2877,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       all_ents_not_in_database_before);
 
   edges_to_merge = edges_to_merge.subset_by_type(MBEDGE);
-  if(debug)
+  if (debug)
     CHKERR SaveData(m_field.get_moab())("edges_to_merge.vtk", edges_to_merge);
 
   Range out_new_tets, out_new_surf;
