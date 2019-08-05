@@ -1061,14 +1061,6 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
       p[1] = getVectorAdaptor(&pos[3], 3);
       ave_cut_edge_length += norm_2(p[0] - p[1]);
 
-      VectorDouble6 dist_normal(6);
-      CHKERR moab.tag_get_data(th_dist_normal, conn, num_nodes,
-                               &dist_normal[0]);
-      auto get_normal = [](const double *normal) {
-        FTensor::Tensor1<const double *, 3> t_n(normal, &normal[1], &normal[2]);
-        return t_n;
-      };
-
       auto &d = eit->second;
       VectorDouble3 new_pos = d.rayPoint + d.dIst * d.unitRayDir;
       for (int nn = 0; nn != 2; ++nn) {
