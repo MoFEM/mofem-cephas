@@ -930,6 +930,14 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
       CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_verts, true);
     if (corner_nodes)
       fixed_edges_verts.merge(*corner_nodes);
+
+    Skinner skin(&moab);
+    Range tets_skin;
+    CHKERR skin.find_skin(0, vOlume, false, tets_skin);
+    Range tets_skin_verts;
+    CHKERR moab.get_connectivity(tets_skin, tets_skin_verts, true);
+    fixed_edges_verts.merge(tets_skin_verts);
+
     vol_vertices = intersect(fixed_edges_verts, vol_vertices);
 
     for (auto v : vol_vertices) {
