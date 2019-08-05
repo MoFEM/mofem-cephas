@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     FieldBlas *field_blas;
     CHKERR m_field.getInterface(field_blas);
 
-    auto set_distance = [&](VectorAdaptor &field_data, double *xcoord,
+    auto set_distance = [&](VectorAdaptor &&field_data, double *xcoord,
                             double *ycoord, double *zcoord) {
       MoFEMFunctionBegin;
       FTensor::Index<'i', 3> i;

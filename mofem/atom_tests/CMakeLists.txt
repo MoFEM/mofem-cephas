@@ -695,9 +695,9 @@ add_test(forces_and_sources_h1_continuity_check_atom
 )
 
 # Check approximation on Hcurl space in 2d
-my_add_executable(forces_and_sources_polynomoal_approx_on_triangle 
-  forces_and_sources_polynomoal_approx_on_triangle.cpp)
-target_link_libraries(forces_and_sources_polynomoal_approx_on_triangle
+my_add_executable(forces_and_sources_check_approx_of_hcurl_in_2d 
+  forces_and_sources_check_approx_of_hcurl_in_2d.cpp)
+target_link_libraries(forces_and_sources_check_approx_of_hcurl_in_2d
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -707,11 +707,19 @@ target_link_libraries(forces_and_sources_polynomoal_approx_on_triangle
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_check_approx_of_hcurl_in_2d
+add_test(forces_and_sources_check_approx_of_hcurl_in_2d_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_polynomoal_approx_on_triangle
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_approx_of_hcurl_in_2d
+  -base ainsworth -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
 )
+# See TODO
+# add_test(forces_and_sources_check_approx_of_hcurl_in_2d_demkowicz
+#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_approx_of_hcurl_in_2d
+#   -base demkowicz -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
+# )
+
+
 
 # add test for recording series
 my_add_executable(record_series_atom record_series_atom.cpp)
@@ -932,6 +940,29 @@ add_test(dm_build_partitioned_mesh_atom
 add_test(dm_build_partitioned_mesh_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/dm_build_partitioned_mesh.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_build_partitioned_mesh.txt
+)
+
+cm_export_file("disp01_3parts.h5m" export_atom_tests)
+my_add_executable(dm_partitioned_no_field dm_partitioned_no_field.cpp)
+target_link_libraries(dm_partitioned_no_field
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(dm_partitioned_no_field_2parts
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${CMAKE_CURRENT_BINARY_DIR}/dm_partitioned_no_field -my_file disp01_2parts.h5m 
+  -dm_is_partitioned
+)
+add_test(dm_partitioned_no_field_3parts
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 3
+  ${CMAKE_CURRENT_BINARY_DIR}/dm_partitioned_no_field -my_file disp01_3parts.h5m 
+  -dm_is_partitioned
 )
 
 my_add_executable(dm_create_subdm dm_create_subdm.cpp)
@@ -1276,7 +1307,7 @@ add_test(
   mesh_cut ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test 
   -my_file test_mesh_cut.cub -side_set 200 -shift -0.2,0.2,0. -nb_ref_before 1 
-  -nb_ref_after 0 -tol 1e-4,4e-1,4e-1,1e-4  -test
+  -nb_ref_after 0 -tol 1e-4,2e-1,2e-1 -test
 )
 
 my_add_executable(segments_distance segments_distance.cpp)

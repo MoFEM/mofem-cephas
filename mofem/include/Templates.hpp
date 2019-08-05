@@ -123,7 +123,6 @@ template <class X> inline std::string toString(X x) {
 
 /**
 * \brief Get tensor rank 0 (scalar) form data vector
-* \ingroup mofem_forces_and_sources_user_data_operators
 
 Example how to use it.
 \code
@@ -153,7 +152,6 @@ getFTensor0FromVec<double, DoubleAllocator>(
 
 /**
  * \brief Get tensor rank 1 (vector) form data matrix
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim, class T, class L, class A>
 static inline FTensor::Tensor1<FTensor::PackPtr<T *, 1>, Tensor_Dim>
@@ -163,7 +161,6 @@ getFTensor1FromMat(ublas::matrix<T, L, A> &data) {
 
 /**
  * \brief Get tensor rank 1 (vector) form data matrix (specialization)
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 static inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>, Tensor_Dim>
@@ -206,7 +203,6 @@ getFTensor1FromMat<2, double, ublas::row_major, DoubleAllocator>(
 
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 static inline FTensor::Tensor2<FTensor::PackPtr<T *, 1>, Tensor_Dim0,
@@ -217,7 +213,6 @@ getFTensor2FromMat(ublas::matrix<T, L, A> &data) {
 
 /**
  * Template specialization for getFTensor2FromMat
- * \ingroup mofem_forces_and_sources_user_data_operators
  *
  */
 template <>
@@ -261,7 +256,6 @@ getFTensor2FromMat(MatrixDouble &data) {
 
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix (specialization)
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
 static inline FTensor::Tensor2<FTensor::PackPtr<double *, 1>, Tensor_Dim0,
@@ -283,7 +277,6 @@ getFTensor2FromMat(MatrixDouble &data) {
 
 /**
  * \brief Get symmetric tensor rank 2 (matrix) form data matrix
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim, class T, class L, class A>
 static inline FTensor::Tensor2_symmetric<FTensor::PackPtr<T *, 1>, Tensor_Dim>
@@ -344,7 +337,6 @@ template <class T> static inline double dEterminant(T &t) {
 /**
  * \brief Calculate inverse of tensor rank 2 at integration points
 
- * \ingroup mofem_forces_and_sources
  */
 template <int Tensor_Dim, class T, class L, class A>
 inline MoFEMErrorCode invertTensor3by3(ublas::matrix<T, L, A> &jac_data,
@@ -425,7 +417,6 @@ inline MoFEMErrorCode invertTensor2by2(T1 &t, T2 &det, T3 &inv_t) {
 /**
  * \brief Calculate matrix inverse, specialization for adouble tensor
 
- * \ingroup mofem_forces_and_sources
  */
 template <>
 inline MoFEMErrorCode invertTensor3by3<FTensor::Tensor2<adouble, 3, 3>, adouble,
@@ -450,7 +441,6 @@ inline MoFEMErrorCode invertTensor3by3<FTensor::Tensor2<adouble, 3, 3>, adouble,
 /**
  * \brief Calculate matrix inverse, specialization for symmetric tensor
 
- * \ingroup mofem_forces_and_sources
  */
 template <>
 inline MoFEMErrorCode
@@ -474,7 +464,6 @@ invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
 /**
  * \brief Calculate matrix inverse, specialization for adouble symmetric tensor
 
- * \ingroup mofem_forces_and_sources
  */
 template <>
 inline MoFEMErrorCode
@@ -498,7 +487,6 @@ invertTensor3by3<FTensor::Tensor2_symmetric<adouble, 3>, adouble,
  * \brief Calculate matrix inverse, specialization for symmetric (pointer)
  tensor
 
- * \ingroup mofem_forces_and_sources
  */
 template <>
 inline MoFEMErrorCode
@@ -516,6 +504,51 @@ invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
   inv_t(2, 2) = (t(0, 0) * t(1, 1) - t(0, 1) * t(1, 0)) * inv_det;
   MoFEMFunctionReturnHot(0);
 }
+
+/**
+ * @brief Extract entity handle form multi-index container
+ * 
+ */
+struct RefEntExtractor {
+  template <typename Iterator>
+  static inline EntityHandle extract(const Iterator &it) {
+    return (*it)->getRefEnt();
+  }
+};
+
+/**
+ * @brief Insert ordered mofem multi-index into range
+ * 
+ * \code
+ * auto hi_rit = refEntsPtr->upper_bound(start);
+ * auto hi_rit = refEntsPtr->upper_bound(end);
+ * Range to_erase;
+ * insertOrdered(to_erase, RefEntExtractor(), rit, hi_rit);
+ * \endcode
+ *
+ * @tparam Iterator
+ * @param r
+ * @param begin_iter
+ * @param end_iter
+ * @return moab::Range::iterator
+ */
+template <typename Extractor, typename Iterator>
+moab::Range::iterator insertOrdered(Range &r, Extractor, Iterator begin_iter,
+                                    Iterator end_iter) {
+  moab::Range::iterator hint = r.begin();
+  while (begin_iter != end_iter) {
+    size_t j = 0;
+    auto bi = Extractor::extract(begin_iter);
+    Iterator pj = begin_iter;
+    while (pj != end_iter && (bi + j) == Extractor::extract(pj)) {
+      ++pj;
+      ++j;
+    }
+    hint = r.insert(hint, bi, bi + (j - 1));
+    begin_iter = pj;
+  }
+  return hint;
+};
 
 } // namespace MoFEM
 

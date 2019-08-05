@@ -121,65 +121,129 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
     }
   }
 
-  std::map<EntityHandle, int> problem_fe_ents;
-  {
-    Range::iterator eit = ents.begin();
-    for (int ii = 0; eit != ents.end(); eit++, ii++) {
-      problem_fe_ents[*eit] = ii;
-    }
-  }
-
   std::vector<EntityHandle> weight_ents;
   weight_ents.reserve(rend - rstart + 1);
+
+  struct AdjBridge {
+    EntityHandle ent;
+    std::vector<int> adj;
+    AdjBridge(const EntityHandle ent, std::vector<int> &adj):
+      ent(ent), adj(adj) {}
+  };
+
+  typedef multi_index_container<
+      AdjBridge,
+      indexed_by<
+
+          hashed_unique<member<AdjBridge, EntityHandle, &AdjBridge::ent>>
+
+          >>
+      AdjBridgeMap;
 
   Range all_dim_ents;
   CHKERR m_field.get_moab().get_adjacencies(ents, adj_dim, true, all_dim_ents,
                                             moab::Interface::UNION);
 
+  AdjBridgeMap adj_bridge_map;
+  auto hint = adj_bridge_map.begin();
+  std::vector<int> adj;
+  for (auto ent : all_dim_ents) {
+    Range adj_ents;
+    CHKERR m_field.get_moab().get_adjacencies(&ent, 1, dim, false, adj_ents);
+    adj_ents = intersect(adj_ents, ents);
+    adj.clear();
+    adj.reserve(adj_ents.size());
+    for (auto a : adj_ents)
+      adj.emplace_back(ents.index(a));
+    hint = adj_bridge_map.emplace_hint(hint, ent, adj);
+  }
+
   int *_i;
   int *_j;
   {
-    // MeshTopoUtil mtu(&m_field.get_moab());
-    std::vector<int> i(rend - rstart + 1, 0), j;
+    const int nb_loc_elements = rend - rstart;
+    std::vector<int> i(nb_loc_elements + 1, 0), j;
     {
-      int jj = 0;
-      Range::iterator fe_it = ents.begin();
-      for (int ii = 0; fe_it != ents.end(); fe_it++, ii++) {
+      std::vector<int> row_adj;
+      Range::iterator fe_it;
+      int ii, jj;
+      size_t max_row_size;
+      for (
+
+          fe_it = ents.begin(), ii = 0, jj = 0, max_row_size = 0;
+
+          fe_it != ents.end(); ++fe_it, ++ii) {
+
         if (ii < rstart)
           continue;
         if (ii >= rend)
           break;
+
         if (m_field.get_moab().type_from_handle(*fe_it) == MBENTITYSET) {
           SETERRQ(
-              m_field.get_comm(), MOFEM_NOT_IMPLEMENTED,
+              PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
               "not yet implemented, don't know what to do for meshset element");
         } else {
-          Range adj_ents;
-          // CHKERR mtu.get_bridge_adjacencies(*fe_it, adj_dim, dim, adj_ents);
+
           Range dim_ents;
           CHKERR m_field.get_moab().get_adjacencies(&*fe_it, 1, adj_dim, false,
                                                     dim_ents);
           dim_ents = intersect(dim_ents, all_dim_ents);
-          CHKERR m_field.get_moab().get_adjacencies(
-              dim_ents, dim, false, adj_ents, moab::Interface::UNION);
-          adj_ents = intersect(adj_ents, ents);
-          i[jj] = j.size();
-          for (Range::iterator eit = adj_ents.begin(); eit != adj_ents.end();
-               eit++) {
-            if (*eit == *fe_it)
-              continue; // no diagonal
-            j.push_back(problem_fe_ents[*eit]);
+
+          row_adj.clear();
+          for (auto e : dim_ents) {
+            auto adj_it = adj_bridge_map.find(e);
+            if (adj_it != adj_bridge_map.end()) {
+              
+              for (const auto idx : adj_it->adj)
+                row_adj.push_back(idx);
+
+            } else
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                      "Entity not found");
           }
+
+          std::sort(row_adj.begin(), row_adj.end());
+          auto end = std::unique(row_adj.begin(), row_adj.end());
+
+          size_t row_size = std::distance(row_adj.begin(), end);
+          max_row_size = std::max(max_row_size, row_size);
+          if (j.capacity() < (nb_loc_elements - jj) * max_row_size)
+            j.reserve(nb_loc_elements * max_row_size);
+
+          i[jj] = j.size();
+          auto diag = ents.index(*fe_it);
+          for (auto it = row_adj.begin(); it != end; ++it)
+            if (*it != diag) 
+              j.push_back(*it);
         }
-        weight_ents.push_back(*fe_it);
-        jj++;
+
+        ++jj;
+
+        if (th_vertex_weights != NULL)
+          weight_ents.push_back(*fe_it);
+
       }
+
       i[jj] = j.size();
     }
+
     CHKERR PetscMalloc(i.size() * sizeof(int), &_i);
     CHKERR PetscMalloc(j.size() * sizeof(int), &_j);
     copy(i.begin(), i.end(), _i);
     copy(j.begin(), j.end(), _j);
+
+    if (verb >= VERY_NOISY) {
+      cerr << "i : ";
+      for (auto ii : i)
+        cerr << ii << " ";
+      cerr << endl;
+
+      cerr << "j : ";
+      for (auto jj : j)
+        cerr << jj << " ";
+      cerr << endl;
+    }
   }
 
   // get weights
@@ -747,7 +811,8 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
         ents_to_synchronise.insert(miit->get()->getEnt());
       }
       Range tmp_ents = ents_to_synchronise;
-      CHKERR m_field.synchronise_entities(ents_to_synchronise, verb);
+      CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+          ents_to_synchronise, verb);
       ents_to_synchronise = subtract(ents_to_synchronise, tmp_ents);
       for (Field_multiIndex::iterator fit = fields_ptr->begin();
            fit != fields_ptr->end(); fit++) {

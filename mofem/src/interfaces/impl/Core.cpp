@@ -200,6 +200,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   CHKERR regSubInterface<FieldBlas>(IDD_MOFEMFieldBlas);
   CHKERR regSubInterface<BitRefManager>(IDD_MOFEMBitRefManager);
   CHKERR regSubInterface<Tools>(IDD_MOFEMTools);
+  CHKERR regSubInterface<CommInterface>(IDD_MOFEMComm);
   CHKERR regSubInterface<MeshsetsManager>(IDD_MOFEMMeshsetsManager);
   CHKERR regSubInterface<CoordSystemsManager>(IDD_MOFEMCoordsSystemsManager);
   CHKERR regSubInterface<NodeMergerInterface>(IDD_MOFEMNodeMerger);
@@ -672,7 +673,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       Range ents_of_id_meshset;
       CHKERR get_moab().get_entities_by_handle(fit->get()->getMeshset(),
                                                ents_of_id_meshset, false);
-      CHKERR set_field_order(ents_of_id_meshset, fit->get()->getId(), -1);
+      CHKERR set_field_order(ents_of_id_meshset, fit->get()->getId(), -1, verb);
     }
   }
 

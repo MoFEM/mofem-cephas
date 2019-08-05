@@ -41,7 +41,7 @@ struct NodeMergerInterface : public UnknownInterface {
    * \brief Return true if successful merge.
    * @return Error code
    */
-  inline bool getSucessMerge() { return successMerge; }
+  inline bool getSuccessMerge() { return successMerge; }
 
   /**
    * \brief Set error if no common edge
@@ -57,8 +57,8 @@ struct NodeMergerInterface : public UnknownInterface {
 
     \param father node to which mother is merged to.
     \param mother merged node
-    \param tetrahedra after merge
-    \param test only tets_ptr from range are changed
+    \param out_tets tetrahedra after merge
+    \param tets_ptr test only tets_ptr from range are changed
     \param only_if_improve_quality Do merge if that improve quality
     \param move father by fraction of edge length move=[0,1]
 
@@ -121,9 +121,9 @@ struct NodeMergerInterface : public UnknownInterface {
 
   typedef multi_index_container<
       ParentChild,
-      indexed_by<hashed_unique<
+      indexed_by<ordered_unique<
                      member<ParentChild, EntityHandle, &ParentChild::pArent>>,
-                 hashed_non_unique<
+                 ordered_non_unique<
                      member<ParentChild, EntityHandle, &ParentChild::cHild>>>>
       ParentChildMap;
 
@@ -194,3 +194,5 @@ private:
  *
  * \ingroup mofem
  */
+
+                               

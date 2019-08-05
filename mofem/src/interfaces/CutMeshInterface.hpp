@@ -129,47 +129,180 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode buildTree();
 
+  /**
+   * @brief Cut mesh onlu
+   * 
+   * @param vol 
+   * @param cut_bit 
+   * @param th 
+   * @param tol_cut 
+   * @param tol_cut_close 
+   * @param fixed_edges 
+   * @param corner_nodes 
+   * @param update_meshsets 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
+                         const double tol_cut, const double tol_cut_close,
+                         Range *fixed_edges = NULL, Range *corner_nodes = NULL,
+                         const bool update_meshsets = false,
+                         const bool debug = false);
+
+  /**
+   * @brief Trim mesh only
+   * 
+   * @param trim_bit 
+   * @param th 
+   * @param tol_cut_close 
+   * @param fixed_edges 
+   * @param corner_nodes 
+   * @param update_meshsets 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode trimOnly(const BitRefLevel trim_bit, Tag th,
+                          const double tol_cut_close,
+                          Range *fixed_edges = NULL, Range *corner_nodes = NULL,
+                          const bool update_meshsets = false,
+                          const bool debug = false);
+
+  /**
+   * @brief Cut and trim
+   * 
+   * @param first_bit 
+   * @param th 
+   * @param tol_cut 
+   * @param tol_cut_close 
+   * @param tol_trim_close 
+   * @param fixed_edges 
+   * @param corner_nodes 
+   * @param update_meshsets 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode
-  cutAndTrim(int &first_bit, const int before_trim_levels, Tag th,
-             const double tol_cut, const double tol_cut_close,
-             const double tol_trim, const double tol_trim_close,
+  cutAndTrim(int &first_bit, Tag th, const double tol_cut,
+             const double tol_cut_close, const double tol_trim_close,
              Range *fixed_edges = NULL, Range *corner_nodes = NULL,
              const bool update_meshsets = false, const bool debug = false);
 
+  /**
+   * @brief Cut, trim and merge 
+   * 
+   * @param first_bit first bit of bit revel, subsequent set bits are for trim and merge
+   * @param fraction_level fraction of edges merged at each merge step
+   * @param th tag storring mesh node positions
+   * @param tol_cut tolerance how mesh node should be close to cut surface (mesh node is moved), should be small
+   * @param tol_cut_close how crack node should be close to mesh (cut surface node is moved), can be big
+   * @param tol_trim_close how front node should be close to mesh, can be big
+   * @param fixed_edges edges on which nodes can not be moved
+   * @param corner_nodes nodes which can not be moved
+   * @param update_meshsets update meshsets by parents
+   * @param debug swich on debugging
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode
-  cutTrimAndMerge(int &first_bit, const int fraction_level,
-                  const int before_trim_levels, Tag th, const double tol_cut,
-                  const double tol_cut_close, const double tol_trim,
-                  const double tol_trim_close, Range &fixed_edges,
-                  Range &corner_nodes, const bool update_meshsets = false,
-                  const bool debug = false);
+  cutTrimAndMerge(int &first_bit, const int fraction_level, Tag th,
+                  const double tol_cut, const double tol_cut_close,
+                  const double tol_trim_close,
+                  Range &fixed_edges, Range &corner_nodes,
+                  const bool update_meshsets = false, const bool debug = false);
 
-  MoFEMErrorCode refCutTrimAndMerge(
-      int &first_bit, const int fraction_level, const int ref_before_cut_levels,
-      const int befor_trim_levels, Tag th, const double tol_cut,
-      const double tol_cut_close, const double tol_trim,
-      const double tol_trim_close, Range &fixed_edges, Range &corner_nodes,
-      const bool update_meshsets = false, const bool debug = false);
+  /**
+   * @brief Create front from the surface
+   * 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode makeFront(const bool debug = false);
 
-  MoFEMErrorCode makeFront();
+  /**
+   * @brief Calculate distance from mesh nodes to cut surface
+   * 
+   * @param intersect_vol 
+   * @param verb 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode createSurfaceLevelSets(int verb = QUIET,
+                                        const bool debug = false);
+
+  /**
+   * @brief Calculate distance from mesh nodes to surface front
+   * 
+   * @param verb 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode createFrontLevelSets(int verb = QUIET,
+                                      const bool debug = false);
+
+  /**
+   * @brief Create a level sets, i.e. distances from surface and surface front
+   * 
+   * @param th 
+   * @param vol_edges 
+   * @param remove_adj_prims_edges 
+   * @param verb 
+   * @param debug 
+   * @param edges_file_name 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode createLevelSets(Tag th, Range &vol_edges,
+                                 const bool remove_adj_prims_edges,
+                                 int verb = QUIET, const bool debug = false,
+                                 const std::string edges_file_name = string());
+
+  /**
+   * @brief Create a level sets, i.e. distances from surface and surface front
+   * 
+   * @param update_front 
+   * @param verb 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode createLevelSets(int verb = QUIET, const bool debug = false);
+
+  /**
+   * @brief Refine and set level sets
+   * 
+   * \note Should be run befor cutting
+   * 
+   * @param refine_front refine nodes at front
+   * @param update_front update level set at front
+   * @param init_bit_level inital bit ref level to store refined meshes
+   * @param surf_levels number of mesh surface refinement 
+   * @param front_levels 
+   * @param fixed_edges 
+   * @param verb 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode refineMesh(const int init_bit_level, const int surf_levels,
+                            const int front_levels,
+                            Range *fixed_edges = nullptr, int verb = QUIET,
+                            const bool debug = false);
 
   /**
    * \brief find edges to cut
    * @param  verb verbosity level
    * @return      error code
    */
-  MoFEMErrorCode findEdgesToCut(Range *fixed_edges, Range *corner_nodes,
-                                const double low_tol, int verb = QUIET,
-                                const bool debug = false);
+  MoFEMErrorCode findEdgesToCut(Range vol, Range *fixed_edges,
+                                Range *corner_nodes, const double low_tol,
+                                int verb = QUIET, const bool debug = false);
 
-  MoFEMErrorCode refineBeforeCut(const BitRefLevel &bit, Range *fixed_edges,
-                                 const bool update_meshsets,
-                                 const bool debug = false);
-
-  MoFEMErrorCode refineBeforeTrim(const BitRefLevel &bit, Range *fixed_edges,
-                                  const bool update_meshsets,
-                                  const bool debug = false);
-
+  /**
+   * @brief Find entities on cut surface which can be projected
+   * 
+   * @param fixed_edges pointer to fix edges
+   * @param corner_nodes pointer to corner nodes
+   * @param low_to is tolerance how close entities has to be
+   * @param verb verbosity level
+   * @param debug true for debuging purposes
+   * 
+   */
   MoFEMErrorCode projectZeroDistanceEnts(Range *fixed_edges,
                                          Range *corner_nodes,
                                          const double low_tol = 0,
@@ -186,8 +319,11 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  bit BitRefLevel of new mesh created by cutting edges
    * @return     error code
    */
-  MoFEMErrorCode cutEdgesInMiddle(const BitRefLevel bit,
+  MoFEMErrorCode cutEdgesInMiddle(const BitRefLevel bit, Range &cut_vols,
+                                  Range &cut_surf, Range &cut_verts,
                                   const bool debug = false);
+
+                              
 
   /**
    * \brief projecting of mid edge nodes on new mesh on surface
@@ -207,7 +343,6 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode findEdgesToTrim(Range *fixed_edges, Range *corner_nodes,
                                  Tag th = NULL, const double tol = 1e-4,
-                                 const double tol_close = 0,
                                  const bool debug = false);
 
   /**
@@ -215,8 +350,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  bit bit level of the trimmed mesh
    * @return     error code
    */
-  MoFEMErrorCode trimEdgesInTheMiddle(const BitRefLevel bit, Tag th = NULL,
-                                      const double tol = 1e-4,
+  MoFEMErrorCode trimEdgesInTheMiddle(const BitRefLevel bit,
                                       const bool debug = false);
 
   /**
@@ -224,6 +358,17 @@ struct CutMeshInterface : public UnknownInterface {
    * @return error code
    */
   MoFEMErrorCode moveMidNodesOnTrimmedEdges(Tag th = NULL);
+
+  /**
+   * @brief Trim surface from faces beyond front
+   * 
+   * @param fixed_edge 
+   * @param corner_nodes 
+   * @param debug 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode trimSurface(Range *fixed_edge, Range *corner_nodes,
+                             const bool debug = false);
 
   /**
    * \brief Remove pathological elements on surface internal front
@@ -293,16 +438,6 @@ struct CutMeshInterface : public UnknownInterface {
                 const Range &corner_nodes, Tag th = NULL,
                 const bool update_meshsets = false, const bool debug = false);
 
-#ifdef WITH_TETGEN
-
-  MoFEMErrorCode
-  rebuildMeshWithTetGen(vector<string> &switches, const BitRefLevel &mesh_bit,
-                        const BitRefLevel &bit, const Range &surface,
-                        const Range &fixed_edges, const Range &corner_nodes,
-                        Tag th = NULL, const bool debug = false);
-
-#endif
-
   /**
    * \brief set coords to tag
    * @param  th tag handle
@@ -339,7 +474,10 @@ struct CutMeshInterface : public UnknownInterface {
   inline const Range &getMergedVolumes() const { return mergedVolumes; }
   inline const Range &getMergedSurfaces() const { return mergedSurfaces; }
 
-  inline const Range &getTetgenSurfaces() const { return tetgenSurfaces; }
+  inline const Range &getCutSurfaceVolumes() const { return cutSurfaceVolumes; }
+  inline const Range &getCutFrontVolumes() const { return cutFrontVolumes; }
+
+  inline void setTrimFixedEdges(const bool b) { trimFixedEdges = b; };
 
   MoFEMErrorCode saveCutEdges(const std::string prefix = "");
 
@@ -351,10 +489,51 @@ struct CutMeshInterface : public UnknownInterface {
 
   MoFEMErrorCode clearMap();
 
+  struct SaveData {
+    moab::Interface &moab;
+    SaveData(moab::Interface &moab) : moab(moab) {}
+    MoFEMErrorCode operator()(const std::string name, const Range &ents) {
+      MoFEMFunctionBegin;
+      EntityHandle meshset;
+      CHKERR moab.create_meshset(MESHSET_SET, meshset);
+      CHKERR moab.add_entities(meshset, ents);
+      CHKERR moab.write_file(name.c_str(), "VTK", "", &meshset, 1);
+      CHKERR moab.delete_entities(&meshset, 1);
+      MoFEMFunctionReturn(0);
+    }
+  };
+
+  struct LengthMapData {
+    double lEngth;
+    double qUality;
+    EntityHandle eDge;
+    bool skip;
+    LengthMapData(const double l, double q, const EntityHandle e)
+        : lEngth(l), qUality(q), eDge(e), skip(false) {}
+  };
+
+  typedef multi_index_container<
+      LengthMapData,
+      indexed_by<
+
+          ordered_non_unique<
+              member<LengthMapData, double, &LengthMapData::lEngth>>,
+
+          hashed_unique<
+              member<LengthMapData, EntityHandle, &LengthMapData::eDge>>,
+
+          ordered_non_unique<
+              member<LengthMapData, double, &LengthMapData::qUality>>
+
+          >>
+      LengthMapData_multi_index;
+
 private:
   Range fRont;
   Range sUrface;
   Range vOlume;
+
+  bool trimFixedEdges;
 
   boost::shared_ptr<OrientedBoxTreeTool> treeSurfPtr;
   EntityHandle rootSetSurf;
@@ -375,8 +554,6 @@ private:
   Range mergedVolumes;
   Range mergedSurfaces;
 
-  Range tetgenSurfaces;
-
   struct TreeData {
     double dIst;
     double lEngth;
@@ -389,16 +566,11 @@ private:
   map<EntityHandle, TreeData> edgesToTrim;
   map<EntityHandle, TreeData> verticesOnTrimEdges;
 
-#ifdef WITH_TETGEN
-
-  map<EntityHandle, unsigned long> moabTetGenMap;
-  map<unsigned long, EntityHandle> tetGenMoabMap;
-  boost::ptr_vector<tetgenio> tetGenData;
-
-#endif
-
   double aveLength; ///< Average edge length
   double maxLength; ///< Maximal edge length
+
+  Range cutSurfaceVolumes;
+  Range cutFrontVolumes;
 };
 } // namespace MoFEM
 

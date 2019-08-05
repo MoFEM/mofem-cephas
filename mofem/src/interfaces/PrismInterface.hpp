@@ -148,10 +148,11 @@ struct PrismInterface : public UnknownInterface {
    * \param meshset
    * \param Refinement bit level of new mesh
    * \param inhered_from_bit_level inhered nodes and other entities form this
-   * bit level. \param add_interface_entities add prism elements at interface
+   * bit level. 
+   * \param add_interface_entities add prism elements at interface
    * \param recursive do meshesets in the meshset
    *
-   * note inhered_from_bit_level is need to be specified to some meshsets
+   * \note inhered_from_bit_level is need to be specified to some meshsets
    * with interfaces. Some nodes on some refinement levels dividing edges but
    * not splitting faces. Inheriting those nodes will not split faces.
    *

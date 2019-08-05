@@ -14,24 +14,28 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 namespace MoFEM {
 
-  CoordSys::CoordSys(const moab::Interface &moab,const EntityHandle meshset):
-  meshSet(meshset),
-  tagCoordSysName(NULL) {
-    // Change those tags only by modifiers
-    ErrorCode rval;
-    // dim
-    Tag th_coord_sys_dim;
-    rval = moab.tag_get_handle("_CoordSysDim",th_coord_sys_dim); MOAB_THROW(rval);
-    rval = moab.tag_get_by_ptr(th_coord_sys_dim,&meshSet,1,(const void **)&tagCoordSysDim); MOAB_THROW(rval);
-    // Coord Sys Name
-    Tag th_coord_sys_name;
-    rval = moab.tag_get_handle("_CoordSysName",th_coord_sys_name); MOAB_THROW(rval);
-    rval = moab.tag_get_by_ptr(th_coord_sys_name,&meshset,1,(const void **)&tagCoordSysName,&tagCoordSysNameSize); MOAB_THROW(rval);
-
-  }
-
+CoordSys::CoordSys(const moab::Interface &moab, const EntityHandle meshset)
+    : meshSet(meshset), tagCoordSysName(NULL) {
+  // Change those tags only by modifiers
+  // dim
+  Tag th_coord_sys_dim;
+  rval = moab.tag_get_handle("_CoordSysDim", th_coord_sys_dim);
+  MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_coord_sys_dim, &meshSet, 1,
+                             (const void **)&tagCoordSysDim);
+  MOAB_THROW(rval);
+  // Coord Sys Name
+  Tag th_coord_sys_name;
+  rval = moab.tag_get_handle("_CoordSysName", th_coord_sys_name);
+  MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_coord_sys_name, &meshset, 1,
+                             (const void **)&tagCoordSysName,
+                             &tagCoordSysNameSize);
+  MOAB_THROW(rval);
 }
+
+} // namespace MoFEM

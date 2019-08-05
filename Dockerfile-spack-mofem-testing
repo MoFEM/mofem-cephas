@@ -10,7 +10,7 @@ ENV MOFEM_BUILD_DIR=/mofem_build/lib
 
 RUN       mkdir -p /spack_views \
           && cd /spack_views \
-	        && spack view symlink -i cmake cmake
+	  && spack view symlink -i cmake cmake
 
 # install mofem core library
 RUN       mkdir -p $MOFEM_BUILD_DIR \

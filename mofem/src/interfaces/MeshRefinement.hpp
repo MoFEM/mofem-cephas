@@ -64,7 +64,7 @@ struct MeshRefinement : public UnknownInterface {
    * recursively.  Returns the contents of meshsets, but not the meshsets
    * themselves if true.
    */
-  virtual MoFEMErrorCode add_vertices_in_the_middel_of_edges(
+  virtual MoFEMErrorCode add_vertices_in_the_middle_of_edges(
       const EntityHandle meshset, const BitRefLevel &bit,
       const bool recursive = false, int verb = QUIET, EntityHandle start_v = 0);
 
@@ -73,7 +73,7 @@ struct MeshRefinement : public UnknownInterface {
       const EntityHandle meshset, const BitRefLevel &bit,
       const bool recursive = false, int verb = QUIET,
       EntityHandle start_v = 0) {
-    return add_vertices_in_the_middel_of_edges(meshset, bit, recursive, verb,
+    return add_vertices_in_the_middle_of_edges(meshset, bit, recursive, verb,
                                                start_v);
   }
 
@@ -93,7 +93,7 @@ struct MeshRefinement : public UnknownInterface {
    * themselves if true.
    */
   virtual MoFEMErrorCode
-  add_vertices_in_the_middel_of_edges(const Range &edges, const BitRefLevel &bit,
+  add_vertices_in_the_middle_of_edges(const Range &edges, const BitRefLevel &bit,
                                      int verb = QUIET,
                                      EntityHandle start_v = 0);
 
@@ -101,7 +101,7 @@ struct MeshRefinement : public UnknownInterface {
   DEPRECATED MoFEMErrorCode add_verices_in_the_middel_of_edges(
       const Range &edges, const BitRefLevel &bit, int verb = QUIET,
       EntityHandle start_v = 0) {
-    return add_vertices_in_the_middel_of_edges(edges, bit, verb, start_v);
+    return add_vertices_in_the_middle_of_edges(edges, bit, verb, start_v);
   }
 
   /**\brief refine TET in the meshset
@@ -115,7 +115,8 @@ struct MeshRefinement : public UnknownInterface {
   virtual MoFEMErrorCode refine_TET(const EntityHandle meshset,
                                     const BitRefLevel &bit,
                                     const bool respect_interface = false,
-                                    int verb = QUIET, Range *ref_edges = NULL);
+                                    int verb = QUIET, Range *ref_edges = NULL,
+                                    const bool debug = false);
 
   /**\brief refine TET in the meshset
    *
@@ -128,7 +129,8 @@ struct MeshRefinement : public UnknownInterface {
    */
   virtual MoFEMErrorCode refine_TET(const Range &tets, const BitRefLevel &bit,
                                     const bool respect_interface = false,
-                                    int verb = QUIET, Range *ref_edges = NULL);
+                                    int verb = QUIET, Range *ref_edges = NULL,
+                                    const bool debug = false);
 
   /**\brief refine PRISM in the meshset
    *

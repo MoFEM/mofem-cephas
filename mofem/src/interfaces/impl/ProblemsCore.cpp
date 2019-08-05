@@ -238,7 +238,7 @@ MoFEMErrorCode Core::build_problem_on_distributed_mesh(int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_problem(const std::string &problem_name, int verb) {
+MoFEMErrorCode Core::clear_problem(const std::string problem_name, int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
     verb = verbose;

@@ -177,7 +177,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
 
       ApproximationOrder ent_order = e.getMaxOrder();
       auto &dat = data[side_number];
-      const int order = e.getMaxOrder();
       dat.getDataOrder() =
           dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
     } else

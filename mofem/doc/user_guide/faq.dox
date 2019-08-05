@@ -314,6 +314,20 @@ check_mofem_version(0 3 6)
 add_subdirectory(${PROJECT_SOURCE_DIR}/homogenisation)
 \endcode
 
+\section openmpi_error_in_docer OpenMPI error in docker
+
+If in docker you have following error
+\code
+[2761d885210d:00053] Read -1, expected 8192, errno = 1
+[2761d885210d:00053] Read -1, expected 87888, errno = 1
+[2761d885210d:00054] Read -1, expected 95784, errno = 1
+\endcode
+Setting in command line
+\code
+export OMPI_MCA_btl_vader_single_copy_mechanism=none
+\endcod
+will fix the problem.
+
 \subsection debugging_in_docker How to make debugging in docker?
 
 You can use gdb inside docker, remembering to set cmake with debugging

@@ -597,4 +597,64 @@ MoFEMErrorCode DeprecatedCoreInterface::loop_finite_elements(
       bh, verb);
 }
 
+MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_ents(
+    const Problem *problem_ptr, const std::string &fe_name, int verb) {
+  return getInterface<CommInterface>()->resolveSharedFiniteElements(
+      problem_ptr, fe_name, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_ents(
+    const std::string &name, const std::string &fe_name, int verb) {
+  return getInterface<CommInterface>()->resolveSharedFiniteElements(
+      name, fe_name, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_finite_elements(
+    const Problem *problem_ptr, const std::string &fe_name, int verb) {
+  return getInterface<CommInterface>()->resolveSharedFiniteElements(
+      problem_ptr, fe_name, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_finite_elements(
+    const std::string &name, const std::string &fe_name, int verb) {
+  return getInterface<CommInterface>()->resolveSharedFiniteElements(
+      name, fe_name, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::make_entities_multishared(
+    const EntityHandle *entities, const int num_entities, const int my_proc,
+    int verb) {
+  return getInterface<CommInterface>()->makeEntitiesMultishared(
+      entities, num_entities, my_proc, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::make_entities_multishared(
+    Range &entities, const int my_proc, int verb) {
+  return getInterface<CommInterface>()->makeEntitiesMultishared(entities,
+                                                                my_proc, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::make_field_entities_multishared(
+    const std::string field_name, const int owner_proc, int verb) {
+  return getInterface<CommInterface>()->makeFieldEntitiesMultishared(
+      field_name, owner_proc, verb);
+}
+
+MoFEMErrorCode
+DeprecatedCoreInterface::exchange_field_data(const std::string field_name,
+                                             int verb) {
+  return getInterface<CommInterface>()->exchangeFieldData(field_name, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::synchronise_entities(Range &ent,
+                                                             int verb) {
+  return getInterface<CommInterface>()->synchroniseEntities(ent, verb);
+}
+
+MoFEMErrorCode
+DeprecatedCoreInterface::synchronise_field_entities(const std::string &name,
+                                                    int verb) {
+  return getInterface<CommInterface>()->synchroniseFieldEntities(name, verb);
+}
+
 } // namespace MoFEM
