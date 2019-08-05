@@ -502,7 +502,7 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
     dist_surface_vec.resize(3 * vol_verts.size());
     dist_surface_normal_vec.resize(3 * vol_verts.size());
     CHKERR moab.get_coords(vol_verts, &*coords.begin());
-    std::srand(std::time(nullptr));
+    std::srand(0);
 
     for (auto v : vol_verts) {
       
