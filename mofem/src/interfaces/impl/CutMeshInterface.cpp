@@ -958,9 +958,21 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
 
   CHKERR project_vertices_close_to_geometry_features();
 
+  for (auto v : zeroDistanceVerts) {
+    Range adj_edges;
+    CHKERR moab.get_adjacencies(&v, 1, 1, false, adj_edges);
+    for (auto e : adj_edges) {
+      cutEdges.erase(e);
+      edgesToCut.erase(e);
+    }
+  }
+  
   if (debug)
-    CHKERR SaveData(m_field.get_moab())("cut_edges.vtk",
-                                        unite(cutEdges, zeroDistanceVerts));
+    CHKERR SaveData(m_field.get_moab())("cut_edges.vtk", cutEdges);
+
+  if(debug)
+    CHKERR SaveData(m_field.get_moab())("cut_edges_zero_distance_verts.vtk",
+                                        zeroDistanceVerts);
 
   MoFEMFunctionReturn(0);
 }
