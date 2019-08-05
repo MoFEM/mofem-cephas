@@ -1138,12 +1138,10 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
   auto get_quality_change =
       [&](const Range &adj_tets,
           map<EntityHandle, TreeData> vertices_on_cut_edges) {
-        // double q0;
-        // CHKERR m_field.getInterface<Tools>()->minTetsQuality(adj_tets, q0);
         double q0 = get_min_quality(adj_tets, verticesOnCutEdges);
         vertices_on_cut_edges.insert(verticesOnCutEdges.begin(),
                                      verticesOnCutEdges.end());
-        double q = get_min_quality(adj_tets, verticesOnCutEdges);
+        double q = get_min_quality(adj_tets, vertices_on_cut_edges);
         return q / q0;
       };
 
