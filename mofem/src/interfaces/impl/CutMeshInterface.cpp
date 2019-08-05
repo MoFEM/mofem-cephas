@@ -264,7 +264,7 @@ CutMeshInterface::cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
 
   if (debug) {
     CHKERR saveCutEdges();
-    if(fixed_edges)
+    if (fixed_edges)
       CHKERR SaveData(moab)("out_cut_new_fixed_edges.vtk", *fixed_edges);
   }
 
