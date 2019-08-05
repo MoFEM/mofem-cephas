@@ -1377,6 +1377,66 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   cut_verts.clear();
   CHKERR moab.get_connectivity(cut_surf, cut_verts, true);
 
+  // Check non-mainfolds
+  auto check_for_non_minfold = [&]() {
+    MoFEMFunctionBegin;
+    Range surf_edges;
+    CHKERR moab.get_adjacencies(cut_surf, 1, false, surf_edges,
+                                moab::Interface::UNION);
+    for(auto e : surf_edges) {
+
+      Range faces;
+      CHKERR moab.get_adjacencies(&e, 1, 2, false, faces);
+      faces = intersect(faces, cut_surf);
+      if (faces.size() > 2) {
+
+        bool resolved = false;
+
+        // Check for haning node
+        Range nodes;
+        CHKERR moab.get_connectivity(faces, nodes, true);
+        for(auto n : nodes) {
+          Range adj_faces;
+          CHKERR moab.get_adjacencies(&n, 1, 2, false, adj_faces);
+          adj_faces = intersect(adj_faces, cut_surf);
+          if (adj_faces.size() == 1) {
+            cut_surf.erase(adj_faces[0]);
+            resolved = true;
+          }
+        }
+        
+        // Check for two edges minfold
+        Range adj_edges;
+        CHKERR moab.get_adjacencies(faces, 1, false, adj_edges,
+                                    moab::Interface::UNION);
+        adj_edges = intersect(adj_edges, surf_edges);
+        adj_edges.erase(e);
+        for(auto other_e : adj_edges) {
+          Range other_faces;
+          CHKERR moab.get_adjacencies(&other_e, 1, 2, false, other_faces);
+          other_faces = intersect(other_faces, cut_surf);
+          if (other_faces.size() > 2) {
+            other_faces = intersect(other_faces, faces);
+            cut_surf = subtract(cut_surf, other_faces);
+            resolved = true;
+          }
+        }
+
+        // if (!resolved)
+          // SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                  // "Non-mainfold surfae");
+
+        cut_verts.clear();
+        CHKERR moab.get_connectivity(cut_surf, cut_verts, true);
+
+
+      }
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR check_for_non_minfold();
+
   MoFEMFunctionReturn(0);
 }
 
