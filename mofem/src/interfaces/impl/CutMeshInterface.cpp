@@ -1061,11 +1061,9 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
       VectorDouble3 new_pos = d.rayPoint + d.dIst * d.unitRayDir;
       for (int nn = 0; nn != 2; ++nn) {
 
-        FTensor::Index<'i', 3> i;
-        auto t_normal = get_normal(&dist_normal[3 * nn]);
-        const double dist = sqrt(t_normal(i) * t_normal(i));
+        VectorDouble3 ray = new_pos - p[nn];
+        const double dist = norm_2(ray);
         const double length = dist;
-        VectorDouble3 ray = getVectorAdaptor(&dist_normal[3 * nn], 3);
 
         bool add_node = true;
         auto vit = min_dist_map.find(conn[nn]);
@@ -1128,6 +1126,8 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
   auto get_quality_change =
       [&](const Range &adj_tets,
           map<EntityHandle, TreeData> vertices_on_cut_edges) {
+        // double q0;
+        // CHKERR m_field.getInterface<Tools>()->minTetsQuality(adj_tets, q0);
         double q0 = get_min_quality(adj_tets, verticesOnCutEdges);
         vertices_on_cut_edges.insert(verticesOnCutEdges.begin(),
                                      verticesOnCutEdges.end());
