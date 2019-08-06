@@ -239,12 +239,11 @@ FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   double *shape_functions =
       &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
   coordsAtGaussPts.resize(nbGaussPts, 3, false);
-  for (int gg = 0; gg != nbGaussPts; ++gg) {
-    for (int dd = 0; dd != 3; ++dd) {
+  for (int gg = 0; gg != nbGaussPts; ++gg)
+    for (int dd = 0; dd != 3; ++dd)
       coordsAtGaussPts(gg, dd) =
           cblas_ddot(3, &shape_functions[3 * gg], 1, &coords[dd], 3);
-    }
-  }
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -259,10 +258,9 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
         mField.get_field_structure(meshPositionsFieldName);
     BitFieldId id = field_struture->getId();
 
-    if ((numeredEntFiniteElementPtr->getBitFieldIdData() & id).none()) {
+    if ((numeredEntFiniteElementPtr->getBitFieldIdData() & id).none()) 
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
               "no MESH_NODE_POSITIONS in element data");
-    }
 
     // Calculate normal for high-order geometry
 
@@ -310,12 +308,11 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
 
   // Apply Piola transform to HDiv and HCurl spaces, uses previously calculated
   // faces normal and tangent vectors.
-  if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+  if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) 
     CHKERR opContravariantTransform.opRhs(data_div);
-  }
-  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+  
+  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) 
     CHKERR opCovariantTransform.opRhs(data_curl);
-  }
 
   // Iterate over operators
   CHKERR loopOverOperators();
@@ -440,10 +437,9 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
   if (type != MBEDGE && type != MBTRI)
     MoFEMFunctionReturnHot(0);
 
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI) {
+  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "This operator can be used only with element which is triangle");
-  }
 
   FTensor::Tensor2<double *, 2, 2> t_inv_jac = FTensor::Tensor2<double *, 2, 2>(
       &invJac(0, 0), &invJac(0, 1), &invJac(1, 0), &invJac(1, 1));
