@@ -485,19 +485,20 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBasedFaceFunctions_MBTET_ON_FACE(
       FTensor::Tensor1<double *, 3>(&phi_f_e[2][HVEC0], &phi_f_e[2][HVEC1],
                                     &phi_f_e[2][HVEC2], 3),
   };
-  FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_face_edge_base[3] = {
-      FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_phi_f_e[0][HVEC0_0], &diff_phi_f_e[0][HVEC0_1],
-          &diff_phi_f_e[0][HVEC1_0], &diff_phi_f_e[0][HVEC1_1],
-          &diff_phi_f_e[0][HVEC2_0], &diff_phi_f_e[0][HVEC2_1]),
-      FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_phi_f_e[1][HVEC0_0], &diff_phi_f_e[1][HVEC0_1],
-          &diff_phi_f_e[1][HVEC1_0], &diff_phi_f_e[1][HVEC1_1],
-          &diff_phi_f_e[1][HVEC2_0], &diff_phi_f_e[1][HVEC2_1]),
-      FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_phi_f_e[2][HVEC0_0], &diff_phi_f_e[2][HVEC0_1],
-          &diff_phi_f_e[2][HVEC1_0], &diff_phi_f_e[2][HVEC1_1],
-          &diff_phi_f_e[2][HVEC2_0], &diff_phi_f_e[2][HVEC2_1])};
+  FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
+      t_diff_face_edge_base[3] = {
+          FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
+              &diff_phi_f_e[0][HVEC0_0], &diff_phi_f_e[0][HVEC0_1],
+              &diff_phi_f_e[0][HVEC1_0], &diff_phi_f_e[0][HVEC1_1],
+              &diff_phi_f_e[0][HVEC2_0], &diff_phi_f_e[0][HVEC2_1]),
+          FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
+              &diff_phi_f_e[1][HVEC0_0], &diff_phi_f_e[1][HVEC0_1],
+              &diff_phi_f_e[1][HVEC1_0], &diff_phi_f_e[1][HVEC1_1],
+              &diff_phi_f_e[1][HVEC2_0], &diff_phi_f_e[1][HVEC2_1]),
+          FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
+              &diff_phi_f_e[2][HVEC0_0], &diff_phi_f_e[2][HVEC0_1],
+              &diff_phi_f_e[2][HVEC1_0], &diff_phi_f_e[2][HVEC1_1],
+              &diff_phi_f_e[2][HVEC2_0], &diff_phi_f_e[2][HVEC2_1])};
 
   for (int ee = 0; ee != 3; ee++) {
 
@@ -1302,19 +1303,20 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_FaceFunctions_MBTET_ON_FACE(
                                     &phi_f_e[1][HVEC2], 3),
       FTensor::Tensor1<double *, 3>(&phi_f_e[2][HVEC0], &phi_f_e[2][HVEC1],
                                     &phi_f_e[2][HVEC2], 3)};
-  FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_face_edge_base[] = {
-      FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_phi_f_e[0][HVEC0_0], &diff_phi_f_e[0][HVEC0_1],
-          &diff_phi_f_e[0][HVEC1_0], &diff_phi_f_e[0][HVEC1_1],
-          &diff_phi_f_e[0][HVEC2_0], &diff_phi_f_e[0][HVEC2_1]),
-      FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_phi_f_e[1][HVEC0_0], &diff_phi_f_e[1][HVEC0_1],
-          &diff_phi_f_e[1][HVEC1_0], &diff_phi_f_e[1][HVEC1_1],
-          &diff_phi_f_e[1][HVEC2_0], &diff_phi_f_e[1][HVEC2_1]),
-      FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
-          &diff_phi_f_e[2][HVEC0_0], &diff_phi_f_e[2][HVEC0_1],
-          &diff_phi_f_e[2][HVEC1_0], &diff_phi_f_e[2][HVEC1_1],
-          &diff_phi_f_e[2][HVEC2_0], &diff_phi_f_e[2][HVEC2_1])};
+  FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
+      t_diff_face_edge_base[] = {
+          FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
+              &diff_phi_f_e[0][HVEC0_0], &diff_phi_f_e[0][HVEC0_1],
+              &diff_phi_f_e[0][HVEC1_0], &diff_phi_f_e[0][HVEC1_1],
+              &diff_phi_f_e[0][HVEC2_0], &diff_phi_f_e[0][HVEC2_1]),
+          FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
+              &diff_phi_f_e[1][HVEC0_0], &diff_phi_f_e[1][HVEC0_1],
+              &diff_phi_f_e[1][HVEC1_0], &diff_phi_f_e[1][HVEC1_1],
+              &diff_phi_f_e[1][HVEC2_0], &diff_phi_f_e[1][HVEC2_1]),
+          FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
+              &diff_phi_f_e[2][HVEC0_0], &diff_phi_f_e[2][HVEC0_1],
+              &diff_phi_f_e[2][HVEC1_0], &diff_phi_f_e[2][HVEC1_1],
+              &diff_phi_f_e[2][HVEC2_0], &diff_phi_f_e[2][HVEC2_1])};
 
   FTensor::Tensor1<double *, 3> t_face_base(&phi_f[0], &phi_f[1], &phi_f[2], 3);
   FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_face_base(
@@ -1325,9 +1327,8 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_FaceFunctions_MBTET_ON_FACE(
     FTensor::Tensor1<double *, 3> t_face_face_base(
         &phi_f_f[HVEC0], &phi_f_f[HVEC1], &phi_f_f[HVEC2], 3);
     FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_face_face_base(
-        &diff_phi_f_f[HVEC0_0], &diff_phi_f_f[HVEC0_1],
-        &diff_phi_f_f[HVEC1_0], &diff_phi_f_f[HVEC1_1],
-        &diff_phi_f_f[HVEC2_0], &diff_phi_f_f[HVEC2_1]);
+        &diff_phi_f_f[HVEC0_0], &diff_phi_f_f[HVEC0_1], &diff_phi_f_f[HVEC1_0],
+        &diff_phi_f_f[HVEC1_1], &diff_phi_f_f[HVEC2_0], &diff_phi_f_f[HVEC2_1]);
     for (int ii = 0; ii != nb_integration_pts; ii++) {
       int cc = 0;
       for (int oo = 0; oo <= p; oo++) {
@@ -1572,8 +1573,8 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
     MeshRefinement *m_ref;
     ierr = m_field_ref.getInterface(m_ref);
     CHKERRG(ierr);
-    ierr = m_ref->add_vertices_in_the_middle_of_edges(edges,
-                                                     BitRefLevel().set(ll + 1));
+    ierr = m_ref->add_vertices_in_the_middle_of_edges(
+        edges, BitRefLevel().set(ll + 1));
     CHKERRG(ierr);
     ierr = m_ref->refine_TET(tets, BitRefLevel().set(ll + 1));
     CHKERRG(ierr);
@@ -1967,9 +1968,10 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   // NBVOLUMETET_AINSWORTH_HCURL(order) << endl; VectorDouble
   // base_volume_functions(3*NBVOLUMETET_AINSWORTH_HCURL(order)*nb_gauss_pts);
   // VectorDouble
-  // diff_base_volume_functions(9*NBVOLUMETET_AINSWORTH_HCURL(order)*nb_gauss_pts); phi_v
-  // = &base_volume_functions[0]; diff_phi_v = &diff_base_volume_functions[0];
-  // ierr = MoFEM::Hcurl_Ainsworth_VolumeFunctions_MBTET(
+  // diff_base_volume_functions(9*NBVOLUMETET_AINSWORTH_HCURL(order)*nb_gauss_pts);
+  // phi_v = &base_volume_functions[0]; diff_phi_v =
+  // &diff_base_volume_functions[0]; ierr =
+  // MoFEM::Hcurl_Ainsworth_VolumeFunctions_MBTET(
   //   order,
   //   &*shape_fun.data().begin(),
   //   diff_shape_fun,
@@ -2200,10 +2202,10 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
   for (int nn = 0; nn != 4; ++nn) {
     t_grad_n[nn] = FTensor::Tensor1<double, 3>(
         diff_n[3 * nn + 0], diff_n[3 * nn + 1], diff_n[3 * nn + 2]);
-    // cerr << t_grad_n[nn](0) << "  " << t_grad_n[nn](1) << " " << t_grad_n[nn](2)
+    // cerr << t_grad_n[nn](0) << "  " << t_grad_n[nn](1) << " " <<
+    // t_grad_n[nn](2)
     //      << endl;
   };
-
 
   HcurlEdgeBase h_curl_base_on_edge;
 
@@ -2213,15 +2215,14 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
                                         &phi[ee][HVEC2], 3);
 
     FTensor::Tensor2<double *, 3, 3> t_diff_phi(
-        &diff_phi[ee][HVEC0_0], &diff_phi[ee][HVEC0_1],
-        &diff_phi[ee][HVEC0_2], &diff_phi[ee][HVEC1_0],
-        &diff_phi[ee][HVEC1_1], &diff_phi[ee][HVEC1_2],
-        &diff_phi[ee][HVEC2_0], &diff_phi[ee][HVEC2_1],
-        &diff_phi[ee][HVEC2_2], 9);
+        &diff_phi[ee][HVEC0_0], &diff_phi[ee][HVEC0_1], &diff_phi[ee][HVEC0_2],
+        &diff_phi[ee][HVEC1_0], &diff_phi[ee][HVEC1_1], &diff_phi[ee][HVEC1_2],
+        &diff_phi[ee][HVEC2_0], &diff_phi[ee][HVEC2_1], &diff_phi[ee][HVEC2_2],
+        9);
 
     int n0_idx = e_nodes[ee][0];
     int n1_idx = e_nodes[ee][1];
-    if(sense[ee]==-1) {
+    if (sense[ee] == -1) {
       int n_tmp = n0_idx;
       n0_idx = n1_idx;
       n1_idx = n_tmp;
@@ -2256,13 +2257,12 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTRI(
                                         &phi[ee][HVEC2], 3);
 
     FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_phi(
-        &diff_phi[ee][HVEC0_0], &diff_phi[ee][HVEC0_1],
-        &diff_phi[ee][HVEC1_0], &diff_phi[ee][HVEC1_1],
-        &diff_phi[ee][HVEC2_0], &diff_phi[ee][HVEC2_1]);
+        &diff_phi[ee][HVEC0_0], &diff_phi[ee][HVEC0_1], &diff_phi[ee][HVEC1_0],
+        &diff_phi[ee][HVEC1_1], &diff_phi[ee][HVEC2_0], &diff_phi[ee][HVEC2_1]);
 
     int n0_idx = e_nodes[ee][0];
     int n1_idx = e_nodes[ee][1];
-    if(sense[ee]==-1) {
+    if (sense[ee] == -1) {
       int n_tmp = n0_idx;
       n0_idx = n1_idx;
       n1_idx = n_tmp;
@@ -2276,8 +2276,8 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTRI(
 }
 
 MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
-    int sense, int p, double *n, double *diff_n, double *phi,
-    double *diff_phi, int nb_integration_pts) {
+    int sense, int p, double *n, double *diff_n, double *phi, double *diff_phi,
+    int nb_integration_pts) {
   MoFEMFunctionBegin;
 
   FTensor::Tensor1<double, 3> t_grad_n[2];
@@ -2287,8 +2287,7 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
 
   HcurlEdgeBase h_curl_base_on_edge;
 
-  FTensor::Tensor1<double *, 3> t_phi(&phi[HVEC0], &phi[HVEC1],
-                                      &phi[HVEC2], 3);
+  FTensor::Tensor1<double *, 3> t_phi(&phi[HVEC0], &phi[HVEC1], &phi[HVEC2], 3);
 
   if (diff_phi != NULL) {
     SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
@@ -2311,10 +2310,10 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
 
 struct HcurlFaceBase {
   HcurlEdgeBase hCurlBaseOnEdge;
-  VectorDouble f0PhiII,diffF0PhiII;
-  VectorDouble f1PhiII,diffF1PhiII;
-  VectorDouble iFiF0,diffIFiF0;
-  VectorDouble iFiF1,diffIFiF1;
+  VectorDouble f0PhiII, diffF0PhiII;
+  VectorDouble f1PhiII, diffF1PhiII;
+  VectorDouble iFiF0, diffIFiF0;
+  VectorDouble iFiF1, diffIFiF1;
 
   FTensor::Index<'i', 3> i;
 
@@ -2327,8 +2326,9 @@ struct HcurlFaceBase {
     FTensor::Index<'j', 3> j;
 
     MoFEMFunctionBegin;
-    f0PhiII.resize(3 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts,false);
-    diffF0PhiII.resize(9 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts,false);
+    f0PhiII.resize(3 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts, false);
+    diffF0PhiII.resize(9 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts,
+                       false);
 
     // edge base for family I
     double *f0_phi_ii = &*f0PhiII.data().begin();
@@ -2341,7 +2341,7 @@ struct HcurlFaceBase {
         &diff_f0_phi_ii[HVEC1_1], &diff_f0_phi_ii[HVEC1_2],
         &diff_f0_phi_ii[HVEC2_0], &diff_f0_phi_ii[HVEC2_1],
         &diff_f0_phi_ii[HVEC2_2], 9);
-    CHKERR hCurlBaseOnEdge(4, p-1, nb_integration_pts, n0f0_idx, n1f0_idx, n,
+    CHKERR hCurlBaseOnEdge(4, p - 1, nb_integration_pts, n0f0_idx, n1f0_idx, n,
                            t_grad_n, t_f0_phi_ii, t_diff_f0_phi_ii);
 
     FTensor::Tensor1<double, 3> &t_grad_n0f0 = t_grad_n[n0f0_idx];
@@ -2399,8 +2399,7 @@ struct HcurlFaceBase {
           ++t_diff_phi;
           ++t_f0_phi_ii;
           ++t_diff_f0_phi_ii;
-
-         }
+        }
       }
     }
 
@@ -2418,10 +2417,12 @@ struct HcurlFaceBase {
 
     MoFEMFunctionBegin;
 
-    f0PhiII.resize(3 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts,false);
-    diffF0PhiII.resize(9 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts,false);
-    f1PhiII.resize(3 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts,false);
-    diffF1PhiII.resize(9 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts,false);
+    f0PhiII.resize(3 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts, false);
+    diffF0PhiII.resize(9 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts,
+                       false);
+    f1PhiII.resize(3 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts, false);
+    diffF1PhiII.resize(9 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts,
+                       false);
 
     // edge base for family I
     double *f0_phi_ii = &*f0PhiII.data().begin();
@@ -2434,7 +2435,7 @@ struct HcurlFaceBase {
         &diff_f0_phi_ii[HVEC1_1], &diff_f0_phi_ii[HVEC1_2],
         &diff_f0_phi_ii[HVEC2_0], &diff_f0_phi_ii[HVEC2_1],
         &diff_f0_phi_ii[HVEC2_2], 9);
-    CHKERR hCurlBaseOnEdge(4, p-1, nb_integration_pts, n0f0_idx, n1f0_idx, n,
+    CHKERR hCurlBaseOnEdge(4, p - 1, nb_integration_pts, n0f0_idx, n1f0_idx, n,
                            t_grad_n, t_f0_phi_ii, t_diff_f0_phi_ii);
 
     // edge base for family II
@@ -2448,7 +2449,7 @@ struct HcurlFaceBase {
         &diff_f1_phi_ii[HVEC1_1], &diff_f1_phi_ii[HVEC1_2],
         &diff_f1_phi_ii[HVEC2_0], &diff_f1_phi_ii[HVEC2_1],
         &diff_f1_phi_ii[HVEC2_2], 9);
-    CHKERR hCurlBaseOnEdge(4, p-1, nb_integration_pts, n0f1_idx, n1f1_idx, n,
+    CHKERR hCurlBaseOnEdge(4, p - 1, nb_integration_pts, n0f1_idx, n1f1_idx, n,
                            t_grad_n, t_f1_phi_ii, t_diff_f1_phi_ii);
 
     FTensor::Tensor1<double, 3> &t_grad_n0f0 = t_grad_n[n0f0_idx];
@@ -2503,8 +2504,7 @@ struct HcurlFaceBase {
             &diff_f0_phi_ii[diff_phi_shift + HVEC2_2], 9);
 
         FTensor::Tensor1<double *, 3> t_f1_phi_ii(
-            &f1_phi_ii[phi_shift + HVEC0],
-            &f1_phi_ii[phi_shift + HVEC1],
+            &f1_phi_ii[phi_shift + HVEC0], &f1_phi_ii[phi_shift + HVEC1],
             &f1_phi_ii[phi_shift + HVEC2], 3);
         FTensor::Tensor2<double *, 3, 3> t_diff_f1_phi_ii(
             &diff_f1_phi_ii[diff_phi_shift + HVEC0_0],
@@ -2556,11 +2556,10 @@ struct HcurlFaceBase {
           ++kk;
         }
       }
-      if(kk != NBFACETRI_DEMKOWICZ_HCURL(p)) {
+      if (kk != NBFACETRI_DEMKOWICZ_HCURL(p)) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Wrong number of base functions");
       }
-
     }
     MoFEMFunctionReturn(0);
   }
@@ -2618,7 +2617,7 @@ struct HcurlFaceBase {
     FTensor::Tensor1<double, 3> t_grad_n0f1_p_n1f1;
     t_grad_n0f1_p_n1f1(i) = t_grad_n0f1(i) + t_grad_n1f1(i);
 
-    iFiF0.resize((p+1), false);
+    iFiF0.resize((p + 1), false);
     diffIFiF0.resize(2 * p + 2, false);
     double *ifif0 = &*iFiF0.data().begin();
     double *diff_ifif0 = &*diffIFiF0.data().begin();
@@ -2675,8 +2674,8 @@ struct HcurlFaceBase {
           CHKERR IntegratedJacobi_polynomials(
               jj + 1, 2 * ii + 1, n2f0, n0f0 + n1f0, &t_grad_n2f0(0),
               &t_grad_n0f0_p_n1f0(0), ifif0, diff_ifif0, 2);
-          FTensor::Tensor1<double, 2> t_diff_ifif0(
-              diff_ifif0[0 + jj], diff_ifif0[(jj + 1) + jj]);
+          FTensor::Tensor1<double, 2> t_diff_ifif0(diff_ifif0[0 + jj],
+                                                   diff_ifif0[(jj + 1) + jj]);
           t_phi(i) = ifif0[jj] * t_f0_phi_ii(i);
           t_diff_phi(i, j) = ifif0[jj] * t_diff_f0_phi_ii(i, j) +
                              t_f0_phi_ii(i) * t_diff_ifif0(j);
@@ -2688,9 +2687,9 @@ struct HcurlFaceBase {
           ++kk;
 
           // family II
-          CHKERR IntegratedJacobi_polynomials(jj + 1, 2 * ii + 1, n2f1, n0f1+n1f1,
-                                    &t_grad_n2f1(0), &t_grad_n0f1_p_n1f1(0),
-                                    ifif1, diff_ifif1, 2);
+          CHKERR IntegratedJacobi_polynomials(
+              jj + 1, 2 * ii + 1, n2f1, n0f1 + n1f1, &t_grad_n2f1(0),
+              &t_grad_n0f1_p_n1f1(0), ifif1, diff_ifif1, 2);
           FTensor::Tensor1<double, 2> t_diff_ifif1(diff_ifif1[0 + jj],
                                                    diff_ifif1[(jj + 1) + jj]);
           t_phi(i) = ifif1[jj] * t_f1_phi_ii(i);
@@ -2703,22 +2702,18 @@ struct HcurlFaceBase {
           ++kk;
         }
       }
-      if(kk != NBFACETRI_DEMKOWICZ_HCURL(p)) {
+      if (kk != NBFACETRI_DEMKOWICZ_HCURL(p)) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Wrong number of base functions");
       }
     }
     MoFEMFunctionReturn(0);
   }
-
 };
 
-MoFEMErrorCode
-MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTET(int *faces_nodes, int *p,
-                                               double *n, double *diff_n,
-                                               double *phi[],
-                                               double *diff_phi[],
-                                               int nb_integration_pts) {
+MoFEMErrorCode MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTET(
+    int *faces_nodes, int *p, double *n, double *diff_n, double *phi[],
+    double *diff_phi[], int nb_integration_pts) {
   MoFEMFunctionBegin;
 
   FTensor::Tensor1<double, 3> t_grad_n[4];
@@ -2738,11 +2733,10 @@ MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTET(int *faces_nodes, int *p,
                                         &phi[ff][HVEC2], 3);
 
     FTensor::Tensor2<double *, 3, 3> t_diff_phi(
-        &diff_phi[ff][HVEC0_0], &diff_phi[ff][HVEC0_1],
-        &diff_phi[ff][HVEC0_2], &diff_phi[ff][HVEC1_0],
-        &diff_phi[ff][HVEC1_1], &diff_phi[ff][HVEC1_2],
-        &diff_phi[ff][HVEC2_0], &diff_phi[ff][HVEC2_1],
-        &diff_phi[ff][HVEC2_2], 9);
+        &diff_phi[ff][HVEC0_0], &diff_phi[ff][HVEC0_1], &diff_phi[ff][HVEC0_2],
+        &diff_phi[ff][HVEC1_0], &diff_phi[ff][HVEC1_1], &diff_phi[ff][HVEC1_2],
+        &diff_phi[ff][HVEC2_0], &diff_phi[ff][HVEC2_1], &diff_phi[ff][HVEC2_2],
+        9);
 
     // f0, f1 - family I and family II
     const int n0f0_idx = faces_nodes[3 * ff + 0];
@@ -2761,18 +2755,15 @@ MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTET(int *faces_nodes, int *p,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTRI(int *faces_nodes, int p,
-                                               double *n, double *diff_n,
-                                               double *phi,
-                                               double *diff_phi,
-                                               int nb_integration_pts) {
+MoFEMErrorCode MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTRI(
+    int *faces_nodes, int p, double *n, double *diff_n, double *phi,
+    double *diff_phi, int nb_integration_pts) {
   MoFEMFunctionBegin;
 
   FTensor::Tensor1<double, 3> t_grad_n[3];
   for (int nn = 0; nn != 3; ++nn) {
-    t_grad_n[nn] = FTensor::Tensor1<double, 3>(
-        diff_n[2 * nn + 0], diff_n[2 * nn + 1], 0.);
+    t_grad_n[nn] =
+        FTensor::Tensor1<double, 3>(diff_n[2 * nn + 0], diff_n[2 * nn + 1], 0.);
   };
 
   HcurlFaceBase h_curl_face_base;
@@ -2780,8 +2771,7 @@ MoFEM::Hcurl_Demkowicz_FaceBaseFunctions_MBTRI(int *faces_nodes, int p,
   if (p < 2)
     MoFEMFunctionReturnHot(0);
 
-  FTensor::Tensor1<double *, 3> t_phi(&phi[HVEC0], &phi[HVEC1],
-                                      &phi[HVEC2], 3);
+  FTensor::Tensor1<double *, 3> t_phi(&phi[HVEC0], &phi[HVEC1], &phi[HVEC2], 3);
 
   FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_phi(
       &diff_phi[HVEC0_0], &diff_phi[HVEC0_1], &diff_phi[HVEC1_0],
@@ -2808,16 +2798,15 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
     int nb_integration_pts) {
 
   int family[3][4] = {{0, 1, 2, 3}, {1, 2, 3, 0}, {2, 3, 0, 1}};
-  FTensor::Index<'i',3> i;
-  FTensor::Index<'j',3> j;
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
 
   MoFEMFunctionBegin;
 
   if (p < 3)
     MoFEMFunctionReturnHot(0);
 
-  FTensor::Tensor1<double *, 3> t_phi(&phi[HVEC0], &phi[HVEC1], &phi[HVEC2],
-                                      3);
+  FTensor::Tensor1<double *, 3> t_phi(&phi[HVEC0], &phi[HVEC1], &phi[HVEC2], 3);
 
   FTensor::Tensor2<double *, 3, 3> t_diff_phi(
       &diff_phi[HVEC0_0], &diff_phi[HVEC0_1], &diff_phi[HVEC0_2],
@@ -2830,17 +2819,17 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
         diff_n[3 * nn + 0], diff_n[3 * nn + 1], diff_n[3 * nn + 2]);
   };
 
-  int nb_face_functions = (NBFACETRI_DEMKOWICZ_HCURL(p-1)) / 2;
+  int nb_face_functions = (NBFACETRI_DEMKOWICZ_HCURL(p - 1)) / 2;
   MatrixDouble phi_ij(3, 3 * nb_face_functions * nb_integration_pts);
   MatrixDouble diff_phi_ij(3, 9 * nb_face_functions * nb_integration_pts);
   MatrixDouble fi_k(3, p + 1);
   MatrixDouble diff_fi_k(3, 3 * p + 3);
   HcurlFaceBase h_curl_face_base;
- 
+
   // calate face base for each family
   for (int ff = 0; ff != 3; ++ff) {
-    double *phi_ij_ptr = &phi_ij(ff,0);
-    double *diff_phi_ij_ptr = &diff_phi_ij(ff,0);
+    double *phi_ij_ptr = &phi_ij(ff, 0);
+    double *diff_phi_ij_ptr = &diff_phi_ij(ff, 0);
 
     FTensor::Tensor1<double *, 3> t_phi_ij(
         &phi_ij_ptr[HVEC0], &phi_ij_ptr[HVEC1], &phi_ij_ptr[HVEC2], 3);
@@ -2929,17 +2918,17 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
 
       int ij = 0;
       for (int oo_ij = 2; oo_ij != oo; ++oo_ij) {
-        int  k = oo-oo_ij;
+        int k = oo - oo_ij;
 
-        CHKERR IntegratedJacobi_polynomials(
-            k, 2 * oo_ij, n3f0, 1 - n3f0, &t_grad_n3f0(0),
-            &t_sum_f0(0), &fi_k(0, 0), &diff_fi_k(0, 0), 3);
-        CHKERR IntegratedJacobi_polynomials(
-            k, 2 * oo_ij, n3f1, 1 - n3f1, &t_grad_n3f1(0),
-            &t_sum_f1(0), &fi_k(1, 0), &diff_fi_k(1, 0), 3);
-        CHKERR IntegratedJacobi_polynomials(
-            k, 2 * oo_ij, n3f2, 1 - n3f2, &t_grad_n3f2(0),
-            &t_sum_f2(0), &fi_k(2, 0), &diff_fi_k(2, 0), 3);
+        CHKERR IntegratedJacobi_polynomials(k, 2 * oo_ij, n3f0, 1 - n3f0,
+                                            &t_grad_n3f0(0), &t_sum_f0(0),
+                                            &fi_k(0, 0), &diff_fi_k(0, 0), 3);
+        CHKERR IntegratedJacobi_polynomials(k, 2 * oo_ij, n3f1, 1 - n3f1,
+                                            &t_grad_n3f1(0), &t_sum_f1(0),
+                                            &fi_k(1, 0), &diff_fi_k(1, 0), 3);
+        CHKERR IntegratedJacobi_polynomials(k, 2 * oo_ij, n3f2, 1 - n3f2,
+                                            &t_grad_n3f2(0), &t_sum_f2(0),
+                                            &fi_k(2, 0), &diff_fi_k(2, 0), 3);
 
         FTensor::Tensor1<double, 3> t_diff_fi_k_f0(diff_fi_k(0, 0 + k - 1),
                                                    diff_fi_k(0, k + k - 1),
@@ -3028,8 +3017,8 @@ MoFEMErrorCode VTK_Demkowicz_Hcurl_MBTET(const string file_name) {
     // refine mesh
     MeshRefinement *m_ref;
     CHKERR m_field_ref.getInterface(m_ref);
-    CHKERR m_ref->add_vertices_in_the_middle_of_edges(edges,
-                                                     BitRefLevel().set(ll + 1));
+    CHKERR m_ref->add_vertices_in_the_middle_of_edges(
+        edges, BitRefLevel().set(ll + 1));
     CHKERR m_ref->refine_TET(tets, BitRefLevel().set(ll + 1));
   }
 
@@ -3093,20 +3082,19 @@ MoFEMErrorCode VTK_Demkowicz_Hcurl_MBTET(const string file_name) {
   // cerr << edge_phi << endl;
 
   for (int ee = 0; ee != 6; ++ee) {
-      for (int ll = 0; ll != NBEDGE_DEMKOWICZ_HCURL(order); ++ll) {
+    for (int ll = 0; ll != NBEDGE_DEMKOWICZ_HCURL(order); ++ll) {
       double def_val[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
       std::string tag_name = "E" + boost::lexical_cast<std::string>(ee) + "_" +
-           boost::lexical_cast<std::string>(ll);
+                             boost::lexical_cast<std::string>(ll);
       Tag th;
-      CHKERR moab_ref.tag_get_handle(
-          tag_name.c_str(),
-          3, MB_TYPE_DOUBLE, th, MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
+      CHKERR moab_ref.tag_get_handle(tag_name.c_str(), 3, MB_TYPE_DOUBLE, th,
+                                     MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
 
       int gg = 0;
       for (Range::iterator nit = elem_nodes.begin(); nit != elem_nodes.end();
            nit++, gg++) {
         int idx = 3 * NBEDGE_DEMKOWICZ_HCURL(order) * gg + 3 * ll;
-        CHKERR moab_ref.tag_set_data(th, &*nit, 1, &edge_phi(ee,idx));
+        CHKERR moab_ref.tag_set_data(th, &*nit, 1, &edge_phi(ee, idx));
       }
     }
   }
@@ -3152,8 +3140,8 @@ MoFEMErrorCode VTK_Demkowicz_Hcurl_MBTET(const string file_name) {
                             9 * NBVOLUMETET_DEMKOWICZ_HCURL(order));
 
   CHKERR Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
-    order, &*shape_fun.data().begin(), diff_shape_fun, &vol_phi(0,0),
-    &diff_vol_phi(0,0), nb_gauss_pts);
+      order, &*shape_fun.data().begin(), diff_shape_fun, &vol_phi(0, 0),
+      &diff_vol_phi(0, 0), nb_gauss_pts);
 
   for (int ll = 0; ll != NBVOLUMETET_DEMKOWICZ_HCURL(order); ++ll) {
     double def_val[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -3185,7 +3173,8 @@ int main(int argc, char *argv[]) {
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
-    // CHKERR VTK_Ainsworth_Hcurl_MBTET("out_curl_vtk_ainsworth_base_on_tet.vtk");
+    // CHKERR
+    // VTK_Ainsworth_Hcurl_MBTET("out_curl_vtk_ainsworth_base_on_tet.vtk");
     CHKERR VTK_Demkowicz_Hcurl_MBTET("out_curl_vtk_demkowicz_base_on_tet.vtk");
   }
   CATCH_ERRORS;
