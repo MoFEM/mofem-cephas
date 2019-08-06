@@ -35,19 +35,125 @@ struct TestFE : public MoFEM::FaceElementForcesAndSourcesCore {
   int getRule(int order) { return 2 * order; }
 };
 
+
+
+double a0 = 1.0; 
+double a1 = 2.0;
+double a2 = -15.0 * a0;
+double a3 = -20.0/ 6 * a1; 
+double a4 = 15.0 * a0;
+double a5 = a1;
+double a6 = -a0;
+
+// 120 a6 x^3 + 60 a5 x^2 y + 24 a4 x y^2 + 6 a3 y^3
+
+
+
+// px = 6 a6 x^5 + 5 a5 x^4 y + 4 a4 x^3 y^2 + 3 a3 x^2 y^3 + 2 a2 x y^4 + a1 y^5
+//      6 a6 x^5 + 5 a5 x^4 y + 4 a4 x^3 y^2 + 3 a3 x^2 y^3 + 2 a2 x y^4 + a1 y^5
+
+// 6 * a6 * pow(x, 5) * pow(y, 0) + 
+// 5 * a5 * pow(x, 4) * pow(y, 1) + 
+// 4 * a4 * pow(x, 3) * pow(y, 2) +
+// 3 * a3 * pow(x, 2) * pow(y, 3) +
+// 2 * a2 * pow(x, 1) * pow(y, 4) +
+// 1 * a1 * pow(x, 0) * pow(y, 5)
+
+
+// (py) = a5 x^5 + 2 a4 x^4 y + 3 a3 x^3 y^2 + 4 a2 x^2 y^3 + 5 a1 x y^4 + 6 a0 y^5
+//        a5 x^5 + 2 a4 x^4 y + 3 a3 x^3 y^2 + 4 a2 x^2 y^3 + 5 a1 x y^4 + 6 a0 y^5
+
+// 1 * a5 * pow(x, 5) * pow(y, 0) + 
+// 2 * a4 * pow(x, 4) * pow(y, 1) + 
+// 3 * a3 * pow(x, 3) * pow(y, 2) +
+// 4 * a2 * pow(x, 2) * pow(y, 3) +
+// 5 * a1 * pow(x, 1) * pow(y, 4) +
+// 6 * a0 * pow(x, 0) * pow(y, 5)
+
+// derivative
+
+// // (px, x) = 30 a6 x^4 + 20 a5 x^3 y + 12 a4 x^2 y^2 + 6 a3 x y^3 + 2 a2 y^4
+//              30 a6 x^4 + 20 a5 x^3 y + 12 a4 x^2 y^2 + 6 a3 x y^3 + 2 a2 y^4
+
+// 30 * a6 * pow(x, 4) * pow(y, 0) + 
+// 20 * a5 * pow(x, 3) * pow(y, 1) + 
+// 12 * a4 * pow(x, 2) * pow(y, 2) +
+//  6 * a3 * pow(x, 1) * pow(y, 3) +
+//  2 * a2 * pow(x, 0) * pow(y, 4)
+
+//  // (px, y) = 5 a5 x^4 + 8 a4 x^3 y + 9 a3 x^2 y^2 + 8 a2 x y^3 + 5 a1 y^4
+//               5 a5 x^4 + 8 a4 x^3 y + 9 a3 x^2 y^2 + 8 a2 x y^3 + 5 a1 y^4
+
+//  5 * a5 * pow(x, 4) * pow(y, 0) + 
+//  8 * a4 * pow(x, 3) * pow(y, 1) + 
+//  9 * a3 * pow(x, 2) * pow(y, 2) +
+//  8 * a2 * pow(x, 1) * pow(y, 3) +
+//  5 * a1 * pow(x, 0) * pow(y, 4)
+
+//  // (py, x) = 5 a5 x^4 + 8 a4 x^3 y + 9 a3 x^2 y^2 + 8 a2 x y^3 + 5 a1 y^4
+//               5 a5 x^4 + 8 a4 x^3 y + 9 a3 x^2 y^2 + 8 a2 x y^3 + 5 a1 y^4
+
+//  5 * a5 * pow(x, 4) * pow(y, 0) + 
+//  8 * a4 * pow(x, 3) * pow(y, 1) + 
+//  9 * a3 * pow(x, 2) * pow(y, 2) +
+//  8 * a2 * pow(x, 1) * pow(y, 3) +
+//  5 * a1 * pow(x, 0) * pow(y, 4)
+
+
+//  // (py, y) = 2 a4 x^4 + 6 a3 x^3 y + 12 a2 x^2 y^2 + 20 a1 x y^3 + 30 a0 y^4
+//               2 a4 x^4 + 6 a3 x^3 y + 12 a2 x^2 y^2 + 20 a1 x y^3 + 30 a0 y^4
+
+//  2 * a4 * pow(x, 4) * pow(y, 0) + 
+//  6 * a3 * pow(x, 3) * pow(y, 1) + 
+// 12 * a2 * pow(x, 2) * pow(y, 2) +
+// 20 * a1 * pow(x, 1) * pow(y, 3) +
+// 30 * a0 * pow(x, 0) * pow(y, 4)
+
+
+
 struct ApproxFunctions {
   static FTensor::Tensor1<double, 3> fUn(const double x, const double y) {
-    return FTensor::Tensor1<double, 3>(
-        pow(x, 5) + pow(y, 5) + pow(x, 3) * pow(y, 2),
-        pow(x, 5) + pow(y, 5) + pow(x, 2) * pow(y, 3), 0.);
+    auto t = FTensor::Tensor1<double, 3>(
+                6 * a6 * pow(x, 5) * pow(y, 0) + 
+                5 * a5 * pow(x, 4) * pow(y, 1) + 
+                4 * a4 * pow(x, 3) * pow(y, 2) +
+                3 * a3 * pow(x, 2) * pow(y, 3) +
+                2 * a2 * pow(x, 1) * pow(y, 4) +
+                1 * a1 * pow(x, 0) * pow(y, 5),
+                    1 * a5 * pow(x, 5) * pow(y, 0) + 
+                    2 * a4 * pow(x, 4) * pow(y, 1) + 
+                    3 * a3 * pow(x, 3) * pow(y, 2) +
+                    4 * a2 * pow(x, 2) * pow(y, 3) +
+                    5 * a1 * pow(x, 1) * pow(y, 4) +
+                    6 * a0 * pow(x, 0) * pow(y, 5), 0.);
+    const double a = t(0);
+    const double b = t(1);
+    return FTensor::Tensor1<double,3>(-b, a, 0.);
+
   }
   static FTensor::Tensor2<double, 3, 2> diffFun(const double x,
                                                 const double y) {
     return FTensor::Tensor2<double, 3, 2>(
-        5 * pow(x, 4) + 3 * pow(x, 2) * pow(y, 2),
-        5 * pow(y, 4) + 2 * pow(x, 3) * pow(y, 1),
-        5 * pow(x, 4) + 2 * pow(x, 1) * pow(y, 3),
-        5 * pow(y, 4) + 3 * pow(x, 2) * pow(y, 2), 0., 0.);
+        30 * a6 * pow(x, 4) * pow(y, 0) + 
+        20 * a5 * pow(x, 3) * pow(y, 1) + 
+        12 * a4 * pow(x, 2) * pow(y, 2) +
+         6 * a3 * pow(x, 1) * pow(y, 3) +
+         2 * a2 * pow(x, 0) * pow(y, 4),
+          5 * a5 * pow(x, 4) * pow(y, 0) + 
+          8 * a4 * pow(x, 3) * pow(y, 1) + 
+          9 * a3 * pow(x, 2) * pow(y, 2) +
+          8 * a2 * pow(x, 1) * pow(y, 3) +
+          5 * a1 * pow(x, 0) * pow(y, 4),
+            5 * a5 * pow(x, 4) * pow(y, 0) + 
+            8 * a4 * pow(x, 3) * pow(y, 1) + 
+            9 * a3 * pow(x, 2) * pow(y, 2) +
+            8 * a2 * pow(x, 1) * pow(y, 3) +
+            5 * a1 * pow(x, 0) * pow(y, 4),
+               2 * a4 * pow(x, 4) * pow(y, 0) + 
+               6 * a3 * pow(x, 3) * pow(y, 1) + 
+              12 * a2 * pow(x, 2) * pow(y, 2) +
+              20 * a1 * pow(x, 1) * pow(y, 3) +
+              30 * a0 * pow(x, 0) * pow(y, 4), 0., 0.);
   }
 };
 
@@ -276,7 +382,7 @@ int main(int argc, char *argv[]) {
     // Add entities
     CHKERR m_field.add_ents_to_field_by_type(0, MBTRI, "FIELD1");
     // Set order
-    int order = 6;
+    int order = 7;
     CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", order);
     CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", order);
     CHKERR m_field.add_ents_to_finite_element_by_type(0, MBTRI, "TEST_FE1");
