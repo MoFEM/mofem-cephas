@@ -2878,10 +2878,10 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
         }
       }
     }
-    if (kk != NBVOLUMETET_DEMKOWICZ_HCURL(p)) {
+    if (kk != NBVOLUMETET_DEMKOWICZ_HCURL(p)) 
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Wrong number of base functions");
-    }
+    
   }
 
   MoFEMFunctionReturn(0);
