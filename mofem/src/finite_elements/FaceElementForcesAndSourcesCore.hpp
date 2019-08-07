@@ -446,14 +446,6 @@ struct OpCalculateInvJacForFace
     : public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
 
-  // /**
-  //  * \deprecated Field name do not needed to construct class, change v0.5.17.
-  //  */
-  // DEPRECATED OpCalculateInvJacForFace(const std::string
-  // &field_name,MatrixDouble &inv_jac):
-  // FaceElementForcesAndSourcesCore::UserDataOperator(H1),
-  // invJac(inv_jac) {}
-
   OpCalculateInvJacForFace(MatrixDouble &inv_jac)
       : FaceElementForcesAndSourcesCore::UserDataOperator(H1), invJac(inv_jac) {
   }
