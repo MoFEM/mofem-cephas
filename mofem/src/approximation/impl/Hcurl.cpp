@@ -2226,17 +2226,20 @@ struct HcurlFaceBase {
 
   FTensor::Index<'i', 3> i;
 
-  MoFEMErrorCode operator()(int shift, int p, int nb_integration_pts,
-                            int n0f0_idx, int n1f0_idx, int n2f0_idx,
-                            double n[], FTensor::Tensor1<double, 3> t_grad_n[],
-                            FTensor::Tensor1<double *, 3> &t_phi,
-                            FTensor::Tensor2<double *, 3, 3> &t_diff_phi) {
+  template <int DIM>
+  MoFEMErrorCode
+  calculateOneFamily(int p, int nb_integration_pts, int n0f0_idx, int n1f0_idx,
+                  int n2f0_idx, double n[],
+                  FTensor::Tensor1<double, 3> t_grad_n[],
+                  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> &t_phi,
+                  FTensor::Tensor2<FTensor::PackPtr<double *, DIM * 3>, 3, DIM>
+                      &t_diff_phi) {
 
-    FTensor::Index<'j', 3> j;
+    FTensor::Index<'j', DIM> j;
 
     MoFEMFunctionBegin;
     f0PhiII.resize(3 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts, false);
-    diffF0PhiII.resize(9 * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts,
+    diffF0PhiII.resize(3 * DIM * NBEDGE_DEMKOWICZ_HCURL(p) * nb_integration_pts,
                        false);
 
     // edge base for family I
@@ -2244,15 +2247,15 @@ struct HcurlFaceBase {
     double *diff_f0_phi_ii = &*diffF0PhiII.data().begin();
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f0_phi_ii(
         &f0_phi_ii[HVEC0], &f0_phi_ii[HVEC1], &f0_phi_ii[HVEC2]);
-    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_f0_phi_ii(
-        &diff_f0_phi_ii[HVEC0_0], &diff_f0_phi_ii[HVEC0_1],
-        &diff_f0_phi_ii[HVEC0_2], &diff_f0_phi_ii[HVEC1_0],
-        &diff_f0_phi_ii[HVEC1_1], &diff_f0_phi_ii[HVEC1_2],
-        &diff_f0_phi_ii[HVEC2_0], &diff_f0_phi_ii[HVEC2_1],
-        &diff_f0_phi_ii[HVEC2_2]);
-    CHKERR hCurlBaseOnEdge.calculate<3, true>(p - 1, nb_integration_pts,
-                                              n0f0_idx, n1f0_idx, n, t_grad_n,
-                                              t_f0_phi_ii, &t_diff_f0_phi_ii);
+    FTensor::Tensor2<FTensor::PackPtr<double *, 3 * DIM>, 3, DIM>
+        t_diff_f0_phi_ii(&diff_f0_phi_ii[HVEC0_0], &diff_f0_phi_ii[HVEC0_1],
+                         &diff_f0_phi_ii[HVEC0_2], &diff_f0_phi_ii[HVEC1_0],
+                         &diff_f0_phi_ii[HVEC1_1], &diff_f0_phi_ii[HVEC1_2],
+                         &diff_f0_phi_ii[HVEC2_0], &diff_f0_phi_ii[HVEC2_1],
+                         &diff_f0_phi_ii[HVEC2_2]);
+    CHKERR hCurlBaseOnEdge.calculate<DIM, true>(p - 1, nb_integration_pts,
+                                                n0f0_idx, n1f0_idx, n, t_grad_n,
+                                                t_f0_phi_ii, &t_diff_f0_phi_ii);
 
     FTensor::Tensor1<double, 3> &t_grad_n0f0 = t_grad_n[n0f0_idx];
     FTensor::Tensor1<double, 3> &t_grad_n1f0 = t_grad_n[n1f0_idx];
@@ -2262,34 +2265,36 @@ struct HcurlFaceBase {
 
     iFiF0.resize(p + 1, false);
     diffIFiF0.resize(3 * p + 3, false);
+    diffIFiF0.clear();
+
     double *ifif0 = &*iFiF0.data().begin();
     double *diff_ifif0 = &*diffIFiF0.data().begin();
 
     for (int gg = 0; gg != nb_integration_pts; ++gg) {
 
-      const int shift_n = shift * gg;
+      const int shift_n = (DIM + 1) * gg;
       const double n0f0 = n[shift_n + n0f0_idx];
       const double n1f0 = n[shift_n + n1f0_idx];
       const double n2f0 = n[shift_n + n2f0_idx];
 
       int phi_shift = 3 * NBEDGE_DEMKOWICZ_HCURL(p - 1) * gg;
-      int diff_phi_shift = 9 * NBEDGE_DEMKOWICZ_HCURL(p - 1) * gg;
+      int diff_phi_shift = (3 * DIM) * NBEDGE_DEMKOWICZ_HCURL(p - 1) * gg;
 
       for (int oo = 2; oo <= p; ++oo) {
 
-        FTensor::Tensor1<double *, 3> t_f0_phi_ii(
+        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f0_phi_ii(
             &f0_phi_ii[phi_shift + HVEC0], &f0_phi_ii[phi_shift + HVEC1],
-            &f0_phi_ii[phi_shift + HVEC2], 3);
-        FTensor::Tensor2<double *, 3, 3> t_diff_f0_phi_ii(
-            &diff_f0_phi_ii[diff_phi_shift + HVEC0_0],
-            &diff_f0_phi_ii[diff_phi_shift + HVEC0_1],
-            &diff_f0_phi_ii[diff_phi_shift + HVEC0_2],
-            &diff_f0_phi_ii[diff_phi_shift + HVEC1_0],
-            &diff_f0_phi_ii[diff_phi_shift + HVEC1_1],
-            &diff_f0_phi_ii[diff_phi_shift + HVEC1_2],
-            &diff_f0_phi_ii[diff_phi_shift + HVEC2_0],
-            &diff_f0_phi_ii[diff_phi_shift + HVEC2_1],
-            &diff_f0_phi_ii[diff_phi_shift + HVEC2_2], 9);
+            &f0_phi_ii[phi_shift + HVEC2]);
+        FTensor::Tensor2<FTensor::PackPtr<double *, DIM * 3>, 3, 3>
+            t_diff_f0_phi_ii(&diff_f0_phi_ii[diff_phi_shift + HVEC0_0],
+                             &diff_f0_phi_ii[diff_phi_shift + HVEC0_1],
+                             &diff_f0_phi_ii[diff_phi_shift + HVEC0_2],
+                             &diff_f0_phi_ii[diff_phi_shift + HVEC1_0],
+                             &diff_f0_phi_ii[diff_phi_shift + HVEC1_1],
+                             &diff_f0_phi_ii[diff_phi_shift + HVEC1_2],
+                             &diff_f0_phi_ii[diff_phi_shift + HVEC2_0],
+                             &diff_f0_phi_ii[diff_phi_shift + HVEC2_1],
+                             &diff_f0_phi_ii[diff_phi_shift + HVEC2_2]);
 
         for (int ii = 0; ii <= oo - 2; ii++) {
 
@@ -2298,7 +2303,7 @@ struct HcurlFaceBase {
           // family I
           CHKERR IntegratedJacobi_polynomials(
               jj + 1, 2 * ii + 1, n2f0, n0f0 + n1f0 + n2f0, &t_grad_n2f0(0),
-              &t_grad_n0f0_p_n1f0(0), ifif0, diff_ifif0, 3);
+              &t_grad_n0f0_p_n1f0(0), ifif0, diff_ifif0, DIM);
           FTensor::Tensor1<double, 3> t_diff_ifif0(
               diff_ifif0[0 + jj], diff_ifif0[(jj + 1) + jj],
               diff_ifif0[2 * (jj + 1) + jj]);
@@ -2745,22 +2750,23 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_VolumeBaseFunctions_MBTET(
     double *phi_ij_ptr = &phi_ij(ff, 0);
     double *diff_phi_ij_ptr = &diff_phi_ij(ff, 0);
 
-    FTensor::Tensor1<double *, 3> t_phi_ij(
-        &phi_ij_ptr[HVEC0], &phi_ij_ptr[HVEC1], &phi_ij_ptr[HVEC2], 3);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_phi_ij(
+        &phi_ij_ptr[HVEC0], &phi_ij_ptr[HVEC1], &phi_ij_ptr[HVEC2]);
 
-    FTensor::Tensor2<double *, 3, 3> t_diff_phi_ij(
+    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_phi_ij(
         &diff_phi_ij_ptr[HVEC0_0], &diff_phi_ij_ptr[HVEC0_1],
         &diff_phi_ij_ptr[HVEC0_2], &diff_phi_ij_ptr[HVEC1_0],
         &diff_phi_ij_ptr[HVEC1_1], &diff_phi_ij_ptr[HVEC1_2],
         &diff_phi_ij_ptr[HVEC2_0], &diff_phi_ij_ptr[HVEC2_1],
-        &diff_phi_ij_ptr[HVEC2_2], 9);
+        &diff_phi_ij_ptr[HVEC2_2]);
 
     const int n0_idx = family[ff][0];
     const int n1_idx = family[ff][1];
     const int n2_idx = family[ff][2];
 
-    CHKERR h_curl_face_base(4, p - 1, nb_integration_pts, n0_idx, n1_idx,
-                            n2_idx, n, t_grad_n, t_phi_ij, t_diff_phi_ij);
+    CHKERR h_curl_face_base.calculateOneFamily<3>(
+        p - 1, nb_integration_pts, n0_idx, n1_idx, n2_idx, n, t_grad_n,
+        t_phi_ij, t_diff_phi_ij);
   }
 
   FTensor::Tensor1<double, 3> &t_grad_n3f0 = t_grad_n[family[0][3]];
