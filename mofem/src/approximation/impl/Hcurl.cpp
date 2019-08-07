@@ -2015,28 +2015,37 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
 
 struct HcurlEdgeBase {
 
+  FTensor::Index<'i', 3> i;
+
+  FTensor::Tensor1<double, 3> tGradN0pN1;
+  FTensor::Tensor1<double, 3> tPhi0;
+  FTensor::Tensor2<double, 3, 3> tDiffPhi0;
+  FTensor::Tensor1<double, 3> tDiffb;
+
+  VectorDouble fI;
+  MatrixDouble diffFi;
+
   template <int DIM, bool CALCULATE_DIRVATIVES>
   MoFEMErrorCode
-  calculate(int p, int nb_integration_pts, int n0_idx, int n1_idx,
-            double n[], FTensor::Tensor1<double, 3> t_grad_n[],
+  calculate(int p, int nb_integration_pts, int n0_idx, int n1_idx, double n[],
+            FTensor::Tensor1<double, 3> t_grad_n[],
             FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> &t_phi,
             FTensor::Tensor2<FTensor::PackPtr<double *, 3 * DIM>, 3, DIM>
                 *t_diff_phi_ptr) {
 
-    FTensor::Index<'i', 3> i;
     FTensor::Index<'j', DIM> j;
 
     MoFEMFunctionBegin;
 
     FTensor::Tensor1<double, 3> &t_grad_n0 = t_grad_n[n0_idx];
     FTensor::Tensor1<double, 3> &t_grad_n1 = t_grad_n[n1_idx];
-    FTensor::Tensor1<double, 3> t_grad_n0_p_n1;
-    t_grad_n0_p_n1(i) = t_grad_n0(i) + t_grad_n1(i);
-    FTensor::Tensor1<double, 3> t_phi_0;
-    FTensor::Tensor2<double, 3, 3> t_diff_phi_0;
+    tGradN0pN1(i) = t_grad_n0(i) + t_grad_n1(i);
 
-    VectorDouble fi(p + 1);
-    MatrixDouble diff_fi(DIM, p + 1);
+    fI.resize(p + 1);
+    if (CALCULATE_DIRVATIVES) {
+      diffFi.resize(3, p + 1);
+      diffFi.clear();
+    }
 
     for (int gg = 0; gg != nb_integration_pts; ++gg) {
 
@@ -2045,14 +2054,14 @@ struct HcurlEdgeBase {
       const double n1 = n[shift_n + n1_idx];
 
       t_phi(i) = n0 * t_grad_n1(i) - n1 * t_grad_n0(i);
-      t_phi_0(i) = t_phi(i);
+      tPhi0(i) = t_phi(i);
 
       ++t_phi;
 
       if (CALCULATE_DIRVATIVES) {
         (*t_diff_phi_ptr)(i, j) =
             t_grad_n0(j) * t_grad_n1(i) - t_grad_n1(j) * t_grad_n0(i);
-        t_diff_phi_0(i, j) = (*t_diff_phi_ptr)(i, j);
+        tDiffPhi0(i, j) = (*t_diff_phi_ptr)(i, j);
         ++(*t_diff_phi_ptr);
       }
 
@@ -2060,42 +2069,39 @@ struct HcurlEdgeBase {
 
         if (CALCULATE_DIRVATIVES)
           CHKERR Jacobi_polynomials(p, 0, n1, n0 + n1, &t_grad_n1(0),
-                                    &t_grad_n0_p_n1(0), &*fi.data().begin(),
-                                    &*diff_fi.data().begin(), DIM);
+                                    &tGradN0pN1(0), &*fI.data().begin(),
+                                    &*diffFi.data().begin(), DIM);
         else
           CHKERR Jacobi_polynomials(p, 0, n1, n0 + n1, nullptr, nullptr,
-                                    &*fi.data().begin(), nullptr, DIM);
+                                    &*fI.data().begin(), nullptr, DIM);
 
         FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3> t_diff_fi(
-            &diff_fi(0, 1), &diff_fi(1, 1), &diff_fi(2, 1));
-        FTensor::Tensor1<double, 3> t_diff_b;
+            &diffFi(0, 1), &diffFi(1, 1), &diffFi(2, 1));
 
         for (int oo = 1; oo <= p - 1; ++oo) {
 
           const double b = pow(n0 + n1, oo);
-          t_phi(i) = b * fi[oo] * t_phi_0(i);
+          t_phi(i) = b * fI[oo] * tPhi0(i);
 
-          if(CALCULATE_DIRVATIVES) {
+          if (CALCULATE_DIRVATIVES) {
 
-            t_diff_b(i) =
+            tDiffb(i) =
                 oo * pow(n0 + n1, oo - 1) * (t_grad_n0(i) + t_grad_n1(i));
-            (*t_diff_phi_ptr)(i, j) = (b * fi[oo]) * t_diff_phi_0(i, j) +
-                               (b * t_diff_fi(j)) * t_phi_0(i) +
-                               t_diff_b(j) * fi[oo] * t_phi_0(i);
+            (*t_diff_phi_ptr)(i, j) = (b * fI[oo]) * tDiffPhi0(i, j) +
+                                      (b * t_diff_fi(j)) * tPhi0(i) +
+                                      tDiffb(j) * fI[oo] * tPhi0(i);
             ++t_diff_fi;
             ++(*t_diff_phi_ptr);
 
           }
 
           ++t_phi;
-
         }
       }
     }
 
     MoFEMFunctionReturn(0);
   }
-
 };
 
 MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
