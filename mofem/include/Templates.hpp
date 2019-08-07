@@ -322,6 +322,62 @@ getFTensor2SymmetricFromMat(MatrixDouble &data) {
 }
 
 /**
+ * @brief Make Tensor1 from pointer
+ * 
+ * @tparam DIM 
+ * @param ptr 
+ * @return FTensor::Tensor2<FTensor::PackPtr<double *, 3 * DIM>, 3, DIM> 
+ */
+template <int DIM>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM>
+getFTensor1FromPtr(double *ptr) {
+  static_assert(DIM != 3, "not implemented");
+};
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+getFTensor1FromPtr<3>(double *ptr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+      &ptr[HVEC0], &ptr[HVEC1], &ptr[HVEC2]);
+};
+
+/**
+ * @brief Make Tensor2 from pointer
+ * 
+ * @tparam DIM 
+ * @param ptr 
+ * @return FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2> 
+ */
+template <int DIM1, int DIM2>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, DIM1 * DIM2>, DIM1, DIM2>
+getFTensor2FromPtr(double *ptr) {
+  static_assert(DIM1 != 3, "not implemented");
+  static_assert(DIM2 >= 2 && DIM2 <= 3, "not implemented");
+};
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
+inline getFTensor2FromPtr<3, 2>(double *ptr) {
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>(
+      &ptr[HVEC0_0], &ptr[HVEC0_1],
+
+      &ptr[HVEC1_0], &ptr[HVEC1_1],
+
+      &ptr[HVEC2_0], &ptr[HVEC2_1]);
+};
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
+inline getFTensor2FromPtr<3, 3>(double *ptr) {
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>(
+      &ptr[HVEC0_0], &ptr[HVEC0_1], &ptr[HVEC0_2],
+
+      &ptr[HVEC1_0], &ptr[HVEC1_1], &ptr[HVEC1_2],
+
+      &ptr[HVEC2_0], &ptr[HVEC2_1], &ptr[HVEC2_2]);
+};
+
+/**
  * @brief Calculate the determinant of a 3x3 matrix or a tensor of rank 2
  *
  * @tparam T
