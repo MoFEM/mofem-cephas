@@ -2015,7 +2015,7 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
 
 struct HcurlEdgeBase {
 
-  template <int DIM>
+  template <int DIM, bool CALCULATE_DIRVATIVES>
   MoFEMErrorCode
   calculate(int p, int nb_integration_pts, int n0_idx, int n1_idx,
             double n[], FTensor::Tensor1<double, 3> t_grad_n[],
@@ -2045,21 +2045,20 @@ struct HcurlEdgeBase {
       const double n1 = n[shift_n + n1_idx];
 
       t_phi(i) = n0 * t_grad_n1(i) - n1 * t_grad_n0(i);
-      if(t_diff_phi_ptr)
-        (*t_diff_phi_ptr)(i, j) =
-            t_grad_n0(j) * t_grad_n1(i) - t_grad_n1(j) * t_grad_n0(i);
-
       t_phi_0(i) = t_phi(i);
-      if (t_diff_phi_ptr)
-        t_diff_phi_0(i, j) = (*t_diff_phi_ptr)(i, j);
 
       ++t_phi;
-      if(t_diff_phi_ptr)
+
+      if (CALCULATE_DIRVATIVES) {
+        (*t_diff_phi_ptr)(i, j) =
+            t_grad_n0(j) * t_grad_n1(i) - t_grad_n1(j) * t_grad_n0(i);
+        t_diff_phi_0(i, j) = (*t_diff_phi_ptr)(i, j);
         ++(*t_diff_phi_ptr);
+      }
 
       if (p > 1) {
 
-        if (t_diff_phi_ptr)
+        if (CALCULATE_DIRVATIVES)
           CHKERR Jacobi_polynomials(p, 0, n1, n0 + n1, &t_grad_n1(0),
                                     &t_grad_n0_p_n1(0), &*fi.data().begin(),
                                     &*diff_fi.data().begin(), DIM);
@@ -2076,86 +2075,20 @@ struct HcurlEdgeBase {
           const double b = pow(n0 + n1, oo);
           t_phi(i) = b * fi[oo] * t_phi_0(i);
 
-          if(t_diff_phi_ptr) {
+          if(CALCULATE_DIRVATIVES) {
+
             t_diff_b(i) =
                 oo * pow(n0 + n1, oo - 1) * (t_grad_n0(i) + t_grad_n1(i));
             (*t_diff_phi_ptr)(i, j) = (b * fi[oo]) * t_diff_phi_0(i, j) +
                                (b * t_diff_fi(j)) * t_phi_0(i) +
                                t_diff_b(j) * fi[oo] * t_phi_0(i);
-          }
-
-          ++t_phi;
-          if(t_diff_phi_ptr) {
             ++t_diff_fi;
             ++(*t_diff_phi_ptr);
+
           }
 
-        }
-      }
-    }
-
-    MoFEMFunctionReturn(0);
-  }
-
-  MoFEMErrorCode operator()(int shift, int p, int nb_integration_pts,
-                            int n0_idx, int n1_idx, double n[],
-                            FTensor::Tensor1<double, 3> t_grad_n[],
-                            FTensor::Tensor1<double *, 3> &t_phi,
-                            FTensor::Tensor2<double *, 3, 3> &t_diff_phi) {
-
-    FTensor::Index<'i', 3> i;
-    FTensor::Index<'j', 3> j;
-
-    MoFEMFunctionBegin;
-
-    FTensor::Tensor1<double, 3> &t_grad_n0 = t_grad_n[n0_idx];
-    FTensor::Tensor1<double, 3> &t_grad_n1 = t_grad_n[n1_idx];
-    FTensor::Tensor1<double, 3> t_grad_n0_p_n1;
-    t_grad_n0_p_n1(i) = t_grad_n0(i) + t_grad_n1(i);
-    FTensor::Tensor1<double, 3> t_phi_0;
-    FTensor::Tensor2<double, 3, 3> t_diff_phi_0;
-
-    VectorDouble fi(p + 1);
-    VectorDouble diff_fi(3 * p + 3);
-
-    for (int gg = 0; gg != nb_integration_pts; ++gg) {
-      const int shift_n = shift * gg;
-      const double n0 = n[shift_n + n0_idx];
-      const double n1 = n[shift_n + n1_idx];
-
-      t_phi(i) = n0 * t_grad_n1(i) - n1 * t_grad_n0(i);
-      t_diff_phi(i, j) =
-          t_grad_n0(j) * t_grad_n1(i) - t_grad_n1(j) * t_grad_n0(i);
-
-      t_phi_0(i) = t_phi(i);
-      t_diff_phi_0(i, j) = t_diff_phi(i, j);
-
-      ++t_phi;
-      ++t_diff_phi;
-
-      if (p > 1) {
-
-        CHKERR Jacobi_polynomials(p, 0, n1, n0 + n1, &t_grad_n1(0),
-                                  &t_grad_n0_p_n1(0), &*fi.data().begin(),
-                                  &*diff_fi.data().begin(), 3);
-
-        FTensor::Tensor1<double *, 3> t_diff_fi(&diff_fi[0 * (p + 1) + 1],
-                                                &diff_fi[1 * (p + 1) + 1],
-                                                &diff_fi[2 * (p + 1) + 1], 1);
-
-        FTensor::Tensor1<double, 3> t_diff_b;
-        for (int oo = 1; oo <= p - 1; ++oo) {
-          const double b = pow(n0 + n1, oo);
-          t_diff_b(i) =
-              oo * pow(n0 + n1, oo - 1) * (t_grad_n0(i) + t_grad_n1(i));
-          t_phi(i) = b * fi[oo] * t_phi_0(i);
-          t_diff_phi(i, j) = (b * fi[oo]) * t_diff_phi_0(i, j) +
-                             (b * t_diff_fi(j)) * t_phi_0(i) +
-                             t_diff_b(j) * fi[oo] * t_phi_0(i);
-
-          ++t_diff_fi;
           ++t_phi;
-          ++t_diff_phi;
+
         }
       }
     }
@@ -2163,113 +2096,6 @@ struct HcurlEdgeBase {
     MoFEMFunctionReturn(0);
   }
 
-  MoFEMErrorCode operator()(
-      int shift, int p, int nb_integration_pts, int n0_idx, int n1_idx,
-      double n[], FTensor::Tensor1<double, 3> t_grad_n[],
-      FTensor::Tensor1<double *, 3> &t_phi,
-      FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> &t_diff_phi) {
-
-    FTensor::Index<'i', 3> i;
-    FTensor::Index<'j', 2> j;
-
-    MoFEMFunctionBegin;
-
-    FTensor::Tensor1<double, 3> &t_grad_n0 = t_grad_n[n0_idx];
-    FTensor::Tensor1<double, 3> &t_grad_n1 = t_grad_n[n1_idx];
-    FTensor::Tensor1<double, 3> t_grad_n0_p_n1;
-    t_grad_n0_p_n1(i) = t_grad_n0(i) + t_grad_n1(i);
-    FTensor::Tensor1<double, 3> t_phi_0;
-    FTensor::Tensor2<double, 3, 2> t_diff_phi_0;
-
-    FTensor::Tensor1<double, 2> t_grad_n0_j(t_grad_n0(0), t_grad_n0(1));
-    FTensor::Tensor1<double, 2> t_grad_n1_j(t_grad_n1(0), t_grad_n1(1));
-
-    VectorDouble fi(p + 1);
-    MatrixDouble diff_fi(2, p + 1);
-
-    for (int gg = 0; gg != nb_integration_pts; ++gg) {
-      const int shift_n = shift * gg;
-      const double n0 = n[shift_n + n0_idx];
-      const double n1 = n[shift_n + n1_idx];
-
-      t_phi(i) = n0 * t_grad_n1(i) - n1 * t_grad_n0(i);
-      t_diff_phi(i, j) =
-          t_grad_n1(i) * t_grad_n0_j(j) - t_grad_n0(i) * t_grad_n1_j(j);
-
-      t_phi_0(i) = t_phi(i);
-      t_diff_phi_0(i, j) = t_diff_phi(i, j);
-
-      ++t_phi;
-      ++t_diff_phi;
-
-      if (p > 1) {
-
-        CHKERR Jacobi_polynomials(p, 0, n1, n0 + n1, &t_grad_n1(0),
-                                  &t_grad_n0_p_n1(0), &*fi.data().begin(),
-                                  &*diff_fi.data().begin(), 2);
-
-        FTensor::Tensor1<double *, 2> t_diff_fi(&diff_fi(0, 1), &diff_fi(1, 1));
-
-        FTensor::Tensor1<double, 2> t_diff_b;
-        for (int oo = 1; oo <= p - 1; ++oo) {
-          const double b = pow(n0 + n1, oo);
-          t_diff_b(j) =
-              oo * pow(n0 + n1, oo - 1) * (t_grad_n0_j(j) + t_grad_n1_j(j));
-          t_phi(i) = b * fi[oo] * t_phi_0(i);
-          t_diff_phi(i, j) = (b * fi[oo]) * t_diff_phi_0(i, j) +
-                             (b * t_phi_0(i) * t_diff_fi(j)) +
-                             fi[oo] * t_phi_0(i) * t_diff_b(j);
-
-          ++t_diff_fi;
-          ++t_phi;
-          ++t_diff_phi;
-        }
-      }
-    }
-
-    MoFEMFunctionReturn(0);
-  }
-
-  MoFEMErrorCode
-  operator()(int shift, int p, int nb_integration_pts, int n0_idx, int n1_idx,
-             double n[], FTensor::Tensor1<double, 3> t_grad_n[],
-             FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> &t_phi) {
-
-    FTensor::Index<'i', 3> i;
-
-    MoFEMFunctionBegin;
-
-    FTensor::Tensor1<double, 3> &t_grad_n0 = t_grad_n[n0_idx];
-    FTensor::Tensor1<double, 3> &t_grad_n1 = t_grad_n[n1_idx];
-    FTensor::Tensor1<double, 3> t_phi_0;
-
-    double fi[p + 1];
-
-    for (int gg = 0; gg != nb_integration_pts; ++gg) {
-      const int shift_n = shift * gg;
-      const double n0 = n[shift_n + n0_idx];
-      const double n1 = n[shift_n + n1_idx];
-
-      t_phi(i) = n0 * t_grad_n1(i) - n1 * t_grad_n0(i);
-      t_phi_0(i) = t_phi(i);
-
-      ++t_phi;
-
-      if (p > 1) {
-
-        CHKERR Jacobi_polynomials(p, 0, n1, n0 + n1, NULL, NULL, fi, NULL, 1);
-
-        FTensor::Tensor1<double, 2> t_diff_b;
-        for (int oo = 1; oo <= p - 1; ++oo) {
-          const double b = pow(n0 + n1, oo);
-          t_phi(i) = b * fi[oo] * t_phi_0(i);
-          ++t_phi;
-        }
-      }
-    }
-
-    MoFEMFunctionReturn(0);
-  }
 };
 
 MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
@@ -2305,9 +2131,9 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTET(
       n1_idx = n_tmp;
     }
 
-    CHKERR h_curl_base_on_edge.calculate<3>(p[ee], nb_integration_pts, n0_idx,
-                                            n1_idx, n, t_grad_n, t_phi,
-                                            &t_diff_phi);
+    CHKERR h_curl_base_on_edge.calculate<3, true>(p[ee], nb_integration_pts,
+                                                  n0_idx, n1_idx, n, t_grad_n,
+                                                  t_phi, &t_diff_phi);
   }
 
   MoFEMFunctionReturn(0);
@@ -2345,9 +2171,9 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTRI(
       n1_idx = n_tmp;
     }
 
-    CHKERR h_curl_base_on_edge.calculate<2>(p[ee], nb_integration_pts, n0_idx,
-                                            n1_idx, n, t_grad_n, t_phi,
-                                            &t_diff_phi);
+    CHKERR h_curl_base_on_edge.calculate<2, true>(p[ee], nb_integration_pts,
+                                                  n0_idx, n1_idx, n, t_grad_n,
+                                                  t_phi, &t_diff_phi);
   }
 
   MoFEMFunctionReturn(0);
@@ -2379,11 +2205,8 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
     n1_idx = n_tmp;
   }
 
-  CHKERR h_curl_base_on_edge.calculate<1>(p, nb_integration_pts, n0_idx, n1_idx,
-                                          n, t_grad_n, t_phi, nullptr);
-
-  // CHKERR h_curl_base_on_edge(1, p, nb_integration_pts, n0_idx, n1_idx, n,
-                            //  t_grad_n, t_phi);
+  CHKERR h_curl_base_on_edge.calculate<1, false>(
+      p, nb_integration_pts, n0_idx, n1_idx, n, t_grad_n, t_phi, nullptr);
 
   MoFEMFunctionReturn(0);
 }
@@ -2413,16 +2236,17 @@ struct HcurlFaceBase {
     // edge base for family I
     double *f0_phi_ii = &*f0PhiII.data().begin();
     double *diff_f0_phi_ii = &*diffF0PhiII.data().begin();
-    FTensor::Tensor1<double *, 3> t_f0_phi_ii(
-        &f0_phi_ii[HVEC0], &f0_phi_ii[HVEC1], &f0_phi_ii[HVEC2], 3);
-    FTensor::Tensor2<double *, 3, 3> t_diff_f0_phi_ii(
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f0_phi_ii(
+        &f0_phi_ii[HVEC0], &f0_phi_ii[HVEC1], &f0_phi_ii[HVEC2]);
+    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_f0_phi_ii(
         &diff_f0_phi_ii[HVEC0_0], &diff_f0_phi_ii[HVEC0_1],
         &diff_f0_phi_ii[HVEC0_2], &diff_f0_phi_ii[HVEC1_0],
         &diff_f0_phi_ii[HVEC1_1], &diff_f0_phi_ii[HVEC1_2],
         &diff_f0_phi_ii[HVEC2_0], &diff_f0_phi_ii[HVEC2_1],
-        &diff_f0_phi_ii[HVEC2_2], 9);
-    CHKERR hCurlBaseOnEdge(4, p - 1, nb_integration_pts, n0f0_idx, n1f0_idx, n,
-                           t_grad_n, t_f0_phi_ii, t_diff_f0_phi_ii);
+        &diff_f0_phi_ii[HVEC2_2]);
+    CHKERR hCurlBaseOnEdge.calculate<3, true>(p - 1, nb_integration_pts,
+                                              n0f0_idx, n1f0_idx, n, t_grad_n,
+                                              t_f0_phi_ii, &t_diff_f0_phi_ii);
 
     FTensor::Tensor1<double, 3> &t_grad_n0f0 = t_grad_n[n0f0_idx];
     FTensor::Tensor1<double, 3> &t_grad_n1f0 = t_grad_n[n1f0_idx];
@@ -2507,30 +2331,32 @@ struct HcurlFaceBase {
     // edge base for family I
     double *f0_phi_ii = &*f0PhiII.data().begin();
     double *diff_f0_phi_ii = &*diffF0PhiII.data().begin();
-    FTensor::Tensor1<double *, 3> t_f0_phi_ii(
-        &f0_phi_ii[HVEC0], &f0_phi_ii[HVEC1], &f0_phi_ii[HVEC2], 3);
-    FTensor::Tensor2<double *, 3, 3> t_diff_f0_phi_ii(
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f0_phi_ii(
+        &f0_phi_ii[HVEC0], &f0_phi_ii[HVEC1], &f0_phi_ii[HVEC2]);
+    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_f0_phi_ii(
         &diff_f0_phi_ii[HVEC0_0], &diff_f0_phi_ii[HVEC0_1],
         &diff_f0_phi_ii[HVEC0_2], &diff_f0_phi_ii[HVEC1_0],
         &diff_f0_phi_ii[HVEC1_1], &diff_f0_phi_ii[HVEC1_2],
         &diff_f0_phi_ii[HVEC2_0], &diff_f0_phi_ii[HVEC2_1],
-        &diff_f0_phi_ii[HVEC2_2], 9);
-    CHKERR hCurlBaseOnEdge(4, p - 1, nb_integration_pts, n0f0_idx, n1f0_idx, n,
-                           t_grad_n, t_f0_phi_ii, t_diff_f0_phi_ii);
+        &diff_f0_phi_ii[HVEC2_2]);
+    CHKERR hCurlBaseOnEdge.calculate<3, true>(p - 1, nb_integration_pts,
+                                              n0f0_idx, n1f0_idx, n, t_grad_n,
+                                              t_f0_phi_ii, &t_diff_f0_phi_ii);
 
     // edge base for family II
     double *f1_phi_ii = &*f1PhiII.data().begin();
     double *diff_f1_phi_ii = &*diffF1PhiII.data().begin();
-    FTensor::Tensor1<double *, 3> t_f1_phi_ii(
-        &f1_phi_ii[HVEC0], &f1_phi_ii[HVEC1], &f1_phi_ii[HVEC2], 3);
-    FTensor::Tensor2<double *, 3, 3> t_diff_f1_phi_ii(
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f1_phi_ii(
+        &f1_phi_ii[HVEC0], &f1_phi_ii[HVEC1], &f1_phi_ii[HVEC2]);
+    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_diff_f1_phi_ii(
         &diff_f1_phi_ii[HVEC0_0], &diff_f1_phi_ii[HVEC0_1],
         &diff_f1_phi_ii[HVEC0_2], &diff_f1_phi_ii[HVEC1_0],
         &diff_f1_phi_ii[HVEC1_1], &diff_f1_phi_ii[HVEC1_2],
         &diff_f1_phi_ii[HVEC2_0], &diff_f1_phi_ii[HVEC2_1],
-        &diff_f1_phi_ii[HVEC2_2], 9);
-    CHKERR hCurlBaseOnEdge(4, p - 1, nb_integration_pts, n0f1_idx, n1f1_idx, n,
-                           t_grad_n, t_f1_phi_ii, t_diff_f1_phi_ii);
+        &diff_f1_phi_ii[HVEC2_2]);
+    CHKERR hCurlBaseOnEdge.calculate<3, true>(p - 1, nb_integration_pts,
+                                              n0f1_idx, n1f1_idx, n, t_grad_n,
+                                              t_f1_phi_ii, &t_diff_f1_phi_ii);
 
     FTensor::Tensor1<double, 3> &t_grad_n0f0 = t_grad_n[n0f0_idx];
     FTensor::Tensor1<double, 3> &t_grad_n1f0 = t_grad_n[n1f0_idx];
@@ -2664,26 +2490,28 @@ struct HcurlFaceBase {
     // edge base for family I
     double *f0_phi_ii = &*f0PhiII.data().begin();
     double *diff_f0_phi_ii = &*diffF0PhiII.data().begin();
-    FTensor::Tensor1<double *, 3> t_f0_phi_ii(
-        &f0_phi_ii[HVEC0], &f0_phi_ii[HVEC1], &f0_phi_ii[HVEC2], 3);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f0_phi_ii(
+        &f0_phi_ii[HVEC0], &f0_phi_ii[HVEC1], &f0_phi_ii[HVEC2]);
     FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_f0_phi_ii(
         &diff_f0_phi_ii[HVEC0_0], &diff_f0_phi_ii[HVEC0_1],
         &diff_f0_phi_ii[HVEC1_0], &diff_f0_phi_ii[HVEC1_1],
         &diff_f0_phi_ii[HVEC2_0], &diff_f0_phi_ii[HVEC2_1]);
-    CHKERR hCurlBaseOnEdge(3, p - 1, nb_integration_pts, n0f0_idx, n1f0_idx, n,
-                           t_grad_n, t_f0_phi_ii, t_diff_f0_phi_ii);
+    CHKERR hCurlBaseOnEdge.calculate<2, true>(p - 1, nb_integration_pts,
+                                              n0f0_idx, n1f0_idx, n, t_grad_n,
+                                              t_f0_phi_ii, &t_diff_f0_phi_ii);
 
     // edge base for family II
     double *f1_phi_ii = &*f1PhiII.data().begin();
     double *diff_f1_phi_ii = &*diffF1PhiII.data().begin();
-    FTensor::Tensor1<double *, 3> t_f1_phi_ii(
-        &f1_phi_ii[HVEC0], &f1_phi_ii[HVEC1], &f1_phi_ii[HVEC2], 3);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_f1_phi_ii(
+        &f1_phi_ii[HVEC0], &f1_phi_ii[HVEC1], &f1_phi_ii[HVEC2]);
     FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_f1_phi_ii(
         &diff_f1_phi_ii[HVEC0_0], &diff_f1_phi_ii[HVEC0_1],
         &diff_f1_phi_ii[HVEC1_0], &diff_f1_phi_ii[HVEC1_1],
         &diff_f1_phi_ii[HVEC2_0], &diff_f1_phi_ii[HVEC2_1]);
-    CHKERR hCurlBaseOnEdge(3, p - 1, nb_integration_pts, n0f1_idx, n1f1_idx, n,
-                           t_grad_n, t_f1_phi_ii, t_diff_f1_phi_ii);
+    CHKERR hCurlBaseOnEdge.calculate<2, true>(p - 1, nb_integration_pts,
+                                              n0f1_idx, n1f1_idx, n, t_grad_n,
+                                              t_f1_phi_ii, &t_diff_f1_phi_ii);
 
     FTensor::Tensor1<double, 3> &t_grad_n0f0 = t_grad_n[n0f0_idx];
     FTensor::Tensor1<double, 3> &t_grad_n1f0 = t_grad_n[n1f0_idx];
