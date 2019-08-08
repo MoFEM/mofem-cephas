@@ -169,15 +169,13 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
     data_curl.spacesOnEntities[MBEDGE].set(HCURL);
   }
 
-
   CHKERR setIntegrationPts();
   CHKERR calculateCoordsAtIntegrationPts();
   CHKERR calculateBaseFunctionsOnElement();
   CHKERR calculateHoCoordsAtIntegrationPts();
 
-  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) 
     CHKERR opCovariantTransform.opRhs(data_curl);
-  }
 
   // Iterate over operators
   CHKERR loopOverOperators();
