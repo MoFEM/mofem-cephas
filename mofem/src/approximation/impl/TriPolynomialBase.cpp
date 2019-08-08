@@ -260,9 +260,9 @@ TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
-  if (data.dataOnEntities[MBTRI].size() != 1) {
+  if (data.dataOnEntities[MBTRI].size() != 1) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  }
+  
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
       cTx->basePolynomialsType0;
@@ -377,6 +377,7 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
                                                         3 * nb_dofs, false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
           nb_gauss_pts, 2 * 3 * nb_dofs, false);
+
       hcurl_edge_n[ee] =
           &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
       diff_hcurl_edge_n[ee] =
@@ -502,21 +503,12 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
     // In linear geometry derivatives are constant,
     // this in expense of efficiency makes implementation
     // consistent between vertices and other types of entities
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3, 2, false);
-    CHKERR ShapeDiffMBTRI(
-        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
-    MatrixDouble diffN(nb_gauss_pts, 6);
-    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-      for (int nn = 0; nn != 3; ++nn) {
-        for (int dd = 0; dd != 2; ++dd) {
-          diffN(gg, nn * 2 + dd) =
-              data.dataOnEntities[MBVERTEX][0].getDiffN(base)(nn, dd);
-        }
-      }
-    }
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(
-        diffN.size1(), diffN.size2(), false);
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().swap(diffN.data());
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts, 6,
+                                                           false);
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) 
+      std::copy(
+          Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+          &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(gg,0));
   }
 
   switch (cTx->sPace) {
