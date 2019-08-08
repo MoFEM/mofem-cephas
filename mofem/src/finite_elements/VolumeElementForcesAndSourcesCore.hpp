@@ -380,7 +380,7 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   MoFEMErrorCode operator()();
 };
 
-struct FaceElementForcesAndSourcesCore;
+struct FaceElementForcesAndSourcesCoreBase;
 
 /**
  * \brief Volume element used to integrate on skeleton
@@ -389,16 +389,16 @@ struct FaceElementForcesAndSourcesCore;
 struct VolumeElementForcesAndSourcesCoreOnSide
     : public VolumeElementForcesAndSourcesCore {
 
-  FaceElementForcesAndSourcesCore *faceFEPtr;
+  FaceElementForcesAndSourcesCoreBase *faceFEPtr;
   VolumeElementForcesAndSourcesCoreOnSide(Interface &m_field,
                                           const EntityType type = MBTET)
       : VolumeElementForcesAndSourcesCore(m_field, type), faceFEPtr(NULL) {}
   ~VolumeElementForcesAndSourcesCoreOnSide() {}
 
   inline MoFEMErrorCode
-  setFaceFEPtr(const FaceElementForcesAndSourcesCore *face_fe_ptr) {
+  setFaceFEPtr(const FaceElementForcesAndSourcesCoreBase *face_fe_ptr) {
     MoFEMFunctionBeginHot;
-    faceFEPtr = const_cast<FaceElementForcesAndSourcesCore *>(face_fe_ptr);
+    faceFEPtr = const_cast<FaceElementForcesAndSourcesCoreBase *>(face_fe_ptr);
     MoFEMFunctionReturnHot(0);
   }
 
@@ -433,7 +433,7 @@ struct VolumeElementForcesAndSourcesCoreOnSide
       return static_cast<VolumeElementForcesAndSourcesCoreOnSide *>(ptrFE);
     }
 
-    inline FaceElementForcesAndSourcesCore *getFaceFEPtr() const {
+    inline FaceElementForcesAndSourcesCoreBase *getFaceFEPtr() const {
       return getVolumeFE()->faceFEPtr;
     }
 

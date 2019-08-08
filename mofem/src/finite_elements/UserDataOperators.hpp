@@ -1201,6 +1201,7 @@ struct OpCalculateHdivVectorField
 
 /**
  * @brief Calculate divergence of vector field
+ * @ingroup mofem_forces_and_sources_user_data_operators
  *
  * @tparam Tensor_Dim dimension of space
  */
@@ -1257,6 +1258,7 @@ struct OpCalculateHdivVectorDivergence
 
 /**
  * @brief Calculate curl   of vector field
+ * @ingroup mofem_forces_and_sources_user_data_operators
  *
  * @tparam Tensor_Dim dimension of space
  */
@@ -1507,6 +1509,73 @@ struct OpCalculateHVecTensorDivergence
     MoFEMFunctionReturn(0);
   }
 };
+
+// Face opeartors 
+
+/** \brief Calculate inverse of jacobian for face element
+
+  It is assumed that face element is XY plane. Applied
+  only for 2d problems.
+
+  \todo Generalize function for arbitrary face orientation in 3d space
+
+  \ingroup mofem_forces_and_sources_tri_element
+
+*/
+struct OpCalculateInvJacForFace
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+  MatrixDouble &invJac;
+
+  OpCalculateInvJacForFace(MatrixDouble &inv_jac)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(H1),
+        invJac(inv_jac) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+/** \brief Transform local reference derivatives of shape functions to global
+derivatives
+
+\ingroup mofem_forces_and_sources_tri_element
+
+*/
+struct OpSetInvJacH1ForFace
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(H1),
+        invJac(inv_jac) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  MatrixDouble &invJac;
+  MatrixDouble diffNinvJac;
+};
+
+/**
+ * \brief brief Transform local reference derivatives of shape function to
+ global derivatives for face
+
+ * \ingroup mofem_forces_and_sources_tri_element
+ */
+struct OpSetInvJacHcurlFace
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpSetInvJacHcurlFace(MatrixDouble &inv_jac)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL),
+        invJac(inv_jac) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  MatrixDouble &invJac;
+  MatrixDouble diffHcurlInvJac;
+};
+
 
 } // namespace MoFEM
 
