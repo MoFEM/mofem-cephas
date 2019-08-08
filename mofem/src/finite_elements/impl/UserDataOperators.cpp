@@ -21,15 +21,56 @@
 namespace MoFEM {
 
 MoFEMErrorCode
+OpCalculateJacForFace::doWork(int side, EntityType type,
+                              DataForcesAndSourcesCore::EntData &data) {
+
+  MoFEMFunctionBegin;
+
+  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI) 
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "This operator can be used only with element which is triangle");
+  
+  if (type == MBVERTEX) {
+    VectorDouble &coords = getCoords();
+    double *coords_ptr = &*coords.data().begin();
+    double j00 = 0, j01 = 0, j10 = 0, j11 = 0;
+
+    // this is triangle, derivative of nodal shape functions is constant.
+    // So only need to do one node.
+    for (auto n : {0, 1, 2}) {
+      j00 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 0];
+      j01 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 1];
+      j10 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 0];
+      j11 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 1];
+    }
+
+    jac.resize(2, 2, false);
+    jac(0, 0) = j00;
+    jac(0, 1) = j01;
+    jac(1, 0) = j10;
+    jac(1, 1) = j11;
+
+  }
+
+  doVertices = true;
+  doEdges = false;
+  doQuads = false;
+  doTris = false;
+  doTets = false;
+  doPrisms = false;
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
 OpCalculateInvJacForFace::doWork(int side, EntityType type,
                                  DataForcesAndSourcesCore::EntData &data) {
 
   MoFEMFunctionBegin;
 
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI) {
+  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "This operator can be used only with element which is triangle");
-  }
 
   if (type == MBVERTEX) {
     VectorDouble &coords = getCoords();
@@ -162,7 +203,9 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
       double *t_inv_diff_n_ptr = &*diffHcurlInvJac.data().begin();
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_inv_diff_n(
           t_inv_diff_n_ptr, &t_inv_diff_n_ptr[HVEC0_1],
+
           &t_inv_diff_n_ptr[HVEC1_0], &t_inv_diff_n_ptr[HVEC1_1],
+
           &t_inv_diff_n_ptr[HVEC2_0], &t_inv_diff_n_ptr[HVEC2_1]);
 
       for (unsigned int gg = 0; gg != nb_gauss_pts; gg++) {
@@ -180,5 +223,113 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+OpMakeHdivFromHcurl::doWork(int side, EntityType type,
+                            DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  if (type != MBEDGE && type != MBTRI)
+    MoFEMFunctionReturnHot(0);
+
+  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI) 
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "This operator can be used only with element which is triangle");
+
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+
+    const unsigned int nb_base_functions = data.getN(base).size2() / 3;
+    if (nb_base_functions) {
+      const unsigned int nb_gauss_pts = data.getDiffN(base).size1();
+
+      auto t_n = data.getFTensor1N<3>(base);
+      auto t_diff_n = data.getFTensor2DiffN<3, 2>(base);
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+
+          const double a = t_n(0);
+          t_n(0) = -t_n(1);
+          t_n(1) = a;
+
+          for (auto n : {0, 1}) {
+            const double b = t_diff_n(0, n);
+            t_diff_n(0, n) = -t_diff_n(1, n);
+            t_diff_n(1, n) = b;
+          }
+
+          ++t_n;
+          ++t_diff_n;
+        }
+      }
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+
+  MoFEMFunctionBegin;
+
+  if (type != MBEDGE && type != MBTRI)
+    MoFEMFunctionReturnHot(0);
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+
+    const unsigned int nb_base_functions = data.getN(base).size2() / 3;
+    if (!nb_base_functions)
+      continue;
+
+    const unsigned int nb_gauss_pts = data.getN(base).size1();
+
+    double det;
+    CHKERR determinantTensor2by2(tJac, det);
+
+    piolaN.resize(nb_gauss_pts, data.getN(base).size2(), false);
+    if (data.getN(base).size2() > 0) {
+      auto t_n = data.getFTensor1N<3>(base);
+      double *t_transformed_n_ptr = &*piolaN.data().begin();
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
+          t_transformed_n_ptr, // HVEC0
+          &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+          t_transformed_n(i) = tJac(i, k) * t_n(k) / det;
+          ++t_n;
+          ++t_transformed_n;
+        }
+      }
+      data.getN(base).data().swap(piolaN.data());
+    }
+
+    piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
+    if (data.getDiffN(base).size2() > 0) {
+      auto t_diff_n = data.getFTensor2DiffN<3, 2>(base);
+      double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+      FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
+          t_transformed_diff_n(
+            t_transformed_diff_n_ptr, &t_transformed_diff_n_ptr[HVEC0_1],
+
+            &t_transformed_diff_n_ptr[HVEC1_0], &t_transformed_diff_n_ptr[HVEC1_1],
+
+            &t_transformed_diff_n_ptr[HVEC2_0], &t_transformed_diff_n_ptr[HVEC2_1]);
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+          t_transformed_diff_n(i, k) = tJac(i, j) * t_diff_n(j, k) / det;
+          ++t_diff_n;
+          ++t_transformed_diff_n;
+        }
+      }
+      data.getDiffN(base).data().swap(piolaDiffN.data());
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
 
 }
