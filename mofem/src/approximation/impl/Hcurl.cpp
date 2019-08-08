@@ -8,7 +8,7 @@
 
 */
 
-#undef GENERATE_VTK_WITH_CURL_BASE
+// #undef GENERATE_VTK_WITH_CURL_BASE
 #ifndef GENERATE_VTK_WITH_CURL_BASE
 
 using namespace MoFEM;
