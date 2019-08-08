@@ -505,10 +505,6 @@ struct FaceElementForcesAndSourcesCoreSwitch
 using FaceElementForcesAndSourcesCore =
     FaceElementForcesAndSourcesCoreSwitch<0>;
 
-using FaceElementForcesAndSourcesCoreSimple =
-    FaceElementForcesAndSourcesCoreSwitch<
-        NO_HO | NO_CONTRAVARIANT_TRANSFORM_HDIV | NO_COVARIANT_TRANSFORM_HCURL>;
-
 } // namespace MoFEM
 
 #endif //__FACEELEMENTFORCESANDSOURCESCORE_HPP__
