@@ -72,11 +72,10 @@ int main(int argc, char *argv[]) {
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
-    // Create MoFEM (Joseph) database
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
-    // set entitities bit level
+    // set entities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
     EntityHandle meshset_level0;
@@ -166,8 +165,6 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.set_field_order(0, MBTRI, "MESH_NODE_POSITIONS", 2);
     CHKERR m_field.set_field_order(0, MBTET, "MESH_NODE_POSITIONS", 2);
 
-    /****/
-    // build database
     // build field
     CHKERR m_field.build_fields();
     // build finite elemnts
@@ -183,7 +180,6 @@ int main(int argc, char *argv[]) {
     Projection10NodeCoordsOnField ent_method(m_field, "MESH_NODE_POSITIONS");
     CHKERR m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method);
 
-    /****/
     // mesh partitioning
     // partition
     CHKERR prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
@@ -448,7 +444,7 @@ int main(int argc, char *argv[]) {
     }
 
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TET_FE", tet_fe);
-    my_split << "intrnal\n";
+    my_split << "internal\n";
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TRI_FE", tri_fe);
     my_split << "skin\n";
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "SKIN_FE", skin_fe);
