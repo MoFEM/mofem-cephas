@@ -77,17 +77,8 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
    */
   struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const FieldSpace space)
-        : ForcesAndSourcesCore::UserDataOperator(space) {}
-
-    UserDataOperator(const std::string &field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(field_name, type) {}
-
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type,
-                     const bool symm = true)
-        : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
-                                                 type, symm) {}
+     using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
+ 
 
     /** \brief get element number of nodes
      */

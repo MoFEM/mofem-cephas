@@ -58,17 +58,7 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
    */
   struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const FieldSpace space)
-        : ForcesAndSourcesCore::UserDataOperator(space) {}
-
-    UserDataOperator(const std::string &field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(field_name, type) {}
-
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type,
-                     const bool symm = true)
-        : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
-                                                 type, symm){};
+    using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
     /**
      * \brief get area of face
@@ -432,12 +422,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   virtual MoFEMErrorCode calculateHoNormal();
 };
 
-enum FaceElementForcesAndSourcesCoreSwitches {
-  NO_HO = 1 << 0,
-  NO_CONTRAVARIANT_TRANSFORM_HDIV = 1 << 1,
-  NO_COVARIANT_TRANSFORM_HCURL = 1 << 2
-};
-
 /** \brief Face finite element switched
  \ingroup mofem_forces_and_sources_tri_element
 
@@ -445,6 +429,12 @@ enum FaceElementForcesAndSourcesCoreSwitches {
 template <int SWITCH>
 struct FaceElementForcesAndSourcesCoreSwitch
     : public FaceElementForcesAndSourcesCoreBase {
+
+  enum FaceElementForcesAndSourcesCoreSwitches {
+    NO_HO = 1 << 0,
+    NO_CONTRAVARIANT_TRANSFORM_HDIV = 1 << 1,
+    NO_COVARIANT_TRANSFORM_HCURL = 1 << 2
+  };
 
   using FaceElementForcesAndSourcesCoreBase::
       FaceElementForcesAndSourcesCoreBase;

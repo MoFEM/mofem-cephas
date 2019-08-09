@@ -1597,6 +1597,10 @@ private:
   MatrixDouble diffHcurlInvJac;
 };
 
+/**
+ * @brief Make Hdiv space from Hcurl space in 2d
+ * @ingroup mofem_forces_and_sources_tri_element
+ */
 struct OpMakeHdivFromHcurl
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
@@ -1619,9 +1623,9 @@ struct OpMakeHdivFromHcurl
  * \frac{1}{\textrm{det}(J)}J_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
  * \f]
  * 
-* \ingroup mofem_forces_and_sources
-
-*/
+ * \ingroup mofem_forces_and_sources
+ *
+  */
 struct OpSetContravariantPiolaTransformFace
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
@@ -1640,6 +1644,18 @@ struct OpSetContravariantPiolaTransformFace
 
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+// Edge
+
+struct OpSetContrariantPiolaTransformOnEdge
+    : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpSetContrariantPiolaTransformOnEdge()
+      : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(HCURL) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);

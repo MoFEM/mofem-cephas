@@ -712,14 +712,33 @@ add_test(forces_and_sources_check_approx_of_hcurl_in_2d_ainsworth
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_approx_of_hcurl_in_2d
   -base ainsworth -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
 )
-# See TODO
 # add_test(forces_and_sources_check_approx_of_hcurl_in_2d_demkowicz
 #   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
 #   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_approx_of_hcurl_in_2d
 #   -base demkowicz -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
 # )
 
-
+my_add_executable(hcurl_divergence_operator_2d hcurl_divergence_operator_2d.cpp)
+target_link_libraries(hcurl_divergence_operator_2d
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(hcurl_divergence_operator_2d
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
+  -base hdiv_ainsworth
+)
+add_test(hcurl_divergence_operator_2d
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
+  -base hdiv_demkowicz
+)
 
 # add test for recording series
 my_add_executable(record_series_atom record_series_atom.cpp)
