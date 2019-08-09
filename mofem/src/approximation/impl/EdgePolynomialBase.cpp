@@ -41,71 +41,62 @@ EdgePolynomialBase::EdgePolynomialBase() {}
 MoFEMErrorCode
 EdgePolynomialBase::getValue(MatrixDouble &pts,
                              boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
-
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->query_interface(IDD_EDGE_BASE_FUNCTION, &iface);
-  CHKERRG(ierr);
+  CHKERR ctx_ptr->query_interface(IDD_EDGE_BASE_FUNCTION, &iface);
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
   int nb_gauss_pts = pts.size2();
-  if (!nb_gauss_pts) {
+  if (!nb_gauss_pts) 
     MoFEMFunctionReturnHot(0);
-  }
 
-  if (pts.size1() < 1) {
+  if (pts.size1() < 1)
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
-  }
 
   const FieldApproximationBase base = cTx->bAse;
   DataForcesAndSourcesCore &data = cTx->dAta;
+
   if (cTx->copyNodeBase == LASTBASE) {
     data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 2, false);
-    ierr = ShapeMBEDGE(
+    CHKERR ShapeMBEDGE(
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &pts(0, 0), nb_gauss_pts);
-    CHKERRG(ierr);
-  } else {
+  } else 
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
         data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
-  }
+  
   if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
-      (unsigned int)nb_gauss_pts) {
+      (unsigned int)nb_gauss_pts) 
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Base functions or nodes has wrong number of integration points "
              "for base %s",
              ApproximationBaseNames[base]);
-  }
+  
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(2, 1, false);
-  ierr = ShapeDiffMBEDGE(
+  CHKERR ShapeDiffMBEDGE(
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
-  CHKERRG(ierr);
 
   switch (cTx->sPace) {
   case H1:
-    ierr = getValueH1(pts);
-    CHKERRG(ierr);
+    CHKERR getValueH1(pts);
     break;
   case HDIV:
-    ierr = getValueHdiv(pts);
-    CHKERRG(ierr);
+    CHKERR getValueHdiv(pts);
     break;
   case HCURL:
-    ierr = getValueHcurl(pts);
-    CHKERRG(ierr);
+    CHKERR getValueHcurl(pts);
     break;
   case L2:
-    ierr = getValueL2(pts);
-    CHKERRG(ierr);
+    CHKERR getValueL2(pts);
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
@@ -200,7 +191,7 @@ MoFEMErrorCode EdgePolynomialBase::getValueHdiv(MatrixDouble &pts) {
 
 MoFEMErrorCode
 EdgePolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
@@ -211,10 +202,10 @@ EdgePolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
 
   int nb_gauss_pts = pts.size2();
   if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
-    // edges
-    if (data.dataOnEntities[MBEDGE].size() != 1) {
+
+    if (data.dataOnEntities[MBEDGE].size() != 1) 
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-    }
+    
     int sense = data.dataOnEntities[MBEDGE][0].getSense();
     int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
     int nb_dofs =
@@ -223,20 +214,20 @@ EdgePolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
                                                      false);
     data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
                                                          false);
-    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
-    ierr = Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_EDGE(
+
+    CHKERR Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_EDGE(
         sense, order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-        &*data.dataOnEntities[MBEDGE][0].getN(base).data().begin(), NULL,
+        &*data.dataOnEntities[MBEDGE][0].getN(base).data().begin(), nullptr,
         nb_gauss_pts, base_polynomials);
-    CHKERRG(ierr);
+
   } else {
     data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, 0, false);
     data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
                                                          false);
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
@@ -248,11 +239,11 @@ EdgePolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
 
   int nb_gauss_pts = pts.size2();
   if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
-    // edges
-    if (data.dataOnEntities[MBEDGE].size() != 1) {
+
+    if (data.dataOnEntities[MBEDGE].size() != 1) 
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "No data structure to store base functions");
-    }
+    
     int sense = data.dataOnEntities[MBEDGE][0].getSense();
     int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
     int nb_dofs =
@@ -261,13 +252,13 @@ EdgePolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
                                                      false);
     data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
                                                          false);
-    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
     CHKERR Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
         sense, order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         &*data.dataOnEntities[MBEDGE][0].getN(base).data().begin(), NULL,
         nb_gauss_pts);
   } else {
+
     data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, 0, false);
     data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
                                                          false);
