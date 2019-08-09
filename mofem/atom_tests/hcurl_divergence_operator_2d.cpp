@@ -2,8 +2,8 @@
  * \file hcurl_divergence_operator_2d.cpp
  * \example hcurl_divergence_operator_2d.cpp
  *
- * Testing Hcurl base, transfromed to Hdiv base in 2d using green theorem
- *
+ * Testing Hcurl base, transfromed to Hdiv base in 2d using Green theorem
+ * 
  */
 
 /* This file is part of MoFEM.
