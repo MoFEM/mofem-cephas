@@ -54,7 +54,6 @@ private:
 
   MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
 
-private:
   MoFEMErrorCode getValueHdivAinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
 
