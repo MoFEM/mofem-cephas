@@ -3,18 +3,18 @@
 */
 
 /* This file is part of MoFEM.
-* MoFEM is free software: you can redistribute it and/or modify it under
-* the terms of the GNU Lesser General Public License as published by the
-* Free Software Foundation, either version 3 of the License, or (at your
-* option) any later version.
-*
-* MoFEM is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-* License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 using namespace MoFEM;
 
@@ -198,7 +198,8 @@ MoFEMErrorCode EdgePolynomialBase::getValueHdiv(MatrixDouble &pts) {
           "Make no sense, unless problem is 2d (2d not implemented yet)");
 }
 
-MoFEMErrorCode EdgePolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
+MoFEMErrorCode
+EdgePolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
@@ -261,7 +262,7 @@ EdgePolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
                                                          false);
     // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
-    CHKERR  Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE (
+    CHKERR Hcurl_Demkowicz_EdgeBaseFunctions_MBEDGE(
         sense, order, &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         &*data.dataOnEntities[MBEDGE][0].getN(base).data().begin(), NULL,
