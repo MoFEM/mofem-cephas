@@ -729,15 +729,15 @@ target_link_libraries(hcurl_divergence_operator_2d
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(hcurl_divergence_operator_2d
+add_test(hcurl_divergence_operator_2d_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
-  -base hdiv_ainsworth
+  -base ainsworth -odrer 5
 )
-add_test(hcurl_divergence_operator_2d
+add_test(hcurl_divergence_operator_2d_demkowicz
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
-  -base hdiv_demkowicz
+  -base demkowicz -odrer 5
 )
 
 # add test for recording series
