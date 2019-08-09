@@ -346,7 +346,8 @@ MoFEMErrorCode OpSetContrariantPiolaTransformOnEdge::doWork(
   const auto &edge_direction = getDirection();
 
   FTensor::Index<'i', 3> i;
-  FTensor::Tensor1<double, 3> t_m(-edge_direction[1], edge_direction[0], 0.);
+  FTensor::Tensor1<double, 3> t_m(-edge_direction[1], edge_direction[0],
+                                  edge_direction[2]);
   const double l0 = t_m(i) * t_m(i);
 
   std::vector<double> l1;

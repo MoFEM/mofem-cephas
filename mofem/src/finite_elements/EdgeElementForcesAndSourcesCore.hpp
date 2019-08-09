@@ -66,7 +66,7 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
 
     using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
-    
+
     /** \brief get element connectivity
      */
     inline const EntityHandle *getConn() {
@@ -188,7 +188,7 @@ struct EdgeElementForcesAndSourcesCoreSwitch
     : public EdgeElementForcesAndSourcesCoreBase {
 
   enum EdgeElementForcesAndSourcesCoreSwitches {
-    NO_HO = 1 << 0,
+    NO_HO_GEOMETRY = 1 << 0,
     NO_COVARIANT_TRANSFORM_HCURL = 1 << 2
   };
 
@@ -222,7 +222,7 @@ struct EdgeElementForcesAndSourcesCoreSwitch
     CHKERR setIntegrationPts();
     CHKERR calculateCoordsAtIntegrationPts();
     CHKERR calculateBaseFunctionsOnElement();
-    if (!(SWITCH & NO_HO))
+    if (!(SWITCH & NO_HO_GEOMETRY))
       CHKERR calculateHoCoordsAtIntegrationPts();
 
     if (!(SWITCH & NO_COVARIANT_TRANSFORM_HCURL))

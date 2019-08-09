@@ -27,12 +27,12 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 using FaceEle = MoFEM::FaceElementForcesAndSourcesCoreSwitch<
-    FaceElementForcesAndSourcesCore::NO_HO |
+    FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY |
     FaceElementForcesAndSourcesCore::NO_CONTRAVARIANT_TRANSFORM_HDIV |
     FaceElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
 
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
-    EdgeElementForcesAndSourcesCore::NO_HO |
+    EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY |
     EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
 
 using FaceEleOp = FaceEle::UserDataOperator;
@@ -76,25 +76,19 @@ struct OpFlux : public EdgeEleOp {
     if (nb_dofs == 0)
       MoFEMFunctionReturnHot(0);
     const int nb_gauss_pts = data.getN().size1();
-
     FTensor::Tensor1<double, 3> t_normal(-getDirection()[1], getDirection()[0],
                                          0.);
 
-    Tag th;
-    double def_val[] = {0, 0, 0};
-    CHKERR getEdgeFE()->mField.get_moab().tag_get_handle("N", th);
-    EntityHandle ent = getFEEntityHandle();
-    CHKERR getEdgeFE()->mField.get_moab().tag_set_data(th, &ent, 1,
-                                                       &t_normal(0));
-
+    auto t_base_fun = data.getFTensor1N<3>();
     FTensor::Index<'i', 2> i;
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      auto t_base_fun = data.getFTensor1N<3>();
+      const double val = getGaussPts()(1, gg);
       for (int bb = 0; bb != nb_dofs; bb++) {
-        fLux -= getGaussPts()(1, gg) * t_normal(i) * t_base_fun(i);
+        fLux += val * t_normal(i) * t_base_fun(i);
         ++t_base_fun;
       }
     }
+
     MoFEMFunctionReturn(0);
   }
 };
@@ -131,7 +125,6 @@ int main(int argc, char *argv[]) {
     PetscInt choice_base_value = AINSWORTH;
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
                                 LASBASETOP, &choice_base_value, &flg);
-
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
     FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
@@ -139,6 +132,11 @@ int main(int argc, char *argv[]) {
       base = AINSWORTH_LEGENDRE_BASE;
     else if (choice_base_value == DEMKOWICZ)
       base = DEMKOWICZ_JACOBI_BASE;
+    int order = 1;
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
+    int p_rule = 0;
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-p_rule", &p_rule, PETSC_NULL);
+
 
     CHKERR m_field.add_field("FIELD1", HCURL, base, 1);
     CHKERR m_field.add_finite_element("FACE_FE");
@@ -165,7 +163,6 @@ int main(int argc, char *argv[]) {
 
     CHKERR m_field.add_ents_to_field_by_type(0, MBTRI, "FIELD1");
     // Set order
-    int order = 2;
     CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", order);
     CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", order);
 
@@ -196,7 +193,7 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
     // integration rule
-    auto rule = [](int, int, int p) { return p + 1; };
+    auto rule = [&](int, int, int p) { return p+p_rule; };
 
     FaceEle fe_face(m_field);
     fe_face.getRuleHook = rule;
@@ -211,11 +208,6 @@ int main(int argc, char *argv[]) {
     double div;
     fe_face.getOpPtrVector().push_back(new OpDivergence(div));
 
-
-    Tag th;
-    double def_val[] = {0, 0, 0};
-    CHKERR moab.tag_get_handle("N", 3, MB_TYPE_DOUBLE, th,
-                               MB_TAG_CREAT | MB_TAG_SPARSE, &def_val);
 
     EdgeEle fe_edge(m_field);
     fe_edge.getRuleHook = rule;
@@ -232,10 +224,10 @@ int main(int argc, char *argv[]) {
 
     PetscPrintf(PETSC_COMM_WORLD, "Div = %4.3e Flux = %3.4e\n", div, flux);
 
-    // constexpr double tol = 1e-8;
-    // if (std::abs(div - flux) < tol)
-    //   SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
-    //            "Test failed (div != flux) %3.4e != %3.4e", div, flux);
+    constexpr double tol = 1e-8;
+    if (std::abs(div - flux) < tol)
+      SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+               "Test failed (div != flux) %3.4e != %3.4e", div, flux);
 
     CHKERR m_field.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_level0, BitRefLevel().set(), MBEDGE, "edges.vtk", "VTK", "");

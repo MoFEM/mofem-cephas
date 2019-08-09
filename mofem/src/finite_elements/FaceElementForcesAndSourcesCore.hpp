@@ -431,7 +431,7 @@ struct FaceElementForcesAndSourcesCoreSwitch
     : public FaceElementForcesAndSourcesCoreBase {
 
   enum FaceElementForcesAndSourcesCoreSwitches {
-    NO_HO = 1 << 0,
+    NO_HO_GEOMETRY = 1 << 0,
     NO_CONTRAVARIANT_TRANSFORM_HDIV = 1 << 1,
     NO_COVARIANT_TRANSFORM_HCURL = 1 << 2
   };
@@ -468,7 +468,7 @@ struct FaceElementForcesAndSourcesCoreSwitch
     /// Use the some node base
     CHKERR calculateCoordinatesAtGaussPts();
     CHKERR calculateBaseFunctionsOnElement();
-    if (!(NO_HO & SWITCH))
+    if (!(NO_HO_GEOMETRY & SWITCH))
       CHKERR calculateHoNormal();
 
     // Apply Piola transform to HDiv and HCurl spaces, uses previously
