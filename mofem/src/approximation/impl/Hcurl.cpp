@@ -178,14 +178,13 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_EDGE(
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,
                                        const int dim)) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   if (NBEDGE_AINSWORTH_HCURL(p) == 0)
     MoFEMFunctionReturnHot(0);
-  if (diff_edge_n != NULL) {
+  if (diff_edge_n != NULL) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Calculation of derivatives not implemented");
-  }
 
   FTensor::Index<'i', 3> i;
   FTensor::Tensor1<double, 3> t_node_diff_ksi[2];
@@ -196,7 +195,8 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_EDGE(
   t_node_diff_ksi[1](1) = 0;
   t_node_diff_ksi[1](2) = 0;
 
-  FTensor::Tensor1<double *, 3> t_edge_n(&edge_n[0], &edge_n[1], &edge_n[2], 3);
+  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_edge_n(
+      &edge_n[0], &edge_n[1], &edge_n[2]);
   FTensor::Tensor1<double, 3> t_psi_e_0, t_psi_e_1;
 
   for (int ii = 0; ii != nb_integration_pts; ii++) {
@@ -208,16 +208,19 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_EDGE(
                    sense;
     t_psi_e_1(i) = N[node_shift + 1] * t_node_diff_ksi[0](i) +
                    N[node_shift + 0] * t_node_diff_ksi[1](i);
+
     t_edge_n(i) = t_psi_e_0(i);
     ++t_edge_n;
+
     t_edge_n(i) = t_psi_e_1(i);
     ++t_edge_n;
 
     if (p > 1) {
+      
       const double ksi_0i = (N[node_shift + 1] - N[node_shift + 0]) * sense;
       double psi_l[p + 1];
-      ierr = base_polynomials(p, ksi_0i, NULL, psi_l, NULL, 3);
-      CHKERRG(ierr);
+      CHKERR base_polynomials(p, ksi_0i, NULL, psi_l, NULL, 3);
+
       for (int ll = 2; ll != NBEDGE_AINSWORTH_HCURL(p); ll++) {
         const double a = (double)(2 * ll + 1) / (double)(ll + 1);
         const double b = (double)(ll) / (double)(ll + 1);
@@ -225,10 +228,11 @@ MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_EDGE(
             a * psi_l[ll - 1] * t_psi_e_1(i) - b * psi_l[ll - 2] * t_psi_e_0(i);
         ++t_edge_n;
       }
+
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode MoFEM::Hcurl_Ainsworth_EdgeBaseFunctions_MBTET_ON_FACE(
