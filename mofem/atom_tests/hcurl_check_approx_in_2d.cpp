@@ -1,6 +1,6 @@
 /**
- * \file forces_and_sources_check_approx_of_hcurl_in_2d
- * \example forces_and_sources_check_approx_of_hcurl_in_2d.cpp
+ * \file hcurl_check_approx_in_2d
+ * \example hcurl_check_approx_in_2d.cpp
  *
  * Approximate polynomial in 2D and check direvatives
  *
@@ -38,19 +38,54 @@ struct TestFE : public FaceEle {
   int getRule(int order) { return 2 * order; }
 };
 
+constexpr double a0 = 0.0;
+constexpr double a1 = 2.0;
+constexpr double a2 = -15.0 * a0;
+constexpr double a3 = -20.0 / 6 * a1;
+constexpr double a4 = 15.0 * a0;
+constexpr double a5 = a1;
+constexpr double a6 = -a0;
+
 struct ApproxFunctions {
   static FTensor::Tensor1<double, 3> fUn(const double x, const double y) {
     return FTensor::Tensor1<double, 3>(
-        pow(x, 5) + pow(y, 5) + pow(x, 3) * pow(y, 2),
-        pow(x, 5) + pow(y, 5) + pow(x, 2) * pow(y, 3), 0.);
+        6 * a6 * std::pow(x, 5) * std::pow(y, 0) +
+            5 * a5 * std::pow(x, 4) * std::pow(y, 1) +
+            4 * a4 * std::pow(x, 3) * std::pow(y, 2) +
+            3 * a3 * std::pow(x, 2) * std::pow(y, 3) +
+            2 * a2 * std::pow(x, 1) * std::pow(y, 4) +
+            1 * a1 * std::pow(x, 0) * std::pow(y, 5),
+
+        1 * a5 * std::pow(x, 5) * std::pow(y, 0) +
+            2 * a4 * std::pow(x, 4) * std::pow(y, 1) +
+            3 * a3 * std::pow(x, 3) * std::pow(y, 2) +
+            4 * a2 * std::pow(x, 2) * std::pow(y, 3) +
+            5 * a1 * std::pow(x, 1) * std::pow(y, 4) +
+            6 * a0 * std::pow(x, 0) * std::pow(y, 5),
+
+        0.);
   }
+
   static FTensor::Tensor2<double, 3, 2> diffFun(const double x,
                                                 const double y) {
     return FTensor::Tensor2<double, 3, 2>(
-        5 * pow(x, 4) + 3 * pow(x, 2) * pow(y, 2),
-        5 * pow(y, 4) + 2 * pow(x, 3) * pow(y, 1),
-        5 * pow(x, 4) + 2 * pow(x, 1) * pow(y, 3),
-        5 * pow(y, 4) + 3 * pow(x, 2) * pow(y, 2), 0., 0.);
+        30 * a6 * pow(x, 4) * pow(y, 0) + 20 * a5 * pow(x, 3) * pow(y, 1) +
+            12 * a4 * pow(x, 2) * pow(y, 2) + 6 * a3 * pow(x, 1) * pow(y, 3) +
+            2 * a2 * pow(x, 0) * pow(y, 4),
+
+        5 * a5 * pow(x, 4) * pow(y, 0) + 8 * a4 * pow(x, 3) * pow(y, 1) +
+            9 * a3 * pow(x, 2) * pow(y, 2) + 8 * a2 * pow(x, 1) * pow(y, 3) +
+            5 * a1 * pow(x, 0) * pow(y, 4),
+
+        5 * a5 * pow(x, 4) * pow(y, 0) + 8 * a4 * pow(x, 3) * pow(y, 1) +
+            9 * a3 * pow(x, 2) * pow(y, 2) + 8 * a2 * pow(x, 1) * pow(y, 3) +
+            5 * a1 * pow(x, 0) * pow(y, 4),
+
+        2 * a4 * pow(x, 4) * pow(y, 0) + 6 * a3 * pow(x, 3) * pow(y, 1) +
+            12 * a2 * pow(x, 2) * pow(y, 2) + 20 * a1 * pow(x, 1) * pow(y, 3) +
+            30 * a0 * pow(x, 0) * pow(y, 4),
+
+        0., 0.);
   }
 };
 
@@ -184,7 +219,6 @@ struct OpCheckValsDiffVals : public FaceEleOp {
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
         const double x = getCoordsAtGaussPts()(gg, 0);
         const double y = getCoordsAtGaussPts()(gg, 1);
-        cerr << t_diff_vals(0, 0) + t_diff_vals(1, 1) << endl;
 
         FTensor::Tensor1<double, 3> delta_val;
         delta_val(i) = t_vals(i) - ApproxFunctions::fUn(x, y)(i);
@@ -193,15 +227,14 @@ struct OpCheckValsDiffVals : public FaceEleOp {
             t_diff_vals(i, j) - ApproxFunctions::diffFun(x, y)(i, j);
         double err_val = sqrt(delta_val(i) * delta_val(i));
         double err_diff_val = sqrt(delta_diff_val(i, j) * delta_diff_val(i, j));
-        cerr << err_val << " " << err_diff_val << endl;
-        // if (err_val > eps) {
-        // SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-        //  "Wrong value %4.3e", err_val);
-        // }
-        // if (err_diff_val > eps) {
-        // SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-        //  "Wrong derivative of value %4.3e", err_diff_val);
-        // }
+        if (err_val > eps) {
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong value %4.3e", err_val);
+        }
+        if (err_diff_val > eps) {
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong derivative of value %4.3e", err_diff_val);
+        }
         ++t_vals;
         ++t_diff_vals;
       }
@@ -220,8 +253,8 @@ int main(int argc, char *argv[]) {
     moab::Interface &moab = mb_instance;
 
     // Read mesh to MOAB
-    // CHKERR moab.load_file("rectangle.h5m", 0, "");
-    CHKERR moab.load_file("bigr.h5m", 0, "");
+    CHKERR moab.load_file("rectangle.h5m", 0, "");
+    // CHKERR moab.load_file("bigr.h5m", 0, "");
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
@@ -231,8 +264,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core;
 
     // set entities bit level
-    BitRefLevel bit_level0;
-    bit_level0.set(0);
+    BitRefLevel bit_level0 = BitRefLevel().set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 2, bit_level0);
 
@@ -269,7 +301,7 @@ int main(int argc, char *argv[]) {
     // Add entities
     CHKERR m_field.add_ents_to_field_by_type(0, MBTRI, "FIELD1");
     // Set order
-    int order = 4;
+    int order = 5;
     CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", order);
     CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", order);
     CHKERR m_field.add_ents_to_finite_element_by_type(0, MBTRI, "TEST_FE1");
@@ -301,7 +333,8 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
                                                               COL, D);
 
-    {
+    auto assemble_matrices_and_vectors = [&]() {
+      MoFEMFunctionBegin;
       TestFE fe(m_field);
       MatrixDouble inv_jac(2, 2), jac(2, 2);
       fe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
@@ -317,20 +350,25 @@ int main(int argc, char *argv[]) {
       CHKERR VecAssemblyEnd(F);
       CHKERR MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
       CHKERR MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-    }
+      MoFEMFunctionReturn(0);
+    };
 
-    // Solver problem
-    auto solver = createKSP(PETSC_COMM_WORLD);
-    CHKERR KSPSetOperators(solver, A, A);
-    CHKERR KSPSetFromOptions(solver);
-    CHKERR KSPSetUp(solver);
-    CHKERR KSPSolve(solver, F, D);
-    CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERR m_field.getInterface<VecManager>()->setLocalGhostVector(
-        "TEST_PROBLEM", COL, D, INSERT_VALUES, SCATTER_REVERSE);
+    auto solve_problem = [&] {
+      MoFEMFunctionBegin;
+      auto solver = createKSP(PETSC_COMM_WORLD);
+      CHKERR KSPSetOperators(solver, A, A);
+      CHKERR KSPSetFromOptions(solver);
+      CHKERR KSPSetUp(solver);
+      CHKERR KSPSolve(solver, F, D);
+      CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
+      CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
+      CHKERR m_field.getInterface<VecManager>()->setLocalGhostVector(
+          "TEST_PROBLEM", COL, D, INSERT_VALUES, SCATTER_REVERSE);
+      MoFEMFunctionReturn(0);
+    };
 
-    {
+    auto check_solution = [&] {
+      MoFEMFunctionBegin;
       TestFE fe(m_field);
       MatrixDouble jac(2, 2), inv_jac(2, 2), vals, diff_vals;
       fe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
@@ -342,7 +380,13 @@ int main(int argc, char *argv[]) {
       fe.getOpPtrVector().push_back(new OpValsDiffVals(vals, diff_vals));
       fe.getOpPtrVector().push_back(new OpCheckValsDiffVals(vals, diff_vals));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE1", fe);
-    }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR assemble_matrices_and_vectors();
+    CHKERR solve_problem();
+    CHKERR check_solution();
+
   }
   CATCH_ERRORS;
 

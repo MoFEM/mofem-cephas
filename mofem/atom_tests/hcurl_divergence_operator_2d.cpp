@@ -103,8 +103,7 @@ int main(int argc, char *argv[]) {
     moab::Interface &moab = mb_instance;
 
     // Read mesh to MOAB
-    // CHKERR moab.load_file("rectangle.h5m", 0, "");
-    CHKERR moab.load_file("bigr.h5m", 0, "");
+    CHKERR moab.load_file("rectangle.h5m", 0, "");
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
@@ -134,9 +133,6 @@ int main(int argc, char *argv[]) {
       base = DEMKOWICZ_JACOBI_BASE;
     int order = 1;
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
-    int p_rule = 0;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-p_rule", &p_rule, PETSC_NULL);
-
 
     CHKERR m_field.add_field("FIELD1", HCURL, base, 1);
     CHKERR m_field.add_finite_element("FACE_FE");
@@ -168,13 +164,19 @@ int main(int argc, char *argv[]) {
 
     // Add entities to elements
     CHKERR m_field.add_ents_to_finite_element_by_type(0, MBTRI, "FACE_FE");
-    Range faces;
-    CHKERR moab.get_entities_by_type(0, MBTRI, faces, false);
-    Skinner skin(&m_field.get_moab());
-    Range faces_skin;
-    CHKERR skin.find_skin(0, faces, false, faces_skin);
-    CHKERR m_field.add_ents_to_finite_element_by_type(faces_skin, MBEDGE,
-                                                      "EDGE_FE");
+
+    auto set_edge_elements_entities_on_mesh_skin = [&]() {
+      MoFEMFunctionBegin;
+      Range faces;
+      CHKERR moab.get_entities_by_type(0, MBTRI, faces, false);
+      Skinner skin(&m_field.get_moab());
+      Range faces_skin;
+      CHKERR skin.find_skin(0, faces, false, faces_skin);
+      CHKERR m_field.add_ents_to_finite_element_by_type(faces_skin, MBEDGE,
+                                                        "EDGE_FE");
+      MoFEMFunctionReturn(0);
+    };
+    CHKERR set_edge_elements_entities_on_mesh_skin();
 
     // Build database
     CHKERR m_field.build_fields();
@@ -193,45 +195,45 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
     // integration rule
-    auto rule = [&](int, int, int p) { return p+p_rule; };
+    auto rule = [&](int, int, int p) { return p; };
 
-    FaceEle fe_face(m_field);
-    fe_face.getRuleHook = rule;
+    auto calculate_divergence = [&]() {
+      double div = 0;
+      FaceEle fe_face(m_field);
+      fe_face.getRuleHook = rule;
+      MatrixDouble inv_jac(2, 2), jac(2, 2);
+      fe_face.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
+      fe_face.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+      fe_face.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
+      fe_face.getOpPtrVector().push_back(
+          new OpSetContravariantPiolaTransformFace(jac));
+      fe_face.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
+      fe_face.getOpPtrVector().push_back(new OpDivergence(div));
+      CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "FACE_FE", fe_face);
+      return div;
+    };
 
-    MatrixDouble inv_jac(2, 2), jac(2, 2);
-    fe_face.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
-    fe_face.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
-    fe_face.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
-    fe_face.getOpPtrVector().push_back(
-        new OpSetContravariantPiolaTransformFace(jac));
-    fe_face.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
-    double div;
-    fe_face.getOpPtrVector().push_back(new OpDivergence(div));
+    auto calculate_flux = [&]() {
+      double flux = 0;
+      EdgeEle fe_edge(m_field);
+      fe_edge.getRuleHook = rule;
+      fe_edge.getOpPtrVector().push_back(
+          new OpSetContrariantPiolaTransformOnEdge());
+      fe_edge.getOpPtrVector().push_back(new OpFlux(flux));
+      CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE_FE", fe_edge);
+      return flux;
+    };
 
+    const double div = calculate_divergence();
+    const double flux = calculate_flux();
 
-    EdgeEle fe_edge(m_field);
-    fe_edge.getRuleHook = rule;
-
-    fe_edge.getOpPtrVector().push_back(
-        new OpSetContrariantPiolaTransformOnEdge());
-    double flux;
-    fe_edge.getOpPtrVector().push_back(new OpFlux(flux));
-
-    div = 0;
-    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "FACE_FE", fe_face);
-    flux = 0;
-    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE_FE", fe_edge);
-
-    PetscPrintf(PETSC_COMM_WORLD, "Div = %4.3e Flux = %3.4e\n", div, flux);
+    PetscPrintf(PETSC_COMM_WORLD, "Div = %4.3e Flux = %3.4e Error = %4.3e\n",
+                div, flux, div + flux);
 
     constexpr double tol = 1e-8;
-    if (std::abs(div - flux) < tol)
+    if (std::abs(div + flux) > tol)
       SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                "Test failed (div != flux) %3.4e != %3.4e", div, flux);
-
-    CHKERR m_field.getInterface<BitRefManager>()->writeBitLevelByType(
-        bit_level0, BitRefLevel().set(), MBEDGE, "edges.vtk", "VTK", "");
-
   }
   CATCH_ERRORS;
 

@@ -695,9 +695,9 @@ add_test(forces_and_sources_h1_continuity_check_atom
 )
 
 # Check approximation on Hcurl space in 2d
-my_add_executable(forces_and_sources_check_approx_of_hcurl_in_2d 
-  forces_and_sources_check_approx_of_hcurl_in_2d.cpp)
-target_link_libraries(forces_and_sources_check_approx_of_hcurl_in_2d
+my_add_executable(hcurl_check_approx_in_2d 
+  hcurl_check_approx_in_2d.cpp)
+target_link_libraries(hcurl_check_approx_in_2d
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -707,16 +707,11 @@ target_link_libraries(forces_and_sources_check_approx_of_hcurl_in_2d
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_check_approx_of_hcurl_in_2d_ainsworth
+add_test(hcurl_check_approx_in_2d_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_approx_of_hcurl_in_2d
-  -base ainsworth -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_check_approx_in_2d
+  -base ainsworth -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
 )
-# add_test(forces_and_sources_check_approx_of_hcurl_in_2d_demkowicz
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_approx_of_hcurl_in_2d
-#   -base demkowicz -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
-# )
 
 my_add_executable(hcurl_divergence_operator_2d hcurl_divergence_operator_2d.cpp)
 target_link_libraries(hcurl_divergence_operator_2d
