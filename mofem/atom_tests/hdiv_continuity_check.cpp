@@ -207,10 +207,10 @@ int main(int argc, char *argv[]) {
       MoFEM::Interface &m_field;
       Tag tH;
 
-      OpTetFluxes(MoFEM::Interface &m_field, Tag _th)
+      OpTetFluxes(MoFEM::Interface &m_field, Tag th)
           : VolumeElementForcesAndSourcesCore::UserDataOperator(
                 "HDIV", UserDataOperator::OPROW),
-            m_field(m_field), tH(_th) {}
+            m_field(m_field), tH(th) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
@@ -234,23 +234,18 @@ int main(int argc, char *argv[]) {
                           ->sense;
 
           VectorDouble t(3, 0);
-          int dd = 0;
           int nb_dofs = data.getN().size2() / 3;
-          for (; dd < nb_dofs; dd++) {
-            int ddd = 0;
-            for (; ddd < 3; ddd++) {
+          for (int dd = 0; dd != nb_dofs; dd++) {
+            for (int ddd = 0; ddd != 3; ddd++)
               t(ddd) +=
                   data.getVectorN<3>(side)(dd, ddd) * data.getFieldData()[dd];
-            }
           }
 
           double *t_ptr;
           CHKERR m_field.get_moab().tag_get_by_ptr(tH, &face, 1,
                                                    (const void **)&t_ptr);
-          dd = 0;
-          for (; dd < 3; dd++) {
+          for (int dd = 0; dd < 3; dd++)
             t_ptr[dd] += sense * t[dd];
-          }
         }
 
         MoFEMFunctionReturnHot(0);
@@ -263,37 +258,23 @@ int main(int argc, char *argv[]) {
           : VolumeElementForcesAndSourcesCore(m_field) {}
       int getRule(int order) { return -1; };
 
-      MatrixDouble N_tri;
+      MatrixDouble N;
       MoFEMErrorCode setGaussPts(int order) {
+        MoFEMFunctionBegin;
 
-        MoFEMFunctionBeginHot;
+        N.resize(1, 3);
+        CHKERR ShapeMBTRI(&N(0, 0), G_TRI_X1, G_TRI_Y1, 1);
 
-        try {
-
-          N_tri.resize(1, 3);
-          CHKERR ShapeMBTRI(&N_tri(0, 0), G_TRI_X1, G_TRI_Y1, 1);
-
-          gaussPts.resize(4, 4);
-          int ff = 0;
-          for (; ff < 4; ff++) {
-            int dd = 0;
-            for (; dd < 3; dd++) {
-              gaussPts(dd, ff) =
-                  cblas_ddot(3, &N_tri(0, 0), 1, &face_coords[ff][dd], 3);
-            }
-            gaussPts(3, ff) = G_TRI_W1[0];
+        gaussPts.resize(4, 4);
+        for (int ff = 0; ff < 4; ff++) {
+          for (int dd = 0; dd < 3; dd++) {
+            gaussPts(dd, ff) =
+                cblas_ddot(3, &N(0, 0), 1, &face_coords[ff][dd], 3);
           }
-
-          // std::cerr << gaussPts << std::endl;
-
-        } catch (std::exception &ex) {
-          std::ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-             << " in file " << __FILE__;
-          SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
+          gaussPts(3, ff) = G_TRI_W1[0];
         }
 
-        MoFEMFunctionReturnHot(0);
+        MoFEMFunctionReturn(0);
       }
     };
 
@@ -304,11 +285,11 @@ int main(int argc, char *argv[]) {
       Tag tH1, tH2;
       TeeStream &mySplit;
 
-      OpFacesSkinFluxes(MoFEM::Interface &m_field, Tag _th1, Tag _th2,
+      OpFacesSkinFluxes(MoFEM::Interface &m_field, Tag th1, Tag th2,
                         TeeStream &my_split)
           : FaceElementForcesAndSourcesCore::UserDataOperator(
                 "HDIV", UserDataOperator::OPROW),
-            m_field(m_field), tH1(_th1), tH2(_th2), mySplit(my_split) {}
+            m_field(m_field), tH1(th1), tH2(th2), mySplit(my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
@@ -362,11 +343,11 @@ int main(int argc, char *argv[]) {
       Tag tH1, tH2;
       TeeStream &mySplit;
 
-      OpFacesFluxes(MoFEM::Interface &m_field, Tag _th1, Tag _th2,
+      OpFacesFluxes(MoFEM::Interface &m_field, Tag th1, Tag th2,
                     TeeStream &my_split)
           : FaceElementForcesAndSourcesCore::UserDataOperator(
                 "HDIV", UserDataOperator::OPROW),
-            m_field(m_field), tH1(_th1), tH2(_th2), mySplit(my_split) {}
+            m_field(m_field), tH1(th1), tH2(th2), mySplit(my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
