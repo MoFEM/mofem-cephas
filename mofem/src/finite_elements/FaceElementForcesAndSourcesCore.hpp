@@ -237,11 +237,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
           ->normalsAtGaussPts;
     }
 
-    /// \deprecated use getNormalsAtGaussPts
-    DEPRECATED inline MatrixDouble &getNormalsAtGaussPt() {
-      return getNormalsAtGaussPts();
-    }
-
     /** \brief if higher order geometry return normals at Gauss pts.
      *
      * \param gg gauss point number
@@ -251,11 +246,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
           static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
               ->normalsAtGaussPts,
           gg);
-    }
-
-    /// \deprecated use getNormalsAtGaussPts
-    DEPRECATED inline auto getNormalsAtGaussPt(const int gg) {
-      return getNormalsAtGaussPts(gg);
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at
@@ -310,11 +300,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
       double *ptr = &*getNormalsAtGaussPts().data().begin();
       return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                                 &ptr[2]);
-    }
-
-    /// \deprecated use getFTensor1NormalsAtGaussPt
-    DEPRECATED inline auto getTensor1NormalsAtGaussPt() {
-      return getFTensor1NormalsAtGaussPts();
     }
 
     /** \brief get tangent 1 at integration points

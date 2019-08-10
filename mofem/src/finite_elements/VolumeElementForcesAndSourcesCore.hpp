@@ -555,11 +555,6 @@ struct VolumeElementForcesAndSourcesCoreOnSide
      */
     ublas::matrix_row<MatrixDouble> getNormalsAtGaussPts(const int gg);
 
-    /// \deprecated use getNormalsAtGaussPts
-    DEPRECATED inline auto getNormalsAtGaussPt(const int gg) {
-      return getNormalsAtGaussPts(gg);
-    }
-
     /** \brief get normal at integration points
 
       Example:
@@ -580,11 +575,6 @@ struct VolumeElementForcesAndSourcesCoreOnSide
                                                                 &ptr[2]);
     }
 
-    /// \deprecated use getFTensor1NormalsAtGaussPts
-    DEPRECATED inline auto getTensor1NormalsAtGaussPt() {
-      return getFTensor1NormalsAtGaussPts();
-    }
-
     /** \brief get face coordinates at Gauss pts.
 
     \note Coordinates should be the same what function getCoordsAtGaussPts
@@ -596,7 +586,6 @@ struct VolumeElementForcesAndSourcesCoreOnSide
   };
 
 private:
-  int getRule(int order) { return -1; };
 
   int faceSense;      ///< Sense of face, could be 1 or -1
   int faceSideNumber; ///< Face side number
@@ -604,12 +593,9 @@ private:
   int tetConnMap[4];
   int oppositeNode;
 
+  int getRule(int order) { return -1; };
   MoFEMErrorCode setGaussPts(int order);
 };
-
-/// \deprecated Use VolumeElementForcesAndSourcesCore
-DEPRECATED typedef VolumeElementForcesAndSourcesCore
-    VolumeElementForcesAndSurcesCore;
 
 } // namespace MoFEM
 
