@@ -486,16 +486,6 @@ struct VolumeElementForcesAndSourcesCoreOnSide
     MoFEMFunctionReturnHot(0);
   }
 
-  int getRule(int order) { return -1; };
-
-  int faceSense;      ///< Sense of face, could be 1 or -1
-  int faceSideNumber; ///< Face side number
-  int faceConnMap[3];
-  int tetConnMap[4];
-  int oppositeNode;
-
-  MoFEMErrorCode setGaussPts(int order);
-
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
    */
@@ -604,6 +594,17 @@ struct VolumeElementForcesAndSourcesCoreOnSide
      */
     MatrixDouble &getFaceCoordsAtGaussPts();
   };
+
+private:
+  int getRule(int order) { return -1; };
+
+  int faceSense;      ///< Sense of face, could be 1 or -1
+  int faceSideNumber; ///< Face side number
+  int faceConnMap[3];
+  int tetConnMap[4];
+  int oppositeNode;
+
+  MoFEMErrorCode setGaussPts(int order);
 };
 
 /// \deprecated Use VolumeElementForcesAndSourcesCore
