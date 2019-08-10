@@ -430,7 +430,7 @@ template <int SWITCH>
 struct FaceElementForcesAndSourcesCoreSwitch
     : public FaceElementForcesAndSourcesCoreBase {
 
-  enum FaceElementForcesAndSourcesCoreSwitches {
+  enum Switches {
     NO_HO_GEOMETRY = 1 << 0,
     NO_CONTRAVARIANT_TRANSFORM_HDIV = 1 << 1,
     NO_COVARIANT_TRANSFORM_HCURL = 1 << 2

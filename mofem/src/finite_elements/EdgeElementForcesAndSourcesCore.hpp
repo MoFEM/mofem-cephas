@@ -187,7 +187,7 @@ template <int SWITCH>
 struct EdgeElementForcesAndSourcesCoreSwitch
     : public EdgeElementForcesAndSourcesCoreBase {
 
-  enum EdgeElementForcesAndSourcesCoreSwitches {
+  enum Switches {
     NO_HO_GEOMETRY = 1 << 0,
     NO_COVARIANT_TRANSFORM_HCURL = 1 << 2
   };
