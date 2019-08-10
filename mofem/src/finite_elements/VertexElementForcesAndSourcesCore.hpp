@@ -51,13 +51,7 @@ struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     */
   struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const std::string &field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(field_name, type) {}
-
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
-                                                 type) {}
+    using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
     inline VectorDouble &getCoords() {
       return static_cast<VertexElementForcesAndSourcesCore *>(ptrFE)->coords;
@@ -75,9 +69,9 @@ DEPRECATED typedef VertexElementForcesAndSourcesCore
 
 #endif //__VERTEXELEMENTFORCESANDSOURCESCORE_HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_forces_and_sources_vertex_element Vertex Element
-* \brief Finite element and operators for vertex entity
-*
-* \ingroup mofem_forces_and_sources
-******************************************************************************/
+/**
+ * \defgroup mofem_forces_and_sources_vertex_element Vertex Element
+ * \brief Finite element and operators for vertex entity
+ *
+ * \ingroup mofem_forces_and_sources
+ **/

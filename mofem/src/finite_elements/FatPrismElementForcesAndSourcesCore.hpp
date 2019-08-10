@@ -86,17 +86,7 @@ struct FatPrismElementForcesAndSourcesCore
   struct UserDataOperator
       : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const FieldSpace space)
-        : VolumeElementForcesAndSourcesCore::UserDataOperator(space) {}
-
-    UserDataOperator(const std::string &field_name, const char type)
-        : VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,
-                                                              type) {}
-
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type)
-        : VolumeElementForcesAndSourcesCore::UserDataOperator(
-              row_field_name, col_field_name, type) {}
+    using VolumeElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
     /** \brief get face aRea
     \param dd if dd == 0 it is for face F3 if dd == 1 is for face F4
