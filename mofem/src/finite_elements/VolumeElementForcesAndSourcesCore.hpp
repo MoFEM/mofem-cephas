@@ -288,7 +288,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     getCurlOfHCurlBaseFunctions(int side, EntityType type,
                                 DataForcesAndSourcesCore::EntData &data, int gg,
                                 MatrixDouble &curl);
-
   };
 
   unsigned int nbGaussPts; ///< Number of integration points
@@ -355,7 +354,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
    * @return Error code
    */
   virtual MoFEMErrorCode transformHoBaseFunctions();
-
 
   enum Switches {
     NO_HO_GEOMETRY = 1 << 0 | 1 << 2,
@@ -456,25 +454,25 @@ using VolumeElementForcesAndSourcesCore =
 struct FaceElementForcesAndSourcesCoreBase;
 
 /**
- * \brief Volume element used to integrate on skeleton
+ * \brief Base volume element used to integrate on skeleton
  * \ingroup mofem_forces_and_sources_volume_element
  */
-struct VolumeElementForcesAndSourcesCoreOnSide
+struct VolumeElementForcesAndSourcesCoreOnSideBase
     : public VolumeElementForcesAndSourcesCore {
 
-  VolumeElementForcesAndSourcesCoreOnSide(Interface &m_field,
-                                          const EntityType type = MBTET)
+  VolumeElementForcesAndSourcesCoreOnSideBase(Interface &m_field,
+                                              const EntityType type = MBTET)
       : VolumeElementForcesAndSourcesCore(m_field, type), faceFEPtr(NULL) {}
-  ~VolumeElementForcesAndSourcesCoreOnSide() {}
+  ~VolumeElementForcesAndSourcesCoreOnSideBase() {}
 
   /**
    * @brief Set the pointer to face element on the side
-   * 
+   *
    * \note Function is is used by face element, while it iterates over elements
    * on the side
-   * 
-   * @param face_fe_ptr 
-   * @return MoFEMErrorCode 
+   *
+   * @param face_fe_ptr
+   * @return MoFEMErrorCode
    */
   inline MoFEMErrorCode
   setSideFEPtr(const FaceElementForcesAndSourcesCoreBase *face_fe_ptr) {
@@ -493,8 +491,9 @@ struct VolumeElementForcesAndSourcesCoreOnSide
 
     /** \brief return pointer to Generic Volume Finite Element object
      */
-    inline const VolumeElementForcesAndSourcesCoreOnSide *getVolumeFE() const {
-      return static_cast<VolumeElementForcesAndSourcesCoreOnSide *>(ptrFE);
+    inline const VolumeElementForcesAndSourcesCoreOnSideBase *
+    getVolumeFE() const {
+      return static_cast<VolumeElementForcesAndSourcesCoreOnSideBase *>(ptrFE);
     }
 
     inline FaceElementForcesAndSourcesCoreBase *getFaceFEPtr() const {
@@ -583,7 +582,6 @@ struct VolumeElementForcesAndSourcesCoreOnSide
   };
 
 private:
-
   FaceElementForcesAndSourcesCoreBase *faceFEPtr;
 
   int faceSense;      ///< Sense of face, could be 1 or -1
@@ -595,6 +593,33 @@ private:
   int getRule(int order) { return -1; };
   MoFEMErrorCode setGaussPts(int order);
 };
+
+/**
+ * @brief Volume finite element with switches
+ *
+ * Using SWITCH to off functions
+ *
+ * @tparam SWITCH
+ */
+template <int SWITCH>
+struct VolumeElementForcesAndSourcesCoreOnSideSwitch
+    : public VolumeElementForcesAndSourcesCoreOnSideBase {
+
+  using VolumeElementForcesAndSourcesCoreOnSideBase::
+      VolumeElementForcesAndSourcesCoreOnSideBase;
+
+  using UserDataOperator =
+      VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator;
+
+  MoFEMErrorCode operator()() { return OpSwitch<SWITCH>(); }
+};
+
+/** \brief Volume element used to integrate on skeleton
+ \ingroup mofem_forces_and_sources_volume_element
+
+ */
+using VolumeElementForcesAndSourcesCoreOnSide =
+    VolumeElementForcesAndSourcesCoreOnSideSwitch<0>;
 
 } // namespace MoFEM
 

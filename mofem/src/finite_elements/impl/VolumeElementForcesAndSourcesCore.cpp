@@ -101,7 +101,8 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::setIntegrationPts() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::calculateVolumeAndJacobian() {
+MoFEMErrorCode
+VolumeElementForcesAndSourcesCoreBase::calculateVolumeAndJacobian() {
   MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
@@ -279,7 +280,8 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::calculateHoJacobian() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformHoBaseFunctions() {
+MoFEMErrorCode
+VolumeElementForcesAndSourcesCoreBase::transformHoBaseFunctions() {
   MoFEMFunctionBegin;
   if (hoCoordsAtGaussPts.size1() > 0) {
     // Transform derivatives of base functions and apply Piola transformation
@@ -300,8 +302,6 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformHoBaseFunctions()
   }
   MoFEMFunctionReturn(0);
 }
-
-
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
     getDivergenceOfHDivBaseFunctions(int side, EntityType type,
@@ -387,7 +387,8 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
+MoFEMErrorCode
+VolumeElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   MoFEMFunctionBegin;
   if (faceFEPtr == NULL) {
     SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
@@ -443,16 +444,16 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
 }
 
 VectorDouble &
-VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormal() {
+VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getNormal() {
   return getFaceFEPtr()->nOrmal;
 }
 
-MatrixDouble &VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
+MatrixDouble &VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
     getNormalsAtGaussPts() {
   return getFaceFEPtr()->normalsAtGaussPts;
 }
 
-MatrixDouble &VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
+MatrixDouble &VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
     getFaceCoordsAtGaussPts() {
   return getFaceFEPtr()->coordsAtGaussPts;
 }
@@ -461,9 +462,8 @@ MatrixDouble &VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
  *
  * \param gg gauss point number
  */
-ublas::matrix_row<MatrixDouble>
-VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormalsAtGaussPts(
-    const int gg) {
+ublas::matrix_row<MatrixDouble> VolumeElementForcesAndSourcesCoreOnSideBase::
+    UserDataOperator::getNormalsAtGaussPts(const int gg) {
   return ublas::matrix_row<MatrixDouble>(getNormalsAtGaussPts(), gg);
 }
 
