@@ -355,18 +355,7 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
    * @return Error code
    */
   virtual MoFEMErrorCode transformHoBaseFunctions();
-};
 
-/**
- * @brief Volume finite element with switches
- *
- * Using SWITCH to off functions
- *
- * @tparam SWITCH
- */
-template <int SWITCH>
-struct VolumeElementForcesAndSourcesCoreSwitch
-    : public VolumeElementForcesAndSourcesCoreBase {
 
   enum Switches {
     NO_HO_GEOMETRY = 1 << 0 | 1 << 2,
@@ -374,13 +363,7 @@ struct VolumeElementForcesAndSourcesCoreSwitch
     NO_HO_TRANSFORM = 1 << 2
   };
 
-  using VolumeElementForcesAndSourcesCoreBase::
-      VolumeElementForcesAndSourcesCoreBase;
-
-  using UserDataOperator =
-      VolumeElementForcesAndSourcesCoreBase::UserDataOperator;
-
-  MoFEMErrorCode operator()() {
+  template <int SWITCH> MoFEMErrorCode OpSwitch() {
     MoFEMFunctionBegin;
 
     if (numeredEntFiniteElementPtr->getEntType() != MBTET)
@@ -441,6 +424,26 @@ struct VolumeElementForcesAndSourcesCoreSwitch
 
     MoFEMFunctionReturn(0);
   }
+};
+
+/**
+ * @brief Volume finite element with switches
+ *
+ * Using SWITCH to off functions
+ *
+ * @tparam SWITCH
+ */
+template <int SWITCH>
+struct VolumeElementForcesAndSourcesCoreSwitch
+    : public VolumeElementForcesAndSourcesCoreBase {
+
+  using VolumeElementForcesAndSourcesCoreBase::
+      VolumeElementForcesAndSourcesCoreBase;
+
+  using UserDataOperator =
+      VolumeElementForcesAndSourcesCoreBase::UserDataOperator;
+
+  MoFEMErrorCode operator()() { return OpSwitch<SWITCH>(); }
 };
 
 /** \brief Volume finite element default
