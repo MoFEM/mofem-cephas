@@ -459,14 +459,22 @@ struct FaceElementForcesAndSourcesCoreBase;
 struct VolumeElementForcesAndSourcesCoreOnSide
     : public VolumeElementForcesAndSourcesCore {
 
-  FaceElementForcesAndSourcesCoreBase *faceFEPtr;
   VolumeElementForcesAndSourcesCoreOnSide(Interface &m_field,
                                           const EntityType type = MBTET)
       : VolumeElementForcesAndSourcesCore(m_field, type), faceFEPtr(NULL) {}
   ~VolumeElementForcesAndSourcesCoreOnSide() {}
 
+  /**
+   * @brief Set the pointer to face element on the side
+   * 
+   * \note Function is is used by face element, while it iterates over elements
+   * on the side
+   * 
+   * @param face_fe_ptr 
+   * @return MoFEMErrorCode 
+   */
   inline MoFEMErrorCode
-  setFaceFEPtr(const FaceElementForcesAndSourcesCoreBase *face_fe_ptr) {
+  setSideFEPtr(const FaceElementForcesAndSourcesCoreBase *face_fe_ptr) {
     MoFEMFunctionBeginHot;
     faceFEPtr = const_cast<FaceElementForcesAndSourcesCoreBase *>(face_fe_ptr);
     MoFEMFunctionReturnHot(0);
@@ -572,6 +580,8 @@ struct VolumeElementForcesAndSourcesCoreOnSide
   };
 
 private:
+
+  FaceElementForcesAndSourcesCoreBase *faceFEPtr;
 
   int faceSense;      ///< Sense of face, could be 1 or -1
   int faceSideNumber; ///< Face side number

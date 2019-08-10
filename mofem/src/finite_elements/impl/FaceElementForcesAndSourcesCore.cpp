@@ -62,7 +62,7 @@ FaceElementForcesAndSourcesCoreBase::UserDataOperator::loopSideVolumes(
 
   method.feName = fe_name;
 
-  CHKERR method.setFaceFEPtr(getFaceFE());
+  CHKERR method.setSideFEPtr(getFaceFE());
   CHKERR method.copyBasicMethod(*getFEMethod());
   CHKERR method.copyKsp(*getFEMethod());
   CHKERR method.copySnes(*getFEMethod());
