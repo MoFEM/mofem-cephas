@@ -315,8 +315,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
    */
   virtual MoFEMErrorCode calculateAreaAndNormal();
 
-  int nbGaussPts; ///< Number of integration points
-
   /**
    * \brief Set integration points
    * @return Error code

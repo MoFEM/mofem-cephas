@@ -153,34 +153,33 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "wrong order %d != %d", QUAD_2D_TABLE[rule]->order, rule);
       }
-      nbGaussPts = QUAD_2D_TABLE[rule]->npoints;
-      gaussPts.resize(3, nbGaussPts, false);
-      cblas_dcopy(nbGaussPts, &QUAD_2D_TABLE[rule]->points[1], 3,
+      const size_t nb_gauss_pts = QUAD_2D_TABLE[rule]->npoints;
+      gaussPts.resize(3, nb_gauss_pts, false);
+      cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[1], 3,
                   &gaussPts(0, 0), 1);
-      cblas_dcopy(nbGaussPts, &QUAD_2D_TABLE[rule]->points[2], 3,
+      cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[2], 3,
                   &gaussPts(1, 0), 1);
-      cblas_dcopy(nbGaussPts, QUAD_2D_TABLE[rule]->weights, 1, &gaussPts(2, 0),
+      cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1, &gaussPts(2, 0),
                   1);
-      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 3,
                                                              false);
       double *shape_ptr =
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-      cblas_dcopy(3 * nbGaussPts, QUAD_2D_TABLE[rule]->points, 1, shape_ptr, 1);
+      cblas_dcopy(3 * nb_gauss_pts, QUAD_2D_TABLE[rule]->points, 1, shape_ptr, 1);
     } else {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_2D_TABLE_SIZE);
-      nbGaussPts = 0;
     }
   } else {
     // If rule is negative, set user defined integration points
     CHKERR setGaussPts(order_row, order_col, order_data);
-    nbGaussPts = gaussPts.size2();
-    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
+    const size_t nb_gauss_pts = gaussPts.size2();
+    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 3,
                                                            false);
-    if (nbGaussPts) {
+    if (nb_gauss_pts) {
       CHKERR ShapeMBTRI(
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
-          &gaussPts(0, 0), &gaussPts(1, 0), nbGaussPts);
+          &gaussPts(0, 0), &gaussPts(1, 0), nb_gauss_pts);
     }
   }
   MoFEMFunctionReturn(0);
@@ -238,8 +237,9 @@ FaceElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
 
   double *shape_functions =
       &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-  coordsAtGaussPts.resize(nbGaussPts, 3, false);
-  for (int gg = 0; gg != nbGaussPts; ++gg)
+  const size_t nb_gauss_pts = gaussPts.size2();
+  coordsAtGaussPts.resize(nb_gauss_pts, 3, false);
+  for (int gg = 0; gg != nb_gauss_pts; ++gg)
     for (int dd = 0; dd != 3; ++dd)
       coordsAtGaussPts(gg, dd) =
           cblas_ddot(3, &shape_functions[3 * gg], 1, &coords[dd], 3);
