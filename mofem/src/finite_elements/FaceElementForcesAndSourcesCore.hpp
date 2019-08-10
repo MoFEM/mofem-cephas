@@ -101,9 +101,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
       return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
     }
 
-    /// \deprecated use getFTensor1Normal()
-    DEPRECATED inline auto getTensor1Normal() { return getFTensor1Normal(); }
-
     /** \brief get tangentOne as tensor
      */
     inline auto getFTensor1Tangent1() {
@@ -111,21 +108,11 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
       return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
     }
 
-    /// \deprecated use getFTensor1Tangent1
-    DEPRECATED inline auto getTensor1Tangent1() {
-      return getFTensor1Tangent1();
-    }
-
     /** \brief get tangentTwo as tensor
      */
     inline auto getFTensor2Tangent1() {
       double *ptr = &*getTangent2().data().begin();
       return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
-    }
-
-    /// \deprecated use getFTensor2Tangent1
-    DEPRECATED inline auto getTensor2Tangent1() {
-      return getFTensor2Tangent1();
     }
 
     /** \brief get element number of nodes
@@ -169,9 +156,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
                                                                 &ptr[2]);
     }
 
-    /// \deprecated use getFTensor1Coords
-    DEPRECATED inline auto getTensor1Coords() { return getFTensor1Coords(); }
-
     /** \brief Gauss points and weight, matrix (nb. of points x 3)
 
     Column 0-2 integration points coordinate x and y, respectively. At rows are
@@ -189,11 +173,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
       double *ptr = &*getCoordsAtGaussPts().data().begin();
       return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                                 &ptr[2]);
-    }
-
-    /// \deprecated use getFTensor1CoordsAtGaussPts
-    DEPRECATED inline auto getTensor1CoordsAtGaussPts() {
-      return getFTensor1CoordsAtGaussPts();
     }
 
     /** \brief coordinate at Gauss points (if hierarchical approximation of
@@ -219,11 +198,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
       double *ptr = &*getHoCoordsAtGaussPts().data().begin();
       return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                                 &ptr[2]);
-    }
-
-    /// \deprecated use getTensor1HoCoordsAtGaussPts
-    DEPRECATED inline auto getTensor1HoCoordsAtGaussPts() {
-      return getFTensor1HoCoordsAtGaussPts();
     }
 
     /** \brief if higher order geometry return normals at Gauss pts.
@@ -260,11 +234,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
           ->tangentOneAtGaussPts;
     }
 
-    /// \deprecated use getTangent1AtGaussPts
-    DEPRECATED inline MatrixDouble &getTangent1AtGaussPt() {
-      return getTangent1AtGaussPts();
-    }
-
     /** \brief if higher order geometry return tangent vector to triangle at
     Gauss pts.
 
@@ -275,11 +244,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     inline MatrixDouble &getTangent2AtGaussPts() {
       return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
           ->tangentTwoAtGaussPts;
-    }
-
-    /// \deprecated use getTangent2AtGaussPts
-    DEPRECATED inline MatrixDouble &getTangent2AtGaussPt() {
-      return getTangent2AtGaussPts();
     }
 
     /** \brief get normal at integration points
@@ -311,11 +275,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
                                                                 &ptr[2]);
     }
 
-    /// \deprecated use getFTensor1Tangent1AtGaussPt
-    DEPRECATED inline auto getTensor1Tangent1AtGaussPt() {
-      return getFTensor1Tangent1AtGaussPts();
-    }
-
     /** \brief get tangent 2 at integration points
 
     */
@@ -323,24 +282,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
       double *ptr = &*getTangent2AtGaussPts().data().begin();
       return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                                 &ptr[2]);
-    }
-
-    /// \deprecated use getFTensor1Tangent2AtGaussPt
-    DEPRECATED inline auto getTensor1Tangent2AtGaussPt() {
-      return getFTensor1Tangent2AtGaussPts();
-    }
-
-    /** \deprecated use getFaceFE instead
-     */
-    DEPRECATED inline const FaceElementForcesAndSourcesCoreBase *
-    getFaceElementForcesAndSourcesCore() {
-      return getFaceFE();
-    }
-
-    /** \deprecated use getFaceFE instead
-     */
-    DEPRECATED inline const FaceElementForcesAndSourcesCoreBase *getTriFE() {
-      return getFaceFE();
     }
 
     /** \brief return pointer to Generic Triangle Finite Element object
@@ -381,9 +322,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
    * @return Error code
    */
   virtual MoFEMErrorCode setIntegrationPts();
-
-  /// \deprecated method with spelling mistake, use setIntegrationPts
-  DEPRECATED MoFEMErrorCode setIntegartionPts() { return setIntegrationPts(); }
 
   /**
    * \brief Determine approximation space and order of base functions

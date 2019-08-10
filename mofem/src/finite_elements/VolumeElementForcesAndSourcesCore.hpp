@@ -289,15 +289,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
                                 DataForcesAndSourcesCore::EntData &data, int gg,
                                 MatrixDouble &curl);
 
-    /// \deprecated use getFTensor1CoordsAtGaussPts
-    DEPRECATED inline auto getTensor1CoordsAtGaussPts() {
-      return getFTensor1CoordsAtGaussPts();
-    }
-
-    /// \deprecated use getFTensor1HoCoordsAtGaussPts
-    DEPRECATED inline auto getTensor1HoCoordsAtGaussPts() {
-      return getFTensor1HoCoordsAtGaussPts();
-    }
   };
 
   unsigned int nbGaussPts; ///< Number of integration points
@@ -310,11 +301,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
    * @return Error code
    */
   virtual MoFEMErrorCode setIntegrationPts();
-
-  /// \deprecated function with spelling mistake, use setIntegrationPts
-  DEPRECATED virtual MoFEMErrorCode setIntegartionPts() {
-    return setIntegrationPts();
-  }
 
   /**
    * \brief Calculate element volume and Jacobian

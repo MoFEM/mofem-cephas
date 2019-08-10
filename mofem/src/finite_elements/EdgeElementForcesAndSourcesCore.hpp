@@ -117,11 +117,6 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
                                                                 &ptr[2]);
     }
 
-    /// \deprecate use getFTensor1CoordsAtGaussPts
-    DEPRECATED inline auto getTensor1CoordsAtGaussPts() {
-      return getFTensor1CoordsAtGaussPts();
-    }
-
     /**
      * \brief get tangent vector to edge curve at integration points
      */
@@ -242,10 +237,6 @@ struct EdgeElementForcesAndSourcesCoreSwitch
  */
 using EdgeElementForcesAndSourcesCore =
     EdgeElementForcesAndSourcesCoreSwitch<0>;
-
-/// \brief Use EdgeElementForcesAndSourcesCore
-DEPRECATED typedef EdgeElementForcesAndSourcesCore
-    EdgeElementForcesAndSurcesCore;
 
 } // namespace MoFEM
 
