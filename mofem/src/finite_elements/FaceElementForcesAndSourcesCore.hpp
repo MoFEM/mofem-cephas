@@ -48,8 +48,8 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   MatrixDouble tangentOneAtGaussPts;
   MatrixDouble tangentTwoAtGaussPts;
   OpGetCoordsAndNormalsOnFace opHOCoordsAndNormals;
-  OpSetContravariantPiolaTransformOnTriangle opContravariantTransform;
-  OpSetCovariantPiolaTransformOnTriangle opCovariantTransform;
+  OpSetContravariantPiolaTransformOnFace opContravariantTransform;
+  OpSetCovariantPiolaTransformOnFace opCovariantTransform;
 
   FaceElementForcesAndSourcesCoreBase(Interface &m_field);
 

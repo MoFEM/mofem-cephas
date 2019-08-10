@@ -1357,7 +1357,7 @@ MoFEMErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
+MoFEMErrorCode OpSetContravariantPiolaTransformOnFace::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
@@ -1405,7 +1405,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
+MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
