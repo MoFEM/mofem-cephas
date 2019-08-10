@@ -279,55 +279,6 @@ struct FatPrismElementForcesAndSourcesCore
       return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE);
     }
 
-    // /** \deprecated Use getNormalsAtGaussPtF3() instead
-    // */
-    // DEPRECATED inline ublas::matrix_row<MatrixDouble >
-    // getNormals_at_GaussPtF3(const int gg) {
-    //   return getNormalsAtGaussPtF3(gg);
-    // }
-    //
-    // /** \deprecated Use getNormalsAtGaussPtF3() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getNormals_at_GaussPtF3() {
-    //   return getNormalsAtGaussPtF3();
-    // }
-    //
-    // /** \deprecated Use getTangent1AtGaussPtF3() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getTangent1_at_GaussPtF3() {
-    //   return getTangent1AtGaussPtF3();
-    // }
-    //
-    // /** \deprecated Use getTangent2AtGaussPtF3() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getTangent2_at_GaussPtF3() {
-    //   return getTangent2AtGaussPtF3();
-    // }
-    //
-    // /** \deprecated Use getNormalsAtGaussPtF4() instead
-    // */
-    // DEPRECATED inline ublas::matrix_row<MatrixDouble >
-    // getNormals_at_GaussPtF4(const int gg) {
-    //   return getNormalsAtGaussPtF4(gg);
-    // }
-    //
-    // /** \deprecated Use getNormalsAtGaussPtF4() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getNormals_at_GaussPtF4() {
-    //   return getNormalsAtGaussPtF4();
-    // }
-    //
-    // /** \deprecated Use getTangent1AtGaussPtF4() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getTangent1_at_GaussPtF4() {
-    //   return getTangent1AtGaussPtF4();
-    // }
-    //
-    // /** \deprecated Use getTangent2AtGaussPtF4() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getTangent2_at_GaussPtF4() {
-    //   return getTangent2AtGaussPtF4();
-    // }
   };
 
   MoFEMErrorCode preProcess() {
