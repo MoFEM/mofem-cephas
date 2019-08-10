@@ -336,10 +336,6 @@ struct OpSetInvJacH1ForFatPrism
                         DataForcesAndSourcesCore::EntData &data);
 };
 
-/// \deprecated use FatPrismElementForcesAndSourcesCore
-DEPRECATED typedef FatPrismElementForcesAndSourcesCore
-    FatPrismElementForcesAndSurcesCore;
-
 } // namespace MoFEM
 
 #endif //__FATPRISMELEMENTFORCESANDSURCESCORE_HPP__

@@ -61,10 +61,6 @@ struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   MoFEMErrorCode operator()();
 };
 
-/// \deprecated Use VertexElementForcesAndSourcesCore
-DEPRECATED typedef VertexElementForcesAndSourcesCore
-    VertexElementForcesAndSurcesCore;
-
 } // namespace MoFEM
 
 #endif //__VERTEXELEMENTFORCESANDSOURCESCORE_HPP__
