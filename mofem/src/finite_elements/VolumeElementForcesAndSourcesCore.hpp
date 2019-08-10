@@ -595,7 +595,7 @@ private:
 };
 
 /**
- * @brief Volume finite element with switches
+ * @brief Volume side finite element with switches
  *
  * Using SWITCH to off functions
  *
