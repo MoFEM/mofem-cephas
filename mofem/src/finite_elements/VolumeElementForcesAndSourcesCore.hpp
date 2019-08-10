@@ -37,40 +37,9 @@ namespace MoFEM {
  */
 struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
-  VectorDouble coords;
-  MatrixDouble3by3 jAc;
-  MatrixDouble3by3 invJac;
-
-  OpSetInvJacH1 opSetInvJacH1;
-  OpSetContravariantPiolaTransform opContravariantPiolaTransform;
-  OpSetCovariantPiolaTransform opCovariantPiolaTransform;
-  OpSetInvJacHdivAndHcurl opSetInvJacHdivAndHcurl;
-
-  std::string meshPositionsFieldName;
-  MatrixDouble hoCoordsAtGaussPts;
-  MatrixDouble hoGaussPtsJac;
-  MatrixDouble hoGaussPtsInvJac;
-  VectorDouble hoGaussPtsDetJac;
-
-  OpGetDataAndGradient<3, 3>
-      opHOatGaussPoints; ///< higher order geometry data at Gauss pts
-  OpSetHoInvJacH1 opSetHoInvJacH1;
-  OpSetHoContravariantPiolaTransform opHoContravariantTransform;
-  OpSetHoCovariantPiolaTransform opHoCovariantTransform;
-  OpSetHoInvJacHdivAndHcurl opSetHoInvJacHdivAndHcurl;
-
   VolumeElementForcesAndSourcesCoreBase(Interface &m_field,
                                         const EntityType type = MBTET);
   virtual ~VolumeElementForcesAndSourcesCoreBase() {}
-
-  double vOlume;
-
-  int num_nodes;
-  const EntityHandle *conn;
-  FTensor::Tensor2<double *, 3, 3> tJac;
-  FTensor::Tensor2<double *, 3, 3> tInvJac;
-
-  MatrixDouble coordsAtGaussPts;
 
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
@@ -94,7 +63,14 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     /** \brief element volume (linear geometry)
      */
-    inline double getVolume() {
+    inline double getVolume() const {
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
+          ->vOlume;
+    }
+
+    /** \brief element volume (linear geometry)
+     */
+    inline double& getVolume() {
       return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
           ->vOlume;
     }
@@ -116,9 +92,15 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     /**
      * \brief get measure of element
-     * @return area of face
+     * @return volume
      */
-    inline double getMeasure() { return getVolume(); }
+    inline double getMeasure() const { return getVolume(); }
+
+    /**
+     * \brief get measure of element
+     * @return volume
+     */
+    inline double& getMeasure() { return getVolume(); }
 
     /** \brief nodal coordinates
      */
@@ -290,8 +272,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
                                 MatrixDouble &curl);
   };
 
-  unsigned int nbGaussPts; ///< Number of integration points
-
   // Note that functions below could be overloaded by user to change default
   // behavior of the element.
 
@@ -371,7 +351,7 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     CHKERR calculateVolumeAndJacobian();
     CHKERR getSpaceBaseAndOrderOnElement();
     CHKERR setIntegrationPts();
-    if (nbGaussPts == 0)
+    if (gaussPts.size2() == 0)
       MoFEMFunctionReturnHot(0);
     CHKERR calculateCoordinatesAtGaussPts();
     CHKERR calculateBaseFunctionsOnElement();
@@ -388,13 +368,14 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
             dataH1.dataOnEntities[MBVERTEX][0];
         if ((data.getDiffN(base).size1() == 4) &&
             (data.getDiffN(base).size2() == 3)) {
-          const unsigned int nb_base_functions = 4;
-          new_diff_n.resize(nbGaussPts, 3 * nb_base_functions, false);
+          const size_t nb_gauss_pts = gaussPts.size2();
+          const size_t nb_base_functions = 4;
+          new_diff_n.resize(nb_gauss_pts, 3 * nb_base_functions, false);
           double *new_diff_n_ptr = &*new_diff_n.data().begin();
           FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_new_diff_n(
               new_diff_n_ptr, &new_diff_n_ptr[1], &new_diff_n_ptr[2]);
           double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
-          for (unsigned int gg = 0; gg != nbGaussPts; gg++) {
+          for (unsigned int gg = 0; gg != nb_gauss_pts; gg++) {
             FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
                 t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
             for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
@@ -422,6 +403,40 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     MoFEMFunctionReturn(0);
   }
+
+protected:
+  VectorDouble coords;
+  MatrixDouble3by3 jAc;
+  MatrixDouble3by3 invJac;
+
+  OpSetInvJacH1 opSetInvJacH1;
+  OpSetContravariantPiolaTransform opContravariantPiolaTransform;
+  OpSetCovariantPiolaTransform opCovariantPiolaTransform;
+  OpSetInvJacHdivAndHcurl opSetInvJacHdivAndHcurl;
+
+  std::string meshPositionsFieldName;
+  MatrixDouble hoCoordsAtGaussPts;
+  MatrixDouble hoGaussPtsJac;
+  MatrixDouble hoGaussPtsInvJac;
+  VectorDouble hoGaussPtsDetJac;
+
+  OpGetDataAndGradient<3, 3>
+      opHOatGaussPoints; ///< higher order geometry data at Gauss pts
+  OpSetHoInvJacH1 opSetHoInvJacH1;
+  OpSetHoContravariantPiolaTransform opHoContravariantTransform;
+  OpSetHoCovariantPiolaTransform opHoCovariantTransform;
+  OpSetHoInvJacHdivAndHcurl opSetHoInvJacHdivAndHcurl;
+
+  double vOlume;
+
+  int num_nodes;
+  const EntityHandle *conn;
+  FTensor::Tensor2<double *, 3, 3> tJac;
+  FTensor::Tensor2<double *, 3, 3> tInvJac;
+
+  MatrixDouble coordsAtGaussPts;
+
+  friend class UserDataOperator;
 };
 
 /**

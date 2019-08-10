@@ -407,9 +407,7 @@ OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
     FTensor::Index<'j', 3> j;
     FTensor::Tensor2<double, 3, 3> t_jac;
 
-    double &vol =
-        const_cast<VolumeElementForcesAndSourcesCoreBase *>(getVolumeFE())
-            ->vOlume;
+    double &vol = getVolume();
     vol = 0;
 
     for (int gg = 0; gg != nb_gauss_pts; gg++) {

@@ -98,7 +98,6 @@ operator()(int order_row, int order_col, int order_data) {
         std::cout << "nbEvalOPoints / nbGaussPts: " << nbEvalPoints << " / "
                   << nb_gauss_pts << std::endl;
       gauss_pts.resize(4, nb_gauss_pts, true);
-      fe.nbGaussPts = nb_gauss_pts;
 
       if (verb >= VERY_NOISY)
         std::cout << "gauss pts: " << gauss_pts << std::endl;

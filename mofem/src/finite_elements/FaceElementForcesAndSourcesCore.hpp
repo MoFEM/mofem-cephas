@@ -362,7 +362,7 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     CHKERR getSpaceBaseAndOrderOnElement();
 
     CHKERR setIntegrationPts();
-    if (nbGaussPts == 0)
+    if (gaussPts.size2() == 0)
       MoFEMFunctionReturnHot(0);
 
     DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];

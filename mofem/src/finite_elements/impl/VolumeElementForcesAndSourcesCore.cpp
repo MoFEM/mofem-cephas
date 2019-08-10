@@ -67,35 +67,34 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::setIntegrationPts() {
         SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                  "wrong order %d != %d", QUAD_3D_TABLE[rule]->order, rule);
       }
-      nbGaussPts = QUAD_3D_TABLE[rule]->npoints;
-      gaussPts.resize(4, nbGaussPts, false);
-      cblas_dcopy(nbGaussPts, &QUAD_3D_TABLE[rule]->points[1], 4,
+      size_t nb_gauss_pts = QUAD_3D_TABLE[rule]->npoints;
+      gaussPts.resize(4, nb_gauss_pts, false);
+      cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[1], 4,
                   &gaussPts(0, 0), 1);
-      cblas_dcopy(nbGaussPts, &QUAD_3D_TABLE[rule]->points[2], 4,
+      cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[2], 4,
                   &gaussPts(1, 0), 1);
-      cblas_dcopy(nbGaussPts, &QUAD_3D_TABLE[rule]->points[3], 4,
+      cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[3], 4,
                   &gaussPts(2, 0), 1);
-      cblas_dcopy(nbGaussPts, QUAD_3D_TABLE[rule]->weights, 1, &gaussPts(3, 0),
+      cblas_dcopy(nb_gauss_pts, QUAD_3D_TABLE[rule]->weights, 1, &gaussPts(3, 0),
                   1);
-      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 4,
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
                                                              false);
       double *shape_ptr =
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-      cblas_dcopy(4 * nbGaussPts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr, 1);
+      cblas_dcopy(4 * nb_gauss_pts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr, 1);
     } else {
       SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_3D_TABLE_SIZE);
-      nbGaussPts = 0;
     }
   } else {
     CHKERR setGaussPts(order_row, order_col, order_data);
-    nbGaussPts = gaussPts.size2();
-    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 4,
+    const size_t nb_gauss_pts = gaussPts.size2();
+    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
                                                            false);
-    if (nbGaussPts > 0) {
+    if (nb_gauss_pts > 0) {
       CHKERR Tools::shapeFunMBTET(
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
-          &gaussPts(0, 0), &gaussPts(1, 0), &gaussPts(2, 0), nbGaussPts);
+          &gaussPts(0, 0), &gaussPts(1, 0), &gaussPts(2, 0), nb_gauss_pts);
     }
   }
   MoFEMFunctionReturn(0);
@@ -134,17 +133,18 @@ VolumeElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
 
   double *shape_functions_ptr =
       &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-  coordsAtGaussPts.resize(nbGaussPts, 3, false);
+  const size_t nb_gauss_pts = gaussPts.size2();
+  coordsAtGaussPts.resize(nb_gauss_pts, 3, false);
   coordsAtGaussPts.clear();
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_at_gauss_ptr(
       &coordsAtGaussPts(0, 0), &coordsAtGaussPts(0, 1),
       &coordsAtGaussPts(0, 2));
   FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_shape_functions(
       shape_functions_ptr);
-  for (unsigned int gg = 0; gg < nbGaussPts; gg++) {
+  for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
         &coords[0], &coords[1], &coords[2]);
-    for (int bb = 0; bb < 4; bb++) {
+    for (int bb = 0; bb != 4; ++bb) {
       t_coords_at_gauss_ptr(i) += t_coords(i) * t_shape_functions;
       ++t_coords;
       ++t_shape_functions;
@@ -258,10 +258,12 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::calculateHoJacobian() {
         &hoGaussPtsInvJac(0, 4), &hoGaussPtsInvJac(0, 5),
         &hoGaussPtsInvJac(0, 6), &hoGaussPtsInvJac(0, 7),
         &hoGaussPtsInvJac(0, 8));
-    hoGaussPtsDetJac.resize(nbGaussPts, false);
+        
+    const size_t nb_gauss_pts = gaussPts.size2();
+    hoGaussPtsDetJac.resize(nb_gauss_pts, false);
     FTensor::Tensor0<double *> det(&hoGaussPtsDetJac[0]);
     // Calculate inverse and determinant
-    for (unsigned int gg = 0; gg != nbGaussPts; gg++) {
+    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
       CHKERR determinantTensor3by3(jac, det);
       // if(det<0) {
       //   SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"Negative
