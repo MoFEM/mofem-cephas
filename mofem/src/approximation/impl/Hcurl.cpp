@@ -2045,10 +2045,8 @@ struct HcurlEdgeBase {
     tGradN0pN1(i) = t_grad_n0(i) + t_grad_n1(i);
 
     fI.resize(p + 1);
-    if (CALCULATE_DIRVATIVES) {
-      diffFi.resize(3, p + 1);
-      diffFi.clear();
-    }
+    diffFi.resize(3, p + 1);
+    diffFi.clear();
 
     FTensor::Tensor2<double, 3, DIM> t_diff_phi0;
 
