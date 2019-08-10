@@ -497,6 +497,54 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
     MoFEMFunctionReturnHot(0);
   }
 
+  int getRule(int order) { return -1; };
+  MoFEMErrorCode setGaussPts(int order);
+
+  /**
+   * @brief Get the face nodes mapped on volume element
+   *
+   * \todo That this is not general, e.g., for quad number of nodes is 4.
+   *
+   * @return const std::array<int, 3>&
+   */
+  inline const std::array<int, 3> &getFaceConnMap() const {
+    return faceConnMap;
+  }
+  
+  /**
+   * @brief Get face nodes maped on volume
+   * 
+   * \todo That this is not general, e.g., for prism or hex, size of fixed array 
+   * is wrong.
+   * 
+   * @return const sdt::array<int, 4>& 
+   */
+  inline const std::array<int, 4> &getTetConnMap() const { return tetConnMap; }
+
+  /**
+   * @brief Get node on volume opposite to volume element
+   *
+   * \todo That this is not general, e.g., for prism or hex, opoosite node is
+   * not unique.
+   *
+   * @return int
+   */
+  inline int getOppositeNode() const { return oppositeNode; }
+
+  /**
+   * @brief Sense face on volume
+   * 
+   * @return int 
+   */
+  inline int getFaceSense() const { return faceSense;  }
+
+  /**
+   * @brief Face number on the volume
+   * 
+   * @return int 
+   */
+  inline int getFaceSideNumber() const { return faceSideNumber; }
+
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
    */
@@ -602,12 +650,10 @@ private:
 
   int faceSense;      ///< Sense of face, could be 1 or -1
   int faceSideNumber; ///< Face side number
-  int faceConnMap[3];
-  int tetConnMap[4];
+  std::array<int, 3> faceConnMap;
+  std::array<int, 4> tetConnMap;
   int oppositeNode;
 
-  int getRule(int order) { return -1; };
-  MoFEMErrorCode setGaussPts(int order);
 };
 
 /**

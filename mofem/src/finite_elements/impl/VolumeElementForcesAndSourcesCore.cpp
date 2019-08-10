@@ -408,7 +408,7 @@ VolumeElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   }
   faceSense = (*sit)->sense;
   faceSideNumber = (*sit)->side_number;
-  fill(tetConnMap, &tetConnMap[4], -1);
+  fill(tetConnMap.begin(), tetConnMap.end(), -1);
   for (int nn = 0; nn != 3; nn++) {
     faceConnMap[nn] =
         std::distance(conn, find(conn, &conn[4], faceFEPtr->conn[nn]));
@@ -418,8 +418,10 @@ VolumeElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
               "No common node on face and element can not be found");
     }
   }
-  oppositeNode =
-      std::distance(tetConnMap, find(tetConnMap, &tetConnMap[4], -1));
+  
+  oppositeNode = std::distance(tetConnMap.begin(),
+                               find(tetConnMap.begin(), tetConnMap.end(), -1));
+
   const int nb_gauss_pts = faceFEPtr->gaussPts.size2();
   gaussPts.resize(4, nb_gauss_pts, false);
   gaussPts.clear();
