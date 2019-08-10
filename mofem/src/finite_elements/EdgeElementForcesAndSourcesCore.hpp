@@ -167,30 +167,13 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
                                                                 &ptr[2]);
     }
   };
-};
-
-/** \brief Edge finite element
- * \ingroup mofem_forces_and_sources_edge_element
- *
- * User is implementing own operator at Gauss points level, by own object
- * derived from EdgeElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to rowOpPtrVector and
- * rowColOpPtrVector.
- *
- */
-template <int SWITCH>
-struct EdgeElementForcesAndSourcesCoreSwitch
-    : public EdgeElementForcesAndSourcesCoreBase {
 
   enum Switches {
     NO_HO_GEOMETRY = 1 << 0,
     NO_COVARIANT_TRANSFORM_HCURL = 1 << 2
   };
 
-  using EdgeElementForcesAndSourcesCoreBase::
-      EdgeElementForcesAndSourcesCoreBase;
-
-  MoFEMErrorCode operator()() {
+  template <int SWITCH> MoFEMErrorCode OpSwitch() {
     MoFEMFunctionBegin;
 
     if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
@@ -229,6 +212,25 @@ struct EdgeElementForcesAndSourcesCoreSwitch
 
     MoFEMFunctionReturn(0);
   }
+};
+
+/** \brief Edge finite element
+ * \ingroup mofem_forces_and_sources_edge_element
+ *
+ * User is implementing own operator at Gauss points level, by own object
+ * derived from EdgeElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
+ * number of operator added pushing objects to rowOpPtrVector and
+ * rowColOpPtrVector.
+ *
+ */
+template <int SWITCH>
+struct EdgeElementForcesAndSourcesCoreSwitch
+    : public EdgeElementForcesAndSourcesCoreBase {
+
+  using EdgeElementForcesAndSourcesCoreBase::
+      EdgeElementForcesAndSourcesCoreBase;
+
+  MoFEMErrorCode operator()() { return OpSwitch<SWITCH>(); }
 };
 
 /** \brief Edge finite element default

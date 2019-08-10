@@ -343,29 +343,14 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
    * @return error code
    */
   virtual MoFEMErrorCode calculateHoNormal();
-};
-
-/** \brief Face finite element switched
- \ingroup mofem_forces_and_sources_tri_element
-
- */
-template <int SWITCH>
-struct FaceElementForcesAndSourcesCoreSwitch
-    : public FaceElementForcesAndSourcesCoreBase {
 
   enum Switches {
     NO_HO_GEOMETRY = 1 << 0,
     NO_CONTRAVARIANT_TRANSFORM_HDIV = 1 << 1,
-    NO_COVARIANT_TRANSFORM_HCURL = 1 << 2
+    NO_COVARIANT_TRANSFORM_HCURL = 1 << 2,
   };
 
-  using FaceElementForcesAndSourcesCoreBase::
-      FaceElementForcesAndSourcesCoreBase;
-
-  using UserDataOperator =
-      FaceElementForcesAndSourcesCoreBase::UserDataOperator;
-
-  MoFEMErrorCode operator()() {
+  template <int SWITCH> MoFEMErrorCode OpSwitch() {
     MoFEMFunctionBegin;
 
     if (numeredEntFiniteElementPtr->getEntType() != MBTRI)
@@ -409,6 +394,23 @@ struct FaceElementForcesAndSourcesCoreSwitch
 
     MoFEMFunctionReturn(0);
   }
+};
+
+/** \brief Face finite element switched
+ \ingroup mofem_forces_and_sources_tri_element
+
+ */
+template <int SWITCH>
+struct FaceElementForcesAndSourcesCoreSwitch
+    : public FaceElementForcesAndSourcesCoreBase {
+
+  using FaceElementForcesAndSourcesCoreBase::
+      FaceElementForcesAndSourcesCoreBase;
+
+  using UserDataOperator =
+      FaceElementForcesAndSourcesCoreBase::UserDataOperator;
+
+  MoFEMErrorCode operator()() { return OpSwitch<SWITCH>(); }
 };
 
 /** \brief Face finite element default
