@@ -34,22 +34,7 @@ namespace MoFEM {
  */
 struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
-  double aRea;
-  int num_nodes;
-  const EntityHandle *conn;
-  VectorDouble nOrmal, tangentOne, tangentTwo;
-  VectorDouble coords;
-  MatrixDouble coordsAtGaussPts;
-
   std::string meshPositionsFieldName; ///< Name of the field with geometry
-
-  MatrixDouble hoCoordsAtGaussPts;
-  MatrixDouble normalsAtGaussPts;
-  MatrixDouble tangentOneAtGaussPts;
-  MatrixDouble tangentTwoAtGaussPts;
-  OpGetCoordsAndNormalsOnFace opHOCoordsAndNormals;
-  OpSetContravariantPiolaTransformOnFace opContravariantTransform;
-  OpSetCovariantPiolaTransformOnFace opCovariantTransform;
 
   FaceElementForcesAndSourcesCoreBase(Interface &m_field);
 
@@ -392,6 +377,25 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     MoFEMFunctionReturn(0);
   }
+
+protected:
+  double aRea;
+  int num_nodes;
+  const EntityHandle *conn;
+  VectorDouble nOrmal, tangentOne, tangentTwo;
+  VectorDouble coords;
+  MatrixDouble coordsAtGaussPts;
+
+  MatrixDouble hoCoordsAtGaussPts;
+  MatrixDouble normalsAtGaussPts;
+  MatrixDouble tangentOneAtGaussPts;
+  MatrixDouble tangentTwoAtGaussPts;
+  OpGetCoordsAndNormalsOnFace opHOCoordsAndNormals;
+  OpSetContravariantPiolaTransformOnFace opContravariantTransform;
+  OpSetCovariantPiolaTransformOnFace opCovariantTransform;
+
+  friend class UserDataOperator;
+  friend class VolumeElementForcesAndSourcesCoreOnSideBase;
 };
 
 /** \brief Face finite element switched

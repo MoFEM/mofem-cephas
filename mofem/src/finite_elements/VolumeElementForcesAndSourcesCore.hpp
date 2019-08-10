@@ -37,6 +37,8 @@ namespace MoFEM {
  */
 struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
+  std::string meshPositionsFieldName;
+
   VolumeElementForcesAndSourcesCoreBase(Interface &m_field,
                                         const EntityType type = MBTET);
   virtual ~VolumeElementForcesAndSourcesCoreBase() {}
@@ -414,7 +416,6 @@ protected:
   OpSetCovariantPiolaTransform opCovariantPiolaTransform;
   OpSetInvJacHdivAndHcurl opSetInvJacHdivAndHcurl;
 
-  std::string meshPositionsFieldName;
   MatrixDouble hoCoordsAtGaussPts;
   MatrixDouble hoGaussPtsJac;
   MatrixDouble hoGaussPtsInvJac;
