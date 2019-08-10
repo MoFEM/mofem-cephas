@@ -369,7 +369,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
    * @return Error code
    */
   virtual MoFEMErrorCode transformHoBaseFunctions();
-
 };
 
 /**
@@ -530,12 +529,12 @@ struct VolumeElementForcesAndSourcesCoreOnSide
     }
 
     inline bool getEdgeFace(const int ee) const {
-      const bool edges_on_faces[6][4] = {{true, false, false, true}, // e0
-                                         {false, true, false, true}, // e1
-                                         {false, false, true, true}, // e2
-                                         {true, false, true, false}, // e3
-                                         {true, true, false, false}, // e4
-                                         {false, true, true, false}};
+      constexpr bool edges_on_faces[6][4] = {{true, false, false, true}, // e0
+                                             {false, true, false, true}, // e1
+                                             {false, false, true, true}, // e2
+                                             {true, false, true, false}, // e3
+                                             {true, true, false, false}, // e4
+                                             {false, true, true, false}};
       return edges_on_faces[ee][getFaceSideNumber()];
     }
 
