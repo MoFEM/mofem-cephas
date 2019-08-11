@@ -18,17 +18,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <cblas.h>
-#include <lapack_wrap.h>
-// #include <gm_rule.h>
-#include <quad.h>
-#ifdef __cplusplus
-}
-#endif
-
 namespace MoFEM {
 
 FaceElementForcesAndSourcesCoreBase::FaceElementForcesAndSourcesCoreBase(
