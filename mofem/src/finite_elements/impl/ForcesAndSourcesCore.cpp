@@ -1073,46 +1073,20 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
   MoFEMFunctionReturn(0);
 }
 
-// **** Data Operator ****
-
-static MoFEMErrorCode
-get_porblem_row_indices(const ForcesAndSourcesCore *fe_ptr,
-                        const EntityType type, const int side,
-                        const std::string field_name, VectorInt &indices) {
-  MoFEMFunctionBegin;
-  switch (type) {
-  case MBVERTEX:
-    CHKERR fe_ptr->getProblemNodesRowIndices(field_name, indices);
-    break;
-  default:
-    CHKERR fe_ptr->getProblemTypeRowIndices(field_name, type, side, indices);
-  }
-  MoFEMFunctionReturn(0);
-}
-
-static MoFEMErrorCode
-get_porblem_col_indices(const ForcesAndSourcesCore *fe_ptr,
-                        const EntityType type, const int side,
-                        const std::string field_name, VectorInt &indices) {
-  MoFEMFunctionBegin;
-  switch (type) {
-  case MBVERTEX:
-    CHKERR fe_ptr->getProblemNodesColIndices(field_name, indices);
-    break;
-  default:
-    CHKERR fe_ptr->getProblemTypeColIndices(field_name, type, side, indices);
-  }
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemRowIndices(
     const std::string field_name, const EntityType type, const int side,
     VectorInt &indices) const {
   MoFEMFunctionBegin;
-  if (ptrFE == NULL) {
+  if (ptrFE == NULL) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+  
+  switch (type) {
+  case MBVERTEX:
+    CHKERR ptrFE->getProblemNodesRowIndices(field_name, indices);
+    break;
+  default:
+    CHKERR ptrFE->getProblemTypeRowIndices(field_name, type, side, indices);
   }
-  CHKERR get_porblem_row_indices(ptrFE, type, side, field_name, indices);
   MoFEMFunctionReturn(0);
 }
 
@@ -1120,10 +1094,16 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemColIndices(
     const std::string field_name, const EntityType type, const int side,
     VectorInt &indices) const {
   MoFEMFunctionBegin;
-  if (ptrFE == NULL) {
+  if (ptrFE == NULL) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+  
+  switch (type) {
+  case MBVERTEX:
+    CHKERR ptrFE->getProblemNodesColIndices(field_name, indices);
+    break;
+  default:
+    CHKERR ptrFE->getProblemTypeColIndices(field_name, type, side, indices);
   }
-  CHKERR get_porblem_col_indices(ptrFE, type, side, field_name, indices);
   MoFEMFunctionReturn(0);
 }
 
