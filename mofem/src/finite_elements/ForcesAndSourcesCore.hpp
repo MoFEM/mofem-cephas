@@ -565,6 +565,34 @@ protected:
   MoFEMErrorCode
   getSpacesAndBaseOnEntities(DataForcesAndSourcesCore &data) const;
 
+  /** \name Data form NumeredDofEntity_multiIndex */
+
+  /**@{*/
+
+  /// \brief get indices of nodal indices which are declared for problem but not
+  /// this particular element
+  MoFEMErrorCode getProblemNodesIndices(const std::string &field_name,
+                                        const NumeredDofEntity_multiIndex &dofs,
+                                        VectorInt &nodes_indices) const;
+
+  /// \brief get indices by type (generic function) which are declared for
+  /// problem but not this particular element
+  MoFEMErrorCode getProblemTypeIndices(const std::string &field_name,
+                                       const NumeredDofEntity_multiIndex &dofs,
+                                       EntityType type, int side_number,
+                                       VectorInt &indices) const;
+
+  MoFEMErrorCode getProblemNodesRowIndices(const std::string &field_name,
+                                           VectorInt &nodes_indices) const;
+  MoFEMErrorCode getProblemTypeRowIndices(const std::string &field_name,
+                                          EntityType type, int side_number,
+                                          VectorInt &indices) const;
+  MoFEMErrorCode getProblemNodesColIndices(const std::string &field_name,
+                                           VectorInt &nodes_indices) const;
+  MoFEMErrorCode getProblemTypeColIndices(const std::string &field_name,
+                                          EntityType type, int side_number,
+                                          VectorInt &indices) const;
+
   /**@}*/
 
   /**
