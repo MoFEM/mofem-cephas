@@ -384,7 +384,7 @@ PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, const char fe_name[]) {
 }
 
 PetscErrorCode DMMoFEMResolveSharedEntities(DM dm, const char fe_name[]) {
-  return DMMoFEMResolveSharedEntities(dm, fe_name);
+  return DMMoFEMResolveSharedFiniteElements(dm, fe_name);
 }
 
 PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm, const char fe_name[],
