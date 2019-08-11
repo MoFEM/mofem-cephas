@@ -281,15 +281,8 @@ struct FatPrismElementForcesAndSourcesCore
 
   };
 
-  MoFEMErrorCode preProcess() {
-    MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(0);
-  }
   MoFEMErrorCode operator()();
-  MoFEMErrorCode postProcess() {
-    MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(0);
-  }
+
 };
 
 } // namespace MoFEM
