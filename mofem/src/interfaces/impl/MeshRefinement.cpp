@@ -167,11 +167,11 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middle_of_edges(
   CHKERR m_field.getInterface<BitRefManager>()->addBitRefLevel(add_bit, bit);
 
   if (!vert_coords[0].empty()) {
-    ReadUtilIface *iface;
-    CHKERR moab.query_interface(iface);
+    ReadUtilIface *read_util;
+    CHKERR moab.query_interface(read_util);
     int num_nodes = vert_coords[0].size();
     vector<double *> arrays_coord;
-    CHKERR iface->get_node_coords(3, num_nodes, 0, start_v, arrays_coord);
+    CHKERR read_util->get_node_coords(3, num_nodes, 0, start_v, arrays_coord);
     Range verts(start_v, start_v + num_nodes - 1);
     for (auto dd : {0, 1, 2}) {
       std::copy(vert_coords[dd].begin(), vert_coords[dd].end(),
