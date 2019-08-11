@@ -43,26 +43,6 @@ namespace MoFEM {
 struct FatPrismElementForcesAndSourcesCore
     : public VolumeElementForcesAndSourcesCore {
 
-  double aRea[2];
-  VectorDouble normal;
-
-  MatrixDouble gaussPtsTrianglesOnly;
-  MatrixDouble coordsAtGaussPtsTrianglesOnly;
-  MatrixDouble gaussPtsThroughThickness;
-
-  DataForcesAndSourcesCore dataH1TrianglesOnly;
-  DataForcesAndSourcesCore dataH1TroughThickness;
-
-  MatrixDouble hoCoordsAtGaussPtsF3;
-  MatrixDouble nOrmals_at_GaussPtF3;
-  MatrixDouble tAngent1_at_GaussPtF3;
-  MatrixDouble tAngent2_at_GaussPtF3;
-  MatrixDouble hoCoordsAtGaussPtsF4;
-  MatrixDouble nOrmals_at_GaussPtF4;
-  MatrixDouble tAngent1_at_GaussPtF4;
-  MatrixDouble tAngent2_at_GaussPtF4;
-  OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
-
   FatPrismElementForcesAndSourcesCore(Interface &m_field);
 
   virtual int getRuleTrianglesOnly(int order) { return 2 * order; };
@@ -278,11 +258,32 @@ struct FatPrismElementForcesAndSourcesCore
     inline const FatPrismElementForcesAndSourcesCore *getPrismFE() {
       return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE);
     }
-
   };
 
   MoFEMErrorCode operator()();
 
+protected:
+  double aRea[2];
+  VectorDouble normal;
+
+  MatrixDouble gaussPtsTrianglesOnly;
+  MatrixDouble coordsAtGaussPtsTrianglesOnly;
+  MatrixDouble gaussPtsThroughThickness;
+
+  DataForcesAndSourcesCore dataH1TrianglesOnly;
+  DataForcesAndSourcesCore dataH1TroughThickness;
+
+  MatrixDouble hoCoordsAtGaussPtsF3;
+  MatrixDouble nOrmals_at_GaussPtF3;
+  MatrixDouble tAngent1_at_GaussPtF3;
+  MatrixDouble tAngent2_at_GaussPtF3;
+  MatrixDouble hoCoordsAtGaussPtsF4;
+  MatrixDouble nOrmals_at_GaussPtF4;
+  MatrixDouble tAngent1_at_GaussPtF4;
+  MatrixDouble tAngent2_at_GaussPtF4;
+  OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
+
+  friend class UserDataOperator;
 };
 
 } // namespace MoFEM
