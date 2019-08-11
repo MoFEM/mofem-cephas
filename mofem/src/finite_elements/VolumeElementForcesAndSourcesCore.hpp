@@ -273,69 +273,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
                                 MatrixDouble &curl);
   };
 
-  // Note that functions below could be overloaded by user to change default
-  // behavior of the element.
-
-  /**
-   * \brief Set integration points
-   * @return Error code
-   */
-  virtual MoFEMErrorCode setIntegrationPts();
-
-  /**
-   * \brief Calculate element volume and Jacobian
-   *
-   * Note that at that point is assumed that geometry is exclusively defined by
-   * corner nodes.
-   *
-   * @return Error code
-   */
-  virtual MoFEMErrorCode calculateVolumeAndJacobian();
-
-  /**
-   * \brief Calculate coordinate at integration points
-   * @return Error code
-   */
-  virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
-
-  /**
-   * \brief Determine approximation space and order of base functions
-   * @return Error code
-   */
-  virtual MoFEMErrorCode getSpaceBaseAndOrderOnElement();
-
-  /**
-   * \brief Transform base functions based on geometric element Jacobian.
-   *
-   * This function apply transformation to base functions and its derivatives.
-   * For example when base functions for H-div are present the
-   * Piola-Transformarion is applied to base functions and their derivatives.
-   *
-   * @return Error code
-   */
-  virtual MoFEMErrorCode transformBaseFunctions();
-
-  /** \brief Calculate Jacobian for HO geometry
-   *
-   * MoFEM use hierarchical approximate base to describe geometry of the body.
-   * This function transform derivatives of base functions when HO geometry is
-   * set and calculate Jacobian, inverse of Jacobian and determinant of
-   * transformation.
-   *
-   */
-  virtual MoFEMErrorCode calculateHoJacobian();
-
-  /**
-   * \brief Transform base functions based on ho-geometry element Jacobian.
-   *
-   * This function apply transformation to base functions and its derivatives.
-   * For example when base functions for H-div are present the
-   * Piola-Transformarion is applied to base functions and their derivatives.
-   *
-   * @return Error code
-   */
-  virtual MoFEMErrorCode transformHoBaseFunctions();
-
   enum Switches {
     NO_HO_GEOMETRY = 1 << 0 | 1 << 2,
     NO_TRANSFORM = 1 << 1 | 1 << 2,
@@ -406,6 +343,70 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   }
 
 protected:
+
+  // Note that functions below could be overloaded by user to change default
+  // behavior of the element.
+
+  /**
+   * \brief Set integration points
+   * @return Error code
+   */
+  virtual MoFEMErrorCode setIntegrationPts();
+
+  /**
+   * \brief Calculate element volume and Jacobian
+   *
+   * Note that at that point is assumed that geometry is exclusively defined by
+   * corner nodes.
+   *
+   * @return Error code
+   */
+  virtual MoFEMErrorCode calculateVolumeAndJacobian();
+
+  /**
+   * \brief Calculate coordinate at integration points
+   * @return Error code
+   */
+  virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
+
+  /**
+   * \brief Determine approximation space and order of base functions
+   * @return Error code
+   */
+  virtual MoFEMErrorCode getSpaceBaseAndOrderOnElement();
+
+  /**
+   * \brief Transform base functions based on geometric element Jacobian.
+   *
+   * This function apply transformation to base functions and its derivatives.
+   * For example when base functions for H-div are present the
+   * Piola-Transformarion is applied to base functions and their derivatives.
+   *
+   * @return Error code
+   */
+  virtual MoFEMErrorCode transformBaseFunctions();
+
+  /** \brief Calculate Jacobian for HO geometry
+   *
+   * MoFEM use hierarchical approximate base to describe geometry of the body.
+   * This function transform derivatives of base functions when HO geometry is
+   * set and calculate Jacobian, inverse of Jacobian and determinant of
+   * transformation.
+   *
+   */
+  virtual MoFEMErrorCode calculateHoJacobian();
+
+  /**
+   * \brief Transform base functions based on ho-geometry element Jacobian.
+   *
+   * This function apply transformation to base functions and its derivatives.
+   * For example when base functions for H-div are present the
+   * Piola-Transformarion is applied to base functions and their derivatives.
+   *
+   * @return Error code
+   */
+  virtual MoFEMErrorCode transformHoBaseFunctions();
+
   VectorDouble coords;
   MatrixDouble3by3 jAc;
   MatrixDouble3by3 invJac;
