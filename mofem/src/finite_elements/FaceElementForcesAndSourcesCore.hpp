@@ -290,7 +290,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
       return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE);
     }
 
-
     /**
      * @deprecated Use getFaceFE
      */
@@ -313,43 +312,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     loopSideVolumes(const string &fe_name,
                     VolumeElementForcesAndSourcesCoreOnSide &method);
   };
-
-  /**
-   * \brief Calculate element area and normal of the face
-   *
-   * Note that at that point is assumed that geometry is exclusively defined by
-   * corner nodes.
-   *
-   * @return Error code
-   */
-  virtual MoFEMErrorCode calculateAreaAndNormal();
-
-  /**
-   * \brief Set integration points
-   * @return Error code
-   */
-  virtual MoFEMErrorCode setIntegrationPts();
-
-  /**
-   * \brief Determine approximation space and order of base functions
-   * @return Error code
-   */
-  virtual MoFEMErrorCode getSpaceBaseAndOrderOnElement();
-
-  /**
-   * \brief Calculate coordinate at integration points
-   * @return Error code
-   */
-  virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
-
-  /**
-   * \brief Calculate normal on curved elements
-   *
-   *  Geometry is given by other field.
-   *
-   * @return error code
-   */
-  virtual MoFEMErrorCode calculateHoNormal();
 
   enum Switches {
     NO_HO_GEOMETRY = 1 << 0,
@@ -403,6 +365,45 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   }
 
 protected:
+  MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
+
+  /**
+   * \brief Calculate element area and normal of the face
+   *
+   * Note that at that point is assumed that geometry is exclusively defined by
+   * corner nodes.
+   *
+   * @return Error code
+   */
+  virtual MoFEMErrorCode calculateAreaAndNormal();
+
+  /**
+   * \brief Set integration points
+   * @return Error code
+   */
+  virtual MoFEMErrorCode setIntegrationPts();
+
+  /**
+   * \brief Determine approximation space and order of base functions
+   * @return Error code
+   */
+  virtual MoFEMErrorCode getSpaceBaseAndOrderOnElement();
+
+  /**
+   * \brief Calculate coordinate at integration points
+   * @return Error code
+   */
+  virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
+
+  /**
+   * \brief Calculate normal on curved elements
+   *
+   *  Geometry is given by other field.
+   *
+   * @return error code
+   */
+  virtual MoFEMErrorCode calculateHoNormal();
+
   double aRea;
   int num_nodes;
   const EntityHandle *conn;

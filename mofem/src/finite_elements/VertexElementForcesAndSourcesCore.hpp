@@ -44,8 +44,6 @@ struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   VertexElementForcesAndSourcesCore(Interface &m_field)
       : ForcesAndSourcesCore(m_field){};
 
-  VectorDouble coords;
-
   /** \brief default operator for VERTEX element
     \ingroup mofem_forces_and_sources_vertex_element
     */
@@ -59,6 +57,10 @@ struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   };
 
   MoFEMErrorCode operator()();
+
+  protected:
+    VectorDouble coords;
+    friend class UserDataOperator;
 };
 
 } // namespace MoFEM
