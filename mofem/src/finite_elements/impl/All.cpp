@@ -1,5 +1,16 @@
 #include <MoFEM.hpp>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+  #include <cblas.h>
+  #include <lapack_wrap.h>
+  // #include <gm_rule.h>
+  #include <quad.h>
+#ifdef __cplusplus
+}
+#endif
+
 #include "impl/DataStructures.cpp"
 #include "impl/DataOperators.cpp"
 #include "impl/ForcesAndSourcesCore.cpp"

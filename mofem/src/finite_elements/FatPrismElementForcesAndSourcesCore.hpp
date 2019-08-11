@@ -43,26 +43,6 @@ namespace MoFEM {
 struct FatPrismElementForcesAndSourcesCore
     : public VolumeElementForcesAndSourcesCore {
 
-  double aRea[2];
-  VectorDouble normal;
-
-  MatrixDouble gaussPtsTrianglesOnly;
-  MatrixDouble coordsAtGaussPtsTrianglesOnly;
-  MatrixDouble gaussPtsThroughThickness;
-
-  DataForcesAndSourcesCore dataH1TrianglesOnly;
-  DataForcesAndSourcesCore dataH1TroughThickness;
-
-  MatrixDouble hoCoordsAtGaussPtsF3;
-  MatrixDouble nOrmals_at_GaussPtF3;
-  MatrixDouble tAngent1_at_GaussPtF3;
-  MatrixDouble tAngent2_at_GaussPtF3;
-  MatrixDouble hoCoordsAtGaussPtsF4;
-  MatrixDouble nOrmals_at_GaussPtF4;
-  MatrixDouble tAngent1_at_GaussPtF4;
-  MatrixDouble tAngent2_at_GaussPtF4;
-  OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
-
   FatPrismElementForcesAndSourcesCore(Interface &m_field);
 
   virtual int getRuleTrianglesOnly(int order) { return 2 * order; };
@@ -278,62 +258,32 @@ struct FatPrismElementForcesAndSourcesCore
     inline const FatPrismElementForcesAndSourcesCore *getPrismFE() {
       return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE);
     }
-
   };
 
-  MoFEMErrorCode preProcess() {
-    MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(0);
-  }
   MoFEMErrorCode operator()();
-  MoFEMErrorCode postProcess() {
-    MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(0);
-  }
-};
 
-/** \brief Calculate inverse of jacobian for face element
+protected:
+  double aRea[2];
+  VectorDouble normal;
 
-  It is assumed that face element is XY plane. Applied
-  only for 2d problems.
+  MatrixDouble gaussPtsTrianglesOnly;
+  MatrixDouble coordsAtGaussPtsTrianglesOnly;
+  MatrixDouble gaussPtsThroughThickness;
 
-  FIXME Generalize function for arbitrary face orientation in 3d space
-  FIXME Calculate to Jacobins for two faces
+  DataForcesAndSourcesCore dataH1TrianglesOnly;
+  DataForcesAndSourcesCore dataH1TroughThickness;
 
-  \ingroup mofem_forces_and_sources_prism_element
+  MatrixDouble hoCoordsAtGaussPtsF3;
+  MatrixDouble nOrmals_at_GaussPtF3;
+  MatrixDouble tAngent1_at_GaussPtF3;
+  MatrixDouble tAngent2_at_GaussPtF3;
+  MatrixDouble hoCoordsAtGaussPtsF4;
+  MatrixDouble nOrmals_at_GaussPtF4;
+  MatrixDouble tAngent1_at_GaussPtF4;
+  MatrixDouble tAngent2_at_GaussPtF4;
+  OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
 
-*/
-struct OpCalculateInvJacForFatPrism
-    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
-
-  MatrixDouble &invJac;
-  OpCalculateInvJacForFatPrism(MatrixDouble &inv_jac)
-      : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
-        invJac(inv_jac) {}
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
-/** \brief Transform local reference derivatives of shape functions to global
-derivatives
-
-FIXME Generalize to curved shapes
-FIXME Generalize to case that top and bottom face has different shape
-
-\ingroup mofem_forces_and_sources_prism_element
-
-*/
-struct OpSetInvJacH1ForFatPrism
-    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
-
-  MatrixDouble &invJac;
-  OpSetInvJacH1ForFatPrism(MatrixDouble &inv_jac)
-      : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
-        invJac(inv_jac) {}
-
-  MatrixDouble diffNinvJac;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
+  friend class UserDataOperator;
 };
 
 } // namespace MoFEM

@@ -41,7 +41,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
   VolumeElementForcesAndSourcesCoreBase(Interface &m_field,
                                         const EntityType type = MBTET);
-  virtual ~VolumeElementForcesAndSourcesCoreBase() {}
 
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
