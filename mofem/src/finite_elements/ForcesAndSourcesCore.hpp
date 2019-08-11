@@ -382,7 +382,7 @@ struct ForcesAndSourcesCore : public FEMethod {
     MoFEMFunctionReturnHot(0);
   }
 
-protected:
+public:
   /** \brief Get max order of approximation for data fields
 
   Method  getMaxDataOrder () return maximal order on entities, for
@@ -402,6 +402,10 @@ protected:
   /// \brief Get max order of approximation for field in columns
   int getMaxColOrder() const;
 
+  /// \brief Get number of DOFs on element
+  MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
+
+protected:
   /**
    * \brief get sense (orientation) of entity
    * @param  type type of entity
@@ -561,37 +565,7 @@ protected:
   MoFEMErrorCode
   getSpacesAndBaseOnEntities(DataForcesAndSourcesCore &data) const;
 
-  /** \name Data form NumeredDofEntity_multiIndex */
-
-  /**@{*/
-
-  /// \brief get indices of nodal indices which are declared for problem but not
-  /// this particular element
-  MoFEMErrorCode getProblemNodesIndices(const std::string &field_name,
-                                        const NumeredDofEntity_multiIndex &dofs,
-                                        VectorInt &nodes_indices) const;
-
-  /// \brief get indices by type (generic function) which are declared for
-  /// problem but not this particular element
-  MoFEMErrorCode getProblemTypeIndices(const std::string &field_name,
-                                       const NumeredDofEntity_multiIndex &dofs,
-                                       EntityType type, int side_number,
-                                       VectorInt &indices) const;
-
-  MoFEMErrorCode getProblemNodesRowIndices(const std::string &field_name,
-                                           VectorInt &nodes_indices) const;
-  MoFEMErrorCode getProblemTypeRowIndices(const std::string &field_name,
-                                          EntityType type, int side_number,
-                                          VectorInt &indices) const;
-  MoFEMErrorCode getProblemNodesColIndices(const std::string &field_name,
-                                           VectorInt &nodes_indices) const;
-  MoFEMErrorCode getProblemTypeColIndices(const std::string &field_name,
-                                          EntityType type, int side_number,
-                                          VectorInt &indices) const;
-
   /**@}*/
-
-  MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
 
   /**
    * \brief another variant of getRule
