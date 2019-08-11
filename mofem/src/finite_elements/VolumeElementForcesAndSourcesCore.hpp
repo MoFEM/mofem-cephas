@@ -71,7 +71,7 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     /** \brief element volume (linear geometry)
      */
-    inline double& getVolume() {
+    inline double &getVolume() {
       return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
           ->vOlume;
     }
@@ -101,7 +101,7 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
      * \brief get measure of element
      * @return volume
      */
-    inline double& getMeasure() { return getVolume(); }
+    inline double &getMeasure() { return getVolume(); }
 
     /** \brief nodal coordinates
      */
@@ -343,7 +343,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   }
 
 protected:
-
   // Note that functions below could be overloaded by user to change default
   // behavior of the element.
 
@@ -453,7 +452,6 @@ struct VolumeElementForcesAndSourcesCoreSwitch
 
   using VolumeElementForcesAndSourcesCoreBase::
       VolumeElementForcesAndSourcesCoreBase;
-
   using UserDataOperator =
       VolumeElementForcesAndSourcesCoreBase::UserDataOperator;
 
@@ -510,14 +508,14 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
   inline const std::array<int, 3> &getFaceConnMap() const {
     return faceConnMap;
   }
-  
+
   /**
    * @brief Get face nodes maped on volume
-   * 
-   * \todo That this is not general, e.g., for prism or hex, size of fixed array 
+   *
+   * \todo That this is not general, e.g., for prism or hex, size of fixed array
    * is wrong.
-   * 
-   * @return const sdt::array<int, 4>& 
+   *
+   * @return const sdt::array<int, 4>&
    */
   inline const std::array<int, 4> &getTetConnMap() const { return tetConnMap; }
 
@@ -533,15 +531,15 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
 
   /**
    * @brief Sense face on volume
-   * 
-   * @return int 
+   *
+   * @return int
    */
-  inline int getFaceSense() const { return faceSense;  }
+  inline int getFaceSense() const { return faceSense; }
 
   /**
    * @brief Face number on the volume
-   * 
-   * @return int 
+   *
+   * @return int
    */
   inline int getFaceSideNumber() const { return faceSideNumber; }
 
@@ -653,7 +651,6 @@ private:
   std::array<int, 3> faceConnMap;
   std::array<int, 4> tetConnMap;
   int oppositeNode;
-
 };
 
 /**
