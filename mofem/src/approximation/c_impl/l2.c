@@ -187,6 +187,6 @@ PetscErrorCode L2_ShapeFunctions_MBTET(
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,
                                        const int dim)){
-  return L2_ShapeFunctions_MBTET(p, N, diffN, L2N, diff_L2N, GDIM,
-                                 base_polynomials);
+  return L2_Ainsworth_ShapeFunctions_MBTET(p, N, diffN, L2N, diff_L2N, GDIM,
+                                           base_polynomials);
 };

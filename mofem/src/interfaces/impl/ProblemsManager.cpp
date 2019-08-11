@@ -3044,10 +3044,8 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         indices.clear();
         indices.reserve(nb_dofs);
         for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
-             ++dit) {
-          const int idx = decltype(tag)::get_index(dit);
+             ++dit)
           indices.push_back(decltype(tag)::get_index(dit));
-        }
       };
 
       auto concatenate_dofs = [&](auto tag, auto &indices,

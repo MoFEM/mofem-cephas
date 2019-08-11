@@ -584,7 +584,6 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       int ref_type[2];
       ref_type[0] = parent_edges_bit.count();
       ref_type[1] = sub_type;
-      int ii = 0;
       for (int tt = 0; tt != nb_new_tets; ++tt) {
         CHKERR moab.tag_set_data(cOre.get_th_RefType(), &ref_tets[tt], 1,
                                  ref_type);

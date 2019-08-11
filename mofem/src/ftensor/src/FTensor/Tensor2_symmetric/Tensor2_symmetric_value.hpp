@@ -59,7 +59,7 @@ namespace FTensor
 
     /* These operator()'s are the first part in constructing template
        expressions.  They can be used to slice off lower dimensional
-       parts. They are not entirely safe, since you can accidentaly use a
+       parts. They are not entirely safe, since you can accidentally use a
        higher dimension than what is really allowed (like Dim=5). */
 
     /* This returns a Tensor2_Expr, since the indices are not really

@@ -33,7 +33,7 @@ namespace MoFEM {
 ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
     :
 
-      mField(m_field),
+      mField(m_field), getRuleHook(0), setRuleHook(0),
       dataOnElement{
 
           nullptr,
@@ -67,7 +67,6 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
       dataNoField(*dataOnElement[NOFIELD].get()),
       dataH1(*dataOnElement[H1].get()), dataHcurl(*dataOnElement[HCURL].get()),
       dataHdiv(*dataOnElement[HDIV].get()), dataL2(*dataOnElement[L2].get()),
-      getRuleHook(0), setRuleHook(0),
       lastEvaluatedElementEntityType(MBMAXTYPE) {}
 
 MoFEMErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {

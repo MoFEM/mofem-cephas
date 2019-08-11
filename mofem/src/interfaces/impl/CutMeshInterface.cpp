@@ -162,19 +162,6 @@ MoFEMErrorCode CutMeshInterface::snapSurfaceToEdges(const Range &surface_edges,
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
 
-  auto get_point = [i](auto &t_w, auto &t_delta, auto t) {
-    FTensor::Tensor1<double, 3> t_p;
-    t = std::max(0., std::min(1., t));
-    t_p(i) = t_w(i) + t * t_delta(i);
-    return t_p;
-  };
-
-  auto get_distance = [i](auto &t_p, auto &t_n) {
-    FTensor::Tensor1<double, 3> t_dist_vector;
-    t_dist_vector(i) = t_p(i) - t_n(i);
-    return sqrt(t_dist_vector(i) * t_dist_vector(i));
-  };
-
   map<EntityHandle, double> map_verts_length;
 
   for (auto f : surface_edges) {
@@ -319,7 +306,6 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
     const double tol_trim_close, Range *fixed_edges, Range *corner_nodes,
     const bool update_meshsets, const bool debug) {
   CoreInterface &m_field = cOre;
-  moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
 
   std::vector<BitRefLevel> bit_levels;
@@ -748,8 +734,6 @@ MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
     MoFEMFunctionReturn(0);
   };
   CHKERR add_bit(init_bit_level);
-
-  int very_last_bit = init_bit_level + surf_levels + front_levels + 2;
 
   auto update_range = [&](Range *r_ptr) {
     MoFEMFunctionBegin;
@@ -1801,13 +1785,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     for (auto n : nodes) {
       auto r = verts_map.get<1>().equal_range(n);
       verts_map.get<1>().erase(r.first, r.second);
-    }
-  };
-
-  auto remove_edges = [&](Range edges) {
-    for (auto e : edges) {
-      auto r = verts_map.get<2>().equal_range(e);
-      verts_map.get<2>().erase(r.first, r.second);
     }
   };
 

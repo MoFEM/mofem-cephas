@@ -1444,7 +1444,6 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
 
     if (nb_dofs > 0 && nb_gauss_pts > 0) {
 
-      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
       FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_h_curl(
           &baseN(0, HVEC0), &baseN(0, HVEC1), &baseN(0, HVEC2));
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_h_curl(
