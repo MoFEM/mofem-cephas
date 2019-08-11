@@ -1661,6 +1661,52 @@ struct OpSetContrariantPiolaTransformOnEdge
                         DataForcesAndSourcesCore::EntData &data);
 };
 
+// Fat prims 
+
+/** \brief Calculate inverse of jacobian for face element
+
+  It is assumed that face element is XY plane. Applied
+  only for 2d problems.
+
+  FIXME Generalize function for arbitrary face orientation in 3d space
+  FIXME Calculate to Jacobins for two faces
+
+  \ingroup mofem_forces_and_sources_prism_element
+
+*/
+struct OpCalculateInvJacForFatPrism
+    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  MatrixDouble &invJac;
+  OpCalculateInvJacForFatPrism(MatrixDouble &inv_jac)
+      : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
+        invJac(inv_jac) {}
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+/** \brief Transform local reference derivatives of shape functions to global
+derivatives
+
+FIXME Generalize to curved shapes
+FIXME Generalize to case that top and bottom face has different shape
+
+\ingroup mofem_forces_and_sources_prism_element
+
+*/
+struct OpSetInvJacH1ForFatPrism
+    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  MatrixDouble &invJac;
+  OpSetInvJacH1ForFatPrism(MatrixDouble &inv_jac)
+      : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
+        invJac(inv_jac) {}
+
+  MatrixDouble diffNinvJac;
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
 } // namespace MoFEM
 
 #endif // __USER_DATA_OPERATORS_HPP__
