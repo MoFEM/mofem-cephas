@@ -86,17 +86,7 @@ struct FatPrismElementForcesAndSourcesCore
   struct UserDataOperator
       : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const FieldSpace space)
-        : VolumeElementForcesAndSourcesCore::UserDataOperator(space) {}
-
-    UserDataOperator(const std::string &field_name, const char type)
-        : VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,
-                                                              type) {}
-
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type)
-        : VolumeElementForcesAndSourcesCore::UserDataOperator(
-              row_field_name, col_field_name, type) {}
+    using VolumeElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
     /** \brief get face aRea
     \param dd if dd == 0 it is for face F3 if dd == 1 is for face F4
@@ -289,55 +279,6 @@ struct FatPrismElementForcesAndSourcesCore
       return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE);
     }
 
-    // /** \deprecated Use getNormalsAtGaussPtF3() instead
-    // */
-    // DEPRECATED inline ublas::matrix_row<MatrixDouble >
-    // getNormals_at_GaussPtF3(const int gg) {
-    //   return getNormalsAtGaussPtF3(gg);
-    // }
-    //
-    // /** \deprecated Use getNormalsAtGaussPtF3() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getNormals_at_GaussPtF3() {
-    //   return getNormalsAtGaussPtF3();
-    // }
-    //
-    // /** \deprecated Use getTangent1AtGaussPtF3() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getTangent1_at_GaussPtF3() {
-    //   return getTangent1AtGaussPtF3();
-    // }
-    //
-    // /** \deprecated Use getTangent2AtGaussPtF3() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getTangent2_at_GaussPtF3() {
-    //   return getTangent2AtGaussPtF3();
-    // }
-    //
-    // /** \deprecated Use getNormalsAtGaussPtF4() instead
-    // */
-    // DEPRECATED inline ublas::matrix_row<MatrixDouble >
-    // getNormals_at_GaussPtF4(const int gg) {
-    //   return getNormalsAtGaussPtF4(gg);
-    // }
-    //
-    // /** \deprecated Use getNormalsAtGaussPtF4() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getNormals_at_GaussPtF4() {
-    //   return getNormalsAtGaussPtF4();
-    // }
-    //
-    // /** \deprecated Use getTangent1AtGaussPtF4() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getTangent1_at_GaussPtF4() {
-    //   return getTangent1AtGaussPtF4();
-    // }
-    //
-    // /** \deprecated Use getTangent2AtGaussPtF4() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getTangent2_at_GaussPtF4() {
-    //   return getTangent2AtGaussPtF4();
-    // }
   };
 
   MoFEMErrorCode preProcess() {
@@ -394,10 +335,6 @@ struct OpSetInvJacH1ForFatPrism
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 };
-
-/// \deprecated use FatPrismElementForcesAndSourcesCore
-DEPRECATED typedef FatPrismElementForcesAndSourcesCore
-    FatPrismElementForcesAndSurcesCore;
 
 } // namespace MoFEM
 

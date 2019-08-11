@@ -167,17 +167,13 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middle_of_edges(
   CHKERR m_field.getInterface<BitRefManager>()->addBitRefLevel(add_bit, bit);
 
   if (!vert_coords[0].empty()) {
+    ReadUtilIface *iface;
+    CHKERR moab.query_interface(iface);
     int num_nodes = vert_coords[0].size();
     vector<double *> arrays_coord;
-    EntityHandle startv;
-    {
-      ReadUtilIface *iface;
-      CHKERR moab.query_interface(iface);
-      CHKERR iface->get_node_coords(3, num_nodes, 0, startv,
-                                    arrays_coord);
-    }
-    Range verts(startv, startv + num_nodes - 1);
-    for (int dd = 0; dd != 3; ++dd) {
+    CHKERR iface->get_node_coords(3, num_nodes, 0, start_v, arrays_coord);
+    Range verts(start_v, start_v + num_nodes - 1);
+    for (auto dd : {0, 1, 2}) {
       std::copy(vert_coords[dd].begin(), vert_coords[dd].end(),
                 arrays_coord[dd]);
     }
@@ -185,9 +181,9 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middle_of_edges(
                              &*parent_edge.begin());
     CHKERR m_field.getInterface<BitRefManager>()->setEntitiesBitRefLevel(
         verts, bit, verb);
-}
-MoFEMFunctionReturn(0);
-} // namespace MoFEM
+  }
+  MoFEMFunctionReturn(0);
+} 
 
 MoFEMErrorCode MeshRefinement::refine_TET(const EntityHandle meshset,
                                           const BitRefLevel &bit,
@@ -319,7 +315,6 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
 
   CHKERR m_field.get_ref_ents(&refined_ents_ptr);
   CHKERR m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
-
 
   Check check;
   if (debug)
@@ -553,21 +548,20 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       nb_new_tets_vec.emplace_back(nb_new_tets);
       sub_type_vec.emplace_back(sub_type);
     }
-
   }
 
   // Create tets
-  EntityHandle starte;
+  EntityHandle start_e = 0;
   EntityHandle *conn_moab;
   const int nb_new_tets = vertices_of_created_tets.size() / 4;
-  read_util->get_element_connect(nb_new_tets, 4, MBTET, 0, starte, conn_moab);
-  std::copy(vertices_of_created_tets.begin(),
-            vertices_of_created_tets.end(), conn_moab);
-  CHKERR read_util->update_adjacencies(starte, nb_new_tets, 4, conn_moab);
-  ents_to_set_bit.insert(starte, starte + nb_new_tets - 1);
+  read_util->get_element_connect(nb_new_tets, 4, MBTET, 0, start_e, conn_moab);
+  std::copy(vertices_of_created_tets.begin(), vertices_of_created_tets.end(),
+            conn_moab);
+  CHKERR read_util->update_adjacencies(start_e, nb_new_tets, 4, conn_moab);
+  ents_to_set_bit.insert(start_e, start_e + nb_new_tets - 1);
 
   // Create adj entities
-  for(auto d : {1,2}) {
+  for (auto d : {1, 2}) {
     Range ents;
     CHKERR moab.get_adjacencies(ents_to_set_bit, d, true, ents,
                                 moab::Interface::UNION);
@@ -582,8 +576,8 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     const int sub_type = sub_type_vec[idx];
 
     std::array<EntityHandle, 8> ref_tets;
-    for (int tt = 0; tt != nb_new_tets; ++tt, ++starte)
-      ref_tets[tt] = starte;
+    for (int tt = 0; tt != nb_new_tets; ++tt, ++start_e)
+      ref_tets[tt] = start_e;
 
     if (nb_new_tets) {
 
@@ -756,14 +750,14 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
     }
   }
 
-  if(debug)
+  if (debug)
     CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
   CHKERR set_parent(refined_ents_ptr);
-  if(debug)
+  if (debug)
     CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(ents_to_set_bit,
                                                                bit, true, verb);
-  if(debug)
+  if (debug)
     CHKERR check(ref_edges_ptr, refined_ents_ptr, cOre);
 
   MoFEMFunctionReturn(0);
