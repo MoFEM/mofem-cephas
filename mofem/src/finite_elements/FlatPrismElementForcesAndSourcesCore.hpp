@@ -38,23 +38,6 @@ namespace MoFEM {
  */
 struct FlatPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
-  double aRea[2];
-  VectorDouble normal;
-  VectorDouble coords;
-  MatrixDouble coordsAtGaussPts;
-
-  std::string meshPositionsFieldName;
-
-  MatrixDouble hoCoordsAtGaussPtsF3;
-  MatrixDouble nOrmals_at_GaussPtF3;
-  MatrixDouble tAngent1_at_GaussPtF3;
-  MatrixDouble tAngent2_at_GaussPtF3;
-  MatrixDouble hoCoordsAtGaussPtsF4;
-  MatrixDouble nOrmals_at_GaussPtF4;
-  MatrixDouble tAngent1_at_GaussPtF4;
-  MatrixDouble tAngent2_at_GaussPtF4;
-  OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
-
   FlatPrismElementForcesAndSourcesCore(Interface &m_field);
 
   /** \brief default operator for Flat Prism element
@@ -231,9 +214,29 @@ struct FlatPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   };
 
   MoFEMErrorCode operator()();
+
+  protected:
+
+  double aRea[2];
+  VectorDouble normal;
+  VectorDouble coords;
+  MatrixDouble coordsAtGaussPts;
+
+  std::string meshPositionsFieldName;
+
+  MatrixDouble hoCoordsAtGaussPtsF3;
+  MatrixDouble nOrmals_at_GaussPtF3;
+  MatrixDouble tAngent1_at_GaussPtF3;
+  MatrixDouble tAngent2_at_GaussPtF3;
+  MatrixDouble hoCoordsAtGaussPtsF4;
+  MatrixDouble nOrmals_at_GaussPtF4;
+  MatrixDouble tAngent1_at_GaussPtF4;
+  MatrixDouble tAngent2_at_GaussPtF4;
+  OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
+
+  friend class UserDataOperator;
+
 };
-
-
 
 /// \brief USe FlatPrismElementForcesAndSourcesCore
 DEPRECATED typedef FlatPrismElementForcesAndSourcesCore
