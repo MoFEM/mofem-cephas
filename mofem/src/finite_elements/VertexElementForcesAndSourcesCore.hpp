@@ -51,7 +51,7 @@ struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-    inline VectorDouble &getCoords() {
+    inline VectorDouble3 &getCoords() {
       return static_cast<VertexElementForcesAndSourcesCore *>(ptrFE)->coords;
     }
   };
@@ -59,7 +59,7 @@ struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   MoFEMErrorCode operator()();
 
   protected:
-    VectorDouble coords;
+    VectorDouble3 coords;
     friend class UserDataOperator;
 };
 
