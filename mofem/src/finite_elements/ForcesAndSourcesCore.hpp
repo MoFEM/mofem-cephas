@@ -405,6 +405,33 @@ public:
   /// \brief Get number of DOFs on element
   MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
 
+  /**
+   * @brief Get the entity data
+   * 
+   * @param space 
+   * @param type 
+   * @param side 
+   * @return const DataForcesAndSourcesCore::EntData& 
+   */
+  const DataForcesAndSourcesCore::EntData &getEntData(const FieldSpace space,
+                                                      const EntityType type,
+                                                      const int side) const {
+    return dataOnElement[space]->dataOnEntities[type][side];
+  }
+
+  /**
+   * @brief Get the entity data
+   * 
+   * @param space 
+   * @param type 
+   * @param side 
+   * @return DataForcesAndSourcesCore::EntData& 
+   */
+  DataForcesAndSourcesCore::EntData &
+  getEntData(const FieldSpace space, const EntityType type, const int side) {
+    return dataOnElement[space]->dataOnEntities[type][side];
+  }
+
 protected:
   /**
    * \brief get sense (orientation) of entity
