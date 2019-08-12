@@ -41,24 +41,7 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
   std::string meshPositionsFieldName;
 
-  MatrixDouble tangentAtGaussPts;
-  OpGetHoTangentOnEdge opGetHoTangentOnEdge;
-  OpSetCovariantPiolaTransformOnEdge opCovariantTransform;
-
   EdgeElementForcesAndSourcesCoreBase(Interface &m_field);
-
-  double lEngth;
-
-  int numNodes;
-  const EntityHandle *cOnn;
-  VectorDouble dIrection;
-  VectorDouble cOords;
-  MatrixDouble coordsAtGaussPts;
-
-  MoFEMErrorCode calculateEdgeDirection();
-  MoFEMErrorCode setIntegrationPts();
-  MoFEMErrorCode calculateCoordsAtIntegrationPts();
-  MoFEMErrorCode calculateHoCoordsAtIntegrationPts();
 
   /** \brief default operator for EDGE element
     \ingroup mofem_forces_and_sources_edge_element
@@ -212,6 +195,26 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     MoFEMFunctionReturn(0);
   }
+
+protected:
+  MatrixDouble tangentAtGaussPts;
+  OpGetHoTangentOnEdge opGetHoTangentOnEdge;
+  OpSetCovariantPiolaTransformOnEdge opCovariantTransform;
+
+  double lEngth;
+
+  int numNodes;
+  const EntityHandle *cOnn;
+  VectorDouble dIrection;
+  VectorDouble cOords;
+  MatrixDouble coordsAtGaussPts;
+
+  MoFEMErrorCode calculateEdgeDirection();
+  MoFEMErrorCode setIntegrationPts();
+  MoFEMErrorCode calculateCoordsAtIntegrationPts();
+  MoFEMErrorCode calculateHoCoordsAtIntegrationPts();
+
+  friend class UserDataOperator;
 };
 
 /** \brief Edge finite element

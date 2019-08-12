@@ -287,7 +287,7 @@ MoFEMErrorCode Core::clear_problem(const std::string problem_name, int verb) {
 }
 
 MoFEMErrorCode Core::build_problems(int verb) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
   if (!((*buildMoFEM) & BUILD_FIELD))
@@ -300,11 +300,11 @@ MoFEMErrorCode Core::build_problems(int verb) {
   Problem_multiIndex::iterator p_miit = pRoblems.begin();
   for (; p_miit != pRoblems.end(); p_miit++) {
     Problem *problem_ptr = const_cast<Problem *>(&*p_miit);
-    ierr = build_problem(problem_ptr, false, verb);
-    CHKERRG(ierr);
+    CHKERR getInterface<ProblemsManager>()->buildProblem(problem_ptr, false,
+                                                         verb);
   }
   *buildMoFEM |= BUILD_PROBLEM;
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::clear_problems(int verb) {

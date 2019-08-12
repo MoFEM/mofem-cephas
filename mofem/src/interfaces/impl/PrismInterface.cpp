@@ -686,8 +686,6 @@ MoFEMErrorCode PrismInterface::splitSides(
 
     RefEntity_multiIndex_view_by_hashed_parent_entity ref_parent_ents_view;
     struct CreateParentEntView {
-      typedef RefEntity_multiIndex::index<
-          Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
       MoFEMErrorCode
       operator()(const BitRefLevel &bit, const BitRefLevel &mask,
                  const RefEntity_multiIndex *refined_ents_ptr,

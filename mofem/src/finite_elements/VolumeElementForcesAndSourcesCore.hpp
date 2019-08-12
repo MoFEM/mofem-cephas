@@ -71,7 +71,7 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     /** \brief element volume (linear geometry)
      */
-    inline double& getVolume() {
+    inline double &getVolume() {
       return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
           ->vOlume;
     }
@@ -101,7 +101,7 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
      * \brief get measure of element
      * @return volume
      */
-    inline double& getMeasure() { return getVolume(); }
+    inline double &getMeasure() { return getVolume(); }
 
     /** \brief nodal coordinates
      */
@@ -273,69 +273,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
                                 MatrixDouble &curl);
   };
 
-  // Note that functions below could be overloaded by user to change default
-  // behavior of the element.
-
-  /**
-   * \brief Set integration points
-   * @return Error code
-   */
-  virtual MoFEMErrorCode setIntegrationPts();
-
-  /**
-   * \brief Calculate element volume and Jacobian
-   *
-   * Note that at that point is assumed that geometry is exclusively defined by
-   * corner nodes.
-   *
-   * @return Error code
-   */
-  virtual MoFEMErrorCode calculateVolumeAndJacobian();
-
-  /**
-   * \brief Calculate coordinate at integration points
-   * @return Error code
-   */
-  virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
-
-  /**
-   * \brief Determine approximation space and order of base functions
-   * @return Error code
-   */
-  virtual MoFEMErrorCode getSpaceBaseAndOrderOnElement();
-
-  /**
-   * \brief Transform base functions based on geometric element Jacobian.
-   *
-   * This function apply transformation to base functions and its derivatives.
-   * For example when base functions for H-div are present the
-   * Piola-Transformarion is applied to base functions and their derivatives.
-   *
-   * @return Error code
-   */
-  virtual MoFEMErrorCode transformBaseFunctions();
-
-  /** \brief Calculate Jacobian for HO geometry
-   *
-   * MoFEM use hierarchical approximate base to describe geometry of the body.
-   * This function transform derivatives of base functions when HO geometry is
-   * set and calculate Jacobian, inverse of Jacobian and determinant of
-   * transformation.
-   *
-   */
-  virtual MoFEMErrorCode calculateHoJacobian();
-
-  /**
-   * \brief Transform base functions based on ho-geometry element Jacobian.
-   *
-   * This function apply transformation to base functions and its derivatives.
-   * For example when base functions for H-div are present the
-   * Piola-Transformarion is applied to base functions and their derivatives.
-   *
-   * @return Error code
-   */
-  virtual MoFEMErrorCode transformHoBaseFunctions();
-
   enum Switches {
     NO_HO_GEOMETRY = 1 << 0 | 1 << 2,
     NO_TRANSFORM = 1 << 1 | 1 << 2,
@@ -406,6 +343,69 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   }
 
 protected:
+  // Note that functions below could be overloaded by user to change default
+  // behavior of the element.
+
+  /**
+   * \brief Set integration points
+   * @return Error code
+   */
+  virtual MoFEMErrorCode setIntegrationPts();
+
+  /**
+   * \brief Calculate element volume and Jacobian
+   *
+   * Note that at that point is assumed that geometry is exclusively defined by
+   * corner nodes.
+   *
+   * @return Error code
+   */
+  virtual MoFEMErrorCode calculateVolumeAndJacobian();
+
+  /**
+   * \brief Calculate coordinate at integration points
+   * @return Error code
+   */
+  virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
+
+  /**
+   * \brief Determine approximation space and order of base functions
+   * @return Error code
+   */
+  virtual MoFEMErrorCode getSpaceBaseAndOrderOnElement();
+
+  /**
+   * \brief Transform base functions based on geometric element Jacobian.
+   *
+   * This function apply transformation to base functions and its derivatives.
+   * For example when base functions for H-div are present the
+   * Piola-Transformarion is applied to base functions and their derivatives.
+   *
+   * @return Error code
+   */
+  virtual MoFEMErrorCode transformBaseFunctions();
+
+  /** \brief Calculate Jacobian for HO geometry
+   *
+   * MoFEM use hierarchical approximate base to describe geometry of the body.
+   * This function transform derivatives of base functions when HO geometry is
+   * set and calculate Jacobian, inverse of Jacobian and determinant of
+   * transformation.
+   *
+   */
+  virtual MoFEMErrorCode calculateHoJacobian();
+
+  /**
+   * \brief Transform base functions based on ho-geometry element Jacobian.
+   *
+   * This function apply transformation to base functions and its derivatives.
+   * For example when base functions for H-div are present the
+   * Piola-Transformarion is applied to base functions and their derivatives.
+   *
+   * @return Error code
+   */
+  virtual MoFEMErrorCode transformHoBaseFunctions();
+
   VectorDouble coords;
   MatrixDouble3by3 jAc;
   MatrixDouble3by3 invJac;
@@ -452,7 +452,6 @@ struct VolumeElementForcesAndSourcesCoreSwitch
 
   using VolumeElementForcesAndSourcesCoreBase::
       VolumeElementForcesAndSourcesCoreBase;
-
   using UserDataOperator =
       VolumeElementForcesAndSourcesCoreBase::UserDataOperator;
 
@@ -509,14 +508,14 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
   inline const std::array<int, 3> &getFaceConnMap() const {
     return faceConnMap;
   }
-  
+
   /**
    * @brief Get face nodes maped on volume
-   * 
-   * \todo That this is not general, e.g., for prism or hex, size of fixed array 
+   *
+   * \todo That this is not general, e.g., for prism or hex, size of fixed array
    * is wrong.
-   * 
-   * @return const sdt::array<int, 4>& 
+   *
+   * @return const sdt::array<int, 4>&
    */
   inline const std::array<int, 4> &getTetConnMap() const { return tetConnMap; }
 
@@ -532,15 +531,15 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
 
   /**
    * @brief Sense face on volume
-   * 
-   * @return int 
+   *
+   * @return int
    */
-  inline int getFaceSense() const { return faceSense;  }
+  inline int getFaceSense() const { return faceSense; }
 
   /**
    * @brief Face number on the volume
-   * 
-   * @return int 
+   *
+   * @return int
    */
   inline int getFaceSideNumber() const { return faceSideNumber; }
 
@@ -652,7 +651,6 @@ private:
   std::array<int, 3> faceConnMap;
   std::array<int, 4> tetConnMap;
   int oppositeNode;
-
 };
 
 /**

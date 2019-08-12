@@ -167,11 +167,11 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middle_of_edges(
   CHKERR m_field.getInterface<BitRefManager>()->addBitRefLevel(add_bit, bit);
 
   if (!vert_coords[0].empty()) {
-    ReadUtilIface *iface;
-    CHKERR moab.query_interface(iface);
+    ReadUtilIface *read_util;
+    CHKERR moab.query_interface(read_util);
     int num_nodes = vert_coords[0].size();
     vector<double *> arrays_coord;
-    CHKERR iface->get_node_coords(3, num_nodes, 0, start_v, arrays_coord);
+    CHKERR read_util->get_node_coords(3, num_nodes, 0, start_v, arrays_coord);
     Range verts(start_v, start_v + num_nodes - 1);
     for (auto dd : {0, 1, 2}) {
       std::copy(vert_coords[dd].begin(), vert_coords[dd].end(),
@@ -584,7 +584,6 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       int ref_type[2];
       ref_type[0] = parent_edges_bit.count();
       ref_type[1] = sub_type;
-      int ii = 0;
       for (int tt = 0; tt != nb_new_tets; ++tt) {
         CHKERR moab.tag_set_data(cOre.get_th_RefType(), &ref_tets[tt], 1,
                                  ref_type);

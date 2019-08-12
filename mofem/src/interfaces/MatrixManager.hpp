@@ -117,6 +117,7 @@ struct MatrixManager : public UnknownInterface {
   MoFEMErrorCode createMPIAdjWithArrays(const std::string name, Mat *Adj,
                                         int verb = QUIET) {
     static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
+    return MOFEM_NOT_IMPLEMENTED;
   }
 
   /**

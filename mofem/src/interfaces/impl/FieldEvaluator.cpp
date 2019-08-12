@@ -54,12 +54,9 @@ operator()(int order_row, int order_col, int order_data) {
 
   if (auto data_ptr = dataPtr.lock()) {
 
-    decltype(data_ptr->evalPoints) evalPoints = data_ptr->evalPoints;
     decltype(data_ptr->nbEvalPoints) nbEvalPoints = data_ptr->nbEvalPoints;
-    decltype(data_ptr->eps) eps = data_ptr->eps;
     decltype(data_ptr->verb) verb = data_ptr->verb;
 
-    decltype(data_ptr->localCoords) &localCoords = data_ptr->localCoords;
     decltype(data_ptr->shapeFunctions) &shapeFunctions =
         data_ptr->shapeFunctions;
     decltype(data_ptr->evalPointEntityHandle) &evalPointEntityHandle =

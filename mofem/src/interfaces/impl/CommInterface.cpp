@@ -386,7 +386,7 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
                        &*status.begin());
 
     if (verb >= NOISY) {
-      for (int proc = 0, kk = 0; proc < m_field.get_comm_size(); ++proc) {
+      for (int proc = 0; proc < m_field.get_comm_size(); ++proc) {
         if (proc != m_field.get_comm_rank()) {
           print_vec("recv_ents_vec received from " +
                         boost::lexical_cast<std::string>(proc),

@@ -152,8 +152,8 @@ FieldEntity::FieldEntity(
     boost::shared_ptr<const int> &&t_max_order_ptr)
     : interface_Field<Field>(field_ptr), interface_RefEntity<RefEntity>(
                                              ref_ent_ptr),
-      fieldDataAdaptorPtr(field_data_adaptor_ptr),
-      tagMaxOrderPtr(t_max_order_ptr) {
+      tagMaxOrderPtr(t_max_order_ptr),
+      fieldDataAdaptorPtr(field_data_adaptor_ptr) {
   globalUId = getGlobalUniqueIdCalculate();
 
   if (PetscUnlikely(!fieldDataAdaptorPtr))
