@@ -141,6 +141,7 @@ template <class T, class A>
 static inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
 getFTensor0FromVec(ublas::vector<T, A> &data) {
   static_assert(!std::is_same<T, T>::value, "not implemented");
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>();
 }
 
 template <>
