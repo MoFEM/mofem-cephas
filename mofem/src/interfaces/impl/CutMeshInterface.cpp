@@ -876,13 +876,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     auto dist_vec0 = get_tag_data(th_dist_normal, conn[0]);
     auto dist_vec1 = get_tag_data(th_dist_normal, conn[1]);
 
-    const double s0 = inner_prod(ray, dist_vec0);
-    const double s1 = inner_prod(ray, dist_vec1);
+    const double s0 = norm_2(dist_vec0);
+    const double s1 = norm_2(dist_vec1);
 
     if (inner_prod(dist_vec0, dist_vec1) < 0) {
 
       // Edges is on two sides of the surface
-      const double s = s0 / (s0 - s1);
+      const double s = s0 / (s0 + s1);
       const double dist = s * ray_length;
 
       VectorDouble3 p = n0 + dist * ray;
