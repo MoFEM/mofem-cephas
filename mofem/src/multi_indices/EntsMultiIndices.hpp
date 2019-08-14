@@ -51,13 +51,19 @@ struct __attribute__((__packed__)) SideNumber {
 typedef multi_index_container<
     boost::shared_ptr<SideNumber>,
     indexed_by<
-        hashed_unique<member<SideNumber, EntityHandle, &SideNumber::ent> >,
-        ordered_non_unique<composite_key<
-            SideNumber,
-            const_mem_fun<SideNumber, EntityType, &SideNumber::getEntType>,
-            member<SideNumber, char, &SideNumber::side_number> > >,
+        hashed_unique<member<SideNumber, EntityHandle, &SideNumber::ent>>,
         ordered_non_unique<
-            const_mem_fun<SideNumber, EntityType, &SideNumber::getEntType> > > >
+
+            composite_key<
+                SideNumber,
+                const_mem_fun<SideNumber, EntityType, &SideNumber::getEntType>,
+                member<SideNumber, char, &SideNumber::side_number>
+
+                >>,
+        ordered_non_unique<
+            const_mem_fun<SideNumber, EntityType, &SideNumber::getEntType>>
+
+        >>
     SideNumber_multiIndex;
 
 /**

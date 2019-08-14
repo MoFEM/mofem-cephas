@@ -1,0 +1,144 @@
+/**
+ * \file boundary_marker.cpp
+ * \example boundary_marker.cpp
+ *
+ * Mark boundary
+ *
+ */
+
+/* This file is part of MoFEM.
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+#include <MoFEM.hpp>
+
+using namespace MoFEM;
+
+static char help[] = "...\n\n";
+
+using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
+using FaceEleOp = FaceEle::UserDataOperator;
+
+struct OpFace : public FaceEleOp {
+  const Range &skinEnts;
+  const std::vector<bool> &mArker;
+
+  OpFace(const Range &skin_ents, const std::vector<bool> &marker)
+      : FaceEleOp("FIELD1", OPROW), skinEnts(skin_ents), mArker(marker) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+
+    const int nb_dofs = data.getIndices().size();
+    if (nb_dofs == 0)
+      MoFEMFunctionReturnHot(0);
+
+    auto get_bioundary_marker_directly_from_rage = [&]() {
+      std::vector<bool> ents_marker_used_for_testing;
+      ents_marker_used_for_testing.resize(data.getLocalIndices().size());
+      switch (type) {
+      case MBVERTEX: {
+        for (size_t side = 0; side != getNumberOfNodesOnElement(); ++side) {
+          EntityHandle ent = getSideEntity(side, MBVERTEX);
+          ents_marker_used_for_testing[side] =
+              skinEnts.find(ent) != skinEnts.end();
+        }
+        break;
+      }
+      default: {
+        EntityHandle ent = getSideEntity(side, type);
+        bool is_on_boundary = skinEnts.find(ent) != skinEnts.end();
+        for (size_t dof = 0; dof != nb_dofs; ++dof)
+          ents_marker_used_for_testing[dof] = is_on_boundary;
+      }
+      };
+      return ents_marker_used_for_testing;
+    };
+
+    auto test_marker = get_bioundary_marker_directly_from_rage();
+    for (size_t n = 0; n != nb_dofs; ++n) {
+      const size_t local_index = data.getLocalIndices()[n];
+      if (test_marker[n] != mArker[local_index])
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                "Wrong boundary marker");
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+};
+
+int main(int argc, char *argv[]) {
+
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
+
+  try {
+
+    moab::Core mb_instance;
+    moab::Interface &moab = mb_instance;
+    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+    if (pcomm == NULL)
+      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+
+    // Create MoFEM instance
+    MoFEM::Core core(moab);
+    MoFEM::Interface &m_field = core;
+
+    int order = 4;
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
+
+    DMType dm_name = "DMMOFEM";
+    CHKERR DMRegister_MoFEM(dm_name);
+
+    auto *simple_interface = m_field.getInterface<Simple>();
+    CHKERR simple_interface->getOptions();
+    CHKERR simple_interface->loadFile("");
+    CHKERR simple_interface->addDomainField("FIELD1", H1,
+                                            AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERR simple_interface->setFieldOrder("FIELD1", order);
+    CHKERR simple_interface->setUp();
+
+    auto get_ents_on_mesh_skin = [&]() {
+      Range faces;
+      CHKERR m_field.get_moab().get_entities_by_type(0, MBTRI, faces);
+      Skinner skin(&m_field.get_moab());
+      Range skin_edges;
+      CHKERR skin.find_skin(0, faces, false, skin_edges);
+      Range skin_verts;
+      CHKERR moab.get_connectivity(skin_edges, skin_verts, true);
+      skin_edges.merge(skin_verts);
+      return skin_edges;
+    };
+
+    auto mark_boundary_dofs = [&](Range &skin_edges) {
+      auto problem_manager = m_field.getInterface<ProblemsManager>();
+      std::vector<bool> marker;
+      problem_manager->markDofs(simple_interface->getProblemName(), ROW,
+                                skin_edges, marker);
+      return marker;
+    };
+
+    auto skin_ents = get_ents_on_mesh_skin();
+    auto marker = mark_boundary_dofs(skin_ents);
+
+    boost::shared_ptr<FaceEle> fe(new FaceEle(m_field));
+    fe->getOpPtrVector().push_back(new OpFace(skin_ents, marker));
+
+    auto dm = simple_interface->getDM();
+    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getDomainFEName(),
+                                    fe);
+  }
+  CATCH_ERRORS;
+
+  CHKERR MoFEM::Core::Finalize();
+}

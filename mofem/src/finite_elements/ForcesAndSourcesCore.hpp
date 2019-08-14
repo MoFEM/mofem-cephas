@@ -146,6 +146,80 @@ struct ForcesAndSourcesCore : public FEMethod {
       return getNumeredEntFiniteElementPtr()->getEnt();
     }
 
+    /**
+     * @brief Get the side number pointer
+     *
+     * \note For vertex is expection. Side basses in argument of function doWork
+     * is zero. For other entity types side can be used as argument of this
+     * function.
+     *
+     * @param side_number
+     * @param type
+     * @return boost::weak_ptr<SideNumber>
+     */
+    inline boost::weak_ptr<SideNumber> getSideNumberPtr(const int side_number,
+                                                        const EntityType type) {
+      auto &side_table_by_side_and_type =
+          ptrFE->numeredEntFiniteElementPtr->getSideNumberTable().get<1>();
+      auto side_it = side_table_by_side_and_type.find(
+          boost::make_tuple(type, side_number));
+      if (side_it != side_table_by_side_and_type.end())
+        return *side_it;
+      else
+        return boost::weak_ptr<SideNumber>();
+    }
+
+    /**
+     * @brief Get the side entity
+     *
+     * \note For vertex is expection. Side basses in argument of function doWork
+     * is zero. For other entity types side can be used as argument of this
+     * function.
+     *
+     * \code
+     * MoFEMErrorCode doWork(int side, EntityType type,
+     *                     DataForcesAndSourcesCore::EntData &data) {
+     *  MoFEMFunctionBegin;
+     *
+     *  if (type == MBVERTEX) {
+     *    for (int n = 0; n != number_of_nodes; ++n)
+     *      EntityHandle ent = getSideEntity(n, type);
+     *
+     *      // Do somthing
+     *
+     *  } else {
+     *    EntityHandle ent = getSideEntity(side, type);
+     *
+     *    // Do somthing
+     *
+     *  }
+     *
+     *  MoFEMFunctionReturn(0);
+     * }
+     * \endcode
+     *
+     * @param side_number
+     * @param type
+     */
+    inline EntityHandle getSideEntity(const int side_number,
+                                      const EntityType type) {
+      if (auto side_ptr = getSideNumberPtr(side_number, type).lock())
+        return side_ptr->ent;
+      else
+        return 0;
+    }
+
+    /**
+     * @brief Get the number of nodes on finite element 
+     * 
+     * @return int 
+     */
+    inline int getNumberOfNodesOnElement() {
+      int num_nodes;
+      CHKERR ptrFE->getNumberOfNodes(num_nodes);
+      return num_nodes;
+    }
+
     /** \brief Get row indices
 
     Field could be or not declared for this element but is declared for problem
