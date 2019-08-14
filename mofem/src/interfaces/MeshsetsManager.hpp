@@ -574,6 +574,22 @@ struct MeshsetsManager : public UnknownInterface {
                             EntityHandle &meshset) const;
 
   /**
+   * @brief Check if meshset constains entities
+   * 
+   * @param ms_id 
+   * @param cubit_bc_type 
+   * @param entities 
+   * @param num_entities 
+   * @param operation_type 
+   * @return true 
+   * @return false 
+   */
+  bool checkIfMeshsetContainsEntities(
+      const int ms_id, const unsigned int cubit_bc_type,
+      const EntityHandle *entities, int num_entities,
+      const int operation_type = moab::Interface::INTERSECT);
+
+  /**
    * \ingroup mofem_meshset_mng
    * \brief get all CUBIT meshsets by CUBIT type
    *
@@ -582,6 +598,7 @@ struct MeshsetsManager : public UnknownInterface {
    */
   MoFEMErrorCode getMeshsetsByType(const unsigned int cubit_bc_type,
                                    Range &meshsets) const;
+
 
   /**
    * \brief add blocksets reading config file

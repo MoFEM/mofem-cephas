@@ -2,7 +2,8 @@
  * \file boundary_marker.cpp
  * \example boundary_marker.cpp
  *
- * Mark boundary
+ * Mark skin entities, i.e. boundary, next check DOFs if are properly marked
+ * when accessed form user data operator.
  *
  */
 
