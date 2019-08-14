@@ -1491,6 +1491,10 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
 
+  treeSurfPtr = boost::shared_ptr<OrientedBoxTreeTool>(
+      new OrientedBoxTreeTool(&moab, "ROOTSETSURF", true));
+  CHKERR treeSurfPtr->build(cutNewSurfaces, rootSetSurf);
+
   // takes body skin
   Skinner skin(&moab);
   Range tets_skin;
@@ -1657,8 +1661,14 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
           FTensor::Tensor1<double, 3> t_edge_point, t_front_point;
           t_edge_point(i) = t_e0(i) + t_edge * t_edge_delta(i);
           t_front_point(i) = t_f0(i) + t_front * t_front_delta(i);
+
+          EntityHandle facets_out;
+          FTensor::Tensor1<double, 3> t_point_on_cutting_surface;
+          CHKERR treeSurfPtr->closest_to_location(
+              &t_front_point(0), rootSetSurf, &t_point_on_cutting_surface(0),
+              facets_out);
           FTensor::Tensor1<double, 3> t_ray;
-          t_ray(i) = t_front_point(i) - t_edge_point(i);
+          t_ray(i) = t_point_on_cutting_surface(i) - t_edge_point(i);
           const double dist = sqrt(t_ray(i) * t_ray(i));
 
           // that imply that edges have common point
