@@ -70,25 +70,25 @@ int main(int argc, char *argv[]) {
       for (auto &it : meshsets_mng->getMeshsetsMultindex())
         cout << it << endl;
       MoFEMFunctionReturn(0);
-  };
+    };
 
-  auto check_meshset = [&](const Range skin_ents) {
-    MoFEMFunctionBegin;
-    std::vector<EntityHandle> ents(skin_ents.size());
-    std::copy(skin_ents.begin(), skin_ents.end(), ents.begin());
-    const bool test = meshsets_mng->checkIfMeshsetContainsEntities(
-        1, BLOCKSET, &*ents.begin(), ents.size());
-    if (!test)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-              "All entities should be in blockset");
-    MoFEMFunctionReturn(0);
-  };
+    auto check_meshset = [&](const Range skin_ents) {
+      MoFEMFunctionBegin;
+      std::vector<EntityHandle> ents(skin_ents.size());
+      std::copy(skin_ents.begin(), skin_ents.end(), ents.begin());
+      const bool test = meshsets_mng->checkIfMeshsetContainsEntities(
+          1, BLOCKSET, &*ents.begin(), ents.size());
+      if (!test)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                "All entities should be in blockset");
+      MoFEMFunctionReturn(0);
+    };
 
-  auto skin_ents = get_ents_on_mesh_skin();
-  CHKERR add_blockset(skin_ents);
-  CHKERR print_blocksets();
-  CHKERR check_meshset(skin_ents);
-    }
+    auto skin_ents = get_ents_on_mesh_skin();
+    CHKERR add_blockset(skin_ents);
+    CHKERR print_blocksets();
+    CHKERR check_meshset(skin_ents);
+  }
   CATCH_ERRORS;
 
   CHKERR MoFEM::Core::Finalize();
