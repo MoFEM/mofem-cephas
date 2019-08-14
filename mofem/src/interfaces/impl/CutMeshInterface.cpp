@@ -500,16 +500,15 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
 
       VectorDouble3 n(3);
       CHKERR tools_interface->getTriNormal(facets_out, &*n.begin());
+      n /= norm_2(n);
 
       VectorDouble3 delta = point_out - point_in;
       if (norm_2(delta) < std::numeric_limits<double>::epsilon()) {
-        const double eps =
-            (static_cast<double>((2 * std::rand()) - RAND_MAX) / RAND_MAX) *
-            std::numeric_limits<float>::epsilon();
-        delta += n * eps;
+        if(std::rand() % 2 == 0)
+          delta += n * std::numeric_limits<double>::epsilon();
+        else 
+          delta -= n * std::numeric_limits<double>::epsilon();
       }
-
-      n /= norm_2(n);
 
       auto dist_vec = getVectorAdaptor(&dist_surface_vec[3 * index], 3);
       noalias(dist_vec) = delta;
