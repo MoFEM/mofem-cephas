@@ -45,7 +45,10 @@ struct OpFace : public FaceEleOp {
     if (nb_dofs == 0)
       MoFEMFunctionReturnHot(0);
 
-    auto get_bioundary_marker_directly_from_rage = [&]() {
+    // This function takes entities on DOFs, and check if those entities are
+    // contained in the range. Note it is local element vector, which is used
+    // to validate of global local vector.
+    auto get_boundary_marker_directly_from_range = [&]() {
       std::vector<bool> ents_marker_used_for_testing;
       ents_marker_used_for_testing.resize(data.getLocalIndices().size());
       switch (type) {
@@ -130,6 +133,10 @@ int main(int argc, char *argv[]) {
     };
 
     auto skin_ents = get_ents_on_mesh_skin();
+
+    // Get global local vector of marked DOFs. Is global, since is set for all
+    // DOFs on processor. Is local since only DOFs on processor are in the
+    // vector. To access DOFs use local indices.
     auto marker = mark_boundary_dofs(skin_ents);
 
     boost::shared_ptr<FaceEle> fe(new FaceEle(m_field));
