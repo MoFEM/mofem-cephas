@@ -70,7 +70,7 @@ struct OpFace : public FaceEleOp {
       return ents_marker_used_for_testing;
     };
 
-    auto test_marker = get_bioundary_marker_directly_from_rage();
+    auto test_marker = get_boundary_marker_directly_from_range();
     for (size_t n = 0; n != nb_dofs; ++n) {
       const size_t local_index = data.getLocalIndices()[n];
       if (test_marker[n] != mArker[local_index])
