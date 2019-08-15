@@ -649,7 +649,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(
       const auto dist0 = get_tag_data(th, conn[0]);
       const auto dist1 = get_tag_data(th, conn[1]);
       const double min_dist = std::min(norm_2(dist0), norm_2(dist1));
-      if (min_dist < 0.5 * length) {
+      if (min_dist < length) {
         auto opposite = inner_prod(dist0, dist1);
         if (opposite <= 0) {
           const double sign_dist0 = signed_norm(dist0);
