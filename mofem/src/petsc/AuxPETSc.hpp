@@ -130,6 +130,9 @@ struct SmartPetscObj
       : boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type>(o,
                                                                       false) {}
   operator OBJ() { return this->get(); }
+  explicit operator PetscObject() {
+    return reinterpret_cast<PetscObject>(this->get());
+  }
 
   int use_count() const {
     if (this->get()) {
