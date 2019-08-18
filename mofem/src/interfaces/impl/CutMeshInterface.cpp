@@ -393,10 +393,9 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
 
   CHKERR cutAndTrim(first_bit, th, tol_cut, tol_cut_close, tol_trim_close,
                     &fixed_edges, &corner_nodes, update_meshsets, debug);
-  if (debug) {
+  if (debug) 
     CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "cut_trim_ents_not_in_database.vtk", "VTK", "");
-  }
 
   BitRefLevel bit_level1 = BitRefLevel().set(first_bit - 1);
   BitRefLevel bit_level2 = get_back_bit_levels();
@@ -2007,9 +2006,18 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
     barrier_vertices.merge(fixed_edges_faces_vertices);
   }
 
-  if (debug && !barrier_vertices.empty())
-    CHKERR SaveData(m_field.get_moab())("barrier_vertices.vtk",
-                                        barrier_vertices);
+  auto remove_faces_on_skin = [&]() {
+    MoFEMFunctionBegin;
+    Range skin_faces = intersect(trimNewSurfaces, trim_tets_skin);
+    if(!skin_faces.empty()) {
+      Range add_to_barrier;
+      CHKERR moab.get_connectivity(skin_faces, add_to_barrier, false);
+      barrier_vertices.merge(add_to_barrier);
+      for(auto f : skin_faces)
+        trimNewSurfaces.erase(f);
+    }
+    MoFEMFunctionReturn(0);
+  };
 
   auto get_trim_free_edges = [&]() {
     // get current surface skin
@@ -2030,8 +2038,13 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
     return free_edges;
   };
 
-  int nn = 0;
+  CHKERR remove_faces_on_skin();
 
+  if (debug && !barrier_vertices.empty())
+    CHKERR SaveData(m_field.get_moab())("barrier_vertices.vtk",
+                                        barrier_vertices);
+
+  int nn = 0;
   Range out_edges;
   while (!(out_edges = get_trim_free_edges()).empty()) {
 
@@ -2052,6 +2065,11 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
     trimNewSurfaces = subtract(trimNewSurfaces, outside_faces);
     ++nn;
   }
+
+  if (debug && !trimNewSurfaces.empty())
+    CHKERR SaveData(m_field.get_moab())(
+        "trimNewSurfaces_" + boost::lexical_cast<std::string>(nn) + ".vtk",
+        trimNewSurfaces);
 
   MoFEMFunctionReturn(0);
 }
