@@ -393,10 +393,9 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
 
   CHKERR cutAndTrim(first_bit, th, tol_cut, tol_cut_close, tol_trim_close,
                     &fixed_edges, &corner_nodes, update_meshsets, debug);
-  if (debug) {
+  if (debug) 
     CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "cut_trim_ents_not_in_database.vtk", "VTK", "");
-  }
 
   BitRefLevel bit_level1 = BitRefLevel().set(first_bit - 1);
   BitRefLevel bit_level2 = get_back_bit_levels();
