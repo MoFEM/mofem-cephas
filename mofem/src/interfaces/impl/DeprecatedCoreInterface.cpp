@@ -354,30 +354,29 @@ MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId(
       ms_id, cubit_bc_type, cubit_meshset_ptr);
 }
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
-    const int msId, const CubitBCType cubit_bc_type, const int dimension,
+    const int ms_id, const CubitBCType cubit_bc_type, const int dimension,
     Range &entities, const bool recursive) {
   return getInterface<MeshsetsManager>()->getEntitiesByDimension(
-      msId, cubit_bc_type.to_ulong(), dimension, entities, recursive);
+      ms_id, cubit_bc_type.to_ulong(), dimension, entities, recursive);
 }
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
-    const int msId, const CubitBCType cubit_bc_type, Range &entities,
+    const int ms_id, const CubitBCType cubit_bc_type, Range &entities,
     const bool recursive) {
   return getInterface<MeshsetsManager>()->getEntitiesByDimension(
-      msId, cubit_bc_type.to_ulong(), entities, recursive);
+      ms_id, cubit_bc_type.to_ulong(), entities, recursive);
 }
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
     const int ms_id, const unsigned int cubit_bc_type, const int dimension,
     Range &entities, const bool recursive) {
-  return get_cubit_msId_entities_by_dimension(ms_id, CubitBCType(cubit_bc_type),
-                                              dimension, entities, recursive);
+  return getInterface<MeshsetsManager>()->getEntitiesByDimension(
+      ms_id, cubit_bc_type, dimension, entities, recursive);
 }
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
     const int ms_id, const unsigned int cubit_bc_type, Range &entities,
     const bool recursive) {
-  return get_cubit_msId_entities_by_dimension(ms_id, CubitBCType(cubit_bc_type),
-                                              entities, recursive);
+  return getInterface<MeshsetsManager>()->getEntitiesByDimension(
+      ms_id, cubit_bc_type, entities, recursive);
 }
-
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_meshset(
     const int ms_id, const unsigned int cubit_bc_type, EntityHandle &meshset) {
   return getInterface<MeshsetsManager>()->getMeshset(ms_id, cubit_bc_type,

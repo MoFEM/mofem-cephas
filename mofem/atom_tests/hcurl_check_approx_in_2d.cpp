@@ -1,11 +1,8 @@
 /**
- * \file forces_and_sources_check_approx_of_hcurl_in_2d
- * \example forces_and_sources_check_approx_of_hcurl_in_2d.cpp
+ * \file hcurl_check_approx_in_2d
+ * \example hcurl_check_approx_in_2d.cpp
  *
  * Approximate polynomial in 2D and check direvatives
- *
- * \todo Add polynomial which is divergence free then Demkowicz truncated h-curl
- * space could be tested as well.
  *
  */
 
@@ -29,9 +26,15 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-struct TestFE : public MoFEM::FaceElementForcesAndSourcesCore {
-  TestFE(MoFEM::Interface &m_field)
-      : MoFEM::FaceElementForcesAndSourcesCore(m_field) {}
+using FaceEle = MoFEM::FaceElementForcesAndSourcesCoreSwitch<
+    FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY |
+    FaceElementForcesAndSourcesCore::NO_CONTRAVARIANT_TRANSFORM_HDIV |
+    FaceElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+
+using FaceEleOp = FaceEle::UserDataOperator;
+
+struct TestFE : public FaceEle {
+  TestFE(MoFEM::Interface &m_field) : FaceEle(m_field) {}
   int getRule(int order) { return 2 * order; }
 };
 
@@ -140,6 +143,7 @@ struct ApproxFunctions {
     return FTensor::Tensor1<double,3>(a, b, 0.);
 
   }
+
   static FTensor::Tensor2<double, 3, 2> diffFun(const double x,
                                                 const double y) {
     return FTensor::Tensor2<double, 3, 2>(
@@ -170,14 +174,11 @@ struct ApproxFunctions {
   }
 };
 
-struct OpAssembleMatAndVec
-    : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+struct OpAssembleMatAndVec : public FaceEleOp {
   Mat A;
   Vec F;
   OpAssembleMatAndVec(Mat a, Vec f)
-      : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
-            "FIELD1", "FIELD1", OPROW | OPROWCOL),
-        A(a), F(f) {
+      : FaceEleOp("FIELD1", "FIELD1", OPROW | OPROWCOL), A(a), F(f) {
     sYmm = false; // FIXME problem is symmetric, should use that
   }
 
@@ -204,8 +205,7 @@ struct OpAssembleMatAndVec
         ++t_base_fun;
       }
     }
-    CHKERR VecSetValues(F, nb_dofs, &*data.getIndices().data().begin(),
-                        &*nF.data().begin(), ADD_VALUES);
+    CHKERR VecSetValues(F, data, &*nF.data().begin(), ADD_VALUES);
     MoFEMFunctionReturn(0);
   }
 
@@ -237,21 +237,16 @@ struct OpAssembleMatAndVec
         ++t_base_row;
       }
     }
-    CHKERR MatSetValues(A, nb_dofs_row, &*row_data.getIndices().begin(),
-                        nb_dofs_col, &*col_data.getIndices().begin(),
-                        &*nA.data().begin(), ADD_VALUES);
+    CHKERR MatSetValues(A, row_data, col_data, &*nA.data().begin(), ADD_VALUES);
     MoFEMFunctionReturn(0);
   }
 };
 
-struct OpValsDiffVals
-    : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+struct OpValsDiffVals : public FaceEleOp {
   MatrixDouble &vAls;
   MatrixDouble &diffVals;
   OpValsDiffVals(MatrixDouble &vals, MatrixDouble &diff_vals)
-      : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1",
-                                                                 OPROW),
-        vAls(vals), diffVals(diff_vals) {}
+      : FaceEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals) {}
 
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 2> j;
@@ -289,14 +284,11 @@ struct OpValsDiffVals
   }
 };
 
-struct OpCheckValsDiffVals
-    : public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+struct OpCheckValsDiffVals : public FaceEleOp {
   MatrixDouble &vAls;
   MatrixDouble &diffVals;
   OpCheckValsDiffVals(MatrixDouble &vals, MatrixDouble &diff_vals)
-      : MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1",
-                                                                 OPROW),
-        vAls(vals), diffVals(diff_vals) {}
+      : FaceEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals) {}
 
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 2> j;
@@ -312,6 +304,7 @@ struct OpCheckValsDiffVals
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
         const double x = getCoordsAtGaussPts()(gg, 0);
         const double y = getCoordsAtGaussPts()(gg, 1);
+
         FTensor::Tensor1<double, 3> delta_val;
         delta_val(i) = t_vals(i) - ApproxFunctions::fUn(x, y)(i);
         FTensor::Tensor2<double, 3, 2> delta_diff_val;
@@ -325,7 +318,7 @@ struct OpCheckValsDiffVals
         }
         if (err_diff_val > eps) {
           SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                  "Wrong derivative of value %4.3e", err_diff_val);
+                   "Wrong derivative of value %4.3e", err_diff_val);
         }
         ++t_vals;
         ++t_diff_vals;
@@ -343,11 +336,10 @@ int main(int argc, char *argv[]) {
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
-    int rank;
-    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
     // Read mesh to MOAB
     CHKERR moab.load_file("rectangle.h5m", 0, "");
+    // CHKERR moab.load_file("bigr.h5m", 0, "");
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
@@ -357,8 +349,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core;
 
     // set entities bit level
-    BitRefLevel bit_level0;
-    bit_level0.set(0);
+    BitRefLevel bit_level0 = BitRefLevel().set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 2, bit_level0);
 
@@ -427,36 +418,59 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
                                                               COL, D);
 
-    {
+    auto assemble_matrices_and_vectors = [&]() {
+      MoFEMFunctionBegin;
       TestFE fe(m_field);
+      MatrixDouble inv_jac(2, 2), jac(2, 2);
+      fe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
+      fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+      fe.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
+      fe.getOpPtrVector().push_back(
+          new OpSetContravariantPiolaTransformFace(jac));
       fe.getOpPtrVector().push_back(new OpAssembleMatAndVec(A, F));
+      CHKERR VecZeroEntries(F);
+      CHKERR MatZeroEntries(A);
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE1", fe);
       CHKERR VecAssemblyBegin(F);
       CHKERR VecAssemblyEnd(F);
       CHKERR MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
       CHKERR MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-    }
+      MoFEMFunctionReturn(0);
+    };
 
-    // Solver problem
-    auto solver = createKSP(PETSC_COMM_WORLD);
-    CHKERR KSPSetOperators(solver, A, A);
-    CHKERR KSPSetFromOptions(solver);
-    CHKERR KSPSetUp(solver);
-    CHKERR KSPSolve(solver, F, D);
-    CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
-    CHKERR m_field.getInterface<VecManager>()->setLocalGhostVector(
-        "TEST_PROBLEM", COL, D, INSERT_VALUES, SCATTER_REVERSE);
+    auto solve_problem = [&] {
+      MoFEMFunctionBegin;
+      auto solver = createKSP(PETSC_COMM_WORLD);
+      CHKERR KSPSetOperators(solver, A, A);
+      CHKERR KSPSetFromOptions(solver);
+      CHKERR KSPSetUp(solver);
+      CHKERR KSPSolve(solver, F, D);
+      CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
+      CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
+      CHKERR m_field.getInterface<VecManager>()->setLocalGhostVector(
+          "TEST_PROBLEM", COL, D, INSERT_VALUES, SCATTER_REVERSE);
+      MoFEMFunctionReturn(0);
+    };
 
-    {
+    auto check_solution = [&] {
+      MoFEMFunctionBegin;
       TestFE fe(m_field);
-      MatrixDouble inv_jac, vals, diff_vals;
+      MatrixDouble jac(2, 2), inv_jac(2, 2), vals, diff_vals;
+      fe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
       fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+      fe.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
+      fe.getOpPtrVector().push_back(
+          new OpSetContravariantPiolaTransformFace(jac));
       fe.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
       fe.getOpPtrVector().push_back(new OpValsDiffVals(vals, diff_vals));
       fe.getOpPtrVector().push_back(new OpCheckValsDiffVals(vals, diff_vals));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE1", fe);
-    }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR assemble_matrices_and_vectors();
+    CHKERR solve_problem();
+    CHKERR check_solution();
 
   }
   CATCH_ERRORS;

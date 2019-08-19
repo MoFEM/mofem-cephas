@@ -294,19 +294,18 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
   }
 
   // Loop over mother adjacent entities to use them as parents
-  auto get_adj_father_ents = [&](const Range &ents, const bool create) {
+  auto get_adj_ents = [&](const Range &ents, const bool create) {
     Range adj;
     for (int dd = 1; dd <= 2; dd++)
       CHKERR m_field.get_moab().get_adjacencies(ents, dd, create, adj,
                                                 moab::Interface::UNION);
     return adj;
   };
-  auto adj_father_ents_existing = get_adj_father_ents(created_tets, false);
-  auto adj_father_ents = subtract(get_adj_father_ents(created_tets, true),
-                                  adj_father_ents_existing);
+  auto adj_crated_ents = get_adj_ents(created_tets, true);
+  adj_crated_ents.erase(common_edge[0]);
 
   FaceMapIdx face_map;
-  for (auto ent : adj_father_ents) {
+  for (auto ent : adj_crated_ents) {
     int num_nodes;
     const EntityHandle *conn = get_conn(ent, &num_nodes);
     EntityHandle small_conn[num_nodes];
@@ -328,7 +327,7 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
     }
   }
 
-  auto adj_mother_ents = get_adj_father_ents(mother_tets, false);
+  auto adj_mother_ents = get_adj_ents(mother_tets, false);
   adj_mother_ents.erase(common_edge[0]);
   for (auto ent : adj_mother_ents) {
     int num_nodes;

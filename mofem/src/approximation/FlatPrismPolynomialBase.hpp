@@ -4,92 +4,89 @@
 */
 
 /* This file is part of MoFEM.
-* MoFEM is free software: you can redistribute it and/or modify it under
-* the terms of the GNU Lesser General Public License as published by the
-* Free Software Foundation, either version 3 of the License, or (at your
-* option) any later version.
-*
-* MoFEM is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-* License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #ifndef __FLATPRISMPOLYNOMIALBASE_HPP__
 #define __FLATPRISMPOLYNOMIALBASE_HPP__
 
 namespace MoFEM {
 
-  static const MOFEMuuid IDD_FLATPRISM_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(FLATPRISM_BASE_FUNCTION_INTERFACE));
+static const MOFEMuuid IDD_FLATPRISM_BASE_FUNCTION =
+    MOFEMuuid(BitIntefaceId(FLATPRISM_BASE_FUNCTION_INTERFACE));
 
-  /**
-  * \brief Class used to pass element data to calculate base functions on flat prism
-  *
-  * \ingroup mofem_base_functions
-  * FIXME: Need moab and mofem finite element structure to work (that not perfect)
-  */
-  struct FlatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
+/**
+ * \brief Class used to pass element data to calculate base functions on flat
+ * prism
+ *
+ * \ingroup mofem_base_functions
+ * FIXME: Need moab and mofem finite element structure to work (that not
+ * perfect)
+ */
+struct FlatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
 
-    MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                   UnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
 
-    moab::Interface &mOab;
-    const NumeredEntFiniteElement *fePtr;
+  moab::Interface &mOab;
+  const NumeredEntFiniteElement *fePtr;
 
-    FlatPrismPolynomialBaseCtx(
-      DataForcesAndSourcesCore &data,
-      moab::Interface &moab,
-      const NumeredEntFiniteElement *fe_ptr,
-      const FieldSpace space,
+  FlatPrismPolynomialBaseCtx(
+      DataForcesAndSourcesCore &data, moab::Interface &moab,
+      const NumeredEntFiniteElement *fe_ptr, const FieldSpace space,
       const FieldApproximationBase base,
-      const FieldApproximationBase copy_node_base = LASTBASE
-    );
+      const FieldApproximationBase copy_node_base = LASTBASE);
 
-    ~FlatPrismPolynomialBaseCtx();
+  ~FlatPrismPolynomialBaseCtx();
+};
 
-  };
+/**
+ * \brief Calculate base functions on tetrahedral
+ * \ingroup mofem_base_functions
+ * FIXME: Need moab and mofem finite element structure to work (that not
+ * perfect)
+ */
+struct FlatPrismPolynomialBase : public BaseFunction {
 
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
 
-  /**
-  * \brief Calculate base functions on tetrahedral
-  * \ingroup mofem_base_functions
-  * FIXME: Need moab and mofem finite element structure to work (that not perfect)
-  */
-  struct FlatPrismPolynomialBase: public BaseFunction {
+  FlatPrismPolynomialBase();
+  ~FlatPrismPolynomialBase();
 
-    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,UnknownInterface** iface) const;
+  MoFEMErrorCode getValue(MatrixDouble &pts,
+                          boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
 
-    FlatPrismPolynomialBase();
-    ~FlatPrismPolynomialBase();
+private:
+  FlatPrismPolynomialBaseCtx *cTx;
 
-    MoFEMErrorCode getValue(
-      MatrixDouble &pts,boost::shared_ptr<BaseFunctionCtx> ctx_ptr
-    );
+  MoFEMErrorCode getValueH1(MatrixDouble &pts);
 
-  private:
+  MoFEMErrorCode getValueL2(MatrixDouble &pts);
 
-    FlatPrismPolynomialBaseCtx *cTx;
+  MoFEMErrorCode getValueHdiv(MatrixDouble &pts);
 
-    MoFEMErrorCode getValueH1(MatrixDouble &pts);
+  MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
 
-    MoFEMErrorCode getValueL2(MatrixDouble &pts);
+  int numNodes;
+  const EntityHandle *connPrism;
+  const EntityHandle *connFace3;
+  const EntityHandle *connFace4;
+  int faceNodes[2][3];
+  MatrixDouble N;
+  MatrixDouble diffN;
+};
 
-    MoFEMErrorCode getValueHdiv(MatrixDouble &pts);
-
-    MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
-
-    int numNodes;
-    const EntityHandle *connPrism;
-    const EntityHandle *connFace3;
-    const EntityHandle *connFace4;
-    int faceNodes[2][3];
-    MatrixDouble N;
-    MatrixDouble diffN;
-
-  };
-
-}
+} // namespace MoFEM
 
 #endif //__FLATPRISMPOLYNOMIALBASE_HPP__

@@ -27,7 +27,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-/** \brief Volume finite element
+/** \brief Volume finite element base
  \ingroup mofem_forces_and_sources_volume_element
 
  User is implementing own operator at Gauss point level, by class
@@ -35,102 +35,79 @@ namespace MoFEM {
  number of operator can be added by pushing objects to OpPtrVector
 
  */
-struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
-
-  VectorDouble coords;
-  MatrixDouble3by3 jAc;
-  MatrixDouble3by3 invJac;
-
-  OpSetInvJacH1 opSetInvJacH1;
-  OpSetContravariantPiolaTransform opContravariantPiolaTransform;
-  OpSetCovariantPiolaTransform opCovariantPiolaTransform;
-  OpSetInvJacHdivAndHcurl opSetInvJacHdivAndHcurl;
+struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
   std::string meshPositionsFieldName;
-  MatrixDouble hoCoordsAtGaussPts;
-  MatrixDouble hoGaussPtsJac;
-  MatrixDouble hoGaussPtsInvJac;
-  VectorDouble hoGaussPtsDetJac;
 
-  OpGetDataAndGradient<3, 3>
-      opHOatGaussPoints; ///< higher order geometry data at Gauss pts
-  OpSetHoInvJacH1 opSetHoInvJacH1;
-  OpSetHoContravariantPiolaTransform opHoContravariantTransform;
-  OpSetHoCovariantPiolaTransform opHoCovariantTransform;
-  OpSetHoInvJacHdivAndHcurl opSetHoInvJacHdivAndHcurl;
-
-  VolumeElementForcesAndSourcesCore(Interface &m_field,
-                                    const EntityType type = MBTET);
-  virtual ~VolumeElementForcesAndSourcesCore() {}
-
-  double vOlume;
-
-  int num_nodes;
-  const EntityHandle *conn;
-  FTensor::Tensor2<double *, 3, 3> tJac;
-  FTensor::Tensor2<double *, 3, 3> tInvJac;
-
-  MatrixDouble coordsAtGaussPts;
+  VolumeElementForcesAndSourcesCoreBase(Interface &m_field,
+                                        const EntityType type = MBTET);
 
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
    */
   struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const FieldSpace space)
-        : ForcesAndSourcesCore::UserDataOperator(space) {}
-
-    UserDataOperator(const std::string &field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(field_name, type) {}
-
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type,
-                     const bool symm = true)
-        : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
-                                                 type, symm) {}
+    using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
     /** \brief get element number of nodes
      */
     inline int getNumNodes() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->num_nodes;
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
+          ->num_nodes;
     }
 
     /** \brief get element connectivity
      */
     inline const EntityHandle *getConn() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->conn;
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->conn;
     }
 
     /** \brief element volume (linear geometry)
      */
-    inline double getVolume() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->vOlume;
+    inline double getVolume() const {
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
+          ->vOlume;
+    }
+
+    /** \brief element volume (linear geometry)
+     */
+    inline double &getVolume() {
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
+          ->vOlume;
     }
 
     /**
      * \brief get element Jacobian
      */
     inline FTensor::Tensor2<double *, 3, 3> &getJac() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->tJac;
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->tJac;
     }
 
     /**
      * \brief get element inverse Jacobian
      */
     inline FTensor::Tensor2<double *, 3, 3> &getInvJac() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->tInvJac;
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
+          ->tInvJac;
     }
 
     /**
      * \brief get measure of element
-     * @return area of face
+     * @return volume
      */
-    inline double getMeasure() { return getVolume(); }
+    inline double getMeasure() const { return getVolume(); }
+
+    /**
+     * \brief get measure of element
+     * @return volume
+     */
+    inline double &getMeasure() { return getVolume(); }
 
     /** \brief nodal coordinates
      */
     inline VectorDouble &getCoords() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)->coords;
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
+          ->coords;
     }
 
     /** \brief Gauss points and weight, matrix (nb. of points x 3)
@@ -140,7 +117,7 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     */
     inline MatrixDouble &getCoordsAtGaussPts() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
           ->coordsAtGaussPts;
     }
 
@@ -148,22 +125,22 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      * element geometry)
      */
     inline MatrixDouble &getHoCoordsAtGaussPts() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
           ->hoCoordsAtGaussPts;
     }
 
     inline MatrixDouble &getHoGaussPtsJac() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
           ->hoGaussPtsJac;
     }
 
     inline MatrixDouble &getHoGaussPtsInvJac() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
           ->hoGaussPtsInvJac;
     }
 
     inline VectorDouble &getHoGaussPtsDetJac() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE)
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
           ->hoGaussPtsDetJac;
     }
 
@@ -225,8 +202,8 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     /** \brief return pointer to Generic Volume Finite Element object
      */
-    inline const VolumeElementForcesAndSourcesCore *getVolumeFE() {
-      return static_cast<VolumeElementForcesAndSourcesCore *>(ptrFE);
+    inline const VolumeElementForcesAndSourcesCoreBase *getVolumeFE() {
+      return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE);
     }
 
     /**
@@ -294,21 +271,78 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     getCurlOfHCurlBaseFunctions(int side, EntityType type,
                                 DataForcesAndSourcesCore::EntData &data, int gg,
                                 MatrixDouble &curl);
-
-    /// \deprecated use getFTensor1CoordsAtGaussPts
-    DEPRECATED inline auto getTensor1CoordsAtGaussPts() {
-      return getFTensor1CoordsAtGaussPts();
-    }
-
-    /// \deprecated use getFTensor1HoCoordsAtGaussPts
-    DEPRECATED inline auto getTensor1HoCoordsAtGaussPts() {
-      return getFTensor1HoCoordsAtGaussPts();
-    }
-
   };
 
-  unsigned int nbGaussPts; ///< Number of integration points
+  enum Switches {
+    NO_HO_GEOMETRY = 1 << 0 | 1 << 2,
+    NO_TRANSFORM = 1 << 1 | 1 << 2,
+    NO_HO_TRANSFORM = 1 << 2
+  };
 
+  template <int SWITCH> MoFEMErrorCode OpSwitch() {
+    MoFEMFunctionBegin;
+
+    if (numeredEntFiniteElementPtr->getEntType() != MBTET)
+      MoFEMFunctionReturnHot(0);
+    CHKERR createDataOnElement();
+
+    CHKERR calculateVolumeAndJacobian();
+    CHKERR getSpaceBaseAndOrderOnElement();
+    CHKERR setIntegrationPts();
+    if (gaussPts.size2() == 0)
+      MoFEMFunctionReturnHot(0);
+    CHKERR calculateCoordinatesAtGaussPts();
+    CHKERR calculateBaseFunctionsOnElement();
+
+    if (!(NO_TRANSFORM & SWITCH))
+      CHKERR transformBaseFunctions();
+
+    try {
+      MatrixDouble new_diff_n;
+      for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+        FTensor::Index<'i', 3> i;
+        FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+        DataForcesAndSourcesCore::EntData &data =
+            dataH1.dataOnEntities[MBVERTEX][0];
+        if ((data.getDiffN(base).size1() == 4) &&
+            (data.getDiffN(base).size2() == 3)) {
+          const size_t nb_gauss_pts = gaussPts.size2();
+          const size_t nb_base_functions = 4;
+          new_diff_n.resize(nb_gauss_pts, 3 * nb_base_functions, false);
+          double *new_diff_n_ptr = &*new_diff_n.data().begin();
+          FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_new_diff_n(
+              new_diff_n_ptr, &new_diff_n_ptr[1], &new_diff_n_ptr[2]);
+          double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
+          for (unsigned int gg = 0; gg != nb_gauss_pts; gg++) {
+            FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
+                t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
+            for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
+              t_new_diff_n(i) = t_diff_n(i);
+              ++t_new_diff_n;
+              ++t_diff_n;
+            }
+          }
+          data.getDiffN(base).resize(new_diff_n.size1(), new_diff_n.size2(),
+                                     false);
+          data.getDiffN(base).data().swap(new_diff_n.data());
+        }
+      }
+    }
+    CATCH_ERRORS;
+
+    if (!(NO_HO_GEOMETRY & SWITCH))
+      CHKERR calculateHoJacobian();
+
+    if (!(NO_HO_TRANSFORM & SWITCH))
+      CHKERR transformHoBaseFunctions();
+
+    // Iterate over operators
+    CHKERR loopOverOperators();
+
+    MoFEMFunctionReturn(0);
+  }
+
+protected:
   // Note that functions below could be overloaded by user to change default
   // behavior of the element.
 
@@ -317,11 +351,6 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
    * @return Error code
    */
   virtual MoFEMErrorCode setIntegrationPts();
-
-  /// \deprecated function with spelling mistake, use setIntegrationPts
-  DEPRECATED virtual MoFEMErrorCode setIntegartionPts() {
-    return setIntegrationPts();
-  }
 
   /**
    * \brief Calculate element volume and Jacobian
@@ -377,40 +406,142 @@ struct VolumeElementForcesAndSourcesCore : public ForcesAndSourcesCore {
    */
   virtual MoFEMErrorCode transformHoBaseFunctions();
 
-  MoFEMErrorCode operator()();
+  VectorDouble coords;
+  MatrixDouble3by3 jAc;
+  MatrixDouble3by3 invJac;
+
+  OpSetInvJacH1 opSetInvJacH1;
+  OpSetContravariantPiolaTransform opContravariantPiolaTransform;
+  OpSetCovariantPiolaTransform opCovariantPiolaTransform;
+  OpSetInvJacHdivAndHcurl opSetInvJacHdivAndHcurl;
+
+  MatrixDouble hoCoordsAtGaussPts;
+  MatrixDouble hoGaussPtsJac;
+  MatrixDouble hoGaussPtsInvJac;
+  VectorDouble hoGaussPtsDetJac;
+
+  OpGetDataAndGradient<3, 3>
+      opHOatGaussPoints; ///< higher order geometry data at Gauss pts
+  OpSetHoInvJacH1 opSetHoInvJacH1;
+  OpSetHoContravariantPiolaTransform opHoContravariantTransform;
+  OpSetHoCovariantPiolaTransform opHoCovariantTransform;
+  OpSetHoInvJacHdivAndHcurl opSetHoInvJacHdivAndHcurl;
+
+  double vOlume;
+
+  int num_nodes;
+  const EntityHandle *conn;
+  FTensor::Tensor2<double *, 3, 3> tJac;
+  FTensor::Tensor2<double *, 3, 3> tInvJac;
+
+  MatrixDouble coordsAtGaussPts;
+
+  friend class UserDataOperator;
 };
 
-struct FaceElementForcesAndSourcesCore;
+/**
+ * @brief Volume finite element with switches
+ *
+ * Using SWITCH to off functions
+ *
+ * @tparam SWITCH
+ */
+template <int SWITCH>
+struct VolumeElementForcesAndSourcesCoreSwitch
+    : public VolumeElementForcesAndSourcesCoreBase {
+
+  using VolumeElementForcesAndSourcesCoreBase::
+      VolumeElementForcesAndSourcesCoreBase;
+  using UserDataOperator =
+      VolumeElementForcesAndSourcesCoreBase::UserDataOperator;
+
+  MoFEMErrorCode operator()() { return OpSwitch<SWITCH>(); }
+};
+
+/** \brief Volume finite element default
+ \ingroup mofem_forces_and_sources_volume_element
+
+ */
+using VolumeElementForcesAndSourcesCore =
+    VolumeElementForcesAndSourcesCoreSwitch<0>;
+
+struct FaceElementForcesAndSourcesCoreBase;
 
 /**
- * \brief Volume element used to integrate on skeleton
+ * \brief Base volume element used to integrate on skeleton
  * \ingroup mofem_forces_and_sources_volume_element
  */
-struct VolumeElementForcesAndSourcesCoreOnSide
+struct VolumeElementForcesAndSourcesCoreOnSideBase
     : public VolumeElementForcesAndSourcesCore {
 
-  FaceElementForcesAndSourcesCore *faceFEPtr;
-  VolumeElementForcesAndSourcesCoreOnSide(Interface &m_field,
-                                          const EntityType type = MBTET)
+  VolumeElementForcesAndSourcesCoreOnSideBase(Interface &m_field,
+                                              const EntityType type = MBTET)
       : VolumeElementForcesAndSourcesCore(m_field, type), faceFEPtr(NULL) {}
-  ~VolumeElementForcesAndSourcesCoreOnSide() {}
+  ~VolumeElementForcesAndSourcesCoreOnSideBase() {}
 
+  /**
+   * @brief Set the pointer to face element on the side
+   *
+   * \note Function is is used by face element, while it iterates over elements
+   * on the side
+   *
+   * @param face_fe_ptr
+   * @return MoFEMErrorCode
+   */
   inline MoFEMErrorCode
-  setFaceFEPtr(const FaceElementForcesAndSourcesCore *face_fe_ptr) {
+  setSideFEPtr(const FaceElementForcesAndSourcesCoreBase *face_fe_ptr) {
     MoFEMFunctionBeginHot;
-    faceFEPtr = const_cast<FaceElementForcesAndSourcesCore *>(face_fe_ptr);
+    faceFEPtr = const_cast<FaceElementForcesAndSourcesCoreBase *>(face_fe_ptr);
     MoFEMFunctionReturnHot(0);
   }
 
   int getRule(int order) { return -1; };
-
-  int faceSense;      ///< Sense of face, could be 1 or -1
-  int faceSideNumber; ///< Face side number
-  int faceConnMap[3];
-  int tetConnMap[4];
-  int oppositeNode;
-
   MoFEMErrorCode setGaussPts(int order);
+
+  /**
+   * @brief Get the face nodes mapped on volume element
+   *
+   * \todo That this is not general, e.g., for quad number of nodes is 4.
+   *
+   * @return const std::array<int, 3>&
+   */
+  inline const std::array<int, 3> &getFaceConnMap() const {
+    return faceConnMap;
+  }
+
+  /**
+   * @brief Get face nodes maped on volume
+   *
+   * \todo That this is not general, e.g., for prism or hex, size of fixed array
+   * is wrong.
+   *
+   * @return const sdt::array<int, 4>&
+   */
+  inline const std::array<int, 4> &getTetConnMap() const { return tetConnMap; }
+
+  /**
+   * @brief Get node on volume opposite to volume element
+   *
+   * \todo That this is not general, e.g., for prism or hex, opoosite node is
+   * not unique.
+   *
+   * @return int
+   */
+  inline int getOppositeNode() const { return oppositeNode; }
+
+  /**
+   * @brief Sense face on volume
+   *
+   * @return int
+   */
+  inline int getFaceSense() const { return faceSense; }
+
+  /**
+   * @brief Face number on the volume
+   *
+   * @return int
+   */
+  inline int getFaceSideNumber() const { return faceSideNumber; }
 
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
@@ -418,22 +549,16 @@ struct VolumeElementForcesAndSourcesCoreOnSide
   struct UserDataOperator
       : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const std::string &field_name, const char type)
-        : VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,
-                                                              type) {}
-
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type)
-        : VolumeElementForcesAndSourcesCore::UserDataOperator(
-              row_field_name, col_field_name, type) {}
+    using VolumeElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
     /** \brief return pointer to Generic Volume Finite Element object
      */
-    inline const VolumeElementForcesAndSourcesCoreOnSide *getVolumeFE() const {
-      return static_cast<VolumeElementForcesAndSourcesCoreOnSide *>(ptrFE);
+    inline const VolumeElementForcesAndSourcesCoreOnSideBase *
+    getVolumeFE() const {
+      return static_cast<VolumeElementForcesAndSourcesCoreOnSideBase *>(ptrFE);
     }
 
-    inline FaceElementForcesAndSourcesCore *getFaceFEPtr() const {
+    inline FaceElementForcesAndSourcesCoreBase *getFaceFEPtr() const {
       return getVolumeFE()->faceFEPtr;
     }
 
@@ -452,12 +577,12 @@ struct VolumeElementForcesAndSourcesCoreOnSide
     }
 
     inline bool getEdgeFace(const int ee) const {
-      const bool edges_on_faces[6][4] = {{true, false, false, true}, // e0
-                                         {false, true, false, true}, // e1
-                                         {false, false, true, true}, // e2
-                                         {true, false, true, false}, // e3
-                                         {true, true, false, false}, // e4
-                                         {false, true, true, false}};
+      constexpr bool edges_on_faces[6][4] = {{true, false, false, true}, // e0
+                                             {false, true, false, true}, // e1
+                                             {false, false, true, true}, // e2
+                                             {true, false, true, false}, // e3
+                                             {true, true, false, false}, // e4
+                                             {false, true, true, false}};
       return edges_on_faces[ee][getFaceSideNumber()];
     }
 
@@ -488,11 +613,6 @@ struct VolumeElementForcesAndSourcesCoreOnSide
      */
     ublas::matrix_row<MatrixDouble> getNormalsAtGaussPts(const int gg);
 
-    /// \deprecated use getNormalsAtGaussPts
-    DEPRECATED inline auto getNormalsAtGaussPt(const int gg) {
-      return getNormalsAtGaussPts(gg);
-    }
-
     /** \brief get normal at integration points
 
       Example:
@@ -513,11 +633,6 @@ struct VolumeElementForcesAndSourcesCoreOnSide
                                                                 &ptr[2]);
     }
 
-    /// \deprecated use getFTensor1NormalsAtGaussPts
-    DEPRECATED inline auto getTensor1NormalsAtGaussPt() {
-      return getFTensor1NormalsAtGaussPts();
-    }
-
     /** \brief get face coordinates at Gauss pts.
 
     \note Coordinates should be the same what function getCoordsAtGaussPts
@@ -528,11 +643,42 @@ struct VolumeElementForcesAndSourcesCoreOnSide
     MatrixDouble &getFaceCoordsAtGaussPts();
   };
 
+private:
+  FaceElementForcesAndSourcesCoreBase *faceFEPtr;
+
+  int faceSense;      ///< Sense of face, could be 1 or -1
+  int faceSideNumber; ///< Face side number
+  std::array<int, 3> faceConnMap;
+  std::array<int, 4> tetConnMap;
+  int oppositeNode;
 };
 
-/// \deprecated Use VolumeElementForcesAndSourcesCore
-DEPRECATED typedef VolumeElementForcesAndSourcesCore
-    VolumeElementForcesAndSurcesCore;
+/**
+ * @brief Volume side finite element with switches
+ *
+ * Using SWITCH to off functions
+ *
+ * @tparam SWITCH
+ */
+template <int SWITCH>
+struct VolumeElementForcesAndSourcesCoreOnSideSwitch
+    : public VolumeElementForcesAndSourcesCoreOnSideBase {
+
+  using VolumeElementForcesAndSourcesCoreOnSideBase::
+      VolumeElementForcesAndSourcesCoreOnSideBase;
+
+  using UserDataOperator =
+      VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator;
+
+  MoFEMErrorCode operator()() { return OpSwitch<SWITCH>(); }
+};
+
+/** \brief Volume element used to integrate on skeleton
+ \ingroup mofem_forces_and_sources_volume_element
+
+ */
+using VolumeElementForcesAndSourcesCoreOnSide =
+    VolumeElementForcesAndSourcesCoreOnSideSwitch<0>;
 
 } // namespace MoFEM
 

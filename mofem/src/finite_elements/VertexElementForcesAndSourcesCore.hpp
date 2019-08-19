@@ -44,40 +44,32 @@ struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   VertexElementForcesAndSourcesCore(Interface &m_field)
       : ForcesAndSourcesCore(m_field){};
 
-  VectorDouble coords;
-
   /** \brief default operator for VERTEX element
     \ingroup mofem_forces_and_sources_vertex_element
     */
   struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const std::string &field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(field_name, type) {}
+    using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
-                                                 type) {}
-
-    inline VectorDouble &getCoords() {
+    inline VectorDouble3 &getCoords() {
       return static_cast<VertexElementForcesAndSourcesCore *>(ptrFE)->coords;
     }
   };
 
   MoFEMErrorCode operator()();
-};
 
-/// \deprecated Use VertexElementForcesAndSourcesCore
-DEPRECATED typedef VertexElementForcesAndSourcesCore
-    VertexElementForcesAndSurcesCore;
+  protected:
+    VectorDouble3 coords;
+    friend class UserDataOperator;
+};
 
 } // namespace MoFEM
 
 #endif //__VERTEXELEMENTFORCESANDSOURCESCORE_HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_forces_and_sources_vertex_element Vertex Element
-* \brief Finite element and operators for vertex entity
-*
-* \ingroup mofem_forces_and_sources
-******************************************************************************/
+/**
+ * \defgroup mofem_forces_and_sources_vertex_element Vertex Element
+ * \brief Finite element and operators for vertex entity
+ *
+ * \ingroup mofem_forces_and_sources
+ **/

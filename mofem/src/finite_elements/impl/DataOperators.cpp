@@ -1357,7 +1357,7 @@ MoFEMErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
+MoFEMErrorCode OpSetContravariantPiolaTransformOnFace::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
@@ -1405,10 +1405,9 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnTriangle::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
+MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
-
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
   if (type != MBEDGE && type != MBTRI)
     MoFEMFunctionReturnHot(0);
@@ -1417,38 +1416,40 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
   FTensor::Index<'j', 3> j;
   FTensor::Index<'k', 2> k;
 
-  // double zero = 0;
   FTensor::Tensor2<const double *, 3, 3> t_m(
-      &tAngent0[0], &tAngent1[0], &nOrmal[0], &tAngent0[1], &tAngent1[1],
-      &nOrmal[1], &tAngent0[2], &tAngent1[2], &nOrmal[2], 3);
+      &tAngent0[0], &tAngent1[0], &nOrmal[0],
+
+      &tAngent0[1], &tAngent1[1], &nOrmal[1],
+
+      &tAngent0[2], &tAngent1[2], &nOrmal[2],
+
+      3);
   double det;
   FTensor::Tensor2<double, 3, 3> t_inv_m;
-  ierr = determinantTensor3by3(t_m, det);
-  CHKERRG(ierr);
-  ierr = invertTensor3by3(t_m, det, t_inv_m);
-  CHKERRG(ierr);
+  CHKERR determinantTensor3by3(t_m, det);
+  CHKERR invertTensor3by3(t_m, det, t_inv_m);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; ++b) {
 
     FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
-    int nb_dofs = data.getN(base).size2() / 3;
-    int nb_gauss_pts = data.getN(base).size1();
+    auto &baseN = data.getN(base);
+    auto &diffBaseN = data.getDiffN(base);
 
-    MatrixDouble piola_n(data.getN(base).size1(), data.getN(base).size2());
-    MatrixDouble diff_piola_n(data.getDiffN(base).size1(),
-                              data.getDiffN(base).size2());
+    int nb_dofs = baseN.size2() / 3;
+    int nb_gauss_pts = baseN.size1();
+
+    MatrixDouble piola_n(baseN.size1(), baseN.size2());
+    MatrixDouble diff_piola_n(diffBaseN.size1(), diffBaseN.size2());
 
     if (nb_dofs > 0 && nb_gauss_pts > 0) {
 
-      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
       FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_h_curl(
-          &data.getN(base)(0, HVEC0), &data.getN(base)(0, HVEC1),
-          &data.getN(base)(0, HVEC2));
+          &baseN(0, HVEC0), &baseN(0, HVEC1), &baseN(0, HVEC2));
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_diff_h_curl(
-          &data.getDiffN(base)(0, HVEC0_0), &data.getDiffN(base)(0, HVEC0_1),
-          &data.getDiffN(base)(0, HVEC1_0), &data.getDiffN(base)(0, HVEC1_1),
-          &data.getDiffN(base)(0, HVEC2_0), &data.getDiffN(base)(0, HVEC2_1));
+          &diffBaseN(0, HVEC0_0), &diffBaseN(0, HVEC0_1),
+          &diffBaseN(0, HVEC1_0), &diffBaseN(0, HVEC1_1),
+          &diffBaseN(0, HVEC2_0), &diffBaseN(0, HVEC2_1));
       FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_h_curl(
           &piola_n(0, HVEC0), &piola_n(0, HVEC1), &piola_n(0, HVEC2));
       FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
@@ -1467,10 +1468,8 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
             &tangent0AtGaussPt(0, 2), &tangent1AtGaussPt(0, 2),
             &normalsAtGaussPts(0, 2), 3);
         for (int gg = 0; gg < nb_gauss_pts; ++gg) {
-          ierr = determinantTensor3by3(t_m_at_pts, det);
-          CHKERRG(ierr);
-          ierr = invertTensor3by3(t_m_at_pts, det, t_inv_m);
-          CHKERRG(ierr);
+          CHKERR determinantTensor3by3(t_m_at_pts, det);
+          CHKERR invertTensor3by3(t_m_at_pts, det, t_inv_m);
           for (int ll = 0; ll != nb_dofs; ll++) {
             t_transformed_h_curl(i) = t_inv_m(j, i) * t_h_curl(j);
             t_transformed_diff_h_curl(i, k) =
@@ -1497,15 +1496,15 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnTriangle::doWork(
           }
         }
       }
-      if (cc != nb_gauss_pts * nb_dofs) {
+      if (cc != nb_gauss_pts * nb_dofs) 
         SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
-      }
-      data.getN(base).data().swap(piola_n.data());
-      data.getDiffN(base).data().swap(diff_piola_n.data());
+      
+      baseN.data().swap(piola_n.data());
+      diffBaseN.data().swap(diff_piola_n.data());
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode

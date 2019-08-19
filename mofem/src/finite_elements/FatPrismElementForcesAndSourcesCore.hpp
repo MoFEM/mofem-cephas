@@ -43,26 +43,6 @@ namespace MoFEM {
 struct FatPrismElementForcesAndSourcesCore
     : public VolumeElementForcesAndSourcesCore {
 
-  double aRea[2];
-  VectorDouble normal;
-
-  MatrixDouble gaussPtsTrianglesOnly;
-  MatrixDouble coordsAtGaussPtsTrianglesOnly;
-  MatrixDouble gaussPtsThroughThickness;
-
-  DataForcesAndSourcesCore dataH1TrianglesOnly;
-  DataForcesAndSourcesCore dataH1TroughThickness;
-
-  MatrixDouble hoCoordsAtGaussPtsF3;
-  MatrixDouble nOrmals_at_GaussPtF3;
-  MatrixDouble tAngent1_at_GaussPtF3;
-  MatrixDouble tAngent2_at_GaussPtF3;
-  MatrixDouble hoCoordsAtGaussPtsF4;
-  MatrixDouble nOrmals_at_GaussPtF4;
-  MatrixDouble tAngent1_at_GaussPtF4;
-  MatrixDouble tAngent2_at_GaussPtF4;
-  OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
-
   FatPrismElementForcesAndSourcesCore(Interface &m_field);
 
   virtual int getRuleTrianglesOnly(int order) { return 2 * order; };
@@ -86,17 +66,7 @@ struct FatPrismElementForcesAndSourcesCore
   struct UserDataOperator
       : public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const FieldSpace space)
-        : VolumeElementForcesAndSourcesCore::UserDataOperator(space) {}
-
-    UserDataOperator(const std::string &field_name, const char type)
-        : VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,
-                                                              type) {}
-
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type)
-        : VolumeElementForcesAndSourcesCore::UserDataOperator(
-              row_field_name, col_field_name, type) {}
+    using VolumeElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
     /** \brief get face aRea
     \param dd if dd == 0 it is for face F3 if dd == 1 is for face F4
@@ -288,116 +258,33 @@ struct FatPrismElementForcesAndSourcesCore
     inline const FatPrismElementForcesAndSourcesCore *getPrismFE() {
       return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE);
     }
-
-    // /** \deprecated Use getNormalsAtGaussPtF3() instead
-    // */
-    // DEPRECATED inline ublas::matrix_row<MatrixDouble >
-    // getNormals_at_GaussPtF3(const int gg) {
-    //   return getNormalsAtGaussPtF3(gg);
-    // }
-    //
-    // /** \deprecated Use getNormalsAtGaussPtF3() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getNormals_at_GaussPtF3() {
-    //   return getNormalsAtGaussPtF3();
-    // }
-    //
-    // /** \deprecated Use getTangent1AtGaussPtF3() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getTangent1_at_GaussPtF3() {
-    //   return getTangent1AtGaussPtF3();
-    // }
-    //
-    // /** \deprecated Use getTangent2AtGaussPtF3() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getTangent2_at_GaussPtF3() {
-    //   return getTangent2AtGaussPtF3();
-    // }
-    //
-    // /** \deprecated Use getNormalsAtGaussPtF4() instead
-    // */
-    // DEPRECATED inline ublas::matrix_row<MatrixDouble >
-    // getNormals_at_GaussPtF4(const int gg) {
-    //   return getNormalsAtGaussPtF4(gg);
-    // }
-    //
-    // /** \deprecated Use getNormalsAtGaussPtF4() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getNormals_at_GaussPtF4() {
-    //   return getNormalsAtGaussPtF4();
-    // }
-    //
-    // /** \deprecated Use getTangent1AtGaussPtF4() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getTangent1_at_GaussPtF4() {
-    //   return getTangent1AtGaussPtF4();
-    // }
-    //
-    // /** \deprecated Use getTangent2AtGaussPtF4() instead
-    // */
-    // DEPRECATED inline MatrixDouble& getTangent2_at_GaussPtF4() {
-    //   return getTangent2AtGaussPtF4();
-    // }
   };
 
-  MoFEMErrorCode preProcess() {
-    MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(0);
-  }
   MoFEMErrorCode operator()();
-  MoFEMErrorCode postProcess() {
-    MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(0);
-  }
+
+protected:
+  double aRea[2];
+  VectorDouble normal;
+
+  MatrixDouble gaussPtsTrianglesOnly;
+  MatrixDouble coordsAtGaussPtsTrianglesOnly;
+  MatrixDouble gaussPtsThroughThickness;
+
+  DataForcesAndSourcesCore dataH1TrianglesOnly;
+  DataForcesAndSourcesCore dataH1TroughThickness;
+
+  MatrixDouble hoCoordsAtGaussPtsF3;
+  MatrixDouble nOrmals_at_GaussPtF3;
+  MatrixDouble tAngent1_at_GaussPtF3;
+  MatrixDouble tAngent2_at_GaussPtF3;
+  MatrixDouble hoCoordsAtGaussPtsF4;
+  MatrixDouble nOrmals_at_GaussPtF4;
+  MatrixDouble tAngent1_at_GaussPtF4;
+  MatrixDouble tAngent2_at_GaussPtF4;
+  OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
+
+  friend class UserDataOperator;
 };
-
-/** \brief Calculate inverse of jacobian for face element
-
-  It is assumed that face element is XY plane. Applied
-  only for 2d problems.
-
-  FIXME Generalize function for arbitrary face orientation in 3d space
-  FIXME Calculate to Jacobins for two faces
-
-  \ingroup mofem_forces_and_sources_prism_element
-
-*/
-struct OpCalculateInvJacForFatPrism
-    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
-
-  MatrixDouble &invJac;
-  OpCalculateInvJacForFatPrism(MatrixDouble &inv_jac)
-      : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
-        invJac(inv_jac) {}
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
-/** \brief Transform local reference derivatives of shape functions to global
-derivatives
-
-FIXME Generalize to curved shapes
-FIXME Generalize to case that top and bottom face has different shape
-
-\ingroup mofem_forces_and_sources_prism_element
-
-*/
-struct OpSetInvJacH1ForFatPrism
-    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
-
-  MatrixDouble &invJac;
-  OpSetInvJacH1ForFatPrism(MatrixDouble &inv_jac)
-      : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
-        invJac(inv_jac) {}
-
-  MatrixDouble diffNinvJac;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
-/// \deprecated use FatPrismElementForcesAndSourcesCore
-DEPRECATED typedef FatPrismElementForcesAndSourcesCore
-    FatPrismElementForcesAndSurcesCore;
 
 } // namespace MoFEM
 

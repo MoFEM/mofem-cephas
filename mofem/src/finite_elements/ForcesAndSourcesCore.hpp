@@ -35,230 +35,7 @@ struct ForcesAndSourcesCore : public FEMethod {
 
   Interface &mField;
 
-  /**
-   * @brief Entity data on element entity rows fields
-   *
-   *
-   * FIXME: that should be moved to private class data and acessed only by
-   * member function
-   */
-  const boost::shared_ptr<DataForcesAndSourcesCore> dataOnElement[LASTSPACE];
-
-  /**
-   * @brief Entity data on element entity columns fields
-   *
-   * FIXME: that should be moved to private class data and acessed only by
-   * member function
-   */
-  const boost::shared_ptr<DataForcesAndSourcesCore>
-      derivedDataOnElement[LASTSPACE];
-
-  DataForcesAndSourcesCore &dataNoField;
-  DataForcesAndSourcesCore &dataH1;
-  DataForcesAndSourcesCore &dataHcurl;
-  DataForcesAndSourcesCore &dataHdiv;
-  DataForcesAndSourcesCore &dataL2;
-
   ForcesAndSourcesCore(Interface &m_field);
-  virtual ~ForcesAndSourcesCore() {}
-
-  MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
-
-  /** \brief Get max order of approximation for data fields
-
-  Method  getMaxDataOrder () return maximal order on entities, for
-  all data on the element. So for example if finite element is triangle, and
-  triangle base function have order 4 and on edges base function have order 2,
-  this function return 4.
-
-  If finite element has for example 2 or more approximated fields, for example
-  Pressure (order 3) and displacement field (order 5), this function returns 5.
-
-  */
-  int getMaxDataOrder() const;
-
-  /// \brief Get max order of approximation for field in rows
-  int getMaxRowOrder() const;
-
-  /// \brief Get max order of approximation for field in columns
-  int getMaxColOrder() const;
-
-  /**
-   * \brief get sense (orientation) of entity
-   * @param  type type of entity
-   * @param  data entity data
-   * @return      error code
-   */
-  MoFEMErrorCode getEntitySense(
-      const EntityType type,
-      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
-
-  /**
-   * @brief Get the entity data order
-   *
-   * @param type
-   * @param space
-   * @param data
-   * @return MoFEMErrorCode
-   */
-  MoFEMErrorCode getEntityDataOrder(
-      const EntityType type, const FieldSpace space,
-      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
-
-  /**
-   * @brief Get the entity sense (orientation)
-   *
-   * @tparam type
-   * @param data
-   * @return MoFEMErrorCode
-   */
-  template <EntityType type>
-  inline MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
-    return getEntitySense(type, data.dataOnEntities[type]);
-  }
-
-  /**
-   * @brief Get the entity data order for given space
-   *
-   * @tparam type
-   * @param data
-   * @param space
-   * @return MoFEMErrorCode
-   */
-  template <EntityType type>
-  inline MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
-                                           const FieldSpace space) const {
-    return getEntityDataOrder(type, space, data.dataOnEntities[type]);
-  }
-
-  // ** Indices **
-
-  /// \brief get node indices
-  MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
-                                 FENumeredDofEntity_multiIndex &dofs,
-                                 VectorInt &nodes_indices,
-                                 VectorInt &local_nodes_indices) const;
-
-  /// \brief get row node indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const;
-
-  /// \brief get col node indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const;
-
-  MoFEMErrorCode getEntityIndices(
-      DataForcesAndSourcesCore &data, const std::string &field_name,
-      FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo = MBVERTEX,
-      const EntityType type_hi = MBPOLYHEDRON) const;
-
-  inline MoFEMErrorCode
-  getEntityRowIndices(DataForcesAndSourcesCore &data,
-                      const std::string &field_name,
-                      const EntityType type_lo = MBVERTEX,
-                      const EntityType type_hi = MBPOLYHEDRON) const {
-    return getEntityIndices(data, field_name,
-                            const_cast<FENumeredDofEntity_multiIndex &>(
-                                numeredEntFiniteElementPtr->getRowsDofs()),
-                            type_lo, type_hi);
-  }
-
-  inline MoFEMErrorCode
-  getEntityColIndices(DataForcesAndSourcesCore &data,
-                      const std::string &field_name,
-                      const EntityType type_lo = MBVERTEX,
-                      const EntityType type_hi = MBPOLYHEDRON) const {
-    return getEntityIndices(data, field_name,
-                            const_cast<FENumeredDofEntity_multiIndex &>(
-                                numeredEntFiniteElementPtr->getColsDofs()),
-                            type_lo, type_hi);
-  }
-
-  /// \brief get NoField indices
-  MoFEMErrorCode getNoFieldIndices(const std::string &field_name,
-                                   FENumeredDofEntity_multiIndex &dofs,
-                                   VectorInt &nodes_indices) const;
-
-  /// \brief get col NoField indices
-  MoFEMErrorCode getNoFieldRowIndices(DataForcesAndSourcesCore &data,
-                                      const std::string &field_name) const;
-
-  /// \brief get col NoField indices
-  MoFEMErrorCode getNoFieldColIndices(DataForcesAndSourcesCore &data,
-                                      const std::string &field_name) const;
-
-  // ** Data **
-
-  /**
-   * \brief Get field data on nodes
-   * @param  field_name Name of field
-   * @param  dofs       Dofs (element) multi index
-   * @param  nodes_data Returned DOFs values
-   * @param  nodes_dofs Vector of pointers to DOFs data structure
-   * @param  space      Get space on nodes (Only H! is valid)
-   * @param  base       Get base on nodes
-   * @return            Error code
-   */
-  MoFEMErrorCode getNodesFieldData(const boost::string_ref field_name,
-                                   FEDofEntity_multiIndex &dofs,
-                                   VectorDouble &nodes_data,
-                                   VectorDofs &nodes_dofs, FieldSpace &space,
-                                   FieldApproximationBase &base) const;
-
-  MoFEMErrorCode getNoFieldFieldData(const boost::string_ref field_name,
-                                     FEDofEntity_multiIndex &dofs,
-                                     VectorDouble &ent_field_data,
-                                     VectorDofs &ent_field_dofs) const;
-  MoFEMErrorCode getNoFieldFieldData(DataForcesAndSourcesCore &data,
-                                     const boost::string_ref field_name) const;
-
-  /**
-   * \brief Get data on nodes
-   * @param  data       Data structure
-   * @param  field_name Field name
-   * @return            Error code
-   */
-  MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
-                                   const std::string &field_name) const;
-
-  MoFEMErrorCode
-  getEntityFieldData(DataForcesAndSourcesCore &data,
-                     const std::string &field_name,
-                     const EntityType type_lo = MBVERTEX,
-                     const EntityType type_hi = MBPOLYHEDRON) const;
-
-  /// \brief Get nodes on triangles
-  MoFEMErrorCode getFaceTriNodes(DataForcesAndSourcesCore &data) const;
-
-  /// \brief Get field approximation space and base on entities
-  MoFEMErrorCode
-  getSpacesAndBaseOnEntities(DataForcesAndSourcesCore &data) const;
-
-  // ** Data form NumeredDofEntity_multiIndex **
-
-  /// \brief get indices of nodal indices which are declared for problem but not
-  /// this particular element
-  MoFEMErrorCode getProblemNodesIndices(const std::string &field_name,
-                                        const NumeredDofEntity_multiIndex &dofs,
-                                        VectorInt &nodes_indices) const;
-
-  /// \brief get indices by type (generic function) which are declared for
-  /// problem but not this particular element
-  MoFEMErrorCode getProblemTypeIndices(const std::string &field_name,
-                                       const NumeredDofEntity_multiIndex &dofs,
-                                       EntityType type, int side_number,
-                                       VectorInt &indices) const;
-
-  MoFEMErrorCode getProblemNodesRowIndices(const std::string &field_name,
-                                           VectorInt &nodes_indices) const;
-  MoFEMErrorCode getProblemTypeRowIndices(const std::string &field_name,
-                                          EntityType type, int side_number,
-                                          VectorInt &indices) const;
-  MoFEMErrorCode getProblemNodesColIndices(const std::string &field_name,
-                                           VectorInt &nodes_indices) const;
-  MoFEMErrorCode getProblemTypeColIndices(const std::string &field_name,
-                                          EntityType type, int side_number,
-                                          VectorInt &indices) const;
 
   typedef boost::function<int(int order_row, int order_col, int order_data)>
       RuleHookFun;
@@ -277,78 +54,6 @@ struct ForcesAndSourcesCore : public FEMethod {
    *
    */
   RuleHookFun setRuleHook;
-
-  /**
-   * \brief another variant of getRule
-   * @param  order_row  order of base function on row
-   * @param  order_col  order of base function on columns
-   * @param  order_data order of base function approximating data
-   * @return            integration rule
-   *
-   * This function is overloaded by the user. The integration rule
-   * is set such that specific operator implemented by the user is integrated
-   * accurately. For example if user implement bilinear operator
-   * \f[
-   * b(u,v) =
-   * \int_\mathcal{T}
-   * \frac{\partial u_i}{\partial x_j}\frac{\partial v_i}{\partial x_j}
-   * \textrm{d}\mathcal{T}
-   * \f]
-   * then if \f$u\f$ and \f$v\f$ are polynomial of given \em order, then exact
-   * integral would be
-   * \code
-   * int getRule(int order) { return 2*(order-1); };
-   * \endcode
-   *
-   * The integration points and weights are set appropriately for given entity
-   * type and integration rule from \ref quad.c
-   *
-   * Method \ref ForcesAndSourcesCore::getRule takes at argument takes maximal
-   * polynomial order set on the element on all fields defined on the element.
-   * If a user likes to have more control, another variant of this function can
-   * be called which distinguishing between field orders on rows, columns and
-   * data, the i.e. first argument of a bilinear form, the second argument of
-   * bilinear form and field coefficients on the element.
-   *
-   * \note If user set rule to -1 or any other negative integer, then method
-   * \ref ForcesAndSourcesCore::setGaussPts is called. In that method user can
-   * implement own (specific) integration method.
-   *
-   * \bug this function should be const
-   */
-  virtual int getRule(int order_row, int order_col, int order_data) {
-    return getRuleHook ? getRuleHook(order_row, order_col, order_data)
-                       : getRule(order_data);
-  }
-
-  /** \brief set user specific integration rule
-
-    This function allows for user defined integration rule. The key is to
-    called matrix gaussPts, which is used by other MoFEM procedures. Matrix has
-    number of rows equal to problem dimension plus one, where last index is used
-    to store weight values. %Number of columns is equal to number of integration
-    points.
-
-    \note This function is called if method \ref ForcesAndSourcesCore::getRule
-    is returning integer -1 or any other negative integer.
-
-    User sets
-    \code
-    MatrixDouble gaussPts;
-    \endcode
-    where
-    \code
-    gaussPts.resize(dim+1,nb_gauss_pts);
-    \endcode
-    number rows represents local coordinates of integration points
-    in reference element, where last index in row is for integration weight.
-
-    */
-  virtual MoFEMErrorCode setGaussPts(int order_row, int order_col,
-                                     int order_data) {
-    return setRuleHook ? setRuleHook(order_row, order_col, order_data)
-                       : setGaussPts(order_data);
-  }
 
   /** \brief Data operator to do calculations at integration points.
     * \ingroup mofem_forces_and_sources
@@ -439,6 +144,80 @@ struct ForcesAndSourcesCore : public FEMethod {
      */
     inline EntityHandle getFEEntityHandle() const {
       return getNumeredEntFiniteElementPtr()->getEnt();
+    }
+
+    /**
+     * @brief Get the side number pointer
+     *
+     * \note For vertex is expection. Side basses in argument of function doWork
+     * is zero. For other entity types side can be used as argument of this
+     * function.
+     *
+     * @param side_number
+     * @param type
+     * @return boost::weak_ptr<SideNumber>
+     */
+    inline boost::weak_ptr<SideNumber> getSideNumberPtr(const int side_number,
+                                                        const EntityType type) {
+      auto &side_table_by_side_and_type =
+          ptrFE->numeredEntFiniteElementPtr->getSideNumberTable().get<1>();
+      auto side_it = side_table_by_side_and_type.find(
+          boost::make_tuple(type, side_number));
+      if (side_it != side_table_by_side_and_type.end())
+        return *side_it;
+      else
+        return boost::weak_ptr<SideNumber>();
+    }
+
+    /**
+     * @brief Get the side entity
+     *
+     * \note For vertex is expection. Side basses in argument of function doWork
+     * is zero. For other entity types side can be used as argument of this
+     * function.
+     *
+     * \code
+     * MoFEMErrorCode doWork(int side, EntityType type,
+     *                     DataForcesAndSourcesCore::EntData &data) {
+     *  MoFEMFunctionBegin;
+     *
+     *  if (type == MBVERTEX) {
+     *    for (int n = 0; n != number_of_nodes; ++n)
+     *      EntityHandle ent = getSideEntity(n, type);
+     *
+     *      // Do somthing
+     *
+     *  } else {
+     *    EntityHandle ent = getSideEntity(side, type);
+     *
+     *    // Do somthing
+     *
+     *  }
+     *
+     *  MoFEMFunctionReturn(0);
+     * }
+     * \endcode
+     *
+     * @param side_number
+     * @param type
+     */
+    inline EntityHandle getSideEntity(const int side_number,
+                                      const EntityType type) {
+      if (auto side_ptr = getSideNumberPtr(side_number, type).lock())
+        return side_ptr->ent;
+      else
+        return 0;
+    }
+
+    /**
+     * @brief Get the number of nodes on finite element 
+     * 
+     * @return int 
+     */
+    inline int getNumberOfNodesOnElement() {
+      int num_nodes;
+      CHKERR ptrFE->getNumberOfNodes(num_nodes);
+      return num_nodes;
     }
 
     /** \brief Get row indices
@@ -619,14 +398,6 @@ struct ForcesAndSourcesCore : public FEMethod {
     ForcesAndSourcesCore *ptrFE;
   };
 
-  /**
-   * @brief Vector of finite element users data operators
-   *
-   * FIXME: that should be moved to private class data and acessed only by
-   * member function
-   */
-  boost::ptr_vector<UserDataOperator> opPtrVector;
-
   /** \brief Use to push back operator for row operator
 
    It can be used to calculate nodal forces or other quantities on the mesh.
@@ -685,6 +456,318 @@ struct ForcesAndSourcesCore : public FEMethod {
     MoFEMFunctionReturnHot(0);
   }
 
+public:
+  /** \brief Get max order of approximation for data fields
+
+  Method  getMaxDataOrder () return maximal order on entities, for
+  all data on the element. So for example if finite element is triangle, and
+  triangle base function have order 4 and on edges base function have order 2,
+  this function return 4.
+
+  If finite element has for example 2 or more approximated fields, for example
+  Pressure (order 3) and displacement field (order 5), this function returns 5.
+
+  */
+  int getMaxDataOrder() const;
+
+  /// \brief Get max order of approximation for field in rows
+  int getMaxRowOrder() const;
+
+  /// \brief Get max order of approximation for field in columns
+  int getMaxColOrder() const;
+
+  /// \brief Get number of DOFs on element
+  MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
+
+  /**
+   * @brief Get the entity data
+   * 
+   * @param space 
+   * @param type 
+   * @param side 
+   * @return const DataForcesAndSourcesCore::EntData& 
+   */
+  const DataForcesAndSourcesCore::EntData &getEntData(const FieldSpace space,
+                                                      const EntityType type,
+                                                      const int side) const {
+    return dataOnElement[space]->dataOnEntities[type][side];
+  }
+
+  /**
+   * @brief Get the entity data
+   * 
+   * @param space 
+   * @param type 
+   * @param side 
+   * @return DataForcesAndSourcesCore::EntData& 
+   */
+  DataForcesAndSourcesCore::EntData &
+  getEntData(const FieldSpace space, const EntityType type, const int side) {
+    return dataOnElement[space]->dataOnEntities[type][side];
+  }
+
+protected:
+  /**
+   * \brief get sense (orientation) of entity
+   * @param  type type of entity
+   * @param  data entity data
+   * @return      error code
+   */
+  MoFEMErrorCode getEntitySense(
+      const EntityType type,
+      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
+
+  /**
+   * @brief Get the entity data order
+   *
+   * @param type
+   * @param space
+   * @param data
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode getEntityDataOrder(
+      const EntityType type, const FieldSpace space,
+      boost::ptr_vector<DataForcesAndSourcesCore::EntData> &data) const;
+
+  /**
+   * @brief Get the entity sense (orientation)
+   *
+   * @tparam type
+   * @param data
+   * @return MoFEMErrorCode
+   */
+  template <EntityType type>
+  inline MoFEMErrorCode getEntitySense(DataForcesAndSourcesCore &data) const {
+    return getEntitySense(type, data.dataOnEntities[type]);
+  }
+
+  /**
+   * @brief Get the entity data order for given space
+   *
+   * @tparam type
+   * @param data
+   * @param space
+   * @return MoFEMErrorCode
+   */
+  template <EntityType type>
+  inline MoFEMErrorCode getEntityDataOrder(DataForcesAndSourcesCore &data,
+                                           const FieldSpace space) const {
+    return getEntityDataOrder(type, space, data.dataOnEntities[type]);
+  }
+
+  /** \name Indices */
+
+  /**@{*/
+
+  /// \brief get node indices
+  MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
+                                 FENumeredDofEntity_multiIndex &dofs,
+                                 VectorInt &nodes_indices,
+                                 VectorInt &local_nodes_indices) const;
+
+  /// \brief get row node indices from FENumeredDofEntity_multiIndex
+  MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
+                                    const std::string &field_name) const;
+
+  /// \brief get col node indices from FENumeredDofEntity_multiIndex
+  MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
+                                    const std::string &field_name) const;
+
+  MoFEMErrorCode getEntityIndices(
+      DataForcesAndSourcesCore &data, const std::string &field_name,
+      FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo = MBVERTEX,
+      const EntityType type_hi = MBPOLYHEDRON) const;
+
+  inline MoFEMErrorCode
+  getEntityRowIndices(DataForcesAndSourcesCore &data,
+                      const std::string &field_name,
+                      const EntityType type_lo = MBVERTEX,
+                      const EntityType type_hi = MBPOLYHEDRON) const {
+    return getEntityIndices(data, field_name,
+                            const_cast<FENumeredDofEntity_multiIndex &>(
+                                numeredEntFiniteElementPtr->getRowsDofs()),
+                            type_lo, type_hi);
+  }
+
+  inline MoFEMErrorCode
+  getEntityColIndices(DataForcesAndSourcesCore &data,
+                      const std::string &field_name,
+                      const EntityType type_lo = MBVERTEX,
+                      const EntityType type_hi = MBPOLYHEDRON) const {
+    return getEntityIndices(data, field_name,
+                            const_cast<FENumeredDofEntity_multiIndex &>(
+                                numeredEntFiniteElementPtr->getColsDofs()),
+                            type_lo, type_hi);
+  }
+
+  /// \brief get NoField indices
+  MoFEMErrorCode getNoFieldIndices(const std::string &field_name,
+                                   FENumeredDofEntity_multiIndex &dofs,
+                                   VectorInt &nodes_indices) const;
+
+  /// \brief get col NoField indices
+  MoFEMErrorCode getNoFieldRowIndices(DataForcesAndSourcesCore &data,
+                                      const std::string &field_name) const;
+
+  /// \brief get col NoField indices
+  MoFEMErrorCode getNoFieldColIndices(DataForcesAndSourcesCore &data,
+                                      const std::string &field_name) const;
+
+  /**@}*/
+
+  /** \name Data */
+
+  /**@{*/
+
+  /**
+   * \brief Get field data on nodes
+   * @param  field_name Name of field
+   * @param  dofs       Dofs (element) multi index
+   * @param  nodes_data Returned DOFs values
+   * @param  nodes_dofs Vector of pointers to DOFs data structure
+   * @param  space      Get space on nodes (Only H! is valid)
+   * @param  base       Get base on nodes
+   * @return            Error code
+   */
+  MoFEMErrorCode getNodesFieldData(const boost::string_ref field_name,
+                                   FEDofEntity_multiIndex &dofs,
+                                   VectorDouble &nodes_data,
+                                   VectorDofs &nodes_dofs, FieldSpace &space,
+                                   FieldApproximationBase &base) const;
+
+  MoFEMErrorCode getNoFieldFieldData(const boost::string_ref field_name,
+                                     FEDofEntity_multiIndex &dofs,
+                                     VectorDouble &ent_field_data,
+                                     VectorDofs &ent_field_dofs) const;
+  MoFEMErrorCode getNoFieldFieldData(DataForcesAndSourcesCore &data,
+                                     const boost::string_ref field_name) const;
+
+  /**
+   * \brief Get data on nodes
+   * @param  data       Data structure
+   * @param  field_name Field name
+   * @return            Error code
+   */
+  MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
+                                   const std::string &field_name) const;
+
+  MoFEMErrorCode
+  getEntityFieldData(DataForcesAndSourcesCore &data,
+                     const std::string &field_name,
+                     const EntityType type_lo = MBVERTEX,
+                     const EntityType type_hi = MBPOLYHEDRON) const;
+
+  /**@}*/
+
+  /// \brief Get nodes on triangles
+  MoFEMErrorCode getFaceTriNodes(DataForcesAndSourcesCore &data) const;
+
+  /// \brief Get field approximation space and base on entities
+  MoFEMErrorCode
+  getSpacesAndBaseOnEntities(DataForcesAndSourcesCore &data) const;
+
+  /** \name Data form NumeredDofEntity_multiIndex */
+
+  /**@{*/
+
+  /// \brief get indices of nodal indices which are declared for problem but not
+  /// this particular element
+  MoFEMErrorCode getProblemNodesIndices(const std::string &field_name,
+                                        const NumeredDofEntity_multiIndex &dofs,
+                                        VectorInt &nodes_indices) const;
+
+  /// \brief get indices by type (generic function) which are declared for
+  /// problem but not this particular element
+  MoFEMErrorCode getProblemTypeIndices(const std::string &field_name,
+                                       const NumeredDofEntity_multiIndex &dofs,
+                                       EntityType type, int side_number,
+                                       VectorInt &indices) const;
+
+  MoFEMErrorCode getProblemNodesRowIndices(const std::string &field_name,
+                                           VectorInt &nodes_indices) const;
+  MoFEMErrorCode getProblemTypeRowIndices(const std::string &field_name,
+                                          EntityType type, int side_number,
+                                          VectorInt &indices) const;
+  MoFEMErrorCode getProblemNodesColIndices(const std::string &field_name,
+                                           VectorInt &nodes_indices) const;
+  MoFEMErrorCode getProblemTypeColIndices(const std::string &field_name,
+                                          EntityType type, int side_number,
+                                          VectorInt &indices) const;
+
+  /**@}*/
+
+  /**
+   * \brief another variant of getRule
+   * @param  order_row  order of base function on row
+   * @param  order_col  order of base function on columns
+   * @param  order_data order of base function approximating data
+   * @return            integration rule
+   *
+   * This function is overloaded by the user. The integration rule
+   * is set such that specific operator implemented by the user is integrated
+   * accurately. For example if user implement bilinear operator
+   * \f[
+   * b(u,v) =
+   * \int_\mathcal{T}
+   * \frac{\partial u_i}{\partial x_j}\frac{\partial v_i}{\partial x_j}
+   * \textrm{d}\mathcal{T}
+   * \f]
+   * then if \f$u\f$ and \f$v\f$ are polynomial of given \em order, then exact
+   * integral would be
+   * \code
+   * int getRule(int order) { return 2*(order-1); };
+   * \endcode
+   *
+   * The integration points and weights are set appropriately for given entity
+   * type and integration rule from \ref quad.c
+   *
+   * Method \ref ForcesAndSourcesCore::getRule takes at argument takes maximal
+   * polynomial order set on the element on all fields defined on the element.
+   * If a user likes to have more control, another variant of this function can
+   * be called which distinguishing between field orders on rows, columns and
+   * data, the i.e. first argument of a bilinear form, the second argument of
+   * bilinear form and field coefficients on the element.
+   *
+   * \note If user set rule to -1 or any other negative integer, then method
+   * \ref ForcesAndSourcesCore::setGaussPts is called. In that method user can
+   * implement own (specific) integration method.
+   *
+   * \bug this function should be const
+   */
+  virtual int getRule(int order_row, int order_col, int order_data) {
+    return getRuleHook ? getRuleHook(order_row, order_col, order_data)
+                       : getRule(order_data);
+  }
+
+  /** \brief set user specific integration rule
+
+    This function allows for user defined integration rule. The key is to
+    called matrix gaussPts, which is used by other MoFEM procedures. Matrix has
+    number of rows equal to problem dimension plus one, where last index is used
+    to store weight values. %Number of columns is equal to number of integration
+    points.
+
+    \note This function is called if method \ref ForcesAndSourcesCore::getRule
+    is returning integer -1 or any other negative integer.
+
+    User sets
+    \code
+    MatrixDouble gaussPts;
+    \endcode
+    where
+    \code
+    gaussPts.resize(dim+1,nb_gauss_pts);
+    \endcode
+    number rows represents local coordinates of integration points
+    in reference element, where last index in row is for integration weight.
+
+    */
+  virtual MoFEMErrorCode setGaussPts(int order_row, int order_col,
+                                     int order_data) {
+    return setRuleHook ? setRuleHook(order_row, order_col, order_data)
+                       : setGaussPts(order_data);
+  }
+
   /**
    * \brief Calculate base functions
    * @return Error code
@@ -729,6 +812,33 @@ struct ForcesAndSourcesCore : public FEMethod {
   }
 
   /**@/}*/
+
+  /**
+   * @brief Entity data on element entity rows fields
+   *
+   */
+  const boost::shared_ptr<DataForcesAndSourcesCore> dataOnElement[LASTSPACE];
+
+  /**
+   * @brief Entity data on element entity columns fields
+   *
+   */
+  const boost::shared_ptr<DataForcesAndSourcesCore>
+      derivedDataOnElement[LASTSPACE];
+
+  DataForcesAndSourcesCore &dataNoField;
+  DataForcesAndSourcesCore &dataH1;
+  DataForcesAndSourcesCore &dataHcurl;
+  DataForcesAndSourcesCore &dataHdiv;
+  DataForcesAndSourcesCore &dataL2;
+
+  /**
+   * @brief Vector of finite element users data operators
+   *
+   */
+  boost::ptr_vector<UserDataOperator> opPtrVector;
+
+  friend class UserDataOperator;
 
 private:
   /**

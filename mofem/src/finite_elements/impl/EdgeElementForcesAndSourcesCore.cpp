@@ -1,4 +1,4 @@
-/** \file EdgeElementForcesAndSourcesCore.cpp
+/** \file EdgeElementForcesAndSourcesCoreBase.cpp
 
 \brief Implementation of edge element
 
@@ -21,17 +21,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  #include <cblas.h>
-  #include <lapack_wrap.h>
-  // #include <gm_rule.h>
-  #include <quad.h>
+#include <cblas.h>
+#include <lapack_wrap.h>
+// #include <gm_rule.h>
+#include <quad.h>
 #ifdef __cplusplus
 }
 #endif
 
 namespace MoFEM {
 
-EdgeElementForcesAndSourcesCore::EdgeElementForcesAndSourcesCore(
+EdgeElementForcesAndSourcesCoreBase::EdgeElementForcesAndSourcesCoreBase(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
       meshPositionsFieldName("MESH_NODE_POSITIONS"),
@@ -41,7 +41,7 @@ EdgeElementForcesAndSourcesCore::EdgeElementForcesAndSourcesCore(
       boost::shared_ptr<BaseFunction>(new EdgePolynomialBase());
 }
 
-MoFEMErrorCode EdgeElementForcesAndSourcesCore::calculateEdgeDirection() {
+MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::calculateEdgeDirection() {
   MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   CHKERR mField.get_moab().get_connectivity(ent, cOnn, numNodes, true);
@@ -54,13 +54,13 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::calculateEdgeDirection() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
+MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::setIntegrationPts() {
   MoFEMFunctionBegin;
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
   int rule = getRule(order_row, order_col, order_data);
-  
+
   int nb_gauss_pts;
   if (rule >= 0) {
     if (rule < QUAD_1D_TABLE_SIZE) {
@@ -107,12 +107,12 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCore::setIntegrationPts() {
 }
 
 MoFEMErrorCode
-EdgeElementForcesAndSourcesCore::calculateCoordsAtIntegrationPts() {
+EdgeElementForcesAndSourcesCoreBase::calculateCoordsAtIntegrationPts() {
   MoFEMFunctionBeginHot;
   const int nb_gauss_pts = gaussPts.size2();
   coordsAtGaussPts.resize(nb_gauss_pts, 3, false);
   if (nb_gauss_pts) {
-    FTensor::Tensor0<FTensor::PackPtr<double *, 1> > t_ksi(
+    FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_ksi(
         &*gaussPts.data().begin());
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
         &coordsAtGaussPts(0, 0), &coordsAtGaussPts(0, 1),
@@ -131,9 +131,9 @@ EdgeElementForcesAndSourcesCore::calculateCoordsAtIntegrationPts() {
 }
 
 MoFEMErrorCode
-EdgeElementForcesAndSourcesCore::calculateHoCoordsAtIntegrationPts() {
+EdgeElementForcesAndSourcesCoreBase::calculateHoCoordsAtIntegrationPts() {
   MoFEMFunctionBegin;
-  
+
   if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
       dataPtr->get<FieldName_mi_tag>().end()) {
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
@@ -142,46 +142,6 @@ EdgeElementForcesAndSourcesCore::calculateHoCoordsAtIntegrationPts() {
   } else {
     tangentAtGaussPts.resize(0, 3, false);
   }
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode EdgeElementForcesAndSourcesCore::operator()() {
-  MoFEMFunctionBegin;
-
-  if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
-    MoFEMFunctionReturnHot(0);
- 
-  CHKERR createDataOnElement();
-  
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-
-  CHKERR calculateEdgeDirection();
-  CHKERR getSpacesAndBaseOnEntities(dataH1);
-  CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
-  dataH1.dataOnEntities[MBEDGE][0].getSense() =
-      1; // set sense to 1, this is this entity
-
-  // Hcurl
-  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
-    data_curl.dataOnEntities[MBEDGE][0].getSense() =
-        1; // set sense to 1, this is this entity
-    data_curl.spacesOnEntities[MBEDGE].set(HCURL);
-  }
-
-
-  CHKERR setIntegrationPts();
-  CHKERR calculateCoordsAtIntegrationPts();
-  CHKERR calculateBaseFunctionsOnElement();
-  CHKERR calculateHoCoordsAtIntegrationPts();
-
-  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    CHKERR opCovariantTransform.opRhs(data_curl);
-  }
-
-  // Iterate over operators
-  CHKERR loopOverOperators();
-
   MoFEMFunctionReturn(0);
 }
 

@@ -695,9 +695,9 @@ add_test(forces_and_sources_h1_continuity_check_atom
 )
 
 # Check approximation on Hcurl space in 2d
-my_add_executable(forces_and_sources_check_approx_of_hcurl_in_2d 
-  forces_and_sources_check_approx_of_hcurl_in_2d.cpp)
-target_link_libraries(forces_and_sources_check_approx_of_hcurl_in_2d
+my_add_executable(hcurl_check_approx_in_2d 
+  hcurl_check_approx_in_2d.cpp)
+target_link_libraries(hcurl_check_approx_in_2d
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -707,19 +707,33 @@ target_link_libraries(forces_and_sources_check_approx_of_hcurl_in_2d
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_check_approx_of_hcurl_in_2d_ainsworth
+add_test(hcurl_check_approx_in_2d_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_approx_of_hcurl_in_2d
-  -base ainsworth -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_check_approx_in_2d
+  -base ainsworth -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
 )
-# See TODO
-# add_test(forces_and_sources_check_approx_of_hcurl_in_2d_demkowicz
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_approx_of_hcurl_in_2d
-#   -base demkowicz -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
-# )
 
-
+my_add_executable(hcurl_divergence_operator_2d hcurl_divergence_operator_2d.cpp)
+target_link_libraries(hcurl_divergence_operator_2d
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(hcurl_divergence_operator_2d_ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
+  -base ainsworth -odrer 5
+)
+add_test(hcurl_divergence_operator_2d_demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
+  -base demkowicz -odrer 5
+)
 
 # add test for recording series
 my_add_executable(record_series_atom record_series_atom.cpp)
@@ -1306,8 +1320,9 @@ target_link_libraries(mesh_cut_test
 add_test(
   mesh_cut ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test 
-  -my_file test_mesh_cut.cub -side_set 200 -shift -0.2,0.2,0. -nb_ref_before 1 
-  -nb_ref_after 0 -tol 1e-4,2e-1,2e-1 -test
+  -my_file test_mesh_cut.cub -side_set 200 
+  -shift -0.2,0.2,0.
+  -tol 1e-4,2e-1,2e-1 -test
 )
 
 my_add_executable(segments_distance segments_distance.cpp)
@@ -1372,4 +1387,35 @@ target_link_libraries(petsc_smart_ptr_objects
 add_test(petsc_smart_ptr_objects
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/petsc_smart_ptr_objects  
+)
+
+my_add_executable(boundary_marker boundary_marker.cpp)
+target_link_libraries(boundary_marker
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(boundary_marker
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/boundary_marker -file_name rectangle.h5m
+)
+
+my_add_executable(add_blockset add_blockset.cpp)
+target_link_libraries(add_blockset
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(add_blockset
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/add_blockset 
 )
