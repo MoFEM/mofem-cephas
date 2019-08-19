@@ -202,7 +202,7 @@ auto createSmartGhostVector = [](MPI_Comm comm, PetscInt n, PetscInt N,
  * <a
  * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecDuplicate.html>VecDuplicate</a>.
  */
-auto smartVectorDuplicate = [](SmartPetscObj<Vec> &vec) {
+inline SmartPetscObj<Vec> smartVectorDuplicate(SmartPetscObj<Vec> &vec) {
   if (vec.use_count()) {
     Vec duplicate;
     ierr = VecDuplicate(vec, &duplicate);
@@ -213,25 +213,39 @@ auto smartVectorDuplicate = [](SmartPetscObj<Vec> &vec) {
   }
 };
 
+inline SmartPetscObj<Vec> smartVectorDuplicate(Vec &vec) {
+    Vec duplicate;
+    ierr = VecDuplicate(vec, &duplicate);
+    CHKERRABORT(PETSC_COMM_SELF, ierr);
+    return SmartPetscObj<Vec>(duplicate);
+};
+
 auto createTS = [](MPI_Comm comm) {
   TS ts;
-  ierr = TSCreate(PETSC_COMM_WORLD, &ts);
+  ierr = TSCreate(comm, &ts);
   CHKERRABORT(comm, ierr);
   return SmartPetscObj<TS>(ts);
 };
 
 auto createSNES = [](MPI_Comm comm) {
   SNES snes;
-  ierr = SNESCreate(PETSC_COMM_WORLD, &snes);
+  ierr = SNESCreate(comm, &snes);
   CHKERRABORT(comm, ierr);
   return SmartPetscObj<SNES>(snes);
 };
 
 auto createKSP = [](MPI_Comm comm) {
   KSP ksp;
-  ierr = KSPCreate(PETSC_COMM_WORLD, &ksp);
+  ierr = KSPCreate(comm, &ksp);
   CHKERRABORT(comm, ierr);
   return SmartPetscObj<KSP>(ksp);
+};
+
+auto createPC = [](MPI_Comm comm) {
+  PC pc;
+  ierr = PCCreate(comm, &pc);
+  CHKERRABORT(comm, ierr);
+  return SmartPetscObj<PC>(pc);
 };
 
 } // namespace MoFEM
