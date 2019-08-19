@@ -37,13 +37,18 @@ struct TestFE : public MoFEM::FaceElementForcesAndSourcesCore {
 
 
 
-double a0 = 1.0; 
+double a0 = 0.0; 
 double a1 = 2.0;
-double a2 = -15.0 * a0;
-double a3 = -20.0/ 6 * a1; 
-double a4 = 15.0 * a0;
-double a5 = a1;
-double a6 = -a0;
+
+double a2 = -3 * a0;
+double a3 = -1./3 * a1;
+
+
+// double a2 = -15.0 * a0;
+// double a3 = -20.0/ 6 * a1; 
+// double a4 = 15.0 * a0;
+// double a5 = a1;
+// double a6 = -a0;
 
 // 120 a6 x^3 + 60 a5 x^2 y + 24 a4 x y^2 + 6 a3 y^3
 
@@ -109,51 +114,59 @@ double a6 = -a0;
 // 20 * a1 * pow(x, 1) * pow(y, 3) +
 // 30 * a0 * pow(x, 0) * pow(y, 4)
 
+// linear
+
 
 
 struct ApproxFunctions {
   static FTensor::Tensor1<double, 3> fUn(const double x, const double y) {
     auto t = FTensor::Tensor1<double, 3>(
-                6 * a6 * pow(x, 5) * pow(y, 0) + 
-                5 * a5 * pow(x, 4) * pow(y, 1) + 
-                4 * a4 * pow(x, 3) * pow(y, 2) +
-                3 * a3 * pow(x, 2) * pow(y, 3) +
-                2 * a2 * pow(x, 1) * pow(y, 4) +
-                1 * a1 * pow(x, 0) * pow(y, 5),
-                    1 * a5 * pow(x, 5) * pow(y, 0) + 
-                    2 * a4 * pow(x, 4) * pow(y, 1) + 
-                    3 * a3 * pow(x, 3) * pow(y, 2) +
-                    4 * a2 * pow(x, 2) * pow(y, 3) +
-                    5 * a1 * pow(x, 1) * pow(y, 4) +
-                    6 * a0 * pow(x, 0) * pow(y, 5), 0.);
+                // 6 * a6 * pow(x, 5) * pow(y, 0) + 
+                // 5 * a5 * pow(x, 4) * pow(y, 1) + 
+                // 4 * a4 * pow(x, 3) * pow(y, 2) +
+                // 3 * a3 * pow(x, 2) * pow(y, 3) +
+                // 2 * a2 * pow(x, 1) * pow(y, 4) +
+                // 1 * a1 * pow(x, 0) * pow(y, 5)
+                a1 * pow(y, 2) + 2 * a2 * pow(x, 1) * pow(y, 1) + 3 * a3 * pow(x, 2),
+                    // 1 * a5 * pow(x, 5) * pow(y, 0) + 
+                    // 2 * a4 * pow(x, 4) * pow(y, 1) + 
+                    // 3 * a3 * pow(x, 3) * pow(y, 2) +
+                    // 4 * a2 * pow(x, 2) * pow(y, 3) +
+                    // 5 * a1 * pow(x, 1) * pow(y, 4) +
+                    // 6 * a0 * pow(x, 0) * pow(y, 5)
+                    3 * a0 * pow(y, 2) + 2 * a1 * pow(x, 1) * pow(y, 1) + a2 * pow(x, 2), 0.);
     const double a = t(0);
     const double b = t(1);
-    return FTensor::Tensor1<double,3>(-b, a, 0.);
+    return FTensor::Tensor1<double,3>(a, b, 0.);
 
   }
   static FTensor::Tensor2<double, 3, 2> diffFun(const double x,
                                                 const double y) {
     return FTensor::Tensor2<double, 3, 2>(
-        30 * a6 * pow(x, 4) * pow(y, 0) + 
-        20 * a5 * pow(x, 3) * pow(y, 1) + 
-        12 * a4 * pow(x, 2) * pow(y, 2) +
-         6 * a3 * pow(x, 1) * pow(y, 3) +
-         2 * a2 * pow(x, 0) * pow(y, 4),
-          5 * a5 * pow(x, 4) * pow(y, 0) + 
-          8 * a4 * pow(x, 3) * pow(y, 1) + 
-          9 * a3 * pow(x, 2) * pow(y, 2) +
-          8 * a2 * pow(x, 1) * pow(y, 3) +
-          5 * a1 * pow(x, 0) * pow(y, 4),
-            5 * a5 * pow(x, 4) * pow(y, 0) + 
-            8 * a4 * pow(x, 3) * pow(y, 1) + 
-            9 * a3 * pow(x, 2) * pow(y, 2) +
-            8 * a2 * pow(x, 1) * pow(y, 3) +
-            5 * a1 * pow(x, 0) * pow(y, 4),
-               2 * a4 * pow(x, 4) * pow(y, 0) + 
-               6 * a3 * pow(x, 3) * pow(y, 1) + 
-              12 * a2 * pow(x, 2) * pow(y, 2) +
-              20 * a1 * pow(x, 1) * pow(y, 3) +
-              30 * a0 * pow(x, 0) * pow(y, 4), 0., 0.);
+        // 30 * a6 * pow(x, 4) * pow(y, 0) + 
+        // 20 * a5 * pow(x, 3) * pow(y, 1) + 
+        // 12 * a4 * pow(x, 2) * pow(y, 2) +
+        //  6 * a3 * pow(x, 1) * pow(y, 3) +
+        //  2 * a2 * pow(x, 0) * pow(y, 4)
+        2 * a2 * pow(y, 1) + 6 * a3 * pow(x, 1),
+          // 5 * a5 * pow(x, 4) * pow(y, 0) + 
+          // 8 * a4 * pow(x, 3) * pow(y, 1) + 
+          // 9 * a3 * pow(x, 2) * pow(y, 2) +
+          // 8 * a2 * pow(x, 1) * pow(y, 3) +
+          // 5 * a1 * pow(x, 0) * pow(y, 4)
+          2 * a1 * pow(y, 1) + 2* a2 * pow(x, 1),
+            // 5 * a5 * pow(x, 4) * pow(y, 0) + 
+            // 8 * a4 * pow(x, 3) * pow(y, 1) + 
+            // 9 * a3 * pow(x, 2) * pow(y, 2) +
+            // 8 * a2 * pow(x, 1) * pow(y, 3) +
+            // 5 * a1 * pow(x, 0) * pow(y, 4)
+            2 * a1 * pow(y, 1) + 2* a2 * pow(x, 1),
+              //  2 * a4 * pow(x, 4) * pow(y, 0) + 
+              //  6 * a3 * pow(x, 3) * pow(y, 1) + 
+              // 12 * a2 * pow(x, 2) * pow(y, 2) +
+              // 20 * a1 * pow(x, 1) * pow(y, 3) +
+              // 30 * a0 * pow(x, 0) * pow(y, 4)
+              6 * a0 * pow(y, 1) + 2 * a1 * pow(x, 1), 0., 0.);
   }
 };
 
