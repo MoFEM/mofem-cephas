@@ -393,7 +393,7 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
 
   CHKERR cutAndTrim(first_bit, th, tol_cut, tol_cut_close, tol_trim_close,
                     &fixed_edges, &corner_nodes, update_meshsets, debug);
-  if (debug) 
+  if (debug)
     CHKERR cOre.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "cut_trim_ents_not_in_database.vtk", "VTK", "");
 
@@ -538,7 +538,8 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::createFrontLevelSets(int verb,
+MoFEMErrorCode CutMeshInterface::createFrontLevelSets(Range vol, Tag th,
+                                                      int verb,
                                                       const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
@@ -556,14 +557,17 @@ MoFEMErrorCode CutMeshInterface::createFrontLevelSets(int verb,
   };
 
   Range vol_vertices;
-  CHKERR moab.get_connectivity(vOlume, vol_vertices, true);
+  CHKERR moab.get_connectivity(vol, vol_vertices, true);
 
   std::vector<double> min_distances_from_front(vol_vertices.size(), -1);
   std::vector<double> points_on_edges(3 * vol_vertices.size(), 0);
   std::vector<EntityHandle> closest_edges(vol_vertices.size(), 0);
 
   std::vector<double> coords(3 * vol_vertices.size());
-  CHKERR moab.get_coords(vol_vertices, &*coords.begin());
+  if (th)
+    CHKERR moab.tag_get_data(th, vol_vertices, &*coords.begin());
+  else
+    CHKERR moab.get_coords(vol_vertices, &*coords.begin());
 
   CHKERR cOre.getInterface<Tools>()->findMinDistanceFromTheEdges(
       &*coords.begin(), vol_vertices.size(), fRont,
@@ -680,7 +684,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
 
-  CHKERR createFrontLevelSets(verb, debug);
+  CHKERR createFrontLevelSets(vOlume, nullptr, verb, debug);
   Tag th_dist_front_vec;
   CHKERR moab.tag_get_handle("DIST_FRONT_VECTOR", th_dist_front_vec);
   CHKERR createLevelSets(th_dist_front_vec, cutFrontVolumes, true, verb, debug,
@@ -926,6 +930,18 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     MoFEMFunctionReturnHot(0);
   };
 
+  auto project_node = [this, &moab](const EntityHandle v) {
+    MoFEMFunctionBeginHot;
+    VectorDouble3 s0(3);
+    CHKERR moab.get_coords(&v, 1, &s0[0]);
+    verticesOnCutEdges[v].dIst = 0;
+    verticesOnCutEdges[v].lEngth = 0;
+    verticesOnCutEdges[v].unitRayDir.resize(3, false);
+    verticesOnCutEdges[v].unitRayDir.clear();
+    verticesOnCutEdges[v].rayPoint = s0;
+    MoFEMFunctionReturnHot(0);
+  };
+
   auto project_vertices_close_to_geometry_features = [&]() {
     MoFEMFunctionBegin;
 
@@ -938,22 +954,29 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     if (corner_nodes)
       fixed_edges_verts.merge(*corner_nodes);
 
-    Skinner skin(&moab);
-    Range tets_skin;
-    CHKERR skin.find_skin(0, vOlume, false, tets_skin);
-    Range tets_skin_verts;
-    CHKERR moab.get_connectivity(tets_skin, tets_skin_verts, true);
-    fixed_edges_verts.merge(tets_skin_verts);
+    Range fix_vertices = intersect(fixed_edges_verts, vol_vertices);
 
-    vol_vertices = intersect(fixed_edges_verts, vol_vertices);
-
-    for (auto v : vol_vertices) {
+    for (auto v : fix_vertices) {
 
       VectorDouble3 dist_normal(3);
       CHKERR moab.tag_get_data(th_dist_normal, &v, 1, &*dist_normal.begin());
       const double dist = norm_2(dist_normal);
 
       const double tol = get_ave_edge_length(v, vol_edges) * geometry_tol;
+      if (dist < tol) {
+        CHKERR not_project_node(v);
+        zeroDistanceVerts.insert(v);
+      }
+    }
+
+    for (auto v : subtract(vol_vertices, fix_vertices)) {
+
+      VectorDouble3 dist_normal(3);
+      CHKERR moab.tag_get_data(th_dist_normal, &v, 1, &*dist_normal.begin());
+      const double dist = norm_2(dist_normal);
+
+      const double tol =
+          get_ave_edge_length(v, vol_edges) * geometry_tol * geometry_tol;
       if (dist < tol) {
         CHKERR not_project_node(v);
         zeroDistanceVerts.insert(v);
@@ -1489,9 +1512,14 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
 
-  treeSurfPtr = boost::shared_ptr<OrientedBoxTreeTool>(
-      new OrientedBoxTreeTool(&moab, "ROOTSETSURF", true));
-  CHKERR treeSurfPtr->build(cutNewSurfaces, rootSetSurf);
+  // treeSurfPtr = boost::shared_ptr<OrientedBoxTreeTool>(
+  //     new OrientedBoxTreeTool(&moab, "ROOTSETSURF", true));
+  // CHKERR treeSurfPtr->build(cutNewSurfaces, rootSetSurf);
+
+  // Calculate distances
+  CHKERR createFrontLevelSets(cutNewSurfaces, th, QUIET, debug);
+  Tag th_dist_front_vec;
+  CHKERR moab.tag_get_handle("DIST_FRONT_VECTOR", th_dist_front_vec);
 
   // takes body skin
   Skinner skin(&moab);
@@ -1595,6 +1623,16 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     // Get edge connectivity and coords
     const EntityHandle *conn_edge;
     CHKERR moab.get_connectivity(e, conn_edge, num_nodes, true);
+
+    auto get_tag_data = [&](auto th, auto conn) {
+      FTensor::Tensor1<double, 3> t;
+      CHKERR moab.tag_get_data(th, &conn, 1, &t(0));
+      return t;
+    };
+
+    auto t_dist0 = get_tag_data(th_dist_front_vec, conn_edge[0]);
+    auto t_dist1 = get_tag_data(th_dist_front_vec, conn_edge[1]);
+
     double coords_edge[3 * num_nodes];
     CHKERR moab.get_coords(conn_edge, num_nodes, coords_edge);
 
@@ -1610,100 +1648,21 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     if (edge_length == 0)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Zero edge length");
 
-    auto get_edge_coors = [&](const auto e) {
-      const EntityHandle *conn;
-      CHKERR moab.get_connectivity(e, conn, num_nodes, true);
-      VectorDouble6 coords(6);
-      if (th)
-        CHKERR moab.tag_get_data(th, conn, num_nodes, &coords[0]);
-      else
-        CHKERR moab.get_coords(conn, num_nodes, &coords[0]);
-      return coords;
-    };
+    const double s0 = t_dist0(i) * t_edge_delta(i) / edge_length;
+    const double s1 = t_dist1(i) * t_edge_delta(i) / edge_length;
+    const double dot = t_dist0(i) * t_dist1(i);
 
-    // iterate entities surface front to find cross to trim
-    for (auto s : surface_skin) {
+    if (s0 >= 0 && s1 <= 0 && dot <= 0) {
 
-      auto coords_front = get_edge_coors(s);
+      // Edges is on two sides of the surface
+      const double t_edge = s0 / (s0 - s1);
 
-      FTensor::Tensor1<double *, 3> t_f0(&coords_front[0], &coords_front[1],
-                                         &coords_front[2]);
-      FTensor::Tensor1<double *, 3> t_f1(&coords_front[3], &coords_front[4],
-                                         &coords_front[5]);
+      FTensor::Tensor1<double, 3> t_ray;
+      t_ray(i) = t_edge * t_edge_delta(i);
+      add_vert(conn_edge[0], e, fabs(t_edge));
+      add_vert(conn_edge[1], e, fabs(t_edge - 1));
+      cut_this_edge(e, edge_length, t_ray, t_e0);
 
-      // find point of minilam distance between front and cut surface edge
-      double t_edge = -1, t_front = -1;
-      auto res = Tools::minDistanceFromSegments(&t_e0(0), &t_e1(0), &t_f0(0),
-                                                &t_f1(0), &t_edge, &t_front);
-
-      if (res != Tools::NO_SOLUTION) {
-
-        // check if edges crossing each other in the middle (it not imply that
-        // have common point)
-        const double overlap_tol = 1e-2;
-        if (
-
-            (t_edge > -std::numeric_limits<float>::epsilon() &&
-             t_edge < 1 + std::numeric_limits<float>::epsilon())
-
-            &&
-
-            (t_front >= -overlap_tol && t_front <= 1 + overlap_tol)
-
-        ) {
-
-          FTensor::Tensor1<double, 3> t_front_delta;
-          t_front_delta(i) = t_f1(i) - t_f0(i);
-          FTensor::Tensor1<double, 3> t_edge_delta;
-          t_edge_delta(i) = t_e1(i) - t_e0(i);
-          FTensor::Tensor1<double, 3> t_edge_point, t_front_point;
-          t_edge_point(i) = t_e0(i) + t_edge * t_edge_delta(i);
-          t_front_point(i) = t_f0(i) + t_front * t_front_delta(i);
-
-          EntityHandle facets_out;
-          FTensor::Tensor1<double, 3> t_point_on_cutting_surface;
-          CHKERR treeSurfPtr->closest_to_location(
-              &t_front_point(0), rootSetSurf, &t_point_on_cutting_surface(0),
-              facets_out);
-          FTensor::Tensor1<double, 3> t_ray;
-          t_ray(i) = t_point_on_cutting_surface(i) - t_edge_point(i);
-          const double dist = sqrt(t_ray(i) * t_ray(i));
-
-          // that imply that edges have common point
-          if ((dist / edge_length) < 0.25) {
-
-            auto check_to_add_edge = [&](const EntityHandle e,
-                                         const double dist) {
-              auto eit = edgesToTrim.find(e);
-              if (eit != edgesToTrim.end())
-                if (eit->second.dIst < dist)
-                  return false;
-              return true;
-            };
-
-            FTensor::Tensor1<double, 3> t_ray;
-            if (t_edge < 0.5) {
-              t_ray(i) = t_edge * t_edge_delta(i);
-              const double ray_length = sqrt(t_ray(i) * t_ray(i));
-              if (check_to_add_edge(e, ray_length)) {
-                add_vert(conn_edge[0], e, fabs(t_edge));
-                add_vert(conn_edge[1], e, fabs(t_edge - 1));
-                cut_this_edge(e, edge_length, t_ray, t_e0);
-              }
-            } else {
-              FTensor::Tensor1<double, 3> t_edge_point;
-              t_edge_point(i) = t_e0(i) + t_edge * t_edge_delta(i);
-              t_ray(i) = t_edge_point(i) - t_e1(i);
-              const double ray_length = sqrt(t_ray(i) * t_ray(i));
-              if (check_to_add_edge(e, ray_length)) {
-                add_vert(conn_edge[0], e, fabs(t_edge));
-                add_vert(conn_edge[1], e, fabs(t_edge - 1));
-                cut_this_edge(e, edge_length, t_ray, t_e1);
-              }
-            }
-          }
-        }
-      }
     }
   }
 
@@ -2009,11 +1968,11 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
   auto remove_faces_on_skin = [&]() {
     MoFEMFunctionBegin;
     Range skin_faces = intersect(trimNewSurfaces, trim_tets_skin);
-    if(!skin_faces.empty()) {
+    if (!skin_faces.empty()) {
       Range add_to_barrier;
       CHKERR moab.get_connectivity(skin_faces, add_to_barrier, false);
       barrier_vertices.merge(add_to_barrier);
-      for(auto f : skin_faces)
+      for (auto f : skin_faces)
         trimNewSurfaces.erase(f);
     }
     MoFEMFunctionReturn(0);
