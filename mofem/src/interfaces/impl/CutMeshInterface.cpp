@@ -1623,10 +1623,19 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
 
       auto project_on_surface = [&](auto &t) {
         FTensor::Tensor1<double, 3> t_p;
+
         EntityHandle facets_out;
         FTensor::Tensor1<double, 3> t_point_on_cutting_surface;
         CHKERR treeSurfPtr->closest_to_location(&t(0), rootSetSurf, &t_p(0),
                                                 facets_out);
+
+        FTensor::Tensor1<double,3> t_normal;
+        CHKERR m_field.getInterface<Tools>()->getTriNormal(facets_out,
+                                                           &t_normal(0));
+        t_normal(i) /= sqrt(t_normal(i) * t_normal(i));
+        const double dot = t_normal(i) * (t_p(i) - t(i));
+        t_p(i) = t(i) + dot * t_normal(i);
+
         return t_p;
       };
 
@@ -1643,6 +1652,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
 
       auto t_p_f0 = project_on_surface(t_f0);
       auto t_p_f1 = project_on_surface(t_f1);
+
       CHKERR moab.set_coords(&conn[0], 1, &t_p_f0(0));
       CHKERR moab.set_coords(&conn[1], 1, &t_p_f1(0));
     }
@@ -1714,17 +1724,19 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       if (res != Tools::NO_SOLUTION) {
         // check if edges crossing each other in the middle (it not imply that
         // have common point)
-        const double overlap_tol = 1e-2;
+        // const double overlap_tol = 1e-2;
         if (
 
             (t_edge > -std::numeric_limits<float>::epsilon() &&
              t_edge < 1 + std::numeric_limits<float>::epsilon())
 
-            &&
+            // &&
 
-            (t_front >= -overlap_tol && t_front <= 1 + overlap_tol)
+            // (t_front >= -overlap_tol && t_front <= 1 + overlap_tol)
 
         ) {
+
+          t_front = std::max(0., std::min(t_front, 1.));
 
           FTensor::Tensor1<double, 3> t_front_delta;
           t_front_delta(i) = t_f1(i) - t_f0(i);
