@@ -1724,15 +1724,15 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       if (res != Tools::NO_SOLUTION) {
         // check if edges crossing each other in the middle (it not imply that
         // have common point)
-        // const double overlap_tol = 1e-2;
+        const double overlap_tol = 1e-2;
         if (
 
             (t_edge > -std::numeric_limits<float>::epsilon() &&
              t_edge < 1 + std::numeric_limits<float>::epsilon())
 
-            // &&
+            &&
 
-            // (t_front >= -overlap_tol && t_front <= 1 + overlap_tol)
+            (t_front >= -overlap_tol && t_front <= 1 + overlap_tol)
 
         ) {
 
