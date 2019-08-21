@@ -821,38 +821,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
   Tag th_dist_normal;
   CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_VECTOR", th_dist_normal);
 
-  auto get_min_edge_length = [&](const EntityHandle ent,
-                                 const Range &vol_edges) {
-
-    Range adj_edges;
-    if (moab.type_from_handle(ent) == MBVERTEX)
-      CHKERR moab.get_adjacencies(&ent, 1, 1, false, adj_edges);
-    else
-      adj_edges.insert(ent);
-    adj_edges = intersect(adj_edges, vol_edges);
-    
-    double min_l = -1;
-    for (auto e : adj_edges) {
-      int num_nodes;
-      const EntityHandle *conn;
-      CHKERR moab.get_connectivity(e, conn, num_nodes, true);
-      VectorDouble6 coords(6);
-      CHKERR moab.get_coords(conn, num_nodes, &coords[0]);
-      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_n0(
-          &coords[0], &coords[1], &coords[2]);
-      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_n1(
-          &coords[3], &coords[4], &coords[5]);
-      FTensor::Index<'i', 3> i;
-      t_n0(i) -= t_n1(i);
-      const double l = sqrt(t_n0(i) * t_n0(i));
-      if (min_l < 0)
-        min_l = l;
-      else
-        min_l = std::min(l, min_l);
-    }
-    return min_l;
-  };
-
   auto get_tag_data = [&](auto th, auto conn) {
     const void *ptr;
     CHKERR moab.tag_get_by_ptr(th, &conn, 1, &ptr);
@@ -945,6 +913,38 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     verticesOnCutEdges[v].unitRayDir = dist_normal;
     verticesOnCutEdges[v].rayPoint = s0;
     MoFEMFunctionReturnHot(0);
+  };
+
+  auto get_min_edge_length = [&](const EntityHandle ent,
+                                 const Range &vol_edges) {
+
+    Range adj_edges;
+    if (moab.type_from_handle(ent) == MBVERTEX)
+      CHKERR moab.get_adjacencies(&ent, 1, 1, false, adj_edges);
+    else
+      adj_edges.insert(ent);
+    adj_edges = intersect(adj_edges, vol_edges);
+    
+    double min_l = -1;
+    for (auto e : adj_edges) {
+      int num_nodes;
+      const EntityHandle *conn;
+      CHKERR moab.get_connectivity(e, conn, num_nodes, true);
+      VectorDouble6 coords(6);
+      CHKERR moab.get_coords(conn, num_nodes, &coords[0]);
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_n0(
+          &coords[0], &coords[1], &coords[2]);
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_n1(
+          &coords[3], &coords[4], &coords[5]);
+      FTensor::Index<'i', 3> i;
+      t_n0(i) -= t_n1(i);
+      const double l = sqrt(t_n0(i) * t_n0(i));
+      if (min_l < 0)
+        min_l = l;
+      else
+        min_l = std::min(l, min_l);
+    }
+    return min_l;
   };
 
   auto project_vertices_close_to_geometry_features = [&]() {
