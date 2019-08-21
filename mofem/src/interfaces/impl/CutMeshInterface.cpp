@@ -930,14 +930,14 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     MoFEMFunctionReturnHot(0);
   };
 
-  auto project_node = [this, &moab](const EntityHandle v) {
+  auto project_node = [this, &moab](const EntityHandle v,
+                                    VectorDouble3 dist_normal) {
     MoFEMFunctionBeginHot;
     VectorDouble3 s0(3);
     CHKERR moab.get_coords(&v, 1, &s0[0]);
-    verticesOnCutEdges[v].dIst = 0;
-    verticesOnCutEdges[v].lEngth = 0;
-    verticesOnCutEdges[v].unitRayDir.resize(3, false);
-    verticesOnCutEdges[v].unitRayDir.clear();
+    verticesOnCutEdges[v].dIst = 1;
+    verticesOnCutEdges[v].lEngth = norm_2(dist_normal);
+    verticesOnCutEdges[v].unitRayDir = dist_normal;
     verticesOnCutEdges[v].rayPoint = s0;
     MoFEMFunctionReturnHot(0);
   };
@@ -969,16 +969,36 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
       }
     }
 
-    for (auto v : subtract(vol_vertices, fix_vertices)) {
+    Skinner skin(&moab);
+    Range tets_skin;
+    CHKERR skin.find_skin(0, vOlume, false, tets_skin);
+    Range tets_skin_verts;
+    CHKERR moab.get_connectivity(tets_skin, tets_skin_verts, true);
+
+    for (auto v : subtract(tets_skin_verts, fix_vertices)) {
 
       VectorDouble3 dist_normal(3);
       CHKERR moab.tag_get_data(th_dist_normal, &v, 1, &*dist_normal.begin());
       const double dist = norm_2(dist_normal);
 
       const double tol =
-          get_ave_edge_length(v, vol_edges) * geometry_tol * geometry_tol;
+          get_ave_edge_length(v, vol_edges) * pow(geometry_tol, 2);
       if (dist < tol) {
         CHKERR not_project_node(v);
+        zeroDistanceVerts.insert(v);
+      }
+    }
+
+    for (auto v : subtract(vol_vertices, tets_skin_verts)) {
+
+      VectorDouble3 dist_normal(3);
+      CHKERR moab.tag_get_data(th_dist_normal, &v, 1, &*dist_normal.begin());
+      const double dist = norm_2(dist_normal);
+
+      const double tol =
+          get_ave_edge_length(v, vol_edges) * pow(geometry_tol, 3);
+      if (dist < tol) {
+        CHKERR project_node(v, dist_normal);
         zeroDistanceVerts.insert(v);
       }
     }
