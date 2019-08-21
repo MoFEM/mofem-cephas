@@ -821,16 +821,17 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
   Tag th_dist_normal;
   CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_VECTOR", th_dist_normal);
 
-  auto get_ave_edge_length = [&](const EntityHandle ent,
+  auto get_min_edge_length = [&](const EntityHandle ent,
                                  const Range &vol_edges) {
+
     Range adj_edges;
     if (moab.type_from_handle(ent) == MBVERTEX)
       CHKERR moab.get_adjacencies(&ent, 1, 1, false, adj_edges);
     else
       adj_edges.insert(ent);
-
     adj_edges = intersect(adj_edges, vol_edges);
-    double ave_l = 0;
+    
+    double min_l = -1;
     for (auto e : adj_edges) {
       int num_nodes;
       const EntityHandle *conn;
@@ -843,9 +844,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
           &coords[3], &coords[4], &coords[5]);
       FTensor::Index<'i', 3> i;
       t_n0(i) -= t_n1(i);
-      ave_l += sqrt(t_n0(i) * t_n0(i));
+      const double l = sqrt(t_n0(i) * t_n0(i));
+      if (min_l < 0)
+        min_l = l;
+      else
+        min_l = std::min(l, min_l);
     }
-    return ave_l / adj_edges.size();
+    return min_l;
   };
 
   auto get_tag_data = [&](auto th, auto conn) {
@@ -962,7 +967,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
       CHKERR moab.tag_get_data(th_dist_normal, &v, 1, &*dist_normal.begin());
       const double dist = norm_2(dist_normal);
 
-      const double tol = get_ave_edge_length(v, vol_edges) * geometry_tol;
+      const double tol = get_min_edge_length(v, vol_edges) * geometry_tol;
       if (dist < tol) {
         CHKERR not_project_node(v);
         zeroDistanceVerts.insert(v);
@@ -982,7 +987,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
       const double dist = norm_2(dist_normal);
 
       const double tol =
-          get_ave_edge_length(v, vol_edges) * pow(geometry_tol, 2);
+          get_min_edge_length(v, vol_edges) * pow(geometry_tol, 2);
       if (dist < tol) {
         CHKERR not_project_node(v);
         zeroDistanceVerts.insert(v);
@@ -996,7 +1001,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
       const double dist = norm_2(dist_normal);
 
       const double tol =
-          get_ave_edge_length(v, vol_edges) * pow(geometry_tol, 3);
+          get_min_edge_length(v, vol_edges) * pow(geometry_tol, 3);
       if (dist < tol) {
         CHKERR project_node(v, dist_normal);
         zeroDistanceVerts.insert(v);
