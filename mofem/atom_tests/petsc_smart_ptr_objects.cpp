@@ -88,6 +88,11 @@ int main(int argc, char *argv[]) {
 
     // counts should be zero now
     CHKERR check(0);
+
+    {
+      SmartPetscObj<Mat> m;
+    }
+
   }
   CATCH_ERRORS;
 
