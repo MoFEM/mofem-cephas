@@ -635,7 +635,7 @@ struct OpCalculateTensor2SymmetricFieldValues
 
   OpCalculateTensor2SymmetricFieldValues(
       const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
-      const EntityType zero_type = MBTRI, const int zero_side = 0)
+      const EntityType zero_type = MBEDGE, const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
@@ -653,9 +653,9 @@ struct OpCalculateTensor2SymmetricFieldValues
       mat.clear();
     }
     const int nb_dofs = data.getFieldData().size();
-    if (!nb_dofs) {
+    if (!nb_dofs) 
       MoFEMFunctionReturnHot(0);
-    }
+    
     const int nb_base_functions = data.getN().size2();
     auto base_function = data.getFTensor0N();
     auto values_at_gauss_pts = getFTensor2SymmetricFromMat<Tensor_Dim>(mat);
@@ -694,7 +694,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
 
   OpCalculateTensor2SymmetricFieldValuesDot(
       const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
-      const EntityType zero_type = MBTRI, const int zero_side = 0)
+      const EntityType zero_type = MBEDGE, const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
@@ -1083,7 +1083,7 @@ struct OpCalculateHdivVectorField_General
   OpCalculateHdivVectorField_General(
       const std::string &field_name,
       boost::shared_ptr<ublas::matrix<T, L, A>> &data_ptr,
-      const EntityType zero_type = MBTRI, const int zero_side = 0)
+      const EntityType zero_type = MBEDGE, const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type), zeroSide(0) {
@@ -1127,7 +1127,7 @@ struct OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
 
   OpCalculateHdivVectorField_General(const std::string &field_name,
                                      boost::shared_ptr<MatrixDouble> &data_ptr,
-                                     const EntityType zero_type = MBTRI,
+                                     const EntityType zero_type = MBEDGE,
                                      const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -1182,8 +1182,6 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
 
 /** \brief Get vector field for H-div approximation
  * \ingroup mofem_forces_and_sources_user_data_operators
- * \note Not tested
- * \FIXME Test this
  */
 template <int Tensor_Dim>
 struct OpCalculateHdivVectorField
@@ -1192,7 +1190,7 @@ struct OpCalculateHdivVectorField
 
   OpCalculateHdivVectorField(const std::string &field_name,
                              boost::shared_ptr<MatrixDouble> &data_ptr,
-                             const EntityType zero_type = MBTRI,
+                             const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
       : OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
                                            DoubleAllocator>(
@@ -1205,7 +1203,7 @@ struct OpCalculateHdivVectorField
  *
  * @tparam Tensor_Dim dimension of space
  */
-template <int Tensor_Dim>
+template <int Tensor_Dim1, int Tensor_Dim2>
 struct OpCalculateHdivVectorDivergence
     : public ForcesAndSourcesCore::UserDataOperator {
 
@@ -1215,7 +1213,7 @@ struct OpCalculateHdivVectorDivergence
 
   OpCalculateHdivVectorDivergence(const std::string &field_name,
                                   boost::shared_ptr<VectorDouble> &data_ptr,
-                                  const EntityType zero_type = MBTRI,
+                                  const EntityType zero_type = MBEDGE,
                                   const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -1235,15 +1233,17 @@ struct OpCalculateHdivVectorDivergence
     const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getN().size2() / Tensor_Dim;
-    FTensor::Index<'i', Tensor_Dim> i;
-    auto t_n_diff_hdiv = data.getFTensor2DiffN<Tensor_Dim, Tensor_Dim>();
+    const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
+    FTensor::Index<'i', Tensor_Dim1> i;
+    auto t_n_diff_hdiv = data.getFTensor2DiffN<Tensor_Dim1, Tensor_Dim2>();
     auto t_data = getFTensor0FromVec(*dataPtr);
     for (int gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor0FieldData();
       int bb = 0;
       for (; bb != nb_dofs; ++bb) {
-        double div = t_n_diff_hdiv(i, i);
+        double div = 0;
+        for (auto ii = 0; ii != Tensor_Dim2; ++ii)
+          div += t_n_diff_hdiv(ii, ii);
         t_data += t_dof * div;
         ++t_n_diff_hdiv;
         ++t_dof;
@@ -1351,7 +1351,7 @@ struct OpCalculateHVecTensorField
 
   OpCalculateHVecTensorField(const std::string &field_name,
                              boost::shared_ptr<MatrixDouble> &data_ptr,
-                             const EntityType zero_type = MBTRI,
+                             const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -1409,7 +1409,7 @@ struct OpCalculateHTensorTensorField
 
   OpCalculateHTensorTensorField(const std::string &field_name,
                                 boost::shared_ptr<MatrixDouble> &data_ptr,
-                                const EntityType zero_type = MBTRI,
+                                const EntityType zero_type = MBEDGE,
                                 const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -1468,7 +1468,7 @@ struct OpCalculateHVecTensorDivergence
 
   OpCalculateHVecTensorDivergence(const std::string &field_name,
                                   boost::shared_ptr<MatrixDouble> &data_ptr,
-                                  const EntityType zero_type = MBTRI,
+                                  const EntityType zero_type = MBEDGE,
                                   const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
