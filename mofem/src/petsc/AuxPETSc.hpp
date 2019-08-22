@@ -1,5 +1,5 @@
 /** \file AuxPETSc.hpp
- * \brief Auxuliary MoFEM-PETSc structures
+ * \brief Auxiliary MoFEM-PETSc structures
  */
 
 /* This file is part of MoFEM.
@@ -49,16 +49,20 @@ template <typename OBJ> void intrusive_ptr_add_ref(OBJ obj) {
  * @param obj
  */
 template <typename OBJ> void intrusive_ptr_release(OBJ obj) {
-  PetscErrorCode ierr;
-  int cnt;
-  ierr = PetscObjectGetReference(reinterpret_cast<PetscObject>(obj), &cnt);
-  CHKERRABORT(PetscObjectComm(MoFEM::getPetscObject(obj)), ierr);
-  if (cnt > 1) {
-    ierr = PetscObjectDereference(MoFEM::getPetscObject(obj));
-    CHKERRABORT(PetscObjectComm(MoFEM::getPetscObject(obj)), ierr);
-  } else {
-    ierr = PetscObjectDestroy(reinterpret_cast<PetscObject *>(&obj));
-    CHKERRABORT(PetscObjectComm(MoFEM::getPetscObject(obj)), ierr);
+  int cnt = 0;
+  PetscErrorCode ierr =
+      PetscObjectGetReference(MoFEM::getPetscObject(obj), &cnt);
+  if (!ierr) {
+    if (cnt) {
+      auto comm = PetscObjectComm(MoFEM::getPetscObject(obj));
+      if (cnt > 1) {
+        ierr = PetscObjectDereference(MoFEM::getPetscObject(obj));
+        CHKERRABORT(comm, ierr);
+      } else {
+        ierr = PetscObjectDestroy(reinterpret_cast<PetscObject *>(&obj));
+        CHKERRABORT(comm, ierr);
+      }
+    }
   }
 }
 
@@ -126,9 +130,9 @@ struct SmartPetscObj
 
   SmartPetscObj()
       : boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type>() {}
-  SmartPetscObj(OBJ o)
+  SmartPetscObj(OBJ o, bool add_ref = false)
       : boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type>(o,
-                                                                      false) {}
+                                                                      add_ref) {}
   operator OBJ() { return this->get(); }
   explicit operator PetscObject() {
     return reinterpret_cast<PetscObject>(this->get());
