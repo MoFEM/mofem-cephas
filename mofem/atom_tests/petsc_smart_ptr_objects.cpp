@@ -48,6 +48,9 @@ int main(int argc, char *argv[]) {
       m_ptr = SmartPetscObj<Mat>(m);
     }
 
+    // Check casting on PetscObject
+    { PetscObject obj = static_cast<PetscObject>(m_ptr); }
+
     { 
       SmartPetscObj<Mat> n_ptr(m_ptr); 
       CHKERR check(2);
@@ -85,6 +88,11 @@ int main(int argc, char *argv[]) {
 
     // counts should be zero now
     CHKERR check(0);
+
+    {
+      SmartPetscObj<Mat> m;
+    }
+
   }
   CATCH_ERRORS;
 

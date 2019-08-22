@@ -287,8 +287,14 @@ struct OpValsDiffVals : public FaceEleOp {
 struct OpCheckValsDiffVals : public FaceEleOp {
   MatrixDouble &vAls;
   MatrixDouble &diffVals;
-  OpCheckValsDiffVals(MatrixDouble &vals, MatrixDouble &diff_vals)
-      : FaceEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals) {}
+  boost::shared_ptr<MatrixDouble> ptrVals;
+  boost::shared_ptr<VectorDouble> ptrDiv;
+
+  OpCheckValsDiffVals(MatrixDouble &vals, MatrixDouble &diff_vals,
+                      boost::shared_ptr<MatrixDouble> ptr_vals,
+                      boost::shared_ptr<VectorDouble> ptr_div)
+      : FaceEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals),
+        ptrVals(ptr_vals), ptrDiv(ptr_div) {}
 
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 2> j;
@@ -299,12 +305,17 @@ struct OpCheckValsDiffVals : public FaceEleOp {
     const double eps = 1e-6;
     if (type == MBEDGE && side == 0) {
       const int nb_gauss_pts = data.getN().size1();
+
       auto t_vals = getFTensor1FromMat<3>(vAls);
       auto t_diff_vals = getFTensor2FromMat<3, 2>(diffVals);
+      auto t_vals_from_op = getFTensor1FromMat<3>(*ptrVals);
+      auto t_div_from_op = getFTensor0FromVec(*ptrDiv);
+
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
         const double x = getCoordsAtGaussPts()(gg, 0);
         const double y = getCoordsAtGaussPts()(gg, 1);
 
+        // Check approximation
         FTensor::Tensor1<double, 3> delta_val;
         delta_val(i) = t_vals(i) - ApproxFunctions::fUn(x, y)(i);
         FTensor::Tensor2<double, 3, 2> delta_diff_val;
@@ -312,16 +323,32 @@ struct OpCheckValsDiffVals : public FaceEleOp {
             t_diff_vals(i, j) - ApproxFunctions::diffFun(x, y)(i, j);
         double err_val = sqrt(delta_val(i) * delta_val(i));
         double err_diff_val = sqrt(delta_diff_val(i, j) * delta_diff_val(i, j));
-        if (err_val > eps) {
+        if (err_val > eps) 
           SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong value %4.3e", err_val);
-        }
-        if (err_diff_val > eps) {
+        
+        if (err_diff_val > eps) 
           SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong derivative of value %4.3e", err_diff_val);
-        }
+        
+        // Check HDiv user data operators
+        delta_val(i) = t_vals(i) - t_vals_from_op(i);
+        err_val = sqrt(delta_val(i) * delta_val(i));
+        if (err_val > eps)
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong value from operator %4.3e", err_val);
+
+        double div = t_diff_vals(0, 0) + t_diff_vals(1, 1);
+        double err_div = div - t_div_from_op;
+        if (err_div > eps)
+          SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong divergence from operator %4.3e (%4.3e != %4.3e)",
+                   err_div, div, t_div_from_op);
+
         ++t_vals;
         ++t_diff_vals;
+        ++t_vals_from_op;
+        ++t_div_from_op;
       }
     }
     MoFEMFunctionReturn(0);
@@ -456,6 +483,11 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       TestFE fe(m_field);
       MatrixDouble jac(2, 2), inv_jac(2, 2), vals, diff_vals;
+
+      boost::shared_ptr<MatrixDouble> ptr_values(new MatrixDouble());
+      boost::shared_ptr<VectorDouble> ptr_divergence(new VectorDouble());
+    
+
       fe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
       fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
       fe.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
@@ -463,7 +495,12 @@ int main(int argc, char *argv[]) {
           new OpSetContravariantPiolaTransformFace(jac));
       fe.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
       fe.getOpPtrVector().push_back(new OpValsDiffVals(vals, diff_vals));
-      fe.getOpPtrVector().push_back(new OpCheckValsDiffVals(vals, diff_vals));
+      fe.getOpPtrVector().push_back(
+          new OpCalculateHdivVectorField<3>("FIELD1", ptr_values));
+      fe.getOpPtrVector().push_back(
+          new OpCalculateHdivVectorDivergence<3, 2>("FIELD1", ptr_divergence));
+      fe.getOpPtrVector().push_back(
+          new OpCheckValsDiffVals(vals, diff_vals, ptr_values, ptr_divergence));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE1", fe);
       MoFEMFunctionReturn(0);
     };

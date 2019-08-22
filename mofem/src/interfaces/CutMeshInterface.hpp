@@ -234,11 +234,14 @@ struct CutMeshInterface : public UnknownInterface {
   /**
    * @brief Calculate distance from mesh nodes to surface front
    *
+   * @param vol
+   * @param th if not null take coordinates from tag
    * @param verb
    * @param debug
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode createFrontLevelSets(int verb = QUIET,
+  MoFEMErrorCode createFrontLevelSets(Range vol, Tag th = nullptr,
+                                      int verb = QUIET,
                                       const bool debug = false);
 
   /**
