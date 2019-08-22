@@ -203,6 +203,8 @@ MoFEMErrorCode CutMeshInterface::snapSurfaceToEdges(const Range &surface_edges,
         &t_n(0), 1, fixed_edges, &min_dist, &t_min_coords(0));
 
     if (min_dist < rel_tol * m.second || min_dist < abs_tol) {
+      if(debug)
+        cerr << "Snap " << min_dist << endl;
       if (th)
         CHKERR moab.tag_set_data(th, &m.first, 1, &t_min_coords(0));
       else
