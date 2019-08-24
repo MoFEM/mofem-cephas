@@ -71,15 +71,7 @@ struct VecManager : public UnknownInterface {
   MoFEMErrorCode vecCreateGhost(const std::string &name, RowColData rc,
                                 Vec *V) const;
 
-  /**
-   * \brief create ghost vector for problem (collective)
-   * \ingroup mofem_vectors
-
-  collective - need to be run on all processors in communicator
-
-   * \param name problem name
-   * \param RowColData specify what data is taken from Row, Col or Data
-   * \param Vec the vector where data is stored
+  /** @copydoc MoFEM::VecManager::vecCreateGhost
    */
   MoFEMErrorCode vecCreateGhost(const std::string &name, RowColData rc,
                                 SmartPetscObj<Vec> &v_ptr) const;
@@ -108,6 +100,15 @@ struct VecManager : public UnknownInterface {
                                   const std::string &y_field_name,
                                   RowColData y_rc, VecScatter *newctx) const;
 
+  /** @copydoc MoFEM::VecManager::vecScatterCreate
+    */
+  MoFEMErrorCode
+  vecScatterCreate(Vec xin, const std::string &x_problem,
+                   const std::string &x_field_name, RowColData x_rc, Vec yin,
+                   const std::string &y_problem,
+                   const std::string &y_field_name, RowColData y_rc,
+                   SmartPetscObj<VecScatter> &smart_newctx) const;
+
   /**
     * \brief create scatter for vectors form one to another problem (collective)
     * \ingroup mofem_vectors
@@ -123,6 +124,13 @@ struct VecManager : public UnknownInterface {
                                   RowColData x_rc, Vec yin,
                                   const std::string &y_problem, RowColData y_rc,
                                   VecScatter *newctx) const;
+
+  /** @copydoc MoFEM::VecManager::vecScatterCreate
+    */
+  MoFEMErrorCode
+  vecScatterCreate(Vec xin, const std::string &x_problem, RowColData x_rc,
+                   Vec yin, const std::string &y_problem, RowColData y_rc,
+                   SmartPetscObj<VecScatter> &smart_newctx) const;
 
   /**
    * \brief set values of vector from/to meshdatabase

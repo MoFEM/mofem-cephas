@@ -155,6 +155,32 @@ MoFEMErrorCode VecManager::vecScatterCreate(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+VecManager::vecScatterCreate(Vec xin, const std::string &x_problem,
+                             const std::string &x_field_name, RowColData x_rc,
+                             Vec yin, const std::string &y_problem,
+                             const std::string &y_field_name, RowColData y_rc,
+                             SmartPetscObj<VecScatter> &smart_newctx) const {
+  MoFEMFunctionBegin;
+  VecScatter newctx;
+  CHKERR vecScatterCreate(xin, x_problem, x_field_name, x_rc, yin, y_problem,
+                          y_field_name, y_rc, &newctx);
+  smart_newctx = newctx;
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+VecManager::vecScatterCreate(Vec xin, const std::string &x_problem,
+                             RowColData x_rc, Vec yin,
+                             const std::string &y_problem, RowColData y_rc,
+                             SmartPetscObj<VecScatter> &smart_newctx) const {
+  MoFEMFunctionBegin;
+  VecScatter newctx; 
+  CHKERR vecScatterCreate(xin, x_problem, x_rc, yin, y_problem, y_rc, &newctx);
+  smart_newctx = newctx;
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode VecManager::setLocalGhostVector(const Problem *problem_ptr,
                                                RowColData rc, Vec V,
                                                InsertMode mode,
