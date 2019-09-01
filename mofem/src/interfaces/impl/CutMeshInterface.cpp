@@ -1126,12 +1126,8 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
         bool add_node = true;
         auto vit = min_dist_map.find(conn[nn]);
         if (vit != min_dist_map.end()) {
-          if (vit->second.first.first > edge_type)
+          if (vit->second.second.dIst < dist)
             add_node = false;
-          else if (vit->second.first.first == edge_type) {
-            if (vit->second.second.dIst < dist)
-              add_node = false;
-          }
         }
 
         if (add_node) {
@@ -1262,6 +1258,13 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
         max_dist = std::max(max_dist, fabs(dist[n]));
       if (max_dist < close_tol * ave_cut_edge_length)
         ents_to_check.insert(std::pair<double, EntityHandle>(max_dist, f));
+    }
+
+    if (debug) {
+      Range ents;
+      for (auto m : ents_to_check)
+        ents.insert(m.second);
+      CHKERR SaveData(moab)("ents_to_check_to_project.vtk", ents);
     }
 
     double ray_point[3], unit_ray_dir[3];
