@@ -966,7 +966,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
       CHKERR moab.tag_get_data(th_dist_normal, &v, 1, &*dist_normal.begin());
       const double dist = norm_2(dist_normal);
 
-      const double tol = get_ave_edge_length(v, vol_edges) * geometry_tol;
+      const double tol = get_ave_edge_length(v, cutEdges) * geometry_tol;
       if (dist < tol) {
         CHKERR not_project_node(v);
         zeroDistanceVerts.insert(v);
@@ -986,7 +986,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
       const double dist = norm_2(dist_normal);
 
       const double tol =
-          get_ave_edge_length(v, vol_edges) * pow(geometry_tol, 2);
+          get_ave_edge_length(v, cutEdges) * pow(geometry_tol, 2);
       if (dist < tol) {
         CHKERR not_project_node(v);
         zeroDistanceVerts.insert(v);
@@ -1000,7 +1000,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
       const double dist = norm_2(dist_normal);
 
       const double tol =
-          get_ave_edge_length(v, vol_edges) * pow(geometry_tol, 3);
+          get_ave_edge_length(v, cutEdges) * pow(geometry_tol, 3);
       if (dist < tol) {
         CHKERR project_node(v, dist_normal);
         zeroDistanceVerts.insert(v);
