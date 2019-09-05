@@ -34,8 +34,7 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
   using FaceElementForcesAndSourcesCoreBase::
       FaceElementForcesAndSourcesCoreBase;
 
-  int getRule(int order) { return -1; };
-  MoFEMErrorCode setGaussPts(int order);
+  int getRule(int order);
 
   /**
    * @brief Get the face nodes mapped on volume element
@@ -44,39 +43,35 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
    *
    * @return const std::array<int, 3>&
    */
-  inline const std::array<int, 2> &getEdgeConnMap() const {
-    return edgeConnMap;
-  }
+  inline const std::array<int, 2> &getEdgeConnMap() const;
 
   /**
    * @brief Get face nodes maped on volume
    *
    * @return const sdt::array<int, 3>&
    */
-  inline const std::array<int, 3> &getFaceConnMap() const {
-    return faceConnMap;
-  }
+  inline const std::array<int, 3> &getFaceConnMap() const;
 
   /**
    * @brief Get node on volume opposite to volume element
    *
    * @return int
    */
-  inline int getOppositeNode() const { return oppositeNode; }
+  inline int getOppositeNode() const;
 
   /**
    * @brief Sense face on volume
    *
    * @return int
    */
-  inline int getEdgeSense() const { return edgeSense; }
+  inline int getEdgeSense() const;
 
   /**
    * @brief Face number on the volume
    *
    * @return int
    */
-  inline int getEdgeSideNumber() const { return edgeSideNumber; }
+  inline int getEdgeSideNumber() const;
 
   /** \brief default operator for Face element
    * \ingroup mofem_forces_and_sources_volume_element
@@ -89,44 +84,36 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
 
     /** \brief return pointer to Generic Volume Finite Element object
      */
-    inline const FaceElementForcesAndSourcesCoreOnSideBase *
-    getFaceFE() const {
-      return static_cast<FaceElementForcesAndSourcesCoreOnSideBase *>(ptrFE);
-    }
+    inline const FaceElementForcesAndSourcesCoreOnSideBase *getFaceFE() const;
 
     /**
      * @brief Get the edge side finite element
-     * 
-     * @return EdgeElementForcesAndSourcesCoreBase* 
+     *
+     * @return EdgeElementForcesAndSourcesCoreBase*
      */
-    EdgeElementForcesAndSourcesCoreBase *getEdgeFE() const;
+    inline EdgeElementForcesAndSourcesCoreBase *getEdgeFE() const;
 
     /**
      * \brief get face sense in respect to volume
      * @return error code
      */
-    inline int getFaceSense() const { return getFaceFE()->edgeSense; }
+    inline int getFaceSense() const;
 
     /**
      * \brief get face side number in respect to volume
      * @return error code
      */
-    inline int getFaceSideNumber() const {
-      return getFaceFE()->edgeSideNumber;
-    }
+    inline int getFaceSideNumber() const;
 
     /**
      * get face normal on side which is this element
      * @return face normal
      */
-    VectorDouble &getDirection();
+    inline VectorDouble &getDirection();
 
     /** \brief get normal as tensor
      */
-    inline auto getFTensor1Tangent() {
-      double *ptr = &*getDirection().data().begin();
-      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
-    }
+    inline auto getFTensor1Tangent();
 
     /** \brief get face coordinates at Gauss pts.
 
@@ -138,6 +125,9 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
     inline MatrixDouble &getEdgeCoordsAtGaussPts();
   };
 
+protected:
+  MoFEMErrorCode setGaussPts(int order);
+
 private:
   int edgeSense;      ///< Sense of edge, could be 1 or -1
   int edgeSideNumber; ///< Edge side number
@@ -145,6 +135,59 @@ private:
   std::array<int, 3> faceConnMap;
   int oppositeNode;
 };
+
+const std::array<int, 2> &
+FaceElementForcesAndSourcesCoreOnSideBase::getEdgeConnMap() const {
+  return edgeConnMap;
+}
+
+const std::array<int, 3> &
+FaceElementForcesAndSourcesCoreOnSideBase::getFaceConnMap() const {
+  return faceConnMap;
+}
+
+int FaceElementForcesAndSourcesCoreOnSideBase::getOppositeNode() const {
+  return oppositeNode;
+}
+
+int FaceElementForcesAndSourcesCoreOnSideBase::getEdgeSense() const {
+  return edgeSense;
+}
+
+int FaceElementForcesAndSourcesCoreOnSideBase::getEdgeSideNumber() const {
+  return edgeSideNumber;
+}
+
+const FaceElementForcesAndSourcesCoreOnSideBase *
+FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getFaceFE() const {
+  return static_cast<FaceElementForcesAndSourcesCoreOnSideBase *>(ptrFE);
+}
+
+EdgeElementForcesAndSourcesCoreBase *
+FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getEdgeFE() const {
+  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE->sidePtrFE);
+}
+
+int FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getFaceSense()
+    const {
+  return getFaceFE()->edgeSense;
+}
+
+int FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+    getFaceSideNumber() const {
+  return getFaceFE()->edgeSideNumber;
+}
+
+auto FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+    getFTensor1Tangent() {
+  double *ptr = &*getDirection().data().begin();
+  return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
+}
+
+MatrixDouble &FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+    getEdgeCoordsAtGaussPts() {
+  return getEdgeFE()->coordsAtGaussPts;
+}
 
 } // namespace MoFEM
 

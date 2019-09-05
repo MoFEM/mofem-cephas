@@ -20,6 +20,10 @@
 
 namespace MoFEM {
 
+int FaceElementForcesAndSourcesCoreOnSideBase::getRule(int order) {
+  return -1;
+};
+
 MoFEMErrorCode
 FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   MoFEMFunctionBegin;
@@ -75,21 +79,6 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   }
 
   MoFEMFunctionReturn(0);
-}
-
-EdgeElementForcesAndSourcesCoreBase *
-FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getEdgeFE() const {
-  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE->sidePtrFE);
-}
-
-VectorDouble &
-FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getDirection() {
-  return getEdgeFE()->dIrection;
-}
-
-MatrixDouble &FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
-    getEdgeCoordsAtGaussPts() {
-  return getEdgeFE()->coordsAtGaussPts;
 }
 
 } // namespace MoFEM
