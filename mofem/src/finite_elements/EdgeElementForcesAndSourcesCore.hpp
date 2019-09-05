@@ -28,6 +28,8 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
+struct FaceElementForcesAndSourcesCoreOnSideBase;
+
 /** \brief Edge finite element
  * \ingroup mofem_forces_and_sources_edge_element
  *

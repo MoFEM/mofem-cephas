@@ -1,4 +1,4 @@
-/** \file VolumeElementForcesAndSourcesCore.hpp
+/** \file VolumeElementForcesAndSourcesCoreOnSide.hpp
   \brief Volume element.
 
   Those element are inherited by user to implement specific implementation of
