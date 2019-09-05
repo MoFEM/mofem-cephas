@@ -55,7 +55,6 @@ struct DataForcesAndSourcesCore {
     /**@{*/
 
     EntData();
-    virtual ~EntData() {}
 
     /**@}*/
 
@@ -65,45 +64,30 @@ struct DataForcesAndSourcesCore {
 
     /// \brief get entity sense, need to calculate base functions with
     /// conforming approximation fields
-    virtual int getSense() const { return sEnse; }
+    virtual int getSense() const;
 
     /// \brief get approximation order
-    inline ApproximationOrder getOrder() const { return oRder; }
+    inline ApproximationOrder getOrder() const;
 
     /// \brief Get global indices of dofs on entity
-    inline const VectorInt &getIndices() const { return iNdices; }
+    inline const VectorInt &getIndices() const;
 
     /// \brief get global indices of dofs on entity up to given order
-    inline const VectorIntAdaptor getIndicesUpToOrder(int order) {
-      unsigned int size = 0;
-      if (iNdices.size()) {
-        size = dOfs[0]->getOrderNbDofs(order) * dOfs[0]->getNbOfCoeffs();
-        size = size < iNdices.size() ? size : iNdices.size();
-      }
-      int *data = &*iNdices.data().begin();
-      return VectorIntAdaptor(size,
-                              ublas::shallow_array_adaptor<int>(size, data));
-    }
+    inline const VectorIntAdaptor getIndicesUpToOrder(int order);
 
     /// \brief get local indices of dofs on entity
-    inline const VectorInt &getLocalIndices() const { return localIndices; }
+    inline const VectorInt &getLocalIndices() const;
 
     /// \brief get local indices of dofs on entity up to given order
-    inline const VectorIntAdaptor getLocalIndicesUpToOrder(int order) {
-      unsigned int size = 0;
-      if (localIndices.size()) {
-        size = dOfs[0]->getOrderNbDofs(order) * dOfs[0]->getNbOfCoeffs();
-        size = size < localIndices.size() ? size : localIndices.size();
-      }
-      int *data = &*localIndices.data().begin();
-      return VectorIntAdaptor(size,
-                              ublas::shallow_array_adaptor<int>(size, data));
-    }
+    inline const VectorIntAdaptor getLocalIndicesUpToOrder(int order);
 
-    inline int &getSense() { return sEnse; }
-    inline ApproximationOrder &getDataOrder() { return oRder; }
-    inline VectorInt &getIndices() { return iNdices; }
-    inline VectorInt &getLocalIndices() { return localIndices; }
+    inline int &getSense();
+
+    inline ApproximationOrder &getDataOrder();
+
+    inline VectorInt &getIndices();
+
+    inline VectorInt &getLocalIndices();
 
     /**@}*/
 
@@ -112,23 +96,15 @@ struct DataForcesAndSourcesCore {
     /**@{*/
 
     /// \brief get dofs values
-    inline const VectorDouble &getFieldData() const { return fieldData; }
+    inline const VectorDouble &getFieldData() const;
 
     /// \brief get dofs values up to given order
-    inline const VectorAdaptor getFieldDataUpToOrder(int order) {
-      unsigned int size = 0;
-      if (fieldData.size()) {
-        size = dOfs[0]->getOrderNbDofs(order) * dOfs[0]->getNbOfCoeffs();
-        size = size < fieldData.size() ? size : fieldData.size();
-      }
-      double *data = &*fieldData.data().begin();
-      return getVectorAdaptor(data, size);
-    }
+    inline const VectorAdaptor getFieldDataUpToOrder(int order);
 
     /// \brief get dofs data stature FEDofEntity
-    inline const VectorDofs &getFieldDofs() const { return dOfs; }
+    inline const VectorDofs &getFieldDofs() const;
 
-    inline VectorDouble &getFieldData() { return fieldData; }
+    inline VectorDouble &getFieldData();
 
     /**
      * @brief Return FTensor of rank 1, i.e. vector from filed data coeffinects
@@ -143,11 +119,7 @@ struct DataForcesAndSourcesCore {
      */
     template <int Tensor_Dim>
     FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
-    getFTensor1FieldData() {
-      std::stringstream s;
-      s << "Not implemented for this dimension dim = " << Tensor_Dim;
-      THROW_MESSAGE(s.str());
-    }
+    getFTensor1FieldData();
 
     /**
      * @brief  Return FTensor rank 2, i.e. matrix from filed data coeffinects
@@ -164,12 +136,7 @@ struct DataForcesAndSourcesCore {
     template <int Tensor_Dim0, int Tensor_Dim1>
     FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
                      Tensor_Dim0, Tensor_Dim1>
-    getFTensor2FieldData() {
-      std::stringstream s;
-      s << "Not implemented for this dimension dim0 = " << Tensor_Dim0;
-      s << " and dim1 " << Tensor_Dim1;
-      THROW_MESSAGE(s.str());
-    }
+    getFTensor2FieldData();
 
     /**
      * @brief  Return symmetric FTensor rank 2, i.e. matrix from filed data
@@ -187,11 +154,7 @@ struct DataForcesAndSourcesCore {
     FTensor::Tensor2_symmetric<
         FTensor::PackPtr<double *, (Tensor_Dim * (Tensor_Dim + 1)) / 2>,
         Tensor_Dim>
-    getFTensor2SymmetricFieldData() {
-      std::stringstream s;
-      s << "Not implemented for this dimension dim = " << Tensor_Dim;
-      THROW_MESSAGE(s.str());
-    }
+    getFTensor2SymmetricFieldData();
 
     /**
      * @brief Resturn scalar files as a FTensor of rank 0
@@ -200,7 +163,7 @@ struct DataForcesAndSourcesCore {
      */
     FTensor::Tensor0<FTensor::PackPtr<double *, 1>> getFTensor0FieldData();
 
-    inline VectorDofs &getFieldDofs() { return dOfs; }
+    inline VectorDofs &getFieldDofs();
 
     /**@}*/
 
@@ -212,45 +175,37 @@ struct DataForcesAndSourcesCore {
      * \brief Get approximation base
      * @return Approximation base
      */
-    inline FieldApproximationBase &getBase() { return bAse; }
+    inline FieldApproximationBase &getBase();
 
     /**
      * \brief Get field space
      * @return Field space
      */
-    inline FieldSpace &getSpace() { return sPace; }
+    inline FieldSpace &getSpace();
 
     /**
      * Get shared pointer to base base functions
      */
     virtual boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base) {
-      return N[base];
-    }
+    getNSharedPtr(const FieldApproximationBase base);
 
     /**
      * Get shared pointer to base base functions
      */
     virtual const boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base) const {
-      return N[base];
-    }
+    getNSharedPtr(const FieldApproximationBase base) const;
 
     /**
      * Get shared pointer to derivatives of base base functions
      */
     virtual boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base) {
-      return diffN[base];
-    }
+    getDiffNSharedPtr(const FieldApproximationBase base);
 
     /**
      * Get shared pointer to derivatives of base base functions
      */
     virtual const boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base) const {
-      return diffN[base];
-    }
+    getDiffNSharedPtr(const FieldApproximationBase base) const;
 
     /**@}*/
 
@@ -268,11 +223,9 @@ struct DataForcesAndSourcesCore {
      * tonsorial and dimension fo problem.
      *
      */
-    virtual const MatrixDouble &getN(const FieldApproximationBase base) const {
-      return *(getNSharedPtr(base));
-    }
+    virtual const MatrixDouble &getN(const FieldApproximationBase base) const;
 
-    inline const MatrixDouble &getN() const { return getN(bAse); }
+    inline const MatrixDouble &getN() const;
 
     /** \brief get derivatives of base functions
      *
@@ -301,20 +254,16 @@ struct DataForcesAndSourcesCore {
      *
      */
     virtual const MatrixDouble &
-    getDiffN(const FieldApproximationBase base) const {
-      return *(getDiffNSharedPtr(base));
-    }
+    getDiffN(const FieldApproximationBase base) const;
 
-    inline const MatrixDouble &getDiffN() const { return getDiffN(bAse); }
+    inline const MatrixDouble &getDiffN() const;
 
     /**
      * \brief Get base functions
      * @param  base Approximation base
      * @return      Error code
      */
-    inline MatrixDouble &getN(const FieldApproximationBase base) {
-      return *(getNSharedPtr(base));
-    }
+    inline MatrixDouble &getN(const FieldApproximationBase base);
 
     /**
      * \brief Get base functions
@@ -324,16 +273,14 @@ struct DataForcesAndSourcesCore {
      *
      * @return Error code
      */
-    inline MatrixDouble &getN() { return getN(bAse); }
+    inline MatrixDouble &getN();
 
     /**
      * \brief Get derivatives of base functions
      * @param  base Approximation base
      * @return      Error code
      */
-    inline MatrixDouble &getDiffN(const FieldApproximationBase base) {
-      return *(getDiffNSharedPtr(base));
-    }
+    inline MatrixDouble &getDiffN(const FieldApproximationBase base);
 
     /**
      * \brief Get derivatives of base functions
@@ -343,19 +290,14 @@ struct DataForcesAndSourcesCore {
      *
      * @return Error code
      */
-    inline MatrixDouble &getDiffN() { return getDiffN(bAse); }
+    inline MatrixDouble &getDiffN();
 
     /// \brief get base functions at Gauss pts
     inline const VectorAdaptor getN(const FieldApproximationBase base,
-                                    const int gg) {
-      int size = getN(base).size2();
-      double *data = &getN(base)(gg, 0);
-      return VectorAdaptor(size,
-                           ublas::shallow_array_adaptor<double>(size, data));
-    }
+                                    const int gg);
 
     /// \brief get base functions at Gauss pts
-    inline const VectorAdaptor getN(const int gg) { return getN(bAse, gg); }
+    inline const VectorAdaptor getN(const int gg);
 
     /** \brief get derivative of base functions at Gauss pts
 
@@ -366,26 +308,7 @@ struct DataForcesAndSourcesCore {
     *
     */
     inline const MatrixAdaptor getDiffN(const FieldApproximationBase base,
-                                        const int gg) {
-      // FIXME: That is bug, it will not work if number of integration pts is
-      // equal to number of nodes on entity.  User who not implementing low
-      // level DataOperator will not experience this.
-      if (getN(base).size1() == getDiffN(base).size1()) {
-        int size = getN(base).size2();
-        int dim = getDiffN(base).size2() / size;
-        double *data = &getDiffN(base)(gg, 0);
-        return MatrixAdaptor(
-            getN(base).size2(), dim,
-            ublas::shallow_array_adaptor<double>(getDiffN(base).size2(), data));
-      } else {
-        // in some cases, f.e. for derivatives of nodal base functions at only
-        // one gauss point is needed
-        return MatrixAdaptor(
-            getN(base).size1(), getN(base).size2(),
-            ublas::shallow_array_adaptor<double>(getDiffN(base).data().size(),
-                                                 &getDiffN(base).data()[0]));
-      }
-    }
+                                        const int gg);
 
     /** \brief get derivative of base functions at Gauss pts
 
@@ -394,9 +317,7 @@ struct DataForcesAndSourcesCore {
     * \param gg nb. of Gauss pts.
     *
     */
-    inline const MatrixAdaptor getDiffN(const int gg) {
-      return getDiffN(bAse, gg);
-    }
+    inline const MatrixAdaptor getDiffN(const int gg);
 
     /** \brief get base functions at Gauss pts
 
@@ -411,14 +332,7 @@ struct DataForcesAndSourcesCore {
 
     */
     inline const VectorAdaptor getN(const FieldApproximationBase base,
-                                    const int gg, const int nb_base_functions) {
-      (void)getN()(gg, nb_base_functions -
-                           1); // throw error if nb_base_functions is to big
-      double *data = &getN(base)(gg, 0);
-      return VectorAdaptor(
-          nb_base_functions,
-          ublas::shallow_array_adaptor<double>(nb_base_functions, data));
-    }
+                                    const int gg, const int nb_base_functions);
 
     /** \brief get base functions at Gauss pts
 
@@ -431,9 +345,7 @@ struct DataForcesAndSourcesCore {
     * \param nb_base_functions number of of base functions returned
 
     */
-    inline const VectorAdaptor getN(const int gg, const int nb_base_functions) {
-      return getN(bAse, gg, nb_base_functions);
-    }
+    inline const VectorAdaptor getN(const int gg, const int nb_base_functions);
 
     /** \brief get derivatives of base functions at Gauss pts
      *
@@ -449,28 +361,7 @@ struct DataForcesAndSourcesCore {
      */
     inline const MatrixAdaptor getDiffN(const FieldApproximationBase base,
                                         const int gg,
-                                        const int nb_base_functions) {
-      // FIXME: That is bug, it will not work if number of integration pts is
-      // equal to number of nodes on entity.  User who not implementing low
-      // level DataOperator will not experience this.
-      if (getN(base).size1() == getDiffN(base).size1()) {
-        (void)getN(base)(gg,
-                         nb_base_functions -
-                             1); // throw error if nb_base_functions is to big
-        int dim = getDiffN(base).size2() / getN(base).size2();
-        double *data = &getDiffN(base)(gg, 0);
-        return MatrixAdaptor(nb_base_functions, dim,
-                             ublas::shallow_array_adaptor<double>(
-                                 dim * nb_base_functions, data));
-      } else {
-        // in some cases, f.e. for derivatives of nodal base functions only one
-        // gauss point is needed
-        return MatrixAdaptor(
-            getN(base).size1(), getN(base).size2(),
-            ublas::shallow_array_adaptor<double>(getDiffN(base).data().size(),
-                                                 &getDiffN(base).data()[0]));
-      }
-    }
+                                        const int nb_base_functions);
 
     /** \brief get derivatives of base functions at Gauss pts
      *
@@ -484,9 +375,7 @@ struct DataForcesAndSourcesCore {
      *
      */
     inline const MatrixAdaptor getDiffN(const int gg,
-                                        const int nb_base_functions) {
-      return getDiffN(bAse, gg, nb_base_functions);
-    }
+                                        const int nb_base_functions);
 
     /**@}*/
 
@@ -503,17 +392,7 @@ struct DataForcesAndSourcesCore {
      */
     template <int DIM>
     inline const MatrixAdaptor getVectorN(const FieldApproximationBase base,
-                                          const int gg) {
-      if (PetscUnlikely(getN(base).size2() % DIM)) {
-        THROW_MESSAGE("Wrong dimension");
-      }
-
-      const int nb_base_functions = getN(base).size2() / DIM;
-      double *data = &getN(base)(gg, 0);
-      return MatrixAdaptor(
-          nb_base_functions, DIM,
-          ublas::shallow_array_adaptor<double>(DIM * nb_base_functions, data));
-    }
+                                          const int gg);
 
     /** \brief get Hdiv of base functions at Gauss pts
      *
@@ -521,9 +400,7 @@ struct DataForcesAndSourcesCore {
      * \param number of of base functions
      *
      */
-    template <int DIM> inline const MatrixAdaptor getVectorN(const int gg) {
-      return getVectorN<DIM>(bAse, gg);
-    }
+    template <int DIM> inline const MatrixAdaptor getVectorN(const int gg);
 
     /** \brief get DiffHdiv of base functions at Gauss pts
      *
@@ -534,17 +411,7 @@ struct DataForcesAndSourcesCore {
      */
     template <int DIM0, int DIM1>
     inline const MatrixAdaptor getVectorDiffN(FieldApproximationBase base,
-                                              const int gg) {
-      if (PetscUnlikely(getDiffN(base).size2() % (DIM0 * DIM1))) {
-        THROW_MESSAGE("Wrong dimension");
-      }
-
-      const int nb_base_functions = getN(base).size2() / (DIM0 * DIM1);
-      double *data = &getN(base)(gg, 0);
-      return MatrixAdaptor(nb_base_functions, DIM0 * DIM1,
-                           ublas::shallow_array_adaptor<double>(
-                               DIM0 * DIM1 * nb_base_functions, data));
-    }
+                                              const int gg);
 
     /** \brief get DiffHdiv of base functions at Gauss pts
      *
@@ -553,9 +420,7 @@ struct DataForcesAndSourcesCore {
      *
      */
     template <int DIM0, int DIM1>
-    inline const MatrixAdaptor getVectorDiffN(const int gg) {
-      return getVectorDiffN<DIM0, DIM1>(bAse, gg);
-    }
+    inline const MatrixAdaptor getVectorDiffN(const int gg);
 
     /** \brief get DiffHdiv of base functions at Gauss pts
      *
@@ -566,11 +431,7 @@ struct DataForcesAndSourcesCore {
      */
     template <int DIM0, int DIM1>
     inline const MatrixAdaptor getVectorDiffN(const FieldApproximationBase base,
-                                              const int dof, const int gg) {
-      double *data = &getDiffN(base)(gg, DIM0 * DIM1 * dof);
-      return MatrixAdaptor(
-          DIM0, DIM1, ublas::shallow_array_adaptor<double>(DIM0 * DIM1, data));
-    }
+                                              const int dof, const int gg);
 
     /** \brief get DiffHdiv of base functions at Gauss pts
      *
@@ -579,9 +440,7 @@ struct DataForcesAndSourcesCore {
      *
      */
     template <int DIM0, int DIM1>
-    inline const MatrixAdaptor getVectorDiffN(const int dof, const int gg) {
-      return getVectorDiffN<DIM0, DIM1>(bAse, dof, gg);
-    }
+    inline const MatrixAdaptor getVectorDiffN(const int dof, const int gg);
 
     /**@}*/
 
@@ -597,10 +456,7 @@ struct DataForcesAndSourcesCore {
      *
      */
     inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-    getFTensor0N(const FieldApproximationBase base) {
-      double *ptr = &*getN(base).data().begin();
-      return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(ptr);
-    };
+    getFTensor0N(const FieldApproximationBase base);
 
     /**
      * \brief Get base function as Tensor0
@@ -610,9 +466,7 @@ struct DataForcesAndSourcesCore {
      * \return Tensor0
      *
      */
-    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>> getFTensor0N() {
-      return getFTensor0N(bAse);
-    };
+    inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>> getFTensor0N();
 
     /**
      * \brief Get base function as Tensor0 (Loop by integration points)
@@ -632,10 +486,7 @@ struct DataForcesAndSourcesCore {
      *
      */
     inline FTensor::Tensor0<double *>
-    getFTensor0N(const FieldApproximationBase base, const int bb) {
-      double *ptr = &getN(base)(0, bb);
-      return FTensor::Tensor0<double *>(ptr, getN(base).size2());
-    };
+    getFTensor0N(const FieldApproximationBase base, const int bb);
 
     /**
      * \brief Get base function as Tensor0 (Loop by integration points)
@@ -647,9 +498,7 @@ struct DataForcesAndSourcesCore {
      *
      *
      */
-    inline FTensor::Tensor0<double *> getFTensor0N(const int bb) {
-      return getFTensor0N(bAse, bb);
-    };
+    inline FTensor::Tensor0<double *> getFTensor0N(const int bb);
 
     /**
      * \brief Get base function as Tensor0 (Loop by integration points)
@@ -670,11 +519,7 @@ struct DataForcesAndSourcesCore {
      *
      */
     inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-    getFTensor0N(const FieldApproximationBase base, const int gg,
-                 const int bb) {
-      double *ptr = &getN(base)(gg, bb);
-      return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(ptr);
-    };
+    getFTensor0N(const FieldApproximationBase base, const int gg, const int bb);
 
     /**
      * \brief Get base function as Tensor0 (Loop by integration points)
@@ -686,9 +531,7 @@ struct DataForcesAndSourcesCore {
      *
      */
     inline FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
-    getFTensor0N(const int gg, const int bb) {
-      return getFTensor0N(bAse, gg, bb);
-    };
+    getFTensor0N(const int gg, const int bb);
 
     /**
      * \brief Get derivatives of base functions
@@ -868,9 +711,7 @@ struct DataForcesAndSourcesCore {
     \endcode
 
     */
-    template <int Tensor_Dim> auto getFTensor1N() {
-      return getFTensor1N<Tensor_Dim>(bAse);
-    }
+    template <int Tensor_Dim> auto getFTensor1N();
 
     /** \brief Get derivatives of base functions for Hdiv space
      */
@@ -941,9 +782,7 @@ struct DataForcesAndSourcesCore {
 
      */
     template <int Tensor_Dim>
-    inline auto getFTensor1N(const int gg, const int bb) {
-      return getFTensor1N<Tensor_Dim>(bAse, gg, bb);
-    }
+    inline auto getFTensor1N(const int gg, const int bb);
 
     /** \brief Get base functions for Hdiv/Hcurl spaces
 
@@ -998,9 +837,7 @@ struct DataForcesAndSourcesCore {
     \endcode
 
     */
-    template <int Tensor_Dim0, int Tensor_Dim1> auto getFTensor2N() {
-      return getFTensor2N<Tensor_Dim0, Tensor_Dim1>(bAse);
-    }
+    template <int Tensor_Dim0, int Tensor_Dim1> auto getFTensor2N();
 
     /** \brief Get base functions for tensor Hdiv/Hcurl spaces
 
@@ -1055,9 +892,7 @@ struct DataForcesAndSourcesCore {
 
     */
     template <int Tensor_Dim0, int Tensor_Dim1>
-    auto getFTensor2N(const int gg, const int bb) {
-      return getFTensor2N<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
-    }
+    auto getFTensor2N(const int gg, const int bb);
 
     /**@}*/
 
@@ -1072,16 +907,7 @@ struct DataForcesAndSourcesCore {
      * Reset data associated with particular field name
      * @return error code
      */
-    inline MoFEMErrorCode resetFieldDependentData() {
-      MoFEMFunctionBeginHot;
-      sPace = NOSPACE;
-      bAse = NOBASE;
-      iNdices.resize(0, false);
-      localIndices.resize(0, false);
-      dOfs.resize(0, false);
-      fieldData.resize(0, false);
-      MoFEMFunctionReturnHot(0);
-    }
+    inline MoFEMErrorCode resetFieldDependentData();
 
     /**@}*/
 
@@ -1115,19 +941,9 @@ struct DataForcesAndSourcesCore {
    * Reset data associated with particular field name
    * @return error code
    */
-  inline MoFEMErrorCode resetFieldDependentData() {
-    MoFEMFunctionBeginHot;
-    for (EntityType t = MBVERTEX; t != MBMAXTYPE; t++) {
-      for (auto &e : dataOnEntities[t]) {
-        ierr = e.resetFieldDependentData();
-        CHKERRG(ierr);
-      }
-    }
-    MoFEMFunctionReturnHot(0);
-  }
+  inline MoFEMErrorCode resetFieldDependentData();
 
   DataForcesAndSourcesCore(const EntityType type);
-  virtual ~DataForcesAndSourcesCore() {}
 
   virtual MoFEMErrorCode setElementType(const EntityType type);
 
@@ -1163,27 +979,21 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
 
     const boost::shared_ptr<DataForcesAndSourcesCore::EntData> entDataPtr;
     DerivedEntData(const boost::shared_ptr<DataForcesAndSourcesCore::EntData>
-                       &ent_data_ptr)
-        : entDataPtr(ent_data_ptr) {}
+                       &ent_data_ptr);
 
-    int getSense() const { return entDataPtr->getSense(); }
+    int getSense() const;
 
     boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base) {
-      return entDataPtr->getNSharedPtr(base);
-    }
+    getNSharedPtr(const FieldApproximationBase base);
+
     boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base) {
-      return entDataPtr->getDiffNSharedPtr(base);
-    }
+    getDiffNSharedPtr(const FieldApproximationBase base);
+
     const boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base) const {
-      return entDataPtr->getNSharedPtr(base);
-    }
+    getNSharedPtr(const FieldApproximationBase base) const;
+
     const boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base) const {
-      return entDataPtr->getDiffNSharedPtr(base);
-    }
+    getDiffNSharedPtr(const FieldApproximationBase base) const;
   };
 
   DerivedDataForcesAndSourcesCore(
@@ -1193,6 +1003,355 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
 private:
   const boost::shared_ptr<DataForcesAndSourcesCore> dataPtr;
 };
+
+ApproximationOrder DataForcesAndSourcesCore::EntData::getOrder() const {
+  return oRder;
+}
+
+const VectorInt &DataForcesAndSourcesCore::EntData::getIndices() const {
+  return iNdices;
+}
+
+const VectorIntAdaptor
+DataForcesAndSourcesCore::EntData::getIndicesUpToOrder(int order) {
+  unsigned int size = 0;
+  if (iNdices.size()) {
+    size = dOfs[0]->getOrderNbDofs(order) * dOfs[0]->getNbOfCoeffs();
+    size = size < iNdices.size() ? size : iNdices.size();
+  }
+  int *data = &*iNdices.data().begin();
+  return VectorIntAdaptor(size, ublas::shallow_array_adaptor<int>(size, data));
+}
+
+const VectorInt &DataForcesAndSourcesCore::EntData::getLocalIndices() const {
+  return localIndices;
+}
+
+const VectorIntAdaptor
+DataForcesAndSourcesCore::EntData::getLocalIndicesUpToOrder(int order) {
+  unsigned int size = 0;
+  if (localIndices.size()) {
+    size = dOfs[0]->getOrderNbDofs(order) * dOfs[0]->getNbOfCoeffs();
+    size = size < localIndices.size() ? size : localIndices.size();
+  }
+  int *data = &*localIndices.data().begin();
+  return VectorIntAdaptor(size, ublas::shallow_array_adaptor<int>(size, data));
+}
+
+int &DataForcesAndSourcesCore::EntData::getSense() { return sEnse; }
+
+ApproximationOrder &DataForcesAndSourcesCore::EntData::getDataOrder() {
+  return oRder;
+}
+
+VectorInt &DataForcesAndSourcesCore::EntData::getIndices() { return iNdices; }
+
+VectorInt &DataForcesAndSourcesCore::EntData::getLocalIndices() {
+  return localIndices;
+}
+
+const VectorDouble &DataForcesAndSourcesCore::EntData::getFieldData() const {
+  return fieldData;
+}
+
+const VectorAdaptor
+DataForcesAndSourcesCore::EntData::getFieldDataUpToOrder(int order) {
+  unsigned int size = 0;
+  if (fieldData.size()) {
+    size = dOfs[0]->getOrderNbDofs(order) * dOfs[0]->getNbOfCoeffs();
+    size = size < fieldData.size() ? size : fieldData.size();
+  }
+  double *data = &*fieldData.data().begin();
+  return getVectorAdaptor(data, size);
+}
+
+const VectorDofs &DataForcesAndSourcesCore::EntData::getFieldDofs() const {
+  return dOfs;
+}
+
+VectorDouble &DataForcesAndSourcesCore::EntData::getFieldData() {
+  return fieldData;
+}
+
+template <int Tensor_Dim>
+FTensor::Tensor1<FTensor::PackPtr<double *, Tensor_Dim>, Tensor_Dim>
+DataForcesAndSourcesCore::EntData::getFTensor1FieldData() {
+  std::stringstream s;
+  s << "Not implemented for this dimension dim = " << Tensor_Dim;
+  THROW_MESSAGE(s.str());
+}
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+FTensor::Tensor2<FTensor::PackPtr<double *, Tensor_Dim0 * Tensor_Dim1>,
+                 Tensor_Dim0, Tensor_Dim1>
+DataForcesAndSourcesCore::EntData::getFTensor2FieldData() {
+  std::stringstream s;
+  s << "Not implemented for this dimension dim0 = " << Tensor_Dim0;
+  s << " and dim1 " << Tensor_Dim1;
+  THROW_MESSAGE(s.str());
+}
+
+template <int Tensor_Dim>
+FTensor::Tensor2_symmetric<
+    FTensor::PackPtr<double *, (Tensor_Dim * (Tensor_Dim + 1)) / 2>, Tensor_Dim>
+DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData() {
+  std::stringstream s;
+  s << "Not implemented for this dimension dim = " << Tensor_Dim;
+  THROW_MESSAGE(s.str());
+}
+
+VectorDofs &DataForcesAndSourcesCore::EntData::getFieldDofs() { return dOfs; }
+
+FieldApproximationBase &DataForcesAndSourcesCore::EntData::getBase() {
+  return bAse;
+}
+
+FieldSpace &DataForcesAndSourcesCore::EntData::getSpace() { return sPace; }
+
+const MatrixDouble &DataForcesAndSourcesCore::EntData::getN() const {
+  return getN(bAse);
+}
+
+const MatrixDouble &DataForcesAndSourcesCore::EntData::getDiffN() const {
+  return getDiffN(bAse);
+}
+
+MatrixDouble &
+DataForcesAndSourcesCore::EntData::getN(const FieldApproximationBase base) {
+  return *(getNSharedPtr(base));
+}
+
+MatrixDouble &DataForcesAndSourcesCore::EntData::getN() { return getN(bAse); }
+
+MatrixDouble &
+DataForcesAndSourcesCore::EntData::getDiffN(const FieldApproximationBase base) {
+  return *(getDiffNSharedPtr(base));
+}
+
+MatrixDouble &DataForcesAndSourcesCore::EntData::getDiffN() {
+  return getDiffN(bAse);
+}
+
+const VectorAdaptor
+DataForcesAndSourcesCore::EntData::getN(const FieldApproximationBase base,
+                                        const int gg) {
+  int size = getN(base).size2();
+  double *data = &getN(base)(gg, 0);
+  return VectorAdaptor(size, ublas::shallow_array_adaptor<double>(size, data));
+}
+
+const VectorAdaptor DataForcesAndSourcesCore::EntData::getN(const int gg) {
+  return getN(bAse, gg);
+}
+
+const MatrixAdaptor
+DataForcesAndSourcesCore::EntData::getDiffN(const FieldApproximationBase base,
+                                            const int gg) {
+  // FIXME: That is bug, it will not work if number of integration pts is
+  // equal to number of nodes on entity.  User who not implementing low
+  // level DataOperator will not experience this.
+  if (getN(base).size1() == getDiffN(base).size1()) {
+    int size = getN(base).size2();
+    int dim = getDiffN(base).size2() / size;
+    double *data = &getDiffN(base)(gg, 0);
+    return MatrixAdaptor(
+        getN(base).size2(), dim,
+        ublas::shallow_array_adaptor<double>(getDiffN(base).size2(), data));
+  } else {
+    // in some cases, f.e. for derivatives of nodal base functions at only
+    // one gauss point is needed
+    return MatrixAdaptor(
+        getN(base).size1(), getN(base).size2(),
+        ublas::shallow_array_adaptor<double>(getDiffN(base).data().size(),
+                                             &getDiffN(base).data()[0]));
+  }
+}
+
+const MatrixAdaptor DataForcesAndSourcesCore::EntData::getDiffN(const int gg) {
+  return getDiffN(bAse, gg);
+}
+
+const VectorAdaptor
+DataForcesAndSourcesCore::EntData::getN(const FieldApproximationBase base,
+                                        const int gg,
+                                        const int nb_base_functions) {
+  (void)getN()(gg, nb_base_functions -
+                       1); // throw error if nb_base_functions is to big
+  double *data = &getN(base)(gg, 0);
+  return VectorAdaptor(nb_base_functions, ublas::shallow_array_adaptor<double>(
+                                              nb_base_functions, data));
+}
+
+const VectorAdaptor
+DataForcesAndSourcesCore::EntData::getN(const int gg,
+                                        const int nb_base_functions) {
+  return getN(bAse, gg, nb_base_functions);
+}
+
+const MatrixAdaptor
+DataForcesAndSourcesCore::EntData::getDiffN(const FieldApproximationBase base,
+                                            const int gg,
+                                            const int nb_base_functions) {
+  // FIXME: That is bug, it will not work if number of integration pts is
+  // equal to number of nodes on entity.  User who not implementing low
+  // level DataOperator will not experience this.
+  if (getN(base).size1() == getDiffN(base).size1()) {
+    (void)getN(base)(gg,
+                     nb_base_functions -
+                         1); // throw error if nb_base_functions is to big
+    int dim = getDiffN(base).size2() / getN(base).size2();
+    double *data = &getDiffN(base)(gg, 0);
+    return MatrixAdaptor(
+        nb_base_functions, dim,
+        ublas::shallow_array_adaptor<double>(dim * nb_base_functions, data));
+  } else {
+    // in some cases, f.e. for derivatives of nodal base functions only one
+    // gauss point is needed
+    return MatrixAdaptor(
+        getN(base).size1(), getN(base).size2(),
+        ublas::shallow_array_adaptor<double>(getDiffN(base).data().size(),
+                                             &getDiffN(base).data()[0]));
+  }
+}
+
+const MatrixAdaptor
+DataForcesAndSourcesCore::EntData::getDiffN(const int gg,
+                                            const int nb_base_functions) {
+  return getDiffN(bAse, gg, nb_base_functions);
+}
+
+template <int DIM>
+const MatrixAdaptor
+DataForcesAndSourcesCore::EntData::getVectorN(const FieldApproximationBase base,
+                                              const int gg) {
+  if (PetscUnlikely(getN(base).size2() % DIM)) {
+    THROW_MESSAGE("Wrong dimension");
+  }
+
+  const int nb_base_functions = getN(base).size2() / DIM;
+  double *data = &getN(base)(gg, 0);
+  return MatrixAdaptor(
+      nb_base_functions, DIM,
+      ublas::shallow_array_adaptor<double>(DIM * nb_base_functions, data));
+}
+
+template <int DIM>
+const MatrixAdaptor
+DataForcesAndSourcesCore::EntData::getVectorN(const int gg) {
+  return getVectorN<DIM>(bAse, gg);
+}
+
+template <int DIM0, int DIM1>
+const MatrixAdaptor
+DataForcesAndSourcesCore::EntData::getVectorDiffN(FieldApproximationBase base,
+                                                  const int gg) {
+  if (PetscUnlikely(getDiffN(base).size2() % (DIM0 * DIM1))) {
+    THROW_MESSAGE("Wrong dimension");
+  }
+
+  const int nb_base_functions = getN(base).size2() / (DIM0 * DIM1);
+  double *data = &getN(base)(gg, 0);
+  return MatrixAdaptor(nb_base_functions, DIM0 * DIM1,
+                       ublas::shallow_array_adaptor<double>(
+                           DIM0 * DIM1 * nb_base_functions, data));
+}
+
+template <int DIM0, int DIM1>
+const MatrixAdaptor
+DataForcesAndSourcesCore::EntData::getVectorDiffN(const int gg) {
+  return getVectorDiffN<DIM0, DIM1>(bAse, gg);
+}
+
+template <int DIM0, int DIM1>
+const MatrixAdaptor DataForcesAndSourcesCore::EntData::getVectorDiffN(
+    const FieldApproximationBase base, const int dof, const int gg) {
+  double *data =
+      &DataForcesAndSourcesCore::EntData::getDiffN(base)(gg, DIM0 * DIM1 * dof);
+  return MatrixAdaptor(DIM0, DIM1,
+                       ublas::shallow_array_adaptor<double>(DIM0 * DIM1, data));
+}
+
+template <int DIM0, int DIM1>
+const MatrixAdaptor
+DataForcesAndSourcesCore::EntData::getVectorDiffN(const int dof, const int gg) {
+  return getVectorDiffN<DIM0, DIM1>(bAse, dof, gg);
+}
+
+FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+DataForcesAndSourcesCore::EntData::getFTensor0N(
+    const FieldApproximationBase base) {
+  double *ptr = &*getN(base).data().begin();
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(ptr);
+};
+
+FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+DataForcesAndSourcesCore::EntData::getFTensor0N() {
+  return getFTensor0N(bAse);
+};
+
+FTensor::Tensor0<double *> DataForcesAndSourcesCore::EntData::getFTensor0N(
+    const FieldApproximationBase base, const int bb) {
+  double *ptr = &getN(base)(0, bb);
+  return FTensor::Tensor0<double *>(ptr, getN(base).size2());
+};
+
+FTensor::Tensor0<double *>
+DataForcesAndSourcesCore::EntData::getFTensor0N(const int bb) {
+  return getFTensor0N(bAse, bb);
+};
+
+FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+DataForcesAndSourcesCore::EntData::getFTensor0N(
+    const FieldApproximationBase base, const int gg, const int bb) {
+  double *ptr = &getN(base)(gg, bb);
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(ptr);
+};
+
+FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+DataForcesAndSourcesCore::EntData::getFTensor0N(const int gg, const int bb) {
+  return getFTensor0N(bAse, gg, bb);
+};
+
+template <int Tensor_Dim>
+auto DataForcesAndSourcesCore::EntData::getFTensor1N() {
+  return getFTensor1N<Tensor_Dim>(bAse);
+}
+
+template <int Tensor_Dim>
+auto DataForcesAndSourcesCore::EntData::getFTensor1N(const int gg,
+                                                     const int bb) {
+  return getFTensor1N<Tensor_Dim>(bAse, gg, bb);
+}
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+auto DataForcesAndSourcesCore::EntData::getFTensor2N() {
+  return getFTensor2N<Tensor_Dim0, Tensor_Dim1>(bAse);
+}
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+auto DataForcesAndSourcesCore::EntData::getFTensor2N(const int gg,
+                                                     const int bb) {
+  return getFTensor2N<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
+}
+
+MoFEMErrorCode DataForcesAndSourcesCore::EntData::resetFieldDependentData() {
+  MoFEMFunctionBeginHot;
+  sPace = NOSPACE;
+  bAse = NOBASE;
+  iNdices.resize(0, false);
+  localIndices.resize(0, false);
+  dOfs.resize(0, false);
+  fieldData.resize(0, false);
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode DataForcesAndSourcesCore::resetFieldDependentData() {
+  MoFEMFunctionBegin;
+  for (EntityType t = MBVERTEX; t != MBMAXTYPE; t++)
+    for (auto &e : dataOnEntities[t])
+      CHKERR e.resetFieldDependentData();
+  MoFEMFunctionReturn(0);
+}
 
 /** \name Specializations for H1/L2 */
 
