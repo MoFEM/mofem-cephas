@@ -41,8 +41,7 @@ struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   std::string meshPositionsFieldName;
 
-  VertexElementForcesAndSourcesCore(Interface &m_field)
-      : ForcesAndSourcesCore(m_field){};
+  VertexElementForcesAndSourcesCore(Interface &m_field);
 
   /** \brief default operator for VERTEX element
     \ingroup mofem_forces_and_sources_vertex_element
@@ -51,17 +50,20 @@ struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-    inline VectorDouble3 &getCoords() {
-      return static_cast<VertexElementForcesAndSourcesCore *>(ptrFE)->coords;
-    }
+    inline VectorDouble3 &getCoords();
   };
 
   MoFEMErrorCode operator()();
 
-  protected:
-    VectorDouble3 coords;
-    friend class UserDataOperator;
+protected:
+  VectorDouble3 coords;
+  friend class UserDataOperator;
 };
+
+VectorDouble3 &
+VertexElementForcesAndSourcesCore::UserDataOperator::getCoords() {
+  return static_cast<VertexElementForcesAndSourcesCore *>(ptrFE)->coords;
+}
 
 } // namespace MoFEM
 
