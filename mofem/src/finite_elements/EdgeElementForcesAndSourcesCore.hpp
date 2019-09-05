@@ -40,7 +40,6 @@ namespace MoFEM {
 struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
   std::string meshPositionsFieldName;
-
   EdgeElementForcesAndSourcesCoreBase(Interface &m_field);
 
   /** \brief default operator for EDGE element
@@ -149,6 +148,10 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
       return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                                 &ptr[2]);
     }
+
+    MoFEMErrorCode
+    loopSideEdge(const string &fe_name,
+                 FaceElementForcesAndSourcesCoreOnSideBase &method);
   };
 
   enum Switches {
@@ -214,7 +217,7 @@ protected:
   MoFEMErrorCode calculateCoordsAtIntegrationPts();
   MoFEMErrorCode calculateHoCoordsAtIntegrationPts();
 
-  friend class UserDataOperator;
+  friend class FaceElementForcesAndSourcesCoreOnSideBase;
 };
 
 /** \brief Edge finite element

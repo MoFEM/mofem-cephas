@@ -24,6 +24,8 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
+template <int SWITCH> struct VolumeElementForcesAndSourcesCoreOnSideSwitch;
+
 /** \brief Face finite element
  \ingroup mofem_forces_and_sources_tri_element
 
@@ -35,7 +37,6 @@ namespace MoFEM {
 struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
   std::string meshPositionsFieldName; ///< Name of the field with geometry
-
   FaceElementForcesAndSourcesCoreBase(Interface &m_field);
 
   /** \brief default operator for TRI element
@@ -308,9 +309,12 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
      * @param  method  Finite element object
      * @return         error code
      */
-    MoFEMErrorCode
-    loopSideVolumes(const string &fe_name,
-                    VolumeElementForcesAndSourcesCoreOnSide &method);
+    template <int SWITCH>
+    MoFEMErrorCode loopSideVolumes(
+        const string &fe_name,
+        VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method) {
+      return loopSide(fe_name, &fe_method, 3);
+    }
   };
 
   enum Switches {
@@ -446,6 +450,130 @@ struct FaceElementForcesAndSourcesCoreSwitch
  */
 using FaceElementForcesAndSourcesCore =
     FaceElementForcesAndSourcesCoreSwitch<0>;
+
+struct EdgeElementForcesAndSourcesCoreBase;
+
+/**
+ * \brief Base face element used to integrate on skeleton
+ * \ingroup mofem_forces_and_sources_volume_element
+ */
+struct FaceElementForcesAndSourcesCoreOnSideBase
+    : public FaceElementForcesAndSourcesCoreBase {
+
+  using FaceElementForcesAndSourcesCoreBase::
+      FaceElementForcesAndSourcesCoreBase;
+
+  int getRule(int order) { return -1; };
+  MoFEMErrorCode setGaussPts(int order);
+
+  /**
+   * @brief Get the face nodes mapped on volume element
+   *
+   * \todo That this is not general, e.g., for quad number of nodes is 4.
+   *
+   * @return const std::array<int, 3>&
+   */
+  inline const std::array<int, 2> &getEdgeConnMap() const {
+    return edgeConnMap;
+  }
+
+  /**
+   * @brief Get face nodes maped on volume
+   *
+   * @return const sdt::array<int, 3>&
+   */
+  inline const std::array<int, 3> &getFaceConnMap() const {
+    return faceConnMap;
+  }
+
+  /**
+   * @brief Get node on volume opposite to volume element
+   *
+   * @return int
+   */
+  inline int getOppositeNode() const { return oppositeNode; }
+
+  /**
+   * @brief Sense face on volume
+   *
+   * @return int
+   */
+  inline int getEdgeSense() const { return edgeSense; }
+
+  /**
+   * @brief Face number on the volume
+   *
+   * @return int
+   */
+  inline int getEdgeSideNumber() const { return edgeSideNumber; }
+
+  /** \brief default operator for Face element
+   * \ingroup mofem_forces_and_sources_volume_element
+   */
+  struct UserDataOperator
+      : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+    using FaceElementForcesAndSourcesCoreBase::UserDataOperator::
+        UserDataOperator;
+
+    /** \brief return pointer to Generic Volume Finite Element object
+     */
+    inline const FaceElementForcesAndSourcesCoreOnSideBase *
+    getFaceFE() const {
+      return static_cast<FaceElementForcesAndSourcesCoreOnSideBase *>(ptrFE);
+    }
+
+    /**
+     * @brief Get the edge side finite element
+     * 
+     * @return EdgeElementForcesAndSourcesCoreBase* 
+     */
+    EdgeElementForcesAndSourcesCoreBase *getEdgeFE() const;
+
+    /**
+     * \brief get face sense in respect to volume
+     * @return error code
+     */
+    inline int getFaceSense() const { return getFaceFE()->edgeSense; }
+
+    /**
+     * \brief get face side number in respect to volume
+     * @return error code
+     */
+    inline int getFaceSideNumber() const {
+      return getFaceFE()->edgeSideNumber;
+    }
+
+    /**
+     * get face normal on side which is this element
+     * @return face normal
+     */
+    VectorDouble &getDirection();
+
+    /** \brief get normal as tensor
+     */
+    inline auto getFTensor1Tangent() {
+      double *ptr = &*getDirection().data().begin();
+      return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
+    }
+
+    /** \brief get face coordinates at Gauss pts.
+
+    \note Coordinates should be the same what function getCoordsAtGaussPts
+    on face is returning. If both coordinates are different it is error, or you
+    do something very unusual.
+
+     */
+    inline MatrixDouble &getEdgeCoordsAtGaussPts();
+  };
+
+private:
+  int edgeSense;      ///< Sense of edge, could be 1 or -1
+  int edgeSideNumber; ///< Edge side number
+  std::array<int, 2> edgeConnMap;
+  std::array<int, 3> faceConnMap;
+  int oppositeNode;
+};
 
 } // namespace MoFEM
 

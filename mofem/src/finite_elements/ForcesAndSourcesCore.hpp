@@ -116,18 +116,18 @@ struct ForcesAndSourcesCore : public FEMethod {
      */
     UserDataOperator(const FieldSpace space, const char type = OPLAST,
                      const bool symm = true)
-        : DataOperator(symm), opType(type), sPace(space), ptrFE(NULL) {}
+        : DataOperator(symm), opType(type), sPace(space), ptrFE(nullptr) {}
 
     UserDataOperator(const std::string &field_name, const char type,
                      const bool symm = true)
         : DataOperator(symm), opType(type), rowFieldName(field_name),
-          colFieldName(field_name), sPace(LASTSPACE), ptrFE(NULL) {}
+          colFieldName(field_name), sPace(LASTSPACE), ptrFE(nullptr) {}
 
     UserDataOperator(const std::string &row_field_name,
                      const std::string &col_field_name, const char type,
                      const bool symm = true)
         : DataOperator(symm), opType(type), rowFieldName(row_field_name),
-          colFieldName(col_field_name), sPace(LASTSPACE), ptrFE(NULL) {}
+          colFieldName(col_field_name), sPace(LASTSPACE), ptrFE(nullptr) {}
 
     virtual ~UserDataOperator() {}
 
@@ -254,12 +254,6 @@ struct ForcesAndSourcesCore : public FEMethod {
                                         const EntityType type, const int side,
                                         VectorInt &indices) const;
 
-    virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr) {
-      MoFEMFunctionBeginHot;
-      ptrFE = ptr;
-      MoFEMFunctionReturnHot(0);
-    }
-
     /** \brief Return raw pointer to Finite Element Method object
      */
     inline const FEMethod *getFEMethod() const { return ptrFE; }
@@ -385,17 +379,40 @@ struct ForcesAndSourcesCore : public FEMethod {
       return getProblemRowIndices(filed_name, type, side, indices);
     }
 
-    // \deprecated Deprecated function with spelling mistake
-    DEPRECATED inline MoFEMErrorCode
-    getPorblemColIndices(const std::string filed_name, const EntityType type,
-                         const int side, VectorInt &indices) const {
-      return getProblemColIndices(filed_name, type, side, indices);
-    }
-
     /**@}*/
 
   protected:
     ForcesAndSourcesCore *ptrFE;
+
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr) {
+      MoFEMFunctionBeginHot;
+      ptrFE = ptr;
+      MoFEMFunctionReturnHot(0);
+    }
+
+    inline ForcesAndSourcesCore *getPtrFE() const { return ptrFE; }
+
+    inline ForcesAndSourcesCore *getSidePtrFE() const {
+      return ptrFE->sidePtrFE;
+    }
+
+  private:
+    /**
+     * @brief User call this function to loop over elements on the side of face.
+     * This function calls finite element with is operator to do calculations.
+     *
+     * @param fe_name
+     * @param side_fe
+     * @param dim
+     * @return MoFEMErrorCode
+     */
+    MoFEMErrorCode loopSide(const string &fe_name,
+                            ForcesAndSourcesCore *side_fe, const size_t dim);
+
+    friend ForcesAndSourcesCore;
+    friend class EdgeElementForcesAndSourcesCoreBase;
+    friend class FaceElementForcesAndSourcesCoreBase;
+
   };
 
   /** \brief Use to push back operator for row operator
@@ -857,6 +874,26 @@ private:
    * @brief Pointer to user polynomail base
    */
   boost::shared_ptr<BaseFunction> userPolynomialBasePtr;
+
+  /**
+   * @brief Element to integrate on the sides
+   *
+   */
+  ForcesAndSourcesCore *sidePtrFE;
+
+  /**
+   * @brief Set the pointer to face element on the side
+   *
+   * \note Function is is used by face element, while it iterates over
+   * elements on the side
+   *
+   * @param side_fe_ptr
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode setSideFEPtr(const ForcesAndSourcesCore *side_fe_ptr);
+
+  friend class VolumeElementForcesAndSourcesCoreOnSideBase;
+  friend class FaceElementForcesAndSourcesCoreOnSideBase;
 };
 
 /// \deprecated Used ForcesAndSourcesCore instead

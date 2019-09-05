@@ -67,7 +67,7 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
       dataNoField(*dataOnElement[NOFIELD].get()),
       dataH1(*dataOnElement[H1].get()), dataHcurl(*dataOnElement[HCURL].get()),
       dataHdiv(*dataOnElement[HDIV].get()), dataL2(*dataOnElement[L2].get()),
-      lastEvaluatedElementEntityType(MBMAXTYPE) {}
+      lastEvaluatedElementEntityType(MBMAXTYPE), sidePtrFE(nullptr) {}
 
 MoFEMErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {
   MoFEMFunctionBeginHot;
@@ -1103,6 +1103,62 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemColIndices(
   default:
     CHKERR ptrFE->getProblemTypeColIndices(field_name, type, side, indices);
   }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+ForcesAndSourcesCore::setSideFEPtr(const ForcesAndSourcesCore *side_fe_ptr) {
+  MoFEMFunctionBeginHot;
+  sidePtrFE = const_cast<ForcesAndSourcesCore *>(side_fe_ptr);
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode
+ForcesAndSourcesCore::UserDataOperator::loopSide(const string &fe_name,
+                                                 ForcesAndSourcesCore *side_fe,
+                                                 const size_t side_dim) {
+  MoFEMFunctionBegin;
+  const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
+  const Problem *problem_ptr = getFEMethod()->problemPtr;
+  Range adjacent_ents;
+  CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
+      ent, side_dim, adjacent_ents);
+  typedef NumeredEntFiniteElement_multiIndex::index<
+      Composite_Name_And_Ent_mi_tag>::type FEByComposite;
+  FEByComposite &numered_fe =
+      problem_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>();
+
+  side_fe->feName = fe_name;
+
+  CHKERR side_fe->setSideFEPtr(ptrFE);
+  CHKERR side_fe->copyBasicMethod(*getFEMethod());
+  CHKERR side_fe->copyKsp(*getFEMethod());
+  CHKERR side_fe->copySnes(*getFEMethod());
+  CHKERR side_fe->copyTs(*getFEMethod());
+
+  CHKERR side_fe->preProcess();
+
+  int nn = 0;
+  side_fe->loopSize = adjacent_ents.size();
+  for (Range::iterator vit = adjacent_ents.begin(); vit != adjacent_ents.end();
+       vit++) {
+    FEByComposite::iterator miit =
+        numered_fe.find(boost::make_tuple(fe_name, *vit));
+    if (miit != numered_fe.end()) {
+      side_fe->nInTheLoop = nn++;
+      side_fe->numeredEntFiniteElementPtr = *miit;
+      side_fe->dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
+      side_fe->rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
+      side_fe->colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
+      side_fe->dataPtr = (*miit)->sPtr->data_dofs;
+      side_fe->rowPtr = (*miit)->rows_dofs;
+      side_fe->colPtr = (*miit)->cols_dofs;
+      CHKERR (*side_fe)();
+    }
+  }
+
+  CHKERR side_fe->postProcess();
+
   MoFEMFunctionReturn(0);
 }
 

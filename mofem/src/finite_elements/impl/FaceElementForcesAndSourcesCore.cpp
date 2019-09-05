@@ -34,55 +34,6 @@ FaceElementForcesAndSourcesCoreBase::FaceElementForcesAndSourcesCoreBase(
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
 }
 
-MoFEMErrorCode
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::loopSideVolumes(
-    const string &fe_name, VolumeElementForcesAndSourcesCoreOnSide &method) {
-  MoFEMFunctionBegin;
-
-  const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
-  const Problem *problem_ptr = getFEMethod()->problemPtr;
-  Range adjacent_volumes;
-  CHKERR getFaceFE()->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
-      ent, 3, adjacent_volumes);
-  typedef NumeredEntFiniteElement_multiIndex::index<
-      Composite_Name_And_Ent_mi_tag>::type FEByComposite;
-  FEByComposite &numered_fe =
-      problem_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>();
-
-  method.feName = fe_name;
-
-  CHKERR method.setSideFEPtr(getFaceFE());
-  CHKERR method.copyBasicMethod(*getFEMethod());
-  CHKERR method.copyKsp(*getFEMethod());
-  CHKERR method.copySnes(*getFEMethod());
-  CHKERR method.copyTs(*getFEMethod());
-
-  CHKERR method.preProcess();
-
-  int nn = 0;
-  method.loopSize = adjacent_volumes.size();
-  for (Range::iterator vit = adjacent_volumes.begin();
-       vit != adjacent_volumes.end(); vit++) {
-    FEByComposite::iterator miit =
-        numered_fe.find(boost::make_tuple(fe_name, *vit));
-    if (miit != numered_fe.end()) {
-      method.nInTheLoop = nn++;
-      method.numeredEntFiniteElementPtr = *miit;
-      method.dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
-      method.rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
-      method.colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
-      method.dataPtr = (*miit)->sPtr->data_dofs;
-      method.rowPtr = (*miit)->rows_dofs;
-      method.colPtr = (*miit)->cols_dofs;
-      CHKERR method();
-    }
-  }
-
-  CHKERR method.postProcess();
-
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
   MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
@@ -266,6 +217,78 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
     tangentTwoAtGaussPts.resize(0, 0, false);
   }
   MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
+  MoFEMFunctionBegin;
+  if (sidePtrFE == nullptr)
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+            "Pointer to face element is not set");
+
+  const EntityHandle edge_entity =
+      sidePtrFE->numeredEntFiniteElementPtr->getEnt();
+  SideNumber_multiIndex &side_table = const_cast<SideNumber_multiIndex &>(
+      numeredEntFiniteElementPtr->getSideNumberTable());
+  SideNumber_multiIndex::nth_index<0>::type::iterator sit =
+      side_table.get<0>().find(edge_entity);
+  if (sit == side_table.get<0>().end())
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+            "Face can not be found on volume element");
+
+  auto edge_ptr_fe =
+      static_cast<EdgeElementForcesAndSourcesCoreBase *>(sidePtrFE);
+
+  edgeSense = (*sit)->sense;
+  edgeSideNumber = (*sit)->side_number;
+  fill(faceConnMap.begin(), faceConnMap.end(), -1);
+  for (int nn = 0; nn != 2; ++nn) {
+    edgeConnMap[nn] =
+        std::distance(conn, find(conn, &conn[2], edge_ptr_fe->cOnn[nn]));
+    faceConnMap[faceConnMap[nn]] = nn;
+    if (faceConnMap[nn] > 2) 
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+              "No common node on face and element can not be found");
+  }
+
+  oppositeNode = std::distance(
+      faceConnMap.begin(), find(faceConnMap.begin(), faceConnMap.end(), -1));
+
+  const int nb_gauss_pts = sidePtrFE->gaussPts.size2();
+  gaussPts.resize(3, nb_gauss_pts, false);
+  gaussPts.clear();
+  DataForcesAndSourcesCore &data_h1_on_edge = *edge_ptr_fe->dataOnElement[H1];
+  const MatrixDouble &edge_shape_funtions =
+      data_h1_on_edge.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+  const double face_coords[] = {0, 0, 0, 1, 1, 0};
+  for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+    gaussPts(0, gg) =
+        edge_shape_funtions(gg, 0) * face_coords[3 * edgeConnMap[0] + 0] +
+        edge_shape_funtions(gg, 1) * face_coords[3 * edgeConnMap[1] + 0] +
+        edge_shape_funtions(gg, 2) * face_coords[3 * edgeConnMap[2] + 0];
+    gaussPts(1, gg) =
+        edge_shape_funtions(gg, 0) * face_coords[3 * edgeConnMap[0] + 1] +
+        edge_shape_funtions(gg, 1) * face_coords[3 * edgeConnMap[1] + 1] +
+        edge_shape_funtions(gg, 2) * face_coords[3 * edgeConnMap[2] + 1];
+    gaussPts(2, gg) = edge_ptr_fe->gaussPts(2, gg);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+EdgeElementForcesAndSourcesCoreBase *
+FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getEdgeFE() const {
+  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE->sidePtrFE);
+}
+
+VectorDouble &
+FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getDirection() {
+  return getEdgeFE()->dIrection;
+}
+
+MatrixDouble &FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+    getEdgeCoordsAtGaussPts() {
+  return getEdgeFE()->coordsAtGaussPts;
 }
 
 } // namespace MoFEM
