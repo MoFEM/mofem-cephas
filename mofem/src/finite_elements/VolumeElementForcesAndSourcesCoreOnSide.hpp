@@ -157,14 +157,15 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
     inline MatrixDouble &getFaceCoordsAtGaussPts();
   };
 
+  inline int getRule(int order);
+  MoFEMErrorCode setGaussPts(int order);
+
 private:
   int faceSense;      ///< Sense of face, could be 1 or -1
   int faceSideNumber; ///< Face side number
   std::array<int, 3> faceConnMap;
   std::array<int, 4> tetConnMap;
   int oppositeNode;
-  inline int getRule(int order);
-  MoFEMErrorCode setGaussPts(int order);
 };
 
 /**
