@@ -43,9 +43,7 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
    *
    * @return const std::array<int, 3>&
    */
-  inline const std::array<int, 3> &getFaceConnMap() const {
-    return faceConnMap;
-  }
+  inline const std::array<int, 3> &getFaceConnMap() const;
 
   /**
    * @brief Get face nodes maped on volume
@@ -55,7 +53,7 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
    *
    * @return const sdt::array<int, 4>&
    */
-  inline const std::array<int, 4> &getTetConnMap() const { return tetConnMap; }
+  inline const std::array<int, 4> &getTetConnMap() const;
 
   /**
    * @brief Get node on volume opposite to volume element
@@ -65,21 +63,21 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
    *
    * @return int
    */
-  inline int getOppositeNode() const { return oppositeNode; }
+  inline int getOppositeNode() const;
 
   /**
    * @brief Sense face on volume
    *
    * @return int
    */
-  inline int getFaceSense() const { return faceSense; }
+  inline int getFaceSense() const;
 
   /**
    * @brief Face number on the volume
    *
    * @return int
    */
-  inline int getFaceSideNumber() const { return faceSideNumber; }
+  inline int getFaceSideNumber() const;
 
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
@@ -194,6 +192,28 @@ struct VolumeElementForcesAndSourcesCoreOnSideSwitch
  */
 using VolumeElementForcesAndSourcesCoreOnSide =
     VolumeElementForcesAndSourcesCoreOnSideSwitch<0>;
+
+const std::array<int, 3> &
+VolumeElementForcesAndSourcesCoreOnSideBase::getFaceConnMap() const {
+  return faceConnMap;
+}
+
+const std::array<int, 4> &
+VolumeElementForcesAndSourcesCoreOnSideBase::getTetConnMap() const {
+  return tetConnMap;
+}
+
+int VolumeElementForcesAndSourcesCoreOnSideBase::getOppositeNode() const {
+  return oppositeNode;
+}
+
+int VolumeElementForcesAndSourcesCoreOnSideBase::getFaceSense() const {
+  return faceSense;
+}
+
+int VolumeElementForcesAndSourcesCoreOnSideBase::getFaceSideNumber() const {
+  return faceSideNumber;
+}
 
 FaceElementForcesAndSourcesCoreBase *
 VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getFaceFE()
