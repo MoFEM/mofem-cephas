@@ -1161,6 +1161,28 @@ ForcesAndSourcesCore::UserDataOperator::loopSide(const string &fe_name,
   MoFEMFunctionReturn(0);
 }
 
+int ForcesAndSourcesCore::getRule(int order_row, int order_col,
+                                  int order_data) {
+  return getRuleHook ? getRuleHook(order_row, order_col, order_data)
+                     : getRule(order_data);
+}
+
+MoFEMErrorCode ForcesAndSourcesCore::setGaussPts(int order_row, int order_col,
+                                                 int order_data) {
+  return setRuleHook ? setRuleHook(order_row, order_col, order_data)
+                     : setGaussPts(order_data);
+}
+
+int ForcesAndSourcesCore::getRule(int order) { return 2 * order; }
+
+/** \deprecated setGaussPts(int row_order, int col_order, int data order);
+ */
+MoFEMErrorCode ForcesAndSourcesCore::setGaussPts(int order) {
+  MoFEMFunctionBeginHot;
+  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Sorry, not implemented");
+  MoFEMFunctionReturnHot(0);
+}
+
 ForcesAndSourcesCore::UserDataOperator::UserDataOperator(const FieldSpace space,
                                                          const char type,
                                                          const bool symm)

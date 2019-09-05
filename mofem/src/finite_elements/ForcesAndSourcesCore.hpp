@@ -537,23 +537,13 @@ protected:
   getEntityRowIndices(DataForcesAndSourcesCore &data,
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
-                      const EntityType type_hi = MBPOLYHEDRON) const {
-    return getEntityIndices(data, field_name,
-                            const_cast<FENumeredDofEntity_multiIndex &>(
-                                numeredEntFiniteElementPtr->getRowsDofs()),
-                            type_lo, type_hi);
-  }
+                      const EntityType type_hi = MBPOLYHEDRON) const;
 
   inline MoFEMErrorCode
   getEntityColIndices(DataForcesAndSourcesCore &data,
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
-                      const EntityType type_hi = MBPOLYHEDRON) const {
-    return getEntityIndices(data, field_name,
-                            const_cast<FENumeredDofEntity_multiIndex &>(
-                                numeredEntFiniteElementPtr->getColsDofs()),
-                            type_lo, type_hi);
-  }
+                      const EntityType type_hi = MBPOLYHEDRON) const;
 
   /// \brief get NoField indices
   MoFEMErrorCode getNoFieldIndices(const std::string &field_name,
@@ -688,10 +678,7 @@ protected:
    *
    * \bug this function should be const
    */
-  virtual int getRule(int order_row, int order_col, int order_data) {
-    return getRuleHook ? getRuleHook(order_row, order_col, order_data)
-                       : getRule(order_data);
-  }
+  virtual int getRule(int order_row, int order_col, int order_data);
 
   /** \brief set user specific integration rule
 
@@ -718,10 +705,7 @@ protected:
 
     */
   virtual MoFEMErrorCode setGaussPts(int order_row, int order_col,
-                                     int order_data) {
-    return setRuleHook ? setRuleHook(order_row, order_col, order_data)
-                       : setGaussPts(order_data);
-  }
+                                     int order_data);
 
   /**
    * \brief Calculate base functions
@@ -756,15 +740,11 @@ protected:
 
   /** \deprecated Use getRule(int row_order, int col_order, int data order)
    */
-  virtual int getRule(int order) { return 2 * order; }
+  virtual int getRule(int order);
 
   /** \deprecated setGaussPts(int row_order, int col_order, int data order);
    */
-  virtual MoFEMErrorCode setGaussPts(int order) {
-    MoFEMFunctionBeginHot;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Sorry, not implemented");
-    MoFEMFunctionReturnHot(0);
-  }
+  virtual MoFEMErrorCode setGaussPts(int order);
 
   /**@/}*/
 
@@ -836,6 +816,24 @@ private:
 
 /// \deprecated Used ForcesAndSourcesCore instead
 DEPRECATED typedef ForcesAndSourcesCore ForcesAndSurcesCore;
+
+MoFEMErrorCode ForcesAndSourcesCore::getEntityRowIndices(
+    DataForcesAndSourcesCore &data, const std::string &field_name,
+    const EntityType type_lo, const EntityType type_hi) const {
+  return getEntityIndices(data, field_name,
+                          const_cast<FENumeredDofEntity_multiIndex &>(
+                              numeredEntFiniteElementPtr->getRowsDofs()),
+                          type_lo, type_hi);
+}
+
+MoFEMErrorCode ForcesAndSourcesCore::getEntityColIndices(
+    DataForcesAndSourcesCore &data, const std::string &field_name,
+    const EntityType type_lo, const EntityType type_hi) const {
+  return getEntityIndices(data, field_name,
+                          const_cast<FENumeredDofEntity_multiIndex &>(
+                              numeredEntFiniteElementPtr->getColsDofs()),
+                          type_lo, type_hi);
+}
 
 boost::shared_ptr<const NumeredEntFiniteElement>
 ForcesAndSourcesCore::UserDataOperator::getNumeredEntFiniteElementPtr() const {
