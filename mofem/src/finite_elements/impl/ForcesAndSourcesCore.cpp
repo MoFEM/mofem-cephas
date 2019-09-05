@@ -136,9 +136,9 @@ static inline int getMaxOrder(const ENTMULTIINDEX &multi_index) {
 int ForcesAndSourcesCore::getMaxDataOrder() const {
   int max_order = 0;
   for (auto e : *dataFieldEntsPtr) {
-      const int order = e->getMaxOrder();
-      max_order = (max_order < order) ? order : max_order;
-    }
+    const int order = e->getMaxOrder();
+    max_order = (max_order < order) ? order : max_order;
+  }
   return max_order;
 }
 
@@ -181,7 +181,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
     } else
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Entity on side of the element not found");
-
   }
 
   for (auto r = side_table.get<2>().equal_range(type); r.first != r.second;
@@ -519,7 +518,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesFieldData(
       }
     }
 
-    for(auto &dof_ptr : brother_dofs_vec) {
+    for (auto &dof_ptr : brother_dofs_vec) {
       if (const auto d = dof_ptr.lock()) {
         const auto &sn = d->sideNumberPtr;
         const int side_number = sn->side_number;
@@ -774,7 +773,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
       data.basesOnSpaces[s].reset();
     }
   }
-  
+
   if (dataFieldEntsPtr)
     for (auto e : *dataFieldEntsPtr) {
       // get data from entity
@@ -789,9 +788,9 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
       data.basesOnEntities[type].set(approx);
       data.basesOnSpaces[space].set(approx);
     }
-    else
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "data fields ents not allocated on element");
+  else
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "data fields ents not allocated on element");
 
   MoFEMFunctionReturnHot(0);
 }
@@ -1076,9 +1075,9 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemRowIndices(
     const std::string field_name, const EntityType type, const int side,
     VectorInt &indices) const {
   MoFEMFunctionBegin;
-  if (ptrFE == NULL) 
+  if (ptrFE == NULL)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  
+
   switch (type) {
   case MBVERTEX:
     CHKERR ptrFE->getProblemNodesRowIndices(field_name, indices);
@@ -1093,9 +1092,9 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemColIndices(
     const std::string field_name, const EntityType type, const int side,
     VectorInt &indices) const {
   MoFEMFunctionBegin;
-  if (ptrFE == NULL) 
+  if (ptrFE == NULL)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  
+
   switch (type) {
   case MBVERTEX:
     CHKERR ptrFE->getProblemNodesColIndices(field_name, indices);
@@ -1160,6 +1159,47 @@ ForcesAndSourcesCore::UserDataOperator::loopSide(const string &fe_name,
   CHKERR side_fe->postProcess();
 
   MoFEMFunctionReturn(0);
+}
+
+ForcesAndSourcesCore::UserDataOperator::UserDataOperator(const FieldSpace space,
+                                                         const char type,
+                                                         const bool symm)
+    : DataOperator(symm), opType(type), sPace(space), ptrFE(nullptr) {}
+
+ForcesAndSourcesCore::UserDataOperator::UserDataOperator(
+    const std::string &field_name, const char type, const bool symm)
+    : DataOperator(symm), opType(type), rowFieldName(field_name),
+      colFieldName(field_name), sPace(LASTSPACE), ptrFE(nullptr) {}
+
+ForcesAndSourcesCore::UserDataOperator::UserDataOperator(
+    const std::string &row_field_name, const std::string &col_field_name,
+    const char type, const bool symm)
+    : DataOperator(symm), opType(type), rowFieldName(row_field_name),
+      colFieldName(col_field_name), sPace(LASTSPACE), ptrFE(nullptr) {}
+
+MoFEMErrorCode ForcesAndSourcesCore::preProcess() {
+  MoFEMFunctionBeginHot;
+  if (preProcessHook) {
+    ierr = preProcessHook();
+    CHKERRG(ierr);
+  }
+  MoFEMFunctionReturnHot(0);
+}
+MoFEMErrorCode ForcesAndSourcesCore::operator()() {
+  MoFEMFunctionBeginHot;
+  if (operatorHook) {
+    ierr = operatorHook();
+    CHKERRG(ierr);
+  }
+  MoFEMFunctionReturnHot(0);
+}
+MoFEMErrorCode ForcesAndSourcesCore::postProcess() {
+  MoFEMFunctionBeginHot;
+  if (postProcessHook) {
+    ierr = postProcessHook();
+    CHKERRG(ierr);
+  }
+  MoFEMFunctionReturnHot(0);
 }
 
 } // namespace MoFEM
