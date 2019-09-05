@@ -323,50 +323,7 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     NO_COVARIANT_TRANSFORM_HCURL = 1 << 2,
   };
 
-  template <int SWITCH> MoFEMErrorCode OpSwitch() {
-    MoFEMFunctionBegin;
-
-    if (numeredEntFiniteElementPtr->getEntType() != MBTRI)
-      MoFEMFunctionReturnHot(0);
-    CHKERR createDataOnElement();
-
-    // Calculate normal and tangent vectors for face geometry given by 3 nodes.
-    CHKERR calculateAreaAndNormal();
-    CHKERR getSpaceBaseAndOrderOnElement();
-
-    CHKERR setIntegrationPts();
-    if (gaussPts.size2() == 0)
-      MoFEMFunctionReturnHot(0);
-
-    DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-    DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
-
-    dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
-    std::copy(
-        Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
-        dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
-
-    /// Use the some node base
-    CHKERR calculateCoordinatesAtGaussPts();
-    CHKERR calculateBaseFunctionsOnElement();
-    if (!(NO_HO_GEOMETRY & SWITCH))
-      CHKERR calculateHoNormal();
-
-    // Apply Piola transform to HDiv and HCurl spaces, uses previously
-    // calculated faces normal and tangent vectors.
-    if (!(NO_CONTRAVARIANT_TRANSFORM_HDIV & SWITCH))
-      if (dataH1.spacesOnEntities[MBTRI].test(HDIV))
-        CHKERR opContravariantTransform.opRhs(data_div);
-
-    if (!(NO_COVARIANT_TRANSFORM_HCURL & SWITCH))
-      if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))
-        CHKERR opCovariantTransform.opRhs(data_curl);
-
-    // Iterate over operators
-    CHKERR loopOverOperators();
-
-    MoFEMFunctionReturn(0);
-  }
+  template <int SWITCH> MoFEMErrorCode OpSwitch();
 
 protected:
   MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
@@ -441,7 +398,7 @@ struct FaceElementForcesAndSourcesCoreSwitch
   using UserDataOperator =
       FaceElementForcesAndSourcesCoreBase::UserDataOperator;
 
-  MoFEMErrorCode operator()() { return OpSwitch<SWITCH>(); }
+  MoFEMErrorCode operator()();
 };
 
 /** \brief Face finite element default
@@ -450,6 +407,56 @@ struct FaceElementForcesAndSourcesCoreSwitch
  */
 using FaceElementForcesAndSourcesCore =
     FaceElementForcesAndSourcesCoreSwitch<0>;
+
+template <int SWITCH>
+MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::OpSwitch() {
+  MoFEMFunctionBegin;
+
+  if (numeredEntFiniteElementPtr->getEntType() != MBTRI)
+    MoFEMFunctionReturnHot(0);
+  CHKERR createDataOnElement();
+
+  // Calculate normal and tangent vectors for face geometry given by 3 nodes.
+  CHKERR calculateAreaAndNormal();
+  CHKERR getSpaceBaseAndOrderOnElement();
+
+  CHKERR setIntegrationPts();
+  if (gaussPts.size2() == 0)
+    MoFEMFunctionReturnHot(0);
+
+  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
+  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
+
+  dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
+  std::copy(Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+            dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
+
+  /// Use the some node base
+  CHKERR calculateCoordinatesAtGaussPts();
+  CHKERR calculateBaseFunctionsOnElement();
+  if (!(NO_HO_GEOMETRY & SWITCH))
+    CHKERR calculateHoNormal();
+
+  // Apply Piola transform to HDiv and HCurl spaces, uses previously
+  // calculated faces normal and tangent vectors.
+  if (!(NO_CONTRAVARIANT_TRANSFORM_HDIV & SWITCH))
+    if (dataH1.spacesOnEntities[MBTRI].test(HDIV))
+      CHKERR opContravariantTransform.opRhs(data_div);
+
+  if (!(NO_COVARIANT_TRANSFORM_HCURL & SWITCH))
+    if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))
+      CHKERR opCovariantTransform.opRhs(data_curl);
+
+  // Iterate over operators
+  CHKERR loopOverOperators();
+
+  MoFEMFunctionReturn(0);
+}
+
+template <int SWITCH>
+MoFEMErrorCode FaceElementForcesAndSourcesCoreSwitch<SWITCH>::operator()() {
+  return OpSwitch<SWITCH>();
+}
 
 } // namespace MoFEM
 
