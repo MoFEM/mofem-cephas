@@ -65,7 +65,20 @@ int main(int argc, char *argv[]) {
         0, 3, bit_level0);
 
     // Fields
-    CHKERR m_field.add_field("F2", HDIV, AINSWORTH_LEGENDRE_BASE, 1);
+    enum bases { AINSWORTH, DEMKOWICZ, LASBASETOP };
+    const char *list_bases[] = {"ainsworth", "demkowicz"};
+    PetscBool flg_base;
+    PetscInt choice_base_value = AINSWORTH;
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+                                LASBASETOP, &choice_base_value, &flg_base);
+    if (flg_base != PETSC_TRUE)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+    FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
+    if (choice_base_value == AINSWORTH)
+      base = AINSWORTH_LEGENDRE_BASE;
+    else if (choice_base_value == DEMKOWICZ)
+      base = DEMKOWICZ_JACOBI_BASE;
+    CHKERR m_field.add_field("F2", HDIV, base, 1);
 
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
@@ -73,7 +86,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "F2");
 
     // set app. order
-    int order = 1;
+    int order = 2;
     CHKERR m_field.set_field_order(root_set, MBTET, "F2", order);
     CHKERR m_field.set_field_order(root_set, MBTRI, "F2", order);
 
