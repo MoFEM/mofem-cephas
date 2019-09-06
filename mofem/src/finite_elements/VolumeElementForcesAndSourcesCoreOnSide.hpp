@@ -155,7 +155,7 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
     inline MatrixDouble &getFaceCoordsAtGaussPts();
   };
 
-  inline int getRule(int order);
+  int getRule(int order);
   MoFEMErrorCode setGaussPts(int order);
 
 private:

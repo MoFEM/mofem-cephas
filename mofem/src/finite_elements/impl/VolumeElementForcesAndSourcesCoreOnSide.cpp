@@ -20,7 +20,7 @@
 
 namespace MoFEM {
 
-inline int VolumeElementForcesAndSourcesCoreOnSideBase::getRule(int order) {
+int VolumeElementForcesAndSourcesCoreOnSideBase::getRule(int order) {
   return -1;
 };
 
