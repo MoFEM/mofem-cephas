@@ -65,20 +65,25 @@ int main(int argc, char *argv[]) {
         0, 3, bit_level0);
 
     // Fields
-    enum bases { AINSWORTH, DEMKOWICZ, LASBASETOP };
-    const char *list_bases[] = {"ainsworth", "demkowicz"};
-    PetscBool flg_base;
-    PetscInt choice_base_value = AINSWORTH;
-    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
-                                LASBASETOP, &choice_base_value, &flg_base);
-    if (flg_base != PETSC_TRUE)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
-    FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
-    if (choice_base_value == AINSWORTH)
-      base = AINSWORTH_LEGENDRE_BASE;
-    else if (choice_base_value == DEMKOWICZ)
-      base = DEMKOWICZ_JACOBI_BASE;
-    CHKERR m_field.add_field("F2", HDIV, base, 1);
+    auto get_base = []() -> FieldApproximationBase {
+      enum bases { AINSWORTH, DEMKOWICZ, LASTBASEOP };
+      const char *list_bases[] = {"ainsworth", "demkowicz"};
+      PetscBool flg;
+      PetscInt choice_base_value = AINSWORTH;
+      CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+                                  LASTBASEOP, &choice_base_value, &flg);
+      if (flg == PETSC_TRUE) {
+        FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
+        if (choice_base_value == AINSWORTH)
+          base = AINSWORTH_LEGENDRE_BASE;
+        else if (choice_base_value == DEMKOWICZ)
+          base = DEMKOWICZ_JACOBI_BASE;
+        return base;
+      }
+      return LASTBASE;
+    };
+
+    CHKERR m_field.add_field("F2", HDIV, get_base(), 1);
 
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
