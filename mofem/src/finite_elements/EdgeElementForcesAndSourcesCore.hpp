@@ -161,45 +161,7 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     NO_COVARIANT_TRANSFORM_HCURL = 1 << 2
   };
 
-  template <int SWITCH> MoFEMErrorCode OpSwitch() {
-    MoFEMFunctionBegin;
-
-    if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
-      MoFEMFunctionReturnHot(0);
-
-    CHKERR createDataOnElement();
-
-    DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-
-    CHKERR calculateEdgeDirection();
-    CHKERR getSpacesAndBaseOnEntities(dataH1);
-    CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
-    dataH1.dataOnEntities[MBEDGE][0].getSense() =
-        1; // set sense to 1, this is this entity
-
-    // Hcurl
-    if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-      CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
-      data_curl.dataOnEntities[MBEDGE][0].getSense() =
-          1; // set sense to 1, this is this entity
-      data_curl.spacesOnEntities[MBEDGE].set(HCURL);
-    }
-
-    CHKERR setIntegrationPts();
-    CHKERR calculateCoordsAtIntegrationPts();
-    CHKERR calculateBaseFunctionsOnElement();
-    if (!(SWITCH & NO_HO_GEOMETRY))
-      CHKERR calculateHoCoordsAtIntegrationPts();
-
-    if (!(SWITCH & NO_COVARIANT_TRANSFORM_HCURL))
-      if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))
-        CHKERR opCovariantTransform.opRhs(data_curl);
-
-    // Iterate over operators
-    CHKERR loopOverOperators();
-
-    MoFEMFunctionReturn(0);
-  }
+  template <int SWITCH> MoFEMErrorCode OpSwitch();
 
 protected:
   MatrixDouble tangentAtGaussPts;
@@ -238,7 +200,7 @@ struct EdgeElementForcesAndSourcesCoreSwitch
   using EdgeElementForcesAndSourcesCoreBase::
       EdgeElementForcesAndSourcesCoreBase;
 
-  MoFEMErrorCode operator()() { return OpSwitch<SWITCH>(); }
+  MoFEMErrorCode operator()();
 };
 
 /** \brief Edge finite element default
@@ -247,6 +209,52 @@ struct EdgeElementForcesAndSourcesCoreSwitch
  */
 using EdgeElementForcesAndSourcesCore =
     EdgeElementForcesAndSourcesCoreSwitch<0>;
+
+template <int SWITCH>
+MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::OpSwitch() {
+  MoFEMFunctionBegin;
+
+  if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
+    MoFEMFunctionReturnHot(0);
+
+  CHKERR createDataOnElement();
+
+  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
+
+  CHKERR calculateEdgeDirection();
+  CHKERR getSpacesAndBaseOnEntities(dataH1);
+  CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
+  dataH1.dataOnEntities[MBEDGE][0].getSense() =
+      1; // set sense to 1, this is this entity
+
+  // Hcurl
+  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+    CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
+    data_curl.dataOnEntities[MBEDGE][0].getSense() =
+        1; // set sense to 1, this is this entity
+    data_curl.spacesOnEntities[MBEDGE].set(HCURL);
+  }
+
+  CHKERR setIntegrationPts();
+  CHKERR calculateCoordsAtIntegrationPts();
+  CHKERR calculateBaseFunctionsOnElement();
+  if (!(SWITCH & NO_HO_GEOMETRY))
+    CHKERR calculateHoCoordsAtIntegrationPts();
+
+  if (!(SWITCH & NO_COVARIANT_TRANSFORM_HCURL))
+    if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))
+      CHKERR opCovariantTransform.opRhs(data_curl);
+
+  // Iterate over operators
+  CHKERR loopOverOperators();
+
+  MoFEMFunctionReturn(0);
+}
+
+template <int SWITCH>
+MoFEMErrorCode EdgeElementForcesAndSourcesCoreSwitch<SWITCH>::operator()() {
+  return OpSwitch<SWITCH>();
+}
 
 } // namespace MoFEM
 
