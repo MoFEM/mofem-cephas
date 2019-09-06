@@ -105,7 +105,7 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
 
     inline bool getEdgeFace(const int ee) const;
 
-      /**
+    /**
      * get face normal on side which is this element
      * @return face normal
      */
@@ -183,7 +183,7 @@ struct VolumeElementForcesAndSourcesCoreOnSideSwitch
   using UserDataOperator =
       VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator;
 
-  MoFEMErrorCode operator()() { return OpSwitch<SWITCH>(); }
+  MoFEMErrorCode operator()();
 };
 
 /** \brief Volume element used to integrate on skeleton
@@ -233,9 +233,8 @@ VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getVolumeFE()
   return static_cast<VolumeElementForcesAndSourcesCoreOnSideBase *>(ptrFE);
 }
 
-int
-VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getFaceSense()
-    const {
+int VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+    getFaceSense() const {
   return getVolumeFE()->faceSense;
 }
 
@@ -283,7 +282,12 @@ ublas::matrix_row<MatrixDouble> VolumeElementForcesAndSourcesCoreOnSideBase::
   return ublas::matrix_row<MatrixDouble>(getNormalsAtGaussPts(), gg);
 }
 
+template <int SWITCH>
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH>::
+operator()() {
+  return OpSwitch<SWITCH>();
+}
+
 } // namespace MoFEM
 
 #endif //__VOLUMEELEMENTFORCESANDSOURCESCORE_ONSIDE_HPP__
-

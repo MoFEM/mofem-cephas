@@ -145,10 +145,4 @@ EdgeElementForcesAndSourcesCoreBase::calculateHoCoordsAtIntegrationPts() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::loopSideEdge(
-    const string &fe_name, FaceElementForcesAndSourcesCoreOnSideBase &fe_side) {
-  return loopSide(fe_name, &fe_side, 2);
-};
-
 } // namespace MoFEM

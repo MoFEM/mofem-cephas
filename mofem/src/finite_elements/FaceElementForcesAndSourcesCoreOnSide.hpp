@@ -136,6 +136,26 @@ private:
   int oppositeNode;
 };
 
+/**
+ * @brief Face side finite element with switches
+ *
+ * Using SWITCH to off functions
+ *
+ * @tparam SWITCH
+ */
+template <int SWITCH>
+struct FaceElementForcesAndSourcesCoreOnSideSwitch
+    : public FaceElementForcesAndSourcesCoreOnSideBase {
+
+  using FaceElementForcesAndSourcesCoreOnSideBase::
+      FaceElementForcesAndSourcesCoreOnSideBase;
+
+  using UserDataOperator =
+      FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator;
+
+  MoFEMErrorCode operator()();
+};
+
 const std::array<int, 2> &
 FaceElementForcesAndSourcesCoreOnSideBase::getEdgeConnMap() const {
   return edgeConnMap;
@@ -178,6 +198,11 @@ int FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
   return getFaceFE()->edgeSideNumber;
 }
 
+VectorDouble &
+FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getDirection() {
+  return getEdgeFE()->dIrection;
+}
+
 auto FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
     getFTensor1Tangent() {
   double *ptr = &*getDirection().data().begin();
@@ -187,6 +212,12 @@ auto FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
 MatrixDouble &FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
     getEdgeCoordsAtGaussPts() {
   return getEdgeFE()->coordsAtGaussPts;
+}
+
+template <int SWITCH>
+MoFEMErrorCode FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH>::
+operator()() {
+  return OpSwitch<SWITCH>();
 }
 
 } // namespace MoFEM
