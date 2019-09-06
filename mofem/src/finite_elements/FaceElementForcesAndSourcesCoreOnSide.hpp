@@ -97,13 +97,13 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
      * \brief get face sense in respect to volume
      * @return error code
      */
-    inline int getFaceSense() const;
+    inline int getEdgeSense() const;
 
     /**
      * \brief get face side number in respect to volume
      * @return error code
      */
-    inline int getFaceSideNumber() const;
+    inline int getEdgeSideNumber() const;
 
     /**
      * get face normal on side which is this element
@@ -113,7 +113,7 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
 
     /** \brief get normal as tensor
      */
-    inline auto getFTensor1Tangent();
+    inline auto getFTensor1Direction();
 
     /** \brief get face coordinates at Gauss pts.
 
@@ -188,13 +188,13 @@ FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getEdgeFE() const {
   return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE->sidePtrFE);
 }
 
-int FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getFaceSense()
+int FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getEdgeSense()
     const {
   return getFaceFE()->edgeSense;
 }
 
 int FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
-    getFaceSideNumber() const {
+    getEdgeSideNumber() const {
   return getFaceFE()->edgeSideNumber;
 }
 
@@ -204,7 +204,7 @@ FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getDirection() {
 }
 
 auto FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
-    getFTensor1Tangent() {
+    getFTensor1Direction() {
   double *ptr = &*getDirection().data().begin();
   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
 }

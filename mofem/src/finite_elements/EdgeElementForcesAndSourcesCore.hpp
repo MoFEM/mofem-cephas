@@ -97,7 +97,7 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
      */
     inline const EdgeElementForcesAndSourcesCoreBase *getEdgeFE();
 
-    inline FTensor::Tensor1<double, 3> getTensor1Direction();
+    inline FTensor::Tensor1<double, 3> getFTensor1Direction();
 
     /**
      * \brief get get coords at gauss points
@@ -123,7 +123,7 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     template <int SWITCH>
     MoFEMErrorCode
-    loopSideEdge(const string &fe_name,
+    loopSideFaces(const string &fe_name,
                  FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side);
   };
 
@@ -275,7 +275,7 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getEdgeFE() {
 }
 
 inline FTensor::Tensor1<double, 3>
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getTensor1Direction() {
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getFTensor1Direction() {
   return FTensor::Tensor1<double, 3>(getDirection()[0], getDirection()[1],
                                      getDirection()[2]);
 }
@@ -297,7 +297,7 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
 
 template <int SWITCH>
 MoFEMErrorCode
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::loopSideEdge(
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::loopSideFaces(
     const string &fe_name,
     FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side) {
   return loopSide(fe_name, &fe_side, 2);

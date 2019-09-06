@@ -39,7 +39,7 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
       side_table.get<0>().find(edge_entity);
   if (sit == side_table.get<0>().end())
     SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-            "Face can not be found on volume element");
+            "Edge can not be found on face element");
 
   auto edge_ptr_fe =
       static_cast<EdgeElementForcesAndSourcesCoreBase *>(sidePtrFE);
@@ -50,7 +50,7 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   for (int nn = 0; nn != 2; ++nn) {
     edgeConnMap[nn] =
         std::distance(conn, find(conn, &conn[2], edge_ptr_fe->cOnn[nn]));
-    faceConnMap[faceConnMap[nn]] = nn;
+    faceConnMap[edgeConnMap[nn]] = nn;
     if (faceConnMap[nn] > 2)
       SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
               "No common node on face and element can not be found");
@@ -65,16 +65,14 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   DataForcesAndSourcesCore &data_h1_on_edge = *edge_ptr_fe->dataOnElement[H1];
   const MatrixDouble &edge_shape_funtions =
       data_h1_on_edge.dataOnEntities[MBVERTEX][0].getN(NOBASE);
-  const double face_coords[] = {0, 0, 0, 1, 1, 0};
+  constexpr double face_coords[] = {0, 0, 1, 0, 0, 1};
   for (int gg = 0; gg != nb_gauss_pts; ++gg) {
     gaussPts(0, gg) =
-        edge_shape_funtions(gg, 0) * face_coords[3 * edgeConnMap[0] + 0] +
-        edge_shape_funtions(gg, 1) * face_coords[3 * edgeConnMap[1] + 0] +
-        edge_shape_funtions(gg, 2) * face_coords[3 * edgeConnMap[2] + 0];
+        edge_shape_funtions(gg, 0) * face_coords[2 * edgeConnMap[0] + 0] +
+        edge_shape_funtions(gg, 1) * face_coords[2 * edgeConnMap[1] + 0];
     gaussPts(1, gg) =
-        edge_shape_funtions(gg, 0) * face_coords[3 * edgeConnMap[0] + 1] +
-        edge_shape_funtions(gg, 1) * face_coords[3 * edgeConnMap[1] + 1] +
-        edge_shape_funtions(gg, 2) * face_coords[3 * edgeConnMap[2] + 1];
+        edge_shape_funtions(gg, 0) * face_coords[2 * edgeConnMap[0] + 1] +
+        edge_shape_funtions(gg, 1) * face_coords[2 * edgeConnMap[1] + 1];
     gaussPts(2, gg) = edge_ptr_fe->gaussPts(2, gg);
   }
 
