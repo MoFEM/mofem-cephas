@@ -1,5 +1,5 @@
-/** \file forces_and_sources_integration_on_skeleton.cpp
- * \example forces_and_sources_integration_on_skeleton.cpp
+/** \file continuity_check_on_skeleton_3d.cpp
+ * \example continuity_check_on_skeleton_3d.cpp
  * \brief Testing integration on skeleton
  */
 

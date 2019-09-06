@@ -895,10 +895,10 @@ add_test(hcurl_curl_operator_demkowicz_atom
 
 #test integration on skeleton
 my_add_executable(
-  forces_and_sources_integration_on_skeleton
-  forces_and_sources_integration_on_skeleton.cpp
+  continuity_check_on_skeleton_3d
+  continuity_check_on_skeleton_3d.cpp
 )
-target_link_libraries(forces_and_sources_integration_on_skeleton
+target_link_libraries(continuity_check_on_skeleton_3d
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -909,10 +909,16 @@ target_link_libraries(forces_and_sources_integration_on_skeleton
   ${PROJECT_LIBS}
 )
 add_test(
-  forces_and_sources_integration_on_skeleton
+  continuity_check_on_skeleton_3d_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_integration_on_skeleton
-  -my_file sphere.h5m
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
+  -my_file sphere.h5m -base ainsworth
+)
+add_test(
+  continuity_check_on_skeleton_3d_demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
+  -my_file sphere.h5m -base demkowicz
 )
 
 #dm
