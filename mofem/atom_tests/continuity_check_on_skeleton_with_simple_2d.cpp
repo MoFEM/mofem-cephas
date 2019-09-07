@@ -3,9 +3,10 @@
  * \ingroup mofem_simple_interface
  * \example continuity_check_on_skeleton_with_simple_2d.cpp
  *
- * Calculate volume by integrating volume elements and using divergence theorem
- * by integrating surface elements.
- *
+ * \brief Integration on skeleton for 2d
+ * 
+ * Teting integration on skeleton and checking of continuity of hcurl space on
+ * edges.
  */
 
 /* This file is part of MoFEM.
@@ -27,11 +28,11 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSideSwitch<0>;
+using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSideSwitch<
+    FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY>;
 
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
-    EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY |
-    EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+    EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY>;
 
 using FaceEleOnSideOp = FaceEleOnSide::UserDataOperator;
 using EdgeEleOp = EdgeEle::UserDataOperator;
@@ -57,9 +58,6 @@ struct SkeletonFE : public EdgeEleOp {
       if (type == MBEDGE && side == getEdgeSideNumber()) {
 
         MatrixDouble diff = getCoordsAtGaussPts() - getEdgeCoordsAtGaussPts();
-
-        cerr << getCoordsAtGaussPts() << " " << getEdgeCoordsAtGaussPts()
-             << endl;
 
         const double eps = 1e-12;
         if (norm_inf(diff) > eps)
@@ -123,9 +121,6 @@ struct SkeletonFE : public EdgeEleOp {
         }
       }
 
-      cerr << getCoords() << endl;
-      cerr << getCoordsAtGaussPts() << endl;
-
       CHKERR loopSideFaces("dFE", faceSideFe);
 
       auto check_continuity_of_base = [&](auto &vol_dot_data) {
@@ -151,18 +146,11 @@ struct SkeletonFE : public EdgeEleOp {
         MoFEMFunctionReturn(0);
       };
 
-      cerr << "bases" << endl;
-      elemData.dotEdge *= 2;
-      cerr << elemData.dotEdge << endl;
-      cerr << elemData.dotEleLeft << endl;
-      cerr << elemData.dotEleRight << endl;
-
       if (elemData.dotEleLeft.size2() != 0)
         CHKERR check_continuity_of_base(elemData.dotEleLeft);
       else if (elemData.dotEleRight.size2() != 0)
         CHKERR check_continuity_of_base(elemData.dotEleRight);
 
-      cerr << "Next" << endl << endl;
     }
     MoFEMFunctionReturnHot(0);
   }
