@@ -28,6 +28,10 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
+template <int SWITCH> struct FaceElementForcesAndSourcesCoreOnSideSwitch;
+
+struct FaceElementForcesAndSourcesCoreOnSideBase;
+
 /** \brief Edge finite element
  * \ingroup mofem_forces_and_sources_edge_element
  *
@@ -40,7 +44,6 @@ namespace MoFEM {
 struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
   std::string meshPositionsFieldName;
-
   EdgeElementForcesAndSourcesCoreBase(Interface &m_field);
 
   /** \brief default operator for EDGE element
@@ -52,73 +55,49 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     /** \brief get element connectivity
      */
-    inline const EntityHandle *getConn() {
-      return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->cOnn;
-    }
+    inline const EntityHandle *getConn();
 
     /**
      * \brief get edge length
      */
-    inline double getLength() {
-      return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->lEngth;
-    }
+    inline double getLength();
 
     /**
      * \brief get measure of element
      * @return length of face
      */
-    inline double getMeasure() { return getLength(); }
+    inline double getMeasure();
 
     /**
      * \brief get edge direction
      */
-    inline VectorDouble &getDirection() {
-      return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)
-          ->dIrection;
-    }
+    inline VectorDouble &getDirection();
 
     /**
      * \brief get edge node coordinates
      */
-    inline VectorDouble &getCoords() {
-      return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->cOords;
-    }
+    inline VectorDouble &getCoords();
 
     /**
      * \brief get coordinate at integration point
      */
-    inline MatrixDouble &getCoordsAtGaussPts() {
-      return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)
-          ->coordsAtGaussPts;
-    }
+    inline MatrixDouble &getCoordsAtGaussPts();
 
     /** \brief get coordinates at Gauss pts.
      */
-    inline auto getFTensor1CoordsAtGaussPts() {
-      double *ptr = &*getCoordsAtGaussPts().data().begin();
-      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
-                                                                &ptr[2]);
-    }
+    inline auto getFTensor1CoordsAtGaussPts();
 
     /**
      * \brief get tangent vector to edge curve at integration points
      */
-    inline MatrixDouble &getTangetAtGaussPts() {
-      return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)
-          ->tangentAtGaussPts;
-    }
+    inline MatrixDouble &getTangetAtGaussPts();
 
     /**
      * \brief get pointer to this finite element
      */
-    inline const EdgeElementForcesAndSourcesCoreBase *getEdgeFE() {
-      return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE);
-    }
+    inline const EdgeElementForcesAndSourcesCoreBase *getEdgeFE();
 
-    inline FTensor::Tensor1<double, 3> getTensor1Direction() {
-      return FTensor::Tensor1<double, 3>(getDirection()[0], getDirection()[1],
-                                         getDirection()[2]);
-    }
+    inline FTensor::Tensor1<double, 3> getFTensor1Direction();
 
     /**
      * \brief get get coords at gauss points
@@ -137,18 +116,15 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
      */
     inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-    getTensor1Coords() {
-      double *ptr = &*getCoords().data().begin();
-      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
-                                                                &ptr[2]);
-    }
+    getTensor1Coords();
 
     inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-    getTensor1TangentAtGaussPts() {
-      double *ptr = &*getTangetAtGaussPts().data().begin();
-      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
-                                                                &ptr[2]);
-    }
+    getFTensor1TangentAtGaussPts();
+
+    template <int SWITCH>
+    MoFEMErrorCode
+    loopSideFaces(const string &fe_name,
+                 FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side);
   };
 
   enum Switches {
@@ -156,45 +132,7 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     NO_COVARIANT_TRANSFORM_HCURL = 1 << 2
   };
 
-  template <int SWITCH> MoFEMErrorCode OpSwitch() {
-    MoFEMFunctionBegin;
-
-    if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
-      MoFEMFunctionReturnHot(0);
-
-    CHKERR createDataOnElement();
-
-    DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-
-    CHKERR calculateEdgeDirection();
-    CHKERR getSpacesAndBaseOnEntities(dataH1);
-    CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
-    dataH1.dataOnEntities[MBEDGE][0].getSense() =
-        1; // set sense to 1, this is this entity
-
-    // Hcurl
-    if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-      CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
-      data_curl.dataOnEntities[MBEDGE][0].getSense() =
-          1; // set sense to 1, this is this entity
-      data_curl.spacesOnEntities[MBEDGE].set(HCURL);
-    }
-
-    CHKERR setIntegrationPts();
-    CHKERR calculateCoordsAtIntegrationPts();
-    CHKERR calculateBaseFunctionsOnElement();
-    if (!(SWITCH & NO_HO_GEOMETRY))
-      CHKERR calculateHoCoordsAtIntegrationPts();
-
-    if (!(SWITCH & NO_COVARIANT_TRANSFORM_HCURL))
-      if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))
-        CHKERR opCovariantTransform.opRhs(data_curl);
-
-    // Iterate over operators
-    CHKERR loopOverOperators();
-
-    MoFEMFunctionReturn(0);
-  }
+  template <int SWITCH> MoFEMErrorCode OpSwitch();
 
 protected:
   MatrixDouble tangentAtGaussPts;
@@ -214,7 +152,7 @@ protected:
   MoFEMErrorCode calculateCoordsAtIntegrationPts();
   MoFEMErrorCode calculateHoCoordsAtIntegrationPts();
 
-  friend class UserDataOperator;
+  friend class FaceElementForcesAndSourcesCoreOnSideBase;
 };
 
 /** \brief Edge finite element
@@ -233,7 +171,7 @@ struct EdgeElementForcesAndSourcesCoreSwitch
   using EdgeElementForcesAndSourcesCoreBase::
       EdgeElementForcesAndSourcesCoreBase;
 
-  MoFEMErrorCode operator()() { return OpSwitch<SWITCH>(); }
+  MoFEMErrorCode operator()();
 };
 
 /** \brief Edge finite element default
@@ -242,6 +180,128 @@ struct EdgeElementForcesAndSourcesCoreSwitch
  */
 using EdgeElementForcesAndSourcesCore =
     EdgeElementForcesAndSourcesCoreSwitch<0>;
+
+template <int SWITCH>
+MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::OpSwitch() {
+  MoFEMFunctionBegin;
+
+  if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
+    MoFEMFunctionReturnHot(0);
+
+  CHKERR createDataOnElement();
+
+  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
+
+  CHKERR calculateEdgeDirection();
+  CHKERR getSpacesAndBaseOnEntities(dataH1);
+  CHKERR getEntityDataOrder<MBEDGE>(dataH1, H1);
+  dataH1.dataOnEntities[MBEDGE][0].getSense() =
+      1; // set sense to 1, this is this entity
+
+  // Hcurl
+  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+    CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
+    data_curl.dataOnEntities[MBEDGE][0].getSense() =
+        1; // set sense to 1, this is this entity
+    data_curl.spacesOnEntities[MBEDGE].set(HCURL);
+  }
+
+  CHKERR setIntegrationPts();
+  CHKERR calculateCoordsAtIntegrationPts();
+  CHKERR calculateBaseFunctionsOnElement();
+  if (!(SWITCH & NO_HO_GEOMETRY))
+    CHKERR calculateHoCoordsAtIntegrationPts();
+
+  if (!(SWITCH & NO_COVARIANT_TRANSFORM_HCURL))
+    if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))
+      CHKERR opCovariantTransform.opRhs(data_curl);
+
+  // Iterate over operators
+  CHKERR loopOverOperators();
+
+  MoFEMFunctionReturn(0);
+}
+
+template <int SWITCH>
+MoFEMErrorCode EdgeElementForcesAndSourcesCoreSwitch<SWITCH>::operator()() {
+  return OpSwitch<SWITCH>();
+}
+
+const EntityHandle *
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getConn() {
+  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->cOnn;
+}
+
+double EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getLength() {
+  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->lEngth;
+}
+
+double EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getMeasure() {
+  return getLength();
+}
+
+VectorDouble &
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getDirection() {
+  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->dIrection;
+}
+
+VectorDouble &
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getCoords() {
+  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->cOords;
+}
+
+MatrixDouble &
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getCoordsAtGaussPts() {
+  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)
+      ->coordsAtGaussPts;
+}
+
+auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
+    getFTensor1CoordsAtGaussPts() {
+  double *ptr = &*getCoordsAtGaussPts().data().begin();
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
+                                                            &ptr[2]);
+}
+
+MatrixDouble &
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getTangetAtGaussPts() {
+  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)
+      ->tangentAtGaussPts;
+}
+
+const EdgeElementForcesAndSourcesCoreBase *
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getEdgeFE() {
+  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE);
+}
+
+inline FTensor::Tensor1<double, 3>
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getFTensor1Direction() {
+  return FTensor::Tensor1<double, 3>(getDirection()[0], getDirection()[1],
+                                     getDirection()[2]);
+}
+
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getTensor1Coords() {
+  double *ptr = &*getCoords().data().begin();
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
+                                                            &ptr[2]);
+}
+
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
+    getFTensor1TangentAtGaussPts() {
+  double *ptr = &*getTangetAtGaussPts().data().begin();
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
+                                                            &ptr[2]);
+}
+
+template <int SWITCH>
+MoFEMErrorCode
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::loopSideFaces(
+    const string &fe_name,
+    FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side) {
+  return loopSide(fe_name, &fe_side, 2);
+}
 
 } // namespace MoFEM
 

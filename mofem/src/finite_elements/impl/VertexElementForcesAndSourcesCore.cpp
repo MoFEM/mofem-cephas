@@ -30,6 +30,10 @@ extern "C" {
 
 namespace MoFEM {
 
+VertexElementForcesAndSourcesCore::VertexElementForcesAndSourcesCore(
+    Interface &m_field)
+    : ForcesAndSourcesCore(m_field){};
+
 MoFEMErrorCode VertexElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBegin;
 

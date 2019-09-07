@@ -109,8 +109,6 @@ struct FaceRule {
 
 int main(int argc, char *argv[]) {
 
-  //
-
   // initialize petsc
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 

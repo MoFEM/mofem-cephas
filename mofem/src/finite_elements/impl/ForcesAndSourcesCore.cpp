@@ -67,7 +67,7 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
       dataNoField(*dataOnElement[NOFIELD].get()),
       dataH1(*dataOnElement[H1].get()), dataHcurl(*dataOnElement[HCURL].get()),
       dataHdiv(*dataOnElement[HDIV].get()), dataL2(*dataOnElement[L2].get()),
-      lastEvaluatedElementEntityType(MBMAXTYPE) {}
+      lastEvaluatedElementEntityType(MBMAXTYPE), sidePtrFE(nullptr) {}
 
 MoFEMErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {
   MoFEMFunctionBeginHot;
@@ -136,9 +136,9 @@ static inline int getMaxOrder(const ENTMULTIINDEX &multi_index) {
 int ForcesAndSourcesCore::getMaxDataOrder() const {
   int max_order = 0;
   for (auto e : *dataFieldEntsPtr) {
-      const int order = e->getMaxOrder();
-      max_order = (max_order < order) ? order : max_order;
-    }
+    const int order = e->getMaxOrder();
+    max_order = (max_order < order) ? order : max_order;
+  }
   return max_order;
 }
 
@@ -181,7 +181,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
     } else
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Entity on side of the element not found");
-
   }
 
   for (auto r = side_table.get<2>().equal_range(type); r.first != r.second;
@@ -519,7 +518,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesFieldData(
       }
     }
 
-    for(auto &dof_ptr : brother_dofs_vec) {
+    for (auto &dof_ptr : brother_dofs_vec) {
       if (const auto d = dof_ptr.lock()) {
         const auto &sn = d->sideNumberPtr;
         const int side_number = sn->side_number;
@@ -774,7 +773,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
       data.basesOnSpaces[s].reset();
     }
   }
-  
+
   if (dataFieldEntsPtr)
     for (auto e : *dataFieldEntsPtr) {
       // get data from entity
@@ -789,9 +788,9 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
       data.basesOnEntities[type].set(approx);
       data.basesOnSpaces[space].set(approx);
     }
-    else
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "data fields ents not allocated on element");
+  else
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "data fields ents not allocated on element");
 
   MoFEMFunctionReturnHot(0);
 }
@@ -1076,9 +1075,9 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemRowIndices(
     const std::string field_name, const EntityType type, const int side,
     VectorInt &indices) const {
   MoFEMFunctionBegin;
-  if (ptrFE == NULL) 
+  if (ptrFE == NULL)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  
+
   switch (type) {
   case MBVERTEX:
     CHKERR ptrFE->getProblemNodesRowIndices(field_name, indices);
@@ -1093,9 +1092,9 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemColIndices(
     const std::string field_name, const EntityType type, const int side,
     VectorInt &indices) const {
   MoFEMFunctionBegin;
-  if (ptrFE == NULL) 
+  if (ptrFE == NULL)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  
+
   switch (type) {
   case MBVERTEX:
     CHKERR ptrFE->getProblemNodesColIndices(field_name, indices);
@@ -1104,6 +1103,125 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getProblemColIndices(
     CHKERR ptrFE->getProblemTypeColIndices(field_name, type, side, indices);
   }
   MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+ForcesAndSourcesCore::setSideFEPtr(const ForcesAndSourcesCore *side_fe_ptr) {
+  MoFEMFunctionBeginHot;
+  sidePtrFE = const_cast<ForcesAndSourcesCore *>(side_fe_ptr);
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode
+ForcesAndSourcesCore::UserDataOperator::loopSide(const string &fe_name,
+                                                 ForcesAndSourcesCore *side_fe,
+                                                 const size_t side_dim) {
+  MoFEMFunctionBegin;
+  const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
+  const Problem *problem_ptr = getFEMethod()->problemPtr;
+  Range adjacent_ents;
+  CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
+      ent, side_dim, adjacent_ents);
+  typedef NumeredEntFiniteElement_multiIndex::index<
+      Composite_Name_And_Ent_mi_tag>::type FEByComposite;
+  FEByComposite &numered_fe =
+      problem_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>();
+
+  side_fe->feName = fe_name;
+
+  CHKERR side_fe->setSideFEPtr(ptrFE);
+  CHKERR side_fe->copyBasicMethod(*getFEMethod());
+  CHKERR side_fe->copyKsp(*getFEMethod());
+  CHKERR side_fe->copySnes(*getFEMethod());
+  CHKERR side_fe->copyTs(*getFEMethod());
+
+  CHKERR side_fe->preProcess();
+
+  int nn = 0;
+  side_fe->loopSize = adjacent_ents.size();
+  for (Range::iterator vit = adjacent_ents.begin(); vit != adjacent_ents.end();
+       vit++) {
+    FEByComposite::iterator miit =
+        numered_fe.find(boost::make_tuple(fe_name, *vit));
+    if (miit != numered_fe.end()) {
+      side_fe->nInTheLoop = nn++;
+      side_fe->numeredEntFiniteElementPtr = *miit;
+      side_fe->dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
+      side_fe->rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
+      side_fe->colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
+      side_fe->dataPtr = (*miit)->sPtr->data_dofs;
+      side_fe->rowPtr = (*miit)->rows_dofs;
+      side_fe->colPtr = (*miit)->cols_dofs;
+      CHKERR (*side_fe)();
+    }
+  }
+
+  CHKERR side_fe->postProcess();
+
+  MoFEMFunctionReturn(0);
+}
+
+int ForcesAndSourcesCore::getRule(int order_row, int order_col,
+                                  int order_data) {
+  return getRuleHook ? getRuleHook(order_row, order_col, order_data)
+                     : getRule(order_data);
+}
+
+MoFEMErrorCode ForcesAndSourcesCore::setGaussPts(int order_row, int order_col,
+                                                 int order_data) {
+  return setRuleHook ? setRuleHook(order_row, order_col, order_data)
+                     : setGaussPts(order_data);
+}
+
+int ForcesAndSourcesCore::getRule(int order) { return 2 * order; }
+
+/** \deprecated setGaussPts(int row_order, int col_order, int data order);
+ */
+MoFEMErrorCode ForcesAndSourcesCore::setGaussPts(int order) {
+  MoFEMFunctionBeginHot;
+  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Sorry, not implemented");
+  MoFEMFunctionReturnHot(0);
+}
+
+ForcesAndSourcesCore::UserDataOperator::UserDataOperator(const FieldSpace space,
+                                                         const char type,
+                                                         const bool symm)
+    : DataOperator(symm), opType(type), sPace(space), ptrFE(nullptr) {}
+
+ForcesAndSourcesCore::UserDataOperator::UserDataOperator(
+    const std::string &field_name, const char type, const bool symm)
+    : DataOperator(symm), opType(type), rowFieldName(field_name),
+      colFieldName(field_name), sPace(LASTSPACE), ptrFE(nullptr) {}
+
+ForcesAndSourcesCore::UserDataOperator::UserDataOperator(
+    const std::string &row_field_name, const std::string &col_field_name,
+    const char type, const bool symm)
+    : DataOperator(symm), opType(type), rowFieldName(row_field_name),
+      colFieldName(col_field_name), sPace(LASTSPACE), ptrFE(nullptr) {}
+
+MoFEMErrorCode ForcesAndSourcesCore::preProcess() {
+  MoFEMFunctionBeginHot;
+  if (preProcessHook) {
+    ierr = preProcessHook();
+    CHKERRG(ierr);
+  }
+  MoFEMFunctionReturnHot(0);
+}
+MoFEMErrorCode ForcesAndSourcesCore::operator()() {
+  MoFEMFunctionBeginHot;
+  if (operatorHook) {
+    ierr = operatorHook();
+    CHKERRG(ierr);
+  }
+  MoFEMFunctionReturnHot(0);
+}
+MoFEMErrorCode ForcesAndSourcesCore::postProcess() {
+  MoFEMFunctionBeginHot;
+  if (postProcessHook) {
+    ierr = postProcessHook();
+    CHKERRG(ierr);
+  }
+  MoFEMFunctionReturnHot(0);
 }
 
 } // namespace MoFEM

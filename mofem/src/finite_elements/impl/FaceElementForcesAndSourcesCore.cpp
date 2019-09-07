@@ -34,55 +34,6 @@ FaceElementForcesAndSourcesCoreBase::FaceElementForcesAndSourcesCoreBase(
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
 }
 
-MoFEMErrorCode
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::loopSideVolumes(
-    const string &fe_name, VolumeElementForcesAndSourcesCoreOnSide &method) {
-  MoFEMFunctionBegin;
-
-  const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
-  const Problem *problem_ptr = getFEMethod()->problemPtr;
-  Range adjacent_volumes;
-  CHKERR getFaceFE()->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
-      ent, 3, adjacent_volumes);
-  typedef NumeredEntFiniteElement_multiIndex::index<
-      Composite_Name_And_Ent_mi_tag>::type FEByComposite;
-  FEByComposite &numered_fe =
-      problem_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>();
-
-  method.feName = fe_name;
-
-  CHKERR method.setSideFEPtr(getFaceFE());
-  CHKERR method.copyBasicMethod(*getFEMethod());
-  CHKERR method.copyKsp(*getFEMethod());
-  CHKERR method.copySnes(*getFEMethod());
-  CHKERR method.copyTs(*getFEMethod());
-
-  CHKERR method.preProcess();
-
-  int nn = 0;
-  method.loopSize = adjacent_volumes.size();
-  for (Range::iterator vit = adjacent_volumes.begin();
-       vit != adjacent_volumes.end(); vit++) {
-    FEByComposite::iterator miit =
-        numered_fe.find(boost::make_tuple(fe_name, *vit));
-    if (miit != numered_fe.end()) {
-      method.nInTheLoop = nn++;
-      method.numeredEntFiniteElementPtr = *miit;
-      method.dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
-      method.rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
-      method.colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
-      method.dataPtr = (*miit)->sPtr->data_dofs;
-      method.rowPtr = (*miit)->rows_dofs;
-      method.colPtr = (*miit)->cols_dofs;
-      CHKERR method();
-    }
-  }
-
-  CHKERR method.postProcess();
-
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
   MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();

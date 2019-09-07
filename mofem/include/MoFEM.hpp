@@ -113,6 +113,8 @@
 #include <VertexElementForcesAndSourcesCore.hpp>
 #include <FlatPrismElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSourcesCore.hpp>
+#include <VolumeElementForcesAndSourcesCoreOnSide.hpp>
+#include <FaceElementForcesAndSourcesCoreOnSide.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <UserDataOperators.hpp>
 
