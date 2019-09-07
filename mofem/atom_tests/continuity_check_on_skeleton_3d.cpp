@@ -206,8 +206,6 @@ int main(int argc, char *argv[]) {
             new SkeletonFE::OpVolSide(elemData));
       }
 
-      int getRule(int order) { return order; };
-
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
 
