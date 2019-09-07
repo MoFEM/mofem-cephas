@@ -1562,39 +1562,51 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
     MoFEMFunctionReturnHot(0);
 
   FTensor::Index<'i', 3> i;
-  FTensor::Tensor1<FTensor::PackPtr<const double *, 1>, 3> t_m(
+  FTensor::Tensor1<FTensor::PackPtr<const double *, 0>, 3> t_m(
       &tAngent[0], &tAngent[1], &tAngent[2]);
   const double l0 = t_m(i) * t_m(i);
-  std::vector<double> l1;
-  {
+
+  auto get_base_at_pts = [&](auto base) {
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_h_curl(
+        &data.getN(base)(0, HVEC0), &data.getN(base)(0, HVEC1),
+        &data.getN(base)(0, HVEC2));
+    return t_h_curl;
+  };
+
+  auto get_tangent_at_pts = [&]() {
+    FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_m_at_pts(
+        &tangentAtGaussPt(0, 0), &tangentAtGaussPt(0, 1),
+        &tangentAtGaussPt(0, 2));
+    return t_m_at_pts;
+  };
+
+  auto calculate_squared_edge_length = [&]() {
+    std::vector<double> l1;
     int nb_gauss_pts = tangentAtGaussPt.size1();
     if (nb_gauss_pts) {
       l1.resize(nb_gauss_pts);
-      FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_m_at_pts(
-          &tangentAtGaussPt(0, 0), &tangentAtGaussPt(0, 1),
-          &tangentAtGaussPt(0, 2));
-      for (int gg = 0; gg < nb_gauss_pts; ++gg) {
+      auto t_m_at_pts = get_tangent_at_pts();
+      for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
         l1[gg] = t_m_at_pts(i) * t_m_at_pts(i);
         ++t_m_at_pts;
       }
     }
-  }
+    return l1;
+  };
+
+  auto l1 = calculate_squared_edge_length();
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-    int nb_gauss_pts = data.getN(base).size1();
-    int nb_dofs = data.getN(base).size2() / 3;
-    if (nb_gauss_pts > 0 && nb_dofs > 0) {
-      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_h_curl(
-          &data.getN(base)(0, HVEC0), &data.getN(base)(0, HVEC1),
-          &data.getN(base)(0, HVEC2));
+    const size_t nb_gauss_pts = data.getN(base).size1();
+    const size_t nb_dofs = data.getN(base).size2() / 3;
+    if (nb_gauss_pts && nb_dofs) {
+      auto t_h_curl = get_base_at_pts(base);
       int cc = 0;
-      if (tangentAtGaussPt.size1() == (unsigned int)nb_gauss_pts) {
-        FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_m_at_pts(
-            &tangentAtGaussPt(0, 0), &tangentAtGaussPt(0, 1),
-            &tangentAtGaussPt(0, 2));
-        for (int gg = 0; gg < nb_gauss_pts; ++gg) {
+      if (tangentAtGaussPt.size1() == nb_gauss_pts) {
+        auto t_m_at_pts = get_tangent_at_pts();
+        for (int gg = 0; gg != nb_gauss_pts; ++gg) {
           const double l0 = l1[gg];
           for (int ll = 0; ll != nb_dofs; ll++) {
             const double val = t_h_curl(0);
@@ -1606,7 +1618,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
           ++t_m_at_pts;
         }
       } else {
-        for (int gg = 0; gg < nb_gauss_pts; ++gg) {
+        for (int gg = 0; gg != nb_gauss_pts; ++gg) {
           for (int ll = 0; ll != nb_dofs; ll++) {
             const double val = t_h_curl(0);
             const double a = val / l0;
@@ -1616,9 +1628,10 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
           }
         }
       }
-      if (cc != nb_gauss_pts * nb_dofs) {
+
+      if (cc != nb_gauss_pts * nb_dofs) 
         SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
-      }
+      
     }
   }
 
