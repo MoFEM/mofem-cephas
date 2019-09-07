@@ -100,8 +100,6 @@ struct SkeletonFE : public EdgeEleOp {
     faceSideFe.getOpPtrVector().push_back(new SkeletonFE::OpFaceSide(elemData));
   }
 
-  int getRule(int order) { return 3; };
-
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
 
@@ -146,14 +144,15 @@ struct SkeletonFE : public EdgeEleOp {
             const double error =
                 std::abs(vol_dot_data(gg, bb) - elemData.dotEdge(gg, bb));
             if (error > eps)
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                       "Inconsistency %3.4e != %3.4e", vol_dot_data(gg, bb),
-                       elemData.dotEdge(gg, bb));
+              SETERRQ4(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                       "Inconsistency (%d, %d) %3.4e != %3.4e", gg, bb,
+                       vol_dot_data(gg, bb), elemData.dotEdge(gg, bb));
           }
         MoFEMFunctionReturn(0);
       };
 
-      cerr << "Next" << endl;
+      cerr << "bases" << endl;
+      elemData.dotEdge *= 2;
       cerr << elemData.dotEdge << endl;
       cerr << elemData.dotEleLeft << endl;
       cerr << elemData.dotEleRight << endl;
@@ -162,6 +161,8 @@ struct SkeletonFE : public EdgeEleOp {
         CHKERR check_continuity_of_base(elemData.dotEleLeft);
       else if (elemData.dotEleRight.size2() != 0)
         CHKERR check_continuity_of_base(elemData.dotEleRight);
+
+      cerr << "Next" << endl << endl;
     }
     MoFEMFunctionReturnHot(0);
   }
@@ -218,7 +219,7 @@ int main(int argc, char *argv[]) {
       CHKERR simple_interface->addDomainField("FIELD", HCURL, base, 1);
       CHKERR simple_interface->addSkeletonField("FIELD", HCURL, base, 1);
       // set fields order
-      CHKERR simple_interface->setFieldOrder("FIELD", 1);
+      CHKERR simple_interface->setFieldOrder("FIELD", 2);
       // setup problem
       CHKERR simple_interface->setUp();
       // get dm
