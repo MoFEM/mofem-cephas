@@ -909,16 +909,28 @@ target_link_libraries(continuity_check_on_skeleton_3d
   ${PROJECT_LIBS}
 )
 add_test(
-  continuity_check_on_skeleton_3d_ainsworth
+  continuity_check_on_skeleton_3d_ainsworth_hdiv
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
-  -my_file sphere.h5m -base ainsworth
+  -my_file sphere.h5m -base ainsworth -space hdiv
 )
 add_test(
-  continuity_check_on_skeleton_3d_demkowicz
+  continuity_check_on_skeleton_3d_demkowicz_hdiv
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
-  -my_file sphere.h5m -base demkowicz
+  -my_file sphere.h5m -base demkowicz -space hdiv
+)
+add_test(
+  continuity_check_on_skeleton_3d_ainsworth_hcurl
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
+  -my_file sphere.h5m -base ainsworth -space hcurl
+)
+add_test(
+  continuity_check_on_skeleton_3d_demkowicz_hcurl
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
+  -my_file sphere.h5m -base demkowicz -space hcurl
 )
 
 #dm

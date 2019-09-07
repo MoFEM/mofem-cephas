@@ -1,6 +1,11 @@
 /** \file continuity_check_on_skeleton_3d.cpp
  * \example continuity_check_on_skeleton_3d.cpp
- * \brief Testing integration on skeleton
+ * 
+ * \brief Testing integration on skeleton for 3D 
+ * 
+ * Checking continuity of hdiv and hcurl spaces on faces, and testing methods
+ * for integration on the skeleton.
+ * 
  */
 
 /* This file is part of MoFEM.
@@ -83,7 +88,25 @@ int main(int argc, char *argv[]) {
       return LASTBASE;
     };
 
-    CHKERR m_field.add_field("F2", HDIV, get_base(), 1);
+    auto get_space = []() -> FieldSpace {
+      enum spaces { HDIV, HCURL, LASTSPACEOP };
+      const char *list_spaces[] = {"hdiv", "hcurl"};
+      PetscBool flg;
+      PetscInt choice_space_value = HDIV;
+      CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
+                                  LASTSPACEOP, &choice_space_value, &flg);
+      if (flg == PETSC_TRUE) {
+        FieldSpace space = FieldSpace::HDIV;
+        if (choice_space_value == HDIV)
+          space = FieldSpace::HDIV;
+        else if (choice_space_value == HCURL)
+          space = FieldSpace::HCURL;
+        return space;
+      }
+      return LASTSPACE;
+    };
+
+    CHKERR m_field.add_field("F2", get_space(), get_base(), 1);
 
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
@@ -94,6 +117,7 @@ int main(int argc, char *argv[]) {
     int order = 2;
     CHKERR m_field.set_field_order(root_set, MBTET, "F2", order);
     CHKERR m_field.set_field_order(root_set, MBTRI, "F2", order);
+    CHKERR m_field.set_field_order(root_set, MBEDGE, "F2", order);
 
     CHKERR m_field.build_fields();
 
@@ -138,7 +162,6 @@ int main(int argc, char *argv[]) {
       MatrixDouble dotNormalEleRight;
     };
 
-
     struct SkeletonFE
         : public FaceElementForcesAndSourcesCore::UserDataOperator {
 
@@ -157,15 +180,8 @@ int main(int argc, char *argv[]) {
 
           if (type == MBTRI && side == getFaceSideNumber()) {
 
-            // std::cout << "\tVolume" << getFEMethod()->nInTheLoop <<
-            // std::endl; std::cout << "\tGauss pts " << getGaussPts() <<
-            // std::endl; std::cout << "\tCoords " << getCoordsAtGaussPts() <<
-            // endl;
             MatrixDouble diff =
                 getCoordsAtGaussPts() - getFaceCoordsAtGaussPts();
-            // std::cout << std::fixed << std::setprecision(3) << "\tDiff coords
-            // "
-            //           << diff << endl;
             const double eps = 1e-12;
             if (norm_inf(diff) > eps)
               SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
@@ -174,9 +190,15 @@ int main(int argc, char *argv[]) {
             const size_t nb_dofs = data.getN().size2() / 3;
             const size_t nb_integration_pts = data.getN().size1();
 
-            auto t_normal = getFTensor1Normal();
-            auto t_hdiv_base = data.getFTensor1N<3>();
             FTensor::Index<'i', 3> i;
+            auto t_to_do_dot = getFTensor1Normal();
+            if (data.getSpace() == HCURL) {
+              auto s1 = getFTensor1Tangent1();
+              auto s2 = getFTensor1Tangent2();
+              t_to_do_dot(i) = s1(i) + s2(i);
+            }
+
+            auto t_hdiv_base = data.getFTensor1N<3>();
             MatrixDouble *ptr_dot_elem_data = nullptr;
             if (getFEMethod()->nInTheLoop == 0)
               ptr_dot_elem_data = &elemData.dotNormalEleLeft;
@@ -187,11 +209,10 @@ int main(int argc, char *argv[]) {
 
             for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
               for (size_t bb = 0; bb != nb_dofs; ++bb) {
-                dot_elem_data(gg, bb) = t_normal(i) * t_hdiv_base(i);
+                dot_elem_data(gg, bb) = t_to_do_dot(i) * t_hdiv_base(i);
                 ++t_hdiv_base;
               }
             }
-
           }
           MoFEMFunctionReturnHot(0);
         }
@@ -211,23 +232,25 @@ int main(int argc, char *argv[]) {
 
         MoFEMFunctionBeginHot;
         if (type == MBTRI && side == 0) {
-          // std::cout << "Face" << std::endl;
-          // std::cout << "Gauss pts " << getGaussPts() << std::endl;
-          // std::cout << "Coords " << getCoordsAtGaussPts() << endl;
-
           const size_t nb_dofs = data.getN().size2() / 3;
           const size_t nb_integration_pts = data.getN().size1();
 
-          auto t_normal = getFTensor1Normal();
-          auto t_hdiv_base = data.getFTensor1N<3>();
           FTensor::Index<'i', 3> i;
+          auto t_to_do_dot = getFTensor1Normal();
+          if (data.getSpace() == HCURL) {
+            auto s1 = getFTensor1Tangent1();
+            auto s2 = getFTensor1Tangent2();
+            t_to_do_dot(i) = s1(i) + s2(i);
+          }
+
+          auto t_hdiv_base = data.getFTensor1N<3>();
           elemData.dotNormalFace.resize(nb_integration_pts, nb_dofs, false);
           elemData.dotNormalEleLeft.resize(nb_integration_pts, 0, false);
           elemData.dotNormalEleRight.resize(nb_integration_pts, 0, false);
 
           for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
             for (size_t bb = 0; bb != nb_dofs; ++bb) {
-              elemData.dotNormalFace(gg, bb) = t_normal(i) * t_hdiv_base(i);
+              elemData.dotNormalFace(gg, bb) = t_to_do_dot(i) * t_hdiv_base(i);
               ++t_hdiv_base;
             }
           }
@@ -248,7 +271,7 @@ int main(int argc, char *argv[]) {
             for (size_t gg = 0; gg != vol_dot_data.size1(); ++gg)
               for (size_t bb = 0; bb != vol_dot_data.size2(); ++bb) {
                 const double error = std::abs(vol_dot_data(gg, bb) -
-                             elemData.dotNormalFace(gg, bb));
+                                              elemData.dotNormalFace(gg, bb));
                 if (error > eps)
                   SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                            "Inconsistency %3.4e != %3.4e", vol_dot_data(gg, bb),
@@ -256,11 +279,6 @@ int main(int argc, char *argv[]) {
               }
             MoFEMFunctionReturn(0);
           };
-
-          // std::cout << elemData.dotNormalFace << std::endl;
-          // std::cout << elemData.dotNormalEleLeft << std::endl;
-          // std::cout << elemData.dotNormalEleRight << std::endl;
-          // std::cout << std::endl;
 
           if (elemData.dotNormalEleLeft.size2() != 0)
             CHKERR check_continuity_of_base(elemData.dotNormalEleLeft);
