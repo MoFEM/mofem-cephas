@@ -119,7 +119,7 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     getTensor1Coords();
 
     inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-    getTensor1TangentAtGaussPts();
+    getFTensor1TangentAtGaussPts();
 
     template <int SWITCH>
     MoFEMErrorCode
@@ -289,7 +289,7 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getTensor1Coords() {
 
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getTensor1TangentAtGaussPts() {
+    getFTensor1TangentAtGaussPts() {
   double *ptr = &*getTangetAtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
