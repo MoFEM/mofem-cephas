@@ -1425,3 +1425,29 @@ target_link_libraries(add_blockset
 add_test(add_blockset
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/add_blockset 
 )
+
+my_add_executable(
+  continuity_check_on_skeleton_with_simple_2d
+  continuity_check_on_skeleton_with_simple_2d.cpp
+)
+target_link_libraries(continuity_check_on_skeleton_with_simple_2d
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(continuity_check_on_skeleton_with_simple_2d_ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
+  -file_name rectangle.h5m -base ainsworth
+)
+
+add_test(continuity_check_on_skeleton_with_simple_2d_demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
+  -file_name rectangle.h5m -base demkowicz
+)
