@@ -80,7 +80,7 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     /** \brief get tangentTwo as tensor
      */
-    inline auto getFTensor2Tangent1();
+    inline auto getFTensor1Tangent2();
 
     /** \brief get element number of nodes
      */
@@ -410,7 +410,7 @@ auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
 }
 
 auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor2Tangent1() {
+    getFTensor1Tangent2() {
   double *ptr = &*getTangent2().data().begin();
   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
 }

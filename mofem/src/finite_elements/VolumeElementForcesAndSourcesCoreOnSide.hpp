@@ -111,9 +111,25 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
      */
     inline VectorDouble &getNormal();
 
+    /** \brief get triangle tangent 1
+     */
+    inline VectorDouble &getTangent1();
+
+    /** \brief get triangle tangent 2
+     */
+    inline VectorDouble &getTangent2();
+
     /** \brief get normal as tensor
      */
     inline auto getFTensor1Normal();
+
+    /** \brief get tangentOne as tensor
+     */
+    inline auto getFTensor1Tangent1();
+
+    /** \brief get tangentTwo as tensor
+     */
+    inline auto getFTensor1Tangent2();
 
     /** \brief if higher order geometry return normals at Gauss pts.
 
@@ -227,6 +243,16 @@ VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getNormal() {
   return getFaceFE()->nOrmal;
 }
 
+VectorDouble &
+VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getTangent1() {
+  return getFaceFE()->tangentOne;
+}
+
+VectorDouble &
+VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getTangent2() {
+  return getFaceFE()->tangentTwo;
+}
+
 VolumeElementForcesAndSourcesCoreOnSideBase *
 VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::getVolumeFE()
     const {
@@ -241,6 +267,18 @@ int VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
 auto VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
     getFTensor1Normal() {
   double *ptr = &*getNormal().data().begin();
+  return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
+}
+
+auto VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+    getFTensor1Tangent1() {
+  double *ptr = &*getTangent1().data().begin();
+  return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
+}
+
+auto VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+    getFTensor1Tangent2() {
+  double *ptr = &*getTangent2().data().begin();
   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
 }
 
