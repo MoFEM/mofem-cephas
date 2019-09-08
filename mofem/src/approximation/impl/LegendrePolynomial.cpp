@@ -1,6 +1,8 @@
 /** \file LegendrePolynomial.cpp
- * \brief implementation of multi-grid solver for p- adaptivity
- *
+ * \brief Implementation of base for Legendre polynomials
+ */
+
+/**
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -13,7 +15,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+**/
 
 namespace MoFEM {
 

@@ -37,8 +37,6 @@ struct Tools : public UnknownInterface {
 
   /** \name Computational */
 
-  /**@{*/
-
   /**
    * \brief Calculate tetrahedron volume length quality
    * @param  coords tet coordinates

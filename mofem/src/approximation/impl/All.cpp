@@ -8,6 +8,7 @@
 #include "impl/EntPolynomialBaseCtx.cpp"
 #include "impl/Hdiv.cpp"
 #include "impl/Hcurl.cpp"
+#include "impl/BernsteinBezier.cpp"
 #include "impl/TriPolynomialBase.cpp"
 #include "impl/TetPolynomialBase.cpp"
 #include "impl/EdgePolynomialBase.cpp"

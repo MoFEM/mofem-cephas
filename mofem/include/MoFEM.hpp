@@ -34,6 +34,7 @@
 #include <h1_hdiv_hcurl_l2.h>
 #include <Hdiv.hpp>
 #include <Hcurl.hpp>
+#include <BernsteinBezier.hpp>
 #include <fem_tools.h>
 #include <BaseFunction.hpp>
 #include <LegendrePolynomial.hpp>

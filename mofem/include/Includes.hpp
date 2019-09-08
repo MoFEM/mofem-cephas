@@ -74,6 +74,8 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/utility/string_ref.hpp>
 #include <boost/function.hpp>
+#include <boost/math/special_functions/binomial.hpp>
+#include <boost/math/special_functions/factorials.hpp>
 
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 
