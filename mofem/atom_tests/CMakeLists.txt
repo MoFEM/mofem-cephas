@@ -1463,3 +1463,19 @@ add_test(continuity_check_on_skeleton_with_simple_2d_demkowicz
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
   -file_name rectangle.h5m -base demkowicz
 )
+
+
+my_add_executable(
+  bernstein_bezier_genrate_base
+  bernstein_bezier_genrate_base.cpp
+)
+target_link_libraries(bernstein_bezier_genrate_base
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)

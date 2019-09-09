@@ -12,26 +12,36 @@ namespace MoFEM {
 
 struct BernsteinBezier {
 
-  static MoFEMErrorCode nodeBaseFunctionsOnEdge(const int N, double *lambda,
-                                                double *grad_lambda,
-                                                double *base,
-                                                double *grad_base);
+  static MoFEMErrorCode generateIndicesVertexEdge(const int N, int *alpha);
+  static MoFEMErrorCode generateIndicesEdgeEdge(const int N, int *alpha);
 
-  static MoFEMErrorCode nodeBaseFunctionsOnTriangle(const int N, double *lambda,
-                                                    double *grad_lambda,
-                                                    double *base,
-                                                    double *grad_base);
+  static MoFEMErrorCode domainPoints3d(const int N, const int n_x,
+                                       const int n_alpha, int *alpha,
+                                       double *x_k, double *x_alpha);
 
-  static MoFEMErrorCode nodeBaseFunctionsOnTetrahedron(const int N,
-                                                       double *lambda,
-                                                       double *grad_lambda,
-                                                       double *base,
-                                                       double *grad_base);
+  // static MoFEMErrorCode nodeDomainPointsOnEdge3d(const int N, double *x_k,
+  //                                                double *x_alpha);
 
-  static MoFEMErrorCode edgeBaseFunctionsOnEdge(const int N, double *lambda,
-                                                double *grad_lambda,
-                                                double *base,
-                                                double *grad_base);
+  // static MoFEMErrorCode nodeBaseFunctionsOnEdge(const int N, double *lambda,
+  //                                               double *grad_lambda,
+  //                                               double *base,
+  //                                               double *grad_base);
+
+  // static MoFEMErrorCode nodeBaseFunctionsOnTriangle(const int N, double *lambda,
+  //                                                   double *grad_lambda,
+  //                                                   double *base,
+  //                                                   double *grad_base);
+
+  // static MoFEMErrorCode nodeBaseFunctionsOnTetrahedron(const int N,
+  //                                                      double *lambda,
+  //                                                      double *grad_lambda,
+  //                                                      double *base,
+  //                                                      double *grad_base);
+
+  // static MoFEMErrorCode edgeBaseFunctionsOnEdge(const int N, double *lambda,
+  //                                               double *grad_lambda,
+  //                                               double *base,
+  //                                               double *grad_base);
 
 
 private:
@@ -39,7 +49,7 @@ private:
   static inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, D>
   getFTensor1(double *x);
 
-  template <int Side>
+  template <int D, int Side>
   inline static MoFEMErrorCode generateIndicesVertex(const int N, int *alpha);
 
   template <int D, int Side>
@@ -53,13 +63,14 @@ private:
   static MoFEMErrorCode generateIndicesVolumeOnSimplex(const int N, int *alpha);
 
   template <int D>
-  inline static MoFEMErrorCode domainPoints(const int N, int *alpha,
+  inline static MoFEMErrorCode domainPoints(const int N, const int n_x,
+                                            const int n_alpha, int *alpha,
                                             double *x_k, double *x_alpha);
 
-  template <int D>
-  inline static MoFEMErrorCode
-  baseFunctions(const int N, int *alpha, double *lambda, double *grad_lambda,
-                double *base, double *grad_base);
+  // template <int D>
+  // inline static MoFEMErrorCode
+  // baseFunctions(const int N, int *alpha, double *lambda, double *grad_lambda,
+  //               double *base, double *grad_base);
 };
 
 } // namespace MoFEM
