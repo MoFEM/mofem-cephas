@@ -24,30 +24,6 @@ struct BernsteinBezier {
                                           double *lambda, double *grad_lambda,
                                           double *base, double *grad_base);
 
-  // static MoFEMErrorCode nodeDomainPointsOnEdge3d(const int N, double *x_k,
-  //                                                double *x_alpha);
-
-  // static MoFEMErrorCode nodeBaseFunctionsOnEdge(const int N, double *lambda,
-  //                                               double *grad_lambda,
-  //                                               double *base,
-  //                                               double *grad_base);
-
-  // static MoFEMErrorCode nodeBaseFunctionsOnTriangle(const int N, double
-  // *lambda,
-  //                                                   double *grad_lambda,
-  //                                                   double *base,
-  //                                                   double *grad_base);
-
-  // static MoFEMErrorCode nodeBaseFunctionsOnTetrahedron(const int N,
-  //                                                      double *lambda,
-  //                                                      double *grad_lambda,
-  //                                                      double *base,
-  //                                                      double *grad_base);
-
-  // static MoFEMErrorCode edgeBaseFunctionsOnEdge(const int N, double *lambda,
-  //                                               double *grad_lambda,
-  //                                               double *base,
-  //                                               double *grad_base);
 
 private:
   template <int D, int S>
@@ -77,6 +53,7 @@ private:
   baseFunctions(const int N, const int gdim, const int n_alpha, int *alpha,
                 double *lambda, double *grad_lambda, double *base,
                 double *grad_base);
+
 };
 
 } // namespace MoFEM

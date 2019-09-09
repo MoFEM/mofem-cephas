@@ -152,26 +152,31 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
   FTensor::Index<'i', D> i;
   MoFEMFunctionBeginHot;
 
-  int * const alpha0 = alpha;
+  int *const alpha0 = alpha;
   auto t_base_grad = getFTensor1<D, D>(grad_base);
+  const double fN = boost::math::factorial<double>(N);
 
   for (int g = 0; g != gdim; ++g) {
 
     double *const lambda0 = lambda;
     for (int n0 = 0; n0 != n_alpha; ++n0) {
 
-      double b = boost::math::binomial_coefficient<double>(N, (*alpha));
+      double f = boost::math::factorial<double>(*alpha);
       auto t_lambda_grad = getFTensor1<D, D>(grad_lambda);
-      *base = b * pow(*lambda, (*alpha));
+
+      *base = pow(*lambda, (*alpha));
       ++alpha;
       ++lambda;
 
       for (int n1 = 1; n1 < D + 1; ++n1) {
-        b = boost::math::binomial_coefficient<double>(N, (*alpha));
-        *base *= b * pow(*lambda, (*alpha));
+        f *= boost::math::factorial<double>(*alpha);
+        *base *= pow(*lambda, (*alpha));
         ++alpha;
         ++lambda;
       }
+
+      const double b = fN / f;
+      *base *= b;
 
       ++base;
       ++t_base_grad;
@@ -182,78 +187,14 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
 
     lambda += D + 1;
     grad_lambda += D * (D + 1);
-
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode BernsteinBezier::baseFunctionsEdge(
-    const int N,  const int gdim, const int n_alpha, int *alpha, double *lambda,
+    const int N, const int gdim, const int n_alpha, int *alpha, double *lambda,
     double *grad_lambda, double *base, double *grad_base) {
   return baseFunctions<1>(N, gdim, n_alpha, alpha, lambda, grad_lambda, base,
-                       grad_base);
+                          grad_base);
 }
-
-// MoFEMErrorCode BernsteinBezier::nodeDomainPointsOnEdge3d(const int N,
-//                                                          double *x_k,
-//                                                          double *x_alpha) {
-//   MoFEMFunctionBegin;
-//   std::array<int, 2> alpha;
-//   CHKERR generateIndicesVertex<1>(2, alpha.data());
-//   CHKERR domainPoints<3>(N, 2, 2, alpha.data(), x_k, x_alpha);
-//   MoFEMFunctionReturn(0);
-// }
-
-// MoFEMErrorCode BernsteinBezier::nodeBaseFunctionsOnEdge(const int N,
-//                                                         double *lambda,
-//                                                         double *grad_lambda,
-//                                                         double *base,
-//                                                         double *grad_base) {
-//   MoFEMFunctionBegin;
-//   std::array<int, 2> alpha;
-//   CHKERR generateIndicesVertex<1>(N, alpha.data());
-//   CHKERR baseFunctions<1>(N, alpha.data(), lambda, grad_lambda, base,
-//                           grad_base);
-//   MoFEMFunctionReturn(0);
-// }
-
-// MoFEMErrorCode BernsteinBezier::nodeBaseFunctionsOnTriangle(const int N,
-//                                                             double *lambda,
-//                                                             double
-//                                                             *grad_lambda,
-//                                                             double *base,
-//                                                             double
-//                                                             *grad_base) {
-//   MoFEMFunctionBegin;
-//   std::array<int, 3> alpha;
-//   CHKERR generateIndicesVertex<2>(N, alpha.data());
-//   CHKERR baseFunctions<2>(N, alpha.data(), lambda, grad_lambda, base,
-//                           grad_base);
-//   MoFEMFunctionReturn(0);
-// }
-
-// MoFEMErrorCode BernsteinBezier::nodeBaseFunctionsOnTetrahedron(
-//     const int N, double *lambda, double *grad_lambda, double *base,
-//     double *grad_base) {
-//   MoFEMFunctionBegin;
-//   std::array<int, 4> alpha;
-//   CHKERR generateIndicesVertex<3>(N, alpha.data());
-//   CHKERR baseFunctions<3>(N, alpha.data(), lambda, grad_lambda, base,
-//                           grad_base);
-//   MoFEMFunctionReturn(0);
-// }
-
-// MoFEMErrorCode BernsteinBezier::edgeBaseFunctionsOnEdge(const int N,
-//                                                         double *lambda,
-//                                                         double *grad_lambda,
-//                                                         double *base,
-//                                                         double *grad_base) {
-//   MoFEMFunctionBegin;
-//   VectorInt alpha(NBEDGE_H1(N));
-//   CHKERR generateIndicesEdgeOnSimplex<1, 0>(N, &*alpha.data().begin());
-//   CHKERR baseFunctions<1>(N, &*alpha.data().begin(), lambda, grad_lambda,
-//   base,
-//                           grad_base);
-//   MoFEMFunctionReturn(0);
-// }
