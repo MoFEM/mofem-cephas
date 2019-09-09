@@ -70,7 +70,7 @@ typedef std::vector<int, std::allocator<int>> IntAllocator;
 typedef std::vector<double, std::allocator<double>> DoubleAllocator;
 typedef ublas::vector<int, IntAllocator> VectorInt;
 typedef ublas::vector<double, DoubleAllocator> VectorDouble;
-typedef ublas::matrix<int, ublas::row_major, DoubleAllocator> MatrixInt;
+typedef ublas::matrix<int, ublas::row_major, IntAllocator> MatrixInt;
 typedef ublas::matrix<double, ublas::row_major, DoubleAllocator> MatrixDouble;
 
 // bounded vector & matrices

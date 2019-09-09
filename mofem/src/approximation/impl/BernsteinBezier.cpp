@@ -144,33 +144,56 @@ MoFEMErrorCode BernsteinBezier::domainPoints3d(const int N, const int n_x,
   return domainPoints<3>(N, n_x, n_alpha, alpha, x_k, x_alpha);
 }
 
-// template <int D>
-// MoFEMErrorCode BernsteinBezier::baseFunctions(const int N, int *alpha,
-//                                               double *lambda,
-//                                               double *grad_lambda, double
-//                                               *base, double *grad_base) {
-//   FTensor::Index<'i', D> i;
-//   MoFEMFunctionBeginHot;
+template <int D>
+MoFEMErrorCode
+BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
+                               int *alpha, double *lambda, double *grad_lambda,
+                               double *base, double *grad_base) {
+  FTensor::Index<'i', D> i;
+  MoFEMFunctionBeginHot;
 
-//   auto t_base_grad = getFTensor1<D, D>(grad_base);
+  int * const alpha0 = alpha;
+  auto t_base_grad = getFTensor1<D, D>(grad_base);
 
-//   for (int n = 0; n != N; ++n) {
-//     auto t_lambda_grad = getFTensor1<D, D>(grad_lambda);
-//     for (int d = 0; d != D + 1; ++d) {
-//       const double b = boost::math::binomial_coefficient<double>(N, *alpha);
-//       const double a = b * pow((*lambda), (*alpha) - 1);
-//       *base = a * (*lambda);
-//       t_base_grad(i) = (*alpha) * a * t_lambda_grad(i);
-//       ++lambda;
-//       ++alpha;
-//       ++t_lambda_grad;
-//       ++base;
-//       ++t_base_grad;
-//     }
-//   }
+  for (int g = 0; g != gdim; ++g) {
 
-//   MoFEMFunctionReturnHot(0);
-// }
+    double *const lambda0 = lambda;
+    for (int n0 = 0; n0 != n_alpha; ++n0) {
+
+      double b = boost::math::binomial_coefficient<double>(N, (*alpha));
+      auto t_lambda_grad = getFTensor1<D, D>(grad_lambda);
+      *base = b * pow(*lambda, (*alpha));
+      ++alpha;
+      ++lambda;
+
+      for (int n1 = 1; n1 < D + 1; ++n1) {
+        b = boost::math::binomial_coefficient<double>(N, (*alpha));
+        *base *= b * pow(*lambda, (*alpha));
+        ++alpha;
+        ++lambda;
+      }
+
+      ++base;
+      ++t_base_grad;
+      lambda = lambda0;
+    }
+
+    alpha = alpha0;
+
+    lambda += D + 1;
+    grad_lambda += D * (D + 1);
+
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode BernsteinBezier::baseFunctionsEdge(
+    const int N,  const int gdim, const int n_alpha, int *alpha, double *lambda,
+    double *grad_lambda, double *base, double *grad_base) {
+  return baseFunctions<1>(N, gdim, n_alpha, alpha, lambda, grad_lambda, base,
+                       grad_base);
+}
 
 // MoFEMErrorCode BernsteinBezier::nodeDomainPointsOnEdge3d(const int N,
 //                                                          double *x_k,

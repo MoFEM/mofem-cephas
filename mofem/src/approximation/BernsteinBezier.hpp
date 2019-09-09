@@ -19,6 +19,11 @@ struct BernsteinBezier {
                                        const int n_alpha, int *alpha,
                                        double *x_k, double *x_alpha);
 
+  static MoFEMErrorCode baseFunctionsEdge(const int N, const int gdim,
+                                          const int n_alpha, int *alpha,
+                                          double *lambda, double *grad_lambda,
+                                          double *base, double *grad_base);
+
   // static MoFEMErrorCode nodeDomainPointsOnEdge3d(const int N, double *x_k,
   //                                                double *x_alpha);
 
@@ -27,7 +32,8 @@ struct BernsteinBezier {
   //                                               double *base,
   //                                               double *grad_base);
 
-  // static MoFEMErrorCode nodeBaseFunctionsOnTriangle(const int N, double *lambda,
+  // static MoFEMErrorCode nodeBaseFunctionsOnTriangle(const int N, double
+  // *lambda,
   //                                                   double *grad_lambda,
   //                                                   double *base,
   //                                                   double *grad_base);
@@ -42,7 +48,6 @@ struct BernsteinBezier {
   //                                               double *grad_lambda,
   //                                               double *base,
   //                                               double *grad_base);
-
 
 private:
   template <int D, int S>
@@ -67,10 +72,11 @@ private:
                                             const int n_alpha, int *alpha,
                                             double *x_k, double *x_alpha);
 
-  // template <int D>
-  // inline static MoFEMErrorCode
-  // baseFunctions(const int N, int *alpha, double *lambda, double *grad_lambda,
-  //               double *base, double *grad_base);
+  template <int D>
+  inline static MoFEMErrorCode
+  baseFunctions(const int N, const int gdim, const int n_alpha, int *alpha,
+                double *lambda, double *grad_lambda, double *base,
+                double *grad_base);
 };
 
 } // namespace MoFEM
