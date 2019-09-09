@@ -153,8 +153,9 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
   MoFEMFunctionBeginHot;
 
   int *const alpha0 = alpha;
-  auto t_base_grad = getFTensor1<D, D>(grad_base);
+  auto t_grad_base = getFTensor1<D, D>(grad_base);
   const double fN = boost::math::factorial<double>(N);
+  std::array<double, D + 1> terms, diff_terms;
 
   for (int g = 0; g != gdim; ++g) {
 
@@ -162,31 +163,54 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
     for (int n0 = 0; n0 != n_alpha; ++n0) {
 
       double f = boost::math::factorial<double>(*alpha);
-      auto t_lambda_grad = getFTensor1<D, D>(grad_lambda);
-
-      *base = pow(*lambda, (*alpha));
+      terms[0] = pow(*lambda, (*alpha));
+      diff_terms[0] = pow(*lambda, (*alpha) - 1);
+      *base = terms[0];
       ++alpha;
       ++lambda;
 
       for (int n1 = 1; n1 < D + 1; ++n1) {
         f *= boost::math::factorial<double>(*alpha);
-        *base *= pow(*lambda, (*alpha));
+        terms[n1] = pow(*lambda, (*alpha));
+        diff_terms[n1] = pow(*lambda, (*alpha) - 1);
+        *base *= terms[n1];
         ++alpha;
         ++lambda;
       }
 
+      auto t_lambda_grad = getFTensor1<D, D>(grad_lambda);
+
+      // double z = diff_terms[0];
+      // for (int n2 = 0; n2 != D + 1; ++n2)
+      //   z *= terms[n2];
+      // t_grad_base(i) = z * t_lambda_grad(i);
+      // ++t_lambda_grad;
+
+      // for (int n1 = 1; n1 < D + 1; ++n1) {
+      //   int n2 = 0;
+      //   z = diff_terms[n1];
+      //   for (; n2 != n1; ++n2)
+      //     z *= terms[n2];
+      //   n2++;
+      //   for (; n2 < D + 1; ++n2)
+      //     z *= terms[n2];
+      //   t_grad_base(i) += z * t_lambda_grad(i);
+      //   ++t_lambda_grad;
+      // }
+
       const double b = fN / f;
       *base *= b;
+      t_grad_base(i) *= b;
 
       ++base;
-      ++t_base_grad;
+      ++t_grad_base;
+
       lambda = lambda0;
     }
 
     alpha = alpha0;
-
     lambda += D + 1;
-    grad_lambda += D * (D + 1);
+    
   }
 
   MoFEMFunctionReturnHot(0);
