@@ -200,14 +200,22 @@ struct MeshsetsManager : public UnknownInterface {
       std::ostringstream ss;
       ss << *it << std::endl;
       ss << data << std::endl;
-      Range tets, tris, edges, nodes;
+      Range tets, tris, edges, nodes, prisms, quads;
       CHKERR moab.get_entities_by_type(it->meshset, MBTET, tets, true);
       CHKERR moab.get_entities_by_type(it->meshset, MBTRI, tris, true);
       CHKERR moab.get_entities_by_type(it->meshset, MBEDGE, edges, true);
       CHKERR moab.get_entities_by_type(it->meshset, MBVERTEX, nodes, true);
+      CHKERR moab.get_entities_by_type(it->meshset, MBPRISM, prisms, true);
+      CHKERR moab.get_entities_by_type(it->meshset, MBQUAD, quads, true);
       ss << "name " << it->getName() << std::endl;
       ss << "msId " << it->getMeshsetId() << " nb. tets " << tets.size()
          << std::endl;
+      if (prisms.size()) 
+        ss << "msId " << it->getMeshsetId() << " nb. prisms " << prisms.size()
+           << std::endl;
+      if (quads.size())
+        ss << "msId " << it->getMeshsetId() << " nb. quads " << quads.size()
+           << std::endl;
       ss << "msId " << it->getMeshsetId() << " nb. tris " << tris.size()
          << std::endl;
       ss << "msId " << it->getMeshsetId() << " nb. edges " << edges.size()
