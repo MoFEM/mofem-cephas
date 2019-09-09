@@ -28,6 +28,12 @@ struct BernsteinBezier {
                                                        double *base,
                                                        double *grad_base);
 
+  static MoFEMErrorCode edgeBaseFunctionsOnEdge(const int N, double *lambda,
+                                                double *grad_lambda,
+                                                double *base,
+                                                double *grad_base);
+
+
 private:
   template <int D, int S>
   static inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, D>
