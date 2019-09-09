@@ -23,15 +23,20 @@ Implementation based on \cite ainsworth2011bernstein
 template <int D, int S>
 FTensor::Tensor1<FTensor::PackPtr<double *, S>, D>
 BernsteinBezier::getFTensor1(double *x) {
-  static_assert((D != 3 && S != 3), "not implemented");
+  static_assert(
+      
+      !(D == 3 && S == 3), 
+
+      "not implemented");
   return FTensor::Tensor1<FTensor::PackPtr<double *, S>, D>();
 }
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-BernsteinBezier::getFTensor1(double *x) {
+BernsteinBezier::getFTensor1<3, 3>(double *x) {
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(x, &x[1], &x[2]);
 }
+
 
 template <int D, int Side>
 MoFEMErrorCode BernsteinBezier::generateIndicesVertex(const int N, int *alpha) {
@@ -149,17 +154,17 @@ MoFEMErrorCode
 BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
                                int *alpha, double *lambda, double *grad_lambda,
                                double *base, double *grad_base) {
-  FTensor::Index<'i', D> i;
   MoFEMFunctionBeginHot;
 
   int *const alpha0 = alpha;
-  auto t_grad_base = getFTensor1<D, D>(grad_base);
   const double fN = boost::math::factorial<double>(N);
   std::array<double, D + 1> terms, diff_terms;
 
   for (int g = 0; g != gdim; ++g) {
 
     double *const lambda0 = lambda;
+    double *const grad_lambda0 = grad_lambda;
+
     for (int n0 = 0; n0 != n_alpha; ++n0) {
 
       double f = boost::math::factorial<double>(*alpha);
@@ -178,38 +183,41 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
         ++lambda;
       }
 
-      auto t_lambda_grad = getFTensor1<D, D>(grad_lambda);
+      double z = diff_terms[0];
+      for (int n2 = 0; n2 != D + 1; ++n2)
+        z *= terms[n2];
+      for (int d = 0; d != D; ++d) {
+        grad_base[d] = z * grad_lambda[d];
+        ++grad_lambda;
+      }
 
-      // double z = diff_terms[0];
-      // for (int n2 = 0; n2 != D + 1; ++n2)
-      //   z *= terms[n2];
-      // t_grad_base(i) = z * t_lambda_grad(i);
-      // ++t_lambda_grad;
-
-      // for (int n1 = 1; n1 < D + 1; ++n1) {
-      //   int n2 = 0;
-      //   z = diff_terms[n1];
-      //   for (; n2 != n1; ++n2)
-      //     z *= terms[n2];
-      //   n2++;
-      //   for (; n2 < D + 1; ++n2)
-      //     z *= terms[n2];
-      //   t_grad_base(i) += z * t_lambda_grad(i);
-      //   ++t_lambda_grad;
-      // }
+      for (int n1 = 1; n1 < D + 1; ++n1) {
+        int n2 = 0;
+        z = diff_terms[n1];
+        for (; n2 != n1; ++n2)
+          z *= terms[n2];
+        n2++;
+        for (; n2 < D + 1; ++n2)
+          z *= terms[n2];
+        for (int d = 0; d != D; ++d) {
+          grad_base[d] = z * grad_lambda[d];
+          ++grad_lambda;
+        }
+      }
 
       const double b = fN / f;
       *base *= b;
-      t_grad_base(i) *= b;
 
       ++base;
-      ++t_grad_base;
+      grad_base += D;
 
       lambda = lambda0;
+      grad_lambda = grad_lambda0;
     }
 
     alpha = alpha0;
     lambda += D + 1;
+    // grad_lambda += D * (D + 1);
     
   }
 
