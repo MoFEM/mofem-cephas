@@ -17,12 +17,23 @@ struct BernsteinBezier {
                                                 double *base,
                                                 double *grad_base);
 
+  static MoFEMErrorCode nodeBaseFunctionsOnTriangle(const int N, double *lambda,
+                                                    double *grad_lambda,
+                                                    double *base,
+                                                    double *grad_base);
+
+  static MoFEMErrorCode nodeBaseFunctionsOnTetrahedron(const int N,
+                                                       double *lambda,
+                                                       double *grad_lambda,
+                                                       double *base,
+                                                       double *grad_base);
+
 private:
   template <int D, int S>
   static inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, D>
   getFTensor1(double *x);
 
-  template<int Side>
+  template <int Side>
   inline static MoFEMErrorCode generateIndicesVertex(const int N, int *alpha);
 
   template <int D, int Side>
