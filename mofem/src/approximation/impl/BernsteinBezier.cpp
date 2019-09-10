@@ -188,7 +188,7 @@ MoFEMErrorCode BernsteinBezier::domainPoints3d(const int N, const int n_x,
   return domainPoints<3>(N, n_x, n_alpha, alpha, x_k, x_alpha);
 }
 
-template <int D>
+template <int D, bool GRAD_BASE>
 MoFEMErrorCode
 BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
                                const int *alpha, const double *lambda,
@@ -211,10 +211,12 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
 
       double f = boost::math::factorial<double>(*alpha);
       terms[0] = pow(*lambda, (*alpha));
-      if (*alpha > 0)
-        diff_terms[0] = (*alpha) * pow(*lambda, (*alpha) - 1);
-      else
-        diff_terms[0] = 0;
+      if (GRAD_BASE) {
+        if (*alpha > 0)
+          diff_terms[0] = (*alpha) * pow(*lambda, (*alpha) - 1);
+        else
+          diff_terms[0] = 0;
+      }
       *base = terms[0];
       ++alpha;
       ++lambda;
@@ -222,44 +224,47 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
       for (int n1 = 1; n1 < D + 1; ++n1) {
         f *= boost::math::factorial<double>(*alpha);
         terms[n1] = pow(*lambda, (*alpha));
-        if (*alpha > 0)
-          diff_terms[n1] = (*alpha) * pow(*lambda, (*alpha) - 1);
-        else
-          diff_terms[n1] = 0;
+        if (GRAD_BASE) {
+          if (*alpha > 0)
+            diff_terms[n1] = (*alpha) * pow(*lambda, (*alpha) - 1);
+          else
+            diff_terms[n1] = 0;
+        }
         *base *= terms[n1];
         ++alpha;
         ++lambda;
       }
 
-      double z = diff_terms[0];
-      for (int n2 = 1; n2 != D + 1; ++n2)
-        z *= terms[n2];
-      for (int d = 0; d != D; ++d) {
-        grad_base[d] = z * (*grad_lambda);
-        ++grad_lambda;
-      }
-
-      for (int n1 = 1; n1 < D + 1; ++n1) {
-        z = diff_terms[n1];
-        int n2 = 0;
-        for (; n2 != n1; ++n2)
-          z *= terms[n2];
-        n2++;
-        for (; n2 < D + 1; ++n2)
-          z *= terms[n2];
-        for (int d = 0; d != D; ++d) {
-          grad_base[d] += z * (*grad_lambda);
-          ++grad_lambda;
-        }
-      }
-
       const double b = fN / f;
       *base *= b;
-      for (int d = 0; d != D; ++d)
-        grad_base[d] *= b;
-
       ++base;
-      grad_base += D;
+
+      if (GRAD_BASE) {
+        double z = diff_terms[0];
+        for (int n2 = 1; n2 != D + 1; ++n2)
+          z *= terms[n2];
+        for (int d = 0; d != D; ++d) {
+          grad_base[d] = z * (*grad_lambda);
+          ++grad_lambda;
+        }
+
+        for (int n1 = 1; n1 < D + 1; ++n1) {
+          z = diff_terms[n1];
+          int n2 = 0;
+          for (; n2 != n1; ++n2)
+            z *= terms[n2];
+          n2++;
+          for (; n2 < D + 1; ++n2)
+            z *= terms[n2];
+          for (int d = 0; d != D; ++d) {
+            grad_base[d] += z * (*grad_lambda);
+            ++grad_lambda;
+          }
+        }
+        for (int d = 0; d != D; ++d)
+          grad_base[d] *= b;
+        grad_base += D;
+      }
 
       lambda = lambda0;
     }
@@ -275,6 +280,10 @@ MoFEMErrorCode BernsteinBezier::baseFunctionsEdge(
     const int N, const int gdim, const int n_alpha, const int *alpha,
     const double *lambda, const double *grad_lambda, double *base,
     double *grad_base) {
-  return baseFunctions<1>(N, gdim, n_alpha, alpha, lambda, grad_lambda, base,
-                          grad_base);
+  if (grad_base)
+    return baseFunctions<1, true>(N, gdim, n_alpha, alpha, lambda, grad_lambda,
+                                  base, grad_base);
+  else
+    return baseFunctions<1, false>(N, gdim, n_alpha, alpha, lambda, grad_lambda,
+                                   base, grad_base);
 }

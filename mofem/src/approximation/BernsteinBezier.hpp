@@ -58,7 +58,7 @@ private:
                                             const int n_alpha, const int *alpha,
                                             const double *x_k, double *x_alpha);
 
-  template <int D>
+  template <int D, bool GRAD_BASE>
   inline static MoFEMErrorCode
   baseFunctions(const int N, const int gdim, const int n_alpha,
                 const int *alpha, const double *lambda,
