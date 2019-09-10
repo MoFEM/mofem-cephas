@@ -60,34 +60,98 @@ int main(int argc, char *argv[]) {
     const int M = 50;
     MatrixDouble edge_base(M, edge_alpha.size1());
     MatrixDouble edge_diff_base(M, edge_alpha.size1());
-    MatrixDouble edge_lambda(M, 2);
 
-    for (size_t i = 0; i != M; ++i) {
-      double x = static_cast<double>(i) / (M - 1);
-      edge_lambda(i, 0) = N_MBEDGE0(x);
-      edge_lambda(i, 1) = N_MBEDGE1(x);
-    }
+    auto calc_lambda_on_edge = [](int M) {
+      MatrixDouble edge_lambda(M, 2);
+      for (size_t i = 0; i != M; ++i) {
+        double x = static_cast<double>(i) / (M - 1);
+        edge_lambda(i, 0) = N_MBEDGE0(x);
+        edge_lambda(i, 1) = N_MBEDGE1(x);
+      }
+      return edge_lambda;
+    };
+    auto edge_lambda = calc_lambda_on_edge(M);
 
     CHKERR BernsteinBezier::baseFunctionsEdge(
         N, M, edge_alpha.size1(), &edge_alpha(0, 0), &edge_lambda(0, 0),
         Tools::diffShapeFunMBEDGE.data(), &edge_base(0, 0),
         &edge_diff_base(0, 0));
+    cerr << edge_diff_base << endl;
 
-    for (size_t i = 0; i != M; ++i) {
-      double x = static_cast<double>(i) / (M - 1);
-      std::cout << "edge " << x << " ";
-      for (size_t j = 0; j != edge_alpha.size1(); ++j)
-        std::cout << edge_base(i, j) << " ";
-      std::cout << endl;
-    }
+    auto print_edge_base = [](auto M, auto &edge_base, auto &edge_diff_base) {
+      MoFEMFunctionBegin;
+      for (size_t i = 0; i != M; ++i) {
+        double x = static_cast<double>(i) / (M - 1);
+        std::cout << "edge " << x << " ";
+        for (size_t j = 0; j != edge_base.size2(); ++j)
+          std::cout << edge_base(i, j) << " ";
+        std::cout << endl;
+      }
 
-    for (size_t i = 0; i != M; ++i) {
-      double x = static_cast<double>(i) / (M - 1);
-      std::cout << "diff_edge " << x << " ";
-      for (size_t j = 0; j != edge_alpha.size1(); ++j)
-        std::cout << edge_diff_base(i, j) << " ";
-      std::cout << endl;
-    }
+      for (size_t i = 0; i != M; ++i) {
+        double x = static_cast<double>(i) / (M - 1);
+        std::cout << "diff_edge " << x << " ";
+        for (size_t j = 0; j != edge_diff_base.size2(); ++j)
+          std::cout << edge_diff_base(i, j) << " ";
+        std::cout << endl;
+      }
+      MoFEMFunctionReturn(0);
+    };
+    CHKERR print_edge_base(M, edge_base, edge_diff_base);
+
+    auto diag_n = [](int n) { return n * (n + 1) / 2; };
+
+    auto binomial_alpha_beta = [](int dim, const int *alpha, const int *beta) {
+      double f = boost::math::binomial_coefficient<double>(alpha[0] + beta[0],
+                                                           alpha[0]);
+      for (int d = 1; d != dim; ++d) {
+        f *= boost::math::binomial_coefficient<double>(alpha[d] + beta[d],
+                                                       alpha[d]);
+      }
+      return f;
+    };
+
+    auto check_property_one = [&](const int M, auto &edge_alpha,
+                                 auto &edge_base) {
+      MoFEMFunctionBegin;
+
+      MatrixInt edge_alpha2(diag_n(edge_alpha.size1()), 2);
+      int k = 0;
+      for (int i = 0; i != edge_alpha.size1(); ++i) {
+        for (int j = i; j != edge_alpha.size1(); ++j, ++k) {
+          for (int d = 0; d != edge_alpha.size2(); ++d) {
+            edge_alpha2(k, d) = edge_alpha(i, d) + edge_alpha(j, d);
+          }
+        }
+      }
+
+      MatrixDouble edge_base2(M, edge_alpha2.size1());
+      MatrixDouble edge_diff_base2(M, edge_alpha2.size1());
+      CHKERR BernsteinBezier::baseFunctionsEdge(
+          M + M, M, edge_alpha2.size1(), &edge_alpha2(0, 0), &edge_lambda(0, 0),
+          Tools::diffShapeFunMBEDGE.data(), &edge_base2(0, 0),
+          &edge_diff_base2(0, 0));
+
+      const double f0 = boost::math::binomial_coefficient<double>(N + N, N);
+      for (int g = 0; g != M; ++g) {
+        int k = 0;
+        for (size_t i = 0; i != edge_alpha.size1(); ++i) {
+          for (size_t j = i; j != edge_alpha.size1(); ++j, ++k) {
+            const double f =
+                binomial_alpha_beta(2, &edge_alpha(i, 0), &edge_alpha(j, 0));
+            const double b = f / f0;
+            const double B_check = b * edge_base2(g, k);
+            const double B_mult = edge_base(g, i) * edge_base(g, j);
+            const double error = std::abs(B_check - B_mult);
+            std::cout << "( " << k << " " << i << " " << j << " )" << B_check
+                      << " " << B_mult << " " << error << std::endl;
+          }
+        }
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    // CHKERR check_property_one(M, edge_alpha, edge_base);
   }
   CATCH_ERRORS;
 

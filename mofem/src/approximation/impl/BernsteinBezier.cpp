@@ -174,7 +174,10 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
 
       double f = boost::math::factorial<double>(*alpha);
       terms[0] = pow(*lambda, (*alpha));
-      diff_terms[0] = (*alpha) * pow(*lambda, (*alpha) - 1);
+      if (*alpha > 0)
+        diff_terms[0] = (*alpha) * pow(*lambda, (*alpha) - 1);
+      else
+        diff_terms[0] = 0;
       *base = terms[0];
       ++alpha;
       ++lambda;
@@ -182,7 +185,10 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
       for (int n1 = 1; n1 < D + 1; ++n1) {
         f *= boost::math::factorial<double>(*alpha);
         terms[n1] = pow(*lambda, (*alpha));
-        diff_terms[n1] = (*alpha) * pow(*lambda, (*alpha) - 1);
+        if(*alpha > 0)
+          diff_terms[n1] = (*alpha) * pow(*lambda, (*alpha) - 1);
+        else
+          diff_terms[n1] = 0;
         *base *= terms[n1];
         ++alpha;
         ++lambda;
