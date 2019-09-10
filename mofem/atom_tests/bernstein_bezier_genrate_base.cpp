@@ -257,9 +257,9 @@ int main(int argc, char *argv[]) {
           double check_diff_base = 0;
           for (int k = 0; k != edge_alpha_diff.size1(); k++) {
             check_diff_base +=
-                c0(j, k) * edge_base_diff(i, k) * Tools::diffShapeFunMBEDGE[0] +
+                c0(j, k) * edge_base_diff(i, k) * Tools::diffShapeFunMBEDGE[0];
+            check_diff_base +=
                 c1(j, k) * edge_base_diff(i, k) * Tools::diffShapeFunMBEDGE[1];
-
           }
           const double error = std::abs(check_diff_base - edge_diff_base(i, j));
 
