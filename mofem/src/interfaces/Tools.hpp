@@ -128,25 +128,16 @@ struct Tools : public UnknownInterface {
       diffShapeFunMBTET3x, diffShapeFunMBTET3y, diffShapeFunMBTET3z};
 
   static inline double shapeFunMBTET0(const double x, const double y,
-                                      const double z) {
-    return N_MBTET0(x, y, z);
-  }
+                                      const double z);
 
   static inline double shapeFunMBTET1(const double x, const double y,
-                                      const double z) {
-    return N_MBTET1(x, y, z);
-  }
+                                      const double z);
 
   static inline double shapeFunMBTET2(const double x, const double y,
-                                      const double z) {
-    return N_MBTET2(x, y, z);
-  }
+                                      const double z);
 
   static inline double shapeFunMBTET3(const double x, const double y,
-                                      const double z) {
-    return N_MBTET3(x, y, z);
-    ;
-  };
+                                      const double z);
 
   static constexpr double shapeFunMBTET0At000 = N_MBTET0(0, 0, 0);
   static constexpr double shapeFunMBTET1At000 = N_MBTET1(0, 0, 0);
@@ -179,20 +170,7 @@ struct Tools : public UnknownInterface {
   template <int LDB = 1>
   static MoFEMErrorCode shapeFunMBTET(double *shape, const double *ksi,
                                       const double *eta, const double *zeta,
-                                      const double nb) {
-    MoFEMFunctionBeginHot;
-    for (int n = 0; n != nb; ++n) {
-      shape[0] = shapeFunMBTET0(*ksi, *eta, *zeta);
-      shape[1] = shapeFunMBTET1(*ksi, *eta, *zeta);
-      shape[2] = shapeFunMBTET2(*ksi, *eta, *zeta);
-      shape[3] = shapeFunMBTET3(*ksi, *eta, *zeta);
-      shape += 4;
-      ksi += LDB;
-      eta += LDB;
-      zeta += LDB;
-    }
-    MoFEMFunctionReturnHot(0);
-  }
+                                      const double nb);
 
   /**
    * @brief Array of shape function at zero local point on reference element
@@ -421,6 +399,40 @@ struct Tools : public UnknownInterface {
 
   /**@}*/
 };
+
+double Tools::shapeFunMBTET0(const double x, const double y, const double z) {
+  return N_MBTET0(x, y, z);
+}
+
+double Tools::shapeFunMBTET1(const double x, const double y, const double z) {
+  return N_MBTET1(x, y, z);
+}
+
+double Tools::shapeFunMBTET2(const double x, const double y, const double z) {
+  return N_MBTET2(x, y, z);
+}
+
+double Tools::shapeFunMBTET3(const double x, const double y, const double z) {
+  return N_MBTET3(x, y, z);
+};
+
+template <int LDB>
+MoFEMErrorCode Tools::shapeFunMBTET(double *shape, const double *ksi,
+                                    const double *eta, const double *zeta,
+                                    const double nb) {
+  MoFEMFunctionBeginHot;
+  for (int n = 0; n != nb; ++n) {
+    shape[0] = shapeFunMBTET0(*ksi, *eta, *zeta);
+    shape[1] = shapeFunMBTET1(*ksi, *eta, *zeta);
+    shape[2] = shapeFunMBTET2(*ksi, *eta, *zeta);
+    shape[3] = shapeFunMBTET3(*ksi, *eta, *zeta);
+    shape += 4;
+    ksi += LDB;
+    eta += LDB;
+    zeta += LDB;
+  }
+  MoFEMFunctionReturnHot(0);
+}
 
 } // namespace MoFEM
 
