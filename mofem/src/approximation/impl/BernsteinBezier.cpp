@@ -119,6 +119,23 @@ MoFEMErrorCode BernsteinBezier::generateIndicesEdgeEdge(const int N,
   return generateIndicesEdgeOnSimplex<1, 0>(N, alpha);
 }
 
+// MoFEMErrorCode BernsteinBezier::genrateDerivativeIndices(const int N,
+//                                                          const int n_alpha,
+//                                                          const int *alpha,
+//                                                          int *diff_alpha) {
+//   MoFEMFunctionBeginHot;
+//   const double b =
+//       boost::math::factorial<double>(N) / boost::math::factorial<double>(N - 1);
+
+//   for (int i = 0; i != n_alpha; ++i) {
+//     for (int d = 0; d != D + 1; ++d) {
+
+//     }
+//   }
+
+//   MoFEMFunctionReturnHot(0);
+// }
+
 template <int D>
 MoFEMErrorCode
 BernsteinBezier::domainPoints(const int N, const int n_x, const int n_alpha,

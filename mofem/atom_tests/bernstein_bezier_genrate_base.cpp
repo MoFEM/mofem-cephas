@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
                                            &edge_x_alpha(0, 0));
     std::cout << "domain points " << edge_x_alpha << endl;
 
-    const int M = 10;
+    const int M = 5;
     MatrixDouble edge_base(M, edge_alpha.size1());
     MatrixDouble edge_diff_base(M, edge_alpha.size1());
 
@@ -119,8 +119,10 @@ int main(int argc, char *argv[]) {
       return f;
     };
 
-    auto check_property_one = [&](const int M, auto &edge_alpha,
-                                  auto &edge_base, bool debug) {
+    auto check_property_one = [N, diag_n, binomial_alpha_beta](
+                                  const int M, const auto &edge_alpha,
+                                  const auto &edge_lambda, auto &edge_base,
+                                  bool debug) {
       MoFEMFunctionBegin;
 
       MatrixInt edge_alpha2(diag_n(edge_alpha.size1()), 2);
@@ -164,9 +166,9 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
 
-    CHKERR check_property_one(M, edge_alpha, edge_base, false);
+    CHKERR check_property_one(M, edge_alpha, edge_lambda, edge_base, false);
 
-    auto check_property_two_on_edge = [&](auto &edge_alpha, bool debug) {
+    auto check_property_two_on_edge = [N](auto &edge_alpha, bool debug) {
       MoFEMFunctionBegin;
       const int rule = N;
       int nb_gauss_pts = QUAD_1D_TABLE[rule]->npoints;
@@ -178,6 +180,8 @@ int main(int argc, char *argv[]) {
       MatrixDouble edge_lambda(nb_gauss_pts, 2);
       cblas_dcopy(2 * nb_gauss_pts, QUAD_1D_TABLE[rule]->points, 1,
                   &edge_lambda(0, 0), 1);
+      MatrixDouble edge_base(nb_gauss_pts, edge_alpha.size1());
+      MatrixDouble edge_diff_base(nb_gauss_pts, edge_alpha.size1());
       CHKERR BernsteinBezier::baseFunctionsEdge(
           N, nb_gauss_pts, edge_alpha.size1(), &edge_alpha(0, 0),
           &edge_lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
@@ -211,8 +215,66 @@ int main(int argc, char *argv[]) {
 
     CHKERR check_property_two_on_edge(edge_alpha, false);
 
+    auto check_property_three_on_edge_derivatives = [N](const int M,
+                                                        const auto &edge_alpha,
+                                                        const auto &edge_lambda,
+                                                        const auto
+                                                            &edge_diff_base,
+                                                        bool debug) {
+      MoFEMFunctionBegin;
 
+      MatrixInt edge_alpha_diff(2 + NBEDGE_H1(N-1), 2);
+      CHKERR BernsteinBezier::generateIndicesVertexEdge(N - 1,
+                                                        &edge_alpha_diff(0, 0));
+      CHKERR BernsteinBezier::generateIndicesEdgeEdge(N - 1,
+                                                      &edge_alpha_diff(2, 0));
 
+      MatrixDouble edge_base_diff(M, edge_alpha_diff.size1());
+      MatrixDouble edge_diff_base_diff(M, edge_alpha_diff.size1());
+      cerr << edge_alpha << endl;
+      cerr << edge_alpha_diff << endl;
+      cerr << edge_diff_base << endl;
+
+      CHKERR BernsteinBezier::baseFunctionsEdge(
+          N - 1, M, edge_alpha_diff.size1(), &edge_alpha_diff(0, 0),
+          &edge_lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
+          &edge_base_diff(0, 0), &edge_diff_base_diff(0, 0));
+
+      const double b = boost::math::factorial<double>(N) /
+                       boost::math::factorial<double>(N - 1);
+
+      for (size_t i = 0; i != M; ++i) {
+        for (size_t j = 0; j != edge_diff_base.size2(); ++j) {
+
+          double check_diff_base = 0;
+          for (int k = 0; k != edge_alpha_diff.size1(); k++) {
+
+            if (edge_alpha_diff(k, 0) + 1 == edge_alpha(j, 0) &&
+                edge_alpha_diff(k, 1) == edge_alpha(j, 1))
+              check_diff_base +=
+                  b * edge_base_diff(i, k) * Tools::diffShapeFunMBEDGE[0];
+
+            if (edge_alpha_diff(k, 0) == edge_alpha(j, 0) &&
+                edge_alpha_diff(k, 1) + 1 == edge_alpha(j, 1))
+              check_diff_base +=
+                  b * edge_base_diff(i, k) * Tools::diffShapeFunMBEDGE[1];
+
+          }
+          const double error = check_diff_base - edge_diff_base(i, j);
+
+          if (debug)
+            std::cout << "edge_diff_base " << check_diff_base << " "
+                      << edge_diff_base(i, j) << " " << error << std::endl;
+        }
+
+        std::cout << endl;
+      }
+
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR check_property_three_on_edge_derivatives(M, edge_alpha, edge_lambda,
+                                                    edge_diff_base, true);
   }
   CATCH_ERRORS;
 

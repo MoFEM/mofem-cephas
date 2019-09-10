@@ -43,6 +43,11 @@ private:
 
   static MoFEMErrorCode generateIndicesVolumeOnSimplex(const int N, int *alpha);
 
+  // template <int D>
+  // static MoFEMErrorCode genrateDerivativeIndices(const int N, const int n_alpha,
+  //                                                const int *alpha,
+  //                                                const int *diff_alpha);
+
   template <int D>
   inline static MoFEMErrorCode domainPoints(const int N, const int n_x,
                                             const int n_alpha, const int *alpha,
