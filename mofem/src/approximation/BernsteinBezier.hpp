@@ -25,6 +25,10 @@ struct BernsteinBezier {
                                           const double *grad_lambda,
                                           double *base, double *grad_base);
 
+  static MoFEMErrorCode genrateDerivativeIndicesEdges(
+      const int N, const int n_alpha, const int *alpha, const int *diff,
+      const int n_alpha_diff, const int *alpha_diff, double *c);
+
 private:
   template <int D, int S>
   static inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, D>
@@ -43,10 +47,11 @@ private:
 
   static MoFEMErrorCode generateIndicesVolumeOnSimplex(const int N, int *alpha);
 
-  // template <int D>
-  // static MoFEMErrorCode genrateDerivativeIndices(const int N, const int n_alpha,
-  //                                                const int *alpha,
-  //                                                const int *diff_alpha);
+  template <int D>
+  static MoFEMErrorCode
+  genrateDerivativeIndices(const int N, const int n_alpha, const int *alpha,
+                           const int *diff, const int n_alpha_diff,
+                           const int *alpha_diff, double *c);
 
   template <int D>
   inline static MoFEMErrorCode domainPoints(const int N, const int n_x,

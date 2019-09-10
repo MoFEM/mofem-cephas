@@ -229,11 +229,19 @@ int main(int argc, char *argv[]) {
       CHKERR BernsteinBezier::generateIndicesEdgeEdge(N - 1,
                                                       &edge_alpha_diff(2, 0));
 
+      MatrixDouble c0(2 + NBEDGE_H1(N), 2 + NBEDGE_H1(N - 1));
+      std::array<int, 2> diff0 = {1, 0};
+      CHKERR BernsteinBezier::genrateDerivativeIndicesEdges(
+          N, edge_alpha.size1(), &edge_alpha(0, 0), diff0.data(),
+          edge_alpha_diff.size1(), &edge_alpha_diff(0, 0), &c0(0, 0));
+      MatrixDouble c1(2 + NBEDGE_H1(N), 2 + NBEDGE_H1(N - 1));
+      std::array<int, 2> diff1 = {0, 1};
+      CHKERR BernsteinBezier::genrateDerivativeIndicesEdges(
+          N, edge_alpha.size1(), &edge_alpha(0, 0), diff1.data(),
+          edge_alpha_diff.size1(), &edge_alpha_diff(0, 0), &c1(0, 0));
+
       MatrixDouble edge_base_diff(M, edge_alpha_diff.size1());
       MatrixDouble edge_diff_base_diff(M, edge_alpha_diff.size1());
-      cerr << edge_alpha << endl;
-      cerr << edge_alpha_diff << endl;
-      cerr << edge_diff_base << endl;
 
       CHKERR BernsteinBezier::baseFunctionsEdge(
           N - 1, M, edge_alpha_diff.size1(), &edge_alpha_diff(0, 0),
@@ -248,26 +256,24 @@ int main(int argc, char *argv[]) {
 
           double check_diff_base = 0;
           for (int k = 0; k != edge_alpha_diff.size1(); k++) {
-
-            if (edge_alpha_diff(k, 0) + 1 == edge_alpha(j, 0) &&
-                edge_alpha_diff(k, 1) == edge_alpha(j, 1))
-              check_diff_base +=
-                  b * edge_base_diff(i, k) * Tools::diffShapeFunMBEDGE[0];
-
-            if (edge_alpha_diff(k, 0) == edge_alpha(j, 0) &&
-                edge_alpha_diff(k, 1) + 1 == edge_alpha(j, 1))
-              check_diff_base +=
-                  b * edge_base_diff(i, k) * Tools::diffShapeFunMBEDGE[1];
+            check_diff_base +=
+                c0(j, k) * edge_base_diff(i, k) * Tools::diffShapeFunMBEDGE[0] +
+                c1(j, k) * edge_base_diff(i, k) * Tools::diffShapeFunMBEDGE[1];
 
           }
-          const double error = check_diff_base - edge_diff_base(i, j);
+          const double error = std::abs(check_diff_base - edge_diff_base(i, j));
 
           if (debug)
             std::cout << "edge_diff_base " << check_diff_base << " "
                       << edge_diff_base(i, j) << " " << error << std::endl;
+          constexpr double eps = 1e-12;
+          if (error > eps)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "Property two on edge is not working");
         }
 
-        std::cout << endl;
+        if (debug)
+          std::cout << endl;
       }
 
       MoFEMFunctionReturn(0);
