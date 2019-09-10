@@ -14,12 +14,20 @@ struct BernsteinBezier {
 
   static MoFEMErrorCode generateIndicesVertexEdge(const int N, int *alpha);
   static MoFEMErrorCode generateIndicesEdgeEdge(const int N, int *alpha);
+  static MoFEMErrorCode generateIndicesVertexTri(const int N, int *alpha);
+  static MoFEMErrorCode generateIndicesEdgeTri(const int N[], int *alpha[]);
+  static MoFEMErrorCode generateIndicesTriTri(const int N, int *alpha);
 
   static MoFEMErrorCode domainPoints3d(const int N, const int n_x,
                                        const int n_alpha, const int *alpha,
                                        const double *x_k, double *x_alpha);
 
   static MoFEMErrorCode baseFunctionsEdge(const int N, const int gdim,
+                                          const int n_alpha, const int *alpha,
+                                          const double *lambda,
+                                          const double *grad_lambda,
+                                          double *base, double *grad_base);
+    static MoFEMErrorCode baseFunctionsTri(const int N, const int gdim,
                                           const int n_alpha, const int *alpha,
                                           const double *lambda,
                                           const double *grad_lambda,
@@ -42,10 +50,10 @@ private:
                                                             int *alpha);
 
   template <int D, int Side>
-  inline static MoFEMErrorCode generateIndicesFaceOnSimplex(const int N,
+  inline static MoFEMErrorCode generateIndicesTriOnSimplex(const int N,
                                                             int *alpha);
 
-  static MoFEMErrorCode generateIndicesVolumeOnSimplex(const int N, int *alpha);
+  static MoFEMErrorCode generateIndicesTetOnSimplex(const int N, int *alpha);
 
   template <int D>
   static MoFEMErrorCode

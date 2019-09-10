@@ -65,7 +65,7 @@ extern "C" {
 #define NBFACEQUAD_H1(P) (((P) > 2) ? ((P - 3) * (P - 2) / 2) : 0)
 
 /**
- * @brief Number of base functions on tetrahedron fro H1 space
+ * @brief Number of base functions on tetrahedron for H1 space
  */
 #define NBVOLUMETET_H1(P) (((P) > 2) ? ((P - 3) * (P - 2) * (P - 1) / 6) : 0)
 

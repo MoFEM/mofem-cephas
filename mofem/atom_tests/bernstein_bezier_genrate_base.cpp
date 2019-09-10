@@ -119,53 +119,61 @@ int main(int argc, char *argv[]) {
       return f;
     };
 
-    auto check_property_one = [N, diag_n, binomial_alpha_beta](
-                                  const int M, const auto &edge_alpha,
-                                  const auto &edge_lambda, auto &edge_base,
-                                  bool debug) {
-      MoFEMFunctionBegin;
+    auto check_property_one =
+        [N, diag_n, binomial_alpha_beta](
+            const int M, const auto &edge_alpha, const auto &edge_lambda,
+            auto &edge_base,
+            boost::function<MoFEMErrorCode(
+                const int N, const int gdim, const int n_alpha,
+                const int *alpha, const double *lambda,
+                const double *grad_lambda, double *base, double *grad_base)>
+                calc_base,
+            bool debug) {
+          MoFEMFunctionBegin;
 
-      MatrixInt edge_alpha2(diag_n(edge_alpha.size1()), 2);
-      int k = 0;
-      for (int i = 0; i != edge_alpha.size1(); ++i) {
-        for (int j = i; j != edge_alpha.size1(); ++j, ++k) {
-          for (int d = 0; d != edge_alpha.size2(); ++d) {
-            edge_alpha2(k, d) = edge_alpha(i, d) + edge_alpha(j, d);
+          MatrixInt edge_alpha2(diag_n(edge_alpha.size1()), edge_alpha.size2());
+          int k = 0;
+          for (int i = 0; i != edge_alpha.size1(); ++i) {
+            for (int j = i; j != edge_alpha.size1(); ++j, ++k) {
+              for (int d = 0; d != edge_alpha.size2(); ++d) {
+                edge_alpha2(k, d) = edge_alpha(i, d) + edge_alpha(j, d);
+              }
+            }
           }
-        }
-      }
 
-      MatrixDouble edge_base2(M, edge_alpha2.size1());
-      CHKERR BernsteinBezier::baseFunctionsEdge(
-          N + N, M, edge_alpha2.size1(), &edge_alpha2(0, 0), &edge_lambda(0, 0),
-          Tools::diffShapeFunMBEDGE.data(), &edge_base2(0, 0),
-          nullptr);
+          MatrixDouble edge_base2(edge_base.size1(), edge_alpha2.size1());
+          CHKERR calc_base(N + N, edge_base.size1(), edge_alpha2.size1(),
+                           &edge_alpha2(0, 0), &edge_lambda(0, 0),
+                           Tools::diffShapeFunMBEDGE.data(), &edge_base2(0, 0),
+                           nullptr);
 
-      const double f0 = boost::math::binomial_coefficient<double>(N + N, N);
-      for (int g = 0; g != M; ++g) {
-        int k = 0;
-        for (size_t i = 0; i != edge_alpha.size1(); ++i) {
-          for (size_t j = i; j != edge_alpha.size1(); ++j, ++k) {
-            const double f =
-                binomial_alpha_beta(2, &edge_alpha(i, 0), &edge_alpha(j, 0));
-            const double b = f / f0;
-            const double B_check = b * edge_base2(g, k);
-            const double B_mult = edge_base(g, i) * edge_base(g, j);
-            const double error = std::abs(B_check - B_mult);
-            if (debug)
-              std::cout << "( " << k << " " << i << " " << j << " )" << B_check
-                        << " " << B_mult << " " << error << std::endl;
-            constexpr double eps = 1e-12;
-            if (error > eps)
-              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                      "Property one is not working");
+          const double f0 = boost::math::binomial_coefficient<double>(N + N, N);
+          for (int g = 0; g != edge_base.size1(); ++g) {
+            int k = 0;
+            for (size_t i = 0; i != edge_alpha.size1(); ++i) {
+              for (size_t j = i; j != edge_alpha.size1(); ++j, ++k) {
+                const double f = binomial_alpha_beta(
+                    edge_alpha.size2(), &edge_alpha(i, 0), &edge_alpha(j, 0));
+                const double b = f / f0;
+                const double B_check = b * edge_base2(g, k);
+                const double B_mult = edge_base(g, i) * edge_base(g, j);
+                const double error = std::abs(B_check - B_mult);
+                if (debug)
+                  std::cout << "( " << k << " " << i << " " << j << " )"
+                            << B_check << " " << B_mult << " " << error
+                            << std::endl;
+                constexpr double eps = 1e-12;
+                if (error > eps)
+                  SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                          "Property one is not working");
+              }
+            }
           }
-        }
-      }
-      MoFEMFunctionReturn(0);
-    };
+          MoFEMFunctionReturn(0);
+        };
 
-    CHKERR check_property_one(M, edge_alpha, edge_lambda, edge_base, false);
+    CHKERR check_property_one(M, edge_alpha, edge_lambda, edge_base,
+                              BernsteinBezier::baseFunctionsEdge, false);
 
     auto check_property_two_on_edge = [N](auto &edge_alpha, bool debug) {
       MoFEMFunctionBegin;
@@ -195,7 +203,7 @@ int main(int argc, char *argv[]) {
       }
 
       const double check_integral =
-          1 / boost::math::binomial_coefficient<double>(N + 1, N);
+          1 / boost::math::binomial_coefficient<double>(N + 1, 1);
 
       for (auto i : integral) {
         const double error = std::abs(i - check_integral);
@@ -213,70 +221,163 @@ int main(int argc, char *argv[]) {
 
     CHKERR check_property_two_on_edge(edge_alpha, false);
 
-    auto check_property_three_on_edge_derivatives = [N](const int M,
-                                                        const auto &edge_alpha,
-                                                        const auto &edge_lambda,
-                                                        const auto
-                                                            &edge_diff_base,
-                                                        bool debug) {
-      MoFEMFunctionBegin;
+    auto check_property_three_on_edge_derivatives =
+        [N](const int M, const auto &edge_alpha, const auto &edge_lambda,
+            const auto &edge_diff_base, bool debug) {
+          MoFEMFunctionBegin;
 
-      MatrixInt edge_alpha_diff(2 + NBEDGE_H1(N-1), 2);
-      CHKERR BernsteinBezier::generateIndicesVertexEdge(N - 1,
-                                                        &edge_alpha_diff(0, 0));
-      CHKERR BernsteinBezier::generateIndicesEdgeEdge(N - 1,
-                                                      &edge_alpha_diff(2, 0));
+          MatrixInt edge_alpha_diff(2 + NBEDGE_H1(N - 1), 2);
+          CHKERR BernsteinBezier::generateIndicesVertexEdge(
+              N - 1, &edge_alpha_diff(0, 0));
+          CHKERR BernsteinBezier::generateIndicesEdgeEdge(
+              N - 1, &edge_alpha_diff(2, 0));
 
-      MatrixDouble c0(2 + NBEDGE_H1(N), 2 + NBEDGE_H1(N - 1));
-      std::array<int, 2> diff0 = {1, 0};
-      CHKERR BernsteinBezier::genrateDerivativeIndicesEdges(
-          N, edge_alpha.size1(), &edge_alpha(0, 0), diff0.data(),
-          edge_alpha_diff.size1(), &edge_alpha_diff(0, 0), &c0(0, 0));
-      MatrixDouble c1(2 + NBEDGE_H1(N), 2 + NBEDGE_H1(N - 1));
-      std::array<int, 2> diff1 = {0, 1};
-      CHKERR BernsteinBezier::genrateDerivativeIndicesEdges(
-          N, edge_alpha.size1(), &edge_alpha(0, 0), diff1.data(),
-          edge_alpha_diff.size1(), &edge_alpha_diff(0, 0), &c1(0, 0));
+          MatrixDouble c0(2 + NBEDGE_H1(N), 2 + NBEDGE_H1(N - 1));
+          std::array<int, 2> diff0 = {1, 0};
+          CHKERR BernsteinBezier::genrateDerivativeIndicesEdges(
+              N, edge_alpha.size1(), &edge_alpha(0, 0), diff0.data(),
+              edge_alpha_diff.size1(), &edge_alpha_diff(0, 0), &c0(0, 0));
+          MatrixDouble c1(2 + NBEDGE_H1(N), 2 + NBEDGE_H1(N - 1));
+          std::array<int, 2> diff1 = {0, 1};
+          CHKERR BernsteinBezier::genrateDerivativeIndicesEdges(
+              N, edge_alpha.size1(), &edge_alpha(0, 0), diff1.data(),
+              edge_alpha_diff.size1(), &edge_alpha_diff(0, 0), &c1(0, 0));
 
-      MatrixDouble edge_base_diff(M, edge_alpha_diff.size1());
-      CHKERR BernsteinBezier::baseFunctionsEdge(
-          N - 1, M, edge_alpha_diff.size1(), &edge_alpha_diff(0, 0),
-          &edge_lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
-          &edge_base_diff(0, 0), nullptr);
+          MatrixDouble edge_base_diff(M, edge_alpha_diff.size1());
+          CHKERR BernsteinBezier::baseFunctionsEdge(
+              N - 1, M, edge_alpha_diff.size1(), &edge_alpha_diff(0, 0),
+              &edge_lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
+              &edge_base_diff(0, 0), nullptr);
 
-      const double b = boost::math::factorial<double>(N) /
-                       boost::math::factorial<double>(N - 1);
+          const double b = boost::math::factorial<double>(N) /
+                           boost::math::factorial<double>(N - 1);
 
-      for (size_t i = 0; i != M; ++i) {
-        for (size_t j = 0; j != edge_diff_base.size2(); ++j) {
+          for (size_t i = 0; i != M; ++i) {
+            for (size_t j = 0; j != edge_diff_base.size2(); ++j) {
 
-          double check_diff_base = 0;
-          for (int k = 0; k != edge_alpha_diff.size1(); k++) {
-            check_diff_base +=
-                c0(j, k) * edge_base_diff(i, k) * Tools::diffShapeFunMBEDGE[0];
-            check_diff_base +=
-                c1(j, k) * edge_base_diff(i, k) * Tools::diffShapeFunMBEDGE[1];
+              double check_diff_base = 0;
+              for (int k = 0; k != edge_alpha_diff.size1(); k++) {
+                check_diff_base += c0(j, k) * edge_base_diff(i, k) *
+                                   Tools::diffShapeFunMBEDGE[0];
+                check_diff_base += c1(j, k) * edge_base_diff(i, k) *
+                                   Tools::diffShapeFunMBEDGE[1];
+              }
+              const double error =
+                  std::abs(check_diff_base - edge_diff_base(i, j));
+
+              if (debug)
+                std::cout << "edge_diff_base " << check_diff_base << " "
+                          << edge_diff_base(i, j) << " " << error << std::endl;
+              constexpr double eps = 1e-12;
+              if (error > eps)
+                SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                        "Property two on edge is not working");
+            }
+
+            if (debug)
+              std::cout << endl;
           }
-          const double error = std::abs(check_diff_base - edge_diff_base(i, j));
 
-          if (debug)
-            std::cout << "edge_diff_base " << check_diff_base << " "
-                      << edge_diff_base(i, j) << " " << error << std::endl;
-          constexpr double eps = 1e-12;
-          if (error > eps)
-            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                    "Property two on edge is not working");
+          MoFEMFunctionReturn(0);
+        };
+
+    CHKERR check_property_three_on_edge_derivatives(M, edge_alpha, edge_lambda,
+                                                    edge_diff_base, false);
+
+    // Triangle
+
+    MatrixInt face_alpha(3 + 3 * NBEDGE_H1(N) + NBFACETRI_H1(N), 3);
+    CHKERR BernsteinBezier::generateIndicesVertexTri(N, &face_alpha(0, 0));
+    CHKERR BernsteinBezier::generateIndicesEdgeTri(
+
+        (std::array<int, 3>{N, N, N}).data(),
+
+        (std::array<int *, 3>{&face_alpha(3, 0),
+                              &face_alpha(3 + NBEDGE_H1(N), 0),
+                              &face_alpha(3 + 2 * NBEDGE_H1(N), 0)})
+            .data()
+
+    );
+    CHKERR BernsteinBezier::generateIndicesTriTri(
+        N, &face_alpha(3 + 3 * NBEDGE_H1(N), 0));
+    // std::cout << "face alpha " << face_alpha << std::endl;
+
+    std::array<double, 9> face_x_k = {0, 0, 0, 1, 0, 0, 0, 1, 0};
+    MatrixDouble face_x_alpha(face_alpha.size1(), 3);
+    CHKERR BernsteinBezier::domainPoints3d(N, 3, face_alpha.size1(),
+                                           &face_alpha(0, 0), face_x_k.data(),
+                                           &face_x_alpha(0, 0));
+    // std::cout << "domain points " << face_x_alpha << std::endl << std::endl;
+
+    auto calc_lambda_on_face = [](auto &face_x_alpha) {
+      MatrixDouble face_lambda(face_x_alpha.size1(), 3);
+      for (size_t i = 0; i != face_x_alpha.size1(); ++i) {
+        face_lambda(i, 0) = 1 - face_x_alpha(i, 0) - face_x_alpha(i, 1);
+        face_lambda(i, 1) = face_x_alpha(i, 0);
+        face_lambda(i, 2) = face_x_alpha(i, 1);
+      }
+      return face_lambda;
+    };
+    auto face_lambda = calc_lambda_on_face(face_x_alpha);
+
+    MatrixDouble face_base(face_x_alpha.size1(), face_alpha.size1());
+    MatrixDouble face_diff_base(face_x_alpha.size1(), face_alpha.size1());
+    CHKERR BernsteinBezier::baseFunctionsTri(
+        N, face_x_alpha.size1(), face_alpha.size1(), &face_alpha(0, 0),
+        &face_lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &face_base(0, 0),
+        &face_diff_base(0, 0));
+    // std::cout << "face base " << face_base << std::endl;
+
+    CHKERR check_property_one(face_x_alpha.size1(), face_alpha, face_lambda,
+                              face_base, BernsteinBezier::baseFunctionsTri,
+                              false);
+
+    auto check_property_two_on_face = [N](auto &face_alpha, bool debug) {
+      MoFEMFunctionBegin;
+      const int rule = N;
+      const size_t nb_gauss_pts = QUAD_2D_TABLE[rule]->npoints;
+      MatrixDouble gauss_pts(3, nb_gauss_pts, false);
+      cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[1], 3,
+                  &gauss_pts(0, 0), 1);
+      cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[2], 3,
+                  &gauss_pts(1, 0), 1);
+      cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1, &gauss_pts(2, 0),
+                  1);
+      MatrixDouble face_lambda(nb_gauss_pts, 3);
+      cblas_dcopy(3 * nb_gauss_pts, QUAD_2D_TABLE[rule]->points, 1,
+                  &face_lambda(0, 0), 1);
+      MatrixDouble face_base(nb_gauss_pts, face_alpha.size1());
+      CHKERR BernsteinBezier::baseFunctionsTri(
+          N, nb_gauss_pts, face_alpha.size1(), &face_alpha(0, 0),
+          &face_lambda(0, 0), Tools::diffShapeFunMBTRI.data(),
+          &face_base(0, 0), nullptr);
+
+      VectorDouble integral(face_alpha.size1());
+      integral.clear();
+
+      for (int g = 0; g != nb_gauss_pts; ++g) {
+        for (size_t i = 0; i != face_alpha.size1(); ++i) {
+          integral[i] += gauss_pts(2, g) * face_base(g, i) / 2.;
         }
+      }
 
+      const double check_integral =
+          0.5 / boost::math::binomial_coefficient<double>(N + 2, 2);
+
+      for (auto i : integral) {
+        const double error = std::abs(i - check_integral);
         if (debug)
-          std::cout << endl;
+          std::cout << "edge integral " << i << " " << check_integral << " "
+                    << error << endl;
+        constexpr double eps = 1e-12;
+        if (error > eps)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "Property two on edge is not working");
       }
 
       MoFEMFunctionReturn(0);
     };
-
-    CHKERR check_property_three_on_edge_derivatives(M, edge_alpha, edge_lambda,
-                                                    edge_diff_base, true);
+    CHKERR check_property_two_on_face(face_alpha, false);
   }
   CATCH_ERRORS;
 

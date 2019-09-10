@@ -63,8 +63,8 @@ MoFEMErrorCode BernsteinBezier::generateIndicesEdgeOnSimplex(const int N,
 }
 
 template <int D, int Side>
-MoFEMErrorCode BernsteinBezier::generateIndicesFaceOnSimplex(const int N,
-                                                             int *alpha) {
+MoFEMErrorCode BernsteinBezier::generateIndicesTriOnSimplex(const int N,
+                                                            int *alpha) {
   constexpr int tri_nodes[4][3] = {{0, 1, 3}, {1, 2, 3}, {0, 2, 3}, {0, 1, 2}};
   MoFEMFunctionBeginHot;
   std::fill(alpha, &alpha[(D + 1) * NBFACETRI_H1(N)], 0);
@@ -80,7 +80,7 @@ MoFEMErrorCode BernsteinBezier::generateIndicesFaceOnSimplex(const int N,
 
       alpha[tri_nodes[Side][0]] = n0;
       alpha[tri_nodes[Side][1]] = n1;
-      alpha[tri_nodes[Side][1]] = N - n0 - n1;
+      alpha[tri_nodes[Side][2]] = N - n0 - n1;
 
       alpha += D + 1;
     }
@@ -88,8 +88,8 @@ MoFEMErrorCode BernsteinBezier::generateIndicesFaceOnSimplex(const int N,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode BernsteinBezier::generateIndicesVolumeOnSimplex(const int N,
-                                                               int *alpha) {
+MoFEMErrorCode BernsteinBezier::generateIndicesTetOnSimplex(const int N,
+                                                            int *alpha) {
   MoFEMFunctionBeginHot;
   std::fill(alpha, &alpha[4 * NBVOLUMETET_H1(N)], 0);
   for (int n0 = 1; n0 != N - 1; ++n0) {
@@ -117,6 +117,27 @@ MoFEMErrorCode BernsteinBezier::generateIndicesVertexEdge(const int N,
 MoFEMErrorCode BernsteinBezier::generateIndicesEdgeEdge(const int N,
                                                         int *alpha) {
   return generateIndicesEdgeOnSimplex<1, 0>(N, alpha);
+}
+
+MoFEMErrorCode BernsteinBezier::generateIndicesVertexTri(const int N,
+                                                         int *alpha) {
+  MoFEMFunctionBeginHot;
+  CHKERR generateIndicesVertex<2, 0>(N, alpha);
+  CHKERR generateIndicesVertex<2, 1>(N, alpha);
+  CHKERR generateIndicesVertex<2, 2>(N, alpha);
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode BernsteinBezier::generateIndicesEdgeTri(const int N[],
+                                                       int *alpha[]) {
+  MoFEMFunctionBeginHot;
+  CHKERR generateIndicesEdgeOnSimplex<2, 0>(N[0], alpha[0]);
+  CHKERR generateIndicesEdgeOnSimplex<2, 1>(N[1], alpha[1]);
+  CHKERR generateIndicesEdgeOnSimplex<2, 2>(N[2], alpha[2]);
+  MoFEMFunctionReturnHot(0);
+}
+MoFEMErrorCode BernsteinBezier::generateIndicesTriTri(const int N, int *alpha) {
+  return generateIndicesTriOnSimplex<2, 3>(N, alpha);
 }
 
 template <int D>
@@ -285,5 +306,17 @@ MoFEMErrorCode BernsteinBezier::baseFunctionsEdge(
                                   base, grad_base);
   else
     return baseFunctions<1, false>(N, gdim, n_alpha, alpha, lambda, grad_lambda,
+                                   base, grad_base);
+}
+
+MoFEMErrorCode BernsteinBezier::baseFunctionsTri(
+    const int N, const int gdim, const int n_alpha, const int *alpha,
+    const double *lambda, const double *grad_lambda, double *base,
+    double *grad_base) {
+  if (grad_base)
+    return baseFunctions<2, true>(N, gdim, n_alpha, alpha, lambda, grad_lambda,
+                                  base, grad_base);
+  else
+    return baseFunctions<2, false>(N, gdim, n_alpha, alpha, lambda, grad_lambda,
                                    base, grad_base);
 }
