@@ -2,7 +2,7 @@
  * \file bernstein_bezier_genrate_base.cpp
  * \example bernstein_bezier_genrate_base.cpp
  *
- * Genarte Bernstein-Bezier base
+ * Genarte and check Bernstein-Bezier base
  *
  */
 
@@ -21,6 +21,15 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <cblas.h>
+#include <quad.h>
+#ifdef __cplusplus
+}
+#endif
 
 using namespace MoFEM;
 
@@ -41,7 +50,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
-    const int N = 6;
+    constexpr int N = 6;
 
     // Edge
 
@@ -57,7 +66,7 @@ int main(int argc, char *argv[]) {
                                            &edge_x_alpha(0, 0));
     std::cout << "domain points " << edge_x_alpha << endl;
 
-    const int M = 50;
+    const int M = 10;
     MatrixDouble edge_base(M, edge_alpha.size1());
     MatrixDouble edge_diff_base(M, edge_alpha.size1());
 
@@ -76,7 +85,6 @@ int main(int argc, char *argv[]) {
         N, M, edge_alpha.size1(), &edge_alpha(0, 0), &edge_lambda(0, 0),
         Tools::diffShapeFunMBEDGE.data(), &edge_base(0, 0),
         &edge_diff_base(0, 0));
-    cerr << edge_diff_base << endl;
 
     auto print_edge_base = [](auto M, auto &edge_base, auto &edge_diff_base) {
       MoFEMFunctionBegin;
@@ -112,7 +120,7 @@ int main(int argc, char *argv[]) {
     };
 
     auto check_property_one = [&](const int M, auto &edge_alpha,
-                                 auto &edge_base) {
+                                  auto &edge_base, bool debug) {
       MoFEMFunctionBegin;
 
       MatrixInt edge_alpha2(diag_n(edge_alpha.size1()), 2);
@@ -128,7 +136,7 @@ int main(int argc, char *argv[]) {
       MatrixDouble edge_base2(M, edge_alpha2.size1());
       MatrixDouble edge_diff_base2(M, edge_alpha2.size1());
       CHKERR BernsteinBezier::baseFunctionsEdge(
-          M + M, M, edge_alpha2.size1(), &edge_alpha2(0, 0), &edge_lambda(0, 0),
+          N + N, M, edge_alpha2.size1(), &edge_alpha2(0, 0), &edge_lambda(0, 0),
           Tools::diffShapeFunMBEDGE.data(), &edge_base2(0, 0),
           &edge_diff_base2(0, 0));
 
@@ -143,15 +151,68 @@ int main(int argc, char *argv[]) {
             const double B_check = b * edge_base2(g, k);
             const double B_mult = edge_base(g, i) * edge_base(g, j);
             const double error = std::abs(B_check - B_mult);
-            std::cout << "( " << k << " " << i << " " << j << " )" << B_check
-                      << " " << B_mult << " " << error << std::endl;
+            if (debug)
+              std::cout << "( " << k << " " << i << " " << j << " )" << B_check
+                        << " " << B_mult << " " << error << std::endl;
+            constexpr double eps = 1e-12;
+            if (error > eps)
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                      "Property one is not working");
           }
         }
       }
       MoFEMFunctionReturn(0);
     };
 
-    // CHKERR check_property_one(M, edge_alpha, edge_base);
+    CHKERR check_property_one(M, edge_alpha, edge_base, false);
+
+    auto check_property_two_on_edge = [&](auto &edge_alpha, bool debug) {
+      MoFEMFunctionBegin;
+      const int rule = N;
+      int nb_gauss_pts = QUAD_1D_TABLE[rule]->npoints;
+      MatrixDouble gauss_pts(2, nb_gauss_pts, false);
+      cblas_dcopy(nb_gauss_pts, &QUAD_1D_TABLE[rule]->points[1], 2,
+                  &gauss_pts(0, 0), 1);
+      cblas_dcopy(nb_gauss_pts, QUAD_1D_TABLE[rule]->weights, 1,
+                  &gauss_pts(1, 0), 1);
+      MatrixDouble edge_lambda(nb_gauss_pts, 2);
+      cblas_dcopy(2 * nb_gauss_pts, QUAD_1D_TABLE[rule]->points, 1,
+                  &edge_lambda(0, 0), 1);
+      CHKERR BernsteinBezier::baseFunctionsEdge(
+          N, nb_gauss_pts, edge_alpha.size1(), &edge_alpha(0, 0),
+          &edge_lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
+          &edge_base(0, 0), &edge_diff_base(0, 0));
+
+      VectorDouble integral(edge_alpha.size1());
+      integral.clear();
+
+      for (int g = 0; g != nb_gauss_pts; ++g) {
+        for (size_t i = 0; i != edge_alpha.size1(); ++i) {
+          integral[i] += gauss_pts(1, g) * edge_base(g, i);
+        }
+      }
+
+      const double check_integral =
+          1 / boost::math::binomial_coefficient<double>(N + 1, N);
+
+      for (auto i : integral) {
+        const double error = std::abs(i - check_integral);
+        if (debug)
+          std::cout << "edge integral " << i << " " << check_integral << " "
+                    << error << endl;
+        constexpr double eps = 1e-12;
+        if (error > eps)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "Property two on edge is not working");
+      }
+
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR check_property_two_on_edge(edge_alpha, false);
+
+
+
   }
   CATCH_ERRORS;
 
