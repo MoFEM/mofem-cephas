@@ -48,14 +48,14 @@ int main(int argc, char *argv[]) {
     MatrixInt edge_alpha(2 + NBEDGE_H1(N), 2);
     CHKERR BernsteinBezier::generateIndicesVertexEdge(N, &edge_alpha(0, 0));
     CHKERR BernsteinBezier::generateIndicesEdgeEdge(N, &edge_alpha(2, 0));
-    cerr << edge_alpha << endl;
+    std::cout << "edge alpha " << edge_alpha << std::endl;
 
     std::array<double, 6> edge_x_k = {0, 0, 0, 1, 0, 0};
     MatrixDouble edge_x_alpha(edge_alpha.size1(), 3);
     CHKERR BernsteinBezier::domainPoints3d(N, 2, edge_alpha.size1(),
                                            &edge_alpha(0, 0), edge_x_k.data(),
                                            &edge_x_alpha(0, 0));
-    cerr << edge_x_alpha << endl;
+    std::cout << "domain points " << edge_x_alpha << endl;
 
     const int M = 50;
     MatrixDouble edge_base(M, edge_alpha.size1());
@@ -67,13 +67,11 @@ int main(int argc, char *argv[]) {
       edge_lambda(i, 0) = N_MBEDGE0(x);
       edge_lambda(i, 1) = N_MBEDGE1(x);
     }
-    cerr << edge_lambda << endl;
 
     CHKERR BernsteinBezier::baseFunctionsEdge(
         N, M, edge_alpha.size1(), &edge_alpha(0, 0), &edge_lambda(0, 0),
         Tools::diffShapeFunMBEDGE.data(), &edge_base(0, 0),
         &edge_diff_base(0, 0));
-    cerr << edge_base << endl;
 
     for (size_t i = 0; i != M; ++i) {
       double x = static_cast<double>(i) / (M - 1);
