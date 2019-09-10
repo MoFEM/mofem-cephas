@@ -136,11 +136,10 @@ int main(int argc, char *argv[]) {
       }
 
       MatrixDouble edge_base2(M, edge_alpha2.size1());
-      MatrixDouble edge_diff_base2(M, edge_alpha2.size1());
       CHKERR BernsteinBezier::baseFunctionsEdge(
           N + N, M, edge_alpha2.size1(), &edge_alpha2(0, 0), &edge_lambda(0, 0),
           Tools::diffShapeFunMBEDGE.data(), &edge_base2(0, 0),
-          &edge_diff_base2(0, 0));
+          nullptr);
 
       const double f0 = boost::math::binomial_coefficient<double>(N + N, N);
       for (int g = 0; g != M; ++g) {
@@ -181,11 +180,10 @@ int main(int argc, char *argv[]) {
       cblas_dcopy(2 * nb_gauss_pts, QUAD_1D_TABLE[rule]->points, 1,
                   &edge_lambda(0, 0), 1);
       MatrixDouble edge_base(nb_gauss_pts, edge_alpha.size1());
-      MatrixDouble edge_diff_base(nb_gauss_pts, edge_alpha.size1());
       CHKERR BernsteinBezier::baseFunctionsEdge(
           N, nb_gauss_pts, edge_alpha.size1(), &edge_alpha(0, 0),
           &edge_lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
-          &edge_base(0, 0), &edge_diff_base(0, 0));
+          &edge_base(0, 0), nullptr);
 
       VectorDouble integral(edge_alpha.size1());
       integral.clear();
@@ -241,12 +239,10 @@ int main(int argc, char *argv[]) {
           edge_alpha_diff.size1(), &edge_alpha_diff(0, 0), &c1(0, 0));
 
       MatrixDouble edge_base_diff(M, edge_alpha_diff.size1());
-      MatrixDouble edge_diff_base_diff(M, edge_alpha_diff.size1());
-
       CHKERR BernsteinBezier::baseFunctionsEdge(
           N - 1, M, edge_alpha_diff.size1(), &edge_alpha_diff(0, 0),
           &edge_lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
-          &edge_base_diff(0, 0), &edge_diff_base_diff(0, 0));
+          &edge_base_diff(0, 0), nullptr);
 
       const double b = boost::math::factorial<double>(N) /
                        boost::math::factorial<double>(N - 1);
