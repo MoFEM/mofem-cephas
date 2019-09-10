@@ -16,14 +16,14 @@ struct BernsteinBezier {
   static MoFEMErrorCode generateIndicesEdgeEdge(const int N, int *alpha);
 
   static MoFEMErrorCode domainPoints3d(const int N, const int n_x,
-                                       const int n_alpha, int *alpha,
-                                       double *x_k, double *x_alpha);
+                                       const int n_alpha, const int *alpha,
+                                       const double *x_k, double *x_alpha);
 
   static MoFEMErrorCode baseFunctionsEdge(const int N, const int gdim,
-                                          const int n_alpha, int *alpha,
-                                          double *lambda, double *grad_lambda,
+                                          const int n_alpha, const int *alpha,
+                                          const double *lambda,
+                                          const double *grad_lambda,
                                           double *base, double *grad_base);
-
 
 private:
   template <int D, int S>
@@ -45,15 +45,14 @@ private:
 
   template <int D>
   inline static MoFEMErrorCode domainPoints(const int N, const int n_x,
-                                            const int n_alpha, int *alpha,
-                                            double *x_k, double *x_alpha);
+                                            const int n_alpha, const int *alpha,
+                                            const double *x_k, double *x_alpha);
 
   template <int D>
   inline static MoFEMErrorCode
-  baseFunctions(const int N, const int gdim, const int n_alpha, int *alpha,
-                double *lambda, double *grad_lambda, double *base,
-                double *grad_base);
-
+  baseFunctions(const int N, const int gdim, const int n_alpha,
+                const int *alpha, const double *lambda,
+                const double *grad_lambda, double *base, double *grad_base);
 };
 
 } // namespace MoFEM

@@ -24,8 +24,8 @@ template <int D, int S>
 FTensor::Tensor1<FTensor::PackPtr<double *, S>, D>
 BernsteinBezier::getFTensor1(double *x) {
   static_assert(
-      
-      !(D == 3 && S == 3), 
+
+      !(D == 3 && S == 3),
 
       "not implemented");
   return FTensor::Tensor1<FTensor::PackPtr<double *, S>, D>();
@@ -36,7 +36,6 @@ FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 BernsteinBezier::getFTensor1<3, 3>(double *x) {
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(x, &x[1], &x[2]);
 }
-
 
 template <int D, int Side>
 MoFEMErrorCode BernsteinBezier::generateIndicesVertex(const int N, int *alpha) {
@@ -121,16 +120,17 @@ MoFEMErrorCode BernsteinBezier::generateIndicesEdgeEdge(const int N,
 }
 
 template <int D>
-MoFEMErrorCode BernsteinBezier::domainPoints(const int N, const int n_x,
-                                             const int n_alpha, int *alpha,
-                                             double *x_k, double *x_alpha) {
+MoFEMErrorCode
+BernsteinBezier::domainPoints(const int N, const int n_x, const int n_alpha,
+                              const int *alpha, const double *x_k,
+                              double *x_alpha) {
   FTensor::Index<'i', D> i;
   MoFEMFunctionBeginHot;
 
   auto t_x_alpha = getFTensor1<D, D>(x_alpha);
   for (int n0 = 0; n0 != n_alpha; ++n0) {
     t_x_alpha(i) = 0;
-    auto t_x_k = getFTensor1<D, D>(x_k);
+    auto t_x_k = getFTensor1<D, D>(const_cast<double *>(x_k));
     for (int n1 = 0; n1 != n_x; ++n1) {
       t_x_alpha(i) += static_cast<double>(*alpha) * t_x_k(i);
       ++t_x_k;
@@ -144,32 +144,37 @@ MoFEMErrorCode BernsteinBezier::domainPoints(const int N, const int n_x,
 }
 
 MoFEMErrorCode BernsteinBezier::domainPoints3d(const int N, const int n_x,
-                                               const int n_alpha, int *alpha,
-                                               double *x_k, double *x_alpha) {
+                                               const int n_alpha,
+                                               const int *alpha,
+                                               const double *x_k,
+                                               double *x_alpha) {
   return domainPoints<3>(N, n_x, n_alpha, alpha, x_k, x_alpha);
 }
 
 template <int D>
 MoFEMErrorCode
 BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
-                               int *alpha, double *lambda, double *grad_lambda,
-                               double *base, double *grad_base) {
+                               const int *alpha, const double *lambda,
+                               const double *grad_lambda, double *base,
+                               double *grad_base) {
   MoFEMFunctionBeginHot;
 
-  int *const alpha0 = alpha;
+  const int *const alpha0 = alpha;
   const double fN = boost::math::factorial<double>(N);
   std::array<double, D + 1> terms, diff_terms;
+  const double *const grad_lambda0 = grad_lambda;
 
   for (int g = 0; g != gdim; ++g) {
 
-    double *const lambda0 = lambda;
-    double *const grad_lambda0 = grad_lambda;
+    const double *const lambda0 = lambda;
 
     for (int n0 = 0; n0 != n_alpha; ++n0) {
 
+      grad_lambda = grad_lambda0;
+
       double f = boost::math::factorial<double>(*alpha);
       terms[0] = pow(*lambda, (*alpha));
-      diff_terms[0] = pow(*lambda, (*alpha) - 1);
+      diff_terms[0] = (*alpha) * pow(*lambda, (*alpha) - 1);
       *base = terms[0];
       ++alpha;
       ++lambda;
@@ -177,56 +182,57 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
       for (int n1 = 1; n1 < D + 1; ++n1) {
         f *= boost::math::factorial<double>(*alpha);
         terms[n1] = pow(*lambda, (*alpha));
-        diff_terms[n1] = pow(*lambda, (*alpha) - 1);
+        diff_terms[n1] = (*alpha) * pow(*lambda, (*alpha) - 1);
         *base *= terms[n1];
         ++alpha;
         ++lambda;
       }
 
       double z = diff_terms[0];
-      for (int n2 = 0; n2 != D + 1; ++n2)
+      for (int n2 = 1; n2 != D + 1; ++n2)
         z *= terms[n2];
       for (int d = 0; d != D; ++d) {
-        grad_base[d] = z * grad_lambda[d];
+        grad_base[d] = z * (*grad_lambda);
         ++grad_lambda;
       }
 
       for (int n1 = 1; n1 < D + 1; ++n1) {
-        int n2 = 0;
         z = diff_terms[n1];
+        int n2 = 0;
         for (; n2 != n1; ++n2)
           z *= terms[n2];
         n2++;
         for (; n2 < D + 1; ++n2)
           z *= terms[n2];
         for (int d = 0; d != D; ++d) {
-          grad_base[d] = z * grad_lambda[d];
+          grad_base[d] += z * (*grad_lambda);
           ++grad_lambda;
         }
       }
 
       const double b = fN / f;
       *base *= b;
+      for (int d = 0; d != D; ++d)
+        grad_base[d] *= b;
 
       ++base;
       grad_base += D;
 
       lambda = lambda0;
-      grad_lambda = grad_lambda0;
+
     }
 
     alpha = alpha0;
     lambda += D + 1;
-    // grad_lambda += D * (D + 1);
-    
   }
 
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode BernsteinBezier::baseFunctionsEdge(
-    const int N, const int gdim, const int n_alpha, int *alpha, double *lambda,
-    double *grad_lambda, double *base, double *grad_base) {
+    const int N, const int gdim, const int n_alpha, const int *alpha,
+    const double *lambda, const double *grad_lambda, double *base,
+    double *grad_base) {
   return baseFunctions<1>(N, gdim, n_alpha, alpha, lambda, grad_lambda, base,
                           grad_base);
 }

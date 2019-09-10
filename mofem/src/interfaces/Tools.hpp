@@ -69,7 +69,7 @@ struct Tools : public UnknownInterface {
   static constexpr double diffN_MBEDGE1x = diffN_MBEDGE1;
 
   static constexpr std::array<double, 2> diffShapeFunMBEDGE = {diffN_MBEDGE0x,
-                                                               diffN_MBEDGE0x};
+                                                               diffN_MBEDGE1x};
 
   static constexpr double diffShapeFunMBTRI0x =
       diffN_MBTRI0x; ///< derivative of triangle shape function

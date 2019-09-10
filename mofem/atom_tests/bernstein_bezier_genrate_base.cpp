@@ -67,21 +67,27 @@ int main(int argc, char *argv[]) {
       edge_lambda(i, 0) = N_MBEDGE0(x);
       edge_lambda(i, 1) = N_MBEDGE1(x);
     }
-    std::array<double, 2> edge_diff_lambda = {Tools::diffShapeFunMBEDGE[0],
-                                              Tools::diffShapeFunMBEDGE[1]};
     cerr << edge_lambda << endl;
 
     CHKERR BernsteinBezier::baseFunctionsEdge(
-        N, M, edge_alpha.size1(), &edge_alpha(0, 0),
-        &edge_lambda(0, 0), edge_diff_lambda.data(), &edge_base(0, 0),
+        N, M, edge_alpha.size1(), &edge_alpha(0, 0), &edge_lambda(0, 0),
+        Tools::diffShapeFunMBEDGE.data(), &edge_base(0, 0),
         &edge_diff_base(0, 0));
     cerr << edge_base << endl;
 
     for (size_t i = 0; i != M; ++i) {
-      double x = static_cast<double>(i) / (M-1) ;
+      double x = static_cast<double>(i) / (M - 1);
       std::cout << "edge " << x << " ";
       for (size_t j = 0; j != edge_alpha.size1(); ++j)
         std::cout << edge_base(i, j) << " ";
+      std::cout << endl;
+    }
+
+    for (size_t i = 0; i != M; ++i) {
+      double x = static_cast<double>(i) / (M - 1);
+      std::cout << "diff_edge " << x << " ";
+      for (size_t j = 0; j != edge_alpha.size1(); ++j)
+        std::cout << edge_diff_base(i, j) << " ";
       std::cout << endl;
     }
   }
