@@ -399,8 +399,6 @@ int main(int argc, char *argv[]) {
           CHKERR BernsteinBezier::generateIndicesTriTri(
               N - 1, &face_alpha_diff(3 + 3 * nb_edge, 0));
 
-          cerr << face_alpha_diff << endl;
-
           MatrixDouble c0(face_alpha.size1(), face_alpha_diff.size1());
           MatrixDouble c1(face_alpha.size1(), face_alpha_diff.size1());
           MatrixDouble c2(face_alpha.size1(), face_alpha_diff.size1());
@@ -417,10 +415,6 @@ int main(int argc, char *argv[]) {
           CHKERR BernsteinBezier::genrateDerivativeIndicesTri(
               N, face_alpha.size1(), &face_alpha(0, 0), diff2.data(),
               face_alpha_diff.size1(), &face_alpha_diff(0, 0), &c2(0, 0));
-
-          cerr << c0 << endl;
-          cerr << c1 << endl;
-          cerr << c2 << endl;
 
           MatrixDouble face_base_diff(M, face_alpha_diff.size1());
           CHKERR BernsteinBezier::baseFunctionsTri(
@@ -467,6 +461,79 @@ int main(int argc, char *argv[]) {
 
     CHKERR check_property_three_on_face_derivatives(
         face_x_alpha.size1(), face_alpha, face_lambda, face_diff_base, false);
+  
+    // Tetrahedron
+
+    MatrixInt tet_alpha_vec(4, 4);
+    CHKERR BernsteinBezier::generateIndicesVertexTet(N, &tet_alpha_vec(0, 0));
+
+    const int nb_dofs_on_egde = NBEDGE_H1(N);
+    std::array<MatrixInt, 6> tet_alpha_edge{
+        MatrixInt(nb_dofs_on_egde, 4), MatrixInt(nb_dofs_on_egde, 4),
+        MatrixInt(nb_dofs_on_egde, 4), MatrixInt(nb_dofs_on_egde, 4),
+        MatrixInt(nb_dofs_on_egde, 4), MatrixInt(nb_dofs_on_egde, 4)};
+    std::array<int, 6> tet_edge_n{N, N, N, N, N, N};
+    std::array<int *, 6> tet_edge_ptr{
+        &tet_alpha_edge[0](0, 0), &tet_alpha_edge[1](0, 0),
+        &tet_alpha_edge[2](0, 0), &tet_alpha_edge[3](0, 0),
+        &tet_alpha_edge[4](0, 0), &tet_alpha_edge[5](0, 0)};
+    CHKERR BernsteinBezier::generateIndicesEdgeTet(tet_edge_n.data(),
+                                                   tet_edge_ptr.data());
+
+
+    const int nb_dofs_on_tri = NBFACETRI_H1(N);
+    std::array<MatrixInt, 4> tet_alpha_face{
+        MatrixInt(nb_dofs_on_tri, 4), MatrixInt(nb_dofs_on_tri, 4),
+        MatrixInt(nb_dofs_on_tri, 4), MatrixInt(nb_dofs_on_tri, 4)};
+    std::array<int, 4> tet_face_n{N, N, N, N};
+    std::array<int *, 4> tet_face_ptr{
+        &tet_alpha_face[0](0, 0), &tet_alpha_face[1](0, 0),
+        &tet_alpha_face[2](0, 0), &tet_alpha_face[3](0, 0)};
+    CHKERR BernsteinBezier::generateIndicesTriTet(tet_face_n.data(),
+                                                   tet_face_ptr.data());
+
+    const int nb_dofs_on_tet = NBVOLUMETET_H1(N);
+    MatrixInt tet_alpha_tet(nb_dofs_on_tet, 4);
+    CHKERR BernsteinBezier::generateIndicesTetTet(N, &tet_alpha_tet(0, 0));
+
+    std::vector<MatrixInt*> alpha_tet;
+    alpha_tet.push_back(&tet_alpha_vec);
+    for (int e = 0; e != 6; ++e)
+      alpha_tet.push_back(&tet_alpha_edge[e]);
+    for (int f = 0; f != 4; ++f)
+      alpha_tet.push_back(&tet_alpha_face[f]);
+    alpha_tet.push_back(&tet_alpha_tet);
+
+    for(auto alpha_ptr : alpha_tet) {
+
+      std::array<double, 12> x_k{0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1};
+      MatrixDouble x_alpha(alpha_ptr->size1(), 3);
+      CHKERR BernsteinBezier::domainPoints3d(N, 4, alpha_ptr->size1(),
+                                             &(*alpha_ptr)(0, 0),
+                                             x_k.data(), &x_alpha(0, 0));
+
+      auto calc_lambda = [](auto &x_alpha) {
+        MatrixDouble lambda(x_alpha.size1(), 3);
+        for (size_t i = 0; i != x_alpha.size1(); ++i) {
+          lambda(i, 0) = 1 - x_alpha(i, 0) - x_alpha(i, 1) - x_alpha(i, 2);
+          lambda(i, 1) = x_alpha(i, 0);
+          lambda(i, 2) = x_alpha(i, 1);
+          lambda(i, 3) = x_alpha(i, 2);
+        }
+        return lambda;
+      };
+      auto lambda = calc_lambda_on_face(x_alpha);
+
+      MatrixDouble base(x_alpha.size1(), alpha_ptr->size1());
+      MatrixDouble diff_base(x_alpha.size1(), 3 * alpha_ptr->size1());
+      CHKERR BernsteinBezier::baseFunctionsTri(
+          N, x_alpha.size1(), alpha_ptr->size1(), &(*alpha_ptr)(0, 0),
+          &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &base(0, 0),
+          &diff_base(0, 0));
+
+    }
+
+
   }
   CATCH_ERRORS;
 

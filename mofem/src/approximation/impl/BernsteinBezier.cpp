@@ -136,8 +136,42 @@ MoFEMErrorCode BernsteinBezier::generateIndicesEdgeTri(const int N[],
   CHKERR generateIndicesEdgeOnSimplex<2, 2>(N[2], alpha[2]);
   MoFEMFunctionReturnHot(0);
 }
+
 MoFEMErrorCode BernsteinBezier::generateIndicesTriTri(const int N, int *alpha) {
   return generateIndicesTriOnSimplex<2, 3>(N, alpha);
+}
+
+MoFEMErrorCode BernsteinBezier::generateIndicesVertexTet(const int N, int *alpha) {
+  MoFEMFunctionBeginHot;
+  CHKERR generateIndicesVertex<3, 0>(N, alpha);
+  CHKERR generateIndicesVertex<3, 1>(N, alpha);
+  CHKERR generateIndicesVertex<3, 2>(N, alpha);
+  CHKERR generateIndicesVertex<3, 3>(N, alpha);
+  MoFEMFunctionReturnHot(0);  
+}
+
+MoFEMErrorCode BernsteinBezier::generateIndicesEdgeTet(const int N[], int *alpha[]) {
+  MoFEMFunctionBeginHot;
+  CHKERR generateIndicesEdgeOnSimplex<3, 0>(N[0], alpha[0]);
+  CHKERR generateIndicesEdgeOnSimplex<3, 1>(N[1], alpha[1]);
+  CHKERR generateIndicesEdgeOnSimplex<3, 2>(N[2], alpha[2]);
+  CHKERR generateIndicesEdgeOnSimplex<3, 3>(N[3], alpha[3]);
+  CHKERR generateIndicesEdgeOnSimplex<3, 4>(N[4], alpha[4]);
+  CHKERR generateIndicesEdgeOnSimplex<3, 5>(N[5], alpha[5]);
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode BernsteinBezier::generateIndicesTriTet(const int N[], int *alpha[]) {
+  MoFEMFunctionBeginHot;
+  CHKERR generateIndicesTriOnSimplex<3, 0>(N[0], alpha[0]);
+  CHKERR generateIndicesTriOnSimplex<3, 1>(N[1], alpha[1]);
+  CHKERR generateIndicesTriOnSimplex<3, 2>(N[2], alpha[2]);
+  CHKERR generateIndicesTriOnSimplex<3, 3>(N[3], alpha[3]);
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode BernsteinBezier::generateIndicesTetTet(const int N, int *alpha) {
+  return generateIndicesTetOnSimplex(N, alpha);
 }
 
 template <int D>
