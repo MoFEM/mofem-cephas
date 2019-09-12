@@ -177,6 +177,13 @@ MoFEMErrorCode BernsteinBezier::genrateDerivativeIndicesEdges(
                                      alpha_diff, c);
 }
 
+MoFEMErrorCode BernsteinBezier::genrateDerivativeIndicesTri(
+    const int N, const int n_alpha, const int *alpha, const int *diff,
+    const int n_alpha_diff, const int *alpha_diff, double *c) {
+  return genrateDerivativeIndices<2>(N, n_alpha, alpha, diff, n_alpha_diff,
+                                     alpha_diff, c);
+}
+
 template <int D>
 MoFEMErrorCode
 BernsteinBezier::domainPoints(const int N, const int n_x, const int n_alpha,

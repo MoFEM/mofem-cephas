@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
-    constexpr int N = 6;
+    constexpr int N = 4;
 
     // Edge
 
@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
               constexpr double eps = 1e-12;
               if (error > eps)
                 SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                        "Property two on edge is not working");
+                        "Property three on edge is not working");
             }
 
             if (debug)
@@ -288,16 +288,12 @@ int main(int argc, char *argv[]) {
 
     MatrixInt face_alpha(3 + 3 * NBEDGE_H1(N) + NBFACETRI_H1(N), 3);
     CHKERR BernsteinBezier::generateIndicesVertexTri(N, &face_alpha(0, 0));
-    CHKERR BernsteinBezier::generateIndicesEdgeTri(
-
-        (std::array<int, 3>{N, N, N}).data(),
-
-        (std::array<int *, 3>{&face_alpha(3, 0),
-                              &face_alpha(3 + NBEDGE_H1(N), 0),
-                              &face_alpha(3 + 2 * NBEDGE_H1(N), 0)})
-            .data()
-
-    );
+    std::array<int, 3> face_edge_n{N, N, N};
+    std::array<int *, 3> face_edge_ptr{&face_alpha(3, 0),
+                                       &face_alpha(3 + NBEDGE_H1(N), 0),
+                                       &face_alpha(3 + 2 * NBEDGE_H1(N), 0)};
+    CHKERR BernsteinBezier::generateIndicesEdgeTri(face_edge_n.data(),
+                                                   face_edge_ptr.data());
     CHKERR BernsteinBezier::generateIndicesTriTri(
         N, &face_alpha(3 + 3 * NBEDGE_H1(N), 0));
     // std::cout << "face alpha " << face_alpha << std::endl;
@@ -321,7 +317,7 @@ int main(int argc, char *argv[]) {
     auto face_lambda = calc_lambda_on_face(face_x_alpha);
 
     MatrixDouble face_base(face_x_alpha.size1(), face_alpha.size1());
-    MatrixDouble face_diff_base(face_x_alpha.size1(), face_alpha.size1());
+    MatrixDouble face_diff_base(face_x_alpha.size1(), 2 * face_alpha.size1());
     CHKERR BernsteinBezier::baseFunctionsTri(
         N, face_x_alpha.size1(), face_alpha.size1(), &face_alpha(0, 0),
         &face_lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &face_base(0, 0),
@@ -341,16 +337,16 @@ int main(int argc, char *argv[]) {
                   &gauss_pts(0, 0), 1);
       cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[2], 3,
                   &gauss_pts(1, 0), 1);
-      cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1, &gauss_pts(2, 0),
-                  1);
+      cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1,
+                  &gauss_pts(2, 0), 1);
       MatrixDouble face_lambda(nb_gauss_pts, 3);
       cblas_dcopy(3 * nb_gauss_pts, QUAD_2D_TABLE[rule]->points, 1,
                   &face_lambda(0, 0), 1);
       MatrixDouble face_base(nb_gauss_pts, face_alpha.size1());
       CHKERR BernsteinBezier::baseFunctionsTri(
           N, nb_gauss_pts, face_alpha.size1(), &face_alpha(0, 0),
-          &face_lambda(0, 0), Tools::diffShapeFunMBTRI.data(),
-          &face_base(0, 0), nullptr);
+          &face_lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &face_base(0, 0),
+          nullptr);
 
       VectorDouble integral(face_alpha.size1());
       integral.clear();
@@ -378,6 +374,99 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
     CHKERR check_property_two_on_face(face_alpha, false);
+
+    auto check_property_three_on_face_derivatives =
+        [N](const int M, const auto &face_alpha, const auto &face_lambda,
+            const auto &face_diff_base, bool debug) {
+          MoFEMFunctionBegin;
+
+          cerr << face_alpha << endl;
+
+          const int nb_edge = NBEDGE_H1(N - 1);
+          const int nb_face = NBFACETRI_H1(N - 1);
+
+          MatrixInt face_alpha_diff(3 + 3 * nb_edge + nb_face, 3);
+          CHKERR BernsteinBezier::generateIndicesVertexTri(
+              N - 1, &face_alpha_diff(0, 0));
+
+          const std::array<int, 3> edge_n{N - 1, N - 1, N - 1};
+          std::array<int *, 3> edge_ptr{&face_alpha_diff(3, 0),
+                                        &face_alpha_diff(3 + nb_edge, 0),
+                                        &face_alpha_diff(3 + 2 * nb_edge, 0)};
+
+          CHKERR BernsteinBezier::generateIndicesEdgeTri(edge_n.data(),
+                                                         edge_ptr.data());
+          CHKERR BernsteinBezier::generateIndicesTriTri(
+              N - 1, &face_alpha_diff(3 + 3 * nb_edge, 0));
+
+          cerr << face_alpha_diff << endl;
+
+          MatrixDouble c0(face_alpha.size1(), face_alpha_diff.size1());
+          MatrixDouble c1(face_alpha.size1(), face_alpha_diff.size1());
+          MatrixDouble c2(face_alpha.size1(), face_alpha_diff.size1());
+
+          std::array<int, 3> diff0 = {1, 0, 0};
+          CHKERR BernsteinBezier::genrateDerivativeIndicesTri(
+              N, face_alpha.size1(), &face_alpha(0, 0), diff0.data(),
+              face_alpha_diff.size1(), &face_alpha_diff(0, 0), &c0(0, 0));
+          std::array<int, 3> diff1 = {0, 1, 0};
+          CHKERR BernsteinBezier::genrateDerivativeIndicesTri(
+              N, face_alpha.size1(), &face_alpha(0, 0), diff1.data(),
+              face_alpha_diff.size1(), &face_alpha_diff(0, 0), &c1(0, 0));
+          std::array<int, 3> diff2 = {0, 0, 1};
+          CHKERR BernsteinBezier::genrateDerivativeIndicesTri(
+              N, face_alpha.size1(), &face_alpha(0, 0), diff2.data(),
+              face_alpha_diff.size1(), &face_alpha_diff(0, 0), &c2(0, 0));
+
+          cerr << c0 << endl;
+          cerr << c1 << endl;
+          cerr << c2 << endl;
+
+          MatrixDouble face_base_diff(M, face_alpha_diff.size1());
+          CHKERR BernsteinBezier::baseFunctionsTri(
+              N - 1, M, face_alpha_diff.size1(), &face_alpha_diff(0, 0),
+              &face_lambda(0, 0), Tools::diffShapeFunMBTRI.data(),
+              &face_base_diff(0, 0), nullptr);
+
+          const double b = boost::math::factorial<double>(N) /
+                           boost::math::factorial<double>(N - 1);
+
+          for (size_t i = 0; i != M; ++i) {
+            for (size_t j = 0; j != face_diff_base.size2() / 2; ++j) {
+
+              VectorDouble3 check_diff_base(2);
+              check_diff_base.clear();
+              for (int k = 0; k != face_alpha_diff.size1(); ++k) {
+                for (int d = 0; d != 2; ++d) {
+                  check_diff_base[d] += c0(j, k) * face_base_diff(i, k) *
+                                        Tools::diffShapeFunMBTRI[2 * 0 + d];
+                  check_diff_base[d] += c1(j, k) * face_base_diff(i, k) *
+                                        Tools::diffShapeFunMBTRI[2 * 1 + d];
+                  check_diff_base[d] += c2(j, k) * face_base_diff(i, k) *
+                                        Tools::diffShapeFunMBTRI[2 * 2 + d];
+                }
+              }
+              auto diff_base = getVectorAdaptor(&face_diff_base(i, 2 * j), 2);
+              const double error = norm_2(check_diff_base - diff_base);
+
+              if (debug)
+                std::cout << "face_diff_base " << check_diff_base << " "
+                          << diff_base << " " << error << std::endl;
+              constexpr double eps = 1e-12;
+              if (error > eps)
+                SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                        "Property three on face is not working");
+            }
+
+            if (debug)
+              std::cout << endl;
+          }
+
+          MoFEMFunctionReturn(0);
+        };
+
+    CHKERR check_property_three_on_face_derivatives(
+        face_x_alpha.size1(), face_alpha, face_lambda, face_diff_base, false);
   }
   CATCH_ERRORS;
 

@@ -37,6 +37,10 @@ struct BernsteinBezier {
       const int N, const int n_alpha, const int *alpha, const int *diff,
       const int n_alpha_diff, const int *alpha_diff, double *c);
 
+  static MoFEMErrorCode genrateDerivativeIndicesTri(
+      const int N, const int n_alpha, const int *alpha, const int *diff,
+      const int n_alpha_diff, const int *alpha_diff, double *c);
+
 private:
   template <int D, int S>
   static inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, D>
