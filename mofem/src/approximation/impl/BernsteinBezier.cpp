@@ -141,16 +141,18 @@ MoFEMErrorCode BernsteinBezier::generateIndicesTriTri(const int N, int *alpha) {
   return generateIndicesTriOnSimplex<2, 3>(N, alpha);
 }
 
-MoFEMErrorCode BernsteinBezier::generateIndicesVertexTet(const int N, int *alpha) {
+MoFEMErrorCode BernsteinBezier::generateIndicesVertexTet(const int N,
+                                                         int *alpha) {
   MoFEMFunctionBeginHot;
   CHKERR generateIndicesVertex<3, 0>(N, alpha);
   CHKERR generateIndicesVertex<3, 1>(N, alpha);
   CHKERR generateIndicesVertex<3, 2>(N, alpha);
   CHKERR generateIndicesVertex<3, 3>(N, alpha);
-  MoFEMFunctionReturnHot(0);  
+  MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode BernsteinBezier::generateIndicesEdgeTet(const int N[], int *alpha[]) {
+MoFEMErrorCode BernsteinBezier::generateIndicesEdgeTet(const int N[],
+                                                       int *alpha[]) {
   MoFEMFunctionBeginHot;
   CHKERR generateIndicesEdgeOnSimplex<3, 0>(N[0], alpha[0]);
   CHKERR generateIndicesEdgeOnSimplex<3, 1>(N[1], alpha[1]);
@@ -161,7 +163,8 @@ MoFEMErrorCode BernsteinBezier::generateIndicesEdgeTet(const int N[], int *alpha
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode BernsteinBezier::generateIndicesTriTet(const int N[], int *alpha[]) {
+MoFEMErrorCode BernsteinBezier::generateIndicesTriTet(const int N[],
+                                                      int *alpha[]) {
   MoFEMFunctionBeginHot;
   CHKERR generateIndicesTriOnSimplex<3, 0>(N[0], alpha[0]);
   CHKERR generateIndicesTriOnSimplex<3, 1>(N[1], alpha[1]);
@@ -215,6 +218,13 @@ MoFEMErrorCode BernsteinBezier::genrateDerivativeIndicesTri(
     const int N, const int n_alpha, const int *alpha, const int *diff,
     const int n_alpha_diff, const int *alpha_diff, double *c) {
   return genrateDerivativeIndices<2>(N, n_alpha, alpha, diff, n_alpha_diff,
+                                     alpha_diff, c);
+}
+
+MoFEMErrorCode BernsteinBezier::genrateDerivativeIndicesTet(
+    const int N, const int n_alpha, const int *alpha, const int *diff,
+    const int n_alpha_diff, const int *alpha_diff, double *c) {
+  return genrateDerivativeIndices<3>(N, n_alpha, alpha, diff, n_alpha_diff,
                                      alpha_diff, c);
 }
 
@@ -359,5 +369,17 @@ MoFEMErrorCode BernsteinBezier::baseFunctionsTri(
                                   base, grad_base);
   else
     return baseFunctions<2, false>(N, gdim, n_alpha, alpha, lambda, grad_lambda,
+                                   base, grad_base);
+}
+
+MoFEMErrorCode BernsteinBezier::baseFunctionsTet(
+    const int N, const int gdim, const int n_alpha, const int *alpha,
+    const double *lambda, const double *grad_lambda, double *base,
+    double *grad_base) {
+  if (grad_base)
+    return baseFunctions<3, true>(N, gdim, n_alpha, alpha, lambda, grad_lambda,
+                                  base, grad_base);
+  else
+    return baseFunctions<3, false>(N, gdim, n_alpha, alpha, lambda, grad_lambda,
                                    base, grad_base);
 }

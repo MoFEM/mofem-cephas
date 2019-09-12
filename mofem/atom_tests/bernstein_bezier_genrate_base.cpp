@@ -380,8 +380,6 @@ int main(int argc, char *argv[]) {
             const auto &face_diff_base, bool debug) {
           MoFEMFunctionBegin;
 
-          cerr << face_alpha << endl;
-
           const int nb_edge = NBEDGE_H1(N - 1);
           const int nb_face = NBFACETRI_H1(N - 1);
 
@@ -526,11 +524,13 @@ int main(int argc, char *argv[]) {
 
       MatrixDouble base(x_alpha.size1(), alpha_ptr->size1());
       MatrixDouble diff_base(x_alpha.size1(), 3 * alpha_ptr->size1());
-      CHKERR BernsteinBezier::baseFunctionsTri(
+      CHKERR BernsteinBezier::baseFunctionsTet(
           N, x_alpha.size1(), alpha_ptr->size1(), &(*alpha_ptr)(0, 0),
           &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &base(0, 0),
           &diff_base(0, 0));
 
+      CHKERR check_property_one(x_alpha.size1(), *alpha_ptr, lambda, base,
+                                BernsteinBezier::baseFunctionsTet, false);
     }
 
 

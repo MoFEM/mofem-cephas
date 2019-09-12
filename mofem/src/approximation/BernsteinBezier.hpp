@@ -31,19 +31,30 @@ struct BernsteinBezier {
                                           const double *lambda,
                                           const double *grad_lambda,
                                           double *base, double *grad_base);
-    static MoFEMErrorCode baseFunctionsTri(const int N, const int gdim,
-                                          const int n_alpha, const int *alpha,
-                                          const double *lambda,
-                                          const double *grad_lambda,
-                                          double *base, double *grad_base);
+  static MoFEMErrorCode baseFunctionsTri(const int N, const int gdim,
+                                         const int n_alpha, const int *alpha,
+                                         const double *lambda,
+                                         const double *grad_lambda,
+                                         double *base, double *grad_base);
+  static MoFEMErrorCode baseFunctionsTet(const int N, const int gdim,
+                                         const int n_alpha, const int *alpha,
+                                         const double *lambda,
+                                         const double *grad_lambda,
+                                         double *base, double *grad_base);
 
   static MoFEMErrorCode genrateDerivativeIndicesEdges(
       const int N, const int n_alpha, const int *alpha, const int *diff,
       const int n_alpha_diff, const int *alpha_diff, double *c);
 
-  static MoFEMErrorCode genrateDerivativeIndicesTri(
-      const int N, const int n_alpha, const int *alpha, const int *diff,
-      const int n_alpha_diff, const int *alpha_diff, double *c);
+  static MoFEMErrorCode
+  genrateDerivativeIndicesTri(const int N, const int n_alpha, const int *alpha,
+                              const int *diff, const int n_alpha_diff,
+                              const int *alpha_diff, double *c);
+
+  static MoFEMErrorCode
+  genrateDerivativeIndicesTet(const int N, const int n_alpha, const int *alpha,
+                              const int *diff, const int n_alpha_diff,
+                              const int *alpha_diff, double *c);
 
 private:
   template <int D, int S>
@@ -59,7 +70,7 @@ private:
 
   template <int D, int Side>
   inline static MoFEMErrorCode generateIndicesTriOnSimplex(const int N,
-                                                            int *alpha);
+                                                           int *alpha);
 
   static MoFEMErrorCode generateIndicesTetOnSimplex(const int N, int *alpha);
 
