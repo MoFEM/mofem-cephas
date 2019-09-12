@@ -459,7 +459,7 @@ int main(int argc, char *argv[]) {
 
     CHKERR check_property_three_on_face_derivatives(
         face_x_alpha.size1(), face_alpha, face_lambda, face_diff_base, false);
-  
+
     // Tetrahedron
 
     MatrixInt tet_alpha_vec(4, 4);
@@ -478,7 +478,6 @@ int main(int argc, char *argv[]) {
     CHKERR BernsteinBezier::generateIndicesEdgeTet(tet_edge_n.data(),
                                                    tet_edge_ptr.data());
 
-
     const int nb_dofs_on_tri = NBFACETRI_H1(N);
     std::array<MatrixInt, 4> tet_alpha_face{
         MatrixInt(nb_dofs_on_tri, 4), MatrixInt(nb_dofs_on_tri, 4),
@@ -488,13 +487,13 @@ int main(int argc, char *argv[]) {
         &tet_alpha_face[0](0, 0), &tet_alpha_face[1](0, 0),
         &tet_alpha_face[2](0, 0), &tet_alpha_face[3](0, 0)};
     CHKERR BernsteinBezier::generateIndicesTriTet(tet_face_n.data(),
-                                                   tet_face_ptr.data());
+                                                  tet_face_ptr.data());
 
     const int nb_dofs_on_tet = NBVOLUMETET_H1(N);
     MatrixInt tet_alpha_tet(nb_dofs_on_tet, 4);
     CHKERR BernsteinBezier::generateIndicesTetTet(N, &tet_alpha_tet(0, 0));
 
-    std::vector<MatrixInt*> alpha_tet;
+    std::vector<MatrixInt *> alpha_tet;
     alpha_tet.push_back(&tet_alpha_vec);
     for (int e = 0; e != 6; ++e)
       alpha_tet.push_back(&tet_alpha_edge[e]);
@@ -502,38 +501,108 @@ int main(int argc, char *argv[]) {
       alpha_tet.push_back(&tet_alpha_face[f]);
     alpha_tet.push_back(&tet_alpha_tet);
 
-    for(auto alpha_ptr : alpha_tet) {
+    auto create_tet_mesh = [&](auto &moab_ref, Range &tets) {
+      MoFEMFunctionBegin;
 
-      std::array<double, 12> x_k{0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1};
-      MatrixDouble x_alpha(alpha_ptr->size1(), 3);
-      CHKERR BernsteinBezier::domainPoints3d(N, 4, alpha_ptr->size1(),
-                                             &(*alpha_ptr)(0, 0),
-                                             x_k.data(), &x_alpha(0, 0));
+      std::array<double, 12> base_coords{0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1};
+      EntityHandle nodes[4];
+      for (int nn = 0; nn < 4; nn++)
+        CHKERR moab_ref.create_vertex(&base_coords[3 * nn], nodes[nn]);
+      EntityHandle tet;
+      CHKERR moab_ref.create_element(MBTET, nodes, 4, tet);
 
-      auto calc_lambda = [](auto &x_alpha) {
-        MatrixDouble lambda(x_alpha.size1(), 3);
-        for (size_t i = 0; i != x_alpha.size1(); ++i) {
-          lambda(i, 0) = 1 - x_alpha(i, 0) - x_alpha(i, 1) - x_alpha(i, 2);
-          lambda(i, 1) = x_alpha(i, 0);
-          lambda(i, 2) = x_alpha(i, 1);
-          lambda(i, 3) = x_alpha(i, 2);
-        }
-        return lambda;
-      };
-      auto lambda = calc_lambda_on_face(x_alpha);
+      MoFEM::Core m_core_ref(moab_ref, PETSC_COMM_SELF, -2);
+      MoFEM::Interface &m_field_ref = m_core_ref;
+      CHKERR m_field_ref.getInterface<BitRefManager>()->setBitRefLevelByDim(
+          0, 3, BitRefLevel().set(0));
+      const int max_level = 3;
+      for (int ll = 0; ll != max_level; ll++) {
+        Range edges;
+        CHKERR m_field_ref.getInterface<BitRefManager>()
+            ->getEntitiesByTypeAndRefLevel(BitRefLevel().set(ll),
+                                           BitRefLevel().set(), MBEDGE, edges);
+        Range tets;
+        CHKERR m_field_ref.getInterface<BitRefManager>()
+            ->getEntitiesByTypeAndRefLevel(BitRefLevel().set(ll),
+                                           BitRefLevel(ll).set(), MBTET, tets);
+        MeshRefinement *m_ref;
+        CHKERR m_field_ref.getInterface(m_ref);
+        CHKERR m_ref->add_vertices_in_the_middle_of_edges(
+            edges, BitRefLevel().set(ll + 1));
+        CHKERR m_ref->refine_TET(tets, BitRefLevel().set(ll + 1));
+      }
 
-      MatrixDouble base(x_alpha.size1(), alpha_ptr->size1());
-      MatrixDouble diff_base(x_alpha.size1(), 3 * alpha_ptr->size1());
+      CHKERR m_field_ref.getInterface<BitRefManager>()
+          ->getEntitiesByTypeAndRefLevel(BitRefLevel().set(max_level),
+                                         BitRefLevel().set(max_level), MBTET,
+                                         tets);
+
+      // Use 10 node tets to print base
+      if (1) {
+        EntityHandle meshset;
+        CHKERR moab_ref.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
+                                       meshset);
+        CHKERR moab_ref.add_entities(meshset, tets);
+        CHKERR moab_ref.convert_entities(meshset, true, false, false);
+        CHKERR moab_ref.delete_entities(&meshset, 1);
+      }
+
+      MoFEMFunctionReturn(0);
+    };
+
+    Range tets;
+    CHKERR create_tet_mesh(moab, tets);
+    Range elem_nodes;
+    CHKERR moab.get_connectivity(tets, elem_nodes, false);
+    MatrixDouble coords(elem_nodes.size(), 3);
+    CHKERR moab.get_coords(elem_nodes, &coords(0, 0));
+
+    auto calc_lambda_on_tet = [](auto &coords) {
+      MatrixDouble lambda(coords.size1(), 4);
+      for (size_t i = 0; i != coords.size1(); ++i) {
+        lambda(i, 0) = 1 - coords(i, 0) - coords(i, 1) - coords(i, 2);
+        lambda(i, 1) = coords(i, 0);
+        lambda(i, 2) = coords(i, 1);
+        lambda(i, 3) = coords(i, 2);
+      }
+      return lambda;
+    };
+    auto lambda = calc_lambda_on_tet(coords);
+    // cerr << lambda << endl;
+
+    int nn = 0;
+    for (auto alpha_ptr : alpha_tet) {
+
+      MatrixDouble base(coords.size1(), alpha_ptr->size1());
+      MatrixDouble diff_base(coords.size1(), 3 * alpha_ptr->size1());
       CHKERR BernsteinBezier::baseFunctionsTet(
-          N, x_alpha.size1(), alpha_ptr->size1(), &(*alpha_ptr)(0, 0),
+          N, coords.size1(), alpha_ptr->size1(), &(*alpha_ptr)(0, 0),
           &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &base(0, 0),
           &diff_base(0, 0));
 
-      CHKERR check_property_one(x_alpha.size1(), *alpha_ptr, lambda, base,
+      CHKERR check_property_one(coords.size1(), *alpha_ptr, lambda, base,
                                 BernsteinBezier::baseFunctionsTet, false);
+
+      // cerr << *alpha_ptr << endl;
+      // cerr << base << endl;
+      MatrixDouble trans_base = trans(base);
+      for (int j = 0; j != base.size2(); ++j) {
+        Tag th;
+        double def_val[] = {0};
+        CHKERR moab.tag_get_handle(
+            ("base_" + boost::lexical_cast<std::string>(nn) + "_" +
+             boost::lexical_cast<std::string>(j))
+                .c_str(),
+            1, MB_TYPE_DOUBLE, th, MB_TAG_CREAT | MB_TAG_DENSE, def_val);
+        CHKERR moab.tag_set_data(th, elem_nodes, &trans_base(j, 0));
+      }
+      ++nn;
     }
 
-
+    EntityHandle meshset;
+    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+    CHKERR moab.add_entities(meshset, tets);
+    CHKERR moab.write_file("bb.vtk", "VTK", "", &meshset, 1);
   }
   CATCH_ERRORS;
 
