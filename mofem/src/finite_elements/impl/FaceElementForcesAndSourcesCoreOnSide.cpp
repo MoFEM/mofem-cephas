@@ -73,7 +73,7 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
     gaussPts(1, gg) =
         edge_shape_funtions(gg, 0) * face_coords[2 * edgeConnMap[0] + 1] +
         edge_shape_funtions(gg, 1) * face_coords[2 * edgeConnMap[1] + 1];
-    gaussPts(2, gg) = edge_ptr_fe->gaussPts(2, gg);
+    gaussPts(2, gg) = edge_ptr_fe->gaussPts(1, gg);
   }
 
   MoFEMFunctionReturn(0);

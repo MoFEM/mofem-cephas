@@ -1464,7 +1464,6 @@ add_test(continuity_check_on_skeleton_with_simple_2d_demkowicz
   -file_name rectangle.h5m -base demkowicz
 )
 
-
 my_add_executable(
   bernstein_bezier_genrate_base
   bernstein_bezier_genrate_base.cpp
@@ -1478,4 +1477,8 @@ target_link_libraries(bernstein_bezier_genrate_base
   mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS}
+)
+add_test(bernstein_bezier_genrate_base
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/bernstein_bezier_genrate_base
 )
