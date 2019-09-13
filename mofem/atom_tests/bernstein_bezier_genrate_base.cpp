@@ -2,7 +2,12 @@
  * \file bernstein_bezier_genrate_base.cpp
  * \example bernstein_bezier_genrate_base.cpp
  *
- * Genarte and check Bernstein-Bezier base
+ * Genarte and check Bernstein-Bezier base. Test validates three properties
+ * of BB polynomials from \cite ainsworth2011bernstein. 
+ * 
+ * 1) Multiplication
+ * 2) Integration
+ * 3) Derivative
  *
  */
 
