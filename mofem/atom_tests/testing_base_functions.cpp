@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
       HCURLTET_AINSWORTH,
       HCURLTET_DEMKOWICZ,
       L2TET,
-      H1TRI,
+      H1TRI_AINSWORTH,
       HDIVTRI_AINSWORTH,
       HDIVTRI_DEMKOWICZ,
       HCURLTRI_AINSWORTH,
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
                           "hcurltet_ainsworth",
                           "hcurltet_demkowicz",
                           "l2tet",
-                          "h1tri",
+                          "h1tri_ainsworth",
                           "hdivtri_ainsworth",
                           "hdivtri_demkowicz",
                           "hcurltri_ainsworth",
@@ -651,7 +651,7 @@ int main(int argc, char *argv[]) {
         &*tri_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
     CHKERRG(ierr);
 
-    if (choice_value == H1TRI) {
+    if (choice_value == H1TRI_AINSWORTH) {
       ierr = TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tri_data, H1, AINSWORTH_LEGENDRE_BASE, NOBASE)));
