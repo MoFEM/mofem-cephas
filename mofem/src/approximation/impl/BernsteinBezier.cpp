@@ -137,6 +137,22 @@ MoFEMErrorCode BernsteinBezier::generateIndicesEdgeTri(const int N[],
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode BernsteinBezier::generateIndicesEdgeTri(const int side,
+                                                       const int N,
+                                                       int *alpha) {
+  switch (side) {
+  case 0:
+    return generateIndicesEdgeOnSimplex<2, 0>(N, alpha);
+  case 1:
+    return generateIndicesEdgeOnSimplex<2, 1>(N, alpha);
+  case 2:
+    return generateIndicesEdgeOnSimplex<2, 2>(N, alpha);
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Wrong side number, on triangle are edges from 0 to 2");
+  }
+}
+
 MoFEMErrorCode BernsteinBezier::generateIndicesTriTri(const int N, int *alpha) {
   return generateIndicesTriOnSimplex<2, 3>(N, alpha);
 }

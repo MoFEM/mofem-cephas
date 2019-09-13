@@ -146,9 +146,7 @@ enum FieldApproximationBase {
       1, ///< Ainsworth Cole (Legendre) approx. base \cite NME:NME847
   AINSWORTH_LOBATTO_BASE, ///< Like AINSWORTH_LEGENDRE_BASE but with Lobatto
                           ///< base instead Legendre \cite beriot2015efficient
-  AINSWORTH_BERNSTEIN_BEZIER_BASE, ///< Not yet implemented, in implementation
-                                   ///< we will follow \cite
-                                   ///< ainsworth2011bernstein and \cite ainsworth2018bernstein
+  AINSWORTH_BERNSTEIN_BEZIER_BASE, ///< See \cite ainsworth2011bernstein and \cite ainsworth2018bernstein
   DEMKOWICZ_JACOBI_BASE, ///< Construction of base is by Demkowicz \cite
                          ///< fuentes2015orientation
   USER_BASE,             ///< user implemented approximation base

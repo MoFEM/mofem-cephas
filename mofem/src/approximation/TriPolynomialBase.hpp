@@ -42,6 +42,8 @@ private:
   EntPolynomialBaseCtx *cTx;
 
   MoFEMErrorCode getValueH1(MatrixDouble &pts);
+  MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
 
   MoFEMErrorCode getValueL2(MatrixDouble &pts);
 

@@ -915,8 +915,6 @@ struct DataForcesAndSourcesCore {
 
     /**@{*/
 
-    inline const MatrixInt &getBBAlphaIndices() const;
-
     inline MatrixInt &getBBAlphaIndices();
 
     /**@}*/
@@ -1436,11 +1434,6 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
 /** \name Bernstein-Bezier base only functions */
 
 /**@{*/
-
-inline const MatrixInt &
-DataForcesAndSourcesCore::EntData::getBBAlphaIndices() const {
-  return bbAlphaInduces;
-}
 
 inline MatrixInt &DataForcesAndSourcesCore::EntData::getBBAlphaIndices() {
   return bbAlphaInduces;

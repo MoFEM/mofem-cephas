@@ -78,8 +78,9 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
                ApproximationBaseNames[base]);
 
     data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(2, 1, false);
-    CHKERR ShapeDiffMBEDGE(
-        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
+    std::copy(Tools::diffShapeFunMBEDGE.begin(),
+              Tools::diffShapeFunMBEDGE.end(),
+              &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
   }
 
   switch (cTx->sPace) {
@@ -160,9 +161,9 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   vertex_alpha.resize(2, 2);
   edge_alpha.resize(nb_dofs_on_edge, 2);
 
-  CHKERR BernsteinBezier::generateIndicesVertexEdge(order, &vertex_alpha(0, 0));
+  CHKERR BernsteinBezier::generateIndicesVertexEdge(1, &vertex_alpha(0, 0));
   CHKERR BernsteinBezier::baseFunctionsEdge(
-      order, nb_gauss_pts, vertex_alpha.size1(), &vertex_alpha(0, 0),
+      1, nb_gauss_pts, vertex_alpha.size1(), &vertex_alpha(0, 0),
       &lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
       &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
       &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0));

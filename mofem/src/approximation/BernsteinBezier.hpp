@@ -42,6 +42,8 @@ struct BernsteinBezier {
 
   static MoFEMErrorCode generateIndicesVertexTri(const int N, int *alpha);
   static MoFEMErrorCode generateIndicesEdgeTri(const int N[], int *alpha[]);
+  static MoFEMErrorCode generateIndicesEdgeTri(const int side, const int N,
+                                               int *alpha);
   static MoFEMErrorCode generateIndicesTriTri(const int N, int *alpha);
   static MoFEMErrorCode baseFunctionsTri(const int N, const int gdim,
                                          const int n_alpha, const int *alpha,
