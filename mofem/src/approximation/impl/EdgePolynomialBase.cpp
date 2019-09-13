@@ -48,7 +48,7 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
   int nb_gauss_pts = pts.size2();
-  if (!nb_gauss_pts) 
+  if (!nb_gauss_pts)
     MoFEMFunctionReturnHot(0);
 
   if (pts.size1() < 1)
@@ -64,17 +64,17 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
     CHKERR ShapeMBEDGE(
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &pts(0, 0), nb_gauss_pts);
-  } else 
+  } else
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
         data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
-  
+
   if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
-      (unsigned int)nb_gauss_pts) 
+      (unsigned int)nb_gauss_pts)
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Base functions or nodes has wrong number of integration points "
              "for base %s",
              ApproximationBaseNames[base]);
-  
+
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(2, 1, false);
   CHKERR ShapeDiffMBEDGE(
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
@@ -100,7 +100,6 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
 }
 
 MoFEMErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
-
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
@@ -203,9 +202,9 @@ EdgePolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
   int nb_gauss_pts = pts.size2();
   if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
 
-    if (data.dataOnEntities[MBEDGE].size() != 1) 
+    if (data.dataOnEntities[MBEDGE].size() != 1)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-    
+
     int sense = data.dataOnEntities[MBEDGE][0].getSense();
     int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
     int nb_dofs =
@@ -240,10 +239,10 @@ EdgePolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   int nb_gauss_pts = pts.size2();
   if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
 
-    if (data.dataOnEntities[MBEDGE].size() != 1) 
+    if (data.dataOnEntities[MBEDGE].size() != 1)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "No data structure to store base functions");
-    
+
     int sense = data.dataOnEntities[MBEDGE][0].getSense();
     int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
     int nb_dofs =
