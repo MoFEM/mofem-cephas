@@ -652,17 +652,16 @@ int main(int argc, char *argv[]) {
     CHKERRG(ierr);
 
     if (choice_value == H1TRI_AINSWORTH) {
-      ierr = TriPolynomialBase().getValue(
+      CHKERR TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tri_data, H1, AINSWORTH_LEGENDRE_BASE, NOBASE)));
-      CHKERRG(ierr);
       if (tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           tri_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(AINSWORTH_LEGENDRE_BASE)
-              .get()) {
+              .get()) 
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Different pointers");
-      }
+      
       double sum = 0, diff_sum = 0;
       std::cout << "Edges\n";
       for (int ee = 0; ee < 3; ee++) {
@@ -690,12 +689,12 @@ int main(int argc, char *argv[]) {
           tri_data.dataOnEntities[MBTRI][0].getDiffN(AINSWORTH_LEGENDRE_BASE));
       std::cout << "sum  " << sum << std::endl;
       std::cout << "diff_sum " << diff_sum << std::endl;
-      if (fabs(0.805556 - sum) > eps) {
+      if (fabs(0.805556 - sum) > eps) 
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
-      }
-      if (fabs(0.0833333 - diff_sum) > eps) {
+      
+      if (fabs(0.0833333 - diff_sum) > eps) 
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
-      }
+      
     }
 
     if (choice_value == HDIVTRI_AINSWORTH) {
