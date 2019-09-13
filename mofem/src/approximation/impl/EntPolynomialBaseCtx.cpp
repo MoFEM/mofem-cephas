@@ -84,6 +84,18 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
                "Not implemented for this space", FieldSpaceNames[sPace]);
     }
     break;
+  case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+    switch (sPace) {
+    case NOSPACE:
+    case NOFIELD:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Makes no sense");
+    case H1:
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Not implemented for this space", FieldSpaceNames[sPace]);
+    }
+    break;
   case DEMKOWICZ_JACOBI_BASE:
     switch (sPace) {
     case NOSPACE:

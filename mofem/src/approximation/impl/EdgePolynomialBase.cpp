@@ -59,25 +59,28 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
   const FieldApproximationBase base = cTx->bAse;
   DataForcesAndSourcesCore &data = cTx->dAta;
 
-  if (cTx->copyNodeBase == LASTBASE) {
-    data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 2, false);
-    CHKERR ShapeMBEDGE(
-        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-        &pts(0, 0), nb_gauss_pts);
-  } else
-    data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
-        data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
+  if (base != AINSWORTH_BERNSTEIN_BEZIER_BASE) {
+    if (cTx->copyNodeBase == LASTBASE) {
+      data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 2,
+                                                         false);
+      CHKERR ShapeMBEDGE(
+          &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+          &pts(0, 0), nb_gauss_pts);
+    } else
+      data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
+          data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
 
-  if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
-      (unsigned int)nb_gauss_pts)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "Base functions or nodes has wrong number of integration points "
-             "for base %s",
-             ApproximationBaseNames[base]);
+    if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
+        (unsigned int)nb_gauss_pts)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Base functions or nodes has wrong number of integration points "
+               "for base %s",
+               ApproximationBaseNames[base]);
 
-  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(2, 1, false);
-  CHKERR ShapeDiffMBEDGE(
-      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(2, 1, false);
+    CHKERR ShapeDiffMBEDGE(
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
+  }
 
   switch (cTx->sPace) {
   case H1:
@@ -100,6 +103,83 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
 }
 
 MoFEMErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  switch (cTx->bAse) {
+  case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
+    CHKERR getValueH1AinsworthBase(pts);
+    break;
+  case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+    CHKERR getValueH1BernsteinBezierBase(pts);
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  const int nb_gauss_pts = pts.size2();
+
+  data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 2, false);
+  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts, 2,
+                                                         false);
+
+  const int side_number = 0;
+  int sense = data.dataOnEntities[MBEDGE][side_number].getSense();
+  int order = data.dataOnEntities[MBEDGE][side_number].getDataOrder();
+  const int nb_dofs_on_edge = NBEDGE_H1(order);
+
+  data.dataOnEntities[MBEDGE][side_number].getN(base).resize(
+      nb_gauss_pts, nb_dofs_on_edge, false);
+  data.dataOnEntities[MBEDGE][side_number].getDiffN(base).resize(
+      nb_gauss_pts, nb_dofs_on_edge, false);
+
+  data.dataOnEntities[MBVERTEX][0].getN(base).clear();
+  data.dataOnEntities[MBVERTEX][0].getDiffN(base).clear();
+  data.dataOnEntities[MBEDGE][side_number].getN(base).clear();
+  data.dataOnEntities[MBEDGE][side_number].getDiffN(base).clear();
+
+  auto &vertex_alpha = data.dataOnEntities[MBVERTEX][0].getBBAlphaIndices();
+  auto &edge_alpha = data.dataOnEntities[MBEDGE][0].getBBAlphaIndices();
+  if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
+      (unsigned int)nb_gauss_pts)
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Base functions or nodes has wrong number of integration points "
+             "for base %s",
+             ApproximationBaseNames[NOBASE]);
+  auto &lambda = data.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+
+  vertex_alpha.resize(2, 2);
+  edge_alpha.resize(nb_dofs_on_edge, 2);
+
+  CHKERR BernsteinBezier::generateIndicesVertexEdge(order, &vertex_alpha(0, 0));
+  CHKERR BernsteinBezier::baseFunctionsEdge(
+      order, nb_gauss_pts, vertex_alpha.size1(), &vertex_alpha(0, 0),
+      &lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
+      &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
+      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0));
+
+  if (order > 1) {
+    CHKERR BernsteinBezier::generateIndicesEdgeEdge(order, &edge_alpha(0, 0));
+    CHKERR BernsteinBezier::baseFunctionsEdge(
+        order, nb_gauss_pts, edge_alpha.size1(), &edge_alpha(0, 0),
+        &lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
+        &data.dataOnEntities[MBEDGE][0].getN(base)(0, 0),
+        &data.dataOnEntities[MBEDGE][0].getDiffN(base)(0, 0));
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode EdgePolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
@@ -109,11 +189,6 @@ MoFEMErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
       cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
-
-  // std::cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << std::endl;
-  // std::cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << std::endl;
-  //
-  // std::cerr << pts << std::endl;
 
   const int side_number = 0;
   int sense = data.dataOnEntities[MBEDGE][side_number].getSense();
@@ -129,12 +204,10 @@ MoFEMErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
   L.resize(NBEDGE_H1(order), false);
   diffL.resize(NBEDGE_H1(order), false);
 
-  // std::cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << std::endl;
-
   if (data.dataOnEntities[MBEDGE][side_number].getDataOrder() > 1) {
 
     double diff_s = 2.; // s = s(xi), ds/dxi = 2., because change of basis
-    for (int gg = 0; gg < nb_gauss_pts; gg++) {
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
 
       double s = 2 * pts(0, gg) - 1; // makes form -1..1
       if (!sense) {
@@ -143,11 +216,8 @@ MoFEMErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
       }
 
       // calculate Legendre polynomials at integration points
-      ierr = base_polynomials(NBEDGE_H1(order) - 1, s, &diff_s,
+      CHKERR base_polynomials(NBEDGE_H1(order) - 1, s, &diff_s,
                               &*L.data().begin(), &*diffL.data().begin(), 1);
-      CHKERRG(ierr);
-
-      // std::cerr << "s " << s << " " << L << std::endl;
 
       for (unsigned int pp = 0;
            pp < data.dataOnEntities[MBEDGE][side_number].getN(base).size2();
@@ -169,9 +239,6 @@ MoFEMErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
       }
     }
   }
-
-  // std::cerr << data.dataOnEntities[MBEDGE][0].getN(base) << std::endl;
-  // std::cerr << data.dataOnEntities[MBEDGE][0].getDiffN(base) << std::endl;
 
   MoFEMFunctionReturnHot(0);
 }

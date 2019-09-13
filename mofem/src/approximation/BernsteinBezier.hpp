@@ -66,14 +66,13 @@ struct BernsteinBezier {
                                          const double *lambda,
                                          const double *grad_lambda,
                                          double *base, double *grad_base);
-
-  /**@}*/
-  
   static MoFEMErrorCode
   genrateDerivativeIndicesTet(const int N, const int n_alpha, const int *alpha,
                               const int *diff, const int n_alpha_diff,
                               const int *alpha_diff, double *c);
 
+  /**@}*/
+ 
   /**
    * @brief Genrate BB points in 3d
    * 

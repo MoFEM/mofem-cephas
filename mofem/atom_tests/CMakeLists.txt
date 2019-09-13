@@ -1261,7 +1261,8 @@ list(INSERT testing_base_list
   hcurltri_ainsworth
   hcurltri_demkowicz
   l2tri
-  h1edge
+  h1edge_ainsworth
+  h1edge_bernstein_bezier
   hcurledge_ainsworth
   hcurledge_demkowicz
 )

@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
-    constexpr int N = 4;
+    constexpr int N = 5;
 
     // Edge
 

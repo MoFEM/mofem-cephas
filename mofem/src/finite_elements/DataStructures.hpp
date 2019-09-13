@@ -911,6 +911,16 @@ struct DataForcesAndSourcesCore {
 
     /**@}*/
 
+    /** \name Bernstein-Bezier base only functions */
+
+    /**@{*/
+
+    inline const MatrixInt &getBBAlphaIndices() const;
+
+    inline MatrixInt &getBBAlphaIndices();
+
+    /**@}*/
+
   protected:
     int sEnse;                                   ///< Entity sense (orientation)
     ApproximationOrder oRder;                    ///< Entity order
@@ -923,6 +933,9 @@ struct DataForcesAndSourcesCore {
     boost::shared_ptr<MatrixDouble> N[LASTBASE]; ///< Base functions
     boost::shared_ptr<MatrixDouble>
         diffN[LASTBASE]; ///< Derivatives of base functions
+
+    MatrixInt bbAlphaInduces; ///< Indices for Bernstein-Bezier base
+
   };
 
   std::bitset<LASTSPACE> sPace;  ///< spaces on element
@@ -1417,6 +1430,21 @@ template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
 DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
     FieldApproximationBase base, const int gg, const int bb);
+
+/**@}*/
+
+/** \name Bernstein-Bezier base only functions */
+
+/**@{*/
+
+inline const MatrixInt &
+DataForcesAndSourcesCore::EntData::getBBAlphaIndices() const {
+  return bbAlphaInduces;
+}
+
+inline MatrixInt &DataForcesAndSourcesCore::EntData::getBBAlphaIndices() {
+  return bbAlphaInduces;
+}
 
 /**@}*/
 

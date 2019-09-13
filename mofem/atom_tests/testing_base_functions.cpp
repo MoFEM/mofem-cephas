@@ -57,7 +57,8 @@ int main(int argc, char *argv[]) {
       HCURLTRI_AINSWORTH,
       HCURLTRI_DEMKOWICZ,
       L2TRI,
-      H1EDGE,
+      H1EDGE_AINSWORTH,
+      H1EDGE_BERNSTEIN_BEZIER,
       HCURLEDGE_AINSWORTH,
       HCURLEDGE_DEMKOWICZ,
       H1FLATPRIS,
@@ -81,7 +82,8 @@ int main(int argc, char *argv[]) {
                           "hcurltri_ainsworth",
                           "hcurltri_demkowicz",
                           "l2tri",
-                          "h1edge",
+                          "h1edge_ainsworth",
+                          "h1edge_bernstein_bezier",
                           "hcurledge_ainsworth",
                           "hcurledge_demkowicz",
                           "h1flatprism",
@@ -240,7 +242,7 @@ int main(int argc, char *argv[]) {
       MatrixDouble pts_1d_t(1, n);
       for (int ii = 0; ii != n; ii++) {
         pts_1d(0, ii) = (double)ii / 20.;
-        pts_1d_t(0, ii) = 1-pts_1d(0, ii);
+        pts_1d_t(0, ii) = 1 - pts_1d(0, ii);
       }
 
       base_ptr->clear();
@@ -561,12 +563,11 @@ int main(int argc, char *argv[]) {
                   << std::endl;
         sum += sum_matrix(
             tet_data.dataOnEntities[MBTRI][ff].getN(DEMKOWICZ_JACOBI_BASE));
-        diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(
-            DEMKOWICZ_JACOBI_BASE));
+        diff_sum += sum_matrix(
+            tet_data.dataOnEntities[MBTRI][ff].getDiffN(DEMKOWICZ_JACOBI_BASE));
       }
       std::cout << "Tets\n";
-      std::cout << tet_data.dataOnEntities[MBTET][0].getN(
-                       DEMKOWICZ_JACOBI_BASE)
+      std::cout << tet_data.dataOnEntities[MBTET][0].getN(DEMKOWICZ_JACOBI_BASE)
                 << std::endl;
       std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN(
                        DEMKOWICZ_JACOBI_BASE)
@@ -801,8 +802,7 @@ int main(int argc, char *argv[]) {
             tri_data.dataOnEntities[MBEDGE][ee].getN(DEMKOWICZ_JACOBI_BASE));
       }
       std::cout << "Face\n";
-      std::cout << tri_data.dataOnEntities[MBTRI][0].getN(
-                       DEMKOWICZ_JACOBI_BASE)
+      std::cout << tri_data.dataOnEntities[MBTRI][0].getN(DEMKOWICZ_JACOBI_BASE)
                 << std::endl;
       sum += sum_matrix(
           tri_data.dataOnEntities[MBTRI][0].getN(DEMKOWICZ_JACOBI_BASE));
@@ -865,11 +865,10 @@ int main(int argc, char *argv[]) {
                   shape_ptr, 1);
     }
 
-    if (choice_value == H1EDGE) {
-      ierr = EdgePolynomialBase().getValue(
+    if (choice_value == H1EDGE_AINSWORTH) {
+      CHKERR EdgePolynomialBase().getValue(
           pts_edge, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                         edge_data, H1, AINSWORTH_LEGENDRE_BASE, NOBASE)));
-      CHKERRG(ierr);
       if (edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
           edge_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(AINSWORTH_LEGENDRE_BASE)
@@ -891,12 +890,57 @@ int main(int argc, char *argv[]) {
           AINSWORTH_LEGENDRE_BASE));
       std::cout << "sum  " << sum << std::endl;
       std::cout << "diff sum " << diff_sum << std::endl;
-      if (fabs(0.506122 - sum) > eps) {
+      if (std::abs(0.506122 - sum) > eps) 
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
-      }
-      if (fabs(2.85714 - diff_sum) > eps) {
+      
+      if (std::abs(2.85714 - diff_sum) > eps) 
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
-      }
+      
+    }
+
+    if (choice_value == H1EDGE_BERNSTEIN_BEZIER) {
+      CHKERR EdgePolynomialBase().getValue(
+          pts_edge,
+          boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+              edge_data, H1, AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
+      if (edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() ==
+          edge_data.dataOnEntities[MBVERTEX][0]
+              .getNSharedPtr(AINSWORTH_BERNSTEIN_BEZIER_BASE)
+              .get())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Should be diffrent pointers");
+
+      double sum = 0, diff_sum = 0;
+      std::cout << "Vertex\n";
+      std::cout << edge_data.dataOnEntities[MBVERTEX][0].getN(
+                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+                << std::endl;
+      std::cout << edge_data.dataOnEntities[MBVERTEX][0].getDiffN(
+                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+                << std::endl;
+      std::cout << "Edge\n";
+      std::cout << edge_data.dataOnEntities[MBEDGE][0].getN(
+                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+                << std::endl;
+      std::cout << edge_data.dataOnEntities[MBEDGE][0].getDiffN(
+                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+                << std::endl;
+      sum += sum_matrix(edge_data.dataOnEntities[MBVERTEX][0].getN(
+          AINSWORTH_BERNSTEIN_BEZIER_BASE));
+      diff_sum += sum_matrix(edge_data.dataOnEntities[MBVERTEX][0].getDiffN(
+          AINSWORTH_BERNSTEIN_BEZIER_BASE));             
+      sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getN(
+          AINSWORTH_BERNSTEIN_BEZIER_BASE));
+      diff_sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getDiffN(
+          AINSWORTH_BERNSTEIN_BEZIER_BASE));
+      std::cout << "sum  " << sum << std::endl;
+      std::cout << "diff sum " << diff_sum << std::endl;
+      if (std::abs(4 - sum) > eps) 
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
+      
+      if (std::abs(diff_sum) > eps) 
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
+      
     }
 
     if (choice_value == HCURLEDGE_AINSWORTH) {
