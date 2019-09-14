@@ -395,11 +395,10 @@ MoFEMErrorCode Core::create_vertices_and_add_to_field(const std::string name,
    Range ents_of_id_meshset;
    CHKERR get_moab().get_entities_by_handle(idm, ents_of_id_meshset, false);
    Range field_ents = intersect(ents, ents_of_id_meshset);
-   if (verb > VERBOSE) {
+   if (verb > VERBOSE) 
      PetscSynchronizedPrintf(
          cOmm, "nb. of ents for order change in the field <%s> %d\n",
          miit->get()->getName().c_str(), field_ents.size());
-   }
 
    // ent view by field id (in set all MoabEnts has the same FieldId)
    auto eiit = entsFields.get<FieldName_mi_tag>().lower_bound(
@@ -431,29 +430,22 @@ MoFEMErrorCode Core::create_vertices_and_add_to_field(const std::string name,
      // Sanity check
      switch ((*miit)->getSpace()) {
      case H1:
-       if (get_moab().type_from_handle(first) == MBVERTEX) {
-         if (order > 1) {
-           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                   "approximation order for H1 space and vertex smaller than "
-                   "1 makes not sense");
-         }
-       }
        break;
      case HCURL:
-       if (get_moab().type_from_handle(first) == MBVERTEX) {
+       if (get_moab().type_from_handle(first) == MBVERTEX)
          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "HDIV space on vertices makes no sense");
-       }
+                 "Hcurl space on vertices makes no sense");
+
        break;
      case HDIV:
-       if (get_moab().type_from_handle(first) == MBVERTEX) {
+       if (get_moab().type_from_handle(first) == MBVERTEX)
          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "HDIV space on vertices makes no sense");
-       }
-       if (get_moab().type_from_handle(first) == MBEDGE) {
+                 "Hdiv space on vertices makes no sense");
+
+       if (get_moab().type_from_handle(first) == MBEDGE)
          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "HDIV space on edges makes no sense");
-       }
+                 "Hdiv space on edges makes no sense");
+
        break;
      default:
        break;
