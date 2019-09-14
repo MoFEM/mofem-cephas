@@ -93,9 +93,8 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
   bitNumber = getBitNumberCalculate();
 
   auto reset_entity_order_table = [&]() {
-    for (int tt = 0; tt != MBMAXTYPE; ++tt) {
+    for (int tt = 0; tt != MBMAXTYPE; ++tt) 
       forderTable[tt] = NULL;
-    }
   };
 
   auto set_entity_order_table = [&]() {
@@ -129,14 +128,22 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
         forderTable[MBTRI] = fNBFACETRI_L2;
         forderTable[MBTET] = fNBVOLUMETET_L2;
         break;
-      case NOFIELD:
-        for (EntityType t = MBVERTEX; t < MBMAXTYPE; t++) {
-          // Concept of approximation order make no sense if there is no field
-          forderTable[t] = fNBENTITYSET_NOFIELD;
-        }
-        break;
       default:
         THROW_MESSAGE("unknown approximation space");
+      }
+      break;
+    case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+      switch (*tagSpaceData) {
+      case H1:
+        forderTable[MBVERTEX] = fNBVERTEX_H1;
+        forderTable[MBEDGE] = fNBEDGE_H1;
+        forderTable[MBTRI] = fNBFACETRI_H1;
+        forderTable[MBQUAD] = fNBFACEQUAD_H1;
+        forderTable[MBTET] = fNBVOLUMETET_H1;
+        forderTable[MBPRISM] = fNBVOLUMEPRISM_H1;
+        break;
+      default:
+        THROW_MESSAGE("unknown approximation space or not yet implemented");
       }
       break;
     case DEMKOWICZ_JACOBI_BASE:
@@ -157,9 +164,6 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
         THROW_MESSAGE("unknown approximation space or not yet implemented");
       }
       break;
-    case AINSWORTH_BERNSTEIN_BEZIER_BASE:
-      THROW_MESSAGE("AINSWORTH_BERNSTEIN_BEZIER_BASE not implemented yer")
-      break;
     case USER_BASE:
       for (int ee = 0; ee < MBMAXTYPE; ee++) {
         forderTable[ee] = fNBENTITY_GENERIC;
@@ -169,9 +173,8 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
       if (*tagSpaceData != NOFIELD) {
         THROW_MESSAGE("unknown approximation base");
       } else {
-        for (EntityType t = MBVERTEX; t < MBMAXTYPE; t++) {
+        for (EntityType t = MBVERTEX; t < MBMAXTYPE; t++) 
           forderTable[t] = fNBENTITYSET_NOFIELD;
-        }
       }
     }
   };
