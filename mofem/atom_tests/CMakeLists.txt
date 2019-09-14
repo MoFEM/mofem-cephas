@@ -1256,6 +1256,7 @@ list(INSERT testing_base_list
   hdivtet_demkowicz
   l2tet
   h1tri_ainsworth
+  h1tri_bernstein_bezier
   hdivtri_ainsworth
   hdivtri_demkowicz
   hcurltri_ainsworth

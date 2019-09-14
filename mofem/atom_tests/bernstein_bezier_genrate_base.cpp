@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
                                            &edge_x_alpha(0, 0));
     std::cout << "domain points " << edge_x_alpha << endl;
 
-    const int M = 5;
+    const int M = 50;
     MatrixDouble edge_base(M, edge_alpha.size1());
     MatrixDouble edge_diff_base(M, edge_alpha.size1());
 

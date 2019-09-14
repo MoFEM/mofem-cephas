@@ -915,6 +915,7 @@ struct DataForcesAndSourcesCore {
 
     /**@{*/
 
+    inline VectorInt &getBBNodeOrder();
     inline MatrixInt &getBBAlphaIndices();
 
     /**@}*/
@@ -932,8 +933,8 @@ struct DataForcesAndSourcesCore {
     boost::shared_ptr<MatrixDouble>
         diffN[LASTBASE]; ///< Derivatives of base functions
 
+    VectorInt bbNodeOrder;
     MatrixInt bbAlphaInduces; ///< Indices for Bernstein-Bezier base
-
   };
 
   std::bitset<LASTSPACE> sPace;  ///< spaces on element
@@ -1434,6 +1435,10 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
 /** \name Bernstein-Bezier base only functions */
 
 /**@{*/
+
+inline VectorInt &DataForcesAndSourcesCore::EntData::getBBNodeOrder() {
+  return bbNodeOrder;
+}
 
 inline MatrixInt &DataForcesAndSourcesCore::EntData::getBBAlphaIndices() {
   return bbAlphaInduces;

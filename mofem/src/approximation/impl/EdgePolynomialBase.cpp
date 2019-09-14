@@ -148,8 +148,6 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   data.dataOnEntities[MBEDGE][side_number].getN(base).clear();
   data.dataOnEntities[MBEDGE][side_number].getDiffN(base).clear();
 
-  auto &vertex_alpha = data.dataOnEntities[MBVERTEX][0].getBBAlphaIndices();
-  auto &edge_alpha = data.dataOnEntities[MBEDGE][0].getBBAlphaIndices();
   if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
       (unsigned int)nb_gauss_pts)
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -158,17 +156,9 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
              ApproximationBaseNames[NOBASE]);
   auto &lambda = data.dataOnEntities[MBVERTEX][0].getN(NOBASE);
 
-  vertex_alpha.resize(2, 2);
-  edge_alpha.resize(nb_dofs_on_edge, 2);
-
-  CHKERR BernsteinBezier::generateIndicesVertexEdge(1, &vertex_alpha(0, 0));
-  CHKERR BernsteinBezier::baseFunctionsEdge(
-      1, nb_gauss_pts, vertex_alpha.size1(), &vertex_alpha(0, 0),
-      &lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
-      &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0));
-
-  if (order > 1) {
+  if (nb_dofs_on_edge) {
+    auto &edge_alpha = data.dataOnEntities[MBEDGE][0].getBBAlphaIndices();
+    edge_alpha.resize(nb_dofs_on_edge, 2);
     CHKERR BernsteinBezier::generateIndicesEdgeEdge(order, &edge_alpha(0, 0));
     CHKERR BernsteinBezier::baseFunctionsEdge(
         order, nb_gauss_pts, edge_alpha.size1(), &edge_alpha(0, 0),
@@ -176,6 +166,18 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
         &data.dataOnEntities[MBEDGE][0].getN(base)(0, 0),
         &data.dataOnEntities[MBEDGE][0].getDiffN(base)(0, 0));
   }
+
+  auto &vertex_alpha = data.dataOnEntities[MBVERTEX][0].getBBAlphaIndices();
+  vertex_alpha.resize(2, 2, false);
+  vertex_alpha(0, 0) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[0];
+  vertex_alpha(0, 1) = 0;
+  vertex_alpha(1, 0) = 0;
+  vertex_alpha(1, 1) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[1];
+  CHKERR BernsteinBezier::baseFunctionsEdge(
+      order, nb_gauss_pts, vertex_alpha.size1(), &vertex_alpha(0, 0),
+      &lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
+      &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
+      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0));
 
   MoFEMFunctionReturn(0);
 }

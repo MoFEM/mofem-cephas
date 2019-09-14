@@ -566,24 +566,12 @@ protected:
 
   /**
    * \brief Get field data on nodes
-   * @param  field_name Name of field
-   * @param  dofs       Dofs (element) multi index
-   * @param  nodes_data Returned DOFs values
-   * @param  nodes_dofs Vector of pointers to DOFs data structure
-   * @param  space      Get space on nodes (Only H! is valid)
-   * @param  base       Get base on nodes
-   * @return            Error code
    */
-  MoFEMErrorCode getNodesFieldData(const boost::string_ref field_name,
-                                   FEDofEntity_multiIndex &dofs,
-                                   VectorDouble &nodes_data,
-                                   VectorDofs &nodes_dofs, FieldSpace &space,
-                                   FieldApproximationBase &base) const;
-
   MoFEMErrorCode getNoFieldFieldData(const boost::string_ref field_name,
                                      FEDofEntity_multiIndex &dofs,
                                      VectorDouble &ent_field_data,
                                      VectorDofs &ent_field_dofs) const;
+                                     
   MoFEMErrorCode getNoFieldFieldData(DataForcesAndSourcesCore &data,
                                      const boost::string_ref field_name) const;
 
