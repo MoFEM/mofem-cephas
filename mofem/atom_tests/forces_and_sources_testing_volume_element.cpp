@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     // Fields
     CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, 1);
     CHKERR m_field.add_field("FIELD2", H1, AINSWORTH_LEGENDRE_BASE, 3);
-    CHKERR m_field.add_field("FIELD3", NOFIELD, AINSWORTH_LEGENDRE_BASE, 3);
+    CHKERR m_field.add_field("FIELD3", NOFIELD, NOBASE, 3);
     CHKERR m_field.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE,
                              3);
 
