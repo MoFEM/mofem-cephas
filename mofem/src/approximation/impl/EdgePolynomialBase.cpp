@@ -163,7 +163,7 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
       boost::math::factorial<double>(
           data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[1])};
 
-  for (int g = 0; g != nb_gauss_pts; ++g) 
+  for (int g = 0; g != nb_gauss_pts; ++g)
     for (int n = 0; n != 2; ++n)
       data.dataOnEntities[MBVERTEX][0].getN(base)(g, n) *= f[n];
 
@@ -173,18 +173,18 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
               "Wrong size ent of ent data");
 
     int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
-    const int nb_dofs_on_edge = NBEDGE_H1(order);
+    const int nb_dofs = NBEDGE_H1(order);
 
-    data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts,
-                                                     nb_dofs_on_edge, false);
-    data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(
-        nb_gauss_pts, nb_dofs_on_edge, false);
+    data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, nb_dofs,
+                                                     false);
+    data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, nb_dofs,
+                                                         false);
     data.dataOnEntities[MBEDGE][0].getN(base).clear();
     data.dataOnEntities[MBEDGE][0].getDiffN(base).clear();
 
-    if (nb_dofs_on_edge) {
+    if (nb_dofs) {
       auto &edge_alpha = data.dataOnEntities[MBEDGE][0].getBBAlphaIndices();
-      edge_alpha.resize(nb_dofs_on_edge, 2);
+      edge_alpha.resize(nb_dofs, 2);
       CHKERR BernsteinBezier::generateIndicesEdgeEdge(order, &edge_alpha(0, 0));
       CHKERR BernsteinBezier::baseFunctionsEdge(
           order, nb_gauss_pts, edge_alpha.size1(), &edge_alpha(0, 0),
@@ -192,6 +192,10 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
           &data.dataOnEntities[MBEDGE][0].getN(base)(0, 0),
           &data.dataOnEntities[MBEDGE][0].getDiffN(base)(0, 0));
     }
+  } else {
+    data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, 0, false);
+    data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
+                                                         false);
   }
 
   MoFEMFunctionReturn(0);

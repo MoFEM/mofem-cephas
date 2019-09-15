@@ -216,13 +216,12 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
     constexpr int edges_nodes[6][2] = {{0, 1}, {1, 2}, {2, 0},
                                        {0, 3}, {1, 3}, {2, 3}};
     for (int ee = 0; ee != 6; ++ee) {
-      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
+      const int sense = data.dataOnEntities[MBEDGE][ee].getSense();
+      if (sense == 0)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Sense of the edge unknown");
-      const int sense = data.dataOnEntities[MBEDGE][ee].getSense();
       const int order = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-      const int nb_dofs =
-          NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+      const int nb_dofs = NBEDGE_H1(order);
 
       auto &get_n = data.dataOnEntities[MBEDGE][ee].getN(base);
       auto &get_diff_n = data.dataOnEntities[MBEDGE][ee].getDiffN(base);
@@ -248,6 +247,13 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
             &get_diff_n(0, 0));
       }
     }
+  } else {
+    for (int ee = 0; ee != 6; ++ee) {
+      auto &get_n = data.dataOnEntities[MBEDGE][ee].getN(base);
+      auto &get_diff_n = data.dataOnEntities[MBEDGE][ee].getDiffN(base);
+      get_n.resize(nb_gauss_pts, 0, false);
+      get_diff_n.resize(nb_gauss_pts, 0, false);
+    }
   }
 
   // face
@@ -261,12 +267,8 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
 
     for (int ff = 0; ff != 4; ++ff) {
-      if (data.dataOnEntities[MBTRI][ff].getSense() == 0)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Sense of the edge unknown");
       const int order = data.dataOnEntities[MBTRI][ff].getDataOrder();
-      const int nb_dofs =
-          NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getDataOrder());
+      const int nb_dofs = NBFACETRI_H1(order);
 
       auto &get_n = data.dataOnEntities[MBTRI][ff].getN(base);
       auto &get_diff_n = data.dataOnEntities[MBTRI][ff].getDiffN(base);
@@ -289,6 +291,13 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
             &get_diff_n(0, 0));
       }
     }
+  } else {
+    for (int ff = 0; ff != 4; ++ff) {
+      auto &get_n = data.dataOnEntities[MBTRI][ff].getN(base);
+      auto &get_diff_n = data.dataOnEntities[MBTRI][ff].getDiffN(base);
+      get_n.resize(nb_gauss_pts, 0, false);
+      get_diff_n.resize(nb_gauss_pts, 0, false);
+    }
   }
 
   if (data.spacesOnEntities[MBTET].test(H1)) {
@@ -309,6 +318,11 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
         order, lambda.size1(), tet_alpha.size1(), &tet_alpha(0, 0),
         &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &get_n(0, 0),
         &get_diff_n(0, 0));
+  } else {
+    auto &get_n = data.dataOnEntities[MBTET][0].getN(base);
+    auto &get_diff_n = data.dataOnEntities[MBTET][0].getDiffN(base);
+    get_n.resize(nb_gauss_pts, 0, false);
+    get_diff_n.resize(nb_gauss_pts, 0, false);
   }
 
   MoFEMFunctionReturn(0);
@@ -1045,37 +1059,38 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
   int nb_gauss_pts = pts.size2();
-  if (!nb_gauss_pts) {
+  if (!nb_gauss_pts) 
     MoFEMFunctionReturnHot(0);
-  }
 
-  if (pts.size1() < 3) {
+  if (pts.size1() < 3) 
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
-  }
 
-  const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
-  if (cTx->copyNodeBase == LASTBASE) {
-    data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 4, false);
-    CHKERR Tools::shapeFunMBTET(
-        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-        &pts(0, 0), &pts(1, 0), &pts(2, 0), nb_gauss_pts);
-  } else {
-    data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
-        data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
+  if (cTx->bAse != AINSWORTH_BERNSTEIN_BEZIER_BASE) {
+    const FieldApproximationBase base = cTx->bAse;
+    DataForcesAndSourcesCore &data = cTx->dAta;
+    if (cTx->copyNodeBase == LASTBASE) {
+      data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 4,
+                                                         false);
+      CHKERR Tools::shapeFunMBTET(
+          &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+          &pts(0, 0), &pts(1, 0), &pts(2, 0), nb_gauss_pts);
+    } else {
+      data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
+          data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
+    }
+    if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
+        (unsigned int)nb_gauss_pts) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Base functions or nodes has wrong number of integration points "
+               "for base %s",
+               ApproximationBaseNames[base]);
+    }
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4, 3, false);
+    std::copy(Tools::diffShapeFunMBTET.begin(), Tools::diffShapeFunMBTET.end(),
+              data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
   }
-  if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
-      (unsigned int)nb_gauss_pts) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "Base functions or nodes has wrong number of integration points "
-             "for base %s",
-             ApproximationBaseNames[base]);
-  }
-  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4, 3, false);
-  std::copy(Tools::diffShapeFunMBTET.begin(), Tools::diffShapeFunMBTET.end(),
-            data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
 
   switch (cTx->sPace) {
   case H1:

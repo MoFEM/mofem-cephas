@@ -77,30 +77,21 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 
   auto &vertex_alpha = data.dataOnEntities[MBVERTEX][0].getBBAlphaIndices();
   vertex_alpha.resize(3, 3, false);
-  vertex_alpha(0, 0) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[0];
-  vertex_alpha(0, 1) = 0;
-  vertex_alpha(0, 2) = 0;
-  vertex_alpha(1, 0) = 0;
-  vertex_alpha(1, 1) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[1];
-  vertex_alpha(1, 2) = 0;
-  vertex_alpha(2, 0) = 0;
-  vertex_alpha(2, 1) = 0;
-  vertex_alpha(2, 2) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[2];
+  vertex_alpha.clear();
+  for (int n = 0; n != 4; ++n)
+    vertex_alpha(n, n) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[n];
 
   CHKERR BernsteinBezier::baseFunctionsTri(
       1, lambda.size1(), vertex_alpha.size1(), &vertex_alpha(0, 0),
       &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &vert_get_n(0, 0),
       &vert_get_diff_n(0, 0));
-  std::array<double, 3> f = {
-      boost::math::factorial<double>(
-          data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[0]),
-      boost::math::factorial<double>(
-          data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[1]),
-      boost::math::factorial<double>(
-          data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[2])};
-  for (int g = 0; g != nb_gauss_pts; ++g)
-    for (int n = 0; n != 3; ++n)
-      data.dataOnEntities[MBVERTEX][0].getN(base)(g, n) *= f[n];
+  for (int n = 0; n != 3; ++n) {
+    const int f = boost::math::factorial<double>(
+        data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[n]);
+    for (int g = 0; g != nb_gauss_pts; ++g) {
+      data.dataOnEntities[MBVERTEX][0].getN(base)(g, n) *= f;
+    }
+  }
 
   // edges
   if (data.spacesOnEntities[MBEDGE].test(H1)) {
@@ -141,6 +132,13 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
             &get_diff_n(0, 0));
       }
     }
+  } else {
+    for (int ee = 0; ee != 3; ++ee) {
+      auto &get_n = data.dataOnEntities[MBEDGE][ee].getN(base);
+      auto &get_diff_n = data.dataOnEntities[MBEDGE][ee].getDiffN(base);
+      get_n.resize(nb_gauss_pts, 0, false);
+      get_diff_n.resize(nb_gauss_pts, 0, false);
+    }
   }
 
   // face
@@ -164,6 +162,11 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
           &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
           &get_diff_n(0, 0));
     }
+  } else {
+    auto &get_n = data.dataOnEntities[MBTRI][0].getN(base);
+    auto &get_diff_n = data.dataOnEntities[MBTRI][0].getDiffN(base);
+    get_n.resize(nb_gauss_pts, 0, false);
+    get_diff_n.resize(nb_gauss_pts, 0, false);
   }
 
   MoFEMFunctionReturn(0);
@@ -598,11 +601,10 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
     MoFEMFunctionReturnHot(0);
   }
 
-  if (pts.size1() < 2) {
+  if (pts.size1() < 2) 
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
-  }
 
   const FieldApproximationBase base = cTx->bAse;
   DataForcesAndSourcesCore &data = cTx->dAta;

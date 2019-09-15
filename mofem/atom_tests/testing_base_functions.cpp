@@ -417,12 +417,12 @@ int main(int argc, char *argv[]) {
       CHKERR TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                        tet_data, H1, AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
-      if (tet_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
+      if (tet_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() ==
           tet_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(AINSWORTH_BERNSTEIN_BEZIER_BASE)
               .get())
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Different pointers");
+                "The same pointers");
 
       double sum = 0, diff_sum = 0;
       std::cout << "Vertices\n";
