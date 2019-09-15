@@ -42,10 +42,7 @@ inline int fNBFACETRI_L2(int P) { return NBFACETRI_L2(P); }
 inline int fNBEDGE_L2(int P) { return NBEDGE_L2(P); }
 
 /// number of approx. functions for H1 space on vertex
-inline int fNBVERTEX_H1(int P) {
-  (void)P;
-  return 1;
-}
+inline int fNBVERTEX_H1(int P) { return (P > 0) ? 1 : 0; }
 /// number of approx. functions for H1 space on edge
 inline int fNBEDGE_H1(int P) { return NBEDGE_H1(P); }
 /// number of approx. functions for H1 space on face
