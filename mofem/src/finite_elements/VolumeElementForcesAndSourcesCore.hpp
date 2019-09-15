@@ -361,7 +361,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::OpSwitch() {
   if (gaussPts.size2() == 0)
     MoFEMFunctionReturnHot(0);
   CHKERR calculateCoordinatesAtGaussPts();
-  CHKERR calculateBaseFunctionsOnElement();
+  CHKERR calHierarchicalBaseFunctionsOnElement();
 
   if (!(NO_TRANSFORM & SWITCH))
     CHKERR transformBaseFunctions();

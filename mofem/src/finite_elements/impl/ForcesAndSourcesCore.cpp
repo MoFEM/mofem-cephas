@@ -803,19 +803,22 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
+MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement(
     const FieldApproximationBase b) {
   MoFEMFunctionBegin;
   if (dataOnElement[H1]->bAse.test(b)) {
     switch (static_cast<FieldApproximationBase>(b)) {
     case NOBASE:
       break;
+    case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+      break;
     case AINSWORTH_LEGENDRE_BASE:
     case AINSWORTH_LOBATTO_BASE:
     case DEMKOWICZ_JACOBI_BASE:
-      if (!getElementPolynomialBase()) 
+      if (!getElementPolynomialBase())
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Functions genrating approximation base not defined");
+
       for (int space = H1; space != LASTSPACE; ++space) {
         if (dataOnElement[H1]->sPace.test(space) &&
             dataOnElement[H1]->bAse.test(b) &&
@@ -829,10 +832,10 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
       }
       break;
     case USER_BASE:
-      if (!getUserPolynomialBase()) {
+      if (!getUserPolynomialBase())
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Functions genrating user approximation base not defined");
-      }
+
       for (int space = H1; space != LASTSPACE; ++space)
         if (dataOnElement[H1]->sPace.test(space) &&
             dataOnElement[H1]->bAse.test(b) &&
@@ -853,7 +856,7 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
+MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement() {
   MoFEMFunctionBegin;
   /// Use the some node base. Node base is usually used for construction other
   /// bases.
@@ -862,7 +865,7 @@ MoFEMErrorCode ForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
         dataOnElement[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
   }
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-    CHKERR calculateBaseFunctionsOnElement(
+    CHKERR calHierarchicalBaseFunctionsOnElement(
         static_cast<FieldApproximationBase>(b));
   }
   MoFEMFunctionReturn(0);

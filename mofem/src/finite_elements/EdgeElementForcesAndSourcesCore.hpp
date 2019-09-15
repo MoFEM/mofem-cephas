@@ -208,7 +208,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::OpSwitch() {
 
   CHKERR setIntegrationPts();
   CHKERR calculateCoordsAtIntegrationPts();
-  CHKERR calculateBaseFunctionsOnElement();
+  CHKERR calHierarchicalBaseFunctionsOnElement();
   if (!(SWITCH & NO_HO_GEOMETRY))
     CHKERR calculateHoCoordsAtIntegrationPts();
 

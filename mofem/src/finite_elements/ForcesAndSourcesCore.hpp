@@ -700,13 +700,13 @@ protected:
    * @return Error code
    */
   MoFEMErrorCode
-  calculateBaseFunctionsOnElement(const FieldApproximationBase b);
+  calHierarchicalBaseFunctionsOnElement(const FieldApproximationBase b);
 
   /**
    * \brief Calculate base functions
    * @return Error code
    */
-  MoFEMErrorCode calculateBaseFunctionsOnElement();
+  MoFEMErrorCode calHierarchicalBaseFunctionsOnElement();
 
   /**
    * @brief Create a entity data on element object

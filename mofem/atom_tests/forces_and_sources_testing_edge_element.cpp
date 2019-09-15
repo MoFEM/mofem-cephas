@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 
     // Fields
     CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, 3);
-    // CHKERR m_field.add_field("FIELD2", L2, AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERR m_field.add_field("FIELD2", H1, AINSWORTH_BERNSTEIN_BEZIER_BASE, 1);
     CHKERR m_field.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE,
                              3);
     
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
     CHKERR add_field_to_fe("FIELD1");
-    // CHKERR add_field_to_fe("FIELD2");
+    CHKERR add_field_to_fe("FIELD2");
     CHKERR m_field.modify_finite_element_add_field_data("TEST_FE",
                                                         "MESH_NODE_POSITIONS");
 
@@ -111,9 +111,10 @@ int main(int argc, char *argv[]) {
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     // add entities to field
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "FIELD1");
-    // CHKERR m_field.add_ents_to_field_by_type(root_set, MBEDGE, "FIELD2");    
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET,
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBEDGE, "FIELD1");
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBEDGE, "FIELD2");    
+
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBEDGE,
                                              "MESH_NODE_POSITIONS");
     CHKERR m_field.set_field_order(root_set, MBVERTEX, "MESH_NODE_POSITIONS",
                                    1);
@@ -134,16 +135,14 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_ents_to_finite_element_by_type(tets_skin_edges, MBEDGE,
                                                       "TEST_FE");
     
-
     // set app. order
     // see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes
     // (Mark Ainsworth & Joe Coyle)
     int order = 3;
-    CHKERR m_field.set_field_order(root_set, MBTET, "FIELD1", order);
-    CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD1", order);
     CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD1", order);
     CHKERR m_field.set_field_order(root_set, MBVERTEX, "FIELD1", 1);
-    // CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD2", order);
+    CHKERR m_field.set_field_order(root_set, MBVERTEX, "FIELD2", order);
+    CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD2", order);
 
     /****/
     // build database
@@ -173,8 +172,6 @@ int main(int argc, char *argv[]) {
     
     CHKERR prb_mng_ptr->buildProblem("TEST_PROBLEM", true);
     
-
-    /****/
     // mesh partitioning
     // partition
     CHKERR prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
@@ -183,7 +180,6 @@ int main(int argc, char *argv[]) {
     // what are ghost nodes, see Petsc Manual
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
     
-
     EdgeElementForcesAndSourcesCore fe1(m_field);
 
     typedef tee_device<std::ostream, std::ofstream> TeeDevice;
