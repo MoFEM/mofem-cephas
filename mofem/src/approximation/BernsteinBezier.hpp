@@ -61,7 +61,11 @@ struct BernsteinBezier {
 
   static MoFEMErrorCode generateIndicesVertexTet(const int N, int *alpha);
   static MoFEMErrorCode generateIndicesEdgeTet(const int N[], int *alpha[]);
+  static MoFEMErrorCode generateIndicesEdgeTet(const int side, const int N,
+                                               int *alpha);
   static MoFEMErrorCode generateIndicesTriTet(const int N[], int *alpha[]);
+  static MoFEMErrorCode generateIndicesTriTet(const int side, const int N,
+                                              int *alpha);
   static MoFEMErrorCode generateIndicesTetTet(const int N, int *alpha);
   static MoFEMErrorCode baseFunctionsTet(const int N, const int gdim,
                                          const int n_alpha, const int *alpha,

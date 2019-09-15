@@ -75,68 +75,6 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
              ApproximationBaseNames[NOBASE]);
   auto &lambda = data.dataOnEntities[MBVERTEX][0].getN(NOBASE);
 
-  // edges
-  if (data.spacesOnEntities[MBEDGE].test(H1)) {
-    if (data.dataOnEntities[MBEDGE].size() != 3)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Wrong size of ent data");
-
-    for (int ee = 0; ee != 3; ++ee) {
-      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Sense of the edge unknown");
-      const int sense = data.dataOnEntities[MBEDGE][ee].getSense();
-      const int order = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-      const int nb_dofs =
-          NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
-        
-      auto &get_n = data.dataOnEntities[MBEDGE][ee].getN(base);
-      auto &get_diff_n = data.dataOnEntities[MBEDGE][ee].getDiffN(base);
-      get_n.resize(nb_gauss_pts, nb_dofs, false);
-      get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
-
-      if (nb_dofs) {
-        auto &edge_alpha = data.dataOnEntities[MBEDGE][ee].getBBAlphaIndices();
-        edge_alpha.resize(nb_dofs, 3, false);
-        CHKERR BernsteinBezier::generateIndicesEdgeTri(ee, order,
-                                                       &edge_alpha(0, 0));
-        if (sense == -1)
-          for (size_t i = 0; i != edge_alpha.size1(); ++i) {
-            int a = edge_alpha(i, 0);
-            edge_alpha(i, 0) = edge_alpha(i, 1);
-            edge_alpha(i, 1) = a;
-          }
-        CHKERR BernsteinBezier::baseFunctionsTri(
-            order, lambda.size1(), edge_alpha.size1(), &edge_alpha(0, 0),
-            &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
-            &get_diff_n(0, 0));
-      }
-    }
-  }
-
-  // face
-  const int face_order = data.dataOnEntities[MBTRI][0].getDataOrder();
-  if (data.spacesOnEntities[MBTRI].test(H1)) {
-    if (data.dataOnEntities[MBTRI].size() != 1)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Wrong size ent of ent data");
-
-    const int nb_dofs = NBFACETRI_H1(face_order);
-    if (nb_dofs) {
-      auto &get_n = data.dataOnEntities[MBTRI][0].getN(base);
-      auto &get_diff_n = data.dataOnEntities[MBTRI][0].getDiffN(base);
-      get_n.resize(nb_gauss_pts, nb_dofs, false);
-      get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
-      auto &face_alpha = data.dataOnEntities[MBTRI][0].getBBAlphaIndices();
-      face_alpha.resize(nb_dofs, 3, false);
-      CHKERR BernsteinBezier::generateIndicesTriTri(face_order, &face_alpha(0, 0));
-      CHKERR BernsteinBezier::baseFunctionsTri(
-          face_order, lambda.size1(), face_alpha.size1(), &face_alpha(0, 0),
-          &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
-          &get_diff_n(0, 0));
-    }
-  }
-
   auto &vertex_alpha = data.dataOnEntities[MBVERTEX][0].getBBAlphaIndices();
   vertex_alpha.resize(3, 3, false);
   vertex_alpha(0, 0) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[0];
@@ -149,12 +87,84 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   vertex_alpha(2, 1) = 0;
   vertex_alpha(2, 2) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[2];
 
-  CHKERR BernsteinBezier::generateIndicesVertexTri(face_order,
-                                                   &vertex_alpha(0, 0));
   CHKERR BernsteinBezier::baseFunctionsTri(
-      face_order, lambda.size1(), vertex_alpha.size1(), &vertex_alpha(0, 0),
+      1, lambda.size1(), vertex_alpha.size1(), &vertex_alpha(0, 0),
       &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &vert_get_n(0, 0),
       &vert_get_diff_n(0, 0));
+  std::array<double, 3> f = {
+      boost::math::factorial<double>(
+          data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[0]),
+      boost::math::factorial<double>(
+          data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[1]),
+      boost::math::factorial<double>(
+          data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[2])};
+  for (int g = 0; g != nb_gauss_pts; ++g)
+    for (int n = 0; n != 3; ++n)
+      data.dataOnEntities[MBVERTEX][0].getN(base)(g, n) *= f[n];
+
+  // edges
+  if (data.spacesOnEntities[MBEDGE].test(H1)) {
+    if (data.dataOnEntities[MBEDGE].size() != 3)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong size of ent data");
+
+    constexpr int edges_nodes[3][2] = {{0, 1}, {1, 2}, {2, 0}};
+    for (int ee = 0; ee != 3; ++ee) {
+      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Sense of the edge unknown");
+      const int sense = data.dataOnEntities[MBEDGE][ee].getSense();
+      const int order = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      const int nb_dofs =
+          NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+
+      auto &get_n = data.dataOnEntities[MBEDGE][ee].getN(base);
+      auto &get_diff_n = data.dataOnEntities[MBEDGE][ee].getDiffN(base);
+      get_n.resize(nb_gauss_pts, nb_dofs, false);
+      get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
+
+      if (nb_dofs) {
+        auto &edge_alpha = data.dataOnEntities[MBEDGE][ee].getBBAlphaIndices();
+        edge_alpha.resize(nb_dofs, 3, false);
+        CHKERR BernsteinBezier::generateIndicesEdgeTri(ee, order,
+                                                       &edge_alpha(0, 0));
+        if (sense == -1)
+          for (int i = 0; i != edge_alpha.size1(); ++i) {
+            int a = edge_alpha(i, edges_nodes[ee][0]);
+            edge_alpha(i, edges_nodes[ee][0]) =
+                edge_alpha(i, edges_nodes[ee][1]);
+            edge_alpha(i, edges_nodes[ee][1]) = a;
+          }
+        CHKERR BernsteinBezier::baseFunctionsTri(
+            order, lambda.size1(), edge_alpha.size1(), &edge_alpha(0, 0),
+            &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
+            &get_diff_n(0, 0));
+      }
+    }
+  }
+
+  // face
+  if (data.spacesOnEntities[MBTRI].test(H1)) {
+    if (data.dataOnEntities[MBTRI].size() != 1)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong size ent of ent data");
+
+    const int order = data.dataOnEntities[MBTRI][0].getDataOrder();
+    const int nb_dofs = NBFACETRI_H1(order);
+    if (nb_dofs) {
+      auto &get_n = data.dataOnEntities[MBTRI][0].getN(base);
+      auto &get_diff_n = data.dataOnEntities[MBTRI][0].getDiffN(base);
+      get_n.resize(nb_gauss_pts, nb_dofs, false);
+      get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
+      auto &face_alpha = data.dataOnEntities[MBTRI][0].getBBAlphaIndices();
+      face_alpha.resize(nb_dofs, 3, false);
+      CHKERR BernsteinBezier::generateIndicesTriTri(order, &face_alpha(0, 0));
+      CHKERR BernsteinBezier::baseFunctionsTri(
+          order, lambda.size1(), face_alpha.size1(), &face_alpha(0, 0),
+          &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
+          &get_diff_n(0, 0));
+    }
+  }
 
   MoFEMFunctionReturn(0);
 }

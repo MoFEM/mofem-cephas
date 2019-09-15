@@ -179,6 +179,30 @@ MoFEMErrorCode BernsteinBezier::generateIndicesEdgeTet(const int N[],
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode BernsteinBezier::generateIndicesEdgeTet(const int side,
+                                                       const int N,
+                                                       int *alpha) {
+  MoFEMFunctionBeginHot;
+  switch (side) {
+  case 0:
+    return generateIndicesEdgeOnSimplex<3, 0>(N, alpha);
+  case 1:
+    return generateIndicesEdgeOnSimplex<3, 1>(N, alpha);
+  case 2:
+    return generateIndicesEdgeOnSimplex<3, 2>(N, alpha);
+  case 3:
+    return generateIndicesEdgeOnSimplex<3, 3>(N, alpha);
+  case 4:
+    return generateIndicesEdgeOnSimplex<3, 4>(N, alpha);
+  case 5:
+    return generateIndicesEdgeOnSimplex<3, 5>(N, alpha);
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Wrong side number, on tetrahedron are edges from 0 to 5");
+  }
+  MoFEMFunctionReturnHot(0);
+}
+
 MoFEMErrorCode BernsteinBezier::generateIndicesTriTet(const int N[],
                                                       int *alpha[]) {
   MoFEMFunctionBeginHot;
@@ -186,6 +210,25 @@ MoFEMErrorCode BernsteinBezier::generateIndicesTriTet(const int N[],
   CHKERR generateIndicesTriOnSimplex<3, 1>(N[1], alpha[1]);
   CHKERR generateIndicesTriOnSimplex<3, 2>(N[2], alpha[2]);
   CHKERR generateIndicesTriOnSimplex<3, 3>(N[3], alpha[3]);
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode BernsteinBezier::generateIndicesTriTet(const int side,
+                                                      const int N, int *alpha) {
+  MoFEMFunctionBeginHot;
+  switch (side) {
+  case 0:
+    return generateIndicesTriOnSimplex<3, 0>(N, alpha);
+  case 1:
+    return generateIndicesTriOnSimplex<3, 1>(N, alpha);
+  case 2:
+    return generateIndicesTriOnSimplex<3, 2>(N, alpha);
+  case 3:
+    return generateIndicesTriOnSimplex<3, 3>(N, alpha);
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Wrong side number, on tetrahedron are from from 0 to 3");
+  }
   MoFEMFunctionReturnHot(0);
 }
 

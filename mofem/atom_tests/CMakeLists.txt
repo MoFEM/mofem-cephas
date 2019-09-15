@@ -1249,7 +1249,8 @@ list(INSERT testing_base_list
   lobatto
   jacobi
   integrated_jacobi
-  h1tet
+  h1tet_ainsworth
+  h1tet_bernstein_bezier 
   hcurltet_ainsworth
   hcurltet_demkowicz
   hdivtet_ainsworth
