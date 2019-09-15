@@ -475,10 +475,10 @@ int main(int argc, char *argv[]) {
           AINSWORTH_BERNSTEIN_BEZIER_BASE));
       std::cout << "sum  " << sum << std::endl;
       std::cout << "diff_sum " << diff_sum << std::endl;
-      if (fabs(1.3509 - sum) > eps) {
+      if (fabs(6.00591 - sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
-      if (fabs(0.233313 - diff_sum) > eps) {
+      if (fabs(-5.6158 - diff_sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
     }
