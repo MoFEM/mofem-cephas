@@ -989,7 +989,6 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
    */
   struct DerivedEntData : public DataForcesAndSourcesCore::EntData {
 
-    const boost::shared_ptr<DataForcesAndSourcesCore::EntData> entDataPtr;
     DerivedEntData(const boost::shared_ptr<DataForcesAndSourcesCore::EntData>
                        &ent_data_ptr);
 
@@ -1006,6 +1005,9 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
 
     const boost::shared_ptr<MatrixDouble> &
     getDiffNSharedPtr(const FieldApproximationBase base) const;
+
+  protected:
+    const boost::shared_ptr<DataForcesAndSourcesCore::EntData> entDataPtr;
   };
 
   DerivedDataForcesAndSourcesCore(
