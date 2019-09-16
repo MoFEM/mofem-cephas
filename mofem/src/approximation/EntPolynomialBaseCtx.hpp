@@ -55,14 +55,17 @@ struct EntPolynomialBaseCtx : public BaseFunctionCtx {
   DataForcesAndSourcesCore &dAta;
   const FieldSpace sPace;
   const FieldApproximationBase bAse;
+  const std::string fieldName;
   const FieldApproximationBase copyNodeBase;
-  const FEMethod *fePtr;
 
   EntPolynomialBaseCtx(DataForcesAndSourcesCore &data, const FieldSpace space,
                        const FieldApproximationBase base,
                        const FieldApproximationBase copy_node_base = LASTBASE);
 
-  ~EntPolynomialBaseCtx();
+  EntPolynomialBaseCtx(DataForcesAndSourcesCore &data,
+                       const std::string field_name, const FieldSpace space,
+                       const FieldApproximationBase base,
+                       const FieldApproximationBase copy_node_base = LASTBASE);
 
 protected:
   MoFEMErrorCode setBase();

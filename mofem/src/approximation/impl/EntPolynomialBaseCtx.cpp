@@ -42,12 +42,19 @@ EntPolynomialBaseCtx::EntPolynomialBaseCtx(
     const FieldApproximationBase base,
     const FieldApproximationBase copy_node_base)
     : dAta(data), sPace(space), bAse(base), copyNodeBase(copy_node_base) {
-
   ierr = setBase();
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
 }
 
-EntPolynomialBaseCtx::~EntPolynomialBaseCtx() {}
+EntPolynomialBaseCtx::EntPolynomialBaseCtx(
+    DataForcesAndSourcesCore &data, const std::string field_name,
+    const FieldSpace space, const FieldApproximationBase base,
+    const FieldApproximationBase copy_node_base)
+    : dAta(data), sPace(space), bAse(base), fieldName(field_name),
+      copyNodeBase(copy_node_base) {
+  ierr = setBase();
+  CHKERRABORT(PETSC_COMM_WORLD, ierr);
+}
 
 MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
   MoFEMFunctionBeginHot;
@@ -85,6 +92,8 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
     }
     break;
   case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+    if(fieldName.empty())
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Field name not set");
     switch (sPace) {
     case NOSPACE:
     case NOFIELD:

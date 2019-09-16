@@ -477,7 +477,7 @@ MoFEMErrorCode
 ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
                                         const std::string &field_name) const {
 
-  auto get_modes_field_data = [&](FEDofEntity_multiIndex &dofs,
+  auto get_nodes_field_data = [&](FEDofEntity_multiIndex &dofs,
                                   VectorDouble &nodes_data,
                                   VectorDofs &nodes_dofs, FieldSpace &space,
                                   FieldApproximationBase &base,
@@ -552,7 +552,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
     MoFEMFunctionReturn(0);
   };
 
-  return get_modes_field_data(
+  return get_nodes_field_data(
       const_cast<FEDofEntity_multiIndex &>(
           numeredEntFiniteElementPtr->getDataDofs()),
       data.dataOnEntities[MBVERTEX][0].getFieldData(),
@@ -566,7 +566,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
     DataForcesAndSourcesCore &data, const std::string &field_name,
     const EntityType type_lo, const EntityType type_hi) const {
   MoFEMFunctionBegin;
-
   for (EntityType t = type_lo; t != type_hi; ++t) {
     for (auto &dat : data.dataOnEntities[t]) {
       dat.getDataOrder() = 0;

@@ -213,19 +213,6 @@ struct DataForcesAndSourcesCore {
 
     /**@{*/
 
-    /** \brief get base functions
-     * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
-     * columns is equal to number of base functions on this entity.
-     *
-     * Note that for vectorial base, like Hdiv or Hcurl, in columns are
-     * vectorial base functions. For tonsorial would be tonsorial base
-     * functions. Interpretation depends on type of base, scalar, vectorial or
-     * tonsorial and dimension fo problem.
-     *
-     */
-    virtual const MatrixDouble &getN(const FieldApproximationBase base) const;
-
-    inline const MatrixDouble &getN() const;
 
     /** \brief get derivatives of base functions
      *
@@ -241,10 +228,10 @@ struct DataForcesAndSourcesCore {
      * functions, columns are derivatives. Nb. of columns depend on element
      * dimension, for EDGES is one, for TRIS is 2 and TETS is 3.
      *
-     * Note that for node element this function make no sense.
+     * \note Note that for node element this function make no sense.
      *
      * Tonsorial base functions:
-     * Note: In rows ale integration pts, columns are formatted that that
+     * \note Note: In rows ale integration pts, columns are formatted that that
      * components of vectors and then derivatives, for example row for given
      * integration points is formatted in array
      * \f[
@@ -253,15 +240,17 @@ struct DataForcesAndSourcesCore {
      * \frac{\partial t_2}{\partial \xi_1}\f$
      *
      */
-    virtual const MatrixDouble &
-    getDiffN(const FieldApproximationBase base) const;
-
     inline const MatrixDouble &getDiffN() const;
 
-    /**
-     * \brief Get base functions
-     * @param  base Approximation base
-     * @return      Error code
+    /** \brief get base functions
+     * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
+     * columns is equal to number of base functions on this entity.
+     *
+     * \note Note that for vectorial base, like Hdiv or Hcurl, in columns are
+     * vectorial base functions. For tonsorial would be tonsorial base
+     * functions. Interpretation depends on type of base, scalar, vectorial or
+     * tonsorial and dimension fo problem.
+     *
      */
     inline MatrixDouble &getN(const FieldApproximationBase base);
 
@@ -270,6 +259,11 @@ struct DataForcesAndSourcesCore {
      *
      * It assumed that approximation base for given field is known and stored in
      * this data structure
+     * 
+     * \note Note that for vectorial base, like Hdiv or Hcurl, in columns are
+     * vectorial base functions. For tonsorial would be tonsorial base
+     * functions. Interpretation depends on type of base, scalar, vectorial or
+     * tonsorial and dimension fo problem
      *
      * @return Error code
      */
@@ -915,8 +909,46 @@ struct DataForcesAndSourcesCore {
 
     /**@{*/
 
+    /**
+     * @brief Get orders at the nodes
+     * 
+     * @return VectorInt& 
+     */
     inline VectorInt &getBBNodeOrder();
+
+    /**
+     * @brief Get file BB indices
+     * 
+     * @return MatrixInt& 
+     */
     inline MatrixInt &getBBAlphaIndices();
+
+    inline boost::shared_ptr<MatrixInt> &
+    getBBAlphaIndicesSharedPtr(const std::string &field_name);
+
+    /**
+     * Get shared pointer to BB base base functions
+     */
+    inline boost::shared_ptr<MatrixDouble> &
+    getBBNSharedPtr(const std::string &field_name);
+
+    /**
+     * Get shared pointer to BB base base functions
+     */
+    inline const boost::shared_ptr<MatrixDouble> &
+    getBBNSharedPtr(const std::string &field_name) const;
+
+    /**
+     * Get shared pointer to BB derivatives of base base functions
+     */
+    inline boost::shared_ptr<MatrixDouble> &
+    getBBDiffNSharedPtr(const std::string &field_name);
+
+    /**
+     * Get shared pointer to derivatives of BB base base functions
+     */
+    inline const boost::shared_ptr<MatrixDouble> &
+    getBBDiffNSharedPtr(const std::string &field_name) const;
 
     /**@}*/
 
@@ -929,25 +961,32 @@ struct DataForcesAndSourcesCore {
     VectorInt localIndices;                      ///< Local indices on entity
     VectorDofs dOfs;                             ///< DoFs on entity
     VectorDouble fieldData;                      ///< Field data on entity
-    boost::shared_ptr<MatrixDouble> N[LASTBASE]; ///< Base functions
-    boost::shared_ptr<MatrixDouble>
-        diffN[LASTBASE]; ///< Derivatives of base functions
+    std::array<boost::shared_ptr<MatrixDouble>, LASTBASE> N; ///< Base functions
+    std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>
+        diffN; ///< Derivatives of base functions
 
-    VectorInt bbNodeOrder;
-    MatrixInt bbAlphaInduces; ///< Indices for Bernstein-Bezier base
+    std::string bbFieldName; ///< field name
+    VectorInt bbNodeOrder;   ///< order of nodes
+    std::map<std::string, boost::shared_ptr<MatrixDouble>> bbN;
+    std::map<std::string, boost::shared_ptr<MatrixDouble>> bbDiffN;
+    std::map<std::string, boost::shared_ptr<MatrixInt>>
+        bbAlphaInduces; ///< Indices for Bernstein-Bezier base
   };
 
-  std::bitset<LASTSPACE> sPace;  ///< spaces on element
-  std::bitset<LASTBASE> bAse;    ///< bases on element
-  ublas::matrix<int> facesNodes; ///< nodes on finite element faces
-  std::bitset<LASTSPACE>
-      spacesOnEntities[MBMAXTYPE];                  ///< spaces on entity types
-  std::bitset<LASTBASE> basesOnEntities[MBMAXTYPE]; ///< bases on entity types
-  std::bitset<LASTBASE> basesOnSpaces[LASTSPACE];   ///< base on spaces
+  std::bitset<LASTSPACE> sPace; ///< spaces on element
+  std::bitset<LASTBASE> bAse;   ///< bases on element
+  MatrixInt facesNodes;         ///< nodes on finite element faces
 
-  boost::ptr_vector<EntData> dataOnEntities[MBMAXTYPE]; ///< data on nodes, base
-                                                        ///< function, dofs
-                                                        ///< values, etc.
+  std::array<std::bitset<LASTSPACE>, MBMAXTYPE>
+      spacesOnEntities; ///< spaces on entity types
+  std::array<std::bitset<LASTBASE>, MBMAXTYPE>
+      basesOnEntities; ///< bases on entity types
+  std::array<std::bitset<LASTBASE>, LASTSPACE>
+      basesOnSpaces; ///< base on spaces
+  std::array<boost::ptr_vector<EntData>, MBMAXTYPE>
+      dataOnEntities; ///< data on nodes, base
+                      ///< function, dofs
+                      ///< values, etc.
 
   /**
    * Reset data associated with particular field name
@@ -1121,14 +1160,6 @@ FieldApproximationBase &DataForcesAndSourcesCore::EntData::getBase() {
 }
 
 FieldSpace &DataForcesAndSourcesCore::EntData::getSpace() { return sPace; }
-
-const MatrixDouble &DataForcesAndSourcesCore::EntData::getN() const {
-  return getN(bAse);
-}
-
-const MatrixDouble &DataForcesAndSourcesCore::EntData::getDiffN() const {
-  return getDiffN(bAse);
-}
 
 MatrixDouble &
 DataForcesAndSourcesCore::EntData::getN(const FieldApproximationBase base) {
@@ -1438,12 +1469,51 @@ DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
 
 /**@{*/
 
-inline VectorInt &DataForcesAndSourcesCore::EntData::getBBNodeOrder() {
+VectorInt &DataForcesAndSourcesCore::EntData::getBBNodeOrder() {
   return bbNodeOrder;
 }
 
-inline MatrixInt &DataForcesAndSourcesCore::EntData::getBBAlphaIndices() {
-  return bbAlphaInduces;
+MatrixInt &DataForcesAndSourcesCore::EntData::getBBAlphaIndices() {
+  return *getBBAlphaIndicesSharedPtr(bbFieldName);
+}
+
+boost::shared_ptr<MatrixInt> &
+DataForcesAndSourcesCore::EntData::getBBAlphaIndicesSharedPtr(
+    const std::string &field_name) {
+  return bbAlphaInduces[field_name];
+}
+
+boost::shared_ptr<MatrixDouble> &
+DataForcesAndSourcesCore::EntData::getBBNSharedPtr(
+    const std::string &field_name) {
+  return bbN[field_name];
+}
+
+/**
+ * Get shared pointer to BB base base functions
+ */
+const boost::shared_ptr<MatrixDouble> &
+DataForcesAndSourcesCore::EntData::getBBNSharedPtr(
+    const std::string &field_name) const {
+  return bbN.at(field_name);
+}
+
+/**
+ * Get shared pointer to BB derivatives of base base functions
+ */
+boost::shared_ptr<MatrixDouble> &
+DataForcesAndSourcesCore::EntData::getBBDiffNSharedPtr(
+    const std::string &field_name) {
+  return bbDiffN[field_name];
+}
+
+/**
+ * Get shared pointer to derivatives of BB base base functions
+ */
+const boost::shared_ptr<MatrixDouble> &
+DataForcesAndSourcesCore::EntData::getBBDiffNSharedPtr(
+    const std::string &field_name) const {
+  return bbDiffN.at(field_name);
 }
 
 /**@}*/

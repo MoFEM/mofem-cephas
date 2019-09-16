@@ -416,7 +416,8 @@ int main(int argc, char *argv[]) {
           &pts_tet(0, 0), &pts_tet(1, 0), &pts_tet(2, 0), nb_gauss_pts);
       CHKERR TetPolynomialBase().getValue(
           pts_tet, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tet_data, H1, AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
+                       tet_data, "TEST_FIELD", H1,
+                       AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
       if (tet_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() ==
           tet_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(AINSWORTH_BERNSTEIN_BEZIER_BASE)

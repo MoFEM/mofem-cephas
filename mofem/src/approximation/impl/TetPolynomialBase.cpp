@@ -176,6 +176,7 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
+  const std::string field_name = cTx->fieldName;
   const int nb_gauss_pts = pts.size2();
 
   if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
@@ -186,14 +187,35 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
              ApproximationBaseNames[NOBASE]);
   auto &lambda = data.dataOnEntities[MBVERTEX][0].getN(NOBASE);
 
-  auto &vertex_alpha = data.dataOnEntities[MBVERTEX][0].getBBAlphaIndices();
+  auto get_alpha = [field_name](auto &data) -> MatrixInt & {
+    auto &ptr = data.getBBAlphaIndicesSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixInt());
+    return *ptr;
+  };
+
+  auto get_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto get_diff_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBDiffNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto &vertex_alpha = get_alpha(data.dataOnEntities[MBVERTEX][0]);
   vertex_alpha.resize(4, 4, false);
   vertex_alpha.clear();
   for (int n = 0; n != 4; ++n)
     vertex_alpha(n, n) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[n];
 
-  auto &vert_get_n = data.dataOnEntities[MBVERTEX][0].getN(base);
-  auto &vert_get_diff_n = data.dataOnEntities[MBVERTEX][0].getDiffN(base);
+  auto &vert_get_n = get_base(data.dataOnEntities[MBVERTEX][0]);
+  auto &vert_get_diff_n = get_diff_base(data.dataOnEntities[MBVERTEX][0]);
   vert_get_n.resize(nb_gauss_pts, 4, false);
   vert_get_diff_n.resize(nb_gauss_pts, 12, false);
   CHKERR BernsteinBezier::baseFunctionsTet(
@@ -203,8 +225,11 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   for (int n = 0; n != 4; ++n) {
     const double f = boost::math::factorial<double>(
         data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[n]);
-    for (int g = 0; g != nb_gauss_pts; ++g)
-      data.dataOnEntities[MBVERTEX][0].getN(base)(g, n) *= f;
+    for (int g = 0; g != nb_gauss_pts; ++g) {
+      vert_get_n(g, n) *= f;
+      for (int d = 0; d != 3; ++d)
+        vert_get_diff_n(g, 3 * n + d) *= f;
+    }
   }
 
   // edges
@@ -223,13 +248,13 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
       const int order = data.dataOnEntities[MBEDGE][ee].getDataOrder();
       const int nb_dofs = NBEDGE_H1(order);
 
-      auto &get_n = data.dataOnEntities[MBEDGE][ee].getN(base);
-      auto &get_diff_n = data.dataOnEntities[MBEDGE][ee].getDiffN(base);
+      auto &get_n = get_base(data.dataOnEntities[MBEDGE][ee]);
+      auto &get_diff_n = get_diff_base(data.dataOnEntities[MBEDGE][ee]);
       get_n.resize(nb_gauss_pts, nb_dofs, false);
       get_diff_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
 
       if (nb_dofs) {
-        auto &edge_alpha = data.dataOnEntities[MBEDGE][ee].getBBAlphaIndices();
+        auto &edge_alpha = get_alpha(data.dataOnEntities[MBEDGE][ee]);
         edge_alpha.resize(nb_dofs, 4, false);
         CHKERR BernsteinBezier::generateIndicesEdgeTet(ee, order,
                                                        &edge_alpha(0, 0));
@@ -249,8 +274,11 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
     }
   } else {
     for (int ee = 0; ee != 6; ++ee) {
-      auto &get_n = data.dataOnEntities[MBEDGE][ee].getN(base);
-      auto &get_diff_n = data.dataOnEntities[MBEDGE][ee].getDiffN(base);
+      data.dataOnEntities[MBEDGE][ee]
+          .getBBAlphaIndicesSharedPtr(field_name)
+          .reset();
+      auto &get_n = get_base(data.dataOnEntities[MBEDGE][ee]);
+      auto &get_diff_n = get_diff_base(data.dataOnEntities[MBEDGE][ee]);
       get_n.resize(nb_gauss_pts, 0, false);
       get_diff_n.resize(nb_gauss_pts, 0, false);
     }
@@ -270,13 +298,13 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
       const int order = data.dataOnEntities[MBTRI][ff].getDataOrder();
       const int nb_dofs = NBFACETRI_H1(order);
 
-      auto &get_n = data.dataOnEntities[MBTRI][ff].getN(base);
-      auto &get_diff_n = data.dataOnEntities[MBTRI][ff].getDiffN(base);
+      auto &get_n = get_base(data.dataOnEntities[MBTRI][ff]);
+      auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][ff]);
       get_n.resize(nb_gauss_pts, nb_dofs, false);
       get_diff_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
 
       if (nb_dofs) {
-        auto &face_alpha = data.dataOnEntities[MBTRI][ff].getBBAlphaIndices();
+        auto &face_alpha = get_alpha(data.dataOnEntities[MBTRI][ff]);
         face_alpha.resize(nb_dofs, 4, false);
         CHKERR BernsteinBezier::generateIndicesTriTet(ff, order,
                                                       &face_alpha(0, 0));
@@ -293,8 +321,11 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
     }
   } else {
     for (int ff = 0; ff != 4; ++ff) {
-      auto &get_n = data.dataOnEntities[MBTRI][ff].getN(base);
-      auto &get_diff_n = data.dataOnEntities[MBTRI][ff].getDiffN(base);
+      data.dataOnEntities[MBTRI][ff]
+          .getBBAlphaIndicesSharedPtr(field_name)
+          .reset();
+      auto &get_n = get_base(data.dataOnEntities[MBTRI][ff]);
+      auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][ff]);
       get_n.resize(nb_gauss_pts, 0, false);
       get_diff_n.resize(nb_gauss_pts, 0, false);
     }
@@ -307,11 +338,11 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 
     const int order = data.dataOnEntities[MBTET][0].getDataOrder();
     const int nb_dofs = NBVOLUMETET_H1(order);
-    auto &tet_alpha = data.dataOnEntities[MBTET][0].getBBAlphaIndices();
+    auto &tet_alpha = get_alpha(data.dataOnEntities[MBTET][0]);
     tet_alpha.resize(nb_dofs, 4, false);
     CHKERR BernsteinBezier::generateIndicesTetTet(order, &tet_alpha(0, 0));
-    auto &get_n = data.dataOnEntities[MBTET][0].getN(base);
-    auto &get_diff_n = data.dataOnEntities[MBTET][0].getDiffN(base);
+    auto &get_n = get_base(data.dataOnEntities[MBTET][0]);
+    auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTET][0]);
     get_n.resize(nb_gauss_pts, nb_dofs, false);
     get_diff_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
     CHKERR BernsteinBezier::baseFunctionsTet(
@@ -319,8 +350,11 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
         &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &get_n(0, 0),
         &get_diff_n(0, 0));
   } else {
-    auto &get_n = data.dataOnEntities[MBTET][0].getN(base);
-    auto &get_diff_n = data.dataOnEntities[MBTET][0].getDiffN(base);
+    data.dataOnEntities[MBTET][0]
+        .getBBAlphaIndicesSharedPtr(field_name)
+        .reset();
+    auto &get_n = get_base(data.dataOnEntities[MBTET][0]);
+    auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTET][0]);
     get_n.resize(nb_gauss_pts, 0, false);
     get_diff_n.resize(nb_gauss_pts, 0, false);
   }

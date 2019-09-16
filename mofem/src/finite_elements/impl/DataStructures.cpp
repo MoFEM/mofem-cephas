@@ -63,16 +63,6 @@ DataForcesAndSourcesCore::EntData::getDiffNSharedPtr(
   return diffN[base];
 }
 
-const MatrixDouble &DataForcesAndSourcesCore::EntData::getN(
-    const FieldApproximationBase base) const {
-  return *(getNSharedPtr(base));
-}
-
-const MatrixDouble &DataForcesAndSourcesCore::EntData::getDiffN(
-    const FieldApproximationBase base) const {
-  return *(getDiffNSharedPtr(base));
-}
-
 static void constructor_data(DataForcesAndSourcesCore *data,
                              const EntityType type) {
 
@@ -206,8 +196,9 @@ std::ostream &operator<<(std::ostream &os,
      << "local indices: " << e.getLocalIndices() << std::endl;
   os.precision(2);
   os << "fieldData: " << std::fixed << e.getFieldData() << std::endl;
-  MatrixDouble base = e.getN();
-  MatrixDouble diff_base = e.getDiffN();
+  MatrixDouble base = const_cast<DataForcesAndSourcesCore::EntData&>(e).getN();
+  MatrixDouble diff_base =
+      const_cast<DataForcesAndSourcesCore::EntData&>(e).getDiffN();
   const double eps = 1e-6;
   for (unsigned int ii = 0; ii != base.size1(); ii++) {
     for (unsigned int jj = 0; jj != base.size2(); jj++) {
@@ -657,5 +648,6 @@ DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
 }
 
 /**@}*/
+
 
 } // namespace MoFEM
