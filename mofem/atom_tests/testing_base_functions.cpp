@@ -422,58 +422,48 @@ int main(int argc, char *argv[]) {
           tet_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(AINSWORTH_BERNSTEIN_BEZIER_BASE)
               .get())
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "The same pointers");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "The same pointers");
 
       double sum = 0, diff_sum = 0;
       std::cout << "Vertices\n";
-      std::cout << tet_data.dataOnEntities[MBVERTEX][0].getN(
-                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+      std::cout << tet_data.dataOnEntities[MBVERTEX][0].getN("TEST_FIELD")
                 << std::endl;
-      std::cout << tet_data.dataOnEntities[MBVERTEX][0].getDiffN(
-                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+      std::cout << tet_data.dataOnEntities[MBVERTEX][0].getDiffN("TEST_FIELD")
                 << std::endl;
-      sum += sum_matrix(tet_data.dataOnEntities[MBVERTEX][0].getN(
-          AINSWORTH_BERNSTEIN_BEZIER_BASE));
-      diff_sum += sum_matrix(tet_data.dataOnEntities[MBVERTEX][0].getDiffN(
-          AINSWORTH_BERNSTEIN_BEZIER_BASE));
+      sum +=
+          sum_matrix(tet_data.dataOnEntities[MBVERTEX][0].getN("TEST_FIELD"));
+      diff_sum += sum_matrix(
+          tet_data.dataOnEntities[MBVERTEX][0].getDiffN("TEST_FIELD"));
       std::cout << "Edges\n";
       for (int ee = 0; ee < 6; ee++) {
-        std::cout << tet_data.dataOnEntities[MBEDGE][ee].getN(
-                         AINSWORTH_BERNSTEIN_BEZIER_BASE)
+        std::cout << tet_data.dataOnEntities[MBEDGE][ee].getN("TEST_FIELD")
                   << std::endl;
-        std::cout << tet_data.dataOnEntities[MBEDGE][ee].getDiffN(
-                         AINSWORTH_BERNSTEIN_BEZIER_BASE)
+        std::cout << tet_data.dataOnEntities[MBEDGE][ee].getDiffN("TEST_FIELD")
                   << std::endl;
-        sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getN(
-            AINSWORTH_BERNSTEIN_BEZIER_BASE));
-        diff_sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getDiffN(
-            AINSWORTH_BERNSTEIN_BEZIER_BASE));
+        sum +=
+            sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getN("TEST_FIELD"));
+        diff_sum += sum_matrix(
+            tet_data.dataOnEntities[MBEDGE][ee].getDiffN("TEST_FIELD"));
       }
       std::cout << "Faces\n";
       for (int ff = 0; ff < 4; ff++) {
-        std::cout << tet_data.dataOnEntities[MBTRI][ff].getN(
-                         AINSWORTH_BERNSTEIN_BEZIER_BASE)
+        std::cout << tet_data.dataOnEntities[MBTRI][ff].getN("TEST_FIELD")
                   << std::endl;
-        std::cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN(
-                         AINSWORTH_BERNSTEIN_BEZIER_BASE)
+        std::cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN("TEST_FIELD")
                   << std::endl;
-        sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getN(
-            AINSWORTH_BERNSTEIN_BEZIER_BASE));
-        diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(
-            AINSWORTH_BERNSTEIN_BEZIER_BASE));
+        sum +=
+            sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getN("TEST_FIELD"));
+        diff_sum += sum_matrix(
+            tet_data.dataOnEntities[MBTRI][ff].getDiffN("TEST_FIELD"));
       }
       std::cout << "Tets\n";
-      std::cout << tet_data.dataOnEntities[MBTET][0].getN(
-                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+      std::cout << tet_data.dataOnEntities[MBTET][0].getN("TEST_FIELD")
                 << std::endl;
-      std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN(
-                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+      std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN("TEST_FIELD")
                 << std::endl;
-      sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(
-          AINSWORTH_BERNSTEIN_BEZIER_BASE));
-      diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(
-          AINSWORTH_BERNSTEIN_BEZIER_BASE));
+      sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN("TEST_FIELD"));
+      diff_sum +=
+          sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN("TEST_FIELD"));
       std::cout << "sum  " << sum << std::endl;
       std::cout << "diff_sum " << diff_sum << std::endl;
       if (fabs(6.00591 - sum) > eps) {
@@ -786,7 +776,8 @@ int main(int argc, char *argv[]) {
     if (choice_value == H1TRI_BERNSTEIN_BEZIER) {
       CHKERR TriPolynomialBase().getValue(
           pts_tri, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                       tri_data, H1, AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
+                       tri_data, "TET_FIELD", H1,
+                       AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
       if (tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() ==
           tri_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(AINSWORTH_BERNSTEIN_BEZIER_BASE)
@@ -796,40 +787,32 @@ int main(int argc, char *argv[]) {
 
       double sum = 0, diff_sum = 0;
       std::cout << "Vertex\n";
-      std::cout << tri_data.dataOnEntities[MBVERTEX][0].getN(
-                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+      std::cout << tri_data.dataOnEntities[MBVERTEX][0].getN("TET_FIELD")
                 << std::endl;
-      std::cout << tri_data.dataOnEntities[MBVERTEX][0].getDiffN(
-                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+      std::cout << tri_data.dataOnEntities[MBVERTEX][0].getDiffN("TET_FIELD")
                 << std::endl;
-      sum += sum_matrix(tri_data.dataOnEntities[MBVERTEX][0].getN(
-          AINSWORTH_BERNSTEIN_BEZIER_BASE));
-      diff_sum += sum_matrix(tri_data.dataOnEntities[MBVERTEX][0].getDiffN(
-          AINSWORTH_BERNSTEIN_BEZIER_BASE));
+      sum += sum_matrix(tri_data.dataOnEntities[MBVERTEX][0].getN("TET_FIELD"));
+      diff_sum += sum_matrix(
+          tri_data.dataOnEntities[MBVERTEX][0].getDiffN("TET_FIELD"));
       std::cout << "Edges\n";
       for (int ee = 0; ee < 3; ee++) {
-        std::cout << tri_data.dataOnEntities[MBEDGE][ee].getN(
-                         AINSWORTH_BERNSTEIN_BEZIER_BASE)
+        std::cout << tri_data.dataOnEntities[MBEDGE][ee].getN("TET_FIELD")
                   << std::endl;
-        std::cout << tri_data.dataOnEntities[MBEDGE][ee].getDiffN(
-                         AINSWORTH_BERNSTEIN_BEZIER_BASE)
+        std::cout << tri_data.dataOnEntities[MBEDGE][ee].getDiffN("TET_FIELD")
                   << std::endl;
-        sum += sum_matrix(tri_data.dataOnEntities[MBEDGE][ee].getN(
-            AINSWORTH_BERNSTEIN_BEZIER_BASE));
-        diff_sum += sum_matrix(tri_data.dataOnEntities[MBEDGE][ee].getDiffN(
-            AINSWORTH_BERNSTEIN_BEZIER_BASE));
+        sum +=
+            sum_matrix(tri_data.dataOnEntities[MBEDGE][ee].getN("TET_FIELD"));
+        diff_sum += sum_matrix(
+            tri_data.dataOnEntities[MBEDGE][ee].getDiffN("TET_FIELD"));
       }
       std::cout << "Face\n";
-      std::cout << tri_data.dataOnEntities[MBTRI][0].getN(
-                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+      std::cout << tri_data.dataOnEntities[MBTRI][0].getN("TET_FIELD")
                 << std::endl;
-      std::cout << tri_data.dataOnEntities[MBTRI][0].getDiffN(
-                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+      std::cout << tri_data.dataOnEntities[MBTRI][0].getDiffN("TET_FIELD")
                 << std::endl;
-      sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(
-          AINSWORTH_BERNSTEIN_BEZIER_BASE));
-      diff_sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getDiffN(
-          AINSWORTH_BERNSTEIN_BEZIER_BASE));
+      sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN("TET_FIELD"));
+      diff_sum +=
+          sum_matrix(tri_data.dataOnEntities[MBTRI][0].getDiffN("TET_FIELD"));
       std::cout << "sum  " << sum << std::endl;
       std::cout << "diff_sum " << diff_sum << std::endl;
       if (fabs(3.01389 - sum) > eps)
@@ -1041,9 +1024,9 @@ int main(int argc, char *argv[]) {
 
     if (choice_value == H1EDGE_BERNSTEIN_BEZIER) {
       CHKERR EdgePolynomialBase().getValue(
-          pts_edge,
-          boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-              edge_data, H1, AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
+          pts_edge, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                        edge_data, "TET_FIELD", H1,
+                        AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
       if (edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() ==
           edge_data.dataOnEntities[MBVERTEX][0]
               .getNSharedPtr(AINSWORTH_BERNSTEIN_BEZIER_BASE)
@@ -1053,27 +1036,22 @@ int main(int argc, char *argv[]) {
 
       double sum = 0, diff_sum = 0;
       std::cout << "Vertex\n";
-      std::cout << edge_data.dataOnEntities[MBVERTEX][0].getN(
-                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+      std::cout << edge_data.dataOnEntities[MBVERTEX][0].getN("TET_FIELD")
                 << std::endl;
-      std::cout << edge_data.dataOnEntities[MBVERTEX][0].getDiffN(
-                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+      std::cout << edge_data.dataOnEntities[MBVERTEX][0].getDiffN("TET_FIELD")
                 << std::endl;
       std::cout << "Edge\n";
-      std::cout << edge_data.dataOnEntities[MBEDGE][0].getN(
-                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+      std::cout << edge_data.dataOnEntities[MBEDGE][0].getN("TET_FIELD")
                 << std::endl;
-      std::cout << edge_data.dataOnEntities[MBEDGE][0].getDiffN(
-                       AINSWORTH_BERNSTEIN_BEZIER_BASE)
+      std::cout << edge_data.dataOnEntities[MBEDGE][0].getDiffN("TET_FIELD")
                 << std::endl;
-      sum += sum_matrix(edge_data.dataOnEntities[MBVERTEX][0].getN(
-          AINSWORTH_BERNSTEIN_BEZIER_BASE));
-      diff_sum += sum_matrix(edge_data.dataOnEntities[MBVERTEX][0].getDiffN(
-          AINSWORTH_BERNSTEIN_BEZIER_BASE));
-      sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getN(
-          AINSWORTH_BERNSTEIN_BEZIER_BASE));
-      diff_sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getDiffN(
-          AINSWORTH_BERNSTEIN_BEZIER_BASE));
+      sum +=
+          sum_matrix(edge_data.dataOnEntities[MBVERTEX][0].getN("TET_FIELD"));
+      diff_sum += sum_matrix(
+          edge_data.dataOnEntities[MBVERTEX][0].getDiffN("TET_FIELD"));
+      sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getN("TET_FIELD"));
+      diff_sum +=
+          sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getDiffN("TET_FIELD"));
       std::cout << "sum  " << sum << std::endl;
       std::cout << "diff sum " << diff_sum << std::endl;
       if (std::abs(4 - sum) > eps)

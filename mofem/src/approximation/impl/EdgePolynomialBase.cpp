@@ -127,14 +127,36 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
+  const std::string &field_name = cTx->fieldName;
   const int nb_gauss_pts = pts.size2();
 
-  data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 2, false);
-  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts, 2,
-                                                         false);
+  auto get_alpha = [field_name](auto &data) -> MatrixInt & {
+    auto &ptr = data.getBBAlphaIndicesSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixInt());
+    return *ptr;
+  };
 
-  data.dataOnEntities[MBVERTEX][0].getN(base).clear();
-  data.dataOnEntities[MBVERTEX][0].getDiffN(base).clear();
+  auto get_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto get_diff_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBDiffNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto &get_n = get_base(data.dataOnEntities[MBVERTEX][0]);
+  auto &get_diff_n = get_diff_base(data.dataOnEntities[MBVERTEX][0]);
+  get_n.resize(nb_gauss_pts, 2, false);
+  get_diff_n.resize(nb_gauss_pts, 2, false);
+  get_n.clear();
+  get_diff_n.clear();
 
   if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
       (unsigned int)nb_gauss_pts)
@@ -144,19 +166,16 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
              ApproximationBaseNames[NOBASE]);
   auto &lambda = data.dataOnEntities[MBVERTEX][0].getN(NOBASE);
 
-  auto &vertex_alpha = data.dataOnEntities[MBVERTEX][0].getBBAlphaIndices();
+  auto &vertex_alpha = get_alpha(data.dataOnEntities[MBVERTEX][0]);
   vertex_alpha.resize(2, 2, false);
   vertex_alpha(0, 0) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[0];
   vertex_alpha(0, 1) = 0;
-
   vertex_alpha(1, 0) = 0;
   vertex_alpha(1, 1) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[1];
 
   CHKERR BernsteinBezier::baseFunctionsEdge(
       1, nb_gauss_pts, vertex_alpha.size1(), &vertex_alpha(0, 0), &lambda(0, 0),
-      Tools::diffShapeFunMBEDGE.data(),
-      &data.dataOnEntities[MBVERTEX][0].getN(base)(0, 0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0, 0));
+      Tools::diffShapeFunMBEDGE.data(), &get_n(0, 0), &get_diff_n(0, 0));
   std::array<double, 2> f = {
       boost::math::factorial<double>(
           data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[0]),
@@ -164,8 +183,10 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
           data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[1])};
 
   for (int g = 0; g != nb_gauss_pts; ++g)
-    for (int n = 0; n != 2; ++n)
-      data.dataOnEntities[MBVERTEX][0].getN(base)(g, n) *= f[n];
+    for (int n = 0; n != 2; ++n) {
+      get_n(g, n) *= f[n];
+      get_diff_n(g, n) *= f[n];
+    }
 
   if (data.spacesOnEntities[MBEDGE].test(H1)) {
     if (data.dataOnEntities[MBEDGE].size() != 1)
@@ -175,27 +196,23 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
     int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
     const int nb_dofs = NBEDGE_H1(order);
 
-    data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, nb_dofs,
-                                                     false);
-    data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, nb_dofs,
-                                                         false);
-    data.dataOnEntities[MBEDGE][0].getN(base).clear();
-    data.dataOnEntities[MBEDGE][0].getDiffN(base).clear();
+    auto &get_n = get_base(data.dataOnEntities[MBEDGE][0]);
+    auto &get_diff_n = get_diff_base(data.dataOnEntities[MBEDGE][0]);
+    get_n.resize(nb_gauss_pts, nb_dofs, false);
+    get_diff_n.resize(nb_gauss_pts, nb_dofs, false); 
 
     if (nb_dofs) {
-      auto &edge_alpha = data.dataOnEntities[MBEDGE][0].getBBAlphaIndices();
+      auto &edge_alpha = get_alpha(data.dataOnEntities[MBEDGE][0]);
       edge_alpha.resize(nb_dofs, 2);
       CHKERR BernsteinBezier::generateIndicesEdgeEdge(order, &edge_alpha(0, 0));
       CHKERR BernsteinBezier::baseFunctionsEdge(
           order, nb_gauss_pts, edge_alpha.size1(), &edge_alpha(0, 0),
-          &lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
-          &data.dataOnEntities[MBEDGE][0].getN(base)(0, 0),
-          &data.dataOnEntities[MBEDGE][0].getDiffN(base)(0, 0));
+          &lambda(0, 0), Tools::diffShapeFunMBEDGE.data(), &get_n(0, 0),
+          &get_diff_n(0, 0));
     }
   } else {
-    data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts, 0, false);
-    data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts, 0,
-                                                         false);
+    get_n.resize(nb_gauss_pts, 0, false);
+    get_diff_n.resize(nb_gauss_pts, 0, false);
   }
 
   MoFEMFunctionReturn(0);

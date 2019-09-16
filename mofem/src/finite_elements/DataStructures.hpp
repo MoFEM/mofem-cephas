@@ -213,6 +213,27 @@ struct DataForcesAndSourcesCore {
 
     /**@{*/
 
+    /** \brief get base functions
+     * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
+     * columns is equal to number of base functions on this entity.
+     *
+     * \note Note that for vectorial base, like Hdiv or Hcurl, in columns are
+     * vectorial base functions. For tonsorial would be tonsorial base
+     * functions. Interpretation depends on type of base, scalar, vectorial or
+     * tonsorial and dimension fo problem.
+     *
+     */
+    inline MatrixDouble &getN(const FieldApproximationBase base);
+
+    /**
+     * @copydoc MoFEM::DataForcesAndSourcesCore::EntData::getN
+     */ 
+    inline MatrixDouble &getN(const std::string &field_name);
+
+    /**
+     * @copydoc MoFEM::DataForcesAndSourcesCore::EntData::getN
+     */
+    inline MatrixDouble &getN();
 
     /** \brief get derivatives of base functions
      *
@@ -240,49 +261,15 @@ struct DataForcesAndSourcesCore {
      * \frac{\partial t_2}{\partial \xi_1}\f$
      *
      */
-    inline const MatrixDouble &getDiffN() const;
-
-    /** \brief get base functions
-     * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
-     * columns is equal to number of base functions on this entity.
-     *
-     * \note Note that for vectorial base, like Hdiv or Hcurl, in columns are
-     * vectorial base functions. For tonsorial would be tonsorial base
-     * functions. Interpretation depends on type of base, scalar, vectorial or
-     * tonsorial and dimension fo problem.
-     *
-     */
-    inline MatrixDouble &getN(const FieldApproximationBase base);
-
-    /**
-     * \brief Get base functions
-     *
-     * It assumed that approximation base for given field is known and stored in
-     * this data structure
-     * 
-     * \note Note that for vectorial base, like Hdiv or Hcurl, in columns are
-     * vectorial base functions. For tonsorial would be tonsorial base
-     * functions. Interpretation depends on type of base, scalar, vectorial or
-     * tonsorial and dimension fo problem
-     *
-     * @return Error code
-     */
-    inline MatrixDouble &getN();
-
-    /**
-     * \brief Get derivatives of base functions
-     * @param  base Approximation base
-     * @return      Error code
-     */
     inline MatrixDouble &getDiffN(const FieldApproximationBase base);
 
     /**
-     * \brief Get derivatives of base functions
-     *
-     * It assumed that approximation base for given field is known and stored in
-     * this data structure
-     *
-     * @return Error code
+     * @copydoc MoFEM::DataForcesAndSourcesCore::EntData::getDiffN
+     */
+    inline MatrixDouble &getDiffN(const std::string &field_name);
+
+    /**
+     * @copydoc MoFEM::DataForcesAndSourcesCore::EntData::getDiffN
      */
     inline MatrixDouble &getDiffN();
 
@@ -1166,11 +1153,21 @@ DataForcesAndSourcesCore::EntData::getN(const FieldApproximationBase base) {
   return *(getNSharedPtr(base));
 }
 
+MatrixDouble &
+DataForcesAndSourcesCore::EntData::getN(const std::string &field_name) {
+  return *(getBBNSharedPtr(field_name));
+}
+
 MatrixDouble &DataForcesAndSourcesCore::EntData::getN() { return getN(bAse); }
 
 MatrixDouble &
 DataForcesAndSourcesCore::EntData::getDiffN(const FieldApproximationBase base) {
   return *(getDiffNSharedPtr(base));
+}
+
+MatrixDouble &
+DataForcesAndSourcesCore::EntData::getDiffN(const std::string &field_name) {
+  return *(getBBDiffNSharedPtr(field_name));
 }
 
 MatrixDouble &DataForcesAndSourcesCore::EntData::getDiffN() {

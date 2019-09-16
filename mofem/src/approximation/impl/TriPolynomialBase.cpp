@@ -60,10 +60,32 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
+  const std::string &field_name = cTx->fieldName;
   int nb_gauss_pts = pts.size2();
 
-  auto &vert_get_n = data.dataOnEntities[MBVERTEX][0].getN(base);
-  auto &vert_get_diff_n = data.dataOnEntities[MBVERTEX][0].getDiffN(base);
+  auto get_alpha = [field_name](auto &data) -> MatrixInt & {
+    auto &ptr = data.getBBAlphaIndicesSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixInt());
+    return *ptr;
+  };
+
+  auto get_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto get_diff_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBDiffNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto &vert_get_n = get_base(data.dataOnEntities[MBVERTEX][0]);
+  auto &vert_get_diff_n = get_diff_base(data.dataOnEntities[MBVERTEX][0]);
   vert_get_n.resize(nb_gauss_pts, 3, false);
   vert_get_diff_n.resize(nb_gauss_pts, 6, false);
 
@@ -75,7 +97,7 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
              ApproximationBaseNames[NOBASE]);
   auto &lambda = data.dataOnEntities[MBVERTEX][0].getN(NOBASE);
 
-  auto &vertex_alpha = data.dataOnEntities[MBVERTEX][0].getBBAlphaIndices();
+  auto &vertex_alpha = get_alpha(data.dataOnEntities[MBVERTEX][0]);
   vertex_alpha.resize(3, 3, false);
   vertex_alpha.clear();
   for (int n = 0; n != 4; ++n)
@@ -89,7 +111,9 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
     const int f = boost::math::factorial<double>(
         data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[n]);
     for (int g = 0; g != nb_gauss_pts; ++g) {
-      data.dataOnEntities[MBVERTEX][0].getN(base)(g, n) *= f;
+      vert_get_n(g, n) *= f;
+      for (int d = 0; d != 2; ++d)
+        vert_get_diff_n(g, 2 * n + d) *= f;
     }
   }
 
@@ -109,13 +133,13 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
       const int nb_dofs =
           NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
 
-      auto &get_n = data.dataOnEntities[MBEDGE][ee].getN(base);
-      auto &get_diff_n = data.dataOnEntities[MBEDGE][ee].getDiffN(base);
+      auto &get_n = get_base(data.dataOnEntities[MBEDGE][ee]);
+      auto &get_diff_n = get_diff_base(data.dataOnEntities[MBEDGE][ee]);
       get_n.resize(nb_gauss_pts, nb_dofs, false);
       get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
 
       if (nb_dofs) {
-        auto &edge_alpha = data.dataOnEntities[MBEDGE][ee].getBBAlphaIndices();
+        auto &edge_alpha = get_alpha(data.dataOnEntities[MBEDGE][ee]);
         edge_alpha.resize(nb_dofs, 3, false);
         CHKERR BernsteinBezier::generateIndicesEdgeTri(ee, order,
                                                        &edge_alpha(0, 0));
@@ -134,8 +158,8 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
     }
   } else {
     for (int ee = 0; ee != 3; ++ee) {
-      auto &get_n = data.dataOnEntities[MBEDGE][ee].getN(base);
-      auto &get_diff_n = data.dataOnEntities[MBEDGE][ee].getDiffN(base);
+      auto &get_n = get_base(data.dataOnEntities[MBEDGE][ee]);
+      auto &get_diff_n = get_diff_base(data.dataOnEntities[MBEDGE][ee]);
       get_n.resize(nb_gauss_pts, 0, false);
       get_diff_n.resize(nb_gauss_pts, 0, false);
     }
@@ -150,11 +174,11 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
     const int order = data.dataOnEntities[MBTRI][0].getDataOrder();
     const int nb_dofs = NBFACETRI_H1(order);
     if (nb_dofs) {
-      auto &get_n = data.dataOnEntities[MBTRI][0].getN(base);
-      auto &get_diff_n = data.dataOnEntities[MBTRI][0].getDiffN(base);
+      auto &get_n = get_base(data.dataOnEntities[MBTRI][0]);
+      auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][0]);
       get_n.resize(nb_gauss_pts, nb_dofs, false);
       get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
-      auto &face_alpha = data.dataOnEntities[MBTRI][0].getBBAlphaIndices();
+      auto &face_alpha = get_alpha(data.dataOnEntities[MBTRI][0]);
       face_alpha.resize(nb_dofs, 3, false);
       CHKERR BernsteinBezier::generateIndicesTriTri(order, &face_alpha(0, 0));
       CHKERR BernsteinBezier::baseFunctionsTri(
@@ -163,8 +187,8 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
           &get_diff_n(0, 0));
     }
   } else {
-    auto &get_n = data.dataOnEntities[MBTRI][0].getN(base);
-    auto &get_diff_n = data.dataOnEntities[MBTRI][0].getDiffN(base);
+    auto &get_n = get_base(data.dataOnEntities[MBTRI][0]);
+    auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][0]);
     get_n.resize(nb_gauss_pts, 0, false);
     get_diff_n.resize(nb_gauss_pts, 0, false);
   }
