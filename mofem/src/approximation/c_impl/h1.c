@@ -874,146 +874,200 @@ PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
   MoFEMFunctionReturnHot(0);
 }
 
-// PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
-//     int *sense, int *p, double *N, double *diffN, double *edgeN[4],
-//     double *diff_edgeN[4], int GDIM,
-//     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
-//                                        double *L, double *diffL,
-//                                        const int dim)) {
-//   MoFEMFunctionBeginHot;
+PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
+    int *sense, int *p, double *N, double *diffN, double *edgeN[4],
+    double *diff_edgeN[4], int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim)) {
+  MoFEMFunctionBeginHot;
 
-//   double *edgeN01 = NULL, *edgeN12 = NULL, *edgeN23 = NULL, *edgeN30 = NULL;
-//   if (edgeN != NULL) {
-//     edgeN01 = edgeN[0];
-//     edgeN12 = edgeN[1];
-//     edgeN23 = edgeN[2];
-//     edgeN30 = edgeN[3];
-//   }
-//   double *diff_edgeN01 = NULL, *diff_edgeN12 = NULL, *diff_edgeN23 = NULL, *diff_edgeN30 = NULL;
-//   if (diff_edgeN != NULL) {
-//     diff_edgeN01 = diff_edgeN[0];
-//     diff_edgeN12 = diff_edgeN[1];
-//     diff_edgeN23 = diff_edgeN[2];
-//     diff_edgeN30 = diff_edgeN[3];
-//   }
-//   int P[4];
-//   int ee = 0;
-//   for (; ee < 4; ee++) {
-//     P[ee] = NBEDGE_H1(p[ee]);
-//   }
-//   int dd = 0;
-//   double diff_ksi01[2], diff_ksi12[2], diff_ksi23[2], diff_ksi30[2];
-//   if (diff_edgeN != NULL) {
-//     for (; dd < 2; dd++) {
-//       diff_ksi01[dd] = (diffN[1 * 2 + dd] - diffN[0 * 2 + dd]) * sense[0];
-//       diff_ksi12[dd] = (diffN[2 * 2 + dd] - diffN[1 * 2 + dd]) * sense[1];
-//       //TODO
-//       diff_ksi23[dd] = (diffN[0 * 2 + dd] - diffN[2 * 2 + dd]) * sense[2];
-//       //TODO
-//       diff_ksi30[dd] = (diffN[0 * 2 + dd] - diffN[2 * 2 + dd]) * sense[2];
-//     }
-//   }
-//   int ii = 0;
-//   for (; ii < GDIM; ii++) {
-//     int node_shift = ii * 3;
-//     double ksi01 = (N[node_shift + 1] - N[node_shift + 0]) * sense[0];
-//     double ksi12 = (N[node_shift + 2] - N[node_shift + 1]) * sense[1];
-//     double ksi20 = (N[node_shift + 0] - N[node_shift + 2]) * sense[2];
-//     double L01[p[0] + 1], L12[p[1] + 1], L20[p[2] + 1];
-//     double diffL01[2 * (p[0] + 1)], diffL12[2 * (p[1] + 1)],
-//         diffL20[2 * (p[2] + 1)];
-//     ierr = base_polynomials(p[0], ksi01, diff_ksi01, L01, diffL01, 2);
-//     CHKERRQ(ierr);
-//     ierr = base_polynomials(p[1], ksi12, diff_ksi12, L12, diffL12, 2);
-//     CHKERRQ(ierr);
-//     ierr = base_polynomials(p[2], ksi20, diff_ksi20, L20, diffL20, 2);
-//     CHKERRQ(ierr);
-//     int shift;
-//     if (edgeN != NULL) {
-//       // edge01
-//       shift = ii * (P[0]);
-//       cblas_dcopy(P[0], L01, 1, &edgeN01[shift], 1);
-//       cblas_dscal(P[0], N[node_shift + 0] * N[node_shift + 1], &edgeN01[shift],
-//                   1);
-//       // edge12
-//       shift = ii * (P[1]);
-//       cblas_dcopy(P[1], L12, 1, &edgeN12[shift], 1);
-//       cblas_dscal(P[1], N[node_shift + 1] * N[node_shift + 2], &edgeN12[shift],
-//                   1);
-//       // edge20
-//       shift = ii * (P[2]);
-//       cblas_dcopy(P[2], L20, 1, &edgeN20[shift], 1);
-//       cblas_dscal(P[2], N[node_shift + 0] * N[node_shift + 2], &edgeN20[shift],
-//                   1);
-//     }
-//     if (diff_edgeN != NULL) {
-//       if (P[0] > 0) {
-//         // edge01
-//         shift = ii * (P[0]);
-//         bzero(&diff_edgeN01[2 * shift], sizeof(double) * 2 * (P[0]));
-//         // diffX
-//         cblas_daxpy(P[0], N[node_shift + 0] * N[node_shift + 1],
-//                     &diffL01[0 * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 0],
-//                     2);
-//         cblas_daxpy(P[0],
-//                     diffN[2 * 0 + 0] * N[node_shift + 1] +
-//                         N[node_shift + 0] * diffN[2 * 1 + 0],
-//                     L01, 1, &diff_edgeN01[2 * shift + 0], 2);
-//         // diff  Y
-//         cblas_daxpy(P[0], N[node_shift + 0] * N[node_shift + 1],
-//                     &diffL01[1 * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 1],
-//                     2);
-//         cblas_daxpy(P[0],
-//                     diffN[2 * 0 + 1] * N[node_shift + 1] +
-//                         N[node_shift + 0] * diffN[2 * 1 + 1],
-//                     L01, 1, &diff_edgeN01[2 * shift + 1], 2);
-//       }
-//       if (P[1] > 0) {
-//         // edge12
-//         shift = ii * (P[1]);
-//         bzero(&diff_edgeN12[2 * shift], sizeof(double) * 2 * (P[1]));
-//         // diffX
-//         cblas_daxpy(P[1], N[node_shift + 1] * N[node_shift + 2],
-//                     &diffL12[0 * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 0],
-//                     2);
-//         cblas_daxpy(P[1],
-//                     diffN[2 * 1 + 0] * N[node_shift + 2] +
-//                         N[node_shift + 1] * diffN[2 * 2 + 0],
-//                     L12, 1, &diff_edgeN12[2 * shift + 0], 2);
-//         // diffY
-//         cblas_daxpy(P[1], N[node_shift + 1] * N[node_shift + 2],
-//                     &diffL12[1 * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 1],
-//                     2);
-//         cblas_daxpy(P[1],
-//                     diffN[2 * 1 + 1] * N[node_shift + 2] +
-//                         N[node_shift + 1] * diffN[2 * 2 + 1],
-//                     L12, 1, &diff_edgeN12[2 * shift + 1], 2);
-//       }
-//       if (P[2] > 0) {
-//         // edge20
-//         shift = ii * (P[2]);
-//         bzero(&diff_edgeN20[2 * shift], sizeof(double) * 2 * (P[2]));
-//         // diffX
-//         cblas_daxpy(P[2], N[node_shift + 0] * N[node_shift + 2],
-//                     &diffL20[0 * (p[2] + 1)], 1, &diff_edgeN20[2 * shift + 0],
-//                     2);
-//         cblas_daxpy(P[2],
-//                     diffN[2 * 0 + 0] * N[node_shift + 2] +
-//                         N[node_shift + 0] * diffN[2 * 2 + 0],
-//                     L20, 1, &diff_edgeN20[2 * shift + 0], 2);
-//         // diffY
-//         cblas_daxpy(P[2], N[node_shift + 0] * N[node_shift + 2],
-//                     &diffL20[1 * (p[2] + 1)], 1, &diff_edgeN20[2 * shift + 1],
-//                     2);
-//         cblas_daxpy(P[2],
-//                     diffN[2 * 0 + 1] * N[node_shift + 2] +
-//                         N[node_shift + 0] * diffN[2 * 2 + 1],
-//                     L20, 1, &diff_edgeN20[2 * shift + 1], 2);
-//       }
-//     }
-//   }
-//   MoFEMFunctionReturnHot(0);
-// }
+  double *edgeN01 = NULL, *edgeN12 = NULL, *edgeN23 = NULL, *edgeN30 = NULL;
+  if (edgeN != NULL) {
+    edgeN01 = edgeN[0];
+    edgeN12 = edgeN[1];
+    edgeN23 = edgeN[2];
+    edgeN30 = edgeN[3];
+  }
+  double *diff_edgeN01 = NULL, *diff_edgeN12 = NULL, *diff_edgeN23 = NULL,
+         *diff_edgeN30 = NULL;
+  if (diff_edgeN != NULL) {
+    diff_edgeN01 = diff_edgeN[0];
+    diff_edgeN12 = diff_edgeN[1];
+    diff_edgeN23 = diff_edgeN[2];
+    diff_edgeN30 = diff_edgeN[3];
+  }
+  int P[4];
+  int ee = 0;
+  for (; ee < 4; ee++) {
+    P[ee] = NBEDGE_H1(p[ee]);
+  }
+
+  int ii = 0;
+
+  int n0 = 0;
+  int n1 = 1;
+  int n2 = 2;
+  int n3 = 3;
+  for (; ii < GDIM; ii++) {
+    int node_shift = ii * 4;
+    int node_diff_shift = 2 * node_shift;
+    
+    double ksi01 = (N[node_shift + n1] - N[node_shift + n0]) * sense[n0];
+    double ksi12 = (N[node_shift + n2] - N[node_shift + n1]) * sense[n1];
+    double ksi23 = (N[node_shift + n3] - N[node_shift + n2]) * sense[n2];
+    double ksi30 = (N[node_shift + n0] - N[node_shift + n3]) * sense[n3];
+
+    double diff_ksi01[2], diff_ksi12[2], diff_ksi23[2], diff_ksi30[2];
+    int dd = 0;
+    for (; dd < 2; dd++) {
+      diff_ksi01[dd] = (diffN[node_diff_shift + 2 * n1 + dd] -
+                        diffN[node_diff_shift + 2 * n0 + dd]) *
+                       sense[n0];
+      diff_ksi12[dd] = (diffN[node_diff_shift + 2 * n2 + dd] -
+                        diffN[node_diff_shift + 2 * n1 + dd]) *
+                       sense[n1];
+      diff_ksi23[dd] = (diffN[node_diff_shift + 2 * n3 + dd] -
+                        diffN[node_diff_shift + 2 * n2 + dd]) *
+                       sense[n2];
+      diff_ksi30[dd] = (diffN[node_diff_shift + 2 * n0 + dd] -
+                        diffN[node_diff_shift + 2 * n3 + dd]) *
+                       sense[n3];
+    }
+
+    double L01[p[0] + 1], L12[p[1] + 1], L23[p[2] + 1], L30[p[3] + 1];
+    double diffL01[2 * (p[0] + 1)], diffL12[2 * (p[1] + 1)],
+        diffL23[2 * (p[2] + 1)], diffL30[2 * (p[3] + 1)];
+    ierr = base_polynomials(p[0], ksi01, diff_ksi01, L01, diffL01, 2);
+    CHKERRQ(ierr);
+    ierr = base_polynomials(p[1], ksi12, diff_ksi12, L12, diffL12, 2);
+    CHKERRQ(ierr);
+    ierr = base_polynomials(p[2], ksi23, diff_ksi23, L23, diffL23, 2);
+    CHKERRQ(ierr);
+    ierr = base_polynomials(p[3], ksi30, diff_ksi30, L30, diffL30, 2);
+    CHKERRQ(ierr);
+    int shift;
+    if (edgeN != NULL) {
+      // edge01
+      shift = ii * (P[0]);
+      cblas_dcopy(P[0], L01, 1, &edgeN01[shift], 1);
+      cblas_dscal(P[0], N[node_shift + n0] * N[node_shift + n1], &edgeN01[shift],
+                  1);
+      // edge12
+      shift = ii * (P[1]);
+      cblas_dcopy(P[1], L12, 1, &edgeN12[shift], 1);
+      cblas_dscal(P[1], N[node_shift + n1] * N[node_shift + n2], &edgeN12[shift],
+                  1);
+      // edge23
+      shift = ii * (P[2]);
+      cblas_dcopy(P[2], L23, 1, &edgeN23[shift], 1);
+      cblas_dscal(P[2], N[node_shift + n2] * N[node_shift + n3], &edgeN23[shift],
+                  1);
+      // edge30
+      shift = ii * (P[2]);
+      cblas_dcopy(P[2], L30, 1, &edgeN30[shift], 1);
+      cblas_dscal(P[2], N[node_shift + n3] * N[node_shift + n0], &edgeN30[shift],
+                  1);
+    }
+    if (diff_edgeN != NULL) {
+      if (P[0] > 0) {
+        // edge01
+        shift = ii * (P[0]);
+
+        bzero(&diff_edgeN01[2 * shift], sizeof(double) * 2 * (P[0]));
+        // diffX
+        cblas_daxpy(P[0], N[node_shift + n0] * N[node_shift + n1],
+                    &diffL01[0 * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 0],
+                    2);
+        cblas_daxpy(P[0],
+                    diffN[node_diff_shift + 2 * n0 + 0] * N[node_shift + n1] +
+                        N[node_shift + n0] *
+                            diffN[node_diff_shift + 2 * n1 + 0],
+                    L01, 1, &diff_edgeN01[2 * shift + 0], 2);
+        // diffY
+        cblas_daxpy(P[0], N[node_shift + n0] * N[node_shift + n1],
+                    &diffL01[1 * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 1],
+                    2);
+        cblas_daxpy(P[0],
+                    diffN[node_diff_shift + 2 * n0 + 1] * N[node_shift + n1] +
+                        N[node_shift + n0] *
+                            diffN[node_diff_shift + 2 * n1 + 1],
+                    L01, 1, &diff_edgeN01[2 * shift + 1], 2);
+      }
+      if (P[1] > 0) {
+        // edge12
+        shift = ii * (P[1]);
+        bzero(&diff_edgeN12[2 * shift], sizeof(double) * 2 * (P[1]));
+        // diffX
+        cblas_daxpy(P[1], N[node_shift + n1] * N[node_shift + n2],
+                    &diffL12[0 * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 0],
+                    2);
+        cblas_daxpy(P[1],
+                    diffN[node_diff_shift + 2 * n1 + 0] * N[node_shift + n2] +
+                        N[node_shift + n1] *
+                            diffN[node_diff_shift + 2 * n2 + 0],
+                    L12, 1, &diff_edgeN12[2 * shift + 0], 2);
+        // diffY
+        cblas_daxpy(P[1], N[node_shift + n1] * N[node_shift + n2],
+                    &diffL12[1 * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 1],
+                    2);
+        cblas_daxpy(P[1],
+                    diffN[node_diff_shift + 2 * n1 + 1] * N[node_shift + n2] +
+                        N[node_shift + n1] *
+                            diffN[node_diff_shift + 2 * n2 + 1],
+                    L12, 1, &diff_edgeN12[2 * shift + 1], 2);
+      }
+      if (P[2] > 0) {
+        // edge23
+        shift = ii * (P[2]);
+        bzero(&diff_edgeN23[2 * shift], sizeof(double) * 2 * (P[2]));
+        // diffX
+        cblas_daxpy(P[2], N[node_shift + n3] * N[node_shift + n2],
+                    &diffL23[0 * (p[2] + 1)], 1, &diff_edgeN23[2 * shift + 0],
+                    2);
+        cblas_daxpy(P[2],
+                    diffN[node_diff_shift + 2 * n3 + 0] * N[node_shift + n2] +
+                        N[node_shift + n3] *
+                            diffN[node_diff_shift + 2 * n2 + 0],
+                    L23, 1, &diff_edgeN23[2 * shift + 0], 2);
+        // diffY
+        cblas_daxpy(P[2], N[node_shift + n3] * N[node_shift + n2],
+                    &diffL23[1 * (p[2] + 1)], 1, &diff_edgeN23[2 * shift + 1],
+                    2);
+        cblas_daxpy(P[2],
+                    diffN[node_diff_shift + 2 * n3 + 1] * N[node_shift + n2] +
+                        N[node_shift + n3] *
+                            diffN[node_diff_shift + 2 * n2 + 1],
+                    L23, 1, &diff_edgeN23[2 * shift + 1], 2);
+      }
+
+      if (P[3] > 0) {
+        // edge30
+        shift = ii * (P[3]);
+        bzero(&diff_edgeN30[2 * shift], sizeof(double) * 2 * (P[3]));
+        // diffX
+        cblas_daxpy(P[3], N[node_shift + n0] * N[node_shift + n3],
+                    &diffL30[0 * (p[2] + 1)], 1, &diff_edgeN30[2 * shift + 0],
+                    2);
+        cblas_daxpy(P[3],
+                    diffN[node_diff_shift + 2 * n0 + 0] * N[node_shift + n3] +
+                        N[node_shift + n0] *
+                            diffN[node_diff_shift + 2 * n3 + 0],
+                    L30, 1, &diff_edgeN30[2 * shift + 0], 2);
+        // diffY
+        cblas_daxpy(P[3], N[node_shift + n0] * N[node_shift + n3],
+                    &diffL30[1 * (p[2] + 1)], 1, &diff_edgeN30[2 * shift + 1],
+                    2);
+        cblas_daxpy(P[3],
+                    diffN[node_diff_shift + 2 * n0 + 1] * N[node_shift + n3] +
+                        N[node_shift + n0] *
+                            diffN[node_diff_shift + 2 * n3 + 1],
+                    L30, 1, &diff_edgeN30[2 * shift + 1], 2);
+      }
+    }
+  }
+  MoFEMFunctionReturnHot(0);
+}
 
 PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p, double *diffN,
                                                         double *dofs,
