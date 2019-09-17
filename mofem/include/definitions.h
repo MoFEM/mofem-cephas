@@ -146,7 +146,8 @@ enum FieldApproximationBase {
       1, ///< Ainsworth Cole (Legendre) approx. base \cite NME:NME847
   AINSWORTH_LOBATTO_BASE, ///< Like AINSWORTH_LEGENDRE_BASE but with Lobatto
                           ///< base instead Legendre \cite beriot2015efficient
-  AINSWORTH_BERNSTEIN_BEZIER_BASE, ///< See \cite ainsworth2011bernstein and \cite ainsworth2018bernstein
+  AINSWORTH_BERNSTEIN_BEZIER_BASE, ///< See \cite ainsworth2011bernstein and
+                                   ///< \cite ainsworth2018bernstein
   DEMKOWICZ_JACOBI_BASE, ///< Construction of base is by Demkowicz \cite
                          ///< fuentes2015orientation
   USER_BASE,             ///< user implemented approximation base
@@ -298,7 +299,7 @@ enum VERBOSITY_LEVELS {
   (MAX_DOFS_ON_ENTITY - 1) ///< Mask for DOF number on entity form UId
 #define ENTITY_UID_MASK (~DOF_UID_MASK)
 
-#define NOT_USED(x)((void)(x))
+#define NOT_USED(x) ((void)(x))
 
 /** \brief set barrier start
  * Run code in sequence, starting from process 0, and ends on last process.
