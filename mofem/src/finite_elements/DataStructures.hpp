@@ -187,25 +187,29 @@ struct DataForcesAndSourcesCore {
      * Get shared pointer to base base functions
      */
     virtual boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base);
+    getNSharedPtr(const FieldApproximationBase base,
+                  const std::string *field_name_ptr = nullptr);
 
     /**
      * Get shared pointer to base base functions
      */
     virtual const boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base) const;
+    getNSharedPtr(const FieldApproximationBase base,
+                  const std::string *field_name_ptr = nullptr) const;
 
     /**
      * Get shared pointer to derivatives of base base functions
      */
     virtual boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base);
+    getDiffNSharedPtr(const FieldApproximationBase base,
+                      const std::string *field_name_ptr = nullptr);
 
     /**
      * Get shared pointer to derivatives of base base functions
      */
     virtual const boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base) const;
+    getDiffNSharedPtr(const FieldApproximationBase base,
+                      const std::string *field_name_ptr = nullptr) const;
 
     /**@}*/
 
@@ -1021,16 +1025,20 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
     int getSense() const;
 
     boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base);
+    getNSharedPtr(const FieldApproximationBase base,
+                  const std::string *field_name_ptr = nullptr);
 
     boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base);
+    getDiffNSharedPtr(const FieldApproximationBase base,
+                      const std::string *field_name_ptr = nullptr);
 
     const boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base) const;
+    getNSharedPtr(const FieldApproximationBase base,
+                  const std::string *field_name_ptr = nullptr) const;
 
     const boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base) const;
+    getDiffNSharedPtr(const FieldApproximationBase base,
+                      const std::string *field_name_ptr = nullptr) const;
 
   protected:
     const boost::shared_ptr<DataForcesAndSourcesCore::EntData> entDataPtr;

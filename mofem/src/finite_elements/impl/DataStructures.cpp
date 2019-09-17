@@ -41,26 +41,40 @@ int DataForcesAndSourcesCore::EntData::getSense() const { return sEnse; }
 
 boost::shared_ptr<MatrixDouble> &
 DataForcesAndSourcesCore::EntData::getNSharedPtr(
-    const FieldApproximationBase base) {
-  return N[base];
+    const FieldApproximationBase base, const std::string *field_name_ptr) {
+  if (field_name_ptr)
+    return getBBNSharedPtr(*field_name_ptr);
+  else
+    return N[base];
 }
 
 const boost::shared_ptr<MatrixDouble> &
 DataForcesAndSourcesCore::EntData::getNSharedPtr(
-    const FieldApproximationBase base) const {
-  return N[base];
+    const FieldApproximationBase base,
+    const std::string *field_name_ptr) const {
+  if (field_name_ptr)
+    return getBBNSharedPtr(*field_name_ptr);
+  else
+    return N[base];
 }
 
 boost::shared_ptr<MatrixDouble> &
 DataForcesAndSourcesCore::EntData::getDiffNSharedPtr(
-    const FieldApproximationBase base) {
-  return diffN[base];
+    const FieldApproximationBase base, const std::string *field_name_ptr) {
+  if (field_name_ptr)
+    return getBBDiffNSharedPtr(*field_name_ptr);
+  else
+    return diffN[base];
 }
 
 const boost::shared_ptr<MatrixDouble> &
 DataForcesAndSourcesCore::EntData::getDiffNSharedPtr(
-    const FieldApproximationBase base) const {
-  return diffN[base];
+    const FieldApproximationBase base,
+    const std::string *field_name_ptr) const {
+  if (field_name_ptr)
+    return getBBDiffNSharedPtr(*field_name_ptr);
+  else
+    return diffN[base];
 }
 
 static void constructor_data(DataForcesAndSourcesCore *data,
@@ -169,23 +183,25 @@ int DerivedDataForcesAndSourcesCore::DerivedEntData::getSense() const {
 
 boost::shared_ptr<MatrixDouble> &
 DerivedDataForcesAndSourcesCore::DerivedEntData::getNSharedPtr(
-    const FieldApproximationBase base) {
-  return entDataPtr->getNSharedPtr(base);
+    const FieldApproximationBase base, const std::string *field_name_ptr) {
+  return entDataPtr->getNSharedPtr(base, field_name_ptr);
 }
 boost::shared_ptr<MatrixDouble> &
 DerivedDataForcesAndSourcesCore::DerivedEntData::getDiffNSharedPtr(
-    const FieldApproximationBase base) {
-  return entDataPtr->getDiffNSharedPtr(base);
+    const FieldApproximationBase base, const std::string *field_name_ptr) {
+  return entDataPtr->getDiffNSharedPtr(base, field_name_ptr);
 }
 const boost::shared_ptr<MatrixDouble> &
 DerivedDataForcesAndSourcesCore::DerivedEntData::getNSharedPtr(
-    const FieldApproximationBase base) const {
-  return entDataPtr->getNSharedPtr(base);
+    const FieldApproximationBase base,
+    const std::string *field_name_ptr) const {
+  return entDataPtr->getNSharedPtr(base, field_name_ptr);
 }
 const boost::shared_ptr<MatrixDouble> &
 DerivedDataForcesAndSourcesCore::DerivedEntData::getDiffNSharedPtr(
-    const FieldApproximationBase base) const {
-  return entDataPtr->getDiffNSharedPtr(base);
+    const FieldApproximationBase base,
+    const std::string *field_name_ptr) const {
+  return entDataPtr->getDiffNSharedPtr(base, field_name_ptr);
 }
 
 std::ostream &operator<<(std::ostream &os,

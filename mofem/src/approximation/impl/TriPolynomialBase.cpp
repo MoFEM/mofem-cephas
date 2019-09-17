@@ -100,7 +100,7 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   auto &vertex_alpha = get_alpha(data.dataOnEntities[MBVERTEX][0]);
   vertex_alpha.resize(3, 3, false);
   vertex_alpha.clear();
-  for (int n = 0; n != 4; ++n)
+  for (int n = 0; n != 3; ++n)
     vertex_alpha(n, n) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[n];
 
   CHKERR BernsteinBezier::baseFunctionsTri(
