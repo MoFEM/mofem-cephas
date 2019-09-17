@@ -48,6 +48,7 @@ cm_export_file("../meshes/mat_elastic_transiso.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_interf.h5m" export_atom_tests)
 cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
 cm_export_file("../meshes/rectangle.h5m" export_atom_tests)
+cm_export_file("../meshes/quad_mesh.h5m" export_atom_tests)
 
 set(PERCOMPILED_MOFEM_HEADER "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
 
@@ -1198,6 +1199,22 @@ cm_export_file("../meshes/rectangle_surface_mesh.cub" export_atom_tests)
 add_test(prisms_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file rectangle_surface_mesh.cub
 )
+
+my_add_executable(quad_shape_functions quad_shape_functions.cpp)
+target_link_libraries(quad_shape_functions
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+#cm_export_file("../meshes/rectangle_surface_mesh.cub" export_atom_tests)
+# add_test(prisms_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+#   ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file rectangle_surface_mesh.cub
+# )
 
 my_add_executable(partition_mesh partition_mesh.cpp)
 target_link_libraries(partition_mesh

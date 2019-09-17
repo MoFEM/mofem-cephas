@@ -253,6 +253,17 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,
                                        const int dim));
+PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
+    int *faces_nodes, int p, double *N, double *diffN, double *faceN,
+    double *diff_faceN, int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
+// PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
+//     int *sense, int *p, double *N, double *diffN, double *edgeN[4],
+//     double *diff_edgeN[4], int GDIM,
+//     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+//                                        double *L, double *diffL, const int dim));
 
 // Hdiv and Hcurl are implemented and declared in other files
 
