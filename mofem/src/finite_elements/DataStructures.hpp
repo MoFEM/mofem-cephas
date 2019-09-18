@@ -54,7 +54,7 @@ struct DataForcesAndSourcesCore {
 
     /**@{*/
 
-    EntData();
+    EntData(const bool allocate_base_matrices = true);
 
     /**@}*/
 
@@ -187,29 +187,25 @@ struct DataForcesAndSourcesCore {
      * Get shared pointer to base base functions
      */
     virtual boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base,
-                  const std::string *field_name_ptr = nullptr);
+    getNSharedPtr(const FieldApproximationBase base);
 
     /**
      * Get shared pointer to base base functions
      */
     virtual const boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base,
-                  const std::string *field_name_ptr = nullptr) const;
+    getNSharedPtr(const FieldApproximationBase base) const;
 
     /**
      * Get shared pointer to derivatives of base base functions
      */
     virtual boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base,
-                      const std::string *field_name_ptr = nullptr);
+    getDiffNSharedPtr(const FieldApproximationBase base);
 
     /**
      * Get shared pointer to derivatives of base base functions
      */
     virtual const boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base,
-                      const std::string *field_name_ptr = nullptr) const;
+    getDiffNSharedPtr(const FieldApproximationBase base) const;
 
     /**@}*/
 
@@ -902,15 +898,15 @@ struct DataForcesAndSourcesCore {
 
     /**
      * @brief Get orders at the nodes
-     * 
-     * @return VectorInt& 
+     *
+     * @return VectorInt&
      */
     inline VectorInt &getBBNodeOrder();
 
     /**
      * @brief Get file BB indices
-     * 
-     * @return MatrixInt& 
+     *
+     * @return MatrixInt&
      */
     inline MatrixInt &getBBAlphaIndices();
 
@@ -944,14 +940,14 @@ struct DataForcesAndSourcesCore {
     /**@}*/
 
   protected:
-    int sEnse;                                   ///< Entity sense (orientation)
-    ApproximationOrder oRder;                    ///< Entity order
-    FieldSpace sPace;                            ///< Entity space
-    FieldApproximationBase bAse;                 ///< Field approximation base
-    VectorInt iNdices;                           ///< Global indices on entity
-    VectorInt localIndices;                      ///< Local indices on entity
-    VectorDofs dOfs;                             ///< DoFs on entity
-    VectorDouble fieldData;                      ///< Field data on entity
+    int sEnse;                   ///< Entity sense (orientation)
+    ApproximationOrder oRder;    ///< Entity order
+    FieldSpace sPace;            ///< Entity space
+    FieldApproximationBase bAse; ///< Field approximation base
+    VectorInt iNdices;           ///< Global indices on entity
+    VectorInt localIndices;      ///< Local indices on entity
+    VectorDofs dOfs;             ///< DoFs on entity
+    VectorDouble fieldData;      ///< Field data on entity
     std::array<boost::shared_ptr<MatrixDouble>, LASTBASE> N; ///< Base functions
     std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>
         diffN; ///< Derivatives of base functions
@@ -1025,20 +1021,22 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
     int getSense() const;
 
     boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base,
-                  const std::string *field_name_ptr = nullptr);
+    getNSharedPtr(const FieldApproximationBase base);
 
     boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base,
-                      const std::string *field_name_ptr = nullptr);
+    getDiffNSharedPtr(const FieldApproximationBase base);
 
     const boost::shared_ptr<MatrixDouble> &
-    getNSharedPtr(const FieldApproximationBase base,
-                  const std::string *field_name_ptr = nullptr) const;
+    getNSharedPtr(const FieldApproximationBase base) const;
 
     const boost::shared_ptr<MatrixDouble> &
-    getDiffNSharedPtr(const FieldApproximationBase base,
-                      const std::string *field_name_ptr = nullptr) const;
+    getDiffNSharedPtr(const FieldApproximationBase base) const;
+
+    inline boost::shared_ptr<MatrixDouble> &
+    getDerivedNSharedPtr(const FieldApproximationBase base);
+
+    inline boost::shared_ptr<MatrixDouble> &
+    getDerivedDiffNSharedPtr(const FieldApproximationBase base);
 
   protected:
     const boost::shared_ptr<DataForcesAndSourcesCore::EntData> entDataPtr;
@@ -1047,6 +1045,7 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
   DerivedDataForcesAndSourcesCore(
       const boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr);
   MoFEMErrorCode setElementType(const EntityType type);
+  MoFEMErrorCode copyBase();
 
 private:
   const boost::shared_ptr<DataForcesAndSourcesCore> dataPtr;
@@ -1519,6 +1518,24 @@ const boost::shared_ptr<MatrixDouble> &
 DataForcesAndSourcesCore::EntData::getBBDiffNSharedPtr(
     const std::string &field_name) const {
   return bbDiffN.at(field_name);
+}
+
+/**@}*/
+
+/** \name DerivedEntData */
+
+/**@{*/
+
+boost::shared_ptr<MatrixDouble> &
+DerivedDataForcesAndSourcesCore::DerivedEntData::getDerivedNSharedPtr(
+    const FieldApproximationBase base) {
+  return N[base];
+}
+
+boost::shared_ptr<MatrixDouble> &
+DerivedDataForcesAndSourcesCore::DerivedEntData::getDerivedDiffNSharedPtr(
+    const FieldApproximationBase base) {
+  return diffN[base];
 }
 
 /**@}*/

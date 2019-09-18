@@ -810,6 +810,7 @@ MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement(
     case NOBASE:
       break;
     case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+      // BERNSTEIN_BEZIER_BASE is not hierarchical base
       break;
     case AINSWORTH_LEGENDRE_BASE:
     case AINSWORTH_LOBATTO_BASE:
@@ -869,6 +870,143 @@ MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement() {
   }
   MoFEMFunctionReturn(0);
 }
+
+MoFEMErrorCode
+ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
+  MoFEMFunctionBegin;
+
+  auto get_nodal_base_data = [&](DataForcesAndSourcesCore &data,
+                                 const std::string &field_name) {
+    MoFEMFunctionBegin;
+    auto &space = data.dataOnEntities[MBVERTEX][0].getSpace();
+    auto &base = data.dataOnEntities[MBVERTEX][0].getBase();
+    auto &bb_node_order = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder();
+
+    auto &dofs_by_name_and_type =
+        dataPtr->get<Composite_Name_And_Type_mi_tag>();
+    auto tuple = boost::make_tuple(field_name, MBVERTEX);
+    auto dit = dofs_by_name_and_type.lower_bound(tuple);
+    if (dit == dofs_by_name_and_type.end())
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No nodal dofs on element");
+    auto hi_dit =
+        dataPtr->get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
+
+    if (dit != hi_dit) {
+      auto &first_dof = **dit;
+      space = first_dof.getSpace();
+      base = first_dof.getApproxBase();
+      int num_nodes;
+      CHKERR getNumberOfNodes(num_nodes);
+      bb_node_order.resize(num_nodes, false);
+      bb_node_order.clear();
+      const int nb_dof_idx = first_dof.getNbOfCoeffs();
+      const int max_nb_dofs = nb_dof_idx * num_nodes;
+
+      std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
+      for (; dit != hi_dit;) {
+        const auto &dof_ptr = *dit;
+        const auto &dof = *dof_ptr;
+        const auto &sn = *dof.sideNumberPtr;
+        const int side_number = sn.side_number;
+        const int brother_side_number = sn.brother_side_number;
+        if (brother_side_number != -1)
+          brother_dofs_vec.emplace_back(dof_ptr);
+        bb_node_order[side_number] = dof.getMaxOrder();
+        for (int ii = 0; ii != nb_dof_idx; ++ii) 
+          ++dit;
+      }
+
+      for (auto &dof_ptr : brother_dofs_vec) {
+        if (const auto d = dof_ptr.lock()) {
+          const auto &sn = d->sideNumberPtr;
+          const int side_number = sn->side_number;
+          const int brother_side_number = sn->brother_side_number;
+          bb_node_order[brother_side_number] = bb_node_order[side_number];
+        }
+      }
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  auto get_entity_base_data = [&](DataForcesAndSourcesCore &data,
+                                  const std::string &field_name,
+                                  const EntityType type_lo,
+                                  const EntityType type_hi) {
+    MoFEMFunctionBegin;
+    for (EntityType t = type_lo; t != type_hi; ++t) {
+      for (auto &dat : data.dataOnEntities[t]) {
+        dat.getDataOrder() = 0;
+        dat.getBase() = NOBASE;
+        dat.getSpace() = NOSPACE;
+      }
+    }
+
+    auto &dofs = const_cast<FEDofEntity_multiIndex &>(
+        numeredEntFiniteElementPtr->getDataDofs());
+    auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+    auto dit = dofs_by_type.lower_bound(boost::make_tuple(field_name, type_lo));
+    if (dit == dofs_by_type.end())
+      MoFEMFunctionReturnHot(0);
+    auto hi_dit =
+        dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
+    std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
+    for (; dit != hi_dit;) {
+
+      auto &dof = **dit;
+      const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
+      if (nb_dofs_on_ent) {
+        const EntityType type = dof.getEntType();
+        const int side = dof.sideNumberPtr->side_number;
+        auto &dat = data.dataOnEntities[type][side];
+
+        const int brother_side = dof.sideNumberPtr->brother_side_number;
+        if (brother_side != -1)
+          brother_dofs_vec.emplace_back(*dit);
+
+        dat.getBase() = dof.getApproxBase();
+        dat.getSpace() = dof.getSpace();
+        const int ent_order = dof.getMaxOrder();
+        dat.getDataOrder() =
+            dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+        for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
+          ++dit;
+        }
+      }
+    }
+
+    for (auto &dof_ptr : brother_dofs_vec) {
+      if (auto d = dof_ptr.lock()) {
+        const EntityType type = d->getEntType();
+        const int side = d->sideNumberPtr->side_number;
+        const int brother_side = d->sideNumberPtr->brother_side_number;
+        auto &dat = data.dataOnEntities[type][side];
+        auto &dat_brother = data.dataOnEntities[type][brother_side];
+        dat_brother.getBase() = dat.getBase();
+        dat_brother.getSpace() = dat.getSpace();
+        dat_brother.getDataOrder() = dat.getDataOrder();
+      }
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  auto &ents_data = *dataFieldEntsPtr;
+  for (auto &e : ents_data) {
+    if (e->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
+      auto field_name = e->getName();
+      auto space = e->getSpace();
+      CHKERR get_nodal_base_data(*dataOnElement[space], field_name);
+      CHKERR get_entity_base_data(*dataOnElement[space], field_name, MBVERTEX,
+                                  MBPOLYHEDRON);
+      CHKERR getElementPolynomialBase()->getValue(
+          gaussPts, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                        *dataOnElement[space], static_cast<FieldSpace>(space),
+                        AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+};
 
 MoFEMErrorCode ForcesAndSourcesCore::createDataOnElement() {
   MoFEMFunctionBegin;

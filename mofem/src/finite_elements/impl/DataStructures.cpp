@@ -17,64 +17,41 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <cblas.h>
-#include <lapack_wrap.h>
-#include <gm_rule.h>
-#ifdef __cplusplus
-}
-#endif
-
 namespace MoFEM {
 
-DataForcesAndSourcesCore::EntData::EntData()
+DataForcesAndSourcesCore::EntData::EntData(const bool allocate_base_matrices)
     : sEnse(0), oRder(0), bAse(NOBASE) {
-  for (int b = 0; b != LASTBASE; ++b) {
-    N[b].reset(new MatrixDouble());
-    diffN[b].reset(new MatrixDouble());
-  }
+  if (allocate_base_matrices)
+    for (int b = 0; b != LASTBASE; ++b) {
+      N[b].reset(new MatrixDouble());
+      diffN[b].reset(new MatrixDouble());
+    }
 }
 
 int DataForcesAndSourcesCore::EntData::getSense() const { return sEnse; }
 
 boost::shared_ptr<MatrixDouble> &
 DataForcesAndSourcesCore::EntData::getNSharedPtr(
-    const FieldApproximationBase base, const std::string *field_name_ptr) {
-  if (field_name_ptr)
-    return getBBNSharedPtr(*field_name_ptr);
-  else
-    return N[base];
+    const FieldApproximationBase base) {
+  return N[base];
 }
 
 const boost::shared_ptr<MatrixDouble> &
 DataForcesAndSourcesCore::EntData::getNSharedPtr(
-    const FieldApproximationBase base,
-    const std::string *field_name_ptr) const {
-  if (field_name_ptr)
-    return getBBNSharedPtr(*field_name_ptr);
-  else
-    return N[base];
+    const FieldApproximationBase base) const {
+  return N[base];
 }
 
 boost::shared_ptr<MatrixDouble> &
 DataForcesAndSourcesCore::EntData::getDiffNSharedPtr(
-    const FieldApproximationBase base, const std::string *field_name_ptr) {
-  if (field_name_ptr)
-    return getBBDiffNSharedPtr(*field_name_ptr);
-  else
-    return diffN[base];
+    const FieldApproximationBase base) {
+  return diffN[base];
 }
 
 const boost::shared_ptr<MatrixDouble> &
 DataForcesAndSourcesCore::EntData::getDiffNSharedPtr(
-    const FieldApproximationBase base,
-    const std::string *field_name_ptr) const {
-  if (field_name_ptr)
-    return getBBDiffNSharedPtr(*field_name_ptr);
-  else
-    return diffN[base];
+    const FieldApproximationBase base) const {
+  return diffN[base];
 }
 
 static void constructor_data(DataForcesAndSourcesCore *data,
@@ -173,9 +150,38 @@ DerivedDataForcesAndSourcesCore::setElementType(const EntityType type) {
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode DerivedDataForcesAndSourcesCore::copyBase() {
+  MoFEMFunctionBegin;
+
+  for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
+    auto &ent_data = dataPtr->dataOnEntities[tt];
+    auto &derived_ent_data = dataOnEntities[tt];
+    for (int s = 0; s != ent_data.size(); ++s) {
+      for (int b = 0; b != LASTBASE; ++b) {
+        FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+        if (basesOnEntities[tt].test(base)) {
+          static_cast<DerivedEntData &>(derived_ent_data[s])
+              .getDerivedNSharedPtr(base) = ent_data[s].getNSharedPtr(base);
+          static_cast<DerivedEntData &>(derived_ent_data[s])
+              .getDerivedDiffNSharedPtr(base) =
+              ent_data[s].getDiffNSharedPtr(base);
+        } else {
+          static_cast<DerivedEntData &>(derived_ent_data[s])
+              .getDerivedNSharedPtr(base)
+              .reset();
+          static_cast<DerivedEntData &>(derived_ent_data[s])
+              .getDerivedDiffNSharedPtr(base)
+              .reset();
+        }
+      }
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
 DerivedDataForcesAndSourcesCore::DerivedEntData::DerivedEntData(
     const boost::shared_ptr<DataForcesAndSourcesCore::EntData> &ent_data_ptr)
-    : entDataPtr(ent_data_ptr) {}
+    : DataForcesAndSourcesCore::EntData(false), entDataPtr(ent_data_ptr) {}
 
 int DerivedDataForcesAndSourcesCore::DerivedEntData::getSense() const {
   return entDataPtr->getSense();
@@ -183,25 +189,35 @@ int DerivedDataForcesAndSourcesCore::DerivedEntData::getSense() const {
 
 boost::shared_ptr<MatrixDouble> &
 DerivedDataForcesAndSourcesCore::DerivedEntData::getNSharedPtr(
-    const FieldApproximationBase base, const std::string *field_name_ptr) {
-  return entDataPtr->getNSharedPtr(base, field_name_ptr);
+    const FieldApproximationBase base) {
+  if (N[base])
+    return N[base];
+  else
+    return entDataPtr->getNSharedPtr(base);
 }
 boost::shared_ptr<MatrixDouble> &
 DerivedDataForcesAndSourcesCore::DerivedEntData::getDiffNSharedPtr(
-    const FieldApproximationBase base, const std::string *field_name_ptr) {
-  return entDataPtr->getDiffNSharedPtr(base, field_name_ptr);
+    const FieldApproximationBase base) {
+  if (diffN[base])
+    return diffN[base];
+  else
+    return entDataPtr->getDiffNSharedPtr(base);
 }
 const boost::shared_ptr<MatrixDouble> &
 DerivedDataForcesAndSourcesCore::DerivedEntData::getNSharedPtr(
-    const FieldApproximationBase base,
-    const std::string *field_name_ptr) const {
-  return entDataPtr->getNSharedPtr(base, field_name_ptr);
+    const FieldApproximationBase base) const {
+  if (N[base])
+    return N[base];
+  else
+    return entDataPtr->getNSharedPtr(base);
 }
 const boost::shared_ptr<MatrixDouble> &
 DerivedDataForcesAndSourcesCore::DerivedEntData::getDiffNSharedPtr(
-    const FieldApproximationBase base,
-    const std::string *field_name_ptr) const {
-  return entDataPtr->getDiffNSharedPtr(base, field_name_ptr);
+    const FieldApproximationBase base) const {
+  if (diffN[base])
+    return diffN[base];
+  else
+    return entDataPtr->getDiffNSharedPtr(base);
 }
 
 std::ostream &operator<<(std::ostream &os,
@@ -212,9 +228,9 @@ std::ostream &operator<<(std::ostream &os,
      << "local indices: " << e.getLocalIndices() << std::endl;
   os.precision(2);
   os << "fieldData: " << std::fixed << e.getFieldData() << std::endl;
-  MatrixDouble base = const_cast<DataForcesAndSourcesCore::EntData&>(e).getN();
+  MatrixDouble base = const_cast<DataForcesAndSourcesCore::EntData &>(e).getN();
   MatrixDouble diff_base =
-      const_cast<DataForcesAndSourcesCore::EntData&>(e).getDiffN();
+      const_cast<DataForcesAndSourcesCore::EntData &>(e).getDiffN();
   const double eps = 1e-6;
   for (unsigned int ii = 0; ii != base.size1(); ii++) {
     for (unsigned int jj = 0; jj != base.size2(); jj++) {
@@ -664,6 +680,5 @@ DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
 }
 
 /**@}*/
-
 
 } // namespace MoFEM

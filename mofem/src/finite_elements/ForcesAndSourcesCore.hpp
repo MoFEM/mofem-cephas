@@ -709,6 +709,13 @@ protected:
   MoFEMErrorCode calHierarchicalBaseFunctionsOnElement();
 
   /**
+   * @brief Calculate Bernstein-Bezier base
+   *
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode calBernsteinBezierBaseFunctionsOnElement();
+
+  /**
    * @brief Create a entity data on element object
    *
    * @return MoFEMErrorCode
