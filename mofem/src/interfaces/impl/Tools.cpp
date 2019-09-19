@@ -15,6 +15,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#include <phg-quadrule/quad.h>
+
 namespace MoFEM {
 
 MoFEMErrorCode Tools::query_interface(const MOFEMuuid &uuid,
@@ -475,6 +477,34 @@ MoFEMErrorCode Tools::findMinDistanceFromTheEdges(
         ++colsest_segment_it;
     }
   }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForQuad(
+    MatrixDouble &gauss_pts, const int rule_ksi, const int rule_eta) {
+  MoFEMFunctionBegin;
+  int nb_gauss_pts_ksi = QUAD_1D_TABLE[rule_ksi]->npoints;
+  int nb_gauss_pts_eta = QUAD_1D_TABLE[rule_eta]->npoints;
+  gauss_pts.resize(3, nb_gauss_pts_ksi * nb_gauss_pts_eta, false);
+  gauss_pts.clear();
+
+  VectorDouble ones;
+  ones.resize(max(nb_gauss_pts_ksi, nb_gauss_pts_eta), false);
+  fill(ones.begin(), ones.end(), 1.0);
+
+  cblas_dger(CblasRowMajor, nb_gauss_pts_eta, nb_gauss_pts_ksi, 1, &ones(0), 1,
+             &QUAD_1D_TABLE[rule_ksi]->points[1], 2, &gauss_pts(0, 0),
+             nb_gauss_pts_ksi);
+
+  cblas_dger(CblasRowMajor, nb_gauss_pts_eta, nb_gauss_pts_ksi, 1,
+             &QUAD_1D_TABLE[rule_eta]->points[1], 2, &ones(0), 1,
+             &gauss_pts(1, 0), nb_gauss_pts_ksi);
+
+  cblas_dger(CblasRowMajor, nb_gauss_pts_eta, nb_gauss_pts_ksi, 1,
+             QUAD_1D_TABLE[rule_eta]->weights, 1,
+             QUAD_1D_TABLE[rule_ksi]->weights, 1, &gauss_pts(2, 0),
+             nb_gauss_pts_ksi);
 
   MoFEMFunctionReturn(0);
 }

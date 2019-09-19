@@ -416,6 +416,10 @@ struct Tools : public UnknownInterface {
                                           const RowColData row_or_col, Vec v);
 
   /**@}*/
+
+  static MoFEMErrorCode outerProductOfEdgeIntegrationPtsForQuad(MatrixDouble &pts,
+                                                              const int edge0,
+                                                              const int edge1);
 };
 
 } // namespace MoFEM

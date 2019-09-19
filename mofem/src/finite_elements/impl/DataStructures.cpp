@@ -64,6 +64,13 @@ static void constructor_data(DataForcesAndSourcesCore *data,
     }
     data->dataOnEntities[MBTRI].push_back(new EntData());
   break;
+  case MBQUAD:
+    data->dataOnEntities[MBVERTEX].push_back(new EntData());
+    for (int ee = 0; ee != 4; ++ee) {
+      data->dataOnEntities[MBEDGE].push_back(new EntData());
+    }
+    data->dataOnEntities[MBQUAD].push_back(new EntData());
+    break;
   case MBEDGE:
     data->dataOnEntities[MBVERTEX].push_back(new EntData());
     data->dataOnEntities[MBEDGE].push_back(new EntData());

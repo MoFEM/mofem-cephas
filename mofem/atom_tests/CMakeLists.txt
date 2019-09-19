@@ -1254,6 +1254,7 @@ list(INSERT testing_base_list
   hdivtet_demkowicz
   l2tet
   h1tri
+  h1quad
   hdivtri_ainsworth
   hdivtri_demkowicz
   hcurltri_ainsworth

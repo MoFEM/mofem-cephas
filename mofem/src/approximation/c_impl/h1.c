@@ -590,6 +590,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
                                        double *L, double *diffL,
                                        const int dim)) {
   MoFEMFunctionBeginHot;
+  // TODO: return separately components of the tensor product between two edges 
 
   int P[3];
   int ff = 0;
@@ -616,14 +617,6 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
       int n3 = faces_nodes[4 * ff + 3];
       int e0 = 2 * ff + 0;
       int e1 = 2 * ff + 1;
-      // {
-      //   ksi_faces[e0] = 2. * (N[node_shift + n1] + N[node_shift + n2] -
-      //                         N[node_shift + n0] - N[node_shift + n3]) -
-      //                   1.;
-      //   ksi_faces[e1] = 2. * (N[node_shift + n2] + N[node_shift + n3] -
-      //                         N[node_shift + n0] - N[node_shift + n1]) -
-      //                   1.;
-      // }
       ksi_faces[e0] = N[node_shift + n1] + N[node_shift + n2] -
                       N[node_shift + n0] - N[node_shift + n3];
       ksi_faces[e1] = N[node_shift + n2] + N[node_shift + n3] -
@@ -637,14 +630,6 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
       }
       int dd = 0;
       for (; dd < 3; dd++) {
-        // diff_ksi_faces[e0][dd] = 2. * (diffN[node_diff_shift + 3 * n1 + dd] +
-        //                                diffN[node_diff_shift + 3 * n2 + dd] -
-        //                                diffN[node_diff_shift + 3 * n0 + dd] -
-        //                                diffN[node_diff_shift + 3 * n3 + dd]);
-        // diff_ksi_faces[e1][dd] = 2. * (diffN[node_diff_shift + 3 * n2 + dd] +
-        //                                diffN[node_diff_shift + 3 * n3 + dd] -
-        //                                diffN[node_diff_shift + 3 * n0 + dd] -
-        //                                diffN[node_diff_shift + 3 * n1 + dd]);
         diff_ksi_faces[e0][dd] = diffN[node_diff_shift + 2 * n1 + dd] +
                                  diffN[node_diff_shift + 2 * n2 + dd] -
                                  diffN[node_diff_shift + 2 * n0 + dd] -
@@ -795,6 +780,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
                                        double *L, double *diffL,
                                        const int dim)) {
   MoFEMFunctionBeginHot;
+  // TODO: return separately components of the tensor product between two edges
 
   int P = NBFACEQUAD_H1(p);
   if (P == 0)
