@@ -91,6 +91,7 @@ Tools::minTetsQuality(const Range &tets, double &min_quality, Tag th,
 constexpr std::array<double, 6> Tools::diffShapeFunMBTRI;
 constexpr std::array<double, 12> Tools::diffShapeFunMBTET;
 constexpr std::array<double, 4> Tools::shapeFunMBTETAt000;
+constexpr std::array<double, 8> Tools::diffShapeFunMBQUADAtCenter;
 
 MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
     const double *elem_coords, const double *global_coords, const int nb_nodes,
@@ -484,6 +485,30 @@ MoFEMErrorCode Tools::findMinDistanceFromTheEdges(
 MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForQuad(
     MatrixDouble &gauss_pts, const int rule_ksi, const int rule_eta) {
   MoFEMFunctionBegin;
+
+  auto check_rule_edge = [](int rule) {
+    MoFEMFunctionBeginHot;
+    if (rule < 0) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Wrong integration rule: %d", rule);
+    }
+    if (rule > QUAD_1D_TABLE_SIZE) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "rule > quadrature order %d < %d", rule, QUAD_1D_TABLE_SIZE);
+    }
+    if (QUAD_1D_TABLE[rule]->dim != 1) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
+    }
+    if (QUAD_1D_TABLE[rule]->order < rule) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "wrong order %d != %d", QUAD_1D_TABLE[rule]->order, rule);
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR check_rule_edge(rule_ksi);
+  CHKERR check_rule_edge(rule_eta);
+
   int nb_gauss_pts_ksi = QUAD_1D_TABLE[rule_ksi]->npoints;
   int nb_gauss_pts_eta = QUAD_1D_TABLE[rule_eta]->npoints;
   gauss_pts.resize(3, nb_gauss_pts_ksi * nb_gauss_pts_eta, false);

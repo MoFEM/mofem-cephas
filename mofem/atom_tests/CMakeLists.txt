@@ -1215,6 +1215,21 @@ add_test(edge_and_bubble_shape_functions_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np
   ${CMAKE_CURRENT_BINARY_DIR}/edge_and_bubble_shape_functions_on_quad -my_file quad_mesh.h5m
 )
 
+my_add_executable(gauss_points_on_quad gauss_points_on_quad.cpp)
+target_link_libraries(gauss_points_on_quad
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(gauss_points_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/gauss_points_on_quad
+)
+
 my_add_executable(partition_mesh partition_mesh.cpp)
 target_link_libraries(partition_mesh
   mofem_finite_elements
