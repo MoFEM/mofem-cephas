@@ -910,31 +910,31 @@ struct DataForcesAndSourcesCore {
      */
     inline MatrixInt &getBBAlphaIndices();
 
-    inline boost::shared_ptr<MatrixInt> &
+    virtual boost::shared_ptr<MatrixInt> &
     getBBAlphaIndicesSharedPtr(const std::string &field_name);
 
     /**
      * Get shared pointer to BB base base functions
      */
-    inline boost::shared_ptr<MatrixDouble> &
+    virtual boost::shared_ptr<MatrixDouble> &
     getBBNSharedPtr(const std::string &field_name);
 
     /**
      * Get shared pointer to BB base base functions
      */
-    inline const boost::shared_ptr<MatrixDouble> &
+    virtual const boost::shared_ptr<MatrixDouble> &
     getBBNSharedPtr(const std::string &field_name) const;
 
     /**
      * Get shared pointer to BB derivatives of base base functions
      */
-    inline boost::shared_ptr<MatrixDouble> &
+    virtual boost::shared_ptr<MatrixDouble> &
     getBBDiffNSharedPtr(const std::string &field_name);
 
     /**
      * Get shared pointer to derivatives of BB base base functions
      */
-    inline const boost::shared_ptr<MatrixDouble> &
+    virtual const boost::shared_ptr<MatrixDouble> &
     getBBDiffNSharedPtr(const std::string &field_name) const;
 
     /**@}*/
@@ -1037,6 +1037,33 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
 
     inline boost::shared_ptr<MatrixDouble> &
     getDerivedDiffNSharedPtr(const FieldApproximationBase base);
+
+    boost::shared_ptr<MatrixInt> &
+    getBBAlphaIndicesSharedPtr(const std::string &field_name);
+
+    /**
+     * Get shared pointer to BB base base functions
+     */
+    boost::shared_ptr<MatrixDouble> &
+    getBBNSharedPtr(const std::string &field_name);
+
+    /**
+     * Get shared pointer to BB base base functions
+     */
+    const boost::shared_ptr<MatrixDouble> &
+    getBBNSharedPtr(const std::string &field_name) const;
+
+    /**
+     * Get shared pointer to BB derivatives of base base functions
+     */
+    boost::shared_ptr<MatrixDouble> &
+    getBBDiffNSharedPtr(const std::string &field_name);
+
+    /**
+     * Get shared pointer to derivatives of BB base base functions
+     */
+    const boost::shared_ptr<MatrixDouble> &
+    getBBDiffNSharedPtr(const std::string &field_name) const;
 
   protected:
     const boost::shared_ptr<DataForcesAndSourcesCore::EntData> entDataPtr;
@@ -1479,45 +1506,6 @@ VectorInt &DataForcesAndSourcesCore::EntData::getBBNodeOrder() {
 
 MatrixInt &DataForcesAndSourcesCore::EntData::getBBAlphaIndices() {
   return *getBBAlphaIndicesSharedPtr(bbFieldName);
-}
-
-boost::shared_ptr<MatrixInt> &
-DataForcesAndSourcesCore::EntData::getBBAlphaIndicesSharedPtr(
-    const std::string &field_name) {
-  return bbAlphaInduces[field_name];
-}
-
-boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getBBNSharedPtr(
-    const std::string &field_name) {
-  return bbN[field_name];
-}
-
-/**
- * Get shared pointer to BB base base functions
- */
-const boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getBBNSharedPtr(
-    const std::string &field_name) const {
-  return bbN.at(field_name);
-}
-
-/**
- * Get shared pointer to BB derivatives of base base functions
- */
-boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getBBDiffNSharedPtr(
-    const std::string &field_name) {
-  return bbDiffN[field_name];
-}
-
-/**
- * Get shared pointer to derivatives of BB base base functions
- */
-const boost::shared_ptr<MatrixDouble> &
-DataForcesAndSourcesCore::EntData::getBBDiffNSharedPtr(
-    const std::string &field_name) const {
-  return bbDiffN.at(field_name);
 }
 
 /**@}*/

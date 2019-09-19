@@ -681,4 +681,86 @@ DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
 
 /**@}*/
 
+/** \name Bernstein-Bezier base only functions */
+
+/**@{*/
+
+boost::shared_ptr<MatrixInt> &
+DataForcesAndSourcesCore::EntData::getBBAlphaIndicesSharedPtr(
+    const std::string &field_name) {
+  return bbAlphaInduces[field_name];
+}
+
+boost::shared_ptr<MatrixDouble> &
+DataForcesAndSourcesCore::EntData::getBBNSharedPtr(
+    const std::string &field_name) {
+  return bbN[field_name];
+}
+
+/**
+ * Get shared pointer to BB base base functions
+ */
+const boost::shared_ptr<MatrixDouble> &
+DataForcesAndSourcesCore::EntData::getBBNSharedPtr(
+    const std::string &field_name) const {
+  return bbN.at(field_name);
+}
+
+/**
+ * Get shared pointer to BB derivatives of base base functions
+ */
+boost::shared_ptr<MatrixDouble> &
+DataForcesAndSourcesCore::EntData::getBBDiffNSharedPtr(
+    const std::string &field_name) {
+  return bbDiffN[field_name];
+}
+
+/**
+ * Get shared pointer to derivatives of BB base base functions
+ */
+const boost::shared_ptr<MatrixDouble> &
+DataForcesAndSourcesCore::EntData::getBBDiffNSharedPtr(
+    const std::string &field_name) const {
+  return bbDiffN.at(field_name);
+}
+
+boost::shared_ptr<MatrixInt> &
+DerivedDataForcesAndSourcesCore::DerivedEntData::getBBAlphaIndicesSharedPtr(
+    const std::string &field_name) {
+  return entDataPtr->getBBAlphaIndicesSharedPtr(field_name);
+}
+
+boost::shared_ptr<MatrixDouble> &
+DerivedDataForcesAndSourcesCore::DerivedEntData::getBBNSharedPtr(
+    const std::string &field_name) {
+  return entDataPtr->getBBNSharedPtr(field_name);
+}
+
+const boost::shared_ptr<MatrixDouble> &
+DerivedDataForcesAndSourcesCore::DerivedEntData::getBBNSharedPtr(
+    const std::string &field_name) const {
+  return entDataPtr->getBBNSharedPtr(field_name);
+}
+
+/**
+ * Get shared pointer to BB derivatives of base base functions
+ */
+boost::shared_ptr<MatrixDouble> &
+DerivedDataForcesAndSourcesCore::DerivedEntData::getBBDiffNSharedPtr(
+    const std::string &field_name) {
+  return entDataPtr->getBBDiffNSharedPtr(field_name);
+}
+
+/**
+ * Get shared pointer to derivatives of BB base base functions
+ */
+const boost::shared_ptr<MatrixDouble> &
+DerivedDataForcesAndSourcesCore::DerivedEntData::getBBDiffNSharedPtr(
+    const std::string &field_name) const {
+  return entDataPtr->getBBDiffNSharedPtr(field_name);
+}
+
+/**@}*/
+
+
 } // namespace MoFEM

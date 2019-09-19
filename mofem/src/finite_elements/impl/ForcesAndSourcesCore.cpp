@@ -996,12 +996,13 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
       auto field_name = e->getName();
       auto space = e->getSpace();
       CHKERR get_nodal_base_data(*dataOnElement[space], field_name);
-      CHKERR get_entity_base_data(*dataOnElement[space], field_name, MBVERTEX,
+      CHKERR get_entity_base_data(*dataOnElement[space], field_name, MBEDGE,
                                   MBPOLYHEDRON);
       CHKERR getElementPolynomialBase()->getValue(
-          gaussPts, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                        *dataOnElement[space], static_cast<FieldSpace>(space),
-                        AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
+          gaussPts,
+          boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+              *dataOnElement[space], field_name, static_cast<FieldSpace>(space),
+              AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
     }
   }
 
