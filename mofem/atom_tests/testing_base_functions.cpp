@@ -466,10 +466,10 @@ int main(int argc, char *argv[]) {
           sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN("TEST_FIELD"));
       std::cout << "sum  " << sum << std::endl;
       std::cout << "diff_sum " << diff_sum << std::endl;
-      if (fabs(6.00591 - sum) > eps) {
+      if (fabs(4.38395 - sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
-      if (fabs(-5.6158 - diff_sum) > eps) {
+      if (fabs(diff_sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
     }
