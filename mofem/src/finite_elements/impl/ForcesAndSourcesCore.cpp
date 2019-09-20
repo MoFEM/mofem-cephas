@@ -939,6 +939,8 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
         dat.getDataOrder() = 0;
         dat.getBase() = NOBASE;
         dat.getSpace() = NOSPACE;
+        dat.getFieldData().resize(0,false);
+        dat.getFieldDofs().resize(0, false);
       }
     }
 
