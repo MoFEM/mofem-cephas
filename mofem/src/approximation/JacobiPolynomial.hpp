@@ -32,7 +32,7 @@ static const MOFEMuuid IDD_JACOBI_BASE_FUNCTION =
 struct JacobiPolynomialCtx : public BaseFunctionCtx {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 MoFEM::UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   int P;
   double *diffX;
@@ -66,7 +66,7 @@ struct JacobiPolynomialCtx : public BaseFunctionCtx {
 struct JacobiPolynomial : public BaseFunction {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 MoFEM::UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   JacobiPolynomial() {}
   ~JacobiPolynomial() {}
@@ -81,7 +81,7 @@ static const MOFEMuuid IDD_INTEGRATED_JACOBI_BASE_FUNCTION =
 struct IntegratedJacobiPolynomialCtx : public JacobiPolynomialCtx {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 MoFEM::UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   IntegratedJacobiPolynomialCtx(
       int p, double *diff_x, double *diff_t, int dim, double alpha,
@@ -97,7 +97,7 @@ struct IntegratedJacobiPolynomialCtx : public JacobiPolynomialCtx {
 struct IntegratedJacobiPolynomial : public JacobiPolynomial {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 MoFEM::UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   IntegratedJacobiPolynomial() : JacobiPolynomial() {}
   ~IntegratedJacobiPolynomial() {}

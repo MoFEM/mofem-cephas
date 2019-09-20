@@ -19,9 +19,8 @@
 
 using namespace MoFEM;
 
-MoFEMErrorCode
-EntPolynomialBaseCtx::query_interface(const MOFEMuuid &uuid,
-                                      MoFEM::UnknownInterface **iface) const {
+MoFEMErrorCode EntPolynomialBaseCtx::query_interface(
+    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
 
   MoFEMFunctionBeginHot;
   *iface = NULL;

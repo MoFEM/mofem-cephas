@@ -23,7 +23,7 @@ using namespace MoFEM;
 
 MoFEMErrorCode
 TetPolynomialBase::query_interface(const MOFEMuuid &uuid,
-                                   MoFEM::UnknownInterface **iface) const {
+                                   BaseFunctionUnknownInterface **iface) const {
 
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -1094,7 +1094,7 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
                             boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
 
-  MoFEM::UnknownInterface *iface;
+  BaseFunctionUnknownInterface *iface;
   CHKERR ctx_ptr->query_interface(IDD_TET_BASE_FUNCTION, &iface);
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 

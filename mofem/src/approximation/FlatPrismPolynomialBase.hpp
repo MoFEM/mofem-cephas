@@ -36,7 +36,7 @@ static const MOFEMuuid IDD_FLATPRISM_BASE_FUNCTION =
 struct FlatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   moab::Interface &mOab;
   const NumeredEntFiniteElement *fePtr;
@@ -59,7 +59,7 @@ struct FlatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
 struct FlatPrismPolynomialBase : public BaseFunction {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   FlatPrismPolynomialBase();
   ~FlatPrismPolynomialBase();

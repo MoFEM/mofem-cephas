@@ -57,7 +57,7 @@ struct SomeUserPolynomialBase : public BaseFunction {
    */
    
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 MoFEM::UnknownInterface **iface) const {
+                                 BaseFunctionUnknownInterface **iface) const {
     MoFEMFunctionBegin;
     *iface = NULL;
     if (uuid == IDD_TET_BASE_FUNCTION) {
@@ -81,7 +81,7 @@ struct SomeUserPolynomialBase : public BaseFunction {
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
     MoFEMFunctionBeginHot;
 
-    MoFEM::UnknownInterface *iface;
+    BaseFunctionUnknownInterface *iface;
     CHKERR ctx_ptr->query_interface(IDD_TET_BASE_FUNCTION, &iface);
     cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 

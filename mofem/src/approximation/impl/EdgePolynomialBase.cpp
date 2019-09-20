@@ -18,9 +18,8 @@
 
 using namespace MoFEM;
 
-MoFEMErrorCode
-EdgePolynomialBase::query_interface(const MOFEMuuid &uuid,
-                                    MoFEM::UnknownInterface **iface) const {
+MoFEMErrorCode EdgePolynomialBase::query_interface(
+    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
 
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -43,7 +42,7 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
                              boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
 
-  MoFEM::UnknownInterface *iface;
+  BaseFunctionUnknownInterface *iface;
   CHKERR ctx_ptr->query_interface(IDD_EDGE_BASE_FUNCTION, &iface);
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
@@ -199,7 +198,7 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
     auto &get_n = get_base(data.dataOnEntities[MBEDGE][0]);
     auto &get_diff_n = get_diff_base(data.dataOnEntities[MBEDGE][0]);
     get_n.resize(nb_gauss_pts, nb_dofs, false);
-    get_diff_n.resize(nb_gauss_pts, nb_dofs, false); 
+    get_diff_n.resize(nb_gauss_pts, nb_dofs, false);
 
     if (nb_dofs) {
       auto &edge_alpha = get_alpha(data.dataOnEntities[MBEDGE][0]);

@@ -31,7 +31,7 @@ namespace MoFEM {
 struct TetPolynomialBase : public BaseFunction {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   TetPolynomialBase();
   ~TetPolynomialBase();
@@ -72,7 +72,6 @@ private:
   MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
 
   MatrixInt senseFaceAlpha;
-
 };
 
 } // namespace MoFEM

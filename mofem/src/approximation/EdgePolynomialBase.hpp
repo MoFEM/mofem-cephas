@@ -33,7 +33,7 @@ namespace MoFEM {
 struct EdgePolynomialBase : public BaseFunction {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   EdgePolynomialBase();
   ~EdgePolynomialBase();

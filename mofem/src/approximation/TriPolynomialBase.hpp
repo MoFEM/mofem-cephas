@@ -30,7 +30,7 @@ namespace MoFEM {
 struct TriPolynomialBase : public BaseFunction {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   TriPolynomialBase();
   ~TriPolynomialBase();

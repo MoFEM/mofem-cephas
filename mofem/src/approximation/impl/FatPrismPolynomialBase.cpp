@@ -16,11 +16,10 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
 using namespace MoFEM;
 
 MoFEMErrorCode FatPrismPolynomialBaseCtx::query_interface(
-    const MOFEMuuid &uuid, MoFEM::UnknownInterface **iface) const {
+    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
 
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -56,9 +55,8 @@ FatPrismPolynomialBaseCtx::FatPrismPolynomialBaseCtx(
 }
 FatPrismPolynomialBaseCtx::~FatPrismPolynomialBaseCtx() {}
 
-MoFEMErrorCode
-FatPrismPolynomialBase::query_interface(const MOFEMuuid &uuid,
-                                        MoFEM::UnknownInterface **iface) const {
+MoFEMErrorCode FatPrismPolynomialBase::query_interface(
+    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if (uuid == IDD_FATPRISM_BASE_FUNCTION) {
@@ -81,7 +79,7 @@ FatPrismPolynomialBase::getValue(MatrixDouble &pts,
 
   MoFEMFunctionBeginHot;
 
-  MoFEM::UnknownInterface *iface;
+  BaseFunctionUnknownInterface *iface;
   ierr = ctx_ptr->query_interface(IDD_FATPRISM_BASE_FUNCTION, &iface);
   CHKERRG(ierr);
   cTx = reinterpret_cast<FatPrismPolynomialBaseCtx *>(iface);

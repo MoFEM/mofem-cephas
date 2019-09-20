@@ -825,9 +825,9 @@ MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement(
             dataOnElement[H1]->basesOnSpaces[space].test(b)) {
           CHKERR getElementPolynomialBase()->getValue(
               gaussPts,
-              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+              boost::make_shared<EntPolynomialBaseCtx>(
                   *dataOnElement[space], static_cast<FieldSpace>(space),
-                  static_cast<FieldApproximationBase>(b), NOBASE)));
+                  static_cast<FieldApproximationBase>(b), NOBASE));
         }
       }
       break;
@@ -842,9 +842,9 @@ MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement(
             dataOnElement[H1]->basesOnSpaces[space].test(b)) {
           CHKERR getUserPolynomialBase()->getValue(
               gaussPts,
-              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+              boost::make_shared<EntPolynomialBaseCtx>(
                   *dataOnElement[space], static_cast<FieldSpace>(space),
-                  static_cast<FieldApproximationBase>(b), NOBASE)));
+                  static_cast<FieldApproximationBase>(b), NOBASE));
         }
       break;
     default:
@@ -1002,9 +1002,9 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
                                   MBPOLYHEDRON);
       CHKERR getElementPolynomialBase()->getValue(
           gaussPts,
-          boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+          boost::make_shared<EntPolynomialBaseCtx>(
               *dataOnElement[space], field_name, static_cast<FieldSpace>(space),
-              AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE)));
+              AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE));
     }
   }
 

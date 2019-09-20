@@ -41,7 +41,7 @@ static const MOFEMuuid IDD_EDGE_BASE_FUNCTION =
 struct EntPolynomialBaseCtx : public BaseFunctionCtx {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   PetscErrorCode (*basePolynomialsType0)(int p, double s, double *diff_s,
                                          double *L, double *diffL,

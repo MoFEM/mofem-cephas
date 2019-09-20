@@ -4,107 +4,97 @@
 */
 
 /* This file is part of MoFEM.
-* MoFEM is free software: you can redistribute it and/or modify it under
-* the terms of the GNU Lesser General Public License as published by the
-* Free Software Foundation, either version 3 of the License, or (at your
-* option) any later version.
-*
-* MoFEM is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-* License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #ifndef __LOBATTOPOLYNOMIALS_HPP__
 #define __LOBATTOPOLYNOMIALS_HPP__
 
 namespace MoFEM {
 
-  static const MOFEMuuid IDD_LOBATTO_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(LOBATTO_BASE_FUNCTION_INTERFACE));
-  static const MOFEMuuid IDD_KERNEL_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(KERNEL_BASE_FUNCTION_INTERFACE));
+static const MOFEMuuid IDD_LOBATTO_BASE_FUNCTION =
+    MOFEMuuid(BitIntefaceId(LOBATTO_BASE_FUNCTION_INTERFACE));
+static const MOFEMuuid IDD_KERNEL_BASE_FUNCTION =
+    MOFEMuuid(BitIntefaceId(KERNEL_BASE_FUNCTION_INTERFACE));
 
-  /**
-   * \brief Class used to give arguments to Lobatto base functions
-   * \ingroup mofem_base_functions
-   */
-  struct LobattoPolynomialCtx: public LegendrePolynomialCtx {
+/**
+ * \brief Class used to give arguments to Lobatto base functions
+ * \ingroup mofem_base_functions
+ */
+struct LobattoPolynomialCtx : public LegendrePolynomialCtx {
 
-    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 BaseFunctionUnknownInterface **iface) const;
 
-    LobattoPolynomialCtx(
-      int p,
-      double *diff_s,
-      int dim,
-      boost::shared_ptr<MatrixDouble > base_fun_ptr,
-      boost::shared_ptr<MatrixDouble > base_diff_fun_ptr
-    ):
-    LegendrePolynomialCtx(p,diff_s,dim,base_fun_ptr,base_diff_fun_ptr) {
-      basePolynomialsType0 = Lobatto_polynomials;
-    }
-    ~LobattoPolynomialCtx() {}
+  LobattoPolynomialCtx(int p, double *diff_s, int dim,
+                       boost::shared_ptr<MatrixDouble> base_fun_ptr,
+                       boost::shared_ptr<MatrixDouble> base_diff_fun_ptr)
+      : LegendrePolynomialCtx(p, diff_s, dim, base_fun_ptr, base_diff_fun_ptr) {
+    basePolynomialsType0 = Lobatto_polynomials;
+  }
+  ~LobattoPolynomialCtx() {}
+};
 
-  };
+/**
+ * \brief Calculating Lobatto base functions
+ * \ingroup mofem_base_functions
+ */
+struct LobattoPolynomial : public LegendrePolynomial {
 
-  /**
-   * \brief Calculating Lobatto base functions
-   * \ingroup mofem_base_functions
-   */
-  struct LobattoPolynomial: public LegendrePolynomial {
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 BaseFunctionUnknownInterface **iface) const;
 
-    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+  LobattoPolynomial() {}
+  ~LobattoPolynomial() {}
 
-    LobattoPolynomial() {}
-    ~LobattoPolynomial() {}
+  MoFEMErrorCode getValue(MatrixDouble &pts,
+                          boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
+};
 
-    MoFEMErrorCode getValue(
-      MatrixDouble &pts,
-      boost::shared_ptr<BaseFunctionCtx> ctx_ptr
-    );
+/**
+ * \brief Class used to give arguments to Kernel Lobatto base functions
+ * \ingroup mofem_base_functions
+ */
+struct KernelLobattoPolynomialCtx : public LegendrePolynomialCtx {
 
-  };
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 BaseFunctionUnknownInterface **iface) const;
 
-  /**
-   * \brief Class used to give arguments to Kernel Lobatto base functions
-   * \ingroup mofem_base_functions
-   */
-  struct KernelLobattoPolynomialCtx: public LegendrePolynomialCtx {
+  KernelLobattoPolynomialCtx(int p, double *diff_s, int dim,
+                             boost::shared_ptr<MatrixDouble> base_fun_ptr,
+                             boost::shared_ptr<MatrixDouble> base_diff_fun_ptr)
+      : LegendrePolynomialCtx(p, diff_s, dim, base_fun_ptr, base_diff_fun_ptr) {
+    basePolynomialsType0 = LobattoKernel_polynomials;
+  }
+  ~KernelLobattoPolynomialCtx() {}
+};
 
-    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
+/**
+ * \brief Calculating Lobatto base functions
+ * \ingroup mofem_base_functions
+ */
+struct KernelLobattoPolynomial : public LegendrePolynomial {
 
-    KernelLobattoPolynomialCtx(
-      int p,
-      double *diff_s,
-      int dim,
-      boost::shared_ptr<MatrixDouble > base_fun_ptr,
-      boost::shared_ptr<MatrixDouble > base_diff_fun_ptr
-    ):
-    LegendrePolynomialCtx(p,diff_s,dim,base_fun_ptr,base_diff_fun_ptr) {
-      basePolynomialsType0 = LobattoKernel_polynomials;
-    }
-    ~KernelLobattoPolynomialCtx() {}
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 BaseFunctionUnknownInterface **iface) const;
 
-  };
+  KernelLobattoPolynomial() {}
+  ~KernelLobattoPolynomial() {}
 
-  /**
-   * \brief Calculating Lobatto base functions
-   * \ingroup mofem_base_functions
-   */
-  struct KernelLobattoPolynomial: public LegendrePolynomial {
+  MoFEMErrorCode getValue(MatrixDouble &pts,
+                          boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
+};
 
-    MoFEMErrorCode query_interface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) const;
-
-    KernelLobattoPolynomial() {}
-    ~KernelLobattoPolynomial() {}
-
-    MoFEMErrorCode getValue(
-      MatrixDouble &pts,
-      boost::shared_ptr<BaseFunctionCtx> ctx_ptr
-    );
-
-  };
-
-}
+} // namespace MoFEM
 
 #endif

@@ -20,7 +20,7 @@
 using namespace MoFEM;
 
 MoFEMErrorCode FlatPrismPolynomialBaseCtx::query_interface(
-    const MOFEMuuid &uuid, MoFEM::UnknownInterface **iface) const {
+    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
 
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -47,7 +47,7 @@ FlatPrismPolynomialBaseCtx::FlatPrismPolynomialBaseCtx(
 FlatPrismPolynomialBaseCtx::~FlatPrismPolynomialBaseCtx() {}
 
 MoFEMErrorCode FlatPrismPolynomialBase::query_interface(
-    const MOFEMuuid &uuid, MoFEM::UnknownInterface **iface) const {
+    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
 
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -70,7 +70,7 @@ FlatPrismPolynomialBase::getValue(MatrixDouble &pts,
 
   MoFEMFunctionBeginHot;
 
-  MoFEM::UnknownInterface *iface;
+  BaseFunctionUnknownInterface *iface;
   CHKERR ctx_ptr->query_interface(IDD_FLATPRISM_BASE_FUNCTION, &iface);
   cTx = reinterpret_cast<FlatPrismPolynomialBaseCtx *>(iface);
   if (!cTx->fePtr) {

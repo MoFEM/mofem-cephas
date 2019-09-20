@@ -24,7 +24,7 @@ TriPolynomialBase::~TriPolynomialBase() {}
 
 MoFEMErrorCode
 TriPolynomialBase::query_interface(const MOFEMuuid &uuid,
-                                   MoFEM::UnknownInterface **iface) const {
+                                   BaseFunctionUnknownInterface **iface) const {
   MoFEMFunctionBegin;
   *iface = NULL;
   if (uuid == IDD_TET_BASE_FUNCTION) {
@@ -616,7 +616,7 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
                             boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
 
-  MoFEM::UnknownInterface *iface;
+  BaseFunctionUnknownInterface *iface;
   CHKERR ctx_ptr->query_interface(IDD_TRI_BASE_FUNCTION, &iface);
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
