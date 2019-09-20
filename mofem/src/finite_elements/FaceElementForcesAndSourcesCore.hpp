@@ -350,6 +350,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::OpSwitch() {
   /// Use the some node base
   CHKERR calculateCoordinatesAtGaussPts();
   CHKERR calHierarchicalBaseFunctionsOnElement();
+  CHKERR calBernsteinBezierBaseFunctionsOnElement();
   if (!(NO_HO_GEOMETRY & SWITCH))
     CHKERR calculateHoNormal();
 
