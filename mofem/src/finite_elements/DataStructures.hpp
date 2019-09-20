@@ -937,6 +937,9 @@ struct DataForcesAndSourcesCore {
     virtual const boost::shared_ptr<MatrixDouble> &
     getBBDiffNSharedPtr(const std::string &field_name) const;
 
+    virtual MoFEMErrorCode baseSwap(const std::string &field_name,
+                            const FieldApproximationBase base);
+
     /**@}*/
 
   protected:
@@ -958,6 +961,11 @@ struct DataForcesAndSourcesCore {
     std::map<std::string, boost::shared_ptr<MatrixDouble>> bbDiffN;
     std::map<std::string, boost::shared_ptr<MatrixInt>>
         bbAlphaInduces; ///< Indices for Bernstein-Bezier base
+
+    protected:
+     boost::shared_ptr<MatrixDouble> swapBaseNPtr;
+     boost::shared_ptr<MatrixDouble> swapBaseDiffNPtr;
+
   };
 
   std::bitset<LASTSPACE> sPace; ///< spaces on element
@@ -975,15 +983,25 @@ struct DataForcesAndSourcesCore {
                       ///< function, dofs
                       ///< values, etc.
 
+  DataForcesAndSourcesCore(const EntityType type);
+
+  virtual MoFEMErrorCode setElementType(const EntityType type);
+
   /**
    * Reset data associated with particular field name
    * @return error code
    */
   inline MoFEMErrorCode resetFieldDependentData();
 
-  DataForcesAndSourcesCore(const EntityType type);
-
-  virtual MoFEMErrorCode setElementType(const EntityType type);
+  /**
+   * @brief Swap approximation base
+   * 
+   * @param field_name 
+   * @param base 
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode baseSwap(const std::string &field_name,
+                                  const FieldApproximationBase base);
 
   friend std::ostream &operator<<(std::ostream &os,
                                   const DataForcesAndSourcesCore &e);
@@ -1065,6 +1083,9 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
     const boost::shared_ptr<MatrixDouble> &
     getBBDiffNSharedPtr(const std::string &field_name) const;
 
+    MoFEMErrorCode baseSwap(const std::string &field_name,
+                            const FieldApproximationBase base);
+
   protected:
     const boost::shared_ptr<DataForcesAndSourcesCore::EntData> entDataPtr;
   };
@@ -1072,7 +1093,6 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
   DerivedDataForcesAndSourcesCore(
       const boost::shared_ptr<DataForcesAndSourcesCore> &data_ptr);
   MoFEMErrorCode setElementType(const EntityType type);
-  MoFEMErrorCode copyBase();
 
 private:
   const boost::shared_ptr<DataForcesAndSourcesCore> dataPtr;
@@ -1408,25 +1428,6 @@ template <int Tensor_Dim0, int Tensor_Dim1>
 auto DataForcesAndSourcesCore::EntData::getFTensor2N(const int gg,
                                                      const int bb) {
   return getFTensor2N<Tensor_Dim0, Tensor_Dim1>(bAse, gg, bb);
-}
-
-MoFEMErrorCode DataForcesAndSourcesCore::EntData::resetFieldDependentData() {
-  MoFEMFunctionBeginHot;
-  sPace = NOSPACE;
-  bAse = NOBASE;
-  iNdices.resize(0, false);
-  localIndices.resize(0, false);
-  dOfs.resize(0, false);
-  fieldData.resize(0, false);
-  MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode DataForcesAndSourcesCore::resetFieldDependentData() {
-  MoFEMFunctionBegin;
-  for (EntityType t = MBVERTEX; t != MBMAXTYPE; t++)
-    for (auto &e : dataOnEntities[t])
-      CHKERR e.resetFieldDependentData();
-  MoFEMFunctionReturn(0);
 }
 
 /** \name Specializations for H1/L2 */

@@ -1105,15 +1105,37 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     } else {
 
       boost::shared_ptr<DataForcesAndSourcesCore> op_data[2];
+      std::array<bool, 2> base_swap;
+      std::array<std::pair<std::string, FieldApproximationBase>, 2>
+          base_swap_data;
+      auto swap_bases = [&]() {
+        MoFEMFunctionBeginHot;
+        for (size_t ss = 0; ss != 2; ++ss)
+          if (base_swap[ss])
+            CHKERR op_data[ss]->baseSwap(base_swap_data[ss].first,
+                                        base_swap_data[ss].second);
+        MoFEMFunctionReturnHot(0);
+      };
 
-      for (int ss = 0; ss != 2; ss++) {
+      for (size_t ss = 0; ss != 2; ss++) {
 
         const std::string field_name =
             !ss ? oit->rowFieldName : oit->colFieldName;
         const Field *field_struture = mField.get_field_structure(field_name);
         const BitFieldId data_id = field_struture->getId();
         const FieldSpace space = field_struture->getSpace();
+        const FieldApproximationBase base = field_struture->getApproxBase();
         op_data[ss] = !ss ? dataOnElement[space] : derivedDataOnElement[space];
+
+        switch (base) {
+          case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+            base_swap_data[ss] = std::pair<std::string, FieldApproximationBase>(
+                field_name, AINSWORTH_BERNSTEIN_BEZIER_BASE);
+            base_swap[ss] = true;
+            break;
+          default:
+            base_swap[ss] = false;
+        };
 
         if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
              data_id)
@@ -1194,12 +1216,14 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         }
       }
 
+      CHKERR swap_bases();
+
       if (oit->getOpType() & UserDataOperator::OPROW) {
         try {
           CHKERR oit->opRhs(*op_data[0], false);
         }
         CATCH_OP_ERRORS(*oit);
-      }
+        }
 
       if (oit->getOpType() & UserDataOperator::OPCOL) {
         try {
@@ -1214,6 +1238,8 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         }
         CATCH_OP_ERRORS(*oit);
       }
+
+      CHKERR swap_bases();
     }
   }
   MoFEMFunctionReturn(0);

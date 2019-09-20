@@ -540,7 +540,9 @@ add_test(forces_and_sources_testing_triangle_element_test_compare ${CMAKE_COMMAN
 )
 
 #edge element
-my_add_executable(forces_and_sources_testing_edge_element forces_and_sources_testing_edge_element.cpp)
+my_add_executable(
+  forces_and_sources_testing_edge_element 
+  forces_and_sources_testing_edge_element.cpp)
 target_link_libraries(forces_and_sources_testing_edge_element
   mofem_finite_elements
   mofem_interfaces
@@ -552,14 +554,27 @@ target_link_libraries(forces_and_sources_testing_edge_element
   ${PROJECT_LIBS}
 )
 
-add_test(forces_and_sources_testing_edge_element_test
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element
-  -my_file elasticity_atom_test_01X_pressure.h5m
+add_test(forces_and_sources_testing_edge_element_ainsworth_test
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element
+  -my_file elasticity_atom_test_01X_pressure.h5m -base ainsworth
 )
-add_test(forces_and_sources_testing_edge_element_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_edge_element.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_edge_element.txt
+add_test(forces_and_sources_testing_edge_element_ainsworth_test_compare 
+${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_edge_element_AINSWORTH_LEGENDRE_BASE.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_edge_element_AINSWORTH_LEGENDRE_BASE.txt
 )
+add_test(forces_and_sources_testing_edge_element_bernstein_bezier_test
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element
+  -my_file elasticity_atom_test_01X_pressure.h5m -base bernstein_bezier
+)
+add_test(forces_and_sources_testing_edge_element_bernstein_bezier_test_compare 
+${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/forces_and_sources_testing_edge_element_AINSWORTH_BERNSTEIN_BEZIER_BASE.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_edge_element_AINSWORTH_BERNSTEIN_BEZIER_BASE.txt
+)
+
 
 #vertex element
 my_add_executable(forces_and_sources_testing_vertex_element forces_and_sources_testing_vertex_element.cpp)

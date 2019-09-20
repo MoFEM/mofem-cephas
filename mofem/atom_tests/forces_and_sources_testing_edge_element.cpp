@@ -189,7 +189,10 @@ int main(int argc, char *argv[]) {
     typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
-    std::ofstream ofs("forces_and_sources_testing_edge_element.txt");
+    std::ofstream ofs(
+        (std ::string("forces_and_sources_testing_edge_element_") +
+         ApproximationBaseNames[base] + ".txt")
+            .c_str());
     TeeDevice my_tee(std::cout, ofs);
     TeeStream my_split(my_tee);
 
@@ -249,8 +252,7 @@ int main(int argc, char *argv[]) {
         new MyOp(my_split, ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
 
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE", fe1);
-    
-  }
+    }
   CATCH_ERRORS;
 
   MoFEM::Core::Finalize();

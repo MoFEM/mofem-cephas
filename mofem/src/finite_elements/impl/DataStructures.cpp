@@ -150,32 +150,75 @@ DerivedDataForcesAndSourcesCore::setElementType(const EntityType type) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DerivedDataForcesAndSourcesCore::copyBase() {
-  MoFEMFunctionBegin;
+MoFEMErrorCode DataForcesAndSourcesCore::EntData::resetFieldDependentData() {
+  MoFEMFunctionBeginHot;
+  sPace = NOSPACE;
+  bAse = NOBASE;
+  iNdices.resize(0, false);
+  localIndices.resize(0, false);
+  dOfs.resize(0, false);
+  fieldData.resize(0, false);
+  MoFEMFunctionReturnHot(0);
+}
 
-  for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
-    auto &ent_data = dataPtr->dataOnEntities[tt];
-    auto &derived_ent_data = dataOnEntities[tt];
-    for (int s = 0; s != ent_data.size(); ++s) {
-      for (int b = 0; b != LASTBASE; ++b) {
-        FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-        if (basesOnEntities[tt].test(base)) {
-          static_cast<DerivedEntData &>(derived_ent_data[s])
-              .getDerivedNSharedPtr(base) = ent_data[s].getNSharedPtr(base);
-          static_cast<DerivedEntData &>(derived_ent_data[s])
-              .getDerivedDiffNSharedPtr(base) =
-              ent_data[s].getDiffNSharedPtr(base);
-        } else {
-          static_cast<DerivedEntData &>(derived_ent_data[s])
-              .getDerivedNSharedPtr(base)
-              .reset();
-          static_cast<DerivedEntData &>(derived_ent_data[s])
-              .getDerivedDiffNSharedPtr(base)
-              .reset();
-        }
-      }
+MoFEMErrorCode DataForcesAndSourcesCore::resetFieldDependentData() {
+  MoFEMFunctionBegin;
+  for (EntityType t = MBVERTEX; t != MBMAXTYPE; t++)
+    for (auto &e : dataOnEntities[t])
+      CHKERR e.resetFieldDependentData();
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+DataForcesAndSourcesCore::EntData::baseSwap(const std::string &field_name,
+                                            const FieldApproximationBase base) {
+  MoFEMFunctionBegin;
+  auto make_swap = [](boost::shared_ptr<MatrixDouble> &ptr,
+                      boost::shared_ptr<MatrixDouble> &ptrBB,
+                      boost::shared_ptr<MatrixDouble> &swap_ptr) {
+    if (swap_ptr) {
+      ptr = swap_ptr;
+      swap_ptr.reset();
+    } else {
+      swap_ptr = ptr;
+      ptr = ptrBB;
     }
+  };
+  make_swap(getNSharedPtr(base), getBBNSharedPtr(field_name), swapBaseNPtr);
+  make_swap(getDiffNSharedPtr(base), getBBDiffNSharedPtr(field_name),
+            swapBaseDiffNPtr);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode DataForcesAndSourcesCore::baseSwap(const std::string &field_name,
+                          const FieldApproximationBase base) {
+  MoFEMFunctionBegin;
+  for (int tt = MBVERTEX; tt != MBMAXTYPE; ++tt) {
+    auto &ent_data = dataOnEntities[tt];
+    for (auto &side_data : ent_data)
+      CHKERR side_data.baseSwap(field_name, base);
   }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode DerivedDataForcesAndSourcesCore::DerivedEntData::baseSwap(
+    const std::string &field_name, const FieldApproximationBase base) {
+  MoFEMFunctionBegin;
+  auto make_swap = [](boost::shared_ptr<MatrixDouble> &ptr,
+                      boost::shared_ptr<MatrixDouble> &ptrBB,
+                      boost::shared_ptr<MatrixDouble> &swap_ptr) {
+    if (swap_ptr) {
+      ptr = swap_ptr;
+      swap_ptr.reset();
+    } else {
+      swap_ptr = ptr;
+      ptr = ptrBB;
+    }
+  };
+  make_swap(getDerivedNSharedPtr(base), getBBNSharedPtr(field_name),
+            swapBaseNPtr);
+  make_swap(getDerivedDiffNSharedPtr(base), getBBDiffNSharedPtr(field_name),
+            swapBaseDiffNPtr);
   MoFEMFunctionReturn(0);
 }
 
@@ -764,3 +807,4 @@ DerivedDataForcesAndSourcesCore::DerivedEntData::getBBDiffNSharedPtr(
 
 
 } // namespace MoFEM
+ 
