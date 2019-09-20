@@ -173,11 +173,11 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 
     const int order = data.dataOnEntities[MBTRI][0].getDataOrder();
     const int nb_dofs = NBFACETRI_H1(order);
+    auto &get_n = get_base(data.dataOnEntities[MBTRI][0]);
+    auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][0]);
+    get_n.resize(nb_gauss_pts, nb_dofs, false);
+    get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
     if (nb_dofs) {
-      auto &get_n = get_base(data.dataOnEntities[MBTRI][0]);
-      auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][0]);
-      get_n.resize(nb_gauss_pts, nb_dofs, false);
-      get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
       auto &face_alpha = get_alpha(data.dataOnEntities[MBTRI][0]);
       face_alpha.resize(nb_dofs, 3, false);
       CHKERR BernsteinBezier::generateIndicesTriTri(order, &face_alpha(0, 0));
