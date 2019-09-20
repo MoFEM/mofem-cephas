@@ -520,7 +520,7 @@ int main(int argc, char *argv[]) {
       MoFEM::Interface &m_field_ref = m_core_ref;
       CHKERR m_field_ref.getInterface<BitRefManager>()->setBitRefLevelByDim(
           0, 3, BitRefLevel().set(0));
-      const int max_level = 5;
+      const int max_level = 3;
       for (int ll = 0; ll != max_level; ll++) {
         Range edges;
         CHKERR m_field_ref.getInterface<BitRefManager>()
