@@ -309,9 +309,13 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
         CHKERR BernsteinBezier::generateIndicesTriTet(ff, order,
                                                       &face_alpha(0, 0));
         senseFaceAlpha.resize(face_alpha.size1(), face_alpha.size2(), false);
+        senseFaceAlpha.clear();
+        constexpr int tri_nodes[4][3] = {
+            {0, 1, 3}, {1, 2, 3}, {0, 2, 3}, {0, 1, 2}};
         for (int d = 0; d != nb_dofs; ++d)
           for (int n = 0; n != 3; ++n)
-            senseFaceAlpha(d, n) = face_alpha(d, data.facesNodes(d, n));
+            senseFaceAlpha(d, data.facesNodes(ff, n)) =
+                face_alpha(d, tri_nodes[ff][n]);
         face_alpha.swap(senseFaceAlpha);
         CHKERR BernsteinBezier::baseFunctionsTet(
             order, lambda.size1(), face_alpha.size1(), &face_alpha(0, 0),
@@ -338,17 +342,19 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 
     const int order = data.dataOnEntities[MBTET][0].getDataOrder();
     const int nb_dofs = NBVOLUMETET_H1(order);
-    auto &tet_alpha = get_alpha(data.dataOnEntities[MBTET][0]);
-    tet_alpha.resize(nb_dofs, 4, false);
-    CHKERR BernsteinBezier::generateIndicesTetTet(order, &tet_alpha(0, 0));
     auto &get_n = get_base(data.dataOnEntities[MBTET][0]);
     auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTET][0]);
     get_n.resize(nb_gauss_pts, nb_dofs, false);
     get_diff_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
-    CHKERR BernsteinBezier::baseFunctionsTet(
-        order, lambda.size1(), tet_alpha.size1(), &tet_alpha(0, 0),
-        &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &get_n(0, 0),
-        &get_diff_n(0, 0));
+    if (nb_dofs) {
+      auto &tet_alpha = get_alpha(data.dataOnEntities[MBTET][0]);
+      tet_alpha.resize(nb_dofs, 4, false);
+      CHKERR BernsteinBezier::generateIndicesTetTet(order, &tet_alpha(0, 0));
+      CHKERR BernsteinBezier::baseFunctionsTet(
+          order, lambda.size1(), tet_alpha.size1(), &tet_alpha(0, 0),
+          &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &get_n(0, 0),
+          &get_diff_n(0, 0));
+    }
   } else {
     data.dataOnEntities[MBTET][0]
         .getBBAlphaIndicesSharedPtr(field_name)
