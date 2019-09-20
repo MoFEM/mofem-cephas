@@ -937,6 +937,12 @@ struct DataForcesAndSourcesCore {
     virtual const boost::shared_ptr<MatrixDouble> &
     getBBDiffNSharedPtr(const std::string &field_name) const;
 
+    virtual std::map<std::string, boost::shared_ptr<MatrixDouble>> &getBBNMap();
+
+    virtual std::map<std::string, boost::shared_ptr<MatrixDouble>> &
+    getBBDiffNMap();
+
+
     virtual MoFEMErrorCode baseSwap(const std::string &field_name,
                             const FieldApproximationBase base);
 

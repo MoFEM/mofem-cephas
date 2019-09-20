@@ -655,37 +655,24 @@ MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
 
 MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
                                      DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+  auto transform_base = [&](MatrixDouble &diff_n,
+                            const bool diff_at_gauss_ptr) {
+    MoFEMFunctionBeginHot;
 
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-    const unsigned int nb_base_functions = data.getN(base).size2();
-    if (!nb_base_functions)
-      continue;
-    const unsigned int nb_gauss_pts = data.getN(base).size1();
-    if (!nb_gauss_pts)
-      continue;
+    if (!diff_n.size1())
+      MoFEMFunctionReturnHot(0);
+    if (!diff_n.size2())
+      MoFEMFunctionReturnHot(0);
 
-    if (type != MBVERTEX) {
-      if (nb_base_functions != data.getDiffN(base).size2() / 3) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "Data inconsistency nb_base_functions != data.diffN.size2()/3 "
-                 "( %u != %u/3 )",
-                 nb_base_functions, data.getDiffN(base).size2());
-      }
-    } else {
-      if (data.getDiffN(base).size1() != 4 ||
-          data.getDiffN(base).size2() != 3) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Data inconsistency");
-      }
-    }
+    const int nb_base_functions =
+        (diff_at_gauss_ptr || type != MBVERTEX) ? diff_n.size2() / 3 : 4;
+    const int nb_gauss_pts =
+        (diff_at_gauss_ptr || type != MBVERTEX) ? diff_n.size1() : 1;
+    diffNinvJac.resize(diff_n.size1(), diff_n.size2(), false);
 
-    diffNinvJac.resize(data.getDiffN(base).size1(), data.getDiffN(base).size2(),
-                       false);
-
-    double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
+    double *t_diff_n_ptr = &*diff_n.data().begin();
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
         t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
     double *t_inv_n_ptr = &*diffNinvJac.data().begin();
@@ -694,17 +681,11 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
 
     switch (type) {
 
-    case MBVERTEX: {
-      for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
-        t_inv_diff_n(i) = t_diff_n(j) * tInvJac(j, i);
-        ++t_diff_n;
-        ++t_inv_diff_n;
-      }
-    } break;
+    case MBVERTEX:
     case MBEDGE:
     case MBTRI:
     case MBTET: {
-      for (unsigned int gg = 0; gg < nb_gauss_pts; ++gg) {
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
         for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
           t_inv_diff_n(i) = t_diff_n(j) * tInvJac(j, i);
           ++t_diff_n;
@@ -717,10 +698,20 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
     }
 
-    data.getDiffN(base).data().swap(diffNinvJac.data());
+    diff_n.data().swap(diffNinvJac.data());
+
+    MoFEMFunctionReturnHot(0);
+  };
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+    CHKERR transform_base(data.getDiffN(base), false);
   }
 
-  MoFEMFunctionReturnHot(0);
+  for (auto &m : data.getBBDiffNMap())
+    CHKERR transform_base(*(m.second), true);
+
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
@@ -891,33 +882,26 @@ OpSetHoInvJacH1::doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+  if (invHoJac.size2() != 9) 
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "It looks that ho inverse of Jacobian is not calculated %d != 9",
+             invHoJac.size2());
 
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-    if (data.getDiffN(base).size2() == 0)
-      continue;
-
-    unsigned int nb_gauss_pts = data.getN(base).size1();
+  auto transform_base = [&](MatrixDouble &diff_n) {
+    MoFEMFunctionBeginHot;
+    unsigned int nb_gauss_pts = diff_n.size1();
     if (nb_gauss_pts == 0)
-      continue;
-    unsigned int nb_base_functions = data.getN(base).size2();
+      MoFEMFunctionReturnHot(0);
+    unsigned int nb_base_functions = diff_n.size2() / 3;
     if (nb_base_functions == 0)
-      continue;
+      MoFEMFunctionReturnHot(0);
 
-    if (invHoJac.size2() != 9) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "It looks that ho inverse of Jacobian is not calculated %d != 9",
-               invHoJac.size2());
-    }
-    if (invHoJac.size1() != nb_gauss_pts) {
-      cerr << "type: " << type << " side: " << side << endl;
-      cerr << "shape fun: " << data.getN(base) << endl;
-      cerr << "diff shape fun  " << data.getDiffN(base) << endl;
+    if (invHoJac.size1() != nb_gauss_pts) 
       SETERRQ2(
           PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
           "It looks that ho inverse of Jacobian is not calculated %d != %d",
           invHoJac.size1(), nb_gauss_pts);
-    }
+    
     double *t_inv_jac_ptr = &*invHoJac.data().begin();
     FTensor::Tensor2<double *, 3, 3> t_inv_jac(
         t_inv_jac_ptr, &t_inv_jac_ptr[1], &t_inv_jac_ptr[2], &t_inv_jac_ptr[3],
@@ -925,6 +909,10 @@ OpSetHoInvJacH1::doWork(int side, EntityType type,
         &t_inv_jac_ptr[7], &t_inv_jac_ptr[8], 9);
 
     diffNinvJac.resize(nb_gauss_pts, 3 * nb_base_functions, false);
+
+    double *t_diff_n_ptr = &*diff_n.data().begin();
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
+        t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
     double *t_inv_n_ptr = &*diffNinvJac.data().begin();
     FTensor::Tensor1<double *, 3> t_inv_diff_n(t_inv_n_ptr, &t_inv_n_ptr[1],
                                                &t_inv_n_ptr[2], 3);
@@ -934,7 +922,6 @@ OpSetHoInvJacH1::doWork(int side, EntityType type,
     case MBEDGE:
     case MBTRI:
     case MBTET: {
-      FTensor::Tensor1<double *, 3> t_diff_n = data.getFTensor1DiffN<3>(base);
       for (unsigned int gg = 0; gg < nb_gauss_pts; ++gg) {
         for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
           t_inv_diff_n(i) = t_diff_n(j) * t_inv_jac(j, i);
@@ -948,12 +935,17 @@ OpSetHoInvJacH1::doWork(int side, EntityType type,
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
     }
 
-    if (type == MBVERTEX) {
-      data.getDiffN(base).resize(diffNinvJac.size1(), diffNinvJac.size2(),
-                                 false);
-    }
-    data.getDiffN(base).data().swap(diffNinvJac.data());
+    diff_n.data().swap(diffNinvJac.data());
+    MoFEMFunctionReturnHot(0);
+  };
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+    CHKERR transform_base(data.getDiffN(base));
   }
+
+  for (auto &m : data.getBBDiffNMap())
+    CHKERR transform_base(*(m.second));
 
   MoFEMFunctionReturn(0);
 }
@@ -1496,9 +1488,9 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
           }
         }
       }
-      if (cc != nb_gauss_pts * nb_dofs) 
+      if (cc != nb_gauss_pts * nb_dofs)
         SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
-      
+
       baseN.data().swap(piola_n.data());
       diffBaseN.data().swap(diff_piola_n.data());
     }
@@ -1629,9 +1621,8 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnEdge::doWork(
         }
       }
 
-      if (cc != nb_gauss_pts * nb_dofs) 
+      if (cc != nb_gauss_pts * nb_dofs)
         SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
-      
     }
   }
 
