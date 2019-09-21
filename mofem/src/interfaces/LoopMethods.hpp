@@ -137,9 +137,11 @@ struct SnesMethod : virtual public UnknownInterface {
    */
   MoFEMErrorCode copySnes(const SnesMethod &snes);
 
-  SNES snes;
-  Vec snes_x, snes_f;
-  Mat snes_A, snes_B;
+  SNES snes;  ///< snes solver
+  Vec snes_x; ///< state vector
+  Vec snes_f; ///< residual
+  Mat snes_A; ///< jacobian matrix  
+  Mat snes_B; ///< preconditioner of jacobian matrix
 };
 
 /**
@@ -186,12 +188,20 @@ struct TSMethod : virtual public UnknownInterface {
   /// \brief Set TS solver
   MoFEMErrorCode setTs(TS _ts);
 
-  TS ts;
-  Vec ts_u, ts_u_t, ts_F;
-  Mat ts_A, ts_B;
+  TS ts;       ///< time solver
+  Vec ts_u;    ///< state vector
+  Vec ts_u_t;  ///< time derivative of state vector
+  Vec ts_u_tt; ///< second time derivative of state vector
+  Vec ts_F;    ///< residual vector
 
-  PetscInt ts_step;
-  PetscReal ts_a, ts_t;
+  Mat ts_A; ///< Jacobian of G(U) = F(t,U,W+v*U,W'+a*U), equivalent to dF/dU +
+            ///< v*dF/dU_t + a*dF/dU_tt
+  Mat ts_B; ///< Preconditioner for ts_A
+
+  PetscInt ts_step; ///< time step
+  PetscReal ts_a;   ///< shift for U_tt (see PETSc Time Solver)
+  PetscReal ts_v;   ///< shift for U_t shift for U_t
+  PetscReal ts_t;   ///< time
 };
 
 /**
@@ -316,7 +326,6 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
 
   boost::movelib::unique_ptr<bool> vecAssembleSwitch;
   boost::movelib::unique_ptr<bool> matAssembleSwitch;
-
 };
 
 /**
