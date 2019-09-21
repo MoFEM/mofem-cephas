@@ -429,25 +429,6 @@ DMMoFEMTSSetRHSFunction(DM dm, const std::string fe_name,
                         boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
- * @brief set TS the right hand side function
- *
- * <a
- * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetRHSFunction.html#TSSetRHSFunction>See
- * petsc documentation</a>
- *
- * @param dm
- * @param fe_name
- * @param method
- * @param pre_only
- * @param post_only
- * @return PetscErrorCode
- */
-PetscErrorCode DMMoFEMTSSetRHSFunction(DM dm, const char fe_name[],
-                                       MoFEM::FEMethod *method,
-                                       MoFEM::BasicMethod *pre_only,
-                                       MoFEM::BasicMethod *post_only);
-
-/**
  * @brief set TS the right hand side jacobian
  *
  * <a
@@ -468,23 +449,24 @@ DMMoFEMTSSetRHSJacobian(DM dm, const std::string fe_name,
                         boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
- * @brief set TS the right hand side jacobian
- *
- * <a
- * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetRHSJacobian.html>See
- * petsc documentation</a>
- *
- * @param dm
- * @param fe_name
- * @param method
- * @param pre_only
- * @param post_only
- * @return PetscErrorCode
+ * \brief set TS implicit function evaluation function
+ * \ingroup dm
  */
-PetscErrorCode DMMoFEMTSSetRHSJacobian(DM dm, const char fe_name[],
-                                       MoFEM::FEMethod *method,
-                                       MoFEM::BasicMethod *pre_only,
-                                       MoFEM::BasicMethod *post_only);
+PetscErrorCode
+DMMoFEMTSSetI2Function(DM dm, const std::string fe_name,
+                      boost::shared_ptr<MoFEM::FEMethod> method,
+                      boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                      boost::shared_ptr<MoFEM::BasicMethod> post_only);
+
+/**
+ * \brief set TS Jacobian evaluation function
+ * \ingroup dm
+ */
+PetscErrorCode
+DMMoFEMTSSetI2Jacobian(DM dm, const std::string fe_name,
+                      boost::shared_ptr<MoFEM::FEMethod> method,
+                      boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                      boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
  * @brief Set Monitor To TS solver
