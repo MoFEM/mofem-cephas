@@ -329,41 +329,70 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
 
   const int *const alpha0 = alpha;
   const double fN = boost::math::factorial<double>(N);
+  constexpr int MAX_ALPHA = 12;
+  int max_alpha = *std::max_element(alpha, &alpha[(D + 1) * n_alpha]);
+  if(max_alpha > MAX_ALPHA)
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Is assumed maximal order not to be bigger than %d", MAX_ALPHA);
+  std::array<double, (D + 1) * (MAX_ALPHA + 1)> pow_alpha;
+  std::array<double, (MAX_ALPHA + 1)> factorial_alpha;
   std::array<double, D + 1> terms, diff_terms;
   const double *const grad_lambda0 = grad_lambda;
 
+  factorial_alpha[0] = 1;
+  if (max_alpha >= 1)
+    factorial_alpha[1] = 1;
+  if (max_alpha >= 2)
+    for (int a = 2; a <= max_alpha; ++a)
+      factorial_alpha[a] = factorial_alpha[a - 1] * a;
+
   for (int g = 0; g != gdim; ++g) {
 
-    const double *const lambda0 = lambda;
+    for (int n = 0; n != D + 1; ++n, ++lambda) {
+      const size_t shift = (MAX_ALPHA + 1) * n;
+      pow_alpha[shift + 0] = 1;
+
+      if (max_alpha >= 1)
+        pow_alpha[shift + 1] = *lambda;
+
+      if (max_alpha >= 2)
+        for (int a = 2; a <= max_alpha; ++a)
+          pow_alpha[shift + a] = pow_alpha[shift + a - 1] * (*lambda);
+    }
 
     for (int n0 = 0; n0 != n_alpha; ++n0) {
 
       grad_lambda = grad_lambda0;
 
-      double f = boost::math::factorial<double>(*alpha);
-      terms[0] = pow(*lambda, (*alpha));
+      double f = factorial_alpha[(*alpha)];
+      double *terms_ptr = terms.data();
+      double *diff_terms_ptr = diff_terms.data();
+      *terms_ptr = pow_alpha[(*alpha)];
       if (GRAD_BASE) {
         if (*alpha > 0)
-          diff_terms[0] = (*alpha) * pow(*lambda, (*alpha) - 1);
+          *diff_terms_ptr = (*alpha) * pow_alpha[(*alpha) - 1];
         else
-          diff_terms[0] = 0;
+          *diff_terms_ptr = 0;
       }
       *base = terms[0];
       ++alpha;
-      ++lambda;
+      ++terms_ptr;
+      ++diff_terms_ptr;
 
       for (int n1 = 1; n1 < D + 1; ++n1) {
-        f *= boost::math::factorial<double>(*alpha);
-        terms[n1] = pow(*lambda, (*alpha));
+        f *= factorial_alpha[(*alpha)];
+        const size_t shift = (MAX_ALPHA + 1) * n1;
+        *terms_ptr = pow_alpha[shift + (*alpha)];
         if (GRAD_BASE) {
           if (*alpha > 0)
-            diff_terms[n1] = (*alpha) * pow(*lambda, (*alpha) - 1);
+            *diff_terms_ptr = (*alpha) * pow_alpha[shift + (*alpha) - 1];
           else
-            diff_terms[n1] = 0;
+            *diff_terms_ptr = 0;
         }
         *base *= terms[n1];
         ++alpha;
-        ++lambda;
+        ++terms_ptr;
+        ++diff_terms_ptr;
       }
 
       const double b = fN / f;
@@ -397,11 +426,9 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
         grad_base += D;
       }
 
-      lambda = lambda0;
     }
 
     alpha = alpha0;
-    lambda += D + 1;
   }
 
   MoFEMFunctionReturnHot(0);
