@@ -374,7 +374,7 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
         else
           *diff_terms_ptr = 0;
       }
-      *base = terms[0];
+      *base = *terms_ptr;
       ++alpha;
       ++terms_ptr;
       ++diff_terms_ptr;
@@ -390,7 +390,7 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
           else
             *diff_terms_ptr = 0;
         }
-        *base *= terms[n1];
+        *base *= *terms_ptr;
       }
 
       const double b = fN / f;
