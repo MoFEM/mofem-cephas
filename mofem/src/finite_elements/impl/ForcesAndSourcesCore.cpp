@@ -913,7 +913,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
         if (brother_side_number != -1)
           brother_dofs_vec.emplace_back(dof_ptr);
         bb_node_order[side_number] = dof.getMaxOrder();
-        for (int ii = 0; ii != nb_dof_idx; ++ii) 
+        for (int ii = 0; ii != nb_dof_idx; ++ii)
           ++dit;
       }
 
@@ -939,7 +939,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
         dat.getDataOrder() = 0;
         dat.getBase() = NOBASE;
         dat.getSpace() = NOSPACE;
-        dat.getFieldData().resize(0,false);
+        dat.getFieldData().resize(0, false);
         dat.getFieldDofs().resize(0, false);
       }
     }
@@ -1073,63 +1073,74 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
   for (; oit != hi_oit; oit++) {
 
-    oit->setPtrFE(this);
+    try {
 
-    if (oit->opType == UserDataOperator::OPLAST) {
+      oit->setPtrFE(this);
 
-      // Set field
-      switch (oit->sPace) {
-      case NOSPACE:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Unknown space");
-      case NOFIELD:
-      case H1:
-      case HCURL:
-      case HDIV:
-      case L2:
-        break;
-      default:
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                 "Not implemented for this space", oit->sPace);
-      }
+      if (oit->opType == UserDataOperator::OPLAST) {
 
-      // Reseat all data which all field dependent
-      dataOnElement[oit->sPace]->resetFieldDependentData();
-      last_eval_field_name[0] = "";
+        // Set field
+        switch (oit->sPace) {
+        case NOSPACE:
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Unknown space");
+        case NOFIELD:
+        case H1:
+        case HCURL:
+        case HDIV:
+        case L2:
+          break;
+        default:
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                   "Not implemented for this space", oit->sPace);
+        }
 
-      // Run operator
-      try {
-        CHKERR oit->opRhs(*dataOnElement[oit->sPace], oit->doVertices,
-                          oit->doEdges, oit->doQuads, oit->doTris, oit->doTets,
-                          false);
-      }
-      CATCH_OP_ERRORS(*oit);
+        // Reseat all data which all field dependent
+        dataOnElement[oit->sPace]->resetFieldDependentData();
+        last_eval_field_name[0] = "";
 
-    } else {
+        // Run operator
+        try {
+          CHKERR oit->opRhs(*dataOnElement[oit->sPace], oit->doVertices,
+                            oit->doEdges, oit->doQuads, oit->doTris,
+                            oit->doTets, false);
+        }
+        CATCH_OP_ERRORS(*oit);
 
-      boost::shared_ptr<DataForcesAndSourcesCore> op_data[2];
-      std::array<bool, 2> base_swap;
-      std::array<std::pair<std::string, FieldApproximationBase>, 2>
-          base_swap_data;
-      auto swap_bases = [&]() {
-        MoFEMFunctionBeginHot;
-        for (size_t ss = 0; ss != 2; ++ss)
-          if (base_swap[ss])
-            CHKERR op_data[ss]->baseSwap(base_swap_data[ss].first,
-                                        base_swap_data[ss].second);
-        MoFEMFunctionReturnHot(0);
-      };
+      } else {
 
-      for (size_t ss = 0; ss != 2; ss++) {
+        boost::shared_ptr<DataForcesAndSourcesCore> op_data[2];
+        std::array<bool, 2> base_swap;
+        std::array<std::pair<std::string, FieldApproximationBase>, 2>
+            base_swap_data;
+        auto swap_bases = [&]() {
+          MoFEMFunctionBeginHot;
+          for (size_t ss = 0; ss != 2; ++ss)
+            if (base_swap[ss])
+              CHKERR op_data[ss]->baseSwap(base_swap_data[ss].first,
+                                           base_swap_data[ss].second);
+          MoFEMFunctionReturnHot(0);
+        };
 
-        const std::string field_name =
-            !ss ? oit->rowFieldName : oit->colFieldName;
-        const Field *field_struture = mField.get_field_structure(field_name);
-        const BitFieldId data_id = field_struture->getId();
-        const FieldSpace space = field_struture->getSpace();
-        const FieldApproximationBase base = field_struture->getApproxBase();
-        op_data[ss] = !ss ? dataOnElement[space] : derivedDataOnElement[space];
+        for (size_t ss = 0; ss != 2; ss++) {
 
-        switch (base) {
+          const std::string field_name =
+              !ss ? oit->rowFieldName : oit->colFieldName;
+          if (field_name.empty()) {
+            SETERRQ2(
+                PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "No field name in operator %d (0-row, 1-column) in operator %s",
+                ss,
+                (boost::typeindex::type_id_runtime(*oit).pretty_name())
+                    .c_str());
+          }
+          const Field *field_struture = mField.get_field_structure(field_name);
+          const BitFieldId data_id = field_struture->getId();
+          const FieldSpace space = field_struture->getSpace();
+          const FieldApproximationBase base = field_struture->getApproxBase();
+          op_data[ss] =
+              !ss ? dataOnElement[space] : derivedDataOnElement[space];
+
+          switch (base) {
           case AINSWORTH_BERNSTEIN_BEZIER_BASE:
             base_swap_data[ss] = std::pair<std::string, FieldApproximationBase>(
                 field_name, AINSWORTH_BERNSTEIN_BEZIER_BASE);
@@ -1137,112 +1148,115 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
             break;
           default:
             base_swap[ss] = false;
-        };
+          };
 
-        if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
-             data_id)
-                .none()) {
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                   "no data field < %s > on finite element < %s >",
-                   field_name.c_str(), feName.c_str());
-        }
-
-        if (oit->getOpType() & types[ss] ||
-            oit->getOpType() & UserDataOperator::OPROWCOL) {
-
-          switch (space) {
-          case NOSPACE:
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
-            break;
-          case NOFIELD:
-          case H1:
-          case HCURL:
-          case HDIV:
-          case L2:
-            break;
-          default:
-            SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                     "Not implemented for this space", space);
+          if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
+               data_id)
+                  .none()) {
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                     "no data field < %s > on finite element < %s >",
+                     field_name.c_str(), feName.c_str());
           }
 
-          if (last_eval_field_name[ss] != field_name) {
-
-            CHKERR getEntityFieldData(*op_data[ss], field_name, MBEDGE);
-            if (!ss)
-              CHKERR getEntityRowIndices(*op_data[ss], field_name, MBEDGE);
-            else
-              CHKERR getEntityColIndices(*op_data[ss], field_name, MBEDGE);
+          if (oit->getOpType() & types[ss] ||
+              oit->getOpType() & UserDataOperator::OPROWCOL) {
 
             switch (space) {
             case NOSPACE:
               SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                       "unknown space");
               break;
+            case NOFIELD:
             case H1:
-              if (!ss)
-                CHKERR getRowNodesIndices(*op_data[ss], field_name);
-              else
-                CHKERR getColNodesIndices(*op_data[ss], field_name);
-              CHKERR getNodesFieldData(*op_data[ss], field_name);
-              break;
             case HCURL:
             case HDIV:
-              break;
             case L2:
-              switch (type) {
-              case MBVERTEX:
-                CHKERR getNodesFieldData(*op_data[ss], field_name);
-                break;
-              default:
-                break;
-              }
-              break;
-            case NOFIELD:
-              if (!getNinTheLoop()) {
-                // NOFIELD data are the same for each element, can be
-                // retrieved only once
-                if (!ss) {
-                  CHKERR getNoFieldRowIndices(*op_data[ss], field_name);
-                } else {
-                  CHKERR getNoFieldColIndices(*op_data[ss], field_name);
-                }
-                CHKERR getNoFieldFieldData(*op_data[ss], field_name);
-              }
               break;
             default:
               SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                        "Not implemented for this space", space);
             }
-            last_eval_field_name[ss] = field_name;
+
+            if (last_eval_field_name[ss] != field_name) {
+
+              CHKERR getEntityFieldData(*op_data[ss], field_name, MBEDGE);
+              if (!ss)
+                CHKERR getEntityRowIndices(*op_data[ss], field_name, MBEDGE);
+              else
+                CHKERR getEntityColIndices(*op_data[ss], field_name, MBEDGE);
+
+              switch (space) {
+              case NOSPACE:
+                SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                        "unknown space");
+                break;
+              case H1:
+                if (!ss)
+                  CHKERR getRowNodesIndices(*op_data[ss], field_name);
+                else
+                  CHKERR getColNodesIndices(*op_data[ss], field_name);
+                CHKERR getNodesFieldData(*op_data[ss], field_name);
+                break;
+              case HCURL:
+              case HDIV:
+                break;
+              case L2:
+                switch (type) {
+                case MBVERTEX:
+                  CHKERR getNodesFieldData(*op_data[ss], field_name);
+                  break;
+                default:
+                  break;
+                }
+                break;
+              case NOFIELD:
+                if (!getNinTheLoop()) {
+                  // NOFIELD data are the same for each element, can be
+                  // retrieved only once
+                  if (!ss) {
+                    CHKERR getNoFieldRowIndices(*op_data[ss], field_name);
+                  } else {
+                    CHKERR getNoFieldColIndices(*op_data[ss], field_name);
+                  }
+                  CHKERR getNoFieldFieldData(*op_data[ss], field_name);
+                }
+                break;
+              default:
+                SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                         "Not implemented for this space", space);
+              }
+              last_eval_field_name[ss] = field_name;
+            }
           }
         }
+
+        CHKERR swap_bases();
+
+        if (oit->getOpType() & UserDataOperator::OPROW) {
+          try {
+            CHKERR oit->opRhs(*op_data[0], false);
+          }
+          CATCH_OP_ERRORS(*oit);
+        }
+
+        if (oit->getOpType() & UserDataOperator::OPCOL) {
+          try {
+            CHKERR oit->opRhs(*op_data[1], false);
+          }
+          CATCH_OP_ERRORS(*oit);
+        }
+
+        if (oit->getOpType() & UserDataOperator::OPROWCOL) {
+          try {
+            CHKERR oit->opLhs(*op_data[0], *op_data[1], oit->sYmm);
+          }
+          CATCH_OP_ERRORS(*oit);
+        }
+
+        CHKERR swap_bases();
       }
-
-      CHKERR swap_bases();
-
-      if (oit->getOpType() & UserDataOperator::OPROW) {
-        try {
-          CHKERR oit->opRhs(*op_data[0], false);
-        }
-        CATCH_OP_ERRORS(*oit);
-        }
-
-      if (oit->getOpType() & UserDataOperator::OPCOL) {
-        try {
-          CHKERR oit->opRhs(*op_data[1], false);
-        }
-        CATCH_OP_ERRORS(*oit);
-      }
-
-      if (oit->getOpType() & UserDataOperator::OPROWCOL) {
-        try {
-          CHKERR oit->opLhs(*op_data[0], *op_data[1], oit->sYmm);
-        }
-        CATCH_OP_ERRORS(*oit);
-      }
-
-      CHKERR swap_bases();
     }
+    CATCH_OP_ERRORS(*oit);
   }
   MoFEMFunctionReturn(0);
 }
