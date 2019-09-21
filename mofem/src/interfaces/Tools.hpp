@@ -88,6 +88,29 @@ struct Tools : public UnknownInterface {
 
       diffShapeFunMBTRI2x, diffShapeFunMBTRI2y};
 
+  static constexpr double diffShapeFunMBQUADAtCenter0x =
+      diffN_MBQUAD0x(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter0y =
+      diffN_MBQUAD0y(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter1x =
+      diffN_MBQUAD1x(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter1y =
+      diffN_MBQUAD1y(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter2x =
+      diffN_MBQUAD2x(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter2y =
+      diffN_MBQUAD2y(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter3x =
+      diffN_MBQUAD3x(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter3y =
+      diffN_MBQUAD3y(0.5); ///< derivative of quad shape function
+
+  static constexpr std::array<double, 8> diffShapeFunMBQUADAtCenter = {
+      diffShapeFunMBQUADAtCenter0x, diffShapeFunMBQUADAtCenter0y,
+      diffShapeFunMBQUADAtCenter1x, diffShapeFunMBQUADAtCenter1y,
+      diffShapeFunMBQUADAtCenter2x, diffShapeFunMBQUADAtCenter2y,
+      diffShapeFunMBQUADAtCenter3x, diffShapeFunMBQUADAtCenter3y};
+
   static constexpr double diffShapeFunMBTET0x =
       diffN_MBTET0x; ///< derivative of tetrahedral shape function
   static constexpr double diffShapeFunMBTET0y =
@@ -205,6 +228,7 @@ struct Tools : public UnknownInterface {
   static constexpr std::array<double, 4> shapeFunMBTETAtOneThird = {
       shapeFunMBTET0AtOneThird, shapeFunMBTET1AtOneThird,
       shapeFunMBTET2AtOneThird, shapeFunMBTET3AtOneThird};
+
 
   /**
    * @brief Get the Local Coordinates On Reference Four Node Tet object

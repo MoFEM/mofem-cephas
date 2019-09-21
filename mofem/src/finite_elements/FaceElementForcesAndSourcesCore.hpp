@@ -322,11 +322,24 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   template <int SWITCH> MoFEMErrorCode OpSwitch() {
     MoFEMFunctionBegin;
 
-    if (numeredEntFiniteElementPtr->getEntType() != MBTRI)
-      MoFEMFunctionReturnHot(0);
-    CHKERR createDataOnElement();
+    const EntityType type = numeredEntFiniteElementPtr->getEntType();
+    if (type != lastEvaluatedElementEntityType) {
+      switch (type) {
+      case MBTRI:
+        getElementPolynomialBase() =
+            boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
+        break;
+      case MBQUAD:
+        getElementPolynomialBase() =
+            boost::shared_ptr<BaseFunction>(new QuadPolynomialBase());
+        break;
+      default:
+        MoFEMFunctionReturnHot(0);
+      }
+      CHKERR createDataOnElement();    
+    }
 
-    // Calculate normal and tangent vectors for face geometry given by 3 nodes.
+    // Calculate normal and tangent vectors for face geometry
     CHKERR calculateAreaAndNormal();
     CHKERR getSpaceBaseAndOrderOnElement();
 
@@ -337,16 +350,36 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
     DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
 
-    dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
-    std::copy(
-        Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
-        dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
+    switch (type) {
+    case MBTRI:
+      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
+      std::copy(
+          Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
+      break;
+    case MBQUAD:
+      break;
+    default:
+      MoFEMFunctionReturnHot(0);
+    }
 
     /// Use the some node base
     CHKERR calculateCoordinatesAtGaussPts();
     CHKERR calculateBaseFunctionsOnElement();
-    if (!(NO_HO_GEOMETRY & SWITCH))
-      CHKERR calculateHoNormal();
+
+    // FIXME for testing only
+    switch (numeredEntFiniteElementPtr->getEntType()) {
+    case MBTRI:
+      if (!(NO_HO_GEOMETRY & SWITCH))
+        CHKERR calculateHoNormal();
+      break;
+    case MBQUAD:
+      CHKERR calculateAreaAndNormalAtIntegrationPts();
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "Element type not implemented");
+    }
 
     // Apply Piola transform to HDiv and HCurl spaces, uses previously
     // calculated faces normal and tangent vectors.
@@ -366,6 +399,13 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
 protected:
   MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
+
+  /**
+   * \brief Calculate element area and normal of the face at integration points
+   *
+   * @return Error code
+   */
+  virtual MoFEMErrorCode calculateAreaAndNormalAtIntegrationPts();
 
   /**
    * \brief Calculate element area and normal of the face

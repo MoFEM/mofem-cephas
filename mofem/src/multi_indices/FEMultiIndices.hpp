@@ -103,11 +103,11 @@ struct RefElement_TET : public RefElement {
  * \brief keeps data about abstract TRI finite element
  * \ingroup fe_multi_indices
  */
-struct RefElement_TRI : public RefElement {
-  RefElement_TRI(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+struct RefElementFace : public RefElement {
+  RefElementFace(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
-  friend std::ostream &operator<<(std::ostream &os, const RefElement_TRI &e);
+  friend std::ostream &operator<<(std::ostream &os, const RefElementFace &e);
 };
 
 /**
@@ -325,7 +325,7 @@ struct DefaultElementAdjacency {
   static MoFEMErrorCode defaultEdge(Interface &moab, const Field &field_ptr,
                                     const EntFiniteElement &fe_ptr,
                                     Range &adjacency);
-  static MoFEMErrorCode defaultTri(Interface &moab, const Field &field_ptr,
+  static MoFEMErrorCode defaultFace(Interface &moab, const Field &field_ptr,
                                    const EntFiniteElement &fe_ptr,
                                    Range &adjacency);
   static MoFEMErrorCode defaultTet(Interface &moab, const Field &field_ptr,
