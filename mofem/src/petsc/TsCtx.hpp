@@ -73,8 +73,9 @@ struct TsCtx {
     PetscLogEventRegister("LoopTsRHSJacobian", 0,
                           &MOFEM_EVENT_TsCtxRHSJacobian);
     PetscLogEventRegister("LoopTsMonitor", 0, &MOFEM_EVENT_TsCtxMonitor);
+    PetscLogEventRegister("LoopTsI2Function", 0, &MOFEM_EVENT_TsCtxI2Function);
+    PetscLogEventRegister("LoopTsI2Jacobian", 0, &MOFEM_EVENT_TsCtxI2Jacobian);
   }
-
 
   /**
    * @brief Get the loops to do IFunction object
@@ -112,8 +113,7 @@ struct TsCtx {
     return loops_to_do_IJacobian;
   }
 
-
-    /**
+  /**
    * @brief Get the loops to do RHSJacobian object
    *
    * It is sequence of finite elements used to evalite the left hand sie of
@@ -235,17 +235,24 @@ struct TsCtx {
   friend PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A,
                                          Mat B, void *ctx);
 
-private:
+  friend PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec U, Vec U_t,
+                                        Vec U_tt, Vec F, void *ctx);
 
+  friend PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec U, Vec U_t,
+                                        Vec U_tt, PetscReal v, PetscReal a,
+                                        Mat J, Mat P, void *ctx);
+
+private:
   PetscLogEvent MOFEM_EVENT_TsCtxRHSFunction;
   PetscLogEvent MOFEM_EVENT_TsCtxRHSJacobian;
   PetscLogEvent MOFEM_EVENT_TsCtxIFunction;
   PetscLogEvent MOFEM_EVENT_TsCtxIJacobian;
   PetscLogEvent MOFEM_EVENT_TsCtxMonitor;
+  PetscLogEvent MOFEM_EVENT_TsCtxI2Function;
+  PetscLogEvent MOFEM_EVENT_TsCtxI2Jacobian;
 
   boost::movelib::unique_ptr<bool> vecAssembleSwitch;
   boost::movelib::unique_ptr<bool> matAssembleSwitch;
-
 };
 
 /**
@@ -355,6 +362,40 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx);
  */
 PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
                                 void *ctx);
+
+/**
+ * @brief Calculation Jaconian for second order PDE in time
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetI2Jacobian.html>PETSc
+ * for details</a>
+ *
+ * @param ts
+ * @param J
+ * @param P
+ * @param jac
+ * @param ctx
+ * @return PetscErrorCode
+ */
+PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
+                               PetscReal v, PetscReal a, Mat J, Mat P,
+                               void *ctx);
+
+/**
+ * @brief Calculation the right hand side for second order PDE in time
+ *
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetI2Function.html>PETSc
+ * for details</a>
+ *
+ * @param ts
+ * @param F
+ * @param fun
+ * @param ctx
+ * @return PetscErrorCode
+ */
+PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
+                               Vec F, void *ctx);
 
 } // namespace MoFEM
 
