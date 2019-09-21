@@ -1239,7 +1239,6 @@ DataForcesAndSourcesCore::EntData::getN(const FieldApproximationBase base,
                                         const int gg) {
   int size = getN(base).size2();
   double *data = &getN(base)(gg, 0);
-  double *data = &*getN(base).data().begin();
   return VectorAdaptor(size, ublas::shallow_array_adaptor<double>(size, data));
 }
 
