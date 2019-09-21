@@ -379,7 +379,8 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
       ++terms_ptr;
       ++diff_terms_ptr;
 
-      for (int n1 = 1; n1 < D + 1; ++n1) {
+      for (int n1 = 1; n1 < D + 1;
+           ++n1, ++alpha, ++terms_ptr, ++diff_terms_ptr) {
         f *= factorial_alpha[(*alpha)];
         const size_t shift = (MAX_ALPHA + 1) * n1;
         *terms_ptr = pow_alpha[shift + (*alpha)];
@@ -390,9 +391,6 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
             *diff_terms_ptr = 0;
         }
         *base *= terms[n1];
-        ++alpha;
-        ++terms_ptr;
-        ++diff_terms_ptr;
       }
 
       const double b = fN / f;
@@ -400,26 +398,34 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
       ++base;
 
       if (GRAD_BASE) {
-        double z = diff_terms[0];
-        for (int n2 = 1; n2 != D + 1; ++n2)
-          z *= terms[n2];
-        for (int d = 0; d != D; ++d) {
+        double *terms_ptr = terms.data();
+        double *diff_terms_ptr = diff_terms.data();
+        double z = *diff_terms_ptr;
+        ++terms_ptr;
+        ++diff_terms_ptr;
+        for (int n2 = 1; n2 != D + 1; ++n2, ++terms_ptr) 
+          z *= *terms_ptr;
+        
+        for (int d = 0; d != D; ++d, ++grad_lambda) 
           grad_base[d] = z * (*grad_lambda);
-          ++grad_lambda;
-        }
 
         for (int n1 = 1; n1 < D + 1; ++n1) {
-          z = diff_terms[n1];
+          z = *diff_terms_ptr;
+
           int n2 = 0;
-          for (; n2 != n1; ++n2)
+          for (terms_ptr = terms.data(); n2 != n1; ++n2, ++terms_ptr)
+            z *= *terms_ptr;
+
+          ++n2;
+          ++terms_ptr;
+          
+          for (; n2 < D + 1; ++n2, ++terms_ptr)
             z *= terms[n2];
-          n2++;
-          for (; n2 < D + 1; ++n2)
-            z *= terms[n2];
-          for (int d = 0; d != D; ++d) {
+
+          for (int d = 0; d != D; ++d, ++grad_lambda) 
             grad_base[d] += z * (*grad_lambda);
-            ++grad_lambda;
-          }
+
+          ++diff_terms_ptr;
         }
         for (int d = 0; d != D; ++d)
           grad_base[d] *= b;
