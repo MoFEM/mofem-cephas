@@ -350,14 +350,20 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
 
     for (int n = 0; n != D + 1; ++n, ++lambda) {
       const size_t shift = (MAX_ALPHA + 1) * n;
-      pow_alpha[shift + 0] = 1;
+      double *pow_alpha_ptr = &pow_alpha[shift];
+      *pow_alpha_ptr = 1;
 
-      if (max_alpha >= 1)
-        pow_alpha[shift + 1] = *lambda;
+      if (max_alpha >= 1) {
+        ++pow_alpha_ptr;
+        *pow_alpha_ptr = *lambda;
+      }
 
       if (max_alpha >= 2)
-        for (int a = 2; a <= max_alpha; ++a)
-          pow_alpha[shift + a] = pow_alpha[shift + a - 1] * (*lambda);
+        for (int a = 2; a <= max_alpha; ++a) {
+          const double p = (*pow_alpha_ptr) * (*lambda);
+          ++pow_alpha_ptr;
+          *pow_alpha_ptr = p;
+        }
     }
 
     for (int n0 = 0; n0 != n_alpha; ++n0) {
