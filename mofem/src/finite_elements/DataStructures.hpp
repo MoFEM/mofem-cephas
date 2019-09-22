@@ -942,6 +942,31 @@ struct DataForcesAndSourcesCore {
     virtual std::map<std::string, boost::shared_ptr<MatrixDouble>> &
     getBBDiffNMap();
 
+    virtual boost::shared_ptr<MatrixInt> &
+    getBBAlphaIndicesByOrderSharedPtr(const size_t o);
+
+    virtual boost::shared_ptr<MatrixDouble> &
+    getBBNByOrderSharedPtr(const size_t o);
+
+    virtual const boost::shared_ptr<MatrixDouble> &
+    getBBNByOrderSharedPtr(const size_t o) const;
+
+    virtual boost::shared_ptr<MatrixDouble> &
+    getBBDiffNByOrderSharedPtr(const size_t o);
+
+    virtual const boost::shared_ptr<MatrixDouble> &
+    getBBDiffNByOrderSharedPtr(const size_t o) const;
+
+    static constexpr size_t MaxBernsteinBezierOrder = BITFEID_SIZE;
+
+    virtual std::array<boost::shared_ptr<MatrixInt>, MaxBernsteinBezierOrder>
+        &getBBAlphaIndicesByOrderArray();
+
+    virtual std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder>
+        &getBBNByOrderArray();
+
+    virtual std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder>
+        &getBBDiffNByOrderArray();
 
     virtual MoFEMErrorCode baseSwap(const std::string &field_name,
                             const FieldApproximationBase base);
@@ -968,9 +993,16 @@ struct DataForcesAndSourcesCore {
     std::map<std::string, boost::shared_ptr<MatrixInt>>
         bbAlphaInduces; ///< Indices for Bernstein-Bezier base
 
-    protected:
-     boost::shared_ptr<MatrixDouble> swapBaseNPtr;
-     boost::shared_ptr<MatrixDouble> swapBaseDiffNPtr;
+    std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder>
+        bbNByOrder;
+    std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder>
+        bbDiffNByOrder;
+    std::array<boost::shared_ptr<MatrixInt>, MaxBernsteinBezierOrder>
+        bbAlphaInducesByOrder;
+
+  protected:
+    boost::shared_ptr<MatrixDouble> swapBaseNPtr;
+    boost::shared_ptr<MatrixDouble> swapBaseDiffNPtr;
 
   };
 

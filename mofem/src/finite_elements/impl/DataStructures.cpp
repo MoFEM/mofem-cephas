@@ -778,6 +778,51 @@ DataForcesAndSourcesCore::EntData::getBBDiffNMap() {
 }
 
 boost::shared_ptr<MatrixInt> &
+DataForcesAndSourcesCore::EntData::getBBAlphaIndicesByOrderSharedPtr(
+    const size_t o) {
+  return bbAlphaInducesByOrder[o];
+}
+
+boost::shared_ptr<MatrixDouble> &
+DataForcesAndSourcesCore::EntData::getBBNByOrderSharedPtr(const size_t o) {
+  return bbNByOrder[o];
+}
+
+const boost::shared_ptr<MatrixDouble> &
+DataForcesAndSourcesCore::EntData::getBBNByOrderSharedPtr(const size_t o) const {
+   return bbNByOrder[o]; 
+}
+
+boost::shared_ptr<MatrixDouble> &
+DataForcesAndSourcesCore::EntData::getBBDiffNByOrderSharedPtr(const size_t o) {
+  return bbDiffNByOrder[o];
+}
+
+const boost::shared_ptr<MatrixDouble> &
+DataForcesAndSourcesCore::EntData::getBBDiffNByOrderSharedPtr(
+    const size_t o) const {
+  return bbDiffNByOrder[o];
+}
+
+std::array<boost::shared_ptr<MatrixInt>,
+           DataForcesAndSourcesCore::EntData::MaxBernsteinBezierOrder> &
+DataForcesAndSourcesCore::EntData::getBBAlphaIndicesByOrderArray() {
+  return bbAlphaInducesByOrder;
+}
+
+std::array<boost::shared_ptr<MatrixDouble>,
+           DataForcesAndSourcesCore::EntData::MaxBernsteinBezierOrder> &
+DataForcesAndSourcesCore::EntData::getBBNByOrderArray() {
+  return bbNByOrder;
+}
+
+std::array<boost::shared_ptr<MatrixDouble>,
+           DataForcesAndSourcesCore::EntData::MaxBernsteinBezierOrder> &
+DataForcesAndSourcesCore::EntData::getBBDiffNByOrderArray() {
+  return bbDiffNByOrder;
+}
+
+boost::shared_ptr<MatrixInt> &
 DerivedDataForcesAndSourcesCore::DerivedEntData::getBBAlphaIndicesSharedPtr(
     const std::string &field_name) {
   return entDataPtr->getBBAlphaIndicesSharedPtr(field_name);

@@ -995,6 +995,22 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
   auto &ents_data = *dataFieldEntsPtr;
   for (auto &e : ents_data) {
     if (e->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
+      auto space = e->getSpace();
+      for (EntityType t = MBVERTEX; t != MBPOLYHEDRON; ++t) {
+        for (auto &dat : (*dataOnElement[space]).dataOnEntities[t]) {
+          for (auto &ptr : dat.getBBAlphaIndicesByOrderArray())
+            ptr.reset();
+          for (auto &ptr : dat.getBBNByOrderArray())
+            ptr.reset();
+          for (auto &ptr : dat.getBBDiffNByOrderArray())
+            ptr.reset();
+        }
+      }
+    }
+  }
+
+  for (auto &e : ents_data) {
+    if (e->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
       auto field_name = e->getName();
       auto space = e->getSpace();
       CHKERR get_nodal_base_data(*dataOnElement[space], field_name);

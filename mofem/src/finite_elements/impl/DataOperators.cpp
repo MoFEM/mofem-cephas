@@ -708,8 +708,9 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
     CHKERR transform_base(data.getDiffN(base), false);
   }
 
-  for (auto &m : data.getBBDiffNMap())
-    CHKERR transform_base(*(m.second), true);
+  for (auto &ptr : data.getBBDiffNByOrderArray())
+    if (ptr)
+      CHKERR transform_base(*ptr, true);
 
   MoFEMFunctionReturn(0);
 }
@@ -944,8 +945,9 @@ OpSetHoInvJacH1::doWork(int side, EntityType type,
     CHKERR transform_base(data.getDiffN(base));
   }
 
-  for (auto &m : data.getBBDiffNMap())
-    CHKERR transform_base(*(m.second));
+  for (auto &ptr : data.getBBDiffNByOrderArray())
+    if (ptr)
+      CHKERR transform_base(*ptr);
 
   MoFEMFunctionReturn(0);
 }
