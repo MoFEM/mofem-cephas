@@ -208,28 +208,31 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
     return *ptr;
   };
 
-  auto get_alpha_by_name_ptr = [](auto &data,
-                          const std::string &field_name) -> boost::shared_ptr<MatrixInt> & {
+  auto get_alpha_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixInt> & {
     return data.getBBAlphaIndicesSharedPtr(field_name);
   };
 
-  auto get_base_by_name_ptr = [](auto &data,
-                     const std::string &field_name) -> boost::shared_ptr<MatrixDouble> & {
+  auto get_base_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixDouble> & {
     return data.getBBNSharedPtr(field_name);
   };
 
   auto get_diff_base_by_name_ptr =
-      [](auto &data, const std::string &field_name) -> boost::shared_ptr<MatrixDouble> & {
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixDouble> & {
     return data.getBBDiffNSharedPtr(field_name);
   };
 
-  auto get_alpha_by_order_ptr = [](auto &data,
-                      const size_t o) -> boost::shared_ptr<MatrixInt> & {
+  auto get_alpha_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixInt> & {
     return data.getBBAlphaIndicesByOrderSharedPtr(o);
   };
 
-  auto get_base_by_order_ptr = [](auto &data,
-                     const size_t o) -> boost::shared_ptr<MatrixDouble> & {
+  auto get_base_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixDouble> & {
     return data.getBBNByOrderSharedPtr(o);
   };
 
@@ -367,7 +370,7 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
           get_n.resize(nb_gauss_pts, nb_dofs, false);
           get_diff_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
 
-          auto &face_alpha = get_alpha(data.dataOnEntities[MBTRI][ff]);
+          auto &face_alpha = get_alpha(ent_data );
           face_alpha.resize(nb_dofs, 4, false);
 
           CHKERR BernsteinBezier::generateIndicesTriTet(ff, order,
@@ -411,43 +414,45 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Wrong size ent of ent data");
 
-    const int order = data.dataOnEntities[MBTET][0].getDataOrder();
+    auto &ent_data = data.dataOnEntities[MBTET][0];
+    const int order = ent_data.getDataOrder();
     const int nb_dofs = NBVOLUMETET_H1(order);
-    auto &get_n = get_base(data.dataOnEntities[MBTET][0]);
-    auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTET][0]);
-    get_n.resize(nb_gauss_pts, nb_dofs, false);
-    get_diff_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
-    if (nb_dofs) {
-      auto &tet_alpha = get_alpha(data.dataOnEntities[MBTET][0]);
-      tet_alpha.resize(nb_dofs, 4, false);
+    if (get_alpha_by_order_ptr(ent_data, order)) {
+      get_alpha_by_name_ptr(ent_data, field_name) =
+          get_alpha_by_order_ptr(ent_data, order);
+      get_base_by_name_ptr(ent_data, field_name) =
+          get_base_by_order_ptr(ent_data, order);
+      get_diff_base_by_name_ptr(ent_data, field_name) =
+          get_diff_base_by_order_ptr(ent_data, order);
+    } else {
 
-      if (get_alpha_by_order_ptr(data.dataOnEntities[MBTET][0], order)) {
-        noalias(tet_alpha) =
-            *get_alpha_by_order_ptr(data.dataOnEntities[MBTET][0], order);
-        noalias(get_n) = *get_base_by_order_ptr(data.dataOnEntities[MBTET][0], order);
-        noalias(get_diff_n) =
-            *get_diff_base_by_order_ptr(data.dataOnEntities[MBTET][0], order);
-      } else {
+      auto &get_n = get_base(ent_data);
+      auto &get_diff_n = get_diff_base(ent_data);
+      get_n.resize(nb_gauss_pts, nb_dofs, false);
+      get_diff_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
+      if (nb_dofs) {
+        auto &tet_alpha = get_alpha(ent_data);
+        tet_alpha.resize(nb_dofs, 4, false);
+
         CHKERR BernsteinBezier::generateIndicesTetTet(order, &tet_alpha(0, 0));
         CHKERR BernsteinBezier::baseFunctionsTet(
             order, lambda.size1(), tet_alpha.size1(), &tet_alpha(0, 0),
             &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &get_n(0, 0),
             &get_diff_n(0, 0));
-        get_alpha_by_order_ptr(data.dataOnEntities[MBTET][0], order) =
-            data.dataOnEntities[MBTET][0].getBBAlphaIndicesSharedPtr(
-                field_name);
-        get_base_by_order_ptr(data.dataOnEntities[MBTET][0], order) =
-            data.dataOnEntities[MBTET][0].getBBNSharedPtr(field_name);
-        get_diff_base_by_order_ptr(data.dataOnEntities[MBTET][0], order) =
-            data.dataOnEntities[MBTET][0].getBBDiffNSharedPtr(field_name);
+
+        get_alpha_by_order_ptr(ent_data, order) =
+            get_alpha_by_name_ptr(ent_data, field_name);
+        get_base_by_order_ptr(ent_data, order) =
+            get_base_by_name_ptr(ent_data, field_name);
+        get_diff_base_by_order_ptr(ent_data, order) =
+            get_diff_base_by_name_ptr(ent_data, field_name);
       }
     }
   } else {
-    data.dataOnEntities[MBTET][0]
-        .getBBAlphaIndicesSharedPtr(field_name)
-        .reset();
-    auto &get_n = get_base(data.dataOnEntities[MBTET][0]);
-    auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTET][0]);
+    auto &ent_data = data.dataOnEntities[MBTET][0];
+    ent_data.getBBAlphaIndicesSharedPtr(field_name).reset();
+    auto &get_n = get_base(ent_data);
+    auto &get_diff_n = get_diff_base(ent_data);
     get_n.resize(nb_gauss_pts, 0, false);
     get_diff_n.resize(nb_gauss_pts, 0, false);
   }
@@ -1186,10 +1191,10 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
   int nb_gauss_pts = pts.size2();
-  if (!nb_gauss_pts) 
+  if (!nb_gauss_pts)
     MoFEMFunctionReturnHot(0);
 
-  if (pts.size1() < 3) 
+  if (pts.size1() < 3)
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
