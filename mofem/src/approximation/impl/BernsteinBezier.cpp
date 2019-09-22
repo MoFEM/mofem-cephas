@@ -420,7 +420,7 @@ BernsteinBezier::baseFunctions(const int N, const int gdim, const int n_alpha,
           ++terms_ptr;
           
           for (; n2 < D + 1; ++n2, ++terms_ptr)
-            z *= terms[n2];
+            z *= *terms_ptr;
 
           for (int d = 0; d != D; ++d, ++grad_lambda) 
             grad_base[d] += z * (*grad_lambda);
