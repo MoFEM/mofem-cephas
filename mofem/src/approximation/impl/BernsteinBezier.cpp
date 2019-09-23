@@ -20,23 +20,6 @@ Implementation based on \cite ainsworth2011bernstein
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-template <int D, int S>
-FTensor::Tensor1<FTensor::PackPtr<double *, S>, D>
-BernsteinBezier::getFTensor1(double *x) {
-  static_assert(
-
-      !(D == 3 && S == 3),
-
-      "not implemented");
-  return FTensor::Tensor1<FTensor::PackPtr<double *, S>, D>();
-}
-
-template <>
-FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-BernsteinBezier::getFTensor1<3, 3>(double *x) {
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(x, &x[1], &x[2]);
-}
-
 template <int D, int Side>
 MoFEMErrorCode BernsteinBezier::generateIndicesVertex(const int N, int *alpha) {
   MoFEMFunctionBeginHot;
@@ -295,10 +278,12 @@ BernsteinBezier::domainPoints(const int N, const int n_x, const int n_alpha,
   FTensor::Index<'i', D> i;
   MoFEMFunctionBeginHot;
 
-  auto t_x_alpha = getFTensor1<D, D>(x_alpha);
+  auto t_x_alpha = FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+      x_alpha, &x_alpha[1], &x_alpha[2]);
   for (int n0 = 0; n0 != n_alpha; ++n0) {
     t_x_alpha(i) = 0;
-    auto t_x_k = getFTensor1<D, D>(const_cast<double *>(x_k));
+    auto t_x_k = FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3>(
+        x_k, &x_k[1], &x_k[2]);
     for (int n1 = 0; n1 != n_x; ++n1) {
       t_x_alpha(i) += static_cast<double>(*alpha) * t_x_k(i);
       ++t_x_k;

@@ -96,10 +96,6 @@ struct BernsteinBezier {
 
 
   private:
-  template <int D, int S>
-  static inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, D>
-  getFTensor1(double *x);
-
   /**
    * @brief Generate BB indices on vertices
    *
