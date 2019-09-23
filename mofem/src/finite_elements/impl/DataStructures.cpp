@@ -767,6 +767,11 @@ DataForcesAndSourcesCore::EntData::getBBDiffNSharedPtr(
   return bbDiffN.at(field_name);
 }
 
+std::map<std::string, boost::shared_ptr<MatrixInt>> &
+DataForcesAndSourcesCore::EntData::getBBAlphaIndicesMap() {
+  return bbAlphaInduces;
+}
+
 std::map<std::string, boost::shared_ptr<MatrixDouble>> &
 DataForcesAndSourcesCore::EntData::getBBNMap() {
   return bbN;

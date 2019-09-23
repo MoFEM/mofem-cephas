@@ -248,8 +248,8 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   for (int n = 0; n != 4; ++n)
     vertex_alpha(n, n) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[n];
 
-  auto &vert_get_n = get_base(data.dataOnEntities[MBVERTEX][0]);
-  auto &vert_get_diff_n = get_diff_base(data.dataOnEntities[MBVERTEX][0]);
+  auto &vert_get_n = get_base(vert_ent_data);
+  auto &vert_get_diff_n = get_diff_base(vert_ent_data);
   vert_get_n.resize(nb_gauss_pts, 4, false);
   vert_get_diff_n.resize(nb_gauss_pts, 12, false);
   CHKERR BernsteinBezier::baseFunctionsTet(
@@ -265,12 +265,6 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
         vert_get_diff_n(g, 3 * n + d) *= f;
     }
   }
-
-  for (auto &ptr : vert_ent_data.getBBDiffNByOrderArray())
-    if (!ptr) {
-      ptr = get_diff_base_by_name_ptr(vert_ent_data, field_name);
-      break;
-    }
 
   // edges
   if (data.spacesOnEntities[MBEDGE].test(H1)) {
@@ -1191,10 +1185,10 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
   int nb_gauss_pts = pts.size2();
-  if (!nb_gauss_pts)
+  if (!nb_gauss_pts) 
     MoFEMFunctionReturnHot(0);
 
-  if (pts.size1() < 3)
+  if (pts.size1() < 3) 
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
