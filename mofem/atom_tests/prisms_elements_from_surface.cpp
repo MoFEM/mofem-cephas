@@ -51,7 +51,8 @@ int main(int argc, char *argv[]) {
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+              "error -my_file (MESH FILE NEEDED)");
     }
 
     // Read mesh to MOAB
@@ -73,55 +74,97 @@ int main(int argc, char *argv[]) {
     CHKERR moab.get_entities_by_type(0, MBTRI, tris, false);
     Range prisms;
     CHKERR prisms_from_surface_interface->createPrisms(tris, prisms);
-    prisms_from_surface_interface->createdVertices.clear();
+    std::array<double, 3> d3 = {0, 0, 0};
+    std::array<double, 3> d4 = {0, 0, 0.2};
+    prisms_from_surface_interface->setThickness(prisms, d3.data(), d4.data());
     Range add_prims_layer;
-    CHKERR prisms_from_surface_interface->createPrismsFromPrisms(
-        prisms, true, add_prims_layer);
-    prisms.merge(add_prims_layer);
+    Range extrude_prisms = prisms;
+
+    for (int ll = 0; ll != 4; ++ll) {
+      prisms_from_surface_interface->createdVertices.clear();
+      CHKERR prisms_from_surface_interface->createPrismsFromPrisms(
+          extrude_prisms, false, add_prims_layer);
+      prisms_from_surface_interface->setThickness(add_prims_layer, d3.data(),
+                                                  d4.data());
+      extrude_prisms = add_prims_layer;
+      prisms.merge(add_prims_layer);
+      add_prims_layer.clear();
+    }
 
     EntityHandle meshset;
     CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
     CHKERR moab.add_entities(meshset, prisms);
 
+    EntityHandle one_prism_meshset;
+    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
+                               one_prism_meshset);
+
+    std::array<double, 18> one_prism_coords = {0, 0, 0, 1, 0, 0, 0, 1, 0,
+                                               0, 0, 1, 1, 0, 1, 0, 1, 1};
+    std::array<EntityHandle, 6> one_prism_nodes;
+    for (int n = 0; n != 6; ++n)
+      CHKERR moab.create_vertex(&one_prism_coords[3 * n], one_prism_nodes[n]);
+    EntityHandle one_prism;
+    CHKERR m_field.get_moab().create_element(MBPRISM, one_prism_nodes.data(), 6,
+                                             one_prism);
+    Range one_prism_range;
+    one_prism_range.insert(one_prism);
+    CHKERR moab.add_entities(one_prism_meshset, one_prism_range);
+    Range one_prism_verts;
+    CHKERR moab.get_connectivity(one_prism_range, one_prism_verts);
+    CHKERR moab.add_entities(one_prism_meshset, one_prism_verts);
+    Range one_prism_adj_ents;
+    for (int d = 2; d != 3; ++d)
+      CHKERR moab.get_adjacencies(one_prism_range, d, true, one_prism_adj_ents,
+                                  moab::Interface::UNION);
+    CHKERR moab.add_entities(one_prism_meshset, one_prism_adj_ents);
+
+    if (debug) {
+      CHKERR moab.write_file("prism_mesh.vtk", "VTK", "", &meshset, 1);
+      CHKERR moab.write_file("one_prism_mesh.vtk", "VTK", "",
+                             &one_prism_meshset, 1);
+    }
+
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-        meshset, 3, bit_level0);
-    CHKERR prisms_from_surface_interface->seedPrismsEntities(prisms,
+    // CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+        // meshset, 3, bit_level0);
+    // CHKERR prisms_from_surface_interface->seedPrismsEntities(prisms,
+    //                                                          bit_level0);
+    CHKERR m_field.getInterface<BitRefManager>()->setEntitiesBitRefLevel(
+        one_prism_range, bit_level0);
+    CHKERR prisms_from_surface_interface->seedPrismsEntities(one_prism_range,
                                                              bit_level0);
 
     // Fields
     CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, 1);
-    CHKERR m_field.add_ents_to_field_by_type(meshset, MBPRISM, "FIELD1", 10);
+    CHKERR m_field.add_ents_to_field_by_type(one_prism_meshset, MBPRISM,
+                                             "FIELD1", 10);
 
-    CHKERR m_field.set_field_order(0, MBVERTEX, "FIELD1", 1);
-    CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", 3, 10);
+    CHKERR m_field.set_field_order(one_prism_meshset, MBVERTEX, "FIELD1", 1);
+    CHKERR m_field.set_field_order(one_prism_meshset, MBEDGE, "FIELD1", 3, 10);
     CHKERR m_field.build_fields(10);
 
-    const DofEntity_multiIndex *dofs_ptr;
-    CHKERR m_field.get_dofs(&dofs_ptr);
-    PetscPrintf(PETSC_COMM_WORLD, "dofs_ptr.size() = %d\n", dofs_ptr->size());
-    if (dofs_ptr->size() != 887) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "data inconsistency 323!=%d", dofs_ptr->size());
-    }
+    // const DofEntity_multiIndex *dofs_ptr;
+    // CHKERR m_field.get_dofs(&dofs_ptr);
+    // PetscPrintf(PETSC_COMM_WORLD, "dofs_ptr.size() = %d\n", dofs_ptr->size());
+    // if (dofs_ptr->size() != 887) {
+    //   SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    //            "data inconsistency 323!=%d", dofs_ptr->size());
+    // }
 
-    CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", 4, 10);
-    CHKERR m_field.set_field_order(0, MBPRISM, "FIELD1", 6, 10);
+    CHKERR m_field.set_field_order(one_prism_meshset, MBQUAD, "FIELD1", 4, 10);
+    CHKERR m_field.set_field_order(one_prism_meshset, MBPRISM, "FIELD1", 6, 10);
     CHKERR m_field.build_fields(10);
 
-    PetscPrintf(PETSC_COMM_WORLD, "dofs_ptr.size() = %d\n", dofs_ptr->size());
-    if (dofs_ptr->size() != 1207) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "data inconsistency 483!=%d", dofs_ptr->size());
-    }
+    // PetscPrintf(PETSC_COMM_WORLD, "dofs_ptr.size() = %d\n", dofs_ptr->size());
+    // if (dofs_ptr->size() != 1207) {
+    //   SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    //            "data inconsistency 483!=%d", dofs_ptr->size());
+    // }
 
-    CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", 3);
+    CHKERR m_field.set_field_order(one_prism_meshset, MBTRI, "FIELD1", 3);
     CHKERR m_field.build_fields();
-
-    if (debug) {
-      CHKERR moab.write_file("prism_mesh.vtk", "VTK", "", &meshset, 1);
-    }
 
     // FE
     CHKERR m_field.add_finite_element("TEST_FE1");
@@ -131,7 +174,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.modify_finite_element_add_field_col("TEST_FE1", "FIELD1");
     CHKERR m_field.modify_finite_element_add_field_data("TEST_FE1", "FIELD1");
 
-    CHKERR m_field.add_ents_to_finite_element_by_type(prisms, MBPRISM,
+    CHKERR m_field.add_ents_to_finite_element_by_type(one_prism_range, MBPRISM,
                                                       "TEST_FE1");
 
     // build finite elemnts
@@ -229,19 +272,19 @@ int main(int argc, char *argv[]) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         //
-        mySplit << "NH1" << std::endl;
-        mySplit << "side: " << side << " type: " << type << std::endl;
-        data.getN() *= 1e4;
-        data.getDiffN() *= 1e4;
-        mySplit << data << std::endl;
-        mySplit << "getTroughThicknessDataStructure" << std::endl;
-        mySplit << getTroughThicknessDataStructure().dataOnEntities[type][side]
-                << std::endl;
+        // mySplit << "NH1" << std::endl;
+        // mySplit << "side: " << side << " type: " << type << std::endl;
+        // data.getN() *= 1e4;
+        // data.getDiffN() *= 1e4;
+        // mySplit << data << std::endl;
+        // mySplit << "getTroughThicknessDataStructure" << std::endl;
+        // mySplit << getTroughThicknessDataStructure().dataOnEntities[type][side]
+        //         << std::endl;
 
         // mySplit << "integration pts " << getGaussPts() << std::endl;
         // mySplit << "coords at integration pts " << getCoordsAtGaussPts() <<
         // std::endl;
-        mySplit << std::endl << std::endl;
+        // mySplit << std::endl << std::endl;
 
         // mySplit << std::setprecision(3) << getCoords() << std::endl;
         // mySplit << std::setprecision(3) << getCoordsAtGaussPts() <<
@@ -258,6 +301,10 @@ int main(int argc, char *argv[]) {
         // getNormalsAtGaussPtF4() << std::endl; mySplit << std::setprecision(3)
         // << getTangent1AtGaussPtF4() << std::endl; mySplit <<
         // std::setprecision(3) << getTangent2AtGaussPtF4() << std::endl;
+
+        // cerr << getGaussPtsTrianglesOnly() << endl;
+        // cerr << getGaussPtsThroughThickness() << endl;
+
         MoFEMFunctionReturnHot(0);
       }
 
