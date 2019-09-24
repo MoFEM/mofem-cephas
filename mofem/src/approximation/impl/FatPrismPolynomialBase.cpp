@@ -202,7 +202,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
     for (int gg = 0; gg < nb_gauss_pts_through_thickness; gg++) {
       double s =
           2 * cTx->gaussPtsThroughThickness(0, gg) - 1; // makes form -1..1
-      if (!sense) {
+      if (sense == -1) {
         s *= -1;
         diff_s *= -1;
       }
