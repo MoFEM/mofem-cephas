@@ -28,7 +28,13 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 static int debug = 1;
+
 static constexpr int precision_exponent = 4;
+static constexpr int number_of_prisms_layers = 5;
+static constexpr double delta =
+    1. / static_cast<double>(number_of_prisms_layers);
+static constexpr std::array<double, 3> d3 = {0, 0, 0};
+static constexpr std::array<double, 3> d4 = {0, 0, delta};
 
 int main(int argc, char *argv[]) {
 
@@ -80,13 +86,11 @@ int main(int argc, char *argv[]) {
 
     Range prisms;
     CHKERR prisms_from_surface_interface->createPrisms(tris, prisms);
-    std::array<double, 3> d3 = {0, 0, 0};
-    std::array<double, 3> d4 = {0, 0, 0.2};
     prisms_from_surface_interface->setThickness(prisms, d3.data(), d4.data());
     Range add_prims_layer;
     Range extrude_prisms = prisms;
 
-    for (int ll = 0; ll != 4; ++ll) {
+    for (int ll = 1; ll != number_of_prisms_layers; ++ll) {
       prisms_from_surface_interface->createdVertices.clear();
       CHKERR prisms_from_surface_interface->createPrismsFromPrisms(
           extrude_prisms, false, add_prims_layer);
@@ -336,10 +340,10 @@ int main(int argc, char *argv[]) {
 
       MoFEMErrorCode setGaussPtsThroughThickness(int order_thickness) {
         MoFEMFunctionBegin;
-        gaussPtsThroughThickness.resize(2, 6, false);
+        gaussPtsThroughThickness.resize(2, number_of_prisms_layers + 1, false);
         gaussPtsThroughThickness.clear();
-        for (int gg = 0; gg != 6; ++gg)
-          gaussPtsThroughThickness(0, gg) = 0.2 * gg;
+        for (int gg = 0; gg != number_of_prisms_layers + 1; ++gg)
+          gaussPtsThroughThickness(0, gg) = delta * gg;
 
         MoFEMFunctionReturn(0);
       }
