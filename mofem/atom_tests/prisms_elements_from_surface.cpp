@@ -189,15 +189,15 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.build_fields(VERY_NOISY);
 
     // FE
-    CHKERR m_field.add_finite_element("TEST_FE1");
+    CHKERR m_field.add_finite_element("PRISM");
 
     // Define rows/cols and element data
-    CHKERR m_field.modify_finite_element_add_field_row("TEST_FE1", "FIELD1");
-    CHKERR m_field.modify_finite_element_add_field_col("TEST_FE1", "FIELD1");
-    CHKERR m_field.modify_finite_element_add_field_data("TEST_FE1", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_row("PRISM", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_col("PRISM", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_data("PRISM", "FIELD1");
 
     CHKERR m_field.add_ents_to_finite_element_by_type(one_prism_range, MBPRISM,
-                                                      "TEST_FE1");
+                                                      "PRISM");
 
     // build finite elemnts
     CHKERR m_field.build_finite_elements();
@@ -208,8 +208,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_problem("TEST_PROBLEM");
 
     // set finite elements for problem
-    CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM",
-                                                     "TEST_FE1");
+    CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM", "PRISM");
     // set refinement level for problem
     CHKERR m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM", bit_level0);
 
@@ -302,7 +301,7 @@ int main(int argc, char *argv[]) {
           return boost::lexical_cast<std::string>(i);
         };
         std::string tag_name_base =
-            "Type" + to_str(type) + "Side" + to_str(side);
+            "PrismType" + to_str(type) + "Side" + to_str(side);
         cerr << "Tag " << tag_name_base << endl;
         cerr << "Order " << data.getOrder() << endl;
 
@@ -365,7 +364,7 @@ int main(int argc, char *argv[]) {
 
     MyPrisms fe1(m_field, tri_coords);
     fe1.getOpPtrVector().push_back(new MyOp(moab, map_coords));
-    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE1", fe1);
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "PRISM", fe1);
 
     CHKERR moab.write_file("prism_mesh.vtk", "VTK", "", &meshset, 1);
     CHKERR moab.write_file("one_prism_mesh.vtk", "VTK", "", &one_prism_meshset,
