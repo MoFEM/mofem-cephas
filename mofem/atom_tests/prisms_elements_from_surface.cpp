@@ -36,6 +36,58 @@ static constexpr double delta =
 static constexpr std::array<double, 3> d3 = {0, 0, 0};
 static constexpr std::array<double, 3> d4 = {0, 0, delta};
 
+struct CoordsAndHandle {
+
+  inline static double getArg(double x) {
+    return std::round(x * pow(10., precision_exponent - 1));
+  };
+
+  int x, y, z;
+  EntityHandle node;
+  CoordsAndHandle(const double *coords, EntityHandle v)
+      : x(getArg(coords[0])), y(getArg(coords[1])), z(getArg(coords[2])),
+        node(v) {}
+};
+
+typedef multi_index_container<
+    CoordsAndHandle,
+    indexed_by<
+
+        hashed_unique<composite_key<
+            CoordsAndHandle, member<CoordsAndHandle, int, &CoordsAndHandle::x>,
+            member<CoordsAndHandle, int, &CoordsAndHandle::y>,
+            member<CoordsAndHandle, int, &CoordsAndHandle::z>>>
+
+        >>
+    MapCoords;
+
+struct PrismOp : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  PrismOp(moab::Interface &post_proc, MapCoords &map_coords);
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+public:
+  moab::Interface &postProc;
+  MapCoords &mapCoords;
+  std::vector<EntityHandle> nodeHandles;
+};
+
+struct PrismFE : public FatPrismElementForcesAndSourcesCore {
+
+  PrismFE(MoFEM::Interface &m_field, MatrixDouble &tri_coords);
+
+  int getRuleTrianglesOnly(int order);
+  int getRuleThroughThickness(int order);
+
+  MoFEMErrorCode setGaussPtsTrianglesOnly(int order_triangles_only);
+
+  MoFEMErrorCode setGaussPtsThroughThickness(int order_thickness);
+
+private:
+  MatrixDouble &triCoords;
+};
+
 int main(int argc, char *argv[]) {
 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
@@ -101,32 +153,6 @@ int main(int argc, char *argv[]) {
       add_prims_layer.clear();
     }
 
-    struct CoordsAndHandle {
-
-      inline static double getArg(double x) {
-        return std::round(x * pow(10., precision_exponent - 1));
-      };
-
-      int x, y, z;
-      EntityHandle node;
-      CoordsAndHandle(const double *coords, EntityHandle v)
-          : x(getArg(coords[0])), y(getArg(coords[1])), z(getArg(coords[2])),
-            node(v) {}
-    };
-
-    typedef multi_index_container<
-        CoordsAndHandle,
-        indexed_by<
-
-            hashed_unique<composite_key<
-                CoordsAndHandle,
-                member<CoordsAndHandle, int, &CoordsAndHandle::x>,
-                member<CoordsAndHandle, int, &CoordsAndHandle::y>,
-                member<CoordsAndHandle, int, &CoordsAndHandle::z>>>
-
-            >>
-        MapCoords;
-
     EntityHandle meshset;
     CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
     CHKERR moab.add_entities(meshset, prisms);
@@ -190,12 +216,33 @@ int main(int argc, char *argv[]) {
 
     // FE
     CHKERR m_field.add_finite_element("PRISM");
+    CHKERR m_field.add_finite_element("EDGE");
+    CHKERR m_field.add_finite_element("TRI");
+    CHKERR m_field.add_finite_element("QUAD");
 
     // Define rows/cols and element data
     CHKERR m_field.modify_finite_element_add_field_row("PRISM", "FIELD1");
     CHKERR m_field.modify_finite_element_add_field_col("PRISM", "FIELD1");
     CHKERR m_field.modify_finite_element_add_field_data("PRISM", "FIELD1");
+    // Define rows/cols and element data
+    CHKERR m_field.modify_finite_element_add_field_row("EDGE", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_col("EDGE", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_data("EDGE", "FIELD1");
+    // Define rows/cols and element data
+    CHKERR m_field.modify_finite_element_add_field_row("TRI", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_col("TRI", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_data("TRI", "FIELD1");
+    // Define rows/cols and element data
+    CHKERR m_field.modify_finite_element_add_field_row("QUAD", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_col("QUAD", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_data("QUAD", "FIELD1");
 
+    CHKERR m_field.add_ents_to_finite_element_by_type(one_prism_range, MBEDGE,
+                                                      "EDGE");
+    CHKERR m_field.add_ents_to_finite_element_by_type(one_prism_range, MBTRI,
+                                                      "TRI");
+    CHKERR m_field.add_ents_to_finite_element_by_type(one_prism_range, MBQUAD,
+                                                      "QUAD");
     CHKERR m_field.add_ents_to_finite_element_by_type(one_prism_range, MBPRISM,
                                                       "PRISM");
 
@@ -209,6 +256,9 @@ int main(int argc, char *argv[]) {
 
     // set finite elements for problem
     CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM", "PRISM");
+    CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM", "EDGE");
+    CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM", "TRI");
+    CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM", "QUAD");
     // set refinement level for problem
     CHKERR m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM", bit_level0);
 
@@ -222,148 +272,8 @@ int main(int argc, char *argv[]) {
     // what are ghost nodes, see Petsc Manual
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
-    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
-    typedef stream<TeeDevice> TeeStream;
-
-    struct MyOp : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
-
-      MyOp(moab::Interface &post_proc, MapCoords &map_coords)
-          : FatPrismElementForcesAndSourcesCore::UserDataOperator(
-                "FIELD1", "FIELD1",
-                ForcesAndSourcesCore::UserDataOperator::OPROW),
-            postProc(post_proc), mapCoords(map_coords) {}
-
-      MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
-        constexpr double def_val[] = {0, 0, 0};
-        MoFEMFunctionBegin;
-        switch (type) {
-        case MBVERTEX:
-        case MBEDGE:
-        case MBTRI:
-        case MBQUAD:
-        case MBPRISM:
-          break;
-        default:
-          MoFEMFunctionReturnHot(0);
-        }
-        if (type == MBTRI && (side != 3 && side != 4))
-          MoFEMFunctionReturnHot(0);
-        if (type == MBQUAD && (side == 3 || side == 4))
-          MoFEMFunctionReturnHot(0);
-
-        if (type == MBVERTEX) {
-          const size_t nb_gauss_pts = getGaussPts().size2();
-          auto &coords_at_pts = getGaussPts();
-          nodeHandles.reserve(nb_gauss_pts);
-          nodeHandles.clear();
-          for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
-            auto t = boost::make_tuple(
-                CoordsAndHandle::getArg(coords_at_pts(0, gg)),
-                CoordsAndHandle::getArg(coords_at_pts(1, gg)),
-                CoordsAndHandle::getArg(coords_at_pts(2, gg)));
-
-            auto it = mapCoords.find(t);
-            if (it != mapCoords.end())
-              nodeHandles.emplace_back(it->node);
-            else
-              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                      "Vertex not found");
-          }
-
-          MatrixDouble node_coords(nb_gauss_pts, 3);
-          CHKERR postProc.get_coords(&nodeHandles[0], nodeHandles.size(),
-                                     &node_coords(0, 0));
-          for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
-            constexpr double eps = 1e-12;
-            for (auto d : {0, 1, 2})
-              if (std::abs(node_coords(gg, d) - getGaussPts()(d, gg)) > eps) {
-                SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                        "Inconsistency between node coords and integration "
-                        "points");
-              }
-            for (auto d : {0, 1, 2})
-              if (std::abs(node_coords(gg, d) - getCoordsAtGaussPts()(gg, d)) >
-                  eps)
-                SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                        "Inconsistency between node coords and integration "
-                        "points");
-          }
-
-          Tag th;
-          CHKERR postProc.tag_get_handle("Coords", 3, MB_TYPE_DOUBLE, th,
-                                         MB_TAG_CREAT | MB_TAG_DENSE, def_val);
-          CHKERR postProc.tag_set_data(th, &nodeHandles[0], nodeHandles.size(),
-                                       &getCoordsAtGaussPts()(0, 0));
-        }
-
-        auto to_str = [](auto i) {
-          return boost::lexical_cast<std::string>(i);
-        };
-        std::string tag_name_base =
-            "PrismType" + to_str(type) + "Side" + to_str(side);
-        cerr << "Tag " << tag_name_base << endl;
-        cerr << "Order " << data.getOrder() << endl;
-
-        MatrixDouble trans_base = trans(data.getN());
-        if (trans_base.size2() != nodeHandles.size())
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                   "wrong size %d != %d", trans_base.size2(),
-                   nodeHandles.size());
-        for (size_t rr = 0; rr != trans_base.size1(); ++rr) {
-          auto tag_name = tag_name_base + "Base" + to_str(rr);
-          Tag th;
-          CHKERR postProc.tag_get_handle(tag_name.c_str(), 1, MB_TYPE_DOUBLE,
-                                         th, MB_TAG_CREAT | MB_TAG_DENSE,
-                                         def_val);
-          CHKERR postProc.tag_set_data(th, &nodeHandles[0], nodeHandles.size(),
-                                       &trans_base(rr, 0));
-        }
-
-        MoFEMFunctionReturn(0);
-      }
-
-    public:
-      moab::Interface &postProc;
-      MapCoords &mapCoords;
-      std::vector<EntityHandle> nodeHandles;
-    };
-
-    struct MyPrisms : public FatPrismElementForcesAndSourcesCore {
-
-      MyPrisms(MoFEM::Interface &m_field, MatrixDouble &tri_coords)
-          : FatPrismElementForcesAndSourcesCore(m_field),
-            triCoords(tri_coords) {}
-
-      int getRuleTrianglesOnly(int order) { return -1; };
-      int getRuleThroughThickness(int order) { return -1; };
-
-      MoFEMErrorCode setGaussPtsTrianglesOnly(int order_triangles_only) {
-        MoFEMFunctionBegin;
-        gaussPtsTrianglesOnly.resize(3, triCoords.size1(), false);
-        gaussPtsTrianglesOnly.clear();
-        for (int gg = 0; gg != triCoords.size1(); ++gg)
-          for (int dd = 0; dd != 2; ++dd)
-            gaussPtsTrianglesOnly(dd, gg) = triCoords(gg, dd);
-        MoFEMFunctionReturn(0);
-      }
-
-      MoFEMErrorCode setGaussPtsThroughThickness(int order_thickness) {
-        MoFEMFunctionBegin;
-        gaussPtsThroughThickness.resize(2, number_of_prisms_layers + 1, false);
-        gaussPtsThroughThickness.clear();
-        for (int gg = 0; gg != number_of_prisms_layers + 1; ++gg)
-          gaussPtsThroughThickness(0, gg) = delta * gg;
-
-        MoFEMFunctionReturn(0);
-      }
-
-    private:
-      MatrixDouble &triCoords;
-    };
-
-    MyPrisms fe1(m_field, tri_coords);
-    fe1.getOpPtrVector().push_back(new MyOp(moab, map_coords));
+    PrismFE fe1(m_field, tri_coords);
+    fe1.getOpPtrVector().push_back(new PrismOp(moab, map_coords));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "PRISM", fe1);
 
     CHKERR moab.write_file("prism_mesh.vtk", "VTK", "", &meshset, 1);
@@ -374,4 +284,118 @@ int main(int argc, char *argv[]) {
 
   MoFEM::Core::Finalize();
   return 0;
+}
+
+PrismOp::PrismOp(moab::Interface &post_proc, MapCoords &map_coords)
+    : FatPrismElementForcesAndSourcesCore::UserDataOperator(
+          "FIELD1", "FIELD1", ForcesAndSourcesCore::UserDataOperator::OPROW),
+      postProc(post_proc), mapCoords(map_coords) {}
+
+MoFEMErrorCode PrismOp::doWork(int side, EntityType type,
+                               DataForcesAndSourcesCore::EntData &data) {
+  constexpr double def_val[] = {0, 0, 0};
+  MoFEMFunctionBegin;
+  switch (type) {
+  case MBVERTEX:
+  case MBEDGE:
+  case MBTRI:
+  case MBQUAD:
+  case MBPRISM:
+    break;
+  default:
+    MoFEMFunctionReturnHot(0);
+  }
+  if (type == MBTRI && (side != 3 && side != 4))
+    MoFEMFunctionReturnHot(0);
+  if (type == MBQUAD && (side == 3 || side == 4))
+    MoFEMFunctionReturnHot(0);
+
+  if (type == MBVERTEX) {
+    const size_t nb_gauss_pts = getGaussPts().size2();
+    auto &coords_at_pts = getGaussPts();
+    nodeHandles.reserve(nb_gauss_pts);
+    nodeHandles.clear();
+    for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+      auto t = boost::make_tuple(CoordsAndHandle::getArg(coords_at_pts(0, gg)),
+                                 CoordsAndHandle::getArg(coords_at_pts(1, gg)),
+                                 CoordsAndHandle::getArg(coords_at_pts(2, gg)));
+
+      auto it = mapCoords.find(t);
+      if (it != mapCoords.end())
+        nodeHandles.emplace_back(it->node);
+      else
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vertex not found");
+    }
+
+    MatrixDouble node_coords(nb_gauss_pts, 3);
+    CHKERR postProc.get_coords(&nodeHandles[0], nodeHandles.size(),
+                               &node_coords(0, 0));
+    for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+      constexpr double eps = 1e-12;
+      for (auto d : {0, 1, 2})
+        if (std::abs(node_coords(gg, d) - getGaussPts()(d, gg)) > eps) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "Inconsistency between node coords and integration "
+                  "points");
+        }
+      for (auto d : {0, 1, 2})
+        if (std::abs(node_coords(gg, d) - getCoordsAtGaussPts()(gg, d)) > eps)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "Inconsistency between node coords and integration "
+                  "points");
+    }
+
+    Tag th;
+    CHKERR postProc.tag_get_handle("Coords", 3, MB_TYPE_DOUBLE, th,
+                                   MB_TAG_CREAT | MB_TAG_DENSE, def_val);
+    CHKERR postProc.tag_set_data(th, &nodeHandles[0], nodeHandles.size(),
+                                 &getCoordsAtGaussPts()(0, 0));
+  }
+
+  auto to_str = [](auto i) { return boost::lexical_cast<std::string>(i); };
+  std::string tag_name_base =
+      "PrismType" + to_str(type) + "Side" + to_str(side);
+  cerr << "Tag " << tag_name_base << endl;
+  cerr << "Order " << data.getOrder() << endl;
+
+  MatrixDouble trans_base = trans(data.getN());
+  if (trans_base.size2() != nodeHandles.size())
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "wrong size %d != %d",
+             trans_base.size2(), nodeHandles.size());
+  for (size_t rr = 0; rr != trans_base.size1(); ++rr) {
+    auto tag_name = tag_name_base + "Base" + to_str(rr);
+    Tag th;
+    CHKERR postProc.tag_get_handle(tag_name.c_str(), 1, MB_TYPE_DOUBLE, th,
+                                   MB_TAG_CREAT | MB_TAG_DENSE, def_val);
+    CHKERR postProc.tag_set_data(th, &nodeHandles[0], nodeHandles.size(),
+                                 &trans_base(rr, 0));
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+PrismFE::PrismFE(MoFEM::Interface &m_field, MatrixDouble &tri_coords)
+    : FatPrismElementForcesAndSourcesCore(m_field), triCoords(tri_coords) {}
+
+int PrismFE::getRuleTrianglesOnly(int order) { return -1; };
+int PrismFE::getRuleThroughThickness(int order) { return -1; };
+
+MoFEMErrorCode PrismFE::setGaussPtsTrianglesOnly(int order_triangles_only) {
+  MoFEMFunctionBegin;
+  gaussPtsTrianglesOnly.resize(3, triCoords.size1(), false);
+  gaussPtsTrianglesOnly.clear();
+  for (int gg = 0; gg != triCoords.size1(); ++gg)
+    for (int dd = 0; dd != 2; ++dd)
+      gaussPtsTrianglesOnly(dd, gg) = triCoords(gg, dd);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode PrismFE::setGaussPtsThroughThickness(int order_thickness) {
+  MoFEMFunctionBegin;
+  gaussPtsThroughThickness.resize(2, number_of_prisms_layers + 1, false);
+  gaussPtsThroughThickness.clear();
+  for (int gg = 0; gg != number_of_prisms_layers + 1; ++gg)
+    gaussPtsThroughThickness(0, gg) = delta * gg;
+
+  MoFEMFunctionReturn(0);
 }
