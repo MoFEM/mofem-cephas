@@ -129,7 +129,6 @@ int main(int argc, char *argv[]) {
     MatrixDouble tri_coords(tris_verts.size(), 3);
     CHKERR moab.get_coords(tris_verts, &tri_coords(0, 0));
 
-    // Create MoFEM (Joseph) databas
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
