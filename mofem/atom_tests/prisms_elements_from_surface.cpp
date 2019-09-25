@@ -189,8 +189,6 @@ int main(int argc, char *argv[]) {
                                   moab::Interface::UNION);
     CHKERR moab.add_entities(one_prism_meshset, one_prism_adj_ents);
 
-    cerr << one_prism_adj_ents << endl;
-
     BitRefLevel bit_level0;
     bit_level0.set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setEntitiesBitRefLevel(
