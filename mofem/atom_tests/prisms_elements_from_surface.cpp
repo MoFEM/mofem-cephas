@@ -28,6 +28,7 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 static int debug = 1;
+static constexpr int precision_exponent = 4;
 
 int main(int argc, char *argv[]) {
 
@@ -63,6 +64,13 @@ int main(int argc, char *argv[]) {
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
+    Range tris;
+    CHKERR moab.get_entities_by_type(0, MBTRI, tris, false);
+    Range tris_verts;
+    CHKERR moab.get_connectivity(tris, tris_verts);
+    MatrixDouble tri_coords(tris_verts.size(), 3);
+    CHKERR moab.get_coords(tris_verts, &tri_coords(0, 0));
+
     // Create MoFEM (Joseph) databas
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
@@ -70,8 +78,6 @@ int main(int argc, char *argv[]) {
     PrismsFromSurfaceInterface *prisms_from_surface_interface;
     CHKERR m_field.getInterface(prisms_from_surface_interface);
 
-    Range tris;
-    CHKERR moab.get_entities_by_type(0, MBTRI, tris, false);
     Range prisms;
     CHKERR prisms_from_surface_interface->createPrisms(tris, prisms);
     std::array<double, 3> d3 = {0, 0, 0};
@@ -90,6 +96,44 @@ int main(int argc, char *argv[]) {
       prisms.merge(add_prims_layer);
       add_prims_layer.clear();
     }
+
+
+    struct CoordsAndHandle {
+
+      inline static double getArg(double x) {
+        return std::round(x * pow(10., precision_exponent - 1));
+      };
+
+      int x, y, z;
+      EntityHandle node;
+      CoordsAndHandle(const double *coords, EntityHandle v)
+          : x(getArg(coords[0])), y(getArg(coords[1])), z(getArg(coords[2])),
+            node(v) {}
+    };
+
+    typedef multi_index_container<
+        CoordsAndHandle,
+        indexed_by<
+
+            hashed_unique<composite_key<
+                CoordsAndHandle,
+                member<CoordsAndHandle, int, &CoordsAndHandle::x>,
+                member<CoordsAndHandle, int, &CoordsAndHandle::y>,
+                member<CoordsAndHandle, int, &CoordsAndHandle::z>>>
+
+            >>
+        MapCoords;
+
+    MapCoords map_coords;
+    Range verts;
+    CHKERR moab.get_connectivity(prisms, verts);
+    MatrixDouble coords(verts.size(), 3);
+
+    CHKERR moab.get_coords(verts, &coords(0, 0));
+
+    for (size_t v = 0; v != verts.size(); ++v)
+      map_coords.insert(CoordsAndHandle(&coords(v, 0), verts[v]));
+
 
     EntityHandle meshset;
     CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
@@ -114,23 +158,13 @@ int main(int argc, char *argv[]) {
     CHKERR moab.get_connectivity(one_prism_range, one_prism_verts);
     CHKERR moab.add_entities(one_prism_meshset, one_prism_verts);
     Range one_prism_adj_ents;
-    for (int d = 2; d != 3; ++d)
+    for (int d = 1; d != 3; ++d)
       CHKERR moab.get_adjacencies(one_prism_range, d, true, one_prism_adj_ents,
                                   moab::Interface::UNION);
     CHKERR moab.add_entities(one_prism_meshset, one_prism_adj_ents);
 
-    if (debug) {
-      CHKERR moab.write_file("prism_mesh.vtk", "VTK", "", &meshset, 1);
-      CHKERR moab.write_file("one_prism_mesh.vtk", "VTK", "",
-                             &one_prism_meshset, 1);
-    }
-
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    // CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-        // meshset, 3, bit_level0);
-    // CHKERR prisms_from_surface_interface->seedPrismsEntities(prisms,
-    //                                                          bit_level0);
     CHKERR m_field.getInterface<BitRefManager>()->setEntitiesBitRefLevel(
         one_prism_range, bit_level0);
     CHKERR prisms_from_surface_interface->seedPrismsEntities(one_prism_range,
@@ -139,29 +173,19 @@ int main(int argc, char *argv[]) {
     // Fields
     CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, 1);
     CHKERR m_field.add_ents_to_field_by_type(one_prism_meshset, MBPRISM,
-                                             "FIELD1", 10);
+                                             "FIELD1", VERY_NOISY);
 
     CHKERR m_field.set_field_order(one_prism_meshset, MBVERTEX, "FIELD1", 1);
-    CHKERR m_field.set_field_order(one_prism_meshset, MBEDGE, "FIELD1", 3, 10);
-    CHKERR m_field.build_fields(10);
+    CHKERR m_field.set_field_order(one_prism_meshset, MBEDGE, "FIELD1", 3,
+                                   VERY_NOISY);
+    CHKERR m_field.build_fields(VERY_NOISY);
 
-    // const DofEntity_multiIndex *dofs_ptr;
-    // CHKERR m_field.get_dofs(&dofs_ptr);
-    // PetscPrintf(PETSC_COMM_WORLD, "dofs_ptr.size() = %d\n", dofs_ptr->size());
-    // if (dofs_ptr->size() != 887) {
-    //   SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-    //            "data inconsistency 323!=%d", dofs_ptr->size());
-    // }
+    CHKERR m_field.set_field_order(one_prism_meshset, MBQUAD, "FIELD1", 5,
+                                   VERY_NOISY);
+    CHKERR m_field.set_field_order(one_prism_meshset, MBPRISM, "FIELD1", 7,
+                                   VERY_NOISY);
+    CHKERR m_field.build_fields(VERY_NOISY);
 
-    CHKERR m_field.set_field_order(one_prism_meshset, MBQUAD, "FIELD1", 4, 10);
-    CHKERR m_field.set_field_order(one_prism_meshset, MBPRISM, "FIELD1", 6, 10);
-    CHKERR m_field.build_fields(10);
-
-    // PetscPrintf(PETSC_COMM_WORLD, "dofs_ptr.size() = %d\n", dofs_ptr->size());
-    // if (dofs_ptr->size() != 1207) {
-    //   SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-    //            "data inconsistency 483!=%d", dofs_ptr->size());
-    // }
 
     CHKERR m_field.set_field_order(one_prism_meshset, MBTRI, "FIELD1", 3);
     CHKERR m_field.build_fields();
@@ -204,134 +228,134 @@ int main(int argc, char *argv[]) {
     typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
-    std::ofstream ofs("prisms_elements_from_surface.txt");
-    TeeDevice my_tee(std::cout, ofs);
-    TeeStream my_split(my_tee);
-
     struct MyOp : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
 
-      TeeStream &mySplit;
-      MyOp(TeeStream &mySplit, const char type)
+      MyOp(moab::Interface &post_proc, MapCoords &map_coords)
           : FatPrismElementForcesAndSourcesCore::UserDataOperator(
-                "FIELD1", "FIELD1", type),
-            mySplit(mySplit) {}
+                "FIELD1", "FIELD1",
+                ForcesAndSourcesCore::UserDataOperator::OPROW),
+            postProc(post_proc), mapCoords(map_coords) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
+        constexpr double def_val[] = {0, 0, 0};
         MoFEMFunctionBeginHot;
 
-        // if(data.getFieldData().empty()) MoFEMFunctionReturnHot(0);
+        if (type == MBVERTEX) {
+          const size_t nb_gauss_pts = getGaussPts().size2();
+          auto &coords_at_pts = getGaussPts();
+          nodeHandles.reserve(nb_gauss_pts);
+          nodeHandles.clear();
+          for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+            auto t = boost::make_tuple(
+                CoordsAndHandle::getArg(coords_at_pts(0, gg)),
+                CoordsAndHandle::getArg(coords_at_pts(1, gg)),
+                CoordsAndHandle::getArg(coords_at_pts(2, gg)));
 
-        // const double eps = 1e-4;
-        // for(
-        //   DoubleAllocator::iterator it = getNormal().data().begin();
-        //   it!=getNormal().data().end();it++
-        // ) {
-        //   *it = fabs(*it)<eps ? 0.0 : *it;
-        // }
-        // for(
-        //   DoubleAllocator::iterator it =
-        //   getNormalsAtGaussPtF3().data().begin();
-        //   it!=getNormalsAtGaussPtF3().data().end();it++
-        // ) {
-        //   *it = fabs(*it)<eps ? 0.0 : *it;
-        // }
-        // for(
-        //   DoubleAllocator::iterator it =
-        //   getTangent1AtGaussPtF3().data().begin();
-        //   it!=getTangent1AtGaussPtF3().data().end();it++
-        // ) {
-        //   *it = fabs(*it)<eps ? 0.0 : *it;
-        // }
-        // for(
-        //   DoubleAllocator::iterator it =
-        //   getTangent2AtGaussPtF3().data().begin();
-        //   it!=getTangent2AtGaussPtF3().data().end();it++
-        // ) {
-        //   *it = fabs(*it)<eps ? 0.0 : *it;
-        // }
-        // for(
-        //   DoubleAllocator::iterator it =
-        //   getNormalsAtGaussPtF4().data().begin();
-        //   it!=getNormalsAtGaussPtF4().data().end();it++
-        // ) {
-        //   *it = fabs(*it)<eps ? 0.0 : *it;
-        // }
-        // for(
-        //   DoubleAllocator::iterator it =
-        //   getTangent1AtGaussPtF4().data().begin();
-        //   it!=getTangent1AtGaussPtF4().data().end();it++
-        // ) {
-        //   *it = fabs(*it)<eps ? 0.0 : *it;
-        // }
-        // for(
-        //   DoubleAllocator::iterator it =
-        //   getTangent2AtGaussPtF4().data().begin();
-        //   it!=getTangent2AtGaussPtF4().data().end();it++
-        // ) {
-        //   *it = fabs(*it)<eps ? 0.0 : *it;
-        // }
-        //
-        // mySplit << "NH1" << std::endl;
-        // mySplit << "side: " << side << " type: " << type << std::endl;
-        // data.getN() *= 1e4;
-        // data.getDiffN() *= 1e4;
-        // mySplit << data << std::endl;
-        // mySplit << "getTroughThicknessDataStructure" << std::endl;
-        // mySplit << getTroughThicknessDataStructure().dataOnEntities[type][side]
-        //         << std::endl;
+            auto it = mapCoords.find(t);
+            if (it != mapCoords.end())
+              nodeHandles.emplace_back(it->node);
+            else
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                      "Vertex not found");
+          }
 
-        // mySplit << "integration pts " << getGaussPts() << std::endl;
-        // mySplit << "coords at integration pts " << getCoordsAtGaussPts() <<
-        // std::endl;
-        // mySplit << std::endl << std::endl;
+          MatrixDouble node_coords(nb_gauss_pts, 3);
+          CHKERR postProc.get_coords(&nodeHandles[0], nodeHandles.size(),
+                                     &node_coords(0, 0));
+          for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+            constexpr double eps = 1e-12;
+            for (auto d : {0, 1, 2})
+              if (std::abs(node_coords(gg, d) - getGaussPts()(d, gg)) > eps) {
+                SETERRQ(
+                    PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "Inconsistency between node coords and integration points");
+              }
+            for (auto d : {0, 1, 2})
+              if (std::abs(node_coords(gg, d) - getCoordsAtGaussPts()(gg, d)) >
+                  eps)
+                SETERRQ(
+                    PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "Inconsistency between node coords and integration points");
+          }
 
-        // mySplit << std::setprecision(3) << getCoords() << std::endl;
-        // mySplit << std::setprecision(3) << getCoordsAtGaussPts() <<
-        // std::endl; mySplit << std::setprecision(3) << getArea(0) <<
-        // std::endl; mySplit << std::setprecision(3) << getArea(1) <<
-        // std::endl; mySplit << std::setprecision(3) << "normal F3 " <<
-        // getNormalF3() << std::endl; mySplit << std::setprecision(3) <<
-        // "normal F4 " << getNormalF4() << std::endl; mySplit <<
-        // std::setprecision(3) << "normal at Gauss pt F3 " <<
-        // getNormalsAtGaussPtF3() << std::endl; mySplit << std::setprecision(3)
-        // << getTangent1AtGaussPtF3() << std::endl; mySplit <<
-        // std::setprecision(3) << getTangent2AtGaussPtF3() << std::endl;
-        // mySplit << std::setprecision(3) << "normal at Gauss pt F4 " <<
-        // getNormalsAtGaussPtF4() << std::endl; mySplit << std::setprecision(3)
-        // << getTangent1AtGaussPtF4() << std::endl; mySplit <<
-        // std::setprecision(3) << getTangent2AtGaussPtF4() << std::endl;
+          Tag th;
+          CHKERR postProc.tag_get_handle("Coords", 3, MB_TYPE_DOUBLE,
+                                         th, MB_TAG_CREAT | MB_TAG_DENSE,
+                                         def_val);
+          CHKERR postProc.tag_set_data(th, &nodeHandles[0], nodeHandles.size(),
+                                       &getCoordsAtGaussPts()(0, 0));
+        }
 
-        // cerr << getGaussPtsTrianglesOnly() << endl;
-        // cerr << getGaussPtsThroughThickness() << endl;
+
+
+        auto to_str = [](auto i) {
+          return boost::lexical_cast<std::string>(i);
+        };
+        std::string tag_name_base =
+            "Type" + to_str(type) + "Side" + to_str(side);
+        cerr << "Tag " << tag_name_base << endl;
+        auto trans_base = trans(data.getN());
+        for (size_t rr = 0; rr != trans_base.size1(); ++rr) {
+          auto tag_name = tag_name_base + "Base" + to_str(rr);
+          Tag th;
+          CHKERR postProc.tag_get_handle(tag_name.c_str(), 1, MB_TYPE_DOUBLE,
+                                         th, MB_TAG_CREAT | MB_TAG_DENSE,
+                                         def_val);
+          CHKERR postProc.tag_set_data(th, &nodeHandles[0], nodeHandles.size(),
+                                       &trans_base(rr, 0));
+        }
 
         MoFEMFunctionReturnHot(0);
       }
 
-      MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
-                            EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
-        MoFEMFunctionBeginHot;
-
-        // if(row_data.getFieldData().empty()) MoFEMFunctionReturnHot(0);
-        //
-        // mySplit << "NH1NH1" << std::endl;
-        // mySplit << "row side: " << row_side << " row_type: " << row_type <<
-        // std::endl; mySplit << row_data << std::endl; mySplit << "NH1NH1" <<
-        // std::endl; mySplit << "col side: " << col_side << " col_type: " <<
-        // col_type << std::endl; mySplit << row_data << std::endl;
-
-        MoFEMFunctionReturnHot(0);
-      }
+      public:
+        moab::Interface &postProc;
+        MapCoords &mapCoords;
+        std::vector<EntityHandle> nodeHandles;
     };
 
-    FatPrismElementForcesAndSourcesCore fe1(m_field);
-    fe1.getOpPtrVector().push_back(
-        new MyOp(my_split, ForcesAndSourcesCore::UserDataOperator::OPROW));
-    // fe1.getOpPtrVector().push_back(new
-    // MyOp(my_split,ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
+    struct MyPrisms : public FatPrismElementForcesAndSourcesCore {
+
+      MyPrisms(MoFEM::Interface &m_field, MatrixDouble &tri_coords)
+          : FatPrismElementForcesAndSourcesCore(m_field),
+            triCoords(tri_coords) {}
+
+      int getRuleTrianglesOnly(int order) { return -1; };
+      int getRuleThroughThickness(int order) { return -1; };
+
+      MoFEMErrorCode setGaussPtsTrianglesOnly(int order_triangles_only) {
+        MoFEMFunctionBegin;
+        gaussPtsTrianglesOnly.resize(3, triCoords.size1(), false);
+        gaussPtsTrianglesOnly.clear();
+        for (int gg = 0; gg != triCoords.size1(); ++gg)
+          for (int dd = 0; dd != 2; ++dd)
+            gaussPtsTrianglesOnly(dd, gg) = triCoords(gg, dd);
+        MoFEMFunctionReturn(0);
+      }
+
+      MoFEMErrorCode setGaussPtsThroughThickness(int order_thickness) {
+        MoFEMFunctionBegin;
+        gaussPtsThroughThickness.resize(2, 6, false);
+        gaussPtsThroughThickness.clear();
+        for (int gg = 0; gg != 6; ++gg)
+          gaussPtsThroughThickness(0, gg) = 0.2 * gg;
+
+        MoFEMFunctionReturn(0);
+      }
+
+    private:
+      MatrixDouble &triCoords;
+    };
+
+
+    MyPrisms fe1(m_field, tri_coords);
+    fe1.getOpPtrVector().push_back(new MyOp(moab, map_coords));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE1", fe1);
+
+    CHKERR moab.write_file("prism_mesh.vtk", "VTK", "", &meshset, 1);
+    CHKERR moab.write_file("one_prism_mesh.vtk", "VTK", "", &one_prism_meshset,
+                           1);
   }
   CATCH_ERRORS;
 
