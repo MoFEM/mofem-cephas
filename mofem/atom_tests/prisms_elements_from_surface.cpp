@@ -167,6 +167,8 @@ int main(int argc, char *argv[]) {
                                   moab::Interface::UNION);
     CHKERR moab.add_entities(one_prism_meshset, one_prism_adj_ents);
 
+    cerr << one_prism_adj_ents << endl;
+
     BitRefLevel bit_level0;
     bit_level0.set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setEntitiesBitRefLevel(
@@ -182,17 +184,12 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.set_field_order(one_prism_meshset, MBVERTEX, "FIELD1", 1);
     CHKERR m_field.set_field_order(one_prism_meshset, MBEDGE, "FIELD1", 3,
                                    VERY_NOISY);
-    CHKERR m_field.build_fields(VERY_NOISY);
-
+    CHKERR m_field.set_field_order(one_prism_meshset, MBTRI, "FIELD1", 3);
     CHKERR m_field.set_field_order(one_prism_meshset, MBQUAD, "FIELD1", 5,
                                    VERY_NOISY);
     CHKERR m_field.set_field_order(one_prism_meshset, MBPRISM, "FIELD1", 7,
                                    VERY_NOISY);
     CHKERR m_field.build_fields(VERY_NOISY);
-
-
-    CHKERR m_field.set_field_order(one_prism_meshset, MBTRI, "FIELD1", 3);
-    CHKERR m_field.build_fields();
 
     // FE
     CHKERR m_field.add_finite_element("TEST_FE1");
@@ -243,7 +240,21 @@ int main(int argc, char *argv[]) {
       MoFEMErrorCode doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
         constexpr double def_val[] = {0, 0, 0};
-        MoFEMFunctionBeginHot;
+        MoFEMFunctionBegin;
+        switch (type) {
+        case MBVERTEX:
+        case MBEDGE:
+        case MBTRI:
+        case MBQUAD:
+        case MBPRISM:
+          break;
+        default:
+          MoFEMFunctionReturnHot(0);
+        }
+        if(type == MBTRI && (side !=3 || side != 4))
+          MoFEMFunctionReturnHot(0);
+        if (type == MBQUAD && (side == 3 || side == 4))
+          MoFEMFunctionReturnHot(0);
 
         if (type == MBVERTEX) {
           const size_t nb_gauss_pts = getGaussPts().size2();
@@ -271,27 +282,24 @@ int main(int argc, char *argv[]) {
             constexpr double eps = 1e-12;
             for (auto d : {0, 1, 2})
               if (std::abs(node_coords(gg, d) - getGaussPts()(d, gg)) > eps) {
-                SETERRQ(
-                    PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                    "Inconsistency between node coords and integration points");
+                SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                        "Inconsistency between node coords and integration "
+                        "points");
               }
             for (auto d : {0, 1, 2})
               if (std::abs(node_coords(gg, d) - getCoordsAtGaussPts()(gg, d)) >
                   eps)
-                SETERRQ(
-                    PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                    "Inconsistency between node coords and integration points");
+                SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                        "Inconsistency between node coords and integration "
+                        "points");
           }
 
           Tag th;
-          CHKERR postProc.tag_get_handle("Coords", 3, MB_TYPE_DOUBLE,
-                                         th, MB_TAG_CREAT | MB_TAG_DENSE,
-                                         def_val);
+          CHKERR postProc.tag_get_handle("Coords", 3, MB_TYPE_DOUBLE, th,
+                                         MB_TAG_CREAT | MB_TAG_DENSE, def_val);
           CHKERR postProc.tag_set_data(th, &nodeHandles[0], nodeHandles.size(),
                                        &getCoordsAtGaussPts()(0, 0));
         }
-
-
 
         auto to_str = [](auto i) {
           return boost::lexical_cast<std::string>(i);
@@ -299,7 +307,13 @@ int main(int argc, char *argv[]) {
         std::string tag_name_base =
             "Type" + to_str(type) + "Side" + to_str(side);
         cerr << "Tag " << tag_name_base << endl;
+        cerr << "Order " << data.getOrder() << endl;
+
         auto trans_base = trans(data.getN());
+        if(trans_base.size2()!=nodeHandles.size())
+          SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "wrong size %d != %d", trans_base.size2(),
+                   nodeHandles.size());
         for (size_t rr = 0; rr != trans_base.size1(); ++rr) {
           auto tag_name = tag_name_base + "Base" + to_str(rr);
           Tag th;
@@ -310,7 +324,7 @@ int main(int argc, char *argv[]) {
                                        &trans_base(rr, 0));
         }
 
-        MoFEMFunctionReturnHot(0);
+        MoFEMFunctionReturn(0);
       }
 
       public:
