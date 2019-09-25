@@ -30,7 +30,7 @@ static char help[] = "...\n\n";
 static int debug = 1;
 
 static constexpr int precision_exponent = 4;
-static constexpr int number_of_prisms_layers = 5;
+static constexpr int number_of_prisms_layers = 18;
 static constexpr double delta =
     1. / static_cast<double>(number_of_prisms_layers);
 static constexpr std::array<double, 3> d3 = {0, 0, 0};
@@ -101,7 +101,6 @@ int main(int argc, char *argv[]) {
       add_prims_layer.clear();
     }
 
-
     struct CoordsAndHandle {
 
       inline static double getArg(double x) {
@@ -128,20 +127,18 @@ int main(int argc, char *argv[]) {
             >>
         MapCoords;
 
+    EntityHandle meshset;
+    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+    CHKERR moab.add_entities(meshset, prisms);
+
     MapCoords map_coords;
     Range verts;
     CHKERR moab.get_connectivity(prisms, verts);
     MatrixDouble coords(verts.size(), 3);
-
     CHKERR moab.get_coords(verts, &coords(0, 0));
 
     for (size_t v = 0; v != verts.size(); ++v)
       map_coords.insert(CoordsAndHandle(&coords(v, 0), verts[v]));
-
-
-    EntityHandle meshset;
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
-    CHKERR moab.add_entities(meshset, prisms);
 
     EntityHandle one_prism_meshset;
     CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
@@ -251,7 +248,7 @@ int main(int argc, char *argv[]) {
         default:
           MoFEMFunctionReturnHot(0);
         }
-        if(type == MBTRI && (side !=3 || side != 4))
+        if (type == MBTRI && (side != 3 && side != 4))
           MoFEMFunctionReturnHot(0);
         if (type == MBQUAD && (side == 3 || side == 4))
           MoFEMFunctionReturnHot(0);
@@ -309,8 +306,8 @@ int main(int argc, char *argv[]) {
         cerr << "Tag " << tag_name_base << endl;
         cerr << "Order " << data.getOrder() << endl;
 
-        auto trans_base = trans(data.getN());
-        if(trans_base.size2()!=nodeHandles.size())
+        MatrixDouble trans_base = trans(data.getN());
+        if (trans_base.size2() != nodeHandles.size())
           SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "wrong size %d != %d", trans_base.size2(),
                    nodeHandles.size());
@@ -327,10 +324,10 @@ int main(int argc, char *argv[]) {
         MoFEMFunctionReturn(0);
       }
 
-      public:
-        moab::Interface &postProc;
-        MapCoords &mapCoords;
-        std::vector<EntityHandle> nodeHandles;
+    public:
+      moab::Interface &postProc;
+      MapCoords &mapCoords;
+      std::vector<EntityHandle> nodeHandles;
     };
 
     struct MyPrisms : public FatPrismElementForcesAndSourcesCore {
@@ -365,7 +362,6 @@ int main(int argc, char *argv[]) {
     private:
       MatrixDouble &triCoords;
     };
-
 
     MyPrisms fe1(m_field, tri_coords);
     fe1.getOpPtrVector().push_back(new MyOp(moab, map_coords));
