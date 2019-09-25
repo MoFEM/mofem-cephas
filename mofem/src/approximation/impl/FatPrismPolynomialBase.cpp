@@ -202,7 +202,11 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
     for (int gg = 0; gg < nb_gauss_pts_through_thickness; gg++) {
       double s =
           2 * cTx->gaussPtsThroughThickness(0, gg) - 1; // makes form -1..1
-      if (!sense) {
+      double eps = 1e-14;
+      if (s < -(1 + eps) || s > (1 + eps)) {
+        SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
+      }
+      if (sense == -1) {
         s *= -1;
         diff_s *= -1;
       }
@@ -286,6 +290,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
           }
           for (int ggt = 0; ggt < nb_gauss_pts_through_thickness; ggt++, gg++) {
 
+            /// CHECK THIS
             double zeta = cTx->gaussPtsThroughThickness(0, ggt);
             double n0 = N_MBEDGE0(zeta);
             double n1 = N_MBEDGE1(zeta);
