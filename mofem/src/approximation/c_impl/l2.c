@@ -190,3 +190,85 @@ PetscErrorCode L2_ShapeFunctions_MBTET(
   return L2_Ainsworth_ShapeFunctions_MBTET(p, N, diffN, L2N, diff_L2N, GDIM,
                                            base_polynomials);
 };
+
+PetscErrorCode L2_Ainsworth_ShapeFunctions_MBPRISM(
+    int p, int q, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim)) {
+  MoFEMFunctionBeginHot;
+
+  int P = NBVOLUMEPRISM_L2(p,q);
+  if (P == 0)
+    MoFEMFunctionReturnHot(0);
+  int n0 = 0;
+  int n1 = 1;
+  int n2 = 2;
+  int n3 = 3;
+  double diff_ksiL0[3], diff_ksiL1[3], diff_ksiL2[3];
+  int ii = 0;
+  for (; ii != GDIM; ++ii) {
+    int node_shift = ii * 6;
+    double ksiL0 = N[node_shift + n1] - N[node_shift + n0];
+    double ksiL1 = N[node_shift + n2] - N[node_shift + n0];
+    double ksiL2 = N[node_shift + n3] - N[node_shift + n0];
+    if (diffN != NULL) {
+      int dd = 0;
+      for (; dd < 3; dd++) {
+        diff_ksiL0[dd] = (diffN[node_shift * 3 + n1 * 3 + dd] -
+                          diffN[node_shift * 3 + n0 * 3 + dd]);
+        diff_ksiL1[dd] = (diffN[node_shift * 3 + n2 * 3 + dd] -
+                          diffN[node_shift * 3 + n0 * 3 + dd]);
+        diff_ksiL2[dd] = (diffN[node_shift * 3 + n3 * 3 + dd] -
+                          diffN[node_shift * 3 + n0 * 3 + dd]);
+      }
+    }
+    double L0[p + 1], L1[p + 1], L2[q + 1];
+    double diffL0[3 * (p + 1)], diffL1[3 * (p + 1)], diffL2[3 * (q + 1)];
+    if (diffN != NULL) {
+      ierr = base_polynomials(p, ksiL0, diff_ksiL0, L0, diffL0, 3);
+      CHKERRQ(ierr);
+      ierr = base_polynomials(p, ksiL1, diff_ksiL1, L1, diffL1, 3);
+      CHKERRQ(ierr);
+      ierr = base_polynomials(q, ksiL2, diff_ksiL2, L2, diffL2, 3);
+      CHKERRQ(ierr);
+    } else {
+      ierr = base_polynomials(p, ksiL0, NULL, L0, NULL, 3);
+      CHKERRQ(ierr);
+      ierr = base_polynomials(p, ksiL1, NULL, L1, NULL, 3);
+      CHKERRQ(ierr);
+      ierr = base_polynomials(q, ksiL2, NULL, L2, NULL, 3);
+      CHKERRQ(ierr);
+    }
+    int shift = ii * P;
+    int jj = 0;
+    int oo = 0;
+    for (; oo <= p; oo++) {
+      int pp0 = 0;
+      for (; pp0 <= oo; pp0++) {
+        int pp1 = oo - pp0;
+        if (pp1 >= 0) {
+          int qq = 0;
+          for (; qq <= q; qq++) {
+            if (L2N != NULL) {
+              L2N[shift + jj] = L0[pp0] * L1[pp1] * L2[qq];
+            }
+            if (diff_L2N != NULL) {
+              int dd = 0;
+              for (; dd < 3; dd++) {
+                diff_L2N[3 * shift + 3 * jj + dd] =
+                    diffL0[dd * (p + 1) + pp0] * L1[pp1] * L2[qq] +
+                    L0[pp0] * diffL1[dd * (p + 1) + pp1] * L2[qq] +
+                    L0[pp0] * L1[pp1] * diffL2[dd * (p + 1) + qq];
+              }
+            }
+            jj++;
+          }
+        }
+      }
+    }
+    if (jj != P)
+      SETERRQ2(PETSC_COMM_SELF, 1, "wrong order %d != %d", jj, P);
+  }
+  MoFEMFunctionReturnHot(0);
+}

@@ -47,6 +47,11 @@ extern "C" {
  */
 #define NBEDGE_L2(P) (P + 1)
 
+/**
+ * @brief Number of base functions on prism for L2 space
+ */
+#define NBVOLUMEPRISM_L2(P,Q) ((P + 1) * (P + 2) * (Q + 1) / 2)
+
 // H1
 
 /**
@@ -166,6 +171,12 @@ PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p, int p,
                                            double *volume_diffN, double *invJac,
                                            double *volume_diffNinvJac,
                                            int GDIM);
+
+PetscErrorCode L2_Ainsworth_ShapeFunctions_MBPRISM(
+    int p, int q, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
+    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
+                                       double *L, double *diffL,
+                                       const int dim));
 
 /**
  * \brief H1_EdgeShapeFunctions_MBTRI
