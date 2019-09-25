@@ -167,11 +167,16 @@ MoFEMErrorCode MeshsetsManager::printMaterialsSet() const {
     std::ostringstream ss;
     ss << *it << std::endl;
     ss << data;
-    Range tets;
+    Range tets, prisms;
     CHKERR moab.get_entities_by_type(it->meshset, MBTET, tets, true);
+    CHKERR moab.get_entities_by_type(it->meshset, MBPRISM, prisms, true);
 
-    ss << "MAT_ELATIC msId " << it->getMeshsetId() << " nb. tets "
-       << tets.size() << std::endl;
+    ss << "MAT_ELASTIC msId " << it->getMeshsetId() << " nb. tets "
+       << tets.size();
+    if (prisms.size())
+      ss << " nb. prisms " << prisms.size() << std::endl;
+    else
+      ss << std::endl;
     ss << std::endl;
     PetscPrintf(m_field.get_comm(), ss.str().c_str());
   }
