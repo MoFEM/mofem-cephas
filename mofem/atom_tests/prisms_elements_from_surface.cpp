@@ -46,11 +46,7 @@ struct CoordsAndHandle {
   EntityHandle node;
   CoordsAndHandle(const double *coords, EntityHandle v)
       : x(getArg(coords[0])), y(getArg(coords[1])), z(getArg(coords[2])),
-        node(v) {
-
-    cerr << coords[0] << " " << coords[1] << " " << coords[2] << endl;
-    cerr << x << " " << y << " " << z << endl;
-  }
+        node(v) {}
 };
 
 typedef multi_index_container<
@@ -163,6 +159,11 @@ int main(int argc, char *argv[]) {
 
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
+
+    std::array<Range, 3> edge_block;
+    for (auto b : {1, 2, 3})
+      CHKERR m_field.getInterface<MeshsetsManager>()->getEntitiesByDimension(
+          b, BLOCKSET, 1, edge_block[b - 1]);
 
     PrismsFromSurfaceInterface *prisms_from_surface_interface;
     CHKERR m_field.getInterface(prisms_from_surface_interface);
@@ -388,9 +389,8 @@ MoFEMErrorCode PrismOp::doWork(int side, EntityType type,
   auto to_str = [](auto i) { return boost::lexical_cast<std::string>(i); };
   std::string tag_name_base =
       "PrismType" + to_str(type) + "Side" + to_str(side);
-  cerr << "Tag " << tag_name_base << endl;
-  cerr << "Order " << data.getOrder() << endl;
-
+  std::cout << tag_name_base << endl;
+  
   MatrixDouble trans_base = trans(data.getN());
   if (trans_base.size2() != nodeHandles.size())
     SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "wrong size %d != %d",
@@ -485,8 +485,8 @@ MoFEMErrorCode FaceOp::doWork(int side, EntityType type,
 
   std::string tag_prism_name_base =
       "PrismType" + to_str(type) + "Side" + to_str(side_prism);
-  cerr << "Tag " << tag_name_base << " : " << tag_prism_name_base << endl;
-  cerr << "Order " << data.getOrder() << endl;
+
+  std::cout << tag_name_base << endl;
 
   MatrixDouble trans_base = trans(data.getN());
   MatrixDouble prism_base(trans_base.size1(), trans_base.size2());
