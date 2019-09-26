@@ -250,10 +250,11 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     // linear for xi,eta and zeta
     dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(
         1, 6, false);
-    CHKERR ShapeDiffMBTRI(&*dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0]
-                                .getDiffN(NOBASE)
-                                .data()
-                                .begin());
+    std::copy(Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+              &*dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0]
+                    .getDiffN(NOBASE)
+                    .data()
+                    .begin());
 
     // Calculate "nobase" base functions on prism, this is cartesian product
     // of base functions on triangles with base functions through thickness
