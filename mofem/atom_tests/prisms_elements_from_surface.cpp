@@ -48,8 +48,8 @@ struct CoordsAndHandle {
       : x(getArg(coords[0])), y(getArg(coords[1])), z(getArg(coords[2])),
         node(v) {
 
-          cerr << coords[0]  << " " <<coords[1] << " " << coords[2] << endl;
-          cerr << x << " " << y << " " << z << endl;
+    cerr << coords[0] << " " << coords[1] << " " << coords[2] << endl;
+    cerr << x << " " << y << " " << z << endl;
   }
 };
 
@@ -483,7 +483,13 @@ MoFEMErrorCode FaceOp::doWork(int side, EntityType type,
       "FEType" + to_str(getNumeredEntFiniteElementPtr()->getEntType()) +
       "Type" + to_str(type) + "Side" + to_str(side_prism);
 
+  std::string tag_prism_name_base =
+      "PrismType" + to_str(type) + "Side" + to_str(side_prism);
+  cerr << "Tag " << tag_name_base << " : " << tag_prism_name_base << endl;
+  cerr << "Order " << data.getOrder() << endl;
+
   MatrixDouble trans_base = trans(data.getN());
+  MatrixDouble prism_base(trans_base.size1(), trans_base.size2());
   if (trans_base.size2() != nodeHandles.size())
     SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "wrong size %d != %d",
              trans_base.size2(), nodeHandles.size());
@@ -494,6 +500,35 @@ MoFEMErrorCode FaceOp::doWork(int side, EntityType type,
                                    MB_TAG_CREAT | MB_TAG_DENSE, def_val);
     CHKERR postProc.tag_set_data(th, &nodeHandles[0], nodeHandles.size(),
                                  &trans_base(rr, 0));
+
+    if (type != MBVERTEX) {
+      auto tag_prism_name = tag_prism_name_base + "Base" + to_str(rr);
+      Tag th_prism;
+      CHKERR postProc.tag_get_handle(tag_prism_name.c_str(), th_prism);
+      CHKERR postProc.tag_get_data(th_prism, &nodeHandles[0],
+                                   nodeHandles.size(), &prism_base(rr, 0));
+    }
+  }
+
+  auto sum_matrix = [](MatrixDouble &m) {
+    double s = 0;
+    for (unsigned int ii = 0; ii < m.size1(); ii++) {
+      for (unsigned int jj = 0; jj < m.size2(); jj++) {
+        s += m(ii, jj);
+      }
+    }
+    return s;
+  };
+
+  if (type != MBVERTEX) {
+    prism_base -= trans_base;
+    double sum = sum_matrix(prism_base);
+    constexpr double eps = 1e-6;
+
+    if (std::abs(sum) > eps)
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "Inconsistent base %s sum %6.4e", tag_prism_name_base.c_str(),
+               sum);
   }
 
   MoFEMFunctionReturn(0);
@@ -515,7 +550,7 @@ MoFEMErrorCode TriFE::setGaussPts(int order_row, int order_col,
   CHKERR mField.get_moab().side_number(prism, ent, side, sense, offset);
   std::array<int, 2> swap = {0, 1};
   if (side == 3)
-    swap = std::array<int, 2>{1, 0}; 
+    swap = std::array<int, 2>{1, 0};
 
   gaussPts.resize(3, triCoords.size1(), false);
   gaussPts.clear();
