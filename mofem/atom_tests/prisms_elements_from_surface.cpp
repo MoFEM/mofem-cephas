@@ -340,13 +340,13 @@ int main(int argc, char *argv[]) {
     fe_tri.getOpPtrVector().push_back(
         new Op<FaceElementForcesAndSourcesCore::UserDataOperator>(
             moab, map_coords, one_prism));
-    // CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TRI", fe_tri);
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TRI", fe_tri);
 
     QuadFE fe_quad(m_field, edge_block, one_prism);
     fe_quad.getOpPtrVector().push_back(
         new Op<FaceElementForcesAndSourcesCoreBase::UserDataOperator>(
             moab, map_coords, one_prism));
-    // CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "QUAD", fe_quad);
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "QUAD", fe_quad);
 
     CHKERR moab.write_file("prism_mesh.vtk", "VTK", "", &meshset, 1);
     CHKERR moab.write_file("one_prism_mesh.vtk", "VTK", "", &one_prism_meshset,
