@@ -263,6 +263,10 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
       cblas_dcopy(3 * nb_gauss_pts, QUAD_2D_TABLE[rule]->points, 1, shape_ptr,
                   1);
+      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
+      std::copy(
+          Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
     } 
     else {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -271,38 +275,28 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
     MoFEMFunctionReturn(0);
   };
 
-  auto calc_N_diffN_for_quad = [&]() {
+  auto calc_base_for_quad = [&]() {
     MoFEMFunctionBegin;
     const size_t nb_gauss_pts = gaussPts.size2();
-    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
-                                                           false);
-    dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(nb_gauss_pts, 8,
-                                                               false);
-    for (int i = 0; i < nb_gauss_pts; ++i) {
-      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(i, 0) =
-          N_MBQUAD0(gaussPts(0, i), gaussPts(1, i));
-      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(i, 1) =
-          N_MBQUAD1(gaussPts(0, i), gaussPts(1, i));
-      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(i, 2) =
-          N_MBQUAD2(gaussPts(0, i), gaussPts(1, i));
-      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(i, 3) =
-          N_MBQUAD3(gaussPts(0, i), gaussPts(1, i));
-      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 0) =
-          diffN_MBQUAD0x(gaussPts(1, i));
-      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 1) =
-          diffN_MBQUAD0y(gaussPts(0, i));
-      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 2) =
-          diffN_MBQUAD1x(gaussPts(1, i));
-      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 3) =
-          diffN_MBQUAD1y(gaussPts(0, i));
-      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 4) =
-          diffN_MBQUAD2x(gaussPts(1, i));
-      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 5) =
-          diffN_MBQUAD2y(gaussPts(0, i));
-      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 6) =
-          diffN_MBQUAD3x(gaussPts(1, i));
-      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 7) =
-          diffN_MBQUAD3y(gaussPts(0, i));
+    auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+    auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+    base.resize(nb_gauss_pts, 4, false);
+    diff_base.resize(nb_gauss_pts, 8, false);
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      const double ksi = gaussPts(0, gg);
+      const double zeta = gaussPts(1, gg);
+      base(gg, 0) = N_MBQUAD0(ksi, zeta);
+      base(gg, 1) = N_MBQUAD1(ksi, zeta);
+      base(gg, 2) = N_MBQUAD2(ksi, zeta);
+      base(gg, 3) = N_MBQUAD3(ksi, zeta);
+      diff_base(gg, 0) = diffN_MBQUAD0x(zeta);
+      diff_base(gg, 1) = diffN_MBQUAD0y(ksi);
+      diff_base(gg, 2) = diffN_MBQUAD1x(zeta);
+      diff_base(gg, 3) = diffN_MBQUAD1y(ksi);
+      diff_base(gg, 4) = diffN_MBQUAD2x(zeta);
+      diff_base(gg, 5) = diffN_MBQUAD2y(ksi);
+      diff_base(gg, 6) = diffN_MBQUAD3x(zeta);
+      diff_base(gg, 7) = diffN_MBQUAD3y(ksi);
     }
     MoFEMFunctionReturn(0);
   };
@@ -317,7 +311,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
     case MBQUAD:
       CHKERR Tools::outerProductOfEdgeIntegrationPtsForQuad(gaussPts, rule,
                                                             rule);
-      CHKERR calc_N_diffN_for_quad();
+      CHKERR calc_base_for_quad();
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -326,20 +320,23 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
 
   } else {
     // If rule is negative, set user defined integration points
-
     CHKERR setGaussPts(order_row, order_col, order_data);
     const size_t nb_gauss_pts = gaussPts.size2();
-    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 3,
-                                                           false);
+    auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+    auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
     if (nb_gauss_pts) {
       switch (type) {
       case MBTRI:
-        CHKERR ShapeMBTRI(
-            &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
-            &gaussPts(0, 0), &gaussPts(1, 0), nb_gauss_pts);
+        base.resize(nb_gauss_pts, 3, false);
+        diff_base.resize(3, 2, false);
+        CHKERR ShapeMBTRI(&*base.data().begin(), &gaussPts(0, 0),
+                          &gaussPts(1, 0), nb_gauss_pts);
+        std::copy(
+            Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+            dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
         break;
       case MBQUAD:
-        CHKERR calc_N_diffN_for_quad();
+        CHKERR calc_base_for_quad();
         break;
       default:
         SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -434,7 +431,6 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
               "no MESH_NODE_POSITIONS in element data");
 
     // Calculate normal for high-order geometry
-
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
     CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
     CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);

@@ -29,7 +29,7 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 static int debug = 1;
 
-static constexpr int precision_exponent = 4;
+static constexpr int precision_exponent = 5;
 static constexpr int number_of_prisms_layers = 18;
 static constexpr double delta =
     1. / static_cast<double>(number_of_prisms_layers);
@@ -161,10 +161,9 @@ int main(int argc, char *argv[]) {
     char mesh_file_name[255];
     CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
                                  255, &flg);
-    if (flg != PETSC_TRUE) {
+    if (flg != PETSC_TRUE) 
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
               "error -my_file (MESH FILE NEEDED)");
-    }
 
     // Read mesh to MOAB
     const char *option;
@@ -334,13 +333,13 @@ int main(int argc, char *argv[]) {
     fe_edge.getOpPtrVector().push_back(
         new Op<EdgeElementForcesAndSourcesCoreBase::UserDataOperator>(
             moab, map_coords, one_prism));
-    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE", fe_edge);
+    // CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE", fe_edge);
 
     TriFE fe_tri(m_field, tri_coords, one_prism);
     fe_tri.getOpPtrVector().push_back(
         new Op<FaceElementForcesAndSourcesCore::UserDataOperator>(
             moab, map_coords, one_prism));
-    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TRI", fe_tri);
+    // CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TRI", fe_tri);
 
     QuadFE fe_quad(m_field, edge_block, one_prism);
     fe_quad.getOpPtrVector().push_back(
@@ -518,8 +517,8 @@ MoFEMErrorCode QuadFE::setGaussPts(int order_row, int order_col,
   MatrixDouble edge_coords(edge_verts.size(), 3);
   CHKERR mField.get_moab().get_coords(edge_verts, &edge_coords(0, 0));
 
-  constexpr double normal[3][2] = {{0, 1}, {-0.5, 0.5}, {0, 1}};
-  constexpr double origin[3][2] = {{0, 0}, {1, 0}, {0, 0}};
+  constexpr double normal[3][2] = {{-1, 0}, {-0.5, 0.5}, {0, 1}};
+  constexpr double origin[3][2] = {{1, 0}, {1, 0}, {0, 0}};
   constexpr int swap[3][2] = {{0, 1}, {0, 1}, {1, 0}};
   gaussPts.resize(3, edge_verts.size() * (number_of_prisms_layers + 1), false);
   int gg = 0;
@@ -611,9 +610,13 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
     MoFEMFunctionReturnHot(0);
   }
 
+  const EntityHandle fe_ent = OP::getFEEntityHandle();
   const EntityHandle ent = OP::getSideEntity(side, type);
   int side_prism, sense, offset;
-  CHKERR postProc.side_number(prism, ent, side_prism, sense, offset);
+  if(type == MBVERTEX) {
+    CHKERR postProc.side_number(prism, fe_ent, side_prism, sense, offset);
+  } else 
+    CHKERR postProc.side_number(prism, ent, side_prism, sense, offset);
 
   if (type == MBVERTEX) {
     auto &coords_at_pts = OP::getCoordsAtGaussPts();
@@ -637,12 +640,7 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
   auto to_str = [](auto i) { return boost::lexical_cast<std::string>(i); };
   std::string tag_name_base =
       "FEType" + to_str(OP::getNumeredEntFiniteElementPtr()->getEntType()) +
-      "Type" + to_str(type) + "Side";
-  if(type == MBVERTEX)
-    tag_name_base += to_str(0);
-  else
-    tag_name_base += to_str(side_prism);
-  
+      "Type" + to_str(type) + "Side" + to_str(side_prism);
 
   std::string tag_prism_name_base =
       "PrismType" + to_str(type) + "Side" + to_str(side_prism);
@@ -653,6 +651,7 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
   if (trans_base.size2() != nodeHandles.size())
     SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "wrong size %d != %d",
              trans_base.size2(), nodeHandles.size());
+
   for (size_t rr = 0; rr != trans_base.size1(); ++rr) {
 
     std::string tag_name = tag_name_base + "Base";

@@ -17,7 +17,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
 using namespace MoFEM;
 
 QuadPolynomialBase::QuadPolynomialBase() {}
@@ -25,15 +24,15 @@ QuadPolynomialBase::~QuadPolynomialBase() {}
 
 MoFEMErrorCode
 QuadPolynomialBase::query_interface(const MOFEMuuid &uuid,
-                                   MoFEM::UnknownInterface **iface) const {
+                                    MoFEM::UnknownInterface **iface) const {
   MoFEMFunctionBegin;
   *iface = NULL;
   if (uuid == IDD_TET_BASE_FUNCTION) {
     *iface = const_cast<QuadPolynomialBase *>(this);
     MoFEMFunctionReturnHot(0);
-  } else {
+  } else
     SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "wrong interference");
-  }
+
   CHKERR BaseFunction::query_interface(uuid, iface);
   MoFEMFunctionReturn(0);
 }
@@ -54,16 +53,16 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   if (data.spacesOnEntities[MBEDGE].test(H1)) {
     // edges
-    if (data.dataOnEntities[MBEDGE].size() != 4) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-    }
+    if (data.dataOnEntities[MBEDGE].size() != 4)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "should be four edges on quad");
+
     int sense[4], order[4];
     double *H1edgeN[4], *diffH1edgeN[4];
-    for (int ee = 0; ee < 4; ee++) {
-      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "data inconsistency");
-      }
+    for (int ee = 0; ee != 4; ++ee) {
+      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "sense not set");
+
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
       int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
@@ -84,14 +83,15 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   if (data.spacesOnEntities[MBQUAD].test(H1)) {
     // face
-    if (data.dataOnEntities[MBQUAD].size() != 1) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-    }
+    if (data.dataOnEntities[MBQUAD].size() != 1)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "should be one quad to store bubble base on quad");
+
     int nb_dofs = NBFACEQUAD_H1(data.dataOnEntities[MBQUAD][0].getDataOrder());
     data.dataOnEntities[MBQUAD][0].getN(base).resize(nb_gauss_pts, nb_dofs,
-                                                    false);
+                                                     false);
     data.dataOnEntities[MBQUAD][0].getDiffN(base).resize(nb_gauss_pts,
-                                                        2 * nb_dofs, false);
+                                                         2 * nb_dofs, false);
     int face_nodes[] = {0, 1, 2, 3};
     CHKERR H1_QuadShapeFunctions_MBQUAD(
         face_nodes, data.dataOnEntities[MBQUAD][0].getDataOrder(),
@@ -107,7 +107,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
 
 MoFEMErrorCode
 QuadPolynomialBase::getValue(MatrixDouble &pts,
-                            boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
+                             boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
 
   MoFEM::UnknownInterface *iface;
@@ -115,28 +115,43 @@ QuadPolynomialBase::getValue(MatrixDouble &pts,
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
   int nb_gauss_pts = pts.size2();
-  if (!nb_gauss_pts) {
+  if (!nb_gauss_pts)
     MoFEMFunctionReturnHot(0);
-  }
 
-  if (pts.size1() < 2) {
+  if (pts.size1() < 2)
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
-  }
 
   const FieldApproximationBase base = cTx->bAse;
   DataForcesAndSourcesCore &data = cTx->dAta;
-  if (cTx->copyNodeBase != NOBASE) {
+  if (cTx->copyNodeBase != NOBASE)
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "Shape base has to be on NOBASE",
-             ApproximationBaseNames[base]);
-  }
+             "Shape base has to be on NOBASE", ApproximationBaseNames[base]);
 
   data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
-    data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
+      data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
   data.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(base) =
-    data.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(cTx->copyNodeBase);
+      data.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(cTx->copyNodeBase);
+
+  auto &base_shape = data.dataOnEntities[MBVERTEX][0].getN(base);
+  auto &diff_base = data.dataOnEntities[MBVERTEX][0].getDiffN(base);
+
+  if (base_shape.size1() != pts.size2())
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Number of base functions integration points not equal number of "
+            "set integration point");
+  if (base_shape.size2() != 4)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Number of shape functions should be four");
+  if (diff_base.size1() != pts.size2())
+    SETERRQ(
+        PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        "Number of diff base functions integration points not equal number of "
+        "set integration point");
+  if (diff_base.size2() != 8)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Number of shape functions should be four");
 
   switch (cTx->sPace) {
   case H1:

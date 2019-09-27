@@ -350,19 +350,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
     DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
 
-    switch (type) {
-    case MBTRI:
-      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
-      std::copy(
-          Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
-          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
-      break;
-    case MBQUAD:
-      break;
-    default:
-      MoFEMFunctionReturnHot(0);
-    }
-
     /// Use the some node base
     CHKERR calculateCoordinatesAtGaussPts();
     CHKERR calculateBaseFunctionsOnElement();
