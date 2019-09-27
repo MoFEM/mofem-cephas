@@ -571,9 +571,6 @@ MoFEMErrorCode EdgeFE::setGaussPts(int order_row, int order_col,
     MatrixDouble coords(num_nodes, 3);
     CHKERR mField.get_moab().get_coords(conn, num_nodes,
                                         &*coords.data().begin());
-    cerr << "edge " << coords << endl;
-
-    cerr << side << std::endl;
     side = side_map[side];
 
     Range edge_verts;
@@ -588,8 +585,6 @@ MoFEMErrorCode EdgeFE::setGaussPts(int order_row, int order_col,
       const double edge_dist = x * normal[side][0] + y * normal[side][1];
       gaussPts(0, gg) = edge_dist;
     }
-
-    cerr << gaussPts << endl;
 
   }
 
@@ -620,13 +615,9 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
   int side_prism, sense, offset;
   CHKERR postProc.side_number(prism, ent, side_prism, sense, offset);
 
-  cerr << "side prism " << side_prism << endl;
-
   if (type == MBVERTEX) {
     auto &coords_at_pts = OP::getCoordsAtGaussPts();
     const size_t nb_gauss_pts = coords_at_pts.size1();
-
-    cerr << coords_at_pts << endl;
 
     nodeHandles.reserve(nb_gauss_pts);
     nodeHandles.clear();
@@ -634,10 +625,6 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
       auto t = boost::make_tuple(CoordsAndHandle::getArg(coords_at_pts(gg, 0)),
                                  CoordsAndHandle::getArg(coords_at_pts(gg, 1)),
                                  CoordsAndHandle::getArg(coords_at_pts(gg, 2)));
-
-      cerr << coords_at_pts(gg, 0) << " ";
-      cerr << coords_at_pts(gg, 1) << " ";
-      cerr << coords_at_pts(gg, 2) << endl;
 
       auto it = mapCoords.find(t);
       if (it != mapCoords.end())
@@ -650,12 +637,16 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
   auto to_str = [](auto i) { return boost::lexical_cast<std::string>(i); };
   std::string tag_name_base =
       "FEType" + to_str(OP::getNumeredEntFiniteElementPtr()->getEntType()) +
-      "Type" + to_str(type) + "Side" + to_str(side_prism);
+      "Type" + to_str(type) + "Side";
+  if(type == MBVERTEX)
+    tag_name_base += to_str(0);
+  else
+    tag_name_base += to_str(side_prism);
+  
 
   std::string tag_prism_name_base =
       "PrismType" + to_str(type) + "Side" + to_str(side_prism);
 
-  std::cout << tag_name_base << endl;
 
   MatrixDouble trans_base = trans(data.getN());
   MatrixDouble prism_base(trans_base.size1(), trans_base.size2());
@@ -663,7 +654,19 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
     SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "wrong size %d != %d",
              trans_base.size2(), nodeHandles.size());
   for (size_t rr = 0; rr != trans_base.size1(); ++rr) {
-    auto tag_name = tag_name_base + "Base" + to_str(rr);
+
+    std::string tag_name = tag_name_base + "Base";
+    if (type == MBVERTEX) {
+      EntityHandle node = data.getFieldDofs()[rr]->getEnt();
+      int prism_mode_side;
+      CHKERR postProc.side_number(prism, node, prism_mode_side, sense, offset);
+      tag_name += to_str(prism_mode_side);
+    } else {
+      tag_name += to_str(rr);
+    }
+
+    std::cout << tag_name << endl;
+
     Tag th;
     CHKERR postProc.tag_get_handle(tag_name.c_str(), 1, MB_TYPE_DOUBLE, th,
                                    MB_TAG_CREAT | MB_TAG_DENSE, def_val);
