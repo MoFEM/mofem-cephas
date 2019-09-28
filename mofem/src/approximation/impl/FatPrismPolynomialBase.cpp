@@ -240,11 +240,9 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     constexpr int prism_edge_map[9][2] = {
         {0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 4}, {2, 5}, {3, 4}, {4, 5}, {5, 3}};
     int gg = 0;
-    for (int ggf = 0; ggf != nb_gauss_pts_on_faces; ggf++) {
-
-      
-      double tri_n = vert_dat.getN(base)(ggf, prism_edge_map[ee][0]);
-
+    for (int ggf = 0; ggf < nb_gauss_pts_on_faces; ggf++) {
+      double tri_n = cTx->dataTrianglesOnly.dataOnEntities[MBVERTEX][0].getN(
+          base)(ggf, prism_edge_map[ee][0]);
       double dksi_tri_n[2];
       for (int kk = 0; kk < 2; kk++) {
         dksi_tri_n[kk] =
