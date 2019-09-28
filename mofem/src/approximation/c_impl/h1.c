@@ -893,13 +893,14 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
   }
   int P[4];
   int ee = 0;
-  for (; ee < 4; ee++) {
+  for (; ee < 4; ee++) 
     P[ee] = NBEDGE_H1(p[ee]);
-  }
+  
   int n0 = 0;
   int n1 = 1;
   int n2 = 2;
   int n3 = 3;
+
   int ii = 0;
   for (; ii < GDIM; ii++) {
     int node_shift = ii * 4;
@@ -937,6 +938,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
     CHKERRQ(ierr);
     ierr = base_polynomials(p[3], ksi30, diff_ksi30, L30, diffL30, 2);
     CHKERRQ(ierr);
+
     int shift;
     if (edgeN != NULL) {
       // edge01
