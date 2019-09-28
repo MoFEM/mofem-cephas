@@ -905,10 +905,23 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
   for (; ii < GDIM; ii++) {
     int node_shift = ii * 4;
     int node_diff_shift = 2 * node_shift;
-    double ksi01 = (N[node_shift + n1] - N[node_shift + n0]) * sense[n0];
-    double ksi12 = (N[node_shift + n2] - N[node_shift + n1]) * sense[n1];
-    double ksi23 = (N[node_shift + n3] - N[node_shift + n2]) * sense[n2];
-    double ksi30 = (N[node_shift + n0] - N[node_shift + n3]) * sense[n3];
+
+    double shape0 = N[node_shift + n0];
+    double shape1 = N[node_shift + n1];
+    double shape2 = N[node_shift + n2];
+    double shape3 = N[node_shift + n3];
+
+    double ksi01 = (shape1 - shape0) * sense[n0];
+    double ksi12 = (shape2 - shape1) * sense[n1];
+    double ksi23 = (shape3 - shape2) * sense[n2];
+    double ksi30 = (shape0 - shape3) * sense[n3];
+
+    double extrude_zeta01 = shape0 + shape1;
+    double extrude_ksi12 = shape1 + shape2;
+    double extrude_zeta23 = shape2 + shape3;
+    double extrude_ksi30 = shape0 + shape3;
+    double bubble_ksi =  extrude_ksi12 * extrude_ksi30;
+    double bubble_zeta = extrude_zeta01 * extrude_zeta23;
 
     double diff_ksi01[2], diff_ksi12[2], diff_ksi23[2], diff_ksi30[2];
     int dd = 0;
@@ -944,23 +957,19 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
       // edge01
       shift = ii * (P[0]);
       cblas_dcopy(P[0], L01, 1, &edgeN01[shift], 1);
-      cblas_dscal(P[0], N[node_shift + n0] * N[node_shift + n1],
-                  &edgeN01[shift], 1);
+      cblas_dscal(P[0], bubble_ksi * extrude_zeta01, &edgeN01[shift], 1);
       // edge12
       shift = ii * (P[1]);
       cblas_dcopy(P[1], L12, 1, &edgeN12[shift], 1);
-      cblas_dscal(P[1], N[node_shift + n1] * N[node_shift + n2],
-                  &edgeN12[shift], 1);
+      cblas_dscal(P[1], bubble_zeta * extrude_ksi12, &edgeN12[shift], 1);
       // edge23
       shift = ii * (P[2]);
       cblas_dcopy(P[2], L23, 1, &edgeN23[shift], 1);
-      cblas_dscal(P[2], N[node_shift + n2] * N[node_shift + n3],
-                  &edgeN23[shift], 1);
+      cblas_dscal(P[2], bubble_ksi * extrude_zeta23, &edgeN23[shift], 1);
       // edge30
       shift = ii * (P[3]);
       cblas_dcopy(P[3], L30, 1, &edgeN30[shift], 1);
-      cblas_dscal(P[3], N[node_shift + n3] * N[node_shift + n0],
-                  &edgeN30[shift], 1);
+      cblas_dscal(P[3], bubble_zeta * extrude_ksi30, &edgeN30[shift], 1);
     }
     if (diff_edgeN != NULL) {
       if (P[0] > 0) {
