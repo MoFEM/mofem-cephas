@@ -454,49 +454,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
         CHKERR edge_through_thickness(ee);
  
       } else {
-        // on triangles ho approximation
-        // ho terms on edges, linear zeta
-        int nb_dofs = cTx->dataTrianglesOnly.dataOnEntities[MBEDGE][ee]
-                          .getN(base)
-                          .size2();
-        data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, nb_dofs,
-                                                          false);
-        data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
-            nb_gauss_pts, 3 * nb_dofs, false);
-        for (int dd = 0; dd < nb_dofs; dd++) {
-          int gg = 0;
-          for (int ggf = 0; ggf < nb_gauss_pts_on_faces; ggf++) {
-            double tri_n =
-                cTx->dataTrianglesOnly.dataOnEntities[MBEDGE][ee].getN(base)(
-                    ggf, dd);
-            double dksi_tri_n =
-                cTx->dataTrianglesOnly.dataOnEntities[MBEDGE][ee].getDiffN(
-                    base)(ggf, 2 * dd + 0);
-            double deta_tri_n =
-                cTx->dataTrianglesOnly.dataOnEntities[MBEDGE][ee].getDiffN(
-                    base)(ggf, 2 * dd + 1);
-            for (int ggt = 0; ggt < nb_gauss_pts_through_thickness;
-                 ggt++, gg++) {
-              double zeta = cTx->gaussPtsThroughThickness(0, ggt);
-              double dzeta, edge_shape;
-              if (ee < 3) {
-                dzeta = diffN_MBEDGE0;
-                edge_shape = N_MBEDGE0(zeta);
-              } else {
-                dzeta = diffN_MBEDGE1;
-                edge_shape = N_MBEDGE1(zeta);
-              }
-              data.dataOnEntities[MBEDGE][ee].getN(base)(gg, dd) =
-                  tri_n * edge_shape;
-              data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg, 3 * dd + 0) =
-                  dksi_tri_n * edge_shape;
-              data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg, 3 * dd + 1) =
-                  deta_tri_n * edge_shape;
-              data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg, 3 * dd + 2) =
-                  tri_n * dzeta;
-            }
-          }
-        }
+        CHKERR edge_on_the_triangle(ee);
       }
     }
 
