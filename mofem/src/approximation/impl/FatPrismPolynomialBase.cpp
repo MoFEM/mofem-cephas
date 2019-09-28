@@ -452,14 +452,139 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     MoFEMFunctionReturn(0);
   };
 
-  // edges on triangles
-  int ee = 0;
-  for (; ee != 3; ++ee)
-    CHKERR edge_on_the_triangle(ee);
-  for (; ee <= 5; ++ee)
-    CHKERR edge_through_thickness(ee);
-  for (; ee <= 8; ++ee)
-    CHKERR edge_on_the_triangle(ee);
+  try {
+    // nodes
+    // linear for xi,eta and zeta
+    data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 6, false);
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts, 18);
+    noalias(data.dataOnEntities[MBVERTEX][0].getN(base)) =
+        data.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+    noalias(data.dataOnEntities[MBVERTEX][0].getDiffN(base)) =
+        data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+
+    // edges on triangles
+    for (int ee = 0; ee < 9; ee++) {
+      if (ee >= 3 && ee <= 5) {
+        // through thickness ho approximation
+        // linear xi,eta, ho terms for zeta
+        int order =
+            cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder();
+        int nb_dofs = NBEDGE_H1(order);
+        if ((unsigned int)nb_dofs !=
+            cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee]
+                .getN(base)
+                .size2()) {
+          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                   "nb_dofs != nb_dofs %d != %d", nb_dofs,
+                   cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee]
+                       .getN(base)
+                       .size2());
+        }
+        data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, nb_dofs,
+                                                          false);
+        data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
+            nb_gauss_pts, 3 * nb_dofs, false);
+        if (nb_dofs == 0)
+          continue;
+        const int prism_edge_map[9][2] = {{0, 1}, {1, 2}, {2, 0},
+                                          {0, 3}, {1, 4}, {2, 5},
+                                          {3, 4}, {4, 5}, {5, 3}};
+        int gg = 0;
+        for (int ggf = 0; ggf < nb_gauss_pts_on_faces; ggf++) {
+          double tri_n =
+              cTx->dataTrianglesOnly.dataOnEntities[MBVERTEX][0].getN(base)(
+                  ggf, prism_edge_map[ee][0]);
+          double dksi_tri_n[2];
+          for (int kk = 0; kk < 2; kk++) {
+            dksi_tri_n[kk] =
+                cTx->dataTrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(
+                    base)(ggf, 2 * prism_edge_map[ee][0] + kk);
+          }
+          for (int ggt = 0; ggt < nb_gauss_pts_through_thickness; ggt++, gg++) {
+
+            double zeta = cTx->gaussPtsThroughThickness(0, ggt);
+            double n0 = N_MBEDGE0(zeta);
+            double n1 = N_MBEDGE1(zeta);
+            double n0n1 = n0 * n1;
+
+            for (int dd = 0; dd < nb_dofs; dd++) {
+
+              double l =
+                  cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getN(
+                      base)(ggt, dd);
+              double diff_l =
+                  cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getDiffN(
+                      base)(ggt, dd);
+
+              double edge_m = n0n1 * l;
+              double dzeta_edge_m =
+                  (diffN_MBEDGE0 * n1 + n0 * diffN_MBEDGE1) * l + n0n1 * diff_l;
+              data.dataOnEntities[MBEDGE][ee].getN(base)(gg, dd) =
+                  tri_n * edge_m;
+              for (int kk = 0; kk < 2; kk++) {
+                data.dataOnEntities[MBEDGE][ee].getDiffN(base)(
+                    gg, 3 * dd + kk) = dksi_tri_n[kk] * edge_m;
+              }
+              data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg, 3 * dd + 2) =
+                  tri_n * dzeta_edge_m;
+            }
+          }
+        }
+      } else {
+        // on triangles ho approximation
+        // ho terms on edges, linear zeta
+        int nb_dofs = cTx->dataTrianglesOnly.dataOnEntities[MBEDGE][ee]
+                          .getN(base)
+                          .size2();
+        data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, nb_dofs,
+                                                          false);
+        data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
+            nb_gauss_pts, 3 * nb_dofs, false);
+        for (int dd = 0; dd < nb_dofs; dd++) {
+          int gg = 0;
+          for (int ggf = 0; ggf < nb_gauss_pts_on_faces; ggf++) {
+            double tri_n =
+                cTx->dataTrianglesOnly.dataOnEntities[MBEDGE][ee].getN(base)(
+                    ggf, dd);
+            double dksi_tri_n =
+                cTx->dataTrianglesOnly.dataOnEntities[MBEDGE][ee].getDiffN(
+                    base)(ggf, 2 * dd + 0);
+            double deta_tri_n =
+                cTx->dataTrianglesOnly.dataOnEntities[MBEDGE][ee].getDiffN(
+                    base)(ggf, 2 * dd + 1);
+            for (int ggt = 0; ggt < nb_gauss_pts_through_thickness;
+                 ggt++, gg++) {
+              double zeta = cTx->gaussPtsThroughThickness(0, ggt);
+              double dzeta, edge_shape;
+              if (ee < 3) {
+                dzeta = diffN_MBEDGE0;
+                edge_shape = N_MBEDGE0(zeta);
+              } else {
+                dzeta = diffN_MBEDGE1;
+                edge_shape = N_MBEDGE1(zeta);
+              }
+              data.dataOnEntities[MBEDGE][ee].getN(base)(gg, dd) =
+                  tri_n * edge_shape;
+              data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg, 3 * dd + 0) =
+                  dksi_tri_n * edge_shape;
+              data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg, 3 * dd + 1) =
+                  deta_tri_n * edge_shape;
+              data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg, 3 * dd + 2) =
+                  tri_n * dzeta;
+            }
+          }
+        }
+      }
+    }
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
+  } catch (std::exception &ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
+       << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
+  }
 
   // triangles
   // ho on triangles, linear zeta
@@ -469,7 +594,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   // quads
   // higher order edges and zeta
   CHKERR quads_base();
-  
+
   // prism
   CHKERR prim_base();
 
