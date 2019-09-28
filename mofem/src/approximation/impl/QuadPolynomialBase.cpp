@@ -50,6 +50,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
       cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
+  auto &vert_dat = data.dataOnEntities[MBVERTEX][0];
 
   if (data.spacesOnEntities[MBEDGE].test(H1)) {
     // edges
@@ -60,46 +61,43 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
     int sense[4], order[4];
     double *H1edgeN[4], *diffH1edgeN[4];
     for (int ee = 0; ee != 4; ++ee) {
-      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
+      auto &ent_dat = data.dataOnEntities[MBEDGE][ee];
+      if (ent_dat.getSense() == 0)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "sense not set");
 
-      sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-      int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
-      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, nb_dofs,
-                                                        false);
-      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
-                                                            2 * nb_dofs, false);
-      H1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
-      diffH1edgeN[ee] =
-          &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
+      sense[ee] = ent_dat.getSense();
+      order[ee] = ent_dat.getDataOrder();
+      int nb_dofs = NBEDGE_H1(ent_dat.getDataOrder());
+      ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
+      ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
+      H1edgeN[ee] = &*ent_dat.getN(base).data().begin();
+      diffH1edgeN[ee] = &*ent_dat.getDiffN(base).data().begin();
     }
     CHKERR H1_EdgeShapeFunctions_MBQUAD(
-        sense, order,
-        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-        H1edgeN, diffH1edgeN, nb_gauss_pts, base_polynomials);
+        sense, order, &*vert_dat.getN(base).data().begin(),
+        &*vert_dat.getDiffN(base).data().begin(), H1edgeN, diffH1edgeN,
+        nb_gauss_pts, base_polynomials);
   }
 
   if (data.spacesOnEntities[MBQUAD].test(H1)) {
+
     // face
     if (data.dataOnEntities[MBQUAD].size() != 1)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "should be one quad to store bubble base on quad");
 
-    int nb_dofs = NBFACEQUAD_H1(data.dataOnEntities[MBQUAD][0].getDataOrder());
-    data.dataOnEntities[MBQUAD][0].getN(base).resize(nb_gauss_pts, nb_dofs,
-                                                     false);
-    data.dataOnEntities[MBQUAD][0].getDiffN(base).resize(nb_gauss_pts,
-                                                         2 * nb_dofs, false);
+    auto &ent_dat = data.dataOnEntities[MBQUAD][0];
+    int nb_dofs = NBFACEQUAD_H1(ent_dat.getDataOrder());
+    ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
+    ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
     int face_nodes[] = {0, 1, 2, 3};
     CHKERR H1_QuadShapeFunctions_MBQUAD(
-        face_nodes, data.dataOnEntities[MBQUAD][0].getDataOrder(),
-        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-        &*data.dataOnEntities[MBQUAD][0].getN(base).data().begin(),
-        &*data.dataOnEntities[MBQUAD][0].getDiffN(base).data().begin(),
-        nb_gauss_pts, base_polynomials);
+        face_nodes, ent_dat.getDataOrder(),
+        &*vert_dat.getN(base).data().begin(),
+        &*vert_dat.getDiffN(base).data().begin(),
+        &*ent_dat.getN(base).data().begin(),
+        &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts,
+        base_polynomials);
   }
 
   MoFEMFunctionReturn(0);
