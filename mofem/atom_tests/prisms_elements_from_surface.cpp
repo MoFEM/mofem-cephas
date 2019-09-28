@@ -333,13 +333,13 @@ int main(int argc, char *argv[]) {
     fe_edge.getOpPtrVector().push_back(
         new Op<EdgeElementForcesAndSourcesCoreBase::UserDataOperator>(
             moab, map_coords, one_prism));
-    // CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE", fe_edge);
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE", fe_edge);
 
     TriFE fe_tri(m_field, tri_coords, one_prism);
     fe_tri.getOpPtrVector().push_back(
         new Op<FaceElementForcesAndSourcesCore::UserDataOperator>(
             moab, map_coords, one_prism));
-    // CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TRI", fe_tri);
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TRI", fe_tri);
 
     QuadFE fe_quad(m_field, edge_block, one_prism);
     fe_quad.getOpPtrVector().push_back(
@@ -696,11 +696,10 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
     double sum = sum_matrix(prism_base);
     constexpr double eps = 1e-6;
 
-    cerr << sum << endl;
-    // if (std::abs(sum) > eps)
-    //   SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-    //            "Inconsistent base %s sum %6.4e", tag_prism_name_base.c_str(),
-    //            sum);
+    if (std::abs(sum) > eps)
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "Inconsistent base %s sum %6.4e", tag_prism_name_base.c_str(),
+               sum);
   }
 
   MoFEMFunctionReturn(0);

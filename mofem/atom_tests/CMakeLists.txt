@@ -1195,9 +1195,9 @@ target_link_libraries(prisms_elements_from_surface
   mofem_third_party
   ${PROJECT_LIBS}
 )
-cm_export_file("../meshes/rectangle_surface_mesh.cub" export_atom_tests)
+cm_export_file("../meshes/reference_triangle_mesh.h5m" export_atom_tests)
 add_test(prisms_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file rectangle_surface_mesh.cub
+  ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file reference_triangle_mesh.h5m
 )
 
 my_add_executable(edge_and_bubble_shape_functions_on_quad edge_and_bubble_shape_functions_on_quad.cpp)
