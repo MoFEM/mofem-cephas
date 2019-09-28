@@ -446,26 +446,14 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     MoFEMFunctionReturn(0);
   };
 
-  try {
-
-    // edges on triangles
-    for (int ee = 0; ee < 9; ee++) {
-      if (ee >= 3 && ee <= 5) {
-        CHKERR edge_through_thickness(ee);
- 
-      } else {
-        CHKERR edge_on_the_triangle(ee);
-      }
-    }
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
-  } catch (std::exception &ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
-       << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
-  }
+  // edges on triangles
+  int ee = 0;
+  for (; ee <= 2; ++ee)
+    CHKERR edge_on_the_triangle(ee);
+  for (; ee <= 5; ++ee)
+    CHKERR edge_through_thickness(ee);
+  for (; ee <= 8; ++ee)
+    CHKERR edge_on_the_triangle(ee);
 
   // triangles
   // ho on triangles, linear zeta
