@@ -89,17 +89,6 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
 
   if (type == MBQUAD) {
 
-    // switch (type) {
-    // case MBTRI:
-    //   // NB: normals at integration points are avaluable for tris for HO
-    //   MoFEMFunctionReturn(0);
-    // case MBQUAD:
-    //   break;
-    // default:
-    //   SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-    //           "Element type not implemented");
-    // }
-
     EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
     CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
     coords.resize(num_nodes * 3, false);
@@ -146,8 +135,6 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
       auto t_coords = get_ftensor_from_vec_3d(coords);
 
       for (int nn = 0; nn != num_nodes; ++nn) {
-        double d1 = t_diff(N0);
-        double d2 = t_diff(N1);
         t_t1(i) += t_coords(i) * t_diff(N0);
         t_t2(i) += t_coords(i) * t_diff(N1);
         ++t_diff;
@@ -164,8 +151,6 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
     }
 
   }
-
-
 
   MoFEMFunctionReturn(0);
 }
