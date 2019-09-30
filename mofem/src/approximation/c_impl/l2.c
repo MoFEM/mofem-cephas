@@ -242,31 +242,67 @@ PetscErrorCode L2_Ainsworth_ShapeFunctions_MBPRISM(
     }
     int shift = ii * P;
     int jj = 0;
-    int oo = 0;
-    for (; oo <= p; oo++) {
-      int pp0 = 0;
-      for (; pp0 <= oo; pp0++) {
-        int pp1 = oo - pp0;
-        if (pp1 >= 0) {
-          int qq = 0;
-          for (; qq <= q; qq++) {
-            if (L2N != NULL) {
-              L2N[shift + jj] = L0[pp0] * L1[pp1] * L2[qq];
-            }
-            if (diff_L2N != NULL) {
-              int dd = 0;
-              for (; dd < 3; dd++) {
-                diff_L2N[3 * shift + 3 * jj + dd] =
-                    diffL0[dd * (p + 1) + pp0] * L1[pp1] * L2[qq] +
-                    L0[pp0] * diffL1[dd * (p + 1) + pp1] * L2[qq] +
-                    L0[pp0] * L1[pp1] * diffL2[dd * (p + 1) + qq];
+    int rr = 0;
+    for (; rr <= p + q; rr++) {
+      int qq = 0;
+      for (; qq <= q; qq++) {
+        int oo = 0;
+        for (; oo <= p; oo++) {
+          int pp0 = 0;
+          for (; pp0 <= oo; pp0++) {
+            int pp1 = oo - pp0;
+            if (pp1 >= 0 && (pp0 + pp1 <= rr)) {
+              if (pp0 + pp1 + qq == rr) {
+                if (L2N != NULL) {
+                  L2N[shift + jj] = L0[pp0] * L1[pp1] * L2[qq];
+                  // if (ii == 0) {
+                  //   printf("%d: %d %d %d\n", rr, pp0, pp1, qq);
+                  // }
+                }
+                // if (diff_L2N != NULL) {
+                //   int dd = 0;
+                //   for (; dd < 3; dd++) {
+                //     diff_L2N[3 * shift + 3 * jj + dd] =
+                //         diffL0[dd * (p + 1) + pp0] * L1[pp1] * L2[qq] +
+                //         L0[pp0] * diffL1[dd * (p + 1) + pp1] * L2[qq] +
+                //         L0[pp0] * L1[pp1] * diffL2[dd * (p + 1) + qq];
+                //   }
+                // }
+                jj++;
               }
             }
-            jj++;
           }
         }
       }
     }
+    // int oo = 0;
+    // for (; oo <= p; oo++) {
+    //   int pp0 = 0;
+    //   for (; pp0 <= oo; pp0++) {
+    //     int pp1 = oo - pp0;
+    //     if (pp1 >= 0) {
+    //       int qq = 0;
+    //       for (; qq <= q; qq++) {
+    //         if (L2N != NULL) {
+    //           L2N[shift + jj] = L0[pp0] * L1[pp1] * L2[qq];
+    //           if (ii == 0) {
+    //             printf("%d %d %d\n", pp0, pp1, qq);
+    //           }
+    //         }
+    //         if (diff_L2N != NULL) {
+    //           int dd = 0;
+    //           for (; dd < 3; dd++) {
+    //             diff_L2N[3 * shift + 3 * jj + dd] =
+    //                 diffL0[dd * (p + 1) + pp0] * L1[pp1] * L2[qq] +
+    //                 L0[pp0] * diffL1[dd * (p + 1) + pp1] * L2[qq] +
+    //                 L0[pp0] * L1[pp1] * diffL2[dd * (p + 1) + qq];
+    //           }
+    //         }
+    //         jj++;
+    //       }
+    //     }
+    //   }
+    // }
     if (jj != P)
       SETERRQ2(PETSC_COMM_SELF, 1, "wrong order %d != %d", jj, P);
   }

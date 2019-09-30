@@ -85,7 +85,9 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   }
   // L2
   if ((dataH1.spacesOnEntities[MBPRISM]).test(L2)) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
+    CHKERR getEntityDataOrder<MBPRISM>(dataL2, L2);
+    dataL2.spacesOnEntities[MBPRISM].set(L2);
+    //SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
   }
 
   // get approx. on triangles, i.e. faces 3 and 4
@@ -113,6 +115,9 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     order_triangles_only = std::max(
         order_triangles_only,
         dataH1TroughThickness.dataOnEntities[MBPRISM][0].getDataOrder());
+    if ((dataH1.spacesOnEntities[MBPRISM]).test(L2)) {
+      order_triangles_only = dataL2.dataOnEntities[MBPRISM][0].getDataOrder();
+    }
     // integration pts on the triangles surfaces
     int rule = getRuleTrianglesOnly(order_triangles_only);
     if (rule >= 0) {
@@ -181,6 +186,9 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     order_thickness = std::max(
         order_thickness,
         dataH1TroughThickness.dataOnEntities[MBPRISM][0].getDataOrder());
+    if ((dataH1.spacesOnEntities[MBPRISM]).test(L2)) {
+      order_thickness = dataL2.dataOnEntities[MBPRISM][0].getDataOrder();
+    }
     // integration points
     int rule = getRuleThroughThickness(order_thickness);
     if (rule >= 0) {
@@ -334,7 +342,25 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
         }
-        break;
+        if (dataH1.spacesOnEntities[MBPRISM].test(L2)) {
+          int s1 = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1();
+          int s2 = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).size2();
+          dataL2.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(s1, s2);
+          for (int i = 0; i < s1; i++) {
+            for (int j = 0; j < s2; j++) {
+              dataL2.dataOnEntities[MBVERTEX][0].getN(NOBASE)(i, j) =
+                  dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(i, j);
+            }
+          }
+          CHKERR FatPrismPolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(new FatPrismPolynomialBaseCtx(
+                  dataL2, dataH1TrianglesOnly, dataH1TroughThickness,
+                  gaussPtsTrianglesOnly, gaussPtsThroughThickness,
+                  mField.get_moab(), numeredEntFiniteElementPtr.get(), L2,
+                  static_cast<FieldApproximationBase>(b), NOBASE)));
+        }
+       break;
       default:
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Not yet implemented");

@@ -49,6 +49,8 @@ cm_export_file("../meshes/mat_interf.h5m" export_atom_tests)
 cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
 cm_export_file("../meshes/rectangle.h5m" export_atom_tests)
 cm_export_file("../meshes/quad_mesh.h5m" export_atom_tests)
+cm_export_file("../meshes/sphere_of_quads.h5m" export_atom_tests)
+cm_export_file("../meshes/one_quad_mesh.h5m" export_atom_tests)
 
 set(PERCOMPILED_MOFEM_HEADER "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
 
@@ -1213,6 +1215,72 @@ target_link_libraries(edge_and_bubble_shape_functions_on_quad
 )
 add_test(edge_and_bubble_shape_functions_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/edge_and_bubble_shape_functions_on_quad -my_file quad_mesh.h5m
+)
+
+my_add_executable(edge_on_tri edge_on_tri.cpp)
+target_link_libraries(edge_on_tri
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
+my_add_executable(l2_base_on_tet l2_base_on_tet.cpp)
+target_link_libraries(l2_base_on_tet
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
+my_add_executable(l2_base_on_prism l2_base_on_prism.cpp)
+target_link_libraries(l2_base_on_prism
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
+my_add_executable(normals_at_integration_points_for_quad normals_at_integration_points_for_quad.cpp)
+target_link_libraries(normals_at_integration_points_for_quad
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(normals_at_integration_points_for_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/normals_at_integration_points_for_quad -my_file sphere_of_quads.h5m
+)
+
+my_add_executable(integration_on_quad integration_on_quad.cpp)
+target_link_libraries(integration_on_quad
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(integration_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/integration_on_quad -my_file one_quad_mesh.h5m
 )
 
 my_add_executable(gauss_points_on_quad gauss_points_on_quad.cpp)

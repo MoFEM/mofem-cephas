@@ -39,6 +39,7 @@ inline int fNBVERTEX_L2(int P) {
   return 0;
 }
 inline int fNBVOLUMETET_L2(int P) { return NBVOLUMETET_L2(P); }
+inline int fNBVOLUMEPRISM_L2(int P) { return NBVOLUMEPRISM_L2(P,P); }
 inline int fNBFACETRI_L2(int P) { return NBFACETRI_L2(P); }
 inline int fNBEDGE_L2(int P) { return NBEDGE_L2(P); }
 

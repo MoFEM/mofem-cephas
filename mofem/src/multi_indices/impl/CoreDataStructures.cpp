@@ -128,6 +128,7 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
         forderTable[MBEDGE] = fNBEDGE_L2;
         forderTable[MBTRI] = fNBFACETRI_L2;
         forderTable[MBTET] = fNBVOLUMETET_L2;
+        forderTable[MBPRISM] = fNBVOLUMEPRISM_L2;
         break;
       case NOFIELD:
         for (EntityType t = MBVERTEX; t < MBMAXTYPE; t++) {

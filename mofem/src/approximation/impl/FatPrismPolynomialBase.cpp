@@ -507,7 +507,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   } catch (std::exception &ex) {
     std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__
+    ss << "throw in method: " << ex.what() << " at line " << __LINE__
        << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF, MOFEM_STD_EXCEPTION_THROW, ss.str().c_str());
   }
@@ -517,7 +517,32 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
 
 MoFEMErrorCode FatPrismPolynomialBase::getValueL2(MatrixDouble &pts) {
   MoFEMFunctionBeginHot;
-  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
+                                     double *diffL, const int dim) =
+      cTx->basePolynomialsType0;
+
+  int nb_gauss_pts = pts.size2();
+
+  int order_triangles_only = data.dataOnEntities[MBPRISM][0].getDataOrder();
+  // TODO: add possibility for different orders
+  int order_through_thickness = order_triangles_only;
+  int nb_base_functions =
+      NBVOLUMEPRISM_L2(order_triangles_only,order_through_thickness);
+
+  data.dataOnEntities[MBPRISM][0].getN(base).resize(nb_gauss_pts,
+                                                    nb_base_functions, false);
+  data.dataOnEntities[MBPRISM][0].getDiffN(base).resize(
+      nb_gauss_pts, 3 * nb_base_functions, false);
+
+  CHKERR L2_Ainsworth_ShapeFunctions_MBPRISM(
+      order_triangles_only, order_through_thickness,
+      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+      &*data.dataOnEntities[MBPRISM][0].getN(base).data().begin(),
+      &*data.dataOnEntities[MBPRISM][0].getDiffN(base).data().begin(),
+      nb_gauss_pts, base_polynomials);
   MoFEMFunctionReturnHot(0);
 }
 
