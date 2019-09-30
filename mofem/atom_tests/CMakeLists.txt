@@ -1217,30 +1217,6 @@ add_test(edge_and_bubble_shape_functions_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np
   ${CMAKE_CURRENT_BINARY_DIR}/edge_and_bubble_shape_functions_on_quad -my_file quad_mesh.h5m
 )
 
-my_add_executable(edge_on_tri edge_on_tri.cpp)
-target_link_libraries(edge_on_tri
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
-
-my_add_executable(l2_base_on_tet l2_base_on_tet.cpp)
-target_link_libraries(l2_base_on_tet
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
-
 my_add_executable(l2_base_on_prism l2_base_on_prism.cpp)
 target_link_libraries(l2_base_on_prism
   mofem_finite_elements
