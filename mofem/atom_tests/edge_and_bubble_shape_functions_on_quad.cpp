@@ -100,18 +100,33 @@ int main(int argc, char *argv[]) {
           &*quad_bubbles.data().begin(), &*quad_diff_bubbles.data().begin(),
           verts.size(), Legendre_polynomials);
 
-      if (fabs(quad_bubbles_sum - sum_matrix(quad_bubbles)) > eps) {
-        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
-      }
-      if (fabs(quad_diff_bubbles_sum - sum_matrix(quad_diff_bubbles)) > eps) {
-        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
-      }
+      MatrixDouble trans_quad_bubbles = trans(quad_bubbles);
+      for (int rr = 0; rr < quad_bubbles.size2(); rr++) {
+        Tag th_base;
+        double def_val[] = {0};
+        CHKERR moab.tag_get_handle(
+            ("base_" + boost::lexical_cast<std::string>(rr)).c_str(), 1,
+            MB_TYPE_DOUBLE, th_base, MB_TAG_CREAT | MB_TAG_DENSE, def_val);
+        CHKERR moab.tag_set_data(th_base, verts, &trans_quad_bubbles(rr, 0));
+        }
+      
+
+      CHKERR moab.write_file("quad_test.h5m");
+
+      // if (fabs(quad_bubbles_sum - sum_matrix(quad_bubbles)) > eps) {
+      //   SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
+      // }
+      // if (fabs(quad_diff_bubbles_sum - sum_matrix(quad_diff_bubbles)) > eps) {
+      //   SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
+      // }
     }
 
     /* EDGES */
     {
-      int sense[] = {1, -1, 1, -1};
-      int p[] = {3, 4, 5, 6};
+      int sense[] = {1, 1, 1, 1};
+      int p[] = {6, 6, 6, 6};
+      // int sense[] = {1, -1, 1, -1};
+      // int p[] = {3, 4, 5, 6};
       int P[4];
       int ee = 0;
       for (; ee < 4; ee++) {
@@ -141,15 +156,31 @@ int main(int argc, char *argv[]) {
           sense, p, &*N.data().begin(), &*diffN.data().begin(), quad_edges_ptr,
           quad_diff_edges_ptr, verts.size(), Legendre_polynomials);
 
-      for (int ee = 0; ee < 4; ++ee) {
-        if (fabs(quad_edges_sum[ee] - sum_matrix(quad_edges[ee])) > eps) {
-          SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
-        }
-        if (fabs(quad_diff_edges_sum[ee] - sum_matrix(quad_diff_edges[ee])) >
-            eps) {
-          SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
-        }
-      }
+      // for (int ee = 0; ee < 4; ee++) {
+      //   MatrixDouble trans_quad_edge = trans(quad_edges[ee]);
+      //   for (int rr = 0; rr < quad_edges[ee].size2(); rr++) {
+      //     Tag th_base;
+      //     double def_val[] = {0};
+      //     CHKERR moab.tag_get_handle(
+      //         ("base_" + boost::lexical_cast<std::string>(ee) + "_" +
+      //          boost::lexical_cast<std::string>(rr))
+      //             .c_str(),
+      //         1, MB_TYPE_DOUBLE, th_base, MB_TAG_CREAT | MB_TAG_DENSE, def_val);
+      //     CHKERR moab.tag_set_data(th_base, verts, &trans_quad_edge(rr, 0));
+      //   }
+      // }
+
+      // CHKERR moab.write_file("quad_test.h5m");
+
+      // for (int ee = 0; ee < 4; ++ee) {
+      //   if (fabs(quad_edges_sum[ee] - sum_matrix(quad_edges[ee])) > eps) {
+      //     SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
+      //   }
+      //   if (fabs(quad_diff_edges_sum[ee] - sum_matrix(quad_diff_edges[ee])) >
+      //       eps) {
+      //     SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
+      //   }
+      // }
     }
   }
   CATCH_ERRORS;

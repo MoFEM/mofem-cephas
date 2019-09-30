@@ -551,8 +551,8 @@ PetscErrorCode H1_VolumeShapeDiffMBTETinvJ(int base_p, int p,
   MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_EdgeGradientOfDeformation_hierarchical(int p, double *diffN,
-                                                        double *dofs,
-                                                        double *F) {
+                                                         double *dofs,
+                                                         double *F) {
   MoFEMFunctionBeginHot;
   int col, row = 0;
   for (; row < 3; row++)
@@ -562,8 +562,8 @@ PetscErrorCode H1_EdgeGradientOfDeformation_hierarchical(int p, double *diffN,
   MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_FaceGradientOfDeformation_hierarchical(int p, double *diffN,
-                                                        double *dofs,
-                                                        double *F) {
+                                                         double *dofs,
+                                                         double *F) {
   MoFEMFunctionBeginHot;
   int col, row = 0;
   for (; row < 3; row++)
@@ -573,8 +573,8 @@ PetscErrorCode H1_FaceGradientOfDeformation_hierarchical(int p, double *diffN,
   MoFEMFunctionReturnHot(0);
 }
 PetscErrorCode H1_VolumeGradientOfDeformation_hierarchical(int p, double *diffN,
-                                                          double *dofs,
-                                                          double *F) {
+                                                           double *dofs,
+                                                           double *F) {
   MoFEMFunctionBeginHot;
   int col, row = 0;
   for (; row < 3; row++)
@@ -590,7 +590,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
                                        double *L, double *diffL,
                                        const int dim)) {
   MoFEMFunctionBeginHot;
-  // TODO: return separately components of the tensor product between two edges 
+  // TODO: return separately components of the tensor product between two edges
 
   int P[3];
   int ff = 0;
@@ -787,7 +787,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
     MoFEMFunctionReturnHot(0);
   double ksi_faces[2];
   double diff_ksiL0F0[2], diff_ksiL1F0[2];
-  double *diff_ksi_faces[] = {diff_ksiL0F0, diff_ksiL1F0}; 
+  double *diff_ksi_faces[] = {diff_ksiL0F0, diff_ksiL1F0};
   int ii = 0;
   for (; ii < GDIM; ii++) {
     int node_shift = ii * 4;
@@ -822,12 +822,12 @@ PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
                                diffN[node_diff_shift + 2 * n1 + dd];
     }
     double L0[p + 1], L1[p + 1];
-    double diffL0[2 * (p + 1)], diffL1[2 * (p + 1)]; 
+    double diffL0[2 * (p + 1)], diffL1[2 * (p + 1)];
     ierr =
-        base_polynomials(p, ksi_faces[e0], diff_ksi_faces[e0], L0, diffL0, 2); 
+        base_polynomials(p, ksi_faces[e0], diff_ksi_faces[e0], L0, diffL0, 2);
     CHKERRQ(ierr);
     ierr =
-        base_polynomials(p, ksi_faces[e1], diff_ksi_faces[e1], L1, diffL1, 2); 
+        base_polynomials(p, ksi_faces[e1], diff_ksi_faces[e1], L1, diffL1, 2);
     CHKERRQ(ierr);
     double v = N[node_shift + n0] * N[node_shift + n2];
     double v2[] = {0, 0};
@@ -863,7 +863,8 @@ PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
       }
     }
     if (jj != P)
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong order %d != %d", jj, P);
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "wrong order %d != %d", jj, P);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -893,37 +894,63 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
   }
   int P[4];
   int ee = 0;
-  for (; ee < 4; ee++) {
+  for (; ee < 4; ee++)
     P[ee] = NBEDGE_H1(p[ee]);
-  }
+
   int n0 = 0;
   int n1 = 1;
   int n2 = 2;
   int n3 = 3;
+
   int ii = 0;
   for (; ii < GDIM; ii++) {
     int node_shift = ii * 4;
     int node_diff_shift = 2 * node_shift;
-    double ksi01 = (N[node_shift + n1] - N[node_shift + n0]) * sense[n0];
-    double ksi12 = (N[node_shift + n2] - N[node_shift + n1]) * sense[n1];
-    double ksi23 = (N[node_shift + n3] - N[node_shift + n2]) * sense[n2];
-    double ksi30 = (N[node_shift + n0] - N[node_shift + n3]) * sense[n3];
+
+    double shape0 = N[node_shift + n0];
+    double shape1 = N[node_shift + n1];
+    double shape2 = N[node_shift + n2];
+    double shape3 = N[node_shift + n3];
+
+    double ksi01 = (shape1 - shape0) * sense[n0];
+    double ksi12 = (shape2 - shape1) * sense[n1];
+    double ksi23 = (shape3 - shape2) * sense[n2];
+    double ksi30 = (shape0 - shape3) * sense[n3];
+
+    double extrude_zeta01 = shape0 + shape1;
+    double extrude_ksi12 = shape1 + shape2;
+    double extrude_zeta23 = shape2 + shape3;
+    double extrude_ksi30 = shape0 + shape3;
+
+    double bubble_ksi = extrude_ksi12 * extrude_ksi30;
+    double bubble_zeta = extrude_zeta01 * extrude_zeta23;
 
     double diff_ksi01[2], diff_ksi12[2], diff_ksi23[2], diff_ksi30[2];
+    double diff_extrude_zeta01[2];
+    double diff_extrude_ksi12[2];
+    double diff_extrude_zeta23[2];
+    double diff_extrude_ksi30[2];
+    double diff_bubble_ksi[2];
+    double diff_bubble_zeta[2];
+
     int dd = 0;
     for (; dd < 2; dd++) {
-      diff_ksi01[dd] = (diffN[node_diff_shift + 2 * n1 + dd] -
-                        diffN[node_diff_shift + 2 * n0 + dd]) *
-                       sense[n0];
-      diff_ksi12[dd] = (diffN[node_diff_shift + 2 * n2 + dd] -
-                        diffN[node_diff_shift + 2 * n1 + dd]) *
-                       sense[n1];
-      diff_ksi23[dd] = (diffN[node_diff_shift + 2 * n3 + dd] -
-                        diffN[node_diff_shift + 2 * n2 + dd]) *
-                       sense[n2];
-      diff_ksi30[dd] = (diffN[node_diff_shift + 2 * n0 + dd] -
-                        diffN[node_diff_shift + 2 * n3 + dd]) *
-                       sense[n3];
+      double diff_shape0 = diffN[node_shift + 2 * n0 + dd];
+      double diff_shape1 = diffN[node_shift + 2 * n1 + dd];
+      double diff_shape2 = diffN[node_shift + 2 * n2 + dd];
+      double diff_shape3 = diffN[node_shift + 2 * n3 + dd];
+      diff_ksi01[dd] = (diff_shape1 - diff_shape0) * sense[n0];
+      diff_ksi12[dd] = (diff_shape2 - diff_shape1) * sense[n1];
+      diff_ksi23[dd] = (diff_shape3 - diff_shape2) * sense[n2];
+      diff_ksi30[dd] = (diff_shape0 - diff_shape3) * sense[n3];
+      diff_extrude_zeta01[dd] = diff_shape0 + diff_shape1;
+      diff_extrude_ksi12[dd] = diff_shape1 + diff_shape2;
+      diff_extrude_zeta23[dd] = diff_shape2 + diff_shape3;
+      diff_extrude_ksi30[dd] = diff_shape0 + diff_shape3;
+      diff_bubble_ksi[dd] = diff_extrude_ksi12[dd] * extrude_ksi30 +
+                            extrude_ksi12 * diff_extrude_ksi30[dd];
+      diff_bubble_zeta[dd] = diff_extrude_zeta01[dd] * extrude_zeta23 +
+                             extrude_zeta01 * diff_extrude_zeta23[dd];
     }
 
     double L01[p[0] + 1], L12[p[1] + 1], L23[p[2] + 1], L30[p[3] + 1];
@@ -937,122 +964,86 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
     CHKERRQ(ierr);
     ierr = base_polynomials(p[3], ksi30, diff_ksi30, L30, diffL30, 2);
     CHKERRQ(ierr);
+
     int shift;
     if (edgeN != NULL) {
       // edge01
       shift = ii * (P[0]);
       cblas_dcopy(P[0], L01, 1, &edgeN01[shift], 1);
-      cblas_dscal(P[0], N[node_shift + n0] * N[node_shift + n1],
-                  &edgeN01[shift], 1);
+      cblas_dscal(P[0], bubble_ksi * extrude_zeta01, &edgeN01[shift], 1);
       // edge12
       shift = ii * (P[1]);
       cblas_dcopy(P[1], L12, 1, &edgeN12[shift], 1);
-      cblas_dscal(P[1], N[node_shift + n1] * N[node_shift + n2],
-                  &edgeN12[shift], 1);
+      cblas_dscal(P[1], bubble_zeta * extrude_ksi12, &edgeN12[shift], 1);
       // edge23
       shift = ii * (P[2]);
       cblas_dcopy(P[2], L23, 1, &edgeN23[shift], 1);
-      cblas_dscal(P[2], N[node_shift + n2] * N[node_shift + n3],
-                  &edgeN23[shift], 1);
+      cblas_dscal(P[2], bubble_ksi * extrude_zeta23, &edgeN23[shift], 1);
       // edge30
       shift = ii * (P[3]);
       cblas_dcopy(P[3], L30, 1, &edgeN30[shift], 1);
-      cblas_dscal(P[3], N[node_shift + n3] * N[node_shift + n0],
-                  &edgeN30[shift], 1);
+      cblas_dscal(P[3], bubble_zeta * extrude_ksi30, &edgeN30[shift], 1);
     }
     if (diff_edgeN != NULL) {
       if (P[0] > 0) {
         // edge01
         shift = ii * (P[0]);
-
         bzero(&diff_edgeN01[2 * shift], sizeof(double) * 2 * (P[0]));
-        // diffX
-        cblas_daxpy(P[0], N[node_shift + n0] * N[node_shift + n1],
-                    &diffL01[0 * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 0],
-                    2);
-        cblas_daxpy(P[0],
-                    diffN[node_diff_shift + 2 * n0 + 0] * N[node_shift + n1] +
-                        N[node_shift + n0] *
-                            diffN[node_diff_shift + 2 * n1 + 0],
-                    L01, 1, &diff_edgeN01[2 * shift + 0], 2);
-        // diffY
-        cblas_daxpy(P[0], N[node_shift + n0] * N[node_shift + n1],
-                    &diffL01[1 * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 1],
-                    2);
-        cblas_daxpy(P[0],
-                    diffN[node_diff_shift + 2 * n0 + 1] * N[node_shift + n1] +
-                        N[node_shift + n0] *
-                            diffN[node_diff_shift + 2 * n1 + 1],
-                    L01, 1, &diff_edgeN01[2 * shift + 1], 2);
+        int d = 0;
+        for (; d != 2; ++d) {
+          cblas_daxpy(P[0], bubble_ksi * extrude_zeta01,
+                      &diffL01[d * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 0],
+                      2);
+          cblas_daxpy(P[0],
+                      diff_bubble_ksi[d] * extrude_zeta01 +
+                          bubble_ksi * diff_extrude_zeta01[d],
+                      L01, 1, &diff_edgeN01[2 * shift + 0], 2);
+        }
       }
       if (P[1] > 0) {
         // edge12
         shift = ii * (P[1]);
         bzero(&diff_edgeN12[2 * shift], sizeof(double) * 2 * (P[1]));
-        // diffX
-        cblas_daxpy(P[1], N[node_shift + n1] * N[node_shift + n2],
-                    &diffL12[0 * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 0],
-                    2);
-        cblas_daxpy(P[1],
-                    diffN[node_diff_shift + 2 * n1 + 0] * N[node_shift + n2] +
-                        N[node_shift + n1] *
-                            diffN[node_diff_shift + 2 * n2 + 0],
-                    L12, 1, &diff_edgeN12[2 * shift + 0], 2);
-        // diffY
-        cblas_daxpy(P[1], N[node_shift + n1] * N[node_shift + n2],
-                    &diffL12[1 * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 1],
-                    2);
-        cblas_daxpy(P[1],
-                    diffN[node_diff_shift + 2 * n1 + 1] * N[node_shift + n2] +
-                        N[node_shift + n1] *
-                            diffN[node_diff_shift + 2 * n2 + 1],
-                    L12, 1, &diff_edgeN12[2 * shift + 1], 2);
+        int d = 0;
+        for (; d != 2; ++d) {
+          cblas_daxpy(P[1], bubble_zeta * extrude_ksi12,
+                      &diffL12[d * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 0],
+                      2);
+          cblas_daxpy(P[1],
+                      diff_bubble_zeta[d] * extrude_ksi12 +
+                          bubble_zeta * diff_extrude_ksi12[d],
+                      L12, 1, &diff_edgeN12[2 * shift + 0], 2);
+        }
       }
       if (P[2] > 0) {
         // edge23
         shift = ii * (P[2]);
         bzero(&diff_edgeN23[2 * shift], sizeof(double) * 2 * (P[2]));
-        // diffX
-        cblas_daxpy(P[2], N[node_shift + n2] * N[node_shift + n3],
-                    &diffL23[0 * (p[2] + 1)], 1, &diff_edgeN23[2 * shift + 0],
-                    2);
-        cblas_daxpy(P[2],
-                    diffN[node_diff_shift + 2 * n2 + 0] * N[node_shift + n3] +
-                        N[node_shift + n2] *
-                            diffN[node_diff_shift + 2 * n3 + 0],
-                    L23, 1, &diff_edgeN23[2 * shift + 0], 2);
-        // diffY
-        cblas_daxpy(P[2], N[node_shift + n2] * N[node_shift + n3],
-                    &diffL23[1 * (p[2] + 1)], 1, &diff_edgeN23[2 * shift + 1],
-                    2);
-        cblas_daxpy(P[2],
-                    diffN[node_diff_shift + 2 * n2 + 1] * N[node_shift + n3] +
-                        N[node_shift + n2] *
-                            diffN[node_diff_shift + 2 * n3 + 1],
-                    L23, 1, &diff_edgeN23[2 * shift + 1], 2);
+        int d = 0;
+        for (; d != 2; ++d) {
+          cblas_daxpy(P[2], bubble_ksi * extrude_zeta23,
+                      &diffL23[d * (p[2] + 1)], 1, &diff_edgeN23[2 * shift + 0],
+                      2);
+          cblas_daxpy(P[2],
+                      diff_bubble_ksi[d] * extrude_zeta23 +
+                          bubble_ksi * diff_extrude_zeta23[d],
+                      L23, 1, &diff_edgeN23[2 * shift + 0], 2);
+        }
       }
       if (P[3] > 0) {
         // edge30
         shift = ii * (P[3]);
         bzero(&diff_edgeN30[2 * shift], sizeof(double) * 2 * (P[3]));
-        // diffX
-        cblas_daxpy(P[3], N[node_shift + n3] * N[node_shift + n0],
-                    &diffL30[0 * (p[3] + 1)], 1, &diff_edgeN30[2 * shift + 0],
-                    2);
-        cblas_daxpy(P[3],
-                    diffN[node_diff_shift + 2 * n3 + 0] * N[node_shift + n0] +
-                        N[node_shift + n3] *
-                            diffN[node_diff_shift + 2 * n0 + 0],
-                    L30, 1, &diff_edgeN30[2 * shift + 0], 2);
-        // diffY
-        cblas_daxpy(P[3], N[node_shift + n3] * N[node_shift + n0],
-                    &diffL30[1 * (p[3] + 1)], 1, &diff_edgeN30[2 * shift + 1],
-                    2);
-        cblas_daxpy(P[3],
-                    diffN[node_diff_shift + 2 * n3 + 1] * N[node_shift + n0] +
-                        N[node_shift + n3] *
-                            diffN[node_diff_shift + 2 * n0 + 1],
-                    L30, 1, &diff_edgeN30[2 * shift + 1], 2);
+        int d = 0;
+        for (; d != 2; ++d) {
+          cblas_daxpy(P[3], bubble_zeta * extrude_ksi30,
+                      &diffL30[d * (p[3] + 1)], 1, &diff_edgeN30[2 * shift + 0],
+                      2);
+          cblas_daxpy(P[3],
+                      diff_bubble_zeta[d] * extrude_ksi30 +
+                          bubble_zeta * diff_extrude_ksi30[d],
+                      L30, 1, &diff_edgeN30[2 * shift + 0], 2);
+        }
       }
     }
   }
