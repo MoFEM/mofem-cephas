@@ -933,24 +933,24 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
     double diff_bubble_ksi[2];
     double diff_bubble_zeta[2];
 
-    int dd = 0;
-    for (; dd < 2; dd++) {
-      double diff_shape0 = diffN[node_shift + 2 * n0 + dd];
-      double diff_shape1 = diffN[node_shift + 2 * n1 + dd];
-      double diff_shape2 = diffN[node_shift + 2 * n2 + dd];
-      double diff_shape3 = diffN[node_shift + 2 * n3 + dd];
-      diff_ksi01[dd] = (diff_shape1 - diff_shape0) * sense[n0];
-      diff_ksi12[dd] = (diff_shape2 - diff_shape1) * sense[n1];
-      diff_ksi23[dd] = (diff_shape3 - diff_shape2) * sense[n2];
-      diff_ksi30[dd] = (diff_shape0 - diff_shape3) * sense[n3];
-      diff_extrude_zeta01[dd] = diff_shape0 + diff_shape1;
-      diff_extrude_ksi12[dd] = diff_shape1 + diff_shape2;
-      diff_extrude_zeta23[dd] = diff_shape2 + diff_shape3;
-      diff_extrude_ksi30[dd] = diff_shape0 + diff_shape3;
-      diff_bubble_ksi[dd] = diff_extrude_ksi12[dd] * extrude_ksi30 +
-                            extrude_ksi12 * diff_extrude_ksi30[dd];
-      diff_bubble_zeta[dd] = diff_extrude_zeta01[dd] * extrude_zeta23 +
-                             extrude_zeta01 * diff_extrude_zeta23[dd];
+    int d = 0;
+    for (; d < 2; d++) {
+      double diff_shape0 = diffN[node_diff_shift + 2 * n0 + d];
+      double diff_shape1 = diffN[node_diff_shift + 2 * n1 + d];
+      double diff_shape2 = diffN[node_diff_shift + 2 * n2 + d];
+      double diff_shape3 = diffN[node_diff_shift + 2 * n3 + d];
+      diff_ksi01[d] = (diff_shape1 - diff_shape0) * sense[n0];
+      diff_ksi12[d] = (diff_shape2 - diff_shape1) * sense[n1];
+      diff_ksi23[d] = (diff_shape3 - diff_shape2) * sense[n2];
+      diff_ksi30[d] = (diff_shape0 - diff_shape3) * sense[n3];
+      diff_extrude_zeta01[d] = diff_shape0 + diff_shape1;
+      diff_extrude_ksi12[d] = diff_shape1 + diff_shape2;
+      diff_extrude_zeta23[d] = diff_shape2 + diff_shape3;
+      diff_extrude_ksi30[d] = diff_shape0 + diff_shape3;
+      diff_bubble_ksi[d] = diff_extrude_ksi12[d] * extrude_ksi30 +
+                            extrude_ksi12 * diff_extrude_ksi30[d];
+      diff_bubble_zeta[d] = diff_extrude_zeta01[d] * extrude_zeta23 +
+                             extrude_zeta01 * diff_extrude_zeta23[d];
     }
 
     double L01[p[0] + 1], L12[p[1] + 1], L23[p[2] + 1], L30[p[3] + 1];
@@ -992,12 +992,12 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
         int d = 0;
         for (; d != 2; ++d) {
           cblas_daxpy(P[0], bubble_ksi * extrude_zeta01,
-                      &diffL01[d * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 0],
+                      &diffL01[d * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + d],
                       2);
           cblas_daxpy(P[0],
                       diff_bubble_ksi[d] * extrude_zeta01 +
                           bubble_ksi * diff_extrude_zeta01[d],
-                      L01, 1, &diff_edgeN01[2 * shift + 0], 2);
+                      L01, 1, &diff_edgeN01[2 * shift + d], 2);
         }
       }
       if (P[1] > 0) {
@@ -1007,12 +1007,12 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
         int d = 0;
         for (; d != 2; ++d) {
           cblas_daxpy(P[1], bubble_zeta * extrude_ksi12,
-                      &diffL12[d * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 0],
+                      &diffL12[d * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + d],
                       2);
           cblas_daxpy(P[1],
                       diff_bubble_zeta[d] * extrude_ksi12 +
                           bubble_zeta * diff_extrude_ksi12[d],
-                      L12, 1, &diff_edgeN12[2 * shift + 0], 2);
+                      L12, 1, &diff_edgeN12[2 * shift + d], 2);
         }
       }
       if (P[2] > 0) {
@@ -1022,12 +1022,12 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
         int d = 0;
         for (; d != 2; ++d) {
           cblas_daxpy(P[2], bubble_ksi * extrude_zeta23,
-                      &diffL23[d * (p[2] + 1)], 1, &diff_edgeN23[2 * shift + 0],
+                      &diffL23[d * (p[2] + 1)], 1, &diff_edgeN23[2 * shift + d],
                       2);
           cblas_daxpy(P[2],
                       diff_bubble_ksi[d] * extrude_zeta23 +
                           bubble_ksi * diff_extrude_zeta23[d],
-                      L23, 1, &diff_edgeN23[2 * shift + 0], 2);
+                      L23, 1, &diff_edgeN23[2 * shift + d], 2);
         }
       }
       if (P[3] > 0) {
@@ -1037,12 +1037,12 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
         int d = 0;
         for (; d != 2; ++d) {
           cblas_daxpy(P[3], bubble_zeta * extrude_ksi30,
-                      &diffL30[d * (p[3] + 1)], 1, &diff_edgeN30[2 * shift + 0],
+                      &diffL30[d * (p[3] + 1)], 1, &diff_edgeN30[2 * shift + d],
                       2);
           cblas_daxpy(P[3],
                       diff_bubble_zeta[d] * extrude_ksi30 +
                           bubble_zeta * diff_extrude_ksi30[d],
-                      L30, 1, &diff_edgeN30[2 * shift + 0], 2);
+                      L30, 1, &diff_edgeN30[2 * shift + d], 2);
         }
       }
     }
