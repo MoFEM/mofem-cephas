@@ -354,20 +354,21 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     CHKERR calculateCoordinatesAtGaussPts();
     CHKERR calculateBaseFunctionsOnElement();
 
+    switch (numeredEntFiniteElementPtr->getEntType()) {
+    case MBTRI:
+      break;
+    case MBQUAD:
+      CHKERR calculateAreaAndNormalAtIntegrationPts();
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+              "Element type not implemented");
+    }
+
     if (!(NO_HO_GEOMETRY & SWITCH)) {
       CHKERR calculateHoNormal();
-    } else {
-      switch (numeredEntFiniteElementPtr->getEntType()) {
-      case MBTRI:
-        break;
-      case MBQUAD:
-        CHKERR calculateAreaAndNormalAtIntegrationPts();
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "Element type not implemented");
-      }
-    }
+    } 
+    
 
     // Apply Piola transform to HDiv and HCurl spaces, uses previously
     // calculated faces normal and tangent vectors.
