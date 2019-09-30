@@ -40,44 +40,62 @@ OpCalculateJacForFace::doWork(int side, EntityType type,
         j10 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 0];
         j11 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 1];
       }
-      jac.resize(4, 1, false);
-      jac(0, 0) = j00;
-      jac(1, 0) = j01;
-      jac(2, 0) = j10;
-      jac(3, 0) = j11;
+      size_t nb_gauss_pts = getGaussPts().size2();
+      jac.resize(4, nb_gauss_pts, false);
+      FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_jac(
+          &jac(0, 0), &jac(1, 0), &jac(2, 0), &jac(3, 0));
+      for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
+        t_jac(0, 0) = j00;
+        t_jac(0, 1) = j01;
+        t_jac(1, 0) = j10;
+        t_jac(1, 1) = j11;
+      }
     }
     MoFEMFunctionReturnHot(0);
   };
 
-  // auto cal_jac_on_quad = [&]() {
-  //   MoFEMFunctionBeginHot;
-  //   if (type == MBVERTEX) {
-  //     VectorDouble &coords = getCoords();
-  //     double *coords_ptr = &*coords.data().begin();
-  //     const nb_integration_pts = getGaussPts().size2();
-  //     jac.resize(4, nb_integration_pts, false);
-
-  //     double j00 = 0, j01 = 0, j10 = 0, j11 = 0;
-  //     // this is triangle, derivative of nodal shape functions is constant.
-  //     // So only need to do one node.
-  //     for (auto n : {0, 1, 2}) {
-  //       j00 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 0];
-  //       j01 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 1];
-  //       j10 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 0];
-  //       j11 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 1];
-  //     }
-  //     jac.resize(2, 2, false);
-  //     jac(0, 0) = j00;
-  //     jac(0, 1) = j01;
-  //     jac(1, 0) = j10;
-  //     jac(1, 1) = j11;
-  //   }
-  //   MoFEMFunctionReturnHot(0);
-  // };
+  auto cal_jac_on_quad = [&]() {
+    MoFEMFunctionBeginHot;
+    if (type == MBVERTEX) {
+      VectorDouble &coords = getCoords();
+      double *coords_ptr = &*coords.data().begin();
+      const size_t nb_integration_pts = getGaussPts().size2();
+      jac.resize(4, nb_integration_pts, false);
+      FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_jac(
+          &jac(0, 0), &jac(1, 0), &jac(2, 0), &jac(3, 0));
+      double* ksi_ptr = &getGaussPts()(0, 0);
+      double* zeta_ptr = &getGaussPts()(1, 0);
+      for (size_t gg = 0; gg != nb_integration_pts;
+           ++gg, ++t_jac, ++ksi_ptr, ++zeta_ptr) {
+        const double &ksi = *ksi_ptr;
+        const double &zeta = *zeta_ptr;
+        jac(0, 0) = coords_ptr[4 * 0 + 0] * diffN_MBQUAD0x(zeta) +
+                    coords_ptr[4 * 1 + 0] * diffN_MBQUAD1x(zeta) +
+                    coords_ptr[4 * 2 + 0] * diffN_MBQUAD2x(zeta) +
+                    coords_ptr[4 * 3 + 0] * diffN_MBQUAD2x(zeta);
+        jac(0, 1) = coords_ptr[4 * 0 + 0] * diffN_MBQUAD0y(ksi) +
+                    coords_ptr[4 * 1 + 0] * diffN_MBQUAD1y(ksi) +
+                    coords_ptr[4 * 2 + 0] * diffN_MBQUAD2y(ksi) +
+                    coords_ptr[4 * 3 + 0] * diffN_MBQUAD2y(ksi);
+        jac(1, 0) = coords_ptr[4 * 0 + 1] * diffN_MBQUAD0x(zeta) +
+                    coords_ptr[4 * 1 + 1] * diffN_MBQUAD1x(zeta) +
+                    coords_ptr[4 * 2 + 1] * diffN_MBQUAD2x(zeta) +
+                    coords_ptr[4 * 3 + 1] * diffN_MBQUAD2x(zeta);
+        jac(1, 1) = coords_ptr[4 * 0 + 1] * diffN_MBQUAD0y(ksi) +
+                    coords_ptr[4 * 1 + 1] * diffN_MBQUAD1y(ksi) +
+                    coords_ptr[4 * 2 + 1] * diffN_MBQUAD2y(ksi) +
+                    coords_ptr[4 * 3 + 1] * diffN_MBQUAD2y(ksi);
+      }
+    }
+    MoFEMFunctionReturnHot(0);
+  };
 
   switch (getNumeredEntFiniteElementPtr()->getEntType()) {
   case MBTRI:
     CHKERR cal_jac_on_tri();
+    break;
+  case MBQUAD:
+    CHKERR cal_jac_on_quad();
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -117,11 +135,56 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
       }
       const double det = j00 * j11 - j01 * j10;
 
-      invJac.resize(4, 1, false);
-      invJac(0, 0) = j11 / det;
-      invJac(1, 0) = -j01 / det;
-      invJac(2, 0) = -j10 / det;
-      invJac(3, 0) = j00 / det;
+      size_t nb_gauss_pts = getGaussPts().size2();
+      invJac.resize(4, nb_gauss_pts, false);
+      FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_inv_jac(
+          &invJac(0, 0), &invJac(1, 0), &invJac(2, 0), &invJac(3, 0));
+      for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
+        t_inv_jac(0, 0) = j11 / det;
+        t_inv_jac(0, 1) = -j01 / det;
+        t_inv_jac(1, 0) = -j10 / det;
+        t_inv_jac(1, 1) = j00 / det;
+      }
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  auto cal_inv_jac_on_quad = [&]() {
+    MoFEMFunctionBeginHot;
+    if (type == MBVERTEX) {
+      VectorDouble &coords = getCoords();
+      double *coords_ptr = &*coords.data().begin();
+      size_t nb_integration_pts = getGaussPts().size2();
+      FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_inv_jac(
+          &invJac(0, 0), &invJac(1, 0), &invJac(2, 0), &invJac(3, 0));
+      double *ksi_ptr = &getGaussPts()(0, 0);
+      double *zeta_ptr = &getGaussPts()(1, 0);
+      for (size_t gg = 0; gg != nb_integration_pts;
+           ++gg, ++t_inv_jac, ++ksi_ptr, ++zeta_ptr) {
+        const double &ksi = *ksi_ptr;
+        const double &zeta = *zeta_ptr;
+        double j00 = coords_ptr[4 * 0 + 0] * diffN_MBQUAD0x(zeta) +
+                       coords_ptr[4 * 1 + 0] * diffN_MBQUAD1x(zeta) +
+                       coords_ptr[4 * 2 + 0] * diffN_MBQUAD2x(zeta) +
+                       coords_ptr[4 * 3 + 0] * diffN_MBQUAD2x(zeta);
+        double j01 = coords_ptr[4 * 0 + 0] * diffN_MBQUAD0y(ksi) +
+                       coords_ptr[4 * 1 + 0] * diffN_MBQUAD1y(ksi) +
+                       coords_ptr[4 * 2 + 0] * diffN_MBQUAD2y(ksi) +
+                       coords_ptr[4 * 3 + 0] * diffN_MBQUAD2y(ksi);
+        double j10 = coords_ptr[4 * 0 + 1] * diffN_MBQUAD0x(zeta) +
+                       coords_ptr[4 * 1 + 1] * diffN_MBQUAD1x(zeta) +
+                       coords_ptr[4 * 2 + 1] * diffN_MBQUAD2x(zeta) +
+                       coords_ptr[4 * 3 + 1] * diffN_MBQUAD2x(zeta);
+        double j11 = coords_ptr[4 * 0 + 1] * diffN_MBQUAD0y(ksi) +
+                       coords_ptr[4 * 1 + 1] * diffN_MBQUAD1y(ksi) +
+                       coords_ptr[4 * 2 + 1] * diffN_MBQUAD2y(ksi) +
+                       coords_ptr[4 * 3 + 1] * diffN_MBQUAD2y(ksi);
+        double det = j00 * j11 - j01 * j10;
+        t_inv_jac(0, 0) = j11 / det;
+        t_inv_jac(0, 1) = -j01 / det;
+        t_inv_jac(1, 0) = -j10 / det;
+        t_inv_jac(1, 1) = j00 / det;
+      }
     }
     MoFEMFunctionReturnHot(0);
   };
@@ -129,6 +192,9 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
   switch (getNumeredEntFiniteElementPtr()->getEntType()) {
   case MBTRI:
     CHKERR cal_inv_jac_on_tri();
+    break;
+  case MBQUAD:
+    CHKERR cal_inv_jac_on_quad();
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -155,11 +221,6 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "This operator can be used only with element which is triangle");
 
-  auto get_inv_jac_on_tri = [](auto &inv_jac, int shift) {
-    return FTensor::Tensor2<double *, 2, 2>(&inv_jac(0, 0), &inv_jac(1, 0),
-                                            &inv_jac(2, 0), &inv_jac(3, 0), 0);
-  };
-
   for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
 
     FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
@@ -179,7 +240,6 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
         }
       }
 
-      auto t_inv_jac = get_inv_jac_on_tri(invJac, 0);
 
       switch (type) {
       case MBVERTEX:
@@ -193,13 +253,14 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
             &diffNinvJac(0, 0), &diffNinvJac(0, 1));
         FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff_n_ref(
             &data.getDiffN(base)(0, 0), &data.getDiffN(base)(0, 1));
-        for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_inv_jac(
+            &invJac(0, 0), &invJac(1, 0), &invJac(2, 0), &invJac(3, 0));
+        for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
           for (unsigned int dd = 0; dd != nb_functions; ++dd) {
             t_diff_n(i) = t_inv_jac(k, i) * t_diff_n_ref(k);
             ++t_diff_n;
             ++t_diff_n_ref;
           }
-          ++t_inv_jac;
         }
         data.getDiffN(base).data().swap(diffNinvJac.data());
       } break;
@@ -224,9 +285,6 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "This operator can be used only with element which is triangle");
 
-  FTensor::Tensor2<double *, 2, 2> t_inv_jac = FTensor::Tensor2<double *, 2, 2>(
-      &invJac(0, 0), &invJac(1, 0), &invJac(2, 0), &invJac(3, 0));
-
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 2> j;
   FTensor::Index<'k', 2> k;
@@ -250,7 +308,10 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
 
           &t_inv_diff_n_ptr[HVEC2_0], &t_inv_diff_n_ptr[HVEC2_1]);
 
-      for (unsigned int gg = 0; gg != nb_gauss_pts; gg++) {
+      FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_inv_jac(
+          &invJac(0, 0), &invJac(1, 0), &invJac(2, 0), &invJac(3, 0));
+
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
         for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
           t_inv_diff_n(i, j) = t_diff_n(i, k) * t_inv_jac(k, j);
           ++t_diff_n;
@@ -319,8 +380,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
   if (type != MBEDGE && type != MBTRI)
     MoFEMFunctionReturnHot(0);
 
-  FTensor::Tensor2<double *, 2, 2> t_jac(&jAc(0, 0), &jAc(1, 0), &jAc(2, 0),
-                                         &jAc(3, 0));
+
 
   FTensor::Index<'i', 2> i;
   FTensor::Index<'j', 2> j;
@@ -334,10 +394,6 @@ MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
     if (nb_base_functions) {
 
       const size_t nb_gauss_pts = data.getN(base).size1();
-
-      double det;
-      CHKERR determinantTensor2by2(t_jac, det);
-
       piolaN.resize(nb_gauss_pts, data.getN(base).size2(), false);
       if (data.getN(base).size2() > 0) {
         auto t_n = data.getFTensor1N<3>(base);
@@ -345,7 +401,11 @@ MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
         FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
             t_transformed_n_ptr, // HVEC0
             &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
-        for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_jac(
+            &jAc(0, 0), &jAc(1, 0), &jAc(2, 0), &jAc(3, 0));
+        for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
+          double det;
+          CHKERR determinantTensor2by2(t_jac, det);
           for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
             t_transformed_n(i) = t_jac(i, k) * t_n(k) / det;
             ++t_n;
@@ -368,7 +428,11 @@ MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
 
                                  &t_transformed_diff_n_ptr[HVEC2_0],
                                  &t_transformed_diff_n_ptr[HVEC2_1]);
-        for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_jac(
+            &jAc(0, 0), &jAc(1, 0), &jAc(2, 0), &jAc(3, 0));
+        for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
+          double det;
+          CHKERR determinantTensor2by2(t_jac, det);
           for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
             t_transformed_diff_n(i, k) = t_jac(i, j) * t_diff_n(j, k) / det;
             ++t_diff_n;
