@@ -1629,24 +1629,18 @@ struct OpMakeHdivFromHcurl
 struct OpSetContravariantPiolaTransformFace
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  FTensor::Tensor2<double *, 2, 2> tJac;
-  FTensor::Index<'i', 2> i;
-  FTensor::Index<'j', 2> j;
-  FTensor::Index<'k', 2> k;
-
   OpSetContravariantPiolaTransformFace(MatrixDouble &jac)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL),
-        tJac(
-
-            &jac(0, 0), &jac(0, 1), &jac(1, 0), &jac(1, 1)
-
-        ) {}
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL), jAc(jac) {
+  }
 
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
+
+  private:
+    MatrixDouble &jAc;
 };
 
 // Edge

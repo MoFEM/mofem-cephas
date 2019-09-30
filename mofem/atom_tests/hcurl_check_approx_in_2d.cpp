@@ -363,7 +363,7 @@ int main(int argc, char *argv[]) {
     auto assemble_matrices_and_vectors = [&]() {
       MoFEMFunctionBegin;
       TestFE fe(m_field);
-      MatrixDouble inv_jac(2, 2), jac(2, 2);
+      MatrixDouble inv_jac, jac;
       fe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
       fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
       fe.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
