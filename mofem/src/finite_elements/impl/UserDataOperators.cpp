@@ -63,28 +63,28 @@ OpCalculateJacForFace::doWork(int side, EntityType type,
       jac.resize(4, nb_integration_pts, false);
       FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_jac(
           &jac(0, 0), &jac(1, 0), &jac(2, 0), &jac(3, 0));
-      double* ksi_ptr = &getGaussPts()(0, 0);
-      double* zeta_ptr = &getGaussPts()(1, 0);
+      double *ksi_ptr = &getGaussPts()(0, 0);
+      double *zeta_ptr = &getGaussPts()(1, 0);
       for (size_t gg = 0; gg != nb_integration_pts;
            ++gg, ++t_jac, ++ksi_ptr, ++zeta_ptr) {
         const double &ksi = *ksi_ptr;
         const double &zeta = *zeta_ptr;
-        jac(0, 0) = coords_ptr[4 * 0 + 0] * diffN_MBQUAD0x(zeta) +
-                    coords_ptr[4 * 1 + 0] * diffN_MBQUAD1x(zeta) +
-                    coords_ptr[4 * 2 + 0] * diffN_MBQUAD2x(zeta) +
-                    coords_ptr[4 * 3 + 0] * diffN_MBQUAD2x(zeta);
-        jac(0, 1) = coords_ptr[4 * 0 + 0] * diffN_MBQUAD0y(ksi) +
-                    coords_ptr[4 * 1 + 0] * diffN_MBQUAD1y(ksi) +
-                    coords_ptr[4 * 2 + 0] * diffN_MBQUAD2y(ksi) +
-                    coords_ptr[4 * 3 + 0] * diffN_MBQUAD2y(ksi);
-        jac(1, 0) = coords_ptr[4 * 0 + 1] * diffN_MBQUAD0x(zeta) +
-                    coords_ptr[4 * 1 + 1] * diffN_MBQUAD1x(zeta) +
-                    coords_ptr[4 * 2 + 1] * diffN_MBQUAD2x(zeta) +
-                    coords_ptr[4 * 3 + 1] * diffN_MBQUAD2x(zeta);
-        jac(1, 1) = coords_ptr[4 * 0 + 1] * diffN_MBQUAD0y(ksi) +
-                    coords_ptr[4 * 1 + 1] * diffN_MBQUAD1y(ksi) +
-                    coords_ptr[4 * 2 + 1] * diffN_MBQUAD2y(ksi) +
-                    coords_ptr[4 * 3 + 1] * diffN_MBQUAD2y(ksi);
+        jac(0, 0) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0x(zeta) +
+                    coords_ptr[3 * 1 + 0] * diffN_MBQUAD1x(zeta) +
+                    coords_ptr[3 * 2 + 0] * diffN_MBQUAD2x(zeta) +
+                    coords_ptr[3 * 3 + 0] * diffN_MBQUAD3x(zeta);
+        jac(0, 1) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0y(ksi) +
+                    coords_ptr[3 * 1 + 0] * diffN_MBQUAD1y(ksi) +
+                    coords_ptr[3 * 2 + 0] * diffN_MBQUAD2y(ksi) +
+                    coords_ptr[3 * 3 + 0] * diffN_MBQUAD3y(ksi);
+        jac(1, 0) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0x(zeta) +
+                    coords_ptr[3 * 1 + 1] * diffN_MBQUAD1x(zeta) +
+                    coords_ptr[3 * 2 + 1] * diffN_MBQUAD2x(zeta) +
+                    coords_ptr[3 * 3 + 1] * diffN_MBQUAD3x(zeta);
+        jac(1, 1) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0y(ksi) +
+                    coords_ptr[3 * 1 + 1] * diffN_MBQUAD1y(ksi) +
+                    coords_ptr[3 * 2 + 1] * diffN_MBQUAD2y(ksi) +
+                    coords_ptr[3 * 3 + 1] * diffN_MBQUAD3y(ksi);
       }
     }
     MoFEMFunctionReturnHot(0);
@@ -155,6 +155,7 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
       VectorDouble &coords = getCoords();
       double *coords_ptr = &*coords.data().begin();
       size_t nb_integration_pts = getGaussPts().size2();
+      invJac.resize(4, nb_integration_pts, false);
       FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_inv_jac(
           &invJac(0, 0), &invJac(1, 0), &invJac(2, 0), &invJac(3, 0));
       double *ksi_ptr = &getGaussPts()(0, 0);
@@ -163,22 +164,22 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
            ++gg, ++t_inv_jac, ++ksi_ptr, ++zeta_ptr) {
         const double &ksi = *ksi_ptr;
         const double &zeta = *zeta_ptr;
-        double j00 = coords_ptr[4 * 0 + 0] * diffN_MBQUAD0x(zeta) +
-                       coords_ptr[4 * 1 + 0] * diffN_MBQUAD1x(zeta) +
-                       coords_ptr[4 * 2 + 0] * diffN_MBQUAD2x(zeta) +
-                       coords_ptr[4 * 3 + 0] * diffN_MBQUAD2x(zeta);
-        double j01 = coords_ptr[4 * 0 + 0] * diffN_MBQUAD0y(ksi) +
-                       coords_ptr[4 * 1 + 0] * diffN_MBQUAD1y(ksi) +
-                       coords_ptr[4 * 2 + 0] * diffN_MBQUAD2y(ksi) +
-                       coords_ptr[4 * 3 + 0] * diffN_MBQUAD2y(ksi);
-        double j10 = coords_ptr[4 * 0 + 1] * diffN_MBQUAD0x(zeta) +
-                       coords_ptr[4 * 1 + 1] * diffN_MBQUAD1x(zeta) +
-                       coords_ptr[4 * 2 + 1] * diffN_MBQUAD2x(zeta) +
-                       coords_ptr[4 * 3 + 1] * diffN_MBQUAD2x(zeta);
-        double j11 = coords_ptr[4 * 0 + 1] * diffN_MBQUAD0y(ksi) +
-                       coords_ptr[4 * 1 + 1] * diffN_MBQUAD1y(ksi) +
-                       coords_ptr[4 * 2 + 1] * diffN_MBQUAD2y(ksi) +
-                       coords_ptr[4 * 3 + 1] * diffN_MBQUAD2y(ksi);
+        double j00 = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0x(zeta) +
+                     coords_ptr[3 * 1 + 0] * diffN_MBQUAD1x(zeta) +
+                     coords_ptr[3 * 2 + 0] * diffN_MBQUAD2x(zeta) +
+                     coords_ptr[3 * 3 + 0] * diffN_MBQUAD3x(zeta);
+        double j01 = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0y(ksi) +
+                     coords_ptr[3 * 1 + 0] * diffN_MBQUAD1y(ksi) +
+                     coords_ptr[3 * 2 + 0] * diffN_MBQUAD2y(ksi) +
+                     coords_ptr[3 * 3 + 0] * diffN_MBQUAD3y(ksi);
+        double j10 = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0x(zeta) +
+                     coords_ptr[3 * 1 + 1] * diffN_MBQUAD1x(zeta) +
+                     coords_ptr[3 * 2 + 1] * diffN_MBQUAD2x(zeta) +
+                     coords_ptr[3 * 3 + 1] * diffN_MBQUAD3x(zeta);
+        double j11 = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0y(ksi) +
+                     coords_ptr[3 * 1 + 1] * diffN_MBQUAD1y(ksi) +
+                     coords_ptr[3 * 2 + 1] * diffN_MBQUAD2y(ksi) +
+                     coords_ptr[3 * 3 + 1] * diffN_MBQUAD3y(ksi);
         double det = j00 * j11 - j01 * j10;
         t_inv_jac(0, 0) = j11 / det;
         t_inv_jac(0, 1) = -j01 / det;
@@ -239,7 +240,6 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
               nb_functions, data.getDiffN(base).size2());
         }
       }
-
 
       switch (type) {
       case MBVERTEX:
@@ -379,8 +379,6 @@ MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
 
   if (type != MBEDGE && type != MBTRI)
     MoFEMFunctionReturnHot(0);
-
-
 
   FTensor::Index<'i', 2> i;
   FTensor::Index<'j', 2> j;
