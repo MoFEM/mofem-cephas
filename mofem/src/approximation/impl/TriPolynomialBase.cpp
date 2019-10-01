@@ -499,17 +499,21 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
              ApproximationBaseNames[base]);
   }
 
-  if(1) {
+  auto set_node_derivative_for_all_gauss_pts = [&]() {
+    MoFEMFunctionBegin;
     // In linear geometry derivatives are constant,
     // this in expense of efficiency makes implementation
     // consistent between vertices and other types of entities
     data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts, 6,
                                                            false);
-    for (int gg = 0; gg != nb_gauss_pts; ++gg) 
-      std::copy(
-          Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
-          &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(gg,0));
-  }
+    for (int gg = 0; gg != nb_gauss_pts; ++gg)
+      std::copy(Tools::diffShapeFunMBTRI.begin(),
+                Tools::diffShapeFunMBTRI.end(),
+                &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(gg, 0));
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR set_node_derivative_for_all_gauss_pts();
 
   switch (cTx->sPace) {
   case H1:
