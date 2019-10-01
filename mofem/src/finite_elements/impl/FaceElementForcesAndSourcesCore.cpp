@@ -206,29 +206,6 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
   case MBQUAD:
     diff_ptr = Tools::diffShapeFunMBQUADAtCenter.data();
     CHKERR calc_normal(diff_ptr);
-    {
-      EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-      CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
-      coords.resize(num_nodes * 3, false);
-      CHKERR mField.get_moab().get_coords(conn, num_nodes,
-                                          &*coords.data().begin());
-      FTensor::Tensor1<double, 3> t_a(coords[0], coords[1], coords[2]);
-      FTensor::Tensor1<double, 3> t_b(coords[3], coords[4], coords[5]);
-      FTensor::Tensor1<double, 3> t_c(coords[6], coords[7], coords[8]);
-      FTensor::Tensor1<double, 3> t_d(coords[9], coords[10], coords[11]);
-
-      FTensor::Index<'i', 3> i;
-      FTensor::Index<'j', 3> j;
-      FTensor::Index<'k', 3> k;
-
-      FTensor::Tensor1<double, 3> coross;
-      coross(k) =
-          FTensor::levi_civita(i, j, k) * (t_a(i) - t_c(i)) * (t_b(j) - t_d(j));
-      double test_area = sqrt(coross(k) * coross(k));
-      cerr << aRea << " " << test_area << " " << aRea/test_area << endl;
-
-    }
-
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Element type not implemented");
