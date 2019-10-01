@@ -126,7 +126,9 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     order_triangles_only = std::max(
         order_triangles_only,
         dataH1TroughThickness.dataOnEntities[MBPRISM][0].getDataOrder());
+        
     // integration pts on the triangles surfaces
+    nb_gauss_pts_on_faces = 0;
     int rule = getRuleTrianglesOnly(order_triangles_only);
     if (rule >= 0) {
       if (rule < QUAD_2D_TABLE_SIZE) {
@@ -164,7 +166,6 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
       } else 
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "rule > quadrature order %d < %d", rule, QUAD_2D_TABLE_SIZE);
-        nb_gauss_pts_on_faces = 0;
       
     } else {
       CHKERR setGaussPtsTrianglesOnly(order_triangles_only);
@@ -197,6 +198,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   auto set_gauss_points_through_thickness =
       [&](int &nb_gauss_pts_through_thickness) {
         MoFEMFunctionBegin;
+        nb_gauss_pts_through_thickness = 0;
         int order_thickness = 1;
         for (unsigned int ee = 3; ee <= 5; ee++) {
           order_thickness = std::max(
@@ -243,8 +245,6 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
           CHKERR setGaussPtsThroughThickness(order_thickness);
           nb_gauss_pts_through_thickness = gaussPtsThroughThickness.size2();
         }
-        if (nb_gauss_pts_through_thickness == 0)
-          MoFEMFunctionReturnHot(0);
         MoFEMFunctionReturn(0);
       };
 
