@@ -178,21 +178,21 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
     ent_data.getDiffN(base).resize(nb_gauss_pts_through_thickness, nb_dofs,
                                    false);
 
-    if (nb_dofs < 0)
-      continue;
-    double diff_s = 2.; // s = s(xi), ds/dxi = 2., because change of basis
-    for (int gg = 0; gg < nb_gauss_pts_through_thickness; gg++) {
-      double s =
-          2 * cTx->gaussPtsThroughThickness(0, gg) - 1; // makes form -1..1
-      if (sense == -1) {
-        s *= -1;
-        diff_s *= -1;
+    if (nb_dofs > 0) {
+      double diff_s = 2.; // s = s(xi), ds/dxi = 2., because change of basis
+      for (int gg = 0; gg < nb_gauss_pts_through_thickness; gg++) {
+        double s =
+            2 * cTx->gaussPtsThroughThickness(0, gg) - 1; // makes form -1..1
+        if (sense == -1) {
+          s *= -1;
+          diff_s *= -1;
+        }
+        // calculate Legendre polynomials at integration points on edges
+        // thorough thickness
+        CHKERR base_polynomials(order - 2, s, &diff_s,
+                                &ent_data.getN(base)(gg, 0),
+                                &ent_data.getDiffN(base)(gg, 0), 1);
       }
-      // calculate Legendre polynomials at integration points on edges thorough
-      // thickness
-      CHKERR base_polynomials(order - 2, s, &diff_s,
-                              &ent_data.getN(base)(gg, 0),
-                              &ent_data.getDiffN(base)(gg, 0), 1);
     }
   }
 
