@@ -133,22 +133,21 @@ int main(int argc, char *argv[]) {
       }
 
       double eps = 1e-8;
-      double quad_edges_sum[] = {6.3525, 4.38007416, 4.38007416, 4.849528992};
-      double quad_diff_edges_sum[] = {-21.4775, 18.15242, 19.96258,
-                                      -19.7395528};
+      double quad_edges_sum[] = {9.075, 5.97498, 5.97498, 7.0086588};
+      double quad_diff_edges_sum[] = {-22.385, 18.79856, 20.248624,
+                                      -20.3557816};
 
       CHKERR H1_EdgeShapeFunctions_MBQUAD(
           sense, p, &*N.data().begin(), &*diffN.data().begin(), quad_edges_ptr,
           quad_diff_edges_ptr, verts.size(), Legendre_polynomials);
 
       for (int ee = 0; ee < 4; ++ee) {
-        if (fabs(quad_edges_sum[ee] - sum_matrix(quad_edges[ee])) > eps) {
+        if (std::abs(quad_edges_sum[ee] - sum_matrix(quad_edges[ee])) > eps) 
           SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
-        }
-        if (fabs(quad_diff_edges_sum[ee] - sum_matrix(quad_diff_edges[ee])) >
-            eps) {
+
+        if (std::abs(quad_diff_edges_sum[ee] -
+                     sum_matrix(quad_diff_edges[ee])) > eps)
           SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
-        }
       }
     }
   }

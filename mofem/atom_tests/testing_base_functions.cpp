@@ -1023,12 +1023,13 @@ int main(int argc, char *argv[]) {
       diff_sum += sum_matrix(quad_data.dataOnEntities[MBQUAD][0].getDiffN(
           AINSWORTH_LEGENDRE_BASE));
 
-      if (fabs(2.0925306 - sum) > eps) {
+      if (std::abs(2.73429 - sum) > eps) 
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
-      }
-      if (fabs(-0.42857143 - diff_sum) > eps) {
+      
+
+      if (std::abs(-0.42857143 - diff_sum) > eps) 
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
-      }
+      
     }
   }
   CATCH_ERRORS;
