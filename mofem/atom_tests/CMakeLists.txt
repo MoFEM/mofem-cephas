@@ -1451,3 +1451,19 @@ target_link_libraries(add_blockset
 add_test(add_blockset
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/add_blockset 
 )
+
+my_add_executable(
+  prism_polynomial_apprximation prism_polynomial_apprximation.cpp)
+target_link_libraries(prism_polynomial_apprximation
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(prism_polynomial_apprximation
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/prism_polynomial_apprximation)

@@ -1,0 +1,354 @@
+/** \file prisms_elements_from_surface.cpp
+  \example prisms_elements_from_surface.cpp
+  \brief Adding prims on the surface
+
+*/
+
+/* This file is part of MoFEM.
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+#include <MoFEM.hpp>
+
+namespace bio = boost::iostreams;
+using bio::stream;
+using bio::tee_device;
+
+using namespace MoFEM;
+
+static char help[] = "...\n\n";
+static int debug = 1;
+
+static constexpr int approx_order = 5;
+static constexpr int number_of_prisms_layers = 1;
+static constexpr double delta =
+    1. / static_cast<double>(number_of_prisms_layers);
+static constexpr std::array<double, 3> d3 = {0, 0, 0};
+static constexpr std::array<double, 3> d4 = {0, 0, delta};
+
+struct ApproxFunction {
+  static inline double fun(double x, double y, double z) {
+    double r = 1;
+    for (int o = 1; o <= approx_order; ++o) {
+      for (int i = 0; i <= o; ++i) {
+        for (int j = 0; j <= (o - i); ++j) {
+          int k = o - i - j;
+          r += pow(x, i) + pow(y, j) + pow(z, k);
+        }
+      }
+    }
+    return r;
+  }
+};
+
+struct PrismOpCheck
+    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  PrismOpCheck(boost::shared_ptr<VectorDouble> &field_vals);
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  boost::shared_ptr<VectorDouble> fieldVals;
+};
+
+struct PrismOpRhs
+    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  PrismOpRhs(SmartPetscObj<Vec> &f);
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  SmartPetscObj<Vec> F;
+};
+
+struct PrismOpLhs
+    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  PrismOpLhs(SmartPetscObj<Mat> &a);
+  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                        EntityType col_type,
+                        DataForcesAndSourcesCore::EntData &row_data,
+                        DataForcesAndSourcesCore::EntData &col_data);
+
+private:
+  SmartPetscObj<Mat> A;
+};
+
+struct PrismFE : public FatPrismElementForcesAndSourcesCore {
+
+  using FatPrismElementForcesAndSourcesCore::
+      FatPrismElementForcesAndSourcesCore;
+  int getRuleTrianglesOnly(int order);
+  int getRuleThroughThickness(int order);
+};
+
+int main(int argc, char *argv[]) {
+
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
+
+  try {
+
+    moab::Core mb_instance;
+    moab::Interface &moab = mb_instance;
+    int rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    // Read parameters from line command
+    PetscBool flg = PETSC_TRUE;
+    char mesh_file_name[255];
+    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+                                 255, &flg);
+    if (flg != PETSC_TRUE)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+              "error -my_file (MESH FILE NEEDED)");
+
+    const char *option;
+    option = "";
+    CHKERR moab.load_file(mesh_file_name, 0, option);
+    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+    if (pcomm == NULL)
+      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+
+    Range tris;
+    CHKERR moab.get_entities_by_type(0, MBTRI, tris, false);
+
+    MoFEM::Core core(moab);
+    MoFEM::Interface &m_field = core;
+
+    PrismsFromSurfaceInterface *prisms_from_surface_interface;
+    CHKERR m_field.getInterface(prisms_from_surface_interface);
+
+    Range prisms;
+    CHKERR prisms_from_surface_interface->createPrisms(tris, prisms);
+    prisms_from_surface_interface->setThickness(prisms, d3.data(), d4.data());
+
+    BitRefLevel bit_level0;
+    bit_level0.set(0);
+    CHKERR m_field.getInterface<BitRefManager>()->setEntitiesBitRefLevel(
+        prisms, bit_level0);
+    CHKERR prisms_from_surface_interface->seedPrismsEntities(prisms,
+                                                             bit_level0);
+
+    // Fields
+    CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERR m_field.add_ents_to_field_by_type(0, MBPRISM, "FIELD1");
+
+    CHKERR m_field.set_field_order(0, MBVERTEX, "FIELD1", 1);
+    CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", approx_order);
+    CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", approx_order);
+    CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", approx_order);
+    CHKERR m_field.set_field_order(0, MBPRISM, "FIELD1", approx_order);
+    CHKERR m_field.build_fields();
+
+    // FE
+    CHKERR m_field.add_finite_element("PRISM");
+
+    // Define rows/cols and element data
+    CHKERR m_field.modify_finite_element_add_field_row("PRISM", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_col("PRISM", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_data("PRISM", "FIELD1");
+    CHKERR m_field.add_ents_to_finite_element_by_type(0, MBPRISM, "PRISM");
+
+    // build finite elemnts
+    CHKERR m_field.build_finite_elements();
+    // //build adjacencies
+    CHKERR m_field.build_adjacencies(bit_level0);
+
+    // Problem
+    CHKERR m_field.add_problem("TEST_PROBLEM");
+
+    // set finite elements for problem
+    CHKERR m_field.modify_problem_add_finite_element("TEST_PROBLEM", "PRISM");
+    // set refinement level for problem
+    CHKERR m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM", bit_level0);
+
+    // build problem
+    ProblemsManager *prb_mng_ptr;
+    CHKERR m_field.getInterface(prb_mng_ptr);
+    CHKERR prb_mng_ptr->buildProblem("TEST_PROBLEM", true);
+    // partition
+    CHKERR prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
+    CHKERR prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM");
+    // what are ghost nodes, see Petsc Manual
+    CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
+
+    // Create matrices
+    SmartPetscObj<Mat> A;
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("TEST_PROBLEM", A);
+    SmartPetscObj<Vec> F;
+    CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
+                                                              ROW, F);
+    SmartPetscObj<Vec> D;
+    CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
+                                                              COL, D);
+
+    auto assemble_matrices_and_vectors = [&]() {
+      MoFEMFunctionBegin;
+      PrismFE fe(m_field);
+      MatrixDouble inv_jac;
+      fe.getOpPtrVector().push_back(
+          new MoFEM::OpCalculateInvJacForFatPrism(inv_jac));
+      fe.getOpPtrVector().push_back(
+          new MoFEM::OpSetInvJacH1ForFatPrism(inv_jac));
+      fe.getOpPtrVector().push_back(new PrismOpRhs(F));
+      fe.getOpPtrVector().push_back(new PrismOpLhs(A));
+      CHKERR VecZeroEntries(F);
+      CHKERR MatZeroEntries(A);
+      CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "PRISM", fe);
+      CHKERR VecAssemblyBegin(F);
+      CHKERR VecAssemblyEnd(F);
+      CHKERR MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+      CHKERR MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+      MoFEMFunctionReturn(0);
+    };
+
+    auto solve_problem = [&] {
+      MoFEMFunctionBegin;
+      auto solver = createKSP(PETSC_COMM_WORLD);
+      CHKERR KSPSetOperators(solver, A, A);
+      CHKERR KSPSetFromOptions(solver);
+      CHKERR KSPSetUp(solver);
+      CHKERR KSPSolve(solver, F, D);
+      CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
+      CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
+      CHKERR m_field.getInterface<VecManager>()->setLocalGhostVector(
+          "TEST_PROBLEM", COL, D, INSERT_VALUES, SCATTER_REVERSE);
+      MoFEMFunctionReturn(0);
+    };
+
+    auto check_solution = [&] {
+      MoFEMFunctionBegin;
+      PrismFE fe(m_field);
+      boost::shared_ptr<VectorDouble> field_vals_ptr(new VectorDouble());
+      MatrixDouble inv_jac;
+      fe.getOpPtrVector().push_back(
+          new MoFEM::OpCalculateInvJacForFatPrism(inv_jac));
+      fe.getOpPtrVector().push_back(
+          new MoFEM::OpSetInvJacH1ForFatPrism(inv_jac));
+      fe.getOpPtrVector().push_back(
+          new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr));
+      fe.getOpPtrVector().push_back(new PrismOpCheck(field_vals_ptr));
+      CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "PRISM", fe);
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR assemble_matrices_and_vectors();
+    CHKERR solve_problem();
+    CHKERR check_solution();
+  }
+  CATCH_ERRORS;
+
+  MoFEM::Core::Finalize();
+  return 0;
+}
+
+PrismOpCheck::PrismOpCheck(boost::shared_ptr<VectorDouble> &field_vals)
+    : FatPrismElementForcesAndSourcesCore::UserDataOperator(
+          "FIELD1", "FIELD1", ForcesAndSourcesCore::UserDataOperator::OPROW),
+      fieldVals(field_vals) {}
+
+MoFEMErrorCode PrismOpCheck::doWork(int side, EntityType type,
+                                    DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+  if (type == MBVERTEX) {
+    const int nb_gauss_pts = data.getN().size2();
+    auto t_coords = getFTensor1CoordsAtGaussPts();
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      double f = ApproxFunction::fun(t_coords(0), t_coords(1), t_coords(2));
+      constexpr double eps = 1e-6;
+      if (std::abs(f - (*fieldVals)[gg]) > eps)
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Wrong value %6.4e != %6.4e", f, (*fieldVals)[gg]);
+      ++t_coords;
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
+PrismOpRhs::PrismOpRhs(SmartPetscObj<Vec> &f)
+    : FatPrismElementForcesAndSourcesCore::UserDataOperator(
+          "FIELD1", "FIELD1", ForcesAndSourcesCore::UserDataOperator::OPROW),
+      F(f) {}
+
+MoFEMErrorCode PrismOpRhs::doWork(int side, EntityType type,
+                                  DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+  const int nb_dofs = data.getN().size2();
+  if (nb_dofs) {
+    const int nb_gauss_pts = data.getN().size1();
+    VectorDouble nf(nb_dofs);
+    nf.clear();
+    auto t_base = data.getFTensor0N();
+    auto t_coords = getFTensor1CoordsAtGaussPts();
+    auto t_w = getFTensor0IntegrationWeight();
+    double vol = getVolume();
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      double f = ApproxFunction::fun(t_coords(0), t_coords(1), t_coords(2));
+      double v = t_w * vol * f;
+      double *val = &*nf.begin();
+      for (int bb = 0; bb != nb_dofs; ++bb) {
+        *val += v * t_base;
+        ++t_base;
+        ++val;
+      }
+      ++t_coords;
+      ++t_w;
+    }
+    CHKERR VecSetValues(F, data, &*nf.data().begin(), ADD_VALUES);
+  }
+  MoFEMFunctionReturn(0);
+}
+
+PrismOpLhs::PrismOpLhs(SmartPetscObj<Mat> &a)
+    : FatPrismElementForcesAndSourcesCore::UserDataOperator(
+          "FIELD1", "FIELD1", ForcesAndSourcesCore::UserDataOperator::OPROWCOL),
+      A(a) {
+  // FIXME: Can be symmetric, is not for simplicity
+  sYmm = false;
+}
+
+MoFEMErrorCode PrismOpLhs::doWork(int row_side, int col_side,
+                                  EntityType row_type, EntityType col_type,
+                                  DataForcesAndSourcesCore::EntData &row_data,
+                                  DataForcesAndSourcesCore::EntData &col_data) {
+  MoFEMFunctionBegin;
+  const int row_nb_dofs = row_data.getN().size2();
+  const int col_nb_dofs = col_data.getN().size2();
+  if (row_nb_dofs && col_nb_dofs) {
+    const int nb_gauss_pts = row_data.getN().size1();
+    MatrixDouble m(row_nb_dofs, col_nb_dofs);
+    m.clear();
+    auto t_w = getFTensor0IntegrationWeight();
+    double vol = getVolume();
+    double *row_base_ptr = &*row_data.getN().data().begin();
+    double *col_base_ptr = &*col_data.getN().data().begin();
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+
+      double v = t_w * vol;
+      cblas_dger(CblasRowMajor, row_nb_dofs, col_nb_dofs, v, row_base_ptr, 1,
+                 col_base_ptr, 1, &*m.data().begin(), col_nb_dofs);
+
+      row_base_ptr += row_nb_dofs;
+      col_base_ptr += col_nb_dofs;
+      ++t_w;
+    }
+    CHKERR MatSetValues(A, row_data, col_data, &*m.data().begin(), ADD_VALUES);
+  }
+  MoFEMFunctionReturn(0);
+}
+
+int PrismFE::getRuleTrianglesOnly(int order) { return 7; };
+int PrismFE::getRuleThroughThickness(int order) { return 7; };
