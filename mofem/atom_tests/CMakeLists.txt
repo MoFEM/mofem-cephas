@@ -1184,22 +1184,6 @@ add_test(node_merge ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/node_merge -my_file node_merge_test.h5m
 )
 
-my_add_executable(prisms_elements_from_surface prisms_elements_from_surface.cpp)
-target_link_libraries(prisms_elements_from_surface
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
-cm_export_file("../meshes/reference_triangle_mesh.h5m" export_atom_tests)
-add_test(prisms_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file reference_triangle_mesh.h5m
-)
-
 my_add_executable(edge_and_bubble_shape_functions_on_quad edge_and_bubble_shape_functions_on_quad.cpp)
 target_link_libraries(edge_and_bubble_shape_functions_on_quad
   mofem_finite_elements
@@ -1452,8 +1436,24 @@ add_test(add_blockset
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/add_blockset 
 )
 
+cm_export_file("../meshes/reference_triangle_mesh.h5m" export_atom_tests)
+my_add_executable(prisms_elements_from_surface prisms_elements_from_surface.cpp)
+target_link_libraries(prisms_elements_from_surface
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(prisms_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface 
+  -my_file reference_triangle_mesh.h5m)
+
 my_add_executable(
-  prism_polynomial_apprximation prism_polynomial_apprximation.cpp)
+  prism_polynomial_apprximation prism_polynomial_approximation.cpp)
 target_link_libraries(prism_polynomial_apprximation
   mofem_finite_elements
   mofem_interfaces
@@ -1466,4 +1466,23 @@ target_link_libraries(prism_polynomial_apprximation
 )
 add_test(prism_polynomial_apprximation
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/prism_polynomial_apprximation)
+  ${CMAKE_CURRENT_BINARY_DIR}/prism_polynomial_apprximation
+  -my_file reference_triangle_mesh.h5m -pc_type lu)
+
+cm_export_file("../meshes/circe_and_quead_mesh.h5m" export_atom_tests)
+my_add_executable(
+  quad_polynomial_approximation quad_polynomial_approximation.cpp)
+target_link_libraries(quad_polynomial_approximation
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(quad_polynomial_approximation
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation
+  -my_file circe_and_quead_mesh.h5m -pc_type lu)
