@@ -1,6 +1,6 @@
-/** \file prisms_elements_from_surface.cpp
-  \example prisms_elements_from_surface.cpp
-  \brief Adding prims on the surface
+/** \file prism_polynomial_approximation.cpp
+  \example prism_polynomial_approximation.cpp
+  \brief Checking approximation functions on prism
 
 */
 
@@ -43,7 +43,7 @@ struct ApproxFunction {
       for (int i = 0; i <= o; ++i) {
         for (int j = 0; j <= (o - i); ++j) {
           int k = o - i - j;
-          r += pow(x, i) + pow(y, j) + pow(z, k);
+          r += pow(x, i) * pow(y, j) * pow(z, k);
         }
       }
     }
