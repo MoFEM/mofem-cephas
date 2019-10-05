@@ -67,39 +67,35 @@ FlatPrismPolynomialBase::FlatPrismPolynomialBase() {}
 MoFEMErrorCode
 FlatPrismPolynomialBase::getValue(MatrixDouble &pts,
                                   boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
-
   MoFEMFunctionBeginHot;
 
   MoFEM::UnknownInterface *iface;
   CHKERR ctx_ptr->query_interface(IDD_FLATPRISM_BASE_FUNCTION, &iface);
   cTx = reinterpret_cast<FlatPrismPolynomialBaseCtx *>(iface);
-  if (!cTx->fePtr) {
+  if (!cTx->fePtr) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
       "Pointer to element should be given "
       "when EntPolynomialBaseCtx is constructed "
             "(use different constructor)");
-  }
 
   int nb_gauss_pts = pts.size2();
-  if (!nb_gauss_pts) {
+  if (!nb_gauss_pts) 
     MoFEMFunctionReturnHot(0);
-  }
 
-  if (pts.size1() < 1) {
+  if (pts.size1() < 1) 
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
-  }
 
   const FieldApproximationBase base = cTx->bAse;
   DataForcesAndSourcesCore &data = cTx->dAta;
 
-  if (cTx->copyNodeBase == LASTBASE) {
+  if (cTx->copyNodeBase == LASTBASE)
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
-  } else {
+  else
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
         data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
-  }
+
   data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 6, false);
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts, 12,
                                                          false);
@@ -117,10 +113,10 @@ FlatPrismPolynomialBase::getValue(MatrixDouble &pts,
   N.resize(nb_gauss_pts, 3, false);
   diffN.resize(3, 2, false);
   CHKERR ShapeMBTRI(&*N.data().begin(), &pts(0, 0), &pts(1, 0), nb_gauss_pts);
-  CHKERR ShapeDiffMBTRI(&*diffN.data().begin());
+  std::copy(Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+            &*diffN.data().begin());
 
   // This is needed to have proper order of nodes on faces
-
   CHKERR cTx->mOab.get_connectivity(cTx->fePtr->getEnt(), connPrism, numNodes,
                                     true);
   SideNumber_multiIndex &side_table =
@@ -157,15 +153,6 @@ FlatPrismPolynomialBase::getValue(MatrixDouble &pts,
           val_y;
     }
   }
-  // for(int nn = 0;nn<3;nn++) {
-  //   if(faceNodes[0][nn]!=faceNodes[1][nn]) {
-  //     SETERRQ(
-  //       PETSC_COMM_SELF,
-  //       MOFEM_DATA_INCONSISTENCY,
-  //       "Node order different on both faces"
-  //     );
-  //   }
-  // }
 
   switch (cTx->sPace) {
     case H1:
@@ -188,7 +175,6 @@ FlatPrismPolynomialBase::getValue(MatrixDouble &pts,
 }
 
 MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
-
   MoFEMFunctionBeginHot;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
@@ -200,31 +186,34 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   int nb_gauss_pts = pts.size2();
 
   // edges
-  if (data.dataOnEntities[MBEDGE].size() != 9) {
+  if (data.dataOnEntities[MBEDGE].size() != 9) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  }
-  int valid_edges[] = {1, 1, 1, 0, 0, 0, 1, 1, 1};
+
   int sense[9], order[9];
   double *H1edgeN[9], *diffH1edgeN[9];
+
+  auto set_edge_base_data = [&](const int ee) {
+    MoFEMFunctionBegin;
+    auto &ent_data = data.dataOnEntities[MBEDGE][ee];
+    if (ent_data.getSense() == 0)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+    sense[ee] = ent_data.getSense();
+    order[ee] = ent_data.getDataOrder();
+    int nb_dofs = NBEDGE_H1(ent_data.getDataOrder());
+    ent_data.getN(base).resize(nb_gauss_pts, nb_dofs, false);
+    ent_data.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
+    H1edgeN[ee] = &*ent_data.getN(base).data().begin();
+    diffH1edgeN[ee] = &*ent_data.getDiffN(base).data().begin();
+    MoFEMFunctionReturn(0);
+  };
+
   if ((data.spacesOnEntities[MBEDGE]).test(H1)) {
-    for (int ee = 0; ee < 9; ee++) {
-      if (!valid_edges[ee])
-        continue;
-      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "data inconsistency");
-      }
-      sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-      int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
-      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts, nb_dofs,
-                                                        false);
-      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,
-                                                            2 * nb_dofs, false);
-      H1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
-      diffH1edgeN[ee] =
-          &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
-    }
+
+    for (int ee = 0; ee != 3; ++ee)
+      CHKERR set_edge_base_data(ee);
+    for (int ee = 6; ee != 9; ++ee)
+      CHKERR set_edge_base_data(ee);
+
     // shape functions on face 3
     CHKERR H1_EdgeShapeFunctions_MBTRI(
         &sense[0], &order[0], &*N.data().begin(), &*diffN.data().begin(),
@@ -236,9 +225,9 @@ MoFEMErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   }
 
   // face
-  if (data.dataOnEntities[MBTRI].size() != 5) {
+  if (data.dataOnEntities[MBTRI].size() != 5) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  }
+  
   if ((data.spacesOnEntities[MBTRI]).test(H1)) {
     for (int ff = 3; ff <= 4; ff++) {
       int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getDataOrder());
