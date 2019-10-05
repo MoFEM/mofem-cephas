@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
 using namespace MoFEM;
 
 MoFEMErrorCode FatPrismPolynomialBaseCtx::query_interface(
@@ -84,18 +83,17 @@ FatPrismPolynomialBase::getValue(MatrixDouble &pts,
   MoFEM::UnknownInterface *iface;
   CHKERR ctx_ptr->query_interface(IDD_FATPRISM_BASE_FUNCTION, &iface);
   cTx = reinterpret_cast<FatPrismPolynomialBaseCtx *>(iface);
-  if (!cTx->fePtr) 
+  if (!cTx->fePtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer to element should be given "
             "when EntPolynomialBaseCtx is constructed "
             "(use different constructor)");
 
   int nb_gauss_pts = pts.size2();
-  if (!nb_gauss_pts) 
+  if (!nb_gauss_pts)
     MoFEMFunctionReturnHot(0);
-  
 
-  if (pts.size1() < 3) 
+  if (pts.size1() < 3)
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
@@ -103,28 +101,27 @@ FatPrismPolynomialBase::getValue(MatrixDouble &pts,
   const FieldApproximationBase base = cTx->bAse;
   DataForcesAndSourcesCore &data = cTx->dAta;
 
-  if (cTx->copyNodeBase == LASTBASE) 
+  if (cTx->copyNodeBase == LASTBASE)
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "It is assumed that base for vertices is calculated");
-  else 
+  else
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
         data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
-  
+
   data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 6, false);
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts, 12,
                                                          false);
   if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
-      (unsigned int)nb_gauss_pts) 
+      (unsigned int)nb_gauss_pts)
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Base functions or nodes has wrong number of integration points "
              "for base %s",
              ApproximationBaseNames[base]);
-  
+
   if (cTx->gaussPtsTrianglesOnly.size2() *
           cTx->gaussPtsThroughThickness.size2() !=
-      pts.size2()) 
+      pts.size2())
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  
 
   switch (cTx->sPace) {
   case H1:
@@ -179,13 +176,13 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
                                    false);
 
     if (nb_dofs > 0) {
-      double diff_s = 2.; // s = s(xi), ds/dxi = 2., because change of basis
+      double diff_s = 1.; // s = s(xi), ds/dxi = 2., because change of basis
       for (int gg = 0; gg < nb_gauss_pts_through_thickness; gg++) {
         double s =
             2 * cTx->gaussPtsThroughThickness(0, gg) - 1; // makes form -1..1
         if (sense == -1) {
-          s *= -1;
-          diff_s *= -1;
+          s *= -2;
+          diff_s *= -2;
         }
         // calculate Legendre polynomials at integration points on edges
         // thorough thickness
@@ -205,6 +202,10 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
 
+  PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
+                                     double *diffL, const int dim) =
+      cTx->basePolynomialsType0;
+
   int nb_gauss_pts = pts.size2();
   int nb_gauss_pts_on_faces = cTx->gaussPtsTrianglesOnly.size2();
   int nb_gauss_pts_through_thickness = cTx->gaussPtsThroughThickness.size2();
@@ -218,6 +219,12 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   noalias(vert_dat.getDiffN(base)) =
       data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
 
+  auto &vert_n = vert_dat.getN(base);
+  auto &vert_diff_n  = vert_dat.getDiffN(base);
+
+  constexpr int prism_edge_map[9][2] = {{0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 4},
+                                        {2, 5}, {3, 4}, {4, 5}, {5, 3}};
+
   auto edge_through_thickness = [&](const int ee) {
     MoFEMFunctionBegin;
     // through thickness ho approximation
@@ -227,48 +234,68 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     auto &prism_ent = data.dataOnEntities[MBEDGE][ee];
 
     int order = thickness_ent.getDataOrder();
+    int sense = thickness_ent.getSense();
     int nb_dofs = NBEDGE_H1(order);
     if ((unsigned int)nb_dofs != thickness_ent.getN(base).size2())
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "nb_dofs != nb_dofs %d != %d", nb_dofs,
                thickness_ent.getN(base).size2());
-
     prism_ent.getN(base).resize(nb_gauss_pts, nb_dofs, false);
     prism_ent.getDiffN(base).resize(nb_gauss_pts, 3 * nb_dofs, false);
     if (nb_dofs == 0)
       MoFEMFunctionReturnHot(0);
-    constexpr int prism_edge_map[9][2] = {
-        {0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 4}, {2, 5}, {3, 4}, {4, 5}, {5, 3}};
+
+    double l[order + 1], diff_l[3 * (order + 1)];
+
     int gg = 0;
     for (int ggf = 0; ggf < nb_gauss_pts_on_faces; ggf++) {
-      double tri_n = cTx->dataTrianglesOnly.dataOnEntities[MBVERTEX][0].getN(
-          base)(ggf, prism_edge_map[ee][0]);
-      double dksi_tri_n[2];
-      for (int kk = 0; kk < 2; kk++) {
-        dksi_tri_n[kk] =
-            cTx->dataTrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(base)(
-                ggf, 2 * prism_edge_map[ee][0] + kk);
-      }
+
       for (int ggt = 0; ggt < nb_gauss_pts_through_thickness; ggt++, gg++) {
+        double extrude = vert_n(gg, prism_edge_map[ee][0]) +
+                         vert_n(gg, prism_edge_map[ee][1]);
 
-        double zeta = cTx->gaussPtsThroughThickness(0, ggt);
-        double n0 = N_MBEDGE0(zeta);
-        double n1 = N_MBEDGE1(zeta);
-        double n0n1 = n0 * n1;
+        double diff_extrude[3];
+        for (auto d : {0, 1, 2})
+          diff_extrude[d] = vert_diff_n(gg, 3 * prism_edge_map[ee][0] + d) +
+                            vert_diff_n(gg, 3 * prism_edge_map[ee][1] + d);
 
-        for (int dd = 0; dd < nb_dofs; dd++) {
+        double n0 = vert_n(gg, 0) + vert_n(gg, 1) + vert_n(gg, 2);
+        double n1 = vert_n(gg, 3) + vert_n(gg, 4) + vert_n(gg, 5);
 
-          double l = thickness_ent.getN(base)(ggt, dd);
-          double diff_l = thickness_ent.getDiffN(base)(ggt, dd);
+        double ksi = n1 - n0;
+        double diff_ksi[3];
+        for (auto d : {0, 1, 2})
+          diff_ksi[d] =
+              vert_diff_n(gg, 3 * 3 + d) + vert_diff_n(gg, 3 * 4 + d) +
+              vert_diff_n(gg, 3 * 5 + d) - vert_diff_n(gg, 3 * 0 + d) -
+              vert_diff_n(gg, 3 * 1 + d) - vert_diff_n(gg, 3 * 2 + d);
 
-          double edge_m = n0n1 * l;
-          double dzeta_edge_m =
-              (diffN_MBEDGE0 * n1 + n0 * diffN_MBEDGE1) * l + n0n1 * diff_l;
-          prism_ent.getN(base)(gg, dd) = tri_n * edge_m;
-          for (int kk = 0; kk < 2; kk++) {
-            prism_ent.getDiffN(base)(gg, 3 * dd + kk) = dksi_tri_n[kk] * edge_m;
-          }
-          prism_ent.getDiffN(base)(gg, 3 * dd + 2) = tri_n * dzeta_edge_m;
+        if(sense == -1) {
+          ksi *= -1;
+          for (auto d : {0, 1, 2})
+            diff_ksi[d] *= -1;
+        }
+
+        CHKERR base_polynomials(order - 2, ksi, diff_ksi, l, diff_l, 3);
+
+        double bubble = n0 * n1;
+        double diff_bubble[3];
+        for (auto d : {0, 1, 2})
+          diff_bubble[d] =
+              n0 * (vert_diff_n(gg, 3 * 3 + d) + vert_diff_n(gg, 3 * 4 + d) +
+                    vert_diff_n(gg, 3 * 5 + d)) +
+
+              n1 * (vert_diff_n(gg, 3 * 0 + d) + vert_diff_n(gg, 3 * 1 + d) +
+                    vert_diff_n(gg, 3 * 2 + d));
+
+        for (int dd = 0; dd != nb_dofs; dd++) {
+
+          prism_ent.getN(base)(gg, dd) = extrude * bubble * l[dd];
+          for (auto d : {0, 1, 2})
+            prism_ent.getDiffN(base)(gg, 3 * d + d) =
+                diff_extrude[d] * bubble * l[dd] +
+                extrude * diff_bubble[d] * l[dd] +
+                extrude * bubble * diff_l[(nb_dofs + 1) * d + dd];
         }
       }
     }
@@ -375,43 +402,40 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     siit = side_table.get<1>().lower_bound(boost::make_tuple(MBQUAD, 0));
     SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit;
     hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBQUAD, 3));
+    if (std::distance(siit, hi_siit) != 3)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Expected three quads on prisms");
     EntityHandle ent = cTx->fePtr->getEnt();
     int num_nodes;
     const EntityHandle *conn;
     CHKERR cTx->mOab.get_connectivity(ent, conn, num_nodes, true);
-    for (; siit != hi_siit; siit++) {
+    for (; siit != hi_siit; ++siit) {
+      int side = siit->get()->side_number;
+      if(side < 0 && side > 2)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Side in range 0,1,2 expected");
       int num_nodes_quad;
       const EntityHandle *conn_quad;
       EntityHandle quad = siit->get()->ent;
       CHKERR cTx->mOab.get_connectivity(quad, conn_quad, num_nodes_quad, true);
       for (int nn = 0; nn < num_nodes_quad; nn++) {
-        quads_nodes[4 * siit->get()->side_number + nn] =
+        quads_nodes[4 * side + nn] =
             std::distance(conn, std::find(conn, conn + 6, conn_quad[nn]));
       }
-      int order =
-          data.dataOnEntities[MBQUAD][siit->get()->side_number].getDataOrder();
-      quad_order[(int)siit->get()->side_number] = order;
-      data.dataOnEntities[MBQUAD][siit->get()->side_number].getN(base).resize(
+      int order = data.dataOnEntities[MBQUAD][side].getDataOrder();
+      quad_order[side] = order;
+      data.dataOnEntities[MBQUAD][side].getN(base).resize(
           nb_gauss_pts, NBFACEQUAD_H1(order), false);
-      data.dataOnEntities[MBQUAD][siit->get()->side_number]
-          .getDiffN(base)
-          .resize(nb_gauss_pts, 3 * NBFACEQUAD_H1(order), false);
-      if (data.dataOnEntities[MBQUAD][siit->get()->side_number]
-              .getN(base)
-              .size2() > 0) {
-        quad_n[(int)siit->get()->side_number] =
-            &*data.dataOnEntities[MBQUAD][siit->get()->side_number]
-                  .getN(base)
-                  .data()
-                  .begin();
-        diff_quad_n[(int)siit->get()->side_number] =
-            &*data.dataOnEntities[MBQUAD][siit->get()->side_number]
-                  .getDiffN(base)
-                  .data()
-                  .begin();
+      data.dataOnEntities[MBQUAD][side].getDiffN(base).resize(
+          nb_gauss_pts, 3 * NBFACEQUAD_H1(order), false);
+      if (data.dataOnEntities[MBQUAD][side].getN(base).size2() > 0) {
+        quad_n[side] =
+            &*data.dataOnEntities[MBQUAD][side].getN(base).data().begin();
+        diff_quad_n[side] =
+            &*data.dataOnEntities[MBQUAD][side].getDiffN(base).data().begin();
       } else {
-        quad_n[(int)siit->get()->side_number] = NULL;
-        diff_quad_n[(int)siit->get()->side_number] = NULL;
+        quad_n[side] = NULL;
+        diff_quad_n[side] = NULL;
       }
     }
     if (quad_order[0] > 0 || quad_order[1] > 0 || quad_order[2] > 0) {

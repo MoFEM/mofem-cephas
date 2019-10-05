@@ -594,9 +594,9 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
 
   int P[3];
   int ff = 0;
-  for (; ff < 3; ff++) {
+  for (; ff < 3; ff++) 
     P[ff] = NBFACEQUAD_H1(p[ff]);
-  }
+  
   double ksi_faces[6];
   double diff_ksiL0F0[3], diff_ksiL3F0[3];
   double diff_ksiL0F1[3], diff_ksiL3F1[3];
@@ -709,8 +709,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
     int node_diff_shift = ii * 18;
     double ksiL0 = N[node_shift + 1] - N[node_shift + 0];
     double ksiL1 = N[node_shift + 2] - N[node_shift + 0];
-    double ksiL2 =
-        N[node_shift + 3] - N[node_shift + 0]; // 2*gauss_pts[2*GDIM+ii]-1.;
+    double ksiL2 = N[node_shift + 3] - N[node_shift + 0];
     int dd = 0;
     for (; dd < 3; dd++) {
       diff_ksiL0[dd] = (diffN[node_diff_shift + 1 * 3 + dd] -
@@ -912,10 +911,10 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
     double shape2 = N[node_shift + n2];
     double shape3 = N[node_shift + n3];
 
-    double ksi01 = (shape1 - shape0) * sense[n0];
-    double ksi12 = (shape2 - shape1) * sense[n1];
-    double ksi23 = (shape3 - shape2) * sense[n2];
-    double ksi30 = (shape0 - shape3) * sense[n3];
+    double ksi01 = (shape1 + shape2 - shape0 - shape3) * sense[n0];
+    double ksi12 = (shape2 + shape3 - shape1 - shape0) * sense[n1];
+    double ksi23 = (shape3 + shape0 - shape2 - shape1) * sense[n2];
+    double ksi30 = (shape0 + shape1 - shape3 - shape2) * sense[n3];
 
     double extrude_zeta01 = shape0 + shape1;
     double extrude_ksi12 = shape1 + shape2;
@@ -939,10 +938,14 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
       double diff_shape1 = diffN[node_diff_shift + 2 * n1 + d];
       double diff_shape2 = diffN[node_diff_shift + 2 * n2 + d];
       double diff_shape3 = diffN[node_diff_shift + 2 * n3 + d];
-      diff_ksi01[d] = (diff_shape1 - diff_shape0) * sense[n0];
-      diff_ksi12[d] = (diff_shape2 - diff_shape1) * sense[n1];
-      diff_ksi23[d] = (diff_shape3 - diff_shape2) * sense[n2];
-      diff_ksi30[d] = (diff_shape0 - diff_shape3) * sense[n3];
+      diff_ksi01[d] =
+          (diff_shape1 + diff_shape2 - diff_shape0 - diff_shape3) * sense[n0];
+      diff_ksi12[d] =
+          (diff_shape2 + diff_shape3 - diff_shape1 - diff_shape0) * sense[n1];
+      diff_ksi23[d] =
+          (diff_shape3 + diff_shape0 - diff_shape2 - diff_shape1) * sense[n2];
+      diff_ksi30[d] =
+          (diff_shape0 + diff_shape1 - diff_shape3 - diff_shape2) * sense[n3];
       diff_extrude_zeta01[d] = diff_shape0 + diff_shape1;
       diff_extrude_ksi12[d] = diff_shape1 + diff_shape2;
       diff_extrude_zeta23[d] = diff_shape2 + diff_shape3;

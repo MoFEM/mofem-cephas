@@ -30,7 +30,6 @@ static char help[] = "...\n\n";
 static int debug = 1;
 
 static constexpr int approx_order = 6;
-
 struct ApproxFunction {
   static inline double fun(double x, double y) {
     double r = 1;
@@ -87,24 +86,24 @@ int main(int argc, char *argv[]) {
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
-    int rank;
-    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-    // Read parameters from line command
-    PetscBool flg = PETSC_TRUE;
-    char mesh_file_name[255];
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
-                                 255, &flg);
-    if (flg != PETSC_TRUE)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
-              "error -my_file (MESH FILE NEEDED)");
+    std::array<double, 12> one_quad_coords = {0, 0, 0,
 
-    const char *option;
-    option = "";
-    CHKERR moab.load_file(mesh_file_name, 0, option);
-    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-    if (pcomm == NULL)
-      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+                                              1, 0, 0,
+
+                                              1, 1, 0,
+
+                                              0, 1, 0};
+    std::array<EntityHandle, 4> one_quad_nodes;
+    for (int n = 0; n != 4; ++n)
+      CHKERR moab.create_vertex(&one_quad_coords[3 * n], one_quad_nodes[n]);
+    EntityHandle one_quad;
+    CHKERR moab.create_element(MBQUAD, one_quad_nodes.data(), 4, one_quad);
+    Range one_quad_range;
+    one_quad_range.insert(one_quad);
+    Range one_quad_adj_ents;
+    CHKERR moab.get_adjacencies(one_quad_range, 1, true, one_quad_adj_ents,
+                                moab::Interface::UNION);
 
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;

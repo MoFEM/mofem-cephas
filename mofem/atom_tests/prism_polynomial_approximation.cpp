@@ -30,11 +30,6 @@ static char help[] = "...\n\n";
 static int debug = 1;
 
 static constexpr int approx_order = 5;
-static constexpr int number_of_prisms_layers = 1;
-static constexpr double delta =
-    1. / static_cast<double>(number_of_prisms_layers);
-static constexpr std::array<double, 3> d3 = {0, 0, 0};
-static constexpr std::array<double, 3> d4 = {0, 0, delta};
 
 struct ApproxFunction {
   static inline double fun(double x, double y, double z) {
@@ -43,7 +38,7 @@ struct ApproxFunction {
       for (int i = 0; i <= o; ++i) {
         for (int j = 0; j <= (o - i); ++j) {
           int k = o - i - j;
-          r += pow(x, i) * pow(y, j) * pow(z, k);
+          r += pow(x, 1) * pow(y, 1) * pow(z, k);
         }
       }
     }
@@ -102,43 +97,36 @@ int main(int argc, char *argv[]) {
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
-    int rank;
-    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-    // Read parameters from line command
-    PetscBool flg = PETSC_TRUE;
-    char mesh_file_name[255];
-    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
-                                 255, &flg);
-    if (flg != PETSC_TRUE)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
-              "error -my_file (MESH FILE NEEDED)");
-
-    const char *option;
-    option = "";
-    CHKERR moab.load_file(mesh_file_name, 0, option);
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
-    Range tris;
-    CHKERR moab.get_entities_by_type(0, MBTRI, tris, false);
+    std::array<double, 18> one_prism_coords = {0, 0, 0, 1, 0, 0, 0, 1, 0,
+                                               0, 0, 1, 1, 0, 1, 0, 1, 1};
+    std::array<EntityHandle, 6> one_prism_nodes;
+    for (int n = 0; n != 6; ++n)
+      CHKERR moab.create_vertex(&one_prism_coords[3 * n], one_prism_nodes[n]);
+    EntityHandle one_prism;
+    CHKERR moab.create_element(MBPRISM, one_prism_nodes.data(), 6,
+                                          one_prism);
+    Range one_prism_range;
+    one_prism_range.insert(one_prism);
+    Range one_prism_adj_ents;
+    for (int d = 1; d != 3; ++d)
+      CHKERR moab.get_adjacencies(one_prism_range, d, true, one_prism_adj_ents,
+                                  moab::Interface::UNION);
 
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
     PrismsFromSurfaceInterface *prisms_from_surface_interface;
     CHKERR m_field.getInterface(prisms_from_surface_interface);
-
-    Range prisms;
-    CHKERR prisms_from_surface_interface->createPrisms(tris, prisms);
-    prisms_from_surface_interface->setThickness(prisms, d3.data(), d4.data());
-
     BitRefLevel bit_level0;
     bit_level0.set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setEntitiesBitRefLevel(
-        prisms, bit_level0);
-    CHKERR prisms_from_surface_interface->seedPrismsEntities(prisms,
+        one_prism_range, bit_level0);
+    CHKERR prisms_from_surface_interface->seedPrismsEntities(one_prism_range,
                                                              bit_level0);
 
     // Fields
@@ -266,12 +254,14 @@ MoFEMErrorCode PrismOpCheck::doWork(int side, EntityType type,
   if (type == MBVERTEX) {
     const int nb_gauss_pts = data.getN().size2();
     auto t_coords = getFTensor1CoordsAtGaussPts();
+    double sum = 0;
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
       double f = ApproxFunction::fun(t_coords(0), t_coords(1), t_coords(2));
       constexpr double eps = 1e-6;
       if (std::abs(f - (*fieldVals)[gg]) > eps)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                 "Wrong value %6.4e != %6.4e", f, (*fieldVals)[gg]);
+        SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Wrong value %6.4e != %6.4e (%6.4e)", f, (*fieldVals)[gg],
+                 f - (*fieldVals)[gg]);
       ++t_coords;
     }
   }
@@ -350,5 +340,5 @@ MoFEMErrorCode PrismOpLhs::doWork(int row_side, int col_side,
   MoFEMFunctionReturn(0);
 }
 
-int PrismFE::getRuleTrianglesOnly(int order) { return 7; };
-int PrismFE::getRuleThroughThickness(int order) { return 7; };
+int PrismFE::getRuleTrianglesOnly(int order) { return 2 * order; };
+int PrismFE::getRuleThroughThickness(int order) { return 2 * order; };

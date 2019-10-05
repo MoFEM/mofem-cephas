@@ -822,10 +822,10 @@ add_test(
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions
 )
-add_test(forces_and_sources_hdiv_approximation_functions_atom_compare ${CMAKE_COMMAND} -E compare_files
+add_test(forces_and_sources_hdiv_approximation_functions_atom_compare 
+  ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_approximation_functions.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_approximation_functions.txt
-)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_approximation_functions.txt)
 
 # add test for hdiv space - check approximation continuity
 my_add_executable(hdiv_continuity_check hdiv_continuity_check.cpp)
@@ -1466,10 +1466,8 @@ target_link_libraries(prism_polynomial_apprximation
 )
 add_test(prism_polynomial_apprximation
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/prism_polynomial_apprximation
-  -my_file reference_triangle_mesh.h5m -pc_type lu)
+  ${CMAKE_CURRENT_BINARY_DIR}/prism_polynomial_apprximation -pc_type lu)
 
-cm_export_file("../meshes/circe_and_quead_mesh.h5m" export_atom_tests)
 my_add_executable(
   quad_polynomial_approximation quad_polynomial_approximation.cpp)
 target_link_libraries(quad_polynomial_approximation
@@ -1484,5 +1482,4 @@ target_link_libraries(quad_polynomial_approximation
 )
 add_test(quad_polynomial_approximation
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation
-  -my_file circe_and_quead_mesh.h5m -pc_type lu)
+  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation -pc_type lu)
