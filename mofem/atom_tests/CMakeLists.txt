@@ -1453,8 +1453,8 @@ add_test(prisms_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   -my_file reference_triangle_mesh.h5m)
 
 my_add_executable(
-  prism_polynomial_apprximation prism_polynomial_approximation.cpp)
-target_link_libraries(prism_polynomial_apprximation
+  prism_polynomial_approximation prism_polynomial_approximation.cpp)
+target_link_libraries(prism_polynomial_approximation
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -1464,7 +1464,7 @@ target_link_libraries(prism_polynomial_apprximation
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(prism_polynomial_apprximation
+add_test(prism_polynomial_approximation
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/prism_polynomial_apprximation -pc_type lu)
 
