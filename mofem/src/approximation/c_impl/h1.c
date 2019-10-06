@@ -707,23 +707,30 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
   for (; ii < GDIM; ii++) {
     int node_shift = ii * 6;
     int node_diff_shift = ii * 18;
-    double ksiL0 = N[node_shift + 1] - N[node_shift + 0];
-    double ksiL1 = N[node_shift + 2] - N[node_shift + 0];
-    double ksiL2 = (N[node_shift + 3] + N[node_shift + 4] + N[node_shift + 5]) -
-                   (N[node_shift + 0] + N[node_shift + 1] + N[node_shift + 2]);
+
+    double n0 = N[node_shift + 0];
+    double n1 = N[node_shift + 1];
+    double n2 = N[node_shift + 2];
+    double n3 = N[node_shift + 3];
+    double n4 = N[node_shift + 4];
+    double n5 = N[node_shift + 5];
+
+    double ksiL0 = n1 + n4 - n0 - n3;
+    double ksiL1 = n2 + n5 - n0 - n3;
+    double ksiL2 = (n3 + n4 + n5) - (n0 + n1 + n2);
+
     int dd = 0;
     for (; dd < 3; dd++) {
-
-      diff_ksiL0[dd] = diffN[node_diff_shift + 1 * 3 + dd] -
-                        diffN[node_diff_shift + 0 * 3 + dd];
-      diff_ksiL1[dd] = diffN[node_diff_shift + 2 * 3 + dd] -
-                        diffN[node_diff_shift + 0 * 3 + dd];
-      diff_ksiL2[dd] = (diffN[node_diff_shift + 3 * 3 + dd] +
-                        diffN[node_diff_shift + 4 * 3 + dd] +
-                        diffN[node_diff_shift + 5 * 3 + dd]) -
-                       (diffN[node_diff_shift + 0 * 3 + dd] +
-                        diffN[node_diff_shift + 1 * 3 + dd] +
-                        diffN[node_diff_shift + 2 * 3 + dd]);
+      double diff_n0 = diffN[node_diff_shift + 3 * 0 + dd];
+      double diff_n1 = diffN[node_diff_shift + 3 * 1 + dd];
+      double diff_n2 = diffN[node_diff_shift + 3 * 2 + dd];
+      double diff_n3 = diffN[node_diff_shift + 3 * 3 + dd];
+      double diff_n4 = diffN[node_diff_shift + 3 * 4 + dd];
+      double diff_n5 = diffN[node_diff_shift + 3 * 5 + dd];
+      diff_ksiL0[dd] = (diff_n1 + diff_n4) - (diff_n0 + diff_n3);
+      diff_ksiL1[dd] = (diff_n2 + diff_n5) - (diff_n0 + diff_n3);
+      diff_ksiL2[dd] =
+          (diff_n3 + diff_n4 + diff_n5) - (diff_n0 + diff_n1 + diff_n2);
     }
 
     double L0[p + 1], L1[p + 1], L2[p + 1];
@@ -735,12 +742,8 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
     ierr = base_polynomials(p, ksiL2, diff_ksiL2, L2, diffL2, 3);
     CHKERRQ(ierr);
 
-    double v_tri = (N[node_shift + 0] + N[node_shift + 3]) *
-                   (N[node_shift + 1] + N[node_shift + 4]) *
-                   (N[node_shift + 2] + N[node_shift + 5]);
-    double v_edge =
-        (N[node_shift + 0] + N[node_shift + 1] + N[node_shift + 2]) *
-        (N[node_shift + 3] + N[node_shift + 4] + N[node_shift + 5]);
+    double v_tri = (n0 + n3) * (n1 + n4) * (n2 + n5);
+    double v_edge = (n0 + n1 + n2) * (n3 + n4 + n5);
     double v = v_tri * v_edge;
 
     double diff_v_tri[3];
