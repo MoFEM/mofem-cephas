@@ -709,15 +709,23 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
     int node_diff_shift = ii * 18;
     double ksiL0 = N[node_shift + 1] - N[node_shift + 0];
     double ksiL1 = N[node_shift + 2] - N[node_shift + 0];
-    double ksiL2 = N[node_shift + 3] - N[node_shift + 0];
+    double ksiL2 = (N[node_shift + 3] + N[node_shift + 4] + N[node_shift + 5]) -
+                   (N[node_shift + 0] + N[node_shift + 1] + N[node_shift + 2]);
     int dd = 0;
     for (; dd < 3; dd++) {
-      diff_ksiL0[dd] = (diffN[node_diff_shift + 1 * 3 + dd] -
-                        diffN[node_diff_shift + 0 * 3 + dd]);
-      diff_ksiL1[dd] = (diffN[node_diff_shift + 2 * 3 + dd] -
-                        diffN[node_diff_shift + 0 * 3 + dd]);
-      diff_ksiL2[dd] = 2;
+
+      diff_ksiL0[dd] = diffN[node_diff_shift + 1 * 3 + dd] -
+                        diffN[node_diff_shift + 0 * 3 + dd];
+      diff_ksiL1[dd] = diffN[node_diff_shift + 2 * 3 + dd] -
+                        diffN[node_diff_shift + 0 * 3 + dd];
+      diff_ksiL2[dd] = (diffN[node_diff_shift + 3 * 3 + dd] +
+                        diffN[node_diff_shift + 4 * 3 + dd] +
+                        diffN[node_diff_shift + 5 * 3 + dd]) -
+                       (diffN[node_diff_shift + 0 * 3 + dd] +
+                        diffN[node_diff_shift + 1 * 3 + dd] +
+                        diffN[node_diff_shift + 2 * 3 + dd]);
     }
+
     double L0[p + 1], L1[p + 1], L2[p + 1];
     double diffL0[3 * (p + 1)], diffL1[3 * (p + 1)], diffL2[3 * (p + 1)];
     ierr = base_polynomials(p, ksiL0, diff_ksiL0, L0, diffL0, 3);
@@ -726,17 +734,33 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
     CHKERRQ(ierr);
     ierr = base_polynomials(p, ksiL2, diff_ksiL2, L2, diffL2, 3);
     CHKERRQ(ierr);
-    double t0 = (N[node_shift + 2] + N[node_shift + 5]);
-    double v = N[node_shift + 0] * N[node_shift + 4] * t0;
-    double v2[3] = {0, 0, 0};
+
+    double v_tri = (N[node_shift + 0] + N[node_shift + 3]) *
+                   (N[node_shift + 1] + N[node_shift + 4]) *
+                   (N[node_shift + 2] + N[node_shift + 5]);
+    double v_edge =
+        (N[node_shift + 0] + N[node_shift + 1] + N[node_shift + 2]) *
+        (N[node_shift + 3] + N[node_shift + 4] + N[node_shift + 5]);
+    double v = v_tri * v_edge;
+
+    double diff_v_tri[3];
+    double diff_v_edge[3];
+    double diff_v[3];
     dd = 0;
     for (; dd < 3; dd++) {
-      v2[dd] = diffN[node_diff_shift + 3 * 0 + dd] * N[node_shift + 4] * t0 +
-               N[node_shift + 0] * diffN[node_diff_shift + 3 * 4 + dd] * t0 +
-               N[node_shift + 0] * N[node_shift + 4] *
-                   (diffN[node_diff_shift + 3 * 2 + dd] +
-                    diffN[node_diff_shift + 3 * 5 + dd]);
+      double diff_n0 = diffN[node_diff_shift + 3 * 0 + dd];
+      double diff_n1 = diffN[node_diff_shift + 3 * 1 + dd];
+      double diff_n2 = diffN[node_diff_shift + 3 * 2 + dd];
+      double diff_n3 = diffN[node_diff_shift + 3 * 3 + dd];
+      double diff_n4 = diffN[node_diff_shift + 3 * 4 + dd];
+      double diff_n5 = diffN[node_diff_shift + 3 * 5 + dd];
+      diff_v_tri[dd] =
+          (diff_n0 + diff_n3) * (diff_n1 + diff_n4) * (diff_n2 + diff_n5);
+      diff_v_edge[dd] =
+          (diff_n0 + diff_n1 + diff_n2) * (diff_n3 + diff_n4 + diff_n5);
+      diff_v[dd] = diff_v_tri[dd] * v_edge + v_tri * diff_v_edge[dd];
     }
+
     int shift = ii * P;
     int jj = 0;
     int oo = 0;
@@ -759,7 +783,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
                      L0[pp0] * L1[pp1] * diffL2[dd * (p + 1) + pp2]) *
                     v;
                 diff_volumeN[3 * shift + 3 * jj + dd] +=
-                    L0[pp0] * L1[pp1] * L2[pp2] * v2[dd];
+                    L0[pp0] * L1[pp1] * L2[pp2] * diff_v[dd];
               }
             }
             jj++;
