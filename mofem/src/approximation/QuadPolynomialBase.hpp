@@ -1,6 +1,9 @@
 /** \file QuadPolynomialBase.hpp
 \brief Implementation of H1 base on a quad face
 
+\todo Quad element can be integrated exploiting tonsorial product. Current
+implementation do not take that opportunity. That can be viewed as a bug. 
+
 */
 
 /* This file is part of MoFEM.

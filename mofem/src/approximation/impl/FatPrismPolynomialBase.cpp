@@ -1,5 +1,9 @@
 /** \file FatPrismPolynomialBase.cpp
 \brief Implementation of Ainsworth-Cole H1 base on edge
+
+\todo Prism element can be integrated exploiting tonsorial product. Current
+implementation do not take that opportunity. That can be viewed as a bug. 
+
 */
 
 /* This file is part of MoFEM.
