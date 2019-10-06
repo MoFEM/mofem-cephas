@@ -245,7 +245,6 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     if (nb_dofs == 0)
       MoFEMFunctionReturnHot(0);
 
-    double l[order + 1], diff_l[3 * (order + 1)];
 
     int gg = 0;
     for (int ggf = 0; ggf < nb_gauss_pts_on_faces; ggf++) {
@@ -262,21 +261,27 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
         double n0 = vert_n(gg, 0) + vert_n(gg, 1) + vert_n(gg, 2);
         double n1 = vert_n(gg, 3) + vert_n(gg, 4) + vert_n(gg, 5);
 
-        double ksi = n1 - n0;
-        double diff_ksi[3];
-        for (auto d : {0, 1, 2})
-          diff_ksi[d] =
-              vert_diff_n(gg, 3 * 3 + d) + vert_diff_n(gg, 3 * 4 + d) +
-              vert_diff_n(gg, 3 * 5 + d) - vert_diff_n(gg, 3 * 0 + d) -
-              vert_diff_n(gg, 3 * 1 + d) - vert_diff_n(gg, 3 * 2 + d);
+        // Calculate base through thickness directly from shape fuctions. I
+        // leave that bit of the code, could be useful for integration on the
+        // skeleton.
+        //
+        // double l[order + 1], diff_l[3 * (order + 1)];
+        // double ksi = n1 - n0;
+        // double diff_ksi[3];
+        // for (auto d : {0, 1, 2})
+        //   diff_ksi[d] =
+        //       vert_diff_n(gg, 3 * 3 + d) + vert_diff_n(gg, 3 * 4 + d) +
+        //       vert_diff_n(gg, 3 * 5 + d) - vert_diff_n(gg, 3 * 0 + d) -
+        //       vert_diff_n(gg, 3 * 1 + d) - vert_diff_n(gg, 3 * 2 + d);
+        // if(sense == -1) {
+        //   ksi *= -1;
+        //   for (auto d : {0, 1, 2})
+        //     diff_ksi[d] *= -1;
+        // }
+        // CHKERR base_polynomials(order - 2, ksi, diff_ksi, l, diff_l, 3);
 
-        if(sense == -1) {
-          ksi *= -1;
-          for (auto d : {0, 1, 2})
-            diff_ksi[d] *= -1;
-        }
-
-        CHKERR base_polynomials(order - 2, ksi, diff_ksi, l, diff_l, 3);
+        double *l = &(thickness_ent.getN(base)(ggt, 0));
+        double *diff_l_1d = &(thickness_ent.getDiffN(base)(ggt, 0));
 
         double bubble = n0 * n1;
         double diff_bubble[3];
@@ -292,10 +297,11 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
 
           prism_ent.getN(base)(gg, dd) = extrude * bubble * l[dd];
           for (auto d : {0, 1, 2})
-            prism_ent.getDiffN(base)(gg, 3 * d + d) =
+            prism_ent.getDiffN(base)(gg, 3 * dd + d) =
                 diff_extrude[d] * bubble * l[dd] +
-                extrude * diff_bubble[d] * l[dd] +
-                extrude * bubble * diff_l[(nb_dofs + 1) * d + dd];
+                extrude * diff_bubble[d] * l[dd];
+          prism_ent.getDiffN(base)(gg, 3 * dd + 2) =
+              extrude * bubble * diff_l_1d[dd];
         }
       }
     }
