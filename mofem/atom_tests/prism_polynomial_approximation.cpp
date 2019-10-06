@@ -28,7 +28,7 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 static int debug = 1;
 
-static constexpr int approx_order = 5;
+static constexpr int approx_order = 7;
 
 struct ApproxFunction {
   static inline double fun(double x, double y, double z) {
@@ -37,7 +37,9 @@ struct ApproxFunction {
       for (int i = 0; i <= o; ++i) {
         for (int j = 0; j <= (o - i); ++j) {
           int k = o - i - j;
-          r += pow(x, i) * pow(y, j) * pow(z, k);
+          if (k >= 1) {
+            r += pow(x, i) * pow(y, j) * pow(z, k - 1);
+          }
         }
       }
     }
@@ -132,10 +134,10 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_ents_to_field_by_type(0, MBPRISM, "FIELD1");
 
     CHKERR m_field.set_field_order(0, MBVERTEX, "FIELD1", 1);
-    CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", approx_order);
-    CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", approx_order);
-    CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", approx_order);
-    CHKERR m_field.set_field_order(0, MBPRISM, "FIELD1", approx_order + 4);
+    CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", approx_order + 1);
+    CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", approx_order + 1);
+    CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", approx_order + 1);
+    CHKERR m_field.set_field_order(0, MBPRISM, "FIELD1", approx_order + 1);
     CHKERR m_field.build_fields();
 
     // FE

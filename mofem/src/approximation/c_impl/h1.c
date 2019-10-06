@@ -762,37 +762,49 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
     }
 
     int shift = ii * P;
+
     int jj = 0;
-    int oo = 0;
-    for (; oo <= (p - 6); oo++) {
-      int pp0 = 0;
-      for (; pp0 <= oo; pp0++) {
-        int pp1 = 0;
-        for (; (pp0 + pp1) <= oo; pp1++) {
-          int pp2 = oo - pp0 - pp1;
-          if (pp2 >= 0) {
-            if (volumeN != NULL) {
-              volumeN[shift + jj] = L0[pp0] * L1[pp1] * L2[pp2] * v;
-            }
+    int oo = 5;
+    for (; oo <= p; ++oo) {
+
+      int oo_ksi_eta = 3;
+      for (; oo_ksi_eta <= oo; ++oo_ksi_eta) {
+
+        int oo_zeta = oo - oo_ksi_eta;
+        if (oo_zeta >= 2) {
+
+          int k = oo_zeta - 2;
+
+          int i = 0;
+          for (; i <= (oo_ksi_eta - 3); ++i) {
+            int j = (oo_ksi_eta - 3) - i;
+
+            if (volumeN != NULL)
+              volumeN[shift + jj] = L0[i] * L1[j] * L2[k] * v;
+
             if (diff_volumeN != NULL) {
               dd = 0;
               for (; dd < 3; dd++) {
                 diff_volumeN[3 * shift + 3 * jj + dd] =
-                    (diffL0[dd * (p + 1) + pp0] * L1[pp1] * L2[pp2] +
-                     L0[pp0] * diffL1[dd * (p + 1) + pp1] * L2[pp2] +
-                     L0[pp0] * L1[pp1] * diffL2[dd * (p + 1) + pp2]) *
+                    (diffL0[dd * (p + 1) + i] * L1[j] * L2[k] +
+                     L0[i] * diffL1[dd * (p + 1) + j] * L2[k] +
+                     L0[i] * L1[j] * diffL2[dd * (p + 1) + k]) *
                     v;
                 diff_volumeN[3 * shift + 3 * jj + dd] +=
-                    L0[pp0] * L1[pp1] * L2[pp2] * diff_v[dd];
+                    L0[i] * L1[j] * L2[k] * diff_v[dd];
               }
             }
-            jj++;
+
+            ++jj;
           }
+
         }
       }
     }
+
     if (jj != P)
-      SETERRQ1(PETSC_COMM_SELF, 1, "wrong order %d", jj);
+      SETERRQ3(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "wrong order %d != %d (%d order)", jj, P, p);
   }
   MoFEMFunctionReturnHot(0);
 }

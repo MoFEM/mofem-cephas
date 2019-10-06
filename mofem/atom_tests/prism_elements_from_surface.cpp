@@ -1,5 +1,5 @@
-/** \file prisms_elements_from_surface.cpp
-  \example prisms_elements_from_surface.cpp
+/** \file prism_elements_from_surface.cpp
+  \example prism_elements_from_surface.cpp
   \brief Adding prims on the surface and checking conformity between quads,
   triangles and prism
 

@@ -1437,8 +1437,8 @@ add_test(add_blockset
 )
 
 cm_export_file("../meshes/reference_triangle_mesh.h5m" export_atom_tests)
-my_add_executable(prisms_elements_from_surface prisms_elements_from_surface.cpp)
-target_link_libraries(prisms_elements_from_surface
+my_add_executable(prism_elements_from_surface prism_elements_from_surface.cpp)
+target_link_libraries(prism_elements_from_surface
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -1448,8 +1448,8 @@ target_link_libraries(prisms_elements_from_surface
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(prisms_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface 
+add_test(prism_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/prism_elements_from_surface 
   -my_file reference_triangle_mesh.h5m)
 
 my_add_executable(
