@@ -1,7 +1,6 @@
 /** \file prism_polynomial_approximation.cpp
   \example prism_polynomial_approximation.cpp
   \brief Checking approximation functions on prism
-
 */
 
 /* This file is part of MoFEM.
@@ -38,7 +37,7 @@ struct ApproxFunction {
       for (int i = 0; i <= o; ++i) {
         for (int j = 0; j <= (o - i); ++j) {
           int k = o - i - j;
-          r += pow(x, 1) * pow(y, 1) * pow(z, k);
+          r += pow(x, i) * pow(y, j) * pow(z, k);
         }
       }
     }
@@ -108,8 +107,7 @@ int main(int argc, char *argv[]) {
     for (int n = 0; n != 6; ++n)
       CHKERR moab.create_vertex(&one_prism_coords[3 * n], one_prism_nodes[n]);
     EntityHandle one_prism;
-    CHKERR moab.create_element(MBPRISM, one_prism_nodes.data(), 6,
-                                          one_prism);
+    CHKERR moab.create_element(MBPRISM, one_prism_nodes.data(), 6, one_prism);
     Range one_prism_range;
     one_prism_range.insert(one_prism);
     Range one_prism_adj_ents;
@@ -137,7 +135,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", approx_order);
     CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", approx_order);
     CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", approx_order);
-    CHKERR m_field.set_field_order(0, MBPRISM, "FIELD1", approx_order);
+    CHKERR m_field.set_field_order(0, MBPRISM, "FIELD1", approx_order + 4);
     CHKERR m_field.build_fields();
 
     // FE
@@ -223,9 +221,9 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<VectorDouble> field_vals_ptr(new VectorDouble());
       MatrixDouble inv_jac;
       fe.getOpPtrVector().push_back(
-          new MoFEM::OpCalculateInvJacForFatPrism(inv_jac));
+          new OpCalculateInvJacForFatPrism(inv_jac));
       fe.getOpPtrVector().push_back(
-          new MoFEM::OpSetInvJacH1ForFatPrism(inv_jac));
+          new OpSetInvJacH1ForFatPrism(inv_jac));
       fe.getOpPtrVector().push_back(
           new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr));
       fe.getOpPtrVector().push_back(new PrismOpCheck(field_vals_ptr));
@@ -340,5 +338,5 @@ MoFEMErrorCode PrismOpLhs::doWork(int row_side, int col_side,
   MoFEMFunctionReturn(0);
 }
 
-int PrismFE::getRuleTrianglesOnly(int order) { return 2 * order; };
-int PrismFE::getRuleThroughThickness(int order) { return 2 * order; };
+int PrismFE::getRuleTrianglesOnly(int order) { return 2 * (order + 1); };
+int PrismFE::getRuleThroughThickness(int order) { return 2 * (order + 1); };

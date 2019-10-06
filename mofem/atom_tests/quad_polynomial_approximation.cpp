@@ -29,7 +29,7 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 static int debug = 1;
 
-static constexpr int approx_order = 6;
+static constexpr int approx_order = 7;
 struct ApproxFunction {
   static inline double fun(double x, double y) {
     double r = 1;

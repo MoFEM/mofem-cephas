@@ -1466,7 +1466,7 @@ target_link_libraries(prism_polynomial_approximation
 )
 add_test(prism_polynomial_approximation
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/prism_polynomial_apprximation -pc_type lu)
+  ${CMAKE_CURRENT_BINARY_DIR}/prism_polynomial_approximation -pc_type lu)
 
 my_add_executable(
   quad_polynomial_approximation quad_polynomial_approximation.cpp)
