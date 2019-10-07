@@ -21,10 +21,6 @@
 
 #include <MoFEM.hpp>
 
-namespace bio = boost::iostreams;
-using bio::stream;
-using bio::tee_device;
-
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
