@@ -1671,12 +1671,19 @@ struct OpSetContrariantPiolaTransformOnEdge
 struct OpCalculateInvJacForFatPrism
     : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
 
-  MatrixDouble &invJac;
+  OpCalculateInvJacForFatPrism(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+      : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
+        invJacPtr(inv_jac_ptr), invJac(*invJacPtr) {}
+
   OpCalculateInvJacForFatPrism(MatrixDouble &inv_jac)
       : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
         invJac(inv_jac) {}
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
+
+  private:
+    const boost::shared_ptr<MatrixDouble> invJacPtr;
+    MatrixDouble &invJac;
 };
 
 /** \brief Transform local reference derivatives of shape functions to global
@@ -1691,14 +1698,22 @@ FIXME Generalize to case that top and bottom face has different shape
 struct OpSetInvJacH1ForFatPrism
     : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
 
-  MatrixDouble &invJac;
+  OpSetInvJacH1ForFatPrism(boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+      : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
+        invJacPtr(inv_jac_ptr), invJac(*invJacPtr) {}
+
   OpSetInvJacH1ForFatPrism(MatrixDouble &inv_jac)
       : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
         invJac(inv_jac) {}
 
-  MatrixDouble diffNinvJac;
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
+
+  private:
+    const boost::shared_ptr<MatrixDouble> invJacPtr;
+    MatrixDouble &invJac;
+    MatrixDouble diffNinvJac;
+
 };
 
 // Flat prism
