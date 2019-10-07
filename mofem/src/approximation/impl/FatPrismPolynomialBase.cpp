@@ -268,7 +268,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
         // Calculate base through thickness directly from shape fuctions. I
         // leave that bit of the code, could be useful for integration on the
         // skeleton.
-        //
+        
         // double l[order + 1], diff_l[3 * (order + 1)];
         // double ksi = n1 - n0;
         // double diff_ksi[3];
@@ -304,8 +304,10 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
             prism_ent.getDiffN(base)(gg, 3 * dd + d) =
                 diff_extrude[d] * bubble * l[dd] +
                 extrude * diff_bubble[d] * l[dd];
-          prism_ent.getDiffN(base)(gg, 3 * dd + 2) =
-              extrude * bubble * diff_l_1d[dd];
+                
+          prism_ent.getDiffN(base)(gg, 3 * dd + 2) +=
+              extrude * bubble * 2 * diff_l_1d[dd];
+
         }
       }
     }

@@ -20,53 +20,58 @@
 
 #include <MoFEM.hpp>
 
-namespace bio = boost::iostreams;
-using bio::stream;
-using bio::tee_device;
-
 using namespace MoFEM;
+
+using Ele = FaceElementForcesAndSourcesCore;
+using OpEle = FaceElementForcesAndSourcesCore::UserDataOperator;
+using EntData = DataForcesAndSourcesCore::EntData;
 
 static char help[] = "...\n\n";
 static int debug = 1;
 
-static constexpr int approx_order = 7;
+static constexpr int approx_order = 5;
 struct ApproxFunction {
   static inline double fun(double x, double y) {
     double r = 1;
     for (int o = 1; o <= approx_order; ++o) {
       for (int i = 0; i <= o; ++i) {
         int j = o - i;
-        r += pow(x, i) * pow(y, j);
+        if (j >= 0)
+          r += pow(x, i) * pow(y, j);
       }
     }
     return r;
   }
 
-  static inline double diff_fun(double x, double y) {
-    double r = 0;
+  static inline VectorDouble3 diff_fun(double x, double y) {
+    VectorDouble3 r(2);
+    r.clear();
     for (int o = 1; o <= approx_order; ++o) {
       for (int i = 0; i <= o; ++i) {
         int j = o - i;
-        r += i * pow(x, i - 1) * pow(y, j) + j * pow(x, i) * pow(y, j - 1);
+        if (j >= 0) {
+          r[0] += i > 0 ? i * pow(x, i - 1) * pow(y, j) : 0;
+          r[1] += j > 0 ? j * pow(x, i) * pow(y, j - 1) : 0;
+        }
       }
     }
     return r;
   }
 };
 
-struct QuadOpCheck
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+struct QuadOpCheck : public OpEle {
 
-  QuadOpCheck(boost::shared_ptr<VectorDouble> &field_vals);
+  QuadOpCheck(boost::shared_ptr<VectorDouble> &field_vals,
+              boost::shared_ptr<MatrixDouble> &diff_field_vals);
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
 private:
   boost::shared_ptr<VectorDouble> fieldVals;
+  boost::shared_ptr<MatrixDouble> diffFieldVals;
 };
 
-struct QuadOpRhs
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+struct QuadOpRhs : public OpEle {
 
   QuadOpRhs(SmartPetscObj<Vec> &f);
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -76,8 +81,7 @@ private:
   SmartPetscObj<Vec> F;
 };
 
-struct QuadOpLhs
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+struct QuadOpLhs : public OpEle {
 
   QuadOpLhs(SmartPetscObj<Mat> &a);
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
@@ -129,7 +133,6 @@ int main(int argc, char *argv[]) {
 
     CHKERR m_field.set_field_order(0, MBVERTEX, "FIELD1", 1);
     CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", approx_order);
-    CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", approx_order);
     CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", approx_order);
     CHKERR m_field.build_fields();
 
@@ -176,17 +179,15 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface<VecManager>()->vecCreateGhost("TEST_PROBLEM",
                                                               COL, D);
 
-    auto rule = [&](int, int, int p) { return p; };
+    auto rule = [&](int, int, int p) { return 2 * (p + 1); };
 
     auto assemble_matrices_and_vectors = [&]() {
       MoFEMFunctionBegin;
-      FaceElementForcesAndSourcesCoreBase fe(m_field);
+      Ele fe(m_field);
       fe.getRuleHook = rule;
       MatrixDouble inv_jac;
-      fe.getOpPtrVector().push_back(
-          new MoFEM::OpCalculateInvJacForFatPrism(inv_jac));
-      fe.getOpPtrVector().push_back(
-          new MoFEM::OpSetInvJacH1ForFatPrism(inv_jac));
+      fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
       fe.getOpPtrVector().push_back(new QuadOpRhs(F));
       fe.getOpPtrVector().push_back(new QuadOpLhs(A));
       CHKERR VecZeroEntries(F);
@@ -215,17 +216,19 @@ int main(int argc, char *argv[]) {
 
     auto check_solution = [&] {
       MoFEMFunctionBegin;
-      FaceElementForcesAndSourcesCoreBase fe(m_field);
+      Ele fe(m_field);
       fe.getRuleHook = rule;
       boost::shared_ptr<VectorDouble> field_vals_ptr(new VectorDouble());
+      boost::shared_ptr<MatrixDouble> diff_field_vals_ptr(new MatrixDouble());
       MatrixDouble inv_jac;
-      fe.getOpPtrVector().push_back(
-          new MoFEM::OpCalculateInvJacForFatPrism(inv_jac));
-      fe.getOpPtrVector().push_back(
-          new MoFEM::OpSetInvJacH1ForFatPrism(inv_jac));
+      fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
       fe.getOpPtrVector().push_back(
           new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr));
-      fe.getOpPtrVector().push_back(new QuadOpCheck(field_vals_ptr));
+      fe.getOpPtrVector().push_back(
+          new OpCalculateScalarFieldGradient<2>("FIELD1", diff_field_vals_ptr));
+      fe.getOpPtrVector().push_back(
+          new QuadOpCheck(field_vals_ptr, diff_field_vals_ptr));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "QUAD", fe);
       MoFEMFunctionReturn(0);
     };
@@ -240,16 +243,17 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-QuadOpCheck::QuadOpCheck(boost::shared_ptr<VectorDouble> &field_vals)
-    : FaceElementForcesAndSourcesCoreBase::UserDataOperator(
-          "FIELD1", "FIELD1", ForcesAndSourcesCore::UserDataOperator::OPROW),
-      fieldVals(field_vals) {}
+QuadOpCheck::QuadOpCheck(boost::shared_ptr<VectorDouble> &field_vals,
+                         boost::shared_ptr<MatrixDouble> &diff_field_vals)
+    : OpEle("FIELD1", "FIELD1", ForcesAndSourcesCore::UserDataOperator::OPROW),
+      fieldVals(field_vals), diffFieldVals(diff_field_vals) {}
 
 MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
-                                    DataForcesAndSourcesCore::EntData &data) {
+                                   DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
+
   if (type == MBVERTEX) {
-    const int nb_gauss_pts = data.getN().size2();
+    const int nb_gauss_pts = data.getN().size1();
     auto t_coords = getFTensor1CoordsAtGaussPts();
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
       double f = ApproxFunction::fun(t_coords(0), t_coords(1));
@@ -257,6 +261,14 @@ MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
       if (std::abs(f - (*fieldVals)[gg]) > eps)
         SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value %6.4e != %6.4e", f, (*fieldVals)[gg]);
+      VectorDouble3 diff_f = ApproxFunction::diff_fun(t_coords(0), t_coords(1));
+      for (auto d : {0, 1}) {
+        if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
+          SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong directive value (%d) %6.4e != %6.4e", diff_f[d],
+                   (*diffFieldVals)(d, gg));
+      }
+
       ++t_coords;
     }
   }
@@ -264,12 +276,11 @@ MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
 }
 
 QuadOpRhs::QuadOpRhs(SmartPetscObj<Vec> &f)
-    : FaceElementForcesAndSourcesCoreBase::UserDataOperator(
-          "FIELD1", "FIELD1", ForcesAndSourcesCore::UserDataOperator::OPROW),
+    : OpEle("FIELD1", "FIELD1", ForcesAndSourcesCore::UserDataOperator::OPROW),
       F(f) {}
 
 MoFEMErrorCode QuadOpRhs::doWork(int side, EntityType type,
-                                  DataForcesAndSourcesCore::EntData &data) {
+                                 DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
   const int nb_dofs = data.getN().size2();
   if (nb_dofs) {
@@ -298,17 +309,17 @@ MoFEMErrorCode QuadOpRhs::doWork(int side, EntityType type,
 }
 
 QuadOpLhs::QuadOpLhs(SmartPetscObj<Mat> &a)
-    : FaceElementForcesAndSourcesCoreBase::UserDataOperator(
-          "FIELD1", "FIELD1", ForcesAndSourcesCore::UserDataOperator::OPROWCOL),
+    : OpEle("FIELD1", "FIELD1",
+            ForcesAndSourcesCore::UserDataOperator::OPROWCOL),
       A(a) {
   // FIXME: Can be symmetric, is not for simplicity
   sYmm = false;
 }
 
 MoFEMErrorCode QuadOpLhs::doWork(int row_side, int col_side,
-                                  EntityType row_type, EntityType col_type,
-                                  DataForcesAndSourcesCore::EntData &row_data,
-                                  DataForcesAndSourcesCore::EntData &col_data) {
+                                 EntityType row_type, EntityType col_type,
+                                 DataForcesAndSourcesCore::EntData &row_data,
+                                 DataForcesAndSourcesCore::EntData &col_data) {
   MoFEMFunctionBegin;
   const int row_nb_dofs = row_data.getN().size2();
   const int col_nb_dofs = col_data.getN().size2();

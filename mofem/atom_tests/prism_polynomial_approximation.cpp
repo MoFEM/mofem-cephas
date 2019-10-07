@@ -19,16 +19,12 @@
 
 #include <MoFEM.hpp>
 
-namespace bio = boost::iostreams;
-using bio::stream;
-using bio::tee_device;
-
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
 static int debug = 1;
 
-static constexpr int approx_order = 6;
+static constexpr int approx_order = 5;
 
 struct ApproxFunction {
   static inline double fun(double x, double y, double z) {
@@ -45,17 +41,37 @@ struct ApproxFunction {
     }
     return r;
   }
+
+  static inline VectorDouble3 diff_fun(double x, double y, double z) {
+    VectorDouble3 r(3);
+    r.clear();
+    for (int o = 1; o <= approx_order; ++o) {
+      for (int i = 0; i <= o; ++i) {
+        for (int j = 0; j <= (o - i); ++j) {
+          int k = o - i - j;
+          if (k >= 0) {
+            r[0] += i > 0 ? i * pow(x, i - 1) * pow(y, j) * pow(z, k) : 0;
+            r[1] += j > 0 ? j * pow(x, i) * pow(y, j - 1) * pow(z, k) : 0;
+            r[2] += k > 0 ? k * pow(x, i) * pow(y, j) * pow(z, k - 1) : 0;
+          }
+        }
+      }
+    }
+    return r;
+  }
 };
 
 struct PrismOpCheck
     : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
 
-  PrismOpCheck(boost::shared_ptr<VectorDouble> &field_vals);
+  PrismOpCheck(boost::shared_ptr<VectorDouble> &field_vals,
+               boost::shared_ptr<MatrixDouble> &diff_field_vals);
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
 private:
   boost::shared_ptr<VectorDouble> fieldVals;
+  boost::shared_ptr<MatrixDouble> diffFieldVals;
 };
 
 struct PrismOpRhs
@@ -221,6 +237,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       PrismFE fe(m_field);
       boost::shared_ptr<VectorDouble> field_vals_ptr(new VectorDouble());
+      boost::shared_ptr<MatrixDouble> diff_field_vals_ptr(new MatrixDouble());
       MatrixDouble inv_jac;
       fe.getOpPtrVector().push_back(
           new OpCalculateInvJacForFatPrism(inv_jac));
@@ -228,7 +245,10 @@ int main(int argc, char *argv[]) {
           new OpSetInvJacH1ForFatPrism(inv_jac));
       fe.getOpPtrVector().push_back(
           new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr));
-      fe.getOpPtrVector().push_back(new PrismOpCheck(field_vals_ptr));
+      fe.getOpPtrVector().push_back(
+          new OpCalculateScalarFieldGradient<3>("FIELD1", diff_field_vals_ptr));
+      fe.getOpPtrVector().push_back(
+          new PrismOpCheck(field_vals_ptr, diff_field_vals_ptr));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "PRISM", fe);
       MoFEMFunctionReturn(0);
     };
@@ -243,10 +263,11 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-PrismOpCheck::PrismOpCheck(boost::shared_ptr<VectorDouble> &field_vals)
+PrismOpCheck::PrismOpCheck(boost::shared_ptr<VectorDouble> &field_vals,
+                           boost::shared_ptr<MatrixDouble> &diff_field_vals)
     : FatPrismElementForcesAndSourcesCore::UserDataOperator(
           "FIELD1", "FIELD1", ForcesAndSourcesCore::UserDataOperator::OPROW),
-      fieldVals(field_vals) {}
+      fieldVals(field_vals), diffFieldVals(diff_field_vals) {}
 
 MoFEMErrorCode PrismOpCheck::doWork(int side, EntityType type,
                                     DataForcesAndSourcesCore::EntData &data) {
@@ -257,11 +278,23 @@ MoFEMErrorCode PrismOpCheck::doWork(int side, EntityType type,
     double sum = 0;
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
       double f = ApproxFunction::fun(t_coords(0), t_coords(1), t_coords(2));
+      VectorDouble3 diff_f =
+          ApproxFunction::diff_fun(t_coords(0), t_coords(1), t_coords(2));
       constexpr double eps = 1e-6;
       if (std::abs(f - (*fieldVals)[gg]) > eps)
         SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value %6.4e != %6.4e (%6.4e)", f, (*fieldVals)[gg],
                  f - (*fieldVals)[gg]);
+      cerr << f - (*fieldVals)[gg] << " : ";
+      for (auto d : {0, 1, 2})
+        cerr << diff_f[d] - (*diffFieldVals)(d, gg) << " ";
+      // if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
+      // SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+      //          "Wrong diff value %6.4e != %6.4e (%6.4e)", diff_f[d],
+      //          (*diffFieldVals)(d, gg),
+      //          diff_f[d] - (*diffFieldVals)(d, gg));
+
+      cerr << endl;
       ++t_coords;
     }
   }
