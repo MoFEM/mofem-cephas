@@ -25,7 +25,7 @@ MoFEMErrorCode EntPolynomialBaseCtx::query_interface(
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if (uuid == IDD_TET_BASE_FUNCTION || uuid == IDD_TRI_BASE_FUNCTION ||
-      uuid == IDD_EDGE_BASE_FUNCTION) {
+          uuid == IDD_EDGE_BASE_FUNCTION || uuid == IDD_QUAD_BASE_FUNCTION) {
     *iface = const_cast<EntPolynomialBaseCtx *>(this);
     MoFEMFunctionReturnHot(0);
   } else {

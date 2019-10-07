@@ -1157,25 +1157,10 @@ OpGetCoordsAndNormalsOnFace::doWork(int side, EntityType type,
     cOords_at_GaussPt.clear();
     tAngent1_at_GaussPt.clear();
     tAngent2_at_GaussPt.clear();
-    auto t_base = data.getFTensor0N();
-    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-      auto t_data = data.getFTensor1FieldData<3>();
-      auto t_diff_base = data.getFTensor1DiffN<2>();
-      for (int nn = 0; nn != 3; nn++) {
-        t_coords(i) += t_base * t_data(i);
-        t_t1(i) += t_data(i) * t_diff_base(N0);
-        t_t2(i) += t_data(i) * t_diff_base(N1);
-        ++t_data;
-        ++t_base;
-        ++t_diff_base;
-      }
-      ++t_coords;
-      ++t_t1;
-      ++t_t2;
-    }
-  } break;
+  }
   case MBEDGE:
-  case MBTRI: {
+  case MBTRI:
+  case MBQUAD: {
     if (2 * data.getN().size2() != data.getDiffN().size2()) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }

@@ -245,6 +245,13 @@ protected:
   MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
 
   /**
+   * \brief Calculate element area and normal of the face at integration points
+   *
+   * @return Error code
+   */
+  virtual MoFEMErrorCode calculateAreaAndNormalAtIntegrationPts();
+
+  /**
    * \brief Calculate element area and normal of the face
    *
    * Note that at that point is assumed that geometry is exclusively defined
@@ -328,11 +335,24 @@ template <int SWITCH>
 MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::OpSwitch() {
   MoFEMFunctionBegin;
 
-  if (numeredEntFiniteElementPtr->getEntType() != MBTRI)
-    MoFEMFunctionReturnHot(0);
-  CHKERR createDataOnElement();
+  const EntityType type = numeredEntFiniteElementPtr->getEntType();
+  if (type != lastEvaluatedElementEntityType) {
+    switch (type) {
+    case MBTRI:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
+      break;
+    case MBQUAD:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new QuadPolynomialBase());
+      break;
+    default:
+      MoFEMFunctionReturnHot(0);
+    }
+    CHKERR createDataOnElement();
+  }
 
-  // Calculate normal and tangent vectors for face geometry given by 3 nodes.
+  // Calculate normal and tangent vectors for face geometry
   CHKERR calculateAreaAndNormal();
   CHKERR getSpaceBaseAndOrderOnElement();
 
@@ -343,16 +363,24 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::OpSwitch() {
   DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
   DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
 
-  dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
-  std::copy(Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
-            dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
-
-  /// Use the some node base
   CHKERR calculateCoordinatesAtGaussPts();
   CHKERR calHierarchicalBaseFunctionsOnElement();
   CHKERR calBernsteinBezierBaseFunctionsOnElement();
-  if (!(NO_HO_GEOMETRY & SWITCH))
+
+  switch (numeredEntFiniteElementPtr->getEntType()) {
+  case MBTRI:
+    break;
+  case MBQUAD:
+    CHKERR calculateAreaAndNormalAtIntegrationPts();
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Element type not implemented");
+  }
+
+  if (!(NO_HO_GEOMETRY & SWITCH)) {
     CHKERR calculateHoNormal();
+  }
 
   // Apply Piola transform to HDiv and HCurl spaces, uses previously
   // calculated faces normal and tangent vectors.

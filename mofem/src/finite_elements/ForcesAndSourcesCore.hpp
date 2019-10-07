@@ -770,13 +770,14 @@ protected:
 
   friend class UserDataOperator;
 
-private:
+protected:
   /**
    * @brief Last evaluated type of element entity
    *
    */
   EntityType lastEvaluatedElementEntityType;
 
+private:
   /**
    * @brief Pointer to entity polynomial base
    *

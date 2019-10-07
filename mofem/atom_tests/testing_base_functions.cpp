@@ -54,6 +54,7 @@ int main(int argc, char *argv[]) {
       L2TET,
       H1TRI_AINSWORTH,
       H1TRI_BERNSTEIN_BEZIER,
+      H1QUAD,
       HDIVTRI_AINSWORTH,
       HDIVTRI_DEMKOWICZ,
       HCURLTRI_AINSWORTH,
@@ -81,6 +82,7 @@ int main(int argc, char *argv[]) {
                           "l2tet",
                           "h1tri_ainsworth",
                           "h1tri_bernstein_bezier",
+                          "h1quad",
                           "hdivtri_ainsworth",
                           "hdivtri_demkowicz",
                           "hcurltri_ainsworth",
@@ -1106,6 +1108,92 @@ int main(int argc, char *argv[]) {
       if (fabs(4 - sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
+    }
+
+    DataForcesAndSourcesCore quad_data(MBQUAD);
+    for (int type = MBVERTEX; type != MBMAXTYPE; type++) {
+      quad_data.spacesOnEntities[type].set(H1);
+    }
+    quad_data.dataOnEntities[MBVERTEX].resize(1);
+    quad_data.dataOnEntities[MBVERTEX][0].getDataOrder() = 1;
+    quad_data.dataOnEntities[MBEDGE].resize(4);
+    for (int ee = 0; ee < 4; ee++) {
+      quad_data.dataOnEntities[MBEDGE][ee].getDataOrder() = 4;
+      quad_data.dataOnEntities[MBEDGE][ee].getSense() = 1;
+    }
+    quad_data.dataOnEntities[MBQUAD].resize(1);
+    quad_data.dataOnEntities[MBQUAD][0].getDataOrder() = 6;
+
+    MatrixDouble pts_quad;
+    int rule_ksi = 6;
+    int rule_eta = 4;
+    CHKERR Tools::outerProductOfEdgeIntegrationPtsForQuad(pts_quad, rule_ksi,
+                                                          rule_eta);
+    nb_gauss_pts = pts_quad.size2();
+    quad_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
+                                                              false);
+    quad_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(nb_gauss_pts,
+                                                                  8, false);
+    for (int i = 0; i < nb_gauss_pts; ++i) {
+      quad_data.dataOnEntities[MBVERTEX][0].getN(NOBASE)(i, 0) =
+          N_MBQUAD0(pts_quad(0, i), pts_quad(1, i));
+      quad_data.dataOnEntities[MBVERTEX][0].getN(NOBASE)(i, 1) =
+          N_MBQUAD1(pts_quad(0, i), pts_quad(1, i));
+      quad_data.dataOnEntities[MBVERTEX][0].getN(NOBASE)(i, 2) =
+          N_MBQUAD2(pts_quad(0, i), pts_quad(1, i));
+      quad_data.dataOnEntities[MBVERTEX][0].getN(NOBASE)(i, 3) =
+          N_MBQUAD3(pts_quad(0, i), pts_quad(1, i));
+
+      quad_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 0) =
+          diffN_MBQUAD0x(pts_quad(1, i));
+      quad_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 1) =
+          diffN_MBQUAD0y(pts_quad(0, i));
+      quad_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 2) =
+          diffN_MBQUAD1x(pts_quad(1, i));
+      quad_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 3) =
+          diffN_MBQUAD1y(pts_quad(0, i));
+      quad_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 4) =
+          diffN_MBQUAD2x(pts_quad(1, i));
+      quad_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 5) =
+          diffN_MBQUAD2y(pts_quad(0, i));
+      quad_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 6) =
+          diffN_MBQUAD3x(pts_quad(1, i));
+      quad_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(i, 7) =
+          diffN_MBQUAD3y(pts_quad(0, i));
+    }
+
+    if (choice_value == H1QUAD) {
+      CHKERR QuadPolynomialBase().getValue(
+          pts_quad, boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                        quad_data, H1, AINSWORTH_LEGENDRE_BASE, NOBASE)));
+      if (quad_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get() !=
+          quad_data.dataOnEntities[MBVERTEX][0]
+              .getNSharedPtr(AINSWORTH_LEGENDRE_BASE)
+              .get()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Different pointers");
+      }
+      double sum = 0, diff_sum = 0;
+      for (int ee = 0; ee < 4; ee++) {
+        sum += sum_matrix(
+            quad_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_LEGENDRE_BASE));
+        diff_sum += sum_matrix(quad_data.dataOnEntities[MBEDGE][ee].getDiffN(
+            AINSWORTH_LEGENDRE_BASE));
+      }
+      sum += sum_matrix(
+          quad_data.dataOnEntities[MBQUAD][0].getN(AINSWORTH_LEGENDRE_BASE));
+      diff_sum += sum_matrix(quad_data.dataOnEntities[MBQUAD][0].getDiffN(
+          AINSWORTH_LEGENDRE_BASE));
+
+      cerr << sum << " " << diff_sum << endl;
+
+      if (std::abs(3.34041 - sum) > eps) 
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
+      
+
+      if (std::abs(-0.428571 - diff_sum) > eps) 
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
+      
     }
   }
   CATCH_ERRORS;

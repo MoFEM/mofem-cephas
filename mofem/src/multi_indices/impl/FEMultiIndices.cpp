@@ -352,13 +352,20 @@ std::ostream &operator<<(std::ostream &os, const RefElement_TET &e) {
   return os;
 }
 
-RefElement_TRI::RefElement_TRI(const boost::shared_ptr<RefEntity> &ref_ent_ptr)
+RefElementFace::RefElementFace(const boost::shared_ptr<RefEntity> &ref_ent_ptr)
     : RefElement(ref_ent_ptr) {
+
+  int nb_nodes = 0;
+  int nb_edges = 0;
   switch (ref_ent_ptr->getEntType()) {
   case MBTRI:
+    nb_nodes = nb_edges = 3;
+    break;
+  case MBQUAD:
+    nb_nodes = nb_edges = 4;
     break;
   default:
-    THROW_MESSAGE("this work only for TRIs");
+    THROW_MESSAGE("this works only for TRIs and QUADs");
   }
   int side_number, sense, offset;
   EntityHandle tri = getRefEnt();
@@ -367,12 +374,12 @@ RefElement_TRI::RefElement_TRI(const boost::shared_ptr<RefEntity> &ref_ent_ptr)
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
   rval = moab.get_connectivity(tri, conn, num_nodes, true);
   MOAB_THROW(rval);
-  for (int nn = 0; nn < 3; nn++) {
+  for (int nn = 0; nn < nb_nodes; nn++) {
     const_cast<SideNumber_multiIndex &>(side_number_table)
         .insert(
             boost::shared_ptr<SideNumber>(new SideNumber(conn[nn], nn, 0, 0)));
   }
-  for (int ee = 0; ee < 3; ee++) {
+  for (int ee = 0; ee < nb_edges; ee++) {
     EntityHandle edge;
     rval = moab.side_element(tri, 1, ee, edge);
     MOAB_THROW(rval);
@@ -386,7 +393,7 @@ RefElement_TRI::RefElement_TRI(const boost::shared_ptr<RefEntity> &ref_ent_ptr)
       .insert(boost::shared_ptr<SideNumber>(new SideNumber(tri, 0, 0, 0)));
 }
 const boost::shared_ptr<SideNumber> &
-RefElement_TRI::getSideNumberPtr(const EntityHandle ent) const {
+RefElementFace::getSideNumberPtr(const EntityHandle ent) const {
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if (miit != side_number_table.end())
@@ -415,7 +422,7 @@ RefElement_TRI::getSideNumberPtr(const EntityHandle ent) const {
   // std::cerr << side_number << " " << sense << " " << offset << std::endl;
   return *miit;
 }
-std::ostream &operator<<(std::ostream &os, const RefElement_TRI &e) {
+std::ostream &operator<<(std::ostream &os, const RefElementFace &e) {
   os << *e.sPtr;
   return os;
 }
@@ -561,7 +568,7 @@ MoFEMErrorCode DefaultElementAdjacency::defaultEdge(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DefaultElementAdjacency::defaultTri(
+MoFEMErrorCode DefaultElementAdjacency::defaultFace(
     moab::Interface &moab, const Field &field_ptr,
     const EntFiniteElement &fe_ptr, Range &adjacency) {
   MoFEMFunctionBegin;
@@ -851,7 +858,8 @@ FiniteElement::FiniteElement(moab::Interface &moab, const EntityHandle _meshset)
 
   elementAdjacencyTable[MBVERTEX] = DefaultElementAdjacency::defaultVertex;
   elementAdjacencyTable[MBEDGE] = DefaultElementAdjacency::defaultEdge;
-  elementAdjacencyTable[MBTRI] = DefaultElementAdjacency::defaultTri;
+  elementAdjacencyTable[MBTRI] = DefaultElementAdjacency::defaultFace;
+  elementAdjacencyTable[MBQUAD] = DefaultElementAdjacency::defaultFace;
   elementAdjacencyTable[MBTET] = DefaultElementAdjacency::defaultTet;
   elementAdjacencyTable[MBPRISM] = DefaultElementAdjacency::defaultPrism;
   elementAdjacencyTable[MBENTITYSET] = DefaultElementAdjacency::defaultMeshset;

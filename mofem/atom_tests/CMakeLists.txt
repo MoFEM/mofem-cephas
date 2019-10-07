@@ -48,6 +48,7 @@ cm_export_file("../meshes/mat_elastic_transiso.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_interf.h5m" export_atom_tests)
 cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
 cm_export_file("../meshes/rectangle.h5m" export_atom_tests)
+cm_export_file("../meshes/quad_mesh.h5m" export_atom_tests)
 
 set(PERCOMPILED_MOFEM_HEADER "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
 
@@ -836,10 +837,10 @@ add_test(
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions
 )
-add_test(forces_and_sources_hdiv_approximation_functions_atom_compare ${CMAKE_COMMAND} -E compare_files
+add_test(forces_and_sources_hdiv_approximation_functions_atom_compare 
+  ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_approximation_functions.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_approximation_functions.txt
-)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_approximation_functions.txt)
 
 # add test for hdiv space - check approximation continuity
 my_add_executable(hdiv_continuity_check hdiv_continuity_check.cpp)
@@ -1216,8 +1217,8 @@ add_test(node_merge ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/node_merge -my_file node_merge_test.h5m
 )
 
-my_add_executable(prisms_elements_from_surface prisms_elements_from_surface.cpp)
-target_link_libraries(prisms_elements_from_surface
+my_add_executable(edge_and_bubble_shape_functions_on_quad edge_and_bubble_shape_functions_on_quad.cpp)
+target_link_libraries(edge_and_bubble_shape_functions_on_quad
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -1227,9 +1228,23 @@ target_link_libraries(prisms_elements_from_surface
   mofem_third_party
   ${PROJECT_LIBS}
 )
-cm_export_file("../meshes/rectangle_surface_mesh.cub" export_atom_tests)
-add_test(prisms_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file rectangle_surface_mesh.cub
+add_test(edge_and_bubble_shape_functions_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/edge_and_bubble_shape_functions_on_quad -my_file quad_mesh.h5m
+)
+
+my_add_executable(gauss_points_on_quad gauss_points_on_quad.cpp)
+target_link_libraries(gauss_points_on_quad
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(gauss_points_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/gauss_points_on_quad
 )
 
 my_add_executable(partition_mesh partition_mesh.cpp)
@@ -1273,6 +1288,7 @@ list(INSERT testing_base_list
   l2tet
   h1tri_ainsworth
   h1tri_bernstein_bezier
+  h1quad
   hdivtri_ainsworth
   hdivtri_demkowicz
   hcurltri_ainsworth
@@ -1481,6 +1497,54 @@ add_test(continuity_check_on_skeleton_with_simple_2d_demkowicz
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
   -file_name rectangle.h5m -base demkowicz
 )
+
+cm_export_file("../meshes/reference_triangle_mesh.h5m" export_atom_tests)
+my_add_executable(prism_elements_from_surface prism_elements_from_surface.cpp)
+target_link_libraries(prism_elements_from_surface
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(prism_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/prism_elements_from_surface 
+  -my_file reference_triangle_mesh.h5m)
+
+my_add_executable(
+  prism_polynomial_approximation prism_polynomial_approximation.cpp)
+target_link_libraries(prism_polynomial_approximation
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(prism_polynomial_approximation
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/prism_polynomial_approximation -pc_type lu)
+
+my_add_executable(
+  quad_polynomial_approximation quad_polynomial_approximation.cpp)
+target_link_libraries(quad_polynomial_approximation
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(quad_polynomial_approximation
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation -pc_type lu)
 
 my_add_executable(
   bernstein_bezier_generate_base

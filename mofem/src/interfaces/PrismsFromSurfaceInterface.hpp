@@ -74,6 +74,18 @@ struct PrismsFromSurfaceInterface : public UnknownInterface {
    */
   MoFEMErrorCode setThickness(const Range &prisms, const double director3[],
                               const double director4[]);
+
+  /**
+   * Set normal thickness
+   * @param prisms   Range of prisms
+   * @param thickness normal thickness 
+   * @return
+   */
+  MoFEMErrorCode setNormalThickness(const Range &prisms,
+                                    double thickness3, double thickness4);
+
+  MoFEMErrorCode updateMeshestByEdgeBlock(const Range &prisms);
+
 };
 
 } // namespace MoFEM

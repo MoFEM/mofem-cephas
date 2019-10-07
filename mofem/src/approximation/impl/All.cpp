@@ -10,6 +10,7 @@
 #include "impl/Hcurl.cpp"
 #include "impl/BernsteinBezier.cpp"
 #include "impl/TriPolynomialBase.cpp"
+#include "impl/QuadPolynomialBase.cpp"
 #include "impl/TetPolynomialBase.cpp"
 #include "impl/EdgePolynomialBase.cpp"
 #include "impl/FlatPrismPolynomialBase.cpp"

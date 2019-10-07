@@ -100,7 +100,8 @@ enum BaseIntefaces {
   TRI_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 9,
   EDGE_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 10,
   FATPRISM_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 11,
-  FLATPRISM_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 12
+  FLATPRISM_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 12,
+  QUAD_BASE_FUNCTION_INTERFACE = 1 << 5 | 1 << 6 | 1 << 13
 };
 
 /** \brief Error handling

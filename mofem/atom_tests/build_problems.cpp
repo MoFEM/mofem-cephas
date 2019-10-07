@@ -61,8 +61,6 @@ int main(int argc, char *argv[]) {
     // set entities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    EntityHandle meshset_level0;
-    CHKERR moab.create_meshset(MESHSET_SET, meshset_level0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 3, bit_level0);
 
