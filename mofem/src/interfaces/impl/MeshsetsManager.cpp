@@ -85,39 +85,39 @@ MoFEMErrorCode MeshsetsManager::getTags(int verb) {
   int default_val = -1;
   CHKERR moab.tag_get_handle(DIRICHLET_SET_TAG_NAME, 1, MB_TYPE_INTEGER, nsTag,
                              MB_TAG_SPARSE | MB_TAG_CREAT, &default_val);
-  
+
   CHKERR moab.tag_get_handle(NEUMANN_SET_TAG_NAME, 1, MB_TYPE_INTEGER, ssTag,
                              MB_TAG_SPARSE | MB_TAG_CREAT, &default_val);
-  
+
   const int def_bc_data_len = 0;
   std::string tag_name = std::string(DIRICHLET_SET_TAG_NAME) + "__BC_DATA";
   CHKERR moab.tag_get_handle(
       tag_name.c_str(), def_bc_data_len, MB_TYPE_OPAQUE, nsTag_data,
       MB_TAG_CREAT | MB_TAG_SPARSE | MB_TAG_BYTES | MB_TAG_VARLEN, NULL);
-  
+
   tag_name = std::string(NEUMANN_SET_TAG_NAME) + "__BC_DATA";
   CHKERR moab.tag_get_handle(
       tag_name.c_str(), def_bc_data_len, MB_TYPE_OPAQUE, ssTag_data,
       MB_TAG_CREAT | MB_TAG_SPARSE | MB_TAG_BYTES | MB_TAG_VARLEN, NULL);
-  
+
   CHKERR moab.tag_get_handle(MATERIAL_SET_TAG_NAME, 1, MB_TYPE_INTEGER, bhTag,
                              MB_TAG_SPARSE | MB_TAG_CREAT, &default_val);
-  
+
   std::vector<unsigned int> def_uint_zero(3, 0);
   CHKERR moab.tag_get_handle(
       BLOCK_HEADER, 3 * sizeof(unsigned int), MB_TYPE_INTEGER, bhTag_header,
       MB_TAG_CREAT | MB_TAG_SPARSE | MB_TAG_BYTES, &def_uint_zero[0]);
-  
+
   Tag block_attribs;
   int def_Block_Attributes_length = 0;
   CHKERR moab.tag_get_handle(
       BLOCK_ATTRIBUTES, def_Block_Attributes_length, MB_TYPE_DOUBLE,
       block_attribs, MB_TAG_CREAT | MB_TAG_SPARSE | MB_TAG_VARLEN, NULL);
-  
+
   Tag entity_name_tag;
   CHKERR moab.tag_get_handle(NAME_TAG_NAME, NAME_TAG_SIZE, MB_TYPE_OPAQUE,
                              entity_name_tag, MB_TAG_SPARSE | MB_TAG_CREAT);
-  
+
   MoFEMFunctionReturn(0);
 }
 
@@ -169,7 +169,7 @@ MoFEMErrorCode MeshsetsManager::printMaterialsSet() const {
     ss << data;
     Range tets;
     CHKERR moab.get_entities_by_type(it->meshset, MBTET, tets, true);
-    
+
     ss << "MAT_ELATIC msId " << it->getMeshsetId() << " nb. tets "
        << tets.size() << std::endl;
     ss << std::endl;
@@ -271,7 +271,7 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
   }
   EntityHandle meshset = cit->getMeshset();
   CHKERR moab.add_entities(meshset, ents);
-  
+
   MoFEMFunctionReturn(0);
 }
 
@@ -292,7 +292,7 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
   }
   EntityHandle meshset = cit->getMeshset();
   CHKERR moab.add_entities(meshset, ents, nb_ents);
-  
+
   MoFEMFunctionReturn(0);
 }
 
@@ -403,7 +403,7 @@ MoFEMErrorCode MeshsetsManager::deleteMeshset(const CubitBCType cubit_bc_type,
   EntityHandle meshset = miit->getMeshset();
   cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().erase(miit);
   CHKERR moab.delete_entities(&meshset, 1);
-  
+
   MoFEMFunctionReturn(0);
 }
 
@@ -498,6 +498,21 @@ MoFEMErrorCode MeshsetsManager::getMeshset(const int ms_id,
              "ms_id = %d is not there", ms_id);
   }
   MoFEMFunctionReturn(0);
+}
+
+bool MeshsetsManager::checkIfMeshsetContainsEntities(
+    const int ms_id, const unsigned int cubit_bc_type,
+    const EntityHandle *entities, int num_entities, const int operation_type) {
+  auto miit =
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+          boost::make_tuple(ms_id, cubit_bc_type));
+  if (miit !=
+      cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+    Interface &m_field = cOre;
+    return m_field.get_moab().contains_entities(miit->meshset, entities,
+                                                num_entities, operation_type);
+  } else
+    return false;
 }
 
 MoFEMErrorCode

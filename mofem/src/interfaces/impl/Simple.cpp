@@ -293,24 +293,25 @@ MoFEMErrorCode Simple::buildFields() {
       CHKERR m_field.get_moab().add_entities(boundaryMeshset, adj);
     }
   }
+  auto comm_interface_ptr = m_field.getInterface<CommInterface>();
   // Add entities to the fields
   for (unsigned int ff = 0; ff != domainFields.size(); ff++) {
     CHKERR m_field.add_ents_to_field_by_dim(meshSet, dIm, domainFields[ff]);
-    CHKERR m_field.synchronise_field_entities(domainFields[ff], 0);
+    CHKERR comm_interface_ptr->synchroniseFieldEntities(domainFields[ff], 0);
   }
   for (unsigned int ff = 0; ff != dataFields.size(); ff++) {
     CHKERR m_field.add_ents_to_field_by_dim(meshSet, dIm, dataFields[ff]);
-    CHKERR m_field.synchronise_field_entities(dataFields[ff], 0);
+    CHKERR comm_interface_ptr->synchroniseFieldEntities(dataFields[ff], 0);
   }
   for (unsigned int ff = 0; ff != boundaryFields.size(); ff++) {
     CHKERR m_field.add_ents_to_field_by_dim(boundaryMeshset, dIm - 1,
                                             boundaryFields[ff]);
-    CHKERR m_field.synchronise_field_entities(boundaryFields[ff], 0);
+    CHKERR comm_interface_ptr->synchroniseFieldEntities(boundaryFields[ff], 0);
   }
   for (unsigned int ff = 0; ff != skeletonFields.size(); ff++) {
     CHKERR m_field.add_ents_to_field_by_dim(meshSet, dIm - 1,
                                             skeletonFields[ff]);
-    CHKERR m_field.synchronise_field_entities(skeletonFields[ff], 0);
+    CHKERR comm_interface_ptr->synchroniseFieldEntities(skeletonFields[ff], 0);
   }
   // Set order
   for (unsigned int ff = 0; ff != domainFields.size(); ff++) {

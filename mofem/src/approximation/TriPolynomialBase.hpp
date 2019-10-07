@@ -1,9 +1,6 @@
 /** \file TriPolynomialBase.hpp
 \brief Implementation of  H1, Hcurl base on triangle
 
-TODO:
-\todo L2 base on triangle
-
 */
 
 /* This file is part of MoFEM.
@@ -57,7 +54,6 @@ private:
 
   MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
 
-private:
   MoFEMErrorCode getValueHdivAinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
 

@@ -1,4 +1,4 @@
-const static int debug = 1;
+const static int debug = 0;
 
 #include <MoFEM.hpp>
 
@@ -21,6 +21,7 @@ const static int debug = 1;
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
 #include <Tools.hpp>
+#include <CommInterface.hpp>
 
 #include "impl/ProblemsManager.cpp"
 #include "impl/Simple.cpp"

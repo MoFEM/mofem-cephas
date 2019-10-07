@@ -326,6 +326,21 @@ struct ProblemsManager : public UnknownInterface {
                                       int verb = VERBOSE,
                                       const bool debug = false);
 
+  /**
+   * @brief Create vector with marked indices 
+   * 
+   * Vector with local DOFs marked by entities 
+   * 
+   * 
+   * @param problem_name 
+   * @param row 
+   * @param ents 
+   * @param marker 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode markDofs(const std::string problem_name, RowColData rc,
+                          const Range ents, std::vector<bool> &marker);
+
 private:
   PetscLogEvent MOFEM_EVENT_ProblemsManager;
 };

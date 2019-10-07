@@ -69,6 +69,7 @@
 
 #include <BitRefManager.hpp>
 #include <Tools.hpp>
+#include <CommInterface.hpp>
 #include <ISManager.hpp>
 #include <VecManager.hpp>
 #include <FieldBlas.hpp>

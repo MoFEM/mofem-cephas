@@ -635,7 +635,7 @@ struct OpCalculateTensor2SymmetricFieldValues
 
   OpCalculateTensor2SymmetricFieldValues(
       const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
-      const EntityType zero_type = MBTRI, const int zero_side = 0)
+      const EntityType zero_type = MBEDGE, const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
@@ -653,9 +653,9 @@ struct OpCalculateTensor2SymmetricFieldValues
       mat.clear();
     }
     const int nb_dofs = data.getFieldData().size();
-    if (!nb_dofs) {
+    if (!nb_dofs) 
       MoFEMFunctionReturnHot(0);
-    }
+    
     const int nb_base_functions = data.getN().size2();
     auto base_function = data.getFTensor0N();
     auto values_at_gauss_pts = getFTensor2SymmetricFromMat<Tensor_Dim>(mat);
@@ -694,7 +694,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
 
   OpCalculateTensor2SymmetricFieldValuesDot(
       const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
-      const EntityType zero_type = MBTRI, const int zero_side = 0)
+      const EntityType zero_type = MBEDGE, const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
@@ -1083,7 +1083,7 @@ struct OpCalculateHdivVectorField_General
   OpCalculateHdivVectorField_General(
       const std::string &field_name,
       boost::shared_ptr<ublas::matrix<T, L, A>> &data_ptr,
-      const EntityType zero_type = MBTRI, const int zero_side = 0)
+      const EntityType zero_type = MBEDGE, const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type), zeroSide(0) {
@@ -1127,7 +1127,7 @@ struct OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
 
   OpCalculateHdivVectorField_General(const std::string &field_name,
                                      boost::shared_ptr<MatrixDouble> &data_ptr,
-                                     const EntityType zero_type = MBTRI,
+                                     const EntityType zero_type = MBEDGE,
                                      const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -1182,8 +1182,6 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
 
 /** \brief Get vector field for H-div approximation
  * \ingroup mofem_forces_and_sources_user_data_operators
- * \note Not tested
- * \FIXME Test this
  */
 template <int Tensor_Dim>
 struct OpCalculateHdivVectorField
@@ -1192,7 +1190,7 @@ struct OpCalculateHdivVectorField
 
   OpCalculateHdivVectorField(const std::string &field_name,
                              boost::shared_ptr<MatrixDouble> &data_ptr,
-                             const EntityType zero_type = MBTRI,
+                             const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
       : OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
                                            DoubleAllocator>(
@@ -1201,10 +1199,11 @@ struct OpCalculateHdivVectorField
 
 /**
  * @brief Calculate divergence of vector field
+ * @ingroup mofem_forces_and_sources_user_data_operators
  *
  * @tparam Tensor_Dim dimension of space
  */
-template <int Tensor_Dim>
+template <int Tensor_Dim1, int Tensor_Dim2>
 struct OpCalculateHdivVectorDivergence
     : public ForcesAndSourcesCore::UserDataOperator {
 
@@ -1214,7 +1213,7 @@ struct OpCalculateHdivVectorDivergence
 
   OpCalculateHdivVectorDivergence(const std::string &field_name,
                                   boost::shared_ptr<VectorDouble> &data_ptr,
-                                  const EntityType zero_type = MBTRI,
+                                  const EntityType zero_type = MBEDGE,
                                   const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -1234,15 +1233,17 @@ struct OpCalculateHdivVectorDivergence
     const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getN().size2() / Tensor_Dim;
-    FTensor::Index<'i', Tensor_Dim> i;
-    auto t_n_diff_hdiv = data.getFTensor2DiffN<Tensor_Dim, Tensor_Dim>();
+    const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
+    FTensor::Index<'i', Tensor_Dim1> i;
+    auto t_n_diff_hdiv = data.getFTensor2DiffN<Tensor_Dim1, Tensor_Dim2>();
     auto t_data = getFTensor0FromVec(*dataPtr);
     for (int gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor0FieldData();
       int bb = 0;
       for (; bb != nb_dofs; ++bb) {
-        double div = t_n_diff_hdiv(i, i);
+        double div = 0;
+        for (auto ii = 0; ii != Tensor_Dim2; ++ii)
+          div += t_n_diff_hdiv(ii, ii);
         t_data += t_dof * div;
         ++t_n_diff_hdiv;
         ++t_dof;
@@ -1257,6 +1258,7 @@ struct OpCalculateHdivVectorDivergence
 
 /**
  * @brief Calculate curl   of vector field
+ * @ingroup mofem_forces_and_sources_user_data_operators
  *
  * @tparam Tensor_Dim dimension of space
  */
@@ -1349,7 +1351,7 @@ struct OpCalculateHVecTensorField
 
   OpCalculateHVecTensorField(const std::string &field_name,
                              boost::shared_ptr<MatrixDouble> &data_ptr,
-                             const EntityType zero_type = MBTRI,
+                             const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -1407,7 +1409,7 @@ struct OpCalculateHTensorTensorField
 
   OpCalculateHTensorTensorField(const std::string &field_name,
                                 boost::shared_ptr<MatrixDouble> &data_ptr,
-                                const EntityType zero_type = MBTRI,
+                                const EntityType zero_type = MBEDGE,
                                 const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -1466,7 +1468,7 @@ struct OpCalculateHVecTensorDivergence
 
   OpCalculateHVecTensorDivergence(const std::string &field_name,
                                   boost::shared_ptr<MatrixDouble> &data_ptr,
-                                  const EntityType zero_type = MBTRI,
+                                  const EntityType zero_type = MBEDGE,
                                   const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -1506,6 +1508,248 @@ struct OpCalculateHVecTensorDivergence
     }
     MoFEMFunctionReturn(0);
   }
+};
+
+// Face opeartors 
+
+/** \brief Calculate jacobian for face element
+
+  It is assumed that face element is XY plane. Applied
+  only for 2d problems.
+
+  \todo Generalize function for arbitrary face orientation in 3d space
+
+  \ingroup mofem_forces_and_sources_tri_element
+
+*/
+struct OpCalculateJacForFace
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+  MatrixDouble &jac;
+
+  OpCalculateJacForFace(MatrixDouble &jac)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(H1), jac(jac) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+/** \brief Calculate inverse of jacobian for face element
+
+  It is assumed that face element is XY plane. Applied
+  only for 2d problems.
+
+  \todo Generalize function for arbitrary face orientation in 3d space
+
+  \ingroup mofem_forces_and_sources_tri_element
+
+*/
+struct OpCalculateInvJacForFace
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+  MatrixDouble &invJac;
+
+  OpCalculateInvJacForFace(MatrixDouble &inv_jac)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(H1),
+        invJac(inv_jac) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+/** \brief Transform local reference derivatives of shape functions to global
+derivatives
+
+\ingroup mofem_forces_and_sources_tri_element
+
+*/
+struct OpSetInvJacH1ForFace
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(H1),
+        invJac(inv_jac) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  MatrixDouble &invJac;
+  MatrixDouble diffNinvJac;
+};
+
+/**
+ * \brief brief Transform local reference derivatives of shape function to
+ global derivatives for face
+
+ * \ingroup mofem_forces_and_sources_tri_element
+ */
+struct OpSetInvJacHcurlFace
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpSetInvJacHcurlFace(MatrixDouble &inv_jac)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL),
+        invJac(inv_jac) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  MatrixDouble &invJac;
+  MatrixDouble diffHcurlInvJac;
+};
+
+/**
+ * @brief Make Hdiv space from Hcurl space in 2d
+ * @ingroup mofem_forces_and_sources_tri_element
+ */
+struct OpMakeHdivFromHcurl
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpMakeHdivFromHcurl()
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+/** \brief Apply contravariant (Piola) transfer to Hdiv space on face
+ * 
+ * \note Hdiv space is generated by Hcurl space in 2d.
+ * 
+ * Contravariant Piola transformation
+ * \f[
+ * \psi_i|_t = \frac{1}{\textrm{det}(J)}J_{ij}\hat{\psi}_j\\
+ * \left.\frac{\partial \psi_i}{\partial \xi_j}\right|_t
+ * =
+ * \frac{1}{\textrm{det}(J)}J_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
+ * \f]
+ * 
+ * \ingroup mofem_forces_and_sources
+ *
+  */
+struct OpSetContravariantPiolaTransformFace
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  FTensor::Tensor2<double *, 2, 2> tJac;
+  FTensor::Index<'i', 2> i;
+  FTensor::Index<'j', 2> j;
+  FTensor::Index<'k', 2> k;
+
+  OpSetContravariantPiolaTransformFace(MatrixDouble &jac)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL),
+        tJac(
+
+            &jac(0, 0), &jac(0, 1), &jac(1, 0), &jac(1, 1)
+
+        ) {}
+
+  MatrixDouble piolaN;
+  MatrixDouble piolaDiffN;
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+// Edge
+
+struct OpSetContrariantPiolaTransformOnEdge
+    : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpSetContrariantPiolaTransformOnEdge()
+      : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(HCURL) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+// Fat prims 
+
+/** \brief Calculate inverse of jacobian for face element
+
+  It is assumed that face element is XY plane. Applied
+  only for 2d problems.
+
+  FIXME Generalize function for arbitrary face orientation in 3d space
+  FIXME Calculate to Jacobins for two faces
+
+  \ingroup mofem_forces_and_sources_prism_element
+
+*/
+struct OpCalculateInvJacForFatPrism
+    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  MatrixDouble &invJac;
+  OpCalculateInvJacForFatPrism(MatrixDouble &inv_jac)
+      : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
+        invJac(inv_jac) {}
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+/** \brief Transform local reference derivatives of shape functions to global
+derivatives
+
+FIXME Generalize to curved shapes
+FIXME Generalize to case that top and bottom face has different shape
+
+\ingroup mofem_forces_and_sources_prism_element
+
+*/
+struct OpSetInvJacH1ForFatPrism
+    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  MatrixDouble &invJac;
+  OpSetInvJacH1ForFatPrism(MatrixDouble &inv_jac)
+      : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
+        invJac(inv_jac) {}
+
+  MatrixDouble diffNinvJac;
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+// Flat prism
+
+/** \brief Calculate inverse of jacobian for face element
+
+  It is assumed that face element is XY plane. Applied
+  only for 2d problems.
+
+  FIXME Generalize function for arbitrary face orientation in 3d space
+  FIXME Calculate to Jacobins for two faces
+
+  \ingroup mofem_forces_and_sources_prism_element
+
+*/
+struct OpCalculateInvJacForFlatPrism
+    : public FlatPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  MatrixDouble &invJacF3;
+  OpCalculateInvJacForFlatPrism(MatrixDouble &inv_jac_f3)
+      : FlatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
+        invJacF3(inv_jac_f3) {}
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+/** \brief Transform local reference derivatives of shape functions to global
+derivatives
+
+FIXME Generalize to curved shapes
+FIXME Generalize to case that top and bottom face has different shape
+
+\ingroup mofem_forces_and_sources_prism_element
+
+*/
+struct OpSetInvJacH1ForFlatPrism
+    : public FlatPrismElementForcesAndSourcesCore::UserDataOperator {
+  MatrixDouble &invJacF3;
+  OpSetInvJacH1ForFlatPrism(MatrixDouble &inv_jac_f3)
+      : FlatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
+        invJacF3(inv_jac_f3) {}
+
+  MatrixDouble diffNinvJac;
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
 };
 
 } // namespace MoFEM

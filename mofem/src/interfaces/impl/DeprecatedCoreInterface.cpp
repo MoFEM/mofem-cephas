@@ -354,30 +354,29 @@ MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId(
       ms_id, cubit_bc_type, cubit_meshset_ptr);
 }
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
-    const int msId, const CubitBCType cubit_bc_type, const int dimension,
+    const int ms_id, const CubitBCType cubit_bc_type, const int dimension,
     Range &entities, const bool recursive) {
   return getInterface<MeshsetsManager>()->getEntitiesByDimension(
-      msId, cubit_bc_type.to_ulong(), dimension, entities, recursive);
+      ms_id, cubit_bc_type.to_ulong(), dimension, entities, recursive);
 }
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
-    const int msId, const CubitBCType cubit_bc_type, Range &entities,
+    const int ms_id, const CubitBCType cubit_bc_type, Range &entities,
     const bool recursive) {
   return getInterface<MeshsetsManager>()->getEntitiesByDimension(
-      msId, cubit_bc_type.to_ulong(), entities, recursive);
+      ms_id, cubit_bc_type.to_ulong(), entities, recursive);
 }
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
     const int ms_id, const unsigned int cubit_bc_type, const int dimension,
     Range &entities, const bool recursive) {
-  return get_cubit_msId_entities_by_dimension(ms_id, CubitBCType(cubit_bc_type),
-                                              dimension, entities, recursive);
+  return getInterface<MeshsetsManager>()->getEntitiesByDimension(
+      ms_id, cubit_bc_type, dimension, entities, recursive);
 }
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_entities_by_dimension(
     const int ms_id, const unsigned int cubit_bc_type, Range &entities,
     const bool recursive) {
-  return get_cubit_msId_entities_by_dimension(ms_id, CubitBCType(cubit_bc_type),
-                                              entities, recursive);
+  return getInterface<MeshsetsManager>()->getEntitiesByDimension(
+      ms_id, cubit_bc_type, entities, recursive);
 }
-
 MoFEMErrorCode DeprecatedCoreInterface::get_cubit_msId_meshset(
     const int ms_id, const unsigned int cubit_bc_type, EntityHandle &meshset) {
   return getInterface<MeshsetsManager>()->getMeshset(ms_id, cubit_bc_type,
@@ -595,6 +594,66 @@ MoFEMErrorCode DeprecatedCoreInterface::loop_finite_elements(
   return getInterface<CoreInterface>()->loop_finite_elements(
       problem_name, fe_name, method, get_comm_rank(), get_comm_rank(), nullptr,
       bh, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_ents(
+    const Problem *problem_ptr, const std::string &fe_name, int verb) {
+  return getInterface<CommInterface>()->resolveSharedFiniteElements(
+      problem_ptr, fe_name, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_ents(
+    const std::string &name, const std::string &fe_name, int verb) {
+  return getInterface<CommInterface>()->resolveSharedFiniteElements(
+      name, fe_name, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_finite_elements(
+    const Problem *problem_ptr, const std::string &fe_name, int verb) {
+  return getInterface<CommInterface>()->resolveSharedFiniteElements(
+      problem_ptr, fe_name, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_finite_elements(
+    const std::string &name, const std::string &fe_name, int verb) {
+  return getInterface<CommInterface>()->resolveSharedFiniteElements(
+      name, fe_name, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::make_entities_multishared(
+    const EntityHandle *entities, const int num_entities, const int my_proc,
+    int verb) {
+  return getInterface<CommInterface>()->makeEntitiesMultishared(
+      entities, num_entities, my_proc, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::make_entities_multishared(
+    Range &entities, const int my_proc, int verb) {
+  return getInterface<CommInterface>()->makeEntitiesMultishared(entities,
+                                                                my_proc, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::make_field_entities_multishared(
+    const std::string field_name, const int owner_proc, int verb) {
+  return getInterface<CommInterface>()->makeFieldEntitiesMultishared(
+      field_name, owner_proc, verb);
+}
+
+MoFEMErrorCode
+DeprecatedCoreInterface::exchange_field_data(const std::string field_name,
+                                             int verb) {
+  return getInterface<CommInterface>()->exchangeFieldData(field_name, verb);
+}
+
+MoFEMErrorCode DeprecatedCoreInterface::synchronise_entities(Range &ent,
+                                                             int verb) {
+  return getInterface<CommInterface>()->synchroniseEntities(ent, verb);
+}
+
+MoFEMErrorCode
+DeprecatedCoreInterface::synchronise_field_entities(const std::string &name,
+                                                    int verb) {
+  return getInterface<CommInterface>()->synchroniseFieldEntities(name, verb);
 }
 
 } // namespace MoFEM

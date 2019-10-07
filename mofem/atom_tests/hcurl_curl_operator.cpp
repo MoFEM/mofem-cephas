@@ -1,3 +1,9 @@
+/** \file hcurl_curl_operator.cpp
+ * \brief Testich curl-curl operator by applying Green theorem
+ * \example hcurl_curl_operator.cpp
+ *
+ */
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -13,10 +19,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-
-// namespace bio = boost::iostreams;
-// using bio::tee_device;
-// using bio::stream;
 
 using namespace MoFEM;
 

@@ -941,7 +941,7 @@ int main(int argc, char *argv[]) {
       sum += sum_matrix(
           edge_data.dataOnEntities[MBEDGE][0].getN(DEMKOWICZ_JACOBI_BASE));
       std::cout << "sum  " << sum << std::endl;
-      if (fabs(-5 - sum) > eps) {
+      if (fabs(4 - sum) > eps) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
       }
     }

@@ -294,85 +294,78 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
   }
 
   // Loop over mother adjacent entities to use them as parents
-  Range adj_father_ents;
-  for (int dd = 1; dd <= 2; dd++) {
-    CHKERR m_field.get_moab().get_adjacencies(
-        created_tets, dd, true, adj_father_ents, moab::Interface::UNION);
-  }
+  auto get_adj_ents = [&](const Range &ents, const bool create) {
+    Range adj;
+    for (int dd = 1; dd <= 2; dd++)
+      CHKERR m_field.get_moab().get_adjacencies(ents, dd, create, adj,
+                                                moab::Interface::UNION);
+    return adj;
+  };
+  auto adj_crated_ents = get_adj_ents(created_tets, true);
+  adj_crated_ents.erase(common_edge[0]);
+
   FaceMapIdx face_map;
-  for (auto ent : adj_father_ents) {
+  for (auto ent : adj_crated_ents) {
     int num_nodes;
     const EntityHandle *conn = get_conn(ent, &num_nodes);
     EntityHandle small_conn[num_nodes];
     int ii = 0;
-    int nn = 0;
     bool father_node = false;
-    for (; nn != num_nodes; nn++) {
-      if (conn[nn] == father) {
+    for (int nn = 0; nn != num_nodes; nn++) {
+      if (conn[nn] == father)
         father_node = true;
-      } else {
+      else
         small_conn[ii++] = conn[nn];
-      }
     }
     if (father_node) {
-      if (ii > 1) {
+      if (ii > 1) 
         std::sort(&small_conn[0], &small_conn[ii]);
-      }
-      if (ii == 2) {
+      if (ii == 2) 
         face_map.insert(FaceMap(ent, small_conn[0], small_conn[1]));
-      } else {
+       else 
         face_map.insert(FaceMap(ent, small_conn[0], 0));
-      }
     }
   }
 
-  Range adj_mother_ents;
-  for (int dd = 1; dd <= 2; ++dd) {
-    CHKERR m_field.get_moab().get_adjacencies(
-        mother_tets, dd, false, adj_mother_ents, moab::Interface::UNION);
-  }
-
+  auto adj_mother_ents = get_adj_ents(mother_tets, false);
   adj_mother_ents.erase(common_edge[0]);
   for (auto ent : adj_mother_ents) {
     int num_nodes;
     const EntityHandle *conn = get_conn(ent, &num_nodes);
-    // EntityHandle new_conn[num_nodes];
     EntityHandle small_conn[num_nodes];
     int nb_new_node = 0;
     int nn = 0;
     int ii = 0;
     for (; nn != num_nodes; ++nn) {
       if (conn[nn] == mother) {
-        // new_conn[nn] = father;
         nb_new_node++;
       } else {
-        // new_conn[nn] = conn[nn];
         small_conn[ii++] = conn[nn];
       }
     }
     if (nb_new_node > 0) {
-      if (ii > 1) {
+      if (ii > 1) 
         std::sort(&small_conn[0], &small_conn[ii]);
-      }
+      
       EntityHandle n0 = small_conn[0], n1 = 0;
-      if (ii == 2) {
+      if (ii == 2) 
         n1 = small_conn[1];
-      }
+      
       FaceMapIdx::iterator fit = face_map.find(boost::make_tuple(n0, n1));
-      if (fit == face_map.end()) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Entity not found");
+      if (fit != face_map.end()) {
+        const EntityHandle child = fit->e;
+        const EntityHandle parent = ent;
+        if (m_field.get_moab().dimension_from_handle(parent) !=
+            m_field.get_moab().dimension_from_handle(child))
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Huston we have a problem!");
+
+        // Set parent child relation
+        CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),
+                                               &child, 1, &parent);
+        // Create map
+        parentChildMap.insert(ParentChild(parent, child));
       }
-      const EntityHandle child = fit->e;
-      const EntityHandle parent = ent;
-      if (m_field.get_moab().dimension_from_handle(parent) !=
-          m_field.get_moab().dimension_from_handle(child)) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Huston we have a problem!");
-      }
-      CHKERR m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),
-                                             &parent, 1, &child);
-      // create map
-      parentChildMap.insert(ParentChild(parent, child));
     }
   }
 
@@ -388,9 +381,8 @@ MoFEMErrorCode NodeMergerInterface::mergeNodes(
 
   successMerge = true;
 
-  if (verb > VERY_VERBOSE) {
-    std::cout << "nodes merged" << endl;
-  }
+  if (verb > VERY_VERBOSE) 
+    std::cerr << "Nodes merged" << endl;
 
   MoFEMFunctionReturn(0);
 }

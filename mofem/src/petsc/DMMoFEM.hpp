@@ -97,26 +97,35 @@ PetscErrorCode DMMoFEMGetSquareProblem(DM dm, PetscBool *square_problem);
 
 /**
  * \brief Resolve shared entities
+ *
  * @param  dm      dm
  * @param  fe_name finite element for which shared entities are resolved
  * @return         error code
  *
-
+ * \note This function is valid for parallel algebra and serial mesh. It should
+ * be run collectively, i.e. on all processors.
+ *
  * This allows for tag reduction or tag exchange, f.e.
-
- \code
- ierr = DMMoFEMGetSquareProblem(dm,"SHELL_ELEMENT"); CHKERRG(ierr);
- Tag th;
- rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
- ParallelComm* pcomm =
- ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
- // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
- rval = pcomm->exchange_tags(th,prisms);
- \endcode
-
+ *
+ * \code
+ * CHKERR DMMoFEMResolveSharedFiniteElements(dm,"SHELL_ELEMENT");
+ * Tag th;
+ * CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th);
+ * ParallelComm* pcomm =
+ * ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+ * // CHKERR pcomm->reduce_tags(th,MPI_SUM,prisms);
+ * CHKERR pcomm->exchange_tags(th,prisms);
+ * \endcode
+ *
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMResolveSharedEntities(DM dm, const char fe_name[]);
+PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, const char fe_name[]);
+
+/**
+ * @deprecated Use DMMoFEMResolveSharedFiniteElements
+ */
+DEPRECATED PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,
+                                                       const char fe_name[]);
 
 /**
  * \brief Get finite elements layout in the problem
@@ -922,15 +931,17 @@ struct DMCtx : public UnknownInterface {
 
 #endif //__DMMMOFEM_H
 
-/***************************************************************************/ /**
-                                                                               * \defgroup dm Distributed mesh manager
-                                                                               * \brief Implementation of PETSc DM, managing interactions between mesh data structures and vectors and matrices
-                                                                               *
-                                                                               * DM objects are used to manage communication between the algebraic structures in
-                                                                               * PETSc (Vec and Mat) and mesh data structures in PDE-based (or other)
-                                                                               * simulations.
-                                                                               *
-                                                                               * DM is abstract interface, here is it particular implementation for MoFEM code.
-                                                                               *
-                                                                               * \ingroup mofem
-                                                                               ******************************************************************************/
+/**
+ * \defgroup dm Distributed mesh manager
+ * \brief Implementation of PETSc DM, managing interactions between mesh data
+ *structures and vectors and matrices
+ *
+ * DM objects are used to manage communication between the algebraic structures
+ *in PETSc (Vec and Mat) and mesh data structures in PDE-based (or other)
+ * simulations.
+ *
+ * DM is abstract interface, here is it particular implementation for MoFEM
+ *code.
+ *
+ * \ingroup mofem
+ **/

@@ -24,6 +24,22 @@ using namespace MoFEM;
 
 static char help[] = "testing mesh cut test\n\n";
 
+struct TestBitLevel {
+  BitRefManager *mngPtr;
+  TestBitLevel(BitRefManager *mng_ptr) : mngPtr(mng_ptr) {}
+  MoFEMErrorCode operator()(const BitRefLevel &bit, const int expected_size) {
+    MoFEMFunctionBeginHot;
+    Range ents;
+    CHKERR mngPtr->getEntitiesByRefLevel(bit, BitRefLevel().set(), ents);
+    cout << "bit_level nb ents " << bit << " " << ents.size() << endl;
+    if (expected_size != -1 && expected_size != static_cast<int>(ents.size())) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "Wrong bit ref size %d!=%d", expected_size, ents.size());
+    }
+    MoFEMFunctionReturnHot(0);
+  }
+};
+
 int main(int argc, char *argv[]) {
 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
@@ -38,7 +54,7 @@ int main(int argc, char *argv[]) {
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "*** ERROR -my_file (MESH FILE NEEDED)");
-    
+
     int side_set = 200;
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-side_set", &side_set,
                               PETSC_NULL);
@@ -46,16 +62,9 @@ int main(int argc, char *argv[]) {
     double shift[] = {0, 0, 0};
     int nmax = 3;
     CHKERR PetscOptionsGetRealArray("", "-shift", shift, &nmax, &flg);
-    if (flg && nmax != 3) 
+    if (flg && nmax != 3)
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "three values expected");
-
-    int nb_ref_before = 0;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-nb_ref_before", &nb_ref_before,
-                              PETSC_NULL);
-    int nb_ref_after = 0;
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-nb_ref_after", &nb_ref_after,
-                              PETSC_NULL);
 
     int fixed_edges_blockset = 100;
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-fixed_edges_blockset",
@@ -65,12 +74,11 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-corner_nodes_blockset",
                               &corner_nodes_blockset, PETSC_NULL);
 
-    double tol[] = {0, 0, 0, 0};
-    int nmax_tol = 4;
+    double tol[] = {0, 0, 0};
+    int nmax_tol = 3;
     CHKERR PetscOptionsGetRealArray("", "-tol", tol, &nmax_tol, &flg);
-    if (flg && nmax_tol != 4) 
-      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-              "four values expected");
+    if (flg && nmax_tol != 3)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "four values expected");
 
     PetscBool test = PETSC_FALSE;
     CHKERR
@@ -97,12 +105,17 @@ int main(int argc, char *argv[]) {
 
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-        0, 3, bit_level0);
     BitRefLevel bit_last;
     bit_last.set(BITREFLEVEL_SIZE - 1);
+
+    CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+        0, 3, BitRefLevel().set(0));
     CHKERR m_field.getInterface<BitRefManager>()->addBitRefLevelByDim(0, 3,
                                                                       bit_last);
+
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        bit_level0, BitRefLevel().set(), MBTET, "out_tets_init_level0.vtk",
+        "VTK", "");
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
         bit_last, BitRefLevel().set(), MBTET, "out_tets_bit_last.vtk", "VTK",
         "");
@@ -115,29 +128,15 @@ int main(int argc, char *argv[]) {
       no_of_ents_not_in_database = ents_not_in_database.size();
     }
 
-    // get cut mesh interface
-    CutMeshInterface *cut_mesh;
-    CHKERR m_field.getInterface(cut_mesh);
+    // Get BitRefManager interface,,
+    BitRefManager *bit_ref_manager;
+    CHKERR m_field.getInterface(bit_ref_manager);
     // get meshset manager interface
     MeshsetsManager *meshset_manager;
     CHKERR m_field.getInterface(meshset_manager);
-    // get surface entities form side set
-    Range surface;
-    if (meshset_manager->checkMeshset(side_set, SIDESET)) 
-      CHKERR meshset_manager->getEntitiesByDimension(side_set, SIDESET, 2,
-                                                     surface, true);
-
-    if (surface.empty()) 
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "No surface to cut");
-
-    // Set surface entities. If surface entities are from existing side set,
-    // copy those entities and do other geometrical transformations, like shift
-    // scale or streach, rotate.
-    if (meshset_manager->checkMeshset(side_set, SIDESET))
-      CHKERR cut_mesh->copySurface(surface, NULL, shift, NULL, NULL,
-                                   "surface.vtk");
-    else
-      CHKERR cut_mesh->setSurface(surface);
+    // get cut mesh interface
+    CutMeshInterface *cut_mesh;
+    CHKERR m_field.getInterface(cut_mesh);
 
     // Get geometric corner nodes and corner edges
     Range fixed_edges, corner_nodes;
@@ -154,17 +153,47 @@ int main(int argc, char *argv[]) {
           corner_nodes_blockset, BLOCKSET, 0, corner_nodes, true);
     }
 
-    // CHKERR cut_mesh->snapSurfaceToEdges(fixed_edges, 0.5, 0);
+    // get surface entities form side set
+    Range surface;
+    if (meshset_manager->checkMeshset(side_set, SIDESET))
+      CHKERR meshset_manager->getEntitiesByDimension(side_set, SIDESET, 2,
+                                                     surface, true);
+    if (surface.empty())
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "No surface to cut");
+    // Set surface entities. If surface entities are from existing side set,
+    // copy those entities and do other geometrical transformations, like shift
+    // scale or streach, rotate.
+    if (meshset_manager->checkMeshset(side_set, SIDESET))
+      CHKERR cut_mesh->copySurface(surface, NULL, shift, NULL, NULL,
+                                   "surface.vtk");
+    else
+      CHKERR cut_mesh->setSurface(surface);
 
     Range tets;
     CHKERR moab.get_entities_by_dimension(0, 3, tets, false);
+
     CHKERR cut_mesh->setVolume(tets);
-
-    // Build tree, it is used to ask geometrical queries, i.e. to find edges to
-    // cut or trim.
     CHKERR cut_mesh->buildTree();
+    CHKERR cut_mesh->makeFront(true);
+    const int nb_ref_cut = 1;
+    const int nb_ref_trim = 1;
+    CHKERR cut_mesh->refineMesh(0, nb_ref_cut, nb_ref_trim, &fixed_edges,
+                                VERBOSE, true);
+    auto shift_after_ref = [&]() {
+      MoFEMFunctionBegin;
+      BitRefLevel mask;
+      mask.set(0);
+      for (int ll = 1; ll != nb_ref_cut + nb_ref_trim + 1; ++ll)
+        mask.set(ll);
+      CHKERR core.getInterface<BitRefManager>()->shiftRightBitRef(
+          nb_ref_cut + nb_ref_trim, mask, VERBOSE);
+      MoFEMFunctionReturn(0);
+    };
+    CHKERR shift_after_ref();
 
-    CHKERR cut_mesh->makeFront();
+    CHKERR m_field.getInterface<BitRefManager>()
+        ->writeEntitiesAllBitLevelsByType(BitRefLevel().set(), MBTET,
+                                          "all_bits.vtk", "VTK", "");
 
     // Create tag storing nodal positions
     double def_position[] = {0, 0, 0};
@@ -174,85 +203,50 @@ int main(int argc, char *argv[]) {
     // Set tag values with coordinates of nodes
     CHKERR cut_mesh->setTagData(th);
 
-    // Get BitRefManager interface,,
-    BitRefManager *bit_ref_manager;
-    CHKERR m_field.getInterface(bit_ref_manager);
-
     // Cut mesh, trim surface and merge bad edges
     int first_bit = 1;
-    CHKERR cut_mesh->refCutTrimAndMerge(
-        first_bit, 1, nb_ref_before, nb_ref_after, th, tol[0], tol[1], tol[2],
-        tol[3], fixed_edges, corner_nodes, true, true);
+    CHKERR cut_mesh->cutTrimAndMerge(first_bit, 5, th, tol[0], tol[1], tol[2],
+                                     fixed_edges, corner_nodes, true, true);
+
+    // Split faces
+    CHKERR cut_mesh->splitSides(BitRefLevel().set(first_bit),
+                                BitRefLevel().set(first_bit + 1),
+                                cut_mesh->getMergedSurfaces(), th);
+    CHKERR core.getInterface<MeshsetsManager>()
+        ->updateAllMeshsetsByEntitiesChildren(BitRefLevel().set(first_bit + 1));
+
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        BitRefLevel().set(first_bit + 1), BitRefLevel().set(), MBTET,
+        "out_split_tets.vtk", "VTK", "");
+
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        BitRefLevel().set(first_bit + 1), BitRefLevel().set(), MBPRISM,
+        "out_split_prism.vtk", "VTK", "");
 
     if (test) {
-      struct TestBitLevel {
-        BitRefManager *mngPtr;
-        TestBitLevel(BitRefManager *mng_ptr) : mngPtr(mng_ptr) {}
-        MoFEMErrorCode operator()(const BitRefLevel &bit,
-                                  const int expected_size) {
-          MoFEMFunctionBeginHot;
-          Range ents;
-          CHKERR mngPtr->getEntitiesByRefLevel(bit, bit, ents);
-          cout << "bit_level nb ents " << ents.size() << endl;
-          if (expected_size != -1 &&
-              expected_size != static_cast<int>(ents.size())) {
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                     "Wrong bit ref size %d!=%d", expected_size, ents.size());
-          }
-          MoFEMFunctionReturnHot(0);
-        }
-      };
-      for (int ll = 1; ll != first_bit; ++ll)
+      for (int ll = 0; ll != first_bit + 2; ++ll)
         CHKERR TestBitLevel(core.getInterface<BitRefManager>())(
             BitRefLevel().set(ll), -1);
     }
 
-    // Improve mesh with tetgen
-#undef WITH_TETGEN
-#ifdef WITH_TETGEN
-    int bit_tetgen = first_bit + 1;
-    // Switches controling TetGen
-    vector<string> switches;
-    switches.push_back("YrqOJMS0VV");
-    CHKERR cut_mesh->rebuildMeshWithTetGen(
-        switches, BitRefLevel().set(first_bit), BitRefLevel().set(bit_tetgen),
-        cut_mesh->getMergedSurfaces(), fixed_edges, corner_nodes, th, true);
-    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-        BitRefLevel().set(bit_tetgen), BitRefLevel().set(), MBTET,
-        "out_tets_tetgen.vtk", "VTK", "");
-#else
-    int bit_tetgen = first_bit;
-    const_cast<Range &>(cut_mesh->getTetgenSurfaces()) =
-        cut_mesh->getMergedSurfaces();
-#endif // WITH_TETGEN
-
-    // Split faces
-    CHKERR cut_mesh->splitSides(BitRefLevel().set(bit_tetgen),
-                                BitRefLevel().set(bit_tetgen + 1),
-                                cut_mesh->getTetgenSurfaces(), th);
-    CHKERR core.getInterface<MeshsetsManager>()
-        ->updateAllMeshsetsByEntitiesChildren(
-            BitRefLevel().set(bit_tetgen + 1));
-
-    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-        BitRefLevel().set(bit_tetgen + 1), BitRefLevel().set(), MBTET,
-        "out_split.vtk", "VTK", "");
-
     // Finally shift bits
     BitRefLevel shift_mask;
-    for (int ll = 0; ll != bit_tetgen + 2; ++ll)
+    for (int ll = 0; ll != first_bit; ++ll)
       shift_mask.set(ll);
     CHKERR core.getInterface<BitRefManager>()->shiftRightBitRef(
-        bit_tetgen, shift_mask, VERBOSE);
+        first_bit, shift_mask, VERBOSE);
 
     // Set coordinates for tag data
     CHKERR cut_mesh->setCoords(th);
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-        BitRefLevel().set(0), BitRefLevel().set(), MBTET,
+        BitRefLevel().set(first_bit), BitRefLevel().set(), MBTET,
         "out_tets_shift_level0.vtk", "VTK", "");
     CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
-        BitRefLevel().set(1), BitRefLevel().set(), MBTET,
+        BitRefLevel().set(first_bit + 1), BitRefLevel().set(), MBTET,
         "out_tets_shift_level1.vtk", "VTK", "");
+    CHKERR core.getInterface<BitRefManager>()->writeBitLevelByType(
+        BitRefLevel().set(first_bit + 1), BitRefLevel().set(), MBPRISM,
+        "out_tets_shift_level1_prism.vtk", "VTK", "");
 
     Range surface_verts;
     CHKERR moab.get_connectivity(cut_mesh->getSurface(), surface_verts);

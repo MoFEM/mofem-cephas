@@ -189,7 +189,7 @@ MoFEMErrorCode FieldBlas::setVertexDofs(FieldBlas::VertexCoordsFunction lambda,
     LambdaMethod(MoFEM::Interface &m_field, Range &verts,
                  FieldBlas::VertexCoordsFunction lambda)
         : EntityMethod(), mField(m_field), verts(verts), lambda(lambda),
-          total(0), count(0) {}
+          count(0), total(0) {}
     MoFEMErrorCode preProcess() {
       vit = verts.begin();
       return 0;

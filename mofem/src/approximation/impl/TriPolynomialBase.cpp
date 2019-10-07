@@ -260,9 +260,9 @@ TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
-  if (data.dataOnEntities[MBTRI].size() != 1) {
+  if (data.dataOnEntities[MBTRI].size() != 1) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  }
+  
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
       cTx->basePolynomialsType0;
@@ -352,20 +352,23 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
 
   // Calculation H-curl on triangle faces
   if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
-    if (data.dataOnEntities[MBEDGE].size() != 3) {
+
+    if (data.dataOnEntities[MBEDGE].size() != 3) 
       SETERRQ1(
           PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
           "wrong number of data structures on edges, should be three but is %d",
           data.dataOnEntities[MBEDGE].size());
-    }
+    
     int sense[3], order[3];
     double *hcurl_edge_n[3];
     double *diff_hcurl_edge_n[3];
+
     for (int ee = 0; ee != 3; ++ee) {
-      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+      
+      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0) 
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "orientation (sense) of edge is not set");
-      }
+      
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
       int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(
@@ -374,21 +377,21 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
                                                         3 * nb_dofs, false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
           nb_gauss_pts, 2 * 3 * nb_dofs, false);
+
       hcurl_edge_n[ee] =
           &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
       diff_hcurl_edge_n[ee] =
           &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
+
     CHKERR Hcurl_Demkowicz_EdgeBaseFunctions_MBTRI(
         sense, order,
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         hcurl_edge_n, diff_hcurl_edge_n, nb_gauss_pts);
-    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
-    // cerr << data.dataOnEntities[MBEDGE][0].getDiffN(base) << endl;
-    // cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
-    // cerr << data.dataOnEntities[MBEDGE][0].getN(base) << endl;
+
   } else {
+
     // No DOFs on faces, resize base function matrices, indicating that no
     // dofs on them.
     for (int ee = 0; ee != 3; ++ee) {
@@ -396,25 +399,23 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts, 0,
                                                             false);
     }
+
   }
 
   if (data.spacesOnEntities[MBTRI].test(HCURL)) {
 
-    // cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
-    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
-    //
     // face
-    if (data.dataOnEntities[MBTRI].size() != 1) {
+    if (data.dataOnEntities[MBTRI].size() != 1) 
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "No data struture to keep base functions on face");
-    }
+    
     int order = data.dataOnEntities[MBTRI][0].getDataOrder();
     int nb_dofs = NBFACETRI_DEMKOWICZ_HCURL(order);
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                     false);
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,
                                                         3 * 2 * nb_dofs, false);
-    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
+
     int face_nodes[] = {0, 1, 2};
     CHKERR Hcurl_Demkowicz_FaceBaseFunctions_MBTRI(
         face_nodes, order,
@@ -423,12 +424,14 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
         &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin(),
         nb_gauss_pts);
-    // cerr << data.dataOnEntities[MBTRI][0].getN(base) << endl;
+
   } else {
+
     // No DOFs on faces, resize base function matrices, indicating that no
     // dofs on them.
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 0, false);
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts, 0, false);
+    
   }
 
   MoFEMFunctionReturn(0);
@@ -500,21 +503,12 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
     // In linear geometry derivatives are constant,
     // this in expense of efficiency makes implementation
     // consistent between vertices and other types of entities
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3, 2, false);
-    CHKERR ShapeDiffMBTRI(
-        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
-    MatrixDouble diffN(nb_gauss_pts, 6);
-    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-      for (int nn = 0; nn != 3; ++nn) {
-        for (int dd = 0; dd != 2; ++dd) {
-          diffN(gg, nn * 2 + dd) =
-              data.dataOnEntities[MBVERTEX][0].getDiffN(base)(nn, dd);
-        }
-      }
-    }
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(
-        diffN.size1(), diffN.size2(), false);
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().swap(diffN.data());
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts, 6,
+                                                           false);
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) 
+      std::copy(
+          Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+          &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(gg,0));
   }
 
   switch (cTx->sPace) {

@@ -95,10 +95,8 @@ struct BitRefManager : public UnknownInterface {
    * @brief add entities to database and set bit ref level
    * \ingroup mofem_bit_ref
    *
-   * \note behaviour of this method is different than when bit ref level is
-   * passed as reference. When is bit ref level is passed by reference lower
-   * dimension entities adjacent to entities are added to database. In THIS
-   * variant only entities in range are added.
+   * \note In THIS variant only entities in range are added and ref finite
+   * elements reated.
    *
    * @param ents
    * @param bit
@@ -114,10 +112,8 @@ struct BitRefManager : public UnknownInterface {
    * @brief add entities to database and set bit ref level
    * \ingroup mofem_bit_ref
    *
-   * \note behaviour of this method is different than when bit ref level is
-   * passed as reference. When is bit ref level is passed by reference lower
-   * dimension entities adjacent to entities are added to database. In THIS
-   * variant only entities in range are added. And DO NOT create elements.
+   * \note In THIS variant only entities in range are added. And DO NOT create
+   * elements.
    *
    * @param ents
    * @param bit
@@ -128,6 +124,62 @@ struct BitRefManager : public UnknownInterface {
   MoFEMErrorCode setEntitiesBitRefLevel(const Range &ents,
                                         const BitRefLevel bit = BitRefLevel(),
                                         int verb = QUIET) const;
+
+  /**
+   * @brief Set the bit ref level to entities in the field meshset
+   * 
+   * @param field_name 
+   * @param bit 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode
+  setFieldEntitiesBitRefLevel(const std::string field_name,
+                              const BitRefLevel bit = BitRefLevel(),
+                              int verb = QUIET) const;
+
+  /**
+   * @brief Set the Bit Ref Level By Dim object
+   *
+   * \note In THIS variant only entities in range are added. And DO NOT create
+   * elements.
+   *
+   * @param meshset
+   * @param dim
+   * @param bit
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode setBitRefLevelByDim(const EntityHandle meshset, const int dim,
+                                     const BitRefLevel bit,
+                                     int verb = QUIET) const;
+
+  /**
+   * @brief Set the Bit Ref Level By Type object
+   * 
+   * \note In THIS variant only entities in range are added. And DO NOT create
+   * elements.
+   * 
+   * @param meshset 
+   * @param type 
+   * @param bit 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode setBitRefLevelByType(const EntityHandle meshset,
+                                      const EntityType type,
+                                      const BitRefLevel bit,
+                                      int verb = QUIET) const;
+
+  /** brief add meshset and set bit ref level
+   * \ingroup mofem_bit_ref
+   *
+   * \param EntityHandle MeshSet
+   * \param BitRefLevel bitLevel
+   */
+  MoFEMErrorCode setBitLevelToMeshset(const EntityHandle meshset,
+                                      const BitRefLevel bit,
+                                      int verb = 0) const;
 
   /**
    * @brief Add entities which exist in MoAB database, and have set appropiate
@@ -141,12 +193,14 @@ struct BitRefManager : public UnknownInterface {
    *
    * @param type of entity
    * @param bit bit ref level
+   * @param mask 
    * @param verb verbosity level
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode addToDatabaseBitRefLevelByType(const EntityType type,
-                                                const BitRefLevel bit,
-                                                int verb = QUIET) const;
+  MoFEMErrorCode
+  addToDatabaseBitRefLevelByType(const EntityType type, const BitRefLevel bit,
+                                 const BitRefLevel mask = BitRefLevel().set(),
+                                 int verb = QUIET) const;
 
   /**
    * @brief Add entities which exist in MoAB database, and have set appropiate
@@ -163,28 +217,10 @@ struct BitRefManager : public UnknownInterface {
    * @param verb verbosity level
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode addToDatabaseBitRefLevelByDim(const int dim,
-                                               const BitRefLevel bit,
-                                               int verb = QUIET) const;
-
-  MoFEMErrorCode setBitRefLevelByDim(const EntityHandle meshset, const int dim,
-                                     const BitRefLevel bit,
-                                     int verb = QUIET) const;
-
-  MoFEMErrorCode setBitRefLevelByType(const EntityHandle meshset,
-                                      const EntityType type,
-                                      const BitRefLevel bit,
-                                      int verb = QUIET) const;
-
-  /** brief add meshset and set bit ref level
-   * \ingroup mofem_bit_ref
-   *
-   * \param EntityHandle MeshSet
-   * \param BitRefLevel bitLevel
-   */
-  MoFEMErrorCode setBitLevelToMeshset(const EntityHandle meshset,
-                                      const BitRefLevel bit,
-                                      int verb = 0) const;
+  MoFEMErrorCode
+  addToDatabaseBitRefLevelByDim(const int dim, const BitRefLevel bit,
+                                const BitRefLevel mask = BitRefLevel().set(),
+                                int verb = QUIET) const;
 
   /**
    * \brief add bit ref level to ref entity
@@ -376,8 +412,8 @@ struct BitRefManager : public UnknownInterface {
    */
   MoFEMErrorCode getEntitiesByParentType(const BitRefLevel bit,
                                          const BitRefLevel mask,
-                                         const EntityType type,
-                                         Range &ents) const;
+                                         const EntityType type, Range &ents,
+                                         const int verb = QUIET) const;
 
   /**
    * @brief Get all entities not in database
@@ -564,10 +600,12 @@ struct BitRefManager : public UnknownInterface {
    * @param  options   file options (see moab documentation)
    * @return           error code
    */
-  MoFEMErrorCode
-  writeBitLevelByType(const BitRefLevel bit, const BitRefLevel mask,
-                      const EntityType type, const char *file_name,
-                      const char *file_type, const char *options) const;
+  MoFEMErrorCode writeBitLevelByType(const BitRefLevel bit,
+                                     const BitRefLevel mask,
+                                     const EntityType type,
+                                     const char *file_name,
+                                     const char *file_type, const char *options,
+                                     const bool check_for_empty = true) const;
 
   /**
    * @brief Write ents not in database
@@ -575,11 +613,29 @@ struct BitRefManager : public UnknownInterface {
    * @param file_name
    * @param file_type for example "VTK"
    * @param options
+   * @param check_for_empty
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode writeEntitiesNotInDatabase(const char *file_name,
-                                            const char *file_type,
-                                            const char *options) const;
+  MoFEMErrorCode
+  writeEntitiesNotInDatabase(const char *file_name, const char *file_type,
+                             const char *options,
+                             const bool check_for_empty = true) const;
+
+  /**
+   * @brief Write all entities by bit levels and type
+   * 
+   * @param mask 
+   * @param type 
+   * @param file_name 
+   * @param file_type 
+   * @param options 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode writeEntitiesAllBitLevelsByType(const BitRefLevel mask,
+                                                 const EntityType type,
+                                                 const char *file_name,
+                                                 const char *file_type,
+                                                 const char *options);
 
   /**@}*/
 };

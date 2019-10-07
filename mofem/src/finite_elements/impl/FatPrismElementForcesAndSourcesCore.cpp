@@ -18,17 +18,6 @@
 * You should have received a copy of the GNU Lesser General Public
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-  #include <cblas.h>
-  #include <lapack_wrap.h>
-  // #include <gm_rule.h>
-  #include <quad.h>
-#ifdef __cplusplus
-}
-#endif
-
 namespace MoFEM {
 
 FatPrismElementForcesAndSourcesCore::FatPrismElementForcesAndSourcesCore(
@@ -387,97 +376,5 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
-                                     DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBegin;
-
-  if (type == MBVERTEX) {
-
-    VectorDouble &coords = getCoords();
-    double *coords_ptr = &*coords.data().begin();
-
-    const int nb_gauss_pts = data.getN(NOBASE).size1();
-    auto t_diff_n = data.getFTensor1DiffN<3>(NOBASE);
-    invJac.resize(9, nb_gauss_pts, false);
-    invJac.clear();
-    auto t_inv_jac = getFTensor2FromMat<3, 3>(invJac);
-
-    FTensor::Index<'i', 3> i;
-    FTensor::Index<'j', 3> j;
-    FTensor::Tensor2<double, 3, 3> t_jac;
-
-    double &vol =
-        const_cast<VolumeElementForcesAndSourcesCore *>(getVolumeFE())->vOlume;
-    vol = 0;
-
-    for (int gg = 0; gg != nb_gauss_pts; gg++) {
-
-      FTensor::Tensor1<double *, 3> t_coords(coords_ptr, &coords_ptr[1],
-                                             &coords_ptr[2], 3);
-      t_jac(i, j) = 0;
-      for (int bb = 0; bb != 6; bb++) {
-        t_jac(i, j) += t_coords(i) * t_diff_n(j);
-        ++t_diff_n;
-        ++t_coords;
-      }
-
-      double det;
-      CHKERR determinantTensor3by3(t_jac, det);
-      CHKERR invertTensor3by3(t_jac, det, t_inv_jac);
-      ++t_inv_jac;
-
-      vol += 0.5 * det * getGaussPts()(3, gg);
-    }
-  }
-
-  doVertices = true;
-  doEdges = false;
-  doQuads = false;
-  doTris = false;
-  doTets = false;
-  doPrisms = false;
-
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-OpSetInvJacH1ForFatPrism::doWork(int side, EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBegin;
-
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
-
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-    if (data.getN(base).size2() == 0)
-      continue;
-
-    const int nb_gauss_pts = data.getN(base).size1();
-    auto t_diff_n = data.getFTensor1DiffN<3>(base);
-    diffNinvJac.resize(data.getDiffN(base).size1(), data.getDiffN(base).size2(),
-                       false);
-
-    FTensor::Index<'i', 3> i;
-    FTensor::Index<'j', 3> j;
-
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_inv_diff_n(
-        &diffNinvJac(0, 0), &diffNinvJac(0, 1), &diffNinvJac(0, 2));
-    auto t_inv_jac = getFTensor2FromMat<3, 3>(invJac);
-
-    const int nb_dofs = data.getN(base).size2();
-    for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      for (int bb = 0; bb != nb_dofs; bb++) {
-        t_inv_diff_n(i) = t_diff_n(j) * t_inv_jac(j, i);
-        ++t_inv_diff_n;
-        ++t_diff_n;
-      }
-      ++t_inv_jac;
-    }
-
-    data.getDiffN(base).data().swap(diffNinvJac.data());
-  }
-
-  MoFEMFunctionReturn(0);
-}
 
 } // namespace MoFEM
