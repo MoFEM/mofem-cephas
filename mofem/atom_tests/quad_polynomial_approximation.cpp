@@ -41,6 +41,17 @@ struct ApproxFunction {
     }
     return r;
   }
+
+  static inline double diff_fun(double x, double y) {
+    double r = 0;
+    for (int o = 1; o <= approx_order; ++o) {
+      for (int i = 0; i <= o; ++i) {
+        int j = o - i;
+        r += i * pow(x, i - 1) * pow(y, j) + j * pow(x, i) * pow(y, j - 1);
+      }
+    }
+    return r;
+  }
 };
 
 struct QuadOpCheck

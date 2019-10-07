@@ -27,7 +27,7 @@ static double sum_matrix(MatrixDouble &m) {
   double s = 0;
   for (unsigned int ii = 0; ii < m.size1(); ii++) {
     for (unsigned int jj = 0; jj < m.size2(); jj++) {
-      s += m(ii, jj);
+      s += std::abs(m(ii, jj));
     }
   }
   return s;
@@ -55,11 +55,11 @@ int main(int argc, char *argv[]) {
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
+      SETERRQ(PETSC_COMM_SELF, 1, "Error -my_file (mesh file needed)");
     }
 
     const char *option;
-    option = ""; //"PARALLEL=BCAST;";//;DEBUG_IO";
+    option = ""; 
     CHKERR moab.load_file(mesh_file_name, 0, option);
     Range verts;
     CHKERR moab.get_entities_by_type(0, MBVERTEX, verts, true);
@@ -92,8 +92,8 @@ int main(int argc, char *argv[]) {
       MatrixDouble quad_bubbles(verts.size(), P);
       MatrixDouble quad_diff_bubbles(verts.size(), P * 2);
       double eps = 1e-8;
-      double quad_bubbles_sum = 1.56816;
-      double quad_diff_bubbles_sum = -7.57944;
+      double quad_bubbles_sum = 8.978040e+00;
+      double quad_diff_bubbles_sum = 1.099244e+02;
 
       CHKERR H1_QuadShapeFunctions_MBQUAD(
           faces_nodes.data(), p, &*N.data().begin(), &*diffN.data().begin(),
@@ -101,10 +101,12 @@ int main(int argc, char *argv[]) {
           verts.size(), Legendre_polynomials);
 
       if (fabs(quad_bubbles_sum - sum_matrix(quad_bubbles)) > eps) {
-        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
+        SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                 "wrong result = %8.6e", sum_matrix(quad_bubbles));
       }
       if (fabs(quad_diff_bubbles_sum - sum_matrix(quad_diff_bubbles)) > eps) {
-        SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
+        SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                 "wrong result = %8.6e", sum_matrix(quad_diff_bubbles));
       }
     }
 
@@ -132,22 +134,27 @@ int main(int argc, char *argv[]) {
         quad_diff_edges_ptr[ee] = &quad_diff_edges[ee](0, 0);
       }
 
-      double eps = 1e-8;
-      double quad_edges_sum[] = {9.075, 5.97498, 5.97498, 7.0086588};
-      double quad_diff_edges_sum[] = {-22.385, 18.79856, 20.248624,
-                                      -20.3557816};
+      double eps = 1e-4;
+      double quad_edges_sum[] = {1.237500e+01, 1.535050e+01, 1.781890e+01,
+                                 2.015678e+01};
+      double quad_diff_edges_sum[] = {8.470000e+01, 1.192510e+02, 1.580128e+02,
+                                      1.976378e+02};
 
       CHKERR H1_EdgeShapeFunctions_MBQUAD(
           sense, p, &*N.data().begin(), &*diffN.data().begin(), quad_edges_ptr,
           quad_diff_edges_ptr, verts.size(), Legendre_polynomials);
 
       for (int ee = 0; ee < 4; ++ee) {
-        if (std::abs(quad_edges_sum[ee] - sum_matrix(quad_edges[ee])) > eps) 
-          SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
+        if (std::abs(quad_edges_sum[ee] - sum_matrix(quad_edges[ee])) > eps)
+          SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                   "edge %d wrong result = %8.6e", ee,
+                   sum_matrix(quad_edges[ee]));
 
         if (std::abs(quad_diff_edges_sum[ee] -
                      sum_matrix(quad_diff_edges[ee])) > eps)
-          SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "wrong result");
+          SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                   "edge %d wrong result = %8.6e", ee,
+                   sum_matrix(quad_diff_edges[ee]));
       }
     }
   }
