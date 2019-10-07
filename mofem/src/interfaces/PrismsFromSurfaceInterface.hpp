@@ -84,7 +84,25 @@ struct PrismsFromSurfaceInterface : public UnknownInterface {
   MoFEMErrorCode setNormalThickness(const Range &prisms,
                                     double thickness3, double thickness4);
 
+  /**
+   * @brief Add quads to bockset 
+   * 
+   * If quad is adjacent to extruded edge, is added to given blockset
+   * 
+   * @param prisms 
+   * @return MoFEMErrorCode 
+   */
   MoFEMErrorCode updateMeshestByEdgeBlock(const Range &prisms);
+
+  /**
+   * @brief Add prism to bockset
+   *
+   * If quad is adjacent to extruded triangle, is added to given blockset
+   *
+   * @param prisms
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode updateMeshestByTriBlock(const Range &prisms);
 
 };
 

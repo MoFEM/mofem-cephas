@@ -283,4 +283,29 @@ PrismsFromSurfaceInterface::updateMeshestByEdgeBlock(const Range &prisms) {
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+PrismsFromSurfaceInterface::updateMeshestByTriBlock(const Range &prisms) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  Range prisms_tris;
+  CHKERR m_field.get_moab().get_adjacencies(prisms, 2, true, prisms_tris,
+                                            moab::Interface::UNION);
+  prisms_tris = prisms_tris.subset_by_type(MBTRI);
+  for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, it)) {
+    Range tris;
+    CHKERR m_field.get_moab().get_entities_by_type(it->meshset, MBTRI, tris,
+                                                  true);
+    tris = intersect(tris, prisms_tris);
+    if (!tris.empty()) {
+      Range tris_ents;
+      CHKERR m_field.get_moab().get_adjacencies(tris, 3, false, tris_ents,
+                                                moab::Interface::UNION);
+      tris_ents = intersect(tris_ents, prisms);
+      EntityHandle meshset = it->getMeshset();
+      CHKERR m_field.get_moab().add_entities(meshset, tris_ents);
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM
