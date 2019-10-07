@@ -621,23 +621,23 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
                       N[node_shift + n0] - N[node_shift + n3];
       ksi_faces[e1] = N[node_shift + n2] + N[node_shift + n3] -
                       N[node_shift + n0] - N[node_shift + n1];
-      double eps = 1e-14;
-      if (ksi_faces[e0] < -(1 + eps) || ksi_faces[e0] > (1 + eps)) {
-        SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
-      }
-      if (ksi_faces[e1] < -(1 + eps) || ksi_faces[e1] > (1 + eps)) {
-        SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
-      }
+      // double eps = 1e-14;
+      // if (ksi_faces[e0] < -(1 + eps) || ksi_faces[e0] > (1 + eps)) {
+      //   SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
+      // }
+      // if (ksi_faces[e1] < -(1 + eps) || ksi_faces[e1] > (1 + eps)) {
+      //   SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
+      // }
       int dd = 0;
       for (; dd < 3; dd++) {
-        diff_ksi_faces[e0][dd] = diffN[node_diff_shift + 2 * n1 + dd] +
-                                 diffN[node_diff_shift + 2 * n2 + dd] -
-                                 diffN[node_diff_shift + 2 * n0 + dd] -
-                                 diffN[node_diff_shift + 2 * n3 + dd];
-        diff_ksi_faces[e1][dd] = diffN[node_diff_shift + 2 * n2 + dd] +
-                                 diffN[node_diff_shift + 2 * n3 + dd] -
-                                 diffN[node_diff_shift + 2 * n0 + dd] -
-                                 diffN[node_diff_shift + 2 * n1 + dd];
+        diff_ksi_faces[e0][dd] = diffN[node_diff_shift + 3 * n1 + dd] +
+                                 diffN[node_diff_shift + 3 * n2 + dd] -
+                                 diffN[node_diff_shift + 3 * n0 + dd] -
+                                 diffN[node_diff_shift + 3 * n3 + dd];
+        diff_ksi_faces[e1][dd] = diffN[node_diff_shift + 3 * n2 + dd] +
+                                 diffN[node_diff_shift + 3 * n3 + dd] -
+                                 diffN[node_diff_shift + 3 * n0 + dd] -
+                                 diffN[node_diff_shift + 3 * n1 + dd];
       }
       double L0[p[ff] + 1], L1[p[ff] + 1];
       double diffL0[3 * (p[ff] + 1)], diffL1[3 * (p[ff] + 1)];
@@ -648,12 +648,12 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
                               diffL1, 3);
       CHKERRQ(ierr);
       double v = N[node_shift + n0] * N[node_shift + n2];
-      double v2[3] = {0, 0, 0};
+      double diff_v[3] = {0, 0, 0};
       dd = 0;
-      for (; dd < 3; dd++) {
-        v2[dd] = diffN[node_diff_shift + 3 * n0 + dd] * N[node_shift + n2] +
+      for (; dd < 3; dd++) 
+        diff_v[dd] = diffN[node_diff_shift + 3 * n0 + dd] * N[node_shift + n2] +
                  N[node_shift + n0] * diffN[node_diff_shift + 3 * n2 + dd];
-      }
+      
       int shift;
       shift = ii * P[ff];
       int jj = 0;
@@ -673,11 +673,12 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
                 dd = 0;
                 for (; dd < 3; dd++) {
                   diff_faceN[ff][3 * shift + 3 * jj + dd] =
+
                       (L0[pp0] * diffL1[dd * (p[ff] + 1) + pp1] +
                        diffL0[dd * (p[ff] + 1) + pp0] * L1[pp1]) *
-                      v;
-                  diff_faceN[ff][3 * shift + 3 * jj + dd] +=
-                      L0[pp0] * L1[pp1] * v2[dd];
+                          v +
+
+                      L0[pp0] * L1[pp1] * diff_v[dd];
                 }
               }
             }
@@ -757,10 +758,11 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
       double diff_n3 = diffN[node_diff_shift + 3 * 3 + dd];
       double diff_n4 = diffN[node_diff_shift + 3 * 4 + dd];
       double diff_n5 = diffN[node_diff_shift + 3 * 5 + dd];
-      diff_v_tri[dd] =
-          (diff_n0 + diff_n3) * (diff_n1 + diff_n4) * (diff_n2 + diff_n5);
-      diff_v_edge[dd] =
-          (diff_n0 + diff_n1 + diff_n2) * (diff_n3 + diff_n4 + diff_n5);
+      diff_v_tri[dd] = (diff_n0 + diff_n3) * (n1 + n4) * (n2 + n5) +
+                       (diff_n1 + diff_n4) * (n0 + n3) * (n2 + n5) +
+                       (diff_n2 + diff_n5) * (n0 + n3) * (n1 + n4);
+      diff_v_edge[dd] = (diff_n0 + diff_n1 + diff_n2) * (n3 + n4 + n5) +
+                        (diff_n3 + diff_n4 + diff_n5) * (n0 + n1 + n2);
       diff_v[dd] = diff_v_tri[dd] * v_edge + v_tri * diff_v_edge[dd];
     }
 
@@ -792,8 +794,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
                     (diffL0[dd * (p + 1) + i] * L1[j] * L2[k] +
                      L0[i] * diffL1[dd * (p + 1) + j] * L2[k] +
                      L0[i] * L1[j] * diffL2[dd * (p + 1) + k]) *
-                    v;
-                diff_volumeN[3 * shift + 3 * jj + dd] +=
+                        v +
                     L0[i] * L1[j] * L2[k] * diff_v[dd];
               }
             }
@@ -841,13 +842,13 @@ PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
                     N[node_shift + n0] - N[node_shift + n3];
     ksi_faces[e1] = N[node_shift + n2] + N[node_shift + n3] -
                     N[node_shift + n0] - N[node_shift + n1];
-    double eps = 1e-14;
-    if (ksi_faces[e0] < -(1 + eps) || ksi_faces[e0] > (1 + eps)) {
-      SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
-    }
-    if (ksi_faces[e1] < -(1 + eps) || ksi_faces[e1] > (1 + eps)) {
-      SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
-    }
+    // double eps = 1e-14;
+    // if (ksi_faces[e0] < -(1 + eps) || ksi_faces[e0] > (1 + eps)) {
+    //   SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
+    // }
+    // if (ksi_faces[e1] < -(1 + eps) || ksi_faces[e1] > (1 + eps)) {
+    //   SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
+    // }
     int dd = 0;
     for (; dd < 2; dd++) {
       diff_ksi_faces[e0][dd] = diffN[node_diff_shift + 2 * n1 + dd] +

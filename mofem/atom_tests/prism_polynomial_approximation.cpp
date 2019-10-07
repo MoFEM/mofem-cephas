@@ -24,7 +24,7 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 static int debug = 1;
 
-static constexpr int approx_order = 5;
+static constexpr int approx_order = 6;
 
 struct ApproxFunction {
   static inline double fun(double x, double y, double z) {
@@ -285,16 +285,19 @@ MoFEMErrorCode PrismOpCheck::doWork(int side, EntityType type,
         SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value %6.4e != %6.4e (%6.4e)", f, (*fieldVals)[gg],
                  f - (*fieldVals)[gg]);
-      cerr << f - (*fieldVals)[gg] << " : ";
-      for (auto d : {0, 1, 2})
-        cerr << diff_f[d] - (*diffFieldVals)(d, gg) << " ";
-      // if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
-      // SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-      //          "Wrong diff value %6.4e != %6.4e (%6.4e)", diff_f[d],
-      //          (*diffFieldVals)(d, gg),
-      //          diff_f[d] - (*diffFieldVals)(d, gg));
+      
+      std::cout << f - (*fieldVals)[gg] << " : ";
+      for (auto d : {0, 1, 2}) 
+        std::cout << diff_f[d] - (*diffFieldVals)(d, gg) << " ";
+      std::cout << std::endl;
 
-      cerr << endl;
+      for (auto d : {0, 1, 2})
+        if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
+          SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong diff value %6.4e != %6.4e (%6.4e)", diff_f[d],
+                   (*diffFieldVals)(d, gg),
+                   diff_f[d] - (*diffFieldVals)(d, gg));
+
       ++t_coords;
     }
   }

@@ -262,12 +262,18 @@ MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
         SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value %6.4e != %6.4e", f, (*fieldVals)[gg]);
       VectorDouble3 diff_f = ApproxFunction::diff_fun(t_coords(0), t_coords(1));
-      for (auto d : {0, 1}) {
+
+      std::cout << f - (*fieldVals)[gg] << " : ";
+      for (auto d : {0, 1})
+        std::cout << diff_f[d] - (*diffFieldVals)(d, gg) << " ";
+      std::cout << std::endl;
+
+      for (auto d : {0, 1}) 
         if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
           SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong directive value (%d) %6.4e != %6.4e", diff_f[d],
                    (*diffFieldVals)(d, gg));
-      }
+      
 
       ++t_coords;
     }

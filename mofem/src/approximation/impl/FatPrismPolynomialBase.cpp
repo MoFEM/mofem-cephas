@@ -304,7 +304,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
             prism_ent.getDiffN(base)(gg, 3 * dd + d) =
                 diff_extrude[d] * bubble * l[dd] +
                 extrude * diff_bubble[d] * l[dd];
-                
+
           prism_ent.getDiffN(base)(gg, 3 * dd + 2) +=
               extrude * bubble * 2 * diff_l_1d[dd];
 
@@ -391,10 +391,9 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
           }
           data.dataOnEntities[MBTRI][ff].getN(base)(gg, dd) =
               tri_n * edge_shape;
-          for (int kk = 0; kk < 2; kk++) {
+          for (auto kk : {0, 1}) 
             data.dataOnEntities[MBTRI][ff].getDiffN(base)(gg, 3 * dd + kk) =
                 dksi_tri_n[kk] * edge_shape;
-          }
           data.dataOnEntities[MBTRI][ff].getDiffN(base)(gg, 3 * dd + 2) =
               tri_n * dzeta;
         }
