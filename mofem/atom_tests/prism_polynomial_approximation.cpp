@@ -28,7 +28,7 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 static int debug = 1;
 
-static constexpr int approx_order = 7;
+static constexpr int approx_order = 6;
 
 struct ApproxFunction {
   static inline double fun(double x, double y, double z) {
@@ -37,8 +37,8 @@ struct ApproxFunction {
       for (int i = 0; i <= o; ++i) {
         for (int j = 0; j <= (o - i); ++j) {
           int k = o - i - j;
-          if (k >= 1) {
-            r += pow(x, i) * pow(y, j) * pow(z, k - 1);
+          if (k >= 0) {
+            r += pow(x, i) * pow(y, j) * pow(z, k);
           }
         }
       }
