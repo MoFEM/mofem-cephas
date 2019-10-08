@@ -92,8 +92,6 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
       }
       t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
 
-      double w = gaussPts(2, gg);
-
       ++t_t1;
       ++t_t2;
       ++t_normal;
@@ -135,6 +133,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
     FTensor::Number<1> N1;
     t_t1(i) = 0;
     t_t2(i) = 0;
+
     for (int nn = 0; nn != num_nodes; ++nn) {
       t_t1(i) += t_coords(i) * t_diff(N0);
       t_t2(i) += t_coords(i) * t_diff(N1);
@@ -376,7 +375,12 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
     normalsAtGaussPts.resize(0, 0, false);
     tangentOneAtGaussPts.resize(0, 0, false);
     tangentTwoAtGaussPts.resize(0, 0, false);
+  } else {
+    hoCoordsAtGaussPts.resize(coordsAtGaussPts.size1(),
+                              coordsAtGaussPts.size2(), false);
+    noalias(hoCoordsAtGaussPts) = coordsAtGaussPts;
   }
+
   MoFEMFunctionReturn(0);
 }
 
