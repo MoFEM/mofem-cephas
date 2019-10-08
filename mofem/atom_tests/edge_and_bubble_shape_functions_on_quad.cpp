@@ -92,8 +92,8 @@ int main(int argc, char *argv[]) {
       MatrixDouble quad_bubbles(verts.size(), P);
       MatrixDouble quad_diff_bubbles(verts.size(), P * 2);
       double eps = 1e-8;
-      double quad_bubbles_sum = 8.978040e+00;
-      double quad_diff_bubbles_sum = 1.099244e+02;
+      double quad_bubbles_sum = 1.795608e+01;
+      double quad_diff_bubbles_sum = 2.198488e+02;
 
       CHKERR H1_QuadShapeFunctions_MBQUAD(
           faces_nodes.data(), p, &*N.data().begin(), &*diffN.data().begin(),
