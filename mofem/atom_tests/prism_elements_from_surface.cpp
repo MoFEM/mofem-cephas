@@ -86,8 +86,7 @@ private:
   EntityHandle prims;
 };
 
-template<typename OP>
-struct Op : public OP {
+template <typename OP> struct Op : public OP {
 
   Op(moab::Interface &post_proc, MapCoords &map_coords, EntityHandle prism);
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -158,7 +157,7 @@ int main(int argc, char *argv[]) {
     char mesh_file_name[255];
     CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
                                  255, &flg);
-    if (flg != PETSC_TRUE) 
+    if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
               "error -my_file (MESH FILE NEEDED)");
 
@@ -378,6 +377,10 @@ MoFEMErrorCode PrismOp::doWork(int side, EntityType type,
   if (type == MBQUAD && (side == 3 || side == 4))
     MoFEMFunctionReturnHot(0);
 
+  const int nb_dofs = data.getIndices().size();
+  for (int dd = 0; dd != nb_dofs; ++dd)
+    data.getFieldDofs()[dd]->getFieldData() = data.getIndices()[dd];
+
   if (type == MBVERTEX) {
     const size_t nb_gauss_pts = getGaussPts().size2();
     auto &coords_at_pts = getGaussPts();
@@ -494,15 +497,15 @@ MoFEMErrorCode TriFE::setGaussPts(int order_row, int order_col,
   MoFEMFunctionReturn(0);
 }
 
-QuadFE::QuadFE(MoFEM::Interface &m_field, std::array<Range,3> &edge_blocks,
-             EntityHandle prism)
+QuadFE::QuadFE(MoFEM::Interface &m_field, std::array<Range, 3> &edge_blocks,
+               EntityHandle prism)
     : FaceElementForcesAndSourcesCore(m_field), edgeBlocks(edge_blocks),
       prism(prism) {}
 
 int QuadFE::getRule(int order_row, int order_col, int order_data) { return -1; }
 
 MoFEMErrorCode QuadFE::setGaussPts(int order_row, int order_col,
-                                  int order_data) {
+                                   int order_data) {
   MoFEMFunctionBegin;
 
   const EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
@@ -519,7 +522,7 @@ MoFEMErrorCode QuadFE::setGaussPts(int order_row, int order_col,
   constexpr int swap[3][2] = {{0, 1}, {0, 1}, {1, 0}};
   gaussPts.resize(3, edge_verts.size() * (number_of_prisms_layers + 1), false);
   int gg = 0;
-  for (size_t rr = 0; rr != edge_verts.size(); ++rr)  {
+  for (size_t rr = 0; rr != edge_verts.size(); ++rr) {
     const double x = edge_coords(rr, 0) - origin[side][0];
     const double y = edge_coords(rr, 1) - origin[side][1];
     const double edge_dist = x * normal[side][0] + y * normal[side][1];
@@ -540,14 +543,14 @@ EdgeFE::EdgeFE(MoFEM::Interface &m_field, std::array<Range, 3> &edge_blocks,
 int EdgeFE::getRule(int order_row, int order_col, int order_data) { return -1; }
 
 MoFEMErrorCode EdgeFE::setGaussPts(int order_row, int order_col,
-                                  int order_data) {
+                                   int order_data) {
   MoFEMFunctionBegin;
 
   const EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   int side, sense, offset;
   CHKERR mField.get_moab().side_number(prism, ent, side, sense, offset);
 
-  if(side >= 3 && side <= 5) {
+  if (side >= 3 && side <= 5) {
 
     gaussPts.resize(2, number_of_prisms_layers + 1, false);
     for (size_t gg = 0; gg != number_of_prisms_layers + 1; ++gg)
@@ -581,14 +584,14 @@ MoFEMErrorCode EdgeFE::setGaussPts(int order_row, int order_col,
       const double edge_dist = x * normal[side][0] + y * normal[side][1];
       gaussPts(0, gg) = edge_dist;
     }
-
   }
 
   MoFEMFunctionReturn(0);
 }
 
 template <typename OP>
-Op<OP>::Op(moab::Interface &post_proc, MapCoords &map_coords, EntityHandle prism)
+Op<OP>::Op(moab::Interface &post_proc, MapCoords &map_coords,
+           EntityHandle prism)
     : OP("FIELD1", "FIELD1", ForcesAndSourcesCore::UserDataOperator::OPROW),
       postProc(post_proc), mapCoords(map_coords), prism(prism) {}
 
@@ -607,12 +610,23 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
     MoFEMFunctionReturnHot(0);
   }
 
+  const int nb_dofs = data.getIndices().size();
+  for (int dd = 0; dd != nb_dofs; ++dd)
+    if (data.getFieldData()[dd] != data.getIndices()[dd]) {
+      std::cerr << "Indices: " << data.getIndices() << std::endl;
+      std::cerr << "Local indices: " << data.getLocalIndices() << std::endl;
+      std::cerr << "Data: " << data.getFieldData() << std::endl;
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "Indicices/data inconsistency %3.1f != %d",
+               data.getFieldData()[dd], data.getIndices()[dd]);
+    }
+
   const EntityHandle fe_ent = OP::getFEEntityHandle();
   const EntityHandle ent = OP::getSideEntity(side, type);
   int side_prism, sense, offset;
-  if(type == MBVERTEX) {
+  if (type == MBVERTEX) {
     CHKERR postProc.side_number(prism, fe_ent, side_prism, sense, offset);
-  } else 
+  } else
     CHKERR postProc.side_number(prism, ent, side_prism, sense, offset);
 
   if (type == MBVERTEX) {
@@ -641,7 +655,6 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
 
   std::string tag_prism_name_base =
       "PrismType" + to_str(type) + "Side" + to_str(side_prism);
-
 
   MatrixDouble trans_base = trans(data.getN());
   MatrixDouble prism_base(trans_base.size1(), trans_base.size2());
@@ -697,9 +710,10 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
       cout << "Inconsistent base " << tag_prism_name_base << " "
            << tag_name_base << " sum  " << sum << endl;
 
-    // SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-    //  "Inconsistent base %s sum %6.4e", tag_prism_name_base.c_str(),
-    //  sum);
+    if (std::abs(sum) > eps)
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+               "Inconsistent base %s sum %6.4e", tag_prism_name_base.c_str(),
+               sum);
   }
 
   MoFEMFunctionReturn(0);
