@@ -455,7 +455,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
           &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin();
       CHKERR H1_QuadShapeFunctions_MBPRISM(quads_nodes, quad_order, vertex_n,
                                            diff_vertex_n, quad_n, diff_quad_n,
-                                           nb_gauss_pts, Legendre_polynomials);
+                                           nb_gauss_pts, base_polynomials);
     }
     MoFEMFunctionReturn(0);
   };
@@ -475,7 +475,7 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
           order, vertex_n, diff_vertex_n,
           &data.dataOnEntities[MBPRISM][0].getN(base)(0, 0),
           &data.dataOnEntities[MBPRISM][0].getDiffN(base)(0, 0), nb_gauss_pts,
-          Legendre_polynomials);
+          base_polynomials);
     }
     MoFEMFunctionReturn(0);
   };
