@@ -176,7 +176,7 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
     }
   }
 
-  // faces
+  // tris
   for (unsigned int ff = 0; ff < row_data.dataOnEntities[MBTRI].size(); ff++) {
     if (row_data.dataOnEntities[MBTRI][ff].getN().size1() == 0)
       continue;
