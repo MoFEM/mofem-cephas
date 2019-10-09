@@ -432,7 +432,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1,
                   &gaussPtsMaster(2, 0), 1);
 
-      cerr << gaussPtsMaster;
+      // cerr << gaussPtsMaster;
 
       gaussPtsSlave = gaussPtsMaster;
 
