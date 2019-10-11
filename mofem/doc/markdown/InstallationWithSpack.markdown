@@ -189,7 +189,7 @@ mpirun -np 2 ./elasticity \
 -my_file LShape.h5m \
 -my_order 2 \
 -ksp_type gmres \
--pc_type lu -pc_factor_mat_solver_package mumps \
+-pc_type lu -pc_factor_mat_solver_type mumps \
 -ksp_monitor
 mbconvert out.h5m out.vtk
 ~~~~~~
@@ -353,12 +353,11 @@ Next, install users modules
 cd $HOME/mofem_install
 mkdir um
 cd um/
-spack view --verbose symlink -i um_view mofem-cephas@develop build_type=RelWithDebInfo
+spack view --verbose symlink -i um_view mofem-cephas@develop
 export PATH=$PWD/um_view/bin:$PATH
 mkdir build 
 cd build/
-spack setup mofem-users-modules@develop copy_user_modules=False build_type=RelWithDebInfo \
-              ^mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
+spack setup mofem-users-modules@develop ^mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
 ./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
 ctest
@@ -568,7 +567,7 @@ $HOME/um_view/bin/mpirun -np $NSLOTS \
 ./elasticity \
 -my_file LShape.h5m \
 -ksp_type gmres -pc_type lu \
--pc_factor_mat_solver_package mumps \
+-pc_factor_mat_solver_type mumps \
 -ksp_monitor \
 -my_order 2 2>&1 | tee log
 ~~~~~

@@ -125,7 +125,6 @@ EdgePolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
-  const FieldApproximationBase base = cTx->bAse;
   const std::string &field_name = cTx->fieldName;
   const int nb_gauss_pts = pts.size2();
 

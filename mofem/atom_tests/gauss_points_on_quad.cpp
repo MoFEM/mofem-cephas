@@ -33,7 +33,6 @@ int main(int argc, char *argv[]) {
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
     MoFEM::Core core(moab);
-    MoFEM::Interface &m_field = core;
 
     MatrixDouble pts_quad;
     int rule_ksi = 6;

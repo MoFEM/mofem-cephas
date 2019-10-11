@@ -1528,8 +1528,6 @@ using namespace boost::numeric;
 MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   MoFEMFunctionBeginHot;
 
-  ErrorCode rval;
-
   double base_coords[] = {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1};
 
   moab::Core core_ref;

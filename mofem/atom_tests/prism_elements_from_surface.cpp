@@ -24,7 +24,6 @@
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
-static int debug = 1;
 
 static constexpr int precision_exponent = 5;
 static constexpr int number_of_prisms_layers = 18;

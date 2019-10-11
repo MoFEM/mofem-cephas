@@ -1791,7 +1791,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
 
             if (t_edge < 0.5) {
               t_ray(i) = t_edge * t_edge_delta(i);
-              const double ray_length = sqrt(t_ray(i) * t_ray(i));
               if (check_to_add_edge(e, dist)) {
                 add_vert(conn_edge[0], e, fabs(t_edge));
                 add_vert(conn_edge[1], e, fabs(t_edge - 1));
@@ -1801,7 +1800,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
               FTensor::Tensor1<double, 3> t_edge_point;
               t_edge_point(i) = t_e0(i) + t_edge * t_edge_delta(i);
               t_ray(i) = t_edge_point(i) - t_e1(i);
-              const double ray_length = sqrt(t_ray(i) * t_ray(i));
               if (check_to_add_edge(e, dist)) {
                 add_vert(conn_edge[0], e, fabs(t_edge));
                 add_vert(conn_edge[1], e, fabs(t_edge - 1));

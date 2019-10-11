@@ -237,7 +237,6 @@ MoFEMErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     auto &prism_ent = data.dataOnEntities[MBEDGE][ee];
 
     int order = thickness_ent.getDataOrder();
-    int sense = thickness_ent.getSense();
     int nb_dofs = NBEDGE_H1(order);
     if ((unsigned int)nb_dofs != thickness_ent.getN(base).size2())
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,

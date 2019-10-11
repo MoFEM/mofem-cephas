@@ -43,7 +43,6 @@ int main(int argc, char *argv[]) {
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
     MoFEM::Core core(moab);
-    MoFEM::Interface &m_field = core;
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];

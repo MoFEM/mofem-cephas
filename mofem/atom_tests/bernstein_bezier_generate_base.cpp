@@ -53,7 +53,6 @@ int main(int argc, char *argv[]) {
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
     // Create MoFEM instance
     MoFEM::Core core(moab);
-    MoFEM::Interface &m_field = core;
 
     constexpr int N = 5;
 
@@ -254,9 +253,6 @@ int main(int argc, char *argv[]) {
               &edge_lambda(0, 0), Tools::diffShapeFunMBEDGE.data(),
               &edge_base_diff(0, 0), nullptr);
 
-          const double b = boost::math::factorial<double>(N) /
-                           boost::math::factorial<double>(N - 1);
-
           for (size_t i = 0; i != M; ++i) {
             for (size_t j = 0; j != edge_diff_base.size2(); ++j) {
 
@@ -424,9 +420,6 @@ int main(int argc, char *argv[]) {
               N - 1, M, face_alpha_diff.size1(), &face_alpha_diff(0, 0),
               &face_lambda(0, 0), Tools::diffShapeFunMBTRI.data(),
               &face_base_diff(0, 0), nullptr);
-
-          const double b = boost::math::factorial<double>(N) /
-                           boost::math::factorial<double>(N - 1);
 
           for (size_t i = 0; i != M; ++i) {
             for (size_t j = 0; j != face_diff_base.size2() / 2; ++j) {

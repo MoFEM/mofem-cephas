@@ -901,7 +901,6 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
       bb_node_order.resize(num_nodes, false);
       bb_node_order.clear();
       const int nb_dof_idx = first_dof.getNbOfCoeffs();
-      const int max_nb_dofs = nb_dof_idx * num_nodes;
 
       std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
       for (; dit != hi_dit;) {
