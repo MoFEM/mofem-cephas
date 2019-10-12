@@ -163,7 +163,14 @@ latest changes.
 Look to Valgrind <a href=http://valgrind.org>documentation</a>. However, a
 quick answer is
 \code
-valgrind --dsymutil=yes --track-origins=yes --trace-children=yes ./command args
+valgrind \
+--dsymutil=yes \
+--track-origins=yes \
+--trace-children=yes \
+--show-leak-kinds=all \
+--verbose \
+--log-file=valgrind-out.txt \
+./command args
 \endcode
 
 \subsection faq_memory_profiling_valgrind How to profile memory usage?
