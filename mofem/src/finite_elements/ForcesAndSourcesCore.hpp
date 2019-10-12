@@ -747,14 +747,17 @@ protected:
    * @brief Entity data on element entity rows fields
    *
    */
-  const boost::shared_ptr<DataForcesAndSourcesCore> dataOnElement[LASTSPACE];
+   const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
+                   LASTSPACE>
+      dataOnElement;
 
   /**
    * @brief Entity data on element entity columns fields
    *
    */
-  const boost::shared_ptr<DataForcesAndSourcesCore>
-      derivedDataOnElement[LASTSPACE];
+   const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
+                   LASTSPACE>
+      derivedDataOnElement;
 
   DataForcesAndSourcesCore &dataNoField;
   DataForcesAndSourcesCore &dataH1;

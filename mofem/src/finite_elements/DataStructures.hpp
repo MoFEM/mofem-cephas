@@ -55,6 +55,7 @@ struct DataForcesAndSourcesCore {
     /**@{*/
 
     EntData(const bool allocate_base_matrices = true);
+    virtual ~EntData() = default;
 
     /**@}*/
 
@@ -1025,6 +1026,7 @@ struct DataForcesAndSourcesCore {
                       ///< values, etc.
 
   DataForcesAndSourcesCore(const EntityType type);
+  virtual ~DataForcesAndSourcesCore() = default;
 
   virtual MoFEMErrorCode setElementType(const EntityType type);
 

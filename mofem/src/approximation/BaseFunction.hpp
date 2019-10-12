@@ -31,7 +31,7 @@ struct BaseFunctionUnknownInterface {
   query_interface(const MOFEMuuid &uuid,
                   BaseFunctionUnknownInterface **iface) const = 0;
 
-  virtual ~BaseFunctionUnknownInterface(){};
+  virtual ~BaseFunctionUnknownInterface() = default;
 };
 
 /**

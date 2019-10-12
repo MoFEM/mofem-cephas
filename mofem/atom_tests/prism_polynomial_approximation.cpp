@@ -274,7 +274,6 @@ MoFEMErrorCode PrismOpCheck::doWork(int side, EntityType type,
   if (type == MBVERTEX) {
     const int nb_gauss_pts = data.getN().size2();
     auto t_coords = getFTensor1CoordsAtGaussPts();
-    double sum = 0;
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
       double f = ApproxFunction::fun(t_coords(0), t_coords(1), t_coords(2));
       VectorDouble3 diff_f =

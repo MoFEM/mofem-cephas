@@ -37,31 +37,26 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
       dataOnElement{
 
           nullptr,
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)), // NOFIELD
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)), // H1
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)), // HCURL
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)), // HDIV
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)) // L2
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // NOFIELD
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // H1
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HCURL
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HDIV
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET)  // L2
 
       },
       derivedDataOnElement{
 
           nullptr,
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnElement[NOFIELD])),
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnElement[H1])),
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnElement[HCURL])),
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnElement[HDIV])),
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnElement[L2]))
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+              dataOnElement[NOFIELD]), // NOFIELD
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+              dataOnElement[H1]), // H1
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+              dataOnElement[HCURL]), // HCURL
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+              dataOnElement[HDIV]), // HDIV
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+              dataOnElement[L2]) // L2
 
       },
       dataNoField(*dataOnElement[NOFIELD].get()),

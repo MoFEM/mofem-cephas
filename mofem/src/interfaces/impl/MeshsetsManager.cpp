@@ -553,12 +553,12 @@ struct BlockData {
 
   std::vector<double> aTtr;
   BlockData() : aTtr(10, 0) {
-    strncpy(dispBc.data.name, "Displacement", 12);
-    strncpy(forceBc.data.name, "Force", 5);
-    strncpy(pressureBc.data.name, "Pressure", 8);
-    strncpy(temperatureBc.data.name, "Temperature", 11);
-    strncpy(heatFluxBc.data.name, "HeatFlux", 8);
-    strncpy(cfgBc.data.name, "cfd_bc", 6);
+    std::memcpy(dispBc.data.name, "Displacement", 12);
+    std::memcpy(forceBc.data.name, "Force", 5);
+    std::memcpy(pressureBc.data.name, "Pressure", 8);
+    std::memcpy(temperatureBc.data.name, "Temperature", 11);
+    std::memcpy(heatFluxBc.data.name, "HeatFlux", 8);
+    std::memcpy(cfgBc.data.name, "cfd_bc", 6);
   }
 };
 

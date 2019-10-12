@@ -164,8 +164,6 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
       MoFEMFunctionReturn(0);
     };
 
-    boost::shared_ptr<CoordSys> undefined_cs_ptr;
-
     auto create_undefined_cs = [&](auto &undefined_cs_ptr) {
       MoFEMFunctionBegin;
       const int unidefined_cs_dim[] = {-1, 0, 0, 0};
@@ -178,7 +176,6 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
 
     auto add_field_meshset_to_cs = [&](auto &undefined_cs_ptr) {
       MoFEMFunctionBegin;
-
       int cs_name_size[1];
       cs_name_size[0] = undefined_cs_ptr->getName().size();
       void const *cs_name[] = {&*undefined_cs_ptr->getNameRef().begin()};
@@ -187,11 +184,11 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
           1, cs_name, cs_name_size);
       EntityHandle coord_sys_meshset = undefined_cs_ptr->getMeshset();
       CHKERR get_moab().add_entities(coord_sys_meshset, &meshset, 1);
-
       MoFEMFunctionReturn(0);
     };
 
     CHKERR create_tags();
+    boost::shared_ptr<CoordSys> undefined_cs_ptr;
     CHKERR create_undefined_cs(undefined_cs_ptr);
     CHKERR add_field_meshset_to_cs(undefined_cs_ptr);
 

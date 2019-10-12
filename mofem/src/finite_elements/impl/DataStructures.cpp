@@ -119,8 +119,8 @@ DataForcesAndSourcesCore::DataForcesAndSourcesCore(EntityType type) {
 
 MoFEMErrorCode DataForcesAndSourcesCore::setElementType(const EntityType type) {
   MoFEMFunctionBegin;
-  for (EntityType tt = MBVERTEX; tt != MBMAXTYPE; ++tt)
-    dataOnEntities[tt].clear();
+  for (auto &data : dataOnEntities)
+    data.clear();
   constructor_data(this, type);
   MoFEMFunctionReturn(0);
 }
