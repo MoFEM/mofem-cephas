@@ -27,7 +27,6 @@ using OpEle = FaceElementForcesAndSourcesCore::UserDataOperator;
 using EntData = DataForcesAndSourcesCore::EntData;
 
 static char help[] = "...\n\n";
-static int debug = 1;
 
 static constexpr int approx_order = 5;
 struct ApproxFunction {
