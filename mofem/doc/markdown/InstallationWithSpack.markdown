@@ -61,7 +61,7 @@ environment-modules \
 git \
 python \
 unzip \
-vim \ 
+vim \
 gfortran
 ~~~~~
 
