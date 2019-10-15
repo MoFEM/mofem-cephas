@@ -118,16 +118,20 @@ cd ~
 echo "$PWD"
   
 # Retrieve Spack for MoFEM
-echo "Download spack mofem mirror"
-mkdir -p spack &&\
-curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
-| tar xzC $PWD/spack --strip 1
+if [ ! -d "$PWD/spack" ]; then
+    echo "Download spack mofem mirror"
+    mkdir -p spack &&\
+    curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
+    | tar xzC $PWD/spack --strip 1
+fi
 
 # Download mirror
-echo "Download spack mofem mirror"
-mkdir -p mofem_mirror &&
-curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
-| tar xzC $PWD/mofem_mirror  --strip 1
+if [ ! -d "$PWD/spack" ]; then
+    echo "Download spack mofem mirror"
+    mkdir -p mofem_mirror &&
+    curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+    | tar xzC $PWD/mofem_mirror  --strip 1
+fi
   
 # Initialise Spack environment variables:
 . $HOME/spack/share/spack/setup-env.sh
