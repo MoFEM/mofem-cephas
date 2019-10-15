@@ -486,6 +486,12 @@ spack view symlink -i um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~
 
+If needs you can add more users modules or compile them by yourself.
+Installation can take some time since everything is installed from scratch.
+You can consider to run it in
+[screen](https://www.youtube.com/watch?v=3txYaF_IVZQ) terminal, and go for a
+coffee. 
+
 ## Server Buckethead {#spack_buckethead}
 
 ### Installation {#spack_buckedhead_installation}
@@ -493,61 +499,96 @@ spack activate -v um_view mofem-users-modules
 Buckethead is a Linux cluster running Centos7. More information about
 Buckethead you will find 
 [here](http://malmsteen.eng.gla.ac.uk/wiki/hpc-wiki/index.php/Resources#Buckethead). 
-Install Spack and load cluster modules
+
+#### Load cluster modules
 ~~~~~
-module load gcc/6.4.0
+module load mpi/openmpi/3.0.0
 module load gridengine
-git clone --single-branch -b mofem https://github.com/likask/spack.git
-. spack/share/spack/setup-env.sh
 ~~~~~
 
-We need to set up compilers since the location of standard `gcc@6.4.0` libraries
-is in an unusual place when loaded by the module. In order to do that you have
-to edit file `.spack/linux/compilers.yaml` in your home directory
+#### Download spack:
 ~~~~~
-     1	compilers:
-     2	- compiler:
-     3	    environment: {}
-     4	    extra_rpaths: []
-     5	    flags: {}
-     6	    modules: []
-     7	    operating_system: centos7
-     8	    paths:
-     9	      cc: /usr/bin/gcc
-    10	      cxx: /usr/bin/g++
-    11	      f77: null
-    12	      fc: null
-    13	    spec: gcc@4.8.5
-    14	    target: x86_64
-    15	- compiler:
-    16	    environment: {}
-    17	    extra_rpaths:
-    18	    - /software/compilers/gcc/6.4.0/lib64
-    19	    flags: {}
-    20	    modules: []
-    21	    operating_system: centos7
-    22	    paths:
-    23	      cc: /software/compilers/gcc/6.4.0/bin/gcc
-    24	      cxx: /software/compilers/gcc/6.4.0/bin/g++
-    25	      f77: /software/compilers/gcc/6.4.0/bin/gfortran
-    26	      fc: /software/compilers/gcc/6.4.0/bin/gfortran
-    27	    spec: gcc@6.4.0
-    28	    target: x86_64
+mkdir -p spack &&\
+curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
+| tar xzC $PWD/spack --strip 1
+~~~~~~
+
+#### Download packages mirror
+~~~~~~
+mkdir -p mofem_mirror &&\
+curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+| tar xzC $PWD/mofem_mirror  --strip 1
 ~~~~~
+
+##### Set spack environment and mirror
+~~~~~
+. spack/share/spack/setup-env.sh
+spack mirror add mofem_mirror $PWD/mofem_mirror
+~~~~~
+
+##### Setup packages and compiler
+
+Edit file `.spack/packages.yaml`
+~~~~~
+packages:
+  openmpi:
+    paths:
+      openmpi@3.0.0%gcc@6.4.0 arch=linux-x86_64-debian7: /software/mpi/openmpi/3.0.0-fix
+~~~~~
+
+Edit file `.spack/linux/compilers.yaml`
+~~~~~
+compilers:
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
+    operating_system: centos7
+    paths:
+      cc: /usr/bin/gcc
+      cxx: /usr/bin/g++
+      f77: null
+      fc: null
+    spec: gcc@4.8.5
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: 
+        - /software/compilers/gcc/6.4.0/lib64
+    flags: {}
+    modules: []
+    operating_system: centos7
+    paths:
+      cc: /software/compilers/gcc/6.4.0/bin/gcc
+      cxx: /software/compilers/gcc/6.4.0/bin/g++
+      f77: /software/compilers/gcc/6.4.0/bin/gfortran
+      fc: /software/compilers/gcc/6.4.0/bin/gfortran
+    spec: gcc@6.4.0
+    target: x86_64
+~~~~~
+
+Note that most of the file can be created by command
+~~~~~
+spack compiler find
+~~~~~
+however you have to put line 
+~~~~~
+    extra_rpaths: 
+        - /software/compilers/gcc/6.4.0/lib64
+~~~~~
+which a enable linking std lib c++ libraries.
+
+#### Running job to compile code
 
 At that point, we can follow the standard installation procedure, as follows
 ~~~~~
 spack bootstrap
+spack install -j 2 -v --only dependencies mofem-cephas ^openmpi@3.0.0
 spack install mofem-users-modules
-spack view --verbose symlink -i um_view mofem-cephas
-spack activate -v um_view mofem-users-modules
 ~~~~~
 
-If needs you can add more users modules or compile them by yourself.
-Installation can take some time since everything is installed from scratch.
-You can consider to run it in
-[screen](https://www.youtube.com/watch?v=3txYaF_IVZQ) terminal, and go for a
-coffee. 
+##### Creating view to compiled MoFEM modules
 
 Now you can create a symlink to install directory including dependent
 libraries, using commands below
@@ -591,11 +632,11 @@ echo "$NSLOTS received"
 cat $PE_HOSTFILE
 
 # Load compiler
-module load gcc/6.4.0
+module load mpi/openmpi/3.0.0
 
 # List of commands which do the actual work
 cd $HOME/um_view/elasticity
-$HOME/um_view/bin/mpirun -np $NSLOTS \
+mpirun -np $NSLOTS \
 ./elasticity \
 -my_file LShape.h5m \
 -ksp_type gmres -pc_type lu \

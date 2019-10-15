@@ -214,7 +214,6 @@ make install
 
 echo -e "\nFinished installing and testing the Core Library.\n"
 
-
 echo -e "\n********************************************************\n"
 echo -e "Installing USER MODULES ..."
 echo -e "\n********************************************************\n"
