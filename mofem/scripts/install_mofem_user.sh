@@ -48,7 +48,6 @@ fi
   
 echo "The number of processors is $NumberOfProcs"
   
-  
 ##############################
 ### PREREQUISITES
 ##############################
@@ -85,7 +84,7 @@ then
         sudo xcodebuild -license accept
         /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
     else 
-        echo -e "\n Homebrew installed"
+        echo -e "\nHomebrew installed"
     fi
 
     brew install curl git gcc
@@ -119,18 +118,28 @@ echo "$PWD"
   
 # Retrieve Spack for MoFEM
 if [ ! -d "$PWD/spack" ]; then
+  if [ ! -f "$PWD/spack.tgz" ]; then
     echo "Download spack mofem mirror"
     mkdir -p spack &&\
     curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
     | tar xzC $PWD/spack --strip 1
+  else 
+    mkdir -p spack &&\
+    tar xzf spack.tgz -C $PWD/spack --strip 1
+  fi
 fi
 
 # Download mirror
 if [ ! -d "$PWD/spack" ]; then
+  if [ ! -f "$PWD/mirror.tgz" ]; then
     echo "Download spack mofem mirror"
-    mkdir -p mofem_mirror &&
+    mkdir -p mofem_mirror && \
     curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
     | tar xzC $PWD/mofem_mirror  --strip 1
+  else 
+    mkdir -p mofem_mirror && \
+    tar xzf mirror.tgz -C $PWD/mofem_mirror  --strip 1
+  fi
 fi
   
 # Initialise Spack environment variables:
@@ -138,7 +147,10 @@ fi
   
 # Add command to .bash_profile
 echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
-  
+
+# Add mirror
+spack mirror add mofem_mirror $PWD/mofem_mirror
+
 # Install packages required by Spack
 spack bootstrap
   

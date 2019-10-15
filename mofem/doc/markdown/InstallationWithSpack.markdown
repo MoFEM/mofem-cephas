@@ -37,6 +37,27 @@ terminal by executing the command, for example,
 ~~~~~~ 
 It is worth noting that running the scripts may require user password for sudo privileges.
 
+## Scripts on secure server
+
+If you are going to install MoFEM on a secure server, or in server without
+access to the internet (in a train or during long flight), you can download
+spack and spack mirror first, and then start the installation.
+
+Download spack
+~~~~~~
+curl -L https://api.github.com/repos/likask/spack/tarball/mofem \
+--output spack.tgz
+~~~~~~
+and download mirror
+~~~~~~
+curl -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+--output mirror.tgz
+~~~~~~
+and then you can install MoFEM
+~~~~~
+./install_mofem_user.sh
+~~~~~
+
 # Prerequisites {#spack_prerequisites}
 
 The installation of MoFEM requires
@@ -101,7 +122,7 @@ If it is not already in the `PATH`, you should add it there.
 Note: recent releases of macOS stopped shipping a Fortran compiler and therefore
 require [Mixed
 Toolchains](http://spack.readthedocs.io/en/latest/getting_started.html#mixed-toolchains).
-The installing of gfortran through homebrew is another way of solving this.
+The installing of gfortran through homebrew is another way of solvingr this.
 
 # Spack setup {#spack_setup}
 
@@ -115,12 +136,23 @@ Initialise Spack's environment variables:
 . spack/share/spack/setup-env.sh
 ~~~~~~
 
+Download spack packages in the mirror necessary to install MoFEM
+~~~~~~
+mkdir -p mofem_mirror &&
+curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+| tar xzC $PWD/mofem_mirror  --strip 1
+spack mirror add mofem_mirror $PWD/mofem_mirror
+~~~~~~
+Above option is not needed. If you do not download and add a mirror, packages
+will be downloaded from the internet. However, locations of libraries change,
+or some server could be temporarily down. Using spack mirror making
+installation resistant to those problems.
+
 Spack's environment variables will be lost when the terminal session is closed.
 Consider adding the previous command to your `.bash_profile` or `.bashrc`, e.g.:
 ~~~~~~
 echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
 ~~~~~~
-
 
 Finally, install packages required by Spack:
 ~~~~~~
@@ -688,13 +720,31 @@ For more details see
 
 ## Mirrors {#spack_mirrors}
 
-Some sites may not have access to the internet for fetching packages. These
-sites will need a local repository of tarballs from which they can get their
-files. Spack has support for this with mirrors. Look to Spack documentation
-to learn more about mirrors, see
+### Downloading mirror with prerequisites
+
+You can download mirror with all necessary packages from MoFEM repository and
+untar and unzip to director
+~~~~~
+mkdir -p mofem_mirror &&
+curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+| tar xzC $PWD/mofem_mirror  --strip 1
+~~~~~
+Note that packages are expanded to directory `mofem_mirror`, and mirror is
+made for MoFEM version v0.9.0.
+
+Once mirror os downloaded, you can add it to your spack 
+~~~~~
+spack mirror add mofem_mirror $PWD/mofem_mirror
+~~~~~
+
+### Making onw mirror 
+
+You need to create mirror first. Some sites may not have access to the
+internet for fetching packages. These sites will need a local repository of
+tarballs from which they can get their files. Spack has support for this with
+mirrors. Look to Spack documentation to learn more about mirrors, see
 [here](https://spack.readthedocs.io/en/latest/mirrors.html?highlight=mirror).
 
-You need to create mirror first
 ~~~~~
 spack mirror create -D mofem-fracture-module
 ~~~~~
