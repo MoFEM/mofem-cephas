@@ -79,9 +79,14 @@ then
     echo -e "\nRunning in macOS\n"
 
     # Install Xcode
-    xcode-select --install
-    sudo xcodebuild -license accept
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    if ! which 'brew' &>/dev/null
+    then
+        xcode-select --install
+        sudo xcodebuild -license accept
+        /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    else 
+        echo -e "\n Homebrew installed"
+    fi
     brew install curl git gcc
  
     # Install XQuartz
@@ -113,12 +118,20 @@ cd ~
 echo "$PWD"
   
 # Retrieve Spack for MoFEM
+echo "Download spack"
 mkdir -p spack &&\
 curl -s -L https://api.github.com/repos/likask/spack/tarball/develop \
 | tar xzC $PWD/spack --strip 1
+
+# Download mirror
+echo "Download spack mofem mirror"
+mkdir -p mofem_mirror &&
+curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+| tar xzC $PWD/mofem_mirror  --strip 1
   
 # Initialise Spack environment variables:
 . $HOME/spack/share/spack/setup-env.sh
+spack mirror add mofem_mirror $PWD/mofem_mirror
   
 # Add command to configuration file .bash_profile
 echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile

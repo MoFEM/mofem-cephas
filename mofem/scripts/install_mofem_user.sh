@@ -79,11 +79,17 @@ then
     echo -e "\nRunning in macOS\n"
 
     # Install Xcode
-    xcode-select --install
-    sudo xcodebuild -license accept
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    if ! which 'brew' &>/dev/null
+    then
+        xcode-select --install
+        sudo xcodebuild -license accept
+        /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    else 
+        echo -e "\n Homebrew installed"
+    fi
+
     brew install curl git gcc
- 
+
     # Install XQuartz
     if ! which 'xquartz' &>/dev/null
     then
@@ -101,7 +107,6 @@ echo "No user password will be asked from now on."
   
 echo "Current directory: $PWD"
   
-  
 ##############################
 ### SPACK
 ##############################
@@ -113,9 +118,16 @@ cd ~
 echo "$PWD"
   
 # Retrieve Spack for MoFEM
+echo "Download spack mofem mirror"
 mkdir -p spack &&\
 curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
 | tar xzC $PWD/spack --strip 1
+
+# Download mirror
+echo "Download spack mofem mirror"
+mkdir -p mofem_mirror &&
+curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+| tar xzC $PWD/mofem_mirror  --strip 1
   
 # Initialise Spack environment variables:
 . $HOME/spack/share/spack/setup-env.sh
@@ -154,7 +166,6 @@ echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
  
 echo -e "\nFinished installing MoFEM User Module and Fracture Module.\n"
  
- 
 # Test elasticity
 cd $MOFEM_INSTALL_DIR/um_view/elasticity
 echo "Current directory: $PWD"
@@ -168,7 +179,7 @@ echo "Current directory: $PWD"
 echo -e "\nFinished testing elasticity.\n"
  
 # Test fracture crack propagation
-cd $MOFEM_INSTALL_DIR/um_view/mofem_um_fracture_mechanics
+cd $MOFEM_INSTALL_DIR/um_view/fracture_mechanics
 echo "Current directory: $PWD"
 ./crack_propagation \
 -my_file examples/analytical_bc/out_10.h5m \
