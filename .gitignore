@@ -42,4 +42,3 @@ doxygen_warnlogfile
 .vscode
 
 spack-build*
-mofem-spack-mirror
