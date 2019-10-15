@@ -357,7 +357,7 @@ spack view --verbose symlink -i um_view mofem-cephas@develop
 export PATH=$PWD/um_view/bin:$PATH
 mkdir build 
 cd build/
-spack setup mofem-users-modules@develop ^mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
+spack setup mofem-users-modules@develop copy_user_modules=False build_type=RelWithDebInfo ^mofem-cephas@develop 
 ./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
 ctest
