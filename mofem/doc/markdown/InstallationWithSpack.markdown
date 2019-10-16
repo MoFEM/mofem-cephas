@@ -422,27 +422,27 @@ Buckethead is a Linux cluster running Centos7. More information about
 Buckethead you will find 
 [here](http://malmsteen.eng.gla.ac.uk/wiki/hpc-wiki/index.php/Resources#Buckethead). 
 
-#### Load cluster modules
+Load cluster modules
 ~~~~~
 module load mpi/openmpi/3.0.0
 module load gridengine
 ~~~~~
 
-#### Download spack:
+Download spack
 ~~~~~
 mkdir -p spack &&\
 curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
 | tar xzC $PWD/spack --strip 1
-~~~~~~
+~~~~~
 
-#### Download packages mirror
-~~~~~~
+Download packages mirror
+~~~~~
 mkdir -p mofem_mirror &&\
 curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 ~~~~~
 
-##### Set spack environment and mirror
+Set spack environment and mirror
 ~~~~~
 . spack/share/spack/setup-env.sh
 spack mirror add mofem_mirror $PWD/mofem_mirror
