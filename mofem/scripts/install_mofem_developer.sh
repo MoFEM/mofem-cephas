@@ -123,6 +123,7 @@ SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 
 # Retrieve Spack for MoFEM
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
+
   if [ ! -f "$PWD/spack.tgz" ]; then
     echo "Download spack"
     mkdir -p $SPACK_ROOT_DIR &&\
@@ -137,10 +138,10 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   . $SPACK_ROOT_DIR/share/spack/setup-env.sh
 
   # Download mirror
-  if [ ! -d "$SPACK_ROOT_DIR" ]; then
+  if [ ! -d "$SPACK_MIRROR_DIR" ]; then
     if [ ! -f "$PWD/mirror.tgz" ]; then
       echo "Download spack mofem mirror"
-      mkdir -p mofem_mirror && \
+      mkdir -p $SPACK_MIRROR_DIR && \
       curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
       | tar xzC $SPACK_MIRROR_DIR --strip 1
     else 
