@@ -307,7 +307,7 @@ mkdir lib
 cd lib/
 spack install --only dependencies mofem-cephas 
 spack setup mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
-./spconfig.py $HOME/mofem_install/mofem-cephas/mofem/
+./spconfig.py -DMOFEM_BUILD_TESTS=ON $HOME/mofem_install/mofem-cephas/mofem/
 make -j4
 ctest
 make install
@@ -326,7 +326,7 @@ export PATH=$PWD/um_view/bin:$PATH
 mkdir build 
 cd build/
 spack setup mofem-users-modules@develop copy_user_modules=False build_type=RelWithDebInfo ^mofem-cephas@develop 
-./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
+./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
 ctest
 make install
@@ -352,6 +352,7 @@ the snippet below
 ~~~~~
 ./spconfig.py \
 -DEXTERNAL_MODULE_SOURCE_DIRS=$PATH_TO_MY_SECRET_MODULE \
+-DMOFEM_UM_BUILD_TESTS=ON \
 -DMOFEM_DIR=../um_view \
 $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
