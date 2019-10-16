@@ -23,7 +23,6 @@ namespace MoFEM {
 ContactPrismElementForcesAndSourcesCore::
     ContactPrismElementForcesAndSourcesCore(Interface &m_field)
     : ForcesAndSourcesCore(m_field),
-      meshPositionsFieldName("MESH_NODE_POSITIONS"),
       dataOnMaster{
 
           nullptr,

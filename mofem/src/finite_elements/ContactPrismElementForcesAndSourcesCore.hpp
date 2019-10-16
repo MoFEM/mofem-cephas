@@ -49,11 +49,6 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   MatrixDouble gaussPtsMaster;
   MatrixDouble gaussPtsSlave;
 
-  // DataForcesAndSourcesCore &dataH1Master;
-  // DataForcesAndSourcesCore &dataH1Slave;
-
-  std::string meshPositionsFieldName;
-
   /**
    * @brief Entity data on element entity rows fields
    *
