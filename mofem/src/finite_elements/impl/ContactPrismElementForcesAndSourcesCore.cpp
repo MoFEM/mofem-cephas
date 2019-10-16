@@ -34,16 +34,6 @@ ContactPrismElementForcesAndSourcesCore::
           boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET)  // L2
 
       },
-      derivedDataOnMaster{
-
-          nullptr,
-          boost::make_shared<DataForcesAndSourcesCore>(dataOnMaster[NOFIELD]),
-          boost::make_shared<DataForcesAndSourcesCore>(dataOnMaster[H1]),
-          boost::make_shared<DataForcesAndSourcesCore>(dataOnMaster[HCURL]),
-          boost::make_shared<DataForcesAndSourcesCore>(dataOnMaster[HDIV]),
-          boost::make_shared<DataForcesAndSourcesCore>(dataOnMaster[L2])
-
-      },
       dataOnSlave{
 
           nullptr,
@@ -51,17 +41,33 @@ ContactPrismElementForcesAndSourcesCore::
           boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // H1
           boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HCURL
           boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HDIV
-          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET) // L2
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET)  // L2
+
+      },
+      derivedDataOnMaster{
+
+          nullptr,
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+              dataOnMaster[NOFIELD]),
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(dataOnMaster[H1]),
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+              dataOnMaster[HCURL]),
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+              dataOnMaster[HDIV]),
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(dataOnMaster[L2])
 
       },
       derivedDataOnSlave{
 
           nullptr,
-          boost::make_shared<DataForcesAndSourcesCore>(dataOnSlave[NOFIELD]),
-          boost::make_shared<DataForcesAndSourcesCore>(dataOnSlave[H1]),
-          boost::make_shared<DataForcesAndSourcesCore>(dataOnSlave[HCURL]),
-          boost::make_shared<DataForcesAndSourcesCore>(dataOnSlave[HDIV]),
-          boost::make_shared<DataForcesAndSourcesCore>(dataOnSlave[L2])
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+              dataOnSlave[NOFIELD]),
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(dataOnSlave[H1]),
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+              dataOnSlave[HCURL]),
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(
+              dataOnSlave[HDIV]),
+          boost::make_shared<DerivedDataForcesAndSourcesCore>(dataOnSlave[L2])
 
       },
       dataH1Master(*dataOnMaster[H1].get()),
@@ -169,9 +175,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       data.spacesOnEntities[t].reset();
       data.basesOnEntities[t].reset();
     }
-    for (int s = 0; s != LASTSPACE; ++s) 
+    for (int s = 0; s != LASTSPACE; ++s)
       data.basesOnSpaces[s].reset();
-    
+
     MoFEMFunctionReturn(0);
   };
 

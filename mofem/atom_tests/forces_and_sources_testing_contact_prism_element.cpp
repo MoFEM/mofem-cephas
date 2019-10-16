@@ -18,6 +18,9 @@ namespace bio = boost::iostreams;
 using bio::stream;
 using bio::tee_device;
 
+typedef tee_device<std::ostream, std::ofstream> TeeDevice;
+typedef stream<TeeDevice> TeeStream;
+
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
@@ -369,8 +372,6 @@ int main(int argc, char *argv[]) {
     // what are ghost nodes, see Petsc Manual
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
-    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
-    typedef stream<TeeDevice> TeeStream;
 
     std::ofstream ofs("forces_and_sources_testing_contact_prism_element.txt");
     TeeDevice my_tee(std::cout, ofs);
