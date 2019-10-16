@@ -22,6 +22,158 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
+struct MyOp : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  TeeStream &mySplit;
+  const char faceType;
+  MyOp(TeeStream &mySplit, const char type, const char face_type)
+      : ContactPrismElementForcesAndSourcesCore::UserDataOperator(
+            "FIELD1", "FIELD1", type, face_type),
+        mySplit(mySplit), faceType(face_type) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBeginHot;
+
+    if (data.getFieldData().empty())
+      MoFEMFunctionReturnHot(0);
+
+    mySplit << "NH1" << std::endl;
+    mySplit << "side: " << side << " type: " << type << std::endl;
+    mySplit << data << std::endl;
+
+    if (faceType == FACEMASTER) {
+      mySplit << std::setprecision(3) << "coords Master " << getCoordsMaster()
+              << std::endl;
+      mySplit << std::setprecision(3) << "area Master " << getAreaMaster()
+              << std::endl;
+      mySplit << std::setprecision(3) << "normal Master " << getNormalMaster()
+              << std::endl;
+      mySplit << std::setprecision(3) << "coords at Gauss Pts Master "
+              << getCoordsAtGaussPtsMaster() << std::endl;
+    } else {
+      mySplit << std::setprecision(3) << "coords Slave " << getCoordsSlave()
+              << std::endl;
+      mySplit << std::setprecision(3) << "area Slave " << getAreaSlave()
+              << std::endl;
+      mySplit << std::setprecision(3) << "normal Slave " << getNormalSlave()
+              << std::endl;
+      mySplit << std::setprecision(3) << "coords at Gauss Pts Slave "
+              << getCoordsAtGaussPtsSlave() << std::endl;
+    }
+    MoFEMFunctionReturnHot(0);
+  }
+
+  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                        EntityType col_type,
+                        DataForcesAndSourcesCore::EntData &row_data,
+                        DataForcesAndSourcesCore::EntData &col_data) {
+    MoFEMFunctionBeginHot;
+
+    if (row_data.getFieldData().empty())
+      MoFEMFunctionReturnHot(0);
+
+    mySplit << "NH1NH1" << std::endl;
+    mySplit << "row side: " << row_side << " row_type: " << row_type
+            << std::endl;
+    mySplit << row_data << std::endl;
+    mySplit << "NH1NH1" << std::endl;
+    mySplit << "col side: " << col_side << " col_type: " << col_type
+            << std::endl;
+    mySplit << col_data << std::endl;
+
+    MoFEMFunctionReturnHot(0);
+  }
+};
+
+struct CallingOp : public ForcesAndSourcesCore::UserDataOperator {
+
+  TeeStream &mySplit;
+  CallingOp(TeeStream &mySplit, const char type)
+      : ForcesAndSourcesCore::UserDataOperator("FIELD1", "FIELD1", type),
+        mySplit(mySplit) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBeginHot;
+
+    if (data.getFieldData().empty())
+      MoFEMFunctionReturnHot(0);
+
+    mySplit << "Calling Operator NH1" << std::endl;
+    mySplit << "side: " << side << " type: " << type << std::endl;
+    mySplit << data << std::endl;
+
+    MoFEMFunctionReturnHot(0);
+  }
+
+  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                        EntityType col_type,
+                        DataForcesAndSourcesCore::EntData &row_data,
+                        DataForcesAndSourcesCore::EntData &col_data) {
+    MoFEMFunctionBeginHot;
+
+    if (row_data.getFieldData().empty())
+      MoFEMFunctionReturnHot(0);
+
+    mySplit << "Calling Operator NH1NH1" << std::endl;
+    mySplit << "row side: " << row_side << " row_type: " << row_type
+            << std::endl;
+    mySplit << row_data << std::endl;
+    mySplit << "NH1NH1" << std::endl;
+    mySplit << "col side: " << col_side << " col_type: " << col_type
+            << std::endl;
+    mySplit << col_data << std::endl;
+
+    MoFEMFunctionReturnHot(0);
+  }
+};
+
+struct MyOp2
+    : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  TeeStream &mySplit;
+  MyOp2(TeeStream &my_split, const char type, const char face_type)
+      : ContactPrismElementForcesAndSourcesCore::UserDataOperator(
+            "FIELD1", "FIELD2", type, face_type),
+        mySplit(my_split) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBeginHot;
+
+    if (type != MBENTITYSET)
+      MoFEMFunctionReturnHot(0);
+
+    mySplit << "NPFIELD" << std::endl;
+    mySplit << "side: " << side << " type: " << type << std::endl;
+    mySplit << data << std::endl;
+    MoFEMFunctionReturnHot(0);
+  }
+
+  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                        EntityType col_type,
+                        DataForcesAndSourcesCore::EntData &row_data,
+                        DataForcesAndSourcesCore::EntData &col_data) {
+    MoFEMFunctionBeginHot;
+
+    unSetSymm();
+
+    if (col_type != MBENTITYSET)
+      MoFEMFunctionReturnHot(0);
+
+    mySplit << "NOFILEDH1" << std::endl;
+    mySplit << "row side: " << row_side << " row_type: " << row_type
+            << std::endl;
+    mySplit << row_data << std::endl;
+    mySplit << "col side: " << col_side << " col_type: " << col_type
+            << std::endl;
+    mySplit << col_data << std::endl;
+
+    MoFEMFunctionReturnHot(0);
+  }
+};
+
 int main(int argc, char *argv[]) {
 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
@@ -117,7 +269,8 @@ int main(int argc, char *argv[]) {
                              3);
     CHKERR m_field.add_field("FIELD2", NOFIELD, NOBASE, 3);
 
-    {
+    auto set_no_field_vertex = [&]() {
+      MoFEMFunctionBegin;
       // Creating and adding no field entities.
       const double coords[] = {0, 0, 0};
       EntityHandle no_field_vertex;
@@ -128,7 +281,10 @@ int main(int argc, char *argv[]) {
           range_no_field_vertex, BitRefLevel().set());
       EntityHandle meshset = m_field.get_field_meshset("FIELD2");
       CHKERR m_field.get_moab().add_entities(meshset, range_no_field_vertex);
-    }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR set_no_field_vertex();
 
     // FE
     CHKERR m_field.add_finite_element("TEST_FE1");
@@ -219,159 +375,6 @@ int main(int argc, char *argv[]) {
     std::ofstream ofs("forces_and_sources_testing_contact_prism_element.txt");
     TeeDevice my_tee(std::cout, ofs);
     TeeStream my_split(my_tee);
-
-    struct MyOp
-        : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
-
-      TeeStream &mySplit;
-      const char faceType;
-      MyOp(TeeStream &mySplit, const char type, const char face_type)
-          : ContactPrismElementForcesAndSourcesCore::UserDataOperator(
-                "FIELD1", "FIELD1", type, face_type),
-            mySplit(mySplit), faceType(face_type) {}
-
-      MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
-        MoFEMFunctionBeginHot;
-
-        if (data.getFieldData().empty())
-          MoFEMFunctionReturnHot(0);
-
-        mySplit << "NH1" << std::endl;
-        mySplit << "side: " << side << " type: " << type << std::endl;
-        mySplit << data << std::endl;
-
-        if (faceType == FACEMASTER) {
-          mySplit << std::setprecision(3) << "coords Master "
-                  << getCoordsMaster() << std::endl;
-          mySplit << std::setprecision(3) << "area Master " << getAreaMaster()
-                  << std::endl;
-          mySplit << std::setprecision(3) << "normal Master "
-                  << getNormalMaster() << std::endl;
-          mySplit << std::setprecision(3) << "coords at Gauss Pts Master "
-                  << getCoordsAtGaussPtsMaster() << std::endl;
-        } else {
-          mySplit << std::setprecision(3) << "coords Slave " << getCoordsSlave()
-                  << std::endl;
-          mySplit << std::setprecision(3) << "area Slave " << getAreaSlave()
-                  << std::endl;
-          mySplit << std::setprecision(3) << "normal Slave " << getNormalSlave()
-                  << std::endl;
-          mySplit << std::setprecision(3) << "coords at Gauss Pts Slave "
-                  << getCoordsAtGaussPtsSlave() << std::endl;
-        }
-        MoFEMFunctionReturnHot(0);
-      }
-
-      MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
-                            EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
-        MoFEMFunctionBeginHot;
-
-        if (row_data.getFieldData().empty())
-          MoFEMFunctionReturnHot(0);
-
-        mySplit << "NH1NH1" << std::endl;
-        mySplit << "row side: " << row_side << " row_type: " << row_type
-                << std::endl;
-        mySplit << row_data << std::endl;
-        mySplit << "NH1NH1" << std::endl;
-        mySplit << "col side: " << col_side << " col_type: " << col_type
-                << std::endl;
-        mySplit << col_data << std::endl;
-
-        MoFEMFunctionReturnHot(0);
-      }
-    };
-
-    struct CallingOp : public ForcesAndSourcesCore::UserDataOperator {
-
-      TeeStream &mySplit;
-      CallingOp(TeeStream &mySplit, const char type)
-          : ForcesAndSourcesCore::UserDataOperator("FIELD1", "FIELD1", type),
-            mySplit(mySplit) {}
-
-      MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
-        MoFEMFunctionBeginHot;
-
-        if (data.getFieldData().empty())
-          MoFEMFunctionReturnHot(0);
-
-        mySplit << "Calling Operator NH1" << std::endl;
-        mySplit << "side: " << side << " type: " << type << std::endl;
-        mySplit << data << std::endl;
-
-        MoFEMFunctionReturnHot(0);
-      }
-
-      MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
-                            EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
-        MoFEMFunctionBeginHot;
-
-        if (row_data.getFieldData().empty())
-          MoFEMFunctionReturnHot(0);
-
-        mySplit << "Calling Operator NH1NH1" << std::endl;
-        mySplit << "row side: " << row_side << " row_type: " << row_type
-                << std::endl;
-        mySplit << row_data << std::endl;
-        mySplit << "NH1NH1" << std::endl;
-        mySplit << "col side: " << col_side << " col_type: " << col_type
-                << std::endl;
-        mySplit << col_data << std::endl;
-
-        MoFEMFunctionReturnHot(0);
-      }
-    };
-
-    struct MyOp2
-        : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
-
-      TeeStream &mySplit;
-      MyOp2(TeeStream &my_split, const char type, const char face_type)
-          : ContactPrismElementForcesAndSourcesCore::UserDataOperator(
-                "FIELD1", "FIELD2", type, face_type),
-            mySplit(my_split) {}
-
-      MoFEMErrorCode doWork(int side, EntityType type,
-                            DataForcesAndSourcesCore::EntData &data) {
-        MoFEMFunctionBeginHot;
-
-        if (type != MBENTITYSET)
-          MoFEMFunctionReturnHot(0);
-
-        mySplit << "NPFIELD" << std::endl;
-        mySplit << "side: " << side << " type: " << type << std::endl;
-        mySplit << data << std::endl;
-        MoFEMFunctionReturnHot(0);
-      }
-
-      MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
-                            EntityType col_type,
-                            DataForcesAndSourcesCore::EntData &row_data,
-                            DataForcesAndSourcesCore::EntData &col_data) {
-        MoFEMFunctionBeginHot;
-
-        unSetSymm();
-
-        if (col_type != MBENTITYSET)
-          MoFEMFunctionReturnHot(0);
-
-        mySplit << "NOFILEDH1" << std::endl;
-        mySplit << "row side: " << row_side << " row_type: " << row_type
-                << std::endl;
-        mySplit << row_data << std::endl;
-        mySplit << "col side: " << col_side << " col_type: " << col_type
-                << std::endl;
-        mySplit << col_data << std::endl;
-
-        MoFEMFunctionReturnHot(0);
-      }
-    };
 
     using UMDataOp = ForcesAndSourcesCore::UserDataOperator;
     using ContactDataOp =
