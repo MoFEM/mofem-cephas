@@ -11,6 +11,7 @@
 #       1. Copy install_mofem_user.sh to the directory where MoFEM will be installed
 #       2. Run install_mofem_user.sh from the command line
 #
+# Note: Installation script changes .bash_profile. Inspect that file after installation.
   
 ##############################
 # INITIALISATION
@@ -112,41 +113,43 @@ echo "Current directory: $PWD"
   
 echo -e "\n****************************\nInstalling SPACK...\n****************************\n"
   
-# Locate home directory
-cd ~
+cd $MOFEM_INSTALL_DIR
 echo "$PWD"
+
+SPACK_ROOT_DIR = $MOFEM_INSTALL_DIR/spack
+SPACK_MIRROR_DIR = $MOFEM_INSTALL_DIR/mofem_mirror
   
 # Retrieve Spack for MoFEM
-if [ ! -d "$PWD/spack" ]; then
+if [ ! -d "$SPACK_ROOT_DIR" ]; then
   if [ ! -f "$PWD/spack.tgz" ]; then
     echo "Download spack mofem mirror"
     mkdir -p spack &&\
     curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
-    | tar xzC $PWD/spack --strip 1
+    | tar xzC $SPACK_ROOT_DIR --strip 1
   else 
-    mkdir -p spack &&\
-    tar xzf spack.tgz -C $PWD/spack --strip 1
+    mkdir -p $SPACK_ROOT_DIR &&\
+    tar xzf $PWD/spack.tgz -C $SPACK_ROOT_DIR --strip 1
   fi
 fi
 
 # Download mirror
-if [ ! -d "$PWD/spack" ]; then
+if [ ! -d "$SPACK_MIRROR_DIR" ]; then
   if [ ! -f "$PWD/mirror.tgz" ]; then
     echo "Download spack mofem mirror"
-    mkdir -p mofem_mirror && \
+    mkdir -p $SPACK_MIRROR_DIR && \
     curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
-    | tar xzC $PWD/mofem_mirror  --strip 1
+    | tar xzC $SPACK_MIRROR_DIR  --strip 1
   else 
-    mkdir -p mofem_mirror && \
-    tar xzf mirror.tgz -C $PWD/mofem_mirror  --strip 1
+    mkdir -p $SPACK_MIRROR_DIR && \
+    tar xzf $PWD/mirror.tgz -C $SPACK_MIRROR_DIR  --strip 1
   fi
 fi
   
 # Initialise Spack environment variables:
-. $HOME/spack/share/spack/setup-env.sh
+. $SPACK_ROOT_DIR/share/spack/setup-env.sh
   
 # Add command to .bash_profile
-echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
+echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bash_profile
 
 # Add mirror
 spack mirror add mofem_mirror $PWD/mofem_mirror
