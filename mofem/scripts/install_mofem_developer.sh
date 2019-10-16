@@ -234,9 +234,12 @@ echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
 
 mkdir build
 cd build/
+
+MOFEM_CEPHAS_SPACK_ID=`spack find -l mofem-cephas | grep mofem-cephas@develop | sed 's/mofem-cephas.*//' | tail -n 1`
+
 spack setup mofem-users-modules@develop \
     copy_user_modules=False build_type=RelWithDebInfo \
-    ^mofem-cephas@develop 
+    ^/$MOFEM_CEPHAS_SPACK_ID
 
 echo -e "\n----------------------------\n"
 echo -e "USER MODULE: spconfig ..."
