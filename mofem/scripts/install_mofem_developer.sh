@@ -124,7 +124,7 @@ SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 # Retrieve Spack for MoFEM
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
   if [ ! -f "$PWD/spack.tgz" ]; then
-    echo "Download spack mofem mirror"
+    echo "Download spack"
     mkdir -p $SPACK_ROOT_DIR &&\
     curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
     | tar xzC $SPACK_ROOT_DIR --strip 1
