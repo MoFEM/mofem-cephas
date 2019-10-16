@@ -380,7 +380,7 @@ git clone -b mofem https://github.com/likask/spack.git
 ~~~~~
 Next, we add local mirror to Spack,
 ~~~~~
-spack mirror add local_filesystem file://opt/spack-mirror-2018-07-26 
+spack mirror add mofem_mirror /opt/mofem-mirror-v0.9.0
 ~~~~~
 and compile all prerequisites
 ~~~~~
@@ -395,8 +395,6 @@ MoFEM with all dependencies
 spack install -j 8 gcc
 spack load gcc
 spack compiler find
-spack install -j 8 curl
-spack load curl
 spack install -j 8 mofem-users-modules%gcc@8.1.0
 ~~~~~
 All this take some time, so you can run this on
@@ -719,7 +717,7 @@ your secure server with spack package.
 
 On a secure server, you add mirror directory to Spack, for example
 ~~~~~
-spack mirror add local_filesystem file://$HOME/spack-mirror-2018-07-21
+spack mirror add local_filesystem /$HOME/spack-mirror-2018-07-21
 ~~~~~
 and with that at hand kick-start installation process described above.
 
