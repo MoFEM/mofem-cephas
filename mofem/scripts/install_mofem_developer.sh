@@ -11,7 +11,7 @@
 #       2. Run install_mofem_developer.sh from the command line
 #
 # Note: Installation script changes .bash_profile. Inspect that file after installation.
-    
+
 ##############################
 # INITIALISATION
 ##############################
@@ -118,8 +118,8 @@ echo -e "\n****************************\nInstalling SPACK...\n******************
 cd $MOFEM_INSTALL_DIR
 echo "$PWD"
 
-SPACK_ROOT_DIR = $MOFEM_INSTALL_DIR/spack
-SPACK_MIRROR_DIR = $MOFEM_INSTALL_DIR/mofem_mirror
+SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
+SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 
 # Retrieve Spack for MoFEM
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
