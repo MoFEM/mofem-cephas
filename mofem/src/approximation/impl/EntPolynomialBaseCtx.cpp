@@ -19,14 +19,13 @@
 
 using namespace MoFEM;
 
-MoFEMErrorCode
-EntPolynomialBaseCtx::query_interface(const MOFEMuuid &uuid,
-                                      MoFEM::UnknownInterface **iface) const {
+MoFEMErrorCode EntPolynomialBaseCtx::query_interface(
+    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
 
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if (uuid == IDD_TET_BASE_FUNCTION || uuid == IDD_TRI_BASE_FUNCTION ||
-      uuid == IDD_EDGE_BASE_FUNCTION) {
+          uuid == IDD_EDGE_BASE_FUNCTION || uuid == IDD_QUAD_BASE_FUNCTION) {
     *iface = const_cast<EntPolynomialBaseCtx *>(this);
     MoFEMFunctionReturnHot(0);
   } else {
@@ -42,12 +41,19 @@ EntPolynomialBaseCtx::EntPolynomialBaseCtx(
     const FieldApproximationBase base,
     const FieldApproximationBase copy_node_base)
     : dAta(data), sPace(space), bAse(base), copyNodeBase(copy_node_base) {
-
   ierr = setBase();
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
 }
 
-EntPolynomialBaseCtx::~EntPolynomialBaseCtx() {}
+EntPolynomialBaseCtx::EntPolynomialBaseCtx(
+    DataForcesAndSourcesCore &data, const std::string field_name,
+    const FieldSpace space, const FieldApproximationBase base,
+    const FieldApproximationBase copy_node_base)
+    : dAta(data), sPace(space), bAse(base), fieldName(field_name),
+      copyNodeBase(copy_node_base) {
+  ierr = setBase();
+  CHKERRABORT(PETSC_COMM_WORLD, ierr);
+}
 
 MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
   MoFEMFunctionBeginHot;
@@ -78,6 +84,20 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
     case HDIV:
     case L2:
       basePolynomialsType0 = LobattoKernel_polynomials;
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Not implemented for this space", FieldSpaceNames[sPace]);
+    }
+    break;
+  case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+    if(fieldName.empty())
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Field name not set");
+    switch (sPace) {
+    case NOSPACE:
+    case NOFIELD:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Makes no sense");
+    case H1:
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,

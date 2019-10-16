@@ -2,11 +2,11 @@ FROM likask/mofem_build:latest
 
 MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 
-# Build argumnets
+# Build arguments
 ARG MODULE
 ARG NBPROCS
 
-# Envirionment
+# Environment
 ENV NP $NBPROCS
 ENV MODULE_SRC_DIR $MOFEM_SRC_DIR/users_modules/$MODULE
 ENV MODULE_BUILD_DIR $MOFEM_INSTALL_DIR/$MODULE

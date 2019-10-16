@@ -864,45 +864,6 @@ protected:
    */
   inline int get_comm_rank() const { return rAnk; }
 
-  MoFEMErrorCode resolve_shared_finite_elements(const Problem *problem_ptr,
-                                                const std::string &fe_name,
-                                                int verb = DEFAULT_VERBOSITY);
-
-  MoFEMErrorCode resolve_shared_finite_elements(const std::string &name,
-                                                const std::string &fe_name,
-                                                int verb = DEFAULT_VERBOSITY);
-
-  MoFEMErrorCode make_entities_multishared(const EntityHandle *entities,
-                                           const int num_entities,
-                                           const int owner_proc = 0,
-                                           int verb = DEFAULT_VERBOSITY);
-                                           
-  MoFEMErrorCode make_entities_multishared(Range &entities,
-                                           const int owner_proc = 0,
-                                           int verb = DEFAULT_VERBOSITY);
-
-  MoFEMErrorCode make_field_entities_multishared(const std::string field_name,
-                                                 const int owner_proc = 0,
-                                                 int verb = DEFAULT_VERBOSITY);
-
-  MoFEMErrorCode exchange_field_data(const std::string field_name,
-                                     int verb = DEFAULT_VERBOSITY);
-
-  /**@}*/
-
-  /** \name Synchronize entities (Following functions in future will be
-   * deprecated) */
-
-  /**@{*/
-
-  MoFEMErrorCode synchronise_entities(Range &ent, int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode synchronise_field_entities(const BitFieldId id,
-                                            int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode synchronise_field_entities(const std::string &name,
-                                            int verb = DEFAULT_VERBOSITY);
-
-  /**@}*/
-
 private:
   struct WrapMPIComm {
     WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm)

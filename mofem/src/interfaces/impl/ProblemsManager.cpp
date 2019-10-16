@@ -811,7 +811,8 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
         ents_to_synchronise.insert(miit->get()->getEnt());
       }
       Range tmp_ents = ents_to_synchronise;
-      CHKERR m_field.synchronise_entities(ents_to_synchronise, verb);
+      CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
+          ents_to_synchronise, verb);
       ents_to_synchronise = subtract(ents_to_synchronise, tmp_ents);
       for (Field_multiIndex::iterator fit = fields_ptr->begin();
            fit != fields_ptr->end(); fit++) {
@@ -3043,10 +3044,8 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         indices.clear();
         indices.reserve(nb_dofs);
         for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
-             ++dit) {
-          const int idx = decltype(tag)::get_index(dit);
+             ++dit)
           indices.push_back(decltype(tag)::get_index(dit));
-        }
       };
 
       auto concatenate_dofs = [&](auto tag, auto &indices,
@@ -3131,4 +3130,33 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
   MoFEMFunctionReturn(0);
 }
 
-} // namespace MoFEM
+MoFEMErrorCode ProblemsManager::markDofs(const std::string problem_name,
+                                         RowColData rc, const Range ents,
+                                         std::vector<bool> &marker) {
+
+  Interface &m_field = cOre;
+  const Problem *problem_ptr;
+  MoFEMFunctionBegin;
+  CHKERR m_field.get_problem(problem_name, &problem_ptr);
+  boost::shared_ptr<NumeredDofEntity_multiIndex> dofs;
+  switch (rc) {
+  case ROW:
+    dofs = problem_ptr->getNumeredDofsRows();
+    break;
+  case COL:
+    dofs = problem_ptr->getNumeredDofsCols();
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
+  }
+  marker.resize(dofs->size());
+  marker.clear();
+  for(auto p = ents.pair_begin();p!=ents.pair_end(); ++p) {
+    auto lo = dofs->get<Ent_mi_tag>().lower_bound(p->first);
+    auto hi = dofs->get<Ent_mi_tag>().upper_bound(p->second);
+    for (; lo != hi; ++lo)
+      marker[(*lo)->getPetscLocalDofIdx()] = true;
+  }
+  MoFEMFunctionReturn(0);
+}
+
+} // MOFEM namespace

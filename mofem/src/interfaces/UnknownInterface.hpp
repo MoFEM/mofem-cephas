@@ -297,7 +297,7 @@ struct UnknownInterface {
     return getInterface<IFACE*,0>();
   }
 
-  virtual ~UnknownInterface() {}
+  virtual ~UnknownInterface() = default;
 
   /**
   * \brief Get library version

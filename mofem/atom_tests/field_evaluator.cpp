@@ -42,8 +42,6 @@ int main(int argc, char *argv[]) {
     DMType dm_name = "DMMOFEM";
     CHKERR DMRegister_MoFEM(dm_name);
 
-    EntityHandle root_set = moab.get_root_set();
-
     // Simple interface
     Simple *simple_interface;
     CHKERR m_field.getInterface(simple_interface);
@@ -76,8 +74,6 @@ int main(int argc, char *argv[]) {
 
       using VolEle = VolumeElementForcesAndSourcesCore;
       using VolOp = VolumeElementForcesAndSourcesCore::UserDataOperator;
-      using SetPtsData = FieldEvaluatorInterface::SetPtsData;
-      using SetPts = FieldEvaluatorInterface::SetPts;
 
       /**
        * @brief Operator used to check consistency between local coordinates and

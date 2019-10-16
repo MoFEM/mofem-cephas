@@ -11,6 +11,7 @@
 #       1. Copy install_mofem_user.sh to the directory where MoFEM will be installed
 #       2. Run install_mofem_user.sh from the command line
 #
+# Note: Installation script changes .bash_profile. Inspect that file after installation.
   
 ##############################
 # INITIALISATION
@@ -48,7 +49,6 @@ fi
   
 echo "The number of processors is $NumberOfProcs"
   
-  
 ##############################
 ### PREREQUISITES
 ##############################
@@ -79,11 +79,17 @@ then
     echo -e "\nRunning in macOS\n"
 
     # Install Xcode
-    xcode-select --install
-    sudo xcodebuild -license accept
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    if ! which 'brew' &>/dev/null
+    then
+        xcode-select --install
+        sudo xcodebuild -license accept
+        /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    else 
+        echo -e "\nHomebrew installed"
+    fi
+
     brew install curl git gcc
- 
+
     # Install XQuartz
     if ! which 'xquartz' &>/dev/null
     then
@@ -101,29 +107,57 @@ echo "No user password will be asked from now on."
   
 echo "Current directory: $PWD"
   
-  
 ##############################
 ### SPACK
 ##############################
   
 echo -e "\n****************************\nInstalling SPACK...\n****************************\n"
   
-# Locate home directory
-cd ~
+cd $MOFEM_INSTALL_DIR
 echo "$PWD"
-  
+
+SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
+SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
+
 # Retrieve Spack for MoFEM
-git clone --single-branch -b mofem https://github.com/likask/spack.git
-  
-# Initialise Spack environment variables:
-. $HOME/spack/share/spack/setup-env.sh
-  
-# Add command to .bash_profile
-echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
-  
-# Install packages required by Spack
-spack bootstrap
-  
+if [ ! -d "$SPACK_ROOT_DIR" ]; then
+
+  if [ ! -f "$PWD/spack.tgz" ]; then
+    echo "Download spack"
+    mkdir -p $SPACK_ROOT_DIR &&\
+    curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
+    | tar xzC $SPACK_ROOT_DIR --strip 1
+  else 
+    mkdir -p $SPACK_ROOT_DIR &&\
+    tar xzf $PWD/spack.tgz -C $SPACK_ROOT_DIR --strip 1
+  fi
+
+  # Initialise Spack environment variables:
+  . $SPACK_ROOT_DIR/share/spack/setup-env.sh
+
+  # Download mirror
+  if [ ! -d "$SPACK_MIRROR_DIR" ]; then
+    if [ ! -f "$PWD/mirror.tgz" ]; then
+      echo "Download spack mofem mirror"
+      mkdir -p $SPACK_MIRROR_DIR && \
+      curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+      | tar xzC $SPACK_MIRROR_DIR --strip 1
+    else 
+      mkdir -p $SPACK_MIRROR_DIR && \
+      tar xzf $PWD/mirror.tgz -C $SPACK_MIRROR_DIR  --strip 1
+    fi
+  fi
+ 
+  # Add mirror
+  spack mirror add mofem_mirror $SPACK_MIRROR_DIR
+
+  # Add command to configuration file .bash_profile
+  echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bash_profile
+ 
+  # Install packages required by Spack
+  spack bootstrap
+fi
+ 
 echo -e "\nFinished installing Spack.\n"
   
 echo "Current directory: $PWD"
@@ -152,7 +186,6 @@ echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
  
 echo -e "\nFinished installing MoFEM User Module and Fracture Module.\n"
  
- 
 # Test elasticity
 cd $MOFEM_INSTALL_DIR/um_view/elasticity
 echo "Current directory: $PWD"
@@ -166,7 +199,7 @@ echo "Current directory: $PWD"
 echo -e "\nFinished testing elasticity.\n"
  
 # Test fracture crack propagation
-cd $MOFEM_INSTALL_DIR/um_view/mofem_um_fracture_mechanics
+cd $MOFEM_INSTALL_DIR/um_view/fracture_mechanics
 echo "Current directory: $PWD"
 ./crack_propagation \
 -my_file examples/analytical_bc/out_10.h5m \

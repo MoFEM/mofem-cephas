@@ -48,6 +48,7 @@ cm_export_file("../meshes/mat_elastic_transiso.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_interf.h5m" export_atom_tests)
 cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
 cm_export_file("../meshes/rectangle.h5m" export_atom_tests)
+cm_export_file("../meshes/quad_mesh.h5m" export_atom_tests)
 
 set(PERCOMPILED_MOFEM_HEADER "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
 
@@ -540,7 +541,9 @@ add_test(forces_and_sources_testing_triangle_element_test_compare ${CMAKE_COMMAN
 )
 
 #edge element
-my_add_executable(forces_and_sources_testing_edge_element forces_and_sources_testing_edge_element.cpp)
+my_add_executable(
+  forces_and_sources_testing_edge_element 
+  forces_and_sources_testing_edge_element.cpp)
 target_link_libraries(forces_and_sources_testing_edge_element
   mofem_finite_elements
   mofem_interfaces
@@ -552,14 +555,27 @@ target_link_libraries(forces_and_sources_testing_edge_element
   ${PROJECT_LIBS}
 )
 
-add_test(forces_and_sources_testing_edge_element_test
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element
-  -my_file elasticity_atom_test_01X_pressure.h5m
+add_test(forces_and_sources_testing_edge_element_ainsworth_test
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element
+  -my_file elasticity_atom_test_01X_pressure.h5m -base ainsworth
 )
-add_test(forces_and_sources_testing_edge_element_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_edge_element.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_edge_element.txt
+add_test(forces_and_sources_testing_edge_element_ainsworth_test_compare 
+${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_edge_element_AINSWORTH_LEGENDRE_BASE.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_edge_element_AINSWORTH_LEGENDRE_BASE.txt
 )
+add_test(forces_and_sources_testing_edge_element_bernstein_bezier_test
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element
+  -my_file elasticity_atom_test_01X_pressure.h5m -base bernstein_bezier
+)
+add_test(forces_and_sources_testing_edge_element_bernstein_bezier_test_compare 
+${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_edge_element_AINSWORTH_BERNSTEIN_BEZIER_BASE.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_edge_element_AINSWORTH_BERNSTEIN_BEZIER_BASE.txt
+)
+
 
 #vertex element
 my_add_executable(forces_and_sources_testing_vertex_element forces_and_sources_testing_vertex_element.cpp)
@@ -718,9 +734,9 @@ add_test(forces_and_sources_h1_continuity_check_atom
 )
 
 # Check approximation on Hcurl space in 2d
-my_add_executable(forces_and_sources_polynomoal_approx_on_triangle 
-  forces_and_sources_polynomoal_approx_on_triangle.cpp)
-target_link_libraries(forces_and_sources_polynomoal_approx_on_triangle
+my_add_executable(hcurl_check_approx_in_2d 
+  hcurl_check_approx_in_2d.cpp)
+target_link_libraries(hcurl_check_approx_in_2d
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -730,10 +746,32 @@ target_link_libraries(forces_and_sources_polynomoal_approx_on_triangle
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_check_approx_of_hcurl_in_2d
+add_test(hcurl_check_approx_in_2d_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_polynomoal_approx_on_triangle
-  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_check_approx_in_2d
+  -base ainsworth -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+)
+
+my_add_executable(hcurl_divergence_operator_2d hcurl_divergence_operator_2d.cpp)
+target_link_libraries(hcurl_divergence_operator_2d
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(hcurl_divergence_operator_2d_ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
+  -base ainsworth -odrer 5
+)
+add_test(hcurl_divergence_operator_2d_demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
+  -base demkowicz -odrer 5
 )
 
 # add test for recording series
@@ -822,10 +860,10 @@ add_test(
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions
 )
-add_test(forces_and_sources_hdiv_approximation_functions_atom_compare ${CMAKE_COMMAND} -E compare_files
+add_test(forces_and_sources_hdiv_approximation_functions_atom_compare 
+  ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_approximation_functions.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_approximation_functions.txt
-)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_approximation_functions.txt)
 
 # add test for hdiv space - check approximation continuity
 my_add_executable(hdiv_continuity_check hdiv_continuity_check.cpp)
@@ -896,10 +934,10 @@ add_test(hcurl_curl_operator_demkowicz_atom
 
 #test integration on skeleton
 my_add_executable(
-  forces_and_sources_integration_on_skeleton
-  forces_and_sources_integration_on_skeleton.cpp
+  continuity_check_on_skeleton_3d
+  continuity_check_on_skeleton_3d.cpp
 )
-target_link_libraries(forces_and_sources_integration_on_skeleton
+target_link_libraries(continuity_check_on_skeleton_3d
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -910,10 +948,28 @@ target_link_libraries(forces_and_sources_integration_on_skeleton
   ${PROJECT_LIBS}
 )
 add_test(
-  forces_and_sources_integration_on_skeleton
+  continuity_check_on_skeleton_3d_ainsworth_hdiv
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_integration_on_skeleton
-  -my_file sphere.h5m
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
+  -my_file sphere.h5m -base ainsworth -space hdiv
+)
+add_test(
+  continuity_check_on_skeleton_3d_demkowicz_hdiv
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
+  -my_file sphere.h5m -base demkowicz -space hdiv
+)
+add_test(
+  continuity_check_on_skeleton_3d_ainsworth_hcurl
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
+  -my_file sphere.h5m -base ainsworth -space hcurl
+)
+add_test(
+  continuity_check_on_skeleton_3d_demkowicz_hcurl
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
+  -my_file sphere.h5m -base demkowicz -space hcurl
 )
 
 #dm
@@ -1184,8 +1240,8 @@ add_test(node_merge ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/node_merge -my_file node_merge_test.h5m
 )
 
-my_add_executable(prisms_elements_from_surface prisms_elements_from_surface.cpp)
-target_link_libraries(prisms_elements_from_surface
+my_add_executable(edge_and_bubble_shape_functions_on_quad edge_and_bubble_shape_functions_on_quad.cpp)
+target_link_libraries(edge_and_bubble_shape_functions_on_quad
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -1195,9 +1251,23 @@ target_link_libraries(prisms_elements_from_surface
   mofem_third_party
   ${PROJECT_LIBS}
 )
-cm_export_file("../meshes/rectangle_surface_mesh.cub" export_atom_tests)
-add_test(prisms_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file rectangle_surface_mesh.cub
+add_test(edge_and_bubble_shape_functions_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/edge_and_bubble_shape_functions_on_quad -my_file quad_mesh.h5m
+)
+
+my_add_executable(gauss_points_on_quad gauss_points_on_quad.cpp)
+target_link_libraries(gauss_points_on_quad
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(gauss_points_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/gauss_points_on_quad
 )
 
 my_add_executable(partition_mesh partition_mesh.cpp)
@@ -1232,19 +1302,23 @@ list(INSERT testing_base_list
   lobatto
   jacobi
   integrated_jacobi
-  h1tet
+  h1tet_ainsworth
+  h1tet_bernstein_bezier 
   hcurltet_ainsworth
   hcurltet_demkowicz
   hdivtet_ainsworth
   hdivtet_demkowicz
   l2tet
-  h1tri
+  h1tri_ainsworth
+  h1tri_bernstein_bezier
+  h1quad
   hdivtri_ainsworth
   hdivtri_demkowicz
   hcurltri_ainsworth
   hcurltri_demkowicz
   l2tri
-  h1edge
+  h1edge_ainsworth
+  h1edge_bernstein_bezier
   hcurledge_ainsworth
   hcurledge_demkowicz
 )
@@ -1321,8 +1395,9 @@ target_link_libraries(mesh_cut_test
 add_test(
   mesh_cut ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test 
-  -my_file test_mesh_cut.cub -side_set 200 -shift -0.2,0.2,0. -nb_ref_before 1 
-  -nb_ref_after 0 -tol 1e-4,2e-1,2e-1 -test
+  -my_file test_mesh_cut.cub -side_set 200 
+  -shift -0.2,0.2,0.
+  -tol 1e-4,2e-1,2e-1 -test
 )
 
 my_add_executable(segments_distance segments_distance.cpp)
@@ -1387,4 +1462,128 @@ target_link_libraries(petsc_smart_ptr_objects
 add_test(petsc_smart_ptr_objects
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/petsc_smart_ptr_objects  
+)
+
+my_add_executable(boundary_marker boundary_marker.cpp)
+target_link_libraries(boundary_marker
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(boundary_marker
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/boundary_marker -file_name rectangle.h5m
+)
+
+my_add_executable(add_blockset add_blockset.cpp)
+target_link_libraries(add_blockset
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(add_blockset
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/add_blockset 
+)
+
+my_add_executable(
+  continuity_check_on_skeleton_with_simple_2d
+  continuity_check_on_skeleton_with_simple_2d.cpp
+)
+target_link_libraries(continuity_check_on_skeleton_with_simple_2d
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(continuity_check_on_skeleton_with_simple_2d_ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
+  -file_name rectangle.h5m -base ainsworth
+)
+
+add_test(continuity_check_on_skeleton_with_simple_2d_demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
+  -file_name rectangle.h5m -base demkowicz
+)
+
+cm_export_file("../meshes/reference_triangle_mesh.h5m" export_atom_tests)
+my_add_executable(prism_elements_from_surface prism_elements_from_surface.cpp)
+target_link_libraries(prism_elements_from_surface
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(prism_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/prism_elements_from_surface 
+  -my_file reference_triangle_mesh.h5m)
+
+my_add_executable(
+  prism_polynomial_approximation prism_polynomial_approximation.cpp)
+target_link_libraries(prism_polynomial_approximation
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(prism_polynomial_approximation
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/prism_polynomial_approximation -pc_type lu)
+
+my_add_executable(
+  quad_polynomial_approximation quad_polynomial_approximation.cpp)
+target_link_libraries(quad_polynomial_approximation
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(quad_polynomial_approximation
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation -pc_type lu)
+
+my_add_executable(
+  bernstein_bezier_generate_base
+  bernstein_bezier_generate_base.cpp
+)
+target_link_libraries(bernstein_bezier_generate_base
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(bernstein_bezier_generate_base
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/bernstein_bezier_generate_base
 )

@@ -1551,20 +1551,17 @@ struct DeprecatedCoreInterface : public CoreInterface {
   /**
    * @deprecated Use version from core interface
    */
-  DEPRECATED MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
-                                      const std::string &fe_name,
-                                      FEMethod &method, int lower_rank,
-                                      int upper_rank, MoFEMTypes bh,
-                                      int verb = DEFAULT_VERBOSITY);
+  DEPRECATED MoFEMErrorCode loop_finite_elements(
+      const std::string &problem_name, const std::string &fe_name,
+      FEMethod &method, int lower_rank, int upper_rank, MoFEMTypes bh,
+      int verb = DEFAULT_VERBOSITY);
 
   /**
    * @deprecated Use version from core interface
    */
-  DEPRECATED MoFEMErrorCode loop_finite_elements(const std::string &problem_name,
-                                      const std::string &fe_name,
-                                      FEMethod &method,
-                                      MoFEMTypes bh,
-                                      int verb = DEFAULT_VERBOSITY);
+  DEPRECATED MoFEMErrorCode loop_finite_elements(
+      const std::string &problem_name, const std::string &fe_name,
+      FEMethod &method, MoFEMTypes bh, int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
 
@@ -1572,13 +1569,176 @@ struct DeprecatedCoreInterface : public CoreInterface {
 
   /**@{*/
 
-  MoFEMErrorCode resolve_shared_ents(const Problem *problem_ptr,
-                                     const std::string &fe_name,
-                                     int verb = DEFAULT_VERBOSITY);
-                                     
-  MoFEMErrorCode resolve_shared_ents(const std::string &name,
-                                     const std::string &fe_name,
-                                     int verb = DEFAULT_VERBOSITY);
+  /**
+   * @deprecate Use CommInterface
+   *
+   * @param problem_ptr
+   * @param fe_name
+   * @param verb
+   * @return DEPRECATED resolve_shared_ents
+   */
+  DEPRECATED MoFEMErrorCode resolve_shared_ents(const Problem *problem_ptr,
+                                                const std::string &fe_name,
+                                                int verb = DEFAULT_VERBOSITY);
+  /**
+   * @deprecated Use CommInterface
+   *
+   * @param name
+   * @param fe_name
+   * @param verb
+   * @return DEPRECATED resolve_shared_ents
+   */
+  DEPRECATED MoFEMErrorCode resolve_shared_ents(const std::string &name,
+                                                const std::string &fe_name,
+                                                int verb = DEFAULT_VERBOSITY);
+
+  /**
+  * \brief resolve shared entities for finite elements in the problem
+  * \ingroup mofem_problems
+  *
+  * \deprecated Use CommInterface
+
+  * @param  problem_ptr  problem pointer
+  * @param  fe_name     finite element name
+  * @param  verb        verbosity level
+  * @return             error code
+  *
+  * This allows for tag reduction or tag exchange, f.e.
+
+  \code
+  CHKERR m_field.resolve_shared_finite_elements(problem_ptr,"SHELL_ELEMENT");
+  Tag th;
+  CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th);
+  CHKERR ParallelComm* pcomm =
+  ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  CHKERR pcomm->exchange_tags(th,prisms);
+  \endcode
+
+  *
+  */
+  DEPRECATED MoFEMErrorCode resolve_shared_finite_elements(
+      const Problem *problem_ptr, const std::string &fe_name,
+      int verb = DEFAULT_VERBOSITY);
+
+  /**
+  * \brief resolve shared entities for finite elements in the problem
+  * \ingroup mofem_problems
+  * \depreacted Use CommInterface
+
+  * @param  name        problem name
+  * @param  fe_name     finite element name
+  * @param  verb        verbosity level
+  * @return             error code
+  *
+  * This allows for tag reduction or tag exchange, f.e.
+
+  \code
+  CHKERR m_field.resolve_shared_finite_elements(problem_ptr,"SHELL_ELEMENT");
+  Tag th;
+  CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th);
+  ParallelComm* pcomm =
+  ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  // CHKERR pcomm->reduce_tags(th,MPI_SUM,prisms);
+  CHKERR pcomm->exchange_tags(th,prisms);
+  \endcode
+
+  *
+  */
+  DEPRECATED MoFEMErrorCode resolve_shared_finite_elements(
+      const std::string &name, const std::string &fe_name,
+      int verb = DEFAULT_VERBOSITY);
+
+  /**
+   * @brief make entities from proc 0 shared on all proc
+   * @deprecated Use CommInterface
+   *
+   * \note collective - need tu be run on all processors in communicator
+   *
+   * @param entities
+   * @param num_entities
+   * @param my_proc default proc id to share from
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  DEPRECATED MoFEMErrorCode make_entities_multishared(
+      const EntityHandle *entities, const int num_entities,
+      const int my_proc = 0, int verb = DEFAULT_VERBOSITY);
+  /**
+   * @brief make entities from proc 0 shared on all proc
+   * @deprecated Use CommInterface
+   *
+   * \note collective - need tu be run on all processors in communicator
+   *
+   * @param entities
+   * @param my_proc default proc id to share from
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  DEPRECATED MoFEMErrorCode make_entities_multishared(
+      Range &entities, const int my_proc = 0, int verb = DEFAULT_VERBOSITY);
+
+  /**
+   * @brief make field entities multi shared
+   * @deprecated Use CommInterface
+   *
+   * \note collective - need tu be run on all processors in communicator
+   *
+   * @param field_name
+   * @param owner_proc
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  DEPRECATED MoFEMErrorCode make_field_entities_multishared(
+      const std::string field_name, const int owner_proc = 0,
+      int verb = DEFAULT_VERBOSITY);
+
+  /**
+   * @brief Exchange field data
+   * @deprecated Use CommInterface
+   *
+   * Exchange field for all shared and ghosted entities. This function should be
+   * called collectively over the communicator for this ParallelComm. If the
+   * entities vector is empty, all shared entities participate in the exchange.
+   * If a proc has no owned entities this function must still be called since it
+   * is collective.
+   *
+   * \note collective - need tu be run on all processors in communicator
+   *
+   * \todo It is not working if field has entities diffrent than vertices.
+   *
+   * @param verb
+   * @param field_name @return MoFEMErrorCode
+   */
+  DEPRECATED MoFEMErrorCode exchange_field_data(const std::string field_name,
+                                                int verb = DEFAULT_VERBOSITY);
+
+  /**@}*/
+
+  /** \name Synchronize */
+
+  /**@{*/
+
+  /** synchronize entity range on processors (collective)
+
+  collective - need tu be run on all processors in communicator
+
+  @deprecated Use Comm Interface
+  */
+  DEPRECATED MoFEMErrorCode synchronise_entities(Range &ent,
+                                                 int verb = DEFAULT_VERBOSITY);
+
+  /** synchronize entity range on processors (collective)
+  * \ingroup mofem_field
+
+  collective - need tu be run on all processors in communicator
+
+  \param name field
+  \param verbose level
+
+  \deprecated Use CommInterface
+  */
+  DEPRECATED MoFEMErrorCode synchronise_field_entities(
+      const std::string &name, int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
 };

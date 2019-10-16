@@ -10,7 +10,8 @@
 #       1. Copy install_mofem_developer.sh to the directory where MoFEM will be installed
 #       2. Run install_mofem_developer.sh from the command line
 #
-  
+# Note: Installation script changes .bash_profile. Inspect that file after installation.
+
 ##############################
 # INITIALISATION
 ##############################
@@ -79,9 +80,14 @@ then
     echo -e "\nRunning in macOS\n"
 
     # Install Xcode
-    xcode-select --install
-    sudo xcodebuild -license accept
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    if ! which 'brew' &>/dev/null
+    then
+        xcode-select --install
+        sudo xcodebuild -license accept
+        /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    else 
+        echo -e "\nHomebrew installed"
+    fi
     brew install curl git gcc
  
     # Install XQuartz
@@ -109,21 +115,51 @@ echo "Current directory: $PWD"
 echo -e "\n****************************\nInstalling SPACK...\n****************************\n"
   
 # Locate home directory
-cd ~
+cd $MOFEM_INSTALL_DIR
 echo "$PWD"
-  
+
+SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
+SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
+
 # Retrieve Spack for MoFEM
-git clone --single-branch -b develop https://github.com/likask/spack.git
-  
-# Initialise Spack environment variables:
-. $HOME/spack/share/spack/setup-env.sh
-  
-# Add command to configuration file .bash_profile
-echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
-  
-# Install packages required by Spack
-spack bootstrap
-  
+if [ ! -d "$SPACK_ROOT_DIR" ]; then
+
+  if [ ! -f "$PWD/spack.tgz" ]; then
+    echo "Download spack"
+    mkdir -p $SPACK_ROOT_DIR &&\
+    curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
+    | tar xzC $SPACK_ROOT_DIR --strip 1
+  else 
+    mkdir -p $SPACK_ROOT_DIR &&\
+    tar xzf $PWD/spack.tgz -C $SPACK_ROOT_DIR --strip 1
+  fi
+
+  # Initialise Spack environment variables:
+  . $SPACK_ROOT_DIR/share/spack/setup-env.sh
+
+  # Download mirror
+  if [ ! -d "$SPACK_MIRROR_DIR" ]; then
+    if [ ! -f "$PWD/mirror.tgz" ]; then
+      echo "Download spack mofem mirror"
+      mkdir -p $SPACK_MIRROR_DIR && \
+      curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+      | tar xzC $SPACK_MIRROR_DIR --strip 1
+    else 
+      mkdir -p $SPACK_MIRROR_DIR && \
+      tar xzf $PWD/mirror.tgz -C $SPACK_MIRROR_DIR  --strip 1
+    fi
+  fi
+ 
+  # Add mirror
+  spack mirror add mofem_mirror $SPACK_MIRROR_DIR
+
+  # Add command to configuration file .bash_profile
+  echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bash_profile
+ 
+  # Install packages required by Spack
+  spack bootstrap
+fi
+ 
 echo -e "\nFinished installing Spack.\n"
   
 echo "Current directory: $PWD"
@@ -141,7 +177,11 @@ cd $MOFEM_INSTALL_DIR
 echo "Current directory: $PWD"
   
 # Clone MoFEM core library
-git clone -b develop --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+if [ ! -d "$PWD/mofem-cephas" ]; then
+  git clone -b develop --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+else 
+  echo -e "\nMoFEM source directory is found"
+fi
 
 # Installation of core library
 mkdir lib
@@ -179,7 +219,6 @@ make install
 
 echo -e "\nFinished installing and testing the Core Library.\n"
 
-
 echo -e "\n********************************************************\n"
 echo -e "Installing USER MODULES ..."
 echo -e "\n********************************************************\n"
@@ -195,14 +234,19 @@ echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
 
 mkdir build
 cd build/
-spack setup mofem-users-modules@develop copy_user_modules=False build_type=RelWithDebInfo \
-    ^mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
+
+MOFEM_CEPHAS_SPACK_ID=`spack find -l mofem-cephas | grep mofem-cephas@develop | sed 's/mofem-cephas.*//' | tail -n 1`
+
+spack setup mofem-users-modules@develop \
+    copy_user_modules=False build_type=RelWithDebInfo \
+    ^/$MOFEM_CEPHAS_SPACK_ID
 
 echo -e "\n----------------------------\n"
 echo -e "USER MODULE: spconfig ..."
 echo -e "\n----------------------------n"
 
-./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DMOFEM_DIR=../um_view $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
+./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DMOFEM_DIR=../um_view \
+    $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
 
 echo -e "\n----------------------------\n"
 echo -e "USER MODULE: make -j $NumberOfProcs ..."

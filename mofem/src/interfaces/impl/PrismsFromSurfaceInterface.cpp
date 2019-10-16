@@ -192,4 +192,120 @@ MoFEMErrorCode PrismsFromSurfaceInterface::setThickness(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode PrismsFromSurfaceInterface::setNormalThickness(
+    const Range &prisms, double thickness3, double thickness4) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  auto add_normal = [&](std::map<EntityHandle, std::array<double, 3>> &nodes,
+                        EntityHandle face) {
+    MoFEMFunctionBeginHot;
+    const EntityHandle *conn;
+    int number_nodes;
+    CHKERR m_field.get_moab().get_connectivity(face, conn, number_nodes, false);
+    std::array<double, 9> coords;
+    CHKERR m_field.get_moab().get_coords(conn, number_nodes, coords.data());
+    std::array<double, 3> normal;
+    CHKERR Tools::getTriNormal(coords.data(), normal.data());
+    double a = sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
+                    normal[2] * normal[2]);
+    for (auto d : {0, 1, 2})
+      normal[d] /= a;
+    for (auto n : {0, 1, 2}) {
+      try {
+        for (auto d : {0, 1, 2})
+          nodes.at(conn[n])[d] += normal[d];
+      } catch (...) {
+        nodes.insert(
+            std::pair<EntityHandle, std::array<double, 3>>(conn[n], normal));
+      }
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  auto apply_map = [&](auto &nodes, double t) {
+    MoFEMFunctionBeginHot;
+    for (auto &m : nodes) {
+      std::array<double, 3> coords;
+      CHKERR m_field.get_moab().get_coords(&m.first, 1, coords.data());
+      auto &normal = m.second;
+      double a = sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
+                      normal[2] * normal[2]);
+      for (auto d : {0, 1, 2})
+        coords[d] += (normal[d] / a) * t;
+      CHKERR m_field.get_moab().set_coords(&m.first, 1, coords.data());
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  map<EntityHandle, std::array<double, 3>> nodes_f3, nodes_f4;
+  for (Range::iterator pit = prisms.begin(); pit != prisms.end(); pit++) {
+    for (int ff = 3; ff <= 4; ff++) {
+      EntityHandle face;
+      CHKERR m_field.get_moab().side_element(*pit, 2, ff, face);
+      if (ff == 3)
+        CHKERR add_normal(nodes_f3, face);
+      else
+        CHKERR add_normal(nodes_f4, face);
+    }
+  }
+
+  CHKERR apply_map(nodes_f3, thickness3);
+  CHKERR apply_map(nodes_f4, thickness4);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+PrismsFromSurfaceInterface::updateMeshestByEdgeBlock(const Range &prisms) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  Range prisms_edges;
+  CHKERR m_field.get_moab().get_adjacencies(prisms, 1, true, prisms_edges,
+                                            moab::Interface::UNION);
+  Range prisms_faces;
+  CHKERR m_field.get_moab().get_adjacencies(prisms, 2, true, prisms_faces,
+                                            moab::Interface::UNION);
+  for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, it)) {
+    Range edges;
+    CHKERR m_field.get_moab().get_entities_by_type(it->meshset, MBEDGE, edges,
+                                                  true);
+    edges = intersect(edges, prisms_edges);
+    if (!edges.empty()) {
+      Range edges_faces;
+      CHKERR m_field.get_moab().get_adjacencies(edges, 2, false, edges_faces,
+                                                moab::Interface::UNION);
+      edges_faces = intersect(edges_faces, prisms_faces.subset_by_type(MBQUAD));
+      EntityHandle meshset = it->getMeshset();
+      CHKERR m_field.get_moab().add_entities(meshset, edges_faces);
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+PrismsFromSurfaceInterface::updateMeshestByTriBlock(const Range &prisms) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  Range prisms_tris;
+  CHKERR m_field.get_moab().get_adjacencies(prisms, 2, true, prisms_tris,
+                                            moab::Interface::UNION);
+  prisms_tris = prisms_tris.subset_by_type(MBTRI);
+  for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, it)) {
+    Range tris;
+    CHKERR m_field.get_moab().get_entities_by_type(it->meshset, MBTRI, tris,
+                                                  true);
+    tris = intersect(tris, prisms_tris);
+    if (!tris.empty()) {
+      Range tris_ents;
+      CHKERR m_field.get_moab().get_adjacencies(tris, 3, false, tris_ents,
+                                                moab::Interface::UNION);
+      tris_ents = intersect(tris_ents, prisms);
+      EntityHandle meshset = it->getMeshset();
+      CHKERR m_field.get_moab().add_entities(meshset, tris_ents);
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

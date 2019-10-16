@@ -18,25 +18,15 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <cblas.h>
-#include <lapack_wrap.h>
-// #include <gm_rule.h>
-#include <quad.h>
-#ifdef __cplusplus
-}
-#endif
-
 namespace MoFEM {
 
-VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
+VolumeElementForcesAndSourcesCoreBase::VolumeElementForcesAndSourcesCoreBase(
     Interface &m_field, const EntityType type)
-    : ForcesAndSourcesCore(m_field), coords(12), jAc(3, 3), invJac(3, 3),
-      opSetInvJacH1(invJac), opContravariantPiolaTransform(vOlume, jAc),
+    : ForcesAndSourcesCore(m_field),
+      meshPositionsFieldName("MESH_NODE_POSITIONS"), coords(12), jAc(3, 3),
+      invJac(3, 3), opSetInvJacH1(invJac),
+      opContravariantPiolaTransform(vOlume, jAc),
       opCovariantPiolaTransform(invJac), opSetInvJacHdivAndHcurl(invJac),
-      meshPositionsFieldName("MESH_NODE_POSITIONS"),
       opHOatGaussPoints(hoCoordsAtGaussPts, hoGaussPtsJac),
       opSetHoInvJacH1(hoGaussPtsInvJac),
       opHoContravariantTransform(hoGaussPtsDetJac, hoGaussPtsJac),
@@ -51,7 +41,7 @@ VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
       boost::shared_ptr<BaseFunction>(new TetPolynomialBase());
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::setIntegrationPts() {
   MoFEMFunctionBegin;
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
@@ -67,41 +57,41 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::setIntegrationPts() {
         SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                  "wrong order %d != %d", QUAD_3D_TABLE[rule]->order, rule);
       }
-      nbGaussPts = QUAD_3D_TABLE[rule]->npoints;
-      gaussPts.resize(4, nbGaussPts, false);
-      cblas_dcopy(nbGaussPts, &QUAD_3D_TABLE[rule]->points[1], 4,
+      size_t nb_gauss_pts = QUAD_3D_TABLE[rule]->npoints;
+      gaussPts.resize(4, nb_gauss_pts, false);
+      cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[1], 4,
                   &gaussPts(0, 0), 1);
-      cblas_dcopy(nbGaussPts, &QUAD_3D_TABLE[rule]->points[2], 4,
+      cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[2], 4,
                   &gaussPts(1, 0), 1);
-      cblas_dcopy(nbGaussPts, &QUAD_3D_TABLE[rule]->points[3], 4,
+      cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[3], 4,
                   &gaussPts(2, 0), 1);
-      cblas_dcopy(nbGaussPts, QUAD_3D_TABLE[rule]->weights, 1, &gaussPts(3, 0),
+      cblas_dcopy(nb_gauss_pts, QUAD_3D_TABLE[rule]->weights, 1, &gaussPts(3, 0),
                   1);
-      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 4,
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
                                                              false);
       double *shape_ptr =
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-      cblas_dcopy(4 * nbGaussPts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr, 1);
+      cblas_dcopy(4 * nb_gauss_pts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr, 1);
     } else {
       SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_3D_TABLE_SIZE);
-      nbGaussPts = 0;
     }
   } else {
     CHKERR setGaussPts(order_row, order_col, order_data);
-    nbGaussPts = gaussPts.size2();
-    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 4,
+    const size_t nb_gauss_pts = gaussPts.size2();
+    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
                                                            false);
-    if (nbGaussPts > 0) {
+    if (nb_gauss_pts > 0) {
       CHKERR Tools::shapeFunMBTET(
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
-          &gaussPts(0, 0), &gaussPts(1, 0), &gaussPts(2, 0), nbGaussPts);
+          &gaussPts(0, 0), &gaussPts(1, 0), &gaussPts(2, 0), nb_gauss_pts);
     }
   }
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
+MoFEMErrorCode
+VolumeElementForcesAndSourcesCoreBase::calculateVolumeAndJacobian() {
   MoFEMFunctionBegin;
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
@@ -126,24 +116,25 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
 }
 
 MoFEMErrorCode
-VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
+VolumeElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBegin;
   // Get coords at Gauss points
   FTensor::Index<'i', 3> i;
 
   double *shape_functions_ptr =
       &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-  coordsAtGaussPts.resize(nbGaussPts, 3, false);
+  const size_t nb_gauss_pts = gaussPts.size2();
+  coordsAtGaussPts.resize(nb_gauss_pts, 3, false);
   coordsAtGaussPts.clear();
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_at_gauss_ptr(
       &coordsAtGaussPts(0, 0), &coordsAtGaussPts(0, 1),
       &coordsAtGaussPts(0, 2));
   FTensor::Tensor0<FTensor::PackPtr<double *, 1>> t_shape_functions(
       shape_functions_ptr);
-  for (unsigned int gg = 0; gg < nbGaussPts; gg++) {
+  for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
         &coords[0], &coords[1], &coords[2]);
-    for (int bb = 0; bb < 4; bb++) {
+    for (int bb = 0; bb != 4; ++bb) {
       t_coords_at_gauss_ptr(i) += t_coords(i) * t_shape_functions;
       ++t_coords;
       ++t_shape_functions;
@@ -154,7 +145,7 @@ VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
 }
 
 MoFEMErrorCode
-VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
+VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
 
   CHKERR getSpacesAndBaseOnEntities(dataH1);
@@ -206,7 +197,7 @@ VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformBaseFunctions() {
   MoFEMFunctionBegin;
 
   CHKERR opSetInvJacH1.opRhs(dataH1);
@@ -221,10 +212,40 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
   if (dataH1.spacesOnEntities[MBTET].test(L2)) {
     CHKERR opSetInvJacH1.opRhs(dataL2);
   }
+
+  MatrixDouble new_diff_n;
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+    FTensor::Index<'i', 3> i;
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+    DataForcesAndSourcesCore::EntData &data =
+        dataH1.dataOnEntities[MBVERTEX][0];
+    if ((data.getDiffN(base).size1() == 4) &&
+        (data.getDiffN(base).size2() == 3)) {
+      const size_t nb_gauss_pts = gaussPts.size2();
+      const size_t nb_base_functions = 4;
+      new_diff_n.resize(nb_gauss_pts, 3 * nb_base_functions, false);
+      double *new_diff_n_ptr = &*new_diff_n.data().begin();
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_new_diff_n(
+          new_diff_n_ptr, &new_diff_n_ptr[1], &new_diff_n_ptr[2]);
+      double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
+      for (unsigned int gg = 0; gg != nb_gauss_pts; gg++) {
+        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
+            t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
+        for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
+          t_new_diff_n(i) = t_diff_n(i);
+          ++t_new_diff_n;
+          ++t_diff_n;
+        }
+      }
+      data.getDiffN(base).resize(new_diff_n.size1(), new_diff_n.size2(), false);
+      data.getDiffN(base).data().swap(new_diff_n.data());
+    }
+  }
+
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::calculateHoJacobian() {
   MoFEMFunctionBegin;
   if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
       dataPtr->get<FieldName_mi_tag>().end()) {
@@ -257,10 +278,12 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
         &hoGaussPtsInvJac(0, 4), &hoGaussPtsInvJac(0, 5),
         &hoGaussPtsInvJac(0, 6), &hoGaussPtsInvJac(0, 7),
         &hoGaussPtsInvJac(0, 8));
-    hoGaussPtsDetJac.resize(nbGaussPts, false);
+        
+    const size_t nb_gauss_pts = gaussPts.size2();
+    hoGaussPtsDetJac.resize(nb_gauss_pts, false);
     FTensor::Tensor0<double *> det(&hoGaussPtsDetJac[0]);
     // Calculate inverse and determinant
-    for (unsigned int gg = 0; gg != nbGaussPts; gg++) {
+    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
       CHKERR determinantTensor3by3(jac, det);
       // if(det<0) {
       //   SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"Negative
@@ -279,7 +302,8 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
+MoFEMErrorCode
+VolumeElementForcesAndSourcesCoreBase::transformHoBaseFunctions() {
   MoFEMFunctionBegin;
   if (hoCoordsAtGaussPts.size1() > 0) {
     // Transform derivatives of base functions and apply Piola transformation
@@ -301,64 +325,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCore::operator()() {
-  MoFEMFunctionBegin;
-
-  if (numeredEntFiniteElementPtr->getEntType() != MBTET)
-    MoFEMFunctionReturnHot(0);
-  CHKERR createDataOnElement();
-
-  CHKERR calculateVolumeAndJacobian();
-  CHKERR getSpaceBaseAndOrderOnElement();
-  CHKERR setIntegrationPts();
-  if (nbGaussPts == 0)
-    MoFEMFunctionReturnHot(0);
-  CHKERR calculateCoordinatesAtGaussPts();
-  CHKERR calculateBaseFunctionsOnElement();
-  CHKERR transformBaseFunctions();
-
-  try {
-    MatrixDouble new_diff_n;
-    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
-      FTensor::Index<'i', 3> i;
-      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-      DataForcesAndSourcesCore::EntData &data =
-          dataH1.dataOnEntities[MBVERTEX][0];
-      if ((data.getDiffN(base).size1() == 4) &&
-          (data.getDiffN(base).size2() == 3)) {
-        const unsigned int nb_base_functions = 4;
-        new_diff_n.resize(nbGaussPts, 3 * nb_base_functions, false);
-        double *new_diff_n_ptr = &*new_diff_n.data().begin();
-        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_new_diff_n(
-            new_diff_n_ptr, &new_diff_n_ptr[1], &new_diff_n_ptr[2]);
-        double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
-        for (unsigned int gg = 0; gg != nbGaussPts; gg++) {
-          FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_diff_n(
-              t_diff_n_ptr, &t_diff_n_ptr[1], &t_diff_n_ptr[2]);
-          for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
-            t_new_diff_n(i) = t_diff_n(i);
-            ++t_new_diff_n;
-            ++t_diff_n;
-          }
-        }
-        data.getDiffN(base).resize(new_diff_n.size1(), new_diff_n.size2(),
-                                   false);
-        data.getDiffN(base).data().swap(new_diff_n.data());
-      }
-    }
-  }
-  CATCH_ERRORS;
-
-  CHKERR calculateHoJacobian();
-  CHKERR transformHoBaseFunctions();
-
-  // Iterate over operators
-  CHKERR loopOverOperators();
-
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
     getDivergenceOfHDivBaseFunctions(int side, EntityType type,
                                      DataForcesAndSourcesCore::EntData &data,
                                      int gg, VectorDouble &div) {
@@ -397,7 +364,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
     getCurlOfHCurlBaseFunctions(int side, EntityType type,
                                 DataForcesAndSourcesCore::EntData &data, int gg,
                                 MatrixDouble &curl) {
@@ -440,86 +407,6 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::
   }
 
   MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
-  MoFEMFunctionBegin;
-  if (faceFEPtr == NULL) {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-            "Pointer to face element is not set");
-  }
-  const EntityHandle face_entity =
-      faceFEPtr->numeredEntFiniteElementPtr->getEnt();
-  SideNumber_multiIndex &side_table = const_cast<SideNumber_multiIndex &>(
-      numeredEntFiniteElementPtr->getSideNumberTable());
-  SideNumber_multiIndex::nth_index<0>::type::iterator sit =
-      side_table.get<0>().find(face_entity);
-  if (sit == side_table.get<0>().end()) {
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-            "Face can not be found on volume element");
-  }
-  faceSense = (*sit)->sense;
-  faceSideNumber = (*sit)->side_number;
-  fill(tetConnMap, &tetConnMap[4], -1);
-  for (int nn = 0; nn != 3; nn++) {
-    faceConnMap[nn] =
-        std::distance(conn, find(conn, &conn[4], faceFEPtr->conn[nn]));
-    tetConnMap[faceConnMap[nn]] = nn;
-    if (faceConnMap[nn] > 3) {
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-              "No common node on face and element can not be found");
-    }
-  }
-  oppositeNode =
-      std::distance(tetConnMap, find(tetConnMap, &tetConnMap[4], -1));
-  const int nb_gauss_pts = faceFEPtr->gaussPts.size2();
-  gaussPts.resize(4, nb_gauss_pts, false);
-  gaussPts.clear();
-  DataForcesAndSourcesCore &dataH1_on_face = *faceFEPtr->dataOnElement[H1];
-  const MatrixDouble &face_shape_funtions =
-      dataH1_on_face.dataOnEntities[MBVERTEX][0].getN(NOBASE);
-  const double tet_coords[] = {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1};
-  for (int gg = 0; gg != nb_gauss_pts; gg++) {
-    gaussPts(0, gg) =
-        face_shape_funtions(gg, 0) * tet_coords[3 * faceConnMap[0] + 0] +
-        face_shape_funtions(gg, 1) * tet_coords[3 * faceConnMap[1] + 0] +
-        face_shape_funtions(gg, 2) * tet_coords[3 * faceConnMap[2] + 0];
-    gaussPts(1, gg) =
-        face_shape_funtions(gg, 0) * tet_coords[3 * faceConnMap[0] + 1] +
-        face_shape_funtions(gg, 1) * tet_coords[3 * faceConnMap[1] + 1] +
-        face_shape_funtions(gg, 2) * tet_coords[3 * faceConnMap[2] + 1];
-    gaussPts(2, gg) =
-        face_shape_funtions(gg, 0) * tet_coords[3 * faceConnMap[0] + 2] +
-        face_shape_funtions(gg, 1) * tet_coords[3 * faceConnMap[1] + 2] +
-        face_shape_funtions(gg, 2) * tet_coords[3 * faceConnMap[2] + 2];
-    gaussPts(3, gg) = faceFEPtr->gaussPts(2, gg);
-  }
-  MoFEMFunctionReturn(0);
-}
-
-VectorDouble &
-VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormal() {
-  return getFaceFEPtr()->nOrmal;
-}
-
-MatrixDouble &VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
-    getNormalsAtGaussPts() {
-  return getFaceFEPtr()->normalsAtGaussPts;
-}
-
-MatrixDouble &VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::
-    getFaceCoordsAtGaussPts() {
-  return getFaceFEPtr()->coordsAtGaussPts;
-}
-
-/** \brief if higher order geometry return normals at Gauss pts.
- *
- * \param gg gauss point number
- */
-ublas::matrix_row<MatrixDouble>
-VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormalsAtGaussPts(
-    const int gg) {
-  return ublas::matrix_row<MatrixDouble>(getNormalsAtGaussPts(), gg);
 }
 
 } // namespace MoFEM

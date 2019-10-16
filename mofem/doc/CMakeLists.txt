@@ -84,6 +84,13 @@ if(DOXYGEN_FOUND)
   )
   add_dependencies(doc doxygen_google_site_verification)
 
+  # copy script files 
+  add_custom_target(doxygen_copy_script_files
+    ${CMAKE_COMMAND} -E copy_directory
+    ${PROJECT_SOURCE_DIR}/scripts ${PROJECT_BINARY_DIR}/html/scripts
+  )
+  add_dependencies(doc doxygen_copy_script_files)
+
   # users modules docs
   # FIXME: This only works if modules are in ${PROJECT_SOURCE_DIR}/users_modules
   file(
@@ -148,17 +155,5 @@ if(DOXYGEN_FOUND)
     )
 
   endif(RSYNC)
-
-  if(GIT_FOUND)
-    find_program(GITSTATS NAMES gitstats)
-    if(GITSTATS)
-      add_custom_target(git-stats
-        GITSTATS ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}/html/git-stats
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-        COMMENT "Generate git-stats" VERBATIM
-      )
-    endif(GITSTATS)
-  endif(GIT_FOUND)
-
 
 endif(DOXYGEN_FOUND)

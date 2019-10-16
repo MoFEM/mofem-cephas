@@ -34,6 +34,7 @@
 #include <h1_hdiv_hcurl_l2.h>
 #include <Hdiv.hpp>
 #include <Hcurl.hpp>
+#include <BernsteinBezier.hpp>
 #include <fem_tools.h>
 #include <BaseFunction.hpp>
 #include <LegendrePolynomial.hpp>
@@ -69,6 +70,7 @@
 
 #include <BitRefManager.hpp>
 #include <Tools.hpp>
+#include <CommInterface.hpp>
 #include <ISManager.hpp>
 #include <VecManager.hpp>
 #include <FieldBlas.hpp>
@@ -102,6 +104,7 @@
 #include <EntPolynomialBaseCtx.hpp>
 #include <TetPolynomialBase.hpp>        // Base functions on tet
 #include <TriPolynomialBase.hpp>        // Base functions on tri
+#include <QuadPolynomialBase.hpp>       // Base functions on quad
 #include <EdgePolynomialBase.hpp>       // Base functions on edge
 #include <FlatPrismPolynomialBase.hpp>  // Base functions on prism
 #include <DataOperators.hpp>
@@ -113,6 +116,8 @@
 #include <FlatPrismElementForcesAndSourcesCore.hpp>
 #include <ContactPrismElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSourcesCore.hpp>
+#include <VolumeElementForcesAndSourcesCoreOnSide.hpp>
+#include <FaceElementForcesAndSourcesCoreOnSide.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <UserDataOperators.hpp>
 

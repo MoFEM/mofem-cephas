@@ -33,7 +33,7 @@ namespace MoFEM {
 struct EdgePolynomialBase : public BaseFunction {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   EdgePolynomialBase();
   ~EdgePolynomialBase();
@@ -47,6 +47,10 @@ private:
   VectorDouble L, diffL;
 
   MoFEMErrorCode getValueH1(MatrixDouble &pts);
+
+  MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
+  
+  MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
 
   MoFEMErrorCode getValueL2(MatrixDouble &pts);
 

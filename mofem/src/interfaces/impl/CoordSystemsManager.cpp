@@ -82,7 +82,6 @@ MoFEMErrorCode CoordSystemsManager::clearMap() {
 }
 
 MoFEMErrorCode CoordSystemsManager::initialiseDatabaseFromMesh(int verb) {
-
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -92,13 +91,12 @@ MoFEMErrorCode CoordSystemsManager::initialiseDatabaseFromMesh(int verb) {
 
   // loop all meshset to find coordinate system
   for (auto meshset : meshsets) {
-    const void *cs_name_ptr;
+    const void *cs_name_ptr = nullptr;
     int cs_name_size = 0;
     rval = moab.tag_get_by_ptr(th_CoordSysName, &meshset, 1,
                                (const void **)&cs_name_ptr, &cs_name_size);
-    std::string cs_name(static_cast<const char *>(cs_name_ptr), cs_name_size);
-
     if (rval == MB_SUCCESS && cs_name_size) {
+      std::string cs_name(static_cast<const char *>(cs_name_ptr), cs_name_size);
 
       std::array<int, 4> dim;
       rval = moab.tag_get_data(th_CoordSysDim, &meshset, 1, dim.data());

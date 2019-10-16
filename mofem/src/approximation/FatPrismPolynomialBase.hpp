@@ -38,7 +38,7 @@ struct NumeredEntFiniteElement;
 struct FatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 MoFEM::UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   DataForcesAndSourcesCore &dataTrianglesOnly;
   DataForcesAndSourcesCore &dataTroughThickness;
@@ -71,7 +71,7 @@ struct FatPrismPolynomialBaseCtx : public EntPolynomialBaseCtx {
 struct FatPrismPolynomialBase : public BaseFunction {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 MoFEM::UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   FatPrismPolynomialBase();
   ~FatPrismPolynomialBase();

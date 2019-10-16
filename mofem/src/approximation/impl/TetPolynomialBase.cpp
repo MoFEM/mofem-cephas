@@ -21,10 +21,9 @@ A l2, h1, h-div and h-curl spaces are implemented.
 
 using namespace MoFEM;
 
-
 MoFEMErrorCode
 TetPolynomialBase::query_interface(const MOFEMuuid &uuid,
-                                   MoFEM::UnknownInterface **iface) const {
+                                   BaseFunctionUnknownInterface **iface) const {
 
   MoFEMFunctionBeginHot;
   *iface = NULL;
@@ -43,6 +42,24 @@ TetPolynomialBase::~TetPolynomialBase() {}
 TetPolynomialBase::TetPolynomialBase() {}
 
 MoFEMErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  switch (cTx->bAse) {
+  case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
+    CHKERR getValueH1AinsworthBase(pts);
+    break;
+  case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+    CHKERR getValueH1BernsteinBezierBase(pts);
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode TetPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
   DataForcesAndSourcesCore &data = cTx->dAta;
@@ -148,6 +165,289 @@ MoFEMErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
   } else {
     data.dataOnEntities[MBTET][0].getN(base).resize(0, 0, false);
     data.dataOnEntities[MBTET][0].getDiffN(base).resize(0, 0, false);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const std::string field_name = cTx->fieldName;
+  const int nb_gauss_pts = pts.size2();
+
+  if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
+      (unsigned int)nb_gauss_pts)
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Base functions or nodes has wrong number of integration points "
+             "for base %s",
+             ApproximationBaseNames[NOBASE]);
+  auto &lambda = data.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+
+  auto get_alpha = [field_name](auto &data) -> MatrixInt & {
+    auto &ptr = data.getBBAlphaIndicesSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixInt());
+    return *ptr;
+  };
+
+  auto get_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto get_diff_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBDiffNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto get_alpha_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixInt> & {
+    return data.getBBAlphaIndicesSharedPtr(field_name);
+  };
+
+  auto get_base_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBNSharedPtr(field_name);
+  };
+
+  auto get_diff_base_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBDiffNSharedPtr(field_name);
+  };
+
+  auto get_alpha_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixInt> & {
+    return data.getBBAlphaIndicesByOrderSharedPtr(o);
+  };
+
+  auto get_base_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBNByOrderSharedPtr(o);
+  };
+
+  auto get_diff_base_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBDiffNByOrderSharedPtr(o);
+  };
+
+  auto &vert_ent_data = data.dataOnEntities[MBVERTEX][0];
+  auto &vertex_alpha = get_alpha(vert_ent_data);
+  vertex_alpha.resize(4, 4, false);
+  vertex_alpha.clear();
+  for (int n = 0; n != 4; ++n)
+    vertex_alpha(n, n) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[n];
+
+  auto &vert_get_n = get_base(vert_ent_data);
+  auto &vert_get_diff_n = get_diff_base(vert_ent_data);
+  vert_get_n.resize(nb_gauss_pts, 4, false);
+  vert_get_diff_n.resize(nb_gauss_pts, 12, false);
+  CHKERR BernsteinBezier::baseFunctionsTet(
+      1, lambda.size1(), vertex_alpha.size1(), &vertex_alpha(0, 0),
+      &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &vert_get_n(0, 0),
+      &vert_get_diff_n(0, 0));
+  for (int n = 0; n != 4; ++n) {
+    const double f = boost::math::factorial<double>(
+        data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[n]);
+    for (int g = 0; g != nb_gauss_pts; ++g) {
+      vert_get_n(g, n) *= f;
+      for (int d = 0; d != 3; ++d)
+        vert_get_diff_n(g, 3 * n + d) *= f;
+    }
+  }
+
+  // edges
+  if (data.spacesOnEntities[MBEDGE].test(H1)) {
+    if (data.dataOnEntities[MBEDGE].size() != 6)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong size of ent data");
+
+    constexpr int edges_nodes[6][2] = {{0, 1}, {1, 2}, {2, 0},
+                                       {0, 3}, {1, 3}, {2, 3}};
+    for (int ee = 0; ee != 6; ++ee) {
+      auto &ent_data = data.dataOnEntities[MBEDGE][ee];
+      const int sense = ent_data.getSense();
+      if (sense == 0)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Sense of the edge unknown");
+      const int order = ent_data.getDataOrder();
+      const int nb_dofs = NBEDGE_H1(order);
+
+      if (nb_dofs) {
+        if (get_alpha_by_order_ptr(ent_data, order)) {
+          get_alpha_by_name_ptr(ent_data, field_name) =
+              get_alpha_by_order_ptr(ent_data, order);
+          get_base_by_name_ptr(ent_data, field_name) =
+              get_base_by_order_ptr(ent_data, order);
+          get_diff_base_by_name_ptr(ent_data, field_name) =
+              get_diff_base_by_order_ptr(ent_data, order);
+        } else {
+          auto &get_n = get_base(ent_data);
+          auto &get_diff_n = get_diff_base(ent_data);
+          get_n.resize(nb_gauss_pts, nb_dofs, false);
+          get_diff_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
+
+          auto &edge_alpha = get_alpha(data.dataOnEntities[MBEDGE][ee]);
+          edge_alpha.resize(nb_dofs, 4, false);
+          CHKERR BernsteinBezier::generateIndicesEdgeTet(ee, order,
+                                                         &edge_alpha(0, 0));
+          if (sense == -1) {
+            for (int i = 0; i != edge_alpha.size1(); ++i) {
+              int a = edge_alpha(i, edges_nodes[ee][0]);
+              edge_alpha(i, edges_nodes[ee][0]) =
+                  edge_alpha(i, edges_nodes[ee][1]);
+              edge_alpha(i, edges_nodes[ee][1]) = a;
+            }
+          }
+          CHKERR BernsteinBezier::baseFunctionsTet(
+              order, lambda.size1(), edge_alpha.size1(), &edge_alpha(0, 0),
+              &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &get_n(0, 0),
+              &get_diff_n(0, 0));
+
+          get_alpha_by_order_ptr(ent_data, order) =
+              get_alpha_by_name_ptr(ent_data, field_name);
+          get_base_by_order_ptr(ent_data, order) =
+              get_base_by_name_ptr(ent_data, field_name);
+          get_diff_base_by_order_ptr(ent_data, order) =
+              get_diff_base_by_name_ptr(ent_data, field_name);
+        }
+      }
+    }
+  } else {
+    for (int ee = 0; ee != 6; ++ee) {
+      auto &ent_data = data.dataOnEntities[MBEDGE][ee];
+      ent_data.getBBAlphaIndicesSharedPtr(field_name).reset();
+      auto &get_n = get_base(ent_data);
+      auto &get_diff_n = get_diff_base(ent_data);
+      get_n.resize(nb_gauss_pts, 0, false);
+      get_diff_n.resize(nb_gauss_pts, 0, false);
+    }
+  }
+
+  // face
+  if (data.spacesOnEntities[MBTRI].test(H1)) {
+    if (data.dataOnEntities[MBTRI].size() != 4)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong size of ent data");
+    if (data.facesNodes.size1() != 4)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+    if (data.facesNodes.size2() != 3)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+
+    for (int ff = 0; ff != 4; ++ff) {
+      auto &ent_data = data.dataOnEntities[MBTRI][ff];
+      const int order = ent_data.getDataOrder();
+      const int nb_dofs = NBFACETRI_H1(order);
+
+      if (nb_dofs) {
+        if (get_alpha_by_order_ptr(ent_data, order)) {
+          get_alpha_by_name_ptr(ent_data, field_name) =
+              get_alpha_by_order_ptr(ent_data, order);
+          get_base_by_name_ptr(ent_data, field_name) =
+              get_base_by_order_ptr(ent_data, order);
+          get_diff_base_by_name_ptr(ent_data, field_name) =
+              get_diff_base_by_order_ptr(ent_data, order);
+        } else {
+
+          auto &get_n = get_base(ent_data);
+          auto &get_diff_n = get_diff_base(ent_data);
+          get_n.resize(nb_gauss_pts, nb_dofs, false);
+          get_diff_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
+
+          auto &face_alpha = get_alpha(ent_data );
+          face_alpha.resize(nb_dofs, 4, false);
+
+          CHKERR BernsteinBezier::generateIndicesTriTet(ff, order,
+                                                        &face_alpha(0, 0));
+          senseFaceAlpha.resize(face_alpha.size1(), face_alpha.size2(), false);
+          senseFaceAlpha.clear();
+          constexpr int tri_nodes[4][3] = {
+              {0, 1, 3}, {1, 2, 3}, {0, 2, 3}, {0, 1, 2}};
+          for (int d = 0; d != nb_dofs; ++d)
+            for (int n = 0; n != 3; ++n)
+              senseFaceAlpha(d, data.facesNodes(ff, n)) =
+                  face_alpha(d, tri_nodes[ff][n]);
+          face_alpha.swap(senseFaceAlpha);
+          CHKERR BernsteinBezier::baseFunctionsTet(
+              order, lambda.size1(), face_alpha.size1(), &face_alpha(0, 0),
+              &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &get_n(0, 0),
+              &get_diff_n(0, 0));
+
+          get_alpha_by_order_ptr(ent_data, order) =
+              get_alpha_by_name_ptr(ent_data, field_name);
+          get_base_by_order_ptr(ent_data, order) =
+              get_base_by_name_ptr(ent_data, field_name);
+          get_diff_base_by_order_ptr(ent_data, order) =
+              get_diff_base_by_name_ptr(ent_data, field_name);
+        }
+      }
+    }
+  } else {
+    for (int ff = 0; ff != 4; ++ff) {
+      auto &ent_data = data.dataOnEntities[MBTRI][ff];
+      ent_data.getBBAlphaIndicesSharedPtr(field_name).reset();
+      auto &get_n = get_base(ent_data);
+      auto &get_diff_n = get_diff_base(ent_data);
+      get_n.resize(nb_gauss_pts, 0, false);
+      get_diff_n.resize(nb_gauss_pts, 0, false);
+    }
+  }
+
+  if (data.spacesOnEntities[MBTET].test(H1)) {
+    if (data.dataOnEntities[MBTET].size() != 1)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong size ent of ent data");
+
+    auto &ent_data = data.dataOnEntities[MBTET][0];
+    const int order = ent_data.getDataOrder();
+    const int nb_dofs = NBVOLUMETET_H1(order);
+    if (get_alpha_by_order_ptr(ent_data, order)) {
+      get_alpha_by_name_ptr(ent_data, field_name) =
+          get_alpha_by_order_ptr(ent_data, order);
+      get_base_by_name_ptr(ent_data, field_name) =
+          get_base_by_order_ptr(ent_data, order);
+      get_diff_base_by_name_ptr(ent_data, field_name) =
+          get_diff_base_by_order_ptr(ent_data, order);
+    } else {
+
+      auto &get_n = get_base(ent_data);
+      auto &get_diff_n = get_diff_base(ent_data);
+      get_n.resize(nb_gauss_pts, nb_dofs, false);
+      get_diff_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
+      if (nb_dofs) {
+        auto &tet_alpha = get_alpha(ent_data);
+        tet_alpha.resize(nb_dofs, 4, false);
+
+        CHKERR BernsteinBezier::generateIndicesTetTet(order, &tet_alpha(0, 0));
+        CHKERR BernsteinBezier::baseFunctionsTet(
+            order, lambda.size1(), tet_alpha.size1(), &tet_alpha(0, 0),
+            &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &get_n(0, 0),
+            &get_diff_n(0, 0));
+
+        get_alpha_by_order_ptr(ent_data, order) =
+            get_alpha_by_name_ptr(ent_data, field_name);
+        get_base_by_order_ptr(ent_data, order) =
+            get_base_by_name_ptr(ent_data, field_name);
+        get_diff_base_by_order_ptr(ent_data, order) =
+            get_diff_base_by_name_ptr(ent_data, field_name);
+      }
+    }
+  } else {
+    auto &ent_data = data.dataOnEntities[MBTET][0];
+    ent_data.getBBAlphaIndicesSharedPtr(field_name).reset();
+    auto &get_n = get_base(ent_data);
+    auto &get_diff_n = get_diff_base(ent_data);
+    get_n.resize(nb_gauss_pts, 0, false);
+    get_diff_n.resize(nb_gauss_pts, 0, false);
   }
 
   MoFEMFunctionReturn(0);
@@ -329,15 +629,15 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
         &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
         &diff_base_ptr[HVEC2_2], 9);
     // face-face
-    boost::shared_ptr<FTensor::Tensor1<double *, 3> > t_base_f;
-    boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> > t_diff_base_f;
+    boost::shared_ptr<FTensor::Tensor1<double *, 3>> t_base_f;
+    boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>> t_diff_base_f;
     if (NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff]) > 0) {
       base_ptr = phi_f[ff];
-      t_base_f = boost::shared_ptr<FTensor::Tensor1<double *, 3> >(
+      t_base_f = boost::shared_ptr<FTensor::Tensor1<double *, 3>>(
           new FTensor::Tensor1<double *, 3>(base_ptr, &base_ptr[HVEC1],
                                             &base_ptr[HVEC2], 3));
       diff_base_ptr = diff_phi_f[ff];
-      t_diff_base_f = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> >(
+      t_diff_base_f = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>>(
           new FTensor::Tensor2<double *, 3, 3>(
               &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
               &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
@@ -431,9 +731,9 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
         &diff_base_ptr[HVEC2_0], &diff_base_ptr[HVEC2_1],
         &diff_base_ptr[HVEC2_2], 9);
     // edges
-    std::vector<FTensor::Tensor1<double *, 3> > t_base_v_e;
+    std::vector<FTensor::Tensor1<double *, 3>> t_base_v_e;
     t_base_v_e.reserve(6);
-    std::vector<FTensor::Tensor2<double *, 3, 3> > t_diff_base_v_e;
+    std::vector<FTensor::Tensor2<double *, 3, 3>> t_diff_base_v_e;
     t_diff_base_v_e.reserve(6);
     for (int ee = 0; ee != 6; ee++) {
       base_ptr = phi_v_e[ee];
@@ -448,9 +748,9 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
           &diff_base_ptr[HVEC2_2], 9));
     }
     // faces
-    std::vector<FTensor::Tensor1<double *, 3> > t_base_v_f;
+    std::vector<FTensor::Tensor1<double *, 3>> t_base_v_f;
     t_base_v_f.reserve(4);
-    std::vector<FTensor::Tensor2<double *, 3, 3> > t_diff_base_v_f;
+    std::vector<FTensor::Tensor2<double *, 3, 3>> t_diff_base_v_f;
     t_diff_base_v_f.reserve(4);
     if (NBVOLUMETET_AINSWORTH_FACE_HDIV(volume_order) > 0) {
       for (int ff = 0; ff != 4; ff++) {
@@ -466,15 +766,15 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivAinsworthBase(MatrixDouble &pts) {
             &diff_base_ptr[HVEC2_2], 9));
       }
     }
-    boost::shared_ptr<FTensor::Tensor1<double *, 3> > t_base_v;
-    boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> > t_diff_base_v;
+    boost::shared_ptr<FTensor::Tensor1<double *, 3>> t_base_v;
+    boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>> t_diff_base_v;
     if (NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order) > 0) {
       base_ptr = phi_v;
-      t_base_v = boost::shared_ptr<FTensor::Tensor1<double *, 3> >(
+      t_base_v = boost::shared_ptr<FTensor::Tensor1<double *, 3>>(
           new FTensor::Tensor1<double *, 3>(base_ptr, &base_ptr[HVEC1],
                                             &base_ptr[HVEC2], 3));
       diff_base_ptr = diff_phi_v;
-      t_diff_base_v = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3> >(
+      t_diff_base_v = boost::shared_ptr<FTensor::Tensor2<double *, 3, 3>>(
           new FTensor::Tensor2<double *, 3, 3>(
               &diff_base_ptr[HVEC0_0], &diff_base_ptr[HVEC0_1],
               &diff_base_ptr[HVEC0_2], &diff_base_ptr[HVEC1_0],
@@ -568,8 +868,7 @@ MoFEMErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
         nb_gauss_pts, 3 * NBVOLUMETET_DEMKOWICZ_HDIV(volume_order), false);
     data.dataOnEntities[MBTET][0].getDiffN(base).resize(
         nb_gauss_pts, 9 * NBVOLUMETET_DEMKOWICZ_HDIV(volume_order), false);
-    double *phi_v =
-        &*data.dataOnEntities[MBTET][0].getN(base).data().begin();
+    double *phi_v = &*data.dataOnEntities[MBTET][0].getN(base).data().begin();
     double *diff_phi_v =
         &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin();
     CHKERR Hdiv_Demkowicz_Interior_MBTET(
@@ -788,9 +1087,9 @@ TetPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     // faces
     if (data.dataOnEntities[MBTRI].size() != 4) {
       SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "data structure for storing face h-curl base have wrong size "
-              "should be four but is %d",
-              data.dataOnEntities[MBTRI].size());
+               "data structure for storing face h-curl base have wrong size "
+               "should be four but is %d",
+               data.dataOnEntities[MBTRI].size());
     }
     double *hcurl_base_n[4], *diff_hcurl_base_n[4];
     for (int ff = 0; ff != 4; ff++) {
@@ -880,42 +1179,43 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
                             boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
 
-  MoFEM::UnknownInterface *iface;
+  BaseFunctionUnknownInterface *iface;
   CHKERR ctx_ptr->query_interface(IDD_TET_BASE_FUNCTION, &iface);
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
   int nb_gauss_pts = pts.size2();
-  if (!nb_gauss_pts) {
+  if (!nb_gauss_pts) 
     MoFEMFunctionReturnHot(0);
-  }
 
-  if (pts.size1() < 3) {
+  if (pts.size1() < 3) 
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
-  }
 
-  const FieldApproximationBase base = cTx->bAse;
-  DataForcesAndSourcesCore &data = cTx->dAta;
-  if (cTx->copyNodeBase == LASTBASE) {
-    data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 4, false);
-    CHKERR Tools::shapeFunMBTET(
-        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-        &pts(0, 0), &pts(1, 0), &pts(2, 0), nb_gauss_pts);
-  } else {
-    data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
-        data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
+  if (cTx->bAse != AINSWORTH_BERNSTEIN_BEZIER_BASE) {
+    const FieldApproximationBase base = cTx->bAse;
+    DataForcesAndSourcesCore &data = cTx->dAta;
+    if (cTx->copyNodeBase == LASTBASE) {
+      data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 4,
+                                                         false);
+      CHKERR Tools::shapeFunMBTET(
+          &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+          &pts(0, 0), &pts(1, 0), &pts(2, 0), nb_gauss_pts);
+    } else {
+      data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
+          data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
+    }
+    if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
+        (unsigned int)nb_gauss_pts) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Base functions or nodes has wrong number of integration points "
+               "for base %s",
+               ApproximationBaseNames[base]);
+    }
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4, 3, false);
+    std::copy(Tools::diffShapeFunMBTET.begin(), Tools::diffShapeFunMBTET.end(),
+              data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
   }
-  if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
-      (unsigned int)nb_gauss_pts) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "Base functions or nodes has wrong number of integration points "
-             "for base %s",
-             ApproximationBaseNames[base]);
-  }
-  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4, 3, false);
-  std::copy(Tools::diffShapeFunMBTET.begin(), Tools::diffShapeFunMBTET.end(),
-            data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
 
   switch (cTx->sPace) {
   case H1:

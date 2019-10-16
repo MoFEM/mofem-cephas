@@ -190,12 +190,13 @@ struct SetBitRefLevelTool {
               boost::shared_ptr<RefElement>(ref_fe_vec, &ref_fe_vec->back()));
         }
       } break;
-      case MBTRI: {
-        boost::shared_ptr<std::vector<RefElement_TRI>> ref_fe_vec =
-            boost::make_shared<std::vector<RefElement_TRI>>();
+      case MBTRI:
+      case MBQUAD: {
+        boost::shared_ptr<std::vector<RefElementFace>> ref_fe_vec =
+            boost::make_shared<std::vector<RefElementFace>>();
         ref_fe_vec->reserve(pit->second - pit->first + 1);
         for (; rit != hi_rit; ++rit) {
-          ref_fe_vec->push_back(RefElement_TRI(*rit));
+          ref_fe_vec->push_back(RefElementFace(*rit));
           shared_ref_fe_vec.push_back(
               boost::shared_ptr<RefElement>(ref_fe_vec, &ref_fe_vec->back()));
         }

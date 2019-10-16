@@ -1,9 +1,6 @@
 /** \file TriPolynomialBase.hpp
 \brief Implementation of  H1, Hcurl base on triangle
 
-TODO:
-\todo L2 base on triangle
-
 */
 
 /* This file is part of MoFEM.
@@ -33,7 +30,7 @@ namespace MoFEM {
 struct TriPolynomialBase : public BaseFunction {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   TriPolynomialBase();
   ~TriPolynomialBase();
@@ -45,6 +42,8 @@ private:
   EntPolynomialBaseCtx *cTx;
 
   MoFEMErrorCode getValueH1(MatrixDouble &pts);
+  MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
 
   MoFEMErrorCode getValueL2(MatrixDouble &pts);
 
@@ -57,7 +56,6 @@ private:
 
   MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
 
-private:
   MoFEMErrorCode getValueHdivAinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueHcurlAinsworthBase(MatrixDouble &pts);
 

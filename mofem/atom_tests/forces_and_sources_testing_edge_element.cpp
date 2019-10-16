@@ -73,14 +73,23 @@ int main(int argc, char *argv[]) {
     bit_level0.set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 3, bit_level0);
-    
+
+    enum bases { AINSWORTH, BERNSTEIN_BEZIER, LASBASETOP };
+    const char *list_bases[] = {"ainsworth", "bernstein_bezier"};
+    PetscInt choice_base_value = AINSWORTH;
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+                                LASBASETOP, &choice_base_value, &flg);
+    FieldApproximationBase base = NOBASE;
+    if (choice_base_value == AINSWORTH) 
+      base = AINSWORTH_LEGENDRE_BASE;
+    else if (choice_base_value == BERNSTEIN_BEZIER) 
+      base = AINSWORTH_BERNSTEIN_BEZIER_BASE;
 
     // Fields
-    CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, 3);
-    // CHKERR m_field.add_field("FIELD2", L2, AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERR m_field.add_field("FIELD1", H1, base, 3);
     CHKERR m_field.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE,
                              3);
-    
+
     // FE
     CHKERR m_field.add_finite_element("TEST_FE");
     
@@ -95,7 +104,6 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionReturn(0);
     };
     CHKERR add_field_to_fe("FIELD1");
-    // CHKERR add_field_to_fe("FIELD2");
     CHKERR m_field.modify_finite_element_add_field_data("TEST_FE",
                                                         "MESH_NODE_POSITIONS");
 
@@ -111,9 +119,8 @@ int main(int argc, char *argv[]) {
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     // add entities to field
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "FIELD1");
-    // CHKERR m_field.add_ents_to_field_by_type(root_set, MBEDGE, "FIELD2");    
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET,
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBEDGE, "FIELD1");
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBEDGE,
                                              "MESH_NODE_POSITIONS");
     CHKERR m_field.set_field_order(root_set, MBVERTEX, "MESH_NODE_POSITIONS",
                                    1);
@@ -134,16 +141,12 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_ents_to_finite_element_by_type(tets_skin_edges, MBEDGE,
                                                       "TEST_FE");
     
-
     // set app. order
     // see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes
     // (Mark Ainsworth & Joe Coyle)
     int order = 3;
-    CHKERR m_field.set_field_order(root_set, MBTET, "FIELD1", order);
-    CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD1", order);
     CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD1", order);
     CHKERR m_field.set_field_order(root_set, MBVERTEX, "FIELD1", 1);
-    // CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD2", order);
 
     /****/
     // build database
@@ -151,7 +154,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.build_fields();
     
     // set FIELD1 from positions of 10 node tets
-    {
+    if (base == AINSWORTH_LEGENDRE_BASE) {
       Projection10NodeCoordsOnField ent_method(m_field, "FIELD1");
       CHKERR m_field.loop_dofs("FIELD1", ent_method);
       
@@ -173,8 +176,6 @@ int main(int argc, char *argv[]) {
     
     CHKERR prb_mng_ptr->buildProblem("TEST_PROBLEM", true);
     
-
-    /****/
     // mesh partitioning
     // partition
     CHKERR prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
@@ -183,13 +184,15 @@ int main(int argc, char *argv[]) {
     // what are ghost nodes, see Petsc Manual
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
     
-
     EdgeElementForcesAndSourcesCore fe1(m_field);
 
     typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
-    std::ofstream ofs("forces_and_sources_testing_edge_element.txt");
+    std::ofstream ofs(
+        (std ::string("forces_and_sources_testing_edge_element_") +
+         ApproximationBaseNames[base] + ".txt")
+            .c_str());
     TeeDevice my_tee(std::cout, ofs);
     TeeStream my_split(my_tee);
 
@@ -249,8 +252,7 @@ int main(int argc, char *argv[]) {
         new MyOp(my_split, ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
 
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE", fe1);
-    
-  }
+    }
   CATCH_ERRORS;
 
   MoFEM::Core::Finalize();

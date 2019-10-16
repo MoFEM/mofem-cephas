@@ -37,8 +37,6 @@ struct Tools : public UnknownInterface {
 
   /** \name Computational */
 
-  /**@{*/
-
   /**
    * \brief Calculate tetrahedron volume length quality
    * @param  coords tet coordinates
@@ -67,6 +65,12 @@ struct Tools : public UnknownInterface {
                                   return std::min(a, b);
                                 });
 
+  static constexpr double diffN_MBEDGE0x = diffN_MBEDGE0;
+  static constexpr double diffN_MBEDGE1x = diffN_MBEDGE1;
+
+  static constexpr std::array<double, 2> diffShapeFunMBEDGE = {diffN_MBEDGE0x,
+                                                               diffN_MBEDGE1x};
+
   static constexpr double diffShapeFunMBTRI0x =
       diffN_MBTRI0x; ///< derivative of triangle shape function
   static constexpr double diffShapeFunMBTRI0y =
@@ -87,6 +91,29 @@ struct Tools : public UnknownInterface {
       diffShapeFunMBTRI1x, diffShapeFunMBTRI1y,
 
       diffShapeFunMBTRI2x, diffShapeFunMBTRI2y};
+
+  static constexpr double diffShapeFunMBQUADAtCenter0x =
+      diffN_MBQUAD0x(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter0y =
+      diffN_MBQUAD0y(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter1x =
+      diffN_MBQUAD1x(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter1y =
+      diffN_MBQUAD1y(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter2x =
+      diffN_MBQUAD2x(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter2y =
+      diffN_MBQUAD2y(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter3x =
+      diffN_MBQUAD3x(0.5); ///< derivative of quad shape function
+  static constexpr double diffShapeFunMBQUADAtCenter3y =
+      diffN_MBQUAD3y(0.5); ///< derivative of quad shape function
+
+  static constexpr std::array<double, 8> diffShapeFunMBQUADAtCenter = {
+      diffShapeFunMBQUADAtCenter0x, diffShapeFunMBQUADAtCenter0y,
+      diffShapeFunMBQUADAtCenter1x, diffShapeFunMBQUADAtCenter1y,
+      diffShapeFunMBQUADAtCenter2x, diffShapeFunMBQUADAtCenter2y,
+      diffShapeFunMBQUADAtCenter3x, diffShapeFunMBQUADAtCenter3y};
 
   static constexpr double diffShapeFunMBTET0x =
       diffN_MBTET0x; ///< derivative of tetrahedral shape function
@@ -124,25 +151,16 @@ struct Tools : public UnknownInterface {
       diffShapeFunMBTET3x, diffShapeFunMBTET3y, diffShapeFunMBTET3z};
 
   static inline double shapeFunMBTET0(const double x, const double y,
-                                      const double z) {
-    return N_MBTET0(x, y, z);
-  }
+                                      const double z);
 
   static inline double shapeFunMBTET1(const double x, const double y,
-                                      const double z) {
-    return N_MBTET1(x, y, z);
-  }
+                                      const double z);
 
   static inline double shapeFunMBTET2(const double x, const double y,
-                                      const double z) {
-    return N_MBTET2(x, y, z);
-  }
+                                      const double z);
 
   static inline double shapeFunMBTET3(const double x, const double y,
-                                      const double z) {
-    return N_MBTET3(x, y, z);
-    ;
-  };
+                                      const double z);
 
   static constexpr double shapeFunMBTET0At000 = N_MBTET0(0, 0, 0);
   static constexpr double shapeFunMBTET1At000 = N_MBTET1(0, 0, 0);
@@ -175,20 +193,7 @@ struct Tools : public UnknownInterface {
   template <int LDB = 1>
   static MoFEMErrorCode shapeFunMBTET(double *shape, const double *ksi,
                                       const double *eta, const double *zeta,
-                                      const double nb) {
-    MoFEMFunctionBeginHot;
-    for (int n = 0; n != nb; ++n) {
-      shape[0] = shapeFunMBTET0(*ksi, *eta, *zeta);
-      shape[1] = shapeFunMBTET1(*ksi, *eta, *zeta);
-      shape[2] = shapeFunMBTET2(*ksi, *eta, *zeta);
-      shape[3] = shapeFunMBTET3(*ksi, *eta, *zeta);
-      shape += 4;
-      ksi += LDB;
-      eta += LDB;
-      zeta += LDB;
-    }
-    MoFEMFunctionReturnHot(0);
-  }
+                                      const double nb);
 
   /**
    * @brief Array of shape function at zero local point on reference element
@@ -205,6 +210,7 @@ struct Tools : public UnknownInterface {
   static constexpr std::array<double, 4> shapeFunMBTETAtOneThird = {
       shapeFunMBTET0AtOneThird, shapeFunMBTET1AtOneThird,
       shapeFunMBTET2AtOneThird, shapeFunMBTET3AtOneThird};
+
 
   /**
    * @brief Get the Local Coordinates On Reference Four Node Tet object
@@ -416,7 +422,45 @@ struct Tools : public UnknownInterface {
                                           const RowColData row_or_col, Vec v);
 
   /**@}*/
+
+  static MoFEMErrorCode outerProductOfEdgeIntegrationPtsForQuad(MatrixDouble &pts,
+                                                              const int edge0,
+                                                              const int edge1);
 };
+
+double Tools::shapeFunMBTET0(const double x, const double y, const double z) {
+  return N_MBTET0(x, y, z);
+}
+
+double Tools::shapeFunMBTET1(const double x, const double y, const double z) {
+  return N_MBTET1(x, y, z);
+}
+
+double Tools::shapeFunMBTET2(const double x, const double y, const double z) {
+  return N_MBTET2(x, y, z);
+}
+
+double Tools::shapeFunMBTET3(const double x, const double y, const double z) {
+  return N_MBTET3(x, y, z);
+};
+
+template <int LDB>
+MoFEMErrorCode Tools::shapeFunMBTET(double *shape, const double *ksi,
+                                    const double *eta, const double *zeta,
+                                    const double nb) {
+  MoFEMFunctionBeginHot;
+  for (int n = 0; n != nb; ++n) {
+    shape[0] = shapeFunMBTET0(*ksi, *eta, *zeta);
+    shape[1] = shapeFunMBTET1(*ksi, *eta, *zeta);
+    shape[2] = shapeFunMBTET2(*ksi, *eta, *zeta);
+    shape[3] = shapeFunMBTET3(*ksi, *eta, *zeta);
+    shape += 4;
+    ksi += LDB;
+    eta += LDB;
+    zeta += LDB;
+  }
+  MoFEMFunctionReturnHot(0);
+}
 
 } // namespace MoFEM
 

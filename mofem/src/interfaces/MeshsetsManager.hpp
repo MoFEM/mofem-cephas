@@ -190,44 +190,7 @@ struct MeshsetsManager : public UnknownInterface {
 
   template <class CUBIT_BC_DATA_TYPE>
   MoFEMErrorCode printBcSet(CUBIT_BC_DATA_TYPE &data,
-                            unsigned long int type) const {
-
-    MoFEMFunctionBeginHot;
-    try {
-      const MoFEM::Interface &m_field = cOre;
-      const moab::Interface &moab = m_field.get_moab();
-      for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_((*this), type, it)) {
-        ierr = it->getBcDataStructure(data);
-        CHKERRG(ierr);
-        std::ostringstream ss;
-        ss << *it << std::endl;
-        ss << data << std::endl;
-        Range tets, tris, edges, nodes;
-        rval = moab.get_entities_by_type(it->meshset, MBTET, tets, true);
-        CHKERRQ_MOAB(rval);
-        rval = moab.get_entities_by_type(it->meshset, MBTRI, tris, true);
-        CHKERRQ_MOAB(rval);
-        rval = moab.get_entities_by_type(it->meshset, MBEDGE, edges, true);
-        CHKERRQ_MOAB(rval);
-        rval = moab.get_entities_by_type(it->meshset, MBVERTEX, nodes, true);
-        CHKERRQ_MOAB(rval);
-        ss << "name " << it->getName() << std::endl;
-        ss << "msId " << it->getMeshsetId() << " nb. tets " << tets.size()
-           << std::endl;
-        ss << "msId " << it->getMeshsetId() << " nb. tris " << tris.size()
-           << std::endl;
-        ss << "msId " << it->getMeshsetId() << " nb. edges " << edges.size()
-           << std::endl;
-        ss << "msId " << it->getMeshsetId() << " nb. nodes " << nodes.size()
-           << std::endl;
-        ss << std::endl;
-        PetscPrintf(m_field.get_comm(), ss.str().c_str());
-      }
-    } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
-    }
-    MoFEMFunctionReturnHot(0);
-  }
+                            unsigned long int type) const;
 
   /**
    * \brief print meshsets with displacement boundary conditions data
@@ -583,6 +546,22 @@ struct MeshsetsManager : public UnknownInterface {
                             EntityHandle &meshset) const;
 
   /**
+   * @brief Check if meshset constains entities
+   *
+   * @param ms_id
+   * @param cubit_bc_type
+   * @param entities
+   * @param num_entities
+   * @param operation_type
+   * @return true
+   * @return false
+   */
+  bool checkIfMeshsetContainsEntities(
+      const int ms_id, const unsigned int cubit_bc_type,
+      const EntityHandle *entities, int num_entities,
+      const int operation_type = moab::Interface::INTERSECT);
+
+  /**
    * \ingroup mofem_meshset_mng
    * \brief get all CUBIT meshsets by CUBIT type
    *
@@ -788,13 +767,45 @@ protected:
   boost::shared_ptr<boost::program_options::options_description>
       configFileOptionsPtr; ///< config file options
 };
+
+template <class CUBIT_BC_DATA_TYPE>
+MoFEMErrorCode MeshsetsManager::printBcSet(CUBIT_BC_DATA_TYPE &data,
+                                           unsigned long int type) const {
+  MoFEMFunctionBegin;
+  const MoFEM::Interface &m_field = cOre;
+  const moab::Interface &moab = m_field.get_moab();
+  for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_((*this), type, it)) {
+    CHKERR it->getBcDataStructure(data);
+    std::ostringstream ss;
+    ss << *it << std::endl;
+    ss << data << std::endl;
+    int tets, tris, edges, nodes, prisms, quads;
+    CHKERR moab.get_number_entities_by_type(it->meshset, MBTET, tets, true);
+    CHKERR moab.get_number_entities_by_type(it->meshset, MBTRI, tris, true);
+    CHKERR moab.get_number_entities_by_type(it->meshset, MBEDGE, edges, true);
+    CHKERR moab.get_number_entities_by_type(it->meshset, MBVERTEX, nodes, true);
+    CHKERR moab.get_number_entities_by_type(it->meshset, MBPRISM, prisms, true);
+    CHKERR moab.get_number_entities_by_type(it->meshset, MBQUAD, quads, true);
+    ss << "name " << it->getName() << std::endl;
+    ss << "msId " << it->getMeshsetId() << " nb. tets " << tets << std::endl;
+    ss << "msId " << it->getMeshsetId() << " nb. prisms " << prisms << std::endl;
+    ss << "msId " << it->getMeshsetId() << " nb. quads " << quads << std::endl;
+    ss << "msId " << it->getMeshsetId() << " nb. tris " << tris << std::endl;
+    ss << "msId " << it->getMeshsetId() << " nb. edges " << edges << std::endl;
+    ss << "msId " << it->getMeshsetId() << " nb. nodes " << nodes << std::endl;
+    ss << std::endl;
+    PetscPrintf(m_field.get_comm(), ss.str().c_str());
+  }
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM
 
 #endif //__MESHSETSMANAGER_HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_meshset_mng MeshsetsManager
-* \brief Interface for meshsets with entities with data and boundary conditions
-*
-* \ingroup mofem
-******************************************************************************/
+/**
+ * \defgroup mofem_meshset_mng MeshsetsManager
+ * \brief Interface for meshsets with entities with data and boundary conditions
+ *
+ * \ingroup mofem
+ **/

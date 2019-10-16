@@ -18,20 +18,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <cblas.h>
-#include <lapack_wrap.h>
-// #include <gm_rule.h>
-#include <quad.h>
-#ifdef __cplusplus
-}
-#endif
-
 namespace MoFEM {
 
-FaceElementForcesAndSourcesCore::FaceElementForcesAndSourcesCore(
+FaceElementForcesAndSourcesCoreBase::FaceElementForcesAndSourcesCoreBase(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
       meshPositionsFieldName("MESH_NODE_POSITIONS"),
@@ -41,102 +30,141 @@ FaceElementForcesAndSourcesCore::FaceElementForcesAndSourcesCore(
       opCovariantTransform(nOrmal, normalsAtGaussPts, tangentOne,
                            tangentOneAtGaussPts, tangentTwo,
                            tangentTwoAtGaussPts) {
-  getElementPolynomialBase() =
-      boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
 }
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
-    const string &fe_name, VolumeElementForcesAndSourcesCoreOnSide &method) {
+FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
   MoFEMFunctionBegin;
 
-  const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
-  const Problem *problem_ptr = getFEMethod()->problemPtr;
-  Range adjacent_volumes;
-  CHKERR getFaceFE()->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
-      ent, 3, adjacent_volumes);
-  typedef NumeredEntFiniteElement_multiIndex::index<
-      Composite_Name_And_Ent_mi_tag>::type FEByComposite;
-  FEByComposite &numered_fe =
-      problem_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>();
+  auto type = numeredEntFiniteElementPtr->getEntType();
 
-  method.feName = fe_name;
+  if (type == MBQUAD) {
 
-  CHKERR method.setFaceFEPtr(getFaceFE());
-  CHKERR method.copyBasicMethod(*getFEMethod());
-  CHKERR method.copyKsp(*getFEMethod());
-  CHKERR method.copySnes(*getFEMethod());
-  CHKERR method.copyTs(*getFEMethod());
+    EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
+    CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
+    coords.resize(num_nodes * 3, false);
+    CHKERR mField.get_moab().get_coords(conn, num_nodes,
+                                        &*coords.data().begin());
 
-  CHKERR method.preProcess();
+    const size_t nb_gauss_pts = gaussPts.size2();
+    normalsAtGaussPts.resize(nb_gauss_pts, 3);
+    tangentOneAtGaussPts.resize(nb_gauss_pts, 3);
+    tangentTwoAtGaussPts.resize(nb_gauss_pts, 3);
+    normalsAtGaussPts.clear();
+    tangentOneAtGaussPts.clear();
+    tangentTwoAtGaussPts.clear();
 
-  int nn = 0;
-  method.loopSize = adjacent_volumes.size();
-  for (Range::iterator vit = adjacent_volumes.begin();
-       vit != adjacent_volumes.end(); vit++) {
-    FEByComposite::iterator miit =
-        numered_fe.find(boost::make_tuple(fe_name, *vit));
-    if (miit != numered_fe.end()) {
-      method.nInTheLoop = nn++;
-      method.numeredEntFiniteElementPtr = *miit;
-      method.dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
-      method.rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
-      method.colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
-      method.dataPtr = (*miit)->sPtr->data_dofs;
-      method.rowPtr = (*miit)->rows_dofs;
-      method.colPtr = (*miit)->cols_dofs;
-      CHKERR method();
+    auto get_ftensor_from_mat_3d = [](MatrixDouble &m) {
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+          &m(0, 0), &m(0, 1), &m(0, 2));
+    };
+    auto get_ftensor_from_mat_2d = [](MatrixDouble &m) {
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(&m(0, 0),
+                                                                &m(0, 1));
+    };
+    auto get_ftensor_from_vec_3d = [](VectorDouble &v) {
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(&v[0], &v[1],
+                                                                &v[2]);
+    };
+
+    auto t_t1 = get_ftensor_from_mat_3d(tangentOneAtGaussPts);
+    auto t_t2 = get_ftensor_from_mat_3d(tangentTwoAtGaussPts);
+    auto t_normal = get_ftensor_from_mat_3d(normalsAtGaussPts);
+
+    auto t_diff = get_ftensor_from_mat_2d(
+        dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE));
+
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'j', 3> j;
+    FTensor::Index<'k', 3> k;
+
+    FTensor::Number<0> N0;
+    FTensor::Number<1> N1;
+
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      auto t_coords = get_ftensor_from_vec_3d(coords);
+
+      for (int nn = 0; nn != num_nodes; ++nn) {
+        t_t1(i) += t_coords(i) * t_diff(N0);
+        t_t2(i) += t_coords(i) * t_diff(N1);
+        ++t_diff;
+        ++t_coords;
+      }
+      t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
+
+      ++t_t1;
+      ++t_t2;
+      ++t_normal;
     }
   }
-
-  CHKERR method.postProcess();
 
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
+MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
   MoFEMFunctionBegin;
+
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
   coords.resize(num_nodes * 3, false);
   CHKERR mField.get_moab().get_coords(conn, num_nodes, &*coords.data().begin());
-  double diff_n[6];
-  CHKERR ShapeDiffMBTRI(diff_n);
-
   nOrmal.resize(3, false);
   tangentOne.resize(3, false);
   tangentTwo.resize(3, false);
-  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
-      &coords[0], &coords[1], &coords[2]);
-  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_normal(
-      &nOrmal[0], &nOrmal[1], &nOrmal[2]);
-  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1(
-      &tangentOne[0], &tangentOne[1], &tangentOne[2]);
-  FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2(
-      &tangentTwo[0], &tangentTwo[1], &tangentTwo[2]);
-  FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff(&diff_n[0],
-                                                            &diff_n[1]);
 
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
-  FTensor::Index<'k', 3> k;
-  FTensor::Number<0> N0;
-  FTensor::Number<1> N1;
-  t_t1(i) = 0;
-  t_t2(i) = 0;
-  for (int nn = 0; nn != 3; ++nn) {
-    t_t1(i) += t_coords(i) * t_diff(N0);
-    t_t2(i) += t_coords(i) * t_diff(N1);
-    ++t_coords;
-    ++t_diff;
+  auto calc_normal = [&](const double *diff_ptr) {
+    MoFEMFunctionBegin;
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
+        &coords[0], &coords[1], &coords[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_normal(
+        &nOrmal[0], &nOrmal[1], &nOrmal[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1(
+        &tangentOne[0], &tangentOne[1], &tangentOne[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2(
+        &tangentTwo[0], &tangentTwo[1], &tangentTwo[2]);
+    FTensor::Tensor1<FTensor::PackPtr<const double *, 2>, 2> t_diff(
+        diff_ptr, &diff_ptr[1]);
+
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'j', 3> j;
+    FTensor::Index<'k', 3> k;
+
+    FTensor::Number<0> N0;
+    FTensor::Number<1> N1;
+    t_t1(i) = 0;
+    t_t2(i) = 0;
+
+    for (int nn = 0; nn != num_nodes; ++nn) {
+      t_t1(i) += t_coords(i) * t_diff(N0);
+      t_t2(i) += t_coords(i) * t_diff(N1);
+      ++t_coords;
+      ++t_diff;
+    }
+    t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
+    aRea = sqrt(t_normal(i) * t_normal(i));
+    MoFEMFunctionReturn(0);
+  };
+
+  const double *diff_ptr;
+  switch (numeredEntFiniteElementPtr->getEntType()) {
+  case MBTRI:
+    diff_ptr = Tools::diffShapeFunMBTRI.data();
+    CHKERR calc_normal(diff_ptr);
+    //FIXME: Normal should be divided not the area for triangle!!
+    aRea /= 2;
+    break;
+  case MBQUAD:
+    diff_ptr = Tools::diffShapeFunMBQUADAtCenter.data();
+    CHKERR calc_normal(diff_ptr);
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Element type not implemented");
   }
-  t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
-  aRea = sqrt(t_normal(i) * t_normal(i)) / 2.;
 
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
+MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
   MoFEMFunctionBegin;
   // Set integration points
   int order_data = getMaxDataOrder();
@@ -144,7 +172,8 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
   int order_col = getMaxColOrder();
   int rule = getRule(order_row, order_col, order_data);
 
-  if (rule >= 0) {
+  auto set_integration_pts_for_tri = [&]() {
+    MoFEMFunctionBegin;
     if (rule < QUAD_2D_TABLE_SIZE) {
       if (QUAD_2D_TABLE[rule]->dim != 2) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
@@ -153,41 +182,106 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::setIntegrationPts() {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "wrong order %d != %d", QUAD_2D_TABLE[rule]->order, rule);
       }
-      nbGaussPts = QUAD_2D_TABLE[rule]->npoints;
-      gaussPts.resize(3, nbGaussPts, false);
-      cblas_dcopy(nbGaussPts, &QUAD_2D_TABLE[rule]->points[1], 3,
+      const size_t nb_gauss_pts = QUAD_2D_TABLE[rule]->npoints;
+      gaussPts.resize(3, nb_gauss_pts, false);
+      cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[1], 3,
                   &gaussPts(0, 0), 1);
-      cblas_dcopy(nbGaussPts, &QUAD_2D_TABLE[rule]->points[2], 3,
+      cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[2], 3,
                   &gaussPts(1, 0), 1);
-      cblas_dcopy(nbGaussPts, QUAD_2D_TABLE[rule]->weights, 1, &gaussPts(2, 0),
-                  1);
-      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
+      cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1,
+                  &gaussPts(2, 0), 1);
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 3,
                                                              false);
       double *shape_ptr =
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-      cblas_dcopy(3 * nbGaussPts, QUAD_2D_TABLE[rule]->points, 1, shape_ptr, 1);
-    } else {
+      cblas_dcopy(3 * nb_gauss_pts, QUAD_2D_TABLE[rule]->points, 1, shape_ptr,
+                  1);
+      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
+      std::copy(
+          Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
+    } 
+    else {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_2D_TABLE_SIZE);
-      nbGaussPts = 0;
     }
+    MoFEMFunctionReturn(0);
+  };
+
+  auto calc_base_for_quad = [&]() {
+    MoFEMFunctionBegin;
+    const size_t nb_gauss_pts = gaussPts.size2();
+    auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+    auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+    base.resize(nb_gauss_pts, 4, false);
+    diff_base.resize(nb_gauss_pts, 8, false);
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      const double ksi = gaussPts(0, gg);
+      const double zeta = gaussPts(1, gg);
+      base(gg, 0) = N_MBQUAD0(ksi, zeta);
+      base(gg, 1) = N_MBQUAD1(ksi, zeta);
+      base(gg, 2) = N_MBQUAD2(ksi, zeta);
+      base(gg, 3) = N_MBQUAD3(ksi, zeta);
+      diff_base(gg, 0) = diffN_MBQUAD0x(zeta);
+      diff_base(gg, 1) = diffN_MBQUAD0y(ksi);
+      diff_base(gg, 2) = diffN_MBQUAD1x(zeta);
+      diff_base(gg, 3) = diffN_MBQUAD1y(ksi);
+      diff_base(gg, 4) = diffN_MBQUAD2x(zeta);
+      diff_base(gg, 5) = diffN_MBQUAD2y(ksi);
+      diff_base(gg, 6) = diffN_MBQUAD3x(zeta);
+      diff_base(gg, 7) = diffN_MBQUAD3y(ksi);
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+
+  if (rule >= 0) {
+    switch (type) {
+    case MBTRI:
+      CHKERR set_integration_pts_for_tri();
+      break;
+    case MBQUAD:
+      CHKERR Tools::outerProductOfEdgeIntegrationPtsForQuad(gaussPts, rule,
+                                                            rule);
+      CHKERR calc_base_for_quad();
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Element type not implemented: %d", type);
+    }
+
   } else {
     // If rule is negative, set user defined integration points
     CHKERR setGaussPts(order_row, order_col, order_data);
-    nbGaussPts = gaussPts.size2();
-    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
-                                                           false);
-    if (nbGaussPts) {
-      CHKERR ShapeMBTRI(
-          &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
-          &gaussPts(0, 0), &gaussPts(1, 0), nbGaussPts);
+    const size_t nb_gauss_pts = gaussPts.size2();
+    auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+    auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+    if (nb_gauss_pts) {
+      switch (type) {
+      case MBTRI:
+        base.resize(nb_gauss_pts, 3, false);
+        diff_base.resize(3, 2, false);
+        CHKERR ShapeMBTRI(&*base.data().begin(), &gaussPts(0, 0),
+                          &gaussPts(1, 0), nb_gauss_pts);
+        std::copy(
+            Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
+            dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
+        break;
+      case MBQUAD:
+        CHKERR calc_base_for_quad();
+        break;
+      default:
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                 "Element type not implemented: %d", type);
+      }
     }
   }
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
+FaceElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
   // Get spaces order/base and sense of entities.
 
@@ -201,6 +295,10 @@ FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   if (dataH1.spacesOnEntities[MBTRI].test(H1)) {
     CHKERR getEntitySense<MBTRI>(dataH1);
     CHKERR getEntityDataOrder<MBTRI>(dataH1, H1);
+  }
+  if (dataH1.spacesOnEntities[MBQUAD].test(H1)) {
+    CHKERR getEntitySense<MBQUAD>(dataH1);
+    CHKERR getEntityDataOrder<MBQUAD>(dataH1, H1);
   }
 
   // Hcurl
@@ -233,22 +331,24 @@ FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
 }
 
 MoFEMErrorCode
-FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
+FaceElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionBeginHot;
 
+  const size_t nb_nodes =
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).size2();
   double *shape_functions =
       &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-  coordsAtGaussPts.resize(nbGaussPts, 3, false);
-  for (int gg = 0; gg != nbGaussPts; ++gg) {
-    for (int dd = 0; dd != 3; ++dd) {
-      coordsAtGaussPts(gg, dd) =
-          cblas_ddot(3, &shape_functions[3 * gg], 1, &coords[dd], 3);
-    }
-  }
+  const size_t nb_gauss_pts = gaussPts.size2();
+  coordsAtGaussPts.resize(nb_gauss_pts, 3, false);
+  for (int gg = 0; gg != nb_gauss_pts; ++gg)
+    for (int dd = 0; dd != 3; ++dd)
+      coordsAtGaussPts(gg, dd) = cblas_ddot(
+          nb_nodes, &shape_functions[nb_nodes * gg], 1, &coords[dd], 3);
+
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
+MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
   MoFEMFunctionBegin;
   // Check if field for high-order geometry is set and if it is set calculate
   // higher-order normals and face tangent vectors.
@@ -259,226 +359,26 @@ MoFEMErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
         mField.get_field_structure(meshPositionsFieldName);
     BitFieldId id = field_struture->getId();
 
-    if ((numeredEntFiniteElementPtr->getBitFieldIdData() & id).none()) {
+    if ((numeredEntFiniteElementPtr->getBitFieldIdData() & id).none()) 
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
               "no MESH_NODE_POSITIONS in element data");
-    }
 
     // Calculate normal for high-order geometry
-
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
     CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
     CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
     CHKERR opHOCoordsAndNormals.opRhs(dataH1);
     CHKERR opHOCoordsAndNormals.calculateNormals();
 
-  } else {
+  } else if(numeredEntFiniteElementPtr->getEntType() == MBTRI) {
     hoCoordsAtGaussPts.resize(0, 0, false);
     normalsAtGaussPts.resize(0, 0, false);
     tangentOneAtGaussPts.resize(0, 0, false);
     tangentTwoAtGaussPts.resize(0, 0, false);
-  }
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode FaceElementForcesAndSourcesCore::operator()() {
-  MoFEMFunctionBegin;
-
-  if (numeredEntFiniteElementPtr->getEntType() != MBTRI)
-    MoFEMFunctionReturnHot(0);
-  CHKERR createDataOnElement();
-
-  // Calculate normal and tangent vectors for face geometry given by 3 nodes.
-  CHKERR calculateAreaAndNormal();
-  CHKERR getSpaceBaseAndOrderOnElement();
-
-  CHKERR setIntegrationPts();
-  if (nbGaussPts == 0)
-    MoFEMFunctionReturnHot(0);
-
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
-
-  dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
-  std::copy(Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
-            dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
-
-  /// Use the some node base
-  CHKERR calculateCoordinatesAtGaussPts();
-  CHKERR calculateBaseFunctionsOnElement();
-  CHKERR calculateHoNormal();
-
-  // Apply Piola transform to HDiv and HCurl spaces, uses previously calculated
-  // faces normal and tangent vectors.
-  if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    CHKERR opContravariantTransform.opRhs(data_div);
-  }
-  if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    CHKERR opCovariantTransform.opRhs(data_curl);
-  }
-
-  // Iterate over operators
-  CHKERR loopOverOperators();
-
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-OpCalculateInvJacForFace::doWork(int side, EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data) {
-
-  MoFEMFunctionBegin;
-
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "This operator can be used only with element which is triangle");
-  }
-
-  if (type == MBVERTEX) {
-    VectorDouble &coords = getCoords();
-    double *coords_ptr = &*coords.data().begin();
-    double j00 = 0, j01 = 0, j10 = 0, j11 = 0;
-
-    // this is triangle, derivative of nodal shape functions is constant.
-    // So only need to do one node.
-    for (auto n : {0, 1, 2}) {
-      j00 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 0];
-      j01 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 1];
-      j10 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 0];
-      j11 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 1];
-    }
-    const double det = j00 * j11 - j01 * j10;
-    
-    invJac.resize(2, 2, false);
-    invJac(0, 0) = j11 / det;
-    invJac(0, 1) = -j01 / det;
-    invJac(1, 0) = -j10 / det;
-    invJac(1, 1) = j00 / det;
-  }
-
-  doVertices = true;
-  doEdges = false;
-  doQuads = false;
-  doTris = false;
-  doTets = false;
-  doPrisms = false;
-
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-OpSetInvJacH1ForFace::doWork(int side, EntityType type,
-                             DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBegin;
-
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&
-      getNumeredEntFiniteElementPtr()->getEntType() != MBQUAD) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "This operator can be used only with element which is triangle");
-  }
-
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
-
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-
-    unsigned int nb_functions = data.getN(base).size2();
-    if (nb_functions) {
-      unsigned int nb_gauss_pts = data.getN(base).size1();
-      diffNinvJac.resize(nb_gauss_pts, 2 * nb_functions, false);
-
-      if (type != MBVERTEX) {
-        if (nb_functions != data.getDiffN(base).size2() / 2) {
-          SETERRQ2(
-              PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "data inconsistency nb_functions != data.diffN.size2()/2 ( %u != "
-              "%u/2 )",
-              nb_functions, data.getDiffN(base).size2());
-        }
-      }
-
-      FTensor::Tensor2<double, 2, 2> t_inv_jac;
-      t_inv_jac(0, 0) = invJac(0, 0);
-      t_inv_jac(0, 1) = invJac(0, 1);
-      t_inv_jac(1, 0) = invJac(1, 0);
-      t_inv_jac(1, 1) = invJac(1, 1);
-
-      switch (type) {
-      case MBVERTEX:
-      case MBEDGE:
-      case MBTRI:
-      case MBQUAD: {
-        FTensor::Index<'i', 2> i;
-        FTensor::Index<'j', 2> j;
-        FTensor::Index<'k', 2> k;
-        FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff_n(
-            &diffNinvJac(0, 0), &diffNinvJac(0, 1));
-        FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff_n_ref(
-            &data.getDiffN(base)(0, 0), &data.getDiffN(base)(0, 1));
-        for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
-          for (unsigned int dd = 0; dd != nb_functions; ++dd) {
-            t_diff_n(i) = t_inv_jac(k, i) * t_diff_n_ref(k);
-            ++t_diff_n;
-            ++t_diff_n_ref;
-          }
-        }
-        data.getDiffN(base).data().swap(diffNinvJac.data());
-      } break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-      }
-    }
-  }
-
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-OpSetInvJacHcurlFace::doWork(int side, EntityType type,
-                             DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBegin;
-
-  if (type != MBEDGE && type != MBTRI)
-    MoFEMFunctionReturnHot(0);
-
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "This operator can be used only with element which is triangle");
-  }
-
-  FTensor::Tensor2<double *, 2, 2> t_inv_jac = FTensor::Tensor2<double *, 2, 2>(
-      &invJac(0, 0), &invJac(0, 1), &invJac(1, 0), &invJac(1, 1));
-
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 2> j;
-  FTensor::Index<'k', 2> k;
-
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
-
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-
-    const unsigned int nb_base_functions = data.getDiffN(base).size2() / 6;
-    if (nb_base_functions) {
-      const unsigned int nb_gauss_pts = data.getDiffN(base).size1();
-
-      diffHcurlInvJac.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
-
-      auto t_diff_n = data.getFTensor2DiffN<3, 2>(base);
-      double *t_inv_diff_n_ptr = &*diffHcurlInvJac.data().begin();
-      FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2> t_inv_diff_n(
-          t_inv_diff_n_ptr, &t_inv_diff_n_ptr[HVEC0_1],
-          &t_inv_diff_n_ptr[HVEC1_0], &t_inv_diff_n_ptr[HVEC1_1],
-          &t_inv_diff_n_ptr[HVEC2_0], &t_inv_diff_n_ptr[HVEC2_1]);
-
-      for (unsigned int gg = 0; gg != nb_gauss_pts; gg++) {
-        for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
-          t_inv_diff_n(i, j) = t_diff_n(i, k) * t_inv_jac(k, j);
-          ++t_diff_n;
-          ++t_inv_diff_n;
-        }
-      }
-
-      data.getDiffN(base).data().swap(diffHcurlInvJac.data());
-    }
+  } else {
+    hoCoordsAtGaussPts.resize(coordsAtGaussPts.size1(),
+                              coordsAtGaussPts.size2(), false);
+    noalias(hoCoordsAtGaussPts) = coordsAtGaussPts;
   }
 
   MoFEMFunctionReturn(0);

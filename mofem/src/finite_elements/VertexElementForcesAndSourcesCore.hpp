@@ -41,43 +41,37 @@ struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   std::string meshPositionsFieldName;
 
-  VertexElementForcesAndSourcesCore(Interface &m_field)
-      : ForcesAndSourcesCore(m_field){};
-
-  VectorDouble coords;
+  VertexElementForcesAndSourcesCore(Interface &m_field);
 
   /** \brief default operator for VERTEX element
     \ingroup mofem_forces_and_sources_vertex_element
     */
   struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const std::string &field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(field_name, type) {}
+    using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
-                                                 type) {}
-
-    inline VectorDouble &getCoords() {
-      return static_cast<VertexElementForcesAndSourcesCore *>(ptrFE)->coords;
-    }
+    inline VectorDouble3 &getCoords();
   };
 
   MoFEMErrorCode operator()();
+
+protected:
+  VectorDouble3 coords;
+  friend class UserDataOperator;
 };
 
-/// \deprecated Use VertexElementForcesAndSourcesCore
-DEPRECATED typedef VertexElementForcesAndSourcesCore
-    VertexElementForcesAndSurcesCore;
+VectorDouble3 &
+VertexElementForcesAndSourcesCore::UserDataOperator::getCoords() {
+  return static_cast<VertexElementForcesAndSourcesCore *>(ptrFE)->coords;
+}
 
 } // namespace MoFEM
 
 #endif //__VERTEXELEMENTFORCESANDSOURCESCORE_HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_forces_and_sources_vertex_element Vertex Element
-* \brief Finite element and operators for vertex entity
-*
-* \ingroup mofem_forces_and_sources
-******************************************************************************/
+/**
+ * \defgroup mofem_forces_and_sources_vertex_element Vertex Element
+ * \brief Finite element and operators for vertex entity
+ *
+ * \ingroup mofem_forces_and_sources
+ **/

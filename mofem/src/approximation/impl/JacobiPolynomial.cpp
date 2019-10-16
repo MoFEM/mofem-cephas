@@ -17,9 +17,8 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode
-JacobiPolynomialCtx::query_interface(const MOFEMuuid &uuid,
-                                     MoFEM::UnknownInterface **iface) const {
+MoFEMErrorCode JacobiPolynomialCtx::query_interface(
+    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if (uuid == IDD_JACOBI_BASE_FUNCTION) {
@@ -35,7 +34,7 @@ JacobiPolynomialCtx::query_interface(const MOFEMuuid &uuid,
 
 MoFEMErrorCode
 JacobiPolynomial::query_interface(const MOFEMuuid &uuid,
-                                  MoFEM::UnknownInterface **iface) const {
+                                  BaseFunctionUnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if (uuid == IDD_JACOBI_BASE_FUNCTION) {
@@ -78,16 +77,15 @@ MoFEMErrorCode
 JacobiPolynomial::getValue(MatrixDouble &pts_x, MatrixDouble &pts_t,
                            boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
-  MoFEM::UnknownInterface *iface;
+  BaseFunctionUnknownInterface *iface;
   CHKERR ctx_ptr->query_interface(IDD_JACOBI_BASE_FUNCTION, &iface);
   JacobiPolynomialCtx *ctx = reinterpret_cast<JacobiPolynomialCtx *>(iface);
   CHKERR get_value(pts_x, pts_t, ctx);
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-IntegratedJacobiPolynomialCtx::query_interface(const MOFEMuuid &uuid,
-                                     MoFEM::UnknownInterface **iface) const {
+MoFEMErrorCode IntegratedJacobiPolynomialCtx::query_interface(
+    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if (uuid == IDD_INTEGRATED_JACOBI_BASE_FUNCTION) {
@@ -102,7 +100,7 @@ IntegratedJacobiPolynomialCtx::query_interface(const MOFEMuuid &uuid,
 }
 
 MoFEMErrorCode IntegratedJacobiPolynomial::query_interface(
-    const MOFEMuuid &uuid, MoFEM::UnknownInterface **iface) const {
+    const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if (uuid == IDD_INTEGRATED_JACOBI_BASE_FUNCTION) {
@@ -120,7 +118,7 @@ MoFEMErrorCode IntegratedJacobiPolynomial::getValue(
     MatrixDouble &pts_x, MatrixDouble &pts_t,
     boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
-  MoFEM::UnknownInterface *iface;
+  BaseFunctionUnknownInterface *iface;
   CHKERR ctx_ptr->query_interface(IDD_INTEGRATED_JACOBI_BASE_FUNCTION, &iface);
   IntegratedJacobiPolynomialCtx *ctx =
       reinterpret_cast<IntegratedJacobiPolynomialCtx *>(iface);

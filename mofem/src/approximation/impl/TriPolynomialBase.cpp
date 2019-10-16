@@ -17,7 +17,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
 using namespace MoFEM;
 
 TriPolynomialBase::TriPolynomialBase() {}
@@ -25,7 +24,7 @@ TriPolynomialBase::~TriPolynomialBase() {}
 
 MoFEMErrorCode
 TriPolynomialBase::query_interface(const MOFEMuuid &uuid,
-                                   MoFEM::UnknownInterface **iface) const {
+                                   BaseFunctionUnknownInterface **iface) const {
   MoFEMFunctionBegin;
   *iface = NULL;
   if (uuid == IDD_TET_BASE_FUNCTION) {
@@ -41,6 +40,164 @@ TriPolynomialBase::query_interface(const MOFEMuuid &uuid,
 MoFEMErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
+  switch (cTx->bAse) {
+  case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
+    CHKERR getValueH1AinsworthBase(pts);
+    break;
+  case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+    CHKERR getValueH1BernsteinBezierBase(pts);
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const std::string &field_name = cTx->fieldName;
+  int nb_gauss_pts = pts.size2();
+
+  auto get_alpha = [field_name](auto &data) -> MatrixInt & {
+    auto &ptr = data.getBBAlphaIndicesSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixInt());
+    return *ptr;
+  };
+
+  auto get_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto get_diff_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBDiffNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto &vert_get_n = get_base(data.dataOnEntities[MBVERTEX][0]);
+  auto &vert_get_diff_n = get_diff_base(data.dataOnEntities[MBVERTEX][0]);
+  vert_get_n.resize(nb_gauss_pts, 3, false);
+  vert_get_diff_n.resize(nb_gauss_pts, 6, false);
+
+  if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
+      (unsigned int)nb_gauss_pts)
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Base functions or nodes has wrong number of integration points "
+             "for base %s",
+             ApproximationBaseNames[NOBASE]);
+  auto &lambda = data.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+
+  auto &vertex_alpha = get_alpha(data.dataOnEntities[MBVERTEX][0]);
+  vertex_alpha.resize(3, 3, false);
+  vertex_alpha.clear();
+  for (int n = 0; n != 3; ++n)
+    vertex_alpha(n, n) = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[n];
+
+  CHKERR BernsteinBezier::baseFunctionsTri(
+      1, lambda.size1(), vertex_alpha.size1(), &vertex_alpha(0, 0),
+      &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &vert_get_n(0, 0),
+      &vert_get_diff_n(0, 0));
+  for (int n = 0; n != 3; ++n) {
+    const int f = boost::math::factorial<double>(
+        data.dataOnEntities[MBVERTEX][0].getBBNodeOrder()[n]);
+    for (int g = 0; g != nb_gauss_pts; ++g) {
+      vert_get_n(g, n) *= f;
+      for (int d = 0; d != 2; ++d)
+        vert_get_diff_n(g, 2 * n + d) *= f;
+    }
+  }
+
+  // edges
+  if (data.spacesOnEntities[MBEDGE].test(H1)) {
+    if (data.dataOnEntities[MBEDGE].size() != 3)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong size of ent data");
+
+    constexpr int edges_nodes[3][2] = {{0, 1}, {1, 2}, {2, 0}};
+    for (int ee = 0; ee != 3; ++ee) {
+      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Sense of the edge unknown");
+      const int sense = data.dataOnEntities[MBEDGE][ee].getSense();
+      const int order = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      const int nb_dofs =
+          NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+
+      auto &get_n = get_base(data.dataOnEntities[MBEDGE][ee]);
+      auto &get_diff_n = get_diff_base(data.dataOnEntities[MBEDGE][ee]);
+      get_n.resize(nb_gauss_pts, nb_dofs, false);
+      get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
+
+      if (nb_dofs) {
+        auto &edge_alpha = get_alpha(data.dataOnEntities[MBEDGE][ee]);
+        edge_alpha.resize(nb_dofs, 3, false);
+        CHKERR BernsteinBezier::generateIndicesEdgeTri(ee, order,
+                                                       &edge_alpha(0, 0));
+        if (sense == -1)
+          for (int i = 0; i != edge_alpha.size1(); ++i) {
+            int a = edge_alpha(i, edges_nodes[ee][0]);
+            edge_alpha(i, edges_nodes[ee][0]) =
+                edge_alpha(i, edges_nodes[ee][1]);
+            edge_alpha(i, edges_nodes[ee][1]) = a;
+          }
+        CHKERR BernsteinBezier::baseFunctionsTri(
+            order, lambda.size1(), edge_alpha.size1(), &edge_alpha(0, 0),
+            &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
+            &get_diff_n(0, 0));
+      }
+    }
+  } else {
+    for (int ee = 0; ee != 3; ++ee) {
+      auto &get_n = get_base(data.dataOnEntities[MBEDGE][ee]);
+      auto &get_diff_n = get_diff_base(data.dataOnEntities[MBEDGE][ee]);
+      get_n.resize(nb_gauss_pts, 0, false);
+      get_diff_n.resize(nb_gauss_pts, 0, false);
+    }
+  }
+
+  // face
+  if (data.spacesOnEntities[MBTRI].test(H1)) {
+    if (data.dataOnEntities[MBTRI].size() != 1)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong size ent of ent data");
+
+    const int order = data.dataOnEntities[MBTRI][0].getDataOrder();
+    const int nb_dofs = NBFACETRI_H1(order);
+    auto &get_n = get_base(data.dataOnEntities[MBTRI][0]);
+    auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][0]);
+    get_n.resize(nb_gauss_pts, nb_dofs, false);
+    get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
+    if (nb_dofs) {
+      auto &face_alpha = get_alpha(data.dataOnEntities[MBTRI][0]);
+      face_alpha.resize(nb_dofs, 3, false);
+      CHKERR BernsteinBezier::generateIndicesTriTri(order, &face_alpha(0, 0));
+      CHKERR BernsteinBezier::baseFunctionsTri(
+          order, lambda.size1(), face_alpha.size1(), &face_alpha(0, 0),
+          &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
+          &get_diff_n(0, 0));
+    }
+  } else {
+    auto &get_n = get_base(data.dataOnEntities[MBTRI][0]);
+    auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][0]);
+    get_n.resize(nb_gauss_pts, 0, false);
+    get_diff_n.resize(nb_gauss_pts, 0, false);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode TriPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if (cTx->basePolynomialsType0 == NULL)
@@ -54,16 +211,16 @@ MoFEMErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   if (data.spacesOnEntities[MBEDGE].test(H1)) {
     // edges
-    if (data.dataOnEntities[MBEDGE].size() != 3) {
+    if (data.dataOnEntities[MBEDGE].size() != 3)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-    }
+
     int sense[3], order[3];
     double *H1edgeN[3], *diffH1edgeN[3];
     for (int ee = 0; ee < 3; ee++) {
-      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "data inconsistency");
-      }
+                "sense of the edge unknown");
+
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
       int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
@@ -260,9 +417,9 @@ TriPolynomialBase::getValueHcurlAinsworthBase(MatrixDouble &pts) {
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
-  if (data.dataOnEntities[MBTRI].size() != 1) {
+  if (data.dataOnEntities[MBTRI].size() != 1)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  }
+
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
                                      double *diffL, const int dim) =
       cTx->basePolynomialsType0;
@@ -352,20 +509,23 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
 
   // Calculation H-curl on triangle faces
   if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
-    if (data.dataOnEntities[MBEDGE].size() != 3) {
+
+    if (data.dataOnEntities[MBEDGE].size() != 3)
       SETERRQ1(
           PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
           "wrong number of data structures on edges, should be three but is %d",
           data.dataOnEntities[MBEDGE].size());
-    }
+
     int sense[3], order[3];
     double *hcurl_edge_n[3];
     double *diff_hcurl_edge_n[3];
+
     for (int ee = 0; ee != 3; ++ee) {
-      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+
+      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "orientation (sense) of edge is not set");
-      }
+
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
       int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(
@@ -374,21 +534,21 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
                                                         3 * nb_dofs, false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
           nb_gauss_pts, 2 * 3 * nb_dofs, false);
+
       hcurl_edge_n[ee] =
           &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
       diff_hcurl_edge_n[ee] =
           &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
+
     CHKERR Hcurl_Demkowicz_EdgeBaseFunctions_MBTRI(
         sense, order,
         &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         hcurl_edge_n, diff_hcurl_edge_n, nb_gauss_pts);
-    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
-    // cerr << data.dataOnEntities[MBEDGE][0].getDiffN(base) << endl;
-    // cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
-    // cerr << data.dataOnEntities[MBEDGE][0].getN(base) << endl;
+
   } else {
+
     // No DOFs on faces, resize base function matrices, indicating that no
     // dofs on them.
     for (int ee = 0; ee != 3; ++ee) {
@@ -400,21 +560,18 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
 
   if (data.spacesOnEntities[MBTRI].test(HCURL)) {
 
-    // cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
-    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
-    //
     // face
-    if (data.dataOnEntities[MBTRI].size() != 1) {
+    if (data.dataOnEntities[MBTRI].size() != 1)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "No data struture to keep base functions on face");
-    }
+
     int order = data.dataOnEntities[MBTRI][0].getDataOrder();
     int nb_dofs = NBFACETRI_DEMKOWICZ_HCURL(order);
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 3 * nb_dofs,
                                                     false);
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,
                                                         3 * 2 * nb_dofs, false);
-    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
+
     int face_nodes[] = {0, 1, 2};
     CHKERR Hcurl_Demkowicz_FaceBaseFunctions_MBTRI(
         face_nodes, order,
@@ -423,8 +580,9 @@ TriPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
         &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin(),
         nb_gauss_pts);
-    // cerr << data.dataOnEntities[MBTRI][0].getN(base) << endl;
+
   } else {
+
     // No DOFs on faces, resize base function matrices, indicating that no
     // dofs on them.
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts, 0, false);
@@ -457,7 +615,7 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
                             boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
 
-  MoFEM::UnknownInterface *iface;
+  BaseFunctionUnknownInterface *iface;
   CHKERR ctx_ptr->query_interface(IDD_TRI_BASE_FUNCTION, &iface);
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
@@ -466,56 +624,53 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
     MoFEMFunctionReturnHot(0);
   }
 
-  if (pts.size1() < 2) {
+  if (pts.size1() < 2) 
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
-  }
 
   const FieldApproximationBase base = cTx->bAse;
   DataForcesAndSourcesCore &data = cTx->dAta;
-  if (cTx->copyNodeBase == LASTBASE) {
-    data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 3, false);
-    CHKERR ShapeMBTRI(
-        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-        &pts(0, 0), &pts(1, 0), nb_gauss_pts);
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3, 2, false);
-    CHKERR ShapeDiffMBTRI(
-        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
-  } else {
-    data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
-        data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
-    data.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(base) =
-        data.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(cTx->copyNodeBase);
-  }
-  if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
-      (unsigned int)nb_gauss_pts) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "Base functions or nodes has wrong number of integration points "
-             "for base %s",
-             ApproximationBaseNames[base]);
-  }
 
-  if(1) {
+  if (base != AINSWORTH_BERNSTEIN_BEZIER_BASE) {
+    if (cTx->copyNodeBase == LASTBASE) {
+      data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts, 3,
+                                                         false);
+      CHKERR ShapeMBTRI(
+          &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+          &pts(0, 0), &pts(1, 0), nb_gauss_pts);
+      data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3, 2, false);
+      CHKERR ShapeDiffMBTRI(
+          &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
+    } else {
+      data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
+          data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
+      data.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(base) =
+          data.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(cTx->copyNodeBase);
+    }
+    if (data.dataOnEntities[MBVERTEX][0].getN(base).size1() !=
+        (unsigned int)nb_gauss_pts) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Base functions or nodes has wrong number of integration points "
+               "for base %s",
+               ApproximationBaseNames[base]);
+    }
+  }
+  auto set_node_derivative_for_all_gauss_pts = [&]() {
+    MoFEMFunctionBegin;
     // In linear geometry derivatives are constant,
     // this in expense of efficiency makes implementation
     // consistent between vertices and other types of entities
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3, 2, false);
-    CHKERR ShapeDiffMBTRI(
-        &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin());
-    MatrixDouble diffN(nb_gauss_pts, 6);
-    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-      for (int nn = 0; nn != 3; ++nn) {
-        for (int dd = 0; dd != 2; ++dd) {
-          diffN(gg, nn * 2 + dd) =
-              data.dataOnEntities[MBVERTEX][0].getDiffN(base)(nn, dd);
-        }
-      }
-    }
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(
-        diffN.size1(), diffN.size2(), false);
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().swap(diffN.data());
-  }
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts, 6,
+                                                           false);
+    for (int gg = 0; gg != nb_gauss_pts; ++gg)
+      std::copy(Tools::diffShapeFunMBTRI.begin(),
+                Tools::diffShapeFunMBTRI.end(),
+                &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(gg, 0));
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR set_node_derivative_for_all_gauss_pts();
 
   switch (cTx->sPace) {
   case H1:

@@ -31,6 +31,8 @@ static const MOFEMuuid IDD_TRI_BASE_FUNCTION =
     MOFEMuuid(BitIntefaceId(TRI_BASE_FUNCTION_INTERFACE));
 static const MOFEMuuid IDD_EDGE_BASE_FUNCTION =
     MOFEMuuid(BitIntefaceId(EDGE_BASE_FUNCTION_INTERFACE));
+static const MOFEMuuid IDD_QUAD_BASE_FUNCTION =
+    MOFEMuuid(BitIntefaceId(QUAD_BASE_FUNCTION_INTERFACE));
 
 /**
  * \brief Class used to pass element data to calculate base functions on
@@ -41,7 +43,7 @@ static const MOFEMuuid IDD_EDGE_BASE_FUNCTION =
 struct EntPolynomialBaseCtx : public BaseFunctionCtx {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   PetscErrorCode (*basePolynomialsType0)(int p, double s, double *diff_s,
                                          double *L, double *diffL,
@@ -55,14 +57,17 @@ struct EntPolynomialBaseCtx : public BaseFunctionCtx {
   DataForcesAndSourcesCore &dAta;
   const FieldSpace sPace;
   const FieldApproximationBase bAse;
+  const std::string fieldName;
   const FieldApproximationBase copyNodeBase;
-  const FEMethod *fePtr;
 
   EntPolynomialBaseCtx(DataForcesAndSourcesCore &data, const FieldSpace space,
                        const FieldApproximationBase base,
                        const FieldApproximationBase copy_node_base = LASTBASE);
 
-  ~EntPolynomialBaseCtx();
+  EntPolynomialBaseCtx(DataForcesAndSourcesCore &data,
+                       const std::string field_name, const FieldSpace space,
+                       const FieldApproximationBase base,
+                       const FieldApproximationBase copy_node_base = LASTBASE);
 
 protected:
   MoFEMErrorCode setBase();

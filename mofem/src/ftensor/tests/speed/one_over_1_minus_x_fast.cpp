@@ -415,12 +415,6 @@ int main()
   double a1[] = {2, 3, 4};
   double a2[] = {5, 6, 7};
   double a3[] = {8, 9, 10};
-  double a4[] = {11, 12, 13};
-  double a5[] = {14, 15, 16};
-  double a6[] = {17, 18, 19};
-  double a7[] = {20, 21, 22};
-  double a8[] = {23, 24, 25};
-  double a9[] = {26, 27, 28};
 
   for(int ii = 0; ii < 10000000; ii++)
     {

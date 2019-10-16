@@ -11,27 +11,29 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __PRISMS_FORM_SURFACE_HPP__
 #define __PRISMS_FORM_SURFACE_HPP__
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMPrismsFromSurface = MOFEMuuid(BitIntefaceId(PRISMSFROMSURFACE_INTERFACE));
+static const MOFEMuuid IDD_MOFEMPrismsFromSurface =
+    MOFEMuuid(BitIntefaceId(PRISMSFROMSURFACE_INTERFACE));
 
 /** \brief merge node from two bit levels
-  * \ingroup mofem
-  */
-struct PrismsFromSurfaceInterface: public UnknownInterface {
+ * \ingroup mofem
+ */
+struct PrismsFromSurfaceInterface : public UnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid& uuid, UnknownInterface** iface) const;
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
 
-  MoFEM::Core& cOre;
-  PrismsFromSurfaceInterface(const MoFEM::Core& core):
-  cOre(const_cast<MoFEM::Core&>(core)) {}
+  MoFEM::Core &cOre;
+  PrismsFromSurfaceInterface(const MoFEM::Core &core)
+      : cOre(const_cast<MoFEM::Core &>(core)) {}
 
-  std::map<EntityHandle,EntityHandle> createdVertices;
+  std::map<EntityHandle, EntityHandle> createdVertices;
 
   /**
    * \brief Make prisms from triangles
@@ -40,7 +42,7 @@ struct PrismsFromSurfaceInterface: public UnknownInterface {
    * @param  verb   Verbosity level
    * @return        Error code
    */
-  MoFEMErrorCode createPrisms(const Range &ents,Range &prisms,int verb = -1);
+  MoFEMErrorCode createPrisms(const Range &ents, Range &prisms, int verb = -1);
 
   /**
    * \brief Seed prism entities by bit level
@@ -49,7 +51,8 @@ struct PrismsFromSurfaceInterface: public UnknownInterface {
    * @param  verb   Verbosity level
    * @return        Error code
    */
-  MoFEMErrorCode seedPrismsEntities(Range &prisms,const BitRefLevel &bit,int verb = -1);
+  MoFEMErrorCode seedPrismsEntities(Range &prisms, const BitRefLevel &bit,
+                                    int verb = -1);
 
   /**
    * \brief Make prisms by extruding top or bottom prisms
@@ -59,8 +62,8 @@ struct PrismsFromSurfaceInterface: public UnknownInterface {
    * @param  verb        Verbosity level
    * @return             Error code
    */
-  MoFEMErrorCode createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb = -1);
-
+  MoFEMErrorCode createPrismsFromPrisms(const Range &prisms, bool from_down,
+                                        Range &out_prisms, int verb = -1);
 
   /**
    * Set uniform thickness
@@ -69,10 +72,40 @@ struct PrismsFromSurfaceInterface: public UnknownInterface {
    * @param  director4 Displacement of face 4
    * @return
    */
-  MoFEMErrorCode setThickness(const Range &prisms,const double director3[],const double director4[]);
+  MoFEMErrorCode setThickness(const Range &prisms, const double director3[],
+                              const double director4[]);
+
+  /**
+   * Set normal thickness
+   * @param prisms   Range of prisms
+   * @param thickness normal thickness 
+   * @return
+   */
+  MoFEMErrorCode setNormalThickness(const Range &prisms,
+                                    double thickness3, double thickness4);
+
+  /**
+   * @brief Add quads to bockset 
+   * 
+   * If quad is adjacent to extruded edge, is added to given blockset
+   * 
+   * @param prisms 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode updateMeshestByEdgeBlock(const Range &prisms);
+
+  /**
+   * @brief Add prism to bockset
+   *
+   * If quad is adjacent to extruded triangle, is added to given blockset
+   *
+   * @param prisms
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode updateMeshestByTriBlock(const Range &prisms);
 
 };
 
-}
+} // namespace MoFEM
 
 #endif //__PRISMS_FORM_SURFACE_HPP__

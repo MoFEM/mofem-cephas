@@ -64,9 +64,6 @@ TetGenInterface::inData(Range &ents, tetgenio &in,
   Interface &m_field = cOre;
   Range::iterator it;
 
-  //
-  ErrorCode rval;
-
   Tag th_marker;
   int def_marker = 0;
   CHKERR m_field.get_moab().tag_get_handle(
@@ -723,8 +720,6 @@ MoFEMErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,
   MoFEMFunctionBegin;
 
   Interface &m_field = cOre;
-
-  ErrorCode rval;
   Skinner skin(&m_field.get_moab());
 
   for (;;) {

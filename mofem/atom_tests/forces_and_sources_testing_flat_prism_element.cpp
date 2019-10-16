@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, 3);
     CHKERR m_field.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE,
                              3);
-    CHKERR m_field.add_field("FIELD2", NOFIELD, AINSWORTH_LEGENDRE_BASE, 3);
+    CHKERR m_field.add_field("FIELD2", NOFIELD, NOBASE, 3);
 
     {
       // Creating and adding no field entities.

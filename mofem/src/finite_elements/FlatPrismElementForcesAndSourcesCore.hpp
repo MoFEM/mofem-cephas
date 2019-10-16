@@ -38,23 +38,6 @@ namespace MoFEM {
  */
 struct FlatPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
-  double aRea[2];
-  VectorDouble normal;
-  VectorDouble coords;
-  MatrixDouble coordsAtGaussPts;
-
-  std::string meshPositionsFieldName;
-
-  MatrixDouble hoCoordsAtGaussPtsF3;
-  MatrixDouble nOrmals_at_GaussPtF3;
-  MatrixDouble tAngent1_at_GaussPtF3;
-  MatrixDouble tAngent2_at_GaussPtF3;
-  MatrixDouble hoCoordsAtGaussPtsF4;
-  MatrixDouble nOrmals_at_GaussPtF4;
-  MatrixDouble tAngent1_at_GaussPtF4;
-  MatrixDouble tAngent2_at_GaussPtF4;
-  OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
-
   FlatPrismElementForcesAndSourcesCore(Interface &m_field);
 
   /** \brief default operator for Flat Prism element
@@ -62,16 +45,7 @@ struct FlatPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
    */
   struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const FieldSpace space)
-        : ForcesAndSourcesCore::UserDataOperator(space) {}
-
-    UserDataOperator(const std::string &field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(field_name, type) {}
-
-    UserDataOperator(const std::string &row_field_name,
-                     const std::string &col_field_name, const char type)
-        : ForcesAndSourcesCore::UserDataOperator(row_field_name, col_field_name,
-                                                 type) {}
+    using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
     /** \brief get face aRea
     \param dd if dd == 0 it is for face F3 if dd == 1 is for face F4
@@ -240,49 +214,28 @@ struct FlatPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   };
 
   MoFEMErrorCode operator()();
-};
 
-/** \brief Calculate inverse of jacobian for face element
+  protected:
 
-  It is assumed that face element is XY plane. Applied
-  only for 2d problems.
+  double aRea[2];
+  VectorDouble normal;
+  VectorDouble coords;
+  MatrixDouble coordsAtGaussPts;
 
-  FIXME Generalize function for arbitrary face orientation in 3d space
-  FIXME Calculate to Jacobins for two faces
+  std::string meshPositionsFieldName;
 
-  \ingroup mofem_forces_and_sources_prism_element
+  MatrixDouble hoCoordsAtGaussPtsF3;
+  MatrixDouble nOrmals_at_GaussPtF3;
+  MatrixDouble tAngent1_at_GaussPtF3;
+  MatrixDouble tAngent2_at_GaussPtF3;
+  MatrixDouble hoCoordsAtGaussPtsF4;
+  MatrixDouble nOrmals_at_GaussPtF4;
+  MatrixDouble tAngent1_at_GaussPtF4;
+  MatrixDouble tAngent2_at_GaussPtF4;
+  OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
 
-*/
-struct OpCalculateInvJacForFlatPrism
-    : public FlatPrismElementForcesAndSourcesCore::UserDataOperator {
+  friend class UserDataOperator;
 
-  MatrixDouble &invJacF3;
-  OpCalculateInvJacForFlatPrism(MatrixDouble &inv_jac_f3)
-      : FlatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
-        invJacF3(inv_jac_f3) {}
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
-/** \brief Transform local reference derivatives of shape functions to global
-derivatives
-
-FIXME Generalize to curved shapes
-FIXME Generalize to case that top and bottom face has different shape
-
-\ingroup mofem_forces_and_sources_prism_element
-
-*/
-struct OpSetInvJacH1ForFlatPrism
-    : public FlatPrismElementForcesAndSourcesCore::UserDataOperator {
-  MatrixDouble &invJacF3;
-  OpSetInvJacH1ForFlatPrism(MatrixDouble &inv_jac_f3)
-      : FlatPrismElementForcesAndSourcesCore::UserDataOperator(H1),
-        invJacF3(inv_jac_f3) {}
-
-  MatrixDouble diffNinvJac;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
 };
 
 /// \brief USe FlatPrismElementForcesAndSourcesCore
@@ -293,7 +246,7 @@ DEPRECATED typedef FlatPrismElementForcesAndSourcesCore
 
 #endif //__FLATPRISMELEMENTFORCESANDSURCESCORE_HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_forces_and_sources_prism_element Prism Element
-* \ingroup mofem_forces_and_sources
-******************************************************************************/
+/**
+ * \defgroup mofem_forces_and_sources_prism_element Prism Element
+ * \ingroup mofem_forces_and_sources
+ **/

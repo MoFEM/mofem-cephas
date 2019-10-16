@@ -25,30 +25,38 @@ namespace MoFEM {
 static const MOFEMuuid IDD_UNKNOWN_BASE_FUNCTION =
     MOFEMuuid(BitIntefaceId(UNKNOWN_BASE_FUNCTION_INTERFACE));
 
+struct BaseFunctionUnknownInterface {
+
+  virtual MoFEMErrorCode
+  query_interface(const MOFEMuuid &uuid,
+                  BaseFunctionUnknownInterface **iface) const = 0;
+
+  virtual ~BaseFunctionUnknownInterface() = default;
+};
+
 /**
  * \brief Base class used to exchange data between element data structures and
  * class calculating base functions \ingroup mofem_base_functions
  */
-struct BaseFunctionCtx : public UnknownInterface {
+struct BaseFunctionCtx : public BaseFunctionUnknownInterface {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 MoFEM::UnknownInterface **iface) const;
+                                 BaseFunctionUnknownInterface **iface) const;
 
   BaseFunctionCtx() {}
-  ~BaseFunctionCtx() {}
 };
 
 /**
  * \brief Base class if inherited used to calculate base functions
  * \ingroup mofem_base_functions
  */
-struct BaseFunction : public UnknownInterface {
+struct BaseFunction : public BaseFunctionUnknownInterface {
 
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 MoFEM::UnknownInterface **iface) const;
+  MoFEMErrorCode
+  query_interface(const MOFEMuuid &uuid,
+                  MoFEM::BaseFunctionUnknownInterface **iface) const;
 
   BaseFunction() {}
-  ~BaseFunction() {}
 
   virtual MoFEMErrorCode getValue(MatrixDouble &pts,
                                   boost::shared_ptr<BaseFunctionCtx> ctx_ptr);
@@ -61,10 +69,10 @@ struct BaseFunction : public UnknownInterface {
 
 #endif //__BASEFUNCTION_HPP__
 
-/***************************************************************************/ /**
-* \defgroup mofem_base_functions Base functions
-*
-* \brief Calculation of base functions at integration points.
-*
-* \ingroup mofem
-******************************************************************************/
+/**
+ * \defgroup mofem_base_functions Base functions
+ *
+ * \brief Calculation of base functions at integration points.
+ *
+ * \ingroup mofem
+ **/
