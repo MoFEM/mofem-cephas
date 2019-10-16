@@ -314,7 +314,7 @@ make install
 ~~~~~
 Note that in addition to `build_type` another specification of the build configuration (*spec*) was used: `copy_user_modules=False `. 
 
-## 2. Install users modules {#spack_users modules}
+## 2. Install users modules {#spack_users_modules}
 
 Install users modules
 ~~~~~
