@@ -38,6 +38,7 @@ namespace MoFEM {
  */
 struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
+
   std::array<double, 2> aRea;
 
   VectorDouble normal;
@@ -60,8 +61,10 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
    * FIXME: that should be moved to private class data and acessed only by
    * member function
    */
-  const boost::shared_ptr<DataForcesAndSourcesCore> dataOnMaster[LASTSPACE];
-  const boost::shared_ptr<DataForcesAndSourcesCore> dataOnSlave[LASTSPACE];
+  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+      dataOnMaster;
+  const std::array <
+      boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE> dataOnSlave;
 
   /**
    * @brief Entity data on element entity columns fields
@@ -69,10 +72,10 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
    * FIXME: that should be moved to private class data and acessed only by
    * member function
    */
-  const boost::shared_ptr<DataForcesAndSourcesCore>
-      derivedDataOnMaster[LASTSPACE];
-  const boost::shared_ptr<DataForcesAndSourcesCore>
-      derivedDataOnSlave[LASTSPACE];
+  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+      derivedDataOnMaster;
+  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+      derivedDataOnSlave;
 
   DataForcesAndSourcesCore &dataH1Master;
   DataForcesAndSourcesCore &dataH1Slave;

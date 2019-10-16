@@ -27,61 +27,41 @@ ContactPrismElementForcesAndSourcesCore::
       dataOnMaster{
 
           nullptr,
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)), // NOFIELD
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)), // H1
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)), // HCURL
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)), // HDIV
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)) // L2
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // NOFIELD
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // H1
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HCURL
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HDIV
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET)  // L2
 
       },
       derivedDataOnMaster{
 
           nullptr,
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnMaster[NOFIELD])),
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnMaster[H1])),
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnMaster[HCURL])),
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnMaster[HDIV])),
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnMaster[L2]))
+          boost::make_shared<DataForcesAndSourcesCore>(dataOnMaster[NOFIELD]),
+          boost::make_shared<DataForcesAndSourcesCore>(dataOnMaster[H1]),
+          boost::make_shared<DataForcesAndSourcesCore>(dataOnMaster[HCURL]),
+          boost::make_shared<DataForcesAndSourcesCore>(dataOnMaster[HDIV]),
+          boost::make_shared<DataForcesAndSourcesCore>(dataOnMaster[L2])
 
       },
       dataOnSlave{
 
           nullptr,
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)), // NOFIELD
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)), // H1
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)), // HCURL
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)), // HDIV
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DataForcesAndSourcesCore(MBENTITYSET)) // L2
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // NOFIELD
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // H1
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HCURL
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HDIV
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET) // L2
 
       },
       derivedDataOnSlave{
 
           nullptr,
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnSlave[NOFIELD])),
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnSlave[H1])),
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnSlave[HCURL])),
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnSlave[HDIV])),
-          boost::shared_ptr<DataForcesAndSourcesCore>(
-              new DerivedDataForcesAndSourcesCore(dataOnSlave[L2]))
+          boost::make_shared<DataForcesAndSourcesCore>(dataOnSlave[NOFIELD]),
+          boost::make_shared<DataForcesAndSourcesCore>(dataOnSlave[H1]),
+          boost::make_shared<DataForcesAndSourcesCore>(dataOnSlave[HCURL]),
+          boost::make_shared<DataForcesAndSourcesCore>(dataOnSlave[HDIV]),
+          boost::make_shared<DataForcesAndSourcesCore>(dataOnSlave[L2])
 
       },
       dataH1Master(*dataOnMaster[H1].get()),
@@ -134,22 +114,22 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
   DataForcesAndSourcesCore &data_l2 = *dataOnElement[HCURL];
 
   EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-  int num_nodes;
-  const EntityHandle *conn;
-  CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
-  {
+  auto get_coord_and_normal = [&]() {
+    MoFEMFunctionBegin;
+    int num_nodes;
+    const EntityHandle *conn;
+    CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
     coords.resize(num_nodes * 3, false);
     CHKERR mField.get_moab().get_coords(conn, num_nodes,
                                         &*coords.data().begin());
-
-    double diff_n[6];
-    CHKERR ShapeDiffMBTRI(diff_n);
     normal.resize(6, false);
-    CHKERR ShapeFaceNormalMBTRI(diff_n, &coords[0], &normal[0]);
-    CHKERR ShapeFaceNormalMBTRI(diff_n, &coords[9], &normal[3]);
+    CHKERR Tools::getTriNormal(&coords[0], &normal[0]);
+    CHKERR Tools::getTriNormal(&coords[9], &normal[3]);
     aRea[0] = cblas_dnrm2(3, &normal[0], 1) * 0.5;
     aRea[1] = cblas_dnrm2(3, &normal[3], 1) * 0.5;
-  }
+    MoFEMFunctionReturn(0);
+  };
+  CHKERR get_coord_and_normal();
 
   CHKERR getSpacesAndBaseOnEntities(dataH1);
 
@@ -189,10 +169,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       data.spacesOnEntities[t].reset();
       data.basesOnEntities[t].reset();
     }
-    for (int s = 0; s != LASTSPACE; ++s) {
+    for (int s = 0; s != LASTSPACE; ++s) 
       data.basesOnSpaces[s].reset();
-    }
-
+    
     MoFEMFunctionReturn(0);
   };
 
@@ -250,6 +229,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder(); // maybe two different rules?
   int rule = getRule(order_row, order_col, order_data);
+
   int nb_gauss_pts;
   if (rule >= 0) {
     if (rule < QUAD_2D_TABLE_SIZE) {
@@ -271,8 +251,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                   &gaussPtsMaster(1, 0), 1);
       cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1,
                   &gaussPtsMaster(2, 0), 1);
-
-      cerr << gaussPtsMaster;
 
       gaussPtsSlave = gaussPtsMaster;
 
@@ -297,7 +275,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                "rule > quadrature order %d < %d", rule, QUAD_2D_TABLE_SIZE);
       nb_gauss_pts = 0;
     }
+
   } else {
+
     // Master-Slave
     if (gaussPtsMaster.size2() != gaussPtsSlave.size2())
       SETERRQ(
