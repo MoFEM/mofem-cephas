@@ -368,9 +368,10 @@ struct ForcesAndSourcesCore : public FEMethod {
     MoFEMErrorCode loopSide(const string &fe_name,
                             ForcesAndSourcesCore *side_fe, const size_t dim);
 
-    friend ForcesAndSourcesCore;
+    friend class ForcesAndSourcesCore;
     friend class EdgeElementForcesAndSourcesCoreBase;
     friend class FaceElementForcesAndSourcesCoreBase;
+    friend class ContactPrismElementForcesAndSourcesCore;
   };
 
   /** \brief Use to push back operator for row operator

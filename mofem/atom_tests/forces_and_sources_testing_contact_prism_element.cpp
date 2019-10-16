@@ -43,14 +43,12 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
                                  mesh_file_name, 255, &flg);
 #endif
-    if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
-    }
+    if (flg != PETSC_TRUE)
+      SETERRQ(PETSC_COMM_SELF, 1, "rerror -my_file (mesh file not given");
 
     const char *option;
-    option = ""; //"PARALLEL=BCAST;";//;DEBUG_IO";
-    rval = moab.load_file(mesh_file_name, 0, option);
-    CHKERRG(rval);
+    option = "";
+    CHKERR moab.load_file(mesh_file_name, 0, option);
 
     // Create MoFEM (Joseph) database
     MoFEM::Core core(moab);
@@ -58,15 +56,13 @@ int main(int argc, char *argv[]) {
     PrismInterface *interface;
     CHKERR m_field.getInterface(interface);
 
-    // set entitities bit level
+    // set entities bit level
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 3, BitRefLevel().set(0));
     std::vector<BitRefLevel> bit_levels;
     bit_levels.push_back(BitRefLevel().set(0));
 
     int ll = 1;
-    // for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|INTERFACESET,cit))
-    // {
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, SIDESET, cit)) {
 
       CHKERR PetscPrintf(PETSC_COMM_WORLD, "Insert Interface %d\n",
@@ -75,8 +71,7 @@ int main(int argc, char *argv[]) {
       {
         // get tet enties form back bit_level
         EntityHandle ref_level_meshset = 0;
-        rval = moab.create_meshset(MESHSET_SET, ref_level_meshset);
-        CHKERRG(rval);
+        CHKERR moab.create_meshset(MESHSET_SET, ref_level_meshset);
         CHKERR m_field.getInterface<BitRefManager>()
             ->getEntitiesByTypeAndRefLevel(bit_levels.back(),
                                            BitRefLevel().set(), MBTET,
@@ -86,9 +81,8 @@ int main(int argc, char *argv[]) {
                                            BitRefLevel().set(), MBPRISM,
                                            ref_level_meshset);
         Range ref_level_tets;
-        rval = moab.get_entities_by_handle(ref_level_meshset, ref_level_tets,
+        CHKERR moab.get_entities_by_handle(ref_level_meshset, ref_level_tets,
                                            true);
-        CHKERRG(rval);
         // get faces and test to split
         CHKERR interface->getSides(cubit_meshset, bit_levels.back(), true, 0);
         // set new bit level
@@ -97,8 +91,7 @@ int main(int argc, char *argv[]) {
         CHKERR interface->splitSides(ref_level_meshset, bit_levels.back(),
                                      cubit_meshset, true, true, 0);
         // clean meshsets
-        rval = moab.delete_entities(&ref_level_meshset, 1);
-        CHKERRG(rval);
+        CHKERR moab.delete_entities(&ref_level_meshset, 1);
       }
       // update cubit meshsets
       for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, ciit)) {
@@ -122,21 +115,19 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, 3);
     CHKERR m_field.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE,
                              3);
-    CHKERR m_field.add_field("FIELD2", NOFIELD, AINSWORTH_LEGENDRE_BASE, 3);
+    CHKERR m_field.add_field("FIELD2", NOFIELD, NOBASE, 3);
 
     {
       // Creating and adding no field entities.
       const double coords[] = {0, 0, 0};
       EntityHandle no_field_vertex;
-      rval = m_field.get_moab().create_vertex(coords, no_field_vertex);
-      CHKERRG(rval);
+      CHKERR m_field.get_moab().create_vertex(coords, no_field_vertex);
       Range range_no_field_vertex;
       range_no_field_vertex.insert(no_field_vertex);
       CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(
           range_no_field_vertex, BitRefLevel().set());
       EntityHandle meshset = m_field.get_field_meshset("FIELD2");
-      rval = m_field.get_moab().add_entities(meshset, range_no_field_vertex);
-      CHKERRG(rval);
+      CHKERR m_field.get_moab().add_entities(meshset, range_no_field_vertex);
     }
 
     // FE
@@ -418,12 +409,10 @@ int main(int argc, char *argv[]) {
     fe2.getOpPtrVector().push_back(
         new MyOp2(my_split, UMDataOp::OPROWCOL, ContactDataOp::FACESLAVESLAVE));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE2", fe2);
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
+  CATCH_ERRORS;
 
-  CHKERR MoFEM::Core::Finalize();
+  MoFEM::Core::Finalize();
 
   return 0;
 }

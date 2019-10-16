@@ -38,7 +38,8 @@ namespace MoFEM {
  */
 struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
-  double aRea[2];
+  std::array<double, 2> aRea;
+
   VectorDouble normal;
   VectorDouble coords;
   MatrixDouble coordsAtGaussPtsMaster;
@@ -225,7 +226,6 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     /** \brief get face aRea Master
      */
-
     inline double getAreaMaster() {
       return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
           ->aRea[0];
@@ -233,7 +233,6 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     /** \brief get face aRea Slave
      */
-
     inline double getAreaSlave() {
       return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
           ->aRea[1];
@@ -316,6 +315,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     getContactPrismElementForcesAndSourcesCore() {
       return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE);
     }
+
   };
 
   MoFEMErrorCode operator()();
@@ -324,8 +324,3 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 } // namespace MoFEM
 
 #endif //__CONTACTPRISMELEMENTFORCESANDSURCESCORE_HPP__
-
-/**
- * \defgroup mofem_forces_and_sources_prism_element Prism Element
- * \ingroup mofem_forces_and_sources
- **/
