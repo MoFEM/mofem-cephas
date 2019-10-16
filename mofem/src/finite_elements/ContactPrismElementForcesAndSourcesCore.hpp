@@ -38,143 +38,7 @@ namespace MoFEM {
  */
 struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
-
-  std::array<double, 2> aRea;
-
-  VectorDouble normal;
-  VectorDouble coords;
-  MatrixDouble coordsAtGaussPtsMaster;
-  MatrixDouble coordsAtGaussPtsSlave;
-
-  MatrixDouble gaussPtsMaster;
-  MatrixDouble gaussPtsSlave;
-
-  /**
-   * @brief Entity data on element entity rows fields
-   *
-   *
-   * FIXME: that should be moved to private class data and acessed only by
-   * member function
-   */
-  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
-      dataOnMaster;
-  const std::array <
-      boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE> dataOnSlave;
-
-  /**
-   * @brief Entity data on element entity columns fields
-   *
-   * FIXME: that should be moved to private class data and acessed only by
-   * member function
-   */
-  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
-      derivedDataOnMaster;
-  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
-      derivedDataOnSlave;
-
-  DataForcesAndSourcesCore &dataH1Master;
-  DataForcesAndSourcesCore &dataH1Slave;
-
-  DataForcesAndSourcesCore &dataNoFieldMaster;
-  DataForcesAndSourcesCore &dataNoFieldSlave;
-  DataForcesAndSourcesCore &dataHcurlMaster;
-  DataForcesAndSourcesCore &dataHcurlSlave;
-  DataForcesAndSourcesCore &dataHdivMaster;
-  DataForcesAndSourcesCore &dataHdivSlave;
-  DataForcesAndSourcesCore &dataL2Master;
-  DataForcesAndSourcesCore &dataL2Slave;
-
   ContactPrismElementForcesAndSourcesCore(Interface &m_field);
-
-  /**
-   * @brief Iterate user data operators
-   *
-   * @return MoFEMErrorCode
-   */
-  MoFEMErrorCode loopOverOperators();
-
-  inline MoFEMErrorCode
-  getEntityRowIndices(DataForcesAndSourcesCore &data,
-                      const std::string &field_name,
-                      const EntityType type_lo = MBVERTEX,
-                      const EntityType type_hi = MBPOLYHEDRON,
-                      const bool master_flag = true) const {
-    return getEntityIndices(data, field_name,
-                            const_cast<FENumeredDofEntity_multiIndex &>(
-                                numeredEntFiniteElementPtr->getRowsDofs()),
-                            type_lo, type_hi, master_flag);
-  }
-
-  inline MoFEMErrorCode
-  getEntityColIndices(DataForcesAndSourcesCore &data,
-                      const std::string &field_name,
-                      const EntityType type_lo = MBVERTEX,
-                      const EntityType type_hi = MBPOLYHEDRON,
-                      const bool master_flag = true) const {
-    return getEntityIndices(data, field_name,
-                            const_cast<FENumeredDofEntity_multiIndex &>(
-                                numeredEntFiniteElementPtr->getColsDofs()),
-                            type_lo, type_hi, master_flag);
-  }
-
-  MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name,
-                                    const EntityType type_lo = MBVERTEX,
-                                    const EntityType type_hi = MBPOLYHEDRON,
-                                    const bool master_flag = true) const;
-
-  MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &data,
-                                  const std::string &field_name,
-                                  FENumeredDofEntity_multiIndex &dofs,
-                                  const EntityType type_lo = MBVERTEX,
-                                  const EntityType type_hi = MBPOLYHEDRON,
-                                  const bool master_flag = true) const;
-
-  // ** Indices **
-
-  /// \brief get node indices
-  MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
-                                 FENumeredDofEntity_multiIndex &dofs,
-                                 VectorInt &nodes_indices,
-                                 VectorInt &local_nodes_indices,
-                                 const bool &master_flag) const;
-
-  /// \brief get row node indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name,
-                                    const bool &master_flag) const;
-
-  /// \brief get col node indices from FENumeredDofEntity_multiIndex
-  MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name,
-                                    const bool &master_flag) const;
-
-  /**
-   * \brief Get field data on nodes
-   * @param  field_name Name of field
-   * @param  dofs       Dofs (element) multi index
-   * @param  nodes_data Returned DOFs values
-   * @param  nodes_dofs Vector of pointers to DOFs data structure
-   * @param  space      Get space on nodes (Only H! is valid)
-   * @param  base       Get base on nodes
-   * @return            Error code
-   */
-  MoFEMErrorCode getNodesFieldData(const boost::string_ref field_name,
-                                   FEDofEntity_multiIndex &dofs,
-                                   VectorDouble &nodes_data,
-                                   VectorDofs &nodes_dofs, FieldSpace &space,
-                                   FieldApproximationBase &base,
-                                   const bool &master_flag) const;
-
-  /**
-   * \brief Get data on nodes
-   * @param  data       Data structure
-   * @param  field_name Field name
-   * @return            Error code
-   */
-  MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
-                                   const std::string &field_name,
-                                   const bool &master_flag) const;
 
   /** \brief default operator for Contact Prism element
    * \ingroup mofem_forces_and_sources_prism_element
@@ -317,6 +181,142 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   };
 
   MoFEMErrorCode operator()();
+
+protected:
+  std::array<double, 2> aRea;
+
+  VectorDouble normal;
+  VectorDouble coords;
+  MatrixDouble coordsAtGaussPtsMaster;
+  MatrixDouble coordsAtGaussPtsSlave;
+
+  MatrixDouble gaussPtsMaster;
+  MatrixDouble gaussPtsSlave;
+
+  /**
+   * @brief Entity data on element entity rows fields
+   *
+   *
+   * FIXME: that should be moved to private class data and acessed only by
+   * member function
+   */
+  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+      dataOnMaster;
+  const std::array <
+      boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE> dataOnSlave;
+
+  /**
+   * @brief Entity data on element entity columns fields
+   *
+   * FIXME: that should be moved to private class data and acessed only by
+   * member function
+   */
+  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+      derivedDataOnMaster;
+  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+      derivedDataOnSlave;
+
+  DataForcesAndSourcesCore &dataH1Master;
+  DataForcesAndSourcesCore &dataH1Slave;
+
+  DataForcesAndSourcesCore &dataNoFieldMaster;
+  DataForcesAndSourcesCore &dataNoFieldSlave;
+  DataForcesAndSourcesCore &dataHcurlMaster;
+  DataForcesAndSourcesCore &dataHcurlSlave;
+  DataForcesAndSourcesCore &dataHdivMaster;
+  DataForcesAndSourcesCore &dataHdivSlave;
+  DataForcesAndSourcesCore &dataL2Master;
+  DataForcesAndSourcesCore &dataL2Slave;
+
+  /**
+   * @brief Iterate user data operators
+   *
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode loopOverOperators();
+
+  inline MoFEMErrorCode
+  getEntityRowIndices(DataForcesAndSourcesCore &data,
+                      const std::string &field_name,
+                      const EntityType type_lo = MBVERTEX,
+                      const EntityType type_hi = MBPOLYHEDRON,
+                      const bool master_flag = true) const {
+    return getEntityIndices(data, field_name,
+                            const_cast<FENumeredDofEntity_multiIndex &>(
+                                numeredEntFiniteElementPtr->getRowsDofs()),
+                            type_lo, type_hi, master_flag);
+  }
+
+  inline MoFEMErrorCode
+  getEntityColIndices(DataForcesAndSourcesCore &data,
+                      const std::string &field_name,
+                      const EntityType type_lo = MBVERTEX,
+                      const EntityType type_hi = MBPOLYHEDRON,
+                      const bool master_flag = true) const {
+    return getEntityIndices(data, field_name,
+                            const_cast<FENumeredDofEntity_multiIndex &>(
+                                numeredEntFiniteElementPtr->getColsDofs()),
+                            type_lo, type_hi, master_flag);
+  }
+
+  MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &data,
+                                    const std::string &field_name,
+                                    const EntityType type_lo = MBVERTEX,
+                                    const EntityType type_hi = MBPOLYHEDRON,
+                                    const bool master_flag = true) const;
+
+  MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &data,
+                                  const std::string &field_name,
+                                  FENumeredDofEntity_multiIndex &dofs,
+                                  const EntityType type_lo = MBVERTEX,
+                                  const EntityType type_hi = MBPOLYHEDRON,
+                                  const bool master_flag = true) const;
+
+  // ** Indices **
+
+  /// \brief get node indices
+  MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
+                                 FENumeredDofEntity_multiIndex &dofs,
+                                 VectorInt &nodes_indices,
+                                 VectorInt &local_nodes_indices,
+                                 const bool &master_flag) const;
+
+  /// \brief get row node indices from FENumeredDofEntity_multiIndex
+  MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
+                                    const std::string &field_name,
+                                    const bool &master_flag) const;
+
+  /// \brief get col node indices from FENumeredDofEntity_multiIndex
+  MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
+                                    const std::string &field_name,
+                                    const bool &master_flag) const;
+
+  /**
+   * \brief Get field data on nodes
+   * @param  field_name Name of field
+   * @param  dofs       Dofs (element) multi index
+   * @param  nodes_data Returned DOFs values
+   * @param  nodes_dofs Vector of pointers to DOFs data structure
+   * @param  space      Get space on nodes (Only H! is valid)
+   * @param  base       Get base on nodes
+   * @return            Error code
+   */
+  MoFEMErrorCode getNodesFieldData(const boost::string_ref field_name,
+                                   FEDofEntity_multiIndex &dofs,
+                                   VectorDouble &nodes_data,
+                                   VectorDofs &nodes_dofs, FieldSpace &space,
+                                   FieldApproximationBase &base,
+                                   const bool &master_flag) const;
+
+  /**
+   * \brief Get data on nodes
+   * @param  data       Data structure
+   * @param  field_name Field name
+   * @return            Error code
+   */
+  MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
+                                   const std::string &field_name,
+                                   const bool &master_flag) const;
 };
 
 } // namespace MoFEM
