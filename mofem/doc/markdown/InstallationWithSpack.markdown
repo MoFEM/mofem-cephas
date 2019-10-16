@@ -269,12 +269,11 @@ spack install --test=root -j 4 mofem-fracture-module
 
 # Developers {#spack_developers}
 
-MoFEM can be developed in different ways:
+MoFEM can be developed in many different ways, here you can follow to step
+installation for core and user modules developers:
 
-1. [In-situ](#spack_modules_insitu)
-2. [Specific module](#spack_specific_module)
-3. [Basic users modules](#spack_basic_users_modules)
-4. [Core libraries](#spack_core_libraries)
+1. [Core libraries](#spack_core_libraries)
+2. [Install users modules](#spack_users_modules)
 
 The developer installation requires knowing more about how Spack works. See [Spack usage and configuration](#spack_usage_config)
 before proceeding with the installation. In particular, the instructions below
@@ -285,77 +284,12 @@ will be given explicitly here: `build_type=RelWithDebInfo`, however keep in mind
 that two other build types can be specified in the same way:
 `build_type=Release` or `build_type=Debug`, see also [Change the build_type](#spack_build_type).
 
-<!-- The instructions below will use `mofem-cephas@develop` and
-`mofem-users-modules@develop` to denote the name of an existing installation.
-However, if multiple versions are installed then you will need to [specify the
-version ID](#spack_mofem_package_versions) instead. You can also [change the build_type](#spack_build_type). -->
+You can skip the first installation method and jump to second if you are not
+going to be the core MoFEM developer. However, to avoid many installation
+paths, and avoid potential bugs which are difficult to reproduce, we
+recommend following installation step 1, and step 2.
 
-## 1. In-situ {#spack_modules_insitu}
-
-This is the simplest method but also limited. You can work with the code
-provided in modules or add your own directory with your module.
-~~~~
-spack install mofem-users-modules build_type=RelWithDebInfo
-cd $HOME
-spack view --verbose symlink -i um_view mofem-users-modules
-export PATH=$PWD/um_view/bin:$PATH
-cd um_view
-mkdir build
-cd build
-cmake \
--DCMAKE_BUILD_TYPE=Debug \
--DSTAND_ALLONE_USERS_MODULES=YES \
--DEXTERNAL_MODULE_SOURCE_DIRS=../ext_users_modules \
-../users_modules
-make -j4
-ctest
-~~~~
-
-You can also provide another directory which is pointing to a module that you are
-developing privately:
-~~~~
--DEXTERNAL_MODULE_SOURCE_DIRS=../ext_users_modules\;$PATH_TO_MY_SECRET_MODULE
-~~~~
-
-## 2. Specific module {#spack_specific_module}
-
-To develop a module, you need install mofem-users-modules, clone from the
-repository which you like to work with, set up configuration and build the
-code.
-~~~~
-spack install mofem-users-modules 
-cd $HOME
-spack view --verbose symlink -i um_view mofem-users-modules
-export PATH=$PWD/um_view/bin:$PATH
-mkdir $HOME/mod_developer
-cd mod_developer/
-git clone -b develop https://bitbucket.org/likask/mofem_um_minimal_surface_equation minimal_surface_equation
-spack setup mofem-minimal-surface-equation@develop build_type=RelWithDebInfo
-./spconfig.py -DMOFEM_DIR=$HOME/um_view \
--DEXTERNAL_MODULE_SOURCE_DIRS=$HOME/mod_developer \
-$HOME/um_view/users_modules
-make -j4
-~~~~
-
-## 3. Basic users modules {#spack_basic_users_modules}
-
-To develop the basic users modules, the procedure is similar to one shown above.
-One needs
-to install mofem-cephas, clone source code, run configuration and finally
-make the code.
-~~~~
-spack install mofem-cephas 
-mkdir $HOME/um_developer
-cd $HOME/um_developer/
-git clone -b develop https://likask@bitbucket.org/mofem/users-modules-cephas.git 
-spack setup mofem-users-modules@develop build_type=RelWithDebInfo
-spack view --verbose symlink -i um_view mofem-cephas
-export PATH=$PWD/um_view/bin:$PATH
-./spconfig.py -DMOFEM_DIR=$HOME/um_view users-modules-cephas/ 
-make -j4
-~~~~
-
-## 4. Core libraries {#spack_core_libraries}
+## 1. Core libraries {#spack_core_libraries}
 
 If you are going to develop MoFEM's core library, it means that you are a core
 developer and you can install MoFEM directly from the source.
@@ -380,7 +314,9 @@ make install
 ~~~~~
 Note that in addition to `build_type` another specification of the build configuration (*spec*) was used: `copy_user_modules=False `. 
 
-Next, install users modules
+## 2. Install users modules {#spack_users modules}
+
+Install users modules
 ~~~~~
 cd $HOME/mofem_install
 mkdir um
@@ -410,18 +346,6 @@ preceding, e.g.:
 ~~~~~ 
 spack setup mofem-users-modules@develop copy_user_modules=False build_type=Debug ^/yk45ivx 
 ~~~~~
-
-<!-- 
-You can add extended users modules to
-`$HOME/mofem_install/mofem-cephas/mofem/users_modules`. To include this in
-the build process:
-~~~~~
-./spconfig.py -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
-make -j4
-ctest
-make install
-~~~~~ 
--->
 
 Alternatively, you can add your users modules to an independent folder and run
 the snippet below
