@@ -938,7 +938,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
     auto &first_dof = **dit;
     space = first_dof.getSpace();
     base = first_dof.getApproxBase();
-    int num_nodes = 3;
+    constexpr int num_nodes = 3;
     const int nb_dof_idx = first_dof.getNbOfCoeffs();
     const int max_nb_dofs = nb_dof_idx * num_nodes;
     nodes_data.resize(max_nb_dofs, false);
