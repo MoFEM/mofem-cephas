@@ -74,7 +74,7 @@ ENV MESHKIT_DIR /opt/petsc/arch-linux2-c-opt/
 ENV CASROOT /opt/petsc/arch-linux2-c-opt/
 
 # Install petsc opt
-RUN cd /opt && git clone --branch v$PETSC_VERSION --depth 1 https://bitbucket.org/petsc/petsc.git
+RUN cd /opt && git clone --branch v$PETSC_VERSION --depth 1 https://gitlab.com/petsc/petsc.git
 
 RUN cd /opt/petsc \
 && wget https://bitbucket.org/likask/mofem-joseph/downloads/netcdf-4.3.3.1.tar.gz \
@@ -148,7 +148,7 @@ LDFLAGS="-L/opt/petsc/arch-linux2-c-opt/lin64/gcc/lib" \
 #--with-cgm=/opt/petsc/$PETSC_ARCH \
 #--enable-irel --enable-fbigeom \
 
-# SLEP opt //solve eigen value problem
+# SLEP opt solve eigen value problem
 #RUN cd /opt && git clone https://bitbucket.org/slepc/slepc && cd /opt/slepc && git checkout tags/v$PETSC_VERSION
 #RUN cd /opt/slepc && PETSC_DIR=/opt/petsc PETSC_ARCH=$PETSC_ARCH ./configure && make SLEPC_DIR=$PWD PETSC_DIR=/opt/petsc PETSC_ARCH=$PETSC_ARCH
 
