@@ -253,12 +253,12 @@ protected:
                                     const EntityType type_hi = MBPOLYHEDRON,
                                     const bool master_flag = true) const;
 
+  template<bool MASTER>
   MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &data,
                                   const std::string &field_name,
                                   FENumeredDofEntity_multiIndex &dofs,
                                   const EntityType type_lo = MBVERTEX,
-                                  const EntityType type_hi = MBPOLYHEDRON,
-                                  const bool master_flag = true) const;
+                                  const EntityType type_hi = MBPOLYHEDRON) const;
 
   // ** Indices **
 
@@ -335,10 +335,10 @@ inline MoFEMErrorCode
 ContactPrismElementForcesAndSourcesCore::getEntityRowIndices(
     DataForcesAndSourcesCore &data, const std::string &field_name,
     const EntityType type_lo, const EntityType type_hi) const {
-  return getEntityIndices(data, field_name,
+  return getEntityIndices<MASTER>(data, field_name,
                           const_cast<FENumeredDofEntity_multiIndex &>(
                               numeredEntFiniteElementPtr->getRowsDofs()),
-                          type_lo, type_hi, MASTER);
+                          type_lo, type_hi);
 }
 
 template <bool MASTER>
@@ -346,11 +346,86 @@ inline MoFEMErrorCode
 ContactPrismElementForcesAndSourcesCore::getEntityColIndices(
     DataForcesAndSourcesCore &data, const std::string &field_name,
     const EntityType type_lo, const EntityType type_hi) const {
-  return getEntityIndices(data, field_name,
+  return getEntityIndices<MASTER>(data, field_name,
                           const_cast<FENumeredDofEntity_multiIndex &>(
                               numeredEntFiniteElementPtr->getColsDofs()),
                           type_lo, type_hi, MASTER);
 }
+
+template <bool MASTER>
+MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
+    DataForcesAndSourcesCore &data, const std::string &field_name,
+    FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo,
+    const EntityType type_hi) const {
+  MoFEMFunctionBegin;
+
+  for (EntityType t = type_lo; t != type_hi; ++t) {
+    for (auto &dat : data.dataOnEntities[t]) {
+      dat.getIndices().resize(0, false);
+      dat.getLocalIndices().resize(0, false);
+    }
+  }
+
+  auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+  auto dit = dofs_by_type.lower_bound(boost::make_tuple(field_name, type_lo));
+  if (dit == dofs_by_type.end())
+    MoFEMFunctionReturnHot(0);
+
+  auto hi_dit =
+      dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
+  for (; dit != hi_dit; ++dit) {
+
+    auto &dof = **dit;
+    const EntityType type = dof.getEntType();
+    // must be non const since side has to change since it must be renumbered
+    int side = dof.sideNumberPtr->side_number;
+
+    if ((MASTER && type == MBEDGE && side > 2) ||
+        (MASTER && type == MBTRI && side != 3)) {
+      continue;
+    } else if ((type == MBEDGE && side < 6) || (type == MBTRI && side != 4)) {
+      continue;
+    }
+
+    if (type == MBTRI) {
+      side = 0;
+    }
+
+    if (MASTER && type == MBEDGE) 
+      side = side - 6;
+
+    auto &dat = data.dataOnEntities[type][side];
+
+    const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
+    if (nb_dofs_on_ent) {
+      const int brother_side = dof.sideNumberPtr->brother_side_number;
+      auto &ent_field_indices = dat.getIndices();
+      auto &ent_field_local_indices = dat.getLocalIndices();
+      if (ent_field_indices.empty()) {
+        ent_field_indices.resize(nb_dofs_on_ent, false);
+        ent_field_local_indices.resize(nb_dofs_on_ent, false);
+        std::fill(ent_field_indices.data().begin(),
+                  ent_field_indices.data().end(), -1);
+        std::fill(ent_field_local_indices.data().begin(),
+                  ent_field_local_indices.data().end(), -1);
+      }
+      const int idx = dof.getEntDofIdx();
+      ent_field_indices[idx] = dof.getPetscGlobalDofIdx();
+      ent_field_local_indices[idx] = dof.getPetscLocalDofIdx();
+      if (brother_side != -1) {
+        auto &dat_brother = data.dataOnEntities[type][brother_side];
+        dat_brother.getIndices().resize(nb_dofs_on_ent, false);
+        dat_brother.getLocalIndices().resize(nb_dofs_on_ent, false);
+        dat_brother.getIndices()[idx] = dat.getIndices()[idx];
+        dat_brother.getLocalIndices()[idx] = dat.getLocalIndices()[idx];
+      }
+    }
+
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 
 } // namespace MoFEM
 
