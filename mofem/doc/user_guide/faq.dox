@@ -332,7 +332,7 @@ If in docker you have following error
 Setting in command line
 \code
 export OMPI_MCA_btl_vader_single_copy_mechanism=none
-\endcod
+\endcode
 will fix the problem.
 
 \subsection debugging_in_docker How to make debugging in docker?

@@ -1,0 +1,73 @@
+cat > script.cmake << EOF
+
+set(GID_SOURCE_REPO "\$ENV{WORKSPACE}")
+set(CTEST_SOURCE_DIRECTORY "\${GID_SOURCE_REPO}")
+set(CTEST_BINARY_DIRECTORY "\$ENV{WORKSPACE}/build")
+
+set(CTEST_SITE "Jenkins")
+set(CTEST_BRANCH "\$ENV{GIT_BRANCH}")
+set(CTEST_BUILD_NAME "Linux-Jenkins-Branch(\${CTEST_BRANCH})")
+
+find_program(CTEST_CONFIGURE_COMMAND NAMES spconfig.py HINTS \${CTEST_BINARY_DIRECTORY}  NO_DEFAULT_PATH)
+find_program(CTEST_BUILD_COMMAND NAMES make)
+find_program(CTEST_COVERAGE_COMMAND NAMES gcov)
+
+#Ctest time out
+set(CTEST_TEST_TIMEOUT 12000)
+
+ctest_start(Continuous)
+
+ctest_configure(
+  OPTIONS "-DSOURCE_DIR=\${CTEST_SOURCE_DIRECTORY} -DWITHCOVERAGE=ON -DMOFEM_UM_BUILD_TESTS=ON -DMOFEM_DIR=${WORKSPACE}/build/um_view")
+
+ctest_build()
+#if(CTEST_MEMORYCHECK_COMMAND)
+#  ctest_memcheck()
+#endif(CTEST_MEMORYCHECK_COMMAND)
+ctest_test()
+if(CTEST_COVERAGE_COMMAND)
+  ctest_coverage()
+endif(CTEST_COVERAGE_COMMAND)
+ctest_submit()
+
+EOF
+
+#if [ ! $GIT_COMMIT == $GIT_PREVIOUS_COMMIT ]; then
+
+  SPACK_ROOT=/var/lib/jenkins/workspace/SpackBuild
+  CORE_WORKSPACE=/var/lib/jenkins/workspace/SpackBuildDevelopBranch
+  
+  if [ ! -f "$SPACK_ROOT/lock_spack" ]; then
+  
+    mkdir -p build
+    cd build
+    
+    if [ ! -f "install_hash" ]; then
+    
+    	. $SPACK_ROOT/share/spack/setup-env.sh
+      
+  	  	CORE_INSTALL_HASH=`cat $CORE_WORKSPACE/build/install_hash`
+        
+  		cd $CORE_WORKSPACE/build
+ 		make install
+  		
+        cd $WORKSPACE/build
+  		spack view --verbose symlink -i ${WORKSPACE}/build/um_view /$CORE_INSTALL_HASH
+
+    	spack setup mofem-cephas@develop copy_user_modules=False build_type=Debug
+        
+      	$WORKSPACE/build/spconfig.py \
+        	-DSOURCE_DIR=$WORKSPACE \
+        	-DMOFEM_UM_BUILD_TESTS=ON -DWITHCOVERAGE=ON \
+        	-DMOFEM_DIR=$WORKSPACE/build/um_view \
+        	$WORKSPACE
+        
+    	grep CMAKE_INSTALL_PREFIX CMakeCache.txt |\
+    	sed 's/.*mofem-users-modules-develop-//' |\
+    	tee install_hash
+    fi
+
+  fi
+
+#fi
+

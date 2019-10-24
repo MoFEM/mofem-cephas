@@ -149,6 +149,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   fi
  
   # Add mirror
+  spack mirror remove mofem_mirror || true
   spack mirror add mofem_mirror $SPACK_MIRROR_DIR
 
   # Add command to configuration file .bash_profile
