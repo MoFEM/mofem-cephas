@@ -20,8 +20,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-using namespace boost::numeric;
-
 #ifndef __CONTACTPRISMELEMENTFORCESANDSURCESCORE_HPP__
 #define __CONTACTPRISMELEMENTFORCESANDSURCESCORE_HPP__
 
@@ -235,19 +233,19 @@ protected:
    */
   MoFEMErrorCode loopOverOperators();
 
+  template<bool MASTER>
   inline MoFEMErrorCode
   getEntityRowIndices(DataForcesAndSourcesCore &data,
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
-                      const EntityType type_hi = MBPOLYHEDRON,
-                      const bool master_flag = true) const;
+                      const EntityType type_hi = MBPOLYHEDRON) const;
 
+  template<bool MATER>
   inline MoFEMErrorCode
   getEntityColIndices(DataForcesAndSourcesCore &data,
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
-                      const EntityType type_hi = MBPOLYHEDRON,
-                      const bool master_flag = true) const;
+                      const EntityType type_hi = MBPOLYHEDRON) const;
 
   MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &data,
                                     const std::string &field_name,
@@ -272,14 +270,14 @@ protected:
                                  const bool &master_flag) const;
 
   /// \brief get row node indices from FENumeredDofEntity_multiIndex
+  template<bool MASTER>
   MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name,
-                                    const bool &master_flag) const;
+                                    const std::string &field_name) const;
 
   /// \brief get col node indices from FENumeredDofEntity_multiIndex
+  template<bool MASTER>
   MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name,
-                                    const bool &master_flag) const;
+                                    const std::string &field_name) const;
 
   /**
    * \brief Get field data on nodes
@@ -309,29 +307,50 @@ protected:
                                    const bool &master_flag) const;
 };
 
+template <bool MASTER>
+MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getRowNodesIndices(
+    DataForcesAndSourcesCore &data, const std::string &field_name) const {
+  return getNodesIndices(field_name,
+                         const_cast<FENumeredDofEntity_multiIndex &>(
+                             numeredEntFiniteElementPtr->getRowsDofs()),
+                         data.dataOnEntities[MBVERTEX][0].getIndices(),
+                         data.dataOnEntities[MBVERTEX][0].getLocalIndices(),
+                         MASTER);
+}
+
+/// \brief get col node indices from FENumeredDofEntity_multiIndex
+template <bool MASTER>
+MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getColNodesIndices(
+    DataForcesAndSourcesCore &data, const std::string &field_name) const {
+  return getNodesIndices(field_name,
+                         const_cast<FENumeredDofEntity_multiIndex &>(
+                             numeredEntFiniteElementPtr->getColsDofs()),
+                         data.dataOnEntities[MBVERTEX][0].getIndices(),
+                         data.dataOnEntities[MBVERTEX][0].getLocalIndices(),
+                         MASTER);
+}
+
+template <bool MASTER>
 inline MoFEMErrorCode
 ContactPrismElementForcesAndSourcesCore::getEntityRowIndices(
     DataForcesAndSourcesCore &data, const std::string &field_name,
-    const EntityType type_lo = MBVERTEX,
-    const EntityType type_hi = MBPOLYHEDRON,
-    const bool master_flag = true) const {
+    const EntityType type_lo, const EntityType type_hi) const {
   return getEntityIndices(data, field_name,
                           const_cast<FENumeredDofEntity_multiIndex &>(
                               numeredEntFiniteElementPtr->getRowsDofs()),
-                          type_lo, type_hi, master_flag);
-  }
+                          type_lo, type_hi, MASTER);
+}
 
-  inline MoFEMErrorCode
-  ContactPrismElementForcesAndSourcesCore::getEntityColIndices(
-      DataForcesAndSourcesCore &data, const std::string &field_name,
-      const EntityType type_lo = MBVERTEX,
-      const EntityType type_hi = MBPOLYHEDRON,
-      const bool master_flag = true) const {
-    return getEntityIndices(data, field_name,
-                            const_cast<FENumeredDofEntity_multiIndex &>(
-                                numeredEntFiniteElementPtr->getColsDofs()),
-                            type_lo, type_hi, master_flag);
-  }
+template <bool MASTER>
+inline MoFEMErrorCode
+ContactPrismElementForcesAndSourcesCore::getEntityColIndices(
+    DataForcesAndSourcesCore &data, const std::string &field_name,
+    const EntityType type_lo, const EntityType type_hi) const {
+  return getEntityIndices(data, field_name,
+                          const_cast<FENumeredDofEntity_multiIndex &>(
+                              numeredEntFiniteElementPtr->getColsDofs()),
+                          type_lo, type_hi, MASTER);
+}
 
 } // namespace MoFEM
 

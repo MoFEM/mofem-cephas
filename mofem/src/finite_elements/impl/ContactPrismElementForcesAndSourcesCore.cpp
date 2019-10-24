@@ -486,15 +486,15 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
             CHKERR getEntityFieldData(*op_slave_data[ss], field_name, MBEDGE,
                                       MBPOLYHEDRON, false);
             if (!ss) {
-              CHKERR getEntityRowIndices(*op_master_data[ss], field_name,
+              CHKERR getEntityRowIndices<true>(*op_master_data[ss], field_name,
                                          MBEDGE);
-              CHKERR getEntityRowIndices(*op_slave_data[ss], field_name, MBEDGE,
-                                         MBPOLYHEDRON, false);
+              CHKERR getEntityRowIndices<false>(*op_slave_data[ss], field_name,
+                                                MBEDGE, MBPOLYHEDRON);
             } else {
-              CHKERR getEntityColIndices(*op_master_data[ss], field_name,
+              CHKERR getEntityColIndices<true>(*op_master_data[ss], field_name,
                                          MBEDGE);
-              CHKERR getEntityColIndices(*op_slave_data[ss], field_name, MBEDGE,
-                                         MBPOLYHEDRON, false);
+              CHKERR getEntityColIndices<false>(*op_slave_data[ss], field_name,
+                                                MBEDGE, MBPOLYHEDRON);
             }
             switch (space) {
             case NOSPACE:
@@ -503,15 +503,15 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
               break;
             case H1:
               if (!ss) {
-                CHKERR getRowNodesIndices(*op_master_data[ss], field_name,
-                                          true);
-                CHKERR getRowNodesIndices(*op_slave_data[ss], field_name,
-                                          false);
+                CHKERR getRowNodesIndices<true>(*op_master_data[ss],
+                                                field_name);
+                CHKERR getRowNodesIndices<false>(*op_slave_data[ss],
+                                                 field_name);
               } else {
-                CHKERR getColNodesIndices(*op_master_data[ss], field_name,
-                                          true);
-                CHKERR getColNodesIndices(*op_slave_data[ss], field_name,
-                                          false);
+                CHKERR getColNodesIndices<true>(*op_master_data[ss],
+                                                field_name);
+                CHKERR getColNodesIndices<false>(*op_slave_data[ss],
+                                                 field_name);
               }
               CHKERR getNodesFieldData(*op_master_data[ss], field_name, true);
               CHKERR getNodesFieldData(*op_slave_data[ss], field_name, false);
@@ -820,28 +820,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
   }
 
   MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getRowNodesIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name,
-    const bool &master_flag) const {
-  return getNodesIndices(field_name,
-                         const_cast<FENumeredDofEntity_multiIndex &>(
-                             numeredEntFiniteElementPtr->getRowsDofs()),
-                         data.dataOnEntities[MBVERTEX][0].getIndices(),
-                         data.dataOnEntities[MBVERTEX][0].getLocalIndices(),
-                         master_flag);
-}
-
-MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getColNodesIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name,
-    const bool &master_flag) const {
-  return getNodesIndices(field_name,
-                         const_cast<FENumeredDofEntity_multiIndex &>(
-                             numeredEntFiniteElementPtr->getColsDofs()),
-                         data.dataOnEntities[MBVERTEX][0].getIndices(),
-                         data.dataOnEntities[MBVERTEX][0].getLocalIndices(),
-                         master_flag);
 }
 
 // ** Indices **
