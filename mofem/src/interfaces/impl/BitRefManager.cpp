@@ -940,10 +940,6 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
     children_ents.insert_list(children_ents_vec.begin(),
                               children_ents_vec.end());
   }
-  CHKERR filterEntitiesByRefLevel(child_bit, child_mask, children_ents, verb);
-  if (verb >= VERY_VERBOSE) {
-    std::cerr << "Children: " << endl << parent << std::endl;
-  }
   CHKERR moab.add_entities(child, children_ents);
   MoFEMFunctionReturn(0);
 }
