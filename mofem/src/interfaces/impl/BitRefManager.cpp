@@ -916,17 +916,29 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
           ->get<Composite_ParentEnt_And_EntType_mi_tag>();
   Range children_ents;
+
+  auto check = [&child_bit, &child_mask](const auto &entity_bit) -> bool {
+    return
+
+        (entity_bit & child_bit).any() &&
+
+        ((entity_bit & child_mask) == entity_bit);
+  };
+  std::vector<EntityHandle> children_ents_vec;
+
   for (Range::pair_iterator pit = ents.pair_begin(); pit != ents.pair_end();
        ++pit) {
     const EntityHandle f = pit->first;
     const EntityHandle s = pit->second;
     auto lo_mit = ref_ents.lower_bound(boost::make_tuple(child_type, f));
     auto hi_mit = ref_ents.upper_bound(boost::make_tuple(child_type, s));
-    insertOrdered(children_ents, RefEntExtractor(), lo_mit, hi_mit);
-  }
-  CHKERR filterEntitiesByRefLevel(child_bit, child_mask, children_ents, verb);
-  if (verb >= VERY_VERBOSE) {
-    std::cerr << "Children: " << endl << parent << std::endl;
+    children_ents_vec.clear();
+    children_ents_vec.reserve(std::distance(lo_mit, hi_mit));
+    for (; lo_mit != hi_mit; ++lo_mit)
+      if (check(*(*lo_mit)->getBitRefLevelPtr()))
+        children_ents_vec.emplace_back((*lo_mit)->getRefEnt());
+    children_ents.insert_list(children_ents_vec.begin(),
+                              children_ents_vec.end());
   }
   CHKERR moab.add_entities(child, children_ents);
   MoFEMFunctionReturn(0);
