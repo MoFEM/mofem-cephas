@@ -349,7 +349,7 @@ ContactPrismElementForcesAndSourcesCore::getEntityColIndices(
   return getEntityIndices<MASTER>(data, field_name,
                           const_cast<FENumeredDofEntity_multiIndex &>(
                               numeredEntFiniteElementPtr->getColsDofs()),
-                          type_lo, type_hi, MASTER);
+                          type_lo, type_hi);
 }
 
 template <bool MASTER>
@@ -370,11 +370,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
   auto dit = dofs_by_type.lower_bound(boost::make_tuple(field_name, type_lo));
   if (dit == dofs_by_type.end())
     MoFEMFunctionReturnHot(0);
-
   auto hi_dit =
       dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
   for (; dit != hi_dit; ++dit) {
-
     auto &dof = **dit;
     const EntityType type = dof.getEntType();
     // must be non const since side has to change since it must be renumbered
@@ -383,7 +381,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
     if ((MASTER && type == MBEDGE && side > 2) ||
         (MASTER && type == MBTRI && side != 3)) {
       continue;
-    } else if ((type == MBEDGE && side < 6) || (type == MBTRI && side != 4)) {
+    } else if ((!MASTER && type == MBEDGE && side < 6) ||
+               (!MASTER && type == MBTRI && side != 4)) {
       continue;
     }
 
@@ -391,8 +390,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
       side = 0;
     }
 
-    if (MASTER && type == MBEDGE) 
+    if (MASTER == 0 && type == MBEDGE) {
       side = side - 6;
+    }
 
     auto &dat = data.dataOnEntities[type][side];
 
@@ -420,7 +420,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
         dat_brother.getLocalIndices()[idx] = dat.getLocalIndices()[idx];
       }
     }
-
   }
 
   MoFEMFunctionReturn(0);

@@ -496,6 +496,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
               CHKERR getEntityColIndices<false>(*op_slave_data[ss], field_name,
                                                 MBEDGE, MBPOLYHEDRON);
             }
+            
             switch (space) {
             case NOSPACE:
               SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
