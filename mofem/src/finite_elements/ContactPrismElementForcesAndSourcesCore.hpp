@@ -175,7 +175,6 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     getContactPrismElementForcesAndSourcesCore() {
       return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE);
     }
-
   };
 
   MoFEMErrorCode operator()();
@@ -200,8 +199,8 @@ protected:
    */
   const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
       dataOnMaster;
-  const std::array <
-      boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE> dataOnSlave;
+  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
+      dataOnSlave;
 
   /**
    * @brief Entity data on element entity columns fields
@@ -233,14 +232,14 @@ protected:
    */
   MoFEMErrorCode loopOverOperators();
 
-  template<bool MASTER>
+  template <bool MASTER>
   inline MoFEMErrorCode
   getEntityRowIndices(DataForcesAndSourcesCore &data,
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
                       const EntityType type_hi = MBPOLYHEDRON) const;
 
-  template<bool MATER>
+  template <bool MATER>
   inline MoFEMErrorCode
   getEntityColIndices(DataForcesAndSourcesCore &data,
                       const std::string &field_name,
@@ -253,12 +252,11 @@ protected:
                                     const EntityType type_hi = MBPOLYHEDRON,
                                     const bool master_flag = true) const;
 
-  template<bool MASTER>
-  MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &data,
-                                  const std::string &field_name,
-                                  FENumeredDofEntity_multiIndex &dofs,
-                                  const EntityType type_lo = MBVERTEX,
-                                  const EntityType type_hi = MBPOLYHEDRON) const;
+  template <bool MASTER>
+  MoFEMErrorCode getEntityIndices(
+      DataForcesAndSourcesCore &data, const std::string &field_name,
+      FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo = MBVERTEX,
+      const EntityType type_hi = MBPOLYHEDRON) const;
 
   // ** Indices **
 
@@ -270,12 +268,12 @@ protected:
                                  const bool &master_flag) const;
 
   /// \brief get row node indices from FENumeredDofEntity_multiIndex
-  template<bool MASTER>
+  template <bool MASTER>
   MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
                                     const std::string &field_name) const;
 
   /// \brief get col node indices from FENumeredDofEntity_multiIndex
-  template<bool MASTER>
+  template <bool MASTER>
   MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
                                     const std::string &field_name) const;
 
@@ -335,10 +333,11 @@ inline MoFEMErrorCode
 ContactPrismElementForcesAndSourcesCore::getEntityRowIndices(
     DataForcesAndSourcesCore &data, const std::string &field_name,
     const EntityType type_lo, const EntityType type_hi) const {
-  return getEntityIndices<MASTER>(data, field_name,
-                          const_cast<FENumeredDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getRowsDofs()),
-                          type_lo, type_hi);
+  return getEntityIndices<MASTER>(
+      data, field_name,
+      const_cast<FENumeredDofEntity_multiIndex &>(
+          numeredEntFiniteElementPtr->getRowsDofs()),
+      type_lo, type_hi);
 }
 
 template <bool MASTER>
@@ -346,10 +345,11 @@ inline MoFEMErrorCode
 ContactPrismElementForcesAndSourcesCore::getEntityColIndices(
     DataForcesAndSourcesCore &data, const std::string &field_name,
     const EntityType type_lo, const EntityType type_hi) const {
-  return getEntityIndices<MASTER>(data, field_name,
-                          const_cast<FENumeredDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getColsDofs()),
-                          type_lo, type_hi);
+  return getEntityIndices<MASTER>(
+      data, field_name,
+      const_cast<FENumeredDofEntity_multiIndex &>(
+          numeredEntFiniteElementPtr->getColsDofs()),
+      type_lo, type_hi);
 }
 
 template <bool MASTER>
@@ -392,7 +392,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
   };
 
   for (; dit != hi_dit; ++dit) {
-    
+
     auto &dof = **dit;
     const EntityType type = dof.getEntType();
 
@@ -400,56 +400,46 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
 
       const int side = dof.sideNumberPtr->side_number;
 
-      if(MASTER) {
+      if (MASTER) {
 
         switch (type) {
-          case MBEDGE:
-            if(side < 3)
-              get_indices(dof, type, side);
-            break;
-          case MBTRI:
-            if (side == 3)
-              get_indices(dof, type, 0);
-            break;
-          default:
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Entity type not implemented");
+        case MBEDGE:
+          if (side < 3)
+            get_indices(dof, type, side);
+          break;
+        case MBTRI:
+          if (side == 3)
+            get_indices(dof, type, 0);
+          break;
+        default:
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Entity type not implemented");
         };
 
       } else {
 
         switch (type) {
-          case MBEDGE:
-            if(side > 5)
-              get_indices(dof, type, side - 6);
-            break;
-          case MBTRI:
-            if (side == 4)
-              get_indices(dof, type, 0);
-            break;
-          default:
-            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                    "Entity type not implemented");
+        case MBEDGE:
+          if (side > 5)
+            get_indices(dof, type, side - 6);
+          break;
+        case MBTRI:
+          if (side == 4)
+            get_indices(dof, type, 0);
+          break;
+        default:
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Entity type not implemented");
         };
-
       }
       const int brother_side = dof.sideNumberPtr->brother_side_number;
-      if (brother_side != -1) 
+      if (brother_side != -1)
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
-
-      // if (brother_side != -1) {
-      //   auto &dat_brother = data.dataOnEntities[type][brother_side];
-      //   dat_brother.getIndices().resize(nb_dofs_on_ent, false);
-      //   dat_brother.getLocalIndices().resize(nb_dofs_on_ent, false);
-      //   dat_brother.getIndices()[idx] = dat.getIndices()[idx];
-      //   dat_brother.getLocalIndices()[idx] = dat.getLocalIndices()[idx];
-      // }
     }
   }
 
   MoFEMFunctionReturn(0);
 }
-
 
 } // namespace MoFEM
 
