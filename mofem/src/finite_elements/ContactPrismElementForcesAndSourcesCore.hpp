@@ -394,10 +394,10 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
   for (; dit != hi_dit; ++dit) {
 
     auto &dof = **dit;
-    const EntityType type = dof.getEntType();
 
     if (dof.getNbDofsOnEnt()) {
 
+      const EntityType type = dof.getEntType();
       const int side = dof.sideNumberPtr->side_number;
 
       if (MASTER) {
