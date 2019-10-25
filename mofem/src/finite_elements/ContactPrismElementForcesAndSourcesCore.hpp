@@ -82,70 +82,37 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      * \brief Get operator types
      * @return Return operator type
      */
-    inline int getFaceType() const { return faceType; }
+    inline int getFaceType() const;
 
     /** \brief get face aRea Master
      */
-    inline double getAreaMaster() {
-      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-          ->aRea[0];
-    }
+    inline double getAreaMaster();
 
     /** \brief get face aRea Slave
      */
-    inline double getAreaSlave() {
-      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-          ->aRea[1];
-    }
+    inline double getAreaSlave();
 
-    inline VectorAdaptor getNormalMaster() {
-      double *data =
-          &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-                ->normal[0]);
-      return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
-    }
+    inline VectorAdaptor getNormalMaster();
 
-    inline VectorAdaptor getNormalSlave() {
-      double *data =
-          &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-                ->normal[3]);
-      return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
-    }
+    inline VectorAdaptor getNormalSlave();
 
-    inline MatrixDouble &getGaussPtsMaster() {
-      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-          ->gaussPtsMaster;
-    }
+    inline MatrixDouble &getGaussPtsMaster();
 
-    inline MatrixDouble &getGaussPtsSlave() {
-      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-          ->gaussPtsSlave;
-    }
+    inline MatrixDouble &getGaussPtsSlave();
 
     /** \brief get triangle coordinates
 
       Vector has 9 elements, i.e. coordinates on Master face
 
      */
-    inline VectorDouble getCoordsMaster() {
-      double *data =
-          &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-                ->coords[0]);
-      return VectorAdaptor(9, ublas::shallow_array_adaptor<double>(9, data));
-    }
+    inline VectorDouble getCoordsMaster();
 
     /** \brief get triangle coordinates
 
       Vector has 9 elements, i.e. coordinates on Slave face
 
      */
-
-    inline VectorDouble getCoordsSlave() {
-      double *data =
-          &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-                ->coords[9]);
-      return VectorAdaptor(9, ublas::shallow_array_adaptor<double>(9, data));
-    }
+    inline VectorDouble getCoordsSlave();
 
     /** \brief get coordinates at Gauss pts on full prism.
 
@@ -153,10 +120,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       i.e. coordinates on face Master
 
      */
-    inline MatrixDouble &getCoordsAtGaussPtsMaster() {
-      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-          ->coordsAtGaussPtsMaster;
-    }
+    inline MatrixDouble &getCoordsAtGaussPtsMaster();
 
     /** \brief get coordinates at Gauss pts on full prism.
 
@@ -164,18 +128,13 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
       i.e. coordinates on face Master
 
      */
-    inline MatrixDouble &getCoordsAtGaussPtsSlave() {
-      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-          ->coordsAtGaussPtsSlave;
-    }
+    inline MatrixDouble &getCoordsAtGaussPtsSlave();
 
     /** \brief return pointer to triangle finite element object
      */
     inline const ContactPrismElementForcesAndSourcesCore *
-    getContactPrismElementForcesAndSourcesCore() {
-      return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE);
-    }
-  };
+    getContactPrismElementForcesAndSourcesCore();
+    };
 
   MoFEMErrorCode operator()();
 
@@ -304,6 +263,79 @@ protected:
                                    const std::string &field_name,
                                    const bool &master_flag) const;
 };
+
+inline int
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFaceType() const {
+  return faceType;
+}
+
+inline double
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::getAreaMaster() {
+  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->aRea[0];
+}
+
+inline double
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::getAreaSlave() {
+  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->aRea[1];
+}
+
+inline VectorAdaptor
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::getNormalMaster() {
+  double *data = &(
+      static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->normal[0]);
+  return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
+}
+
+inline VectorAdaptor
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::getNormalSlave() {
+  double *data = &(
+      static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->normal[3]);
+  return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
+}
+
+inline MatrixDouble &
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::getGaussPtsMaster() {
+  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+      ->gaussPtsMaster;
+}
+
+inline MatrixDouble &
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::getGaussPtsSlave() {
+  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+      ->gaussPtsSlave;
+}
+
+inline VectorDouble
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::getCoordsMaster() {
+  double *data = &(
+      static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->coords[0]);
+  return VectorAdaptor(9, ublas::shallow_array_adaptor<double>(9, data));
+}
+
+inline VectorDouble
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::getCoordsSlave() {
+  double *data = &(
+      static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->coords[9]);
+  return VectorAdaptor(9, ublas::shallow_array_adaptor<double>(9, data));
+}
+
+inline MatrixDouble &ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getCoordsAtGaussPtsMaster() {
+  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+      ->coordsAtGaussPtsMaster;
+}
+
+inline MatrixDouble &ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getCoordsAtGaussPtsSlave() {
+  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+      ->coordsAtGaussPtsSlave;
+}
+
+inline const ContactPrismElementForcesAndSourcesCore *
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getContactPrismElementForcesAndSourcesCore() {
+  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE);
+}
 
 template <bool MASTER>
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getRowNodesIndices(
