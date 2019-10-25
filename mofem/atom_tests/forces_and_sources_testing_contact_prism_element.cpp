@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE)
-      SETERRQ(PETSC_COMM_SELF, 1, "rerror -my_file (mesh file not given");
+      SETERRQ(PETSC_COMM_SELF, 1, "error -my_file (mesh file not given");
 
     const char *option;
     option = "";

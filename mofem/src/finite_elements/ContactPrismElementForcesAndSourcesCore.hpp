@@ -372,53 +372,78 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
     MoFEMFunctionReturnHot(0);
   auto hi_dit =
       dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
+
+  auto get_indices = [&data](auto &dof, const auto type, const auto side) {
+    auto &dat = data.dataOnEntities[type][side];
+    auto &ent_field_indices = dat.getIndices();
+    auto &ent_field_local_indices = dat.getLocalIndices();
+    if (ent_field_indices.empty()) {
+      const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
+      ent_field_indices.resize(nb_dofs_on_ent, false);
+      ent_field_local_indices.resize(nb_dofs_on_ent, false);
+      std::fill(ent_field_indices.data().begin(),
+                ent_field_indices.data().end(), -1);
+      std::fill(ent_field_local_indices.data().begin(),
+                ent_field_local_indices.data().end(), -1);
+    }
+    const int idx = dof.getEntDofIdx();
+    ent_field_indices[idx] = dof.getPetscGlobalDofIdx();
+    ent_field_local_indices[idx] = dof.getPetscLocalDofIdx();
+  };
+
   for (; dit != hi_dit; ++dit) {
+    
     auto &dof = **dit;
     const EntityType type = dof.getEntType();
-    // must be non const since side has to change since it must be renumbered
-    int side = dof.sideNumberPtr->side_number;
 
-    if ((MASTER && type == MBEDGE && side > 2) ||
-        (MASTER && type == MBTRI && side != 3)) {
-      continue;
-    } else if ((!MASTER && type == MBEDGE && side < 6) ||
-               (!MASTER && type == MBTRI && side != 4)) {
-      continue;
-    }
+    if (dof.getNbDofsOnEnt()) {
 
-    if (type == MBTRI) {
-      side = 0;
-    }
+      const int side = dof.sideNumberPtr->side_number;
 
-    if (MASTER == 0 && type == MBEDGE) {
-      side = side - 6;
-    }
+      if(MASTER) {
 
-    auto &dat = data.dataOnEntities[type][side];
+        switch (type) {
+          case MBEDGE:
+            if(side < 3)
+              get_indices(dof, type, side);
+            break;
+          case MBTRI:
+            if (side == 3)
+              get_indices(dof, type, 0);
+            break;
+          default:
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Entity type not implemented");
+        };
 
-    const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
-    if (nb_dofs_on_ent) {
+      } else {
+
+        switch (type) {
+          case MBEDGE:
+            if(side > 5)
+              get_indices(dof, type, side - 6);
+            break;
+          case MBTRI:
+            if (side == 4)
+              get_indices(dof, type, 0);
+            break;
+          default:
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Entity type not implemented");
+        };
+
+      }
       const int brother_side = dof.sideNumberPtr->brother_side_number;
-      auto &ent_field_indices = dat.getIndices();
-      auto &ent_field_local_indices = dat.getLocalIndices();
-      if (ent_field_indices.empty()) {
-        ent_field_indices.resize(nb_dofs_on_ent, false);
-        ent_field_local_indices.resize(nb_dofs_on_ent, false);
-        std::fill(ent_field_indices.data().begin(),
-                  ent_field_indices.data().end(), -1);
-        std::fill(ent_field_local_indices.data().begin(),
-                  ent_field_local_indices.data().end(), -1);
-      }
-      const int idx = dof.getEntDofIdx();
-      ent_field_indices[idx] = dof.getPetscGlobalDofIdx();
-      ent_field_local_indices[idx] = dof.getPetscLocalDofIdx();
-      if (brother_side != -1) {
-        auto &dat_brother = data.dataOnEntities[type][brother_side];
-        dat_brother.getIndices().resize(nb_dofs_on_ent, false);
-        dat_brother.getLocalIndices().resize(nb_dofs_on_ent, false);
-        dat_brother.getIndices()[idx] = dat.getIndices()[idx];
-        dat_brother.getLocalIndices()[idx] = dat.getLocalIndices()[idx];
-      }
+      if (brother_side != -1) 
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
+
+      // if (brother_side != -1) {
+      //   auto &dat_brother = data.dataOnEntities[type][brother_side];
+      //   dat_brother.getIndices().resize(nb_dofs_on_ent, false);
+      //   dat_brother.getLocalIndices().resize(nb_dofs_on_ent, false);
+      //   dat_brother.getIndices()[idx] = dat.getIndices()[idx];
+      //   dat_brother.getLocalIndices()[idx] = dat.getLocalIndices()[idx];
+      // }
     }
   }
 
