@@ -206,21 +206,12 @@ protected:
   // ** Indices **
 
   /// \brief get node indices
-  template <bool MASTER>
   MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
                                  FENumeredDofEntity_multiIndex &dofs,
-                                 VectorInt &nodes_indices,
-                                 VectorInt &local_nodes_indices) const;
-
-  /// \brief get row node indices from FENumeredDofEntity_multiIndex
-  template <bool MASTER>
-  MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const;
-
-  /// \brief get col node indices from FENumeredDofEntity_multiIndex
-  template <bool MASTER>
-  MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
-                                    const std::string &field_name) const;
+                                 VectorInt &master_nodes_indices,
+                                 VectorInt &master_local_nodes_indices,
+                                 VectorInt &slave_nodes_indices,
+                                 VectorInt &slave_local_nodes_indices) const;
 
   /**
    * \brief Get field data on nodes
@@ -321,83 +312,6 @@ inline const ContactPrismElementForcesAndSourcesCore *
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::
     getContactPrismElementForcesAndSourcesCore() {
   return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE);
-}
-
-template <bool MASTER>
-MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getRowNodesIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name) const {
-  return getNodesIndices<MASTER>(
-      field_name,
-      const_cast<FENumeredDofEntity_multiIndex &>(
-          numeredEntFiniteElementPtr->getRowsDofs()),
-      data.dataOnEntities[MBVERTEX][0].getIndices(),
-      data.dataOnEntities[MBVERTEX][0].getLocalIndices());
-}
-
-/// \brief get col node indices from FENumeredDofEntity_multiIndex
-template <bool MASTER>
-MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getColNodesIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name) const {
-  return getNodesIndices<MASTER>(
-      field_name,
-      const_cast<FENumeredDofEntity_multiIndex &>(
-          numeredEntFiniteElementPtr->getColsDofs()),
-      data.dataOnEntities[MBVERTEX][0].getIndices(),
-      data.dataOnEntities[MBVERTEX][0].getLocalIndices());
-}
-
-
-template <bool MASTER>
-MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
-    const boost::string_ref field_name, FENumeredDofEntity_multiIndex &dofs,
-    VectorInt &nodes_indices, VectorInt &local_nodes_indices) const {
-  MoFEMFunctionBegin;
-  auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
-  auto tuple = boost::make_tuple(field_name, MBVERTEX);
-  auto dit = dofs_by_type.lower_bound(tuple);
-  auto hi_dit = dofs_by_type.upper_bound(tuple);
-
-  if (dit != hi_dit) {
-
-    const int num_nodes = 3;
-    int max_nb_dofs = 0;
-    const int nb_dofs_on_vert = (*dit)->getNbOfCoeffs();
-    max_nb_dofs = nb_dofs_on_vert * num_nodes;
-    nodes_indices.resize(max_nb_dofs, false);
-    local_nodes_indices.resize(max_nb_dofs, false);
-    if (std::distance(dit, hi_dit) != max_nb_dofs) {
-      std::fill(nodes_indices.begin(), nodes_indices.end(), -1);
-      std::fill(local_nodes_indices.begin(), local_nodes_indices.end(), -1);
-    }
-
-    auto get_indices = [&](auto &dof, const auto side) {
-      const int idx = dof.getPetscGlobalDofIdx();
-      const int local_idx = dof.getPetscLocalDofIdx();
-      const int pos = side * nb_dofs_on_vert + dof.getDofCoeffIdx();
-      nodes_indices[pos] = idx;
-      local_nodes_indices[pos] = local_idx;
-    };
-
-    for (; dit != hi_dit; dit++) {
-      auto &dof = **dit;
-      const int side = dof.sideNumberPtr->side_number;
-
-      if (MASTER && side < 3)
-        get_indices(dof, side);
-      else if (!MASTER && side > 2)
-        get_indices(dof, side - 3);
-
-      const int brother_side = (*dit)->sideNumberPtr->brother_side_number;
-      if (brother_side != -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
-    }
-
-  } else {
-    nodes_indices.resize(0, false);
-    local_nodes_indices.resize(0, false);
-  }
-
-  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM

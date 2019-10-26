@@ -504,21 +504,32 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
               SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                       "unknown space");
               break;
-            case H1:
-              if (!ss) {
-                CHKERR getRowNodesIndices<true>(*op_master_data[ss],
-                                                field_name);
-                CHKERR getRowNodesIndices<false>(*op_slave_data[ss],
-                                                 field_name);
-              } else {
-                CHKERR getColNodesIndices<true>(*op_master_data[ss],
-                                                field_name);
-                CHKERR getColNodesIndices<false>(*op_slave_data[ss],
-                                                 field_name);
-              }
+            case H1: {
+
+              auto get_indices = [&](auto &master, auto &slave, auto &dofs) {
+                return getNodesIndices(
+                    field_name, dofs,
+                    master.dataOnEntities[MBVERTEX][0].getIndices(),
+                    master.dataOnEntities[MBVERTEX][0].getLocalIndices(),
+                    slave.dataOnEntities[MBVERTEX][0].getIndices(),
+                    slave.dataOnEntities[MBVERTEX][0].getLocalIndices());
+              };
+
+              if (!ss)
+                CHKERR get_indices(
+                    *op_master_data[ss], *op_slave_data[ss],
+                    const_cast<FENumeredDofEntity_multiIndex &>(
+                        numeredEntFiniteElementPtr->getRowsDofs()));
+              else
+                CHKERR get_indices(
+                    *op_master_data[ss], *op_slave_data[ss],
+                    const_cast<FENumeredDofEntity_multiIndex &>(
+                        numeredEntFiniteElementPtr->getColsDofs()));
+                
               CHKERR getNodesFieldData(*op_master_data[ss], field_name, true);
               CHKERR getNodesFieldData(*op_slave_data[ss], field_name, false);
-              break;
+
+            } break;
             case HCURL:
             case HDIV:
               break;
@@ -950,5 +961,74 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
 
   MoFEMFunctionReturn(0);
 }
+
+MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
+    const boost::string_ref field_name, FENumeredDofEntity_multiIndex &dofs,
+    VectorInt &master_nodes_indices, VectorInt &master_local_nodes_indices,
+    VectorInt &slave_nodes_indices,
+    VectorInt &slave_local_nodes_indices) const {
+  MoFEMFunctionBegin;
+
+  auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+  auto tuple = boost::make_tuple(field_name, MBVERTEX);
+  auto dit = dofs_by_type.lower_bound(tuple);
+  auto hi_dit = dofs_by_type.upper_bound(tuple);
+
+  master_nodes_indices.resize(0, false);
+  master_local_nodes_indices.resize(0, false);
+  slave_nodes_indices.resize(0, false);
+  slave_local_nodes_indices.resize(0, false);
+
+  if (dit != hi_dit) {
+
+    const int num_nodes = 3;
+    int max_nb_dofs = 0;
+    const int nb_dofs_on_vert = (*dit)->getNbOfCoeffs();
+    max_nb_dofs = nb_dofs_on_vert * num_nodes;
+
+    auto set_vec_size = [&](auto &nodes_indices, auto &local_nodes_indices) {
+      nodes_indices.resize(max_nb_dofs, false);
+      local_nodes_indices.resize(max_nb_dofs, false);
+      if (std::distance(dit, hi_dit) != max_nb_dofs) {
+        std::fill(nodes_indices.begin(), nodes_indices.end(), -1);
+        std::fill(local_nodes_indices.begin(), local_nodes_indices.end(), -1);
+      }
+    };
+
+    set_vec_size(master_nodes_indices, master_local_nodes_indices);
+    set_vec_size(slave_nodes_indices, slave_local_nodes_indices);    
+
+    auto get_indices = [&](auto &nodes_indices, auto &local_nodes_indices,
+                           auto &dof, const auto side) {
+      const int idx = dof.getPetscGlobalDofIdx();
+      const int local_idx = dof.getPetscLocalDofIdx();
+      const int pos = side * nb_dofs_on_vert + dof.getDofCoeffIdx();
+      nodes_indices[pos] = idx;
+      local_nodes_indices[pos] = local_idx;
+    };
+
+    for (; dit != hi_dit; dit++) {
+      auto &dof = **dit;
+      const int side = dof.sideNumberPtr->side_number;
+
+      if (side < 3)
+        get_indices(master_nodes_indices, master_local_nodes_indices, dof,
+                    side);
+      else if (side > 2)
+        get_indices(slave_nodes_indices, slave_local_nodes_indices, dof,
+                    side - 3);
+      else
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
+
+      const int brother_side = (*dit)->sideNumberPtr->brother_side_number;
+      if (brother_side != -1)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
+    }
+
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 
 } // namespace MoFEM
