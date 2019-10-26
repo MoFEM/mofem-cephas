@@ -485,17 +485,19 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
             CHKERR getEntityFieldData(*op_master_data[ss], field_name, MBEDGE);
             CHKERR getEntityFieldData(*op_slave_data[ss], field_name, MBEDGE,
                                       MBPOLYHEDRON, false);
-            if (!ss) {
-              CHKERR getEntityRowIndices<true>(*op_master_data[ss], field_name,
-                                         MBEDGE);
-              CHKERR getEntityRowIndices<false>(*op_slave_data[ss], field_name,
-                                                MBEDGE, MBPOLYHEDRON);
-            } else {
-              CHKERR getEntityColIndices<true>(*op_master_data[ss], field_name,
-                                         MBEDGE);
-              CHKERR getEntityColIndices<false>(*op_slave_data[ss], field_name,
-                                                MBEDGE, MBPOLYHEDRON);
-            }
+
+            if (!ss)
+              CHKERR getEntityIndices(
+                  *op_master_data[ss], *op_slave_data[ss], field_name,
+                  const_cast<FENumeredDofEntity_multiIndex &>(
+                      numeredEntFiniteElementPtr->getRowsDofs()),
+                  MBEDGE);
+            else
+              CHKERR getEntityIndices(
+                  *op_master_data[ss], *op_slave_data[ss], field_name,
+                  const_cast<FENumeredDofEntity_multiIndex &>(
+                      numeredEntFiniteElementPtr->getColsDofs()),
+                  MBEDGE);
 
             switch (space) {
             case NOSPACE:
@@ -860,6 +862,90 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
   } else {
     nodes_data.resize(0, false);
     nodes_dofs.resize(0, false);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
+    DataForcesAndSourcesCore &master_data, DataForcesAndSourcesCore &slave_data,
+    const std::string &field_name, FENumeredDofEntity_multiIndex &dofs,
+    const EntityType type_lo, const EntityType type_hi) const {
+  MoFEMFunctionBegin;
+
+  auto clear_data = [type_lo, type_hi](auto &data) {
+    for (EntityType t = type_lo; t != type_hi; ++t) {
+      for (auto &d : data.dataOnEntities[t]) {
+        d.getIndices().resize(0, false);
+        d.getLocalIndices().resize(0, false);
+      }
+    }
+  };
+
+  clear_data(master_data);
+  clear_data(slave_data);
+
+  auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+  auto dit = dofs_by_type.lower_bound(boost::make_tuple(field_name, type_lo));
+  if (dit == dofs_by_type.end())
+    MoFEMFunctionReturnHot(0);
+  auto hi_dit =
+      dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
+
+  auto get_indices = [&](auto &data, auto &dof, const auto type,
+                         const auto side) {
+    auto &dat = data.dataOnEntities[type][side];
+    auto &ent_field_indices = dat.getIndices();
+    auto &ent_field_local_indices = dat.getLocalIndices();
+    if (ent_field_indices.empty()) {
+      const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
+      ent_field_indices.resize(nb_dofs_on_ent, false);
+      ent_field_local_indices.resize(nb_dofs_on_ent, false);
+      std::fill(ent_field_indices.data().begin(),
+                ent_field_indices.data().end(), -1);
+      std::fill(ent_field_local_indices.data().begin(),
+                ent_field_local_indices.data().end(), -1);
+    }
+    const int idx = dof.getEntDofIdx();
+    ent_field_indices[idx] = dof.getPetscGlobalDofIdx();
+    ent_field_local_indices[idx] = dof.getPetscLocalDofIdx();
+  };
+
+  for (; dit != hi_dit; ++dit) {
+
+    auto &dof = **dit;
+
+    if (dof.getNbDofsOnEnt()) {
+
+      const EntityType type = dof.getEntType();
+      const int side = dof.sideNumberPtr->side_number;
+
+      switch (type) {
+      case MBEDGE:
+
+        if (side < 3)
+          get_indices(master_data, dof, type, side);
+        else if (side > 5)
+          get_indices(slave_data, dof, type, side - 6);
+
+        break;
+      case MBTRI:
+
+        if (side == 3)
+          get_indices(master_data, dof, type, 0);
+        if (side == 4)
+          get_indices(slave_data, dof, type, 0);
+
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Entity type not implemented");
+      };
+
+      const int brother_side = dof.sideNumberPtr->brother_side_number;
+      if (brother_side != -1)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
+    }
   }
 
   MoFEMFunctionReturn(0);
