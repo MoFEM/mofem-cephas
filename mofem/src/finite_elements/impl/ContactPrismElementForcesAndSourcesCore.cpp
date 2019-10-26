@@ -515,6 +515,22 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                     slave.dataOnEntities[MBVERTEX][0].getLocalIndices());
               };
 
+              auto get_data = [&](DataForcesAndSourcesCore &master_data,
+                                  DataForcesAndSourcesCore &slave_data) {
+                return getNodesFieldData(
+                    field_name,
+                    const_cast<FEDofEntity_multiIndex &>(
+                        numeredEntFiniteElementPtr->getDataDofs()),
+                    master_data.dataOnEntities[MBVERTEX][0].getFieldData(),
+                    slave_data.dataOnEntities[MBVERTEX][0].getFieldData(),
+                    master_data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
+                    slave_data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
+                    master_data.dataOnEntities[MBVERTEX][0].getSpace(),
+                    slave_data.dataOnEntities[MBVERTEX][0].getSpace(),
+                    master_data.dataOnEntities[MBVERTEX][0].getBase(),
+                    slave_data.dataOnEntities[MBVERTEX][0].getBase());
+              };
+
               if (!ss)
                 CHKERR get_indices(
                     *op_master_data[ss], *op_slave_data[ss],
@@ -526,22 +542,12 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                     const_cast<FENumeredDofEntity_multiIndex &>(
                         numeredEntFiniteElementPtr->getColsDofs()));
                 
-              CHKERR getNodesFieldData(*op_master_data[ss], field_name, true);
-              CHKERR getNodesFieldData(*op_slave_data[ss], field_name, false);
+              CHKERR get_data(*op_master_data[ss], *op_slave_data[ss]);
 
             } break;
             case HCURL:
             case HDIV:
-              break;
             case L2:
-              switch (type) {
-              case MBVERTEX:
-                CHKERR getNodesFieldData(*op_master_data[ss], field_name, true);
-                CHKERR getNodesFieldData(*op_slave_data[ss], field_name, false);
-                break;
-              default:
-                break;
-              }
               break;
             case NOFIELD:
               if (!getNinTheLoop()) {
@@ -765,28 +771,22 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
 }
 
 
-// ** Indices **
-
-MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
-    DataForcesAndSourcesCore &data, const std::string &field_name,
-    const bool &master_flag) const {
-  return getNodesFieldData(field_name,
-                           const_cast<FEDofEntity_multiIndex &>(
-                               numeredEntFiniteElementPtr->getDataDofs()),
-                           data.dataOnEntities[MBVERTEX][0].getFieldData(),
-                           data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
-                           data.dataOnEntities[MBVERTEX][0].getSpace(),
-                           data.dataOnEntities[MBVERTEX][0].getBase(),
-                           master_flag);
-}
-
-// ** Data **
-
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
     const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
-    VectorDouble &nodes_data, VectorDofs &nodes_dofs, FieldSpace &space,
-    FieldApproximationBase &base, const bool &master_flag) const {
+    VectorDouble &master_nodes_data, VectorDouble &slave_nodes_data,
+    VectorDofs &master_nodes_dofs, VectorDofs &slave_nodes_dofs,
+    FieldSpace &master_space, FieldSpace &slave_space,
+    FieldApproximationBase &master_base,
+    FieldApproximationBase &slave_base) const {
   MoFEMFunctionBegin;
+
+  auto set_zero = [](auto &nodes_data, auto &nodes_dofs) {
+    nodes_data.resize(0, false);
+    nodes_dofs.resize(0, false);
+  };
+  set_zero(master_nodes_data, master_nodes_dofs);
+  set_zero(slave_nodes_data, slave_nodes_dofs);
+
   auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Type_mi_tag>();
   auto tuple = boost::make_tuple(field_name, MBVERTEX);
   auto dit = dofs_by_name_and_type.lower_bound(tuple);
@@ -797,83 +797,51 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
 
   if (dit != hi_dit) {
     auto &first_dof = **dit;
-    space = first_dof.getSpace();
-    base = first_dof.getApproxBase();
-    constexpr int num_nodes = 3;
     const int nb_dof_idx = first_dof.getNbOfCoeffs();
-    const int max_nb_dofs = nb_dof_idx * num_nodes;
-    nodes_data.resize(max_nb_dofs, false);
-    nodes_dofs.resize(max_nb_dofs, false);
-    nodes_data.clear();
+
+    auto init_set = [&](auto &nodes_data, auto &nodes_dofs, auto &space,
+                        auto &base) {
+      constexpr int num_nodes = 3;
+      const int max_nb_dofs = nb_dof_idx * num_nodes;
+      space = first_dof.getSpace();
+      base = first_dof.getApproxBase();
+      nodes_data.resize(max_nb_dofs, false);
+      nodes_dofs.resize(max_nb_dofs, false);
+      nodes_data.clear();
+    };
+
+    init_set(master_nodes_data, master_nodes_dofs, master_space, master_base);
+    init_set(slave_nodes_data, slave_nodes_dofs, slave_space, slave_base);
 
     std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
     for (; dit != hi_dit;) {
       const auto &dof_ptr = *dit;
       const auto &dof = *dof_ptr;
       const auto &sn = *dof.sideNumberPtr;
-      int side_number = sn.side_number;
-      const int brother_side_number = sn.brother_side_number;
+      int side = sn.side_number;
 
-      if (master_flag == 1 && side_number > 2) {
+      auto set_data = [&](auto &nodes_data, auto &nodes_dofs, int pos) {
+        auto ent_filed_data_vec = dof.getEntFieldData();
         for (int ii = 0; ii != nb_dof_idx; ++ii) {
-          ++dit;
-        }
-        continue;
-      } else if (master_flag == 0 && side_number < 3) {
-        for (int ii = 0; ii != nb_dof_idx; ++ii) {
-          ++dit;
-        }
-        continue;
-      }
-
-      if (master_flag == 0) {
-        side_number = side_number - 3;
-      }
-
-      if (brother_side_number != -1)
-        brother_dofs_vec.emplace_back(dof_ptr);
-
-      int pos = side_number * nb_dof_idx;
-      auto ent_filed_data_vec = dof.getEntFieldData();
-      for (int ii = 0; ii != nb_dof_idx; ++ii) {
-        nodes_data[pos] = ent_filed_data_vec[ii];
-        nodes_dofs[pos] = *dit;
-        ++pos;
-        ++dit;
-      }
-    }
-
-    for (auto &dof_ptr : brother_dofs_vec) {
-      if (const auto d = dof_ptr.lock()) {
-        const auto &sn = d->sideNumberPtr;
-        int side_number = sn->side_number;
-        const int brother_side_number = sn->brother_side_number;
-
-        if (master_flag == 1 && side_number > 2) {
-          continue;
-        } else if (master_flag == 0 && side_number < 3) {
-          continue;
-        }
-
-        if (master_flag == 0) {
-          side_number = side_number - 3;
-        }
-
-        int pos = side_number * nb_dof_idx;
-        int brother_pos = brother_side_number * nb_dof_idx;
-        for (int ii = 0; ii != nb_dof_idx; ++ii) {
-          nodes_data[brother_pos] = nodes_data[pos];
-          nodes_dofs[brother_pos] = nodes_dofs[pos];
+          nodes_data[pos] = ent_filed_data_vec[ii];
+          nodes_dofs[pos] = *dit;
           ++pos;
-          ++brother_pos;
+          ++dit;
         }
-      }
+      };
+
+      if (side < 3)
+        set_data(master_nodes_data, master_nodes_dofs, side * nb_dof_idx);
+      else
+        set_data(slave_nodes_data, slave_nodes_dofs, (side - 3) * nb_dof_idx);
+
+      const int brother_side = sn.brother_side_number;
+      if (brother_side != -1)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+
     }
 
-  } else {
-    nodes_data.resize(0, false);
-    nodes_dofs.resize(0, false);
-  }
+  } 
 
   MoFEMFunctionReturn(0);
 }

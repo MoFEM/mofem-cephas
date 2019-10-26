@@ -205,7 +205,6 @@ protected:
 
   // ** Indices **
 
-  /// \brief get node indices
   MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
                                  FENumeredDofEntity_multiIndex &dofs,
                                  VectorInt &master_nodes_indices,
@@ -213,32 +212,17 @@ protected:
                                  VectorInt &slave_nodes_indices,
                                  VectorInt &slave_local_nodes_indices) const;
 
-  /**
-   * \brief Get field data on nodes
-   * @param  field_name Name of field
-   * @param  dofs       Dofs (element) multi index
-   * @param  nodes_data Returned DOFs values
-   * @param  nodes_dofs Vector of pointers to DOFs data structure
-   * @param  space      Get space on nodes (Only H! is valid)
-   * @param  base       Get base on nodes
-   * @return            Error code
-   */
   MoFEMErrorCode getNodesFieldData(const boost::string_ref field_name,
                                    FEDofEntity_multiIndex &dofs,
-                                   VectorDouble &nodes_data,
-                                   VectorDofs &nodes_dofs, FieldSpace &space,
-                                   FieldApproximationBase &base,
-                                   const bool &master_flag) const;
+                                   VectorDouble &master_nodes_data,
+                                   VectorDouble &slave_nodes_data,
+                                   VectorDofs &master_nodes_dofs,
+                                   VectorDofs &slave_nodes_dofs,
+                                   FieldSpace &master_space,
+                                   FieldSpace &slave_space,
+                                   FieldApproximationBase &master_base,
+                                   FieldApproximationBase &slave_base) const;
 
-  /**
-   * \brief Get data on nodes
-   * @param  data       Data structure
-   * @param  field_name Field name
-   * @return            Error code
-   */
-  MoFEMErrorCode getNodesFieldData(DataForcesAndSourcesCore &data,
-                                   const std::string &field_name,
-                                   const bool &master_flag) const;
 };
 
 inline int
