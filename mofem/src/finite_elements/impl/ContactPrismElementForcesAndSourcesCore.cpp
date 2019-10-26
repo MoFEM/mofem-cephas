@@ -389,9 +389,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
   MoFEMFunctionBegin;
 
   const EntityType type = numeredEntFiniteElementPtr->getEntType();
-  const UserDataOperator::OpType types[2] = {UserDataOperator::OPROW,
-                                             UserDataOperator::OPCOL};
-  std::vector<std::string> last_eval_field_name(2);
+  constexpr std::array<UserDataOperator::OpType, 2> types{
+      UserDataOperator::OPROW, UserDataOperator::OPCOL};
+  std::array<std::string, 2> last_eval_field_name{std::string(), std::string()};
 
   auto oit = opPtrVector.begin();
   auto hi_oit = opPtrVector.end();
@@ -420,7 +420,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
       // Reseat all data which all field dependent
       dataOnMaster[oit->sPace]->resetFieldDependentData();
       dataOnSlave[oit->sPace]->resetFieldDependentData();
-      last_eval_field_name[0] = "";
 
       // Run operator
       try {
@@ -452,11 +451,10 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
 
         if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
              data_id)
-                .none()) {
+                .none()) 
           SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "no data field < %s > on finite element < %s >",
                    field_name.c_str(), feName.c_str());
-        }
 
         if (oit->getOpType() & types[ss] ||
             oit->getOpType() & UserDataOperator::OPROWCOL) {
