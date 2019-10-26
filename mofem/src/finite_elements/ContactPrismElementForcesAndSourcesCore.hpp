@@ -191,19 +191,17 @@ protected:
    */
   MoFEMErrorCode loopOverOperators();
 
-  MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &data,
+  MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &master_data,
+                                    DataForcesAndSourcesCore &slave_data,
                                     const std::string &field_name,
                                     const EntityType type_lo = MBVERTEX,
-                                    const EntityType type_hi = MBPOLYHEDRON,
-                                    const bool master_flag = true) const;
+                                    const EntityType type_hi = MBPOLYHEDRON) const;
 
   MoFEMErrorCode getEntityIndices(
       DataForcesAndSourcesCore &master_data,
       DataForcesAndSourcesCore &slave_data, const std::string &field_name,
       FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo = MBVERTEX,
       const EntityType type_hi = MBPOLYHEDRON) const;
-
-  // ** Indices **
 
   MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
                                  FENumeredDofEntity_multiIndex &dofs,

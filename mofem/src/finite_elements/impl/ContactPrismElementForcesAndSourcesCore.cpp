@@ -482,9 +482,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
           }
 
           if (last_eval_field_name[ss] != field_name) {
-            CHKERR getEntityFieldData(*op_master_data[ss], field_name, MBEDGE);
-            CHKERR getEntityFieldData(*op_slave_data[ss], field_name, MBEDGE,
-                                      MBPOLYHEDRON, false);
+            CHKERR getEntityFieldData(*op_master_data[ss],
+                                      *op_slave_data[ss],field_name, MBEDGE);
 
             if (!ss)
               CHKERR getEntityIndices(
@@ -541,7 +540,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                     *op_master_data[ss], *op_slave_data[ss],
                     const_cast<FENumeredDofEntity_multiIndex &>(
                         numeredEntFiniteElementPtr->getColsDofs()));
-                
+
               CHKERR get_data(*op_master_data[ss], *op_slave_data[ss]);
 
             } break;
@@ -669,20 +668,24 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
 }
 
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
-    DataForcesAndSourcesCore &data, const std::string &field_name,
-    const EntityType type_lo, const EntityType type_hi,
-    const bool master_flag) const {
+    DataForcesAndSourcesCore &master_data, DataForcesAndSourcesCore &slave_data,
+    const std::string &field_name, const EntityType type_lo,
+    const EntityType type_hi) const {
   MoFEMFunctionBegin;
 
-  for (EntityType t = type_lo; t != type_hi; ++t) {
-    for (auto &dat : data.dataOnEntities[t]) {
-      dat.getDataOrder() = 0;
-      dat.getBase() = NOBASE;
-      dat.getSpace() = NOSPACE;
-      dat.getFieldData().resize(0, false);
-      dat.getFieldDofs().resize(0, false);
+  auto reset_data = [type_lo, type_hi](auto &data) {
+    for (EntityType t = type_lo; t != type_hi; ++t) {
+      for (auto &dat : data.dataOnEntities[t]) {
+        dat.getDataOrder() = 0;
+        dat.getBase() = NOBASE;
+        dat.getSpace() = NOSPACE;
+        dat.getFieldData().resize(0, false);
+        dat.getFieldDofs().resize(0, false);
+      }
     }
-  }
+  };
+  reset_data(master_data);
+  reset_data(slave_data);
 
   auto &dofs = const_cast<FEDofEntity_multiIndex &>(
       numeredEntFiniteElementPtr->getDataDofs());
@@ -692,84 +695,68 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
     MoFEMFunctionReturnHot(0);
   auto hi_dit =
       dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
-  std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
+
+  auto get_data = [&](auto &data, auto &dof, auto type, auto side) {
+    auto &dat = data.dataOnEntities[type][side];
+    auto &ent_field_dofs = dat.getFieldDofs();
+    auto &ent_field_data = dat.getFieldData();
+    if (ent_field_data.empty()) {
+      dat.getBase() = dof.getApproxBase();
+      dat.getSpace() = dof.getSpace();
+      const int ent_order = dof.getMaxOrder();
+      dat.getDataOrder() =
+          dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+      const auto dof_ent_field_data = dof.getEntFieldData();
+      const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
+      ent_field_data.resize(nb_dofs_on_ent, false);
+      noalias(ent_field_data) = dof.getEntFieldData();
+      ent_field_dofs.resize(nb_dofs_on_ent, false);
+      for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
+        ent_field_dofs[ii] = *dit;
+        ++dit;
+      }
+    }
+  };
+
   for (; dit != hi_dit;) {
 
     auto &dof = **dit;
-    const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
-    if (nb_dofs_on_ent) {
+    if (dof.getNbDofsOnEnt()) {
 
       const EntityType type = dof.getEntType();
-      // must be non const since side has to change since it must be renumbered
-      int side = dof.sideNumberPtr->side_number;
+      const int side = dof.sideNumberPtr->side_number;
 
-      if ((master_flag == 1 && type == MBEDGE && side > 2) ||
-          (master_flag == 1 && type == MBTRI && side != 3)) {
-        for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
-          ++dit;
-        }
-        continue;
-      } else if ((master_flag == 0 && type == MBEDGE && side < 6) ||
-                 (master_flag == 0 && type == MBTRI && side != 4)) {
-        for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
-          ++dit;
-        }
-        continue;
-      }
+      switch (type) {
+      case MBEDGE:
 
-      if (type == MBTRI) {
-        side = 0;
-      }
+        if (side < 3)
+          get_data(master_data, dof, type, side);
+        else if (side > 5)
+          get_data(slave_data, dof, type, side - 6);
 
-      if (master_flag == 0 && type == MBEDGE) {
-        side = side - 6;
-      }
+        break;
+      case MBTRI:
 
-      auto &dat = data.dataOnEntities[type][side];
+        if (side == 3)
+          get_data(master_data, dof, type, 0);
+        if (side == 4)
+          get_data(slave_data, dof, type, 0);
 
-      auto &ent_field_dofs = dat.getFieldDofs();
-      auto &ent_field_data = dat.getFieldData();
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Entity type not implemented");
+      };
+
       const int brother_side = dof.sideNumberPtr->brother_side_number;
       if (brother_side != -1)
-        brother_dofs_vec.emplace_back(*dit);
-
-      if (ent_field_data.empty()) {
-
-        dat.getBase() = dof.getApproxBase();
-        dat.getSpace() = dof.getSpace();
-        const int ent_order = dof.getMaxOrder();
-        dat.getDataOrder() =
-            dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
-        const auto dof_ent_field_data = dof.getEntFieldData();
-        ent_field_data.resize(nb_dofs_on_ent, false);
-        noalias(ent_field_data) = dof.getEntFieldData();
-        ent_field_dofs.resize(nb_dofs_on_ent, false);
-        for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
-          ent_field_dofs[ii] = *dit;
-          ++dit;
-        }
-      }
-    }
-  }
-
-  for (auto &dof_ptr : brother_dofs_vec) {
-    if (auto d = dof_ptr.lock()) {
-      const EntityType type = d->getEntType();
-      const int side = d->sideNumberPtr->side_number;
-      const int brother_side = d->sideNumberPtr->brother_side_number;
-      auto &dat = data.dataOnEntities[type][side];
-      auto &dat_brother = data.dataOnEntities[type][brother_side];
-      dat_brother.getBase() = dat.getBase();
-      dat_brother.getSpace() = dat.getSpace();
-      dat_brother.getDataOrder() = dat.getDataOrder();
-      dat_brother.getFieldData() = dat.getFieldData();
-      dat_brother.getFieldDofs() = dat.getFieldDofs();
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "Case with brother side not implemented");
     }
   }
 
   MoFEMFunctionReturn(0);
 }
-
 
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
     const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
@@ -838,10 +825,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
       const int brother_side = sn.brother_side_number;
       if (brother_side != -1)
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
-
     }
-
-  } 
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -964,7 +949,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
     };
 
     set_vec_size(master_nodes_indices, master_local_nodes_indices);
-    set_vec_size(slave_nodes_indices, slave_local_nodes_indices);    
+    set_vec_size(slave_nodes_indices, slave_local_nodes_indices);
 
     auto get_indices = [&](auto &nodes_indices, auto &local_nodes_indices,
                            auto &dof, const auto side) {
@@ -992,11 +977,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
       if (brother_side != -1)
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
     }
-
   }
 
   MoFEMFunctionReturn(0);
 }
-
 
 } // namespace MoFEM
