@@ -134,7 +134,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline const ContactPrismElementForcesAndSourcesCore *
     getContactPrismElementForcesAndSourcesCore();
-    };
+  };
 
   MoFEMErrorCode operator()();
 
@@ -191,11 +191,12 @@ protected:
    */
   MoFEMErrorCode loopOverOperators();
 
-  MoFEMErrorCode getEntityFieldData(DataForcesAndSourcesCore &master_data,
-                                    DataForcesAndSourcesCore &slave_data,
-                                    const std::string &field_name,
-                                    const EntityType type_lo = MBVERTEX,
-                                    const EntityType type_hi = MBPOLYHEDRON) const;
+  MoFEMErrorCode
+  getEntityFieldData(DataForcesAndSourcesCore &master_data,
+                     DataForcesAndSourcesCore &slave_data,
+                     const std::string &field_name,
+                     const EntityType type_lo = MBVERTEX,
+                     const EntityType type_hi = MBPOLYHEDRON) const;
 
   MoFEMErrorCode getEntityIndices(
       DataForcesAndSourcesCore &master_data,
@@ -210,17 +211,13 @@ protected:
                                  VectorInt &slave_nodes_indices,
                                  VectorInt &slave_local_nodes_indices) const;
 
-  MoFEMErrorCode getNodesFieldData(const boost::string_ref field_name,
-                                   FEDofEntity_multiIndex &dofs,
-                                   VectorDouble &master_nodes_data,
-                                   VectorDouble &slave_nodes_data,
-                                   VectorDofs &master_nodes_dofs,
-                                   VectorDofs &slave_nodes_dofs,
-                                   FieldSpace &master_space,
-                                   FieldSpace &slave_space,
-                                   FieldApproximationBase &master_base,
-                                   FieldApproximationBase &slave_base) const;
-
+  MoFEMErrorCode getNodesFieldData(
+      const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
+      VectorDouble &master_nodes_data, VectorDouble &slave_nodes_data,
+      VectorDofs &master_nodes_dofs, VectorDofs &slave_nodes_dofs,
+      FieldSpace &master_space, FieldSpace &slave_space,
+      FieldApproximationBase &master_base,
+      FieldApproximationBase &slave_base) const;
 };
 
 inline int

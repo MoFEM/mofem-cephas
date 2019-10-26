@@ -482,8 +482,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
           }
 
           if (last_eval_field_name[ss] != field_name) {
-            CHKERR getEntityFieldData(*op_master_data[ss],
-                                      *op_slave_data[ss],field_name, MBEDGE);
+            CHKERR getEntityFieldData(*op_master_data[ss], *op_slave_data[ss],
+                                      field_name, MBEDGE);
 
             if (!ss)
               CHKERR getEntityIndices(
