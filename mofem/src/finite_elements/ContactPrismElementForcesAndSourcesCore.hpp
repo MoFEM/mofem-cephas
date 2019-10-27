@@ -91,7 +91,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     /** \brief get face aRea Slave
      */
     inline double getAreaSlave();
-    
+
     /** \brief get face normal vector to Master face
      */
     inline VectorAdaptor getNormalMaster();
@@ -149,7 +149,8 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 protected:
   std::array<double, 2> aRea; ///< Array storing master and slave faces areas
 
-  VectorDouble normal; ///< vector storing vector normal to master or slave element
+  VectorDouble
+      normal; ///< vector storing vector normal to master or slave element
   VectorDouble coords;
   MatrixDouble coordsAtGaussPtsMaster; ///< matrix storing master Gauss points
                                        ///< coordinates and weights
