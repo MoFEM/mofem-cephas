@@ -91,13 +91,21 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     /** \brief get face aRea Slave
      */
     inline double getAreaSlave();
-
+    
+    /** \brief get face normal vector to Master face
+     */
     inline VectorAdaptor getNormalMaster();
 
+    /** \brief get face normal vector to Slave face
+     */
     inline VectorAdaptor getNormalSlave();
 
+    /** \brief get Gauss point at Master face
+     */
     inline MatrixDouble &getGaussPtsMaster();
 
+    /** \brief get Gauss point at Slave face
+     */
     inline MatrixDouble &getGaussPtsSlave();
 
     /** \brief get triangle coordinates
@@ -139,15 +147,19 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   MoFEMErrorCode operator()();
 
 protected:
-  std::array<double, 2> aRea;
+  std::array<double, 2> aRea; ///< Array storing master and slave faces areas
 
-  VectorDouble normal;
+  VectorDouble normal; ///< vector storing vector normal to master or slave element
   VectorDouble coords;
-  MatrixDouble coordsAtGaussPtsMaster;
-  MatrixDouble coordsAtGaussPtsSlave;
+  MatrixDouble coordsAtGaussPtsMaster; ///< matrix storing master Gauss points
+                                       ///< coordinates and weights
+  MatrixDouble coordsAtGaussPtsSlave;  ///< matrix storing slave Gauss points
+                                       ///< coordinates and weights
 
-  MatrixDouble gaussPtsMaster;
-  MatrixDouble gaussPtsSlave;
+  MatrixDouble gaussPtsMaster; ///< matrix storing master Gauss points
+                               ///< coordinates and weights
+  MatrixDouble gaussPtsSlave;  ///< matrix storing slave Gauss points
+                               ///< coordinates and weights
 
   /**
    * @brief Entity data on element entity rows fields
@@ -191,6 +203,10 @@ protected:
    */
   MoFEMErrorCode loopOverOperators();
 
+  /** \brief if higher order geometry return normals at Gauss pts.
+   *
+   * \param gg gauss point number
+   */
   MoFEMErrorCode
   getEntityFieldData(DataForcesAndSourcesCore &master_data,
                      DataForcesAndSourcesCore &slave_data,
@@ -198,12 +214,32 @@ protected:
                      const EntityType type_lo = MBVERTEX,
                      const EntityType type_hi = MBPOLYHEDRON) const;
 
+  /** \brief function that gets entity indices.
+   *
+   * \param master_data data fot master face
+   * \param slave_data data fot master face
+   * \param field_name field name of interest
+   * \param dofs MultiIndex container keeping FENumeredDofEntity.
+   * \param type_lo lowest dimension entity type to be searched
+   * \param type_hi highest dimension entity type to be searched
+   */
   MoFEMErrorCode getEntityIndices(
       DataForcesAndSourcesCore &master_data,
       DataForcesAndSourcesCore &slave_data, const std::string &field_name,
       FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo = MBVERTEX,
       const EntityType type_hi = MBPOLYHEDRON) const;
 
+  /** \brief function that gets nodes indices.
+   *
+   * \param field_name field name of interest
+   * \param dofs MultiIndex container keeping FENumeredDofEntity.
+   * \param master_nodes_indices vector contining global master nodes indices
+   * \param master_local_nodes_indices vector contining local master nodes
+   * indices
+   * \param slave_nodes_indices vector contining global master nodes indices
+   * \param slave_local_nodes_indices vector contining local master nodes
+   * indices
+   */
   MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
                                  FENumeredDofEntity_multiIndex &dofs,
                                  VectorInt &master_nodes_indices,
@@ -211,6 +247,19 @@ protected:
                                  VectorInt &slave_nodes_indices,
                                  VectorInt &slave_local_nodes_indices) const;
 
+  /** \brief function that gets nodes indices.
+   *
+   * \param field_name field name of interest
+   * \param dofs MultiIndex container keeping FENumeredDofEntity.
+   * \param master_nodes_data vector contining master nodes data
+   * \param slave_nodes_data vector contining master nodes data
+   * \param master_nodes_dofs vector contining master nodes dofs
+   * \param slave_nodes_dofs vector contining slave nodes dofs
+   * \param master_space approximation energy space at master
+   * \param slave_space approximation energy space at slave
+   * \param master_base base for master face
+   * \param slave_base base for slave face
+   */
   MoFEMErrorCode getNodesFieldData(
       const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
       VectorDouble &master_nodes_data, VectorDouble &slave_nodes_data,
