@@ -109,17 +109,15 @@ EOF
 
 #fi
 
-curl \
-  -X POST -H 'Content-type: application/json' \
-  --data '{"text":"Jenkins start job for branch $GIT_BRANCH"}' \
-  https://hooks.slack.com/services/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
+curl -X POST -H 'Content-type: application/json' \
+--data "{\"text\":\"Jenkins start job for branch $GIT_BRANCH\"}" \
+https://hooks.slack.com/services/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
 
 cd $WORKSPACE/build
 spack load cmake
 ctest -V -S $WORKSPACE/script.cmake
 make install
 
-curl \
-  -X POST -H 'Content-type: application/json' \
-  --data '{"text":"Jenkins end job for branch $GIT_BRANCH (See http://cdash.eng.gla.ac.uk/cdash/)"}' \
-  https://hooks.slack.com/services/T06180CDN/BPWLDQK71/KfDtJMLrecQOVZ4NKDXhPiA
+curl -X POST -H 'Content-type: application/json' \
+--data "{\"text\":\"Jenkins end job for branch $GIT_BRANCH (See http://cdash.eng.gla.ac.uk/cdash/)\"}" \
+https://hooks.slack.com/services/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
