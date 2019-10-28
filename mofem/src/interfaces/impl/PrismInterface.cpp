@@ -1,5 +1,5 @@
 /** \file PrismInterface.cpp
- * \brief Inserting prims interface elements
+ * \brief Inserting prisms interface elements
  * \todo FIXME this is no so good implementation
  *
  * \ingroup mofem_prism_interface
@@ -753,8 +753,8 @@ MoFEMErrorCode PrismInterface::splitSides(
   EntityHandle meshset_for_bit_level;
   CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
                              meshset_for_bit_level);
-  // subtract those elements which will be refined, i.e. disconnected form other
-  // side elements, and connected to new prisms, if they area created
+  // subtract those elements which will be refined, i.e. disconnected from other
+  // side elements, and connected to new prisms, if they are created
   meshset_3d_ents = subtract(meshset_3d_ents, side_ents3d);
   CHKERR moab.add_entities(meshset_for_bit_level, meshset_3d_ents);
 
@@ -938,6 +938,54 @@ MoFEMErrorCode PrismInterface::splitSides(
     int num_nodes;
     const EntityHandle *conn;
     CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
+    // std::vector<EntityHandle> conn;
+    // CHKERR moab.get_connectivity(&*eit, 1, conn, true);
+    // num_nodes = conn.size();
+    int sense = 0;
+    if (moab.type_from_handle(*eit) == MBTRI) {
+      Range ents_3d;
+      CHKERR moab.get_adjacencies(&*eit, 1, 3, false, ents_3d,
+                                  moab::Interface::UNION);
+      // cout << ents_3d.size() << endl;
+      // ents_3d.print();
+      // Range ins;
+      ents_3d = intersect(ents_3d, side_ents3d);
+      if (ents_3d.size() != 1) {
+        SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                 "Found %u adjacent tets on one of the sides, should be 1",
+                 ents_3d.size());
+      }
+      // auto print_coords = [&](EntityHandle &node) {
+      //   MoFEMFunctionBegin;
+      //   VectorDouble coords(3);
+      //   CHKERR moab.get_coords(&node, 1, &coords(0));
+      //   cout << coords(0) << " " << coords(1) << " " << coords(2) << endl;
+      //   MoFEMFunctionReturn(0);
+      // };
+      // Range nds;
+      // CHKERR moab.get_connectivity(ents_3d, nds);
+      // for (Range::iterator nit = nds.begin(); nit != nds.end(); nit++) {
+      //   VectorDouble coords(3);
+      //   CHKERR moab.get_coords(&*nit, 1, &coords(0));
+      //   cout << coords(0) << " " << coords(1) << " " << coords(2) << endl;
+      // }
+      //cout << ents_3d.size() << endl;
+      //ents_3d.print(); 
+      int side = 0;
+      //int sense = 0;
+      int offset = 0;
+      CHKERR moab.side_number(ents_3d.back(), *eit, side, sense, offset);
+      // if (sense == -1) {
+      //   EntityHandle temp;
+      //   temp = conn[1];
+      //   conn[1] = conn[2];
+      //   conn[2] = temp;
+      // }
+      //cout << side << " " << sense << " " << offset << endl;
+      // ins = intersect(ents_3d, side_ents3d);
+      // cout << ins.size() << endl;
+      // ins.print();
+    }
     EntityHandle new_conn[num_nodes];
     int nb_new_conn = 0;
     for (int ii = 0; ii != num_nodes; ++ii) {
@@ -984,6 +1032,23 @@ MoFEMErrorCode PrismInterface::splitSides(
         // set prism connectivity
         EntityHandle prism_conn[6] = {conn[0],     conn[1],     conn[2],
                                       new_conn[0], new_conn[1], new_conn[2]};
+        if (sense == -1) {
+          std::swap(prism_conn[1], prism_conn[2]);
+          std::swap(prism_conn[4], prism_conn[5]);
+        }
+        auto print_coords =
+            [&](EntityHandle &node) {
+              MoFEMFunctionBegin;
+              VectorDouble coords(3);
+              CHKERR moab.get_coords(&node, 1, &coords(0));
+              cout << coords(0) << " " << coords(1) << " " << coords(2) << endl;
+              MoFEMFunctionReturn(0);
+            };
+
+        for (int i = 0; i < 6; i++) {
+          print_coords(prism_conn[i]);
+        }
+
         EntityHandle prism;
         CHKERR moab.create_element(MBPRISM, prism_conn, 6, prism);
         CHKERR moab.add_entities(meshset_for_bit_level, &prism, 1);
