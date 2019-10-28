@@ -114,6 +114,7 @@
 #include <EdgeElementForcesAndSourcesCore.hpp>
 #include <VertexElementForcesAndSourcesCore.hpp>
 #include <FlatPrismElementForcesAndSourcesCore.hpp>
+#include <ContactPrismElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSourcesCore.hpp>
 #include <VolumeElementForcesAndSourcesCoreOnSide.hpp>
 #include <FaceElementForcesAndSourcesCoreOnSide.hpp>
