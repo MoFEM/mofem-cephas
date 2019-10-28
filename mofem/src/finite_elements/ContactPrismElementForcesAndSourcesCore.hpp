@@ -1,8 +1,8 @@
-/** \file ForcesAndSourcesCore.hpp
-  \brief Implementation of elements on entities.
+/** \file ContactPrismElementForcesAndSourcesCore.hpp
+  \brief Implementation of the contact prism element.
 
-  Those element are inherited by user to implement specific implementation of
-  particular problem.
+  These elements are used to enforce contact constraints in the interface
+  between two solids.
 
 */
 
@@ -28,9 +28,9 @@ namespace MoFEM {
 /** \brief ContactPrism finite element
  \ingroup mofem_forces_and_sources_prism_element
 
- User is implementing own operator at Gauss points level, by own object
+ User is implementing own operator at Gauss points level, by own class
  derived from ContactPrismElementForcesAndSourcesCoreL::UserDataOperator.
- Arbitrary number of operator added pushing objects to rowOpPtrVector and
+ Arbitrary number of operator added pushing instances to rowOpPtrVector and
  rowColOpPtrVector.
 
  */
@@ -66,6 +66,23 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
         : ForcesAndSourcesCore::UserDataOperator(field_name, type),
           faceType(face_type) {}
 
+    /**
+           * \brief Controls loop over faces and face combination on element
+            *
+            * FACEMASTER is used when column or row data needs to be accessed
+      located at master face
+            * FACESLAVE is used when column or row data needs to be accessed
+      located at slave face
+            * FACEMASTERMASTER is used for accessing simultaneously row and col
+      data located at master face.
+            * FACEMASTERSLAVE is used for accessing simultaneously row data that
+      is located on master face and col data located at slave face.
+            * FACESLAVEMASTER is used for accessing simultaneously row data that
+      is located on slave face and col data located at master face.
+      * FACESLAVESLAVE is used for accessing simultaneously row and col
+      data located at slave face.
+            *
+      */
     enum FaceType {
       FACEMASTER = 1 << 0,
       FACESLAVE = 1 << 1,
@@ -132,8 +149,8 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     /** \brief get coordinates at Gauss pts on full prism.
 
-      Matrix has size (nb integration points on master)x(3),
-      i.e. coordinates on face Master
+      Matrix has size (nb integration points on slave)x(3),
+      i.e. coordinates on face Slave 
 
      */
     inline MatrixDouble &getCoordsAtGaussPtsSlave();
@@ -153,13 +170,13 @@ protected:
       normal; ///< vector storing vector normal to master or slave element
   VectorDouble coords;
   MatrixDouble coordsAtGaussPtsMaster; ///< matrix storing master Gauss points
-                                       ///< coordinates and weights
+                                       ///< global coordinates
   MatrixDouble coordsAtGaussPtsSlave;  ///< matrix storing slave Gauss points
-                                       ///< coordinates and weights
+                                       ///< global coordinates
 
-  MatrixDouble gaussPtsMaster; ///< matrix storing master Gauss points
+  MatrixDouble gaussPtsMaster; ///< matrix storing master Gauss points local
                                ///< coordinates and weights
-  MatrixDouble gaussPtsSlave;  ///< matrix storing slave Gauss points
+  MatrixDouble gaussPtsSlave;  ///< matrix storing slave Gauss points local
                                ///< coordinates and weights
 
   /**
@@ -204,9 +221,13 @@ protected:
    */
   MoFEMErrorCode loopOverOperators();
 
-  /** \brief if higher order geometry return normals at Gauss pts.
+  /** \brief function that gets entity field data.
    *
-   * \param gg gauss point number
+   * \param master_data data fot master face
+   * \param slave_data data fot master face
+   * \param field_name field name of interest
+   * \param type_lo lowest dimension entity type to be searched
+   * \param type_hi highest dimension entity type to be searched
    */
   MoFEMErrorCode
   getEntityFieldData(DataForcesAndSourcesCore &master_data,
@@ -234,11 +255,11 @@ protected:
    *
    * \param field_name field name of interest
    * \param dofs MultiIndex container keeping FENumeredDofEntity.
-   * \param master_nodes_indices vector contining global master nodes indices
-   * \param master_local_nodes_indices vector contining local master nodes
+   * \param master_nodes_indices vector containing global master nodes indices
+   * \param master_local_nodes_indices vector containing local master nodes
    * indices
-   * \param slave_nodes_indices vector contining global master nodes indices
-   * \param slave_local_nodes_indices vector contining local master nodes
+   * \param slave_nodes_indices vector containing global master nodes indices
+   * \param slave_local_nodes_indices vector containing local master nodes
    * indices
    */
   MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
@@ -248,14 +269,14 @@ protected:
                                  VectorInt &slave_nodes_indices,
                                  VectorInt &slave_local_nodes_indices) const;
 
-  /** \brief function that gets nodes indices.
+  /** \brief function that gets nodes field data.
    *
    * \param field_name field name of interest
    * \param dofs MultiIndex container keeping FENumeredDofEntity.
-   * \param master_nodes_data vector contining master nodes data
-   * \param slave_nodes_data vector contining master nodes data
-   * \param master_nodes_dofs vector contining master nodes dofs
-   * \param slave_nodes_dofs vector contining slave nodes dofs
+   * \param master_nodes_data vector containing master nodes data
+   * \param slave_nodes_data vector containing master nodes data
+   * \param master_nodes_dofs vector containing master nodes dofs
+   * \param slave_nodes_dofs vector containing slave nodes dofs
    * \param master_space approximation energy space at master
    * \param slave_space approximation energy space at slave
    * \param master_base base for master face
