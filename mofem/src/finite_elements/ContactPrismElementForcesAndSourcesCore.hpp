@@ -150,7 +150,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     /** \brief get coordinates at Gauss pts on full prism.
 
       Matrix has size (nb integration points on slave)x(3),
-      i.e. coordinates on face Slave 
+      i.e. coordinates on face Slave
 
      */
     inline MatrixDouble &getCoordsAtGaussPtsSlave();
