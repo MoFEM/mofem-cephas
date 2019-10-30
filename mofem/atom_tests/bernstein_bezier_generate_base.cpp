@@ -597,7 +597,7 @@ int main(int argc, char *argv[]) {
     }
 
     EntityHandle meshset;
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+    CHKERR moab.create_meshset(MESHSET_SET, meshset);
     CHKERR moab.add_entities(meshset, tets);
     CHKERR moab.write_file("bb.vtk", "VTK", "", &meshset, 1);
   }
