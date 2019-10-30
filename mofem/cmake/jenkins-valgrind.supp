@@ -17986,3 +17986,21 @@
    fun:PetscViewerASCIIOpen
    fun:main
 }
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:strdup
+   fun:pmix_bfrops_base_value_xfer
+   fun:OPAL_MCA_PMIX2X_PMIx_Store_internal
+   fun:pmix2x_store_local
+   fun:orte_ess_base_app_setup
+   fun:rte_init
+   fun:orte_init
+   fun:ompi_mpi_init
+   fun:PMPI_Init_thread
+   fun:PetscInitialize
+   fun:_ZN5MoFEM4Core10InitializeEPiPPPcPKcS6_
+   fun:main
+}
