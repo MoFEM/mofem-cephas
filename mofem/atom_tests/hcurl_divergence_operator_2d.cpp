@@ -53,6 +53,10 @@ struct OpDivergence : public FaceEleOp {
     auto t_diff_base_fun = data.getFTensor2DiffN<3, 2>();
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       const double val = getArea() * getGaussPts()(2, gg);
+      // double x = getGaussPts()(0, gg);
+      // double y = getGaussPts()(1, gg);
+      double z = getGaussPts()(2, gg);
+      cout << "z : " << z << endl;
       for (int bb = 0; bb != nb_dofs; bb++) {
         dIv += val * (t_diff_base_fun(0, 0) + t_diff_base_fun(1, 1));
         ++t_diff_base_fun;
@@ -83,6 +87,10 @@ struct OpFlux : public EdgeEleOp {
     FTensor::Index<'i', 2> i;
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       const double val = getGaussPts()(1, gg);
+      double x = getGaussPts()(1, gg);
+      // double y = getGaussPts()(1, gg);
+      // double z = getGaussPts()(2, gg);
+      cout << "x : " << x << endl;
       for (int bb = 0; bb != nb_dofs; bb++) {
         fLux += val * t_normal(i) * t_base_fun(i);
         ++t_base_fun;
@@ -131,7 +139,7 @@ int main(int argc, char *argv[]) {
       base = AINSWORTH_LEGENDRE_BASE;
     else if (choice_base_value == DEMKOWICZ)
       base = DEMKOWICZ_JACOBI_BASE;
-    int order = 1;
+    int order = 2;
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
 
     CHKERR m_field.add_field("FIELD1", HCURL, base, 1);
