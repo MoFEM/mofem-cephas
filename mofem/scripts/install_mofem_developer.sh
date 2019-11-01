@@ -10,7 +10,8 @@
 #       1. Copy install_mofem_developer.sh to the directory where MoFEM will be installed
 #       2. Run install_mofem_developer.sh from the command line
 #
-# Note: Installation script changes .bash_profile. Inspect that file after installation.
+# Note: Installation script changes .bashrc on Ubuntu or .bash_profile on Mac.
+# Please inspect the file after installation.
 
 ##############################
 # INITIALISATION
@@ -136,6 +137,14 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
 
   # Initialise Spack environment variables:
   . $SPACK_ROOT_DIR/share/spack/setup-env.sh
+  # Add command to configuration file .bashrc on Ubuntu or .bash_profile on Mac
+  if [ ${machine} = "Linux" ]
+  then
+    echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc
+  elif [ ${machine} = "Mac" ]
+  then
+    echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bash_profile
+  fi
 
   # Download mirror
   if [ ! -d "$SPACK_MIRROR_DIR" ]; then
@@ -154,9 +163,6 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   spack mirror remove mofem_mirror || true
   spack mirror add mofem_mirror $SPACK_MIRROR_DIR
 
-  # Add command to configuration file .bash_profile
-  echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bash_profile
- 
   # Install packages required by Spack
   spack bootstrap
 fi
@@ -231,7 +237,14 @@ mkdir um
 cd um/
 spack view --verbose symlink -i um_view mofem-cephas@develop build_type=RelWithDebInfo 
 export PATH=$PWD/um_view/bin:$PATH
-echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
+# Add PATH to .bashrc on Ubuntu or .bash_profile on Mac
+if [ ${machine} = "Linux" ]
+then
+  echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bashrc
+elif [ ${machine} = "Mac" ]
+then
+  echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
+fi
 
 mkdir build
 cd build/
