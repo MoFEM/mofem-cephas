@@ -602,7 +602,7 @@ MoFEMErrorCode PrismInterface::splitSides(
   // 3d ents on "father" side
   Range side_ents3d;
   CHKERR moab.get_entities_by_handle(children[0], side_ents3d, false);
-  // 3d ents on "mather" side
+  // 3d ents on "mother" side
   Range other_ents3d;
   CHKERR moab.get_entities_by_handle(children[1], other_ents3d, false);
   // faces of interface
@@ -631,7 +631,7 @@ MoFEMErrorCode PrismInterface::splitSides(
     PetscPrintf(m_field.get_comm(), "split sides nodes %u\n", nodes.size());
   }
 
-  typedef std::map<EntityHandle, /*node on "mather" side*/
+  typedef std::map<EntityHandle, /*node on "mother" side*/
                    EntityHandle  /*node on "father" side*/
                    >
       MapNodes;
@@ -944,13 +944,22 @@ MoFEMErrorCode PrismInterface::splitSides(
       CHKERR moab.get_adjacencies(&*eit, 1, 3, false, ents_3d,
                                   moab::Interface::UNION);
       ents_3d = intersect(ents_3d, side_ents3d);
-      if (ents_3d.size() != 1) {
-        SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                 "Found %u adjacent tets on one of the sides, should be 1",
-                 ents_3d.size());
+      switch (ents_3d.size()) {
+      case 0:
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                "Did not find adjacent tets on one side of the contact "
+                "interface, check its definition and try creating separate "
+                "sidesets for each contact surface");
+      case 2:
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                "Found both adjacent tets on one side of the contact "
+                "interface, check its definition and try creating separate "
+                "sidesets for each contact surface");
+      default :
+        break;
       }
       int side, offset;
-      CHKERR moab.side_number(ents_3d.back(), *eit, side, sense, offset);
+      CHKERR moab.side_number(ents_3d.front(), *eit, side, sense, offset);
     }
     EntityHandle new_conn[num_nodes];
     int nb_new_conn = 0;
@@ -999,9 +1008,10 @@ MoFEMErrorCode PrismInterface::splitSides(
         EntityHandle prism_conn[6] = {conn[0],     conn[1],     conn[2],
                                       new_conn[0], new_conn[1], new_conn[2]};
         if (sense != 1 && sense != -1) {
-          SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                   "Wrong sense of a triangle, should be 1 or -1, but is %u",
-                   sense);
+          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                  "Undefined sense of a trinagle on the interface, "
+                  "check its definition and try creating separate "
+                  "sidesets for each surface");
         }
         if (sense == -1) {
           // swap nodes in triangles for correct prism creation
