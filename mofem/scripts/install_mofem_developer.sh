@@ -176,7 +176,7 @@ echo "Current directory: $PWD"
 ########################################
   
 echo -e "\n********************************************************\n"
-echo -e "Installing CORE LIBRARY ..."
+echo -e "Installing CORE LIBRARY - Release version ..."
 echo -e "\n********************************************************\n"
   
 # Locate MoFEM installation directory
@@ -191,27 +191,27 @@ else
 fi
 
 # Installation of core library
-mkdir lib
-cd lib
+mkdir -p lib_release
+cd lib_release
 
-spack install --only dependencies mofem-cephas 
-spack setup mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
+spack install --only dependencies mofem-cephas
+spack setup mofem-cephas@develop copy_user_modules=False build_type=Release
 
 echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY: spconfig ..."
-echo -e "\n----------------------------n"
+echo -e "CORE LIBRARY - Release version: spconfig ..."
+echo -e "\n----------------------------\n"
 
 ./spconfig.py -DMOFEM_BUILD_TESTS=ON $MOFEM_INSTALL_DIR/mofem-cephas/mofem
 
 echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY: make -j $NumberOfProcs ..."
+echo -e "CORE LIBRARY - Release version: make -j $NumberOfProcs ..."
 echo -e "\n----------------------------\n"
 
 make -j $NumberOfProcs
 
 # Run the tests on core library
 echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY: ctest ..."
+echo -e "CORE LIBRARY - Release version: ctest ..."
 echo -e "\n----------------------------\n"
 
 spack load cmake
@@ -219,7 +219,7 @@ ctest -D Experimental
 
 # Install the library
 echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY: make install ..."
+echo -e "CORE LIBRARY - Release version: make install ..."
 echo -e "\n----------------------------\n"
 
 make install
@@ -227,15 +227,15 @@ make install
 echo -e "\nFinished installing and testing the Core Library.\n"
 
 echo -e "\n********************************************************\n"
-echo -e "Installing USER MODULES ..."
+echo -e "Installing USER MODULES - Release version ..."
 echo -e "\n********************************************************\n"
 
 # Installation of user modules
 cd $MOFEM_INSTALL_DIR
 
-mkdir um
+mkdir -p um
 cd um/
-spack view --verbose symlink -i um_view mofem-cephas@develop build_type=RelWithDebInfo 
+spack view --verbose symlink -i um_view mofem-cephas@develop build_type=Release 
 export PATH=$PWD/um_view/bin:$PATH
 # Add PATH to .bashrc on Ubuntu or .bash_profile on Mac
 if [ ${machine} = "Linux" ]
@@ -246,41 +246,146 @@ then
   echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
 fi
 
-mkdir build
-cd build/
+mkdir -p build_release
+cd build_release/
 
-MOFEM_CEPHAS_SPACK_ID=`spack find -l mofem-cephas | grep mofem-cephas@develop | sed 's/mofem-cephas.*//' | tail -n 1`
+MOFEM_CEPHAS_SPACK_ID=`spack find -l mofem-cephas | grep mofem-cephas@develop | sed 's/mofem-cephas.*//' | head -n 1`
+echo "mofem-cephas id for release: $MOFEM_CEPHAS_SPACK_ID"
 
 spack setup mofem-users-modules@develop \
-    copy_user_modules=False build_type=RelWithDebInfo \
+    copy_user_modules=False build_type=Release \
     ^/$MOFEM_CEPHAS_SPACK_ID
 
 echo -e "\n----------------------------\n"
-echo -e "USER MODULE: spconfig ..."
-echo -e "\n----------------------------n"
+echo -e "USER MODULE - Release version: spconfig ..."
+echo -e "\n----------------------------\n"
 
 ./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DMOFEM_DIR=../um_view \
     $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
 
 echo -e "\n----------------------------\n"
-echo -e "USER MODULE: make -j $NumberOfProcs ..."
+echo -e "USER MODULE - Release version: make -j $NumberOfProcs ..."
 echo -e "\n----------------------------\n"
 
 make -j $NumberOfProcs
 
 # Run the tests on user modules
 echo -e "\n----------------------------\n"
-echo -e "USER MODULE: ctest ..."
+echo -e "USER MODULE - Release version: ctest ..."
 echo -e "\n----------------------------\n"
 
-spack load cmake
 ctest -D Experimental
 
 # Install the user module
 echo -e "\n----------------------------\n"
-echo -e "USER MODULE: make install ..."
+echo -e "USER MODULE - Release version: make install ..."
+echo -e "\n----------------------------\n"
+
+make install
+<<<<<<< HEAD
+=======
+
+echo -e "\nFinished installing and testing the User Module - Release version.\n"
+
+
+# ************************************************************************
+# DEBUG VERSION
+# ************************************************************************
+
+echo -e "\n********************************************************\n"
+echo -e "Installing MoFEM - DEBUG VERSION..."
+echo -e "\n********************************************************\n"
+  
+
+########################################
+### MoFEM CORE LIBRARY & USER MODULES
+########################################
+
+# Locate MoFEM installation directory
+cd $MOFEM_INSTALL_DIR
+
+# Installation of core library
+mkdir -p lib_debug
+cd lib_debug
+
+spack setup mofem-cephas@develop copy_user_modules=False build_type=Debug
+
+echo -e "\n----------------------------\n"
+echo -e "CORE LIBRARY - Debug version: spconfig ..."
+echo -e "\n----------------------------\n"
+
+./spconfig.py -DMOFEM_BUILD_TESTS=ON $MOFEM_INSTALL_DIR/mofem-cephas/mofem
+
+echo -e "\n----------------------------\n"
+echo -e "CORE LIBRARY - Debug version: make -j $NumberOfProcs ..."
+echo -e "\n----------------------------\n"
+
+make -j $NumberOfProcs
+
+# Run the tests on core library
+echo -e "\n----------------------------\n"
+echo -e "CORE LIBRARY - Debug version: ctest ..."
+echo -e "\n----------------------------\n"
+
+ctest -D Experimental
+
+# Install the library
+echo -e "\n----------------------------\n"
+echo -e "CORE LIBRARY - Debug version: make install ..."
 echo -e "\n----------------------------\n"
 
 make install
 
-echo -e "\nFinished installing and testing the User Module.\n"
+echo -e "\nFinished installing and testing the Core Library - Debug version.\n"
+
+echo -e "\n********************************************************\n"
+echo -e "Installing USER MODULES - Debug version ..."
+echo -e "\n********************************************************\n"
+
+# Installation of user modules
+cd $MOFEM_INSTALL_DIR
+
+# mkdir um
+cd um/
+
+spack view --verbose symlink -i um_view_debug mofem-cephas@develop build_type=Debug 
+
+mkdir -p build_debug
+cd build_debug/
+
+MOFEM_CEPHAS_SPACK_ID=`spack find -l mofem-cephas | grep mofem-cephas@develop | sed 's/mofem-cephas.*//' | head -n 1`
+echo "mofem-cephas id for debug: $MOFEM_CEPHAS_SPACK_ID"
+
+spack setup mofem-users-modules@develop \
+    copy_user_modules=False build_type=Debug \
+    ^/$MOFEM_CEPHAS_SPACK_ID
+
+echo -e "\n----------------------------\n"
+echo -e "USER MODULE: spconfig - Debug version ..."
+echo -e "\n----------------------------\n"
+
+./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DMOFEM_DIR=../um_view_debug \
+    $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
+
+echo -e "\n----------------------------\n"
+echo -e "USER MODULE - Debug version: make -j $NumberOfProcs ..."
+echo -e "\n----------------------------\n"
+
+make -j $NumberOfProcs
+
+# Run the tests on user modules
+echo -e "\n----------------------------\n"
+echo -e "USER MODULE - Debug version: ctest ..."
+echo -e "\n----------------------------\n"
+
+ctest -D Experimental
+
+# Install the user module
+echo -e "\n----------------------------\n"
+echo -e "USER MODULE - Debug version: make install ..."
+echo -e "\n----------------------------\n"
+
+make install
+>>>>>>> a99d85fec... Add debug version when installing MoFEM for developer
+
+echo -e "\nFinished installing and testing the User Module - Debug version.\n"
