@@ -70,6 +70,17 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
   BitFEId id = getFEShift();
   CHKERR get_moab().tag_set_data(th_FEId, &meshset, 1, &id);
 
+  const void *tag_vals[] = {&rAnk};
+  ParallelComm *pcomm = ParallelComm::get_pcomm(
+      &get_moab(), get_basic_entity_data_ptr()->pcommID);
+  Tag part_tag = pcomm->part_tag();
+  Range tagged_sets;
+  CHKERR get_moab().get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag,
+                                                 tag_vals, 1, tagged_sets,
+                                                 moab::Interface::UNION);
+  for(auto s : tagged_sets)
+    CHKERR get_moab().add_entities(s, &meshset, 1);
+
   // id name
   void const *tag_data[] = {fe_name.c_str()};
   int tag_sizes[1];

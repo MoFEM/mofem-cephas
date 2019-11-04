@@ -35,6 +35,18 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
   EntityHandle meshset;
   CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
   CHKERR get_moab().tag_set_data(th_ProblemId, &meshset, 1, &id);
+  
+  const void *tag_vals[] = {&rAnk};
+  ParallelComm *pcomm = ParallelComm::get_pcomm(
+        &get_moab(), get_basic_entity_data_ptr()->pcommID);
+  Tag part_tag = pcomm->part_tag();
+  Range tagged_sets;
+  CHKERR get_moab().get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag,
+                                                 tag_vals, 1, tagged_sets,
+                                                 moab::Interface::UNION);
+  for (auto s : tagged_sets)
+    CHKERR get_moab().add_entities(s, &meshset, 1);
+
   void const *tag_data[] = {name.c_str()};
   int tag_sizes[1];
   tag_sizes[0] = name.size();
