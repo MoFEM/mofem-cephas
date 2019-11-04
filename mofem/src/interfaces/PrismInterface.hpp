@@ -1,8 +1,10 @@
-/** \file PrismInterface.hpp
+/** 
+ * \file PrismInterface.hpp
+ * 
  * \brief MoFEM interface
  *
- * Low level data structures not used directly by user
-
+ * Insert prisms in the interface between two surfaces
+ * 
  * \ingroup mofem_prism_interface
  */
 
@@ -26,13 +28,10 @@ namespace MoFEM {
 static const MOFEMuuid IDD_MOFEMPrismInterface =
     MOFEMuuid(BitIntefaceId(PRISM_INTEFACE));
 
-/** \brief Make interface on given faces and create flat prism in that space
-
-  \todo FIXME Names of methods do not follow naming convention and are difficult
-  to work with.
-
-  \ingroup mofem_prism_interface
-
+/** 
+ * \brief Create interface at given faces and add flat prisms in-between 
+ * 
+ * \ingroup mofem_prism_interface
 */
 struct PrismInterface : public UnknownInterface {
 
@@ -45,80 +44,93 @@ struct PrismInterface : public UnknownInterface {
   /// destructor
   ~PrismInterface() {}
 
-  /** \brief create two children meshsets in the meshset containing tetrahedral
-   * on two sides of faces
+  /** 
+   * \brief Store tetrahedra from each side of the interface 
+   * separately in two child meshsets of the parent meshset
+   *
+   * Additional third child meshset contains nodes which can be split
+   * and skin edges
    *
    * \param msId Id of meshset
    * \param cubit_bc_type type of meshset (NODESET, SIDESET or BLOCKSET and
-   * more) \param mesh_bit_level add interface on bit level is bit_level =
-   * BitRefLevel.set() then add interface on all bit levels \param recursive if
-   * true parent meshset is searched recursively
+   * more)
+   * \param mesh_bit_level interface is added on this bit level
+   * \param recursive if true parent meshset is searched recursively
+   * \param  verb verbosity level
+   * 
+   * \note if bit_level == BitRefLevel.set() then interface will be added 
+   * on all bit levels
+   * 
    */
   MoFEMErrorCode getSides(const int msId, const CubitBCType cubit_bc_type,
                           const BitRefLevel mesh_bit_level,
                           const bool recursive, int verb = QUIET);
 
-  /** \brief create two children meshsets in the meshset containing tetrahedral
-   * on two sides of faces
+  /**
+   * \brief Store tetrahedra from each side of the interface
+   * in two child meshsets of the parent meshset
    *
-   * Get tets adj to faces. Take skin form tets and get edges from that skin.
-   * Take skin form triangles (the face). Subtrac skin faces edges form skin
-   * edges in order to get edges on the boundary of the face which is in the
-   * volume of the body, but is not on the boundary.
-   * Each child set has a child containing nodes which can be split and skin
-   * edges. After that simply iterate under all tets on one side which are
-   * adjacent to the face are found. Side tets are stored in to children
-   * meshsets of the SIDESET meshset.
+   * Additional third child meshset contains nodes which can be split
+   * and skin edges
+   *
+   * \param sideset parent meshset with the surface
+   * \param mesh_bit_level interface is added on this bit level
+   * \param recursive if true parent meshset is searched recursively
+   * \param  verb verbosity level
+   *
+   * \note if bit_level == BitRefLevel.set() then interface will be added
+   * on all bit levels
+   *
+   * 1. Get tets adjacent to nodes of the interface meshset.
+   * 2. Take skin faces from these tets and get edges from that skin.
+   * 3. Take skin from triangles of the interface.
+   * 4. Subtract edges of skin faces from skin of triangles in order to get
+   * edges in the volume of the body, and not on the interface boundary.
+   * 5. Iterate between all triangles of the interface and find adjacent tets
+   * on each side of the interface
+   *
    */
   MoFEMErrorCode getSides(const EntityHandle sideset,
                           const BitRefLevel mesh_bit_level,
                           const bool recursive, int verb = QUIET);
 
-  /** 
-   * \brief Find if triangle has three nodes on internal surface skin
-   * 
-   * Internal surface skin is a set of edges in the body on the boundary of the
-   * surface. This set of edges is called a surface front. If the surface the
-   * face has three nodes on the surface front, none of the face nodes is split
-   * and should be removed from the surface. Otherwise, such a triangle cannot
-   * be split.
+  /**
+   * \brief Find triangles which have three nodes on internal surface skin
+   *
+   * Internal surface skin is a set of all edges on the boundary of a given
+   * surface inside the body. This set of edges is also called the surface
+   * front. If a triangle has three nodes on the surface front, none of these 
+   * nodes can be split. Therefore, such a triangle cannot be split and
+   * should be removed from the surface. 
    *
    * @param  sideset        meshset with surface
    * @param  mesh_bit_level bit ref level of the volume mesh
-   * @param  recursive      search in sub-meshsets
+   * @param  recursive      if true search in sub-meshsets
    * @param  faces_with_three_nodes_on_front returned faces
    * @param  verb           verbosity level
    *
    * @return error code
    */
-  MoFEMErrorCode findIfTringleHasThreeNodesOnInternalSurfaceSkin(
+  MoFEMErrorCode findFacesWithThreeNodesOnInternalSurfaceSkin(
       const EntityHandle sideset, const BitRefLevel mesh_bit_level,
       const bool recursive, Range &faces_with_three_nodes_on_front,
       int verb = QUIET);
 
   /**
-   * \brief split nodes and other entities of tetrahedral in children sets and
-   *add prism elements
+   * \brief Split nodes and other entities of tetrahedra on both sides
+   * of the interface and add prism elements in-between
    *
-   * The all new entities (prisms, tets) are added to refinement level given by
-   *bit \param meshset meshset to get entities from \param BitRefLevel new level
-   *where refinement would be stored \param msId meshset ID imported from cubit
+   * \param meshset parent meshset to get entities from
+   * \param bit bit ref level on which new entities will be stored
+   * \param msId meshset ID imported from cubit
    * \param cubit_bc_type type of meshset (NODESET, SIDESET or BLOCKSET and
-   *more) \param add_interface_entities meshset which contain the interface
+   *more)
+   * \param add_interface_entities if true add prism elements at interface
    * \param recursive if true parent meshset is searched recursively
    *
-   * Each inteface face has two tags,
-   *    const int def_side[] = {0};
-   *	rval = moab.tag_get_handle("INTERFACE_SIDE",1,MB_TYPE_INTEGER,
-   *	  th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side);
-   *CHKERRQ_MOAB(rval);
-   *
-   *  	const EntityHandle def_node[] = {0};
-   *	rval = moab.tag_get_handle("SIDE_INTFACE_ELEMENT",1,MB_TYPE_HANDLE,
-   *	  th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERRQ_MOAB(rval);
-   *
-   * First tag inform about inteface side, second tag inform about side adjacent
-   * inteface element.
+   * \note Parent meshset must have three child meshsets: two with tetrahedra
+   * from each side of the interface, third containing nodes which can be split
+   * and skin edges
    *
    */
   MoFEMErrorCode splitSides(const EntityHandle meshset, const BitRefLevel &bit,
@@ -127,34 +139,44 @@ struct PrismInterface : public UnknownInterface {
                             const bool recursive = false, int verb = QUIET);
 
   /**
-   * \brief split nodes and other entities of tetrahedral in children sets and
-   * add prism elements
+   * \brief Split nodes and other entities of tetrahedra on both sides
+   * of the interface and add prism elements in-between
    *
-   * The all new entities (prisms, tets) are added to refinement level given by
-   * bit
+   * \param meshset parent meshset to get entities from
+   * \param bit bit ref level on which new entities will be stored
+   * \param msId meshset ID imported from cubit
+   * \param cubit_bc_type type of meshset (NODESET, SIDESET or BLOCKSET and
+   *more)
+   * \param add_interface_entities if true add prism elements at interface
+   * \param recursive if true parent meshset is searched recursively
+   *
+   * \note Parent meshset must have three child meshsets: two with tetrahedra
+   * from each side of the interface, third containing nodes which can be split
+   * and skin edges
    */
   MoFEMErrorCode splitSides(const EntityHandle meshset, const BitRefLevel &bit,
-                            const EntityHandle,
+                            const EntityHandle sideset,
                             const bool add_interface_entities,
                             const bool recursive = false, int verb = QUIET);
 
   /**
-   * \brief split nodes and other entities of tetrahedrons in children sets and
+   * \brief Split nodes and other entities of tetrahedrons in children sets and
    * add prism elements
    *
-   * The all new entities (prisms, tets) are added to refinement level given by
-   * bit
+   * \param meshset parent meshset to get entities from
+   * \param bit bit ref level on which new entities will be stored
+   * \param inhered_from_bit_level inherit nodes and other entities form this
+   * bit level
+   * \param inhered_from_bit_level_mask corresponding mask
+   * \param add_interface_entities if true add prism elements at interface
+   * \param recursive if true parent meshset is searched recursively
    *
-   * \param meshset
-   * \param Refinement bit level of new mesh
-   * \param inhered_from_bit_level inhered nodes and other entities form this
-   * bit level. 
-   * \param add_interface_entities add prism elements at interface
-   * \param recursive do meshesets in the meshset
-   *
-   * \note inhered_from_bit_level is need to be specified to some meshsets
-   * with interfaces. Some nodes on some refinement levels dividing edges but
-   * not splitting faces. Inheriting those nodes will not split faces.
+   * \note Parent meshset must have three child meshsets: two with tetrahedra
+   * from each side of the interface, third containing nodes which can be split
+   * and skin edges
+   * \note inhered_from_bit_level needs to be specified for some meshsets
+   * with interfaces. Some nodes on some refinement levels are dividing edges 
+   * but not splitting faces. Inheriting those nodes will not split faces.
    *
    */
   MoFEMErrorCode splitSides(const EntityHandle meshset, const BitRefLevel &bit,
@@ -169,10 +191,10 @@ struct PrismInterface : public UnknownInterface {
 
 /**
  * \defgroup mofem_prism_interface PrismInterface
- * \brief Make interface between faces
+ * \brief Create interface between faces
  *
- * Make interface between faces (surface) and put in between prism element if
- *needed.
+ * Create interface between given faces and add in-between prisms
+ * if needed
  *
  * \ingroup mofem
  */

@@ -1,6 +1,6 @@
 /** \file PrismInterface.cpp
- * \brief Inserting prisms interface elements
- * \todo FIXME this is no so good implementation
+ * \brief Insert prisms in the interface between two surfaces
+ * \todo FIXME this is not so good implementation
  *
  * \ingroup mofem_prism_interface
  */
@@ -308,9 +308,8 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
       }
     }
 
-    // This is a case when separate sub-domains are split, so wee need
-    // additional
-    // tetrahedron for seed process
+    // This is a case when separate sub-domains are split, so we need
+    // additional tetrahedron for seed process
     if (side_ents3d_tris_on_surface.size() != triangles.size()) {
       Range left_triangles = subtract(triangles, side_ents3d_tris_on_surface);
       Range tets;
@@ -395,7 +394,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
+MoFEMErrorCode PrismInterface::findFacesWithThreeNodesOnInternalSurfaceSkin(
     const EntityHandle sideset, const BitRefLevel mesh_bit_level,
     const bool recursive, Range &faces_with_three_nodes_on_front, int verb) {
   Interface &m_field = cOre;
@@ -431,7 +430,7 @@ MoFEMErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
   Range nodes; // nodes from triangles
   CHKERR moab.get_connectivity(triangles, nodes, true);
 
-  Range ents3d; // 3d ents form nodes
+  Range ents3d; // 3d ents from nodes
   CHKERR moab.get_adjacencies(nodes, 3, false, ents3d, moab::Interface::UNION);
 
   if (mesh_bit_level.any()) {
@@ -578,6 +577,7 @@ MoFEMErrorCode PrismInterface::splitSides(const EntityHandle meshset,
                     add_interface_entities, recursive, verb);
   MoFEMFunctionReturn(0);
 }
+
 MoFEMErrorCode PrismInterface::splitSides(
     const EntityHandle meshset, const BitRefLevel &bit,
     const BitRefLevel &inhered_from_bit_level,
@@ -941,8 +941,7 @@ MoFEMErrorCode PrismInterface::splitSides(
     int sense = 0; ///< sense of the triangle used to create a prism
     if (moab.type_from_handle(*eit) == MBTRI) {
       Range ents_3d;
-      CHKERR moab.get_adjacencies(&*eit, 1, 3, false, ents_3d,
-                                  moab::Interface::UNION);
+      CHKERR moab.get_adjacencies(&*eit, 1, 3, false, ents_3d);
       ents_3d = intersect(ents_3d, side_ents3d);
       switch (ents_3d.size()) {
       case 0:

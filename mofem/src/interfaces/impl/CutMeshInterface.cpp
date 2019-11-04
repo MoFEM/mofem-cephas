@@ -2239,7 +2239,7 @@ CutMeshInterface::removePathologicalFrontTris(const BitRefLevel split_bit,
     EntityHandle meshset;
     CHKERR moab.create_meshset(MESHSET_SET, meshset);
     CHKERR moab.add_entities(meshset, ents);
-    CHKERR interface->findIfTringleHasThreeNodesOnInternalSurfaceSkin(
+    CHKERR interface->findFacesWithThreeNodesOnInternalSurfaceSkin(
         meshset, split_bit, true, front_tris);
     CHKERR moab.delete_entities(&meshset, 1);
     ents = subtract(ents, front_tris);
