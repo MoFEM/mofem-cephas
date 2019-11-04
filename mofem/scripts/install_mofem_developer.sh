@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script automises installation of MoFEM developer version (RelWithDebInfo)
+# This script automises installation of MoFEM developer version: Release & Debug
 # Full description of the installation process using spack can be found at:
 # http://mofem.eng.gla.ac.uk/mofem/html/install_spack.html
 # The script should work for both Ubuntu and macOS platforms
@@ -126,10 +126,11 @@ SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
 
   if [ ! -f "$PWD/spack.tgz" ]; then
-    echo "Download spack"
+    echo "Downloading spack ..."
     mkdir -p $SPACK_ROOT_DIR &&\
     curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
     | tar xzC $SPACK_ROOT_DIR --strip 1
+    echo -e "Done.\n"
   else 
     mkdir -p $SPACK_ROOT_DIR &&\
     tar xzf $PWD/spack.tgz -C $SPACK_ROOT_DIR --strip 1
@@ -149,10 +150,11 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   # Download mirror
   if [ ! -d "$SPACK_MIRROR_DIR" ]; then
     if [ ! -f "$PWD/mirror.tgz" ]; then
-      echo "Download spack mofem mirror"
+      echo "Downloading spack mofem mirror ..."
       mkdir -p $SPACK_MIRROR_DIR && \
       curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
       | tar xzC $SPACK_MIRROR_DIR --strip 1
+      echo -e "Done.\n"
     else 
       mkdir -p $SPACK_MIRROR_DIR && \
       tar xzf $PWD/mirror.tgz -C $SPACK_MIRROR_DIR  --strip 1
@@ -160,8 +162,14 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   fi
  
   # Add mirror
-  spack mirror remove mofem_mirror || true
-  spack mirror add mofem_mirror $SPACK_MIRROR_DIR
+  if spack mirror list | grep mofem_mirror
+  then
+    echo "Removing old mofem_mirror ..."
+    spack mirror remove mofem_mirror
+    echo -e "Done.\n"
+  else
+    spack mirror add mofem_mirror $SPACK_MIRROR_DIR
+  fi
 
   # Install packages required by Spack
   spack bootstrap
@@ -190,7 +198,12 @@ else
   echo -e "\nMoFEM source directory is found"
 fi
 
+# Clone MoFEM Fracture Module
+cd $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
+git clone -b develop https://bitbucket.org/likask/mofem_um_fracture_mechanics.git
+
 # Installation of core library
+cd $MOFEM_INSTALL_DIR
 mkdir -p lib_release
 cd lib_release
 
@@ -260,7 +273,7 @@ echo -e "\n----------------------------\n"
 echo -e "USER MODULE - Release version: spconfig ..."
 echo -e "\n----------------------------\n"
 
-./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DMOFEM_DIR=../um_view \
+./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DFM_VERSION_MAJOR=0 -DFM_VERSION_MINOR=0 -DFM_VERSION_BUILD=0 -DMOFEM_DIR=../um_view \
     $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
 
 echo -e "\n----------------------------\n"
@@ -282,8 +295,6 @@ echo -e "USER MODULE - Release version: make install ..."
 echo -e "\n----------------------------\n"
 
 make install
-<<<<<<< HEAD
-=======
 
 echo -e "\nFinished installing and testing the User Module - Release version.\n"
 
@@ -364,7 +375,7 @@ echo -e "\n----------------------------\n"
 echo -e "USER MODULE: spconfig - Debug version ..."
 echo -e "\n----------------------------\n"
 
-./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DMOFEM_DIR=../um_view_debug \
+./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DFM_VERSION_MAJOR=0 -DFM_VERSION_MINOR=0 -DFM_VERSION_BUILD=0 -DMOFEM_DIR=../um_view_debug \
     $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
 
 echo -e "\n----------------------------\n"
@@ -386,6 +397,5 @@ echo -e "USER MODULE - Debug version: make install ..."
 echo -e "\n----------------------------\n"
 
 make install
->>>>>>> a99d85fec... Add debug version when installing MoFEM for developer
 
 echo -e "\nFinished installing and testing the User Module - Debug version.\n"
