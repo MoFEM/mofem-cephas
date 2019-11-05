@@ -13,7 +13,9 @@
 #
 # Note: Installation script changes .bashrc on Ubuntu or .bash_profile on Mac.
 # Please inspect the file after installation.
-  
+
+echo "Start time: $(date +"%T")"
+
 ##############################
 # INITIALISATION
 ##############################
@@ -231,3 +233,5 @@ then
 else
    echo -e "\nInstallation FAILED!\n"
 fi
+
+echo "End time: $(date +"%T")"

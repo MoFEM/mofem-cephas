@@ -17,7 +17,9 @@
 #       For example, to install MoFEM Fracture Module version 0.9.60, 
 #       run this from the command line: ./update_mofem_fracture_module.sh 0.9.60
 #
-  
+
+echo "Start time: $(date +"%T")"
+
 ##############################
 # INITIALISATION
 ##############################
@@ -139,3 +141,5 @@ then
 else
    echo -e "\nUpdate FAILED!\n"
 fi
+
+echo "End time: $(date +"%T")"
