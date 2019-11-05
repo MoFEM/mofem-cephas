@@ -109,16 +109,25 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     EntityHandle meshset;
     CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
                                      meshset);
-    const void *tag_vals[] = {&rAnk};
-    ParallelComm *pcomm = ParallelComm::get_pcomm(
-        &get_moab(), get_basic_entity_data_ptr()->pcommID);
-    Tag part_tag = pcomm->part_tag();
-    Range tagged_sets;
-    CHKERR get_moab().get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag,
-                                                   tag_vals, 1, tagged_sets,
-                                                   moab::Interface::UNION);
-    for (auto s : tagged_sets)
-      CHKERR get_moab().add_entities(s, &meshset, 1);
+
+    // Add filed meshset to partion meshset. In case of no elements
+    // on processor part, when mesh file is red, finite element meshset is
+    // prevented form deletion by moab reader.
+    auto add_meshset_to_partition = [&](auto meshset) {
+      MoFEMFunctionBegin;
+      const void *tag_vals[] = {&rAnk};
+      ParallelComm *pcomm = ParallelComm::get_pcomm(
+          &get_moab(), get_basic_entity_data_ptr()->pcommID);
+      Tag part_tag = pcomm->part_tag();
+      Range tagged_sets;
+      CHKERR get_moab().get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag,
+                                                     tag_vals, 1, tagged_sets,
+                                                     moab::Interface::UNION);
+      for (auto s : tagged_sets)
+        CHKERR get_moab().add_entities(s, &meshset, 1);
+      MoFEMFunctionReturn(0);
+    };
+    CHKERR add_meshset_to_partition(meshset);
 
     // id
     BitFieldId id = getFieldShift();

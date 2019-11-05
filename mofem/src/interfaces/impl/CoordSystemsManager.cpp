@@ -89,7 +89,7 @@ MoFEMErrorCode CoordSystemsManager::initialiseDatabaseFromMesh(int verb) {
   Range meshsets;
   CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
 
-  // loop all meshset to find coordinate system
+  // Iterate all meshset to find coordinate system
   for (auto meshset : meshsets) {
     const void *cs_name_ptr = nullptr;
     int cs_name_size = 0;
@@ -107,6 +107,9 @@ MoFEMErrorCode CoordSystemsManager::initialiseDatabaseFromMesh(int verb) {
                 boost::make_shared<CoordSys>(moab, meshset));
 
         if (!p.second) {
+          // Coordinate system is in database. Could be crated on other
+          // processor. Check constancy both coordinate systems with the same
+          // name.
           if (((*p.first)->getDim(0) != dim[0]) ||
               ((*p.first)->getDim(1) != dim[1]) ||
               ((*p.first)->getDim(2) != dim[2]) ||
@@ -116,6 +119,7 @@ MoFEMErrorCode CoordSystemsManager::initialiseDatabaseFromMesh(int verb) {
                      "cs_name %s dim = %d",
                      cs_name.c_str(), dim[0] + dim[1] + dim[2] + dim[3]);
           } else {
+            // Remove duplicate mesheset
             CHKERR moab.delete_entities(&meshset, 1);
           }
         }
@@ -185,21 +189,25 @@ CoordSystemsManager::setFieldCoordinateSystem(const std::string field_name,
   MoFEMFunctionBegin;
   CHKERR m_field.get_fields(&fields_ptr);
 
+  // Find field
   auto field_it = fields_ptr->get<FieldName_mi_tag>().find(field_name);
   if (field_it == fields_ptr->get<FieldName_mi_tag>().end())
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Field < %s > not found", field_name.c_str());
 
+  // Remove field from other coordinate system
   EntityHandle field_meshest = (*field_it)->getMeshset();
   for (auto &cs : coordinateSystems)
     CHKERR m_field.get_moab().remove_entities(cs->getMeshset(), &field_meshest,
                                               1);
 
+  // Find coordinate system
   auto cs_it = coordinateSystems.get<CoordSysName_mi_tag>().find(cs_name);
   if (cs_it == coordinateSystems.get<CoordSysName_mi_tag>().end())
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "Coord system < %s > not found", cs_name.c_str());
 
+  // Add field to coordinate system
   CHKERR m_field.get_moab().add_entities((*cs_it)->getMeshset(), &field_meshest,
                                          1);
 
@@ -210,6 +218,7 @@ CoordSystemsManager::setFieldCoordinateSystem(const std::string field_name,
     }
   }
 
+  // Check consistency of field and coordinate system
   switch ((*field_it)->getSpace()) {
   case NOSPACE:
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No space given");

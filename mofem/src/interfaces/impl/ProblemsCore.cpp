@@ -35,17 +35,25 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
   EntityHandle meshset;
   CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
   CHKERR get_moab().tag_set_data(th_ProblemId, &meshset, 1, &id);
-  
-  const void *tag_vals[] = {&rAnk};
-  ParallelComm *pcomm = ParallelComm::get_pcomm(
+
+  // Add problem meshset to partion meshset. In case of no elements
+  // on processor part, when mesh file is red, finite element meshset is
+  // prevented form deletion by moab reader.
+  auto add_meshset_to_partition = [&](auto meshset) {
+    MoFEMFunctionBegin;
+    const void *tag_vals[] = {&rAnk};
+    ParallelComm *pcomm = ParallelComm::get_pcomm(
         &get_moab(), get_basic_entity_data_ptr()->pcommID);
-  Tag part_tag = pcomm->part_tag();
-  Range tagged_sets;
-  CHKERR get_moab().get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag,
-                                                 tag_vals, 1, tagged_sets,
-                                                 moab::Interface::UNION);
-  for (auto s : tagged_sets)
+    Tag part_tag = pcomm->part_tag();
+    Range tagged_sets;
+    CHKERR get_moab().get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag,
+                                                   tag_vals, 1, tagged_sets,
+                                                   moab::Interface::UNION);
+    for (auto s : tagged_sets)
     CHKERR get_moab().add_entities(s, &meshset, 1);
+    MoFEMFunctionReturn(0);
+  };
+  CHKERR add_meshset_to_partition(meshset);
 
   void const *tag_data[] = {name.c_str()};
   int tag_sizes[1];
@@ -118,53 +126,45 @@ MoFEMErrorCode Core::list_problem() const {
 MoFEMErrorCode
 Core::modify_problem_add_finite_element(const std::string &name_problem,
                                         const std::string &fe_name) {
-  MoFEMFunctionBeginHot;
-  try {
-    typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
-    ProblemsByName &set = pRoblems.get<Problem_mi_tag>();
-    ProblemsByName::iterator miit = set.find(name_problem);
-    if (miit == set.end()) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-               "this problem <%s> is not there", name_problem.c_str());
-    }
-    BitFEId f_id = getBitFEId(fe_name);
-    bool success = set.modify(miit, ProblemFiniteElementChangeBitAdd(f_id));
-    if (!success)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-              "modification unsuccessful");
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
+  MoFEMFunctionBegin;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  ProblemsByName &set = pRoblems.get<Problem_mi_tag>();
+  ProblemsByName::iterator miit = set.find(name_problem);
+  if (miit == set.end()) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is not there",
+             name_problem.c_str());
   }
-  MoFEMFunctionReturnHot(0);
+  BitFEId f_id = getBitFEId(fe_name);
+  bool success = set.modify(miit, ProblemFiniteElementChangeBitAdd(f_id));
+  if (!success)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+            "modification unsuccessful");
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 Core::modify_problem_unset_finite_element(const std::string &name_problem,
                                           const std::string &fe_name) {
-  MoFEMFunctionBeginHot;
-  try {
-    typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
-    ProblemsByName &set = pRoblems.get<Problem_mi_tag>();
-    ProblemsByName::iterator miit = set.find(name_problem);
-    if (miit == set.end()) {
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-               "this problem <%s> is not there", name_problem.c_str());
-    }
-    BitFEId f_id = getBitFEId(fe_name);
-    bool success = set.modify(miit, ProblemFiniteElementChangeBitUnSet(f_id));
-    if (!success)
-      SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-              "modification unsuccessful");
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
+  MoFEMFunctionBegin;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  ProblemsByName &set = pRoblems.get<Problem_mi_tag>();
+  ProblemsByName::iterator miit = set.find(name_problem);
+  if (miit == set.end()) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "this problem <%s> is not there",
+             name_problem.c_str());
   }
-  MoFEMFunctionReturnHot(0);
+  BitFEId f_id = getBitFEId(fe_name);
+  bool success = set.modify(miit, ProblemFiniteElementChangeBitUnSet(f_id));
+  if (!success)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+            "modification unsuccessful");
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 Core::modify_problem_ref_level_add_bit(const std::string &name_problem,
                                        const BitRefLevel &bit) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   ProblemsByName &set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator miit = set.find(name_problem);
@@ -176,13 +176,13 @@ Core::modify_problem_ref_level_add_bit(const std::string &name_problem,
   bool success = set.modify(miit, ProblemChangeRefLevelBitAdd(bit));
   if (!success)
     SETERRQ(PETSC_COMM_SELF, 1, "modification unsuccessful");
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 Core::modify_problem_ref_level_set_bit(const std::string &name_problem,
                                        const BitRefLevel &bit) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   ProblemsByName &set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator miit = set.find(name_problem);
@@ -195,13 +195,13 @@ Core::modify_problem_ref_level_set_bit(const std::string &name_problem,
   if (!success)
     SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
             "modification unsuccessful");
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 Core::modify_problem_mask_ref_level_add_bit(const std::string &name_problem,
                                             const BitRefLevel &bit) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   ProblemsByName &set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator miit = set.find(name_problem);
@@ -215,13 +215,13 @@ Core::modify_problem_mask_ref_level_add_bit(const std::string &name_problem,
   if (!success)
     SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
             "modification unsuccessful");
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 Core::modify_problem_mask_ref_level_set_bit(const std::string &name_problem,
                                             const BitRefLevel &bit) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   ProblemsByName &set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator miit = set.find(name_problem);
@@ -235,7 +235,7 @@ Core::modify_problem_mask_ref_level_set_bit(const std::string &name_problem,
   if (!success)
     SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
             "modification unsuccessful");
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::build_problem_on_distributed_mesh(int verb) {
@@ -251,7 +251,7 @@ MoFEMErrorCode Core::build_problem_on_distributed_mesh(int verb) {
 }
 
 MoFEMErrorCode Core::clear_problem(const std::string problem_name, int verb) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
@@ -295,7 +295,7 @@ MoFEMErrorCode Core::clear_problem(const std::string problem_name, int verb) {
     p_miit->getSubData().reset();
   if (p_miit->getComposedProblemsData())
     p_miit->getComposedProblemsData().reset();
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::build_problems(int verb) {
@@ -320,16 +320,13 @@ MoFEMErrorCode Core::build_problems(int verb) {
 }
 
 MoFEMErrorCode Core::clear_problems(int verb) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
   // iterate problems
-  for (Problem_multiIndex::iterator p_miit = pRoblems.begin();
-       p_miit != pRoblems.end(); p_miit++) {
-    ierr = clear_problem(p_miit->getName(), verb);
-    CHKERRG(ierr);
-  }
-  MoFEMFunctionReturnHot(0);
+  for (auto p_miit = pRoblems.begin(); p_miit != pRoblems.end(); p_miit++)
+    CHKERR clear_problem(p_miit->getName(), verb);
+  MoFEMFunctionReturn(0);
 }
 
 #define SET_BASIC_METHOD(METHOD, PROBLEM_PTR)                                  \

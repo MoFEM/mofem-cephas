@@ -70,16 +70,24 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
   BitFEId id = getFEShift();
   CHKERR get_moab().tag_set_data(th_FEId, &meshset, 1, &id);
 
-  const void *tag_vals[] = {&rAnk};
-  ParallelComm *pcomm = ParallelComm::get_pcomm(
-      &get_moab(), get_basic_entity_data_ptr()->pcommID);
-  Tag part_tag = pcomm->part_tag();
-  Range tagged_sets;
-  CHKERR get_moab().get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag,
-                                                 tag_vals, 1, tagged_sets,
-                                                 moab::Interface::UNION);
-  for(auto s : tagged_sets)
-    CHKERR get_moab().add_entities(s, &meshset, 1);
+  // Add finite element meshset to partion meshset. In case of no elements
+  // on processor part, when mesh file is red, finite element meshset is
+  // prevented form deletion by moab reader.
+  auto add_meshset_to_partition = [&](auto meshset) {
+    MoFEMFunctionBegin;
+    const void *tag_vals[] = {&rAnk};
+    ParallelComm *pcomm = ParallelComm::get_pcomm(
+        &get_moab(), get_basic_entity_data_ptr()->pcommID);
+    Tag part_tag = pcomm->part_tag();
+    Range tagged_sets;
+    CHKERR get_moab().get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag,
+                                                   tag_vals, 1, tagged_sets,
+                                                   moab::Interface::UNION);
+    for (auto s : tagged_sets)
+      CHKERR get_moab().add_entities(s, &meshset, 1);
+    MoFEMFunctionReturn(0);
+  };
+  CHKERR add_meshset_to_partition(meshset);
 
   // id name
   void const *tag_data[] = {fe_name.c_str()};
@@ -96,7 +104,6 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
     std::ostringstream ss;
     ss << "add finite element: " << fe_name << std::endl;
     PetscPrintf(cOmm, ss.str().c_str());
-    // list_finiteElements();
   }
   MoFEMFunctionReturn(0);
 }

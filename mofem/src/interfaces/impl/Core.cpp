@@ -602,12 +602,12 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       rval =
           get_moab().tag_get_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &*mit,
                                     1, (const void **)&cs_name, &cs_name_size);
-      if (rval == MB_SUCCESS && cs_name_size) {
+      if (rval == MB_SUCCESS && cs_name_size)
         CHKERR cs_manger_ptr->getCoordSysPtr(std::string(cs_name, cs_name_size),
                                              cs_ptr);
-      } else {
+      else
         CHKERR cs_manger_ptr->getCoordSysPtr("UNDEFINED", cs_ptr);
-      }
+
       p = fIelds.insert(
           boost::shared_ptr<Field>(new Field(moab, *mit, cs_ptr)));
       if (verb >= VERBOSE) {
@@ -616,6 +616,8 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         PetscPrintf(cOmm, ss.str().c_str());
       }
       if(!p.second) {
+        // Field meshset exist, remove duplicate meshsets form other
+        // processors.
         Range ents;
         CHKERR get_moab().get_entities_by_handle(*mit, ents, true);
         CHKERR get_moab().add_entities((*p.first)->getMeshset(), ents);
@@ -643,6 +645,8 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       CHKERR get_moab().get_entities_by_handle(*mit, ents, true);
       ref_elems_to_add.merge(ents);
       if(!p.second) {
+        // Finite element meshset exist, could be crated on other processor.
+        // Remove duplicate.
         CHKERR get_moab().add_entities((*p.first)->getMeshset(), ents);
         CHKERR get_moab().delete_entities(&*mit, 1);
       } else {
@@ -664,8 +668,11 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         PetscPrintf(cOmm, ss.str().c_str());
       }
       if(!p.second) {
+        // Problem meshset exist, could be crated on other processor.
+        // Remove duplicate.
         Range ents;
         CHKERR get_moab().get_entities_by_handle(*mit, ents, true);
+        CHKERR get_moab().get_entities_by_type(*mit, MBENTITYSET, ents, true);
         CHKERR get_moab().add_entities(p.first->meshset, ents);
         CHKERR get_moab().delete_entities(&*mit, 1);
       } else {
