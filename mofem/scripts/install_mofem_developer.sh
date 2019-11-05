@@ -162,12 +162,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   fi
  
   # Add mirror
-  if spack mirror list | grep mofem_mirror
-  then
-    echo "Removing old mofem_mirror ..."
-    spack mirror remove mofem_mirror
-    echo -e "Done.\n"
-  fi
+  spack mirror remove mofem_mirror 2> /dev/null
   spack mirror add mofem_mirror $SPACK_MIRROR_DIR
 
   # Install packages required by Spack
