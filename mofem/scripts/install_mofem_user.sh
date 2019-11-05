@@ -163,9 +163,8 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
     echo "Removing old mofem_mirror ..."
     spack mirror remove mofem_mirror
     echo -e "Done.\n"
-  else
-    spack mirror add mofem_mirror $SPACK_MIRROR_DIR
   fi
+  spack mirror add mofem_mirror $SPACK_MIRROR_DIR
 
   # Install packages required by Spack
   spack bootstrap
