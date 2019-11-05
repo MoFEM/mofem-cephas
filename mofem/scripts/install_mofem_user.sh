@@ -189,19 +189,6 @@ spack install  -j $NumberOfProcs mofem-fracture-module build_type=Release
 # Activate fracture module
 spack view --verbose symlink -i um_view mofem-fracture-module
  
-# Export view and make view visible from any directory
-export PATH=$PWD/um_view/bin:$PATH 
-# Add PATH to .bashrc on Ubuntu or .bash_profile on Mac
-if [ ${machine} = "Linux" ]
-then
-  echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bashrc
-elif [ ${machine} = "Mac" ]
-then
-  echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
-fi
- 
-echo -e "\nFinished installing MoFEM User Module and Fracture Module.\n"
- 
 # Test elasticity
 cd $MOFEM_INSTALL_DIR/um_view/elasticity
 echo "Current directory: $PWD"
@@ -221,5 +208,26 @@ echo "Current directory: $PWD"
 -my_file examples/analytical_bc/out_10.h5m \
 -my_order 2 \
 -my_ref 0 2>&1 | tee log
+
+echo -e "\nFinished testing fracture module.\n"
+
+# Check the output message and finalise the installation
+if tail -n 1 log | grep -q "Done rank = 0"
+then
+  echo -e "\nInstallation SUCCESSFUL!\n"
   
-echo -e "\nFinished testing crack propagation.\n"
+  # Export view and make view visible from any directory
+  export PATH=$PWD/um_view/bin:$PATH 
+  # Add PATH to .bashrc on Ubuntu or .bash_profile on Mac
+  if [ ${machine} = "Linux" ]
+  then
+    echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bashrc
+  elif [ ${machine} = "Mac" ]
+  then
+    echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
+  fi
+
+  echo "Please check PATH in .bashrc (Ubuntu) or .bash_profile (macOS) and remove the old ones."
+else
+   echo -e "\nInstallation FAILED!\n"
+fi
