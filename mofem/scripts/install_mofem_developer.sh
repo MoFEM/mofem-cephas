@@ -249,10 +249,10 @@ export PATH=$PWD/um_view/bin:$PATH
 # Add PATH to .bashrc on Ubuntu or .bash_profile on Mac
 if [ ${machine} = "Linux" ]
 then
-  echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bashrc
+  echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bashrc
 elif [ ${machine} = "Mac" ]
 then
-  echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
+  echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bash_profile
 fi
 
 mkdir -p build_release

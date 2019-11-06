@@ -196,10 +196,7 @@ cd $MOFEM_INSTALL_DIR/um_view/elasticity
 echo "Current directory: $PWD"
 ./elasticity \
 -my_file LShape.h5m \
--my_order 2 \
--ksp_type gmres \
--pc_type lu -pc_factor_mat_solver_package mumps \
--ksp_monitor 2>&1 | tee log
+-my_order 2 2>&1 | tee log
   
 echo -e "\nFinished testing elasticity.\n"
  
@@ -223,10 +220,10 @@ then
   # Add PATH to .bashrc on Ubuntu or .bash_profile on Mac
   if [ ${machine} = "Linux" ]
   then
-    echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bashrc
+    echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bashrc
   elif [ ${machine} = "Mac" ]
   then
-    echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
+    echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bash_profile
   fi
 
   echo "Please check PATH in .bashrc (Ubuntu) or .bash_profile (macOS) and remove the old ones."
