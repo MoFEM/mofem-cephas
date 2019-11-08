@@ -645,7 +645,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       CHKERR get_moab().get_entities_by_handle(*mit, ents, true);
       ref_elems_to_add.merge(ents);
       if(!p.second) {
-        // Finite element meshset exist, could be crated on other processor.
+        // Finite element mesh set exist, could be crated on other processor.
         // Remove duplicate.
         CHKERR get_moab().add_entities((*p.first)->getMeshset(), ents);
         CHKERR get_moab().delete_entities(&*mit, 1);
