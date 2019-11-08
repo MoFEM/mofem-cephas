@@ -71,8 +71,8 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
   CHKERR get_moab().tag_set_data(th_FEId, &meshset, 1, &id);
 
   // Add finite element meshset to partion meshset. In case of no elements
-  // on processor part, when mesh file is red, finite element meshset is
-  // prevented form deletion by moab reader.
+  // on processor part, when mesh file is read, finite element meshset is
+  // prevented from deletion by moab reader.
   auto add_meshset_to_partition = [&](auto meshset) {
     MoFEMFunctionBegin;
     const void *tag_vals[] = {&rAnk};

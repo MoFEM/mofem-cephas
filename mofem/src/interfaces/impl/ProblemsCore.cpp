@@ -37,8 +37,8 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
   CHKERR get_moab().tag_set_data(th_ProblemId, &meshset, 1, &id);
 
   // Add problem meshset to partion meshset. In case of no elements
-  // on processor part, when mesh file is red, finite element meshset is
-  // prevented form deletion by moab reader.
+  // on processor part, when mesh file is read, finite element meshset is
+  // prevented from deletion by moab reader.
   auto add_meshset_to_partition = [&](auto meshset) {
     MoFEMFunctionBegin;
     const void *tag_vals[] = {&rAnk};

@@ -616,7 +616,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         PetscPrintf(cOmm, ss.str().c_str());
       }
       if(!p.second) {
-        // Field meshset exist, remove duplicate meshsets form other
+        // Field meshset exists, remove duplicate meshsets from other
         // processors.
         Range ents;
         CHKERR get_moab().get_entities_by_handle(*mit, ents, true);
@@ -668,7 +668,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         PetscPrintf(cOmm, ss.str().c_str());
       }
       if(!p.second) {
-        // Problem meshset exist, could be crated on other processor.
+        // Problem meshset exists, could be created on other processor.
         // Remove duplicate.
         Range ents;
         CHKERR get_moab().get_entities_by_handle(*mit, ents, true);
