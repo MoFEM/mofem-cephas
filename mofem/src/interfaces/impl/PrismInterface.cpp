@@ -1,6 +1,6 @@
 /** \file PrismInterface.cpp
- * \brief Inserting prims interface elements
- * \todo FIXME this is no so good implementation
+ * \brief Insert prisms in the interface between two surfaces
+ * \todo FIXME this is not so good implementation
  *
  * \ingroup mofem_prism_interface
  */
@@ -308,9 +308,8 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
       }
     }
 
-    // This is a case when separate sub-domains are split, so wee need
-    // additional
-    // tetrahedron for seed process
+    // This is a case when separate sub-domains are split, so we need
+    // additional tetrahedron for seed process
     if (side_ents3d_tris_on_surface.size() != triangles.size()) {
       Range left_triangles = subtract(triangles, side_ents3d_tris_on_surface);
       Range tets;
@@ -395,7 +394,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
+MoFEMErrorCode PrismInterface::findFacesWithThreeNodesOnInternalSurfaceSkin(
     const EntityHandle sideset, const BitRefLevel mesh_bit_level,
     const bool recursive, Range &faces_with_three_nodes_on_front, int verb) {
   Interface &m_field = cOre;
@@ -431,7 +430,7 @@ MoFEMErrorCode PrismInterface::findIfTringleHasThreeNodesOnInternalSurfaceSkin(
   Range nodes; // nodes from triangles
   CHKERR moab.get_connectivity(triangles, nodes, true);
 
-  Range ents3d; // 3d ents form nodes
+  Range ents3d; // 3d ents from nodes
   CHKERR moab.get_adjacencies(nodes, 3, false, ents3d, moab::Interface::UNION);
 
   if (mesh_bit_level.any()) {
@@ -578,6 +577,7 @@ MoFEMErrorCode PrismInterface::splitSides(const EntityHandle meshset,
                     add_interface_entities, recursive, verb);
   MoFEMFunctionReturn(0);
 }
+
 MoFEMErrorCode PrismInterface::splitSides(
     const EntityHandle meshset, const BitRefLevel &bit,
     const BitRefLevel &inhered_from_bit_level,
@@ -602,7 +602,7 @@ MoFEMErrorCode PrismInterface::splitSides(
   // 3d ents on "father" side
   Range side_ents3d;
   CHKERR moab.get_entities_by_handle(children[0], side_ents3d, false);
-  // 3d ents on "mather" side
+  // 3d ents on "mother" side
   Range other_ents3d;
   CHKERR moab.get_entities_by_handle(children[1], other_ents3d, false);
   // faces of interface
@@ -631,7 +631,7 @@ MoFEMErrorCode PrismInterface::splitSides(
     PetscPrintf(m_field.get_comm(), "split sides nodes %u\n", nodes.size());
   }
 
-  typedef std::map<EntityHandle, /*node on "mather" side*/
+  typedef std::map<EntityHandle, /*node on "mother" side*/
                    EntityHandle  /*node on "father" side*/
                    >
       MapNodes;
@@ -753,8 +753,8 @@ MoFEMErrorCode PrismInterface::splitSides(
   EntityHandle meshset_for_bit_level;
   CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
                              meshset_for_bit_level);
-  // subtract those elements which will be refined, i.e. disconnected form other
-  // side elements, and connected to new prisms, if they area created
+  // subtract those elements which will be refined, i.e. disconnected from other
+  // side elements, and connected to new prisms, if they are created
   meshset_3d_ents = subtract(meshset_3d_ents, side_ents3d);
   CHKERR moab.add_entities(meshset_for_bit_level, meshset_3d_ents);
 
@@ -938,6 +938,28 @@ MoFEMErrorCode PrismInterface::splitSides(
     int num_nodes;
     const EntityHandle *conn;
     CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
+    int sense = 0; ///< sense of the triangle used to create a prism
+    if (moab.type_from_handle(*eit) == MBTRI) {
+      Range ents_3d;
+      CHKERR moab.get_adjacencies(&*eit, 1, 3, false, ents_3d);
+      ents_3d = intersect(ents_3d, side_ents3d);
+      switch (ents_3d.size()) {
+      case 0:
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                "Did not find adjacent tets on one side of the interface, "
+                "check its definition and try creating separate sidesets for "
+                "each surface");
+      case 2:
+        SETERRQ(
+            m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+            "Found both adjacent tets on one side of the interface, check its "
+            "definition and try creating separate sidesets for each surface");
+      default:
+        break;
+      }
+      int side, offset;
+      CHKERR moab.side_number(ents_3d.front(), *eit, side, sense, offset);
+    }
     EntityHandle new_conn[num_nodes];
     int nb_new_conn = 0;
     for (int ii = 0; ii != num_nodes; ++ii) {
@@ -984,6 +1006,17 @@ MoFEMErrorCode PrismInterface::splitSides(
         // set prism connectivity
         EntityHandle prism_conn[6] = {conn[0],     conn[1],     conn[2],
                                       new_conn[0], new_conn[1], new_conn[2]};
+        if (sense != 1 && sense != -1) {
+          SETERRQ(
+              m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+              "Undefined sense of a trinagle on the interface, check its "
+              "definition and try creating separate sidesets for each surface");
+        }
+        if (sense == -1) {
+          // swap nodes in triangles for correct prism creation
+          std::swap(prism_conn[1], prism_conn[2]);
+          std::swap(prism_conn[4], prism_conn[5]);
+        }
         EntityHandle prism;
         CHKERR moab.create_element(MBPRISM, prism_conn, 6, prism);
         CHKERR moab.add_entities(meshset_for_bit_level, &prism, 1);
