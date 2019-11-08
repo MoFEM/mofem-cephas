@@ -101,6 +101,8 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline int getFaceType() const;
 
+    inline boost::shared_ptr<const NumeredEntFiniteElement> getNumeredEntFiniteElementPtr() const;
+
     /** \brief get face aRea Master
      */
     inline double getAreaMaster();
@@ -159,6 +161,40 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline const ContactPrismElementForcesAndSourcesCore *
     getContactPrismElementForcesAndSourcesCore();
+
+    /**
+     * @brief User call this function to loop over elements on the side of
+     * face. This function calls finite element with is operator to do
+     * calculations.
+     *
+     * @param fe_name
+     * @param side_fe
+     * @param dim
+     * @return MoFEMErrorCode
+     */
+    MoFEMErrorCode loopSide(const string &fe_name,
+                            ForcesAndSourcesCore *side_fe, const size_t dim);
+
+    /**
+     *
+     * User call this function to loop over elements on the side of face. This
+     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnSide with is
+     * operator to do calculations.
+     *
+     * @param  fe_name Name of the element
+     * @param  method  Finite element object
+     * @return         error code
+     */
+    template <int SWITCH>
+    MoFEMErrorCode loopSideVolumes(
+        const string &fe_name,
+        VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method);
+
+  protected:
+    inline ForcesAndSourcesCore *getSidePtrFE() const;
+    // /** \brief Return raw pointer to Finite Element Method object
+    //  */
+    // inline const FEMethod *getFEMethod() const;
   };
 
   MoFEMErrorCode operator()();
@@ -178,6 +214,14 @@ protected:
                                ///< coordinates and weights
   MatrixDouble gaussPtsSlave;  ///< matrix storing slave Gauss points local
                                ///< coordinates and weights
+
+  VectorDouble nOrmalSlave, tangentOneSlave, tangentTwoSlave;
+
+  MatrixDouble normalsAtGaussPtsSlave;
+  MatrixDouble tangentOneAtGaussPtsSlave;
+  MatrixDouble tangentTwoAtGaussPtsSlave;
+  OpSetContravariantPiolaTransformOnFace opContravariantTransformSlave;
+  OpSetCovariantPiolaTransformOnFace opCovariantTransformSlave;
 
   /**
    * @brief Entity data on element entity rows fields
@@ -221,6 +265,15 @@ protected:
    */
   MoFEMErrorCode loopOverOperators();
 
+  /**
+   * @brief Iterate user data operators
+   *
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode
+  getValueHdivDemkowiczBase(MatrixDouble &pts, FieldApproximationBase m_s_base,
+                            DataForcesAndSourcesCore &m_s_data);
+
   /** \brief function that gets entity field data.
    *
    * \param master_data data fot master face
@@ -250,6 +303,7 @@ protected:
       DataForcesAndSourcesCore &slave_data, const std::string &field_name,
       FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo = MBVERTEX,
       const EntityType type_hi = MBPOLYHEDRON) const;
+
 
   /** \brief function that gets nodes indices.
    *
@@ -289,7 +343,47 @@ protected:
       FieldSpace &master_space, FieldSpace &slave_space,
       FieldApproximationBase &master_base,
       FieldApproximationBase &slave_base) const;
+
+private:
+  /**
+   * @brief Element to integrate on the sides
+   *
+   */
+  ForcesAndSourcesCore *sidePtrFE;
+
+  /**
+   * @brief Set the pointer to face element on the side
+   *
+   * \note Function is is used by face element, while it iterates over
+   * elements on the side
+   *
+   * @param side_fe_ptr
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode setSideFEPtr(const ForcesAndSourcesCore *side_fe_ptr);
 };
+
+boost::shared_ptr<const NumeredEntFiniteElement>
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getNumeredEntFiniteElementPtr() const {
+  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+      ->numeredEntFiniteElementPtr;
+};
+
+ForcesAndSourcesCore *
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::getSidePtrFE()
+    const {
+  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+      ->sidePtrFE;
+}
+
+template <int SWITCH>
+MoFEMErrorCode
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
+    const string &fe_name,
+    VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method) {
+  return loopSide(fe_name, &fe_method, 3);
+}
 
 inline int
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFaceType() const {
@@ -363,6 +457,11 @@ ContactPrismElementForcesAndSourcesCore::UserDataOperator::
     getContactPrismElementForcesAndSourcesCore() {
   return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE);
 }
+
+// const FEMethod *
+// ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFEMethod() const {
+//   return ptrFE;
+// }
 
 } // namespace MoFEM
 
