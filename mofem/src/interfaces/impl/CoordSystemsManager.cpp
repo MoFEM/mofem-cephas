@@ -89,7 +89,7 @@ MoFEMErrorCode CoordSystemsManager::initialiseDatabaseFromMesh(int verb) {
   Range meshsets;
   CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
 
-  // Iterate all meshset to find coordinate system
+  // Iterate all mesh sets to find coordinate system
   for (auto meshset : meshsets) {
     const void *cs_name_ptr = nullptr;
     int cs_name_size = 0;
@@ -107,8 +107,8 @@ MoFEMErrorCode CoordSystemsManager::initialiseDatabaseFromMesh(int verb) {
                 boost::make_shared<CoordSys>(moab, meshset));
 
         if (!p.second) {
-          // Coordinate system is in database. Could be created
-          // processor. check Consistency of both coordinate systems with the
+          // Coordinate system is in database. Could be created by another
+          // processor Check consistency of both coordinate systems with the
           // same name.
           if (((*p.first)->getDim(0) != dim[0]) ||
               ((*p.first)->getDim(1) != dim[1]) ||
