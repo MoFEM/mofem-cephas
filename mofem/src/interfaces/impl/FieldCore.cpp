@@ -111,8 +111,8 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
                                      meshset);
 
     // Add filed meshset to partion meshset. In case of no elements
-    // on processor part, when mesh file is red, finite element meshset is
-    // prevented form deletion by moab reader.
+    // on processor part, when mesh file is read, finite element meshset is
+    // prevented from deletion by moab reader.
     auto add_meshset_to_partition = [&](auto meshset) {
       MoFEMFunctionBegin;
       const void *tag_vals[] = {&rAnk};

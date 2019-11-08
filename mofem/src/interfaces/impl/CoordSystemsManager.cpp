@@ -107,9 +107,9 @@ MoFEMErrorCode CoordSystemsManager::initialiseDatabaseFromMesh(int verb) {
                 boost::make_shared<CoordSys>(moab, meshset));
 
         if (!p.second) {
-          // Coordinate system is in database. Could be crated on other
-          // processor. Check constancy both coordinate systems with the same
-          // name.
+          // Coordinate system is in database. Could be created
+          // processor. check Consistency of both coordinate systems with the
+          // same name.
           if (((*p.first)->getDim(0) != dim[0]) ||
               ((*p.first)->getDim(1) != dim[1]) ||
               ((*p.first)->getDim(2) != dim[2]) ||
