@@ -110,7 +110,7 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
                                      meshset);
 
-    // Add filed mesh set to partion meshset. In case of no elements
+    // Add field mesh set to partion meshset. In case of no elements
     // on processor part, when mesh file is read, finite element meshset is
     // prevented from deletion by moab reader.
     auto add_meshset_to_partition = [&](auto meshset) {
