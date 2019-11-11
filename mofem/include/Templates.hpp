@@ -348,7 +348,7 @@ inline FTensor::Ddg<FTensor::PackPtr<double *, 1>, 3, 3>
 getFTensor4DdgFromMat(MatrixDouble &data) {
   if (data.size1() != 36)
     THROW_MESSAGE(
-        "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, numer "
+        "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
         "of rows should be 36 but is " +
         boost::lexical_cast<std::string>(data.size1()));
 
