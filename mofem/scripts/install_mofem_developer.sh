@@ -258,7 +258,7 @@ fi
 mkdir -p build_release
 cd build_release/
 
-MOFEM_CEPHAS_SPACK_ID=`spack find -l mofem-cephas | grep mofem-cephas@develop | sed 's/mofem-cephas.*//' | head -n 1`
+MOFEM_CEPHAS_SPACK_ID=`spack find -lv mofem-cephas | grep mofem-cephas@develop | grep build_type=Release | awk '{print $1}'| tail -n 1`
 echo "mofem-cephas id for release: $MOFEM_CEPHAS_SPACK_ID"
 
 spack setup mofem-users-modules@develop \
@@ -360,7 +360,7 @@ spack view --verbose symlink -i um_view_debug mofem-cephas@develop build_type=De
 mkdir -p build_debug
 cd build_debug/
 
-MOFEM_CEPHAS_SPACK_ID=`spack find -l mofem-cephas | grep mofem-cephas@develop | sed 's/mofem-cephas.*//' | head -n 1`
+MOFEM_CEPHAS_SPACK_ID=`spack find -lv mofem-cephas | grep mofem-cephas@develop | grep build_type=Debug | awk '{print $1}'| tail -n 1`
 echo "mofem-cephas id for debug: $MOFEM_CEPHAS_SPACK_ID"
 
 spack setup mofem-users-modules@develop \
