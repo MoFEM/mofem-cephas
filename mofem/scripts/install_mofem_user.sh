@@ -38,17 +38,13 @@ esac
 # Get numbers of processor
 if [ ${machine} = "Linux" ]
 then
-    NumberOfProcs=$(($(cat /proc/cpuinfo | grep -i "^processor" | wc -l)/2))
+    NumberOfProcs=$(nproc)
 elif [ ${machine} = "Mac" ]
 then
     NumberOfProcs=$(($(sysctl -n hw.ncpu)/2))
 fi
-  
-if
-    [ "$NumberOfProcs" -lt 1 ]
-then
-    NumberOfProcs=1
-fi
+# max(NumberOfProcs, 1)
+NumberOfProcs=$(( NumberOfProcs > 1 ? NumberOfProcs : 1 ))
   
 echo "The number of processors is $NumberOfProcs"
   
