@@ -11,8 +11,11 @@
 #       1. Copy install_mofem_user.sh to the directory where MoFEM will be installed
 #       2. Run install_mofem_user.sh from the command line
 #
-# Note: Installation script changes .bash_profile. Inspect that file after installation.
-  
+# Note: Installation script changes .bashrc on Ubuntu or .bash_profile on Mac.
+# Please inspect the file after installation.
+
+echo "Start time: $(date +"%T")"
+
 ##############################
 # INITIALISATION
 ##############################
@@ -35,17 +38,13 @@ esac
 # Get numbers of processor
 if [ ${machine} = "Linux" ]
 then
-    NumberOfProcs=$(($(cat /proc/cpuinfo | grep -i "^processor" | wc -l)/2))
+    NumberOfProcs=$(nproc)
 elif [ ${machine} = "Mac" ]
 then
     NumberOfProcs=$(($(sysctl -n hw.ncpu)/2))
 fi
-  
-if
-    [ "$NumberOfProcs" -lt 1 ]
-then
-    NumberOfProcs=1
-fi
+# max(NumberOfProcs, 1)
+NumberOfProcs=$(( NumberOfProcs > 1 ? NumberOfProcs : 1 ))
   
 echo "The number of processors is $NumberOfProcs"
   
@@ -123,10 +122,11 @@ SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
 
   if [ ! -f "$PWD/spack.tgz" ]; then
-    echo "Download spack"
+    echo "Downloading spack ..."
     mkdir -p $SPACK_ROOT_DIR &&\
     curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
     | tar xzC $SPACK_ROOT_DIR --strip 1
+    echo -e "Done.\n"
   else 
     mkdir -p $SPACK_ROOT_DIR &&\
     tar xzf $PWD/spack.tgz -C $SPACK_ROOT_DIR --strip 1
@@ -134,14 +134,23 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
 
   # Initialise Spack environment variables:
   . $SPACK_ROOT_DIR/share/spack/setup-env.sh
-
+  # Add command to configuration file .bashrc on Ubuntu or .bash_profile on Mac
+  if [ ${machine} = "Linux" ]
+  then
+    echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc
+  elif [ ${machine} = "Mac" ]
+  then
+    echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bash_profile
+  fi
+  
   # Download mirror
   if [ ! -d "$SPACK_MIRROR_DIR" ]; then
     if [ ! -f "$PWD/mirror.tgz" ]; then
-      echo "Download spack mofem mirror"
+      echo "Downloading spack mofem mirror ..."
       mkdir -p $SPACK_MIRROR_DIR && \
       curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
       | tar xzC $SPACK_MIRROR_DIR --strip 1
+      echo -e "Done.\n"
     else 
       mkdir -p $SPACK_MIRROR_DIR && \
       tar xzf $PWD/mirror.tgz -C $SPACK_MIRROR_DIR  --strip 1
@@ -149,12 +158,9 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   fi
  
   # Add mirror
-  spack mirror remove mofem_mirror || true
+  spack mirror remove mofem_mirror 2> /dev/null
   spack mirror add mofem_mirror $SPACK_MIRROR_DIR
 
-  # Add command to configuration file .bash_profile
-  echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bash_profile
- 
   # Install packages required by Spack
   spack bootstrap
 fi
@@ -181,21 +187,12 @@ spack install  -j $NumberOfProcs mofem-fracture-module build_type=Release
 # Activate fracture module
 spack view --verbose symlink -i um_view mofem-fracture-module
  
-# Export view and make view visible from any directory
-export PATH=$PWD/um_view/bin:$PATH 
-echo "export PATH=$PWD/um_view/bin:$PATH" >> ~/.bash_profile
- 
-echo -e "\nFinished installing MoFEM User Module and Fracture Module.\n"
- 
 # Test elasticity
 cd $MOFEM_INSTALL_DIR/um_view/elasticity
 echo "Current directory: $PWD"
 ./elasticity \
 -my_file LShape.h5m \
--my_order 2 \
--ksp_type gmres \
--pc_type lu -pc_factor_mat_solver_package mumps \
--ksp_monitor 2>&1 | tee log
+-my_order 2 2>&1 | tee log
   
 echo -e "\nFinished testing elasticity.\n"
  
@@ -206,5 +203,28 @@ echo "Current directory: $PWD"
 -my_file examples/analytical_bc/out_10.h5m \
 -my_order 2 \
 -my_ref 0 2>&1 | tee log
+
+echo -e "\nFinished testing fracture module.\n"
+
+# Check the output message and finalise the installation
+if tail -n 1 log | grep -q "Done rank = 0"
+then
+  echo -e "\nInstallation SUCCESSFUL!\n"
   
-echo -e "\nFinished testing crack propagation.\n"
+  # Export view and make view visible from any directory
+  export PATH=$PWD/um_view/bin:$PATH 
+  # Add PATH to .bashrc on Ubuntu or .bash_profile on Mac
+  if [ ${machine} = "Linux" ]
+  then
+    echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bashrc
+  elif [ ${machine} = "Mac" ]
+  then
+    echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bash_profile
+  fi
+
+  echo "Please check PATH in .bashrc (Ubuntu) or .bash_profile (macOS) and remove the old ones."
+else
+   echo -e "\nInstallation FAILED!\n"
+fi
+
+echo "End time: $(date +"%T")"
