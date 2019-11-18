@@ -233,9 +233,7 @@ struct CubitMeshSets {
    * Block Name Conventions:
 
    * Materials are defined with block names starting with MAT_
-   * e.g. MAT_ELASTIC_abcd, MAT_FRACTcdef etc.
-   * Solution procedures are defined with block names starting with SOL_ e.g.
-   * SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
+   * e.g. MAT_ELASTIC_abcd.
    *
    * List of materials/solution procedures
 
@@ -334,7 +332,7 @@ struct CubitMeshSets {
   Tag nsTag, ssTag, nsTag_data, ssTag_data, bhTag, bhTag_header, thBlockAttribs,
       entityNameTag;
 
-  MoFEMErrorCode getTagsHanlders(Interface &moab);
+  MoFEMErrorCode getTagsHandlers(Interface &moab);
 };
 
 /**
