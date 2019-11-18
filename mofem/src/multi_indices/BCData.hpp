@@ -35,9 +35,10 @@ struct GenericCubitBcData {
      * @param  attributes vector of doubles
      * @return            error code
      */
-    virtual MoFEMErrorCode fill_data(const std::vector<char>& bc_data) {
+    virtual MoFEMErrorCode fill_data(const std::vector<char> &bc_data) {
       MoFEMFunctionBeginHot;
-      SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic bc type");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "It makes no sense for the generic bc type");
       MoFEMFunctionReturnHot(0);
     }
 
@@ -47,9 +48,10 @@ struct GenericCubitBcData {
      * @param  size    size of data in bytes
      * @return         error code
      */
-    virtual MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    virtual MoFEMErrorCode set_data(void *tag_ptr, unsigned int size) const {
       MoFEMFunctionBeginHot;
-      SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic bc type");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+              "It makes no sense for the generic bc type");
       MoFEMFunctionReturnHot(0);
     }
 
@@ -310,15 +312,15 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
  */
  struct TemperatureCubitBcData: public GenericCubitBcData {
    struct __attribute__ ((packed)) _data_{
-     char name[11]; //< 11 characters for "Temperature"
-     char pre1; //< This is always zero
-     char pre2; //< 0: temperature is not applied on thin shells (default); 1: temperature is applied on thin shells
-     char flag1; //< 0: N/A, 1: temperature value applied (not on thin shells)
-     char flag2; //< 0: N/A, 1: temperature applied on thin shell middle
-     char flag3; //< 0: N/A, 1: thin shell temperature gradient specified
-     char flag4; //< 0: N/A, 1: top thin shell temperature
-     char flag5; //< 0: N/A, 1: bottom thin shell temperature
-     char flag6; //< This is always zero
+     char name[11]; //< 11 characters for "Temperature" (11)
+     char pre1; //< This is always zero (12)
+     char pre2; //< 0: temperature is not applied on thin shells (default); 1: temperature is applied on thin shells (13)
+     char flag1; //< 0: N/A, 1: temperature value applied (not on thin shells) (14)
+     char flag2; //< 0: N/A, 1: temperature applied on thin shell middle (15)
+     char flag3; //< 0: N/A, 1: thin shell temperature gradient specified (16)
+     char flag4; //< 0: N/A, 1: top thin shell temperature (17)
+     char flag5; //< 0: N/A, 1: bottom thin shell temperature (18)
+     char flag6; //< This is always zero (19)
      double value1; //< Temperature (default case - no thin shells)
      double value2; //< Temperature for middle of thin shells
      double value3; //< Temperature gradient for thin shells
@@ -337,27 +339,43 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
      bzero(&data,sizeof(data));
    }
 
-   MoFEMErrorCode fill_data(const std::vector<char>& bc_data) {
+   MoFEMErrorCode fill_data(const std::vector<char> &bc_data) {
      MoFEMFunctionBeginHot;
-     //Fill data
-     if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-     memcpy(&data, &bc_data[0], sizeof(data));
+     // Fill data
+     if (bc_data.size() > sizeof(data))
+       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Wrong number of parameters in Cubit %d != %d", bc_data.size(),
+                sizeof(data));
+
+     // Fix for newer version of Cubit
+     if (bc_data.size() == 58) {
+       std::vector<char> new_bc_data(66, 0);
+       size_t ii = 0;
+       for (; ii != 16; ++ii)
+         new_bc_data[ii] = bc_data[ii];
+       for (; ii != bc_data.size(); ++ii)
+         new_bc_data[ii + 1] = bc_data[ii];
+       memcpy(&data, &new_bc_data[0], new_bc_data.size());
+     } else {
+       memcpy(&data, &bc_data[0], bc_data.size());
+     }
+
      MoFEMFunctionReturnHot(0);
    }
 
-   MoFEMErrorCode set_data(void *tag_ptr,unsigned int size) const {
+   MoFEMErrorCode set_data(void *tag_ptr, unsigned int size) const {
      MoFEMFunctionBeginHot;
-     if(size!=sizeof(data)) {
-       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+     if (size != sizeof(data)) {
+       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
      }
      memcpy(tag_ptr, &data, size);
      MoFEMFunctionReturnHot(0);
    }
 
-
    /*! \brief Print temperature bc data
    */
-   friend std::ostream& operator<<(std::ostream& os,const TemperatureCubitBcData& e);
+   friend std::ostream &operator<<(std::ostream &os,
+                                   const TemperatureCubitBcData &e);
  };
 
 /*! \struct PressureCubitBcData
@@ -420,7 +438,7 @@ struct HeatFluxCubitBcData: public GenericCubitBcData {
     char pre2; //< 0: heat flux is not applied on thin shells (default); 1: heat flux is applied on thin shells
     char flag1; //< 0: N/A, 1: normal heat flux case (i.e. single value, case without thin shells)
     char flag2; //< 0: N/A, 1: Thin shell top heat flux specified
-    char flag3; //< 0: N/A, 1: Thin shell bottom heat flux specidied
+    char flag3; //< 0: N/A, 1: Thin shell bottom heat flux specified
     double value1; //< Heat flux value for default case (no thin shells)
     double value2; //< Heat flux (thin shell top)
     double value3; //< Heat flux (thin shell bottom)
