@@ -15,7 +15,7 @@ RUN       mkdir -p /spack_views \
 # install mofem core library
 RUN       mkdir -p $MOFEM_BUILD_DIR \
           && cd $MOFEM_BUILD_DIR \
-          && spack setup mofem-cephas@develop ^openblas@0.3.2 \
+          && spack setup mofem-cephas@develop ^openblas~avx2 \
           && ./spconfig.py \
             -DMOFEM_BUILD_TESTS=YES \
             -DMPI_RUN_FLAGS="--allow-run-as-root" \
@@ -27,12 +27,12 @@ RUN       mkdir -p $MOFEM_BUILD_DIR \
 # create installation view
 RUN       mkdir -p $MOFEM_INSTALL_DIR \
           && cd $MOFEM_INSTALL_DIR \ 
-          && spack view symlink -i um_view mofem-cephas@develop ^openblas@0.3.2
+          && spack view symlink -i um_view mofem-cephas@develop ^openblas~avx2
 
 # install users modules
 RUN       mkdir -p $MOFEM_INSTALL_DIR/build \
           && cd $MOFEM_INSTALL_DIR/build \
-          && spack setup mofem-users-modules@develop ^openblas@0.3.2 \
+          && spack setup mofem-users-modules@develop ^openblas~avx2 \
           && ./spconfig.py \
             -DFM_VERSION_MAJOR=0 -DFM_VERSION_MINOR=0 -DFM_VERSION_BUILD=0 \
             -DWITH_METAIO=YES \
