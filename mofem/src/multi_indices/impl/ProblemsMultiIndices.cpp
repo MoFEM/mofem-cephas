@@ -67,29 +67,55 @@ std::ostream &operator<<(std::ostream &os, const Problem &e) {
 
 BitFEId Problem::getBitFEId() const { return *tagBitFEId; }
 
-MoFEMErrorCode
-Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,
-                                       const NumeredDofEntity **dof_ptr) const {
+boost::weak_ptr<NumeredDofEntity>
+Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx) const {
   MoFEMFunctionBeginHot;
+  boost::weak_ptr<NumeredDofEntity> dof_weak_ptr;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = numeredDofsRows->get<PetscGlobalIdx_mi_tag>().find(idx);
-  if (dit == numeredDofsRows->get<PetscGlobalIdx_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "row dof <%d> not found", idx);
+  if (dit != numeredDofsRows->get<PetscGlobalIdx_mi_tag>().end()) 
+    dof_weak_ptr = *dit;
+  return dof_weak_ptr;
+}
+
+boost::weak_ptr<NumeredDofEntity>
+Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx) const {
+  MoFEMFunctionBeginHot;
+  boost::weak_ptr<NumeredDofEntity> dof_weak_ptr;
+  NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
+  dit = numeredDofsCols->get<PetscGlobalIdx_mi_tag>().find(idx);
+  if (dit != numeredDofsCols->get<PetscGlobalIdx_mi_tag>().end()) 
+    dof_weak_ptr = *dit;
+  return dof_weak_ptr;
+}
+
+MoFEMErrorCode
+Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,
+                                       const NumeredDofEntity **dof_ptr, MoFEMTypes bh) const {
+  MoFEMFunctionBeginHot;
+  auto weak_dof_ptr = getRowDofsByPetscGlobalDofIdx(idx);
+  if(auto shared_dof_ptr = weak_dof_ptr.lock()) {
+     *dof_ptr = shared_dof_ptr.get();
+  } else {
+    if(bh == MF_EXIST)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "row dof <%d> not found", idx);
+    *dof_ptr = nullptr;
   }
-  *dof_ptr = &*(*dit);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode
 Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx,
-                                       const NumeredDofEntity **dof_ptr) const {
+                                       const NumeredDofEntity **dof_ptr, MoFEMTypes bh) const {
   MoFEMFunctionBeginHot;
-  NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
-  dit = numeredDofsCols->get<PetscGlobalIdx_mi_tag>().find(idx);
-  if (dit == numeredDofsCols->get<PetscGlobalIdx_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "row dof <%d> not found", idx);
+  auto weak_dof_ptr = getColDofsByPetscGlobalDofIdx(idx);
+  if(auto shared_dof_ptr = weak_dof_ptr.lock()) {
+     *dof_ptr = shared_dof_ptr.get();
+  } else {
+    if(bh == MF_EXIST)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "row dof <%d> not found", idx);
+    *dof_ptr = nullptr;
   }
-  *dof_ptr = &*(*dit);
   MoFEMFunctionReturnHot(0);
 }
 
