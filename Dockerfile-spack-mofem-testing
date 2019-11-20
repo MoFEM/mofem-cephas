@@ -7,6 +7,7 @@ ENV MOFEM_SRC_DIR=/mofem
 ENV MOFEM_ROOT_DIR=/mofem_build
 ENV MOFEM_INSTALL_DIR=/mofem_build/um
 ENV MOFEM_BUILD_DIR=/mofem_build/lib
+ENV OMPI_MCA_btl_vader_single_copy_mechanism=none
 
 RUN       mkdir -p /spack_views \
           && cd /spack_views \
