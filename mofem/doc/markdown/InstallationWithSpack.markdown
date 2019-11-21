@@ -339,8 +339,8 @@ and kick-start installation of the core library:
 cd $HOME/mofem_install
 mkdir lib
 cd lib/
-spack install --only dependencies mofem-cephas 
-spack setup mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
+spack install --only dependencies mofem-cephas+slepc ^petsc+X
+spack setup mofem-cephas@develop+slepc copy_user_modules=False build_type=RelWithDebInfo ^petsc+X
 ./spconfig.py -DMOFEM_BUILD_TESTS=ON $HOME/mofem_install/mofem-cephas/mofem/
 make -j4
 ctest

@@ -72,6 +72,8 @@ typedef ublas::vector<int, IntAllocator> VectorInt;
 typedef ublas::vector<double, DoubleAllocator> VectorDouble;
 typedef ublas::matrix<int, ublas::row_major, IntAllocator> MatrixInt;
 typedef ublas::matrix<double, ublas::row_major, DoubleAllocator> MatrixDouble;
+typedef ublas::matrix<std::complex<double>, ublas::row_major, DoubleAllocator>
+    MatrixComplexDouble;
 
 // bounded vector & matrices
 template <typename T, size_t N>
@@ -93,6 +95,7 @@ template <typename T, size_t N>
 using MatrixBoundedArray =
     ublas::matrix<T, ublas::row_major, ublas::bounded_array<T, N>>;
 typedef MatrixBoundedArray<double, 9> MatrixDouble3by3;
+typedef MatrixBoundedArray<std::complex<double>, 9> MatrixComplexDouble3by3;
 
 // shallow adaptor classes
 template <typename T>
