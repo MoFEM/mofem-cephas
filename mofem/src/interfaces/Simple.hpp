@@ -42,11 +42,6 @@ struct Simple : public UnknownInterface {
   Simple(const MoFEM::Core &core);
 
   /**
-   * \brief Destructor
-   */
-  ~Simple();
-
-  /**
    * \brief get options
    * @return error code
    */

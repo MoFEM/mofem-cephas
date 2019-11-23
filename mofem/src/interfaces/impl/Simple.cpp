@@ -43,7 +43,6 @@ Simple::Simple(const Core &core)
   PetscLogEventRegister("SimpleKSPSolve", 0, &MOFEM_EVENT_SimpleKSPSolve);
   strcpy(meshFileName, "mesh.h5m");
 }
-Simple::~Simple() {}
 
 MoFEMErrorCode Simple::getOptions() {
   PetscBool flg = PETSC_TRUE;
