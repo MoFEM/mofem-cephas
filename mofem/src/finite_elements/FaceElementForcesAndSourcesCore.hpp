@@ -305,6 +305,7 @@ protected:
 
   friend class UserDataOperator;
   friend class VolumeElementForcesAndSourcesCoreOnSideBase;
+  // friend class VolumeElementForcesAndSourcesCoreOnVolumeSideBase;
 };
 
 /** \brief Face finite element switched

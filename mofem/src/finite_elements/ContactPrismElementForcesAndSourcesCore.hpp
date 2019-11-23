@@ -24,7 +24,7 @@
 #define __CONTACTPRISMELEMENTFORCESANDSURCESCORE_HPP__
 
 namespace MoFEM {
-
+template <int SWITCH> struct VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch;
 /** \brief ContactPrism finite element
  \ingroup mofem_forces_and_sources_prism_element
 
@@ -101,7 +101,8 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline int getFaceType() const;
 
-    inline boost::shared_ptr<const NumeredEntFiniteElement> getNumeredEntFiniteElementPtr() const;
+    inline boost::shared_ptr<const NumeredEntFiniteElement>
+    getNumeredEntFiniteElementPtr() const;
 
     /** \brief get face aRea Master
      */
@@ -126,6 +127,36 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     /** \brief get Gauss point at Slave face
      */
     inline MatrixDouble &getGaussPtsSlave();
+
+    /**
+     * @brief Get integration weights
+     *
+     * \code
+     * auto t_w = getFTensor0IntegrationWeight();
+     * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
+     *  // integrate something
+     *  ++t_w;
+     * }
+     * \endcode
+     *
+     * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+     */
+    inline auto getFTensor0IntegrationWeightSlave();
+
+    /**
+     * @brief Get integration weights
+     *
+     * \code
+     * auto t_w = getFTensor0IntegrationWeight();
+     * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
+     *  // integrate something
+     *  ++t_w;
+     * }
+     * \endcode
+     *
+     * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+     */
+    inline auto getFTensor0IntegrationWeightMaster();
 
     /** \brief get triangle coordinates
 
@@ -162,33 +193,37 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     inline const ContactPrismElementForcesAndSourcesCore *
     getContactPrismElementForcesAndSourcesCore();
 
-    /**
-     * @brief User call this function to loop over elements on the side of
-     * face. This function calls finite element with is operator to do
-     * calculations.
-     *
-     * @param fe_name
-     * @param side_fe
-     * @param dim
-     * @return MoFEMErrorCode
-     */
-    MoFEMErrorCode loopSide(const string &fe_name,
-                            ForcesAndSourcesCore *side_fe, const size_t dim);
+    // /**
+    //  * @brief User call this function to loop over elements on the side of
+    //  * face. This function calls finite element with is operator to do
+    //  * calculations.
+    //  *
+    //  * @param fe_name
+    //  * @param side_fe
+    //  * @param  side_type  states the side from which side element will work (0
+    //  * for master 1 for slave)
+    //  * @return MoFEMErrorCode
+    //  */
+    // MoFEMErrorCode loopSide(const string &fe_name,
+    //                         ForcesAndSourcesCore *side_fe, const int side_type);
 
     /**
      *
      * User call this function to loop over elements on the side of face. This
-     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnSide with is
+     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnVolumeSide with is
      * operator to do calculations.
      *
      * @param  fe_name Name of the element
      * @param  method  Finite element object
+     * @param  side_type  states the side from which side element will work (0
+     * for master 1 for slave)
      * @return         error code
      */
     template <int SWITCH>
     MoFEMErrorCode loopSideVolumes(
         const string &fe_name,
-        VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method);
+        VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch<SWITCH> &fe_method,
+        const int side_type, const EntityHandle ent_for_side);
 
   protected:
     inline ForcesAndSourcesCore *getSidePtrFE() const;
@@ -198,6 +233,34 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
   };
 
   MoFEMErrorCode operator()();
+
+  // inline const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
+  //                         LASTSPACE>
+  // getDataOnMaster();
+
+  // inline const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
+  //                         LASTSPACE>
+  // getDataOnSlave();
+
+  inline const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
+                          LASTSPACE>
+  getDataOnMasterFromEleSide() {
+    return dataOnMaster;
+  }
+
+  inline const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
+                          LASTSPACE>
+  getDataOnSlaveFromEleSide() {
+    return dataOnSlave;
+  }
+
+  inline MatrixDouble &getGaussPtsMasterFromEleSide() {
+    return gaussPtsMaster;
+  }
+
+  inline MatrixDouble &getGaussPtsSlaveFromEleSide() {
+    return gaussPtsSlave;
+  }
 
 protected:
   std::array<double, 2> aRea; ///< Array storing master and slave faces areas
@@ -270,9 +333,9 @@ protected:
    *
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode
-  getValueHdivDemkowiczBase(MatrixDouble &pts, FieldApproximationBase m_s_base,
-                            DataForcesAndSourcesCore &m_s_data);
+  MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts,
+                                           FieldApproximationBase m_s_base,
+                                           DataForcesAndSourcesCore &m_s_data);
 
   /** \brief function that gets entity field data.
    *
@@ -303,7 +366,6 @@ protected:
       DataForcesAndSourcesCore &slave_data, const std::string &field_name,
       FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo = MBVERTEX,
       const EntityType type_hi = MBPOLYHEDRON) const;
-
 
   /** \brief function that gets nodes indices.
    *
@@ -344,24 +406,7 @@ protected:
       FieldApproximationBase &master_base,
       FieldApproximationBase &slave_base) const;
 
-private:
-  /**
-   * @brief Element to integrate on the sides
-   *
-   */
-  ForcesAndSourcesCore *sidePtrFE;
-
-  /**
-   * @brief Set the pointer to face element on the side
-   *
-   * \note Function is is used by face element, while it iterates over
-   * elements on the side
-   *
-   * @param side_fe_ptr
-   * @return MoFEMErrorCode
-   */
-  MoFEMErrorCode setSideFEPtr(const ForcesAndSourcesCore *side_fe_ptr);
-};
+  };
 
 boost::shared_ptr<const NumeredEntFiniteElement>
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::
@@ -370,19 +415,13 @@ ContactPrismElementForcesAndSourcesCore::UserDataOperator::
       ->numeredEntFiniteElementPtr;
 };
 
-ForcesAndSourcesCore *
-ContactPrismElementForcesAndSourcesCore::UserDataOperator::getSidePtrFE()
-    const {
-  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-      ->sidePtrFE;
-}
-
 template <int SWITCH>
 MoFEMErrorCode
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
     const string &fe_name,
-    VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method) {
-  return loopSide(fe_name, &fe_method, 3);
+    VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch<SWITCH> &fe_method,
+    const int side_type, const EntityHandle ent_for_side) {
+  return loopSide(fe_name, &fe_method, side_type, ent_for_side);
 }
 
 inline int
@@ -426,6 +465,16 @@ ContactPrismElementForcesAndSourcesCore::UserDataOperator::getGaussPtsSlave() {
       ->gaussPtsSlave;
 }
 
+auto ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFTensor0IntegrationWeightSlave() {
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
+      &(getGaussPtsSlave()(getGaussPtsSlave().size1() - 1, 0)));
+}
+
+auto ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFTensor0IntegrationWeightMaster() {
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
+      &(getGaussPtsMaster()(getGaussPtsMaster().size1() - 1, 0)));
+}
+
 inline VectorDouble
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::getCoordsMaster() {
   double *data = &(
@@ -458,10 +507,11 @@ ContactPrismElementForcesAndSourcesCore::UserDataOperator::
   return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE);
 }
 
-// const FEMethod *
-// ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFEMethod() const {
-//   return ptrFE;
-// }
+    // const FEMethod *
+    // ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFEMethod()
+    // const {
+    //   return ptrFE;
+    // }
 
 } // namespace MoFEM
 

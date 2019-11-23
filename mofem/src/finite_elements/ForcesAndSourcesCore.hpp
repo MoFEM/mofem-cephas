@@ -366,7 +366,8 @@ struct ForcesAndSourcesCore : public FEMethod {
      * @return MoFEMErrorCode
      */
     MoFEMErrorCode loopSide(const string &fe_name,
-                            ForcesAndSourcesCore *side_fe, const size_t dim);
+                            ForcesAndSourcesCore *side_fe, const size_t dim,
+                            const EntityHandle ent_for_side = 0);
 
     friend class ForcesAndSourcesCore;
     friend class EdgeElementForcesAndSourcesCoreBase;
@@ -812,6 +813,7 @@ private:
 
   friend class VolumeElementForcesAndSourcesCoreOnSideBase;
   friend class FaceElementForcesAndSourcesCoreOnSideBase;
+  friend class VolumeElementForcesAndSourcesCoreOnVolumeSideBase;
 };
 
 /// \deprecated Used ForcesAndSourcesCore instead

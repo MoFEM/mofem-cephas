@@ -25,9 +25,8 @@ ContactPrismElementForcesAndSourcesCore::
     : ForcesAndSourcesCore(m_field),
       opContravariantTransformSlave(nOrmalSlave, normalsAtGaussPtsSlave),
       opCovariantTransformSlave(nOrmalSlave, normalsAtGaussPtsSlave,
-                           tangentOneSlave, tangentOneAtGaussPtsSlave,
-                           tangentTwoSlave,
-                           tangentTwoAtGaussPtsSlave),
+                                tangentOneSlave, tangentOneAtGaussPtsSlave,
+                                tangentTwoSlave, tangentTwoAtGaussPtsSlave),
       dataOnMaster{
 
           nullptr,
@@ -152,6 +151,18 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     CHKERR Tools::getTriNormal(&coords[9], &normal[3]);
     aRea[0] = cblas_dnrm2(3, &normal[0], 1) * 0.5;
     aRea[1] = cblas_dnrm2(3, &normal[3], 1) * 0.5;
+
+    // SideNumber_multiIndex &side_table =
+    //     const_cast<SideNumber_multiIndex &>(numeredEntFiniteElementPtr->getSideNumberTable());
+    // SideNumber_multiIndex::nth_index<1>::type::iterator siit3 =
+    //     side_table.get<1>().find(boost::make_tuple(MBTRI, 3));
+    // SideNumber_multiIndex::nth_index<1>::type::iterator siit4 =
+    //     side_table.get<1>().find(boost::make_tuple(MBTRI, 4));
+    // if (siit3 == side_table.get<1>().end())
+    //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+    // if (siit4 == side_table.get<1>().end())
+    //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
+
     MoFEMFunctionReturn(0);
   };
   CHKERR get_coord_and_normal();
@@ -176,17 +187,20 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 
   // Hdiv
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-    CHKERR getEntitySense<MBTRI>(dataH1);
-    CHKERR getEntityDataOrder<MBTRI>(dataH1, HDIV);
+    CHKERR getEntitySense<MBTRI>(data_div);
+    CHKERR getEntityDataOrder<MBTRI>(data_div, HDIV);
 
     // CHKERR getEntitySense<MBTRI>(dataHdivSlave);
-    //CHKERR getFaceTriNodes(dataHdivSlave);
-    //CHKERR getEntityDataOrder<MBTRI>(dataHdivSlave, HDIV);
-    dataHdivSlave.spacesOnEntities[MBTRI].set(HDIV);
+    // CHKERR getFaceTriNodes(dataHdivSlave);
+    // CHKERR getEntityDataOrder<MBTRI>(dataHdivSlave, HDIV);
+    
+    //dataHdivSlave.spacesOnEntities[MBTRI].set(HDIV);
+    
     // CHKERR getEntitySense<MBTRI>(dataHdivMaster);
     // CHKERR getFaceTriNodes(dataHdivMaster);
     // CHKERR getEntityDataOrder<MBTRI>(dataHdivMaster, HDIV);
-    dataHdivMaster.spacesOnEntities[MBTRI].set(HDIV);
+    
+    //dataHdivMaster.spacesOnEntities[MBTRI].set(HDIV);
   }
 
   // L2
@@ -255,7 +269,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
   };
 
   auto copy_data_hdiv = [](DataForcesAndSourcesCore &data,
-                      DataForcesAndSourcesCore &copy_data, const int shift) {
+                           DataForcesAndSourcesCore &copy_data,
+                           const int shift) {
     MoFEMFunctionBegin;
 
     if (shift != 3 && shift != 4) {
@@ -273,7 +288,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 
     data.basesOnSpaces[MBVERTEX] = copy_data.basesOnSpaces[MBVERTEX];
     data.basesOnSpaces[MBTRI] = copy_data.basesOnSpaces[MBTRI];
-
 
     if (shift == 3) {
       data.dataOnEntities[MBTRI][0].getSense() =
@@ -350,21 +364,24 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       cblas_dcopy(3 * nb_gauss_pts, QUAD_2D_TABLE[rule]->points, 1,
                   shape_ptr_slave, 1);
 
-     //Hdiv
-      dataHdivMaster.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,
-                                                                   3, false);
+      // Hdiv
+      dataHdivMaster.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(
+          nb_gauss_pts, 3, false);
 
-      dataHdivSlave.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,
-                                                                  3, false);
+      dataHdivSlave.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(
+          nb_gauss_pts, 3, false);
 
-      double *shape_ptr_master_div = &*dataHdivMaster.dataOnEntities[MBVERTEX][0]
-                                       .getN(NOBASE)
-                                       .data()
-                                       .begin();
+      double *shape_ptr_master_div =
+          &*dataHdivMaster.dataOnEntities[MBVERTEX][0]
+                .getN(NOBASE)
+                .data()
+                .begin();
       cblas_dcopy(3 * nb_gauss_pts, QUAD_2D_TABLE[rule]->points, 1,
                   shape_ptr_master_div, 1);
-      double *shape_ptr_slave_div =
-          &*dataHdivSlave.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+      double *shape_ptr_slave_div = &*dataHdivSlave.dataOnEntities[MBVERTEX][0]
+                                          .getN(NOBASE)
+                                          .data()
+                                          .begin();
       cblas_dcopy(3 * nb_gauss_pts, QUAD_2D_TABLE[rule]->points, 1,
                   shape_ptr_slave_div, 1);
       // Hdiv
@@ -418,6 +435,32 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
             &coords[9 + dd], 3);
       }
     }
+  }
+
+  auto get_ftensor_from_mat_3d = [](MatrixDouble &m) {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+        &m(0, 0), &m(0, 1), &m(0, 2));
+  };
+
+  FTensor::Tensor1<double *, 3> t_linear_normal(&normal[3], &normal[4],
+                                                &normal[5], 3);
+
+  nOrmalSlave.resize(3, false);
+  FTensor::Tensor1<double *, 3> normal_slave(&nOrmalSlave[0], &nOrmalSlave[1],
+                                             &nOrmalSlave[2], 3);
+
+  normalsAtGaussPtsSlave.resize(nb_gauss_pts, 3, false);
+  normalsAtGaussPtsSlave.clear();
+  auto t_normal = get_ftensor_from_mat_3d(normalsAtGaussPtsSlave);
+  
+  FTensor::Index<'i', 3> i;
+
+  const double normal_length = sqrt(t_linear_normal(i) * t_linear_normal(i));
+  normal_slave(i) += t_linear_normal(i) / normal_length;
+
+  for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+    t_normal(i) += t_linear_normal(i) / normal_length;
+    ++t_normal;
   }
 
   for (int space = HCURL; space != LASTSPACE; ++space)
@@ -478,39 +521,41 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
         break;
 
       case DEMKOWICZ_JACOBI_BASE:
-      if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-        // SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-        //         "w00t");
-        //CHKERR getSpacesAndBaseOnEntities(dataH1);
-        // CHKERR getEntitySense<MBTRI>(dataHdivMaster);
-        // CHKERR getEntityDataOrder<MBTRI>(dataHdivMaster, HDIV);
-        // dataHdivMaster.spacesOnEntities[MBTRI].set(HDIV);
+        if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+          // SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          //         "w00t");
+          // CHKERR getSpacesAndBaseOnEntities(dataH1);
+          // CHKERR getEntitySense<MBTRI>(dataHdivMaster);
+          // CHKERR getEntityDataOrder<MBTRI>(dataHdivMaster, HDIV);
+          // dataHdivMaster.spacesOnEntities[MBTRI].set(HDIV);
 
-        // CHKERR getEntitySense<MBTRI>(dataHdivSlave);
-        // CHKERR getEntityDataOrder<MBTRI>(dataHdivSlave, HDIV);
-        // dataHdivSlave.spacesOnEntities[MBTRI].set(HDIV);
+          // CHKERR getEntitySense<MBTRI>(dataHdivSlave);
+          // CHKERR getEntityDataOrder<MBTRI>(dataHdivSlave, HDIV);
+          // dataHdivSlave.spacesOnEntities[MBTRI].set(HDIV);
 
-        CHKERR getUserPolynomialBase()->getValue(
-            gaussPtsMaster,
-            boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                dataHdivMaster, HDIV, static_cast<FieldApproximationBase>(b),
-                NOBASE)));
+          CHKERR getUserPolynomialBase()->getValue(
+              gaussPtsMaster,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataHdivMaster, HDIV, static_cast<FieldApproximationBase>(b),
+                  NOBASE)));
 
-        CHKERR getUserPolynomialBase()->getValue(
-            gaussPtsSlave,
-            boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
-                NOBASE)));
+          CHKERR getUserPolynomialBase()->getValue(
+              gaussPtsSlave,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
+                  NOBASE)));
+          CHKERR opContravariantTransformSlave.opRhs(dataHdivSlave);
 
-        // CHKERR getValueHdivDemkowiczBase(gaussPtsMaster,
-        //                                  static_cast<FieldApproximationBase>(b),
-        //                                  dataHdivMaster);
-        CHKERR getValueHdivDemkowiczBase(gaussPtsSlave,
-                                         static_cast<FieldApproximationBase>(b),
-                                         dataHdivSlave);
+          // CHKERR getValueHdivDemkowiczBase(gaussPtsMaster,
+          //                                  static_cast<FieldApproximationBase>(b),
+          //                                  dataHdivMaster);
+
+          // CHKERR getValueHdivDemkowiczBase(
+          //     gaussPtsSlave, static_cast<FieldApproximationBase>(b),
+          //     dataHdivSlave);
         }
-      break;
-          default:
+        break;
+      default:
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Not yet implemented");
       }
@@ -563,64 +608,105 @@ ContactPrismElementForcesAndSourcesCore::getValueHdivDemkowiczBase(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::setSideFEPtr(
-    const ForcesAndSourcesCore *side_fe_ptr) {
-  MoFEMFunctionBeginHot;
-  sidePtrFE = const_cast<ForcesAndSourcesCore *>(side_fe_ptr);
-  MoFEMFunctionReturnHot(0);
-}
+// MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::setSideFEPtr(
+//     const ForcesAndSourcesCore *side_fe_ptr) {
+//   MoFEMFunctionBeginHot;
+//   sidePtrFE = const_cast<ForcesAndSourcesCore *>(side_fe_ptr);
+//   MoFEMFunctionReturnHot(0);
+// }
 
-MoFEMErrorCode
-ContactPrismElementForcesAndSourcesCore::UserDataOperator::loopSide(
-    const string &fe_name, ForcesAndSourcesCore *side_fe,
-    const size_t side_dim) {
-  MoFEMFunctionBegin;
-  const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
-  const Problem *problem_ptr =
-      getContactPrismElementForcesAndSourcesCore()->problemPtr;
-  Range adjacent_ents;
-  CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
-      ent, side_dim, adjacent_ents);
+// MoFEMErrorCode
+// ContactPrismElementForcesAndSourcesCore::UserDataOperator::loopSide(
+//     const string &fe_name, ForcesAndSourcesCore *side_fe, const int side_type) {
+//   MoFEMFunctionBegin;
 
-  //CHKERR adjacent_ents.(MBTET);
-  typedef NumeredEntFiniteElement_multiIndex::index<
-      Composite_Name_And_Ent_mi_tag>::type FEByComposite;
-  FEByComposite &numered_fe =
-      problem_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>();
+//   if (side_type != 0 && side_type != 1) {
+//     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+//              "The side_type must be set to choose which side is used: 0 "
+//              "for master 1 for slave instead %d",
+//              side_type);
+//   }
 
-  side_fe->feName = fe_name;
+//   const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
 
-  CHKERR static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->setSideFEPtr(ptrFE);
-  CHKERR side_fe->copyBasicMethod(*getFEMethod());
-  CHKERR side_fe->copyKsp(*getFEMethod());
-  CHKERR side_fe->copySnes(*getFEMethod());
-  CHKERR side_fe->copyTs(*getFEMethod());
+//   const EntityHandle tri_master = getSideEntity(3, MBTRI);
+//   const EntityHandle tri_slave = getSideEntity(4, MBTRI);
 
-  CHKERR side_fe->preProcess();
+//   const Problem *problem_ptr =
+//       getContactPrismElementForcesAndSourcesCore()->problemPtr;
+//   Range adjacent_tris;
+//   Range adjacent_ents;
+  
+//   if (side_type == 0){
+//     CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
+//         tri_master, 3, adjacent_ents);
+//    }
+//   else{
+//     CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
+//         tri_slave, 3, adjacent_ents);
+//   }
 
-  int nn = 0;
-  side_fe->loopSize = adjacent_ents.size();
-  for (Range::iterator vit = adjacent_ents.begin(); vit != adjacent_ents.end();
-       vit++) {
-    FEByComposite::iterator miit =
-        numered_fe.find(boost::make_tuple(fe_name, *vit));
-    if (miit != numered_fe.end()) {
-      side_fe->nInTheLoop = nn++;
-      side_fe->numeredEntFiniteElementPtr = *miit;
-      side_fe->dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
-      side_fe->rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
-      side_fe->colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
-      side_fe->dataPtr = (*miit)->sPtr->data_dofs;
-      side_fe->rowPtr = (*miit)->rows_dofs;
-      side_fe->colPtr = (*miit)->cols_dofs;
-      CHKERR (*side_fe)();
-    }
-  }
+//   // CHKERR ptrFE->mField.get_moab().get_adjacencies(
+//   //     &ent, 1, 3, false, adjacent_tris, moab::Interface::UNION);
 
-  CHKERR side_fe->postProcess();
+  
+//   CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
+//       ent, 2, adjacent_tris);
 
-  MoFEMFunctionReturn(0);
-}
+//   adjacent_tris = adjacent_tris.subset_by_type(MBTRI);
+
+//   for (Range::iterator it_tris = adjacent_tris.begin();
+//        it_tris != adjacent_tris.end(); it_tris++) {
+//     if (*it_tris == tri_master) {
+//      // cerr << "Master Tri! \n";
+//     } else if (*it_tris == tri_slave) {
+//       //cerr << "Slave! \n";
+//     } else {
+//       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+//               "Error on searching prism master and slave adjacent tets");
+//     }
+//   }
+
+//   // CHKERR adjacent_ents.(MBTET);
+//   adjacent_ents = adjacent_ents.subset_by_type(MBTET);
+//   typedef NumeredEntFiniteElement_multiIndex::index<
+//       Composite_Name_And_Ent_mi_tag>::type FEByComposite;
+//   FEByComposite &numered_fe =
+//       problem_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>();
+
+//   side_fe->feName = fe_name;
+
+//   CHKERR side_fe->setSideFEPtr(ptrFE);
+//   CHKERR side_fe->copyBasicMethod(*getFEMethod());
+//   CHKERR side_fe->copyKsp(*getFEMethod());
+//   CHKERR side_fe->copySnes(*getFEMethod());
+//   CHKERR side_fe->copyTs(*getFEMethod());
+
+//   CHKERR side_fe->preProcess();
+
+//   int nn = 0;
+//   side_fe->loopSize = adjacent_ents.size();
+//   for (Range::iterator vit = adjacent_ents.begin(); vit != adjacent_ents.end();
+//        vit++) {
+//     FEByComposite::iterator miit =
+//         numered_fe.find(boost::make_tuple(fe_name, *vit));
+//     if (miit != numered_fe.end()) {
+//       side_fe->nInTheLoop = nn++;
+//       side_fe->numeredEntFiniteElementPtr = *miit;
+//       side_fe->dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
+//       side_fe->rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
+//       side_fe->colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
+//       side_fe->dataPtr = (*miit)->sPtr->data_dofs;
+//       side_fe->rowPtr = (*miit)->rows_dofs;
+//       side_fe->colPtr = (*miit)->cols_dofs;
+//       CHKERR (*side_fe)();
+//     }
+//   }
+
+//   CHKERR side_fe->postProcess();
+
+//   MoFEMFunctionReturn(0);
+// }
 
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
   MoFEMFunctionBegin;
@@ -688,7 +774,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
 
         if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
              data_id)
-                .none()) 
+                .none())
           SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "no data field < %s > on finite element < %s >",
                    field_name.c_str(), feName.c_str());
@@ -781,7 +867,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
 
             } break;
             case HCURL:
-            
+
             case L2:
               break;
             case NOFIELD:
