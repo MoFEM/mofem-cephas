@@ -107,7 +107,10 @@ Simple::addDomainField(const std::string &name, const FieldSpace space,
   MoFEMFunctionBegin;
   CHKERR m_field.add_field(name, space, base, nb_of_cooficients, tag_type, bh,
                            verb);
-  domainFields.push_back(name);
+  if (space == NOFIELD)
+    noFieldFields.push_back(name);
+  else
+    domainFields.push_back(name);
   MoFEMFunctionReturn(0);
 }
 
@@ -122,6 +125,10 @@ Simple::addBoundaryField(const std::string &name, const FieldSpace space,
   CHKERR m_field.add_field(name, space, base, nb_of_cooficients, tag_type, bh,
                            verb);
   boundaryFields.push_back(name);
+  if (space == NOFIELD)
+    SETERRQ(
+        PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+        "NOFIELD space for boundary filed not implemented in Simple interface");
   MoFEMFunctionReturn(0);
 }
 
@@ -137,6 +144,10 @@ Simple::addSkeletonField(const std::string &name, const FieldSpace space,
   CHKERR m_field.add_field(name, space, base, nb_of_cooficients, tag_type, bh,
                            verb);
   skeletonFields.push_back(name);
+  if (space == NOFIELD)
+    SETERRQ(
+        PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+        "NOFIELD space for boundary filed not implemented in Simple interface");
   MoFEMFunctionReturn(0);
 }
 
@@ -151,7 +162,10 @@ Simple::addDataField(const std::string &name, const FieldSpace space,
   MoFEMFunctionBegin;
   CHKERR m_field.add_field(name, space, base, nb_of_cooficients, tag_type, bh,
                            verb);
-  dataFields.push_back(name);
+  if (space == NOFIELD)
+    noFieldDataFields.push_back(name);
+  else
+    dataFields.push_back(name);
   MoFEMFunctionReturn(0);
 }
 
@@ -160,71 +174,46 @@ MoFEMErrorCode Simple::defineFiniteElements() {
   MoFEMFunctionBeginHot;
   // Define finite elements
   CHKERR m_field.add_finite_element(domainFE);
-  for (unsigned int ff = 0; ff != domainFields.size(); ff++) {
-    CHKERR m_field.modify_finite_element_add_field_row(domainFE,
-                                                       domainFields[ff]);
-    CHKERR m_field.modify_finite_element_add_field_col(domainFE,
-                                                       domainFields[ff]);
-    CHKERR m_field.modify_finite_element_add_field_data(domainFE,
-                                                        domainFields[ff]);
-  }
-  for (unsigned int ff = 0; ff != dataFields.size(); ff++) {
-    CHKERR m_field.modify_finite_element_add_field_data(domainFE,
-                                                        dataFields[ff]);
-  }
+
+  auto add_fields = [&](auto &fe_name, auto &fields) {
+    MoFEMFunctionBeginHot;
+    for (auto &field : fields) {
+      CHKERR m_field.modify_finite_element_add_field_row(fe_name, field);
+      CHKERR m_field.modify_finite_element_add_field_col(fe_name, field);
+      CHKERR m_field.modify_finite_element_add_field_data(fe_name, field);
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  auto add_data_fields = [&](auto &fe_name, auto &fields) {
+    MoFEMFunctionBeginHot;
+    for (auto &field : fields)
+      CHKERR m_field.modify_finite_element_add_field_data(fe_name, field);
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR add_fields(domainFE, domainFields);
+  CHKERR add_data_fields(domainFE, dataFields);
+  CHKERR add_fields(domainFE, noFieldFields);
+  CHKERR add_data_fields(domainFE, noFieldDataFields);
+
   if (!boundaryFields.empty()) {
     CHKERR m_field.add_finite_element(boundaryFE);
-    for (unsigned int ff = 0; ff != domainFields.size(); ff++) {
-      CHKERR m_field.modify_finite_element_add_field_row(boundaryFE,
-                                                         domainFields[ff]);
-      CHKERR m_field.modify_finite_element_add_field_col(boundaryFE,
-                                                         domainFields[ff]);
-      CHKERR m_field.modify_finite_element_add_field_data(boundaryFE,
-                                                          domainFields[ff]);
-    }
-    for (unsigned int ff = 0; ff != boundaryFields.size(); ff++) {
-      CHKERR m_field.modify_finite_element_add_field_row(boundaryFE,
-                                                         boundaryFields[ff]);
-      CHKERR m_field.modify_finite_element_add_field_col(boundaryFE,
-                                                         boundaryFields[ff]);
-      CHKERR m_field.modify_finite_element_add_field_data(boundaryFE,
-                                                          boundaryFields[ff]);
-    }
-    for (unsigned int ff = 0; ff != skeletonFields.size(); ff++) {
-      CHKERR m_field.modify_finite_element_add_field_row(boundaryFE,
-                                                         skeletonFields[ff]);
-      CHKERR m_field.modify_finite_element_add_field_col(boundaryFE,
-                                                         skeletonFields[ff]);
-      CHKERR m_field.modify_finite_element_add_field_data(boundaryFE,
-                                                          skeletonFields[ff]);
-    }
+    CHKERR add_fields(boundaryFE, domainFields);
+    CHKERR add_fields(boundaryFE, boundaryFields);
+    CHKERR add_fields(boundaryFE, skeletonFields);
+    CHKERR add_data_fields(boundaryFE, dataFields);
+    CHKERR add_data_fields(boundaryFE, noFieldDataFields);
+    CHKERR add_fields(boundaryFE, noFieldFields);
   }
   if (!skeletonFields.empty()) {
     CHKERR m_field.add_finite_element(skeletonFE);
-    for (unsigned int ff = 0; ff != domainFields.size(); ff++) {
-      CHKERR m_field.modify_finite_element_add_field_row(skeletonFE,
-                                                         domainFields[ff]);
-      CHKERR m_field.modify_finite_element_add_field_col(skeletonFE,
-                                                         domainFields[ff]);
-      CHKERR m_field.modify_finite_element_add_field_data(skeletonFE,
-                                                          domainFields[ff]);
-    }
-    for (unsigned int ff = 0; ff != boundaryFields.size(); ff++) {
-      CHKERR m_field.modify_finite_element_add_field_row(skeletonFE,
-                                                         boundaryFields[ff]);
-      CHKERR m_field.modify_finite_element_add_field_col(skeletonFE,
-                                                         boundaryFields[ff]);
-      CHKERR m_field.modify_finite_element_add_field_data(skeletonFE,
-                                                          boundaryFields[ff]);
-    }
-    for (unsigned int ff = 0; ff != skeletonFields.size(); ff++) {
-      CHKERR m_field.modify_finite_element_add_field_row(skeletonFE,
-                                                         skeletonFields[ff]);
-      CHKERR m_field.modify_finite_element_add_field_col(skeletonFE,
-                                                         skeletonFields[ff]);
-      CHKERR m_field.modify_finite_element_add_field_data(skeletonFE,
-                                                          skeletonFields[ff]);
-    }
+    CHKERR add_fields(skeletonFE, domainFields);
+    CHKERR add_fields(skeletonFE, boundaryFields);
+    CHKERR add_fields(skeletonFE, skeletonFields);
+    CHKERR add_data_fields(skeletonFE, dataFields);
+    CHKERR add_data_fields(skeletonFE, noFieldDataFields);
+    CHKERR add_fields(skeletonFE, noFieldFields);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -294,170 +283,68 @@ MoFEMErrorCode Simple::buildFields() {
   }
   auto comm_interface_ptr = m_field.getInterface<CommInterface>();
   // Add entities to the fields
-  for (unsigned int ff = 0; ff != domainFields.size(); ff++) {
-    CHKERR m_field.add_ents_to_field_by_dim(meshSet, dIm, domainFields[ff]);
-    CHKERR comm_interface_ptr->synchroniseFieldEntities(domainFields[ff], 0);
-  }
-  for (unsigned int ff = 0; ff != dataFields.size(); ff++) {
-    CHKERR m_field.add_ents_to_field_by_dim(meshSet, dIm, dataFields[ff]);
-    CHKERR comm_interface_ptr->synchroniseFieldEntities(dataFields[ff], 0);
-  }
-  for (unsigned int ff = 0; ff != boundaryFields.size(); ff++) {
-    CHKERR m_field.add_ents_to_field_by_dim(boundaryMeshset, dIm - 1,
-                                            boundaryFields[ff]);
-    CHKERR comm_interface_ptr->synchroniseFieldEntities(boundaryFields[ff], 0);
-  }
-  for (unsigned int ff = 0; ff != skeletonFields.size(); ff++) {
-    CHKERR m_field.add_ents_to_field_by_dim(meshSet, dIm - 1,
-                                            skeletonFields[ff]);
-    CHKERR comm_interface_ptr->synchroniseFieldEntities(skeletonFields[ff], 0);
-  }
+  auto add_ents_to_field = [&](auto meshset, auto dim, auto &fields) {
+    MoFEMFunctionBeginHot;
+    for (auto &field : fields) {
+      CHKERR m_field.add_ents_to_field_by_dim(meshset, dim, field);
+      CHKERR comm_interface_ptr->synchroniseFieldEntities(field, 0);
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR add_ents_to_field(meshSet, dIm, domainFields);
+  CHKERR add_ents_to_field(meshSet, dIm, dataFields);
+  CHKERR add_ents_to_field(boundaryMeshset, dIm - 1, boundaryFields);
+  CHKERR add_ents_to_field(meshSet, dIm - 1, skeletonFields);
+
   // Set order
-  for (unsigned int ff = 0; ff != domainFields.size(); ff++) {
-    if (fieldsOrder.find(domainFields[ff]) == fieldsOrder.end()) {
-      SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
-               "Order for field not set %s", domainFields[ff].c_str());
-    }
-    int dds = 0;
-    const Field *field = m_field.get_field_structure(domainFields[ff]);
-    switch (field->getSpace()) {
-    case L2:
-      dds = dIm;
-      break;
-    case HDIV:
-      dds = 2;
-      break;
-    case HCURL:
-      dds = 1;
-      break;
-    case H1:
-      dds = 1;
-      break;
-    default:
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-              "Huston we have a problem");
-    }
-    if (field->getSpace() == H1) {
-      CHKERR m_field.set_field_order(meshSet, MBVERTEX, domainFields[ff], 1);
-    }
-    for (int dd = dds; dd <= dIm; dd++) {
-      Range ents;
-      CHKERR m_field.get_field_entities_by_dimension(domainFields[ff], dd,
-                                                     ents);
-      if (!fieldsOrder.at(domainFields[ff]).second.empty()) {
-        ents = intersect(ents, fieldsOrder.at(domainFields[ff]).second);
+  auto set_order = [&](auto meshset, auto dim, auto &fields) {
+    MoFEMFunctionBeginHot;
+    for (auto &field : fields) {
+      if (fieldsOrder.find(field) == fieldsOrder.end()) {
+        SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
+                 "Order for field not set %s", field.c_str());
       }
-      CHKERR m_field.set_field_order(ents, domainFields[ff],
-                                     fieldsOrder.at(domainFields[ff]).first);
+      int dds = 0;
+      const Field *field_ptr = m_field.get_field_structure(field);
+      switch (field_ptr->getSpace()) {
+      case L2:
+        dds = dim;
+        break;
+      case HDIV:
+        dds = 2;
+        break;
+      case HCURL:
+        dds = 1;
+        break;
+      case H1:
+        dds = 1;
+        break;
+      default:
+        SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+                "Glasgow we have a problem");
+      }
+      if (field_ptr->getSpace() == H1) {
+        CHKERR m_field.set_field_order(meshSet, MBVERTEX, field, 1);
+      }
+      for (int dd = dds; dd <= dim; dd++) {
+        Range ents;
+        CHKERR m_field.get_field_entities_by_dimension(field, dd, ents);
+        if (!fieldsOrder.at(field).second.empty()) {
+          ents = intersect(ents, fieldsOrder.at(field).second);
+        }
+        CHKERR m_field.set_field_order(ents, field,
+                                       fieldsOrder.at(field).first);
+      }
     }
-  }
-  // Set order to data fields
-  for (unsigned int ff = 0; ff != dataFields.size(); ff++) {
-    if (fieldsOrder.find(dataFields[ff]) == fieldsOrder.end()) {
-      SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
-               "Order for field not set %s", dataFields[ff].c_str());
-    }
-    int dds = 0;
-    const Field *field = m_field.get_field_structure(dataFields[ff]);
-    switch (field->getSpace()) {
-    case L2:
-      dds = dIm;
-      break;
-    case HDIV:
-      dds = 2;
-      break;
-    case HCURL:
-      dds = 1;
-      break;
-    case H1:
-      dds = 1;
-      break;
-    default:
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-              "Huston we have a problem");
-    }
-    if (field->getSpace() == H1) {
-      CHKERR m_field.set_field_order(meshSet, MBVERTEX, dataFields[ff], 1);
-    }
-    for (int dd = dds; dd <= dIm; dd++) {
-      Range ents;
-      CHKERR m_field.get_field_entities_by_dimension(dataFields[ff], dd, ents);
-      CHKERR m_field.set_field_order(ents, dataFields[ff],
-                                     fieldsOrder.at(dataFields[ff]).first);
-    }
-  }
-  // Set order to boundary
-  for (unsigned int ff = 0; ff != boundaryFields.size(); ff++) {
-    if (fieldsOrder.find(boundaryFields[ff]) == fieldsOrder.end()) {
-      SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
-               "Order for field not set %s", boundaryFields[ff].c_str());
-    }
-    int dds = 0;
-    const Field *field = m_field.get_field_structure(boundaryFields[ff]);
-    switch (field->getSpace()) {
-    case L2:
-      dds = dIm - 1;
-      break;
-    case HDIV:
-      dds = 2;
-      break;
-    case HCURL:
-      dds = 1;
-      break;
-    case H1:
-      dds = 1;
-      break;
-    default:
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-              "Huston we have a problem");
-    }
-    if (field->getSpace() == H1) {
-      CHKERR m_field.set_field_order(meshSet, MBVERTEX, boundaryFields[ff], 1);
-    }
-    for (int dd = dds; dd <= dIm - 1; dd++) {
-      Range ents;
-      CHKERR m_field.get_field_entities_by_dimension(boundaryFields[ff], dd,
-                                                     ents);
-      CHKERR m_field.set_field_order(ents, boundaryFields[ff],
-                                     fieldsOrder.at(boundaryFields[ff]).first);
-    }
-  }
-  // Set order to skeleton
-  for (unsigned int ff = 0; ff != skeletonFields.size(); ff++) {
-    if (fieldsOrder.find(skeletonFields[ff]) == fieldsOrder.end()) {
-      SETERRQ1(PETSC_COMM_WORLD, MOFEM_INVALID_DATA,
-               "Order for field not set %s", skeletonFields[ff].c_str());
-    }
-    int dds = 0;
-    const Field *field = m_field.get_field_structure(skeletonFields[ff]);
-    switch (field->getSpace()) {
-    case L2:
-      dds = dIm - 1;
-      break;
-    case HDIV:
-      dds = 2;
-      break;
-    case HCURL:
-      dds = 1;
-      break;
-    case H1:
-      dds = 1;
-      break;
-    default:
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-              "Huston we have a problem");
-    }
-    if (field->getSpace() == H1) {
-      CHKERR m_field.set_field_order(meshSet, MBVERTEX, skeletonFields[ff], 1);
-    }
-    for (int dd = dds; dd <= dIm - 1; dd++) {
-      Range ents;
-      CHKERR m_field.get_field_entities_by_dimension(skeletonFields[ff], dd,
-                                                     ents);
-      CHKERR m_field.set_field_order(ents, skeletonFields[ff],
-                                     fieldsOrder.at(skeletonFields[ff]).first);
-    }
-  }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR set_order(meshSet, dIm, domainFields);
+  CHKERR set_order(meshSet, dIm, dataFields);
+  CHKERR set_order(meshSet, dIm - 1, boundaryFields);
+  CHKERR set_order(meshSet, dIm - 1, skeletonFields);
+
   // Build fields
   CHKERR m_field.build_fields();
   PetscLogEventEnd(MOFEM_EVENT_SimpleBuildFields, 0, 0, 0, 0);

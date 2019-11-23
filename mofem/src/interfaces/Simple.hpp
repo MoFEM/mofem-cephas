@@ -234,19 +234,21 @@ private:
   PetscLogEvent MOFEM_EVENT_SimpleBuildProblem;
   PetscLogEvent MOFEM_EVENT_SimpleKSPSolve;
 
-  EntityHandle meshSet;                    ///< domain meshset
-  EntityHandle boundaryMeshset;            ///< meshset with boundary
-  std::vector<std::string> domainFields;   ///< domain fields
-  std::vector<std::string> boundaryFields; ///< boundary fields
-  std::vector<std::string> skeletonFields; ///< fields on the skeleton
-  std::vector<std::string> dataFields;     ///< Data fields
+  EntityHandle meshSet;                       ///< domain meshset
+  EntityHandle boundaryMeshset;               ///< meshset with boundary
+  std::vector<std::string> domainFields;      ///< domain fields
+  std::vector<std::string> boundaryFields;    ///< boundary fields
+  std::vector<std::string> skeletonFields;    ///< fields on the skeleton
+  std::vector<std::string> dataFields;        ///< Data fields
+  std::vector<std::string> noFieldFields;     ///< NOFIELD field name
+  std::vector<std::string> noFieldDataFields; ///< NOFIELD field name
 
   std::map<std::string, std::pair<int, Range>> fieldsOrder; ///< fields order
 
   std::string nameOfProblem; ///< problem name
-  std::string domainFE;   ///< domain finite element
-  std::string boundaryFE; ///< boundary finite element
-  std::string skeletonFE; ///< skeleton finite element
+  std::string domainFE;      ///< domain finite element
+  std::string boundaryFE;    ///< boundary finite element
+  std::string skeletonFE;    ///< skeleton finite element
 
   std::vector<std::string> otherFEs; ///< Other finite elements
 
