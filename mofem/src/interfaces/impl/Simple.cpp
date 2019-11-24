@@ -253,10 +253,10 @@ MoFEMErrorCode Simple::buildFields() {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_SimpleBuildFields, 0, 0, 0, 0);
-  // take skin
-  {
+
+  auto get_skin = [&](auto meshset) {
     Range domain_ents;
-    CHKERR m_field.get_moab().get_entities_by_dimension(meshSet, dIm,
+    CHKERR m_field.get_moab().get_entities_by_dimension(meshset, dIm,
                                                         domain_ents, true);
     Skinner skin(&m_field.get_moab());
     Range domain_skin;
@@ -268,6 +268,11 @@ MoFEMErrorCode Simple::buildFields() {
     CHKERR pcomm->filter_pstatus(domain_skin,
                                  PSTATUS_SHARED | PSTATUS_MULTISHARED,
                                  PSTATUS_NOT, -1, &proc_domain_skin);
+    return proc_domain_skin;
+  };
+
+  auto create_boundary_meshset = [&](auto &&proc_domain_skin) {
+    MoFEMFunctionBeginHot;
     // create boundary meshset
     if (boundaryMeshset != 0) {
       CHKERR m_field.get_moab().delete_entities(&boundaryMeshset, 1);
@@ -280,7 +285,11 @@ MoFEMErrorCode Simple::buildFields() {
                                                 adj, moab::Interface::UNION);
       CHKERR m_field.get_moab().add_entities(boundaryMeshset, adj);
     }
-  }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR create_boundary_meshset(get_skin(meshSet));
+
   auto comm_interface_ptr = m_field.getInterface<CommInterface>();
   auto bit_ref_ptr = m_field.getInterface<BitRefManager>();
 

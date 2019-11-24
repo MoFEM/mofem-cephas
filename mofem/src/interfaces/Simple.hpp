@@ -212,21 +212,84 @@ struct Simple : public UnknownInterface {
    */
   inline SmartPetscObj<DM> getDM() { return dM; }
 
+  /**
+   * @brief Get the problem dimensio
+   *
+   * Problem dimension is determined by highest dimension of entities on the
+   * mesh.
+   *
+   * @return int
+   */
   inline int getDim() const { return dIm; }
+
+  /**
+   * @brief Get the Domain FE Name
+   *
+   * @return const std::string
+   */
   inline const std::string getDomainFEName() const { return domainFE; }
+
+  /**
+   * @brief Get the Boundary FE Name
+   *
+   * @return const std::string
+   */
   inline const std::string getBoundaryFEName() const { return boundaryFE; }
+
+  /**
+   * @brief Get the Skeleton FE Name
+   *
+   * @return const std::string
+   */
   inline const std::string getSkeletonFEName() const { return skeletonFE; }
+
+  /**
+   * @brief Get the Problem Name
+   *
+   * @return const std::string
+   */
   inline const std::string getProblemName() const { return nameOfProblem; }
 
+  /**
+   * @brief Get the Domain FE Name
+   *
+   * @return std::string&
+   */
   inline std::string &getDomainFEName() { return domainFE; }
+
+  /**
+   * @brief Get the Boundary FE Name
+   *
+   * @return std::string&
+   */
   inline std::string &getBoundaryFEName() { return boundaryFE; }
+
+  /**
+   * @brief Get the Skeleton FE Name
+   *
+   * @return std::string&
+   */
   inline std::string &getSkeletonFEName() { return skeletonFE; }
+
+  /**
+   * @brief Get the Problem Name
+   *
+   * @return std::string&
+   */
   inline std::string &getProblemName() { return nameOfProblem; }
 
+  /**
+   * @brief Get the Other Finite Elements
+   *
+   * User can create finite elements using directly core interface and
+   * and them to simple problem by this function
+   *
+   * @return std::vector<std::string>&
+   */
   inline std::vector<std::string> &getOtherFiniteElements() { return otherFEs; }
 
 private:
-  const BitRefLevel bitLevel;
+  const BitRefLevel bitLevel; ///< BitRefLevel of the probelm
 
   PetscLogEvent MOFEM_EVENT_SimpleLoadMesh;
   PetscLogEvent MOFEM_EVENT_SimpleBuildFields;
@@ -255,7 +318,8 @@ private:
   char meshFileName[255]; ///< mesh file name
   int dIm;                ///< dimension of problem
 
-  SmartPetscObj<DM> dM;
+  SmartPetscObj<DM>
+      dM; ///< Discrete manager (interface to PETSc/MoFEM functions)
 };
 
 } // namespace MoFEM
