@@ -28,8 +28,9 @@ using namespace boost::numeric;
 namespace MoFEM {
 
 /**
- * \brief Base volume element used to integrate on skeleton
- * \ingroup mofem_forces_and_sources_volume_element
+ * \brief Base volume element used to integrate on contact surface (could be
+ * extended to other volume elements) \ingroup
+ * mofem_forces_and_sources_volume_element
  */
 struct VolumeElementForcesAndSourcesCoreOnVolumeSideBase
     : public VolumeElementForcesAndSourcesCore {
@@ -43,7 +44,7 @@ struct VolumeElementForcesAndSourcesCoreOnVolumeSideBase
    *
    * @return const std::array<int, 3>&
    */
-  // inline const std::array<int, 3> &getFaceConnMap() const;
+  inline const std::array<int, 3> &getFaceConnMap() const;
 
   /**
    * @brief Get face nodes maped on volume
@@ -58,26 +59,12 @@ struct VolumeElementForcesAndSourcesCoreOnVolumeSideBase
   /**
    * @brief Get node on volume opposite to volume element
    *
-   * \todo That this is not general, e.g., for prism or hex, opoosite node is
+   * \todo That this is not general, e.g., for prism or hex, opposite node is
    * not unique.
    *
    * @return int
    */
   inline int getOppositeNode() const;
-
-  /**
-   * @brief Sense face on volume
-   *
-   * @return int
-   */
-  // inline int getFaceSense() const;
-
-  /**
-   * @brief Face number on the volume
-   *
-   * @return int
-   */
-  // inline int getFaceSideNumber() const;
 
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
@@ -89,87 +76,7 @@ struct VolumeElementForcesAndSourcesCoreOnVolumeSideBase
 
     inline VolumeElementForcesAndSourcesCoreOnVolumeSideBase *getVolumeFE() const;
 
-    // inline FaceElementForcesAndSourcesCoreBase *getFaceFE() const;
-
-    /**
-     * \brief get face sense in respect to volume
-     * @return error code
-     */
-    inline int getFaceSense() const;
-
-    /**
-     * \brief get face side number in respect to volume
-     * @return error code
-     */
-    // inline int getFaceSideNumber() const;
-
-    // inline bool getEdgeFace(const int ee) const;
-
-    /**
-     * get face normal on side which is this element
-     * @return face normal
-     */
-    // inline VectorDouble &getNormal();
-
-    // /** \brief get triangle tangent 1
-    //  */
-    // inline VectorDouble &getTangent1();
-
-    // /** \brief get triangle tangent 2
-    //  */
-    // inline VectorDouble &getTangent2();
-
-    // /** \brief get normal as tensor
-    //  */
-    // inline auto getFTensor1Normal();
-
-    // /** \brief get tangentOne as tensor
-    //  */
-    // inline auto getFTensor1Tangent1();
-
-    /** \brief get tangentTwo as tensor
-     */
-    // inline auto getFTensor1Tangent2();
-
-    /** \brief if higher order geometry return normals at Gauss pts.
-
-    Note: returned matrix has size 0 in rows and columns if no HO approximation
-    of geometry is available.
-
-     */
-    // inline MatrixDouble &getNormalsAtGaussPts();
-
-    /** \brief if higher order geometry return normals at Gauss pts.
-     *
-     * \param gg gauss point number
-     */
-    // inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPts(const int gg);
-
-    /** \brief get normal at integration points
-
-      Example:
-      \code
-      double nrm2;
-      FTensor::Index<'i',3> i;
-      auto t_normal = getFTensor1NormalsAtGaussPts();
-      for(int gg = gg!=data.getN().size1();gg++) {
-        nrm2 = sqrt(t_normal(i)*t_normal(i));
-        ++t_normal;
-      }
-      \endcode
-
-    */
-    inline auto getFTensor1NormalsAtGaussPts();
-
-    /** \brief get face coordinates at Gauss pts.
-
-    \note Coordinates should be the same what function getCoordsAtGaussPts
-    on tets is returning. If both coordinates are different it is error, or you
-    do something very unusual.
-
-     */
-    // inline MatrixDouble &getFaceCoordsAtGaussPts();
-  };
+   };
 
   int getRule(int order);
   MoFEMErrorCode setGaussPts(int order);
@@ -202,17 +109,17 @@ struct VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch
   MoFEMErrorCode operator()();
 };
 
-/** \brief Volume element used to integrate on skeleton
+/** \brief Volume element used to integrate on contact element (could be extended for other volume elements)
  \ingroup mofem_forces_and_sources_volume_element
 
  */
 using VolumeElementForcesAndSourcesCoreOnVolumeSide =
     VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch<0>;
 
-// const std::array<int, 3> &
-// VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getFaceConnMap() const {
-//   return faceConnMap;
-// }
+const std::array<int, 3> &
+VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getFaceConnMap() const {
+  return faceConnMap;
+}
 
 const std::array<int, 4> &
 VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getTetConnMap() const {
@@ -223,102 +130,11 @@ int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getOppositeNode() const {
   return oppositeNode;
 }
 
-// int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getFaceSense() const {
-//   return faceSense;
-// }
-
-// int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getFaceSideNumber() const {
-//   return faceSideNumber;
-// }
-
-// FaceElementForcesAndSourcesCoreBase *
-// VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::getFaceFE()
-//     const {
-//   return static_cast<FaceElementForcesAndSourcesCoreBase *>(
-//       getVolumeFE()->sidePtrFE);
-// }
-
-// VectorDouble &
-// VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::getNormal() {
-//   return getFaceFE()->nOrmal;
-// }
-
-// VectorDouble &
-// VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::getTangent1() {
-//   return getFaceFE()->tangentOne;
-// }
-
-// VectorDouble &
-// VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::getTangent2() {
-//   return getFaceFE()->tangentTwo;
-// }
-
 VolumeElementForcesAndSourcesCoreOnVolumeSideBase *
 VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::getVolumeFE()
     const {
   return static_cast<VolumeElementForcesAndSourcesCoreOnVolumeSideBase *>(ptrFE);
 }
-
-// int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
-//     getFaceSense() const {
-//   return getVolumeFE()->faceSense;
-// }
-
-// auto VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
-//     getFTensor1Normal() {
-//   double *ptr = &*getNormal().data().begin();
-//   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
-// }
-
-// auto VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
-//     getFTensor1Tangent1() {
-//   double *ptr = &*getTangent1().data().begin();
-//   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
-// }
-
-// auto VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
-//     getFTensor1Tangent2() {
-//   double *ptr = &*getTangent2().data().begin();
-//   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
-// }
-
-// inline auto VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
-//     getFTensor1NormalsAtGaussPts() {
-//   double *ptr = &*getNormalsAtGaussPts().data().begin();
-//   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
-//                                                             &ptr[2]);
-// }
-
-// int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
-//     getFaceSideNumber() const {
-//   return getVolumeFE()->faceSideNumber;
-// }
-
-// MatrixDouble &VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
-//     getNormalsAtGaussPts() {
-//   return getFaceFE()->normalsAtGaussPts;
-// }
-
-// MatrixDouble &VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
-//     getFaceCoordsAtGaussPts() {
-//   return getFaceFE()->coordsAtGaussPts;
-// }
-
-// bool VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::getEdgeFace(
-//     const int ee) const {
-//   constexpr bool edges_on_faces[6][4] = {{true, false, false, true}, // e0
-//                                          {false, true, false, true}, // e1
-//                                          {false, false, true, true}, // e2
-//                                          {true, false, true, false}, // e3
-//                                          {true, true, false, false}, // e4
-//                                          {false, true, true, false}};
-//   return edges_on_faces[ee][getFaceSideNumber()];
-// }
-
-// ublas::matrix_row<MatrixDouble> VolumeElementForcesAndSourcesCoreOnVolumeSideBase::
-//     UserDataOperator::getNormalsAtGaussPts(const int gg) {
-//   return ublas::matrix_row<MatrixDouble>(getNormalsAtGaussPts(), gg);
-// }
 
 template <int SWITCH>
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch<SWITCH>::
