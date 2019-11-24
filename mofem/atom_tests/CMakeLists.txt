@@ -264,6 +264,7 @@ cm_export_file("../meshes/elasticity_atom_test_01X_pressure.h5m" export_atom_tes
 
 my_add_executable(field_axpy_atom_test field_axpy_atom_test.cpp)
 target_link_libraries(field_axpy_atom_test
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -281,6 +282,7 @@ add_test(field_axpy
 
 my_add_executable(field_blas_set_vertex_dofs field_blas_set_vertex_dofs.cpp)
 target_link_libraries(field_blas_set_vertex_dofs
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -298,6 +300,7 @@ add_test(field_blas_set_vertex_dofs
 #test coord sys
 my_add_executable(test_setting_coordinate_sys test_setting_coordinate_sys.cpp)
 target_link_libraries(test_setting_coordinate_sys
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -1193,6 +1196,7 @@ if(TETGEN_LIBRARY)
 
   my_add_executable(tetgen_interface tetgen_interface.cpp)
   target_link_libraries(tetgen_interface
+    mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
@@ -1214,6 +1218,7 @@ if(NETGEN_LIBRARY)
 
   my_add_executable(netgen_interface netgen_interface.cpp)
   target_link_libraries(netgen_interface
+    mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
     mofem_approx
@@ -1226,6 +1231,7 @@ endif(NETGEN_LIBRARY)
 
 my_add_executable(node_merge node_merge.cpp)
 target_link_libraries(node_merge
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -1384,6 +1390,7 @@ add_test(
 cm_export_file("../meshes/test_mesh_cut.cub" export_atom_tests)
 my_add_executable(mesh_cut_test mesh_cut_test.cpp)
 target_link_libraries(mesh_cut_test
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -1402,6 +1409,7 @@ add_test(
 
 my_add_executable(segments_distance segments_distance.cpp)
 target_link_libraries(segments_distance
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -1417,6 +1425,7 @@ add_test(
 
 my_add_executable(find_local_coordinates_on_tet find_local_coordinates_on_tet.cpp)
 target_link_libraries(find_local_coordinates_on_tet
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
