@@ -24,7 +24,8 @@
 #define __CONTACTPRISMELEMENTFORCESANDSURCESCORE_HPP__
 
 namespace MoFEM {
-template <int SWITCH> struct VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch;
+template <int SWITCH>
+struct VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch;
 /** \brief ContactPrism finite element
  \ingroup mofem_forces_and_sources_prism_element
 
@@ -200,18 +201,20 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     //  *
     //  * @param fe_name
     //  * @param side_fe
-    //  * @param  side_type  states the side from which side element will work (0
+    //  * @param  side_type  states the side from which side element will work
+    //  (0
     //  * for master 1 for slave)
     //  * @return MoFEMErrorCode
     //  */
     // MoFEMErrorCode loopSide(const string &fe_name,
-    //                         ForcesAndSourcesCore *side_fe, const int side_type);
+    //                         ForcesAndSourcesCore *side_fe, const int
+    //                         side_type);
 
     /**
      *
      * User call this function to loop over elements on the side of face. This
-     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnVolumeSide with is
-     * operator to do calculations.
+     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnVolumeSide with
+     * is operator to do calculations.
      *
      * @param  fe_name Name of the element
      * @param  method  Finite element object
@@ -254,13 +257,9 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     return dataOnSlave;
   }
 
-  inline MatrixDouble &getGaussPtsMasterFromEleSide() {
-    return gaussPtsMaster;
-  }
+  inline MatrixDouble &getGaussPtsMasterFromEleSide() { return gaussPtsMaster; }
 
-  inline MatrixDouble &getGaussPtsSlaveFromEleSide() {
-    return gaussPtsSlave;
-  }
+  inline MatrixDouble &getGaussPtsSlaveFromEleSide() { return gaussPtsSlave; }
 
 protected:
   std::array<double, 2> aRea; ///< Array storing master and slave faces areas
@@ -283,7 +282,7 @@ protected:
   MatrixDouble normalsAtGaussPtsSlave;
   MatrixDouble tangentOneAtGaussPtsSlave;
   MatrixDouble tangentTwoAtGaussPtsSlave;
-  
+
   /**
    * @brief Entity data on element entity rows fields
    *
@@ -403,8 +402,7 @@ protected:
       FieldSpace &master_space, FieldSpace &slave_space,
       FieldApproximationBase &master_base,
       FieldApproximationBase &slave_base) const;
-
-  };
+};
 
 boost::shared_ptr<const NumeredEntFiniteElement>
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::
@@ -463,12 +461,14 @@ ContactPrismElementForcesAndSourcesCore::UserDataOperator::getGaussPtsSlave() {
       ->gaussPtsSlave;
 }
 
-auto ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFTensor0IntegrationWeightSlave() {
+auto ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getFTensor0IntegrationWeightSlave() {
   return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
       &(getGaussPtsSlave()(getGaussPtsSlave().size1() - 1, 0)));
 }
 
-auto ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFTensor0IntegrationWeightMaster() {
+auto ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getFTensor0IntegrationWeightMaster() {
   return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
       &(getGaussPtsMaster()(getGaussPtsMaster().size1() - 1, 0)));
 }
@@ -505,11 +505,11 @@ ContactPrismElementForcesAndSourcesCore::UserDataOperator::
   return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE);
 }
 
-    // const FEMethod *
-    // ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFEMethod()
-    // const {
-    //   return ptrFE;
-    // }
+// const FEMethod *
+// ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFEMethod()
+// const {
+//   return ptrFE;
+// }
 
 } // namespace MoFEM
 

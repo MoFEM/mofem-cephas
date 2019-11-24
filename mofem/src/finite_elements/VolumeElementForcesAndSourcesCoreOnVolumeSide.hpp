@@ -74,9 +74,9 @@ struct VolumeElementForcesAndSourcesCoreOnVolumeSideBase
 
     using VolumeElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-    inline VolumeElementForcesAndSourcesCoreOnVolumeSideBase *getVolumeFE() const;
-
-   };
+    inline VolumeElementForcesAndSourcesCoreOnVolumeSideBase *
+    getVolumeFE() const;
+  };
 
   int getRule(int order);
   MoFEMErrorCode setGaussPts(int order);
@@ -109,8 +109,9 @@ struct VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch
   MoFEMErrorCode operator()();
 };
 
-/** \brief Volume element used to integrate on contact element (could be extended for other volume elements)
- \ingroup mofem_forces_and_sources_volume_element
+/** \brief Volume element used to integrate on contact element (could be
+ extended for other volume elements) \ingroup
+ mofem_forces_and_sources_volume_element
 
  */
 using VolumeElementForcesAndSourcesCoreOnVolumeSide =
@@ -131,9 +132,10 @@ int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getOppositeNode() const {
 }
 
 VolumeElementForcesAndSourcesCoreOnVolumeSideBase *
-VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::getVolumeFE()
-    const {
-  return static_cast<VolumeElementForcesAndSourcesCoreOnVolumeSideBase *>(ptrFE);
+VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
+    getVolumeFE() const {
+  return static_cast<VolumeElementForcesAndSourcesCoreOnVolumeSideBase *>(
+      ptrFE);
 }
 
 template <int SWITCH>

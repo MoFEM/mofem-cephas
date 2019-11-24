@@ -29,7 +29,8 @@ VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
   MoFEMFunctionBegin;
 
   if (!sidePtrFE)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Side volume element not set");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Side volume element not set");
 
   const EntityHandle volume_entity =
       sidePtrFE->numeredEntFiniteElementPtr->getEnt();
@@ -39,8 +40,9 @@ VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
   SideNumber_multiIndex &side_table = const_cast<SideNumber_multiIndex &>(
       numeredEntFiniteElementPtr->getSideNumberTable());
 
-  SideNumber_multiIndex &side_volume_table = const_cast<SideNumber_multiIndex &>(
-      sidePtrFE->numeredEntFiniteElementPtr->getSideNumberTable());
+  SideNumber_multiIndex &side_volume_table =
+      const_cast<SideNumber_multiIndex &>(
+          sidePtrFE->numeredEntFiniteElementPtr->getSideNumberTable());
 
   adj_faces = adj_faces.subset_by_type(MBTRI);
   bool face_common = false;
@@ -51,17 +53,15 @@ VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
        it_tris++) {
     sit = side_table.get<0>().find(*it_tris);
     sit_volume = side_volume_table.get<0>().find(*it_tris);
-    if (sit != side_table.get<0>().end())
-    {
+    if (sit != side_table.get<0>().end()) {
       face_ent = *it_tris;
       face_common = true;
       break;
     }
   }
   if (!face_common) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Error no common tets");    
-    }
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Error no common tets");
+  }
 
   auto face_ptr_fe =
       static_cast<FaceElementForcesAndSourcesCoreBase *>(sidePtrFE);
@@ -94,10 +94,10 @@ VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
       contact_prism_ptr_fe->getGaussPtsMasterFromEleSide().size2();
   gaussPts.resize(4, nb_gauss_pts, false);
   gaussPts.clear();
-  
+
   const EntityType tri_type = MBTRI;
   boost::shared_ptr<DataForcesAndSourcesCore> dataH1_on_face;
-  
+
   if (side_of_vol_number == 3) {
     dataH1_on_face = boost::shared_ptr<DataForcesAndSourcesCore>(
         contact_prism_ptr_fe->getDataOnMasterFromEleSide()[H1]);
@@ -105,34 +105,34 @@ VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
     dataH1_on_face = boost::shared_ptr<DataForcesAndSourcesCore>(
         contact_prism_ptr_fe->getDataOnSlaveFromEleSide()[H1]);
   } else {
-   SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-          "Side element for contact: Wrong face for contact!");
- }
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
+            "Side element for contact: Wrong face for contact!");
+  }
 
- const MatrixDouble &face_shape_funtions =
-     dataH1_on_face->dataOnEntities[MBVERTEX][0].getN(NOBASE);
+  const MatrixDouble &face_shape_funtions =
+      dataH1_on_face->dataOnEntities[MBVERTEX][0].getN(NOBASE);
 
- const double tet_coords[] = {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1};
- for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-   gaussPts(0, gg) =
-       face_shape_funtions(gg, 0) * tet_coords[3 * faceConnMap[0] + 0] +
-       face_shape_funtions(gg, 1) * tet_coords[3 * faceConnMap[1] + 0] +
-       face_shape_funtions(gg, 2) * tet_coords[3 * faceConnMap[2] + 0];
-   gaussPts(1, gg) =
-       face_shape_funtions(gg, 0) * tet_coords[3 * faceConnMap[0] + 1] +
-       face_shape_funtions(gg, 1) * tet_coords[3 * faceConnMap[1] + 1] +
-       face_shape_funtions(gg, 2) * tet_coords[3 * faceConnMap[2] + 1];
-   gaussPts(2, gg) =
-       face_shape_funtions(gg, 0) * tet_coords[3 * faceConnMap[0] + 2] +
-       face_shape_funtions(gg, 1) * tet_coords[3 * faceConnMap[1] + 2] +
-       face_shape_funtions(gg, 2) * tet_coords[3 * faceConnMap[2] + 2];
+  const double tet_coords[] = {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1};
+  for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+    gaussPts(0, gg) =
+        face_shape_funtions(gg, 0) * tet_coords[3 * faceConnMap[0] + 0] +
+        face_shape_funtions(gg, 1) * tet_coords[3 * faceConnMap[1] + 0] +
+        face_shape_funtions(gg, 2) * tet_coords[3 * faceConnMap[2] + 0];
+    gaussPts(1, gg) =
+        face_shape_funtions(gg, 0) * tet_coords[3 * faceConnMap[0] + 1] +
+        face_shape_funtions(gg, 1) * tet_coords[3 * faceConnMap[1] + 1] +
+        face_shape_funtions(gg, 2) * tet_coords[3 * faceConnMap[2] + 1];
+    gaussPts(2, gg) =
+        face_shape_funtions(gg, 0) * tet_coords[3 * faceConnMap[0] + 2] +
+        face_shape_funtions(gg, 1) * tet_coords[3 * faceConnMap[1] + 2] +
+        face_shape_funtions(gg, 2) * tet_coords[3 * faceConnMap[2] + 2];
     if (side_of_vol_number == 3) {
       gaussPts(3, gg) =
           contact_prism_ptr_fe->getGaussPtsMasterFromEleSide()(2, gg);
-   } else {
-     gaussPts(3, gg) =
-         contact_prism_ptr_fe->getGaussPtsSlaveFromEleSide()(2, gg);
-   }
+    } else {
+      gaussPts(3, gg) =
+          contact_prism_ptr_fe->getGaussPtsSlaveFromEleSide()(2, gg);
+    }
   }
   MoFEMFunctionReturn(0);
 }
