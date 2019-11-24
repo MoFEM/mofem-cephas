@@ -8,3 +8,5 @@
 #include "impl/ProblemsMultiIndices.cpp"
 #include "impl/SeriesMultiIndices.cpp"
 #include "impl/BCMultiIndices.cpp"
+#include "impl/BCData.cpp"
+#include "impl/MaterialBlocks.cpp"
