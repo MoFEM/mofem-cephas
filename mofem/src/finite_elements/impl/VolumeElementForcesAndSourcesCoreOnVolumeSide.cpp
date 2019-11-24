@@ -63,12 +63,6 @@ VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
             "Error no common tets");    
     }
 
-  // SideNumber_multiIndex::nth_index<0>::type::iterator sit =
-  //     side_table.get<0>().find(face_entity);
-  // if (sit == side_table.get<0>().end())
-  //   SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-  //           "Face can not be found on volume element");
-
   auto face_ptr_fe =
       static_cast<FaceElementForcesAndSourcesCoreBase *>(sidePtrFE);
 
@@ -85,8 +79,6 @@ VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
 
   fill(tetConnMap.begin(), tetConnMap.end(), -1);
   for (int nn = 0; nn != 3; ++nn) {
-    // faceConnMap[nn] =
-    //     std::distance(conn, find(conn, &conn[4], face_ptr_fe->conn[nn]));
     faceConnMap[nn] = std::distance(conn, find(conn, &conn[4], ent_on_vol[nn]));
 
     tetConnMap[faceConnMap[nn]] = nn;
@@ -98,34 +90,25 @@ VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
   oppositeNode = std::distance(tetConnMap.begin(),
                                find(tetConnMap.begin(), tetConnMap.end(), -1));
 
-  // const int nb_gauss_pts = face_ptr_fe->gaussPts.size2();
   const int nb_gauss_pts =
       contact_prism_ptr_fe->getGaussPtsMasterFromEleSide().size2();
   gaussPts.resize(4, nb_gauss_pts, false);
   gaussPts.clear();
-  // DataForcesAndSourcesCore &dataH1_on_face = *face_ptr_fe->dataOnElement[H1];
-
-  //DataForcesAndSourcesCore &dataH1_on_face;
-
+  
   const EntityType tri_type = MBTRI;
   boost::shared_ptr<DataForcesAndSourcesCore> dataH1_on_face;
-  // = boost::make_shared<DataForcesAndSourcesCore>(tri_type);
-
+  
   if (side_of_vol_number == 3) {
     dataH1_on_face = boost::shared_ptr<DataForcesAndSourcesCore>(
         contact_prism_ptr_fe->getDataOnMasterFromEleSide()[H1]);
-    //    dataH1_on_face = *contact_prism_ptr_fe->getDataOnMaster()[H1];
   } else if (side_of_vol_number == 4) {
     dataH1_on_face = boost::shared_ptr<DataForcesAndSourcesCore>(
         contact_prism_ptr_fe->getDataOnSlaveFromEleSide()[H1]);
-    //  dataH1_on_face = *contact_prism_ptr_fe->getDataOnSlave()[H1];
- } else {
+  } else {
    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
           "Side element for contact: Wrong face for contact!");
  }
 
-  // const MatrixDouble &face_shape_funtions =
-  //     dataH1_on_face.dataOnEntities[MBVERTEX][0].getN(NOBASE);
  const MatrixDouble &face_shape_funtions =
      dataH1_on_face->dataOnEntities[MBVERTEX][0].getN(NOBASE);
 
@@ -143,7 +126,6 @@ VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
        face_shape_funtions(gg, 0) * tet_coords[3 * faceConnMap[0] + 2] +
        face_shape_funtions(gg, 1) * tet_coords[3 * faceConnMap[1] + 2] +
        face_shape_funtions(gg, 2) * tet_coords[3 * faceConnMap[2] + 2];
-   // gaussPts(3, gg) = face_ptr_fe->gaussPts(2, gg);
     if (side_of_vol_number == 3) {
       gaussPts(3, gg) =
           contact_prism_ptr_fe->getGaussPtsMasterFromEleSide()(2, gg);

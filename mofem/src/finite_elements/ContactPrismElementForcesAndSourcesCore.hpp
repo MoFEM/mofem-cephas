@@ -129,7 +129,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     inline MatrixDouble &getGaussPtsSlave();
 
     /**
-     * @brief Get integration weights
+     * @brief Get integration weights for slave side
      *
      * \code
      * auto t_w = getFTensor0IntegrationWeight();
@@ -144,7 +144,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     inline auto getFTensor0IntegrationWeightSlave();
 
     /**
-     * @brief Get integration weights
+     * @brief Get integration weights for master side
      *
      * \code
      * auto t_w = getFTensor0IntegrationWeight();
@@ -283,9 +283,7 @@ protected:
   MatrixDouble normalsAtGaussPtsSlave;
   MatrixDouble tangentOneAtGaussPtsSlave;
   MatrixDouble tangentTwoAtGaussPtsSlave;
-  OpSetContravariantPiolaTransformOnFace opContravariantTransformSlave;
-  OpSetCovariantPiolaTransformOnFace opCovariantTransformSlave;
-
+  
   /**
    * @brief Entity data on element entity rows fields
    *
