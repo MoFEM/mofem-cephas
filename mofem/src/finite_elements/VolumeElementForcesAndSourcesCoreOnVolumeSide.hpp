@@ -66,6 +66,20 @@ struct VolumeElementForcesAndSourcesCoreOnVolumeSideBase
    */
   inline int getOppositeNode() const;
 
+  /**
+   * @brief Sense face on volume
+   *
+   * @return int
+   */
+  inline int getFaceSense() const;
+
+  /**
+   * @brief Face number on the volume
+   *
+   * @return int
+   */
+  inline int getFaceSideNumber() const;
+
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
    */
@@ -76,17 +90,49 @@ struct VolumeElementForcesAndSourcesCoreOnVolumeSideBase
 
     inline VolumeElementForcesAndSourcesCoreOnVolumeSideBase *
     getVolumeFE() const;
-  };
 
-  int getRule(int order);
-  MoFEMErrorCode setGaussPts(int order);
+    inline ContactPrismElementForcesAndSourcesCore *getContactFE() const;
 
-private:
-  int faceSense;      ///< Sense of face, could be 1 or -1
-  int faceSideNumber; ///< Face side number
-  std::array<int, 3> faceConnMap;
-  std::array<int, 4> tetConnMap;
-  int oppositeNode;
+    /** \brief get face coordinates at Gauss pts.
+
+    \note Coordinates should be the same what function getMasterCoordsAtGaussPts
+    on tets is returning. If both coordinates are different it is error, or you
+    do something very unusual.
+
+     */
+    inline MatrixDouble &getMasterCoordsAtGaussPts();
+
+    /** \brief get face coordinates at Gauss pts.
+
+    \note Coordinates should be the same what function getSlaveCoordsAtGaussPts
+    on tets is returning. If both coordinates are different it is error, or you
+    do something very unusual.
+
+    */
+    inline MatrixDouble &getSlaveCoordsAtGaussPts();
+
+    /**
+     * \brief get face sense in respect to volume
+     * @return error code
+     */
+    inline int getFaceSense() const;
+
+    /**
+     * \brief get face side number in respect to volume
+     * @return error code
+     */
+    inline int getFaceSideNumber() const;
+    };
+
+    int getRule(int order);
+    MoFEMErrorCode setGaussPts(int order);
+
+  private:
+    int faceSense;      ///< Sense of face, could be 1 or -1
+    int faceSideNumber; ///< Face side number
+    std::array<int, 3> faceConnMap;
+    std::array<int, 4> tetConnMap;
+    int oppositeNode;
 };
 
 /**
@@ -131,11 +177,47 @@ int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getOppositeNode() const {
   return oppositeNode;
 }
 
+int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getFaceSense() const {
+  return faceSense;
+}
+
+int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getFaceSideNumber() const {
+  return faceSideNumber;
+}
+
 VolumeElementForcesAndSourcesCoreOnVolumeSideBase *
 VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
     getVolumeFE() const {
   return static_cast<VolumeElementForcesAndSourcesCoreOnVolumeSideBase *>(
       ptrFE);
+}
+
+ContactPrismElementForcesAndSourcesCore *
+VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
+    getContactFE() const {
+  return static_cast<ContactPrismElementForcesAndSourcesCore *>(
+      getVolumeFE()->sidePtrFE);
+}
+
+MatrixDouble &VolumeElementForcesAndSourcesCoreOnVolumeSideBase::
+    UserDataOperator::getMasterCoordsAtGaussPts() {
+  return getContactFE()->getGaussPtsMasterFromEleSide();
+}
+
+MatrixDouble &VolumeElementForcesAndSourcesCoreOnVolumeSideBase::
+    UserDataOperator::getSlaveCoordsAtGaussPts() {
+  return getContactFE()->getGaussPtsSlaveFromEleSide();
+}
+
+int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
+    getFaceSense() const {
+  return getVolumeFE()->faceSense;
+}
+
+int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
+getFaceSideNumber()
+const {
+  return getVolumeFE()->faceSideNumber;
 }
 
 template <int SWITCH>

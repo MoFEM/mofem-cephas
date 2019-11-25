@@ -363,6 +363,7 @@ struct ForcesAndSourcesCore : public FEMethod {
      * @param fe_name
      * @param side_fe
      * @param dim
+     * @param ent_for_side
      * @return MoFEMErrorCode
      */
     MoFEMErrorCode loopSide(const string &fe_name,
