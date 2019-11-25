@@ -122,17 +122,17 @@ struct VolumeElementForcesAndSourcesCoreOnVolumeSideBase
      * @return error code
      */
     inline int getFaceSideNumber() const;
-    };
+  };
 
-    int getRule(int order);
-    MoFEMErrorCode setGaussPts(int order);
+  int getRule(int order);
+  MoFEMErrorCode setGaussPts(int order);
 
-  private:
-    int faceSense;      ///< Sense of face, could be 1 or -1
-    int faceSideNumber; ///< Face side number
-    std::array<int, 3> faceConnMap;
-    std::array<int, 4> tetConnMap;
-    int oppositeNode;
+private:
+  int faceSense;      ///< Sense of face, could be 1 or -1
+  int faceSideNumber; ///< Face side number
+  std::array<int, 3> faceConnMap;
+  std::array<int, 4> tetConnMap;
+  int oppositeNode;
 };
 
 /**
@@ -181,7 +181,8 @@ int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getFaceSense() const {
   return faceSense;
 }
 
-int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getFaceSideNumber() const {
+int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getFaceSideNumber()
+    const {
   return faceSideNumber;
 }
 
@@ -215,8 +216,7 @@ int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
 }
 
 int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
-getFaceSideNumber()
-const {
+    getFaceSideNumber() const {
   return getVolumeFE()->faceSideNumber;
 }
 
