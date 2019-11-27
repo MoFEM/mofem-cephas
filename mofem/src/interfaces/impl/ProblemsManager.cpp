@@ -77,7 +77,6 @@ ProblemsManager::ProblemsManager(const MoFEM::Core &core)
       synchroniseProblemEntities(PETSC_FALSE) {
   PetscLogEventRegister("ProblemsManager", 0, &MOFEM_EVENT_ProblemsManager);
 }
-ProblemsManager::~ProblemsManager() {}
 
 MoFEMErrorCode ProblemsManager::getOptions() {
   MoFEM::Interface &m_field = cOre;
