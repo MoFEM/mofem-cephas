@@ -146,8 +146,6 @@ OpTetDivergence::doWork(int side, EntityType type,
   if (data.getFieldData().size() == 0)
     MoFEMFunctionReturnHot(0);
 
-  // cout << "type " << type << " side " << side << std::endl;
-
   int nb_gauss_pts = data.getDiffN().size1();
   int nb_dofs = data.getFieldData().size();
 
@@ -200,7 +198,6 @@ MoFEMErrorCode OpFacesFluxes::doWork(int side, EntityType type,
               n[2] * data.getVectorN<3>(gg)(dd, 2)) *
              getGaussPts()(2, gg) * area;
     }
-    // cout << getNormal() << std::endl;
   }
 
   MoFEMFunctionReturnHot(0);
