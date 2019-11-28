@@ -1,3 +1,11 @@
+/** 
+ * \file hdiv_divergence_operator.cpp \example hdiv_divergence_operator.cpp
+ * 
+ * Using Basic interface calculate the divergence of base functions, and
+ * integral of flux on the boundary. Since the h-div space is used, volume
+ * integral and boundary integral should give the same result.
+ */
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
