@@ -45,60 +45,60 @@ struct Basic : public MoFEM::Simple {
 
   /**
    * @brief Get the Op Domain Lhs Rule Hook object
-   * 
-   * @tparam -1 
-   * @param reset 
-   * @return RuleHookFun& 
+   *
+   * @tparam -1
+   * @param reset
+   * @return RuleHookFun&
    */
   template <int DIM = -1>
   inline RuleHookFun &getOpDomainLhsRuleHook(const bool reset = false);
 
   /**
    * @brief Get the Op Domain Rhs Rule Hook object
-   * 
-   * @tparam -1 
-   * @param reset 
-   * @return RuleHookFun& 
+   *
+   * @tparam -1
+   * @param reset
+   * @return RuleHookFun&
    */
   template <int DIM = -1>
   inline RuleHookFun &getOpDomainRhsRuleHook(const bool reset = false);
 
   /**
    * @brief Get the Op Boundary Lhs Rule Hook object
-   * 
-   * @tparam -1 
-   * @param reset 
-   * @return RuleHookFun& 
+   *
+   * @tparam -1
+   * @param reset
+   * @return RuleHookFun&
    */
   template <int DIM = -1>
   inline RuleHookFun &getOpBoundaryLhsRuleHook(const bool reset = false);
 
   /**
    * @brief Get the Op Boundary Rhs Rule Hook object
-   * 
-   * @tparam -1 
-   * @param reset 
-   * @return RuleHookFun& 
+   *
+   * @tparam -1
+   * @param reset
+   * @return RuleHookFun&
    */
   template <int DIM = -1>
   inline RuleHookFun &getOpBoundaryRhsRuleHook(const bool reset = false);
 
   /**
    * @brief Get the Op Skeleton Lhs Rule Hook object
-   * 
-   * @tparam -1 
-   * @param reset 
-   * @return RuleHookFun& 
+   *
+   * @tparam -1
+   * @param reset
+   * @return RuleHookFun&
    */
   template <int DIM = -1>
   inline RuleHookFun &getOpSkeletonLhsRuleHook(const bool reset = false);
 
   /**
    * @brief Get the Op Skeleton Rhs Rule Hook object
-   * 
-   * @tparam -1 
-   * @param reset 
-   * @return RuleHookFun& 
+   *
+   * @tparam -1
+   * @param reset
+   * @return RuleHookFun&
    */
   template <int DIM = -1>
   inline RuleHookFun &getOpSkeletonRhsRuleHook(const bool reset = false);
@@ -295,237 +295,282 @@ Basic::createBoundaryFEPipeline<1>(boost::shared_ptr<FEMethod> &fe,
 
 template <int DIM>
 Basic::RuleHookFun &Basic::getOpDomainLhsRuleHook(const bool reset) {
-  if (DIM == -1)
-    switch (getDim()) {
-    case 1:
-      return getOpDomainLhsRuleHook<1>(reset);
-    case 2:
-      return getOpDomainLhsRuleHook<2>(reset);
-    case 3:
-      return getOpDomainLhsRuleHook<3>(reset);
-    default:
-      THROW_MESSAGE("Not implemented");
-    }
-  else
-    return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-               createDomainFEPipeline<DIM>(feDomainLhs, reset))
-        ->getRuleHook;
+  return dynamic_cast<ForcesAndSourcesCore *>(
+             createDomainFEPipeline<DIM>(feDomainLhs, reset).get())
+      ->getRuleHook;
+}
+
+template <>
+inline Basic::RuleHookFun &Basic::getOpDomainLhsRuleHook<-1>(const bool reset) {
+  switch (getDim()) {
+  case 1:
+    return getOpDomainLhsRuleHook<1>(reset);
+  case 2:
+    return getOpDomainLhsRuleHook<2>(reset);
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpDomainLhsRuleHook<3>(reset);
 }
 
 template <int DIM>
 Basic::RuleHookFun &Basic::getOpDomainRhsRuleHook(const bool reset) {
-  if (DIM == -1)
-    switch (getDim()) {
-    case 1:
-      return getOpDomainRhsRuleHook<1>(reset);
-    case 2:
-      return getOpDomainRhsRuleHook<2>(reset);
-    case 3:
-      return getOpDomainRhsRuleHook<3>(reset);
-    default:
-      THROW_MESSAGE("Not implemented");
-    }
-  else
-    return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-               createDomainFEPipeline<DIM>(feDomainRhs, reset))
-        ->getRuleHook;
+  return dynamic_cast<ForcesAndSourcesCore *>(
+             createDomainFEPipeline<DIM>(feDomainRhs, reset).get())
+      ->getRuleHook;
+}
+
+template <>
+inline Basic::RuleHookFun &Basic::getOpDomainRhsRuleHook<-1>(const bool reset) {
+  switch (getDim()) {
+  case 1:
+    return getOpDomainRhsRuleHook<1>(reset);
+  case 2:
+    return getOpDomainRhsRuleHook<2>(reset);
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpDomainRhsRuleHook<3>(reset);
 }
 
 template <int DIM>
 Basic::RuleHookFun &Basic::getOpBoundaryLhsRuleHook(const bool reset) {
-  if (DIM == -1)
-    switch (getDim()) {
-    case 1:
-      return getOpBoundaryLhsRuleHook<1>(reset);
-    case 2:
-      return getOpBoundaryLhsRuleHook<2>(reset);
-    case 3:
-      return getOpBoundaryLhsRuleHook<3>(reset);
-    default:
-      THROW_MESSAGE("Not implemented");
-    }
-  else
-    return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-               createBoundaryFEPipeline<DIM>(feBoundaryLhs, reset))
-        ->getRuleHook;
+  return dynamic_cast<ForcesAndSourcesCore *>(
+             createBoundaryFEPipeline<DIM>(feBoundaryLhs, reset).get())
+      ->getRuleHook;
+}
+
+template <>
+inline Basic::RuleHookFun &
+Basic::getOpBoundaryLhsRuleHook<-1>(const bool reset) {
+  switch (getDim()) {
+  case 1:
+    return getOpBoundaryLhsRuleHook<1>(reset);
+  case 2:
+    return getOpBoundaryLhsRuleHook<2>(reset);
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpBoundaryLhsRuleHook<3>(reset);
 }
 
 template <int DIM>
 Basic::RuleHookFun &Basic::getOpBoundaryRhsRuleHook(const bool reset) {
-  if (DIM == -1)
-    switch (getDim()) {
-    case 1:
-      return getOpBoundaryRhsRuleHook<1>(reset);
-    case 2:
-      return getOpBoundaryRhsRuleHook<2>(reset);
-    case 3:
-      return getOpBoundaryRhsRuleHook<3>(reset);
-    default:
-      THROW_MESSAGE("Not implemented");
-    }
-  else
-    return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-               createBoundaryFEPipeline<DIM>(feBoundaryRhs, reset))
-        ->getRuleHook;
+  return dynamic_cast<ForcesAndSourcesCore *>(
+             createBoundaryFEPipeline<DIM>(feBoundaryRhs, reset).get())
+      ->getRuleHook;
+}
+
+template <>
+inline Basic::RuleHookFun &
+Basic::getOpBoundaryRhsRuleHook<-1>(const bool reset) {
+  switch (getDim()) {
+  case 1:
+    return getOpBoundaryRhsRuleHook<1>(reset);
+  case 2:
+    return getOpBoundaryRhsRuleHook<2>(reset);
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpBoundaryRhsRuleHook<3>(reset);
 }
 
 template <int DIM>
 Basic::RuleHookFun &Basic::getOpSkeletonLhsRuleHook(const bool reset) {
-    if (DIM == -1)
-    switch (getDim()) {
-    case 1:
-      return getOpSkeletonLhsRuleHook<1>(reset);
-    case 2:
-      return getOpSkeletonLhsRuleHook<2>(reset);
-    case 3:
-      return getOpSkeletonLhsRuleHook<3>(reset);
-    default:
-      THROW_MESSAGE("Not implemented");
-    }
-  else
-  return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-             createBoundaryFEPipeline<DIM>(feSkeletonRhs, reset))
+  return dynamic_cast<ForcesAndSourcesCore *>(
+             createBoundaryFEPipeline<DIM>(feSkeletonRhs, reset).get())
       ->getRuleHook;
+}
+
+template <>
+inline Basic::RuleHookFun &
+Basic::getOpSkeletonLhsRuleHook<-1>(const bool reset) {
+  switch (getDim()) {
+  case 1:
+    return getOpSkeletonLhsRuleHook<1>(reset);
+  case 2:
+    return getOpSkeletonLhsRuleHook<2>(reset);
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpSkeletonLhsRuleHook<3>(reset);
 }
 
 template <int DIM>
 Basic::RuleHookFun &Basic::getOpSkeletonRhsRuleHook(const bool reset) {
-      if (DIM == -1)
-    switch (getDim()) {
-    case 1:
-      return getOpSkeletonRhsRuleHook<1>(reset);
-    case 2:
-      return getOpSkeletonRhsRuleHook<2>(reset);
-    case 3:
-      return getOpSkeletonRhsRuleHook<3>(reset);
-    default:
-      THROW_MESSAGE("Not implemented");
-    }
-  else
-  return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-             createBoundaryFEPipeline<DIM>(feSkeletonRhs, reset))
+  return dynamic_cast<ForcesAndSourcesCore *>(
+             createBoundaryFEPipeline<DIM>(feSkeletonRhs, reset).get())
       ->getRuleHook;
 }
 
+template <>
+inline Basic::RuleHookFun &
+Basic::getOpSkeletonRhsRuleHook<-1>(const bool reset) {
+  switch (getDim()) {
+  case 1:
+    return getOpSkeletonRhsRuleHook<1>(reset);
+  case 2:
+    return getOpSkeletonRhsRuleHook<2>(reset);
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpSkeletonRhsRuleHook<3>(reset);
+}
 
 template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpDomainLhsPipeline(const bool reset) {
-  if (DIM == -1)
-    switch (getDim()) {
-    case 1:
-      return getOpDomainLhsPipeline<1>(reset);
-    case 2:
-      return getOpDomainLhsPipeline<2>(reset);
-    case 3:
-      return getOpDomainLhsPipeline<3>(reset);
-    default:
-      THROW_MESSAGE("Not implemented");
-    }
-  else
-    return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-               createDomainFEPipeline<DIM>(feDomainLhs, reset))
-        ->getOpPtrVector();
+  return dynamic_cast<ForcesAndSourcesCore *>(
+             createDomainFEPipeline<DIM>(feDomainLhs, reset).get())
+      ->getOpPtrVector();
+}
+
+template <>
+inline boost::ptr_vector<Basic::UserDataOperator> &
+Basic::getOpDomainLhsPipeline<-1>(const bool reset) {
+  switch (getDim()) {
+  case 1:
+    return getOpDomainLhsPipeline<1>(reset);
+  case 2:
+    return getOpDomainLhsPipeline<2>(reset);
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpDomainLhsPipeline<3>(reset);
 }
 
 template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpDomainRhsPipeline(const bool reset) {
-  if (DIM == -1)
-    switch (getDim()) {
-    case 1:
-      return getOpDomainRhsPipeline<1>(reset);
-    case 2:
-      return getOpDomainRhsPipeline<2>(reset);
-    case 3:
-      return getOpDomainRhsPipeline<3>(reset);
-    default:
-      THROW_MESSAGE("Not implemented");
-    }
-  else
-    return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-               createDomainFEPipeline<DIM>(feDomainRhs, reset))
-        ->getOpPtrVector();
+  return dynamic_cast<ForcesAndSourcesCore *>(
+             createDomainFEPipeline<DIM>(feDomainRhs, reset).get())
+      ->getOpPtrVector();
+}
+
+template <>
+inline boost::ptr_vector<Basic::UserDataOperator> &
+Basic::getOpDomainRhsPipeline<-1>(const bool reset) {
+  switch (getDim()) {
+  case 1:
+    return getOpDomainRhsPipeline<1>(reset);
+  case 2:
+    return getOpDomainRhsPipeline<2>(reset);
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpDomainRhsPipeline<3>(reset);
 }
 
 template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpBoundaryLhsPipeline(const bool reset) {
-  if (DIM == -1)
-    switch (getDim()) {
-    case 1:
-      return getOpBoundaryLhsPipeline<1>(reset);
-    case 2:
-      return getOpBoundaryLhsPipeline<2>(reset);
-    case 3:
-      return getOpBoundaryLhsPipeline<3>(reset);
-    default:
-      THROW_MESSAGE("Not implemented");
-    }
-  else
-    return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-               createBoundaryFEPipeline<DIM>(feBoundaryRhs, reset))
-        ->getOpPtrVector();
+  return dynamic_cast<ForcesAndSourcesCore *>(
+             createBoundaryFEPipeline<DIM>(feBoundaryRhs, reset).get())
+      ->getOpPtrVector();
+}
+
+template <>
+inline boost::ptr_vector<Basic::UserDataOperator> &
+Basic::getOpBoundaryLhsPipeline<-1>(const bool reset) {
+  switch (getDim()) {
+  case 1:
+    return getOpBoundaryLhsPipeline<1>(reset);
+  case 2:
+    return getOpBoundaryLhsPipeline<2>(reset);
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpBoundaryLhsPipeline<3>(reset);
 }
 
 template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpBoundaryRhsPipeline(const bool reset) {
-  if (DIM == -1)
-    switch (getDim()) {
-    case 1:
-      return getOpBoundaryRhsPipeline<1>(reset);
-    case 2:
-      return getOpBoundaryRhsPipeline<2>(reset);
-    case 3:
-      return getOpBoundaryRhsPipeline<3>(reset);
-    default:
-      THROW_MESSAGE("Not implemented");
-    }
-  else
-    return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-               createBoundaryFEPipeline<DIM>(feBoundaryLhs, reset))
-        ->getOpPtrVector();
+  return dynamic_cast<ForcesAndSourcesCore *>(
+             createBoundaryFEPipeline<DIM>(feBoundaryLhs, reset).get())
+      ->getOpPtrVector();
+}
+
+template <>
+inline boost::ptr_vector<Basic::UserDataOperator> &
+Basic::getOpBoundaryRhsPipeline<-1>(const bool reset) {
+  switch (getDim()) {
+  case 1:
+    return getOpBoundaryRhsPipeline<1>(reset);
+  case 2:
+    return getOpBoundaryRhsPipeline<2>(reset);
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpBoundaryRhsPipeline<3>(reset);
 }
 
 template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpSkeletonLhsPipeline(const bool reset) {
-  if (DIM == -1)
-    switch (getDim()) {
-    case 1:
-      return getOpSkeletonLhsPipeline<1>(reset);
-    case 2:
-      return getOpSkeletonLhsPipeline<2>(reset);
-    case 3:
-      return getOpSkeletonLhsPipeline<3>(reset);
-    default:
-      THROW_MESSAGE("Not implemented");
-    }
-  else
-    return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-               createBoundaryFEPipeline<DIM>(feSkeletonRhs, reset))
-        ->getOpPtrVector();
+  return dynamic_cast<ForcesAndSourcesCore *>(
+             createBoundaryFEPipeline<DIM>(feSkeletonRhs, reset).get())
+      ->getOpPtrVector();
+}
+
+template <>
+inline boost::ptr_vector<Basic::UserDataOperator> &
+Basic::getOpSkeletonLhsPipeline<-1>(const bool reset) {
+  switch (getDim()) {
+  case 1:
+    return getOpSkeletonLhsPipeline<1>(reset);
+  case 2:
+    return getOpSkeletonLhsPipeline<2>(reset);
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpSkeletonLhsPipeline<3>(reset);
 }
 
 template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpSkeletonRhsPipeline(const bool reset) {
-  if (DIM == -1)
-    switch (getDim()) {
-    case 1:
-      return getOpSkeletonRhsPipeline<1>(reset);
-    case 2:
-      return getOpSkeletonRhsPipeline<2>(reset);
-    case 3:
-      return getOpSkeletonRhsPipeline<3>(reset);
-    default:
-      THROW_MESSAGE("Not implemented");
-    }
-  else
-    return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-               createBoundaryFEPipeline<DIM>(feSkeletonLhs, reset))
-        ->getOpPtrVector();
+  return dynamic_cast<ForcesAndSourcesCore *>(
+             createBoundaryFEPipeline<DIM>(feSkeletonLhs, reset).get())
+      ->getOpPtrVector();
+}
+
+template <>
+inline boost::ptr_vector<Basic::UserDataOperator> &
+Basic::getOpSkeletonRhsPipeline<-1>(const bool reset) {
+  switch (getDim()) {
+  case 1:
+    return getOpSkeletonRhsPipeline<1>(reset);
+  case 2:
+    return getOpSkeletonRhsPipeline<2>(reset);
+  case 3:
+    break;
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  return getOpSkeletonRhsPipeline<3>(reset);
 }
 
 } // namespace MoFEM

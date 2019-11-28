@@ -906,12 +906,12 @@ target_link_libraries(hdiv_divergence_operator
 add_test(hdiv_divergence_operator_ainsworth_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
-  -my_file sphere.h5m -base hdiv_ainsworth
+  -file_name sphere.h5m -base hdiv_ainsworth
 )
 add_test(hdiv_divergence_operator_demkowicz_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
-  -my_file sphere.h5m -base hdiv_demkowicz
+  -file_name sphere.h5m -base hdiv_demkowicz
 )
 
 # add test for hcurl curl operator
