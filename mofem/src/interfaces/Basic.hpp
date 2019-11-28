@@ -41,6 +41,25 @@ struct Basic : public MoFEM::Simple {
   using Simple::Simple::Simple;
 
   using UserDataOperator = MoFEM::ForcesAndSourcesCore::UserDataOperator;
+  using RuleHookFun = MoFEM::ForcesAndSourcesCore::RuleHookFun;
+
+  template <int DIM>
+  inline RuleHookFun &getOpDomainLhsRuleHook(const bool reset = false);
+
+  template <int DIM>
+  inline RuleHookFun &getOpDomainRhsRuleHook(const bool reset = false);
+
+  template <int DIM>
+  inline RuleHookFun &getOpBoundaryLhsRuleHook(const bool reset = false);
+
+  template <int DIM>
+  inline RuleHookFun &getOpBoundaryRhsRuleHook(const bool reset = false);
+
+  template <int DIM>
+  inline RuleHookFun &getOpSkeletonLhsRuleHook(const bool reset = false);
+
+  template <int DIM>
+  inline RuleHookFun &getOpSkeletonRhsRuleHook(const bool reset = false);
 
   /**
    * @brief Get the Op Domain Lhs Pipeline object
@@ -146,9 +165,9 @@ private:
   boost::shared_ptr<FEMethod>
       feDomainLhs; ///< Element to assemble LHS side by integrating domain
   boost::shared_ptr<FEMethod>
-      feBcRhs; ///< Element to assemble RHS side by integrating boundary
+      feBoundaryRhs; ///< Element to assemble RHS side by integrating boundary
   boost::shared_ptr<FEMethod>
-      feBcLhs; ///< Element to assemble LHS side by integrating boundary
+      feBoundaryLhs; ///< Element to assemble LHS side by integrating boundary
   boost::shared_ptr<FEMethod>
       feSkeletonRhs; ///< Element to assemble RHS side by integrating skeleton
   boost::shared_ptr<FEMethod>
@@ -165,36 +184,25 @@ private:
                            const bool reset = false);
 };
 
-template <int DIM>
-boost::shared_ptr<FEMethod>
-Basic::createDomainFEPipeline(boost::shared_ptr<FEMethod> &fe,
-                              const bool reset) {
-  static_assert(DIM == 1 || DIM == 2 || DIM == 3, "not implemented");
-  return boost::make_shared<FEMethod>();
-}
-
 template <>
-boost::shared_ptr<FEMethod>
-inline Basic::createDomainFEPipeline<3>(boost::shared_ptr<FEMethod> &fe,
-                                 const bool reset) {
+boost::shared_ptr<FEMethod> inline Basic::createDomainFEPipeline<3>(
+    boost::shared_ptr<FEMethod> &fe, const bool reset) {
   if (!fe || reset)
     fe = boost::make_shared<VolumeElementForcesAndSourcesCore>(cOre);
   return fe;
 }
 
 template <>
-boost::shared_ptr<FEMethod>
-inline Basic::createDomainFEPipeline<2>(boost::shared_ptr<FEMethod> &fe,
-                                 const bool reset) {
+boost::shared_ptr<FEMethod> inline Basic::createDomainFEPipeline<2>(
+    boost::shared_ptr<FEMethod> &fe, const bool reset) {
   if (!fe || reset)
     fe = boost::make_shared<FaceElementForcesAndSourcesCore>(cOre);
   return fe;
 }
 
 template <>
-boost::shared_ptr<FEMethod>
-inline Basic::createDomainFEPipeline<1>(boost::shared_ptr<FEMethod> &fe,
-                                 const bool reset) {
+boost::shared_ptr<FEMethod> inline Basic::createDomainFEPipeline<1>(
+    boost::shared_ptr<FEMethod> &fe, const bool reset) {
   if (!fe || reset)
     fe = boost::make_shared<EdgeElementForcesAndSourcesCore>(cOre);
   return fe;
@@ -236,6 +244,56 @@ Basic::createBoundaryFEPipeline<1>(boost::shared_ptr<FEMethod> &fe,
 }
 
 template <int DIM>
+Basic::RuleHookFun &Basic::getOpDomainLhsRuleHook(const bool reset) {
+  return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
+             createDomainFEPipeline<DIM>(feDomainLhs, reset))
+      ->getRuleHook;
+}
+
+template <int DIM>
+Basic::RuleHookFun &Basic::getOpDomainRhsRuleHook(const bool reset) {
+  return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
+             createDomainFEPipeline<DIM>(feDomainRhs, reset))
+      ->getRuleHook;
+}
+
+template <int DIM>
+Basic::RuleHookFun &Basic::getOpBoundaryLhsRuleHook(const bool reset) {
+  return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
+             createBoundaryFEPipeline<DIM>(feBoundaryLhs, reset))
+      ->getRuleHook;
+}
+
+template <int DIM>
+Basic::RuleHookFun &Basic::getOpBoundaryRhsRuleHook(const bool reset) {
+  return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
+             createBoundaryFEPipeline<DIM>(feBoundaryRhs, reset))
+      ->getRuleHook;
+}
+
+template <int DIM>
+Basic::RuleHookFun &Basic::getOpSkeletonLhsRuleHook(const bool reset) {
+  return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
+             createBoundaryFEPipeline<DIM>(feSkeletonRhs, reset))
+      ->getRuleHook;
+}
+
+template <int DIM>
+Basic::RuleHookFun &Basic::getOpSkeletonRhsRuleHook(const bool reset) {
+  return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
+             createBoundaryFEPipeline<DIM>(feSkeletonRhs, reset))
+      ->getRuleHook;
+}
+
+template <int DIM>
+boost::shared_ptr<FEMethod>
+Basic::createDomainFEPipeline(boost::shared_ptr<FEMethod> &fe,
+                              const bool reset) {
+  static_assert(DIM == 1 || DIM == 2 || DIM == 3, "not implemented");
+  return boost::make_shared<FEMethod>();
+}
+
+template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpDomainLhsPipeline(const bool reset) {
   return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
@@ -255,7 +313,7 @@ template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpBoundaryLhsPipeline(const bool reset) {
   return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-             createBoundaryFEPipeline<DIM>(feBcRhs, reset))
+             createBoundaryFEPipeline<DIM>(feBoundaryRhs, reset))
       ->getOpPtrVector();
 }
 
@@ -263,7 +321,7 @@ template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpBoundaryRhsPipeline(const bool reset) {
   return dynamic_cast<boost::shared_ptr<ForcesAndSourcesCore>>(
-             createBoundaryFEPipeline<DIM>(feBcLhs, reset))
+             createBoundaryFEPipeline<DIM>(feBoundaryLhs, reset))
       ->getOpPtrVector();
 }
 

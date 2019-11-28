@@ -41,8 +41,9 @@ MoFEMErrorCode Basic::loopFiniteElements() {
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
     CHKERR DMoFEMLoopFiniteElements(getDM(), getDomainFEName(), feDomainLhs);
-  if (feBcLhs)
-    CHKERR DMoFEMLoopFiniteElements(getDM(), getBoundaryFEName(), feBcLhs);
+  if (feBoundaryLhs)
+    CHKERR DMoFEMLoopFiniteElements(getDM(), getBoundaryFEName(),
+                                    feBoundaryLhs);
   if (feSkeletonLhs)
     CHKERR DMoFEMLoopFiniteElements(getDM(), getSkeletonFEName(),
                                     feSkeletonLhs);
@@ -50,8 +51,9 @@ MoFEMErrorCode Basic::loopFiniteElements() {
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
     CHKERR DMoFEMLoopFiniteElements(getDM(), getDomainFEName(), feDomainRhs);
-  if (feBcRhs)
-    CHKERR DMoFEMLoopFiniteElements(getDM(), getBoundaryFEName(), feBcRhs);
+  if (feBoundaryRhs)
+    CHKERR DMoFEMLoopFiniteElements(getDM(), getBoundaryFEName(),
+                                    feBoundaryRhs);
   if (feSkeletonRhs)
     CHKERR DMoFEMLoopFiniteElements(getDM(), getSkeletonFEName(),
                                     feSkeletonRhs);
@@ -71,9 +73,9 @@ SmartPetscObj<KSP> Basic::createKSP() {
   if (feDomainLhs)
     CHKERR DMMoFEMKSPSetComputeOperators(getDM(), getDomainFEName(),
                                          feDomainLhs, null, null);
-  if (feBcLhs)
-    CHKERR DMMoFEMKSPSetComputeOperators(getDM(), getBoundaryFEName(), feBcLhs,
-                                         null, null);
+  if (feBoundaryLhs)
+    CHKERR DMMoFEMKSPSetComputeOperators(getDM(), getBoundaryFEName(),
+                                         feBoundaryLhs, null, null);
   if (feSkeletonLhs)
     CHKERR DMMoFEMKSPSetComputeOperators(getDM(), getSkeletonFEName(),
                                          feSkeletonLhs, null, null);
@@ -82,9 +84,9 @@ SmartPetscObj<KSP> Basic::createKSP() {
   if (feDomainRhs)
     CHKERR DMMoFEMKSPSetComputeRHS(getDM(), getDomainFEName(), feDomainRhs,
                                    null, null);
-  if (feBcRhs)
-    CHKERR DMMoFEMKSPSetComputeRHS(getDM(), getBoundaryFEName(), feBcRhs, null,
-                                   null);
+  if (feBoundaryRhs)
+    CHKERR DMMoFEMKSPSetComputeRHS(getDM(), getBoundaryFEName(), feBoundaryRhs,
+                                   null, null);
   if (feSkeletonRhs)
     CHKERR DMMoFEMKSPSetComputeRHS(getDM(), getSkeletonFEName(), feSkeletonRhs,
                                    null, null);
@@ -107,9 +109,9 @@ SmartPetscObj<SNES> Basic::createSNES() {
   if (feDomainLhs)
     CHKERR DMMoFEMSNESSetJacobian(getDM(), getDomainFEName(), feDomainLhs, null,
                                   null);
-  if (feBcLhs)
-    CHKERR DMMoFEMSNESSetJacobian(getDM(), getBoundaryFEName(), feBcLhs, null,
-                                  null);
+  if (feBoundaryLhs)
+    CHKERR DMMoFEMSNESSetJacobian(getDM(), getBoundaryFEName(), feBoundaryLhs,
+                                  null, null);
   if (feSkeletonLhs)
     CHKERR DMMoFEMSNESSetJacobian(getDM(), getSkeletonFEName(), feSkeletonLhs,
                                   null, null);
@@ -118,9 +120,9 @@ SmartPetscObj<SNES> Basic::createSNES() {
   if (feDomainRhs)
     CHKERR DMMoFEMSNESSetFunction(getDM(), getDomainFEName(), feDomainRhs, null,
                                   null);
-  if (feBcRhs)
-    CHKERR DMMoFEMSNESSetFunction(getDM(), getBoundaryFEName(), feBcRhs, null,
-                                  null);
+  if (feBoundaryRhs)
+    CHKERR DMMoFEMSNESSetFunction(getDM(), getBoundaryFEName(), feBoundaryRhs,
+                                  null, null);
   if (feSkeletonRhs)
     CHKERR DMMoFEMSNESSetFunction(getDM(), getSkeletonFEName(), feSkeletonRhs,
                                   null, null);
@@ -142,9 +144,9 @@ SmartPetscObj<TS> Basic::createTS() {
   if (feDomainLhs)
     CHKERR DMMoFEMTSSetIJacobian(getDM(), getDomainFEName(), feDomainLhs, null,
                                  null);
-  if (feBcLhs)
-    CHKERR DMMoFEMTSSetIJacobian(getDM(), getBoundaryFEName(), feBcLhs, null,
-                                 null);
+  if (feBoundaryLhs)
+    CHKERR DMMoFEMTSSetIJacobian(getDM(), getBoundaryFEName(), feBoundaryLhs,
+                                 null, null);
   if (feSkeletonLhs)
     CHKERR DMMoFEMTSSetIJacobian(getDM(), getSkeletonFEName(), feSkeletonLhs,
                                  null, null);
@@ -153,9 +155,9 @@ SmartPetscObj<TS> Basic::createTS() {
   if (feDomainRhs)
     CHKERR DMMoFEMTSSetIFunction(getDM(), getDomainFEName(), feDomainRhs, null,
                                  null);
-  if (feBcRhs)
-    CHKERR DMMoFEMTSSetIFunction(getDM(), getBoundaryFEName(), feBcRhs, null,
-                                 null);
+  if (feBoundaryRhs)
+    CHKERR DMMoFEMTSSetIFunction(getDM(), getBoundaryFEName(), feBoundaryRhs,
+                                 null, null);
   if (feSkeletonRhs)
     CHKERR DMMoFEMTSSetIFunction(getDM(), getSkeletonFEName(), feSkeletonRhs,
                                  null, null);
