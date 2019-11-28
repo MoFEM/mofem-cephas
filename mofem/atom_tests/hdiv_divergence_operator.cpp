@@ -1,6 +1,6 @@
-/** 
+/**
  * \file hdiv_divergence_operator.cpp \example hdiv_divergence_operator.cpp
- * 
+ *
  * Using Basic interface calculate the divergence of base functions, and
  * integral of flux on the boundary. Since the h-div space is used, volume
  * integral and boundary integral should give the same result.
@@ -58,17 +58,21 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    enum bases { HDIV_AINSWORTH, HDIV_DEMKOWICZ, LASTOP };
+    enum bases { AINSWORTH, DEMKOWICZ, LASTOP };
 
-    const char *list[] = {"hdiv_ainsworth", "hdiv_demkowicz"};
+    const char *list[] = {"ainsworth", "demkowicz"};
 
     PetscBool flg;
-    PetscInt choise_value = HDIV_AINSWORTH;
+    PetscInt choise_value = AINSWORTH;
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list, LASTOP,
                                 &choise_value, &flg);
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
     }
+
+    PetscBool ho_geometry = PETSC_FALSE;
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-ho_geometry", &ho_geometry,
+                               PETSC_NULL);
 
     DMType dm_name = "DMMOFEM";
     CHKERR DMRegister_MoFEM(dm_name);
@@ -87,13 +91,13 @@ int main(int argc, char *argv[]) {
 
     // fields
     switch (choise_value) {
-    case HDIV_AINSWORTH:
+    case AINSWORTH:
       CHKERR basic_interface->addDomainField("HDIV", HDIV,
                                              AINSWORTH_LEGENDRE_BASE, 1);
       CHKERR basic_interface->addBoundaryField("HDIV", HDIV,
                                                AINSWORTH_LEGENDRE_BASE, 1);
       break;
-    case HDIV_DEMKOWICZ:
+    case DEMKOWICZ:
       CHKERR basic_interface->addDomainField("HDIV", HDIV,
                                              DEMKOWICZ_JACOBI_BASE, 1);
       CHKERR basic_interface->addBoundaryField("HDIV", HDIV,
@@ -101,8 +105,14 @@ int main(int argc, char *argv[]) {
       break;
     }
 
-    constexpr int order = 5;
+    if (ho_geometry == PETSC_TRUE)
+      CHKERR basic_interface->addDataField("MESH_NODE_POSITIONS", H1,
+                                           AINSWORTH_LEGENDRE_BASE, 3);
+
+          constexpr int order = 5;
     CHKERR basic_interface->setFieldOrder("HDIV", order);
+    if (ho_geometry == PETSC_TRUE)
+      CHKERR basic_interface->setFieldOrder("MESH_NODE_POSITIONS", 2);
     CHKERR basic_interface->setUp();
 
     auto integration_rule = [](int, int, int p_data) { return 2 * p_data; };
@@ -116,6 +126,11 @@ int main(int argc, char *argv[]) {
     basic_interface->getOpBoundaryRhsPipeline().push_back(
         new OpFacesFluxes(divergence_skin));
 
+    // project geometry form 10 node tets on higher order approx. functions
+    if (ho_geometry == PETSC_TRUE) {
+      Projection10NodeCoordsOnField ent_method(m_field, "MESH_NODE_POSITIONS");
+      CHKERR m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method);
+    }
     CHKERR basic_interface->loopFiniteElements();
 
     std::cout.precision(12);

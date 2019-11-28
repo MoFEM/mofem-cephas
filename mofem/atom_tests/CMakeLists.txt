@@ -906,12 +906,22 @@ target_link_libraries(hdiv_divergence_operator
 add_test(hdiv_divergence_operator_ainsworth_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
-  -file_name sphere.h5m -base hdiv_ainsworth
+  -file_name sphere.h5m -base ainsworth
 )
 add_test(hdiv_divergence_operator_demkowicz_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
-  -file_name sphere.h5m -base hdiv_demkowicz
+  -file_name sphere.h5m -base demkowicz
+)
+add_test(hdiv_divergence_operator_ainsworth_ho_geometry_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
+  -file_name sphere.h5m -base ainsworth -ho_geometry
+)
+add_test(hdiv_divergence_operator_demkowicz_ho_geometry_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
+  -file_name sphere.h5m -base demkowicz -ho_geometry
 )
 
 # add test for hcurl curl operator
@@ -927,12 +937,24 @@ target_link_libraries(hcurl_curl_operator
   ${PROJECT_LIBS}
 )
 add_test(hcurl_curl_operator_ainsworth_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
-  -my_file sphere.h5m -base ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -file_name sphere.h5m -base ainsworth
 )
 add_test(hcurl_curl_operator_demkowicz_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
-  -my_file sphere.h5m -base demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -file_name sphere.h5m -base demkowicz
+)
+add_test(hcurl_curl_operator_ainsworth_ho_geometry_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -file_name sphere.h5m -base ainsworth -ho_geometry
+)
+add_test(hcurl_curl_operator_demkowicz_ho_geometry_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -file_name sphere.h5m -base demkowicz -ho_geometry
 )
 
 #test integration on skeleton
