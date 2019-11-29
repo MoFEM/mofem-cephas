@@ -355,11 +355,11 @@ Install users modules
 cd $HOME/mofem_install
 mkdir um
 cd um/
-spack view --verbose symlink -i um_view mofem-cephas@develop build_type=RelWithDebInfo
+spack view --verbose symlink -i um_view mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
 export PATH=$PWD/um_view/bin:$PATH
 mkdir build 
 cd build/
-spack setup mofem-users-modules@develop copy_user_modules=False build_type=RelWithDebInfo ^mofem-cephas@develop build_type=RelWithDebInfo
+spack setup mofem-users-modules@develop copy_user_modules=False build_type=RelWithDebInfo ^mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
 ./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
 ctest
