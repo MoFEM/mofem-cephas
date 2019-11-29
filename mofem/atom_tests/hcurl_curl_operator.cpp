@@ -118,8 +118,8 @@ int main(int argc, char *argv[]) {
     CHKERR basic_interface->setUp();
 
     auto integration_rule = [](int, int, int p_data) { return 2 * p_data; };
-    basic_interface->getOpDomainRhsRuleHook() = integration_rule;
-    basic_interface->getOpBoundaryRhsRuleHook() = integration_rule;
+    CHKERR basic_interface->setDomainRhsIntegrationRule(integration_rule);
+    CHKERR basic_interface->setBoundaryRhsIntegrationRule(integration_rule);
 
     FTensor::Tensor1<double, 3> t_curl_vol;
     FTensor::Tensor1<double, 3> t_curl_skin;
@@ -151,10 +151,9 @@ int main(int argc, char *argv[]) {
     double nrm2 = sqrt(t_curl_vol(i) * t_curl_vol(i));
 
     constexpr double eps = 1e-8;
-    if (fabs(nrm2) > eps) 
+    if (fabs(nrm2) > eps)
       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
               "Curl operator not passed test\n");
-    
   }
   CATCH_ERRORS;
 

@@ -1,5 +1,5 @@
 /**
- * \file hdiv_divergence_operator.cpp 
+ * \file hdiv_divergence_operator.cpp
  * \example hdiv_divergence_operator.cpp
  *
  * Using Basic interface calculate the divergence of base functions, and
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     const char *list[] = {"ainsworth", "demkowicz"};
 
     PetscBool flg;
-    PetscInt choise_value = AINSWORTH;
+    PetscInt choice_value = AINSWORTH;
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list, LASTOP,
                                 &choice_value, &flg);
     if (flg != PETSC_TRUE) {
@@ -117,8 +117,8 @@ int main(int argc, char *argv[]) {
     CHKERR basic_interface->setUp();
 
     auto integration_rule = [](int, int, int p_data) { return 2 * p_data; };
-    basic_interface->getOpDomainRhsRuleHook() = integration_rule;
-    basic_interface->getOpBoundaryRhsRuleHook() = integration_rule;
+    CHKERR basic_interface->setDomainRhsIntegrationRule(integration_rule);
+    CHKERR basic_interface->setBoundaryRhsIntegrationRule(integration_rule);
 
     double divergence_vol = 0;
     double divergence_skin = 0;
@@ -140,11 +140,10 @@ int main(int argc, char *argv[]) {
     std::cout << "divergence_skin " << divergence_skin << std::endl;
 
     constexpr double eps = 1e-8;
-    if (fabs(divergence_skin - divergence_vol) > eps) 
+    if (fabs(divergence_skin - divergence_vol) > eps)
       SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "invalid surface flux or divergence or both\n", divergence_skin,
                divergence_vol);
-    
   }
   CATCH_ERRORS;
 
