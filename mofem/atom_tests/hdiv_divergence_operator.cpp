@@ -1,5 +1,6 @@
 /**
- * \file hdiv_divergence_operator.cpp \example hdiv_divergence_operator.cpp
+ * \file hdiv_divergence_operator.cpp 
+ * \example hdiv_divergence_operator.cpp
  *
  * Using Basic interface calculate the divergence of base functions, and
  * integral of flux on the boundary. Since the h-div space is used, volume
@@ -65,7 +66,7 @@ int main(int argc, char *argv[]) {
     PetscBool flg;
     PetscInt choise_value = AINSWORTH;
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list, LASTOP,
-                                &choise_value, &flg);
+                                &choice_value, &flg);
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
     }
@@ -85,12 +86,12 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
-    auto basic_interface = m_field.getInterface<Basic>();
+    Basic *basic_interface = m_field.getInterface<Basic>();
     CHKERR basic_interface->getOptions();
     CHKERR basic_interface->loadFile("");
 
     // fields
-    switch (choise_value) {
+    switch (choice_value) {
     case AINSWORTH:
       CHKERR basic_interface->addDomainField("HDIV", HDIV,
                                              AINSWORTH_LEGENDRE_BASE, 1);
@@ -109,7 +110,7 @@ int main(int argc, char *argv[]) {
       CHKERR basic_interface->addDataField("MESH_NODE_POSITIONS", H1,
                                            AINSWORTH_LEGENDRE_BASE, 3);
 
-          constexpr int order = 5;
+    constexpr int order = 5;
     CHKERR basic_interface->setFieldOrder("HDIV", order);
     if (ho_geometry == PETSC_TRUE)
       CHKERR basic_interface->setFieldOrder("MESH_NODE_POSITIONS", 2);
@@ -138,12 +139,12 @@ int main(int argc, char *argv[]) {
     std::cout << "divergence_vol " << divergence_vol << std::endl;
     std::cout << "divergence_skin " << divergence_skin << std::endl;
 
-    constexpr double eps = 1e-12;
-    if (fabs(divergence_skin - divergence_vol) > eps) {
+    constexpr double eps = 1e-8;
+    if (fabs(divergence_skin - divergence_vol) > eps) 
       SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "invalid surface flux or divergence or both\n", divergence_skin,
                divergence_vol);
-    }
+    
   }
   CATCH_ERRORS;
 

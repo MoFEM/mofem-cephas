@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
-    auto basic_interface = m_field.getInterface<Basic>();
+    Basic *basic_interface = m_field.getInterface<Basic>();
     CHKERR basic_interface->getOptions();
     CHKERR basic_interface->loadFile("");
 
