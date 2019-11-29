@@ -38,10 +38,17 @@ struct Basic : public MoFEM::Simple {
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
 
-  using Simple::Simple::Simple;
+  Basic(const MoFEM::Core &core);
 
   using UserDataOperator = MoFEM::ForcesAndSourcesCore::UserDataOperator;
   using RuleHookFun = MoFEM::ForcesAndSourcesCore::RuleHookFun;
+
+  using FaceEle2D = MoFEM::FaceElementForcesAndSourcesCoreSwitch<
+    FaceElementForcesAndSourcesCore::NO_CONTRAVARIANT_TRANSFORM_HDIV |
+    FaceElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+  using EdgeEle2D = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
+      EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+  using EdgeEle1D = EdgeEle2D;
 
   /**
    * @brief Get the Op Domain Lhs Rule Hook object
@@ -251,7 +258,7 @@ template <>
 boost::shared_ptr<FEMethod> inline Basic::createDomainFEPipeline<2>(
     boost::shared_ptr<FEMethod> &fe, const bool reset) {
   if (!fe || reset)
-    fe = boost::make_shared<FaceElementForcesAndSourcesCore>(cOre);
+    fe = boost::make_shared<FaceEle2D>(cOre);
   return fe;
 }
 
@@ -259,7 +266,7 @@ template <>
 boost::shared_ptr<FEMethod> inline Basic::createDomainFEPipeline<1>(
     boost::shared_ptr<FEMethod> &fe, const bool reset) {
   if (!fe || reset)
-    fe = boost::make_shared<EdgeElementForcesAndSourcesCore>(cOre);
+    fe = boost::make_shared<EdgeEle1D>(cOre);
   return fe;
 }
 
@@ -285,7 +292,7 @@ inline boost::shared_ptr<FEMethod>
 Basic::createBoundaryFEPipeline<2>(boost::shared_ptr<FEMethod> &fe,
                                    const bool reset) {
   if (!fe || reset)
-    fe = boost::make_shared<EdgeElementForcesAndSourcesCore>(cOre);
+    fe = boost::make_shared<EdgeEle2D>(cOre);
   return fe;
 }
 

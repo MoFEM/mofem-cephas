@@ -35,6 +35,10 @@ MoFEMErrorCode Basic::query_interface(const MOFEMuuid &uuid,
   MoFEMFunctionReturnHot(0);
 }
 
+Basic::Basic(const MoFEM::Core &core) : Simple(core) {
+  getProblemName() = "BasicProblem";
+}
+
 MoFEMErrorCode Basic::loopFiniteElements() {
   MoFEMFunctionBegin;
 
