@@ -107,6 +107,7 @@ struct Basic : public MoFEM::Simple {
    * @brief Get the Op Domain Lhs Pipeline object
    * @ingroup mofem_basic_interface
    *
+   * @tparam -1
    * @param reset If true reset pipeline (reset finite element pointer)
    * @return boost::ptr_vector<UserDataOperator>&
    */
@@ -118,6 +119,7 @@ struct Basic : public MoFEM::Simple {
    * @brief Get the Op Domain Rhs Pipeline object
    * @ingroup mofem_basic_interface
    *
+   * @tparam -1
    * @param reset If true reset pipeline (reset finite element pointer)
    * @return boost::ptr_vector<UserDataOperator>&
    */
@@ -129,6 +131,7 @@ struct Basic : public MoFEM::Simple {
    * @brief Get the Op Boundary Lhs Pipeline object
    * @ingroup mofem_basic_interface
    *
+   * @tparam -1
    * @param reset  If true reset pipeline (reset finite element pointer)
    * @return boost::ptr_vector<UserDataOperator>&
    */
@@ -140,6 +143,7 @@ struct Basic : public MoFEM::Simple {
    * @brief Get the Op Boundary Rhs Pipeline object
    * @ingroup mofem_basic_interface
    *
+   * @tparam -1
    * @param reset If true reset pipeline (reset finite element pointer)
    * @return boost::ptr_vector<UserDataOperator>&
    */
@@ -162,6 +166,7 @@ struct Basic : public MoFEM::Simple {
    * @brief Get the Op Skeleton Rhs Pipeline object
    * @ingroup mofem_basic_interface
    *
+   * @tparam -1
    * @param reset  If true reset pipeline (reset finite element pointer)
    * @return boost::ptr_vector<UserDataOperator>&
    */
