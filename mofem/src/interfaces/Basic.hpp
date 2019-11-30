@@ -50,23 +50,17 @@ struct Basic : public MoFEM::Simple {
       EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
   using EdgeEle1D = EdgeEle2D;
 
-  template <typename T = ForcesAndSourcesCore>
-  inline boost::shared_ptr<T> &getOpDomainLhsFE();
+  inline boost::shared_ptr<FEMethod> &getDomainLhsFE();
 
-  template <typename T = ForcesAndSourcesCore>
-  inline boost::shared_ptr<T> &getOpDomainRhsFE();
+  inline boost::shared_ptr<FEMethod> &getDomainRhsFE();
 
-  template <typename T = ForcesAndSourcesCore>
-  inline boost::shared_ptr<T> &getOpBoundaryLhsFE();
+  inline boost::shared_ptr<FEMethod> &getBoundaryLhsFE();
 
-  template <typename T = ForcesAndSourcesCore>
-  inline boost::shared_ptr<T> &getOpBoundaryRhsFE();
+  inline boost::shared_ptr<FEMethod> &getBoundaryRhsFE();
 
-  template <typename T = ForcesAndSourcesCore>
-  inline boost::shared_ptr<T> &getOpSkeletonLhsFE();
+  inline boost::shared_ptr<FEMethod> &getSkeletonLhsFE();
 
-  template <typename T = ForcesAndSourcesCore>
-  inline boost::shared_ptr<T> &getOpSkeletonRhsFE();
+  inline boost::shared_ptr<FEMethod> &getSkeletonRhsFE();
 
   template <int DIM = -1>
   inline MoFEMErrorCode setDomainLhsIntegrationRule(RuleHookFun rule,
@@ -292,28 +286,28 @@ Basic::createBoundaryFEPipeline<1>(boost::shared_ptr<FEMethod> &fe,
   return fe;
 }
 
-template <typename T> boost::shared_ptr<T> &Basic::getOpDomainLhsFE() {
-  return boost::dynamic_pointer_cast<T>(feDomainLhs);
+boost::shared_ptr<FEMethod> &Basic::getDomainLhsFE() {
+  return feDomainLhs;
 }
 
-template <typename T> boost::shared_ptr<T> &Basic::getOpDomainRhsFE() {
-  return boost::dynamic_pointer_cast<T>(feDomainRhs);
+boost::shared_ptr<FEMethod> &Basic::getDomainRhsFE() {
+  return feDomainRhs;
 }
 
-template <typename T> boost::shared_ptr<T> &Basic::getOpBoundaryLhsFE() {
-  return boost::dynamic_pointer_cast<T>(feBoundaryLhs);
+boost::shared_ptr<FEMethod> &Basic::getBoundaryLhsFE() {
+  return feBoundaryLhs;
 }
 
-template <typename T> boost::shared_ptr<T> &Basic::getOpBoundaryRhsFE() {
-  return boost::dynamic_pointer_cast<T>(feBoundaryRhs);
+boost::shared_ptr<FEMethod> &Basic::getBoundaryRhsFE() {
+  return feBoundaryRhs;
 }
 
-template <typename T> boost::shared_ptr<T> &Basic::getOpSkeletonLhsFE() {
-  return boost::dynamic_pointer_cast<T>(feSkeletonLhs);
+boost::shared_ptr<FEMethod> &Basic::getSkeletonLhsFE() {
+  return feSkeletonLhs;
 }
 
-template <typename T> boost::shared_ptr<T> &Basic::getOpSkeletonRhsFE() {
-  return boost::dynamic_pointer_cast<T>(feSkeletonRhs);
+boost::shared_ptr<FEMethod> &Basic::getSkeletonRhsFE() {
+  return feSkeletonRhs;
 }
 
 template <int DIM>
