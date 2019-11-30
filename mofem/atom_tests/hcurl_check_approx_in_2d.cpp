@@ -395,7 +395,7 @@ int main(int argc, char *argv[]) {
 
     CHKERR assemble_matrices_and_vectors();
     CHKERR solve_problem();
-    // CHKERR check_solution();
+    CHKERR check_solution();
   }
   CATCH_ERRORS;
 
