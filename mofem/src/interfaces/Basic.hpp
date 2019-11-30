@@ -163,25 +163,28 @@ struct Basic : public MoFEM::Simple {
    * @brief Create KSP (linear) solver
    * @ingroup mofem_basic_interface
    *
+   * @param ksp_ctx 
    * @return SmartPetscObj<KSP>
    */
-  SmartPetscObj<KSP> createKSP();
+  SmartPetscObj<KSP> createKSP(boost::shared_ptr<KspCtx> ksp_ctx = nullptr);
 
   /**
    * @brief Create SNES (nonlinear) solver
    * @ingroup mofem_basic_interface
    *
+   * @param snes_ctx 
    * @return SmartPetscObj<SNES>
    */
-  SmartPetscObj<SNES> createSNES();
+  SmartPetscObj<SNES> createSNES(boost::shared_ptr<SnesCtx> snes_ctx = nullptr);
 
   /**
    * @brief Create TS (time) solver
    * @ingroup mofem_basic_interface
    *
+   * @param ts_ctx 
    * @return SmartPetscObj<TS>
    */
-  SmartPetscObj<TS> createTS();
+  SmartPetscObj<TS> createTS(boost::shared_ptr<TsCtx> ts_ctx = nullptr);
 
 private:
   boost::shared_ptr<FEMethod>
@@ -280,29 +283,17 @@ Basic::createBoundaryFEPipeline<1>(boost::shared_ptr<FEMethod> &fe,
   return fe;
 }
 
-boost::shared_ptr<FEMethod> &Basic::getDomainLhsFE() {
-  return feDomainLhs;
-}
+boost::shared_ptr<FEMethod> &Basic::getDomainLhsFE() { return feDomainLhs; }
 
-boost::shared_ptr<FEMethod> &Basic::getDomainRhsFE() {
-  return feDomainRhs;
-}
+boost::shared_ptr<FEMethod> &Basic::getDomainRhsFE() { return feDomainRhs; }
 
-boost::shared_ptr<FEMethod> &Basic::getBoundaryLhsFE() {
-  return feBoundaryLhs;
-}
+boost::shared_ptr<FEMethod> &Basic::getBoundaryLhsFE() { return feBoundaryLhs; }
 
-boost::shared_ptr<FEMethod> &Basic::getBoundaryRhsFE() {
-  return feBoundaryRhs;
-}
+boost::shared_ptr<FEMethod> &Basic::getBoundaryRhsFE() { return feBoundaryRhs; }
 
-boost::shared_ptr<FEMethod> &Basic::getSkeletonLhsFE() {
-  return feSkeletonLhs;
-}
+boost::shared_ptr<FEMethod> &Basic::getSkeletonLhsFE() { return feSkeletonLhs; }
 
-boost::shared_ptr<FEMethod> &Basic::getSkeletonRhsFE() {
-  return feSkeletonRhs;
-}
+boost::shared_ptr<FEMethod> &Basic::getSkeletonRhsFE() { return feSkeletonRhs; }
 
 template <int DIM>
 MoFEMErrorCode Basic::setDomainLhsIntegrationRule(Basic::RuleHookFun rule) {

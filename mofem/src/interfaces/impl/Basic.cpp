@@ -65,11 +65,12 @@ MoFEMErrorCode Basic::loopFiniteElements() {
   MoFEMFunctionReturn(0);
 }
 
-SmartPetscObj<KSP> Basic::createKSP() {
+SmartPetscObj<KSP> Basic::createKSP(boost::shared_ptr<KspCtx> ksp_ctx) {
   Interface &m_field = cOre;
 
-  boost::shared_ptr<KspCtx> snes_ctx(new KspCtx(m_field, getProblemName()));
-  CHKERR DMMoFEMSetKspCtx(getDM(), snes_ctx);
+  if(!ksp_ctx)
+  ksp_ctx = boost::make_shared<KspCtx>(m_field, getProblemName());
+  CHKERR DMMoFEMSetKspCtx(getDM(), ksp_ctx);
 
   boost::shared_ptr<FEMethod> null;
 
@@ -100,11 +101,11 @@ SmartPetscObj<KSP> Basic::createKSP() {
   return ksp;
 }
 
-SmartPetscObj<SNES> Basic::createSNES() {
+SmartPetscObj<SNES> Basic::createSNES(boost::shared_ptr<SnesCtx> snes_ctx) {
   Interface &m_field = cOre;
 
-  boost::shared_ptr<MoFEM::SnesCtx> snes_ctx(
-      new SnesCtx(m_field, getProblemName()));
+  if(!snes_ctx)
+   snes_ctx = boost::make_shared<SnesCtx>(m_field, getProblemName());
   CHKERR DMMoFEMSetSnesCtx(getDM(), snes_ctx);
 
   boost::shared_ptr<FEMethod> null;
@@ -136,10 +137,11 @@ SmartPetscObj<SNES> Basic::createSNES() {
   return snes;
 }
 
-SmartPetscObj<TS> Basic::createTS() {
+SmartPetscObj<TS> Basic::createTS(boost::shared_ptr<TsCtx> ts_ctx) {
   Interface &m_field = cOre;
 
-  boost::shared_ptr<MoFEM::TsCtx> ts_ctx(new TsCtx(m_field, getProblemName()));
+  if(!ts_ctx)
+    ts_ctx = boost::make_shared<TsCtx>(m_field, getProblemName());
   CHKERR DMMoFEMSetTsCtx(getDM(), ts_ctx);
 
   boost::shared_ptr<FEMethod> null;
