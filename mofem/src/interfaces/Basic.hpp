@@ -63,28 +63,22 @@ struct Basic : public MoFEM::Simple {
   inline boost::shared_ptr<FEMethod> &getSkeletonRhsFE();
 
   template <int DIM = -1>
-  inline MoFEMErrorCode setDomainLhsIntegrationRule(RuleHookFun rule,
-                                                    const bool reset = 0);
+  inline MoFEMErrorCode setDomainLhsIntegrationRule(RuleHookFun rule);
 
   template <int DIM = -1>
-  inline MoFEMErrorCode setDomainRhsIntegrationRule(RuleHookFun rule,
-                                                    const bool reset = 0);
+  inline MoFEMErrorCode setDomainRhsIntegrationRule(RuleHookFun rule);
 
   template <int DIM = -1>
-  inline MoFEMErrorCode setBoundaryLhsIntegrationRule(RuleHookFun rule,
-                                                      const bool reset = 0);
+  inline MoFEMErrorCode setBoundaryLhsIntegrationRule(RuleHookFun rule);
 
   template <int DIM = -1>
-  inline MoFEMErrorCode setBoundaryRhsIntegrationRule(RuleHookFun rule,
-                                                      const bool reset = 0);
+  inline MoFEMErrorCode setBoundaryRhsIntegrationRule(RuleHookFun rule);
 
   template <int DIM = -1>
-  inline MoFEMErrorCode setSkeletonLhsIntegrationRule(RuleHookFun rule,
-                                                      const bool reset = 0);
+  inline MoFEMErrorCode setSkeletonLhsIntegrationRule(RuleHookFun rule);
 
   template <int DIM = -1>
-  inline MoFEMErrorCode setSkeletonRhsIntegrationRule(RuleHookFun rule,
-                                                      const bool reset = 0);
+  inline MoFEMErrorCode setSkeletonRhsIntegrationRule(RuleHookFun rule);
 
   /**
    * @brief Get the Op Domain Lhs Pipeline object
@@ -311,27 +305,25 @@ boost::shared_ptr<FEMethod> &Basic::getSkeletonRhsFE() {
 }
 
 template <int DIM>
-MoFEMErrorCode Basic::setDomainLhsIntegrationRule(Basic::RuleHookFun rule,
-                                                  const bool reset) {
+MoFEMErrorCode Basic::setDomainLhsIntegrationRule(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-      createDomainFEPipeline<DIM>(feDomainLhs, reset))
+      createDomainFEPipeline<DIM>(feDomainLhs))
       ->getRuleHook = rule;
   MoFEMFunctionReturn(0);
 }
 
 template <>
 inline MoFEMErrorCode
-Basic::setDomainLhsIntegrationRule<-1>(Basic::RuleHookFun rule,
-                                       const bool reset) {
+Basic::setDomainLhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   switch (getDim()) {
   case 1:
-    return setDomainLhsIntegrationRule<1>(rule, reset);
+    return setDomainLhsIntegrationRule<1>(rule);
   case 2:
-    return setDomainLhsIntegrationRule<2>(rule, reset);
+    return setDomainLhsIntegrationRule<2>(rule);
   case 3:
-    return setDomainLhsIntegrationRule<3>(rule, reset);
+    return setDomainLhsIntegrationRule<3>(rule);
   default:
     THROW_MESSAGE("Not implemented");
   }
@@ -339,27 +331,25 @@ Basic::setDomainLhsIntegrationRule<-1>(Basic::RuleHookFun rule,
 }
 
 template <int DIM>
-MoFEMErrorCode Basic::setDomainRhsIntegrationRule(Basic::RuleHookFun rule,
-                                                  const bool reset) {
+MoFEMErrorCode Basic::setDomainRhsIntegrationRule(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-      createDomainFEPipeline<DIM>(feDomainRhs, reset))
+      createDomainFEPipeline<DIM>(feDomainRhs))
       ->getRuleHook = rule;
   MoFEMFunctionReturn(0);
 }
 
 template <>
 inline MoFEMErrorCode
-Basic::setDomainRhsIntegrationRule<-1>(Basic::RuleHookFun rule,
-                                       const bool reset) {
+Basic::setDomainRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   switch (getDim()) {
   case 1:
-    return setDomainRhsIntegrationRule<1>(rule, reset);
+    return setDomainRhsIntegrationRule<1>(rule);
   case 2:
-    return setDomainRhsIntegrationRule<2>(rule, reset);
+    return setDomainRhsIntegrationRule<2>(rule);
   case 3:
-    return setDomainRhsIntegrationRule<3>(rule, reset);
+    return setDomainRhsIntegrationRule<3>(rule);
   default:
     THROW_MESSAGE("Not implemented");
   }
@@ -367,27 +357,25 @@ Basic::setDomainRhsIntegrationRule<-1>(Basic::RuleHookFun rule,
 }
 
 template <int DIM>
-MoFEMErrorCode Basic::setBoundaryLhsIntegrationRule(Basic::RuleHookFun rule,
-                                                    const bool reset) {
+MoFEMErrorCode Basic::setBoundaryLhsIntegrationRule(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-      createDomainFEPipeline<DIM>(feBoundaryLhs, reset))
+      createDomainFEPipeline<DIM>(feBoundaryLhs))
       ->getRuleHook = rule;
   MoFEMFunctionReturn(0);
 }
 
 template <>
 inline MoFEMErrorCode
-Basic::setBoundaryLhsIntegrationRule<-1>(Basic::RuleHookFun rule,
-                                         const bool reset) {
+Basic::setBoundaryLhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   switch (getDim()) {
   case 1:
-    return setBoundaryLhsIntegrationRule<1>(rule, reset);
+    return setBoundaryLhsIntegrationRule<1>(rule);
   case 2:
-    return setBoundaryLhsIntegrationRule<2>(rule, reset);
+    return setBoundaryLhsIntegrationRule<2>(rule);
   case 3:
-    return setBoundaryLhsIntegrationRule<3>(rule, reset);
+    return setBoundaryLhsIntegrationRule<3>(rule);
   default:
     THROW_MESSAGE("Not implemented");
   }
@@ -395,27 +383,25 @@ Basic::setBoundaryLhsIntegrationRule<-1>(Basic::RuleHookFun rule,
 }
 
 template <int DIM>
-MoFEMErrorCode Basic::setBoundaryRhsIntegrationRule(Basic::RuleHookFun rule,
-                                                    const bool reset) {
+MoFEMErrorCode Basic::setBoundaryRhsIntegrationRule(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-      createDomainFEPipeline<DIM>(feBoundaryRhs, reset))
+      createDomainFEPipeline<DIM>(feBoundaryRhs))
       ->getRuleHook = rule;
   MoFEMFunctionReturn(0);
 }
 
 template <>
 inline MoFEMErrorCode
-Basic::setBoundaryRhsIntegrationRule<-1>(Basic::RuleHookFun rule,
-                                         const bool reset) {
+Basic::setBoundaryRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   switch (getDim()) {
   case 1:
-    return setBoundaryRhsIntegrationRule<1>(rule, reset);
+    return setBoundaryRhsIntegrationRule<1>(rule);
   case 2:
-    return setBoundaryRhsIntegrationRule<2>(rule, reset);
+    return setBoundaryRhsIntegrationRule<2>(rule);
   case 3:
-    return setBoundaryRhsIntegrationRule<3>(rule, reset);
+    return setBoundaryRhsIntegrationRule<3>(rule);
   default:
     THROW_MESSAGE("Not implemented");
   }
@@ -423,27 +409,25 @@ Basic::setBoundaryRhsIntegrationRule<-1>(Basic::RuleHookFun rule,
 }
 
 template <int DIM>
-MoFEMErrorCode Basic::setSkeletonLhsIntegrationRule(Basic::RuleHookFun rule,
-                                                    const bool reset) {
+MoFEMErrorCode Basic::setSkeletonLhsIntegrationRule(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-      createDomainFEPipeline<DIM>(feSkeletonLhs, reset))
+      createDomainFEPipeline<DIM>(feSkeletonLhs))
       ->getRuleHook = rule;
   MoFEMFunctionReturn(0);
 }
 
 template <>
 inline MoFEMErrorCode
-Basic::setSkeletonLhsIntegrationRule<-1>(Basic::RuleHookFun rule,
-                                         const bool reset) {
+Basic::setSkeletonLhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   switch (getDim()) {
   case 1:
-    return setSkeletonLhsIntegrationRule<1>(rule, reset);
+    return setSkeletonLhsIntegrationRule<1>(rule);
   case 2:
-    return setSkeletonLhsIntegrationRule<2>(rule, reset);
+    return setSkeletonLhsIntegrationRule<2>(rule);
   case 3:
-    return setSkeletonLhsIntegrationRule<3>(rule, reset);
+    return setSkeletonLhsIntegrationRule<3>(rule);
   default:
     THROW_MESSAGE("Not implemented");
   }
@@ -451,27 +435,25 @@ Basic::setSkeletonLhsIntegrationRule<-1>(Basic::RuleHookFun rule,
 }
 
 template <int DIM>
-MoFEMErrorCode Basic::setSkeletonRhsIntegrationRule(Basic::RuleHookFun rule,
-                                                    const bool reset) {
+MoFEMErrorCode Basic::setSkeletonRhsIntegrationRule(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-      createDomainFEPipeline<DIM>(feSkeletonRhs, reset))
+      createDomainFEPipeline<DIM>(feSkeletonRhs))
       ->getRuleHook = rule;
   MoFEMFunctionReturn(0);
 }
 
 template <>
 inline MoFEMErrorCode
-Basic::setSkeletonRhsIntegrationRule<-1>(Basic::RuleHookFun rule,
-                                         const bool reset) {
+Basic::setSkeletonRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   switch (getDim()) {
   case 1:
-    return setSkeletonRhsIntegrationRule<1>(rule, reset);
+    return setSkeletonRhsIntegrationRule<1>(rule);
   case 2:
-    return setSkeletonRhsIntegrationRule<2>(rule, reset);
+    return setSkeletonRhsIntegrationRule<2>(rule);
   case 3:
-    return setSkeletonRhsIntegrationRule<3>(rule, reset);
+    return setSkeletonRhsIntegrationRule<3>(rule);
   default:
     THROW_MESSAGE("Not implemented");
   }

@@ -116,6 +116,14 @@ int main(int argc, char *argv[]) {
       CHKERR basic_interface->setFieldOrder("MESH_NODE_POSITIONS", 2);
     CHKERR basic_interface->setUp();
 
+    /// This has no real effect, folling line are only for atom test purpose
+    basic_interface->getDomainLhsFE().reset();
+    basic_interface->getDomainRhsFE().reset();
+    basic_interface->getBoundaryLhsFE().reset();
+    basic_interface->getBoundaryRhsFE().reset();
+    basic_interface->getSkeletonLhsFE().reset();
+    basic_interface->getSkeletonRhsFE().reset();
+
     auto integration_rule = [](int, int, int p_data) { return 2 * p_data; };
     CHKERR basic_interface->setDomainRhsIntegrationRule(integration_rule);
     CHKERR basic_interface->setBoundaryRhsIntegrationRule(integration_rule);
