@@ -33,7 +33,7 @@ static const MOFEMuuid IDD_MOFEMBasic =
  * \brief Basic interface
  * \ingroup mofem_basic_interface
  */
-struct Basic : public MoFEM::Simple {
+struct Basic : public UnknownInterface {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
@@ -157,36 +157,38 @@ struct Basic : public MoFEM::Simple {
    *
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode loopFiniteElements();
+  MoFEMErrorCode loopFiniteElements(SmartPetscObj<DM> dm = nullptr);
 
   /**
    * @brief Create KSP (linear) solver
    * @ingroup mofem_basic_interface
    *
-   * @param ksp_ctx 
+   * @param dm
    * @return SmartPetscObj<KSP>
    */
-  SmartPetscObj<KSP> createKSP(boost::shared_ptr<KspCtx> ksp_ctx = nullptr);
+  SmartPetscObj<KSP> createKSP(SmartPetscObj<DM> dm = nullptr);
 
   /**
    * @brief Create SNES (nonlinear) solver
    * @ingroup mofem_basic_interface
    *
-   * @param snes_ctx 
+   * @param dm
    * @return SmartPetscObj<SNES>
    */
-  SmartPetscObj<SNES> createSNES(boost::shared_ptr<SnesCtx> snes_ctx = nullptr);
+  SmartPetscObj<SNES> createSNES(SmartPetscObj<DM> dm = nullptr);
 
   /**
    * @brief Create TS (time) solver
    * @ingroup mofem_basic_interface
    *
-   * @param ts_ctx 
+   * @param dm
    * @return SmartPetscObj<TS>
    */
-  SmartPetscObj<TS> createTS(boost::shared_ptr<TsCtx> ts_ctx = nullptr);
+  SmartPetscObj<TS> createTS(SmartPetscObj<DM> dm = nullptr);
 
 private:
+  MoFEM::Core &cOre;
+
   boost::shared_ptr<FEMethod>
       feDomainRhs; ///< Element to assemble RHS side by integrating domain
   boost::shared_ptr<FEMethod>
@@ -308,7 +310,7 @@ template <>
 inline MoFEMErrorCode
 Basic::setDomainLhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
-  switch (getDim()) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return setDomainLhsIntegrationRule<1>(rule);
   case 2:
@@ -334,7 +336,7 @@ template <>
 inline MoFEMErrorCode
 Basic::setDomainRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
-  switch (getDim()) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return setDomainRhsIntegrationRule<1>(rule);
   case 2:
@@ -360,7 +362,7 @@ template <>
 inline MoFEMErrorCode
 Basic::setBoundaryLhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
-  switch (getDim()) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return setBoundaryLhsIntegrationRule<1>(rule);
   case 2:
@@ -386,7 +388,7 @@ template <>
 inline MoFEMErrorCode
 Basic::setBoundaryRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
-  switch (getDim()) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return setBoundaryRhsIntegrationRule<1>(rule);
   case 2:
@@ -412,7 +414,7 @@ template <>
 inline MoFEMErrorCode
 Basic::setSkeletonLhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
-  switch (getDim()) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return setSkeletonLhsIntegrationRule<1>(rule);
   case 2:
@@ -438,7 +440,7 @@ template <>
 inline MoFEMErrorCode
 Basic::setSkeletonRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
-  switch (getDim()) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return setSkeletonRhsIntegrationRule<1>(rule);
   case 2:
@@ -462,7 +464,7 @@ Basic::getOpDomainLhsPipeline(const bool reset) {
 template <>
 inline boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpDomainLhsPipeline<-1>(const bool reset) {
-  switch (getDim()) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return getOpDomainLhsPipeline<1>(reset);
   case 2:
@@ -486,7 +488,7 @@ Basic::getOpDomainRhsPipeline(const bool reset) {
 template <>
 inline boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpDomainRhsPipeline<-1>(const bool reset) {
-  switch (getDim()) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return getOpDomainRhsPipeline<1>(reset);
   case 2:
@@ -510,7 +512,7 @@ Basic::getOpBoundaryLhsPipeline(const bool reset) {
 template <>
 inline boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpBoundaryLhsPipeline<-1>(const bool reset) {
-  switch (getDim()) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return getOpBoundaryLhsPipeline<1>(reset);
   case 2:
@@ -534,7 +536,7 @@ Basic::getOpBoundaryRhsPipeline(const bool reset) {
 template <>
 inline boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpBoundaryRhsPipeline<-1>(const bool reset) {
-  switch (getDim()) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return getOpBoundaryRhsPipeline<1>(reset);
   case 2:
@@ -558,7 +560,7 @@ Basic::getOpSkeletonLhsPipeline(const bool reset) {
 template <>
 inline boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpSkeletonLhsPipeline<-1>(const bool reset) {
-  switch (getDim()) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return getOpSkeletonLhsPipeline<1>(reset);
   case 2:
@@ -582,7 +584,7 @@ Basic::getOpSkeletonRhsPipeline(const bool reset) {
 template <>
 inline boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpSkeletonRhsPipeline<-1>(const bool reset) {
-  switch (getDim()) {
+  switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return getOpSkeletonRhsPipeline<1>(reset);
   case 2:

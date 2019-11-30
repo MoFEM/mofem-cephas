@@ -87,35 +87,36 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
 
+    Simple *simple_interface = m_field.getInterface<Simple>();
     Basic *basic_interface = m_field.getInterface<Basic>();
-    CHKERR basic_interface->getOptions();
-    CHKERR basic_interface->loadFile("");
+    CHKERR simple_interface->getOptions();
+    CHKERR simple_interface->loadFile("");
 
     // fields
     switch (choise_value) {
     case AINSWORTH:
-      CHKERR basic_interface->addDomainField("HCURL", HCURL,
-                                             AINSWORTH_LEGENDRE_BASE, 1);
-      CHKERR basic_interface->addBoundaryField("HCURL", HCURL,
-                                               AINSWORTH_LEGENDRE_BASE, 1);
+      CHKERR simple_interface->addDomainField("HCURL", HCURL,
+                                              AINSWORTH_LEGENDRE_BASE, 1);
+      CHKERR simple_interface->addBoundaryField("HCURL", HCURL,
+                                                AINSWORTH_LEGENDRE_BASE, 1);
       break;
     case DEMKOWICZ:
-      CHKERR basic_interface->addDomainField("HCURL", HCURL,
-                                             DEMKOWICZ_JACOBI_BASE, 1);
-      CHKERR basic_interface->addBoundaryField("HCURL", HCURL,
-                                               DEMKOWICZ_JACOBI_BASE, 1);
+      CHKERR simple_interface->addDomainField("HCURL", HCURL,
+                                              DEMKOWICZ_JACOBI_BASE, 1);
+      CHKERR simple_interface->addBoundaryField("HCURL", HCURL,
+                                                DEMKOWICZ_JACOBI_BASE, 1);
       break;
     }
 
     if (ho_geometry == PETSC_TRUE)
-      CHKERR basic_interface->addDataField("MESH_NODE_POSITIONS", H1,
+      CHKERR simple_interface->addDataField("MESH_NODE_POSITIONS", H1,
                                            AINSWORTH_LEGENDRE_BASE, 3);
 
     constexpr int order = 5;
-    CHKERR basic_interface->setFieldOrder("HCURL", order);
+    CHKERR simple_interface->setFieldOrder("HCURL", order);
     if (ho_geometry == PETSC_TRUE)
-      CHKERR basic_interface->setFieldOrder("MESH_NODE_POSITIONS", 2);
-    CHKERR basic_interface->setUp();
+      CHKERR simple_interface->setFieldOrder("MESH_NODE_POSITIONS", 2);
+    CHKERR simple_interface->setUp();
 
     auto integration_rule = [](int, int, int p_data) { return 2 * p_data; };
     CHKERR basic_interface->setDomainRhsIntegrationRule(integration_rule);

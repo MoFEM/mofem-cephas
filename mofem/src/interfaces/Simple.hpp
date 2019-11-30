@@ -38,7 +38,6 @@ struct Simple : public UnknownInterface {
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
 
-  MoFEM::Core &cOre;
   Simple(const MoFEM::Core &core);
 
   /**
@@ -289,6 +288,8 @@ struct Simple : public UnknownInterface {
   inline std::vector<std::string> &getOtherFiniteElements() { return otherFEs; }
 
 private:
+  MoFEM::Core &cOre;
+
   const BitRefLevel bitLevel; ///< BitRefLevel of the probelm
 
   PetscLogEvent MOFEM_EVENT_SimpleLoadMesh;

@@ -27,152 +27,149 @@ MoFEMErrorCode Basic::query_interface(const MOFEMuuid &uuid,
     *iface = const_cast<Basic *>(this);
     MoFEMFunctionReturnHot(0);
   }
-  if (uuid == IDD_MOFEMSimple) {
-    *iface = static_cast<Simple *>(const_cast<Basic *>(this));
-    MoFEMFunctionReturnHot(0);
-  }
   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
   MoFEMFunctionReturnHot(0);
 }
 
-Basic::Basic(const MoFEM::Core &core) : Simple(core) {
-  getProblemName() = "BasicProblem";
-}
+Basic::Basic(const MoFEM::Core &core) : cOre(const_cast<Core &>(core)) {}
 
-MoFEMErrorCode Basic::loopFiniteElements() {
+MoFEMErrorCode Basic::loopFiniteElements(SmartPetscObj<DM> dm) {
   MoFEMFunctionBegin;
+  Interface &m_field = cOre;
+  Simple *simple_interface = m_field.getInterface<Simple>();
+  if (!dm)
+    dm = simple_interface->getDM();
 
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
-    CHKERR DMoFEMLoopFiniteElements(getDM(), getDomainFEName(), feDomainLhs);
+    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getDomainFEName(),
+                                    feDomainLhs);
   if (feBoundaryLhs)
-    CHKERR DMoFEMLoopFiniteElements(getDM(), getBoundaryFEName(),
+    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getBoundaryFEName(),
                                     feBoundaryLhs);
   if (feSkeletonLhs)
-    CHKERR DMoFEMLoopFiniteElements(getDM(), getSkeletonFEName(),
+    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getSkeletonFEName(),
                                     feSkeletonLhs);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
-    CHKERR DMoFEMLoopFiniteElements(getDM(), getDomainFEName(), feDomainRhs);
+    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getDomainFEName(),
+                                    feDomainRhs);
   if (feBoundaryRhs)
-    CHKERR DMoFEMLoopFiniteElements(getDM(), getBoundaryFEName(),
+    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getBoundaryFEName(),
                                     feBoundaryRhs);
   if (feSkeletonRhs)
-    CHKERR DMoFEMLoopFiniteElements(getDM(), getSkeletonFEName(),
+    CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getSkeletonFEName(),
                                     feSkeletonRhs);
 
   MoFEMFunctionReturn(0);
 }
 
-SmartPetscObj<KSP> Basic::createKSP(boost::shared_ptr<KspCtx> ksp_ctx) {
+SmartPetscObj<KSP> Basic::createKSP(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
-
-  if(!ksp_ctx)
-  ksp_ctx = boost::make_shared<KspCtx>(m_field, getProblemName());
-  CHKERR DMMoFEMSetKspCtx(getDM(), ksp_ctx);
+  Simple *simple_interface = m_field.getInterface<Simple>();
+  if (!dm)
+    dm = simple_interface->getDM();
 
   boost::shared_ptr<FEMethod> null;
 
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
-    CHKERR DMMoFEMKSPSetComputeOperators(getDM(), getDomainFEName(),
-                                         feDomainLhs, null, null);
+    CHKERR DMMoFEMKSPSetComputeOperators(
+        dm, simple_interface->getDomainFEName(), feDomainLhs, null, null);
   if (feBoundaryLhs)
-    CHKERR DMMoFEMKSPSetComputeOperators(getDM(), getBoundaryFEName(),
-                                         feBoundaryLhs, null, null);
+    CHKERR DMMoFEMKSPSetComputeOperators(
+        dm, simple_interface->getBoundaryFEName(), feBoundaryLhs, null, null);
   if (feSkeletonLhs)
-    CHKERR DMMoFEMKSPSetComputeOperators(getDM(), getSkeletonFEName(),
-                                         feSkeletonLhs, null, null);
+    CHKERR DMMoFEMKSPSetComputeOperators(
+        dm, simple_interface->getSkeletonFEName(), feSkeletonLhs, null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
-    CHKERR DMMoFEMKSPSetComputeRHS(getDM(), getDomainFEName(), feDomainRhs,
-                                   null, null);
+    CHKERR DMMoFEMKSPSetComputeRHS(dm, simple_interface->getDomainFEName(),
+                                   feDomainRhs, null, null);
   if (feBoundaryRhs)
-    CHKERR DMMoFEMKSPSetComputeRHS(getDM(), getBoundaryFEName(), feBoundaryRhs,
-                                   null, null);
+    CHKERR DMMoFEMKSPSetComputeRHS(dm, simple_interface->getBoundaryFEName(),
+                                   feBoundaryRhs, null, null);
   if (feSkeletonRhs)
-    CHKERR DMMoFEMKSPSetComputeRHS(getDM(), getSkeletonFEName(), feSkeletonRhs,
-                                   null, null);
+    CHKERR DMMoFEMKSPSetComputeRHS(dm, simple_interface->getSkeletonFEName(),
+                                   feSkeletonRhs, null, null);
 
   auto ksp = MoFEM::createKSP(m_field.get_comm());
-  CHKERR KSPSetDM(ksp, getDM());
+  CHKERR KSPSetDM(ksp, dm);
   return ksp;
 }
 
-SmartPetscObj<SNES> Basic::createSNES(boost::shared_ptr<SnesCtx> snes_ctx) {
+SmartPetscObj<SNES> Basic::createSNES(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
-
-  if(!snes_ctx)
-   snes_ctx = boost::make_shared<SnesCtx>(m_field, getProblemName());
-  CHKERR DMMoFEMSetSnesCtx(getDM(), snes_ctx);
+  Simple *simple_interface = m_field.getInterface<Simple>();
+  if (!dm)
+    dm = simple_interface->getDM();
 
   boost::shared_ptr<FEMethod> null;
 
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
-    CHKERR DMMoFEMSNESSetJacobian(getDM(), getDomainFEName(), feDomainLhs, null,
-                                  null);
+    CHKERR DMMoFEMSNESSetJacobian(dm, simple_interface->getDomainFEName(),
+                                  feDomainLhs, null, null);
   if (feBoundaryLhs)
-    CHKERR DMMoFEMSNESSetJacobian(getDM(), getBoundaryFEName(), feBoundaryLhs,
-                                  null, null);
+    CHKERR DMMoFEMSNESSetJacobian(dm, simple_interface->getBoundaryFEName(),
+                                  feBoundaryLhs, null, null);
   if (feSkeletonLhs)
-    CHKERR DMMoFEMSNESSetJacobian(getDM(), getSkeletonFEName(), feSkeletonLhs,
-                                  null, null);
+    CHKERR DMMoFEMSNESSetJacobian(dm, simple_interface->getSkeletonFEName(),
+                                  feSkeletonLhs, null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
-    CHKERR DMMoFEMSNESSetFunction(getDM(), getDomainFEName(), feDomainRhs, null,
-                                  null);
+    CHKERR DMMoFEMSNESSetFunction(dm, simple_interface->getDomainFEName(),
+                                  feDomainRhs, null, null);
   if (feBoundaryRhs)
-    CHKERR DMMoFEMSNESSetFunction(getDM(), getBoundaryFEName(), feBoundaryRhs,
-                                  null, null);
+    CHKERR DMMoFEMSNESSetFunction(dm, simple_interface->getBoundaryFEName(),
+                                  feBoundaryRhs, null, null);
   if (feSkeletonRhs)
-    CHKERR DMMoFEMSNESSetFunction(getDM(), getSkeletonFEName(), feSkeletonRhs,
-                                  null, null);
+    CHKERR DMMoFEMSNESSetFunction(dm, simple_interface->getSkeletonFEName(),
+                                  feSkeletonRhs, null, null);
 
   auto snes = MoFEM::createSNES(m_field.get_comm());
-  CHKERR SNESSetDM(snes, getDM());
+  CHKERR SNESSetDM(snes, dm);
   return snes;
 }
 
-SmartPetscObj<TS> Basic::createTS(boost::shared_ptr<TsCtx> ts_ctx) {
+SmartPetscObj<TS> Basic::createTS(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
-
-  if(!ts_ctx)
-    ts_ctx = boost::make_shared<TsCtx>(m_field, getProblemName());
-  CHKERR DMMoFEMSetTsCtx(getDM(), ts_ctx);
+  Simple *simple_interface = m_field.getInterface<Simple>();
+  if (!dm)
+    dm = simple_interface->getDM();
 
   boost::shared_ptr<FEMethod> null;
 
   // Add element to calculate lhs of stiff part
   if (feDomainLhs)
-    CHKERR DMMoFEMTSSetIJacobian(getDM(), getDomainFEName(), feDomainLhs, null,
-                                 null);
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple_interface->getDomainFEName(),
+                                 feDomainLhs, null, null);
   if (feBoundaryLhs)
-    CHKERR DMMoFEMTSSetIJacobian(getDM(), getBoundaryFEName(), feBoundaryLhs,
-                                 null, null);
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple_interface->getBoundaryFEName(),
+                                 feBoundaryLhs, null, null);
   if (feSkeletonLhs)
-    CHKERR DMMoFEMTSSetIJacobian(getDM(), getSkeletonFEName(), feSkeletonLhs,
-                                 null, null);
+    CHKERR DMMoFEMTSSetIJacobian(dm, simple_interface->getSkeletonFEName(),
+                                 feSkeletonLhs, null, null);
 
   // Add element to calculate rhs of stiff part
   if (feDomainRhs)
-    CHKERR DMMoFEMTSSetIFunction(getDM(), getDomainFEName(), feDomainRhs, null,
-                                 null);
+    CHKERR DMMoFEMTSSetIFunction(dm, simple_interface->getDomainFEName(),
+                                 feDomainRhs, null, null);
   if (feBoundaryRhs)
-    CHKERR DMMoFEMTSSetIFunction(getDM(), getBoundaryFEName(), feBoundaryRhs,
-                                 null, null);
+    CHKERR DMMoFEMTSSetIFunction(dm, simple_interface->getBoundaryFEName(),
+                                 feBoundaryRhs, null, null);
   if (feSkeletonRhs)
-    CHKERR DMMoFEMTSSetIFunction(getDM(), getSkeletonFEName(), feSkeletonRhs,
-                                 null, null);
+    CHKERR DMMoFEMTSSetIFunction(dm, simple_interface->getSkeletonFEName(),
+                                 feSkeletonRhs, null, null);
 
   // Note: More cases for explit, and implicit time ingeration cases can be
   // implemented here.
 
   auto ts = MoFEM::createTS(m_field.get_comm());
-  CHKERR TSSetDM(ts, getDM());
+  CHKERR TSSetDM(ts, dm);
   return ts;
 }
 
