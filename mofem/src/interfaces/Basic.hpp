@@ -85,71 +85,65 @@ struct Basic : public UnknownInterface {
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @param reset If true reset pipeline (reset finite element pointer)
    * @return boost::ptr_vector<UserDataOperator>&
    */
   template <int DIM = -1>
   inline boost::ptr_vector<UserDataOperator> &
-  getOpDomainLhsPipeline(const bool reset = false);
+  getOpDomainLhsPipeline();
 
   /**
    * @brief Get the Op Domain Rhs Pipeline object
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @param reset If true reset pipeline (reset finite element pointer)
    * @return boost::ptr_vector<UserDataOperator>&
    */
   template <int DIM = -1>
   inline boost::ptr_vector<UserDataOperator> &
-  getOpDomainRhsPipeline(const bool reset = false);
+  getOpDomainRhsPipeline();
 
   /**
    * @brief Get the Op Boundary Lhs Pipeline object
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @param reset  If true reset pipeline (reset finite element pointer)
    * @return boost::ptr_vector<UserDataOperator>&
    */
   template <int DIM = -1>
   inline boost::ptr_vector<UserDataOperator> &
-  getOpBoundaryLhsPipeline(const bool reset = false);
+  getOpBoundaryLhsPipeline();
 
   /**
    * @brief Get the Op Boundary Rhs Pipeline object
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @param reset If true reset pipeline (reset finite element pointer)
    * @return boost::ptr_vector<UserDataOperator>&
    */
   template <int DIM = -1>
   inline boost::ptr_vector<UserDataOperator> &
-  getOpBoundaryRhsPipeline(const bool reset = false);
+  getOpBoundaryRhsPipeline();
 
   /**
    * @brief Get the Op Skeleton Lhs Pipeline object
    * @ingroup mofem_basic_interface
    *
-   * @param reset If true reset pipeline (reset finite element pointer)
    * @return boost::ptr_vector<UserDataOperator>&
    */
   template <int DIM = -1>
   inline boost::ptr_vector<UserDataOperator> &
-  getOpSkeletonLhsPipeline(const bool reset = false);
+  getOpSkeletonLhsPipeline();
 
   /**
    * @brief Get the Op Skeleton Rhs Pipeline object
    * @ingroup mofem_basic_interface
    *
    * @tparam -1
-   * @param reset  If true reset pipeline (reset finite element pointer)
    * @return boost::ptr_vector<UserDataOperator>&
    */
   template <int DIM = -1>
   inline boost::ptr_vector<UserDataOperator> &
-  getOpSkeletonRhsPipeline(const bool reset = false);
+  getOpSkeletonRhsPipeline();
 
   /**
    * @brief Iterate finite elements
@@ -204,19 +198,16 @@ private:
 
   template <int DIM>
   inline boost::shared_ptr<FEMethod> &
-  createDomainFEPipeline(boost::shared_ptr<FEMethod> &fe,
-                         const bool reset = false);
+  createDomainFEPipeline(boost::shared_ptr<FEMethod> &fe);
 
   template <int DIM>
   inline boost::shared_ptr<FEMethod> &
-  createBoundaryFEPipeline(boost::shared_ptr<FEMethod> &fe,
-                           const bool reset = false);
+  createBoundaryFEPipeline(boost::shared_ptr<FEMethod> &fe);
 };
 
 template <int DIM>
 boost::shared_ptr<FEMethod> &
-Basic::createDomainFEPipeline(boost::shared_ptr<FEMethod> &fe,
-                              const bool reset) {
+Basic::createDomainFEPipeline(boost::shared_ptr<FEMethod> &fe) {
   static_assert(DIM == 1 || DIM == 2 || DIM == 3, "not implemented");
   fe = boost::make_shared<FEMethod>();
   return fe;
@@ -224,35 +215,31 @@ Basic::createDomainFEPipeline(boost::shared_ptr<FEMethod> &fe,
 
 template <>
 inline boost::shared_ptr<FEMethod> &
-Basic::createDomainFEPipeline<3>(boost::shared_ptr<FEMethod> &fe,
-                                 const bool reset) {
-  if (!fe || reset)
+Basic::createDomainFEPipeline<3>(boost::shared_ptr<FEMethod> &fe) {
+  if (!fe)
     fe = boost::make_shared<VolumeElementForcesAndSourcesCore>(cOre);
   return fe;
 }
 
 template <>
 inline boost::shared_ptr<FEMethod> &
-Basic::createDomainFEPipeline<2>(boost::shared_ptr<FEMethod> &fe,
-                                 const bool reset) {
-  if (!fe || reset)
+Basic::createDomainFEPipeline<2>(boost::shared_ptr<FEMethod> &fe) {
+  if (!fe)
     fe = boost::make_shared<FaceEle2D>(cOre);
   return fe;
 }
 
 template <>
 inline boost::shared_ptr<FEMethod> &
-Basic::createDomainFEPipeline<1>(boost::shared_ptr<FEMethod> &fe,
-                                 const bool reset) {
-  if (!fe || reset)
+Basic::createDomainFEPipeline<1>(boost::shared_ptr<FEMethod> &fe) {
+  if (!fe)
     fe = boost::make_shared<EdgeEle1D>(cOre);
   return fe;
 }
 
 template <int DIM>
 boost::shared_ptr<FEMethod> &
-Basic::createBoundaryFEPipeline(boost::shared_ptr<FEMethod> &fe,
-                                const bool reset) {
+Basic::createBoundaryFEPipeline(boost::shared_ptr<FEMethod> &fe) {
   static_assert(DIM == 1 || DIM == 2 || DIM == 3, "not implemented");
   fe = boost::make_shared<FEMethod>();
   return fe;
@@ -260,27 +247,24 @@ Basic::createBoundaryFEPipeline(boost::shared_ptr<FEMethod> &fe,
 
 template <>
 inline boost::shared_ptr<FEMethod> &
-Basic::createBoundaryFEPipeline<3>(boost::shared_ptr<FEMethod> &fe,
-                                   const bool reset) {
-  if (!fe || reset)
+Basic::createBoundaryFEPipeline<3>(boost::shared_ptr<FEMethod> &fe) {
+  if (!fe)
     fe = boost::make_shared<FaceElementForcesAndSourcesCore>(cOre);
   return fe;
 }
 
 template <>
 inline boost::shared_ptr<FEMethod> &
-Basic::createBoundaryFEPipeline<2>(boost::shared_ptr<FEMethod> &fe,
-                                   const bool reset) {
-  if (!fe || reset)
+Basic::createBoundaryFEPipeline<2>(boost::shared_ptr<FEMethod> &fe) {
+  if (!fe)
     fe = boost::make_shared<EdgeEle2D>(cOre);
   return fe;
 }
 
 template <>
 inline boost::shared_ptr<FEMethod> &
-Basic::createBoundaryFEPipeline<1>(boost::shared_ptr<FEMethod> &fe,
-                                   const bool reset) {
-  if (!fe || reset)
+Basic::createBoundaryFEPipeline<1>(boost::shared_ptr<FEMethod> &fe) {
+  if (!fe)
     fe = boost::make_shared<VertexElementForcesAndSourcesCore>(cOre);
   return fe;
 }
@@ -455,146 +439,146 @@ Basic::setSkeletonRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
 
 template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpDomainLhsPipeline(const bool reset) {
+Basic::getOpDomainLhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-             createDomainFEPipeline<DIM>(feDomainLhs, reset))
+             createDomainFEPipeline<DIM>(feDomainLhs))
       ->getOpPtrVector();
 }
 
 template <>
 inline boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpDomainLhsPipeline<-1>(const bool reset) {
+Basic::getOpDomainLhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
-    return getOpDomainLhsPipeline<1>(reset);
+    return getOpDomainLhsPipeline<1>();
   case 2:
-    return getOpDomainLhsPipeline<2>(reset);
+    return getOpDomainLhsPipeline<2>();
   case 3:
     break;
   default:
     THROW_MESSAGE("Not implemented");
   }
-  return getOpDomainLhsPipeline<3>(reset);
+  return getOpDomainLhsPipeline<3>();
 }
 
 template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpDomainRhsPipeline(const bool reset) {
+Basic::getOpDomainRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-             createDomainFEPipeline<DIM>(feDomainRhs, reset))
+             createDomainFEPipeline<DIM>(feDomainRhs))
       ->getOpPtrVector();
 }
 
 template <>
 inline boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpDomainRhsPipeline<-1>(const bool reset) {
+Basic::getOpDomainRhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
-    return getOpDomainRhsPipeline<1>(reset);
+    return getOpDomainRhsPipeline<1>();
   case 2:
-    return getOpDomainRhsPipeline<2>(reset);
+    return getOpDomainRhsPipeline<2>();
   case 3:
     break;
   default:
     THROW_MESSAGE("Not implemented");
   }
-  return getOpDomainRhsPipeline<3>(reset);
+  return getOpDomainRhsPipeline<3>();
 }
 
 template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpBoundaryLhsPipeline(const bool reset) {
+Basic::getOpBoundaryLhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-             createBoundaryFEPipeline<DIM>(feBoundaryRhs, reset))
+             createBoundaryFEPipeline<DIM>(feBoundaryRhs))
       ->getOpPtrVector();
 }
 
 template <>
 inline boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpBoundaryLhsPipeline<-1>(const bool reset) {
+Basic::getOpBoundaryLhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
-    return getOpBoundaryLhsPipeline<1>(reset);
+    return getOpBoundaryLhsPipeline<1>();
   case 2:
-    return getOpBoundaryLhsPipeline<2>(reset);
+    return getOpBoundaryLhsPipeline<2>();
   case 3:
     break;
   default:
     THROW_MESSAGE("Not implemented");
   }
-  return getOpBoundaryLhsPipeline<3>(reset);
+  return getOpBoundaryLhsPipeline<3>();
 }
 
 template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpBoundaryRhsPipeline(const bool reset) {
+Basic::getOpBoundaryRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-             createBoundaryFEPipeline<DIM>(feBoundaryLhs, reset))
+             createBoundaryFEPipeline<DIM>(feBoundaryLhs))
       ->getOpPtrVector();
 }
 
 template <>
 inline boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpBoundaryRhsPipeline<-1>(const bool reset) {
+Basic::getOpBoundaryRhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
-    return getOpBoundaryRhsPipeline<1>(reset);
+    return getOpBoundaryRhsPipeline<1>();
   case 2:
-    return getOpBoundaryRhsPipeline<2>(reset);
+    return getOpBoundaryRhsPipeline<2>();
   case 3:
     break;
   default:
     THROW_MESSAGE("Not implemented");
   }
-  return getOpBoundaryRhsPipeline<3>(reset);
+  return getOpBoundaryRhsPipeline<3>();
 }
 
 template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpSkeletonLhsPipeline(const bool reset) {
+Basic::getOpSkeletonLhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-             createBoundaryFEPipeline<DIM>(feSkeletonRhs, reset))
+             createBoundaryFEPipeline<DIM>(feSkeletonRhs))
       ->getOpPtrVector();
 }
 
 template <>
 inline boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpSkeletonLhsPipeline<-1>(const bool reset) {
+Basic::getOpSkeletonLhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
-    return getOpSkeletonLhsPipeline<1>(reset);
+    return getOpSkeletonLhsPipeline<1>();
   case 2:
-    return getOpSkeletonLhsPipeline<2>(reset);
+    return getOpSkeletonLhsPipeline<2>();
   case 3:
     break;
   default:
     THROW_MESSAGE("Not implemented");
   }
-  return getOpSkeletonLhsPipeline<3>(reset);
+  return getOpSkeletonLhsPipeline<3>();
 }
 
 template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpSkeletonRhsPipeline(const bool reset) {
+Basic::getOpSkeletonRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-             createBoundaryFEPipeline<DIM>(feSkeletonLhs, reset))
+             createBoundaryFEPipeline<DIM>(feSkeletonLhs))
       ->getOpPtrVector();
 }
 
 template <>
 inline boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpSkeletonRhsPipeline<-1>(const bool reset) {
+Basic::getOpSkeletonRhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
-    return getOpSkeletonRhsPipeline<1>(reset);
+    return getOpSkeletonRhsPipeline<1>();
   case 2:
-    return getOpSkeletonRhsPipeline<2>(reset);
+    return getOpSkeletonRhsPipeline<2>();
   case 3:
     break;
   default:
     THROW_MESSAGE("Not implemented");
   }
-  return getOpSkeletonRhsPipeline<3>(reset);
+  return getOpSkeletonRhsPipeline<3>();
 }
 
 } // namespace MoFEM

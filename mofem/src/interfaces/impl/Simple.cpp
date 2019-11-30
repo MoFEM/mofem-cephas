@@ -58,10 +58,15 @@ MoFEMErrorCode Simple::getOptions() {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Simple::loadFile(const std::string options) {
+MoFEMErrorCode Simple::loadFile(const std::string options,
+                                const std::string mesh_file_name) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_SimpleLoadMesh, 0, 0, 0, 0);
+
+  if (!mesh_file_name.empty())
+    strcpy(meshFileName, mesh_file_name.c_str());
+
   // This is a case of distributed mesh and algebra. In that case each processor
   // keep only part of the problem.
   CHKERR m_field.get_moab().load_file(meshFileName, 0, options.c_str());

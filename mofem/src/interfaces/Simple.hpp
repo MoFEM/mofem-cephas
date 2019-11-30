@@ -48,13 +48,16 @@ struct Simple : public UnknownInterface {
 
   /**
    * \brief Load mesh file
-   * @param  field_name file name
+   * @param  options file load options
+   * @param  mesh_file_name file name if not set default or set by command line
+   * is used.
    * @return            error code
    */
   MoFEMErrorCode
   loadFile(const std::string options = "PARALLEL=READ_PART;"
                                        "PARALLEL_RESOLVE_SHARED_ENTS;"
-                                       "PARTITION=PARALLEL_PARTITION;");
+                                       "PARTITION=PARALLEL_PARTITION;",
+           const std::string mesh_file_name = "");
 
   /**
    * \brief Add field on domain
