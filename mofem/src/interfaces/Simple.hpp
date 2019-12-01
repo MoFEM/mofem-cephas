@@ -39,6 +39,7 @@ struct Simple : public UnknownInterface {
                                  UnknownInterface **iface) const;
 
   Simple(const MoFEM::Core &core);
+  virtual ~Simple() = default;
 
   /**
    * \brief get options
