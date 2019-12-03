@@ -333,7 +333,7 @@ static inline FTensor::Ddg<FTensor::PackPtr<T *, 1>, Tensor_Dim01, Tensor_Dim23>
 getFTensor4DdgFromMat(ublas::matrix<T, L, A> &data) {
   static_assert(
       !std::is_same<T, T>::value,
-      "Such getFTensor2SymmetricFromMat specialisation is not implemented");
+      "Such getFTensor4DdgFromMat specialisation is not implemented");
 }
 
 /**
