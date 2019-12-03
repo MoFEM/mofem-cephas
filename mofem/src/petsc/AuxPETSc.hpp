@@ -214,6 +214,21 @@ auto createSmartGhostVector = [](MPI_Comm comm, PetscInt n, PetscInt N,
 };
 
 /**
+ * @brief Create MPI Vector
+ * 
+ * For details abut arguments see here:
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecCreateMPI.html>VecCreateMPI</a>.
+ * 
+ */
+auto createSmartVectorMPI = [](MPI_Comm comm, PetscInt n, PetscInt N) {
+  Vec vv;
+  ierr = VecCreateMPI(comm, n, N, &vv);
+  CHKERRABORT(comm, ierr);
+  return SmartPetscObj<Vec>(vv);
+};
+
+/**
  * @brief Create duplicate vector of smart vector
  *
  * For details abut arguments see here:
