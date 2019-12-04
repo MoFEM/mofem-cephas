@@ -940,25 +940,21 @@ MoFEMErrorCode PrismInterface::splitSides(
     CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
     int sense = 0; ///< sense of the triangle used to create a prism
     if (moab.type_from_handle(*eit) == MBTRI) {
-      Range ents_3d;
-      CHKERR moab.get_adjacencies(&*eit, 1, 3, false, ents_3d);
-      ents_3d = intersect(ents_3d, side_ents3d);
-      switch (ents_3d.size()) {
+      Range adj_ents_3d;
+      CHKERR moab.get_adjacencies(&*eit, 1, 3, false, adj_ents_3d);
+      adj_ents_3d = intersect(adj_ents_3d, side_ents3d);
+      switch (adj_ents_3d.size()) {
       case 0:
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                "Did not find adjacent tets on one side of the interface, "
-                "check its definition and try creating separate sidesets for "
-                "each surface");
+                "Did not find adjacent tets on one side of the interface");
       case 2:
-        SETERRQ(
-            m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-            "Found both adjacent tets on one side of the interface, check its "
-            "definition and try creating separate sidesets for each surface");
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                "Found both adjacent tets on one side of the interface");
       default:
         break;
       }
       int side, offset;
-      CHKERR moab.side_number(ents_3d.front(), *eit, side, sense, offset);
+      CHKERR moab.side_number(adj_ents_3d.front(), *eit, side, sense, offset);
     }
     EntityHandle new_conn[num_nodes];
     int nb_new_conn = 0;
@@ -1007,10 +1003,8 @@ MoFEMErrorCode PrismInterface::splitSides(
         EntityHandle prism_conn[6] = {conn[0],     conn[1],     conn[2],
                                       new_conn[0], new_conn[1], new_conn[2]};
         if (sense != 1 && sense != -1) {
-          SETERRQ(
-              m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-              "Undefined sense of a trinagle on the interface, check its "
-              "definition and try creating separate sidesets for each surface");
+          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                  "Undefined sense of a trinagle on the interface");
         }
         if (sense == -1) {
           // swap nodes in triangles for correct prism creation
