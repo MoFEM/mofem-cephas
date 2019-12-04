@@ -83,6 +83,39 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
     return *ptr;
   };
 
+  auto get_alpha_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixInt> & {
+    return data.getBBAlphaIndicesSharedPtr(field_name);
+  };
+
+  auto get_base_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBNSharedPtr(field_name);
+  };
+
+  auto get_diff_base_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBDiffNSharedPtr(field_name);
+  };
+
+  auto get_alpha_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixInt> & {
+    return data.getBBAlphaIndicesByOrderSharedPtr(o);
+  };
+
+  auto get_base_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBNByOrderSharedPtr(o);
+  };
+
+  auto get_diff_base_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBDiffNByOrderSharedPtr(o);
+  };
+
   auto &vert_get_n = get_base(data.dataOnEntities[MBVERTEX][0]);
   auto &vert_get_diff_n = get_diff_base(data.dataOnEntities[MBVERTEX][0]);
   vert_get_n.resize(nb_gauss_pts, 3, false);
@@ -124,70 +157,138 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 
     constexpr int edges_nodes[3][2] = {{0, 1}, {1, 2}, {2, 0}};
     for (int ee = 0; ee != 3; ++ee) {
-      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
+      auto &ent_data = data.dataOnEntities[MBEDGE][ee];
+
+      if (ent_data.getSense() == 0)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Sense of the edge unknown");
-      const int sense = data.dataOnEntities[MBEDGE][ee].getSense();
-      const int order = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-      const int nb_dofs =
-          NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
 
-      auto &get_n = get_base(data.dataOnEntities[MBEDGE][ee]);
-      auto &get_diff_n = get_diff_base(data.dataOnEntities[MBEDGE][ee]);
-      get_n.resize(nb_gauss_pts, nb_dofs, false);
-      get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
+      const int sense = ent_data.getSense();
+      const int order = ent_data.getDataOrder();
+      const int nb_dofs = NBEDGE_H1(ent_data.getDataOrder());
 
       if (nb_dofs) {
-        auto &edge_alpha = get_alpha(data.dataOnEntities[MBEDGE][ee]);
-        edge_alpha.resize(nb_dofs, 3, false);
-        CHKERR BernsteinBezier::generateIndicesEdgeTri(ee, order,
-                                                       &edge_alpha(0, 0));
-        if (sense == -1)
-          for (int i = 0; i != edge_alpha.size1(); ++i) {
-            int a = edge_alpha(i, edges_nodes[ee][0]);
-            edge_alpha(i, edges_nodes[ee][0]) =
-                edge_alpha(i, edges_nodes[ee][1]);
-            edge_alpha(i, edges_nodes[ee][1]) = a;
+        if (get_alpha_by_order_ptr(ent_data, order)) {
+          get_alpha_by_name_ptr(ent_data, field_name) =
+              get_alpha_by_order_ptr(ent_data, order);
+          get_base_by_name_ptr(ent_data, field_name) =
+              get_base_by_order_ptr(ent_data, order);
+          get_diff_base_by_name_ptr(ent_data, field_name) =
+              get_diff_base_by_order_ptr(ent_data, order);
+        } else {
+          auto &get_n = get_base(ent_data);
+          auto &get_diff_n = get_diff_base(ent_data);
+          get_n.resize(nb_gauss_pts, nb_dofs, false);
+          get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
+
+          auto &edge_alpha = get_alpha(data.dataOnEntities[MBEDGE][ee]);
+          edge_alpha.resize(nb_dofs, 3, false);
+          CHKERR BernsteinBezier::generateIndicesEdgeTri(ee, order,
+                                                         &edge_alpha(0, 0));
+          if (sense == -1) {
+            for (int i = 0; i != edge_alpha.size1(); ++i) {
+              int a = edge_alpha(i, edges_nodes[ee][0]);
+              edge_alpha(i, edges_nodes[ee][0]) =
+                  edge_alpha(i, edges_nodes[ee][1]);
+              edge_alpha(i, edges_nodes[ee][1]) = a;
+            }
           }
-        CHKERR BernsteinBezier::baseFunctionsTri(
-            order, lambda.size1(), edge_alpha.size1(), &edge_alpha(0, 0),
-            &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
-            &get_diff_n(0, 0));
+          CHKERR BernsteinBezier::baseFunctionsTri(
+              order, lambda.size1(), edge_alpha.size1(), &edge_alpha(0, 0),
+              &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
+              &get_diff_n(0, 0));
+
+          get_alpha_by_order_ptr(ent_data, order) =
+              get_alpha_by_name_ptr(ent_data, field_name);
+          get_base_by_order_ptr(ent_data, order) =
+              get_base_by_name_ptr(ent_data, field_name);
+          get_diff_base_by_order_ptr(ent_data, order) =
+              get_diff_base_by_name_ptr(ent_data, field_name);
+        }
       }
     }
   } else {
     for (int ee = 0; ee != 3; ++ee) {
-      auto &get_n = get_base(data.dataOnEntities[MBEDGE][ee]);
-      auto &get_diff_n = get_diff_base(data.dataOnEntities[MBEDGE][ee]);
+      auto &ent_data = data.dataOnEntities[MBEDGE][ee];
+      ent_data.getBBAlphaIndicesSharedPtr(field_name).reset();
+      auto &get_n = get_base(ent_data);
+      auto &get_diff_n = get_diff_base(ent_data);
       get_n.resize(nb_gauss_pts, 0, false);
       get_diff_n.resize(nb_gauss_pts, 0, false);
     }
   }
 
   // face
+  // if (data.spacesOnEntities[MBTRI].test(H1)) {
+  //   if (data.dataOnEntities[MBTRI].size() != 1)
+  //     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+  //             "Wrong size ent of ent data");
+
+  //   const int order = data.dataOnEntities[MBTRI][0].getDataOrder();
+  //   const int nb_dofs = NBFACETRI_H1(order);
+  //   auto &get_n = get_base(data.dataOnEntities[MBTRI][0]);
+  //   auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][0]);
+  //   get_n.resize(nb_gauss_pts, nb_dofs, false);
+  //   get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
+  //   if (nb_dofs) {
+  //     auto &face_alpha = get_alpha(data.dataOnEntities[MBTRI][0]);
+  //     face_alpha.resize(nb_dofs, 3, false);
+  //     CHKERR BernsteinBezier::generateIndicesTriTri(order, &face_alpha(0, 0));
+  //     CHKERR BernsteinBezier::baseFunctionsTri(
+  //         order, lambda.size1(), face_alpha.size1(), &face_alpha(0, 0),
+  //         &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
+  //         &get_diff_n(0, 0));
+  //   }
+  // } else {
+  //   auto &get_n = get_base(data.dataOnEntities[MBTRI][0]);
+  //   auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][0]);
+  //   get_n.resize(nb_gauss_pts, 0, false);
+  //   get_diff_n.resize(nb_gauss_pts, 0, false);
+  // }
   if (data.spacesOnEntities[MBTRI].test(H1)) {
     if (data.dataOnEntities[MBTRI].size() != 1)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Wrong size ent of ent data");
 
-    const int order = data.dataOnEntities[MBTRI][0].getDataOrder();
+    auto &ent_data = data.dataOnEntities[MBTRI][0];
+    const int order = ent_data.getDataOrder();
     const int nb_dofs = NBFACETRI_H1(order);
-    auto &get_n = get_base(data.dataOnEntities[MBTRI][0]);
-    auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][0]);
-    get_n.resize(nb_gauss_pts, nb_dofs, false);
-    get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
-    if (nb_dofs) {
-      auto &face_alpha = get_alpha(data.dataOnEntities[MBTRI][0]);
-      face_alpha.resize(nb_dofs, 3, false);
-      CHKERR BernsteinBezier::generateIndicesTriTri(order, &face_alpha(0, 0));
-      CHKERR BernsteinBezier::baseFunctionsTri(
-          order, lambda.size1(), face_alpha.size1(), &face_alpha(0, 0),
-          &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
-          &get_diff_n(0, 0));
+    if (get_alpha_by_order_ptr(ent_data, order)) {
+      get_alpha_by_name_ptr(ent_data, field_name) =
+          get_alpha_by_order_ptr(ent_data, order);
+      get_base_by_name_ptr(ent_data, field_name) =
+          get_base_by_order_ptr(ent_data, order);
+      get_diff_base_by_name_ptr(ent_data, field_name) =
+          get_diff_base_by_order_ptr(ent_data, order);
+    } else {
+
+      auto &get_n = get_base(ent_data);
+      auto &get_diff_n = get_diff_base(ent_data);
+      get_n.resize(nb_gauss_pts, nb_dofs, false);
+      get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
+      if (nb_dofs) {
+        auto &tri_alpha = get_alpha(ent_data);
+        tri_alpha.resize(nb_dofs, 3, false);
+
+        CHKERR BernsteinBezier::generateIndicesTriTri(order, &tri_alpha(0, 0));
+        CHKERR BernsteinBezier::baseFunctionsTri(
+            order, lambda.size1(), tri_alpha.size1(), &tri_alpha(0, 0),
+            &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
+            &get_diff_n(0, 0));
+
+        get_alpha_by_order_ptr(ent_data, order) =
+            get_alpha_by_name_ptr(ent_data, field_name);
+        get_base_by_order_ptr(ent_data, order) =
+            get_base_by_name_ptr(ent_data, field_name);
+        get_diff_base_by_order_ptr(ent_data, order) =
+            get_diff_base_by_name_ptr(ent_data, field_name);
+      }
     }
   } else {
-    auto &get_n = get_base(data.dataOnEntities[MBTRI][0]);
-    auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][0]);
+    auto &ent_data = data.dataOnEntities[MBTRI][0];
+    ent_data.getBBAlphaIndicesSharedPtr(field_name).reset();
+    auto &get_n = get_base(ent_data);
+    auto &get_diff_n = get_diff_base(ent_data);
     get_n.resize(nb_gauss_pts, 0, false);
     get_diff_n.resize(nb_gauss_pts, 0, false);
   }

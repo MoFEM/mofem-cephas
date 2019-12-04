@@ -736,6 +736,29 @@ add_test(forces_and_sources_h1_continuity_check_atom
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_h1_continuity_check -my_file sphere.h5m
 )
 
+# Check approxination on H1 space in 2d
+my_add_executable(h1_check_approximation_2d h1_check_approximation_2d.cpp)
+target_link_libraries(h1_check_approximation_2d
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(h1_check_approx_2d_ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/h1_check_approximation_2d
+  -base ainsworth -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+)
+add_test(h1_check_approx_2d_bernstein
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/h1_check_approximation_2d
+  -base bernstein -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+)
+
 # Check approximation on Hcurl space in 2d
 my_add_executable(hcurl_check_approx_in_2d 
   hcurl_check_approx_in_2d.cpp)

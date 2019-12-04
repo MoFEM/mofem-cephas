@@ -354,7 +354,17 @@ MoFEMErrorCode Simple::buildFields() {
                 "Glasgow we have a problem");
       }
       if (field_ptr->getSpace() == H1) {
-        CHKERR m_field.set_field_order(meshSet, MBVERTEX, field, 1);
+        if (field_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
+          Range ents;
+          CHKERR m_field.get_field_entities_by_dimension(field, 0, ents);
+          if (!fieldsOrder.at(field).second.empty()) {
+            ents = intersect(ents, fieldsOrder.at(field).second);
+          }
+          CHKERR m_field.set_field_order(ents, field,
+                                         fieldsOrder.at(field).first);
+        } else {
+          CHKERR m_field.set_field_order(meshSet, MBVERTEX, field, 1);
+        }
       }
       for (int dd = dds; dd <= dim; dd++) {
         Range ents;
@@ -415,6 +425,7 @@ MoFEMErrorCode Simple::buildProblem() {
   // elements
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
   CHKERR DMSetUp(dM);
+  m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_FALSE;
   PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
