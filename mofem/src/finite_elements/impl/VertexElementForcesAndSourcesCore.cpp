@@ -51,4 +51,9 @@ MoFEMErrorCode VertexElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionReturn(0);
 }
 
+bool VertexElementForcesAndSourcesCore::UserDataOperator::checkFECast()
+    const {
+  return dynamic_cast<VertexElementForcesAndSourcesCore *>(ptrFE) != nullptr;
+}
+
 } // namespace MoFEM

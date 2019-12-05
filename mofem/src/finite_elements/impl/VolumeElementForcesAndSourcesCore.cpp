@@ -409,4 +409,10 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
   MoFEMFunctionReturn(0);
 }
 
+bool VolumeElementForcesAndSourcesCoreBase::UserDataOperator::checkFECast()
+    const {
+  return dynamic_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE) != nullptr;
+}
+
+
 } // namespace MoFEM

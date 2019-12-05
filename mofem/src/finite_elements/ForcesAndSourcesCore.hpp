@@ -227,6 +227,14 @@ struct ForcesAndSourcesCore : public FEMethod {
                                         const EntityType type, const int side,
                                         VectorInt &indices) const;
 
+    /**
+     * @brief Check cast to generic force and source element
+     * 
+     * @return true 
+     * @return false 
+     */
+    virtual bool checkFECast() const;
+
     /** \brief Return raw pointer to Finite Element Method object
      */
     inline const FEMethod *getFEMethod() const;

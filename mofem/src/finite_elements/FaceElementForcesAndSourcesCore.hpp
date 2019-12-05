@@ -47,6 +47,14 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
     /**
+     * @brief Check cast to FaceFE
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool checkFECast() const;
+
+    /**
      * \brief get area of face
      * @return area of face
      */

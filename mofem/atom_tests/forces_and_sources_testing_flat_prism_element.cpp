@@ -4,7 +4,6 @@
  *
  */
 
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -336,12 +335,13 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    struct MyOp2 : public FaceElementForcesAndSourcesCore::UserDataOperator {
+    struct MyOp2
+        : public FlatPrismElementForcesAndSourcesCore::UserDataOperator {
 
       TeeStream &mySplit;
       MyOp2(TeeStream &my_split, const char type)
-          : FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1",
-                                                              "FIELD2", type),
+          : FlatPrismElementForcesAndSourcesCore::UserDataOperator(
+                "FIELD1", "FIELD2", type),
             mySplit(my_split) {}
 
       MoFEMErrorCode doWork(int side, EntityType type,
@@ -393,10 +393,8 @@ int main(int argc, char *argv[]) {
     fe2.getOpPtrVector().push_back(
         new MyOp2(my_split, ForcesAndSourcesCore::UserDataOperator::OPROWCOL));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE2", fe2);
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF, e.errorCode, e.errorMessage);
   }
+  CATCH_ERRORS;
 
   CHKERR MoFEM::Core::Finalize();
 

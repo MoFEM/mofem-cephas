@@ -82,6 +82,14 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
     using FaceElementForcesAndSourcesCoreBase::UserDataOperator::
         UserDataOperator;
 
+    /**
+     * @brief Check cast to generic force and source element
+     *
+     * @return true
+     * @return false
+     */
+    bool checkFECast() const;
+
     /** \brief return pointer to Generic Volume Finite Element object
      */
     inline const FaceElementForcesAndSourcesCoreOnSideBase *getFaceFE() const;

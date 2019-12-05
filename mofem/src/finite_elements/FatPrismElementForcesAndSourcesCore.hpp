@@ -68,6 +68,14 @@ struct FatPrismElementForcesAndSourcesCore
 
     using VolumeElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
+    /**
+     * @brief Check cast to generic force and source element
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool checkFECast() const;
+
     /** \brief get face aRea
     \param dd if dd == 0 it is for face F3 if dd == 1 is for face F4
     */

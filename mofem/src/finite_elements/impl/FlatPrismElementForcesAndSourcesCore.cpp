@@ -5,18 +5,18 @@
 */
 
 /* This file is part of MoFEM.
-* MoFEM is free software: you can redistribute it and/or modify it under
-* the terms of the GNU Lesser General Public License as published by the
-* Free Software Foundation, either version 3 of the License, or (at your
-* option) any later version.
-*
-* MoFEM is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-* License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 namespace MoFEM {
 
@@ -39,7 +39,6 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     MoFEMFunctionReturnHot(0);
   CHKERR createDataOnElement();
 
-  
   DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
   DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
   DataForcesAndSourcesCore &data_l2 = *dataOnElement[HCURL];
@@ -116,7 +115,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
       cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1,
                   &gaussPts(2, 0), 1);
       dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 3,
-                                                              false);
+                                                             false);
       double *shape_ptr =
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
       cblas_dcopy(3 * nb_gauss_pts, QUAD_2D_TABLE[rule]->points, 1, shape_ptr,
@@ -130,7 +129,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     CHKERR setGaussPts(order_row, order_col, order_data);
     nb_gauss_pts = gaussPts.size2();
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 3,
-                                                            false);
+                                                           false);
     if (nb_gauss_pts) {
       CHKERR ShapeMBTRI(
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
@@ -157,8 +156,7 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
   for (int space = HCURL; space != LASTSPACE; ++space)
     if (dataOnElement[space]) {
       dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
-          dataOnElement[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
-              NOBASE);
+          dataOnElement[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
     }
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
@@ -227,6 +225,11 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
   CHKERR loopOverOperators();
 
   MoFEMFunctionReturn(0);
+}
+
+bool FlatPrismElementForcesAndSourcesCore::UserDataOperator::checkFECast()
+    const {
+  return dynamic_cast<ForcesAndSourcesCore *>(ptrFE) != nullptr;
 }
 
 } // namespace MoFEM

@@ -53,6 +53,15 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
+    /**
+     * @brief Check cast to generic force and source element
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool checkFECast() const;
+
+
     /** \brief get element connectivity
      */
     inline const EntityHandle *getConn();

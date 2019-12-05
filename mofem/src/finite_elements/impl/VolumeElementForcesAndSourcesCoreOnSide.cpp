@@ -84,4 +84,10 @@ VolumeElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   MoFEMFunctionReturn(0);
 }
 
+bool VolumeElementForcesAndSourcesCoreOnSideBase::UserDataOperator::
+    checkFECast() const {
+  return dynamic_cast<VolumeElementForcesAndSourcesCoreOnSideBase *>(ptrFE) !=
+         nullptr;
+}
+
 } // namespace MoFEM

@@ -145,4 +145,9 @@ EdgeElementForcesAndSourcesCoreBase::calculateHoCoordsAtIntegrationPts() {
   MoFEMFunctionReturn(0);
 }
 
+bool EdgeElementForcesAndSourcesCoreBase::UserDataOperator::checkFECast()
+    const {
+  return dynamic_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE) != nullptr;
+}
+
 } // namespace MoFEM

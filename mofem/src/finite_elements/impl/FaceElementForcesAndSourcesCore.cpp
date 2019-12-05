@@ -384,4 +384,9 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
   MoFEMFunctionReturn(0);
 }
 
+bool FaceElementForcesAndSourcesCoreBase::UserDataOperator::checkFECast()
+    const {
+  return dynamic_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE) != nullptr;
+}
+
 } // namespace MoFEM

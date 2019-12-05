@@ -79,4 +79,10 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   MoFEMFunctionReturn(0);
 }
 
+bool FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator::checkFECast()
+    const {
+  return dynamic_cast<FaceElementForcesAndSourcesCoreOnSideBase *>(ptrFE) !=
+         nullptr;
+}
+
 } // namespace MoFEM

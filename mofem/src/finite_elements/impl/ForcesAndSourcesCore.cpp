@@ -1086,6 +1086,12 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
     try {
 
       oit->setPtrFE(this);
+      
+      if (!oit->checkFECast())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Finite element and object do not match");
+
+
 
       if (oit->opType == UserDataOperator::OPLAST) {
 
@@ -1422,6 +1428,10 @@ MoFEMErrorCode ForcesAndSourcesCore::postProcess() {
     CHKERRG(ierr);
   }
   MoFEMFunctionReturnHot(0);
+}
+
+bool ForcesAndSourcesCore::UserDataOperator::checkFECast() const {
+  return dynamic_cast<ForcesAndSourcesCore *>(ptrFE) != nullptr;
 }
 
 } // namespace MoFEM
