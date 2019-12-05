@@ -117,6 +117,7 @@
 #include <ContactPrismElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSourcesCore.hpp>
 #include <VolumeElementForcesAndSourcesCoreOnSide.hpp>
+#include <VolumeElementForcesAndSourcesCoreOnVolumeSide.hpp>
 #include <FaceElementForcesAndSourcesCoreOnSide.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <UserDataOperators.hpp>
