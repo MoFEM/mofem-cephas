@@ -683,12 +683,47 @@ struct Problem {
   inline BitRefLevel getBitRefLevel() const { return *tagBitRefLevel; }
   inline BitRefLevel getMaskBitRefLevel() const { return *tagMaskBitRefLevel; }
 
-  MoFEMErrorCode
-  getRowDofsByPetscGlobalDofIdx(DofIdx idx,
-                                const NumeredDofEntity **dof_ptr) const;
-  MoFEMErrorCode
-  getColDofsByPetscGlobalDofIdx(DofIdx idx,
-                                const NumeredDofEntity **dof_ptr) const;
+  /**
+   * @brief Get the Row Dofs By Petsc Global Dof Idx object
+   * 
+   * @param idx 
+   * @param dof_ptr 
+   * @param bh
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,
+                                               const NumeredDofEntity **dof_ptr,
+                                               MoFEMTypes bh = MF_EXIST) const;
+
+  /**
+   * @brief Get the Col Dofs By Petsc Global Dof Idx object
+   * 
+   * @param idx 
+   * @param dof_ptr 
+   * @param bh
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,
+                                               const NumeredDofEntity **dof_ptr,
+                                               MoFEMTypes bh = MF_EXIST) const;
+
+  /**
+   * @brief Get the Row Dofs By Petsc Global Dof Idx object
+   * 
+   * @param idx 
+   * @return boost::weak_ptr<NumeredDofEntity> 
+   */
+  boost::weak_ptr<NumeredDofEntity>
+  getRowDofsByPetscGlobalDofIdx(DofIdx idx) const;
+
+  /**
+   * @brief Get the Col Dofs By Petsc Global Dof Idx object
+   * 
+   * @param idx 
+   * @return boost::weak_ptr<NumeredDofEntity> 
+   */
+  boost::weak_ptr<NumeredDofEntity>
+  getColDofsByPetscGlobalDofIdx(DofIdx idx) const;
 
   BitFEId getBitFEId() const;
 
