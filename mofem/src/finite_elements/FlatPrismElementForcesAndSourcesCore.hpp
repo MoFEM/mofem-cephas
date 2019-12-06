@@ -47,14 +47,6 @@ struct FlatPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-    /**
-     * @brief Check cast to generic force and source element
-     *
-     * @return true
-     * @return false
-     */
-    bool checkFECast() const;
-
     /** \brief get face aRea
     \param dd if dd == 0 it is for face F3 if dd == 1 is for face F4
     */
@@ -158,6 +150,10 @@ struct FlatPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline const FlatPrismElementForcesAndSourcesCore *
     getFlatPrismElementForcesAndSourcesCore();
+
+  protected:
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
   };
 
   MoFEMErrorCode operator()();

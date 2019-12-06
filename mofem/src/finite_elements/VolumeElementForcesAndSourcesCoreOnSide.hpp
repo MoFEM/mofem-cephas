@@ -87,14 +87,6 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
 
     using VolumeElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-    /**
-     * @brief Check cast to generic force and source element
-     * 
-     * @return true 
-     * @return false 
-     */
-    bool checkFECast() const;
-
     inline VolumeElementForcesAndSourcesCoreOnSideBase *getVolumeFE() const;
 
     inline FaceElementForcesAndSourcesCoreBase *getFaceFE() const;
@@ -177,6 +169,10 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
 
      */
     inline MatrixDouble &getFaceCoordsAtGaussPts();
+
+  protected:
+  
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
   };
 
   int getRule(int order);

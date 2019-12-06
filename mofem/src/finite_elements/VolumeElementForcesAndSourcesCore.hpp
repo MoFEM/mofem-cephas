@@ -49,14 +49,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-    /**
-     * @brief Check cast to generic force and source element
-     * 
-     * @return true 
-     * @return false 
-     */
-    bool checkFECast() const;
-
     /** \brief get element number of nodes
      */
     inline int getNumNodes();
@@ -222,6 +214,11 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     getCurlOfHCurlBaseFunctions(int side, EntityType type,
                                 DataForcesAndSourcesCore::EntData &data, int gg,
                                 MatrixDouble &curl);
+
+  protected:
+
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
   };
 
   enum Switches {
@@ -371,7 +368,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::OpSwitch() {
   CHKERR calculateCoordinatesAtGaussPts();
   CHKERR calHierarchicalBaseFunctionsOnElement();
   CHKERR calBernsteinBezierBaseFunctionsOnElement();
-  
+
   if (!(NO_TRANSFORM & SWITCH))
     CHKERR transformBaseFunctions();
 

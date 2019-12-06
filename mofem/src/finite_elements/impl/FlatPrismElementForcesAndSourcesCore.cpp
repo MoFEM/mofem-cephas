@@ -227,9 +227,13 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionReturn(0);
 }
 
-bool FlatPrismElementForcesAndSourcesCore::UserDataOperator::checkFECast()
-    const {
-  return dynamic_cast<ForcesAndSourcesCore *>(ptrFE) != nullptr;
+MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::UserDataOperator::setPtrFE(
+    ForcesAndSourcesCore *ptr) {
+  MoFEMFunctionBeginHot;
+  if (!(ptrFE = dynamic_cast<FlatPrismElementForcesAndSourcesCore *>(ptr)))
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "User operator and finite element do not work together");
+  MoFEMFunctionReturnHot(0);
 }
 
 } // namespace MoFEM

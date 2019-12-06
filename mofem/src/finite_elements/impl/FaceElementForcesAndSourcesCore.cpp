@@ -29,8 +29,7 @@ FaceElementForcesAndSourcesCoreBase::FaceElementForcesAndSourcesCoreBase(
       opContravariantTransform(nOrmal, normalsAtGaussPts),
       opCovariantTransform(nOrmal, normalsAtGaussPts, tangentOne,
                            tangentOneAtGaussPts, tangentTwo,
-                           tangentTwoAtGaussPts) {
-}
+                           tangentTwoAtGaussPts) {}
 
 MoFEMErrorCode
 FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
@@ -150,7 +149,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
   case MBTRI:
     diff_ptr = Tools::diffShapeFunMBTRI.data();
     CHKERR calc_normal(diff_ptr);
-    //FIXME: Normal should be divided not the area for triangle!!
+    // FIXME: Normal should be divided not the area for triangle!!
     aRea /= 2;
     break;
   case MBQUAD:
@@ -158,7 +157,8 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormal() {
     CHKERR calc_normal(diff_ptr);
     break;
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Element type not implemented");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Element type not implemented");
   }
 
   MoFEMFunctionReturn(0);
@@ -200,8 +200,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::setIntegrationPts() {
       std::copy(
           Tools::diffShapeFunMBTRI.begin(), Tools::diffShapeFunMBTRI.end(),
           dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
-    } 
-    else {
+    } else {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_2D_TABLE_SIZE);
     }
@@ -359,7 +358,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
         mField.get_field_structure(meshPositionsFieldName);
     BitFieldId id = field_struture->getId();
 
-    if ((numeredEntFiniteElementPtr->getBitFieldIdData() & id).none()) 
+    if ((numeredEntFiniteElementPtr->getBitFieldIdData() & id).none())
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
               "no MESH_NODE_POSITIONS in element data");
 
@@ -370,7 +369,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
     CHKERR opHOCoordsAndNormals.opRhs(dataH1);
     CHKERR opHOCoordsAndNormals.calculateNormals();
 
-  } else if(numeredEntFiniteElementPtr->getEntType() == MBTRI) {
+  } else if (numeredEntFiniteElementPtr->getEntType() == MBTRI) {
     hoCoordsAtGaussPts.resize(0, 0, false);
     normalsAtGaussPts.resize(0, 0, false);
     tangentOneAtGaussPts.resize(0, 0, false);
@@ -384,9 +383,13 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
   MoFEMFunctionReturn(0);
 }
 
-bool FaceElementForcesAndSourcesCoreBase::UserDataOperator::checkFECast()
-    const {
-  return dynamic_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE) != nullptr;
+MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
+    ForcesAndSourcesCore *ptr) {
+  MoFEMFunctionBeginHot;
+  if (!(ptrFE = dynamic_cast<FaceElementForcesAndSourcesCoreBase *>(ptr)))
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "User operator and finite element do not work together");
+  MoFEMFunctionReturnHot(0);
 }
 
 } // namespace MoFEM

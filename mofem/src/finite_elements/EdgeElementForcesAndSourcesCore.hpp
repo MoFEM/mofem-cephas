@@ -53,15 +53,6 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
     using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-    /**
-     * @brief Check cast to generic force and source element
-     * 
-     * @return true 
-     * @return false 
-     */
-    bool checkFECast() const;
-
-
     /** \brief get element connectivity
      */
     inline const EntityHandle *getConn();
@@ -133,7 +124,11 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     template <int SWITCH>
     MoFEMErrorCode
     loopSideFaces(const string &fe_name,
-                 FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side);
+                  FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side);
+
+  protected:
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+    
   };
 
   enum Switches {

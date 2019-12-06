@@ -442,9 +442,13 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionReturn(0);
 }
 
-bool FatPrismElementForcesAndSourcesCore::UserDataOperator::checkFECast()
-    const {
-  return dynamic_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE) != nullptr;
+MoFEMErrorCode FatPrismElementForcesAndSourcesCore::UserDataOperator::setPtrFE(
+    ForcesAndSourcesCore *ptr) {
+  MoFEMFunctionBeginHot;
+  if (!(ptrFE = dynamic_cast<FatPrismElementForcesAndSourcesCore *>(ptr)))
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "User operator and finite element do not work together");
+  MoFEMFunctionReturnHot(0);
 }
 
 } // namespace MoFEM

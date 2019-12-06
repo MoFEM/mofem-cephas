@@ -409,9 +409,14 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
   MoFEMFunctionReturn(0);
 }
 
-bool VolumeElementForcesAndSourcesCoreBase::UserDataOperator::checkFECast()
-    const {
-  return dynamic_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE) != nullptr;
+MoFEMErrorCode
+VolumeElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
+    ForcesAndSourcesCore *ptr) {
+  MoFEMFunctionBeginHot;
+  if(!(ptrFE = dynamic_cast<VolumeElementForcesAndSourcesCoreBase *>(ptr))) 
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "User operator and finite element do not work together");
+  MoFEMFunctionReturnHot(0);
 }
 
 

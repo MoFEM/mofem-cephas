@@ -47,14 +47,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
     /**
-     * @brief Check cast to FaceFE
-     * 
-     * @return true 
-     * @return false 
-     */
-    bool checkFECast() const;
-
-    /**
      * \brief get area of face
      * @return area of face
      */
@@ -239,6 +231,10 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     MoFEMErrorCode loopSideVolumes(
         const string &fe_name,
         VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method);
+
+  private:
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
   };
 
   enum Switches {
@@ -250,6 +246,7 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   template <int SWITCH> MoFEMErrorCode OpSwitch();
 
 protected:
+
   MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
 
   /**

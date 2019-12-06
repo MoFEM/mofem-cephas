@@ -50,15 +50,12 @@ struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-    /**
-     * @brief Check cast to generic force and source element
-     *
-     * @return true
-     * @return false
-     */
-    bool checkFECast() const;
 
     inline VectorDouble3 &getCoords();
+
+ protected:
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
   };
 
   MoFEMErrorCode operator()();

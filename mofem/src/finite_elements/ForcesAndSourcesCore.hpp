@@ -227,14 +227,6 @@ struct ForcesAndSourcesCore : public FEMethod {
                                         const EntityType type, const int side,
                                         VectorInt &indices) const;
 
-    /**
-     * @brief Check cast to generic force and source element
-     * 
-     * @return true 
-     * @return false 
-     */
-    virtual bool checkFECast() const;
-
     /** \brief Return raw pointer to Finite Element Method object
      */
     inline const FEMethod *getFEMethod() const;
@@ -356,7 +348,7 @@ struct ForcesAndSourcesCore : public FEMethod {
   protected:
     ForcesAndSourcesCore *ptrFE;
 
-    inline MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+    virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 
     inline ForcesAndSourcesCore *getPtrFE() const;
 
@@ -580,7 +572,7 @@ protected:
                                      FEDofEntity_multiIndex &dofs,
                                      VectorDouble &ent_field_data,
                                      VectorDofs &ent_field_dofs) const;
-                                     
+
   MoFEMErrorCode getNoFieldFieldData(DataForcesAndSourcesCore &data,
                                      const boost::string_ref field_name) const;
 
@@ -756,16 +748,14 @@ protected:
    * @brief Entity data on element entity rows fields
    *
    */
-   const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
-                   LASTSPACE>
+  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
       dataOnElement;
 
   /**
    * @brief Entity data on element entity columns fields
    *
    */
-   const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
-                   LASTSPACE>
+  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
       derivedDataOnElement;
 
   DataForcesAndSourcesCore &dataNoField;
@@ -967,13 +957,6 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
     const std::string filed_name, const EntityType type, const int side,
     VectorInt &indices) const {
   return getProblemRowIndices(filed_name, type, side, indices);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::UserDataOperator::setPtrFE(ForcesAndSourcesCore *ptr) {
-  MoFEMFunctionBeginHot;
-  ptrFE = ptr;
-  MoFEMFunctionReturnHot(0);
 }
 
 ForcesAndSourcesCore *ForcesAndSourcesCore::UserDataOperator::getPtrFE() const {
