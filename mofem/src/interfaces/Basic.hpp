@@ -489,7 +489,7 @@ template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpBoundaryLhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-             createBoundaryFEPipeline<DIM>(feBoundaryRhs))
+             createBoundaryFEPipeline<DIM>(feBoundaryLhs))
       ->getOpPtrVector();
 }
 
@@ -513,7 +513,7 @@ template <int DIM>
 boost::ptr_vector<Basic::UserDataOperator> &
 Basic::getOpBoundaryRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-             createBoundaryFEPipeline<DIM>(feBoundaryLhs))
+             createBoundaryFEPipeline<DIM>(feBoundaryRhs))
       ->getOpPtrVector();
 }
 
