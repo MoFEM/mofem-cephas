@@ -337,7 +337,7 @@ template <int DIM>
 MoFEMErrorCode Basic::setBoundaryLhsIntegrationRule(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-      createDomainFEPipeline<DIM>(feBoundaryLhs))
+      createBoundaryFEPipeline<DIM>(feBoundaryLhs))
       ->getRuleHook = rule;
   MoFEMFunctionReturn(0);
 }
@@ -363,7 +363,7 @@ template <int DIM>
 MoFEMErrorCode Basic::setBoundaryRhsIntegrationRule(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-      createDomainFEPipeline<DIM>(feBoundaryRhs))
+      createBoundaryFEPipeline<DIM>(feBoundaryRhs))
       ->getRuleHook = rule;
   MoFEMFunctionReturn(0);
 }
@@ -389,7 +389,7 @@ template <int DIM>
 MoFEMErrorCode Basic::setSkeletonLhsIntegrationRule(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-      createDomainFEPipeline<DIM>(feSkeletonLhs))
+      createBoundaryFEPipeline<DIM>(feSkeletonLhs))
       ->getRuleHook = rule;
   MoFEMFunctionReturn(0);
 }
@@ -415,7 +415,7 @@ template <int DIM>
 MoFEMErrorCode Basic::setSkeletonRhsIntegrationRule(Basic::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
-      createDomainFEPipeline<DIM>(feSkeletonRhs))
+      createBoundaryFEPipeline<DIM>(feSkeletonRhs))
       ->getRuleHook = rule;
   MoFEMFunctionReturn(0);
 }
