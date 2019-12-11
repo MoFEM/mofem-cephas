@@ -363,38 +363,44 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
     const std::string &field_name, const NumeredDofEntity_multiIndex &dofs,
     VectorInt &nodes_indices) const {
   MoFEMFunctionBeginHot;
-  nodes_indices.resize(0);
-  auto &side_table = const_cast<SideNumber_multiIndex &>(
-      numeredEntFiniteElementPtr->getSideNumberTable());
-  auto siit = side_table.get<1>().lower_bound(boost::make_tuple(MBVERTEX, 0));
-  auto hi_siit =
-      side_table.get<1>().lower_bound(boost::make_tuple(MBVERTEX, 10000));
 
-  int nn = 0;
-  for (; siit != hi_siit; siit++, nn++) {
+  const Field *field_struture = mField.get_field_structure(field_name);
+  if (field_struture->getSpace() == H1) {
 
-    if (siit->get()->side_number == -1)
-      continue;
+    int num_nodes;
+    CHKERR getNumberOfNodes(num_nodes);
+    nodes_indices.resize(field_struture->getNbOfCoeffs() * num_nodes, false);
+    std::fill(nodes_indices.begin(), nodes_indices.end(), -1);
 
-    const EntityHandle ent = siit->get()->ent;
-    auto dit =
-        dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().lower_bound(
-            boost::make_tuple(field_name, ent, 0));
-    auto hi_dit =
-        dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().upper_bound(
-            boost::make_tuple(field_name, ent, 10000)); /// very large number
-    if (dit != hi_dit) {
-      if (!nn) {
-        nodes_indices.resize((*dit)->getNbOfCoeffs() *
-                             std::distance(siit, hi_siit));
-      }
+    auto &side_table = const_cast<SideNumber_multiIndex &>(
+        numeredEntFiniteElementPtr->getSideNumberTable());
+    auto siit = side_table.get<1>().lower_bound(boost::make_tuple(MBVERTEX, 0));
+    auto hi_siit =
+        side_table.get<1>().lower_bound(boost::make_tuple(MBVERTEX, 10000));
+
+    int nn = 0;
+    for (; siit != hi_siit; siit++, nn++) {
+
+      if (siit->get()->side_number == -1)
+        continue;
+
+      const EntityHandle ent = siit->get()->ent;
+      auto dit =
+          dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().lower_bound(
+              boost::make_tuple(field_name, ent, 0));
+      auto hi_dit =
+          dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().upper_bound(
+              boost::make_tuple(field_name, ent, 10000)); /// very large number
       for (; dit != hi_dit; dit++) {
         nodes_indices[siit->get()->side_number * (*dit)->getNbOfCoeffs() +
                       (*dit)->getDofCoeffIdx()] =
             (*dit)->getPetscGlobalDofIdx();
       }
     }
+  } else {
+    nodes_indices.resize(0, false);
   }
+
 
   MoFEMFunctionReturnHot(0);
 }
@@ -1427,7 +1433,7 @@ MoFEMErrorCode ForcesAndSourcesCore::postProcess() {
 MoFEMErrorCode
 ForcesAndSourcesCore::UserDataOperator::setPtrFE(ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;
-  if(!(ptrFE = dynamic_cast<ForcesAndSourcesCore *>(ptr))) 
+  if (!(ptrFE = dynamic_cast<ForcesAndSourcesCore *>(ptr)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);
