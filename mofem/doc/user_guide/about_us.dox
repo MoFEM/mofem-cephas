@@ -23,7 +23,7 @@
 List of third party libraries and packages used by MoFEM:
 
 - SIGMA Tools <http://press3.mcs.anl.gov/sigma>
-- MOAB <http://www.mcs.anl.gov/~fathom/moab-docs/html/userguide.html>.
+- MOAB <http://ftp.mcs.anl.gov/pub/fathom/moab-docs/index.html>.
 - PETSc <http://www.mcs.anl.gov/petsc/documentation/index.html>
 - BOOST <http://www.boost.org>
 	- uBlas <http://www.boost.org/doc/libs/release/libs/numeric/>
