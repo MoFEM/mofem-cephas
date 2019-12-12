@@ -35,13 +35,6 @@ configure_file(
 set_source_files_properties(
   ${PROJECT_BINARY_DIR}/include/config.h PROPERTIES GENERATED TRUE
 )
-configure_file(
-  ${PROJECT_SOURCE_DIR}/include/version.h.in
-  ${PROJECT_BINARY_DIR}/include/version.h
-)
-set_source_files_properties(
-  ${PROJECT_BINARY_DIR}/include/version.h PROPERTIES GENERATED TRUE
-)
 include_directories(${PROJECT_BINARY_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
