@@ -35,6 +35,12 @@ include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C CXX)
 
+# Set fallback version. Fallback version is version of MoFEM core which is used
+# as default version if version from the git tags can not be extracted. For exammple 
+# that is a keys when somone commole mofem frome tarball.
+set(MoFEM_FALLBACK_VERSION "0.9.0" CACHE STRING "Fallback version")
+message(STATUS "Falback vecrsion v${MoFEM_FALLBACK_VERSION}")
+
 # Options
 option(STAND_ALLONE_USERS_MODULES 
   "If if ON copy files, othrewise make link" OFF)
@@ -119,7 +125,7 @@ find_package(Git)
 include(cmake/GetGitRevisionSimple.cmake)
 get_git_hash(${PROJECT_SOURCE_DIR} GIT_SHA1)
 message(STATUS "MoFEM GIT_SHA1 ${GIT_SHA1}")
-get_git_tag(${PROJECT_SOURCE_DIR} VERSION)
+get_git_tag(${PROJECT_SOURCE_DIR} "v${MoFEM_FALLBACK_VERSION}" VERSION)
 message(STATUS "MoFEM GIT_TAG ${VERSION}")
 get_git_version(
   ${VERSION} MoFEM_VERSION_MAJOR MoFEM_VERSION_MINOR MoFEM_VERSION_BUILD)
