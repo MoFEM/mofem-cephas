@@ -29,7 +29,7 @@ endfunction()
 
 function(get_git_tag GIT_DIR _gittag) 
   execute_process(COMMAND
-    "${GIT_EXECUTABLE}" describe --tags 
+    "${GIT_EXECUTABLE}" describe --always --tags 
     WORKING_DIRECTORY ${GIT_DIR}
     OUTPUT_VARIABLE GIT_TAG
     RESULT_VARIABLE res)
