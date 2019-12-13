@@ -100,11 +100,21 @@ ContactPrismElementForcesAndSourcesCore::
   dataH1Slave.dataOnEntities[MBTRI].push_back(
       new DataForcesAndSourcesCore::EntData());
 
+  dataHdivMaster.dataOnEntities[MBTRI].push_back(
+      new DataForcesAndSourcesCore::EntData());
+  dataHdivSlave.dataOnEntities[MBTRI].push_back(
+      new DataForcesAndSourcesCore::EntData());
+
   // Data on elements for proper spaces
   dataOnMaster[H1]->setElementType(MBTRI);
   derivedDataOnMaster[H1]->setElementType(MBTRI);
   dataOnSlave[H1]->setElementType(MBTRI);
   derivedDataOnSlave[H1]->setElementType(MBTRI);
+
+  dataOnMaster[HDIV]->setElementType(MBTRI);
+  derivedDataOnMaster[HDIV]->setElementType(MBTRI);
+  dataOnSlave[HDIV]->setElementType(MBTRI);
+  derivedDataOnSlave[HDIV]->setElementType(MBTRI);
 }
 
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
@@ -211,6 +221,42 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     }
 
     if (shift == 0) {
+      data.dataOnEntities[MBTRI][0].getSense() =
+          copy_data.dataOnEntities[MBTRI][3].getSense();
+      data.dataOnEntities[MBTRI][0].getDataOrder() =
+          copy_data.dataOnEntities[MBTRI][3].getDataOrder();
+    } else {
+      data.dataOnEntities[MBTRI][0].getSense() =
+          copy_data.dataOnEntities[MBTRI][4].getSense();
+      data.dataOnEntities[MBTRI][0].getDataOrder() =
+          copy_data.dataOnEntities[MBTRI][4].getDataOrder();
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  auto copy_data_hdiv = [](DataForcesAndSourcesCore &data,
+                      DataForcesAndSourcesCore &copy_data, const int shift) {
+    MoFEMFunctionBegin;
+
+    if (shift != 3 && shift != 4) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong shift for contact prism element");
+    }
+
+    data.sPace = copy_data.sPace;
+    data.bAse = copy_data.bAse;
+    data.spacesOnEntities[MBVERTEX] = copy_data.spacesOnEntities[MBVERTEX];
+    data.spacesOnEntities[MBTRI] = copy_data.spacesOnEntities[MBTRI];
+
+    data.basesOnEntities[MBVERTEX] = copy_data.basesOnEntities[MBVERTEX];
+    data.basesOnEntities[MBTRI] = copy_data.basesOnEntities[MBTRI];
+
+    data.basesOnSpaces[MBVERTEX] = copy_data.basesOnSpaces[MBVERTEX];
+    data.basesOnSpaces[MBTRI] = copy_data.basesOnSpaces[MBTRI];
+
+    
+    if (shift == 3) {
       data.dataOnEntities[MBTRI][0].getSense() =
           copy_data.dataOnEntities[MBTRI][3].getSense();
       data.dataOnEntities[MBTRI][0].getDataOrder() =
@@ -333,7 +379,23 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
           dataOnMaster[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
       dataH1Slave.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
           dataOnSlave[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-    }
+      if (space == HDIV) {
+        if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+
+          cerr << " CERR H DIV \n";
+          CHKERR clean_data(dataHdivSlave);
+          CHKERR copy_data_hdiv(dataHdivSlave, dataH1, 4);
+          CHKERR clean_data(dataHdivMaster);
+          CHKERR copy_data_hdiv(dataHdivMaster, dataH1, 3);
+
+          // dataHdivMaster.dataOnEntities[MBTRI][0].getNSharedPtr(NOBASE) =
+          //     dataOnMaster[HDIV]->dataOnEntities[MBTRI][3].getNSharedPtr(
+          //         NOBASE);
+          // dataHdivSlave.dataOnEntities[MBTRI][0].getNSharedPtr(NOBASE) =
+          //     dataOnSlave[HDIV]->dataOnEntities[MBTRI][4].getNSharedPtr(NOBASE);
+        }
+}
+          }
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
     if (dataH1.bAse.test(b)) {
@@ -356,9 +418,38 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
         }
 
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Not yet implemented");
-        }
+          cerr << " \n\n\n\n\n\n SDAASDASDAS " << gaussPtsMaster.size1() << " \n\n\n";
+
+          cerr << " \n\n\n\n\n\n SDAASDASDAS \n\n\n";
+          cerr << " \n\n\n\n\n\n SDAASDASDAS \n\n\n";
+          cerr << " \n\n\n\n\n\n SDAASDASDAS \n\n\n";
+          cerr << " \n\n\n\n\n\n SDAASDASDAS \n\n\n";
+          cerr << " \n\n\n\n\n\n SDAASDASDAS \n\n\n";
+          cerr << " \n\n\n\n\n\n SDAASDASDAS"
+               << gaussPtsMaster.size1() << " \n\n\n";
+          CHKERR getUserPolynomialBase()->getValue(
+              gaussPtsMaster,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataHdivMaster, HDIV, static_cast<FieldApproximationBase>(b),
+                  NOBASE)));
+
+          CHKERR getUserPolynomialBase()->getValue(
+              gaussPtsSlave,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
+                  NOBASE)));
+
+          cerr << " \n\n\n\n\n\n ASSERTION \n\n\n";
+          cerr << " \n\n\n\n\n\n ASSERTION \n\n\n";
+          cerr << " \n\n\n\n\n\n ASSERTION \n\n\n";
+          cerr << " \n\n\n\n\n\n ASSERTION \n\n\n";
+          cerr << " \n\n\n\n\n\n ASSERTION \n\n\n";
+          }
+
+        // if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+        //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        //           "Not yet implemented");
+        // }
         if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
