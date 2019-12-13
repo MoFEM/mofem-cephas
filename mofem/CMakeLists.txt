@@ -35,7 +35,7 @@ include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C CXX)
 
-# Set fallback version. Fallback version is version of MoFEM core which is used
+# Set fallback version. Fallback version is version of MoFEM which is used
 # as default version if version from the git tags can not be extracted. For exammple 
 # that is a keys when somone commole mofem frome tarball.
 set(MoFEM_FALLBACK_VERSION "0.9.0" CACHE STRING "Fallback version")
