@@ -1116,9 +1116,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
         // Run operator
         try {
-          CHKERR oit->opRhs(*dataOnElement[oit->sPace], oit->doVertices,
-                            oit->doEdges, oit->doQuads, oit->doTris,
-                            oit->doTets, false);
+          CHKERR oit->opRhs(*dataOnElement[oit->sPace], oit->doEntities, false);
         }
         CATCH_OP_ERRORS(*oit);
 

@@ -423,13 +423,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
 
       // Run operator
       try {
-        CHKERR oit->opRhs(*dataOnMaster[oit->sPace], oit->doVertices,
-                          oit->doEdges, oit->doQuads, oit->doTris, oit->doTets,
-                          false);
-
-        CHKERR oit->opRhs(*dataOnSlave[oit->sPace], oit->doVertices,
-                          oit->doEdges, oit->doQuads, oit->doTris, oit->doTets,
-                          false);
+        CHKERR oit->opRhs(*dataOnMaster[oit->sPace], oit->doEntities, false);
+        CHKERR oit->opRhs(*dataOnSlave[oit->sPace], oit->doEntities, false);
       }
       CATCH_OP_ERRORS(*oit);
 
@@ -451,7 +446,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
 
         if ((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData() &
              data_id)
-                .none()) 
+                .none())
           SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                    "no data field < %s > on finite element < %s >",
                    field_name.c_str(), feName.c_str());

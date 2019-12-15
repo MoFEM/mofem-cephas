@@ -102,12 +102,8 @@ OpCalculateJacForFace::doWork(int side, EntityType type,
             "Operator not implemented for this entity type");
   };
 
-  doVertices = true;
-  doEdges = false;
-  doQuads = false;
-  doTris = false;
-  doTets = false;
-  doPrisms = false;
+  doEntities[MBVERTEX] = true;
+  std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
 
   MoFEMFunctionReturn(0);
 }
@@ -202,12 +198,8 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
             "Operator not implemented for this entity type");
   };
 
-  doVertices = true;
-  doEdges = false;
-  doQuads = false;
-  doTris = false;
-  doTets = false;
-  doPrisms = false;
+  doEntities[MBVERTEX] = true;
+  std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
 
   MoFEMFunctionReturn(0);
 }
@@ -576,12 +568,8 @@ OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
     }
   }
 
-  doVertices = true;
-  doEdges = false;
-  doQuads = false;
-  doTris = false;
-  doTets = false;
-  doPrisms = false;
+  doEntities[MBVERTEX] = true;
+  std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
 
   MoFEMFunctionReturn(0);
 }
@@ -654,12 +642,8 @@ OpCalculateInvJacForFlatPrism::doWork(int side, EntityType type,
     invJacF3(1, 1) = j00_f3 / det_f3;
   }
 
-  doVertices = true;
-  doEdges = false;
-  doQuads = false;
-  doTris = false;
-  doTets = false;
-  doPrisms = false;
+  doEntities[MBVERTEX] = true;
+  std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
 
   MoFEMFunctionReturn(0);
 }

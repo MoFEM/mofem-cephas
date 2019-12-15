@@ -35,15 +35,8 @@ namespace MoFEM {
  */
 struct DataOperator {
 
-  DataOperator(const bool symm = true, const bool do_vertices = true,
-               const bool do_edges = true, const bool do_quads = true,
-               const bool do_tris = true, const bool do_tets = true,
-               const bool do_prisms = true)
-      : sYmm(symm), doVertices(do_vertices), doEdges(do_edges),
-        doQuads(do_quads), doTris(do_tris), doTets(do_tets),
-        doPrisms(do_prisms) {}
-
-  virtual ~DataOperator() {}
+  DataOperator(const bool symm = true);
+  virtual ~DataOperator() = default;
 
   /** \brief Operator for bi-linear form, usually to calculate values on left
    * hand side
@@ -78,24 +71,26 @@ struct DataOperator {
 
   virtual MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
                                const bool error_if_no_base = false) {
-    return opRhs(data, doVertices, doEdges, doQuads, doTris, doTets, doPrisms,
-                 error_if_no_base);
+    return opRhs(data, doEntities, error_if_no_base);
   }
 
   virtual MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
-                               const bool do_vertices, const bool do_edges,
-                               const bool do_quads, const bool do_tris,
-                               const bool do_tets, const bool do_prisms,
+                               const std::array<bool, MBMAXTYPE> &do_entities,
                                const bool error_if_no_base = false);
 
   bool sYmm; ///< If true assume that matrix is symmetric structure
 
-  bool doVertices; ///< If false skip vertices
-  bool doEdges;    ///< If false skip edges
-  bool doQuads;
-  bool doTris;
-  bool doTets;
-  bool doPrisms;
+  std::array<bool, MBMAXTYPE> doEntities; ///< If true entity evaluated
+
+  // Deprecated implementation should not be used, it will be keeped for some
+  // time, some users modules still use it. Use doEntities instread.
+
+  bool &doVertices; ///< \depreacted If false skip vertices
+  bool &doEdges;    ///< \depreacted If false skip edges
+  bool &doQuads;    ///< \depreacted
+  bool &doTris;     ///< \depreacted
+  bool &doTets;     ///< \depreacted
+  bool &doPrisms;   ///< \depreacted
 
   /**
    * \brief Get if operator uses symmetry of DOFs or not
@@ -122,9 +117,7 @@ private:
 
   template <bool ErrorIfNoBase>
   inline MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
-                              const bool do_vertices, const bool do_edges,
-                              const bool do_quads, const bool do_tris,
-                              const bool do_tets, const bool do_prisms);
+                              const std::array<bool, MBMAXTYPE> &do_entities);
 };
 
 /**

@@ -30,6 +30,24 @@ extern "C" {
 
 namespace MoFEM {
 
+DataOperator::DataOperator(const bool symm)
+    :
+
+      sYmm(true),
+
+      doVertices(doEntities[MBVERTEX]), doEdges(doEntities[MBEDGE]),
+      doQuads(doEntities[MBQUAD]), doTris(doEntities[MBTRI]),
+      doTets(doEntities[MBTET]), doPrisms(doEntities[MBPRISM])
+
+{
+  std::fill(doEntities.begin(), doEntities.end(), true);
+  // Not yet implemented
+  doEntities[MBPOLYGON] = false;
+  doEntities[MBKNIFE] = false;
+  doEntities[MBHEX] = false;
+  doEntities[MBPOLYHEDRON] = false;
+}
+
 template <bool Symm>
 MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
                                    DataForcesAndSourcesCore &col_data) {
@@ -86,10 +104,9 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
 }
 
 template <bool ErrorIfNoBase>
-MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
-                                   const bool do_vertices, const bool do_edges,
-                                   const bool do_quads, const bool do_tris,
-                                   const bool do_tets, const bool do_prisms) {
+MoFEMErrorCode
+DataOperator::opRhs(DataForcesAndSourcesCore &data,
+                    const std::array<bool, MBMAXTYPE> &do_entities) {
   MoFEMFunctionBegin;
 
   auto do_entity = [&](auto type) {
@@ -118,47 +135,21 @@ MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
     MoFEMFunctionReturn(0);
   };
 
-  if (do_vertices)
-    CHKERR do_entity(MBVERTEX);
-
-  if (do_edges)
-    CHKERR do_entity(MBEDGE);
-
-  if (do_edges)
-    CHKERR do_entity(MBTRI);
-
-  if (do_quads)
-    CHKERR do_entity(MBQUAD);
-
-  if (do_tets)
-    CHKERR do_entity(MBTET);
-
-  if (do_prisms)
-    CHKERR do_entity(MBPRISM);
-
-  // This is odd behaviour, diffrent than for other entities. Should be
-  // changed that behaviour is consistent,
-  for (unsigned int mm = 0; mm != data.dataOnEntities[MBENTITYSET].size();
-       ++mm) {
-    if (!data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty()) {
-      CHKERR doWork(mm, MBENTITYSET, data.dataOnEntities[MBENTITYSET][mm]);
-    }
-  }
+  for (EntityType row_type = MBVERTEX; row_type != MBMAXTYPE; ++row_type)
+    if (do_entities[row_type])
+      CHKERR do_entity(row_type);
 
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
-                                   const bool do_vertices, const bool do_edges,
-                                   const bool do_quads, const bool do_tris,
-                                   const bool do_tets, const bool do_prisms,
-                                   const bool error_if_no_base) {
+MoFEMErrorCode
+DataOperator::opRhs(DataForcesAndSourcesCore &data,
+                    const std::array<bool, MBMAXTYPE> &do_entities,
+                    const bool error_if_no_base) {
   if (error_if_no_base)
-    return opRhs<true>(data, do_vertices, do_edges, do_quads, do_tris, do_tets,
-                       do_prisms);
+    return opRhs<true>(data, do_entities);
   else
-    return opRhs<false>(data, do_vertices, do_edges, do_quads, do_tris, do_tets,
-                        do_prisms);
+    return opRhs<false>(data, do_entities);
 }
 
 template <>
