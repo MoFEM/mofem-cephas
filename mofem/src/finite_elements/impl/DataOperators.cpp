@@ -147,7 +147,7 @@ DataOperator::opRhs(DataForcesAndSourcesCore &data,
   if (do_entities[MBTET])
     CHKERR do_entity(MBTET);
 
-  if (do_entities[MPRISM])
+  if (do_entities[MBPRISM])
     CHKERR do_entity(MBPRISM);
 
   // This is odd behaviour, diffrent than for other entities. Should be
@@ -167,17 +167,16 @@ DataOperator::opRhs(DataForcesAndSourcesCore &data,
                     const std::array<bool, MBMAXTYPE> &do_entities,
                     const bool error_if_no_base) {
   if (error_if_no_base)
-    return opRhs<true>(data, do_vertices, do_entities);
+    return opRhs<true>(data, do_entities);
   else
-    return opRhs<false>(data, do_vertices, do_entities);
+    return opRhs<false>(data, do_entities);
 }
 
 template <>
 MoFEMErrorCode invertTensor3by3<3, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &jac_data, VectorDouble &det_data,
     MatrixDouble &inv_jac_data) {
-
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   auto A = getFTensor2FromMat<3, 3>(jac_data);
   int nb_gauss_pts = jac_data.size2();
   det_data.resize(nb_gauss_pts, false);
@@ -185,15 +184,13 @@ MoFEMErrorCode invertTensor3by3<3, double, ublas::row_major, DoubleAllocator>(
   auto det = getFTensor0FromVec(det_data);
   auto I = getFTensor2FromMat<3, 3>(inv_jac_data);
   for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-    ierr = determinantTensor3by3(A, det);
-    CHKERRG(ierr);
-    ierr = invertTensor3by3(A, det, I);
-    CHKERRG(ierr);
+    CHKERR determinantTensor3by3(A, det);
+    CHKERR invertTensor3by3(A, det, I);
     ++A;
     ++det;
     ++I;
   }
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
