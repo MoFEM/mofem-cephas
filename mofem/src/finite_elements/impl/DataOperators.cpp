@@ -35,474 +35,43 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
                                    DataForcesAndSourcesCore &col_data) {
   MoFEMFunctionBeginHot;
 
-  /**
-   * This function can be rewritten, with less code repetition. Each entity
-   * data has similar patter, which is not exploited. 
-   */
+  auto do_col_entity =
+      [&](boost::ptr_vector<DataForcesAndSourcesCore::EntData> &row_ent_data,
+          const int ss, const EntityType row_type, const EntityType low_type,
+          const EntityType hi_type) {
+        MoFEMFunctionBegin;
+        for (EntityType col_type = low_type; col_type != hi_type; ++col_type) {
+          auto &col_ent_data = col_data.dataOnEntities[col_type];
+          for (size_t SS = 0; SS != col_ent_data.size(); SS++) {
+            if (col_ent_data[SS].getFieldData().size())
+              CHKERR doWork(ss, SS, row_type, col_type, row_ent_data[ss],
+                            col_ent_data[SS]);
+          }
+        }
+        MoFEMFunctionReturn(0);
+      };
 
-  // nodes
-  for (unsigned int nn = 0; nn != row_data.dataOnEntities[MBVERTEX].size();
-       nn++) {
-    unsigned int NN = 0;
-    if (Symm)
-      NN = nn;
-    for (; NN != col_data.dataOnEntities[MBVERTEX].size(); NN++) {
-      ierr = doWork(nn, NN, MBVERTEX, MBVERTEX,
-                    row_data.dataOnEntities[MBVERTEX][0],
-                    col_data.dataOnEntities[MBVERTEX][0]);
-      CHKERRG(ierr);
-    }
-    if (!Symm) {
-      for (unsigned int EE = 0; EE < col_data.dataOnEntities[MBEDGE].size();
-           EE++) {
-        if (col_data.dataOnEntities[MBEDGE][EE].getN().size1() == 0)
-          continue;
-        ierr = doWork(nn, EE, MBVERTEX, MBEDGE,
-                      row_data.dataOnEntities[MBVERTEX][0],
-                      col_data.dataOnEntities[MBEDGE][EE]);
-        CHKERRG(ierr);
+  auto do_row_entity = [&](const EntityType type) {
+    MoFEMFunctionBegin;
+    auto &row_ent_data = row_data.dataOnEntities[type];
+    for (size_t ss = 0; ss != row_ent_data.size(); ++ss) {
+      size_t SS = 0;
+      if (Symm)
+        SS = ss;
+      for (; SS < col_data.dataOnEntities[type].size(); SS++) {
+        CHKERR doWork(ss, SS, type, type, row_ent_data[ss],
+                      col_data.dataOnEntities[type][SS]);
       }
-      for (unsigned int FF = 0; FF < col_data.dataOnEntities[MBTRI].size();
-           FF++) {
-        if (col_data.dataOnEntities[MBTRI][FF].getN().size1() == 0)
-          continue;
-        ierr = doWork(nn, FF, MBVERTEX, MBTRI,
-                      row_data.dataOnEntities[MBVERTEX][0],
-                      col_data.dataOnEntities[MBTRI][FF]);
-        CHKERRG(ierr);
-      }
-      for (unsigned int QQ = 0; QQ < col_data.dataOnEntities[MBQUAD].size();
-           QQ++) {
-        if (col_data.dataOnEntities[MBQUAD][QQ].getN().size1() == 0)
-          continue;
-        ierr = doWork(nn, QQ, MBVERTEX, MBQUAD,
-                      row_data.dataOnEntities[MBVERTEX][0],
-                      col_data.dataOnEntities[MBQUAD][QQ]);
-        CHKERRG(ierr);
-      }
+      if (!Symm)
+        CHKERR do_col_entity(row_ent_data, ss, type, MBVERTEX, type);
+      CHKERR do_col_entity(row_ent_data, ss, type,
+                           static_cast<EntityType>(type + 1), MBMAXTYPE);
     }
-    for (unsigned int VV = 0; VV < col_data.dataOnEntities[MBTET].size();
-         VV++) {
-      if (col_data.dataOnEntities[MBTET][VV].getN().size1() == 0)
-        continue;
-      ierr =
-          doWork(nn, VV, MBVERTEX, MBTET, row_data.dataOnEntities[MBVERTEX][0],
-                 col_data.dataOnEntities[MBTET][VV]);
-      CHKERRG(ierr);
-    }
-    for (unsigned int PP = 0; PP < col_data.dataOnEntities[MBPRISM].size();
-         PP++) {
-      if (col_data.dataOnEntities[MBPRISM][PP].getN().size1() == 0)
-        continue;
-      ierr = doWork(nn, PP, MBVERTEX, MBPRISM,
-                    row_data.dataOnEntities[MBVERTEX][0],
-                    col_data.dataOnEntities[MBPRISM][PP]);
-      CHKERRG(ierr);
-    }
-    for (unsigned int MM = 0; MM < col_data.dataOnEntities[MBENTITYSET].size();
-         MM++) {
-      if (row_data.dataOnEntities[MBENTITYSET][MM].getIndices().empty() &&
-          row_data.dataOnEntities[MBENTITYSET][MM].getFieldData().empty())
-        continue;
-      ierr = doWork(nn, MM, MBVERTEX, MBENTITYSET,
-                    row_data.dataOnEntities[MBVERTEX][0],
-                    col_data.dataOnEntities[MBENTITYSET][MM]);
-      CHKERRG(ierr);
-    }
-  }
+    MoFEMFunctionReturn(0);
+  };
 
-  // edges
-  for (unsigned int ee = 0; ee < row_data.dataOnEntities[MBEDGE].size(); ee++) {
-    if (row_data.dataOnEntities[MBEDGE][ee].getN().size1() == 0)
-      continue;
-    for (unsigned int NN = 0; NN != col_data.dataOnEntities[MBVERTEX].size();
-         NN++) {
-      ierr =
-          doWork(ee, NN, MBEDGE, MBVERTEX, row_data.dataOnEntities[MBEDGE][ee],
-                 col_data.dataOnEntities[MBVERTEX][0]);
-      CHKERRG(ierr);
-    }
-    unsigned int EE = 0;
-    if (Symm)
-      EE = ee;
-    for (; EE < col_data.dataOnEntities[MBEDGE].size(); EE++) {
-      if (col_data.dataOnEntities[MBEDGE][EE].getN().size1() == 0)
-        continue;
-      ierr = doWork(ee, EE, MBEDGE, MBEDGE, row_data.dataOnEntities[MBEDGE][ee],
-                    col_data.dataOnEntities[MBEDGE][EE]);
-      CHKERRG(ierr);
-    }
-    // tris
-    for (unsigned int FF = 0; FF < col_data.dataOnEntities[MBTRI].size();
-         FF++) {
-      if (col_data.dataOnEntities[MBTRI][FF].getN().size1() == 0)
-        continue;
-      ierr = doWork(ee, FF, MBEDGE, MBTRI, row_data.dataOnEntities[MBEDGE][ee],
-                    col_data.dataOnEntities[MBTRI][FF]);
-      CHKERRG(ierr);
-    }
-    // quad
-    for (unsigned int QQ = 0; QQ < col_data.dataOnEntities[MBQUAD].size();
-         QQ++) {
-      if (col_data.dataOnEntities[MBQUAD][QQ].getN().size1() == 0)
-        continue;
-      ierr = doWork(ee, QQ, MBEDGE, MBQUAD, row_data.dataOnEntities[MBEDGE][ee],
-                    col_data.dataOnEntities[MBQUAD][QQ]);
-      CHKERRG(ierr);
-    }
-    // tet
-    for (unsigned int VV = 0; VV < col_data.dataOnEntities[MBTET].size();
-         VV++) {
-      if (col_data.dataOnEntities[MBTET][VV].getN().size1() == 0)
-        continue;
-      ierr = doWork(ee, VV, MBEDGE, MBTET, row_data.dataOnEntities[MBEDGE][ee],
-                    col_data.dataOnEntities[MBTET][VV]);
-      CHKERRG(ierr);
-    }
-    // prism
-    for (unsigned int PP = 0; PP < col_data.dataOnEntities[MBPRISM].size();
-         PP++) {
-      if (col_data.dataOnEntities[MBPRISM][PP].getN().size1() == 0)
-        continue;
-      ierr =
-          doWork(ee, PP, MBEDGE, MBPRISM, row_data.dataOnEntities[MBEDGE][ee],
-                 col_data.dataOnEntities[MBPRISM][PP]);
-      CHKERRG(ierr);
-    }
-    for (unsigned int MM = 0; MM < col_data.dataOnEntities[MBENTITYSET].size();
-         MM++) {
-      if (col_data.dataOnEntities[MBENTITYSET][MM].getIndices().empty() &&
-          col_data.dataOnEntities[MBENTITYSET][MM].getFieldData().empty())
-        continue;
-      ierr = doWork(ee, MM, MBEDGE, MBENTITYSET,
-                    row_data.dataOnEntities[MBEDGE][ee],
-                    col_data.dataOnEntities[MBENTITYSET][MM]);
-      CHKERRG(ierr);
-    }
-  }
-
-  // tris
-  for (unsigned int ff = 0; ff < row_data.dataOnEntities[MBTRI].size(); ff++) {
-    if (row_data.dataOnEntities[MBTRI][ff].getN().size1() == 0)
-      continue;
-    for (unsigned int NN = 0; NN != col_data.dataOnEntities[MBVERTEX].size();
-         NN++) {
-      ierr = doWork(ff, NN, MBTRI, MBVERTEX, row_data.dataOnEntities[MBTRI][ff],
-                    col_data.dataOnEntities[MBVERTEX][0]);
-      CHKERRG(ierr);
-    }
-    if (!Symm) {
-      unsigned int EE = 0;
-      for (; EE < col_data.dataOnEntities[MBEDGE].size(); EE++) {
-        if (col_data.dataOnEntities[MBEDGE][EE].getN().size1() == 0)
-          continue;
-        ierr = doWork(ff, EE, MBTRI, MBEDGE, row_data.dataOnEntities[MBTRI][ff],
-                      col_data.dataOnEntities[MBEDGE][EE]);
-        CHKERRG(ierr);
-      }
-    }
-    unsigned int FF = 0;
-    if (Symm)
-      FF = ff;
-    for (; FF < col_data.dataOnEntities[MBTRI].size(); FF++) {
-      if (col_data.dataOnEntities[MBTRI][FF].getN().size1() == 0)
-        continue;
-      ierr = doWork(ff, FF, MBTRI, MBTRI, row_data.dataOnEntities[MBTRI][ff],
-                    col_data.dataOnEntities[MBTRI][FF]);
-      CHKERRG(ierr);
-    }
-    for (unsigned int QQ = 0; QQ < col_data.dataOnEntities[MBQUAD].size();
-         QQ++) {
-      if (col_data.dataOnEntities[MBQUAD][QQ].getN().size1() == 0)
-        continue;
-      ierr = doWork(ff, QQ, MBTRI, MBQUAD, row_data.dataOnEntities[MBTRI][ff],
-                    col_data.dataOnEntities[MBQUAD][QQ]);
-      CHKERRG(ierr);
-    }
-    for (unsigned int VV = 0; VV < col_data.dataOnEntities[MBTET].size();
-         VV++) {
-      if (col_data.dataOnEntities[MBTET][VV].getN().size1() == 0)
-        continue;
-      ierr = doWork(ff, VV, MBTRI, MBTET, row_data.dataOnEntities[MBTRI][ff],
-                    col_data.dataOnEntities[MBTET][VV]);
-      CHKERRG(ierr);
-    }
-    for (unsigned int PP = 0; PP < col_data.dataOnEntities[MBPRISM].size();
-         PP++) {
-      if (col_data.dataOnEntities[MBPRISM][PP].getN().size1() == 0)
-        continue;
-      ierr = doWork(ff, PP, MBTRI, MBPRISM, row_data.dataOnEntities[MBTRI][ff],
-                    col_data.dataOnEntities[MBPRISM][PP]);
-      CHKERRG(ierr);
-    }
-    for (unsigned int MM = 0; MM < col_data.dataOnEntities[MBENTITYSET].size();
-         MM++) {
-      if (col_data.dataOnEntities[MBENTITYSET][MM].getIndices().empty() &&
-          col_data.dataOnEntities[MBENTITYSET][MM].getFieldData().empty())
-        continue;
-      ierr =
-          doWork(ff, MM, MBTRI, MBENTITYSET, row_data.dataOnEntities[MBTRI][ff],
-                 col_data.dataOnEntities[MBENTITYSET][MM]);
-      CHKERRG(ierr);
-    }
-  }
-
-  // quads
-  for (unsigned int qq = 0; qq < row_data.dataOnEntities[MBQUAD].size(); qq++) {
-    if (row_data.dataOnEntities[MBQUAD][qq].getN().size1() == 0)
-      continue;
-    for (unsigned int NN = 0; NN != col_data.dataOnEntities[MBVERTEX].size();
-         NN++) {
-      ierr =
-          doWork(qq, NN, MBQUAD, MBVERTEX, row_data.dataOnEntities[MBQUAD][qq],
-                 col_data.dataOnEntities[MBVERTEX][0]);
-      CHKERRG(ierr);
-    }
-    if (!Symm) {
-      unsigned int EE = 0;
-      for (; EE < col_data.dataOnEntities[MBEDGE].size(); EE++) {
-        if (col_data.dataOnEntities[MBEDGE][EE].getN().size1() == 0)
-          continue;
-        ierr =
-            doWork(qq, EE, MBQUAD, MBEDGE, row_data.dataOnEntities[MBQUAD][qq],
-                   col_data.dataOnEntities[MBEDGE][EE]);
-        CHKERRG(ierr);
-      }
-      unsigned int FF = 0;
-      for (; FF < col_data.dataOnEntities[MBTRI].size(); FF++) {
-        if (col_data.dataOnEntities[MBTRI][FF].getN().size1() == 0)
-          continue;
-        ierr =
-            doWork(qq, FF, MBQUAD, MBTRI, row_data.dataOnEntities[MBQUAD][qq],
-                   col_data.dataOnEntities[MBTRI][FF]);
-        CHKERRG(ierr);
-      }
-    }
-    unsigned int QQ = 0;
-    if (Symm)
-      QQ = qq;
-    for (; QQ < col_data.dataOnEntities[MBQUAD].size(); QQ++) {
-      if (col_data.dataOnEntities[MBQUAD][QQ].getN().size1() == 0)
-        continue;
-      ierr = doWork(qq, QQ, MBQUAD, MBQUAD, row_data.dataOnEntities[MBQUAD][qq],
-                    col_data.dataOnEntities[MBQUAD][QQ]);
-      CHKERRG(ierr);
-    }
-    for (unsigned int PP = 0; PP < col_data.dataOnEntities[MBPRISM].size();
-         PP++) {
-      if (col_data.dataOnEntities[MBPRISM][PP].getN().size1() == 0)
-        continue;
-      ierr = doWork(qq, PP, MBTRI, MBPRISM, row_data.dataOnEntities[MBQUAD][qq],
-                    col_data.dataOnEntities[MBPRISM][PP]);
-      CHKERRG(ierr);
-    }
-    for (unsigned int MM = 0; MM < col_data.dataOnEntities[MBENTITYSET].size();
-         MM++) {
-      if (col_data.dataOnEntities[MBENTITYSET][MM].getIndices().empty() &&
-          col_data.dataOnEntities[MBENTITYSET][MM].getFieldData().empty())
-        continue;
-      ierr = doWork(qq, MM, MBQUAD, MBENTITYSET,
-                    row_data.dataOnEntities[MBQUAD][qq],
-                    col_data.dataOnEntities[MBENTITYSET][MM]);
-      CHKERRG(ierr);
-    }
-  }
-
-  // volumes
-  for (unsigned int vv = 0; vv < row_data.dataOnEntities[MBTET].size(); vv++) {
-    if (row_data.dataOnEntities[MBTET][vv].getN().size1() == 0)
-      continue;
-    if (!Symm) {
-      // vertex
-      for (unsigned int NN = 0; NN != col_data.dataOnEntities[MBVERTEX].size();
-           NN++) {
-        ierr =
-            doWork(vv, NN, MBTET, MBVERTEX, row_data.dataOnEntities[MBTET][vv],
-                   col_data.dataOnEntities[MBVERTEX][0]);
-        CHKERRG(ierr);
-      }
-      // edges
-      for (unsigned int EE = 0; EE < col_data.dataOnEntities[MBEDGE].size();
-           EE++) {
-        if (col_data.dataOnEntities[MBEDGE][EE].getN().size1() == 0)
-          continue;
-        ierr = doWork(vv, EE, MBTET, MBEDGE, row_data.dataOnEntities[MBTET][vv],
-                      col_data.dataOnEntities[MBEDGE][EE]);
-        CHKERRG(ierr);
-      }
-      // faces
-      for (unsigned int FF = 0; FF < col_data.dataOnEntities[MBTRI].size();
-           FF++) {
-        if (col_data.dataOnEntities[MBTRI][FF].getN().size1() == 0)
-          continue;
-        ierr = doWork(vv, FF, MBTET, MBTRI, row_data.dataOnEntities[MBTET][vv],
-                      col_data.dataOnEntities[MBTRI][FF]);
-        CHKERRG(ierr);
-      }
-    }
-    unsigned int VV = 0;
-    if (Symm)
-      VV = vv;
-    for (; VV < col_data.dataOnEntities[MBTET].size(); VV++) {
-      if (col_data.dataOnEntities[MBTET][VV].getN().size1() == 0)
-        continue;
-      ierr = doWork(vv, VV, MBTET, MBTET, row_data.dataOnEntities[MBTET][vv],
-                    col_data.dataOnEntities[MBTET][VV]);
-      CHKERRG(ierr);
-    }
-    for (unsigned int MM = 0; MM < col_data.dataOnEntities[MBENTITYSET].size();
-         MM++) {
-      if (col_data.dataOnEntities[MBENTITYSET][MM].getIndices().empty() &&
-          col_data.dataOnEntities[MBENTITYSET][MM].getFieldData().empty())
-        continue;
-      ierr =
-          doWork(vv, MM, MBTET, MBENTITYSET, row_data.dataOnEntities[MBTET][vv],
-                 col_data.dataOnEntities[MBENTITYSET][MM]);
-      CHKERRG(ierr);
-    }
-  }
-
-  for (unsigned int pp = 0; pp < row_data.dataOnEntities[MBPRISM].size();
-       pp++) {
-    if (row_data.dataOnEntities[MBPRISM][pp].getN().size1() == 0)
-      continue;
-    if (!Symm) {
-      // vertex
-      for (unsigned int NN = 0; NN != col_data.dataOnEntities[MBVERTEX].size();
-           NN++) {
-        ierr = doWork(pp, NN, MBPRISM, MBVERTEX,
-                      row_data.dataOnEntities[MBPRISM][pp],
-                      col_data.dataOnEntities[MBVERTEX][0]);
-        CHKERRG(ierr);
-      }
-      // edges
-      for (unsigned int EE = 0; EE < col_data.dataOnEntities[MBEDGE].size();
-           EE++) {
-        if (col_data.dataOnEntities[MBEDGE][EE].getN().size1() == 0)
-          continue;
-        ierr = doWork(pp, EE, MBPRISM, MBEDGE,
-                      row_data.dataOnEntities[MBPRISM][pp],
-                      col_data.dataOnEntities[MBEDGE][EE]);
-        CHKERRG(ierr);
-      }
-      // faces
-      for (unsigned int FF = 0; FF < col_data.dataOnEntities[MBTRI].size();
-           FF++) {
-        if (col_data.dataOnEntities[MBTRI][FF].getN().size1() == 0)
-          continue;
-        ierr =
-            doWork(pp, FF, MBPRISM, MBTRI, row_data.dataOnEntities[MBPRISM][pp],
-                   col_data.dataOnEntities[MBTRI][FF]);
-        CHKERRG(ierr);
-      }
-      // quads
-      for (unsigned int QQ = 0; QQ < col_data.dataOnEntities[MBQUAD].size();
-           QQ++) {
-        if (col_data.dataOnEntities[MBQUAD][QQ].getN().size1() == 0)
-          continue;
-        ierr = doWork(pp, QQ, MBPRISM, MBQUAD,
-                      row_data.dataOnEntities[MBPRISM][pp],
-                      col_data.dataOnEntities[MBQUAD][QQ]);
-        CHKERRG(ierr);
-      }
-    }
-    unsigned int PP = 0;
-    if (Symm)
-      PP = pp;
-    for (; PP < col_data.dataOnEntities[MBPRISM].size(); PP++) {
-      if (col_data.dataOnEntities[MBPRISM][PP].getN().size1() == 0)
-        continue;
-      ierr =
-          doWork(pp, PP, MBPRISM, MBPRISM, row_data.dataOnEntities[MBPRISM][pp],
-                 col_data.dataOnEntities[MBPRISM][PP]);
-      CHKERRG(ierr);
-    }
-    for (unsigned int MM = 0; MM < col_data.dataOnEntities[MBENTITYSET].size();
-         MM++) {
-      if (col_data.dataOnEntities[MBENTITYSET][MM].getIndices().empty() &&
-          col_data.dataOnEntities[MBENTITYSET][MM].getFieldData().empty())
-        continue;
-      ierr = doWork(pp, MM, MBPRISM, MBENTITYSET,
-                    row_data.dataOnEntities[MBPRISM][pp],
-                    col_data.dataOnEntities[MBENTITYSET][MM]);
-      CHKERRG(ierr);
-    }
-  }
-
-  // meshsets
-  for (unsigned int mm = 0; mm < row_data.dataOnEntities[MBENTITYSET].size();
-       mm++) {
-    if (row_data.dataOnEntities[MBENTITYSET][mm].getIndices().empty() &&
-        row_data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty())
-      continue;
-    if (!Symm) {
-      // vertex
-      for (unsigned int NN = 0; NN != col_data.dataOnEntities[MBVERTEX].size();
-           NN++) {
-        ierr = doWork(mm, NN, MBENTITYSET, MBVERTEX,
-                      row_data.dataOnEntities[MBENTITYSET][mm],
-                      col_data.dataOnEntities[MBVERTEX][0]);
-        CHKERRG(ierr);
-      }
-      // edges
-      for (unsigned int EE = 0; EE < col_data.dataOnEntities[MBEDGE].size();
-           EE++) {
-        if (col_data.dataOnEntities[MBEDGE][EE].getN().size1() == 0)
-          continue;
-        ierr = doWork(mm, EE, MBENTITYSET, MBEDGE,
-                      row_data.dataOnEntities[MBENTITYSET][mm],
-                      col_data.dataOnEntities[MBEDGE][EE]);
-        CHKERRG(ierr);
-      }
-      // faces
-      for (unsigned int FF = 0; FF < col_data.dataOnEntities[MBTRI].size();
-           FF++) {
-        if (col_data.dataOnEntities[MBTRI][FF].getN().size1() == 0)
-          continue;
-        ierr = doWork(mm, FF, MBENTITYSET, MBTRI,
-                      row_data.dataOnEntities[MBENTITYSET][mm],
-                      col_data.dataOnEntities[MBTRI][FF]);
-        CHKERRG(ierr);
-      }
-      // quad
-      for (unsigned int QQ = 0; QQ < col_data.dataOnEntities[MBQUAD].size();
-           QQ++) {
-        if (col_data.dataOnEntities[MBQUAD][QQ].getN().size1() == 0)
-          continue;
-        ierr = doWork(mm, QQ, MBENTITYSET, MBQUAD,
-                      row_data.dataOnEntities[MBENTITYSET][mm],
-                      col_data.dataOnEntities[MBQUAD][QQ]);
-        CHKERRG(ierr);
-      }
-      // volume
-      for (unsigned int VV = 0; VV < col_data.dataOnEntities[MBTET].size();
-           VV++) {
-        ierr = doWork(mm, VV, MBENTITYSET, MBTET,
-                      row_data.dataOnEntities[MBENTITYSET][mm],
-                      col_data.dataOnEntities[MBTET][VV]);
-        CHKERRG(ierr);
-      }
-      for (unsigned int PP = 0; PP < col_data.dataOnEntities[MBPRISM].size();
-           PP++) {
-        ierr = doWork(mm, PP, MBENTITYSET, MBPRISM,
-                      row_data.dataOnEntities[MBENTITYSET][mm],
-                      col_data.dataOnEntities[MBPRISM][PP]);
-        CHKERRG(ierr);
-      }
-    }
-    unsigned int MM = 0;
-    if (Symm)
-      MM = mm;
-    for (; MM < col_data.dataOnEntities[MBENTITYSET].size(); MM++) {
-      if (!row_data.dataOnEntities[MBENTITYSET][MM].getIndices().empty() ||
-          row_data.dataOnEntities[MBENTITYSET][MM].getFieldData().empty()) {
-        ierr = doWork(mm, MM, MBENTITYSET, MBENTITYSET,
-                      row_data.dataOnEntities[MBENTITYSET][mm],
-                      col_data.dataOnEntities[MBENTITYSET][MM]);
-        CHKERRG(ierr);
-      }
-    }
-  }
+  for (EntityType row_type = MBVERTEX; row_type != MBMAXTYPE; ++row_type)
+    CHKERR do_row_entity(row_type);
 
   MoFEMFunctionReturnHot(0);
 }
@@ -549,32 +118,31 @@ MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
     MoFEMFunctionReturn(0);
   };
 
-  if (do_vertices) 
+  if (do_vertices)
     CHKERR do_entity(MBVERTEX);
 
-   if (do_edges) 
+  if (do_edges)
     CHKERR do_entity(MBEDGE);
 
-   if (do_edges)
-     CHKERR do_entity(MBTRI);
+  if (do_edges)
+    CHKERR do_entity(MBTRI);
 
-   if (do_quads)
-     CHKERR do_entity(MBQUAD);
+  if (do_quads)
+    CHKERR do_entity(MBQUAD);
 
-   if (do_tets)
-     CHKERR do_entity(MBTET);
+  if (do_tets)
+    CHKERR do_entity(MBTET);
 
-   if (do_prisms)
-     CHKERR do_entity(MBPRISM);
+  if (do_prisms)
+    CHKERR do_entity(MBPRISM);
 
-   // This is odd behaviour, diffrent than for other entities. Should be
-   // changed that behaviour is consistent, 
-   for (unsigned int mm = 0; mm != data.dataOnEntities[MBENTITYSET].size();
-        ++mm) {
-     if (!data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty() ||
-         !data.dataOnEntities[MBENTITYSET][mm].getIndices().empty()) {
-       CHKERR doWork(mm, MBENTITYSET, data.dataOnEntities[MBENTITYSET][mm]);
-     }
+  // This is odd behaviour, diffrent than for other entities. Should be
+  // changed that behaviour is consistent,
+  for (unsigned int mm = 0; mm != data.dataOnEntities[MBENTITYSET].size();
+       ++mm) {
+    if (!data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty()) {
+      CHKERR doWork(mm, MBENTITYSET, data.dataOnEntities[MBENTITYSET][mm]);
+    }
   }
 
   MoFEMFunctionReturn(0);
