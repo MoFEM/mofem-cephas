@@ -43,7 +43,16 @@ DataOperator::DataOperator(const bool symm, const bool do_vertices,
 
       doVertices(doEntities[MBVERTEX]), doEdges(doEntities[MBEDGE]),
       doQuads(doEntities[MBQUAD]), doTris(doEntities[MBTRI]),
-      doTets(doEntities[MBTET]), doPrisms(doEntities[MBPRISM]) {}
+      doTets(doEntities[MBTET]), doPrisms(doEntities[MBPRISM]) {
+
+        /// This not yet implemented, switch off.
+        doEntities[MBPOLYGON] = false;
+        doEntities[MBPYRAMID] = false;
+        doEntities[MBKNIFE] = false;
+        doEntities[MBHEX] = false;
+        doEntities[MBPOLYHEDRON] = false;
+
+      }
 
 template <bool Symm>
 MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
@@ -133,18 +142,9 @@ DataOperator::opRhs(DataForcesAndSourcesCore &data,
   };
 
 
-  for(EntityType row_type = MBVERTEX; row_type != MBENTITYSET; ++row_type) {
+  for(EntityType row_type = MBVERTEX; row_type != MBMAXTYPE; ++row_type) {
     if(do_entities[row_type]) {
       CHKERR do_entity(row_type);
-    }
-  }
-
-  // This is odd behaviour, diffrent than for other entities. Should be
-  // changed that behaviour is consistent,
-  for (unsigned int mm = 0; mm != data.dataOnEntities[MBENTITYSET].size();
-       ++mm) {
-    if (!data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty()) {
-      CHKERR doWork(mm, MBENTITYSET, data.dataOnEntities[MBENTITYSET][mm]);
     }
   }
 
