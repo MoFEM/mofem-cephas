@@ -141,10 +141,20 @@ DataOperator::opRhs(DataForcesAndSourcesCore &data,
     MoFEMFunctionReturn(0);
   };
 
-
-  for(EntityType row_type = MBVERTEX; row_type != MBMAXTYPE; ++row_type) {
+  for(EntityType row_type = MBVERTEX; row_type != MBENTITYSET; ++row_type) {
     if(do_entities[row_type]) {
       CHKERR do_entity(row_type);
+    }
+  }
+
+  if (do_entities[MBENTITYSET]) {
+    // This is odd behaviour, diffrent than for other entities. Should be
+    // changed that behaviour is consistent,
+    for (unsigned int mm = 0; mm != data.dataOnEntities[MBENTITYSET].size();
+         ++mm) {
+      if (!data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty()) {
+        CHKERR doWork(mm, MBENTITYSET, data.dataOnEntities[MBENTITYSET][mm]);
+      }
     }
   }
 
