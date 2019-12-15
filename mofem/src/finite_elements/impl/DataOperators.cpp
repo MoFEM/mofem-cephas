@@ -132,23 +132,12 @@ DataOperator::opRhs(DataForcesAndSourcesCore &data,
     MoFEMFunctionReturn(0);
   };
 
-  if (do_entities[MBVERTEX])
-    CHKERR do_entity(MBVERTEX);
 
-  if (do_entities[MBEDGE])
-    CHKERR do_entity(MBEDGE);
-
-  if (do_entities[MBTRI])
-    CHKERR do_entity(MBTRI);
-
-  if (do_entities[MBQUAD])
-    CHKERR do_entity(MBQUAD);
-
-  if (do_entities[MBTET])
-    CHKERR do_entity(MBTET);
-
-  if (do_entities[MBPRISM])
-    CHKERR do_entity(MBPRISM);
+  for(EntityType row_type = MBVERTEX; row_type != MBENTITYSET; ++row_type) {
+    if(do_entities[row_type]) {
+      CHKERR do_entity(row_type);
+    }
+  }
 
   // This is odd behaviour, diffrent than for other entities. Should be
   // changed that behaviour is consistent,
