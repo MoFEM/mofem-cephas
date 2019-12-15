@@ -1262,7 +1262,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
 
         if (oit->getOpType() & UserDataOperator::OPROWCOL) {
           try {
-            CHKERR oit->opLhs(*op_data[0], *op_data[1], oit->sYmm);
+            CHKERR oit->opLhs(*op_data[0], *op_data[1]);
           }
           CATCH_OP_ERRORS(*oit);
         }

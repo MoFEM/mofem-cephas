@@ -627,7 +627,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
       if (oit->getOpType() & UserDataOperator::OPROWCOL &&
           (type & UserDataOperator::FACEMASTERMASTER)) {
         try {
-          CHKERR oit->opLhs(*op_master_data[0], *op_master_data[1], oit->sYmm);
+          CHKERR oit->opLhs(*op_master_data[0], *op_master_data[1]);
         }
         CATCH_OP_ERRORS(*oit);
       }
@@ -635,7 +635,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
       if (oit->getOpType() & UserDataOperator::OPROWCOL &&
           (type & UserDataOperator::FACEMASTERSLAVE)) {
         try {
-          CHKERR oit->opLhs(*op_master_data[0], *op_slave_data[1], oit->sYmm);
+          CHKERR oit->opLhs(*op_master_data[0], *op_slave_data[1]);
         }
         CATCH_OP_ERRORS(*oit);
       }
@@ -643,7 +643,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
       if (oit->getOpType() & UserDataOperator::OPROWCOL &&
           (type & UserDataOperator::FACESLAVEMASTER)) {
         try {
-          CHKERR oit->opLhs(*op_slave_data[0], *op_master_data[1], oit->sYmm);
+          CHKERR oit->opLhs(*op_slave_data[0], *op_master_data[1]);
         }
         CATCH_OP_ERRORS(*oit);
       }
@@ -651,7 +651,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
       if (oit->getOpType() & UserDataOperator::OPROWCOL &&
           (type & UserDataOperator::FACESLAVESLAVE)) {
         try {
-          CHKERR oit->opLhs(*op_slave_data[0], *op_slave_data[1], oit->sYmm);
+          CHKERR oit->opLhs(*op_slave_data[0], *op_slave_data[1]);
         }
         CATCH_OP_ERRORS(*oit);
       }

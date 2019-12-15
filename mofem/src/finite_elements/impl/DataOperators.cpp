@@ -101,9 +101,8 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
 }
 
 MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
-                                   DataForcesAndSourcesCore &col_data,
-                                   bool symm) {
-  if (symm)
+                                   DataForcesAndSourcesCore &col_data) {
+  if (getSymm())
     return opLhs<true>(row_data, col_data);
   else
     return opLhs<false>(row_data, col_data);

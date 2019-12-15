@@ -55,13 +55,7 @@ struct DataOperator {
   }
 
   virtual MoFEMErrorCode opLhs(DataForcesAndSourcesCore &row_data,
-                               DataForcesAndSourcesCore &col_data,
-                               bool symm = true);
-
-  virtual MoFEMErrorCode opLhs(DataForcesAndSourcesCore &row_data,
-                               DataForcesAndSourcesCore &col_data) {
-    return opLhs(row_data, col_data, getSymm());
-  }
+                               DataForcesAndSourcesCore &col_data);
 
   /** \brief Operator for linear form, usually to calculate values on right hand
    * side
