@@ -541,7 +541,7 @@ which a enable linking std lib c++ libraries.
 At that point, we can follow the standard installation procedure, as follows
 ~~~~~
 spack bootstrap
-spack install -j 2 -v --only dependencies mofem-cephas ^openmpi@3.0.0
+spack install -j 2 -v --only dependencies mofem-cephas%gcc@6.4.0 ^openmpi@3.0.0%gcc@6.4.0
 spack install mofem-users-modules
 ~~~~~
 
@@ -567,14 +567,14 @@ Create a script file with content as below and name it, for example, *job_spack*
 #$ -q gcec.q
 
 # File to which standard error should be directed
-#$ -e ./stderr
+#$ -e ./stdout_job_$JOB_ID
 
 # File to which standard output should be directed
-#$ -o ./stdout
+#$ -o ./stderr_job_$JOB_ID
 
 # E-mail address to which status updates should be sent
 # N.B.: in an array job, a separate e-mail will be sent for each task!
-#$ -M your.email@uni.ac.uk
+#$ -M your.email@glasgow.ac.uk
 
 # Events on which to send a status update
 #$ -m beas
@@ -582,7 +582,7 @@ Create a script file with content as below and name it, for example, *job_spack*
 # Request for 1.0 GB of memory per task (needed on Miffy and Dusty)
 #$ -l mem_tokens=1.0G
 
-#$ -pe mpi 2 # where N is the number of processors required
+#$ -pe mofem-* 2 # where N is the number of processors required
 
 # List of commands which do the actual work
 echo "$NSLOTS received"
@@ -606,6 +606,8 @@ and run it as follows
 qsub job_spack
 ~~~~~
 Results of the analysis are located in $HOME/um_view/elasticity. 
+
+
 
 # Spack usage and configuration {#spack_usage_config}
 
