@@ -30,6 +30,21 @@ extern "C" {
 
 namespace MoFEM {
 
+DataOperator::DataOperator(const bool symm, const bool do_vertices,
+                           const bool do_edges, const bool do_quads,
+                           const bool do_tris, const bool do_tets,
+                           const bool do_prisms)
+    :
+
+      sYmm(symm),
+
+      doEntities{true, true, true, true, true, true,
+                 true, true, true, true, true, true},
+
+      doVertices(doEntities[MBVERTEX]), doEdges(doEntities[MBEDGE]),
+      doQuads(doEntities[MBQUAD]), doTris(doEntities[MBTRI]),
+      doTets(doEntities[MBTET]), doPrisms(doEntities[MBPRISM]) {}
+
 template <bool Symm>
 MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
                                    DataForcesAndSourcesCore &col_data) {

@@ -38,12 +38,9 @@ struct DataOperator {
   DataOperator(const bool symm = true, const bool do_vertices = true,
                const bool do_edges = true, const bool do_quads = true,
                const bool do_tris = true, const bool do_tets = true,
-               const bool do_prisms = true)
-      : sYmm(symm), doVertices(do_vertices), doEdges(do_edges),
-        doQuads(do_quads), doTris(do_tris), doTets(do_tets),
-        doPrisms(do_prisms) {}
+               const bool do_prisms = true);
 
-  virtual ~DataOperator() {}
+  virtual ~DataOperator()  = default;
 
   /** \brief Operator for bi-linear form, usually to calculate values on left
    * hand side
@@ -90,12 +87,13 @@ struct DataOperator {
 
   bool sYmm; ///< If true assume that matrix is symmetric structure
 
-  bool doVertices; ///< If false skip vertices
-  bool doEdges;    ///< If false skip edges
-  bool doQuads;
-  bool doTris;
-  bool doTets;
-  bool doPrisms;
+  std::array<bool, MBMAXTYPE> doEntities;
+  bool &doVertices; ///< If false skip vertices
+  bool &doEdges;    ///< If false skip edges
+  bool &doQuads;
+  bool &doTris;
+  bool &doTets;
+  bool &doPrisms;
 
   /**
    * \brief Get if operator uses symmetry of DOFs or not
