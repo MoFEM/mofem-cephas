@@ -85,12 +85,16 @@ struct DataOperator {
   bool sYmm; ///< If true assume that matrix is symmetric structure
 
   std::array<bool, MBMAXTYPE> doEntities;
-  bool &doVertices; ///< If false skip vertices
-  bool &doEdges;    ///< If false skip edges
-  bool &doQuads;
-  bool &doTris;
-  bool &doTets;
-  bool &doPrisms;
+
+  // Deprecated variables. Use doEntities instead. I keep them for back 
+  // compatibility with some older modules. It will be removed in some future.
+
+  bool &doVertices; ///< \deprectaed If false skip vertices
+  bool &doEdges;    ///< \deprectaed If false skip edges
+  bool &doQuads;    ///< \deprectaed
+  bool &doTris;     ///< \deprectaed
+  bool &doTets;     ///< \deprectaed
+  bool &doPrisms;   ///< \deprectaed
 
   /**
    * \brief Get if operator uses symmetry of DOFs or not
