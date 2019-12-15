@@ -86,24 +86,6 @@ local indices: [6](24,25,26,27,28,29)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -192,24 +174,6 @@ local indices: [6](30,31,32,33,34,35)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -298,24 +262,6 @@ local indices: [6](36,37,38,39,40,41)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -404,24 +350,6 @@ local indices: [6](42,43,44,45,46,47)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -510,24 +438,6 @@ local indices: [6](48,49,50,51,52,53)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -616,24 +526,6 @@ local indices: [6](54,55,56,57,58,59)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -722,24 +614,6 @@ local indices: [6](60,61,62,63,64,65)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -828,24 +702,6 @@ local indices: [6](66,67,68,69,70,71)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -934,24 +790,6 @@ local indices: [6](72,73,74,75,76,77)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -1040,24 +878,6 @@ local indices: [6](78,79,80,81,82,83)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -1146,24 +966,6 @@ local indices: [6](84,85,86,87,88,89)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -1252,24 +1054,6 @@ local indices: [6](90,91,92,93,94,95)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -1358,24 +1142,6 @@ local indices: [6](96,97,98,99,100,101)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -1464,24 +1230,6 @@ local indices: [6](102,103,104,105,106,107)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -1570,24 +1318,6 @@ local indices: [6](108,109,110,111,112,113)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -1676,24 +1406,6 @@ local indices: [6](114,115,116,117,118,119)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -1782,24 +1494,6 @@ local indices: [6](120,121,122,123,124,125)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -1888,21 +1582,3 @@ local indices: [6](126,127,128,129,130,131)
 fieldData: [6](0.00,0.00,0.00,0.00,0.00,0.00)
 N: [4,2]((0.06,0.06),(0.06,-0.06),(0.22,0.08),(0.22,-0.08))
 diffN: [4,2]((0.86,0.87),(-0.86,0.87),(0.34,0.56),(-0.34,0.56))
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()

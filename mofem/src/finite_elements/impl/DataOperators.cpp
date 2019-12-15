@@ -45,14 +45,13 @@ DataOperator::DataOperator(const bool symm, const bool do_vertices,
       doQuads(doEntities[MBQUAD]), doTris(doEntities[MBTRI]),
       doTets(doEntities[MBTET]), doPrisms(doEntities[MBPRISM]) {
 
-        /// This not yet implemented, switch off.
-        doEntities[MBPOLYGON] = false;
-        doEntities[MBPYRAMID] = false;
-        doEntities[MBKNIFE] = false;
-        doEntities[MBHEX] = false;
-        doEntities[MBPOLYHEDRON] = false;
-
-      }
+  /// This not yet implemented, switch off.
+  doEntities[MBPOLYGON] = false;
+  doEntities[MBPYRAMID] = false;
+  doEntities[MBKNIFE] = false;
+  doEntities[MBHEX] = false;
+  doEntities[MBPOLYHEDRON] = false;
+}
 
 template <bool Symm>
 MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
@@ -94,8 +93,20 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
     MoFEMFunctionReturn(0);
   };
 
-  for (EntityType row_type = MBVERTEX; row_type != MBMAXTYPE; ++row_type)
-    CHKERR do_row_entity(row_type);
+  for (EntityType row_type = MBVERTEX; row_type != MBENTITYSET; ++row_type) {
+    if (doEntities[row_type]) {
+      CHKERR do_row_entity(row_type);
+    }
+  }
+
+  if (doEntities[MBENTITYSET]) {
+    for (unsigned int mm = 0; mm != row_data.dataOnEntities[MBENTITYSET].size();
+         ++mm) {
+      if (!row_data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty()) {
+        CHKERR do_row_entity(MBENTITYSET);
+      }
+    }
+  }
 
   MoFEMFunctionReturnHot(0);
 }
@@ -140,8 +151,8 @@ DataOperator::opRhs(DataForcesAndSourcesCore &data,
     MoFEMFunctionReturn(0);
   };
 
-  for(EntityType row_type = MBVERTEX; row_type != MBENTITYSET; ++row_type) {
-    if(do_entities[row_type]) {
+  for (EntityType row_type = MBVERTEX; row_type != MBENTITYSET; ++row_type) {
+    if (do_entities[row_type]) {
       CHKERR do_entity(row_type);
     }
   }

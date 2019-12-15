@@ -26,24 +26,6 @@ local indices: [3](0,1,2)
 fieldData: [3](0.50,-0.50,0.50)
 N: [0,0]()
 diffN: [0,0]()
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -70,24 +52,6 @@ oRder: 0
 global indices: [3](3,4,5)
 local indices: [3](3,4,5)
 fieldData: [3](0.50,0.50,0.50)
-N: [0,0]()
-diffN: [0,0]()
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
 N: [0,0]()
 diffN: [0,0]()
 NH1
@@ -118,24 +82,6 @@ local indices: [3](6,7,8)
 fieldData: [3](-0.50,0.50,0.50)
 N: [0,0]()
 diffN: [0,0]()
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -162,24 +108,6 @@ oRder: 0
 global indices: [3](9,10,11)
 local indices: [3](9,10,11)
 fieldData: [3](-0.50,-0.50,0.50)
-N: [0,0]()
-diffN: [0,0]()
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
 N: [0,0]()
 diffN: [0,0]()
 NH1
@@ -210,24 +138,6 @@ local indices: [3](12,13,14)
 fieldData: [3](0.50,0.50,-0.50)
 N: [0,0]()
 diffN: [0,0]()
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -254,24 +164,6 @@ oRder: 0
 global indices: [3](15,16,17)
 local indices: [3](15,16,17)
 fieldData: [3](0.50,-0.50,-0.50)
-N: [0,0]()
-diffN: [0,0]()
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
 N: [0,0]()
 diffN: [0,0]()
 NH1
@@ -302,24 +194,6 @@ local indices: [3](18,19,20)
 fieldData: [3](-0.50,-0.50,-0.50)
 N: [0,0]()
 diffN: [0,0]()
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
 NH1
 side: 0 type: 0
 data: sEnse: 0
@@ -346,23 +220,5 @@ oRder: 0
 global indices: [3](21,22,23)
 local indices: [3](21,22,23)
 fieldData: [3](-0.50,0.50,-0.50)
-N: [0,0]()
-diffN: [0,0]()
-ROW NH1NH1
-row side: 0 row_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
-N: [0,0]()
-diffN: [0,0]()
-COL NH1NH1
-col side: 0 col_type: 11
-sEnse: 0
-oRder: 0
-global indices: [0]()
-local indices: [0]()
-fieldData: [0]()
 N: [0,0]()
 diffN: [0,0]()
