@@ -423,8 +423,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
 
       // Run operator
       try {
-        CHKERR oit->opRhs(*dataOnMaster[oit->sPace], oit->doEntities, false);
-        CHKERR oit->opRhs(*dataOnSlave[oit->sPace], oit->doEntities, false);
+        CHKERR oit->opRhs(*dataOnMaster[oit->sPace], false);
+        CHKERR oit->opRhs(*dataOnSlave[oit->sPace], false);
       }
       CATCH_OP_ERRORS(*oit);
 

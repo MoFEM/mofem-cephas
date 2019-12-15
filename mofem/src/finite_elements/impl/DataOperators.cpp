@@ -151,14 +151,12 @@ DataOperator::opRhs(DataForcesAndSourcesCore &data,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-DataOperator::opRhs(DataForcesAndSourcesCore &data,
-                    const std::array<bool, MBMAXTYPE> &do_entities,
-                    const bool error_if_no_base) {
+MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
+                                   const bool error_if_no_base) {
   if (error_if_no_base)
-    return opRhs<true>(data, do_entities);
+    return opRhs<true>(data, doEntities);
   else
-    return opRhs<false>(data, do_entities);
+    return opRhs<false>(data, doEntities);
 }
 
 template <>

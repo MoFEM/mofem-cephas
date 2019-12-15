@@ -74,17 +74,12 @@ struct DataOperator {
   }
 
   virtual MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
-                               const bool error_if_no_base = false) {
-    return opRhs(data, doEntities, error_if_no_base);
-  }
-
-  virtual MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
-                               const std::array<bool, MBMAXTYPE> &do_entity,
                                const bool error_if_no_base = false);
 
   bool sYmm; ///< If true assume that matrix is symmetric structure
 
-  std::array<bool, MBMAXTYPE> doEntities;
+  std::array<bool, MBMAXTYPE>
+      doEntities; ///< If true operator is executed for entity.
 
   // Deprecated variables. Use doEntities instead. I keep them for back 
   // compatibility with some older modules. It will be removed in some future.
@@ -115,6 +110,7 @@ struct DataOperator {
   inline void unSetSymm() { sYmm = false; }
 
 private:
+
   template <bool Symm>
   inline MoFEMErrorCode opLhs(DataForcesAndSourcesCore &row_data,
                               DataForcesAndSourcesCore &col_data);
