@@ -77,16 +77,16 @@ struct DataOperator {
   }
 
   virtual MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
-                               const bool do_vertices, const bool do_edges,
-                               const bool do_quads, const bool do_tris,
-                               const bool do_tets, const bool do_prisms,
-                               const bool error_if_no_base = true);
-
-  virtual MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
-                               const bool error_if_no_base = true) {
+                               const bool error_if_no_base = false) {
     return opRhs(data, doVertices, doEdges, doQuads, doTris, doTets, doPrisms,
                  error_if_no_base);
   }
+
+  virtual MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
+                               const bool do_vertices, const bool do_edges,
+                               const bool do_quads, const bool do_tris,
+                               const bool do_tets, const bool do_prisms,
+                               const bool error_if_no_base = false);
 
   bool sYmm; ///< If true assume that matrix is symmetric structure
 
@@ -114,6 +114,17 @@ struct DataOperator {
 
   /// unset if operator is executed for  non symmetric problem
   inline void unSetSymm() { sYmm = false; }
+
+private:
+  template <bool Symm>
+  inline MoFEMErrorCode opLhs(DataForcesAndSourcesCore &row_data,
+                              DataForcesAndSourcesCore &col_data);
+
+  template <bool ErrorIfNoBase>
+  inline MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
+                              const bool do_vertices, const bool do_edges,
+                              const bool do_quads, const bool do_tris,
+                              const bool do_tets, const bool do_prisms);
 };
 
 /**
@@ -514,7 +525,7 @@ struct OpSetContravariantPiolaTransformOnFace : public DataOperator {
   const MatrixDouble &normalsAtGaussPts;
 
   OpSetContravariantPiolaTransformOnFace(const VectorDouble &normal,
-                                             const MatrixDouble &normals_at_pts)
+                                         const MatrixDouble &normals_at_pts)
       : nOrmal(normal), normalsAtGaussPts(normals_at_pts) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -534,11 +545,11 @@ struct OpSetCovariantPiolaTransformOnFace : public DataOperator {
   const MatrixDouble &tangent1AtGaussPt;
 
   OpSetCovariantPiolaTransformOnFace(const VectorDouble &normal,
-                                         const MatrixDouble &normals_at_pts,
-                                         const VectorDouble &tangent0,
-                                         const MatrixDouble &tangent0_at_pts,
-                                         const VectorDouble &tangent1,
-                                         const MatrixDouble &tangent1_at_pts)
+                                     const MatrixDouble &normals_at_pts,
+                                     const VectorDouble &tangent0,
+                                     const MatrixDouble &tangent0_at_pts,
+                                     const VectorDouble &tangent1,
+                                     const MatrixDouble &tangent1_at_pts)
       : nOrmal(normal), normalsAtGaussPts(normals_at_pts), tAngent0(tangent0),
         tangent0AtGaussPt(tangent0_at_pts), tAngent1(tangent1),
         tangent1AtGaussPt(tangent1_at_pts) {}
