@@ -35,6 +35,11 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
                                    DataForcesAndSourcesCore &col_data) {
   MoFEMFunctionBeginHot;
 
+  /**
+   * This function can be rewritten, with less code repetition. Each entity
+   * data has similar patter, which is not exploited. 
+   */
+
   // nodes
   for (unsigned int nn = 0; nn != row_data.dataOnEntities[MBVERTEX].size();
        nn++) {
@@ -253,7 +258,7 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
                  col_data.dataOnEntities[MBVERTEX][0]);
       CHKERRG(ierr);
     }
-    if (!symm) {
+    if (!Symm) {
       unsigned int EE = 0;
       for (; EE < col_data.dataOnEntities[MBEDGE].size(); EE++) {
         if (col_data.dataOnEntities[MBEDGE][EE].getN().size1() == 0)
@@ -511,6 +516,83 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
     return opLhs<false>(row_data, col_data);
 }
 
+template <bool ErrorIfNoBase>
+MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
+                                   const bool do_vertices, const bool do_edges,
+                                   const bool do_quads, const bool do_tris,
+                                   const bool do_tets, const bool do_prisms) {
+  MoFEMFunctionBegin;
+
+  auto do_entity = [&](auto type) {
+    MoFEMFunctionBegin;
+
+    auto &ent_data = data.dataOnEntities[type];
+    const size_t size = ent_data.size();
+    for (size_t ss = 0; ss != size; ++ss) {
+
+      auto &side_data = ent_data[ss];
+
+      if (ErrorIfNoBase) {
+        if (side_data.getFieldData().size() &&
+            (side_data.getBase() == NOBASE ||
+             side_data.getBase() == LASTBASE)) {
+          for (VectorDofs::iterator it = side_data.getFieldDofs().begin();
+               it != side_data.getFieldDofs().end(); it++)
+            if ((*it) && (*it)->getActive())
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No base on");
+        }
+      }
+
+      CHKERR doWork(ss, type, side_data);
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  if (do_vertices) 
+    CHKERR do_entity(MBVERTEX);
+
+   if (do_edges) 
+    CHKERR do_entity(MBEDGE);
+
+   if (do_edges)
+     CHKERR do_entity(MBTRI);
+
+   if (do_quads)
+     CHKERR do_entity(MBQUAD);
+
+   if (do_tets)
+     CHKERR do_entity(MBTET);
+
+   if (do_prisms)
+     CHKERR do_entity(MBPRISM);
+
+   // This is odd behaviour, diffrent than for other entities. Should be
+   // changed that behaviour is consistent, 
+   for (unsigned int mm = 0; mm != data.dataOnEntities[MBENTITYSET].size();
+        ++mm) {
+     if (!data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty() ||
+         !data.dataOnEntities[MBENTITYSET][mm].getIndices().empty()) {
+       CHKERR doWork(mm, MBENTITYSET, data.dataOnEntities[MBENTITYSET][mm]);
+     }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
+                                   const bool do_vertices, const bool do_edges,
+                                   const bool do_quads, const bool do_tris,
+                                   const bool do_tets, const bool do_prisms,
+                                   const bool error_if_no_base) {
+  if (error_if_no_base)
+    return opRhs<true>(data, do_vertices, do_edges, do_quads, do_tris, do_tets,
+                       do_prisms);
+  else
+    return opRhs<false>(data, do_vertices, do_edges, do_quads, do_tris, do_tets,
+                        do_prisms);
+}
+
 template <>
 MoFEMErrorCode invertTensor3by3<3, double, ublas::row_major, DoubleAllocator>(
     MatrixDouble &jac_data, VectorDouble &det_data,
@@ -533,160 +615,6 @@ MoFEMErrorCode invertTensor3by3<3, double, ublas::row_major, DoubleAllocator>(
     ++I;
   }
   MoFEMFunctionReturnHot(0);
-}
-
-template <bool ErrorIfNoBase>
-MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
-                                   const bool do_vertices, const bool do_edges,
-                                   const bool do_quads, const bool do_tris,
-                                   const bool do_tets, const bool do_prisms) {
-  MoFEMFunctionBeginHot;
-
-  if (do_vertices) {
-    for (unsigned int nn = 0; nn < data.dataOnEntities[MBVERTEX].size(); nn++) {
-      if (ErrorIfNoBase) {
-        if (data.dataOnEntities[MBVERTEX][nn].getFieldData().size() &&
-            (data.dataOnEntities[MBVERTEX][nn].getBase() == NOBASE ||
-             data.dataOnEntities[MBVERTEX][nn].getBase() == LASTBASE)) {
-          for (VectorDofs::iterator it =
-                   data.dataOnEntities[MBVERTEX][nn].getFieldDofs().begin();
-               it != data.dataOnEntities[MBVERTEX][nn].getFieldDofs().end();
-               it++)
-            if ((*it) && (*it)->getActive()) {
-              SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                       "No base on Vertex and side %d", nn);
-            }
-        }
-      }
-      ierr = doWork(nn, MBVERTEX, data.dataOnEntities[MBVERTEX][nn]);
-      CHKERRG(ierr);
-    }
-  }
-
-  if (do_edges) {
-    for (unsigned int ee = 0; ee < data.dataOnEntities[MBEDGE].size(); ee++) {
-      if (ErrorIfNoBase) {
-        if (data.dataOnEntities[MBEDGE][ee].getFieldData().size() &&
-            (data.dataOnEntities[MBEDGE][ee].getBase() == NOBASE ||
-             data.dataOnEntities[MBEDGE][ee].getBase() == LASTBASE)) {
-          for (VectorDofs::iterator it =
-                   data.dataOnEntities[MBEDGE][ee].getFieldDofs().begin();
-               it != data.dataOnEntities[MBEDGE][ee].getFieldDofs().end(); it++)
-            if ((*it) && (*it)->getActive()) {
-              SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                       "No base on Edge and side %d", ee);
-            }
-        }
-      }
-      ierr = doWork(ee, MBEDGE, data.dataOnEntities[MBEDGE][ee]);
-      CHKERRG(ierr);
-    }
-  }
-
-  if (do_tris) {
-    for (unsigned int ff = 0; ff < data.dataOnEntities[MBTRI].size(); ff++) {
-      if (ErrorIfNoBase) {
-        if (data.dataOnEntities[MBTRI][ff].getFieldData().size() &&
-            (data.dataOnEntities[MBTRI][ff].getBase() == NOBASE ||
-             data.dataOnEntities[MBTRI][ff].getBase() == LASTBASE)) {
-          for (VectorDofs::iterator it =
-                   data.dataOnEntities[MBTRI][ff].getFieldDofs().begin();
-               it != data.dataOnEntities[MBTRI][ff].getFieldDofs().end(); it++)
-            if ((*it) && (*it)->getActive()) {
-              SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                       "No base on Triangle and side %d", ff);
-            }
-        }
-      }
-      ierr = doWork(ff, MBTRI, data.dataOnEntities[MBTRI][ff]);
-      CHKERRG(ierr);
-    }
-  }
-
-  if (do_quads) {
-    for (unsigned int qq = 0; qq < data.dataOnEntities[MBQUAD].size(); qq++) {
-      if (ErrorIfNoBase) {
-        if (data.dataOnEntities[MBQUAD][qq].getFieldData().size() &&
-            (data.dataOnEntities[MBQUAD][qq].getBase() == NOBASE ||
-             data.dataOnEntities[MBQUAD][qq].getBase() == LASTBASE)) {
-          for (VectorDofs::iterator it =
-                   data.dataOnEntities[MBQUAD][qq].getFieldDofs().begin();
-               it != data.dataOnEntities[MBQUAD][qq].getFieldDofs().end(); it++)
-            if ((*it) && (*it)->getActive()) {
-              SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                       "No base on Quad and side %d", qq);
-            }
-        }
-      }
-      ierr = doWork(qq, MBQUAD, data.dataOnEntities[MBQUAD][qq]);
-      CHKERRG(ierr);
-    }
-  }
-
-  if (do_tets) {
-    for (unsigned int vv = 0; vv < data.dataOnEntities[MBTET].size(); vv++) {
-      if (ErrorIfNoBase) {
-        if (data.dataOnEntities[MBTET][vv].getFieldData().size() &&
-            (data.dataOnEntities[MBTET][vv].getBase() == NOBASE &&
-             data.dataOnEntities[MBTET][vv].getBase() == LASTBASE)) {
-          for (VectorDofs::iterator it =
-                   data.dataOnEntities[MBTET][vv].getFieldDofs().begin();
-               it != data.dataOnEntities[MBTET][vv].getFieldDofs().end(); it++)
-            if ((*it) && (*it)->getActive()) {
-              SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                       "No base on Tet and side %d", vv);
-            }
-        }
-      }
-      ierr = doWork(vv, MBTET, data.dataOnEntities[MBTET][vv]);
-      CHKERRG(ierr);
-    }
-  }
-
-  if (do_prisms) {
-    for (unsigned int pp = 0; pp < data.dataOnEntities[MBPRISM].size(); pp++) {
-      if (ErrorIfNoBase) {
-        if (data.dataOnEntities[MBPRISM][pp].getFieldData().size() &&
-            (data.dataOnEntities[MBPRISM][pp].getBase() == NOBASE ||
-             data.dataOnEntities[MBPRISM][pp].getBase() == LASTBASE)) {
-          for (VectorDofs::iterator it =
-                   data.dataOnEntities[MBPRISM][pp].getFieldDofs().begin();
-               it != data.dataOnEntities[MBPRISM][pp].getFieldDofs().end();
-               it++)
-            if ((*it) && (*it)->getActive()) {
-              SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                       "No baErrorIfNoBasese on Prism and side %d", pp);
-            }
-        }
-      }
-      ierr = doWork(pp, MBPRISM, data.dataOnEntities[MBPRISM][pp]);
-      CHKERRG(ierr);
-    }
-  }
-
-  for (unsigned int mm = 0; mm < data.dataOnEntities[MBENTITYSET].size();
-       mm++) {
-    if (!data.dataOnEntities[MBENTITYSET][mm].getFieldData().empty() ||
-        !data.dataOnEntities[MBENTITYSET][mm].getIndices().empty()) {
-      ierr = doWork(mm, MBENTITYSET, data.dataOnEntities[MBENTITYSET][mm]);
-      CHKERRG(ierr);
-    }
-  }
-
-  MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
-                                   const bool do_vertices, const bool do_edges,
-                                   const bool do_quads, const bool do_tris,
-                                   const bool do_tets, const bool do_prisms,
-                                   const bool error_if_no_base) {
-  if (error_if_no_base)
-    return opRhs<true>(data, do_vertices, do_edges, do_quads, do_tris, do_tets,
-                       do_prisms);
-  else
-    return opRhs<false>(data, do_vertices, do_edges, do_quads, do_tris, do_tets,
-                        do_prisms);
 }
 
 MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
