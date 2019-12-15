@@ -101,10 +101,9 @@ MoFEMErrorCode DataOperator::opLhs(DataForcesAndSourcesCore &row_data,
 }
 
 template <bool ErrorIfNoBase>
-MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
-                                   const bool do_vertices, const bool do_edges,
-                                   const bool do_quads, const bool do_tris,
-                                   const bool do_tets, const bool do_prisms) {
+MoFEMErrorCode
+DataOperator::opRhs(DataForcesAndSourcesCore &data,
+                    const std::array<bool, MBMAXTYPE> &do_entities) {
   MoFEMFunctionBegin;
 
   auto do_entity = [&](auto type) {
@@ -133,22 +132,22 @@ MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
     MoFEMFunctionReturn(0);
   };
 
-  if (do_vertices)
+  if (do_entities[MBVERTEX])
     CHKERR do_entity(MBVERTEX);
 
-  if (do_edges)
+  if (do_entities[MBEDGE])
     CHKERR do_entity(MBEDGE);
 
-  if (do_edges)
+  if (do_entities[MBTRI])
     CHKERR do_entity(MBTRI);
 
-  if (do_quads)
+  if (do_entities[MBQUAD])
     CHKERR do_entity(MBQUAD);
 
-  if (do_tets)
+  if (do_entities[MBTET])
     CHKERR do_entity(MBTET);
 
-  if (do_prisms)
+  if (do_entities[MPRISM])
     CHKERR do_entity(MBPRISM);
 
   // This is odd behaviour, diffrent than for other entities. Should be
@@ -163,17 +162,14 @@ MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DataOperator::opRhs(DataForcesAndSourcesCore &data,
-                                   const bool do_vertices, const bool do_edges,
-                                   const bool do_quads, const bool do_tris,
-                                   const bool do_tets, const bool do_prisms,
-                                   const bool error_if_no_base) {
+MoFEMErrorCode
+DataOperator::opRhs(DataForcesAndSourcesCore &data,
+                    const std::array<bool, MBMAXTYPE> &do_entities,
+                    const bool error_if_no_base) {
   if (error_if_no_base)
-    return opRhs<true>(data, do_vertices, do_edges, do_quads, do_tris, do_tets,
-                       do_prisms);
+    return opRhs<true>(data, do_vertices, do_entities);
   else
-    return opRhs<false>(data, do_vertices, do_edges, do_quads, do_tris, do_tets,
-                        do_prisms);
+    return opRhs<false>(data, do_vertices, do_entities);
 }
 
 template <>

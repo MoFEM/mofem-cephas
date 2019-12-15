@@ -40,7 +40,7 @@ struct DataOperator {
                const bool do_tris = true, const bool do_tets = true,
                const bool do_prisms = true);
 
-  virtual ~DataOperator()  = default;
+  virtual ~DataOperator() = default;
 
   /** \brief Operator for bi-linear form, usually to calculate values on left
    * hand side
@@ -75,14 +75,11 @@ struct DataOperator {
 
   virtual MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
                                const bool error_if_no_base = false) {
-    return opRhs(data, doVertices, doEdges, doQuads, doTris, doTets, doPrisms,
-                 error_if_no_base);
+    return opRhs(data, doEntities, error_if_no_base);
   }
 
   virtual MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
-                               const bool do_vertices, const bool do_edges,
-                               const bool do_quads, const bool do_tris,
-                               const bool do_tets, const bool do_prisms,
+                               const std::array<bool, MBMAXTYPE> &do_entity,
                                const bool error_if_no_base = false);
 
   bool sYmm; ///< If true assume that matrix is symmetric structure
@@ -120,9 +117,7 @@ private:
 
   template <bool ErrorIfNoBase>
   inline MoFEMErrorCode opRhs(DataForcesAndSourcesCore &data,
-                              const bool do_vertices, const bool do_edges,
-                              const bool do_quads, const bool do_tris,
-                              const bool do_tets, const bool do_prisms);
+                              const std::array<bool, MBMAXTYPE> &do_entities);
 };
 
 /**
