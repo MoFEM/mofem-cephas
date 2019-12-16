@@ -382,11 +382,17 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       if (space == HDIV) {
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
 
-          cerr << " CERR H DIV \n";
           CHKERR clean_data(dataHdivSlave);
           CHKERR copy_data_hdiv(dataHdivSlave, dataH1, 4);
           CHKERR clean_data(dataHdivMaster);
           CHKERR copy_data_hdiv(dataHdivMaster, dataH1, 3);
+
+          dataHdivMaster.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
+              dataOnMaster[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
+                  NOBASE);
+          dataHdivSlave.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
+              dataOnSlave[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
+                  NOBASE);
 
           // dataHdivMaster.dataOnEntities[MBTRI][0].getNSharedPtr(NOBASE) =
           //     dataOnMaster[HDIV]->dataOnEntities[MBTRI][3].getNSharedPtr(
@@ -416,17 +422,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                   dataH1Slave, H1, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
         }
-
+      case DEMKOWICZ_JACOBI_BASE:
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-          cerr << " \n\n\n\n\n\n SDAASDASDAS " << gaussPtsMaster.size1() << " \n\n\n";
-
-          cerr << " \n\n\n\n\n\n SDAASDASDAS \n\n\n";
-          cerr << " \n\n\n\n\n\n SDAASDASDAS \n\n\n";
-          cerr << " \n\n\n\n\n\n SDAASDASDAS \n\n\n";
-          cerr << " \n\n\n\n\n\n SDAASDASDAS \n\n\n";
-          cerr << " \n\n\n\n\n\n SDAASDASDAS \n\n\n";
-          cerr << " \n\n\n\n\n\n SDAASDASDAS"
-               << gaussPtsMaster.size1() << " \n\n\n";
+        
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsMaster,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
@@ -439,11 +437,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                   dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
 
-          cerr << " \n\n\n\n\n\n ASSERTION \n\n\n";
-          cerr << " \n\n\n\n\n\n ASSERTION \n\n\n";
-          cerr << " \n\n\n\n\n\n ASSERTION \n\n\n";
-          cerr << " \n\n\n\n\n\n ASSERTION \n\n\n";
-          cerr << " \n\n\n\n\n\n ASSERTION \n\n\n";
           }
 
         // if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
@@ -466,9 +459,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     }
   }
 
-  if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
-  }
+  // if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+  //   SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
+  // }
 
   // Iterate over operators
   CHKERR loopOverOperators();
