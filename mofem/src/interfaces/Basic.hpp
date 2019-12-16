@@ -586,7 +586,7 @@ Basic::getOpSkeletonRhsPipeline<-1>() {
 #endif // __BASIC_HPP__
 
 /**
- * \defgroup mofem_basic_interface Simple interface
+ * \defgroup mofem_basic_interface Basic interface
  * \brief Implementation of basic interface for rapid problem implementation.
  *
  * \ingroup mofem
