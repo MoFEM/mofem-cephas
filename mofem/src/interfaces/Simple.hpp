@@ -180,6 +180,14 @@ struct Simple : public UnknownInterface {
   MoFEMErrorCode buildFiniteElements();
 
   /**
+   * @brief Set the skeleton adjacency object
+   * 
+   * @param dim 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode setSkeletonAdjacency(int dim = -1);
+
+  /**
    * \brief Build problem
    * @return error code
    */
@@ -290,8 +298,6 @@ struct Simple : public UnknownInterface {
    * @return std::vector<std::string>&
    */
   inline std::vector<std::string> &getOtherFiniteElements() { return otherFEs; }
-
-  MoFEMErrorCode setSkeletonAdjacency(int dim = -1);
 
 private:
   MoFEM::Core &cOre;

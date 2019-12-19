@@ -287,31 +287,35 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
     auto &dof = **dit;
     const EntityType type = dof.getEntType();
     const int side = dof.sideNumberPtr->side_number;
-    auto &dat = data.dataOnEntities[type][side];
 
-    const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
-    if (nb_dofs_on_ent) {
-      const int brother_side = dof.sideNumberPtr->brother_side_number;
-      auto &ent_field_indices = dat.getIndices();
-      auto &ent_field_local_indices = dat.getLocalIndices();
-      if (ent_field_indices.empty()) {
-        ent_field_indices.resize(nb_dofs_on_ent, false);
-        ent_field_local_indices.resize(nb_dofs_on_ent, false);
-        std::fill(ent_field_indices.data().begin(),
-                  ent_field_indices.data().end(), -1);
-        std::fill(ent_field_local_indices.data().begin(),
-                  ent_field_local_indices.data().end(), -1);
+    if (side >= 0) {
+
+      auto &dat = data.dataOnEntities[type][side];
+      const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
+      if (nb_dofs_on_ent) {
+        const int brother_side = dof.sideNumberPtr->brother_side_number;
+        auto &ent_field_indices = dat.getIndices();
+        auto &ent_field_local_indices = dat.getLocalIndices();
+        if (ent_field_indices.empty()) {
+          ent_field_indices.resize(nb_dofs_on_ent, false);
+          ent_field_local_indices.resize(nb_dofs_on_ent, false);
+          std::fill(ent_field_indices.data().begin(),
+                    ent_field_indices.data().end(), -1);
+          std::fill(ent_field_local_indices.data().begin(),
+                    ent_field_local_indices.data().end(), -1);
+        }
+        const int idx = dof.getEntDofIdx();
+        ent_field_indices[idx] = dof.getPetscGlobalDofIdx();
+        ent_field_local_indices[idx] = dof.getPetscLocalDofIdx();
+        if (brother_side != -1) {
+          auto &dat_brother = data.dataOnEntities[type][brother_side];
+          dat_brother.getIndices().resize(nb_dofs_on_ent, false);
+          dat_brother.getLocalIndices().resize(nb_dofs_on_ent, false);
+          dat_brother.getIndices()[idx] = dat.getIndices()[idx];
+          dat_brother.getLocalIndices()[idx] = dat.getLocalIndices()[idx];
+        }
       }
-      const int idx = dof.getEntDofIdx();
-      ent_field_indices[idx] = dof.getPetscGlobalDofIdx();
-      ent_field_local_indices[idx] = dof.getPetscLocalDofIdx();
-      if (brother_side != -1) {
-        auto &dat_brother = data.dataOnEntities[type][brother_side];
-        dat_brother.getIndices().resize(nb_dofs_on_ent, false);
-        dat_brother.getLocalIndices().resize(nb_dofs_on_ent, false);
-        dat_brother.getIndices()[idx] = dat.getIndices()[idx];
-        dat_brother.getLocalIndices()[idx] = dat.getLocalIndices()[idx];
-      }
+      
     }
   }
 
@@ -596,29 +600,38 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
 
       const EntityType type = dof.getEntType();
       const int side = dof.sideNumberPtr->side_number;
-      auto &dat = data.dataOnEntities[type][side];
+      if (side >= 0) {
 
-      auto &ent_field_dofs = dat.getFieldDofs();
-      auto &ent_field_data = dat.getFieldData();
-      const int brother_side = dof.sideNumberPtr->brother_side_number;
-      if (brother_side != -1)
-        brother_dofs_vec.emplace_back(*dit);
+        auto &dat = data.dataOnEntities[type][side];
+        auto &ent_field_dofs = dat.getFieldDofs();
+        auto &ent_field_data = dat.getFieldData();
+        const int brother_side = dof.sideNumberPtr->brother_side_number;
+        if (brother_side != -1)
+          brother_dofs_vec.emplace_back(*dit);
 
-      if (ent_field_data.empty()) {
+        if (ent_field_data.empty()) {
 
-        dat.getBase() = dof.getApproxBase();
-        dat.getSpace() = dof.getSpace();
-        const int ent_order = dof.getMaxOrder();
-        dat.getDataOrder() =
-            dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
-        ent_field_data.resize(nb_dofs_on_ent, false);
-        noalias(ent_field_data) = dof.getEntFieldData();
-        ent_field_dofs.resize(nb_dofs_on_ent, false);
-        for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
-          ent_field_dofs[ii] = *dit;
-          ++dit;
+          dat.getBase() = dof.getApproxBase();
+          dat.getSpace() = dof.getSpace();
+          const int ent_order = dof.getMaxOrder();
+          dat.getDataOrder() =
+              dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+          ent_field_data.resize(nb_dofs_on_ent, false);
+          noalias(ent_field_data) = dof.getEntFieldData();
+          ent_field_dofs.resize(nb_dofs_on_ent, false);
+          for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
+            ent_field_dofs[ii] = *dit;
+            ++dit;
+          }
         }
+
+      } else {
+
+        for (int ii = 0; ii != nb_dofs_on_ent; ++ii)
+          ++dit;
+
       }
+
     }
   }
 
