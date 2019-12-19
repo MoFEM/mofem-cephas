@@ -103,14 +103,15 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntitySense(
 
   auto &side_table = numeredEntFiniteElementPtr->getSideNumberTable().get<2>();
   for (auto r = side_table.equal_range(type); r.first != r.second; ++r.first) {
-
     const int side_number = (*r.first)->side_number;
-    const int brother_side_number = (*r.first)->brother_side_number;
-    const int sense = (*r.first)->sense;
+    if (side_number >= 0) {
+      const int brother_side_number = (*r.first)->brother_side_number;
+      const int sense = (*r.first)->sense;
 
-    data[side_number].getSense() = sense;
-    if (brother_side_number != -1)
-      data[brother_side_number].getSense() = sense;
+      data[side_number].getSense() = sense;
+      if (brother_side_number != -1)
+        data[brother_side_number].getSense() = sense;
+    }
   }
   MoFEMFunctionReturn(0);
 }
@@ -168,11 +169,12 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
 
       auto &side = *sit;
       const int side_number = side->side_number;
-
-      ApproximationOrder ent_order = e.getMaxOrder();
-      auto &dat = data[side_number];
-      dat.getDataOrder() =
-          dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+      if (side_number >= 0) {
+        ApproximationOrder ent_order = e.getMaxOrder();
+        auto &dat = data[side_number];
+        dat.getDataOrder() =
+            dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+      }
     } else
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Entity on side of the element not found");
