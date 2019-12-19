@@ -291,6 +291,8 @@ struct Simple : public UnknownInterface {
    */
   inline std::vector<std::string> &getOtherFiniteElements() { return otherFEs; }
 
+  MoFEMErrorCode setSkeletonAdjacency(int dim = -1);
+
 private:
   MoFEM::Core &cOre;
 
@@ -325,6 +327,10 @@ private:
 
   SmartPetscObj<DM>
       dM; ///< Discrete manager (interface to PETSc/MoFEM functions)
+
+  template<int DIM = -1>
+  MoFEMErrorCode setSkeletonAdjacency();
+
 };
 
 } // namespace MoFEM
