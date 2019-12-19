@@ -120,9 +120,9 @@ Core::modify_finite_element_adjacency_table(const std::string &fe_name,
       finiteElements.get<FiniteElement_name_mi_tag>();
   FiniteElements_by_name::iterator it_fe =
       finite_element_name_set.find(fe_name);
-  if (it_fe == finite_element_name_set.end()) {
-    SETERRQ(cOmm, MOFEM_NOT_FOUND, "this FiniteElement is there");
-  }
+  if (it_fe == finite_element_name_set.end()) 
+    SETERRQ(cOmm, MOFEM_NOT_FOUND,
+            "This finite element is not defined (advise: check spelling)");
   boost::shared_ptr<FiniteElement> fe;
   fe = *it_fe;
   fe->elementAdjacencyTable[type] = function;
@@ -141,7 +141,8 @@ Core::modify_finite_element_add_field_data(const std::string &fe_name,
   FiniteElements_by_name::iterator it_fe =
       finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
-    SETERRQ(cOmm, MOFEM_NOT_FOUND, "this FiniteElement is there");
+    SETERRQ(cOmm, MOFEM_NOT_FOUND,
+            "This finite element is not defined (advise: check spelling)");
   bool success = finite_element_name_set.modify(
       it_fe, FiniteElement_change_bit_add(getBitFieldId(name_data)));
   if (!success)
