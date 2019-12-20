@@ -1,6 +1,6 @@
 /**
- * \file h1_check_approximation_2d.cpp
- * \example h1_check_approximation_2d.cpp
+ * \file scalar_check_approximation_2d.cpp
+ * \example scalar_check_approximation_2d.cpp
  *
  * Approximate polynomial in 2D and check direvatives
  *
