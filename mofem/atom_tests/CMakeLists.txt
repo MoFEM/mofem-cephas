@@ -751,13 +751,23 @@ target_link_libraries(h1_check_approximation_2d
 add_test(h1_check_approx_2d_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/h1_check_approximation_2d
-  -base ainsworth -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
-)
+  -base ainsworth -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0)
 add_test(h1_check_approx_2d_bernstein
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/h1_check_approximation_2d
-  -base bernstein -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
-)
+  -base bernstein -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0)
+add_test(l2_check_approx_2d_ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/h1_check_approximation_2d
+  -base ainsworth -space l2 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0)
+add_test(l2_check_approx_2d_bernstein
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/h1_check_approximation_2d
+  -base bernstein -space l2 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0)
 
 # Check approximation on Hcurl space in 2d
 my_add_executable(hcurl_check_approx_in_2d 

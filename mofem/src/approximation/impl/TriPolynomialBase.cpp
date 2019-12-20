@@ -218,33 +218,6 @@ TriPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
     }
   }
 
-  // face
-  // if (data.spacesOnEntities[MBTRI].test(H1)) {
-  //   if (data.dataOnEntities[MBTRI].size() != 1)
-  //     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-  //             "Wrong size ent of ent data");
-
-  //   const int order = data.dataOnEntities[MBTRI][0].getDataOrder();
-  //   const int nb_dofs = NBFACETRI_H1(order);
-  //   auto &get_n = get_base(data.dataOnEntities[MBTRI][0]);
-  //   auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][0]);
-  //   get_n.resize(nb_gauss_pts, nb_dofs, false);
-  //   get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
-  //   if (nb_dofs) {
-  //     auto &face_alpha = get_alpha(data.dataOnEntities[MBTRI][0]);
-  //     face_alpha.resize(nb_dofs, 3, false);
-  //     CHKERR BernsteinBezier::generateIndicesTriTri(order, &face_alpha(0, 0));
-  //     CHKERR BernsteinBezier::baseFunctionsTri(
-  //         order, lambda.size1(), face_alpha.size1(), &face_alpha(0, 0),
-  //         &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
-  //         &get_diff_n(0, 0));
-  //   }
-  // } else {
-  //   auto &get_n = get_base(data.dataOnEntities[MBTRI][0]);
-  //   auto &get_diff_n = get_diff_base(data.dataOnEntities[MBTRI][0]);
-  //   get_n.resize(nb_gauss_pts, 0, false);
-  //   get_diff_n.resize(nb_gauss_pts, 0, false);
-  // }
   if (data.spacesOnEntities[MBTRI].test(H1)) {
     if (data.dataOnEntities[MBTRI].size() != 1)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -366,6 +339,25 @@ MoFEMErrorCode TriPolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
 MoFEMErrorCode TriPolynomialBase::getValueL2(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
+  switch (cTx->bAse) {
+  case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
+    CHKERR getValueL2AinsworthBase(pts);
+    break;
+  case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+    CHKERR getValueL2BernsteinBezierBase(pts);
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  }
+
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode TriPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   if (cTx->basePolynomialsType0 == NULL)
@@ -391,6 +383,142 @@ MoFEMErrorCode TriPolynomialBase::getValueL2(MatrixDouble &pts) {
       &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin(),
       nb_gauss_pts, base_polynomials);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+TriPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const std::string &field_name = cTx->fieldName;
+  int nb_gauss_pts = pts.size2();
+
+  auto get_alpha = [field_name](auto &data) -> MatrixInt & {
+    auto &ptr = data.getBBAlphaIndicesSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixInt());
+    return *ptr;
+  };
+
+  auto get_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto get_diff_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBDiffNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto get_alpha_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixInt> & {
+    return data.getBBAlphaIndicesSharedPtr(field_name);
+  };
+
+  auto get_base_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBNSharedPtr(field_name);
+  };
+
+  auto get_diff_base_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBDiffNSharedPtr(field_name);
+  };
+
+  auto get_alpha_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixInt> & {
+    return data.getBBAlphaIndicesByOrderSharedPtr(o);
+  };
+
+  auto get_base_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBNByOrderSharedPtr(o);
+  };
+
+  auto get_diff_base_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBDiffNByOrderSharedPtr(o);
+  };
+
+  if (data.spacesOnEntities[MBTRI].test(L2)) {
+    if (data.dataOnEntities[MBTRI].size() != 1)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong size ent of ent data");
+              
+    if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
+        (unsigned int)nb_gauss_pts)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Base functions or nodes has wrong number of integration points "
+               "for base %s",
+               ApproximationBaseNames[NOBASE]);
+    auto &lambda = data.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+
+    auto &ent_data = data.dataOnEntities[MBTRI][0];
+    const int order = ent_data.getDataOrder();
+    const int nb_dofs = NBFACETRI_L2(order);
+
+    if(nb_dofs != 3 + 3 * NBEDGE_H1(order) + NBFACETRI_H1(order))
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Inconsistent number of DOFs");
+
+    if (get_alpha_by_order_ptr(ent_data, order)) {
+      get_alpha_by_name_ptr(ent_data, field_name) =
+          get_alpha_by_order_ptr(ent_data, order);
+      get_base_by_name_ptr(ent_data, field_name) =
+          get_base_by_order_ptr(ent_data, order);
+      get_diff_base_by_name_ptr(ent_data, field_name) =
+          get_diff_base_by_order_ptr(ent_data, order);
+    } else {
+
+      auto &get_n = get_base(ent_data);
+      auto &get_diff_n = get_diff_base(ent_data);
+      get_n.resize(nb_gauss_pts, nb_dofs, false);
+      get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
+      if (nb_dofs) {
+        auto &tri_alpha = get_alpha(ent_data);
+        tri_alpha.resize(nb_dofs, 3, false);
+
+        std::array<int, 3> face_n{order, order, order};
+        std::array<int *, 3> face_edge_ptr{
+            &tri_alpha(3, 0), &tri_alpha(3 + NBEDGE_H1(order), 0),
+            &tri_alpha(3 + 2 * NBEDGE_H1(order), 0)};
+        CHKERR BernsteinBezier::generateIndicesVertexTri(order,
+                                                         &tri_alpha(0, 0));
+        CHKERR BernsteinBezier::generateIndicesEdgeTri(face_n.data(),
+                                                       face_edge_ptr.data());
+
+        CHKERR BernsteinBezier::generateIndicesTriTri(
+            order, &tri_alpha(3 + 3 * NBEDGE_H1(order), 0));
+        CHKERR BernsteinBezier::baseFunctionsTri(
+            order, lambda.size1(), tri_alpha.size1(), &tri_alpha(0, 0),
+            &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
+            &get_diff_n(0, 0));
+
+        get_alpha_by_order_ptr(ent_data, order) =
+            get_alpha_by_name_ptr(ent_data, field_name);
+        get_base_by_order_ptr(ent_data, order) =
+            get_base_by_name_ptr(ent_data, field_name);
+        get_diff_base_by_order_ptr(ent_data, order) =
+            get_diff_base_by_name_ptr(ent_data, field_name);
+      }
+    }
+  } else {
+    auto &ent_data = data.dataOnEntities[MBTRI][0];
+    ent_data.getBBAlphaIndicesSharedPtr(field_name).reset();
+    auto &get_n = get_base(ent_data);
+    auto &get_diff_n = get_diff_base(ent_data);
+    get_n.resize(nb_gauss_pts, 0, false);
+    get_diff_n.resize(nb_gauss_pts, 0, false);
+  }
 
   MoFEMFunctionReturn(0);
 }

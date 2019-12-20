@@ -264,7 +264,20 @@ int main(int argc, char *argv[]) {
     else if (choice_base_value == BERNSTEIN)
       base = AINSWORTH_BERNSTEIN_BEZIER_BASE;
 
-    CHKERR simple_interface->addDomainField("FIELD1", H1, base, 1);
+    enum spaces { H1SPACE, L2SPACE, LASBASETSPACE };
+    const char *list_spaces[] = {"h1", "l2"};
+    PetscInt choice_space_value = H1SPACE;
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
+                                LASBASETOP, &choice_space_value, &flg);
+    if (flg != PETSC_TRUE)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "space not set");
+    FieldSpace space = H1;
+    if (choice_base_value == H1SPACE)
+      space = H1;
+    else if (choice_base_value == L2SPACE)
+      space = L2;
+
+    CHKERR simple_interface->addDomainField("FIELD1", space, base, 1);
     constexpr int order = 5;
     CHKERR simple_interface->setFieldOrder("FIELD1", order);
     CHKERR simple_interface->setUp();
