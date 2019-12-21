@@ -27,6 +27,7 @@ namespace MoFEM {
 // TENSOR0
 
 /** \brief Calculate field values for tenor field rank 0, i.e. scalar field
+ * 
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <class T, class A>
@@ -37,7 +38,7 @@ struct OpCalculateScalarFieldValues_General
   const EntityHandle zeroType;
 
   OpCalculateScalarFieldValues_General(
-      const std::string &field_name,
+      const std::string field_name,
       boost::shared_ptr<ublas::vector<T, A>> &data_ptr,
       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -60,6 +61,7 @@ struct OpCalculateScalarFieldValues_General
 
 /**
  * \brief Specialization of member function
+ * 
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <class T, class A>
@@ -74,12 +76,13 @@ MoFEMErrorCode OpCalculateScalarFieldValues_General<T, A>::doWork(
 
 /**
  * \brief Get value at integration points for scalar field
+ * 
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 struct OpCalculateScalarFieldValues
     : public OpCalculateScalarFieldValues_General<double, DoubleAllocator> {
 
-  OpCalculateScalarFieldValues(const std::string &field_name,
+  OpCalculateScalarFieldValues(const std::string field_name,
                                boost::shared_ptr<VectorDouble> &data_ptr,
                                const EntityType zero_type = MBVERTEX)
       : OpCalculateScalarFieldValues_General<double, DoubleAllocator>(
@@ -196,6 +199,7 @@ struct OpCalculateScalarValuesDot
 // TENSOR1
 
 /** \brief Calculate field values for tenor field rank 1, i.e. vector field
+ * 
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim, class T, class L, class A>
@@ -206,7 +210,7 @@ struct OpCalculateVectorFieldValues_General
   const EntityHandle zeroType;
 
   OpCalculateVectorFieldValues_General(
-      const std::string &field_name,
+      const std::string field_name,
       boost::shared_ptr<ublas::matrix<T, L, A>> &data_ptr,
       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -240,8 +244,9 @@ OpCalculateVectorFieldValues_General<Tensor_Dim, T, L, A>::doWork(
 }
 
 /** \brief Calculate field values (template specialization) for tensor field
- * rank 1, i.e. vector field \ingroup
- * mofem_forces_and_sources_user_data_operators
+ * rank 1, i.e. vector field 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
@@ -252,7 +257,7 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
   const EntityHandle zeroType;
 
   OpCalculateVectorFieldValues_General(
-      const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -267,7 +272,8 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
 
 /**
  * \brief Member function specialization calculating values for tenor field rank
- * 1 \ingroup mofem_forces_and_sources_user_data_operators
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 MoFEMErrorCode OpCalculateVectorFieldValues_General<
@@ -314,14 +320,16 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
 }
 
 /** \brief Get values at integration pts for tensor filed rank 1, i.e. vector
- * field \ingroup mofem_forces_and_sources_user_data_operators
+ * field 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 struct OpCalculateVectorFieldValues
     : public OpCalculateVectorFieldValues_General<
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
 
-  OpCalculateVectorFieldValues(const std::string &field_name,
+  OpCalculateVectorFieldValues(const std::string field_name,
                                boost::shared_ptr<MatrixDouble> &data_ptr,
                                const EntityType zero_type = MBVERTEX)
       : OpCalculateVectorFieldValues_General<Tensor_Dim, double,
@@ -330,8 +338,9 @@ struct OpCalculateVectorFieldValues
 };
 
 /** \brief Get time direvatives of values at integration pts for tensor filed
- * rank 1, i.e. vector field \ingroup
- * mofem_forces_and_sources_user_data_operators
+ * rank 1, i.e. vector field 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 struct OpCalculateVectorFieldValuesDot
@@ -417,6 +426,7 @@ inline auto OpCalculateVectorFieldValuesDot<3>::getFTensorDotData<3>() {
 }
 
 /** \brief Calculate field values for tenor field rank 2.
+ * 
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
@@ -427,7 +437,7 @@ struct OpCalculateTensor2FieldValues_General
   const EntityHandle zeroType;
 
   OpCalculateTensor2FieldValues_General(
-      const std::string &field_name,
+      const std::string field_name,
       boost::shared_ptr<ublas::matrix<T, L, A>> &data_ptr,
       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -463,7 +473,7 @@ struct OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
   const EntityHandle zeroType;
 
   OpCalculateTensor2FieldValues_General(
-      const std::string &field_name,
+      const std::string field_name,
       boost::shared_ptr<
           ublas::matrix<double, ublas::row_major, DoubleAllocator>> &data_ptr,
       const EntityType zero_type = MBVERTEX)
@@ -520,14 +530,16 @@ MoFEMErrorCode OpCalculateTensor2FieldValues_General<
 }
 
 /** \brief Get values at integration pts for tensor filed rank 2, i.e. matrix
- * field \ingroup mofem_forces_and_sources_user_data_operators
+ * field 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
 struct OpCalculateTensor2FieldValues
     : public OpCalculateTensor2FieldValues_General<
           Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
 
-  OpCalculateTensor2FieldValues(const std::string &field_name,
+  OpCalculateTensor2FieldValues(const std::string field_name,
                                 boost::shared_ptr<MatrixDouble> &data_ptr,
                                 const EntityType zero_type = MBVERTEX)
       : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
@@ -538,6 +550,7 @@ struct OpCalculateTensor2FieldValues
 
 /** \brief Get time direvarive values at integration pts for tensor filed rank
  * 2, i.e. matrix field
+ * 
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
@@ -634,7 +647,7 @@ struct OpCalculateTensor2SymmetricFieldValues
   const int zeroSide;
 
   OpCalculateTensor2SymmetricFieldValues(
-      const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
       const EntityType zero_type = MBEDGE, const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -693,7 +706,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
   }
 
   OpCalculateTensor2SymmetricFieldValuesDot(
-      const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
       const EntityType zero_type = MBEDGE, const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -763,22 +776,25 @@ OpCalculateTensor2SymmetricFieldValuesDot<3>::getFTensorDotData<3>() {
 
 /**
  * \brief Evaluate field gradient values for scalar field, i.e. gradient is
- * tensor rank 1 (vector) \ingroup mofem_forces_and_sources_user_data_operators
+ * tensor rank 1 (vector) 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim, class T, class L, class A>
 struct OpCalculateScalarFieldGradient_General
     : public OpCalculateVectorFieldValues_General<Tensor_Dim, T, L, A> {
 
   OpCalculateScalarFieldGradient_General(
-      const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
       const EntityType zero_type = MBVERTEX)
       : OpCalculateVectorFieldValues_General<Tensor_Dim, T, L, A>(
             field_name, data_ptr, zero_type) {}
 };
 
 /** \brief Evaluate field gradient values for scalar field, i.e. gradient is
- * tensor rank 1 (vector), specialization \ingroup
- * mofem_forces_and_sources_user_data_operators
+ * tensor rank 1 (vector), specialization 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 struct OpCalculateScalarFieldGradient_General<Tensor_Dim, double,
@@ -787,7 +803,7 @@ struct OpCalculateScalarFieldGradient_General<Tensor_Dim, double,
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
 
   OpCalculateScalarFieldGradient_General(
-      const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
       const EntityType zero_type = MBVERTEX)
       : OpCalculateVectorFieldValues_General<Tensor_Dim, double,
                                              ublas::row_major, DoubleAllocator>(
@@ -806,7 +822,9 @@ struct OpCalculateScalarFieldGradient_General<Tensor_Dim, double,
 
 /**
  * \brief Member function specialization calculating scalar field gradients for
- * tenor field rank 1 \ingroup mofem_forces_and_sources_user_data_operators
+ * tenor field rank 1 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 MoFEMErrorCode OpCalculateScalarFieldGradient_General<
@@ -854,14 +872,16 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
 }
 
 /** \brief Get field gradients at integration pts for scalar filed rank 0, i.e.
- * vector field \ingroup mofem_forces_and_sources_user_data_operators
+ * vector field 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 struct OpCalculateScalarFieldGradient
     : public OpCalculateScalarFieldGradient_General<
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
 
-  OpCalculateScalarFieldGradient(const std::string &field_name,
+  OpCalculateScalarFieldGradient(const std::string field_name,
                                  boost::shared_ptr<MatrixDouble> &data_ptr,
                                  const EntityType zero_type = MBVERTEX)
       : OpCalculateScalarFieldGradient_General<
@@ -871,7 +891,9 @@ struct OpCalculateScalarFieldGradient
 
 /**
  * \brief Evaluate field gradient values for vector field, i.e. gradient is
- * tensor rank 2 \ingroup mofem_forces_and_sources_user_data_operators
+ * tensor rank 2 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 struct OpCalculateVectorFieldGradient_General
@@ -879,7 +901,7 @@ struct OpCalculateVectorFieldGradient_General
                                                    L, A> {
 
   OpCalculateVectorFieldGradient_General(
-      const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
       const EntityType zero_type = MBVERTEX)
       : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, T, L,
                                               A>(field_name, data_ptr,
@@ -893,7 +915,7 @@ struct OpCalculateVectorFieldGradient_General<Tensor_Dim0, Tensor_Dim1, double,
           Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
 
   OpCalculateVectorFieldGradient_General(
-      const std::string &field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
       const EntityType zero_type = MBVERTEX)
       : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
                                               ublas::row_major,
@@ -913,7 +935,9 @@ struct OpCalculateVectorFieldGradient_General<Tensor_Dim0, Tensor_Dim1, double,
 
 /**
  * \brief Member function specialization calculating vector field gradients for
- * tenor field rank 2 \ingroup mofem_forces_and_sources_user_data_operators
+ * tenor field rank 2 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
 MoFEMErrorCode OpCalculateVectorFieldGradient_General<
@@ -963,14 +987,16 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
 }
 
 /** \brief Get field gradients at integration pts for scalar filed rank 0, i.e.
- * vector field \ingroup mofem_forces_and_sources_user_data_operators
+ * vector field 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
 struct OpCalculateVectorFieldGradient
     : public OpCalculateVectorFieldGradient_General<
           Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
 
-  OpCalculateVectorFieldGradient(const std::string &field_name,
+  OpCalculateVectorFieldGradient(const std::string field_name,
                                  boost::shared_ptr<MatrixDouble> &data_ptr,
                                  const EntityType zero_type = MBVERTEX)
       : OpCalculateVectorFieldGradient_General<Tensor_Dim0, Tensor_Dim1, double,
@@ -980,8 +1006,9 @@ struct OpCalculateVectorFieldGradient
 };
 
 /** \brief Get field gradients time derivative at integration pts for scalar
- * filed rank 0, i.e. vector field \ingroup
- * mofem_forces_and_sources_user_data_operators
+ * filed rank 0, i.e. vector field 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
 struct OpCalculateVectorFieldGradientDot
@@ -1070,6 +1097,7 @@ inline auto OpCalculateVectorFieldGradientDot<3, 3>::getFTensorDotData<3>() {
 }
 
 /** \brief Get vector field for H-div approximation
+ * 
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, class T, class L, class A>
@@ -1081,7 +1109,7 @@ struct OpCalculateHdivVectorField_General
   const int zeroSide;
 
   OpCalculateHdivVectorField_General(
-      const std::string &field_name,
+      const std::string field_name,
       boost::shared_ptr<ublas::matrix<T, L, A>> &data_ptr,
       const EntityType zero_type = MBEDGE, const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -1114,6 +1142,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<Tensor_Dim, T, L, A>::doWork(
 }
 
 /** \brief Get vector field for H-div approximation
+ * 
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
@@ -1125,7 +1154,7 @@ struct OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
   const EntityHandle zeroType;
   const int zeroSide;
 
-  OpCalculateHdivVectorField_General(const std::string &field_name,
+  OpCalculateHdivVectorField_General(const std::string field_name,
                                      boost::shared_ptr<MatrixDouble> &data_ptr,
                                      const EntityType zero_type = MBEDGE,
                                      const int zero_side = 0)
@@ -1181,6 +1210,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
 }
 
 /** \brief Get vector field for H-div approximation
+ * 
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
@@ -1188,7 +1218,7 @@ struct OpCalculateHdivVectorField
     : public OpCalculateHdivVectorField_General<
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
 
-  OpCalculateHdivVectorField(const std::string &field_name,
+  OpCalculateHdivVectorField(const std::string field_name,
                              boost::shared_ptr<MatrixDouble> &data_ptr,
                              const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
@@ -1211,7 +1241,7 @@ struct OpCalculateHdivVectorDivergence
   const EntityHandle zeroType;
   const int zeroSide;
 
-  OpCalculateHdivVectorDivergence(const std::string &field_name,
+  OpCalculateHdivVectorDivergence(const std::string field_name,
                                   boost::shared_ptr<VectorDouble> &data_ptr,
                                   const EntityType zero_type = MBEDGE,
                                   const int zero_side = 0)
@@ -1270,7 +1300,7 @@ struct OpCalculateHcurlVectorCurl
   const EntityHandle zeroType;
   const int zeroSide;
 
-  OpCalculateHcurlVectorCurl(const std::string &field_name,
+  OpCalculateHcurlVectorCurl(const std::string field_name,
                              boost::shared_ptr<MatrixDouble> &data_ptr,
                              const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
@@ -1349,7 +1379,7 @@ struct OpCalculateHVecTensorField
   const EntityHandle zeroType;
   const int zeroSide;
 
-  OpCalculateHVecTensorField(const std::string &field_name,
+  OpCalculateHVecTensorField(const std::string field_name,
                              boost::shared_ptr<MatrixDouble> &data_ptr,
                              const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
@@ -1407,7 +1437,7 @@ struct OpCalculateHTensorTensorField
   const EntityHandle zeroType;
   const int zeroSide;
 
-  OpCalculateHTensorTensorField(const std::string &field_name,
+  OpCalculateHTensorTensorField(const std::string field_name,
                                 boost::shared_ptr<MatrixDouble> &data_ptr,
                                 const EntityType zero_type = MBEDGE,
                                 const int zero_side = 0)
@@ -1466,7 +1496,7 @@ struct OpCalculateHVecTensorDivergence
   const EntityHandle zeroType;
   const int zeroSide;
 
-  OpCalculateHVecTensorDivergence(const std::string &field_name,
+  OpCalculateHVecTensorDivergence(const std::string field_name,
                                   boost::shared_ptr<MatrixDouble> &data_ptr,
                                   const EntityType zero_type = MBEDGE,
                                   const int zero_side = 0)
