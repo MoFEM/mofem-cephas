@@ -30,10 +30,7 @@ extern "C" {
 
 namespace MoFEM {
 
-DataOperator::DataOperator(const bool symm, const bool do_vertices,
-                           const bool do_edges, const bool do_quads,
-                           const bool do_tris, const bool do_tets,
-                           const bool do_prisms)
+DataOperator::DataOperator(const bool symm)
     :
 
       sYmm(symm),
