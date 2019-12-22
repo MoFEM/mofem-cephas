@@ -1072,7 +1072,7 @@ struct OpCalculateVectorFieldGradientDot
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
     }
     for (int gg = 0; gg < nb_gauss_pts; ++gg) {
-      auto field_data = getFTensorDotData<3>();
+      auto field_data = getFTensorDotData<Tensor_Dim0>();
       int bb = 0;
       for (; bb < size; ++bb) {
         gradients_at_gauss_pts(I, J) += field_data(I) * diff_base_function(J);
@@ -1094,6 +1094,13 @@ template <>
 inline auto OpCalculateVectorFieldGradientDot<3, 3>::getFTensorDotData<3>() {
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
       &dotVector[0], &dotVector[1], &dotVector[2]);
+}
+
+template <>
+template <>
+inline auto OpCalculateVectorFieldGradientDot<2, 2>::getFTensorDotData<2>() {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(&dotVector[0],
+                                                            &dotVector[1]);
 }
 
 /** \brief Get vector field for H-div approximation

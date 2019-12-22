@@ -317,7 +317,7 @@ getFTensor2SymmetricFromMat(MatrixDouble &data) {
         "of rows should be 3 but is " +
         boost::lexical_cast<std::string>(data.size1()));
   return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 2>(
-      &data(0, 0), &data(1, 0), &data(1, 1));
+      &data(0, 0), &data(1, 0), &data(2, 0));
 }
 
 /**
