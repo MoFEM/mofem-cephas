@@ -126,7 +126,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     order_triangles_only = std::max(
         order_triangles_only,
         dataH1TroughThickness.dataOnEntities[MBPRISM][0].getDataOrder());
-        
+
     // integration pts on the triangles surfaces
     nb_gauss_pts_on_faces = 0;
     int rule = getRuleTrianglesOnly(order_triangles_only);
@@ -163,10 +163,10 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
                         .getDiffN(NOBASE)
                         .data()
                         .begin());
-      } else 
+      } else
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                  "rule > quadrature order %d < %d", rule, QUAD_2D_TABLE_SIZE);
-      
+
     } else {
       CHKERR setGaussPtsTrianglesOnly(order_triangles_only);
       nb_gauss_pts_on_faces = gaussPtsTrianglesOnly.size2();
@@ -440,6 +440,15 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   CHKERR loopOverOperators();
 
   MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode FatPrismElementForcesAndSourcesCore::UserDataOperator::setPtrFE(
+    ForcesAndSourcesCore *ptr) {
+  MoFEMFunctionBeginHot;
+  if (!(ptrFE = dynamic_cast<FatPrismElementForcesAndSourcesCore *>(ptr)))
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "User operator and finite element do not work together");
+  MoFEMFunctionReturnHot(0);
 }
 
 } // namespace MoFEM

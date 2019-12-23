@@ -340,31 +340,35 @@ struct CubitMeshSets {
  * \brief Stores data about meshsets (see CubitMeshSets) storing data about
  * boundary conditions, interfaces, sidesets, nodests, blocksets
  *
- *  \param Meshset_mi_tag  index by meshset handle
- *  \param CubitMeshSets_mi_tag index by bc type, see CubitBC
- *  \param CubitMeshSets_mask_meshset_mi_tag index by NODESET, SIDESET, BLOCKSET
- * only \param CubitMeshSets_name index by meshset name \param
- * Composite_Cubit_msId_And_MeshSetType_mi_tag index by meshset id and type
- * NODESET, SIDESET or BLOCKSET
+ * \param Meshset_mi_tag  index by meshset handle
+ * \param CubitMeshSets_mi_tag index by bc type, see CubitBC
+ * \param CubitMeshSets_mask_meshset_mi_tag index by NODESET, SIDESET, BLOCKSET
+ * only
+ *
+ * \param CubitMeshSets_name index by meshset name
+ *
+ * \param Composite_Cubit_msId_And_MeshSetType_mi_tag index by meshset id and
+ * type NODESET, SIDESET or BLOCKSET
  *
  *  Example:
  *  \code
  *   MeshsetsManager *m_mng;
- *   ierr = m_field.getInterface(m_mng); CHKERRG(ierr);
- *   CubitMeshSet_multiIndex &meshsets_index = m_mng->etMeshsetsMultindex();
+ *   CHKERR m_field.getInterface(m_mng);
+ *   auto &index = m_mng->getMeshsetsMultindex();
  *
- *   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
- * mit,hi_mit; mit =
- * meshsets_index.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(BLOCKSET);
- *   hi_mit =
- * meshsets_index.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(BLOCKSET);
+ *
+ *   auto mit =
+ * index.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(BLOCKSET); auto
+ * hi_mit =
+ * index.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(BLOCKSET);
+ *
  *   // Make a loop over all BLOCKSET
  *   for(;mit!=hi_mit;mit++) {
  *     int id = mit->getMeshsetId();            // get blockset id
  *     EntityHandle handle = mit->getMeshset(); // get block meshset
  *     std::vector< double > attributes;
  *     // get block attributes
- *     ierr = mit->getAttributes(attributes); CHKERRG(ierr);
+ *     auto mit->getAttributes(attributes);
  *     // do something
  *   }
  *  \endcode

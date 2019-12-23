@@ -102,12 +102,8 @@ OpCalculateJacForFace::doWork(int side, EntityType type,
             "Operator not implemented for this entity type");
   };
 
-  doVertices = true;
-  doEdges = false;
-  doQuads = false;
-  doTris = false;
-  doTets = false;
-  doPrisms = false;
+  doEntities[MBVERTEX] = true;
+  std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
 
   MoFEMFunctionReturn(0);
 }
@@ -202,12 +198,8 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
             "Operator not implemented for this entity type");
   };
 
-  doVertices = true;
-  doEdges = false;
-  doQuads = false;
-  doTris = false;
-  doTets = false;
-  doPrisms = false;
+  doEntities[MBVERTEX] = true;
+  std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
 
   MoFEMFunctionReturn(0);
 }
@@ -222,24 +214,12 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "This operator can be used only with element which is triangle");
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
-
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-
-    unsigned int nb_functions = data.getN(base).size2();
+  auto apply_transform = [&](MatrixDouble &diff_n) {
+    MoFEMFunctionBegin;
+    size_t nb_functions = diff_n.size2() / 2;
     if (nb_functions) {
-      unsigned int nb_gauss_pts = data.getN(base).size1();
+      size_t nb_gauss_pts = diff_n.size1();
       diffNinvJac.resize(nb_gauss_pts, 2 * nb_functions, false);
-
-      if (type != MBVERTEX) {
-        if (nb_functions != data.getDiffN(base).size2() / 2) {
-          SETERRQ2(
-              PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "data inconsistency nb_functions != data.diffN.size2()/2 ( %u != "
-              "%u/2 )",
-              nb_functions, data.getDiffN(base).size2());
-        }
-      }
 
       switch (type) {
       case MBVERTEX:
@@ -252,23 +232,42 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
         FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff_n(
             &diffNinvJac(0, 0), &diffNinvJac(0, 1));
         FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> t_diff_n_ref(
-            &data.getDiffN(base)(0, 0), &data.getDiffN(base)(0, 1));
+            &diff_n(0, 0), &diff_n(0, 1));
         FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_inv_jac(
             &invJac(0, 0), &invJac(1, 0), &invJac(2, 0), &invJac(3, 0));
-        for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
-          for (unsigned int dd = 0; dd != nb_functions; ++dd) {
+        for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
+          for (size_t dd = 0; dd != nb_functions; ++dd) {
             t_diff_n(i) = t_inv_jac(k, i) * t_diff_n_ref(k);
             ++t_diff_n;
             ++t_diff_n_ref;
           }
         }
-        data.getDiffN(base).data().swap(diffNinvJac.data());
+        diff_n.data().swap(diffNinvJac.data());
       } break;
       default:
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
       }
     }
+    MoFEMFunctionReturn(0);
+  };
+
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+    CHKERR apply_transform(data.getDiffN(base));
   }
+
+  switch (type) {
+  case MBVERTEX:
+    for (auto &m : data.getBBDiffNMap())
+      CHKERR apply_transform(*(m.second));
+    break;
+  default:
+    for (auto &ptr : data.getBBDiffNByOrderArray())
+      if (ptr)
+        CHKERR apply_transform(*ptr);
+  }
+
 
   MoFEMFunctionReturn(0);
 }
@@ -569,12 +568,8 @@ OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
     }
   }
 
-  doVertices = true;
-  doEdges = false;
-  doQuads = false;
-  doTris = false;
-  doTets = false;
-  doPrisms = false;
+  doEntities[MBVERTEX] = true;
+  std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
 
   MoFEMFunctionReturn(0);
 }
@@ -647,12 +642,8 @@ OpCalculateInvJacForFlatPrism::doWork(int side, EntityType type,
     invJacF3(1, 1) = j00_f3 / det_f3;
   }
 
-  doVertices = true;
-  doEdges = false;
-  doQuads = false;
-  doTris = false;
-  doTets = false;
-  doPrisms = false;
+  doEntities[MBVERTEX] = true;
+  std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
 
   MoFEMFunctionReturn(0);
 }

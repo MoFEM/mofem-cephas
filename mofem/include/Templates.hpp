@@ -300,6 +300,27 @@ getFTensor2SymmetricFromMat(MatrixDouble &data) {
 }
 
 /**
+ * @brief Get symmetric tensor rank 2 form matrix of for dimension 2
+ *
+ * Specialisation for symmetric tensor 2
+ *
+ * @tparam
+ * @param data
+ * @return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 2>
+ */
+template <>
+inline FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 2>
+getFTensor2SymmetricFromMat(MatrixDouble &data) {
+  if (data.size1() != 3)
+    THROW_MESSAGE(
+        "getFTensor2SymmetricFromMat<2>: wrong size of data matrix, numer "
+        "of rows should be 3 but is " +
+        boost::lexical_cast<std::string>(data.size1()));
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, 2>(
+      &data(0, 0), &data(1, 0), &data(2, 0));
+}
+
+/**
  * @brief Get symmetric tensor rank 2 form matrix
  *
  * Specialisation for symmetric tensor 2
@@ -333,7 +354,7 @@ static inline FTensor::Ddg<FTensor::PackPtr<T *, 1>, Tensor_Dim01, Tensor_Dim23>
 getFTensor4DdgFromMat(ublas::matrix<T, L, A> &data) {
   static_assert(
       !std::is_same<T, T>::value,
-      "Such getFTensor2SymmetricFromMat specialisation is not implemented");
+      "Such getFTensor4DdgFromMat specialisation is not implemented");
 }
 
 /**

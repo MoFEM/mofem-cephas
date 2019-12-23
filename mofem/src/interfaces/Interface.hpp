@@ -1788,12 +1788,10 @@ struct CoreInterface : public UnknownInterface {
 
 namespace MoFEM {
 
-#if __cplusplus <= 199711L
-struct Interface : public DeprecatedCoreInterface {};
-#else
 using Interface = DeprecatedCoreInterface;
-#endif
+
 } // namespace MoFEM
+
 
 #endif // __INTERFACE_HPP__
 

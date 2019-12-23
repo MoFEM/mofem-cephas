@@ -970,6 +970,13 @@ private:
    */
   MoFEMErrorCode getOptions(int verb = DEFAULT_VERBOSITY);
 
+  /**
+   * @brief Register subinterfac in core interface
+   * 
+   * @tparam IFACE 
+   * @param uid 
+   * @return MoFEMErrorCode 
+   */
   template <class IFACE> MoFEMErrorCode regSubInterface(const MOFEMuuid &uid);
 };
 

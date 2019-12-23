@@ -39,13 +39,15 @@
  */
 enum Interfaces {
   UNKNOWNINTERFACE = 1 << 0,
-  // Field Interface
+
   CORE_INTERFACE = 1 << 0 | 1 << 1,
   DEPRECATED_CORE_INTERFACE = 1 << 0 | 1 << 2,
   PROBLEMSMANAGER_INTERFACE = 1 << 0 | 1 << 3,
   MATRIX_MANAGER_INTERFACE = 1 << 0 | 1 << 4,
   SIMPLE_INTERFACE = 1 << 0 | 1 << 5,
-  COMM_INTERFACE = 1 << 0 | 1 << 6,
+  BASIC_INTERFACE = 1 << 0 | 1 << 6,
+  COMM_INTERFACE = 1 << 0 | 1 << 7,
+
   MESH_REFINE = 1 << 1 | 1 << 2,
   PRISM_INTEFACE = 1 << 1 | 1 << 3,
   SERIES_RECORDER = 1 << 1 | 1 << 4,
@@ -53,7 +55,9 @@ enum Interfaces {
   VECMANAGER_INTERFACE = 1 << 1 | 1 << 6,
   FIELDBLAS_INTERFACE = 1 << 1 | 1 << 7,
   BITREFMANAGER_INTERFACE = 1 << 1 | 1 << 8,
+
   TOOLS = 1 << 1 | 1 << 10,
+
   // Independent Interfaces
   TETGEN_INTERFACE = 1 << 2 | 1 << 3,
   MED_INTERFACE = 1 << 2 | 1 << 4,
