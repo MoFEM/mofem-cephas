@@ -268,7 +268,7 @@ int main(int argc, char *argv[]) {
     const char *list_spaces[] = {"h1", "l2"};
     PetscInt choice_space_value = H1SPACE;
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
-                                LASBASETOP, &choice_space_value, &flg);
+                                LASBASETSPACE, &choice_space_value, &flg);
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "space not set");
     FieldSpace space = H1;
