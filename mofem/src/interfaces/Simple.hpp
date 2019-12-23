@@ -180,6 +180,14 @@ struct Simple : public UnknownInterface {
   MoFEMErrorCode buildFiniteElements();
 
   /**
+   * @brief Set the skeleton adjacency object
+   * 
+   * @param dim 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode setSkeletonAdjacency(int dim = -1);
+
+  /**
    * \brief Build problem
    * @return error code
    */
@@ -325,6 +333,10 @@ private:
 
   SmartPetscObj<DM>
       dM; ///< Discrete manager (interface to PETSc/MoFEM functions)
+
+  template<int DIM = -1>
+  MoFEMErrorCode setSkeletonAdjacency();
+
 };
 
 } // namespace MoFEM

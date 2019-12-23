@@ -76,6 +76,7 @@
 #include <boost/function.hpp>
 #include <boost/math/special_functions/binomial.hpp>
 #include <boost/math/special_functions/factorials.hpp>
+#include <boost/math/constants/constants.hpp>
 
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 

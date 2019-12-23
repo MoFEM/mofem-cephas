@@ -35,10 +35,7 @@ namespace MoFEM {
  */
 struct DataOperator {
 
-  DataOperator(const bool symm = true, const bool do_vertices = true,
-               const bool do_edges = true, const bool do_quads = true,
-               const bool do_tris = true, const bool do_tets = true,
-               const bool do_prisms = true);
+  DataOperator(const bool symm = true);
 
   virtual ~DataOperator() = default;
 

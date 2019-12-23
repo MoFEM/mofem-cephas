@@ -31,6 +31,159 @@ MoFEMErrorCode Simple::query_interface(const MOFEMuuid &uuid,
   MoFEMFunctionReturnHot(0);
 }
 
+template<int DIM>
+MoFEMErrorCode Simple::setSkeletonAdjacency() {
+  static_assert(DIM == 2 || DIM == 3, "not implemented");
+  return MOFEM_NOT_IMPLEMENTED;
+}
+
+template<>
+MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  auto defaultSkeletonEdge = [&](moab::Interface &moab, const Field &field,
+                                 const EntFiniteElement &fe,
+                                 Range &adjacency) -> MoFEMErrorCode {
+    MoFEMFunctionBegin;
+
+    Range base_adj;
+    CHKERR DefaultElementAdjacency::defaultEdge(moab, field, fe, adjacency);
+
+    if (std::find(domainFields.begin(), domainFields.end(),
+                  field.getName()) != domainFields.end()) {
+
+      const EntityHandle fe_ent = fe.getEnt();
+      Range bride_adjacency_edge, bride_adjacency;
+      CHKERR moab.get_adjacencies(&fe_ent, 1, 2, false, bride_adjacency_edge);
+
+      switch (field.getSpace()) {
+      case H1:
+        CHKERR moab.get_connectivity(bride_adjacency_edge, bride_adjacency,
+                                     true);
+      case L2:
+      case HCURL:
+      case HDIV:
+        CHKERR moab.get_adjacencies(bride_adjacency_edge, 1, false,
+                                    bride_adjacency, moab::Interface::UNION);
+        bride_adjacency.merge(bride_adjacency_edge);
+        break;
+      case NOFIELD:
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "this field is not implemented for TRI finite element");
+      }
+
+      bride_adjacency = subtract(bride_adjacency, adjacency);
+
+      for (auto e : bride_adjacency)
+        const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
+            .insert(boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
+
+      adjacency.merge(bride_adjacency);
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR m_field.modify_finite_element_adjacency_table(skeletonFE, MBEDGE,
+                                                       defaultSkeletonEdge);
+
+  MoFEMFunctionReturn(0);
+}
+
+template<>
+MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  auto defaultSkeletonEdge = [&](moab::Interface &moab, const Field &field,
+                                 const EntFiniteElement &fe,
+                                 Range &adjacency) -> MoFEMErrorCode {
+    MoFEMFunctionBegin;
+
+    Range base_adj;
+    CHKERR DefaultElementAdjacency::defaultFace(moab, field, fe, adjacency);
+
+    if (std::find(domainFields.begin(), domainFields.end(),
+                  field.getName()) != domainFields.end()) {
+
+      const EntityHandle fe_ent = fe.getEnt();
+      Range bride_adjacency_face, bride_adjacency;
+      CHKERR moab.get_adjacencies(&fe_ent, 1, 3, false, bride_adjacency_face);
+
+      switch (field.getSpace()) {
+      case H1:
+        CHKERR moab.get_connectivity(bride_adjacency_face, bride_adjacency,
+                                     true);
+      case HCURL:
+        CHKERR moab.get_adjacencies(bride_adjacency_face, 1, false,
+                                    bride_adjacency, moab::Interface::UNION);
+      case L2:
+      case HDIV:
+        CHKERR moab.get_adjacencies(bride_adjacency_face, 2, false,
+                                    bride_adjacency, moab::Interface::UNION);
+        bride_adjacency.merge(bride_adjacency_face);
+        break;
+      case NOFIELD:
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "this field is not implemented for TRI finite element");
+      }
+
+      bride_adjacency = subtract(bride_adjacency, adjacency);
+
+      for (auto e : bride_adjacency)
+        const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
+            .insert(boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
+
+      adjacency.merge(bride_adjacency);
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR m_field.modify_finite_element_adjacency_table(skeletonFE, MBTRI,
+                                                       defaultSkeletonEdge);
+  CHKERR m_field.modify_finite_element_adjacency_table(skeletonFE, MBQUAD,
+                                                       defaultSkeletonEdge);
+
+  MoFEMFunctionReturn(0);
+}
+
+template<>
+MoFEMErrorCode Simple::setSkeletonAdjacency<-1>() {
+  MoFEMFunctionBegin;
+  switch (getDim()) {
+  case 1:
+    THROW_MESSAGE("Not implemented");
+  case 2:
+    return setSkeletonAdjacency<2>();
+  case 3:
+    return setSkeletonAdjacency<3>(); 
+  default:
+    THROW_MESSAGE("Not implemented");
+  }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Simple::setSkeletonAdjacency(int dim) {
+  MoFEMFunctionBegin;
+  if(dim == -1)
+    dim = getDim();
+  switch(dim) {
+  case 2:
+    return setSkeletonAdjacency<2>();
+  case 3:
+    return setSkeletonAdjacency<3>();
+  default:
+    SETERRQ(PETSC_COMM_WORLD, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  }
+  MoFEMFunctionReturn(0);
+}
+
 Simple::Simple(const Core &core)
     : cOre(const_cast<Core &>(core)), bitLevel(BitRefLevel().set(0)),
       meshSet(0), boundaryMeshset(0), nameOfProblem("SimpleProblem"),
@@ -433,6 +586,8 @@ MoFEMErrorCode Simple::buildProblem() {
 MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
   MoFEMFunctionBegin;
   CHKERR defineFiniteElements();
+  if (!skeletonFields.empty())
+    CHKERR setSkeletonAdjacency();
   CHKERR defineProblem(is_partitioned);
   CHKERR buildFields();
   CHKERR buildFiniteElements();
