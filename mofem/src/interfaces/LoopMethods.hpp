@@ -64,7 +64,7 @@ struct KspMethod : virtual public UnknownInterface {
       : ksp_ctx(CTX_KSPNONE), ksp(PETSC_NULL), ksp_f(PETSC_NULL),
         ksp_A(PETSC_NULL), ksp_B(PETSC_NULL) {}
 
-  virtual ~KspMethod() {}
+  virtual ~KspMethod() = default;
 
   /**
    * \brief set operator type
@@ -120,17 +120,7 @@ struct SnesMethod : virtual public UnknownInterface {
       : snes_ctx(CTX_SNESNONE), snes_x(PETSC_NULL), snes_f(PETSC_NULL),
         snes_A(PETSC_NULL), snes_B(PETSC_NULL) {}
 
-  virtual ~SnesMethod() {}
-
-  /**
-   * \brief Set SNES context
-   */
-  MoFEMErrorCode setSnesCtx(const SNESContext &ctx);
-
-  /**
-   * \brief Set SNES instance
-   */
-  MoFEMErrorCode setSnes(SNES snes);
+  virtual ~SnesMethod() = default;
 
   /**
    * \brief Copy snes data
@@ -179,14 +169,8 @@ struct TSMethod : virtual public UnknownInterface {
 
   virtual ~TSMethod() {}
 
-  /// \brief Set Ts context
-  MoFEMErrorCode setTsCtx(const TSContext &ctx);
-
   /// \brief Copy TS solver data
   MoFEMErrorCode copyTs(const TSMethod &ts);
-
-  /// \brief Set TS solver
-  MoFEMErrorCode setTs(TS _ts);
 
   TS ts;       ///< time solver
   Vec ts_u;    ///< state vector

@@ -19,16 +19,6 @@
 namespace MoFEM {
 
 // KSP
-MoFEMErrorCode KspMethod::setKspCtx(const KSPContext &ctx) {
-  MoFEMFunctionBeginHot;
-  ksp_ctx = ctx;
-  MoFEMFunctionReturnHot(0);
-}
-MoFEMErrorCode KspMethod::setKsp(KSP ksp_) {
-  MoFEMFunctionBeginHot;
-  ksp = ksp_;
-  MoFEMFunctionReturnHot(0);
-}
 MoFEMErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
   MoFEMFunctionBeginHot;
   this->ksp_ctx = ksp.ksp_ctx;
@@ -40,16 +30,6 @@ MoFEMErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
 }
 
 // SNES
-MoFEMErrorCode SnesMethod::setSnesCtx(const SNESContext &ctx) {
-  MoFEMFunctionBeginHot;
-  snes_ctx = ctx;
-  MoFEMFunctionReturnHot(0);
-}
-MoFEMErrorCode SnesMethod::setSnes(SNES _snes) {
-  MoFEMFunctionBeginHot;
-  snes = _snes;
-  MoFEMFunctionReturnHot(0);
-}
 MoFEMErrorCode SnesMethod::copySnes(const SnesMethod &snes) {
   MoFEMFunctionBeginHot;
   this->snes_ctx = snes.snes_ctx;
@@ -62,16 +42,6 @@ MoFEMErrorCode SnesMethod::copySnes(const SnesMethod &snes) {
 }
 
 // TS
-MoFEMErrorCode TSMethod::setTsCtx(const TSContext &ctx) {
-  MoFEMFunctionBeginHot;
-  ts_ctx = ctx;
-  MoFEMFunctionReturnHot(0);
-}
-MoFEMErrorCode TSMethod::setTs(TS _ts) {
-  MoFEMFunctionBeginHot;
-  ts = _ts;
-  MoFEMFunctionReturnHot(0);
-}
 MoFEMErrorCode TSMethod::copyTs(const TSMethod &ts) {
   MoFEMFunctionBeginHot;
   this->ts_ctx = ts.ts_ctx;
