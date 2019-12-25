@@ -21,6 +21,8 @@
 
 namespace MoFEM {
 
+static const MOFEMuuid IDD_MOFEMPetscDataMethod =
+    MOFEMuuid(BitIntefaceId(PETSC_DATA_METHOD));
 static const MOFEMuuid IDD_MOFEMKspMethod =
     MOFEMuuid(BitIntefaceId(KSP_METHOD));
 static const MOFEMuuid IDD_MOFEMSnesMethod =
@@ -34,6 +36,32 @@ static const MOFEMuuid IDD_MOFEMEntityMethod =
 static const MOFEMuuid IDD_MOFEMDofMethod =
     MOFEMuuid(BitIntefaceId(DOF_METHOD));
 
+struct PetscData : public UnknownInterface {
+
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const {
+    MoFEMFunctionBeginHot;
+    if (uuid == IDD_MOFEMPetscDataMethod) {
+      *iface = const_cast<PetscData *>(this);
+      MoFEMFunctionReturnHot(0);
+    }
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  }
+
+  PetscData()
+      : A(PETSC_NULL), B(PETSC_NULL), x(PETSC_NULL), x_t(PETSC_NULL),
+        x_tt(PETSC_NULL), f(PETSC_NULL) {}
+
+  virtual ~PetscData() = default;
+
+  Mat A;
+  Mat B;
+  Vec x;
+  Vec x_t;
+  Vec x_tt;
+  Vec f;
+};
+
 /**
  * \brief data structure for ksp (linear solver) context
  * \ingroup mofem_loops
@@ -42,7 +70,7 @@ static const MOFEMuuid IDD_MOFEMDofMethod =
  * functions.
  *
  */
-struct KspMethod : virtual public UnknownInterface {
+struct KspMethod : virtual protected PetscData {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const {
@@ -61,24 +89,10 @@ struct KspMethod : virtual public UnknownInterface {
   enum KSPContext { CTX_SETFUNCTION, CTX_OPERATORS, CTX_KSPNONE };
 
   KspMethod()
-      : ksp_ctx(CTX_KSPNONE), ksp(PETSC_NULL), ksp_f(PETSC_NULL),
-        ksp_A(PETSC_NULL), ksp_B(PETSC_NULL) {}
+      : PetscData(), ksp_ctx(CTX_KSPNONE), ksp(PETSC_NULL), ksp_f(PetscData::f),
+        ksp_A(PetscData::A), ksp_B(PetscData::B) {}
 
   virtual ~KspMethod() = default;
-
-  /**
-   * \brief set operator type
-   * @param  ctx Context, CTX_SETFUNCTION, CTX_OPERATORS, CTX_KSPNONE
-   * @return     error code
-   */
-  MoFEMErrorCode setKspCtx(const KSPContext &ctx);
-
-  /**
-   * \brief set solver
-   * @param  ksp solver
-   * @return     error code
-   */
-  MoFEMErrorCode setKsp(KSP ksp);
 
   /**
    * \brief copy data form another method
@@ -89,9 +103,10 @@ struct KspMethod : virtual public UnknownInterface {
 
   KSPContext ksp_ctx; ///< Context
   KSP ksp;            ///< KSP solver
-  Vec ksp_f;          ///< the right hand side vector
-  Mat ksp_A;          ///< matrix
-  Mat ksp_B;          ///< preconditioner matrix
+
+  Vec &ksp_f;
+  Mat &ksp_A;
+  Mat &ksp_B;
 };
 
 /**
@@ -102,7 +117,7 @@ struct KspMethod : virtual public UnknownInterface {
  * functions.
  *
  */
-struct SnesMethod : virtual public UnknownInterface {
+struct SnesMethod : virtual protected PetscData {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const {
@@ -117,8 +132,8 @@ struct SnesMethod : virtual public UnknownInterface {
 
   SNESContext snes_ctx;
   SnesMethod()
-      : snes_ctx(CTX_SNESNONE), snes_x(PETSC_NULL), snes_f(PETSC_NULL),
-        snes_A(PETSC_NULL), snes_B(PETSC_NULL) {}
+      : PetscData(), snes_ctx(CTX_SNESNONE), snes_x(PetscData::x),
+        snes_f(PetscData::f), snes_A(PetscData::A), snes_B(PetscData::B) {}
 
   virtual ~SnesMethod() = default;
 
@@ -127,11 +142,11 @@ struct SnesMethod : virtual public UnknownInterface {
    */
   MoFEMErrorCode copySnes(const SnesMethod &snes);
 
-  SNES snes;  ///< snes solver
-  Vec snes_x; ///< state vector
-  Vec snes_f; ///< residual
-  Mat snes_A; ///< jacobian matrix  
-  Mat snes_B; ///< preconditioner of jacobian matrix
+  SNES snes;   ///< snes solver
+  Vec &snes_x; ///< state vector
+  Vec &snes_f; ///< residual
+  Mat &snes_A; ///< jacobian matrix
+  Mat &snes_B; ///< preconditioner of jacobian matrix
 };
 
 /**
@@ -141,7 +156,7 @@ struct SnesMethod : virtual public UnknownInterface {
  * Structure stores context data which are set in functions run by PETSc Time
  * Stepping functions.
  */
-struct TSMethod : virtual public UnknownInterface {
+struct TSMethod : virtual protected PetscData {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const {
@@ -163,29 +178,30 @@ struct TSMethod : virtual public UnknownInterface {
 
   TSContext ts_ctx;
   TSMethod()
-      : ts_ctx(CTX_TSNONE), ts_u(PETSC_NULL), ts_u_t(PETSC_NULL),
-        ts_F(PETSC_NULL), ts_A(PETSC_NULL), ts_B(PETSC_NULL), ts_step(-1),
-        ts_a(0), ts_t(0) {}
+      : PetscData(), ts_ctx(CTX_TSNONE), ts_step(-1), ts_a(0), ts_t(0),
+        ts_u(PetscData::x), ts_u_t(PetscData::x_t), ts_u_tt(PetscData::x_tt),
+        ts_F(PetscData::f), ts_A(PetscData::A), ts_B(PetscData::B) {}
 
-  virtual ~TSMethod() {}
+  virtual ~TSMethod() = default;
 
   /// \brief Copy TS solver data
   MoFEMErrorCode copyTs(const TSMethod &ts);
 
-  TS ts;       ///< time solver
-  Vec ts_u;    ///< state vector
-  Vec ts_u_t;  ///< time derivative of state vector
-  Vec ts_u_tt; ///< second time derivative of state vector
-  Vec ts_F;    ///< residual vector
-
-  Mat ts_A; ///< Jacobian of G(U) = F(t,U,W+v*U,W'+a*U), equivalent to dF/dU +
-            ///< v*dF/dU_t + a*dF/dU_tt
-  Mat ts_B; ///< Preconditioner for ts_A
+  TS ts; ///< time solver
 
   PetscInt ts_step; ///< time step
   PetscReal ts_a;   ///< shift for U_tt (see PETSc Time Solver)
   PetscReal ts_v;   ///< shift for U_t shift for U_t
   PetscReal ts_t;   ///< time
+
+  Vec &ts_u;    ///< state vector
+  Vec &ts_u_t;  ///< time derivative of state vector
+  Vec &ts_u_tt; ///< second time derivative of state vector
+  Vec &ts_F;    ///< residual vector
+
+  Mat &ts_A; ///< Jacobian of G(U) = F(t,U,W+v*U,W'+a*U), equivalent to dF/dU +
+             ///< v*dF/dU_t + a*dF/dU_tt
+  Mat &ts_B; ///< Preconditioner for ts_A
 };
 
 /**
@@ -363,87 +379,6 @@ struct FEMethod : public BasicMethod {
   boost::shared_ptr<const FieldEntity_multiIndex_spaceType_view>
       dataFieldEntsPtr; ///< Pointer to finite element field entities data view
 
-/** \brief loop over all dofs which are on a particular FE row
- * \ingroup mofem_loops
- */
-#define _IT_GET_FEROW_DOFS_FOR_LOOP_(FE, IT)                                   \
-  auto IT = FE->rowPtr->begin();                                               \
-  IT != FE->rowPtr->end();                                                     \
-  IT++
-
-/** \brief loop over all dofs which are on a particular FE column
- * \ingroup mofem_loops
- */
-#define _IT_GET_FECOL_DOFS_FOR_LOOP_(FE, IT)                                   \
-  auto IT = FE->colPtr->begin();                                               \
-  IT != FE->colPtr->end();                                                     \
-  IT++
-
-/** \brief loop over all dofs which are on a particular FE data
- * \ingroup mofem_loops
- */
-#define _IT_GET_FEDATA_DOFS_FOR_LOOP_(FE, IT)                                  \
-  auto IT = FE->dataPtr->begin();                                              \
-  IT != FE->dataPtr->end();                                                    \
-  IT++
-
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator
-  get_begin(const MULTIINDEX &index, const std::string &field_name,
-            const EntityType type, const int side_number) const {
-    return index.lower_bound(boost::make_tuple(field_name, type, side_number));
-  }
-
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator
-  get_end(const MULTIINDEX &index, const std::string &field_name,
-          const EntityType type, const int side_number) const {
-    return index.upper_bound(boost::make_tuple(field_name, type, side_number));
-  }
-
-  /** \brief loop over all dofs which are on a particular FE row, field,
-   * entity type and canonical side number \ingroup mofem_loops
-   *
-   * \param FE finite elements
-   * \param Name field name
-   * \param Type moab entity type (MBVERTEX, MBEDGE etc)
-   * \param Side side canonical number
-   * \param IT the interator in use
-   */
-#define _IT_GET_FEROW_BY_SIDE_DOFS_FOR_LOOP_(FE, NAME, TYPE, SIDE, IT)         \
-  FENumeredDofEntity_multiIndex::index<Composite_mi_tag>::type::iterator IT =  \
-      FE->get_begin<                                                           \
-          FENumeredDofEntity_multiIndex::index<Composite_mi_tag>::type>(       \
-          FE->rowPtr->get<Composite_mi_tag>(), NAME, TYPE, SIDE);              \
-  IT != FE->get_end<                                                           \
-            FENumeredDofEntity_multiIndex::index<Composite_mi_tag>::type>(     \
-            FE->rowPtr->get<Composite_mi_tag>(), NAME, TYPE, SIDE);            \
-  IT++
-
-/** \brief loop over all dofs which are on a particular FE column, field, entity
- * type and canonical side number \ingroup mofem_loops
- */
-#define _IT_GET_FECOL_BY_SIDE_DOFS_FOR_LOOP_(FE, NAME, TYPE, SIDE, IT)         \
-  FENumeredDofEntity_multiIndex::index<Composite_mi_tag>::type::iterator IT =  \
-      FE->get_begin<                                                           \
-          FENumeredDofEntity_multiIndex::index<Composite_mi_tag>::type>(       \
-          FE->colPtr->get<Composite_mi_tag>(), NAME, TYPE, SIDE);              \
-  IT != FE->get_end<                                                           \
-            FENumeredDofEntity_multiIndex::index<Composite_mi_tag>::type>(     \
-            FE->colPtr->get<Composite_mi_tag>(), NAME, TYPE, SIDE);            \
-  IT++
-
-/** \brief loop over all dofs which are on a particular FE data, field, entity
- * type and canonical side number \ingroup mofem_loops
- */
-#define _IT_GET_FEDATA_BY_SIDE_DOFS_FOR_LOOP_(FE, NAME, TYPE, SIDE, IT)        \
-  FEDofEntity_multiIndex::index<Composite_mi_tag>::type::iterator IT =         \
-      FE->get_begin<FEDofEntity_multiIndex::index<Composite_mi_tag>::type>(    \
-          FE->dataPtr->get<Composite_mi_tag>(), NAME, TYPE, SIDE);             \
-  IT != FE->get_end<FEDofEntity_multiIndex::index<Composite_mi_tag>::type>(    \
-            FE->dataPtr->get<Composite_mi_tag>(), NAME, TYPE, SIDE);           \
-  IT++
-
   template <class MULTIINDEX>
   typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,
                                           const std::string &field_name,
@@ -528,89 +463,7 @@ struct FEMethod : public BasicMethod {
             FE->dataPtr->get<FieldName_mi_tag>(), NAME);                       \
   IT++
 
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,
-                                          const EntityHandle ent) const {
-    return index.lower_bound(ent);
-  }
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,
-                                        const EntityHandle ent) const {
-    return index.upper_bound(ent);
-  }
 
-/** \brief loop over all dofs which are on a particular FE row and given element
- * entity (handle from moab) \ingroup mofem_loops
- */
-#define _IT_GET_FEROW_DOFS_BY_ENT_FOR_LOOP_(FE, ENT, IT)                       \
-  auto IT = FE->get_begin<FENumeredDofEntityByEnt>(                            \
-      FE->rowPtr->get<Ent_mi_tag>(), ENT);                                     \
-  IT != FE->get_end<FENumeredDofEntityByEnt>(FE->rowPtr->get<Ent_mi_tag>(),    \
-                                             ENT);                             \
-  IT++
-
-/** \brief loop over all dofs which are on a particular FE column and given
- * element entity (handle from moab) \ingroup mofem_loops
- */
-#define _IT_GET_FECOL_DOFS_BY_ENT_FOR_LOOP_(FE, ENT, IT)                       \
-  auto IT = FE->get_begin<FENumeredDofEntityByEnt>(                            \
-      FE->colPtr->get<Ent_mi_tag>(), ENT);                                     \
-  IT != FE->get_end<FENumeredDofEntityByEnt>(FE->colPtr->get<Ent_mi_tag>(),    \
-                                             ENT);                             \
-  IT++
-
-/** \brief loop over all dofs which are on a particular FE data and given
- * element entity (handle from moab) \ingroup mofem_loops
- */
-#define _IT_GET_FEDATA_DOFS_BY_ENT_FOR_LOOP_(FE, ENT, IT)                      \
-  auto IT = FE->get_begin<FEDofEntity_multiIndex::index<Ent_mi_tag>::type>(    \
-      FE->dataPtr->get<Ent_mi_tag>(), ENT);                                    \
-  IT != FE->get_end<FEDofEntity_multiIndex::index<Ent_mi_tag>::type>(          \
-            FE->dataPtr->get<Ent_mi_tag>(), ENT);                              \
-  IT++
-
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,
-                                          const std::string &field_name,
-                                          const EntityHandle ent) const {
-    return index.lower_bound(boost::make_tuple(field_name, ent));
-  }
-  template <class MULTIINDEX>
-  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,
-                                        const std::string &field_name,
-                                        const EntityHandle ent) const {
-    return index.upper_bound(boost::make_tuple(field_name, ent));
-  }
-
-/** \brief loop over all dofs which are on a particular FE row, field and given
- * element entity (handle from moab) \ingroup mofem_loops
- */
-#define _IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE, NAME, ENT, IT)        \
-  auto IT = FE->get_begin<FENumeredDofEntityByNameAndEnt>(                     \
-      FE->rowPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);            \
-  IT != FE->get_end<FENumeredDofEntityByNameAndEnt>(                           \
-            FE->rowPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);      \
-  IT++
-
-/** \brief loop over all dofs which are on a particular FE column, field and
- * given element entity (handle from moab) \ingroup mofem_loops
- */
-#define _IT_GET_FECOL_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE, NAME, ENT, IT)        \
-  auto IT = FE->get_begin<FENumeredDofEntityByNameAndEnt>(                     \
-      FE->colPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);            \
-  IT != FE->get_end<FENumeredDofEntityByNameAndEnt>(                           \
-            FE->colPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);      \
-  IT++
-
-/** \brief loop over all dofs which are on a particular FE data, field and given
- * element entity (handle from moab) \ingroup mofem_loops
- */
-#define _IT_GET_FEDATA_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE, NAME, ENT, IT)       \
-  auto IT = FE->get_begin<FEDofEntityByNameAndEnt>(                            \
-      FE->dataPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);           \
-  IT != FE->get_end<FEDofEntityByNameAndEnt>(                                  \
-            FE->dataPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME, ENT);     \
-  IT++
 };
 
 /**

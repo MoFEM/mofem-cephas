@@ -72,6 +72,7 @@ enum Interfaces {
 
 enum LoopInterfaces {
   // Loop Methods
+  PETSC_DATA_METHOD = 1 << 3,
   KSP_METHOD = 1 << 3 | 1 << 4,
   SNES_METHOD = 1 << 3 | 1 << 5,
   TS_METHOD = 1 << 3 | 1 << 6,
