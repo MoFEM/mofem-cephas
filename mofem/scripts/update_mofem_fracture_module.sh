@@ -80,7 +80,7 @@ if [ ! -d "$SPACK_MIRROR_DIR" ]; then
   if [ ! -f "$PWD/mirror.tgz" ]; then
     echo "Downloading spack mofem mirror ..."
     mkdir -p $SPACK_MIRROR_DIR && \
-    curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+    curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
     | tar xzC $SPACK_MIRROR_DIR --strip 1
     echo -e "Done.\n"
   else 

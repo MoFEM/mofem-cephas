@@ -3,7 +3,7 @@ echo 1 > lock_spack
 . share/spack/setup-env.sh
 
 mkdir -p mofem_mirror &&
-curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 
 spack mirror remove mofem_mirror  || true
