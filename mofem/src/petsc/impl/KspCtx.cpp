@@ -28,33 +28,45 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
 
   ksp_ctx->vecAssembleSwitch = boost::movelib::make_unique<bool>(true);
 
+  // pre-process
   for (auto &bit : ksp_ctx->preProcess_Rhs) {
     bit->vecAssembleSwitch = boost::move(ksp_ctx->vecAssembleSwitch);
     bit->ksp = ksp;
     bit->ksp_ctx = KspMethod::CTX_SETFUNCTION;
+    bit->data_ctx = PetscData::CTX_SET_F;
     bit->ksp_f = f;
     CHKERR ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,
                                                            *bit);
     bit->ksp_ctx = KspMethod::CTX_KSPNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ksp_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
+
+  // operators
   for (auto &lit : ksp_ctx->loops_to_do_Rhs) {
     lit.second->vecAssembleSwitch = boost::move(ksp_ctx->vecAssembleSwitch);
     lit.second->ksp_ctx = KspMethod::CTX_SETFUNCTION;
+    lit.second->data_ctx = PetscData::CTX_SET_F;
     lit.second->ksp = ksp;
     lit.second->ksp_f = f;
     CHKERR ksp_ctx->mField.loop_finite_elements(
         ksp_ctx->problemName, lit.first, *(lit.second), nullptr, ksp_ctx->bH);
     lit.second->ksp_ctx = KspMethod::CTX_KSPNONE;
+    lit.second->data_ctx = PetscData::CTX_SET_NONE;
     ksp_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
+
+  // post-process
   for (auto &bit : ksp_ctx->postProcess_Rhs) {
     bit->vecAssembleSwitch = boost::move(ksp_ctx->vecAssembleSwitch);
     bit->ksp = ksp;
     bit->ksp_f = f;
+    bit->ksp_ctx = KspMethod::CTX_SETFUNCTION;
+    bit->data_ctx = PetscData::CTX_SET_F;
     CHKERR ksp_ctx->mField.problem_basic_method_postProcess(
         ksp_ctx->problemName, *bit);
     bit->ksp_ctx = KspMethod::CTX_KSPNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ksp_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
@@ -75,37 +87,48 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
 
   ksp_ctx->matAssembleSwitch = boost::movelib::make_unique<bool>(true);
 
+  // pre-procsess
   for (auto &bit : ksp_ctx->preProcess_Mat) {
     bit->matAssembleSwitch = boost::move(ksp_ctx->matAssembleSwitch);
     bit->ksp = ksp;
     bit->ksp_A = A;
     bit->ksp_B = B;
     bit->ksp_ctx = KspMethod::CTX_OPERATORS;
+    bit->data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_A;
     CHKERR ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,
                                                            *bit);
     bit->ksp_ctx = KspMethod::CTX_KSPNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ksp_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
+
+  // operators
   for (auto &lit : ksp_ctx->loops_to_do_Mat) {
     lit.second->matAssembleSwitch = boost::move(ksp_ctx->matAssembleSwitch);
     lit.second->ksp_A = A;
     lit.second->ksp_B = B;
     lit.second->ksp = ksp;
     lit.second->ksp_ctx = KspMethod::CTX_OPERATORS;
+    lit.second->data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_A;
     CHKERR ksp_ctx->mField.loop_finite_elements(
         ksp_ctx->problemName, lit.first, *(lit.second), nullptr, ksp_ctx->bH);
     lit.second->ksp_ctx = KspMethod::CTX_KSPNONE;
+    lit.second->data_ctx = PetscData::CTX_SET_NONE;
     ksp_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
+
+  // post-process
   for (auto &bit : ksp_ctx->postProcess_Mat) {
     bit->matAssembleSwitch = boost::move(ksp_ctx->matAssembleSwitch);
     bit->ksp = ksp;
     bit->ksp_A = A;
     bit->ksp_B = B;
     bit->ksp_ctx = KspMethod::CTX_OPERATORS;
+    bit->data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_A;
     CHKERR ksp_ctx->mField.problem_basic_method_postProcess(
         ksp_ctx->problemName, *bit);
     bit->ksp_ctx = KspMethod::CTX_KSPNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ksp_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 

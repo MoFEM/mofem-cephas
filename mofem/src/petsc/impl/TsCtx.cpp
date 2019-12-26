@@ -60,10 +60,13 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     bit->ts_t = t;
     bit->ts_step = step;
     bit->ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
+    bit->data_ctx =
+        PetscData::CTX_SET_F | PetscData::CTX_SET_X | PetscData::CTX_SET_X_T;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
@@ -76,10 +79,13 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     lit.second->ts_t = t;
     lit.second->ts_step = step;
     lit.second->ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
+    lit.second->data_ctx =
+        PetscData::CTX_SET_F | PetscData::CTX_SET_X | PetscData::CTX_SET_X_T;
     lit.second->ts = ts;
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
     lit.second->ts_ctx = TSMethod::CTX_TSNONE;
+    lit.second->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
 
@@ -92,10 +98,13 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     bit->ts_t = t;
     bit->ts_step = step;
     bit->ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
+    bit->data_ctx =
+        PetscData::CTX_SET_F | PetscData::CTX_SET_X | PetscData::CTX_SET_X_T;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
@@ -146,10 +155,13 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     bit->ts_a = a;
     bit->ts_step = step;
     bit->ts_ctx = TSMethod::CTX_TSSETIJACOBIAN;
+    bit->data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_B |
+                    PetscData::CTX_SET_X | PetscData::CTX_SET_X_T;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
@@ -166,7 +178,10 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     lit.second->ts = ts;
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
+    lit.second->data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_B |
+                    PetscData::CTX_SET_X | PetscData::CTX_SET_X_T;
     lit.second->ts_ctx = TSMethod::CTX_TSNONE;
+    lit.second->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
 
@@ -181,10 +196,13 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     bit->ts_a = a;
     bit->ts_step = step;
     bit->ts_ctx = TSMethod::CTX_TSSETIJACOBIAN;
+    bit->data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_B |
+                    PetscData::CTX_SET_X | PetscData::CTX_SET_X_T;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
@@ -213,10 +231,12 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     bit->ts_step = step;
     bit->ts_F = PETSC_NULL;
     bit->ts_ctx = TSMethod::CTX_TSTSMONITORSET;
+    bit->data_ctx = PetscData::CTX_SET_X;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
   }
 
   for (auto &lit : ts_ctx->loops_to_do_Monitor) {
@@ -225,10 +245,12 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     lit.second->ts_step = step;
     lit.second->ts_F = PETSC_NULL;
     lit.second->ts_ctx = TSMethod::CTX_TSTSMONITORSET;
+    lit.second->data_ctx = PetscData::CTX_SET_X;
     lit.second->ts = ts;
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
     lit.second->ts_ctx = TSMethod::CTX_TSNONE;
+    lit.second->data_ctx = PetscData::CTX_SET_NONE;
   }
 
   // post process
@@ -238,10 +260,12 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     bit->ts_step = step;
     bit->ts_F = PETSC_NULL;
     bit->ts_ctx = TSMethod::CTX_TSTSMONITORSET;
+    bit->data_ctx = PetscData::CTX_SET_X;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
   }
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxMonitor, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
@@ -288,10 +312,12 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     bit->ts_t = t;
     bit->ts_step = step;
     bit->ts_ctx = TSMethod::CTX_TSSETRHSFUNCTION;
+    bit->data_ctx = PetscData::CTX_SET_F | PetscData::CTX_SET_X;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
@@ -303,10 +329,12 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     lit.second->ts_t = t;
     lit.second->ts_step = step;
     lit.second->ts_ctx = TSMethod::CTX_TSSETRHSFUNCTION;
+    lit.second->data_ctx = PetscData::CTX_SET_F | PetscData::CTX_SET_X;
     lit.second->ts = ts;
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
     lit.second->ts_ctx = TSMethod::CTX_TSNONE;
+    lit.second->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
 
@@ -318,10 +346,12 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     bit->ts_t = t;
     bit->ts_step = step;
     bit->ts_ctx = TSMethod::CTX_TSSETRHSFUNCTION;
+    bit->data_ctx = PetscData::CTX_SET_F | PetscData::CTX_SET_X;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
@@ -369,10 +399,13 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     bit->ts_t = t;
     bit->ts_step = step;
     bit->ts_ctx = TSMethod::CTX_TSSETRHSJACOBIAN;
+    bit->data_ctx =
+        PetscData::CTX_SET_A | PetscData::CTX_SET_B | PetscData::CTX_SET_X;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
@@ -385,10 +418,13 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     lit.second->ts_t = t;
     lit.second->ts_step = step;
     lit.second->ts_ctx = TSMethod::CTX_TSSETRHSJACOBIAN;
+    lit.second->data_ctx =
+        PetscData::CTX_SET_A | PetscData::CTX_SET_B | PetscData::CTX_SET_X;
     lit.second->ts = ts;
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
     lit.second->ts_ctx = TSMethod::CTX_TSNONE;
+    lit.second->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
 
@@ -401,10 +437,13 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     bit->ts_t = t;
     bit->ts_step = step;
     bit->ts_ctx = TSMethod::CTX_TSSETRHSJACOBIAN;
+    bit->data_ctx =
+        PetscData::CTX_SET_A | PetscData::CTX_SET_B | PetscData::CTX_SET_X;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
@@ -458,10 +497,14 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     bit->ts_step = step;
 
     bit->ts_ctx = TSMethod::CTX_TSSETIJACOBIAN;
+    bit->data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_B |
+                    PetscData::CTX_SET_X | PetscData::CTX_SET_X_T |
+                    PetscData::CTX_SET_X_TT;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
@@ -477,10 +520,15 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     lit.second->ts_a = a;
     lit.second->ts_step = step;
     lit.second->ts_ctx = TSMethod::CTX_TSSETIJACOBIAN;
+    lit.second->data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_B |
+                           PetscData::CTX_SET_X | PetscData::CTX_SET_X_T |
+                           PetscData::CTX_SET_X_TT;
     lit.second->ts = ts;
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
     lit.second->ts_ctx = TSMethod::CTX_TSNONE;
+    lit.second->data_ctx = PetscData::CTX_SET_NONE;
+    lit.second->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
 
@@ -497,10 +545,14 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     bit->ts_a = a;
     bit->ts_step = step;
     bit->ts_ctx = TSMethod::CTX_TSSETIJACOBIAN;
+    bit->data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_B |
+                    PetscData::CTX_SET_X | PetscData::CTX_SET_X_T |
+                    PetscData::CTX_SET_X_TT;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
@@ -561,10 +613,13 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     bit->ts_t = t;
     bit->ts_step = step;
     bit->ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
+    bit->data_ctx = PetscData::CTX_SET_F | PetscData::CTX_SET_X |
+                    PetscData::CTX_SET_X_T | PetscData::CTX_SET_X_TT;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
@@ -578,10 +633,13 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     lit.second->ts_t = t;
     lit.second->ts_step = step;
     lit.second->ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
+    lit.second->data_ctx = PetscData::CTX_SET_F | PetscData::CTX_SET_X |
+                           PetscData::CTX_SET_X_T | PetscData::CTX_SET_X_TT;
     lit.second->ts = ts;
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
     lit.second->ts_ctx = TSMethod::CTX_TSNONE;
+    lit.second->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
 
@@ -595,10 +653,13 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     bit->ts_t = t;
     bit->ts_step = step;
     bit->ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
+    bit->data_ctx = PetscData::CTX_SET_F | PetscData::CTX_SET_X |
+                    PetscData::CTX_SET_X_T | PetscData::CTX_SET_X_TT;
     bit->ts = ts;
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
     bit->ts_ctx = TSMethod::CTX_TSNONE;
+    bit->data_ctx = PetscData::CTX_SET_NONE;
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 

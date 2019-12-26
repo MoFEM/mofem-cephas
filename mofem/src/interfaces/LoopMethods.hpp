@@ -49,17 +49,29 @@ struct PetscData : public UnknownInterface {
   }
 
   PetscData()
-      : A(PETSC_NULL), B(PETSC_NULL), x(PETSC_NULL), x_t(PETSC_NULL),
-        x_tt(PETSC_NULL), f(PETSC_NULL) {}
+      : f(PETSC_NULL), A(PETSC_NULL), B(PETSC_NULL), x(PETSC_NULL),
+        x_t(PETSC_NULL), x_tt(PETSC_NULL) {}
 
   virtual ~PetscData() = default;
 
+  enum DataContext {
+    CTX_SET_NONE = 0,
+    CTX_SET_F = 1 << 0,
+    CTX_SET_A = 1 << 1,
+    CTX_SET_B = 1 << 2,
+    CTX_SET_X = 1 << 3,
+    CTX_SET_X_T = 1 << 4,
+    CTX_SET_X_TT = 1 << 6
+  };
+
+  std::bitset<7> data_ctx;
+
+  Vec f;
   Mat A;
   Mat B;
   Vec x;
   Vec x_t;
   Vec x_tt;
-  Vec f;
 };
 
 /**
@@ -70,7 +82,7 @@ struct PetscData : public UnknownInterface {
  * functions.
  *
  */
-struct KspMethod : virtual protected PetscData {
+struct KspMethod : virtual public PetscData {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const {
@@ -130,7 +142,6 @@ struct SnesMethod : virtual protected PetscData {
 
   enum SNESContext { CTX_SNESSETFUNCTION, CTX_SNESSETJACOBIAN, CTX_SNESNONE };
 
-  SNESContext snes_ctx;
   SnesMethod()
       : PetscData(), snes_ctx(CTX_SNESNONE), snes_x(PetscData::x),
         snes_f(PetscData::f), snes_A(PetscData::A), snes_B(PetscData::B) {}
@@ -141,6 +152,8 @@ struct SnesMethod : virtual protected PetscData {
    * \brief Copy snes data
    */
   MoFEMErrorCode copySnes(const SnesMethod &snes);
+
+  SNESContext snes_ctx;
 
   SNES snes;   ///< snes solver
   Vec &snes_x; ///< state vector
@@ -224,7 +237,7 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
   }
 
   BasicMethod();
-  virtual ~BasicMethod(){};
+  virtual ~BasicMethod() = default;
 
   /**
    * @brief number currently of processed method
@@ -462,8 +475,6 @@ struct FEMethod : public BasicMethod {
   IT != FE->get_end<FEDofEntityByFieldName>(                                   \
             FE->dataPtr->get<FieldName_mi_tag>(), NAME);                       \
   IT++
-
-
 };
 
 /**

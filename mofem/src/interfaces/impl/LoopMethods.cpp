@@ -48,6 +48,7 @@ MoFEMErrorCode TSMethod::copyTs(const TSMethod &ts) {
   this->ts = ts.ts;
   this->ts_u = ts.ts_u;
   this->ts_u_t = ts.ts_u_t;
+  this->ts_u_tt = ts.ts_u_tt;
   this->ts_F = ts.ts_F;
   this->ts_A = ts.ts_A;
   this->ts_B = ts.ts_B;
@@ -59,8 +60,8 @@ MoFEMErrorCode TSMethod::copyTs(const TSMethod &ts) {
 
 // BasicMethod
 BasicMethod::BasicMethod()
-    : KspMethod(), SnesMethod(), TSMethod(), nInTheLoop(0), loopSize(0),
-      rAnk(-1), sIze(-1), refinedEntitiesPtr(nullptr),
+    : PetscData(), KspMethod(), SnesMethod(), TSMethod(), nInTheLoop(0),
+      loopSize(0), rAnk(-1), sIze(-1), refinedEntitiesPtr(nullptr),
       refinedFiniteElementsPtr(nullptr), problemPtr(nullptr),
       fieldsPtr(nullptr), entitiesPtr(nullptr), dofsPtr(nullptr),
       finiteElementsPtr(nullptr), finiteElementsEntitiesPtr(nullptr),

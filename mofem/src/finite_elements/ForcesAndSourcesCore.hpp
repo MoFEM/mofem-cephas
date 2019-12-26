@@ -299,6 +299,8 @@ struct ForcesAndSourcesCore : public FEMethod {
 
     inline Vec getTSu_t() const;
 
+    inline Vec getTSu_tt() const;
+
     inline Vec getTSf() const;
 
     inline Mat getTSA() const;
@@ -943,6 +945,10 @@ Vec ForcesAndSourcesCore::UserDataOperator::getTSu() const {
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSu_t() const {
   return getFEMethod()->ts_u_t;
+}
+
+Vec ForcesAndSourcesCore::UserDataOperator::getTSu_tt() const {
+  return getFEMethod()->ts_u_tt;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSf() const {
