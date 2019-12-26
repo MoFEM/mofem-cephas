@@ -18,7 +18,36 @@
 
 namespace MoFEM {
 
+// PetscData
+MoFEMErrorCode PetscData::query_interface(const MOFEMuuid &uuid,
+                                          UnknownInterface **iface) const {
+  MoFEMFunctionBeginHot;
+  if (uuid == IDD_MOFEMPetscDataMethod) {
+    *iface = const_cast<PetscData *>(this);
+    MoFEMFunctionReturnHot(0);
+  }
+  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  }
+
+PetscData::PetscData()
+    : f(PETSC_NULL), A(PETSC_NULL), B(PETSC_NULL), x(PETSC_NULL),
+      x_t(PETSC_NULL), x_tt(PETSC_NULL) {}
+
 // KSP
+MoFEMErrorCode KspMethod::query_interface(const MOFEMuuid &uuid,
+                                          UnknownInterface **iface) const {
+  MoFEMFunctionBeginHot;
+  if (uuid == IDD_MOFEMKspMethod) {
+    *iface = const_cast<KspMethod *>(this);
+    MoFEMFunctionReturnHot(0);
+  }
+  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+};
+
+KspMethod::KspMethod()
+    : ksp_ctx(CTX_KSPNONE), ksp(PETSC_NULL), ksp_f(PetscData::f),
+      ksp_A(PetscData::A), ksp_B(PetscData::B) {}
+
 MoFEMErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
   MoFEMFunctionBeginHot;
   this->ksp_ctx = ksp.ksp_ctx;
@@ -30,6 +59,19 @@ MoFEMErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
 }
 
 // SNES
+MoFEMErrorCode SnesMethod::query_interface(const MOFEMuuid &uuid,
+                                           UnknownInterface **iface) const {
+  if (uuid == IDD_MOFEMSnesMethod) {
+    *iface = const_cast<SnesMethod *>(this);
+    MoFEMFunctionReturnHot(0);
+  }
+  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  }
+
+SnesMethod::SnesMethod()
+    : snes_ctx(CTX_SNESNONE), snes_x(PetscData::x), snes_f(PetscData::f),
+      snes_A(PetscData::A), snes_B(PetscData::B) {}
+
 MoFEMErrorCode SnesMethod::copySnes(const SnesMethod &snes) {
   MoFEMFunctionBeginHot;
   this->snes_ctx = snes.snes_ctx;
@@ -42,6 +84,20 @@ MoFEMErrorCode SnesMethod::copySnes(const SnesMethod &snes) {
 }
 
 // TS
+MoFEMErrorCode TSMethod::query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const {
+    if (uuid == IDD_MOFEMTsMethod) {
+      *iface = const_cast<TSMethod *>(this);
+      MoFEMFunctionReturnHot(0);
+    }
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  }
+
+TSMethod::TSMethod()
+    : ts_ctx(CTX_TSNONE), ts_step(-1), ts_a(0), ts_t(0), ts_u(PetscData::x),
+      ts_u_t(PetscData::x_t), ts_u_tt(PetscData::x_tt), ts_F(PetscData::f),
+      ts_A(PetscData::A), ts_B(PetscData::B) {}
+
 MoFEMErrorCode TSMethod::copyTs(const TSMethod &ts) {
   MoFEMFunctionBeginHot;
   this->ts_ctx = ts.ts_ctx;

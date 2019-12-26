@@ -39,23 +39,14 @@ static const MOFEMuuid IDD_MOFEMDofMethod =
 struct PetscData : public UnknownInterface {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const {
-    MoFEMFunctionBeginHot;
-    if (uuid == IDD_MOFEMPetscDataMethod) {
-      *iface = const_cast<PetscData *>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  }
+                                 UnknownInterface **iface) const;
 
-  PetscData()
-      : f(PETSC_NULL), A(PETSC_NULL), B(PETSC_NULL), x(PETSC_NULL),
-        x_t(PETSC_NULL), x_tt(PETSC_NULL) {}
+  PetscData();
 
   virtual ~PetscData() = default;
 
   enum DataContext {
-    CTX_SET_NONE = 0,
+    CTX_SETNONE = 0,
     CTX_SET_F = 1 << 0,
     CTX_SET_A = 1 << 1,
     CTX_SET_B = 1 << 2,
@@ -85,24 +76,14 @@ struct PetscData : public UnknownInterface {
 struct KspMethod : virtual public PetscData {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const {
-    MoFEMFunctionBeginHot;
-    if (uuid == IDD_MOFEMKspMethod) {
-      *iface = const_cast<KspMethod *>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  }
-
+                                 UnknownInterface **iface) const;
   /**
    * \brief pass information about context of KSP/DM for with finite element is
    * computed
    */
   enum KSPContext { CTX_SETFUNCTION, CTX_OPERATORS, CTX_KSPNONE };
 
-  KspMethod()
-      : PetscData(), ksp_ctx(CTX_KSPNONE), ksp(PETSC_NULL), ksp_f(PetscData::f),
-        ksp_A(PetscData::A), ksp_B(PetscData::B) {}
+  KspMethod();
 
   virtual ~KspMethod() = default;
 
@@ -132,19 +113,11 @@ struct KspMethod : virtual public PetscData {
 struct SnesMethod : virtual protected PetscData {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const {
-    if (uuid == IDD_MOFEMSnesMethod) {
-      *iface = const_cast<SnesMethod *>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  }
+                                 UnknownInterface **iface) const;
 
   enum SNESContext { CTX_SNESSETFUNCTION, CTX_SNESSETJACOBIAN, CTX_SNESNONE };
 
-  SnesMethod()
-      : PetscData(), snes_ctx(CTX_SNESNONE), snes_x(PetscData::x),
-        snes_f(PetscData::f), snes_A(PetscData::A), snes_B(PetscData::B) {}
+  SnesMethod();
 
   virtual ~SnesMethod() = default;
 
@@ -172,13 +145,7 @@ struct SnesMethod : virtual protected PetscData {
 struct TSMethod : virtual protected PetscData {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const {
-    if (uuid == IDD_MOFEMTsMethod) {
-      *iface = const_cast<TSMethod *>(this);
-      MoFEMFunctionReturnHot(0);
-    }
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-  }
+                                 UnknownInterface **iface) const;
 
   enum TSContext {
     CTX_TSSETRHSFUNCTION,
@@ -189,11 +156,7 @@ struct TSMethod : virtual protected PetscData {
     CTX_TSNONE
   };
 
-  TSContext ts_ctx;
-  TSMethod()
-      : PetscData(), ts_ctx(CTX_TSNONE), ts_step(-1), ts_a(0), ts_t(0),
-        ts_u(PetscData::x), ts_u_t(PetscData::x_t), ts_u_tt(PetscData::x_tt),
-        ts_F(PetscData::f), ts_A(PetscData::A), ts_B(PetscData::B) {}
+  TSMethod();
 
   virtual ~TSMethod() = default;
 
@@ -201,6 +164,8 @@ struct TSMethod : virtual protected PetscData {
   MoFEMErrorCode copyTs(const TSMethod &ts);
 
   TS ts; ///< time solver
+
+  TSContext ts_ctx;
 
   PetscInt ts_step; ///< time step
   PetscReal ts_a;   ///< shift for U_tt (see PETSc Time Solver)
