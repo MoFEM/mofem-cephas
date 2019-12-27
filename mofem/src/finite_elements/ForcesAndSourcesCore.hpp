@@ -264,12 +264,11 @@ struct ForcesAndSourcesCore : public FEMethod {
      */
     inline const std::string &getFEName() const;
 
-
     /** \name Accessing KSP */
 
     /**@{*/
 
-    inline Vec getKSPF() const;
+    inline Vec getKSPf() const;
 
     inline Mat getKSPA() const;
 
@@ -281,13 +280,25 @@ struct ForcesAndSourcesCore : public FEMethod {
 
     /**@{*/
 
-    inline Vec getSnesF() const;
+    inline Vec getSNESf() const;
 
-    inline Vec getSnesX() const;
+    inline Vec getSNESx() const;
 
-    inline Mat getSnesA() const;
+    inline Mat getSNESA() const;
 
-    inline Mat getSnesB() const;
+    inline Mat getSNESB() const;
+
+    //! \deprecated Use getSNESF intead
+    DEPRECATED inline Vec getSnesF() const { return getSNESf(); }
+
+    //! \deprecated Use getSNESX intead
+    DEPRECATED inline Vec getSnesX() const { return getSNESx(); }
+
+    //! \deprecated Use getSNESA intead
+    DEPRECATED inline Mat getSnesA() const { return getSNESA(); }
+
+    //! \deprecated Use getSNESB intead
+    DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
 
     /**@}*/
 
@@ -911,7 +922,7 @@ const std::string &ForcesAndSourcesCore::UserDataOperator::getFEName() const {
   return getFEMethod()->feName;
 }
 
-Vec ForcesAndSourcesCore::UserDataOperator::getKSPF() const {
+Vec ForcesAndSourcesCore::UserDataOperator::getKSPf() const {
   return getFEMethod()->ksp_f;
 }
 
@@ -923,19 +934,19 @@ Mat ForcesAndSourcesCore::UserDataOperator::getKSPB() const {
   return getFEMethod()->ksp_B;
 }
 
-Vec ForcesAndSourcesCore::UserDataOperator::getSnesF() const {
+Vec ForcesAndSourcesCore::UserDataOperator::getSNESf() const {
   return getFEMethod()->snes_f;
 }
 
-Vec ForcesAndSourcesCore::UserDataOperator::getSnesX() const {
+Vec ForcesAndSourcesCore::UserDataOperator::getSNESx() const {
   return getFEMethod()->snes_x;
 }
 
-Mat ForcesAndSourcesCore::UserDataOperator::getSnesA() const {
+Mat ForcesAndSourcesCore::UserDataOperator::getSNESA() const {
   return getFEMethod()->snes_A;
 }
 
-Mat ForcesAndSourcesCore::UserDataOperator::getSnesB() const {
+Mat ForcesAndSourcesCore::UserDataOperator::getSNESB() const {
   return getFEMethod()->snes_B;
 }
 
