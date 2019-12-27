@@ -82,51 +82,65 @@ namespace FTensor
 
   /* T3dg+=T3dg */
 
+  template <bool S> struct Sign_of_T3dg_plus_equals_T3dg {};
+
+  template <> struct Sign_of_T3dg_plus_equals_T3dg<true> {
+    template <typename L, typename R> static inline void op(L &l, R &&r) {
+      l += r;
+    }
+  };
+
+  template <> struct Sign_of_T3dg_plus_equals_T3dg<false> {
+    template <typename L, typename R> static inline void op(L &l, R &&r) {
+      l -= r;
+    }
+  };
+
   template <class A, class B, class U, int Dim01, int Dim2, char i, char j,
-            char k, int Current_Dim0, int Current_Dim1, int Current_Dim2>
-  void
-  T3dg_plus_equals_T3dg(A &iter, const Dg_Expr<B, U, Dim01, Dim2, i, j, k> &result,
-                   const Number<Current_Dim0> &, const Number<Current_Dim1> &,
-                   const Number<Current_Dim2> &)
-  {
-    iter(Current_Dim0 - 1, Current_Dim1 - 1, Current_Dim2 - 1)
-      += result(Current_Dim0 - 1, Current_Dim1 - 1, Current_Dim2 - 1);
+            char k, int Current_Dim0, int Current_Dim1, int Current_Dim2,
+            class Op>
+  void T3dg_plus_equals_T3dg(A &iter,
+                             const Dg_Expr<B, U, Dim01, Dim2, i, j, k> &result,
+                             const Number<Current_Dim0> &,
+                             const Number<Current_Dim1> &,
+                             const Number<Current_Dim2> &, const Op &) {
+    Op::op(iter(Current_Dim0 - 1, Current_Dim1 - 1, Current_Dim2 - 1),
+           result(Current_Dim0 - 1, Current_Dim1 - 1, Current_Dim2 - 1));
     T3dg_plus_equals_T3dg(iter, result, Number<Current_Dim0 - 1>(),
-                     Number<Current_Dim1>(), Number<Current_Dim2>());
+                          Number<Current_Dim1>(), Number<Current_Dim2>(), Op());
   }
 
   template <class A, class B, class U, int Dim01, int Dim2, char i, char j,
-            char k, int Current_Dim1, int Current_Dim2>
-  void
-  T3dg_plus_equals_T3dg(A &iter, const Dg_Expr<B, U, Dim01, Dim2, i, j, k> &result,
-                   const Number<1> &, const Number<Current_Dim1> &,
-                   const Number<Current_Dim2> &)
-  {
-    iter(0, Current_Dim1 - 1, Current_Dim2 - 1)
-      += result(0, Current_Dim1 - 1, Current_Dim2 - 1);
+            char k, int Current_Dim1, int Current_Dim2, class Op>
+  void T3dg_plus_equals_T3dg(A &iter,
+                             const Dg_Expr<B, U, Dim01, Dim2, i, j, k> &result,
+                             const Number<1> &, const Number<Current_Dim1> &,
+                             const Number<Current_Dim2> &, const Op &) {
+    Op::op(iter(0, Current_Dim1 - 1, Current_Dim2 - 1),
+           result(0, Current_Dim1 - 1, Current_Dim2 - 1));
     T3dg_plus_equals_T3dg(iter, result, Number<Current_Dim1 - 1>(),
-                     Number<Current_Dim1 - 1>(), Number<Current_Dim2>());
+                          Number<Current_Dim1 - 1>(), Number<Current_Dim2>(),
+                          Op());
   }
 
   template <class A, class B, class U, int Dim01, int Dim2, char i, char j,
-            char k, int Current_Dim2>
-  void
-  T3dg_plus_equals_T3dg(A &iter, const Dg_Expr<B, U, Dim01, Dim2, i, j, k> &result,
-                   const Number<1> &, const Number<1> &,
-                   const Number<Current_Dim2> &)
-  {
-    iter(0, 0, Current_Dim2 - 1) += result(0, 0, Current_Dim2 - 1);
+            char k, int Current_Dim2, class Op>
+  void T3dg_plus_equals_T3dg(A &iter,
+                             const Dg_Expr<B, U, Dim01, Dim2, i, j, k> &result,
+                             const Number<1> &, const Number<1> &,
+                             const Number<Current_Dim2> &, const Op &) {
+    Op::op(iter(0, 0, Current_Dim2 - 1), result(0, 0, Current_Dim2 - 1));
     T3dg_plus_equals_T3dg(iter, result, Number<Dim01>(), Number<Dim01>(),
-                     Number<Current_Dim2 - 1>());
+                          Number<Current_Dim2 - 1>(), Op());
   }
 
   template <class A, class B, class U, int Dim01, int Dim2, char i, char j,
-            char k>
-  void
-  T3dg_plus_equals_T3dg(A &iter, const Dg_Expr<B, U, Dim01, Dim2, i, j, k> &result,
-                   const Number<1> &, const Number<1> &, const Number<1> &)
-  {
-    iter(0, 0, 0) += result(0, 0, 0);
+            char k, class Op>
+  void T3dg_plus_equals_T3dg(A &iter,
+                             const Dg_Expr<B, U, Dim01, Dim2, i, j, k> &result,
+                             const Number<1> &, const Number<1> &,
+                             const Number<1> &, const Op &) {
+    Op::op(iter(0, 0, 0), result(0, 0, 0));
   }
 
   template <class A, class T, int Tensor_Dim01, int Tensor_Dim2, int Dim01,
@@ -137,7 +151,20 @@ namespace FTensor
   operator+=(const Dg_Expr<B, U, Dim01, Dim2, i, j, k> &result)
   {
     T3dg_plus_equals_T3dg(iter, result, Number<Dim01>(), Number<Dim01>(),
-                     Number<Dim2>());
+                          Number<Dim2>(),
+                          Sign_of_T3dg_plus_equals_T3dg<true>());
+    return *this;
+  }
+
+  template <class A, class T, int Tensor_Dim01, int Tensor_Dim2, int Dim01,
+            int Dim2, char i, char j, char k>
+  template <class B, class U>
+  Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j, k> &
+  Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j, k>::
+  operator-=(const Dg_Expr<B, U, Dim01, Dim2, i, j, k> &result) {
+    T3dg_plus_equals_T3dg(iter, result, Number<Dim01>(), Number<Dim01>(),
+                          Number<Dim2>(),
+                          Sign_of_T3dg_plus_equals_T3dg<false>());
     return *this;
   }
 
@@ -151,6 +178,16 @@ namespace FTensor
                           j, k> &result)
   {
     return operator+=<Dg<A, Tensor_Dim01, Tensor_Dim2>, T>(result);
+  }
+
+  template <class A, class T, int Tensor_Dim01, int Tensor_Dim2, int Dim01,
+            int Dim2, char i, char j, char k>
+  Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j, k> &
+  Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j, k>::
+  operator-=(const Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i,
+                          j, k> &result)
+  {
+    return operator-=<Dg<A, Tensor_Dim01, Tensor_Dim2>, T>(result);
   }
 
   /* T3dg=U */
