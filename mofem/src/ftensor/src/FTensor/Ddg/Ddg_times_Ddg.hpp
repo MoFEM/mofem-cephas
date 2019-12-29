@@ -137,7 +137,7 @@ namespace FTensor
                     k, l>(TensorExpr(a, b));
   }
 
-  /* A(m,m,i,j)*B(m,n,k,l) -> Ddg */
+  /* A(i,j, m, n)*B(m,n,k,l) -> Ddg */
 
   template <class A, class B, class T, class U, int Dim01, int Dim23, int Dim45,
             char i, char j, char k, char l, char m, char n>
@@ -181,5 +181,51 @@ namespace FTensor
     return Ddg_Expr<TensorExpr, typename promote<T, U>::V, Dim01, Dim23, i, j,
                     k, l>(TensorExpr(a, b));
   }
+
+  /* A(m,n,i,j)*B(k,l,m,n) -> Ddg */
+
+  template <class A, class B, class T, class U, int Dim01, int Dim23, int Dim45,
+            char i, char j, char k, char l, char m, char n>
+  class Ddg_times_Ddg_0123 {
+
+    using IterA = Ddg_Expr<A, T, Dim45, Dim01, m, n, i, j>;
+    using IterB = Ddg_Expr<B, U, Dim23, Dim45, k, l, m, n>;
+
+    IterA iterA;
+    IterB iterB;
+
+  public:
+    Ddg_times_Ddg_0123(const IterA &a, const IterB &b) : iterA(a), iterB(b) {}
+
+    typename promote<T, U>::V operator()(const int N0, const int N1,
+                                         const int N2, const int N3) const {
+      typename promote<T, U>::V ret_val = 0;
+      auto index_sequence = std::make_index_sequence<Dim45>();
+
+      auto outer = [&](auto N4) {
+        auto inner = [&](auto N5) {
+          ret_val += iterA(N4, N5, N0, N1) * iterA(N2, N3, N4, N5);
+        };
+        boost::hana::for_each(index_sequence, inner);
+      };
+      boost::hana::for_each(index_sequence, outer);
+
+      return ret_val;
+    }
+  };
+
+  template <class A, class B, class T, class U, int Dim01, int Dim23, int Dim45,
+            char i, char j, char k, char l, char m, char n>
+  Ddg_Expr<
+      Ddg_times_Ddg_0123<A, B, T, U, Dim01, Dim23, Dim45, i, j, k, l, m, n>,
+      typename promote<T, U>::V, Dim01, Dim23, i, j, k, l>
+  operator*(const Ddg_Expr<A, T, Dim45, Dim01, m, n, i, j> &a,
+            const Ddg_Expr<B, U, Dim23, Dim45, k, l, m, n> &b) {
+    using TensorExpr =
+        Ddg_times_Ddg_0123<A, B, T, U, Dim01, Dim23, Dim45, i, j, k, l, m, n>;
+    return Ddg_Expr<TensorExpr, typename promote<T, U>::V, Dim01, Dim23, i, j,
+                    k, l>(TensorExpr(a, b));
+  }
+
 
 }
