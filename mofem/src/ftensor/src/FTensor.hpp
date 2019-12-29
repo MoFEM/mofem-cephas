@@ -117,6 +117,9 @@ namespace FTensor
   template <class T> class Tensor_Levi_Civita;
 }
 
+#include <boost/hana.hpp>
+#include <boost/hana/for_each.hpp>
+
 #include "FTensor/Index.hpp"
 #include "FTensor/Number.hpp"
 #include "FTensor/promote.hpp"

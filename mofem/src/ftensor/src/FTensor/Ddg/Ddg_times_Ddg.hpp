@@ -104,52 +104,24 @@ namespace FTensor
     IterA iterA;
     IterB iterB;
 
-    // template<int N1, int N2, int N3, int N4, int Dim01, int Dim23>    
-    // struct OuterLoop {
-
-    //   typename promote<T, U>::V retVal;
-    //   const IterA &iterA;
-    //   const IterB &iterB;
-    //   OuterLoop(typename promote<T, U>::V &ret_val, const IterA &a,
-    //             const IterB &b)
-    //       : retVal(ret_val), iterA(a), iterB(b) {}
-
-    //   template <int N1, int N2, int N3, int N4, int N5>
-    //   struct InnerLoop {
-    //     typename promote<T, U>::V retVal;
-    //     const IterA &iterA;
-    //     const IterB &iterB;
-    //     OuterLoop(typename promote<T, U>::V &ret_val, const IterA &a,
-    //               const IterB &b)
-    //         : retVal(ret_val), iterA(a), iterB(b) {}
-
-    //     template <typename U> void operator()(U N6) {
-    //       retVal += iterA(N5, N6, N1, N2) * iterA(N5, N6, N3, N4);
-    //     }
-    //   };
-
-    //   template <typename U> void operator()(U N5) {
-    //   boost::mpl::for_each<boost::mpl::range_c<int, 0, Dim45>>(
-    //       InnerLoop<N1, N2, N3, N4, Dim01, Dim12>(iterA, iterB, ret_val));
-    //   }
-    // };
-
   public:
     Ddg_times_Ddg_0101(const IterA &a, const IterB &b) : iterA(a), iterB(b) {}
 
-      typename promote<T, U>::V operator()(const int N1, const int N2,
-                                         const int N3, const int N4) const {
-
+    typename promote<T, U>::V operator()(const int N0, const int N1,
+                                         const int N2, const int N3) const {
       typename promote<T, U>::V ret_val = 0;
+      auto index_sequence = std::make_index_sequence<Dim45>();
 
-      // boost::mpl::for_each<boost::mpl::range_c<int, 0, Dim45>>(
-      // OuterLoop<N1, N2, N3, N4, Dim01, Dim12>(iterA, iterB, ret_val));
+      auto outer = [&](auto N4) {
+        auto inner = [&](auto N5) {
+          ret_val += iterA(N4, N5, N0, N1) * iterA(N4, N5, N2, N3);
+        };
+        boost::hana::for_each(index_sequence, inner);
+      };
+      boost::hana::for_each(index_sequence, outer);
 
-      for (int mm = 0; mm != Dim45; ++mm)
-        for (int nn = 0; nn != Dim45; ++nn)
-          ret_val += iterA(mm, nn, N1, N2) * iterA(mm, nn, N3, N4);
       return ret_val;
-      }
+    }
   };
 
   template <class A, class B, class T, class U, int Dim01, int Dim23, int Dim45,
