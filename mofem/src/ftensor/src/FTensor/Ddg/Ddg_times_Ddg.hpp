@@ -137,7 +137,7 @@ namespace FTensor
                     k, l>(TensorExpr(a, b));
   }
 
-  /* A(m,m,i,j)*B(m,nk,l) -> Ddg */
+  /* A(m,m,i,j)*B(m,n,k,l) -> Ddg */
 
   template <class A, class B, class T, class U, int Dim01, int Dim23, int Dim45,
             char i, char j, char k, char l, char m, char n>
