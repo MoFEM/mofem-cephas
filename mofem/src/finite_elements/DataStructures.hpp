@@ -1494,6 +1494,10 @@ FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<3>();
 
 template <>
+FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>
+DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<2>();
+
+template <>
 FTensor::Tensor1<double *, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
     const FieldApproximationBase base);

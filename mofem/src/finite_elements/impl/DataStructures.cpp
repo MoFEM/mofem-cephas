@@ -382,6 +382,22 @@ DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<3>() {
       ptr, &ptr[1], &ptr[2], &ptr[3], &ptr[4], &ptr[5]);
 }
 
+template <>
+FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>
+DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<2>() {
+  if (dOfs[0]->getNbOfCoeffs() != 3) {
+    std::stringstream s;
+    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << " but you ask for symmetric tensor rank 2 dimensions 2 by 2 so 3 "
+         "coefficients "
+         "is expected";
+    THROW_MESSAGE(s.str());
+  }
+  double *ptr = &*fieldData.data().begin();
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>(
+      ptr, &ptr[1], &ptr[2]);
+}
+
 FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
 DataForcesAndSourcesCore::EntData::getFTensor0FieldData() {
   if (dOfs[0]->getNbOfCoeffs() != 1) {
