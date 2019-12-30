@@ -28,7 +28,6 @@ namespace MoFEM {
 
 /** \brief Calculate field values for tenor field rank 0, i.e. scalar field
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <class T, class A>
 struct OpCalculateScalarFieldValues_General
@@ -62,7 +61,6 @@ struct OpCalculateScalarFieldValues_General
 /**
  * \brief Specialization of member function
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <class T, class A>
 MoFEMErrorCode OpCalculateScalarFieldValues_General<T, A>::doWork(
@@ -200,7 +198,6 @@ struct OpCalculateScalarValuesDot
 
 /** \brief Calculate field values for tenor field rank 1, i.e. vector field
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim, class T, class L, class A>
 struct OpCalculateVectorFieldValues_General
@@ -246,7 +243,6 @@ OpCalculateVectorFieldValues_General<Tensor_Dim, T, L, A>::doWork(
 /** \brief Calculate field values (template specialization) for tensor field
  * rank 1, i.e. vector field 
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
@@ -273,7 +269,6 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
 /**
  * \brief Member function specialization calculating values for tenor field rank
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 MoFEMErrorCode OpCalculateVectorFieldValues_General<
@@ -427,7 +422,6 @@ inline auto OpCalculateVectorFieldValuesDot<3>::getFTensorDotData<3>() {
 
 /** \brief Calculate field values for tenor field rank 2.
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 struct OpCalculateTensor2FieldValues_General
@@ -638,6 +632,13 @@ inline auto OpCalculateTensor2FieldValuesDot<3, 3>::getFTensorDotData<3, 3>() {
       &dotVector[6], &dotVector[7], &dotVector[8]);
 }
 
+/**
+ * @brief Calculate symmetric tensor field values at integration pts.
+ * 
+ * @tparam Tensor_Dim 
+
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
 template <int Tensor_Dim>
 struct OpCalculateTensor2SymmetricFieldValues
     : public ForcesAndSourcesCore::UserDataOperator {
@@ -692,6 +693,13 @@ struct OpCalculateTensor2SymmetricFieldValues
   }
 };
 
+/**
+ * @brief Calculate symmetric tensor field rates ant integratio pts.
+ * 
+ * @tparam Tensor_Dim 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
 template <int Tensor_Dim>
 struct OpCalculateTensor2SymmetricFieldValuesDot
     : public ForcesAndSourcesCore::UserDataOperator {
@@ -778,7 +786,6 @@ OpCalculateTensor2SymmetricFieldValuesDot<3>::getFTensorDotData<3>() {
  * \brief Evaluate field gradient values for scalar field, i.e. gradient is
  * tensor rank 1 (vector) 
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim, class T, class L, class A>
 struct OpCalculateScalarFieldGradient_General
@@ -794,7 +801,6 @@ struct OpCalculateScalarFieldGradient_General
 /** \brief Evaluate field gradient values for scalar field, i.e. gradient is
  * tensor rank 1 (vector), specialization 
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 struct OpCalculateScalarFieldGradient_General<Tensor_Dim, double,
@@ -824,7 +830,6 @@ struct OpCalculateScalarFieldGradient_General<Tensor_Dim, double,
  * \brief Member function specialization calculating scalar field gradients for
  * tenor field rank 1 
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 MoFEMErrorCode OpCalculateScalarFieldGradient_General<
@@ -893,7 +898,6 @@ struct OpCalculateScalarFieldGradient
  * \brief Evaluate field gradient values for vector field, i.e. gradient is
  * tensor rank 2 
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 struct OpCalculateVectorFieldGradient_General
@@ -937,7 +941,6 @@ struct OpCalculateVectorFieldGradient_General<Tensor_Dim0, Tensor_Dim1, double,
  * \brief Member function specialization calculating vector field gradients for
  * tenor field rank 2 
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
 MoFEMErrorCode OpCalculateVectorFieldGradient_General<
@@ -1105,7 +1108,6 @@ inline auto OpCalculateVectorFieldGradientDot<2, 2>::getFTensorDotData<2>() {
 
 /** \brief Get vector field for H-div approximation
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, class T, class L, class A>
 struct OpCalculateHdivVectorField_General
@@ -1150,7 +1152,6 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<Tensor_Dim, T, L, A>::doWork(
 
 /** \brief Get vector field for H-div approximation
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 struct OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
