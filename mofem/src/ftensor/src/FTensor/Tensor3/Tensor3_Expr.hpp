@@ -17,259 +17,219 @@
 
 #include "../Tensor4/Tensor4_number.hpp"
 
-namespace FTensor {
-template <class A, class T, int Dim0, int Dim1, int Dim2, char i, char j,
-          char k>
-class Tensor3_Expr {
-  A iter;
+namespace FTensor
+{
+  template <class A, class T, int Dim0, int Dim1, int Dim2, char i, char j,
+            char k>
+  class Tensor3_Expr
+  {
+    A iter;
 
-public:
-  Tensor3_Expr(const A &a) : iter(a) {}
-  T operator()(const int N1, const int N2, const int N3) const {
-    return iter(N1, N2, N3);
-  }
-};
+  public:
+    Tensor3_Expr(const A &a) : iter(a) {}
+    T operator()(const int N1, const int N2, const int N3) const
+    {
+      return iter(N1, N2, N3);
+    }
+  };
 
-template <class A, class T, int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2,
-          int Dim0, int Dim1, int Dim2, char i, char j, char k>
-class Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T, Dim0,
-                   Dim1, Dim2, i, j, k> {
-  Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2> &iter;
+  template <class A, class T, int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2,
+            int Dim0, int Dim1, int Dim2, char i, char j, char k>
+  class Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T,
+                     Dim0, Dim1, Dim2, i, j, k>
+  {
+    Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2> &iter;
 
-public:
-  Tensor3_Expr(Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2> &a)
-      : iter(a) {}
-  T &operator()(const int N1, const int N2, const int N3) {
-    return iter(N1, N2, N3);
-  }
-  T operator()(const int N1, const int N2, const int N3) const {
-    return iter(N1, N2, N3);
-  }
+  public:
+    Tensor3_Expr(Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2> &a)
+        : iter(a)
+    {}
+    T &operator()(const int N1, const int N2, const int N3)
+    {
+      return iter(N1, N2, N3);
+    }
+    T operator()(const int N1, const int N2, const int N3) const
+    {
+      return iter(N1, N2, N3);
+    }
 
-  /* Various assignment operators.  I have to explicitly declare the
-     second operator= because otherwise the compiler will generate its
-     own and not use the template code. */
+    /* Various assignment operators.  I have to explicitly declare the
+       second operator= because otherwise the compiler will generate its
+       own and not use the template code. */
 
-  template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
-            char j_1, char k_1>
-  auto &
-  equals(const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
+    template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
+              char j_1, char k_1>
+    auto &
+    equals(const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs)
+    {
+      for(int ii = 0; ii < Dim0; ++ii)
+        for(int jj = 0; jj < Dim1; ++jj)
+          for(int kk = 0; kk < Dim2; ++kk)
+            {
+              iter(ii, jj, kk) = permute(*this, rhs, ii, jj, kk);
+            }
+      return *this;
+    }
 
-    auto index_sequence0 = std::make_index_sequence<Dim0>();
-    auto index_sequence1 = std::make_index_sequence<Dim1>();
-    auto index_sequence2 = std::make_index_sequence<Dim2>();
+    template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
+              char j_1, char k_1>
+    auto &operator=(
+      const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs)
+    {
+      return equals(rhs);
+    }
 
-    auto l0 = [&](auto N0) {
-      auto l1 = [&](auto N1) {
-        auto l2 = [&](auto N2) {
-          iter(N0, N1, N2) = permute(*this, rhs, N0, N1, N2);
-        };
-        boost::hana::for_each(index_sequence2, l2);
-      };
-      boost::hana::for_each(index_sequence1, l1);
-    };
-    boost::hana::for_each(index_sequence0, l0);
-
-    return *this;
-  }
-
-  template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
-            char j_1, char k_1>
-  auto &operator=(
-      const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
-    return equals(rhs);
-  }
-
-  auto &operator=(
+    auto &operator=(
       const Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T,
-                         Dim0, Dim1, Dim2, i, j, k> &rhs) {
-    return equals(rhs);
-  }
+                         Dim0, Dim1, Dim2, i, j, k> &rhs)
+    {
+      return equals(rhs);
+    }
 
-  template <class U>
-  Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T, Dim0, Dim1,
-               Dim2, i, j, k> &
-  operator=(const U &u) {
-    auto index_sequence0 = std::make_index_sequence<Dim0>();
-    auto index_sequence1 = std::make_index_sequence<Dim1>();
-    auto index_sequence2 = std::make_index_sequence<Dim2>();
+    template <class U>
+    Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T, Dim0,
+                 Dim1, Dim2, i, j, k> &
+    operator=(const U &u)
+    {
+      for(int ii = 0; ii < Dim0; ++ii)
+        for(int jj = 0; jj < Dim1; ++jj)
+          for(int kk = 0; kk < Dim2; ++kk)
+            {
+              iter(ii, jj, kk) = u;
+            }
+      return *this;
+    }
 
-    auto l0 = [&](auto N0) {
-      auto l1 = [&](auto N1) {
-        auto l2 = [&](auto N2) { iter(N0, N1, N2) = u; };
-        boost::hana::for_each(index_sequence2, l2);
-      };
-      boost::hana::for_each(index_sequence1, l1);
-    };
-    boost::hana::for_each(index_sequence0, l0);
+    template <class U>
+    Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T, Dim0,
+                 Dim1, Dim2, i, j, k> &
+    operator*=(const U &u)
+    {
+      for(int ii = 0; ii < Dim0; ++ii)
+        for(int jj = 0; jj < Dim1; ++jj)
+          for(int kk = 0; kk < Dim2; ++kk)
+            {
+              iter(ii, jj, kk) *= u;
+            }
+      return *this;
+    }
 
-    return *this;
-  }
+    template <class U>
+    Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T, Dim0,
+                 Dim1, Dim2, i, j, k> &
+    operator/=(const U &u)
+    {
+      for(int ii = 0; ii < Dim0; ++ii)
+        for(int jj = 0; jj < Dim1; ++jj)
+          for(int kk = 0; kk < Dim2; ++kk)
+            {
+              iter(ii, jj, kk) /= u;
+            }
+      return *this;
+    }
 
-  template <class U>
-  Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T, Dim0, Dim1,
-               Dim2, i, j, k> &
-  operator*=(const U &u) {
+    template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
+              char j_1, char k_1>
+    auto &operator+=(
+        const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
+      for (int ii = 0; ii < Dim0; ++ii)
+        for (int jj = 0; jj < Dim1; ++jj)
+          for (int kk = 0; kk < Dim2; ++kk) {
+            iter(ii, jj, kk) += permute(*this, rhs, ii, jj, kk);
+          }
+      return *this;
+    }
 
-    auto index_sequence0 = std::make_index_sequence<Dim0>();
-    auto index_sequence1 = std::make_index_sequence<Dim1>();
-    auto index_sequence2 = std::make_index_sequence<Dim2>();
+    auto &operator+=(
+        const Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T,
+                           Dim0, Dim1, Dim2, i, j, k> &rhs) {
+      for (int ii = 0; ii < Dim0; ++ii)
+        for (int jj = 0; jj < Dim1; ++jj)
+          for (int kk = 0; kk < Dim2; ++kk) {
+            iter(ii, jj, kk) += permute(*this, rhs, ii, jj, kk);
+          }
+      return *this;
+    }
+  };
 
-    auto l0 = [&](auto N0) {
-      auto l1 = [&](auto N1) {
-        auto l2 = [&](auto N2) { iter(N0, N1, N2) *= u; };
-        boost::hana::for_each(index_sequence2, l2);
-      };
-      boost::hana::for_each(index_sequence1, l1);
-    };
-    boost::hana::for_each(index_sequence0, l0);
+  /* Specialized for Tensor4_number_rhs_2  */
 
-    return *this;
-  }
+  template <class A, class T, int Dim0, int Dim1, int Dim2, char i, char j,
+            char k, int N>
+  class Tensor3_Expr<Tensor4_number_rhs_2<A, T, N>, T, Dim0, Dim1, Dim2, i, j,
+                     k> {
+    A &iter;
 
-  template <class U>
-  Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T, Dim0, Dim1,
-               Dim2, i, j, k> &
-  operator/=(const U &u) {
+  public:
+    Tensor3_Expr(A &a) : iter(a) {}
+    T &operator()(const int N0, const int N1, const int N2) {
+      return iter(N0, N1, N2, N);
+    }
+    T operator()(const int N0, const int N1, const int N2) const {
+      return iter(N0, N1, N2, N);
+    }
 
-    auto index_sequence0 = std::make_index_sequence<Dim0>();
-    auto index_sequence1 = std::make_index_sequence<Dim1>();
-    auto index_sequence2 = std::make_index_sequence<Dim2>();
+    /* Various assignment operators.  I have to explicitly declare the
+       second operator= because otherwise the compiler will generate its
+       own and not use the template code. */
 
-    auto l0 = [&](auto N0) {
-      auto l1 = [&](auto N1) {
-        auto l2 = [&](auto N2) { iter(N0, N1, N2) /= u; };
-        boost::hana::for_each(index_sequence2, l2);
-      };
-      boost::hana::for_each(index_sequence1, l1);
-    };
-    boost::hana::for_each(index_sequence0, l0);
+    template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
+              char j_1, char k_1>
+    auto &operator=(
+        const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
+      for (int ii = 0; ii < Dim0; ++ii)
+        for (int jj = 0; jj < Dim1; ++jj)
+          for (int kk = 0; kk < Dim2; ++kk) {
+            iter(ii, jj, N, kk) = permute(*this, rhs, ii, jj, kk);
+          }
+      return *this;
+    }
 
-    return *this;
-  }
+    auto &operator=(const Tensor3_Expr<Tensor4_number_rhs_2<A, T, N>, T, Dim0,
+                                       Dim1, Dim2, i, j, k> &result) {
+      return operator=<Tensor4_number_rhs_2<A, T, N>, T>(result);
+    }
 
-  template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
-            char j_1, char k_1>
-  auto &operator+=(
-      const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
+  };
 
-    auto index_sequence0 = std::make_index_sequence<Dim0>();
-    auto index_sequence1 = std::make_index_sequence<Dim1>();
-    auto index_sequence2 = std::make_index_sequence<Dim2>();
+  /* Specialized for Tensor4_number_rhs_3  */
 
-    auto l0 = [&](auto N0) {
-      auto l1 = [&](auto N1) {
-        auto l2 = [&](auto N2) {
-          iter(N0, N1, N2) += permute(*this, rhs, N0, N1, N2);
-        };
-        boost::hana::for_each(index_sequence2, l2);
-      };
-      boost::hana::for_each(index_sequence1, l1);
-    };
-    boost::hana::for_each(index_sequence0, l0);
+  template <class A, class T, int Dim0, int Dim1, int Dim2, char i, char j,
+            char k, int N>
+  class Tensor3_Expr<Tensor4_number_rhs_3<A, T, N>, T, Dim0, Dim1, Dim2, i, j,
+                     k> {
+    A &iter;
 
-    return *this;
-  }
+  public:
+    Tensor3_Expr(A &a) : iter(a) {}
+    T &operator()(const int N0, const int N1, const int N2) {
+      return iter(N0, N1, N2, N);
+    }
+    T operator()(const int N0, const int N1, const int N2) const {
+      return iter(N0, N1, N2, N);
+    }
 
-  auto &operator+=(
-      const Tensor3_Expr<Tensor3<A, Tensor_Dim0, Tensor_Dim1, Tensor_Dim2>, T,
-                         Dim0, Dim1, Dim2, i, j, k> &rhs) {
+    /* Various assignment operators.  I have to explicitly declare the
+       second operator= because otherwise the compiler will generate its
+       own and not use the template code. */
 
-    auto index_sequence0 = std::make_index_sequence<Dim0>();
-    auto index_sequence1 = std::make_index_sequence<Dim1>();
-    auto index_sequence2 = std::make_index_sequence<Dim2>();
+    template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
+              char j_1, char k_1>
+    auto &operator=(
+        const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
+      for (int ii = 0; ii < Dim0; ++ii)
+        for (int jj = 0; jj < Dim1; ++jj)
+          for (int kk = 0; kk < Dim2; ++kk) {
+            iter(ii, jj, kk, N) = permute(*this, rhs, ii, jj, kk);
+          }
+      return *this;
+    }
 
-    auto l0 = [&](auto N0) {
-      auto l1 = [&](auto N1) {
-        auto l2 = [&](auto N2) {
-          iter(N0, N1, N2) += permute(*this, rhs, N0, N1, N2);
-        };
-        boost::hana::for_each(index_sequence2, l2);
-      };
-      boost::hana::for_each(index_sequence1, l1);
-    };
-    boost::hana::for_each(index_sequence0, l0);
+    auto &operator=(const Tensor3_Expr<Tensor4_number_rhs_3<A, T, N>, T, Dim0,
+                                       Dim1, Dim2, i, j, k> &result) {
+      return operator=<Tensor4_number_rhs_3<A, T, N>, T>(result);
+    }
 
-    return *this;
-  }
-};
+  };
 
-/* Specialized for Tensor4_number_rhs_2  */
-
-template <class A, class T, int Dim0, int Dim1, int Dim2, char i, char j,
-          char k, int N>
-class Tensor3_Expr<Tensor4_number_rhs_2<A, T, N>, T, Dim0, Dim1, Dim2, i, j,
-                   k> {
-  A &iter;
-
-public:
-  Tensor3_Expr(A &a) : iter(a) {}
-  T &operator()(const int N0, const int N1, const int N2) {
-    return iter(N0, N1, N2, N);
-  }
-  T operator()(const int N0, const int N1, const int N2) const {
-    return iter(N0, N1, N2, N);
-  }
-
-  /* Various assignment operators.  I have to explicitly declare the
-     second operator= because otherwise the compiler will generate its
-     own and not use the template code. */
-
-  template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
-            char j_1, char k_1>
-  auto &operator=(
-      const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
-    for (int ii = 0; ii < Dim0; ++ii)
-      for (int jj = 0; jj < Dim1; ++jj)
-        for (int kk = 0; kk < Dim2; ++kk) {
-          iter(ii, jj, N, kk) = permute(*this, rhs, ii, jj, kk);
-        }
-    return *this;
-  }
-
-  auto &operator=(const Tensor3_Expr<Tensor4_number_rhs_2<A, T, N>, T, Dim0,
-                                     Dim1, Dim2, i, j, k> &result) {
-    return operator=<Tensor4_number_rhs_2<A, T, N>, T>(result);
-  }
-};
-
-/* Specialized for Tensor4_number_rhs_3  */
-
-template <class A, class T, int Dim0, int Dim1, int Dim2, char i, char j,
-          char k, int N>
-class Tensor3_Expr<Tensor4_number_rhs_3<A, T, N>, T, Dim0, Dim1, Dim2, i, j,
-                   k> {
-  A &iter;
-
-public:
-  Tensor3_Expr(A &a) : iter(a) {}
-  T &operator()(const int N0, const int N1, const int N2) {
-    return iter(N0, N1, N2, N);
-  }
-  T operator()(const int N0, const int N1, const int N2) const {
-    return iter(N0, N1, N2, N);
-  }
-
-  /* Various assignment operators.  I have to explicitly declare the
-     second operator= because otherwise the compiler will generate its
-     own and not use the template code. */
-
-  template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, char i_1,
-            char j_1, char k_1>
-  auto &operator=(
-      const Tensor3_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, i_1, j_1, k_1> &rhs) {
-    for (int ii = 0; ii < Dim0; ++ii)
-      for (int jj = 0; jj < Dim1; ++jj)
-        for (int kk = 0; kk < Dim2; ++kk) {
-          iter(ii, jj, kk, N) = permute(*this, rhs, ii, jj, kk);
-        }
-    return *this;
-  }
-
-  auto &operator=(const Tensor3_Expr<Tensor4_number_rhs_3<A, T, N>, T, Dim0,
-                                     Dim1, Dim2, i, j, k> &result) {
-    return operator=<Tensor4_number_rhs_3<A, T, N>, T>(result);
-  }
-};
-
-} // namespace FTensor
+}
