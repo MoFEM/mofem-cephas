@@ -780,6 +780,14 @@ OpCalculateTensor2SymmetricFieldValuesDot<3>::getFTensorDotData<3>() {
       &dotVector[5]);
 }
 
+template <>
+template <>
+inline auto
+OpCalculateTensor2SymmetricFieldValuesDot<2>::getFTensorDotData<2>() {
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>(
+      &dotVector[0], &dotVector[1], &dotVector[2]);
+}
+
 // GET GRADIENTS AT GAUSS POINTS
 
 /**
