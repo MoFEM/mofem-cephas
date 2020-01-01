@@ -31,13 +31,13 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
   auto set = [&](auto &fe) {
     fe.ksp = ksp;
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
-    fe.data_ctx = PetscData::CTX_SET_F;
+    fe.data_ctx = PetscData::CtxSetF;
     fe.ksp_f = f;
   };
 
   auto unset = [&](auto &fe) {
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SET_NONE;
+    fe.data_ctx = PetscData::CtxSetNone;
   };
 
   // pre-process
@@ -92,12 +92,12 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
     fe.ksp_A = A;
     fe.ksp_B = B;
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
-    fe.data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_B;
+    fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB;
   };
 
   auto unset = [&](auto &fe) {
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SET_NONE;
+    fe.data_ctx = PetscData::CtxSetNone;
   };
 
   // pre-procsess

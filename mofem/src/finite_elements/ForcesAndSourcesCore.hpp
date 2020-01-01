@@ -268,7 +268,7 @@ struct ForcesAndSourcesCore : public FEMethod {
 
     /**@{*/
 
-    inline const std::bitset<7> &getDataCtx() const;
+    inline const PetscData::Switches &getDataCtx() const;
 
     inline const KspMethod::KSPContext getKSPCtx() const;
 
@@ -934,7 +934,7 @@ const std::string &ForcesAndSourcesCore::UserDataOperator::getFEName() const {
   return getFEMethod()->feName;
 }
 
-const std::bitset<7> &
+const PetscData::Switches &
 ForcesAndSourcesCore::UserDataOperator::getDataCtx() const {
   return getFEMethod()->data_ctx;
 }

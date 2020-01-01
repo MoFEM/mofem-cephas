@@ -59,13 +59,13 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     fe.snes_f = f;
     fe.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
-    fe.data_ctx = PetscData::CTX_SET_F | PetscData::CTX_SET_X;
+    fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX;
   };
 
   auto unset = [&](auto &fe) {
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SET_NONE;
+    fe.data_ctx = PetscData::CtxSetNone;
   };
 
   for (auto &bit : snes_ctx->preProcess_Rhs) {
@@ -136,13 +136,13 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
     fe.data_ctx =
-        PetscData::CTX_SET_A | PetscData::CTX_SET_B | PetscData::CTX_SET_X;
+        PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX;
   };
 
   auto unset = [&](auto &fe) {
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SET_NONE;
+    fe.data_ctx = PetscData::CtxSetNone;
   };
 
   CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);

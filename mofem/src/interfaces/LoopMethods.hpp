@@ -56,16 +56,18 @@ struct PetscData : public UnknownInterface {
     CTX_SET_TIME = 1 << 7
   };
 
-  static constexpr std::bitset<7> CtxSetNone = std::bitset<7>(CTX_SET_NONE);
-  static constexpr std::bitset<7> CtxSetF = std::bitset<7>(CTX_SET_F);
-  static constexpr std::bitset<7> CtxSetA = std::bitset<7>(CTX_SET_A);
-  static constexpr std::bitset<7> CtxSetB = std::bitset<7>(CTX_SET_B);
-  static constexpr std::bitset<7> CtxSetX = std::bitset<7>(CTX_SET_X);
-  static constexpr std::bitset<7> CtxSetX_T = std::bitset<7>(CTX_SET_X_T);
-  static constexpr std::bitset<7> CtxSetX_TT = std::bitset<7>(CTX_SET_X_TT);
-  static constexpr std::bitset<7> CtxSetTime = std::bitset<7>(CTX_SET_TIME);
+  using Switches = std::bitset<8>;
 
-  std::bitset<7> data_ctx;
+  static constexpr Switches CtxSetNone = PetscData::Switches(CTX_SET_NONE);
+  static constexpr Switches CtxSetF = PetscData::Switches(CTX_SET_F);
+  static constexpr Switches CtxSetA = PetscData::Switches(CTX_SET_A);
+  static constexpr Switches CtxSetB = PetscData::Switches(CTX_SET_B);
+  static constexpr Switches CtxSetX = PetscData::Switches(CTX_SET_X);
+  static constexpr Switches CtxSetX_T = PetscData::Switches(CTX_SET_X_T);
+  static constexpr Switches CtxSetX_TT = PetscData::Switches(CTX_SET_X_TT);
+  static constexpr Switches CtxSetTime = PetscData::Switches(CTX_SET_TIME);
+
+  Switches data_ctx;
 
   Vec f;
   Mat A;
