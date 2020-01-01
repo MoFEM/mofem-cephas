@@ -142,6 +142,12 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
         forderTable[MBTET] = fNBVOLUMETET_H1;
         forderTable[MBPRISM] = fNBVOLUMEPRISM_H1;
         break;
+      case L2:
+        forderTable[MBVERTEX] = fNBVERTEX_L2;
+        forderTable[MBEDGE] = fNBEDGE_L2;
+        forderTable[MBTRI] = fNBFACETRI_L2;
+        forderTable[MBTET] = fNBVOLUMETET_L2;
+        break;
       default:
         THROW_MESSAGE("unknown approximation space or not yet implemented");
       }
