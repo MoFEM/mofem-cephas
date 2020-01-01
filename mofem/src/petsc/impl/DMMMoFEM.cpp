@@ -33,11 +33,6 @@ DMCtx::DMCtx()
       isSubDM(PETSC_FALSE), isCompDM(PETSC_FALSE), destroyProblem(PETSC_FALSE),
       verbosity(VERBOSE), referenceNumber(0) {}
 
-DMCtx::~DMCtx() {
-  // cerr << "Snes " << snesCtx.use_count() << endl;
-  // cerr << "Destroy DMCtx" << endl;
-}
-
 MoFEMErrorCode DMCtx::query_interface(const MOFEMuuid &uuid,
                                       UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
@@ -90,19 +85,20 @@ PetscErrorCode DMDestroy_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   MoFEMFunctionBeginHot;
-  if (((DMCtx *)dm->data)->referenceNumber == 0) {
+  if (static_cast<DMCtx *>(dm->data)->referenceNumber == 0) {
     if (dm_field->destroyProblem) {
+
       if (dm_field->mField_ptr->check_problem(dm_field->problemName)) {
         dm_field->mField_ptr->delete_problem(dm_field->problemName);
       } // else problem has to be deleted by the user
+
     }
-    // cerr << "Destroy " << dm_field->problemName << endl;
-    delete ((DMCtx *)dm->data);
-  } else {
-    // cerr << "Dereference " << dm_field->problemName << " "  <<
-    // ((DMCtx*)dm->data)->referenceNumber << endl;
-    (((DMCtx *)dm->data)->referenceNumber)--;
-  }
+
+    delete static_cast<DMCtx *>(dm->data);
+
+  } else 
+    --static_cast<DMCtx *>(dm->data)->referenceNumber;
+  
   MoFEMFunctionReturnHot(0);
 }
 
@@ -147,8 +143,6 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm, MoFEM::Interface *m_field_ptr,
   CHKERR PetscObjectGetComm((PetscObject)dm, &comm);
   int result = 0;
   MPI_Comm_compare(comm, m_field_ptr->get_comm(), &result);
-  // std::cerr << result << " " << MPI_IDENT << " " << MPI_CONGRUENT << " " <<
-  // MPI_SIMILAR << " " << MPI_UNEQUAL << std::endl;
   if (result > MPI_CONGRUENT) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "MoFEM and DM using different communicators");
@@ -159,6 +153,23 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm, MoFEM::Interface *m_field_ptr,
   // problem structure
   CHKERR dm_field->mField_ptr->get_problem(dm_field->problemName,
                                            &dm_field->problemPtr);
+
+  MoFEMFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMDuplicateDMCtx(DM dm, DM dm_duplicate) {
+  MoFEMFunctionBegin;
+
+  auto *dm_field = static_cast<DMCtx *>(dm->data);
+  if (!dm->data)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "data structure for MoFEM not yet created");
+
+  if (static_cast<DMCtx *>(dm_duplicate->data)->referenceNumber == 0)
+    delete static_cast<DMCtx *>(dm_duplicate->data);
+
+  dm_duplicate->data = dm->data;
+  ++(static_cast<DMCtx *>(dm_duplicate->data)->referenceNumber);
 
   MoFEMFunctionReturn(0);
 }

@@ -103,8 +103,21 @@ SmartPetscObj<KSP> Basic::createKSP(SmartPetscObj<DM> dm) {
 SmartPetscObj<SNES> Basic::createSNES(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
   Simple *simple_interface = m_field.getInterface<Simple>();
-  if (!dm)
-    dm = simple_interface->getDM();
+
+  auto copy_dm_struture = [&](auto simple_dm) {
+    MPI_Comm comm;
+    CHKERR PetscObjectGetComm(getPetscObject(simple_dm.get()), &comm);
+    DMType type;
+    CHKERR DMGetType(simple_dm, &type);
+    dm = createSmartDM(comm, type);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_interface->getDM(), dm);
+    return dm;
+  };
+
+  if (!dm) 
+    dm = copy_dm_struture(simple_interface->getDM());
+  else 
+    dm = copy_dm_struture(dm);
 
   boost::shared_ptr<FEMethod> null;
 
@@ -138,8 +151,21 @@ SmartPetscObj<SNES> Basic::createSNES(SmartPetscObj<DM> dm) {
 SmartPetscObj<TS> Basic::createTS(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
   Simple *simple_interface = m_field.getInterface<Simple>();
-  if (!dm)
-    dm = simple_interface->getDM();
+
+  auto copy_dm_struture = [&](auto simple_dm) {
+    MPI_Comm comm;
+    CHKERR PetscObjectGetComm(getPetscObject(simple_dm.get()), &comm);
+    DMType type;
+    CHKERR DMGetType(simple_dm, &type);
+    dm = createSmartDM(comm, type);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_interface->getDM(), dm);
+    return dm;
+  };
+
+  if (!dm) 
+    dm = copy_dm_struture(simple_interface->getDM());
+  else 
+    dm = copy_dm_struture(dm);
 
   boost::shared_ptr<FEMethod> null;
 
