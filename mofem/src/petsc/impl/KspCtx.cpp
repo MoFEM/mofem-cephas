@@ -37,7 +37,7 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
 
   auto unset = [&](auto &fe) {
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SETNONE;
+    fe.data_ctx = PetscData::CTX_SET_NONE;
   };
 
   // pre-process
@@ -97,7 +97,7 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
 
   auto unset = [&](auto &fe) {
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SETNONE;
+    fe.data_ctx = PetscData::CTX_SET_NONE;
   };
 
   // pre-procsess

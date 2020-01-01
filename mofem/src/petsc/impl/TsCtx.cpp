@@ -61,15 +61,15 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     fe.ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
     fe.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
-    fe.data_ctx =
-        PetscData::CTX_SET_F | PetscData::CTX_SET_X | PetscData::CTX_SET_X_T;
+    fe.data_ctx = PetscData::CTX_SET_F | PetscData::CTX_SET_X |
+                  PetscData::CTX_SET_X_T | PetscData::CTX_SET_TIME;
   };
 
   auto unset = [&](auto &fe) {
     fe.ts_ctx = TSMethod::CTX_TSNONE;
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SETNONE;
+    fe.data_ctx = PetscData::CTX_SET_NONE;
   };
 
   // preprocess
@@ -151,14 +151,15 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
     fe.data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_B |
-                  PetscData::CTX_SET_X | PetscData::CTX_SET_X_T;
+                  PetscData::CTX_SET_X | PetscData::CTX_SET_X_T |
+                  PetscData::CTX_SET_TIME;
   };
 
   auto unset = [&](auto &fe) {
     fe.ts_ctx = TSMethod::CTX_TSNONE;
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SETNONE;
+    fe.data_ctx = PetscData::CTX_SET_NONE;
   };
 
   // preproces
@@ -217,12 +218,12 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     fe.ts_ctx = TSMethod::CTX_TSTSMONITORSET;
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SET_X;
+    fe.data_ctx = PetscData::CTX_SET_X | PetscData::CTX_SET_TIME;
   };
 
   auto unset = [&](auto &fe) {
     fe.ts_ctx = TSMethod::CTX_TSNONE;
-    fe.data_ctx = PetscData::CTX_SETNONE;
+    fe.data_ctx = PetscData::CTX_SET_NONE;
   };
 
   // preproces
@@ -295,14 +296,15 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     fe.ts_ctx = TSMethod::CTX_TSSETRHSFUNCTION;
     fe.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
-    fe.data_ctx = PetscData::CTX_SET_F | PetscData::CTX_SET_X;
+    fe.data_ctx =
+        PetscData::CTX_SET_F | PetscData::CTX_SET_X | PetscData::CTX_SET_TIME;
   };
 
   auto unset = [&](auto &fe) {
     fe.ts_ctx = TSMethod::CTX_TSNONE;
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SETNONE;
+    fe.data_ctx = PetscData::CTX_SET_NONE;
   };
 
   for (auto &bit : ts_ctx->preProcess_RHSJacobian) {
@@ -378,8 +380,8 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     fe.ts_ctx = TSMethod::CTX_TSSETRHSJACOBIAN;
     fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
-    fe.data_ctx =
-        PetscData::CTX_SET_A | PetscData::CTX_SET_B | PetscData::CTX_SET_X;
+    fe.data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_B |
+                  PetscData::CTX_SET_X | PetscData::CTX_SET_TIME;
     fe.ts = ts;
   };
 
@@ -387,7 +389,7 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     fe.ts_ctx = TSMethod::CTX_TSNONE;
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SETNONE;
+    fe.data_ctx = PetscData::CTX_SET_NONE;
   };
 
   // preprocess
@@ -471,8 +473,8 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
     fe.data_ctx = PetscData::CTX_SET_A | PetscData::CTX_SET_B |
-                    PetscData::CTX_SET_X | PetscData::CTX_SET_X_T |
-                    PetscData::CTX_SET_X_TT;
+                  PetscData::CTX_SET_X | PetscData::CTX_SET_X_T |
+                  PetscData::CTX_SET_X_TT | PetscData::CTX_SET_TIME;
     fe.ts = ts;
   };
 
@@ -480,7 +482,7 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.ts_ctx = TSMethod::CTX_TSNONE;
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SETNONE;
+    fe.data_ctx = PetscData::CTX_SET_NONE;
   };
 
   // preproces
@@ -570,7 +572,8 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
     fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
     fe.data_ctx = PetscData::CTX_SET_F | PetscData::CTX_SET_X |
-                  PetscData::CTX_SET_X_T | PetscData::CTX_SET_X_TT;
+                  PetscData::CTX_SET_X_T | PetscData::CTX_SET_X_TT |
+                  PetscData::CTX_SET_TIME;
     fe.ts = ts;
   };
 
@@ -578,7 +581,7 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.ts_ctx = TSMethod::CTX_TSNONE;
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SETNONE;
+    fe.data_ctx = PetscData::CTX_SET_NONE;
   };
 
   // preprocess

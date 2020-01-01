@@ -65,7 +65,7 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   auto unset = [&](auto &fe) {
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SETNONE;
+    fe.data_ctx = PetscData::CTX_SET_NONE;
   };
 
   for (auto &bit : snes_ctx->preProcess_Rhs) {
@@ -142,7 +142,7 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
   auto unset = [&](auto &fe) {
     fe.snes_ctx = SnesMethod::CTX_SNESNONE;
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
-    fe.data_ctx = PetscData::CTX_SETNONE;
+    fe.data_ctx = PetscData::CTX_SET_NONE;
   };
 
   CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);

@@ -46,14 +46,24 @@ struct PetscData : public UnknownInterface {
   virtual ~PetscData() = default;
 
   enum DataContext {
-    CTX_SETNONE = 0,
+    CTX_SET_NONE = 0,
     CTX_SET_F = 1 << 0,
     CTX_SET_A = 1 << 1,
     CTX_SET_B = 1 << 2,
     CTX_SET_X = 1 << 3,
     CTX_SET_X_T = 1 << 4,
-    CTX_SET_X_TT = 1 << 6
+    CTX_SET_X_TT = 1 << 6,
+    CTX_SET_TIME = 1 << 7
   };
+
+  static constexpr std::bitset<7> CtxSetNone = std::bitset<7>(CTX_SET_NONE);
+  static constexpr std::bitset<7> CtxSetF = std::bitset<7>(CTX_SET_F);
+  static constexpr std::bitset<7> CtxSetA = std::bitset<7>(CTX_SET_A);
+  static constexpr std::bitset<7> CtxSetB = std::bitset<7>(CTX_SET_B);
+  static constexpr std::bitset<7> CtxSetX = std::bitset<7>(CTX_SET_X);
+  static constexpr std::bitset<7> CtxSetX_T = std::bitset<7>(CTX_SET_X_T);
+  static constexpr std::bitset<7> CtxSetX_TT = std::bitset<7>(CTX_SET_X_TT);
+  static constexpr std::bitset<7> CtxSetTime = std::bitset<7>(CTX_SET_TIME);
 
   std::bitset<7> data_ctx;
 

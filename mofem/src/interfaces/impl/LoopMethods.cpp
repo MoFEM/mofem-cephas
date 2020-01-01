@@ -18,6 +18,15 @@
 
 namespace MoFEM {
 
+constexpr std::bitset<7> PetscData::CtxSetNone;
+constexpr std::bitset<7> PetscData::CtxSetF;
+constexpr std::bitset<7> PetscData::CtxSetA;
+constexpr std::bitset<7> PetscData::CtxSetB;
+constexpr std::bitset<7> PetscData::CtxSetX;
+constexpr std::bitset<7> PetscData::CtxSetX_T;
+constexpr std::bitset<7> PetscData::CtxSetX_TT;
+constexpr std::bitset<7> PetscData::CtxSetTime;
+
 // PetscData
 MoFEMErrorCode PetscData::query_interface(const MOFEMuuid &uuid,
                                           UnknownInterface **iface) const {

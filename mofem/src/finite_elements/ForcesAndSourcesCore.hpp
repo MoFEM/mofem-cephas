@@ -268,6 +268,18 @@ struct ForcesAndSourcesCore : public FEMethod {
 
     /**@{*/
 
+    inline const std::bitset<7> &getDataCtx() const;
+
+    inline const KspMethod::KSPContext getKSPCtx() const;
+
+    inline const SnesMethod::SNESContext getSNESCtx() const;
+
+    inline const TSMethod::TSContext getTSCtx() const;
+
+    /**@}*/
+
+    /**@{*/
+
     inline Vec getKSPf() const;
 
     inline Mat getKSPA() const;
@@ -920,6 +932,26 @@ int ForcesAndSourcesCore::UserDataOperator::getLoopSize() const {
 
 const std::string &ForcesAndSourcesCore::UserDataOperator::getFEName() const {
   return getFEMethod()->feName;
+}
+
+const std::bitset<7> &
+ForcesAndSourcesCore::UserDataOperator::getDataCtx() const {
+  return getFEMethod()->data_ctx;
+}
+
+const KspMethod::KSPContext
+ForcesAndSourcesCore::UserDataOperator::getKSPCtx() const {
+  return getFEMethod()->ksp_ctx;
+}
+
+const SnesMethod::SNESContext
+ForcesAndSourcesCore::UserDataOperator::getSNESCtx() const {
+  return getFEMethod()->snes_ctx;
+}
+
+const TSMethod::TSContext
+ForcesAndSourcesCore::UserDataOperator::getTSCtx() const {
+  return getFEMethod()->ts_ctx;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getKSPf() const {
