@@ -68,8 +68,33 @@ MoFEMErrorCode Basic::loopFiniteElements(SmartPetscObj<DM> dm) {
 SmartPetscObj<KSP> Basic::createKSP(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
   Simple *simple_interface = m_field.getInterface<Simple>();
-  if (!dm)
-    dm = simple_interface->getDM();
+  
+  auto copy_dm_struture = [&](auto simple_dm) {
+    MPI_Comm comm;
+    CHKERR PetscObjectGetComm(getPetscObject(simple_dm.get()), &comm);
+    DMType type;
+    CHKERR DMGetType(simple_dm, &type);
+    dm = createSmartDM(comm, type);
+    CHKERR DMMoFEMDuplicateDMCtx(simple_interface->getDM(), dm);
+    return dm;
+  };
+
+  if (!dm) 
+    dm = copy_dm_struture(simple_interface->getDM());
+  else 
+    dm = copy_dm_struture(dm);
+
+  auto set_dm_section = [&](auto dm) {
+    MoFEMFunctionBegin;
+    PetscSection section;
+    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
+        simple_interface->getProblemName(), &section);
+    CHKERR DMSetDefaultSection(dm, section);
+    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR PetscSectionDestroy(&section);
+    MoFEMFunctionReturn(0);
+  };
+  CHKERR set_dm_section(dm);
 
   boost::shared_ptr<FEMethod> null;
 
@@ -119,6 +144,18 @@ SmartPetscObj<SNES> Basic::createSNES(SmartPetscObj<DM> dm) {
   else 
     dm = copy_dm_struture(dm);
 
+  auto set_dm_section = [&](auto dm) {
+    MoFEMFunctionBegin;
+    PetscSection section;
+    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
+        simple_interface->getProblemName(), &section);
+    CHKERR DMSetDefaultSection(dm, section);
+    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR PetscSectionDestroy(&section);
+    MoFEMFunctionReturn(0);
+  };
+  CHKERR set_dm_section(dm);
+
   boost::shared_ptr<FEMethod> null;
 
   // Add element to calculate lhs of stiff part
@@ -166,6 +203,18 @@ SmartPetscObj<TS> Basic::createTS(SmartPetscObj<DM> dm) {
     dm = copy_dm_struture(simple_interface->getDM());
   else 
     dm = copy_dm_struture(dm);
+
+  auto set_dm_section = [&](auto dm) {
+    MoFEMFunctionBegin;
+    PetscSection section;
+    CHKERR m_field.getInterface<ISManager>()->sectionCreate(
+        simple_interface->getProblemName(), &section);
+    CHKERR DMSetDefaultSection(dm, section);
+    CHKERR DMSetDefaultGlobalSection(dm, section);
+    CHKERR PetscSectionDestroy(&section);
+    MoFEMFunctionReturn(0);
+  };
+  CHKERR set_dm_section(dm);
 
   boost::shared_ptr<FEMethod> null;
 
