@@ -134,14 +134,14 @@ struct OpCalculateScalarFieldValues
  * 
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
-struct OpCalculateScalarValuesDot
+struct OpCalculateScalarFieldValuesDot
     : public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<VectorDouble> dataPtr;
   const EntityHandle zeroAtType;
   VectorDouble dotVector;
 
-  OpCalculateScalarValuesDot(const std::string field_name,
+  OpCalculateScalarFieldValuesDot(const std::string field_name,
                                   boost::shared_ptr<VectorDouble> &data_ptr,
                                   const EntityType zero_at_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -198,6 +198,12 @@ struct OpCalculateScalarValuesDot
     MoFEMFunctionReturn(0);
   }
 };
+
+/**
+ * \depreacted Name inconstent with other operators
+ * 
+ */
+using OpCalculateScalarValuesDot = OpCalculateScalarFieldValuesDot;
 
 // TENSOR1
 
