@@ -351,7 +351,6 @@ MoFEMErrorCode TriPolynomialBase::getValueL2(MatrixDouble &pts) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
   }
 
-
   MoFEMFunctionReturn(0);
 }
 
@@ -453,7 +452,7 @@ TriPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
     if (data.dataOnEntities[MBTRI].size() != 1)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Wrong size ent of ent data");
-              
+
     if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
         (unsigned int)nb_gauss_pts)
       SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -465,10 +464,6 @@ TriPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
     auto &ent_data = data.dataOnEntities[MBTRI][0];
     const int order = ent_data.getDataOrder();
     const int nb_dofs = NBFACETRI_L2(order);
-
-    if(nb_dofs != 3 + 3 * NBEDGE_H1(order) + NBFACETRI_H1(order))
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Inconsistent number of DOFs");
 
     if (get_alpha_by_order_ptr(ent_data, order)) {
       get_alpha_by_name_ptr(ent_data, field_name) =
@@ -484,24 +479,46 @@ TriPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
       get_n.resize(nb_gauss_pts, nb_dofs, false);
       get_diff_n.resize(nb_gauss_pts, 2 * nb_dofs, false);
       if (nb_dofs) {
-        auto &tri_alpha = get_alpha(ent_data);
-        tri_alpha.resize(nb_dofs, 3, false);
 
-        std::array<int, 3> face_n{order, order, order};
-        std::array<int *, 3> face_edge_ptr{
-            &tri_alpha(3, 0), &tri_alpha(3 + NBEDGE_H1(order), 0),
-            &tri_alpha(3 + 2 * NBEDGE_H1(order), 0)};
-        CHKERR BernsteinBezier::generateIndicesVertexTri(order,
-                                                         &tri_alpha(0, 0));
-        CHKERR BernsteinBezier::generateIndicesEdgeTri(face_n.data(),
-                                                       face_edge_ptr.data());
+        if (order == 0) {
 
-        CHKERR BernsteinBezier::generateIndicesTriTri(
-            order, &tri_alpha(3 + 3 * NBEDGE_H1(order), 0));
-        CHKERR BernsteinBezier::baseFunctionsTri(
-            order, lambda.size1(), tri_alpha.size1(), &tri_alpha(0, 0),
-            &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
-            &get_diff_n(0, 0));
+          if (nb_dofs != 1)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Inconsistent number of DOFs");
+
+          auto &tri_alpha = get_alpha(ent_data);
+          tri_alpha.clear();
+          get_n(0, 0) = 1;
+          get_diff_n.clear();
+
+        } else {
+
+          if (nb_dofs != 3 + 3 * NBEDGE_H1(order) + NBFACETRI_H1(order))
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Inconsistent number of DOFs");
+
+          auto &tri_alpha = get_alpha(ent_data);
+          tri_alpha.resize(nb_dofs, 3, false);
+
+          CHKERR BernsteinBezier::generateIndicesVertexTri(order,
+                                                           &tri_alpha(0, 0));
+
+          if (order > 1) {
+            std::array<int, 3> face_n{order, order, order};
+            std::array<int *, 3> face_edge_ptr{
+                &tri_alpha(3, 0), &tri_alpha(3 + NBEDGE_H1(order), 0),
+                &tri_alpha(3 + 2 * NBEDGE_H1(order), 0)};
+            CHKERR BernsteinBezier::generateIndicesEdgeTri(
+                face_n.data(), face_edge_ptr.data());
+            if (order > 2)
+              CHKERR BernsteinBezier::generateIndicesTriTri(
+                  order, &tri_alpha(3 + 3 * NBEDGE_H1(order), 0));
+          }
+          CHKERR BernsteinBezier::baseFunctionsTri(
+              order, lambda.size1(), tri_alpha.size1(), &tri_alpha(0, 0),
+              &lambda(0, 0), Tools::diffShapeFunMBTRI.data(), &get_n(0, 0),
+              &get_diff_n(0, 0));
+        }
 
         get_alpha_by_order_ptr(ent_data, order) =
             get_alpha_by_name_ptr(ent_data, field_name);
@@ -853,7 +870,7 @@ TriPolynomialBase::getValue(MatrixDouble &pts,
     MoFEMFunctionReturnHot(0);
   }
 
-  if (pts.size1() < 2) 
+  if (pts.size1() < 2)
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
