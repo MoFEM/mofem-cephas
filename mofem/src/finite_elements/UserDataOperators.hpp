@@ -129,6 +129,11 @@ struct OpCalculateScalarFieldValues
   }
 };
 
+/**
+ * @brief Get rate of scalar field at integration points
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
 struct OpCalculateScalarValuesDot
     : public ForcesAndSourcesCore::UserDataOperator {
 
