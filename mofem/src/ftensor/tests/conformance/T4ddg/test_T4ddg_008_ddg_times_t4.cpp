@@ -23,11 +23,10 @@ void test_T4ddg_008(const Tensor2<double, 3, 3> &t2_1,
 
   {
 
-    Tensor4<double, 3, 3, 3, 3> t4_2;
-    Tensor4<double, 3, 3, 3, 3> t4_3;
+    Tensor4<double, 3, 3, 3, 3> t4_2, t4_3, t4_4;
 
     t4_2(i, j, k, l) = t4ddg_1(i, j, m, n) * t4_1(m, n, k, l);
-    
+
     t4_3(i, j, k, l) = 0;
     for (int ii = 0; ii != 3; ++ii) {
       for (int jj = 0; jj != 3; ++jj) {
@@ -43,13 +42,6 @@ void test_T4ddg_008(const Tensor2<double, 3, 3> &t2_1,
         }
       }
     }
-        for (int ii = 0; ii != 3; ++ii)
-      for (int jj = 0; jj != 3; ++jj)
-        for (int kk = 0; kk != 3; ++kk)
-          for (int ll = 0; ll != 3; ++ll) {
-            cerr << ii << " " << jj << " " << kk << " " << ll << " : "
-                 << t4_2(ii, jj, kk, ll) << " " << t4_3(ii, jj, kk, ll) << endl;
-          }
 
     for (int ii = 0; ii != 3; ++ii)
       for (int jj = 0; jj != 3; ++jj)
@@ -59,6 +51,20 @@ void test_T4ddg_008(const Tensor2<double, 3, 3> &t2_1,
                           "t4_2(i, j, k, l) = t4ddg_1(i, j, m, n) * "
                           "t4_1(m, n, k, l)");
           }
+  
+      t4_4(i, j, k, l) = t4_1(m, n, k, l) * t4ddg_1(i, j, m, n);
+
+
+    for (int ii = 0; ii != 3; ++ii)
+      for (int jj = 0; jj != 3; ++jj)
+        for (int kk = 0; kk != 3; ++kk)
+          for (int ll = 0; ll != 3; ++ll) {
+            test_for_zero(t4_4(ii, jj, kk, ll) - t4_3(ii, jj, kk, ll),
+                          "t4_2(i, j, k, l) = t4ddg_1(i, j, m, n) * "
+                          "t4_1(m, n, k, l)");
+          }
+
+  
   }
 
 };

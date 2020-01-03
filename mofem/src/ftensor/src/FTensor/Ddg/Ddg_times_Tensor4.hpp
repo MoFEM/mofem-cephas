@@ -62,4 +62,19 @@ operator*(const Ddg_Expr<A, T, Dim01, Dim23, i, j, m, n> &a,
                       Dim3, i, j, k, l>(TensorExpr(a, b));
 }
 
+/* A(m,n,k,l)*S(i,j,m,n) */
+
+template <class A, class B, class T, class U, int Dim01, int Dim23, int Dim2,
+          int Dim3, char i, char j, char k, char l, char m, char n>
+Tensor4_Expr<Ddg_times_Tensor4_2301<A, B, T, U, Dim01, Dim23, Dim2, Dim3, i, j,
+                                    k, l, m, n>,
+             typename promote<T, U>::V, Dim01, Dim01, Dim2, Dim3, i, j, k, l>
+operator*(const Tensor4_Expr<B, U, Dim23, Dim23, Dim2, Dim3, m, n, k, l> &b,
+          const Ddg_Expr<A, T, Dim01, Dim23, i, j, m, n> &a) {
+  using TensorExpr = Ddg_times_Tensor4_2301<A, B, T, U, Dim01, Dim23, Dim2,
+                                            Dim3, i, j, k, l, m, n>;
+  return Tensor4_Expr<TensorExpr, typename promote<T, U>::V, Dim01, Dim01, Dim2,
+                      Dim3, i, j, k, l>(TensorExpr(a, b));
+}
+
 } // namespace FTensor
