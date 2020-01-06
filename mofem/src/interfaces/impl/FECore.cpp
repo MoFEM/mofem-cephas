@@ -120,7 +120,7 @@ Core::modify_finite_element_adjacency_table(const std::string &fe_name,
       finiteElements.get<FiniteElement_name_mi_tag>();
   FiniteElements_by_name::iterator it_fe =
       finite_element_name_set.find(fe_name);
-  if (it_fe == finite_element_name_set.end()) 
+  if (it_fe == finite_element_name_set.end())
     SETERRQ(cOmm, MOFEM_NOT_FOUND,
             "This finite element is not defined (advise: check spelling)");
   boost::shared_ptr<FiniteElement> fe;
@@ -196,12 +196,9 @@ Core::modify_finite_element_off_field_data(const std::string &fe_name,
                                            const std::string &name_data) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
-  typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
-      FiniteElements_by_name;
-  FiniteElements_by_name &finite_element_name_set =
+  auto &finite_element_name_set =
       finiteElements.get<FiniteElement_name_mi_tag>();
-  FiniteElements_by_name::iterator it_fe =
-      finite_element_name_set.find(fe_name);
+  auto it_fe = finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "this FiniteElement is there");
   bool success = finite_element_name_set.modify(
@@ -216,12 +213,9 @@ Core::modify_finite_element_off_field_row(const std::string &fe_name,
                                           const std::string &name_row) {
   MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
-  typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
-      FiniteElements_by_name;
-  FiniteElements_by_name &finite_element_name_set =
+  auto &finite_element_name_set =
       finiteElements.get<FiniteElement_name_mi_tag>();
-  FiniteElements_by_name::iterator it_fe =
-      finite_element_name_set.find(fe_name);
+  auto it_fe = finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
     SETERRQ1(cOmm, MOFEM_NOT_FOUND, "this < %s > is not there",
              fe_name.c_str());
@@ -235,25 +229,18 @@ Core::modify_finite_element_off_field_row(const std::string &fe_name,
 MoFEMErrorCode
 Core::modify_finite_element_off_field_col(const std::string &fe_name,
                                           const std::string &name_col) {
-  MoFEMFunctionBeginHot;
+  MoFEMFunctionBegin;
   *buildMoFEM &= 1 << 0;
-  typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
-      FiniteElements_by_name;
-  FiniteElements_by_name &finite_element_name_set =
+  auto &finite_element_name_set =
       finiteElements.get<FiniteElement_name_mi_tag>();
-  FiniteElements_by_name::iterator it_fe =
-      finite_element_name_set.find(fe_name);
+  auto it_fe = finite_element_name_set.find(fe_name);
   if (it_fe == finite_element_name_set.end())
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "this FiniteElement is there");
-  try {
-    bool success = finite_element_name_set.modify(
-        it_fe, FiniteElement_col_change_bit_off(getBitFieldId(name_col)));
-    if (!success)
-      SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm, e.errorCode, e.errorMessage);
-  }
-  MoFEMFunctionReturnHot(0);
+  bool success = finite_element_name_set.modify(
+      it_fe, FiniteElement_col_change_bit_off(getBitFieldId(name_col)));
+  if (!success)
+    SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "modification unsuccessful");
+  MoFEMFunctionReturn(0);
 }
 
 BitFEId Core::getBitFEId(const std::string &name) const {
@@ -657,8 +644,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         fe_raw_ptr->col_field_ents_view = fe_raw_ptr->row_field_ents_view;
       } else {
         // row and columns are diffent
-        if (fe_raw_ptr->col_field_ents_view ==
-                 fe_raw_ptr->row_field_ents_view)
+        if (fe_raw_ptr->col_field_ents_view == fe_raw_ptr->row_field_ents_view)
           fe_raw_ptr->col_field_ents_view =
               boost::make_shared<FieldEntity_vector_view>();
         fe_raw_ptr->col_field_ents_view->reserve(last_col_field_ents_view_size);
@@ -685,7 +671,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Data inconsistency");
         }
-
 
         // Loop over adjacencies of element and find field entities on those
         // adjacencies, that create hash map map_uid_fe which is used later
@@ -778,7 +763,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       sort(fe_raw_ptr->row_field_ents_view->begin(),
            fe_raw_ptr->row_field_ents_view->end(), uid_comp);
       last_row_field_ents_view_size = fe_raw_ptr->row_field_ents_view->size();
-      
+
       // Column
       if (fe_raw_ptr->col_field_ents_view != fe_raw_ptr->row_field_ents_view) {
         sort(fe_raw_ptr->col_field_ents_view->begin(),
@@ -795,8 +780,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       data_dofs_array_vec->reserve(nb_dofs_on_data);
 
       fe_raw_ptr->getDofsSequence() = data_dofs_array_vec;
-
-
     }
   }
 
@@ -911,7 +894,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         by |= BYDATA;
       FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
       auto hint = entFEAdjacencies.end();
-      for (auto e :  *(*fit)->row_field_ents_view) {
+      for (auto e : *(*fit)->row_field_ents_view) {
         hint = entFEAdjacencies.emplace_hint(hint, e.lock(), *fit);
         bool success = entFEAdjacencies.modify(hint, modify_row);
         if (!success)
@@ -924,7 +907,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
           by |= BYDATA;
         FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_col(by);
         auto hint = entFEAdjacencies.end();
-        for (auto e :  *(*fit)->col_field_ents_view) {
+        for (auto e : *(*fit)->col_field_ents_view) {
           hint = entFEAdjacencies.emplace_hint(hint, e.lock(), *fit);
           bool success = entFEAdjacencies.modify(hint, modify_col);
           if (!success)
@@ -937,7 +920,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(
             BYDATA);
         auto hint = entFEAdjacencies.end();
-        for (auto &e :  *(*fit)->data_field_ents_view) {
+        for (auto &e : *(*fit)->data_field_ents_view) {
           hint = entFEAdjacencies.emplace_hint(hint, e, *fit);
           bool success = entFEAdjacencies.modify(hint, modify_data);
           if (!success)
