@@ -144,6 +144,31 @@ struct Simple : public UnknownInterface {
                               const enum MoFEMTypes bh = MF_ZERO,
                               int verb = -1);
 
+
+  /**
+   * @brief Remove field form domain 
+   * 
+   * @param name 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode removeDomainField(const std::string &name);
+
+  /**
+   * @brief Remove field form boundary 
+   * 
+   * @param name 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode removeBoundaryField(const std::string &name);
+
+  /**
+   * @brief Remove field form skeleton
+   * 
+   * @param name 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode removeSkeletonField(const std::string &name);
+
   /**
    * \brief Define finite elements
    * @return         Error code
@@ -198,6 +223,18 @@ struct Simple : public UnknownInterface {
    * @return error code
    */
   MoFEMErrorCode setUp(const PetscBool is_partitioned = PETSC_TRUE);
+
+  /**
+   * @brief Rebuild internal MoFEM data structures
+   * 
+   * Call this function after you add field or remove it.
+   *
+   * \note If you add field, or remove it, finite element and problem needs to
+   * be rebuild. However DM can remain the same.
+   *
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode reSetUp();
 
   /**
    * \brief Get DM
