@@ -35,6 +35,8 @@ EOF
 #if [ ! $GIT_COMMIT == $GIT_PREVIOUS_COMMIT ]; then
 
   SPACK_ROOT=/var/lib/jenkins/workspace/SpackBuild
+  . $SPACK_ROOT/share/spack/setup-env.sh
+  
   CORE_WORKSPACE=/var/lib/jenkins/workspace/SpackBuildDevelopBranch
   
   if [ ! -f "$SPACK_ROOT/lock_spack" ]; then
@@ -43,31 +45,40 @@ EOF
     cd build
     
     if [ ! -f "install_hash" ]; then
-    
-    	. $SPACK_ROOT/share/spack/setup-env.sh
-      
+          
   	  	CORE_INSTALL_HASH=`cat $CORE_WORKSPACE/build/install_hash`
-        
-  		cd $CORE_WORKSPACE/build
- 		make install
-  		
-        cd $WORKSPACE/build
-  		spack view --verbose symlink -i ${WORKSPACE}/build/um_view /$CORE_INSTALL_HASH
 
-    	spack setup mofem-cephas@develop copy_user_modules=False build_type=Debug
-        
-      	$WORKSPACE/build/spconfig.py \
-        	-DSOURCE_DIR=$WORKSPACE \
-        	-DMOFEM_UM_BUILD_TESTS=ON -DWITHCOVERAGE=ON \
-        	-DMOFEM_DIR=$WORKSPACE/build/um_view \
-        	$WORKSPACE
-        
-    	grep CMAKE_INSTALL_PREFIX CMakeCache.txt |\
-    	sed 's/.*mofem-users-modules-develop-//' |\
-    	tee install_hash
+        cd $WORKSPACE/build
+  		  spack view --verbose symlink -i ${WORKSPACE}/build/um_view /$CORE_INSTALL_HASH
+        spack setup mofem-users-modules@develop copy_user_modules=False build_type=Debug ^/$CORE_INSTALL_HASH
+
     fi
 
   fi
 
 #fi
+
+cd $WORKSPACE/build
+$WORKSPACE/build/spconfig.py \
+	-DSOURCE_DIR=$WORKSPACE \
+	-DMOFEM_UM_BUILD_TESTS=ON -DWITHCOVERAGE=ON \
+	-DMOFEM_DIR=$WORKSPACE/build/um_view $WORKSPACE
+        
+grep CMAKE_INSTALL_PREFIX CMakeCache.txt |\
+sed 's/.*mofem-users-modules-develop-//' |\
+tee install_hash
+
+curl -X POST -H 'Content-type: application/json' \
+--data "{\"text\":\"Jenkins start job for users modules branch $GIT_BRANCH\"}" \
+https://hooks.slack.com/services/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
+
+cd $WORKSPACE/build
+spack load cmake
+ctest -V -S $WORKSPACE/script.cmake
+make install
+
+curl -X POST -H 'Content-type: application/json' \
+--data "{\"text\":\"Jenkins end job for users modules branch $GIT_BRANCH (See http://cdash.eng.gla.ac.uk/cdash/)\"}" \
+https://hooks.slack.com/services/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
+
 
