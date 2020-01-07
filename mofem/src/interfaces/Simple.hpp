@@ -356,7 +356,7 @@ private:
   std::vector<std::string> noFieldFields;     ///< NOFIELD field name
   std::vector<std::string> noFieldDataFields; ///< NOFIELD field name
 
-  std::map<std::string, std::pair<int, Range>> fieldsOrder; ///< fields order
+  std::multimap<std::string, std::pair<int, Range>> fieldsOrder; ///< fields order
 
   std::string nameOfProblem; ///< problem name
   std::string domainFE;      ///< domain finite element

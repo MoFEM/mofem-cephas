@@ -472,8 +472,8 @@ MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
 MoFEMErrorCode Simple::setFieldOrder(const std::string field_name,
                                      const int order, const Range *ents) {
   MoFEMFunctionBeginHot;
-  fieldsOrder[field_name] =
-      std::pair<int, Range>(order, ents == NULL ? Range() : Range(*ents));
+  fieldsOrder.insert(
+      {field_name, {order, ents == NULL ? Range() : Range(*ents)}});
   MoFEMFunctionReturnHot(0);
 }
 
@@ -576,15 +576,25 @@ MoFEMErrorCode Simple::buildFields() {
         SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
                 "Glasgow we have a problem");
       }
+
+      auto set_order = [&](auto field, auto &ents) {
+        MoFEMFunctionBegin;
+
+        auto range = fieldsOrder.equal_range(field);
+        for (auto o = range.first; o != range.second; ++o) {
+          if (!o->second.second.empty())
+            ents = intersect(ents, o->second.second);
+          CHKERR m_field.set_field_order(ents, field, o->second.first);
+        }
+
+        MoFEMFunctionReturn(0);
+      };
+
       if (field_ptr->getSpace() == H1) {
         if (field_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
           Range ents;
           CHKERR m_field.get_field_entities_by_dimension(field, 0, ents);
-          if (!fieldsOrder.at(field).second.empty()) {
-            ents = intersect(ents, fieldsOrder.at(field).second);
-          }
-          CHKERR m_field.set_field_order(ents, field,
-                                         fieldsOrder.at(field).first);
+          CHKERR set_order(field, ents);
         } else {
           CHKERR m_field.set_field_order(meshSet, MBVERTEX, field, 1);
         }
@@ -592,11 +602,7 @@ MoFEMErrorCode Simple::buildFields() {
       for (int dd = dds; dd <= dim; dd++) {
         Range ents;
         CHKERR m_field.get_field_entities_by_dimension(field, dd, ents);
-        if (!fieldsOrder.at(field).second.empty()) {
-          ents = intersect(ents, fieldsOrder.at(field).second);
-        }
-        CHKERR m_field.set_field_order(ents, field,
-                                       fieldsOrder.at(field).first);
+        CHKERR set_order(field, ents);
       }
     }
     MoFEMFunctionReturnHot(0);
