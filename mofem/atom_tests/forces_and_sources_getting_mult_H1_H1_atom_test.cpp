@@ -274,7 +274,7 @@ int main(int argc, char *argv[]) {
             boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                 data_col, H1, AINSWORTH_LEGENDRE_BASE)));
 
-        CHKERR op.opLhs(data_row, data_col, true);
+        CHKERR op.opLhs(data_row, data_col);
 
         MoFEMFunctionReturnHot(0);
       }

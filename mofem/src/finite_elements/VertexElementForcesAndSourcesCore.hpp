@@ -50,7 +50,12 @@ struct VertexElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
     using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
+
     inline VectorDouble3 &getCoords();
+
+ protected:
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
   };
 
   MoFEMErrorCode operator()();

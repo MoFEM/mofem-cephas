@@ -169,6 +169,10 @@ struct VolumeElementForcesAndSourcesCoreOnSideBase
 
      */
     inline MatrixDouble &getFaceCoordsAtGaussPts();
+
+  protected:
+  
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
   };
 
   int getRule(int order);

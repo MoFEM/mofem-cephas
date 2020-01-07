@@ -19,7 +19,6 @@
 #include <Includes.hpp>
 
 //SRC APPROXIMATION
-#include <version.h>
 #include <config.h>
 #include <definitions.h>
 
@@ -125,7 +124,7 @@
 
 // More interfaces
 
+#include <Basic.hpp>
 #include <FieldEvaluator.hpp>
-
 
 #endif //MOFEM_HPP__

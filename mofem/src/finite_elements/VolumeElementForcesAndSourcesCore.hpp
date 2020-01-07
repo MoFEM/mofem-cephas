@@ -214,6 +214,11 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     getCurlOfHCurlBaseFunctions(int side, EntityType type,
                                 DataForcesAndSourcesCore::EntData &data, int gg,
                                 MatrixDouble &curl);
+
+  protected:
+
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
   };
 
   enum Switches {
@@ -363,7 +368,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::OpSwitch() {
   CHKERR calculateCoordinatesAtGaussPts();
   CHKERR calHierarchicalBaseFunctionsOnElement();
   CHKERR calBernsteinBezierBaseFunctionsOnElement();
-  
+
   if (!(NO_TRANSFORM & SWITCH))
     CHKERR transformBaseFunctions();
 

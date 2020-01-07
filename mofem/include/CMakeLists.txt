@@ -35,18 +35,10 @@ configure_file(
 set_source_files_properties(
   ${PROJECT_BINARY_DIR}/include/config.h PROPERTIES GENERATED TRUE
 )
-configure_file(
-  ${PROJECT_SOURCE_DIR}/include/version.h.in
-  ${PROJECT_BINARY_DIR}/include/version.h
-)
-set_source_files_properties(
-  ${PROJECT_BINARY_DIR}/include/version.h PROPERTIES GENERATED TRUE
-)
 include_directories(${PROJECT_BINARY_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/version.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
 if(PRECOMPILED_HEADRES)
 

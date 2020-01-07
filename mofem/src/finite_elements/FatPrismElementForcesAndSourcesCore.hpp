@@ -186,6 +186,10 @@ struct FatPrismElementForcesAndSourcesCore
     /** \brief return pointer to fat prism finite element
      */
     inline const FatPrismElementForcesAndSourcesCore *getPrismFE();
+
+  protected:
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
   };
 
   MoFEMErrorCode operator()();

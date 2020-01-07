@@ -817,11 +817,12 @@ int main(int argc, char *argv[]) {
           sum_matrix(tri_data.dataOnEntities[MBTRI][0].getDiffN("TET_FIELD"));
       std::cout << "sum  " << sum << std::endl;
       std::cout << "diff_sum " << diff_sum << std::endl;
-      if (fabs(3.01389 - sum) > eps)
+      if (std::abs(3.01389 - sum) > eps)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
 
-      if (fabs(diff_sum) > eps)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
+      if (std::abs(diff_sum) > eps)
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "wrong result %3.4e != $3.4e", 0, diff_sum);
     }
 
     if (choice_value == HDIVTRI_AINSWORTH) {

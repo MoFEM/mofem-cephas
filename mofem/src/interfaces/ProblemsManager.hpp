@@ -38,6 +38,7 @@ struct ProblemsManager : public UnknownInterface {
 
   MoFEM::Core &cOre;
   ProblemsManager(const MoFEM::Core &core);
+  virtual ~ProblemsManager() = default;
 
   PetscBool buildProblemFromFields; ///< If set to true, problem is build from
   /// DOFs in fields, not from DOFs on elements

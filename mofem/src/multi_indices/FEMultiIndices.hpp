@@ -184,11 +184,10 @@ typedef multi_index_container<
     indexed_by<
         ordered_unique<tag<Ent_mi_tag>,
                        const_mem_fun<RefElement::interface_type_RefEntity,
-                                     EntityHandle, &RefElement::getRefEnt> >,
-        ordered_non_unique<
-            tag<EntType_mi_tag>,
-            const_mem_fun<RefElement::interface_type_RefEntity, EntityType,
-                          &RefElement::getEntType> > > >
+                                     EntityHandle, &RefElement::getRefEnt>>,
+        ordered_non_unique<tag<EntType_mi_tag>,
+                           const_mem_fun<RefElement::interface_type_RefEntity,
+                                         EntityType, &RefElement::getEntType>>>>
     RefElement_multiIndex;
 
 typedef multi_index_container<
@@ -197,11 +196,11 @@ typedef multi_index_container<
     indexed_by<
         ordered_unique<tag<Ent_mi_tag>,
                        const_mem_fun<RefElement::interface_type_RefEntity,
-                                     EntityHandle, &RefElement::getRefEnt> >,
+                                     EntityHandle, &RefElement::getRefEnt>>,
         ordered_non_unique<
             tag<Ent_Ent_mi_tag>,
             const_mem_fun<RefElement::interface_type_RefEntity, EntityHandle,
-                          &RefElement::getParentEnt> >,
+                          &RefElement::getParentEnt>>,
         ordered_non_unique<
             tag<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
             composite_key<
@@ -209,7 +208,7 @@ typedef multi_index_container<
                 const_mem_fun<RefElement::interface_type_RefEntity,
                               EntityHandle, &RefElement::getParentEnt>,
                 const_mem_fun<RefElement, int,
-                              &RefElement::getBitRefEdgesUlong> > > > >
+                              &RefElement::getBitRefEdgesUlong>>>>>
     RefElement_multiIndex_parents_view;
 
 struct EntFiniteElement;
@@ -217,8 +216,8 @@ struct EntFiniteElement;
 /** \brief user adjacency function
  * \ingroup fe_multi_indices
  */
-typedef boost::function<MoFEMErrorCode(Interface &moab, const Field &field_ptr,
-                                       const EntFiniteElement &fe_ptr,
+typedef boost::function<MoFEMErrorCode(Interface &moab, const Field &field,
+                                       const EntFiniteElement &fe,
                                        Range &adjacency)>
     ElementAdjacencyFunct;
 
@@ -306,7 +305,7 @@ struct FiniteElement {
    * \brief Table of functions retrieving adjacencies for finite element
    * User can alter and change default behavior
    */
-  ElementAdjacencyFunct elementAdjacencyTable[MBMAXTYPE];
+  std::array<ElementAdjacencyFunct, MBMAXTYPE> elementAdjacencyTable;
 
   /**
    * \brief print finite element
@@ -319,23 +318,23 @@ struct FiniteElement {
  */
 struct DefaultElementAdjacency {
 
-  static MoFEMErrorCode defaultVertex(Interface &moab, const Field &field_ptr,
-                                      const EntFiniteElement &fe_ptr,
+  static MoFEMErrorCode defaultVertex(Interface &moab, const Field &field,
+                                      const EntFiniteElement &fe,
                                       Range &adjacency);
-  static MoFEMErrorCode defaultEdge(Interface &moab, const Field &field_ptr,
-                                    const EntFiniteElement &fe_ptr,
+  static MoFEMErrorCode defaultEdge(Interface &moab, const Field &field,
+                                    const EntFiniteElement &fe,
                                     Range &adjacency);
-  static MoFEMErrorCode defaultFace(Interface &moab, const Field &field_ptr,
-                                   const EntFiniteElement &fe_ptr,
+  static MoFEMErrorCode defaultFace(Interface &moab, const Field &field,
+                                    const EntFiniteElement &fe,
+                                    Range &adjacency);
+  static MoFEMErrorCode defaultTet(Interface &moab, const Field &field,
+                                   const EntFiniteElement &fe,
                                    Range &adjacency);
-  static MoFEMErrorCode defaultTet(Interface &moab, const Field &field_ptr,
-                                   const EntFiniteElement &fe_ptr,
-                                   Range &adjacency);
-  static MoFEMErrorCode defaultPrism(Interface &moab, const Field &field_ptr,
-                                     const EntFiniteElement &fe_ptr,
+  static MoFEMErrorCode defaultPrism(Interface &moab, const Field &field,
+                                     const EntFiniteElement &fe,
                                      Range &adjacency);
-  static MoFEMErrorCode defaultMeshset(Interface &moab, const Field &field_ptr,
-                                       const EntFiniteElement &fe_ptr,
+  static MoFEMErrorCode defaultMeshset(Interface &moab, const Field &field,
+                                       const EntFiniteElement &fe,
                                        Range &adjacency);
 };
 
@@ -531,13 +530,13 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
    * vector. That do the trick.
    *
    */
-  inline boost::weak_ptr<std::vector<FEDofEntity> > &getDofsSequence() const {
+  inline boost::weak_ptr<std::vector<FEDofEntity>> &getDofsSequence() const {
     return dofsSequce;
   }
 
 private:
   // Keep vector of DoFS on entity
-  mutable boost::weak_ptr<std::vector<FEDofEntity> > dofsSequce;
+  mutable boost::weak_ptr<std::vector<FEDofEntity>> dofsSequce;
 };
 
 /**
@@ -678,12 +677,12 @@ struct NumeredEntFiniteElement
 
   /**
    * @deprecated Unsafe to use, will be removed in future releases.
-   * 
+   *
    * Get the Row Dofs By Petsc Global Dof Idx object
-   * 
-   * @param idx 
-   * @param dof_raw_ptr 
-   * @return MoFEMErrorCode 
+   *
+   * @param idx
+   * @param dof_raw_ptr
+   * @return MoFEMErrorCode
    */
   DEPRECATED inline MoFEMErrorCode
   getRowDofsByPetscGlobalDofIdx(const int idx,
@@ -699,12 +698,12 @@ struct NumeredEntFiniteElement
 
   /**
    * @deprecated Unsafe to use, will be removed in future releases.
-   * 
+   *
    * Get the Row Dofs By Petsc Global Dof Idx object
-   * 
-   * @param idx 
-   * @param dof_raw_ptr 
-   * @return MoFEMErrorCode 
+   *
+   * @param idx
+   * @param dof_raw_ptr
+   * @return MoFEMErrorCode
    */
   DEPRECATED inline MoFEMErrorCode
   getColDofsByPetscGlobalDofIdx(const int idx,
@@ -732,7 +731,7 @@ struct NumeredEntFiniteElement
    * vector. That do the trick.
    *
    */
-  inline boost::weak_ptr<std::vector<FENumeredDofEntity> > &
+  inline boost::weak_ptr<std::vector<FENumeredDofEntity>> &
   getRowDofsSequence() const {
     return dofsRowSequce;
   }
@@ -745,15 +744,15 @@ struct NumeredEntFiniteElement
    * vector. That do the trick.
    *
    */
-  inline boost::weak_ptr<std::vector<FENumeredDofEntity> > &
+  inline boost::weak_ptr<std::vector<FENumeredDofEntity>> &
   getColDofsSequence() const {
     return dofsColSequce;
   }
 
 private:
   // Keep vector of DoFS on entity
-  mutable boost::weak_ptr<std::vector<FENumeredDofEntity> > dofsRowSequce;
-  mutable boost::weak_ptr<std::vector<FENumeredDofEntity> > dofsColSequce;
+  mutable boost::weak_ptr<std::vector<FENumeredDofEntity>> dofsRowSequce;
+  mutable boost::weak_ptr<std::vector<FENumeredDofEntity>> dofsColSequce;
 };
 
 /** \brief interface for NumeredEntFiniteElement
@@ -798,23 +797,23 @@ typedef multi_index_container<
     indexed_by<
         ordered_unique<
             tag<Unique_mi_tag>,
-            member<EntFiniteElement, UId, &EntFiniteElement::globalUId> >,
+            member<EntFiniteElement, UId, &EntFiniteElement::globalUId>>,
         ordered_non_unique<tag<Ent_mi_tag>,
                            const_mem_fun<EntFiniteElement, EntityHandle,
-                                         &EntFiniteElement::getEnt> >,
+                                         &EntFiniteElement::getEnt>>,
         ordered_non_unique<
             tag<FiniteElement_name_mi_tag>,
             const_mem_fun<EntFiniteElement::interface_type_FiniteElement,
-                          boost::string_ref, &EntFiniteElement::getNameRef> >,
+                          boost::string_ref, &EntFiniteElement::getNameRef>>,
         ordered_non_unique<
             tag<BitFEId_mi_tag>,
             const_mem_fun<EntFiniteElement::interface_type_FiniteElement,
                           BitFEId, &EntFiniteElement::getId>,
-            LtBit<BitFEId> >,
+            LtBit<BitFEId>>,
         ordered_non_unique<
             tag<EntType_mi_tag>,
             const_mem_fun<EntFiniteElement::interface_type_RefEntity,
-                          EntityType, &EntFiniteElement::getEntType> >,
+                          EntityType, &EntFiniteElement::getEntType>>,
         ordered_non_unique<
             tag<Composite_Name_And_Ent_mi_tag>,
             composite_key<
@@ -822,7 +821,7 @@ typedef multi_index_container<
                 const_mem_fun<EntFiniteElement::interface_type_FiniteElement,
                               boost::string_ref, &EntFiniteElement::getNameRef>,
                 const_mem_fun<EntFiniteElement, EntityHandle,
-                              &EntFiniteElement::getEnt> > > > >
+                              &EntFiniteElement::getEnt>>>>>
     EntFiniteElement_multiIndex;
 
 /**
@@ -845,20 +844,20 @@ typedef multi_index_container<
             tag<Unique_mi_tag>,
             const_mem_fun<
                 NumeredEntFiniteElement::interface_type_EntFiniteElement, UId,
-                &NumeredEntFiniteElement::getGlobalUniqueId> >,
+                &NumeredEntFiniteElement::getGlobalUniqueId>>,
         ordered_non_unique<tag<Part_mi_tag>,
                            member<NumeredEntFiniteElement, unsigned int,
-                                  &NumeredEntFiniteElement::part> >,
+                                  &NumeredEntFiniteElement::part>>,
         ordered_non_unique<
             tag<FiniteElement_name_mi_tag>,
             const_mem_fun<NumeredEntFiniteElement::interface_type_FiniteElement,
                           boost::string_ref,
-                          &NumeredEntFiniteElement::getNameRef> >,
+                          &NumeredEntFiniteElement::getNameRef>>,
         ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<
                 NumeredEntFiniteElement::interface_type_EntFiniteElement,
-                EntityHandle, &NumeredEntFiniteElement::getEnt> >,
+                EntityHandle, &NumeredEntFiniteElement::getEnt>>,
         ordered_non_unique<
             tag<Composite_Name_And_Ent_mi_tag>,
             composite_key<
@@ -868,7 +867,7 @@ typedef multi_index_container<
                     boost::string_ref, &NumeredEntFiniteElement::getNameRef>,
                 const_mem_fun<
                     NumeredEntFiniteElement::interface_type_EntFiniteElement,
-                    EntityHandle, &NumeredEntFiniteElement::getEnt> > >,
+                    EntityHandle, &NumeredEntFiniteElement::getEnt>>>,
         ordered_non_unique<
             tag<Composite_Name_And_Part_mi_tag>,
             composite_key<
@@ -877,7 +876,7 @@ typedef multi_index_container<
                     NumeredEntFiniteElement::interface_type_FiniteElement,
                     boost::string_ref, &NumeredEntFiniteElement::getNameRef>,
                 member<NumeredEntFiniteElement, unsigned int,
-                       &NumeredEntFiniteElement::part> > > > >
+                       &NumeredEntFiniteElement::part>>>>>
     NumeredEntFiniteElement_multiIndex;
 
 /**
@@ -906,14 +905,14 @@ typedef multi_index_container<
     boost::shared_ptr<FiniteElement>,
     indexed_by<hashed_unique<tag<FiniteElement_Meshset_mi_tag>,
                              member<FiniteElement, EntityHandle,
-                                    &FiniteElement::meshset> >,
+                                    &FiniteElement::meshset>>,
                hashed_unique<
                    tag<BitFEId_mi_tag>,
                    const_mem_fun<FiniteElement, BitFEId, &FiniteElement::getId>,
-                   HashBit<BitFEId>, EqBit<BitFEId> >,
+                   HashBit<BitFEId>, EqBit<BitFEId>>,
                ordered_unique<tag<FiniteElement_name_mi_tag>,
                               const_mem_fun<FiniteElement, boost::string_ref,
-                                            &FiniteElement::getNameRef> > > >
+                                            &FiniteElement::getNameRef>>>>
     FiniteElement_multiIndex;
 
 // modificators
@@ -1079,6 +1078,6 @@ struct FiniteElement_change_bit_off {
 #endif // __FEMMULTIINDICES_HPP__
 
 /***************************************************************************/ /**
-* \defgroup fe_multi_indices Finite elements structures and multi-indices
-* \ingroup mofem
-******************************************************************************/
+                                                                               * \defgroup fe_multi_indices Finite elements structures and multi-indices
+                                                                               * \ingroup mofem
+                                                                               ******************************************************************************/

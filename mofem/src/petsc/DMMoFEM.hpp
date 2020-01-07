@@ -909,6 +909,31 @@ struct DMCtx : public UnknownInterface {
   boost::shared_ptr<SnesCtx> snesCtx; ///< data structure SNES
   boost::shared_ptr<TsCtx> tsCtx;     ///< data structure for TS solver
 };
+
+/**
+ * @brief Get smart matrix from DM
+ * \ingroup dm
+ * 
+ */
+auto smartCreateDMMatrix = [](DM dm) {
+  SmartPetscObj<Mat> a;
+  ierr = DMCreateMatrix_MoFEM(dm, a);
+  CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
+  return a;
+};
+
+/**
+ * @brief Get smart vector from DM
+ * \ingroup dm
+ * 
+ */
+auto smartCreateDMDVector = [](DM dm) {
+  SmartPetscObj<Vec> v;
+  ierr = DMCreateGlobalVector_MoFEM(dm, v);
+  CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
+  return v;
+};
+
 } // namespace MoFEM
 
 #endif //__DMMMOFEM_H
