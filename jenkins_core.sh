@@ -22,7 +22,7 @@ ctest_configure(
 
 find_program(CTEST_MEMORYCHECK_COMMAND NAMES valgrind)
 set(CTEST_MEMORYCHECK_COMMAND_OPTIONS
-  "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=50 --verbose --demangle=yes --gen-suppressions=all")
+  "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=50 --demangle=yes --gen-suppressions=all")
 set(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "\${GID_SOURCE_REPO}/mofem/cmake/jenkins-valgrind.supp")  
 
 set(CTEST_CUSTOM_MEMCHECK_IGNORE
@@ -93,21 +93,20 @@ EOF
     if [ ! -f "install_hash" ]; then
     
     	spack setup mofem-cephas@develop+slepc copy_user_modules=False build_type=Debug
-      
-      $WORKSPACE/build/spconfig.py \
-        	-DSOURCE_DIR=$WORKSPACE/mofem \
-        	-DMOFEM_BUILD_TESTS=ON -DWITHCOVERAGE=ON ../mofem
-        
-    	grep CMAKE_INSTALL_PREFIX CMakeCache.txt |\
-    	sed 's/.*mofem-cephas-develop-//' |\
-    	tee install_hash
         
     fi
     
-
   fi
 
 #fi
+
+$WORKSPACE/build/spconfig.py \
+	-DSOURCE_DIR=$WORKSPACE/mofem \
+	-DMOFEM_BUILD_TESTS=ON -DWITHCOVERAGE=ON ../mofem
+        
+grep CMAKE_INSTALL_PREFIX CMakeCache.txt |\
+sed 's/.*mofem-cephas-develop-//' |\
+tee install_hash
 
 curl -X POST -H 'Content-type: application/json' \
 --data "{\"text\":\"Jenkins start job for branch $GIT_BRANCH\"}" \
