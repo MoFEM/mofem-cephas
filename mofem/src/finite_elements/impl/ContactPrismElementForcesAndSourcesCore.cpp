@@ -78,7 +78,8 @@ ContactPrismElementForcesAndSourcesCore::
       dataHdivMaster(*dataOnMaster[HDIV].get()),
       dataL2Master(*dataOnMaster[L2].get()),
       dataHdivSlave(*dataOnSlave[HDIV].get()),
-      dataL2Slave(*dataOnSlave[L2].get()) {
+      dataL2Slave(*dataOnSlave[L2].get()),
+      opContravariantTransform(nOrmalSlave, normalsAtGaussPtsSlave) {
 
   getUserPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
@@ -138,8 +139,68 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     CHKERR mField.get_moab().get_coords(conn, num_nodes,
                                         &*coords.data().begin());
     normal.resize(6, false);
+
+    tangentMasterOne.resize(3, false);
+    tangentMasterTwo.resize(3, false);
+
+    tangentSlaveOne.resize(3, false);
+    tangentSlaveTwo.resize(3, false);
+
+    tangentMasterOne.clear();
+    tangentMasterTwo.clear();
+
+    tangentSlaveOne.clear();
+    tangentSlaveTwo.clear();
+
     CHKERR Tools::getTriNormal(&coords[0], &normal[0]);
     CHKERR Tools::getTriNormal(&coords[9], &normal[3]);
+
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_master(
+        &coords[0], &coords[1], &coords[2]);
+
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_slave(
+        &coords[3], &coords[4], &coords[5]);
+
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_normal_master(
+        &normal[0], &normal[1], &normal[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_normal_slave(
+        &normal[3], &normal[4], &normal[5]);
+
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1_master(
+        &tangentMasterOne[0], &tangentMasterOne[1], &tangentMasterOne[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2_master(
+        &tangentMasterTwo[0], &tangentMasterTwo[1], &tangentMasterTwo[2]);
+
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1_slave(
+        &tangentSlaveOne[0], &tangentSlaveOne[1], &tangentSlaveOne[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2_slave(
+        &tangentSlaveTwo[0], &tangentSlaveTwo[1], &tangentSlaveTwo[2]);
+
+    const double *diff_ptr = Tools::diffShapeFunMBTRI.data();
+    FTensor::Tensor1<FTensor::PackPtr<const double *, 2>, 2> t_diff(
+        diff_ptr, &diff_ptr[1]);
+
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'j', 3> j;
+    FTensor::Index<'k', 3> k;
+
+    FTensor::Number<0> N0;
+    FTensor::Number<1> N1;
+    
+    for (int nn = 0; nn != 3; ++nn) {
+      t_t1_master(i) += t_coords_master(i) * t_diff(N0);
+      t_t1_slave(i) += t_coords_slave(i) * t_diff(N0);
+      ++t_coords_master;
+      ++t_coords_slave;
+      ++t_diff;
+    }
+
+    t_t2_master(j) =
+        FTensor::levi_civita(i, j, k) * t_normal_master(k) * t_t1_master(i);
+
+    t_t2_slave(j) =
+        FTensor::levi_civita(i, j, k) * t_normal_slave(k) * t_t1_slave(i);
+
     aRea[0] = cblas_dnrm2(3, &normal[0], 1) * 0.5;
     aRea[1] = cblas_dnrm2(3, &normal[3], 1) * 0.5;
     MoFEMFunctionReturn(0);
@@ -168,6 +229,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
     CHKERR getEntitySense<MBTRI>(data_div);
     CHKERR getEntityDataOrder<MBTRI>(data_div, HDIV);
+    dataHdivSlave.spacesOnEntities[MBTRI].set(HDIV);
+    dataHdivMaster.spacesOnEntities[MBTRI].set(HDIV);
   }
 
   // L2
@@ -421,15 +484,55 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   dataH1Slave, H1, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
+
+          // cerr << " H1 transform " << dataH1Slave << "\n";
         }
       case DEMKOWICZ_JACOBI_BASE:
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-        
+
+          normalsAtGaussPtsSlave.resize(nb_gauss_pts, 3, false);
+          normalsAtGaussPtsSlave.clear();
+          nOrmalSlave.resize(3, false);
+          nOrmalSlave.clear();
+
+          auto get_ftensor_from_mat_3d = [](MatrixDouble &m) {
+            return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+                &m(0, 0), &m(0, 1), &m(0, 2));
+          };
+
+          auto t_normal = get_ftensor_from_mat_3d(normalsAtGaussPtsSlave);
+
+          auto get_tensor_vec = [](VectorDouble &n, const int r = 0) {
+            return FTensor::Tensor1<double *, 3>(&n(r + 0), &n(r + 1),
+                                                 &n(r + 2));
+          };
+
+          auto normal_slave = get_tensor_vec(nOrmalSlave);
+
+          auto slave_normal_data = get_tensor_vec(normal, 3);
+
+          FTensor::Index<'i', 3> i;
+
+          const double normal_length =
+              sqrt(slave_normal_data(i) * slave_normal_data(i));
+          normal_slave(i) = slave_normal_data(i) / normal_length;
+
+          // cerr << "slave data 1 " << normal << "\n";
+
+          for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+            t_normal(i) = normal_slave(i);
+            ++t_normal;
+          }
+          // cerr << "slave data 2 " << nOrmalSlave << "\n";
+
+          // cerr << " calculated base! " << normalsAtGaussPtsSlave << "\n";
+
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsMaster,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   dataHdivMaster, HDIV, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
+          // cerr << " Before values" << dataHdivSlave << "\n";
 
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsSlave,
@@ -437,7 +540,14 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                   dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
 
-          }
+          // cerr << " Before transform " << dataHdivSlave << "\n";
+
+          // opContravariantTransform(nOrmalSlave,
+          // normalsAtGaussPtsSlave)
+
+          CHKERR opContravariantTransform.opRhs(data_div);
+          // cerr << " After transform " << dataHdivSlave << "\n";
+        }
 
         // if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
         //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -465,6 +575,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 
   // Iterate over operators
   CHKERR loopOverOperators();
+  //cerr << " In rush? " << dataHdivSlave << "\n";
 
   MoFEMFunctionReturn(0);
 }

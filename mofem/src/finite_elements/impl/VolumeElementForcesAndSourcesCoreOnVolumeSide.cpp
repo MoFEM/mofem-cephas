@@ -63,9 +63,6 @@ VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Error no common tets");
   }
 
-  auto face_ptr_fe =
-      static_cast<FaceElementForcesAndSourcesCoreBase *>(sidePtrFE);
-
   auto contact_prism_ptr_fe =
       static_cast<ContactPrismElementForcesAndSourcesCore *>(sidePtrFE);
 

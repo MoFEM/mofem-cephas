@@ -120,9 +120,25 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline VectorAdaptor getNormalMaster();
 
+    /** \brief get first face tangent vector to Master face
+     */
+    inline VectorAdaptor getTangentMasterOne();
+
+    /** \brief get second face tangent vector to Master face
+     */
+    inline VectorAdaptor getTangentMasterTwo();
+
     /** \brief get face normal vector to Slave face
      */
     inline VectorAdaptor getNormalSlave();
+
+    /** \brief get first face tangent vector to Slave face
+     */
+    inline VectorAdaptor getTangentSlaveOne();
+
+    /** \brief get second face tangent vector to Slave face
+     */
+    inline VectorAdaptor getTangentSlaveTwo();
 
     /** \brief get Gauss point at Master face
      */
@@ -271,11 +287,13 @@ protected:
   MatrixDouble gaussPtsSlave;  ///< matrix storing slave Gauss points local
                                ///< coordinates and weights
 
-  VectorDouble nOrmalSlave, tangentOneSlave, tangentTwoSlave;
+  VectorDouble nOrmalSlave, tangentSlaveOne, tangentSlaveTwo;
+  VectorDouble nOrmalMaster, tangentMasterOne, tangentMasterTwo;
 
   MatrixDouble normalsAtGaussPtsSlave;
   MatrixDouble tangentOneAtGaussPtsSlave;
   MatrixDouble tangentTwoAtGaussPtsSlave;
+  OpSetContravariantPiolaTransformOnFace opContravariantTransform;
 
   /**
    * @brief Entity data on element entity rows fields
@@ -446,9 +464,37 @@ ContactPrismElementForcesAndSourcesCore::UserDataOperator::getNormalMaster() {
 }
 
 inline VectorAdaptor
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::getTangentMasterOne() {
+  double *data = &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+                       ->tangentMasterOne[0]);
+  return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
+}
+
+inline VectorAdaptor
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::getTangentMasterTwo() {
+  double *data = &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+                       ->tangentMasterTwo[0]);
+  return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
+}
+
+inline VectorAdaptor
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::getNormalSlave() {
   double *data = &(
       static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->normal[3]);
+  return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
+}
+
+inline VectorAdaptor ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getTangentSlaveOne() {
+  double *data = &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+                       ->tangentSlaveOne[0]);
+  return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
+}
+
+inline VectorAdaptor ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getTangentSlaveTwo() {
+  double *data = &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+                       ->tangentSlaveTwo[0]);
   return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
 }
 
