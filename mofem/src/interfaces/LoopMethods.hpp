@@ -140,12 +140,22 @@ struct SnesMethod : virtual protected PetscData {
 
   SNESContext snes_ctx;
 
+  /**
+   * @deprecated Avoid using values by hand.
+   */
+  DEPRECATED inline MoFEMErrorCode setSnesCtx(SNESContext ctx);
+
   SNES snes;   ///< snes solver
   Vec &snes_x; ///< state vector
   Vec &snes_f; ///< residual
   Mat &snes_A; ///< jacobian matrix
   Mat &snes_B; ///< preconditioner of jacobian matrix
 };
+
+MoFEMErrorCode SnesMethod::setSnesCtx(SNESContext ctx) {
+  snes_ctx = ctx;
+  return 0;
+}
 
 /**
  * \brief data structure for TS (time stepping) context
@@ -179,6 +189,11 @@ struct TSMethod : virtual protected PetscData {
 
   TSContext ts_ctx;
 
+  /**
+   * @deprecated Avoid using values by hand.
+   */
+  DEPRECATED inline MoFEMErrorCode setTsCtx(TSContext ctx);
+
   PetscInt ts_step; ///< time step
   PetscReal ts_a;   ///< shift for U_tt (see PETSc Time Solver)
   PetscReal ts_v;   ///< shift for U_t shift for U_t
@@ -193,6 +208,11 @@ struct TSMethod : virtual protected PetscData {
              ///< v*dF/dU_t + a*dF/dU_tt
   Mat &ts_B; ///< Preconditioner for ts_A
 };
+
+MoFEMErrorCode TSMethod::setTsCtx(TSContext ctx) {
+  ts_ctx = ctx;
+  return 0;
+}
 
 /**
  * \brief Data structure to exchange data between mofem and User Loop Methods.
