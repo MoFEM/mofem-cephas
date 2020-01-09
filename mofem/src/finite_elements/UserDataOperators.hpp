@@ -1548,7 +1548,7 @@ struct OpCalculateHVecTensorDivergence
     const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
     FTensor::Index<'i', Tensor_Dim0> i;
     FTensor::Index<'j', Tensor_Dim1> j;
-    auto t_n_diff_hvec = data.getFTensor2DiffN<Tensor_Dim1, Tensor_Dim1>();
+    auto t_n_diff_hvec = data.getFTensor2DiffN<3, Tensor_Dim1>();
     auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
     for (int gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
