@@ -2119,20 +2119,23 @@ MoFEMErrorCode MoFEM::Hcurl_Demkowicz_EdgeBaseFunctions_MBTRI(
 
   for (int ee = 0; ee != 3; ++ee) {
 
-    auto t_phi = getFTensor1FromPtr<3>(phi[ee]);
-    auto t_diff_phi = getFTensor2FromPtr<3, 2>(diff_phi[ee]);
+    if (p[ee]) {
 
-    int n0_idx = e_nodes[ee][0];
-    int n1_idx = e_nodes[ee][1];
-    if (sense[ee] == -1) {
-      int n_tmp = n0_idx;
-      n0_idx = n1_idx;
-      n1_idx = n_tmp;
+      auto t_phi = getFTensor1FromPtr<3>(phi[ee]);
+      auto t_diff_phi = getFTensor2FromPtr<3, 2>(diff_phi[ee]);
+
+      int n0_idx = e_nodes[ee][0];
+      int n1_idx = e_nodes[ee][1];
+      if (sense[ee] == -1) {
+        int n_tmp = n0_idx;
+        n0_idx = n1_idx;
+        n1_idx = n_tmp;
+      }
+
+      CHKERR h_curl_base_on_edge.calculate<2, true>(p[ee], nb_integration_pts,
+                                                    n0_idx, n1_idx, n, t_grad_n,
+                                                    t_phi, &t_diff_phi);
     }
-
-    CHKERR h_curl_base_on_edge.calculate<2, true>(p[ee], nb_integration_pts,
-                                                  n0_idx, n1_idx, n, t_grad_n,
-                                                  t_phi, &t_diff_phi);
   }
 
   MoFEMFunctionReturn(0);

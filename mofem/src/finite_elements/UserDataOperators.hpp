@@ -1545,7 +1545,7 @@ struct OpCalculateHVecTensorDivergence
     const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
+    const int nb_base_functions = data.getN().size2() / 3;
     FTensor::Index<'i', Tensor_Dim0> i;
     FTensor::Index<'j', Tensor_Dim1> j;
     auto t_n_diff_hvec = data.getFTensor2DiffN<3, Tensor_Dim1>();
