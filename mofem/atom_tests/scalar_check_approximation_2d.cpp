@@ -119,39 +119,50 @@ struct OpAssembleVec : public FaceEleOp {
 struct OpValsDiffVals : public FaceEleOp {
   VectorDouble &vAls;
   MatrixDouble &diffVals;
-  OpValsDiffVals(VectorDouble &vals, MatrixDouble &diff_vals)
-      : FaceEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals) {}
+  const bool checkGradients;
+  OpValsDiffVals(VectorDouble &vals, MatrixDouble &diff_vals, bool check_grads)
+      : FaceEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals),
+        checkGradients(check_grads) {}
 
   FTensor::Index<'i', 2> i;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
-    const int nb_dofs = data.getIndices().size();
-    if (nb_dofs == 0)
-      MoFEMFunctionReturnHot(0);
-    const int nb_gauss_pts = data.getN().size1();
+    const int nb_gauss_pts = getGaussPts().size2();
     if (type == MBVERTEX) {
       vAls.resize(nb_gauss_pts, false);
       diffVals.resize(2, nb_gauss_pts, false);
       vAls.clear();
       diffVals.clear();
     }
-    auto t_vals = getFTensor0FromVec(vAls);
-    auto t_diff_vals = getFTensor1FromMat<2>(diffVals);
-    auto t_base_fun = data.getFTensor0N();
-    auto t_diff_base_fun = data.getFTensor1DiffN<2>();
-    for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      auto t_data = data.getFTensor0FieldData();
-      for (int bb = 0; bb != nb_dofs; bb++) {
-        t_vals += t_base_fun * t_data;
-        t_diff_vals(i) += t_diff_base_fun(i) * t_data;
-        ++t_base_fun;
-        ++t_diff_base_fun;
-        ++t_data;
+    const int nb_dofs = data.getIndices().size();
+    if (nb_dofs) {
+      auto t_vals = getFTensor0FromVec(vAls);
+      auto t_base_fun = data.getFTensor0N();
+      for (int gg = 0; gg != nb_gauss_pts; gg++) {
+        auto t_data = data.getFTensor0FieldData();
+        for (int bb = 0; bb != nb_dofs; bb++) {
+          t_vals += t_base_fun * t_data;
+          ++t_base_fun;
+          ++t_data;
+        }
+        ++t_vals;
       }
-      ++t_vals;
-      ++t_diff_vals;
+
+      if (checkGradients) {
+        auto t_diff_vals = getFTensor1FromMat<2>(diffVals);
+        auto t_diff_base_fun = data.getFTensor1DiffN<2>();
+        for (int gg = 0; gg != nb_gauss_pts; gg++) {
+          auto t_data = data.getFTensor0FieldData();
+          for (int bb = 0; bb != nb_dofs; bb++) {
+            t_diff_vals(i) += t_diff_base_fun(i) * t_data;
+            ++t_diff_base_fun;
+            ++t_data;
+          }
+          ++t_diff_vals;
+        }
+      }
     }
     MoFEMFunctionReturn(0);
   }
@@ -162,12 +173,17 @@ struct OpCheckValsDiffVals : public FaceEleOp {
   MatrixDouble &diffVals;
   boost::shared_ptr<VectorDouble> ptrVals;
   boost::shared_ptr<MatrixDouble> ptrDiffVals;
+  const bool checkGradients;
 
   OpCheckValsDiffVals(VectorDouble &vals, MatrixDouble &diff_vals,
                       boost::shared_ptr<VectorDouble> &ptr_vals,
-                      boost::shared_ptr<MatrixDouble> &ptr_diff_vals)
+                      boost::shared_ptr<MatrixDouble> &ptr_diff_vals,
+                      bool check_grads)
       : FaceEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals),
-        ptrVals(ptr_vals), ptrDiffVals(ptr_diff_vals) {}
+        ptrVals(ptr_vals), ptrDiffVals(ptr_diff_vals),
+        checkGradients(check_grads) {
+    std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
+  }
 
   FTensor::Index<'i', 2> i;
 
@@ -175,13 +191,37 @@ struct OpCheckValsDiffVals : public FaceEleOp {
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
     const double eps = 1e-6;
-    if (type == MBVERTEX) {
-      const int nb_gauss_pts = data.getN().size1();
+    const int nb_gauss_pts = data.getN().size1();
 
-      auto t_vals = getFTensor0FromVec(vAls);
+    auto t_vals = getFTensor0FromVec(vAls);
+
+    auto t_ptr_vals = getFTensor0FromVec(*ptrVals);
+
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
+      const double x = getCoordsAtGaussPts()(gg, 0);
+      const double y = getCoordsAtGaussPts()(gg, 1);
+
+      // Check approximation
+      const double delta_val = t_vals - ApproxFunctions::fUn(x, y);
+
+      double err_val = sqrt(delta_val * delta_val);
+      if (err_val > eps)
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Wrong value %4.3e",
+                 err_val);
+
+      // Check H1 user data operators
+      err_val = t_vals - t_ptr_vals;
+      if (err_val > eps)
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Wrong value from operator %4.3e", err_val);
+
+      ++t_vals;
+      ++t_ptr_vals;
+    }
+
+    if (checkGradients) {
+
       auto t_diff_vals = getFTensor1FromMat<2>(diffVals);
-
-      auto t_ptr_vals = getFTensor0FromVec(*ptrVals);
       auto t_ptr_diff_vals = getFTensor1FromMat<2>(*ptrDiffVals);
 
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
@@ -189,25 +229,14 @@ struct OpCheckValsDiffVals : public FaceEleOp {
         const double y = getCoordsAtGaussPts()(gg, 1);
 
         // Check approximation
-        const double delta_val = t_vals - ApproxFunctions::fUn(x, y);
         FTensor::Tensor1<double, 2> t_delta_diff_val;
         t_delta_diff_val(i) =
             t_diff_vals(i) - ApproxFunctions::diffFun(x, y)(i);
-        double err_val = sqrt(delta_val * delta_val);
-        double err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
-        if (err_val > eps)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                   "Wrong value %4.3e", err_val);
 
+        double err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
         if (err_diff_val > eps)
           SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong derivative of value %4.3e", err_diff_val);
-
-        // Check H1 user data operators
-        err_val = t_vals - t_ptr_vals;
-        if (err_val > eps)
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                   "Wrong value from operator %4.3e", err_val);
 
         t_delta_diff_val(i) = t_diff_vals(i) - t_ptr_diff_vals(i);
         err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
@@ -215,12 +244,11 @@ struct OpCheckValsDiffVals : public FaceEleOp {
           SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong direvatives from operator %4.3e", err_diff_val);
 
-        ++t_vals;
         ++t_diff_vals;
-        ++t_ptr_vals;
         ++t_ptr_diff_vals;
       }
     }
+
     MoFEMFunctionReturn(0);
   }
 };
@@ -272,9 +300,9 @@ int main(int argc, char *argv[]) {
     if (flg != PETSC_TRUE)
       SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "space not set");
     FieldSpace space = H1;
-    if (choice_base_value == H1SPACE)
+    if (choice_space_value == H1SPACE)
       space = H1;
-    else if (choice_base_value == L2SPACE)
+    else if (choice_space_value == L2SPACE)
       space = L2;
 
     CHKERR simple_interface->addDomainField("FIELD1", space, base, 1);
@@ -331,13 +359,16 @@ int main(int argc, char *argv[]) {
       basic_interface->getOpDomainRhsPipeline().push_back(
           new OpSetInvJacH1ForFace(inv_jac));
       basic_interface->getOpDomainRhsPipeline().push_back(
-          new OpValsDiffVals(vals, diff_vals));
+          new OpValsDiffVals(vals, diff_vals, choice_space_value == H1SPACE));
       basic_interface->getOpDomainRhsPipeline().push_back(
           new OpCalculateScalarFieldValues("FIELD1", ptr_values));
+      if (choice_space_value == H1SPACE) {
+        basic_interface->getOpDomainRhsPipeline().push_back(
+            new OpCalculateScalarFieldGradient<2>("FIELD1", ptr_diff_vals));
+      }
       basic_interface->getOpDomainRhsPipeline().push_back(
-          new OpCalculateScalarFieldGradient<2>("FIELD1", ptr_diff_vals));
-      basic_interface->getOpDomainRhsPipeline().push_back(
-          new OpCheckValsDiffVals(vals, diff_vals, ptr_values, ptr_diff_vals));
+          new OpCheckValsDiffVals(vals, diff_vals, ptr_values, ptr_diff_vals,
+                                  choice_space_value == H1SPACE));
 
       CHKERR basic_interface->loopFiniteElements();
 

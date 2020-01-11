@@ -300,6 +300,18 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
+    const std::string &problem, RowColData rc, const std::string &field,
+    int min_coeff_idx, int max_coeff_idx, SmartPetscObj<IS> &smart_is,
+    Range *ents_ptr) const {
+  MoFEMFunctionBegin;
+  IS is;
+  CHKERR isCreateProblemFieldAndRank(problem, rc, field, min_coeff_idx,
+                                     max_coeff_idx, &is, ents_ptr);
+  smart_is = SmartPetscObj<IS>(is);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode ISManager::isCreateProblemFieldAndEntityType(
     const std::string &problem, RowColData rc, const std::string &field,
     EntityType low_type, EntityType hi_type, int min_coeff_idx,

@@ -264,17 +264,53 @@ struct ForcesAndSourcesCore : public FEMethod {
      */
     inline const std::string &getFEName() const;
 
+    /** \name Accessing KSP */
+
+    /**@{*/
+
+    inline const PetscData::Switches &getDataCtx() const;
+
+    inline const KspMethod::KSPContext getKSPCtx() const;
+
+    inline const SnesMethod::SNESContext getSNESCtx() const;
+
+    inline const TSMethod::TSContext getTSCtx() const;
+
+    /**@}*/
+
+    /**@{*/
+
+    inline Vec getKSPf() const;
+
+    inline Mat getKSPA() const;
+
+    inline Mat getKSPB() const;
+
+    /**@}*/
+
     /** \name Accessing SNES */
 
     /**@{*/
 
-    inline Vec getSnesF() const;
+    inline Vec getSNESf() const;
 
-    inline Vec getSnesX() const;
+    inline Vec getSNESx() const;
 
-    inline Mat getSnesA() const;
+    inline Mat getSNESA() const;
 
-    inline Mat getSnesB() const;
+    inline Mat getSNESB() const;
+
+    //! \deprecated Use getSNESF intead
+    DEPRECATED inline Vec getSnesF() const { return getSNESf(); }
+
+    //! \deprecated Use getSNESX intead
+    DEPRECATED inline Vec getSnesX() const { return getSNESx(); }
+
+    //! \deprecated Use getSNESA intead
+    DEPRECATED inline Mat getSnesA() const { return getSNESA(); }
+
+    //! \deprecated Use getSNESB intead
+    DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
 
     /**@}*/
 
@@ -285,6 +321,8 @@ struct ForcesAndSourcesCore : public FEMethod {
     inline Vec getTSu() const;
 
     inline Vec getTSu_t() const;
+
+    inline Vec getTSu_tt() const;
 
     inline Vec getTSf() const;
 
@@ -899,19 +937,51 @@ const std::string &ForcesAndSourcesCore::UserDataOperator::getFEName() const {
   return getFEMethod()->feName;
 }
 
-Vec ForcesAndSourcesCore::UserDataOperator::getSnesF() const {
+const PetscData::Switches &
+ForcesAndSourcesCore::UserDataOperator::getDataCtx() const {
+  return getFEMethod()->data_ctx;
+}
+
+const KspMethod::KSPContext
+ForcesAndSourcesCore::UserDataOperator::getKSPCtx() const {
+  return getFEMethod()->ksp_ctx;
+}
+
+const SnesMethod::SNESContext
+ForcesAndSourcesCore::UserDataOperator::getSNESCtx() const {
+  return getFEMethod()->snes_ctx;
+}
+
+const TSMethod::TSContext
+ForcesAndSourcesCore::UserDataOperator::getTSCtx() const {
+  return getFEMethod()->ts_ctx;
+}
+
+Vec ForcesAndSourcesCore::UserDataOperator::getKSPf() const {
+  return getFEMethod()->ksp_f;
+}
+
+Mat ForcesAndSourcesCore::UserDataOperator::getKSPA() const {
+  return getFEMethod()->ksp_A;
+}
+
+Mat ForcesAndSourcesCore::UserDataOperator::getKSPB() const {
+  return getFEMethod()->ksp_B;
+}
+
+Vec ForcesAndSourcesCore::UserDataOperator::getSNESf() const {
   return getFEMethod()->snes_f;
 }
 
-Vec ForcesAndSourcesCore::UserDataOperator::getSnesX() const {
+Vec ForcesAndSourcesCore::UserDataOperator::getSNESx() const {
   return getFEMethod()->snes_x;
 }
 
-Mat ForcesAndSourcesCore::UserDataOperator::getSnesA() const {
+Mat ForcesAndSourcesCore::UserDataOperator::getSNESA() const {
   return getFEMethod()->snes_A;
 }
 
-Mat ForcesAndSourcesCore::UserDataOperator::getSnesB() const {
+Mat ForcesAndSourcesCore::UserDataOperator::getSNESB() const {
   return getFEMethod()->snes_B;
 }
 
@@ -921,6 +991,10 @@ Vec ForcesAndSourcesCore::UserDataOperator::getTSu() const {
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSu_t() const {
   return getFEMethod()->ts_u_t;
+}
+
+Vec ForcesAndSourcesCore::UserDataOperator::getTSu_tt() const {
+  return getFEMethod()->ts_u_tt;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSf() const {

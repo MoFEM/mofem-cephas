@@ -478,11 +478,18 @@ When debugging a nonlinear problem, it might be useful to test the jacobian matr
 
 To view those matrices in a graphical form, simply add:
 \code 
--snes_compare_explicit_draw -draw_save
+-snes_test_jacobian
+-snes_compare_explicit_draw 
+-draw_save
 \endcode
 
 This will create a folder named \e Draw_0x7f86644**** with 3 image files: user-jacobian (0), finite difference jacobian (1) and the difference (2).
 The draw function works only with one processor.
+
+If you like to see diffrence of jacobians, add option:
+\code
+-snes_test_jacobian_display
+\endcode
 
 \subsection slack_message_send How to send message to Slack e.g. to report program crash?
 To send a message to your Slack (in mofem.slack.com workspace) 

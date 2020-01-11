@@ -12,12 +12,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-// #if PETSC_VERSION_GE(3,6,0)
-//   #include <petsc/private/snesimpl.h>
-// #else
-//   #include <petsc-private/snesimpl.h>
-// #endif
-
 namespace MoFEM {
 
 PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
@@ -57,30 +51,38 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
   };
   CHKERR zero_ghost_vec(f);
 
-  snes_ctx->vecAssembleSwitch =
-      boost::movelib::make_unique<bool>(true);
+  snes_ctx->vecAssembleSwitch = boost::movelib::make_unique<bool>(true);
+
+  auto set = [&](auto &fe) {
+    fe.snes = snes;
+    fe.snes_x = x;
+    fe.snes_f = f;
+    fe.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
+    fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
+    fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX;
+  };
+
+  auto unset = [&](auto &fe) {
+    fe.snes_ctx = SnesMethod::CTX_SNESNONE;
+    fe.ksp_ctx = KspMethod::CTX_KSPNONE;
+    fe.data_ctx = PetscData::CtxSetNone;
+  };
 
   for (auto &bit : snes_ctx->preProcess_Rhs) {
     bit->vecAssembleSwitch = boost::move(snes_ctx->vecAssembleSwitch);
-    CHKERR bit->setSnes(snes);
-    bit->snes_x = x;
-    bit->snes_f = f;
-    CHKERR bit->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);
+    set(*bit);
     CHKERR snes_ctx->mField.problem_basic_method_preProcess(
         snes_ctx->problemName, *bit);
-    CHKERR bit->setSnesCtx(SnesMethod::CTX_SNESNONE);
+    unset(*bit);
     snes_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
   for (auto &lit : snes_ctx->loops_to_do_Rhs) {
     lit.second->vecAssembleSwitch = boost::move(snes_ctx->vecAssembleSwitch);
-    CHKERR lit.second->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);
-    CHKERR lit.second->setSnes(snes);
-    lit.second->snes_x = x;
-    lit.second->snes_f = f;
+    set(*lit.second);
     CHKERR snes_ctx->mField.loop_finite_elements(
         snes_ctx->problemName, lit.first, *lit.second, nullptr, snes_ctx->bH);
-    CHKERR lit.second->setSnesCtx(SnesMethod::CTX_SNESNONE);
+    unset(*lit.second); 
     if (snes_ctx->vErify) {
       // Verify finite elements, check for not a number
       CHKERR VecAssemblyBegin(f);
@@ -93,18 +95,16 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
       CHKERR snes_ctx->mField.getInterface<Tools>()->checkVectorForNotANumber(
           prb_ptr, ROW, f);
     }
+
     snes_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
 
   for (auto &bit : snes_ctx->postProcess_Rhs) {
     bit->vecAssembleSwitch = boost::move(snes_ctx->vecAssembleSwitch);
-    CHKERR bit->setSnes(snes);
-    bit->snes_x = x;
-    bit->snes_f = f;
-    CHKERR bit->setSnesCtx(SnesMethod::CTX_SNESSETFUNCTION);
+    set(*bit);
     CHKERR snes_ctx->mField.problem_basic_method_postProcess(
         snes_ctx->problemName, *bit);
-    CHKERR bit->setSnesCtx(SnesMethod::CTX_SNESNONE);
+    unset(*bit);
     snes_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
@@ -128,46 +128,54 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
 
   snes_ctx->matAssembleSwitch = boost::movelib::make_unique<bool>(true);
 
+  auto set = [&](auto &fe) {
+    fe.snes = snes;
+    fe.snes_x = x;
+    fe.snes_A = A;
+    fe.snes_B = B;
+    fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
+    fe.ksp_ctx = KspMethod::CTX_OPERATORS;
+    fe.data_ctx =
+        PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX;
+  };
+
+  auto unset = [&](auto &fe) {
+    fe.snes_ctx = SnesMethod::CTX_SNESNONE;
+    fe.ksp_ctx = KspMethod::CTX_KSPNONE;
+    fe.data_ctx = PetscData::CtxSetNone;
+  };
+
   CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR snes_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
       snes_ctx->problemName, COL, x, INSERT_VALUES, SCATTER_REVERSE);
   for (auto &bit : snes_ctx->preProcess_Mat) {
     bit->matAssembleSwitch = boost::move(snes_ctx->matAssembleSwitch);
-    CHKERR bit->setSnes(snes);
-    bit->snes_x = x;
-    bit->snes_A = A;
-    bit->snes_B = B;
-    CHKERR bit->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN);
+    set(*bit);
     CHKERR snes_ctx->mField.problem_basic_method_preProcess(
         snes_ctx->problemName, *bit);
-    CHKERR bit->setSnesCtx(SnesMethod::CTX_SNESNONE);
+    unset(*bit);
     snes_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
+
   for (auto &lit : snes_ctx->loops_to_do_Mat) {
     lit.second->matAssembleSwitch = boost::move(snes_ctx->matAssembleSwitch);
-    CHKERR lit.second->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN);
-    CHKERR lit.second->setSnes(snes);
-    lit.second->snes_x = x;
-    lit.second->snes_A = A;
-    lit.second->snes_B = B;
+    set(*lit.second);
     CHKERR snes_ctx->mField.loop_finite_elements(
         snes_ctx->problemName, lit.first, *(lit.second), nullptr, snes_ctx->bH);
-    CHKERR lit.second->setSnesCtx(SnesMethod::CTX_SNESNONE);
+    unset(*lit.second);
     snes_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
+
   for (auto &bit : snes_ctx->postProcess_Mat) {
     bit->matAssembleSwitch = boost::move(snes_ctx->matAssembleSwitch);
-    CHKERR bit->setSnes(snes);
-    bit->snes_x = x;
-    bit->snes_A = A;
-    bit->snes_B = B;
-    CHKERR bit->setSnesCtx(SnesMethod::CTX_SNESSETJACOBIAN);
+    set(*bit);
     CHKERR snes_ctx->mField.problem_basic_method_postProcess(
         snes_ctx->problemName, *bit);
-    CHKERR bit->setSnesCtx(SnesMethod::CTX_SNESNONE);
+    unset(*bit);
     snes_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
+
   if (*snes_ctx->matAssembleSwitch) {
     CHKERR MatAssemblyBegin(B, snes_ctx->typeOfAssembly);
     CHKERR MatAssemblyEnd(B, snes_ctx->typeOfAssembly);

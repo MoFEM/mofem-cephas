@@ -39,6 +39,15 @@ PetscErrorCode DMMoFEMCreateMoFEM(
     const MoFEM::BitRefLevel bit_mask = MoFEM::BitRefLevel().set());
 
 /**
+ * @brief Duplicate internal data struture
+ * 
+ * @param dm 
+ * @param dm_duplicate 
+ * @return PetscErrorCode 
+ */
+PetscErrorCode DMMoFEMDuplicateDMCtx(DM dm, DM dm_duplicate);
+
+/**
  * \brief Must be called by user to set Sub DM MoFEM data structures
  * \ingroup dm
  */
@@ -102,8 +111,8 @@ PetscErrorCode DMMoFEMGetSquareProblem(DM dm, PetscBool *square_problem);
  * @param  fe_name finite element for which shared entities are resolved
  * @return         error code
  *
- * \note This function is valid for parallel algebra and serial mesh. It should
- * be run collectively, i.e. on all processors.
+ * \note This function is valid for parallel algebra and serial mesh. It
+ * should be run collectively, i.e. on all processors.
  *
  * This allows for tag reduction or tag exchange, f.e.
  *
@@ -454,9 +463,9 @@ DMMoFEMTSSetRHSJacobian(DM dm, const std::string fe_name,
  */
 PetscErrorCode
 DMMoFEMTSSetI2Function(DM dm, const std::string fe_name,
-                      boost::shared_ptr<MoFEM::FEMethod> method,
-                      boost::shared_ptr<MoFEM::BasicMethod> pre_only,
-                      boost::shared_ptr<MoFEM::BasicMethod> post_only);
+                       boost::shared_ptr<MoFEM::FEMethod> method,
+                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                       boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
  * \brief set TS Jacobian evaluation function
@@ -464,9 +473,9 @@ DMMoFEMTSSetI2Function(DM dm, const std::string fe_name,
  */
 PetscErrorCode
 DMMoFEMTSSetI2Jacobian(DM dm, const std::string fe_name,
-                      boost::shared_ptr<MoFEM::FEMethod> method,
-                      boost::shared_ptr<MoFEM::BasicMethod> pre_only,
-                      boost::shared_ptr<MoFEM::BasicMethod> post_only);
+                       boost::shared_ptr<MoFEM::FEMethod> method,
+                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                       boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
  * @brief Set Monitor To TS solver
@@ -900,7 +909,7 @@ struct DMCtx : public UnknownInterface {
   PetscBool destroyProblem; ///< If true destroy problem with DM
 
   DMCtx();
-  virtual ~DMCtx();
+  virtual ~DMCtx() = default;
 
   int verbosity; ///< verbosity
   int referenceNumber;

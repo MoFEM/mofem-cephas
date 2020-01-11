@@ -1003,6 +1003,36 @@ struct FiniteElement_change_bit_off {
   void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 
+/**
+ * \brief Reset field from column
+ *
+ * \ingroup fe_multi_indices
+ */
+struct FiniteElement_col_change_bit_reset {
+  FiniteElement_col_change_bit_reset() = default;
+  void operator()(boost::shared_ptr<FiniteElement> &fe);
+};
+
+/**
+ * \brief Reset field from row
+ *
+ * \ingroup fe_multi_indices
+ */
+struct FiniteElement_row_change_bit_reset {
+  FiniteElement_row_change_bit_reset() = default;
+  void operator()(boost::shared_ptr<FiniteElement> &fe);
+};
+
+/**
+ * \brief Reset field from data
+ *
+ * \ingroup fe_multi_indices
+ */
+struct FiniteElement_change_bit_reset {
+  FiniteElement_change_bit_reset() = default;
+  void operator()(boost::shared_ptr<FiniteElement> &fe);
+};
+
 } // namespace MoFEM
 
 /**
