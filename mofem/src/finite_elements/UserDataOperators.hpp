@@ -1217,7 +1217,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
   const int nb_dofs = data.getFieldData().size();
   if (!nb_dofs)
     MoFEMFunctionReturnHot(0);
-  const int nb_base_functions = data.getN().size2() / Tensor_Dim;
+  const int nb_base_functions = data.getN().size2() / 3;
   FTensor::Index<'i', Tensor_Dim> i;
   auto t_n_hdiv = data.getFTensor1N<Tensor_Dim>();
   auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
@@ -1360,22 +1360,9 @@ struct OpCalculateHcurlVectorCurl
     auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
     for (int gg = 0; gg != nb_integration_points; ++gg) {
 
-      // // get curl of base functions
-      // CHKERR getCurlOfHCurlBaseFunctions(side, type, data, gg, curl_mat);
-      // FTensor::Tensor1<double *, 3> t_base_curl(
-      //     &curl_mat(0, HVEC0), &curl_mat(0, HVEC1), &curl_mat(0, HVEC2), 3);
-
       auto t_dof = data.getFTensor0FieldData();
       int bb = 0;
       for (; bb != nb_dofs; ++bb) {
-
-        // FTensor::Tensor1<double, 3> t_test;
-        // t_test(k) = levi_civita(j, i, k) * t_n_diff_hcurl(i, j);
-        // t_base_curl(k) -= t_test(k);
-        // std::cerr << "error: " << t_base_curl(0) << " " << t_base_curl(1) <<
-        // " "
-        //           << t_base_curl(2) << std::endl;
-        // ++t_base_curl;
 
         t_data(k) += t_dof * (levi_civita(j, i, k) * t_n_diff_hcurl(i, j));
         ++t_n_diff_hcurl;
@@ -1428,7 +1415,7 @@ struct OpCalculateHVecTensorField
     const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
+    const int nb_base_functions = data.getN().size2() / 3;
     FTensor::Index<'i', Tensor_Dim0> i;
     FTensor::Index<'j', Tensor_Dim1> j;
     auto t_n_hvec = data.getFTensor1N<Tensor_Dim1>();
@@ -1543,25 +1530,25 @@ struct OpCalculateHVecTensorDivergence
       dataPtr->clear();
     }
     const int nb_dofs = data.getFieldData().size();
-    if (!nb_dofs)
-      MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getN().size2() / 3;
-    FTensor::Index<'i', Tensor_Dim0> i;
-    FTensor::Index<'j', Tensor_Dim1> j;
-    auto t_n_diff_hvec = data.getFTensor2DiffN<3, Tensor_Dim1>();
-    auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
-    for (int gg = 0; gg != nb_integration_points; ++gg) {
-      auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
-      int bb = 0;
-      for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
-        double div = t_n_diff_hvec(j, j);
-        t_data(i) += t_dof(i) * div;
-        ++t_n_diff_hvec;
-        ++t_dof;
+    if (nb_dofs) {
+      const int nb_base_functions = data.getN().size2() / 3;
+      FTensor::Index<'i', Tensor_Dim0> i;
+      FTensor::Index<'j', Tensor_Dim1> j;
+      auto t_n_diff_hvec = data.getFTensor2DiffN<3, Tensor_Dim1>();
+      auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
+      for (int gg = 0; gg != nb_integration_points; ++gg) {
+        auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
+        int bb = 0;
+        for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
+          double div = t_n_diff_hvec(j, j);
+          t_data(i) += t_dof(i) * div;
+          ++t_n_diff_hvec;
+          ++t_dof;
+        }
+        for (; bb < nb_base_functions; ++bb)
+          ++t_n_diff_hvec;
+        ++t_data;
       }
-      for (; bb != nb_base_functions; ++bb)
-        ++t_n_diff_hvec;
-      ++t_data;
     }
     MoFEMFunctionReturn(0);
   }
