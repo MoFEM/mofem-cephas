@@ -1413,24 +1413,24 @@ struct OpCalculateHVecTensorField
       dataPtr->clear();
     }
     const int nb_dofs = data.getFieldData().size();
-    if (!nb_dofs)
-      MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getN().size2() / 3;
-    FTensor::Index<'i', Tensor_Dim0> i;
-    FTensor::Index<'j', Tensor_Dim1> j;
-    auto t_n_hvec = data.getFTensor1N<Tensor_Dim1>();
-    auto t_data = getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(*dataPtr);
-    for (int gg = 0; gg != nb_integration_points; ++gg) {
-      auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
-      int bb = 0;
-      for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
-        t_data(i, j) += t_dof(i) * t_n_hvec(j);
-        ++t_n_hvec;
-        ++t_dof;
+    if (nb_dofs) {
+      const int nb_base_functions = data.getN().size2() / 3;
+      FTensor::Index<'i', Tensor_Dim0> i;
+      FTensor::Index<'j', Tensor_Dim1> j;
+      auto t_n_hvec = data.getFTensor1N<3>();
+      auto t_data = getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(*dataPtr);
+      for (int gg = 0; gg != nb_integration_points; ++gg) {
+        auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
+        int bb = 0;
+        for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
+          t_data(i, j) += t_dof(i) * t_n_hvec(j);
+          ++t_n_hvec;
+          ++t_dof;
+        }
+        for (; bb != nb_base_functions; ++bb)
+          ++t_n_hvec;
+        ++t_data;
       }
-      for (; bb != nb_base_functions; ++bb)
-        ++t_n_hvec;
-      ++t_data;
     }
     MoFEMFunctionReturn(0);
   }
