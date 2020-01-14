@@ -1451,11 +1451,6 @@ DataForcesAndSourcesCore::EntData::getFTensor0N(const int gg, const int bb) {
   return getFTensor0N(bAse, gg, bb);
 };
 
-template <>
-FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1N<3>(
-    FieldApproximationBase base);
-
 template <int Tensor_Dim>
 auto DataForcesAndSourcesCore::EntData::getFTensor1N() {
   return getFTensor1N<Tensor_Dim>(bAse);
@@ -1559,6 +1554,92 @@ MatSetValues(Mat M, const DataForcesAndSourcesCore::EntData &row_data,
       M, row_data.getIndices().size(), &*row_data.getIndices().begin(),
       col_data.getIndices().size(), &*col_data.getIndices().begin(), ptr, iora);
 }
+
+/** \name Specializations for tensor base function */
+
+/**@{*/
+
+template <>
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+DataForcesAndSourcesCore::EntData::getFTensor1N<3>(
+    FieldApproximationBase base);
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
+    FieldApproximationBase base);
+
+/**@}*/
+
+
+/** \name Specializations for direcatives of base functions */
+
+template <>
+FTensor::Tensor1<double *, 3>
+DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
+    const FieldApproximationBase base);
+template <>
+FTensor::Tensor1<double *, 3>
+DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>();
+
+template <>
+FTensor::Tensor1<double *, 2>
+DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
+    const FieldApproximationBase base);
+template <>
+FTensor::Tensor1<double *, 2>
+DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>();
+template <>
+FTensor::Tensor1<double *, 3>
+DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
+    const FieldApproximationBase base, const int bb);
+template <>
+FTensor::Tensor1<double *, 3>
+DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(const int bb);
+template <>
+FTensor::Tensor1<double *, 2>
+DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(
+    const FieldApproximationBase base, const int bb);
+template <>
+FTensor::Tensor1<double *, 2>
+DataForcesAndSourcesCore::EntData::getFTensor1DiffN<2>(const int bb);
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
+    FieldApproximationBase base);
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
+DataForcesAndSourcesCore::EntData::getFTensor2DiffN<3, 2>(
+    FieldApproximationBase base, const int gg, const int bb);
+
+/**@}*/
+
+/** \name Specializations for field data */
+
+/**@{*/
+
+template <>
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+DataForcesAndSourcesCore::EntData::getFTensor1FieldData<3>();
+
+template <>
+FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
+DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>();
+
+template <>
+FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2FieldData<3, 3>();
+
+template <>
+FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>
+DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<3>();
+
+template <>
+FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>
+DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<2>();
+
+/**@}*/
 
 } // namespace MoFEM
 
