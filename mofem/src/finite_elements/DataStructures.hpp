@@ -1451,6 +1451,11 @@ DataForcesAndSourcesCore::EntData::getFTensor0N(const int gg, const int bb) {
   return getFTensor0N(bAse, gg, bb);
 };
 
+template <>
+FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+DataForcesAndSourcesCore::EntData::getFTensor1N<3>(
+    FieldApproximationBase base);
+
 template <int Tensor_Dim>
 auto DataForcesAndSourcesCore::EntData::getFTensor1N() {
   return getFTensor1N<Tensor_Dim>(bAse);
