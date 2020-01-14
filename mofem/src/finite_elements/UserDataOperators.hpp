@@ -287,40 +287,43 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
+
   const int nb_dofs = data.getFieldData().size();
-  if (!nb_dofs && type == this->zeroType) {
-    dataPtr->resize(Tensor_Dim, 0, false);
-    MoFEMFunctionReturnHot(0);
-  }
-  if (!nb_dofs) {
-    MoFEMFunctionReturnHot(0);
-  }
-  const int nb_gauss_pts = data.getN().size1();
-  const int nb_base_functions = data.getN().size2();
-  MatrixDouble &mat = *dataPtr;
-  if (type == zeroType) {
-    mat.resize(Tensor_Dim, nb_gauss_pts, false);
-    mat.clear();
-  }
-  auto base_function = data.getFTensor0N();
-  auto values_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
-  FTensor::Index<'I', Tensor_Dim> I;
-  const int size = nb_dofs / Tensor_Dim;
-  if (nb_dofs % Tensor_Dim) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
-  }
-  for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-    auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
-    int bb = 0;
-    for (; bb != size; ++bb) {
-      values_at_gauss_pts(I) += field_data(I) * base_function;
-      ++field_data;
-      ++base_function;
+
+  if (nb_dofs) {
+    const int nb_gauss_pts = getGaussPts().size2();
+    auto &mat = *dataPtr;
+    if (type == zeroType) {
+      mat.resize(Tensor_Dim, nb_gauss_pts, false);
+      mat.clear();
     }
-    // Number of dofs can be smaller than number of Tensor_Dim x base functions
-    for (; bb != nb_base_functions; ++bb)
-      ++base_function;
-    ++values_at_gauss_pts;
+    if (nb_gauss_pts) {
+      const int nb_base_functions = data.getN().size2();
+      auto base_function = data.getFTensor0N();
+      auto values_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
+      FTensor::Index<'I', Tensor_Dim> I;
+      const int size = nb_dofs / Tensor_Dim;
+      if (nb_dofs % Tensor_Dim) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency");
+      }
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
+        int bb = 0;
+        for (; bb != size; ++bb) {
+          values_at_gauss_pts(I) += field_data(I) * base_function;
+          ++field_data;
+          ++base_function;
+        }
+        // Number of dofs can be smaller than number of Tensor_Dim x base
+        // functions
+        for (; bb != nb_base_functions; ++bb)
+          ++base_function;
+        ++values_at_gauss_pts;
+      }
+    }
+  } else if (type == this->zeroType) {
+    dataPtr->resize(Tensor_Dim, 0, false);
   }
   MoFEMFunctionReturn(0);
 }
@@ -856,42 +859,43 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
-  const int nb_dofs = data.getFieldData().size();
-  if (!this->dataPtr) {
+  if (!this->dataPtr) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Data pointer not allocated");
-  }
-  if (!nb_dofs && type == this->zeroType) {
-    this->dataPtr->resize(Tensor_Dim, 0, false);
-    MoFEMFunctionReturnHot(0);
-  }
-  if (!nb_dofs) {
-    MoFEMFunctionReturnHot(0);
-  }
-  const int nb_gauss_pts = data.getN().size1();
-  const int nb_base_functions = data.getN().size2();
-  ublas::matrix<double, ublas::row_major, DoubleAllocator> &mat =
-      *this->dataPtr;
-  if (type == this->zeroType) {
-    mat.resize(Tensor_Dim, nb_gauss_pts, false);
-    mat.clear();
-  }
-  auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
-  auto gradients_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
-  FTensor::Index<'I', Tensor_Dim> I;
-  for (int gg = 0; gg < nb_gauss_pts; ++gg) {
-    auto field_data = data.getFTensor0FieldData();
-    int bb = 0;
-    for (; bb < nb_dofs; ++bb) {
-      gradients_at_gauss_pts(I) += field_data * diff_base_function(I);
-      ++field_data;
-      ++diff_base_function;
+
+  const int nb_dofs = data.getFieldData().size();
+  if (nb_dofs) {
+    const int nb_gauss_pts = this->getGaussPts().size2();
+    auto &mat = *this->dataPtr;
+    if (type == this->zeroType) {
+      mat.resize(Tensor_Dim, nb_gauss_pts, false);
+      mat.clear();
     }
-    // Number of dofs can be smaller than number of base functions
-    for (; bb != nb_base_functions; ++bb)
-      ++diff_base_function;
-    ++gradients_at_gauss_pts;
+    if (nb_gauss_pts) {
+      const int nb_base_functions = data.getN().size2();
+      auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
+      auto gradients_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
+
+      FTensor::Index<'I', Tensor_Dim> I;
+      for (int gg = 0; gg < nb_gauss_pts; ++gg) {
+        auto field_data = data.getFTensor0FieldData();
+        int bb = 0;
+        for (; bb != nb_dofs; ++bb) {
+          gradients_at_gauss_pts(I) += field_data * diff_base_function(I);
+          ++field_data;
+          ++diff_base_function;
+        }
+        // Number of dofs can be smaller than number of base functions
+        for (; bb < nb_base_functions; ++bb)
+          ++diff_base_function;
+        ++gradients_at_gauss_pts;
+      }
+    }
+
+  } else if(type == this->zeroType) {
+    this->dataPtr->resize(Tensor_Dim, 0, false);
   }
+
   MoFEMFunctionReturn(0);
 }
 
@@ -967,43 +971,50 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
+  if (!this->dataPtr) 
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Data pointer not allocated");
+
   const int nb_dofs = data.getFieldData().size();
-  if (!nb_dofs && type == this->zeroType) {
-    this->dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, 0, false);
-    MoFEMFunctionReturnHot(0);
-  }
-  if (!nb_dofs) {
-    MoFEMFunctionReturnHot(0);
-  }
-  const int nb_gauss_pts = data.getN().size1();
-  const int nb_base_functions = data.getN().size2();
-  ublas::matrix<double, ublas::row_major, DoubleAllocator> &mat =
-      *this->dataPtr;
-  if (type == this->zeroType) {
-    mat.resize(Tensor_Dim0 * Tensor_Dim1, nb_gauss_pts, false);
-    mat.clear();
-  }
-  auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
-  auto gradients_at_gauss_pts =
-      getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(mat);
-  FTensor::Index<'I', Tensor_Dim0> I;
-  FTensor::Index<'J', Tensor_Dim1> J;
-  int size = nb_dofs / Tensor_Dim0;
-  if (nb_dofs % Tensor_Dim0) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
-  }
-  for (int gg = 0; gg < nb_gauss_pts; ++gg) {
-    auto field_data = data.getFTensor1FieldData<Tensor_Dim0>();
-    int bb = 0;
-    for (; bb < size; ++bb) {
-      gradients_at_gauss_pts(I, J) += field_data(I) * diff_base_function(J);
-      ++field_data;
-      ++diff_base_function;
+
+  if (nb_dofs) {
+    const int nb_gauss_pts = this->getGaussPts().size2();
+    auto &mat = *this->dataPtr;
+    if (type == this->zeroType) {
+      mat.resize(Tensor_Dim0 * Tensor_Dim1, nb_gauss_pts, false);
+      mat.clear();
     }
-    // Number of dofs can be smaller than number of Tensor_Dim0 x base functions
-    for (; bb != nb_base_functions; ++bb)
-      ++diff_base_function;
-    ++gradients_at_gauss_pts;
+
+    if (nb_gauss_pts) {
+      const int nb_base_functions = data.getN().size2();
+      auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
+      auto gradients_at_gauss_pts =
+          getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(mat);
+      FTensor::Index<'I', Tensor_Dim0> I;
+      FTensor::Index<'J', Tensor_Dim1> J;
+      int size = nb_dofs / Tensor_Dim0;
+      if (nb_dofs % Tensor_Dim0) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency");
+      }
+      for (int gg = 0; gg < nb_gauss_pts; ++gg) {
+        auto field_data = data.getFTensor1FieldData<Tensor_Dim0>();
+        int bb = 0;
+        for (; bb < size; ++bb) {
+          gradients_at_gauss_pts(I, J) += field_data(I) * diff_base_function(J);
+          ++field_data;
+          ++diff_base_function;
+        }
+        // Number of dofs can be smaller than number of Tensor_Dim0 x base
+        // functions
+        for (; bb != nb_base_functions; ++bb)
+          ++diff_base_function;
+        ++gradients_at_gauss_pts;
+      }
+    }
+
+  } else if (type == this->zeroType) {
+    this->dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, 0, false);
   }
   MoFEMFunctionReturn(0);
 }
@@ -1209,7 +1220,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
-  const int nb_integration_points = getGaussPts().size2();
+  const int nb_integration_points = this->getGaussPts().size2();
   if (type == zeroType && side == zeroSide) {
     dataPtr->resize(Tensor_Dim, nb_integration_points, false);
     dataPtr->clear();
