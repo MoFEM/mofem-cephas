@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 
     if (m_field.get_comm_rank() == 0) {
       CHKERR m_field.getInterface<FieldBlas>()->setField(1, "LAMBDA");
-      CHKERR m_field.getInterface<FieldBlas>()->setField(1, "FILED");
+      CHKERR m_field.getInterface<FieldBlas>()->setField(1, "FIELD");
     }
 
     CHKERR comm_interface_ptr->exchangeFieldData("LAMBDA");

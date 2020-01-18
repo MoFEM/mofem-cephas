@@ -299,9 +299,21 @@ MoFEMErrorCode FieldBlas::setField(const double val,
   const MoFEM::Interface &m_field = cOre;
   const DofEntity_multiIndex *dofs_ptr;
   MoFEMFunctionBegin;
-  CHKERR m_field.get_dofs(&dofs_ptr);
-  for (auto &dof : *dofs_ptr)
-    dof->getFieldData() = val;
+  const Field_multiIndex *fields_ptr;
+  CHKERR m_field.get_fields(&fields_ptr);
+  auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
+  if (fit == fields_ptr->get<FieldName_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             " field < %s > not found, (top tip: check spelling)",
+             field_name.c_str());
+  }
+  ierr = m_field.get_dofs(&dofs_ptr);
+  CHKERRG(ierr);
+  auto dit = dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name);
+  auto hi_dit = dofs_ptr->get<FieldName_mi_tag>().upper_bound(field_name);
+  for (; dit != hi_dit; dit++) {
+    (*dit)->getFieldData() = val;
+  }
   MoFEMFunctionReturn(0);
 }
 
@@ -310,6 +322,15 @@ MoFEMErrorCode FieldBlas::fieldScale(const double alpha,
   const MoFEM::Interface &m_field = cOre;
   const DofEntity_multiIndex *dofs_ptr;
   MoFEMFunctionBeginHot;
+  const Field_multiIndex *fields_ptr;
+  ierr = m_field.get_fields(&fields_ptr);
+  CHKERRG(ierr);
+  auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
+  if (fit == fields_ptr->get<FieldName_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             " field < %s > not found, (top tip: check spelling)",
+             field_name.c_str());
+  }
   ierr = m_field.get_dofs(&dofs_ptr);
   CHKERRG(ierr);
   DofEntityByFieldName::iterator dit, hi_dit;
