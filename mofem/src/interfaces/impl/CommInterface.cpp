@@ -256,8 +256,7 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
       MoFEMFunctionReturn(0);
     };
 
-    auto resolve_ents = [&](auto &&th_gid, auto &all_ents_range) {
-
+    auto resolve_shared_ents = [&](auto &&th_gid, auto &all_ents_range) {
       auto set_gid = [&](auto &th_gid) {
         std::vector<int> gids(num_entities);
         for (size_t g = 0; g != all_ents_range.size(); ++g)
@@ -292,16 +291,19 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
         return proc_ent;
       };
 
-      auto proc_ent = get_proc_ent(all_ents_range);
-      auto skin_ents = get_skin_ents(all_ents_range);
-      CHKERR pcomm->resolve_shared_ents(
-          0, proc_ent, resolve_dim(all_ents_range), resolve_dim(all_ents_range),
-          skin_ents.data(), set_gid(th_gid));
+      auto resolve_shared_ents = [&](auto &&proc_ents, auto &&skin_ents) {
+        return pcomm->resolve_shared_ents(
+            0, proc_ents, resolve_dim(all_ents_range),
+            resolve_dim(all_ents_range), skin_ents.data(), set_gid(th_gid));
+      };
+
+      CHKERR resolve_shared_ents(get_proc_ent(all_ents_range),
+                                 get_skin_ents(all_ents_range));
 
       return th_gid;
     };
 
-    CHKERR delete_tag(resolve_ents(get_tag(), all_ents_range));
+    CHKERR delete_tag(resolve_shared_ents(get_tag(), all_ents_range));
 
     if (verb >= NOISY) {
 
