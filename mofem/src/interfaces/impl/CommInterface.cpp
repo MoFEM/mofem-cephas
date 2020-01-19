@@ -330,121 +330,38 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
     const EntityHandle *const end = entities + num_entities;
     std::vector<EntityHandle> all_ents_vec(ent, end);
 
-    auto print_vec = [&](auto name, auto &vec) {
-      std::ostringstream ss;
-      ss << "Proc " << m_field.get_comm_rank() << " ";
-      ss << "vector " << name << " [ ";
-      for (auto v : vec)
-        ss << v << " ";
-      ss << "]" << endl;
-      PetscSynchronizedPrintf(m_field.get_comm(), "%s", ss.str().c_str());
-      PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
-    };
+    Range all_ents_range;
+    all_ents_range.insert_list(all_ents_vec.begin(), all_ents_vec.end());
 
-    if (verb >= NOISY)
-      print_vec("all_ents_vec", all_ents_vec);
+    Tag th_gid;
+    CHKERR m_field.get_moab().tag_get_handle(GLOBAL_ID_TAG_NAME, th_gid);
 
-    const size_t block_size = sizeof(EntityHandle) / sizeof(int);
+    std::vector<int> gids(num_entities);
+    for (size_t g = 0; g != num_entities; ++g)
+      gids[g] = std::numeric_limits<int>().max() - g - 1;
+    CHKERR m_field.get_moab().tag_set_data(th_gid, all_ents_range,
+                                           &*gids.begin());
 
-    int tag;
-    CHKERR PetscCommGetNewTag(m_field.get_comm(), &tag);
+    Range proc_ents_skin[4];
+    proc_ents_skin[3] = all_ents_range.subset_by_dimension(3);
+    proc_ents_skin[2] = all_ents_range.subset_by_dimension(2);
+    proc_ents_skin[1] = all_ents_range.subset_by_dimension(1);
+    proc_ents_skin[0] = all_ents_range.subset_by_dimension(0);
+    Range proc_ent;
+    if (m_field.get_comm_size() == 0)
+      proc_ent = all_ents_range;
 
-    std::vector<EntityHandle> recv_ents_vec[m_field.get_comm_size()];
-    std::vector<MPI_Request> r_waits(m_field.get_comm_size());
-    for (int proc = 0, kk = 0; proc < m_field.get_comm_size(); ++proc) {
-      if (proc != m_field.get_comm_rank()) {
-        recv_ents_vec[proc].resize(all_ents_vec.size());
-        CHKERR MPI_Irecv(&*recv_ents_vec[proc].begin(), // buffer to receive
-                         recv_ents_vec[proc].size() *
-                             block_size, // message length
-                         MPIU_INT, proc, // to proc
-                         tag, m_field.get_comm(), &r_waits[kk]);
-        ++kk;
-      }
-    }
+    int resolve_dim  = 3;
+    for (; resolve_dim <= 0; --resolve_dim)
+      if (all_ents_range.num_of_dimension(resolve_dim))
+        break;
 
-    std::vector<MPI_Request> s_waits(
-        m_field.get_comm_size()); // status of send messages
-    for (int proc = 0, kk = 0; proc < m_field.get_comm_size(); ++proc) {
-      if (proc != m_field.get_comm_rank()) {
-        CHKERR MPI_Isend(&*all_ents_vec.begin(),           // buffer to send
-                         all_ents_vec.size() * block_size, // message length
-                         MPIU_INT, proc,                   // to proc
-                         tag, m_field.get_comm(), &s_waits[kk]);
-        ++kk;
-      }
-    }
+    CHKERR pcomm->resolve_shared_ents(0, proc_ent, resolve_dim, -1,
+                                      proc_ents_skin);
 
-    std::vector<MPI_Status> status(m_field.get_comm_size());
-
-    // Wait for received
-    CHKERR MPI_Waitall(m_field.get_comm_size() - 1, &*r_waits.begin(),
-                       &*status.begin());
-
-    // Wait for send messages
-    CHKERR MPI_Waitall(m_field.get_comm_size() - 1, &*s_waits.begin(),
-                       &*status.begin());
-
-    if (verb >= NOISY) {
-      for (int proc = 0; proc < m_field.get_comm_size(); ++proc) {
-        if (proc != m_field.get_comm_rank()) {
-          print_vec("recv_ents_vec received from " +
-                        boost::lexical_cast<std::string>(proc),
-                    recv_ents_vec[proc]);
-        }
-      }
-    }
-
-    unsigned char pstatus = 0;
-
-    if (m_field.get_comm_rank() != owner_proc)
-      pstatus = PSTATUS_NOT_OWNED;
-
-    pstatus |= PSTATUS_SHARED;
-    if (m_field.get_comm_size() > 2)
-      pstatus |= PSTATUS_MULTISHARED;
-
-    if (pcomm->size() != m_field.get_comm_size())
-      SETERRQ(PETSC_COMM_WORLD, MOFEM_NOT_IMPLEMENTED,
-              "Implementation that size of PComm and MoFEM are diffrent not "
-              "implemented");
-
-    std::vector<int> shprocs(MAX_SHARING_PROCS, 0);
-    std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, 0);
+  
 
     for (int e = 0; e != all_ents_vec.size(); ++e) {
-
-      size_t rrr = 0;
-      if (m_field.get_comm_rank() != owner_proc) {
-        shhandles[rrr] = (recv_ents_vec[owner_proc])[e];
-        shprocs[rrr] = owner_proc;
-        ++rrr;
-      }
-
-      for (size_t rr = 0; rr < m_field.get_comm_size(); ++rr) {
-        if (rr != owner_proc && rr != m_field.get_comm_rank()) {
-          shhandles[rrr] = (recv_ents_vec[rr])[e];
-          shprocs[rrr] = rr;
-          ++rrr;
-        }
-      }
-
-      for (; rrr != MAX_SHARING_PROCS; ++rrr)
-        shprocs[rrr] = -1;
-
-      CHKERR m_field.get_moab().tag_set_data(pcomm->sharedp_tag(),
-                                             &all_ents_vec[e], 1, &shprocs[0]);
-      CHKERR m_field.get_moab().tag_set_data(
-          pcomm->sharedh_tag(), &all_ents_vec[e], 1, &shhandles[0]);
-      if (pstatus & PSTATUS_MULTISHARED) {
-        CHKERR m_field.get_moab().tag_set_data(
-            pcomm->sharedps_tag(), &all_ents_vec[e], 1, &shprocs[0]);
-        CHKERR m_field.get_moab().tag_set_data(
-            pcomm->sharedhs_tag(), &all_ents_vec[e], 1, &shhandles[0]);
-      }
-
-      CHKERR m_field.get_moab().tag_set_data(pcomm->pstatus_tag(),
-                                             &all_ents_vec[e], 1, &pstatus);
 
       auto print_owner = [&]() {
         MoFEMFunctionBegin;
@@ -453,6 +370,25 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
         CHKERR pcomm->get_owner_handle(all_ents_vec[e], moab_owner_proc,
                                        moab_owner_handle);
 
+        unsigned char pstatus = 0;
+
+        CHKERR m_field.get_moab().tag_get_data(pcomm->pstatus_tag(),
+                                               &all_ents_vec[e], 1, &pstatus);
+
+        std::vector<int> shprocs(MAX_SHARING_PROCS, 0);
+        std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, 0);
+
+        CHKERR m_field.get_moab().tag_get_data(
+            pcomm->sharedp_tag(), &all_ents_vec[e], 1, &shprocs[0]);
+        CHKERR m_field.get_moab().tag_get_data(
+            pcomm->sharedh_tag(), &all_ents_vec[e], 1, &shhandles[0]);
+        if (pstatus & PSTATUS_MULTISHARED) {
+          CHKERR m_field.get_moab().tag_get_data(
+              pcomm->sharedps_tag(), &all_ents_vec[e], 1, &shprocs[0]);
+          CHKERR m_field.get_moab().tag_get_data(
+              pcomm->sharedhs_tag(), &all_ents_vec[e], 1, &shhandles[0]);
+        }
+
         std::ostringstream ss;
 
         ss << "Rank " << m_field.get_comm_rank() << " ";
@@ -460,10 +396,18 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
           ss << "OWNER ";
         if (pstatus & PSTATUS_SHARED)
           ss << "PSTATUS_SHARED ";
-        else if (pstatus & PSTATUS_MULTISHARED)
+        if (pstatus & PSTATUS_MULTISHARED)
           ss << "PSTATUS_MULTISHARED ";
 
         ss << "owner " << moab_owner_proc << " (" << owner_proc << ") ";
+
+        ss << "shprocs: ";
+        for (size_t r = 0; r != m_field.get_comm_size() + 1; ++r)
+          ss << shprocs[r] << " ";
+
+        ss << "shhandles: ";
+        for (size_t r = 0; r != m_field.get_comm_size() + 1; ++r)
+          ss << shhandles[r] << " ";
 
         ss << std::endl;
         PetscSynchronizedPrintf(m_field.get_comm(), "%s", ss.str().c_str());
@@ -474,25 +418,8 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
 
       if (verb >= NOISY)
         CHKERR print_owner();
-
-      auto check_owner = [&]() {
-        MoFEMFunctionBegin;
-        int moab_owner_proc;
-        EntityHandle moab_owner_handle;
-        CHKERR pcomm->get_owner_handle(all_ents_vec[e], moab_owner_proc,
-                                       moab_owner_handle);
-        if (owner_proc != moab_owner_proc)
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "%d != %d",
-                   owner_proc, moab_owner_proc);
-        if (m_field.get_comm_rank() != owner_proc)
-          if (recv_ents_vec[owner_proc][e] != moab_owner_handle)
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "%lu != %lu",
-                     recv_ents_vec[owner_proc][e], moab_owner_handle);
-        MoFEMFunctionReturn(0);
-      };
-
-      CHKERR check_owner();
     }
+  
   }
 
   MoFEMFunctionReturn(0);
