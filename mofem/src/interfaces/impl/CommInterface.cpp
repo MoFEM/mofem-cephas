@@ -245,11 +245,14 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
     all_ents_range.insert_list(all_ents_vec.begin(), all_ents_vec.end());
 
     Tag th_gid;
-    CHKERR m_field.get_moab().tag_get_handle(GLOBAL_ID_TAG_NAME, th_gid);
+    const int zero = 0;
+    CHKERR m_field.get_moab().tag_get_handle(
+        "TMP_GLOBAL_ID_TAG_NAME", 1, MB_TYPE_INTEGER, th_gid,
+        MB_TAG_SPARSE | MB_TAG_CREAT, &zero);
 
     std::vector<int> gids(num_entities);
     for (size_t g = 0; g != num_entities; ++g)
-      gids[g] = std::numeric_limits<int>().max() - g - 1;
+      gids[g] = g + 1;
     CHKERR m_field.get_moab().tag_set_data(th_gid, all_ents_range,
                                            &*gids.begin());
 
@@ -268,36 +271,35 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
         break;
 
     CHKERR pcomm->resolve_shared_ents(0, proc_ent, resolve_dim, -1,
-                                      proc_ents_skin);
+                                      proc_ents_skin, &th_gid);
 
-  
+    CHKERR m_field.get_moab().tag_delete(th_gid);
 
-    for (int e = 0; e != all_ents_vec.size(); ++e) {
+    if (verb >= NOISY) {
 
-      auto print_owner = [&]() {
+      auto print_owner = [&](const EntityHandle e) {
         MoFEMFunctionBegin;
         int moab_owner_proc;
         EntityHandle moab_owner_handle;
-        CHKERR pcomm->get_owner_handle(all_ents_vec[e], moab_owner_proc,
-                                       moab_owner_handle);
+        CHKERR pcomm->get_owner_handle(e, moab_owner_proc, moab_owner_handle);
 
         unsigned char pstatus = 0;
 
-        CHKERR m_field.get_moab().tag_get_data(pcomm->pstatus_tag(),
-                                               &all_ents_vec[e], 1, &pstatus);
+        CHKERR m_field.get_moab().tag_get_data(pcomm->pstatus_tag(), &e, 1,
+                                               &pstatus);
 
         std::vector<int> shprocs(MAX_SHARING_PROCS, 0);
         std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, 0);
 
-        CHKERR m_field.get_moab().tag_get_data(
-            pcomm->sharedp_tag(), &all_ents_vec[e], 1, &shprocs[0]);
-        CHKERR m_field.get_moab().tag_get_data(
-            pcomm->sharedh_tag(), &all_ents_vec[e], 1, &shhandles[0]);
+        CHKERR m_field.get_moab().tag_get_data(pcomm->sharedp_tag(), &e, 1,
+                                               &shprocs[0]);
+        CHKERR m_field.get_moab().tag_get_data(pcomm->sharedh_tag(), &e, 1,
+                                               &shhandles[0]);
         if (pstatus & PSTATUS_MULTISHARED) {
-          CHKERR m_field.get_moab().tag_get_data(
-              pcomm->sharedps_tag(), &all_ents_vec[e], 1, &shprocs[0]);
-          CHKERR m_field.get_moab().tag_get_data(
-              pcomm->sharedhs_tag(), &all_ents_vec[e], 1, &shhandles[0]);
+          CHKERR m_field.get_moab().tag_get_data(pcomm->sharedps_tag(), &e, 1,
+                                                 &shprocs[0]);
+          CHKERR m_field.get_moab().tag_get_data(pcomm->sharedhs_tag(), &e, 1,
+                                                 &shhandles[0]);
         }
 
         std::ostringstream ss;
@@ -327,10 +329,9 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
         MoFEMFunctionReturn(0);
       };
 
-      if (verb >= NOISY)
-        CHKERR print_owner();
+      for (auto e : all_ents_vec)
+        CHKERR print_owner(e);
     }
-  
   }
 
   MoFEMFunctionReturn(0);
