@@ -384,20 +384,6 @@ PetscErrorCode DMMoFEMSetSquareProblem(DM dm, PetscBool square_problem) {
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, const char fe_name[]) {
-  MoFEMFunctionBeginHot;
-  PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
-  MoFEMFunctionBegin;
-  DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
-  CHKERR dm_field->mField_ptr->getInterface<CommInterface>()
-      ->resolveSharedFiniteElements(dm_field->problemPtr, fe_name);
-  MoFEMFunctionReturn(0);
-}
-
-PetscErrorCode DMMoFEMResolveSharedEntities(DM dm, const char fe_name[]) {
-  return DMMoFEMResolveSharedFiniteElements(dm, fe_name);
-}
-
 PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm, const char fe_name[],
                                                     PetscLayout *layout) {
   MoFEMFunctionBeginHot;
