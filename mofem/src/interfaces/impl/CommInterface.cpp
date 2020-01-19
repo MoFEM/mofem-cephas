@@ -238,10 +238,8 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
     ParallelComm *pcomm = ParallelComm::get_pcomm(
         &m_field.get_moab(), m_field.get_basic_entity_data_ptr()->pcommID);
 
-    std::vector<EntityHandle> all_ents_vec(entities, entities + num_entities);
     Range all_ents_range;
-    all_ents_range.insert_list(all_ents_vec.begin(), all_ents_vec.end());
-    cerr << all_ents_range << endl;
+    all_ents_range.insert_list(entities, entities + num_entities);
 
     auto get_tag = [&]() {
       Tag th_gid;
@@ -358,7 +356,7 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
         MoFEMFunctionReturn(0);
       };
 
-      for (auto e : all_ents_vec)
+      for (auto e : all_ents_range)
         CHKERR print_owner(e);
     }
   }
