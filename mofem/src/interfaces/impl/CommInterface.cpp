@@ -237,43 +237,72 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
 
     ParallelComm *pcomm = ParallelComm::get_pcomm(
         &m_field.get_moab(), m_field.get_basic_entity_data_ptr()->pcommID);
-    const EntityHandle *ent = entities;
-    const EntityHandle *const end = entities + num_entities;
-    std::vector<EntityHandle> all_ents_vec(ent, end);
 
+    std::vector<EntityHandle> all_ents_vec(entities, entities + num_entities);
     Range all_ents_range;
     all_ents_range.insert_list(all_ents_vec.begin(), all_ents_vec.end());
+    cerr << all_ents_range << endl;
 
-    Tag th_gid;
-    const int zero = 0;
-    CHKERR m_field.get_moab().tag_get_handle(
-        "TMP_GLOBAL_ID_TAG_NAME", 1, MB_TYPE_INTEGER, th_gid,
-        MB_TAG_SPARSE | MB_TAG_CREAT, &zero);
+    auto get_tag = [&]() {
+      Tag th_gid;
+      const int zero = 0;
+      CHKERR m_field.get_moab().tag_get_handle(
+          "TMP_GLOBAL_ID_TAG_NAME", 1, MB_TYPE_INTEGER, th_gid,
+          MB_TAG_SPARSE | MB_TAG_CREAT, &zero);
+      return th_gid;
+    };
 
-    std::vector<int> gids(num_entities);
-    for (size_t g = 0; g != num_entities; ++g)
-      gids[g] = g + 1;
-    CHKERR m_field.get_moab().tag_set_data(th_gid, all_ents_range,
-                                           &*gids.begin());
+    auto delete_tag = [&](auto &&th_gid) {
+      MoFEMFunctionBegin;
+      CHKERR m_field.get_moab().tag_delete(th_gid);
+      MoFEMFunctionReturn(0);
+    };
 
-    Range proc_ents_skin[4];
-    proc_ents_skin[3] = all_ents_range.subset_by_dimension(3);
-    proc_ents_skin[2] = all_ents_range.subset_by_dimension(2);
-    proc_ents_skin[1] = all_ents_range.subset_by_dimension(1);
-    proc_ents_skin[0] = all_ents_range.subset_by_dimension(0);
-    Range proc_ent;
-    if (m_field.get_comm_size() == 0)
-      proc_ent = all_ents_range;
+    auto resolve_ents = [&](auto &&th_gid, auto &all_ents_range) {
 
-    int resolve_dim  = 3;
-    for (; resolve_dim <= 0; --resolve_dim)
-      if (all_ents_range.num_of_dimension(resolve_dim))
-        break;
+      auto set_gid = [&](auto &th_gid) {
+        std::vector<int> gids(num_entities);
+        for (size_t g = 0; g != all_ents_range.size(); ++g)
+          gids[g] = g + 1;
+        CHKERR m_field.get_moab().tag_set_data(th_gid, all_ents_range,
+                                               &*gids.begin());
 
-    CHKERR pcomm->resolve_shared_ents(0, proc_ent, resolve_dim, -1,
-                                      proc_ents_skin, &th_gid);
+        return &th_gid;
+      };
 
-    CHKERR m_field.get_moab().tag_delete(th_gid);
+      auto get_skin_ents = [&](auto &all_ents_range) {
+        std::array<Range, 4> proc_ents_skin;
+        proc_ents_skin[3] = all_ents_range.subset_by_dimension(3);
+        proc_ents_skin[2] = all_ents_range.subset_by_dimension(2);
+        proc_ents_skin[1] = all_ents_range.subset_by_dimension(1);
+        proc_ents_skin[0] = all_ents_range.subset_by_dimension(0);
+        return proc_ents_skin;
+      };
+
+      auto resolve_dim = [&](auto &all_ents_range) {
+        for (int resolve_dim = 3; resolve_dim >= 0; --resolve_dim) {
+          if (all_ents_range.num_of_dimension(resolve_dim)) 
+            return resolve_dim;
+        }
+        return -1;
+      };
+
+      auto get_proc_ent = [&](auto &all_ents_range) {
+        Range proc_ent;
+        if (m_field.get_comm_rank() == owner_proc)
+          proc_ent = all_ents_range;
+        return proc_ent;
+      };
+
+      auto proc_ent = get_proc_ent(all_ents_range);
+      CHKERR pcomm->resolve_shared_ents(
+          0, proc_ent, resolve_dim(all_ents_range), resolve_dim(all_ents_range),
+          get_skin_ents(all_ents_range).data(), set_gid(th_gid));
+
+      return th_gid;
+    };
+
+    CHKERR delete_tag(resolve_ents(get_tag(), all_ents_range));
 
     if (verb >= NOISY) {
 
