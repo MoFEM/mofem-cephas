@@ -293,9 +293,10 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
       };
 
       auto proc_ent = get_proc_ent(all_ents_range);
+      auto skin_ents = get_skin_ents(all_ents_range);
       CHKERR pcomm->resolve_shared_ents(
           0, proc_ent, resolve_dim(all_ents_range), resolve_dim(all_ents_range),
-          get_skin_ents(all_ents_range).data(), set_gid(th_gid));
+          skin_ents.data(), set_gid(th_gid));
 
       return th_gid;
     };
