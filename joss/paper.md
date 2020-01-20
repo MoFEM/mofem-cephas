@@ -38,13 +38,13 @@ authors:
   - name: Chris J. Pearce  
     affiliation: 1 
 affiliations:
- - name: Glasgow Computational Engineering Centre, The James Watt School of Engineering, University of Glasgow, Glasgow, G12 8QQ, UK
+ - name: Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow, Glasgow, G12 8QQ, UK
    index: 1
  - name: School of Mechanical & Aerospace Engineering, Queen's University, Belfast, BT7 1NN, UK
    index: 2
  - name: Department of Bridge Engineering, Tongji University, 1239 Siping Road, Shanghai, 200092, China
    index: 3
-date: 3 May 2019
+date: 21 January 2019
 bibliography: paper.bib
 ---
 
@@ -55,19 +55,19 @@ bibliography: paper.bib
  `MoFEM` (Mesh-oriented Finite Element Method) is a C++ library for managing
  complexities related to the finite element method (FEM). FEM is a widely
  used numerical approach for solving partial differential equations (PDEs)
- arising in various physical problems. `MoFEM` belongs to the class of open
- source finite element libraries, such as `Deal.II`, `MFEM`, `libMesh`,
- `FEniCS`, or `FreeFEM++` to name a few. These provide users with generic
- tools for developers to implement FE solvers. `MoFEM` is developed to
- provide finite element library, incorporating modern approximation
- approaches and data structures, for engineers, students and academics. It
- was primarily designed to solve crack propagation for structural integrity
- assessment of safety-critical structures (see \autoref{fig:brick}). MoFEM is
- designed to solve bespoke engineering problems, enabling the seamless
- integration of meshes that comprise multiple element types, such as rods,
- shells and/or solids, and element shapes, for example triangles, quads,
- prisms, tetrahedrons etc., that are typically encountered in industrial
- applications.
+ arising in various physical problems. `MoFEM` is developed to
+ provide a finite element library incorporating modern approximation
+ approaches and data structures for engineers, students and academics. 
+ 
+`MoFEM` belongs to a class of open source finite element libraries, 
+ such as `Deal.II` [@dealII91], `MFEM` [@doecode_1687], `libMesh` [@libMeshPaper], 
+ `FEniCS` [@AlnaesBlechta2015a] and `FreeFEM++` [@MR3043640], which provide users with generic
+ tools for solving PDEs and developers with frameworks for implementing 
+ bespoke finite elements. `MoFEM` is specifically designed to solve complex engineering problems, enabling 
+ seamless integration of meshes that comprise multiple element types and element shapes, which are typically encountered in industrial
+ applications. The development of `MoFEM` was primarily targeting the problem of 
+ crack propagation for structural integrity assessment of safety critical structures 
+ (see \autoref{fig:brick}).
  
  ![Brittle crack propagation.\label{fig:brick}](paper_brick.png){width=60%}
 
@@ -76,7 +76,7 @@ bibliography: paper.bib
  artefacts from the real physical phenomena. A brute force approach based on
  mesh refinement (so-called *$h$-adaptivity*) leads to a low polynomial
  convergence rate and, therefore, is severely limited by the current computing
- capabilities. A more elegant approach was paved by [@guo1986hp], 
+ capabilities. A more elegant approach was paved by @guo1986hp, 
  who showed that if one could simultaneously increase the
  mesh density and the interpolation order, i.e. employ *$hp$-adaptivity*,
  exponential convergence is achievable. This has been seen as the 'Holy Grail'
@@ -85,13 +85,13 @@ bibliography: paper.bib
  However, raising the order of approximation comes with a computational cost:
  the algebraic solver time and the matrix assembly time are increased.
  Unfortunately, there is no universal solution to tackle these two
- difficulties simultaneously. To reduce the solver time, the properties of
- hierarchical and heterogenous approximation basis, constructed Legendre
+ difficulties simultaneously. To reduce the solver time, properties of
+ hierarchical and heterogeneous approximation basis, constructed using Legendre
  [@ainsworth2003hierarchic] or Jacobi [@fuentes2015orientation] polynomials,
- can be exploited. Such bases enable to rise approximation locally and
- produce sparse and well-conditioned systems of equations. Moreover algebraic
+ can be exploited. Such bases permit to increase approximation order locally and
+ produce sparse and well-conditioned systems of equations. Moreover, algebraic
  system constructed with hierarchical basis can be naturally restricted to
- lower dimensions and used as preconditioner, e.g. multi-grid solvers. This
+ lower dimensions and used as preconditioner, e.g. with multi-grid solvers. This
  approach is ideal for elliptic problems such as solid elasticity; however,
  for hyperbolic problems the efficiency bottleneck could be in the assembly
  time, e.g. for acoustic wave propagation. In this latter case, different
@@ -105,7 +105,7 @@ bibliography: paper.bib
  ($\mathit{H}^1$, ${\mathbf{H}}({\textbf{curl}})$,
  ${\mathbf{H}}({\textbf{div}})$ and $\mathit{L}^2$) are used.
 
- `MoFEM` incorporates all the solutions discussed above for $hp$-adaptivity, enabling
+ `MoFEM` incorporates all solutions discussed above for $hp$-adaptivity, enabling
  rapid implementation of the finite element method, i.e. relieving the user
  from programming complexities related to bookkeeping of degrees of freedom
  (DOFs), finite elements, matrix assembly, etc. Therefore, `MoFEM` provides
@@ -122,14 +122,14 @@ bibliography: paper.bib
  [@MoFEMWebPage].\label{fig:design}](basic_design.pdf){width=100%}
  
   Modern finite element software is an ecosystem that manages various complexities
-  related to mesh and topology, sparse algebra and approximation, integration
+  related to mesh and topology, sparse algebra and approximation, numerical integration
   and dense tensor algebra at the integration point level. `MoFEM` has not
   developed all these capabilities from scratch. Instead,
   `MoFEM` integrates advanced scientific computing tools for sparse algebra from
-  [PETSc](https://www.mcs.anl.gov/petsc/) (Portable, Extensible Toolkit for
+  [`PETSc`](https://www.mcs.anl.gov/petsc/) (Portable, Extensible Toolkit for
   Scientific Computation) [@petsc-user-ref], components for handling mesh and
-  topology from [MOAB](https://press3.mcs.anl.gov/sigma/moab-library/)
-  (Mesh-Oriented Database) [@tautges_moab:2004] and data structures from [Boost
+  topology from [`MOAB`](https://press3.mcs.anl.gov/sigma/moab-library/)
+  (Mesh-Oriented Database) [@tautges_moab:2004] and data structures from [`Boost`
   libraries](https://www.boost.org) [@boost-web-page]. An illustration of how
   these packages are utilised in `MoFEM` is shown in \autoref{fig:design}.
   Finally, `MoFEM`'s core library is developed to manage complexities directly
@@ -137,7 +137,7 @@ bibliography: paper.bib
   has its own design objectives, and appropriate programming tools can be selected from a
   spectrum of solutions. Resilience of the `MoFEM` ecosystem is
   ensured since the underpinning components have dynamic
-  and established groups of developers and significant number of users.
+  and established groups of developers and a significant number of users.
   \autoref{fig:ecosystem} shows different components that are employed in the
   ecosystem including popular pre- and post-processing software.
 
@@ -148,7 +148,7 @@ bibliography: paper.bib
   to fully exploit the potential of emerging approximation methods. On the
   contrary, the design of data structures for approximation of field variables
   in `MoFEM` is independent of the specific finite element, e.g. Lagrangian,
-  N\tex{\'{e}}d\tex{\'{e}}lec, Raviart-Thomas, since each finite element is
+  N\tex{\'{e}}d\tex{\'{e}}lec or Raviart-Thomas, since each finite element is
   constructed by a set of lower dimension entities on which the approximation
   fields are defined. Consequently, different approximation spaces
   ($\mathit{H}^1$, ${\mathbf{H}}({\textbf{curl}})$,
@@ -165,7 +165,7 @@ bibliography: paper.bib
   depends on direction in curvilinear basis, e.g. solid shells with arbitrary
   higher approximation order on the surface and arbitrary lower order through
   the thickness of the shell. This approach also sets the benchmark in terms of
-  how finite element codes are implemented, introducing a concept of
+  how finite element codes are implemented, introducing a concept of pipelines of 
   *user-defined data operators* acting on fields that are associated with
   entities (vertices, edges, faces and volumes) rather on the finite element
   directly. Such an approach simplifies code writing, testing and validation,
