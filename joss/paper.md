@@ -60,7 +60,7 @@ bibliography: paper.bib
  `FEniCS`, or `FreeFEM++` to name a few. These provide users with generic
  tools for solving PDEs and developers with methods to implement bespoke
  finite elements. `MoFEM` is developed to provide free finite element
- framework, incorporating modern approximation approaches and data
+ library, incorporating modern approximation approaches and data
  structures, for engineers, students and academics. It is designed to solve
  bespoke engineering problems, it was primarily designed to solve crack
  propagation for structural integrity assessment of safety-critical
