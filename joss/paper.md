@@ -53,14 +53,19 @@ bibliography: paper.bib
 # Introduction and Motivation
 
  `MoFEM` (Mesh-oriented Finite Element Method) is a C++ library for managing
- complexities related to the finite element method (FEM). FEM is a widely used
- numerical approach for solving partial differential equations (PDEs) arising in
- various physical problems and engineering applications. `MoFEM` is developed to
- provide free and open source finite element framework, incorporating modern
- approximation approaches and data structures, for engineers, students and
- academics. It was primarily designed to solve crack propagation for structural
- integrity assessment of safety-critical structures (see \autoref{fig:brick}).
-
+ complexities related to the finite element method (FEM). FEM is a widely
+ used numerical approach for solving partial differential equations (PDEs)
+ arising in various physical problems. `MoFEM` belongs to the class of open
+ source finite element libraries, such as `Deal.II`, `MFEM`, `libMesh`,
+ `FEniCS`, or `FreeFEM++` to name a few. These provide users with generic
+ tools for solving PDEs and developers with methods to implement bespoke
+ finite elements. `MoFEM` is developed to provide free finite element
+ framework, incorporating modern approximation approaches and data
+ structures, for engineers, students and academics. It is designed to solve
+ bespoke engineering problems, it was primarily designed to solve crack
+ propagation for structural integrity assessment of safety-critical
+ structures (see \autoref{fig:brick}).
+ 
  ![Brittle crack propagation.\label{fig:brick}](paper_brick.png){width=60%}
 
  The need for solutions to increasingly complex problems demands control over
@@ -182,7 +187,7 @@ bibliography: paper.bib
   of Engineering and EDF Energy to solve the problem of crack propagation
   [@kaczmarczyk2017energy]. Over time, the domain of applications expanded to
   include computational homogenisation [@ullah2019unified],
-  bone remodelling and fracture (Kelvin Smith Scholarship),
+  bone remodelling and fracture [@lew2020numerical],
   modelling of the gel rheology [@richardson2018multiphysics] and acoustics
   problems. Moreover, `MoFEM` includes an extensive library of example
   applications such as soap film, solid shell, topology optimisation, phase
@@ -246,22 +251,6 @@ bibliography: paper.bib
   $\mathit{L}^2$ \label{fig:convergence}. 
   For more details, see *"Mix formulation and integration on skeleton"* tutorial
   on @MoFEMWebPage.](LShape.pdf){width=100%}
-
-# Landscape of open source finite element libraries
-
- `MoFEM` belongs to the class of open source finite element libraries, such as
- `Deal.II`, `MFEM`, `libMesh`, `FEniCS`, or `FreeFEM++` to name a few. These
- provide users with generic tools for solving PDEs and developers with
- methods to implement bespoke finite elements. 
- `MoFEM` is designed to solve bespoke engineering problems, enabling the seamless
- integration of meshes that comprise multiple element types, such as 
- rods, shells and/or solids, and element shapes, for example quads,
- prisms, tetrahedrons etc., that are typically encountered in industrial
- applications. In addition, it provides a platform to undertake research in finite
- element technology, supporting multiple approximation spaces and bases. Through 
- pipelines user-defined operators, MoFEM also enables
- complex problem to be broken down into simple parts which can be implemented 
- independently.
 
 # Conclusions 
 
