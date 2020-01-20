@@ -38,7 +38,7 @@ authors:
   - name: Chris J. Pearce  
     affiliation: 1 
 affiliations:
- - name: School of Engineering, University of Glasgow, Glasgow, G12 8QQ, UK
+ - name: Glasgow Computational Engineering Centre, The James Watt School of Engineering, University of Glasgow, Glasgow, G12 8QQ, UK
    index: 1
  - name: School of Mechanical & Aerospace Engineering, Queen's University, Belfast, BT7 1NN, UK
    index: 2
@@ -65,7 +65,7 @@ bibliography: paper.bib
  bespoke engineering problems, it was primarily designed to solve crack
  propagation for structural integrity assessment of safety-critical
  structures (see \autoref{fig:brick}).
- 
+
  ![Brittle crack propagation.\label{fig:brick}](paper_brick.png){width=60%}
 
  The need for solutions to increasingly complex problems demands control over
