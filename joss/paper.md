@@ -80,9 +80,9 @@ bibliography: paper.bib
  difficulties simultaneously. To reduce the solver time, the properties of
  hierarchical and heterogenous approximation basis, constructed Legendre
  [@ainsworth2003hierarchic] or Jacobi [@fuentes2015orientation] polynomials,
- can be exploited. Such bases enables to rise approximation locally and
- produce sparse and well conditioned systems of equations. Moreover algebraic
- system constructed with hierarchical base can be naturally restricted to
+ can be exploited. Such bases enable to rise approximation locally and
+ produce sparse and well-conditioned systems of equations. Moreover algebraic
+ system constructed with hierarchical basis can be naturally restricted to
  lower dimensions and used as preconditioner, e.g. multi-grid solvers. This
  approach is ideal for elliptic problems such as solid elasticity; however,
  for hyperbolic problems the efficiency bottleneck could be in the assembly
