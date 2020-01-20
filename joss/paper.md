@@ -58,12 +58,17 @@ bibliography: paper.bib
  arising in various physical problems. `MoFEM` belongs to the class of open
  source finite element libraries, such as `Deal.II`, `MFEM`, `libMesh`,
  `FEniCS`, or `FreeFEM++` to name a few. These provide users with generic
- tools for developers to implement bespoke FE solvers. `MoFEM` is developed
- to provide finite element library, incorporating modern approximation
+ tools for developers to implement FE solvers. `MoFEM` is developed to
+ provide finite element library, incorporating modern approximation
  approaches and data structures, for engineers, students and academics. It
  was primarily designed to solve crack propagation for structural integrity
- assessment of safety-critical structures (see \autoref{fig:brick}).
-
+ assessment of safety-critical structures (see \autoref{fig:brick}). MoFEM is
+ designed to solve bespoke engineering problems, enabling the seamless
+ integration of meshes that comprise multiple element types, such as rods,
+ shells and/or solids, and element shapes, for example triangles, quads,
+ prisms, tetrahedrons etc., that are typically encountered in industrial
+ applications.
+ 
  ![Brittle crack propagation.\label{fig:brick}](paper_brick.png){width=60%}
 
  The need for solutions to increasingly complex problems demands control over
