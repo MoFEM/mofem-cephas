@@ -204,10 +204,10 @@ bibliography: paper.bib
  `MoFEM` is designed to provide efficient tools for solving a wide variety of
  user-defined problems. \autoref{fig:shell} shows an example of error-driven
  $p$-adaptivity on hierarchical approximation basis with a multi-grid solver
- applied to the Scordelis-Lo perforated roof problem [@kaczmarczyk2016prism]. 
+ applied to the perforated Scordelis-Lo roof problem [@kaczmarczyk2016prism]. 
   
   ![Example of $p$-adaptivity for hierarchical and heterogenous approximation
-  with multi-grid solver applied to the Scordelis-Lo perforated roof problem
+  with multi-grid solver applied to the perforated Scordelis-Lo roof problem
   using a solid shell element.\label{fig:shell}](paper_shell.pdf) 
 
   `MoFEM` provides a convenient application programming interface allowing a
@@ -252,7 +252,7 @@ bibliography: paper.bib
   ${\mathbf{H}}(\textbf{div})$ while the field values are in a
   subspace of
   $\mathit{L}^2$ \label{fig:convergence}. 
-  For more details, see *"Mix formulation and integration on skeleton"* tutorial
+  For more details, see *"Mixed formulation and integration on skeleton"* tutorial
   on @MoFEMWebPage.](LShape.pdf){width=100%}
 
 # Conclusions 
