@@ -152,22 +152,20 @@ bibliography: paper.bib
   constructed by a set of lower dimension entities on which the approximation
   fields are defined. Consequently, different approximation spaces
   ($\mathit{H}^1$, ${\mathbf{H}}({\textbf{curl}})$,
-  ${\mathbf{H}}({\textbf{div}})$ and $\mathit{L}^2$) can be arbitrarily mixed in
-  a finite element to create new capabilities for solving complex problems
-  efficiently. 
+  ${\mathbf{H}}({\textbf{div}})$ and $\mathit{L}^2$) can be suitably combined in
+  a finite element to create new stable mixed formulation for solving complex problems efficiently. 
 
   `MoFEM` data structures enable easy enrichment of approximation fields and
-  modification of basis functions, for example, for resolving singularity at the
-  crack front. Applying this technique, it is almost effortless to construct
+  modification of basis functions, for example, for resolution of singularity at a
+  crack front. Applying such technique, it is almost effortless to construct
   transition elements between domains with different problem formulation and
   physics, e.g. from two-field mixed formulation to a single-field. One can
   easily implement elements with an anisotropic approximation order, which
   depends on direction in curvilinear basis, e.g. solid shells with arbitrary
   higher approximation order on the surface and arbitrary lower order through
-  the thickness of the shell. This approach also sets the benchmark in terms of
-  how finite element codes are implemented, introducing a concept of pipelines of 
-  *user-defined data operators* acting on fields that are associated with
-  entities (vertices, edges, faces and volumes) rather on the finite element
+  the thickness of the shell. This approach also sets a benchmark on  
+  how finite element codes could implemented, introducing a concept of pipelines of *user-defined data operators* acting on fields that are associated with
+  entities (vertices, edges, faces and volumes) rather on elements
   directly. Such an approach simplifies code writing, testing and validation,
   making the code more resilient to bugs.
 
@@ -202,7 +200,7 @@ bibliography: paper.bib
   `MoFEM`.\label{fig:examples}](mofem_modules_examples.png){width=100%}
 
  `MoFEM` is designed to provide efficient tools for solving a wide variety of
- user-defined problems. \autoref{fig:shell} shows an example of error-driven
+ user-defined problems. \autoref{fig:shell} shows an example of
  $p$-adaptivity on hierarchical approximation basis with a multi-grid solver
  applied to the perforated Scordelis-Lo roof problem [@kaczmarczyk2016prism]. 
   
@@ -210,14 +208,14 @@ bibliography: paper.bib
   with multi-grid solver applied to the perforated Scordelis-Lo roof problem
   using a solid shell element.\label{fig:shell}](paper_shell.pdf) 
 
-  `MoFEM` provides a convenient application programming interface allowing a
+  `MoFEM` provides a convenient application programming interface allowing
   user to freely choose the approximation basis (e.g. Legrende or Jacobi
   polynomials) independently from the approximation space, and type and
   dimension of the field. A user can approximate scalar and vectorial fields on
   scalar basis functions, or vectorial and tensorial fields on vectorial bases.
   Moreover, `MoFEM` permits the construction of tensorial fields on tensorial
   bases, e.g. bubble basis of zero normal and divergence-free basis
-  functions; see @gopalakrishnan2012second for an example of such a space. A `MoFEM` user can
+  functions; see @gopalakrishnan2012second for an example of such a space. A `MoFEM` user can also
   freely set the approximation order on each entity of an element separately,
   e.g. edge, face, volume, or define a field on the skeleton. In \autoref{fig:convergence},
   we present a convergence study for the mixed
