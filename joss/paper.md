@@ -184,9 +184,9 @@ bibliography: paper.bib
 
 # Examples and Capabilities
 
-  `MoFEM` was initially created with the financial support of the Royal Academy
-  of Engineering and EDF Energy to solve the problem of crack propagation
-  [@kaczmarczyk2017energy]. Over time, the domain of applications expanded to
+  `MoFEM` was initially created to solve the problem of brittle crack propagation
+  using thermodynamically consistent framework [@kaczmarczyk2017energy]. 
+  Over time, the domain of applications expanded to
   include computational homogenisation [@ullah2019unified],
   bone remodelling and fracture [@lew2020numerical],
   modelling of the gel rheology [@richardson2018multiphysics] and acoustics
@@ -204,7 +204,7 @@ bibliography: paper.bib
   a multi-grid solver is applied to the perforated Scordelis-Lo Roof problem 
   [@kaczmarczyk2016prism].
 
-  ![Example of $p$-adaptivity for hierarchical and heterogenous approximation
+  ![Example of $p$-adaptivity for hierarchical and heterogeneous approximation
   with multi-grid solver applied to the perforated Scordelis-Lo roof problem
   using a solid shell element.\label{fig:shell}](paper_shell.pdf) 
 
