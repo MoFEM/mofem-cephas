@@ -117,13 +117,16 @@ bibliography: paper.bib
  types, for example, tetrahedra and prisms.
 
 # Design
-
- ![Basic design of `MoFEM`. Adopted from
- [@MoFEMWebPage].\label{fig:design}](basic_design.pdf){width=100%}
  
   Modern finite element software is an ecosystem that manages various complexities
   related to mesh and topology, sparse algebra and approximation, numerical integration
-  and dense tensor algebra at the integration point level. `MoFEM` has not
+  and dense tensor algebra at the integration point level. 
+
+  ![Basic design of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:design}](basic_design.pdf){width=100%}
+
+  ![Ecosystem of `MoFEM`. Adopted from @MOABWebPage.\label{fig:ecosystem}](ecosystem.pdf){width=70%}
+  
+  However, `MoFEM` has not
   developed all these capabilities from scratch. Instead,
   `MoFEM` integrates advanced scientific computing tools for sparse algebra from
   [`PETSc`](https://www.mcs.anl.gov/petsc/) (Portable, Extensible Toolkit for
@@ -131,8 +134,8 @@ bibliography: paper.bib
   topology from [`MOAB`](https://press3.mcs.anl.gov/sigma/moab-library/)
   (Mesh-Oriented Database) [@tautges_moab:2004] and data structures from [`Boost`
   libraries](https://www.boost.org) [@boost-web-page]. An illustration of how
-  these packages are utilised in `MoFEM` is shown in \autoref{fig:design}.
-  Finally, `MoFEM`'s core library is developed to manage complexities directly
+  these packages are utilised in `MoFEM` is shown in \autoref{fig:design}. Moreover, 
+  `MoFEM`'s core library is developed to manage complexities directly
   related to the finite element method. Therefore, each part of this ecosystem
   has its own design objectives, and appropriate programming tools can be selected from a
   spectrum of solutions. Resilience of the `MoFEM` ecosystem is
@@ -140,8 +143,6 @@ bibliography: paper.bib
   and established groups of developers and a significant number of users.
   \autoref{fig:ecosystem} shows different components that are employed in the
   ecosystem including popular pre- and post-processing software.
-
-  ![Ecosystem of `MoFEM`. Adopted from @MOABWebPage.\label{fig:ecosystem}](ecosystem.pdf){width=80%}
 
   Traditional finite element codes are element-centric, i.e. the type of an
   element defines the approximation space and basis. Therefore, they are not able
@@ -155,6 +156,8 @@ bibliography: paper.bib
   ${\mathbf{H}}({\textbf{div}})$ and $\mathit{L}^2$) can be arbitrarily mixed in
   a finite element to create new capabilities for solving complex problems
   efficiently. 
+
+   ![Examples of user modules implemented using `MoFEM`.\label{fig:examples}](mofem_modules_examples.png){width=100%}
 
   `MoFEM` data structures enable easy enrichment of approximation fields and
   modification of basis functions, for example, for resolving singularity at the
@@ -170,6 +173,10 @@ bibliography: paper.bib
   entities (vertices, edges, faces and volumes) rather on the finite element
   directly. Such an approach simplifies code writing, testing and validation,
   making the code more resilient to bugs.
+
+  ![Example of $p$-adaptivity for hierarchical and heterogenous approximation
+  with multi-grid solver applied to the perforated Scordelis-Lo roof problem
+  using a solid shell element.\label{fig:shell}](paper_shell.pdf) 
 
   Furthermore, `MoFEM`'s core library provides functionality for developing *user
   modules* (see \autoref{fig:design}) where applications for particular
@@ -198,17 +205,10 @@ bibliography: paper.bib
   remodelling, configurational fracture, plasticity, mortar contact,
   magnetostatics and acoustic wave propagation as shown in \autoref{fig:examples}.
 
-  ![Examples of user modules implemented using
-  `MoFEM`.\label{fig:examples}](mofem_modules_examples.png){width=100%}
-
  `MoFEM` is designed to provide efficient tools for solving a wide variety of
  user-defined problems. \autoref{fig:shell} shows an example of error-driven
  $p$-adaptivity on hierarchical approximation basis with a multi-grid solver
  applied to the perforated Scordelis-Lo roof problem [@kaczmarczyk2016prism]. 
-  
-  ![Example of $p$-adaptivity for hierarchical and heterogenous approximation
-  with multi-grid solver applied to the perforated Scordelis-Lo roof problem
-  using a solid shell element.\label{fig:shell}](paper_shell.pdf) 
 
   `MoFEM` provides a convenient application programming interface allowing a
   user to freely choose the approximation basis (e.g. Legrende or Jacobi
@@ -222,10 +222,10 @@ bibliography: paper.bib
   e.g. edge, face, volume, or define a field on the skeleton. In \autoref{fig:convergence},
   we present a convergence study for the mixed
   formulation of a transport/heat conduction problem.  In the code
-  snippet below, we outline defining approximation space, basis and order for each
-  field in this example.
+  snippet below, we outline the definition of approximation space, basis and order for each
+  field in this example:
 
-  ```c++
+  ```cpp
   // add fields of fluxes and values to the mesh
   // define approximation space, basis and number of coefficients
   mField.add_field(fluxes, HDIV, DEMKOWICZ_JACOBI_BASE, 1); 
@@ -242,7 +242,6 @@ bibliography: paper.bib
   mField.set_field_order(mesh_set, MBTRI, fluxes, order+1); 
   mField.set_field_order(mesh_set, MBTET, values, order);
   ```
-
   ![A convergence study of $h$-adaptivity for the mixed formulation of the
   stationary transport/heat conduction problem (see inset of the figure for
   the geometry), with the comparison of different polynomial orders, denoted
@@ -253,7 +252,7 @@ bibliography: paper.bib
   subspace of
   $\mathit{L}^2$ \label{fig:convergence}. 
   For more details, see *"Mixed formulation and integration on skeleton"* tutorial
-  on @MoFEMWebPage.](LShape.pdf){width=100%}
+  on @MoFEMWebPage.](LShape.pdf){width=90%}
 
 # Conclusions 
 
