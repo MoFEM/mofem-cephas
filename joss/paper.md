@@ -76,7 +76,7 @@ bibliography: paper.bib
  artefacts from the real physical phenomena. A brute force approach based on
  mesh refinement (so-called *$h$-adaptivity*) leads to a low polynomial
  convergence rate and, therefore, is severely limited by the current computing
- capabilities. A more elegant approach was paved by [@guo1986hp], 
+ capabilities. A more elegant approach was paved by @guo1986hp, 
  who showed that if one could simultaneously increase the
  mesh density and the interpolation order, i.e. employ *$hp$-adaptivity*,
  exponential convergence is achievable. This has been seen as the 'Holy Grail'
@@ -140,7 +140,7 @@ bibliography: paper.bib
 
   ![Basic design of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:design}](basic_design.pdf){width=100%}
 
-  ![Ecosystem of `MoFEM`. Adopted from @MOABWebPage.\label{fig:ecosystem}](ecosystem.pdf){width=70%}
+  ![Ecosystem of `MoFEM`. Adopted from [@MOABWebPage].\label{fig:ecosystem}](ecosystem.pdf){width=70%}
 
   Traditional finite element codes are element-centric, i.e. the type of an
   element defines the approximation space and basis. Therefore, they are not able
