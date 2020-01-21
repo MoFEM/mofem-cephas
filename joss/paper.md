@@ -76,7 +76,7 @@ bibliography: paper.bib
  artefacts from the real physical phenomena. A brute force approach based on
  mesh refinement (so-called *$h$-adaptivity*) leads to a low polynomial
  convergence rate and, therefore, is severely limited by the current computing
- capabilities. A more elegant approach was paved by @guo1986hp, 
+ capabilities. A more elegant approach was paved by [@guo1986hp], 
  who showed that if one could simultaneously increase the
  mesh density and the interpolation order, i.e. employ *$hp$-adaptivity*,
  exponential convergence is achievable. This has been seen as the 'Holy Grail'
@@ -141,7 +141,7 @@ bibliography: paper.bib
   \autoref{fig:ecosystem} shows different components that are employed in the
   ecosystem including popular pre- and post-processing software.
 
-  ![Ecosystem of `MoFEM`. Adopted from @MOABWebPage.\label{fig:ecosystem}](ecosystem.pdf){width=80%}
+  ![Ecosystem of `MoFEM`. Adopted from [@MOABWebPage].\label{fig:ecosystem}](ecosystem.pdf){width=80%}
 
   Traditional finite element codes are element-centric, i.e. the type of an
   element defines the approximation space and basis. Therefore, they are not able
@@ -215,7 +215,7 @@ bibliography: paper.bib
   scalar basis functions, or vectorial and tensorial fields on vectorial bases.
   Moreover, `MoFEM` permits the construction of tensorial fields on tensorial
   bases, e.g. bubble basis of zero normal and divergence-free basis
-  functions; see @gopalakrishnan2012second for an example of such a space. A `MoFEM` user can also
+  functions; see [@gopalakrishnan2012second] for an example of such a space. A `MoFEM` user can also
   freely set the approximation order on each entity of an element separately,
   e.g. edge, face, volume, or define a field on the skeleton. In \autoref{fig:convergence},
   we present a convergence study for the mixed
@@ -251,7 +251,7 @@ bibliography: paper.bib
   subspace of
   $\mathit{L}^2$ \label{fig:convergence}. 
   For more details, see *"Mixed formulation and integration on skeleton"* tutorial
-  on @MoFEMWebPage.](LShape.pdf){width=100%}
+  on [@MoFEMWebPage].](LShape.pdf){width=100%}
 
 # Conclusions 
 
