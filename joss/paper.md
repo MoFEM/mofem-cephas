@@ -44,7 +44,7 @@ affiliations:
    index: 2
  - name: Department of Bridge Engineering, Tongji University, 1239 Siping Road, Shanghai, 200092, China
    index: 3
-date: 21 January 2019
+date: 21 January 2020
 bibliography: paper.bib
 ---
 
