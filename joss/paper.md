@@ -65,14 +65,14 @@ bibliography: paper.bib
  tools for solving PDEs and developers with frameworks for implementing 
  bespoke finite elements. `MoFEM` is specifically designed to solve complex engineering problems, enabling 
  seamless integration of meshes that comprise multiple element types and element shapes, which are typically encountered in industrial
- applications. The development of `MoFEM` was primarily targeting the problem of 
+ applications. The development of `MoFEM` has been primarily targeting the problem of 
  crack propagation for structural integrity assessment of safety critical structures 
  (see \autoref{fig:brick}).
  
  ![Brittle crack propagation.\label{fig:brick}](paper_brick.png){width=60%}
 
  The need for solutions to increasingly complex problems demands control over
- numerical errors; otherwise, we will be unable to distinguish discretisation
+ numerical errors; otherwise, it would be difficult to distinguish discretisation
  artefacts from the real physical phenomena. A brute force approach based on
  mesh refinement (so-called *$h$-adaptivity*) leads to a low polynomial
  convergence rate and, therefore, is severely limited by the current computing
@@ -94,7 +94,7 @@ bibliography: paper.bib
  lower dimensions and used as preconditioner, e.g. with multi-grid solvers. This
  approach is ideal for elliptic problems such as solid elasticity; however,
  for hyperbolic problems the efficiency bottleneck could be in the assembly
- time, e.g. for acoustic wave propagation. In this latter case, different
+ time, e.g. for acoustic wave propagation. In the latter case, different
  approximation bases, such as the Bernstein-Bézier basis
  [@ainsworth2011bernstein], allowing for fast numerical integration, could be
  an optimal solution. Finally, the adaptive choice of the mesh density and
@@ -135,8 +135,8 @@ bibliography: paper.bib
   spectrum of solutions. Resilience of the `MoFEM` ecosystem is
   ensured since the underpinning components have dynamic
   and established groups of developers and a significant number of users.
-  \autoref{fig:ecosystem} shows different components that are employed in the
-  ecosystem including popular pre- and post-processing software.
+  Different components employed in the ecosystem are illustrated in \autoref{fig:ecosystem}, 
+  including popular pre- and post-processing software.
 
   ![Basic design of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:design}](basic_design.pdf){width=100%}
 
@@ -146,7 +146,7 @@ bibliography: paper.bib
   element defines the approximation space and basis. Therefore, they are not able
   to fully exploit the potential of emerging approximation methods. On the
   contrary, the design of data structures for approximation of field variables
-  in `MoFEM` is independent of the specific finite element, e.g. Lagrangian,
+  in `MoFEM` is independent of the specific finite element formulation, e.g. Lagrangian,
   N\tex{\'{e}}d\tex{\'{e}}lec or Raviart-Thomas, since each finite element is
   constructed by a set of lower dimension entities on which the approximation
   fields are defined. Consequently, different approximation spaces
@@ -199,9 +199,10 @@ bibliography: paper.bib
   ![Examples of user modules implemented using `MoFEM`.\label{fig:examples}](mofem_modules_examples.png){width=100%}
 
  `MoFEM` is designed to provide efficient tools for solving a wide variety of
- user-defined problems. \autoref{fig:shell} shows an example of error-driven
- $p$-adaptivity on hierarchical approximation basis with a multi-grid solver
- applied to the perforated Scordelis-Lo roof problem [@kaczmarczyk2016prism]. 
+  user-defined problems. In \autoref{fig:shell} an example of error-driven 
+  $p$-adaptivity is presented, where hierarchical approximation basis with 
+  a multi-grid solver is applied to the perforated Scordelis-Lo Roof problem 
+  [@kaczmarczyk2016prism].
 
   ![Example of $p$-adaptivity for hierarchical and heterogenous approximation
   with multi-grid solver applied to the perforated Scordelis-Lo roof problem
@@ -209,17 +210,16 @@ bibliography: paper.bib
 
   `MoFEM` provides a convenient application programming interface allowing
   user to freely choose the approximation basis (e.g. Legrende or Jacobi
-  polynomials) independently from the approximation space, and type and
+  polynomials) independently of the approximation space, and type and
   dimension of the field. A user can approximate scalar and vectorial fields on
   scalar basis functions, or vectorial and tensorial fields on vectorial bases.
   Moreover, `MoFEM` permits the construction of tensorial fields on tensorial
   bases, e.g. bubble basis of zero normal and divergence-free basis
   functions; see [@gopalakrishnan2012second] for an example of such a space. A `MoFEM` user can also
   freely set the approximation order on each entity of an element separately,
-  e.g. edge, face, volume, or define a field on the skeleton. In \autoref{fig:convergence},
-  we present a convergence study for the mixed
-  formulation of a transport/heat conduction problem.  In the code
-  snippet below, we outline the definition of approximation space, basis and order for each
+  e.g. edge, face, volume, or define a field on the skeleton. In \autoref{fig:convergence}
+  a convergence study for the mixed formulation of a transport/heat conduction problem is presented, while the code
+  snippet below outlines the definition of approximation space, basis and order for each
   field in this example:
 
   ```cpp
