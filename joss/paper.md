@@ -76,7 +76,7 @@ bibliography: paper.bib
  artefacts from the real physical phenomena. A brute force approach based on
  mesh refinement (so-called *$h$-adaptivity*) leads to a low polynomial
  convergence rate and, therefore, is severely limited by the current computing
- capabilities. A more elegant approach was paved by @guo1986hp, 
+ capabilities. A more elegant approach was paved by [@guo1986hp], 
  who showed that if one could simultaneously increase the
  mesh density and the interpolation order, i.e. employ *$hp$-adaptivity*,
  exponential convergence is achievable. This has been seen as the 'Holy Grail'
@@ -155,15 +155,19 @@ bibliography: paper.bib
   a finite element to create new stable mixed formulations for solving complex problems efficiently. 
 
   `MoFEM` data structures enable easy enrichment of approximation fields and
-  modification of basis functions, for example, for resolution of singularity at a
-  crack front. Applying such technique, it is almost effortless to construct
-  transition elements between domains with different problem formulation and
-  physics, e.g. from two-field mixed formulation to a single-field. One can
-  easily implement elements with an anisotropic approximation order, which
-  depends on direction in curvilinear basis, e.g. solid shells with arbitrary
-  higher approximation order on the surface and arbitrary lower order through
-  the thickness of the shell. This approach also sets a benchmark on how finite element codes could be implemented, introducing a concept of pipelines of *user-defined data operators* acting on fields that are associated with entities (vertices, edges, faces and volumes) rather than on elements directly. Such an approach simplifies code writing, testing and validation,
-  making the code more resilient to bugs.
+  modification of basis functions, for example, for resolution of singularity
+  at a crack front. Applying such technique, it is almost effortless to
+  construct transition elements between domains with different problem
+  formulation and physics, e.g. from two-field mixed formulation to a
+  single-field. One can easily implement elements with an anisotropic
+  approximation order, which depends on direction in curvilinear basis, e.g.
+  solid shells with arbitrary higher approximation order on the surface and
+  arbitrary lower order through the thickness of the shell. This approach
+  also sets a benchmark on how finite element codes could implemented,
+  introducing a concept of pipelines of *user-defined data operators* acting
+  on fields that are associated with entities (vertices, edges, faces and
+  volumes) rather on elements directly. Such an approach simplifies code
+  writing, testing and validation, making the code more resilient to bugs.
 
   Furthermore, `MoFEM`'s core library provides functionality for developing *user
   modules* (see \autoref{fig:design}) where applications for particular
@@ -210,7 +214,7 @@ bibliography: paper.bib
   scalar basis functions, or vectorial and tensorial fields on vectorial bases.
   Moreover, `MoFEM` permits the construction of tensorial fields on tensorial
   bases, e.g. bubble basis of zero normal and divergence-free basis
-  functions; see @gopalakrishnan2012second for an example of such a space. A `MoFEM` user can also
+  functions; see [@gopalakrishnan2012second] for an example of such a space. A `MoFEM` user can also
   freely set the approximation order on each entity of an element separately,
   e.g. edge, face, volume, or define a field on the skeleton. In \autoref{fig:convergence},
   we present a convergence study for the mixed
@@ -245,7 +249,7 @@ bibliography: paper.bib
   subspace of
   $\mathit{L}^2$ \label{fig:convergence}. 
   For more details, see *"Mixed formulation and integration on skeleton"* tutorial
-  on @MoFEMWebPage.](LShape.pdf){width=90%}
+  on [@MoFEMWebPage].](LShape.pdf){width=100%}
 
 # Conclusions 
 
