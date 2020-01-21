@@ -120,13 +120,7 @@ bibliography: paper.bib
  
   Modern finite element software is an ecosystem that manages various complexities
   related to mesh and topology, sparse algebra and approximation, numerical integration
-  and dense tensor algebra at the integration point level. 
-
-  ![Basic design of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:design}](basic_design.pdf){width=100%}
-
-  ![Ecosystem of `MoFEM`. Adopted from @MOABWebPage.\label{fig:ecosystem}](ecosystem.pdf){width=70%}
-  
-  However, `MoFEM` has not
+  and dense tensor algebra at the integration point level.  However, `MoFEM` has not
   developed all these capabilities from scratch. Instead,
   `MoFEM` integrates advanced scientific computing tools for sparse algebra from
   [`PETSc`](https://www.mcs.anl.gov/petsc/) (Portable, Extensible Toolkit for
@@ -144,6 +138,10 @@ bibliography: paper.bib
   \autoref{fig:ecosystem} shows different components that are employed in the
   ecosystem including popular pre- and post-processing software.
 
+  ![Basic design of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:design}](basic_design.pdf){width=100%}
+
+  ![Ecosystem of `MoFEM`. Adopted from @MOABWebPage.\label{fig:ecosystem}](ecosystem.pdf){width=70%}
+
   Traditional finite element codes are element-centric, i.e. the type of an
   element defines the approximation space and basis. Therefore, they are not able
   to fully exploit the potential of emerging approximation methods. On the
@@ -154,9 +152,7 @@ bibliography: paper.bib
   fields are defined. Consequently, different approximation spaces
   ($\mathit{H}^1$, ${\mathbf{H}}({\textbf{curl}})$,
   ${\mathbf{H}}({\textbf{div}})$ and $\mathit{L}^2$) can be suitably combined in
-  a finite element to create new stable mixed formulation for solving complex problems efficiently. 
-
-   ![Examples of user modules implemented using `MoFEM`.\label{fig:examples}](mofem_modules_examples.png){width=100%}
+  a finite element to create new stable mixed formulations for solving complex problems efficiently. 
 
   `MoFEM` data structures enable easy enrichment of approximation fields and
   modification of basis functions, for example, for resolution of singularity at a
@@ -166,15 +162,8 @@ bibliography: paper.bib
   easily implement elements with an anisotropic approximation order, which
   depends on direction in curvilinear basis, e.g. solid shells with arbitrary
   higher approximation order on the surface and arbitrary lower order through
-  the thickness of the shell. This approach also sets a benchmark on  
-  how finite element codes could implemented, introducing a concept of pipelines of *user-defined data operators* acting on fields that are associated with
-  entities (vertices, edges, faces and volumes) rather on elements
-  directly. Such an approach simplifies code writing, testing and validation,
+  the thickness of the shell. This approach also sets a benchmark on how finite element codes could be implemented, introducing a concept of pipelines of *user-defined data operators* acting on fields that are associated with entities (vertices, edges, faces and volumes) rather than on elements directly. Such an approach simplifies code writing, testing and validation,
   making the code more resilient to bugs.
-
-  ![Example of $p$-adaptivity for hierarchical and heterogenous approximation
-  with multi-grid solver applied to the perforated Scordelis-Lo roof problem
-  using a solid shell element.\label{fig:shell}](paper_shell.pdf) 
 
   Furthermore, `MoFEM`'s core library provides functionality for developing *user
   modules* (see \autoref{fig:design}) where applications for particular
@@ -203,10 +192,16 @@ bibliography: paper.bib
   remodelling, configurational fracture, plasticity, mortar contact,
   magnetostatics and acoustic wave propagation as shown in \autoref{fig:examples}.
 
+  ![Examples of user modules implemented using `MoFEM`.\label{fig:examples}](mofem_modules_examples.png){width=100%}
+
  `MoFEM` is designed to provide efficient tools for solving a wide variety of
- user-defined problems. \autoref{fig:shell} shows an example of
+ user-defined problems. \autoref{fig:shell} shows an example of error-driven
  $p$-adaptivity on hierarchical approximation basis with a multi-grid solver
  applied to the perforated Scordelis-Lo roof problem [@kaczmarczyk2016prism]. 
+
+  ![Example of $p$-adaptivity for hierarchical and heterogenous approximation
+  with multi-grid solver applied to the perforated Scordelis-Lo roof problem
+  using a solid shell element.\label{fig:shell}](paper_shell.pdf) 
 
   `MoFEM` provides a convenient application programming interface allowing
   user to freely choose the approximation basis (e.g. Legrende or Jacobi
