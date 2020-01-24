@@ -166,9 +166,9 @@ bibliography: paper.bib
   also sets a benchmark on how finite element codes could be implemented,
   introducing a concept of pipelines of *user-defined data operators* acting
   on fields that are associated with entities (vertices, edges, faces and
-  volumes) rather than on elements directly. Such an approach simplifies code
-  writing, testing and validation, making the code more resilient to bugs.
-
+  volumes). Such an approach simplifies code writing, testing and validation,
+  making the code more resilient to bugs.
+  
   Furthermore, `MoFEM`'s core library provides functionality for developing *user
   modules* (see \autoref{fig:design}) where applications for particular
   problems can be implemented. This toolkit-like structure allows for
