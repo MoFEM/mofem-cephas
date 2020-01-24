@@ -86,12 +86,12 @@ bibliography: paper.bib
  the algebraic solver time and the matrix assembly time are increased.
  Unfortunately, there is no universal solution to tackle these two
  difficulties simultaneously. To reduce the solver time, properties of
- hierarchical and heterogeneous approximation basis, constructed using Legendre
+ hierarchical and heterogeneous approximation bases, constructed using Legendre
  [@ainsworth2003hierarchic] or Jacobi [@fuentes2015orientation] polynomials,
  can be exploited. Such bases permit to increase approximation order locally and
  produce sparse and well-conditioned systems of equations. Moreover, algebraic
- system constructed with hierarchical basis can be naturally restricted to
- lower dimensions and used as preconditioner, e.g. with multi-grid solvers. This
+ systems constructed with hierarchical bases can be naturally restricted to
+ lower dimensions for use as a preconditioner, e.g. with multi-grid solvers. This
  approach is ideal for elliptic problems such as solid elasticity; however,
  for hyperbolic problems the efficiency bottleneck could be in the assembly
  time, e.g. for acoustic wave propagation. In the latter case, different
@@ -138,9 +138,9 @@ bibliography: paper.bib
   Different components employed in the ecosystem are illustrated in \autoref{fig:ecosystem}, 
   including popular pre- and post-processing software.
 
-  ![Basic design of `MoFEM`. Adopted from [@MoFEMWebPage].\label{fig:design}](basic_design.pdf){width=100%}
+  ![Basic design of `MoFEM`. Adopted from @MoFEMWebPage.\label{fig:design}](basic_design.pdf){width=100%}
 
-  ![Ecosystem of `MoFEM`. Adopted from [@MOABWebPage].\label{fig:ecosystem}](ecosystem.pdf){width=70%}
+  ![Ecosystem of `MoFEM`. Adopted from @MOABWebPage.\label{fig:ecosystem}](ecosystem.pdf){width=70%}
 
   Traditional finite element codes are element-centric, i.e. the type of an
   element defines the approximation space and basis. Therefore, they are not able
@@ -166,7 +166,7 @@ bibliography: paper.bib
   also sets a benchmark on how finite element codes could be implemented,
   introducing a concept of pipelines of *user-defined data operators* acting
   on fields that are associated with entities (vertices, edges, faces and
-  volumes) rather on elements directly. Such an approach simplifies code
+  volumes) rather than on elements directly. Such an approach simplifies code
   writing, testing and validation, making the code more resilient to bugs.
 
   Furthermore, `MoFEM`'s core library provides functionality for developing *user
@@ -177,7 +177,7 @@ bibliography: paper.bib
   industrial sensitive projects. At the same time, the `MoFEM` core library is
   licensed under the [GNU Lesser General Public
   License](https://www.gnu.org/licenses/lgpl.html) and it can be deployed and
-  developed using the package manager [Spack](https://spack.io), see [MoFEM
+  developed using the package manager [Spack](https://spack.io); see the [MoFEM
   installation
   instructions](http://mofem.eng.gla.ac.uk/mofem/html/installation.html) for
   more details.
@@ -189,7 +189,7 @@ bibliography: paper.bib
   Over time, the domain of applications expanded to
   include computational homogenisation [@ullah2019unified],
   bone remodelling and fracture [@lew2020numerical],
-  modelling of the gel rheology [@richardson2018multiphysics] and acoustics
+  modelling of gel rheology [@richardson2018multiphysics] and acoustics
   problems. Moreover, `MoFEM` includes an extensive library of example
   applications such as soap film, solid shell, topology optimisation, phase
   field fracture, Navier-Stokes flow, cell traction microscopy, bone
@@ -200,7 +200,7 @@ bibliography: paper.bib
 
  `MoFEM` is designed to provide efficient tools for solving a wide variety of
   user-defined problems. In \autoref{fig:shell} an example of error-driven 
-  $p$-adaptivity is presented, where hierarchical approximation basis with 
+  $p$-adaptivity is presented, where a hierarchical approximation basis with
   a multi-grid solver is applied to the perforated Scordelis-Lo Roof problem 
   [@kaczmarczyk2016prism].
 
@@ -215,12 +215,12 @@ bibliography: paper.bib
   scalar basis functions, or vectorial and tensorial fields on vectorial bases.
   Moreover, `MoFEM` permits the construction of tensorial fields on tensorial
   bases, e.g. bubble basis of zero normal and divergence-free basis
-  functions; see [@gopalakrishnan2012second] for an example of such a space. A `MoFEM` user can also
+  functions; see @gopalakrishnan2012second for an example of such a space. A `MoFEM` user can also
   freely set the approximation order on each entity of an element separately,
-  e.g. edge, face, volume, or define a field on the skeleton. In \autoref{fig:convergence}
-  a convergence study for the mixed formulation of a transport/heat conduction problem is presented, while the code
+  e.g. edge, face, volume, or define a field on the skeleton. \autoref{fig:convergence} presents
+  a convergence study for the mixed formulation of a transport/heat conduction problem; the code
   snippet below outlines the definition of approximation space, basis and order for each
-  field in this example:
+  field in this example.
 
   ```cpp
   // add fields of fluxes and values to the mesh
@@ -241,14 +241,14 @@ bibliography: paper.bib
   ```
   ![A convergence study of $h$-adaptivity for the mixed formulation of the
   stationary transport/heat conduction problem (see inset of the figure for
-  the geometry), with the comparison of different polynomial orders, denoted
-  as '$\text{P}n\text{-}\text{P}m$', where $n$ is order of approximation for
+  the geometry) with comparison of different polynomial orders, denoted
+  as $\text{P}n\text{-}\text{P}m$, where $n$ is the order of approximation for
   the flux and $m$ is the order for the field values (temperature or
   density). Note that the flux is approximated in a subspace of
   ${\mathbf{H}}(\textbf{div})$ while the field values are in a
   subspace of
   $\mathit{L}^2$ \label{fig:convergence}. 
-  For more details, see *"Mixed formulation and integration on skeleton"* tutorial
+  For more details, see the *"Mixed formulation and integration on skeleton"* tutorial
   on [@MoFEMWebPage].](LShape.pdf){width=100%}
 
 # Conclusions 
