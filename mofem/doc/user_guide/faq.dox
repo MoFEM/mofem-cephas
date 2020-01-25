@@ -13,6 +13,23 @@ cite our publication in \em The \em Journal \em of \em Open \em Source \em Softw
 \endhtmlonly
 (follow link on the badge).
 
+The BibTex entry for MoFEM paper \cite mofemJoss is 
+\code
+@article{mofemJoss2020,
+  title = {{MoFEM:} An open source, parallel finite element library},
+  author = {
+    {\L}ukasz, Kaczmarczyk and Zahur, Ullah and Karol, Lewandowski and
+    Xuan, Meng and Xiao-Yi, Zhou and Ignatios, Athanasiadis and Hoang, Nguyen and
+    Christophe-Alexandre, Chalons-Mouriesse and Euan, Richardson and Euan, Miur 
+    and Andrei, Shvarts and Mebratu, Wakeni and Chris, Pearce},
+  journal={The Journal of Open Source Software},
+  year={2020},
+  note={http://mofem.eng.gla.ac.uk},
+  doi={10.21105/joss.01441},
+  url={https://joss.theoj.org/papers/10.21105/joss.01441}
+}
+\endcode
+
 \note Each user module can have own DOI and reference. All module references
 supplements  MoFEM reference. For example homogenisation module DOI is on the badge
 \htmlonly
