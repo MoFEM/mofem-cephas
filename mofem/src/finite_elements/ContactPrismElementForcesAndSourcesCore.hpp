@@ -125,6 +125,36 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline MatrixDouble &getGaussPtsSlave();
 
+    /**
+     * @brief Get integration weights
+     *
+     * \code
+     * auto t_w = getFTensor0IntegrationWeightSlave();
+     * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
+     *  // integrate something
+     *  ++t_w;
+     * }
+     * \endcode
+     *
+     * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+     */
+    inline auto getFTensor0IntegrationWeightSlave();
+    
+    /**
+     * @brief Get integration weights
+     *
+     * \code
+     * auto t_w = getFTensor0IntegrationWeightMaster();
+     * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
+     *  // integrate something
+     *  ++t_w;
+     * }
+     * \endcode
+     *
+     * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
+     */
+    inline auto getFTensor0IntegrationWeightMaster();
+
     /** \brief get triangle coordinates
 
       Vector has 9 elements, i.e. coordinates on Master face
@@ -330,6 +360,17 @@ inline MatrixDouble &
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::getGaussPtsSlave() {
   return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
       ->gaussPtsSlave;
+}
+
+auto ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getFTensor0IntegrationWeightSlave() {
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
+      &(getGaussPtsSlave()(getGaussPtsSlave().size1() - 1, 0)));
+}
+auto ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getFTensor0IntegrationWeightMaster() {
+  return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
+      &(getGaussPtsMaster()(getGaussPtsMaster().size1() - 1, 0)));
 }
 
 inline VectorDouble
