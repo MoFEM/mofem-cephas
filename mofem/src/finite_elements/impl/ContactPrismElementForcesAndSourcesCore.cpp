@@ -989,6 +989,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
     init_set(slave_nodes_data, slave_nodes_dofs, slave_space, slave_base);
 
     std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
+  
     for (; dit != hi_dit;) {
       const auto &dof_ptr = *dit;
       const auto &dof = *dof_ptr;
@@ -1004,6 +1005,13 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
           ++dit;
         }
       };
+      
+      if (side == -1) {
+        for (int ii = 0; ii != nb_dof_idx; ++ii) {
+          ++dit;
+        }
+        continue;
+      }
 
       if (side < 3)
         set_data(master_nodes_data, master_nodes_dofs, side * nb_dof_idx);
@@ -1151,7 +1159,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
     for (; dit != hi_dit; dit++) {
       auto &dof = **dit;
       const int side = dof.sideNumberPtr->side_number;
-
+    
       if (side < 3)
         get_indices(master_nodes_indices, master_local_nodes_indices, dof,
                     side);
@@ -1160,10 +1168,11 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
                     side - 3);
       else
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
-
+    
       const int brother_side = (*dit)->sideNumberPtr->brother_side_number;
+    
       if (brother_side != -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");\
     }
   }
 

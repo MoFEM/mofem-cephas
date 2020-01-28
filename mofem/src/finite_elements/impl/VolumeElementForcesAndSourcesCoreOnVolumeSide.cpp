@@ -34,6 +34,7 @@ VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
 
   const EntityHandle volume_entity =
       sidePtrFE->numeredEntFiniteElementPtr->getEnt();
+
   Range adj_faces;
   CHKERR sidePtrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
       volume_entity, 2, adj_faces);
@@ -79,9 +80,11 @@ VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
     faceConnMap[nn] = std::distance(conn, find(conn, &conn[4], ent_on_vol[nn]));
 
     tetConnMap[faceConnMap[nn]] = nn;
-    if (faceConnMap[nn] > 3)
+    if (faceConnMap[nn] > 3){
+      cerr << " faceConnMap[nn] " << faceConnMap[nn] << "\n";
       SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
               "No common node on face and element can not be found");
+    }
   }
 
   oppositeNode = std::distance(tetConnMap.begin(),
