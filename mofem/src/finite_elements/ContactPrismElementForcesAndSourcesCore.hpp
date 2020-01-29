@@ -139,7 +139,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
      */
     inline auto getFTensor0IntegrationWeightSlave();
-    
+
     /**
      * @brief Get integration weights
      *
@@ -367,6 +367,7 @@ auto ContactPrismElementForcesAndSourcesCore::UserDataOperator::
   return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
       &(getGaussPtsSlave()(getGaussPtsSlave().size1() - 1, 0)));
 }
+
 auto ContactPrismElementForcesAndSourcesCore::UserDataOperator::
     getFTensor0IntegrationWeightMaster() {
   return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
