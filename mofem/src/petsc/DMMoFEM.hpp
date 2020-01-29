@@ -904,12 +904,22 @@ auto smartCreateDMMatrix = [](DM dm) {
  * \ingroup dm
  * 
  */
-auto smartCreateDMDVector = [](DM dm) {
+auto smartCreateDMVector = [](DM dm) {
   SmartPetscObj<Vec> v;
   ierr = DMCreateGlobalVector_MoFEM(dm, v);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return v;
 };
+
+/**
+ * @deprecated Use smartCreateDMVector
+ * 
+ * @param dm 
+ * @return DEPRECATED smartCreateDMDVector 
+ */
+DEPRECATED inline auto smartCreateDMDVector(DM dm) {
+  return smartCreateDMVector(dm);
+}
 
 } // namespace MoFEM
 
