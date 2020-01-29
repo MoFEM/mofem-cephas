@@ -350,7 +350,7 @@ int main(int argc, char *argv[]) {
       CHKERR KSPSetFromOptions(solver);
       CHKERR KSPSetUp(solver);
 
-      auto D = smartCreateDMDVector(dm);
+      auto D = smartCreateDMVector(dm);
       auto F = smartVectorDuplicate(D);
 
       CHKERR KSPSolve(solver, F, D);
