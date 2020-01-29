@@ -915,7 +915,7 @@ auto smartCreateDMVector = [](DM dm) {
  * @deprecated Use smartCreateDMVector
  * 
  * @param dm 
- * @return DEPRECATED smartCreateDMDVector 
+ * @return DEPRECATED smartCreateDMVector 
  */
 DEPRECATED inline auto smartCreateDMDVector(DM dm) {
   return smartCreateDMVector(dm);
