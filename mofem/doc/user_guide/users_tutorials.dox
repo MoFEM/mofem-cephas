@@ -7,6 +7,10 @@
  - \subpage elastic_dynamics
  - \subpage small_strain_plasticity_plate_with_hole
 
+ \section unsaturated_flow_2d Unsaturated flow 2d
+
+ - \subpage unsaturated_flow
+
 \section gel_module_gt Gel
 
   - \subpage gel_model_example
