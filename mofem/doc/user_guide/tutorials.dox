@@ -5,24 +5,37 @@ general problem on particular examples.
 
 \tableofcontents
 
+\section basic_interface Basic interface
+ 
+Eight lessons are a complete set intended to both introductions to finite element method and implementation details. Lessons problems are not designed to be simple; however, MoFEM makes them easy to implement. Lessons show how to solve nonlinear problems, also problems which involve more than one field and are mixed or coupled. 
 
-\section hierarchical_approximation Hierarchical approximation
+- Lesson 1: \subpage basic_lessons1
+- Lesson 2: Approximation of the function
+- Lesson 3: Scalar field problem (heat transfer)
+- Lesson 4: Vector field problem (elastic problem)
+- Lesson 5: Complex field problem (acoustic wave)
+- Lesson 6: First nonlinearity, radiation
+- Lesson 7: Second nonlinearity, plasticity
+- Lesson 8: Third nonlinearity, contact
+- Questions: Mixing all
+
+\section simple_interface Simple interface
+
+\subsection hierarchical_approximation Hierarchical approximation
 
 Introduces the reader to the basic concepts of finite element approach using
 Hierarchical basis functions.
 
 - \subpage hierarchical_approximation_1
 
-
-\section hello_world Hello world
+\subsection hello_world Hello world
 
 Introduces user to basic ideas of user operator and MoFEM::Simple interface and
 implementation of finite element with users data operators.
 
 - \subpage hello_world_tut1
 
-
-\section poisson_problem The Poisson equation and difussion problems
+\subsection poisson_problem The Poisson equation and difussion problems
 
 The Poisson equation is solved using MoFEM::Simple interface. The generic
 procedure is applied to one of the simples PDEs. In order to make the problem instructional,
@@ -48,7 +61,7 @@ Implementation of Fisher's reaction-diffusion equation
 
 - \subpage reaction_diffusion_imp
 
-\section simple_elasticity Solid elasticity problems
+\subsection simple_elasticity Solid elasticity problems
 
 Introduction to fundamental MoFEM functionalities and capabilities by solving a simple linear elastic problem.
 
@@ -62,7 +75,9 @@ Tutorial for the implementation of Winkler spring elements
 
 - \subpage spring_element
 
-\section snes_nonlinear_tut Nonlinear problem
+\section core_interface Core interface
+
+\subsection snes_nonlinear_tut Nonlinear problem
 
 Minimal surface area (soap film on the wire): Tutorial showing step by step
 implementation of nonlinear problem. It presents how to set up the problem
@@ -71,7 +86,7 @@ PETSc
 
 - \subpage sope_film
 
-\section mix_adpativity_tut Mix formulation and h-adaptivity
+\subsection mix_adpativity_tut Mix formulation and h-adaptivity
 
 This example shows how to solve transport problem using mix element with an
 independent approximation for fluxes and function values.  Also, it shows how to
