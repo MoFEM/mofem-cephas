@@ -50,7 +50,7 @@ curl -L https://api.github.com/repos/likask/spack/tarball/mofem \
 ~~~~~~
 and download mirror
 ~~~~~~
-curl -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+curl -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
 --output mirror.tgz
 ~~~~~~
 and then you can install MoFEM
@@ -173,7 +173,7 @@ Initialise Spack's environment variables:
 Download spack packages in the mirror necessary to install MoFEM
 ~~~~~~
 mkdir -p mofem_mirror &&
-curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 spack mirror add mofem_mirror $PWD/mofem_mirror
 ~~~~~~
@@ -473,7 +473,7 @@ curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
 Download packages mirror
 ~~~~~
 mkdir -p mofem_mirror &&\
-curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 ~~~~~
 
@@ -726,7 +726,7 @@ You can download mirror with all necessary packages from MoFEM repository and
 untar and unzip to director
 ~~~~~
 mkdir -p mofem_mirror &&
-curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 ~~~~~
 Note that packages are expanded to directory `mofem_mirror`, and mirror is

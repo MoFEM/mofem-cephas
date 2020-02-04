@@ -28,7 +28,6 @@ namespace MoFEM {
 
 /** \brief Calculate field values for tenor field rank 0, i.e. scalar field
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <class T, class A>
 struct OpCalculateScalarFieldValues_General
@@ -62,7 +61,6 @@ struct OpCalculateScalarFieldValues_General
 /**
  * \brief Specialization of member function
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <class T, class A>
 MoFEMErrorCode OpCalculateScalarFieldValues_General<T, A>::doWork(
@@ -131,14 +129,19 @@ struct OpCalculateScalarFieldValues
   }
 };
 
-struct OpCalculateScalarValuesDot
+/**
+ * @brief Get rate of scalar field at integration points
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+struct OpCalculateScalarFieldValuesDot
     : public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<VectorDouble> dataPtr;
   const EntityHandle zeroAtType;
   VectorDouble dotVector;
 
-  OpCalculateScalarValuesDot(const std::string field_name,
+  OpCalculateScalarFieldValuesDot(const std::string field_name,
                                   boost::shared_ptr<VectorDouble> &data_ptr,
                                   const EntityType zero_at_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -196,11 +199,16 @@ struct OpCalculateScalarValuesDot
   }
 };
 
+/**
+ * \depreacted Name inconstent with other operators
+ * 
+ */
+using OpCalculateScalarValuesDot = OpCalculateScalarFieldValuesDot;
+
 // TENSOR1
 
 /** \brief Calculate field values for tenor field rank 1, i.e. vector field
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim, class T, class L, class A>
 struct OpCalculateVectorFieldValues_General
@@ -246,7 +254,6 @@ OpCalculateVectorFieldValues_General<Tensor_Dim, T, L, A>::doWork(
 /** \brief Calculate field values (template specialization) for tensor field
  * rank 1, i.e. vector field 
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
@@ -273,7 +280,6 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
 /**
  * \brief Member function specialization calculating values for tenor field rank
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 MoFEMErrorCode OpCalculateVectorFieldValues_General<
@@ -281,40 +287,43 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
+
   const int nb_dofs = data.getFieldData().size();
-  if (!nb_dofs && type == this->zeroType) {
-    dataPtr->resize(Tensor_Dim, 0, false);
-    MoFEMFunctionReturnHot(0);
-  }
-  if (!nb_dofs) {
-    MoFEMFunctionReturnHot(0);
-  }
-  const int nb_gauss_pts = data.getN().size1();
-  const int nb_base_functions = data.getN().size2();
-  MatrixDouble &mat = *dataPtr;
-  if (type == zeroType) {
-    mat.resize(Tensor_Dim, nb_gauss_pts, false);
-    mat.clear();
-  }
-  auto base_function = data.getFTensor0N();
-  auto values_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
-  FTensor::Index<'I', Tensor_Dim> I;
-  const int size = nb_dofs / Tensor_Dim;
-  if (nb_dofs % Tensor_Dim) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
-  }
-  for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-    auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
-    int bb = 0;
-    for (; bb != size; ++bb) {
-      values_at_gauss_pts(I) += field_data(I) * base_function;
-      ++field_data;
-      ++base_function;
+
+  if (nb_dofs) {
+    const int nb_gauss_pts = getGaussPts().size2();
+    auto &mat = *dataPtr;
+    if (type == zeroType) {
+      mat.resize(Tensor_Dim, nb_gauss_pts, false);
+      mat.clear();
     }
-    // Number of dofs can be smaller than number of Tensor_Dim x base functions
-    for (; bb != nb_base_functions; ++bb)
-      ++base_function;
-    ++values_at_gauss_pts;
+    if (nb_gauss_pts) {
+      const int nb_base_functions = data.getN().size2();
+      auto base_function = data.getFTensor0N();
+      auto values_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
+      FTensor::Index<'I', Tensor_Dim> I;
+      const int size = nb_dofs / Tensor_Dim;
+      if (nb_dofs % Tensor_Dim) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency");
+      }
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
+        int bb = 0;
+        for (; bb != size; ++bb) {
+          values_at_gauss_pts(I) += field_data(I) * base_function;
+          ++field_data;
+          ++base_function;
+        }
+        // Number of dofs can be smaller than number of Tensor_Dim x base
+        // functions
+        for (; bb != nb_base_functions; ++bb)
+          ++base_function;
+        ++values_at_gauss_pts;
+      }
+    }
+  } else if (type == this->zeroType) {
+    dataPtr->resize(Tensor_Dim, 0, false);
   }
   MoFEMFunctionReturn(0);
 }
@@ -427,7 +436,6 @@ inline auto OpCalculateVectorFieldValuesDot<3>::getFTensorDotData<3>() {
 
 /** \brief Calculate field values for tenor field rank 2.
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 struct OpCalculateTensor2FieldValues_General
@@ -638,6 +646,13 @@ inline auto OpCalculateTensor2FieldValuesDot<3, 3>::getFTensorDotData<3, 3>() {
       &dotVector[6], &dotVector[7], &dotVector[8]);
 }
 
+/**
+ * @brief Calculate symmetric tensor field values at integration pts.
+ * 
+ * @tparam Tensor_Dim 
+
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
 template <int Tensor_Dim>
 struct OpCalculateTensor2SymmetricFieldValues
     : public ForcesAndSourcesCore::UserDataOperator {
@@ -692,6 +707,13 @@ struct OpCalculateTensor2SymmetricFieldValues
   }
 };
 
+/**
+ * @brief Calculate symmetric tensor field rates ant integratio pts.
+ * 
+ * @tparam Tensor_Dim 
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
 template <int Tensor_Dim>
 struct OpCalculateTensor2SymmetricFieldValuesDot
     : public ForcesAndSourcesCore::UserDataOperator {
@@ -772,13 +794,20 @@ OpCalculateTensor2SymmetricFieldValuesDot<3>::getFTensorDotData<3>() {
       &dotVector[5]);
 }
 
+template <>
+template <>
+inline auto
+OpCalculateTensor2SymmetricFieldValuesDot<2>::getFTensorDotData<2>() {
+  return FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>(
+      &dotVector[0], &dotVector[1], &dotVector[2]);
+}
+
 // GET GRADIENTS AT GAUSS POINTS
 
 /**
  * \brief Evaluate field gradient values for scalar field, i.e. gradient is
  * tensor rank 1 (vector) 
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim, class T, class L, class A>
 struct OpCalculateScalarFieldGradient_General
@@ -794,7 +823,6 @@ struct OpCalculateScalarFieldGradient_General
 /** \brief Evaluate field gradient values for scalar field, i.e. gradient is
  * tensor rank 1 (vector), specialization 
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 struct OpCalculateScalarFieldGradient_General<Tensor_Dim, double,
@@ -824,7 +852,6 @@ struct OpCalculateScalarFieldGradient_General<Tensor_Dim, double,
  * \brief Member function specialization calculating scalar field gradients for
  * tenor field rank 1 
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 MoFEMErrorCode OpCalculateScalarFieldGradient_General<
@@ -832,42 +859,43 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
-  const int nb_dofs = data.getFieldData().size();
-  if (!this->dataPtr) {
+  if (!this->dataPtr) 
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Data pointer not allocated");
-  }
-  if (!nb_dofs && type == this->zeroType) {
-    this->dataPtr->resize(Tensor_Dim, 0, false);
-    MoFEMFunctionReturnHot(0);
-  }
-  if (!nb_dofs) {
-    MoFEMFunctionReturnHot(0);
-  }
-  const int nb_gauss_pts = data.getN().size1();
-  const int nb_base_functions = data.getN().size2();
-  ublas::matrix<double, ublas::row_major, DoubleAllocator> &mat =
-      *this->dataPtr;
-  if (type == this->zeroType) {
-    mat.resize(Tensor_Dim, nb_gauss_pts, false);
-    mat.clear();
-  }
-  auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
-  auto gradients_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
-  FTensor::Index<'I', Tensor_Dim> I;
-  for (int gg = 0; gg < nb_gauss_pts; ++gg) {
-    auto field_data = data.getFTensor0FieldData();
-    int bb = 0;
-    for (; bb < nb_dofs; ++bb) {
-      gradients_at_gauss_pts(I) += field_data * diff_base_function(I);
-      ++field_data;
-      ++diff_base_function;
+
+  const int nb_dofs = data.getFieldData().size();
+  if (nb_dofs) {
+    const int nb_gauss_pts = this->getGaussPts().size2();
+    auto &mat = *this->dataPtr;
+    if (type == this->zeroType) {
+      mat.resize(Tensor_Dim, nb_gauss_pts, false);
+      mat.clear();
     }
-    // Number of dofs can be smaller than number of base functions
-    for (; bb != nb_base_functions; ++bb)
-      ++diff_base_function;
-    ++gradients_at_gauss_pts;
+    if (nb_gauss_pts) {
+      const int nb_base_functions = data.getN().size2();
+      auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
+      auto gradients_at_gauss_pts = getFTensor1FromMat<Tensor_Dim>(mat);
+
+      FTensor::Index<'I', Tensor_Dim> I;
+      for (int gg = 0; gg < nb_gauss_pts; ++gg) {
+        auto field_data = data.getFTensor0FieldData();
+        int bb = 0;
+        for (; bb != nb_dofs; ++bb) {
+          gradients_at_gauss_pts(I) += field_data * diff_base_function(I);
+          ++field_data;
+          ++diff_base_function;
+        }
+        // Number of dofs can be smaller than number of base functions
+        for (; bb < nb_base_functions; ++bb)
+          ++diff_base_function;
+        ++gradients_at_gauss_pts;
+      }
+    }
+
+  } else if(type == this->zeroType) {
+    this->dataPtr->resize(Tensor_Dim, 0, false);
   }
+
   MoFEMFunctionReturn(0);
 }
 
@@ -893,7 +921,6 @@ struct OpCalculateScalarFieldGradient
  * \brief Evaluate field gradient values for vector field, i.e. gradient is
  * tensor rank 2 
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 struct OpCalculateVectorFieldGradient_General
@@ -937,7 +964,6 @@ struct OpCalculateVectorFieldGradient_General<Tensor_Dim0, Tensor_Dim1, double,
  * \brief Member function specialization calculating vector field gradients for
  * tenor field rank 2 
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
 MoFEMErrorCode OpCalculateVectorFieldGradient_General<
@@ -945,43 +971,50 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
+  if (!this->dataPtr) 
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Data pointer not allocated");
+
   const int nb_dofs = data.getFieldData().size();
-  if (!nb_dofs && type == this->zeroType) {
-    this->dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, 0, false);
-    MoFEMFunctionReturnHot(0);
-  }
-  if (!nb_dofs) {
-    MoFEMFunctionReturnHot(0);
-  }
-  const int nb_gauss_pts = data.getN().size1();
-  const int nb_base_functions = data.getN().size2();
-  ublas::matrix<double, ublas::row_major, DoubleAllocator> &mat =
-      *this->dataPtr;
-  if (type == this->zeroType) {
-    mat.resize(Tensor_Dim0 * Tensor_Dim1, nb_gauss_pts, false);
-    mat.clear();
-  }
-  auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
-  auto gradients_at_gauss_pts =
-      getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(mat);
-  FTensor::Index<'I', Tensor_Dim0> I;
-  FTensor::Index<'J', Tensor_Dim1> J;
-  int size = nb_dofs / Tensor_Dim0;
-  if (nb_dofs % Tensor_Dim0) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
-  }
-  for (int gg = 0; gg < nb_gauss_pts; ++gg) {
-    auto field_data = data.getFTensor1FieldData<Tensor_Dim0>();
-    int bb = 0;
-    for (; bb < size; ++bb) {
-      gradients_at_gauss_pts(I, J) += field_data(I) * diff_base_function(J);
-      ++field_data;
-      ++diff_base_function;
+
+  if (nb_dofs) {
+    const int nb_gauss_pts = this->getGaussPts().size2();
+    auto &mat = *this->dataPtr;
+    if (type == this->zeroType) {
+      mat.resize(Tensor_Dim0 * Tensor_Dim1, nb_gauss_pts, false);
+      mat.clear();
     }
-    // Number of dofs can be smaller than number of Tensor_Dim0 x base functions
-    for (; bb != nb_base_functions; ++bb)
-      ++diff_base_function;
-    ++gradients_at_gauss_pts;
+
+    if (nb_gauss_pts) {
+      const int nb_base_functions = data.getN().size2();
+      auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
+      auto gradients_at_gauss_pts =
+          getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(mat);
+      FTensor::Index<'I', Tensor_Dim0> I;
+      FTensor::Index<'J', Tensor_Dim1> J;
+      int size = nb_dofs / Tensor_Dim0;
+      if (nb_dofs % Tensor_Dim0) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency");
+      }
+      for (int gg = 0; gg < nb_gauss_pts; ++gg) {
+        auto field_data = data.getFTensor1FieldData<Tensor_Dim0>();
+        int bb = 0;
+        for (; bb < size; ++bb) {
+          gradients_at_gauss_pts(I, J) += field_data(I) * diff_base_function(J);
+          ++field_data;
+          ++diff_base_function;
+        }
+        // Number of dofs can be smaller than number of Tensor_Dim0 x base
+        // functions
+        for (; bb != nb_base_functions; ++bb)
+          ++diff_base_function;
+        ++gradients_at_gauss_pts;
+      }
+    }
+
+  } else if (type == this->zeroType) {
+    this->dataPtr->resize(Tensor_Dim0 * Tensor_Dim1, 0, false);
   }
   MoFEMFunctionReturn(0);
 }
@@ -1105,7 +1138,6 @@ inline auto OpCalculateVectorFieldGradientDot<2, 2>::getFTensorDotData<2>() {
 
 /** \brief Get vector field for H-div approximation
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, class T, class L, class A>
 struct OpCalculateHdivVectorField_General
@@ -1150,7 +1182,6 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<Tensor_Dim, T, L, A>::doWork(
 
 /** \brief Get vector field for H-div approximation
  * 
- * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 struct OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
@@ -1189,7 +1220,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
-  const int nb_integration_points = getGaussPts().size2();
+  const int nb_integration_points = this->getGaussPts().size2();
   if (type == zeroType && side == zeroSide) {
     dataPtr->resize(Tensor_Dim, nb_integration_points, false);
     dataPtr->clear();
@@ -1197,7 +1228,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
   const int nb_dofs = data.getFieldData().size();
   if (!nb_dofs)
     MoFEMFunctionReturnHot(0);
-  const int nb_base_functions = data.getN().size2() / Tensor_Dim;
+  const int nb_base_functions = data.getN().size2() / 3;
   FTensor::Index<'i', Tensor_Dim> i;
   auto t_n_hdiv = data.getFTensor1N<Tensor_Dim>();
   auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
@@ -1340,22 +1371,9 @@ struct OpCalculateHcurlVectorCurl
     auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
     for (int gg = 0; gg != nb_integration_points; ++gg) {
 
-      // // get curl of base functions
-      // CHKERR getCurlOfHCurlBaseFunctions(side, type, data, gg, curl_mat);
-      // FTensor::Tensor1<double *, 3> t_base_curl(
-      //     &curl_mat(0, HVEC0), &curl_mat(0, HVEC1), &curl_mat(0, HVEC2), 3);
-
       auto t_dof = data.getFTensor0FieldData();
       int bb = 0;
       for (; bb != nb_dofs; ++bb) {
-
-        // FTensor::Tensor1<double, 3> t_test;
-        // t_test(k) = levi_civita(j, i, k) * t_n_diff_hcurl(i, j);
-        // t_base_curl(k) -= t_test(k);
-        // std::cerr << "error: " << t_base_curl(0) << " " << t_base_curl(1) <<
-        // " "
-        //           << t_base_curl(2) << std::endl;
-        // ++t_base_curl;
 
         t_data(k) += t_dof * (levi_civita(j, i, k) * t_n_diff_hcurl(i, j));
         ++t_n_diff_hcurl;
@@ -1406,24 +1424,24 @@ struct OpCalculateHVecTensorField
       dataPtr->clear();
     }
     const int nb_dofs = data.getFieldData().size();
-    if (!nb_dofs)
-      MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
-    FTensor::Index<'i', Tensor_Dim0> i;
-    FTensor::Index<'j', Tensor_Dim1> j;
-    auto t_n_hvec = data.getFTensor1N<Tensor_Dim1>();
-    auto t_data = getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(*dataPtr);
-    for (int gg = 0; gg != nb_integration_points; ++gg) {
-      auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
-      int bb = 0;
-      for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
-        t_data(i, j) += t_dof(i) * t_n_hvec(j);
-        ++t_n_hvec;
-        ++t_dof;
+    if (nb_dofs) {
+      const int nb_base_functions = data.getN().size2() / 3;
+      FTensor::Index<'i', Tensor_Dim0> i;
+      FTensor::Index<'j', Tensor_Dim1> j;
+      auto t_n_hvec = data.getFTensor1N<3>();
+      auto t_data = getFTensor2FromMat<Tensor_Dim0, Tensor_Dim1>(*dataPtr);
+      for (int gg = 0; gg != nb_integration_points; ++gg) {
+        auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
+        int bb = 0;
+        for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
+          t_data(i, j) += t_dof(i) * t_n_hvec(j);
+          ++t_n_hvec;
+          ++t_dof;
+        }
+        for (; bb != nb_base_functions; ++bb)
+          ++t_n_hvec;
+        ++t_data;
       }
-      for (; bb != nb_base_functions; ++bb)
-        ++t_n_hvec;
-      ++t_data;
     }
     MoFEMFunctionReturn(0);
   }
@@ -1523,25 +1541,25 @@ struct OpCalculateHVecTensorDivergence
       dataPtr->clear();
     }
     const int nb_dofs = data.getFieldData().size();
-    if (!nb_dofs)
-      MoFEMFunctionReturnHot(0);
-    const int nb_base_functions = data.getN().size2() / Tensor_Dim1;
-    FTensor::Index<'i', Tensor_Dim0> i;
-    FTensor::Index<'j', Tensor_Dim1> j;
-    auto t_n_diff_hvec = data.getFTensor2DiffN<Tensor_Dim1, Tensor_Dim1>();
-    auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
-    for (int gg = 0; gg != nb_integration_points; ++gg) {
-      auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
-      int bb = 0;
-      for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
-        double div = t_n_diff_hvec(j, j);
-        t_data(i) += t_dof(i) * div;
-        ++t_n_diff_hvec;
-        ++t_dof;
+    if (nb_dofs) {
+      const int nb_base_functions = data.getN().size2() / 3;
+      FTensor::Index<'i', Tensor_Dim0> i;
+      FTensor::Index<'j', Tensor_Dim1> j;
+      auto t_n_diff_hvec = data.getFTensor2DiffN<3, Tensor_Dim1>();
+      auto t_data = getFTensor1FromMat<Tensor_Dim0>(*dataPtr);
+      for (int gg = 0; gg != nb_integration_points; ++gg) {
+        auto t_dof = data.getFTensor1FieldData<Tensor_Dim0>();
+        int bb = 0;
+        for (; bb != nb_dofs / Tensor_Dim0; ++bb) {
+          double div = t_n_diff_hvec(j, j);
+          t_data(i) += t_dof(i) * div;
+          ++t_n_diff_hvec;
+          ++t_dof;
+        }
+        for (; bb < nb_base_functions; ++bb)
+          ++t_n_diff_hvec;
+        ++t_data;
       }
-      for (; bb != nb_base_functions; ++bb)
-        ++t_n_diff_hvec;
-      ++t_data;
     }
     MoFEMFunctionReturn(0);
   }

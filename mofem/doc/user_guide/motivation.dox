@@ -18,7 +18,7 @@ MoFEM manages complexity related to finite element approximation and bookkeeping
 related do degrees of freedom and finite elements. It is part of bigger
 software ecosystem, composed of the Boost MultiIndex containers, MOAB (Mesh
 Oriented Database) \cite tautges_moab:2004 and PETSc (Portable, Extensible
-Toolkit for Scientific Computation) \cite petsc-web-page. MoFEM is developed in
+Toolkit for Scientific Computation) \cite petsc-user-ref. MoFEM is developed in
 C++ and it is open-source software under the GNU Lesser General Public License
 (see \ref legal_stuff) Stuff.
 

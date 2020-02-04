@@ -31,6 +31,10 @@ void test_T4ddg_006(const Tensor2_symmetric<double, 3> &t2s_2,
                     const Tensor2_symmetric<double, 3> &t2s_3);
 void test_T4ddg_007(const Tensor2_symmetric<double, 3> &t2s_2,
                     const Tensor2_symmetric<double, 3> &t2s_3);
+void test_T4ddg_008(const Tensor2<double, 3, 3> &t2_1,
+                    const Tensor2<double, 3, 3> &t2_2,
+                    const Tensor2_symmetric<double, 3> &t2s_2,
+                    const Tensor2_symmetric<double, 3> &t2s_3);
 
 void test_T4ddg(Tensor1<double, 3> &t1_1, const Tensor1<double, 3> &t1_2,
                 Tensor2<double, 3, 3> &t2_1, const Tensor2<double, 3, 3> &t2_2,
@@ -47,4 +51,5 @@ void test_T4ddg(Tensor1<double, 3> &t1_1, const Tensor1<double, 3> &t1_2,
   test_T4ddg_05(t1_1, t1_2, t2_1, t2s_1, t2s_2, t2s_3, t3dg_1, t3dg_2, t3dg_3);
   test_T4ddg_006(t2s_2, t2s_3);
   test_T4ddg_007(t2s_2, t2s_3);
+  test_T4ddg_008(t2_1, t2_2, t2s_2, t2s_3);
 }

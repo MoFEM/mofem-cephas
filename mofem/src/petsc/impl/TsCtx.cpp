@@ -45,52 +45,60 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
   ts_ctx->vecAssembleSwitch = boost::movelib::make_unique<bool>(true);
 
   int step;
+#if PETSC_VERSION_GE(3, 8, 0)
+  CHKERR TSGetStepNumber(ts, &step);
+#else
   CHKERR TSGetTimeStepNumber(ts, &step);
+#endif
+
+  auto set = [&](auto &fe) {
+    fe.ts = ts;
+    fe.ts_u = u;
+    fe.ts_u_t = u_t;
+    fe.ts_F = F;
+    fe.ts_t = t;
+    fe.ts_step = step;
+    fe.ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
+    fe.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
+    fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
+    fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX |
+                  PetscData::CtxSetX_T | PetscData::CtxSetTime;
+  };
+
+  auto unset = [&](auto &fe) {
+    fe.ts_ctx = TSMethod::CTX_TSNONE;
+    fe.snes_ctx = SnesMethod::CTX_SNESNONE;
+    fe.ksp_ctx = KspMethod::CTX_KSPNONE;
+    fe.data_ctx = PetscData::CtxSetNone;
+  };
+
   // preprocess
   for (auto &bit : ts_ctx->preProcess_IFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
-    bit->ts_u = u;
-    bit->ts_u_t = u_t;
-    bit->ts_F = F;
-    bit->ts_t = t;
-    bit->ts_step = step;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETIFUNCTION);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
   // fe loops
   for (auto &lit : ts_ctx->loops_to_do_IFunction) {
     lit.second->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
-    lit.second->ts_u = u;
-    lit.second->ts_u_t = u_t;
-    lit.second->ts_F = F;
-    lit.second->ts_t = t;
-    lit.second->ts_step = step;
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSSETIFUNCTION);
-    CHKERR lit.second->setTs(ts);
+    set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*lit.second);
     ts_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
 
   // post process
   for (auto &bit : ts_ctx->postProcess_IFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
-    bit->ts_u = u;
-    bit->ts_u_t = u_t;
-    bit->ts_F = F;
-    bit->ts_t = t;
-    bit->ts_step = step;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETIFUNCTION);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
@@ -121,61 +129,65 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     CHKERR MatZeroEntries(B);
   }
   int step;
+#if PETSC_VERSION_GE(3, 8, 0)
+  CHKERR TSGetStepNumber(ts, &step);
+#else
   CHKERR TSGetTimeStepNumber(ts, &step);
+#endif
 
   ts_ctx->matAssembleSwitch =
       boost::movelib::make_unique<bool>(ts_ctx->zeroMatrix);
 
+  auto set = [&](auto &fe) {
+    fe.ts = ts;
+    fe.ts_u = u;
+    fe.ts_u_t = u_t;
+    fe.ts_A = A;
+    fe.ts_B = B;
+    fe.ts_t = t;
+    fe.ts_a = a;
+    fe.ts_step = step;
+    fe.ts_ctx = TSMethod::CTX_TSSETIJACOBIAN;
+    fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
+    fe.ksp_ctx = KspMethod::CTX_OPERATORS;
+    fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB |
+                  PetscData::CtxSetX | PetscData::CtxSetX_T |
+                  PetscData::CtxSetTime;
+  };
+
+  auto unset = [&](auto &fe) {
+    fe.ts_ctx = TSMethod::CTX_TSNONE;
+    fe.snes_ctx = SnesMethod::CTX_SNESNONE;
+    fe.ksp_ctx = KspMethod::CTX_KSPNONE;
+    fe.data_ctx = PetscData::CtxSetNone;
+  };
+
   // preproces
   for (auto &bit : ts_ctx->preProcess_IJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
-    bit->ts_u = u;
-    bit->ts_u_t = u_t;
-    bit->ts_A = A;
-    bit->ts_B = B;
-    bit->ts_t = t;
-    bit->ts_a = a;
-    bit->ts_step = step;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
   for (auto &lit : ts_ctx->loops_to_do_IJacobian) {
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
-    lit.second->ts_u = u;
-    lit.second->ts_u_t = u_t;
-    lit.second->ts_A = A;
-    lit.second->ts_B = B;
-    lit.second->ts_t = t;
-    lit.second->ts_a = a;
-    lit.second->ts_step = step;
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
-    CHKERR lit.second->setTs(ts);
+    set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*lit.second);
     ts_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
 
   // post process
   for (auto &bit : ts_ctx->postProcess_IJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
-    bit->ts_u = u;
-    bit->ts_u_t = u_t;
-    bit->ts_A = A;
-    bit->ts_B = B;
-    bit->ts_t = t;
-    bit->ts_a = a;
-    bit->ts_step = step;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
@@ -197,43 +209,46 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
   CHKERR ts_ctx->mField.getInterface<VecManager>()->setLocalGhostVector(
       ts_ctx->problemName, COL, u, INSERT_VALUES, SCATTER_REVERSE);
 
+  auto set = [&](auto &fe) {
+    fe.ts = ts;
+    fe.ts_u = u;
+    fe.ts_t = t;
+    fe.ts_step = step;
+    fe.ts_F = PETSC_NULL;
+    fe.ts_ctx = TSMethod::CTX_TSTSMONITORSET;
+    fe.snes_ctx = SnesMethod::CTX_SNESNONE;
+    fe.ksp_ctx = KspMethod::CTX_KSPNONE;
+    fe.data_ctx = PetscData::CtxSetX | PetscData::CtxSetTime;
+  };
+
+  auto unset = [&](auto &fe) {
+    fe.ts_ctx = TSMethod::CTX_TSNONE;
+    fe.data_ctx = PetscData::CtxSetNone;
+  };
+
   // preproces
   for (auto &bit : ts_ctx->preProcess_Monitor) {
-    bit->ts_u = u;
-    bit->ts_t = t;
-    bit->ts_step = step;
-    bit->ts_F = PETSC_NULL;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSTSMONITORSET);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
   }
 
   for (auto &lit : ts_ctx->loops_to_do_Monitor) {
-    lit.second->ts_u = u;
-    lit.second->ts_t = t;
-    lit.second->ts_step = step;
-    lit.second->ts_F = PETSC_NULL;
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSTSMONITORSET);
-    CHKERR lit.second->setTs(ts);
+    set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*lit.second);
   }
 
   // post process
   for (auto &bit : ts_ctx->postProcess_Monitor) {
-    bit->ts_u = u;
-    bit->ts_t = t;
-    bit->ts_step = step;
-    bit->ts_F = PETSC_NULL;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSTSMONITORSET);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
   }
+
   PetscLogEventEnd(ts_ctx->MOFEM_EVENT_TsCtxMonitor, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
@@ -266,48 +281,58 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
   ts_ctx->vecAssembleSwitch = boost::movelib::make_unique<bool>(true);
 
   int step;
+#if PETSC_VERSION_GE(3, 8, 0)
+  CHKERR TSGetStepNumber(ts, &step);
+#else
   CHKERR TSGetTimeStepNumber(ts, &step);
+#endif
+
+  auto set = [&](auto &fe) {
+    fe.ts_u = u;
+    fe.ts_F = F;
+    fe.ts_t = t;
+    fe.ts = ts;
+    fe.ts_step = step;
+    fe.ts_ctx = TSMethod::CTX_TSSETRHSFUNCTION;
+    fe.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
+    fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
+    fe.data_ctx =
+        PetscData::CtxSetF | PetscData::CtxSetX | PetscData::CtxSetTime;
+  };
+
+  auto unset = [&](auto &fe) {
+    fe.ts_ctx = TSMethod::CTX_TSNONE;
+    fe.snes_ctx = SnesMethod::CTX_SNESNONE;
+    fe.ksp_ctx = KspMethod::CTX_KSPNONE;
+    fe.data_ctx = PetscData::CtxSetNone;
+  };
+
   for (auto &bit : ts_ctx->preProcess_RHSJacobian) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
-    bit->ts_u = u;
-    bit->ts_F = F;
-    bit->ts_t = t;
-    bit->ts_step = step;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETRHSFUNCTION);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
   // fe loops
   for (auto &lit : ts_ctx->loops_to_do_RHSFunction) {
     lit.second->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
-    lit.second->ts_u = u;
-    lit.second->ts_F = F;
-    lit.second->ts_t = t;
-    lit.second->ts_step = step;
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSSETRHSFUNCTION);
-    CHKERR lit.second->setTs(ts);
+    set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*lit.second);
     ts_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
 
   // post process
   for (auto &bit : ts_ctx->postProcess_RHSJacobian) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
-    bit->ts_u = u;
-    bit->ts_F = F;
-    bit->ts_t = t;
-    bit->ts_step = step;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETRHSFUNCTION);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
@@ -340,52 +365,60 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
       boost::movelib::make_unique<bool>(ts_ctx->zeroMatrix);
 
   int step;
+#if PETSC_VERSION_GE(3, 8, 0)
+  CHKERR TSGetStepNumber(ts, &step);
+#else
   CHKERR TSGetTimeStepNumber(ts, &step);
+#endif
+
+  auto set = [&](auto &fe) {
+    fe.ts_u = u;
+    fe.ts_A = A;
+    fe.ts_B = B;
+    fe.ts_t = t;
+    fe.ts_step = step;
+    fe.ts_ctx = TSMethod::CTX_TSSETRHSJACOBIAN;
+    fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
+    fe.ksp_ctx = KspMethod::CTX_OPERATORS;
+    fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB |
+                  PetscData::CtxSetX | PetscData::CtxSetTime;
+    fe.ts = ts;
+  };
+
+  auto unset = [&](auto &fe) {
+    fe.ts_ctx = TSMethod::CTX_TSNONE;
+    fe.snes_ctx = SnesMethod::CTX_SNESNONE;
+    fe.ksp_ctx = KspMethod::CTX_KSPNONE;
+    fe.data_ctx = PetscData::CtxSetNone;
+  };
+
   // preprocess
   for (auto &bit : ts_ctx->preProcess_RHSJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
-    bit->ts_u = u;
-    bit->ts_A = A;
-    bit->ts_B = B;
-    bit->ts_t = t;
-    bit->ts_step = step;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETRHSJACOBIAN);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
   // fe loops
   for (auto &lit : ts_ctx->loops_to_do_RHSJacobian) {
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
-    lit.second->ts_u = u;
-    lit.second->ts_A = A;
-    lit.second->ts_B = B;
-    lit.second->ts_t = t;
-    lit.second->ts_step = step;
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSSETRHSJACOBIAN);
-    CHKERR lit.second->setTs(ts);
+    set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*lit.second);
     ts_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
 
   // post process
   for (auto &bit : ts_ctx->postProcess_RHSJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
-    bit->ts_u = u;
-    bit->ts_A = A;
-    bit->ts_B = B;
-    bit->ts_t = t;
-    bit->ts_step = step;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETRHSJACOBIAN);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
@@ -417,67 +450,67 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     CHKERR MatZeroEntries(B);
   }
   int step;
+#if PETSC_VERSION_GE(3, 8, 0)
+  CHKERR TSGetStepNumber(ts, &step);
+#else
   CHKERR TSGetTimeStepNumber(ts, &step);
+#endif
 
   ts_ctx->matAssembleSwitch =
       boost::movelib::make_unique<bool>(ts_ctx->zeroMatrix);
 
+  auto set = [&](auto &fe) {
+    fe.ts_u = u;
+    fe.ts_u_t = u_t;
+    fe.ts_u_tt = u_tt;
+    fe.ts_A = A;
+    fe.ts_B = B;
+    fe.ts_t = t;
+    fe.ts_a = a;
+    fe.ts_step = step;
+
+    fe.ts_ctx = TSMethod::CTX_TSSETIJACOBIAN;
+    fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
+    fe.ksp_ctx = KspMethod::CTX_OPERATORS;
+    fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB |
+                  PetscData::CtxSetX | PetscData::CtxSetX_T |
+                  PetscData::CtxSetX_TT | PetscData::CtxSetTime;
+    fe.ts = ts;
+  };
+
+  auto unset = [&](auto &fe) {
+    fe.ts_ctx = TSMethod::CTX_TSNONE;
+    fe.snes_ctx = SnesMethod::CTX_SNESNONE;
+    fe.ksp_ctx = KspMethod::CTX_KSPNONE;
+    fe.data_ctx = PetscData::CtxSetNone;
+  };
+
   // preproces
   for (auto &bit : ts_ctx->preProcess_IJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
-    bit->ts_u = u;
-    bit->ts_u_t = u_t;
-    bit->ts_u_tt = u_tt;
-    bit->ts_A = A;
-    bit->ts_B = B;
-    bit->ts_t = t;
-    bit->ts_a = a;
-    bit->ts_step = step;
-
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
   for (auto &lit : ts_ctx->loops_to_do_IJacobian) {
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
-    lit.second->ts_u = u;
-    lit.second->ts_u_t = u_t;
-    lit.second->ts_u_tt = u_tt;
-    lit.second->ts_A = A;
-    lit.second->ts_B = B;
-    lit.second->ts_t = t;
-    lit.second->ts_v = v;
-    lit.second->ts_a = a;
-    lit.second->ts_step = step;
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
-    CHKERR lit.second->setTs(ts);
+    set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*lit.second);
     ts_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
 
   // post process
   for (auto &bit : ts_ctx->postProcess_IJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
-    bit->ts_u = u;
-    bit->ts_u_t = u_t;
-    bit->ts_u_tt = u_tt;
-    bit->ts_A = A;
-    bit->ts_B = B;
-    bit->ts_t = t;
-    bit->ts_v = v;
-    bit->ts_a = a;
-    bit->ts_step = step;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETIJACOBIAN);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
@@ -522,55 +555,62 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
   ts_ctx->vecAssembleSwitch = boost::movelib::make_unique<bool>(true);
 
   int step;
+#if PETSC_VERSION_GE(3, 8, 0)
+  CHKERR TSGetStepNumber(ts, &step);
+#else
   CHKERR TSGetTimeStepNumber(ts, &step);
+#endif
+
+  auto set = [&](auto &fe) {
+    fe.ts_u = u;
+    fe.ts_u_t = u_t;
+    fe.ts_u_tt = u_tt;
+    fe.ts_F = F;
+    fe.ts_t = t;
+    fe.ts_step = step;
+    fe.ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
+    fe.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
+    fe.ksp_ctx = KspMethod::CTX_SETFUNCTION;
+    fe.data_ctx = PetscData::CtxSetF | PetscData::CtxSetX |
+                  PetscData::CtxSetX_T | PetscData::CtxSetX_TT |
+                  PetscData::CtxSetTime;
+    fe.ts = ts;
+  };
+
+  auto unset = [&](auto &fe) {
+    fe.ts_ctx = TSMethod::CTX_TSNONE;
+    fe.snes_ctx = SnesMethod::CTX_SNESNONE;
+    fe.ksp_ctx = KspMethod::CTX_KSPNONE;
+    fe.data_ctx = PetscData::CtxSetNone;
+  };
+
   // preprocess
   for (auto &bit : ts_ctx->preProcess_IFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
-    bit->ts_u = u;
-    bit->ts_u_t = u_t;
-    bit->ts_u_tt = u_tt;
-    bit->ts_F = F;
-    bit->ts_t = t;
-    bit->ts_step = step;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETIFUNCTION);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_preProcess(ts_ctx->problemName,
                                                           *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 
   // fe loops
   for (auto &lit : ts_ctx->loops_to_do_IFunction) {
     lit.second->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
-    lit.second->ts_u = u;
-    lit.second->ts_u_t = u_t;
-    lit.second->ts_u_tt = u_tt;
-    lit.second->ts_F = F;
-    lit.second->ts_t = t;
-    lit.second->ts_step = step;
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSSETIFUNCTION);
-    CHKERR lit.second->setTs(ts);
+    set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
         ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
-    CHKERR lit.second->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*lit.second);
     ts_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
 
   // post process
   for (auto &bit : ts_ctx->postProcess_IFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
-    bit->ts_u = u;
-    bit->ts_u_t = u_t;
-    bit->ts_u_tt = u_tt;
-    bit->ts_F = F;
-    bit->ts_t = t;
-    bit->ts_step = step;
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSSETIFUNCTION);
-    CHKERR bit->setTs(ts);
+    set(*bit);
     CHKERR ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,
                                                            *bit);
-    CHKERR bit->setTsCtx(TSMethod::CTX_TSNONE);
+    unset(*bit);
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
 

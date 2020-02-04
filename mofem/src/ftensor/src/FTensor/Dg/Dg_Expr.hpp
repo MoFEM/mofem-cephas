@@ -71,6 +71,14 @@ namespace FTensor
     operator+=(const Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2,
                             i, j, k> &result);                        
 
+    template <class B, class U>
+    Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j, k> &
+    operator-=(const Dg_Expr<B, U, Dim01, Dim2, i, j, k> &result);
+
+    Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j, k> &
+    operator-=(const Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2,
+                            i, j, k> &result);                        
+
     template <class U>
     Dg_Expr<Dg<A, Tensor_Dim01, Tensor_Dim2>, T, Dim01, Dim2, i, j, k> &
     operator=(const U &d);
@@ -118,12 +126,29 @@ namespace FTensor
     {
       return iter(N3, N1, N2);
     }
+
     template <class B, class U>
     Dg_Expr<Christof<A, Tensor_Dim0, Tensor_Dim12>, T, Dim12, Dim0, i, j, k> &
     operator=(const Dg_Expr<B, U, Dim12, Dim0, i, j, k> &result);
 
     Dg_Expr<Christof<A, Tensor_Dim0, Tensor_Dim12>, T, Dim12, Dim0, i, j, k> &
     operator=(const Dg_Expr<Christof<A, Tensor_Dim0, Tensor_Dim12>, T, Dim12,
+                            Dim0, i, j, k> &result);
+
+    template <class B, class U>
+    Dg_Expr<Christof<A, Tensor_Dim0, Tensor_Dim12>, T, Dim12, Dim0, i, j, k> &
+    operator+=(const Dg_Expr<B, U, Dim12, Dim0, i, j, k> &result);
+
+    Dg_Expr<Christof<A, Tensor_Dim0, Tensor_Dim12>, T, Dim12, Dim0, i, j, k> &
+    operator+=(const Dg_Expr<Christof<A, Tensor_Dim0, Tensor_Dim12>, T, Dim12,
+                            Dim0, i, j, k> &result);
+
+    template <class B, class U>
+    Dg_Expr<Christof<A, Tensor_Dim0, Tensor_Dim12>, T, Dim12, Dim0, i, j, k> &
+    operator-=(const Dg_Expr<B, U, Dim12, Dim0, i, j, k> &result);
+
+    Dg_Expr<Christof<A, Tensor_Dim0, Tensor_Dim12>, T, Dim12, Dim0, i, j, k> &
+    operator-=(const Dg_Expr<Christof<A, Tensor_Dim0, Tensor_Dim12>, T, Dim12,
                             Dim0, i, j, k> &result);
 
     template <class U>

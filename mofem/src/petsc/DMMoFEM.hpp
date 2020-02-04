@@ -39,6 +39,15 @@ PetscErrorCode DMMoFEMCreateMoFEM(
     const MoFEM::BitRefLevel bit_mask = MoFEM::BitRefLevel().set());
 
 /**
+ * @brief Duplicate internal data struture
+ * 
+ * @param dm 
+ * @param dm_duplicate 
+ * @return PetscErrorCode 
+ */
+PetscErrorCode DMMoFEMDuplicateDMCtx(DM dm, DM dm_duplicate);
+
+/**
  * \brief Must be called by user to set Sub DM MoFEM data structures
  * \ingroup dm
  */
@@ -94,38 +103,6 @@ PetscErrorCode DMMoFEMSetSquareProblem(DM dm, PetscBool square_problem);
 
   */
 PetscErrorCode DMMoFEMGetSquareProblem(DM dm, PetscBool *square_problem);
-
-/**
- * \brief Resolve shared entities
- *
- * @param  dm      dm
- * @param  fe_name finite element for which shared entities are resolved
- * @return         error code
- *
- * \note This function is valid for parallel algebra and serial mesh. It should
- * be run collectively, i.e. on all processors.
- *
- * This allows for tag reduction or tag exchange, f.e.
- *
- * \code
- * CHKERR DMMoFEMResolveSharedFiniteElements(dm,"SHELL_ELEMENT");
- * Tag th;
- * CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th);
- * ParallelComm* pcomm =
- * ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
- * // CHKERR pcomm->reduce_tags(th,MPI_SUM,prisms);
- * CHKERR pcomm->exchange_tags(th,prisms);
- * \endcode
- *
- * \ingroup dm
- */
-PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, const char fe_name[]);
-
-/**
- * @deprecated Use DMMoFEMResolveSharedFiniteElements
- */
-DEPRECATED PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,
-                                                       const char fe_name[]);
 
 /**
  * \brief Get finite elements layout in the problem
@@ -454,9 +431,9 @@ DMMoFEMTSSetRHSJacobian(DM dm, const std::string fe_name,
  */
 PetscErrorCode
 DMMoFEMTSSetI2Function(DM dm, const std::string fe_name,
-                      boost::shared_ptr<MoFEM::FEMethod> method,
-                      boost::shared_ptr<MoFEM::BasicMethod> pre_only,
-                      boost::shared_ptr<MoFEM::BasicMethod> post_only);
+                       boost::shared_ptr<MoFEM::FEMethod> method,
+                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                       boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
  * \brief set TS Jacobian evaluation function
@@ -464,9 +441,9 @@ DMMoFEMTSSetI2Function(DM dm, const std::string fe_name,
  */
 PetscErrorCode
 DMMoFEMTSSetI2Jacobian(DM dm, const std::string fe_name,
-                      boost::shared_ptr<MoFEM::FEMethod> method,
-                      boost::shared_ptr<MoFEM::BasicMethod> pre_only,
-                      boost::shared_ptr<MoFEM::BasicMethod> post_only);
+                       boost::shared_ptr<MoFEM::FEMethod> method,
+                       boost::shared_ptr<MoFEM::BasicMethod> pre_only,
+                       boost::shared_ptr<MoFEM::BasicMethod> post_only);
 
 /**
  * @brief Set Monitor To TS solver
@@ -900,7 +877,7 @@ struct DMCtx : public UnknownInterface {
   PetscBool destroyProblem; ///< If true destroy problem with DM
 
   DMCtx();
-  virtual ~DMCtx();
+  virtual ~DMCtx() = default;
 
   int verbosity; ///< verbosity
   int referenceNumber;
@@ -927,12 +904,22 @@ auto smartCreateDMMatrix = [](DM dm) {
  * \ingroup dm
  * 
  */
-auto smartCreateDMDVector = [](DM dm) {
+auto smartCreateDMVector = [](DM dm) {
   SmartPetscObj<Vec> v;
   ierr = DMCreateGlobalVector_MoFEM(dm, v);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return v;
 };
+
+/**
+ * @deprecated Use smartCreateDMVector
+ * 
+ * @param dm 
+ * @return DEPRECATED smartCreateDMVector 
+ */
+DEPRECATED inline auto smartCreateDMDVector(DM dm) {
+  return smartCreateDMVector(dm);
+}
 
 } // namespace MoFEM
 

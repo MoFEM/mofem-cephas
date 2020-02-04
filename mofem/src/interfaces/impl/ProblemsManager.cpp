@@ -2934,6 +2934,13 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
   int *local_nbdof_ptr[] = {&prb_ptr->nbLocDofsRow, &prb_ptr->nbLocDofsCol};
   int *ghost_nbdof_ptr[] = {&prb_ptr->nbGhostDofsRow, &prb_ptr->nbGhostDofsCol};
 
+  const int nb_init_row_dofs = prb_ptr->getNbDofsRow();
+  const int nb_init_col_dofs = prb_ptr->getNbDofsCol();
+  const int nb_init_loc_row_dofs = prb_ptr->getNbLocalDofsRow();
+  const int nb_init_loc_col_dofs = prb_ptr->getNbLocalDofsCol();
+  const int nb_init_ghost_row_dofs = prb_ptr->getNbGhostDofsRow();
+  const int nb_init_ghost_col_dofs = prb_ptr->getNbGhostDofsCol();
+
   for (int s = 0; s != 2; ++s)
     if (numered_dofs[s]) {
 
@@ -3117,12 +3124,15 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
   if (verb > QUIET) {
     PetscSynchronizedPrintf(
         m_field.get_comm(),
-        "removed ents on rank %d from problem %s dofs [ %d / %d local, %d / %d "
-        "ghost, %d / %d global]\n",
+        "removed ents on rank %d from problem %s dofs [ %d / %d  (before %d / "
+        "%d) local, %d / %d (before %d / %d) "
+        "ghost, %d / %d (before %d / %d) global]\n",
         m_field.get_comm_rank(), prb_ptr->getName().c_str(),
         prb_ptr->getNbLocalDofsRow(), prb_ptr->getNbLocalDofsCol(),
-        prb_ptr->getNbGhostDofsRow(), prb_ptr->getNbGhostDofsCol(),
-        prb_ptr->getNbDofsRow(), prb_ptr->getNbDofsCol());
+        nb_init_row_dofs, nb_init_col_dofs, prb_ptr->getNbGhostDofsRow(),
+        prb_ptr->getNbGhostDofsCol(), nb_init_ghost_row_dofs,
+        nb_init_ghost_col_dofs, prb_ptr->getNbDofsRow(),
+        prb_ptr->getNbDofsCol(), nb_init_loc_row_dofs, nb_init_loc_col_dofs);
     PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
   }
 

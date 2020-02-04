@@ -72,6 +72,7 @@ enum Interfaces {
 
 enum LoopInterfaces {
   // Loop Methods
+  PETSC_DATA_METHOD = 1 << 3,
   KSP_METHOD = 1 << 3 | 1 << 4,
   SNES_METHOD = 1 << 3 | 1 << 5,
   TS_METHOD = 1 << 3 | 1 << 6,
@@ -597,7 +598,7 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
  * \endcode
  *
  */
-#define CHKERR MoFEM::ErrorCheckerCode<__LINE__>() <<
+#define CHKERR MoFEM::ErrorChecker<__LINE__>() <<
 
 /**
  * \brief Check error code of MoAB function and throw MoFEM exception

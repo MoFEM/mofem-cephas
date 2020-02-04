@@ -21,7 +21,7 @@ extern "C" {
 #include <med.h>
 }
 
-#if (MED_MAJOR_NUM == 3)
+#if (MED_MAJOR_NUM >= 3)
 // To avoid too many ifdefs below we use defines for the bits of the
 // API that did not change too much between MED2 and MED3. If we
 // remove MED2 support at some point, please remove these defines and

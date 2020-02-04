@@ -596,30 +596,6 @@ MoFEMErrorCode DeprecatedCoreInterface::loop_finite_elements(
       bh, verb);
 }
 
-MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_ents(
-    const Problem *problem_ptr, const std::string &fe_name, int verb) {
-  return getInterface<CommInterface>()->resolveSharedFiniteElements(
-      problem_ptr, fe_name, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_ents(
-    const std::string &name, const std::string &fe_name, int verb) {
-  return getInterface<CommInterface>()->resolveSharedFiniteElements(
-      name, fe_name, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_finite_elements(
-    const Problem *problem_ptr, const std::string &fe_name, int verb) {
-  return getInterface<CommInterface>()->resolveSharedFiniteElements(
-      problem_ptr, fe_name, verb);
-}
-
-MoFEMErrorCode DeprecatedCoreInterface::resolve_shared_finite_elements(
-    const std::string &name, const std::string &fe_name, int verb) {
-  return getInterface<CommInterface>()->resolveSharedFiniteElements(
-      name, fe_name, verb);
-}
-
 MoFEMErrorCode DeprecatedCoreInterface::make_entities_multishared(
     const EntityHandle *entities, const int num_entities, const int my_proc,
     int verb) {

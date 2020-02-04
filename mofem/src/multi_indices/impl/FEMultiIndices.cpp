@@ -880,32 +880,47 @@ std::ostream &operator<<(std::ostream &os, const FiniteElement &e) {
 
 void FiniteElement_col_change_bit_add::
 operator()(boost::shared_ptr<FiniteElement> &fe) {
-  *((BitFieldId *)(fe->tag_BitFieldId_col_data)) |= fIdCol;
+  *static_cast<BitFieldId *>(fe->tag_BitFieldId_col_data) |= fIdCol;
 }
 
 void FiniteElement_row_change_bit_add::
 operator()(boost::shared_ptr<FiniteElement> &fe) {
-  *((BitFieldId *)(fe->tag_BitFieldId_row_data)) |= fIdRow;
+  *static_cast<BitFieldId *>(fe->tag_BitFieldId_row_data) |= fIdRow;
 }
 
 void FiniteElement_change_bit_add::
 operator()(boost::shared_ptr<FiniteElement> &fe) {
-  *((BitFieldId *)(fe->tag_BitFieldId_data)) |= fIdData;
+  *static_cast<BitFieldId *>(fe->tag_BitFieldId_data) |= fIdData;
 }
 
 void FiniteElement_col_change_bit_off::
 operator()(boost::shared_ptr<FiniteElement> &fe) {
-  *((BitFieldId *)(fe->tag_BitFieldId_col_data)) &= fIdCol.flip();
+  *static_cast<BitFieldId *>(fe->tag_BitFieldId_col_data) &= fIdCol.flip();
 }
 
 void FiniteElement_row_change_bit_off::
 operator()(boost::shared_ptr<FiniteElement> &fe) {
-  *((BitFieldId *)(fe->tag_BitFieldId_row_data)) &= fIdRow.flip();
+  *static_cast<BitFieldId *>(fe->tag_BitFieldId_row_data) &= fIdRow.flip();
 }
 
 void FiniteElement_change_bit_off::
 operator()(boost::shared_ptr<FiniteElement> &fe) {
-  *((BitFieldId *)(fe->tag_BitFieldId_data)) &= fIdData.flip();
+  *static_cast<BitFieldId *>(fe->tag_BitFieldId_data) &= fIdData.flip();
+}
+
+void FiniteElement_col_change_bit_reset::
+operator()(boost::shared_ptr<FiniteElement> &fe) {
+  static_cast<BitFieldId *>(fe->tag_BitFieldId_col_data)->reset();
+}
+
+void FiniteElement_row_change_bit_reset::
+operator()(boost::shared_ptr<FiniteElement> &fe) {
+  static_cast<BitFieldId *>(fe->tag_BitFieldId_row_data)->reset();
+}
+
+void FiniteElement_change_bit_reset::
+operator()(boost::shared_ptr<FiniteElement> &fe) {
+  static_cast<BitFieldId *>(fe->tag_BitFieldId_data)->reset();
 }
 
 // FiniteElement data
@@ -926,19 +941,17 @@ std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   os << *e.sFePtr << std::endl;
   os << *e.sPtr << std::endl;
   os << "data dof_uids ";
-  FEDofEntity_multiIndex::iterator dit;
-  dit = e.data_dofs->begin();
-  for (; dit != e.data_dofs->end(); dit++) {
-    if (!(*dit)) {
+  for (auto &dit : *e.data_dofs) {
+    if (!dit) {
       os << "null ptr";
     } else {
-      if (!(*dit)->getDofEntityPtr()) {
+      if (!dit->getDofEntityPtr()) {
         os << "( null ptr to dof ) ";
       } else {
-        if (!(*dit)->getFieldEntityPtr()) {
+        if (!dit->getFieldEntityPtr()) {
           os << "(( null ptr to field entity )) ";
         } else {
-          os << (*dit)->getGlobalUniqueId() << " ";
+          os << dit->getGlobalUniqueId() << " ";
         }
       }
     }

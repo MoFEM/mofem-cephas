@@ -47,7 +47,6 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
                                  Range &adjacency) -> MoFEMErrorCode {
     MoFEMFunctionBegin;
 
-    Range base_adj;
     CHKERR DefaultElementAdjacency::defaultEdge(moab, field, fe, adjacency);
 
     if (std::find(domainFields.begin(), domainFields.end(),
@@ -103,7 +102,6 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
                                  Range &adjacency) -> MoFEMErrorCode {
     MoFEMFunctionBegin;
 
-    Range base_adj;
     CHKERR DefaultElementAdjacency::defaultFace(moab, field, fe, adjacency);
 
     if (std::find(domainFields.begin(), domainFields.end(),
@@ -327,11 +325,81 @@ Simple::addDataField(const std::string &name, const FieldSpace space,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode Simple::removeDomainField(const std::string &name) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  auto remove_field_from_list = [&](auto &vec) {
+    auto it = std::find(vec.begin(), vec.end(), name);
+    if (it != vec.end())
+      vec.erase(it);
+  };
+
+  remove_field_from_list(noFieldFields);
+  remove_field_from_list(domainFields);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Simple::removeBoundaryField(const std::string &name) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  auto remove_field_from_list = [&](auto &vec) {
+    auto it = std::find(vec.begin(), vec.end(), name);
+    if (it != vec.end())
+      vec.erase(it);
+  };
+
+  remove_field_from_list(boundaryFields);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Simple::removeSkeletonField(const std::string &name) {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  auto remove_field_from_list = [&](auto &vec) {
+    auto it = std::find(vec.begin(), vec.end(), name);
+    if (it != vec.end())
+      vec.erase(it);
+  };
+
+  remove_field_from_list(skeletonFields);
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode Simple::defineFiniteElements() {
   Interface &m_field = cOre;
   MoFEMFunctionBeginHot;
+
+  auto clear_rows_and_cols = [&](auto &fe_name) {
+    MoFEMFunctionBeginHot;
+    const FiniteElement_multiIndex *fe_ptr;
+    CHKERR m_field.get_finite_elements(&fe_ptr);
+    auto &fe_by_name = const_cast<FiniteElement_multiIndex *>(fe_ptr)
+                           ->get<FiniteElement_name_mi_tag>();
+    auto it_fe = fe_by_name.find(fe_name);
+    if (it_fe != fe_by_name.end()) {
+
+      if(!fe_by_name.modify(it_fe, FiniteElement_row_change_bit_reset()))
+        SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+                "modification unsuccessful");
+
+      if(!fe_by_name.modify(it_fe, FiniteElement_col_change_bit_reset()))
+        SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+                "modification unsuccessful");
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+  CHKERR clear_rows_and_cols(domainFE);
+  CHKERR clear_rows_and_cols(boundaryFE);
+  CHKERR clear_rows_and_cols(skeletonFE);
+
   // Define finite elements
-  CHKERR m_field.add_finite_element(domainFE);
+  CHKERR m_field.add_finite_element(domainFE, MF_ZERO);
 
   auto add_fields = [&](auto &fe_name, auto &fields) {
     MoFEMFunctionBeginHot;
@@ -356,7 +424,7 @@ MoFEMErrorCode Simple::defineFiniteElements() {
   CHKERR add_data_fields(domainFE, noFieldDataFields);
 
   if (!boundaryFields.empty()) {
-    CHKERR m_field.add_finite_element(boundaryFE);
+    CHKERR m_field.add_finite_element(boundaryFE, MF_ZERO);
     CHKERR add_fields(boundaryFE, domainFields);
     CHKERR add_fields(boundaryFE, boundaryFields);
     CHKERR add_fields(boundaryFE, skeletonFields);
@@ -365,7 +433,7 @@ MoFEMErrorCode Simple::defineFiniteElements() {
     CHKERR add_fields(boundaryFE, noFieldFields);
   }
   if (!skeletonFields.empty()) {
-    CHKERR m_field.add_finite_element(skeletonFE);
+    CHKERR m_field.add_finite_element(skeletonFE, MF_ZERO);
     CHKERR add_fields(skeletonFE, domainFields);
     CHKERR add_fields(skeletonFE, boundaryFields);
     CHKERR add_fields(skeletonFE, skeletonFields);
@@ -402,8 +470,8 @@ MoFEMErrorCode Simple::defineProblem(const PetscBool is_partitioned) {
 MoFEMErrorCode Simple::setFieldOrder(const std::string field_name,
                                      const int order, const Range *ents) {
   MoFEMFunctionBeginHot;
-  fieldsOrder[field_name] =
-      std::pair<int, Range>(order, ents == NULL ? Range() : Range(*ents));
+  fieldsOrder.insert(
+      {field_name, {order, ents == NULL ? Range() : Range(*ents)}});
   MoFEMFunctionReturnHot(0);
 }
 
@@ -506,15 +574,25 @@ MoFEMErrorCode Simple::buildFields() {
         SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
                 "Glasgow we have a problem");
       }
+
+      auto set_order = [&](auto field, auto &ents) {
+        MoFEMFunctionBegin;
+
+        auto range = fieldsOrder.equal_range(field);
+        for (auto o = range.first; o != range.second; ++o) {
+          if (!o->second.second.empty())
+            ents = intersect(ents, o->second.second);
+          CHKERR m_field.set_field_order(ents, field, o->second.first);
+        }
+
+        MoFEMFunctionReturn(0);
+      };
+
       if (field_ptr->getSpace() == H1) {
         if (field_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
           Range ents;
           CHKERR m_field.get_field_entities_by_dimension(field, 0, ents);
-          if (!fieldsOrder.at(field).second.empty()) {
-            ents = intersect(ents, fieldsOrder.at(field).second);
-          }
-          CHKERR m_field.set_field_order(ents, field,
-                                         fieldsOrder.at(field).first);
+          CHKERR set_order(field, ents);
         } else {
           CHKERR m_field.set_field_order(meshSet, MBVERTEX, field, 1);
         }
@@ -522,11 +600,7 @@ MoFEMErrorCode Simple::buildFields() {
       for (int dd = dds; dd <= dim; dd++) {
         Range ents;
         CHKERR m_field.get_field_entities_by_dimension(field, dd, ents);
-        if (!fieldsOrder.at(field).second.empty()) {
-          ents = intersect(ents, fieldsOrder.at(field).second);
-        }
-        CHKERR m_field.set_field_order(ents, field,
-                                       fieldsOrder.at(field).first);
+        CHKERR set_order(field, ents);
       }
     }
     MoFEMFunctionReturnHot(0);
@@ -592,6 +666,28 @@ MoFEMErrorCode Simple::setUp(const PetscBool is_partitioned) {
   CHKERR buildFields();
   CHKERR buildFiniteElements();
   CHKERR buildProblem();
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Simple::reSetUp() {
+  Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+
+  CHKERR defineFiniteElements();
+  if (!skeletonFields.empty())
+    CHKERR setSkeletonAdjacency();
+  CHKERR buildFields();
+  CHKERR buildFiniteElements();
+
+  PetscLogEventBegin(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
+  CHKERR m_field.build_adjacencies(bitLevel);
+  // Set problem by the DOFs on the fields rather that by adding DOFs on the
+  // elements
+  m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
+  CHKERR DMSetUp_MoFEM(dM);
+  m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_FALSE;
+  PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
+
   MoFEMFunctionReturn(0);
 }
 
