@@ -182,9 +182,9 @@ auto createSmartDM = [](MPI_Comm comm, const std::string dm_type_name) {
 
 /**
  * @brief Get the Comm From Petsc Object object
- * 
- * @param obj 
- * @return MPI_Comm 
+ *
+ * @param obj
+ * @return MPI_Comm
  */
 inline MPI_Comm getCommFromPetscObject(PetscObject obj) {
   MPI_Comm comm;
@@ -215,11 +215,11 @@ auto createSmartGhostVector = [](MPI_Comm comm, PetscInt n, PetscInt N,
 
 /**
  * @brief Create MPI Vector
- * 
+ *
  * For details abut arguments see here:
  * <a
  * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecCreateMPI.html>VecCreateMPI</a>.
- * 
+ *
  */
 auto createSmartVectorMPI = [](MPI_Comm comm, PetscInt n, PetscInt N) {
   Vec vv;
@@ -267,10 +267,9 @@ inline SmartPetscObj<Mat> smartMatDuplicate(SmartPetscObj<Mat> &mat,
     ierr = MatDuplicate(mat, op, &duplicate);
     CHKERRABORT(PETSC_COMM_SELF, ierr);
     return SmartPetscObj<Mat>(duplicate);
-}
-else {
-  return SmartPetscObj<Mat>();
-}
+  } else {
+    return SmartPetscObj<Mat>();
+  }
 };
 
 auto createTS = [](MPI_Comm comm) {
