@@ -149,10 +149,17 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     inline MatrixDouble &getGaussPtsSlave();
 
     /**
+<<<<<<< HEAD
      * @brief Get integration weights for slave side
      *
      * \code
      * auto t_w = getFTensor0IntegrationWeight();
+=======
+     * @brief Get integration weights
+     *
+     * \code
+     * auto t_w = getFTensor0IntegrationWeightSlave();
+>>>>>>> lukasz/develop
      * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
      *  // integrate something
      *  ++t_w;
@@ -164,10 +171,17 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     inline auto getFTensor0IntegrationWeightSlave();
 
     /**
+<<<<<<< HEAD
      * @brief Get integration weights for master side
      *
      * \code
      * auto t_w = getFTensor0IntegrationWeight();
+=======
+     * @brief Get integration weights
+     *
+     * \code
+     * auto t_w = getFTensor0IntegrationWeightMaster();
+>>>>>>> lukasz/develop
      * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
      *  // integrate something
      *  ++t_w;

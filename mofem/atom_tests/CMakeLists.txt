@@ -1592,6 +1592,21 @@ my_add_executable(
   continuity_check_on_contact_prism_side_ele.cpp
 )
 target_link_libraries(continuity_check_on_contact_prism_side_ele
+mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
+my_add_executable(
+  continuity_check_on_skeleton_with_simple_2d_for_hdiv
+  continuity_check_on_skeleton_with_simple_2d_for_hdiv.cpp
+)
+target_link_libraries(continuity_check_on_skeleton_with_simple_2d_for_hdiv
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -1607,6 +1622,18 @@ add_test(
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_contact_prism_side_ele
   -my_file 2_tets_contact.cub -base ainsworth -space h1
+)
+
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
+  -file_name rectangle.h5m -base ainsworth
+)
+
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
+  -file_name rectangle.h5m -base demkowicz
 )
 
 cm_export_file("../meshes/reference_triangle_mesh.h5m" export_atom_tests)

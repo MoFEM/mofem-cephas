@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 
     if (m_field.get_comm_rank() == 0) {
       CHKERR m_field.getInterface<FieldBlas>()->setField(1, "LAMBDA");
-      CHKERR m_field.getInterface<FieldBlas>()->setField(1, "FILED");
+      CHKERR m_field.getInterface<FieldBlas>()->setField(1, "FIELD");
     }
 
     CHKERR comm_interface_ptr->exchangeFieldData("LAMBDA");
@@ -169,7 +169,11 @@ int main(int argc, char *argv[]) {
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
             "TEST_PROBLEM", -1, -1, 1);
 
-        CHKERR MatDestroy(&m);
+    CHKERR MatDestroy(&m);
+
+    // check if file can be saved
+    CHKERR moab.write_file("test_out.h5m", "MOAB", "PARALLEL=WRITE_PART");
+
     // destry dm
     CHKERR DMDestroy(&dm);
   }

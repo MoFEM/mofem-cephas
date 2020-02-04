@@ -47,7 +47,6 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
                                  Range &adjacency) -> MoFEMErrorCode {
     MoFEMFunctionBegin;
 
-    Range base_adj;
     CHKERR DefaultElementAdjacency::defaultEdge(moab, field, fe, adjacency);
 
     if (std::find(domainFields.begin(), domainFields.end(),
@@ -103,7 +102,6 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
                                  Range &adjacency) -> MoFEMErrorCode {
     MoFEMFunctionBegin;
 
-    Range base_adj;
     CHKERR DefaultElementAdjacency::defaultFace(moab, field, fe, adjacency);
 
     if (std::find(domainFields.begin(), domainFields.end(),

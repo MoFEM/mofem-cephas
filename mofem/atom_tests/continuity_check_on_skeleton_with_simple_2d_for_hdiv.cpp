@@ -29,10 +29,11 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSideSwitch<
-    FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY>;
+    FaceElementForcesAndSourcesCore::NO_CONTRAVARIANT_TRANSFORM_HDIV |
+    FaceElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
 
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
-    EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY>;
+    EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
 
 using FaceEleOnSideOp = FaceEleOnSide::UserDataOperator;
 using EdgeEleOp = EdgeEle::UserDataOperator;
@@ -67,9 +68,10 @@ struct SkeletonFE : public EdgeEleOp {
         const size_t nb_dofs = data.getN().size2() / 3;
         const size_t nb_integration_pts = data.getN().size1();
 
-        auto t_tangent = getFTensor1Direction();
-        auto t_hcurl_base = data.getFTensor1N<3>();
-        FTensor::Index<'i', 3> i;
+        auto &dir = getDirection();
+        FTensor::Tensor1<double, 2> t_normal{-dir(1), dir(0)};
+        auto t_hdiv_base = data.getFTensor1N<3>();
+        FTensor::Index<'i', 2> i;
         MatrixDouble *ptr_dot_elem_data = nullptr;
         if (getFEMethod()->nInTheLoop == 0)
           ptr_dot_elem_data = &elemData.dotEleLeft;
@@ -80,8 +82,8 @@ struct SkeletonFE : public EdgeEleOp {
 
         for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
           for (size_t bb = 0; bb != nb_dofs; ++bb) {
-            dot_elem_data(gg, bb) = t_tangent(i) * t_hcurl_base(i);
-            ++t_hcurl_base;
+            dot_elem_data(gg, bb) = t_normal(i) * t_hdiv_base(i);
+            ++t_hdiv_base;
           }
         }
       }
@@ -91,11 +93,19 @@ struct SkeletonFE : public EdgeEleOp {
 
   CommonData &elemData;
   FaceEleOnSide faceSideFe;
+  MatrixDouble jac;
 
   SkeletonFE(MoFEM::Interface &m_field, CommonData &elem_data)
       : EdgeEle::UserDataOperator("FIELD", UserDataOperator::OPROW),
         faceSideFe(m_field), elemData(elem_data) {
-    faceSideFe.getOpPtrVector().push_back(new SkeletonFE::OpFaceSide(elemData));
+
+      faceSideFe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
+      faceSideFe.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
+      faceSideFe.getOpPtrVector().push_back(
+          new OpSetContravariantPiolaTransformFace(jac));
+      faceSideFe.getOpPtrVector().push_back(
+          new SkeletonFE::OpFaceSide(elemData));
+
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -107,17 +117,18 @@ struct SkeletonFE : public EdgeEleOp {
       const size_t nb_dofs = data.getN().size2() / 3;
       const size_t nb_integration_pts = data.getN().size1();
 
-      auto t_tangent = getFTensor1Direction();
-      auto t_hcurl_base = data.getFTensor1N<3>();
-      FTensor::Index<'i', 3> i;
+      auto &dir = getDirection();
+      FTensor::Tensor1<double, 2> t_normal{-dir(1), dir(0)};
+      auto t_hdiv_base = data.getFTensor1N<3>();
+      FTensor::Index<'i', 2> i;
       elemData.dotEdge.resize(nb_integration_pts, nb_dofs, false);
       elemData.dotEleLeft.resize(nb_integration_pts, 0, false);
       elemData.dotEleRight.resize(nb_integration_pts, 0, false);
 
       for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
         for (size_t bb = 0; bb != nb_dofs; ++bb) {
-          elemData.dotEdge(gg, bb) = t_tangent(i) * t_hcurl_base(i);
-          ++t_hcurl_base;
+          elemData.dotEdge(gg, bb) = t_normal(i) * t_hdiv_base(i);
+          ++t_hdiv_base;
         }
       }
 
@@ -217,6 +228,9 @@ int main(int argc, char *argv[]) {
       CommonData elem_data;
       boost::shared_ptr<EdgeEle> skeleton_fe =
           boost::shared_ptr<EdgeEle>(new EdgeEle(m_field));
+
+      skeleton_fe->getOpPtrVector().push_back(
+          new OpSetContrariantPiolaTransformOnEdge());
       skeleton_fe->getOpPtrVector().push_back(
           new SkeletonFE(m_field, elem_data));
 

@@ -253,6 +253,13 @@ inline SmartPetscObj<Vec> smartVectorDuplicate(Vec &vec) {
   return SmartPetscObj<Vec>(duplicate);
 };
 
+inline SmartPetscObj<Mat> smartMatDuplicate(Mat &mat, MatDuplicateOption op) {
+  Mat duplicate;
+  ierr = MatDuplicate(mat, op, &duplicate);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  return SmartPetscObj<Mat>(duplicate);
+};
+
 auto createTS = [](MPI_Comm comm) {
   TS ts;
   ierr = TSCreate(comm, &ts);

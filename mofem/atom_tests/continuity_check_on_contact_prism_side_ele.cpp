@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
 
             MatrixDouble diff =
                 getCoordsAtGaussPts() - getMasterCoordsAtGaussPts();
-            const double eps = 1e-12;
+            constexpr double eps = 1e-12;
             if (norm_inf(diff) > eps)
               SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                       "coordinates at integration pts are different");
@@ -316,34 +316,6 @@ int main(int argc, char *argv[]) {
                   ++t_base;
                 }
               }
-            } else {
- 
-            // FTensor::Index<'i', 3> i;
-            // auto t_to_do_dot = getFTensor1Normal();
-            // if (data.getSpace() == HCURL) {
-            //   auto s1 = getFTensor1Tangent1();
-            //   auto s2 = getFTensor1Tangent2();
-            //   t_to_do_dot(i) = s1(i) + s2(i);
-            // }
-
-            // auto t_hdiv_base = data.getFTensor1N<3>();
-            // MatrixDouble *ptr_dot_elem_data = nullptr;
-            // if (getFEMethod()->nInTheLoop == 0)
-            //   ptr_dot_elem_data = &elemData.dotNormalEleLeft;
-            // else
-            //   ptr_dot_elem_data = &elemData.dotNormalEleRight;
-            // MatrixDouble &dot_elem_data = *ptr_dot_elem_data;
-            // dot_elem_data.resize(nb_integration_pts, nb_dofs, false);
-
-            // for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
-            //   for (size_t bb = 0; bb != nb_dofs; ++bb) {
-            //     dot_elem_data(gg, bb) = t_to_do_dot(i) * t_hdiv_base(i);
-            //     ++t_hdiv_base;
-            //   }
-            // }
-
-           // FTensor::Tensor0<double *> t_base(&data.getN()(gg, 0));
-            
             }
           }
           MoFEMFunctionReturnHot(0);
@@ -381,30 +353,7 @@ int main(int argc, char *argv[]) {
                 ++t_base;
               }
             }
-        } else {
-          //todo: will be implemented when more basis functions will be implemented
-          //for contact element
-
-          // FTensor::Index<'i', 3> i;
-          // auto t_to_do_dot = getFTensor1Normal();
-          // if (data.getSpace() == HCURL) {
-          //   auto s1 = getFTensor1Tangent1();
-          //   auto s2 = getFTensor1Tangent2();
-          //   t_to_do_dot(i) = s1(i) + s2(i);
-          // }
-
-          // auto t_hdiv_base = data.getFTensor1N<3>();
-          // elemData.dotNormalFace.resize(nb_integration_pts, nb_dofs, false);
-          // elemData.dotNormalEleLeft.resize(nb_integration_pts, 0, false);
-          // elemData.dotNormalEleRight.resize(nb_integration_pts, 0, false);
-
-          // for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
-          //   for (size_t bb = 0; bb != nb_dofs; ++bb) {
-          //     elemData.dotNormalFace(gg, bb) = t_to_do_dot(i) * t_hdiv_base(i);
-          //     ++t_hdiv_base;
-          //   }
-          // }
-        }
+        } 
         std::string side_fe_name = "V1";
         const EntityHandle tri_master = getSideEntity(3, MBTRI);
         CHKERR loopSideVolumes(side_fe_name, volSideFe, 3, tri_master);
@@ -419,7 +368,7 @@ int main(int argc, char *argv[]) {
           if (vol_dot_data.size2() != elemData.dotNormalFace.size2())
             SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                     "Inconsistent number of base functions");
-          const double eps = 1e-12;
+          constexpr double eps = 1e-12;
           for (size_t gg = 0; gg != vol_dot_data.size1(); ++gg)
             for (size_t bb = 0; bb != vol_dot_data.size2(); ++bb) {
               const double error = std::abs(vol_dot_data(gg, bb) -
@@ -442,7 +391,7 @@ int main(int argc, char *argv[]) {
           if (vol_data.size2() != elemData.shapeFunH1Values.size2())
             SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                     "Inconsistent number of base functions");
-          const double eps = 1e-12;
+          constexpr double eps = 1e-12;
           for (size_t gg = 0; gg != vol_data.size1(); ++gg)
             for (size_t bb = 0; bb != vol_data.size2(); ++bb) {
               const double error = std::abs(vol_data(gg, bb) -
@@ -486,7 +435,7 @@ int main(int argc, char *argv[]) {
 
             MatrixDouble diff =
                 getCoordsAtGaussPts() - getMasterCoordsAtGaussPts();
-            const double eps = 1e-12;
+            constexpr double eps = 1e-12;
             if (norm_inf(diff) > eps)
               SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                       "coordinates at integration pts are different");
@@ -507,33 +456,6 @@ int main(int argc, char *argv[]) {
                   ++t_base;
                 }
               }
-            } else {
-
-              // FTensor::Index<'i', 3> i;
-              // auto t_to_do_dot = getFTensor1Normal();
-              // if (data.getSpace() == HCURL) {
-              //   auto s1 = getFTensor1Tangent1();
-              //   auto s2 = getFTensor1Tangent2();
-              //   t_to_do_dot(i) = s1(i) + s2(i);
-              // }
-
-              // auto t_hdiv_base = data.getFTensor1N<3>();
-              // MatrixDouble *ptr_dot_elem_data = nullptr;
-              // if (getFEMethod()->nInTheLoop == 0)
-              //   ptr_dot_elem_data = &elemData.dotNormalEleLeft;
-              // else
-              //   ptr_dot_elem_data = &elemData.dotNormalEleRight;
-              // MatrixDouble &dot_elem_data = *ptr_dot_elem_data;
-              // dot_elem_data.resize(nb_integration_pts, nb_dofs, false);
-
-              // for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
-              //   for (size_t bb = 0; bb != nb_dofs; ++bb) {
-              //     dot_elem_data(gg, bb) = t_to_do_dot(i) * t_hdiv_base(i);
-              //     ++t_hdiv_base;
-              //   }
-              // }
-
-              // FTensor::Tensor0<double *> t_base(&data.getN()(gg, 0));
             }
           }
           MoFEMFunctionReturnHot(0);
@@ -571,32 +493,8 @@ int main(int argc, char *argv[]) {
                 ++t_base;
               }
             }
-          } else {
-            // todo: will be implemented when more basis functions will be
-            // implemented for contact element
-
-            // FTensor::Index<'i', 3> i;
-            // auto t_to_do_dot = getFTensor1Normal();
-            // if (data.getSpace() == HCURL) {
-            //   auto s1 = getFTensor1Tangent1();
-            //   auto s2 = getFTensor1Tangent2();
-            //   t_to_do_dot(i) = s1(i) + s2(i);
-            // }
-
-            // auto t_hdiv_base = data.getFTensor1N<3>();
-            // elemData.dotNormalFace.resize(nb_integration_pts, nb_dofs,
-            // false); elemData.dotNormalEleLeft.resize(nb_integration_pts, 0,
-            // false); elemData.dotNormalEleRight.resize(nb_integration_pts, 0,
-            // false);
-
-            // for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
-            //   for (size_t bb = 0; bb != nb_dofs; ++bb) {
-            //     elemData.dotNormalFace(gg, bb) = t_to_do_dot(i) *
-            //     t_hdiv_base(i);
-            //     ++t_hdiv_base;
-            //   }
-            // }
-          }
+          } 
+          
           std::string side_fe_name = "V1";
           const EntityHandle tri_slave = getSideEntity(4, MBTRI);
           CHKERR loopSideVolumes(side_fe_name, volSideFe, 3, tri_slave);
@@ -611,7 +509,7 @@ int main(int argc, char *argv[]) {
             if (vol_dot_data.size2() != elemData.dotNormalFace.size2())
               SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                       "Inconsistent number of base functions");
-            const double eps = 1e-12;
+            constexpr double eps = 1e-12;
             for (size_t gg = 0; gg != vol_dot_data.size1(); ++gg)
               for (size_t bb = 0; bb != vol_dot_data.size2(); ++bb) {
                 const double error = std::abs(vol_dot_data(gg, bb) -
@@ -634,7 +532,7 @@ int main(int argc, char *argv[]) {
             if (vol_data.size2() != elemData.shapeFunH1Values.size2())
               SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                       "Inconsistent number of base functions");
-            const double eps = 1e-12;
+            constexpr double eps = 1e-12;
             for (size_t gg = 0; gg != vol_data.size1(); ++gg)
               for (size_t bb = 0; bb != vol_data.size2(); ++bb) {
                 const double error = std::abs(

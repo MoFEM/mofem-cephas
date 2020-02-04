@@ -456,12 +456,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
           dataHdivSlave.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
               dataOnSlave[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
                   NOBASE);
-
-          // dataHdivMaster.dataOnEntities[MBTRI][0].getNSharedPtr(NOBASE) =
-          //     dataOnMaster[HDIV]->dataOnEntities[MBTRI][3].getNSharedPtr(
-          //         NOBASE);
-          // dataHdivSlave.dataOnEntities[MBTRI][0].getNSharedPtr(NOBASE) =
-          //     dataOnSlave[HDIV]->dataOnEntities[MBTRI][4].getNSharedPtr(NOBASE);
         }
 }
           }
@@ -485,7 +479,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                   dataH1Slave, H1, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
 
-          // cerr << " H1 transform " << dataH1Slave << "\n";
         }
       case DEMKOWICZ_JACOBI_BASE:
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
@@ -517,42 +510,28 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
               sqrt(slave_normal_data(i) * slave_normal_data(i));
           normal_slave(i) = slave_normal_data(i) / normal_length;
 
-          // cerr << "slave data 1 " << normal << "\n";
 
           for (int gg = 0; gg != nb_gauss_pts; ++gg) {
             t_normal(i) = normal_slave(i);
             ++t_normal;
           }
-          // cerr << "slave data 2 " << nOrmalSlave << "\n";
-
-          // cerr << " calculated base! " << normalsAtGaussPtsSlave << "\n";
 
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsMaster,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   dataHdivMaster, HDIV, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
-          // cerr << " Before values" << dataHdivSlave << "\n";
-
+ 
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsSlave,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
 
-          // cerr << " Before transform " << dataHdivSlave << "\n";
-
-          // opContravariantTransform(nOrmalSlave,
-          // normalsAtGaussPtsSlave)
-
+ 
           CHKERR opContravariantTransform.opRhs(data_div);
-          // cerr << " After transform " << dataHdivSlave << "\n";
         }
 
-        // if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-        //   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-        //           "Not yet implemented");
-        // }
         if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
@@ -569,13 +548,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     }
   }
 
-  // if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-  //   SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
-  // }
-
   // Iterate over operators
   CHKERR loopOverOperators();
-  //cerr << " In rush? " << dataHdivSlave << "\n";
 
   MoFEMFunctionReturn(0);
 }

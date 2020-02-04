@@ -7,7 +7,7 @@ institution = {Sandia National Laboratories},
 author = {Tautges, T. J. and Meyers, R. and Merkley, K. and Stimpson, C. and Ernst, C.},
 month = apr,
 year = {2004},
-doi={https://doi.org/10.2172/970174},
+doi={10.2172/970174},
 note = {Report}
 }
 
@@ -21,49 +21,50 @@ publisher = {John Wiley & Sons, Ltd.},
 issn = {1097-0207},
 pages = {2103--2130},
 keywords = {hierarchic finite element bases, conforming finite element spaces},
-doi={https://doi.org/10.1002/nme.847},
+doi={10.1002/nme.847},
 year = {2003},
 }
 
-@Misc{petsc-web-page,
-author = {Satish Balay and Shrirang Abhyankar and Mark~F. Adams and Jed Brown and Peter Brune
-and Kris Buschelman and Lisandro Dalcin and Victor Eijkhout and William~D. Gropp
-and Dinesh Kaushik and Matthew~G. Knepley
-and Lois Curfman McInnes and Karl Rupp and Barry~F. Smith
-and Stefano Zampini and Hong Zhang},
-title =  {{PETS}c {W}eb page},
-url =    {http://www.mcs.anl.gov/petsc},
-year = {2015}
+@TechReport{petsc-user-ref,
+  author = {Satish Balay and Shrirang Abhyankar and Mark~F. Adams and Jed Brown and Peter Brune
+            and Kris Buschelman and Lisandro Dalcin and Alp Dener and Victor Eijkhout and William~D. Gropp
+            and Dmitry Karpeyev and Dinesh Kaushik and Matthew~G. Knepley and Dave~A. May and Lois Curfman McInnes
+            and Richard Tran Mills and Todd Munson and Karl Rupp and Patrick Sanan
+            and Barry~F. Smith and Stefano Zampini and Hong Zhang and Hong Zhang},
+  title  = {{PETS}c Users Manual},
+  institution = {Argonne National Laboratory},
+  year   = 2019,
+  number = {ANL-95/11 - Revision 3.12}
 }
 
 @Misc{boost-web-page,
 title =  {{B}oost {W}eb page},
 url =    {https://www.boost.org},
-year = {2019}
+year = {2020}
 }
 
 
 @Misc{MoFEMWebPage,
 title =  {{M}o{FEM} {W}eb page},
 url =    {http://mofem.eng.gla.ac.uk},
-year = {2019}
+year = {2020}
 }
 
 @Misc{MOABWebPage,
 title =  {{MOAB} {W}eb page},
 url =    {https://press3.mcs.anl.gov/sigma/},
-year = {2019}
+year = {2020}
 }
 
 @article{ainsworth2011bernstein,
-  title={Bernstein-B{\'e}zier finite elements of arbitrary order and optimal assembly procedures},
+  title={{Bernstein-B{\'e}zier} finite elements of arbitrary order and optimal assembly procedures},
   author={Ainsworth, Mark and Andriamaro, Gaelle and Davydov, Oleg},
   journal={SIAM Journal on Scientific Computing},
   volume={33},
   number={6},
   pages={3087--3109},
   year={2011},
-  doi={https://doi.org/10.1137/11082539x},
+  doi={10.1137/11082539x},
   publisher={SIAM}
 }
 
@@ -75,7 +76,7 @@ year = {2019}
   number={4},
   pages={353--458},
   year={2015},
-  doi={https://doi.org/10.1016/j.camwa.2015.04.027},
+  doi={10.1016/j.camwa.2015.04.027},
   publisher={Elsevier}
 }
 
@@ -87,7 +88,7 @@ year = {2019}
   volume={324},
   pages={54--73},
   year={2017},
-  doi={https://doi.org/10.1016/j.cma.2017.06.001},
+  doi={10.1016/j.cma.2017.06.001},
   publisher={Elsevier}
 }
 
@@ -96,17 +97,20 @@ year = {2019}
   author={Ullah, Zahur and Zhou, Xiao-Yi and Kaczmarczyk, Lukasz and Archer, E and McIlhagger, A and Harkin-Jones, E},
   journal={Composites Part B: Engineering},
   year={2019},
-  publisher={Elsevier}
+  publisher={Elsevier},
+  doi={10.1016/j.compositesb.2019.03.027}
 }
 
-@article{babuska1992version,
-  title={The h, p and h-p version of the finite element method; basis theory and applications},
-  author={Babu\v{s}ka, I. and Guo, B.Q.},
-  journal={Advances in Engineering Software},
-  volume={15},
-  pages={159--174},
-  year={1992},
-  publisher={Elsevier}
+@article{guo1986hp,
+  title={The $h$-$p$ version of the finite element method},
+  author={Guo, B and Babu{\v{s}}ka, I},
+  journal={Computational Mechanics},
+  volume={1},
+  number={1},
+  pages={21--41},
+  year={1986},
+  publisher={Springer},
+  doi={10.1007/BF00298636}
 }
 
 @article{kaczmarczyk2016prism,
@@ -127,7 +131,7 @@ year = {2019}
   number={1},
   pages={352--372},
   year={2012},
-  doi={https://doi.org/10.1093/imanum/drq047},
+  doi={10.1093/imanum/drq047},
   publisher={OUP}
 }
 
@@ -135,5 +139,78 @@ year = {2019}
   title={A multiphysics finite element model of the wood cell wall},
   author={Richardson, Euan J},
   year={2018},
-  school={University of Glasgow}
+  school={University of Glasgow},
+  url={http://theses.gla.ac.uk/9150/}
+}
+
+@misc{lew2020numerical,
+    title={Numerical investigation into fracture resistance of bone following adaptation},
+    author={Karol Lewandowski and Łukasz Kaczmarczyk and Ignatios Athanasiadis and John F. Marshall and Chris J. Pearce},
+    year={2020},
+    eprint={2001.00647},
+    archivePrefix={arXiv},
+    primaryClass={cs.CE}
+}
+
+@article{dealII91,
+  title   = {The \texttt{deal.II} Library, Version 9.1},
+  author  = {D. Arndt and W. Bangerth and T. C. Clevenger and D. Davydov and
+              M. Fehling and D. Garcia-Sanchez and G. Harper and T. Heister and
+              L. Heltai and M. Kronbichler and R. M. Kynch and M. Maier and
+              J.-P. Pelteret and B. Turcksin and D. Wells},
+  journal = {Journal of Numerical Mathematics},
+  note    = {accepted},
+  year    = {2019},
+  DOI     = {10.1515/jnma-2019-0064},
+  url     = {https://dealii.org/deal91-preprint.pdf}
+}
+
+@misc{mfem-library,
+  title = {{MFEM}: Modular Finite Element Methods Library},
+  howpublished = {\url{mfem.org}},
+  doi = {10.11578/dc.20171025.1248}
+}
+
+@misc{doecode_1687,
+title = {{MFEM: Modular Finite Element Methods Library}},
+author = {Kolev, Tzanio and Dobrev, Veselin},
+url = {http://mfem.org/},
+doi = {10.11578/dc.20171025.1248},
+year = {2010}
+}
+
+@article{libMeshPaper,
+  author = {B.~S.~Kirk and J.~W.~Peterson and R.~H.~Stogner and G.~F.~Carey},
+  title = {{\texttt{libMesh}: A C++ Library for Parallel Adaptive Mesh Refinement/Coarsening Simulations}},
+  journal = {Engineering with Computers},
+  volume = 22,
+  number = {3--4},
+  pages = {237--254},
+  year = 2006,
+  doi = {10.1007/s00366-006-0049-3}
+}
+
+@article{AlnaesBlechta2015a,
+  title = {The FEniCS Project Version 1.5},
+  author = {Martin S. Aln{\ae}s and Jan Blechta and Johan Hake and August Johansson and Benjamin Kehlet and Anders Logg and Chris Richardson and Johannes Ring and Marie E. Rognes and Garth N. Wells},
+  year = {2015},
+  journal = {Archive of Numerical Software},
+  volume = {3},
+  number = {100},
+  doi = {10.11588/ans.2015.100.20553},
+  page = {9-23},
+}
+
+@article{MR3043640,
+  AUTHOR = {Hecht, F.},
+  TITLE = {New development in FreeFem++},
+  JOURNAL = {J. Numer. Math.},
+  FJOURNAL = {Journal of Numerical Mathematics},
+  VOLUME = {20}, YEAR = {2012},
+  NUMBER = {3-4}, PAGES = {251--265},
+  ISSN = {1570-2820},
+  MRCLASS = {65Y15},
+  MRNUMBER = {3043640},
+  URL = {https://freefem.org/},
+  doi = {10.1515/jnum-2012-0013}
 }

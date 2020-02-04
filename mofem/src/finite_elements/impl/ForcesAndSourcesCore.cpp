@@ -1336,8 +1336,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
     const string &fe_name, ForcesAndSourcesCore *side_fe, const size_t side_dim,
     const EntityHandle ent_for_side) {
   MoFEMFunctionBegin;
-  const EntityHandle ent =
-      ent_for_side ? ent_for_side : getNumeredEntFiniteElementPtr()->getEnt();
+  const EntityHandle ent = ent_for_side ? ent_for_side : getFEEntityHandle();
 
   const Problem *problem_ptr = getFEMethod()->problemPtr;
   Range adjacent_ents;

@@ -99,7 +99,7 @@ static MoFEMErrorCodeGeneric<PetscErrorCode> ierr =
  * not do that.
  *
  */
-template <int LINE> struct ErrorCheckerCode {
+template <int LINE> struct ErrorChecker {
 
   /**
    * @brief Operator for handling PetscErrorCode and MoFEMErrorCode
