@@ -260,6 +260,19 @@ inline SmartPetscObj<Mat> smartMatDuplicate(Mat &mat, MatDuplicateOption op) {
   return SmartPetscObj<Mat>(duplicate);
 };
 
+inline SmartPetscObj<Mat> smartMatDuplicate(SmartPetscObj<Mat> &mat,
+                                            MatDuplicateOption op) {
+  if (mat.use_count()) {
+    Mat duplicate;
+    ierr = MatDuplicate(mat, op, &duplicate);
+    CHKERRABORT(PETSC_COMM_SELF, ierr);
+    return SmartPetscObj<Mat>(duplicate);
+}
+else {
+  return SmartPetscObj<Mat>();
+}
+};
+
 auto createTS = [](MPI_Comm comm) {
   TS ts;
   ierr = TSCreate(comm, &ts);
