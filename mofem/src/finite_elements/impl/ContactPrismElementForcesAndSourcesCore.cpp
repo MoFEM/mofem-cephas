@@ -186,7 +186,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 
     FTensor::Number<0> N0;
     FTensor::Number<1> N1;
-    
+
     for (int nn = 0; nn != 3; ++nn) {
       t_t1_master(i) += t_coords_master(i) * t_diff(N0);
       t_t1_slave(i) += t_coords_slave(i) * t_diff(N0);
@@ -299,7 +299,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
   };
 
   auto copy_data_hdiv = [](DataForcesAndSourcesCore &data,
-                      DataForcesAndSourcesCore &copy_data, const int shift) {
+                           DataForcesAndSourcesCore &copy_data,
+                           const int shift) {
     MoFEMFunctionBegin;
 
     if (shift != 3 && shift != 4) {
@@ -318,7 +319,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     data.basesOnSpaces[MBVERTEX] = copy_data.basesOnSpaces[MBVERTEX];
     data.basesOnSpaces[MBTRI] = copy_data.basesOnSpaces[MBTRI];
 
-    
     if (shift == 3) {
       data.dataOnEntities[MBTRI][0].getSense() =
           copy_data.dataOnEntities[MBTRI][3].getSense();
@@ -457,8 +457,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
               dataOnSlave[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
                   NOBASE);
         }
-}
-          }
+      }
+    }
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
     if (dataH1.bAse.test(b)) {
@@ -478,7 +478,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   dataH1Slave, H1, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
-
         }
       case DEMKOWICZ_JACOBI_BASE:
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
@@ -510,7 +509,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
               sqrt(slave_normal_data(i) * slave_normal_data(i));
           normal_slave(i) = slave_normal_data(i) / normal_length;
 
-
           for (int gg = 0; gg != nb_gauss_pts; ++gg) {
             t_normal(i) = normal_slave(i);
             ++t_normal;
@@ -521,14 +519,13 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   dataHdivMaster, HDIV, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
- 
+
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsSlave,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
 
- 
           CHKERR opContravariantTransform.opRhs(data_div);
         }
 
@@ -963,7 +960,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
     init_set(slave_nodes_data, slave_nodes_dofs, slave_space, slave_base);
 
     std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
-  
+
     for (; dit != hi_dit;) {
       const auto &dof_ptr = *dit;
       const auto &dof = *dof_ptr;
@@ -979,7 +976,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
           ++dit;
         }
       };
-      
+
       if (side == -1) {
         for (int ii = 0; ii != nb_dof_idx; ++ii) {
           ++dit;
@@ -1133,7 +1130,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
     for (; dit != hi_dit; dit++) {
       auto &dof = **dit;
       const int side = dof.sideNumberPtr->side_number;
-    
+
       if (side < 3)
         get_indices(master_nodes_indices, master_local_nodes_indices, dof,
                     side);
@@ -1142,11 +1139,11 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
                     side - 3);
       else
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
-    
+
       const int brother_side = (*dit)->sideNumberPtr->brother_side_number;
-    
+
       if (brother_side != -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");\
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
     }
   }
 

@@ -27,8 +27,7 @@ namespace MoFEM {
 template <int SWITCH>
 struct VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch;
 
-template <int SWITCH>
-struct FaceElementForcesAndSourcesCoreOnVolumeSideSwitch;
+template <int SWITCH> struct FaceElementForcesAndSourcesCoreOnVolumeSideSwitch;
 /** \brief ContactPrism finite element
  \ingroup mofem_forces_and_sources_prism_element
 
@@ -149,17 +148,10 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     inline MatrixDouble &getGaussPtsSlave();
 
     /**
-<<<<<<< HEAD
      * @brief Get integration weights for slave side
      *
      * \code
      * auto t_w = getFTensor0IntegrationWeight();
-=======
-     * @brief Get integration weights
-     *
-     * \code
-     * auto t_w = getFTensor0IntegrationWeightSlave();
->>>>>>> lukasz/develop
      * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
      *  // integrate something
      *  ++t_w;
@@ -171,17 +163,10 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     inline auto getFTensor0IntegrationWeightSlave();
 
     /**
-<<<<<<< HEAD
      * @brief Get integration weights for master side
      *
      * \code
      * auto t_w = getFTensor0IntegrationWeight();
-=======
-     * @brief Get integration weights
-     *
-     * \code
-     * auto t_w = getFTensor0IntegrationWeightMaster();
->>>>>>> lukasz/develop
      * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
      *  // integrate something
      *  ++t_w;
@@ -265,7 +250,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
 
   protected:
     inline ForcesAndSourcesCore *getSidePtrFE() const;
-   };
+  };
 
   MoFEMErrorCode operator()();
 
@@ -477,15 +462,15 @@ ContactPrismElementForcesAndSourcesCore::UserDataOperator::getNormalMaster() {
   return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
 }
 
-inline VectorAdaptor
-ContactPrismElementForcesAndSourcesCore::UserDataOperator::getTangentMasterOne() {
+inline VectorAdaptor ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getTangentMasterOne() {
   double *data = &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
                        ->tangentMasterOne[0]);
   return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
 }
 
-inline VectorAdaptor
-ContactPrismElementForcesAndSourcesCore::UserDataOperator::getTangentMasterTwo() {
+inline VectorAdaptor ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getTangentMasterTwo() {
   double *data = &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
                        ->tangentMasterTwo[0]);
   return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));

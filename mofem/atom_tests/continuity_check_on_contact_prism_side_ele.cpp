@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.modify_finite_element_add_field_data("C2", "F2");
 
     CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "V1");
-  
+
     Range prism;
     CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
         bit_levels[0], BitRefLevel().set(), MBPRISM, prism);
@@ -266,7 +266,7 @@ int main(int argc, char *argv[]) {
     ProblemsManager *prb_mng_ptr;
     CHKERR m_field.getInterface(prb_mng_ptr);
     CHKERR prb_mng_ptr->buildProblem("P1", true);
-    
+
     struct CommonData {
       MatrixDouble dotNormalFace;
       MatrixDouble dotNormalEleLeft;
@@ -279,8 +279,8 @@ int main(int argc, char *argv[]) {
         : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
 
       VolumeElementForcesAndSourcesCoreOnVolumeSide volSideFe;
-      struct OpVolSide
-          : public VolumeElementForcesAndSourcesCoreOnVolumeSide::UserDataOperator {
+      struct OpVolSide : public VolumeElementForcesAndSourcesCoreOnVolumeSide::
+                             UserDataOperator {
 
         CommonData &elemData;
         OpVolSide(CommonData &elem_data)
@@ -353,63 +353,63 @@ int main(int argc, char *argv[]) {
                 ++t_base;
               }
             }
-        } 
-        std::string side_fe_name = "V1";
-        const EntityHandle tri_master = getSideEntity(3, MBTRI);
-        CHKERR loopSideVolumes(side_fe_name, volSideFe, 3, tri_master);
+          }
+          std::string side_fe_name = "V1";
+          const EntityHandle tri_master = getSideEntity(3, MBTRI);
+          CHKERR loopSideVolumes(side_fe_name, volSideFe, 3, tri_master);
 
-        auto check_continuity_of_base = [&](auto &vol_dot_data) {
-          MoFEMFunctionBegin;
+          auto check_continuity_of_base = [&](auto &vol_dot_data) {
+            MoFEMFunctionBegin;
 
-          if (vol_dot_data.size1() != elemData.dotNormalFace.size1())
-            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                    "Inconsistent number of integration points");
+            if (vol_dot_data.size1() != elemData.dotNormalFace.size1())
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                      "Inconsistent number of integration points");
 
-          if (vol_dot_data.size2() != elemData.dotNormalFace.size2())
-            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                    "Inconsistent number of base functions");
-          constexpr double eps = 1e-12;
-          for (size_t gg = 0; gg != vol_dot_data.size1(); ++gg)
-            for (size_t bb = 0; bb != vol_dot_data.size2(); ++bb) {
-              const double error = std::abs(vol_dot_data(gg, bb) -
-                                            elemData.dotNormalFace(gg, bb));
-              if (error > eps)
-                SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                         "Inconsistency %3.4e != %3.4e", vol_dot_data(gg, bb),
-                         elemData.dotNormalFace(gg, bb));
-            }
-          MoFEMFunctionReturn(0);
-        };
+            if (vol_dot_data.size2() != elemData.dotNormalFace.size2())
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                      "Inconsistent number of base functions");
+            constexpr double eps = 1e-12;
+            for (size_t gg = 0; gg != vol_dot_data.size1(); ++gg)
+              for (size_t bb = 0; bb != vol_dot_data.size2(); ++bb) {
+                const double error = std::abs(vol_dot_data(gg, bb) -
+                                              elemData.dotNormalFace(gg, bb));
+                if (error > eps)
+                  SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                           "Inconsistency %3.4e != %3.4e", vol_dot_data(gg, bb),
+                           elemData.dotNormalFace(gg, bb));
+              }
+            MoFEMFunctionReturn(0);
+          };
 
-        auto check_continuity_of_h1_base = [&](auto &vol_data) {
-          MoFEMFunctionBegin;
+          auto check_continuity_of_h1_base = [&](auto &vol_data) {
+            MoFEMFunctionBegin;
 
-          if (vol_data.size1() != elemData.shapeFunH1Values.size1())
-            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                    "Inconsistent number of integration points");
+            if (vol_data.size1() != elemData.shapeFunH1Values.size1())
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                      "Inconsistent number of integration points");
 
-          if (vol_data.size2() != elemData.shapeFunH1Values.size2())
-            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                    "Inconsistent number of base functions");
-          constexpr double eps = 1e-12;
-          for (size_t gg = 0; gg != vol_data.size1(); ++gg)
-            for (size_t bb = 0; bb != vol_data.size2(); ++bb) {
-              const double error = std::abs(vol_data(gg, bb) -
-                                            elemData.shapeFunH1Values(gg, bb));
-              if (error > eps)
-                SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                         "Inconsistency %3.4e != %3.4e", vol_data(gg, bb),
-                         elemData.shapeFunH1Values(gg, bb));
-            }
-          MoFEMFunctionReturn(0);
-        };
+            if (vol_data.size2() != elemData.shapeFunH1Values.size2())
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                      "Inconsistent number of base functions");
+            constexpr double eps = 1e-12;
+            for (size_t gg = 0; gg != vol_data.size1(); ++gg)
+              for (size_t bb = 0; bb != vol_data.size2(); ++bb) {
+                const double error = std::abs(
+                    vol_data(gg, bb) - elemData.shapeFunH1Values(gg, bb));
+                if (error > eps)
+                  SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                           "Inconsistency %3.4e != %3.4e", vol_data(gg, bb),
+                           elemData.shapeFunH1Values(gg, bb));
+              }
+            MoFEMFunctionReturn(0);
+          };
 
-        if (elemData.dotNormalEleLeft.size2() != 0)
-          CHKERR check_continuity_of_base(elemData.dotNormalEleLeft);
-        else if (elemData.dotNormalEleRight.size2() != 0)
-          CHKERR check_continuity_of_base(elemData.dotNormalEleRight);
-        else if (elemData.shapeFunH1VolSide.size2() != 0)
-          CHKERR check_continuity_of_h1_base(elemData.shapeFunH1VolSide);
+          if (elemData.dotNormalEleLeft.size2() != 0)
+            CHKERR check_continuity_of_base(elemData.dotNormalEleLeft);
+          else if (elemData.dotNormalEleRight.size2() != 0)
+            CHKERR check_continuity_of_base(elemData.dotNormalEleRight);
+          else if (elemData.shapeFunH1VolSide.size2() != 0)
+            CHKERR check_continuity_of_h1_base(elemData.shapeFunH1VolSide);
         }
         MoFEMFunctionReturnHot(0);
       }
@@ -493,8 +493,8 @@ int main(int argc, char *argv[]) {
                 ++t_base;
               }
             }
-          } 
-          
+          }
+
           std::string side_fe_name = "V1";
           const EntityHandle tri_slave = getSideEntity(4, MBTRI);
           CHKERR loopSideVolumes(side_fe_name, volSideFe, 3, tri_slave);
@@ -557,10 +557,10 @@ int main(int argc, char *argv[]) {
     };
 
     CommonData elem_data;
-    
+
     ContactPrismElementForcesAndSourcesCore contact_prism_fe_master(m_field);
     ContactPrismElementForcesAndSourcesCore contact_prism_fe_slave(m_field);
-    
+
     // OnContactSideMaster
     contact_prism_fe_master.getOpPtrVector().push_back(
         new OnContactSideMaster(m_field, elem_data));

@@ -315,7 +315,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
           dat_brother.getLocalIndices()[idx] = dat.getLocalIndices()[idx];
         }
       }
-      
     }
   }
 
@@ -406,7 +405,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
   } else {
     nodes_indices.resize(0, false);
   }
-
 
   MoFEMFunctionReturnHot(0);
 }
@@ -629,9 +627,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
 
         for (int ii = 0; ii != nb_dofs_on_ent; ++ii)
           ++dit;
-
       }
-
     }
   }
 
