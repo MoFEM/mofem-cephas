@@ -45,6 +45,63 @@ struct CommInterface : public UnknownInterface {
    */
   ~CommInterface();
 
+  /** \name Make elemnts multishared */
+
+  /**@{*/
+
+  /**
+  * \brief resolve shared entities for finite elements in the problem
+  * \ingroup mofem_problems
+
+  * @param  problem_ptr  problem pointer
+  * @param  fe_name     finite element name
+  * @param  verb        verbosity level
+  * @return             error code
+  *
+  * This allows for tag reduction or tag exchange, f.e.
+
+  \code
+  CHKERR m_field.resolveSharedFiniteElements(problem_ptr,"SHELL_ELEMENT");
+  Tag th;
+  CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th);
+  CHKERR ParallelComm* pcomm =
+  ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  CHKERR pcomm->exchange_tags(th,prisms);
+  \endcode
+
+  *
+  */
+  MoFEMErrorCode resolveSharedFiniteElements(const Problem *problem_ptr,
+                                                const std::string &fe_name,
+                                                int verb = DEFAULT_VERBOSITY);
+
+  /**
+  * \brief resolve shared entities for finite elements in the problem
+  * \ingroup mofem_problems
+
+  * @param  name        problem name
+  * @param  fe_name     finite element name
+  * @param  verb        verbosity level
+  * @return             error code
+  *
+  * This allows for tag reduction or tag exchange, f.e.
+
+  \code
+  CHKERR m_field.resolveSharedFiniteElements(problem_ptr,"SHELL_ELEMENT");
+  Tag th;
+  CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th);
+  ParallelComm* pcomm =
+  ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  // CHKERR pcomm->reduce_tags(th,MPI_SUM,prisms);
+  CHKERR pcomm->exchange_tags(th,prisms);
+  \endcode
+
+  *
+  */
+  MoFEMErrorCode resolveSharedFiniteElements(const std::string &name,
+                                                const std::string &fe_name,
+                                                int verb = DEFAULT_VERBOSITY);
+
   /** \name Make entities multishared */
 
   /**

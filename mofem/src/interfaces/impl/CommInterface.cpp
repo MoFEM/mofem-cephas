@@ -226,6 +226,95 @@ MoFEMErrorCode CommInterface::synchroniseFieldEntities(const std::string name,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode CommInterface::resolveSharedFiniteElements(
+    const Problem *problem_ptr, const std::string &fe_name, int verb) {
+  MoFEM::Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  ParallelComm *pcomm = ParallelComm::get_pcomm(
+      &m_field.get_moab(), m_field.get_basic_entity_data_ptr()->pcommID);
+  std::vector<int> shprocs(MAX_SHARING_PROCS, 0);
+  std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, 0);
+  Range ents;
+  Tag th_gid;
+  const int zero = 0;
+  CHKERR m_field.get_moab().tag_get_handle(GLOBAL_ID_TAG_NAME, 1,
+                                           MB_TYPE_INTEGER, th_gid,
+                                           MB_TAG_DENSE | MB_TAG_CREAT, &zero);
+  PetscLayout layout;
+  CHKERR problem_ptr->getNumberOfElementsByNameAndPart(m_field.get_comm(),
+                                                       fe_name, &layout);
+  int gid, last_gid;
+  CHKERR PetscLayoutGetRange(layout, &gid, &last_gid);
+  CHKERR PetscLayoutDestroy(&layout);
+  for (_IT_NUMEREDFE_BY_NAME_FOR_LOOP_(problem_ptr, fe_name, fe_it)) {
+    EntityHandle ent = (*fe_it)->getEnt();
+    ents.insert(ent);
+    unsigned int part = (*fe_it)->getPart();
+    CHKERR m_field.get_moab().tag_set_data(pcomm->part_tag(), &ent, 1, &part);
+    if (part == pcomm->rank()) {
+      CHKERR m_field.get_moab().tag_set_data(th_gid, &ent, 1, &gid);
+      gid++;
+    }
+    shprocs.clear();
+    shhandles.clear();
+
+    if (pcomm->size() > 1) {
+
+      unsigned char pstatus = 0;
+      if (pcomm->rank() != part) {
+        pstatus = PSTATUS_NOT_OWNED;
+        pstatus |= PSTATUS_GHOST;
+      }
+
+      if (pcomm->size() > 2) {
+        pstatus |= PSTATUS_SHARED;
+        pstatus |= PSTATUS_MULTISHARED;
+      } else {
+        pstatus |= PSTATUS_SHARED;
+      }
+
+      size_t rrr = 0;
+      for (size_t rr = 0; rr < pcomm->size(); ++rr) {
+        if (rr != pcomm->rank()) {
+          shhandles[rrr] = ent;
+          shprocs[rrr] = rr;
+          ++rrr;
+        }
+      }
+      for (; rrr != pcomm->size(); ++rrr)
+        shprocs[rrr] = -1;
+
+      if (pstatus & PSTATUS_SHARED) {
+        CHKERR m_field.get_moab().tag_set_data(pcomm->sharedp_tag(), &ent, 1,
+                                               &shprocs[0]);
+        CHKERR m_field.get_moab().tag_set_data(pcomm->sharedh_tag(), &ent, 1,
+                                               &shhandles[0]);
+      }
+
+      if (pstatus & PSTATUS_MULTISHARED) {
+        CHKERR m_field.get_moab().tag_set_data(pcomm->sharedps_tag(), &ent, 1,
+                                               &shprocs[0]);
+        CHKERR m_field.get_moab().tag_set_data(pcomm->sharedhs_tag(), &ent, 1,
+                                               &shhandles[0]);
+      }
+      CHKERR m_field.get_moab().tag_set_data(pcomm->pstatus_tag(), &ent, 1,
+                                             &pstatus);
+    }
+  }
+  CHKERR pcomm->exchange_tags(th_gid, ents);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode CommInterface::resolveSharedFiniteElements(
+    const std::string &name, const std::string &fe_name, int verb) {
+  MoFEM::Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  const Problem *problem_ptr;
+  CHKERR m_field.get_problem(name, &problem_ptr);
+  CHKERR resolveSharedFiniteElements(problem_ptr, fe_name, verb);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode
 CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
                                        const int num_entities,
