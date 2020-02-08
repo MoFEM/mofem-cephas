@@ -389,6 +389,11 @@ struct FEMethod : public BasicMethod {
   boost::shared_ptr<const FieldEntity_multiIndex_spaceType_view>
       dataFieldEntsPtr; ///< Pointer to finite element field entities data view
 
+  /// \brief Get number of DOFs on element
+  MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
+
+  MoFEMErrorCode getNodeData(const std::string field_name, VectorDouble &data);
+
   template <class MULTIINDEX>
   typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,
                                           const std::string &field_name,
