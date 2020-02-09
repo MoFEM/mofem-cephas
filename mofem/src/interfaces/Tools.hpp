@@ -92,6 +92,29 @@ struct Tools : public UnknownInterface {
 
       diffShapeFunMBTRI2x, diffShapeFunMBTRI2y};
 
+  static inline double shapeFunMBTRI0(const double x, const double y);
+
+  static inline double shapeFunMBTRI1(const double x, const double y);
+
+  static inline double shapeFunMBTRI2(const double x, const double y);
+
+  /**
+   * @brief Calculate shape functions on triangle
+   *
+   * \note Template parameter is leading dimension of point coordinate arrays,
+   * such that \f$ksi_{n+1} = ksi[n + LDB]\f$
+   *
+   * @tparam 1
+   * @param shape shape functions
+   * @param ksi pointer to first local coordinates
+   * @param eta pointer to second local coordinates
+   * @param nb number of points
+   * @return MoFEMErrorCode
+   */
+  template <int LDB = 1>
+  static MoFEMErrorCode shapeFunMBTRI(double *shape, const double *ksi,
+                                      const double *eta, const double nb);
+
   static constexpr double diffShapeFunMBQUADAtCenter0x =
       diffN_MBQUAD0x(0.5); ///< derivative of quad shape function
   static constexpr double diffShapeFunMBQUADAtCenter0y =
@@ -427,6 +450,33 @@ struct Tools : public UnknownInterface {
                                                               const int edge0,
                                                               const int edge1);
 };
+
+double Tools::shapeFunMBTRI0(const double x, const double y) {
+  return N_MBTRI0(x, y);
+}
+
+double Tools::shapeFunMBTRI1(const double x, const double y) {
+  return N_MBTRI1(x, y);
+}
+
+double Tools::shapeFunMBTRI2(const double x, const double y) {
+  return N_MBTRI2(x, y);
+}
+
+template <int LDB>
+MoFEMErrorCode Tools::shapeFunMBTRI(double *shape, const double *ksi,
+                                    const double *eta, const double nb) {
+  MoFEMFunctionBeginHot;
+  for (int n = 0; n != nb; ++n) {
+    shape[0] = shapeFunMBTRI0(*ksi, *eta);
+    shape[1] = shapeFunMBTRI1(*ksi, *eta);
+    shape[2] = shapeFunMBTRI2(*ksi, *eta);
+    shape += 3;
+    ksi += LDB;
+    eta += LDB;
+  }
+  MoFEMFunctionReturnHot(0);
+}
 
 double Tools::shapeFunMBTET0(const double x, const double y, const double z) {
   return N_MBTET0(x, y, z);
