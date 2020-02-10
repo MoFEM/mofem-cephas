@@ -105,6 +105,38 @@ PetscErrorCode DMMoFEMSetSquareProblem(DM dm, PetscBool square_problem);
 PetscErrorCode DMMoFEMGetSquareProblem(DM dm, PetscBool *square_problem);
 
 /**
+ * \brief Resolve shared entities
+ *
+ * @param  dm      dm
+ * @param  fe_name finite element for which shared entities are resolved
+ * @return         error code
+ *
+ * \note This function is valid for parallel algebra and serial mesh. It
+ * should be run collectively, i.e. on all processors.
+ *
+ * This allows for tag reduction or tag exchange, f.e.
+ *
+ * \code
+ * CHKERR DMMoFEMResolveSharedFiniteElements(dm,"SHELL_ELEMENT");
+ * Tag th;
+ * CHKERR mField.get_moab().tag_get_handle("ADAPT_ORDER",th);
+ * ParallelComm* pcomm =
+ * ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+ * // CHKERR pcomm->reduce_tags(th,MPI_SUM,prisms);
+ * CHKERR pcomm->exchange_tags(th,prisms);
+ * \endcode
+ *
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMResolveSharedFiniteElements(DM dm, const char fe_name[]);
+
+/**
+ * @deprecated Use DMMoFEMResolveSharedFiniteElements
+ */
+DEPRECATED PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,
+                                                       const char fe_name[]);
+
+/**
  * \brief Get finite elements layout in the problem
  *
  * In layout is stored information how many elements is on each processor, for

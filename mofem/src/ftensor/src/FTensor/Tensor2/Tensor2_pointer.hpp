@@ -16,19 +16,19 @@ namespace FTensor
   public:
     /* Initializations for varying numbers of elements. */
 
-    Tensor2(T *d00, T *d01, T *d10, T *d11, const int i = 1) : inc(i)
+    Tensor2(T *d00, T *d01, T *d10, T *d11, const int i) : inc(i)
     {
       Tensor2_constructor<T * restrict, Tensor_Dim0, Tensor_Dim1, column_major>(
         data, d00, d01, d10, d11);
     }
-    Tensor2(T *d00, T *d01, T *d10, T *d11, T *d20, T *d21, const int i = 1)
+    Tensor2(T *d00, T *d01, T *d10, T *d11, T *d20, T *d21, const int i)
         : inc(i)
     {
       Tensor2_constructor<T * restrict, Tensor_Dim0, Tensor_Dim1, column_major>(
         data, d00, d01, d10, d11, d20, d21);
     }
     Tensor2(T *d00, T *d01, T *d02, T *d10, T *d11, T *d12, T *d20, T *d21,
-            T *d22, const int i = 1)
+            T *d22, const int i)
         : inc(i)
     {
       Tensor2_constructor<T * restrict, Tensor_Dim0, Tensor_Dim1, column_major>(
@@ -36,7 +36,7 @@ namespace FTensor
     }
     Tensor2(T *d00, T *d01, T *d02, T *d03, T *d10, T *d11, T *d12, T *d13,
             T *d20, T *d21, T *d22, T *d23, T *d30, T *d31, T *d32, T *d33,
-            const int i = 1)
+            const int i)
         : inc(i)
     {
       Tensor2_constructor<T * restrict, Tensor_Dim0, Tensor_Dim1, column_major>(
