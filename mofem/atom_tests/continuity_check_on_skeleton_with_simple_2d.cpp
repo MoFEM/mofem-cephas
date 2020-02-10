@@ -68,7 +68,7 @@ struct SkeletonFE : public EdgeEleOp {
         const size_t nb_integration_pts = data.getN().size1();
 
         auto t_tangent = getFTensor1Direction();
-        auto t_hdiv_base = data.getFTensor1N<3>();
+        auto t_hcurl_base = data.getFTensor1N<3>();
         FTensor::Index<'i', 3> i;
         MatrixDouble *ptr_dot_elem_data = nullptr;
         if (getFEMethod()->nInTheLoop == 0)
@@ -80,8 +80,8 @@ struct SkeletonFE : public EdgeEleOp {
 
         for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
           for (size_t bb = 0; bb != nb_dofs; ++bb) {
-            dot_elem_data(gg, bb) = t_tangent(i) * t_hdiv_base(i);
-            ++t_hdiv_base;
+            dot_elem_data(gg, bb) = t_tangent(i) * t_hcurl_base(i);
+            ++t_hcurl_base;
           }
         }
       }

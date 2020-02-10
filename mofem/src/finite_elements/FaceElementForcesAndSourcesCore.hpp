@@ -231,6 +231,10 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     MoFEMErrorCode loopSideVolumes(
         const string &fe_name,
         VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method);
+
+  private:
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
   };
 
   enum Switches {
@@ -242,6 +246,7 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   template <int SWITCH> MoFEMErrorCode OpSwitch();
 
 protected:
+
   MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
 
   /**

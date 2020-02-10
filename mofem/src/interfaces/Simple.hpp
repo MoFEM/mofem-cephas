@@ -38,13 +38,8 @@ struct Simple : public UnknownInterface {
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
 
-  MoFEM::Core &cOre;
   Simple(const MoFEM::Core &core);
-
-  /**
-   * \brief Destructor
-   */
-  ~Simple();
+  virtual ~Simple() = default;
 
   /**
    * \brief get options
@@ -54,13 +49,16 @@ struct Simple : public UnknownInterface {
 
   /**
    * \brief Load mesh file
-   * @param  field_name file name
+   * @param  options file load options
+   * @param  mesh_file_name file name if not set default or set by command line
+   * is used.
    * @return            error code
    */
   MoFEMErrorCode
   loadFile(const std::string options = "PARALLEL=READ_PART;"
                                        "PARALLEL_RESOLVE_SHARED_ENTS;"
-                                       "PARTITION=PARALLEL_PARTITION;");
+                                       "PARTITION=PARALLEL_PARTITION;",
+           const std::string mesh_file_name = "");
 
   /**
    * \brief Add field on domain
@@ -146,6 +144,31 @@ struct Simple : public UnknownInterface {
                               const enum MoFEMTypes bh = MF_ZERO,
                               int verb = -1);
 
+
+  /**
+   * @brief Remove field form domain 
+   * 
+   * @param name 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode removeDomainField(const std::string &name);
+
+  /**
+   * @brief Remove field form boundary 
+   * 
+   * @param name 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode removeBoundaryField(const std::string &name);
+
+  /**
+   * @brief Remove field form skeleton
+   * 
+   * @param name 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode removeSkeletonField(const std::string &name);
+
   /**
    * \brief Define finite elements
    * @return         Error code
@@ -182,6 +205,14 @@ struct Simple : public UnknownInterface {
   MoFEMErrorCode buildFiniteElements();
 
   /**
+   * @brief Set the skeleton adjacency object
+   * 
+   * @param dim 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode setSkeletonAdjacency(int dim = -1);
+
+  /**
    * \brief Build problem
    * @return error code
    */
@@ -192,6 +223,18 @@ struct Simple : public UnknownInterface {
    * @return error code
    */
   MoFEMErrorCode setUp(const PetscBool is_partitioned = PETSC_TRUE);
+
+  /**
+   * @brief Rebuild internal MoFEM data structures
+   * 
+   * Call this function after you add field or remove it.
+   *
+   * \note If you add field, or remove it, finite element and problem needs to
+   * be rebuild. However DM can remain the same.
+   *
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode reSetUp();
 
   /**
    * \brief Get DM
@@ -217,21 +260,86 @@ struct Simple : public UnknownInterface {
    */
   inline SmartPetscObj<DM> getDM() { return dM; }
 
+  /**
+   * @brief Get the problem dimensio
+   *
+   * Problem dimension is determined by highest dimension of entities on the
+   * mesh.
+   *
+   * @return int
+   */
   inline int getDim() const { return dIm; }
+
+  /**
+   * @brief Get the Domain FE Name
+   *
+   * @return const std::string
+   */
   inline const std::string getDomainFEName() const { return domainFE; }
+
+  /**
+   * @brief Get the Boundary FE Name
+   *
+   * @return const std::string
+   */
   inline const std::string getBoundaryFEName() const { return boundaryFE; }
+
+  /**
+   * @brief Get the Skeleton FE Name
+   *
+   * @return const std::string
+   */
   inline const std::string getSkeletonFEName() const { return skeletonFE; }
+
+  /**
+   * @brief Get the Problem Name
+   *
+   * @return const std::string
+   */
   inline const std::string getProblemName() const { return nameOfProblem; }
 
+  /**
+   * @brief Get the Domain FE Name
+   *
+   * @return std::string&
+   */
   inline std::string &getDomainFEName() { return domainFE; }
+
+  /**
+   * @brief Get the Boundary FE Name
+   *
+   * @return std::string&
+   */
   inline std::string &getBoundaryFEName() { return boundaryFE; }
+
+  /**
+   * @brief Get the Skeleton FE Name
+   *
+   * @return std::string&
+   */
   inline std::string &getSkeletonFEName() { return skeletonFE; }
+
+  /**
+   * @brief Get the Problem Name
+   *
+   * @return std::string&
+   */
   inline std::string &getProblemName() { return nameOfProblem; }
 
+  /**
+   * @brief Get the Other Finite Elements
+   *
+   * User can create finite elements using directly core interface and
+   * and them to simple problem by this function
+   *
+   * @return std::vector<std::string>&
+   */
   inline std::vector<std::string> &getOtherFiniteElements() { return otherFEs; }
 
 private:
-  const BitRefLevel bitLevel;
+  MoFEM::Core &cOre;
+
+  const BitRefLevel bitLevel; ///< BitRefLevel of the probelm
 
   PetscLogEvent MOFEM_EVENT_SimpleLoadMesh;
   PetscLogEvent MOFEM_EVENT_SimpleBuildFields;
@@ -239,26 +347,33 @@ private:
   PetscLogEvent MOFEM_EVENT_SimpleBuildProblem;
   PetscLogEvent MOFEM_EVENT_SimpleKSPSolve;
 
-  EntityHandle meshSet;                    ///< domain meshset
-  EntityHandle boundaryMeshset;            ///< meshset with boundary
-  std::vector<std::string> domainFields;   ///< domain fields
-  std::vector<std::string> boundaryFields; ///< boundary fields
-  std::vector<std::string> skeletonFields; ///< fields on the skeleton
-  std::vector<std::string> dataFields;     ///< Data fields
+  EntityHandle meshSet;                       ///< domain meshset
+  EntityHandle boundaryMeshset;               ///< meshset with boundary
+  std::vector<std::string> domainFields;      ///< domain fields
+  std::vector<std::string> boundaryFields;    ///< boundary fields
+  std::vector<std::string> skeletonFields;    ///< fields on the skeleton
+  std::vector<std::string> dataFields;        ///< Data fields
+  std::vector<std::string> noFieldFields;     ///< NOFIELD field name
+  std::vector<std::string> noFieldDataFields; ///< NOFIELD field name
 
-  std::map<std::string, std::pair<int, Range>> fieldsOrder; ///< fields order
+  std::multimap<std::string, std::pair<int, Range>> fieldsOrder; ///< fields order
 
   std::string nameOfProblem; ///< problem name
-  std::string domainFE;   ///< domain finite element
-  std::string boundaryFE; ///< boundary finite element
-  std::string skeletonFE; ///< skeleton finite element
+  std::string domainFE;      ///< domain finite element
+  std::string boundaryFE;    ///< boundary finite element
+  std::string skeletonFE;    ///< skeleton finite element
 
   std::vector<std::string> otherFEs; ///< Other finite elements
 
   char meshFileName[255]; ///< mesh file name
   int dIm;                ///< dimension of problem
 
-  SmartPetscObj<DM> dM;
+  SmartPetscObj<DM>
+      dM; ///< Discrete manager (interface to PETSc/MoFEM functions)
+
+  template<int DIM = -1>
+  MoFEMErrorCode setSkeletonAdjacency();
+
 };
 
 } // namespace MoFEM

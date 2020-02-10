@@ -509,19 +509,19 @@ std::ostream &operator<<(std::ostream &os, const RefElement_VERTEX &e) {
 }
 
 MoFEMErrorCode DefaultElementAdjacency::defaultVertex(
-    moab::Interface &moab, const Field &field_ptr,
-    const EntFiniteElement &fe_ptr, Range &adjacency) {
+    moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
+    Range &adjacency) {
   MoFEMFunctionBegin;
-  switch (field_ptr.getSpace()) {
+  switch (field.getSpace()) {
   case H1:
-    adjacency.insert(fe_ptr.getEnt());
+    adjacency.insert(fe.getEnt());
     break;
   case NOFIELD: {
     Range ents;
-    CHKERR moab.get_entities_by_handle(field_ptr.getMeshset(), ents, false);
+    CHKERR moab.get_entities_by_handle(field.getMeshset(), ents, false);
     adjacency.merge(ents);
     for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
-      const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
+      const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
           .insert(
               boost::shared_ptr<SideNumber>(new SideNumber(*eit, -1, 0, 0)));
     }
@@ -532,17 +532,19 @@ MoFEMErrorCode DefaultElementAdjacency::defaultVertex(
   }
   // build side table
   for (Range::iterator eit = adjacency.begin(); eit != adjacency.end(); eit++) {
-    fe_ptr.getSideNumberPtr(*eit);
+    fe.getSideNumberPtr(*eit);
   }
   MoFEMFunctionReturn(0);
 }
-MoFEMErrorCode DefaultElementAdjacency::defaultEdge(
-    moab::Interface &moab, const Field &field_ptr,
-    const EntFiniteElement &fe_ptr, Range &adjacency) {
+
+MoFEMErrorCode DefaultElementAdjacency::defaultEdge(moab::Interface &moab,
+                                                    const Field &field,
+                                                    const EntFiniteElement &fe,
+                                                    Range &adjacency) {
   MoFEMFunctionBegin;
-  EntityHandle fe_ent = fe_ptr.getEnt();
+  EntityHandle fe_ent = fe.getEnt();
   // Range nodes;
-  switch (field_ptr.getSpace()) {
+  switch (field.getSpace()) {
   case H1:
     CHKERR moab.get_connectivity(&fe_ent, 1, adjacency, true);
   case L2:
@@ -551,10 +553,10 @@ MoFEMErrorCode DefaultElementAdjacency::defaultEdge(
     break;
   case NOFIELD: {
     Range ents;
-    CHKERR moab.get_entities_by_handle(field_ptr.getMeshset(), ents, false);
+    CHKERR moab.get_entities_by_handle(field.getMeshset(), ents, false);
     adjacency.merge(ents);
     for (auto e : ents) {
-      const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
+      const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
           .insert(boost::shared_ptr<SideNumber>(new SideNumber(e, -1, 0, 0)));
     }
   } break;
@@ -564,17 +566,18 @@ MoFEMErrorCode DefaultElementAdjacency::defaultEdge(
   }
   // build side table
   for (auto e : adjacency)
-    fe_ptr.getSideNumberPtr(e);
+    fe.getSideNumberPtr(e);
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DefaultElementAdjacency::defaultFace(
-    moab::Interface &moab, const Field &field_ptr,
-    const EntFiniteElement &fe_ptr, Range &adjacency) {
+MoFEMErrorCode DefaultElementAdjacency::defaultFace(moab::Interface &moab,
+                                                    const Field &field,
+                                                    const EntFiniteElement &fe,
+                                                    Range &adjacency) {
   MoFEMFunctionBegin;
   // Range nodes,edges;
-  const EntityHandle fe_ent = fe_ptr.getEnt();
-  switch (field_ptr.getSpace()) {
+  const EntityHandle fe_ent = fe.getEnt();
+  switch (field.getSpace()) {
   case H1:
     CHKERR moab.get_connectivity(&fe_ent, 1, adjacency, true);
   case HCURL:
@@ -585,10 +588,10 @@ MoFEMErrorCode DefaultElementAdjacency::defaultFace(
     break;
   case NOFIELD: {
     Range ents;
-    CHKERR moab.get_entities_by_handle(field_ptr.getMeshset(), ents, false);
+    CHKERR moab.get_entities_by_handle(field.getMeshset(), ents, false);
     adjacency.merge(ents);
     for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
-      const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
+      const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
           .insert(
               boost::shared_ptr<SideNumber>(new SideNumber(*eit, -1, 0, 0)));
     }
@@ -602,15 +605,17 @@ MoFEMErrorCode DefaultElementAdjacency::defaultFace(
   }
   // build side table
   for (Range::iterator eit = adjacency.begin(); eit != adjacency.end(); eit++)
-    fe_ptr.getSideNumberPtr(*eit);
+    fe.getSideNumberPtr(*eit);
   MoFEMFunctionReturn(0);
 }
-MoFEMErrorCode DefaultElementAdjacency::defaultTet(
-    moab::Interface &moab, const Field &field_ptr,
-    const EntFiniteElement &fe_ptr, Range &adjacency) {
+
+MoFEMErrorCode DefaultElementAdjacency::defaultTet(moab::Interface &moab,
+                                                   const Field &field,
+                                                   const EntFiniteElement &fe,
+                                                   Range &adjacency) {
   MoFEMFunctionBegin;
-  EntityHandle fe_ent = fe_ptr.getEnt();
-  switch (field_ptr.getSpace()) {
+  EntityHandle fe_ent = fe.getEnt();
+  switch (field.getSpace()) {
   case H1:
     CHKERR moab.get_connectivity(&fe_ent, 1, adjacency, true);
   case HCURL:
@@ -624,10 +629,10 @@ MoFEMErrorCode DefaultElementAdjacency::defaultTet(
     break;
   case NOFIELD: {
     Range ents;
-    CHKERR moab.get_entities_by_handle(field_ptr.getMeshset(), ents, false);
+    CHKERR moab.get_entities_by_handle(field.getMeshset(), ents, false);
     adjacency.merge(ents);
     for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
-      const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
+      const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
           .insert(
               boost::shared_ptr<SideNumber>(new SideNumber(*eit, -1, 0, 0)));
     }
@@ -638,23 +643,24 @@ MoFEMErrorCode DefaultElementAdjacency::defaultTet(
   }
   // build side table
   for (Range::iterator eit = adjacency.begin(); eit != adjacency.end(); eit++)
-    fe_ptr.getSideNumberPtr(*eit);
+    fe.getSideNumberPtr(*eit);
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode DefaultElementAdjacency::defaultPrism(
-    moab::Interface &moab, const Field &field_ptr,
-    const EntFiniteElement &fe_ptr, Range &adjacency) {
+MoFEMErrorCode DefaultElementAdjacency::defaultPrism(moab::Interface &moab,
+                                                     const Field &field,
+                                                     const EntFiniteElement &fe,
+                                                     Range &adjacency) {
   MoFEMFunctionBegin;
-  const EntityHandle prism = fe_ptr.getEnt();
+  const EntityHandle prism = fe.getEnt();
   Range nodes;
   // initialize side sets
-  fe_ptr.getRefElement()->getSideNumberPtr(prism);
+  fe.getRefElement()->getSideNumberPtr(prism);
   EntityHandle face_side3, face_side4;
   CHKERR moab.side_element(prism, 2, 3, face_side3);
   CHKERR moab.side_element(prism, 2, 4, face_side4);
-  fe_ptr.getRefElement()->getSideNumberPtr(face_side3);
-  fe_ptr.getRefElement()->getSideNumberPtr(face_side4);
+  fe.getRefElement()->getSideNumberPtr(face_side3);
+  fe.getRefElement()->getSideNumberPtr(face_side4);
   for (int qq = 0; qq < 3; qq++) {
     EntityHandle quad = 0;
     rval = moab.side_element(prism, 2, qq, quad);
@@ -664,7 +670,7 @@ MoFEMErrorCode DefaultElementAdjacency::defaultPrism(
     rval = moab.side_number(prism, quad, side_number, sense, offset);
     if (side_number == -1 || rval != MB_SUCCESS)
       continue;
-    const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
+    const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
         .insert(boost::shared_ptr<SideNumber>(
             new SideNumber(quad, side_number, sense, offset)));
   }
@@ -673,7 +679,7 @@ MoFEMErrorCode DefaultElementAdjacency::defaultPrism(
     EntityHandle edge = 0;
     CHKERR moab.side_element(prism, 1, ee, edge);
     boost::shared_ptr<SideNumber> side_ptr =
-        fe_ptr.getRefElement()->getSideNumberPtr(edge);
+        fe.getRefElement()->getSideNumberPtr(edge);
     if (side_ptr->side_number != ee) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "data inconsistency for edge %d while in FE datastructure is "
@@ -681,7 +687,7 @@ MoFEMErrorCode DefaultElementAdjacency::defaultPrism(
                ee, side_ptr->side_number);
     }
     CHKERR moab.side_element(prism, 1, 6 + ee, edge);
-    side_ptr = fe_ptr.getRefElement()->getSideNumberPtr(edge);
+    side_ptr = fe.getRefElement()->getSideNumberPtr(edge);
     if (side_ptr->side_number != ee + 6) {
       if (side_ptr->side_number != ee) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -702,7 +708,7 @@ MoFEMErrorCode DefaultElementAdjacency::defaultPrism(
     rval = moab.side_number(prism, edge, side_number, sense, offset);
     if (side_number == -1 || rval != MB_SUCCESS)
       continue;
-    const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
+    const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
         .insert(boost::shared_ptr<SideNumber>(
             new SideNumber(edge, side_number, sense, offset)));
   }
@@ -711,7 +717,7 @@ MoFEMErrorCode DefaultElementAdjacency::defaultPrism(
     EntityHandle node;
     CHKERR moab.side_element(prism, 0, nn, node);
     boost::shared_ptr<SideNumber> side_ptr =
-        fe_ptr.getRefElement()->getSideNumberPtr(node);
+        fe.getRefElement()->getSideNumberPtr(node);
     if (side_ptr->side_number != nn) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "data inconsistency for node %d while in FE datastructure is "
@@ -719,7 +725,7 @@ MoFEMErrorCode DefaultElementAdjacency::defaultPrism(
                nn, side_ptr->side_number);
     }
     CHKERR moab.side_element(prism, 0, nn + 3, node);
-    side_ptr = fe_ptr.getRefElement()->getSideNumberPtr(node);
+    side_ptr = fe.getRefElement()->getSideNumberPtr(node);
     if (side_ptr->side_number != nn + 3) {
       if (side_ptr->side_number != nn) {
         SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -733,9 +739,8 @@ MoFEMErrorCode DefaultElementAdjacency::defaultPrism(
   }
 
   // get adjacencies
-  SideNumber_multiIndex &side_table =
-      fe_ptr.getRefElement()->getSideNumberTable();
-  switch (field_ptr.getSpace()) {
+  SideNumber_multiIndex &side_table = fe.getRefElement()->getSideNumberTable();
+  switch (field.getSpace()) {
   case H1:
     // moab.get_connectivity(&prism,1,nodes,true);
     // use get adjacencies, this will allow take in account adjacencies set user
@@ -773,10 +778,10 @@ MoFEMErrorCode DefaultElementAdjacency::defaultPrism(
     break;
   case NOFIELD: {
     Range ents;
-    CHKERR moab.get_entities_by_handle(field_ptr.getMeshset(), ents, false);
+    CHKERR moab.get_entities_by_handle(field.getMeshset(), ents, false);
     adjacency.merge(ents);
     for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
-      const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
+      const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
           .insert(
               boost::shared_ptr<SideNumber>(new SideNumber(*eit, -1, 0, 0)));
     }
@@ -787,11 +792,12 @@ MoFEMErrorCode DefaultElementAdjacency::defaultPrism(
   }
   MoFEMFunctionReturn(0);
 }
+
 MoFEMErrorCode DefaultElementAdjacency::defaultMeshset(
-    moab::Interface &moab, const Field &field_ptr,
-    const EntFiniteElement &fe_ptr, Range &adjacency) {
+    moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
+    Range &adjacency) {
   MoFEMFunctionBegin;
-  EntityHandle fe_ent = fe_ptr.getEnt();
+  EntityHandle fe_ent = fe.getEnt();
   // get all meshsets in finite element meshset
   Range ent_ents_meshset;
   CHKERR moab.get_entities_by_type(fe_ent, MBENTITYSET, ent_ents_meshset,
@@ -799,7 +805,7 @@ MoFEMErrorCode DefaultElementAdjacency::defaultMeshset(
   // resolve recursively all ents in the meshset
   Range ent_ents;
   CHKERR moab.get_entities_by_handle(fe_ent, ent_ents, true);
-  switch (field_ptr.getSpace()) {
+  switch (field.getSpace()) {
   case H1:
     adjacency.merge(ent_ents.subset_by_type(MBVERTEX));
   case HCURL:
@@ -811,10 +817,10 @@ MoFEMErrorCode DefaultElementAdjacency::defaultMeshset(
     break;
   case NOFIELD: {
     Range ents;
-    CHKERR moab.get_entities_by_handle(field_ptr.getMeshset(), ents, false);
+    CHKERR moab.get_entities_by_handle(field.getMeshset(), ents, false);
     adjacency.merge(ents);
     for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
-      const_cast<SideNumber_multiIndex &>(fe_ptr.getSideNumberTable())
+      const_cast<SideNumber_multiIndex &>(fe.getSideNumberTable())
           .insert(
               boost::shared_ptr<SideNumber>(new SideNumber(*eit, -1, 0, 0)));
     }
@@ -874,32 +880,47 @@ std::ostream &operator<<(std::ostream &os, const FiniteElement &e) {
 
 void FiniteElement_col_change_bit_add::
 operator()(boost::shared_ptr<FiniteElement> &fe) {
-  *((BitFieldId *)(fe->tag_BitFieldId_col_data)) |= fIdCol;
+  *static_cast<BitFieldId *>(fe->tag_BitFieldId_col_data) |= fIdCol;
 }
 
 void FiniteElement_row_change_bit_add::
 operator()(boost::shared_ptr<FiniteElement> &fe) {
-  *((BitFieldId *)(fe->tag_BitFieldId_row_data)) |= fIdRow;
+  *static_cast<BitFieldId *>(fe->tag_BitFieldId_row_data) |= fIdRow;
 }
 
 void FiniteElement_change_bit_add::
 operator()(boost::shared_ptr<FiniteElement> &fe) {
-  *((BitFieldId *)(fe->tag_BitFieldId_data)) |= fIdData;
+  *static_cast<BitFieldId *>(fe->tag_BitFieldId_data) |= fIdData;
 }
 
 void FiniteElement_col_change_bit_off::
 operator()(boost::shared_ptr<FiniteElement> &fe) {
-  *((BitFieldId *)(fe->tag_BitFieldId_col_data)) &= fIdCol.flip();
+  *static_cast<BitFieldId *>(fe->tag_BitFieldId_col_data) &= fIdCol.flip();
 }
 
 void FiniteElement_row_change_bit_off::
 operator()(boost::shared_ptr<FiniteElement> &fe) {
-  *((BitFieldId *)(fe->tag_BitFieldId_row_data)) &= fIdRow.flip();
+  *static_cast<BitFieldId *>(fe->tag_BitFieldId_row_data) &= fIdRow.flip();
 }
 
 void FiniteElement_change_bit_off::
 operator()(boost::shared_ptr<FiniteElement> &fe) {
-  *((BitFieldId *)(fe->tag_BitFieldId_data)) &= fIdData.flip();
+  *static_cast<BitFieldId *>(fe->tag_BitFieldId_data) &= fIdData.flip();
+}
+
+void FiniteElement_col_change_bit_reset::
+operator()(boost::shared_ptr<FiniteElement> &fe) {
+  static_cast<BitFieldId *>(fe->tag_BitFieldId_col_data)->reset();
+}
+
+void FiniteElement_row_change_bit_reset::
+operator()(boost::shared_ptr<FiniteElement> &fe) {
+  static_cast<BitFieldId *>(fe->tag_BitFieldId_row_data)->reset();
+}
+
+void FiniteElement_change_bit_reset::
+operator()(boost::shared_ptr<FiniteElement> &fe) {
+  static_cast<BitFieldId *>(fe->tag_BitFieldId_data)->reset();
 }
 
 // FiniteElement data
@@ -920,19 +941,17 @@ std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   os << *e.sFePtr << std::endl;
   os << *e.sPtr << std::endl;
   os << "data dof_uids ";
-  FEDofEntity_multiIndex::iterator dit;
-  dit = e.data_dofs->begin();
-  for (; dit != e.data_dofs->end(); dit++) {
-    if (!(*dit)) {
+  for (auto &dit : *e.data_dofs) {
+    if (!dit) {
       os << "null ptr";
     } else {
-      if (!(*dit)->getDofEntityPtr()) {
+      if (!dit->getDofEntityPtr()) {
         os << "( null ptr to dof ) ";
       } else {
-        if (!(*dit)->getFieldEntityPtr()) {
+        if (!dit->getFieldEntityPtr()) {
           os << "(( null ptr to field entity )) ";
         } else {
-          os << (*dit)->getGlobalUniqueId() << " ";
+          os << dit->getGlobalUniqueId() << " ";
         }
       }
     }

@@ -6,7 +6,7 @@
 
 - \ref mofem_citation
 \htmlonly
-<a href="https://doi.org/10.5281/zenodo.438712"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.438712.svg" alt="DOI"></a>
+<a href="http://joss.theoj.org/papers/43d9625e5ed28d5c493bfc0fae6d8215"><img src="http://joss.theoj.org/papers/43d9625e5ed28d5c493bfc0fae6d8215/status.svg"></a>
 \endhtmlonly
 - Mailing list: <a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a>
 - Discussion channel: <https://mofem.slack.com/>
@@ -23,7 +23,7 @@
 List of third party libraries and packages used by MoFEM:
 
 - SIGMA Tools <http://press3.mcs.anl.gov/sigma>
-- MOAB <http://www.mcs.anl.gov/~fathom/moab-docs/html/userguide.html>.
+- MOAB <http://ftp.mcs.anl.gov/pub/fathom/moab-docs/index.html>.
 - PETSc <http://www.mcs.anl.gov/petsc/documentation/index.html>
 - BOOST <http://www.boost.org>
 	- uBlas <http://www.boost.org/doc/libs/release/libs/numeric/>

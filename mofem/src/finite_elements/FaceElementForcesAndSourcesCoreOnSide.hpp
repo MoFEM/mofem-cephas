@@ -123,9 +123,15 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
 
      */
     inline MatrixDouble &getEdgeCoordsAtGaussPts();
+
+  protected:
+
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+
   };
 
 protected:
+
   MoFEMErrorCode setGaussPts(int order);
 
 private:

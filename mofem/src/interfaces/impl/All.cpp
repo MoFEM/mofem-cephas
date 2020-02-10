@@ -17,6 +17,4 @@ const static int debug = 0;
 #include "impl/VecManager.cpp"
 #include "impl/FieldBlas.cpp"
 #include "impl/BitRefManager.cpp"
-#include "impl/Tools.cpp"
 #include "impl/CommInterface.cpp"
-#include "impl/FieldEvaluator.cpp"

@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
   }
   CATCH_ERRORS;
 
-  CHKERR MoFEM::Core::Finalize();
+  MoFEM::Core::Finalize();
 
   return 0;
 }

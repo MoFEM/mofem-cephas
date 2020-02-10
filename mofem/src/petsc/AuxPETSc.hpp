@@ -132,7 +132,8 @@ struct SmartPetscObj
       : boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type>() {}
   SmartPetscObj(OBJ o, bool add_ref = false)
       : boost::intrusive_ptr<typename std::remove_pointer<OBJ>::type>(o,
-                                                                      add_ref) {}
+                                                                      add_ref) {
+  }
   operator OBJ() { return this->get(); }
   explicit operator PetscObject() {
     return reinterpret_cast<PetscObject>(this->get());
@@ -180,6 +181,19 @@ auto createSmartDM = [](MPI_Comm comm, const std::string dm_type_name) {
 };
 
 /**
+ * @brief Get the Comm From Petsc Object object
+ *
+ * @param obj
+ * @return MPI_Comm
+ */
+inline MPI_Comm getCommFromPetscObject(PetscObject obj) {
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm(obj, &comm);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  return comm;
+};
+
+/**
  * @brief Create smart ghost vector
  *
  * For details abut arguments see here:
@@ -195,6 +209,21 @@ auto createSmartGhostVector = [](MPI_Comm comm, PetscInt n, PetscInt N,
                                  PetscInt nghost, const PetscInt ghosts[]) {
   Vec vv;
   ierr = VecCreateGhost(comm, n, N, nghost, ghosts, &vv);
+  CHKERRABORT(comm, ierr);
+  return SmartPetscObj<Vec>(vv);
+};
+
+/**
+ * @brief Create MPI Vector
+ *
+ * For details abut arguments see here:
+ * <a
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Vec/VecCreateMPI.html>VecCreateMPI</a>.
+ *
+ */
+auto createSmartVectorMPI = [](MPI_Comm comm, PetscInt n, PetscInt N) {
+  Vec vv;
+  ierr = VecCreateMPI(comm, n, N, &vv);
   CHKERRABORT(comm, ierr);
   return SmartPetscObj<Vec>(vv);
 };
@@ -218,10 +247,29 @@ inline SmartPetscObj<Vec> smartVectorDuplicate(SmartPetscObj<Vec> &vec) {
 };
 
 inline SmartPetscObj<Vec> smartVectorDuplicate(Vec &vec) {
-    Vec duplicate;
-    ierr = VecDuplicate(vec, &duplicate);
+  Vec duplicate;
+  ierr = VecDuplicate(vec, &duplicate);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  return SmartPetscObj<Vec>(duplicate);
+};
+
+inline SmartPetscObj<Mat> smartMatDuplicate(Mat &mat, MatDuplicateOption op) {
+  Mat duplicate;
+  ierr = MatDuplicate(mat, op, &duplicate);
+  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  return SmartPetscObj<Mat>(duplicate);
+};
+
+inline SmartPetscObj<Mat> smartMatDuplicate(SmartPetscObj<Mat> &mat,
+                                            MatDuplicateOption op) {
+  if (mat.use_count()) {
+    Mat duplicate;
+    ierr = MatDuplicate(mat, op, &duplicate);
     CHKERRABORT(PETSC_COMM_SELF, ierr);
-    return SmartPetscObj<Vec>(duplicate);
+    return SmartPetscObj<Mat>(duplicate);
+  } else {
+    return SmartPetscObj<Mat>();
+  }
 };
 
 auto createTS = [](MPI_Comm comm) {

@@ -76,6 +76,7 @@
 #include <boost/function.hpp>
 #include <boost/math/special_functions/binomial.hpp>
 #include <boost/math/special_functions/factorials.hpp>
+#include <boost/math/constants/constants.hpp>
 
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 
@@ -86,6 +87,8 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/operation.hpp>
+#include <boost/numeric/ublas/lu.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
 
@@ -116,6 +119,10 @@
 #include <boost/utility/enable_if.hpp>
 
 #include <boost/ref.hpp>
+
+// Metaprogramming
+#include <boost/hana.hpp>
+#include <boost/hana/for_each.hpp>
 
 //MOAB
 #include <moab/MOABConfig.h>

@@ -264,17 +264,53 @@ struct ForcesAndSourcesCore : public FEMethod {
      */
     inline const std::string &getFEName() const;
 
+    /** \name Accessing KSP */
+
+    /**@{*/
+
+    inline const PetscData::Switches &getDataCtx() const;
+
+    inline const KspMethod::KSPContext getKSPCtx() const;
+
+    inline const SnesMethod::SNESContext getSNESCtx() const;
+
+    inline const TSMethod::TSContext getTSCtx() const;
+
+    /**@}*/
+
+    /**@{*/
+
+    inline Vec getKSPf() const;
+
+    inline Mat getKSPA() const;
+
+    inline Mat getKSPB() const;
+
+    /**@}*/
+
     /** \name Accessing SNES */
 
     /**@{*/
 
-    inline Vec getSnesF() const;
+    inline Vec getSNESf() const;
 
-    inline Vec getSnesX() const;
+    inline Vec getSNESx() const;
 
-    inline Mat getSnesA() const;
+    inline Mat getSNESA() const;
 
-    inline Mat getSnesB() const;
+    inline Mat getSNESB() const;
+
+    //! \deprecated Use getSNESF intead
+    DEPRECATED inline Vec getSnesF() const { return getSNESf(); }
+
+    //! \deprecated Use getSNESX intead
+    DEPRECATED inline Vec getSnesX() const { return getSNESx(); }
+
+    //! \deprecated Use getSNESA intead
+    DEPRECATED inline Mat getSnesA() const { return getSNESA(); }
+
+    //! \deprecated Use getSNESB intead
+    DEPRECATED inline Mat getSnesB() const { return getSNESB(); }
 
     /**@}*/
 
@@ -285,6 +321,8 @@ struct ForcesAndSourcesCore : public FEMethod {
     inline Vec getTSu() const;
 
     inline Vec getTSu_t() const;
+
+    inline Vec getTSu_tt() const;
 
     inline Vec getTSf() const;
 
@@ -348,7 +386,7 @@ struct ForcesAndSourcesCore : public FEMethod {
   protected:
     ForcesAndSourcesCore *ptrFE;
 
-    inline MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+    virtual MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 
     inline ForcesAndSourcesCore *getPtrFE() const;
 
@@ -368,9 +406,10 @@ struct ForcesAndSourcesCore : public FEMethod {
     MoFEMErrorCode loopSide(const string &fe_name,
                             ForcesAndSourcesCore *side_fe, const size_t dim);
 
-    friend ForcesAndSourcesCore;
+    friend class ForcesAndSourcesCore;
     friend class EdgeElementForcesAndSourcesCoreBase;
     friend class FaceElementForcesAndSourcesCoreBase;
+    friend class ContactPrismElementForcesAndSourcesCore;
   };
 
   /** \brief Use to push back operator for row operator
@@ -430,9 +469,6 @@ public:
 
   /// \brief Get max order of approximation for field in columns
   int getMaxColOrder() const;
-
-  /// \brief Get number of DOFs on element
-  MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
 
   /**
    * @brief Get the entity data
@@ -571,7 +607,7 @@ protected:
                                      FEDofEntity_multiIndex &dofs,
                                      VectorDouble &ent_field_data,
                                      VectorDofs &ent_field_dofs) const;
-                                     
+
   MoFEMErrorCode getNoFieldFieldData(DataForcesAndSourcesCore &data,
                                      const boost::string_ref field_name) const;
 
@@ -747,16 +783,14 @@ protected:
    * @brief Entity data on element entity rows fields
    *
    */
-   const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
-                   LASTSPACE>
+  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
       dataOnElement;
 
   /**
    * @brief Entity data on element entity columns fields
    *
    */
-   const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
-                   LASTSPACE>
+  const std::array<boost::shared_ptr<DataForcesAndSourcesCore>, LASTSPACE>
       derivedDataOnElement;
 
   DataForcesAndSourcesCore &dataNoField;
@@ -897,19 +931,51 @@ const std::string &ForcesAndSourcesCore::UserDataOperator::getFEName() const {
   return getFEMethod()->feName;
 }
 
-Vec ForcesAndSourcesCore::UserDataOperator::getSnesF() const {
+const PetscData::Switches &
+ForcesAndSourcesCore::UserDataOperator::getDataCtx() const {
+  return getFEMethod()->data_ctx;
+}
+
+const KspMethod::KSPContext
+ForcesAndSourcesCore::UserDataOperator::getKSPCtx() const {
+  return getFEMethod()->ksp_ctx;
+}
+
+const SnesMethod::SNESContext
+ForcesAndSourcesCore::UserDataOperator::getSNESCtx() const {
+  return getFEMethod()->snes_ctx;
+}
+
+const TSMethod::TSContext
+ForcesAndSourcesCore::UserDataOperator::getTSCtx() const {
+  return getFEMethod()->ts_ctx;
+}
+
+Vec ForcesAndSourcesCore::UserDataOperator::getKSPf() const {
+  return getFEMethod()->ksp_f;
+}
+
+Mat ForcesAndSourcesCore::UserDataOperator::getKSPA() const {
+  return getFEMethod()->ksp_A;
+}
+
+Mat ForcesAndSourcesCore::UserDataOperator::getKSPB() const {
+  return getFEMethod()->ksp_B;
+}
+
+Vec ForcesAndSourcesCore::UserDataOperator::getSNESf() const {
   return getFEMethod()->snes_f;
 }
 
-Vec ForcesAndSourcesCore::UserDataOperator::getSnesX() const {
+Vec ForcesAndSourcesCore::UserDataOperator::getSNESx() const {
   return getFEMethod()->snes_x;
 }
 
-Mat ForcesAndSourcesCore::UserDataOperator::getSnesA() const {
+Mat ForcesAndSourcesCore::UserDataOperator::getSNESA() const {
   return getFEMethod()->snes_A;
 }
 
-Mat ForcesAndSourcesCore::UserDataOperator::getSnesB() const {
+Mat ForcesAndSourcesCore::UserDataOperator::getSNESB() const {
   return getFEMethod()->snes_B;
 }
 
@@ -919,6 +985,10 @@ Vec ForcesAndSourcesCore::UserDataOperator::getTSu() const {
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSu_t() const {
   return getFEMethod()->ts_u_t;
+}
+
+Vec ForcesAndSourcesCore::UserDataOperator::getTSu_tt() const {
+  return getFEMethod()->ts_u_tt;
 }
 
 Vec ForcesAndSourcesCore::UserDataOperator::getTSf() const {
@@ -958,13 +1028,6 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
     const std::string filed_name, const EntityType type, const int side,
     VectorInt &indices) const {
   return getProblemRowIndices(filed_name, type, side, indices);
-}
-
-MoFEMErrorCode
-ForcesAndSourcesCore::UserDataOperator::setPtrFE(ForcesAndSourcesCore *ptr) {
-  MoFEMFunctionBeginHot;
-  ptrFE = ptr;
-  MoFEMFunctionReturnHot(0);
 }
 
 ForcesAndSourcesCore *ForcesAndSourcesCore::UserDataOperator::getPtrFE() const {

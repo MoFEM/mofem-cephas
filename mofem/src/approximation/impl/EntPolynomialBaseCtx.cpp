@@ -98,6 +98,7 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
     case NOFIELD:
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Makes no sense");
     case H1:
+    case L2:
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,

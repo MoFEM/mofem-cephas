@@ -264,6 +264,7 @@ cm_export_file("../meshes/elasticity_atom_test_01X_pressure.h5m" export_atom_tes
 
 my_add_executable(field_axpy_atom_test field_axpy_atom_test.cpp)
 target_link_libraries(field_axpy_atom_test
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -281,6 +282,7 @@ add_test(field_axpy
 
 my_add_executable(field_blas_set_vertex_dofs field_blas_set_vertex_dofs.cpp)
 target_link_libraries(field_blas_set_vertex_dofs
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -298,6 +300,7 @@ add_test(field_blas_set_vertex_dofs
 #test coord sys
 my_add_executable(test_setting_coordinate_sys test_setting_coordinate_sys.cpp)
 target_link_libraries(test_setting_coordinate_sys
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -622,6 +625,29 @@ add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMM
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_flat_prism_element.txt
 )
 
+#contact prism element
+my_add_executable(forces_and_sources_testing_contact_prism_element forces_and_sources_testing_contact_prism_element.cpp)
+target_link_libraries(forces_and_sources_testing_contact_prism_element
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
+add_test(forces_and_sources_testing_contact_prism_element_test
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_contact_prism_element
+  -my_file templar.h5m
+)
+add_test(forces_and_sources_testing_contact_prism_element_test_compare ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_contact_prism_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_contact_prism_element.txt
+)
+
 # Checking direvatives
 my_add_executable(
   check_base_functions_direvatives_on_tet
@@ -709,6 +735,39 @@ add_test(forces_and_sources_h1_continuity_check_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_h1_continuity_check -my_file sphere.h5m
 )
+
+# Check approxination on H1 space in 2d
+my_add_executable(scalar_check_approximation_2d scalar_check_approximation_2d.cpp)
+target_link_libraries(scalar_check_approximation_2d
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(h1_check_approx_2d_ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -base ainsworth -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0)
+add_test(h1_check_approx_2d_bernstein
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -base bernstein -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0)
+add_test(l2_check_approx_2d_ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -base ainsworth -space l2 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0)
+add_test(l2_check_approx_2d_bernstein
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -base bernstein -space l2 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0)
 
 # Check approximation on Hcurl space in 2d
 my_add_executable(hcurl_check_approx_in_2d 
@@ -880,12 +939,22 @@ target_link_libraries(hdiv_divergence_operator
 add_test(hdiv_divergence_operator_ainsworth_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
-  -my_file sphere.h5m -base hdiv_ainsworth
+  -file_name sphere.h5m -base ainsworth
 )
 add_test(hdiv_divergence_operator_demkowicz_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
-  -my_file sphere.h5m -base hdiv_demkowicz
+  -file_name sphere.h5m -base demkowicz
+)
+add_test(hdiv_divergence_operator_ainsworth_ho_geometry_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
+  -file_name sphere.h5m -base ainsworth -ho_geometry
+)
+add_test(hdiv_divergence_operator_demkowicz_ho_geometry_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
+  -file_name sphere.h5m -base demkowicz -ho_geometry
 )
 
 # add test for hcurl curl operator
@@ -901,12 +970,24 @@ target_link_libraries(hcurl_curl_operator
   ${PROJECT_LIBS}
 )
 add_test(hcurl_curl_operator_ainsworth_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
-  -my_file sphere.h5m -base ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -file_name sphere.h5m -base ainsworth
 )
 add_test(hcurl_curl_operator_demkowicz_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
-  -my_file sphere.h5m -base demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -file_name sphere.h5m -base demkowicz
+)
+add_test(hcurl_curl_operator_ainsworth_ho_geometry_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -file_name sphere.h5m -base ainsworth -ho_geometry
+)
+add_test(hcurl_curl_operator_demkowicz_ho_geometry_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
+  -file_name sphere.h5m -base demkowicz -ho_geometry
 )
 
 #test integration on skeleton
@@ -1170,6 +1251,7 @@ if(TETGEN_LIBRARY)
 
   my_add_executable(tetgen_interface tetgen_interface.cpp)
   target_link_libraries(tetgen_interface
+    mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
@@ -1191,6 +1273,7 @@ if(NETGEN_LIBRARY)
 
   my_add_executable(netgen_interface netgen_interface.cpp)
   target_link_libraries(netgen_interface
+    mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
     mofem_approx
@@ -1203,6 +1286,7 @@ endif(NETGEN_LIBRARY)
 
 my_add_executable(node_merge node_merge.cpp)
 target_link_libraries(node_merge
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -1361,6 +1445,7 @@ add_test(
 cm_export_file("../meshes/test_mesh_cut.cub" export_atom_tests)
 my_add_executable(mesh_cut_test mesh_cut_test.cpp)
 target_link_libraries(mesh_cut_test
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -1379,6 +1464,7 @@ add_test(
 
 my_add_executable(segments_distance segments_distance.cpp)
 target_link_libraries(segments_distance
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -1394,6 +1480,7 @@ add_test(
 
 my_add_executable(find_local_coordinates_on_tet find_local_coordinates_on_tet.cpp)
 target_link_libraries(find_local_coordinates_on_tet
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
@@ -1495,6 +1582,32 @@ add_test(continuity_check_on_skeleton_with_simple_2d_ainsworth
 add_test(continuity_check_on_skeleton_with_simple_2d_demkowicz
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
+  -file_name rectangle.h5m -base demkowicz
+)
+
+my_add_executable(
+  continuity_check_on_skeleton_with_simple_2d_for_hdiv
+  continuity_check_on_skeleton_with_simple_2d_for_hdiv.cpp
+)
+target_link_libraries(continuity_check_on_skeleton_with_simple_2d_for_hdiv
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
+  -file_name rectangle.h5m -base ainsworth
+)
+
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
   -file_name rectangle.h5m -base demkowicz
 )
 

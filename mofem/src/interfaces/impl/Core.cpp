@@ -193,6 +193,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
 
   // Register sub interfaces
   CHKERR regSubInterface<Simple>(IDD_MOFEMSimple);
+  CHKERR regSubInterface<Basic>(IDD_MOFEMBasic);
   CHKERR regSubInterface<ProblemsManager>(IDD_MOFEMProblemsManager);
   CHKERR regSubInterface<MatrixManager>(IDD_MOFEMMatrixManager);
   CHKERR regSubInterface<ISManager>(IDD_MOFEMISManager);
@@ -602,12 +603,12 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       rval =
           get_moab().tag_get_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &*mit,
                                     1, (const void **)&cs_name, &cs_name_size);
-      if (rval == MB_SUCCESS && cs_name_size) {
+      if (rval == MB_SUCCESS && cs_name_size)
         CHKERR cs_manger_ptr->getCoordSysPtr(std::string(cs_name, cs_name_size),
                                              cs_ptr);
-      } else {
+      else
         CHKERR cs_manger_ptr->getCoordSysPtr("UNDEFINED", cs_ptr);
-      }
+
       p = fIelds.insert(
           boost::shared_ptr<Field>(new Field(moab, *mit, cs_ptr)));
       if (verb >= VERBOSE) {
@@ -615,7 +616,16 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         ss << "read field " << **p.first << std::endl;
         PetscPrintf(cOmm, ss.str().c_str());
       }
-      special_meshsets.insert(*mit);
+      if(!p.second) {
+        // Field meshset exists, remove duplicate meshsets from other
+        // processors.
+        Range ents;
+        CHKERR get_moab().get_entities_by_handle(*mit, ents, true);
+        CHKERR get_moab().add_entities((*p.first)->getMeshset(), ents);
+        CHKERR get_moab().delete_entities(&*mit, 1);
+      } else {
+        special_meshsets.insert(*mit);
+      }
     }
     // Check for finite elements
     BitFieldId fe_id;
@@ -631,12 +641,18 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         ss << "read finite element " << **p.first << std::endl;
         PetscPrintf(cOmm, ss.str().c_str());
       }
-      NOT_USED(p);
       Range ents;
       CHKERR get_moab().get_entities_by_type(*mit, MBENTITYSET, ents, false);
       CHKERR get_moab().get_entities_by_handle(*mit, ents, true);
       ref_elems_to_add.merge(ents);
-      special_meshsets.insert(*mit);
+      if(!p.second) {
+        // Finite element mesh set exist, could be created on other processor.
+        // Remove duplicate.
+        CHKERR get_moab().add_entities((*p.first)->getMeshset(), ents);
+        CHKERR get_moab().delete_entities(&*mit, 1);
+      } else {
+        special_meshsets.insert(*mit);
+      }
     }
     BitProblemId problem_id;
     // get bit id form problem tag
@@ -652,7 +668,17 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
            << p.first->getMaskBitRefLevel() << std::endl;
         PetscPrintf(cOmm, ss.str().c_str());
       }
-      special_meshsets.insert(*mit);
+      if(!p.second) {
+        // Problem meshset exists, could be created on other processor.
+        // Remove duplicate.
+        Range ents;
+        CHKERR get_moab().get_entities_by_handle(*mit, ents, true);
+        CHKERR get_moab().get_entities_by_type(*mit, MBENTITYSET, ents, true);
+        CHKERR get_moab().add_entities(p.first->meshset, ents);
+        CHKERR get_moab().delete_entities(&*mit, 1);
+      } else {
+        special_meshsets.insert(*mit);
+      }
     }
   }
 

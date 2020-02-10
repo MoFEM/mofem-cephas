@@ -1,5 +1,5 @@
 /** \file Types.hpp
- * \brief Types 
+ * \brief Types
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -21,8 +21,8 @@
 namespace MoFEM {
 
 /**
- * @brief Types 
- * 
+ * @brief Types
+ *
  */
 namespace Types {
 
@@ -40,7 +40,6 @@ typedef int FieldCoefficientsNumber; ///< Number of field coefficients
 // typedef checked_uint128_t UId;
 typedef uint128_t UId; ///< Unique Id
 typedef int ShortId;   ///< Unique Id in the field
-
 
 typedef std::bitset<BITREFEDGES_SIZE> BitRefEdges;
 
@@ -68,10 +67,17 @@ typedef std::bitset<32> CubitBCType;
 // DoubleAllocator;
 typedef std::vector<int, std::allocator<int>> IntAllocator;
 typedef std::vector<double, std::allocator<double>> DoubleAllocator;
+typedef std::vector<std::complex<double>, std::allocator<std::complex<double>>>
+    ComplexDoubleAllocator;
 typedef ublas::vector<int, IntAllocator> VectorInt;
 typedef ublas::vector<double, DoubleAllocator> VectorDouble;
 typedef ublas::matrix<int, ublas::row_major, IntAllocator> MatrixInt;
 typedef ublas::matrix<double, ublas::row_major, DoubleAllocator> MatrixDouble;
+typedef ublas::vector<std::complex<double>, ComplexDoubleAllocator>
+    VectorComplexDouble;
+typedef ublas::matrix<std::complex<double>, ublas::row_major,
+                      ComplexDoubleAllocator>
+    MatrixComplexDouble;
 
 // bounded vector & matrices
 template <typename T, size_t N>
@@ -93,6 +99,7 @@ template <typename T, size_t N>
 using MatrixBoundedArray =
     ublas::matrix<T, ublas::row_major, ublas::bounded_array<T, N>>;
 typedef MatrixBoundedArray<double, 9> MatrixDouble3by3;
+typedef MatrixBoundedArray<std::complex<double>, 9> MatrixComplexDouble3by3;
 
 // shallow adaptor classes
 template <typename T>

@@ -654,9 +654,9 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(
       const auto dist0 = get_tag_data(th, conn[0]);
       const auto dist1 = get_tag_data(th, conn[1]);
       const double min_dist = std::min(norm_2(dist0), norm_2(dist1));
-      if (min_dist < length) {
+      if (min_dist < 2 * length) {
         auto opposite = inner_prod(dist0, dist1);
-        if (opposite <= 0) {
+        if (opposite <= std::numeric_limits<double>::epsilon()) {
           const double sign_dist0 = signed_norm(dist0);
           const double sign_dist1 = signed_norm(dist1);
           if (sign_dist0 > -std::numeric_limits<double>::epsilon() &&
@@ -2239,7 +2239,7 @@ CutMeshInterface::removePathologicalFrontTris(const BitRefLevel split_bit,
     EntityHandle meshset;
     CHKERR moab.create_meshset(MESHSET_SET, meshset);
     CHKERR moab.add_entities(meshset, ents);
-    CHKERR interface->findIfTringleHasThreeNodesOnInternalSurfaceSkin(
+    CHKERR interface->findFacesWithThreeNodesOnInternalSurfaceSkin(
         meshset, split_bit, true, front_tris);
     CHKERR moab.delete_entities(&meshset, 1);
     ents = subtract(ents, front_tris);

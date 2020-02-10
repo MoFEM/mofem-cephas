@@ -50,13 +50,47 @@ curl -L https://api.github.com/repos/likask/spack/tarball/mofem \
 ~~~~~~
 and download mirror
 ~~~~~~
-curl -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+curl -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
 --output mirror.tgz
 ~~~~~~
 and then you can install MoFEM
 ~~~~~
 ./install_mofem_user.sh
 ~~~~~
+
+## Update fracture module
+
+This script allows you to update a user version of the fracture module: [`update_mofem_fracture_module.sh`](scripts/update_mofem_fracture_module.sh)
+
+If you would like to update and install the newest version of the fracture
+module, run the script like this
+~~~~~~
+./update_mofem_fracture_module.sh
+~~~~~~
+The installation will create a directory named, for example,
+`fracture_module_v0.9.60` in the same location where the script is run and the
+new directory contains the executables of fracture module in _fracture_module_v0.9.60/um_view/fracture_mechanics/_.
+
+
+For the update and installation of a specific version of the fracture
+module, you will add an argument of the version to the command line. For
+example, the following will install fracture module version 0.9.60
+~~~~~~
+./update_mofem_fracture_module.sh 0.9.60
+~~~~~~ 
+
+
+You can run the command line below for the list of all available versions of the
+fracture module in MoFEM
+~~~~~~
+spack info mofem-fracture-module
+~~~~~~ 
+
+Please note that this script should be used only if MoFEM has already been installed using
+spack in advance. If MoFEM has not been installed, install it using
+[`install_mofem_user.sh`](scripts/install_mofem_user.sh) or
+[`install_mofem_developer.sh`](scripts/install_mofem_developer.sh) described
+in the previous section before running this script.
 
 # Prerequisites {#spack_prerequisites}
 
@@ -139,7 +173,7 @@ Initialise Spack's environment variables:
 Download spack packages in the mirror necessary to install MoFEM
 ~~~~~~
 mkdir -p mofem_mirror &&
-curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 spack mirror add mofem_mirror $PWD/mofem_mirror
 ~~~~~~
@@ -305,8 +339,8 @@ and kick-start installation of the core library:
 cd $HOME/mofem_install
 mkdir lib
 cd lib/
-spack install --only dependencies mofem-cephas 
-spack setup mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
+spack install --only dependencies mofem-cephas+slepc ^petsc+X
+spack setup mofem-cephas@develop+slepc copy_user_modules=False build_type=RelWithDebInfo ^petsc+X
 ./spconfig.py -DMOFEM_BUILD_TESTS=ON $HOME/mofem_install/mofem-cephas/mofem/
 make -j4
 ctest
@@ -321,11 +355,11 @@ Install users modules
 cd $HOME/mofem_install
 mkdir um
 cd um/
-spack view --verbose symlink -i um_view mofem-cephas@develop
+spack view --verbose symlink -i um_view mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
 export PATH=$PWD/um_view/bin:$PATH
 mkdir build 
 cd build/
-spack setup mofem-users-modules@develop copy_user_modules=False build_type=RelWithDebInfo ^mofem-cephas@develop 
+spack setup mofem-users-modules@develop copy_user_modules=False build_type=RelWithDebInfo ^mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
 ./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
 make -j4
 ctest
@@ -439,7 +473,7 @@ curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
 Download packages mirror
 ~~~~~
 mkdir -p mofem_mirror &&\
-curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 ~~~~~
 
@@ -507,7 +541,7 @@ which a enable linking std lib c++ libraries.
 At that point, we can follow the standard installation procedure, as follows
 ~~~~~
 spack bootstrap
-spack install -j 2 -v --only dependencies mofem-cephas ^openmpi@3.0.0
+spack install -j 2 -v --only dependencies mofem-cephas%gcc@6.4.0 ^openmpi@3.0.0%gcc@6.4.0
 spack install mofem-users-modules
 ~~~~~
 
@@ -533,14 +567,14 @@ Create a script file with content as below and name it, for example, *job_spack*
 #$ -q gcec.q
 
 # File to which standard error should be directed
-#$ -e ./stderr
+#$ -e ./stdout_job_$JOB_ID
 
 # File to which standard output should be directed
-#$ -o ./stdout
+#$ -o ./stderr_job_$JOB_ID
 
 # E-mail address to which status updates should be sent
 # N.B.: in an array job, a separate e-mail will be sent for each task!
-#$ -M your.email@uni.ac.uk
+#$ -M your.email@glasgow.ac.uk
 
 # Events on which to send a status update
 #$ -m beas
@@ -548,7 +582,7 @@ Create a script file with content as below and name it, for example, *job_spack*
 # Request for 1.0 GB of memory per task (needed on Miffy and Dusty)
 #$ -l mem_tokens=1.0G
 
-#$ -pe mpi 2 # where N is the number of processors required
+#$ -pe mofem-* 2 # where N is the number of processors required
 
 # List of commands which do the actual work
 echo "$NSLOTS received"
@@ -572,6 +606,8 @@ and run it as follows
 qsub job_spack
 ~~~~~
 Results of the analysis are located in $HOME/um_view/elasticity. 
+
+
 
 # Spack usage and configuration {#spack_usage_config}
 
@@ -690,7 +726,7 @@ You can download mirror with all necessary packages from MoFEM repository and
 untar and unzip to director
 ~~~~~
 mkdir -p mofem_mirror &&
-curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.0.tar.gz \
+curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 ~~~~~
 Note that packages are expanded to directory `mofem_mirror`, and mirror is

@@ -124,7 +124,11 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     template <int SWITCH>
     MoFEMErrorCode
     loopSideFaces(const string &fe_name,
-                 FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side);
+                  FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side);
+
+  protected:
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+    
   };
 
   enum Switches {

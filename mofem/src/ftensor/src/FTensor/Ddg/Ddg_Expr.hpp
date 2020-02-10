@@ -14,6 +14,7 @@
 #include "Ddg_times_Ddg.hpp"
 #include "Ddg_times_Tensor1.hpp"
 #include "Ddg_times_Tensor2.hpp"
+#include "Ddg_times_Tensor4.hpp"
 #include "Ddg_times_Tensor2_symmetric.hpp"
 #include "Ddg_times_generic.hpp"
 #include "minus_Ddg.hpp"
@@ -67,6 +68,14 @@ namespace FTensor
 
     Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j, k, l> &
     operator+=(const Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01,
+                             Dim23, i, j, k, l> &result);
+
+    template <class B, class U>
+    Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j, k, l> &
+    operator-=(const Ddg_Expr<B, U, Dim01, Dim23, i, j, k, l> &result);
+
+    Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01, Dim23, i, j, k, l> &
+    operator-=(const Ddg_Expr<Ddg<A, Tensor_Dim01, Tensor_Dim23>, T, Dim01,
                              Dim23, i, j, k, l> &result);
 
     template <class U>

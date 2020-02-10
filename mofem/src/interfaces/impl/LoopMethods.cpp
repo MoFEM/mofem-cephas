@@ -18,17 +18,45 @@
 
 namespace MoFEM {
 
+constexpr PetscData::Switches PetscData::CtxSetNone;
+constexpr PetscData::Switches PetscData::CtxSetF;
+constexpr PetscData::Switches PetscData::CtxSetA;
+constexpr PetscData::Switches PetscData::CtxSetB;
+constexpr PetscData::Switches PetscData::CtxSetX;
+constexpr PetscData::Switches PetscData::CtxSetX_T;
+constexpr PetscData::Switches PetscData::CtxSetX_TT;
+constexpr PetscData::Switches PetscData::CtxSetTime;
+
+// PetscData
+MoFEMErrorCode PetscData::query_interface(const MOFEMuuid &uuid,
+                                          UnknownInterface **iface) const {
+  MoFEMFunctionBeginHot;
+  if (uuid == IDD_MOFEMPetscDataMethod) {
+    *iface = const_cast<PetscData *>(this);
+    MoFEMFunctionReturnHot(0);
+  }
+  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  }
+
+PetscData::PetscData()
+    : f(PETSC_NULL), A(PETSC_NULL), B(PETSC_NULL), x(PETSC_NULL),
+      x_t(PETSC_NULL), x_tt(PETSC_NULL) {}
+
 // KSP
-MoFEMErrorCode KspMethod::setKspCtx(const KSPContext &ctx) {
+MoFEMErrorCode KspMethod::query_interface(const MOFEMuuid &uuid,
+                                          UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
-  ksp_ctx = ctx;
-  MoFEMFunctionReturnHot(0);
-}
-MoFEMErrorCode KspMethod::setKsp(KSP ksp_) {
-  MoFEMFunctionBeginHot;
-  ksp = ksp_;
-  MoFEMFunctionReturnHot(0);
-}
+  if (uuid == IDD_MOFEMKspMethod) {
+    *iface = const_cast<KspMethod *>(this);
+    MoFEMFunctionReturnHot(0);
+  }
+  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+};
+
+KspMethod::KspMethod()
+    : ksp_ctx(CTX_KSPNONE), ksp(PETSC_NULL), ksp_f(PetscData::f),
+      ksp_A(PetscData::A), ksp_B(PetscData::B) {}
+
 MoFEMErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
   MoFEMFunctionBeginHot;
   this->ksp_ctx = ksp.ksp_ctx;
@@ -40,16 +68,19 @@ MoFEMErrorCode KspMethod::copyKsp(const KspMethod &ksp) {
 }
 
 // SNES
-MoFEMErrorCode SnesMethod::setSnesCtx(const SNESContext &ctx) {
-  MoFEMFunctionBeginHot;
-  snes_ctx = ctx;
-  MoFEMFunctionReturnHot(0);
-}
-MoFEMErrorCode SnesMethod::setSnes(SNES _snes) {
-  MoFEMFunctionBeginHot;
-  snes = _snes;
-  MoFEMFunctionReturnHot(0);
-}
+MoFEMErrorCode SnesMethod::query_interface(const MOFEMuuid &uuid,
+                                           UnknownInterface **iface) const {
+  if (uuid == IDD_MOFEMSnesMethod) {
+    *iface = const_cast<SnesMethod *>(this);
+    MoFEMFunctionReturnHot(0);
+  }
+  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  }
+
+SnesMethod::SnesMethod()
+    : snes_ctx(CTX_SNESNONE), snes_x(PetscData::x), snes_f(PetscData::f),
+      snes_A(PetscData::A), snes_B(PetscData::B) {}
+
 MoFEMErrorCode SnesMethod::copySnes(const SnesMethod &snes) {
   MoFEMFunctionBeginHot;
   this->snes_ctx = snes.snes_ctx;
@@ -62,22 +93,27 @@ MoFEMErrorCode SnesMethod::copySnes(const SnesMethod &snes) {
 }
 
 // TS
-MoFEMErrorCode TSMethod::setTsCtx(const TSContext &ctx) {
-  MoFEMFunctionBeginHot;
-  ts_ctx = ctx;
-  MoFEMFunctionReturnHot(0);
-}
-MoFEMErrorCode TSMethod::setTs(TS _ts) {
-  MoFEMFunctionBeginHot;
-  ts = _ts;
-  MoFEMFunctionReturnHot(0);
-}
+MoFEMErrorCode TSMethod::query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const {
+    if (uuid == IDD_MOFEMTsMethod) {
+      *iface = const_cast<TSMethod *>(this);
+      MoFEMFunctionReturnHot(0);
+    }
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  }
+
+TSMethod::TSMethod()
+    : ts_ctx(CTX_TSNONE), ts_step(-1), ts_a(0), ts_t(0), ts_u(PetscData::x),
+      ts_u_t(PetscData::x_t), ts_u_tt(PetscData::x_tt), ts_F(PetscData::f),
+      ts_A(PetscData::A), ts_B(PetscData::B) {}
+
 MoFEMErrorCode TSMethod::copyTs(const TSMethod &ts) {
   MoFEMFunctionBeginHot;
   this->ts_ctx = ts.ts_ctx;
   this->ts = ts.ts;
   this->ts_u = ts.ts_u;
   this->ts_u_t = ts.ts_u_t;
+  this->ts_u_tt = ts.ts_u_tt;
   this->ts_F = ts.ts_F;
   this->ts_A = ts.ts_A;
   this->ts_B = ts.ts_B;
@@ -89,8 +125,8 @@ MoFEMErrorCode TSMethod::copyTs(const TSMethod &ts) {
 
 // BasicMethod
 BasicMethod::BasicMethod()
-    : KspMethod(), SnesMethod(), TSMethod(), nInTheLoop(0), loopSize(0),
-      rAnk(-1), sIze(-1), refinedEntitiesPtr(nullptr),
+    : PetscData(), KspMethod(), SnesMethod(), TSMethod(), nInTheLoop(0),
+      loopSize(0), rAnk(-1), sIze(-1), refinedEntitiesPtr(nullptr),
       refinedFiniteElementsPtr(nullptr), problemPtr(nullptr),
       fieldsPtr(nullptr), entitiesPtr(nullptr), dofsPtr(nullptr),
       finiteElementsPtr(nullptr), finiteElementsEntitiesPtr(nullptr),
@@ -158,5 +194,94 @@ EntityMethod::EntityMethod() : BasicMethod() {}
 
 // DofMethod
 DofMethod::DofMethod() : BasicMethod() {}
+
+MoFEMErrorCode FEMethod::getNumberOfNodes(int &num_nodes) const {
+  MoFEMFunctionBeginHot;
+
+  EntityHandle handle = numeredEntFiniteElementPtr->getEnt();
+  if (handle) {
+    switch (static_cast<EntityType>(handle >> MB_ID_WIDTH)) {
+    case MBVERTEX:
+      num_nodes = 1;
+      break;
+    case MBEDGE:
+      num_nodes = 2;
+      break;
+    case MBTRI:
+      num_nodes = 3;
+      break;
+    case MBQUAD:
+      num_nodes = 4;
+      break;
+    case MBTET:
+      num_nodes = 4;
+      break;
+    case MBPRISM:
+      num_nodes = 6;
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    }
+  } else {
+    num_nodes = 0;
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
+                                     VectorDouble &data) {
+  MoFEMFunctionBegin;
+
+  auto get_nodes_field_data = [&](FEDofEntity_multiIndex &dofs,
+                                  VectorDouble &nodes_data) {
+    MoFEMFunctionBegin;
+
+   auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+    auto tuple = boost::make_tuple(field_name, MBVERTEX);
+    auto dit = dofs_by_name_and_type.lower_bound(tuple);
+    if (dit == dofs_by_name_and_type.end())
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No nodal dofs on element");
+    auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
+
+    if (dit != hi_dit) {
+      auto &first_dof = **dit;
+      int num_nodes;
+      CHKERR getNumberOfNodes(num_nodes);
+      const int nb_dof_idx = first_dof.getNbOfCoeffs();
+      const int max_nb_dofs = nb_dof_idx * num_nodes;
+      nodes_data.resize(max_nb_dofs, false);
+      nodes_data.clear();
+
+      for (; dit != hi_dit;) {
+        const auto &dof_ptr = *dit;
+        const auto &dof = *dof_ptr;
+        const auto &sn = *dof.sideNumberPtr;
+        const int side_number = sn.side_number;
+
+        int pos = side_number * nb_dof_idx;
+        auto ent_filed_data_vec = dof.getEntFieldData();
+        for (int ii = 0; ii != nb_dof_idx; ++ii) {
+          nodes_data[pos] = ent_filed_data_vec[ii];
+          ++pos;
+          ++dit;
+        }
+      }
+
+    } else {
+      nodes_data.resize(0, false);
+    }
+
+  
+    MoFEMFunctionReturn(0);
+  };
+
+  return get_nodes_field_data(const_cast<FEDofEntity_multiIndex &>(
+                                  numeredEntFiniteElementPtr->getDataDofs()),
+                              data);
+
+  MoFEMFunctionReturn(0);
+}
 
 } // namespace MoFEM
