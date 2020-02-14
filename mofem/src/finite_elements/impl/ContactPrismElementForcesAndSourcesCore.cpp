@@ -580,6 +580,16 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                   "Wrong combination of FaceType and OpType, OPROW or OPCOL "
                   "combined with face-face OpType");
         }
+
+        if ((oit->getOpType() & UserDataOperator::OPROWCOL) &&
+            ((type & UserDataOperator::FACEMASTER) ||
+             (type & UserDataOperator::FACESLAVE))) {
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Wrong combination of FaceType and OpType, OPROWCOL "
+                  "combined with face-face OpType");
+        }
+
+        
         if (!type) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Face type is not set");
