@@ -195,4 +195,93 @@ EntityMethod::EntityMethod() : BasicMethod() {}
 // DofMethod
 DofMethod::DofMethod() : BasicMethod() {}
 
+MoFEMErrorCode FEMethod::getNumberOfNodes(int &num_nodes) const {
+  MoFEMFunctionBeginHot;
+
+  EntityHandle handle = numeredEntFiniteElementPtr->getEnt();
+  if (handle) {
+    switch (static_cast<EntityType>(handle >> MB_ID_WIDTH)) {
+    case MBVERTEX:
+      num_nodes = 1;
+      break;
+    case MBEDGE:
+      num_nodes = 2;
+      break;
+    case MBTRI:
+      num_nodes = 3;
+      break;
+    case MBQUAD:
+      num_nodes = 4;
+      break;
+    case MBTET:
+      num_nodes = 4;
+      break;
+    case MBPRISM:
+      num_nodes = 6;
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    }
+  } else {
+    num_nodes = 0;
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
+                                     VectorDouble &data) {
+  MoFEMFunctionBegin;
+
+  auto get_nodes_field_data = [&](FEDofEntity_multiIndex &dofs,
+                                  VectorDouble &nodes_data) {
+    MoFEMFunctionBegin;
+
+   auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+    auto tuple = boost::make_tuple(field_name, MBVERTEX);
+    auto dit = dofs_by_name_and_type.lower_bound(tuple);
+    if (dit == dofs_by_name_and_type.end())
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No nodal dofs on element");
+    auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
+
+    if (dit != hi_dit) {
+      auto &first_dof = **dit;
+      int num_nodes;
+      CHKERR getNumberOfNodes(num_nodes);
+      const int nb_dof_idx = first_dof.getNbOfCoeffs();
+      const int max_nb_dofs = nb_dof_idx * num_nodes;
+      nodes_data.resize(max_nb_dofs, false);
+      nodes_data.clear();
+
+      for (; dit != hi_dit;) {
+        const auto &dof_ptr = *dit;
+        const auto &dof = *dof_ptr;
+        const auto &sn = *dof.sideNumberPtr;
+        const int side_number = sn.side_number;
+
+        int pos = side_number * nb_dof_idx;
+        auto ent_filed_data_vec = dof.getEntFieldData();
+        for (int ii = 0; ii != nb_dof_idx; ++ii) {
+          nodes_data[pos] = ent_filed_data_vec[ii];
+          ++pos;
+          ++dit;
+        }
+      }
+
+    } else {
+      nodes_data.resize(0, false);
+    }
+
+  
+    MoFEMFunctionReturn(0);
+  };
+
+  return get_nodes_field_data(const_cast<FEDofEntity_multiIndex &>(
+                                  numeredEntFiniteElementPtr->getDataDofs()),
+                              data);
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

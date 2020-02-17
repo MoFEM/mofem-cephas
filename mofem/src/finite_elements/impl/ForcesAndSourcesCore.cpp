@@ -64,36 +64,6 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
       dataHdiv(*dataOnElement[HDIV].get()), dataL2(*dataOnElement[L2].get()),
       lastEvaluatedElementEntityType(MBMAXTYPE), sidePtrFE(nullptr) {}
 
-MoFEMErrorCode ForcesAndSourcesCore::getNumberOfNodes(int &num_nodes) const {
-  MoFEMFunctionBeginHot;
-
-  EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-  switch (mField.get_moab().type_from_handle(ent)) {
-  case MBVERTEX:
-    num_nodes = 1;
-    break;
-  case MBEDGE:
-    num_nodes = 2;
-    break;
-  case MBTRI:
-    num_nodes = 3;
-    break;
-  case MBQUAD:
-    num_nodes = 4;
-    break;
-  case MBTET:
-    num_nodes = 4;
-    break;
-  case MBPRISM:
-    num_nodes = 6;
-    break;
-  default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-  }
-
-  MoFEMFunctionReturnHot(0);
-}
-
 // ** Sense **
 
 MoFEMErrorCode ForcesAndSourcesCore::getEntitySense(

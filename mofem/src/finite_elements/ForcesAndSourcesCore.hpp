@@ -473,9 +473,6 @@ public:
   /// \brief Get max order of approximation for field in columns
   int getMaxColOrder() const;
 
-  /// \brief Get number of DOFs on element
-  MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
-
   /**
    * @brief Get the entity data
    *
