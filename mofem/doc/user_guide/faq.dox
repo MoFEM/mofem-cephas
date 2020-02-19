@@ -18,10 +18,10 @@ The BibTex entry for MoFEM paper \cite mofemJoss is
 @article{mofemJoss2020,
   title = {{MoFEM:} An open source, parallel finite element library},
   author = {
-    {\L}ukasz, Kaczmarczyk and Zahur, Ullah and Karol, Lewandowski and
-    Xuan, Meng and Xiao-Yi, Zhou and Ignatios, Athanasiadis and Hoang, Nguyen and
-    Christophe-Alexandre, Chalons-Mouriesse and Euan, Richardson and Euan, Miur 
-    and Andrei, Shvarts and Mebratu, Wakeni and Chris, Pearce},
+    Kaczmarczyk, {\L}ukasz and Ullah, Zahur and Lewandowski, Karol and Meng, 
+    Xuan and	Zhou, Xiao-Yi and Athanasiadis, Ignatios and Nguyen, 
+    Hoang  and	Chalons-Mouriesse, Christophe-Alexandre and Richardson, 
+    Euan and Miur, Euan and Shvarts, Andrei and Wakeni,Mebratu and Pearce, Chris},
   journal={The Journal of Open Source Software},
   year={2020},
   note={http://mofem.eng.gla.ac.uk},
