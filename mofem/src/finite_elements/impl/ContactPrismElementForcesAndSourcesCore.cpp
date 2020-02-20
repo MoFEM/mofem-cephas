@@ -107,6 +107,55 @@ ContactPrismElementForcesAndSourcesCore::
   derivedDataOnSlave[H1]->setElementType(MBTRI);
 }
 
+MoFEMErrorCode
+ContactPrismElementForcesAndSourcesCore::setDefaultGaussPts(const int rule) {
+  MoFEMFunctionBegin;
+
+  if (rule < QUAD_2D_TABLE_SIZE) {
+    if (QUAD_2D_TABLE[rule]->dim != 2) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
+    }
+    if (QUAD_2D_TABLE[rule]->order < rule) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "wrong order %d != %d", QUAD_2D_TABLE[rule]->order, rule);
+    }
+    nbGaussPts = QUAD_2D_TABLE[rule]->npoints;
+    // For master and slave
+    gaussPtsMaster.resize(3, nbGaussPts, false);
+    gaussPtsSlave.resize(3, nbGaussPts, false);
+
+    cblas_dcopy(nbGaussPts, &QUAD_2D_TABLE[rule]->points[1], 3,
+                &gaussPtsMaster(0, 0), 1);
+    cblas_dcopy(nbGaussPts, &QUAD_2D_TABLE[rule]->points[2], 3,
+                &gaussPtsMaster(1, 0), 1);
+    cblas_dcopy(nbGaussPts, QUAD_2D_TABLE[rule]->weights, 1,
+                &gaussPtsMaster(2, 0), 1);
+
+    gaussPtsSlave = gaussPtsMaster;
+
+    dataH1Master.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
+                                                                 false);
+
+    dataH1Slave.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
+                                                                false);
+
+    double *shape_ptr_master =
+        &*dataH1Master.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+    cblas_dcopy(3 * nbGaussPts, QUAD_2D_TABLE[rule]->points, 1,
+                shape_ptr_master, 1);
+    double *shape_ptr_slave =
+        &*dataH1Slave.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+    cblas_dcopy(3 * nbGaussPts, QUAD_2D_TABLE[rule]->points, 1, shape_ptr_slave,
+                1);
+  } else {
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "rule > quadrature order %d < %d", rule, QUAD_2D_TABLE_SIZE);
+    nbGaussPts = 0;
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
   MoFEMFunctionBegin;
 
@@ -235,51 +284,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
   int order_col = getMaxColOrder(); // maybe two different rules?
   int rule = getRule(order_row, order_col, order_data);
 
-  int nb_gauss_pts;
   if (rule >= 0) {
-    if (rule < QUAD_2D_TABLE_SIZE) {
-      if (QUAD_2D_TABLE[rule]->dim != 2) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
-      }
-      if (QUAD_2D_TABLE[rule]->order < rule) {
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "wrong order %d != %d", QUAD_2D_TABLE[rule]->order, rule);
-      }
-      nb_gauss_pts = QUAD_2D_TABLE[rule]->npoints;
-      // For master and slave
-      gaussPtsMaster.resize(3, nb_gauss_pts, false);
-      gaussPtsSlave.resize(3, nb_gauss_pts, false);
 
-      cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[1], 3,
-                  &gaussPtsMaster(0, 0), 1);
-      cblas_dcopy(nb_gauss_pts, &QUAD_2D_TABLE[rule]->points[2], 3,
-                  &gaussPtsMaster(1, 0), 1);
-      cblas_dcopy(nb_gauss_pts, QUAD_2D_TABLE[rule]->weights, 1,
-                  &gaussPtsMaster(2, 0), 1);
-
-      gaussPtsSlave = gaussPtsMaster;
-
-      dataH1Master.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,
-                                                                   3, false);
-
-      dataH1Slave.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,
-                                                                  3, false);
-
-      double *shape_ptr_master = &*dataH1Master.dataOnEntities[MBVERTEX][0]
-                                       .getN(NOBASE)
-                                       .data()
-                                       .begin();
-      cblas_dcopy(3 * nb_gauss_pts, QUAD_2D_TABLE[rule]->points, 1,
-                  shape_ptr_master, 1);
-      double *shape_ptr_slave =
-          &*dataH1Slave.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-      cblas_dcopy(3 * nb_gauss_pts, QUAD_2D_TABLE[rule]->points, 1,
-                  shape_ptr_slave, 1);
-    } else {
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "rule > quadrature order %d < %d", rule, QUAD_2D_TABLE_SIZE);
-      nb_gauss_pts = 0;
-    }
+    CHKERR setDefaultGaussPts(rule);
 
   } else {
 
@@ -290,32 +297,34 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
           "Number of Gauss Points at Master triangle is different than slave");
 
     CHKERR setGaussPts(order_row, order_col, order_data);
-    nb_gauss_pts = gaussPtsMaster.size2();
-    dataH1Master.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,
-                                                                 3, false);
-    dataH1Slave.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 3,
+    nbGaussPts = gaussPtsMaster.size2();
+    dataH1Master.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
+                                                                 false);
+    dataH1Slave.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts, 3,
                                                                 false);
 
-    if (nb_gauss_pts) {
-      CHKERR ShapeMBTRI(&*dataH1Master.dataOnEntities[MBVERTEX][0]
-                              .getN(NOBASE)
-                              .data()
-                              .begin(),
-                        &gaussPtsMaster(0, 0), &gaussPtsMaster(1, 0),
-                        nb_gauss_pts);
+    if (nbGaussPts) {
+      CHKERR Tools::shapeFunMBTRI<1>(&*dataH1Master.dataOnEntities[MBVERTEX][0]
+                                           .getN(NOBASE)
+                                           .data()
+                                           .begin(),
+                                     &gaussPtsMaster(0, 0),
+                                     &gaussPtsMaster(1, 0), nbGaussPts);
 
-      CHKERR ShapeMBTRI(
+      CHKERR Tools::shapeFunMBTRI<1>(
           &*dataH1Slave.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
-          &gaussPtsSlave(0, 0), &gaussPtsSlave(1, 0), nb_gauss_pts);
+          &gaussPtsSlave(0, 0), &gaussPtsSlave(1, 0), nbGaussPts);
     }
   }
-  if (nb_gauss_pts == 0)
+
+  if (nbGaussPts == 0)
     MoFEMFunctionReturnHot(0);
 
+  // Get coordinates on slave and master
   {
-    coordsAtGaussPtsMaster.resize(nb_gauss_pts, 3, false);
-    coordsAtGaussPtsSlave.resize(nb_gauss_pts, 3, false);
-    for (int gg = 0; gg < nb_gauss_pts; gg++) {
+    coordsAtGaussPtsMaster.resize(nbGaussPts, 3, false);
+    coordsAtGaussPtsSlave.resize(nbGaussPts, 3, false);
+    for (int gg = 0; gg < nbGaussPts; gg++) {
       for (int dd = 0; dd < 3; dd++) {
         coordsAtGaussPtsMaster(gg, dd) = cblas_ddot(
             3, &dataH1Master.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg, 0), 1,
@@ -589,7 +598,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                   "combined with face-face OpType");
         }
 
-        
         if (!type) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Face type is not set");
