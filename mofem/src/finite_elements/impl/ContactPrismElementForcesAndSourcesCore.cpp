@@ -463,11 +463,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
         if (oit->getOpType() & types[ss] ||
             oit->getOpType() & UserDataOperator::OPROWCOL) {
 
-          if (UserDataOperator *cast_oit =
-                  dynamic_cast<UserDataOperator *>(&*oit)) {
-          } else {
-            printf("Check\n");
-          }
           switch (space) {
           case NOSPACE:
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown space");
