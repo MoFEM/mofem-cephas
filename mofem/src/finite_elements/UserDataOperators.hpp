@@ -38,7 +38,7 @@ struct OpCalculateScalarFieldValues_General
 
   OpCalculateScalarFieldValues_General(
       const std::string field_name,
-      boost::shared_ptr<ublas::vector<T, A>> &data_ptr,
+      boost::shared_ptr<ublas::vector<T, A>> data_ptr,
       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -81,7 +81,7 @@ struct OpCalculateScalarFieldValues
     : public OpCalculateScalarFieldValues_General<double, DoubleAllocator> {
 
   OpCalculateScalarFieldValues(const std::string field_name,
-                               boost::shared_ptr<VectorDouble> &data_ptr,
+                               boost::shared_ptr<VectorDouble> data_ptr,
                                const EntityType zero_type = MBVERTEX)
       : OpCalculateScalarFieldValues_General<double, DoubleAllocator>(
             field_name, data_ptr, zero_type) {
@@ -142,7 +142,7 @@ struct OpCalculateScalarFieldValuesDot
   VectorDouble dotVector;
 
   OpCalculateScalarFieldValuesDot(const std::string field_name,
-                                  boost::shared_ptr<VectorDouble> &data_ptr,
+                                  boost::shared_ptr<VectorDouble> data_ptr,
                                   const EntityType zero_at_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -219,7 +219,7 @@ struct OpCalculateVectorFieldValues_General
 
   OpCalculateVectorFieldValues_General(
       const std::string field_name,
-      boost::shared_ptr<ublas::matrix<T, L, A>> &data_ptr,
+      boost::shared_ptr<ublas::matrix<T, L, A>> data_ptr,
       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -264,7 +264,7 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
   const EntityHandle zeroType;
 
   OpCalculateVectorFieldValues_General(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -339,7 +339,7 @@ struct OpCalculateVectorFieldValues
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
 
   OpCalculateVectorFieldValues(const std::string field_name,
-                               boost::shared_ptr<MatrixDouble> &data_ptr,
+                               boost::shared_ptr<MatrixDouble> data_ptr,
                                const EntityType zero_type = MBVERTEX)
       : OpCalculateVectorFieldValues_General<Tensor_Dim, double,
                                              ublas::row_major, DoubleAllocator>(
@@ -364,7 +364,7 @@ struct OpCalculateVectorFieldValuesDot
   }
 
   OpCalculateVectorFieldValuesDot(const std::string field_name,
-                                  boost::shared_ptr<MatrixDouble> &data_ptr,
+                                  boost::shared_ptr<MatrixDouble> data_ptr,
                                   const EntityType zero_at_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -446,7 +446,7 @@ struct OpCalculateTensor2FieldValues_General
 
   OpCalculateTensor2FieldValues_General(
       const std::string field_name,
-      boost::shared_ptr<ublas::matrix<T, L, A>> &data_ptr,
+      boost::shared_ptr<ublas::matrix<T, L, A>> data_ptr,
       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -548,7 +548,7 @@ struct OpCalculateTensor2FieldValues
           Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
 
   OpCalculateTensor2FieldValues(const std::string field_name,
-                                boost::shared_ptr<MatrixDouble> &data_ptr,
+                                boost::shared_ptr<MatrixDouble> data_ptr,
                                 const EntityType zero_type = MBVERTEX)
       : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
                                               ublas::row_major,
@@ -565,7 +565,7 @@ template <int Tensor_Dim0, int Tensor_Dim1>
 struct OpCalculateTensor2FieldValuesDot
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  boost::shared_ptr<MatrixDouble> &dataPtr; ///< Data computed into this matrix
+  boost::shared_ptr<MatrixDouble> dataPtr; ///< Data computed into this matrix
   EntityType zeroAtType;  ///< Zero values at Gauss point at this type
   VectorDouble dotVector; ///< Keeps temoorary values of time directives
 
@@ -574,7 +574,7 @@ struct OpCalculateTensor2FieldValuesDot
   }
 
   OpCalculateTensor2FieldValuesDot(const std::string field_name,
-                                   boost::shared_ptr<MatrixDouble> &data_ptr,
+                                   boost::shared_ptr<MatrixDouble> data_ptr,
                                    const EntityType zero_at_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -662,7 +662,7 @@ struct OpCalculateTensor2SymmetricFieldValues
   const int zeroSide;
 
   OpCalculateTensor2SymmetricFieldValues(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
       const EntityType zero_type = MBEDGE, const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -728,7 +728,7 @@ struct OpCalculateTensor2SymmetricFieldValuesDot
   }
 
   OpCalculateTensor2SymmetricFieldValuesDot(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
       const EntityType zero_type = MBEDGE, const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -814,7 +814,7 @@ struct OpCalculateScalarFieldGradient_General
     : public OpCalculateVectorFieldValues_General<Tensor_Dim, T, L, A> {
 
   OpCalculateScalarFieldGradient_General(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
       const EntityType zero_type = MBVERTEX)
       : OpCalculateVectorFieldValues_General<Tensor_Dim, T, L, A>(
             field_name, data_ptr, zero_type) {}
@@ -831,7 +831,7 @@ struct OpCalculateScalarFieldGradient_General<Tensor_Dim, double,
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
 
   OpCalculateScalarFieldGradient_General(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
       const EntityType zero_type = MBVERTEX)
       : OpCalculateVectorFieldValues_General<Tensor_Dim, double,
                                              ublas::row_major, DoubleAllocator>(
@@ -910,7 +910,7 @@ struct OpCalculateScalarFieldGradient
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
 
   OpCalculateScalarFieldGradient(const std::string field_name,
-                                 boost::shared_ptr<MatrixDouble> &data_ptr,
+                                 boost::shared_ptr<MatrixDouble> data_ptr,
                                  const EntityType zero_type = MBVERTEX)
       : OpCalculateScalarFieldGradient_General<
             Tensor_Dim, double, ublas::row_major, DoubleAllocator>(
@@ -928,7 +928,7 @@ struct OpCalculateVectorFieldGradient_General
                                                    L, A> {
 
   OpCalculateVectorFieldGradient_General(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
       const EntityType zero_type = MBVERTEX)
       : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, T, L,
                                               A>(field_name, data_ptr,
@@ -942,7 +942,7 @@ struct OpCalculateVectorFieldGradient_General<Tensor_Dim0, Tensor_Dim1, double,
           Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
 
   OpCalculateVectorFieldGradient_General(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> &data_ptr,
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
       const EntityType zero_type = MBVERTEX)
       : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
                                               ublas::row_major,
@@ -1030,7 +1030,7 @@ struct OpCalculateVectorFieldGradient
           Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
 
   OpCalculateVectorFieldGradient(const std::string field_name,
-                                 boost::shared_ptr<MatrixDouble> &data_ptr,
+                                 boost::shared_ptr<MatrixDouble> data_ptr,
                                  const EntityType zero_type = MBVERTEX)
       : OpCalculateVectorFieldGradient_General<Tensor_Dim0, Tensor_Dim1, double,
                                                ublas::row_major,
@@ -1047,7 +1047,7 @@ template <int Tensor_Dim0, int Tensor_Dim1>
 struct OpCalculateVectorFieldGradientDot
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  boost::shared_ptr<MatrixDouble> &dataPtr; ///< Data computed into this matrix
+  boost::shared_ptr<MatrixDouble> dataPtr; ///< Data computed into this matrix
   EntityType zeroAtType;  ///< Zero values at Gauss point at this type
   VectorDouble dotVector; ///< Keeps temoorary values of time directives
 
@@ -1056,7 +1056,7 @@ struct OpCalculateVectorFieldGradientDot
   }
 
   OpCalculateVectorFieldGradientDot(const std::string field_name,
-                                    boost::shared_ptr<MatrixDouble> &data_ptr,
+                                    boost::shared_ptr<MatrixDouble> data_ptr,
                                     const EntityType zero_at_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -1149,7 +1149,7 @@ struct OpCalculateHdivVectorField_General
 
   OpCalculateHdivVectorField_General(
       const std::string field_name,
-      boost::shared_ptr<ublas::matrix<T, L, A>> &data_ptr,
+      boost::shared_ptr<ublas::matrix<T, L, A>> data_ptr,
       const EntityType zero_type = MBEDGE, const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -1193,7 +1193,7 @@ struct OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
   const int zeroSide;
 
   OpCalculateHdivVectorField_General(const std::string field_name,
-                                     boost::shared_ptr<MatrixDouble> &data_ptr,
+                                     boost::shared_ptr<MatrixDouble> data_ptr,
                                      const EntityType zero_type = MBEDGE,
                                      const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -1257,7 +1257,7 @@ struct OpCalculateHdivVectorField
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
 
   OpCalculateHdivVectorField(const std::string field_name,
-                             boost::shared_ptr<MatrixDouble> &data_ptr,
+                             boost::shared_ptr<MatrixDouble> data_ptr,
                              const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
       : OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
@@ -1280,7 +1280,7 @@ struct OpCalculateHdivVectorDivergence
   const int zeroSide;
 
   OpCalculateHdivVectorDivergence(const std::string field_name,
-                                  boost::shared_ptr<VectorDouble> &data_ptr,
+                                  boost::shared_ptr<VectorDouble> data_ptr,
                                   const EntityType zero_type = MBEDGE,
                                   const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -1339,7 +1339,7 @@ struct OpCalculateHcurlVectorCurl
   const int zeroSide;
 
   OpCalculateHcurlVectorCurl(const std::string field_name,
-                             boost::shared_ptr<MatrixDouble> &data_ptr,
+                             boost::shared_ptr<MatrixDouble> data_ptr,
                              const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -1405,7 +1405,7 @@ struct OpCalculateHVecTensorField
   const int zeroSide;
 
   OpCalculateHVecTensorField(const std::string field_name,
-                             boost::shared_ptr<MatrixDouble> &data_ptr,
+                             boost::shared_ptr<MatrixDouble> data_ptr,
                              const EntityType zero_type = MBEDGE,
                              const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -1463,7 +1463,7 @@ struct OpCalculateHTensorTensorField
   const int zeroSide;
 
   OpCalculateHTensorTensorField(const std::string field_name,
-                                boost::shared_ptr<MatrixDouble> &data_ptr,
+                                boost::shared_ptr<MatrixDouble> data_ptr,
                                 const EntityType zero_type = MBEDGE,
                                 const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
@@ -1522,7 +1522,7 @@ struct OpCalculateHVecTensorDivergence
   const int zeroSide;
 
   OpCalculateHVecTensorDivergence(const std::string field_name,
-                                  boost::shared_ptr<MatrixDouble> &data_ptr,
+                                  boost::shared_ptr<MatrixDouble> data_ptr,
                                   const EntityType zero_type = MBEDGE,
                                   const int zero_side = 0)
       : ForcesAndSourcesCore::UserDataOperator(
