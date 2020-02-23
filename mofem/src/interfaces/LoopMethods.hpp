@@ -392,7 +392,10 @@ struct FEMethod : public BasicMethod {
   /// \brief Get number of DOFs on element
   MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
 
-  MoFEMErrorCode getNodeData(const std::string field_name, VectorDouble &data);
+  inline EntityHandle getFEEntityHandle() const;
+
+  MoFEMErrorCode getNodeData(const std::string field_name, VectorDouble &data,
+                             const bool reset_dofs = true);
 
   template <class MULTIINDEX>
   typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,
@@ -478,6 +481,10 @@ struct FEMethod : public BasicMethod {
             FE->dataPtr->get<FieldName_mi_tag>(), NAME);                       \
   IT++
 };
+
+inline EntityHandle FEMethod::getFEEntityHandle() const {
+  return numeredEntFiniteElementPtr->getEnt();
+}
 
 /**
  * \brief Data structure to exchange data between mofem and User Loop Methods on
