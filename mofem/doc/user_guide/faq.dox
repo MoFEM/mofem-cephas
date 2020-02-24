@@ -266,14 +266,14 @@ $HOME/mofem-cephas/mofem/users_modules, for example, module for computational
 homogenisation has repository in Bitbucket and can be added by
 \code
 cd $HOME/mofem-cephas/mofem/users_modules
-git clone https://likask@bitbucket.org/likask/mofem_um_homogenisation.git homogenisation
+git clone https://bitbucket.org/likask/mofem_um_homogenisation.git homogenisation
 \endcode
 Sometimes users modules depend on other modules, in that case, homogenisation
 module uses some old obsolete classes (which should not be used in new
 developments), thus in this particular case addition you have to clone  also
 obsolete module
 \code
-git clone https://likask@bitbucket.org/likask/mofem_um_obsolete.git obsolete
+git clone https://bitbucket.org/likask/mofem_um_obsolete.git obsolete
 \endcode
 
 Once the module is added, you have to go main build directory where users
@@ -302,7 +302,7 @@ can be simply added by adding it to \em ModulesLists.cmake in users modules
 directory. However is recommended that user module is project/respository by its
 own, repository should be cloned to users modules directory, f.e. in
 mofem-cephas/mofem/users_modules \code
-git clone https://likask@bitbucket.org/likask/mofem_um_homogenisation.git homogenisation
+git clone https://bitbucket.org/likask/mofem_um_homogenisation.git homogenisation
 \endcode
 
 In user module directory directory should be file file, \em
