@@ -580,8 +580,7 @@ struct FieldEntity : public interface_Field<Field>,
               boost::shared_ptr<double *const> &&field_data_adaptor_ptr,
               boost::shared_ptr<const int> &&t_max_order_ptr);
 
-                  
-  ~FieldEntity();
+  virtual ~FieldEntity() = default;
 
   /**
    * \brief Get entity handle
