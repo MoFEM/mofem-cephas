@@ -182,7 +182,6 @@ boost::shared_ptr<FieldData *const> FieldEntity::makeSharedFieldDataAdaptorPtr(
   return boost::make_shared<FieldData *const>(ptr);
 }
 
-FieldEntity::~FieldEntity() {}
 std::ostream &operator<<(std::ostream &os, const FieldEntity &e) {
   os << "ent_global_uid "
      << (UId)e.getGlobalUniqueId()
