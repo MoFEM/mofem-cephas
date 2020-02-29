@@ -29,7 +29,6 @@
 
 namespace MoFEM {
 
-
 /** \brief user adjacency function
  * \ingroup fe_multi_indices
  */
@@ -391,7 +390,6 @@ private:
   mutable SequenceEntContainer sequenceEntContainer;
   mutable SequenceDofContainer sequenceDofContainer;
   mutable DofsOrderMap dofOrderMap;
-
 
 };
 
