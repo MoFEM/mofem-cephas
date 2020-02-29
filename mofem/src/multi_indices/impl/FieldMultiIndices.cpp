@@ -95,50 +95,7 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
       forderTable[tt] = NULL;
   };
 
-  auto fNBENTITY_GENERIC = [](int P) -> int {
-    (void)P;
-    return 0;
-  };
 
-  auto fNBENTITYSET_NOFIELD = [](int P) -> int {
-    (void)P;
-    return 1;
-  };
-
-  auto fNBVERTEX_L2 = [](int P) -> int {
-    (void)P;
-    return 1;
-  };
-
-  auto fNBVOLUMETET_L2 = [](int P) -> int { return NBVOLUMETET_L2(P); };
-  auto fNBFACETRI_L2 = [](int P) -> int { return NBFACETRI_L2(P); };
-  auto fNBEDGE_L2 = [](int P) -> int { return NBEDGE_L2(P); };
-
-  /// number of approx. functions for H1 space on vertex
-  auto fNBVERTEX_H1 = [](int P) -> int { return (P > 0) ? 1 : 0; };
-  /// number of approx. functions for H1 space on edge
-  auto fNBEDGE_H1 = [](int P) -> int { return NBEDGE_H1(P); };
-  /// number of approx. functions for H1 space on face
-  auto fNBFACETRI_H1 = [](int P) -> int { return NBFACETRI_H1(P); };
-  auto fNBFACEQUAD_H1 = [](int P) -> int { return NBFACEQUAD_H1(P); };
-  /// number of approx. functions for H1 space on volume
-  auto fNBVOLUMETET_H1 = [](int P) -> int { return NBVOLUMETET_H1(P); };
-  auto fNBVOLUMEPRISM_H1 = [](int P) -> int { return NBVOLUMEPRISM_H1(P); };
-
-  /// number of approx. functions for HCURL space on vertex
-  auto fNBVERTEX_HCURL = [](int P) -> int {
-    (void)P;
-    return 0;
-  };
-  auto fNBEDGE_AINSWORTH_HCURL = [](int P) -> int {
-    return NBEDGE_AINSWORTH_HCURL(P);
-  };
-  auto fNBFACETRI_AINSWORTH_HCURL = [](int P) -> int {
-    return NBFACETRI_AINSWORTH_HCURL(P);
-  };
-  auto fNBVOLUMETET_AINSWORTH_HCURL = [](int P) -> int {
-    return NBVOLUMETET_AINSWORTH_HCURL(P);
-  };
   auto fNBEDGE_DEMKOWICZ_HCURL = [](int P) -> int {
     return NBEDGE_DEMKOWICZ_HCURL(P);
   };
@@ -183,18 +140,27 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
     case AINSWORTH_LOBATTO_BASE:
       switch (*tagSpaceData) {
       case H1:
-        forderTable[MBVERTEX] = fNBVERTEX_H1;
-        forderTable[MBEDGE] = fNBEDGE_H1;
-        forderTable[MBTRI] = fNBFACETRI_H1;
-        forderTable[MBQUAD] = fNBFACEQUAD_H1;
-        forderTable[MBTET] = fNBVOLUMETET_H1;
-        forderTable[MBPRISM] = fNBVOLUMEPRISM_H1;
+        forderTable[MBVERTEX] = [](int P) -> int { return (P > 0) ? 1 : 0; };
+        forderTable[MBEDGE] = [](int P) -> int { return NBEDGE_H1(P); };
+        forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_H1(P); };
+        forderTable[MBQUAD] = [](int P) -> int { return NBFACEQUAD_H1(P); };
+        forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_H1(P); };
+        forderTable[MBPRISM] = [](int P) -> int { return NBVOLUMEPRISM_H1(P); };
         break;
       case HCURL:
-        forderTable[MBVERTEX] = fNBVERTEX_HCURL;
-        forderTable[MBEDGE] = fNBEDGE_AINSWORTH_HCURL;
-        forderTable[MBTRI] = fNBFACETRI_AINSWORTH_HCURL;
-        forderTable[MBTET] = fNBVOLUMETET_AINSWORTH_HCURL;
+        forderTable[MBVERTEX] = [](int P) -> int {
+          (void)P;
+          return 0;
+        };
+        forderTable[MBEDGE] = [](int P) -> int {
+          return NBEDGE_AINSWORTH_HCURL(P);
+        };
+        forderTable[MBTRI] = [](int P) -> int {
+          return NBFACETRI_AINSWORTH_HCURL(P);
+        };
+        forderTable[MBTET] = [](int P) -> int {
+          return NBVOLUMETET_AINSWORTH_HCURL(P);
+        };
         break;
       case HDIV:
         forderTable[MBVERTEX] = fNBVERTEX_HDIV;
@@ -203,10 +169,13 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
         forderTable[MBTET] = fNBVOLUMETET_AINSWORTH_HDIV;
         break;
       case L2:
-        forderTable[MBVERTEX] = fNBVERTEX_L2;
-        forderTable[MBEDGE] = fNBEDGE_L2;
-        forderTable[MBTRI] = fNBFACETRI_L2;
-        forderTable[MBTET] = fNBVOLUMETET_L2;
+        forderTable[MBVERTEX] = [](int P) -> int {
+          (void)P;
+          return 1;
+        };
+        forderTable[MBEDGE] = [](int P) -> int { return NBEDGE_L2(P); };
+        forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_L2(P); };
+        forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_L2(P); };
         break;
       default:
         THROW_MESSAGE("unknown approximation space");
@@ -215,18 +184,21 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
     case AINSWORTH_BERNSTEIN_BEZIER_BASE:
       switch (*tagSpaceData) {
       case H1:
-        forderTable[MBVERTEX] = fNBVERTEX_H1;
-        forderTable[MBEDGE] = fNBEDGE_H1;
-        forderTable[MBTRI] = fNBFACETRI_H1;
-        forderTable[MBQUAD] = fNBFACEQUAD_H1;
-        forderTable[MBTET] = fNBVOLUMETET_H1;
-        forderTable[MBPRISM] = fNBVOLUMEPRISM_H1;
+        forderTable[MBVERTEX] = [](int P) -> int { return (P > 0) ? 1 : 0; };
+        forderTable[MBEDGE] = [](int P) -> int { return NBEDGE_H1(P); };
+        forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_H1(P); };
+        forderTable[MBQUAD] = [](int P) -> int { return NBFACEQUAD_H1(P); };
+        forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_H1(P); };
+        forderTable[MBPRISM] = [](int P) -> int { return NBVOLUMEPRISM_H1(P); };
         break;
       case L2:
-        forderTable[MBVERTEX] = fNBVERTEX_L2;
-        forderTable[MBEDGE] = fNBEDGE_L2;
-        forderTable[MBTRI] = fNBFACETRI_L2;
-        forderTable[MBTET] = fNBVOLUMETET_L2;
+        forderTable[MBVERTEX] = [](int P) -> int {
+          (void)P;
+          return 1;
+        };
+        forderTable[MBEDGE] = [](int P) -> int { return NBEDGE_L2(P); };
+        forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_L2(P); };
+        forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_L2(P); };
         break;
       default:
         THROW_MESSAGE("unknown approximation space or not yet implemented");
@@ -235,7 +207,10 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
     case DEMKOWICZ_JACOBI_BASE:
       switch (*tagSpaceData) {
       case HCURL:
-        forderTable[MBVERTEX] = fNBVERTEX_HCURL;
+        forderTable[MBVERTEX] = [](int P) -> int {
+          (void)P;
+          return 0;
+        };
         forderTable[MBEDGE] = fNBEDGE_DEMKOWICZ_HCURL;
         forderTable[MBTRI] = fNBFACETRI_DEMKOWICZ_HCURL;
         forderTable[MBTET] = fNBVOLUMETET_DEMKOWICZ_HCURL;
@@ -252,7 +227,10 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
       break;
     case USER_BASE:
       for (int ee = 0; ee < MBMAXTYPE; ee++) {
-        forderTable[ee] = fNBENTITY_GENERIC;
+        forderTable[ee] = [](int P) -> int {
+          (void)P;
+          return 0;
+        };
       }
       break;
     default:
@@ -260,7 +238,10 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
         THROW_MESSAGE("unknown approximation base");
       } else {
         for (EntityType t = MBVERTEX; t < MBMAXTYPE; t++)
-          forderTable[t] = fNBENTITYSET_NOFIELD;
+          forderTable[t] = [](int P) -> int {
+            (void)P;
+            return 1;
+          };
       }
     }
   };
