@@ -91,8 +91,90 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
   bitNumber = getBitNumberCalculate();
 
   auto reset_entity_order_table = [&]() {
-    for (int tt = 0; tt != MBMAXTYPE; ++tt) 
+    for (int tt = 0; tt != MBMAXTYPE; ++tt)
       forderTable[tt] = NULL;
+  };
+
+  auto fNBENTITY_GENERIC = [](int P) -> int {
+    (void)P;
+    return 0;
+  };
+
+  auto fNBENTITYSET_NOFIELD = [](int P) -> int {
+    (void)P;
+    return 1;
+  };
+
+  auto fNBVERTEX_L2 = [](int P) -> int {
+    (void)P;
+    return 1;
+  };
+
+  auto fNBVOLUMETET_L2 = [](int P) -> int { return NBVOLUMETET_L2(P); };
+  auto fNBFACETRI_L2 = [](int P) -> int { return NBFACETRI_L2(P); };
+  auto fNBEDGE_L2 = [](int P) -> int { return NBEDGE_L2(P); };
+
+  /// number of approx. functions for H1 space on vertex
+  auto fNBVERTEX_H1 = [](int P) -> int { return (P > 0) ? 1 : 0; };
+  /// number of approx. functions for H1 space on edge
+  auto fNBEDGE_H1 = [](int P) -> int { return NBEDGE_H1(P); };
+  /// number of approx. functions for H1 space on face
+  auto fNBFACETRI_H1 = [](int P) -> int { return NBFACETRI_H1(P); };
+  auto fNBFACEQUAD_H1 = [](int P) -> int { return NBFACEQUAD_H1(P); };
+  /// number of approx. functions for H1 space on volume
+  auto fNBVOLUMETET_H1 = [](int P) -> int { return NBVOLUMETET_H1(P); };
+  auto fNBVOLUMEPRISM_H1 = [](int P) -> int { return NBVOLUMEPRISM_H1(P); };
+
+  /// number of approx. functions for HCURL space on vertex
+  auto fNBVERTEX_HCURL = [](int P) -> int {
+    (void)P;
+    return 0;
+  };
+  auto fNBEDGE_AINSWORTH_HCURL = [](int P) -> int {
+    return NBEDGE_AINSWORTH_HCURL(P);
+  };
+  auto fNBFACETRI_AINSWORTH_HCURL = [](int P) -> int {
+    return NBFACETRI_AINSWORTH_HCURL(P);
+  };
+  auto fNBVOLUMETET_AINSWORTH_HCURL = [](int P) -> int {
+    return NBVOLUMETET_AINSWORTH_HCURL(P);
+  };
+  auto fNBEDGE_DEMKOWICZ_HCURL = [](int P) -> int {
+    return NBEDGE_DEMKOWICZ_HCURL(P);
+  };
+  auto fNBFACETRI_DEMKOWICZ_HCURL = [](int P) -> int {
+    return NBFACETRI_DEMKOWICZ_HCURL(P);
+  };
+  auto fNBVOLUMETET_DEMKOWICZ_HCURL = [](int P) -> int {
+    return NBVOLUMETET_DEMKOWICZ_HCURL(P);
+  };
+
+  /// \brief number of approx. functions for HDIV space on vertex
+  /// zero number of digrees of freedom on vertex for that space
+  auto fNBVERTEX_HDIV = [](int P) -> int {
+    (void)P;
+    return 0;
+  };
+  /// number of approx. functions for HDIV space on edge
+  auto fNBEDGE_HDIV = [](int P) -> int {
+    (void)P;
+    return NBEDGE_HDIV(P);
+  };
+  /// number of approx. functions for HDIV space on face
+  auto fNBFACETRI_AINSWORTH_HDIV = [](int P) -> int {
+    return NBFACETRI_AINSWORTH_HDIV(P);
+  };
+  /// number of approx. functions for HDIV space on volume
+  auto fNBVOLUMETET_AINSWORTH_HDIV = [](int P) -> int {
+    return NBVOLUMETET_AINSWORTH_HDIV(P);
+  };
+
+  auto fNBFACETRI_DEMKOWICZ_HDIV = [](int P) -> int {
+    return NBFACETRI_DEMKOWICZ_HDIV(P);
+  };
+  /// number of approx. functions for HDIV space on volume
+  auto fNBVOLUMETET_DEMKOWICZ_HDIV = [](int P) -> int {
+    return NBVOLUMETET_DEMKOWICZ_HDIV(P);
   };
 
   auto set_entity_order_table = [&]() {
@@ -177,7 +259,7 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
       if (*tagSpaceData != NOFIELD) {
         THROW_MESSAGE("unknown approximation base");
       } else {
-        for (EntityType t = MBVERTEX; t < MBMAXTYPE; t++) 
+        for (EntityType t = MBVERTEX; t < MBMAXTYPE; t++)
           forderTable[t] = fNBENTITYSET_NOFIELD;
       }
     }
