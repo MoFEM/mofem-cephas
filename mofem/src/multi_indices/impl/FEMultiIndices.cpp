@@ -1,5 +1,5 @@
-/** \file CoreDataStructures.cpp
- * \brief Mylti-index contains data structures and other low-level functions
+/** \file FEMultiIndices.cpp
+ * \brief Multi-index contains for finite elements
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under

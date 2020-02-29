@@ -50,6 +50,7 @@
 #include <MaterialBlocks.hpp>
 #include <BCData.hpp>
 #include <TagMultiIndices.hpp>
+#include <CoreDataStructures.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>

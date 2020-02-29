@@ -1,5 +1,5 @@
-/** \file CoreDataStructures.cpp
- * \brief Multi-index containers, data structures and other low-level functions
+/** \file EntsMultiIndices.cpp
+ * \brief Multi-index containers for entities
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under

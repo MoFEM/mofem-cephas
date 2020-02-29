@@ -1,5 +1,5 @@
-/** \file CoreDataStructures.cpp
- * \brief Multi-index containers, data structures and other low-level functions
+/** \file FieldMultiIndices.cpp
+ * \brief Multi-index containers for fields
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -15,8 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
-
-#include <CoreDataStructures.hpp>
 
 namespace MoFEM {
 
