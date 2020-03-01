@@ -1737,10 +1737,10 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     double coords_edge[3 * num_nodes];
     CHKERR moab.get_coords(conn_edge, num_nodes, coords_edge);
 
-    FTensor::Tensor1<double *, 3> t_e0(&coords_edge[0], &coords_edge[1],
-                                       &coords_edge[2]);
-    FTensor::Tensor1<double *, 3> t_e1(&coords_edge[3], &coords_edge[4],
-                                       &coords_edge[5]);
+    FTensor::Tensor1<double, 3> t_e0{coords_edge[0], coords_edge[1],
+                                     coords_edge[2]};
+    FTensor::Tensor1<double, 3> t_e1{coords_edge[3], coords_edge[4],
+                                     coords_edge[5]};
 
     FTensor::Tensor1<double, 3> t_edge_delta;
     t_edge_delta(i) = t_e1(i) - t_e0(i);
@@ -1767,10 +1767,10 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
 
       auto coords_front = get_edge_coors(s);
 
-      FTensor::Tensor1<double *, 3> t_f0(&coords_front[0], &coords_front[1],
-                                         &coords_front[2]);
-      FTensor::Tensor1<double *, 3> t_f1(&coords_front[3], &coords_front[4],
-                                         &coords_front[5]);
+      FTensor::Tensor1<double, 3> t_f0{coords_front[0], coords_front[1],
+                                       coords_front[2]};
+      FTensor::Tensor1<double, 3> t_f1{coords_front[3], coords_front[4],
+                                       coords_front[5]};
 
       // find point of minilam distance between front and cut surface edge
       double t_edge = -1, t_front = -1;
@@ -1780,7 +1780,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       if (res != Tools::NO_SOLUTION) {
         // check if edges crossing each other in the middle (it not imply that
         // have common point)
-        const double overlap_tol = 1e-2;
+        constexpr double overlap_tol = 1e-2;
         if (
 
             (t_edge > -std::numeric_limits<float>::epsilon() &&
