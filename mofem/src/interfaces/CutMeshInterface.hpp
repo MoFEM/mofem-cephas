@@ -245,7 +245,7 @@ struct CutMeshInterface : public UnknownInterface {
                                       const bool debug = false);
 
   /**
-   * @brief Create a level sets, i.e. distances from surface and surface front
+   * @brief Find level set volumes
    *
    * @param th
    * @param vol_edges
@@ -255,20 +255,20 @@ struct CutMeshInterface : public UnknownInterface {
    * @param edges_file_name
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode createLevelSets(Tag th, Range &vol_edges,
+  MoFEMErrorCode findLevelSetVolumes(Tag th, Range &vol_edges,
                                  const bool remove_adj_prims_edges,
                                  int verb = QUIET, const bool debug = false,
                                  const std::string edges_file_name = string());
 
   /**
-   * @brief Create a level sets, i.e. distances from surface and surface front
+   * @brief Find level set volumes
    *
    * @param update_front
    * @param verb
    * @param debug
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode createLevelSets(int verb = QUIET, const bool debug = false);
+  MoFEMErrorCode findLevelSetVolumes(int verb = QUIET, const bool debug = false);
 
   /**
    * @brief Refine and set level sets

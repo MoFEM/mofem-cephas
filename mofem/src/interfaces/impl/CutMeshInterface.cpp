@@ -593,7 +593,7 @@ MoFEMErrorCode CutMeshInterface::createFrontLevelSets(Range vol, Tag th,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::createLevelSets(
+MoFEMErrorCode CutMeshInterface::findLevelSetVolumes(
     Tag th, Range &vol_edges, const bool remove_adj_prims_edges, int verb,
     const bool debug, const std::string edges_file_name) {
   CoreInterface &m_field = cOre;
@@ -681,7 +681,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
+MoFEMErrorCode CutMeshInterface::findLevelSetVolumes(int verb, const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -689,7 +689,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
   CHKERR createFrontLevelSets(vOlume, nullptr, verb, debug);
   Tag th_dist_front_vec;
   CHKERR moab.tag_get_handle("DIST_FRONT_VECTOR", th_dist_front_vec);
-  CHKERR createLevelSets(th_dist_front_vec, cutFrontVolumes, true, verb, debug,
+  CHKERR findLevelSetVolumes(th_dist_front_vec, cutFrontVolumes, true, verb, debug,
                          "cutFrontEdges.vtk");
 
   CHKERR createSurfaceLevelSets(verb, debug);
@@ -697,7 +697,7 @@ MoFEMErrorCode CutMeshInterface::createLevelSets(int verb, const bool debug) {
   Tag th_dist_surface_vec;
   CHKERR moab.tag_get_handle("DIST_SURFACE_VECTOR", th_dist_surface_vec);
   cutSurfaceVolumes.clear();
-  CHKERR createLevelSets(th_dist_surface_vec, cutSurfaceVolumes, true, verb,
+  CHKERR findLevelSetVolumes(th_dist_surface_vec, cutSurfaceVolumes, true, verb,
                          debug, "cutSurfaceEdges.vtk");
 
   if (debug)
@@ -779,18 +779,18 @@ MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
   };
 
   for (int ll = init_bit_level; ll != init_bit_level + surf_levels; ++ll) {
-    CHKERR createLevelSets(verb, debug);
+    CHKERR findLevelSetVolumes(verb, debug);
     CHKERR refine(BitRefLevel().set(ll + 1),
                   unite(cutSurfaceVolumes, cutFrontVolumes));
   }
 
   for (int ll = init_bit_level + surf_levels;
        ll != init_bit_level + surf_levels + front_levels; ++ll) {
-    CHKERR createLevelSets(verb, debug);
+    CHKERR findLevelSetVolumes(verb, debug);
     CHKERR refine(BitRefLevel().set(ll + 1), cutFrontVolumes);
   }
 
-  CHKERR createLevelSets(verb, debug);
+  CHKERR findLevelSetVolumes(verb, debug);
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("refinedVolume.vtk", vOlume);
