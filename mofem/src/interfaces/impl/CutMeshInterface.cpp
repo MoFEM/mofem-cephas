@@ -813,13 +813,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
   zeroDistanceEnts.clear();
   verticesOnCutEdges.clear();
 
-  Tag th_test_dist;
-  if (debug) {
-    double def_val[] = {0, 0, 0};
-    CHKERR moab.tag_get_handle("TETS_DIST", 1, MB_TYPE_DOUBLE, th_test_dist,
-                               MB_TAG_CREAT | MB_TAG_SPARSE, def_val);
-  }
-
   Tag th_dist_normal;
   CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_VECTOR", th_dist_normal);
 
@@ -828,6 +821,23 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     CHKERR moab.tag_get_by_ptr(th, &conn, 1, &ptr);
     return getVectorAdaptor(
         const_cast<double *>(static_cast<const double *>(ptr)), 3);
+  };
+
+  auto send_ray = [&](auto &pt, auto &ray, auto length) {
+    std::vector<double> intersection_distances_out;
+    std::vector<EntityHandle> intersection_facets_out;
+    CHKERR treeSurfPtr->ray_intersect_triangles(
+        intersection_distances_out, intersection_facets_out, rootSetSurf,
+        std::numeric_limits<float>::epsilon(), &pt[0], &ray[0], &length);
+    auto return_pair = [](const double d, const EntityHandle e) {
+      return std::make_pair(d, e);
+    };
+
+    if (!intersection_distances_out.empty())
+      return return_pair(intersection_distances_out[0],
+                         intersection_facets_out[0]);
+    else
+      return return_pair(0, 0);
   };
 
   Range vol_edges;
@@ -850,35 +860,22 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     const double ray_length = norm_2(ray);
     ray /= ray_length;
 
+    auto edge_intersection = send_ray(n0, ray, ray_length);
+
     auto dist_vec0 = get_tag_data(th_dist_normal, conn[0]);
     auto dist_vec1 = get_tag_data(th_dist_normal, conn[1]);
 
     const double s0 = norm_2(dist_vec0);
     const double s1 = norm_2(dist_vec1);
 
-    if (inner_prod(dist_vec0, dist_vec1) < 0) {
+    auto dot = inner_prod(dist_vec0, dist_vec1);
+    if (dot < 0 || edge_intersection.second) {
 
       // Edges is on two sides of the surface
       const double s = s0 / (s0 + s1);
       const double dist = s * ray_length;
 
-      VectorDouble3 p = n0 + dist * ray;
-      VectorDouble3 w = n0 + dist_vec0;
-      VectorDouble3 v = n1 + dist_vec1;
-      double t;
-      auto res = Tools::minDistancePointFromOnSegment(&w[0], &v[0], &p[0], &t);
-      t = std::max(0., std::min(t, 1.));
-      double d = 0;
-      if (res == Tools::SOLUTION_EXIST) {
-        VectorDouble3 o = w + t * (v - w);
-        d = norm_2(o - p) / ray_length;
-      }
-
-      if (debug)
-        CHKERR moab.tag_set_data(th_test_dist, &e, 1, &d);
-
-      if (d < 0.25) {
-
+      auto add_edge = [&](auto dist) {
         edgesToCut[e].dIst = dist;
         edgesToCut[e].lEngth = ray_length;
         edgesToCut[e].unitRayDir = ray;
@@ -888,7 +885,40 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
         aveLength += norm_2(ray);
         maxLength = fmax(maxLength, norm_2(ray));
         ++nb_ave_length;
+      };
+
+      if (dot && edge_intersection.second) {
+        // Use disrance from closeset distance of nodes, instead of edge ray
+        // distance. That smoothing crack surface when mesh representing cut
+        // surface is not dense enough to represenr crack.
+        add_edge(dist);
+
+      } else if (edge_intersection.second) {
+        // Surface has to be curved
+        add_edge(edge_intersection.first);
+
+      } else if (dot < 0) {
+        // Edge is outside of surface
+
+        VectorDouble3 p = n0 + dist * ray;
+        VectorDouble3 w = n0 + dist_vec0;
+        VectorDouble3 v = n1 + dist_vec1;
+        double t;
+        auto res =
+            Tools::minDistancePointFromOnSegment(&w[0], &v[0], &p[0], &t);
+        t = std::max(0., std::min(t, 1.));
+        double d = 0;
+        if (res == Tools::SOLUTION_EXIST) {
+          VectorDouble3 o = w + t * (v - w);
+          d = norm_2(o - p) / ray_length;
+        }
+
+        // If edge cut is consistent distance is zero
+        constexpr double min_dist_tol = 0.125;
+        if(d < min_dist_tol)
+          add_edge(dist);
       }
+
     }
   }
   aveLength /= nb_ave_length;
@@ -1652,7 +1682,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         FTensor::Tensor1<double, 3> t_p;
 
         EntityHandle facets_out;
-        FTensor::Tensor1<double, 3> t_point_on_cutting_surface;
         CHKERR treeSurfPtr->closest_to_location(&t(0), rootSetSurf, &t_p(0),
                                                 facets_out);
 
