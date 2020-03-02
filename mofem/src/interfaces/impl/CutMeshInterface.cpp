@@ -1755,8 +1755,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     const double dot = t_dist0(i) * t_dist1(i);
     const double dot_direction = t_dist0(i) * t_edge_delta(i);
 
-    const double s = s0 / (s0 + s1);
-
+    const double s = s0 / (s0 - s1);
 
     if(dot < 0 && dot_direction > 0) {
 
@@ -1825,14 +1824,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       } else {
         t_cut = s;
       }
-
-      auto check_to_add_edge = [&](const EntityHandle e, const double dist) {
-        auto eit = edgesToTrim.find(e);
-        if (eit != edgesToTrim.end())
-          if (eit->second.dIst < dist)
-            return false;
-        return true;
-      };
 
       FTensor::Tensor1<double, 3> t_ray;
       if (t_edge < 0.5) {
