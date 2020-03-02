@@ -1753,9 +1753,12 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     const double s0 = t_dist0(i) * t_edge_delta(i) / edge_length;
     const double s1 = t_dist1(i) * t_edge_delta(i) / edge_length;
     const double dot = t_dist0(i) * t_dist1(i);
+    const double dot_direction = t_dist0(i) * t_edge_delta(i);
 
-    // iterate entities surface front to find cross to trim
-    for (auto s : surface_skin) {
+    const double s = s0 / (s0 + s1);
+
+
+    if(dot < 0 && dot_direction > 0) {
 
       auto get_edge_coors = [&](const auto e) {
         const EntityHandle *conn;
@@ -1765,80 +1768,88 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         return coords;
       };
 
-      auto coords_front = get_edge_coors(s);
+      auto find_minimal_cross_dist = [&]() {
+        EntityHandle min_front_edge = 0;
+        double t_min_edge = 0;
+        double min_dist = edge_length;
+        for (auto s : surface_skin) {
 
-      FTensor::Tensor1<double, 3> t_f0{coords_front[0], coords_front[1],
-                                       coords_front[2]};
-      FTensor::Tensor1<double, 3> t_f1{coords_front[3], coords_front[4],
-                                       coords_front[5]};
+          auto get_edge_coors = [&](const auto e) {
+            const EntityHandle *conn;
+            CHKERR moab.get_connectivity(e, conn, num_nodes, true);
+            VectorDouble6 coords(6);
+            CHKERR moab.get_coords(conn, num_nodes, &coords[0]);
+            return coords;
+          };
 
-      // find point of minilam distance between front and cut surface edge
-      double t_edge = -1, t_front = -1;
-      auto res = Tools::minDistanceFromSegments(&t_e0(0), &t_e1(0), &t_f0(0),
-                                                &t_f1(0), &t_edge, &t_front);
+          auto coords_front = get_edge_coors(s);
 
-      if (res != Tools::NO_SOLUTION) {
-        // check if edges crossing each other in the middle (it not imply that
-        // have common point)
-        constexpr double overlap_tol = 1e-2;
-        if (
+          FTensor::Tensor1<double, 3> t_f0{coords_front[0], coords_front[1],
+                                           coords_front[2]};
+          FTensor::Tensor1<double, 3> t_f1{coords_front[3], coords_front[4],
+                                           coords_front[5]};
 
-            (t_edge > -std::numeric_limits<float>::epsilon() &&
-             t_edge < 1 + std::numeric_limits<float>::epsilon())
+          // find point of minilam distance between front and cut surface edge
+          double t_edge = -1, t_front = -1;
+          auto res = Tools::minDistanceFromSegments(
+              &t_e0(0), &t_e1(0), &t_f0(0), &t_f1(0), &t_edge, &t_front);
 
-            &&
+          if (res != Tools::NO_SOLUTION) {
 
-            (t_front >= -overlap_tol && t_front <= 1 + overlap_tol)
+            t_front = std::max(0., std::min(t_front, 1.));
+            FTensor::Tensor1<double, 3> t_front_delta;
+            t_front_delta(i) = t_f1(i) - t_f0(i);
+            FTensor::Tensor1<double, 3> t_edge_point, t_front_point;
+            t_edge_point(i) =
+                t_e0(i) + std::max(0., std::min(t_edge, 1.)) * t_edge_delta(i);
+            t_front_point(i) = t_f0(i) + t_front * t_front_delta(i);
 
-        ) {
-
-          t_front = std::max(0., std::min(t_front, 1.));
-
-          FTensor::Tensor1<double, 3> t_front_delta;
-          t_front_delta(i) = t_f1(i) - t_f0(i);
-          FTensor::Tensor1<double, 3> t_edge_point, t_front_point;
-          t_edge_point(i) = t_e0(i) + t_edge * t_edge_delta(i);
-          t_front_point(i) = t_f0(i) + t_front * t_front_delta(i);
-
-          FTensor::Tensor1<double, 3> t_ray;
-          t_ray(i) = t_front_point(i) - t_edge_point(i);
-          const double dist = sqrt(t_ray(i) * t_ray(i));
-
-          // that imply that edges have common point
-          if ((dist < 0.1 * edge_length) ||
-              (s0 >= 0 && s1 < -std::numeric_limits<double>::epsilon() &&
-               dot <= 0)) {
-
-            auto check_to_add_edge = [&](const EntityHandle e,
-                                         const double dist) {
-              auto eit = edgesToTrim.find(e);
-              if (eit != edgesToTrim.end())
-                if (eit->second.dIst < dist)
-                  return false;
-              return true;
-            };
-
-            if (t_edge < 0.5) {
-              t_ray(i) = t_edge * t_edge_delta(i);
-              if (check_to_add_edge(e, dist)) {
-                add_vert(conn_edge[0], e, fabs(t_edge));
-                add_vert(conn_edge[1], e, fabs(t_edge - 1));
-                cut_this_edge(e, edge_length, t_ray, t_e0);
-              }
-            } else {
-              FTensor::Tensor1<double, 3> t_edge_point;
-              t_edge_point(i) = t_e0(i) + t_edge * t_edge_delta(i);
-              t_ray(i) = t_edge_point(i) - t_e1(i);
-              if (check_to_add_edge(e, dist)) {
-                add_vert(conn_edge[0], e, fabs(t_edge));
-                add_vert(conn_edge[1], e, fabs(t_edge - 1));
-                cut_this_edge(e, edge_length, t_ray, t_e1);
-              }
+            FTensor::Tensor1<double, 3> t_ray;
+            t_ray(i) = t_front_point(i) - t_edge_point(i);
+            const double dist = sqrt(t_ray(i) * t_ray(i));
+            if (dist < min_dist) {
+              min_front_edge = s;
+              t_min_edge = t_edge;
             }
           }
         }
+
+        return std::make_pair(min_front_edge, t_min_edge);
+      };
+
+      auto p = find_minimal_cross_dist();
+      const double t_edge = p.second;
+      double t_cut;
+      if (t_edge >= 0 && t_edge <= 1 && !p.first) {
+        t_cut = t_edge;
+      } else {
+        t_cut = s;
       }
-    }
+
+      auto check_to_add_edge = [&](const EntityHandle e, const double dist) {
+        auto eit = edgesToTrim.find(e);
+        if (eit != edgesToTrim.end())
+          if (eit->second.dIst < dist)
+            return false;
+        return true;
+      };
+
+      FTensor::Tensor1<double, 3> t_ray;
+      if (t_edge < 0.5) {
+        t_ray(i) = t_cut * t_edge_delta(i);
+        add_vert(conn_edge[0], e, fabs(t_cut));
+        add_vert(conn_edge[1], e, fabs(t_cut - 1));
+        cut_this_edge(e, edge_length, t_ray, t_e0);
+      } else {
+        FTensor::Tensor1<double, 3> t_edge_point;
+        t_edge_point(i) = t_e0(i) + t_cut * t_edge_delta(i);
+        t_ray(i) = t_edge_point(i) - t_e1(i);
+        add_vert(conn_edge[0], e, fabs(t_cut));
+        add_vert(conn_edge[1], e, fabs(t_cut - 1));
+        cut_this_edge(e, edge_length, t_ray, t_e1);
+      }
+    } 
+
   }
 
   if (debug)
