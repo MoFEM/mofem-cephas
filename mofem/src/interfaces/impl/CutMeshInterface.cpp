@@ -869,7 +869,8 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     const double s1 = norm_2(dist_vec1);
 
     auto dot = inner_prod(dist_vec0, dist_vec1);
-    if (dot < 0 || edge_intersection.second) {
+    auto dot_dir = inner_prod(dist_vec0, ray);
+    if ((dot < 0 && dot_dir) || edge_intersection.second) {
 
       // Edges is on two sides of the surface
       const double s = s0 / (s0 + s1);
@@ -887,7 +888,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
         ++nb_ave_length;
       };
 
-      if (dot && edge_intersection.second) {
+      if (dot < 0 && dot_dir > 0 && edge_intersection.second) {
         // Use disrance from closeset distance of nodes, instead of edge ray
         // distance. That smoothing crack surface when mesh representing cut
         // surface is not dense enough to represenr crack.
@@ -897,7 +898,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
         // Surface has to be curved
         add_edge(edge_intersection.first);
 
-      } else if (dot < 0) {
+      } else if (dot < 0 && dot_dir > 0) {
         // Edge is outside of surface
 
         VectorDouble3 p = n0 + dist * ray;
