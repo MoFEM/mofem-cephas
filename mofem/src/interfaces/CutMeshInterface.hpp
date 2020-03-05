@@ -268,7 +268,17 @@ struct CutMeshInterface : public UnknownInterface {
    * @param debug
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode findLevelSetVolumes(int verb = QUIET, const bool debug = false);
+  MoFEMErrorCode findLevelSetVolumes(int verb = QUIET,
+                                     const bool debug = false);
+
+  /**
+   * @brief Classify nodes on both sides
+   * 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode classifyNodes(const double tol_cut, int verb = QUIET,
+                               const bool debug = false);
 
   /**
    * @brief Refine and set level sets
