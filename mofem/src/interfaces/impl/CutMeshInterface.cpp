@@ -725,104 +725,27 @@ MoFEMErrorCode CutMeshInterface::classifyNodes(const double tol_cut, int verb,
   auto tools_interface = m_field.getInterface<Tools>();
   MoFEMFunctionBegin;
 
-  auto create_tag = [&](const std::string name, const int dim) {
-    Tag th;
-    rval = m_field.get_moab().tag_get_handle(name.c_str(), th);
-    if (rval == MB_SUCCESS)
-      return th;
-    std::vector<double> def_val(dim, 0);
-    CHKERR m_field.get_moab().tag_get_handle(name.c_str(), dim, MB_TYPE_DOUBLE,
-                                             th, MB_TAG_CREAT | MB_TAG_SPARSE,
-                                             &*def_val.begin());
-
-    return th;
+  auto send_ray = [&](auto &&point_in) {
+    VectorDouble3 point_out(3);
+    EntityHandle facets_out;
+    CHKERR treeSurfPtr->closest_to_location(&point_in[0], rootSetSurf,
+                                            &point_out[0], facets_out);
+    VectorDouble3 ray =  point_in - point_out;
+    const double dist = norm_2(ray);
+    VectorDouble3 n(3);
+    CHKERR tools_interface->getTriNormal(facets_out, &*n.begin());
+    return std::copysign(dist, inner_prod(ray, n));
   };
-
-  auto get_conn = [&](const auto e) {
-    int num_nodes;
-    const EntityHandle *conn;
-    CHKERR m_field.get_moab().get_connectivity(e, conn, num_nodes, true);
-    return conn;
-  };
-
-  auto get_ray = [&](auto conn) {
-
-    auto get_dist_vec = [&](auto conn) {
-      Tag th;
-      CHKERR m_field.get_moab().tag_get_handle("DIST_SURFACE_VECTOR", th);
-      std::array<double, 6> dist_vec;
-      CHKERR m_field.get_moab().tag_get_data(th, conn, 2, dist_vec.data());
-    };
-
-    auto get_dist = [](auto &&dist) {
-      auto calc = [](auto d) {
-        return sqrt(dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2]);
-      };
-      return std::array<double, 2>{calc(&dits[0]), calc(&dits[3])};
-    };
-
-    auto get_ray_conn = [&](auto conn) {
-      auto dist = get_dist(get_dist_vec(conn));
-      if (dist[0] > dist[1])
-        return std::array<EntityHandle, 2>{conn[0], conn[1]};
-      else
-        return std::array<EntityHandle, 2>{conn[1], conn[0]};
-    };
-
-    auto ray_conn = get_ray_conn(conn);
-
-    VectorDouble6 coords(6);
-    CHKERR m_field.get_moab().get_coords(ray_conn.data(), 2, &coords[0]);
-    VectorDouble3 n0 = getVectorAdaptor(&coords[0], 3);
-    VectorAdaptor n1 = getVectorAdaptor(&coords[3], 3);
-    VectorDouble3 ray = n1 - n0;
-
-    return std::make_tuple(ray_conn, n0, ray);
-  };
-
-  auto send_ray = [&](auto tuple) {
-    auto &pt = std::get<1>(tuple);
-    auto &ray = std::get<2>(tuple);
-
-    const double ray_length = norm_2(ray);
-    ray /= ray_length;
-
-    std::vector<double> intersection_distances_out;
-    std::vector<EntityHandle> intersection_facets_out;
-    CHKERR treeSurfPtr->ray_intersect_triangles(
-        intersection_distances_out, intersection_facets_out, rootSetSurf,
-        std::numeric_limits<float>::epsilon(), &pt[0], &ray[0]);
-    auto return_pair = [](const double d, const EntityHandle *conn) {
-      return std::make_pair(d, conn);
-    };
-
-    if (!intersection_distances_out.empty()) {
-
-      if(intersection_distances_out[0] < ray_length*tol_cut) {
-
-      }
-
-      VectorDouble3 n(3);
-      CHKERR tools_interface->getTriNormal(intersection_facets_out[0],
-                                           &*n.begin());
-      if (inner_prod(ray, n) < 0) 
-        intersection_distances_out[0] *= -1;
-
-      return return_pair(intersection_distances_out[0], std::get<0>(tuple));
-
-    } else
-      return return_pair(0, std::array<EntityHandle, 2>{0, 0});
-  };
-
 
   Range vol = unite(cutSurfaceVolumes, cutFrontVolumes);
-
   Skinner skin(&m_field.get_moab());
+  std::vector<double> coords, dist_vec;
+  std::array<std::vector<EntityHandle>, 2> side_nodes;
 
   auto get_skin = [&](auto v) {
-    Range skin;
-    CHKERR skin.find_skin(0, vol, false, skin);
-    return skin;
+    Range skin_faces;
+    CHKERR skin.find_skin(0, vol, false, skin_faces);
+    return skin_faces;
   };
 
   auto get_adj = [&](auto r, int dim) {
@@ -832,61 +755,71 @@ MoFEMErrorCode CutMeshInterface::classifyNodes(const double tol_cut, int verb,
     return r;
   };
 
-  auto nodes = get_adj(get_skin(vol), 0);
-
-  std::vector<EntityHandle> cut_edges;
-  cut_edges.reserve(edges.size());
-  std::array<std::vector<EntityHandle>, 2> side_nodes;
-
-  for (auto n : nodes) {
-
-    auto p = send_ray(n);
-
-    if (p.second) {
-      cut_edges.push_back(e);
-      if (p.first > 0) {
-        side_nodes[0].push_back(p.second[0]);
-        side_nodes[1].push_back(p.second[1]);
-      } else {
-        side_nodes[0].push_back(p.second[1]);
-        side_nodes[1].push_back(p.second[0]);
-      }
-    }
+  auto get_range = [](auto v) {
+    Range r;
+    r.insert_list(v.begin(), v.end());
+    return r;
   };
 
-  Range edges_vol;
-  CHKERR m_field.get_moab().get_adjacencies(&*cut_edges.begin(),
-                                            cut_edges.size(), 3, false,
-                                            edges_vol, moab::Interface::UNION);
-  edges_vol = intersect(vol, edges_vol);
+  int nb_vol_ele;
 
-  std::array<Range, 2> side_skin;
-  for (auto i : {0, 1}) {
-    CHKERR m_field.get_moab().get_adjacencies(
-        &*side_nodes[i].begin(), side_nodes[i].size(), 2, false, side_skin[i],
-        moab::Interface::UNION);
-    side_skin[i] = intersect(side_skin[i], skin);
-    Range side_snodes;
-    return skin;
-    CHKERR m_f;
-    ield.get_moab().get_connectivity(side_skin[i], side_skin_nodes, true);
+  do {
+    nb_vol_ele = vol.size();
 
-    auto get_range = [](auto v) {
-      Range r;
-      r.insert_list(v.begin(), v.end());
-      return r;
-    };
+    auto nodes = get_adj(get_skin(vol), 0);
+    coords.resize(3 * nodes.size());
+    dist_vec.reserve(nodes.size());
+    CHKERR m_field.get_moab().get_coords(nodes, &*coords.begin());
 
-    side_skin_nodes = subtract(side_skin_nodes, get_range(side_nodes[i]));
-    Range side_to_remove;
-    CHKERR m_field.get_moab().get_adjacencies(
-        side_skin_nodes, 2, false, side_to_remove, moab::Interface::UNION);
-    side_skin[i] = subtract(side_skin[i], side_to_remove);
+    dist_vec.clear();
+    for (auto n : nodes)
+      dist_vec.emplace_back(
+          send_ray(getVectorAdaptor(&coords[3 * nodes.index(n)], 3)));
 
-    if (debug)
+    auto max_abs_dist = 0;
+    for (auto d : dist_vec)
+      if (std::abs(d) > max_abs_dist)
+        max_abs_dist = std::abs(d);
+
+    for (auto &d : dist_vec)
+      if (std::abs(d) < tol_cut * max_abs_dist)
+        d = -0;
+
+    for (auto s : {0, 1}) {
+      side_nodes[s].reserve(nodes.size());
+      side_nodes[s].clear();
+    }
+
+    for (auto n : nodes)
+      if (dist_vec[nodes.index(n)] <= 0)
+        side_nodes[1].emplace_back(n);
+      else
+        side_nodes[0].emplace_back(n);
+
+    auto vol_edges = subtract(get_adj(vol, 1), get_adj(get_skin(vol), 1));
+    std::array<Range, 2> side_edges;
+    for (auto i : {0, 1})
+      side_edges[i] =
+          intersect(vol_edges, get_adj(get_range(side_nodes[i]), 1));
+
+    vol = intersect(vol, get_adj(side_edges[0], 3));
+
+  } while (nb_vol_ele != vol.size());
+
+  if (debug) {
+
+    CHKERR SaveData(m_field.get_moab())("side_vol.vtk", vol);
+
+    std::array<Range, 2> side_skin;
+    for (auto i : {0, 1}) {
+
+      side_skin[i] =
+          intersect(get_skin(vol), get_adj(get_range(side_nodes[i]), 2));
+
       CHKERR SaveData(m_field.get_moab())(
           ("side_skin_" + boost::lexical_cast<std::string>(i) + ".vtk"),
           side_skin[i]);
+    }
   }
 
   MoFEMFunctionReturn(0);
