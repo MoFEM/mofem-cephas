@@ -235,7 +235,7 @@ CutMeshInterface::cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
   MoFEMFunctionBegin;
 
   // cut mesh
-  CHKERR classifyNodes(tol_cut, QUIET, debug);
+  CHKERR findCutVolume(tol_cut, QUIET, debug);
   CHKERR findEdgesToCut(vol, fixed_edges, corner_nodes, tol_cut, QUIET, debug);
   CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close,
                                  QUIET, debug);
@@ -719,7 +719,7 @@ MoFEMErrorCode CutMeshInterface::findLevelSetVolumes(int verb,
  * @param verb
  * @return MoFEMErrorCode
  */
-MoFEMErrorCode CutMeshInterface::classifyNodes(const double tol_cut, int verb,
+MoFEMErrorCode CutMeshInterface::findCutVolume(const double tol_cut, int verb,
                                                const bool debug) {
   CoreInterface &m_field = cOre;
   auto tools_interface = m_field.getInterface<Tools>();
@@ -806,7 +806,7 @@ MoFEMErrorCode CutMeshInterface::classifyNodes(const double tol_cut, int verb,
 
   } while (nb_vol_ele != vol.size());
 
-  if (debug) {
+  if (1) {
 
     CHKERR SaveData(m_field.get_moab())("side_vol.vtk", vol);
 

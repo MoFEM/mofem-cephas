@@ -277,7 +277,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @param verb 
    * @return MoFEMErrorCode 
    */
-  MoFEMErrorCode classifyNodes(const double tol_cut, int verb = QUIET,
+  MoFEMErrorCode findCutVolume(const double tol_cut, int verb = QUIET,
                                const bool debug = false);
 
   /**
