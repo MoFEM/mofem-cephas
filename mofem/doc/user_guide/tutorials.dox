@@ -5,24 +5,23 @@ general problem on particular examples.
 
 \tableofcontents
 
+\section simple_interface Simple interface
 
-\section hierarchical_approximation Hierarchical approximation
+\subsection hierarchical_approximation Hierarchical approximation
 
 Introduces the reader to the basic concepts of finite element approach using
 Hierarchical basis functions.
 
 - \subpage hierarchical_approximation_1
 
-
-\section hello_world Hello world
+\subsection hello_world Hello world
 
 Introduces user to basic ideas of user operator and MoFEM::Simple interface and
 implementation of finite element with users data operators.
 
 - \subpage hello_world_tut1
 
-
-\section poisson_problem The Poisson equation and difussion problems
+\subsection poisson_problem The Poisson equation and difussion problems
 
 The Poisson equation is solved using MoFEM::Simple interface. The generic
 procedure is applied to one of the simples PDEs. In order to make the problem instructional,
@@ -48,7 +47,7 @@ Implementation of Fisher's reaction-diffusion equation
 
 - \subpage reaction_diffusion_imp
 
-\section simple_elasticity Solid elasticity problems
+\subsection simple_elasticity Solid elasticity problems
 
 Introduction to fundamental MoFEM functionalities and capabilities by solving a simple linear elastic problem.
 
@@ -62,7 +61,9 @@ Tutorial for the implementation of Winkler spring elements
 
 - \subpage spring_element
 
-\section snes_nonlinear_tut Nonlinear problem
+\section core_interface Core interface
+
+\subsection snes_nonlinear_tut Nonlinear problem
 
 Minimal surface area (soap film on the wire): Tutorial showing step by step
 implementation of nonlinear problem. It presents how to set up the problem
@@ -71,7 +72,7 @@ PETSc
 
 - \subpage sope_film
 
-\section mix_adpativity_tut Mix formulation and h-adaptivity
+\subsection mix_adpativity_tut Mix formulation and h-adaptivity
 
 This example shows how to solve transport problem using mix element with an
 independent approximation for fluxes and function values.  Also, it shows how to

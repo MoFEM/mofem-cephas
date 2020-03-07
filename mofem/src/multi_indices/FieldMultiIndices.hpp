@@ -381,7 +381,7 @@ struct Field {
    *
    */
   inline DofsOrderMap &getDofOrderMap() const {
-    return const_cast<DofsOrderMap&>(dofOrderMap);
+    return const_cast<DofsOrderMap &>(dofOrderMap);
   }
 
   MoFEMErrorCode rebuildDofsOrderMap() const;
@@ -390,6 +390,7 @@ private:
   mutable SequenceEntContainer sequenceEntContainer;
   mutable SequenceDofContainer sequenceDofContainer;
   mutable DofsOrderMap dofOrderMap;
+
 };
 
 /**
@@ -547,6 +548,8 @@ struct FieldChangeCoordinateSystem {
   void operator()(boost::shared_ptr<Field> &e) { e->coordSysPtr = csPtr; }
 };
 
+
 } // namespace MoFEM
 
 #endif // __FIELDMULTIINDICES_HPP__
+  

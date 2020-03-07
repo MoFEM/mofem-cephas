@@ -1,0 +1,21 @@
+/*! \page work_in_progress Work in progress
+
+\note Documentation here is not yet complete or reviewed. Work on documents is in progress.
+
+\tableofcontents
+
+\section basic_interface Basic inteface. 
+
+Eight lessons are a complete set intended to give "Not too long introductions to finite element method" and "Basic Programming in MoFEM". Lessons problems are not always straightforward; however, MoFEM makes them easy to implement. Lessons show how to solve nonlinear problems, also problems which involve more than one field and are mixed, or coupled. 
+
+- Lesson 1: \subpage basic_lessons1
+- Lesson 2: Approximation of the function
+- Lesson 3: Scalar field problem (heat transfer)
+- Lesson 4: Vector field problem (elastic problem)
+- Lesson 5: Complex field problem (acoustic wave)
+- Lesson 6: First nonlinearity, radiation
+- Lesson 7: Second nonlinearity, plasticity
+- Lesson 8: Third nonlinearity, contact
+- Questions: Mixing all
+
+*/

@@ -111,10 +111,12 @@ if(DOXYGEN_FOUND)
     endforeach(LOOP_DIR)
   endif(EXTERNAL_MODULE_SOURCE_DIRS)
 
-  foreach(LOOP_MODULE ${INSTLLED_DOC_MODULES})
-    message(STATUS "Add module documentation ... ${LOOP_MODULE}")
-    include(${LOOP_MODULE})
-  endforeach(LOOP_MODULE)
+  foreach(LOOP_DOC_MODULE ${INSTLLED_DOC_MODULES})
+    message(STATUS "Add module documentation ... ${LOOP_DOC_MODULE}")
+    string(REGEX REPLACE
+      "/+AddDocumentation.cmake" "" ADD_DOC_DIRECTORY ${LOOP_DOC_MODULE})
+    include(${LOOP_DOC_MODULE})
+  endforeach(LOOP_DOC_MODULE)
 
   find_program(RSYNC NAMES rsync)
   if(RSYNC)
