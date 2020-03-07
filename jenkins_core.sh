@@ -4,7 +4,7 @@ set(GID_SOURCE_REPO "\$ENV{WORKSPACE}")
 set(CTEST_SOURCE_DIRECTORY "\${GID_SOURCE_REPO}/mofem")
 set(CTEST_BINARY_DIRECTORY "\$ENV{WORKSPACE}/build")
 
-set(CTEST_SITE "Jenkins")
+set(CTEST_SITE "Cactus")
 set(CTEST_BRANCH "\$ENV{GIT_BRANCH}")
 set(CTEST_BUILD_NAME "Linux-Jenkins=BranchO(\${CTEST_BRANCH})")
 
@@ -82,7 +82,7 @@ EOF
 
 #if [ ! $GIT_COMMIT == $GIT_PREVIOUS_COMMIT ]; then
 
-  SPACK_ROOT=/var/lib/jenkins/workspace/SpackBuild
+  SPACK_ROOT=/home/jenkins/workspace/SpackInstall
   . $SPACK_ROOT/share/spack/setup-env.sh
 
   if [ ! -f "$SPACK_ROOT/lock_spack" ]; then
@@ -92,7 +92,7 @@ EOF
   
     if [ ! -f "install_hash" ]; then
     
-    	spack setup mofem-cephas@develop+slepc copy_user_modules=False build_type=Debug
+    	spack setup mofem-cephas@develop+slepc copy_user_modules=False build_type=Debug install_id=1
         
     fi
     
@@ -109,14 +109,15 @@ sed 's/.*mofem-cephas-develop-//' |\
 tee install_hash
 
 curl -X POST -H 'Content-type: application/json' \
---data "{\"text\":\"Jenkins start job for branch $GIT_BRANCH\"}" \
+--data "{\"text\":\"Jenkins cactus start job for branch $GIT_BRANCH\"}" \
 https://hooks.slack.com/services/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
 
 cd $WORKSPACE/build
 spack load cmake
 ctest -V -S $WORKSPACE/script.cmake
 make install
+make clean
 
 curl -X POST -H 'Content-type: application/json' \
---data "{\"text\":\"Jenkins end job for branch $GIT_BRANCH (See http://cdash.eng.gla.ac.uk/cdash/)\"}" \
+--data "{\"text\":\"Jenkins cactus end job for branch $GIT_BRANCH (See http://cdash.eng.gla.ac.uk/cdash/)\"}" \
 https://hooks.slack.com/services/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
