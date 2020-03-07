@@ -655,7 +655,7 @@ MoFEMErrorCode CutMeshInterface::findLevelSetVolumes(
       const auto dist0 = get_tag_data(th, conn[0]);
       const auto dist1 = get_tag_data(th, conn[1]);
       const double min_dist = std::min(norm_2(dist0), norm_2(dist1));
-      if (min_dist < 2 * length) {
+      if (min_dist < 4 * length) {
         auto opposite = inner_prod(dist0, dist1);
         if (opposite <= std::numeric_limits<double>::epsilon()) {
           const double sign_dist0 = signed_norm(dist0);
@@ -776,7 +776,7 @@ MoFEMErrorCode CutMeshInterface::findCutVolume(const double tol_cut, int verb,
       dist_vec.emplace_back(
           send_ray(getVectorAdaptor(&coords[3 * nodes.index(n)], 3)));
 
-    auto max_abs_dist = 0;
+    double max_abs_dist = 0;
     for (auto d : dist_vec)
       if (std::abs(d) > max_abs_dist)
         max_abs_dist = std::abs(d);
@@ -806,7 +806,7 @@ MoFEMErrorCode CutMeshInterface::findCutVolume(const double tol_cut, int verb,
 
   } while (nb_vol_ele != vol.size());
 
-  if (1) {
+  if (debug) {
 
     CHKERR SaveData(m_field.get_moab())("side_vol.vtk", vol);
 

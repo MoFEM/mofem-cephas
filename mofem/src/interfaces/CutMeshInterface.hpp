@@ -272,7 +272,7 @@ struct CutMeshInterface : public UnknownInterface {
                                      const bool debug = false);
 
   /**
-   * @brief Classify nodes on both sides
+   * @brief Find volume to cut
    * 
    * @param verb 
    * @return MoFEMErrorCode 
