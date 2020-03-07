@@ -1,5 +1,5 @@
 /** \file FEMultiIndices.cpp
- * \brief Multi-index contains for finite elements
+ * \brief Multi-index containers for finite elements
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
