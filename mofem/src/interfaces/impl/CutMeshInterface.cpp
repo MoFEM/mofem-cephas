@@ -482,12 +482,15 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
 
   auto set_vol = [&](const Range &vol_verts, std::vector<double> &coords,
                      std::vector<double> &dist_surface_vec,
-                     std::vector<double> &dist_surface_normal_vec) {
+                     std::vector<double> &dist_surface_normal_vec,
+                     std::vector<double> &dist_surface_digned_dist_vec) {
     MoFEMFunctionBegin;
 
     coords.resize(3 * vol_verts.size());
     dist_surface_vec.resize(3 * vol_verts.size());
     dist_surface_normal_vec.resize(3 * vol_verts.size());
+    dist_surface_digned_dist_vec.resize(vol_verts.size());
+    
     CHKERR moab.get_coords(vol_verts, &*coords.begin());
     std::srand(0);
 
@@ -517,7 +520,11 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
 
       auto dist_normal_vec =
           getVectorAdaptor(&dist_surface_normal_vec[3 * index], 3);
-      noalias(dist_normal_vec) = inner_prod(delta, n) * n;
+
+      const double dot = inner_prod(delta, n);
+      dist_surface_digned_dist_vec[index] = dot;
+      noalias(dist_normal_vec) = dot * n;
+
     }
 
     MoFEMFunctionReturn(0);
@@ -526,17 +533,19 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
   std::vector<double> coords;
   std::vector<double> dist_surface_vec;
   std::vector<double> dist_surface_normal_vec;
+  std::vector<double> dist_surface_digned_dist_vec;
   Range vol_verts;
   CHKERR moab.get_connectivity(vOlume, vol_verts, true);
 
-  CHKERR set_vol(vol_verts, coords, dist_surface_vec, dist_surface_normal_vec);
+  CHKERR set_vol(vol_verts, coords, dist_surface_vec, dist_surface_normal_vec,
+                 dist_surface_digned_dist_vec);
 
-  auto th_dist_surface_vec = create_tag("DIST_SURFACE_VECTOR", 3);
-  auto th_dist_surface_normal_vec = create_tag("DIST_SURFACE_NORMAL_VECTOR", 3);
-  CHKERR moab.tag_set_data(th_dist_surface_vec, vol_verts,
+  CHKERR moab.tag_set_data(create_tag("DIST_SURFACE_VECTOR", 3), vol_verts,
                            &*dist_surface_vec.begin());
-  CHKERR moab.tag_set_data(th_dist_surface_normal_vec, vol_verts,
-                           &*dist_surface_normal_vec.begin());
+  CHKERR moab.tag_set_data(create_tag("DIST_SURFACE_NORMAL_VECTOR", 3),
+                           vol_verts, &*dist_surface_normal_vec.begin());
+  CHKERR moab.tag_set_data(create_tag("DIST_SURFACE_NORMAL_SIGNED", 1),
+                           vol_verts, &*dist_surface_digned_dist_vec.begin());
 
   MoFEMFunctionReturn(0);
 }
