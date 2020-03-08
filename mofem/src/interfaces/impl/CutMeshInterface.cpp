@@ -934,7 +934,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     auto dot = dist0 * dist1;
     if (dot <= 0 &&
         (std::abs(dist0) > std::numeric_limits<double>::epsilon() ||
-         std::abs(dist0) > std::numeric_limits<double>::epsilon())) {
+         std::abs(dist1) > std::numeric_limits<double>::epsilon())) {
 
       // Edges is on two sides of the surface
       const double s = dist0 / (dist0 - dist1);
