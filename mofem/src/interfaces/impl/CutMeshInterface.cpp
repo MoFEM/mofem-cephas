@@ -868,11 +868,20 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
   Tag th_dist_normal;
   CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_VECTOR", th_dist_normal);
 
+  Tag th_signed_dist;
+  CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_SIGNED", th_signed_dist);
+
   auto get_tag_data = [&](auto th, auto conn) {
     const void *ptr;
     CHKERR moab.tag_get_by_ptr(th, &conn, 1, &ptr);
     return getVectorAdaptor(
         const_cast<double *>(static_cast<const double *>(ptr)), 3);
+  };
+
+  auto get_tag_dist = [&](auto th, auto conn) {
+    double dist;
+    CHKERR moab.tag_get_data(th, &conn, 1, &dist);
+    return dist;
   };
 
   auto send_ray = [&](auto &pt, auto &ray, auto length) {
@@ -912,20 +921,23 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     const double ray_length = norm_2(ray);
     ray /= ray_length;
 
-    auto edge_intersection = send_ray(n0, ray, ray_length);
+    // auto edge_intersection = send_ray(n0, ray, ray_length);
+    // auto dist_vec0 = get_tag_data(th_dist_normal, conn[0]);
+    // auto dist_vec1 = get_tag_data(th_dist_normal, conn[1]);
 
-    auto dist_vec0 = get_tag_data(th_dist_normal, conn[0]);
-    auto dist_vec1 = get_tag_data(th_dist_normal, conn[1]);
+    auto dist0 = get_tag_dist(th_signed_dist, conn[0]);
+    auto dist1 = get_tag_dist(th_signed_dist, conn[1]);
 
-    const double s0 = norm_2(dist_vec0);
-    const double s1 = norm_2(dist_vec1);
+    // const double s0 = norm_2(dist_vec0);
+    // const double s1 = norm_2(dist_vec1);
 
-    auto dot = inner_prod(dist_vec0, dist_vec1);
-    auto dot_dir = inner_prod(dist_vec0, ray);
-    if ((dot < 0 && dot_dir) || edge_intersection.second) {
+    auto dot = dist0 * dist1;
+    if (dot <= 0 &&
+        (std::abs(dist0) > std::numeric_limits<double>::epsilon() ||
+         std::abs(dist0) > std::numeric_limits<double>::epsilon())) {
 
       // Edges is on two sides of the surface
-      const double s = s0 / (s0 + s1);
+      const double s = dist0 / (dist0 - dist1);
       const double dist = s * ray_length;
 
       auto add_edge = [&](auto dist) {
@@ -940,37 +952,39 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
         ++nb_ave_length;
       };
 
-      if (dot < 0 && dot_dir > 0 && edge_intersection.second) {
-        // Use disrance from closeset distance of nodes, instead of edge ray
-        // distance. That smoothing crack surface when mesh representing cut
-        // surface is not dense enough to represenr crack.
-        add_edge(dist);
+      add_edge(dist);
 
-      } else if (edge_intersection.second) {
-        // Surface has to be curved
-        add_edge(edge_intersection.first);
+      // if (dot < 0 && dot_dir > 0 && edge_intersection.second) {
+      //   // Use disrance from closeset distance of nodes, instead of edge ray
+      //   // distance. That smoothing crack surface when mesh representing cut
+      //   // surface is not dense enough to represenr crack.
+      //   add_edge(dist);
 
-      } else if (dot < 0 && dot_dir > 0) {
-        // Edge is outside of surface
+      // } else if (edge_intersection.second) {
+      //   // Surface has to be curved
+      //   add_edge(edge_intersection.first);
 
-        VectorDouble3 p = n0 + dist * ray;
-        VectorDouble3 w = n0 + dist_vec0;
-        VectorDouble3 v = n1 + dist_vec1;
-        double t;
-        auto res =
-            Tools::minDistancePointFromOnSegment(&w[0], &v[0], &p[0], &t);
-        t = std::max(0., std::min(t, 1.));
-        double d = 0;
-        if (res == Tools::SOLUTION_EXIST) {
-          VectorDouble3 o = w + t * (v - w);
-          d = norm_2(o - p) / ray_length;
-        }
+      // } else if (dot < 0 && dot_dir > 0) {
+      //   // Edge is outside of surface
 
-        // If edge cut is consistent distance is zero
-        constexpr double min_dist_tol = 0.125;
-        if (d < min_dist_tol)
-          add_edge(dist);
-      }
+      //   VectorDouble3 p = n0 + dist * ray;
+      //   VectorDouble3 w = n0 + dist_vec0;
+      //   VectorDouble3 v = n1 + dist_vec1;
+      //   double t;
+      //   auto res =
+      //       Tools::minDistancePointFromOnSegment(&w[0], &v[0], &p[0], &t);
+      //   t = std::max(0., std::min(t, 1.));
+      //   double d = 0;
+      //   if (res == Tools::SOLUTION_EXIST) {
+      //     VectorDouble3 o = w + t * (v - w);
+      //     d = norm_2(o - p) / ray_length;
+      //   }
+
+      //   // If edge cut is consistent distance is zero
+      //   constexpr double min_dist_tol = 0.125;
+      //   if (d < min_dist_tol)
+      //     add_edge(dist);
+      // }
     }
   }
   aveLength /= nb_ave_length;
