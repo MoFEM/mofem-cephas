@@ -272,15 +272,6 @@ struct CutMeshInterface : public UnknownInterface {
                                      const bool debug = false);
 
   /**
-   * @brief Find volume to cut
-   * 
-   * @param verb 
-   * @return MoFEMErrorCode 
-   */
-  MoFEMErrorCode findCutVolume(const double tol_cut, int verb = QUIET,
-                               const bool debug = false);
-
-  /**
    * @brief Refine and set level sets
    *
    * \note Should be run befor cutting
