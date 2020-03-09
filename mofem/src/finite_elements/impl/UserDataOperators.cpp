@@ -541,9 +541,6 @@ MoFEMErrorCode OpMultiplyDeterminatOfJabionAndWieightsForFatPrims::doWork(
     FTensor::Index<'j', 3> j;
     FTensor::Tensor2<double, 3, 3> t_jac;
 
-    double &vol = getVolume();
-    vol = 0;
-
     auto t_w = getFTensor0IntegrationWeight();
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
 
@@ -558,13 +555,12 @@ MoFEMErrorCode OpMultiplyDeterminatOfJabionAndWieightsForFatPrims::doWork(
 
       double det;
       CHKERR determinantTensor3by3(t_jac, det);
-      vol += 0.5 * det * getGaussPts()(3, gg);
-
-      t_w *= det;
+      t_w *= det * t_w / 2.;
 
       ++t_w;
     }
 
+    double &vol = getVolume();
     auto t_w_scaled = getFTensor0IntegrationWeight();
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       t_w_scaled /= vol;
@@ -599,9 +595,7 @@ OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
     FTensor::Index<'j', 3> j;
     FTensor::Tensor2<double, 3, 3> t_jac;
 
-    double &vol = getVolume();
-    vol = 0;
-
+    auto t_w = getFTensor0IntegrationWeight();
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
 
       FTensor::Tensor1<double *, 3> t_coords(coords_ptr, &coords_ptr[1],
@@ -618,7 +612,6 @@ OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
       CHKERR invertTensor3by3(t_jac, det, t_inv_jac);
       ++t_inv_jac;
 
-      vol += 0.5 * det * getGaussPts()(3, gg);
     }
   }
 
