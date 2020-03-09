@@ -1710,7 +1710,17 @@ struct OpSetContrariantPiolaTransformOnEdge
                         DataForcesAndSourcesCore::EntData &data);
 };
 
-// Fat prims 
+// Fat prims
+
+struct OpMultiplyDeterminatOfJabionAndWieightsForFatPrims
+    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  OpMultiplyDeterminatOfJabionAndWieightsForFatPrims()
+      : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
 
 /** \brief Calculate inverse of jacobian for face element
 
