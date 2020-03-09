@@ -884,23 +884,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     return dist;
   };
 
-  auto send_ray = [&](auto &pt, auto &ray, auto length) {
-    std::vector<double> intersection_distances_out;
-    std::vector<EntityHandle> intersection_facets_out;
-    CHKERR treeSurfPtr->ray_intersect_triangles(
-        intersection_distances_out, intersection_facets_out, rootSetSurf,
-        std::numeric_limits<float>::epsilon(), &pt[0], &ray[0], &length);
-    auto return_pair = [](const double d, const EntityHandle e) {
-      return std::make_pair(d, e);
-    };
-
-    if (!intersection_distances_out.empty())
-      return return_pair(intersection_distances_out[0],
-                         intersection_facets_out[0]);
-    else
-      return return_pair(0, 0);
-  };
-
   Range vol_edges;
   CHKERR moab.get_adjacencies(vol, 1, true, vol_edges, moab::Interface::UNION);
 
@@ -921,15 +904,8 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     const double ray_length = norm_2(ray);
     ray /= ray_length;
 
-    // auto edge_intersection = send_ray(n0, ray, ray_length);
-    // auto dist_vec0 = get_tag_data(th_dist_normal, conn[0]);
-    // auto dist_vec1 = get_tag_data(th_dist_normal, conn[1]);
-
     auto dist0 = get_tag_dist(th_signed_dist, conn[0]);
     auto dist1 = get_tag_dist(th_signed_dist, conn[1]);
-
-    // const double s0 = norm_2(dist_vec0);
-    // const double s1 = norm_2(dist_vec1);
 
     auto dot = dist0 * dist1;
     if (dot <= 0 &&
@@ -954,37 +930,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
 
       add_edge(dist);
 
-      // if (dot < 0 && dot_dir > 0 && edge_intersection.second) {
-      //   // Use disrance from closeset distance of nodes, instead of edge ray
-      //   // distance. That smoothing crack surface when mesh representing cut
-      //   // surface is not dense enough to represenr crack.
-      //   add_edge(dist);
-
-      // } else if (edge_intersection.second) {
-      //   // Surface has to be curved
-      //   add_edge(edge_intersection.first);
-
-      // } else if (dot < 0 && dot_dir > 0) {
-      //   // Edge is outside of surface
-
-      //   VectorDouble3 p = n0 + dist * ray;
-      //   VectorDouble3 w = n0 + dist_vec0;
-      //   VectorDouble3 v = n1 + dist_vec1;
-      //   double t;
-      //   auto res =
-      //       Tools::minDistancePointFromOnSegment(&w[0], &v[0], &p[0], &t);
-      //   t = std::max(0., std::min(t, 1.));
-      //   double d = 0;
-      //   if (res == Tools::SOLUTION_EXIST) {
-      //     VectorDouble3 o = w + t * (v - w);
-      //     d = norm_2(o - p) / ray_length;
-      //   }
-
-      //   // If edge cut is consistent distance is zero
-      //   constexpr double min_dist_tol = 0.125;
-      //   if (d < min_dist_tol)
-      //     add_edge(dist);
-      // }
     }
   }
   aveLength /= nb_ave_length;
