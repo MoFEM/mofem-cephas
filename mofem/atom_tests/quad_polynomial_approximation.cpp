@@ -108,6 +108,7 @@ int main(int argc, char *argv[]) {
                                               1, 1, 0,
 
                                               0, 1, 0};
+
     std::array<EntityHandle, 4> one_quad_nodes;
     for (int n = 0; n != 4; ++n)
       CHKERR moab.create_vertex(&one_quad_coords[3 * n], one_quad_nodes[n]);
@@ -267,12 +268,11 @@ MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
         std::cout << diff_f[d] - (*diffFieldVals)(d, gg) << " ";
       std::cout << std::endl;
 
-      for (auto d : {0, 1}) 
+      for (auto d : {0, 1})
         if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
           SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong directive value (%d) %6.4e != %6.4e", diff_f[d],
                    (*diffFieldVals)(d, gg));
-      
 
       ++t_coords;
     }
