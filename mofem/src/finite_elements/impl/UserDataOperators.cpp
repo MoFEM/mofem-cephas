@@ -525,6 +525,60 @@ MoFEMErrorCode OpSetContrariantPiolaTransformOnEdge::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode OpMultiplyDeterminatOfJabionAndWieightsForFatPrims::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  if (type == MBVERTEX) {
+
+    VectorDouble &coords = getCoords();
+    double *coords_ptr = &*coords.data().begin();
+
+    const int nb_gauss_pts = data.getN(NOBASE).size1();
+    auto t_diff_n = data.getFTensor1DiffN<3>(NOBASE);
+ 
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'j', 3> j;
+    FTensor::Tensor2<double, 3, 3> t_jac;
+
+    double &vol = getVolume();
+    vol = 0;
+
+    auto t_w = getFTensor0IntegrationWeight();
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
+
+      FTensor::Tensor1<double *, 3> t_coords(coords_ptr, &coords_ptr[1],
+                                             &coords_ptr[2], 3);
+      t_jac(i, j) = 0;
+      for (int bb = 0; bb != 6; bb++) {
+        t_jac(i, j) += t_coords(i) * t_diff_n(j);
+        ++t_diff_n;
+        ++t_coords;
+      }
+
+      double det;
+      CHKERR determinantTensor3by3(t_jac, det);
+      vol += 0.5 * det * getGaussPts()(3, gg);
+
+      t_w *= det;
+
+      ++t_w;
+    }
+
+    auto t_w_scaled = getFTensor0IntegrationWeight();
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
+      t_w_scaled /= vol;
+      ++t_w_scaled;
+    }
+
+  }
+
+  doEntities[MBVERTEX] = true;
+  std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode
 OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
                                      DataForcesAndSourcesCore::EntData &data) {
