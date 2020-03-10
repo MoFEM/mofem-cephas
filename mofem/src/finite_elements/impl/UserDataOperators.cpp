@@ -555,7 +555,7 @@ MoFEMErrorCode OpMultiplyDeterminatOfJabionAndWieightsForFatPrims::doWork(
 
       double det;
       CHKERR determinantTensor3by3(t_jac, det);
-      t_w *= det * t_w / 2.;
+      t_w *= det / 2.;
 
       ++t_w;
     }
