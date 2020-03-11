@@ -525,7 +525,7 @@ MoFEMErrorCode OpSetContrariantPiolaTransformOnEdge::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode OpMultiplyDeterminatOfJacobianAndWeightsForFatPrims::doWork(
+MoFEMErrorCode OpMultiplyDeterminantOfJacobianAndWeightsForFatPrisms::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 

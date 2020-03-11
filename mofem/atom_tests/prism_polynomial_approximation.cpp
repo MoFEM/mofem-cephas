@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
       PrismFE fe(m_field);
       MatrixDouble inv_jac;
       fe.getOpPtrVector().push_back(
-          new OpMultiplyDeterminatOfJacobianAndWeightsForFatPrims());
+          new OpMultiplyDeterminantOfJacobianAndWeightsForFatPrisms());
       fe.getOpPtrVector().push_back(
           new MoFEM::OpCalculateInvJacForFatPrism(inv_jac));
       fe.getOpPtrVector().push_back(

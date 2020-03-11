@@ -1728,10 +1728,10 @@ struct OpSetContrariantPiolaTransformOnEdge
  * element coordinate.
  *
  */
-struct OpMultiplyDeterminatOfJacobianAndWeightsForFatPrims
+struct OpMultiplyDeterminantOfJacobianAndWeightsForFatPrisms
     : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
 
-  OpMultiplyDeterminatOfJacobianAndWeightsForFatPrims()
+  OpMultiplyDeterminantOfJacobianAndWeightsForFatPrisms()
       : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
