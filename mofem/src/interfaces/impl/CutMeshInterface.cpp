@@ -235,7 +235,9 @@ CutMeshInterface::cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
   MoFEMFunctionBegin;
 
   // cut mesh
-  CHKERR findEdgesToCut(vol, fixed_edges, corner_nodes, tol_cut, QUIET, debug);
+  CHKERR findEdgesToCut(vol, QUIET, debug);
+  CHKERR projectZeroGeometryEnts(vol, fixed_edges, corner_nodes, tol_cut, QUIET,
+                                 debug);
   CHKERR projectZeroDistanceEnts(fixed_edges, corner_nodes, tol_cut_close,
                                  QUIET, debug);
   CHKERR cutEdgesInMiddle(cut_bit, cutNewVolumes, cutNewSurfaces,
@@ -632,7 +634,6 @@ MoFEMErrorCode CutMeshInterface::findLevelSetVolumes(
     return ray;
   };
 
-
   Range edges;
   CHKERR moab.get_adjacencies(vOlume, 1, true, edges, moab::Interface::UNION);
 
@@ -701,7 +702,7 @@ MoFEMErrorCode CutMeshInterface::findLevelSetVolumes(
     return conn;
   };
 
-  if(dim == 3)
+  if (dim == 3)
     for (auto e : edges)
       CHKERR get_cut_edges_vec(th, cut_edges, e, get_conn(e));
   else
@@ -850,10 +851,8 @@ MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
-                                                Range *corner_nodes,
-                                                const double geometry_tol,
-                                                int verb, const bool debug) {
+MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, int verb,
+                                                const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -861,15 +860,9 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
   edgesToCut.clear();
   cutEdges.clear();
 
-  zeroDistanceVerts.clear();
-  zeroDistanceEnts.clear();
-  verticesOnCutEdges.clear();
-
-  Tag th_dist_normal;
-  CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_VECTOR", th_dist_normal);
-
   Tag th_signed_dist;
   CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_SIGNED", th_signed_dist);
+
 
   auto get_tag_data = [&](auto th, auto conn) {
     const void *ptr;
@@ -929,10 +922,29 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
       };
 
       add_edge(dist);
-
     }
   }
   aveLength /= nb_ave_length;
+
+  if (debug)
+    CHKERR SaveData(m_field.get_moab())("cut_edges.vtk", cutEdges);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode CutMeshInterface::projectZeroGeometryEnts(
+    Range vol, Range *fixed_edges, Range *corner_nodes,
+    const double geometry_tol, int verb, const bool debug) {
+  CoreInterface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  MoFEMFunctionBegin;
+
+  Tag th_dist_normal;
+  CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_VECTOR", th_dist_normal);
+
+  zeroDistanceVerts.clear();
+  zeroDistanceEnts.clear();
+  verticesOnCutEdges.clear();
 
   auto not_project_node = [this, &moab](const EntityHandle v) {
     MoFEMFunctionBeginHot;
@@ -957,6 +969,9 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
     verticesOnCutEdges[v].rayPoint = s0;
     MoFEMFunctionReturnHot(0);
   };
+
+  Range vol_edges;
+  CHKERR moab.get_adjacencies(vol, 1, true, vol_edges, moab::Interface::UNION);
 
   auto get_ave_edge_length = [&](const EntityHandle ent,
                                  const Range &vol_edges) {
@@ -1060,9 +1075,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, Range *fixed_edges,
       edgesToCut.erase(e);
     }
   }
-
-  if (debug)
-    CHKERR SaveData(m_field.get_moab())("cut_edges.vtk", cutEdges);
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("cut_edges_zero_distance_verts.vtk",
