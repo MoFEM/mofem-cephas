@@ -397,6 +397,47 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
     MoFEMFunctionReturn(0);
   };
 
+  auto calculate_volume = [&]() {
+    auto get_t_w = [&] {
+      return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(&gaussPts(2, 0));
+    };
+
+    auto get_t_coords = [&]() {
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+          &coords[0], &coords[1], &coords[2]);
+    };
+
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'j', 3> j;
+    FTensor::Tensor2<double, 3, 3> t_jac;
+
+    const size_t nb_gauss_pts = gaussPts.size2();
+    auto t_diff_n =
+        dataH1.dataOnEntities[MBVERTEX][0].getFTensor1DiffN<3>(NOBASE);
+
+    double vol = 0;
+    auto t_w = get_t_w();
+    for(int gg = 0; gg!=nb_gauss_pts; ++gg) {
+
+      auto t_coords = get_t_coords();
+      t_jac(i, j) = 0;
+      for (size_t n = 0; n != 6; ++n) {
+        t_jac(i, j) += t_coords(i) * t_diff_n(j);
+        ++t_diff_n;
+        ++t_coords;
+      }
+
+      double det;
+      CHKERR determinantTensor3by3(t_jac, det);
+      vol += det * t_w / 2;
+
+      ++t_w;
+    }
+
+
+    return vol;
+  };
+
   auto calc_ho_triangle_face_normals = [&]() {
     MoFEMFunctionBegin;
     // Calculate ho-geometry tangents and normals
@@ -434,6 +475,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
   CHKERR calc_vertex_base_on_prism();
   CHKERR calc_base_on_prism();
   CHKERR calc_coordinate_on_prism();
+  vOlume = calculate_volume();
   CHKERR calc_ho_triangle_face_normals();
 
   // Iterate over operators
