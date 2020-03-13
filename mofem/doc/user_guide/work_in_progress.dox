@@ -4,10 +4,11 @@
 
 \tableofcontents
 
-\section basic_interface Basic inteface. 
+\section basic_interface Lessons
 
 Eight lessons are a complete set intended to give "Not too long introductions to finite element method" and "Basic Programming in MoFEM". Lessons problems are not always straightforward; however, MoFEM makes them easy to implement. Lessons show how to solve nonlinear problems, also problems which involve more than one field and are mixed, or coupled. 
 
+- \subpage basic_introduction
 - Lesson 1: \subpage basic_lessons1
 - Lesson 2: Approximation of the function
 - Lesson 3: Scalar field problem (heat transfer)
