@@ -1092,22 +1092,24 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
 
+  auto get_adj = [&moab](const auto &r, const int dim) {
+    Range a;
+    CHKERR moab.get_adjacencies(r, dim, false, a, moab::Interface::UNION);
+    return a;
+  };
+
   // Get entities on body skin
   Skinner skin(&moab);
   Range tets_skin;
   CHKERR skin.find_skin(0, vOlume, false, tets_skin);
-  Range tets_skin_edges;
-  CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
-                              moab::Interface::UNION);
+  auto tets_skin_edges = get_adj(tets_skin, 1);
   Range tets_skin_verts;
   CHKERR moab.get_connectivity(tets_skin, tets_skin_verts, true);
 
   // Get entities in volume
-  Range vol_faces, vol_edges, vol_nodes;
-  CHKERR moab.get_adjacencies(vOlume, 2, false, vol_faces,
-                              moab::Interface::UNION);
-  CHKERR moab.get_adjacencies(vOlume, 1, false, vol_edges,
-                              moab::Interface::UNION);
+  auto vol_faces = get_adj(vOlume, 2);
+  auto vol_edges = get_adj(vOlume, 1);
+  Range vol_nodes;
   CHKERR moab.get_connectivity(vOlume, vol_nodes, true);
 
   // Get nodes on cut edges
@@ -1115,17 +1117,13 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
   CHKERR moab.get_connectivity(cutEdges, cut_edge_verts, true);
 
   // Get faces and edges
-  Range cut_edges_faces;
-  CHKERR moab.get_adjacencies(cut_edge_verts, 2, true, cut_edges_faces,
-                              moab::Interface::UNION);
+  auto cut_edges_faces = get_adj(cut_edge_verts, 2);
   cut_edges_faces = intersect(cut_edges_faces, vol_faces);
   Range cut_edges_faces_verts;
   CHKERR moab.get_connectivity(cut_edges_faces, cut_edges_faces_verts, true);
   cut_edges_faces_verts = subtract(cut_edges_faces_verts, cut_edge_verts);
-  Range to_remove_cut_edges_faces;
-  CHKERR moab.get_adjacencies(cut_edges_faces_verts, 2, true,
-                              to_remove_cut_edges_faces,
-                              moab::Interface::UNION);
+  auto to_remove_cut_edges_faces = get_adj(cut_edges_faces_verts, 2);
+
   // Those are faces which have vertices adjacent to cut edges vertices without
   // hanging nodes (nodes not adjacent to cutting edge)
   cut_edges_faces = subtract(cut_edges_faces, to_remove_cut_edges_faces);
