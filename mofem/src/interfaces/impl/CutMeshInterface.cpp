@@ -1090,38 +1090,42 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
                                                          const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
+  Skinner skin(&moab);
   MoFEMFunctionBegin;
 
-  auto get_adj = [&moab](const auto &r, const int dim) {
+  auto get_adj = [&moab](const auto r, const int dim) {
     Range a;
-    CHKERR moab.get_adjacencies(r, dim, false, a, moab::Interface::UNION);
+    if(dim)
+      CHKERR moab.get_adjacencies(r, dim, false, a, moab::Interface::UNION);
+    else
+      CHKERR moab.get_connectivity(r, a, true);
     return a;
   };
 
+  auto get_skin = [&skin](const auto r) {
+    Range s;
+    CHKERR skin.find_skin(0, r, false, s);
+    return s;
+  };
+
   // Get entities on body skin
-  Skinner skin(&moab);
-  Range tets_skin;
-  CHKERR skin.find_skin(0, vOlume, false, tets_skin);
+  auto tets_skin = get_skin(vOlume);
   auto tets_skin_edges = get_adj(tets_skin, 1);
-  Range tets_skin_verts;
-  CHKERR moab.get_connectivity(tets_skin, tets_skin_verts, true);
+  auto tets_skin_verts = get_adj(tets_skin, 0);
 
   // Get entities in volume
   auto vol_faces = get_adj(vOlume, 2);
   auto vol_edges = get_adj(vOlume, 1);
-  Range vol_nodes;
-  CHKERR moab.get_connectivity(vOlume, vol_nodes, true);
+  auto vol_nodes = get_adj(vOlume, 0);
 
   // Get nodes on cut edges
-  Range cut_edge_verts;
-  CHKERR moab.get_connectivity(cutEdges, cut_edge_verts, true);
+  auto cut_edge_verts = get_adj(cutEdges, 0);
 
   // Get faces and edges
   auto cut_edges_faces = get_adj(cut_edge_verts, 2);
   cut_edges_faces = intersect(cut_edges_faces, vol_faces);
-  Range cut_edges_faces_verts;
-  CHKERR moab.get_connectivity(cut_edges_faces, cut_edges_faces_verts, true);
-  cut_edges_faces_verts = subtract(cut_edges_faces_verts, cut_edge_verts);
+  auto cut_edges_faces_verts =
+      subtract(get_adj(cut_edges_faces, 0), cut_edge_verts);
   auto to_remove_cut_edges_faces = get_adj(cut_edges_faces_verts, 2);
 
   // Those are faces which have vertices adjacent to cut edges vertices without
@@ -1133,7 +1137,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
 
   Range fixed_edges_nodes;
   if (fixed_edges)
-    CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_nodes, true);
+    fixed_edges_nodes = get_adj(*fixed_edges, 0);
 
   Tag th_dist_normal;
   CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_VECTOR", th_dist_normal);
