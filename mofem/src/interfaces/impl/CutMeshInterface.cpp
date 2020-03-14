@@ -1124,9 +1124,8 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(Range *fixed_edges,
   // Get faces and edges
   auto cut_edges_faces = get_adj(cut_edge_verts, 2);
   cut_edges_faces = intersect(cut_edges_faces, vol_faces);
-  auto cut_edges_faces_verts =
-      subtract(get_adj(cut_edges_faces, 0), cut_edge_verts);
-  auto to_remove_cut_edges_faces = get_adj(cut_edges_faces_verts, 2);
+  auto to_remove_cut_edges_faces =
+      get_adj(subtract(get_adj(cut_edges_faces, 0), cut_edge_verts), 2);
 
   // Those are faces which have vertices adjacent to cut edges vertices without
   // hanging nodes (nodes not adjacent to cutting edge)
