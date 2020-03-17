@@ -57,21 +57,20 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
       return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
           &m(0, 0), &m(0, 1), &m(0, 2));
     };
-    auto get_ftensor_from_mat_2d = [](MatrixDouble &m) {
-      return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(&m(0, 0),
-                                                                &m(0, 1));
-    };
     auto get_ftensor_from_vec_3d = [](VectorDouble &v) {
       return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(&v[0], &v[1],
                                                                 &v[2]);
     };
 
+    auto get_ftensor_n_diff = [&]() {
+      const auto &m = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+      return FTensor::Tensor1<FTensor::PackPtr<const double *, 2>, 2>(&m(0, 0),
+                                                                      &m(0, 1));
+    };
+
     auto t_t1 = get_ftensor_from_mat_3d(tangentOneAtGaussPts);
     auto t_t2 = get_ftensor_from_mat_3d(tangentTwoAtGaussPts);
     auto t_normal = get_ftensor_from_mat_3d(normalsAtGaussPts);
-
-    auto t_diff = get_ftensor_from_mat_2d(
-        dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE));
 
     FTensor::Index<'i', 3> i;
     FTensor::Index<'j', 3> j;
@@ -80,6 +79,7 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
     FTensor::Number<0> N0;
     FTensor::Number<1> N1;
 
+    auto t_diff = get_ftensor_n_diff();
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
       auto t_coords = get_ftensor_from_vec_3d(coords);
 

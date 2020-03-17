@@ -1710,7 +1710,33 @@ struct OpSetContrariantPiolaTransformOnEdge
                         DataForcesAndSourcesCore::EntData &data);
 };
 
-// Fat prims 
+// Fat prims
+
+/**
+ * @brief Operator for fat prism element updating integration weights in the
+ * volume.
+ *
+ * Jacobian on the distorted element is nonconstant. This operator updates
+ * integration weight on prism to take into account nonconstat jacobian.
+ *
+ * \f[
+ * W_i = w_i \left( \frac{1}{2V} \left\| \frac{\partial \mathbf{x}}{\partial
+ * \pmb\xi} \right\| \right)
+ * \f]
+ * where \f$w_i\f$ is integration weight at integration point \f$i\f$,
+ * \f$\mathbf{x}\f$ is physical coordinate, and \f$\pmb\xi\f$ is reference
+ * element coordinate.
+ *
+ */
+struct OpMultiplyDeterminantOfJacobianAndWeightsForFatPrisms
+    : public FatPrismElementForcesAndSourcesCore::UserDataOperator {
+
+  OpMultiplyDeterminantOfJacobianAndWeightsForFatPrisms()
+      : FatPrismElementForcesAndSourcesCore::UserDataOperator(H1) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
 
 /** \brief Calculate inverse of jacobian for face element
 
