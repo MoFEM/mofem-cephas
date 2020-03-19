@@ -78,7 +78,8 @@ ContactPrismElementForcesAndSourcesCore::
       dataHdivMaster(*dataOnMaster[HDIV].get()),
       dataL2Master(*dataOnMaster[L2].get()),
       dataHdivSlave(*dataOnSlave[HDIV].get()),
-      dataL2Slave(*dataOnSlave[L2].get()) {
+      dataL2Slave(*dataOnSlave[L2].get()),
+      opContravariantTransform(nOrmalSlave, normalsAtGaussPtsSlave) {
 
   getUserPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
@@ -100,11 +101,21 @@ ContactPrismElementForcesAndSourcesCore::
   dataH1Slave.dataOnEntities[MBTRI].push_back(
       new DataForcesAndSourcesCore::EntData());
 
+  dataHdivMaster.dataOnEntities[MBTRI].push_back(
+      new DataForcesAndSourcesCore::EntData());
+  dataHdivSlave.dataOnEntities[MBTRI].push_back(
+      new DataForcesAndSourcesCore::EntData());
+
   // Data on elements for proper spaces
   dataOnMaster[H1]->setElementType(MBTRI);
   derivedDataOnMaster[H1]->setElementType(MBTRI);
   dataOnSlave[H1]->setElementType(MBTRI);
   derivedDataOnSlave[H1]->setElementType(MBTRI);
+
+  dataOnMaster[HDIV]->setElementType(MBTRI);
+  derivedDataOnMaster[HDIV]->setElementType(MBTRI);
+  dataOnSlave[HDIV]->setElementType(MBTRI);
+  derivedDataOnSlave[HDIV]->setElementType(MBTRI);
 }
 
 MoFEMErrorCode
@@ -177,8 +188,68 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     CHKERR mField.get_moab().get_coords(conn, num_nodes,
                                         &*coords.data().begin());
     normal.resize(6, false);
+
+    tangentMasterOne.resize(3, false);
+    tangentMasterTwo.resize(3, false);
+
+    tangentSlaveOne.resize(3, false);
+    tangentSlaveTwo.resize(3, false);
+
+    tangentMasterOne.clear();
+    tangentMasterTwo.clear();
+
+    tangentSlaveOne.clear();
+    tangentSlaveTwo.clear();
+
     CHKERR Tools::getTriNormal(&coords[0], &normal[0]);
     CHKERR Tools::getTriNormal(&coords[9], &normal[3]);
+
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_master(
+        &coords[0], &coords[1], &coords[2]);
+
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_slave(
+        &coords[3], &coords[4], &coords[5]);
+
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_normal_master(
+        &normal[0], &normal[1], &normal[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_normal_slave(
+        &normal[3], &normal[4], &normal[5]);
+
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1_master(
+        &tangentMasterOne[0], &tangentMasterOne[1], &tangentMasterOne[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2_master(
+        &tangentMasterTwo[0], &tangentMasterTwo[1], &tangentMasterTwo[2]);
+
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1_slave(
+        &tangentSlaveOne[0], &tangentSlaveOne[1], &tangentSlaveOne[2]);
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2_slave(
+        &tangentSlaveTwo[0], &tangentSlaveTwo[1], &tangentSlaveTwo[2]);
+
+    const double *diff_ptr = Tools::diffShapeFunMBTRI.data();
+    FTensor::Tensor1<FTensor::PackPtr<const double *, 2>, 2> t_diff(
+        diff_ptr, &diff_ptr[1]);
+
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'j', 3> j;
+    FTensor::Index<'k', 3> k;
+
+    FTensor::Number<0> N0;
+    FTensor::Number<1> N1;
+
+    for (int nn = 0; nn != 3; ++nn) {
+      t_t1_master(i) += t_coords_master(i) * t_diff(N0);
+      t_t1_slave(i) += t_coords_slave(i) * t_diff(N0);
+      ++t_coords_master;
+      ++t_coords_slave;
+      ++t_diff;
+    }
+
+    t_t2_master(j) =
+        FTensor::levi_civita(i, j, k) * t_normal_master(k) * t_t1_master(i);
+
+    t_t2_slave(j) =
+        FTensor::levi_civita(i, j, k) * t_normal_slave(k) * t_t1_slave(i);
+
     aRea[0] = cblas_dnrm2(3, &normal[0], 1) * 0.5;
     aRea[1] = cblas_dnrm2(3, &normal[3], 1) * 0.5;
     MoFEMFunctionReturn(0);
@@ -207,6 +278,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
     CHKERR getEntitySense<MBTRI>(data_div);
     CHKERR getEntityDataOrder<MBTRI>(data_div, HDIV);
+    dataHdivSlave.spacesOnEntities[MBTRI].set(HDIV);
+    dataHdivMaster.spacesOnEntities[MBTRI].set(HDIV);
   }
 
   // L2
@@ -260,6 +333,42 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     }
 
     if (shift == 0) {
+      data.dataOnEntities[MBTRI][0].getSense() =
+          copy_data.dataOnEntities[MBTRI][3].getSense();
+      data.dataOnEntities[MBTRI][0].getDataOrder() =
+          copy_data.dataOnEntities[MBTRI][3].getDataOrder();
+    } else {
+      data.dataOnEntities[MBTRI][0].getSense() =
+          copy_data.dataOnEntities[MBTRI][4].getSense();
+      data.dataOnEntities[MBTRI][0].getDataOrder() =
+          copy_data.dataOnEntities[MBTRI][4].getDataOrder();
+    }
+
+    MoFEMFunctionReturn(0);
+  };
+
+  auto copy_data_hdiv = [](DataForcesAndSourcesCore &data,
+                           DataForcesAndSourcesCore &copy_data,
+                           const int shift) {
+    MoFEMFunctionBegin;
+
+    if (shift != 3 && shift != 4) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong shift for contact prism element");
+    }
+
+    data.sPace = copy_data.sPace;
+    data.bAse = copy_data.bAse;
+    data.spacesOnEntities[MBVERTEX] = copy_data.spacesOnEntities[MBVERTEX];
+    data.spacesOnEntities[MBTRI] = copy_data.spacesOnEntities[MBTRI];
+
+    data.basesOnEntities[MBVERTEX] = copy_data.basesOnEntities[MBVERTEX];
+    data.basesOnEntities[MBTRI] = copy_data.basesOnEntities[MBTRI];
+
+    data.basesOnSpaces[MBVERTEX] = copy_data.basesOnSpaces[MBVERTEX];
+    data.basesOnSpaces[MBTRI] = copy_data.basesOnSpaces[MBTRI];
+
+    if (shift == 3) {
       data.dataOnEntities[MBTRI][0].getSense() =
           copy_data.dataOnEntities[MBTRI][3].getSense();
       data.dataOnEntities[MBTRI][0].getDataOrder() =
@@ -342,6 +451,22 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
           dataOnMaster[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
       dataH1Slave.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
           dataOnSlave[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+      if (space == HDIV) {
+        if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+
+          CHKERR clean_data(dataHdivSlave);
+          CHKERR copy_data_hdiv(dataHdivSlave, dataH1, 4);
+          CHKERR clean_data(dataHdivMaster);
+          CHKERR copy_data_hdiv(dataHdivMaster, dataH1, 3);
+
+          dataHdivMaster.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
+              dataOnMaster[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
+                  NOBASE);
+          dataHdivSlave.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
+              dataOnSlave[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
+                  NOBASE);
+        }
+      }
     }
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
@@ -363,11 +488,56 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                   dataH1Slave, H1, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
         }
-
+      case DEMKOWICZ_JACOBI_BASE:
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Not yet implemented");
+
+          normalsAtGaussPtsSlave.resize(nb_gauss_pts, 3, false);
+          normalsAtGaussPtsSlave.clear();
+          nOrmalSlave.resize(3, false);
+          nOrmalSlave.clear();
+
+          auto get_ftensor_from_mat_3d = [](MatrixDouble &m) {
+            return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+                &m(0, 0), &m(0, 1), &m(0, 2));
+          };
+
+          auto t_normal = get_ftensor_from_mat_3d(normalsAtGaussPtsSlave);
+
+          auto get_tensor_vec = [](VectorDouble &n, const int r = 0) {
+            return FTensor::Tensor1<double *, 3>(&n(r + 0), &n(r + 1),
+                                                 &n(r + 2));
+          };
+
+          auto normal_slave = get_tensor_vec(nOrmalSlave);
+
+          auto slave_normal_data = get_tensor_vec(normal, 3);
+
+          FTensor::Index<'i', 3> i;
+
+          const double normal_length =
+              sqrt(slave_normal_data(i) * slave_normal_data(i));
+          normal_slave(i) = slave_normal_data(i) / normal_length;
+
+          for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+            t_normal(i) = normal_slave(i);
+            ++t_normal;
+          }
+
+          CHKERR getUserPolynomialBase()->getValue(
+              gaussPtsMaster,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataHdivMaster, HDIV, static_cast<FieldApproximationBase>(b),
+                  NOBASE)));
+
+          CHKERR getUserPolynomialBase()->getValue(
+              gaussPtsSlave,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
+                  NOBASE)));
+
+          CHKERR opContravariantTransform.opRhs(data_div);
         }
+
         if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Not yet implemented");
@@ -382,10 +552,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                 "Not yet implemented");
       }
     }
-  }
-
-  if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented yet");
   }
 
   // Iterate over operators
@@ -807,6 +973,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
     init_set(slave_nodes_data, slave_nodes_dofs, slave_space, slave_base);
 
     std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
+
     for (; dit != hi_dit;) {
       const auto &dof_ptr = *dit;
       const auto &dof = *dof_ptr;
@@ -822,6 +989,13 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
           ++dit;
         }
       };
+
+      if (side == -1) {
+        for (int ii = 0; ii != nb_dof_idx; ++ii) {
+          ++dit;
+        }
+        continue;
+      }
 
       if (side < 3)
         set_data(master_nodes_data, master_nodes_dofs, side * nb_dof_idx);
@@ -980,6 +1154,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
 
       const int brother_side = (*dit)->sideNumberPtr->brother_side_number;
+
       if (brother_side != -1)
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
     }
