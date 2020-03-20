@@ -303,23 +303,6 @@ struct CutMeshInterface : public UnknownInterface {
                                 const bool debug = false);
 
   /**
-   * @brief project cut edges close to geomeic features
-   *
-   * @param vol is tetrahedrons search to cut
-   * @param fixed_edges pointer to fixed edges
-   * @param corner_nodes pointer to corner edges
-   * @param geometry_tol tolerance for close geometry fetchers
-   * @param verb verbosity level
-   * @param debug debugging
-   * @return MoFEMErrorCode
-   */
-  MoFEMErrorCode projectZeroGeometryEnts(Range vol, Range *fixed_edges,
-                                             Range *corner_nodes,
-                                             const double geometry_tol,
-                                             int verb = QUIET,
-                                             const bool debug = false);
-
-  /**
    * @brief Find entities on cut surface which can be projected
    *
    * @param fixed_edges pointer to fix edges
@@ -331,6 +314,7 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode projectZeroDistanceEnts(Range *fixed_edges,
                                          Range *corner_nodes,
+                                         const double geometry_tol = 0,
                                          const double close_tol = 0,
                                          const int verb = QUIET,
                                          const bool debug = false);
