@@ -384,7 +384,7 @@ This create directory \em html. Open file \em html/index.html to see results in 
 
 \subsection configure_vs_code How to configure MoFEM in Visual Studio Code?
 
-Basic support for C/C++ languages is provided with <a
+PipelineManager support for C/C++ languages is provided with <a
 href="https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools">
 Microsoft C/C++ extension</a>. To configure IntelliSense code-completion tool
 add \p -DCMAKE_EXPORT_COMPILE_COMMANDS=ON to users_modules's `cmake` command 

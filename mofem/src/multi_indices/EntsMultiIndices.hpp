@@ -67,7 +67,7 @@ typedef multi_index_container<
     SideNumber_multiIndex;
 
 /**
- * \brief Basic data. like access to moab interface and basic tag handlers.
+ * \brief PipelineManager data. like access to moab interface and basic tag handlers.
  */
 struct BasicEntityData {
   moab::Interface &moab;

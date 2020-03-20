@@ -704,7 +704,7 @@ To create your package for the user module, you have to
 - create package class following naming convention
 - modify file changing names and locations appropriately for your user module
 
-## Basic settings in config.yaml {#spack_config}
+## PipelineManager settings in config.yaml {#spack_config}
 
 Spack's basic configuration options are set in config.yaml. You can see the
 default settings by *$HOME/.spack/config.yaml*, for example, you can set the

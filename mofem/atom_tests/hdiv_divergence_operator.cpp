@@ -2,7 +2,7 @@
  * \file hdiv_divergence_operator.cpp
  * \example hdiv_divergence_operator.cpp
  *
- * Using Basic interface calculate the divergence of base functions, and
+ * Using PipelineManager interface calculate the divergence of base functions, and
  * integral of flux on the boundary. Since the h-div space is used, volume
  * integral and boundary integral should give the same result.
  */
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core;
 
     Simple *simple_interface = m_field.getInterface<Simple>();
-    Basic *basic_interface = m_field.getInterface<Basic>();
+    PipelineManager *pipeline_mng = m_field.getInterface<PipelineManager>();
     CHKERR simple_interface->getOptions();
     CHKERR simple_interface->loadFile("");
 
@@ -118,22 +118,22 @@ int main(int argc, char *argv[]) {
     CHKERR simple_interface->setUp();
 
     /// This has no real effect, folling line are only for atom test purpose
-    basic_interface->getDomainLhsFE().reset();
-    basic_interface->getDomainRhsFE().reset();
-    basic_interface->getBoundaryLhsFE().reset();
-    basic_interface->getBoundaryRhsFE().reset();
-    basic_interface->getSkeletonLhsFE().reset();
-    basic_interface->getSkeletonRhsFE().reset();
+    pipeline_mng->getDomainLhsFE().reset();
+    pipeline_mng->getDomainRhsFE().reset();
+    pipeline_mng->getBoundaryLhsFE().reset();
+    pipeline_mng->getBoundaryRhsFE().reset();
+    pipeline_mng->getSkeletonLhsFE().reset();
+    pipeline_mng->getSkeletonRhsFE().reset();
 
     auto integration_rule = [](int, int, int p_data) { return 2 * p_data; };
-    CHKERR basic_interface->setDomainRhsIntegrationRule(integration_rule);
-    CHKERR basic_interface->setBoundaryRhsIntegrationRule(integration_rule);
+    CHKERR pipeline_mng->setDomainRhsIntegrationRule(integration_rule);
+    CHKERR pipeline_mng->setBoundaryRhsIntegrationRule(integration_rule);
 
     double divergence_vol = 0;
     double divergence_skin = 0;
-    basic_interface->getOpDomainRhsPipeline().push_back(
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
         new OpTetDivergence(divergence_vol));
-    basic_interface->getOpBoundaryRhsPipeline().push_back(
+    pipeline_mng->getOpBoundaryRhsPipeline().push_back(
         new OpFacesFluxes(divergence_skin));
 
     // project geometry form 10 node tets on higher order approx. functions
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
       Projection10NodeCoordsOnField ent_method(m_field, "MESH_NODE_POSITIONS");
       CHKERR m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method);
     }
-    CHKERR basic_interface->loopFiniteElements();
+    CHKERR pipeline_mng->loopFiniteElements();
 
     std::cout.precision(12);
 
