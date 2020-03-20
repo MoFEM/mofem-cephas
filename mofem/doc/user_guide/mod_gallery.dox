@@ -28,10 +28,10 @@ library.
     <th> Useful links </th>
   </tr>
    <tr style="height:85px;">
-    <th> PipelineManager finite elements </th> 
+    <th> Basic finite elements </th> 
     <td> \image html basic_user_mod_ava.png "" width = 80px </td>
     <td> 
-    PipelineManager finite element library. Required by most of the other modules. 
+    Basic finite element library. Required by most of the other modules. 
     - \subpage elastic_dynamics
     - <a href="https://bitbucket.org/mofem/users-modules-cephas">Bitbucket repository </a></td>
   </tr>
