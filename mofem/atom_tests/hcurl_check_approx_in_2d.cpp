@@ -287,7 +287,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core;
 
     Simple *simple_interface = m_field.getInterface<Simple>();
-    Basic *basic_interface = m_field.getInterface<Basic>();
+    PipelineManager *pipeline_mng = m_field.getInterface<PipelineManager>();
     CHKERR simple_interface->getOptions();
     CHKERR simple_interface->loadFile("", "rectangle.h5m");
 
@@ -317,36 +317,36 @@ int main(int argc, char *argv[]) {
 
     auto assemble_matrices_and_vectors = [&]() {
       MoFEMFunctionBegin;
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateJacForFace(jac));
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateInvJacForFace(inv_jac));
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpMakeHdivFromHcurl());
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSetContravariantPiolaTransformFace(jac));
-      basic_interface->getOpDomainRhsPipeline().push_back(new OpAssembleVec());
+      pipeline_mng->getOpDomainRhsPipeline().push_back(new OpAssembleVec());
 
-      basic_interface->getOpDomainLhsPipeline().push_back(
+      pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpCalculateJacForFace(jac));
-      basic_interface->getOpDomainLhsPipeline().push_back(
+      pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpCalculateInvJacForFace(inv_jac));
-      basic_interface->getOpDomainLhsPipeline().push_back(
+      pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpMakeHdivFromHcurl());
-      basic_interface->getOpDomainLhsPipeline().push_back(
+      pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpSetContravariantPiolaTransformFace(jac));
-      basic_interface->getOpDomainLhsPipeline().push_back(new OpAssembleMat());
+      pipeline_mng->getOpDomainLhsPipeline().push_back(new OpAssembleMat());
 
       auto integration_rule = [](int, int, int p_data) { return 2 * p_data; };
-      CHKERR basic_interface->setDomainRhsIntegrationRule(integration_rule);
-      CHKERR basic_interface->setDomainLhsIntegrationRule(integration_rule);
+      CHKERR pipeline_mng->setDomainRhsIntegrationRule(integration_rule);
+      CHKERR pipeline_mng->setDomainLhsIntegrationRule(integration_rule);
 
       MoFEMFunctionReturn(0);
     };
 
     auto solve_problem = [&] {
       MoFEMFunctionBegin;
-      auto solver = basic_interface->createKSP();
+      auto solver = pipeline_mng->createKSP();
       CHKERR KSPSetFromOptions(solver);
       CHKERR KSPSetUp(solver);
 
@@ -366,29 +366,29 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<MatrixDouble> ptr_values(new MatrixDouble());
       boost::shared_ptr<VectorDouble> ptr_divergence(new VectorDouble());
 
-      basic_interface->getOpDomainLhsPipeline().clear();
-      basic_interface->getOpDomainRhsPipeline().clear();
+      pipeline_mng->getOpDomainLhsPipeline().clear();
+      pipeline_mng->getOpDomainRhsPipeline().clear();
 
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateJacForFace(jac));
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateInvJacForFace(inv_jac));
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpMakeHdivFromHcurl());
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSetContravariantPiolaTransformFace(jac));
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSetInvJacHcurlFace(inv_jac));
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpValsDiffVals(vals, diff_vals));
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateHdivVectorField<3>("FIELD1", ptr_values));
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateHdivVectorDivergence<3, 2>("FIELD1", ptr_divergence));
-      basic_interface->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCheckValsDiffVals(vals, diff_vals, ptr_values, ptr_divergence));
 
-      CHKERR basic_interface->loopFiniteElements();
+      CHKERR pipeline_mng->loopFiniteElements();
 
       MoFEMFunctionReturn(0);
     };

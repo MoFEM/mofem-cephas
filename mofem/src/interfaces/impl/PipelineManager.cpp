@@ -1,4 +1,4 @@
-/** \file Basic.cpp
+/** \file PipelineManager.cpp
  * \brief Implementation of basic interface
  * \ingroup mofem_basic_interface
  */
@@ -19,21 +19,21 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode Basic::query_interface(const MOFEMuuid &uuid,
+MoFEMErrorCode PipelineManager::query_interface(const MOFEMuuid &uuid,
                                       UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;
   *iface = NULL;
   if (uuid == IDD_MOFEMBasic) {
-    *iface = const_cast<Basic *>(this);
+    *iface = const_cast<PipelineManager *>(this);
     MoFEMFunctionReturnHot(0);
   }
   SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
   MoFEMFunctionReturnHot(0);
 }
 
-Basic::Basic(const MoFEM::Core &core) : cOre(const_cast<Core &>(core)) {}
+PipelineManager::PipelineManager(const MoFEM::Core &core) : cOre(const_cast<Core &>(core)) {}
 
-MoFEMErrorCode Basic::loopFiniteElements(SmartPetscObj<DM> dm) {
+MoFEMErrorCode PipelineManager::loopFiniteElements(SmartPetscObj<DM> dm) {
   MoFEMFunctionBegin;
   Interface &m_field = cOre;
   Simple *simple_interface = m_field.getInterface<Simple>();
@@ -65,7 +65,7 @@ MoFEMErrorCode Basic::loopFiniteElements(SmartPetscObj<DM> dm) {
   MoFEMFunctionReturn(0);
 }
 
-SmartPetscObj<KSP> Basic::createKSP(SmartPetscObj<DM> dm) {
+SmartPetscObj<KSP> PipelineManager::createKSP(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
   Simple *simple_interface = m_field.getInterface<Simple>();
   
@@ -125,7 +125,7 @@ SmartPetscObj<KSP> Basic::createKSP(SmartPetscObj<DM> dm) {
   return ksp;
 }
 
-SmartPetscObj<SNES> Basic::createSNES(SmartPetscObj<DM> dm) {
+SmartPetscObj<SNES> PipelineManager::createSNES(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
   Simple *simple_interface = m_field.getInterface<Simple>();
 
@@ -185,7 +185,7 @@ SmartPetscObj<SNES> Basic::createSNES(SmartPetscObj<DM> dm) {
   return snes;
 }
 
-SmartPetscObj<TS> Basic::createTS(SmartPetscObj<DM> dm) {
+SmartPetscObj<TS> PipelineManager::createTS(SmartPetscObj<DM> dm) {
   Interface &m_field = cOre;
   Simple *simple_interface = m_field.getInterface<Simple>();
 

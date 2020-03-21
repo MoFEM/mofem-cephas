@@ -1,4 +1,4 @@
-/** \file Basic.hpp
+/** \file PipelineManager.hpp
  * \brief Header file for basic interface
  * \ingroup mofem_basic_interface
  *
@@ -30,15 +30,15 @@ static const MOFEMuuid IDD_MOFEMBasic =
     MOFEMuuid(BitIntefaceId(BASIC_INTERFACE));
 
 /**
- * \brief Basic interface
+ * \brief PipelineManager interface
  * \ingroup mofem_basic_interface
  */
-struct Basic : public UnknownInterface {
+struct PipelineManager : public UnknownInterface {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
 
-  Basic(const MoFEM::Core &core);
+  PipelineManager(const MoFEM::Core &core);
 
   using UserDataOperator = MoFEM::ForcesAndSourcesCore::UserDataOperator;
   using RuleHookFun = MoFEM::ForcesAndSourcesCore::RuleHookFun;
@@ -207,7 +207,7 @@ private:
 
 template <int DIM>
 boost::shared_ptr<FEMethod> &
-Basic::createDomainFEPipeline(boost::shared_ptr<FEMethod> &fe) {
+PipelineManager::createDomainFEPipeline(boost::shared_ptr<FEMethod> &fe) {
   static_assert(DIM == 1 || DIM == 2 || DIM == 3, "not implemented");
   fe = boost::make_shared<FEMethod>();
   return fe;
@@ -215,7 +215,7 @@ Basic::createDomainFEPipeline(boost::shared_ptr<FEMethod> &fe) {
 
 template <>
 inline boost::shared_ptr<FEMethod> &
-Basic::createDomainFEPipeline<3>(boost::shared_ptr<FEMethod> &fe) {
+PipelineManager::createDomainFEPipeline<3>(boost::shared_ptr<FEMethod> &fe) {
   if (!fe)
     fe = boost::make_shared<VolumeElementForcesAndSourcesCore>(cOre);
   return fe;
@@ -223,7 +223,7 @@ Basic::createDomainFEPipeline<3>(boost::shared_ptr<FEMethod> &fe) {
 
 template <>
 inline boost::shared_ptr<FEMethod> &
-Basic::createDomainFEPipeline<2>(boost::shared_ptr<FEMethod> &fe) {
+PipelineManager::createDomainFEPipeline<2>(boost::shared_ptr<FEMethod> &fe) {
   if (!fe)
     fe = boost::make_shared<FaceEle2D>(cOre);
   return fe;
@@ -231,7 +231,7 @@ Basic::createDomainFEPipeline<2>(boost::shared_ptr<FEMethod> &fe) {
 
 template <>
 inline boost::shared_ptr<FEMethod> &
-Basic::createDomainFEPipeline<1>(boost::shared_ptr<FEMethod> &fe) {
+PipelineManager::createDomainFEPipeline<1>(boost::shared_ptr<FEMethod> &fe) {
   if (!fe)
     fe = boost::make_shared<EdgeEle1D>(cOre);
   return fe;
@@ -239,7 +239,7 @@ Basic::createDomainFEPipeline<1>(boost::shared_ptr<FEMethod> &fe) {
 
 template <int DIM>
 boost::shared_ptr<FEMethod> &
-Basic::createBoundaryFEPipeline(boost::shared_ptr<FEMethod> &fe) {
+PipelineManager::createBoundaryFEPipeline(boost::shared_ptr<FEMethod> &fe) {
   static_assert(DIM == 1 || DIM == 2 || DIM == 3, "not implemented");
   fe = boost::make_shared<FEMethod>();
   return fe;
@@ -247,7 +247,7 @@ Basic::createBoundaryFEPipeline(boost::shared_ptr<FEMethod> &fe) {
 
 template <>
 inline boost::shared_ptr<FEMethod> &
-Basic::createBoundaryFEPipeline<3>(boost::shared_ptr<FEMethod> &fe) {
+PipelineManager::createBoundaryFEPipeline<3>(boost::shared_ptr<FEMethod> &fe) {
   if (!fe)
     fe = boost::make_shared<FaceElementForcesAndSourcesCore>(cOre);
   return fe;
@@ -255,7 +255,7 @@ Basic::createBoundaryFEPipeline<3>(boost::shared_ptr<FEMethod> &fe) {
 
 template <>
 inline boost::shared_ptr<FEMethod> &
-Basic::createBoundaryFEPipeline<2>(boost::shared_ptr<FEMethod> &fe) {
+PipelineManager::createBoundaryFEPipeline<2>(boost::shared_ptr<FEMethod> &fe) {
   if (!fe)
     fe = boost::make_shared<EdgeEle2D>(cOre);
   return fe;
@@ -263,26 +263,26 @@ Basic::createBoundaryFEPipeline<2>(boost::shared_ptr<FEMethod> &fe) {
 
 template <>
 inline boost::shared_ptr<FEMethod> &
-Basic::createBoundaryFEPipeline<1>(boost::shared_ptr<FEMethod> &fe) {
+PipelineManager::createBoundaryFEPipeline<1>(boost::shared_ptr<FEMethod> &fe) {
   if (!fe)
     fe = boost::make_shared<VertexElementForcesAndSourcesCore>(cOre);
   return fe;
 }
 
-boost::shared_ptr<FEMethod> &Basic::getDomainLhsFE() { return feDomainLhs; }
+boost::shared_ptr<FEMethod> &PipelineManager::getDomainLhsFE() { return feDomainLhs; }
 
-boost::shared_ptr<FEMethod> &Basic::getDomainRhsFE() { return feDomainRhs; }
+boost::shared_ptr<FEMethod> &PipelineManager::getDomainRhsFE() { return feDomainRhs; }
 
-boost::shared_ptr<FEMethod> &Basic::getBoundaryLhsFE() { return feBoundaryLhs; }
+boost::shared_ptr<FEMethod> &PipelineManager::getBoundaryLhsFE() { return feBoundaryLhs; }
 
-boost::shared_ptr<FEMethod> &Basic::getBoundaryRhsFE() { return feBoundaryRhs; }
+boost::shared_ptr<FEMethod> &PipelineManager::getBoundaryRhsFE() { return feBoundaryRhs; }
 
-boost::shared_ptr<FEMethod> &Basic::getSkeletonLhsFE() { return feSkeletonLhs; }
+boost::shared_ptr<FEMethod> &PipelineManager::getSkeletonLhsFE() { return feSkeletonLhs; }
 
-boost::shared_ptr<FEMethod> &Basic::getSkeletonRhsFE() { return feSkeletonRhs; }
+boost::shared_ptr<FEMethod> &PipelineManager::getSkeletonRhsFE() { return feSkeletonRhs; }
 
 template <int DIM>
-MoFEMErrorCode Basic::setDomainLhsIntegrationRule(Basic::RuleHookFun rule) {
+MoFEMErrorCode PipelineManager::setDomainLhsIntegrationRule(PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
       createDomainFEPipeline<DIM>(feDomainLhs))
@@ -292,7 +292,7 @@ MoFEMErrorCode Basic::setDomainLhsIntegrationRule(Basic::RuleHookFun rule) {
 
 template <>
 inline MoFEMErrorCode
-Basic::setDomainLhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
+PipelineManager::setDomainLhsIntegrationRule<-1>(PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -308,7 +308,7 @@ Basic::setDomainLhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
 }
 
 template <int DIM>
-MoFEMErrorCode Basic::setDomainRhsIntegrationRule(Basic::RuleHookFun rule) {
+MoFEMErrorCode PipelineManager::setDomainRhsIntegrationRule(PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
       createDomainFEPipeline<DIM>(feDomainRhs))
@@ -318,7 +318,7 @@ MoFEMErrorCode Basic::setDomainRhsIntegrationRule(Basic::RuleHookFun rule) {
 
 template <>
 inline MoFEMErrorCode
-Basic::setDomainRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
+PipelineManager::setDomainRhsIntegrationRule<-1>(PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -334,7 +334,7 @@ Basic::setDomainRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
 }
 
 template <int DIM>
-MoFEMErrorCode Basic::setBoundaryLhsIntegrationRule(Basic::RuleHookFun rule) {
+MoFEMErrorCode PipelineManager::setBoundaryLhsIntegrationRule(PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
       createBoundaryFEPipeline<DIM>(feBoundaryLhs))
@@ -344,7 +344,7 @@ MoFEMErrorCode Basic::setBoundaryLhsIntegrationRule(Basic::RuleHookFun rule) {
 
 template <>
 inline MoFEMErrorCode
-Basic::setBoundaryLhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
+PipelineManager::setBoundaryLhsIntegrationRule<-1>(PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -360,7 +360,7 @@ Basic::setBoundaryLhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
 }
 
 template <int DIM>
-MoFEMErrorCode Basic::setBoundaryRhsIntegrationRule(Basic::RuleHookFun rule) {
+MoFEMErrorCode PipelineManager::setBoundaryRhsIntegrationRule(PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
       createBoundaryFEPipeline<DIM>(feBoundaryRhs))
@@ -370,7 +370,7 @@ MoFEMErrorCode Basic::setBoundaryRhsIntegrationRule(Basic::RuleHookFun rule) {
 
 template <>
 inline MoFEMErrorCode
-Basic::setBoundaryRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
+PipelineManager::setBoundaryRhsIntegrationRule<-1>(PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -386,7 +386,7 @@ Basic::setBoundaryRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
 }
 
 template <int DIM>
-MoFEMErrorCode Basic::setSkeletonLhsIntegrationRule(Basic::RuleHookFun rule) {
+MoFEMErrorCode PipelineManager::setSkeletonLhsIntegrationRule(PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
       createBoundaryFEPipeline<DIM>(feSkeletonLhs))
@@ -396,7 +396,7 @@ MoFEMErrorCode Basic::setSkeletonLhsIntegrationRule(Basic::RuleHookFun rule) {
 
 template <>
 inline MoFEMErrorCode
-Basic::setSkeletonLhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
+PipelineManager::setSkeletonLhsIntegrationRule<-1>(PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -412,7 +412,7 @@ Basic::setSkeletonLhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
 }
 
 template <int DIM>
-MoFEMErrorCode Basic::setSkeletonRhsIntegrationRule(Basic::RuleHookFun rule) {
+MoFEMErrorCode PipelineManager::setSkeletonRhsIntegrationRule(PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
       createBoundaryFEPipeline<DIM>(feSkeletonRhs))
@@ -422,7 +422,7 @@ MoFEMErrorCode Basic::setSkeletonRhsIntegrationRule(Basic::RuleHookFun rule) {
 
 template <>
 inline MoFEMErrorCode
-Basic::setSkeletonRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
+PipelineManager::setSkeletonRhsIntegrationRule<-1>(PipelineManager::RuleHookFun rule) {
   MoFEMFunctionBegin;
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
@@ -438,16 +438,16 @@ Basic::setSkeletonRhsIntegrationRule<-1>(Basic::RuleHookFun rule) {
 }
 
 template <int DIM>
-boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpDomainLhsPipeline() {
+boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpDomainLhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createDomainFEPipeline<DIM>(feDomainLhs))
       ->getOpPtrVector();
 }
 
 template <>
-inline boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpDomainLhsPipeline<-1>() {
+inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpDomainLhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return getOpDomainLhsPipeline<1>();
@@ -462,16 +462,16 @@ Basic::getOpDomainLhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpDomainRhsPipeline() {
+boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpDomainRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createDomainFEPipeline<DIM>(feDomainRhs))
       ->getOpPtrVector();
 }
 
 template <>
-inline boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpDomainRhsPipeline<-1>() {
+inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpDomainRhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return getOpDomainRhsPipeline<1>();
@@ -486,16 +486,16 @@ Basic::getOpDomainRhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpBoundaryLhsPipeline() {
+boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpBoundaryLhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createBoundaryFEPipeline<DIM>(feBoundaryLhs))
       ->getOpPtrVector();
 }
 
 template <>
-inline boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpBoundaryLhsPipeline<-1>() {
+inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpBoundaryLhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return getOpBoundaryLhsPipeline<1>();
@@ -510,16 +510,16 @@ Basic::getOpBoundaryLhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpBoundaryRhsPipeline() {
+boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpBoundaryRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createBoundaryFEPipeline<DIM>(feBoundaryRhs))
       ->getOpPtrVector();
 }
 
 template <>
-inline boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpBoundaryRhsPipeline<-1>() {
+inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpBoundaryRhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return getOpBoundaryRhsPipeline<1>();
@@ -534,16 +534,16 @@ Basic::getOpBoundaryRhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpSkeletonLhsPipeline() {
+boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpSkeletonLhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createBoundaryFEPipeline<DIM>(feSkeletonRhs))
       ->getOpPtrVector();
 }
 
 template <>
-inline boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpSkeletonLhsPipeline<-1>() {
+inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpSkeletonLhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return getOpSkeletonLhsPipeline<1>();
@@ -558,16 +558,16 @@ Basic::getOpSkeletonLhsPipeline<-1>() {
 }
 
 template <int DIM>
-boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpSkeletonRhsPipeline() {
+boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpSkeletonRhsPipeline() {
   return boost::dynamic_pointer_cast<ForcesAndSourcesCore>(
              createBoundaryFEPipeline<DIM>(feSkeletonLhs))
       ->getOpPtrVector();
 }
 
 template <>
-inline boost::ptr_vector<Basic::UserDataOperator> &
-Basic::getOpSkeletonRhsPipeline<-1>() {
+inline boost::ptr_vector<PipelineManager::UserDataOperator> &
+PipelineManager::getOpSkeletonRhsPipeline<-1>() {
   switch (cOre.getInterface<Simple>()->getDim()) {
   case 1:
     return getOpSkeletonRhsPipeline<1>();
@@ -586,7 +586,7 @@ Basic::getOpSkeletonRhsPipeline<-1>() {
 #endif // __BASIC_HPP__
 
 /**
- * \defgroup mofem_basic_interface Basic interface
+ * \defgroup mofem_basic_interface PipelineManager interface
  * \brief Implementation of basic interface for rapid problem implementation.
  *
  * \ingroup mofem

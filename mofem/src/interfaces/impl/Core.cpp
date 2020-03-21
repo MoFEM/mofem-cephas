@@ -193,7 +193,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
 
   // Register sub interfaces
   CHKERR regSubInterface<Simple>(IDD_MOFEMSimple);
-  CHKERR regSubInterface<Basic>(IDD_MOFEMBasic);
+  CHKERR regSubInterface<PipelineManager>(IDD_MOFEMBasic);
   CHKERR regSubInterface<ProblemsManager>(IDD_MOFEMProblemsManager);
   CHKERR regSubInterface<MatrixManager>(IDD_MOFEMMatrixManager);
   CHKERR regSubInterface<ISManager>(IDD_MOFEMISManager);
