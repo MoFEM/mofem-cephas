@@ -3,7 +3,7 @@
  * \brief Testich curl-curl operator by applying Stokes theorem
  * \example hcurl_curl_operator.cpp
  *
- * Using Basic interface calculate the curl of base functions, and integral of
+ * Using PipelineManager interface calculate the curl of base functions, and integral of
  * the vector tangent vector with normal on the boundary. Since the h-curl space
  * is used, volume integral and boundary integral should give the same result,
  * as a result, as we are applying Stokes theorem on h-curl space.
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core;
 
     Simple *simple_interface = m_field.getInterface<Simple>();
-    Basic *basic_interface = m_field.getInterface<Basic>();
+    PipelineManager *pipeline_mng = m_field.getInterface<PipelineManager>();
     CHKERR simple_interface->getOptions();
     CHKERR simple_interface->loadFile("");
 
@@ -119,15 +119,15 @@ int main(int argc, char *argv[]) {
     CHKERR simple_interface->setUp();
 
     auto integration_rule = [](int, int, int p_data) { return 2 * p_data; };
-    CHKERR basic_interface->setDomainRhsIntegrationRule(integration_rule);
-    CHKERR basic_interface->setBoundaryRhsIntegrationRule(integration_rule);
+    CHKERR pipeline_mng->setDomainRhsIntegrationRule(integration_rule);
+    CHKERR pipeline_mng->setBoundaryRhsIntegrationRule(integration_rule);
 
     FTensor::Tensor1<double, 3> t_curl_vol;
     FTensor::Tensor1<double, 3> t_curl_skin;
 
-    basic_interface->getOpDomainRhsPipeline().push_back(
+    pipeline_mng->getOpDomainRhsPipeline().push_back(
         new OpTetCurl(t_curl_vol));
-    basic_interface->getOpBoundaryRhsPipeline().push_back(
+    pipeline_mng->getOpBoundaryRhsPipeline().push_back(
         new OpFacesRot(t_curl_skin));
 
     FTensor::Index<'i', 3> i;
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Run pipelines on mesh
-    CHKERR basic_interface->loopFiniteElements();
+    CHKERR pipeline_mng->loopFiniteElements();
 
     std::cout.precision(12);
 
