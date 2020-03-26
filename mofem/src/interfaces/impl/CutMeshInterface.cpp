@@ -913,13 +913,13 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, int verb,
     const double ray_length = norm_2(ray);
     ray /= ray_length;
 
-    auto dist0 = get_tag_dist(th_signed_dist, conn[0]);
-    auto dist1 = get_tag_dist(th_signed_dist, conn[1]);
+    const auto dist0 = get_tag_dist(th_signed_dist, conn[0]);
+    const auto dist1 = get_tag_dist(th_signed_dist, conn[1]);
+    const auto dist_max = std::max(dist0, dist1);
 
     auto dot = dist0 * dist1;
     if (dot <= 0 &&
-        (std::abs(dist0) > std::numeric_limits<double>::epsilon() ||
-         std::abs(dist1) > std::numeric_limits<double>::epsilon())) {
+        std::abs(dist_max) > std::numeric_limits<double>::epsilon()) {
 
       // Edges is on two sides of the surface
       const double s = dist0 / (dist0 - dist1);
@@ -941,52 +941,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, int verb,
     }
   }
   aveLength /= nb_ave_length;
-
-  auto get_edges_not_on_the_skin = [&](auto skin, auto vol) {
-    Range r = intersect(
-
-        get_adj(subtract(get_adj(vol, 0), get_adj(skin, 0)), 1),
-
-        get_adj(vol, 1)
-
-    );
-    return r;
-  };
-
-  auto get_edges_to_remove = [&](auto &&edges_not_on_the_skin) {
-
-    std::vector<EntityHandle> edges_on_negative_side;
-    edges_on_negative_side.reserve(edges_not_on_the_skin.size());
-    for (auto e : cutEdges) {
-      auto eit = edgesToCut.find(e);
-      if (eit != edgesToCut.end()) {
-
-        auto conn = get_conn(e);
-        const auto d0 = get_tag_dist(th_signed_dist, conn[0]);
-        const auto d1 = get_tag_dist(th_signed_dist, conn[1]);
-        const auto max_d = std::max(d0, d1);
-
-        if (std::abs(max_d) < std::numeric_limits<double>::epsilon())
-          edges_on_negative_side.push_back(e);
-
-      }
-    }
-    return edges_on_negative_side;
-  };
-
-  auto vol_cut_edges = intersect(get_adj(cutEdges, 3), vol);
-  cutEdges = subtract(
-
-      cutEdges,
-
-      get_range(
-
-          get_edges_to_remove(
-              get_edges_not_on_the_skin(get_skin(vol_cut_edges), vol_cut_edges))
-
-              )
-
-  );
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("cut_edges.vtk", cutEdges);
