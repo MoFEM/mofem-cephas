@@ -963,7 +963,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
   auto get_ent_adj = [&moab](const EntityHandle v, const int dim) {
     Range a;
     if (dim)
-      CHKERR moab.get_adjacencies(&v, 1, dim, false, a);
+      CHKERR moab.get_adjacencies(&v, 1, dim, true, a);
     return a;
   };
 
@@ -1162,12 +1162,11 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     return zero_dist_vec;
   };
 
-  auto skin_ents = subtract(get_skin(intersect(vOlume, get_adj(cutEdges, 3))),
-                            get_skin(vOlume));
+  auto vol_cut_ents = intersect(vOlume, get_adj(cutEdges, 3));
 
   auto get_zero_distant_ents = [&](auto zero_distance_verts, const int dim) {
-    auto ents =
-        intersect(get_adj(zero_distance_verts, dim), get_adj(skin_ents, dim));
+    auto ents = intersect(get_adj(zero_distance_verts, dim),
+                          get_adj(vol_cut_ents, dim));
     auto ents_to_remove =
         get_adj(subtract(get_adj(ents, 0), zero_distance_verts), dim);
     return subtract(ents, ents_to_remove);
@@ -1175,18 +1174,16 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
 
   zeroDistanceVerts =
       get_range(get_zero_distance_verts(project_nodes(get_adj(cutEdges, 0))));
-
   zeroDistanceEnts.clear();
-  for (auto d : {1, 2})
-    zeroDistanceEnts.merge(get_zero_distant_ents(zeroDistanceVerts, d));
+  zeroDistanceEnts.merge(get_zero_distant_ents(zeroDistanceVerts, 2));
 
   if (debug)
     CHKERR SaveData(moab)("zero_distance_verts.vtk", zeroDistanceVerts);
   if (debug)
     CHKERR SaveData(moab)("zero_distance_ents.vtk", zeroDistanceEnts);
 
-  for (auto f : unite(zeroDistanceEnts, zeroDistanceVerts)) {
-    auto adj_edges = get_adj(get_ent_adj(f, 0), 1);
+  for (auto f : zeroDistanceVerts) {
+    auto adj_edges = get_ent_adj(f, 1);
     for (auto e : adj_edges) {
       cutEdges.erase(e);
       edgesToCut.erase(e);
@@ -1234,11 +1231,13 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
       bit, BitRefLevel().set(), MBTET, cut_vols);
   cut_surf.clear();
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
-      bit, BitRefLevel().set(), MBTRI, cut_surf);
+      bit, bit, MBTRI, cut_surf);
+
+  if (debug)
+    CHKERR SaveData(moab)("cut_surf_from_bit.vtk", cut_surf);
 
   // Find new vertices on cut edges
   cut_verts.clear();
-  CHKERR moab.get_connectivity(zeroDistanceEnts, cut_verts, true);
   cut_verts.merge(zeroDistanceVerts);
 
   for (auto &m : edgesToCut) {
@@ -1339,6 +1338,9 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   };
 
   CHKERR check_for_non_minfold();
+
+  if (debug)
+    CHKERR SaveData(moab)("cut_surf.vtk", cut_surf);
 
   MoFEMFunctionReturn(0);
 }
