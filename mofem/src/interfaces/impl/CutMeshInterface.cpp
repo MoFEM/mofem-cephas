@@ -1265,21 +1265,23 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   Range tets_skin;
   Skinner skin(&moab);
   CHKERR skin.find_skin(0, cut_vols, false, tets_skin);
-  cut_surf.merge(zeroDistanceEnts.subset_by_type(MBTRI));
 
   // At that point cut_surf has all newly created faces, now take all
   // nodes on those faces and subtract nodes on cut edges. Faces adjacent to
   // nodes which left are not part of surface.
+  cut_surf.merge(zeroDistanceEnts);
   Range diff_verts;
-  CHKERR moab.get_connectivity(unite(cut_surf, zeroDistanceEnts), diff_verts,
-                               true);
+  CHKERR moab.get_connectivity(cut_surf, diff_verts, true);
   diff_verts = subtract(diff_verts, cut_verts);
+
   Range subtract_faces;
   CHKERR moab.get_adjacencies(diff_verts, 2, false, subtract_faces,
                               moab::Interface::UNION);
   cut_surf = subtract(cut_surf, unite(subtract_faces, tets_skin));
+
   cut_verts.clear();
   CHKERR moab.get_connectivity(cut_surf, cut_verts, true);
+
 
   // Check non-mainfolds
   auto check_for_non_minfold = [&]() {
@@ -1337,7 +1339,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
     MoFEMFunctionReturn(0);
   };
 
-  CHKERR check_for_non_minfold();
+  // CHKERR check_for_non_minfold();
 
   if (debug)
     CHKERR SaveData(moab)("cut_surf.vtk", cut_surf);
