@@ -246,6 +246,9 @@ CutMeshInterface::cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
                                  tol_cut_close, QUIET, debug);
   CHKERR cutEdgesInMiddle(cut_bit, cutNewVolumes, cutNewSurfaces,
                           cutNewVertices, debug);
+
+  CHKERR cOre.getInterface<BitRefManager>()->updateRange(constrainSurface,
+                                                         constrainSurface);
   if (fixed_edges)
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
                                                            *fixed_edges);
@@ -279,6 +282,9 @@ MoFEMErrorCode CutMeshInterface::trimOnly(const BitRefLevel trim_bit, Tag th,
   // trim mesh
   CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim_close, debug);
   CHKERR trimEdgesInTheMiddle(trim_bit, debug);
+
+  CHKERR cOre.getInterface<BitRefManager>()->updateRange(constrainSurface,
+                                                         constrainSurface);
   if (fixed_edges)
     CHKERR cOre.getInterface<BitRefManager>()->updateRange(*fixed_edges,
                                                            *fixed_edges);
@@ -1397,6 +1403,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   Skinner skin(&moab);
   Range tets_skin;
   CHKERR skin.find_skin(0, cutNewVolumes, false, tets_skin);
+  tets_skin.merge(constrainSurface);
 
   // vertices on the skin
   Range tets_skin_verts;
@@ -1494,6 +1501,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
 
   double max_edge_length = 0;
 
+  /// Project front entities on on the cut surface plane
   if (!fRont.empty()) {
     // Calculate distances
     treeSurfPtr = boost::shared_ptr<OrientedBoxTreeTool>(
@@ -1739,9 +1747,11 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   map<std::string, Range> range_maps;
   CHKERR skin.find_skin(0, cutNewSurfaces, false, range_maps["surface_skin"]);
   intersect_self(range_maps["surface_skin"], trimEdges);
+
   range_maps["fixed_edges_on_surface_skin"] =
       intersect(range_maps["surface_skin"], fix_edges);
-  CHKERR moab.get_adjacencies(range_maps["fixed_edges_verts"], 1, false,
+
+  CHKERR moab.get_adjacencies(fixed_edges_verts, 1, false,
                               range_maps["fixed_edges_verts_edges"],
                               moab::Interface::UNION);
   intersect_self(range_maps["fixed_edges_verts_edges"], trimEdges);
@@ -2403,6 +2413,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     MoFEMErrorCode classifyVerts(const Range &surface, const Range &tets,
                                  const Range &fixed_edges,
                                  const Range &corner_nodes,
+                                 const Range &constrain_surface,
                                  SetsMap &sets_map) const {
       moab::Interface &moab(mField.get_moab());
       Skinner skin(&moab);
@@ -2418,6 +2429,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       Range tets_skin_edges;
       CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
                                   moab::Interface::UNION);
+      tets_skin.merge(constrain_surface);
 
       // surface skin
       Range surface_skin;
@@ -2665,7 +2677,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                       not_merged_edges);
   Toplogy::SetsMap sets_map;
   CHKERR Toplogy(m_field, th, tol * aveLength)
-      .classifyVerts(surface, tets, fixed_edges, corner_nodes, sets_map);
+      .classifyVerts(surface, tets, fixed_edges, corner_nodes, constrainSurface,
+                     sets_map);
   if (debug) {
     for (Toplogy::SetsMap::reverse_iterator sit = sets_map.rbegin();
          sit != sets_map.rend(); sit++) {
