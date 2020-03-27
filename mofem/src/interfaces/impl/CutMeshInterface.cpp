@@ -859,7 +859,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, int verb,
                                                 const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  Skinner skin(&moab);
   MoFEMFunctionBegin;
 
   edgesToCut.clear();
