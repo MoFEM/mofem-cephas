@@ -1008,6 +1008,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     };
 
     std::pair<EntityHandle, double> min_pair{0, 0};
+    
     for (auto e : edges) {
       auto eit = edgesToCut.find(e);
       if(eit != edgesToCut.end()) {
@@ -1019,16 +1020,17 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
           if (conn[0] == v)
             return eit->second.dIst;
           else if(conn[1] == v)
-            return (1 - eit->second.dIst);
+            return (eit->second.lEngth - eit->second.dIst);
           else
             THROW_MESSAGE("Data inconsistency");
         };
 
-        const auto d = get_dist(eit) * eit->second.lEngth;
-        if (min_pair.first == 0)
+        const auto d = get_dist(eit);
+        if (min_pair.first == 0) {
           min_pair = get_pair(e, d);
-        else if (min_pair.second > d)
+        } else if (min_pair.second > d) {
           min_pair = get_pair(e, d);
+        }
 
       }
     }
