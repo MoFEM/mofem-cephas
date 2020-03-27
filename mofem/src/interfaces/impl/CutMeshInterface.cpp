@@ -1268,6 +1268,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   Range tets_skin;
   Skinner skin(&moab);
   CHKERR skin.find_skin(0, cut_vols, false, tets_skin);
+  tets_skin.merge(constrainSurface);
 
   // At that point cut_surf has all newly created faces, now take all
   // nodes on those faces and subtract nodes on cut edges. Faces adjacent to
