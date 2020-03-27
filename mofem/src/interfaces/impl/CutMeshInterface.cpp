@@ -1048,7 +1048,9 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     Range fix_e;
     if (fixed_edges)
       fix_e = intersect(*fixed_edges, cutEdges);
-    Range skin_e = intersect(get_adj(get_skin(vOlume), 1), cutEdges);
+
+    Range skin_e = intersect(
+        get_adj(unite(get_skin(vOlume), constrainSurface), 1), cutEdges);
 
     Range corner_n;
     if (corner_nodes)
@@ -1283,7 +1285,6 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   cut_verts.clear();
   CHKERR moab.get_connectivity(cut_surf, cut_verts, true);
 
-
   // Check non-mainfolds
   auto check_for_non_minfold = [&]() {
     MoFEMFunctionBegin;
@@ -1340,7 +1341,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
     MoFEMFunctionReturn(0);
   };
 
-  // CHKERR check_for_non_minfold();
+  CHKERR check_for_non_minfold();
 
   if (debug)
     CHKERR SaveData(moab)("cut_surf.vtk", cut_surf);
