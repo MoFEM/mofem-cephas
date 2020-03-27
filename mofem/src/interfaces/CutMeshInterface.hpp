@@ -72,21 +72,21 @@ struct CutMeshInterface : public UnknownInterface {
     MoFEMFunctionReturn(0);
   }
 
-  MoFEMErrorCode setFront(const Range &surface);
+  MoFEMErrorCode setFront(const Range surface);
 
   /**
    * \brief set surface entities
    * @param  surface entities which going to be added
    * @return         error code
    */
-  MoFEMErrorCode setSurface(const Range &surface);
+  MoFEMErrorCode setSurface(const Range surface);
 
   /**
    * \brief copy surface entities
    * @param  surface entities which going to be added
    * @return         error code
    */
-  MoFEMErrorCode copySurface(const Range &surface, Tag th = NULL,
+  MoFEMErrorCode copySurface(const Range surface, Tag th = NULL,
                              double *shift = NULL, double *origin = NULL,
                              double *transform = NULL,
                              const std::string save_mesh = "");
@@ -96,29 +96,38 @@ struct CutMeshInterface : public UnknownInterface {
    * @param  volume entities which going to be added
    * @return         error code
    */
-  MoFEMErrorCode setVolume(const Range &volume);
+  MoFEMErrorCode setVolume(const Range volume);
+
+
+  /**
+   * @brief Set the constrain surface object
+   * 
+   * @param surf 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode setConstrainSurface(const Range surf);
 
   /**
    * \brief merge surface entities
    * @param  surface entities which going to be added
    * @return         error code
    */
-  MoFEMErrorCode mergeSurface(const Range &surface);
+  MoFEMErrorCode mergeSurface(const Range surface);
 
   /**
    * \brief merge volume entities
    * @param  volume entities which going to be added
    * @return         error code
    */
-  MoFEMErrorCode mergeVolumes(const Range &volume);
+  MoFEMErrorCode mergeVolumes(const Range volume);
 
-  MoFEMErrorCode snapSurfaceSkinToEdges(const Range &fixed_edges,
+  MoFEMErrorCode snapSurfaceSkinToEdges(const Range fixed_edges,
                                         const double rel_tol,
                                         const double abs_tol, Tag th = nullptr,
                                         const bool debug = false);
 
-  MoFEMErrorCode snapSurfaceToEdges(const Range &surface_edges,
-                                    const Range &fixed_edges,
+  MoFEMErrorCode snapSurfaceToEdges(const Range surface_edges,
+                                    const Range fixed_edges,
                                     const double rel_tol, const double abs_tol,
                                     Tag th = nullptr, const bool debug = false);
 
@@ -577,6 +586,7 @@ private:
 
   Range cutSurfaceVolumes;
   Range cutFrontVolumes;
+  Range constrainSurface;
 };
 } // namespace MoFEM
 

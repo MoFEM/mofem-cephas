@@ -44,19 +44,19 @@ MoFEMErrorCode CutMeshInterface::clearMap() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::setFront(const Range &front) {
+MoFEMErrorCode CutMeshInterface::setFront(const Range front) {
   MoFEMFunctionBeginHot;
   fRont = front;
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode CutMeshInterface::setSurface(const Range &surface) {
+MoFEMErrorCode CutMeshInterface::setSurface(const Range surface) {
   MoFEMFunctionBeginHot;
   sUrface = surface;
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode CutMeshInterface::copySurface(const Range &surface, Tag th,
+MoFEMErrorCode CutMeshInterface::copySurface(const Range surface, Tag th,
                                              double *shift, double *origin,
                                              double *transform,
                                              const std::string save_mesh) {
@@ -116,26 +116,32 @@ MoFEMErrorCode CutMeshInterface::copySurface(const Range &surface, Tag th,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::setVolume(const Range &volume) {
+MoFEMErrorCode CutMeshInterface::setVolume(const Range volume) {
   MoFEMFunctionBeginHot;
   vOlume = volume;
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode CutMeshInterface::mergeSurface(const Range &surface) {
+MoFEMErrorCode CutMeshInterface::setConstrainSurface(const Range surf) {
+  MoFEMFunctionBeginHot;
+  constrainSurface = surf;
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode CutMeshInterface::mergeSurface(const Range surface) {
   MoFEMFunctionBeginHot;
   sUrface.merge(surface);
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode CutMeshInterface::mergeVolumes(const Range &volume) {
+MoFEMErrorCode CutMeshInterface::mergeVolumes(const Range volume) {
   MoFEMFunctionBeginHot;
   vOlume.merge(volume);
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode CutMeshInterface::snapSurfaceSkinToEdges(
-    const Range &fixed_edges, const double rel_tol, const double abs_tol,
+    const Range fixed_edges, const double rel_tol, const double abs_tol,
     Tag th, const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
@@ -152,8 +158,8 @@ MoFEMErrorCode CutMeshInterface::snapSurfaceSkinToEdges(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::snapSurfaceToEdges(const Range &surface_edges,
-                                                    const Range &fixed_edges,
+MoFEMErrorCode CutMeshInterface::snapSurfaceToEdges(const Range surface_edges,
+                                                    const Range fixed_edges,
                                                     const double rel_tol,
                                                     const double abs_tol,
                                                     Tag th, const bool debug) {
@@ -882,12 +888,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, int verb,
     else
       CHKERR moab.get_connectivity(r, a, true);
     return a;
-  };
-
-  auto get_skin = [&skin](const auto r) {
-    Range s;
-    CHKERR skin.find_skin(0, r, false, s);
-    return s;
   };
 
   auto get_range = [](std::vector<EntityHandle> v) {
