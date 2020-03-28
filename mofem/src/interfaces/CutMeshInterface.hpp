@@ -138,7 +138,7 @@ struct CutMeshInterface : public UnknownInterface {
   MoFEMErrorCode buildTree();
 
   /**
-   * @brief Cut mesh onlu
+   * @brief Cut mesh only
    *
    * @param vol
    * @param cut_bit
