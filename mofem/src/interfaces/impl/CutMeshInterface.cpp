@@ -875,10 +875,10 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, int verb,
   Tag th_signed_dist;
   CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_SIGNED", th_signed_dist);
 
-  auto get_tag_dist = [&](auto th, auto conn) {
-    double dist;
-    CHKERR moab.tag_get_data(th, &conn, 1, &dist);
-    return dist;
+  auto get_tag_edge_dist = [&](auto th, auto conn) {
+    std::array<double, 2> r;
+    CHKERR moab.tag_get_data(th, conn, 2, r.data());
+    return r;
   };
 
   auto get_conn = [&](const auto e) {
@@ -911,6 +911,10 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, int verb,
   for (auto e : vol_edges) {
 
     auto conn = get_conn(e);
+    auto dist = get_tag_edge_dist(th_signed_dist, conn);
+    const auto dist_max = std::max(dist[0], dist[1]);
+    const auto dist_min = std::min(dist[0], dist[1]);
+    const auto dot = dist[0] * dist[1];
 
     VectorDouble6 coords(6);
     CHKERR moab.get_coords(conn, 2, &coords[0]);
@@ -920,16 +924,16 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, int verb,
     const double ray_length = norm_2(ray);
     ray /= ray_length;
 
-    const auto dist0 = get_tag_dist(th_signed_dist, conn[0]);
-    const auto dist1 = get_tag_dist(th_signed_dist, conn[1]);
-    const auto dist_max = std::max(dist0, dist1);
+    if (
 
-    auto dot = dist0 * dist1;
-    if (dot <= 0 &&
-        std::abs(dist_max) > std::numeric_limits<double>::epsilon()) {
+        (dot < 0 && dist_max > std::numeric_limits<double>::epsilon()) ||
+        (std::abs(dist_min) < std::numeric_limits<double>::epsilon() &&
+         dist_max > std::numeric_limits<double>::epsilon())
+
+    ) {
 
       // Edges is on two sides of the surface
-      const double s = dist0 / (dist0 - dist1);
+      const double s = dist[0] / (dist[0] - dist[1]);
       const double dist = s * ray_length;
 
       auto add_edge = [&](auto dist) {
