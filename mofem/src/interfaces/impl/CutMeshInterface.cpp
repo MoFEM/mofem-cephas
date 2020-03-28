@@ -1217,6 +1217,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
       };
 
   auto get_zero_distance_verts = [&](const auto &&vertices_on_cut_edges) {
+    verticesOnCutEdges.clear();
     std::vector<EntityHandle> zero_dist_vec;
     zero_dist_vec.reserve(vertices_on_cut_edges.size());
     for (auto t : vertices_on_cut_edges) {
