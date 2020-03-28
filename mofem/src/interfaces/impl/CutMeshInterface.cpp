@@ -1006,13 +1006,11 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     return coords;
   };
 
-  auto get_prj_point = [&](const EntityHandle v, const Range r) {
-    auto edges = intersect(r, get_ent_adj(v, 1));
-    auto get_pair = [](const EntityHandle e, const double dist) {
-      return std::make_pair(e, dist);
-    };
+  auto get_prj_point = [&](const EntityHandle v, const Range edges) {
+    auto get_tuple = [](const EntityHandle e, const double dist,
+                        const double l) { return std::make_tuple(e, dist, l); };
 
-    std::pair<EntityHandle, double> min_pair{0, 0};
+    std::tuple<EntityHandle, double, double> min_tuple{0, 0, 0};
     
     for (auto e : edges) {
       auto eit = edgesToCut.find(e);
@@ -1031,32 +1029,37 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
         };
 
         const auto d = get_dist(eit);
-        if (min_pair.first == 0) {
-          min_pair = get_pair(e, d);
-        } else if (min_pair.second > d) {
-          min_pair = get_pair(e, d);
+        if (std::get<0>(min_tuple) == 0) {
+          min_tuple = get_tuple(e, d, eit->second.lEngth);
+        } else if (std::get<1>(min_tuple) > d) {
+          min_tuple = get_tuple(e, d, eit->second.lEngth);
         }
-
       }
     }
 
-    const auto &d = edgesToCut.at(min_pair.first);
-    if(min_pair.second > d.lEngth * geometry_tol)
-      return VectorDouble3(d.rayPoint + d.dIst * d.unitRayDir);
+    const auto &d = edgesToCut.at(std::get<0>(min_tuple));
+    if(std::get<1>(min_tuple) > d.lEngth * geometry_tol)
+      return std::make_pair(VectorDouble3(d.rayPoint + d.dIst * d.unitRayDir),
+                       std::get<2>(min_tuple));
     else
-      return get_coords(v);
+      return std::make_pair(get_coords(v), std::get<2>(min_tuple));
   };
 
   auto get_in_range = [](auto v, auto &r) { return (r.find(v) != r.end()); };
 
   auto project_nodes = [&](auto nodes_to_check) {
 
-    Range fix_e;
-    if (fixed_edges)
-      fix_e = intersect(*fixed_edges, cutEdges);
+    auto get_fix_e = [](auto fixed_edges) {
+      if(fixed_edges)
+        return *fixed_edges;
+      else 
+        return Range();
+    };
 
-    Range skin_e = intersect(
-        get_adj(unite(get_skin(vOlume), constrainSurface), 1), cutEdges);
+    const auto fix_e = get_fix_e(fixed_edges);
+    const auto skin_e = get_adj(unite(get_skin(vOlume), constrainSurface), 1);
+    const auto cut_fix = intersect(cutEdges, fix_e);
+    const auto cut_skin = intersect(cutEdges, skin_e);
 
     Range corner_n;
     if (corner_nodes)
@@ -1065,7 +1068,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     auto skin_n = intersect(get_adj(skin_e, 0), nodes_to_check);
 
     std::vector<std::pair<EntityHandle, TreeData>> vertices_on_cut_edges;
-    vertices_on_cut_edges.reserve(corner_n.size());
+    vertices_on_cut_edges.reserve(nodes_to_check.size());
 
     auto add_zero_vertex = [&](const EntityHandle v, auto &&new_pos) {
       auto coords = get_coords(v);
@@ -1073,7 +1076,6 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
       auto l = norm_2(ray);
       TreeData data;
       data.dIst = l;
-      data.lEngth = l;
       if(l > std::numeric_limits<double>::epsilon()) {
         data.unitRayDir = ray / l;
       } else {
@@ -1081,18 +1083,53 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
         data.unitRayDir = ray;
       }
       data.rayPoint = coords;
-      vertices_on_cut_edges.push_back(std::make_pair(v, data));
+      return std::make_pair(v, data);
+    };
+
+    auto intersect_v = [&](const auto v, const auto r) {
+      return intersect(r, get_ent_adj(v, 1));
     };
 
     for (auto v : nodes_to_check) {
-      if(get_in_range(v, corner_n)) {
-        add_zero_vertex(v, get_coords(v));
-      } else if(get_in_range(v, corner_n)) {
-        add_zero_vertex(v, get_prj_point(v, fix_e));
-      } else if(get_in_range(v, skin_e)) {
-        add_zero_vertex(v, get_prj_point(v, skin_e));
+      if (get_in_range(v, corner_n)) {
+        vertices_on_cut_edges.push_back(add_zero_vertex(v, get_coords(v)));
+      } else if (get_in_range(v, fixe_n)) {
+
+        const auto e = intersect_v(v, cut_fix);
+        if (!e.empty()) {
+          vertices_on_cut_edges.push_back(
+              add_zero_vertex(v, get_prj_point(v, e).first));
+
+        } else {
+          auto b = intersect_v(v, cutEdges);
+          if (!b.empty()) {
+            auto p = get_prj_point(v, b);
+            if (norm_2(get_coords(v) - p.first) < geometry_tol * p.second)
+              vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
+          }
+        }
+
+      } else if (get_in_range(v, skin_n)) {
+        
+        const auto e = intersect_v(v, cut_skin);
+        if (!e.empty()) {
+          vertices_on_cut_edges.push_back(
+              add_zero_vertex(v, get_prj_point(v, e).first));
+
+        } else {
+          auto b = intersect_v(v, cutEdges);
+          if (!b.empty()) {
+            auto p = get_prj_point(v, b);
+            if (norm_2(get_coords(v) - p.first) < geometry_tol * p.second)
+              vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
+          }
+        }
+
       } else {
-        add_zero_vertex(v, get_prj_point(v, cutEdges));
+        const auto e = intersect_v(v, cutEdges);
+        if (!e.empty())
+          vertices_on_cut_edges.push_back(
+              add_zero_vertex(v, get_prj_point(v, e).first));
       }
     }
 
@@ -1115,12 +1152,21 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     auto dist_map = get_distances(vertices_on_cut_edges);
 
     auto cmp = [&dist_map](const auto &a, const auto &b) {
-      return dist_map[a.first] < dist_map[b.first];
+      return std::abs(dist_map[a.first]) < std::abs(dist_map[b.first]);
     };
 
     std::sort(vertices_on_cut_edges.begin(), vertices_on_cut_edges.end(), cmp);
+    auto max_dist = std::max_element(vertices_on_cut_edges.begin(),
+                                     vertices_on_cut_edges.end(), cmp)
+                        ->second.dIst;
 
-    return vertices_on_cut_edges;
+    decltype(vertices_on_cut_edges) vertices_on_cut_edges_tol;
+    vertices_on_cut_edges_tol.reserve(vertices_on_cut_edges.size());
+    for (auto &t : vertices_on_cut_edges)
+      if (t.second.dIst < close_tol * max_dist)
+        vertices_on_cut_edges_tol.emplace_back(t);
+
+    return vertices_on_cut_edges_tol;
   };
 
   auto get_min_quality =
@@ -1160,6 +1206,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     std::vector<EntityHandle> zero_dist_vec;
     zero_dist_vec.reserve(vertices_on_cut_edges.size());
     for(auto t : vertices_on_cut_edges) {
+      
       auto adj_tet = intersect(vOlume, get_ent_adj(t.first, 3));
       const double q0 = get_min_quality(adj_tet, verticesOnCutEdges, nullptr);
       const double q = get_min_quality(adj_tet, verticesOnCutEdges, &t);
@@ -1173,18 +1220,68 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
 
   auto vol_cut_ents = intersect(vOlume, get_adj(cutEdges, 3));
 
-  auto get_zero_distant_ents = [&](auto zero_distance_verts, const int dim) {
-    auto ents = intersect(get_adj(zero_distance_verts, dim),
+  auto get_zero_distant_ents = [&](auto bridge_ents, const int dim,
+                                   const int bridge_dim) {
+    auto ents = intersect(get_adj(bridge_ents, dim),
                           get_adj(vol_cut_ents, dim));
     auto ents_to_remove =
-        get_adj(subtract(get_adj(ents, 0), zero_distance_verts), dim);
+        get_adj(subtract(get_adj(ents, bridge_dim), bridge_ents), dim);
     return subtract(ents, ents_to_remove);
   };
 
   zeroDistanceVerts =
       get_range(get_zero_distance_verts(project_nodes(get_adj(cutEdges, 0))));
-  zeroDistanceEnts.clear();
-  zeroDistanceEnts.merge(get_zero_distant_ents(zeroDistanceVerts, 2));
+  zeroDistanceEnts = 
+  
+  get_zero_distant_ents(zeroDistanceVerts, 2, 0);
+
+  /*const auto zero_distance_faces =
+      get_zero_distant_ents(zeroDistanceVerts, 2, 0);
+  const auto zero_distance_edges = 
+     get_zero_distant_ents(zeroDistanceVerts, 1, 0); 
+
+  const auto zero_distance_faces_top_bottom =
+      intersect(get_skin(vol_cut_ents), zero_distance_faces);
+  const auto zero_distance_ents_top_bottom_skin =
+      get_skin(zero_distance_faces_top_bottom);
+
+  const auto zero_distance_edges_top_bottom =
+      unite(subtract(intersect(get_adj(get_skin(vol_cut_ents), 1),
+                               zero_distance_edges),
+                     get_adj(zero_distance_faces_top_bottom, 1)),
+            zero_distance_ents_top_bottom_skin);
+
+  const auto zero_distance_ents_thickens =
+      intersect(get_zero_distant_ents(
+                    unite(cutEdges, zero_distance_edges_top_bottom), 2, 1),
+                zero_distance_faces);
+
+  zeroDistanceEnts =
+      unite(zero_distance_faces_top_bottom, zero_distance_ents_thickens);
+
+  CHKERR SaveData(moab)("zero_distance_faces.vtk", zero_distance_faces);
+  CHKERR SaveData(moab)("zero_distance_faces_top_bottom.vtk",
+                        zero_distance_faces_top_bottom);
+  CHKERR SaveData(moab)("zero_distance_ents_thickens.vtk",
+                        zero_distance_ents_thickens);
+
+  CHKERR SaveData(moab)("zero_distance_edges_top_bottom.vtk",
+                        zero_distance_edges_top_bottom);*/
+
+  // const auto zero_dist_faces_edges = get_adj(zeroDistanceEnts, 1);
+  // const auto zero_dist_faces_skin = get_skin(zeroDistanceEnts);
+
+  // auto zero_dist_skin =
+  //     subtract(zeroDistanceVerts, get_adj(zero_dist_faces_edges, 0));
+  // zero_dist_skin.merge(get_adj(zero_dist_faces_skin, 0));
+
+  
+
+  // zeroDistanceEnts.merge(
+  //   subtract(
+  //     intersect(get_adj(get_skin(vol_cut_ents), 1),
+  //               get_zero_distant_ents(zeroDistanceVerts, 1)),zero_dist_faces_edges));
+                
 
   if (debug)
     CHKERR SaveData(moab)("zero_distance_verts.vtk", zeroDistanceVerts);
@@ -1279,7 +1376,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   // At that point cut_surf has all newly created faces, now take all
   // nodes on those faces and subtract nodes on cut edges. Faces adjacent to
   // nodes which left are not part of surface.
-  cut_surf.merge(zeroDistanceEnts);
+  cut_surf.merge(zeroDistanceEnts.subset_by_type(MBTRI));
   Range diff_verts;
   CHKERR moab.get_connectivity(cut_surf, diff_verts, true);
   diff_verts = subtract(diff_verts, cut_verts);
