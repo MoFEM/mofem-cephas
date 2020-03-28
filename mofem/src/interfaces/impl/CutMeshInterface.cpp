@@ -140,9 +140,11 @@ MoFEMErrorCode CutMeshInterface::mergeVolumes(const Range volume) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode CutMeshInterface::snapSurfaceSkinToEdges(
-    const Range fixed_edges, const double rel_tol, const double abs_tol,
-    Tag th, const bool debug) {
+MoFEMErrorCode CutMeshInterface::snapSurfaceSkinToEdges(const Range fixed_edges,
+                                                        const double rel_tol,
+                                                        const double abs_tol,
+                                                        Tag th,
+                                                        const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -908,7 +910,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, int verb,
   int nb_ave_length = 0;
   for (auto e : vol_edges) {
 
-    auto conn = get_conn(e);    
+    auto conn = get_conn(e);
 
     VectorDouble6 coords(6);
     CHKERR moab.get_coords(conn, 2, &coords[0]);
@@ -950,7 +952,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, int verb,
   if (debug)
     CHKERR SaveData(m_field.get_moab())("cut_edges.vtk", cutEdges);
 
-  if(debug)
+  if (debug)
     CHKERR SaveData(m_field.get_moab())("cut_edges_vol.vtk",
                                         get_adj(cutEdges, 3));
 
@@ -974,7 +976,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
 
   auto get_adj = [&moab](const Range r, const int dim) {
     Range a;
-    if(dim)
+    if (dim)
       CHKERR moab.get_adjacencies(r, dim, false, a, moab::Interface::UNION);
     else
       CHKERR moab.get_connectivity(r, a, true);
@@ -1011,10 +1013,10 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
                         const double l) { return std::make_tuple(e, dist, l); };
 
     std::tuple<EntityHandle, double, double> min_tuple{0, 0, 0};
-    
+
     for (auto e : edges) {
       auto eit = edgesToCut.find(e);
-      if(eit != edgesToCut.end()) {
+      if (eit != edgesToCut.end()) {
 
         auto get_dist = [&](auto eit) {
           int num_nodes;
@@ -1022,7 +1024,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
           CHKERR moab.get_connectivity(eit->first, conn, num_nodes, true);
           if (conn[0] == v)
             return eit->second.dIst;
-          else if(conn[1] == v)
+          else if (conn[1] == v)
             return (eit->second.lEngth - eit->second.dIst);
           else
             THROW_MESSAGE("Data inconsistency");
@@ -1038,9 +1040,9 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     }
 
     const auto &d = edgesToCut.at(std::get<0>(min_tuple));
-    if(std::get<1>(min_tuple) > d.lEngth * geometry_tol)
+    if (std::get<1>(min_tuple) > d.lEngth * geometry_tol)
       return std::make_pair(VectorDouble3(d.rayPoint + d.dIst * d.unitRayDir),
-                       std::get<2>(min_tuple));
+                            std::get<2>(min_tuple));
     else
       return std::make_pair(get_coords(v), std::get<2>(min_tuple));
   };
@@ -1048,11 +1050,10 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
   auto get_in_range = [](auto v, auto &r) { return (r.find(v) != r.end()); };
 
   auto project_nodes = [&](auto nodes_to_check) {
-
     auto get_fix_e = [](auto fixed_edges) {
-      if(fixed_edges)
+      if (fixed_edges)
         return *fixed_edges;
-      else 
+      else
         return Range();
     };
 
@@ -1076,7 +1077,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
       auto l = norm_2(ray);
       TreeData data;
       data.dIst = l;
-      if(l > std::numeric_limits<double>::epsilon()) {
+      if (l > std::numeric_limits<double>::epsilon()) {
         data.unitRayDir = ray / l;
       } else {
         data.dIst = 0;
@@ -1110,7 +1111,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
         }
 
       } else if (get_in_range(v, skin_n)) {
-        
+
         const auto e = intersect_v(v, cut_skin);
         if (!e.empty()) {
           vertices_on_cut_edges.push_back(
@@ -1138,7 +1139,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
       CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_SIGNED", th);
       std::vector<EntityHandle> verts;
       verts.reserve(data.size());
-      for(auto d : data)
+      for (auto d : data)
         verts.emplace_back(d.first);
       std::vector<double> distances(verts.size());
       CHKERR moab.tag_get_data(th, &*verts.begin(), verts.size(),
@@ -1152,12 +1153,21 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     auto dist_map = get_distances(vertices_on_cut_edges);
 
     auto cmp = [&dist_map](const auto &a, const auto &b) {
-      return std::abs(dist_map[a.first]) < std::abs(dist_map[b.first]);
+      const double da = dist_map[a.first];
+      const double db = dist_map[b.first];
+      if (da * db < 0)
+        return dist_map[a.first] < dist_map[b.first];
+      else
+        return std::abs(dist_map[a.first]) < std::abs(dist_map[b.first]);
     };
 
     std::sort(vertices_on_cut_edges.begin(), vertices_on_cut_edges.end(), cmp);
+
+    auto cmp_abs = [&dist_map](const auto &a, const auto &b) {
+      return std::abs(dist_map[a.first]) < std::abs(dist_map[b.first]);
+    };
     auto max_dist = std::max_element(vertices_on_cut_edges.begin(),
-                                     vertices_on_cut_edges.end(), cmp)
+                                     vertices_on_cut_edges.end(), cmp_abs)
                         ->second.dIst;
 
     decltype(vertices_on_cut_edges) vertices_on_cut_edges_tol;
@@ -1205,8 +1215,8 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
   auto get_zero_distance_verts = [&](const auto &&vertices_on_cut_edges) {
     std::vector<EntityHandle> zero_dist_vec;
     zero_dist_vec.reserve(vertices_on_cut_edges.size());
-    for(auto t : vertices_on_cut_edges) {
-      
+    for (auto t : vertices_on_cut_edges) {
+
       auto adj_tet = intersect(vOlume, get_ent_adj(t.first, 3));
       const double q0 = get_min_quality(adj_tet, verticesOnCutEdges, nullptr);
       const double q = get_min_quality(adj_tet, verticesOnCutEdges, &t);
@@ -1222,8 +1232,8 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
 
   auto get_zero_distant_ents = [&](auto bridge_ents, const int dim,
                                    const int bridge_dim) {
-    auto ents = intersect(get_adj(bridge_ents, dim),
-                          get_adj(vol_cut_ents, dim));
+    auto ents =
+        intersect(get_adj(bridge_ents, dim), get_adj(vol_cut_ents, dim));
     auto ents_to_remove =
         get_adj(subtract(get_adj(ents, bridge_dim), bridge_ents), dim);
     return subtract(ents, ents_to_remove);
@@ -1231,57 +1241,8 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
 
   zeroDistanceVerts =
       get_range(get_zero_distance_verts(project_nodes(get_adj(cutEdges, 0))));
-  zeroDistanceEnts = 
-  
-  get_zero_distant_ents(zeroDistanceVerts, 2, 0);
-
-  /*const auto zero_distance_faces =
-      get_zero_distant_ents(zeroDistanceVerts, 2, 0);
-  const auto zero_distance_edges = 
-     get_zero_distant_ents(zeroDistanceVerts, 1, 0); 
-
-  const auto zero_distance_faces_top_bottom =
-      intersect(get_skin(vol_cut_ents), zero_distance_faces);
-  const auto zero_distance_ents_top_bottom_skin =
-      get_skin(zero_distance_faces_top_bottom);
-
-  const auto zero_distance_edges_top_bottom =
-      unite(subtract(intersect(get_adj(get_skin(vol_cut_ents), 1),
-                               zero_distance_edges),
-                     get_adj(zero_distance_faces_top_bottom, 1)),
-            zero_distance_ents_top_bottom_skin);
-
-  const auto zero_distance_ents_thickens =
-      intersect(get_zero_distant_ents(
-                    unite(cutEdges, zero_distance_edges_top_bottom), 2, 1),
-                zero_distance_faces);
-
-  zeroDistanceEnts =
-      unite(zero_distance_faces_top_bottom, zero_distance_ents_thickens);
-
-  CHKERR SaveData(moab)("zero_distance_faces.vtk", zero_distance_faces);
-  CHKERR SaveData(moab)("zero_distance_faces_top_bottom.vtk",
-                        zero_distance_faces_top_bottom);
-  CHKERR SaveData(moab)("zero_distance_ents_thickens.vtk",
-                        zero_distance_ents_thickens);
-
-  CHKERR SaveData(moab)("zero_distance_edges_top_bottom.vtk",
-                        zero_distance_edges_top_bottom);*/
-
-  // const auto zero_dist_faces_edges = get_adj(zeroDistanceEnts, 1);
-  // const auto zero_dist_faces_skin = get_skin(zeroDistanceEnts);
-
-  // auto zero_dist_skin =
-  //     subtract(zeroDistanceVerts, get_adj(zero_dist_faces_edges, 0));
-  // zero_dist_skin.merge(get_adj(zero_dist_faces_skin, 0));
-
-  
-
-  // zeroDistanceEnts.merge(
-  //   subtract(
-  //     intersect(get_adj(get_skin(vol_cut_ents), 1),
-  //               get_zero_distant_ents(zeroDistanceVerts, 1)),zero_dist_faces_edges));
-                
+  zeroDistanceEnts = subtract(get_zero_distant_ents(zeroDistanceVerts, 2, 0),
+                              get_skin(vOlume));
 
   if (debug)
     CHKERR SaveData(moab)("zero_distance_verts.vtk", zeroDistanceVerts);
