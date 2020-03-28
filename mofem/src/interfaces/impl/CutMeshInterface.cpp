@@ -1103,7 +1103,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
       verts.reserve(data.size());
       for(auto d : data)
         verts.emplace_back(d.first);
-      std::vector<EntityHandle> distances(verts.size());
+      std::vector<double> distances(verts.size());
       CHKERR moab.tag_get_data(th, &*verts.begin(), verts.size(),
                                &*distances.begin());
       std::map<EntityHandle, double> dist_map;
