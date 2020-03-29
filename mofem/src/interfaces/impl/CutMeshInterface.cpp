@@ -1012,7 +1012,17 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     return coords;
   };
 
-  auto get_prj_point = [&](const EntityHandle v, const Range edges) {
+  Tag th_normal_dist;
+  CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_VECTOR", th_normal_dist);
+
+  auto get_normal_dits = [&](const EntityHandle v) {
+    VectorDouble3 dist_vec(3);
+    CHKERR moab.tag_get_data(th_normal_dist, &v, 1, &*dist_vec.begin());
+    return dist_vec;
+  };
+
+  auto get_prj_point = [&](const EntityHandle v, const Range edges,
+                           const bool geom_dist) {
     auto get_tuple = [](const EntityHandle e, const double dist,
                         const double l) { return std::make_tuple(e, dist, l); };
 
@@ -1043,12 +1053,27 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
       }
     }
 
-    const auto &d = edgesToCut.at(std::get<0>(min_tuple));
-    if (std::get<1>(min_tuple) > d.lEngth * geometry_tol)
+    const auto geom_dist_vec = get_normal_dits(v);
+    const auto geom_tol = norm_2(geom_dist_vec);
+    const auto l = std::get<2>(min_tuple);
+
+    if(geom_tol < l * geometry_tol) {
+      
+      return std::make_pair(get_coords(v), l);
+
+    }
+
+    if (geom_dist) {
+
+      return std::make_pair(VectorDouble3(get_coords(v) + geom_dist_vec), l);
+
+    } else {
+
+      const auto &d = edgesToCut.at(std::get<0>(min_tuple));
       return std::make_pair(VectorDouble3(d.rayPoint + d.dIst * d.unitRayDir),
-                            std::get<2>(min_tuple));
-    else
-      return std::make_pair(get_coords(v), std::get<2>(min_tuple));
+                            l);
+    }
+
   };
 
   auto get_in_range = [](auto v, auto &r) { return (r.find(v) != r.end()); };
@@ -1103,12 +1128,12 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
         const auto e = intersect_v(v, cut_fix);
         if (!e.empty()) {
           vertices_on_cut_edges.push_back(
-              add_zero_vertex(v, get_prj_point(v, e).first));
+              add_zero_vertex(v, get_prj_point(v, e, true).first));
 
         } else {
           auto b = intersect_v(v, cutEdges);
           if (!b.empty()) {
-            auto p = get_prj_point(v, b);
+            auto p = get_prj_point(v, b, false);
             if (norm_2(get_coords(v) - p.first) < geometry_tol * p.second)
               vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
           }
@@ -1119,12 +1144,12 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
         const auto e = intersect_v(v, cut_skin);
         if (!e.empty()) {
           vertices_on_cut_edges.push_back(
-              add_zero_vertex(v, get_prj_point(v, e).first));
+              add_zero_vertex(v, get_prj_point(v, e, false).first));
 
         } else {
           auto b = intersect_v(v, cutEdges);
           if (!b.empty()) {
-            auto p = get_prj_point(v, b);
+            auto p = get_prj_point(v, b, false);
             if (norm_2(get_coords(v) - p.first) < geometry_tol * p.second)
               vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
           }
@@ -1134,7 +1159,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
         const auto e = intersect_v(v, cutEdges);
         if (!e.empty())
           vertices_on_cut_edges.push_back(
-              add_zero_vertex(v, get_prj_point(v, e).first));
+              add_zero_vertex(v, get_prj_point(v, e, false).first));
       }
     }
 
