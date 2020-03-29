@@ -99,9 +99,13 @@ struct CutMeshInterface : public UnknownInterface {
   MoFEMErrorCode setVolume(const Range volume);
 
 
-  /**
+  /** 
    * @brief Set the constrain surface object
    * 
+   * Add surfaces which are restricted by mesh cut. Example of surface which
+   * needs to be respected is an interface, the boundary between two materials,
+   * or crack surface.
+   *  
    * @param surf 
    * @return MoFEMErrorCode 
    */
