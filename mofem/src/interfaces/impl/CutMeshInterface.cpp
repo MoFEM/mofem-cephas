@@ -1022,7 +1022,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
   };
 
   auto get_prj_point = [&](const EntityHandle v, const Range edges,
-                           const bool geom_dist) {
+                           const bool geom_dist, const double geometry_tol) {
     auto get_tuple = [](const EntityHandle e, const double dist,
                         const double l) { return std::make_tuple(e, dist, l); };
 
@@ -1057,10 +1057,9 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     const auto geom_tol = norm_2(geom_dist_vec);
     const auto l = std::get<2>(min_tuple);
 
-    if(geom_tol < l * geometry_tol) {
-      
-      return std::make_pair(get_coords(v), l);
+    if (geom_tol < l * geometry_tol) {
 
+      return std::make_pair(get_coords(v), l);
     }
 
     if (geom_dist) {
@@ -1073,7 +1072,6 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
       return std::make_pair(VectorDouble3(d.rayPoint + d.dIst * d.unitRayDir),
                             l);
     }
-
   };
 
   auto get_in_range = [](auto v, auto &r) { return (r.find(v) != r.end()); };
@@ -1127,13 +1125,13 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
 
         const auto e = intersect_v(v, cut_fix);
         if (!e.empty()) {
-          vertices_on_cut_edges.push_back(
-              add_zero_vertex(v, get_prj_point(v, e, true).first));
+          vertices_on_cut_edges.push_back(add_zero_vertex(
+              v, get_prj_point(v, e, false, geometry_tol).first));
 
         } else {
           auto b = intersect_v(v, cutEdges);
           if (!b.empty()) {
-            auto p = get_prj_point(v, b, false);
+            auto p = get_prj_point(v, b, true, geometry_tol);
             if (norm_2(get_coords(v) - p.first) < geometry_tol * p.second)
               vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
           }
@@ -1143,13 +1141,13 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
 
         const auto e = intersect_v(v, cut_skin);
         if (!e.empty()) {
-          vertices_on_cut_edges.push_back(
-              add_zero_vertex(v, get_prj_point(v, e, false).first));
+          vertices_on_cut_edges.push_back(add_zero_vertex(
+              v, get_prj_point(v, e, false, geometry_tol).first));
 
         } else {
           auto b = intersect_v(v, cutEdges);
           if (!b.empty()) {
-            auto p = get_prj_point(v, b, false);
+            auto p = get_prj_point(v, b, true, geometry_tol);
             if (norm_2(get_coords(v) - p.first) < geometry_tol * p.second)
               vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
           }
@@ -1159,7 +1157,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
         const auto e = intersect_v(v, cutEdges);
         if (!e.empty())
           vertices_on_cut_edges.push_back(
-              add_zero_vertex(v, get_prj_point(v, e, false).first));
+              add_zero_vertex(v, get_prj_point(v, e, false, 0).first));
       }
     }
 
