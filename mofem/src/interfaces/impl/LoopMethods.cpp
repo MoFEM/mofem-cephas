@@ -230,19 +230,18 @@ MoFEMErrorCode FEMethod::getNumberOfNodes(int &num_nodes) const {
 }
 
 MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
-                                     VectorDouble &data) {
+                                     VectorDouble &data,
+                                     const bool reset_dofs) {
   MoFEMFunctionBegin;
 
   auto get_nodes_field_data = [&](FEDofEntity_multiIndex &dofs,
                                   VectorDouble &nodes_data) {
     MoFEMFunctionBegin;
 
-   auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+    auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+
     auto tuple = boost::make_tuple(field_name, MBVERTEX);
     auto dit = dofs_by_name_and_type.lower_bound(tuple);
-    if (dit == dofs_by_name_and_type.end())
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "No nodal dofs on element");
     auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
 
     if (dit != hi_dit) {
@@ -269,10 +268,9 @@ MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
         }
       }
 
-    } else {
+    } else if(reset_dofs) {
       nodes_data.resize(0, false);
     }
-
   
     MoFEMFunctionReturn(0);
   };

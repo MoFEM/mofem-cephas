@@ -1,5 +1,5 @@
-/** \file CoreDataStructures.cpp
- * \brief Multi-index container, data structures and other low-level functions
+/** \file DofsMultiIndices.cpp
+ * \brief Multi-index containers for DOFs
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the

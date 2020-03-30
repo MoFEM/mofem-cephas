@@ -1,5 +1,5 @@
-/** \file CoreDataStructures.cpp
- * \brief Multi-index containers, data structures and other low-level functions
+/** \file EntsMultiIndices.cpp
+ * \brief Multi-index containers for entities
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -182,7 +182,6 @@ boost::shared_ptr<FieldData *const> FieldEntity::makeSharedFieldDataAdaptorPtr(
   return boost::make_shared<FieldData *const>(ptr);
 }
 
-FieldEntity::~FieldEntity() {}
 std::ostream &operator<<(std::ostream &os, const FieldEntity &e) {
   os << "ent_global_uid "
      << (UId)e.getGlobalUniqueId()

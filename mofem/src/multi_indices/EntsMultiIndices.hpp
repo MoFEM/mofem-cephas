@@ -310,9 +310,7 @@ struct RefEntity : public BasicEntity {
 
   /** \brief Get parent entity, i.e. entity form one refinement level up
    */
-  inline EntityHandle getParentEnt() const {
-    return *(getParentEntPtr());
-  }
+  inline EntityHandle getParentEnt() const { return *(getParentEntPtr()); }
 
   /** \brief Get entity ref bit refinement signature
    */
@@ -420,30 +418,30 @@ typedef multi_index_container<
     boost::shared_ptr<RefEntity>,
     indexed_by<
         ordered_unique<tag<Ent_mi_tag>, member<RefEntity::BasicEntity,
-                                               EntityHandle, &RefEntity::ent> >,
+                                               EntityHandle, &RefEntity::ent>>,
         ordered_non_unique<
             tag<Ent_Ent_mi_tag>,
-            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt> >,
+            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt>>,
         ordered_non_unique<tag<EntType_mi_tag>,
                            const_mem_fun<RefEntity::BasicEntity, EntityType,
-                                         &RefEntity::getEntType> >,
-        ordered_non_unique<tag<ParentEntType_mi_tag>,
-                           const_mem_fun<RefEntity, EntityType,
-                                         &RefEntity::getParentEntType> >,
+                                         &RefEntity::getEntType>>,
+        ordered_non_unique<
+            tag<ParentEntType_mi_tag>,
+            const_mem_fun<RefEntity, EntityType, &RefEntity::getParentEntType>>,
         ordered_non_unique<
             tag<Composite_EntType_and_ParentEntType_mi_tag>,
             composite_key<RefEntity,
                           const_mem_fun<RefEntity::BasicEntity, EntityType,
                                         &RefEntity::getEntType>,
                           const_mem_fun<RefEntity, EntityType,
-                                        &RefEntity::getParentEntType> > >,
+                                        &RefEntity::getParentEntType>>>,
         ordered_non_unique<
             tag<Composite_ParentEnt_And_EntType_mi_tag>,
             composite_key<RefEntity,
                           const_mem_fun<RefEntity::BasicEntity, EntityType,
                                         &RefEntity::getEntType>,
                           const_mem_fun<RefEntity, EntityHandle,
-                                        &RefEntity::getParentEnt> > > > >
+                                        &RefEntity::getParentEnt>>>>>
     RefEntity_multiIndex;
 
 /** \brief multi-index view of RefEntity by parent entity
@@ -453,14 +451,13 @@ typedef multi_index_container<
     boost::shared_ptr<RefEntity>,
     indexed_by<
         hashed_non_unique<
-            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt> >,
-        hashed_unique<
-            tag<Composite_EntType_and_ParentEntType_mi_tag>,
-            composite_key<
-                boost::shared_ptr<RefEntity>,
-                const_mem_fun<RefEntity, EntityHandle, &RefEntity::getRefEnt>,
-                const_mem_fun<RefEntity, EntityHandle,
-                              &RefEntity::getParentEnt> > > >
+            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt>>,
+        hashed_unique<tag<Composite_EntType_and_ParentEntType_mi_tag>,
+                      composite_key<boost::shared_ptr<RefEntity>,
+                                    const_mem_fun<RefEntity, EntityHandle,
+                                                  &RefEntity::getRefEnt>,
+                                    const_mem_fun<RefEntity, EntityHandle,
+                                                  &RefEntity::getParentEnt>>>>
 
     >
     RefEntity_multiIndex_view_by_hashed_parent_entity;
@@ -482,10 +479,10 @@ typedef multi_index_container<
 
 typedef multi_index_container<
     boost::shared_ptr<RefEntity>,
-    indexed_by<sequenced<>,
-               ordered_unique<tag<Ent_mi_tag>,
-                              member<RefEntity::BasicEntity, EntityHandle,
-                                     &RefEntity::ent> > > >
+    indexed_by<
+        sequenced<>,
+        ordered_unique<tag<Ent_mi_tag>, member<RefEntity::BasicEntity,
+                                               EntityHandle, &RefEntity::ent>>>>
     RefEntity_multiIndex_view_sequence_ordered_view;
 
 template <class T> struct Entity_update_pcomm_data {
@@ -580,8 +577,7 @@ struct FieldEntity : public interface_Field<Field>,
               boost::shared_ptr<double *const> &&field_data_adaptor_ptr,
               boost::shared_ptr<const int> &&t_max_order_ptr);
 
-                  
-  ~FieldEntity();
+  virtual ~FieldEntity() = default;
 
   /**
    * \brief Get entity handle
@@ -599,8 +595,8 @@ struct FieldEntity : public interface_Field<Field>,
 
   /**
    * @brief Return shared pointer to entity field data vector adaptor
-   * 
-   * @return boost::shared_ptr<VectorAdaptor> 
+   *
+   * @return boost::shared_ptr<VectorAdaptor>
    */
   static boost::shared_ptr<FieldData *const> makeSharedFieldDataAdaptorPtr(
       const boost::shared_ptr<Field> &field_ptr,
@@ -612,7 +608,7 @@ struct FieldEntity : public interface_Field<Field>,
    *
    * @return boost::shared_ptr<VectorAdaptor>&
    */
-  inline boost::shared_ptr<FieldData * const> &getEntFieldDataPtr() const {
+  inline boost::shared_ptr<FieldData *const> &getEntFieldDataPtr() const {
     return fieldDataAdaptorPtr;
   }
 
@@ -629,7 +625,7 @@ struct FieldEntity : public interface_Field<Field>,
    * @param  order Order of approximation
    * @return       Number of DOFs
    */
-  inline int getOrderNbDofs(int order) const {
+  inline int getOrderNbDofs(ApproximationOrder order) const {
     return (this->sFieldPtr->forderTable[getEntType()])(order);
   }
 
@@ -638,7 +634,7 @@ struct FieldEntity : public interface_Field<Field>,
    * @param  order Approximation order
    * @return       Difference number of DOFs
    */
-  inline int getOrderNbDofsDiff(int order) const {
+  inline int getOrderNbDofsDiff(ApproximationOrder order) const {
     return getOrderNbDofs(order) - getOrderNbDofs(order - 1);
   }
 
@@ -741,9 +737,8 @@ struct FieldEntity : public interface_Field<Field>,
   }
 
 private:
-
   mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
-  mutable boost::shared_ptr<FieldData * const> fieldDataAdaptorPtr;
+  mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
 };
 
 /**
@@ -771,12 +766,12 @@ struct interface_FieldEntity : public interface_Field<T>,
   }
 
   /// @return get number of DOFs for given order
-  inline int getOrderNbDofs(int order) const {
+  inline int getOrderNbDofs(ApproximationOrder order) const {
     return this->sPtr->getOrderNbDofs(order);
   }
 
   /// @return get increase of DOFs by increase to this order
-  inline int getOrderNbDofsDiff(int order) const {
+  inline int getOrderNbDofsDiff(ApproximationOrder order) const {
     return this->sPtr->getOrderNbDofsDiff(order);
   }
 
@@ -824,7 +819,8 @@ struct interface_FieldEntity : public interface_Field<T>,
  */
 struct FieldEntity_change_order {
 
-  FieldEntity_change_order(const int order, const bool reduce_tag_size = false)
+  FieldEntity_change_order(const ApproximationOrder order,
+                           const bool reduce_tag_size = false)
       : order(order), reduceTagSize(reduce_tag_size) {}
   inline void operator()(boost::shared_ptr<FieldEntity> &e) {
     (*this)(e.get());
@@ -847,14 +843,14 @@ typedef multi_index_container<
     boost::shared_ptr<FieldEntity>,
     indexed_by<
         ordered_unique<tag<Unique_mi_tag>,
-                       member<FieldEntity, UId, &FieldEntity::globalUId> >,
+                       member<FieldEntity, UId, &FieldEntity::globalUId>>,
         ordered_non_unique<
             tag<FieldName_mi_tag>,
             const_mem_fun<FieldEntity::interface_type_Field, boost::string_ref,
-                          &FieldEntity::getNameRef> >,
+                          &FieldEntity::getNameRef>>,
         ordered_non_unique<
             tag<Ent_mi_tag>,
-            const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt> >,
+            const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt>>,
         ordered_non_unique<
             tag<Composite_Name_And_Ent_mi_tag>,
             composite_key<
@@ -862,7 +858,7 @@ typedef multi_index_container<
                 const_mem_fun<FieldEntity::interface_type_Field,
                               boost::string_ref, &FieldEntity::getNameRef>,
                 const_mem_fun<FieldEntity, EntityHandle,
-                              &FieldEntity::getEnt> > > > >
+                              &FieldEntity::getEnt>>>>>
     FieldEntity_multiIndex;
 
 /** \brief Entity index by field name
@@ -923,6 +919,6 @@ struct BaseFEEntity {
 #endif // __ENTSMULTIINDICES_HPP__
 
 /***************************************************************************/ /**
-* \defgroup ent_multi_indices Entities structures and multi-indices
-* \ingroup mofem
-******************************************************************************/
+                                                                               * \defgroup ent_multi_indices Entities structures and multi-indices
+                                                                               * \ingroup mofem
+                                                                               ******************************************************************************/

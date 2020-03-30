@@ -1,5 +1,3 @@
-echo 1 > lock_spack
-
 . share/spack/setup-env.sh
 
 mkdir -p mofem_mirror &&
@@ -15,7 +13,7 @@ rm -f lock_spack
 
 #if [ ! $GIT_COMMIT == $GIT_PREVIOUS_COMMIT ]; then
 
-	rm -rf /var/lib/jenkins/workspace/SpackBuildDevelopBranch/build
-  rm -rf /var/lib/jenkins/workspace/SpackBuildUserModulesDevelopBranch/build
+  rm -rf /home/jenkins/workspace/Core*
+  rm -rf /home/jenkins/workspace/UM*
 
 #fi

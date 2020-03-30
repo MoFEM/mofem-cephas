@@ -331,6 +331,8 @@ protected:
   DataForcesAndSourcesCore &dataL2Master;
   DataForcesAndSourcesCore &dataL2Slave;
 
+  MoFEMErrorCode setDefaultGaussPts(const int rule);
+
   /**
    * @brief Iterate user data operators
    *
@@ -415,6 +417,10 @@ protected:
       FieldSpace &master_space, FieldSpace &slave_space,
       FieldApproximationBase &master_base,
       FieldApproximationBase &slave_base) const;
+
+private:
+  int nbGaussPts;
+
 };
 
 boost::shared_ptr<const NumeredEntFiniteElement>

@@ -1,5 +1,5 @@
-/** \file CoreDataStructures.cpp
- * \brief Myltindex contains, data structures and other low-level functions
+/** \file ProblemsMultiIndices.cpp
+ * \brief Multindex contains for problems
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
