@@ -79,9 +79,7 @@ ContactPrismElementForcesAndSourcesCore::
       dataL2Master(*dataOnMaster[L2].get()),
       dataHdivSlave(*dataOnSlave[HDIV].get()),
       dataL2Slave(*dataOnSlave[L2].get()),
-      opContravariantTransform(nOrmalSlave, normalsAtGaussPtsSlave),
-      opContravariantTransformIgnatios(nOrmalSlave, tangentSlaveOne,
-                                       tangentSlaveTwo) {
+      opContravariantTransform(nOrmalSlave, normalsAtGaussPtsSlave) {
 
   getUserPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
@@ -527,8 +525,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                   dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
 
-          // CHKERR opContravariantTransform.opRhs(dataHdivSlave);
-          CHKERR opContravariantTransformIgnatios.opRhs(dataHdivSlave);
+          CHKERR opContravariantTransform.opRhs(dataHdivSlave);
         }
 
         if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {

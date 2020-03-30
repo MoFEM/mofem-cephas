@@ -27,7 +27,6 @@ namespace MoFEM {
 template <int SWITCH>
 struct VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch;
 
-template <int SWITCH> struct FaceElementForcesAndSourcesCoreOnVolumeSideSwitch;
 /** \brief ContactPrism finite element
  \ingroup mofem_forces_and_sources_prism_element
 
@@ -230,24 +229,6 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
         VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch<SWITCH> &fe_method,
         const int side_type, const EntityHandle ent_for_side);
 
-    /**
-     *
-     * User call this function to loop over elements on the side of face. This
-     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnVolumeSide with
-     * is operator to do calculations.
-     *
-     * @param  fe_name Name of the element
-     * @param  method  Finite element object
-     * @param  side_type  states the side from which side element will work (0
-     * for master 1 for slave)
-     * @return         error code
-     */
-    template <int SWITCH>
-    MoFEMErrorCode loopSideFaces(
-        const string &fe_name,
-        FaceElementForcesAndSourcesCoreOnVolumeSideSwitch<SWITCH> &fe_method,
-        const int side_type, const EntityHandle ent_for_side);
-
   protected:
     inline ForcesAndSourcesCore *getSidePtrFE() const;
   };
@@ -294,8 +275,7 @@ protected:
   MatrixDouble tangentTwoAtGaussPtsSlave;
   MatrixDouble jacSlave;
   OpSetContravariantPiolaTransformOnFace opContravariantTransform;
-  OpSetContravariantPiolaTransformOnFaceIgnatios opContravariantTransformIgnatios;
-
+  
   /**
    * @brief Entity data on element entity rows fields
    *
@@ -435,15 +415,6 @@ MoFEMErrorCode
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
     const string &fe_name,
     VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch<SWITCH> &fe_method,
-    const int side_type, const EntityHandle ent_for_side) {
-  return loopSide(fe_name, &fe_method, side_type, ent_for_side);
-}
-
-template <int SWITCH>
-MoFEMErrorCode
-ContactPrismElementForcesAndSourcesCore::UserDataOperator::loopSideFaces(
-    const string &fe_name,
-    FaceElementForcesAndSourcesCoreOnVolumeSideSwitch<SWITCH> &fe_method,
     const int side_type, const EntityHandle ent_for_side) {
   return loopSide(fe_name, &fe_method, side_type, ent_for_side);
 }

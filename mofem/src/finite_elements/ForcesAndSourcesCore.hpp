@@ -849,7 +849,6 @@ private:
   friend class VolumeElementForcesAndSourcesCoreOnSideBase;
   friend class FaceElementForcesAndSourcesCoreOnSideBase;
   friend class VolumeElementForcesAndSourcesCoreOnVolumeSideBase;
-  friend class FaceElementForcesAndSourcesCoreOnVolumeSideBase;
 };
 
 /// \deprecated Used ForcesAndSourcesCore instead
