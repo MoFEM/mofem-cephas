@@ -147,7 +147,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @param vol
    * @param cut_bit
    * @param th
-   * @param tol_cut
+   * @param tol_geometry
    * @param tol_cut_close
    * @param fixed_edges
    * @param corner_nodes
@@ -156,7 +156,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
-                         const double tol_cut, const double tol_cut_close,
+                         const double tol_geometry, const double tol_cut_close,
                          Range *fixed_edges = NULL, Range *corner_nodes = NULL,
                          const bool update_meshsets = false,
                          const bool debug = false);
@@ -174,8 +174,9 @@ struct CutMeshInterface : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode trimOnly(const BitRefLevel trim_bit, Tag th,
-                          const double tol_cut_close, Range *fixed_edges = NULL,
-                          Range *corner_nodes = NULL,
+                          const double tol_geometry,
+                          const double tol_trim_close,
+                          Range *fixed_edges = NULL, Range *corner_nodes = NULL,
                           const bool update_meshsets = false,
                           const bool debug = false);
 
@@ -184,7 +185,7 @@ struct CutMeshInterface : public UnknownInterface {
    *
    * @param first_bit
    * @param th
-   * @param tol_cut
+   * @param tol_geometry
    * @param tol_cut_close
    * @param tol_trim_close
    * @param fixed_edges
@@ -194,7 +195,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode
-  cutAndTrim(int &first_bit, Tag th, const double tol_cut,
+  cutAndTrim(int &first_bit, Tag th, const double tol_geometry,
              const double tol_cut_close, const double tol_trim_close,
              Range *fixed_edges = NULL, Range *corner_nodes = NULL,
              const bool update_meshsets = false, const bool debug = false);
@@ -206,7 +207,7 @@ struct CutMeshInterface : public UnknownInterface {
    * and merge
    * @param fraction_level fraction of edges merged at each merge step
    * @param th tag storring mesh node positions
-   * @param tol_cut tolerance how mesh node should be close to cut surface (mesh
+   * @param tol_geometry tolerance how mesh node should be close to cut surface (mesh
    * node is moved), should be small
    * @param tol_cut_close how crack node should be close to mesh (cut surface
    * node is moved), can be big
@@ -218,7 +219,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode cutTrimAndMerge(int &first_bit, const int fraction_level,
-                                 Tag th, const double tol_cut,
+                                 Tag th, const double tol_geometry,
                                  const double tol_cut_close,
                                  const double tol_trim_close,
                                  Range &fixed_edges, Range &corner_nodes,
@@ -363,7 +364,9 @@ struct CutMeshInterface : public UnknownInterface {
    * @return      error code
    */
   MoFEMErrorCode findEdgesToTrim(Range *fixed_edges, Range *corner_nodes,
-                                 Tag th = NULL, const double tol = 1e-4,
+                                 Tag th = NULL,
+                                 const double tol_geometry = 1e-4,
+                                 const double tol = 1e-4,
                                  const bool debug = false);
 
   /**
