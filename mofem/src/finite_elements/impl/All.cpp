@@ -25,4 +25,3 @@ extern "C" {
 #include "impl/VolumeElementForcesAndSourcesCoreOnSide.cpp"
 #include "impl/FaceElementForcesAndSourcesCoreOnSide.cpp"
 #include "impl/VolumeElementForcesAndSourcesCoreOnVolumeSide.cpp"
-#include "impl/FaceElementForcesAndSourcesCoreOnVolumeSide.cpp"
