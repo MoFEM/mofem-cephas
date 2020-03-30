@@ -516,6 +516,24 @@ struct OpSetContravariantPiolaTransformOnFace : public DataOperator {
                         DataForcesAndSourcesCore::EntData &data);
 };
 
+/** \brief transform Hdiv base fluxes from reference element to physical
+ * triangle \ingroup mofem_forces_and_sources
+ */
+struct OpSetContravariantPiolaTransformOnFaceIgnatios : public DataOperator {
+
+  VectorDouble &nOrmal;
+  VectorDouble &tAngent1;
+  VectorDouble &tAngent2;
+
+  OpSetContravariantPiolaTransformOnFaceIgnatios(VectorDouble &normal,
+                                                VectorDouble &tangent1,
+                                                VectorDouble &tangent2)
+      : nOrmal(normal), tAngent1(tangent1), tAngent2(tangent2) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
 /** \brief transform Hcurl base fluxes from reference element to physical
  * triangle \ingroup mofem_forces_and_sources
  */

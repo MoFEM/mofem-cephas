@@ -941,6 +941,67 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace::doWork(
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode OpSetContravariantPiolaTransformOnFaceIgnatios::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBeginHot;
+
+  if (type != MBTRI)
+    MoFEMFunctionReturnHot(0);
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+
+    int nb_gauss_pts = data.getN(base).size1();
+    if (nb_gauss_pts) {
+      FTensor::Index<'i', 3> i;
+      FTensor::Index<'j', 3> j;
+      auto t_normal =
+          FTensor::Tensor1<double, 3>(nOrmal[0], nOrmal[1], nOrmal[2]);
+      const double l02 = t_normal(i) * t_normal(i);
+      int nb_base_functions = data.getN(base).size2() / 3;
+      auto t_n = data.getFTensor1N<3>(base);
+      VectorDouble help_vector;
+      help_vector.resize(3, false);
+      help_vector.clear();
+      FTensor::Tensor1<double *, 3> t_help(&help_vector[0], &help_vector[1],
+                                           &help_vector[2], 3);
+      t_help(i) += t_normal(i)/ sqrt(l02);
+
+      auto get_inv_tensor_from_vecs = [](VectorDouble &t0,VectorDouble &t1,
+                                         VectorDouble &n) {
+        return FTensor::Tensor2<double *, 3, 3>(&t0(0), &t0(1), &t0(2), &t1(0),
+                                                &t1(1), &t1(2), &n(0), &n(1),
+                                                &n(2));
+      };
+
+      auto t_Jac = get_inv_tensor_from_vecs(tAngent1, tAngent2, help_vector);
+
+      double det = +t_Jac(0, 0) * t_Jac(1, 1) * t_Jac(2, 2) + t_Jac(1, 0) * t_Jac(2, 1) * t_Jac(0, 2) +
+                   t_Jac(2, 0) * t_Jac(0, 1) * t_Jac(1, 2) - t_Jac(0, 0) * t_Jac(2, 1) * t_Jac(1, 2) -
+                   t_Jac(2, 0) * t_Jac(1, 1) * t_Jac(0, 2) - t_Jac(1, 0) * t_Jac(0, 1) * t_Jac(2, 2);
+      VectorDouble v_n;
+      v_n.resize(3, false);
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (int bb = 0; bb != nb_base_functions; ++bb) {
+          const double v = t_n(0);
+          v_n[0] = t_n(0);
+          v_n[1] = t_n(1);
+          v_n[2] = t_n(2);
+          FTensor::Tensor1<double *, 3> t_v_help(&v_n[0], &v_n[1], &v_n[2], 3);
+          t_n(i) = t_Jac(i, j) * t_v_help(j) / det;
+          cerr << " t_n " << t_n(0) << "  " << t_n(1) << "  " << t_n(2) << "  "
+               << "\n";
+          cerr << " dets  " << det << "  " << sqrt(l02)<<"\n";
+          ++t_n;
+        }
+      }
+    }
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
 MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;

@@ -292,7 +292,9 @@ protected:
   MatrixDouble normalsAtGaussPtsSlave;
   MatrixDouble tangentOneAtGaussPtsSlave;
   MatrixDouble tangentTwoAtGaussPtsSlave;
+  MatrixDouble jacSlave;
   OpSetContravariantPiolaTransformOnFace opContravariantTransform;
+  OpSetContravariantPiolaTransformOnFaceIgnatios opContravariantTransformIgnatios;
 
   /**
    * @brief Entity data on element entity rows fields

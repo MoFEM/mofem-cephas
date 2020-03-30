@@ -79,7 +79,9 @@ ContactPrismElementForcesAndSourcesCore::
       dataL2Master(*dataOnMaster[L2].get()),
       dataHdivSlave(*dataOnSlave[HDIV].get()),
       dataL2Slave(*dataOnSlave[L2].get()),
-      opContravariantTransform(nOrmalSlave, normalsAtGaussPtsSlave) {
+      opContravariantTransform(nOrmalSlave, normalsAtGaussPtsSlave),
+      opContravariantTransformIgnatios(nOrmalSlave, tangentSlaveOne,
+                                       tangentSlaveTwo) {
 
   getUserPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
@@ -152,6 +154,15 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     tangentSlaveOne.clear();
     tangentSlaveTwo.clear();
 
+    const size_t nb_gauss_pts = gaussPtsSlave.size2();
+    normalsAtGaussPtsSlave.resize(nb_gauss_pts, 3);
+    tangentOneAtGaussPtsSlave.resize(nb_gauss_pts, 3);
+    tangentTwoAtGaussPtsSlave.resize(nb_gauss_pts, 3);
+    normalsAtGaussPtsSlave.clear();
+    tangentOneAtGaussPtsSlave.clear();
+    tangentTwoAtGaussPtsSlave.clear();
+
+
     CHKERR Tools::getTriNormal(&coords[0], &normal[0]);
     CHKERR Tools::getTriNormal(&coords[9], &normal[3]);
 
@@ -159,7 +170,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
         &coords[0], &coords[1], &coords[2]);
 
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_slave(
-        &coords[3], &coords[4], &coords[5]);
+        &coords[9], &coords[10], &coords[11]);
 
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_normal_master(
         &normal[0], &normal[1], &normal[2]);
@@ -438,11 +449,14 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 
   for (int space = HCURL; space != LASTSPACE; ++space)
     if (dataOnElement[space]) {
+ 
       dataH1Master.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
           dataOnMaster[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
       dataH1Slave.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
           dataOnSlave[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+     
       if (space == HDIV) {
+
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
 
           CHKERR clean_data(dataHdivSlave);
@@ -466,7 +480,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       case AINSWORTH_LEGENDRE_BASE:
       case AINSWORTH_LOBATTO_BASE:
         if (dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
-
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsMaster,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
@@ -482,18 +495,10 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       case DEMKOWICZ_JACOBI_BASE:
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
 
-          normalsAtGaussPtsSlave.resize(nb_gauss_pts, 3, false);
-          normalsAtGaussPtsSlave.clear();
+          normalsAtGaussPtsSlave.resize(0, 0, false);
+          
           nOrmalSlave.resize(3, false);
           nOrmalSlave.clear();
-
-          auto get_ftensor_from_mat_3d = [](MatrixDouble &m) {
-            return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-                &m(0, 0), &m(0, 1), &m(0, 2));
-          };
-
-          auto t_normal = get_ftensor_from_mat_3d(normalsAtGaussPtsSlave);
-
           auto get_tensor_vec = [](VectorDouble &n, const int r = 0) {
             return FTensor::Tensor1<double *, 3>(&n(r + 0), &n(r + 1),
                                                  &n(r + 2));
@@ -505,28 +510,16 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 
           FTensor::Index<'i', 3> i;
 
-          const double normal_length =
-              sqrt(slave_normal_data(i) * slave_normal_data(i));
-          normal_slave(i) = slave_normal_data(i) / normal_length;
-
-          for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-            t_normal(i) = normal_slave(i);
-            ++t_normal;
-          }
-
-          CHKERR getUserPolynomialBase()->getValue(
-              gaussPtsMaster,
-              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                  dataHdivMaster, HDIV, static_cast<FieldApproximationBase>(b),
-                  NOBASE)));
-
+          normal_slave(i) = 0.5 * slave_normal_data(i);
+        
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsSlave,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
 
-          CHKERR opContravariantTransform.opRhs(data_div);
+          // CHKERR opContravariantTransform.opRhs(dataHdivSlave);
+          CHKERR opContravariantTransformIgnatios.opRhs(dataHdivSlave);
         }
 
         if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
