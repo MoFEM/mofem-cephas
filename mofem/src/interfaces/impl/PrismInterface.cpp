@@ -92,13 +92,18 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   // get interface triangles from side set
   Range triangles;
   CHKERR moab.get_entities_by_type(sideset, MBTRI, triangles, recursive);
-  if (mesh_bit_level.any()) {
+  if (mesh_bit_level.any()) 
     triangles = intersect(triangles, mesh_level_ents3d_tris);
-  }
-  if (verb >= VERBOSE) {
+
+  if(triangles.empty())
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Northing to split");
+
+  if (verb >= VERBOSE) 
     PetscPrintf(m_field.get_comm(), "Nb. of triangles in set %u\n",
                 triangles.size());
-  }
+
+
+  
   // get nodes, edges and 3d ents (i.e. tets and prisms)
   Range nodes; // nodes from triangles
   CHKERR moab.get_connectivity(triangles, nodes, true);
@@ -325,10 +330,11 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
 
   } while (side_ents3d_tris_on_surface.size() != triangles.size());
 
-  if (ents3d_with_prisms.size() == side_ents3d.size()) {
+  if (ents3d_with_prisms.size() == side_ents3d.size())
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-            "All tets on one side, no-interface");
-  }
+            "All tetrahedrons are on one side of split surface and that is "
+            "wrong. Algorithm can not distinguish (find) sides of interface.");
+
   // other side ents
   Range other_side = subtract(ents3d_with_prisms, side_ents3d);
   // side nodes
