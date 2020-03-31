@@ -125,6 +125,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
                 triangles.size());
 
   auto get_skin_edges_boundary = [&]() {
+
     // get nodes, edges and 3d ents (i.e. tets and prisms)
     auto ents3d_with_prisms = get_adj(get_adj(triangles, 0), 3);
     if (mesh_bit_level.any())
@@ -237,6 +238,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
     CHKERR save_range("skin_nodes_boundary.vtk", skin_nodes_boundary);
   }
 
+
   auto find_tetrahedrons_on_the_side = [&]() {
     auto seed = intersect(get_adj(triangles, 3), ents3d);
     Range side_ents3d;
@@ -248,28 +250,27 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
     // get all tets adjacent to crack surface, but only on one side of it
     do {
 
+      Range adj_ents3d;
       do {
-        Range adj_tris, adj_ents3d;
+
+        Range adj_tris;
         nb_side_ents3d = side_ents3d.size();
         if (verb >= VERBOSE)
           PetscPrintf(m_field.get_comm(), "nb_side_ents3d %u\n",
                       nb_side_ents3d);
 
         // get faces
-        CHKERR moab.get_adjacencies(side_ents3d.subset_by_type(MBTET), 2, false,
-                                    adj_tris, moab::Interface::UNION);
+        // subtrace from faces interface
+        adj_tris = get_skin(side_ents3d.subset_by_type(MBTET));
+        adj_tris = subtract(adj_tris, triangles);
         if (mesh_bit_level.any())
           adj_tris = intersect(adj_tris, mesh_level_tris);
-
-        // subtrace from faces interface
-        adj_tris = subtract(adj_tris, triangles);
         if (verb >= VERBOSE)
           PetscPrintf(m_field.get_comm(), "adj_tris %u\n", adj_tris.size());
 
         // get tets adjacent to faces
-        CHKERR moab.get_adjacencies(adj_tris, 3, true, adj_ents3d,
+        CHKERR moab.get_adjacencies(adj_tris, 3, false, adj_ents3d,
                                     moab::Interface::UNION);
-
         // intersect tets with tets adjacent to inetface
         adj_ents3d = intersect(adj_ents3d, ents3d_with_prisms);
         if (verb >= VERBOSE)
@@ -285,7 +286,6 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
         }
 
       } while (nb_side_ents3d != side_ents3d.size());
-
       Range side_ents3d_tris;
       CHKERR moab.get_adjacencies(side_ents3d, 2, false, side_ents3d_tris,
                                   moab::Interface::UNION);
@@ -304,12 +304,12 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
       // This is a case when separate sub-domains are split, so we need
       // additional tetrahedron for seed process
       if (side_ents3d_tris_on_surface.size() != triangles.size()) {
-        Range left_triangles = subtract(triangles, side_ents3d_tris_on_surface);
+        auto left_triangles = subtract(triangles, side_ents3d_tris_on_surface);
         Range tets;
         CHKERR moab.get_adjacencies(&*left_triangles.begin(), 1, 3, false,
                                     tets);
-
         tets = intersect(tets, ents3d_with_prisms);
+
         if (tets.empty()) {
           CHKERR save_range("error.vtk", left_triangles);
           THROW_MESSAGE(
