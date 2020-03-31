@@ -335,17 +335,13 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
 
   // other side ents
   auto other_side = subtract(ents3d_with_prisms, side_ents3d);
-
   // side nodes
-  Range side_nodes;
-  CHKERR moab.get_connectivity(side_ents3d.subset_by_type(MBTET), side_nodes,
-                               true);
+  auto side_nodes = get_adj(side_ents3d.subset_by_type(MBTET), 0);
   // nodes on crack surface without front
   nodes_without_front = intersect(nodes_without_front, side_nodes);
-  Range side_edges;
-  CHKERR moab.get_adjacencies(side_ents3d.subset_by_type(MBTET), 1, false,
-                              side_edges, moab::Interface::UNION);
+  auto side_edges = get_adj(side_ents3d.subset_by_type(MBTET), 1);
   skin_edges_boundary = intersect(skin_edges_boundary, side_edges);
+
   // make child meshsets
   std::vector<EntityHandle> children;
   CHKERR moab.get_child_meshsets(sideset, children);
@@ -359,12 +355,13 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
     CHKERR moab.add_child_meshset(sideset, children[2]);
   } else {
     if (children.size() != 3) {
-      SETERRQ(PETSC_COMM_SELF, 1,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "this meshset should have 3 children meshsets");
     }
     children.resize(3);
     CHKERR moab.clear_meshset(&children[0], 3);
   }
+
   EntityHandle &child_side = children[0];
   EntityHandle &child_other_side = children[1];
   EntityHandle &child_nodes_and_skin_edges = children[2];
@@ -373,9 +370,9 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   CHKERR moab.add_entities(child_nodes_and_skin_edges, nodes_without_front);
   CHKERR moab.add_entities(child_nodes_and_skin_edges, skin_edges_boundary);
   if (verb >= VERBOSE) {
-    PetscPrintf(m_field.get_comm(), "Nb. of side ents3d in set %u\n",
+    PetscPrintf(m_field.get_comm(), "Nb. of side 3d elements in set %u\n",
                 side_ents3d.size());
-    PetscPrintf(m_field.get_comm(), "Nb. of other side ents3d in set %u\n",
+    PetscPrintf(m_field.get_comm(), "Nb. of other side 3d elements in set %u\n",
                 other_side.size());
     PetscPrintf(m_field.get_comm(), "Nb. of boundary edges %u\n",
                 skin_edges_boundary.size());
@@ -384,6 +381,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
     CHKERR moab.write_file("side.vtk", "VTK", "", &children[0], 1);
     CHKERR moab.write_file("other_side.vtk", "VTK", "", &children[1], 1);
   }
+
   MoFEMFunctionReturn(0);
 }
 
