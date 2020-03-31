@@ -129,7 +129,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   if (mesh_bit_level.any())
     ents3d_with_prisms = intersect(ents3d_with_prisms, mesh_level_ents3d);
   auto ents3d = ents3d_with_prisms.subset_by_type(
-      MBTET);                         // take only tets, add prism later
+      MBTET); // take only tets, add prism later
 
   // note: that skin faces edges do not contain internal boundary
   // note: that prisms are not included in ents3d, so if ents3d have border with
@@ -161,22 +161,6 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
       get_adj(triangles, 0),
       skin_nodes_boundary); // nodes_without_front adjacent to all split
                             // face edges except those on internal edge
-
-  if (verb >= NOISY) {
-    CHKERR save_range("triangles.vtk", triangles);
-    CHKERR save_range("ents3d.vtk", ents3d);
-    CHKERR save_range("skin_edges_boundary.vtk", skin_edges_boundary);
-  }
-
-  if (verb >= VERY_VERBOSE) {
-    PetscPrintf(m_field.get_comm(), "subtract skin_edges_boundary %u\n",
-                skin_edges_boundary.size());
-    PetscPrintf(m_field.get_comm(), "subtract skin_nodes_boundary %u\n",
-                skin_nodes_boundary.size());
-    PetscPrintf(m_field.get_comm(),
-                "adj. node if ents3d but not on the internal edge %u\n",
-                nodes_without_front.size());
-  }
 
   // ents3 that are adjacent to front nodes on split faces but not those which
   // are on the front nodes on internal edge
@@ -236,7 +220,9 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   Range side_ents3d_tris_on_surface;
 
   if (verb >= NOISY) {
-    CHKERR save_range("ents3d_test.vtk", ents3d);
+    CHKERR save_range("triangles.vtk", triangles);
+    CHKERR save_range("skin_edges_boundary.vtk", skin_edges_boundary);
+    CHKERR save_range("ents3d.vtk", ents3d);
     CHKERR save_range("nodes_without_front.vtk", nodes_without_front);
     CHKERR save_range("skin_nodes_boundary.vtk", skin_nodes_boundary);
   }
