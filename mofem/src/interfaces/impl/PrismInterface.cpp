@@ -231,103 +231,111 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
     PetscPrintf(m_field.get_comm(), "adj. ents3d to front nodes %u\n",
                 ents3d.size());
 
-  auto seed = intersect(get_adj(triangles, 3), ents3d);
-  Range side_ents3d;
-  if (!seed.empty())
-    side_ents3d.insert(seed[0]);
-  unsigned int nb_side_ents3d = side_ents3d.size();
-  Range side_ents3d_tris_on_surface;
-
   if (verb >= NOISY) {
     CHKERR save_range("triangles.vtk", triangles);
     CHKERR save_range("ents3d.vtk", ents3d);
     CHKERR save_range("skin_nodes_boundary.vtk", skin_nodes_boundary);
   }
 
-  // get all tets adjacent to crack surface, but only on one side of it
-  do {
+  auto find_tetrahedrons_on_the_side = [&]() {
+    auto seed = intersect(get_adj(triangles, 3), ents3d);
+    Range side_ents3d;
+    if (!seed.empty())
+      side_ents3d.insert(seed[0]);
+    unsigned int nb_side_ents3d = side_ents3d.size();
+    Range side_ents3d_tris_on_surface;
 
+    // get all tets adjacent to crack surface, but only on one side of it
     do {
-      Range adj_tris, adj_ents3d;
-      nb_side_ents3d = side_ents3d.size();
-      if (verb >= VERBOSE)
-        PetscPrintf(m_field.get_comm(), "nb_side_ents3d %u\n", nb_side_ents3d);
 
-      // get faces
-      CHKERR moab.get_adjacencies(side_ents3d.subset_by_type(MBTET), 2, false,
-                                  adj_tris, moab::Interface::UNION);
-      if (mesh_bit_level.any())
-        adj_tris = intersect(adj_tris, mesh_level_tris);
+      do {
+        Range adj_tris, adj_ents3d;
+        nb_side_ents3d = side_ents3d.size();
+        if (verb >= VERBOSE)
+          PetscPrintf(m_field.get_comm(), "nb_side_ents3d %u\n",
+                      nb_side_ents3d);
 
-      // subtrace from faces interface
-      adj_tris = subtract(adj_tris, triangles);
-      if (verb >= VERBOSE)
-        PetscPrintf(m_field.get_comm(), "adj_tris %u\n", adj_tris.size());
+        // get faces
+        CHKERR moab.get_adjacencies(side_ents3d.subset_by_type(MBTET), 2, false,
+                                    adj_tris, moab::Interface::UNION);
+        if (mesh_bit_level.any())
+          adj_tris = intersect(adj_tris, mesh_level_tris);
 
-      // get tets adjacent to faces
-      CHKERR moab.get_adjacencies(adj_tris, 3, true, adj_ents3d,
+        // subtrace from faces interface
+        adj_tris = subtract(adj_tris, triangles);
+        if (verb >= VERBOSE)
+          PetscPrintf(m_field.get_comm(), "adj_tris %u\n", adj_tris.size());
+
+        // get tets adjacent to faces
+        CHKERR moab.get_adjacencies(adj_tris, 3, true, adj_ents3d,
+                                    moab::Interface::UNION);
+
+        // intersect tets with tets adjacent to inetface
+        adj_ents3d = intersect(adj_ents3d, ents3d_with_prisms);
+        if (verb >= VERBOSE)
+          PetscPrintf(m_field.get_comm(), "adj_ents3d %u\n", adj_ents3d.size());
+
+        // add tets to side
+        side_ents3d.insert(adj_ents3d.begin(), adj_ents3d.end());
+        if (verb >= VERY_NOISY) {
+          CHKERR save_range(
+              "side_ents3d_" +
+                  boost::lexical_cast<std::string>(nb_side_ents3d) + ".vtk",
+              side_ents3d);
+        }
+
+      } while (nb_side_ents3d != side_ents3d.size());
+
+      Range side_ents3d_tris;
+      CHKERR moab.get_adjacencies(side_ents3d, 2, false, side_ents3d_tris,
                                   moab::Interface::UNION);
+      side_ents3d_tris_on_surface = intersect(side_ents3d_tris, triangles);
 
-      // intersect tets with tets adjacent to inetface
-      adj_ents3d = intersect(adj_ents3d, ents3d_with_prisms);
-      if (verb >= VERBOSE)
-        PetscPrintf(m_field.get_comm(), "adj_ents3d %u\n", adj_ents3d.size());
-
-      // add tets to side
-      side_ents3d.insert(adj_ents3d.begin(), adj_ents3d.end());
       if (verb >= VERY_NOISY) {
-        CHKERR save_range("side_ents3d_" +
-                              boost::lexical_cast<std::string>(nb_side_ents3d) +
-                              ".vtk",
-                          side_ents3d);
+        Range left_triangles = subtract(triangles, side_ents3d_tris_on_surface);
+        if (!left_triangles.empty()) {
+          CHKERR save_range(
+              "left_triangles_" +
+                  boost::lexical_cast<std::string>(nb_side_ents3d) + ".vtk",
+              left_triangles);
+        }
       }
 
-    } while (nb_side_ents3d != side_ents3d.size());
+      // This is a case when separate sub-domains are split, so we need
+      // additional tetrahedron for seed process
+      if (side_ents3d_tris_on_surface.size() != triangles.size()) {
+        Range left_triangles = subtract(triangles, side_ents3d_tris_on_surface);
+        Range tets;
+        CHKERR moab.get_adjacencies(&*left_triangles.begin(), 1, 3, false,
+                                    tets);
 
-    Range side_ents3d_tris;
-    CHKERR moab.get_adjacencies(side_ents3d, 2, false, side_ents3d_tris,
-                                moab::Interface::UNION);
-    side_ents3d_tris_on_surface = intersect(side_ents3d_tris, triangles);
-
-    if (verb >= VERY_NOISY) {
-      Range left_triangles = subtract(triangles, side_ents3d_tris_on_surface);
-      if (!left_triangles.empty()) {
-        CHKERR save_range("left_triangles_" +
-                              boost::lexical_cast<std::string>(nb_side_ents3d) +
-                              ".vtk",
-                          left_triangles);
+        tets = intersect(tets, ents3d_with_prisms);
+        if (tets.empty()) {
+          CHKERR save_range("error.vtk", left_triangles);
+          THROW_MESSAGE(
+              "Not all faces on surface going to be split, see error.vtk for "
+              "problematic triangle. "
+              "It could be a case where triangle on front (part boundary of "
+              "surface in interior) "
+              "has three nodes front.");
+        }
+        side_ents3d.insert(*tets.begin());
       }
-    }
 
-    // This is a case when separate sub-domains are split, so we need
-    // additional tetrahedron for seed process
-    if (side_ents3d_tris_on_surface.size() != triangles.size()) {
-      Range left_triangles = subtract(triangles, side_ents3d_tris_on_surface);
-      Range tets;
-      CHKERR moab.get_adjacencies(&*left_triangles.begin(), 1, 3, false, tets);
+    } while (side_ents3d_tris_on_surface.size() != triangles.size());
 
-      tets = intersect(tets, ents3d_with_prisms);
-      if (tets.empty()) {
-        CHKERR save_range("error.vtk", left_triangles);
-        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                "Not all faces on surface going to be split, see error.vtk for "
-                "problematic triangle. "
-                "It could be a case where triangle on front (part boundary of "
-                "surface in interior) "
-                "has three nodes front.");
-      }
-      side_ents3d.insert(*tets.begin());
-    }
+    return side_ents3d;
+  };
 
-  } while (side_ents3d_tris_on_surface.size() != triangles.size());
-
+  auto side_ents3d = find_tetrahedrons_on_the_side();
   if (ents3d_with_prisms.size() == side_ents3d.size())
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
             "All tetrahedrons are on one side of split surface and that is "
             "wrong. Algorithm can not distinguish (find) sides of interface.");
 
   // other side ents
-  Range other_side = subtract(ents3d_with_prisms, side_ents3d);
+  auto other_side = subtract(ents3d_with_prisms, side_ents3d);
+
   // side nodes
   Range side_nodes;
   CHKERR moab.get_connectivity(side_ents3d.subset_by_type(MBTET), side_nodes,
