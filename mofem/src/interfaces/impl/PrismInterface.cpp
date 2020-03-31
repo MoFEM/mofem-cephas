@@ -203,39 +203,32 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   auto find_triangles_on_front_and_adjacent_tet = [&]() {
     MoFEMFunctionBegin;
     // get all triangles adjacent to front
-    Range skin_nodes_boundary_tris;
-    CHKERR moab.get_adjacencies(skin_nodes_boundary, 2, false,
-                                skin_nodes_boundary_tris,
-                                moab::Interface::UNION);
+    auto skin_nodes_boundary_tris = get_adj(skin_nodes_boundary, 2);
+
     // get nodes of triangles adjacent to front nodes
-    Range skin_nodes_boundary_tris_nodes;
-    CHKERR moab.get_connectivity(skin_nodes_boundary_tris,
-                                 skin_nodes_boundary_tris_nodes, true);
     // get hanging nodes, i.e. nodes which are not on the front but adjacent
     // to triangles adjacent to crack front
-    skin_nodes_boundary_tris_nodes =
-        subtract(skin_nodes_boundary_tris_nodes, skin_nodes_boundary);
+    auto skin_nodes_boundary_tris_nodes =
+        subtract(get_adj(skin_nodes_boundary_tris, 2), skin_nodes_boundary);
+
     // get triangles adjacent to hanging nodes
-    Range skin_nodes_boundary_tris_nodes_tris;
-    CHKERR moab.get_adjacencies(skin_nodes_boundary_tris_nodes, 2, false,
-                                skin_nodes_boundary_tris_nodes_tris,
-                                moab::Interface::UNION);
+    auto skin_nodes_boundary_tris_nodes_tris =
+        get_adj(skin_nodes_boundary_tris_nodes, 2);
+
     // triangles which have tree nodes on front boundary
     skin_nodes_boundary_tris =
         intersect(triangles, subtract(skin_nodes_boundary_tris,
                                       skin_nodes_boundary_tris_nodes_tris));
     if (!skin_nodes_boundary_tris.empty()) {
       // Get internal edges of triangle which has three nodes on boundary
-      Range skin_nodes_boundary_tris_edges;
-      CHKERR moab.get_adjacencies(skin_nodes_boundary_tris, 1, false,
-                                  skin_nodes_boundary_tris_edges,
-                                  moab::Interface::UNION);
+      auto skin_nodes_boundary_tris_edges =
+          get_adj(skin_nodes_boundary_tris, 1);
+
       skin_nodes_boundary_tris_edges =
           subtract(skin_nodes_boundary_tris_edges, skin_edges_boundary);
       // Get 3d elements adjacent to internal edge which has three nodes on
       // boundary
-      CHKERR moab.get_adjacencies(skin_nodes_boundary_tris_edges, 3, false,
-                                  ents3d_with_prisms, moab::Interface::UNION);
+      ents3d_with_prisms.merge(get_adj(skin_nodes_boundary_tris_edges, 3));
     }
     MoFEMFunctionReturn(0);
   };
