@@ -117,13 +117,13 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   // get interface triangles from side set
   Range triangles;
   CHKERR moab.get_entities_by_type(sideset, MBTRI, triangles, recursive);
-  if (mesh_bit_level.any()) 
+  if (mesh_bit_level.any())
     triangles = intersect(triangles, mesh_level_ents3d_tris);
 
-  if(triangles.empty())
+  if (triangles.empty())
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Northing to split");
 
-  if (verb >= VERBOSE) 
+  if (verb >= VERBOSE)
     PetscPrintf(m_field.get_comm(), "Nb. of triangles in set %u\n",
                 triangles.size());
 
@@ -131,10 +131,10 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   auto nodes = get_adj(triangles, 0); // nodes from triangles
   auto edges = get_adj(triangles, 1); // edges from triangles
   auto ents3d_with_prisms = get_adj(edges, 3);
-  if (mesh_bit_level.any()) 
+  if (mesh_bit_level.any())
     ents3d_with_prisms = intersect(ents3d_with_prisms, mesh_level_ents3d);
   auto ents3d = ents3d_with_prisms.subset_by_type(
-      MBTET); // take only tets, add prism later
+      MBTET);                         // take only tets, add prism later
   auto skin_faces = get_skin(ents3d); // skin faces from 3d ents
   auto skin_edges_boundary = get_skin(triangles); // skin edges from triangles
   auto skin_faces_edges = get_adj(
@@ -158,12 +158,24 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
                skin_faces_edges); // from skin edges subtract edges from skin
                                   // faces of 3d ents (only internal edges)
 
-  Range prism_edges = get_adj(ents3d_with_prisms.subset_by_type(MBPRISM),
-                              1); // edges from skin faces of 3d ents
+  auto prism_edges = get_adj(ents3d_with_prisms.subset_by_type(MBPRISM),
+                             1); // edges from skin faces of 3d ents
   skin_edges_boundary =
       subtract(skin_edges_boundary,
-               prism_edges); // from skin edges subtract edges from prism edges, that create internal boundary
+               prism_edges); // from skin edges subtract edges from prism edges,
+                             // that create internal boundary
 
+  auto edges_without_boundary = subtract(edges, skin_edges_boundary);
+
+  // Get nodes on boundary edge
+  // Remove node which are boundary with other existing interface
+  auto skin_nodes_boundary = get_adj(skin_edges_boundary, 0);
+
+  // use nodes on body boundary and interface (without internal boundary) to
+  // find adjacent tets
+  auto nodes_without_front = subtract(
+      nodes, skin_nodes_boundary); // nodes_without_front adjacent to all split
+                                   // face edges except those on internal edge
 
   if (verb >= NOISY) {
     CHKERR save_range("triangles.vtk", triangles);
@@ -171,28 +183,15 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
     CHKERR save_range("skin_edges_boundary.vtk", skin_edges_boundary);
   }
 
-  if (verb >= VERY_VERBOSE)
+  if (verb >= VERY_VERBOSE) {
     PetscPrintf(m_field.get_comm(), "subtract skin_edges_boundary %u\n",
                 skin_edges_boundary.size());
-
-
-  auto edges_without_boundary = subtract(edges, skin_edges_boundary);
-
-  // Get nodes on boundary edge
-  // Remove node which are boundary with other existing interface
-  auto skin_nodes_boundary = get_adj(skin_edges_boundary, 0);
-  if (verb >= VERY_VERBOSE)
     PetscPrintf(m_field.get_comm(), "subtract skin_nodes_boundary %u\n",
                 skin_nodes_boundary.size());
-  // use nodes on body boundary and interface (without internal boundary) to
-  // find adjacent tets
-  auto nodes_without_front = subtract(
-      nodes, skin_nodes_boundary); // nodes_without_front adjacent to all split
-                                   // face edges except those on internal edge
-  if (verb >= VERY_VERBOSE)
     PetscPrintf(m_field.get_comm(),
                 "adj. node if ents3d but not on the internal edge %u\n",
                 nodes_without_front.size());
+  }
 
   // ents3 that are adjacent to front nodes on split faces but not those which
   // are on the front nodes on internal edge
@@ -240,11 +239,11 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
     }
     MoFEMFunctionReturn(0);
   };
-  
+
   CHKERR find_triangles_on_front_and_adjacent_tet();
 
   // prism and tets on both side of interface
-  if (mesh_bit_level.any()) 
+  if (mesh_bit_level.any())
     ents3d_with_prisms = intersect(ents3d_with_prisms, mesh_level_ents3d);
   ents3d = ents3d_with_prisms.subset_by_type(MBTET);
   if (verb >= VERY_VERBOSE)
@@ -253,7 +252,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
 
   auto seed = intersect(get_adj(triangles, 3), ents3d);
   Range side_ents3d;
-  if(!seed.empty())
+  if (!seed.empty())
     side_ents3d.insert(seed[0]);
   unsigned int nb_side_ents3d = side_ents3d.size();
   Range side_ents3d_tris_on_surface;
@@ -276,9 +275,9 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
       // get faces
       CHKERR moab.get_adjacencies(side_ents3d.subset_by_type(MBTET), 2, false,
                                   adj_tris, moab::Interface::UNION);
-      if (mesh_bit_level.any()) 
+      if (mesh_bit_level.any())
         adj_tris = intersect(adj_tris, mesh_level_tris);
-      
+
       // subtrace from faces interface
       adj_tris = subtract(adj_tris, triangles);
       if (verb >= VERBOSE)
@@ -296,9 +295,10 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
       // add tets to side
       side_ents3d.insert(adj_ents3d.begin(), adj_ents3d.end());
       if (verb >= VERY_NOISY) {
-         CHKERR save_range("side_ents3d_" +
-                           boost::lexical_cast<std::string>(nb_side_ents3d) +
-                           ".vtk", side_ents3d);
+        CHKERR save_range("side_ents3d_" +
+                              boost::lexical_cast<std::string>(nb_side_ents3d) +
+                              ".vtk",
+                          side_ents3d);
       }
 
     } while (nb_side_ents3d != side_ents3d.size());
@@ -1055,7 +1055,7 @@ MoFEMErrorCode PrismInterface::splitSides(
     return adj;
   };
   Range side_adj_faces_and_edges = all_others_adj_entities(true);
-  
+
   for (Range::iterator eit = side_adj_faces_and_edges.begin();
        eit != side_adj_faces_and_edges.end(); ++eit) {
     int num_nodes;
@@ -1167,7 +1167,7 @@ MoFEMErrorCode PrismInterface::splitSides(
   }
 
   // finalise by adding new tets and prism ti bit level
-  // FIXME: This is switch of, you can not change parent. 
+  // FIXME: This is switch of, you can not change parent.
   // CHKERR set_parent(refined_ents_ptr);
 
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
