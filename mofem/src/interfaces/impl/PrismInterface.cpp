@@ -152,22 +152,25 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
     return skin_edges_boundary;
   };
 
-
-  auto skin_edges_boundary  =  get_skin_edges_boundary();
+  auto skin_edges_boundary = get_skin_edges_boundary();
   auto skin_nodes_boundary = get_adj(skin_edges_boundary, 0);
 
-   // Get front edges
-  auto edges_without_boundary =
-      subtract(get_adj(triangles, 1), skin_edges_boundary);
-  // use nodes on body boundary and interface (without internal boundary) to
-  // find adjacent tets
-  auto nodes_without_front = subtract(
-      get_adj(triangles, 0),
-      skin_nodes_boundary); // nodes_without_front adjacent to all split
-                            // face edges except those on internal edge
+  auto get_edges_without_boundary = [&]() {
+    // Get front edges
+    return subtract(get_adj(triangles, 1), skin_edges_boundary);
+  };
 
-  auto get_ents3d_with_prisms = [&]() {
+  auto get_nodes_without_front = [&]() {
+    // use nodes on body boundary and interface (without internal boundary) to
+    // find adjacent tets
+    return subtract(get_adj(triangles, 0),
+                    skin_nodes_boundary); // nodes_without_front adjacent to
+                                          // all split face edges except
+                                          // those on internal edge
+  };
 
+  auto get_ents3d_with_prisms = [&](auto edges_without_boundary,
+                                    auto nodes_without_front) {
     // ents3 that are adjacent to front nodes on split faces but not those which
     // are on the front nodes on internal edge
     Range ents3d_with_prisms =
@@ -212,10 +215,17 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
     if (mesh_bit_level.any())
       ents3d_with_prisms = intersect(ents3d_with_prisms, mesh_level_ents3d);
 
+    if (verb >= NOISY) {
+      CHKERR save_range("skin_edges_boundary.vtk", skin_edges_boundary);
+      CHKERR save_range("nodes_without_front.vtk", nodes_without_front);
+    }
+
     return ents3d_with_prisms;
   };
 
-  auto ents3d_with_prisms = get_ents3d_with_prisms();
+  auto nodes_without_front = get_nodes_without_front();
+  auto ents3d_with_prisms =
+      get_ents3d_with_prisms(get_edges_without_boundary(), nodes_without_front);
   auto ents3d = ents3d_with_prisms.subset_by_type(MBTET);
   if (verb >= VERY_VERBOSE)
     PetscPrintf(m_field.get_comm(), "adj. ents3d to front nodes %u\n",
@@ -230,9 +240,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
 
   if (verb >= NOISY) {
     CHKERR save_range("triangles.vtk", triangles);
-    CHKERR save_range("skin_edges_boundary.vtk", skin_edges_boundary);
     CHKERR save_range("ents3d.vtk", ents3d);
-    CHKERR save_range("nodes_without_front.vtk", nodes_without_front);
     CHKERR save_range("skin_nodes_boundary.vtk", skin_nodes_boundary);
   }
 
