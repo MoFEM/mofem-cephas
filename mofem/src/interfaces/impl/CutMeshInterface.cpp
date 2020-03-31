@@ -439,6 +439,8 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
   PetscPrintf(PETSC_COMM_WORLD, "Min quality node merge %6.4g\n",
               get_min_quality(bit_level3, th));
 
+  CHKERR cOre.getInterface<BitRefManager>()->updateRange(constrainSurface,
+                                                         constrainSurface);
   CHKERR cOre.getInterface<BitRefManager>()->updateRange(fixed_edges,
                                                          fixed_edges);
   CHKERR cOre.getInterface<BitRefManager>()->updateRange(corner_nodes,
