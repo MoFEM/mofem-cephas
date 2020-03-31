@@ -124,37 +124,41 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
     PetscPrintf(m_field.get_comm(), "Nb. of triangles in set %u\n",
                 triangles.size());
 
-  // get nodes, edges and 3d ents (i.e. tets and prisms)
-  auto ents3d_with_prisms = get_adj(get_adj(triangles, 0), 3);
-  if (mesh_bit_level.any())
-    ents3d_with_prisms = intersect(ents3d_with_prisms, mesh_level_ents3d);
-  auto ents3d = ents3d_with_prisms.subset_by_type(
-      MBTET); // take only tets, add prism later
+  auto get_skin_edges_boundary = [&]() {
+    // get nodes, edges and 3d ents (i.e. tets and prisms)
+    auto ents3d_with_prisms = get_adj(get_adj(triangles, 0), 3);
+    if (mesh_bit_level.any())
+      ents3d_with_prisms = intersect(ents3d_with_prisms, mesh_level_ents3d);
+    auto ents3d = ents3d_with_prisms.subset_by_type(
+        MBTET); // take only tets, add prism later
 
-  // note: that skin faces edges do not contain internal boundary
-  // note: that prisms are not included in ents3d, so if ents3d have border with
-  // other inteface is like external boundary skin edges boundary are internal
-  // edge <- skin_faces_edges contains edges which are on the body boundary <-
-  // that is the trick
-  auto skin_edges_boundary = subtract(
-      get_skin(triangles),
-      get_adj(get_skin(ents3d), 1)); // from skin edges subtract edges from skin
-                                     // faces of 3d ents (only internal edges)
+    // note: that skin faces edges do not contain internal boundary
+    // note: that prisms are not included in ents3d, so if ents3d have border
+    // with other inteface is like external boundary skin edges boundary are
+    // internal edge <- skin_faces_edges contains edges which are on the body
+    // boundary <- that is the trick
+    auto skin_edges_boundary =
+        subtract(get_skin(triangles),
+                 get_adj(get_skin(ents3d),
+                         1)); // from skin edges subtract edges from skin
+                              // faces of 3d ents (only internal edges)
 
-  skin_edges_boundary =
-      subtract(skin_edges_boundary,
-               get_adj(ents3d_with_prisms.subset_by_type(MBPRISM),
-                       1)); // from skin edges subtract edges from prism edges,
-                            // that create internal boundary
+    skin_edges_boundary =
+        subtract(skin_edges_boundary,
+                 get_adj(ents3d_with_prisms.subset_by_type(MBPRISM),
+                         1)); // from skin edges subtract edges from prism
+                              // edges, that create internal boundary
 
-  // Get front edges
-  auto edges_without_boundary =
-      subtract(get_adj(triangles, 1), skin_edges_boundary);
+    return skin_edges_boundary;
+  };
 
-  // Get nodes on boundary edge
-  // Remove node which are boundary with other existing interface
+
+  auto skin_edges_boundary  =  get_skin_edges_boundary();
   auto skin_nodes_boundary = get_adj(skin_edges_boundary, 0);
 
+   // Get front edges
+  auto edges_without_boundary =
+      subtract(get_adj(triangles, 1), skin_edges_boundary);
   // use nodes on body boundary and interface (without internal boundary) to
   // find adjacent tets
   auto nodes_without_front = subtract(
@@ -162,52 +166,57 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
       skin_nodes_boundary); // nodes_without_front adjacent to all split
                             // face edges except those on internal edge
 
-  // ents3 that are adjacent to front nodes on split faces but not those which
-  // are on the front nodes on internal edge
-  ents3d.clear();
-  ents3d_with_prisms.clear();
-  ents3d_with_prisms =
-      get_adj(unite(edges_without_boundary, nodes_without_front), 3);
+  auto get_ents3d_with_prisms = [&]() {
 
-  auto find_triangles_on_front_and_adjacent_tet = [&]() {
-    MoFEMFunctionBegin;
-    // get all triangles adjacent to front
-    auto skin_nodes_boundary_tris = get_adj(skin_nodes_boundary, 2);
+    // ents3 that are adjacent to front nodes on split faces but not those which
+    // are on the front nodes on internal edge
+    Range ents3d_with_prisms =
+        get_adj(unite(edges_without_boundary, nodes_without_front), 3);
 
-    // get nodes of triangles adjacent to front nodes
-    // get hanging nodes, i.e. nodes which are not on the front but adjacent
-    // to triangles adjacent to crack front
-    auto skin_nodes_boundary_tris_nodes =
-        subtract(get_adj(skin_nodes_boundary_tris, 2), skin_nodes_boundary);
+    auto find_triangles_on_front_and_adjacent_tet = [&]() {
+      MoFEMFunctionBegin;
+      // get all triangles adjacent to front
+      auto skin_nodes_boundary_tris = get_adj(skin_nodes_boundary, 2);
 
-    // get triangles adjacent to hanging nodes
-    auto skin_nodes_boundary_tris_nodes_tris =
-        get_adj(skin_nodes_boundary_tris_nodes, 2);
+      // get nodes of triangles adjacent to front nodes
+      // get hanging nodes, i.e. nodes which are not on the front but adjacent
+      // to triangles adjacent to crack front
+      auto skin_nodes_boundary_tris_nodes =
+          subtract(get_adj(skin_nodes_boundary_tris, 2), skin_nodes_boundary);
 
-    // triangles which have tree nodes on front boundary
-    skin_nodes_boundary_tris =
-        intersect(triangles, subtract(skin_nodes_boundary_tris,
-                                      skin_nodes_boundary_tris_nodes_tris));
-    if (!skin_nodes_boundary_tris.empty()) {
-      // Get internal edges of triangle which has three nodes on boundary
-      auto skin_nodes_boundary_tris_edges =
-          get_adj(skin_nodes_boundary_tris, 1);
+      // get triangles adjacent to hanging nodes
+      auto skin_nodes_boundary_tris_nodes_tris =
+          get_adj(skin_nodes_boundary_tris_nodes, 2);
 
-      skin_nodes_boundary_tris_edges =
-          subtract(skin_nodes_boundary_tris_edges, skin_edges_boundary);
-      // Get 3d elements adjacent to internal edge which has three nodes on
-      // boundary
-      ents3d_with_prisms.merge(get_adj(skin_nodes_boundary_tris_edges, 3));
-    }
-    MoFEMFunctionReturn(0);
+      // triangles which have tree nodes on front boundary
+      skin_nodes_boundary_tris =
+          intersect(triangles, subtract(skin_nodes_boundary_tris,
+                                        skin_nodes_boundary_tris_nodes_tris));
+      if (!skin_nodes_boundary_tris.empty()) {
+        // Get internal edges of triangle which has three nodes on boundary
+        auto skin_nodes_boundary_tris_edges =
+            get_adj(skin_nodes_boundary_tris, 1);
+
+        skin_nodes_boundary_tris_edges =
+            subtract(skin_nodes_boundary_tris_edges, skin_edges_boundary);
+        // Get 3d elements adjacent to internal edge which has three nodes on
+        // boundary
+        ents3d_with_prisms.merge(get_adj(skin_nodes_boundary_tris_edges, 3));
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR find_triangles_on_front_and_adjacent_tet();
+
+    // prism and tets on both side of interface
+    if (mesh_bit_level.any())
+      ents3d_with_prisms = intersect(ents3d_with_prisms, mesh_level_ents3d);
+
+    return ents3d_with_prisms;
   };
 
-  CHKERR find_triangles_on_front_and_adjacent_tet();
-
-  // prism and tets on both side of interface
-  if (mesh_bit_level.any())
-    ents3d_with_prisms = intersect(ents3d_with_prisms, mesh_level_ents3d);
-  ents3d = ents3d_with_prisms.subset_by_type(MBTET);
+  auto ents3d_with_prisms = get_ents3d_with_prisms();
+  auto ents3d = ents3d_with_prisms.subset_by_type(MBTET);
   if (verb >= VERY_VERBOSE)
     PetscPrintf(m_field.get_comm(), "adj. ents3d to front nodes %u\n",
                 ents3d.size());
