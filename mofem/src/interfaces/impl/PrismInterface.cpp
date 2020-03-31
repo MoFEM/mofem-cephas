@@ -138,21 +138,21 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
       subtract(skin_edges_boundary,
                skin_faces_edges); // from skin edges subtract edges from skin
                                   // faces of 3d ents (only internal edges)
-  if (verb >= NOISY) {
+
+  auto save_range = [&](const std::string name, const Range r) {
+    MoFEMFunctionBegin;
     EntityHandle out_meshset;
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, out_meshset);
-    CHKERR moab.add_entities(out_meshset, triangles);
-    CHKERR moab.write_file("triangles.vtk", "VTK", "", &out_meshset, 1);
+    CHKERR moab.create_meshset(MESHSET_SET, out_meshset);
+    CHKERR moab.add_entities(out_meshset, r);
+    CHKERR moab.write_file(name.c_str(), "VTK", "", &out_meshset, 1);
     CHKERR moab.delete_entities(&out_meshset, 1);
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, out_meshset);
-    CHKERR moab.add_entities(out_meshset, ents3d);
-    CHKERR moab.write_file("ents3d.vtk", "VTK", "", &out_meshset, 1);
-    CHKERR moab.delete_entities(&out_meshset, 1);
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, out_meshset);
-    CHKERR moab.add_entities(out_meshset, skin_edges_boundary);
-    CHKERR moab.write_file("skin_edges_boundary.vtk", "VTK", "", &out_meshset,
-                           1);
-    CHKERR moab.delete_entities(&out_meshset, 1);
+    MoFEMFunctionReturn(0);
+  };
+
+  if (verb >= NOISY) {
+    CHKERR save_range("triangles.vtk", triangles);
+    CHKERR save_range("ents3d.vtk", ents3d);
+    CHKERR save_range("skin_edges_boundary.vtk", skin_edges_boundary);
   }
   if (verb >= VERY_VERBOSE)
     PetscPrintf(m_field.get_comm(), "subtract skin_edges_boundary %u\n",
@@ -222,7 +222,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
                                     moab::Interface::UNION);
         skin_nodes_boundary_tris_edges =
             subtract(skin_nodes_boundary_tris_edges, skin_edges_boundary);
-        // Get 3d elements adjacent to internal edge which has two nodes on
+        // Get 3d elements adjacent to internal edge which has three nodes on
         // boundary
         CHKERR moab.get_adjacencies(skin_nodes_boundary_tris_edges, 3, false,
                                     ents3d_with_prisms, moab::Interface::UNION);
@@ -247,6 +247,12 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   unsigned int nb_side_ents3d = side_ents3d.size();
   side_ents3d.insert(*ents3d.begin());
   Range side_ents3d_tris_on_surface;
+
+  if (verb >= NOISY) {
+    CHKERR save_range("ents3d_test.vtk", ents3d);
+    CHKERR save_range("nodes_without_front.vtk", nodes_without_front);
+    CHKERR save_range("skin_nodes_boundary.vtk", skin_nodes_boundary);
+  }
 
   // get all tets adjacent to crack surface, but only on one side of it
   do {
@@ -276,15 +282,9 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
       // add tets to side
       side_ents3d.insert(adj_ents3d.begin(), adj_ents3d.end());
       if (verb >= VERY_NOISY) {
-        EntityHandle out_meshset;
-        CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
-                                   out_meshset);
-        CHKERR moab.add_entities(out_meshset, side_ents3d);
-        std::string file = "side_ents3d_" +
+         CHKERR save_range("side_ents3d_" +
                            boost::lexical_cast<std::string>(nb_side_ents3d) +
-                           ".vtk";
-        CHKERR moab.write_file(file.c_str(), "VTK", "", &out_meshset, 1);
-        CHKERR moab.delete_entities(&out_meshset, 1);
+                           ".vtk", side_ents3d);
       }
     } while (nb_side_ents3d != side_ents3d.size());
 
@@ -296,15 +296,10 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
     if (verb >= VERY_NOISY) {
       Range left_triangles = subtract(triangles, side_ents3d_tris_on_surface);
       if (!left_triangles.empty()) {
-        EntityHandle out_meshset;
-        CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
-                                   out_meshset);
-        CHKERR moab.add_entities(out_meshset, left_triangles);
-        std::string file = "left_triangles_" +
-                           boost::lexical_cast<std::string>(nb_side_ents3d) +
-                           ".vtk";
-        CHKERR moab.write_file(file.c_str(), "VTK", "", &out_meshset, 1);
-        CHKERR moab.delete_entities(&out_meshset, 1);
+        CHKERR save_range("left_triangles_" +
+                              boost::lexical_cast<std::string>(nb_side_ents3d) +
+                              ".vtk",
+                          left_triangles);
       }
     }
 
@@ -317,14 +312,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
 
       tets = intersect(tets, ents3d_with_prisms);
       if (tets.empty()) {
-        Range left_triangles_nodes;
-        CHKERR moab.get_connectivity(&*left_triangles.begin(), 1,
-                                     left_triangles_nodes, true);
-        EntityHandle meshset;
-        CHKERR moab.create_meshset(MESHSET_SET, meshset);
-        CHKERR moab.add_entities(meshset, left_triangles);
-        CHKERR moab.write_file("error.vtk", "VTK", "", &meshset, 1);
-        CHKERR moab.delete_entities(&meshset, 1);
+        CHKERR save_range("error.vtk", left_triangles);
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                 "Not all faces on surface going to be split, see error.vtk for "
                 "problematic triangle. "
