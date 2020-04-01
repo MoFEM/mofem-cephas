@@ -271,13 +271,10 @@ CutMeshInterface::cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::trimOnly(const BitRefLevel trim_bit, Tag th,
-                                          const double tol_geometry,
-                                          const double tol_trim_close,
-                                          Range *fixed_edges,
-                                          Range *corner_nodes,
-                                          const bool update_meshsets,
-                                          const bool debug) {
+MoFEMErrorCode CutMeshInterface::trimOnly(
+    const BitRefLevel trim_bit, Tag th, const double tol_geometry,
+    const double tol_trim_close, Range *fixed_edges, Range *corner_nodes,
+    const bool update_meshsets, const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
@@ -320,9 +317,9 @@ MoFEMErrorCode CutMeshInterface::trimOnly(const BitRefLevel trim_bit, Tag th,
 }
 
 MoFEMErrorCode CutMeshInterface::cutAndTrim(
-    int &first_bit, Tag th, const double tol_geometry, const double tol_cut_close,
-    const double tol_trim_close, Range *fixed_edges, Range *corner_nodes,
-    const bool update_meshsets, const bool debug) {
+    int &first_bit, Tag th, const double tol_geometry,
+    const double tol_cut_close, const double tol_trim_close, Range *fixed_edges,
+    Range *corner_nodes, const bool update_meshsets, const bool debug) {
   CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -1668,7 +1665,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     };
 
     auto get_coords_edge = [&moab](auto conn_edge) {
-      std::array<double,6> coords_edge;
+      std::array<double, 6> coords_edge;
       CHKERR moab.get_coords(conn_edge, 2, coords_edge.data());
       return coords_edge;
     };
@@ -1724,7 +1721,8 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
 
       add_edge(t_cut);
 
-    } else if (std::min(dot_direction0, dot_direction1) < edge_length) {
+    } else if (std::min(t_dist0(i) * t_dist0(i), t_dist0(i) * t_dist0(i)) <
+               edge_length * edge_length) {
 
       for (auto f : surface_skin) {
 
@@ -1733,29 +1731,25 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         auto t_f0 = get_ftensor_coords(&coords_front[0]);
         auto t_f1 = get_ftensor_coords(&coords_front[3]);
 
-        double tvw;
-        double tlk;
+        double te;
+        double tf;
 
         auto res = Tools::minDistanceFromSegments(&t_e0(0), &t_e1(0), &t_f0(0),
-                                                  &t_f1(0), &tvw, &tlk);
+                                                  &t_f1(0), &te, &tf);
 
         if (res != Tools::NO_SOLUTION) {
 
           auto check = [](auto v) {
-            return v > -std::numeric_limits<double>::epsilon() &&
-                   (v - 1) < std::numeric_limits<double>::epsilon();
+            return (v > -std::numeric_limits<double>::epsilon() &&
+                    (v - 1) < std::numeric_limits<double>::epsilon());
           };
 
-          if ( check(tvw) && check(tlk) ) {
-            add_edge(tvw);
-          }
-
+          if (check(te) && check(tf))
+            add_edge(te);
         }
-
       }
     }
   }
-
 
   if (debug)
     CHKERR SaveData(moab)("edges_potentially_to_trim.vtk", cut_surface_edges);
@@ -1920,7 +1914,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   auto add_zero_dist_vertices = [&](const auto &&verts, const double geom_tol) {
     MoFEMFunctionBegin;
 
-    std::vector<double> dits_vec(3*verts.size());
+    std::vector<double> dits_vec(3 * verts.size());
     CHKERR moab.tag_get_data(th_dist_front_vec, verts, &*dits_vec.begin());
     auto t_dist = FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
         &dits_vec[0], &dits_vec[1], &dits_vec[2]);
@@ -1944,7 +1938,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
           verticesOnTrimEdges[v].unitRayDir.clear();
           verticesOnTrimEdges[v].rayPoint = get_point_coords(v);
           trimNewVertices.insert(v);
-
         }
       }
 
