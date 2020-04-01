@@ -1656,26 +1656,34 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     return th;
   };
 
-  auto th_dot = create_tag("DOT", 1);
-  auto th_dir = create_tag("DIR", 1);
-
   // iterate over edges on cut surface
   for (auto e : cut_surface_edges) {
 
-    // Get edge connectivity and coords
-    const EntityHandle *conn_edge;
-    CHKERR moab.get_connectivity(e, conn_edge, num_nodes, true);
+    auto get_conn_edge = [&moab](auto e) {
+      // Get edge connectivity and coords
+      const EntityHandle *conn_edge;
+      int num_nodes;
+      CHKERR moab.get_connectivity(e, conn_edge, num_nodes, true);
+      return conn_edge;
+    };
+
+    auto get_coords_edge = [&moab](auto conn_edge) {
+      std::array<double,6> coords_edge;
+      CHKERR moab.get_coords(conn_edge, 2, coords_edge.data());
+      return coords_edge;
+    };
+
+    auto get_ftensor_coords = [](const double *ptr) {
+      return FTensor::Tensor1<double, 3>{ptr[0], ptr[1], ptr[2]};
+    };
+
+    auto conn_edge = get_conn_edge(e);
+    auto coords_edge = get_coords_edge(conn_edge);
 
     auto t_dist0 = get_tag_data(th_dist_front_vec, conn_edge[0]);
     auto t_dist1 = get_tag_data(th_dist_front_vec, conn_edge[1]);
-
-    double coords_edge[3 * num_nodes];
-    CHKERR moab.get_coords(conn_edge, num_nodes, coords_edge);
-
-    FTensor::Tensor1<double, 3> t_e0{coords_edge[0], coords_edge[1],
-                                     coords_edge[2]};
-    FTensor::Tensor1<double, 3> t_e1{coords_edge[3], coords_edge[4],
-                                     coords_edge[5]};
+    auto t_e0 = get_ftensor_coords(&coords_edge[0]);
+    auto t_e1 = get_ftensor_coords(&coords_edge[3]);
 
     FTensor::Tensor1<double, 3> t_edge_delta;
     t_edge_delta(i) = t_e1(i) - t_e0(i);
@@ -1685,29 +1693,11 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Zero edge length");
 
     max_edge_length = std::max(max_edge_length, edge_length);
-    const double s0 = t_dist0(i) * t_edge_delta(i) / edge_length;
-    const double s1 = t_dist1(i) * t_edge_delta(i) / edge_length;
     const double dot = t_dist0(i) * t_dist1(i);
-    const double dot_direction = t_dist0(i) * t_edge_delta(i);
+    const double dot_direction0 = t_dist0(i) * t_edge_delta(i);
+    const double dot_direction1 = t_dist1(i) * t_edge_delta(i);
 
-    const double s = s0 / (s0 - s1);
-
-    CHKERR moab.tag_set_data(th_dot, &e, 1, &dot);
-    CHKERR moab.tag_set_data(th_dir, &e, 1, &dot_direction);
-
-    if (dot < std::numeric_limits<double>::epsilon() &&
-        dot_direction > -tol_geometry * edge_length) {
-
-      auto get_edge_coors = [&](const auto e) {
-        const EntityHandle *conn;
-        CHKERR moab.get_connectivity(e, conn, num_nodes, true);
-        VectorDouble6 coords(6);
-        CHKERR moab.get_coords(conn, num_nodes, &coords[0]);
-        return coords;
-      };
-
-      const double t_cut = s;
-
+    auto add_edge = [&](auto t_cut) {
       FTensor::Tensor1<double, 3> t_ray;
       if (t_cut < 0.5) {
         t_ray(i) = t_cut * t_edge_delta(i);
@@ -1721,6 +1711,47 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         add_vert(conn_edge[0], e, fabs(t_cut));
         add_vert(conn_edge[1], e, fabs(t_cut - 1));
         cut_this_edge(e, edge_length, t_ray, t_e1);
+      }
+    };
+
+    if (dot < tol_geometry * edge_length &&
+        dot_direction0 > -std::numeric_limits<double>::epsilon() &&
+        dot_direction1 < std::numeric_limits<double>::epsilon()) {
+
+      const double s0 = t_dist0(i) * t_edge_delta(i) / edge_length;
+      const double s1 = t_dist1(i) * t_edge_delta(i) / edge_length;
+      const double t_cut = s0 / (s0 - s1);
+
+      add_edge(t_cut);
+
+    } else if (std::min(dot_direction0, dot_direction1) < edge_length) {
+
+      for (auto f : surface_skin) {
+
+        auto conn_front = get_conn_edge(f);
+        auto coords_front = get_coords_edge(conn_front);
+        auto t_f0 = get_ftensor_coords(&coords_front[0]);
+        auto t_f1 = get_ftensor_coords(&coords_front[3]);
+
+        double tvw;
+        double tlk;
+
+        auto res = Tools::minDistanceFromSegments(&t_e0(0), &t_e1(0), &t_f0(0),
+                                                  &t_f1(0), &tvw, &tlk);
+
+        if (res != Tools::NO_SOLUTION) {
+
+          auto check = [](auto v) {
+            return v > -std::numeric_limits<double>::epsilon() &&
+                   (v - 1) < std::numeric_limits<double>::epsilon();
+          };
+
+          if ( check(tvw) && check(tlk) ) {
+            add_edge(tvw);
+          }
+
+        }
+
       }
     }
   }
