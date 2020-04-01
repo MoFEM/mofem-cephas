@@ -1684,8 +1684,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     if (edge_length == 0)
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Zero edge length");
 
-    max_edge_length = std::max(max_edge_length, edge_length);
-
     auto add_edge = [&](auto t_cut) {
       FTensor::Tensor1<double, 3> t_ray;
       if (t_cut < 0.5) {
@@ -1701,6 +1699,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         add_vert(conn_edge[1], e, fabs(t_cut - 1));
         cut_this_edge(e, edge_length, t_ray, t_e1);
       }
+      max_edge_length = std::max(max_edge_length, edge_length);
     };
 
     auto trim_cross_edges = [&]() {
