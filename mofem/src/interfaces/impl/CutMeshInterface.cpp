@@ -1690,9 +1690,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Zero edge length");
 
     max_edge_length = std::max(max_edge_length, edge_length);
-    const double dot = t_dist0(i) * t_dist1(i);
-    const double dot_direction0 = t_dist0(i) * t_edge_delta(i);
-    const double dot_direction1 = t_dist1(i) * t_edge_delta(i);
 
     auto add_edge = [&](auto t_cut) {
       FTensor::Tensor1<double, 3> t_ray;
@@ -1711,44 +1708,60 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       }
     };
 
-    if (dot < tol_geometry * edge_length &&
-        dot_direction0 > -std::numeric_limits<double>::epsilon() &&
-        dot_direction1 < std::numeric_limits<double>::epsilon()) {
+    auto trim_cross_edges = [&]() {
+      if (std::min(t_dist0(i) * t_dist0(i), t_dist0(i) * t_dist0(i)) <
+          edge_length2) {
 
-      const double s0 = t_dist0(i) * t_edge_delta(i) / edge_length;
-      const double s1 = t_dist1(i) * t_edge_delta(i) / edge_length;
-      const double t_cut = s0 / (s0 - s1);
+        for (auto f : surface_skin) {
 
-      add_edge(t_cut);
+          auto conn_front = get_conn_edge(f);
+          auto coords_front = get_coords_edge(conn_front);
+          auto t_f0 = get_ftensor_coords(&coords_front[0]);
+          auto t_f1 = get_ftensor_coords(&coords_front[3]);
 
-    } else if (std::min(t_dist0(i) * t_dist0(i), t_dist0(i) * t_dist0(i)) <
-               edge_length * edge_length) {
+          double te;
+          double tf;
 
-      for (auto f : surface_skin) {
+          auto res = Tools::minDistanceFromSegments(
+              &t_e0(0), &t_e1(0), &t_f0(0), &t_f1(0), &te, &tf);
 
-        auto conn_front = get_conn_edge(f);
-        auto coords_front = get_coords_edge(conn_front);
-        auto t_f0 = get_ftensor_coords(&coords_front[0]);
-        auto t_f1 = get_ftensor_coords(&coords_front[3]);
+          if (res != Tools::NO_SOLUTION) {
 
-        double te;
-        double tf;
+            auto check = [](auto v) {
+              return (v > -std::numeric_limits<double>::epsilon() &&
+                      (v - 1) < std::numeric_limits<double>::epsilon());
+            };
 
-        auto res = Tools::minDistanceFromSegments(&t_e0(0), &t_e1(0), &t_f0(0),
-                                                  &t_f1(0), &te, &tf);
-
-        if (res != Tools::NO_SOLUTION) {
-
-          auto check = [](auto v) {
-            return (v > -std::numeric_limits<double>::epsilon() &&
-                    (v - 1) < std::numeric_limits<double>::epsilon());
-          };
-
-          if (check(te) && check(tf))
-            add_edge(te);
+            if (check(te) && check(tf)) {
+              add_edge(te);
+              return true;
+            }
+            
+          }
         }
       }
+
+      return false;
+    };
+
+    if (!trim_cross_edges()) {
+
+      const double dot = t_dist0(i) * t_dist1(i);
+      const double dot_direction0 = t_dist0(i) * t_edge_delta(i);
+      const double dot_direction1 = t_dist1(i) * t_edge_delta(i);
+
+      if (dot < tol_geometry * edge_length &&
+          dot_direction0 > -std::numeric_limits<double>::epsilon() &&
+          dot_direction1 < std::numeric_limits<double>::epsilon()) {
+
+        const double s0 = t_dist0(i) * t_edge_delta(i) / edge_length;
+        const double s1 = t_dist1(i) * t_edge_delta(i) / edge_length;
+        const double t_cut = s0 / (s0 - s1);
+
+        add_edge(t_cut);
+      }
     }
+
   }
 
   if (debug)
