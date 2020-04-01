@@ -1181,12 +1181,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     auto dist_map = get_distances(vertices_on_cut_edges);
 
     auto cmp = [&dist_map](const auto &a, const auto &b) {
-      const double da = dist_map[a.first];
-      const double db = dist_map[b.first];
-      if (da * db < 0)
-        return dist_map[a.first] < dist_map[b.first];
-      else
-        return std::abs(dist_map[a.first]) < std::abs(dist_map[b.first]);
+      return dist_map[a.first] < dist_map[b.first];
     };
 
     std::sort(vertices_on_cut_edges.begin(), vertices_on_cut_edges.end(), cmp);
@@ -1736,7 +1731,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
               add_edge(te);
               return true;
             }
-            
+
           }
         }
       }
