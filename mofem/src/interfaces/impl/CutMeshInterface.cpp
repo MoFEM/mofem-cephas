@@ -372,8 +372,8 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
 
   BitRefLevel trim_bit = get_back_bit_levels();
 
-  CHKERR trimOnly(trim_bit, th, tol_trim_close, fixed_edges,
-                  corner_nodes, update_meshsets, debug);
+  CHKERR trimOnly(trim_bit, th, tol_trim_close, fixed_edges, corner_nodes,
+                  update_meshsets, debug);
 
   PetscPrintf(PETSC_COMM_WORLD, "Min quality trim %3.2g\n",
               get_min_quality(trim_bit, th));
@@ -1730,7 +1730,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
               add_edge(te);
               return true;
             }
-
           }
         }
       }
@@ -1755,7 +1754,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
         add_edge(t_cut);
       }
     }
-
   }
 
   if (debug)
@@ -1888,7 +1886,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   auto intersect_self = [&](Range &a, const Range b) { a = intersect(a, b); };
 
   map<std::string, Range> range_maps;
-  
+
   // Edges on surface skin
   CHKERR skin.find_skin(0, cutNewSurfaces, false, range_maps["surface_skin"]);
   // Edges as trimmed
@@ -2500,9 +2498,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
     CoreInterface &mField;
     Tag tH;
-    const double tOL;
-    Toplogy(CoreInterface &m_field, Tag th, const double tol)
-        : mField(m_field), tH(th), tOL(tol) {}
+    Toplogy(CoreInterface &m_field, Tag th) : mField(m_field), tH(th) {}
 
     enum TYPE {
       FREE = 0,
@@ -2630,7 +2626,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(tets_skin_edges_verts);
         ents_nodes_and_edges.merge(tets_skin_edges);
         CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        0, false);
+                                        false);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
@@ -2643,7 +2639,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(tets_skin_edges_verts);
         ents_nodes_and_edges.merge(tets_skin_edges);
         CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        0, false);
+                                        false);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
@@ -2658,13 +2654,13 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(corner_nodes);
         ents_nodes_and_edges.merge(fixed_edges);
         CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        0, false);
+                                        false);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
       // remove edges self connected to surface
-      CHKERR removeSelfConectingEdges(surface_edges, edges_to_remove, 0, false);
+      CHKERR removeSelfConectingEdges(surface_edges, edges_to_remove, false);
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
 
@@ -2674,7 +2670,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(surface_skin);
         ents_nodes_and_edges.merge(fixed_edges_nodes);
         CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        0, false);
+                                        false);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
@@ -2685,7 +2681,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(surface_skin.subset_by_type(MBEDGE));
         ents_nodes_and_edges.merge(fixed_edges.subset_by_type(MBEDGE));
         CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        0, false);
+                                        false);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
@@ -2698,7 +2694,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
         ents_nodes_and_edges.merge(tets_skin_edges_verts);
         ents_nodes_and_edges.merge(tets_skin_edges);
         CHKERR removeSelfConectingEdges(ents_nodes_and_edges, edges_to_remove,
-                                        tOL, false);
+                                        false);
       }
       edges_to_merge = subtract(edges_to_merge, edges_to_remove);
       not_merged_edges.merge(edges_to_remove);
@@ -2709,7 +2705,6 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   private:
     MoFEMErrorCode removeSelfConectingEdges(const Range &ents,
                                             Range &edges_to_remove,
-                                            const bool length,
                                             bool debug) const {
       moab::Interface &moab(mField.get_moab());
       MoFEMFunctionBegin;
@@ -2737,37 +2732,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
           subtract(ents_nodes_edges, ents_nodes_edges_nodes_edges);
       ents_nodes_edges =
           subtract(ents_nodes_edges, ents.subset_by_type(MBEDGE));
-      if (length > 0) {
-        Range::iterator eit = ents_nodes_edges.begin();
-        for (; eit != ents_nodes_edges.end();) {
 
-          int num_nodes;
-          const EntityHandle *conn;
-          CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
-          double coords[6];
-          if (tH)
-            CHKERR moab.tag_get_data(tH, conn, num_nodes, coords);
-          else
-            CHKERR moab.get_coords(conn, num_nodes, coords);
-
-          auto get_edge_length = [coords]() {
-            FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_coords(
-                &coords[0], &coords[1], &coords[2]);
-            FTensor::Tensor1<double, 3> t_delta;
-            FTensor::Index<'i', 3> i;
-            t_delta(i) = t_coords(i);
-            ++t_coords;
-            t_delta(i) -= t_coords(i);
-            return sqrt(t_delta(i) * t_delta(i));
-          };
-
-          if (get_edge_length() < tOL) {
-            eit = ents_nodes_edges.erase(eit);
-          } else {
-            eit++;
-          }
-        }
-      }
       edges_to_remove.swap(ents_nodes_edges);
       if (debug) {
         CHKERR SaveData(moab)("edges_to_remove.vtk", edges_to_remove);
@@ -2777,12 +2742,11 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   };
 
   Range not_merged_edges;
-  const double tol = 1e-3;
-  CHKERR Toplogy(m_field, th, tol * aveLength)
+  CHKERR Toplogy(m_field, th)
       .removeBadEdges(surface, tets, fixed_edges, corner_nodes, edges_to_merge,
                       not_merged_edges);
   Toplogy::SetsMap sets_map;
-  CHKERR Toplogy(m_field, th, tol * aveLength)
+  CHKERR Toplogy(m_field, th)
       .classifyVerts(surface, tets, fixed_edges, corner_nodes, constrainSurface,
                      sets_map);
   if (debug) {
@@ -2795,8 +2759,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     }
   }
   Range proc_tets;
-  CHKERR Toplogy(m_field, th, tol * aveLength)
-      .getProcTets(tets, edges_to_merge, proc_tets);
+  CHKERR Toplogy(m_field, th).getProcTets(tets, edges_to_merge, proc_tets);
   out_tets = subtract(tets, proc_tets);
 
   if (bit_ptr) {
@@ -2938,7 +2901,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     CHKERR moab.get_adjacencies(proc_tets, 1, false, adj_edges,
                                 moab::Interface::UNION);
     edges_to_merge = intersect(edges_to_merge, adj_edges);
-    CHKERR Toplogy(m_field, th, tol * aveLength)
+    CHKERR Toplogy(m_field, th)
         .removeBadEdges(new_surf, proc_tets, fixed_edges, corner_nodes,
                         edges_to_merge, not_merged_edges);
   }
