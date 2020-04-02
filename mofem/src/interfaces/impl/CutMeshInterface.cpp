@@ -1888,29 +1888,40 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   auto intersect_self = [&](Range &a, const Range b) { a = intersect(a, b); };
 
   map<std::string, Range> range_maps;
+  
+  // Edges on surface skin
   CHKERR skin.find_skin(0, cutNewSurfaces, false, range_maps["surface_skin"]);
+  // Edges as trimmed
   intersect_self(range_maps["surface_skin"], trimEdges);
-
+  // Edges are on fixed edges
   range_maps["fixed_edges_on_surface_skin"] =
       intersect(range_maps["surface_skin"], fix_edges);
 
+  // Edges adjacent to fixed edges
   CHKERR moab.get_adjacencies(fixed_edges_verts, 1, false,
                               range_maps["fixed_edges_verts_edges"],
                               moab::Interface::UNION);
   intersect_self(range_maps["fixed_edges_verts_edges"], trimEdges);
+
   CHKERR moab.get_connectivity(
       range_maps["fixed_edges_verts_edges"],
       range_maps["fixed_edges_verts_edges_verts_on_the_skin"], false);
   intersect_self(range_maps["fixed_edges_verts_edges_verts_on_the_skin"],
                  tets_skin_verts);
 
-  // do not move nodes at the corners
+  // Do not move nodes at the corners
   trim_verts(corners, false);
   remove_verts(corners);
+
+  // Trim edges on the body skin move
   trim_edges(range_maps["fixed_edges_on_surface_skin"], true);
   remove_verts(range_maps["fixed_edges_on_surface_skin_verts"]);
+
+  // Trim edges nodes on the skin but edge not on the skin do not
   trim_verts(range_maps["fixed_edges_verts_edges_verts_on_the_skin"], false);
   remove_verts(range_maps["fixed_edges_verts_edges_verts_on_the_skin"]);
+
+  // Trim edges on the cut skin move
   trim_edges(range_maps["surface_skin"], true);
   trim_verts(tets_skin_verts, false);
   remove_verts(tets_skin_verts);
