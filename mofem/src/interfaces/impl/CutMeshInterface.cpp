@@ -1744,7 +1744,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
       const double dot_direction0 = t_dist0(i) * t_edge_delta(i);
       const double dot_direction1 = t_dist1(i) * t_edge_delta(i);
 
-      if (dot < tol_geometry * edge_length &&
+      if (dot < std::numeric_limits<double>::epsilon() &&
           dot_direction0 > -std::numeric_limits<double>::epsilon() &&
           dot_direction1 < std::numeric_limits<double>::epsilon()) {
 
@@ -1926,30 +1926,30 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     auto t_dist = FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
         &dits_vec[0], &dits_vec[1], &dits_vec[2]);
 
-    for (auto v : verts) {
+    // for (auto v : verts) {
 
-      if (trimNewVertices.find(v) == trimNewVertices.end()) {
+    //   if (trimNewVertices.find(v) == trimNewVertices.end()) {
 
-        auto get_tag_data = [&](auto th, auto conn) {
-          FTensor::Tensor1<double, 3> t;
-          CHKERR moab.tag_get_data(th, &conn, 1, &t(0));
-          return t;
-        };
+    //     auto get_tag_data = [&](auto th, auto conn) {
+    //       FTensor::Tensor1<double, 3> t;
+    //       CHKERR moab.tag_get_data(th, &conn, 1, &t(0));
+    //       return t;
+    //     };
 
-        auto t_dist = get_tag_data(th_dist_front_vec, v);
-        const double d = sqrt(t_dist(i) * t_dist(i));
-        if (d < geom_tol * max_edge_length) {
-          verticesOnTrimEdges[v].dIst = 0;
-          verticesOnTrimEdges[v].lEngth = 0;
-          verticesOnTrimEdges[v].unitRayDir.resize(3);
-          verticesOnTrimEdges[v].unitRayDir.clear();
-          verticesOnTrimEdges[v].rayPoint = get_point_coords(v);
-          trimNewVertices.insert(v);
-        }
-      }
+    //     auto t_dist = get_tag_data(th_dist_front_vec, v);
+    //     const double d = sqrt(t_dist(i) * t_dist(i));
+    //     if (d < geom_tol * max_edge_length) {
+    //       verticesOnTrimEdges[v].dIst = 0;
+    //       verticesOnTrimEdges[v].lEngth = 0;
+    //       verticesOnTrimEdges[v].unitRayDir.resize(3);
+    //       verticesOnTrimEdges[v].unitRayDir.clear();
+    //       verticesOnTrimEdges[v].rayPoint = get_point_coords(v);
+    //       trimNewVertices.insert(v);
+    //     }
+    //   }
 
-      ++t_dist;
-    }
+    //   ++t_dist;
+    // }
 
     MoFEMFunctionReturn(0);
   };
