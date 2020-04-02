@@ -1918,45 +1918,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   for (auto &m : verts_map.get<0>())
     add_trim_vert(m.v, m.e);
 
-  auto add_zero_dist_vertices = [&](const auto &&verts, const double geom_tol) {
-    MoFEMFunctionBegin;
-
-    std::vector<double> dits_vec(3 * verts.size());
-    CHKERR moab.tag_get_data(th_dist_front_vec, verts, &*dits_vec.begin());
-    auto t_dist = FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-        &dits_vec[0], &dits_vec[1], &dits_vec[2]);
-
-    // for (auto v : verts) {
-
-    //   if (trimNewVertices.find(v) == trimNewVertices.end()) {
-
-    //     auto get_tag_data = [&](auto th, auto conn) {
-    //       FTensor::Tensor1<double, 3> t;
-    //       CHKERR moab.tag_get_data(th, &conn, 1, &t(0));
-    //       return t;
-    //     };
-
-    //     auto t_dist = get_tag_data(th_dist_front_vec, v);
-    //     const double d = sqrt(t_dist(i) * t_dist(i));
-    //     if (d < geom_tol * max_edge_length) {
-    //       verticesOnTrimEdges[v].dIst = 0;
-    //       verticesOnTrimEdges[v].lEngth = 0;
-    //       verticesOnTrimEdges[v].unitRayDir.resize(3);
-    //       verticesOnTrimEdges[v].unitRayDir.clear();
-    //       verticesOnTrimEdges[v].rayPoint = get_point_coords(v);
-    //       trimNewVertices.insert(v);
-    //     }
-    //   }
-
-    //   ++t_dist;
-    // }
-
-    MoFEMFunctionReturn(0);
-  };
-
-  CHKERR add_zero_dist_vertices(subtract(cut_surface_verts, checked_verts),
-                                tol_geometry);
-
   for (auto m : verticesOnTrimEdges) {
     EntityHandle v = m.first;
     Range adj;
