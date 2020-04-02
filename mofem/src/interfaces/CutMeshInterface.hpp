@@ -174,7 +174,6 @@ struct CutMeshInterface : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode trimOnly(const BitRefLevel trim_bit, Tag th,
-                          const double tol_geometry,
                           const double tol_trim_close,
                           Range *fixed_edges = NULL, Range *corner_nodes = NULL,
                           const bool update_meshsets = false,
@@ -365,7 +364,6 @@ struct CutMeshInterface : public UnknownInterface {
    */
   MoFEMErrorCode findEdgesToTrim(Range *fixed_edges, Range *corner_nodes,
                                  Tag th = NULL,
-                                 const double tol_geometry = 1e-4,
                                  const double tol = 1e-4,
                                  const bool debug = false);
 

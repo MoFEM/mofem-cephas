@@ -271,17 +271,18 @@ CutMeshInterface::cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CutMeshInterface::trimOnly(
-    const BitRefLevel trim_bit, Tag th, const double tol_geometry,
-    const double tol_trim_close, Range *fixed_edges, Range *corner_nodes,
-    const bool update_meshsets, const bool debug) {
+MoFEMErrorCode CutMeshInterface::trimOnly(const BitRefLevel trim_bit, Tag th,
+                                          const double tol_trim_close,
+                                          Range *fixed_edges,
+                                          Range *corner_nodes,
+                                          const bool update_meshsets,
+                                          const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
 
   // trim mesh
-  CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_geometry,
-                         tol_trim_close, debug);
+  CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim_close, debug);
   CHKERR trimEdgesInTheMiddle(trim_bit, debug);
 
   CHKERR cOre.getInterface<BitRefManager>()->updateRange(constrainSurface,
@@ -371,7 +372,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
 
   BitRefLevel trim_bit = get_back_bit_levels();
 
-  CHKERR trimOnly(trim_bit, th, tol_geometry, tol_trim_close, fixed_edges,
+  CHKERR trimOnly(trim_bit, th, tol_trim_close, fixed_edges,
                   corner_nodes, update_meshsets, debug);
 
   PetscPrintf(PETSC_COMM_WORLD, "Min quality trim %3.2g\n",
@@ -1475,7 +1476,6 @@ MoFEMErrorCode CutMeshInterface::moveMidNodesOnTrimmedEdges(Tag th) {
 
 MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
                                                  Range *corner_nodes, Tag th,
-                                                 const double tol_geometry,
                                                  const double tol_trim_close,
                                                  const bool debug) {
   CoreInterface &m_field = cOre;
