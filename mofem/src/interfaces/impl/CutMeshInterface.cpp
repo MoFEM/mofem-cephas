@@ -1727,11 +1727,20 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
             };
 
             if (check(te) && check(tf)) {
+
+              FTensor::Tensor1<double, 3> t_delta;
+              t_delta(i) = (t_e0(i) + te * t_edge_delta(i)) -
+                           (t_f0(0) + tf * (t_f1(i) - t_f0(i)));
+              t_delta(i) /= edge_length;
+
+              if (t_delta(i) * t_delta(i) < tol_trim_close * tol_trim_close) {
               add_edge(te);
               return true;
             }
+
           }
         }
+      }
       }
 
       return false;
