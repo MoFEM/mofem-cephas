@@ -2088,45 +2088,46 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
       return fixed_edges_on_trim_surface_verts;
     };
 
-    // // get faces adjacent to barrier_vertices
-    // auto get_faces_adjace_to_barrier_vertices = [&]() {
-    //   Range barrier_vertices_faces;
-    //   CHKERR moab.get_adjacencies(barrier_vertices, 2, false,
-    //                               barrier_vertices_faces,
-    //                               moab::Interface::UNION);
-    //   barrier_vertices_faces =
-    //       intersect(barrier_vertices_faces, trimNewSurfaces);
-    //   return barrier_vertices_faces;
-    // };
+    // get faces adjacent to barrier_vertices
+    auto get_faces_adjace_to_barrier_vertices = [&]() {
+      Range barrier_vertices_faces;
+      CHKERR moab.get_adjacencies(barrier_vertices, 2, false,
+                                  barrier_vertices_faces,
+                                  moab::Interface::UNION);
+      barrier_vertices_faces =
+          intersect(barrier_vertices_faces, trimNewSurfaces);
+      return barrier_vertices_faces;
+    };
 
-    // // get vertices on fixed edges
-    // auto get_vertices_on_barrier_and_barrier = [&]() {
-    //   Range fixed_edges_vertices;
-    //   CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_vertices, false);
-    //   fixed_edges_vertices = intersect(barrier_vertices, fixed_edges_vertices);
-    // };
+    // get vertices on fixed edges
+    auto get_vertices_on_barrier_and_barrier = [&]() {
+      Range fixed_edges_vertices;
+      CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_vertices, false);
+      fixed_edges_vertices = intersect(barrier_vertices, fixed_edges_vertices);
+      return fixed_edges_vertices;
+    };
 
-    // auto fixed_edges_vertices =
-    //     subtract(get_vertices_on_barrier_and_barrier(),
-    //              get_all_vertices_on_fixed_edge_and_cut_surface());
-    // if (corner_nodes)
-    //   fixed_edges_vertices.merge(intersect(barrier_vertices, *corner_nodes));
+    auto fixed_edges_vertices =
+        subtract(get_vertices_on_barrier_and_barrier(),
+                 get_all_vertices_on_fixed_edge_and_cut_surface());
+    if (corner_nodes)
+      fixed_edges_vertices.merge(intersect(barrier_vertices, *corner_nodes));
 
-    // // get faces adjacent to vertices on fixed edges
-    // Range fixed_edges_faces;
-    // CHKERR moab.get_adjacencies(fixed_edges_vertices, 2, false,
-    //                             fixed_edges_faces, moab::Interface::UNION);
-    // fixed_edges_faces = intersect(fixed_edges_faces, barrier_vertices_faces);
-    // cerr << fixed_edges_faces << endl;
-    // if (debug && !fixed_edges_faces.empty())
-    //   CHKERR SaveData(m_field.get_moab())("fixed_edges_faces.vtk",
-    //                                       fixed_edges_faces);
+    // get faces adjacent to vertices on fixed edges
+    Range fixed_edges_faces;
+    CHKERR moab.get_adjacencies(fixed_edges_vertices, 2, false,
+                                fixed_edges_faces, moab::Interface::UNION);
+    fixed_edges_faces =
+        intersect(fixed_edges_faces, get_faces_adjace_to_barrier_vertices());
+    if (debug && !fixed_edges_faces.empty())
+      CHKERR SaveData(m_field.get_moab())("fixed_edges_faces.vtk",
+                                          fixed_edges_faces);
 
-    // // get nodes on faces
-    // Range fixed_edges_faces_vertices;
-    // CHKERR moab.get_connectivity(fixed_edges_faces, fixed_edges_faces_vertices,
-    //                              false);
-    // barrier_vertices.merge(fixed_edges_faces_vertices);
+    // get nodes on faces
+    Range fixed_edges_faces_vertices;
+    CHKERR moab.get_connectivity(fixed_edges_faces, fixed_edges_faces_vertices,
+                                 false);
+    barrier_vertices.merge(fixed_edges_faces_vertices);
   }
 
   auto remove_faces_on_skin = [&]() {
