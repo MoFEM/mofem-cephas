@@ -390,7 +390,7 @@ struct CutMeshInterface : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode trimSurface(Range *fixed_edge, Range *corner_nodes,
-                             const bool debug = false);
+                             Tag th = NULL, const bool debug = false);
 
   /**
    * \brief Remove pathological elements on surface internal front
