@@ -2100,7 +2100,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
     };
 
     // get vertices on fixed edges
-    auto get_vertices_on_barrier_and_barrier = [&]() {
+    auto get_vertices_on_fixed_edges_and_barrier = [&]() {
       Range fixed_edges_vertices;
       CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_vertices, false);
       fixed_edges_vertices = intersect(barrier_vertices, fixed_edges_vertices);
@@ -2108,7 +2108,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
     };
 
     auto fixed_edges_vertices =
-        subtract(get_vertices_on_barrier_and_barrier(),
+        subtract(get_vertices_on_fixed_edges_and_barrier(),
                  get_all_vertices_on_fixed_edge_and_cut_surface());
     if (corner_nodes)
       fixed_edges_vertices.merge(intersect(barrier_vertices, *corner_nodes));
