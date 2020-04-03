@@ -119,7 +119,8 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   if (mesh_bit_level.any())
     triangles = intersect(triangles, mesh_level_ents3d_tris);
   if (triangles.empty())
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Northing to split");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Range of triangles set to split is emtpy. Nothing to split.");
   if (verb >= VERBOSE)
     PetscPrintf(m_field.get_comm(), "Nb. of triangles in set %u\n",
                 triangles.size());
