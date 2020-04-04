@@ -35,7 +35,6 @@ CutMeshInterface::CutMeshInterface(const Core &core)
   lineSearchSteps = 10;
   nbMaxMergingCycles = 200;
   projectEntitiesQualityTrashold = 0.5;
-  trimFixedEdges = true;
 }
 
 MoFEMErrorCode CutMeshInterface::clearMap() {
@@ -303,7 +302,7 @@ MoFEMErrorCode CutMeshInterface::trimOnly(const BitRefLevel trim_bit, Tag th,
   CHKERR moveMidNodesOnTrimmedEdges(th);
 
   // remove faces
-  CHKERR trimSurface(fixed_edges, corner_nodes, th, debug);
+  CHKERR trimSurface(fixed_edges, corner_nodes, tol_trim_close, th, debug);
 
   if (debug) {
     CHKERR saveTrimEdges();
@@ -2028,115 +2027,101 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
 }
 
 MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
-                                             Range *corner_nodes, Tag th,
+                                             Range *corner_nodes,
+                                             const double tol, Tag th,
                                              const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
+  Skinner skin(&moab);
+
+  auto get_adj = [&moab](const Range r, const int dim) {
+    Range a;
+    if (dim)
+      CHKERR moab.get_adjacencies(r, dim, false, a, moab::Interface::UNION);
+    else
+      CHKERR moab.get_connectivity(r, a, true);
+    return a;
+  };
+
+  auto get_skin = [&skin](const auto r) {
+    Range s;
+    CHKERR skin.find_skin(0, r, false, s);
+    return s;
+  };
+
+  auto get_front_dist = [&](const auto v, auto th) {
+    VectorDouble3 dist_vec(3);
+    CHKERR moab.tag_get_data(th, &v, 1, &dist_vec[0]);
+    return norm_2(dist_vec);
+  };
+
   MoFEMFunctionBegin;
 
-  CHKERR buildTree();
+  Tag th_dist_front_vec;
+  CHKERR moab.tag_get_handle("DIST_FRONT_VECTOR", th_dist_front_vec);
 
-  Skinner skin(&moab);
-  Range trim_tets_skin;
-  CHKERR skin.find_skin(0, trimNewVolumes, false, trim_tets_skin);
-  Range trim_tets_skin_edges;
-  CHKERR moab.get_adjacencies(trim_tets_skin, 1, false, trim_tets_skin_edges,
-                              moab::Interface::UNION);
-
+  auto trim_tets_skin = get_skin(trimNewVolumes);
+  auto trim_tets_skin_edges = get_adj(trim_tets_skin, 1);
 
   Range barrier_vertices(trimNewVertices);
-  if (corner_nodes)
-    barrier_vertices.merge(*corner_nodes);
-
-  // auto add_close_surface_barrier = [&]() {
-
-  //   Range trim_surface_nodes;
-  //   CHKERR moab.get_connectivity(trimNewSurfaces, trim_surface_nodes, false);
-  //   std::vector<double> coords(3 * trim_surface_nodes.size());
-  //   if (tH)
-  //     CHKERR moab.tag_get_data(th, trim_surface_nodes, &*coords.begin());
-  //   else
-  //     CHKERR moab.get_coords(n, num_nodes);
-
-  //   auto coords_ptr = coords.begin();
-
-  //   for(auto n : trim_surface_nodes) {
-
-  //     VectorDouble3 point_out(3);
-  //     EntityHandle facets_out;
-  //     CHKERR treeSurfPtr->closest_to_location(coords_ptr, rootSetSurf,
-  //                                             &point_out[0], facets_out);
-
-  //     coords_ptr += 3;
-  //   }
-
-
-  // };
-
-  if (fixed_edges && trimFixedEdges) {
-
-    // get all vertices on fixed edges and cut surface
-    auto get_all_vertices_on_fixed_edge_and_cut_surface = [&]() {
-      Range trim_surface_edges;
-      CHKERR moab.get_adjacencies(trimNewSurfaces, 1, false, trim_surface_edges,
-                                  moab::Interface::UNION);
-      Range fixed_edges_on_trim_surface;
-      fixed_edges_on_trim_surface = intersect(trim_surface_edges, *fixed_edges);
-      Range fixed_edges_on_trim_surface_verts;
-      CHKERR moab.get_connectivity(fixed_edges_on_trim_surface,
-                                   fixed_edges_on_trim_surface_verts, false);
-      return fixed_edges_on_trim_surface_verts;
-    };
-
-    // get faces adjacent to barrier_vertices
-    auto get_faces_adjace_to_barrier_vertices = [&]() {
-      Range barrier_vertices_faces;
-      CHKERR moab.get_adjacencies(barrier_vertices, 2, false,
-                                  barrier_vertices_faces,
-                                  moab::Interface::UNION);
-      barrier_vertices_faces =
-          intersect(barrier_vertices_faces, trimNewSurfaces);
-      return barrier_vertices_faces;
-    };
-
-    // get vertices on fixed edges
-    auto get_vertices_on_fixed_edges_and_barrier = [&]() {
-      Range fixed_edges_vertices;
-      CHKERR moab.get_connectivity(*fixed_edges, fixed_edges_vertices, false);
-      fixed_edges_vertices = intersect(barrier_vertices, fixed_edges_vertices);
-      return fixed_edges_vertices;
-    };
-
-    auto fixed_edges_vertices =
-        subtract(get_vertices_on_fixed_edges_and_barrier(),
-                 get_all_vertices_on_fixed_edge_and_cut_surface());
-    if (corner_nodes)
-      fixed_edges_vertices.merge(intersect(barrier_vertices, *corner_nodes));
-
-    // get faces adjacent to vertices on fixed edges
-    Range fixed_edges_faces;
-    CHKERR moab.get_adjacencies(fixed_edges_vertices, 2, false,
-                                fixed_edges_faces, moab::Interface::UNION);
-    fixed_edges_faces =
-        intersect(fixed_edges_faces, get_faces_adjace_to_barrier_vertices());
-    if (debug && !fixed_edges_faces.empty())
-      CHKERR SaveData(m_field.get_moab())("fixed_edges_faces.vtk",
-                                          fixed_edges_faces);
-
-    // get nodes on faces
-    Range fixed_edges_faces_vertices;
-    CHKERR moab.get_connectivity(fixed_edges_faces, fixed_edges_faces_vertices,
-                                 false);
-    barrier_vertices.merge(fixed_edges_faces_vertices);
+  if (corner_nodes) {
+    // Add nodes which re adjacent to corner nodes
+    barrier_vertices.merge(
+        get_adj(
+            intersect(get_adj(intersect(*corner_nodes, barrier_vertices), 2),
+                      trimNewSurfaces), 0));
   }
+
+  auto add_close_surface_barrier = [&]() {
+    MoFEMFunctionBegin;
+
+    CHKERR buildTree();
+
+    auto trim_surface_nodes = get_adj(trimNewSurfaces, 0);
+    trim_surface_nodes = subtract(trim_surface_nodes, barrier_vertices);
+
+    std::vector<double> coords(3 * trim_surface_nodes.size());
+    if (th)
+      CHKERR moab.tag_get_data(th, trim_surface_nodes, &*coords.begin());
+    else
+      CHKERR moab.get_coords(trim_surface_nodes, &*coords.begin());
+
+    auto coords_ptr = &*coords.begin();
+
+    std::vector<EntityHandle> add_nodes;
+    add_nodes.reserve(trim_surface_nodes.size());
+
+    for (auto n : trim_surface_nodes) {
+
+      VectorDouble3 point_out(3);
+
+      EntityHandle facets_out;
+      CHKERR treeSurfPtr->closest_to_location(coords_ptr, rootSetSurf,
+                                              &point_out[0], facets_out);
+
+      VectorDouble3 delta = point_out - getVectorAdaptor(coords_ptr, 3);
+      VectorDouble3 normal(3);
+      CHKERR m_field.getInterface<Tools>()->getTriNormal(facets_out,
+                                                         &normal[0]);
+      delta -= inner_prod(normal, delta) * normal;
+
+      double dist = norm_2(delta);
+      if (dist < tol * get_front_dist(n, th_dist_front_vec))
+        add_nodes.emplace_back(n);
+
+      coords_ptr += 3;
+    }
+
+    barrier_vertices.insert_list(add_nodes.begin(), add_nodes.end());
+
+    MoFEMFunctionReturn(0);
+  };
 
   auto remove_faces_on_skin = [&]() {
     MoFEMFunctionBegin;
     Range skin_faces = intersect(trimNewSurfaces, trim_tets_skin);
     if (!skin_faces.empty()) {
-      Range add_to_barrier;
-      CHKERR moab.get_connectivity(skin_faces, add_to_barrier, false);
-      barrier_vertices.merge(add_to_barrier);
+      barrier_vertices.merge(get_adj(skin_faces, 0));
       for (auto f : skin_faces)
         trimNewSurfaces.erase(f);
     }
@@ -2163,10 +2148,11 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
   };
 
   CHKERR remove_faces_on_skin();
+  CHKERR add_close_surface_barrier();
+  
 
-  if (debug && !barrier_vertices.empty())
-    CHKERR SaveData(m_field.get_moab())("barrier_vertices.vtk",
-                                        barrier_vertices);
+  // if (debug && !barrier_vertices.empty())
+  CHKERR SaveData(m_field.get_moab())("barrier_vertices.vtk", barrier_vertices);
 
   int nn = 0;
   Range out_edges;

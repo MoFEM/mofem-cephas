@@ -390,7 +390,8 @@ struct CutMeshInterface : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode trimSurface(Range *fixed_edge, Range *corner_nodes,
-                             Tag th = NULL, const bool debug = false);
+                             const double tol = 1e-4, Tag th = NULL,
+                             const bool debug = false);
 
   /**
    * \brief Remove pathological elements on surface internal front
@@ -498,8 +499,6 @@ struct CutMeshInterface : public UnknownInterface {
   inline const Range &getCutSurfaceVolumes() const { return cutSurfaceVolumes; }
   inline const Range &getCutFrontVolumes() const { return cutFrontVolumes; }
 
-  inline void setTrimFixedEdges(const bool b) { trimFixedEdges = b; };
-
   MoFEMErrorCode saveCutEdges(const std::string prefix = "");
 
   MoFEMErrorCode saveTrimEdges();
@@ -553,8 +552,6 @@ private:
   Range fRont;
   Range sUrface;
   Range vOlume;
-
-  bool trimFixedEdges;
 
   boost::shared_ptr<OrientedBoxTreeTool> treeSurfPtr;
   EntityHandle rootSetSurf;
