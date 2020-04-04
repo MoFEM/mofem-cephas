@@ -1708,8 +1708,14 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
     };
 
     auto trim_cross_edges = [&]() {
-      if (std::min(t_dist0(i) * t_dist0(i), t_dist0(i) * t_dist0(i)) <
+      if (std::min(t_dist0(i) * t_dist0(i), t_dist1(i) * t_dist1(i)) <
           edge_length2) {
+
+        auto make_pair = [&](const double d, const double te) {
+          return std::make_pair(d, te);
+        };
+
+        auto min_pair = make_pair(-1, -1);
 
         for (auto f : surface_skin) {
 
@@ -1736,18 +1742,25 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
               FTensor::Tensor1<double, 3> t_delta, t_cross;
               t_delta(i) = (t_e0(i) + te * t_edge_delta(i)) -
                            (t_f0(0) + tf * (t_f1(i) - t_f0(i)));
-              t_cross(i) =
-                  levi_civita(i, j, k) * t_edge_delta(j) * (t_f1(k) - t_f0(k));
-              t_delta(i) -= (t_delta(j) * t_cross(j)) * t_cross(i);
+
               t_delta(i) /= edge_length;
 
-              if (t_delta(i) * t_delta(i) < tol_trim_close * tol_trim_close) {
-                add_edge(te);
-                return true;
+              const double dot = t_delta(i) * t_delta(i);
+
+              if (min_pair.first < 0 || min_pair.first > dot) {
+
+                if (dot < tol_trim_close * tol_trim_close) 
+                  min_pair = make_pair(dot, te);
+                
               }
 
             }
           }
+        }
+
+        if (min_pair.first > -std::numeric_limits<double>::epsilon()) {
+          add_edge(min_pair.second);
+          return true;
         }
       }
 
@@ -2049,16 +2062,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
     return s;
   };
 
-  auto get_front_dist = [&](const auto v, auto th) {
-    VectorDouble3 dist_vec(3);
-    CHKERR moab.tag_get_data(th, &v, 1, &dist_vec[0]);
-    return norm_2(dist_vec);
-  };
-
   MoFEMFunctionBegin;
-
-  Tag th_dist_front_vec;
-  CHKERR moab.tag_get_handle("DIST_FRONT_VECTOR", th_dist_front_vec);
 
   auto trim_tets_skin = get_skin(trimNewVolumes);
   auto trim_tets_skin_edges = get_adj(trim_tets_skin, 1);
@@ -2103,10 +2107,12 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
       VectorDouble3 normal(3);
       CHKERR m_field.getInterface<Tools>()->getTriNormal(facets_out,
                                                          &normal[0]);
+
+      normal /= norm_2(normal);
       delta -= inner_prod(normal, delta) * normal;
 
       double dist = norm_2(delta);
-      if (dist < tol * get_front_dist(n, th_dist_front_vec))
+      if (dist < tol )
         add_nodes.emplace_back(n);
 
       coords_ptr += 3;
@@ -2148,7 +2154,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
   };
 
   CHKERR remove_faces_on_skin();
-  CHKERR add_close_surface_barrier();
+  // CHKERR add_close_surface_barrier();
   
 
   // if (debug && !barrier_vertices.empty())
