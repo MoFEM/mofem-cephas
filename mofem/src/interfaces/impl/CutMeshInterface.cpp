@@ -2066,6 +2066,10 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
 
   auto trim_tets_skin = get_skin(trimNewVolumes);
   auto trim_tets_skin_edges = get_adj(trim_tets_skin, 1);
+  auto contarain_edges =
+      intersect(get_adj(trimNewSurfaces, 1), get_adj(constrainSurface, 1));
+  if(fixed_edges)
+    contarain_edges.merge(*fixed_edges);
 
   Range barrier_vertices(trimNewVertices);
   if (corner_nodes) {
@@ -2076,19 +2080,28 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
                       trimNewSurfaces), 0));
   }
 
-  auto add_close_surface_barrier = [&]() {
+  /*auto add_close_surface_barrier = [&]() {
     MoFEMFunctionBegin;
 
     CHKERR buildTree();
 
     auto trim_surface_nodes = get_adj(trimNewSurfaces, 0);
+    auto trim_skin = intersect(get_skin(trimNewSurfaces), trim_tets_skin_edges);
+
+    trim_skin.merge(contarain_edges);
+    trim_skin.merge(fRont);
+
+    VectorDouble coords(3 * trim_surface_nodes.size());
+    CHKERR moab.get_coords(trim_surface_nodes, &*coords.begin());
     trim_surface_nodes = subtract(trim_surface_nodes, barrier_vertices);
 
-    std::vector<double> coords(3 * trim_surface_nodes.size());
-    if (th)
-      CHKERR moab.tag_get_data(th, trim_surface_nodes, &*coords.begin());
-    else
-      CHKERR moab.get_coords(trim_surface_nodes, &*coords.begin());
+    std::vector<double> min_distances;
+    CHKERR cOre.getInterface<Tools>()->findMinDistanceFromTheEdges(
+        &*coords.begin(), trim_surface_nodes.size(), trim_skin,
+        &*min_distances.begin());
+
+    auto trim_surface_nodes = get_adj(trimNewSurfaces, 0);
+    trim_surface_nodes = subtract(trim_surface_nodes, barrier_vertices);
 
     auto coords_ptr = &*coords.begin();
 
@@ -2121,7 +2134,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
     barrier_vertices.insert_list(add_nodes.begin(), add_nodes.end());
 
     MoFEMFunctionReturn(0);
-  };
+  };*/
 
   auto remove_faces_on_skin = [&]() {
     MoFEMFunctionBegin;
@@ -2148,14 +2161,14 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
     Range free_edges;
     CHKERR moab.get_adjacencies(trim_surf_skin_verts, 1, false, free_edges,
                                 moab::Interface::UNION);
-    free_edges = intersect(free_edges, trim_surf_skin);
+    free_edges =
+        subtract(intersect(free_edges, trim_surf_skin), contarain_edges);
 
     return free_edges;
   };
 
   CHKERR remove_faces_on_skin();
   // CHKERR add_close_surface_barrier();
-  
 
   // if (debug && !barrier_vertices.empty())
   CHKERR SaveData(m_field.get_moab())("barrier_vertices.vtk", barrier_vertices);
