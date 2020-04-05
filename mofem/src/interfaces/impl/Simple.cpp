@@ -220,7 +220,10 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
 
   // This is a case of distributed mesh and algebra. In that case each processor
   // keep only part of the problem.
-  CHKERR m_field.get_moab().load_file(meshFileName, 0, options.c_str());
+  if (m_field.get_comm_size() > 1)
+    CHKERR m_field.get_moab().load_file(meshFileName, 0, options.c_str());
+  else
+    CHKERR m_field.get_moab().load_file(meshFileName, 0, "");
   CHKERR m_field.rebuild_database();
   // determine problem dimension
   if (dIm == -1) {
