@@ -1749,11 +1749,9 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
 
               if (min_pair.first < 0 || min_pair.first > dot) {
 
-                if (dot < tol_trim_close * tol_trim_close) 
+                if (dot < tol_trim_close * tol_trim_close)
                   min_pair = make_pair(dot, te);
-                
               }
-
             }
           }
         }
@@ -2066,75 +2064,107 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
 
   auto trim_tets_skin = get_skin(trimNewVolumes);
   auto trim_tets_skin_edges = get_adj(trim_tets_skin, 1);
+  auto trim_surface_edges = get_adj(trimNewSurfaces, 1);
+
   auto contarain_edges =
-      intersect(get_adj(trimNewSurfaces, 1), get_adj(constrainSurface, 1));
-  if(fixed_edges)
-    contarain_edges.merge(*fixed_edges);
+      intersect(trim_surface_edges, get_adj(constrainSurface, 1));
+  if (fixed_edges)
+    contarain_edges.merge(
+        intersect(fixed_edges->subset_by_type(MBEDGE), trim_surface_edges));
 
   Range barrier_vertices(trimNewVertices);
   if (corner_nodes) {
     // Add nodes which re adjacent to corner nodes
-    barrier_vertices.merge(
-        get_adj(
-            intersect(get_adj(intersect(*corner_nodes, barrier_vertices), 2),
-                      trimNewSurfaces), 0));
+    barrier_vertices.merge(get_adj(
+        intersect(get_adj(intersect(*corner_nodes, barrier_vertices), 2),
+                  trimNewSurfaces),
+        0));
   }
 
-  /*auto add_close_surface_barrier = [&]() {
+  auto add_close_surface_barrier = [&]() {
     MoFEMFunctionBegin;
+
+    // Ten algorytm dedykuje destylarni Bowmore. Jeżeli coś pójdzie nie tak, coś
+    // pęknie inaczej niż trzeba, to pełną odpowiedzialność ponosi Beam Suntory
+    // UK Ltd.
 
     CHKERR buildTree();
 
-    auto trim_surface_nodes = get_adj(trimNewSurfaces, 0);
-    auto trim_skin = intersect(get_skin(trimNewSurfaces), trim_tets_skin_edges);
+    auto test_edges =
+        subtract(trim_surface_edges, get_adj(constrainSurface, 1));
+    if (fixed_edges)
+      test_edges = subtract(test_edges, *fixed_edges);
+    auto trim_surface_nodes = get_adj(trim_surface_edges, 0);
+    trim_surface_nodes = subtract(trim_surface_nodes, barrier_vertices);
 
+    auto trim_skin = intersect(get_skin(trimNewSurfaces), trim_tets_skin_edges);
     trim_skin.merge(contarain_edges);
-    trim_skin.merge(fRont);
+    if (fRont.empty())
+      trim_skin.merge(get_skin(sUrface));
+    else
+      trim_skin.merge(fRont);
+
+    CHKERR SaveData(m_field.get_moab())("trim_skin.vtk", trim_skin);
 
     VectorDouble coords(3 * trim_surface_nodes.size());
-    CHKERR moab.get_coords(trim_surface_nodes, &*coords.begin());
+    if (th)
+      CHKERR moab.tag_get_data(th, trim_surface_nodes, &*coords.begin());
+    else
+      CHKERR moab.get_coords(trim_surface_nodes, &*coords.begin());
+
     trim_surface_nodes = subtract(trim_surface_nodes, barrier_vertices);
 
-    std::vector<double> min_distances;
-    CHKERR cOre.getInterface<Tools>()->findMinDistanceFromTheEdges(
-        &*coords.begin(), trim_surface_nodes.size(), trim_skin,
-        &*min_distances.begin());
+    if (!trim_skin.empty()) {
 
-    auto trim_surface_nodes = get_adj(trimNewSurfaces, 0);
-    trim_surface_nodes = subtract(trim_surface_nodes, barrier_vertices);
+      std::vector<double> min_distances(trim_surface_nodes.size(), -1);
+      CHKERR cOre.getInterface<Tools>()->findMinDistanceFromTheEdges(
+          &*coords.begin(), trim_surface_nodes.size(), trim_skin,
+          &*min_distances.begin());
 
-    auto coords_ptr = &*coords.begin();
+      auto coords_ptr = &*coords.begin();
+      auto min_dist = &*min_distances.begin();
 
-    std::vector<EntityHandle> add_nodes;
-    add_nodes.reserve(trim_surface_nodes.size());
+      std::vector<EntityHandle> add_nodes;
+      add_nodes.reserve(trim_surface_nodes.size());
 
-    for (auto n : trim_surface_nodes) {
+      for (auto n : trim_surface_nodes) {
 
-      VectorDouble3 point_out(3);
+        cerr << *min_dist << endl;
+        cerr << *coords_ptr << endl;
 
-      EntityHandle facets_out;
-      CHKERR treeSurfPtr->closest_to_location(coords_ptr, rootSetSurf,
-                                              &point_out[0], facets_out);
+        if ((*min_dist) < std::numeric_limits<double>::epsilon()) {
+          add_nodes.emplace_back(n);
 
-      VectorDouble3 delta = point_out - getVectorAdaptor(coords_ptr, 3);
-      VectorDouble3 normal(3);
-      CHKERR m_field.getInterface<Tools>()->getTriNormal(facets_out,
-                                                         &normal[0]);
+        } else {
 
-      normal /= norm_2(normal);
-      delta -= inner_prod(normal, delta) * normal;
+          VectorDouble3 point_out(3);
 
-      double dist = norm_2(delta);
-      if (dist < tol )
-        add_nodes.emplace_back(n);
+          EntityHandle facets_out;
+          CHKERR treeSurfPtr->closest_to_location(coords_ptr, rootSetSurf,
+                                                  &point_out[0], facets_out);
 
-      coords_ptr += 3;
+          VectorDouble3 delta = point_out - getVectorAdaptor(coords_ptr, 3);
+          VectorDouble3 normal(3);
+          CHKERR m_field.getInterface<Tools>()->getTriNormal(facets_out,
+                                                             &normal[0]);
+
+          normal /= norm_2(normal);
+          delta -= inner_prod(normal, delta) * normal;
+
+          double dist = norm_2(delta);
+          if (dist < tol * (*min_dist))
+            add_nodes.emplace_back(n);
+        }
+
+        coords_ptr += 3;
+        min_dist += 1;
+      }
+
+      barrier_vertices.insert_list(add_nodes.begin(), add_nodes.end());
     }
 
-    barrier_vertices.insert_list(add_nodes.begin(), add_nodes.end());
-
     MoFEMFunctionReturn(0);
-  };*/
+  };
 
   auto remove_faces_on_skin = [&]() {
     MoFEMFunctionBegin;
@@ -2168,7 +2198,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
   };
 
   CHKERR remove_faces_on_skin();
-  // CHKERR add_close_surface_barrier();
+  CHKERR add_close_surface_barrier();
 
   // if (debug && !barrier_vertices.empty())
   CHKERR SaveData(m_field.get_moab())("barrier_vertices.vtk", barrier_vertices);
