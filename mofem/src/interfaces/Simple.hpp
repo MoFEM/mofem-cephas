@@ -56,7 +56,12 @@ struct Simple : public UnknownInterface {
    */
   MoFEMErrorCode loadFile(const std::string options,
                           const std::string mesh_file_name);
-
+  /**
+   * \brief Load mesh file with parallel options if number of cores > 1
+   * @param  mesh_file_name file name if not set default or set by command line
+   * is used.
+   * @return            error code
+   */
   MoFEMErrorCode loadFile(const std::string mesh_file_name = "");
   /**
    * \brief Add field on domain
