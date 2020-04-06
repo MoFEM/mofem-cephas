@@ -252,6 +252,19 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode Simple::loadFile(const std::string mesh_file_name) {
+  MoFEMFunctionBegin;
+  Interface &m_field = cOre;
+  if (m_field.get_comm_size() == 1)
+    CHKERR loadFile("", meshFileName);
+  else
+    CHKERR loadFile("PARALLEL=READ_PART;"
+                    "PARALLEL_RESOLVE_SHARED_ENTS;"
+                    "PARTITION=PARALLEL_PARTITION;",
+                    meshFileName);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode
 Simple::addDomainField(const std::string &name, const FieldSpace space,
                        const FieldApproximationBase base,
