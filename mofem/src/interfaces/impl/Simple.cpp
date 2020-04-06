@@ -220,10 +220,7 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
 
   // This is a case of distributed mesh and algebra. In that case each processor
   // keep only part of the problem.
-  if (m_field.get_comm_size() > 1)
-    CHKERR m_field.get_moab().load_file(meshFileName, 0, options.c_str());
-  else
-    CHKERR m_field.get_moab().load_file(meshFileName, 0, "");
+  CHKERR m_field.get_moab().load_file(meshFileName, 0, options.c_str());
   CHKERR m_field.rebuild_database();
   // determine problem dimension
   if (dIm == -1) {
@@ -252,6 +249,19 @@ MoFEMErrorCode Simple::loadFile(const std::string options,
   if (pcomm == NULL)
     pcomm = new ParallelComm(&m_field.get_moab(), m_field.get_comm());
   PetscLogEventEnd(MOFEM_EVENT_SimpleLoadMesh, 0, 0, 0, 0);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Simple::loadFile(const std::string mesh_file_name) {
+  MoFEMFunctionBegin;
+  Interface &m_field = cOre;
+  if (m_field.get_comm_size() == 1)
+    CHKERR loadFile("", meshFileName);
+  else
+    CHKERR loadFile("PARALLEL=READ_PART;"
+                    "PARALLEL_RESOLVE_SHARED_ENTS;"
+                    "PARTITION=PARALLEL_PARTITION;",
+                    meshFileName);
   MoFEMFunctionReturn(0);
 }
 

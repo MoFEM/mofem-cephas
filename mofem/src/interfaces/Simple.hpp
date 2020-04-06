@@ -54,12 +54,10 @@ struct Simple : public UnknownInterface {
    * is used.
    * @return            error code
    */
-  MoFEMErrorCode
-  loadFile(const std::string options = "PARALLEL=READ_PART;"
-                                       "PARALLEL_RESOLVE_SHARED_ENTS;"
-                                       "PARTITION=PARALLEL_PARTITION;",
-           const std::string mesh_file_name = "");
+  MoFEMErrorCode loadFile(const std::string options,
+                          const std::string mesh_file_name);
 
+  MoFEMErrorCode loadFile(const std::string mesh_file_name = "");
   /**
    * \brief Add field on domain
    * @param  name              name of the filed
