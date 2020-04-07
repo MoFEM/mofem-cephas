@@ -1,4 +1,4 @@
-/** \file VolumeElementForcesAndSourcesCoreOnVolumeSide.hpp
+/** \file VolumeElementForcesAndSourcesCoreOnContactPrismSide.hpp
   \brief Volume element.
 
   Those element are inherited by user to implement specific implementation of
@@ -32,7 +32,7 @@ namespace MoFEM {
  * extended to other volume elements) \ingroup
  * mofem_forces_and_sources_volume_element
  */
-struct VolumeElementForcesAndSourcesCoreOnVolumeSideBase
+struct VolumeElementForcesAndSourcesCoreOnContactPrismSideBase
     : public VolumeElementForcesAndSourcesCore {
 
   using VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore;
@@ -88,7 +88,7 @@ struct VolumeElementForcesAndSourcesCoreOnVolumeSideBase
 
     using VolumeElementForcesAndSourcesCore::UserDataOperator::UserDataOperator;
 
-    inline VolumeElementForcesAndSourcesCoreOnVolumeSideBase *
+    inline VolumeElementForcesAndSourcesCoreOnContactPrismSideBase *
     getVolumeFE() const;
 
     inline ContactPrismElementForcesAndSourcesCore *getContactFE() const;
@@ -143,14 +143,14 @@ private:
  * @tparam SWITCH
  */
 template <int SWITCH>
-struct VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch
-    : public VolumeElementForcesAndSourcesCoreOnVolumeSideBase {
+struct VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch
+    : public VolumeElementForcesAndSourcesCoreOnContactPrismSideBase {
 
-  using VolumeElementForcesAndSourcesCoreOnVolumeSideBase::
-      VolumeElementForcesAndSourcesCoreOnVolumeSideBase;
+  using VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::
+      VolumeElementForcesAndSourcesCoreOnContactPrismSideBase;
 
   using UserDataOperator =
-      VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator;
+      VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator;
 
   MoFEMErrorCode operator()();
 };
@@ -160,68 +160,68 @@ struct VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch
  mofem_forces_and_sources_volume_element
 
  */
-using VolumeElementForcesAndSourcesCoreOnVolumeSide =
-    VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch<0>;
+using VolumeElementForcesAndSourcesCoreOnContactPrismSide =
+    VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<0>;
 
 const std::array<int, 3> &
-VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getFaceConnMap() const {
+VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getFaceConnMap() const {
   return faceConnMap;
 }
 
 const std::array<int, 4> &
-VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getTetConnMap() const {
+VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getTetConnMap() const {
   return tetConnMap;
 }
 
-int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getOppositeNode() const {
+int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getOppositeNode() const {
   return oppositeNode;
 }
 
-int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getFaceSense() const {
+int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getFaceSense() const {
   return faceSense;
 }
 
-int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getFaceSideNumber()
+int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getFaceSideNumber()
     const {
   return faceSideNumber;
 }
 
-VolumeElementForcesAndSourcesCoreOnVolumeSideBase *
-VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
+VolumeElementForcesAndSourcesCoreOnContactPrismSideBase *
+VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator::
     getVolumeFE() const {
-  return static_cast<VolumeElementForcesAndSourcesCoreOnVolumeSideBase *>(
+  return static_cast<VolumeElementForcesAndSourcesCoreOnContactPrismSideBase *>(
       ptrFE);
 }
 
 ContactPrismElementForcesAndSourcesCore *
-VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
+VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator::
     getContactFE() const {
   return static_cast<ContactPrismElementForcesAndSourcesCore *>(
       getVolumeFE()->sidePtrFE);
 }
 
-MatrixDouble &VolumeElementForcesAndSourcesCoreOnVolumeSideBase::
+MatrixDouble &VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::
     UserDataOperator::getMasterCoordsAtGaussPts() {
   return getContactFE()->getGaussPtsMasterFromEleSide();
 }
 
-MatrixDouble &VolumeElementForcesAndSourcesCoreOnVolumeSideBase::
+MatrixDouble &VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::
     UserDataOperator::getSlaveCoordsAtGaussPts() {
   return getContactFE()->getGaussPtsSlaveFromEleSide();
 }
 
-int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
+int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator::
     getFaceSense() const {
   return getVolumeFE()->faceSense;
 }
 
-int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::UserDataOperator::
+int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator::
     getFaceSideNumber() const {
   return getVolumeFE()->faceSideNumber;
 }
 
 template <int SWITCH>
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch<SWITCH>::
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<SWITCH>::
 operator()() {
   return OpSwitch<SWITCH>();
 }

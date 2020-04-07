@@ -1,4 +1,4 @@
-/** \file VolumeElementForcesAndSourcesCoreOnVolumeSide.cpp
+/** \file VolumeElementForcesAndSourcesCoreOnContactPrismSide.cpp
 
 \brief Implementation of volume element on side
 
@@ -20,12 +20,12 @@
 
 namespace MoFEM {
 
-int VolumeElementForcesAndSourcesCoreOnVolumeSideBase::getRule(int order) {
+int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::getRule(int order) {
   return -1;
 };
 
 MoFEMErrorCode
-VolumeElementForcesAndSourcesCoreOnVolumeSideBase::setGaussPts(int order) {
+VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::setGaussPts(int order) {
   MoFEMFunctionBegin;
 
   if (!sidePtrFE)

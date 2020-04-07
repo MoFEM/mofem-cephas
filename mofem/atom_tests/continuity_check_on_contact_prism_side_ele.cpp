@@ -278,13 +278,13 @@ int main(int argc, char *argv[]) {
     struct OnContactSideMaster
         : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
 
-      VolumeElementForcesAndSourcesCoreOnVolumeSide volSideFe;
-      struct OpVolSide : public VolumeElementForcesAndSourcesCoreOnVolumeSide::
+      VolumeElementForcesAndSourcesCoreOnContactPrismSide volSideFe;
+      struct OpVolSide : public VolumeElementForcesAndSourcesCoreOnContactPrismSide::
                              UserDataOperator {
 
         CommonData &elemData;
         OpVolSide(CommonData &elem_data)
-            : VolumeElementForcesAndSourcesCoreOnVolumeSide::UserDataOperator(
+            : VolumeElementForcesAndSourcesCoreOnContactPrismSide::UserDataOperator(
                   "F2", UserDataOperator::OPROW),
               elemData(elem_data) {}
         MoFEMErrorCode doWork(int side, EntityType type,
@@ -418,13 +418,13 @@ int main(int argc, char *argv[]) {
     struct OnContactSideSlave
         : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
 
-      VolumeElementForcesAndSourcesCoreOnVolumeSide volSideFe;
-      struct OpVolSide : public VolumeElementForcesAndSourcesCoreOnVolumeSide::
+      VolumeElementForcesAndSourcesCoreOnContactPrismSide volSideFe;
+      struct OpVolSide : public VolumeElementForcesAndSourcesCoreOnContactPrismSide::
                              UserDataOperator {
 
         CommonData &elemData;
         OpVolSide(CommonData &elem_data)
-            : VolumeElementForcesAndSourcesCoreOnVolumeSide::UserDataOperator(
+            : VolumeElementForcesAndSourcesCoreOnContactPrismSide::UserDataOperator(
                   "F2", UserDataOperator::OPROW),
               elemData(elem_data) {}
         MoFEMErrorCode doWork(int side, EntityType type,

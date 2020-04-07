@@ -25,7 +25,7 @@
 
 namespace MoFEM {
 template <int SWITCH>
-struct VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch;
+struct VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch;
 
 /** \brief ContactPrism finite element
  \ingroup mofem_forces_and_sources_prism_element
@@ -214,7 +214,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     /**
      *
      * User call this function to loop over elements on the side of face. This
-     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnVolumeSide with
+     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnContactPrismSide with
      * is operator to do calculations.
      *
      * @param  fe_name Name of the element
@@ -226,7 +226,7 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     template <int SWITCH>
     MoFEMErrorCode loopSideVolumes(
         const string &fe_name,
-        VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch<SWITCH> &fe_method,
+        VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<SWITCH> &fe_method,
         const int side_type, const EntityHandle ent_for_side);
 
   protected:
@@ -414,7 +414,7 @@ template <int SWITCH>
 MoFEMErrorCode
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
     const string &fe_name,
-    VolumeElementForcesAndSourcesCoreOnVolumeSideSwitch<SWITCH> &fe_method,
+    VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<SWITCH> &fe_method,
     const int side_type, const EntityHandle ent_for_side) {
   return loopSide(fe_name, &fe_method, side_type, ent_for_side);
 }
