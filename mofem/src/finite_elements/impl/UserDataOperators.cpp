@@ -694,4 +694,95 @@ OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+OpCalculateInvJacForContactPrism::doWork(int side, EntityType type,
+                                      DataForcesAndSourcesCore::EntData &data) {
+
+  MoFEMFunctionBegin;
+
+  if (type == MBVERTEX) {
+
+    VectorDouble coords;
+   
+    if (faceType ==
+        ContactPrismElementForcesAndSourcesCore::UserDataOperator::FACEMASTER) {
+      coords = getCoordsMaster();
+    } else if (faceType == ContactPrismElementForcesAndSourcesCore::
+                               UserDataOperator::FACESLAVE) {
+      coords = getCoordsSlave();
+    } else {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Wrong choice of face type, it should be either FACEMASTER or FACESLAVE");
+    }
+      double *coords_ptr = &*coords.data().begin();
+    double diff_n[6];
+    CHKERR ShapeDiffMBTRI(diff_n);
+    double j00_f3, j01_f3, j10_f3, j11_f3;
+    for (int gg = 0; gg < 1; gg++) {
+      // this is triangle, derivative of nodal shape functions is constant.
+      // So only need to do one node.
+      j00_f3 = cblas_ddot(3, &coords_ptr[0], 3, &diff_n[0], 2);
+      j01_f3 = cblas_ddot(3, &coords_ptr[0], 3, &diff_n[1], 2);
+      j10_f3 = cblas_ddot(3, &coords_ptr[1], 3, &diff_n[0], 2);
+      j11_f3 = cblas_ddot(3, &coords_ptr[1], 3, &diff_n[1], 2);
+    }
+    double det_f3 = j00_f3 * j11_f3 - j01_f3 * j10_f3;
+    invJacContFace.resize(2, 2, false);
+    invJacContFace(0, 0) = j11_f3 / det_f3;
+    invJacContFace(0, 1) = -j01_f3 / det_f3;
+    invJacContFace(1, 0) = -j10_f3 / det_f3;
+    invJacContFace(1, 1) = j00_f3 / det_f3;
+  }
+
+  doEntities[MBVERTEX] = true;
+  std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+OpSetInvJacH1ForContactPrism::doWork(int side, EntityType type,
+                                  DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+
+    unsigned int nb_dofs = data.getN(base).size2();
+    if (nb_dofs == 0)
+      MoFEMFunctionReturnHot(0);
+    unsigned int nb_gauss_pts = data.getN(base).size1();
+    diffNinvJac.resize(nb_gauss_pts, 2 * nb_dofs, false);
+
+    if (type != MBVERTEX) {
+      if (nb_dofs != data.getDiffN(base).size2() / 2) {
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "data inconsistency nb_dofs != data.diffN.size2()/2 ( %u != "
+                 "%u/2 )",
+                 nb_dofs, data.getDiffN(base).size2());
+      }
+    }
+
+    switch (type) {
+    case MBVERTEX:
+    case MBEDGE:
+    case MBTRI: {
+      for (unsigned int gg = 0; gg < nb_gauss_pts; gg++) {
+        for (unsigned int dd = 0; dd < nb_dofs; dd++) {
+          cblas_dgemv(CblasRowMajor, CblasTrans, 2, 2, 1,
+                      &*invJacContFace.data().begin(), 2,
+                      &data.getDiffN(base)(gg, 2 * dd), 1, 0,
+                      &diffNinvJac(gg, 2 * dd), 1);
+        }
+      }
+      data.getDiffN(base).data().swap(diffNinvJac.data());
+    } break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

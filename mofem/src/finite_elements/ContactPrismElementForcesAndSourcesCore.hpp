@@ -46,6 +46,9 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     UserDataOperator(const FieldSpace space)
         : ForcesAndSourcesCore::UserDataOperator(space) {}
 
+    UserDataOperator(const FieldSpace space, const char type)
+        : ForcesAndSourcesCore::UserDataOperator(space), faceType(type) {}
+
     UserDataOperator(const std::string &field_name, const char type)
         : ForcesAndSourcesCore::UserDataOperator(field_name, type) {}
 
@@ -124,14 +127,6 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     /** \brief get Gauss point at Slave face
      */
     inline MatrixDouble &getGaussPtsSlave();
-
-    /** \brief get inverse jacobian at Master face
-     */
-    inline MatrixDouble &getInvJacMaster();
-
-    /** \brief get inverse jacobian at Slave face
-     */
-    inline MatrixDouble &getInvJacSlave();
 
     /**
      * @brief Get integration weights
@@ -216,9 +211,6 @@ protected:
                                ///< coordinates and weights
   MatrixDouble gaussPtsSlave;  ///< matrix storing slave Gauss points local
                                ///< coordinates and weights
-
-  MatrixDouble invJacSlave;  ///< Inverse Jacobian for Slave Face
-  MatrixDouble invJacMaster; ///< Inverse Jacobian for Master Face
 
   /**
    * @brief Entity data on element entity rows fields
@@ -376,18 +368,6 @@ inline MatrixDouble &
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::getGaussPtsSlave() {
   return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
       ->gaussPtsSlave;
-}
-
-inline MatrixDouble &
-ContactPrismElementForcesAndSourcesCore::UserDataOperator::getInvJacMaster() {
-  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-      ->invJacMaster;
-}
-
-inline MatrixDouble &
-ContactPrismElementForcesAndSourcesCore::UserDataOperator::getInvJacSlave() {
-  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
-      ->invJacSlave;
 }
 
 auto ContactPrismElementForcesAndSourcesCore::UserDataOperator::
