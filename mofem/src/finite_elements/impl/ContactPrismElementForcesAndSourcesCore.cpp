@@ -181,9 +181,36 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     CHKERR Tools::getTriNormal(&coords[9], &normal[3]);
     aRea[0] = cblas_dnrm2(3, &normal[0], 1) * 0.5;
     aRea[1] = cblas_dnrm2(3, &normal[3], 1) * 0.5;
+
+    
     MoFEMFunctionReturn(0);
   };
   CHKERR get_coord_and_normal();
+
+  auto get_jac = [](MatrixDouble & inv_jac, double *coords_ptr) {
+    MoFEMFunctionBegin;
+    double diff_n[6];
+    CHKERR ShapeDiffMBTRI(diff_n);
+    double j00_f3, j01_f3, j10_f3, j11_f3;
+
+    // this is triangle, derivative of nodal shape functions is
+    // constant. So only need to do one node.
+    j00_f3 = cblas_ddot(3, &coords_ptr[0], 3, &diff_n[0], 2);
+    j01_f3 = cblas_ddot(3, &coords_ptr[0], 3, &diff_n[1], 2);
+    j10_f3 = cblas_ddot(3, &coords_ptr[1], 3, &diff_n[0], 2);
+    j11_f3 = cblas_ddot(3, &coords_ptr[1], 3, &diff_n[1], 2);
+
+    double det_f3 = j00_f3 * j11_f3 - j01_f3 * j10_f3;
+    inv_jac.resize(2, 2, false);
+    inv_jac(0, 0) = j11_f3 / det_f3;
+    inv_jac(0, 1) = -j01_f3 / det_f3;
+    inv_jac(1, 0) = -j10_f3 / det_f3;
+    inv_jac(1, 1) = j00_f3 / det_f3;
+    MoFEMFunctionReturn(0);
+  };
+
+  CHKERR get_jac(invJacMaster, &coords[0]);
+  CHKERR get_jac(invJacSlave, &coords[9]);
 
   CHKERR getSpacesAndBaseOnEntities(dataH1);
 
