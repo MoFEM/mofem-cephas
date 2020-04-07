@@ -292,7 +292,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
     SETERRQ(m_field.get_comm(), MOFEM_NOT_IMPLEMENTED,
             "Curvilinear coordinate system implemented");
   }
-  if (space_dim != 3) {
+  if (space_dim < 2) {
     SETERRQ1(m_field.get_comm(), MOFEM_NOT_IMPLEMENTED,
              "Not implemented for space dim %d", space_dim);
   }
@@ -353,8 +353,12 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
             arrays_coord[0]);
   std::copy(&coord_med[1 * num_nodes], &coord_med[2 * num_nodes],
             arrays_coord[1]);
-  std::copy(&coord_med[2 * num_nodes], &coord_med[3 * num_nodes],
-            arrays_coord[2]);
+  if (space_dim == 2) {
+    std::fill(arrays_coord[2], &arrays_coord[2][num_nodes], 0.);
+  } else {
+    std::copy(&coord_med[2 * num_nodes], &coord_med[3 * num_nodes],
+              arrays_coord[2]);
+  }
   CHKERR m_field.get_moab().add_entities(mesh_meshset, verts);
   family_elem_map.clear();
 

@@ -59,6 +59,10 @@ int main(int argc, char *argv[]) {
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-side_set", &side_set,
                               PETSC_NULL);
 
+    int restricted_side_set = 205;
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-restricted_side_set",
+                              &restricted_side_set, PETSC_NULL);
+
     double shift[] = {0, 0, 0};
     int nmax = 3;
     CHKERR PetscOptionsGetRealArray("", "-shift", shift, &nmax, &flg);
@@ -154,6 +158,11 @@ int main(int argc, char *argv[]) {
     }
 
     // get surface entities form side set
+    Range restriced_surface;
+    if (meshset_manager->checkMeshset(restricted_side_set, SIDESET))
+      CHKERR meshset_manager->getEntitiesByDimension(
+          restricted_side_set, SIDESET, 2, restriced_surface, true);
+
     Range surface;
     if (meshset_manager->checkMeshset(side_set, SIDESET))
       CHKERR meshset_manager->getEntitiesByDimension(side_set, SIDESET, 2,
@@ -168,6 +177,8 @@ int main(int argc, char *argv[]) {
                                    "surface.vtk");
     else
       CHKERR cut_mesh->setSurface(surface);
+
+    cut_mesh->setConstrainSurface(restriced_surface);
 
     Range tets;
     CHKERR moab.get_entities_by_dimension(0, 3, tets, false);
