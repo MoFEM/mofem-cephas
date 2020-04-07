@@ -217,8 +217,8 @@ protected:
   MatrixDouble gaussPtsSlave;  ///< matrix storing slave Gauss points local
                                ///< coordinates and weights
 
-  MatrixDouble invJacSlave;   ///< Inverse Jacobian for Slave Face
-  MatrixDouble invJacMaster;  ///< Inverse Jacobian for Master Face
+  MatrixDouble invJacSlave;  ///< Inverse Jacobian for Slave Face
+  MatrixDouble invJacMaster; ///< Inverse Jacobian for Master Face
 
   /**
    * @brief Entity data on element entity rows fields
@@ -335,7 +335,6 @@ protected:
 
 private:
   int nbGaussPts;
-
 };
 
 inline int

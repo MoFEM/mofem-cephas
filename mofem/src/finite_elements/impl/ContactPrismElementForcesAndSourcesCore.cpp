@@ -182,12 +182,11 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     aRea[0] = cblas_dnrm2(3, &normal[0], 1) * 0.5;
     aRea[1] = cblas_dnrm2(3, &normal[3], 1) * 0.5;
 
-    
     MoFEMFunctionReturn(0);
   };
   CHKERR get_coord_and_normal();
 
-  auto get_jac = [](MatrixDouble & inv_jac, double *coords_ptr) {
+  auto get_jac = [](MatrixDouble &inv_jac, double *coords_ptr) {
     MoFEMFunctionBegin;
     double diff_n[6];
     CHKERR ShapeDiffMBTRI(diff_n);
