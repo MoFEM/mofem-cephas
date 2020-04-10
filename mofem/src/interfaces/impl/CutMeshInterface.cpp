@@ -2094,7 +2094,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
         subtract(trim_surface_edges, get_adj(constrainSurface, 1));
     if (fixed_edges)
       test_edges = subtract(test_edges, *fixed_edges);
-    auto trim_surface_nodes = get_adj(trim_surface_edges, 0);
+    auto trim_surface_nodes = get_adj(test_edges, 0);
     trim_surface_nodes = subtract(trim_surface_nodes, barrier_vertices);
 
     Range trim_skin;
@@ -2103,6 +2103,8 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
       trim_skin.merge(get_skin(sUrface));
     else
       trim_skin.merge(fRont);
+    if(fixed_edges)
+      trim_skin.merge(intersect(*fixed_edges, trim_surface_edges));
 
     if (debug && !trim_skin.empty())
       CHKERR SaveData(m_field.get_moab())("trim_skin.vtk", trim_skin);
@@ -2130,11 +2132,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
 
       for (auto n : trim_surface_nodes) {
 
-        if ((*min_dist) < std::numeric_limits<double>::epsilon()) {
-          add_nodes.emplace_back(n);
-
-        } else {
-
+        if ((*min_dist) > std::numeric_limits<double>::epsilon()) {
           VectorDouble3 point_out(3);
 
           EntityHandle facets_out;
@@ -2198,7 +2196,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
   CHKERR remove_faces_on_skin();
   CHKERR add_close_surface_barrier();
 
-  if (debug && !barrier_vertices.empty())
+  if (dEBUG && !BARRIER_vertices.empty())
     CHKERR SaveData(m_field.get_moab())("barrier_vertices.vtk",
                                         barrier_vertices);
 
