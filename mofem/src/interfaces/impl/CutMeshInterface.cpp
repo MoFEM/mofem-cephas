@@ -2196,7 +2196,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
   CHKERR remove_faces_on_skin();
   CHKERR add_close_surface_barrier();
 
-  if (dEBUG && !BARRIER_vertices.empty())
+  if (debug && !barrier_vertices.empty())
     CHKERR SaveData(m_field.get_moab())("barrier_vertices.vtk",
                                         barrier_vertices);
 
