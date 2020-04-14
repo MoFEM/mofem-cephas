@@ -316,9 +316,9 @@ protected:
   MoFEMErrorCode remove_parents_by_ents(const Range &ents,
                                         int verb = DEFAULT_VERBOSITY);
 
-  MoFEMErrorCode remove_parents_by_by_bit_ref(const BitRefLevel &bit,
-                                              const BitRefLevel &mask,
-                                              int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode remove_parents_by_bit_ref(const BitRefLevel bit,
+                                           const BitRefLevel mask,
+                                           int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode remove_parents_by_parents(const Range &ents,
                                            int verb = DEFAULT_VERBOSITY);

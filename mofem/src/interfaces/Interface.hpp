@@ -183,9 +183,25 @@ struct CoreInterface : public UnknownInterface {
   virtual MoFEMErrorCode
   remove_parents_by_ents(const Range &ents, int verb = DEFAULT_VERBOSITY) = 0;
 
+  /**
+   * @brief Remove parent from entities on bit level
+   *
+   * Evert entity created by refinement, split or any other change on the mesh
+   * can have parent. This function remove parent from entity,
+   *
+   * \note Functions makeing topological changes on entities should repsect
+   * parents child relation. This erase that relation. If you going to split
+   * faces and create interface is recommended to call this function before
+   * split opeartion.
+   *
+   * @param bit level
+   * @param mask of bit level
+   * @param verb verbosity level
+   * @return MoFEMErrorCode
+   */
   virtual MoFEMErrorCode
-  remove_parents_by_by_bit_ref(const BitRefLevel &bit, const BitRefLevel &mask,
-                               int verb = DEFAULT_VERBOSITY) = 0;
+  remove_parents_by_bit_ref(const BitRefLevel bit, const BitRefLevel mask,
+                            int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
    * @brief Remove paremts from entities having parents in passed range

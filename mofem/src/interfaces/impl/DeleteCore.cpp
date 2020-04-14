@@ -485,9 +485,9 @@ MoFEMErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel bit,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::remove_parents_by_by_bit_ref(const BitRefLevel &bit,
-                                                  const BitRefLevel &mask,
-                                                  int verb) {
+MoFEMErrorCode Core::remove_parents_by_bit_ref(const BitRefLevel bit,
+                                               const BitRefLevel mask,
+                                               int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
