@@ -2621,9 +2621,17 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
       Range tets_skin;
       CHKERR skin.find_skin(0, tets, false, tets_skin);
-      tets_skin.merge(constrain_surface);
       Range tets_skin_edges;
       CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
+                                  moab::Interface::UNION);
+
+      // constrain surface
+      Range constrain_surface_verts;
+      CHKERR moab.get_connectivity(constrain_surface, constrain_surface_verts,
+                                   true);
+      Range constrain_surface_edges;
+      CHKERR moab.get_adjacencies(constrain_surface, 1, false,
+                                  constrain_surface_edges,
                                   moab::Interface::UNION);
 
       // surface skin
@@ -2631,23 +2639,31 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       CHKERR skin.find_skin(0, surface, false, surface_skin);
       Range front_in_the_body;
       front_in_the_body = subtract(surface_skin, tets_skin_edges);
+      Range front_in_the_body_verts;
+      CHKERR moab.get_connectivity(front_in_the_body, front_in_the_body_verts,
+                                   true);
       Range front_ends;
       CHKERR skin.find_skin(0, front_in_the_body, false, front_ends);
+      front_ends.merge(
+          intersect(front_in_the_body_verts, constrain_surface_verts));
       sets_map[FRONT_ENDS].swap(front_ends);
 
       Range surface_skin_verts;
       CHKERR moab.get_connectivity(surface_skin, surface_skin_verts, true);
       sets_map[SURFACE_SKIN].swap(surface_skin_verts);
-
+      
       // surface
       Range surface_verts;
       CHKERR moab.get_connectivity(surface, surface_verts, true);
+      sets_map[SURFACE_SKIN].merge(
+          intersect(constrain_surface_verts, surface_verts));
       sets_map[SURFACE].swap(surface_verts);
 
       // skin
       Range tets_skin_verts;
       CHKERR moab.get_connectivity(tets_skin, tets_skin_verts, true);
       sets_map[SKIN].swap(tets_skin_verts);
+      sets_map[SKIN].merge(constrain_surface_verts);
 
       Range tets_verts;
       CHKERR moab.get_connectivity(tets, tets_verts, true);
@@ -2684,22 +2700,35 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       Skinner skin(&moab);
       Range tets_skin;
       CHKERR skin.find_skin(0, tets, false, tets_skin);
-      tets_skin.merge(constrain_surface);
       Range surface_skin;
       CHKERR skin.find_skin(0, surface, false, surface_skin);
+
+      // constrain surface
+      Range constrain_surface_verts;
+      CHKERR moab.get_connectivity(constrain_surface, constrain_surface_verts,
+                                   true);
+      Range constrain_surface_edges;
+      CHKERR moab.get_adjacencies(constrain_surface, 1, false,
+                                  constrain_surface_edges,
+                                  moab::Interface::UNION);
 
       // end nodes
       Range tets_skin_edges;
       CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
                                   moab::Interface::UNION);
+
       Range surface_front;
       surface_front = subtract(surface_skin, tets_skin_edges);
       Range surface_front_nodes;
       CHKERR moab.get_connectivity(surface_front, surface_front_nodes, true);
+
       Range ends_nodes;
       CHKERR skin.find_skin(0, surface_front, false, ends_nodes);
+      ends_nodes.merge(intersect(surface_front_nodes, constrain_surface_verts));
 
       // remove bad merges
+      surface_skin.merge(constrain_surface);
+      tets_skin_edges.merge(constrain_surface_edges);
 
       // get surface and body skin verts
       Range surface_edges;
