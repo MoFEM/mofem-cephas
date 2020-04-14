@@ -348,9 +348,9 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   CHKERR moab.get_child_meshsets(sideset, children);
   if (children.empty()) {
     children.resize(3);
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, children[0]);
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, children[1]);
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, children[2]);
+    CHKERR moab.create_meshset(MESHSET_SET, children[0]);
+    CHKERR moab.create_meshset(MESHSET_SET, children[1]);
+    CHKERR moab.create_meshset(MESHSET_SET, children[2]);
     CHKERR moab.add_child_meshset(sideset, children[0]);
     CHKERR moab.add_child_meshset(sideset, children[1]);
     CHKERR moab.add_child_meshset(sideset, children[2]);
@@ -464,15 +464,15 @@ MoFEMErrorCode PrismInterface::findFacesWithThreeNodesOnInternalSurfaceSkin(
 
   if (verb >= VERY_VERBOSE) {
     EntityHandle out_meshset;
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, out_meshset);
+    CHKERR moab.create_meshset(MESHSET_SET, out_meshset);
     CHKERR moab.add_entities(out_meshset, triangles);
     CHKERR moab.write_file("triangles.vtk", "VTK", "", &out_meshset, 1);
     CHKERR moab.delete_entities(&out_meshset, 1);
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, out_meshset);
+    CHKERR moab.create_meshset(MESHSET_SET, out_meshset);
     CHKERR moab.add_entities(out_meshset, ents3d);
     CHKERR moab.write_file("ents3d.vtk", "VTK", "", &out_meshset, 1);
     CHKERR moab.delete_entities(&out_meshset, 1);
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, out_meshset);
+    CHKERR moab.create_meshset(MESHSET_SET, out_meshset);
     CHKERR moab.add_entities(out_meshset, skin_edges_boundary);
     CHKERR moab.write_file("skin_edges_boundary.vtk", "VTK", "", &out_meshset,
                            1);
@@ -743,8 +743,8 @@ MoFEMErrorCode PrismInterface::splitSides(
 
   // crete meshset for new mesh bit level
   EntityHandle meshset_for_bit_level;
-  CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
-                             meshset_for_bit_level);
+  CHKERR moab.create_meshset(MESHSET_SET, meshset_for_bit_level);
+
   // subtract those elements which will be refined, i.e. disconnected from other
   // side elements, and connected to new prisms, if they are created
   meshset_3d_ents = subtract(meshset_3d_ents, side_ents3d);
@@ -823,14 +823,16 @@ MoFEMErrorCode PrismInterface::splitSides(
           CHKERR moab.create_element(MBTET, new_conn, 4, tet);
           CHKERR moab.tag_set_data(cOre.get_th_RefParentHandle(), &tet, 1,
                                    &*eit3d);
+                                   
         } else {
-          // FIXME: That takes firs element form the list. Should throw error
-          // if is more than one or handle it properly.
-          RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator new_rit =
-              refined_ents_ptr->get<Ent_mi_tag>().find(*new_conn_tet.begin());
-          if (new_rit == refined_ents_ptr->get<Ent_mi_tag>().end())
-            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                    "Can't find entity in database");
+
+          auto new_rit = refined_ents_ptr->get<Ent_mi_tag>().equal_range(
+              *new_conn_tet.begin());
+
+          size_t nb_elems = std::distance(new_rit.first, new_rit.second);
+          if (nb_elems != 1)
+            SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                    "Can't find entity in database, size is %d", nb_elems);
           tet = *new_conn_tet.begin();
         }
       } else {
