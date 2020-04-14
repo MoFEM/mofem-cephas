@@ -2621,10 +2621,10 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
       Range tets_skin;
       CHKERR skin.find_skin(0, tets, false, tets_skin);
+      tets_skin.merge(constrain_surface);
       Range tets_skin_edges;
       CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
                                   moab::Interface::UNION);
-      tets_skin.merge(constrain_surface);
 
       // surface skin
       Range surface_skin;
@@ -2674,6 +2674,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     MoFEMErrorCode removeBadEdges(const Range &surface, const Range &tets,
                                   const Range &fixed_edges,
                                   const Range &corner_nodes,
+                                  const Range &constrain_surface,
                                   Range &edges_to_merge,
                                   Range &not_merged_edges) {
       moab::Interface &moab(mField.get_moab());
@@ -2683,6 +2684,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       Skinner skin(&moab);
       Range tets_skin;
       CHKERR skin.find_skin(0, tets, false, tets_skin);
+      tets_skin.merge(constrain_surface);
       Range surface_skin;
       CHKERR skin.find_skin(0, surface, false, surface_skin);
 
@@ -2836,8 +2838,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
   Range not_merged_edges;
   CHKERR Toplogy(m_field, th)
-      .removeBadEdges(surface, tets, fixed_edges, corner_nodes, edges_to_merge,
-                      not_merged_edges);
+      .removeBadEdges(surface, tets, fixed_edges, corner_nodes,
+                      constrainSurface, edges_to_merge, not_merged_edges);
   Toplogy::SetsMap sets_map;
   CHKERR Toplogy(m_field, th)
       .classifyVerts(surface, tets, fixed_edges, corner_nodes, constrainSurface,
@@ -2996,7 +2998,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     edges_to_merge = intersect(edges_to_merge, adj_edges);
     CHKERR Toplogy(m_field, th)
         .removeBadEdges(new_surf, proc_tets, fixed_edges, corner_nodes,
-                        edges_to_merge, not_merged_edges);
+                        constrainSurface, edges_to_merge, not_merged_edges);
   }
 
   if (bit_ptr)
