@@ -1071,19 +1071,42 @@ MoFEMErrorCode PrismInterface::splitSides(
 
   auto set_parnets = [&](auto side_adj_faces_and_edges) {
     MoFEMFunctionBegin;
-    for (auto e : side_adj_faces_and_edges) {
-      auto conn = get_conn(e);
-      auto new_conn = get_new_conn(conn);
-      if (new_conn.second) {
 
-        auto miit_ref_ent = refined_ents_ptr->find(e);
-        if (miit_ref_ent == refined_ents_ptr->end())
-          SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                   "Entity should be in database, num_nodes = %d",
-                   new_conn.second);
+    for (auto p = side_adj_faces_and_edges.pair_begin();
+         p != side_adj_faces_and_edges.pair_end(); ++p) {
+      auto f = p->first;
+      auto s = p->second;
 
-        auto new_ent = get_new_ent(new_conn, conn.second, conn.second - 1);
-        CHKERR set_parent(new_ent, e, refined_ents_ptr);
+      auto lo = refined_ents_ptr->lower_bound(f);
+      auto hi = refined_ents_ptr->upper_bound(s);
+      if (std::distance(lo, hi) != (s - f + 1))
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                "Some triangles are not in database");
+
+      Range r(f, s);
+      int count, vpere;
+      EntityHandle *conn_ptr;
+      CHKERR m_field.get_moab().connect_iterate(r.begin(), r.end(), conn_ptr,
+                                                vpere, count);
+      if (count != r.size())
+        SETERRQ2(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                 "Can not access connectivity for some triangles %d != %d",
+                 count, r.size());
+
+      for (; f <= s; ++f, conn_ptr += vpere) {
+
+        auto new_conn = get_new_conn(std::make_pair(conn_ptr, vpere));
+        if (new_conn.second) {
+
+          auto miit_ref_ent = refined_ents_ptr->find(f);
+          if (miit_ref_ent == refined_ents_ptr->end())
+            SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                     "Entity should be in database, num_nodes = %d",
+                     new_conn.second);
+
+          auto new_ent = get_new_ent(new_conn, vpere, vpere - 1);
+          CHKERR set_parent(new_ent, f, refined_ents_ptr);
+        }
       }
     }
     MoFEMFunctionReturn(0);
@@ -1187,5 +1210,5 @@ MoFEMErrorCode PrismInterface::splitSides(
 
 
   MoFEMFunctionReturn(0);
-}
+    }
 } // namespace MoFEM
