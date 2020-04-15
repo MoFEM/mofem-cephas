@@ -869,13 +869,6 @@ MoFEMErrorCode PrismInterface::splitSides(
     }
   }
 
-  // Tags for setting side
-  Tag th_interface_side;
-  const int def_side[] = {0};
-  CHKERR moab.tag_get_handle("INTERFACE_SIDE", 1, MB_TYPE_INTEGER,
-                             th_interface_side, MB_TAG_CREAT | MB_TAG_SPARSE,
-                             def_side);
-
   struct SetParent {
 
     SetParent(MoFEM::Core &core) : cOre(core) ,mField(core) {}
@@ -966,6 +959,14 @@ MoFEMErrorCode PrismInterface::splitSides(
 
   auto create_prisms = [&]() {
     MoFEMFunctionBegin;
+
+    // Tags for setting side
+    Tag th_interface_side;
+    const int def_side[] = {0};
+    CHKERR moab.tag_get_handle("INTERFACE_SIDE", 1, MB_TYPE_INTEGER,
+                               th_interface_side, MB_TAG_CREAT | MB_TAG_SPARSE,
+                               def_side);
+
     for (auto e : triangles) {
       auto conn = get_conn(e);
       auto new_conn = get_new_conn(conn);
@@ -1025,7 +1026,6 @@ MoFEMErrorCode PrismInterface::splitSides(
 
         auto new_triangle = get_new_ent(new_conn, 3, 2);
         set_side_tag(new_triangle);
-        auto ent3d = get_ent3d(e);
 
         if (add_interface_entities) {
           // set prism connectivity
@@ -1033,7 +1033,7 @@ MoFEMErrorCode PrismInterface::splitSides(
               conn.first[0],     conn.first[1],     conn.first[2],
 
               new_conn.first[0], new_conn.first[1], new_conn.first[2]};
-          if (get_sense(e, ent3d) == -1) {
+          if (get_sense(e, get_ent3d(e)) == -1) {
             // swap nodes in triangles for correct prism creation
             std::swap(prism_conn[1], prism_conn[2]);
             std::swap(prism_conn[4], prism_conn[5]);
@@ -1079,6 +1079,10 @@ MoFEMErrorCode PrismInterface::splitSides(
 
   auto add_new_prisms_which_parents_are_part_of_other_intefaces = [&]() {
     MoFEMFunctionBegin;
+
+    Tag th_interface_side;
+    CHKERR moab.tag_get_handle("INTERFACE_SIDE", th_interface_side);
+
     Range new_3d_prims = new_3d_ents.subset_by_type(MBPRISM);
     for (Range::iterator pit = new_3d_prims.begin(); pit != new_3d_prims.end();
          ++pit) {
