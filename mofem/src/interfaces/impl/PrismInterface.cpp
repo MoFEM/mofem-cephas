@@ -967,6 +967,7 @@ MoFEMErrorCode PrismInterface::splitSides(
                                th_interface_side, MB_TAG_CREAT | MB_TAG_SPARSE,
                                def_side);
 
+
     for (auto p = triangles.pair_begin(); p != triangles.pair_end(); ++p) {
       auto f = p->first;
       auto s = p->second;
@@ -976,10 +977,21 @@ MoFEMErrorCode PrismInterface::splitSides(
       if (std::distance(lo, hi) != (s - f + 1))
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                 "Some triangles are not in database");
-      for (; f <= s; ++f) {
 
-        auto conn = get_conn(f);
-        auto new_conn = get_new_conn(conn);
+      Range r(f, s);
+      int count, vpere;
+      EntityHandle *conn_ptr;
+      CHKERR m_field.get_moab().connect_iterate(r.begin(), r.end(), conn_ptr,
+                                                vpere, count);
+      if (count != r.size())
+        SETERRQ2(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                 "Can not access connectivity for some triangles %d != %d",
+                 count, r.size());
+
+      for (; f <= s; ++f, conn_ptr += vpere) {
+
+        auto new_conn = get_new_conn(std::make_pair(conn_ptr, vpere));
+
         if (new_conn.second) {
 
           auto set_side_tag = [&](auto new_triangle) {
@@ -1037,7 +1049,7 @@ MoFEMErrorCode PrismInterface::splitSides(
 
             // set prism connectivity
             EntityHandle prism_conn[6] = {
-                conn.first[0],     conn.first[1],     conn.first[2],
+                conn_ptr[0],       conn_ptr[1],       conn_ptr[2],
 
                 new_conn.first[0], new_conn.first[1], new_conn.first[2]};
             if (get_sense(f, get_ent3d(f)) == -1) {
