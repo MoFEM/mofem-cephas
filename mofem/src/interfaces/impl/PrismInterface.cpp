@@ -1026,7 +1026,6 @@ MoFEMErrorCode PrismInterface::splitSides(
         auto new_triangle = get_new_ent(new_conn, 3, 2);
         set_side_tag(new_triangle);
         auto ent3d = get_ent3d(e);
-        CHKERR set_parent(new_triangle, e, refined_ents_ptr);
 
         if (add_interface_entities) {
           // set prism connectivity
@@ -1075,7 +1074,6 @@ MoFEMErrorCode PrismInterface::splitSides(
     for (auto d : {1, 2})
       CHKERR moab.get_adjacencies(side_ents3d.subset_by_type(MBTET), d, create,
                                   adj, moab::Interface::UNION);
-    // adj = subtract(adj, triangles);
     return adj;
   };
 
@@ -1161,8 +1159,6 @@ MoFEMErrorCode PrismInterface::splitSides(
       meshset_for_bit_level, 3, bit);
   CHKERR moab.delete_entities(&meshset_for_bit_level, 1);
   CHKERR moab.clear_meshset(&children[0], 3);
-
-
 
 
 
