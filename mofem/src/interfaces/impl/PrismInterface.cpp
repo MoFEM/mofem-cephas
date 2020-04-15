@@ -967,81 +967,89 @@ MoFEMErrorCode PrismInterface::splitSides(
                                th_interface_side, MB_TAG_CREAT | MB_TAG_SPARSE,
                                def_side);
 
-    for (auto e : triangles) {
-      auto conn = get_conn(e);
-      auto new_conn = get_new_conn(conn);
-      if (new_conn.second) {
+    for (auto p = triangles.pair_begin(); p != triangles.pair_end(); ++p) {
+      auto f = p->first;
+      auto s = p->second;
 
-        // add prism element
-        if (inhered_from_bit_level.any())
-          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "not implemented for inhered_from_bit_level");
+      auto lo = refined_ents_ptr->lower_bound(f);
+      auto hi = refined_ents_ptr->upper_bound(s);
+      if (std::distance(lo, hi) != (s - f + 1))
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                "Some triangles are not in database");
+      for (; f <= s; ++f) {
 
-        auto miit_ref_ent = refined_ents_ptr->find(e);
-        if (miit_ref_ent == refined_ents_ptr->end())
-          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "this entity (edge or tri) should be already in database");
+        auto conn = get_conn(f);
+        auto new_conn = get_new_conn(conn);
+        if (new_conn.second) {
 
-        auto set_side_tag = [&](auto new_triangle) {
-          int new_side = 1;
-          CHKERR moab.tag_set_data(th_interface_side, &new_triangle, 1,
-                                   &new_side);
-        };
+          auto set_side_tag = [&](auto new_triangle) {
+            int new_side = 1;
+            CHKERR moab.tag_set_data(th_interface_side, &new_triangle, 1,
+                                     &new_side);
+          };
 
-        auto get_ent3d = [&](auto e) {
-          Range ents_3d;
-          CHKERR moab.get_adjacencies(&e, 1, 3, false, ents_3d);
-          ents_3d = intersect(ents_3d, side_ents3d);
+          auto get_ent3d = [&](auto e) {
+            Range ents_3d;
+            CHKERR moab.get_adjacencies(&e, 1, 3, false, ents_3d);
+            ents_3d = intersect(ents_3d, side_ents3d);
 
-          switch (ents_3d.size()) {
-          case 0:
-            THROW_MESSAGE(
-                "Did not find adjacent tets on one side of the interface, "
-                "check its definition and try creating separate sidesets for "
-                "each surface");
-          case 2:
-            THROW_MESSAGE(
-                "Found both adjacent tets on one side of the interface, check "
-                "its "
-                "definition and try creating separate sidesets for each "
-                "surface");
-          default:
-            break;
+            switch (ents_3d.size()) {
+            case 0:
+              THROW_MESSAGE(
+                  "Did not find adjacent tets on one side of the interface, "
+                  "check its definition and try creating separate sidesets for "
+                  "each surface");
+            case 2:
+              THROW_MESSAGE(
+                  "Found both adjacent tets on one side of the interface, "
+                  "check "
+                  "its "
+                  "definition and try creating separate sidesets for each "
+                  "surface");
+            default:
+              break;
+            }
+
+            return ents_3d.front();
+          };
+
+          auto get_sense = [&](auto e, auto ent3d) {
+            int sense, side, offset;
+            CHKERR moab.side_number(ent3d, e, side, sense, offset);
+            if (sense != 1 && sense != -1) {
+              SETERRQ(
+                  m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                  "Undefined sense of a trinagle on the interface, check its "
+                  "definition and try creating separate sidesets for each "
+                  "surface");
+            }
+            return sense;
+          };
+
+          auto new_triangle = get_new_ent(new_conn, 3, 2);
+          set_side_tag(new_triangle);
+
+          if (add_interface_entities) {
+
+            if (inhered_from_bit_level.any())
+              SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                      "not implemented for inhered_from_bit_level");
+
+            // set prism connectivity
+            EntityHandle prism_conn[6] = {
+                conn.first[0],     conn.first[1],     conn.first[2],
+
+                new_conn.first[0], new_conn.first[1], new_conn.first[2]};
+            if (get_sense(f, get_ent3d(f)) == -1) {
+              // swap nodes in triangles for correct prism creation
+              std::swap(prism_conn[1], prism_conn[2]);
+              std::swap(prism_conn[4], prism_conn[5]);
+            }
+
+            EntityHandle prism;
+            CHKERR moab.create_element(MBPRISM, prism_conn, 6, prism);
+            CHKERR moab.add_entities(meshset_for_bit_level, &prism, 1);
           }
-
-          return ents_3d.front();
-        };
-
-        auto get_sense = [&](auto e, auto ent3d) {
-          int sense, side, offset;
-          CHKERR moab.side_number(ent3d, e, side, sense, offset);
-          if (sense != 1 && sense != -1) {
-            SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                    "Undefined sense of a trinagle on the interface, check its "
-                    "definition and try creating separate sidesets for each "
-                    "surface");
-          }
-          return sense;
-        };
-
-        auto new_triangle = get_new_ent(new_conn, 3, 2);
-        set_side_tag(new_triangle);
-
-        if (add_interface_entities) {
-          // set prism connectivity
-          EntityHandle prism_conn[6] = {
-              conn.first[0],     conn.first[1],     conn.first[2],
-
-              new_conn.first[0], new_conn.first[1], new_conn.first[2]};
-          if (get_sense(e, get_ent3d(e)) == -1) {
-            // swap nodes in triangles for correct prism creation
-            std::swap(prism_conn[1], prism_conn[2]);
-            std::swap(prism_conn[4], prism_conn[5]);
-          }
-
-          EntityHandle prism;
-          CHKERR moab.create_element(MBPRISM, prism_conn, 6, prism);
-          CHKERR moab.add_entities(meshset_for_bit_level, &prism, 1);
         }
       }
     }
