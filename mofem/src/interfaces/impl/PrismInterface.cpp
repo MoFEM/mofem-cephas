@@ -1197,9 +1197,8 @@ MoFEMErrorCode PrismInterface::splitSides(
   CHKERR set_parnets(all_others_adj_entities(true));
   CHKERR add_new_prisms_which_parents_are_part_of_other_intefaces();
 
-  // finalise by adding new tets and prism ti bit level
-  // FIXME: This is switch of, you can not change parent.
-  // CHKERR set_parent(refined_ents_ptr);
+  // Finalise by adding new tets and prism ti bit level
+  CHKERR set_parent.override_parents(refined_ents_ptr);
 
 
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
