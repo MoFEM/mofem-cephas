@@ -918,16 +918,16 @@ MoFEMErrorCode PrismInterface::splitSides(
 
   auto get_adj_ents = [&](const bool create) {
     Range adj;
-    // create new entities by adjacencies form new tets
-    CHKERR moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET), 2, create,
-                                adj, moab::Interface::UNION);
-    CHKERR moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET), 1, create,
-                                adj, moab::Interface::UNION);
+    for (auto d : {1, 2}) {
+      // create new entities by adjacencies form new tets
+      CHKERR moab.get_adjacencies(new_3d_ents.subset_by_type(MBTET), d, create,
+                                  adj, moab::Interface::UNION);
+    }
     return adj;
   };
 
-  Range new_ents_existing = get_adj_ents(false);
-  Range new_ents = subtract(get_adj_ents(true), new_ents_existing);
+  // Create entities
+  get_adj_ents(true);
 
   auto get_conn = [&](const auto e) {
     int num_nodes;
