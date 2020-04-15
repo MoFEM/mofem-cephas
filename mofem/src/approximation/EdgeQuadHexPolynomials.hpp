@@ -27,7 +27,8 @@ namespace MoFEM {
  * @return  edgeN           base functions on edges at qd pts
  * @return  diff_edgeN      derivatives of edge shape functions at qd pts
  * @param  nb_integration_pts           number of integration points
- * @param  base_polynomials polynomial base function (f.e. Legendre of Integrated Legendre)
+ * @param  base_polynomials polynomial base function (f.e. Legendre of
+ Integrated Legendre)
  * @return                  error code
  */
 MoFEMErrorCode H1_TP_EdgeShapeFunctions_MBEDGE(
@@ -127,12 +128,11 @@ Legendre)
 * @return                  error code
 */
 MoFEMErrorCode L2_TP_QuadShapeFunctions_MBQUAD(
-    int *p, double *N, double *diffN, double *edgeN[],
-    double *diff_edgeN[], int nb_integration_pts,
+    int *p, double *N, double *diffN, double *edgeN[], double *diff_edgeN[],
+    int nb_integration_pts,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
                                        double *L, double *diffL,
                                        const int dim));
-
 
 } // namespace MoFEM
 
