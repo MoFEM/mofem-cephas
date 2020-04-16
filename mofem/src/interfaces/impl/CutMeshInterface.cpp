@@ -1638,21 +1638,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   Tag th_dist_front_vec;
   CHKERR moab.tag_get_handle("DIST_FRONT_VECTOR", th_dist_front_vec);
 
-  /*auto create_tag = [&](const std::string name, const int dim) {
-    Tag th;
-    rval = moab.tag_get_handle(name.c_str(), th);
-    if (rval == MB_SUCCESS)
-      return th;
-    std::vector<double> def_val(dim, 0);
-    CHKERR moab.tag_get_handle(name.c_str(), dim, MB_TYPE_DOUBLE, th,
-                               MB_TAG_CREAT | MB_TAG_SPARSE, &*def_val.begin());
-
-    return th;
-  };
-
-  auto th_te = create_tag("TE", 1);
-  auto th_tf = create_tag("TF", 1);*/
-
   // iterate over edges on cut surface
   for (auto e : cut_surface_edges) {
 
@@ -3037,7 +3022,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     CHKERR reconstructMultiIndex(*refined_ents_ptr);
     MoFEMFunctionReturn(0);
   };
-  
+
   // Add function which reconstruct core multi-index. Node merging is messy
   // process and entity parent could be changed without notification to
   // multi-index. TODO Issue has to be tracked down better, however in principle
