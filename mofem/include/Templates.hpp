@@ -683,15 +683,18 @@ struct Modify_change_nothing {
 /**
  * @brief Template used to reconstruct multi-index
  * 
- * @param m 
- * @return template <typename MI> 
+ * @tparam MI multi-index
+ * @tparam Modifier 
+ * @param mi 
+ * @param mo 
+ * @return MoFEMErrorCode 
  */
-template <typename MI>
-inline MoFEMErrorCode reconstructMultiIndex(const MI &m) {
+template <typename MI, typename MO = Modify_change_nothing>
+inline MoFEMErrorCode reconstructMultiIndex(const MI &mi,
+                                            MO &&mo = Modify_change_nothing()) {
   MoFEMFunctionBegin;
-  for (auto it = m.begin(); it != m.end(); ++it) {
-    bool success = const_cast<MI &>(m).modify(it, Modify_change_nothing());
-    if (!success)
+  for (auto it = mi.begin(); it != mi.end(); ++it) {
+    if (!const_cast<MI &>(mi).modify(it, mo))
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Houston we have a problem");
   }
