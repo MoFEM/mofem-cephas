@@ -2081,6 +2081,9 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
       test_edges = subtract(test_edges, *fixed_edges);
     auto trim_surface_nodes = get_adj(test_edges, 0);
     trim_surface_nodes = subtract(trim_surface_nodes, barrier_vertices);
+    if (fixed_edges)
+      trim_surface_nodes =
+          subtract(trim_surface_nodes, get_adj(*fixed_edges, 0));
 
     Range trim_skin;
     trim_skin.merge(contarain_edges);
@@ -2099,8 +2102,6 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
       CHKERR moab.tag_get_data(th, trim_surface_nodes, &*coords.begin());
     else
       CHKERR moab.get_coords(trim_surface_nodes, &*coords.begin());
-
-    trim_surface_nodes = subtract(trim_surface_nodes, barrier_vertices);
 
     if (!trim_skin.empty()) {
 
