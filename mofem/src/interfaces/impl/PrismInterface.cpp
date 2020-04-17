@@ -1221,7 +1221,7 @@ MoFEMErrorCode PrismInterface::splitSides(
   CHKERR moab.delete_entities(&meshset_for_bit_level, 1);
   CHKERR moab.clear_meshset(&children[0], 3);
 
-  auto reconstrutc_refined_ents = [&]() {
+  auto reconstruct_refined_ents = [&]() {
     MoFEMFunctionBegin;
     const RefEntity_multiIndex *refined_ents_ptr;
     CHKERR m_field.get_ref_ents(&refined_ents_ptr);
@@ -1237,7 +1237,7 @@ MoFEMErrorCode PrismInterface::splitSides(
   // multi-index. TODO Issue has to be tracked down better, however in principle
   // is better not to modify multi-index each time parent is changed, that makes
   // code slow. Is better to do it in the bulk as below.
-  CHKERR reconstrutc_refined_ents();
+  CHKERR reconstruct_refined_ents();
 
   MoFEMFunctionReturn(0);
 }

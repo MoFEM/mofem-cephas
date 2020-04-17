@@ -3016,7 +3016,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                         constrainSurface, edges_to_merge, not_merged_edges);
   }
 
-  auto reconstrutc_refined_ents = [&]() {
+  auto reconstruct_refined_ents = [&]() {
     MoFEMFunctionBegin;
     const RefEntity_multiIndex *refined_ents_ptr;
     CHKERR m_field.get_ref_ents(&refined_ents_ptr);
@@ -3029,7 +3029,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
   // multi-index. TODO Issue has to be tracked down better, however in principle
   // is better not to modify multi-index each time parent is changed, that makes
   // code slow. Is better to do it in the bulk as below.
-  CHKERR reconstrutc_refined_ents();
+  CHKERR reconstruct_refined_ents();
 
   if (bit_ptr)
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(proc_tets,
