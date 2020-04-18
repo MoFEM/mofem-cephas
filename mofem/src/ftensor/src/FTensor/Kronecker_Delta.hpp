@@ -1,5 +1,5 @@
 /**
- * @file Kronecker_Delta.hpp.
+ * @file Kronecker_Delta.hpp
  *
  */
 
