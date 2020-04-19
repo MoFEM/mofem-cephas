@@ -16,6 +16,7 @@ using namespace std;
 #include "test_T4.hpp"
 #include "test_T4R.hpp"
 #include "test_T4ddg.hpp"
+#include "test_Kronecker_Delta.hpp"
 
 int main()
 {
@@ -79,6 +80,7 @@ int main()
   test_T4R();
   test_T4(t4_1, t2_4, t2_5, t3_2);
   test_Levi_Civita();
+  test_Kornecker_Delta();
 
   return 0;
 }
