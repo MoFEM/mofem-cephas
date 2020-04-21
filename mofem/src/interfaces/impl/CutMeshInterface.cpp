@@ -1078,6 +1078,9 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
   auto get_in_range = [](auto v, auto &r) { return (r.find(v) != r.end()); };
 
   auto project_nodes = [&](auto nodes_to_check) {
+    if (debug)
+      CHKERR SaveData(moab)("nodes_to_check.vtk", nodes_to_check);
+
     auto get_fix_e = [](auto fixed_edges) {
       if (fixed_edges)
         return *fixed_edges;
@@ -1120,25 +1123,33 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     };
 
     for (auto v : nodes_to_check) {
+
       if (get_in_range(v, corner_n)) {
         vertices_on_cut_edges.push_back(add_zero_vertex(v, get_coords(v)));
-      } else if (get_in_range(v, fixe_n)) {
+        continue;
+      }
+
+      if (get_in_range(v, fixe_n)) {
 
         const auto e = intersect_v(v, cut_fix);
         if (!e.empty()) {
           vertices_on_cut_edges.push_back(add_zero_vertex(
               v, get_prj_point(v, e, false, geometry_tol).first));
-
+          continue;
         } else {
           auto b = intersect_v(v, cutEdges);
           if (!b.empty()) {
             auto p = get_prj_point(v, b, true, geometry_tol);
-            if (norm_2(get_coords(v) - p.first) < geometry_tol * p.second)
-              vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
+            if (norm_2(get_coords(v) - p.first) < close_tol * p.second) {
+              vertices_on_cut_edges.push_back(
+                  add_zero_vertex(v, get_coords(v)));
+              continue;
+            }
           }
         }
+      }
 
-      } else if (get_in_range(v, skin_n)) {
+      if (get_in_range(v, skin_n)) {
 
         const auto e = intersect_v(v, cut_skin);
         if (!e.empty()) {
@@ -1149,17 +1160,19 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
           auto b = intersect_v(v, cutEdges);
           if (!b.empty()) {
             auto p = get_prj_point(v, b, true, geometry_tol);
-            if (norm_2(get_coords(v) - p.first) < geometry_tol * p.second)
-              vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
+            if (norm_2(get_coords(v) - p.first) < close_tol * p.second) {
+              vertices_on_cut_edges.push_back(
+                  add_zero_vertex(v, get_coords(v)));
+              continue;
+            }
           }
         }
-
-      } else {
-        const auto e = intersect_v(v, cutEdges);
-        if (!e.empty())
-          vertices_on_cut_edges.push_back(
-              add_zero_vertex(v, get_prj_point(v, e, false, 0).first));
       }
+
+      const auto e = intersect_v(v, cutEdges);
+      if (!e.empty())
+        vertices_on_cut_edges.push_back(
+            add_zero_vertex(v, get_prj_point(v, e, false, 0).first));
     }
 
     auto get_distances = [&](auto &data) {
@@ -2091,7 +2104,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
       trim_skin.merge(get_skin(sUrface));
     else
       trim_skin.merge(fRont);
-    if(fixed_edges)
+    if (fixed_edges)
       trim_skin.merge(intersect(*fixed_edges, trim_surface_edges));
 
     if (debug && !trim_skin.empty())
@@ -2637,7 +2650,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       Range surface_skin_verts;
       CHKERR moab.get_connectivity(surface_skin, surface_skin_verts, true);
       sets_map[SURFACE_SKIN].swap(surface_skin_verts);
-      
+
       // surface
       Range surface_verts;
       CHKERR moab.get_connectivity(surface, surface_verts, true);
