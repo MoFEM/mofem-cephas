@@ -485,9 +485,9 @@ MoFEMErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel bit,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::remove_parents_by_by_bit_ref(const BitRefLevel &bit,
-                                                  const BitRefLevel &mask,
-                                                  int verb) {
+MoFEMErrorCode Core::remove_parents_by_bit_ref(const BitRefLevel bit,
+                                               const BitRefLevel mask,
+                                               int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -499,24 +499,34 @@ MoFEMErrorCode Core::remove_parents_by_by_bit_ref(const BitRefLevel &bit,
 
 MoFEMErrorCode Core::remove_parents_by_ents(const Range &ents, int verb) {
   MoFEMFunctionBegin;
-  Range removed_from_ents;
-  for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
-    RefEntity_multiIndex::iterator it = refinedEntities.find(*eit);
-    if (it != refinedEntities.end()) {
-      bool success = refinedEntities.modify(it, RefEntity_change_parent(0));
-      if (!success) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                "Operation of removing parent unsuccessful");
-      } else {
-        removed_from_ents.insert(*eit);
-      }
+  
+  std::vector<EntityHandle> leftovers_ents;
+  leftovers_ents.reserve(ents.size());
+
+  for (auto pit = ents.pair_begin(); pit != ents.pair_end(); ++pit) {
+
+    EntityHandle f = pit->first;
+    const EntityHandle s = pit->second;
+    auto lo = refinedEntities.lower_bound(f);
+    for (; f <= s; ++f) {
+
+      if ((*lo)->getRefEnt() == f) {
+          bool success = refinedEntities.modify(lo, RefEntity_change_parent(0));
+          if (!success)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "Operation of removing parent unsuccessful");
+          ++lo;
+      } else
+        leftovers_ents.emplace_back(f);
+
     }
   }
-  Range leftovers_ents = subtract(ents,removed_from_ents);
+
   if (!leftovers_ents.empty()) {
     std::vector<EntityHandle> zero_parents(leftovers_ents.size());
-    CHKERR get_moab().tag_set_data(th_RefParentHandle, leftovers_ents,
-                             &*zero_parents.begin());
+    CHKERR get_moab().tag_set_data(th_RefParentHandle, &leftovers_ents[0],
+                                   leftovers_ents.size(),
+                                   &*zero_parents.begin());
   }
   MoFEMFunctionReturn(0);
 }

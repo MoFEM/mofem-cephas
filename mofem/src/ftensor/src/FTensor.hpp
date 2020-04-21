@@ -114,7 +114,6 @@ namespace FTensor
   template <class A, class T, int N0, int N1> class Ddg_number_rhs_01;
   template <class A, class T, int N0> class Ddg_number_rhs_0;
 
-  template <class T> class Tensor_Levi_Civita;
 }
 
 #include "FTensor/Index.hpp"
@@ -123,6 +122,7 @@ namespace FTensor
 
 #include "FTensor/Levi_Civita.hpp"
 #include "FTensor/cross.hpp"
+#include "FTensor/Kronecker_Delta.hpp"
 
 #include "FTensor/Christof.hpp"
 #include "FTensor/Ddg.hpp"

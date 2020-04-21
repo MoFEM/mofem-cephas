@@ -1638,21 +1638,6 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
   Tag th_dist_front_vec;
   CHKERR moab.tag_get_handle("DIST_FRONT_VECTOR", th_dist_front_vec);
 
-  /*auto create_tag = [&](const std::string name, const int dim) {
-    Tag th;
-    rval = moab.tag_get_handle(name.c_str(), th);
-    if (rval == MB_SUCCESS)
-      return th;
-    std::vector<double> def_val(dim, 0);
-    CHKERR moab.tag_get_handle(name.c_str(), dim, MB_TYPE_DOUBLE, th,
-                               MB_TAG_CREAT | MB_TAG_SPARSE, &*def_val.begin());
-
-    return th;
-  };
-
-  auto th_te = create_tag("TE", 1);
-  auto th_tf = create_tag("TF", 1);*/
-
   // iterate over edges on cut surface
   for (auto e : cut_surface_edges) {
 
@@ -2094,8 +2079,11 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
         subtract(trim_surface_edges, get_adj(constrainSurface, 1));
     if (fixed_edges)
       test_edges = subtract(test_edges, *fixed_edges);
-    auto trim_surface_nodes = get_adj(trim_surface_edges, 0);
+    auto trim_surface_nodes = get_adj(test_edges, 0);
     trim_surface_nodes = subtract(trim_surface_nodes, barrier_vertices);
+    if (fixed_edges)
+      trim_surface_nodes =
+          subtract(trim_surface_nodes, get_adj(*fixed_edges, 0));
 
     Range trim_skin;
     trim_skin.merge(contarain_edges);
@@ -2103,6 +2091,8 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
       trim_skin.merge(get_skin(sUrface));
     else
       trim_skin.merge(fRont);
+    if(fixed_edges)
+      trim_skin.merge(intersect(*fixed_edges, trim_surface_edges));
 
     if (debug && !trim_skin.empty())
       CHKERR SaveData(m_field.get_moab())("trim_skin.vtk", trim_skin);
@@ -2112,8 +2102,6 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
       CHKERR moab.tag_get_data(th, trim_surface_nodes, &*coords.begin());
     else
       CHKERR moab.get_coords(trim_surface_nodes, &*coords.begin());
-
-    trim_surface_nodes = subtract(trim_surface_nodes, barrier_vertices);
 
     if (!trim_skin.empty()) {
 
@@ -2130,11 +2118,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
 
       for (auto n : trim_surface_nodes) {
 
-        if ((*min_dist) < std::numeric_limits<double>::epsilon()) {
-          add_nodes.emplace_back(n);
-
-        } else {
-
+        if ((*min_dist) > std::numeric_limits<double>::epsilon()) {
           VectorDouble3 point_out(3);
 
           EntityHandle facets_out;
@@ -2626,30 +2610,46 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       Range tets_skin_edges;
       CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
                                   moab::Interface::UNION);
-      tets_skin.merge(constrain_surface);
+
+      // constrain surface
+      Range constrain_surface_verts;
+      CHKERR moab.get_connectivity(constrain_surface, constrain_surface_verts,
+                                   true);
+      Range constrain_surface_edges;
+      CHKERR moab.get_adjacencies(constrain_surface, 1, false,
+                                  constrain_surface_edges,
+                                  moab::Interface::UNION);
 
       // surface skin
       Range surface_skin;
       CHKERR skin.find_skin(0, surface, false, surface_skin);
       Range front_in_the_body;
       front_in_the_body = subtract(surface_skin, tets_skin_edges);
+      Range front_in_the_body_verts;
+      CHKERR moab.get_connectivity(front_in_the_body, front_in_the_body_verts,
+                                   true);
       Range front_ends;
       CHKERR skin.find_skin(0, front_in_the_body, false, front_ends);
+      front_ends.merge(
+          intersect(front_in_the_body_verts, constrain_surface_verts));
       sets_map[FRONT_ENDS].swap(front_ends);
 
       Range surface_skin_verts;
       CHKERR moab.get_connectivity(surface_skin, surface_skin_verts, true);
       sets_map[SURFACE_SKIN].swap(surface_skin_verts);
-
+      
       // surface
       Range surface_verts;
       CHKERR moab.get_connectivity(surface, surface_verts, true);
+      sets_map[SURFACE_SKIN].merge(
+          intersect(constrain_surface_verts, surface_verts));
       sets_map[SURFACE].swap(surface_verts);
 
       // skin
       Range tets_skin_verts;
       CHKERR moab.get_connectivity(tets_skin, tets_skin_verts, true);
       sets_map[SKIN].swap(tets_skin_verts);
+      sets_map[SKIN].merge(constrain_surface_verts);
 
       Range tets_verts;
       CHKERR moab.get_connectivity(tets, tets_verts, true);
@@ -2676,6 +2676,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     MoFEMErrorCode removeBadEdges(const Range &surface, const Range &tets,
                                   const Range &fixed_edges,
                                   const Range &corner_nodes,
+                                  const Range &constrain_surface,
                                   Range &edges_to_merge,
                                   Range &not_merged_edges) {
       moab::Interface &moab(mField.get_moab());
@@ -2688,18 +2689,32 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
       Range surface_skin;
       CHKERR skin.find_skin(0, surface, false, surface_skin);
 
+      // constrain surface
+      Range constrain_surface_verts;
+      CHKERR moab.get_connectivity(constrain_surface, constrain_surface_verts,
+                                   true);
+      Range constrain_surface_edges;
+      CHKERR moab.get_adjacencies(constrain_surface, 1, false,
+                                  constrain_surface_edges,
+                                  moab::Interface::UNION);
+
       // end nodes
       Range tets_skin_edges;
       CHKERR moab.get_adjacencies(tets_skin, 1, false, tets_skin_edges,
                                   moab::Interface::UNION);
+
       Range surface_front;
       surface_front = subtract(surface_skin, tets_skin_edges);
       Range surface_front_nodes;
       CHKERR moab.get_connectivity(surface_front, surface_front_nodes, true);
+
       Range ends_nodes;
       CHKERR skin.find_skin(0, surface_front, false, ends_nodes);
+      ends_nodes.merge(intersect(surface_front_nodes, constrain_surface_verts));
 
       // remove bad merges
+      surface_skin.merge(constrain_surface);
+      tets_skin_edges.merge(constrain_surface_edges);
 
       // get surface and body skin verts
       Range surface_edges;
@@ -2838,8 +2853,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
   Range not_merged_edges;
   CHKERR Toplogy(m_field, th)
-      .removeBadEdges(surface, tets, fixed_edges, corner_nodes, edges_to_merge,
-                      not_merged_edges);
+      .removeBadEdges(surface, tets, fixed_edges, corner_nodes,
+                      constrainSurface, edges_to_merge, not_merged_edges);
   Toplogy::SetsMap sets_map;
   CHKERR Toplogy(m_field, th)
       .classifyVerts(surface, tets, fixed_edges, corner_nodes, constrainSurface,
@@ -2998,8 +3013,23 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     edges_to_merge = intersect(edges_to_merge, adj_edges);
     CHKERR Toplogy(m_field, th)
         .removeBadEdges(new_surf, proc_tets, fixed_edges, corner_nodes,
-                        edges_to_merge, not_merged_edges);
+                        constrainSurface, edges_to_merge, not_merged_edges);
   }
+
+  auto reconstruct_refined_ents = [&]() {
+    MoFEMFunctionBegin;
+    const RefEntity_multiIndex *refined_ents_ptr;
+    CHKERR m_field.get_ref_ents(&refined_ents_ptr);
+    CHKERR reconstructMultiIndex(*refined_ents_ptr);
+    MoFEMFunctionReturn(0);
+  };
+
+  // Add function which reconstruct core multi-index. Node merging is messy
+  // process and entity parent could be changed without notification to
+  // multi-index. TODO Issue has to be tracked down better, however in principle
+  // is better not to modify multi-index each time parent is changed, that makes
+  // code slow. Is better to do it in the bulk as below.
+  CHKERR reconstruct_refined_ents();
 
   if (bit_ptr)
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevel(proc_tets,
@@ -3062,6 +3092,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
   mergedVolumes.swap(out_new_tets);
   mergedSurfaces.swap(out_new_surf);
+
   MoFEMFunctionReturn(0);
 }
 

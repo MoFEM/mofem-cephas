@@ -1662,6 +1662,20 @@ struct DeprecatedCoreInterface : public CoreInterface {
       const std::string &name, int verb = DEFAULT_VERBOSITY);
 
   /**@}*/
+
+  /** \name Delete and remove */
+
+  /**@{*/
+
+  /**
+   * \deprecated use  remove_parents_by_bit_ref
+   */
+  DEPRECATED MoFEMErrorCode
+  remove_parents_by_by_bit_ref(const BitRefLevel bit, const BitRefLevel mask,
+                               int verb = DEFAULT_VERBOSITY);
+
+  /**@}*/
+
 };
 
 } // namespace MoFEM
