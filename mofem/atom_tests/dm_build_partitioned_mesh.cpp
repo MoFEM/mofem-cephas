@@ -141,8 +141,10 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.modify_finite_element_add_field_data("FE", "FIELD2");
     // Only data
     CHKERR m_field.add_finite_element("FE_ONLY_DATA");
-    CHKERR m_field.modify_finite_element_add_field_data("FE", "FIELD1");
-    CHKERR m_field.modify_finite_element_add_field_data("FE", "FIELD2");
+    CHKERR m_field.modify_finite_element_add_field_data("FE_ONLY_DATA",
+                                                        "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_data("FE_ONLY_DATA",
+                                                        "FIELD2");
     // Add entities to finite element
     CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "FE");
     CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET,
