@@ -2598,8 +2598,24 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
           hint = fe_dofs[ss]->emplace_hint(hint, dofs_array, &v);
       }
     }
-    if (!numered_fe->sPtr->row_field_ents_view->empty() &&
-        !numered_fe->sPtr->col_field_ents_view->empty()) {
+
+    auto check_fields_and_dofs = [](const auto &numered_fe) {
+      auto &fe = *(numered_fe->sPtr);
+
+      // Adding elements if row or column has DOFs, or there is no field set to
+      // rows and columns. The second case would be used by elements performing
+      // tasks which do not assemble matrices or vectors, but evaluate fields or
+      // modify base functions.
+
+      return (!fe.row_field_ents_view->empty() ||
+              !fe.col_field_ents_view->empty())
+
+             ||
+
+             (fe.getBitFieldIdRow().none() || fe.getBitFieldIdCol().none());
+    };
+
+    if (check_fields_and_dofs(numered_fe)) {
 
       // Add element to the problem
       auto p = problem_finite_elements.insert(numered_fe);
