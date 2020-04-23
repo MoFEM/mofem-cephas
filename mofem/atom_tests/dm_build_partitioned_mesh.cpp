@@ -24,6 +24,36 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
+struct CountUp : FEMethod {
+
+  CountUp(int &counter) : FEMethod(), cOunter(counter) {}
+  MoFEMErrorCode preProcess() { return 0; }
+  MoFEMErrorCode operator()() {
+    ++cOunter;
+    return 0;
+  }
+  MoFEMErrorCode postProcess() { return 0; }
+
+private:
+  int &cOunter;
+
+};
+
+struct CountDown : FEMethod {
+
+  CountDown(int &counter) : FEMethod(), cOunter(counter) {}
+    MoFEMErrorCode preProcess() { return 0; }
+  MoFEMErrorCode operator()() {
+    --cOunter;
+    return 0;
+  }
+  MoFEMErrorCode postProcess() { return 0; }
+
+private:
+  int &cOunter;
+
+};
+
 int main(int argc, char *argv[]) {
   // initialize petsc
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
@@ -47,7 +77,7 @@ int main(int argc, char *argv[]) {
     DMType dm_name = "DMMOFEM";
     CHKERR DMRegister_MoFEM(dm_name);
 
-    // craete dm instance
+    // create dm instance
     DM dm;
     CHKERR DMCreate(PETSC_COMM_WORLD, &dm);
     CHKERR DMSetType(dm, dm_name);
@@ -109,8 +139,14 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.modify_finite_element_add_field_row("FE", "FIELD2");
     CHKERR m_field.modify_finite_element_add_field_col("FE", "FIELD2");
     CHKERR m_field.modify_finite_element_add_field_data("FE", "FIELD2");
-    // add entities to finite element
+    // Only data
+    CHKERR m_field.add_finite_element("FE_ONLY_DATA");
+    CHKERR m_field.modify_finite_element_add_field_data("FE", "FIELD1");
+    CHKERR m_field.modify_finite_element_add_field_data("FE", "FIELD2");
+    // Add entities to finite element
     CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "FE");
+    CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET,
+                                                      "FE_ONLY_DATA");
     // build finite elemnts
     CHKERR m_field.build_finite_elements();
     // build adjacencies
@@ -123,11 +159,12 @@ int main(int argc, char *argv[]) {
                           // and cols)
     CHKERR DMSetFromOptions(dm);
     CHKERR DMMoFEMAddElement(dm, "FE");
+    CHKERR DMMoFEMAddElement(dm, "FE_ONLY_DATA");
     CHKERR DMSetUp(dm);
 
     // dump data to file, just to check if something was changed
-    Mat m;
-    CHKERR DMCreateMatrix(dm, &m);
+    SmartPetscObj<Mat> m;
+    CHKERR DMCreateMatrix_MoFEM(dm, m);
 
     CHKERR m_field.getInterface<MatrixManager>()
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
@@ -162,9 +199,18 @@ int main(int argc, char *argv[]) {
       CHKERR PetscViewerDestroy(&viewer);
     }
 
-    CHKERR MatDestroy(&m);
+    int count = 0;
+    CHKERR DMoFEMLoopFiniteElements(dm, "FE",
+                                    boost::make_shared<CountUp>(count));
+    CHKERR DMoFEMLoopFiniteElements(dm, "FE_ONLY_DATA",
+                                    boost::make_shared<CountDown>(count));
+    if(count)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Should be zero %d",
+               count);
+
     // destry dm
     CHKERR DMDestroy(&dm);
+
   }
   CATCH_ERRORS;
 
