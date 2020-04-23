@@ -2607,12 +2607,26 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       // tasks which do not assemble matrices or vectors, but evaluate fields or
       // modify base functions.
 
+      if (!part_from_moab) {
+
+        if(fe.getBitFieldIdRow().none())
+          THROW_MESSAGE(
+              "At leas one field has to be added to element row, to determine "
+              "partition  of finite element, if mesh is not partitioned. Check "
+              "element " +
+              boost::lexical_cast<std::string>(fe.getName()));
+
+        return !fe.row_field_ents_view->empty();
+
+      } else {
+
       return (!fe.row_field_ents_view->empty() ||
               !fe.col_field_ents_view->empty())
 
              ||
 
              (fe.getBitFieldIdRow().none() || fe.getBitFieldIdCol().none());
+      }
     };
 
     if (check_fields_and_dofs(numered_fe)) {
