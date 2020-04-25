@@ -1023,7 +1023,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
   };
 
   auto get_prj_point = [&](const EntityHandle v, const Range edges,
-                           const bool geom_dist, const double geometry_tol) {
+                           const double geometry_tol) {
     auto get_tuple = [](const EntityHandle e, const double dist,
                         const double l) { return std::make_tuple(e, dist, l); };
 
@@ -1058,7 +1058,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     const auto geom_tol = norm_2(geom_dist_vec);
     const auto l = std::get<2>(min_tuple);
 
-    if (geom_dist || (geom_tol < l * geometry_tol)) {
+    if (geom_tol < l * geometry_tol) {
       return std::make_pair(get_coords(v), l);
 
     } else {
@@ -1121,61 +1121,43 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
       if (!e.empty()) {
 
         if (get_in_range(v, corner_n)) {
-          auto p = get_prj_point(v, e, false, 0);
+          auto p = get_prj_point(v, e, 0);
           if (norm_2(get_coords(v) - p.first) < close_tol * p.second) {
             vertices_on_cut_edges.push_back(add_zero_vertex(v, get_coords(v)));
             continue;
           }
 
-        }
-
-        if (get_in_range(v, fixe_n)) {
+        } else if (get_in_range(v, fixe_n)) {
           const auto b = intersect_v(v, cut_fix);
           if (!b.empty()) {
-            auto p = get_prj_point(v, b, false, geometry_tol);
+            auto p = get_prj_point(v, b, geometry_tol);
             if (norm_2(get_coords(v) - p.first) < close_tol * p.second) {
               vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
               continue;
             }
-          }
 
-        }
-
-        if (get_in_range(v, skin_n)) {
-          const auto b = intersect_v(v, cut_skin);
-          if (!b.empty()) {
-            auto p = get_prj_point(v, b, false, 0);
-            if (norm_2(get_coords(v) - p.first) < close_tol * p.second) {
-              vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
-              continue;
+          } else if (get_in_range(v, skin_n)) {
+            const auto b = intersect_v(v, cut_skin);
+            if (!b.empty()) {
+              auto p = get_prj_point(v, b, geometry_tol);
+              if (norm_2(get_coords(v) - p.first) < close_tol * p.second) {
+                vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
+                continue;
+              }
             }
-          }
 
+          }
         }
 
-        if (get_in_range(v, fixe_n)) {
-          auto p = get_prj_point(v, e, false, 0);
-          if (norm_2(get_coords(v) - p.first) < geometry_tol * p.second) {
+        auto p = get_prj_point(v, e, geometry_tol);
+        if (norm_2(get_coords(v) - p.first) < close_tol * p.second) {
+          if (get_in_range(v, fixe_n) || get_in_range(v, skin_n))
             vertices_on_cut_edges.push_back(add_zero_vertex(v, get_coords(v)));
-            continue;
+          else
+            vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
           }
-
         }
-
-        if (get_in_range(v, skin_n)) {
-          auto p = get_prj_point(v, e, false, 0);
-          if (norm_2(get_coords(v) - p.first) < geometry_tol * p.second) {
-            vertices_on_cut_edges.push_back(add_zero_vertex(v, get_coords(v)));
-            continue;
-          }
-
-        }
-
-        auto p = get_prj_point(v, e, false, 0);
-        if (norm_2(get_coords(v) - p.first) < close_tol * p.second)
-          vertices_on_cut_edges.push_back(add_zero_vertex(v, p.first));
-
-      }
+        
     }
 
     auto get_distances = [&](auto &data) {
@@ -1201,13 +1183,6 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     };
 
     std::sort(vertices_on_cut_edges.begin(), vertices_on_cut_edges.end(), cmp);
-
-    auto cmp_abs = [&dist_map](const auto &a, const auto &b) {
-      return std::abs(dist_map[a.first]) < std::abs(dist_map[b.first]);
-    };
-    auto max_dist = std::max_element(vertices_on_cut_edges.begin(),
-                                     vertices_on_cut_edges.end(), cmp_abs)
-                        ->second.dIst;
 
     return vertices_on_cut_edges;
   };
