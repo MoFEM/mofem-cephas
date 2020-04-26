@@ -2599,34 +2599,33 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       }
     }
 
-    auto check_fields_and_dofs = [part_from_moab](const auto &numered_fe) {
+    auto check_fields_and_dofs = [part_from_moab,
+                                  &m_field](const auto &numered_fe) {
       auto &fe = *(numered_fe->sPtr);
+
+
+      if (!part_from_moab) {
+
+        if (fe.getBitFieldIdRow().none() && m_field.get_comm_size() == 0) {
+          // THROW_MESSAGE(
+          //     "At least one field has to be added to element row, to
+          //     determine " "partition  of finite element, if mesh is not
+          //     partitioned. Check " "element " +
+          //     boost::lexical_cast<std::string>(fe.getName()));
+        }
+      }
 
       // Adding elements if row or column has DOFs, or there is no field set to
       // rows and columns. The second case would be used by elements performing
       // tasks which do not assemble matrices or vectors, but evaluate fields or
       // modify base functions.
 
-      if (!part_from_moab) {
+      return (!fe.row_field_ents_view->empty() ||
+              !fe.col_field_ents_view->empty())
 
-        if(fe.getBitFieldIdRow().none())
-          THROW_MESSAGE(
-              "At leas one field has to be added to element row, to determine "
-              "partition  of finite element, if mesh is not partitioned. Check "
-              "element " +
-              boost::lexical_cast<std::string>(fe.getName()));
+             ||
 
-        return !fe.row_field_ents_view->empty();
-
-      } else {
-
-        return (!fe.row_field_ents_view->empty() ||
-                !fe.col_field_ents_view->empty())
-
-               ||
-
-               (fe.getBitFieldIdRow().none() || fe.getBitFieldIdCol().none());
-      }
+             (fe.getBitFieldIdRow().none() || fe.getBitFieldIdCol().none());
     };
 
     if (check_fields_and_dofs(numered_fe)) {
