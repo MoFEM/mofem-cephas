@@ -672,23 +672,17 @@ MoFEMErrorCode CutMeshInterface::findLevelSetVolumes(
 
   auto get_cut_edges_vec = [&](auto th, auto &cut_edges, auto e, auto &&conn) {
     MoFEMFunctionBegin;
+
     auto ray = get_edge_ray(conn);
     const double length = norm_2(ray);
     ray /= length;
-    auto signed_norm = [&](const auto &v) { return inner_prod(ray, v); };
     const auto dist0 = get_tag_data(th, conn[0]);
     const auto dist1 = get_tag_data(th, conn[1]);
-    // const double min_dist = std::min(norm_2(dist0), norm_2(dist1));
-    // if (min_dist < 2 * length) {
-    auto opposite = inner_prod(dist0, dist1);
-    if (opposite <= std::numeric_limits<double>::epsilon()) {
-      const double sign_dist0 = signed_norm(dist0);
-      const double sign_dist1 = signed_norm(dist1);
-      if (sign_dist0 > -std::numeric_limits<double>::epsilon() &&
-          sign_dist1 < std::numeric_limits<double>::epsilon())
-        cut_edges.push_back(e);
+    const double max_dist = std::max(norm_2(dist0), norm_2(dist1));
+    if (max_dist < length) {
+      cut_edges.push_back(e);
     }
-    // }
+
     MoFEMFunctionReturn(0);
   };
 
@@ -703,7 +697,7 @@ MoFEMErrorCode CutMeshInterface::findLevelSetVolumes(
     const auto dist0 = get_tag_signed_dist(conn[0]);
     const auto dist1 = get_tag_signed_dist(conn[1]);
     const double opposite = dist0 * dist1;
-    if (opposite < 0)
+    if (opposite <= 0)
       cut_edges.push_back(e);
     MoFEMFunctionReturn(0);
   };
@@ -758,13 +752,6 @@ MoFEMErrorCode CutMeshInterface::findLevelSetVolumes(int verb,
   cutSurfaceVolumes.clear();
   CHKERR findLevelSetVolumes(th_dist_surface_vec, cutSurfaceVolumes, true, verb,
                              debug, "cutSurfaceEdges.vtk");
-  Tag th_dist_signed_normal;
-  CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_SIGNED",
-                             th_dist_signed_normal);
-  Range signed_vol;
-  CHKERR findLevelSetVolumes(th_dist_signed_normal, signed_vol, true, verb,
-                             debug, "cutSurfaceEdges.vtk");
-  cutSurfaceVolumes = intersect(cutSurfaceVolumes, signed_vol);
 
   if (debug)
     CHKERR SaveData(m_field.get_moab())("level_sets.vtk", vOlume);
@@ -1221,7 +1208,6 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
       };
 
   auto get_zero_distance_verts = [&](const auto &&vertices_on_cut_edges) {
-    verticesOnCutEdges.clear();
     std::vector<EntityHandle> zero_dist_vec;
     zero_dist_vec.reserve(vertices_on_cut_edges.size());
     for (auto t : vertices_on_cut_edges) {
@@ -1248,8 +1234,10 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     return subtract(ents, ents_to_remove);
   };
 
-  zeroDistanceVerts =
-      get_range(get_zero_distance_verts(project_nodes(get_adj(cutEdges, 0))));
+  verticesOnCutEdges.clear();
+  zeroDistanceVerts.clear();
+  zeroDistanceVerts.merge(
+      get_range(get_zero_distance_verts(project_nodes(get_adj(cutEdges, 0)))));
   zeroDistanceEnts = subtract(get_zero_distant_ents(zeroDistanceVerts, 2, 0),
                               get_skin(vOlume));
 
@@ -2050,6 +2038,18 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
                   trimNewSurfaces),
         0));
   }
+
+  auto get_nodes_with_one_node_on_fixed_edge_other_not = [&]() {
+    const auto fixed_edges_on_surface =
+        intersect(*fixed_edges, trim_surface_edges);
+    const auto skin_fixed_edges_on_surface = get_skin(fixed_edges_on_surface);
+    const auto barrier_nodes = subtract(skin_fixed_edges_on_surface,
+                                  get_adj(get_skin(trimNewSurfaces), 0));
+    return barrier_nodes;
+  };
+
+  if (fixed_edges)
+    barrier_vertices.merge(get_nodes_with_one_node_on_fixed_edge_other_not());
 
   auto add_close_surface_barrier = [&]() {
     MoFEMFunctionBegin;
