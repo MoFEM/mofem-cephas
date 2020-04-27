@@ -69,13 +69,18 @@ struct LogManager : public UnknownInterface {
 
   struct SynchronizedStream {
     SynchronizedStream(MPI_Comm comm) : cOmm(comm) {}
-    SynchronizedStream &operator<<(const std::ostringstream &os) {
-      PetscSynchronizedPrintf(cOmm, "%s", os.str().c_str());
+    template<typename T>
+    SynchronizedStream &operator<<(const T &os) {
+      strm << os;
       return *this;
     }
-    void flush() { PetscSynchronizedFlush(cOmm, PETSC_STDOUT); }
+    void flush() {
+      PetscSynchronizedPrintf(cOmm, "%s", strm.str().c_str());
+      PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+    }
 
   private:
+    std::ostringstream strm;
     MPI_Comm cOmm;
   };
 
