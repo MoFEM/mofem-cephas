@@ -497,13 +497,13 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
   auto set_vol = [&](const Range &vol_verts, std::vector<double> &coords,
                      std::vector<double> &dist_surface_vec,
                      std::vector<double> &dist_surface_normal_vec,
-                     std::vector<double> &dist_surface_digned_dist_vec) {
+                     std::vector<double> &dist_surface_signed_dist_vec) {
     MoFEMFunctionBegin;
 
     coords.resize(3 * vol_verts.size());
     dist_surface_vec.resize(3 * vol_verts.size());
     dist_surface_normal_vec.resize(3 * vol_verts.size());
-    dist_surface_digned_dist_vec.resize(vol_verts.size());
+    dist_surface_signed_dist_vec.resize(vol_verts.size());
 
     CHKERR moab.get_coords(vol_verts, &*coords.begin());
     std::srand(0);
@@ -537,7 +537,7 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
       auto dist_normal_vec =
           getVectorAdaptor(&dist_surface_normal_vec[3 * index], 3);
 
-      dist_surface_digned_dist_vec[index] = dot;
+      dist_surface_signed_dist_vec[index] = dot;
       noalias(dist_normal_vec) = dot * n;
     }
 
