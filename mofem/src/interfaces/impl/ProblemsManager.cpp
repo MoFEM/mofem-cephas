@@ -2444,11 +2444,12 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
   if (hi_proc == -1)
     hi_proc = m_field.get_comm_rank();
 
-  // Find pointer to problem of given name
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
   // Get pointer to problem data struture
   CHKERR m_field.get_problems(&problems_ptr);
-  ProblemByName &problems =
+
+  // Find pointer to problem of given name
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
+  auto &problems =
       const_cast<ProblemByName &>(problems_ptr->get<Problem_mi_tag>());
   ProblemByName::iterator p_miit = problems.find(name);
   if (p_miit == problems.end()) {
@@ -2524,17 +2525,16 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
           proc = (*efit)->getOwnerProc();
         }
         NumeredEntFiniteElement_change_part(proc).operator()(numered_fe);
+        
       } else {
-        // count partition of the dofs in row, the larges dofs with given
+
+        // Count partition of the dofs in row, the larges dofs with given
         // partition is used to set partition of the element
         CHKERR(*efit)->getRowDofView(*(p_miit->numeredDofsRows), rows_view,
                                      moab::Interface::UNION);
         std::vector<int> parts(m_field.get_comm_size(), 0);
-        NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_rows;
-        viit_rows = rows_view.begin();
-        for (; viit_rows != rows_view.end(); viit_rows++) {
-          parts[(*viit_rows)->pArt]++;
-        }
+        for(auto &dof_ptr : rows_view)
+          parts[dof_ptr->pArt]++;
         std::vector<int>::iterator pos =
             max_element(parts.begin(), parts.end());
         unsigned int max_part = std::distance(parts.begin(), pos);
@@ -2546,10 +2546,10 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
     if ((numered_fe->getPart() >= (unsigned int)low_proc) &&
         (numered_fe->getPart() <= (unsigned int)hi_proc)) {
 
-      NumeredDofEntity_multiIndex_uid_view_ordered *dofs_view[] = {&rows_view,
-                                                                   &cols_view};
-      FENumeredDofEntity_multiIndex *fe_dofs[] = {rows_dofs.get(),
-                                                  cols_dofs.get()};
+      std::array<NumeredDofEntity_multiIndex_uid_view_ordered *, 2> dofs_view{
+          &rows_view, &cols_view};
+      std::array<FENumeredDofEntity_multiIndex *, 2> fe_dofs{rows_dofs.get(),
+                                                             cols_dofs.get()};
 
       for (int ss = 0; ss != (do_cols_fe ? 2 : 1); ss++) {
 
@@ -2598,9 +2598,38 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
           hint = fe_dofs[ss]->emplace_hint(hint, dofs_array, &v);
       }
     }
-    if (!numered_fe->sPtr->row_field_ents_view->empty() &&
-        !numered_fe->sPtr->col_field_ents_view->empty()) {
 
+    auto check_fields_and_dofs = [part_from_moab](const auto &numered_fe) {
+      auto &fe = *(numered_fe->sPtr);
+
+      // Adding elements if row or column has DOFs, or there is no field set to
+      // rows and columns. The second case would be used by elements performing
+      // tasks which do not assemble matrices or vectors, but evaluate fields or
+      // modify base functions.
+
+      if (!part_from_moab) {
+
+        if(fe.getBitFieldIdRow().none())
+          THROW_MESSAGE(
+              "At leas one field has to be added to element row, to determine "
+              "partition  of finite element, if mesh is not partitioned. Check "
+              "element " +
+              boost::lexical_cast<std::string>(fe.getName()));
+
+        return !fe.row_field_ents_view->empty();
+
+      } else {
+
+        return (!fe.row_field_ents_view->empty() ||
+                !fe.col_field_ents_view->empty())
+
+               ||
+
+               (fe.getBitFieldIdRow().none() || fe.getBitFieldIdCol().none());
+      }
+    };
+
+    if (check_fields_and_dofs(numered_fe)) {
       // Add element to the problem
       auto p = problem_finite_elements.insert(numered_fe);
       if (!p.second)
@@ -2610,9 +2639,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
         std::ostringstream ss;
         ss << *p_miit << std::endl;
         ss << *p.first << std::endl;
-        typedef FENumeredDofEntityByUId FENumeredDofEntityByUId;
-        FENumeredDofEntityByUId::iterator miit =
-            (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
+        auto miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
         for (; miit != (*p.first)->rows_dofs->get<Unique_mi_tag>().end();
              miit++)
           ss << "rows: " << *(*miit) << std::endl;
@@ -2622,18 +2649,16 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
           ss << "cols: " << *(*miit) << std::endl;
         PetscSynchronizedPrintf(m_field.get_comm(), ss.str().c_str());
       }
+
     }
+
   }
 
   if (verb >= VERBOSE) {
-    typedef NumeredEntFiniteElement_multiIndex::index<Part_mi_tag>::type
-        NumeredEntFiniteElementPart;
-    NumeredEntFiniteElementPart::iterator miit, hi_miit;
-    miit = problem_finite_elements.get<Part_mi_tag>().lower_bound(
-        m_field.get_comm_rank());
-    hi_miit = problem_finite_elements.get<Part_mi_tag>().upper_bound(
-        m_field.get_comm_rank());
-    int count = std::distance(miit, hi_miit);
+    auto elements_on_rank =
+        problem_finite_elements.get<Part_mi_tag>().equal_range(
+            m_field.get_comm_rank());
+    int count = std::distance(elements_on_rank.first, elements_on_rank.second);
     std::ostringstream ss;
     ss << *p_miit;
     ss << " Nb. elems " << count << " on proc " << m_field.get_comm_rank()
