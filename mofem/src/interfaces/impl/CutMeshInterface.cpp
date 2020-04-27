@@ -517,12 +517,55 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
       CHKERR treeSurfPtr->closest_to_location(&point_in[0], rootSetSurf,
                                               &point_out[0], facets_out);
 
-      VectorDouble3 n(3);
-      CHKERR tools_interface->getTriNormal(facets_out, &*n.begin());
-      n /= norm_2(n);
-
       VectorDouble3 delta = point_out - point_in;
+      VectorDouble3 n_first(3);
+      CHKERR tools_interface->getTriNormal(facets_out, &*n_first.begin());
+
+      // Check of only triangle in proximity of point out is one triangle, if is
+      // more than one, use normal of lager triangle to set orientation.
+      auto check_triangle_orientation = [&](auto n) {
+        int num_nodes;
+        const EntityHandle *conn;
+        CHKERR moab.get_connectivity(facets_out, conn, num_nodes, true);
+        MatrixDouble3by3 coords(3, 3);
+        CHKERR moab.get_coords(conn, 3, &coords(0, 0));
+        VectorDouble3 center(3);
+        center.clear();
+        for (auto ii : {0, 1, 2})
+          for (auto jj : {0, 1, 2})
+            center(jj) += coords(ii, jj) / 3;
+
+        std::vector<EntityHandle> triangles_out;
+        std::vector<double> distance_out;
+        auto a_max = norm_2(n);
+        VectorDouble3 ray = -n / a_max;
+        VectorDouble3 pt = center - ray * sqrt(a_max);
+        const double ray_length = 2 * sqrt(a_max);
+
+        CHKERR treeSurfPtr->ray_intersect_triangles(
+            distance_out, triangles_out, rootSetSurf,
+            std::numeric_limits<float>::epsilon(), &pt[0], &ray[0],
+            &ray_length);
+
+        if (triangles_out.size() > 1) {
+          VectorDouble3 nt(3);
+          for (auto t : triangles_out) {
+            CHKERR tools_interface->getTriNormal(t, &*nt.begin());
+            double at = norm_2(nt);
+            if (at > a_max) {
+              n = nt;
+              a_max = at;
+            }
+          }
+        }
+
+        return n;
+      };
+
+      auto n = check_triangle_orientation(n_first);
+      n /= norm_2(n);
       const double dot = inner_prod(delta, n);
+
 
       if (std::abs(dot) < std::numeric_limits<double>::epsilon()) {
         if (std::rand() % 2 == 0)
