@@ -21,7 +21,7 @@ MoFEMErrorCode MoFEM::Integrated_Legendre(int p, double s, double *L,
     {
       for (int i = 0; i != p; i++)
       {
-        double factor = 1.0 / (2.0 * (2.0*(i+1) + 1.0));
+        double factor = 1.0 / (2.0 * (2.0 * (i+1) + 1.0));
 
         L[i+1] = factor * (l[i+2] - factor * l[i]);
         diffL[i+1] = 0.5 * l[i+1];
@@ -74,12 +74,12 @@ MoFEMErrorCode MoFEM::H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
       double ss = s[e] * sense[e];
       CHKERR Integrated_Legendre(p[e], ss, L, diffL);
       int qd_shift = (p[e]+1) * q;
-      for (int n = 0; n != p[e] + 1; n++) {
-        edgeN[qd_shift + n][e] = mu[e] * L[n];
+      for (int n = 0; n != p[e]; n++) {
+        edgeN[qd_shift + n][e] = mu[e] * L[n+1];
         diff_edgeN[2 * qd_shift + 2 * n][e] =
-            mu[e] * diffL[n] * sense[e] * diff_s[e][0] + diff_mu[e][0] * L[n];
+            mu[e] * diffL[n+1] * sense[e] * diff_s[e][0] + diff_mu[e][0] * L[n+1];
         diff_edgeN[2 * qd_shift + 2 * n + 1][e] =
-            mu[e] * diffL[n] * sense[e] * diff_s[e][1] + diff_mu[e][1] * L[n];
+            mu[e] * diffL[n+1] * sense[e] * diff_s[e][1] + diff_mu[e][1] * L[n+1];
       }
     }
   }
