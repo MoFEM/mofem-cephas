@@ -241,10 +241,9 @@ PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,
       }
     }
   }
-  for (int k = 0; k != p; k++)
-  {
+  for (int k = 0; k != p; k++) {
     double factor = 2.0 * (2.0 * (k + 1.0) + 1.0);
-    L[k] = 1.0 / factor * (l[k+2] - l[k]);
+    L[k] = 1.0 / factor * (l[k + 2] - l[k]);
   }
   MoFEMFunctionReturnHot(0);
 }
