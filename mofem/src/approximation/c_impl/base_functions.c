@@ -246,36 +246,6 @@ PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,
     double factor = 2.0 * (2.0 * (k + 1.0) + 1.0);
     L[k] = 1.0 / factor * (l[k+2] - l[k]);
   }
-  
-
-
-  // {
-  //   // Functions
-  //   bzero(L, (p + 1) * sizeof(double));
-  //   int nb_gauss_pts = QUAD_1D_TABLE[p + 2]->npoints;
-  //   double *points = QUAD_1D_TABLE[p + 2]->points;
-  //   double *weights = QUAD_1D_TABLE[p + 2]->weights;
-  //   s = s + 1;
-  //   int gg = 0;
-  //   for (; gg != nb_gauss_pts; gg++) {
-  //     double ksi = points[2 * gg + 1];
-  //     double zeta = s * ksi - 1;
-  //     ierr = Legendre_polynomials(p + 1, zeta, NULL, l, NULL, 1);
-  //     CHKERRQ(ierr);
-  //     double w = s * weights[gg];
-  //     cblas_daxpy(p + 1, w, &l[1], 1, &L[0], 1);
-  //   }
-  // }
-  // {
-  //   int k = 0;
-  //   for (; k <= p; k++) {
-  //     double a = 4 * sqrt(k + 2 - 0.5);
-  //     if (L != NULL)
-  //       L[k] *= a;
-  //     if (diffL != NULL)
-  //       diffL[k] *= a;
-  //   }
-  // }
   MoFEMFunctionReturnHot(0);
 }
 
