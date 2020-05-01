@@ -15,4 +15,5 @@
 #include "impl/EdgePolynomialBase.cpp"
 #include "impl/FlatPrismPolynomialBase.cpp"
 #include "impl/FatPrismPolynomialBase.cpp"
+#include "impl/EdgeQuadHexPolynomials.cpp"
 

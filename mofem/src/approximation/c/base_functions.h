@@ -91,18 +91,23 @@ PetscErrorCode IntegratedJacobi_polynomials(int p, double alpha, double x,
                                             double *diffL, const int dim);
 
 /**
- \brief Calculate Lobatto base functions.
+ \brief Calculate Lobatto base functions \cite FUENTES2015353.
 
  \ingroup mofem_base_functions
 
  Order of first function is 2.
 
  \param p is approximation order
- \param s is position \f$s\in[-1,1]\f$
- \param diff_s derivatives of shape functions, i.e. \f$\frac{\partial
- s}{\partial \xi_i}\f$ \retval L approximation functions \retval diffL
- derivatives, i.e. \f$\frac{\partial L}{\partial \xi_i}\f$ \param dim dimension
+ \param s is a parametrisation of position on segment
+ \f$s(\xi_1,\cdots, \xi_{dim})\in[-1,1]\f$ \param diff_s derivatives of shape
+ functions, i.e. \f$\frac{\partial s}{\partial \xi_i}\f$ \retval L approximation
+ functions \retval diffL derivatives, i.e. \f$\frac{\partial L}{\partial
+ \xi_i}\f$
+ \param dim dimension of ambient space where the segment is embedded
  \return error code
+ - output
+ \param L values of basis functions
+ \param diffL derivatives of basis functions
 
 */
 PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,

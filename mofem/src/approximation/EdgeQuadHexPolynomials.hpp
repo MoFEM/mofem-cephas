@@ -45,9 +45,8 @@ MoFEMErrorCode Integrated_Legendre(int p, double s, double *L,
     Integrated Legendre)
     * @return                  error code
     */
-    MoFEMErrorCode
-    H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N, double *edgeN[],
-                                 double *diff_edgeN[], int nb_integration_pts);
+  MoFEMErrorCode H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N, double *edgeN[4],
+                                 double *diff_edgeN[4], int nb_integration_pts);
 
 /**
 * \brief H1 Face bubble functions on Quad.
@@ -66,9 +65,8 @@ integration point
 Legendre)
 * @return                  error code
 */
-MoFEMErrorCode H1_FaceShapeFunctions_ONQUAD(
-    int *sense, int *p, double *N, double *edgeN[],
-    double *diff_edgeN[], int nb_integration_pts);
+MoFEMErrorCode H1_FaceShapeFunctions_ONQUAD(int *p, double *N, double *faceN,
+                                            double *diff_faceN, int nb_integration_pts);
 
 /**
 * \brief L2 Face base functions on Quad
@@ -86,12 +84,14 @@ integration point
 Legendre)
 * @return                  error code
 */
-MoFEMErrorCode L2_FaceShapeFunctions_ONQUAD(
-    int *p, double *N, double *diffN, double *edgeN[], double *diff_edgeN[],
-    int nb_integration_pts,
-    PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
-                                       double *L, double *diffL,
-                                       const int dim));
+MoFEMErrorCode L2_FaceShapeFunctions_ONQUAD(int *p, double *N, 
+                                            double *face_buble, double *diff_face_bubble,
+                                            int nb_integration_pts);
+
+MoFEMErrorCode Hcurl_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
+                                               double *edgeN[],
+                                               double *curl_edgeN[],
+                                               int nb_integration_pts);
 
 } // namespace MoFEM
 
