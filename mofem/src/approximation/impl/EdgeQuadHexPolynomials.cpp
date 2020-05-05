@@ -28,10 +28,10 @@ MoFEMErrorCode MoFEM::Integrated_Legendre(int p, double s, double *L,
   {
     for (int i = 0; i != p-1; i++)
     {
-      double factor = 1.0 / (2.0 * (2.0 * (i+1) + 1.0));
+      double factor = 1.0 / ((2.0 * (i+1) + 1.0));
 
       L[i] = factor * (l[i+2] - l[i]);
-      diffL[i] = 0.5 * l[i+1];
+      diffL[i] = l[i+1];
     }
   }
   
@@ -130,17 +130,17 @@ MoFEMErrorCode MoFEM::L2_FaceShapeFunctions_ONQUAD(int *p, double *N, double *fa
     double ksi = -N[shift + 0] + N[shift + 1] + N[shift + 2] - N[shift + 3];
     double eta = -N[shift + 0] - N[shift + 1] + N[shift + 2] + N[shift + 3];
 
-    double L0[p[0]];
-    double L1[p[1]];
+    double L0[p[0] - 1];
+    double L1[p[1] - 1];
 
-    CHKERR Legendre_polynomials(p[0] - 1, ksi, NULL, L0, NULL, 1);
-    CHKERR Legendre_polynomials(p[1] - 1, eta, NULL, L1, NULL, 1);
+    CHKERR Legendre_polynomials(p[0], ksi, NULL, L0, NULL, 1);
+    CHKERR Legendre_polynomials(p[1], eta, NULL, L1, NULL, 1);
 
-    int qd_shift = p[0] * p[1]  * q;
+    int qd_shift = (p[0] - 1) * (p[1] - 1)  * q;
     int n = 0;
     for (int s1 = 0; s1 != p[0]; s1++) {
       for (int s2 = 0; s2 != p[1]; s2++) {
-        faceN[qd_shift + n] = 0.25 * L0[s1] * L1[s2];
+        faceN[qd_shift + n] = L0[s1] * L1[s2];
         ++n;
       }
     }
@@ -154,10 +154,6 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
                                                       double *curl_edgeN[],
                                                       int nb_integration_pts) {
   MoFEMFunctionBeginHot;
-  auto cross_product = [](double *E1, double *E2){
-    return E1[0] * E2[1] - E1[1] * E2[0];
-  };
-
   for (int q = 0; q != nb_integration_pts; q++) {
     int shift = 4 * q;
     double ksi = -N[shift + 0] + N[shift + 1] + N[shift + 2] - N[shift + 3];
@@ -179,19 +175,56 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
     double diff_s[4][2] = {{1.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {0.0, 1.0}};
 
     for (int e = 0; e != 4; e++) {
-      double L[p[e]];
+      double L[p[e] - 1];
       double ss = s[e] * sense[e];
-      CHKERR Legendre_polynomials(p[0] - 1, ss, NULL, L, NULL, 1);
-      int qd_shift = p[e] * q;
+      CHKERR Legendre_polynomials(p[0], ss, NULL, L, NULL, 1);
+      int qd_shift = (p[e] - 1) * q;
       for (int n = 0; n != p[e]; n++) {
         edgeN[e][2 * (qd_shift + n) + 0] = mu[e] * L[n] * diff_s[e][0];
         edgeN[e][2 * (qd_shift + n) + 1] = mu[e] * L[n] * diff_s[e][1];
 
         double E1[2] = {diff_mu[e][0], diff_mu[e][1]};
         double E2[2] = {L[n] * diff_s[e][0], L[n] * diff_s[e][0]}; 
-        curl_edgeN[e][qd_shift + n] = cross_product(E1, E2);
+        curl_edgeN[e][qd_shift + n] = E1[0] * E2[1] - E1[1] * E2[0];
       }
     }
   }
   MoFEMFunctionReturnHot(0);
-                                                      }
+}
+
+MoFEMErrorCode Hcurl_FaceShapeFunctions_ONQUAD(int *p, double *N,
+                                               double *faceN[],
+                                               double *curl_faceN[],
+                                               int nb_integration_pts){
+  MoFEMFunctionBeginHot;
+  for (int q = 0; q != nb_integration_pts; q++) {
+    int shift = 4 * q;
+
+    double ksi = -N[shift + 0] + N[shift + 1] + N[shift + 2] - N[shift + 3];
+    double eta = -N[shift + 0] - N[shift + 1] + N[shift + 2] + N[shift + 3];
+
+    double s[2] = {ksi, eta};
+    double diff_s[2][2] = {{1.0, 0.0}, {0.0, 1.0}};
+
+    for (int typ = 0; typ != 2; typ++)
+    {
+      double Phi[p[typ] - 1];
+      double diffPhi[p[typ] - 1];
+      CHKERR Integrated_Legendre(p[typ], s[typ], Phi, diffPhi);
+
+      double E[p[typ]];
+      CHKERR Legendre_polynomials(p[typ] - 1, s[typ], NULL, E, NULL, 1);
+
+      int qd_shift = (p[typ] - 1) * p[(typ + 1) % 2] * q;
+      int n = 0;
+      for (int i = 0; i != p[typ] - 1; i++) {
+        for (int j = 0; j != p[typ]; i++) {
+          faceN[typ][2 * (qd_shift + n) + 0] = Phi[i] * E[j] * diff_s[typ][0];
+          faceN[typ][2 * (qd_shift + n) + 1] = Phi[i] * E[j] * diff_s[typ][1];
+          ++n;
+        }
+      }
+    }
+  }
+  MoFEMFunctionReturnHot(0);
+}

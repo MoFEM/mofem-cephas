@@ -93,6 +93,11 @@ MoFEMErrorCode Hcurl_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
                                                double *curl_edgeN[],
                                                int nb_integration_pts);
 
+MoFEMErrorCode Hcurl_FaceShapeFunctions_ONQUAD(int *p, double *N,
+                                               double *faceN[],
+                                               double *curl_faceN[],
+                                               int nb_integration_pts);
+
 } // namespace MoFEM
 
 #endif // __EDGE_QUAD_HEX_HPP__
