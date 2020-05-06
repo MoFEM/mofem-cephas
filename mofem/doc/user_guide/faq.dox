@@ -508,12 +508,13 @@ Similar process to send message to MS Teams can be done using their APIs
 TITLE="Title of your message"
 MESSAGE="Body of your message"
 JSON="{\"title\": \"${TITLE}\", \"text\": \"${MESSAGE}\" }"
-WEBHOOK_URL="https://outlook.office.com/webhook/43c9f281-c5e1-4833-be78-27addb5d8529@6e725c29-763a-4f50-81f2-2e254f0133c8/IncomingWebhook/441a73f641534b14ac0d65ead4adb94b/4b2fd8be-d98a-492f-b349-c2ae11c04573"
+WEBHOOK_URL="https://outlook.office.com/webhook/abcd1234xyz"
 
 curl -H "Content-Type: application/json" -d "${JSON}" "${WEBHOOK_URL}"
 \endcode
 
-Where WEBHOOK_URL is the webhook URL of the channel to which the message will be
-sent. How to get webhook URL can be found <a href=https://learning.postman.com/docs/integrations/microsoft-teams/> here</a>.
+Where WEBHOOK_URL is the webhook URL of the Teams channel to which the message
+will be sent. How to get webhook URL can be found <a
+href=https://learning.postman.com/docs/integrations/microsoft-teams/> here</a>. 
 
 */
