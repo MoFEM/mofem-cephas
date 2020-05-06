@@ -48,8 +48,10 @@ struct LogManager : public UnknownInterface {
 
   class SelfStreamBuf : public std::stringbuf {
     virtual int sync() {
-      PetscPrintf(PETSC_COMM_SELF, "%s", this->str().c_str());
-      this->str("");
+      if (!this->str().empty()) {
+        PetscPrintf(PETSC_COMM_SELF, "%s", this->str().c_str());
+        this->str("");
+      }
       return 0;
     }
   };
@@ -57,8 +59,10 @@ struct LogManager : public UnknownInterface {
   struct WorldStreamBuf : public std::stringbuf  {
     WorldStreamBuf(MPI_Comm comm) : cOmm(comm) {}
     virtual int sync() {
-      PetscPrintf(cOmm, "%s", this->str().c_str());
-      this->str("");
+      if (!this->str().empty()) {
+        PetscPrintf(cOmm, "%s", this->str().c_str());
+        this->str("");
+      }
       return 0;
     }
   private:
@@ -68,9 +72,11 @@ struct LogManager : public UnknownInterface {
   struct SynchronizedStreamBuf : public std::stringbuf  {
     SynchronizedStreamBuf(MPI_Comm comm) : cOmm(comm) {}
     virtual int sync() {
-      PetscSynchronizedPrintf(cOmm, "%s", this->str().c_str());
-      PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-      this->str("");
+      if (!this->str().empty()) {
+        PetscSynchronizedPrintf(cOmm, "%s", this->str().c_str());
+        PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+        this->str("");
+      }
       return 0;
     }
 
