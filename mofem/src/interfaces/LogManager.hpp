@@ -46,41 +46,35 @@ struct LogManager : public UnknownInterface {
    */
   MoFEMErrorCode getOptions();
 
-  struct SelfStream {
-    SelfStream() = default;
-
-    template<typename T>
-    SelfStream &operator<<(const std::ostringstream &os) {
-      PetscPrintf(PETSC_COMM_SELF, "%s", os.str().c_str());
-      return *this;
-    };
+  class SelfStreamBuf : public std::stringbuf {
+    virtual int sync() {
+      PetscPrintf(PETSC_COMM_SELF, "%s", this->str().c_str());
+      this->str("");
+      return 0;
+    }
   };
 
-  struct WorldStream {
-    WorldStream(MPI_Comm comm) : cOmm(comm) {}
-    WorldStream &operator<<(const std::ostringstream &os) {
-      PetscPrintf(cOmm, "%s", os.str().c_str());
-      return *this;
+  struct WorldStreamBuf : public std::stringbuf  {
+    WorldStreamBuf(MPI_Comm comm) : cOmm(comm) {}
+    virtual int sync() {
+      PetscPrintf(cOmm, "%s", this->str().c_str());
+      this->str("");
+      return 0;
     }
-
   private:
     MPI_Comm cOmm;
   };
 
-  struct SynchronizedStream {
-    SynchronizedStream(MPI_Comm comm) : cOmm(comm) {}
-    template<typename T>
-    SynchronizedStream &operator<<(const T &os) {
-      strm << os;
-      return *this;
-    }
-    void flush() {
-      PetscSynchronizedPrintf(cOmm, "%s", strm.str().c_str());
+  struct SynchronizedStreamBuf : public std::stringbuf  {
+    SynchronizedStreamBuf(MPI_Comm comm) : cOmm(comm) {}
+    virtual int sync() {
+      PetscSynchronizedPrintf(cOmm, "%s", this->str().c_str());
       PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+      this->str("");
+      return 0;
     }
 
   private:
-    std::ostringstream strm;
     MPI_Comm cOmm;
   };
 

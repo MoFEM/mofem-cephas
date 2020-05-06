@@ -209,8 +209,7 @@ resolve_libraries(SYSTEM_PROJECT_LIBS "
   ${MOAB_LIBS_LINK}
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}
-  ${BOOST_PROGRAM_OPTIONS_LIB}
-  ${BOOST_LOG_LIB}
+  ${Boost_LIBRARIES} 
   ${BLAS_LINKER_FLAGS}
   ${CBLAS_LIBIBRARY}")
 # Set project libs compiled with the MoFEM as external libs
