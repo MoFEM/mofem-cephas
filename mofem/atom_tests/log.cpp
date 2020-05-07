@@ -90,6 +90,10 @@ void tagged_logging() {
   src::severity_logger<severity_level> slg;
   slg.add_attribute("Tag", attrs::constant<std::string>("My tag value"));
 
+  // BOOST_LOG_FUNC();
+  BOOST_LOG_FUNCTION();
+  BOOST_LOG_NAMED_SCOPE("aaa");
+
   BOOST_LOG_SEV(slg, normal) << "Here goes the tagged record";
 }
 
@@ -132,13 +136,14 @@ int main(int argc, char *argv[]) {
 
     enum my_severity_level { normal, notification, warning, error, critical };
 
-    LogManager::SynchronizedStreamBuf sync_buf(m_field.get_comm());
+    LogManager::WorldStreamBuf sync_buf(m_field.get_comm());
     auto stream_ptr = boost::make_shared<std::ostream>(&sync_buf);
 
     auto core_log = logging::core::get();
     auto backend = boost::make_shared<sinks::text_ostream_backend>();
-    backend->add_stream(
-        boost::shared_ptr<std::ostream>(&std::clog, boost::null_deleter()));
+    backend->add_stream(stream_ptr);
+    // backend->add_stream(
+        // boost::shared_ptr<std::ostream>(&std::clog, boost::null_deleter()));
     backend->auto_flush(true);
 
     typedef sinks::synchronous_sink<sinks::text_ostream_backend> sink_t;
@@ -150,6 +155,8 @@ int main(int argc, char *argv[]) {
         << std::hex << std::setw(8) << std::setfill('0')
         << boost::log::expressions::line_id << std::dec << std::setfill(' ')
         << ": <" << boost::log::expressions::severity << ">\t"
+        << boost::log::expressions::format_named_scope(
+               "Scope", keywords::format = "[%f:%l]")
         << "(" << boost::log::expressions::scope << ") "
         << expr::if_(expr::has_attr(boost::log::expressions::tag_attr))
                [expr::stream << "[" << boost::log::expressions::tag_attr
@@ -168,10 +175,10 @@ int main(int argc, char *argv[]) {
     core_log->add_global_attribute("TimeStamp", attrs::local_clock());
     core_log->add_global_attribute("Scope", attrs::named_scope());
 
-    named_scope_logging();
-    logging_function();
+    // named_scope_logging();
+    // logging_function();
     tagged_logging();
-    timed_logging();
+    // timed_logging();
 
     backend->flush();
   }
