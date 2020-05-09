@@ -31,6 +31,9 @@
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/core/null_deleter.hpp>
+#include <boost/log/sources/channel_feature.hpp>
+#include <boost/log/sources/channel_logger.hpp>
+#include <boost/log/sources/severity_channel_logger.hpp>
 
 namespace logging = boost::log;
 namespace src = boost::log::sources;
@@ -47,6 +50,7 @@ namespace expressions {
 BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
 BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity",
                             MoFEM::LogManager::SeverityLevel)
+BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
 BOOST_LOG_ATTRIBUTE_KEYWORD(tag_attr, "Tag", std::string)
 BOOST_LOG_ATTRIBUTE_KEYWORD(scope, "Scope", attrs::named_scope::value_type)
 BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline", attrs::timer::value_type)
@@ -54,6 +58,10 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline", attrs::timer::value_type)
 } // namespace log
 } // namespace boost
 
+#define BOOST_LOG_STREAM_COMM_SEV(logger, comm, lvl)                           \
+  BOOST_LOG_STREAM_WITH_PARAMS((logger),                                       \
+                               (::boost::log::keywords::comm = (chan))(        \
+                                   ::boost::log::keywords::severity = (lvl)))
 
 // The operator puts a human-friendly representation of the severity level to
 // the stream
@@ -173,40 +181,62 @@ boost::shared_ptr<std::ostream> LogManager::getStrmSync() {
 MoFEMErrorCode LogManager::setUpLog() {
   MoFEMFunctionBegin;
 
-  auto stream_ptr = getStrmWorld();
+
+  auto create_sink = [&](auto stream_ptr, auto comm_filter) {
+
+    auto backend = boost::make_shared<sinks::text_ostream_backend>();
+    backend->add_stream(stream_ptr);
+    backend->auto_flush(true);
+
+    typedef sinks::synchronous_sink<sinks::text_ostream_backend> sink_t;
+    auto sink = boost::make_shared<sink_t>(backend);
+    sink->set_filter((expr::has_attr(boost::log::expressions::channel) &&
+                      boost::log::expressions::channel == comm_filter));
+
+    sink->set_formatter(
+
+        expr::stream
+        << std::hex << std::setw(8) << std::setfill('0')
+        << boost::log::expressions::line_id << std::dec << std::setfill(' ')
+        << ": <" << boost::log::expressions::severity << ">\t"
+        << boost::log::expressions::format_named_scope(
+               "Scope", keywords::format = "[%f:%l]")
+        << "(" << boost::log::expressions::scope << ") "
+        << expr::if_(expr::has_attr(boost::log::expressions::tag_attr))
+               [expr::stream << "[" << boost::log::expressions::tag_attr
+                             << "] "]
+        << expr::if_(expr::has_attr(boost::log::expressions::timeline))
+               [expr::stream << "[" << boost::log::expressions::timeline
+                             << "] "]
+        << expr::smessage
+
+    );
+
+    
+    return sink;
+
+
+  };
 
   auto core_log = logging::core::get();
-  auto backend = boost::make_shared<sinks::text_ostream_backend>();
-  backend->add_stream(stream_ptr);
-
-  typedef sinks::synchronous_sink<sinks::text_ostream_backend> sink_t;
-  auto sink = boost::make_shared<sink_t>(backend);
-
-  sink->set_formatter(
-
-      expr::stream
-      << std::hex << std::setw(8) << std::setfill('0')
-      << boost::log::expressions::line_id << std::dec << std::setfill(' ')
-      << ": <" << boost::log::expressions::severity << ">\t"
-      << boost::log::expressions::format_named_scope("Scope", keywords::format =
-                                                                  "[%f:%l]")
-      << "(" << boost::log::expressions::scope << ") "
-      << expr::if_(expr::has_attr(boost::log::expressions::tag_attr))
-             [expr::stream << "[" << boost::log::expressions::tag_attr << "] "]
-      << expr::if_(expr::has_attr(boost::log::expressions::timeline))
-             [expr::stream << "[" << boost::log::expressions::timeline << "] "]
-      << expr::smessage
-
-  );
-
-  core_log->add_sink(sink);
+  core_log->add_sink(create_sink(getStrmSelf(), "SELF"));
+  core_log->add_sink(create_sink(getStrmWorld(), "WORLD"));
+  core_log->add_sink(create_sink(getStrmSync(), "SYNC"));
 
   logging::add_common_attributes();
   core_log->add_global_attribute("LineID", attrs::counter<unsigned int>(1));
   core_log->add_global_attribute("TimeStamp", attrs::local_clock());
   core_log->add_global_attribute("Scope", attrs::named_scope());
 
-  backend->auto_flush(true);
+  typedef src::severity_channel_logger<SeverityLevel, std::string> logger_type;
+
+  logger_type lg_self(keywords::channel = "SELF");
+  logger_type lg_world(keywords::channel = "WORLD");
+  logger_type lg_sync(keywords::channel = "SYNC");
+
+  BOOST_LOG_SEV(lg_self, normal) << "Hello, self!";
+  BOOST_LOG_SEV(lg_world, normal) << "Hello, world!";
+  BOOST_LOG_SEV(lg_sync, normal) << "Hello, sync!";
 
   MoFEMFunctionReturn(0);
 }

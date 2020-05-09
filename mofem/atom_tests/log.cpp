@@ -65,15 +65,17 @@ static char help[] = "...\n\n";
 //   BOOST_LOG_SEV(slg, critical) << "Everything crumbles, shoot me now!";
 // }
 
-void named_scope_logging() {
-  BOOST_LOG_NAMED_SCOPE("named_scope_logging");
+// void named_scope_logging() {
+//   BOOST_LOG_NAMED_SCOPE("named_scope_logging");
 
-  src::severity_logger<LogManager::SeverityLevel> slg;
-  slg.add_attribute("Tag", attrs::constant<std::string>("My tag value"));
+//   src::severity_logger<LogManager::SeverityLevel> slg;
+//   slg.add_attribute("Tag", attrs::constant<std::string>("My tag value"));
 
-  BOOST_LOG_SEV(slg, LogManager::SeverityLevel::normal)
-      << "Hello from the function named_scope_logging!";
-}
+
+//   BOOST_LOG_STREAM_WITH_PARAMS((slg), (::boost::log::keywords::comm = ())(::boost::log::keywords::severity = (lvl)))
+
+//   BOOST_LOG_SEV(slg, LogManager::SeverityLevel) << "Hello from the function named_scope_logging!";
+// }
 
 // void tagged_logging() {
 //   src::severity_logger<severity_level> slg;
@@ -163,8 +165,8 @@ int main(int argc, char *argv[]) {
     // core_log->add_global_attribute("TimeStamp", attrs::local_clock());
     // core_log->add_global_attribute("Scope", attrs::named_scope());
 
-    BOOST_LOG_FUNCTION();
-    named_scope_logging();
+    // BOOST_LOG_FUNCTION();
+    // named_scope_logging();
     // logging_function();
     // tagged_logging();
     // timed_logging();

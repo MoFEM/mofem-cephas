@@ -17,6 +17,9 @@
 #ifndef __LOGMANAGER_HPP__
 #define __LOGMANAGER_HPP__
 
+
+
+
 namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMLogManager =
@@ -30,7 +33,6 @@ static const MOFEMuuid IDD_MOFEMLogManager =
 struct LogManager : public UnknownInterface {
 
   enum SeverityLevel { normal, notification, warning, error, critical };
-  enum CommType { self, world, sync };
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
