@@ -1,14 +1,14 @@
 /**
  * @file LogManager.cpp
  * @brief Log and register warnings
- * 
+ *
  */
 
 #include <MoFEM.hpp>
 
 #undef likely
 
-#define BOOST_LOG_DYN_LINK 
+#define BOOST_LOG_DYN_LINK
 
 #include <cstddef>
 #include <string>
@@ -31,8 +31,6 @@
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/core/null_deleter.hpp>
-#include <boost/log/sources/channel_feature.hpp>
-#include <boost/log/sources/channel_logger.hpp>
 #include <boost/log/sources/severity_channel_logger.hpp>
 
 namespace logging = boost::log;
@@ -42,7 +40,6 @@ namespace keywords = boost::log::keywords;
 namespace attrs = boost::log::attributes;
 namespace keywords = boost::log::keywords;
 namespace expr = boost::log::expressions;
-
 
 namespace boost {
 namespace log {
@@ -65,7 +62,8 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline", attrs::timer::value_type)
 
 // The operator puts a human-friendly representation of the severity level to
 // the stream
-std::ostream &operator<<(std::ostream &strm, MoFEM::LogManager::SeverityLevel level) {
+std::ostream &operator<<(std::ostream &strm,
+                         MoFEM::LogManager::SeverityLevel level) {
   static const char *strings[] = {"normal", "notification", "warning", "error",
                                   "critical"};
 
@@ -129,26 +127,36 @@ struct LogManager::InternalData
   std::ostream strmWorld;
   std::ostream strmSync;
 
+  typedef src::severity_channel_logger<SeverityLevel, std::string> LoggerType;
+
+  LoggerType lgSelf;
+  LoggerType lgWorld;
+  LoggerType lgSync;
+
   InternalData(MPI_Comm comm)
       : worldBuf(comm), syncBuf(comm), strmSelf(&selfBuf), strmWorld(&worldBuf),
-        strmSync(&syncBuf) {}
-    };
+        strmSync(&syncBuf), lgSelf(keywords::channel = "SELF"),
+        lgWorld(keywords::channel = "WORLD"),
+        lgSync(keywords::channel = "SYNC") {}
 
-    LogManager::LogManager(const MoFEM::Core &core)
-        : cOre(const_cast<MoFEM::Core &>(core)),
-          internalDataPtr(new InternalData(
-              static_cast<MoFEM::Interface &>(cOre).get_comm())) {}
+  virtual ~InternalData() = default;
+};
 
-    MoFEMErrorCode LogManager::query_interface(const MOFEMuuid &uuid,
-                                               UnknownInterface **iface) const {
-      MoFEMFunctionBeginHot;
-      *iface = NULL;
-      if (uuid == IDD_MOFEMLogManager) {
-        *iface = const_cast<LogManager *>(this);
-        MoFEMFunctionReturnHot(0);
-      }
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
-      MoFEMFunctionReturnHot(0);
+LogManager::LogManager(const MoFEM::Core &core)
+    : cOre(const_cast<MoFEM::Core &>(core)),
+      internalDataPtr(
+          new InternalData(static_cast<MoFEM::Interface &>(cOre).get_comm())) {}
+
+MoFEMErrorCode LogManager::query_interface(const MOFEMuuid &uuid,
+                                           UnknownInterface **iface) const {
+  MoFEMFunctionBeginHot;
+  *iface = NULL;
+  if (uuid == IDD_MOFEMLogManager) {
+    *iface = const_cast<LogManager *>(this);
+    MoFEMFunctionReturnHot(0);
+  }
+  SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "unknown interface");
+  MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode LogManager::getSubInterfaceOptions() { return getOptions(); }
@@ -181,9 +189,7 @@ boost::shared_ptr<std::ostream> LogManager::getStrmSync() {
 MoFEMErrorCode LogManager::setUpLog() {
   MoFEMFunctionBegin;
 
-
   auto create_sink = [&](auto stream_ptr, auto comm_filter) {
-
     auto backend = boost::make_shared<sinks::text_ostream_backend>();
     backend->add_stream(stream_ptr);
     backend->auto_flush(true);
@@ -212,10 +218,7 @@ MoFEMErrorCode LogManager::setUpLog() {
 
     );
 
-    
     return sink;
-
-
   };
 
   auto core_log = logging::core::get();
@@ -241,4 +244,4 @@ MoFEMErrorCode LogManager::setUpLog() {
   MoFEMFunctionReturn(0);
 }
 
-} // MOFEM namespace
+} // namespace MoFEM
