@@ -192,6 +192,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   iFaces.clear();
 
   // Register sub interfaces
+  CHKERR regSubInterface<LogManager>(IDD_MOFEMLogManager);
   CHKERR regSubInterface<Simple>(IDD_MOFEMSimple);
   CHKERR regSubInterface<PipelineManager>(IDD_MOFEMBasic);
   CHKERR regSubInterface<ProblemsManager>(IDD_MOFEMProblemsManager);

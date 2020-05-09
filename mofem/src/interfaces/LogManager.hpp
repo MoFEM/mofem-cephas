@@ -14,14 +14,13 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
-#pragma once
-
+#ifndef __LOGMANAGER_HPP__
 #define __LOGMANAGER_HPP__
 
 namespace MoFEM {
 
-// static const MOFEMuuid IDD_MOFEMLogManager =
-//     MOFEMuuid(BitIntefaceId(LogManager_INTERFACE));
+static const MOFEMuuid IDD_MOFEMLogManager =
+    MOFEMuuid(BitIntefaceId(LOGMANAGER_INTERFACE));
 
 /**
  * \brief Problem manager is used to build and partition problems
@@ -30,8 +29,11 @@ namespace MoFEM {
  */
 struct LogManager : public UnknownInterface {
 
-  // MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-  //                                UnknownInterface **iface) const;
+  enum SeverityLevel { normal, notification, warning, error, critical };
+  enum CommType { self, world, sync };
+
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
 
   LogManager(const MoFEM::Core &core);
   virtual ~LogManager() = default;
@@ -46,49 +48,21 @@ struct LogManager : public UnknownInterface {
    */
   MoFEMErrorCode getOptions();
 
-  class SelfStreamBuf : public std::stringbuf {
-    virtual int sync() {
-      if (!this->str().empty()) {
-        PetscPrintf(PETSC_COMM_SELF, "%s", this->str().c_str());
-        this->str("");
-      }
-      return 0;
-    }
-  };
-
-  struct WorldStreamBuf : public std::stringbuf  {
-    WorldStreamBuf(MPI_Comm comm) : cOmm(comm) {}
-    virtual int sync() {
-      if (!this->str().empty()) {
-        PetscPrintf(cOmm, "%s", this->str().c_str());
-        this->str("");
-      }
-      return 0;
-    }
-  private:
-    MPI_Comm cOmm;
-  };
-
-  struct SynchronizedStreamBuf : public std::stringbuf  {
-    SynchronizedStreamBuf(MPI_Comm comm) : cOmm(comm) {}
-    virtual int sync() {
-      if (!this->str().empty()) {
-        PetscSynchronizedPrintf(cOmm, "%s", this->str().c_str());
-        PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-        this->str("");
-      }
-      return 0;
-    }
-
-  private:
-    MPI_Comm cOmm;
-  };
+  boost::shared_ptr<std::ostream> getStrmSelf();
+  boost::shared_ptr<std::ostream> getStrmWorld();
+  boost::shared_ptr<std::ostream> getStrmSync();
 
 private:
   MoFEM::Core &cOre;
-  MPI_Comm cOmm; ///< MoFEM communicator
+
+  struct InternalData;
+  boost::shared_ptr<InternalData> internalDataPtr;
+
+  MoFEMErrorCode setUpLog();
 };
 }
+
+#endif //__LOGMANAGER_HPP__
 
 /**
  * \defgroup mofem_warring_manager

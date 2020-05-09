@@ -67,6 +67,7 @@
 
 #include <AuxPETSc.hpp>
 
+#include <LogManager.hpp>
 #include <BitRefManager.hpp>
 #include <Tools.hpp>
 #include <CommInterface.hpp>
