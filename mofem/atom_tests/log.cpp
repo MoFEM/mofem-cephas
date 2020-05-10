@@ -15,7 +15,7 @@ using namespace MoFEM;
 
 void log_fun1(MoFEM::Interface &m_field) {
 
-  auto world_log = m_field.getInterface<LogManager>()->getLogWorld();
+  auto world_log = LogManager::getLogWorld();
   // world_log.add_attribute("LineID", attrs::counter<unsigned int>(1));
   world_log.add_attribute("TimeStamp", attrs::local_clock());
 
@@ -30,7 +30,7 @@ void log_fun1(MoFEM::Interface &m_field) {
 
 void log_fun2(MoFEM::Interface &m_field) {
 
-  auto sync_log = m_field.getInterface<LogManager>()->getLogSync();
+  auto sync_log = LogManager::getLogSync();
   sync_log.add_attribute("LineID", attrs::counter<unsigned int>(1));
   sync_log.add_attribute("Scope", attrs::named_scope());
   sync_log.add_attribute("TimeStamp", attrs::local_clock());
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     logging::core::get()->set_filter(MoFEM::LogKeywords::severity >=
                                      LogManager::SeverityLevel::very_noisy);
 
-    auto self_log = m_field.getInterface<LogManager>()->getLogSelf();
+    auto self_log = LogManager::getLogSelf();
 
     {
       BOOST_LOG_NAMED_SCOPE("log test");
