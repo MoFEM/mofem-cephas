@@ -39,78 +39,6 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-// enum severity_level { normal, notification, warning, error, critical };
-
-// namespace boost {
-// namespace log {
-// namespace expressions {
-// BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
-// BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", severity_level)
-// BOOST_LOG_ATTRIBUTE_KEYWORD(tag_attr, "Tag", std::string)
-// BOOST_LOG_ATTRIBUTE_KEYWORD(scope, "Scope", attrs::named_scope::value_type)
-// BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline", attrs::timer::value_type)
-// } // namespace expressions
-// } // namespace log
-// } // namespace boost
-
-// void logging_function() {
-//   BOOST_LOG_NAMED_SCOPE("named_scope_logging");
-//   src::severity_logger<severity_level> slg;
-
-//   BOOST_LOG_SEV(slg, normal) << "A regular message";
-//   BOOST_LOG_SEV(slg, warning)
-//       << "Something bad is going on but I can handle it";
-//   BOOST_LOG_SEV(slg, critical) << "Everything crumbles, shoot me now!";
-// }
-
-// void named_scope_logging() {
-//   BOOST_LOG_NAMED_SCOPE("named_scope_logging");
-
-//   src::severity_logger<LogManager::SeverityLevel> slg;
-//   slg.add_attribute("Tag", attrs::constant<std::string>("My tag value"));
-
-
-//   BOOST_LOG_STREAM_WITH_PARAMS((slg), (::boost::log::keywords::comm = ())(::boost::log::keywords::severity = (lvl)))
-
-//   BOOST_LOG_SEV(slg, LogManager::SeverityLevel) << "Hello from the function named_scope_logging!";
-// }
-
-// void tagged_logging() {
-//   src::severity_logger<severity_level> slg;
-//   slg.add_attribute("Tag", attrs::constant<std::string>("My tag value"));
-
-//   // // BOOST_LOG_FUNC();
-//   // BOOST_LOG_FUNCTION();
-//   // clang-format off
-//   BOOST_LOG_NAMED_SCOPE("aaa"); BOOST_LOG_SEV(slg, normal) << "Here goes the tagged record";
-//   // clang-format on
-// }
-
-// void timed_logging() {
-//   BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
-
-//   src::severity_logger<severity_level> slg;
-//   BOOST_LOG_SEV(slg, normal) << "Starting to time nested functions";
-
-//   logging_function();
-
-//   BOOST_LOG_SEV(slg, normal) << "Stopping to time nested functions";
-// }
-
-// // The operator puts a human-friendly representation of the severity level to
-// // the stream
-// std::ostream &operator<<(std::ostream &strm, severity_level level) {
-//   static const char *strings[] = {"normal", "notification", "warning", "error",
-//                                   "critical"};
-
-//   if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings))
-//     strm << strings[level];
-//   else
-//     strm << static_cast<int>(level);
-
-//   return strm;
-// }
-
 int main(int argc, char *argv[]) {
 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
@@ -123,53 +51,17 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab, PETSC_COMM_WORLD);
     MoFEM::Interface &m_field = core;
 
-    // // LogManager::WorldStreamBuf sync_buf(m_field.get_comm());
-    // // auto stream_ptr = boost::make_shared<std::ostream>(&sync_buf);
-    // auto stream_ptr = m_field.getInterface<LogManager>()->getStrmWorld();
+    BOOST_LOG_SEV(m_field.getInterface<LogManager>()->getLogSelf(),
+                  LogManager::normal)
+        << "Hello, self!";
+    BOOST_LOG_SEV(m_field.getInterface<LogManager>()->getLogWorld(),
+                  LogManager::normal)
+        << "Hello, world!";
+    BOOST_LOG_SEV(m_field.getInterface<LogManager>()->getLogSync(),
+                  LogManager::normal)
+        << "Hello, sync!";
 
-    // auto core_log = logging::core::get();
-    // auto backend = boost::make_shared<sinks::text_ostream_backend>();
-    // backend->add_stream(stream_ptr);
-    // // backend->add_stream(
-    //     // boost::shared_ptr<std::ostream>(&std::clog, boost::null_deleter()));
-    // backend->auto_flush(true);
 
-    // typedef sinks::synchronous_sink<sinks::text_ostream_backend> sink_t;
-    // boost::shared_ptr<sink_t> sink(new sink_t(backend));
-
-    // sink->set_formatter(
-
-    //     expr::stream
-    //     << std::hex << std::setw(8) << std::setfill('0')
-    //     << boost::log::expressions::line_id << std::dec << std::setfill(' ')
-    //     << ": <" << boost::log::expressions::severity << ">\t"
-    //     << boost::log::expressions::format_named_scope(
-    //            "Scope", keywords::format = "[%f:%l]")
-    //     << "(" << boost::log::expressions::scope << ") "
-    //     << expr::if_(expr::has_attr(boost::log::expressions::tag_attr))
-    //            [expr::stream << "[" << boost::log::expressions::tag_attr
-    //                          << "] "]
-    //     << expr::if_(expr::has_attr(boost::log::expressions::timeline))
-    //            [expr::stream << "[" << boost::log::expressions::timeline
-    //                          << "] "]
-    //     << expr::smessage
-
-    // );
-
-    // core_log->add_sink(sink);
-
-    // logging::add_common_attributes();
-    // core_log->add_global_attribute("LineID", attrs::counter<unsigned int>(1));
-    // core_log->add_global_attribute("TimeStamp", attrs::local_clock());
-    // core_log->add_global_attribute("Scope", attrs::named_scope());
-
-    // BOOST_LOG_FUNCTION();
-    // named_scope_logging();
-    // logging_function();
-    // tagged_logging();
-    // timed_logging();
-
-    // backend->flush();
   }
   CATCH_ERRORS;
 

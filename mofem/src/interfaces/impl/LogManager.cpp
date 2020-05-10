@@ -218,17 +218,17 @@ MoFEMErrorCode LogManager::setUpLog() {
   core_log->add_global_attribute("TimeStamp", attrs::local_clock());
   core_log->add_global_attribute("Scope", attrs::named_scope());
 
-  typedef src::severity_channel_logger<SeverityLevel, std::string> logger_type;
-
-  logger_type lg_self(keywords::channel = "SELF");
-  logger_type lg_world(keywords::channel = "WORLD");
-  logger_type lg_sync(keywords::channel = "SYNC");
-
-  BOOST_LOG_SEV(lg_self, normal) << "Hello, self!";
-  BOOST_LOG_SEV(lg_world, normal) << "Hello, world!";
-  BOOST_LOG_SEV(lg_sync, normal) << "Hello, sync!";
-
   MoFEMFunctionReturn(0);
+}
+
+LogManager::LoggerType &LogManager::getLogSelf() {
+  return internalDataPtr->lgSelf;
+}
+LogManager::LoggerType &LogManager::getLogWorld() {
+  return internalDataPtr->lgWorld;
+}
+LogManager::LoggerType &LogManager::getLogSync() {
+  return internalDataPtr->lgSync;
 }
 
 } // namespace MoFEM

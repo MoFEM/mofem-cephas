@@ -47,8 +47,9 @@ struct LogManager : public UnknownInterface {
                                                        std::string>
       LoggerType;
 
-
-  
+  LoggerType &getLogSelf();
+  LoggerType &getLogWorld();
+  LoggerType &getLogSync();
 
   /**
    * \brief Get options from command line
