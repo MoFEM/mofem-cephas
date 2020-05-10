@@ -188,14 +188,47 @@ MoFEMErrorCode LogManager::setUpLog() {
   MoFEMFunctionReturn(0);
 }
 
-LogManager::LoggerType LogManager::getLogSelf() {
-  return LoggerType(boost::log::keywords::channel = "SELF");
+void LogManager::addAttributes(LogManager::LoggerType &lg,
+                                          const int bit) {
+
+  if (bit == 0)
+    return;
+
+  if (bit & (BitLineID | BitScope)) {
+
+    if (bit & BitLineID)
+      lg.add_attribute("LineID", attrs::counter<unsigned int>(1));
+
+    if (bit & BitScope)
+      lg.add_attribute("Scope", attrs::named_scope());
+
+  } else {
+    THROW_MESSAGE("Wrong cast");
+  }
 }
-LogManager::LoggerType LogManager::getLogWorld() {
-  return LoggerType(boost::log::keywords::channel = "WORLD");
+
+void LogManager::addTag(LogManager::LoggerType &lg, const std::string tag) {
+  lg.add_attribute("Tag", attrs::constant<std::string>(tag));
+  
 }
-LogManager::LoggerType LogManager::getLogSync() {
-  return LoggerType(boost::log::keywords::channel = "SYNC");
+
+LogManager::LoggerType LogManager::getLog(const std::string channel,
+                                          const int bit) {
+  auto lg = LoggerType(boost::log::keywords::channel = channel);
+  addAttributes(lg, bit);
+  return lg;
+}
+
+LogManager::LoggerType LogManager::getLogSelf(const int bit) {
+  return getLog("SELF", bit);
+}
+
+LogManager::LoggerType LogManager::getLogWorld(const int bit) {
+  return getLog("WORLD", bit);
+}
+
+LogManager::LoggerType LogManager::getLogSync(const int bit) {
+  return getLog("SYNC", bit);
 }
 
 } // namespace MoFEM

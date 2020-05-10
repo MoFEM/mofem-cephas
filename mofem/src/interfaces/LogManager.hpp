@@ -57,6 +57,11 @@ struct LogManager : public UnknownInterface {
     critical
   };
 
+  enum LogAttributesBits {
+    BitLineID = 1 << 0,
+    BitScope = 1 << 1,
+  };
+
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
 
@@ -71,9 +76,17 @@ struct LogManager : public UnknownInterface {
                                                        std::string>
       LoggerType;
 
-  static LoggerType getLogSelf();
-  static LoggerType getLogWorld();
-  static LoggerType getLogSync();
+  static void addAttributes(LogManager::LoggerType &lg, const int bit = 0);
+
+  static LoggerType getLog(const std::string channel, const int bit = 0);
+
+  static LoggerType getLogSelf(const int bit = 0);
+
+  static LoggerType getLogWorld(const int bit = 0);
+
+  static LoggerType getLogSync(const int bit = 0);
+
+  static void addTag(LogManager::LoggerType &lg, const std::string tag);
 
   /**
    * \brief Get options from command line
@@ -97,9 +110,9 @@ std::ostream &operator<<(std::ostream &strm,
 
 namespace LogKeywords {
 
-BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
 BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", LogManager::SeverityLevel)
 BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
+BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
 BOOST_LOG_ATTRIBUTE_KEYWORD(tag_attr, "Tag", std::string)
 BOOST_LOG_ATTRIBUTE_KEYWORD(scope, "Scope",
                             boost::log::attributes::named_scope::value_type)

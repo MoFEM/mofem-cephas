@@ -16,26 +16,21 @@ using namespace MoFEM;
 void log_fun1(MoFEM::Interface &m_field) {
 
   auto world_log = LogManager::getLogWorld();
-  // world_log.add_attribute("LineID", attrs::counter<unsigned int>(1));
-  world_log.add_attribute("TimeStamp", attrs::local_clock());
+  LogManager::addTag(world_log, "My tag");
 
-  BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
-  BOOST_LOG_FUNCTION();
   BOOST_LOG_SEV(world_log, LogManager::SeverityLevel::verbose)
       << "Hello, world!";
   std::this_thread::sleep_for(std::chrono::seconds(1));
+
   BOOST_LOG_SEV(world_log, LogManager::SeverityLevel::verbose)
-      << "Hello, world!";
+      << "Hello, second time world!";
 }
 
 void log_fun2(MoFEM::Interface &m_field) {
 
-  auto sync_log = LogManager::getLogSync();
-  sync_log.add_attribute("LineID", attrs::counter<unsigned int>(1));
-  sync_log.add_attribute("Scope", attrs::named_scope());
-  sync_log.add_attribute("TimeStamp", attrs::local_clock());
+  auto sync_log =
+      LogManager::getLogSync(LogManager::BitLineID | LogManager::BitScope);
 
-  BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
   BOOST_LOG_FUNCTION();
   BOOST_LOG_SEV(sync_log, LogManager::SeverityLevel::warning) << "Hello, sync!";
   BOOST_LOG_SEV(sync_log, LogManager::SeverityLevel::warning)
@@ -48,6 +43,7 @@ int main(int argc, char *argv[]) {
 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
+
   try {
 
     moab::Core mb_instance;
@@ -59,7 +55,7 @@ int main(int argc, char *argv[]) {
     logging::core::get()->set_filter(MoFEM::LogKeywords::severity >=
                                      LogManager::SeverityLevel::very_noisy);
 
-    auto self_log = LogManager::getLogSelf();
+    auto self_log = LogManager::getLogSelf(LogManager::BitScope);
 
     {
       BOOST_LOG_NAMED_SCOPE("log test");
