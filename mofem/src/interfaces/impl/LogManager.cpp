@@ -127,6 +127,16 @@ struct LogManager::InternalData
   std::ostream strmWorld;
   std::ostream strmSync;
 
+  boost::shared_ptr<std::ostream> getStrmSelf() {
+    return boost::shared_ptr<std::ostream>(shared_from_this(), &strmSelf);
+  }
+  boost::shared_ptr<std::ostream> getStrmWorld() {
+    return boost::shared_ptr<std::ostream>(shared_from_this(), &strmWorld);
+  }
+  boost::shared_ptr<std::ostream> getStrmSync() {
+    return boost::shared_ptr<std::ostream>(shared_from_this(), &strmSync);
+  }
+
   typedef src::severity_channel_logger<SeverityLevel, std::string> LoggerType;
 
   LoggerType lgSelf;
@@ -173,18 +183,7 @@ MoFEMErrorCode LogManager::getOptions() {
   MoFEMFunctionReturn(0);
 }
 
-boost::shared_ptr<std::ostream> LogManager::getStrmSelf() {
-  return boost::shared_ptr<std::ostream>(internalDataPtr,
-                                         &internalDataPtr->strmSelf);
-}
-boost::shared_ptr<std::ostream> LogManager::getStrmWorld() {
-  return boost::shared_ptr<std::ostream>(internalDataPtr,
-                                         &internalDataPtr->strmWorld);
-}
-boost::shared_ptr<std::ostream> LogManager::getStrmSync() {
-  return boost::shared_ptr<std::ostream>(internalDataPtr,
-                                         &internalDataPtr->strmSync);
-}
+
 
 MoFEMErrorCode LogManager::setUpLog() {
   MoFEMFunctionBegin;
@@ -222,9 +221,9 @@ MoFEMErrorCode LogManager::setUpLog() {
   };
 
   auto core_log = logging::core::get();
-  core_log->add_sink(create_sink(getStrmSelf(), "SELF"));
-  core_log->add_sink(create_sink(getStrmWorld(), "WORLD"));
-  core_log->add_sink(create_sink(getStrmSync(), "SYNC"));
+  core_log->add_sink(create_sink(internalDataPtr->getStrmSelf(), "SELF"));
+  core_log->add_sink(create_sink(internalDataPtr->getStrmWorld(), "WORLD"));
+  core_log->add_sink(create_sink(internalDataPtr->getStrmSync(), "SYNC"));
 
   logging::add_common_attributes();
   core_log->add_global_attribute("LineID", attrs::counter<unsigned int>(1));
