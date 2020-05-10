@@ -45,15 +45,12 @@ std::ostream &operator<<(std::ostream &strm,
                          const LogManager::SeverityLevel &level) {
   static const char *strings[] = {
 
-      "very_noisy", "noisy", "very_verbose", "verbose",
-      "warning",    "error", "critical"
+      "very_noisy", "noisy", "very_verbose", "verbose", "inform",
+      "warning",    "fault", "critical"
 
   };
 
-  // if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings))
   strm << strings[level];
-  // else
-  // strm << static_cast<int>(level);
 
   return strm;
 }
@@ -172,13 +169,17 @@ MoFEMErrorCode LogManager::setUpLog() {
 
         expr::stream
 
-        << std::hex << std::setw(8) << std::setfill('0') << line_id
+        << expr::if_(expr::has_attr(
+               line_id))[expr::stream << std::hex << std::setw(8)
+                                      << std::setfill('0') << line_id
+                                      << std::dec << std::setfill(' ') << ": "]
 
-        << std::dec << std::setfill(' ') << ": <" << severity << ">\t"
+        << "<" << severity << ">\t"
 
-        << boost::log::expressions::format_named_scope(
-               "Scope", keywords::format = "[%f:%l]")
-        << "(" << scope << ") "
+        << expr::if_(expr::has_attr(scope))[
+               expr::stream << boost::log::expressions::format_named_scope(
+                                   "Scope", keywords::format = "[%f:%l]")
+                            << "(" << scope << ") "]
 
         << expr::if_(expr::has_attr(
                tag_attr))[expr::stream << "[" << tag_attr << "] "]
@@ -197,10 +198,10 @@ MoFEMErrorCode LogManager::setUpLog() {
   core_log->add_sink(create_sink(internalDataPtr->getStrmWorld(), "WORLD"));
   core_log->add_sink(create_sink(internalDataPtr->getStrmSync(), "SYNC"));
 
-  logging::add_common_attributes();
-  core_log->add_global_attribute("LineID", attrs::counter<unsigned int>(1));
-  core_log->add_global_attribute("TimeStamp", attrs::local_clock());
-  core_log->add_global_attribute("Scope", attrs::named_scope());
+  // logging::add_common_attributes();
+  // core_log->add_global_attribute("LineID", attrs::counter<unsigned int>(1));
+  // core_log->add_global_attribute("TimeStamp", attrs::local_clock());
+  // core_log->add_global_attribute("Scope", attrs::named_scope());
 
   auto &strm = *(internalDataPtr->getStrmSelf());
   strm << SeverityLevel::very_noisy << endl; 

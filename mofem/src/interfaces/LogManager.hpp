@@ -41,6 +41,7 @@ struct LogManager : public UnknownInterface {
     noisy,
     very_verbose,
     verbose,
+    inform,
     warning,
     fault,
     critical
