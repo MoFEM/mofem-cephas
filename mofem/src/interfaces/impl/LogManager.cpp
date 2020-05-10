@@ -162,10 +162,11 @@ MoFEMErrorCode LogManager::setUpLog() {
 
         << "<" << severity << ">\t"
 
-        << expr::if_(expr::has_attr(scope))[
-               expr::stream << boost::log::expressions::format_named_scope(
-                                   "Scope", keywords::format = "[%f:%l]")
-                            << "(" << scope << ") "]
+        << expr::if_(expr::has_attr(
+               scope))[expr::stream
+                       << boost::log::expressions::format_named_scope(
+                              "Scope", keywords::format = "[%f:%l]")
+                       << "(" << scope << ") "]
 
         << expr::if_(expr::has_attr(
                tag_attr))[expr::stream << "[" << tag_attr << "] "]
@@ -184,17 +185,17 @@ MoFEMErrorCode LogManager::setUpLog() {
   core_log->add_sink(create_sink(internalDataPtr->getStrmWorld(), "WORLD"));
   core_log->add_sink(create_sink(internalDataPtr->getStrmSync(), "SYNC"));
 
-  // logging::add_common_attributes();
-  // core_log->add_global_attribute("LineID", attrs::counter<unsigned int>(1));
-  // core_log->add_global_attribute("TimeStamp", attrs::local_clock());
-  // core_log->add_global_attribute("Scope", attrs::named_scope());
-
-  auto &strm = *(internalDataPtr->getStrmSelf());
-  strm << SeverityLevel::very_noisy << endl; 
-  strm.flush();
-  // cout << strm;
-
   MoFEMFunctionReturn(0);
+}
+
+LogManager::LoggerType LogManager::getLogSelf() {
+  return LoggerType(boost::log::keywords::channel = "SELF");
+}
+LogManager::LoggerType LogManager::getLogWorld() {
+  return LoggerType(boost::log::keywords::channel = "WORLD");
+}
+LogManager::LoggerType LogManager::getLogSync() {
+  return LoggerType(boost::log::keywords::channel = "SYNC");
 }
 
 } // namespace MoFEM

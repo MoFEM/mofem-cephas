@@ -71,15 +71,9 @@ struct LogManager : public UnknownInterface {
                                                        std::string>
       LoggerType;
 
-  static inline LoggerType getLogSelf() {
-    return LoggerType(boost::log::keywords::channel = "SELF");
-  }
-  static inline LoggerType getLogWorld() {
-    return LoggerType(boost::log::keywords::channel = "WORLD");
-  }
-  static inline LoggerType getLogSync() {
-    return LoggerType(boost::log::keywords::channel = "WORLD");
-  }
+  static LoggerType getLogSelf();
+  static LoggerType getLogWorld();
+  static LoggerType getLogSync();
 
   /**
    * \brief Get options from command line
