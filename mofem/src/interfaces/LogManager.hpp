@@ -93,13 +93,6 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 }
 
 
-// namespace boost {
-// namespace log {
-// namespace expressions {
-// } // namespace expressions
-// } // namespace log
-// } // namespace boost
-
 #endif //__LOGMANAGER_HPP__
 
 /**
