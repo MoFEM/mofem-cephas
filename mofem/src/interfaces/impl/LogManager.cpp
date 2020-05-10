@@ -38,24 +38,9 @@ namespace attrs = boost::log::attributes;
 namespace keywords = boost::log::keywords;
 namespace expr = boost::log::expressions;
 
-// The operator puts a human-friendly representation of the severity level to
-// the stream
-std::ostream &operator<<(std::ostream &strm,
-                         MoFEM::LogManager::SeverityLevel level) {
-  static const char *strings[] = {"normal", "notification", "warning", "error",
-                                  "critical"};
-
-  if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings))
-    strm << strings[level];
-  else
-    strm << static_cast<int>(level);
-
-  return strm;
-}
-
 namespace MoFEM {
 
-using namespace MoFEM::Log;
+using namespace MoFEM::LogKeywords;
 
 struct LogManager::InternalData
     : public boost::enable_shared_from_this<LogManager::InternalData> {
@@ -206,6 +191,11 @@ MoFEMErrorCode LogManager::setUpLog() {
   core_log->add_global_attribute("LineID", attrs::counter<unsigned int>(1));
   core_log->add_global_attribute("TimeStamp", attrs::local_clock());
   core_log->add_global_attribute("Scope", attrs::named_scope());
+
+  auto &strm = *(internalDataPtr->getStrmSelf());
+  strm << SeverityLevel::very_noisy << endl; 
+  strm.flush();
+  // cout << strm;
 
   MoFEMFunctionReturn(0);
 }

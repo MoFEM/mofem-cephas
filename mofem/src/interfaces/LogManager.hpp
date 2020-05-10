@@ -1,7 +1,7 @@
 /**
  * @file LogManager.hpp
  * @brief Log and register warnings
- * 
+ *
  */
 
 /*
@@ -24,6 +24,11 @@
 
 namespace MoFEM {
 
+
+}
+
+namespace MoFEM {
+
 static const MOFEMuuid IDD_MOFEMLogManager =
     MOFEMuuid(BitIntefaceId(LOGMANAGER_INTERFACE));
 
@@ -40,7 +45,7 @@ struct LogManager : public UnknownInterface {
     very_verbose,
     verbose,
     warning,
-    error,
+    fault,
     critical
   };
 
@@ -77,11 +82,29 @@ private:
   MoFEMErrorCode setUpLog();
 };
 
-namespace Log {
+// The operator puts a human-friendly representation of the severity level to
+// the stream
+inline std::ostream &operator<<(std::ostream &strm,
+                                const LogManager::SeverityLevel &level) {
+  static const char *strings[] = {
+
+      "very_noisy", "noisy", "very_verbose", "verbose",
+      "warning",    "error", "critical"
+
+  };
+
+  // if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings))
+  strm << strings[level];
+  // else
+  // strm << static_cast<int>(level);
+
+  return strm;
+}
+
+namespace LogKeywords {
 
 BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
-BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity",
-                            MoFEM::LogManager::SeverityLevel)
+BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", LogManager::SeverityLevel)
 BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
 BOOST_LOG_ATTRIBUTE_KEYWORD(tag_attr, "Tag", std::string)
 BOOST_LOG_ATTRIBUTE_KEYWORD(scope, "Scope",
@@ -89,9 +112,8 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(scope, "Scope",
 BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
                             boost::log::attributes::timer::value_type)
 
-} // namespace Logging
-}
-
+} // namespace LogKeywords
+} // namespace MoFEM
 
 #endif //__LOGMANAGER_HPP__
 

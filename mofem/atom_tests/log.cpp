@@ -51,19 +51,18 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab, PETSC_COMM_WORLD);
     MoFEM::Interface &m_field = core;
 
-    logging::core::get()->set_filter(MoFEM::Log::severity >=
-                                     LogManager::verbose);
+    logging::core::get()->set_filter(MoFEM::LogKeywords::severity >=
+                                     LogManager::SeverityLevel::verbose);
 
     BOOST_LOG_SEV(m_field.getInterface<LogManager>()->getLogSelf(),
-                  LogManager::noisy)
+                  LogManager::SeverityLevel::noisy)
         << "Hello, self!";
     BOOST_LOG_SEV(m_field.getInterface<LogManager>()->getLogWorld(),
-                  LogManager::verbose)
+                  LogManager::SeverityLevel::verbose)
         << "Hello, world!";
     BOOST_LOG_SEV(m_field.getInterface<LogManager>()->getLogSync(),
-                  LogManager::verbose)
+                  LogManager::SeverityLevel::verbose)
         << "Hello, sync!";
-
 
   }
   CATCH_ERRORS;
