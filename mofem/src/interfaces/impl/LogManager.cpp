@@ -35,7 +35,6 @@ namespace sinks = boost::log::sinks;
 namespace src = boost::log::sources;
 namespace keywords = boost::log::keywords;
 namespace attrs = boost::log::attributes;
-namespace keywords = boost::log::keywords;
 namespace expr = boost::log::expressions;
 
 namespace MoFEM {
@@ -119,15 +118,9 @@ struct LogManager::InternalData
     return boost::shared_ptr<std::ostream>(shared_from_this(), &strmSync);
   }
 
-  LoggerType lgSelf;
-  LoggerType lgWorld;
-  LoggerType lgSync;
-
   InternalData(MPI_Comm comm)
       : worldBuf(comm), syncBuf(comm), strmSelf(&selfBuf), strmWorld(&worldBuf),
-        strmSync(&syncBuf), lgSelf(keywords::channel = "SELF"),
-        lgWorld(keywords::channel = "WORLD"),
-        lgSync(keywords::channel = "SYNC") {}
+        strmSync(&syncBuf) {}
 
   virtual ~InternalData() = default;
 };
@@ -215,16 +208,6 @@ MoFEMErrorCode LogManager::setUpLog() {
   // cout << strm;
 
   MoFEMFunctionReturn(0);
-}
-
-LogManager::LoggerType &LogManager::getLogSelf() {
-  return internalDataPtr->lgSelf;
-}
-LogManager::LoggerType &LogManager::getLogWorld() {
-  return internalDataPtr->lgWorld;
-}
-LogManager::LoggerType &LogManager::getLogSync() {
-  return internalDataPtr->lgSync;
 }
 
 } // namespace MoFEM

@@ -60,9 +60,9 @@ struct LogManager : public UnknownInterface {
                                                        std::string>
       LoggerType;
 
-  LoggerType &getLogSelf();
-  LoggerType &getLogWorld();
-  LoggerType &getLogSync();
+  inline LoggerType getLogSelf();
+  inline LoggerType getLogWorld();
+  inline LoggerType getLogSync();
 
   /**
    * \brief Get options from command line
@@ -96,6 +96,17 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
                             boost::log::attributes::timer::value_type)
 
 } // namespace LogKeywords
+
+LogManager::LoggerType LogManager::getLogSelf() {
+  return LoggerType(boost::log::keywords::channel = "SELF");
+}
+LogManager::LoggerType LogManager::getLogWorld() {
+  return LoggerType(boost::log::keywords::channel = "WORLD");
+}
+LogManager::LoggerType LogManager::getLogSync() {
+  return LoggerType(boost::log::keywords::channel = "WORLD");
+}
+
 } // namespace MoFEM
 
 #endif //__LOGMANAGER_HPP__

@@ -37,6 +37,20 @@ namespace expr = boost::log::expressions;
 
 using namespace MoFEM;
 
+void fun1(MoFEM::Interface &m_field) {
+  BOOST_LOG_FUNCTION();
+  auto world_log = m_field.getInterface<LogManager>()->getLogWorld();
+  BOOST_LOG_SEV(world_log, LogManager::SeverityLevel::verbose)
+      << "Hello, world!";
+}
+
+void fun2(MoFEM::Interface &m_field) {
+  BOOST_LOG_FUNCTION();
+  auto sync_log = m_field.getInterface<LogManager>()->getLogSync();
+  BOOST_LOG_SEV(sync_log, LogManager::SeverityLevel::warning)
+      << "Hello, sync!";
+}
+
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
@@ -52,17 +66,16 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core;
 
     logging::core::get()->set_filter(MoFEM::LogKeywords::severity >=
-                                     LogManager::SeverityLevel::verbose);
+                                     LogManager::SeverityLevel::noisy);
 
-    BOOST_LOG_SEV(m_field.getInterface<LogManager>()->getLogSelf(),
-                  LogManager::SeverityLevel::noisy)
-        << "Hello, self!";
-    BOOST_LOG_SEV(m_field.getInterface<LogManager>()->getLogWorld(),
-                  LogManager::SeverityLevel::verbose)
-        << "Hello, world!";
-    BOOST_LOG_SEV(m_field.getInterface<LogManager>()->getLogSync(),
-                  LogManager::SeverityLevel::verbose)
-        << "Hello, sync!";
+    BOOST_LOG_NAMED_SCOPE("log test");
+    auto self_log = m_field.getInterface<LogManager>()->getLogSelf();
+
+    BOOST_LOG_SEV(self_log, LogManager::SeverityLevel::noisy) << "Hello, self!";
+
+    fun1(m_field);
+    fun2(m_field);
+
 
   }
   CATCH_ERRORS;
