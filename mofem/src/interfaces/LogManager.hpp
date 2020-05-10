@@ -20,7 +20,17 @@
 #define BOOST_LOG_DYN_LINK
 #include <boost/log/sources/severity_channel_logger.hpp>
 #include <boost/log/attributes.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/expressions.hpp>
+#include <boost/log/sources/severity_feature.hpp>
+#include <boost/log/sinks/text_ostream_backend.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/sources/severity_feature.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+
+namespace attrs = boost::log::attributes;
+namespace logging = boost::log;
 
 namespace MoFEM {}
 
