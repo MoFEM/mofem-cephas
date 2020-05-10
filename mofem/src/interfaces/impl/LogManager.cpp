@@ -77,47 +77,47 @@ std::ostream &operator<<(std::ostream &strm,
 
 namespace MoFEM {
 
-class SelfStreamBuf : public std::stringbuf {
-  virtual int sync() {
-    if (!this->str().empty()) {
-      PetscPrintf(PETSC_COMM_SELF, "%s", this->str().c_str());
-      this->str("");
-    }
-    return 0;
-  }
-};
-
-struct WorldStreamBuf : public std::stringbuf {
-  WorldStreamBuf(MPI_Comm comm) : cOmm(comm) {}
-  virtual int sync() {
-    if (!this->str().empty()) {
-      PetscPrintf(cOmm, "%s", this->str().c_str());
-      this->str("");
-    }
-    return 0;
-  }
-
-private:
-  MPI_Comm cOmm;
-};
-
-struct SynchronizedStreamBuf : public std::stringbuf {
-  SynchronizedStreamBuf(MPI_Comm comm) : cOmm(comm) {}
-  virtual int sync() {
-    if (!this->str().empty()) {
-      PetscSynchronizedPrintf(cOmm, "%s", this->str().c_str());
-      PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-      this->str("");
-    }
-    return 0;
-  }
-
-private:
-  MPI_Comm cOmm;
-};
-
 struct LogManager::InternalData
     : public boost::enable_shared_from_this<LogManager::InternalData> {
+
+  class SelfStreamBuf : public std::stringbuf {
+    virtual int sync() {
+      if (!this->str().empty()) {
+        PetscPrintf(PETSC_COMM_SELF, "%s", this->str().c_str());
+        this->str("");
+      }
+      return 0;
+    }
+  };
+
+  struct WorldStreamBuf : public std::stringbuf {
+    WorldStreamBuf(MPI_Comm comm) : cOmm(comm) {}
+    virtual int sync() {
+      if (!this->str().empty()) {
+        PetscPrintf(cOmm, "%s", this->str().c_str());
+        this->str("");
+      }
+      return 0;
+    }
+
+  private:
+    MPI_Comm cOmm;
+  };
+
+  struct SynchronizedStreamBuf : public std::stringbuf {
+    SynchronizedStreamBuf(MPI_Comm comm) : cOmm(comm) {}
+    virtual int sync() {
+      if (!this->str().empty()) {
+        PetscSynchronizedPrintf(cOmm, "%s", this->str().c_str());
+        PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+        this->str("");
+      }
+      return 0;
+    }
+
+  private:
+    MPI_Comm cOmm;
+  };
 
   SelfStreamBuf selfBuf;
   WorldStreamBuf worldBuf;
@@ -182,8 +182,6 @@ MoFEMErrorCode LogManager::getOptions() {
 
   MoFEMFunctionReturn(0);
 }
-
-
 
 MoFEMErrorCode LogManager::setUpLog() {
   MoFEMFunctionBegin;
