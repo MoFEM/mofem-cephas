@@ -32,11 +32,13 @@ std::ostream &operator<<(std::ostream &strm,
   static const char *strings[] = {
 
       "very_noisy", "noisy", "very_verbose", "verbose", "inform",
-      "warning",    "fault", "critical"
+      "warning",    "error", "critical"
 
   };
 
-  strm << strings[level];
+  if (level < LogManager::SeverityLevel::inform ||
+      level > LogManager::SeverityLevel::inform)
+    strm << "<" << strings[level] << ">\t";
 
   return strm;
 }
@@ -160,7 +162,7 @@ MoFEMErrorCode LogManager::setUpLog() {
                                       << std::setfill('0') << line_id
                                       << std::dec << std::setfill(' ') << ": "]
 
-        << "<" << severity << ">\t"
+        << severity 
 
         << expr::if_(expr::has_attr(
                scope))[expr::stream
@@ -209,7 +211,7 @@ void LogManager::addAttributes(LogManager::LoggerType &lg,
 
 void LogManager::addTag(LogManager::LoggerType &lg, const std::string tag) {
   lg.add_attribute("Tag", attrs::constant<std::string>(tag));
-  
+
 }
 
 LogManager::LoggerType LogManager::getLog(const std::string channel,

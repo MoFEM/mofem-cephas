@@ -53,7 +53,7 @@ struct LogManager : public UnknownInterface {
     verbose,
     inform,
     warning,
-    fault,
+    error,
     critical
   };
 

@@ -53,22 +53,30 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core;
 
     logging::core::get()->set_filter(MoFEM::LogKeywords::severity >=
-                                     LogManager::SeverityLevel::very_noisy);
+                                     LogManager::SeverityLevel::noisy);
 
-    auto self_log = LogManager::getLogSelf(LogManager::BitScope);
 
     {
+      auto self_log = LogManager::getLogSelf(LogManager::BitScope);
       BOOST_LOG_NAMED_SCOPE("log test");
       BOOST_LOG_SEV(self_log, LogManager::SeverityLevel::noisy)
           << "Hello, self!";
     }
 
     {
-      BOOST_LOG_NAMED_SCOPE("more log test")
+      auto self_log = LogManager::getLogSelf();
       BOOST_LOG_SEV(self_log, LogManager::SeverityLevel::verbose)
+          << "Hello, self!";
+      BOOST_LOG_SEV(self_log, LogManager::SeverityLevel::noisy)
           << "Hello, self!";
       BOOST_LOG_SEV(self_log, LogManager::SeverityLevel::very_noisy)
           << "Hello, self!";
+    }
+
+    {
+      auto self_inform = LogManager::getLogSelf();
+      BOOST_LOG_SEV(self_inform, LogManager::SeverityLevel::inform)
+          << "Hello, work inform";
     }
 
     {
