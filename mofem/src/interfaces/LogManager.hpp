@@ -17,9 +17,8 @@
 #ifndef __LOGMANAGER_HPP__
 #define __LOGMANAGER_HPP__
 
-
-
-
+#define BOOST_LOG_DYN_LINK
+#include <boost/log/sources/severity_channel_logger.hpp>
 namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMLogManager =
@@ -44,15 +43,15 @@ struct LogManager : public UnknownInterface {
 
   MoFEMErrorCode getSubInterfaceOptions();
 
+  typedef boost::log::sources::severity_channel_logger<SeverityLevel,
+                                                       std::string>
+      LoggerType;
+
   /**
    * \brief Get options from command line
    * @return error code
    */
   MoFEMErrorCode getOptions();
-
-  boost::shared_ptr<std::ostream> getStrmSelf();
-  boost::shared_ptr<std::ostream> getStrmWorld();
-  boost::shared_ptr<std::ostream> getStrmSync();
 
 private:
   MoFEM::Core &cOre;

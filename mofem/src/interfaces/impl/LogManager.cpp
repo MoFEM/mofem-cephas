@@ -8,8 +8,6 @@
 
 #undef likely
 
-#define BOOST_LOG_DYN_LINK
-
 #include <cstddef>
 #include <string>
 #include <ostream>
@@ -31,11 +29,10 @@
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/core/null_deleter.hpp>
-#include <boost/log/sources/severity_channel_logger.hpp>
 
 namespace logging = boost::log;
-namespace src = boost::log::sources;
 namespace sinks = boost::log::sinks;
+namespace src = boost::log::sources;
 namespace keywords = boost::log::keywords;
 namespace attrs = boost::log::attributes;
 namespace keywords = boost::log::keywords;
@@ -54,11 +51,6 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline", attrs::timer::value_type)
 } // namespace expressions
 } // namespace log
 } // namespace boost
-
-#define BOOST_LOG_STREAM_COMM_SEV(logger, comm, lvl)                           \
-  BOOST_LOG_STREAM_WITH_PARAMS((logger),                                       \
-                               (::boost::log::keywords::comm = (chan))(        \
-                                   ::boost::log::keywords::severity = (lvl)))
 
 // The operator puts a human-friendly representation of the severity level to
 // the stream
@@ -136,8 +128,6 @@ struct LogManager::InternalData
   boost::shared_ptr<std::ostream> getStrmSync() {
     return boost::shared_ptr<std::ostream>(shared_from_this(), &strmSync);
   }
-
-  typedef src::severity_channel_logger<SeverityLevel, std::string> LoggerType;
 
   LoggerType lgSelf;
   LoggerType lgWorld;
