@@ -47,6 +47,9 @@ struct LogManager : public UnknownInterface {
                                                        std::string>
       LoggerType;
 
+
+  
+
   /**
    * \brief Get options from command line
    * @return error code
