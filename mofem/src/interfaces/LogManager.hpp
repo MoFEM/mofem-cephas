@@ -76,12 +76,9 @@ private:
 
   MoFEMErrorCode setUpLog();
 };
-}
 
+namespace Log {
 
-namespace boost {
-namespace log {
-namespace expressions {
 BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
 BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity",
                             MoFEM::LogManager::SeverityLevel)
@@ -91,9 +88,17 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(scope, "Scope",
                             boost::log::attributes::named_scope::value_type)
 BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
                             boost::log::attributes::timer::value_type)
-} // namespace expressions
-} // namespace log
-} // namespace boost
+
+} // namespace Logging
+}
+
+
+// namespace boost {
+// namespace log {
+// namespace expressions {
+// } // namespace expressions
+// } // namespace log
+// } // namespace boost
 
 #endif //__LOGMANAGER_HPP__
 

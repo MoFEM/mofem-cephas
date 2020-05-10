@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab, PETSC_COMM_WORLD);
     MoFEM::Interface &m_field = core;
 
-    logging::core::get()->set_filter(boost::log::expressions::severity >=
+    logging::core::get()->set_filter(MoFEM::Log::severity >=
                                      LogManager::verbose);
 
     BOOST_LOG_SEV(m_field.getInterface<LogManager>()->getLogSelf(),

@@ -55,6 +55,8 @@ std::ostream &operator<<(std::ostream &strm,
 
 namespace MoFEM {
 
+using namespace MoFEM::Log;
+
 struct LogManager::InternalData
     : public boost::enable_shared_from_this<LogManager::InternalData> {
 
@@ -169,24 +171,25 @@ MoFEMErrorCode LogManager::setUpLog() {
 
     typedef sinks::synchronous_sink<sinks::text_ostream_backend> sink_t;
     auto sink = boost::make_shared<sink_t>(backend);
-    sink->set_filter((expr::has_attr(boost::log::expressions::channel) &&
-                      boost::log::expressions::channel == comm_filter));
+    sink->set_filter((expr::has_attr(channel) && channel == comm_filter));
 
     sink->set_formatter(
 
         expr::stream
-        << std::hex << std::setw(8) << std::setfill('0')
-        << boost::log::expressions::line_id << std::dec << std::setfill(' ')
-        << ": <" << boost::log::expressions::severity << ">\t"
+
+        << std::hex << std::setw(8) << std::setfill('0') << line_id
+
+        << std::dec << std::setfill(' ') << ": <" << severity << ">\t"
+
         << boost::log::expressions::format_named_scope(
                "Scope", keywords::format = "[%f:%l]")
-        << "(" << boost::log::expressions::scope << ") "
-        << expr::if_(expr::has_attr(boost::log::expressions::tag_attr))
-               [expr::stream << "[" << boost::log::expressions::tag_attr
-                             << "] "]
-        << expr::if_(expr::has_attr(boost::log::expressions::timeline))
-               [expr::stream << "[" << boost::log::expressions::timeline
-                             << "] "]
+        << "(" << scope << ") "
+
+        << expr::if_(expr::has_attr(
+               tag_attr))[expr::stream << "[" << tag_attr << "] "]
+
+        << expr::if_(expr::has_attr(
+               timeline))[expr::stream << "[" << timeline << "] "]
         << expr::smessage
 
     );
