@@ -52,8 +52,8 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab, PETSC_COMM_WORLD);
     MoFEM::Interface &m_field = core;
 
-    logging::core::get()->set_filter(MoFEM::LogKeywords::severity >=
-                                     LogManager::SeverityLevel::noisy);
+    // logging::core::get()->set_filter(MoFEM::LogKeywords::severity >=
+    //                                  LogManager::SeverityLevel::noisy);
 
 
     {

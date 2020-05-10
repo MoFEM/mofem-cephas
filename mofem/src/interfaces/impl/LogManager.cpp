@@ -27,18 +27,14 @@ namespace MoFEM {
 
 using namespace MoFEM::LogKeywords;
 
+constexpr std::array<char *const, LogManager::SeverityLevel::critical + 1>
+    LogManager::severityStrings;
+
 std::ostream &operator<<(std::ostream &strm,
                          const LogManager::SeverityLevel &level) {
-  static const char *strings[] = {
-
-      "very_noisy", "noisy", "very_verbose", "verbose", "inform",
-      "warning",    "error", "critical"
-
-  };
-
   if (level < LogManager::SeverityLevel::inform ||
       level > LogManager::SeverityLevel::inform)
-    strm << "<" << strings[level] << ">\t";
+    strm << "<" << LogManager::severityStrings[level] << ">\t";
 
   return strm;
 }
@@ -131,12 +127,21 @@ MoFEMErrorCode LogManager::getSubInterfaceOptions() { return getOptions(); }
 
 MoFEMErrorCode LogManager::getOptions() {
   MoFEMFunctionBegin;
+  PetscInt sev_level = SeverityLevel::inform;
+
   CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "log_",
                            "Warning interface options", "none");
+
+  CHKERR PetscOptionsEList("-severity_level", "Volume length quality type", "",
+                           severityStrings.data(), SeverityLevel::error,
+                           severityStrings[sev_level], &sev_level, PETSC_NULL);
+
   ierr = PetscOptionsEnd();
   CHKERRG(ierr);
 
   CHKERR setUpLog();
+
+  logging::core::get()->set_filter(MoFEM::LogKeywords::severity >= sev_level);
 
   MoFEMFunctionReturn(0);
 }

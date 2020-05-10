@@ -57,10 +57,20 @@ struct LogManager : public UnknownInterface {
     critical
   };
 
+  static constexpr std::array<char *const, critical + 1> severityStrings = {
+
+      (char *)"very_noisy", (char *)"noisy",   (char *)"very_verbose",
+      (char *)"verbose",    (char *)"inform",  (char *)"warning",
+      (char *)"error",      (char *)"critical"
+
+  };
+
   enum LogAttributesBits {
     BitLineID = 1 << 0,
     BitScope = 1 << 1,
   };
+
+
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
