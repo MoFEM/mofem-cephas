@@ -42,6 +42,23 @@ namespace MoFEM {
 
 using namespace MoFEM::LogKeywords;
 
+std::ostream &operator<<(std::ostream &strm,
+                         const LogManager::SeverityLevel &level) {
+  static const char *strings[] = {
+
+      "very_noisy", "noisy", "very_verbose", "verbose",
+      "warning",    "error", "critical"
+
+  };
+
+  // if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings))
+  strm << strings[level];
+  // else
+  // strm << static_cast<int>(level);
+
+  return strm;
+}
+
 struct LogManager::InternalData
     : public boost::enable_shared_from_this<LogManager::InternalData> {
 

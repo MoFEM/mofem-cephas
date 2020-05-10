@@ -22,10 +22,7 @@
 #include <boost/log/attributes.hpp>
 #include <boost/log/expressions.hpp>
 
-namespace MoFEM {
-
-
-}
+namespace MoFEM {}
 
 namespace MoFEM {
 
@@ -84,22 +81,8 @@ private:
 
 // The operator puts a human-friendly representation of the severity level to
 // the stream
-inline std::ostream &operator<<(std::ostream &strm,
-                                const LogManager::SeverityLevel &level) {
-  static const char *strings[] = {
-
-      "very_noisy", "noisy", "very_verbose", "verbose",
-      "warning",    "error", "critical"
-
-  };
-
-  // if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings))
-  strm << strings[level];
-  // else
-  // strm << static_cast<int>(level);
-
-  return strm;
-}
+std::ostream &operator<<(std::ostream &strm,
+                         const LogManager::SeverityLevel &level);
 
 namespace LogKeywords {
 
