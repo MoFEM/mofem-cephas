@@ -19,6 +19,9 @@
 
 #define BOOST_LOG_DYN_LINK
 #include <boost/log/sources/severity_channel_logger.hpp>
+#include <boost/log/attributes.hpp>
+#include <boost/log/expressions.hpp>
+
 namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMLogManager =
@@ -31,7 +34,15 @@ static const MOFEMuuid IDD_MOFEMLogManager =
  */
 struct LogManager : public UnknownInterface {
 
-  enum SeverityLevel { normal, notification, warning, error, critical };
+  enum SeverityLevel {
+    very_noisy,
+    noisy,
+    very_verbose,
+    verbose,
+    warning,
+    error,
+    critical
+  };
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const;
@@ -66,6 +77,23 @@ private:
   MoFEMErrorCode setUpLog();
 };
 }
+
+
+namespace boost {
+namespace log {
+namespace expressions {
+BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
+BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity",
+                            MoFEM::LogManager::SeverityLevel)
+BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
+BOOST_LOG_ATTRIBUTE_KEYWORD(tag_attr, "Tag", std::string)
+BOOST_LOG_ATTRIBUTE_KEYWORD(scope, "Scope",
+                            boost::log::attributes::named_scope::value_type)
+BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
+                            boost::log::attributes::timer::value_type)
+} // namespace expressions
+} // namespace log
+} // namespace boost
 
 #endif //__LOGMANAGER_HPP__
 

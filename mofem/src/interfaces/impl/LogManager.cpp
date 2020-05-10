@@ -38,20 +38,6 @@ namespace attrs = boost::log::attributes;
 namespace keywords = boost::log::keywords;
 namespace expr = boost::log::expressions;
 
-namespace boost {
-namespace log {
-namespace expressions {
-BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
-BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity",
-                            MoFEM::LogManager::SeverityLevel)
-BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
-BOOST_LOG_ATTRIBUTE_KEYWORD(tag_attr, "Tag", std::string)
-BOOST_LOG_ATTRIBUTE_KEYWORD(scope, "Scope", attrs::named_scope::value_type)
-BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline", attrs::timer::value_type)
-} // namespace expressions
-} // namespace log
-} // namespace boost
-
 // The operator puts a human-friendly representation of the severity level to
 // the stream
 std::ostream &operator<<(std::ostream &strm,
