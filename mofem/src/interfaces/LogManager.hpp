@@ -86,6 +86,14 @@ struct LogManager : public UnknownInterface {
 
   static void addAttributes(LogManager::LoggerType &lg, const int bit = 0);
 
+  static LoggerType& setLog(const std::string channel, const int bit = 0);
+
+  static LoggerType& setLogSelf(const int bit = 0);
+
+  static LoggerType& setLogWorld(const int bit = 0);
+
+  static LoggerType& setLogSync(const int bit = 0);
+
   static LoggerType& getLog(const std::string channel, const int bit = 0);
 
   static LoggerType& getLogSelf(const int bit = 0);

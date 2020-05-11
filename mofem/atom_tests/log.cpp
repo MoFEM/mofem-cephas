@@ -15,7 +15,7 @@ using namespace MoFEM;
 
 void log_fun1(MoFEM::Interface &m_field) {
 
-  auto world_log = LogManager::getLogWorld();
+  auto world_log = LogManager::setLogWorld();
   LogManager::addTag(world_log, "My tag");
 
   BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
@@ -32,7 +32,7 @@ void log_fun1(MoFEM::Interface &m_field) {
 void log_fun2(MoFEM::Interface &m_field) {
 
   auto sync_log =
-      LogManager::getLogSync(LogManager::BitLineID | LogManager::BitScope);
+      LogManager::setLogSync(LogManager::BitLineID | LogManager::BitScope);
 
   BOOST_LOG_FUNCTION();
   BOOST_LOG_SEV(sync_log, LogManager::SeverityLevel::warning) << "Hello, sync!";
@@ -60,14 +60,14 @@ int main(int argc, char *argv[]) {
 
 
     {
-      auto self_log = LogManager::getLogSelf(LogManager::BitScope);
+      auto self_log = LogManager::setLogSelf(LogManager::BitScope);
       BOOST_LOG_NAMED_SCOPE("log test");
       BOOST_LOG_SEV(self_log, LogManager::SeverityLevel::noisy)
           << "Hello, self!";
     }
 
     {
-      auto self_log = LogManager::getLogSelf();
+      auto self_log = LogManager::setLogSelf();
       BOOST_LOG_SEV(self_log, LogManager::SeverityLevel::verbose)
           << "Hello, self!";
       BOOST_LOG_SEV(self_log, LogManager::SeverityLevel::noisy)
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     }
 
     {
-      auto self_inform = LogManager::getLogSelf();
+      auto self_inform = LogManager::setLogSelf();
       BOOST_LOG_SEV(self_inform, LogManager::SeverityLevel::inform)
           << "Hello, work inform";
     }
