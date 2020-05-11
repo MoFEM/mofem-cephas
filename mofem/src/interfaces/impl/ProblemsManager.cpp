@@ -2740,6 +2740,10 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string name,
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
   MoFEMFunctionBegin;
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_CHANNEL("SYNC");
+  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
+  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
 
   if (!(cOre.getBuildMoFEM() & Core::PARTITION_PROBLEM))
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -2809,28 +2813,13 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string name,
   }
 
   if (verb > QUIET) {
-    std::ostringstream ss;
-    ss << "partition_ghost_row_dofs: rank = " << m_field.get_comm_rank()
-       << " FEs row ghost dofs " << *p_miit << " Nb. row ghost dof "
-       << p_miit->getNbGhostDofsRow() << " Nb. local dof "
-       << p_miit->getNbLocalDofsRow() << std::endl;
-    ss << "partition_ghost_col_dofs: rank = " << m_field.get_comm_rank()
-       << " FEs col ghost dofs " << *p_miit << " Nb. col ghost dof "
-       << p_miit->getNbGhostDofsCol() << " Nb. local dof "
-       << p_miit->getNbLocalDofsCol() << std::endl;
-    if (verb > VERBOSE) {
-      NumeredDofEntity_multiIndex::iterator miit_dd_col =
-          p_miit->numeredDofsCols->begin();
-      for (; miit_dd_col != p_miit->numeredDofsCols->end(); miit_dd_col++) {
-        if ((*miit_dd_col)->pArt == (unsigned int)m_field.get_comm_rank())
-          continue;
-        if ((*miit_dd_col)->petscLocalDofIdx == (DofIdx)-1)
-          continue;
-        ss << *(*miit_dd_col) << std::endl;
-      }
-    }
-    PetscSynchronizedPrintf(m_field.get_comm(), ss.str().c_str());
-    PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+    MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
+        << " FEs ghost dofs on problem " << p_miit->getName()
+        << " Nb. ghost dof " << p_miit->getNbGhostDofsRow() << " by "
+        << p_miit->getNbGhostDofsCol() << " Nb. local dof "
+        << p_miit->getNbLocalDofsCol() << " by " << p_miit->getNbLocalDofsCol();
+
+    MOFEM_LOG_SYNCHORMISE(PETSC_COMM_WORLD) 
   }
 
   cOre.getBuildMoFEM() |= Core::PARTITION_GHOST_DOFS;
