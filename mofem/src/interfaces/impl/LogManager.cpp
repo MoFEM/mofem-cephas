@@ -230,7 +230,10 @@ void LogManager::addAttributes(const std::string channel, const int bit) {
 
 void LogManager::addTag(LogManager::LoggerType &lg, const std::string tag) {
   lg.add_attribute("Tag", attrs::constant<std::string>(tag));
+}
 
+void LogManager::addTag(const std::string channel, const std::string tag) {
+  getLog(channel).add_attribute("Tag", attrs::constant<std::string>(tag));
 }
 
 LogManager::LoggerType &LogManager::setLog(const std::string channel,
@@ -239,18 +242,6 @@ LogManager::LoggerType &LogManager::setLog(const std::string channel,
       LoggerType(boost::log::keywords::channel = channel);
   addAttributes(InternalData::logChannels[channel], bit);
   return InternalData::logChannels[channel];
-}
-
-LogManager::LoggerType& LogManager::setLogSelf(const int bit) {
-  return setLog("SELF", bit);
-}
-
-LogManager::LoggerType& LogManager::setLogWorld(const int bit) {
-  return setLog("WORLD", bit);
-}
-
-LogManager::LoggerType& LogManager::setLogSync(const int bit) {
-  return setLog("SYNC", bit);
 }
 
 LogManager::LoggerType &LogManager::getLog(const std::string channel) {

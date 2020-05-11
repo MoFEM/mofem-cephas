@@ -90,15 +90,11 @@ struct LogManager : public UnknownInterface {
 
   static LoggerType &setLog(const std::string channel, const int bit = 0);
 
-  static LoggerType &setLogSelf(const int bit = 0);
-
-  static LoggerType &setLogWorld(const int bit = 0);
-
-  static LoggerType &setLogSync(const int bit = 0);
-
   static LoggerType &getLog(const std::string channel);
 
   static void addTag(LogManager::LoggerType &lg, const std::string tag);
+
+  static void addTag(const std::string channel, const std::string tag);
 
   /**
    * \brief Get options from command line
