@@ -157,6 +157,7 @@ MoFEMErrorCode LogManager::getOptions() {
 }
 
 MoFEMErrorCode LogManager::setUpLog() {
+  MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
   auto create_sink = [&](auto stream_ptr, auto comm_filter) {
@@ -172,12 +173,15 @@ MoFEMErrorCode LogManager::setUpLog() {
 
         expr::stream
 
+        << "[ " << std::hex << std::setw(3) << std::setfill(' ') << proc_attr
+        << " ] "
+
         << expr::if_(expr::has_attr(
                line_id))[expr::stream << std::hex << std::setw(8)
                                       << std::setfill('0') << line_id
                                       << std::dec << std::setfill(' ') << ": "]
 
-        << severity 
+        << severity
 
         << expr::if_(expr::has_attr(
                scope))[expr::stream
@@ -201,6 +205,8 @@ MoFEMErrorCode LogManager::setUpLog() {
   core_log->add_sink(create_sink(internalDataPtr->getStrmSelf(), "SELF"));
   core_log->add_sink(create_sink(internalDataPtr->getStrmWorld(), "WORLD"));
   core_log->add_sink(create_sink(internalDataPtr->getStrmSync(), "SYNC"));
+  core_log->add_global_attribute(
+      "Proc", attrs::constant<unsigned int>(m_field.get_comm_rank()));
 
   MoFEMFunctionReturn(0);
 }
