@@ -260,6 +260,13 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
  */
 #define MOFEM_LOG_TAG(channel, tag) LogManager::addTag(channel, tag);
 
+/**
+ * @brief Synchronise "SYNC" channel
+ * 
+ */
+#define MOFEM_LOG_SYNCHORMISE(comm)                                                  \
+  PetscSynchronizedFlush(comm, PETSC_STDOUT);
+
 #endif //__LOGMANAGER_HPP__
 
 /**

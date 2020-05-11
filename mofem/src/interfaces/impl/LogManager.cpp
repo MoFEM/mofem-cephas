@@ -75,7 +75,6 @@ struct LogManager::InternalData
     virtual int sync() {
       if (!this->str().empty()) {
         PetscSynchronizedPrintf(cOmm, "%s", this->str().c_str());
-        PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
         this->str("");
       }
       return 0;
@@ -117,8 +116,7 @@ std::map<std::string, LogManager::LoggerType>
 
 LogManager::LogManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)),
-      internalDataPtr(
-          new InternalData(static_cast<MoFEM::Interface &>(cOre).get_comm())) {}
+      internalDataPtr(new InternalData(PETSC_COMM_WORLD)) {}
 
 MoFEMErrorCode LogManager::query_interface(const MOFEMuuid &uuid,
                                            UnknownInterface **iface) const {

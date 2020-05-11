@@ -2421,6 +2421,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
   const Problem_multiIndex *problems_ptr;
   const EntFiniteElement_multiIndex *fe_ent_ptr;
   MoFEMFunctionBegin;
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_CHANNEL("SYNC");
 
   if (!(cOre.getBuildMoFEM() & Core::BUILD_FIELD))
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY, "fields not build");
@@ -2607,11 +2609,10 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       if (!part_from_moab) {
 
         if (fe.getBitFieldIdRow().none() && m_field.get_comm_size() == 0) {
-          // THROW_MESSAGE(
-          //     "At least one field has to be added to element row, to
-          //     determine " "partition  of finite element, if mesh is not
-          //     partitioned. Check " "element " +
-          //     boost::lexical_cast<std::string>(fe.getName()));
+          MOFEM_LOG("WORLD", LogManager::SeverityLevel::warning)
+              << "At least one field has to be added to element row to "
+                 "determine partition of finite element. Check element " +
+                     boost::lexical_cast<std::string>(fe.getName());
         }
       }
 
@@ -2635,20 +2636,15 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "element is there");
 
       if (verb >= VERY_VERBOSE) {
-        std::ostringstream ss;
-        ss << *p_miit << std::endl;
-        ss << *p.first << std::endl;
-        auto miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
-        for (; miit != (*p.first)->rows_dofs->get<Unique_mi_tag>().end();
-             miit++)
-          ss << "rows: " << *(*miit) << std::endl;
-        miit = (*p.first)->cols_dofs->get<Unique_mi_tag>().begin();
-        for (; miit != (*p.first)->cols_dofs->get<Unique_mi_tag>().end();
-             miit++)
-          ss << "cols: " << *(*miit) << std::endl;
-        PetscSynchronizedPrintf(m_field.get_comm(), ss.str().c_str());
+        MOFEM_LOG("SYNC", LogManager::SeverityLevel::very_verbose) << *p_miit;
+        MOFEM_LOG("SYNC", LogManager::SeverityLevel::very_verbose) << *p.first;
+        for (auto &dof_ptr : (*p.first)->rows_dofs->get<Unique_mi_tag>())
+          MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy)
+              << "row: " << *dof_ptr;
+        for (auto &dof_ptr : (*p.first)->cols_dofs->get<Unique_mi_tag>())
+          MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy)
+              << "col: " << *dof_ptr;
       }
-
     }
 
   }
@@ -2657,13 +2653,10 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
     auto elements_on_rank =
         problem_finite_elements.get<Part_mi_tag>().equal_range(
             m_field.get_comm_rank());
-    int count = std::distance(elements_on_rank.first, elements_on_rank.second);
-    std::ostringstream ss;
-    ss << *p_miit;
-    ss << " Nb. elems " << count << " on proc " << m_field.get_comm_rank()
-       << std::endl;
-    PetscSynchronizedPrintf(m_field.get_comm(), ss.str().c_str());
-    PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+    MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+        << *p_miit << " Nb. elems "
+        << std::distance(elements_on_rank.first, elements_on_rank.second);
+    MOFEM_LOG_SYNCHORMISE(PETSC_COMM_WORLD);
   }
 
   cOre.getBuildMoFEM() |= Core::PARTITION_FE;

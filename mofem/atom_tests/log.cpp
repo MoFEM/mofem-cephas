@@ -97,6 +97,7 @@ int main(int argc, char *argv[]) {
     {
       CHKERR log_fun1();
       CHKERR log_fun2();
+      MOFEM_LOG_SYNCHORMISE(PETSC_COMM_WORLD)
     }
   }
   CATCH_ERRORS;
