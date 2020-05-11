@@ -70,8 +70,8 @@ struct LogManager : public UnknownInterface {
     BitScope = 1 << 1,
   };
 
-  MoFEMErrorCode
-  query_interface(const MOFEMuuid &uuid, UnknownInterface **iface) const;
+  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
+                                 UnknownInterface **iface) const;
 
   LogManager(const MoFEM::Core &core);
   virtual ~LogManager() = default;
@@ -86,21 +86,17 @@ struct LogManager : public UnknownInterface {
 
   static void addAttributes(LogManager::LoggerType &lg, const int bit = 0);
 
-  static LoggerType& setLog(const std::string channel, const int bit = 0);
+  static void addAttributes(const std::string channel, const int bit = 0);
 
-  static LoggerType& setLogSelf(const int bit = 0);
+  static LoggerType &setLog(const std::string channel, const int bit = 0);
 
-  static LoggerType& setLogWorld(const int bit = 0);
+  static LoggerType &setLogSelf(const int bit = 0);
 
-  static LoggerType& setLogSync(const int bit = 0);
+  static LoggerType &setLogWorld(const int bit = 0);
 
-  static LoggerType& getLog(const std::string channel, const int bit = 0);
+  static LoggerType &setLogSync(const int bit = 0);
 
-  static LoggerType& getLogSelf(const int bit = 0);
-
-  static LoggerType& getLogWorld(const int bit = 0);
-
-  static LoggerType& getLogSync(const int bit = 0);
+  static LoggerType &getLog(const std::string channel);
 
   static void addTag(LogManager::LoggerType &lg, const std::string tag);
 
@@ -137,8 +133,10 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 
 } // namespace LogKeywords
 
-
 } // namespace MoFEM
+
+#define MOFEM_LOG(channel, severity)                                           \
+  BOOST_LOG_SEV(MoFEM::LogManager::getLog(channel), severity)
 
 #endif //__LOGMANAGER_HPP__
 

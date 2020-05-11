@@ -58,29 +58,32 @@ int main(int argc, char *argv[]) {
     // logging::core::get()->set_filter(MoFEM::LogKeywords::severity >=
     //                                  LogManager::SeverityLevel::noisy);
 
-
+    LogManager::setLogSelf();
     {
-      auto self_log = LogManager::setLogSelf(LogManager::BitScope);
-      BOOST_LOG_NAMED_SCOPE("log test");
-      BOOST_LOG_SEV(self_log, LogManager::SeverityLevel::noisy)
-          << "Hello, self!";
+      MOFEM_LOG("SELF", LogManager::SeverityLevel::critical)
+          << "Hello, self critical!";
+      MOFEM_LOG("SELF", LogManager::SeverityLevel::error)
+          << "Hello, self error!";
+      MOFEM_LOG("SELF", LogManager::SeverityLevel::warning)
+          << "Hello, self warning!";
+      MOFEM_LOG("SELF", LogManager::SeverityLevel::inform)
+          << "Hello, self inform!";
+      MOFEM_LOG("SELF", LogManager::SeverityLevel::verbose)
+          << "Hello, self verbose!";
+      MOFEM_LOG("SELF", LogManager::SeverityLevel::noisy)
+          << "Hello, self noisy!";
+      MOFEM_LOG("SELF", LogManager::SeverityLevel::very_noisy)
+          << "Hello, self very noisy!";
     }
 
+    LogManager::addAttributes("SELF", LogManager::BitScope);
     {
-      auto self_log = LogManager::setLogSelf();
-      BOOST_LOG_SEV(self_log, LogManager::SeverityLevel::verbose)
-          << "Hello, self!";
-      BOOST_LOG_SEV(self_log, LogManager::SeverityLevel::noisy)
-          << "Hello, self!";
-      BOOST_LOG_SEV(self_log, LogManager::SeverityLevel::very_noisy)
-          << "Hello, self!";
+      BOOST_LOG_NAMED_SCOPE("log test with scope");
+      MOFEM_LOG("SELF", LogManager::SeverityLevel::noisy)
+          << "Hello, self with scope!";
     }
 
-    {
-      auto self_inform = LogManager::setLogSelf();
-      BOOST_LOG_SEV(self_inform, LogManager::SeverityLevel::inform)
-          << "Hello, work inform";
-    }
+
 
     {
       BOOST_LOG_NAMED_SCOPE("test functions")

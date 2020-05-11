@@ -36,6 +36,11 @@ std::ostream &operator<<(std::ostream &strm,
       level > LogManager::SeverityLevel::inform)
     strm << "<" << LogManager::severityStrings[level] << ">\t";
 
+  if(level == LogManager::SeverityLevel::noisy)
+    strm << "\t";
+  if (level == LogManager::SeverityLevel::error)
+    strm << "\t";
+
   return strm;
 }
 
@@ -219,6 +224,10 @@ void LogManager::addAttributes(LogManager::LoggerType &lg,
   }
 }
 
+void LogManager::addAttributes(const std::string channel, const int bit) {
+  addAttributes(getLog(channel), bit);
+}
+
 void LogManager::addTag(LogManager::LoggerType &lg, const std::string tag) {
   lg.add_attribute("Tag", attrs::constant<std::string>(tag));
 
@@ -244,23 +253,8 @@ LogManager::LoggerType& LogManager::setLogSync(const int bit) {
   return setLog("SYNC", bit);
 }
 
-LogManager::LoggerType &LogManager::getLog(const std::string channel,
-                                           const int bit) {
-  auto lg = InternalData::logChannels.at(channel);
-  addAttributes(lg, bit);
-  return lg;
-}
-
-LogManager::LoggerType& LogManager::getLogSelf(const int bit) {
-  return getLog("SELF", bit);
-}
-
-LogManager::LoggerType& LogManager::getLogWorld(const int bit) {
-  return getLog("WORLD", bit);
-}
-
-LogManager::LoggerType& LogManager::getLogSync(const int bit) {
-  return getLog("SYNC", bit);
+LogManager::LoggerType &LogManager::getLog(const std::string channel) {
+  return InternalData::logChannels.at(channel);
 }
 
 } // namespace MoFEM
