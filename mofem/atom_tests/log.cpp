@@ -86,6 +86,8 @@ int main(int argc, char *argv[]) {
           << "Hello, self inform!";
       MOFEM_LOG("WORLD", LogManager::SeverityLevel::verbose)
           << "Hello, self verbose!";
+      MOFEM_LOG("WORLD", LogManager::SeverityLevel::very_verbose)
+          << "Hello, self very verbose!";
       MOFEM_LOG("WORLD", LogManager::SeverityLevel::noisy)
           << "Hello, self noisy!";
       MOFEM_LOG("WORLD", LogManager::SeverityLevel::very_noisy)

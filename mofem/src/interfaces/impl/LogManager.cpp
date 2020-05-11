@@ -32,14 +32,13 @@ constexpr std::array<char *const, LogManager::SeverityLevel::critical + 1>
 
 std::ostream &operator<<(std::ostream &strm,
                          const LogManager::SeverityLevel &level) {
-  if (level < LogManager::SeverityLevel::inform ||
-      level > LogManager::SeverityLevel::inform)
-    strm << "<" << LogManager::severityStrings[level] << ">\t";
 
-  if(level == LogManager::SeverityLevel::noisy)
-    strm << "\t";
-  if (level == LogManager::SeverityLevel::error)
-    strm << "\t";
+  strm << "<" << LogManager::severityStrings[level] << "> ";
+
+  // if(level == LogManager::SeverityLevel::noisy)
+  //   strm << "\t";
+  // if (level == LogManager::SeverityLevel::error)
+  //   strm << "\t";
 
   return strm;
 }
@@ -173,8 +172,7 @@ MoFEMErrorCode LogManager::setUpLog() {
 
         expr::stream
 
-        << "[ " << std::hex << std::setw(3) << std::setfill(' ') << proc_attr
-        << " ] "
+        << "[" << std::dec << std::setfill(' ') << proc_attr << "] "
 
         << expr::if_(expr::has_attr(
                line_id))[expr::stream << std::hex << std::setw(8)
