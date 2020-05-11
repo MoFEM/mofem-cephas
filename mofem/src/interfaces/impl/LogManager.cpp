@@ -236,11 +236,9 @@ void LogManager::addTag(const std::string channel, const std::string tag) {
   getLog(channel).add_attribute("Tag", attrs::constant<std::string>(tag));
 }
 
-LogManager::LoggerType &LogManager::setLog(const std::string channel,
-                                           const int bit) {
+LogManager::LoggerType &LogManager::setLog(const std::string channel) {
   InternalData::logChannels[channel] =
       LoggerType(boost::log::keywords::channel = channel);
-  addAttributes(InternalData::logChannels[channel], bit);
   return InternalData::logChannels[channel];
 }
 

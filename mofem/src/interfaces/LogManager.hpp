@@ -88,7 +88,7 @@ struct LogManager : public UnknownInterface {
 
   static void addAttributes(const std::string channel, const int bit = 0);
 
-  static LoggerType &setLog(const std::string channel, const int bit = 0);
+  static LoggerType &setLog(const std::string channel);
 
   static LoggerType &getLog(const std::string channel);
 
@@ -131,12 +131,41 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 
 } // namespace MoFEM
 
+/**
+ * @brief Set and reset channel
+ *
+ * \code
+ * MOFEM_LOG_CHANNEL("WORLD");
+ * \endcode
+ *
+ * Are three default type of channels, SELF, ech processor prints to the
+ * standard output, WORLD, only processor one prints, and SYNC all processors
+ * prints synchronously.
+ *
+ *
+ */
 #define MOFEM_LOG_CHANNEL(channel)                                             \
   { LogManager::setLog(channel); }
 
+/**
+ * @brief Add attributes to channel
+ * 
+ * \code
+ * MOFEM_LOG_ATTRIBUTES("SYNC", LogManager::BitLineID | LogManager::BitScope);
+ * \endcode
+ * 
+ */
 #define MOFEM_LOG_ATTRIBUTES(channel, bit)                                     \
   { LogManager::addAttributes(channel, bit); }
 
+/**
+ * @brief Log
+ *
+ * \code
+ * MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform) << "Hello world";
+ * \endcode
+ *
+ */
 #define MOFEM_LOG(channel, severity)                                           \
   BOOST_LOG_SEV(MoFEM::LogManager::getLog(channel), severity)
 
@@ -154,6 +183,13 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
       PETSC_FUNCTION_NAME, __FILE__, __LINE__,                                 \
       ::boost::log::attributes::named_scope_entry::function)
 
+/**
+ * @brief Tag channel
+ *
+ * Tag channel tag is set until MOFEM_LOG_CHANNEL is called, then new tag can be
+ * set.
+ *
+ */
 #define MOFEM_LOG_TAG(channel, tag) LogManager::addTag(channel, tag);
 
 #endif //__LOGMANAGER_HPP__
