@@ -131,8 +131,30 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 
 } // namespace MoFEM
 
+#define MOFEM_LOG_CHANNEL(channel)                                             \
+  { LogManager::setLog(channel); }
+
+#define MOFEM_LOG_ATTRIBUTES(channel, bit)                                     \
+  { LogManager::addAttributes(channel, bit); }
+
 #define MOFEM_LOG(channel, severity)                                           \
   BOOST_LOG_SEV(MoFEM::LogManager::getLog(channel), severity)
+
+/*!
+ * Macro for function scope markup. The scope name is constructed with help of
+ * compiler and contains the current function signature. The scope name is
+ * pushed to the end of the current thread scope list.
+ *
+ * Not all compilers have support for this macro. The exact form of the scope
+ * name may vary from one compiler to another.
+ */
+#define MOFEM_LOG_FUNCTION()                                                   \
+  BOOST_LOG_NAMED_SCOPE_INTERNAL(                                              \
+      BOOST_LOG_UNIQUE_IDENTIFIER_NAME(_boost_log_named_scope_sentry_),        \
+      PETSC_FUNCTION_NAME, __FILE__, __LINE__,                                 \
+      ::boost::log::attributes::named_scope_entry::function)
+
+#define MOFEM_LOG_TAG(channel, tag) LogManager::addTag(channel, tag);
 
 #endif //__LOGMANAGER_HPP__
 
