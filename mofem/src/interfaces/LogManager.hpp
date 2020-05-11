@@ -40,12 +40,17 @@ static const MOFEMuuid IDD_MOFEMLogManager =
     MOFEMuuid(BitIntefaceId(LOGMANAGER_INTERFACE));
 
 /**
- * \brief Problem manager is used to build and partition problems
- * \ingroup mofem_warring_manager
+ * \brief Log manager is used to build and partition problems
+ * \ingroup mofem_log_manager
  *
  */
 struct LogManager : public UnknownInterface {
 
+  /**
+   * @brief Severity levels
+   * \ingroup mofem_log_manager
+   * 
+   */
   enum SeverityLevel {
     very_noisy,
     noisy,
@@ -65,6 +70,11 @@ struct LogManager : public UnknownInterface {
 
   };
 
+  /**
+   * @brief Tag attributes switches
+   * \ingroup mofem_log_manager
+   * 
+   */
   enum LogAttributesBits {
     BitLineID = 1 << 0,
     BitScope = 1 << 1,
@@ -76,25 +86,76 @@ struct LogManager : public UnknownInterface {
   LogManager(const MoFEM::Core &core);
   virtual ~LogManager() = default;
 
-  enum WarringType { SELF, WORLD, SYNCHRONIZED };
-
-  MoFEMErrorCode getSubInterfaceOptions();
-
+  /**
+   * @brief Definition of the channel logger
+   * 
+   */
   typedef boost::log::sources::severity_channel_logger<SeverityLevel,
                                                        std::string>
       LoggerType;
 
+  /**
+   * @brief Add attributes to logger
+   * \ingroup mofem_log_manager
+   * 
+   * @param lg 
+   * @param bit 
+   */
   static void addAttributes(LogManager::LoggerType &lg, const int bit = 0);
 
+  /**
+   * @brief Add attributes to channel
+   * \ingroup mofem_log_manager
+   * 
+   * @param channel 
+   * @param bit 
+   */
   static void addAttributes(const std::string channel, const int bit = 0);
 
+  /**
+   * @brief Set ans resset chanel logger
+   * \ingroup mofem_log_manager
+   * 
+   * @param channel 
+   * @return LoggerType& 
+   */
   static LoggerType &setLog(const std::string channel);
 
+  /**
+   * @brief Get logger by channel
+   * \ingroup mofem_log_manager
+   * 
+   * @param channel 
+   * @return LoggerType& 
+   */
   static LoggerType &getLog(const std::string channel);
 
+  /**
+   * @brief Add tag to logger
+   * \ingroup mofem_log_manager
+   * 
+   * @param lg 
+   * @param tag 
+   */
   static void addTag(LogManager::LoggerType &lg, const std::string tag);
 
+  /**
+   * @brief Add tag to channel
+   * \ingroup mofem_log_manager
+   * 
+   * @param channel 
+   * @param tag 
+   */
   static void addTag(const std::string channel, const std::string tag);
+
+  /**
+   * @brief Get the Interface Options 
+   * 
+   * This function is called by MoFEM core when this interface is registred into database.
+   * 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode getSubInterfaceOptions();
 
   /**
    * \brief Get options from command line
@@ -133,6 +194,7 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 
 /**
  * @brief Set and reset channel
+ * \ingroup mofem_log_manager
  *
  * \code
  * MOFEM_LOG_CHANNEL("WORLD");
@@ -149,6 +211,7 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 
 /**
  * @brief Add attributes to channel
+ * \ingroup mofem_log_manager
  * 
  * \code
  * MOFEM_LOG_ATTRIBUTES("SYNC", LogManager::BitLineID | LogManager::BitScope);
@@ -160,6 +223,7 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 
 /**
  * @brief Log
+ * \ingroup mofem_log_manager
  *
  * \code
  * MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform) << "Hello world";
@@ -169,7 +233,9 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 #define MOFEM_LOG(channel, severity)                                           \
   BOOST_LOG_SEV(MoFEM::LogManager::getLog(channel), severity)
 
-/*!
+/** \brief Set scope
+ * \ingroup mofem_log_manager
+ * 
  * Macro for function scope markup. The scope name is constructed with help of
  * compiler and contains the current function signature. The scope name is
  * pushed to the end of the current thread scope list.
@@ -185,6 +251,7 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 
 /**
  * @brief Tag channel
+ * \ingroup mofem_log_manager
  *
  * Tag channel tag is set until MOFEM_LOG_CHANNEL is called, then new tag can be
  * set.
@@ -195,8 +262,11 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 #endif //__LOGMANAGER_HPP__
 
 /**
- * \defgroup mofem_warring_manager
- * \brief Warning manager
+ * \defgroup mofem_log_manager
+ * \brief Log manager
+ *
+ * Logging manager based on Boost.Log
+ * (<a href="https://www.boost.org/doc/libs/1_63_0/libs/log/doc/html/index.html">Boost.Log v2</a>)
  *
  * \ingroup mofem
  */
