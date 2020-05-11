@@ -13,11 +13,13 @@
 
 using namespace MoFEM;
 
-MoFEMErrorCode log_fun1(MoFEM::Interface &m_field) {
+MoFEMErrorCode log_fun1() {
   MoFEMFunctionBegin;
 
   MOFEM_LOG_CHANNEL("WORLD");
+  // Log time
   BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+  // Log tag
   MOFEM_LOG_TAG("WORLD", "Tag this output");
 
   MOFEM_LOG("WORLD", LogManager::SeverityLevel::verbose) << "Hello, world!";
@@ -31,15 +33,29 @@ MoFEMErrorCode log_fun1(MoFEM::Interface &m_field) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode log_fun2(MoFEM::Interface &m_field) {
+MoFEMErrorCode log_fun3() {
+  MoFEMFunctionBegin;
+  MOFEM_LOG_FUNCTION();
+
+  // Log scope
+  MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose) << "Hello, sync!";
+  MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose) << "Hello again, sync!";
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode log_fun2() {
   MoFEMFunctionBegin;
 
+  // Log scope
   MOFEM_LOG_FUNCTION();
   MOFEM_LOG_CHANNEL("SYNC");
   MOFEM_LOG_ATTRIBUTES("SYNC", LogManager::BitLineID | LogManager::BitScope);
-  MOFEM_LOG("SYNC", LogManager::SeverityLevel::warning) << "Hello, sync!";
-  MOFEM_LOG("SYNC", LogManager::SeverityLevel::warning) << "Hello again, sync!";
-  
+  MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose) << "Hello, sync!";
+  MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose) << "Hello again, sync!";
+
+  CHKERR log_fun3();
+
   MoFEMFunctionReturn(0);
 }
 
@@ -57,36 +73,28 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab, PETSC_COMM_WORLD);
     MoFEM::Interface &m_field = core;
 
-    // logging::core::get()->set_filter(MoFEM::LogKeywords::severity >=
-    //                                  LogManager::SeverityLevel::noisy);
-
-    MOFEM_LOG_CHANNEL("SELF");
+    // Set "WORLD channel" 
+    MOFEM_LOG_CHANNEL("WORLD");
     {
-      MOFEM_LOG("SELF", LogManager::SeverityLevel::critical)
+      MOFEM_LOG("WORLD", LogManager::SeverityLevel::critical)
           << "Hello, self critical!";
-      MOFEM_LOG("SELF", LogManager::SeverityLevel::error)
+      MOFEM_LOG("WORLD", LogManager::SeverityLevel::error)
           << "Hello, self error!";
-      MOFEM_LOG("SELF", LogManager::SeverityLevel::warning)
+      MOFEM_LOG("WORLD", LogManager::SeverityLevel::warning)
           << "Hello, self warning!";
-      MOFEM_LOG("SELF", LogManager::SeverityLevel::inform)
+      MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform)
           << "Hello, self inform!";
-      MOFEM_LOG("SELF", LogManager::SeverityLevel::verbose)
+      MOFEM_LOG("WORLD", LogManager::SeverityLevel::verbose)
           << "Hello, self verbose!";
-      MOFEM_LOG("SELF", LogManager::SeverityLevel::noisy)
+      MOFEM_LOG("WORLD", LogManager::SeverityLevel::noisy)
           << "Hello, self noisy!";
-      MOFEM_LOG("SELF", LogManager::SeverityLevel::very_noisy)
+      MOFEM_LOG("WORLD", LogManager::SeverityLevel::very_noisy)
           << "Hello, self very noisy!";
     }
 
-    MOFEM_LOG_ATTRIBUTES("SELF", LogManager::BitScope);
     {
-      MOFEM_LOG("SELF", LogManager::SeverityLevel::noisy)
-          << "Hello, self with scope!";
-    }
-
-    {
-      CHKERR log_fun1(m_field);
-      CHKERR log_fun2(m_field);
+      CHKERR log_fun1();
+      CHKERR log_fun2();
     }
   }
   CATCH_ERRORS;
