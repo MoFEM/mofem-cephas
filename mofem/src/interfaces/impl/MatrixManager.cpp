@@ -744,6 +744,9 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
     const std::string problem_name, int row_print, int col_print, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
+  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
+  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
+
   PetscLogEventBegin(MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn, 0, 0, 0, 0);
 
   struct TestMatrixFillIn : public FEMethod {
