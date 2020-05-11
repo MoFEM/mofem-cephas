@@ -99,6 +99,10 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
     int verb, const bool debug) {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_TAG("WORLD", "Partition mesh");
+  MOFEM_LOG_CHANNEL("SYNC");
+  MOFEM_LOG_TAG("SYNC", "Partition mesh");
 
   // get layout
   int rstart, rend, nb_elems;
@@ -112,11 +116,10 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
     CHKERR PetscLayoutGetRange(layout, &rstart, &rend);
     CHKERR PetscLayoutDestroy(&layout);
     if (verb >= VERBOSE) {
-      PetscSynchronizedPrintf(m_field.get_comm(),
-                              "Finite elements partition in problem: row lower "
-                              "%d row upper %d nb elems %d ( %d )\n",
-                              rstart, rend, nb_elems, ents.size());
-      PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
+          << "Finite elements in problem: row lower " << rstart << " row upper "
+          << rend << " nb. elems " << nb_elems << " ( " << ents.size() << " )";
+      MOFEM_LOG_SYNCHORMISE(PETSC_COMM_WORLD)
     }
   }
 
@@ -232,17 +235,6 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
     copy(i.begin(), i.end(), _i);
     copy(j.begin(), j.end(), _j);
 
-    if (verb >= VERY_NOISY) {
-      cerr << "i : ";
-      for (auto ii : i)
-        cerr << ii << " ";
-      cerr << endl;
-
-      cerr << "j : ";
-      for (auto jj : j)
-        cerr << jj << " ";
-      cerr << endl;
-    }
   }
 
   // get weights
@@ -271,9 +263,8 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
     }
 
     // run pets to do partitioning
-    if (verb >= VERBOSE) {
-      CHKERR PetscPrintf(m_field.get_comm(), "Partition mesh");
-    }
+    MOFEM_LOG("WORLD", LogManager::SeverityLevel::verbose) << "Start";
+
     MatPartitioning part;
     IS is;
     CHKERR MatPartitioningCreate(m_field.get_comm(), &part);
@@ -294,9 +285,7 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       CHKERR MatPartitioningApply(part, &is);
     }
 
-    if (verb >= VERBOSE) {
-      CHKERR PetscPrintf(m_field.get_comm(), " <- Done\n");
-    }
+    MOFEM_LOG("WORLD", LogManager::SeverityLevel::verbose) << "End";
 
     // gather
     IS is_gather, is_num, is_gather_num;
@@ -481,6 +470,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
   const EntFiniteElement_multiIndex *fe_ent_ptr;
   const DofEntity_multiIndex *dofs_field_ptr;
   MoFEMFunctionBegin;
+  MOFEM_LOG_CHANNEL("SYNC");
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
   // Note: Only allowed changes on problem_ptr structure which not influence
@@ -598,46 +588,34 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
   }
 
   // job done, some debugging and postprocessing
-  if (verb > QUIET) {
-    PetscSynchronizedPrintf(
-        m_field.get_comm(), "Problem %s Nb. rows %u Nb. cols %u\n",
-        problem_ptr->getName().c_str(), problem_ptr->numeredDofsRows->size(),
-        problem_ptr->numeredDofsCols->size());
-  }
-  if (verb > VERBOSE) {
-    EntFiniteElement_multiIndex::iterator miit = fe_ent_ptr->begin();
-    EntFiniteElement_multiIndex::iterator hi_miit = fe_ent_ptr->end();
-    std::ostringstream ss;
-    ss << "rank " << m_field.get_comm_rank() << " ";
-    ss << "FEs data for problem " << *problem_ptr << std::endl;
-    for (; miit != hi_miit; miit++) {
-      ss << "rank " << m_field.get_comm_rank() << " ";
-      ss << **miit << std::endl;
-    }
-    ss << "rank " << m_field.get_comm_rank() << " ";
-    ss << "FEs row dofs " << *problem_ptr << " Nb. row dof "
-       << problem_ptr->getNbDofsRow() << std::endl;
-    NumeredDofEntity_multiIndex::iterator miit_dd_row =
-        problem_ptr->numeredDofsRows->begin();
-    for (; miit_dd_row != problem_ptr->numeredDofsRows->end(); miit_dd_row++) {
-      ss << "rank " << m_field.get_comm_rank() << " ";
-      ss << **miit_dd_row << std::endl;
-    }
-    ss << "rank " << m_field.get_comm_rank() << " ";
-    ss << "FEs col dofs " << *problem_ptr << " Nb. col dof "
-       << problem_ptr->getNbDofsCol() << std::endl;
-    NumeredDofEntity_multiIndex::iterator miit_dd_col =
-        problem_ptr->numeredDofsCols->begin();
-    for (; miit_dd_col != problem_ptr->numeredDofsCols->end(); miit_dd_col++) {
-      ss << "rank " << m_field.get_comm_rank() << " ";
-      ss << **miit_dd_col << std::endl;
-    }
-    PetscSynchronizedPrintf(m_field.get_comm(), ss.str().c_str());
+  if (verb >= VERBOSE) {
+    MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+        << "Problem " << problem_ptr->getName() << " Nb. rows "
+        << problem_ptr->numeredDofsRows->size() << " Nb. cols "
+        << problem_ptr->numeredDofsCols->size();
+    MOFEM_LOG_SYNCHORMISE(PETSC_COMM_WORLD);
   }
 
-  if (verb > QUIET) {
-    PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+  if (verb >= NOISY) {
+    MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy)
+        << "FEs data for problem " << *problem_ptr;
+    for(auto &miit : *fe_ent_ptr)
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy) << *miit;
+
+    MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy)
+        << "FEs row dofs " << *problem_ptr << " Nb. row dof "
+        << problem_ptr->getNbDofsRow();
+    for (auto &miit : *problem_ptr->numeredDofsRows)
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy) << *miit;
+
+    MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy)
+        << "FEs col dofs " << *problem_ptr << " Nb. col dof "
+        << problem_ptr->getNbDofsCol();
+    for (auto &miit : *problem_ptr->numeredDofsCols)
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy) << *miit;
+    MOFEM_LOG_SYNCHORMISE(PETSC_COMM_WORLD);
   }
+
   cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM; // It is assumed that user who
                                                // uses this function knows what
                                                // he is doing

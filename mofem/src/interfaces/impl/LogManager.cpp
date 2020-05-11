@@ -134,7 +134,7 @@ MoFEMErrorCode LogManager::getSubInterfaceOptions() { return getOptions(); }
 
 MoFEMErrorCode LogManager::getOptions() {
   MoFEMFunctionBegin;
-  PetscInt sev_level = SeverityLevel::inform;
+  PetscInt sev_level = SeverityLevel::verbose;
 
   CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "log_",
                            "Warning interface options", "none");
