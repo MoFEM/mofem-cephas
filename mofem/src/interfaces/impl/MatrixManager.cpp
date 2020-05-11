@@ -273,7 +273,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     if (verb >= VERBOSE) {
       MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy)
         << "row lower " << rstart << " row upper " << rend;
-      MOFEM_LOG_SYNCHORMISE(PETSC_COMM_WORLD)
+      MOFEM_LOG_SYNCHORMISE(cOmm)
     }
 
     miit_row = dofs_row_by_idx.lower_bound(rstart);
