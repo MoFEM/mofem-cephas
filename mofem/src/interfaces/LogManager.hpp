@@ -70,10 +70,8 @@ struct LogManager : public UnknownInterface {
     BitScope = 1 << 1,
   };
 
-
-
-  MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
-                                 UnknownInterface **iface) const;
+  MoFEMErrorCode
+  query_interface(const MOFEMuuid &uuid, UnknownInterface **iface) const;
 
   LogManager(const MoFEM::Core &core);
   virtual ~LogManager() = default;
@@ -88,13 +86,13 @@ struct LogManager : public UnknownInterface {
 
   static void addAttributes(LogManager::LoggerType &lg, const int bit = 0);
 
-  static LoggerType getLog(const std::string channel, const int bit = 0);
+  static LoggerType& getLog(const std::string channel, const int bit = 0);
 
-  static LoggerType getLogSelf(const int bit = 0);
+  static LoggerType& getLogSelf(const int bit = 0);
 
-  static LoggerType getLogWorld(const int bit = 0);
+  static LoggerType& getLogWorld(const int bit = 0);
 
-  static LoggerType getLogSync(const int bit = 0);
+  static LoggerType& getLogSync(const int bit = 0);
 
   static void addTag(LogManager::LoggerType &lg, const std::string tag);
 

@@ -89,6 +89,8 @@ struct LogManager::InternalData
   std::ostream strmWorld;
   std::ostream strmSync;
 
+  static std::map<std::string, LoggerType> logChannels;
+
   boost::shared_ptr<std::ostream> getStrmSelf() {
     return boost::shared_ptr<std::ostream>(shared_from_this(), &strmSelf);
   }
@@ -105,6 +107,9 @@ struct LogManager::InternalData
 
   virtual ~InternalData() = default;
 };
+
+std::map<std::string, LogManager::LoggerType>
+    LogManager::InternalData::logChannels;
 
 LogManager::LogManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)),
@@ -219,22 +224,23 @@ void LogManager::addTag(LogManager::LoggerType &lg, const std::string tag) {
 
 }
 
-LogManager::LoggerType LogManager::getLog(const std::string channel,
-                                          const int bit) {
-  auto lg = LoggerType(boost::log::keywords::channel = channel);
-  addAttributes(lg, bit);
-  return lg;
+LogManager::LoggerType &LogManager::getLog(const std::string channel,
+                                           const int bit) {
+  InternalData::logChannels[channel] =
+      LoggerType(boost::log::keywords::channel = channel);
+  addAttributes(InternalData::logChannels[channel], bit);
+  return InternalData::logChannels[channel];
 }
 
-LogManager::LoggerType LogManager::getLogSelf(const int bit) {
+LogManager::LoggerType& LogManager::getLogSelf(const int bit) {
   return getLog("SELF", bit);
 }
 
-LogManager::LoggerType LogManager::getLogWorld(const int bit) {
+LogManager::LoggerType& LogManager::getLogWorld(const int bit) {
   return getLog("WORLD", bit);
 }
 
-LogManager::LoggerType LogManager::getLogSync(const int bit) {
+LogManager::LoggerType& LogManager::getLogSync(const int bit) {
   return getLog("SYNC", bit);
 }
 

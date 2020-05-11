@@ -18,9 +18,12 @@ void log_fun1(MoFEM::Interface &m_field) {
   auto world_log = LogManager::getLogWorld();
   LogManager::addTag(world_log, "My tag");
 
+  BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
   BOOST_LOG_SEV(world_log, LogManager::SeverityLevel::verbose)
       << "Hello, world!";
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  // sleep for half a second
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
   BOOST_LOG_SEV(world_log, LogManager::SeverityLevel::verbose)
       << "Hello, second time world!";
