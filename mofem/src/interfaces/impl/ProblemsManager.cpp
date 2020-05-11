@@ -100,9 +100,9 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
   MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_TAG("WORLD", "Partition mesh");
   MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_TAG("SYNC", "Partition mesh");
+  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
+  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
 
   // get layout
   int rstart, rend, nb_elems;
@@ -471,7 +471,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
   const DofEntity_multiIndex *dofs_field_ptr;
   MoFEMFunctionBegin;
   MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_TAG("SYNC", "buildProblem");
+  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
   // Note: Only allowed changes on problem_ptr structure which not influence
@@ -1931,9 +1931,9 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
   const Problem_multiIndex *problems_ptr;
   MoFEMFunctionBegin;
   MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_TAG("WORLD", "partitionProblem");
+  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
+  
   MOFEM_LOG("WORLD", LogManager::SeverityLevel::noisy) << name;
-
 
   if (!(cOre.getBuildMoFEM() & (1 << 0)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "fields not build");
@@ -2110,10 +2110,11 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
 MoFEMErrorCode ProblemsManager::inheritPartition(
     const std::string name, const std::string problem_for_rows, bool copy_rows,
     const std::string problem_for_cols, bool copy_cols, int verb) {
-
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
   MoFEMFunctionBegin;
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
 
   if (!(cOre.getBuildMoFEM() & Core::BUILD_PROBLEM))
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY, "pRoblems not build");
@@ -2131,10 +2132,9 @@ MoFEMErrorCode ProblemsManager::inheritPartition(
              name.c_str());
   }
   if (verb > QUIET)
-    PetscPrintf(m_field.get_comm(),
-                "Compose problem %s from rows of %s and columns of %s\n",
-                p_miit->getName().c_str(), problem_for_rows.c_str(),
-                problem_for_cols.c_str());
+    MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform)
+        << p_miit->getName() << " from rows of " << problem_for_rows
+        << " and columns of " << problem_for_cols;
 
   // find p_miit_row
   ProblemByName::iterator p_miit_row = problems_by_name.find(problem_for_rows);
@@ -2283,7 +2283,7 @@ ProblemsManager::printPartitionedProblem(const Problem *problem_ptr, int verb) {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBeginHot;
   MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_TAG("SYNC", "partitionedProblem");
+  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
 
   if (verb > QUIET) {
 
@@ -2372,6 +2372,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
   MoFEMFunctionBegin;
   MOFEM_LOG_CHANNEL("WORLD");
   MOFEM_LOG_CHANNEL("SYNC");
+  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
+  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
 
   if (!(cOre.getBuildMoFEM() & Core::BUILD_FIELD))
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY, "fields not build");
@@ -2583,17 +2585,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       auto p = problem_finite_elements.insert(numered_fe);
       if (!p.second)
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "element is there");
-
-      if (verb >= VERY_VERBOSE) {
-        MOFEM_LOG("SYNC", LogManager::SeverityLevel::very_verbose) << *p_miit;
-        MOFEM_LOG("SYNC", LogManager::SeverityLevel::very_verbose) << *p.first;
-        for (auto &dof_ptr : (*p.first)->rows_dofs->get<Unique_mi_tag>())
-          MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy)
-              << "row: " << *dof_ptr;
-        for (auto &dof_ptr : (*p.first)->cols_dofs->get<Unique_mi_tag>())
-          MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy)
-              << "col: " << *dof_ptr;
-      }
+      
     }
 
   }
@@ -2603,8 +2595,20 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
         problem_finite_elements.get<Part_mi_tag>().equal_range(
             m_field.get_comm_rank());
     MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
-        << *p_miit << " Nb. elems "
+        << p_miit->getName() << " nb. elems "
         << std::distance(elements_on_rank.first, elements_on_rank.second);
+    const FiniteElement_multiIndex *fe_ptr;
+    CHKERR m_field.get_finite_elements(&fe_ptr);
+    for(auto &fe : *fe_ptr) {
+      auto e_range =
+          problem_finite_elements.get<Composite_Name_And_Part_mi_tag>()
+              .equal_range(
+                  boost::make_tuple(fe->getName(), m_field.get_comm_rank()));
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::very_verbose)
+          << "Element " << fe->getName() << " nb. elems "
+          << std::distance(e_range.first, e_range.second);
+    }
+
     MOFEM_LOG_SYNCHORMISE(PETSC_COMM_WORLD);
   }
 
@@ -2617,6 +2621,10 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
   MoFEMFunctionBegin;
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_CHANNEL("SYNC");
+  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
+  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
 
   if (!(cOre.getBuildMoFEM() & Core::PARTITION_PROBLEM))
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -2713,28 +2721,13 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
   }
 
   if (verb > QUIET) {
-    std::ostringstream ss;
-    ss << "partition_ghost_col_dofs: rank = " << m_field.get_comm_rank()
-       << " FEs col ghost dofs " << *p_miit << " Nb. col ghost dof "
-       << p_miit->getNbGhostDofsCol() << " Nb. local dof "
-       << p_miit->getNbLocalDofsCol() << std::endl;
-    ss << "partition_ghost_row_dofs: rank = " << m_field.get_comm_rank()
-       << " FEs row ghost dofs " << *p_miit << " Nb. row ghost dof "
-       << p_miit->getNbGhostDofsRow() << " Nb. local dof "
-       << p_miit->getNbLocalDofsRow() << std::endl;
-    if (verb > VERBOSE) {
-      NumeredDofEntity_multiIndex::iterator miit_dd_col =
-          p_miit->numeredDofsCols->begin();
-      for (; miit_dd_col != p_miit->numeredDofsCols->end(); miit_dd_col++) {
-        if ((*miit_dd_col)->pArt == (unsigned int)m_field.get_comm_rank())
-          continue;
-        if ((*miit_dd_col)->petscLocalDofIdx == (DofIdx)-1)
-          continue;
-        ss << *(*miit_dd_col) << std::endl;
-      }
-    }
-    PetscSynchronizedPrintf(m_field.get_comm(), ss.str().c_str());
-    PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+    MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
+        << " FEs ghost dofs on problem " << p_miit->getName()
+        << " Nb. ghost dof " << p_miit->getNbGhostDofsRow() << " by "
+        << p_miit->getNbGhostDofsCol() << " Nb. local dof "
+        << p_miit->getNbLocalDofsCol() << " by " << p_miit->getNbLocalDofsCol();
+
+    MOFEM_LOG_SYNCHORMISE(PETSC_COMM_WORLD)    
   }
 
   cOre.getBuildMoFEM() |= Core::PARTITION_GHOST_DOFS;
