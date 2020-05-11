@@ -35,11 +35,6 @@ std::ostream &operator<<(std::ostream &strm,
 
   strm << "<" << LogManager::severityStrings[level] << "> ";
 
-  // if(level == LogManager::SeverityLevel::noisy)
-  //   strm << "\t";
-  // if (level == LogManager::SeverityLevel::error)
-  //   strm << "\t";
-
   return strm;
 }
 
@@ -116,7 +111,8 @@ std::map<std::string, LogManager::LoggerType>
 
 LogManager::LogManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)),
-      internalDataPtr(new InternalData(PETSC_COMM_WORLD)) {}
+      internalDataPtr(
+          new InternalData(static_cast<MoFEM::Interface &>(cOre).get_comm())) {}
 
 MoFEMErrorCode LogManager::query_interface(const MOFEMuuid &uuid,
                                            UnknownInterface **iface) const {
