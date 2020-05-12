@@ -281,7 +281,7 @@ PrismsFromSurfaceInterface::updateMeshestByEdgeBlock(const Range &prisms) {
   for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, it)) {
     Range edges;
     CHKERR m_field.get_moab().get_entities_by_type(it->meshset, MBEDGE, edges,
-                                                  true);
+                                                   true);
     edges = intersect(edges, prisms_edges);
     if (!edges.empty()) {
       Range edges_faces;
@@ -306,7 +306,7 @@ PrismsFromSurfaceInterface::updateMeshestByTriBlock(const Range &prisms) {
   for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, it)) {
     Range tris;
     CHKERR m_field.get_moab().get_entities_by_type(it->meshset, MBTRI, tris,
-                                                  true);
+                                                   true);
     tris = intersect(tris, prisms_tris);
     if (!tris.empty()) {
       Range tris_ents;
