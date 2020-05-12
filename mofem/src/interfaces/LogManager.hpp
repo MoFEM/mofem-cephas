@@ -31,6 +31,7 @@
 
 namespace attrs = boost::log::attributes;
 namespace logging = boost::log;
+namespace keywords = boost::log::keywords;
 
 namespace MoFEM {}
 
