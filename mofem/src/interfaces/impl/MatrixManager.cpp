@@ -229,6 +229,9 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     std::vector<PetscInt> &i, std::vector<PetscInt> &j, const bool no_diagonals,
     int verb) const {
   MoFEMFunctionBegin;
+  MOFEM_LOG_CHANNEL("SYNC");
+  MOFEM_LOG_FUNCTION();
+
   PetscLogEventBegin(MOFEM_EVENT_createMat, 0, 0, 0, 0);
 
   typedef
@@ -266,11 +269,13 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     PetscInt rstart, rend;
     CHKERR PetscLayoutGetRange(layout, &rstart, &rend);
     CHKERR PetscLayoutDestroy(&layout);
+
     if (verb >= VERBOSE) {
-      PetscSynchronizedPrintf(cOmm, "\tcreate_Mat: row lower %d row upper %d\n",
-                              rstart, rend);
-      PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy)
+        << "row lower " << rstart << " row upper " << rend;
+      MOFEM_LOG_SYNCHORMISE(cOmm)
     }
+
     miit_row = dofs_row_by_idx.lower_bound(rstart);
     hi_miit_row = dofs_row_by_idx.lower_bound(rend);
     if (std::distance(miit_row, hi_miit_row) != rend - rstart) {
@@ -481,11 +486,6 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
             : (mofem_ent_ptr->getGlobalUniqueId() !=
                (*miit_row)->getFieldEntityPtr()->getGlobalUniqueId())) {
 
-      if (verb >= NOISY) {
-        std::stringstream ss;
-        ss << "rank " << rAnk << ": row " << **miit_row << std::endl;
-        PetscSynchronizedPrintf(cOmm, "%s", ss.str().c_str());
-      }
 
       // get entity adjacencies
       mofem_ent_ptr = (*miit_row)->getFieldEntityPtr();
@@ -521,12 +521,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
           unique(dofs_vec.begin(), dofs_vec.end());
       int new_size = std::distance(dofs_vec.begin(), new_end);
       dofs_vec.resize(new_size);
-      if (verb >= NOISY) {
-        std::stringstream ss;
-        ss << "rank " << rAnk << ": dofs_vec for " << *mofem_ent_ptr
-           << std::endl;
-        PetscSynchronizedPrintf(cOmm, "%s", ss.str().c_str());
-      }
+      
     }
 
     // Try to be smart reserving memory
@@ -556,18 +551,10 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
       }
       j.push_back(*diit);
 
-      if (verb >= VERY_VERBOSE) {
-        PetscSynchronizedPrintf(cOmm, "%d ", *diit);
-      }
-    }
-    if (verb >= VERY_VERBOSE) {
-      PetscSynchronizedPrintf(cOmm, "\n", *diit);
+
     }
   }
 
-  if (verb >= VERY_VERBOSE) {
-    PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-  }
 
   // build adj matrix
   i.push_back(j.size());
@@ -757,6 +744,10 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
     const std::string problem_name, int row_print, int col_print, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
+  MOFEM_LOG_CHANNEL("SYNC");
+  MOFEM_LOG_CHANNEL("WORD");
+  MOFEM_LOG_FUNCTION();
+
   PetscLogEventBegin(MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn, 0, 0, 0, 0);
 
   struct TestMatrixFillIn : public FEMethod {

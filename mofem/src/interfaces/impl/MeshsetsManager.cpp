@@ -26,6 +26,13 @@
 using namespace std;
 namespace po = boost::program_options;
 
+#define MeshsetsManagerFunctionBegin                                           \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_CHANNEL("SYNC");                                                   \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("SYNC", "MeshsetsManager");
+
 namespace MoFEM {
 
 MoFEMErrorCode
@@ -53,7 +60,7 @@ MoFEMErrorCode MeshsetsManager::clearMap() {
 MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  MeshsetsManagerFunctionBegin;
   Range meshsets;
   CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
   for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
@@ -63,16 +70,14 @@ MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
             .any()) {
       std::pair<CubitMeshSet_multiIndex::iterator, bool> p =
           cubitMeshsets.insert(base_meshset);
-      if (!p.second) {
+      if (!p.second) 
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "meshset not inserted");
-      }
-      if (verb > QUIET) {
-        std::ostringstream ss;
-        ss << "read cubit " << base_meshset << std::endl;
-        // PetscSynchronizedPrintf(comm,ss.str().c_str());
-        PetscPrintf(m_field.get_comm(), ss.str().c_str());
-      }
+
+      if (verb > QUIET) 
+        MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform)
+            << "read cubit " << base_meshset;
+      
     }
   }
   MoFEMFunctionReturn(0);

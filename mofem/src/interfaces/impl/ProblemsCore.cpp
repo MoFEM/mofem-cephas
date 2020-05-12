@@ -16,6 +16,14 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#define ProblemCoreFunctionBegin                                               \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_CHANNEL("SYNC");                                                   \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("SYNC", "ProblemCore");                                        \
+  MOFEM_LOG_TAG("WORLD", "ProblemCore")
+
 namespace MoFEM {
 
 bool Core::check_problem(const string name) {
@@ -29,7 +37,8 @@ bool Core::check_problem(const string name) {
 
 MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
                                 int verb) {
-  MoFEMFunctionBegin;
+  ProblemCoreFunctionBegin;
+
   if (verb == -1)
     verb = verbose;
   EntityHandle meshset;
@@ -61,15 +70,13 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
   CHKERR get_moab().tag_set_by_ptr(th_ProblemName, &meshset, 1, tag_data,
                                    tag_sizes);
   // create entry
-  std::pair<Problem_multiIndex::iterator, bool> p =
-      pRoblems.insert(Problem(moab, meshset));
-  NOT_USED(p);
-  assert(p.second);
-  if (verb > 0) {
-    std::ostringstream ss;
-    ss << "add problem: " << name << std::endl;
-    PetscPrintf(cOmm, ss.str().c_str());
-  }
+  auto p = pRoblems.insert(Problem(moab, meshset));
+  if(!p.second)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Problem not added");
+
+  MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform)
+      << "Add probken " << name;
+
   MoFEMFunctionReturn(0);
 }
 

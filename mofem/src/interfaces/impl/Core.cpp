@@ -125,6 +125,19 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
     pComm = new ParallelComm(&moab, cOmm);
   }
 
+  // Print version
+  if (verbose > QUIET) {
+    char petsc_version[255];
+    ierr = PetscGetVersion(petsc_version, 255);
+    CHKERRABORT(cOmm, ierr);
+    ierr = PetscPrintf(cOmm, "MoFEM version %d.%d.%d (%s %s) \n",
+                       MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR,
+                       MoFEM_VERSION_BUILD, MOAB_VERSION_STRING, petsc_version);
+    CHKERRABORT(cOmm, ierr);
+    ierr = PetscPrintf(cOmm, "git commit id %s\n", GIT_SHA1_NAME);
+    CHKERRABORT(cOmm, ierr);
+  }
+
   // Register interfaces for this implementation
   ierr = registerInterface<UnknownInterface>(IDD_MOFEMUnknown);
   CHKERRABORT(comm, ierr);
@@ -161,18 +174,6 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
   ierr = initialiseDatabaseFromMesh(verbose);
   CHKERRABORT(cOmm, ierr);
 
-  // Print version
-  if (verbose > QUIET) {
-    char petsc_version[255];
-    ierr = PetscGetVersion(petsc_version, 255);
-    CHKERRABORT(cOmm, ierr);
-    ierr = PetscPrintf(cOmm, "MoFEM version %d.%d.%d (%s %s) \n",
-                       MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR,
-                       MoFEM_VERSION_BUILD, MOAB_VERSION_STRING, petsc_version);
-    CHKERRABORT(cOmm, ierr);
-    ierr = PetscPrintf(cOmm, "git commit id %s\n", GIT_SHA1_NAME);
-    CHKERRABORT(cOmm, ierr);
-  }
 }
 
 Core::~Core() {
@@ -192,6 +193,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   iFaces.clear();
 
   // Register sub interfaces
+  CHKERR regSubInterface<LogManager>(IDD_MOFEMLogManager);
   CHKERR regSubInterface<Simple>(IDD_MOFEMSimple);
   CHKERR regSubInterface<PipelineManager>(IDD_MOFEMBasic);
   CHKERR regSubInterface<ProblemsManager>(IDD_MOFEMProblemsManager);

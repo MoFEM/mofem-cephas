@@ -16,6 +16,13 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#define FECoreFunctionBegin                                                    \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_CHANNEL("SYNC");                                                   \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("SYNC", "FECore");
+
 namespace MoFEM {
 
 MoFEMErrorCode
@@ -44,7 +51,7 @@ bool Core::check_finite_element(const std::string &name) const {
 
 MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
                                         enum MoFEMTypes bh, int verb) {
-  MoFEMFunctionBegin;
+  FECoreFunctionBegin;
   *buildMoFEM &= 1 << 0;
   if (verb == -1) {
     verb = verbose;
@@ -96,15 +103,15 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
   CHKERR get_moab().tag_set_by_ptr(th_FEName, &meshset, 1, tag_data, tag_sizes);
 
   // add FiniteElement
-  std::pair<FiniteElement_multiIndex::iterator, bool> p = finiteElements.insert(
+  auto p = finiteElements.insert(
       boost::shared_ptr<FiniteElement>(new FiniteElement(moab, meshset)));
   if (!p.second)
     SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "FiniteElement not inserted");
-  if (verb > 0) {
-    std::ostringstream ss;
-    ss << "add finite element: " << fe_name << std::endl;
-    PetscPrintf(cOmm, ss.str().c_str());
-  }
+
+  if (verb > QUIET)
+    MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform)
+        << "Add finite element " << fe_name;
+
   MoFEMFunctionReturn(0);
 }
 
@@ -469,24 +476,19 @@ MoFEMErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
 MoFEMErrorCode Core::add_ents_to_finite_element_by_bit_ref(
     const BitRefLevel &bit, const BitRefLevel &mask, const std::string &name,
     EntityType type, int verb) {
-  MoFEMFunctionBegin;
+  FECoreFunctionBegin;
 
   if (verb == -1)
     verb = verbose;
   *buildMoFEM &= 1 << 0;
   const BitFEId id = getBitFEId(name);
   const EntityHandle idm = get_finite_element_meshset(id);
-  typedef RefElement_multiIndex::index<EntType_mi_tag>::type refMoabFE_by_type;
-  refMoabFE_by_type &ref_MoFEMFiniteElement =
-      refinedFiniteElements.get<EntType_mi_tag>();
-  refMoabFE_by_type::iterator miit = ref_MoFEMFiniteElement.lower_bound(type);
-  refMoabFE_by_type::iterator hi_miit =
-      ref_MoFEMFiniteElement.upper_bound(type);
-  if (verb > 1) {
-    PetscSynchronizedPrintf(cOmm, "nb. ref elements in database %d\n",
-                            std::distance(miit, hi_miit));
-  }
-  int nb_add_FEs = 0;
+
+  auto &ref_MoFEMFiniteElement = refinedFiniteElements.get<EntType_mi_tag>();
+  auto miit = ref_MoFEMFiniteElement.lower_bound(type);
+  auto hi_miit = ref_MoFEMFiniteElement.upper_bound(type);
+
+  int nb_add_fes = 0;
   for (; miit != hi_miit; miit++) {
     BitRefLevel bit2 = miit->get()->getBitRefLevel();
     if ((bit2 & mask) != bit2)
@@ -494,15 +496,15 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_bit_ref(
     if ((bit2 & bit).any()) {
       EntityHandle ent = miit->get()->getRefEnt();
       CHKERR get_moab().add_entities(idm, &ent, 1);
-      nb_add_FEs++;
+      nb_add_fes++;
     }
   }
-  if (verb > 0) {
-    std::ostringstream ss;
-    ss << "Add Nb. FEs " << nb_add_FEs << " form BitRef " << bit << std::endl;
-    PetscSynchronizedPrintf(cOmm, "%s", ss.str().c_str());
-    PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-  }
+
+  MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
+      << "Finite element " << name << " added. Nb. of elements added "
+      << nb_add_fes << " out of " << std::distance(miit, hi_miit);
+
+  MOFEM_LOG_SYNCHORMISE(cOmm)
 
   MoFEMFunctionReturn(0);
 }
@@ -568,9 +570,13 @@ template <int I> struct BuildFiniteElements {
 MoFEMErrorCode
 Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
                           const Range *ents_ptr, int verb) {
-  MoFEMFunctionBegin;
+  FECoreFunctionBegin;
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
+
+  if (verb > QUIET)
+    MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+        << "Build Finite Elements " << fe->getName();
 
   auto &fields_by_id = fIelds.get<BitFieldId_mi_tag>();
 
@@ -802,34 +808,51 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 }
 
 MoFEMErrorCode Core::build_finite_elements(int verb) {
-  MoFEMFunctionBeginHot;
+  FECoreFunctionBegin;
+
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
 
   // loop Finite Elements
-  for (auto &fe : finiteElements) {
-    if (verb >= VERBOSE)
-      PetscPrintf(cOmm, "Build Finite Elements %s\n", fe->getName().c_str());
+  for (auto &fe : finiteElements)
     CHKERR buildFiniteElements(fe, NULL, verb);
-  }
 
-  if (verb >= VERBOSE) {
-    PetscSynchronizedPrintf(cOmm, "Nb. FEs %u\n", entsFiniteElements.size());
-    PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-    auto &finite_elements_by_id = entsFiniteElements.get<BitFEId_mi_tag>();
+  if (verb > QUIET) {
+
+    auto &fe_ents = entsFiniteElements.get<BitFEId_mi_tag>();
     for (auto &fe : finiteElements) {
-      auto miit = finite_elements_by_id.lower_bound(fe->getId());
-      auto hi_miit = finite_elements_by_id.upper_bound(fe->getId());
-      int count = std::distance(miit, hi_miit);
-      std::ostringstream ss;
-      ss << *fe << " Nb. FEs " << count << std::endl;
-      PetscSynchronizedPrintf(cOmm, ss.str().c_str());
-      PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+      auto miit = fe_ents.lower_bound(fe->getId());
+      auto hi_miit = fe_ents.upper_bound(fe->getId());
+      const auto count = std::distance(miit, hi_miit);
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
+          << "Finite element " << fe->getName()
+          << " added. Nb. of elements added " << count;
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::very_verbose) << *fe;
+
+      auto slg = MoFEM::LogManager::getLog("SYNC");
+      for (auto &field : fIelds) {
+        auto rec = slg.open_record(keywords::severity =
+                                       LogManager::SeverityLevel::verbose);
+        if (rec) {
+          logging::record_ostream strm(rec);
+          strm << "Field " << field->getName() << " on finite element: ";
+          if ((field->getId() & fe->getBitFieldIdRow()).any())
+            strm << "row ";
+          if ((field->getId() & fe->getBitFieldIdCol()).any())
+            strm << "columns ";
+          if ((field->getId() & fe->getBitFieldIdData()).any())
+            strm << "data";
+          strm.flush();
+          slg.push_record(boost::move(rec));
+        }
+      }
     }
+
+    MOFEM_LOG_SYNCHORMISE(cOmm)
   }
 
   *buildMoFEM |= 1 << 1;
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::build_finite_elements(const BitRefLevel &bit, int verb) {
@@ -870,9 +893,10 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
 }
 
 MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
-  MoFEMFunctionBeginHot;
+  FECoreFunctionBegin;
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
+
   if (!((*buildMoFEM) & BUILD_FIELD))
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "field not build");
   if (!((*buildMoFEM) & BUILD_FE))
@@ -930,16 +954,15 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
       }
     }
   }
-  if (verb >= VERY_NOISY) {
-    list_adjacencies();
-  }
+
   if (verb >= VERBOSE) {
-    PetscSynchronizedPrintf(cOmm, "Nb. entFEAdjacencies %u\n",
-                            entFEAdjacencies.size());
-    PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+    MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform)
+        << "Number of adjacencies " << entFEAdjacencies.size();
+    MOFEM_LOG_SYNCHORMISE(cOmm)
   }
+
   *buildMoFEM |= 1 << 2;
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::build_adjacencies(const BitRefLevel &bit,

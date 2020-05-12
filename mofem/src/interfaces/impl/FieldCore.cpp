@@ -16,6 +16,13 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#define FieldCoreFunctionBegin                                                 \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_CHANNEL("SYNC");                                                   \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("SYNC", "FieldCore");
+
 namespace MoFEM {
 
 BitFieldId Core::getBitFieldId(const std::string &name) const {
@@ -93,7 +100,7 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
                                const FieldCoefficientsNumber nb_of_coefficients,
                                const TagType tag_type, const enum MoFEMTypes bh,
                                int verb) {
-  MoFEMFunctionBegin;
+  FieldCoreFunctionBegin;
   if (verb == -1)
     verb = verbose;
   *buildMoFEM = 0;
@@ -221,11 +228,9 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
                  Field(moab, meshset, undefined_cs_ptr).getName().c_str());
     }
 
-    if (verb > QUIET) {
-      std::ostringstream ss;
-      ss << "add: " << **p.first << std::endl;
-      PetscPrintf(cOmm, ss.str().c_str());
-    }
+    if (verb > QUIET)
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
+          << "Add field " << **p.first;
   }
 
   MoFEMFunctionReturn(0);
@@ -1041,13 +1046,13 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
 
 MoFEMErrorCode Core::buildField(const boost::shared_ptr<Field> &field,
                                 int verb) {
-  MoFEMFunctionBegin;
+  FieldCoreFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  if (verb > QUIET) {
-    PetscSynchronizedPrintf(cOmm, "Build Field %s (rank %d)\n",
-                            field->getName().c_str(), rAnk);
-  }
+  if (verb > QUIET)
+    MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+        << "Build field " << field->getName();
+
   std::map<EntityType, int> dof_counter;
   std::map<EntityType, int> inactive_dof_counter;
 
@@ -1077,38 +1082,39 @@ MoFEMErrorCode Core::buildField(const boost::shared_ptr<Field> &field,
     for (auto const &it : dof_counter) {
       switch (it.first) {
       case MBVERTEX:
-        PetscSynchronizedPrintf(cOmm,
-                                "nb added dofs (vertices) %d (inactive %d)\n",
-                                it.second, inactive_dof_counter[it.first]);
+        MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+            << "Nb. of dofs (vertices) " << it.second << " (inactive "
+            << inactive_dof_counter[it.first] << ")";
         break;
       case MBEDGE:
-        PetscSynchronizedPrintf(cOmm,
-                                "nb added dofs (edges) %d (inactive %d)\n",
-                                it.second, inactive_dof_counter[it.first]);
+        MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+            << "Nb. of dofs (edge) " << it.second << " (inactive "
+            << inactive_dof_counter[it.first] << ")";
         break;
       case MBTRI:
-        PetscSynchronizedPrintf(cOmm,
-                                "nb added dofs (triangles) %d (inactive %d)\n",
-                                it.second, inactive_dof_counter[it.first]);
+        MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+            << "Nb. of dofs (triangles) " << it.second << " (inactive "
+            << inactive_dof_counter[it.first] << ")";
         break;
       case MBQUAD:
-        PetscSynchronizedPrintf(cOmm,
-                                "nb added dofs (quads) %d (inactive %d)\n",
-                                it.second, inactive_dof_counter[it.first]);
+        MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+            << "Nb. of dofs (quads) " << it.second << " (inactive "
+            << inactive_dof_counter[it.first] << ")";
         break;
       case MBTET:
-        PetscSynchronizedPrintf(cOmm, "nb added dofs (tets) %d (inactive %d)\n",
-                                it.second, inactive_dof_counter[it.first]);
+        MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+            << "Nb. of dofs (tetrahedra) " << it.second << " (inactive "
+            << inactive_dof_counter[it.first] << ")";
         break;
       case MBPRISM:
-        PetscSynchronizedPrintf(cOmm,
-                                "nb added dofs (prisms) %d (inactive %d)\n",
-                                it.second, inactive_dof_counter[it.first]);
+        MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+            << "Nb. of dofs (prisms) " << it.second << " (inactive "
+            << inactive_dof_counter[it.first] << ")";
         break;
       case MBENTITYSET:
-        PetscSynchronizedPrintf(cOmm,
-                                "nb added dofs (meshsets) %d (inactive %d)\n",
-                                it.second, inactive_dof_counter[it.first]);
+        MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+            << "Nb. of dofs (meshsets) " << it.second << " (inactive "
+            << inactive_dof_counter[it.first] << ")";
         break;
       default:
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
@@ -1117,78 +1123,66 @@ MoFEMErrorCode Core::buildField(const boost::shared_ptr<Field> &field,
       nb_inactive_added_dofs += inactive_dof_counter[it.first];
     }
     if (verb > QUIET) {
-      PetscSynchronizedPrintf(cOmm,
-                              "nb added dofs %d (number of inactive dofs %d)\n",
-                              nb_added_dofs, nb_inactive_added_dofs);
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+          << "Nb. added dofs " << nb_added_dofs << " (number of inactive dofs "
+          << nb_inactive_added_dofs << " )";
     }
   }
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::build_field(const std::string field_name, int verb) {
-  MoFEMFunctionBegin;
+  FieldCoreFunctionBegin;
   auto miit = fIelds.get<FieldName_mi_tag>().find(field_name);
   if (miit == fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field < %s > not found",
              field_name.c_str());
   }
   CHKERR buildField((*miit), verb);
-  PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+  if (verb > QUIET)
+    MOFEM_LOG_SYNCHORMISE(cOmm);
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::build_fields(int verb) {
-  MoFEMFunctionBegin;
+  FieldCoreFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  auto &set_id = fIelds.get<BitFieldId_mi_tag>();
-  for (auto miit = set_id.begin(); miit != set_id.end(); miit++) {
-    CHKERR buildField((*miit), verb);
-  }
+
+  for (auto miit : fIelds.get<BitFieldId_mi_tag>())
+    CHKERR buildField(miit, verb);
+
   *buildMoFEM = 1 << 0;
   if (verb > QUIET) {
-    PetscSynchronizedPrintf(cOmm, "Nb. dofs %u\n", dofsField.size());
+    MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
+      << "Number of dofs " << dofsField.size();
+    MOFEM_LOG_SYNCHORMISE(cOmm);
   }
-  PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+
   MoFEMFunctionReturn(0);
-  // return 0;
 }
 
 MoFEMErrorCode
 Core::list_dofs_by_field_name(const std::string &field_name) const {
-  MoFEMFunctionBeginHot;
+  FieldCoreFunctionBegin;
   auto dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
   auto hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
-  for (; dit != hi_dit; dit++) {
-    std::ostringstream ss;
-    ss << "rank " << rAnk << " ";
-    ss << *dit << std::endl;
-    PetscSynchronizedPrintf(cOmm, ss.str().c_str());
-  }
-  PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-  MoFEMFunctionReturnHot(0);
-}
-MoFEMErrorCode Core::list_fields() const {
-  MoFEMFunctionBeginHot;
-  auto &set_id = fIelds.get<BitFieldId_mi_tag>();
-  for (auto &miit : set_id) {
-    std::ostringstream ss;
-    ss << *miit << std::endl;
-    PetscSynchronizedPrintf(cOmm, ss.str().c_str());
-  }
-  PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-  MoFEMFunctionReturnHot(0);
+  MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform) << "List DOFs:";
+  for (; dit != hi_dit; dit++) 
+    MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform) << *dit;
+
+  MOFEM_LOG_SYNCHORMISE(cOmm);
+  MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::list_adjacencies() const {
-  MoFEMFunctionBeginHot;
-  for (auto &miit : entFEAdjacencies) {
-    std::ostringstream ss;
-    ss << miit << std::endl;
-    PetscSynchronizedPrintf(cOmm, ss.str().c_str());
-  }
-  PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-  MoFEMFunctionReturnHot(0);
+MoFEMErrorCode Core::list_fields() const {
+  FieldCoreFunctionBegin;
+  MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform) << "List Fields:";
+  for (auto &miit : fIelds.get<BitFieldId_mi_tag>())
+    MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform) << *miit;
+
+  MOFEM_LOG_SYNCHORMISE(cOmm);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
@@ -1199,8 +1193,8 @@ Core::get_problem_finite_elements_entities(const std::string &problem_name,
   auto &prb = pRoblems.get<Problem_mi_tag>();
   auto p_miit = prb.find(problem_name);
   if (p_miit == prb.end())
-    SETERRQ1(PETSC_COMM_SELF, 1, "no such problem like < %s >",
-             problem_name.c_str());
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "No such problem like < %s >", problem_name.c_str());
   auto miit = p_miit->numeredFiniteElements->get<FiniteElement_name_mi_tag>()
                   .lower_bound(fe_name);
   auto hi_miit = p_miit->numeredFiniteElements->get<FiniteElement_name_mi_tag>()
@@ -1208,7 +1202,7 @@ Core::get_problem_finite_elements_entities(const std::string &problem_name,
   for (; miit != hi_miit; miit++) {
     EntityHandle ent = (*miit)->getEnt();
     CHKERR get_moab().add_entities(meshset, &ent, 1);
-    int part = (*miit)->getPart();
+    const int part = (*miit)->getPart();
     CHKERR get_moab().tag_set_data(th_Part, &ent, 1, &part);
   }
   MoFEMFunctionReturn(0);
