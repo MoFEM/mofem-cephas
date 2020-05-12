@@ -100,7 +100,7 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
                                const FieldCoefficientsNumber nb_of_coefficients,
                                const TagType tag_type, const enum MoFEMTypes bh,
                                int verb) {
-  MoFEMFunctionBegin;
+  FieldCoreFunctionBegin;
   if (verb == -1)
     verb = verbose;
   *buildMoFEM = 0;
@@ -228,11 +228,9 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
                  Field(moab, meshset, undefined_cs_ptr).getName().c_str());
     }
 
-    if (verb > QUIET) {
-      std::ostringstream ss;
-      ss << "add: " << **p.first << std::endl;
-      PetscPrintf(cOmm, ss.str().c_str());
-    }
+    if (verb > QUIET)
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
+          << "Add field " << **p.first;
   }
 
   MoFEMFunctionReturn(0);
