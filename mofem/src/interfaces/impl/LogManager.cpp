@@ -131,13 +131,17 @@ MoFEMErrorCode LogManager::getSubInterfaceOptions() { return getOptions(); }
 MoFEMErrorCode LogManager::getOptions() {
   MoFEMFunctionBegin;
   PetscInt sev_level = SeverityLevel::inform;
+  PetscBool log_scope = PETSC_FALSE;
 
   CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "log_",
                            "Warning interface options", "none");
 
-  CHKERR PetscOptionsEList("-severity_level", "Volume length quality type", "",
+  CHKERR PetscOptionsEList("-severity_level", "Scope level", "",
                            severityStrings.data(), SeverityLevel::error,
                            severityStrings[sev_level], &sev_level, PETSC_NULL);
+
+  CHKERR PetscOptionsBool("-scope", "Log scope", "", log_scope, &log_scope,
+                          NULL);
 
   ierr = PetscOptionsEnd();
   CHKERRG(ierr);
@@ -145,6 +149,10 @@ MoFEMErrorCode LogManager::getOptions() {
   CHKERR setUpLog();
 
   logging::core::get()->set_filter(MoFEM::LogKeywords::severity >= sev_level);
+
+  if (log_scope)
+    logging::core::get()->add_global_attribute("Scope", attrs::named_scope());
+  
 
   MoFEMFunctionReturn(0);
 }
@@ -178,7 +186,7 @@ MoFEMErrorCode LogManager::setUpLog() {
         << expr::if_(expr::has_attr(
                scope))[expr::stream
                        << boost::log::expressions::format_named_scope(
-                              "Scope", keywords::format = "[%f:%l]")
+                              "Scope", keywords::format = "[%F:%l]")
                        << "(" << scope << ") "]
 
         << expr::if_(expr::has_attr(

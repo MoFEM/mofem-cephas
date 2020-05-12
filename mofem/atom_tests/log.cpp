@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     {
       CHKERR log_fun1();
       CHKERR log_fun2();
-      MOFEM_LOG_SYNCHORMISE(m_field.get_comm())
+      MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
     }
   }
   CATCH_ERRORS;

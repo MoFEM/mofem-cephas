@@ -16,6 +16,13 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#define FECoreFunctionBegin                                                    \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_CHANNEL("SYNC");                                                   \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("SYNC", "FECore");
+
 namespace MoFEM {
 
 MoFEMErrorCode
@@ -44,7 +51,7 @@ bool Core::check_finite_element(const std::string &name) const {
 
 MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
                                         enum MoFEMTypes bh, int verb) {
-  MoFEMFunctionBegin;
+  FECoreFunctionBegin;
   *buildMoFEM &= 1 << 0;
   if (verb == -1) {
     verb = verbose;
@@ -96,15 +103,14 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
   CHKERR get_moab().tag_set_by_ptr(th_FEName, &meshset, 1, tag_data, tag_sizes);
 
   // add FiniteElement
-  std::pair<FiniteElement_multiIndex::iterator, bool> p = finiteElements.insert(
+  auto p = finiteElements.insert(
       boost::shared_ptr<FiniteElement>(new FiniteElement(moab, meshset)));
   if (!p.second)
     SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "FiniteElement not inserted");
-  if (verb > 0) {
-    std::ostringstream ss;
-    ss << "add finite element: " << fe_name << std::endl;
-    PetscPrintf(cOmm, ss.str().c_str());
-  }
+
+  if (verb > QUIET)
+    MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform) << "Add finite element " << fe_name;
+  
   MoFEMFunctionReturn(0);
 }
 
@@ -469,9 +475,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
 MoFEMErrorCode Core::add_ents_to_finite_element_by_bit_ref(
     const BitRefLevel &bit, const BitRefLevel &mask, const std::string &name,
     EntityType type, int verb) {
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
+  FECoreFunctionBegin;
   
   if (verb == -1)
     verb = verbose;
@@ -799,11 +803,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 }
 
 MoFEMErrorCode Core::build_finite_elements(int verb) {
-  MoFEMFunctionBeginHot;
-  MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
-  MOFEM_LOG_CHANNEL("WORD");
-  MOFEM_LOG_TAG("WORD", PETSC_FUNCTION_NAME);
+  FECoreFunctionBegin;
 
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
@@ -831,7 +831,7 @@ MoFEMErrorCode Core::build_finite_elements(int verb) {
   }
 
   *buildMoFEM |= 1 << 1;
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::build_finite_elements(const BitRefLevel &bit, int verb) {
@@ -872,11 +872,9 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
 }
 
 MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
-  MoFEMFunctionBeginHot;
+  FECoreFunctionBegin;
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
-  MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME)
 
   if (!((*buildMoFEM) & BUILD_FIELD))
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "field not build");
@@ -943,7 +941,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
   }
 
   *buildMoFEM |= 1 << 2;
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::build_adjacencies(const BitRefLevel &bit,

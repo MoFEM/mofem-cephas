@@ -16,6 +16,14 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#define ProblemCoreFunctionBegin                                               \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_CHANNEL("SYNC");                                                   \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("SYNC", "ProblemCore");                                        \
+  MOFEM_LOG_TAG("WORLD", "ProblemCore")
+
 namespace MoFEM {
 
 bool Core::check_problem(const string name) {
@@ -29,9 +37,7 @@ bool Core::check_problem(const string name) {
 
 MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
                                 int verb) {
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
+  ProblemCoreFunctionBegin;
 
   if (verb == -1)
     verb = verbose;
@@ -68,8 +74,9 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
   if(!p.second)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Problem not added");
 
-  MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform) << name;
-  
+  MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform)
+      << "Add probken " << name;
+
   MoFEMFunctionReturn(0);
 }
 

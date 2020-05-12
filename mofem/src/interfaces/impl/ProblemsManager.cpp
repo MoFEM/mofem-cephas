@@ -26,6 +26,14 @@ MoFEMErrorCode MatPartitioningApply_Parmetis_MoFEM(MatPartitioning part,
 
 #endif // PARMETIS
 
+#define ProblemManagerFunctionBegin                                            \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_CHANNEL("SYNC");                                                   \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("SYNC", "ProblemsManager");                                    \
+  MOFEM_LOG_TAG("WORLD", "ProblemsManager")                                   
+  
 struct IdxDataType {
   IdxDataType(const UId uid, const int dof) {
     bcopy(&uid, dAta, 4 * sizeof(int));
@@ -98,11 +106,7 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
     Tag *th_vertex_weights, Tag *th_edge_weights, Tag *th_part_weights,
     int verb, const bool debug) {
   MoFEM::Interface &m_field = cOre;
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
-  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
+  ProblemManagerFunctionBegin;
 
   // get layout
   int rstart, rend, nb_elems;
@@ -448,7 +452,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(const std::string name,
                                              int verb) {
 
   MoFEM::Interface &m_field = cOre;
-  MoFEMFunctionBegin;
+  ProblemManagerFunctionBegin;
   if (!(cOre.getBuildMoFEM() & (1 << 0)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "fields not build");
   if (!(cOre.getBuildMoFEM() & (1 << 1)))
@@ -469,9 +473,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
   MoFEM::Interface &m_field = cOre;
   const EntFiniteElement_multiIndex *fe_ent_ptr;
   const DofEntity_multiIndex *dofs_field_ptr;
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
+  ProblemManagerFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
   // Note: Only allowed changes on problem_ptr structure which not influence
@@ -629,7 +631,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
 MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     const std::string name, const bool square_matrix, int verb) {
   MoFEM::Interface &m_field = cOre;
-  MoFEMFunctionBegin;
+  ProblemManagerFunctionBegin;
 
   if (!((cOre.getBuildMoFEM()) & Core::BUILD_FIELD))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "fields not build");
@@ -656,7 +658,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   const FiniteElement_multiIndex *fe_ptr;
   const EntFiniteElement_multiIndex *fe_ent_ptr;
   const DofEntity_multiIndex *dofs_field_ptr;
-  MoFEMFunctionBegin;
+  ProblemManagerFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
   // clear data structures
@@ -1239,7 +1241,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
     int verb) {
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
-  MoFEMFunctionBegin;
+  ProblemManagerFunctionBegin;
 
   CHKERR m_field.clear_problem(out_name);
   CHKERR m_field.get_problems(&problems_ptr);
@@ -1500,7 +1502,7 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "adjacencies not build");
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
-  MoFEMFunctionBegin;
+  ProblemManagerFunctionBegin;
 
   CHKERR m_field.clear_problem(out_name);
   CHKERR m_field.get_problems(&problems_ptr);
@@ -1781,8 +1783,7 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string name,
 
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("WORLD");
+  ProblemManagerFunctionBegin;
 
   if (!(cOre.getBuildMoFEM() & Core::BUILD_FIELD))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "fields not build");
@@ -1929,9 +1930,7 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
                                                  int verb) {
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
+  ProblemManagerFunctionBegin;
   
   MOFEM_LOG("WORLD", LogManager::SeverityLevel::noisy) << name;
 
@@ -2112,9 +2111,7 @@ MoFEMErrorCode ProblemsManager::inheritPartition(
     const std::string problem_for_cols, bool copy_cols, int verb) {
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
+  ProblemManagerFunctionBegin;
 
   if (!(cOre.getBuildMoFEM() & Core::BUILD_PROBLEM))
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY, "pRoblems not build");
@@ -2281,9 +2278,7 @@ MoFEMErrorCode ProblemsManager::inheritPartition(
 MoFEMErrorCode
 ProblemsManager::printPartitionedProblem(const Problem *problem_ptr, int verb) {
   MoFEM::Interface &m_field = cOre;
-  MoFEMFunctionBeginHot;
-  MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
+  ProblemManagerFunctionBegin;
 
   if (verb > QUIET) {
 
@@ -2296,7 +2291,7 @@ ProblemsManager::printPartitionedProblem(const Problem *problem_ptr, int verb) {
     MOFEM_LOG_SYNCHORMISE(m_field.get_comm())
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
@@ -2369,11 +2364,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
   const EntFiniteElement_multiIndex *fe_ent_ptr;
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
-  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
+  ProblemManagerFunctionBegin;
 
   if (!(cOre.getBuildMoFEM() & Core::BUILD_FIELD))
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY, "fields not build");
@@ -2620,11 +2611,7 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
                                                    int verb) {
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
-  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
+  ProblemManagerFunctionBegin;
 
   if (!(cOre.getBuildMoFEM() & Core::PARTITION_PROBLEM))
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -2739,11 +2726,7 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string name,
                                                      int verb) {
   MoFEM::Interface &m_field = cOre;
   const Problem_multiIndex *problems_ptr;
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME);
-  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
+  ProblemManagerFunctionBegin;
 
   if (!(cOre.getBuildMoFEM() & Core::PARTITION_PROBLEM))
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -2831,7 +2814,8 @@ MoFEMErrorCode ProblemsManager::getFEMeshset(const std::string prb_name,
                                              EntityHandle *meshset) const {
   MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
-  MoFEMFunctionBegin;
+  ProblemManagerFunctionBegin;
+
   CHKERR m_field.get_moab().create_meshset(MESHSET_SET, *meshset);
   CHKERR m_field.get_problem(prb_name, &problem_ptr);
   auto fit =
@@ -2855,7 +2839,7 @@ ProblemsManager::getProblemElementsLayout(const std::string name,
                                           PetscLayout *layout) const {
   MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
-  MoFEMFunctionBegin;
+  ProblemManagerFunctionBegin;
   CHKERR m_field.get_problem(name, &problem_ptr);
   CHKERR problem_ptr->getNumberOfElementsByNameAndPart(PETSC_COMM_WORLD,
                                                        fe_name, layout);
@@ -2868,7 +2852,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
     const bool debug) {
 
   MoFEM::Interface &m_field = cOre;
-  MoFEMFunctionBegin;
+  ProblemManagerFunctionBegin;
 
   const Problem *prb_ptr;
   CHKERR m_field.get_problem(problem_name, &prb_ptr);
@@ -3093,7 +3077,7 @@ MoFEMErrorCode ProblemsManager::markDofs(const std::string problem_name,
 
   Interface &m_field = cOre;
   const Problem *problem_ptr;
-  MoFEMFunctionBegin;
+  ProblemManagerFunctionBegin;
   CHKERR m_field.get_problem(problem_name, &problem_ptr);
   boost::shared_ptr<NumeredDofEntity_multiIndex> dofs;
   switch (rc) {
