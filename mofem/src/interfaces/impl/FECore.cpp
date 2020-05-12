@@ -873,6 +873,9 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
   MoFEMFunctionBeginHot;
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_TAG("WORLD", PETSC_FUNCTION_NAME)
+
   if (!((*buildMoFEM) & BUILD_FIELD))
     SETERRQ(cOmm, MOFEM_NOT_FOUND, "field not build");
   if (!((*buildMoFEM) & BUILD_FE))
@@ -930,14 +933,13 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
       }
     }
   }
-  if (verb >= VERY_NOISY) {
-    list_adjacencies();
-  }
+  
   if (verb >= VERBOSE) {
-    PetscSynchronizedPrintf(cOmm, "Nb. entFEAdjacencies %u\n",
-                            entFEAdjacencies.size());
-    PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+    MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform) <<
+      "Number of adjacencies " << entFEAdjacencies.size();
+    MOFEM_LOG_SYNCHORMISE(cOmm)
   }
+
   *buildMoFEM |= 1 << 2;
   MoFEMFunctionReturnHot(0);
 }

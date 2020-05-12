@@ -707,7 +707,6 @@ protected:
   MoFEMErrorCode
   clear_adjacencies_finite_elements(const std::string name, const Range ents,
                                     int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode list_adjacencies() const;
 
   /**@}*/
 

@@ -1180,17 +1180,6 @@ MoFEMErrorCode Core::list_fields() const {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::list_adjacencies() const {
-  MoFEMFunctionBeginHot;
-  for (auto &miit : entFEAdjacencies) {
-    std::ostringstream ss;
-    ss << miit << std::endl;
-    PetscSynchronizedPrintf(cOmm, ss.str().c_str());
-  }
-  PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-  MoFEMFunctionReturnHot(0);
-}
-
 MoFEMErrorCode
 Core::get_problem_finite_elements_entities(const std::string &problem_name,
                                            const std::string &fe_name,
