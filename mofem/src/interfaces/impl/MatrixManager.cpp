@@ -230,7 +230,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     int verb) const {
   MoFEMFunctionBegin;
   MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_TAG("SYNC", "createMatArrays");
+  MOFEM_LOG_TAG("SYNC", PETSC_FUNCTION_NAME);
 
   PetscLogEventBegin(MOFEM_EVENT_createMat, 0, 0, 0, 0);
 
