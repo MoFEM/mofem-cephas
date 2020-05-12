@@ -37,13 +37,21 @@ struct PrismsFromSurfaceInterface : public UnknownInterface {
 
   /**
    * \brief Make prisms from triangles
-   * @param  ents   Range of triangles
-   * @param  prisms Returned range of prisms
-   * @param  verb   Verbosity level
-   * @return        Error code
+   * @param  ents       Range of triangles
+   * @param  swap_nodes If set true prism's nodes are swapped to satisfy the
+   * canonical ordering (required if surface normal is pointing inwards)
+   * @param  prisms     Returned range of prisms
+   * @param  verb       Verbosity level
+   * @return            Error code
    */
-  MoFEMErrorCode createPrisms(const Range &ents, Range &prisms, int verb = -1);
+  MoFEMErrorCode createPrisms(const Range &ents, const bool swap_nodes,
+                              Range &prisms, int verb = -1);
 
+  /// \deprecated Use the function with the same name and a bool parameter
+  /// *swap_nodes*, if set true prism's nodes are swapped to satisfy the
+  /// canonical ordering (required if surface normal is pointing inwards)
+  DEPRECATED MoFEMErrorCode createPrisms(const Range &ents, Range &prisms,
+                                         int verb = -1);
   /**
    * \brief Seed prism entities by bit level
    * @param  prisms Range of entities
@@ -78,19 +86,19 @@ struct PrismsFromSurfaceInterface : public UnknownInterface {
   /**
    * Set normal thickness
    * @param prisms   Range of prisms
-   * @param thickness normal thickness 
+   * @param thickness normal thickness
    * @return
    */
-  MoFEMErrorCode setNormalThickness(const Range &prisms,
-                                    double thickness3, double thickness4);
+  MoFEMErrorCode setNormalThickness(const Range &prisms, double thickness3,
+                                    double thickness4);
 
   /**
-   * @brief Add quads to bockset 
-   * 
+   * @brief Add quads to bockset
+   *
    * If quad is adjacent to extruded edge, is added to given blockset
-   * 
-   * @param prisms 
-   * @return MoFEMErrorCode 
+   *
+   * @param prisms
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode updateMeshestByEdgeBlock(const Range &prisms);
 
@@ -103,7 +111,6 @@ struct PrismsFromSurfaceInterface : public UnknownInterface {
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode updateMeshestByTriBlock(const Range &prisms);
-
 };
 
 } // namespace MoFEM
