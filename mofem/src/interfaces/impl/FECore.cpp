@@ -843,8 +843,8 @@ MoFEMErrorCode Core::build_finite_elements(int verb) {
           if ((field->getId() & fe->getBitFieldIdData()).any())
             strm << "data";
           strm.flush();
+          slg.push_record(boost::move(rec));
         }
-        slg.push_record(boost::move(rec));
       }
     }
 
