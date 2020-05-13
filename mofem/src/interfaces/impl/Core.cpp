@@ -51,22 +51,21 @@ bool Core::isGloballyInitialised = false;
 MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
                                 const char help[]) {
 
+  
+  MPI_Init(argc, args);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if (!rank)
+    PetscVFPrintf = logPetscFPrintf<0>;
+  else
+    PetscVFPrintf = logPetscFPrintf<1>;
+
   auto core_log = logging::core::get();
   core_log->add_sink(LogManager::createSink(
       boost::shared_ptr<std::ostream>(&std::clog, boost::null_deleter()),
       "PETSC"));
   LogManager::setLog("PETSC");
-
-  int mpi_init;
-  MPI_Initialized(&mpi_init);
-  int rank;
-  if (mpi_init)
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  if (!rank)
-    PetscVFPrintf = logPetscFPrintf<0>;
-  else
-    PetscVFPrintf = logPetscFPrintf<1>;
+  core_log->add_global_attribute("Proc", attrs::constant<unsigned int>(rank));
 
   ierr = PetscInitialize(argc, args, file, help);
   CHKERRG(ierr);
@@ -83,7 +82,8 @@ MoFEMErrorCode Core::Finalize() {
   ierr = PetscPopErrorHandler();
   CHKERRG(ierr);
   isGloballyInitialised = false;
-  return PetscFinalize();
+  PetscFinalize();
+  return MPI_Finalize();
 }
 
 // Use SFINAE to decide which template should be run,

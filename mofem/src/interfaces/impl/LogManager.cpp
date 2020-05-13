@@ -170,12 +170,12 @@ LogManager::createSink(boost::shared_ptr<std::ostream> stream_ptr,
 
       << "[" << std::dec << std::setfill(' ') << proc_attr << "] "
 
+      << severity
+
       << expr::if_(expr::has_attr(
              line_id))[expr::stream << std::hex << std::setw(8)
                                     << std::setfill('0') << line_id << std::dec
                                     << std::setfill(' ') << ": "]
-
-      << severity
 
       << expr::if_(expr::has_attr(
              scope))[expr::stream
@@ -203,8 +203,6 @@ MoFEMErrorCode LogManager::setUpLog() {
   core_log->add_sink(createSink(internalDataPtr->getStrmSelf(), "SELF"));
   core_log->add_sink(createSink(internalDataPtr->getStrmWorld(), "WORLD"));
   core_log->add_sink(createSink(internalDataPtr->getStrmSync(), "SYNC"));
-  core_log->add_global_attribute(
-      "Proc", attrs::constant<unsigned int>(m_field.get_comm_rank()));
 
   MoFEMFunctionReturn(0);
 }

@@ -294,12 +294,10 @@ PetscErrorCode logPetscFPrintf(FILE *fd, const char format[], va_list Argp) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
   if (fd != stdout && fd != stderr && fd != mofem_log_out) {
-    cerr << "Case 1 ";
     ierr = PetscVFPrintfDefault(fd, format, Argp);
     CHKERR(ierr);
-  } else {
 
-    cerr << "Case 2 ";
+  } else {
     char buff[1024];
     size_t length;
     ierr = PetscVSNPrintf(buff, 1024, format, &length, Argp);
@@ -313,17 +311,15 @@ PetscErrorCode logPetscFPrintf(FILE *fd, const char format[], va_list Argp) {
 
     const std::string str(buff);
     if (!str.empty()) {
-      cerr << "Case 3 " << RANK << " ";
       if (fd != mofem_log_out) {
-        if (RANK == 0)
+        if (!RANK)
           MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::petsc)
-              << "Case 4 " << remove_line_break(std::string(buff));
+              << remove_line_break(std::string(buff));
         else
-          std::clog << "Case 5 " << std::string(buff);
+          std::clog << std::string(buff);
       } else
-        std::clog << "Case 5 " << std::string(buff);
+        std::clog << std::string(buff);
     }
-
   }
   PetscFunctionReturn(0);
 }
