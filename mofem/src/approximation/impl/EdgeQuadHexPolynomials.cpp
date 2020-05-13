@@ -184,7 +184,7 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
         edgeN[e][2 * (qd_shift + n) + 1] = mu[e] * L[n] * diff_s[e][1];
 
         double E1[2] = {diff_mu[e][0], diff_mu[e][1]};
-        double E2[2] = {L[n] * diff_s[e][0], L[n] * diff_s[e][0]}; 
+        double E2[2] = {L[n] * diff_s[e][0], L[n] * diff_s[e][0]};
         curl_edgeN[e][qd_shift + n] = E1[0] * E2[1] - E1[1] * E2[0];
       }
     }
