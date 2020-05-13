@@ -95,20 +95,16 @@ PetscErrorCode IntegratedJacobi_polynomials(int p, double alpha, double x,
 
  \ingroup mofem_base_functions
 
- Order of first function is 2.
+ Order of first function is 2 and goes to p.
 
  \param p is approximation order
- \param s is a parametrisation of position on segment
- \f$s(\xi_1,\cdots, \xi_{dim})\in[-1,1]\f$ \param diff_s derivatives of shape
- functions, i.e. \f$\frac{\partial s}{\partial \xi_i}\f$ \retval L approximation
- functions \retval diffL derivatives, i.e. \f$\frac{\partial L}{\partial
- \xi_i}\f$
- \param dim dimension of ambient space where the segment is embedded
- \return error code
+ \param s is a mapping of coordinates of edge to \f$[-1, 1]\f$, i.e., \f$s(\xi_1,\cdot,\xi_{dim})\in[-1,1]\f$
+ \param diff_s jacobian of the transformation, i.e. \f$\frac{\partial
+ s}{\partial \xi_i}\f$ 
  - output
- \param L values of basis functions
- \param diffL derivatives of basis functions
-
+ \retval L values basis functions at s 
+ \retval diffL derivatives of basis functions at s, i.e. \f$\frac{\partial L}{\partial \xi_i}\f$ \param dim dimension
+ \return error code
 */
 PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,
                                    double *diffL, const int dim);
