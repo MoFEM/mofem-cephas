@@ -47,9 +47,9 @@ struct PrismsFromSurfaceInterface : public UnknownInterface {
    * (0 <-> 3, 1 <-> 4, 2 <-> 5)
    */
   enum SwapType {
-    NO_SWAP = 1 << 0,
-    SWAP_TRI_NODE_ORDER = 1 << 1,
-    SWAP_TOP_AND_BOT_TRI = 1 << 2
+    NO_SWAP = 0,
+    SWAP_TRI_NODE_ORDER = 1,
+    SWAP_TOP_AND_BOT_TRI = 2
   };
 
   /**
