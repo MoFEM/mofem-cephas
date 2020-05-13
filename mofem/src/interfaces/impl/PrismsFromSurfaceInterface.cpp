@@ -33,14 +33,12 @@ PrismsFromSurfaceInterface::query_interface(const MOFEMuuid &uuid,
 DEPRECATED MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(
     const Range &ents, Range &prisms, int verb) {
   MoFEMFunctionBegin;
-  CHKERR createPrisms(ents, false, prisms, verb);
+  CHKERR createPrisms(ents, NO_SWAP, prisms, verb);
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,
-                                                        const bool swap_nodes,
-                                                        Range &prisms,
-                                                        int verb) {
+MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(
+    const Range &ents, const SwapType swap_type, Range &prisms, int verb) {
   MoFEMFunctionBegin;
   Interface &m_field = cOre;
   Range tris = ents.subset_by_type(MBTRI);
@@ -64,9 +62,19 @@ MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,
                                                &prism_nodes[nn]);
       }
     }
-    if (swap_nodes) {
+    switch (swap_type) {
+    case SWAP_TRI_NODE_ORDER:
       std::swap(prism_nodes[1], prism_nodes[2]);
       std::swap(prism_nodes[4], prism_nodes[5]);
+      break;
+    case SWAP_TOP_AND_BOT_TRI:
+      std::swap(prism_nodes[0], prism_nodes[3]);
+      std::swap(prism_nodes[1], prism_nodes[4]);
+      std::swap(prism_nodes[2], prism_nodes[5]);
+      break;
+    case NO_SWAP:
+    default:
+      break;
     }
     EntityHandle prism;
     CHKERR m_field.get_moab().create_element(MBPRISM, prism_nodes, 6, prism);
