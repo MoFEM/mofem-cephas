@@ -28,12 +28,16 @@
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sources/severity_feature.hpp>
 #include <boost/log/sources/record_ostream.hpp>
+#include <boost/core/null_deleter.hpp>
 
 namespace attrs = boost::log::attributes;
 namespace logging = boost::log;
 namespace keywords = boost::log::keywords;
-
-namespace MoFEM {}
+namespace logging = boost::log;
+namespace sinks = boost::log::sinks;
+namespace src = boost::log::sources;
+namespace attrs = boost::log::attributes;
+namespace expr = boost::log::expressions;
 
 namespace MoFEM {
 
@@ -58,6 +62,7 @@ struct LogManager : public UnknownInterface {
     very_verbose,
     verbose,
     inform,
+    petsc,
     warning,
     error,
     critical
@@ -65,9 +70,11 @@ struct LogManager : public UnknownInterface {
 
   static constexpr std::array<char *const, critical + 1> severityStrings = {
 
-      (char *)"very_noisy", (char *)"noisy",   (char *)"very_verbose",
-      (char *)"verbose",    (char *)"inform",  (char *)"warning",
-      (char *)"error",      (char *)"critical"
+      (char *)"very_noisy",   (char *)"noisy",
+      (char *)"very_verbose", (char *)"verbose",
+      (char *)"inform",       (char *)"petsc",
+      (char *)"warning",      (char *)"error",
+      (char *)"critical"
 
   };
 
@@ -149,12 +156,20 @@ struct LogManager : public UnknownInterface {
    */
   static void addTag(const std::string channel, const std::string tag);
 
+
+  typedef sinks::synchronous_sink<sinks::text_ostream_backend> SinkType;
+
+  static boost::shared_ptr<SinkType>
+  createSink(boost::shared_ptr<std::ostream> stream_ptr,
+             std::string comm_filter);
+
   /**
-   * @brief Get the Interface Options 
-   * 
-   * This function is called by MoFEM core when this interface is registred into database.
-   * 
-   * @return MoFEMErrorCode 
+   * @brief Get the Interface Options
+   *
+   * This function is called by MoFEM core when this interface is registred
+   * into database.
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode getSubInterfaceOptions();
 
@@ -163,6 +178,7 @@ struct LogManager : public UnknownInterface {
    * @return error code
    */
   MoFEMErrorCode getOptions();
+
 
 private:
   MoFEM::Core &cOre;
@@ -192,7 +208,13 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 
 } // namespace LogKeywords
 
+
 } // namespace MoFEM
+
+static FILE *mofem_log_out = nullptr;
+extern "C" {
+PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
+}
 
 /**
  * @brief Set and reset channel
@@ -265,8 +287,46 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
  * @brief Synchronise "SYNC" channel
  * 
  */
-#define MOFEM_LOG_SYNCHORMISE(comm)                                                  \
-  PetscSynchronizedFlush(comm, PETSC_STDOUT);
+#define MOFEM_LOG_SYNCHORMISE(comm) PetscSynchronizedFlush(comm, mofem_log_out);
+
+template <int RANK>
+PetscErrorCode logPetscFPrintf(FILE *fd, const char format[], va_list Argp) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  if (fd != stdout && fd != stderr && fd != mofem_log_out) {
+    cerr << "Case 1 ";
+    ierr = PetscVFPrintfDefault(fd, format, Argp);
+    CHKERR(ierr);
+  } else {
+
+    cerr << "Case 2 ";
+    char buff[1024];
+    size_t length;
+    ierr = PetscVSNPrintf(buff, 1024, format, &length, Argp);
+    CHKERRQ(ierr);
+
+    auto remove_line_break = [](auto &&msg) {
+      if (!msg.empty() && msg.back() == '\n')
+        msg = std::string_view(msg.data(), msg.size() - 1);
+      return msg;
+    };
+
+    const std::string str(buff);
+    if (!str.empty()) {
+      cerr << "Case 3 " << RANK << " ";
+      if (fd != mofem_log_out) {
+        if (RANK == 0)
+          MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::petsc)
+              << "Case 4 " << remove_line_break(std::string(buff));
+        else
+          std::clog << "Case 5 " << std::string(buff);
+      } else
+        std::clog << "Case 5 " << std::string(buff);
+    }
+
+  }
+  PetscFunctionReturn(0);
+}
 
 #endif //__LOGMANAGER_HPP__
 

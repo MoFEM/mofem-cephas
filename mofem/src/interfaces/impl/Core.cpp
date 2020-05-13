@@ -50,10 +50,30 @@ bool Core::isGloballyInitialised = false;
 
 MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
                                 const char help[]) {
+
+  auto core_log = logging::core::get();
+  core_log->add_sink(LogManager::createSink(
+      boost::shared_ptr<std::ostream>(&std::clog, boost::null_deleter()),
+      "PETSC"));
+  LogManager::setLog("PETSC");
+
+  int mpi_init;
+  MPI_Initialized(&mpi_init);
+  int rank;
+  if (mpi_init)
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  if (!rank)
+    PetscVFPrintf = logPetscFPrintf<0>;
+  else
+    PetscVFPrintf = logPetscFPrintf<1>;
+
   ierr = PetscInitialize(argc, args, file, help);
   CHKERRG(ierr);
+
   ierr = PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
   CHKERRG(ierr);
+
   isGloballyInitialised = true;
   return MOFEM_SUCCESS;
 }
@@ -130,7 +150,7 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
     char petsc_version[255];
     ierr = PetscGetVersion(petsc_version, 255);
     CHKERRABORT(cOmm, ierr);
-    ierr = PetscPrintf(cOmm, "MoFEM version %d.%d.%d (%s %s) \n",
+    ierr = PetscPrintf(cOmm, "MoFEM version %d.%d.%d (%s %s)\n",
                        MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR,
                        MoFEM_VERSION_BUILD, MOAB_VERSION_STRING, petsc_version);
     CHKERRABORT(cOmm, ierr);

@@ -16,12 +16,6 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-namespace logging = boost::log;
-namespace sinks = boost::log::sinks;
-namespace src = boost::log::sources;
-namespace attrs = boost::log::attributes;
-namespace expr = boost::log::expressions;
-
 namespace MoFEM {
 
 using namespace MoFEM::LogKeywords;
@@ -43,7 +37,7 @@ struct LogManager::InternalData
   class SelfStreamBuf : public std::stringbuf {
     virtual int sync() {
       if (!this->str().empty()) {
-        PetscPrintf(PETSC_COMM_SELF, "%s", this->str().c_str());
+        PetscFPrintf(PETSC_COMM_SELF, mofem_log_out, "%s", this->str().c_str());
         this->str("");
       }
       return 0;
@@ -54,7 +48,7 @@ struct LogManager::InternalData
     WorldStreamBuf(MPI_Comm comm) : cOmm(comm) {}
     virtual int sync() {
       if (!this->str().empty()) {
-        PetscPrintf(cOmm, "%s", this->str().c_str());
+        PetscFPrintf(cOmm, mofem_log_out, "%s", this->str().c_str());
         this->str("");
       }
       return 0;
@@ -68,7 +62,8 @@ struct LogManager::InternalData
     SynchronizedStreamBuf(MPI_Comm comm) : cOmm(comm) {}
     virtual int sync() {
       if (!this->str().empty()) {
-        PetscSynchronizedPrintf(cOmm, "%s", this->str().c_str());
+        PetscSynchronizedFPrintf(cOmm, mofem_log_out, "%s",
+                                 this->str().c_str());
         this->str("");
       }
       return 0;
@@ -156,54 +151,58 @@ MoFEMErrorCode LogManager::getOptions() {
   MoFEMFunctionReturn(0);
 }
 
+boost::shared_ptr<LogManager::SinkType>
+LogManager::createSink(boost::shared_ptr<std::ostream> stream_ptr,
+                       std::string comm_filter) {
+
+  auto backend = boost::make_shared<sinks::text_ostream_backend>();
+  if (stream_ptr)
+    backend->add_stream(stream_ptr);
+  backend->auto_flush(true);
+
+  typedef sinks::synchronous_sink<sinks::text_ostream_backend> sink_t;
+  auto sink = boost::make_shared<sink_t>(backend);
+  sink->set_filter((expr::has_attr(channel) && channel == comm_filter));
+
+  sink->set_formatter(
+
+      expr::stream
+
+      << "[" << std::dec << std::setfill(' ') << proc_attr << "] "
+
+      << expr::if_(expr::has_attr(
+             line_id))[expr::stream << std::hex << std::setw(8)
+                                    << std::setfill('0') << line_id << std::dec
+                                    << std::setfill(' ') << ": "]
+
+      << severity
+
+      << expr::if_(expr::has_attr(
+             scope))[expr::stream
+                     << boost::log::expressions::format_named_scope(
+                            "Scope", keywords::format = "[%F:%l]")
+                     << "(" << scope << ") "]
+
+      << expr::if_(
+             expr::has_attr(tag_attr))[expr::stream << "[" << tag_attr << "] "]
+
+      << expr::if_(
+             expr::has_attr(timeline))[expr::stream << "[" << timeline << "] "]
+      << expr::smessage
+
+  );
+
+  return sink;
+}
+
 MoFEMErrorCode LogManager::setUpLog() {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  auto create_sink = [&](auto stream_ptr, auto comm_filter) {
-    auto backend = boost::make_shared<sinks::text_ostream_backend>();
-    backend->add_stream(stream_ptr);
-    backend->auto_flush(true);
-
-    typedef sinks::synchronous_sink<sinks::text_ostream_backend> sink_t;
-    auto sink = boost::make_shared<sink_t>(backend);
-    sink->set_filter((expr::has_attr(channel) && channel == comm_filter));
-
-    sink->set_formatter(
-
-        expr::stream
-
-        << "[" << std::dec << std::setfill(' ') << proc_attr << "] "
-
-        << expr::if_(expr::has_attr(
-               line_id))[expr::stream << std::hex << std::setw(8)
-                                      << std::setfill('0') << line_id
-                                      << std::dec << std::setfill(' ') << ": "]
-
-        << severity
-
-        << expr::if_(expr::has_attr(
-               scope))[expr::stream
-                       << boost::log::expressions::format_named_scope(
-                              "Scope", keywords::format = "[%F:%l]")
-                       << "(" << scope << ") "]
-
-        << expr::if_(expr::has_attr(
-               tag_attr))[expr::stream << "[" << tag_attr << "] "]
-
-        << expr::if_(expr::has_attr(
-               timeline))[expr::stream << "[" << timeline << "] "]
-        << expr::smessage
-
-    );
-
-    return sink;
-  };
-
   auto core_log = logging::core::get();
-  core_log->add_sink(create_sink(internalDataPtr->getStrmSelf(), "SELF"));
-  core_log->add_sink(create_sink(internalDataPtr->getStrmWorld(), "WORLD"));
-  core_log->add_sink(create_sink(internalDataPtr->getStrmSync(), "SYNC"));
+  core_log->add_sink(createSink(internalDataPtr->getStrmSelf(), "SELF"));
+  core_log->add_sink(createSink(internalDataPtr->getStrmWorld(), "WORLD"));
+  core_log->add_sink(createSink(internalDataPtr->getStrmSync(), "SYNC"));
   core_log->add_global_attribute(
       "Proc", attrs::constant<unsigned int>(m_field.get_comm_rank()));
 
