@@ -82,6 +82,9 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
 
   static int cnt = 1;
   MoFEMFunctionBeginHot;
+  
+  PetscVFPrintf = PetscVFPrintfDefault; 
+  MoFEM::LogManager::dummy_mofem_fd = PETSC_STDERR;
 
   int rank = 0;
   if (comm != PETSC_COMM_SELF)
