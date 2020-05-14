@@ -97,7 +97,7 @@ MoFEMErrorCode SeriesRecorder::initialiseDatabaseFromMesh(int verb) {
           seriesSteps.insert(FieldSeriesStep(moab, &*sit, ss));
       if (verb > QUIET)
         MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
-            << "add series step " << *p.first << std::endl;
+            << "add series step " << *p.first;
     }
   }
   MoFEMFunctionReturn(0);

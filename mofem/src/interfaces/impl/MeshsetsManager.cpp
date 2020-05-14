@@ -31,6 +31,7 @@ namespace po = boost::program_options;
   MOFEM_LOG_CHANNEL("WORLD");                                                  \
   MOFEM_LOG_CHANNEL("SYNC");                                                   \
   MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("WORLD", "MeshsetsManager");                                   \
   MOFEM_LOG_TAG("SYNC", "MeshsetsManager");
 
 namespace MoFEM {

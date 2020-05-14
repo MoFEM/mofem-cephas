@@ -1,5 +1,6 @@
 /**
  * @file log.cpp
+ * @example log.cpp
  * @brief Example and test how to log
  *
  * This is an example of how to use the logger.
