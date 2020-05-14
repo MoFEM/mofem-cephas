@@ -187,7 +187,11 @@ struct LogManager : public UnknownInterface {
   static PetscErrorCode logPetscFPrintf(FILE *fd, const char format[],
                                         va_list Argp);
 
+  static std::string getVLikeFormatedString(const char *fmt, va_list args);
+
   static std::string getCLikeFormatedString(const char *fmt, ...);
+
+
 
 private:
   MoFEM::Core &cOre;
@@ -240,7 +244,7 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
  *
  */
 #define MOFEM_LOG_CHANNEL(channel)                                             \
-  { LogManager::setLog(channel); }
+  { MoFEM::LogManager::setLog(channel); }
 
 /**
  * @brief Add attributes to channel
@@ -252,7 +256,7 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
  * 
  */
 #define MOFEM_LOG_ATTRIBUTES(channel, bit)                                     \
-  { LogManager::addAttributes(channel, bit); }
+  { MoFEM::LogManager::addAttributes(channel, bit); }
 
 /**
  * @brief Log
@@ -294,14 +298,14 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
  * set.
  *
  */
-#define MOFEM_LOG_TAG(channel, tag) LogManager::addTag(channel, tag);
+#define MOFEM_LOG_TAG(channel, tag) MoFEM::LogManager::addTag(channel, tag);
 
 /**
  * @brief Synchronise "SYNC" channel
  * 
  */
 #define MOFEM_LOG_SYNCHORMISE(comm)                                            \
-  PetscSynchronizedFlush(comm, LogManager::dummy_mofem_fd);
+  PetscSynchronizedFlush(comm, MoFEM::LogManager::dummy_mofem_fd);
 
 #endif //__LOGMANAGER_HPP__
 

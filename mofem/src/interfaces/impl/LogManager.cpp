@@ -294,14 +294,18 @@ PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
   PetscFunctionReturn(0);
 }
 
-std::string LogManager::getCLikeFormatedString(const char *fmt, ...) {
-
+std::string LogManager::getVLikeFormatedString(const char *fmt, va_list args) {
   std::array<char, 1024> buf;
+  vsprintf(buf.data(), fmt, args);
+  return std::string(buf.data());
+}
+
+std::string LogManager::getCLikeFormatedString(const char *fmt, ...) {
    va_list args;
    va_start(args, fmt);
-   vsprintf(buf.data(), fmt, args);
+   auto str = getVLikeFormatedString(fmt,args);
    va_end(args);
-   return std::string(buf.data());
+   return str;
 }
 
 } // namespace MoFEM
