@@ -85,6 +85,7 @@ struct LogManager::InternalData
   std::ostream strmWorld;
   std::ostream strmSync;
 
+  static bool logQuiet;
   static std::map<std::string, LoggerType> logChannels;
 
   boost::shared_ptr<std::ostream> getStrmSelf() {
@@ -104,6 +105,7 @@ struct LogManager::InternalData
   virtual ~InternalData() = default;
 };
 
+bool LogManager::InternalData::logQuiet = false;
 std::map<std::string, LogManager::LoggerType>
     LogManager::InternalData::logChannels;
 
@@ -130,9 +132,10 @@ MoFEMErrorCode LogManager::getOptions() {
   MoFEMFunctionBegin;
   PetscInt sev_level = SeverityLevel::inform;
   PetscBool log_scope = PETSC_FALSE;
+  PetscBool log_quiet = PETSC_FALSE;
 
   CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "log_",
-                           "Warning interface options", "none");
+                           "Logging interface options", "none");
 
   CHKERR PetscOptionsEList("-severity_level", "Scope level", "",
                            severityStrings.data(), SeverityLevel::error + 1,
@@ -140,6 +143,9 @@ MoFEMErrorCode LogManager::getOptions() {
 
   CHKERR PetscOptionsBool("-scope", "Log scope", "", log_scope, &log_scope,
                           NULL);
+
+  CHKERR PetscOptionsBool("-quiet", "Quiet log attributes", "", log_quiet,
+                          &log_quiet, NULL);
 
   ierr = PetscOptionsEnd();
   CHKERRG(ierr);
@@ -151,71 +157,79 @@ MoFEMErrorCode LogManager::getOptions() {
   if (log_scope)
     logging::core::get()->add_global_attribute("Scope", attrs::named_scope());
 
+  if(log_quiet)
+    LogManager::InternalData::logQuiet = true;
+
   MoFEMFunctionReturn(0);
 }
 
 void LogManager::recordFormatterDefault(logging::record_view const &rec,
                                         logging::formatting_ostream &strm) {
 
-  auto sev = rec[severity];
-  auto p = rec[proc_attr];
-  auto l = rec[line_id];
-  auto s = rec[scope];
-  auto tg = rec[tag_attr];
-  auto tl = rec[timeline];
-  auto msg = rec[logging::expressions::smessage];
 
-  auto set_color = [&](const auto str) {
+  if (!LogManager::InternalData::logQuiet) {
+
+    auto sev = rec[severity];
+    auto p = rec[proc_attr];
+    auto l = rec[line_id];
+    auto s = rec[scope];
+    auto tg = rec[tag_attr];
+    auto tl = rec[timeline];
+
+    auto set_color = [&](const auto str) {
 #if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
-    if (isatty(fileno(stdout)))
-      strm << str;
+      if (isatty(fileno(stdout)))
+        strm << str;
 #endif
-  };
+    };
 
-  if (!p.empty()) {
-    strm << "[";
-    set_color("\033[32m");
-    strm << p;
-    set_color("\033[0m");
-    strm << "] ";
-  }
-
-  if (sev > SeverityLevel::inform) {
-    set_color("\033[31m");
-    if (sev > SeverityLevel::warning)
-      set_color("\033[1m");
-  } else
-    set_color("\033[34m");
-
-  strm << sev;
-
-  set_color("\033[0m");
-
-  if (!l.empty())
-    strm << std::hex << std::setw(8) << std::setfill('0') << l.get() << std::dec
-         << std::setfill(' ') << ": ";
-
-  if (!s.empty()) {
-    for (::boost::log::attributes::named_scope_list::const_iterator iter =
-             s->begin();
-         iter != s->end(); ++iter) {
-      const auto path = std::string(iter->file_name.data());
-      const auto file = path.substr(path.find_last_of("/\\") + 1);
-      strm << "(" << file << ":" << iter->line << ">" << iter->scope_name
-           << ")";
+    if (!p.empty()) {
+      strm << "[";
+      set_color("\033[32m");
+      strm << p;
+      set_color("\033[0m");
+      strm << "] ";
     }
-    strm << " ";
-  }
 
-  if (!tg.empty()) {
+    if (sev > SeverityLevel::inform) {
+      set_color("\033[31m");
+      if (sev > SeverityLevel::warning)
+        set_color("\033[1m");
+    } else
+      set_color("\033[34m");
 
-    set_color("\033[1m");
-    strm << "[" << tg.get() << "] ";
+    strm << sev;
+
     set_color("\033[0m");
+
+    if (!l.empty())
+      strm << std::hex << std::setw(8) << std::setfill('0') << l.get()
+           << std::dec << std::setfill(' ') << ": ";
+
+    if (!s.empty()) {
+      for (::boost::log::attributes::named_scope_list::const_iterator iter =
+               s->begin();
+           iter != s->end(); ++iter) {
+        const auto path = std::string(iter->file_name.data());
+        const auto file = path.substr(path.find_last_of("/\\") + 1);
+        strm << "(" << file << ":" << iter->line << ">" << iter->scope_name
+             << ")";
+      }
+      strm << " ";
+    }
+
+    if (!tg.empty()) {
+
+      set_color("\033[1m");
+      strm << "[" << tg.get() << "] ";
+      set_color("\033[0m");
+    }
+
+    if (!tl.empty())
+      strm << "[" << tl.get() << "] ";
   }
 
-  if (!tl.empty())
-    strm << "[" << tl.get() << "] ";
+  auto msg = rec[logging::expressions::smessage];
 
   strm << msg;
 }
