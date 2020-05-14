@@ -150,55 +150,88 @@ MoFEMErrorCode LogManager::getOptions() {
 
   if (log_scope)
     logging::core::get()->add_global_attribute("Scope", attrs::named_scope());
-  
 
   MoFEMFunctionReturn(0);
+}
+
+void LogManager::recordFormatterDefault(logging::record_view const &rec,
+                                        logging::formatting_ostream &strm) {
+
+  auto sev = rec[severity];
+  auto p = rec[proc_attr];
+  auto l = rec[line_id];
+  auto s = rec[scope];
+  auto tg = rec[tag_attr];
+  auto tl = rec[timeline];
+  auto msg = rec[logging::expressions::smessage];
+
+  auto set_color = [&](const auto str) {
+#if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
+    if (isatty(fileno(stdout)))
+      strm << str;
+#endif
+  };
+
+  if (!p.empty()) {
+    strm << "[";
+    set_color("\033[32m");
+    strm << p;
+    set_color("\033[0m");
+    strm << "] ";
+  }
+
+  if (sev > SeverityLevel::inform) {
+    set_color("\033[31m");
+    if (sev > SeverityLevel::warning)
+      set_color("\033[1m");
+  } else
+    set_color("\033[34m");
+
+  strm << sev;
+
+  set_color("\033[0m");
+
+  if (!l.empty())
+    strm << std::hex << std::setw(8) << std::setfill('0') << l.get() << std::dec
+         << std::setfill(' ') << ": ";
+
+  if (!s.empty()) {
+    for (::boost::log::attributes::named_scope_list::const_iterator iter =
+             s->begin();
+         iter != s->end(); ++iter) {
+      const auto path = std::string(iter->file_name.data());
+      const auto file = path.substr(path.find_last_of("/\\") + 1);
+      strm << "(" << file << ":" << iter->line << ">" << iter->scope_name
+           << ")";
+    }
+    strm << " ";
+  }
+
+  if (!tg.empty()) {
+
+    set_color("\033[1m");
+    strm << "[" << tg.get() << "] ";
+    set_color("\033[0m");
+  }
+
+  if (!tl.empty())
+    strm << "[" << tl.get() << "] ";
+
+  strm << msg;
 }
 
 boost::shared_ptr<LogManager::SinkType>
 LogManager::createSink(boost::shared_ptr<std::ostream> stream_ptr,
                        std::string comm_filter) {
 
-  // dummy_mofem_fd = (FILE *)(&dummy_file_ptr);
-
-  
-
   auto backend = boost::make_shared<sinks::text_ostream_backend>();
   if (stream_ptr)
     backend->add_stream(stream_ptr);
   backend->auto_flush(true);
 
-  typedef sinks::synchronous_sink<sinks::text_ostream_backend> sink_t;
-  auto sink = boost::make_shared<sink_t>(backend);
+  auto sink = boost::make_shared<SinkType>(backend);
   sink->set_filter((expr::has_attr(channel) && channel == comm_filter));
-
-  sink->set_formatter(
-
-      expr::stream
-
-      << "[" << std::dec << std::setfill(' ') << proc_attr << "] "
-
-      << severity
-
-      << expr::if_(expr::has_attr(
-             line_id))[expr::stream << std::hex << std::setw(8)
-                                    << std::setfill('0') << line_id << std::dec
-                                    << std::setfill(' ') << ": "]
-
-      << expr::if_(expr::has_attr(
-             scope))[expr::stream
-                     << boost::log::expressions::format_named_scope(
-                            "Scope", keywords::format = "[%F:%l]")
-                     << "(" << scope << ") "]
-
-      << expr::if_(
-             expr::has_attr(tag_attr))[expr::stream << "[" << tag_attr << "] "]
-
-      << expr::if_(
-             expr::has_attr(timeline))[expr::stream << "[" << timeline << "] "]
-      << expr::smessage
-
-  );
+  sink->set_formatter(&recordFormatterDefault);
 
   return sink;
 }
@@ -218,8 +251,7 @@ MoFEMErrorCode LogManager::setUpLog() {
   MoFEMFunctionReturn(0);
 }
 
-void LogManager::addAttributes(LogManager::LoggerType &lg,
-                                          const int bit) {
+void LogManager::addAttributes(LogManager::LoggerType &lg, const int bit) {
 
   if (bit == 0)
     return;
@@ -301,11 +333,11 @@ std::string LogManager::getVLikeFormatedString(const char *fmt, va_list args) {
 }
 
 std::string LogManager::getCLikeFormatedString(const char *fmt, ...) {
-   va_list args;
-   va_start(args, fmt);
-   auto str = getVLikeFormatedString(fmt,args);
-   va_end(args);
-   return str;
+  va_list args;
+  va_start(args, fmt);
+  auto str = getVLikeFormatedString(fmt, args);
+  va_end(args);
+  return str;
 }
 
 } // namespace MoFEM

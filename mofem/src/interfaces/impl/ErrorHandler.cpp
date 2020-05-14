@@ -16,65 +16,6 @@
 #include <petsc/private/petscimpl.h>
 #endif
 
-// static PetscErrorCode mofem_error_printf(const char format[], ...) {
-//   va_list Argp;
-//   static PetscBool PetscErrorPrintfCalled = PETSC_FALSE;
-
-//   /*
-//       This function does not call PetscFunctionBegin and
-//       PetscFunctionReturn()
-//     because it may be called by PetscStackView().
-
-//       This function does not do error checking because it is called by the
-//       error
-//     handlers.
-//   */
-
-//   if (!PetscErrorPrintfCalled) {
-//     PetscErrorPrintfCalled = PETSC_TRUE;
-
-//     /*
-//         On the SGI machines and Cray T3E, if errors are generated
-//       "simultaneously" by different processors, the messages are printed all
-//       jumbled up; to try to prevent this we have each processor wait based on
-//       their rank
-//     */
-// #if defined(PETSC_CAN_SLEEP_AFTER_ERROR)
-//     {
-//       PetscMPIInt rank;
-//       if (PetscGlobalRank > 8)
-//         rank = 8;
-//       else
-//         rank = PetscGlobalRank;
-//       PetscSleep((PetscReal)rank);
-//     }
-// #endif
-//   }
-
-//   // PetscFPrintf(PETSC_COMM_SELF, PETSC_STDERR,
-//   //              "[%d]MoFEM ERROR: ", PetscGlobalRank);
-//   va_start(Argp, format);
-//   MOFEM_LOG("SELF", LogManager::SeverityLevel::error)
-//       << MoFEM::LogManager::getVLikeFormatedString(format, Argp);
-//   //  (*PetscVFPrintf)(PETSC_STDERR, format, Argp);
-//   va_end(Argp);
-//   return 0;
-// }
-
-// static void error_printf_highlight(void) {
-// #if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
-//   if (isatty(fileno(PETSC_STDERR)))
-//     fprintf(PETSC_STDERR, "\033[1;32m");
-// #endif
-// }
-
-// static void error_printf_normal(void) {
-// #if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
-//   if (isatty(fileno(PETSC_STDERR)))
-//     fprintf(PETSC_STDERR, "\033[0;39m\033[0;49m");
-// #endif
-// }
-
 static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
                                           const char *fun, const char *file,
                                           PetscErrorCode n, PetscErrorType p,
@@ -82,7 +23,6 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
 
   static int cnt = 1;
   MoFEMFunctionBeginHot;
-  
   PetscVFPrintf = PetscVFPrintfDefault; 
   MoFEM::LogManager::dummy_mofem_fd = PETSC_STDERR;
 

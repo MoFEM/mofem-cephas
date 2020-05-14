@@ -21,6 +21,7 @@
   MOFEM_LOG_CHANNEL("WORLD");                                                  \
   MOFEM_LOG_CHANNEL("SYNC");                                                   \
   MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("WORLD", "FECore");                                            \
   MOFEM_LOG_TAG("SYNC", "FECore");
 
 namespace MoFEM {

@@ -89,6 +89,8 @@ struct LogManager : public UnknownInterface {
                                                        std::string>
       LoggerType;
 
+  typedef sinks::synchronous_sink<sinks::text_ostream_backend> SinkType;
+
   /**
    * @brief Add attributes to logger
    * \ingroup mofem_log_manager
@@ -143,9 +145,6 @@ struct LogManager : public UnknownInterface {
    */
   static void addTag(const std::string channel, const std::string tag);
 
-
-  typedef sinks::synchronous_sink<sinks::text_ostream_backend> SinkType;
-
   static boost::shared_ptr<SinkType>
   createSink(boost::shared_ptr<std::ostream> stream_ptr,
              std::string comm_filter);
@@ -187,11 +186,32 @@ struct LogManager : public UnknownInterface {
   static PetscErrorCode logPetscFPrintf(FILE *fd, const char format[],
                                         va_list Argp);
 
+  /**
+   * @brief Converts formatted output to string
+   * 
+   * @param fmt 
+   * @param args 
+   * @return std::string 
+   */
   static std::string getVLikeFormatedString(const char *fmt, va_list args);
 
+  /**
+   * @brief Converts formatted output to string
+   * 
+   * @param fmt 
+   * @param args 
+   * @return std::string 
+   */
   static std::string getCLikeFormatedString(const char *fmt, ...);
 
-
+  /**
+   * @brief Default record formatter
+   * 
+   * @param rec 
+   * @param strm 
+   */
+  static void recordFormatterDefault(logging::record_view const &rec,
+                                     logging::formatting_ostream &strm);
 
 private:
   MoFEM::Core &cOre;

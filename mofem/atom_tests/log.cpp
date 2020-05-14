@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "Trigger error");
+    // SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "Trigger error");
   }
   CATCH_ERRORS;
 
