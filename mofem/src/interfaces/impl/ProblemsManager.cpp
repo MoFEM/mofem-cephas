@@ -2595,7 +2595,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
           problem_finite_elements.get<Composite_Name_And_Part_mi_tag>()
               .equal_range(
                   boost::make_tuple(fe->getName(), m_field.get_comm_rank()));
-      MOFEM_LOG("SYNC", LogManager::SeverityLevel::very_verbose)
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy)
           << "Element " << fe->getName() << " nb. elems "
           << std::distance(e_range.first, e_range.second);
     }

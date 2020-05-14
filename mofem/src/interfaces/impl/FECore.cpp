@@ -827,7 +827,7 @@ MoFEMErrorCode Core::build_finite_elements(int verb) {
       MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
           << "Finite element " << fe->getName()
           << " added. Nb. of elements added " << count;
-      MOFEM_LOG("SYNC", LogManager::SeverityLevel::very_verbose) << *fe;
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy) << *fe;
 
       auto slg = MoFEM::LogManager::getLog("SYNC");
       for (auto &field : fIelds) {

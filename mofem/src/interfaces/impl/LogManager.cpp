@@ -22,7 +22,7 @@ namespace MoFEM {
 
 using namespace MoFEM::LogKeywords;
 
-constexpr std::array<char *const, LogManager::SeverityLevel::critical + 1>
+constexpr std::array<char *const, LogManager::SeverityLevel::error + 1>
     LogManager::severityStrings;
 
 std::ostream &operator<<(std::ostream &strm,
@@ -203,7 +203,8 @@ LogManager::createSink(boost::shared_ptr<std::ostream> stream_ptr,
   return sink;
 }
 
-FILE *LogManager::mofem_log_out;
+static char dummy_file;
+FILE *LogManager::mofem_log_out = (FILE *)&dummy_file;
 
 MoFEMErrorCode LogManager::setUpLog() {
   MoFEM::Interface &m_field = cOre;
@@ -284,7 +285,7 @@ PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
     const std::string str(buff);
     if (!str.empty()) {
       if (fd != mofem_log_out) {
-        MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::petsc)
+        MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::verbose)
             << ss.str() << remove_line_break(std::string(buff));
       } else {
         std::clog << ss.str() << std::string(buff);

@@ -56,25 +56,12 @@ struct LogManager : public UnknownInterface {
    * \ingroup mofem_log_manager
    * 
    */
-  enum SeverityLevel {
-    very_noisy,
-    noisy,
-    very_verbose,
-    verbose,
-    inform,
-    petsc,
-    warning,
-    error,
-    critical
-  };
+  enum SeverityLevel { noisy, verbose, inform, warning, error };
 
-  static constexpr std::array<char *const, critical + 1> severityStrings = {
+  static constexpr std::array<char *const, error + 1> severityStrings = {
 
-      (char *)"very_noisy",   (char *)"noisy",
-      (char *)"very_verbose", (char *)"verbose",
-      (char *)"inform",       (char *)"petsc",
-      (char *)"warning",      (char *)"error",
-      (char *)"critical"
+      (char *)"noisy", (char *)"verbose", (char *)"inform", (char *)"warning",
+      (char *)"error"
 
   };
 
