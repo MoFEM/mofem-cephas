@@ -39,7 +39,7 @@ struct LogManager::InternalData
   class SelfStreamBuf : public std::stringbuf {
     virtual int sync() {
       if (!this->str().empty()) {
-        PetscFPrintf(PETSC_COMM_SELF, LogManager::mofem_log_out, "%s",
+        PetscFPrintf(PETSC_COMM_SELF, LogManager::dummy_mofem_fd, "%s",
                      this->str().c_str());
         this->str("");
       }
@@ -51,7 +51,7 @@ struct LogManager::InternalData
     WorldStreamBuf(MPI_Comm comm) : cOmm(comm) {}
     virtual int sync() {
       if (!this->str().empty()) {
-        PetscFPrintf(cOmm, LogManager::mofem_log_out, "%s",
+        PetscFPrintf(cOmm, LogManager::dummy_mofem_fd, "%s",
                      this->str().c_str());
         this->str("");
       }
@@ -66,7 +66,7 @@ struct LogManager::InternalData
     SynchronizedStreamBuf(MPI_Comm comm) : cOmm(comm) {}
     virtual int sync() {
       if (!this->str().empty()) {
-        PetscSynchronizedFPrintf(cOmm, LogManager::mofem_log_out, "%s",
+        PetscSynchronizedFPrintf(cOmm, LogManager::dummy_mofem_fd, "%s",
                                  this->str().c_str());
         this->str("");
       }
@@ -159,7 +159,7 @@ boost::shared_ptr<LogManager::SinkType>
 LogManager::createSink(boost::shared_ptr<std::ostream> stream_ptr,
                        std::string comm_filter) {
 
-  // mofem_log_out = (FILE *)(&dummy_file_ptr);
+  // dummy_mofem_fd = (FILE *)(&dummy_file_ptr);
 
   
 
@@ -204,7 +204,7 @@ LogManager::createSink(boost::shared_ptr<std::ostream> stream_ptr,
 }
 
 static char dummy_file;
-FILE *LogManager::mofem_log_out = (FILE *)&dummy_file;
+FILE *LogManager::dummy_mofem_fd = (FILE *)&dummy_file;
 
 MoFEMErrorCode LogManager::setUpLog() {
   MoFEM::Interface &m_field = cOre;
@@ -259,19 +259,18 @@ LogManager::LoggerType &LogManager::getLog(const std::string channel) {
   return InternalData::logChannels.at(channel);
 }
 
-bool LogManager::semafor;
 PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
                                            va_list Argp) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  if (fd != stdout && fd != stderr && fd != mofem_log_out) {
+  if (fd != stdout && fd != stderr && fd != dummy_mofem_fd) {
     ierr = PetscVFPrintfDefault(fd, format, Argp);
     CHKERR(ierr);
 
   } else {
-    char buff[1024];
+    std::array<char, 1024> buff;
     size_t length;
-    ierr = PetscVSNPrintf(buff, 1024, format, &length, Argp);
+    ierr = PetscVSNPrintf(buff.data(), 1024, format, &length, Argp);
     CHKERRQ(ierr);
 
     auto remove_line_break = [](auto &&msg) {
@@ -282,17 +281,27 @@ PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
 
     std::ostringstream ss;
 
-    const std::string str(buff);
+    const std::string str(buff.data());
     if (!str.empty()) {
-      if (fd != mofem_log_out) {
+      if (fd != dummy_mofem_fd) {
         MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::inform)
-            << ss.str() << remove_line_break(std::string(buff));
+            << ss.str() << remove_line_break(std::string(buff.data()));
       } else {
-        std::clog << ss.str() << std::string(buff);
+        std::clog << ss.str() << std::string(buff.data());
       }
     }
   }
   PetscFunctionReturn(0);
+}
+
+std::string LogManager::getCLikeFormatedString(const char *fmt, ...) {
+
+  std::array<char, 1024> buf;
+   va_list args;
+   va_start(args, fmt);
+   vsprintf(buf.data(), fmt, args);
+   va_end(args);
+   return std::string(buf.data());
 }
 
 } // namespace MoFEM

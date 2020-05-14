@@ -92,10 +92,18 @@ int main(int argc, char *argv[]) {
     }
 
     {
+      MOFEM_C_LOG("WORLD", LogManager::SeverityLevel::inform, "%s %d %d %d",
+                  "Hello C, self error!", 1, 2, 3);
+    }
+
+    {
       CHKERR log_fun1();
       CHKERR log_fun2();
       MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
     }
+
+
+    // SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "Trigger error");
   }
   CATCH_ERRORS;
 

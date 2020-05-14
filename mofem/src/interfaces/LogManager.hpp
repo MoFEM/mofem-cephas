@@ -166,13 +166,28 @@ struct LogManager : public UnknownInterface {
    */
   MoFEMErrorCode getOptions();
 
-  static FILE *mofem_log_out;
+  /**
+   * @brief Dummy file pointer (DO NOT USE)
+   * 
+   * \note This is for internal use only/
+   * 
+   */
+  static FILE *dummy_mofem_fd;
 
+  /**
+   * @brief Use to handle PETSc output
+   * 
+   * \note This is for internal use only/
+   * 
+   * @param fd 
+   * @param format 
+   * @param Argp 
+   * @return PetscErrorCode 
+   */
   static PetscErrorCode logPetscFPrintf(FILE *fd, const char format[],
                                         va_list Argp);
 
-  // static int rAnk;
-  static bool semafor;
+  static std::string getCLikeFormatedString(const char *fmt, ...);
 
 private:
   MoFEM::Core &cOre;
@@ -251,6 +266,10 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
 #define MOFEM_LOG(channel, severity)                                           \
   BOOST_LOG_SEV(MoFEM::LogManager::getLog(channel), severity)
 
+#define MOFEM_C_LOG(channel, severity, format, ...)                            \
+  MOFEM_LOG(channel, severity)                                                 \
+      << MoFEM::LogManager::getCLikeFormatedString(format, __VA_ARGS__)
+
 /** \brief Set scope
  * \ingroup mofem_log_manager
  * 
@@ -282,7 +301,7 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
  * 
  */
 #define MOFEM_LOG_SYNCHORMISE(comm)                                            \
-  PetscSynchronizedFlush(comm, LogManager::mofem_log_out);
+  PetscSynchronizedFlush(comm, LogManager::dummy_mofem_fd);
 
 #endif //__LOGMANAGER_HPP__
 
