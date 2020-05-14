@@ -16,6 +16,8 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+static int dummy_file_ptr = 1;
+
 namespace MoFEM {
 
 using namespace MoFEM::LogKeywords;
@@ -37,7 +39,8 @@ struct LogManager::InternalData
   class SelfStreamBuf : public std::stringbuf {
     virtual int sync() {
       if (!this->str().empty()) {
-        PetscFPrintf(PETSC_COMM_SELF, mofem_log_out, "%s", this->str().c_str());
+        PetscFPrintf(PETSC_COMM_SELF, LogManager::mofem_log_out, "%s",
+                     this->str().c_str());
         this->str("");
       }
       return 0;
@@ -48,7 +51,8 @@ struct LogManager::InternalData
     WorldStreamBuf(MPI_Comm comm) : cOmm(comm) {}
     virtual int sync() {
       if (!this->str().empty()) {
-        PetscFPrintf(cOmm, mofem_log_out, "%s", this->str().c_str());
+        PetscFPrintf(cOmm, LogManager::mofem_log_out, "%s",
+                     this->str().c_str());
         this->str("");
       }
       return 0;
@@ -62,7 +66,7 @@ struct LogManager::InternalData
     SynchronizedStreamBuf(MPI_Comm comm) : cOmm(comm) {}
     virtual int sync() {
       if (!this->str().empty()) {
-        PetscSynchronizedFPrintf(cOmm, mofem_log_out, "%s",
+        PetscSynchronizedFPrintf(cOmm, LogManager::mofem_log_out, "%s",
                                  this->str().c_str());
         this->str("");
       }
@@ -155,6 +159,10 @@ boost::shared_ptr<LogManager::SinkType>
 LogManager::createSink(boost::shared_ptr<std::ostream> stream_ptr,
                        std::string comm_filter) {
 
+  // mofem_log_out = (FILE *)(&dummy_file_ptr);
+
+  
+
   auto backend = boost::make_shared<sinks::text_ostream_backend>();
   if (stream_ptr)
     backend->add_stream(stream_ptr);
@@ -194,6 +202,8 @@ LogManager::createSink(boost::shared_ptr<std::ostream> stream_ptr,
 
   return sink;
 }
+
+FILE *LogManager::mofem_log_out;
 
 MoFEMErrorCode LogManager::setUpLog() {
   MoFEM::Interface &m_field = cOre;
@@ -246,6 +256,42 @@ LogManager::LoggerType &LogManager::setLog(const std::string channel) {
 
 LogManager::LoggerType &LogManager::getLog(const std::string channel) {
   return InternalData::logChannels.at(channel);
+}
+
+bool LogManager::semafor;
+PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
+                                           va_list Argp) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  if (fd != stdout && fd != stderr && fd != mofem_log_out) {
+    ierr = PetscVFPrintfDefault(fd, format, Argp);
+    CHKERR(ierr);
+
+  } else {
+    char buff[1024];
+    size_t length;
+    ierr = PetscVSNPrintf(buff, 1024, format, &length, Argp);
+    CHKERRQ(ierr);
+
+    auto remove_line_break = [](auto &&msg) {
+      if (!msg.empty() && msg.back() == '\n')
+        msg = std::string_view(msg.data(), msg.size() - 1);
+      return msg;
+    };
+
+    std::ostringstream ss;
+
+    const std::string str(buff);
+    if (!str.empty()) {
+      if (fd != mofem_log_out) {
+        MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::petsc)
+            << ss.str() << remove_line_break(std::string(buff));
+      } else {
+        std::clog << ss.str() << std::string(buff);
+      }
+    }
+  }
+  PetscFunctionReturn(0);
 }
 
 } // namespace MoFEM

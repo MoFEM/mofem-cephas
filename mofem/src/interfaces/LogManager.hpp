@@ -179,6 +179,13 @@ struct LogManager : public UnknownInterface {
    */
   MoFEMErrorCode getOptions();
 
+  static FILE *mofem_log_out;
+
+  static PetscErrorCode logPetscFPrintf(FILE *fd, const char format[],
+                                        va_list Argp);
+
+  // static int rAnk;
+  static bool semafor;
 
 private:
   MoFEM::Core &cOre;
@@ -187,6 +194,8 @@ private:
   boost::shared_ptr<InternalData> internalDataPtr;
 
   MoFEMErrorCode setUpLog();
+  
+
 };
 
 // The operator puts a human-friendly representation of the severity level to
@@ -208,10 +217,8 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 
 } // namespace LogKeywords
 
-
 } // namespace MoFEM
 
-static FILE *mofem_log_out = nullptr;
 extern "C" {
 PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
 }
@@ -287,42 +294,8 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
  * @brief Synchronise "SYNC" channel
  * 
  */
-#define MOFEM_LOG_SYNCHORMISE(comm) PetscSynchronizedFlush(comm, mofem_log_out);
-
-template <int RANK>
-PetscErrorCode logPetscFPrintf(FILE *fd, const char format[], va_list Argp) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  if (fd != stdout && fd != stderr && fd != mofem_log_out) {
-    ierr = PetscVFPrintfDefault(fd, format, Argp);
-    CHKERR(ierr);
-
-  } else {
-    char buff[1024];
-    size_t length;
-    ierr = PetscVSNPrintf(buff, 1024, format, &length, Argp);
-    CHKERRQ(ierr);
-
-    auto remove_line_break = [](auto &&msg) {
-      if (!msg.empty() && msg.back() == '\n')
-        msg = std::string_view(msg.data(), msg.size() - 1);
-      return msg;
-    };
-
-    const std::string str(buff);
-    if (!str.empty()) {
-      if (fd != mofem_log_out) {
-        if (!RANK)
-          MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::petsc)
-              << remove_line_break(std::string(buff));
-        else
-          std::clog << std::string(buff);
-      } else
-        std::clog << std::string(buff);
-    }
-  }
-  PetscFunctionReturn(0);
-}
+#define MOFEM_LOG_SYNCHORMISE(comm)                                            \
+  PetscSynchronizedFlush(comm, LogManager::mofem_log_out);
 
 #endif //__LOGMANAGER_HPP__
 
