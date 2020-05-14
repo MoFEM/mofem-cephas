@@ -1,5 +1,6 @@
 /**
  * @file log.cpp
+ * @example log.cpp
  * @brief Example and test how to log
  *
  * This is an example of how to use the logger.
@@ -73,11 +74,12 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab, PETSC_COMM_WORLD);
     MoFEM::Interface &m_field = core;
 
+    CHKERR PetscPrintf(PETSC_COMM_WORLD,
+                       "Testing logging for obsolete way of printing messages");
+
     // Set "WORLD channel" 
     MOFEM_LOG_CHANNEL("WORLD");
     {
-      MOFEM_LOG("WORLD", LogManager::SeverityLevel::critical)
-          << "Hello, self critical!";
       MOFEM_LOG("WORLD", LogManager::SeverityLevel::error)
           << "Hello, self error!";
       MOFEM_LOG("WORLD", LogManager::SeverityLevel::warning)
@@ -86,12 +88,13 @@ int main(int argc, char *argv[]) {
           << "Hello, self inform!";
       MOFEM_LOG("WORLD", LogManager::SeverityLevel::verbose)
           << "Hello, self verbose!";
-      MOFEM_LOG("WORLD", LogManager::SeverityLevel::very_verbose)
-          << "Hello, self very verbose!";
       MOFEM_LOG("WORLD", LogManager::SeverityLevel::noisy)
           << "Hello, self noisy!";
-      MOFEM_LOG("WORLD", LogManager::SeverityLevel::very_noisy)
-          << "Hello, self very noisy!";
+    }
+
+    {
+      MOFEM_C_LOG("WORLD", LogManager::SeverityLevel::inform, "%s %d %d %d",
+                  "Hello C, self error!", 1, 2, 3);
     }
 
     {
@@ -99,6 +102,9 @@ int main(int argc, char *argv[]) {
       CHKERR log_fun2();
       MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
     }
+
+
+    // SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "Trigger error");
   }
   CATCH_ERRORS;
 

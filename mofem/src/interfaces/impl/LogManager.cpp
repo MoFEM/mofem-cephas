@@ -16,17 +16,13 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-namespace logging = boost::log;
-namespace sinks = boost::log::sinks;
-namespace src = boost::log::sources;
-namespace attrs = boost::log::attributes;
-namespace expr = boost::log::expressions;
+static int dummy_file_ptr = 1;
 
 namespace MoFEM {
 
 using namespace MoFEM::LogKeywords;
 
-constexpr std::array<char *const, LogManager::SeverityLevel::critical + 1>
+constexpr std::array<char *const, LogManager::SeverityLevel::error + 1>
     LogManager::severityStrings;
 
 std::ostream &operator<<(std::ostream &strm,
@@ -43,7 +39,8 @@ struct LogManager::InternalData
   class SelfStreamBuf : public std::stringbuf {
     virtual int sync() {
       if (!this->str().empty()) {
-        PetscPrintf(PETSC_COMM_SELF, "%s", this->str().c_str());
+        PetscFPrintf(PETSC_COMM_SELF, LogManager::dummy_mofem_fd, "%s",
+                     this->str().c_str());
         this->str("");
       }
       return 0;
@@ -54,7 +51,8 @@ struct LogManager::InternalData
     WorldStreamBuf(MPI_Comm comm) : cOmm(comm) {}
     virtual int sync() {
       if (!this->str().empty()) {
-        PetscPrintf(cOmm, "%s", this->str().c_str());
+        PetscFPrintf(cOmm, LogManager::dummy_mofem_fd, "%s",
+                     this->str().c_str());
         this->str("");
       }
       return 0;
@@ -68,7 +66,8 @@ struct LogManager::InternalData
     SynchronizedStreamBuf(MPI_Comm comm) : cOmm(comm) {}
     virtual int sync() {
       if (!this->str().empty()) {
-        PetscSynchronizedPrintf(cOmm, "%s", this->str().c_str());
+        PetscSynchronizedFPrintf(cOmm, LogManager::dummy_mofem_fd, "%s",
+                                 this->str().c_str());
         this->str("");
       }
       return 0;
@@ -86,6 +85,7 @@ struct LogManager::InternalData
   std::ostream strmWorld;
   std::ostream strmSync;
 
+  static bool logQuiet;
   static std::map<std::string, LoggerType> logChannels;
 
   boost::shared_ptr<std::ostream> getStrmSelf() {
@@ -105,6 +105,7 @@ struct LogManager::InternalData
   virtual ~InternalData() = default;
 };
 
+bool LogManager::InternalData::logQuiet = false;
 std::map<std::string, LogManager::LoggerType>
     LogManager::InternalData::logChannels;
 
@@ -131,16 +132,20 @@ MoFEMErrorCode LogManager::getOptions() {
   MoFEMFunctionBegin;
   PetscInt sev_level = SeverityLevel::inform;
   PetscBool log_scope = PETSC_FALSE;
+  PetscBool log_quiet = PETSC_FALSE;
 
   CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "log_",
-                           "Warning interface options", "none");
+                           "Logging interface options", "none");
 
   CHKERR PetscOptionsEList("-severity_level", "Scope level", "",
-                           severityStrings.data(), SeverityLevel::error,
+                           severityStrings.data(), SeverityLevel::error + 1,
                            severityStrings[sev_level], &sev_level, PETSC_NULL);
 
   CHKERR PetscOptionsBool("-scope", "Log scope", "", log_scope, &log_scope,
                           NULL);
+
+  CHKERR PetscOptionsBool("-quiet", "Quiet log attributes", "", log_quiet,
+                          &log_quiet, NULL);
 
   ierr = PetscOptionsEnd();
   CHKERRG(ierr);
@@ -151,67 +156,116 @@ MoFEMErrorCode LogManager::getOptions() {
 
   if (log_scope)
     logging::core::get()->add_global_attribute("Scope", attrs::named_scope());
-  
+
+  if(log_quiet)
+    LogManager::InternalData::logQuiet = true;
 
   MoFEMFunctionReturn(0);
 }
+
+void LogManager::recordFormatterDefault(logging::record_view const &rec,
+                                        logging::formatting_ostream &strm) {
+
+
+  if (!LogManager::InternalData::logQuiet) {
+
+    auto sev = rec[severity];
+    auto p = rec[proc_attr];
+    auto l = rec[line_id];
+    auto s = rec[scope];
+    auto tg = rec[tag_attr];
+    auto tl = rec[timeline];
+
+    auto set_color = [&](const auto str) {
+#if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
+      if (isatty(fileno(stdout)))
+        strm << str;
+#endif
+    };
+
+    if (!p.empty()) {
+      strm << "[";
+      set_color("\033[32m");
+      strm << p;
+      set_color("\033[0m");
+      strm << "] ";
+    }
+
+    if (sev > SeverityLevel::inform) {
+      set_color("\033[31m");
+      if (sev > SeverityLevel::warning)
+        set_color("\033[1m");
+    } else
+      set_color("\033[34m");
+
+    strm << sev;
+
+    set_color("\033[0m");
+
+    if (!l.empty())
+      strm << std::hex << std::setw(8) << std::setfill('0') << l.get()
+           << std::dec << std::setfill(' ') << ": ";
+
+    if (!s.empty()) {
+      for (::boost::log::attributes::named_scope_list::const_iterator iter =
+               s->begin();
+           iter != s->end(); ++iter) {
+        const auto path = std::string(iter->file_name.data());
+        const auto file = path.substr(path.find_last_of("/\\") + 1);
+        strm << "(" << file << ":" << iter->line << ">" << iter->scope_name
+             << ")";
+      }
+      strm << " ";
+    }
+
+    if (!tg.empty()) {
+
+      set_color("\033[1m");
+      strm << "[" << tg.get() << "] ";
+      set_color("\033[0m");
+    }
+
+    if (!tl.empty())
+      strm << "[" << tl.get() << "] ";
+  }
+
+  auto msg = rec[logging::expressions::smessage];
+
+  strm << msg;
+}
+
+boost::shared_ptr<LogManager::SinkType>
+LogManager::createSink(boost::shared_ptr<std::ostream> stream_ptr,
+                       std::string comm_filter) {
+
+  auto backend = boost::make_shared<sinks::text_ostream_backend>();
+  if (stream_ptr)
+    backend->add_stream(stream_ptr);
+  backend->auto_flush(true);
+
+  auto sink = boost::make_shared<SinkType>(backend);
+  sink->set_filter((expr::has_attr(channel) && channel == comm_filter));
+  sink->set_formatter(&recordFormatterDefault);
+
+  return sink;
+}
+
+static char dummy_file;
+FILE *LogManager::dummy_mofem_fd = (FILE *)&dummy_file;
 
 MoFEMErrorCode LogManager::setUpLog() {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
-  auto create_sink = [&](auto stream_ptr, auto comm_filter) {
-    auto backend = boost::make_shared<sinks::text_ostream_backend>();
-    backend->add_stream(stream_ptr);
-    backend->auto_flush(true);
-
-    typedef sinks::synchronous_sink<sinks::text_ostream_backend> sink_t;
-    auto sink = boost::make_shared<sink_t>(backend);
-    sink->set_filter((expr::has_attr(channel) && channel == comm_filter));
-
-    sink->set_formatter(
-
-        expr::stream
-
-        << "[" << std::dec << std::setfill(' ') << proc_attr << "] "
-
-        << expr::if_(expr::has_attr(
-               line_id))[expr::stream << std::hex << std::setw(8)
-                                      << std::setfill('0') << line_id
-                                      << std::dec << std::setfill(' ') << ": "]
-
-        << severity
-
-        << expr::if_(expr::has_attr(
-               scope))[expr::stream
-                       << boost::log::expressions::format_named_scope(
-                              "Scope", keywords::format = "[%F:%l]")
-                       << "(" << scope << ") "]
-
-        << expr::if_(expr::has_attr(
-               tag_attr))[expr::stream << "[" << tag_attr << "] "]
-
-        << expr::if_(expr::has_attr(
-               timeline))[expr::stream << "[" << timeline << "] "]
-        << expr::smessage
-
-    );
-
-    return sink;
-  };
-
   auto core_log = logging::core::get();
-  core_log->add_sink(create_sink(internalDataPtr->getStrmSelf(), "SELF"));
-  core_log->add_sink(create_sink(internalDataPtr->getStrmWorld(), "WORLD"));
-  core_log->add_sink(create_sink(internalDataPtr->getStrmSync(), "SYNC"));
-  core_log->add_global_attribute(
-      "Proc", attrs::constant<unsigned int>(m_field.get_comm_rank()));
+  core_log->add_sink(createSink(internalDataPtr->getStrmSelf(), "SELF"));
+  core_log->add_sink(createSink(internalDataPtr->getStrmWorld(), "WORLD"));
+  core_log->add_sink(createSink(internalDataPtr->getStrmSync(), "SYNC"));
 
   MoFEMFunctionReturn(0);
 }
 
-void LogManager::addAttributes(LogManager::LoggerType &lg,
-                                          const int bit) {
+void LogManager::addAttributes(LogManager::LoggerType &lg, const int bit) {
 
   if (bit == 0)
     return;
@@ -249,6 +303,55 @@ LogManager::LoggerType &LogManager::setLog(const std::string channel) {
 
 LogManager::LoggerType &LogManager::getLog(const std::string channel) {
   return InternalData::logChannels.at(channel);
+}
+
+PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
+                                           va_list Argp) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  if (fd != stdout && fd != stderr && fd != dummy_mofem_fd) {
+    ierr = PetscVFPrintfDefault(fd, format, Argp);
+    CHKERR(ierr);
+
+  } else {
+    std::array<char, 1024> buff;
+    size_t length;
+    ierr = PetscVSNPrintf(buff.data(), 1024, format, &length, Argp);
+    CHKERRQ(ierr);
+
+    auto remove_line_break = [](auto &&msg) {
+      if (!msg.empty() && msg.back() == '\n')
+        msg = std::string_view(msg.data(), msg.size() - 1);
+      return msg;
+    };
+
+    std::ostringstream ss;
+
+    const std::string str(buff.data());
+    if (!str.empty()) {
+      if (fd != dummy_mofem_fd) {
+        MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::inform)
+            << ss.str() << remove_line_break(std::string(buff.data()));
+      } else {
+        std::clog << ss.str() << std::string(buff.data());
+      }
+    }
+  }
+  PetscFunctionReturn(0);
+}
+
+std::string LogManager::getVLikeFormatedString(const char *fmt, va_list args) {
+  std::array<char, 1024> buf;
+  vsprintf(buf.data(), fmt, args);
+  return std::string(buf.data());
+}
+
+std::string LogManager::getCLikeFormatedString(const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  auto str = getVLikeFormatedString(fmt, args);
+  va_end(args);
+  return str;
 }
 
 } // namespace MoFEM

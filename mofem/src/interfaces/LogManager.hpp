@@ -28,12 +28,16 @@
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sources/severity_feature.hpp>
 #include <boost/log/sources/record_ostream.hpp>
+#include <boost/core/null_deleter.hpp>
 
 namespace attrs = boost::log::attributes;
 namespace logging = boost::log;
 namespace keywords = boost::log::keywords;
-
-namespace MoFEM {}
+namespace logging = boost::log;
+namespace sinks = boost::log::sinks;
+namespace src = boost::log::sources;
+namespace attrs = boost::log::attributes;
+namespace expr = boost::log::expressions;
 
 namespace MoFEM {
 
@@ -52,22 +56,12 @@ struct LogManager : public UnknownInterface {
    * \ingroup mofem_log_manager
    * 
    */
-  enum SeverityLevel {
-    very_noisy,
-    noisy,
-    very_verbose,
-    verbose,
-    inform,
-    warning,
-    error,
-    critical
-  };
+  enum SeverityLevel { noisy, verbose, inform, warning, error };
 
-  static constexpr std::array<char *const, critical + 1> severityStrings = {
+  static constexpr std::array<char *const, error + 1> severityStrings = {
 
-      (char *)"very_noisy", (char *)"noisy",   (char *)"very_verbose",
-      (char *)"verbose",    (char *)"inform",  (char *)"warning",
-      (char *)"error",      (char *)"critical"
+      (char *)"noisy", (char *)"verbose", (char *)"inform", (char *)"warning",
+      (char *)"error"
 
   };
 
@@ -94,6 +88,8 @@ struct LogManager : public UnknownInterface {
   typedef boost::log::sources::severity_channel_logger<SeverityLevel,
                                                        std::string>
       LoggerType;
+
+  typedef sinks::synchronous_sink<sinks::text_ostream_backend> SinkType;
 
   /**
    * @brief Add attributes to logger
@@ -149,12 +145,17 @@ struct LogManager : public UnknownInterface {
    */
   static void addTag(const std::string channel, const std::string tag);
 
+  static boost::shared_ptr<SinkType>
+  createSink(boost::shared_ptr<std::ostream> stream_ptr,
+             std::string comm_filter);
+
   /**
-   * @brief Get the Interface Options 
-   * 
-   * This function is called by MoFEM core when this interface is registred into database.
-   * 
-   * @return MoFEMErrorCode 
+   * @brief Get the Interface Options
+   *
+   * This function is called by MoFEM core when this interface is registred
+   * into database.
+   *
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode getSubInterfaceOptions();
 
@@ -164,6 +165,54 @@ struct LogManager : public UnknownInterface {
    */
   MoFEMErrorCode getOptions();
 
+  /**
+   * @brief Dummy file pointer (DO NOT USE)
+   * 
+   * \note This is for internal use only/
+   * 
+   */
+  static FILE *dummy_mofem_fd;
+
+  /**
+   * @brief Use to handle PETSc output
+   * 
+   * \note This is for internal use only/
+   * 
+   * @param fd 
+   * @param format 
+   * @param Argp 
+   * @return PetscErrorCode 
+   */
+  static PetscErrorCode logPetscFPrintf(FILE *fd, const char format[],
+                                        va_list Argp);
+
+  /**
+   * @brief Converts formatted output to string
+   * 
+   * @param fmt 
+   * @param args 
+   * @return std::string 
+   */
+  static std::string getVLikeFormatedString(const char *fmt, va_list args);
+
+  /**
+   * @brief Converts formatted output to string
+   * 
+   * @param fmt 
+   * @param args 
+   * @return std::string 
+   */
+  static std::string getCLikeFormatedString(const char *fmt, ...);
+
+  /**
+   * @brief Default record formatter
+   * 
+   * @param rec 
+   * @param strm 
+   */
+  static void recordFormatterDefault(logging::record_view const &rec,
+                                     logging::formatting_ostream &strm);
+
 private:
   MoFEM::Core &cOre;
 
@@ -171,6 +220,8 @@ private:
   boost::shared_ptr<InternalData> internalDataPtr;
 
   MoFEMErrorCode setUpLog();
+  
+
 };
 
 // The operator puts a human-friendly representation of the severity level to
@@ -194,6 +245,10 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
 
 } // namespace MoFEM
 
+extern "C" {
+PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
+}
+
 /**
  * @brief Set and reset channel
  * \ingroup mofem_log_manager
@@ -209,7 +264,7 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
  *
  */
 #define MOFEM_LOG_CHANNEL(channel)                                             \
-  { LogManager::setLog(channel); }
+  { MoFEM::LogManager::setLog(channel); }
 
 /**
  * @brief Add attributes to channel
@@ -221,7 +276,7 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
  * 
  */
 #define MOFEM_LOG_ATTRIBUTES(channel, bit)                                     \
-  { LogManager::addAttributes(channel, bit); }
+  { MoFEM::LogManager::addAttributes(channel, bit); }
 
 /**
  * @brief Log
@@ -234,6 +289,10 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
  */
 #define MOFEM_LOG(channel, severity)                                           \
   BOOST_LOG_SEV(MoFEM::LogManager::getLog(channel), severity)
+
+#define MOFEM_C_LOG(channel, severity, format, ...)                            \
+  MOFEM_LOG(channel, severity)                                                 \
+      << MoFEM::LogManager::getCLikeFormatedString(format, __VA_ARGS__)
 
 /** \brief Set scope
  * \ingroup mofem_log_manager
@@ -259,14 +318,14 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timeline, "Timeline",
  * set.
  *
  */
-#define MOFEM_LOG_TAG(channel, tag) LogManager::addTag(channel, tag);
+#define MOFEM_LOG_TAG(channel, tag) MoFEM::LogManager::addTag(channel, tag);
 
 /**
  * @brief Synchronise "SYNC" channel
  * 
  */
-#define MOFEM_LOG_SYNCHORMISE(comm)                                                  \
-  PetscSynchronizedFlush(comm, PETSC_STDOUT);
+#define MOFEM_LOG_SYNCHORMISE(comm)                                            \
+  PetscSynchronizedFlush(comm, MoFEM::LogManager::dummy_mofem_fd);
 
 #endif //__LOGMANAGER_HPP__
 

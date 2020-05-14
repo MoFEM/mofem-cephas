@@ -50,10 +50,26 @@ bool Core::isGloballyInitialised = false;
 
 MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
                                 const char help[]) {
+  MPI_Init(argc, args);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  PetscVFPrintf = LogManager::logPetscFPrintf;
+
+  auto core_log = logging::core::get();
+  core_log->add_sink(LogManager::createSink(
+      boost::shared_ptr<std::ostream>(&std::clog, boost::null_deleter()),
+      "PETSC"));
+  LogManager::setLog("PETSC");
+  MOFEM_LOG_TAG("PETSC", "petsc");
+  core_log->add_global_attribute("Proc", attrs::constant<unsigned int>(rank));
+
   ierr = PetscInitialize(argc, args, file, help);
   CHKERRG(ierr);
+
   ierr = PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
   CHKERRG(ierr);
+
   isGloballyInitialised = true;
   return MOFEM_SUCCESS;
 }
@@ -63,7 +79,8 @@ MoFEMErrorCode Core::Finalize() {
   ierr = PetscPopErrorHandler();
   CHKERRG(ierr);
   isGloballyInitialised = false;
-  return PetscFinalize();
+  PetscFinalize();
+  return MPI_Finalize();
 }
 
 // Use SFINAE to decide which template should be run,
@@ -125,19 +142,6 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
     pComm = new ParallelComm(&moab, cOmm);
   }
 
-  // Print version
-  if (verbose > QUIET) {
-    char petsc_version[255];
-    ierr = PetscGetVersion(petsc_version, 255);
-    CHKERRABORT(cOmm, ierr);
-    ierr = PetscPrintf(cOmm, "MoFEM version %d.%d.%d (%s %s) \n",
-                       MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR,
-                       MoFEM_VERSION_BUILD, MOAB_VERSION_STRING, petsc_version);
-    CHKERRABORT(cOmm, ierr);
-    ierr = PetscPrintf(cOmm, "git commit id %s\n", GIT_SHA1_NAME);
-    CHKERRABORT(cOmm, ierr);
-  }
-
   // Register interfaces for this implementation
   ierr = registerInterface<UnknownInterface>(IDD_MOFEMUnknown);
   CHKERRABORT(comm, ierr);
@@ -150,6 +154,22 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
   // Register sub-interfaces
   ierr = registerSubInterfaces();
   CHKERRABORT(PETSC_COMM_SELF, ierr);
+
+  // Print version
+  if (verbose > QUIET) {
+    MOFEM_LOG_CHANNEL("WORLD");
+    char petsc_version[255];
+    ierr = PetscGetVersion(petsc_version, 255);
+    CHKERRABORT(comm, ierr);
+    MOFEM_C_LOG("WORLD", LogManager::SeverityLevel::inform,
+                "MoFEM version %d.%d.%d (%s %s)", MoFEM_VERSION_MAJOR,
+                MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD, MOAB_VERSION_STRING,
+                petsc_version);
+    MOFEM_C_LOG("WORLD", LogManager::SeverityLevel::inform, "git commit id %s",
+                GIT_SHA1_NAME);
+  }
+
+
 
   // Register MOFEM events in PETSc
   PetscLogEventRegister("FE_preProcess", 0, &MOFEM_EVENT_preProcess);

@@ -16,61 +16,6 @@
 #include <petsc/private/petscimpl.h>
 #endif
 
-static PetscErrorCode mofem_error_printf(const char format[], ...) {
-  va_list Argp;
-  static PetscBool PetscErrorPrintfCalled = PETSC_FALSE;
-
-  /*
-      This function does not call PetscFunctionBegin and PetscFunctionReturn()
-    because it may be called by PetscStackView().
-
-      This function does not do error checking because it is called by the error
-    handlers.
-  */
-
-  if (!PetscErrorPrintfCalled) {
-    PetscErrorPrintfCalled = PETSC_TRUE;
-
-    /*
-        On the SGI machines and Cray T3E, if errors are generated
-      "simultaneously" by different processors, the messages are printed all
-      jumbled up; to try to prevent this we have each processor wait based on
-      their rank
-    */
-#if defined(PETSC_CAN_SLEEP_AFTER_ERROR)
-    {
-      PetscMPIInt rank;
-      if (PetscGlobalRank > 8)
-        rank = 8;
-      else
-        rank = PetscGlobalRank;
-      PetscSleep((PetscReal)rank);
-    }
-#endif
-  }
-
-  PetscFPrintf(PETSC_COMM_SELF, PETSC_STDERR,
-               "[%d]MoFEM ERROR: ", PetscGlobalRank);
-  va_start(Argp, format);
-  (*PetscVFPrintf)(PETSC_STDERR, format, Argp);
-  va_end(Argp);
-  return 0;
-}
-
-static void error_printf_highlight(void) {
-#if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
-  if (isatty(fileno(PETSC_STDERR)))
-    fprintf(PETSC_STDERR, "\033[1;32m");
-#endif
-}
-
-static void error_printf_normal(void) {
-#if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
-  if (isatty(fileno(PETSC_STDERR)))
-    fprintf(PETSC_STDERR, "\033[0;39m\033[0;49m");
-#endif
-}
-
 static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
                                           const char *fun, const char *file,
                                           PetscErrorCode n, PetscErrorType p,
@@ -78,6 +23,8 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
 
   static int cnt = 1;
   MoFEMFunctionBeginHot;
+  PetscVFPrintf = PetscVFPrintfDefault; 
+  MoFEM::LogManager::dummy_mofem_fd = PETSC_STDERR;
 
   int rank = 0;
   if (comm != PETSC_COMM_SELF)
@@ -85,33 +32,44 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
 
   if (!rank) {
 
-
     if (p == PETSC_ERROR_INITIAL) {
 
       char petsc_version[255];
       PetscGetVersion(petsc_version, 255);
+      MOFEM_LOG_CHANNEL("SELF");
 
-      error_printf_highlight();
-      mofem_error_printf("--------------------- MoFEM Error Message ---------------------------------------------------\n");
-      mofem_error_printf("MoFEM version %d.%d.%d (%s %s)\n",
-                         MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR,
-                         MoFEM_VERSION_BUILD, MOAB_VERSION_STRING, petsc_version);
-      mofem_error_printf("MoFEM git commit id %s\n", GIT_SHA1_NAME);
-      mofem_error_printf("See "
-                         "http://mofem.eng.gla.ac.uk/mofem/html/"
-                         "guidelines_bug_reporting.html for bug reporting.\n");
-      mofem_error_printf(
+      MOFEM_C_LOG("SELF", MoFEM::LogManager::SeverityLevel::error, "%s",
+                  "--------------------- MoFEM Error Message "
+                  "---------------------------------------------------");
+
+      MOFEM_C_LOG("SELF", MoFEM::LogManager::SeverityLevel::error,
+                  "MoFEM version %d.%d.%d (%s %s)", MoFEM_VERSION_MAJOR,
+                  MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD, MOAB_VERSION_STRING,
+                  petsc_version);
+
+      MOFEM_C_LOG("SELF", MoFEM::LogManager::SeverityLevel::error,
+                  "MoFEM git commit id %s", GIT_SHA1_NAME);
+
+      MOFEM_C_LOG("SELF", MoFEM::LogManager::SeverityLevel::error, "%s",
+                  "See http://mofem.eng.gla.ac.uk/mofem/html/ "
+                  "guidelines_bug_reporting.html for bug reporting.");
+
+      MOFEM_C_LOG(
+          "SELF", MoFEM::LogManager::SeverityLevel::error, "%s",
           "Write to https://groups.google.com/forum/#!forum/mofem-group to "
-          "seek help.\n");
-      error_printf_normal();
+          "seek help.");
     }
 
     if (n >= MOFEM_DATA_INCONSISTENCY) {
+
       if (p == PETSC_ERROR_INITIAL) {
         if (mess)
-          mofem_error_printf("%s\n", mess);
+          MOFEM_C_LOG("SELF", MoFEM::LogManager::SeverityLevel::error, "%s",
+                      mess);
       }
-      mofem_error_printf("#%d %s() line %d in %s\n", cnt++, fun, line, file);
+      MOFEM_C_LOG("SELF", MoFEM::LogManager::SeverityLevel::error,
+                  "#%d %s() line %d in %s", cnt++, fun, line, file);
+
     } else {
       PetscTraceBackErrorHandler(PETSC_COMM_SELF, line, fun, file, n, p, mess,
                                  ctx);
@@ -130,10 +88,11 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
 #endif
       }
 
-      error_printf_highlight();
-      mofem_error_printf("-- MoFEM End of Error Message -- send entire error "
-                         "message to mofem-group@googlegroups.com --\n");
-      error_printf_normal();
+      // error_printf_highlight();
+      MOFEM_C_LOG("SELF", MoFEM::LogManager::SeverityLevel::error, "%s",
+                  "-- MoFEM End of Error Message -- send entire error "
+                  "message to mofem-group@googlegroups.com --");
+      // error_printf_normal();
     }
 
   } else {
@@ -143,7 +102,6 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
     PetscSleep(10.0);
     abort();
   }
-
 
   MoFEMFunctionReturnHot(n);
 }

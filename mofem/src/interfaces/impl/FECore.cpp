@@ -21,6 +21,7 @@
   MOFEM_LOG_CHANNEL("WORLD");                                                  \
   MOFEM_LOG_CHANNEL("SYNC");                                                   \
   MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("WORLD", "FECore");                                            \
   MOFEM_LOG_TAG("SYNC", "FECore");
 
 namespace MoFEM {
@@ -827,7 +828,7 @@ MoFEMErrorCode Core::build_finite_elements(int verb) {
       MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
           << "Finite element " << fe->getName()
           << " added. Nb. of elements added " << count;
-      MOFEM_LOG("SYNC", LogManager::SeverityLevel::very_verbose) << *fe;
+      MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy) << *fe;
 
       auto slg = MoFEM::LogManager::getLog("SYNC");
       for (auto &field : fIelds) {
