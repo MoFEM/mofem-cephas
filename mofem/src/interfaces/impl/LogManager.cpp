@@ -135,7 +135,7 @@ MoFEMErrorCode LogManager::getOptions() {
                            "Warning interface options", "none");
 
   CHKERR PetscOptionsEList("-severity_level", "Scope level", "",
-                           severityStrings.data(), SeverityLevel::error,
+                           severityStrings.data(), SeverityLevel::error + 1,
                            severityStrings[sev_level], &sev_level, PETSC_NULL);
 
   CHKERR PetscOptionsBool("-scope", "Log scope", "", log_scope, &log_scope,
@@ -285,7 +285,7 @@ PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
     const std::string str(buff);
     if (!str.empty()) {
       if (fd != mofem_log_out) {
-        MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::verbose)
+        MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::inform)
             << ss.str() << remove_line_break(std::string(buff));
       } else {
         std::clog << ss.str() << std::string(buff);
