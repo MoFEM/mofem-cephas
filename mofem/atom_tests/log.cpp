@@ -28,8 +28,7 @@ MoFEMErrorCode log_fun1() {
   // sleep for half a second
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-  MOFEM_LOG("WORLD", Sev::verbose)
-      << "Hello, second time world!";
+  MOFEM_LOG("WORLD", Sev::verbose) << "Hello, second time world!";
 
   MoFEMFunctionReturn(0);
 }
@@ -77,24 +76,19 @@ int main(int argc, char *argv[]) {
     CHKERR PetscPrintf(PETSC_COMM_WORLD,
                        "Testing logging for obsolete way of printing messages");
 
-    // Set "WORLD channel" 
+    // Set "WORLD channel"
     MOFEM_LOG_CHANNEL("WORLD");
     {
-      MOFEM_LOG("WORLD", Sev::error)
-          << "Hello, self error!";
-      MOFEM_LOG("WORLD", Sev::warning)
-          << "Hello, self warning!";
-      MOFEM_LOG("WORLD", Sev::inform)
-          << "Hello, self inform!";
-      MOFEM_LOG("WORLD", Sev::verbose)
-          << "Hello, self verbose!";
-      MOFEM_LOG("WORLD", Sev::noisy)
-          << "Hello, self noisy!";
+      MOFEM_LOG("WORLD", Sev::error) << "Hello, self error!";
+      MOFEM_LOG("WORLD", Sev::warning) << "Hello, self warning!";
+      MOFEM_LOG("WORLD", Sev::inform) << "Hello, self inform!";
+      MOFEM_LOG("WORLD", Sev::verbose) << "Hello, self verbose!";
+      MOFEM_LOG("WORLD", Sev::noisy) << "Hello, self noisy!";
     }
 
     {
-      MOFEM_C_LOG("WORLD", Sev::inform, "%s %d %d %d",
-                  "Hello C, self error!", 1, 2, 3);
+      MOFEM_C_LOG("WORLD", Sev::inform, "%s %d %d %d", "Hello C, self error!",
+                  1, 2, 3);
     }
 
     {
@@ -102,7 +96,6 @@ int main(int argc, char *argv[]) {
       CHKERR log_fun2();
       MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
     }
-
 
     // SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "Trigger error");
   }
