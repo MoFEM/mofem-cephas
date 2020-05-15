@@ -23,12 +23,12 @@ MoFEMErrorCode log_fun1() {
   // Log tag
   MOFEM_LOG_TAG("WORLD", "Tag this output");
 
-  MOFEM_LOG("WORLD", LogManager::SeverityLevel::verbose) << "Hello, world!";
+  MOFEM_LOG("WORLD", Sev::verbose) << "Hello, world!";
 
   // sleep for half a second
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-  MOFEM_LOG("WORLD", LogManager::SeverityLevel::verbose)
+  MOFEM_LOG("WORLD", Sev::verbose)
       << "Hello, second time world!";
 
   MoFEMFunctionReturn(0);
@@ -39,8 +39,8 @@ MoFEMErrorCode log_fun3() {
   MOFEM_LOG_FUNCTION();
 
   // Log scope
-  MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose) << "Hello, sync!";
-  MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose) << "Hello again, sync!";
+  MOFEM_LOG("SYNC", Sev::verbose) << "Hello, sync!";
+  MOFEM_LOG("SYNC", Sev::verbose) << "Hello again, sync!";
 
   MoFEMFunctionReturn(0);
 }
@@ -52,8 +52,8 @@ MoFEMErrorCode log_fun2() {
   MOFEM_LOG_FUNCTION();
   MOFEM_LOG_CHANNEL("SYNC");
   MOFEM_LOG_ATTRIBUTES("SYNC", LogManager::BitLineID | LogManager::BitScope);
-  MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose) << "Hello, sync!";
-  MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose) << "Hello again, sync!";
+  MOFEM_LOG("SYNC", Sev::verbose) << "Hello, sync!";
+  MOFEM_LOG("SYNC", Sev::verbose) << "Hello again, sync!";
 
   CHKERR log_fun3();
 
@@ -80,20 +80,20 @@ int main(int argc, char *argv[]) {
     // Set "WORLD channel" 
     MOFEM_LOG_CHANNEL("WORLD");
     {
-      MOFEM_LOG("WORLD", LogManager::SeverityLevel::error)
+      MOFEM_LOG("WORLD", Sev::error)
           << "Hello, self error!";
-      MOFEM_LOG("WORLD", LogManager::SeverityLevel::warning)
+      MOFEM_LOG("WORLD", Sev::warning)
           << "Hello, self warning!";
-      MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform)
+      MOFEM_LOG("WORLD", Sev::inform)
           << "Hello, self inform!";
-      MOFEM_LOG("WORLD", LogManager::SeverityLevel::verbose)
+      MOFEM_LOG("WORLD", Sev::verbose)
           << "Hello, self verbose!";
-      MOFEM_LOG("WORLD", LogManager::SeverityLevel::noisy)
+      MOFEM_LOG("WORLD", Sev::noisy)
           << "Hello, self noisy!";
     }
 
     {
-      MOFEM_C_LOG("WORLD", LogManager::SeverityLevel::inform, "%s %d %d %d",
+      MOFEM_C_LOG("WORLD", Sev::inform, "%s %d %d %d",
                   "Hello C, self error!", 1, 2, 3);
     }
 

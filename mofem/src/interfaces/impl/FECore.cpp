@@ -110,8 +110,7 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
     SETERRQ(cOmm, MOFEM_OPERATION_UNSUCCESSFUL, "FiniteElement not inserted");
 
   if (verb > QUIET)
-    MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform)
-        << "Add finite element " << fe_name;
+    MOFEM_LOG("WORLD", Sev::inform) << "Add finite element " << fe_name;
 
   MoFEMFunctionReturn(0);
 }
@@ -501,7 +500,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_bit_ref(
     }
   }
 
-  MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
+  MOFEM_LOG("SYNC", Sev::inform)
       << "Finite element " << name << " added. Nb. of elements added "
       << nb_add_fes << " out of " << std::distance(miit, hi_miit);
 
@@ -576,7 +575,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
     verb = verbose;
 
   if (verb > QUIET)
-    MOFEM_LOG("SYNC", LogManager::SeverityLevel::verbose)
+    MOFEM_LOG("SYNC", Sev::verbose)
         << "Build Finite Elements " << fe->getName();
 
   auto &fields_by_id = fIelds.get<BitFieldId_mi_tag>();
@@ -825,15 +824,14 @@ MoFEMErrorCode Core::build_finite_elements(int verb) {
       auto miit = fe_ents.lower_bound(fe->getId());
       auto hi_miit = fe_ents.upper_bound(fe->getId());
       const auto count = std::distance(miit, hi_miit);
-      MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
+      MOFEM_LOG("SYNC", Sev::inform)
           << "Finite element " << fe->getName()
           << " added. Nb. of elements added " << count;
-      MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy) << *fe;
+      MOFEM_LOG("SYNC", Sev::noisy) << *fe;
 
       auto slg = MoFEM::LogManager::getLog("SYNC");
       for (auto &field : fIelds) {
-        auto rec = slg.open_record(keywords::severity =
-                                       LogManager::SeverityLevel::verbose);
+        auto rec = slg.open_record(keywords::severity = Sev::verbose);
         if (rec) {
           logging::record_ostream strm(rec);
           strm << "Field " << field->getName() << " on finite element: ";
@@ -957,7 +955,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
   }
 
   if (verb >= VERBOSE) {
-    MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform)
+    MOFEM_LOG("WORLD", Sev::inform)
         << "Number of adjacencies " << entFEAdjacencies.size();
     MOFEM_LOG_SYNCHORMISE(cOmm)
   }

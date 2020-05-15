@@ -161,15 +161,11 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
     char petsc_version[255];
     ierr = PetscGetVersion(petsc_version, 255);
     CHKERRABORT(comm, ierr);
-    MOFEM_C_LOG("WORLD", LogManager::SeverityLevel::inform,
-                "MoFEM version %d.%d.%d (%s %s)", MoFEM_VERSION_MAJOR,
-                MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD, MOAB_VERSION_STRING,
-                petsc_version);
-    MOFEM_C_LOG("WORLD", LogManager::SeverityLevel::inform, "git commit id %s",
-                GIT_SHA1_NAME);
+    MOFEM_C_LOG("WORLD", Sev::inform, "MoFEM version %d.%d.%d (%s %s)",
+                MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD,
+                MOAB_VERSION_STRING, petsc_version);
+    MOFEM_C_LOG("WORLD", Sev::inform, "git commit id %s", GIT_SHA1_NAME);
   }
-
-
 
   // Register MOFEM events in PETSc
   PetscLogEventRegister("FE_preProcess", 0, &MOFEM_EVENT_preProcess);
@@ -193,7 +189,6 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
   CHKERRABORT(cOmm, ierr);
   ierr = initialiseDatabaseFromMesh(verbose);
   CHKERRABORT(cOmm, ierr);
-
 }
 
 Core::~Core() {
@@ -638,7 +633,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         ss << "read field " << **p.first << std::endl;
         PetscPrintf(cOmm, ss.str().c_str());
       }
-      if(!p.second) {
+      if (!p.second) {
         // Field meshset exists, remove duplicate meshsets from other
         // processors.
         Range ents;
@@ -667,7 +662,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       CHKERR get_moab().get_entities_by_type(*mit, MBENTITYSET, ents, false);
       CHKERR get_moab().get_entities_by_handle(*mit, ents, true);
       ref_elems_to_add.merge(ents);
-      if(!p.second) {
+      if (!p.second) {
         // Finite element mesh set exist, could be created on other processor.
         // Remove duplicate.
         CHKERR get_moab().add_entities((*p.first)->getMeshset(), ents);
@@ -690,7 +685,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
            << p.first->getMaskBitRefLevel() << std::endl;
         PetscPrintf(cOmm, ss.str().c_str());
       }
-      if(!p.second) {
+      if (!p.second) {
         // Problem meshset exists, could be created on other processor.
         // Remove duplicate.
         Range ents;

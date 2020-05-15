@@ -271,8 +271,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     CHKERR PetscLayoutDestroy(&layout);
 
     if (verb >= VERBOSE) {
-      MOFEM_LOG("SYNC", LogManager::SeverityLevel::noisy)
-        << "row lower " << rstart << " row upper " << rend;
+      MOFEM_LOG("SYNC", Sev::noisy)
+          << "row lower " << rstart << " row upper " << rend;
       MOFEM_LOG_SYNCHORMISE(cOmm)
     }
 
@@ -486,7 +486,6 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
             : (mofem_ent_ptr->getGlobalUniqueId() !=
                (*miit_row)->getFieldEntityPtr()->getGlobalUniqueId())) {
 
-
       // get entity adjacencies
       mofem_ent_ptr = (*miit_row)->getFieldEntityPtr();
       CHKERR getEntityAdjacenies<TAG>(p_miit, miit_row, mofem_ent_ptr,
@@ -521,7 +520,6 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
           unique(dofs_vec.begin(), dofs_vec.end());
       int new_size = std::distance(dofs_vec.begin(), new_end);
       dofs_vec.resize(new_size);
-      
     }
 
     // Try to be smart reserving memory
@@ -550,11 +548,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
         }
       }
       j.push_back(*diit);
-
-
     }
   }
-
 
   // build adj matrix
   i.push_back(j.size());

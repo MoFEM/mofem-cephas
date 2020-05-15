@@ -59,7 +59,7 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
                                                    tag_vals, 1, tagged_sets,
                                                    moab::Interface::UNION);
     for (auto s : tagged_sets)
-    CHKERR get_moab().add_entities(s, &meshset, 1);
+      CHKERR get_moab().add_entities(s, &meshset, 1);
     MoFEMFunctionReturn(0);
   };
   CHKERR add_meshset_to_partition(meshset);
@@ -71,11 +71,10 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
                                    tag_sizes);
   // create entry
   auto p = pRoblems.insert(Problem(moab, meshset));
-  if(!p.second)
+  if (!p.second)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Problem not added");
 
-  MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform)
-      << "Add probken " << name;
+  MOFEM_LOG("WORLD", Sev::inform) << "Add probken " << name;
 
   MoFEMFunctionReturn(0);
 }
@@ -228,8 +227,8 @@ Core::modify_problem_mask_ref_level_add_bit(const std::string &name_problem,
 MoFEMErrorCode
 Core::modify_problem_mask_ref_level_set_bit(const std::string &name_problem,
                                             const BitRefLevel &bit) {
-  MoFEMFunctionBegin
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  MoFEMFunctionBegin typedef Problem_multiIndex::index<Problem_mi_tag>::type
+      ProblemsByName;
   ProblemsByName &set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator miit = set.find(name_problem);
   if (miit == set.end()) {
@@ -722,7 +721,7 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
   method.nInTheLoop = 0;
 
   if (ents)
-    for (auto p = ents->const_pair_begin(); p != ents->const_pair_end(); ++p) 
+    for (auto p = ents->const_pair_begin(); p != ents->const_pair_end(); ++p)
       for (auto feit = ents_view.lower_bound(p->first);
            feit != ents_view.upper_bound(p->second); ++feit) {
         method.entPtr = *feit;

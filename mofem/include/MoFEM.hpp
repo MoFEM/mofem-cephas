@@ -68,6 +68,8 @@
 #include <AuxPETSc.hpp>
 
 #include <LogManager.hpp>
+using Sev = MoFEM::LogManager::SeverityLevel;
+
 #include <BitRefManager.hpp>
 #include <Tools.hpp>
 #include <CommInterface.hpp>
