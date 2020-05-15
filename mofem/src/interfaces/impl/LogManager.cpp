@@ -321,7 +321,7 @@ PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
 
     auto remove_line_break = [](auto &&msg) {
       if (!msg.empty() && msg.back() == '\n')
-        msg = std::string_view(msg.data(), msg.size() - 1);
+        msg = std::string(msg.data(), msg.size() - 1);
       return msg;
     };
 
