@@ -86,6 +86,8 @@ struct LogManager::InternalData
   std::ostream strmSync;
 
   static bool logQuiet;
+  static bool noColors;
+
   static std::map<std::string, LoggerType> logChannels;
 
   boost::shared_ptr<std::ostream> getStrmSelf() {
@@ -106,6 +108,8 @@ struct LogManager::InternalData
 };
 
 bool LogManager::InternalData::logQuiet = false;
+bool LogManager::InternalData::noColors = false;
+
 std::map<std::string, LogManager::LoggerType>
     LogManager::InternalData::logChannels;
 
@@ -133,6 +137,7 @@ MoFEMErrorCode LogManager::getOptions() {
   PetscInt sev_level = SeverityLevel::inform;
   PetscBool log_scope = PETSC_FALSE;
   PetscBool log_quiet = PETSC_FALSE;
+  PetscBool log_no_colors = PETSC_FALSE;
 
   CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "log_",
                            "Logging interface options", "none");
@@ -147,6 +152,9 @@ MoFEMErrorCode LogManager::getOptions() {
   CHKERR PetscOptionsBool("-quiet", "Quiet log attributes", "", log_quiet,
                           &log_quiet, NULL);
 
+  CHKERR PetscOptionsBool("-no_color", "Terminal with no colors", "",
+                          log_no_colors, &log_no_colors, NULL);
+
   ierr = PetscOptionsEnd();
   CHKERRG(ierr);
 
@@ -157,15 +165,17 @@ MoFEMErrorCode LogManager::getOptions() {
   if (log_scope)
     logging::core::get()->add_global_attribute("Scope", attrs::named_scope());
 
-  if(log_quiet)
+  if (log_quiet)
     LogManager::InternalData::logQuiet = true;
+
+  if (log_no_colors)
+    LogManager::InternalData::noColors = true;
 
   MoFEMFunctionReturn(0);
 }
 
 void LogManager::recordFormatterDefault(logging::record_view const &rec,
                                         logging::formatting_ostream &strm) {
-
 
   if (!LogManager::InternalData::logQuiet) {
 
@@ -177,8 +187,9 @@ void LogManager::recordFormatterDefault(logging::record_view const &rec,
     auto tl = rec[timeline];
 
     auto set_color = [&](const auto str) {
+      
 #if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
-      if (isatty(fileno(stdout)))
+      if (isatty(fileno(stdout)) && !LogManager::InternalData::noColors)
         strm << str;
 #endif
     };
