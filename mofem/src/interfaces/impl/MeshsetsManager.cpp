@@ -71,14 +71,12 @@ MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
             .any()) {
       std::pair<CubitMeshSet_multiIndex::iterator, bool> p =
           cubitMeshsets.insert(base_meshset);
-      if (!p.second) 
+      if (!p.second)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "meshset not inserted");
 
-      if (verb > QUIET) 
-        MOFEM_LOG("WORLD", LogManager::SeverityLevel::inform)
-            << "read cubit " << base_meshset;
-      
+      if (verb > QUIET)
+        MOFEM_LOG("WORLD", Sev::inform) << "read cubit " << base_meshset;
     }
   }
   MoFEMFunctionReturn(0);

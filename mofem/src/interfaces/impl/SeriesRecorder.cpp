@@ -82,8 +82,7 @@ MoFEMErrorCode SeriesRecorder::initialiseDatabaseFromMesh(int verb) {
       std::pair<Series_multiIndex::iterator, bool> p =
           sEries.insert(FieldSeries(moab, *mit));
       if (verb > QUIET)
-        MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
-            << "read series " << *p.first;
+        MOFEM_LOG("SYNC", Sev::inform) << "read series " << *p.first;
     }
   }
   // //build series steps
@@ -96,8 +95,7 @@ MoFEMErrorCode SeriesRecorder::initialiseDatabaseFromMesh(int verb) {
       std::pair<SeriesStep_multiIndex::iterator, bool> p =
           seriesSteps.insert(FieldSeriesStep(moab, &*sit, ss));
       if (verb > QUIET)
-        MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
-            << "add series step " << *p.first;
+        MOFEM_LOG("SYNC", Sev::inform) << "add series step " << *p.first;
     }
   }
   MoFEMFunctionReturn(0);
@@ -303,12 +301,11 @@ MoFEMErrorCode SeriesRecorder::print_series_steps() {
   SeriesRecorderFunctionBegin;
 
   for (auto &sit : sEries.get<SeriesName_mi_tag>())
-    MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform) << "series " << sit;
+    MOFEM_LOG("SYNC", Sev::inform) << "series " << sit;
 
   for (auto &ssit : seriesSteps.get<SeriesName_mi_tag>())
-    MOFEM_LOG("SYNC", LogManager::SeverityLevel::inform)
-        << "series steps " << ssit;
-  
+    MOFEM_LOG("SYNC", Sev::inform) << "series steps " << ssit;
+
   MoFEMFunctionReturn(0);
 }
 
