@@ -11,6 +11,14 @@
 
 */
 
+#define MatrixManagerFunctionBegin                                             \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_CHANNEL("SYNC");                                                   \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("SYNC", "MatrixManager");                                      \
+  MOFEM_LOG_TAG("WORLD", "MatrixManager")
+
 namespace MoFEM {
 
 /** \brief Create compressed matrix
@@ -228,9 +236,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     ProblemsByName::iterator p_miit, const MatType type,
     std::vector<PetscInt> &i, std::vector<PetscInt> &j, const bool no_diagonals,
     int verb) const {
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_FUNCTION();
+  MatrixManagerFunctionBegin;
 
   PetscLogEventBegin(MOFEM_EVENT_createMat, 0, 0, 0, 0);
 
@@ -738,10 +744,7 @@ MoFEMErrorCode
 MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
     const std::string problem_name, int row_print, int col_print, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("SYNC");
-  MOFEM_LOG_CHANNEL("WORD");
-  MOFEM_LOG_FUNCTION();
+  MatrixManagerFunctionBegin;
 
   PetscLogEventBegin(MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn, 0, 0, 0, 0);
 

@@ -591,7 +591,7 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
   }
 
   if (verb >= VERBOSE)
-    MOFEM_C_LOG("WORLD", Sev::verbose, "Nb. of deleted entities %d",
+    MOFEM_LOG_C("WORLD", Sev::verbose, "Nb. of deleted entities %d",
                 ents.size());
 
   MoFEMFunctionReturn(0);

@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     }
 
     {
-      MOFEM_C_LOG("WORLD", Sev::inform, "%s %d %d %d", "Hello C, self error!",
+      MOFEM_LOG_C("WORLD", Sev::inform, "%s %d %d %d", "Hello C, self error!",
                   1, 2, 3);
     }
 

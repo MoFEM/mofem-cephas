@@ -38,21 +38,21 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
       PetscGetVersion(petsc_version, 255);
       MOFEM_LOG_CHANNEL("SELF");
 
-      MOFEM_C_LOG("SELF", Sev::error, "%s",
+      MOFEM_LOG_C("SELF", Sev::error, "%s",
                   "--------------------- MoFEM Error Message "
                   "---------------------------------------------------");
 
-      MOFEM_C_LOG("SELF", Sev::error, "MoFEM version %d.%d.%d (%s %s)",
+      MOFEM_LOG_C("SELF", Sev::error, "MoFEM version %d.%d.%d (%s %s)",
                   MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD,
                   MOAB_VERSION_STRING, petsc_version);
 
-      MOFEM_C_LOG("SELF", Sev::error, "MoFEM git commit id %s", GIT_SHA1_NAME);
+      MOFEM_LOG_C("SELF", Sev::error, "MoFEM git commit id %s", GIT_SHA1_NAME);
 
-      MOFEM_C_LOG("SELF", Sev::error, "%s",
+      MOFEM_LOG_C("SELF", Sev::error, "%s",
                   "See http://mofem.eng.gla.ac.uk/mofem/html/ "
                   "guidelines_bug_reporting.html for bug reporting.");
 
-      MOFEM_C_LOG(
+      MOFEM_LOG_C(
           "SELF", Sev::error, "%s",
           "Write to https://groups.google.com/forum/#!forum/mofem-group to "
           "seek help.");
@@ -62,9 +62,9 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
 
       if (p == PETSC_ERROR_INITIAL) {
         if (mess)
-          MOFEM_C_LOG("SELF", Sev::error, "%s", mess);
+          MOFEM_LOG_C("SELF", Sev::error, "%s", mess);
       }
-      MOFEM_C_LOG("SELF", Sev::error, "#%d %s() line %d in %s", cnt++, fun,
+      MOFEM_LOG_C("SELF", Sev::error, "#%d %s() line %d in %s", cnt++, fun,
                   line, file);
 
     } else {
@@ -86,7 +86,7 @@ static PetscErrorCode mofem_error_handler(MPI_Comm comm, int line,
       }
 
       // error_printf_highlight();
-      MOFEM_C_LOG("SELF", Sev::error, "%s",
+      MOFEM_LOG_C("SELF", Sev::error, "%s",
                   "-- MoFEM End of Error Message -- send entire error "
                   "message to mofem-group@googlegroups.com --");
       // error_printf_normal();
