@@ -187,7 +187,6 @@ void LogManager::recordFormatterDefault(logging::record_view const &rec,
     auto tl = rec[timeline];
 
     auto set_color = [&](const auto str) {
-      
 #if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
       if (isatty(fileno(stdout)) && !LogManager::InternalData::noColors)
         strm << str;
@@ -202,12 +201,22 @@ void LogManager::recordFormatterDefault(logging::record_view const &rec,
       strm << "] ";
     }
 
-    if (sev > SeverityLevel::inform) {
+    switch (sev.get()) {
+    case SeverityLevel::error:
+      set_color("\033[1m");
+    case SeverityLevel::warning:
       set_color("\033[31m");
-      if (sev > SeverityLevel::warning)
-        set_color("\033[1m");
-    } else
+      break;
+    case SeverityLevel::inform:
       set_color("\033[34m");
+      break;
+    case SeverityLevel::verbose:
+      set_color("\033[35m");
+      break;
+    case SeverityLevel::noisy:
+      set_color("\033[36m");
+      break;
+    }
 
     strm << sev;
 
