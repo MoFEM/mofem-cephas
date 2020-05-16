@@ -352,7 +352,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
     return min_q;
   };
 
-  MOFEM_C_LOG("WORLD", Sev::inform, "Min quality cut %6.4g",
+  MOFEM_LOG_C("WORLD", Sev::inform, "Min quality cut %6.4g",
               get_min_quality(cut_bit, th));
 
   Range starting_volume = cutNewVolumes;
@@ -380,7 +380,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   CHKERR trimOnly(trim_bit, th, tol_trim_close, fixed_edges, corner_nodes,
                   update_meshsets, debug);
 
-  MOFEM_C_LOG("WORLD", Sev::inform, "Min quality trim %3.2g",
+  MOFEM_LOG_C("WORLD", Sev::inform, "Min quality trim %3.2g",
               get_min_quality(trim_bit, th));
 
   first_bit += bit_levels.size() - 1;
@@ -439,7 +439,7 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
     return min_q;
   };
 
-  MOFEM_C_LOG("WORLD", Sev::inform, "Min quality node merge %6.4g",
+  MOFEM_LOG_C("WORLD", Sev::inform, "Min quality node merge %6.4g",
               get_min_quality(bit_level3, th));
 
   CHKERR cOre.getInterface<BitRefManager>()->updateRange(constrainSurface,
@@ -3025,7 +3025,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     CHKERR merge_nodes.updateRangeByChilds(new_surf, edges_to_merge,
                                            not_merged_edges, true);
 
-    MOFEM_C_LOG("WORLD", Sev::verbose,
+    MOFEM_LOG_C("WORLD", Sev::verbose,
                 "(%d) Number of nodes merged %d ave q %3.4e min q %3.4e", pp,
                 nb_nodes_merged, ave, min);
 

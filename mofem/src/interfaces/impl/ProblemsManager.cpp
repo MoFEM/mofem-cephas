@@ -1928,7 +1928,7 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
   const Problem_multiIndex *problems_ptr;
   ProblemManagerFunctionBegin;
 
-  MOFEM_LOG("WORLD", Sev::noisy) << name;
+  MOFEM_LOG("WORLD", Sev::noisy) << "Partition problem " << name;
 
   if (!(cOre.getBuildMoFEM() & (1 << 0)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "fields not build");

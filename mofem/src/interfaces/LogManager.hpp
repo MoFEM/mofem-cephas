@@ -290,7 +290,7 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
 #define MOFEM_LOG(channel, severity)                                           \
   BOOST_LOG_SEV(MoFEM::LogManager::getLog(channel), severity)
 
-#define MOFEM_C_LOG(channel, severity, format, ...)                            \
+#define MOFEM_LOG_C(channel, severity, format, ...)                            \
   MOFEM_LOG(channel, severity)                                                 \
       << MoFEM::LogManager::getCLikeFormatedString(format, __VA_ARGS__)
 

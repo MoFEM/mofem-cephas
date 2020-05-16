@@ -161,10 +161,10 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
     char petsc_version[255];
     ierr = PetscGetVersion(petsc_version, 255);
     CHKERRABORT(comm, ierr);
-    MOFEM_C_LOG("WORLD", Sev::inform, "MoFEM version %d.%d.%d (%s %s)",
+    MOFEM_LOG_C("WORLD", Sev::inform, "MoFEM version %d.%d.%d (%s %s)",
                 MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD,
                 MOAB_VERSION_STRING, petsc_version);
-    MOFEM_C_LOG("WORLD", Sev::inform, "git commit id %s", GIT_SHA1_NAME);
+    MOFEM_LOG_C("WORLD", Sev::inform, "git commit id %s", GIT_SHA1_NAME);
   }
 
   // Register MOFEM events in PETSc
