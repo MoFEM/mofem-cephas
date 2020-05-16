@@ -26,14 +26,6 @@
 using namespace std;
 namespace po = boost::program_options;
 
-#define MeshsetsManagerFunctionBegin                                           \
-  MoFEMFunctionBegin;                                                          \
-  MOFEM_LOG_CHANNEL("WORLD");                                                  \
-  MOFEM_LOG_CHANNEL("SYNC");                                                   \
-  MOFEM_LOG_FUNCTION();                                                        \
-  MOFEM_LOG_TAG("WORLD", "MeshsetsManager");                                   \
-  MOFEM_LOG_TAG("SYNC", "MeshsetsManager");
-
 namespace MoFEM {
 
 MoFEMErrorCode
@@ -168,36 +160,28 @@ MoFEMErrorCode MeshsetsManager::printMaterialsSet() const {
            (*this), BLOCKSET | MAT_ELASTICSET, it)) {
     Mat_Elastic data;
     CHKERR it->getAttributeDataStructure(data);
-    std::ostringstream ss;
-    ss << *it << std::endl;
-    ss << data;
+    MOFEM_LOG("WORLD", Sev::inform) << *it;
+    MOFEM_LOG("WORLD", Sev::inform) << data;
     Range tets;
     CHKERR moab.get_entities_by_type(it->meshset, MBTET, tets, true);
-
-    ss << "MAT_ELATIC msId " << it->getMeshsetId() << " nb. tets "
-       << tets.size() << std::endl;
-    ss << std::endl;
-    PetscPrintf(m_field.get_comm(), ss.str().c_str());
+    MOFEM_LOG("WORLD", Sev::inform) << "MAT_ELATIC msId " << it->getMeshsetId()
+                                    << " nb. tets " << tets.size();
   }
 
   for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
            m_field, BLOCKSET | MAT_THERMALSET, it)) {
     Mat_Thermal data;
     CHKERR it->getAttributeDataStructure(data);
-    std::ostringstream ss;
-    ss << *it << std::endl;
-    ss << data;
-    PetscPrintf(m_field.get_comm(), ss.str().c_str());
+    MOFEM_LOG("WORLD", Sev::inform) << *it;
+    MOFEM_LOG("WORLD", Sev::inform) << data;
   }
 
   for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
            m_field, BLOCKSET | MAT_MOISTURESET, it)) {
     Mat_Moisture data;
     CHKERR it->getAttributeDataStructure(data);
-    std::ostringstream ss;
-    ss << *it << std::endl;
-    ss << data;
-    PetscPrintf(m_field.get_comm(), ss.str().c_str());
+    MOFEM_LOG("WORLD", Sev::inform) << *it;
+    MOFEM_LOG("WORLD", Sev::inform) << data;
   }
   MoFEMFunctionReturn(0);
 }
@@ -569,8 +553,7 @@ struct BlockData {
 MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
                                                    bool clean_file_options) {
   Interface &m_field = cOre;
-  // moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  MeshsetsManagerFunctionBegin;
   std::ifstream ini_file(file_name.c_str(), std::ifstream::in);
   po::variables_map vm;
   if (clean_file_options) {
@@ -906,8 +889,8 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
       collect_unrecognized(parsed.options, po::include_positional);
   for (std::vector<std::string>::iterator vit = additional_parameters.begin();
        vit != additional_parameters.end(); vit++) {
-    CHKERR PetscPrintf(m_field.get_comm(),
-                       "** WARNING Unrecognized option %s\n", vit->c_str());
+    MOFEM_C_LOG("WORLD", Sev::warning, "Unrecognized option %s\n",
+                vit->c_str());
   }
   for (map<int, BlockData>::iterator mit = block_lists.begin();
        mit != block_lists.end(); mit++) {
