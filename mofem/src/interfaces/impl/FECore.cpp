@@ -847,7 +847,7 @@ MoFEMErrorCode Core::build_finite_elements(int verb) {
       }
     }
 
-    MOFEM_LOG_SYNCHORMISE(cOmm)
+    MOFEM_LOG_SYNCHORMISE(cOmm);
   }
 
   *buildMoFEM |= 1 << 1;
@@ -872,19 +872,15 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
     SETERRQ1(cOmm, MOFEM_NOT_FOUND, "Finite element <%s> not found",
              fe_name.c_str());
 
-  if (verb >= VERBOSE)
-    PetscPrintf(cOmm, "Build Finite Elements %s\n", fe_name.c_str());
   CHKERR buildFiniteElements(*fe_miit, ents_ptr, verb);
 
   if (verb >= VERBOSE) {
-    auto &finite_elements_by_id = entsFiniteElements.get<BitFEId_mi_tag>();
-    auto miit = finite_elements_by_id.lower_bound((*fe_miit)->getId());
-    auto hi_miit = finite_elements_by_id.upper_bound((*fe_miit)->getId());
-    int count = std::distance(miit, hi_miit);
-    std::ostringstream ss;
-    ss << *(*fe_miit) << " Nb. FEs " << count << std::endl;
-    PetscSynchronizedPrintf(cOmm, ss.str().c_str());
-    PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+    auto &fe_ents = entsFiniteElements.get<BitFEId_mi_tag>();
+    auto miit = fe_ents.lower_bound((*fe_miit)->getId());
+    auto hi_miit = fe_ents.upper_bound((*fe_miit)->getId());
+    const auto count = std::distance(miit, hi_miit);
+    MOFEM_LOG("SYNC", Sev::inform) << "Finite element " << fe_name
+                                   << " added. Nb. of elements added " << count;
   }
 
   *buildMoFEM |= 1 << 1;
