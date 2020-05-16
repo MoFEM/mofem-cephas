@@ -15,6 +15,12 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#define CutMeshFunctionBegin                                                   \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("WORLD", "CutMesh");
+
 namespace MoFEM {
 
 MoFEMErrorCode
@@ -146,7 +152,7 @@ MoFEMErrorCode CutMeshInterface::snapSurfaceSkinToEdges(const Range fixed_edges,
                                                         const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   // Get cutting surface skin
   Skinner skin(&moab);
@@ -167,7 +173,7 @@ MoFEMErrorCode CutMeshInterface::snapSurfaceToEdges(const Range surface_edges,
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   FTensor::Index<'i', 3> i;
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   map<EntityHandle, double> map_verts_length;
 
@@ -211,7 +217,7 @@ MoFEMErrorCode CutMeshInterface::snapSurfaceToEdges(const Range surface_edges,
 
     if (min_dist < rel_tol * m.second || min_dist < abs_tol) {
       if (debug)
-        cerr << "Snap " << min_dist << endl;
+        MOFEM_LOG("WORLD", Sev::noisy) << "Snap " << min_dist;
       if (th)
         CHKERR moab.tag_set_data(th, &m.first, 1, &t_min_coords(0));
       else
@@ -239,7 +245,7 @@ CutMeshInterface::cutOnly(Range vol, const BitRefLevel cut_bit, Tag th,
                           const bool update_meshsets, const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   // cut mesh
   CHKERR findEdgesToCut(vol, QUIET, debug);
@@ -278,7 +284,7 @@ MoFEMErrorCode CutMeshInterface::trimOnly(const BitRefLevel trim_bit, Tag th,
                                           const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   // trim mesh
   CHKERR findEdgesToTrim(fixed_edges, corner_nodes, th, tol_trim_close, debug);
@@ -321,7 +327,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
     const double tol_cut_close, const double tol_trim_close, Range *fixed_edges,
     Range *corner_nodes, const bool update_meshsets, const bool debug) {
   CoreInterface &m_field = cOre;
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   std::vector<BitRefLevel> bit_levels;
 
@@ -346,7 +352,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
     return min_q;
   };
 
-  PetscPrintf(PETSC_COMM_WORLD, "Min quality cut %6.4g\n",
+  MOFEM_C_LOG("WORLD", Sev::inform, "Min quality cut %6.4g",
               get_min_quality(cut_bit, th));
 
   Range starting_volume = cutNewVolumes;
@@ -374,7 +380,7 @@ MoFEMErrorCode CutMeshInterface::cutAndTrim(
   CHKERR trimOnly(trim_bit, th, tol_trim_close, fixed_edges, corner_nodes,
                   update_meshsets, debug);
 
-  PetscPrintf(PETSC_COMM_WORLD, "Min quality trim %3.2g\n",
+  MOFEM_C_LOG("WORLD", Sev::inform, "Min quality trim %3.2g",
               get_min_quality(trim_bit, th));
 
   first_bit += bit_levels.size() - 1;
@@ -391,7 +397,7 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
     const double tol_cut_close, const double tol_trim_close, Range &fixed_edges,
     Range &corner_nodes, const bool update_meshsets, const bool debug) {
   CoreInterface &m_field = cOre;
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   std::vector<BitRefLevel> bit_levels;
 
@@ -433,7 +439,7 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
     return min_q;
   };
 
-  PetscPrintf(PETSC_COMM_WORLD, "Min quality node merge %6.4g\n",
+  MOFEM_C_LOG("WORLD", Sev::inform, "Min quality node merge %6.4g",
               get_min_quality(bit_level3, th));
 
   CHKERR cOre.getInterface<BitRefManager>()->updateRange(constrainSurface,
@@ -460,7 +466,7 @@ MoFEMErrorCode CutMeshInterface::cutTrimAndMerge(
 MoFEMErrorCode CutMeshInterface::makeFront(const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
   Skinner skin(&moab);
   Range tets_skin;
   CHKERR skin.find_skin(0, vOlume, false, tets_skin);
@@ -479,7 +485,7 @@ MoFEMErrorCode CutMeshInterface::createSurfaceLevelSets(int verb,
                                                         const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
   auto tools_interface = m_field.getInterface<Tools>();
 
   auto create_tag = [&](const std::string name, const int dim) {
@@ -612,7 +618,7 @@ MoFEMErrorCode CutMeshInterface::createFrontLevelSets(Range vol, Tag th,
                                                       const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   auto create_tag = [&](const std::string name, const int dim) {
     Tag th;
@@ -665,7 +671,7 @@ MoFEMErrorCode CutMeshInterface::findLevelSetVolumes(
     const bool debug, const std::string edges_file_name) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   auto get_tag_dim = [&](auto th) {
     int dim;
@@ -780,7 +786,7 @@ MoFEMErrorCode CutMeshInterface::findLevelSetVolumes(int verb,
                                                      const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   CHKERR createFrontLevelSets(vOlume, nullptr, verb, debug);
   Tag th_dist_front_vec;
@@ -816,7 +822,7 @@ MoFEMErrorCode CutMeshInterface::refineMesh(const int init_bit_level,
   moab::Interface &moab = m_field.get_moab();
   MeshRefinement *refiner;
   BitRefManager *bit_ref_manager;
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.getInterface(bit_ref_manager);
 
@@ -898,7 +904,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToCut(Range vol, int verb,
                                                 const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   edgesToCut.clear();
   cutEdges.clear();
@@ -1000,7 +1006,7 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   Skinner skin(&moab);
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   auto get_ent_adj = [&moab](const EntityHandle v, const int dim) {
     Range a;
@@ -1312,7 +1318,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   moab::Interface &moab = m_field.get_moab();
   MeshRefinement *refiner;
   const RefEntity_multiIndex *ref_ents_ptr;
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   if (cutEdges.size() != edgesToCut.size())
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
@@ -1455,11 +1461,9 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
 }
 
 MoFEMErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
-  MoFEMFunctionBeginHot;
-
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   // Range out_side_vertices;
   for (auto m : verticesOnCutEdges) {
@@ -1477,7 +1481,7 @@ MoFEMErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
 MoFEMErrorCode CutMeshInterface::moveMidNodesOnTrimmedEdges(Tag th) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
   for (auto &v : verticesOnTrimEdges) {
     double dist = v.second.dIst;
     VectorDouble3 new_coors = v.second.rayPoint + dist * v.second.unitRayDir;
@@ -1495,7 +1499,7 @@ MoFEMErrorCode CutMeshInterface::findEdgesToTrim(Range *fixed_edges,
                                                  const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   // takes body skin
   Skinner skin(&moab);
@@ -1983,7 +1987,7 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
   moab::Interface &moab = m_field.get_moab();
   MeshRefinement *refiner;
   const RefEntity_multiIndex *ref_ents_ptr;
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   CHKERR m_field.getInterface(refiner);
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
@@ -2061,7 +2065,7 @@ MoFEMErrorCode CutMeshInterface::trimSurface(Range *fixed_edges,
     return s;
   };
 
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   auto trim_tets_skin = get_skin(trimNewVolumes);
   auto trim_tets_skin_edges = get_adj(trim_tets_skin, 1);
@@ -2250,7 +2254,7 @@ CutMeshInterface::removePathologicalFrontTris(const BitRefLevel split_bit,
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PrismInterface *interface;
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
   CHKERR m_field.getInterface(interface);
   // Remove tris on surface front
   {
@@ -2282,7 +2286,7 @@ MoFEMErrorCode CutMeshInterface::splitSides(const BitRefLevel split_bit,
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   PrismInterface *interface;
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
   CHKERR m_field.getInterface(interface);
   EntityHandle meshset_volume;
   CHKERR moab.create_meshset(MESHSET_SET, meshset_volume);
@@ -2319,7 +2323,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     const BitRefLevel *bit_ptr, const bool debug) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
 
   /**
    * \brief Merge nodes
@@ -2404,7 +2408,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                                        Range &not_merged_edges,
                                        bool add_child) {
       moab::Interface &moab = mField.get_moab();
-      MoFEMFunctionBegin;
+      CutMeshFunctionBegin;
       if (add_child) {
 
         std::vector<EntityHandle> parents_ents_vec(parentsChildMap.size());
@@ -2626,7 +2630,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                                  SetsMap &sets_map) const {
       moab::Interface &moab(mField.get_moab());
       Skinner skin(&moab);
-      MoFEMFunctionBegin;
+      CutMeshFunctionBegin;
 
       sets_map[FIX_CORNERS].merge(corner_nodes);
       Range fixed_verts;
@@ -2689,7 +2693,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     MoFEMErrorCode getProcTets(const Range &tets, const Range &edges_to_merge,
                                Range &proc_tets) const {
       moab::Interface &moab(mField.get_moab());
-      MoFEMFunctionBegin;
+      CutMeshFunctionBegin;
       Range edges_to_merge_verts;
       CHKERR moab.get_connectivity(edges_to_merge, edges_to_merge_verts, true);
       Range edges_to_merge_verts_tets;
@@ -2708,7 +2712,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                                   Range &edges_to_merge,
                                   Range &not_merged_edges) {
       moab::Interface &moab(mField.get_moab());
-      MoFEMFunctionBegin;
+      CutMeshFunctionBegin;
 
       // find skin
       Skinner skin(&moab);
@@ -2845,7 +2849,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
                                             Range &edges_to_remove,
                                             bool debug) const {
       moab::Interface &moab(mField.get_moab());
-      MoFEMFunctionBegin;
+      CutMeshFunctionBegin;
       // get nodes
       Range ents_nodes = ents.subset_by_type(MBVERTEX);
       if (ents_nodes.empty()) {
@@ -3021,8 +3025,8 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     CHKERR merge_nodes.updateRangeByChilds(new_surf, edges_to_merge,
                                            not_merged_edges, true);
 
-    PetscPrintf(m_field.get_comm(),
-                "(%d) Number of nodes merged %d ave q %3.4e min q %3.4e\n", pp,
+    MOFEM_C_LOG("WORLD", Sev::verbose,
+                "(%d) Number of nodes merged %d ave q %3.4e min q %3.4e", pp,
                 nb_nodes_merged, ave, min);
 
     if (debug)
@@ -3078,7 +3082,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     const Range &fixed_edges, const Range &corner_nodes, Tag th,
     const bool update_meshsets, const bool debug) {
   CoreInterface &m_field = cOre;
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
   Range tets_level;
   CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByTypeAndRefLevel(
       trim_bit, BitRefLevel().set(), MBTET, tets_level);
@@ -3127,7 +3131,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 MoFEMErrorCode CutMeshInterface::setTagData(Tag th, const BitRefLevel bit) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
   Range nodes;
   if (bit.none())
     CHKERR moab.get_entities_by_type(0, MBVERTEX, nodes);
@@ -3144,7 +3148,7 @@ MoFEMErrorCode CutMeshInterface::setCoords(Tag th, const BitRefLevel bit,
                                            const BitRefLevel mask) {
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  CutMeshFunctionBegin;
   Range nodes;
   if (bit.none())
     CHKERR moab.get_entities_by_type(0, MBVERTEX, nodes);
