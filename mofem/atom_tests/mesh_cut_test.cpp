@@ -31,7 +31,8 @@ struct TestBitLevel {
     MoFEMFunctionBeginHot;
     Range ents;
     CHKERR mngPtr->getEntitiesByRefLevel(bit, BitRefLevel().set(), ents);
-    cout << "bit_level nb ents " << bit << " " << ents.size() << endl;
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "bit_level nb ents " << bit << " " << ents.size();
     if (expected_size != -1 && expected_size != static_cast<int>(ents.size())) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "Wrong bit ref size %d!=%d", expected_size, ents.size());
@@ -45,6 +46,8 @@ int main(int argc, char *argv[]) {
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
+
+    MOFEM_LOG_CHANNEL("WORLD");
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
@@ -98,9 +101,10 @@ int main(int argc, char *argv[]) {
     MoFEM::CoreInterface &m_field =
         *(core.getInterface<MoFEM::CoreInterface>());
 
+    MOFEM_LOG_CHANNEL("WORLD");
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(
              (*core.getInterface<MeshsetsManager>()), SIDESET, it)) {
-      cout << *it << endl;
+      MOFEM_LOG("WORLD", Sev::inform) << *it;
     }
 
     BitRefLevel bit_level0;
@@ -275,11 +279,12 @@ int main(int argc, char *argv[]) {
     CHKERR core.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "left_entities.vtk", "VTK", "");
 
+    MOFEM_LOG_CHANNEL("WORLD");
     if (test) {
       Range ents;
       core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(ents);
       if (no_of_ents_not_in_database != static_cast<int>(ents.size())) {
-        cerr << subtract(ents, ents_not_in_database) << endl;
+        MOFEM_LOG("WORLD", Sev::inform) << subtract(ents, ents_not_in_database);
         EntityHandle meshset;
         CHKERR moab.create_meshset(MESHSET_SET, meshset);
         Range tets;
