@@ -910,11 +910,8 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
   if (verb >= VERY_VERBOSE) {
     std::cerr << "Parnets:" << endl << parent << std::endl;
   }
-  typedef RefEntity_multiIndex::index<
-      Composite_ParentEnt_And_EntType_mi_tag>::type RefEntsByComposite;
-  RefEntsByComposite &ref_ents =
-      const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
-          ->get<Composite_ParentEnt_And_EntType_mi_tag>();
+  auto &ref_ents = const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
+                       ->get<Composite_ParentEnt_And_EntType_mi_tag>();
   Range children_ents;
 
   auto check = [&child_bit, &child_mask](const auto &entity_bit) -> bool {

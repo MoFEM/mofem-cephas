@@ -153,6 +153,22 @@ int main(int argc, char *argv[]) {
       CHKERR run_test(w, v, k, l, Tools::SOLUTION_EXIST, 0.5, 0.5);
     }
 
+    {
+      const double w[] = {0, 1, 0};
+      const double v[] = {0, 2, 0};
+      const double k[] = {0, 0, 0};
+      const double l[] = {1, 0, 0};
+      CHKERR run_test(w, v, k, l, Tools::SOLUTION_EXIST, -1, 0);
+    }
+
+    {
+      const double w[] = {0, 0, 0};
+      const double v[] = {1, 0, 0};
+      const double k[] = {0, 1, 0};
+      const double l[] = {0, 2, 0};
+      CHKERR run_test(w, v, k, l, Tools::SOLUTION_EXIST, 0, -1);
+    }
+
 
   }
   CATCH_ERRORS;

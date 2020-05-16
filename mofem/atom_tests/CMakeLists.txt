@@ -1443,6 +1443,9 @@ add_test(
 # Tetsing mesh cuttiong
 
 cm_export_file("../meshes/test_mesh_cut.cub" export_atom_tests)
+cm_export_file("../meshes/circle_cut.h5m" export_atom_tests)
+cm_export_file("../meshes/cylinder_cut.h5m" export_atom_tests)
+
 my_add_executable(mesh_cut_test mesh_cut_test.cpp)
 target_link_libraries(mesh_cut_test
   mofem_finite_elements
@@ -1455,11 +1458,21 @@ target_link_libraries(mesh_cut_test
   ${PROJECT_LIBS}
 )
 add_test(
-  mesh_cut ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  mesh_cut_circle ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test 
-  -my_file test_mesh_cut.cub -side_set 200 
+  -my_file circle_cut.h5m 
+  -side_set 200 
   -shift -0.2,0.2,0.
-  -tol 1e-4,2e-1,2e-1 -test
+  -tol 1e-4,3.3e-1,3.3e-1 -test
+)
+add_test(
+  mesh_cut_cylinder ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test 
+  -my_file cylinder_cut.h5m 
+  -side_set 204
+  -shift -0.0,0.0,0.
+  -tol 1e-2,3.3e-1,3.3e-1
+  -test
 )
 
 my_add_executable(segments_distance segments_distance.cpp)
