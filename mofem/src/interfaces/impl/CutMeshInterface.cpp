@@ -1191,28 +1191,32 @@ MoFEMErrorCode CutMeshInterface::projectZeroDistanceEnts(
     }
 
     auto get_distances = [&](auto &data) {
-      Tag th;
-      CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_SIGNED", th);
-      std::vector<EntityHandle> verts;
-      verts.reserve(data.size());
-      for (auto d : data)
-        verts.emplace_back(d.first);
-      std::vector<double> distances(verts.size());
-      CHKERR moab.tag_get_data(th, &*verts.begin(), verts.size(),
-                               &*distances.begin());
       std::map<EntityHandle, double> dist_map;
-      for (size_t i = 0; i != verts.size(); ++i)
-        dist_map[verts[i]] = distances[i];
+      if (!data.empty()) {
+        Tag th;
+        CHKERR moab.tag_get_handle("DIST_SURFACE_NORMAL_SIGNED", th);
+
+        std::vector<EntityHandle> verts;
+        verts.reserve(data.size());
+        for (auto d : data)
+          verts.emplace_back(d.first);
+        std::vector<double> distances(verts.size());
+        CHKERR moab.tag_get_data(th, &*verts.begin(), verts.size(),
+                                 &*distances.begin());
+        for (size_t i = 0; i != verts.size(); ++i)
+          dist_map[verts[i]] = distances[i];
+      }
       return dist_map;
     };
 
     auto dist_map = get_distances(vertices_on_cut_edges);
-
-    auto cmp = [&dist_map](const auto &a, const auto &b) {
-      return dist_map[a.first] < dist_map[b.first];
-    };
-
-    std::sort(vertices_on_cut_edges.begin(), vertices_on_cut_edges.end(), cmp);
+    if (!dist_map.empty()) {
+      auto cmp = [&dist_map](const auto &a, const auto &b) {
+        return dist_map[a.first] < dist_map[b.first];
+      };
+      std::sort(vertices_on_cut_edges.begin(), vertices_on_cut_edges.end(),
+                cmp);
+    }
 
     return vertices_on_cut_edges;
   };
