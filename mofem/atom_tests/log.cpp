@@ -74,7 +74,8 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core;
 
     CHKERR PetscPrintf(PETSC_COMM_WORLD,
-                       "Testing logging for obsolete way of printing messages");
+                       "\nTesting logging for obsolete way of printing "
+                       "messages\nnext line\nnext line\n\n");
 
     // Set "WORLD channel"
     MOFEM_LOG_CHANNEL("WORLD");
