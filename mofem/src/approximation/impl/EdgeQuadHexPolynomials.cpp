@@ -22,9 +22,9 @@ MoFEMErrorCode MoFEM::Integrated_Legendre(int p, double s, double *L,
 
   MoFEMFunctionBeginHot;
 
-  double l[p + 2];
-  CHKERR Legendre_polynomials(p + 1, s, NULL, l, NULL, 1);
-  if (p >= 1)
+  double l[p + 1];
+  CHKERR Legendre_polynomials(p, s, NULL, l, NULL, 1);
+  if (p >= 2)
   {
     for (int i = 0; i != p-1; i++)
     {
@@ -206,21 +206,27 @@ MoFEMErrorCode Hcurl_FaceShapeFunctions_ONQUAD(int *p, double *N,
     double s[2] = {ksi, eta};
     double diff_s[2][2] = {{1.0, 0.0}, {0.0, 1.0}};
 
+    int sgn[2] = {-1, 1};
+
     for (int typ = 0; typ != 2; typ++)
     {
-      double Phi[p[typ] - 1];
-      double diffPhi[p[typ] - 1];
-      CHKERR Integrated_Legendre(p[typ], s[typ], Phi, diffPhi);
+      int pp = p[typ];
+      int qq = p[(typ + 1) % 2];
 
-      double E[p[typ]];
-      CHKERR Legendre_polynomials(p[typ] - 1, s[typ], NULL, E, NULL, 1);
+      double Phi[pp - 1];
+      double diffPhi[pp - 1];
+      CHKERR Integrated_Legendre(pp, s[typ], Phi, diffPhi);
 
-      int qd_shift = (p[typ] - 1) * p[(typ + 1) % 2] * q;
+      double E[qq];
+      CHKERR Legendre_polynomials(qq - 1, s[typ], NULL, E, NULL, 1);
+
+      int qd_shift = (pp - 1) * qq * q;
       int n = 0;
-      for (int i = 0; i != p[typ] - 1; i++) {
-        for (int j = 0; j != p[typ]; i++) {
-          faceN[typ][2 * (qd_shift + n) + 0] = Phi[i] * E[j] * diff_s[typ][0];
-          faceN[typ][2 * (qd_shift + n) + 1] = Phi[i] * E[j] * diff_s[typ][1];
+      for (int i = 0; i != qq - 1; i++) {
+        for (int j = 0; j != pp - 2; i++) {
+          faceN[typ][2 * (qd_shift + n) + 0] = Phi[j] * E[i] * diff_s[typ][0];
+          faceN[typ][2 * (qd_shift + n) + 1] = Phi[j] * E[i] * diff_s[typ][1];
+          curl_faceN[typ][qd_shift + n] = (double)sgn[typ] * diffPhi[j] * E[i];
           ++n;
         }
       }
