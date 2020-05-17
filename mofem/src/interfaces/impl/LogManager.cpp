@@ -327,37 +327,31 @@ LogManager::LoggerType &LogManager::getLog(const std::string channel) {
 
 PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
                                            va_list Argp) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
+  MoFEMFunctionBegin;
   if (fd != stdout && fd != stderr && fd != dummy_mofem_fd) {
-    ierr = PetscVFPrintfDefault(fd, format, Argp);
-    CHKERR(ierr);
+    CHKERR PetscVFPrintfDefault(fd, format, Argp);
 
   } else {
     std::array<char, 1024> buff;
     size_t length;
-    ierr = PetscVSNPrintf(buff.data(), 1024, format, &length, Argp);
-    CHKERRQ(ierr);
-
-    auto remove_line_break = [](auto &&msg) {
-      if (!msg.empty() && msg.back() == '\n')
-        msg = std::string(msg.data(), msg.size() - 1);
-      return msg;
-    };
-
-    std::ostringstream ss;
+    CHKERR PetscVSNPrintf(buff.data(), 1024, format, &length, Argp);
 
     const std::string str(buff.data());
     if (!str.empty()) {
       if (fd != dummy_mofem_fd) {
-        MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::inform)
-            << ss.str() << remove_line_break(std::string(buff.data()));
+        std::istringstream is(str);
+        std::string line;
+        while (getline(is, line, '\n'))
+          MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::inform)
+              << line;
+
       } else {
-        std::clog << ss.str() << std::string(buff.data());
+        std::clog << std::string(buff.data());
       }
     }
+
   }
-  PetscFunctionReturn(0);
+  MoFEMFunctionReturn(0);
 }
 
 std::string LogManager::getVLikeFormatedString(const char *fmt, va_list args) {
