@@ -51,18 +51,8 @@ bool Core::isGloballyInitialised = false;
 MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
                                 const char help[]) {
   MPI_Init(argc, args);
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
+  LogManager::createSinks(MPI_COMM_WORLD);
   PetscVFPrintf = LogManager::logPetscFPrintf;
-
-  auto core_log = logging::core::get();
-  core_log->add_sink(LogManager::createSink(
-      boost::shared_ptr<std::ostream>(&std::clog, boost::null_deleter()),
-      "PETSC"));
-  LogManager::setLog("PETSC");
-  MOFEM_LOG_TAG("PETSC", "petsc");
-  core_log->add_global_attribute("Proc", attrs::constant<unsigned int>(rank));
 
   ierr = PetscInitialize(argc, args, file, help);
   CHKERRG(ierr);

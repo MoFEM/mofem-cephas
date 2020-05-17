@@ -145,9 +145,23 @@ struct LogManager : public UnknownInterface {
    */
   static void addTag(const std::string channel, const std::string tag);
 
+  /**
+   * @brief Create a sink object
+   *
+   * @param stream_ptr
+   * @param comm_filter
+   * @return boost::shared_ptr<SinkType>
+   */
   static boost::shared_ptr<SinkType>
   createSink(boost::shared_ptr<std::ostream> stream_ptr,
              std::string comm_filter);
+
+
+  /**
+   * @brief Create sinks
+   *
+   */
+  static void createSinks(MPI_Comm comm);
 
   /**
    * @brief Get the Interface Options
@@ -217,7 +231,7 @@ private:
   MoFEM::Core &cOre;
 
   struct InternalData;
-  boost::shared_ptr<InternalData> internalDataPtr;
+  static boost::shared_ptr<InternalData> internalDataPtr;
 
   MoFEMErrorCode setUpLog();
   

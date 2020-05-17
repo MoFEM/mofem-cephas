@@ -87,6 +87,7 @@ struct LogManager::InternalData
 
   static bool logQuiet;
   static bool noColors;
+  static bool sinksAdd;
 
   static std::map<std::string, LoggerType> logChannels;
 
@@ -109,14 +110,14 @@ struct LogManager::InternalData
 
 bool LogManager::InternalData::logQuiet = false;
 bool LogManager::InternalData::noColors = false;
-
+bool LogManager::InternalData::sinksAdd = true;
 std::map<std::string, LogManager::LoggerType>
     LogManager::InternalData::logChannels;
 
+boost::shared_ptr<LogManager::InternalData> LogManager::internalDataPtr;
+
 LogManager::LogManager(const MoFEM::Core &core)
-    : cOre(const_cast<MoFEM::Core &>(core)),
-      internalDataPtr(
-          new InternalData(static_cast<MoFEM::Interface &>(cOre).get_comm())) {}
+    : cOre(const_cast<MoFEM::Core &>(core)) {}
 
 MoFEMErrorCode LogManager::query_interface(const MOFEMuuid &uuid,
                                            UnknownInterface **iface) const {
@@ -270,18 +271,37 @@ LogManager::createSink(boost::shared_ptr<std::ostream> stream_ptr,
   return sink;
 }
 
+void LogManager::createSinks(MPI_Comm comm) {
+  
+  internalDataPtr = boost::make_shared<InternalData>(comm);
+
+  auto core_log = logging::core::get();
+  core_log->remove_all_sinks();
+  core_log->add_sink(LogManager::createSink(
+      boost::shared_ptr<std::ostream>(&std::clog, boost::null_deleter()),
+      "PETSC"));
+  core_log->add_sink(createSink(internalDataPtr->getStrmSelf(), "SELF"));
+  core_log->add_sink(createSink(internalDataPtr->getStrmWorld(), "WORLD"));
+  core_log->add_sink(createSink(internalDataPtr->getStrmSync(), "SYNC"));
+
+  LogManager::setLog("PETSC");
+  LogManager::setLog("SELF");
+  LogManager::setLog("WORLD");
+  LogManager::setLog("SYNC");   
+
+  MOFEM_LOG_TAG("PETSC", "petsc");
+
+  int rank;
+  MPI_Comm_rank(comm, &rank);
+  core_log->add_global_attribute("Proc", attrs::constant<unsigned int>(rank));
+}
+
 static char dummy_file;
 FILE *LogManager::dummy_mofem_fd = (FILE *)&dummy_file;
 
 MoFEMErrorCode LogManager::setUpLog() {
   MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
-
-  auto core_log = logging::core::get();
-  core_log->add_sink(createSink(internalDataPtr->getStrmSelf(), "SELF"));
-  core_log->add_sink(createSink(internalDataPtr->getStrmWorld(), "WORLD"));
-  core_log->add_sink(createSink(internalDataPtr->getStrmSync(), "SYNC"));
-
   MoFEMFunctionReturn(0);
 }
 
@@ -346,7 +366,7 @@ PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
               << line;
 
       } else {
-        std::clog << std::string(buff.data());
+        std::clog << str;
       }
     }
 
