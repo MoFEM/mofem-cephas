@@ -359,11 +359,16 @@ PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
     const std::string str(buff.data());
     if (!str.empty()) {
       if (fd != dummy_mofem_fd) {
+        
+        MoFEM::LogManager::SeverityLevel sev =
+            MoFEM::LogManager::SeverityLevel::inform;
+        if (str.find("WARNING") != std::string::npos)
+          sev = MoFEM::LogManager::SeverityLevel::warning;
+
         std::istringstream is(str);
         std::string line;
         while (getline(is, line, '\n'))
-          MOFEM_LOG("PETSC", MoFEM::LogManager::SeverityLevel::inform)
-              << line;
+          MOFEM_LOG("PETSC", sev) << line;
 
       } else {
         std::clog << str;
