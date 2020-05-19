@@ -149,7 +149,7 @@ MoFEMErrorCode CoordSystemsManager::addCoordinateSystem(
     Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     EntityHandle meshset;
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+    CHKERR moab.create_meshset(MESHSET_SET, meshset);
     CHKERR moab.tag_set_data(th_CoordSysDim, &meshset, 1, cs_dim);
     void const *cs_name_ptr[] = {cs_name.c_str()};
     int cs_name_size[1];

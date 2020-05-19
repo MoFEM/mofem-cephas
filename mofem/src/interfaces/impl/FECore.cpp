@@ -72,7 +72,7 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
       MoFEMFunctionReturnHot(0);
   }
   EntityHandle meshset;
-  CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR get_moab().create_meshset(MESHSET_SET, meshset);
 
   // id
   BitFEId id = getFEShift();

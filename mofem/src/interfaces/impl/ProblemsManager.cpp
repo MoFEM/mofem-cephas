@@ -342,8 +342,7 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
         int num_new = n_parts - tagged_sets.size();
         for (int i = 0; i < num_new; i++) {
           EntityHandle new_set;
-          CHKERR m_field.get_moab().create_meshset(
-              MESHSET_SET | MESHSET_TRACK_OWNER, new_set);
+          CHKERR m_field.get_moab().create_meshset(MESHSET_SET, new_set);
           tagged_sets.insert(new_set);
         }
       } else if (n_parts < (int)tagged_sets.size()) {

@@ -108,7 +108,7 @@ SeriesRecorder::add_series_recorder(const std::string &series_name) {
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   EntityHandle meshset;
-  CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR moab.create_meshset(MESHSET_SET, meshset);
   void const *tag_data[] = {series_name.c_str()};
   int tag_sizes[1];
   tag_sizes[0] = series_name.size();
