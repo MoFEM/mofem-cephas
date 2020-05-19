@@ -29,6 +29,12 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
+#define DeleteCoreFunctionBegin                                                \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("WORLD", "DeleteCore");
+
 namespace MoFEM {
 
 MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
@@ -485,9 +491,9 @@ MoFEMErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel bit,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::remove_parents_by_by_bit_ref(const BitRefLevel &bit,
-                                                  const BitRefLevel &mask,
-                                                  int verb) {
+MoFEMErrorCode Core::remove_parents_by_bit_ref(const BitRefLevel bit,
+                                               const BitRefLevel mask,
+                                               int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -499,24 +505,34 @@ MoFEMErrorCode Core::remove_parents_by_by_bit_ref(const BitRefLevel &bit,
 
 MoFEMErrorCode Core::remove_parents_by_ents(const Range &ents, int verb) {
   MoFEMFunctionBegin;
-  Range removed_from_ents;
-  for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
-    RefEntity_multiIndex::iterator it = refinedEntities.find(*eit);
-    if (it != refinedEntities.end()) {
-      bool success = refinedEntities.modify(it, RefEntity_change_parent(0));
-      if (!success) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                "Operation of removing parent unsuccessful");
-      } else {
-        removed_from_ents.insert(*eit);
-      }
+  
+  std::vector<EntityHandle> leftovers_ents;
+  leftovers_ents.reserve(ents.size());
+
+  for (auto pit = ents.pair_begin(); pit != ents.pair_end(); ++pit) {
+
+    EntityHandle f = pit->first;
+    const EntityHandle s = pit->second;
+    auto lo = refinedEntities.lower_bound(f);
+    for (; f <= s; ++f) {
+
+      if ((*lo)->getRefEnt() == f) {
+          bool success = refinedEntities.modify(lo, RefEntity_change_parent(0));
+          if (!success)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "Operation of removing parent unsuccessful");
+          ++lo;
+      } else
+        leftovers_ents.emplace_back(f);
+
     }
   }
-  Range leftovers_ents = subtract(ents,removed_from_ents);
+
   if (!leftovers_ents.empty()) {
     std::vector<EntityHandle> zero_parents(leftovers_ents.size());
-    CHKERR get_moab().tag_set_data(th_RefParentHandle, leftovers_ents,
-                             &*zero_parents.begin());
+    CHKERR get_moab().tag_set_data(th_RefParentHandle, &leftovers_ents[0],
+                                   leftovers_ents.size(),
+                                   &*zero_parents.begin());
   }
   MoFEMFunctionReturn(0);
 }
@@ -542,8 +558,7 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
                                             const BitRefLevel mask,
                                             const bool remove_parent,
                                             int verb) {
-
-  MoFEMFunctionBegin;
+  DeleteCoreFunctionBegin;
   if (verb == -1)
     verb = verbose;
 
@@ -571,8 +586,9 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
       for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
         try {
           RefEntity ref_ent(basicEntityDataPtr, *eit);
-          cerr << "Error: " << RefEntity(basicEntityDataPtr, *eit) << " "
-               << ref_ent.getBitRefLevel() << endl;
+          MOFEM_LOG("WORLD", Sev::error)
+              << "Error: " << RefEntity(basicEntityDataPtr, *eit) << " "
+              << ref_ent.getBitRefLevel();
         } catch (std::exception const &ex) {
         }
       };
@@ -584,9 +600,9 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
     THROW_MESSAGE("Can not delete entities from MoAB database (see error.vtk)");
   }
 
-  if(verb >= VERBOSE) {
-    PetscPrintf(get_comm(),"Nb. of deleted entities %d\n",ents.size());
-  }
+  if (verb >= VERBOSE)
+    MOFEM_LOG_C("WORLD", Sev::verbose, "Nb. of deleted entities %d",
+                ents.size());
 
   MoFEMFunctionReturn(0);
 }

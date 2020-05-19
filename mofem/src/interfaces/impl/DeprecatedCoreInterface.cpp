@@ -632,4 +632,9 @@ DeprecatedCoreInterface::synchronise_field_entities(const std::string &name,
   return getInterface<CommInterface>()->synchroniseFieldEntities(name, verb);
 }
 
+DEPRECATED MoFEMErrorCode DeprecatedCoreInterface::remove_parents_by_by_bit_ref(
+    const BitRefLevel bit, const BitRefLevel mask, int verb) {
+  return remove_parents_by_bit_ref(bit, mask, verb);
+}
+
 } // namespace MoFEM

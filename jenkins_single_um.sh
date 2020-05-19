@@ -43,6 +43,7 @@ EOF
 SPACK_ROOT=/home/jenkins/workspace/SpackInstall
 . $SPACK_ROOT/share/spack/setup-env.sh
 
+spack uninstall -y --dependents mofem-users-modules@lukasz build_type=RelWithDebInfo
 spack install --no-cache mofem-users-modules@lukasz build_type=RelWithDebInfo
 rm -rf  $WORKSPACE/um_view 
 spack \

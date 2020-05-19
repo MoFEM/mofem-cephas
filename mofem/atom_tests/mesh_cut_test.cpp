@@ -31,7 +31,8 @@ struct TestBitLevel {
     MoFEMFunctionBeginHot;
     Range ents;
     CHKERR mngPtr->getEntitiesByRefLevel(bit, BitRefLevel().set(), ents);
-    cout << "bit_level nb ents " << bit << " " << ents.size() << endl;
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "bit_level nb ents " << bit << " " << ents.size();
     if (expected_size != -1 && expected_size != static_cast<int>(ents.size())) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                "Wrong bit ref size %d!=%d", expected_size, ents.size());
@@ -46,6 +47,8 @@ int main(int argc, char *argv[]) {
 
   try {
 
+    MOFEM_LOG_CHANNEL("WORLD");
+
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
     CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
@@ -58,6 +61,10 @@ int main(int argc, char *argv[]) {
     int side_set = 200;
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-side_set", &side_set,
                               PETSC_NULL);
+
+    int restricted_side_set = 205;
+    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-restricted_side_set",
+                              &restricted_side_set, PETSC_NULL);
 
     double shift[] = {0, 0, 0};
     int nmax = 3;
@@ -98,9 +105,10 @@ int main(int argc, char *argv[]) {
     MoFEM::CoreInterface &m_field =
         *(core.getInterface<MoFEM::CoreInterface>());
 
+    MOFEM_LOG_CHANNEL("WORLD");
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(
              (*core.getInterface<MeshsetsManager>()), SIDESET, it)) {
-      cout << *it << endl;
+      MOFEM_LOG("WORLD", Sev::inform) << *it;
     }
 
     BitRefLevel bit_level0;
@@ -154,6 +162,11 @@ int main(int argc, char *argv[]) {
     }
 
     // get surface entities form side set
+    Range restriced_surface;
+    if (meshset_manager->checkMeshset(restricted_side_set, SIDESET))
+      CHKERR meshset_manager->getEntitiesByDimension(
+          restricted_side_set, SIDESET, 2, restriced_surface, true);
+
     Range surface;
     if (meshset_manager->checkMeshset(side_set, SIDESET))
       CHKERR meshset_manager->getEntitiesByDimension(side_set, SIDESET, 2,
@@ -168,6 +181,8 @@ int main(int argc, char *argv[]) {
                                    "surface.vtk");
     else
       CHKERR cut_mesh->setSurface(surface);
+
+    cut_mesh->setConstrainSurface(restriced_surface);
 
     Range tets;
     CHKERR moab.get_entities_by_dimension(0, 3, tets, false);
@@ -275,11 +290,12 @@ int main(int argc, char *argv[]) {
     CHKERR core.getInterface<BitRefManager>()->writeEntitiesNotInDatabase(
         "left_entities.vtk", "VTK", "");
 
+    MOFEM_LOG_CHANNEL("WORLD");
     if (test) {
       Range ents;
       core.getInterface<BitRefManager>()->getAllEntitiesNotInDatabase(ents);
       if (no_of_ents_not_in_database != static_cast<int>(ents.size())) {
-        cerr << subtract(ents, ents_not_in_database) << endl;
+        MOFEM_LOG("WORLD", Sev::inform) << subtract(ents, ents_not_in_database);
         EntityHandle meshset;
         CHKERR moab.create_meshset(MESHSET_SET, meshset);
         Range tets;

@@ -316,9 +316,9 @@ protected:
   MoFEMErrorCode remove_parents_by_ents(const Range &ents,
                                         int verb = DEFAULT_VERBOSITY);
 
-  MoFEMErrorCode remove_parents_by_by_bit_ref(const BitRefLevel &bit,
-                                              const BitRefLevel &mask,
-                                              int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode remove_parents_by_bit_ref(const BitRefLevel bit,
+                                           const BitRefLevel mask,
+                                           int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode remove_parents_by_parents(const Range &ents,
                                            int verb = DEFAULT_VERBOSITY);
@@ -707,7 +707,6 @@ protected:
   MoFEMErrorCode
   clear_adjacencies_finite_elements(const std::string name, const Range ents,
                                     int verb = DEFAULT_VERBOSITY);
-  MoFEMErrorCode list_adjacencies() const;
 
   /**@}*/
 

@@ -328,7 +328,7 @@ Tools::minDistancePointFromOnSegment(const double *w_ptr, const double *v_ptr,
   FTensor::Tensor1<double, 3> t_vw;
   t_vw(i) = t_v(i) - t_w(i);
   const double dot_vw = t_vw(i) * t_vw(i);
-  if (dot_vw == 0) {
+  if (std::abs(dot_vw) < std::numeric_limits<double>::epsilon()) {
     if (t_ptr)
       *t_ptr = 0;
     return SEGMENT_ONE_IS_POINT;
@@ -356,7 +356,7 @@ Tools::minDistanceFromSegments(const double *w_ptr, const double *v_ptr,
   FTensor::Tensor1<double, 3> t_vw;
   t_vw(i) = t_v(i) - t_w(i);
   double dot_vw = t_vw(i) * t_vw(i);
-  if (dot_vw == 0) {
+  if (std::abs(dot_vw) < std::numeric_limits<double>::epsilon()) {
     if (tvw_ptr)
       *tvw_ptr = 0;
     if (minDistancePointFromOnSegment(k_ptr, l_ptr, w_ptr, tlk_ptr) ==
@@ -370,7 +370,7 @@ Tools::minDistanceFromSegments(const double *w_ptr, const double *v_ptr,
   FTensor::Tensor1<double, 3> t_lk;
   t_lk(i) = t_l(i) - t_k(i);
   double dot_lk = t_lk(i) * t_lk(i);
-  if (dot_lk == 0) {
+  if (std::abs(dot_lk) < std::numeric_limits<double>::epsilon()) {
     if (tlk_ptr)
       *tlk_ptr = 0;
     if (minDistancePointFromOnSegment(w_ptr, v_ptr, k_ptr, tvw_ptr) ==
@@ -385,7 +385,7 @@ Tools::minDistanceFromSegments(const double *w_ptr, const double *v_ptr,
   const double c = t_lk(i) * t_lk(i);
 
   const double det = a * c - b * b;
-  if (det == 0) {
+  if (std::abs(det) < std::numeric_limits<double>::epsilon()) {
 
     return NO_SOLUTION;
 
