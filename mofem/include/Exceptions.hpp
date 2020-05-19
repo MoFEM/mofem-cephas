@@ -22,7 +22,7 @@ namespace MoFEM {
 
 /**
  * @brief Exceptions and handling errors data structures
- * 
+ *
  */
 namespace Exceptions {
 /**
@@ -30,19 +30,19 @@ namespace Exceptions {
  */
 struct MoFEMException : public std::exception {
   const int errorCode;
-  char errorMessage[255];
-  MoFEMException(const MoFEMErrorCodes error_code) : errorCode(error_code) {
-    strcpy(errorMessage, "Huston we have a problem, something is wrong");
-  }
+  char errorMessage[1024];
+  MoFEMException(const MoFEMErrorCodes error_code)
+      : MoFEMException(static_cast<int>(error_code)) {}
   MoFEMException(const MoFEMErrorCodes error_code, const char error_message[])
       : errorCode(error_code) {
-    strcpy(errorMessage, error_message);
+    strncpy(errorMessage, error_message, sizeof(errorMessage));
+    errorMessage[sizeof(errorMessage) - 1] = '\0';
   }
   const char *what() const throw() { return errorMessage; }
 
 protected:
   MoFEMException(const int error_code) : errorCode(error_code) {
-    strcpy(errorMessage, "Huston we have a problem, something is wrong");
+    strcpy(errorMessage, "Houston we have a problem, something is wrong");
   }
 };
 
@@ -58,7 +58,8 @@ struct MoFEMExceptionInitial : public MoFEMExceptionRepeat {
   MoFEMExceptionInitial(const int error_code, const char error_message[],
                         const int line)
       : MoFEMExceptionRepeat(error_code, line) {
-    strcpy(errorMessage, error_message);
+    strncpy(errorMessage, error_message, sizeof(errorMessage));
+    errorMessage[sizeof(errorMessage) - 1] = '\0';
   }
 };
 
