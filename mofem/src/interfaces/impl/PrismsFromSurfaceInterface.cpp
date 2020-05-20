@@ -30,9 +30,15 @@ PrismsFromSurfaceInterface::query_interface(const MOFEMuuid &uuid,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,
-                                                        Range &prisms,
-                                                        int verb) {
+DEPRECATED MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(
+    const Range &ents, Range &prisms, int verb) {
+  MoFEMFunctionBegin;
+  CHKERR createPrisms(ents, NO_SWAP, prisms, verb);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(
+    const Range &ents, const SwapType swap_type, Range &prisms, int verb) {
   MoFEMFunctionBegin;
   Interface &m_field = cOre;
   Range tris = ents.subset_by_type(MBTRI);
@@ -55,6 +61,20 @@ MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,
                                                &prism_nodes[3 + nn], 1,
                                                &prism_nodes[nn]);
       }
+    }
+    switch (swap_type) {
+    case SWAP_TRI_NODE_ORDER:
+      std::swap(prism_nodes[1], prism_nodes[2]);
+      std::swap(prism_nodes[4], prism_nodes[5]);
+      break;
+    case SWAP_TOP_AND_BOT_TRI:
+      std::swap(prism_nodes[0], prism_nodes[3]);
+      std::swap(prism_nodes[1], prism_nodes[4]);
+      std::swap(prism_nodes[2], prism_nodes[5]);
+      break;
+    case NO_SWAP:
+    default:
+      break;
     }
     EntityHandle prism;
     CHKERR m_field.get_moab().create_element(MBPRISM, prism_nodes, 6, prism);
@@ -269,7 +289,7 @@ PrismsFromSurfaceInterface::updateMeshestByEdgeBlock(const Range &prisms) {
   for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, it)) {
     Range edges;
     CHKERR m_field.get_moab().get_entities_by_type(it->meshset, MBEDGE, edges,
-                                                  true);
+                                                   true);
     edges = intersect(edges, prisms_edges);
     if (!edges.empty()) {
       Range edges_faces;
@@ -294,7 +314,7 @@ PrismsFromSurfaceInterface::updateMeshestByTriBlock(const Range &prisms) {
   for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, it)) {
     Range tris;
     CHKERR m_field.get_moab().get_entities_by_type(it->meshset, MBTRI, tris,
-                                                  true);
+                                                   true);
     tris = intersect(tris, prisms_tris);
     if (!tris.empty()) {
       Range tris_ents;
