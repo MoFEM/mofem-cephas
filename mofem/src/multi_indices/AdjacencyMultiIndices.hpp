@@ -73,34 +73,6 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
    */
   BitFEId getBitFEId() const { return entFePtr->getId(); }
 
-  // /** \deprecated use getFeUniqueId
-  // */
-  // DEPRECATED inline UId get_MoFEMFiniteElement_unique_id() const { return getFeUniqueId(); }
-  //
-  // /** \deprecated use getFeMeshset
-  // */
-  // DEPRECATED inline EntityHandle get_MoFEMFiniteElement_meshset() const { return getFeMeshset(); }
-  //
-  // /** \deprecated use getFeHandle
-  // */
-  // DEPRECATED inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return getFeHandle(); }
-  //
-  // /** \deprecated use getEntUniqueId
-  // */
-  // DEPRECATED inline UId get_ent_unique_id() const { return getEntUniqueId(); }
-  //
-  // /** \deprecated use getEntMeshset
-  // */
-  // DEPRECATED inline EntityHandle get_ent_meshset() const { return getEntMeshset(); }
-  //
-  // /** \deprecated use getEntHandle
-  // */
-  // DEPRECATED inline EntityHandle get_ent_entity_handle() const { return getEntHandle(); }
-  //
-  // /** \deprecated use getBitFEId
-  // */
-  // DEPRECATED BitFEId get_BitFEId() const { return getBitFEId(); }
-
   friend std::ostream& operator<<(std::ostream& os,const FieldEntityEntFiniteElementAdjacencyMap &e);
 };
 
