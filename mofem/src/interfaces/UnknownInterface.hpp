@@ -12,7 +12,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __MOFEMUNKNOWNINTERFACE_HPP__
 #define __MOFEMUNKNOWNINTERFACE_HPP__
@@ -20,16 +20,16 @@
 namespace MoFEM {
 
 /**
-* \brief MoFEM interface unique ID
-* \ingroup mofem
-*/
+ * \brief MoFEM interface unique ID
+ * \ingroup mofem
+ */
 struct MOFEMuuid {
 
   MOFEMuuid() { memset(this, 0, sizeof(MOFEMuuid)); }
   MOFEMuuid(const BitIntefaceId &uuid) { uUId = uuid; }
 
   /** \brief returns whether two uuid's are equal
-  **/
+   **/
   inline bool operator==(const MOFEMuuid &orig) const {
     return (uUId & orig.uUId) == orig.uUId;
   }
@@ -39,9 +39,9 @@ struct MOFEMuuid {
 };
 
 /** uuid for an unknown interface
-* this can be used to either return a default interface
-* or a NULL interface
-**/
+ * this can be used to either return a default interface
+ * or a NULL interface
+ **/
 static const MOFEMuuid IDD_MOFEMUnknown =
     MOFEMuuid(BitIntefaceId(UNKNOWNINTERFACE));
 
@@ -60,7 +60,7 @@ struct Version {
   MoFEMErrorCode printVersion(std::string prefix = "",
                               MPI_Comm comm = PETSC_COMM_WORLD) {
     MoFEMFunctionBegin;
-    if(!prefix.empty()) {
+    if (!prefix.empty()) {
       prefix += " ";
     }
     CHKERR PetscPrintf(comm, "%s%d.%d.%d\n", prefix.c_str(), majorVersion,
@@ -70,8 +70,8 @@ struct Version {
 };
 
 /** \brief base class for all interface classes
-* \ingroup mofem
-**/
+ * \ingroup mofem
+ **/
 struct UnknownInterface {
 
   virtual MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
@@ -123,9 +123,9 @@ struct UnknownInterface {
     MoFEMFunctionBeginHot;
     iface = NULL;
     if (VERIFY) {
-      if (boost::typeindex::type_id<IFACE>()!=getClassIdx(uuid)) {
+      if (boost::typeindex::type_id<IFACE>() != getClassIdx(uuid)) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
-                 "Inconsistency between interface Id and type");
+                "Inconsistency between interface Id and type");
       }
     }
     UnknownInterface *ptr;
@@ -227,15 +227,15 @@ struct UnknownInterface {
             typename boost::enable_if<boost::is_pointer<IFACE>, int>::type = 0>
   inline IFACE getInterface() const {
     typedef typename boost::remove_pointer<IFACE>::type IFaceType;
-    IFaceType* iface = NULL;
+    IFaceType *iface = NULL;
     ierr = getInterface<IFaceType, false>(
         getUId(boost::typeindex::type_id<IFaceType>()), iface);
     CHKERRABORT(PETSC_COMM_SELF, ierr);
     return iface;
   }
 
- /**
-   * @brief Get reference to interface 
+  /**
+   * @brief Get reference to interface
    *
    * \code
    * // Create moab database
@@ -261,7 +261,7 @@ struct UnknownInterface {
                                                    int>::type = 0>
   inline IFACE getInterface() const {
     typedef typename boost::remove_reference<IFACE>::type IFaceType;
-    IFaceType* iface = NULL;
+    IFaceType *iface = NULL;
     ierr = getInterface<IFaceType, false>(
         getUId(boost::typeindex::type_id<IFaceType>()), iface);
     CHKERRABORT(PETSC_COMM_SELF, ierr);
@@ -291,20 +291,19 @@ struct UnknownInterface {
    *
    * @return IFACE*
    */
-  template <class IFACE>
-  inline IFACE* getInterface() const {
-    return getInterface<IFACE*,0>();
+  template <class IFACE> inline IFACE *getInterface() const {
+    return getInterface<IFACE *, 0>();
   }
 
   virtual ~UnknownInterface() = default;
 
   /**
-  * \brief Get library version
-  *
-  * This is library version.
-  *
-  * @return error code
-  */
+   * \brief Get library version
+   *
+   * This is library version.
+   *
+   * @return error code
+   */
   virtual MoFEMErrorCode getLibVersion(Version &version) const {
     MoFEMFunctionBeginHot;
     version =
@@ -313,13 +312,14 @@ struct UnknownInterface {
   }
 
   /**
-  * \brief Get database major version
-  *
-  * This is database version. MoFEM can read DataBase from file created by older
-  * version. Then library version and database version could be different.
-  *
-  * @return error code
-  */
+   * \brief Get database major version
+   *
+   * This is database version. MoFEM can read DataBase from file created by
+   * older version. Then library version and database version could be
+   * different.
+   *
+   * @return error code
+   */
   virtual const MoFEMErrorCode getFileVersion(moab::Interface &moab,
                                               Version &version) const {
     MoFEMFunctionBegin;
@@ -346,13 +346,13 @@ struct UnknownInterface {
   }
 
   /**
-  * \brief Get database major version
-  *
-  * Implementation of particular interface could be different than main lib. For
-  * example user could use older interface, to keep back compatibility.
-  *
-  * @return error code
-  */
+   * \brief Get database major version
+   *
+   * Implementation of particular interface could be different than main lib.
+   * For example user could use older interface, to keep back compatibility.
+   *
+   * @return error code
+   */
   virtual MoFEMErrorCode getInterfaceVersion(Version &version) const {
     MoFEMFunctionBeginHot;
     version =
@@ -361,7 +361,6 @@ struct UnknownInterface {
   }
 
 protected:
-
   struct NotKnownClass {};
 
   /**
@@ -393,7 +392,6 @@ protected:
   }
 
 private:
-
   struct UIdTypeMap {
     MOFEMuuid uID;
     boost::typeindex::type_index classIdx;
@@ -409,17 +407,17 @@ private:
 
   /// Data structure for interfaces Id and class names
   typedef multi_index_container<
-    UIdTypeMap,
-    indexed_by<
-     hashed_unique<
-      member<UIdTypeMap, MOFEMuuid, &UIdTypeMap::uID>, 
-      HashMOFEMuuid
-     >,
-     hashed_unique<
-      member<UIdTypeMap, boost::typeindex::type_index, &UIdTypeMap::classIdx>
-     >
-    >
-  > iFaceTypeMap_multiIndex;
+      UIdTypeMap,
+      indexed_by<
+
+          hashed_unique<member<UIdTypeMap, MOFEMuuid, &UIdTypeMap::uID>,
+                        HashMOFEMuuid>,
+
+          hashed_unique<member<UIdTypeMap, boost::typeindex::type_index,
+                               &UIdTypeMap::classIdx>>
+
+          >>
+      iFaceTypeMap_multiIndex;
 
   mutable iFaceTypeMap_multiIndex
       iFaceTypeMap; ///< Maps MOFEMuuid to interface type name
@@ -430,6 +428,6 @@ inline MoFEMErrorCode UnknownInterface::getInterface<UnknownInterface, false>(
     const MOFEMuuid &uuid, UnknownInterface *&iface) const {
   return query_interface(uuid, &iface);
 }
-}
+} // namespace MoFEM
 
 #endif // __MOFEMUNKNOWNINTERFACE_HPP__
