@@ -94,8 +94,7 @@ struct UnknownInterface {
   MoFEMErrorCode registerInterface(const MOFEMuuid &uuid,
                                    bool error_if_registration_failed = true) {
     MoFEMFunctionBeginHot;
-    std::pair<iFaceTypeMap_multiIndex::iterator, bool> p;
-    p = iFaceTypeMap.insert(
+    auto p = iFaceTypeMap.insert(
         UIdTypeMap(uuid, boost::typeindex::type_id<IFACE>()));
     if (error_if_registration_failed && (!p.second)) {
       SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
