@@ -41,6 +41,8 @@ static const MOFEMuuid IDD_MOFEMDeprecatedCoreInterface =
  */
 struct CoreInterface : public UnknownInterface {
 
+  virtual ~CoreInterface() = default;
+
   /** \name Interfaces */
 
   /**@{*/
