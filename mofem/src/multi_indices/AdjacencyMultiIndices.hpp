@@ -33,6 +33,8 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
       const boost::shared_ptr<FieldEntity> &ent_field_ptr,
       const boost::shared_ptr<EntFiniteElement> &ent_fe_ptr);
 
+  virtual ~FieldEntityEntFiniteElementAdjacencyMap() = default;
+
   /**
    * \brief get unique iD of finite element entity
    */

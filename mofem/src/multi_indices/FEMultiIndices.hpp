@@ -68,6 +68,7 @@ struct RefElement : public interface_RefEntity<RefEntity> {
  */
 struct RefElement_MESHSET : public RefElement {
   RefElement_MESHSET(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  virtual ~RefElement_MESHSET() = default;
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
 };
@@ -78,6 +79,8 @@ struct RefElement_MESHSET : public RefElement {
 struct RefElement_PRISM : public RefElement {
   BitRefEdges *tag_BitRefEdges;
   RefElement_PRISM(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  virtual ~RefElement_PRISM() = default;
+
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
   const BitRefEdges &getBitRefEdges() const { return *tag_BitRefEdges; }
@@ -92,6 +95,8 @@ struct RefElement_TET : public RefElement {
   BitRefEdges *tag_BitRefEdges;
   const int *tag_type_data;
   RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  virtual ~RefElement_TET() = default;
+
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
   SideNumber_multiIndex &getSideNumberTable() const {
@@ -107,6 +112,7 @@ struct RefElement_TET : public RefElement {
  */
 struct RefElementFace : public RefElement {
   RefElementFace(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  virtual ~RefElementFace() = default;
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream &operator<<(std::ostream &os, const RefElementFace &e);
@@ -118,6 +124,7 @@ struct RefElementFace : public RefElement {
  */
 struct RefElement_EDGE : public RefElement {
   RefElement_EDGE(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  virtual ~RefElement_EDGE() = default;
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream &operator<<(std::ostream &os, const RefElement_EDGE &e);
@@ -129,6 +136,7 @@ struct RefElement_EDGE : public RefElement {
  */
 struct RefElement_VERTEX : public RefElement {
   RefElement_VERTEX(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  virtual ~RefElement_VERTEX() = default;
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream &operator<<(std::ostream &os, const RefElement_VERTEX &e);
@@ -145,6 +153,7 @@ template <typename T> struct interface_RefElement : interface_RefEntity<T> {
 
   interface_RefElement(const boost::shared_ptr<T> &sptr)
       : interface_RefEntity<T>(sptr) {}
+  virtual ~interface_RefElement() = default;
 
   inline int getBitRefEdgesUlong() const {
     return this->sPtr->getBitRefEdgesUlong();
@@ -167,7 +176,6 @@ template <typename T> struct interface_RefElement : interface_RefEntity<T> {
     return this->sPtr;
   }
 
-  virtual ~interface_RefElement() {}
 };
 
 /**

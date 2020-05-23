@@ -40,6 +40,8 @@ struct __attribute__((__packed__)) SideNumber {
   SideNumber(EntityHandle _ent, int _side_number, int _sense, int _offset)
       : ent(_ent), side_number(_side_number), sense(_sense), offset(_offset),
         brother_side_number(-1) {}
+  virtual ~SideNumber() = default;
+
 };
 
 /**
@@ -76,7 +78,7 @@ struct BasicEntityData {
   Tag th_RefBitLevel;
   BasicEntityData(const moab::Interface &mfield,
                   const int pcomm_id = MYPCOMM_INDEX);
-  virtual ~BasicEntityData();
+  virtual ~BasicEntityData() = default;
   inline void setDistributedMesh() { distributedMesh = true; }
   inline void unSetDistributedMesh() { distributedMesh = false; }
   inline bool trueIfDistributedMesh() const { return distributedMesh; }
@@ -262,6 +264,8 @@ struct RefEntity : public BasicEntity {
   RefEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
             const EntityHandle ent);
 
+  virtual ~RefEntity() = default;
+
   static MoFEMErrorCode getParentEnt(Interface &moab, Range ents,
                                      std::vector<EntityHandle> vec_patent_ent);
 
@@ -341,7 +345,7 @@ template <typename T> struct interface_RefEntity {
   interface_RefEntity(const interface_RefEntity<T> &interface)
       : sPtr(interface.getRefEntityPtr()) {}
 
-  virtual ~interface_RefEntity() {}
+  virtual ~interface_RefEntity() = default;
 
   inline boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
     return this->sPtr->getBasicDataPtr();
@@ -911,6 +915,7 @@ typedef std::vector<boost::weak_ptr<FieldEntity>> FieldEntity_vector_view;
 struct BaseFEEntity {
   BaseFEEntity(const boost::shared_ptr<SideNumber> &side_number_ptr)
       : sideNumberPtr(side_number_ptr){};
+  virtual ~BaseFEEntity() = default;
   boost::shared_ptr<SideNumber> sideNumberPtr;
   inline int getSideNumber() { return sideNumberPtr->side_number; }
 };

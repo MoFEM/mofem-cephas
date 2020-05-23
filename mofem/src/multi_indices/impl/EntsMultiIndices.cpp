@@ -44,7 +44,6 @@ BasicEntityData::BasicEntityData(const moab::Interface &moab,
   rval = moab.tag_get_handle("_RefBitLevel", th_RefBitLevel);
   MOAB_THROW(rval);
 }
-BasicEntityData::~BasicEntityData() {}
 
 // basic moab ent
 BasicEntity::BasicEntity(
