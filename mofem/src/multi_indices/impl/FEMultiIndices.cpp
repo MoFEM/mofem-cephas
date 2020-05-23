@@ -313,35 +313,31 @@ RefElement_TET::RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ent_ptr)
 const boost::shared_ptr<SideNumber> &
 RefElement_TET::getSideNumberPtr(const EntityHandle ent) const {
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
-  SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
+  auto miit = side_number_table.find(ent);
   if (miit != side_number_table.end())
     return *miit;
   if (sPtr->ent == ent) {
-    miit =
-        const_cast<SideNumber_multiIndex &>(side_number_table)
-            .insert(boost::shared_ptr<SideNumber>(new SideNumber(ent, 0, 0, 0)))
-            .first;
+    miit = const_cast<SideNumber_multiIndex &>(side_number_table)
+               .insert(boost::make_shared<SideNumber>(ent, 0, 0, 0))
+               .first;
     return *miit;
   }
   if (moab.type_from_handle(ent) == MBENTITYSET) {
-    miit =
-        const_cast<SideNumber_multiIndex &>(side_number_table)
-            .insert(boost::shared_ptr<SideNumber>(new SideNumber(ent, 0, 0, 0)))
-            .first;
+    miit = const_cast<SideNumber_multiIndex &>(side_number_table)
+               .insert(boost::make_shared<SideNumber>(ent, 0, 0, 0))
+               .first;
     return *miit;
   }
   int side_number, sense, offset;
   rval = moab.side_number(sPtr->ent, ent, side_number, sense, offset);
   MOAB_THROW(rval);
-  std::pair<SideNumber_multiIndex::iterator, bool> p_miit;
-  p_miit = const_cast<SideNumber_multiIndex &>(side_number_table)
-               .insert(boost::shared_ptr<SideNumber>(
-                   new SideNumber(ent, side_number, sense, offset)));
+  auto p_miit = const_cast<SideNumber_multiIndex &>(side_number_table)
+                    .insert(boost::make_shared<SideNumber>(ent, side_number,
+                                                           sense, offset));
   miit = p_miit.first;
-  if (miit->get()->ent != ent) {
+  if (miit->get()->ent != ent) 
     THROW_MESSAGE("this not working");
-  }
-  // std::cerr << side_number << " " << sense << " " << offset << std::endl;
+  
   return *miit;
 }
 std::ostream &operator<<(std::ostream &os, const RefElement_TET &e) {
