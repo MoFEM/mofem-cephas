@@ -306,8 +306,7 @@ RefElement_TET::RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ent_ptr)
     THROW_MESSAGE("this work only for TETs");
   }
   const_cast<SideNumber_multiIndex &>(side_number_table)
-      .insert(
-          boost::shared_ptr<SideNumber>(new SideNumber(sPtr->ent, 0, 0, 0)));
+      .insert(boost::make_shared<SideNumber>(sPtr->ent, 0, 0, 0));
 }
 
 const boost::shared_ptr<SideNumber> &
