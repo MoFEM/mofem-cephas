@@ -34,6 +34,8 @@ struct RefElement : public interface_RefEntity<RefEntity> {
 
   SideNumber_multiIndex side_number_table;
   RefElement(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  virtual ~RefElement() = default;
+
   virtual const BitRefEdges &getBitRefEdges() const { return DummyBitRefEdges; }
 
   virtual int getBitRefEdgesUlong() const { return 0; }
@@ -347,6 +349,7 @@ template <typename T> struct interface_FiniteElement {
   mutable boost::shared_ptr<T> sFePtr;
 
   interface_FiniteElement(const boost::shared_ptr<T> &ptr) : sFePtr(ptr){};
+  virtual ~interface_FiniteElement() = default;
 
   inline const boost::shared_ptr<FiniteElement> &get_MoFEMFiniteElementPtr() {
     return this->sFePtr;
@@ -433,6 +436,7 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
 
   EntFiniteElement(const boost::shared_ptr<RefElement> &ref_finite_element,
                    const boost::shared_ptr<FiniteElement> &fe_ptr);
+  virtual ~EntFiniteElement() = default;
 
   /**
    * \brief Get unique UId for finite element entity
@@ -549,6 +553,7 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
 
   interface_EntFiniteElement(const boost::shared_ptr<T> &sptr)
       : interface_FiniteElement<T>(sptr), interface_RefElement<T>(sptr) {}
+  virtual ~interface_EntFiniteElement() = default;
 
   inline const FEDofEntity_multiIndex &getDataDofs() const {
     return this->sPtr->getDataDofs();
@@ -582,24 +587,10 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
     return this->sPtr->getSideNumberTable();
   }
 
-  // /** \deprecated Use getSideNumberTable() instead
-  // */
-  // DEPRECATED SideNumber_multiIndex &get_side_number_table() const {
-  //   return this->sPtr->getSideNumberTable();
-  // }
-
   inline MoFEMErrorCode getElementAdjacency(const Field *field_ptr,
                                             Range &adjacency) {
     return this->getElementAdjacency(field_ptr, adjacency);
   }
-
-  // /** \deprecated Use getElementAdjacency() instead
-  // */
-  // DEPRECATED inline MoFEMErrorCode get_element_adjacency(
-  //   const Field *field_ptr,Range &adjacency
-  // ) {
-  //   return this->getElementAdjacency(field_ptr,adjacency);
-  // }
 
   inline boost::shared_ptr<RefElement> &getRefElement() const {
     return this->sPtr->getRefElement();
@@ -617,6 +608,8 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
  */
 struct NumeredEntFiniteElement
     : public interface_EntFiniteElement<EntFiniteElement> {
+
+  virtual ~NumeredEntFiniteElement() = default;      
 
   typedef interface_FiniteElement<EntFiniteElement>
       interface_type_FiniteElement;
@@ -764,6 +757,7 @@ struct interface_NumeredEntFiniteElement
 
   interface_NumeredEntFiniteElement(const boost::shared_ptr<T> &sptr)
       : interface_EntFiniteElement<T>(sptr){};
+  virtual ~interface_NumeredEntFiniteElement() = default;
 
   /**
    * \brief Get partition number
