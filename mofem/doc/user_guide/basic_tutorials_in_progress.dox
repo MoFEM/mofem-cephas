@@ -1,0 +1,98 @@
+/*! \page basic_tutorials_in_progress Basic tutorials (in progress)
+
+\tableofcontents
+
+The tutorials contain a number of basic programs that are built on top of each
+other. Each of the tutorials has the following structure
+
+-# <b> Introduction:</b> Problem to solve, mathematical equations, derivations
+leading to finite element implemetation
+-# <b> Implementation:</b> Detailed explanation of the source code
+-# <b> Results:</b> How to run the program, output, visualisation, intepretation
+and comments, possible extensions.
+-# <b> Plain program:</b> Full source code without extended comments
+
+The source code of the tutorials is located in the directory
+<tt>mofem-cephas/mofem/users_modules/basic_finite_elements/tutorials/</tt>
+and its corresponding executatbles are in <tt>um/build/basic_finite_elements/tutorials/</tt>
+
+Interface \ref basic_lessons1_interfaces
+
+\section simple_interface Simple interface
+
+In this part of the tutorials, you will be guided through the process of getting
+familiar with MoFEM. Firstly, solving the Poisson's equation. You will:
+- solve the equation in MoFEM from the simplest case to more complicated ones
+- get familiar with the concept of User Data Operator (UDO) and how to
+implement new operators and use them for the assembling process.
+- expand the code to solve 3D problem from 2D one.
+- be able to use PETSc linear solver (<a
+href="https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html">KSP</a>),
+nonlinear solver (<a
+href="https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/index.html">SNES</a>),
+and time-stepping solver (<a href="https://www.mcs.anl.gov/petsc/documentation/tutorials/ECP19/ECP19_TS.pdf">TS</a>)
+- get familiar with <a href="http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCFIELDSPLIT.html">PCFIELDSPLIT</a>
+pre-conditioner to solve the problem with multiple fields.
+
+\subsection basic_tutorials_poisson_problem Linear and nonlinear Poisson's equation
+
+Let's start to learn MoFEM by solving the linear Poisson's equation in 2D with
+homogeneous boundary condition. At the end of this tutorial, there will be
+instruction on how to easily switch the implementation to solve the equation in
+3D with a few changes in the code
+
+- \subpage basic_tutorials_poisson_homogeneous
+
+Based on the implementation of the previous step, let's explore how to expand
+the code to cover the non-homogeneous boundary condition
+
+- \subpage basic_tutorials_poisson_nonhomogeneous
+
+Below is an alternative way to solve the equation with non-homogeneous boundary
+condition using Lagrage multiplier which means making use of an additional field 
+
+- \subpage basic_tutorials_poisson_lagrange_multiplier
+
+That was for linear problem using KSP solver. Now, let's try to solve a
+nonlinear Poisson's equation by mean of SNES solver
+
+- \subpage basic_tutorials_poisson_nonlinear
+
+Let's concretise what you learnt by solving a variant of the nonlinear Poisson's
+equation, namely Minimal surface equation
+
+- \subpage basic_tutorials_minimal_surface_equation
+
+Example of implementation of nonlinear Poisson equation using SNES (Newton)
+solver
+
+\subsection basic_tutorials_time_dependent_problems Time-dependent problems
+
+You have finished some Poisson's equations. By now, you have general idea how
+MoFEM works and how to implement operators which is the crucial part in MoFEM.
+
+Experience with all of the implemetation for linear/nonlinear Poisson's equation
+would be helpful as you progress to the next stage which involves solving
+time-dependent heat equation and wave equation using PETSc time-stepping solver
+(<a
+href="https://www.mcs.anl.gov/petsc/documentation/tutorials/ECP19/ECP19_TS.pdf">TS</a>).
+
+This part will deal with time-dependent problem where PETSc time-stepping solver
+is involved. You will be working with heat equation, wave equation and
+reaction-diffusion equation.
+
+Implicit scheme
+- \subpage basic_tutorials_heat_equation.
+
+Implicit scheme
+- \subpage basic_tutorials_wave_equation.
+
+Implicit-Explicit (IMEX) scheme
+- \subpage basic_tutorials_reaction_difffusion.
+
+
+\subsection basic_tutorials_vector_value_problems Vector-value problems
+
+The previous was dealing with scalar-value problem, now vector-value problems
+
+*/
