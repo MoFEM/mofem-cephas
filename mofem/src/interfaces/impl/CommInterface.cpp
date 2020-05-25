@@ -493,8 +493,7 @@ MoFEMErrorCode CommInterface::exchangeFieldData(const std::string field_name,
   MoFEMFunctionBegin;
   if (m_field.get_comm_size() > 1) {
 
-    const FieldEntity_multiIndex *field_ents;
-    CHKERR m_field.get_field_ents(&field_ents);
+    auto *field_ents = m_field.get_field_ents();
 
     Range exchange_ents_data_verts, exchange_ents_data;
 

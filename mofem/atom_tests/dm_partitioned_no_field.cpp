@@ -90,8 +90,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.build_fields();
 
     auto print_field_ents = [&](const std::string field_name) {
-      const FieldEntity_multiIndex *field_ents;
-      CHKERR m_field.get_field_ents(&field_ents);
+      auto *field_ents = m_field.get_field_ents();
       for (auto it =
                field_ents->get<FieldName_mi_tag>().lower_bound(field_name);
            it != field_ents->get<FieldName_mi_tag>().upper_bound(field_name);
@@ -117,8 +116,7 @@ int main(int argc, char *argv[]) {
     auto check_exchanged_values = [&](const std::string field_name) {
       MoFEMFunctionBegin;
       if (m_field.get_comm_rank() != 0) {
-        const FieldEntity_multiIndex *field_ents;
-        CHKERR m_field.get_field_ents(&field_ents);
+        auto *field_ents = m_field.get_field_ents();
         for (auto it =
                  field_ents->get<FieldName_mi_tag>().lower_bound(field_name);
              it != field_ents->get<FieldName_mi_tag>().upper_bound(field_name);

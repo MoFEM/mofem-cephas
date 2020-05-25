@@ -26,20 +26,6 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode
-Core::get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const {
-  MoFEMFunctionBeginHot;
-  *fe_ptr = &finiteElements;
-  MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode Core::get_ents_finite_elements(
-    const EntFiniteElement_multiIndex **fe_ent_ptr) const {
-  MoFEMFunctionBeginHot;
-  *fe_ent_ptr = &entsFiniteElements;
-  MoFEMFunctionReturnHot(0);
-}
-
 bool Core::check_finite_element(const std::string &name) const {
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
       FeSetByName;

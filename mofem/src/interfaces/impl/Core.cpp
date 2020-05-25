@@ -789,6 +789,20 @@ MoFEMErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode
+Core::get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const {
+  MoFEMFunctionBeginHot;
+  *fe_ptr = &finiteElements;
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode Core::get_ents_finite_elements(
+    const EntFiniteElement_multiIndex **fe_ent_ptr) const {
+  MoFEMFunctionBeginHot;
+  *fe_ent_ptr = &entsFiniteElements;
+  MoFEMFunctionReturnHot(0);
+}
+
 MeshsetsManager *Core::get_meshsets_manager_ptr() {
   MeshsetsManager *meshsets_manager_ptr;
   getInterface(meshsets_manager_ptr);
@@ -799,6 +813,36 @@ const MeshsetsManager *Core::get_meshsets_manager_ptr() const {
   MeshsetsManager *meshsets_manager_ptr;
   getInterface(meshsets_manager_ptr);
   return meshsets_manager_ptr;
+}
+
+const Field_multiIndex *Core::get_fields() const {
+  return &fIelds;
+}
+const RefEntity_multiIndex *Core::get_ref_ents() const {
+  return &refinedEntities;
+}
+const RefElement_multiIndex *Core::get_ref_finite_elements() const {
+  return &refinedFiniteElements;
+}
+const FiniteElement_multiIndex *Core::get_finite_elements() const {
+  return &finiteElements;
+}
+const EntFiniteElement_multiIndex *Core::get_ents_finite_elements() const {
+  return &entsFiniteElements;
+}
+const FieldEntity_multiIndex *Core::get_field_ents() const {
+  return &entsFields;
+}
+const DofEntity_multiIndex *Core::get_dofs() const {
+  return &dofsField;
+}
+const Problem *Core::get_problem(const std::string &problem_name) const {
+  const Problem *prb;
+  CHKERR get_problem(problem_name, &prb);
+  return prb;
+}
+const Problem_multiIndex *Core::get_problems() const {
+  return &pRoblems;
 }
 
 } // namespace MoFEM

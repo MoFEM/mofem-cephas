@@ -468,8 +468,8 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
                                              const bool square_matrix,
                                              int verb) {
   MoFEM::Interface &m_field = cOre;
-  const EntFiniteElement_multiIndex *fe_ent_ptr;
-  const DofEntity_multiIndex *dofs_field_ptr;
+  auto fe_ent_ptr = m_field.get_ents_finite_elements();
+  auto dofs_field_ptr = m_field.get_dofs();
   ProblemManagerFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
@@ -481,8 +481,6 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
              problem_ptr->getName().c_str());
   }
   CHKERR m_field.clear_problem(problem_ptr->getName());
-  CHKERR m_field.get_ents_finite_elements(&fe_ent_ptr);
-  CHKERR m_field.get_dofs(&dofs_field_ptr);
 
   // zero finite elements
   problem_ptr->numeredFiniteElements->clear();
@@ -651,9 +649,9 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     Problem *problem_ptr, const bool square_matrix, int verb) {
   MoFEM::Interface &m_field = cOre;
   const Field_multiIndex *fields_ptr;
-  const FiniteElement_multiIndex *fe_ptr;
-  const EntFiniteElement_multiIndex *fe_ent_ptr;
-  const DofEntity_multiIndex *dofs_field_ptr;
+  auto fe_ptr = m_field.get_finite_elements();
+  auto fe_ent_ptr = m_field.get_ents_finite_elements();
+  auto dofs_field_ptr = m_field.get_dofs();
   ProblemManagerFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
@@ -662,9 +660,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
   CHKERR getOptions();
   CHKERR m_field.get_fields(&fields_ptr);
-  CHKERR m_field.get_finite_elements(&fe_ptr);
-  CHKERR m_field.get_ents_finite_elements(&fe_ent_ptr);
-  CHKERR m_field.get_dofs(&dofs_field_ptr);
 
   if (problem_ptr->getBitRefLevel().none()) {
     SETERRQ1(PETSC_COMM_SELF, 1, "problem <%s> refinement level not set",
@@ -1133,8 +1128,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       data_procs = rbuf_col;
     }
 
-    const DofEntity_multiIndex *dofs_ptr;
-    CHKERR m_field.get_dofs(&dofs_ptr);
+    auto dofs_ptr = m_field.get_dofs();
 
     UId uid;
     NumeredDofEntity_multiIndex::iterator dit;
@@ -1236,11 +1230,10 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
     const map<std::string, std::pair<EntityType, EntityType>> *entityMapCol,
     int verb) {
   MoFEM::Interface &m_field = cOre;
-  const Problem_multiIndex *problems_ptr;
+  auto problems_ptr = m_field.get_problems();
   ProblemManagerFunctionBegin;
 
   CHKERR m_field.clear_problem(out_name);
-  CHKERR m_field.get_problems(&problems_ptr);
 
   // get reference to all problems
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
@@ -1497,11 +1490,10 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
   if (!(cOre.getBuildMoFEM() & Core::BUILD_ADJ))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "adjacencies not build");
   MoFEM::Interface &m_field = cOre;
-  const Problem_multiIndex *problems_ptr;
+  auto problems_ptr = m_field.get_problems();
   ProblemManagerFunctionBegin;
 
   CHKERR m_field.clear_problem(out_name);
-  CHKERR m_field.get_problems(&problems_ptr);
   // get reference to all problems
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
   ProblemByName &problems_by_name =
@@ -1778,7 +1770,7 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string name,
                                                        int verb) {
 
   MoFEM::Interface &m_field = cOre;
-  const Problem_multiIndex *problems_ptr;
+  auto problems_ptr = m_field.get_problems();
   ProblemManagerFunctionBegin;
 
   if (!(cOre.getBuildMoFEM() & Core::BUILD_FIELD))
@@ -1791,7 +1783,6 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string name,
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "adjacencies not build");
   MOFEM_LOG("WORLD", Sev::verbose) << "Simple partition problem " << name;
 
-  CHKERR m_field.get_problems(&problems_ptr);
   // find p_miit
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
   ProblemByName &problems_set =
@@ -1924,7 +1915,7 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string name,
 MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
                                                  int verb) {
   MoFEM::Interface &m_field = cOre;
-  const Problem_multiIndex *problems_ptr;
+  auto problems_ptr = m_field.get_problems();
   ProblemManagerFunctionBegin;
 
   MOFEM_LOG("WORLD", Sev::noisy) << "Partition problem " << name;
@@ -1944,7 +1935,6 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
 
   // Find problem pointer by name
-  CHKERR m_field.get_problems(&problems_ptr);
   auto &problems_set =
       const_cast<ProblemsByName &>(problems_ptr->get<Problem_mi_tag>());
   auto p_miit = problems_set.find(name);
@@ -2104,7 +2094,7 @@ MoFEMErrorCode ProblemsManager::inheritPartition(
     const std::string name, const std::string problem_for_rows, bool copy_rows,
     const std::string problem_for_cols, bool copy_cols, int verb) {
   MoFEM::Interface &m_field = cOre;
-  const Problem_multiIndex *problems_ptr;
+  auto problems_ptr = m_field.get_problems();
   ProblemManagerFunctionBegin;
 
   if (!(cOre.getBuildMoFEM() & Core::BUILD_PROBLEM))
@@ -2113,7 +2103,6 @@ MoFEMErrorCode ProblemsManager::inheritPartition(
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
 
   // find p_miit
-  CHKERR m_field.get_problems(&problems_ptr);
   ProblemByName &problems_by_name =
       const_cast<ProblemByName &>(problems_ptr->get<Problem_mi_tag>());
   ProblemByName::iterator p_miit = problems_by_name.find(name);
@@ -2356,8 +2345,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
                                                         int low_proc,
                                                         int hi_proc, int verb) {
   MoFEM::Interface &m_field = cOre;
-  const Problem_multiIndex *problems_ptr;
-  const EntFiniteElement_multiIndex *fe_ent_ptr;
+  auto problems_ptr = m_field.get_problems();
+  auto fe_ent_ptr = m_field.get_ents_finite_elements();
   ProblemManagerFunctionBegin;
 
   if (!(cOre.getBuildMoFEM() & Core::BUILD_FIELD))
@@ -2381,9 +2370,6 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
     low_proc = m_field.get_comm_rank();
   if (hi_proc == -1)
     hi_proc = m_field.get_comm_rank();
-
-  // Get pointer to problem data struture
-  CHKERR m_field.get_problems(&problems_ptr);
 
   // Find pointer to problem of given name
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
@@ -2411,7 +2397,6 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
 
   // Loop over all elements in database and if right element is there add it
   // to problem finite element multi-index
-  CHKERR m_field.get_ents_finite_elements(&fe_ent_ptr);
   for (auto efit = fe_ent_ptr->begin(); efit != fe_ent_ptr->end(); efit++) {
 
     // if element is not part of problem
@@ -2579,8 +2564,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
     MOFEM_LOG("SYNC", Sev::verbose)
         << p_miit->getName() << " nb. elems "
         << std::distance(elements_on_rank.first, elements_on_rank.second);
-    const FiniteElement_multiIndex *fe_ptr;
-    CHKERR m_field.get_finite_elements(&fe_ptr);
+    auto fe_ptr = m_field.get_finite_elements();
     for (auto &fe : *fe_ptr) {
       auto e_range =
           problem_finite_elements.get<Composite_Name_And_Part_mi_tag>()
@@ -2601,7 +2585,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
 MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
                                                    int verb) {
   MoFEM::Interface &m_field = cOre;
-  const Problem_multiIndex *problems_ptr;
+  auto problems_ptr = m_field.get_problems();
   ProblemManagerFunctionBegin;
 
   if (!(cOre.getBuildMoFEM() & Core::PARTITION_PROBLEM))
@@ -2610,9 +2594,6 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
   if (!(cOre.getBuildMoFEM() & Core::PARTITION_FE))
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
             "partitions finite elements not build");
-
-  // find p_miit
-  CHKERR m_field.get_problems(&problems_ptr);
 
   // get problem pointer
   auto p_miit = problems_ptr->get<Problem_mi_tag>().find(name);
@@ -2716,7 +2697,7 @@ MoFEMErrorCode
 ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string name,
                                                      int verb) {
   MoFEM::Interface &m_field = cOre;
-  const Problem_multiIndex *problems_ptr;
+  auto problems_ptr = m_field.get_problems();
   ProblemManagerFunctionBegin;
 
   if (!(cOre.getBuildMoFEM() & Core::PARTITION_PROBLEM))
@@ -2729,7 +2710,6 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string name,
   // get problem pointer
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   // find p_miit
-  CHKERR m_field.get_problems(&problems_ptr);
   ProblemsByName &problems_set =
       const_cast<ProblemsByName &>(problems_ptr->get<Problem_mi_tag>());
   ProblemsByName::iterator p_miit = problems_set.find(name);

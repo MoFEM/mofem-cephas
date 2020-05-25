@@ -208,7 +208,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
-  const RefElement_multiIndex *refined_finite_elements_ptr;
+  auto refined_finite_elements_ptr = m_field.get_ref_finite_elements();
   ReadUtilIface *read_util;
   MoFEMFunctionBegin;
 
@@ -314,7 +314,6 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   Range ents_to_set_bit;
 
   CHKERR m_field.get_ref_ents(&refined_ents_ptr);
-  CHKERR m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
   Check check;
   if (debug)
@@ -766,16 +765,13 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
 
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  const RefEntity_multiIndex *refined_ents_ptr;
-  const RefElement_multiIndex *refined_finite_elements_ptr;
+  auto refined_ents_ptr = m_field.get_ref_ents();
+  auto refined_finite_elements_ptr = m_field.get_ref_finite_elements();
 
   // FIXME: refinement is based on entity handlers, should work on global ids of
   // nodes, this will allow parallelise algorithm in the future
 
   MoFEMFunctionBegin;
-
-  CHKERR m_field.get_ref_ents(&refined_ents_ptr);
-  CHKERR m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
   typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
 

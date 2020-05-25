@@ -523,8 +523,7 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
     // Verify consistency with database
     if (verify) {
       // Get pointer to multi-index with field entities
-      const FieldEntity_multiIndex *field_ents;
-      CHKERR m_field.get_field_ents(&field_ents);
+      auto *field_ents = m_field.get_field_ents();
 
       auto get_ents_max_order = [&](const std::vector<EntityHandle> &ents) {
         boost::shared_ptr<std::vector<const void *>> ents_max_order(

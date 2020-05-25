@@ -248,10 +248,9 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
                                              int verb) const {
   MoFEM::Interface &m_field = cOre;
   const RefEntity_multiIndex *ref_ents_ptr;
-  const RefElement_multiIndex *ref_fe_ptr;
+  auto ref_fe_ptr = m_field.get_ref_finite_elements();
   MoFEMFunctionBegin;
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR m_field.get_ref_finite_elements(&ref_fe_ptr);
 
   if (verb > VERBOSE) 
     PetscSynchronizedPrintf(PETSC_COMM_SELF, "nb. entities to add %d\n",
@@ -298,10 +297,9 @@ MoFEMErrorCode BitRefManager::setElementsBitRefLevel(const Range &ents,
                                                      int verb) const {
   MoFEM::Interface &m_field = cOre;
   const RefEntity_multiIndex *ref_ents_ptr;
-  const RefElement_multiIndex *ref_fe_ptr;
+  auto ref_fe_ptr = m_field.get_ref_finite_elements();
   MoFEMFunctionBegin;
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR m_field.get_ref_finite_elements(&ref_fe_ptr);
 
   for (Range::const_pair_iterator pit = ents.pair_begin();
        pit != ents.pair_end(); pit++) {
@@ -334,10 +332,9 @@ MoFEMErrorCode BitRefManager::setEntitiesBitRefLevel(const Range &ents,
                                                      int verb) const {
   MoFEM::Interface &m_field = cOre;
   const RefEntity_multiIndex *ref_ents_ptr;
-  const RefElement_multiIndex *ref_fe_ptr;
+  auto ref_fe_ptr = m_field.get_ref_finite_elements();
   MoFEMFunctionBegin;
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR m_field.get_ref_finite_elements(&ref_fe_ptr);
 
   for (Range::const_pair_iterator pit = ents.pair_begin();
        pit != ents.pair_end(); pit++) {
@@ -394,10 +391,9 @@ MoFEMErrorCode BitRefManager::setBitLevelToMeshset(const EntityHandle meshset,
                                                    int verb) const {
   MoFEM::Interface &m_field = cOre;
   const RefEntity_multiIndex *ref_ents_ptr;
-  const RefElement_multiIndex *ref_fe_ptr;
+  auto ref_fe_ptr = m_field.get_ref_finite_elements();
   MoFEMFunctionBegin;
   CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR m_field.get_ref_finite_elements(&ref_fe_ptr);
   // Add ref entity
   std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
