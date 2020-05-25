@@ -33,7 +33,7 @@ struct RefElement : public interface_RefEntity<RefEntity> {
   static BitRefEdges DummyBitRefEdges;
 
   SideNumber_multiIndex side_number_table;
-  RefElement(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElement(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
   virtual ~RefElement() = default;
 
   virtual const BitRefEdges &getBitRefEdges() const { return DummyBitRefEdges; }
@@ -67,7 +67,7 @@ struct RefElement : public interface_RefEntity<RefEntity> {
  * \ingroup fe_multi_indices
  */
 struct RefElement_MESHSET : public RefElement {
-  RefElement_MESHSET(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElement_MESHSET(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
   virtual ~RefElement_MESHSET() = default;
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
@@ -78,7 +78,7 @@ struct RefElement_MESHSET : public RefElement {
  */
 struct RefElement_PRISM : public RefElement {
   BitRefEdges *tag_BitRefEdges;
-  RefElement_PRISM(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElement_PRISM(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
   virtual ~RefElement_PRISM() = default;
 
   const boost::shared_ptr<SideNumber> &
@@ -94,7 +94,7 @@ struct RefElement_PRISM : public RefElement {
 struct RefElement_TET : public RefElement {
   BitRefEdges *tag_BitRefEdges;
   const int *tag_type_data;
-  RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
   virtual ~RefElement_TET() = default;
 
   const boost::shared_ptr<SideNumber> &
@@ -111,7 +111,7 @@ struct RefElement_TET : public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElementFace : public RefElement {
-  RefElementFace(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElementFace(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
   virtual ~RefElementFace() = default;
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
@@ -123,7 +123,7 @@ struct RefElementFace : public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_EDGE : public RefElement {
-  RefElement_EDGE(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElement_EDGE(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
   virtual ~RefElement_EDGE() = default;
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
@@ -135,7 +135,7 @@ struct RefElement_EDGE : public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_VERTEX : public RefElement {
-  RefElement_VERTEX(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElement_VERTEX(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
   virtual ~RefElement_VERTEX() = default;
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;

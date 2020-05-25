@@ -37,9 +37,8 @@ CommInterface::~CommInterface() {}
 
 MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
   MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ents_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
 
   // make a buffer
   std::vector<std::vector<EntityHandle>> sbuffer(m_field.get_comm_size());

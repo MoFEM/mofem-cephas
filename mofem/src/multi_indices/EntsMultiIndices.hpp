@@ -578,7 +578,7 @@ struct FieldEntity : public interface_Field<Field>,
   UId globalUId; ///< Global unique id for this entity
 
   FieldEntity(const boost::shared_ptr<Field> &field_ptr,
-              const boost::shared_ptr<RefEntity> &ref_ent_ptr,
+              const boost::shared_ptr<RefEntity> &ref_ents_ptr,
               boost::shared_ptr<double *const> &&field_data_adaptor_ptr,
               boost::shared_ptr<const int> &&t_max_order_ptr);
 
@@ -605,7 +605,7 @@ struct FieldEntity : public interface_Field<Field>,
    */
   static boost::shared_ptr<FieldData *const> makeSharedFieldDataAdaptorPtr(
       const boost::shared_ptr<Field> &field_ptr,
-      const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+      const boost::shared_ptr<RefEntity> &ref_ents_ptr);
 
   /**
    * @brief Get shared ptr to vector adaptor pointing to the field tag data on

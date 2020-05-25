@@ -22,8 +22,8 @@ const boost::shared_ptr<SideNumber> RefElement::nullSideNumber =
     boost::shared_ptr<SideNumber>();
 
 // ref moab FiniteElement
-RefElement::RefElement(const boost::shared_ptr<RefEntity> &ref_ent_ptr)
-    : interface_RefEntity<RefEntity>(ref_ent_ptr) {}
+RefElement::RefElement(const boost::shared_ptr<RefEntity> &ref_ents_ptr)
+    : interface_RefEntity<RefEntity>(ref_ents_ptr) {}
 
 std::ostream &operator<<(std::ostream &os, const RefElement &e) {
   os << " ref egdes " << e.getBitRefEdges();
@@ -32,9 +32,9 @@ std::ostream &operator<<(std::ostream &os, const RefElement &e) {
 }
 
 RefElement_MESHSET::RefElement_MESHSET(
-    const boost::shared_ptr<RefEntity> &ref_ent_ptr)
-    : RefElement(ref_ent_ptr) {
-  switch (ref_ent_ptr->getEntType()) {
+    const boost::shared_ptr<RefEntity> &ref_ents_ptr)
+    : RefElement(ref_ents_ptr) {
+  switch (ref_ents_ptr->getEntType()) {
   case MBENTITYSET:
     break;
   default:
@@ -52,16 +52,16 @@ RefElement_MESHSET::getSideNumberPtr(const EntityHandle ent) const {
   return *miit;
 }
 RefElement_PRISM::RefElement_PRISM(
-    const boost::shared_ptr<RefEntity> &ref_ent_ptr)
-    : RefElement(ref_ent_ptr) {
+    const boost::shared_ptr<RefEntity> &ref_ents_ptr)
+    : RefElement(ref_ents_ptr) {
   Tag th_RefBitEdge;
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
   rval = moab.tag_get_handle("_RefBitEdge", th_RefBitEdge);
   MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitEdge, &ref_ent_ptr->ent, 1,
+  rval = moab.tag_get_by_ptr(th_RefBitEdge, &ref_ents_ptr->ent, 1,
                              (const void **)&tag_BitRefEdges);
   MOAB_THROW(rval);
-  switch (ref_ent_ptr->getEntType()) {
+  switch (ref_ents_ptr->getEntType()) {
   case MBPRISM:
     break;
   default:
@@ -290,16 +290,16 @@ RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {
   return nullSideNumber;
 }
 
-RefElement_TET::RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ent_ptr)
-    : RefElement(ref_ent_ptr), tag_BitRefEdges(NULL) {
+RefElement_TET::RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ents_ptr)
+    : RefElement(ref_ents_ptr), tag_BitRefEdges(NULL) {
   Tag th_RefBitEdge;
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
   rval = moab.tag_get_handle("_RefBitEdge", th_RefBitEdge);
   MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitEdge, &ref_ent_ptr->ent, 1,
+  rval = moab.tag_get_by_ptr(th_RefBitEdge, &ref_ents_ptr->ent, 1,
                              (const void **)&tag_BitRefEdges);
   MOAB_THROW(rval);
-  switch (ref_ent_ptr->getEntType()) {
+  switch (ref_ents_ptr->getEntType()) {
   case MBTET:
     break;
   default:
@@ -347,12 +347,12 @@ std::ostream &operator<<(std::ostream &os, const RefElement_TET &e) {
   return os;
 }
 
-RefElementFace::RefElementFace(const boost::shared_ptr<RefEntity> &ref_ent_ptr)
-    : RefElement(ref_ent_ptr) {
+RefElementFace::RefElementFace(const boost::shared_ptr<RefEntity> &ref_ents_ptr)
+    : RefElement(ref_ents_ptr) {
 
   int nb_nodes = 0;
   int nb_edges = 0;
-  switch (ref_ent_ptr->getEntType()) {
+  switch (ref_ents_ptr->getEntType()) {
   case MBTRI:
     nb_nodes = nb_edges = 3;
     break;
@@ -422,9 +422,9 @@ std::ostream &operator<<(std::ostream &os, const RefElementFace &e) {
   return os;
 }
 RefElement_EDGE::RefElement_EDGE(
-    const boost::shared_ptr<RefEntity> &ref_ent_ptr)
-    : RefElement(ref_ent_ptr) {
-  switch (ref_ent_ptr->getEntType()) {
+    const boost::shared_ptr<RefEntity> &ref_ents_ptr)
+    : RefElement(ref_ents_ptr) {
+  switch (ref_ents_ptr->getEntType()) {
   case MBEDGE:
     break;
   default:
@@ -466,9 +466,9 @@ std::ostream &operator<<(std::ostream &os, const RefElement_EDGE &e) {
   return os;
 }
 RefElement_VERTEX::RefElement_VERTEX(
-    const boost::shared_ptr<RefEntity> &ref_ent_ptr)
-    : RefElement(ref_ent_ptr) {
-  switch (ref_ent_ptr->getEntType()) {
+    const boost::shared_ptr<RefEntity> &ref_ents_ptr)
+    : RefElement(ref_ents_ptr) {
+  switch (ref_ents_ptr->getEntType()) {
   case MBVERTEX:
     break;
   default:

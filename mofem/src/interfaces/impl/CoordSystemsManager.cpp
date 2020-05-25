@@ -185,9 +185,8 @@ CoordSystemsManager::setFieldCoordinateSystem(const std::string field_name,
                                               const std::string cs_name) {
 
   Interface &m_field = cOre;
-  const Field_multiIndex *fields_ptr;
+  auto fields_ptr = m_field.get_fields();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_fields(&fields_ptr);
 
   // Find field
   auto field_it = fields_ptr->get<FieldName_mi_tag>().find(field_name);

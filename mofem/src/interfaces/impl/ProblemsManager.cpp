@@ -648,7 +648,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     Problem *problem_ptr, const bool square_matrix, int verb) {
   MoFEM::Interface &m_field = cOre;
-  const Field_multiIndex *fields_ptr;
+  auto fields_ptr = m_field.get_fields();
   auto fe_ptr = m_field.get_finite_elements();
   auto fe_ent_ptr = m_field.get_ents_finite_elements();
   auto dofs_field_ptr = m_field.get_dofs();
@@ -659,7 +659,6 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   CHKERR m_field.clear_problem(problem_ptr->getName());
 
   CHKERR getOptions();
-  CHKERR m_field.get_fields(&fields_ptr);
 
   if (problem_ptr->getBitRefLevel().none()) {
     SETERRQ1(PETSC_COMM_SELF, 1, "problem <%s> refinement level not set",

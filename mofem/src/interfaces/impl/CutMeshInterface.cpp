@@ -1321,7 +1321,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MeshRefinement *refiner;
-  const RefEntity_multiIndex *ref_ents_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
   CutMeshFunctionBegin;
 
   if (cutEdges.size() != edgesToCut.size())
@@ -1330,7 +1330,6 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
   auto refine_mesh = [&]() {
     MoFEMFunctionBegin;
     CHKERR m_field.getInterface(refiner);
-    CHKERR m_field.get_ref_ents(&ref_ents_ptr);
     CHKERR refiner->add_vertices_in_the_middle_of_edges(cutEdges, bit);
     CHKERR refiner->refine_TET(vOlume, bit, false, QUIET,
                                debug ? &cutEdges : NULL);
@@ -1990,11 +1989,10 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
   CoreInterface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   MeshRefinement *refiner;
-  const RefEntity_multiIndex *ref_ents_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
   CutMeshFunctionBegin;
 
   CHKERR m_field.getInterface(refiner);
-  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   CHKERR refiner->add_vertices_in_the_middle_of_edges(trimEdges, bit);
   CHKERR refiner->refine_TET(cutNewVolumes, bit, false, QUIET,
                              debug ? &trimEdges : NULL);
@@ -3054,9 +3052,7 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
 
   auto reconstruct_refined_ents = [&]() {
     MoFEMFunctionBegin;
-    const RefEntity_multiIndex *refined_ents_ptr;
-    CHKERR m_field.get_ref_ents(&refined_ents_ptr);
-    CHKERR reconstructMultiIndex(*refined_ents_ptr);
+    CHKERR reconstructMultiIndex(*m_field.get_ref_ents());
     MoFEMFunctionReturn(0);
   };
 

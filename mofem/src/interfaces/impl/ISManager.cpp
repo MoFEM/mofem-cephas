@@ -40,11 +40,10 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
                                         const RowColData row_col) const {
   const MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
-  const Field_multiIndex *fields_ptr;
+  auto fields_ptr = m_field.get_fields();
   auto fe_ptr = m_field.get_finite_elements();
   MoFEMFunctionBegin;
   CHKERR m_field.get_problem(problem_name, &problem_ptr);
-  CHKERR m_field.get_fields(&fields_ptr);
   boost::shared_ptr<NumeredDofEntity_multiIndex> dofs;
   BitFieldId fields_ids;
   switch (row_col) {

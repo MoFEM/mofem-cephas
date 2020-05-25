@@ -41,11 +41,10 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
                                       bool error_if_missing,
                                       bool creat_if_missing) {
   const MoFEM::Interface &m_field = cOre;
-  const Field_multiIndex *fields_ptr;
-  auto *field_ents = m_field.get_field_ents();
+  auto fields_ptr = m_field.get_fields();
+  auto field_ents = m_field.get_field_ents();
   auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_fields(&fields_ptr);
 
   auto x_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_x);
   if (x_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
@@ -293,10 +292,9 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
 MoFEMErrorCode FieldBlas::setField(const double val,
                                    const std::string field_name) {
   const MoFEM::Interface &m_field = cOre;
+  auto fields_ptr = m_field.get_fields();
   auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
-  const Field_multiIndex *fields_ptr;
-  CHKERR m_field.get_fields(&fields_ptr);
   auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
   if (fit == fields_ptr->get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -315,10 +313,9 @@ MoFEMErrorCode FieldBlas::setField(const double val,
 MoFEMErrorCode FieldBlas::fieldScale(const double alpha,
                                      const std::string field_name) {
   const MoFEM::Interface &m_field = cOre;
+  auto fields_ptr = m_field.get_fields();
   auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBeginHot;
-  const Field_multiIndex *fields_ptr;
-  CHKERR m_field.get_fields(&fields_ptr);
 
   auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
   if (fit == fields_ptr->get<FieldName_mi_tag>().end()) {
