@@ -22,8 +22,8 @@ In this part of the tutorials, you will be guided through the process of getting
 familiar with MoFEM. Firstly, solving Poisson's equation and its variants. You will:
 - solve partial differential equations in MoFEM from the simplest case to more complicated ones
 - get familiar with the concept of User Data Operator (UDO) and how to
-implement new operators and \b push them to the main program.
--get familiar with different interfaces in MoFEM (\ref basic_lessons1_interfaces)
+implement new operators and \b push them to the main program
+- get familiar with Simple Interface among other \ref basic_lessons1_interfaces
 - expand the code to solve 3D problem from 2D one.
 - be able to use PETSc linear solver (<a
 href="https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html">KSP</a>),
@@ -62,9 +62,6 @@ equation, namely Minimal surface equation
 
 - \subpage basic_tutorials_minimal_surface_equation
 
-Example of implementation of nonlinear Poisson equation using SNES (Newton)
-solver
-
 \subsection basic_tutorials_time_dependent_problems Time-dependent problems
 
 You have finished some Poisson's equations. By now, you have general idea how
@@ -81,13 +78,13 @@ is involved. You will be working with heat equation, wave equation and
 reaction-diffusion equation.
 
 Implicit scheme
-- \subpage basic_tutorials_heat_equation.
+- \subpage basic_tutorials_heat_equation
 
 Implicit scheme
-- \subpage basic_tutorials_wave_equation.
+- \subpage basic_tutorials_wave_equation
 
 Implicit-Explicit (IMEX) scheme
-- \subpage basic_tutorials_reaction_difffusion.
+- \subpage basic_tutorials_reaction_diffusion_equation
 
 
 \subsection basic_tutorials_vector_value_problems Vector-value problems
