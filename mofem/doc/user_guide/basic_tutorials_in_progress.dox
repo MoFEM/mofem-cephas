@@ -5,8 +5,8 @@
 The tutorials contain a number of basic programs that are built on top of each
 other. Each of the tutorials has the following structure
 
--# <b> Introduction:</b> Problem to solve, mathematical equations, derivations
-leading to finite element implemetation
+-# <b> Introduction:</b> Intended learning outcome, problem being solved,
+mathematical equations and derivations leading to finite element implemetation
 -# <b> Implementation:</b> Detailed explanation of the source code
 -# <b> Results:</b> How to run the program, output, visualisation, intepretation
 and comments, possible extensions.
@@ -14,17 +14,16 @@ and comments, possible extensions.
 
 The source code of the tutorials is located in the directory
 <tt>mofem-cephas/mofem/users_modules/basic_finite_elements/tutorials/</tt>
-and its corresponding executatbles are in <tt>um/build/basic_finite_elements/tutorials/</tt>
-
-Interface \ref basic_lessons1_interfaces
+and its corresponding executables are at <tt>um/build/basic_finite_elements/tutorials/</tt>
 
 \section simple_interface Simple interface
 
 In this part of the tutorials, you will be guided through the process of getting
-familiar with MoFEM. Firstly, solving the Poisson's equation. You will:
-- solve the equation in MoFEM from the simplest case to more complicated ones
+familiar with MoFEM. Firstly, solving Poisson's equation and its variants. You will:
+- solve partial differential equations in MoFEM from the simplest case to more complicated ones
 - get familiar with the concept of User Data Operator (UDO) and how to
-implement new operators and use them for the assembling process.
+implement new operators and \b push them to the main program.
+-get familiar with different interfaces in MoFEM (\ref basic_lessons1_interfaces)
 - expand the code to solve 3D problem from 2D one.
 - be able to use PETSc linear solver (<a
 href="https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html">KSP</a>),
@@ -38,8 +37,8 @@ pre-conditioner to solve the problem with multiple fields.
 
 Let's start to learn MoFEM by solving the linear Poisson's equation in 2D with
 homogeneous boundary condition. At the end of this tutorial, there will be
-instruction on how to easily switch the implementation to solve the equation in
-3D with a few changes in the code
+instruction on how to effortlessly and quickly switch the implementation to
+solve the equation in 3D with few changes in the code
 
 - \subpage basic_tutorials_poisson_homogeneous
 
