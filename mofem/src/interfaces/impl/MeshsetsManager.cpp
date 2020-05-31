@@ -889,8 +889,7 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
       collect_unrecognized(parsed.options, po::include_positional);
   for (std::vector<std::string>::iterator vit = additional_parameters.begin();
        vit != additional_parameters.end(); vit++) {
-    MOFEM_LOG_C("WORLD", Sev::warning, "Unrecognized option %s\n",
-                vit->c_str());
+    MOFEM_LOG_C("WORLD", Sev::warning, "Unrecognized option %s", vit->c_str());
   }
   for (map<int, BlockData>::iterator mit = block_lists.begin();
        mit != block_lists.end(); mit++) {
