@@ -17,40 +17,54 @@ MoFEMErrorCode Integrated_Legendre(int p, double s, double *L,
 
 MoFEMErrorCode Face_orientMat(int *face_nodes, double orientMat[2][2]);
 
-    /*
-          Quads
-     3-------2------2
-     |              |       y
-     |              |       ^
-     3              1       |
-     |              |       |
-     |              |       0-----  > x
-     0-------0------1
-   */
+/*
+Segment (1d) basis functions
 
-    /**
-    * \brief H1 Edge base functions on Quad
+       0-----------1
+*/
+MoFEMErrorCode H1_BubbleShapeFunctions_ONSEGMENT(int p, double *L,
+                                                 double *bubbleN,
+                                                 double *diff_bubbleN,
+                                                int nb_integration_pts);
 
-    Function generates hierarchical base of H1 comforting functions on a 2D
-    Quad.
+MoFEMErrorCode L2_ShapeFunctions_ONSEGMENT(int p, double *L,
+                                           double *funN,
+                                           int nb_integration_pts);
 
-    * @param  sense            array of orientation of edges (take 1 or -1)
-    * @param  p               array of orders (in each direction) of base
-    functions
-    * @param  N                array vertex shape functions evaluated at each
-    integration point
-    * @param  diffN            derivatives of vertex shape functions
-    * @return  edgeN           base functions on edges at qd pts
-    * @return  diff_edgeN      derivatives of edge shape functions at qd pts
-    * @param  nb_integration_pts           number of integration points
-    * @param  base_polynomials polynomial base function (f.e. Legendre of
-    Integrated Legendre)
-    * @return                  error code
-    */
-    MoFEMErrorCode
-    H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
-                                 double *edgeN[4], double *diff_edgeN[4],
-                                 int nb_integration_pts);
+/*
+      Quads
+ 3-------2------2
+ |              |       y
+ |              |       ^
+ 3              1       |
+ |              |       |
+ |              |       0-----  > x
+ 0-------0------1
+*/
+
+/**
+* \brief H1 Edge base functions on Quad
+
+Function generates hierarchical base of H1 comforting functions on a 2D
+Quad.
+
+* @param  sense            array of orientation of edges (take 1 or -1)
+* @param  p               array of orders (in each direction) of base
+functions
+* @param  N                array vertex shape functions evaluated at each
+integration point
+* @param  diffN            derivatives of vertex shape functions
+* @return  edgeN           base functions on edges at qd pts
+* @return  diff_edgeN      derivatives of edge shape functions at qd pts
+* @param  nb_integration_pts           number of integration points
+* @param  base_polynomials polynomial base function (f.e. Legendre of
+Integrated Legendre)
+* @return                  error code
+*/
+MoFEMErrorCode H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
+                                            double *edgeN[4],
+                                            double *diff_edgeN[4],
+                                            int nb_integration_pts);
 
 /**
 * \brief H1 Face bubble functions on Quad.

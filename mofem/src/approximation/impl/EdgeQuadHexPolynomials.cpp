@@ -104,6 +104,46 @@ MoFEMErrorCode MoFEM::Face_orientMat(int *face_nodes, double orientMat[2][2]) {
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode MoFEM::H1_BubbleShapeFunctions_ONSEGMENT(int p, double *N,
+                                                      double *bubbleN,
+                                                      double *diff_bubbleN,
+                                                      int nb_integration_pts) {
+  MoFEMFunctionBeginHot;
+  for (int q = 0; q != nb_integration_pts; q++) {
+    int shift = 2 * q;
+    double ksi = - N[shift + 0] + N[shift + 1];
+     double L[p-1];
+     double diffL[p-1];
+    CHKERR Integrated_Legendre(p, ksi, L, diffL);
+    int qd_shift = (p - 1) * q;
+    for (int n = 0; n != p-1; n++){
+      bubbleN[qd_shift + n] = L[n];
+      diff_bubbleN[qd_shift + n] = diffL[n];
+    }
+    
+  }   
+  MoFEMFunctionReturnHot(0);
+}
+
+
+MoFEMErrorCode L2_ShapeFunctions_ONSEGMENT(int p, double *N,
+                                           double *funN,
+                                           int nb_integration_pts){
+  MoFEMFunctionBeginHot;
+  for (int q = 0; q != nb_integration_pts; q++) {
+    int shift = 2 * q;
+    double ksi = -N[shift + 0] + N[shift + 1];
+    double L[p];
+    CHKERR Legendre_polynomials(p - 1, ksi, NULL, L, NULL, 1);
+    int qd_shift = p * q;
+    for (int n = 0; n != p; n++) {
+      funN[qd_shift + n] = L[n];
+    }
+  }   
+  MoFEMFunctionReturnHot(0);
+
+}
+
 MoFEMErrorCode MoFEM::H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
                                                    double *N, double
                                                    *edgeN[4], double
