@@ -234,7 +234,8 @@ private:
   static boost::shared_ptr<InternalData> internalDataPtr;
 
   MoFEMErrorCode setUpLog();
-  
+
+  static std::string petscStringCache;
 
 };
 

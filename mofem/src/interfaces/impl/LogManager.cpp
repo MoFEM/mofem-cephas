@@ -345,6 +345,8 @@ LogManager::LoggerType &LogManager::getLog(const std::string channel) {
   return InternalData::logChannels.at(channel);
 }
 
+std::string LogManager::petscStringCache = std::string();
+
 PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
                                            va_list Argp) {
   MoFEMFunctionBegin;
@@ -352,11 +354,21 @@ PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
     CHKERR PetscVFPrintfDefault(fd, format, Argp);
 
   } else {
+
     std::array<char, 1024> buff;
     size_t length;
     CHKERR PetscVSNPrintf(buff.data(), 1024, format, &length, Argp);
 
-    const std::string str(buff.data());
+    auto get_str = [&buff]() {
+      std::string str;
+      if (!petscStringCache.empty())
+        str = petscStringCache + std::string(buff.data());
+      else
+        str = std::string(buff.data());
+      return str;
+    };
+    const auto str = get_str();
+
     if (!str.empty()) {
       if (fd != dummy_mofem_fd) {
         
@@ -367,14 +379,24 @@ PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],
 
         std::istringstream is(str);
         std::string line;
-        while (getline(is, line, '\n'))
+        std::vector<std::string> log_list;
+
+        while (getline(is, line, '\n')) 
+          log_list.push_back(line);
+
+        if (str.back() != '\n') {
+          petscStringCache = log_list.back();
+          log_list.pop_back();
+        } else
+          petscStringCache.clear();
+
+        for(auto &line : log_list) 
           MOFEM_LOG("PETSC", sev) << line;
 
       } else {
         std::clog << str;
       }
     }
-
   }
   MoFEMFunctionReturn(0);
 }
