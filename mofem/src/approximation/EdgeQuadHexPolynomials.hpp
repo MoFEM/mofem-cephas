@@ -15,6 +15,8 @@ namespace MoFEM {
 MoFEMErrorCode Integrated_Legendre(int p, double s, double *L,
                                           double *diffL);
 
+MoFEMErrorCode Face_orientMat(int *face_nodes, double orientMat[2][2]);
+
     /*
           Quads
      3-------2------2
@@ -45,8 +47,10 @@ MoFEMErrorCode Integrated_Legendre(int p, double s, double *L,
     Integrated Legendre)
     * @return                  error code
     */
-  MoFEMErrorCode H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N, double *edgeN[4],
-                                 double *diff_edgeN[4], int nb_integration_pts);
+    MoFEMErrorCode
+    H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
+                                 double *edgeN[4], double *diff_edgeN[4],
+                                 int nb_integration_pts);
 
 /**
 * \brief H1 Face bubble functions on Quad.
@@ -89,14 +93,103 @@ MoFEMErrorCode L2_FaceShapeFunctions_ONQUAD(int *p, double *N,
                                             int nb_integration_pts);
 
 MoFEMErrorCode Hcurl_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
-                                               double *edgeN[],
-                                               double *curl_edgeN[],
+                                               double *edgeN[4],
+                                               double *curl_edgeN[4],
                                                int nb_integration_pts);
 
 MoFEMErrorCode Hcurl_FaceShapeFunctions_ONQUAD(int *p, double *N,
-                                               double *faceN[],
-                                               double *curl_faceN[],
+                                               double *faceN[2],
+                                               double *curl_faceN[2],
                                                int nb_integration_pts);
+
+MoFEMErrorCode Hdiv_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
+                                               double *edgeN[],
+                                               double *div_edgeN[],
+                                               int nb_integration_pts);
+
+MoFEMErrorCode Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
+                                               double *faceN[],
+                                               double *div_faceN[],
+                                               int nb_integration_pts);
+
+/* Reference Hex and its canonical vertex and edge numbering
+               8 ---------11--------- 7
+              /|                    /|
+             / |                   / |
+           12  |                 10  |             x3
+           /   8                 /   |             |
+          /    |                /    7             |    x2
+        5 ----------9--------- 6     |             |   /
+         |     |               |     |             |  /
+         |    4 ----------3---------- 3            | /
+        5|    /                |    /              o -------- x1
+         |   /                 6   /
+         |  4                  |  2
+         | /                   | /
+         |/                    |/
+        1 ---------1---------- 2
+
+  Hex Face Canonical numbering
+
+        1. 1 2 3 4
+        2. 1 2 6 5
+        3. 2 3 7 6
+        4. 4 3 7 8
+        5. 1 4 8 5
+        6. 5 6 7 8
+*/
+
+MoFEMErrorCode H1_EdgeShapeFunctions_ONHEX(int        *sense, 
+                                           int         *p,   
+                                           double      *N,
+                                           double      *edgeN[12],
+                                           double      *diff_edgeN[12],
+                                           int         nb_integration_pts);
+
+MoFEMErrorCode H1_FaceShapeFunctions_ONHEX(int        *face_nodes[6],
+                                           int        *p, 
+                                           double     *N, 
+                                           double     *faceN[6],
+                                           double     *diff_faceN[6],
+                                           int        nb_integration_pts);
+
+MoFEMErrorCode H1_InteriorShapeFunctions_ONHEX(int       *p, 
+                                               double    *N,
+                                               double    *faceN,
+                                               double    *diff_faceN,
+                                               int       nb_integration_pts);
+
+// MoFEMErrorCode L2_FaceShapeFunctions_ONHEX(int        *p, 
+//                                            double     *N,
+//                                            double     *face_buble,
+//                                            double     *diff_face_bubble,
+//                                            int        nb_integration_pts);
+
+// MoFEMErrorCode Hcurl_EdgeShapeFunctions_ONHEX(int       *sense, 
+//                                               int       *p, 
+//                                               double    *N,
+//                                               double    *edgeN[4],
+//                                               double    *curl_edgeN[4],
+//                                               int       nb_integration_pts);
+
+// MoFEMErrorCode Hcurl_FaceShapeFunctions_ONHEX(int       *p, 
+//                                                double    *N,
+//                                                double    *faceN[2],
+//                                                double    *curl_faceN[2],
+//                                                int       nb_integration_pts);
+
+// MoFEMErrorCode Hdiv_EdgeShapeFunctions_ONHEX(int       *sense, 
+//                                              int       *p, 
+//                                              double    *N,
+//                                              double    *edgeN[],
+//                                              double    *div_edgeN[],
+//                                              int       nb_integration_pts);
+
+// MoFEMErrorCode Hdiv_FaceShapeFunctions_ONHEX(int      *p, 
+//                                              double   *N,
+//                                              double   *faceN[],
+//                                              double   *div_faceN[],
+//                                              int      nb_integration_pts);
 
 } // namespace MoFEM
 
