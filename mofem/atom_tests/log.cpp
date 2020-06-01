@@ -77,6 +77,14 @@ int main(int argc, char *argv[]) {
                        "\nTesting logging for obsolete way of printing "
                        "messages\nnext line\nnext line\n\n");
 
+    CHKERR PetscPrintf(PETSC_COMM_WORLD,
+                       "Ala have ");
+    CHKERR PetscPrintf(PETSC_COMM_WORLD, "a ");
+    CHKERR PetscPrintf(PETSC_COMM_WORLD,
+                       "cat\n");
+
+    CHKERR PetscPrintf(PETSC_COMM_WORLD, "WARNING\n");
+
     // Set "WORLD channel"
     MOFEM_LOG_CHANNEL("WORLD");
     {
