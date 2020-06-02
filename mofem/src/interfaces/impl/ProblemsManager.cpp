@@ -2394,113 +2394,99 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
     do_cols_prob = false;
   }
 
-  // Loop over all elements in database and if right element is there add it
-  // to problem finite element multi-index
-  for (auto efit = fe_ent_ptr->begin(); efit != fe_ent_ptr->end(); efit++) {
+  auto get_good_elems = [&]() {
+    auto good_elems = std::vector<decltype(fe_ent_ptr->begin())>();
+    good_elems.reserve(fe_ent_ptr->size());
 
-    // if element is not part of problem
-    if (((*efit)->getId() & p_miit->getBitFEId()).none())
-      continue;
+    const auto prb_bit = p_miit->getBitRefLevel();
+    const auto prb_mask = p_miit->getMaskBitRefLevel();
 
-    BitRefLevel prb_bit = p_miit->getBitRefLevel();
-    BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
-    BitRefLevel fe_bit = (*efit)->getBitRefLevel();
-    // if entity is not problem refinement level
-    if ((fe_bit & prb_mask) != fe_bit)
-      continue;
-    if ((fe_bit & prb_bit) != prb_bit)
-      continue;
+    // Loop over all elements in database and if right element is there add it
+    // to problem finite element multi-index
+    for (auto efit = fe_ent_ptr->begin(); efit != fe_ent_ptr->end(); ++efit) {
 
-    // create element
-    boost::shared_ptr<NumeredEntFiniteElement> numered_fe(
-        new NumeredEntFiniteElement(*efit));
+      // if element is not part of problem
+      if (((*efit)->getId() & p_miit->getBitFEId()).any()) {
 
-    // check if rows and columns are the same on this element
-    bool do_cols_fe = true;
-    if ((numered_fe->sPtr->row_field_ents_view ==
-         numered_fe->sPtr->col_field_ents_view) &&
-        !do_cols_prob) {
-      do_cols_fe = false;
-      numered_fe->cols_dofs = numered_fe->rows_dofs;
-    } else {
-      // different dofs on rows and columns
-      numered_fe->cols_dofs = boost::shared_ptr<FENumeredDofEntity_multiIndex>(
-          new FENumeredDofEntity_multiIndex());
-    }
-    // get pointer to dofs multi-index on rows and columns
-    auto rows_dofs = numered_fe->rows_dofs;
-    auto cols_dofs = numered_fe->cols_dofs;
-    // clear multi-indices
-    rows_dofs->clear();
-    if (do_cols_fe) {
-      cols_dofs->clear();
-    }
-    NumeredDofEntity_multiIndex_uid_view_ordered rows_view;
-    NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
+        const auto fe_bit = (*efit)->getBitRefLevel();
 
-    // set partition to the element
-    {
-      if (part_from_moab) {
-        // if partition is taken from moab partition
-        int proc = (*efit)->getPartProc();
-        if (proc == -1 && (*efit)->getEntType() == MBVERTEX) {
-          proc = (*efit)->getOwnerProc();
-        }
-        NumeredEntFiniteElement_change_part(proc).operator()(numered_fe);
-
-      } else {
-
-        // Count partition of the dofs in row, the larges dofs with given
-        // partition is used to set partition of the element
-        CHKERR(*efit)->getRowDofView(*(p_miit->numeredDofsRows), rows_view,
-                                     moab::Interface::UNION);
-        std::vector<int> parts(m_field.get_comm_size(), 0);
-        for (auto &dof_ptr : rows_view)
-          parts[dof_ptr->pArt]++;
-        std::vector<int>::iterator pos =
-            max_element(parts.begin(), parts.end());
-        unsigned int max_part = std::distance(parts.begin(), pos);
-        NumeredEntFiniteElement_change_part(max_part).operator()(numered_fe);
+        // if entity is not problem refinement level
+        if ((fe_bit & prb_mask) == fe_bit && (fe_bit & prb_bit) == prb_bit)
+          good_elems.emplace_back(efit);
       }
     }
 
+    return good_elems;
+  };
+
+  auto good_elems = get_good_elems();
+
+  auto numbered_good_elems_ptr =
+      boost::make_shared<std::vector<NumeredEntFiniteElement>>();
+  numbered_good_elems_ptr->reserve(good_elems.size());
+  for (auto &efit : good_elems)
+    numbered_good_elems_ptr->emplace_back(NumeredEntFiniteElement(*efit));
+
+  if (!do_cols_prob) {
+    for (auto &fe : *numbered_good_elems_ptr) {
+      if (fe.sPtr->row_field_ents_view == fe.sPtr->col_field_ents_view) {
+        fe.cols_dofs = fe.rows_dofs;
+      }
+    }
+  }
+
+  if (part_from_moab) {
+    for (auto &fe : *numbered_good_elems_ptr) {
+      // if partition is taken from moab partition
+      int proc = fe.getPartProc();
+      if (proc == -1 && fe.getEntType() == MBVERTEX)
+        proc = fe.getOwnerProc();
+      fe.part = proc;
+    }
+  }
+
+  for (auto &fe : *numbered_good_elems_ptr) {
+
+    NumeredDofEntity_multiIndex_uid_view_ordered rows_view;
+    NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
+
+    // Count partition of the dofs in row, the larges dofs with given
+    // partition is used to set partition of the element
+    CHKERR fe.sPtr->getRowDofView(*(p_miit->numeredDofsRows), rows_view,
+                                  moab::Interface::UNION);
+    if (fe.cols_dofs != fe.rows_dofs)
+      CHKERR fe.sPtr->getColDofView(*(p_miit->numeredDofsCols), cols_view,
+                                    moab::Interface::UNION);
+
+    if (!part_from_moab) {
+      std::vector<int> parts(m_field.get_comm_size(), 0);
+      for (auto &dof_ptr : rows_view)
+        parts[dof_ptr->pArt]++;
+      std::vector<int>::iterator pos = max_element(parts.begin(), parts.end());
+      const auto max_part = std::distance(parts.begin(), pos);
+      fe.part = max_part;
+    }
+
     // set dofs on rows and columns (if are different)
-    if ((numered_fe->getPart() >= (unsigned int)low_proc) &&
-        (numered_fe->getPart() <= (unsigned int)hi_proc)) {
+    if ((fe.getPart() >= (unsigned int)low_proc) &&
+        (fe.getPart() <= (unsigned int)hi_proc)) {
 
       std::array<NumeredDofEntity_multiIndex_uid_view_ordered *, 2> dofs_view{
           &rows_view, &cols_view};
-      std::array<FENumeredDofEntity_multiIndex *, 2> fe_dofs{rows_dofs.get(),
-                                                             cols_dofs.get()};
+      std::array<FENumeredDofEntity_multiIndex *, 2> fe_dofs{
+          fe.rows_dofs.get(), fe.cols_dofs.get()};
 
-      for (int ss = 0; ss != (do_cols_fe ? 2 : 1); ss++) {
-
-        if (ss == 0) {
-          if (part_from_moab) {
-            // get row_view
-            CHKERR(*efit)->getRowDofView(*(p_miit->numeredDofsRows),
-                                         *dofs_view[ss],
-                                         moab::Interface::UNION);
-          }
-        } else {
-          // get cols_views
-          CHKERR(*efit)->getColDofView(*(p_miit->numeredDofsCols),
-                                       *dofs_view[ss], moab::Interface::UNION);
-        }
-
+      for (int ss = 0; ss != ((fe.cols_dofs != fe.rows_dofs) ? 2 : 1); ss++) {
         // Following reserve memory in sequences, only two allocations are here,
         // once for array of objects, next for array of shared pointers
 
         // reserve memory for field  dofs
-        boost::shared_ptr<std::vector<FENumeredDofEntity>> dofs_array(
-            new std::vector<FENumeredDofEntity>());
-
+        auto dofs_array = boost::make_shared<std::vector<FENumeredDofEntity>>();
         if (!ss) {
-          numered_fe->getRowDofsSequence() = dofs_array;
-          if (!do_cols_fe)
-            numered_fe->getColDofsSequence() = dofs_array;
+          fe.getRowDofsSequence() = dofs_array;
+          fe.getColDofsSequence() = dofs_array;
         } else
-          numered_fe->getColDofsSequence() = dofs_array;
+          fe.getColDofsSequence() = dofs_array;
 
         auto vit = dofs_view[ss]->begin();
         auto hi_vit = dofs_view[ss]->end();
@@ -2508,11 +2494,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
         dofs_array->reserve(std::distance(vit, hi_vit));
 
         // create elements objects
-        for (; vit != hi_vit; vit++) {
-          boost::shared_ptr<SideNumber> side_number_ptr;
-          side_number_ptr = (*efit)->getSideNumberPtr((*vit)->getEnt());
-          dofs_array->emplace_back(side_number_ptr, *vit);
-        }
+        for (; vit != hi_vit; vit++)
+          dofs_array->emplace_back(fe.getSideNumberPtr((*vit)->getEnt()), *vit);
 
         // finally add DoFS to multi-indices
         auto hint = fe_dofs[ss]->end();
@@ -2520,11 +2503,11 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
           hint = fe_dofs[ss]->emplace_hint(hint, dofs_array, &v);
       }
     }
+  }
 
-    auto check_fields_and_dofs = [part_from_moab,
-                                  &m_field](const auto &numered_fe) {
-      auto &fe = *(numered_fe->sPtr);
+  for (auto &fe : *numbered_good_elems_ptr) {
 
+    auto check_fields_and_dofs = [&]() {
       if (!part_from_moab) {
 
         if (fe.getBitFieldIdRow().none() && m_field.get_comm_size() == 0) {
@@ -2540,17 +2523,19 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       // tasks which do not assemble matrices or vectors, but evaluate fields or
       // modify base functions.
 
-      return (!fe.row_field_ents_view->empty() ||
-              !fe.col_field_ents_view->empty())
+      return (!fe.sPtr->row_field_ents_view->empty() ||
+              !fe.sPtr->col_field_ents_view->empty())
 
              ||
 
              (fe.getBitFieldIdRow().none() || fe.getBitFieldIdCol().none());
     };
 
-    if (check_fields_and_dofs(numered_fe)) {
+    if (check_fields_and_dofs()) {
       // Add element to the problem
-      auto p = problem_finite_elements.insert(numered_fe);
+      auto p = problem_finite_elements.insert(
+          boost::shared_ptr<NumeredEntFiniteElement>(numbered_good_elems_ptr,
+                                                     &fe));
       if (!p.second)
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "element is there");
     }
