@@ -70,6 +70,15 @@ extern "C" {
 #define NBFACEQUAD_L2(P) (((P) > 0) ? ((P - 1) * (P - 1)) : 0)
 
 /**
+ * @brief Number of base functions on quad edge for Hcurl space
+ */
+#define NBEDGEQUAD_FULL_HCURL(P) (((P) > 0) ? P : 0)
+
+/**
+ * @brief Number of base functions on quad for Hcurl space
+ */
+#define NBFACE_TYP_QUAD_FULL_HCURL(P) (((P) > 1) ? P * (P - 1) : 0)
+/**
  * @brief Number of base functions on quad for H1 space
  */
 #define NBFACEQUAD_FULL_H1(P) (((P) > 2) ? ((P - 1) * (P - 1)) : 0)

@@ -211,6 +211,90 @@ MoFEMErrorCode QuadPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
 }
 
 MoFEMErrorCode
+QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+
+  int nb_gauss_pts = pts.size2();
+
+  // Calculation H-curl on quad edges
+  if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
+
+    if (data.dataOnEntities[MBEDGE].size() != 4)
+      SETERRQ1(
+          PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+          "wrong number of edges on quad, should be 4 but is %d",
+          data.dataOnEntities[MBEDGE].size());
+
+    int sense[4], order[4];
+    double *hcurl_edge_n[4];
+    double *curl_edge_n[4];
+
+    for (int ee = 0; ee != 4; ++ee) {
+
+      if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "orientation (sense) of edge is not set");
+
+      sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      int nb_dofs =
+          NBEDGEQUAD_FULL_HCURL(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
+                                                        2 * nb_dofs, false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_dofs, false);
+
+      hcurl_edge_n[ee] =
+          &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
+      curl_edge_n[ee] =
+          &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
+    }
+    int pp[2] = {order[0], order[1]};
+    CHKERR Hcurl_EdgeShapeFunctions_ONQUAD(
+        sense, pp,
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        hcurl_edge_n, curl_edge_n, nb_gauss_pts);
+
+  } 
+
+  if (data.spacesOnEntities[MBQUAD].test(HCURL)) {
+
+    // face
+    if (data.dataOnEntities[MBQUAD].size() != 1)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "No data struture to keep base functions on face");
+
+    double *hcurl_val_face_n[2];
+    double *hcurl_curl_face_n[2];
+    int p = data.dataOnEntities[MBQUAD][0].getDataOrder();
+    int order[2] = {p, p};
+    for (int typ = 0; typ != 2; typ++)
+    {
+      int nb_dofs = NBFACE_TYP_QUAD_FULL_HCURL(p);
+      data.dataOnEntities[MBQUAD][typ].getN(base).resize(nb_gauss_pts,
+                                                         2 * nb_dofs, false);
+      data.dataOnEntities[MBQUAD][typ].getDiffN(base).resize(nb_gauss_pts,
+                                                             nb_dofs, false);
+      hcurl_val_face_n[typ] =
+          &*data.dataOnEntities[MBQUAD][typ].getN(base).data().begin();
+      hcurl_curl_face_n[typ] =
+          &*data.dataOnEntities[MBQUAD][typ].getDiffN(base).data().begin();
+    }
+  
+    CHKERR Hcurl_FaceShapeFunctions_ONQUAD(order,
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        hcurl_val_face_n,
+        hcurl_curl_face_n,
+        nb_gauss_pts);
+
+  } 
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
 QuadPolynomialBase::getValue(MatrixDouble &pts,
                              boost::shared_ptr<BaseFunctionCtx> ctx_ptr) {
   MoFEMFunctionBegin;
@@ -264,6 +348,9 @@ QuadPolynomialBase::getValue(MatrixDouble &pts,
     break;
   case L2:
     CHKERR getValueL2DemkowiczBase(pts);
+    break;
+  case HCURL:
+    CHKERR getValueHcurlDemkowiczBase(pts);
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
