@@ -17,19 +17,6 @@
 #ifndef __LOGMANAGER_HPP__
 #define __LOGMANAGER_HPP__
 
-#define BOOST_LOG_DYN_LINK
-#include <boost/log/sources/severity_channel_logger.hpp>
-#include <boost/log/attributes.hpp>
-#include <boost/log/attributes/scoped_attribute.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sources/severity_feature.hpp>
-#include <boost/log/sinks/text_ostream_backend.hpp>
-#include <boost/log/sinks/unlocked_frontend.hpp>
-#include <boost/log/sources/severity_feature.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/core/null_deleter.hpp>
-
 namespace attrs = boost::log::attributes;
 namespace logging = boost::log;
 namespace keywords = boost::log::keywords;
@@ -89,7 +76,7 @@ struct LogManager : public UnknownInterface {
                                                        std::string>
       LoggerType;
 
-  typedef sinks::unlocked_sink<sinks::text_ostream_backend> SinkType;
+  typedef sinks::synchronous_sink<sinks::text_ostream_backend> SinkType;
 
   /**
    * @brief Add attributes to logger
