@@ -179,7 +179,36 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode QuadPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
 
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  if (cTx->basePolynomialsType0 == NULL)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Polynomial type not set");
+  PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
+                                     double *diffL, const int dim) =
+      cTx->basePolynomialsType0;
+
+  int nb_gauss_pts = pts.size2();
+  auto &vert_dat = data.dataOnEntities[MBVERTEX][0];
+
+    auto &ent_dat = data.dataOnEntities[MBQUAD][0];
+    int p = ent_dat.getDataOrder();
+    int order[2] = {p, p};
+    int nb_dofs = NBFACEQUAD_L2(p);
+    ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
+    ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
+
+    CHKERR L2_FaceShapeFunctions_ONQUAD(
+        order,
+        &*vert_dat.getN(base).data().begin(),
+        &*ent_dat.getN(base).data().begin(),
+        &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
+
+    MoFEMFunctionReturn(0);
+}
 
 MoFEMErrorCode
 QuadPolynomialBase::getValue(MatrixDouble &pts,
@@ -232,6 +261,9 @@ QuadPolynomialBase::getValue(MatrixDouble &pts,
   switch (cTx->sPace) {
   case H1:
     CHKERR getValueH1(pts);
+    break;
+  case L2:
+    CHKERR getValueL2DemkowiczBase(pts);
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
