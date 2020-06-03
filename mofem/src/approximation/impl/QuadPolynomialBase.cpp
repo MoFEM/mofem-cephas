@@ -41,10 +41,10 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   switch (cTx->bAse) {
   case AINSWORTH_LEGENDRE_BASE:
-    CHKERR getValueH1DemkowiczBase(pts);
+    CHKERR getValueH1AinsworthBase(pts);
     break;
   case AINSWORTH_LOBATTO_BASE:
-    CHKERR getValueH1AinsworthBase(pts);
+    CHKERR getValueH1DemkowiczBase(pts);
     break;
   case AINSWORTH_BERNSTEIN_BEZIER_BASE:
   default:
