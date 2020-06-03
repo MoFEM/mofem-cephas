@@ -4,17 +4,6 @@
   type H1, Hcurl, Hdiv
 */
 
-/*
-      Quads
- 4-------3------3
- |              |       eta
- |              |       ^
- 4              2       |
- |              |       |
- |              |       0-----  > ksi
- 1-------1------2
-*/
-
 using namespace MoFEM;
 
 // Auxilary functions
@@ -51,11 +40,11 @@ MoFEMErrorCode MoFEM::Face_orientMat(int *face_nodes, double orientMat[2][2]) {
   switch (node0) {
   case 0 : 
     switch (node1){
-      case 1 :  //positive direction
-        orientMat[0][0] = 1.0;
+      case 1 :  //positive direction: identity
+        orientMat[0][0] = 1.0;   
         orientMat[1][1] = 1.0; //
         break;
-      case 3 :  // negative direction
+      case 3 :  // negative direction: reflection about the 
         orientMat[0][1] = 1.0;
         orientMat[1][0] = 1.0; //
         break;
@@ -104,6 +93,11 @@ MoFEMErrorCode MoFEM::Face_orientMat(int *face_nodes, double orientMat[2][2]) {
   MoFEMFunctionReturnHot(0);
 }
 
+/*
+
+    0--------------1
+
+*/
 MoFEMErrorCode MoFEM::H1_BubbleShapeFunctions_ONSEGMENT(int p, double *N,
                                                       double *bubbleN,
                                                       double *diff_bubbleN,
@@ -144,6 +138,16 @@ MoFEMErrorCode L2_ShapeFunctions_ONSEGMENT(int p, double *N,
 
 }
 
+/*
+      Quads
+ 4-------3------3
+ |              |       eta
+ |              |       ^
+ 4              2       |
+ |              |       |
+ |              |       0-----  > ksi
+ 1-------1------2
+*/
 MoFEMErrorCode MoFEM::H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
                                                    double *N, double
                                                    *edgeN[4], double
@@ -631,8 +635,6 @@ MoFEMErrorCode MoFEM::H1_FaceShapeFunctions_ONHEX(int *face_nodes[6],
           s[r] += orient_mat[r][c] * coords[face][c];
         }
       }
-      // cout << "coords[face] : [" << coords[face][0] << ", " << coords[face][1] << "]" << endl; 
-      // cout << "           s : [" << s[0] << ", " << s[1] << "]" << endl; 
       double diff_s[2][3] = {{0., 0., 0.}, {0., 0., 0.}};
 
       diff_s[0][pos[face][0]] = orient_mat[0][0];
@@ -652,13 +654,9 @@ MoFEMErrorCode MoFEM::H1_FaceShapeFunctions_ONHEX(int *face_nodes[6],
 
       int qd_shift = (pq[0] - 1) * (pq[1] - 1) * q;
       int n = 0;
-      // cout << "=============================================" << endl;
       for (int s1 = 0; s1 != pq[0] - 1; s1++) {
         for (int s2 = 0; s2 != pq[1] - 1; s2++) {
           faceN[face][qd_shift + n] = mu[face] * L0[s1] * L1[s2];
-          // cout << "mu[ff] : " << mu[face] << endl;
-          // cout << "L0[s1] : " << L0[s1] << endl;
-          // cout << "L1[s2] : " << L1[s2] << endl;
 
           diff_faceN[face][3 * (qd_shift + n) + 0] = diff_mu[face][0] * L0[s1] * L1[s2] +
                                                 mu[face] * diffL0[s1] * diff_s[0][0] * L1[s2] +
