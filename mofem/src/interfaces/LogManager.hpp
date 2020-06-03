@@ -25,7 +25,7 @@
 #include <boost/log/expressions.hpp>
 #include <boost/log/sources/severity_feature.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
-#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/sinks/unlocked_frontend.hpp>
 #include <boost/log/sources/severity_feature.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/core/null_deleter.hpp>
@@ -89,7 +89,7 @@ struct LogManager : public UnknownInterface {
                                                        std::string>
       LoggerType;
 
-  typedef sinks::synchronous_sink<sinks::text_ostream_backend> SinkType;
+  typedef sinks::unlocked_sink<sinks::text_ostream_backend> SinkType;
 
   /**
    * @brief Add attributes to logger
