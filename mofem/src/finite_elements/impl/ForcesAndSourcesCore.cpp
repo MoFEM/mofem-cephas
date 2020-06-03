@@ -1,7 +1,6 @@
 /** \file ForcesAndSourcesCore.cpp
 
 \brief Implementation of Elements on Entities for Forces and Sources
-
 */
 
 /* This file is part of MoFEM.
@@ -1253,6 +1252,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         }
 
         CHKERR swap_bases();
+
       }
     }
     CATCH_OP_ERRORS(*oit);

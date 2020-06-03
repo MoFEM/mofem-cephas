@@ -326,9 +326,9 @@ std::ostream &operator<<(std::ostream &os, const DataForcesAndSourcesCore &e) {
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1FieldData<3>() {
-  if (dOfs[0]->getNbOfCoeffs() != 3) {
+  if (dOfs[0].lock()->getNbOfCoeffs() != 3) {
     std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << "Wrong number of coefficients is " << dOfs[0].lock()->getNbOfCoeffs();
     s << " but you ask for tensor rank 1 dimension 3";
     THROW_MESSAGE(s.str());
   }
@@ -340,9 +340,9 @@ DataForcesAndSourcesCore::EntData::getFTensor1FieldData<3>() {
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
 DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>() {
-  if (dOfs[0]->getNbOfCoeffs() != 2) {
+  if (dOfs[0].lock()->getNbOfCoeffs() != 2) {
     std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << "Wrong number of coefficients is " << dOfs[0].lock()->getNbOfCoeffs();
     s << " but you ask for tensor rank 1 dimension 3";
     THROW_MESSAGE(s.str());
   }
@@ -353,9 +353,9 @@ DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>() {
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
 DataForcesAndSourcesCore::EntData::getFTensor2FieldData<3, 3>() {
-  if (dOfs[0]->getNbOfCoeffs() != 9) {
+  if (dOfs[0].lock()->getNbOfCoeffs() != 9) {
     std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << "Wrong number of coefficients is " << dOfs[0].lock()->getNbOfCoeffs();
     s << " but you ask for tensor rank 2 dimensions 3 by 3 so 9 coefficients "
          "is expected";
     THROW_MESSAGE(s.str());
@@ -369,9 +369,9 @@ DataForcesAndSourcesCore::EntData::getFTensor2FieldData<3, 3>() {
 template <>
 FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 6>, 3>
 DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<3>() {
-  if (dOfs[0]->getNbOfCoeffs() != 6) {
+  if (dOfs[0].lock()->getNbOfCoeffs() != 6) {
     std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << "Wrong number of coefficients is " << dOfs[0].lock()->getNbOfCoeffs();
     s << " but you ask for symmetric tensor rank 2 dimensions 3 by 3 so 6 "
          "coefficients "
          "is expected";
@@ -385,9 +385,9 @@ DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<3>() {
 template <>
 FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 3>, 2>
 DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<2>() {
-  if (dOfs[0]->getNbOfCoeffs() != 3) {
+  if (dOfs[0].lock()->getNbOfCoeffs() != 3) {
     std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << "Wrong number of coefficients is " << dOfs[0].lock()->getNbOfCoeffs();
     s << " but you ask for symmetric tensor rank 2 dimensions 2 by 2 so 3 "
          "coefficients "
          "is expected";
@@ -400,9 +400,9 @@ DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData<2>() {
 
 FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
 DataForcesAndSourcesCore::EntData::getFTensor0FieldData() {
-  if (dOfs[0]->getNbOfCoeffs() != 1) {
+  if (dOfs[0].lock()->getNbOfCoeffs() != 1) {
     std::stringstream s;
-    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << "Wrong number of coefficients is " << dOfs[0].lock()->getNbOfCoeffs();
     s << " but expected scalar field, tensor of rank 0";
     THROW_MESSAGE(s.str());
   }

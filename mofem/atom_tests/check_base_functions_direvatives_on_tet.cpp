@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
 
         mySplit << "Type  " << type << " side " << side << endl;
 
-        if (data.getFieldDofs()[0]->getSpace() == H1) {
+        if (data.getFieldDofs()[0].lock()->getSpace() == H1) {
 
           // mySplit << std::fixed << data.getN() << std::endl;
           // mySplit << std::fixed << data.getDiffN() << std::endl;
@@ -242,8 +242,8 @@ int main(int argc, char *argv[]) {
           }
         }
 
-        if (data.getFieldDofs()[0]->getSpace() == HDIV ||
-            data.getFieldDofs()[0]->getSpace() == HCURL) {
+        if (data.getFieldDofs()[0].lock()->getSpace() == HDIV ||
+            data.getFieldDofs()[0].lock()->getSpace() == HCURL) {
 
           FTensor::Tensor1<double *, 3> base_ksi_m(
               &data.getN()(0, 0), &data.getN()(0, 1), &data.getN()(0, 2), 3);
@@ -291,22 +291,25 @@ int main(int argc, char *argv[]) {
                     << dzeta(2) << " " << sqrt(dzeta(i) * dzeta(i)) << endl;
 
             if (sqrt(dksi(i) * dksi(i)) > eps_diff) {
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                       "%s inconsistent dKsi derivative  for type %d",
-                       FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
-                       type);
+              SETERRQ2(
+                  PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "%s inconsistent dKsi derivative  for type %d",
+                  FieldSpaceNames[data.getFieldDofs()[0].lock()->getSpace()],
+                  type);
             }
             if (sqrt(deta(i) * deta(i)) > eps_diff) {
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                       "%s inconsistent dEta derivative for type %d",
-                       FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
-                       type);
+              SETERRQ2(
+                  PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "%s inconsistent dEta derivative for type %d",
+                  FieldSpaceNames[data.getFieldDofs()[0].lock()->getSpace()],
+                  type);
             }
             if (sqrt(dzeta(i) * dzeta(i)) > eps_diff) {
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                       "%s inconsistent dZeta derivative for type %d",
-                       FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
-                       type);
+              SETERRQ2(
+                  PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "%s inconsistent dZeta derivative for type %d",
+                  FieldSpaceNames[data.getFieldDofs()[0].lock()->getSpace()],
+                  type);
             }
 
             ++base_ksi_m;

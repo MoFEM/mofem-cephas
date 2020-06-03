@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
           MoFEMFunctionReturnHot(0);
         mySplit << "type " << type << " side " << side << endl;
 
-        if (data.getFieldDofs()[0]->getSpace() == H1) {
+        if (data.getFieldDofs()[0].lock()->getSpace() == H1) {
 
           // mySplit << std::fixed << data.getN() << std::endl;
           // mySplit << std::fixed << data.getDiffN() << std::endl;
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
           }
         }
 
-        if (data.getFieldDofs()[0]->getSpace() == HCURL) {
+        if (data.getFieldDofs()[0].lock()->getSpace() == HCURL) {
 
           FTensor::Tensor1<double *, 3> base_ksi_m(&data.getN()(0, HVEC0),
                                                    &data.getN()(0, HVEC1),
@@ -277,19 +277,21 @@ int main(int argc, char *argv[]) {
             deta(i) -= diff_base(i, N1);
             if (sqrt(dksi(i) * dksi(i)) > eps_diff) {
               // mySplit << "KSI ERROR\n";
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                       "%s inconsistent dKsi derivative  for type %d",
-                       FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
-                       type);
+              SETERRQ2(
+                  PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "%s inconsistent dKsi derivative  for type %d",
+                  FieldSpaceNames[data.getFieldDofs()[0].lock()->getSpace()],
+                  type);
             } else {
               mySplit << "OK" << std::endl;
             }
             if (sqrt(deta(i) * deta(i)) > eps_diff) {
               // mySplit << "ETA ERROR\n";
-              SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                       "%s inconsistent dEta derivative for type %d",
-                       FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
-                       type);
+              SETERRQ2(
+                  PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "%s inconsistent dEta derivative for type %d",
+                  FieldSpaceNames[data.getFieldDofs()[0].lock()->getSpace()],
+                  type);
             } else {
               mySplit << "OK" << std::endl;
             }

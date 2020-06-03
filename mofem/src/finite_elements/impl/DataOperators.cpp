@@ -135,10 +135,11 @@ DataOperator::opRhs(DataForcesAndSourcesCore &data,
         if (side_data.getFieldData().size() &&
             (side_data.getBase() == NOBASE ||
              side_data.getBase() == LASTBASE)) {
-          for (VectorDofs::iterator it = side_data.getFieldDofs().begin();
-               it != side_data.getFieldDofs().end(); it++)
-            if ((*it) && (*it)->getActive())
+          for (auto &it : side_data.getFieldDofs()) {
+            auto dof = it.lock();
+            if (dof && dof->getActive())
               SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "No base on");
+          }
         }
       }
 
@@ -713,7 +714,8 @@ OpGetCoordsAndNormalsOnFace::doWork(int side, EntityType type,
     if (nb_dofs > 3 * data.getN().size2()) {
       unsigned int nn = 0;
       for (; nn != nb_dofs; nn++) {
-        if (!data.getFieldDofs()[nn]->getActive())
+        auto dof = data.getFieldDofs()[nn].lock();
+        if (!dof->getActive())
           break;
       }
       if (nn > 3 * data.getN().size2()) {
