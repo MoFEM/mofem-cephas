@@ -60,6 +60,9 @@
 #include <cmath>
 
 //BOOST
+#define BOOST_DISABLE_THREADS
+#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
+
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
@@ -77,9 +80,6 @@
 #include <boost/math/special_functions/binomial.hpp>
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/math/constants/constants.hpp>
-
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-
 #include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/symmetric.hpp>
