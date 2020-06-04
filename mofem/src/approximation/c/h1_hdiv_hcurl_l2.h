@@ -47,6 +47,12 @@ extern "C" {
  */
 #define NBEDGE_L2(P) (P + 1)
 
+/**
+ * @brief Number of base functions on edge for L2 (Demkowicz) space
+ *
+ */
+#define NBEDGE_EXACT_L2(P) (P)
+
 // H1
 
 /**

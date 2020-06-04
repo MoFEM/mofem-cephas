@@ -93,7 +93,8 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
     CHKERR getValueHcurl(pts);
     break;
   case L2:
-    CHKERR getValueL2(pts);
+    CHKERR getValueL2DemkowiczBase(pts);
+    // CHKERR getValueL2(pts);
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
@@ -105,8 +106,12 @@ EdgePolynomialBase::getValue(MatrixDouble &pts,
 MoFEMErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
+
+
+
   switch (cTx->bAse) {
   case AINSWORTH_LEGENDRE_BASE:
+    CHKERR getValueH1DemkowiczBase(pts);
   case AINSWORTH_LOBATTO_BASE:
     CHKERR getValueH1AinsworthBase(pts);
     break;
@@ -275,6 +280,85 @@ MoFEMErrorCode EdgePolynomialBase::getValueH1AinsworthBase(MatrixDouble &pts) {
             v * diffL(pp);
       }
     }
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode EdgePolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
+  MoFEMFunctionBeginHot;
+
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+
+  int nb_gauss_pts = pts.size2();
+
+  const int side_number = 0;
+  int order = data.dataOnEntities[MBEDGE][side_number].getDataOrder();
+
+  data.dataOnEntities[MBEDGE][side_number].getN(base).resize(
+                                 nb_gauss_pts, NBEDGE_H1(order), false);
+  data.dataOnEntities[MBEDGE][side_number].getDiffN(base).resize(
+                                 nb_gauss_pts, NBEDGE_H1(order), false);
+
+  data.dataOnEntities[MBEDGE][side_number].getN(base).clear();
+  data.dataOnEntities[MBEDGE][side_number].getDiffN(base).clear();
+  
+  MatrixDouble Nshape(nb_gauss_pts, 2);
+  Nshape.clear();
+  if (data.dataOnEntities[MBEDGE][side_number].getDataOrder() > 1) {
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
+
+      double mu0 = 1.0 - pts(0, gg);  // pts ranges over [0, 1]
+      double mu1 = pts(0, gg);
+
+      Nshape(gg, 0) = mu0;
+      Nshape(gg, 1) = mu1;
+    }
+
+    CHKERR H1_BubbleShapeFunctions_ONSEGMENT(
+        order, &*Nshape.data().begin(),
+        &*data.dataOnEntities[MBEDGE][side_number].getN(base).data().begin(),
+        &*data.dataOnEntities[MBEDGE][side_number].getDiffN(base).data().begin(),
+        nb_gauss_pts);
+
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode EdgePolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
+  MoFEMFunctionBeginHot;
+
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+
+  int nb_gauss_pts = pts.size2();
+
+  const int side_number = 0;
+  int order = data.dataOnEntities[MBEDGE][side_number].getDataOrder();
+
+  data.dataOnEntities[MBEDGE][side_number].getN(base).resize(
+      nb_gauss_pts, NBEDGE_EXACT_L2(order), false);
+
+  data.dataOnEntities[MBEDGE][side_number].getN(base).clear();
+
+  MatrixDouble Nshape(nb_gauss_pts, 2);
+  Nshape.clear();
+  if (data.dataOnEntities[MBEDGE][side_number].getDataOrder() > 1) {
+    for (int gg = 0; gg != nb_gauss_pts; gg++) {
+
+      double mu0 = 1.0 - pts(0, gg); // pts ranges over [0, 1]
+      double mu1 = pts(0, gg);
+
+      Nshape(gg, 0) = mu0;
+      Nshape(gg, 1) = mu1;
+    }
+
+    CHKERR L2_ShapeFunctions_ONSEGMENT(
+        order, &*Nshape.data().begin(),
+        &*data.dataOnEntities[MBEDGE][side_number].getN(base).data().begin(),
+        nb_gauss_pts);
   }
 
   MoFEMFunctionReturnHot(0);

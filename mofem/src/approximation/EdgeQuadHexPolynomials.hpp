@@ -27,8 +27,7 @@ MoFEMErrorCode H1_BubbleShapeFunctions_ONSEGMENT(int p, double *L,
                                                  double *diff_bubbleN,
                                                 int nb_integration_pts);
 
-MoFEMErrorCode L2_ShapeFunctions_ONSEGMENT(int p, double *L,
-                                           double *funN,
+MoFEMErrorCode L2_ShapeFunctions_ONSEGMENT(int p, double *L, double *funN,
                                            int nb_integration_pts);
 
 /*
