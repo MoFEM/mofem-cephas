@@ -497,7 +497,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
         auto ent_filed_data_vec = dof.getEntFieldData();
         for (int ii = 0; ii != nb_dof_idx; ++ii) {
           nodes_data[pos] = ent_filed_data_vec[ii];
-          nodes_dofs[pos] = *dit;
+          const_cast<FEDofEntity *&>(nodes_dofs[pos]) = (*dit).get();
           ++pos;
           ++dit;
         }
@@ -513,7 +513,8 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
           int brother_pos = brother_side_number * nb_dof_idx;
           for (int ii = 0; ii != nb_dof_idx; ++ii) {
             nodes_data[brother_pos] = nodes_data[pos];
-            nodes_dofs[brother_pos] = nodes_dofs[pos];
+            const_cast<FEDofEntity *&>(nodes_dofs[brother_pos]) =
+                nodes_dofs[pos];
             ++pos;
             ++brother_pos;
           }
@@ -589,7 +590,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
           noalias(ent_field_data) = dof.getEntFieldData();
           ent_field_dofs.resize(nb_dofs_on_ent, false);
           for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
-            ent_field_dofs[ii] = *dit;
+            const_cast<FEDofEntity *&>(ent_field_dofs[ii]) = (*dit).get();
             ++dit;
           }
         }
@@ -615,7 +616,12 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
       dat_brother.getSpace() = dat.getSpace();
       dat_brother.getDataOrder() = dat.getDataOrder();
       dat_brother.getFieldData() = dat.getFieldData();
-      dat_brother.getFieldDofs() = dat.getFieldDofs();
+      dat_brother.getFieldDofs().resize(dat.getFieldData().size());
+      auto dit = dat.getFieldDofs().begin();
+      for(auto &v : dat_brother.getFieldDofs()) {
+        const_cast<FEDofEntity *&>(v) = *dit;
+        ++dit;
+      }
     }
   }
 
@@ -634,7 +640,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
   for (; dit != hi_dit; dit++) {
     int idx = (*dit)->getDofCoeffIdx();
     ent_field_data[idx] = (*dit)->getFieldData();
-    ent_field_dofs[idx] = *dit;
+    const_cast<FEDofEntity *&>(ent_field_dofs[idx]) = (*dit).get();
   }
   MoFEMFunctionReturnHot(0);
 }

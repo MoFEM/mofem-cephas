@@ -378,7 +378,7 @@ MoFEMErrorCode PrismOp::doWork(int side, EntityType type,
 
   const int nb_dofs = data.getIndices().size();
   for (int dd = 0; dd != nb_dofs; ++dd)
-    data.getFieldDofs()[dd].lock()->getFieldData() = data.getIndices()[dd];
+    data.getFieldDofs()[dd]->getFieldData() = data.getIndices()[dd];
 
   if (type == MBVERTEX) {
     const size_t nb_gauss_pts = getGaussPts().size2();
@@ -665,7 +665,7 @@ MoFEMErrorCode Op<OP>::doWork(int side, EntityType type,
 
     std::string tag_name = tag_name_base + "Base";
     if (type == MBVERTEX) {
-      EntityHandle node = data.getFieldDofs()[rr].lock()->getEnt();
+      EntityHandle node = data.getFieldDofs()[rr]->getEnt();
       int prism_mode_side;
       CHKERR postProc.side_number(prism, node, prism_mode_side, sense, offset);
       tag_name += to_str(prism_mode_side);

@@ -28,13 +28,13 @@ namespace MoFEM {
 
 typedef ublas::unbounded_array<
 
-    boost::weak_ptr<FEDofEntity>, std::allocator<boost::weak_ptr<FEDofEntity>>
+    FEDofEntity *const, std::allocator<FEDofEntity *const>
 
     >
     DofsAllocator;
 
 //TODO: [CORE-5] Change VectorDof to vector of weak pointers
-typedef ublas::vector<boost::weak_ptr<FEDofEntity>, DofsAllocator> VectorDofs;
+typedef ublas::vector<FEDofEntity *const, DofsAllocator> VectorDofs;
 
 /** \brief data structure for finite element entity
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -1155,7 +1155,7 @@ const VectorInt &DataForcesAndSourcesCore::EntData::getIndices() const {
 const VectorIntAdaptor
 DataForcesAndSourcesCore::EntData::getIndicesUpToOrder(int order) {
   unsigned int size = 0;
-  if (auto dof = dOfs[0].lock()) {
+  if (auto dof = dOfs[0]) {
     size = dof->getOrderNbDofs(order) * dof->getNbOfCoeffs();
     size = size < iNdices.size() ? size : iNdices.size();
   }
@@ -1170,7 +1170,7 @@ const VectorInt &DataForcesAndSourcesCore::EntData::getLocalIndices() const {
 const VectorIntAdaptor
 DataForcesAndSourcesCore::EntData::getLocalIndicesUpToOrder(int order) {
   unsigned int size = 0;
-  if (auto dof = dOfs[0].lock()) {
+  if (auto dof = dOfs[0]) {
     size = dof->getOrderNbDofs(order) * dof->getNbOfCoeffs();
     size = size < localIndices.size() ? size : localIndices.size();
   }
@@ -1197,7 +1197,7 @@ const VectorDouble &DataForcesAndSourcesCore::EntData::getFieldData() const {
 const VectorAdaptor
 DataForcesAndSourcesCore::EntData::getFieldDataUpToOrder(int order) {
   unsigned int size = 0;
-  if (auto dof = dOfs[0].lock()) {
+  if (auto dof = dOfs[0]) {
     size = dof->getOrderNbDofs(order) * dof->getNbOfCoeffs();
     size = size < fieldData.size() ? size : fieldData.size();
   }
