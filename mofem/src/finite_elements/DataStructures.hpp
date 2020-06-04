@@ -28,13 +28,12 @@ namespace MoFEM {
 
 typedef ublas::unbounded_array<
 
-    FEDofEntity *const, std::allocator<FEDofEntity *const>
+    FEDofEntity *, std::allocator<FEDofEntity *>
 
     >
     DofsAllocator;
 
-//TODO: [CORE-5] Change VectorDof to vector of weak pointers
-typedef ublas::vector<FEDofEntity *const, DofsAllocator> VectorDofs;
+typedef ublas::vector<FEDofEntity *, DofsAllocator> VectorDofs;
 
 /** \brief data structure for finite element entity
  * \ingroup mofem_forces_and_sources_user_data_operators
