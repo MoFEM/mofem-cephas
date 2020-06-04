@@ -36,20 +36,38 @@ struct PrismsFromSurfaceInterface : public UnknownInterface {
   std::map<EntityHandle, EntityHandle> createdVertices;
 
   /**
+   * \brief List of types of node swapping performed on a created prism
+   * Node swapping is required to satisfy the canonical ordering for the prism 
+   * in case the surface normal is pointing inwards rather than outwards
+   * Currently supported options (assuming canonical ordering of nodes 0-5):
+   * NO_SWAP : node swapping is not performed
+   * SWAP_TRI_NODE_ORDER : swap the order of nodes on prism's triangle faces 
+   * (1 <-> 2, 4 <-> 5)
+   * SWAP_TOP_AND_BOT_TRI : swap nodes between the top and the bottom triangles
+   * (0 <-> 3, 1 <-> 4, 2 <-> 5)
+   */
+  enum SwapType {
+    NO_SWAP = 0,
+    SWAP_TRI_NODE_ORDER = 1,
+    SWAP_TOP_AND_BOT_TRI = 2
+  };
+
+  /**
    * \brief Make prisms from triangles
    * @param  ents       Range of triangles
-   * @param  swap_nodes If set true prism's nodes are swapped to satisfy the
-   * canonical ordering (required if surface normal is pointing inwards)
+   * @param  swap_type  Defines how the nodes of the created prism are swapped
+   * (required for canonical ordering if the surface normal is pointing inwards) 
    * @param  prisms     Returned range of prisms
    * @param  verb       Verbosity level
    * @return            Error code
    */
-  MoFEMErrorCode createPrisms(const Range &ents, const bool swap_nodes,
+  MoFEMErrorCode createPrisms(const Range &ents, const SwapType swap_type,
                               Range &prisms, int verb = -1);
 
-  /// \deprecated Use the function with the same name and a bool parameter
-  /// *swap_nodes*, if set true prism's nodes are swapped to satisfy the
-  /// canonical ordering (required if surface normal is pointing inwards)
+  /// \deprecated Use the function with the same name and a parameter
+  /// *swap_type*, permitting to swap the order of each triangle's nodes or 
+  /// alternatively swap nodes between top and bottom triangles, which is 
+  /// required for the canonical ordering if surface normal is pointing inwards
   DEPRECATED MoFEMErrorCode createPrisms(const Range &ents, Range &prisms,
                                          int verb = -1);
   /**
