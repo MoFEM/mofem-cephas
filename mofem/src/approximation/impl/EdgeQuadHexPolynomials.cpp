@@ -119,14 +119,13 @@ MoFEMErrorCode MoFEM::H1_BubbleShapeFunctions_ONSEGMENT(int p, double *N,
   MoFEMFunctionReturnHot(0);
 }
 
-
-MoFEMErrorCode L2_ShapeFunctions_ONSEGMENT(int p, double *N,
-                                           double *funN,
-                                           int nb_integration_pts){
+MoFEMErrorCode MoFEM::L2_ShapeFunctions_ONSEGMENT(int p, double *N,
+                                                  double *funN,
+                                                  int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   for (int q = 0; q != nb_integration_pts; q++) {
     int shift = 2 * q;
-    double ksi = -N[shift + 0] + N[shift + 1];
+    double ksi = - N[shift + 0] + N[shift + 1];
     double L[p];
     CHKERR Legendre_polynomials(p - 1, ksi, NULL, L, NULL, 1);
     int qd_shift = p * q;
@@ -135,7 +134,6 @@ MoFEMErrorCode L2_ShapeFunctions_ONSEGMENT(int p, double *N,
     }
   }   
   MoFEMFunctionReturnHot(0);
-
 }
 
 /*
