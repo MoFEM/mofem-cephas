@@ -12,7 +12,9 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode Integrated_Legendre(int p, double s, double *L,
+MoFEMErrorCode Legendre_polynomials01(int p, double s, double *L);
+
+MoFEMErrorCode Integrated_Legendre01(int p, double s, double *L,
                                           double *diffL);
 
 MoFEMErrorCode Face_orientMat(int *face_nodes, double orientMat[2][2]);
