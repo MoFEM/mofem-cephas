@@ -119,6 +119,36 @@ int main(int argc, char *argv[]) {
               "no added block set");
     }
 
+    MOFEM_LOG("WORLD", Sev::inform) << "<<<< NODESET >>>>>";
+
+    CHKERR meshsets_manager_ptr->addMeshset(NODESET, 1010);
+    DisplacementCubitBcData disp_bc;
+    std::memcpy(disp_bc.data.name, "Displacement", 12);
+    disp_bc.data.flag1 = 1;
+    disp_bc.data.flag2 = 1;
+    disp_bc.data.flag3 = 1;
+    disp_bc.data.flag4 = 0;
+    disp_bc.data.flag5 = 0;
+    disp_bc.data.flag6 = 0;
+    disp_bc.data.value1 = 0;
+    disp_bc.data.value2 = 0;
+    disp_bc.data.value3 = 0;
+    disp_bc.data.value4 = 0;
+    disp_bc.data.value5 = 0;
+    disp_bc.data.value6 = 0;
+
+    CHKERR meshsets_manager_ptr->setBcData(NODESET, 1010, disp_bc);
+
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+             m_field, NODESET | DISPLACEMENTSET, it)) {
+      DisplacementCubitBcData disp_data;
+      CHKERR it->getBcDataStructure(disp_data);
+      MOFEM_LOG("WORLD", Sev::inform) << disp_data;
+    }
+
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "<<<< ADD BLOCKSETs FROM CONFIG FILE >>>>>";
+
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1002, "ADD_BLOCK_SET");
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1003, "ADD_BLOCK_SET");
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1004, "ADD_BLOCK_SET");
@@ -126,9 +156,6 @@ int main(int argc, char *argv[]) {
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1006, "ADD_BLOCK_SET");
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1007, "ADD_BLOCK_SET");
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1008, "ADD_BLOCK_SET");
-
-    MOFEM_LOG("WORLD", Sev::inform)
-        << "<<<< ADD BLOCKSETs FROM CONFIG FILE >>>>>";
 
     CHKERR meshsets_manager_ptr->setMeshsetFromFile(
         /*"add_cubit_meshsets.in"*/);
