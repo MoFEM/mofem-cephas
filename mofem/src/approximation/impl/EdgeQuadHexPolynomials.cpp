@@ -409,10 +409,10 @@ MoFEMErrorCode MoFEM::Hcurl_FaceShapeFunctions_ONQUAD(int *p, double *N,
     int pq[2] = {p[0], p[1]};
     int qp[2] = {p[1], p[0]};
     double mu_ksi_eta[2] = {mu_ksi[1], mu_eta[1]};
-    double mu_eta_ksi[2] = {mu_eta[1], mu_eta[1]};
+    double mu_eta_ksi[2] = {mu_eta[1], mu_ksi[1]};
 
     double *diff_mu_ksi_eta[2] = {diff_mu_ksi[1], diff_mu_eta[1]};
-    double *diff_mu_eta_ksi[2] = {diff_mu_eta[1], diff_mu_eta[1]};
+    double *diff_mu_eta_ksi[2] = {diff_mu_eta[1], diff_mu_ksi[1]};
     double sgn[2] = {-1.0, 1.0};
     for (int typ = 0; typ != 2; typ++)
     {
@@ -507,9 +507,9 @@ MoFEMErrorCode MoFEM::Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
                                                      int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   double coords[4][2] = {{0.0, 0.0},
-                      {1.0, 0.0},
-                      {1.0, 1.0},
-                      {0.0, 1.0}};
+                         {1.0, 0.0},
+                         {1.0, 1.0},
+                         {0.0, 1.0}};
   for (int q = 0; q != nb_integration_pts; q++) {
     int shift = 4 * q;
     double ksi = 0.0; double eta = 0.0;
@@ -532,13 +532,12 @@ MoFEMErrorCode MoFEM::Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
     int pq[2] = {p[0], p[1]};
     int qp[2] = {p[1], p[0]};
     double mu_ksi_eta[2] = {mu_ksi[1], mu_eta[1]};
-    double mu_eta_ksi[2] = {mu_eta[1], mu_eta[1]};
+    double mu_eta_ksi[2] = {mu_eta[1], mu_ksi[1]};
 
     double *diff_mu_ksi_eta[2] = {diff_mu_ksi[1], diff_mu_eta[1]};
-    double *diff_mu_eta_ksi[2] = {diff_mu_eta[1], diff_mu_eta[1]};
+    double *diff_mu_eta_ksi[2] = {diff_mu_eta[1], diff_mu_ksi[1]};
     double sgn[2] = {-1.0, 1.0};
-    for (int typ = 0; typ != 2; typ++)
-    {
+    for (int typ = 0; typ != 2; typ++){
       int pp = pq[typ];
       
 
