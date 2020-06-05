@@ -981,9 +981,8 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
           mit->second.dispBc.data.flag6 = 0;
         if (mit->second.dispBc.data.flag6)
           mit->second.dispBc.data.flag6 = 1;
-        ierr =
-            setBcData(mit->second.bcType, mit->second.iD, mit->second.dispBc);
-        CHKERRG(ierr);
+        CHKERR setBcData(mit->second.bcType, mit->second.iD,
+                         mit->second.dispBc);
       }
       if (mit->second.forceBc.data.value1 != 0 ||
           mit->second.forceBc.data.value2 != 0) {
