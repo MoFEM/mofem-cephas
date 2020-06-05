@@ -79,7 +79,14 @@ ContactPrismElementForcesAndSourcesCore::
       dataL2Master(*dataOnMaster[L2].get()),
       dataHdivSlave(*dataOnSlave[HDIV].get()),
       dataL2Slave(*dataOnSlave[L2].get()),
-      opContravariantTransform(nOrmalSlave, normalsAtGaussPtsSlave) {
+      opContravariantTransform(nOrmalSlave, normalsAtGaussPtsSlave),
+      jacSlave(3, 3), jacMaster(3, 3), invJacSlave(3, 3), invJacMaster(3, 3),
+      opSetInvJacHdivAndHcurl(invJacSlave),
+      tJacSlave(&jacSlave(0, 0), &jacSlave(0, 1), &jacSlave(0, 2), &jacSlave(1, 0), &jacSlave(1, 1),
+           &jacSlave(1, 2), &jacSlave(2, 0), &jacSlave(2, 1), &jacSlave(2, 2)),
+      tInvJacSlave(&invJacSlave(0, 0), &invJacSlave(0, 1), &invJacSlave(0, 2), &invJacSlave(1, 0),
+              &invJacSlave(1, 1), &invJacSlave(1, 2), &invJacSlave(2, 0), &invJacSlave(2, 1),
+              &invJacSlave(2, 2)) {
 
   getUserPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
@@ -252,6 +259,17 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       ++t_coords_slave;
       ++t_diff;
     }
+
+    jacSlave.clear();
+    for (auto n : {0, 1, 2}) {
+      tJacSlave(i, j) += t_coords_slave(i) * t_diff(j);
+      ++t_coords_slave;
+      ++t_diff;
+    }
+
+    double area;
+    CHKERR determinantTensor3by3(tJacSlave, area);
+    CHKERR invertTensor3by3(tJacSlave, area, tInvJacSlave);
 
     t_t2_master(j) =
         FTensor::levi_civita(i, j, k) * t_normal_master(k) * t_t1_master(i);
@@ -526,6 +544,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                   NOBASE)));
 
           CHKERR opContravariantTransform.opRhs(dataHdivSlave);
+          CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdivSlave);
         }
 
         if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
