@@ -261,11 +261,11 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     }
 
     jacSlave.clear();
-    for (auto n : {0, 1, 2}) {
-      tJacSlave(i, j) += t_coords_slave(i) * t_diff(j);
-      ++t_coords_slave;
-      ++t_diff;
-    }
+    // for (auto n : {0, 1, 2}) {
+    //   tJacSlave(i, j) += t_coords_slave(i) * t_diff(j);
+    //   ++t_coords_slave;
+    //   ++t_diff;
+    // }
 
     double area;
     CHKERR determinantTensor3by3(tJacSlave, area);
@@ -544,7 +544,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                   NOBASE)));
 
           CHKERR opContravariantTransform.opRhs(dataHdivSlave);
-          CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdivSlave);
+          // CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdivSlave);
         }
 
         if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
