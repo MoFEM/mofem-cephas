@@ -317,7 +317,7 @@ echo -e "\n----------------------------\n"
 echo -e "CORE LIBRARY - Debug version: spconfig ..."
 echo -e "\n----------------------------\n"
 
-./spconfig.py -DMOFEM_BUILD_TESTS=ON $MOFEM_INSTALL_DIR/mofem-cephas/mofem
+./spconfig.py -DMOFEM_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1 $MOFEM_INSTALL_DIR/mofem-cephas/mofem
 
 echo -e "\n----------------------------\n"
 echo -e "CORE LIBRARY - Debug version: make -j $NumberOfProcs ..."
@@ -367,7 +367,7 @@ echo -e "\n----------------------------\n"
 echo -e "USER MODULE: spconfig - Debug version ..."
 echo -e "\n----------------------------\n"
 
-./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DFM_VERSION_MAJOR=0 -DFM_VERSION_MINOR=0 -DFM_VERSION_BUILD=0 -DMOFEM_DIR=../um_view_debug \
+./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1  -DFM_VERSION_MAJOR=0 -DFM_VERSION_MINOR=0 -DFM_VERSION_BUILD=0 -DMOFEM_DIR=../um_view_debug \
     $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
 
 echo -e "\n----------------------------\n"
