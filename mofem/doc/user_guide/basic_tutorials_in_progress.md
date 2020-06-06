@@ -24,22 +24,33 @@ the following directories
 Each tutorial in this page includes code name and keywords for quick reference
 and search within the browser.
 
-# Mesh generation
+Our way of creating tutorials is inspired by [deal.II](https://www.dealii.org).
 
-This part presents how to create a MoFEM-compatible mesh from open-source mesh
-generators, e.g. Gmsh, Salome
+\note You do not need to go through all the tutorials in the order they are
+listed in this page before jumping into the topic in which you are
+interested. However, we do recommend you to have a look at the first few tutorials
+solving scalar-field problems to have a general idea how the finite element
+implementation is done in MoFEM. We also make a recommendation at the beginning
+of each tutorial regarding which tutorial(s) you should read (prerequisites) before
+continuing with the one you are most excited about.
 
-- \ref basic_tutorials_mesh_generation_2d (Keywords: *block definition, config file, read_med*)
-- \ref basic_tutorials_mesh_generation_3d (Keywords: *block definition, config file, read_med*)
+# Mesh creation
 
+This part of the tutorials presents how to create a MoFEM-compatible input mesh
+from open-source mesh generators, e.g. [Gmsh](https://gmsh.info), [Salome-Meca](https://www.code-aster.org/V2/spip.php?article303)
+
+- \ref basic_tutorials_mesh_generation_2d (Keywords: *block definition, config file, [read_med](http://mofem.eng.gla.ac.uk/mofem/html/read__med_8cpp.html)*)
+- \ref basic_tutorials_mesh_generation_3d (Keywords: *block definition, config file, [read_med](http://mofem.eng.gla.ac.uk/mofem/html/read__med_8cpp.html)*)
 
 
 # Scalar-field problems
 
 In this part of the tutorials, you will be guided through the process of getting
-familiar with MoFEM. Firstly, solving Poisson's equation and its variants. This
-equation is of scalar-field problem meaning the field value that needs to be
-solved has *only one* component. In these tutorials, you will:
+familiar with finite element implementation in MoFEM. Firstly, solving Poisson's
+equation and its variants. This equation is of scalar-field problem meaning the
+field value that needs to be solved has *only one* component. 
+
+<!-- In these tutorials, you will:
 - solve partial differential equations in MoFEM from the simplest case to more complicated ones
 - get familiar with the concept of User Data Operator (UDO) and how to
 implement new operators and \b push them to the main program
@@ -47,55 +58,40 @@ implement new operators and \b push them to the main program
 - expand the code to solve 3D problem from 2D one.
 - be able to use PETSc linear solver ([KSP](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html)),
 nonlinear solver ([SNES](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/index.html)),
-and time-stepping solver ([TS](https://www.mcs.anl.gov/petsc/documentation/tutorials/ECP19/ECP19_TS.pdf))
+and time-stepping solver ([TS](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/index.html))
 - get familiar with ([PCFIELDSPLIT](http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCFIELDSPLIT.html))
-pre-conditioner to solve the problem with multiple fields.
+pre-conditioner to solve the problem with multiple fields. -->
 
 ## Linear and nonlinear Poisson's equation
 
 Let's start to learn MoFEM by solving the linear Poisson's equation in 2D with
-homogeneous boundary condition. At the end of this tutorial, there will be
+homogeneous boundary condition. At the end of the first tutorial, there will be
 instruction on how to effortlessly and quickly switch the implementation to
-solve the equation in 3D with few changes in the code
+solve the equation in 3D with few changes in the code. The rest of this part
+would show how to expand the code to cover the non-homogeneous boundary
+conditions and nonlinearity.
 
-- \ref basic_tutorials_poisson_homogeneous (Keywords: *Simple Interface, KSP solver, mofem_part, mbconvert, Paraview*)
+- \ref basic_tutorials_poisson_homogeneous (Keywords: *[Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [KSP](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html) solver, [mofem_part](http://mofem.eng.gla.ac.uk/mofem/html/mofem__part_8cpp.html), [mbconvert](https://gitlab.kitware.com/third-party/moab/-/blob/17ddd284930a23d8e8e48efa4510ff6fe56ade4f/tools/mbconvert.man), 3D extension*)
 
-Based on the implementation of the previous step, let's explore how to expand
-the code to cover the non-homogeneous boundary condition
+- \ref basic_tutorials_poisson_nonhomogeneous (Keywords: *[Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [KSP](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html) solver, least-square approx.*)
 
-- \ref basic_tutorials_poisson_nonhomogeneous (Keywords: *Simple Interface, KSP solver, least-square approx.*)
+- \ref basic_tutorials_poisson_lagrange_multiplier (Keywords: *[Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [PCFIELDSPLIT](http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCFIELDSPLIT.html) block solver*)
 
-Below is an alternative way to solve the equation with non-homogeneous boundary
-condition using Lagrange multiplier which means making use of an additional field 
+- \ref basic_tutorials_poisson_nonlinear (Keywords: *[Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [SNES](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/index.html) solver*)
 
-- \ref basic_tutorials_poisson_lagrange_multiplier (Keywords: *Simple Interface, PCFIELDSPLIT block solver*)
-
-That was for linear problem using KSP solver. Now, let's try to solve a
-nonlinear Poisson's equation by mean of SNES solver
-
-- \ref basic_tutorials_poisson_nonlinear (Keywords: *Simple Interface, SNES solver*)
-
-Let's concretise what you have learnt by solving a variant of the nonlinear
-Poisson's equation, namely Minimal surface equation
-
-- \ref basic_tutorials_minimal_surface_equation (Keywords: *Simple Interface, SNES solver*)
+- \ref basic_tutorials_minimal_surface_equation (Keywords: *[Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [SNES](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/index.html) solver*)
 
 ## Time-dependent problems
 
-You have finished some Poisson's equations. By now, you have general idea how
-MoFEM works and how to implement UDOs which is the crucial part in MoFEM.
+This part will show you how to solve, in MoFEM, the time-dependent heat equation,
+wave equation, and reaction-diffusion equation using PETSc [time-stepping solver](https://www.mcs.anl.gov/petsc/documentation/tutorials/ECP19/ECP19_TS.pdf)
+([TS](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/index.html))
 
-Experience with all of the implementation for linear/nonlinear Poisson's equation
-would be helpful as you progress to the next stage which involves solving
-time-dependent heat equation, wave equation, and reaction-diffusion equation
-using PETSc time-stepping solver
-([TS](https://www.mcs.anl.gov/petsc/documentation/tutorials/ECP19/ECP19_TS.pdf))
+- \ref basic_tutorials_heat_equation (Keywords: *[Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [TS](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/index.html) solver, implicit scheme*)
 
-- \ref basic_tutorials_heat_equation (Keywords: *Simple Interface, TS solver, implicit scheme*)
+- \ref basic_tutorials_wave_equation (Keywords: *[Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [TS](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/index.html) solver, implicit scheme*)
 
-- \ref basic_tutorials_wave_equation (Keywords: *Simple Interface, TS solver, implicit scheme*)
-
-- \ref basic_tutorials_reaction_diffusion_equation (Keywords: *Simple Interface, TS solver, Implicit-Explicit (IMEX) scheme*)
+- \ref basic_tutorials_reaction_diffusion_equation (Keywords: *[Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [TS](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/index.html) solver, Implicit-Explicit (IMEX) scheme*)
 
 
 # Vector-field problems
