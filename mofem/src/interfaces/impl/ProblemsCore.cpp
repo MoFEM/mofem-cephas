@@ -74,7 +74,7 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
   if (!p.second)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Problem not added");
 
-  MOFEM_LOG("WORLD", Sev::inform) << "Add probken " << name;
+  MOFEM_LOG("WORLD", Sev::inform) << "Add problem " << name;
 
   MoFEMFunctionReturn(0);
 }
