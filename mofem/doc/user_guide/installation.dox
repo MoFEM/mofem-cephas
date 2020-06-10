@@ -37,7 +37,7 @@ installation that will include binary (executable) files of *Default User Module
 Developer version of MoFEM installation provides you with highest flexibility.
 You can experiment codes, create your own module, and you can always stay
 up-to-date to the latest developement of MoFEM. You may wish to follow these
-steps for installation that will include source code and execuatbles of *Core
+steps for installation that will include source code and executables of *Core
 Library*, *Default User Module*, and *Fracture Module* with both release and
 debug versions.
 
