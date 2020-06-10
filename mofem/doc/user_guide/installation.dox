@@ -2,7 +2,7 @@
 
 \tableofcontents
 
-We recommend you to use the scripts provided below to install user version or
+We prefer to use the scripts provided below to install user version or
 developer version of MoFEM with [Spack](https://spack.io) as a package manager.
 
 \section installation_user_version User version
@@ -23,6 +23,13 @@ installation that will include binary (executable) files of *Default User Module
 - Run the script (sudo privileges may be required)
   ~~~~~~
   ./install_mofem_user.sh
+  ~~~~~~ 
+
+- Test run `elasticity` program
+  ~~~~~~
+  cd YOUR_INSTALLATION_DIRECTORY
+  cd mofem_install/um_view/elasticity
+  ./elasticity -my_file LShape.h5m -my_order 2
   ~~~~~~ 
 
 \section installation_developer_version Developer version
@@ -46,6 +53,13 @@ debug versions.
 - Run the script (sudo privileges may be required)
   ~~~~~~
   ./install_mofem_developer.sh
+  ~~~~~~ 
+
+- Test run `elasticity` program
+  ~~~~~~
+  cd YOUR_INSTALLATION_DIRECTORY
+  cd mofem_install/um/build_release/basic_finite_elements/elasticity
+  ./elasticity -my_file LShape.h5m -my_order 2
   ~~~~~~ 
 
 \subsection installation_developer_version_add_new_module Compile codes and add new module in MoFEM
