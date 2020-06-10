@@ -298,8 +298,13 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
     CHKERR getEntitySense<MBTRI>(data_div);
     CHKERR getEntityDataOrder<MBTRI>(data_div, HDIV);
+    // CHKERR getEntitySense<MBTRI>(dataHdivSlave);
+    // CHKERR getEntityDataOrder<MBTRI>(dataHdivSlave, HDIV);
+    // CHKERR getEntitySense<MBTRI>(dataHdivMaster);
+    // CHKERR getEntityDataOrder<MBTRI>(dataHdivMaster, HDIV);
     dataHdivSlave.spacesOnEntities[MBTRI].set(HDIV);
     dataHdivMaster.spacesOnEntities[MBTRI].set(HDIV);
+    data_div.spacesOnEntities[MBTRI].set(HDIV);
   }
 
   // L2
@@ -377,8 +382,12 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
               "Wrong shift for contact prism element");
     }
 
-    data.sPace = copy_data.sPace;
-    data.bAse = copy_data.bAse;
+    auto &dat = copy_data.dataOnEntities[MBTRI][shift];
+    data.sPace = dat.getBase();
+    data.bAse = dat.getSpace();
+
+    // data.sPace = copy_data.sPace;
+    // data.bAse = copy_data.bAse;
     data.spacesOnEntities[MBVERTEX] = copy_data.spacesOnEntities[MBVERTEX];
     data.spacesOnEntities[MBTRI] = copy_data.spacesOnEntities[MBTRI];
 
@@ -482,12 +491,20 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
           CHKERR clean_data(dataHdivMaster);
           CHKERR copy_data_hdiv(dataHdivMaster, dataH1, 3);
 
+          dataHdivMaster.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(
+              nbGaussPts, 3, false);
+          dataHdivSlave.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(
+              nbGaussPts, 3, false);
+
           dataHdivMaster.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
               dataOnMaster[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
                   NOBASE);
           dataHdivSlave.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
               dataOnSlave[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
                   NOBASE);
+          // dataOnElement[HDIV].dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
+          //     dataOnMaster[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
+          //         NOBASE);
         }
       }
     }
@@ -534,7 +551,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 
           // FTensor::Index<'i', 3> i;
 
-          normal_slave(i) = 0.5 * slave_normal_data(i);
+          normal_slave(i) = slave_normal_data(i);
         
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsSlave,
@@ -542,6 +559,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                   dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
 
+          
+          normalsAtGaussPtsSlave.resize(gaussPtsSlave.size2(), 3);
           normalsAtGaussPtsSlave.clear();
           auto t_normal = get_ftensor_from_mat_3d(normalsAtGaussPtsSlave);
 
