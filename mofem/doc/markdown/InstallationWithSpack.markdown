@@ -1,5 +1,7 @@
-Installation with Spack (Recommended for Linux, macOS, HPC) {#install_spack}
+Installation with Spack (Linux, macOS, HPC) {#install_spack}
 ==========================================================
+
+\note This document is for reference ONLY (no longer maintained and supported)
 
 Spack is "A flexible package manager that supports multiple versions,
 configurations, platforms, and compilers." -
@@ -29,13 +31,13 @@ installation can use the following scripts for different purposes:
 - For user only (just the binary files): [`install_mofem_user.sh`](scripts/install_mofem_user.sh)
 - For developer (full source and binary files): [`install_mofem_developer.sh`](scripts/install_mofem_developer.sh)
 
-After downloading the appropriate file of choice, one should copy the file to
-the directory where MoFEM will be installed. Then simply run the file from the
-terminal by executing the command, for example,
+You will copy the script to the directory where MoFEM will be installed and run
+it from the terminal, for example
 ~~~~~~
 ./install_mofem_user.sh
 ~~~~~~ 
-It is worth noting that running the scripts may require user password for sudo privileges.
+
+\note Running the scripts may require user password for sudo privileges.
 
 ## Scripts on secure server
 
