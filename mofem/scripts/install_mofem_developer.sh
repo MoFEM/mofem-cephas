@@ -35,20 +35,6 @@ case "${unameOut}" in
     *)          machine="UNKNOWN:${unameOut}"
 esac
   
-# Get numbers of processor
-if [ ${machine} = "Linux" ]
-then
-    NumberOfProcs=$(nproc)
-elif [ ${machine} = "Mac" ]
-then
-    NumberOfProcs=$(($(sysctl -n hw.ncpu)/2))
-fi
-# max(NumberOfProcs, 1)
-NumberOfProcs=$(( NumberOfProcs > 1 ? NumberOfProcs : 1 ))
-  
-echo "The number of processors is $NumberOfProcs"
-  
-  
 ##############################
 ### PREREQUISITES
 ##############################
@@ -85,7 +71,7 @@ then
         sudo xcodebuild -license accept
         /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
     else 
-        echo -e "\nHomebrew installed"
+        echo -e "\nHomebrew is already installed."
     fi
     brew install curl git gcc
  
@@ -123,16 +109,9 @@ SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 # Retrieve Spack for MoFEM
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
 
-  if [ ! -f "$PWD/spack.tgz" ]; then
-    echo "Downloading spack ..."
-    mkdir -p $SPACK_ROOT_DIR &&\
-    curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
-    | tar xzC $SPACK_ROOT_DIR --strip 1
-    echo -e "Done.\n"
-  else 
-    mkdir -p $SPACK_ROOT_DIR &&\
-    tar xzf $PWD/spack.tgz -C $SPACK_ROOT_DIR --strip 1
-  fi
+  echo "Cloning spack ..."
+  git clone -b develop https://github.com/likask/spack.git
+  echo -e "Done.\n"
 
   # Initialise Spack environment variables:
   . $SPACK_ROOT_DIR/share/spack/setup-env.sh
@@ -148,7 +127,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   # Download mirror
   if [ ! -d "$SPACK_MIRROR_DIR" ]; then
     if [ ! -f "$PWD/mirror.tgz" ]; then
-      echo "Downloading spack mofem mirror ..."
+      echo "Downloading mirror of spack packages for MoFEM..."
       mkdir -p $SPACK_MIRROR_DIR && \
       curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
       | tar xzC $SPACK_MIRROR_DIR --strip 1
@@ -186,6 +165,11 @@ echo "Current directory: $PWD"
 # Clone MoFEM core library
 if [ ! -d "$PWD/mofem-cephas" ]; then
   git clone -b develop --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+  
+  # Checkout develop branch in user modules repo (sub-module)
+  cd mofem-cephas/mofem/users_modules
+  git fetch && git checkout develop && git pull
+
 else 
   echo -e "\nMoFEM source directory is found"
 fi
@@ -199,8 +183,9 @@ cd $MOFEM_INSTALL_DIR
 mkdir -p lib_release
 cd lib_release
 
-spack install --only dependencies mofem-cephas
-spack setup mofem-cephas@develop copy_user_modules=False build_type=Release
+spack install --only dependencies mofem-cephas+slepc ^petsc+X
+spack setup mofem-cephas@develop copy_user_modules=False \
+  build_type=Release ^petsc+X
 
 echo -e "\n----------------------------\n"
 echo -e "CORE LIBRARY - Release version: spconfig ..."
@@ -209,10 +194,10 @@ echo -e "\n----------------------------\n"
 ./spconfig.py -DMOFEM_BUILD_TESTS=ON $MOFEM_INSTALL_DIR/mofem-cephas/mofem
 
 echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY - Release version: make -j $NumberOfProcs ..."
+echo -e "CORE LIBRARY - Release version: make -j 2 ..."
 echo -e "\n----------------------------\n"
 
-make -j $NumberOfProcs
+make -j 2
 
 # Run the tests on core library
 echo -e "\n----------------------------\n"
@@ -235,12 +220,17 @@ echo -e "\n********************************************************\n"
 echo -e "Installing USER MODULES - Release version ..."
 echo -e "\n********************************************************\n"
 
+# Get mofem-cephas spack hash for release version
+TODAY=`date +%F` 
+MOFEM_CEPHAS_HASH=`spack find -lv --start-date $TODAY | grep mofem-cephas@develop | grep Release | awk '{print $1}'` 
+echo "mofem-cephas id for release: $MOFEM_CEPHAS_HASH"
+
 # Installation of user modules
 cd $MOFEM_INSTALL_DIR
 
 mkdir -p um
 cd um/
-spack view --verbose symlink -i um_view mofem-cephas@develop build_type=Release 
+spack view --verbose symlink -i um_view /$MOFEM_CEPHAS_HASH 
 export PATH=$PWD/um_view/bin:$PATH
 # Add PATH to .bashrc on Ubuntu or .bash_profile on Mac
 if [ ${machine} = "Linux" ]
@@ -254,12 +244,9 @@ fi
 mkdir -p build_release
 cd build_release/
 
-MOFEM_CEPHAS_SPACK_ID=`spack find -lv mofem-cephas | grep mofem-cephas@develop | grep build_type=Release | awk '{print $1}'| tail -n 1`
-echo "mofem-cephas id for release: $MOFEM_CEPHAS_SPACK_ID"
-
 spack setup mofem-users-modules@develop \
     copy_user_modules=False build_type=Release \
-    ^/$MOFEM_CEPHAS_SPACK_ID
+    ^/$MOFEM_CEPHAS_HASH
 
 echo -e "\n----------------------------\n"
 echo -e "USER MODULE - Release version: spconfig ..."
@@ -269,10 +256,10 @@ echo -e "\n----------------------------\n"
     $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
 
 echo -e "\n----------------------------\n"
-echo -e "USER MODULE - Release version: make -j $NumberOfProcs ..."
+echo -e "USER MODULE - Release version: make -j 2 ..."
 echo -e "\n----------------------------\n"
 
-make -j $NumberOfProcs
+make -j 2
 
 # Run the tests on user modules
 echo -e "\n----------------------------\n"
@@ -311,19 +298,20 @@ cd $MOFEM_INSTALL_DIR
 mkdir -p lib_debug
 cd lib_debug
 
-spack setup mofem-cephas@develop copy_user_modules=False build_type=Debug
+spack setup mofem-cephas@develop copy_user_modules=False \
+build_type=Debug ^petsc+X
 
 echo -e "\n----------------------------\n"
 echo -e "CORE LIBRARY - Debug version: spconfig ..."
 echo -e "\n----------------------------\n"
 
-./spconfig.py -DMOFEM_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1 $MOFEM_INSTALL_DIR/mofem-cephas/mofem
+./spconfig.py -DMOFEM_BUILD_TESTS=ON $MOFEM_INSTALL_DIR/mofem-cephas/mofem
 
 echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY - Debug version: make -j $NumberOfProcs ..."
+echo -e "CORE LIBRARY - Debug version: make -j 2 ..."
 echo -e "\n----------------------------\n"
 
-make -j $NumberOfProcs
+make -j 2
 
 # Run the tests on core library
 echo -e "\n----------------------------\n"
@@ -345,36 +333,39 @@ echo -e "\n********************************************************\n"
 echo -e "Installing USER MODULES - Debug version ..."
 echo -e "\n********************************************************\n"
 
+# Get mofem-cephas spack hash for debug version
+TODAY=`date +%F` 
+MOFEM_CEPHAS_HASH=`spack find -lv --start-date $TODAY | grep mofem-cephas@develop | grep Debug | awk '{print $1}'` 
+echo "mofem-cephas id for debug: $MOFEM_CEPHAS_HASH"
+
 # Installation of user modules
 cd $MOFEM_INSTALL_DIR
 
 # mkdir um
 cd um/
 
-spack view --verbose symlink -i um_view_debug mofem-cephas@develop build_type=Debug 
+spack view --verbose symlink -i um_view_debug /$MOFEM_CEPHAS_HASH
 
 mkdir -p build_debug
 cd build_debug/
 
-MOFEM_CEPHAS_SPACK_ID=`spack find -lv mofem-cephas | grep mofem-cephas@develop | grep build_type=Debug | awk '{print $1}'| tail -n 1`
-echo "mofem-cephas id for debug: $MOFEM_CEPHAS_SPACK_ID"
 
 spack setup mofem-users-modules@develop \
     copy_user_modules=False build_type=Debug \
-    ^/$MOFEM_CEPHAS_SPACK_ID
+    ^/$MOFEM_CEPHAS_HASH
 
 echo -e "\n----------------------------\n"
 echo -e "USER MODULE: spconfig - Debug version ..."
 echo -e "\n----------------------------\n"
 
-./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1  -DFM_VERSION_MAJOR=0 -DFM_VERSION_MINOR=0 -DFM_VERSION_BUILD=0 -DMOFEM_DIR=../um_view_debug \
+./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DFM_VERSION_MAJOR=0 -DFM_VERSION_MINOR=0 -DFM_VERSION_BUILD=0 -DMOFEM_DIR=../um_view_debug \
     $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
 
 echo -e "\n----------------------------\n"
-echo -e "USER MODULE - Debug version: make -j $NumberOfProcs ..."
+echo -e "USER MODULE - Debug version: make -j 2 ..."
 echo -e "\n----------------------------\n"
 
-make -j $NumberOfProcs
+make -j 2
 
 # Run the tests on user modules
 echo -e "\n----------------------------\n"
