@@ -106,6 +106,11 @@ echo "$PWD"
 SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
 SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 
+# Remove .spack directory in $HOME from previous installation (if any)
+if [ -d "$HOME/.spack" ]; then
+  cp -R $HOME/.spack $HOME/.spack_old
+fi
+
 # Retrieve Spack for MoFEM
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
 

@@ -35,19 +35,7 @@ case "${unameOut}" in
     *)          machine="UNKNOWN:${unameOut}"
 esac
   
-# Get numbers of processor
-if [ ${machine} = "Linux" ]
-then
-    NumberOfProcs=$(nproc)
-elif [ ${machine} = "Mac" ]
-then
-    NumberOfProcs=$(($(sysctl -n hw.ncpu)/2))
-fi
-# max(NumberOfProcs, 1)
-NumberOfProcs=$(( NumberOfProcs > 1 ? NumberOfProcs : 1 ))
-  
-echo "The number of processors is $NumberOfProcs"
-  
+
 ##############################
 ### PREREQUISITES
 ##############################
@@ -118,6 +106,11 @@ echo "$PWD"
 SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
 SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 
+# Remove .spack directory in $HOME from previous installation (if any)
+if [ -d "$HOME/.spack" ]; then
+  cp -R $HOME/.spack $HOME/.spack_old
+fi
+
 # Retrieve Spack for MoFEM
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
 
@@ -146,7 +139,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   # Download mirror
   if [ ! -d "$SPACK_MIRROR_DIR" ]; then
     if [ ! -f "$PWD/mirror.tgz" ]; then
-      echo "Downloading spack mofem mirror ..."
+      echo "Downloading mirror of spack packages for MoFEM..."
       mkdir -p $SPACK_MIRROR_DIR && \
       curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
       | tar xzC $SPACK_MIRROR_DIR --strip 1
@@ -182,7 +175,7 @@ cd $MOFEM_INSTALL_DIR
 echo "Current directory: $PWD"
   
 # Install MoFEM packages
-spack install  -j $NumberOfProcs mofem-fracture-module build_type=Release
+spack install  -j 2 mofem-fracture-module build_type=Release
   
 # Activate fracture module
 spack view --verbose symlink -i um_view mofem-fracture-module
