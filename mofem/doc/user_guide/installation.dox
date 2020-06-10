@@ -7,13 +7,14 @@ developer version of MoFEM with [Spack](https://spack.io) as a package manager.
 
 \section installation_user_version User version
 
-User version of MoFEM installation provides only binary files that allow users
+User version of MoFEM installation provides only binary files (not the source
+codes) that allow users 
 to run analyses in MoFEM straightaway. You may wish follow these steps for
 installation that will include binary (executable) files of *Default User Module* and *Fracture Module*
 
-- Locate the directory where you want to install MoFEM
+- Locate the directory where you would like to install MoFEM
 
-- Download script to that directory [`install_mofem_user.sh`](scripts/install_mofem_user.sh)
+- Download installation script to that directory [`install_mofem_user.sh`](scripts/install_mofem_user.sh)
 
 - Change mode of the script (if neccesary)
   ~~~~~~
@@ -34,16 +35,17 @@ installation that will include binary (executable) files of *Default User Module
 
 \section installation_developer_version Developer version
 
-Developer version of MoFEM installation provides you with highest flexibility.
-You can experiment codes, create your own module, and you can always stay
+Developer version of MoFEM installation provides you with highest flexibility
+with all the source codes.
+You can experiment the codes, create your own module, and always stay
 up-to-date to the latest developement of MoFEM. You may wish to follow these
 steps for installation that will include source code and executables of *Core
 Library*, *Default User Module*, and *Fracture Module* with both release and
-debug versions.
+debug build types.
 
-- Locate the directory where you want to install MoFEM
+- Locate the directory where you would like to install MoFEM
 
-- Download script to that directory [`install_mofem_developer.sh`](scripts/install_mofem_developer.sh)
+- Download installation script to that directory [`install_mofem_developer.sh`](scripts/install_mofem_developer.sh)
 
 - Change mode of the script (if neccesary)
   ~~~~~~
@@ -64,8 +66,8 @@ debug versions.
 
 \subsection installation_developer_version_add_new_module Compile codes and add new module in MoFEM
 
-For developer, you may wish to read these two tutorials to compile codes and add
-new module in MoFEM
+For developer, you may wish to have a look at these two tutorials to compile
+codes and add new module in MoFEM
 
 - \ref how_to_compile_program
 
@@ -77,9 +79,9 @@ Q&A](https://groups.google.com/forum/#!categories/mofem-group). Enjoy MoFEM!
 
 \section installation_reference Reference-only documents
 
-If you were visiting this installation page in its previous version before and
-you may want to revisit what you had seen, the following documents are now for
-reference ONLY, they are no longer maintained and supported
+If you were visiting this installation page in its previous version and
+would like to revisit what you had seen before, the following documents are now
+for reference ONLY, they are no longer maintained and supported
 - \subpage install_spack
 - \subpage install_docker
 - \subpage install_ubuntu
