@@ -28,10 +28,10 @@ You compile the Core Library by running the following command lines
 
 ```
   cd $HOME/mofem_install/lib_release/
-  make -j2
-  make -j2 install
+  make -j4
+  make -j4 install
 ```
-where `-j2` indicates you will use two processors to compile the codes.
+where `-j4` indicates you will use two processors to compile the codes.
 
 \note Remember that compiling Core Library requires both `make` and `make install`
 
@@ -53,7 +53,7 @@ running the following command lines
 
 ```
   cd $HOME/mofem_install/um/build_release/
-  make -j2
+  make -j4
 ```
 
 \note You only need to compile Core Library before compiling Default User Module
