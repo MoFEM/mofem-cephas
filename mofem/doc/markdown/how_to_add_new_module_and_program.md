@@ -32,9 +32,6 @@ cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/
 git clone https://bitbucket.org/likask/mofem_um_solid_shell_prism_element.git
 ```
 
-\note If you have issue with repo access for Solid Shell Module, please contact
-us on [MoFEM Q&A](https://groups.google.com/forum/#!categories/mofem-group)
-
 - Reconfigure build directory
 ```
 cd $HOME/mofem_install/um/build_release/

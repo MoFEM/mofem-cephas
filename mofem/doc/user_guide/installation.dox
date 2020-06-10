@@ -48,8 +48,7 @@ debug versions.
   ./install_mofem_developer.sh
   ~~~~~~ 
 
-\subsection installation_developer_version_add_new_module Compile codes and add
-new module in MoFEM
+\subsection installation_developer_version_add_new_module Compile codes and add new module in MoFEM
 
 For developer, you may wish to read these two tutorials to compile codes and add
 new module in MoFEM
