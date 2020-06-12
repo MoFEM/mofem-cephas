@@ -10,7 +10,7 @@ developer version of MoFEM with [Spack](https://spack.io) as a package manager.
 User version of MoFEM installation provides only binary files (not the source
 codes) that allow users 
 to run analyses in MoFEM straightaway. You may wish follow these steps for
-installation that will include binary (executable) files of *Default User Module* and *Fracture Module*
+installation that will include binary (executable) files of *Basic User Module* and *Fracture Module*
 
 - Locate the directory where you would like to install MoFEM
 
@@ -40,7 +40,7 @@ with all the source codes.
 You can experiment the codes, create your own module, and always stay
 up-to-date to the latest developement of MoFEM. You may wish to follow these
 steps for installation that will include source code and executables of *Core
-Library*, *Default User Module*, and *Fracture Module* with both release and
+Library*, *Basic User Module*, and *Fracture Module* with both release and
 debug build types.
 
 - Locate the directory where you would like to install MoFEM

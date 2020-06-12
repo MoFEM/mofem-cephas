@@ -6,12 +6,12 @@ How to compile a program {#how_to_compile_program}
 This tutorial assumes that you have installed MoFEM with developer version using
 the script provided in \ref installation. And therefore, you probably have paths
 for the source code and the binary files (e.g. for `release` build type) of the
-Core Library and the Default User Module as follows
+Core Library and the Basic User Module as follows
 
 - Core Library
   - Source code: *$HOME/mofem_install/mofem-cephas/*
   - Binary files (build directory): *$HOME/mofem_install/lib_release/*
-- Default User Module
+- Basic User Module
   - Source code: *$HOME/mofem_install/mofem-cephas/mofem/users_modules/*
   - Binary files (build directory): *$HOME/mofem_install/um/build_release/*
 
@@ -36,17 +36,17 @@ where `-j4` indicates you will use four processors to compile the codes.
 
 
 
-# Compile the Default User Module
+# Compile the Basic User Module
 
-You will need to compile the Default User Module if you change any file related
+You will need to compile the Basic User Module if you change any file related
 to C++ source codes that are located in
 ```
   $HOME/mofem_install/mofem-cephas/mofem/users_modules/
 ```
-The changes include those when you modify codes for Default User Module or when
+The changes include those when you modify codes for Basic User Module or when
 you add a new module of your own and change its source code.
 
-You can compile both the Default User Module and your own module (if any) by
+You can compile both the Basic User Module and your own module (if any) by
 running the following command lines
 
 ```
@@ -54,7 +54,7 @@ running the following command lines
   make -j4
 ```
 
-\note You only need to compile Core Library before compiling Default User Module
+\note You only need to compile Core Library before compiling Basic User Module
 if you have changes in Core Library. If you only have changes in user modules
-(either the default one or the one added by yourself), you just need to
-compile the Default User Module.
+(either the Basic one or the one added by yourself), you just need to
+compile the Basic User Module.

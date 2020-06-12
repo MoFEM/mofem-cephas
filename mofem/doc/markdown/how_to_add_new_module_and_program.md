@@ -6,12 +6,12 @@ How to add a new module and program {#how_to_add_new_module_and_program}
 This tutorial assumes that you have installed MoFEM with developer version using
 the script provided in \ref installation. And therefore, you probably have paths
 for the source code and the binary files (e.g. for `release` build type) of the
-Core Library and the Default User Module as follows
+Core Library and the Basic User Module as follows
 
 - Core Library
   - Source code: *$HOME/mofem_install/mofem-cephas/*
   - Binary files (build directory): *$HOME/mofem_install/lib_release/*
-- Default User Module
+- Basic User Module
   - Source code: *$HOME/mofem_install/mofem-cephas/mofem/users_modules/*
   - Binary files (build directory): *$HOME/mofem_install/um/build_release/*
 
@@ -22,7 +22,7 @@ Core Library and the Default User Module as follows
 To add a new MoFEM module that already developed, for example [Solid Shell
 Module](https://bitbucket.org/likask/mofem_um_solid_shell_prism_element/src/master/), you may wish to follow these steps
 
-- Locate Default User Module source code
+- Locate Basic User Module source code
 ```
 cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/
 ```
@@ -92,7 +92,7 @@ Q&A](https://groups.google.com/forum/#!categories/mofem-group). We are happy to 
 The quickest way to add a new program to an existing module in your
 MoFEM installation directory is to replicate a program that already available in
 the same module of your choice. For example, you can replicate `elasticity`
-program in MoFEM Default User Module following general steps as follows
+program in MoFEM Basic User Module following general steps as follows
 
 - Go to:
   $HOME/mofem_install/mofem-cephas/mofem/users_modules/basic_finite_elements/
