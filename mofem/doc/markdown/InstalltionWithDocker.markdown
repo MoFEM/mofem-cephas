@@ -1,8 +1,6 @@
 Installation with Docker (Linux, macOS and some versions of Windows) {#install_docker}
 =======================================================================
 
-\note This document is for reference ONLY (no longer maintained and supported)
-
 Docker is an open platform that allows for the distribution and deployment of
 applications across different systems. In the context of MoFEM it allows for
 the distribution of pre-compiled libraries for the Docker platform that can

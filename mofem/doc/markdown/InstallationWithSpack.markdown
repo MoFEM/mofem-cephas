@@ -1,8 +1,6 @@
 Installation with Spack (Linux, macOS, HPC) {#install_spack}
 ==========================================================
 
-\note This document is for reference ONLY (no longer maintained and supported)
-
 Spack is "A flexible package manager that supports multiple versions,
 configurations, platforms, and compilers." -
 [https://spack.io](https://spack.io)
