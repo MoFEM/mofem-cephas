@@ -1,31 +1,97 @@
 /*! \page installation Installation
 
-We recommend installation preferably with Spack or with Docker. Both installation
-methods are system independent, which minimises the likelihood of
-something going wrong on your computer.
+\tableofcontents
 
-Docker <https://www.docker.com> is a Linux (e.g. Ubuntu) system virtualisation,
-where MoFEM is launched in a docker container (virtual system) hosted by your
-native OS. The advantage of this approach is that the operating system
-environment is contained on a virtual machine hosted on your computer.
-Therefore, potential errors can be easily reproduced by MoFEM support team, and
-the assistance can be provided easier. However, this installation method demands
-understanding of how Docker container works, furthermore, it provides relatively
-slow reading and writing and a limited portability for HPC computing.
+We prefer to use the scripts provided below to install user version or
+developer version of MoFEM with [Spack](https://spack.io) as a package manager.
 
-Spack <https://spack.io> on the other hand allows an easy installation on
-the base system and is free from disadvantages of the Docker solution. Spack is
-not a container, it is a packaging system for HPC, Linux and macOS. Therefore, <b>Spack is
-the recommended installation method for MoFEM.</b>
+\section installation_user_version User version
 
-Ubuntu and macOS installation methods demand direct interaction with the OS,
-and to do it well you have to know the location of some libraries installed on
-your system. We do not recommend following these installation instructions unless
-you have experience of installing libraries from source.
+User version of MoFEM installation provides only binary files (not the source
+codes) that allow users 
+to run analyses in MoFEM straightaway. You may wish follow these steps for
+installation that will include binary (executable) files of *Basic User Module* and *Fracture Module*
 
-- \subpage install_spack  - recommended for all users
-- \subpage install_docker - recommended (has some disadvantages)
-- \subpage install_ubuntu - not recommended for common users
-- \subpage install_macosx - not recommended for common users
+- Locate the directory where you would like to install MoFEM
+
+- Download installation script to that directory [`install_mofem_user.sh`](scripts/install_mofem_user.sh)
+
+- Change mode of the script (if neccesary)
+  ~~~~~~
+  chmod +x install_mofem_user.sh
+  ~~~~~~
+
+- Run the script (sudo privileges may be required)
+  ~~~~~~
+  ./install_mofem_user.sh
+  ~~~~~~ 
+
+- Test run `elasticity` program
+  ~~~~~~
+  cd YOUR_INSTALLATION_DIRECTORY
+  cd mofem_install/um_view/elasticity
+  ./elasticity -my_file LShape.h5m -my_order 2
+  ~~~~~~ 
+
+\section installation_developer_version Developer version
+
+Developer version of MoFEM installation provides you with highest flexibility
+with all the source codes.
+You can experiment the codes, create your own module, and always stay
+up-to-date to the latest developement of MoFEM. You may wish to follow these
+steps for installation that will include source code and executables of *Core
+Library*, *Basic User Module*, and *Fracture Module* with both release and
+debug build types
+
+- Locate the directory where you would like to install MoFEM
+
+- Download installation script to that directory [`install_mofem_developer.sh`](scripts/install_mofem_developer.sh)
+
+- Change mode of the script (if neccesary)
+  ~~~~~~
+  chmod +x install_mofem_developer.sh
+  ~~~~~~
+
+- Run the script (sudo privileges may be required)
+  ~~~~~~
+  ./install_mofem_developer.sh
+  ~~~~~~ 
+
+- Test run `elasticity` program
+  ~~~~~~
+  cd YOUR_INSTALLATION_DIRECTORY
+  cd mofem_install/um/build_release/basic_finite_elements/elasticity
+  ./elasticity -my_file LShape.h5m -my_order 2
+  ~~~~~~ 
+
+\subsection installation_developer_version_add_new_module Compile codes and add new module in MoFEM
+
+For developer, you may wish to have a look at these two tutorials to compile
+codes and add new module in MoFEM
+
+- \ref how_to_compile_program
+
+- \ref how_to_add_new_module_and_program
+
+\note If you have issues installing MoFEM, please let us know on [MoFEM
+Q&A](https://groups.google.com/forum/#!categories/mofem-group). Enjoy MoFEM!
+
+
+\subsection installation_reference Other documents
+
+We do recommend you to use the scripts above for installation; however, if you
+would like to read about different ways to install MoFEM, you can have a look here
+
+- Spack and Docker
+
+  - \subpage install_spack
+
+  - \subpage install_docker
+
+- Ubuntu and macOS (reference only, no longer maintained and supported)
+
+  - \subpage install_ubuntu
+
+  - \subpage install_macosx
 
 */

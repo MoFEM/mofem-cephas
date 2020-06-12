@@ -1,5 +1,7 @@
-Installation on Ubuntu (Advanced) {#install_ubuntu}
+Installation on Ubuntu {#install_ubuntu}
 ======================
+
+\note This document is for reference ONLY (no longer maintained and supported)
 
 This type of installation is not advised, some dependent libraries like MoAB
 or PETSc have very complex dependencies and success of installation depends
