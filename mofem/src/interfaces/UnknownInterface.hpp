@@ -57,8 +57,11 @@ struct Version {
   Version(const int minor, const int major, const int build)
       : majorVersion(minor), minorVersion(major), buildVersion(build) {}
 
-  MoFEMErrorCode printVersion(std::string prefix = "",
-                              MPI_Comm comm = PETSC_COMM_WORLD) {
+  /**
+   * @deprecated Prints version
+   */
+  DEPRECATED MoFEMErrorCode printVersion(std::string prefix = "",
+                                         MPI_Comm comm = PETSC_COMM_WORLD) {
     MoFEMFunctionBegin;
     if (!prefix.empty()) {
       prefix += " ";
@@ -66,6 +69,12 @@ struct Version {
     CHKERR PetscPrintf(comm, "%s%d.%d.%d\n", prefix.c_str(), majorVersion,
                        minorVersion, buildVersion);
     MoFEMFunctionReturn(0);
+  }
+
+  std::string strVersion() {
+    auto str = [](auto v) { return boost::lexical_cast<std::string>(v); };
+    return str(majorVersion) + "." + str(minorVersion) + "." +
+           str(buildVersion);
   }
 };
 
