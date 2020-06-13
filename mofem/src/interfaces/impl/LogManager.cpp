@@ -271,7 +271,7 @@ LogManager::createSink(boost::shared_ptr<std::ostream> stream_ptr,
   return sink;
 }
 
-void LogManager::createSinks(MPI_Comm comm) {
+void LogManager::createDefaultSinks(MPI_Comm comm) {
   
   internalDataPtr = boost::make_shared<InternalData>(comm);
 

@@ -145,10 +145,10 @@ struct LogManager : public UnknownInterface {
 
 
   /**
-   * @brief Create sinks
+   * @brief Create default sinks
    *
    */
-  static void createSinks(MPI_Comm comm);
+  static void createDefaultSinks(MPI_Comm comm);
 
   /**
    * @brief Get the Interface Options

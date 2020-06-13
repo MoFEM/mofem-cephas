@@ -51,7 +51,7 @@ bool Core::isGloballyInitialised = false;
 MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
                                 const char help[]) {
   MPI_Init(argc, args);
-  LogManager::createSinks(MPI_COMM_WORLD);
+  LogManager::createDefaultSinks(MPI_COMM_WORLD);
   PetscVFPrintf = LogManager::logPetscFPrintf;
 
   ierr = PetscInitialize(argc, args, file, help);
