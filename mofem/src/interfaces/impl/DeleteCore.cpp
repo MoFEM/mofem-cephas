@@ -29,6 +29,12 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
+#define DeleteCoreFunctionBegin                                                \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("WORLD", "DeleteCore");
+
 namespace MoFEM {
 
 MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
@@ -542,8 +548,7 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
                                             const BitRefLevel mask,
                                             const bool remove_parent,
                                             int verb) {
-
-  MoFEMFunctionBegin;
+  DeleteCoreFunctionBegin;
   if (verb == -1)
     verb = verbose;
 
@@ -571,8 +576,9 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
       for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
         try {
           RefEntity ref_ent(basicEntityDataPtr, *eit);
-          cerr << "Error: " << RefEntity(basicEntityDataPtr, *eit) << " "
-               << ref_ent.getBitRefLevel() << endl;
+          MOFEM_LOG("WORLD", Sev::error)
+              << "Error: " << RefEntity(basicEntityDataPtr, *eit) << " "
+              << ref_ent.getBitRefLevel();
         } catch (std::exception const &ex) {
         }
       };
@@ -584,9 +590,9 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
     THROW_MESSAGE("Can not delete entities from MoAB database (see error.vtk)");
   }
 
-  if(verb >= VERBOSE) {
-    PetscPrintf(get_comm(),"Nb. of deleted entities %d\n",ents.size());
-  }
+  if (verb >= VERBOSE)
+    MOFEM_LOG_C("WORLD", Sev::verbose, "Nb. of deleted entities %d",
+                ents.size());
 
   MoFEMFunctionReturn(0);
 }
