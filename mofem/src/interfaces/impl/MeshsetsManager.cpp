@@ -1084,8 +1084,7 @@ MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(
   CHKERR getCubitMeshsetPtr(ms_id, cubit_bc_type, &cubit_meshset_ptr);
   EntityHandle meshset = cubit_meshset_ptr->getMeshset();
   CHKERR m_field.get_moab().write_file(file_name.c_str(), file_type.c_str(),
-                                       options.c_str(), &meshset, 1, nullptr,
-                                       0);
+                                       options.c_str(), &meshset, 1);
   MoFEMFunctionReturn(0);
 }
 
@@ -1103,7 +1102,7 @@ MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(
   CHKERR moab.create_meshset(MESHSET_SET, meshset);
   CHKERR moab.add_entities(meshset, entities);
   CHKERR moab.write_file(file_name.c_str(), file_type.c_str(), options.c_str(),
-                         &meshset, 1, nullptr, 0);
+                         &meshset, 1);
   CHKERR moab.delete_entities(&meshset, 1);
   MoFEMFunctionReturn(0);
 }
