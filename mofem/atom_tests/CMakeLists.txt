@@ -1677,3 +1677,19 @@ add_test(bernstein_bezier_generate_base
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/bernstein_bezier_generate_base
 )
+
+my_add_executable(
+  log
+  log.cpp
+)
+target_link_libraries(log
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+  
+)

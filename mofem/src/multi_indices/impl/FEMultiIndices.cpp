@@ -872,7 +872,7 @@ FiniteElement::FiniteElement(moab::Interface &moab, const EntityHandle _meshset)
 }
 
 std::ostream &operator<<(std::ostream &os, const FiniteElement &e) {
-  os << "id " << e.getId() << " name " << e.getNameRef() << " f_id_row "
+  os << e.getNameRef() << " fe_id " << e.getId().to_ulong() << " f_id_row "
      << e.getBitFieldIdRow() << " f_id_col " << e.getBitFieldIdCol()
      << " BitFEId_data " << e.getBitFieldIdData();
   return os;
