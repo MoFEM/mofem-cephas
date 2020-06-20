@@ -137,7 +137,7 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   }
 
   /// @return return true if dof us active
-  inline char getActive() const { return active ? 1 : 0; }
+  inline char getActive() const { return dof < 0 ? 0 : 1; }
 
   friend std::ostream &operator<<(std::ostream &os, const DofEntity &e);
 };

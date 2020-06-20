@@ -52,16 +52,23 @@ DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
 std::ostream &operator<<(std::ostream &os, const DofEntity &e) {
   os << "dof_uid " << e.getGlobalUniqueId() << " dof_order " << e.getDofOrder()
      << " dof_rank " << e.getDofCoeffIdx() << " dof " << e.getEntDofIdx()
-     << " active " << e.active << " " << *(e.sFieldPtr);
+     << " active " << (e.dof < 0 ? false : true) << " " << *(e.sFieldPtr);
   return os;
 }
 
 DofEntity_active_change::DofEntity_active_change(bool active)
     : aCtive(active) {}
 void DofEntity_active_change::operator()(boost::shared_ptr<DofEntity> &dof) {
-  dof->active = aCtive;
-  if (aCtive && dof->getDofOrder() > dof->getMaxOrder()) {
-    cerr << *dof << endl;
+
+  if(aCtive)
+    dof->dof = std::abs(dof->dof);
+  else
+    dof->dof = -std::abs(dof->dof);
+
+  if (PetscUnlikely(aCtive && dof->getDofOrder() > dof->getMaxOrder())) {
+    MOFEM_LOG_CHANNEL("SELF");
+    MOFEM_LOG_TAG("SELF", "DofEntity_active_change");
+    MOFEM_LOG("SELF", Sev::error) << *dof;
     THROW_MESSAGE("Set DoF active which has order larger than maximal order "
                   "set to entity");
   }
