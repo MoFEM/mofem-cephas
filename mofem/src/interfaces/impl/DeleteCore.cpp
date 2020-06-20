@@ -377,7 +377,7 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string name,
       it_fe = finiteElements.get<FiniteElement_name_mi_tag>().find(name);
   if (it_fe != finiteElements.get<FiniteElement_name_mi_tag>().end()) {
 
-    const int fe_bit_number = it_fe->get()->getBitNumber();
+    const auto fe_uid = (*it_fe)->getFEUId();
 
     for (Range::const_pair_iterator p_eit = ents.pair_begin();
          p_eit != ents.pair_end(); p_eit++) {
@@ -388,9 +388,9 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string name,
 
       // Get UId
       UId first_uid =
-          EntFiniteElement::getGlobalUniqueIdCalculate(first, fe_bit_number);
+          EntFiniteElement::getGlobalUniqueIdCalculate(first, fe_uid);
       UId second_uid =
-          EntFiniteElement::getGlobalUniqueIdCalculate(second, fe_bit_number);
+          EntFiniteElement::getGlobalUniqueIdCalculate(second, fe_uid);
 
       // Find and remove adjacencies
       FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<

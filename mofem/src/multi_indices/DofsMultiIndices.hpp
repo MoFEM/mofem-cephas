@@ -36,8 +36,8 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   typedef interface_RefEntity<FieldEntity> interface_type_RefEntity;
 
   static inline UId getGlobalUniqueIdCalculate(const DofIdx dof,
-                                               const UId &ent_uid) {
-    return static_cast<UId>(dof) | ent_uid;
+                                               UId ent_uid) {
+    return ent_uid | dof;
   }
 
   /**

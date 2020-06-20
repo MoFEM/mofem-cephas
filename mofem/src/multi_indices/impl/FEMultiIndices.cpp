@@ -864,6 +864,8 @@ FiniteElement::FiniteElement(moab::Interface &moab, const EntityHandle _meshset)
   elementAdjacencyTable[MBTET] = DefaultElementAdjacency::defaultTet;
   elementAdjacencyTable[MBPRISM] = DefaultElementAdjacency::defaultPrism;
   elementAdjacencyTable[MBENTITYSET] = DefaultElementAdjacency::defaultMeshset;
+
+  feUId = static_cast<UId>(getBitNumber()) << 8 * sizeof(EntityHandle);
 }
 
 std::ostream &operator<<(std::ostream &os, const FiniteElement &e) {
@@ -927,10 +929,7 @@ EntFiniteElement::EntFiniteElement(
       data_dofs(new FEDofEntity_multiIndex()),
       row_field_ents_view(new FieldEntity_vector_view()),
       col_field_ents_view(new FieldEntity_vector_view()),
-      data_field_ents_view(new FieldEntity_multiIndex_spaceType_view()) {
-  // get finite element entity
-  globalUId = getGlobalUniqueIdCalculate();
-}
+      data_field_ents_view(new FieldEntity_multiIndex_spaceType_view()) {}
 
 std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   os << *e.sFePtr << std::endl;

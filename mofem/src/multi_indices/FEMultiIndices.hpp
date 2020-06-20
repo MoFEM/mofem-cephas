@@ -244,14 +244,22 @@ struct FiniteElement {
   BitFieldId *tag_BitFieldId_col_data; ///< tag stores col id_id for fields
   BitFieldId *tag_BitFieldId_row_data; ///< tag stores row id_id for fields
   BitFieldId *tag_BitFieldId_data;     ///< tag stores data id_id for fields
+  UId feUId;
 
   FiniteElement(Interface &moab, const EntityHandle _meshset);
+
+  /**
+   * @brief Get finite element uid
+   * 
+   * @return const UId& 
+   */
+  inline const UId& getFEUId() const { return feUId; }
 
   /**
    * \brief Get finite element id
    * @return Finite element Id
    */
-  inline BitFEId getId() const { return *tagId; };
+  inline BitFEId getId() const { return *tagId; }
 
   /**
    * \brief Get meshset containing element entities
@@ -364,63 +372,56 @@ template <typename T> struct interface_FiniteElement {
   };
 
   /**
-   * \brief Get finite element id
-   * @return Finite element Id
+   * @copydoc MoFEM::FiniteElement::getFEUId
+   */
+  inline const UId &getFEUId() const { return this->sFePtr->getFEUId(); }
+
+  /**
+   * @copydoc MoFEM::FiniteElement::getId
    */
   inline BitFEId getId() const { return this->sFePtr->getId(); }
 
   /**
-   * \brief Get meshset containing element entities
-   * @return Meshset
+   * @copydoc MoFEM::FiniteElement::getMeshset
    */
   inline EntityHandle getMeshset() const { return this->sFePtr->getMeshset(); }
 
   /**
-   * \brief Get finite element name
-   * @return string_ref
+   * @copydoc MoFEM::FiniteElement::getNameRef
    */
   inline boost::string_ref getNameRef() const {
     return this->sFePtr->getNameRef();
   }
 
   /**
-   * \brief Get finite element name
-   * @return string_ref
+   * @copydoc MoFEM::FiniteElement::getName
    */
   inline std::string getName() const { return this->sFePtr->getName(); }
 
   /**
-   * \brief Get field ids on columns
-   * @return Bit field ids
+   * @copydoc MoFEM::FiniteElement::getBitFieldIdCol
    */
   inline BitFieldId getBitFieldIdCol() const {
     return this->sFePtr->getBitFieldIdCol();
   }
 
   /**
-   * \brief Get field ids on rows
-   * @return Bit field ids
+   * @copydoc MoFEM::FiniteElement::getBitFieldIdRow
    */
   inline BitFieldId getBitFieldIdRow() const {
     return this->sFePtr->getBitFieldIdRow();
   }
 
   /**
-   * \brief Get field ids on data
-   * @return Bit field ids
+   * @copydoc MoFEM::FiniteElement::getBitFieldIdData
    */
   inline BitFieldId getBitFieldIdData() const {
     return this->sFePtr->getBitFieldIdData();
   }
 
   /**
-   * \brief Get bit identifying this element
-   *
-   * Each element like field is identified by bit set. Each element has unique
-   * bit set, this function returns number of that bit.
-   *
-   * @return Bit number
-   */
+   * @copydoc MoFEM::FiniteElement::getBitNumber
+   */ 
   inline unsigned int getBitNumber() const {
     return this->sFePtr->getBitNumber();
   }
@@ -440,7 +441,6 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   boost::shared_ptr<FieldEntity_vector_view> row_field_ents_view;
   boost::shared_ptr<FieldEntity_vector_view> col_field_ents_view;
   boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> data_field_ents_view;
-  UId globalUId;
 
   EntFiniteElement(const boost::shared_ptr<RefElement> &ref_finite_element,
                    const boost::shared_ptr<FiniteElement> &fe_ptr);
@@ -450,17 +450,11 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
    * \brief Get unique UId for finite element entity
    * @return UId
    */
-  inline const UId &getGlobalUniqueId() const { return globalUId; }
+  inline UId getGlobalUniqueId() const { return getGlobalUniqueIdCalculate(); }
 
-  /**
-   * \brief Generate UId for finite element entity
-   * @return finite element entity unique Id
-   */
   static inline UId getGlobalUniqueIdCalculate(const EntityHandle ent,
-                                               const int bit_number) {
-    assert(bit_number <= 32);
-    return static_cast<UId>(ent) | static_cast<UId>(bit_number)
-                                       << 8 * sizeof(EntityHandle);
+                                               UId fe_uid) {
+    return fe_uid |= ent;
   }
 
   /**
@@ -468,7 +462,7 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
    * @return finite element entity unique Id
    */
   inline UId getGlobalUniqueIdCalculate() const {
-    return getGlobalUniqueIdCalculate(sPtr->getRefEnt(), getBitNumber());
+    return getGlobalUniqueIdCalculate(getEnt(), getFEUId());
   }
 
   /**
@@ -797,25 +791,31 @@ struct interface_NumeredEntFiniteElement
 typedef multi_index_container<
     boost::shared_ptr<EntFiniteElement>,
     indexed_by<
-        ordered_unique<
-            tag<Unique_mi_tag>,
-            member<EntFiniteElement, UId, &EntFiniteElement::globalUId>>,
+
+        ordered_unique<tag<Unique_mi_tag>,
+                       const_mem_fun<EntFiniteElement, UId,
+                                     &EntFiniteElement::getGlobalUniqueId>>,
+
         ordered_non_unique<tag<Ent_mi_tag>,
                            const_mem_fun<EntFiniteElement, EntityHandle,
                                          &EntFiniteElement::getEnt>>,
+
         ordered_non_unique<
             tag<FiniteElement_name_mi_tag>,
             const_mem_fun<EntFiniteElement::interface_type_FiniteElement,
                           boost::string_ref, &EntFiniteElement::getNameRef>>,
+
         ordered_non_unique<
             tag<BitFEId_mi_tag>,
             const_mem_fun<EntFiniteElement::interface_type_FiniteElement,
                           BitFEId, &EntFiniteElement::getId>,
             LtBit<BitFEId>>,
+
         ordered_non_unique<
             tag<EntType_mi_tag>,
             const_mem_fun<EntFiniteElement::interface_type_RefEntity,
                           EntityType, &EntFiniteElement::getEntType>>,
+
         ordered_non_unique<
             tag<Composite_Name_And_Ent_mi_tag>,
             composite_key<
@@ -823,7 +823,9 @@ typedef multi_index_container<
                 const_mem_fun<EntFiniteElement::interface_type_FiniteElement,
                               boost::string_ref, &EntFiniteElement::getNameRef>,
                 const_mem_fun<EntFiniteElement, EntityHandle,
-                              &EntFiniteElement::getEnt>>>>>
+                              &EntFiniteElement::getEnt>>>
+
+        >>
     EntFiniteElement_multiIndex;
 
 /**
