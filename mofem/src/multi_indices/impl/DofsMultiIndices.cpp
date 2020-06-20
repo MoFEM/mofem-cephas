@@ -22,7 +22,11 @@ DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
                      const ApproximationOrder dof_order,
                      const FieldCoefficientsNumber dof_rank, const DofIdx dof,
                      const bool is_active)
-    : interface_FieldEntity<FieldEntity>(entity_ptr), active(is_active) {
+    : interface_FieldEntity<FieldEntity>(entity_ptr), dof(dof),
+      active(is_active) {
+
+  if (!active)
+    this->dof = -std::abs(dof);
 
   globalUId = getGlobalUniqueIdCalculate(dof, entity_ptr);
 
@@ -43,7 +47,6 @@ DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
   // verify dof rank
   if (PetscUnlikely(dof_rank != dof % getNbOfCoeffs()))
     THROW_MESSAGE("Inconsistent DOFs rank with index of DOF on entity");
-    
 }
 
 std::ostream &operator<<(std::ostream &os, const DofEntity &e) {
