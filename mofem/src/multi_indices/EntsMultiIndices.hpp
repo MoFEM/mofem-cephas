@@ -133,17 +133,9 @@ struct BasicEntity {
    */
   inline EntityHandle getOwnerEnt() const { return moab_owner_handle; }
 
-  /** \brief Owner handle on this or other processors
-   */
-  inline EntityHandle &getOwnerEnt() { return moab_owner_handle; }
-
   /** \brief Get processor owning entity
    */
   inline int getOwnerProc() const { return owner_proc; }
-
-  /** \brief Get processor owning entity
-   */
-  inline int &getOwnerProc() { return owner_proc; }
 
   /** \brief Get processor
    */
@@ -175,7 +167,7 @@ struct BasicEntity {
   DO NOT MODIFY LIST.
 
   \code
-    BasicEntity *ent_ptr = BasicEntity(moan,entity_handle);
+    BasicEntity *ent_ptr = BasicEntity(moab,entity_handle);
     for(int proc = 0; proc<MAX_SHARING_PROCS && -1 !=
   ent_ptr->getSharingProcsPtr[proc]; proc++) {
         if(ent_ptr->getSharingProcsPtr[proc] == -1) {
@@ -216,7 +208,7 @@ struct BasicEntity {
   DO NOT MODIFY LIST.
 
   \code
-    BasicEntity *ent_ptr = BasicEntity(moan,entity_handle);
+    BasicEntity *ent_ptr = BasicEntity(moab,entity_handle);
     for(int proc = 0; proc<MAX_SHARING_PROCS && -1 !=
      ent_ptr->getSharingProcsPtr[proc]; proc++) {
       if(ent_ptr->getSharingProcsPtr[proc] == -1) {
@@ -387,11 +379,7 @@ template <typename T> struct interface_RefEntity {
 
   inline int getOwnerProc() const { return this->sPtr->getOwnerProc(); }
 
-  inline int &getOwnerProc() { return this->sPtr->getOwnerProc(); }
-
   inline int getPartProc() const { return this->sPtr->getPartProc(); }
-
-  inline int &getPartProc() { return this->sPtr->getPartProc(); }
 
   inline unsigned char getPStatus() const { return this->sPtr->getPStatus(); }
 
