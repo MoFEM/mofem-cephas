@@ -75,8 +75,6 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
            (static_cast<ShortId>(ent_ptr->getBitNumber()) << 9);
   }
 
-  DofIdx dof;
-
   DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
             const ApproximationOrder dof_order,
             const FieldCoefficientsNumber dof_rank, const DofIdx dof);
@@ -137,6 +135,13 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   inline char getActive() const { return dof < 0 ? 0 : 1; }
 
   friend std::ostream &operator<<(std::ostream &os, const DofEntity &e);
+
+private:
+
+  DofIdx dof;
+
+  friend struct DofEntity_active_change;
+
 };
 
 /**
