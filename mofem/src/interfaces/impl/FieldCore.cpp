@@ -863,16 +863,14 @@ Core::buildFieldForNoField(const BitFieldId id,
       // create dofs on this entity (nb. of dofs is equal to rank)
       for (FieldCoefficientsNumber rank = 0; rank < (*miit)->getNbOfCoeffs();
            rank++) {
-        std::pair<DofEntity_multiIndex::iterator, bool> d_miit;
         // insert dof
-        d_miit = dofsField.insert(
-            boost::make_shared<DofEntity>(field_eit, 0, rank, rank, true));
+        auto d_miit = dofsField.insert(
+            boost::make_shared<DofEntity>(field_eit, 0, rank, rank));
         if (d_miit.second) {
           dof_counter[MBENTITYSET]++; // Count entities in the meshset
-        } else {
+        } else
           SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                  "Dof should be created");
-        }
+                  "Dof expected to be created");
       }
       MoFEMFunctionReturn(0);
     };
@@ -993,7 +991,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
         for (int dd = 0; dd < feit->get()->getOrderNbDofsDiff(oo); ++dd) {
           // Loop rank
           for (int rr = 0; rr < rank; ++rr, ++DD) {
-            dofs_array->emplace_back(*feit, oo, rr, DD, true);
+            dofs_array->emplace_back(*feit, oo, rr, DD);
             ++dof_counter[feit->get()->getEntType()];
           }
         }

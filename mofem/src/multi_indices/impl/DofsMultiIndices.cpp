@@ -20,15 +20,8 @@ namespace MoFEM {
 // moab dof
 DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
                      const ApproximationOrder dof_order,
-                     const FieldCoefficientsNumber dof_rank, const DofIdx dof,
-                     const bool is_active)
-    : interface_FieldEntity<FieldEntity>(entity_ptr), dof(dof),
-      active(is_active) {
-
-  if (!active)
-    this->dof = -std::abs(dof);
-
-  globalUId = getGlobalUniqueIdCalculate(dof, entity_ptr);
+                     const FieldCoefficientsNumber dof_rank, const DofIdx dof)
+    : interface_FieldEntity<FieldEntity>(entity_ptr), dof(dof) {
 
   if (PetscUnlikely(!entity_ptr)) 
     THROW_MESSAGE("FieldEntity pointer not initialized");

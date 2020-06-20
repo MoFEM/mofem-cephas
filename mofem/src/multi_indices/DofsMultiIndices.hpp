@@ -75,15 +75,11 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
            (static_cast<ShortId>(ent_ptr->getBitNumber()) << 9);
   }
 
-  bool active;   ///< true if dof is active
-  UId globalUId; ///< global unique id for this dof
-
   DofIdx dof;
 
   DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
             const ApproximationOrder dof_order,
-            const FieldCoefficientsNumber dof_rank, const DofIdx dof,
-            const bool is_active = false);
+            const FieldCoefficientsNumber dof_rank, const DofIdx dof);
 
   /// @return get dof index on entity
   inline DofIdx getEntDofIdx() const { return std::abs(dof); }
@@ -96,7 +92,8 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
 
   /// @return get unique dof id
   inline UId getGlobalUniqueId() const {
-    return static_cast<UId>(std::abs(dof)) | this->sPtr->getGlobalUniqueId();
+    return getGlobalUniqueIdCalculate(std::abs(dof),
+                                      this->sPtr->getGlobalUniqueId());
   }
 
   /// @return get entity unique dof id
