@@ -98,12 +98,11 @@ private:
  */
 struct BasicEntity {
 
-  mutable boost::shared_ptr<BasicEntityData> basicDataPtr;
+  static boost::shared_ptr<BasicEntityData> basicDataPtr;
 
   EntityHandle ent;
 
-  BasicEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
-              const EntityHandle ent);
+  BasicEntity(const EntityHandle ent);
   virtual ~BasicEntity() = default;
 
   inline boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
@@ -248,8 +247,7 @@ struct BasicEntity {
  */
 struct RefEntity : public BasicEntity {
 
-  RefEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
-            const EntityHandle ent);
+  RefEntity(const EntityHandle ent);
 
   virtual ~RefEntity() = default;
 

@@ -174,6 +174,7 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
     basicEntityDataPtr->setDistributedMesh();
   else
     basicEntityDataPtr->unSetDistributedMesh();
+  BasicEntity::basicDataPtr = basicEntityDataPtr;
 
   ierr = getOptions(verbose);
   CHKERRABORT(cOmm, ierr);
@@ -277,8 +278,7 @@ MoFEMErrorCode Core::addPrismToDatabase(const EntityHandle prism, int verb) {
   if (verb == -1)
     verb = verbose;
   std::pair<RefEntity_multiIndex::iterator, bool> p_ent;
-  p_ent = refinedEntities.insert(
-      boost::make_shared<RefEntity>(basicEntityDataPtr, prism));
+  p_ent = refinedEntities.insert(boost::make_shared<RefEntity>(prism));
   if (p_ent.second) {
     std::pair<RefElement_multiIndex::iterator, bool> p;
     p = refinedFiniteElements.insert(
@@ -548,6 +548,7 @@ MoFEMErrorCode Core::set_moab_interface(moab::Interface &new_moab, int verb,
     basicEntityDataPtr->setDistributedMesh();
   else
     basicEntityDataPtr->unSetDistributedMesh();
+  BasicEntity::basicDataPtr = basicEntityDataPtr;
 
   // Initalise database
   CHKERR initialiseDatabaseFromMesh(verb);

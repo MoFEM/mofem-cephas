@@ -143,8 +143,8 @@ MoFEMErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(
       Range::iterator eit = ents.begin();
       for (; eit != ents.end(); eit++) {
         std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
-            refined_entities_ptr->insert(boost::shared_ptr<RefEntity>(
-                new RefEntity(m_field.get_basic_entity_data_ptr(), *eit)));
+            refined_entities_ptr->insert(
+                boost::shared_ptr<RefEntity>(new RefEntity(*eit)));
         *(const_cast<RefEntity *>(p_ent.first->get())->getBitRefLevelPtr()) |=
             bit;
         if (verb >= VERY_VERBOSE) {

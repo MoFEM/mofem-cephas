@@ -103,7 +103,7 @@ struct SetBitRefLevelTool {
           new std::vector<RefEntity>());
       ref_ents_vec->reserve(s - f + 1);
       for (auto f : Range(f, s))
-        ref_ents_vec->emplace_back(baseEntData, f);
+        ref_ents_vec->emplace_back(f);
 
       // Set bits to range
       if (bIt.any()) {
@@ -393,8 +393,7 @@ MoFEMErrorCode BitRefManager::setBitLevelToMeshset(const EntityHandle meshset,
   // Add ref entity
   std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
-          ->insert(boost::shared_ptr<RefEntity>(
-              new RefEntity(m_field.get_basic_entity_data_ptr(), meshset)));
+          ->insert(boost::shared_ptr<RefEntity>(new RefEntity(meshset)));
   *(const_cast<RefEntity *>(p_ent.first->get())->getBitRefLevelPtr()) |= bit;
   // Add ref element
   boost::shared_ptr<RefElement> fe_ptr =
@@ -863,7 +862,7 @@ MoFEMErrorCode BitRefManager::getAdjacencies(
   for (Range::iterator eit = adj_entities.begin(); eit != adj_entities.end();
        b_it++) {
     if (verb > VERBOSE) {
-      RefEntity adj_entity(m_field.get_basic_entity_data_ptr(), *eit);
+      RefEntity adj_entity(*eit);
       std::ostringstream ss;
       ss << "\t" << adj_entity.getBitRefLevel() << " : " << adj_entity
          << std::endl;
