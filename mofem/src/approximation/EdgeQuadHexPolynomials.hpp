@@ -12,6 +12,8 @@
 
 namespace MoFEM {
 
+
+
 MoFEMErrorCode Legendre_polynomials01(int p, double s, double *L);
 
 MoFEMErrorCode Integrated_Legendre01(int p, double s, double *L,
@@ -205,6 +207,114 @@ MoFEMErrorCode H1_InteriorShapeFunctions_ONHEX(int       *p,
 //                                              double   *faceN[],
 //                                              double   *div_faceN[],
 //                                              int      nb_integration_pts);
+
+struct RefHex {
+  RefHex(double *N, int nb_integration_pts)
+      : vertices{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0},
+                 {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0},
+                 {1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
+        faces{{0, 1, 2, 3}, {0, 1, 5, 4}, {1, 2, 6, 5},
+              {3, 2, 6, 7}, {0, 3, 7, 4}, {4, 5, 6, 7}},
+        nbIntegrationPts(nb_integration_pts), vNshape(N) {
+    intergration_pts = new double *[nb_integration_pts];
+    for (int qq = 0; qq != nb_integration_pts; qq++) {
+      int shift = 8 * qq;
+      intergration_pts[qq] = new double[3];
+      for (int vv = 0; vv < 8; vv++) {
+        intergration_pts[qq][0] += N[shift + vv] * vertices[vv][0];
+        intergration_pts[qq][1] += N[shift + vv] * vertices[vv][1];
+        intergration_pts[qq][2] += N[shift + vv] * vertices[vv][2];
+      }
+    }
+  }
+
+  double **get_integrationPts() { return intergration_pts; }
+  double **get_edge_affines() {
+    double **edge_affine = 0;
+    edge_affine = new double *[nbIntegrationPts];
+    for (int qq = 0; qq != nbIntegrationPts; qq++) {
+      edge_affine[qq] = new double[24];
+      double ksi = intergration_pts[qq][0];
+      double eta = intergration_pts[qq][1];
+      double gma = intergration_pts[qq][2];
+
+      double edgeAffines[24] = {
+          1.0 - eta, 1.0 - gma, 0.0 + ksi, 1.0 - gma, 0.0 + eta, 1.0 - gma,
+          1.0 - ksi, 1.0 - gma, 1.0 - ksi, 1.0 - eta, 0.0 + ksi, 1.0 - eta,
+          0.0 + ksi, 0.0 + eta, 1.0 - ksi, 0.0 + eta, 1.0 - eta, 0.0 + gma,
+          0.0 + ksi, 0.0 + gma, 0.0 + eta, 0.0 + gma, 1.0 - ksi, 0.0 + gma};
+      for (int ee = 0; ee != 12; ee++) {
+        edge_affine[qq][2 * ee + 0] = edgeAffines[2 * ee + 0];
+        edge_affine[qq][2 * ee + 1] = edgeAffines[2 * ee + 1];
+      }
+    }
+    return edge_affine;
+  }
+  double **get_edge_coords() {
+    double **edge_coords = 0;
+    edge_coords = new double *[nbIntegrationPts];
+    int free_edge_coords[12] = {0, 1, 0, 1, 2, 2, 2, 2, 0, 1, 0, 1};
+    for (int qq = 0; qq != nbIntegrationPts; qq++) {
+      edge_coords[qq] = new double[12];
+      for (int ee = 0; ee < 12; ee++) {
+        int cc = free_edge_coords[ee];
+        edge_coords[qq][ee] = intergration_pts[qq][cc];
+      }
+    }
+    return edge_coords;
+  }
+  double **get_face_affines() {
+    double **face_affine = 0;
+    face_affine = new double *[nbIntegrationPts];
+    for (int qq = 0; qq != nbIntegrationPts; qq++) {
+      face_affine[qq] = new double[6];
+      double ksi = intergration_pts[qq][0];
+      double eta = intergration_pts[qq][1];
+      double gma = intergration_pts[qq][2];
+
+      double faceAffine[6] = {1.0 - gma, 1.0 - eta, 0.0 + ksi,
+                              0.0 + eta, 1.0 - ksi, 0.0 + gma};
+      for (int ff = 0; ff != 6; ff++)
+        face_affine[qq][ff] = faceAffine[ff];
+    }
+    return face_affine;
+  }
+
+  double **get_face_coords(int face_nodes[6][4]) {
+    double **face_coords = 0;
+    int par_face_nodes[6][8] = {
+        {4, 5, 6, 7, 0, 1, 2, 3}, {3, 2, 1, 0, 7, 6, 5, 4},
+        {1, 0, 3, 2, 5, 4, 7, 6}, {3, 2, 1, 0, 7, 6, 5, 4},
+        {1, 0, 3, 2, 5, 4, 7, 6}, {4, 5, 6, 7, 0, 1, 2, 3}};
+    face_coords = new double *[nbIntegrationPts];
+    int free_coords[6][2] = {{0, 1}, {0, 2}, {1, 2}, {0, 2}, {1, 2}, {0, 1}};
+    for (int qq = 0; qq != nbIntegrationPts; qq++) {
+      int quad_shift = 8 * qq;
+      face_coords[qq] = new double[12];
+      for (int ff = 0; ff != 6; ff++) {
+        int v0 = free_coords[ff][0];
+        int v1 = free_coords[ff][1];
+        for (int fv = 0; fv != 4; fv++) {
+          int n0 = face_nodes[ff][fv];
+          int n1 = par_face_nodes[ff][n0];
+          int index = faces[ff][fv];
+          double N = vNshape[quad_shift + n0] + vNshape[quad_shift + n1];
+          face_coords[qq][2 * ff + 0] += vertices[index][v0] * N;
+          face_coords[qq][2 * ff + 1] += vertices[index][v1] * N;
+        }
+      }
+    }
+    return face_coords;
+  }
+
+private:
+  double vertices[8][3];
+  int faces[6][4];
+
+  double **intergration_pts;
+  int nbIntegrationPts;
+  double *vNshape;
+};
 
 } // namespace MoFEM
 
