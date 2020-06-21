@@ -102,11 +102,6 @@ struct BasicEntity {
 
   EntityHandle ent;
 
-  int owner_proc; ///< this never can not be changed if distributed mesh
-  int part_proc;  ///< this can be changed on distributed
-
-  EntityHandle moab_owner_handle;
-
   BasicEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
               const EntityHandle ent);
   virtual ~BasicEntity() = default;
@@ -131,19 +126,19 @@ struct BasicEntity {
 
   /** \brief Owner handle on this or other processors
    */
-  inline EntityHandle getOwnerEnt() const { return moab_owner_handle; }
+  EntityHandle getOwnerEnt() const;
 
   /** \brief Get processor owning entity
    */
-  inline int getOwnerProc() const { return owner_proc; }
+  int getOwnerProc() const;
 
   /** \brief Get processor
    */
-  inline int getPartProc() const { return part_proc; }
+  int getPartProc() const;
 
   /** \brief Get processor owning entity
    */
-  inline int &getPartProc() { return part_proc; }
+  int &getPartProc();
 
   /** \brief get pstatus
    * This tag stores various aspects of parallel status in bits; see also
@@ -699,7 +694,7 @@ struct FieldEntity : public interface_Field<Field>,
    */
   inline UId getGlobalUniqueIdCalculate() const {
     return getGlobalUniqueIdCalculate(
-        sPtr->owner_proc, getBitNumber(), sPtr->moab_owner_handle,
+        sPtr->getOwnerProc(), getBitNumber(), sPtr->getOwnerEnt(),
         getBasicDataPtr()->trueIfDistributedMesh());
   }
 

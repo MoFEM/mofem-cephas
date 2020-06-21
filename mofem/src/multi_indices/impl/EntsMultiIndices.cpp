@@ -25,7 +25,7 @@ static moab::Error error;
 
 inline void *get_tag_ptr(moab::Interface &moab, Tag th, EntityHandle ent,
                          int *tag_size) {
-  ApproximationOrder *ret_val;
+  void *ret_val;
   rval = moab.tag_get_by_ptr(th, &ent, 1, (const void **)&ret_val, tag_size);
   if (rval != MB_SUCCESS) {
     *tag_size = 0;
@@ -62,13 +62,56 @@ BasicEntity::BasicEntity(
   default:
     THROW_MESSAGE("this entity type is currently not implemented");
   }
+}
+
+inline EntityHandle BasicEntity::getOwnerEnt() const {
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
-  if (pcomm == NULL)
-    THROW_MESSAGE("pcomm is null");
-  rval = pcomm->get_owner_handle(ent, owner_proc, moab_owner_handle);
-  MOAB_THROW(rval);
-  part_proc = owner_proc;
+  auto pstat = *((unsigned char *)MoFEM::get_tag_ptr(
+      basicDataPtr->moab, pcomm->pstatus_tag(), ent, NULL));
+  if (!(pstat & PSTATUS_NOT_OWNED)) {
+    return ent;
+  } else if (pstat & PSTATUS_MULTISHARED) {
+    return ((EntityHandle *)MoFEM::get_tag_ptr(
+        basicDataPtr->moab, pcomm->sharedhs_tag(), ent, NULL))[0];
+  } else if (pstat & PSTATUS_SHARED) {
+    return ((EntityHandle *)MoFEM::get_tag_ptr(
+        basicDataPtr->moab, pcomm->sharedh_tag(), ent, NULL))[0];
+  } else {
+    return 0;
+  }
+}
+
+inline int BasicEntity::getOwnerProc() const {
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
+  auto pstat = *((unsigned char *)MoFEM::get_tag_ptr(
+      basicDataPtr->moab, pcomm->pstatus_tag(), ent, NULL));
+  if (!(pstat & PSTATUS_NOT_OWNED)) {
+    return pcomm->rank();
+  } else if (pstat & PSTATUS_MULTISHARED) {
+    return ((int *)MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->sharedps_tag(),
+                                      ent, NULL))[0];
+  } else if (pstat & PSTATUS_SHARED) {
+    return ((int *)MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->sharedp_tag(),
+                                      ent, NULL))[0];
+  } else {
+    return -1;
+  }
+}
+
+int BasicEntity::getPartProc() const {
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
+  return *((int *)MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->partition_tag(),
+                                     ent, NULL));
+}
+
+int &BasicEntity::getPartProc() {
+  ParallelComm *pcomm =
+      ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
+  return *((int *)MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->partition_tag(),
+                                     ent, NULL));
 }
 
 unsigned char BasicEntity::getPStatus() const {
