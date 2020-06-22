@@ -27,7 +27,6 @@ MoFEMErrorCode MoFEM::Integrated_Legendre01(int p, double s01, double *L,
   if (p >= 2) {
     for (int i = 0; i != p - 1; i++) {
       double factor = 1.0 / (2 * (2.0 * (i + 1) + 1.0));
-
       L[i] = factor * (l[i + 2] - l[i]);
       diffL[i] = l[i + 1];
     }
@@ -36,71 +35,71 @@ MoFEMErrorCode MoFEM::Integrated_Legendre01(int p, double s01, double *L,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Face_orientMat(int *face_nodes, double orientMat[2][2]) {
+// MoFEMErrorCode MoFEM::Face_orientMat(int *face_nodes, double orientMat[2][2]) {
 
-  MoFEMFunctionBeginHot;
+//   MoFEMFunctionBeginHot;
 
-  for (int i = 0; i != 2; i++)
-    for (int j = 0; j != 2; j++)
-      orientMat[i][j] = 0.0;
+//   for (int i = 0; i != 2; i++)
+//     for (int j = 0; j != 2; j++)
+//       orientMat[i][j] = 0.0;
 
-  int node0 = face_nodes[0]; int node1 = face_nodes[1];
+//   int node0 = face_nodes[0]; int node1 = face_nodes[1];
 
-  switch (node0) {
-  case 0 : 
-    switch (node1){
-      case 1 :  //positive direction: identity
-        orientMat[0][0] = 1.0;   
-        orientMat[1][1] = 1.0; //
-        break;
-      case 3 :  // negative direction: reflection about the 
-        orientMat[0][1] = 1.0;
-        orientMat[1][0] = 1.0; //
-        break;
-    }
-    break;
-  case 1 : 
-    switch (node1){
-    case 2 :  //positive direction
-      orientMat[0][1] = 1.0;
-      orientMat[1][0] = -1.0; //
-      break;
-      case 0 :  // negative direction
-        orientMat[0][0] = -1.0;
-        orientMat[1][1] = 1.0; //
-        break;
-    }
-    break;
-  case 2 : 
-    switch (node1){
-      case 3 :
-        orientMat[0][0] = -1.0;
-        orientMat[1][1] = -1.0;
-        break;
-      case 1 :
-        orientMat[0][1] = -1.0;
-        orientMat[1][0] = -1.0;
-        break; 
-    }
-    break;
-    case 3 :
-      switch (node1){
-        case 0 :
-          orientMat[0][1] = -1.0;
-          orientMat[1][0] = 1.0;
-          break;
-        case 2 :
-          orientMat[0][0] = 1.0;
-          orientMat[1][1] = -1.0;
-          break;
-      }
-      break;
-    default :
-      break;
-  }
+//   switch (node0) {
+//   case 0 : 
+//     switch (node1){
+//       case 1 :  //positive direction: identity
+//         orientMat[0][0] = 1.0;   
+//         orientMat[1][1] = 1.0; //
+//         break;
+//       case 3 :  // negative direction: reflection about the 
+//         orientMat[0][1] = 1.0;
+//         orientMat[1][0] = 1.0; //
+//         break;
+//     }
+//     break;
+//   case 1 : 
+//     switch (node1){
+//     case 2 :  //positive direction
+//       orientMat[0][1] = 1.0;
+//       orientMat[1][0] = -1.0; //
+//       break;
+//       case 0 :  // negative direction
+//         orientMat[0][0] = -1.0;
+//         orientMat[1][1] = 1.0; //
+//         break;
+//     }
+//     break;
+//   case 2 : 
+//     switch (node1){
+//       case 3 :
+//         orientMat[0][0] = -1.0;
+//         orientMat[1][1] = -1.0;
+//         break;
+//       case 1 :
+//         orientMat[0][1] = -1.0;
+//         orientMat[1][0] = -1.0;
+//         break; 
+//     }
+//     break;
+//     case 3 :
+//       switch (node1){
+//         case 0 :
+//           orientMat[0][1] = -1.0;
+//           orientMat[1][0] = 1.0;
+//           break;
+//         case 2 :
+//           orientMat[0][0] = 1.0;
+//           orientMat[1][1] = -1.0;
+//           break;
+//       }
+//       break;
+//     default :
+//       break;
+//   }
 
-  MoFEMFunctionReturnHot(0);
-}
+//   MoFEMFunctionReturnHot(0);
+// }
 
 /*
 
@@ -599,85 +598,41 @@ MoFEMErrorCode MoFEM::H1_EdgeShapeFunctions_ONHEX(int        *sense,
                                                   double      *diff_edgeN[12],
                                                    int         nb_integration_pts){
   MoFEMFunctionBeginHot;
-  double vertices[8][3] =  {{-1., -1., -1.}, 
-                            { 1., -1., -1.},
-                            { 1.,  1., -1.},
-                            {-1.,  1., -1.},
-                            {-1., -1.,  1.},
-                            { 1., -1.,  1.},
-                            { 1.,  1.,  1.},
-                            {-1.,  1.,  1.}};
-  cout << "++++++++++++++++++++++++++++++++++++" << endl;
+  RefHex ref_hex(N, nb_integration_pts);
+  auto edge_coords     = ref_hex.get_edge_coords();
+  auto edge_diff_coords = ref_hex.get_edge_diff_coords();
+  auto edge_affine      = ref_hex.get_edge_affines();
+  auto edge_diff_affine  = ref_hex.get_edge_diff_affines();
+
   for (int q = 0; q != nb_integration_pts; q++) {
-    
-    int shift = 8 * q;
-    double ksi = 0.; double eta = 0.; double gma = 0.;
-    for (int vv = 0; vv != 8; vv++)
-    {
-      ksi += N[shift + vv] * vertices[vv][0];
-      eta += N[shift + vv] * vertices[vv][1];
-      gma += N[shift + vv] * vertices[vv][2];
-    }
-
-    cout << "ksi : " << ksi << "\t";
-    cout << "eta : " << eta << "\t";
-    cout << "gma : " << gma << endl;
-
-    double diff_ksi[3] = {1.0, 0.0, 0.0};
-    double diff_eta[3] = {0.0, 1.0, 0.0};
-    double diff_gma[3] = {0.0, 0.0, 1.0};
-
-    // Affine coordinates of each eadge mu0 and mu1
-    double mu_ksi0 = 1.0 - 0.5 * (ksi + 1.0); double diff_mu_ksi0[3] = {-0.5, 0.0, 0.0};
-    double mu_eta0 = 1.0 - 0.5 * (eta + 1.0); double diff_mu_eta0[3] = {0.0, -0.5, 0.0};
-    double mu_gma0 = 1.0 - 0.5 * (gma + 1.0); double diff_mu_gma0[3] = {0.0, 0.0, -0.5};
-
-    double mu_ksi1 = 0.5 * (ksi + 1.0);  double diff_mu_ksi1[3] = {0.5, 0.0, 0.0};
-    double mu_eta1 = 0.5 * (eta + 1.0);  double diff_mu_eta1[3] = {0.0, 0.5, 0.0};
-    double mu_gma1 = 0.5 * (gma + 1.0);  double diff_mu_gma1[3] = {0.0, 0.0, 0.5};
-
-    // constant affine coordinates of edges per cannonical numbering
-    double mu[12][2] = {{mu_eta0, mu_gma0}, {mu_ksi1, mu_gma0}, {mu_eta1, mu_gma0}, {mu_ksi0, mu_gma0},
-                        {mu_ksi0, mu_eta0}, {mu_ksi1, mu_eta0}, {mu_ksi1, mu_eta1}, {mu_ksi0, mu_eta1},
-                        {mu_eta0, mu_gma1}, {mu_ksi1, mu_gma1}, {mu_eta1, mu_gma1}, {mu_ksi0, mu_gma1}};
-
-    double *diff_mu[12][2] = {{diff_mu_eta0, diff_mu_gma0}, {diff_mu_ksi1, diff_mu_gma0}, {diff_mu_eta1, diff_mu_gma0}, {diff_mu_ksi0, diff_mu_gma0},
-                              {diff_mu_ksi0, diff_mu_eta0}, {diff_mu_ksi1, diff_mu_eta0}, {diff_mu_ksi1, diff_mu_eta1}, {diff_mu_ksi0, diff_mu_eta1},
-                              {diff_mu_eta0, diff_mu_gma1}, {diff_mu_ksi1, diff_mu_gma1}, {diff_mu_eta1, diff_mu_gma1}, {diff_mu_ksi0, diff_mu_gma1}};
-                        
-    
-
-    // parametrization of each edge per cannonical numbering
-    double s[12] = {ksi, eta, ksi, eta, 
-                    gma, gma, gma, gma, 
-                    ksi, eta, ksi, eta};
-    double *diff_s[12] = {diff_ksi,  diff_eta, diff_ksi, diff_eta,
-                            diff_gma,  diff_gma, diff_gma, diff_gma,
-                            diff_ksi,  diff_eta, diff_ksi, diff_eta};
 
     int pp[12] = {p[0], p[1], p[0], p[1], p[2], p[2], p[2], p[2], p[0], p[1], p[0], p[1]};
-
-    
 
     for (int e = 0; e != 12; e++) {
       double L[pp[e] - 1];
       double diffL[pp[e] - 1];
-      double ss = s[e] * sense[e];
+      double ss = (double)sense[e] * edge_coords[q][e] + 0.5 * (1.0 - (double)sense[e]);
       
       CHKERR Integrated_Legendre01(pp[e], ss, L, diffL);
       int qd_shift = (pp[e] - 1) * q;
 
       for (int n = 0; n != pp[e] - 1; n++) {
-        edgeN[e][qd_shift + n] = mu[e][0] * mu[e][1] * L[n];
+        edgeN[e][qd_shift + n] = edge_affine[q][2 * e + 0] * edge_affine[q][2 * e + 1] * L[n];
         
-        diff_edgeN[e][3 * (qd_shift + n) + 0] = mu[e][0] * mu[e][1] * diffL[n] * sense[e] * diff_s[e][0] + 
-                                                (mu[e][0] * diff_mu[e][1][0] + diff_mu[e][0][0] * mu[e][1]) * L[n];
+        diff_edgeN[e][3 * (qd_shift + n) + 0] = edge_affine[q][2 * e + 0] * edge_affine[q][2 * e + 1] * 
+                                                diffL[n] * sense[e] * edge_diff_coords[e][0] + 
+                                                (edge_affine[q][2 * e + 0] * edge_diff_affine[e][0][0] + 
+                                                 edge_affine[q][2 * e + 1] * edge_diff_affine[e][1][0]) * L[n];
 
-        diff_edgeN[e][3 * (qd_shift + n) + 1] = mu[e][0] * mu[e][1] * diffL[n] * sense[e] * diff_s[e][1] + 
-                                                (mu[e][0] * diff_mu[e][1][1] + diff_mu[e][0][1] * mu[e][1]) * L[n];
+        diff_edgeN[e][3 * (qd_shift + n) + 1] = edge_affine[q][2 * e + 0] * edge_affine[q][2 * e + 1] * 
+                                                diffL[n] * sense[e] * edge_diff_coords[e][1] + 
+                                                (edge_affine[q][2 * e + 0] * edge_diff_affine[e][0][1] + 
+                                                 edge_affine[q][2 * e + 1] * edge_diff_affine[e][1][1]) * L[n];
 
-        diff_edgeN[e][3 * (qd_shift + n) + 2] = mu[e][0] * mu[e][1] * diffL[n] * sense[e] * diff_s[e][2] + 
-                                                (mu[e][0] * diff_mu[e][1][2] + diff_mu[e][0][2] * mu[e][1]) * L[n];
+        diff_edgeN[e][3 * (qd_shift + n) + 2] = edge_affine[q][2 * e + 0] * edge_affine[q][2 * e + 1] * 
+                                                diffL[n] * sense[e] * edge_diff_coords[e][2] + 
+                                                (edge_affine[q][2 * e + 0] * edge_diff_affine[e][0][2] + 
+                                                 edge_affine[q][2 * e + 1] * edge_diff_affine[e][1][2]) * L[n];
 
       }
     }
@@ -692,111 +647,51 @@ MoFEMErrorCode MoFEM::H1_FaceShapeFunctions_ONHEX(int *face_nodes[6],
                                                    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
 
-  double vertices[8][3] = {{-1., -1., -1.}, 
-                           { 1., -1., -1.}, 
-                           { 1.,  1., -1.}, 
-                           {-1.,  1., -1.},  
-                           {-1., -1.,  1.}, 
-                           { 1., -1.,  1.},
-                           { 1.,  1.,  1.}, 
-                           {-1.,  1.,  1.}};
+  RefHex ref_hex(N, nb_integration_pts);
+  auto face_coords = ref_hex.get_face_coords(face_nodes);
+  auto face_diff_coords = ref_hex.get_face_diff_coords(face_nodes);
+  auto face_affine = ref_hex.get_face_affines();
+  auto face_diff_affine = ref_hex.get_face_diff_affines();
   for (int q = 0; q != nb_integration_pts; q++) {
-    
-    int shift = 8 * q;
-    double ksi = 0.;
-    double eta = 0.;
-    double gma = 0.;
-    
-    for (int vv = 0; vv != 8; vv++) {
-      ksi += N[shift + vv] * vertices[vv][0];
-      eta += N[shift + vv] * vertices[vv][1];
-      gma += N[shift + vv] * vertices[vv][2];
-    }
-
-    double diff_ksi[3] = {1.0, 0.0, 0.0};
-    double diff_eta[3] = {0.0, 1.0, 0.0};
-    double diff_gma[3] = {0.0, 0.0, 1.0};
-
-    // Affine coordinates of each eadge mu0 and mu1
-    double mu_ksi0 = 1.0 - 0.5 * (ksi + 1.0); double diff_mu_ksi0[3] = {-0.5, 0.0, 0.0};
-    double mu_eta0 = 1.0 - 0.5 * (eta + 1.0); double diff_mu_eta0[3] = {0.5, -0.5, 0.0};
-    double mu_gma0 = 1.0 - 0.5 * (gma + 1.0); double diff_mu_gma0[3] = {0.5, 0.0, -0.5};
-
-    double mu_ksi1 = 0.5 * (ksi + 1.0);  double diff_mu_ksi1[3] = {0.5, 0.0, 0.0};
-    double mu_eta1 = 0.5 * (eta + 1.0);  double diff_mu_eta1[3] = {0.5, 0.5, 0.0};
-    double mu_gma1 = 0.5 * (gma + 1.0);  double diff_mu_gma1[3] = {0.5, 0.0, 0.5};
-
-    // constant affine, face normal coordinates of each face per cannonical numbering
-    double mu[6] = {mu_gma0, mu_eta0, mu_ksi1, mu_eta1, mu_ksi0, mu_gma1};
-    double *diff_mu[6] = {diff_mu_gma0, diff_mu_eta0, diff_mu_ksi1, diff_mu_eta1, diff_mu_ksi0, diff_mu_gma1};
-
-    // face tangent, coordinates 
-    double coords[6][2] = {{ksi, eta}, 
-                            {ksi, gma}, 
-                            {eta, gma}, 
-                            {ksi, gma}, 
-                            {eta, gma}, 
-                            {ksi, eta}};
-
-    // polynomial orders for each face
-
-    int pp[6][2] = {{p[0], p[1]},
-                    {p[0], p[2]},
-                    {p[1], p[2]},
-                    {p[0], p[2]},
-                    {p[1], p[2]},
-                    {p[0], p[1]}};
-
-    int pos[6][2] = {{0, 1}, {0, 2}, {1, 2}, {0,2}, {1, 2}, {0, 1}};
+        int pp[6][2] = {{p[0], p[1]},
+                        {p[0], p[2]},
+                        {p[1], p[2]},
+                        {p[0], p[2]},
+                        {p[1], p[2]},
+                        {p[0], p[1]}};
 
     for (int face = 0; face != 6; face++) {
-
-      int *nodes = face_nodes[face];
-      double s[2] = {0.0, 0.0}; 
-      double orient_mat[2][2];
-      
-      CHKERR Face_orientMat(nodes, orient_mat);
-      // cout << "oMat : [" << orient_mat[0][0] << ", " << orient_mat[0][1] << endl;
-      // cout << "        " << orient_mat[1][0] << ", " << orient_mat[1][1] << "]" << endl;
-      for (int r = 0; r != 2; r++){
-        for (int c = 0; c != 2; c++){
-          s[r] += orient_mat[r][c] * coords[face][c];
-        }
-      }
-      double diff_s[2][3] = {{0., 0., 0.}, {0., 0., 0.}};
-
-      diff_s[0][pos[face][0]] = orient_mat[0][0];
-      diff_s[0][pos[face][1]] = orient_mat[0][1];
-
-      diff_s[1][pos[face][0]] = orient_mat[1][0];
-      diff_s[1][pos[face][1]] = orient_mat[1][1];
-
       int pq[2] = {pp[face][0], pp[face][1]};
 
 
       double L0[pq[0] - 1];          double diffL0[pq[0] - 1];
       double L1[pq[1] - 1];          double diffL1[pq[1] - 1];
 
-      CHKERR Integrated_Legendre01(pq[0], s[0], L0, diffL0);
-      CHKERR Integrated_Legendre01(pq[1], s[1], L1, diffL1);
+      double ss0 = face_coords[q][2 * face + 0];
+      double ss1 = face_coords[q][2 * face + 1];
+
+      CHKERR Integrated_Legendre01(pq[0], ss0, L0, diffL0);
+      CHKERR Integrated_Legendre01(pq[1], ss1, L1, diffL1);
 
       int qd_shift = (pq[0] - 1) * (pq[1] - 1) * q;
       int n = 0;
       for (int s1 = 0; s1 != pq[0] - 1; s1++) {
         for (int s2 = 0; s2 != pq[1] - 1; s2++) {
-          faceN[face][qd_shift + n] = mu[face] * L0[s1] * L1[s2];
+          faceN[face][qd_shift + n] = face_affine[q][face] * L0[s1] * L1[s2];
 
-          diff_faceN[face][3 * (qd_shift + n) + 0] = diff_mu[face][0] * L0[s1] * L1[s2] +
-                                                mu[face] * diffL0[s1] * diff_s[0][0] * L1[s2] +
-                                                mu[face] * L0[s1] * diffL1[s1] * diff_s[1][0]; 
+          diff_faceN[face][3 * (qd_shift + n) + 0] = face_diff_affine[face][0] * L0[s1] * L1[s2] +
+                                                     face_affine[q][face] * diffL0[s1] * face_diff_coords[face][0][0] * L1[s2] +
+                                                     face_affine[q][face] * L0[s1] * diffL1[s1] * face_diff_coords[face][1][0]; 
 
-          diff_faceN[face][3 * (qd_shift + n) + 1] = diff_mu[face][1] * L0[s1] * L1[s2] +
-                                                mu[face] * diffL0[s1] * diff_s[0][1] * L1[s2] +
-                                                mu[face] * L0[s1] * diffL1[s1] * diff_s[1][1];
+                                                 
 
-          diff_faceN[face][3 * (qd_shift + n) + 2] = diff_mu[face][2] * L0[s1] * L1[s2] +
-                                                mu[face] * diffL0[s1] * diff_s[0][2] * L1[s2] +
-                                                mu[face] * L0[s1] * diffL1[s1] * diff_s[1][2];
+          diff_faceN[face][3 * (qd_shift + n) + 1] = face_diff_affine[face][1] * L0[s1] * L1[s2] +
+                                                     face_affine[q][face] * diffL0[s1] * face_diff_coords[face][0][1] * L1[s2] +
+                                                     face_affine[q][face] * L0[s1] * diffL1[s1] * face_diff_coords[face][1][1]; 
+
+          diff_faceN[face][3 * (qd_shift + n) + 2] = face_diff_affine[face][2] * L0[s1] * L1[s2] +
+                                                     face_affine[q][face] * diffL0[s1] * face_diff_coords[face][0][2] * L1[s2] +
+                                                     face_affine[q][face] * L0[s1] * diffL1[s1] * face_diff_coords[face][1][2]; 
 
           ++n;
         }
@@ -812,36 +707,18 @@ MoFEMErrorCode MoFEM::H1_InteriorShapeFunctions_ONHEX(int *p,
                                                       double *diff_faceN,
                                                       int nb_integration_pts) {
   MoFEMFunctionBeginHot;
-  double vertices[8][3] = {{-1., -1., -1.}, {1., -1., -1.}, {1., 1., -1.},
-                           {-1., 1., -1.},  {-1., -1., 1.}, {1., -1., 1.},
-                           {1., 1., 1.},    {-1., 1., 1.}};
+  RefHex ref_hex(N, nb_integration_pts);
+  auto volume_coords = ref_hex.get_integrationPts();
+  auto volume_diff_coords = ref_hex.get_volume_diff_coords();
   for (int q = 0; q != nb_integration_pts; q++) {
-    int shift = 8 * q;
-    double ksi = 0.;
-    double eta = 0.;
-    double gma = 0.;
-    
-    for (int vv = 0; vv != 8; vv++) {
-      ksi += N[shift + vv] * vertices[vv][0];
-      eta += N[shift + vv] * vertices[vv][1];
-      gma += N[shift + vv] * vertices[vv][2];
-    }
 
-    double diff_ksi[3] = {1.0, 0.0, 0.0};
-    double diff_eta[3] = {0.0, 1.0, 0.0};
-    double diff_gma[3] = {0.0, 0.0, 1.0};
 
-    // Affine coordinates of each eadge mu0 and mu1
-    double mu_ksi0 = 1.0 - 0.5 * (ksi + 1.0); double diff_mu_ksi0[3] = {-0.5, 0.0, 0.0};
-    double mu_eta0 = 1.0 - 0.5 * (eta + 1.0); double diff_mu_eta0[3] = {0.0, -0.5, 0.0};
-    double mu_gma0 = 1.0 - 0.5 * (gma + 1.0); double diff_mu_gma0[3] = {0.0, 0.0, -0.5};
+  
 
-    double mu_ksi1 = 0.5 * (ksi + 1.0);  double diff_mu_ksi1[3] = {0.5, 0.0, 0.0};
-    double mu_eta1 = 0.5 * (eta + 1.0);  double diff_mu_eta1[3] = {0.0, 0.5, 0.0};
-    double mu_gma1 = 0.5 * (gma + 1.0);  double diff_mu_gma1[3] = {0.0, 0.0, 0.5};
+    double ksi = volume_coords[q][0];
+    double eta = volume_coords[q][1];
+    double gma = volume_coords[q][2];
 
-    double s[3] = {ksi, eta, gma};
-    double diff_s[3][3] = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
     double L0[p[0] - 1];         double diffL0[p[0] - 1];
     double L1[p[1] - 1];         double diffL1[p[1] - 1];
     double L2[p[2] - 1];         double diffL2[p[2] - 1];
@@ -859,18 +736,18 @@ MoFEMErrorCode MoFEM::H1_InteriorShapeFunctions_ONHEX(int *p,
         for (int s3 = 0; s3 < p[2] - 1; s3++)
         {
           faceN[qd_shift + n] = L0[s1] * L1[s2] * L2[s3];
+                                                            
+          diff_faceN[3 * (qd_shift + n) + 0] = diffL0[s1] * volume_diff_coords[0][0] * L1[s2] * L2[s3] +
+                                               L0[s1] * diffL1[s2] * volume_diff_coords[1][0] * L2[s3] +
+                                               L0[s1] * L1[s2] * diffL2[s3] * volume_diff_coords[2][0];
 
-          diff_faceN[3 * (qd_shift + n) + 0] = diffL0[s1] * diff_s[0][0] * L1[s2] * L2[s3] +
-                                               L0[s1] * diffL1[s2] * diff_s[1][0] * L2[s3] +
-                                               L0[s1] * L1[s2] * diffL2[s3] * diff_s[2][0];
+          diff_faceN[3 * (qd_shift + n) + 1] = diffL0[s1] * volume_diff_coords[0][1] * L1[s2] * L2[s3] +
+                                               L0[s1] * diffL1[s2] * volume_diff_coords[1][1] * L2[s3] +
+                                               L0[s1] * L1[s2] * diffL2[s3] * volume_diff_coords[2][1];
 
-          diff_faceN[3 * (qd_shift + n) + 1] = diffL0[s1] * diff_s[0][1] * L1[s2] * L2[s3] +
-                                               L0[s1] * diffL1[s2] * diff_s[1][1] * L2[s3] +
-                                               L0[s1] * L1[s2] * diffL2[s3] * diff_s[2][1];
-
-          diff_faceN[3 * (qd_shift + n) + 2] = diffL0[s1] * diff_s[0][2] * L1[s2] * L2[s3] +
-                                               L0[s1] * diffL1[s2] * diff_s[1][2] * L2[s3] +
-                                               L0[s1] * L1[s2] * diffL2[s3] * diff_s[2][2];
+          diff_faceN[3 * (qd_shift + n) + 2] = diffL0[s1] * volume_diff_coords[0][2] * L1[s2] * L2[s3] +
+                                               L0[s1] * diffL1[s2] * volume_diff_coords[1][2] * L2[s3] +
+                                               L0[s1] * L1[s2] * diffL2[s3] * volume_diff_coords[2][2];
 
           ++n;
         } 

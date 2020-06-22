@@ -229,6 +229,18 @@ struct RefHex {
   }
 
   double **get_integrationPts() { return intergration_pts; }
+  double **get_volume_diff_coords() {
+    double **volume_diff_coords = new double *[3];
+    double diff_coords[3][3] = {
+        {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+    for (int cc = 0; cc < 3; cc++) {
+      volume_diff_coords[cc] = new double[3];
+      for (int dd = 0; dd < 3; dd++) {
+        volume_diff_coords[cc][dd] = diff_coords[cc][dd];
+      }
+    }
+    return volume_diff_coords;
+  }
   double **get_edge_affines() {
     double **edge_affine = 0;
     edge_affine = new double *[nbIntegrationPts];
@@ -250,6 +262,31 @@ struct RefHex {
     }
     return edge_affine;
   }
+  double ***get_edge_diff_affines() {
+    double ***edge_diff_affines = 0;
+    edge_diff_affines = new double **[12];
+    double diff_affines[3][2][3] = {{{-1.0, 0.0, 0.0}, {1.0, 0.0, 0.0}},
+                                    {{0.0, -1.0, 0.0}, {0.0, 1.0, 0.0}},
+                                    {{0.0, 0.0, -1.0}, {0.0, 0.0, 1.0}}};
+    int II[12][2][2] = {{{1, 0}, {2, 0}}, {{0, 1}, {2, 0}}, {{1, 1}, {2, 0}},
+                        {{0, 0}, {2, 0}}, {{0, 0}, {1, 0}}, {{0, 1}, {1, 0}},
+                        {{0, 1}, {1, 1}}, {{0, 0}, {1, 1}}, {{1, 0}, {2, 1}},
+                        {{0, 1}, {2, 1}}, {{1, 1}, {2, 1}}, {{0, 0}, {2, 1}}};
+    for (int ee = 0; ee < 12; ee++) {
+      edge_diff_affines[ee] = new double *[2];
+      edge_diff_affines[ee][0] = new double[3];
+      edge_diff_affines[ee][1] = new double[3];
+      int comp11 = II[ee][0][0];
+      int comp12 = II[ee][0][1];
+      int comp21 = II[ee][1][0];
+      int comp22 = II[ee][1][1];
+      for (int c = 0; c < 3; c++) {
+        edge_diff_affines[ee][0][c] = diff_affines[comp11][comp12][c];
+        edge_diff_affines[ee][1][c] = diff_affines[comp21][comp22][c];
+      }
+    }
+    return edge_diff_affines;
+  }
   double **get_edge_coords() {
     double **edge_coords = 0;
     edge_coords = new double *[nbIntegrationPts];
@@ -262,6 +299,21 @@ struct RefHex {
       }
     }
     return edge_coords;
+  }
+  double **get_edge_diff_coords() {
+    double **edge_diff_coords = 0;
+    edge_diff_coords = new double *[12];
+    double diff_coords[3][3] = {
+        {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+    int free_edge_coords[12] = {0, 1, 0, 1, 2, 2, 2, 2, 0, 1, 0, 1};
+    for (int ee = 0; ee < 12; ee++) {
+      edge_diff_coords[ee] = new double[3];
+      for (int cc = 0; cc < 3; cc++) {
+        int n = free_edge_coords[ee];
+        edge_diff_coords[ee][cc] = diff_coords[n][cc];
+      }
+    }
+    return edge_diff_coords;
   }
   double **get_face_affines() {
     double **face_affine = 0;
@@ -280,7 +332,26 @@ struct RefHex {
     return face_affine;
   }
 
-  double **get_face_coords(int face_nodes[6][4]) {
+  double **get_face_diff_affines() {
+    double **face_diff_affines = 0;
+    face_diff_affines = new double *[6];
+    int free_face[6][2] = {{2, 0}, {1, 0}, {0, 1}, {1, 1}, {0, 0}, {2, 1}};
+
+    double diff_affines[3][2][3] = {{{-1.0, 0.0, 0.0}, {1.0, 0.0, 0.0}},
+                                    {{0.0, -1.0, 0.0}, {0.0, 1.0, 0.0}},
+                                    {{0.0, 0.0, -1.0}, {0.0, 0.0, 1.0}}};
+    for (int ff = 0; ff < 6; ff++) {
+      face_diff_affines[ff] = new double[3];
+      int var_i = free_face[ff][0];
+      int var_j = free_face[ff][1];
+      for (int cc = 0; cc < 3; cc++) {
+        face_diff_affines[ff][cc] = diff_affines[var_i][var_j][cc];
+      }
+    }
+    return face_diff_affines;
+  }
+
+  double **get_face_coords(int *face_nodes[6]) {
     double **face_coords = 0;
     int par_face_nodes[6][8] = {
         {4, 5, 6, 7, 0, 1, 2, 3}, {3, 2, 1, 0, 7, 6, 5, 4},
@@ -305,6 +376,59 @@ struct RefHex {
       }
     }
     return face_coords;
+  }
+
+  double ***get_face_diff_coords(int *face_nodes[6]) {
+    double ***face_diff_coords = 0;
+    face_diff_coords = new double **[6];
+
+
+    int I1[8] = {0, 1, 1, 0, 0, 1, 1, 0};
+    int I2[8] = {0, 0, 1, 1, 0, 0, 1, 1};
+    int I3[8] = {0, 0, 0, 0, 1, 1, 1, 1};
+
+    double n1[8] = {-1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0};
+    double n2[8] = {-1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0};
+    double n3[8] = {-1.0, -1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0};
+
+    double diff_N[8][3];
+
+    for (int n = 0; n < 8; n++) {
+      diff_N[n][0] = n1[n] * 0.25;
+      diff_N[n][1] = n2[n] * 0.25;
+      diff_N[n][2] = n3[n] * 0.25;
+    }
+
+    int par_face_nodes[6][8] = {
+        {4, 5, 6, 7, 0, 1, 2, 3}, {3, 2, 1, 0, 7, 6, 5, 4},
+        {1, 0, 3, 2, 5, 4, 7, 6}, {3, 2, 1, 0, 7, 6, 5, 4},
+        {1, 0, 3, 2, 5, 4, 7, 6}, {4, 5, 6, 7, 0, 1, 2, 3}};
+
+    int free_coords[6][2] = {{0, 1}, {0, 2}, {1, 2}, {0, 2}, {1, 2}, {0, 1}};
+
+    for (int ff = 0; ff != 6; ff++) {
+      face_diff_coords[ff] = new double *[2];
+      face_diff_coords[ff][0] = new double[3];
+      face_diff_coords[ff][1] = new double[3];
+      int v0 = free_coords[ff][0];
+      int v1 = free_coords[ff][1];
+      for (int fv = 0; fv != 4; fv++) {
+        int n0 = face_nodes[ff][fv];
+        int n1 = par_face_nodes[ff][n0];
+        int index = faces[ff][fv];
+        double Nx = diff_N[n0][0] + diff_N[n1][0];
+        double Ny = diff_N[n0][1] + diff_N[n1][1];
+        double Nz = diff_N[n0][2] + diff_N[n1][2];
+        face_diff_coords[ff][0][0] += vertices[index][v0] * Nx;
+        face_diff_coords[ff][0][1] += vertices[index][v0] * Ny;
+        face_diff_coords[ff][0][2] += vertices[index][v0] * Nz;
+
+        face_diff_coords[ff][1][0] += vertices[index][v1] * Nx;
+        face_diff_coords[ff][1][1] += vertices[index][v1] * Ny;
+        face_diff_coords[ff][1][2] += vertices[index][v1] * Nz;
+      }
+    }
+    return face_diff_coords;
   }
 
 private:
