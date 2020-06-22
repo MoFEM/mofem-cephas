@@ -63,37 +63,37 @@ BasicEntity::BasicEntity(const EntityHandle ent) : ent(ent) {
   }
 }
 
-inline EntityHandle BasicEntity::getOwnerEnt() const {
+EntityHandle BasicEntity::getOwnerEnt() const {
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
-  auto pstat = *((unsigned char *)MoFEM::get_tag_ptr(
-      basicDataPtr->moab, pcomm->pstatus_tag(), ent, NULL));
+  auto pstat = *static_cast<unsigned char *>(
+      MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->pstatus_tag(), ent, NULL));
   if (!(pstat & PSTATUS_NOT_OWNED)) {
     return ent;
   } else if (pstat & PSTATUS_MULTISHARED) {
-    return ((EntityHandle *)MoFEM::get_tag_ptr(
+    return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
         basicDataPtr->moab, pcomm->sharedhs_tag(), ent, NULL))[0];
   } else if (pstat & PSTATUS_SHARED) {
-    return ((EntityHandle *)MoFEM::get_tag_ptr(
+    return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
         basicDataPtr->moab, pcomm->sharedh_tag(), ent, NULL))[0];
   } else {
     return 0;
   }
 }
 
-inline int BasicEntity::getOwnerProc() const {
+int BasicEntity::getOwnerProc() const {
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
-  auto pstat = *((unsigned char *)MoFEM::get_tag_ptr(
-      basicDataPtr->moab, pcomm->pstatus_tag(), ent, NULL));
+  auto pstat = *static_cast<unsigned char *>(
+      MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->pstatus_tag(), ent, NULL));
   if (!(pstat & PSTATUS_NOT_OWNED)) {
     return pcomm->rank();
   } else if (pstat & PSTATUS_MULTISHARED) {
-    return ((int *)MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->sharedps_tag(),
-                                      ent, NULL))[0];
+    return static_cast<int *>(MoFEM::get_tag_ptr(
+        basicDataPtr->moab, pcomm->sharedps_tag(), ent, NULL))[0];
   } else if (pstat & PSTATUS_SHARED) {
-    return ((int *)MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->sharedp_tag(),
-                                      ent, NULL))[0];
+    return static_cast<int *>(MoFEM::get_tag_ptr(
+        basicDataPtr->moab, pcomm->sharedp_tag(), ent, NULL))[0];
   } else {
     return -1;
   }
@@ -102,22 +102,22 @@ inline int BasicEntity::getOwnerProc() const {
 int BasicEntity::getPartProc() const {
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
-  return *((int *)MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->partition_tag(),
-                                     ent, NULL));
+  return *static_cast<int *>(MoFEM::get_tag_ptr(
+      basicDataPtr->moab, pcomm->partition_tag(), ent, NULL));
 }
 
 int &BasicEntity::getPartProc() {
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
-  return *((int *)MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->partition_tag(),
-                                     ent, NULL));
+  return *static_cast<int *>(MoFEM::get_tag_ptr(
+      basicDataPtr->moab, pcomm->partition_tag(), ent, NULL));
 }
 
 unsigned char BasicEntity::getPStatus() const {
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
-  return *((unsigned char *)MoFEM::get_tag_ptr(
-      basicDataPtr->moab, pcomm->pstatus_tag(), ent, NULL));
+  return *static_cast<unsigned char *>(
+      MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->pstatus_tag(), ent, NULL));
 }
 
 // ref moab ent
