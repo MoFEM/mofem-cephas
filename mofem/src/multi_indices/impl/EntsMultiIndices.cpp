@@ -206,7 +206,7 @@ boost::shared_ptr<FieldData *const> FieldEntity::makeSharedFieldDataAdaptorPtr(
     const boost::shared_ptr<Field> &field_ptr,
     const boost::shared_ptr<RefEntity> &ref_ents_ptr) {
   int size;
-  double *ptr;
+  FieldData *ptr;
   switch (ref_ents_ptr->getEntType()) {
   case MBVERTEX:
     size = field_ptr->getNbOfCoeffs();
