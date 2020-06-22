@@ -230,7 +230,7 @@ PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,
       if (diff_s == NULL) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
       }
-      double a = l[k + 1];
+      double a = 0.5 * l[k + 1];
       diffL[0 * (p + 1) + k] = a * diff_s[0];
       if (dim >= 2) {
         diffL[1 * (p + 1) + k] = a * diff_s[1];
@@ -243,7 +243,7 @@ PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,
   
   // Integrated Legendre
   for (int k = 0; k <= p; k++) {
-    double factor = (2.0 * ((double)k + 1.0) + 1.0);
+    double factor = 2.0 * (2.0 * ((double)k + 1.0) + 1.0);
     L[k] = 1.0 / factor * (l[k + 2] - l[k]);
   }
   MoFEMFunctionReturnHot(0);
