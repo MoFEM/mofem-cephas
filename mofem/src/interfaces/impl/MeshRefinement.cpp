@@ -917,8 +917,8 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
                                    &split_edges);
           std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
               const_cast<RefEntity_multiIndex *>(refined_ents_ptr)
-                  ->insert(boost::shared_ptr<RefEntity>(
-                      new RefEntity(ref_prisms[pp])));
+                  ->insert(boost::shared_ptr<RefEntity>(new RefEntity(
+                      m_field.get_basic_entity_data_ptr(), ref_prisms[pp])));
           std::pair<RefElement_multiIndex::iterator, bool> p_fe;
           try {
             p_fe =

@@ -45,10 +45,11 @@ BasicEntityData::BasicEntityData(const moab::Interface &moab,
   MOAB_THROW(rval);
 }
 
-boost::shared_ptr<BasicEntityData> BasicEntity::basicDataPtr;
-
 // basic moab ent
-BasicEntity::BasicEntity(const EntityHandle ent) : ent(ent) {
+BasicEntity::BasicEntity(
+    const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+    const EntityHandle ent)
+    : basicDataPtr(basic_data_ptr), ent(ent) {
   switch (getEntType()) {
   case MBVERTEX:
   case MBEDGE:
@@ -122,7 +123,9 @@ unsigned char BasicEntity::getPStatus() const {
 
 // ref moab ent
 BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);
-RefEntity::RefEntity(const EntityHandle ent) : BasicEntity(ent) {}
+RefEntity::RefEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+                     const EntityHandle ent)
+    : BasicEntity(basic_data_ptr, ent) {}
 
 EntityHandle *RefEntity::getParentEntPtr() const {
   return static_cast<EntityHandle *>(get_tag_ptr(

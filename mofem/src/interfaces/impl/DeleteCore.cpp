@@ -585,9 +585,10 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
     if(verb >= VERY_VERBOSE) {
       for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
         try {
-          RefEntity ref_ent(*eit);
+          RefEntity ref_ent(basicEntityDataPtr, *eit);
           MOFEM_LOG("WORLD", Sev::error)
-              << "Error: " << ref_ent << " " << ref_ent.getBitRefLevel();
+              << "Error: " << RefEntity(basicEntityDataPtr, *eit) << " "
+              << ref_ent.getBitRefLevel();
         } catch (std::exception const &ex) {
         }
       };
