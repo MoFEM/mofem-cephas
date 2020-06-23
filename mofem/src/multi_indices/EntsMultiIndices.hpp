@@ -24,6 +24,27 @@
 namespace MoFEM {
 
 /**
+ * @brief Get the tag ptr object
+ * 
+ * @param moab 
+ * @param th 
+ * @param ent 
+ * @param tag_size 
+ * @return void* 
+ */
+inline void *get_tag_ptr(moab::Interface &moab, Tag th, EntityHandle ent,
+                         int *tag_size) {
+  void *ret_val;
+  rval = moab.tag_get_by_ptr(th, &ent, 1, (const void **)&ret_val, tag_size);
+  if (rval != MB_SUCCESS) {
+    *tag_size = 0;
+    return NULL;
+  } else {
+    return ret_val;
+  }
+}
+
+/**
  * \brief keeps information about side number for the finite element
  * \ingroup ent_multi_indices
  */
@@ -98,11 +119,16 @@ private:
  */
 template <int N = 1> struct BasicEntity : public BasicEntity<N - 1> {
 
+  using BasicEntity<N - 1>::BasicEntity;
+};
+
+template <> struct BasicEntity<0> {
+
   EntityHandle ent;
 
   BasicEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
               const EntityHandle ent)
-      : BasicEntity<N - 1>(basic_data_ptr), ent(ent) {
+      : basicDataPtr(basic_data_ptr), ent(ent) {
     switch (getEntType()) {
     case MBVERTEX:
     case MBEDGE:
@@ -115,6 +141,15 @@ template <int N = 1> struct BasicEntity : public BasicEntity<N - 1> {
     default:
       THROW_MESSAGE("this entity type is currently not implemented");
     }
+  }
+  virtual ~BasicEntity() = default;
+
+  virtual boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
+    return basicDataPtr;
+  }
+
+  virtual const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
+    return basicDataPtr;
   }
 
   /** \brief Get entity type
@@ -129,19 +164,61 @@ template <int N = 1> struct BasicEntity : public BasicEntity<N - 1> {
 
   /** \brief Owner handle on this or other processors
    */
-  EntityHandle getOwnerEnt() const;
+  inline EntityHandle getOwnerEnt() const {
+    ParallelComm *pcomm = ParallelComm::get_pcomm(
+        &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
+    auto pstat = *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
+        this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), ent, NULL));
+    if (!(pstat & PSTATUS_NOT_OWNED)) {
+      return ent;
+    } else if (pstat & PSTATUS_MULTISHARED) {
+      return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
+          this->getBasicDataPtr()->moab, pcomm->sharedhs_tag(), ent, NULL))[0];
+    } else if (pstat & PSTATUS_SHARED) {
+      return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
+          this->getBasicDataPtr()->moab, pcomm->sharedh_tag(), ent, NULL))[0];
+    } else {
+      return 0;
+    }
+  }
 
   /** \brief Get processor owning entity
    */
-  int getOwnerProc() const;
+  inline int getOwnerProc() const {
+    ParallelComm *pcomm = ParallelComm::get_pcomm(
+        &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
+    auto pstat = *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
+        this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), ent, NULL));
+    if (!(pstat & PSTATUS_NOT_OWNED)) {
+      return pcomm->rank();
+    } else if (pstat & PSTATUS_MULTISHARED) {
+      return static_cast<int *>(MoFEM::get_tag_ptr(
+          this->getBasicDataPtr()->moab, pcomm->sharedps_tag(), ent, NULL))[0];
+    } else if (pstat & PSTATUS_SHARED) {
+      return static_cast<int *>(MoFEM::get_tag_ptr(
+          this->getBasicDataPtr()->moab, pcomm->sharedp_tag(), ent, NULL))[0];
+    } else {
+      return -1;
+    }
+  }
 
   /** \brief Get processor
    */
-  int getPartProc() const;
+  inline int getPartProc() const {
+    ParallelComm *pcomm = ParallelComm::get_pcomm(
+        &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
+    return *static_cast<int *>(MoFEM::get_tag_ptr(
+        this->getBasicDataPtr()->moab, pcomm->partition_tag(), ent, NULL));
+  }
 
   /** \brief Get processor owning entity
    */
-  int &getPartProc();
+  int &getPartProc() {
+    ParallelComm *pcomm = ParallelComm::get_pcomm(
+        &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
+    return *static_cast<int *>(MoFEM::get_tag_ptr(
+        this->getBasicDataPtr()->moab, pcomm->partition_tag(), ent, NULL));
+  }
 
   /** \brief get pstatus
    * This tag stores various aspects of parallel status in bits; see also
@@ -155,7 +232,12 @@ template <int N = 1> struct BasicEntity : public BasicEntity<N - 1> {
    * bit 4: ghost (0=not ghost, 1=ghost)
    *
    */
-  unsigned char getPStatus() const;
+  inline unsigned char getPStatus() const {
+    ParallelComm *pcomm = ParallelComm::get_pcomm(
+        &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
+    return *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
+        this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), ent, NULL));
+  }
 
   /** \brief get shared processors
 
@@ -241,23 +323,8 @@ template <int N = 1> struct BasicEntity : public BasicEntity<N - 1> {
     }
     return sharing_handlers_ptr;
   }
-};
 
-template <> struct BasicEntity<0> {
-
-  BasicEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr)
-      : basicDataPtr(basic_data_ptr) {}
-  virtual ~BasicEntity() = default;
-
-  virtual boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
-    return basicDataPtr;
-  }
-
-  virtual const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
-    return basicDataPtr;
-  }
-
-protected:
+private:
   mutable boost::shared_ptr<BasicEntityData> basicDataPtr;
 };
 
@@ -269,7 +336,7 @@ protected:
   waste of space.
 
  */
-template <int N = 1> struct RefEntityTmp : public BasicEntity<N> {
+template <int N = 0> struct RefEntityTmp : public BasicEntity<N> {
 
   RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
                const EntityHandle ent)
@@ -949,75 +1016,6 @@ struct BaseFEEntity {
   inline int getSideNumber() { return sideNumberPtr->side_number; }
 };
 
-inline void *get_tag_ptr(moab::Interface &moab, Tag th, EntityHandle ent,
-                         int *tag_size) {
-  void *ret_val;
-  rval = moab.tag_get_by_ptr(th, &ent, 1, (const void **)&ret_val, tag_size);
-  if (rval != MB_SUCCESS) {
-    *tag_size = 0;
-    return NULL;
-  } else {
-    return ret_val;
-  }
-}
-
-template <int N> EntityHandle BasicEntity<N>::getOwnerEnt() const {
-  ParallelComm *pcomm = ParallelComm::get_pcomm(
-      &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
-  auto pstat = *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
-      this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), ent, NULL));
-  if (!(pstat & PSTATUS_NOT_OWNED)) {
-    return ent;
-  } else if (pstat & PSTATUS_MULTISHARED) {
-    return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
-        this->getBasicDataPtr()->moab, pcomm->sharedhs_tag(), ent, NULL))[0];
-  } else if (pstat & PSTATUS_SHARED) {
-    return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
-        this->getBasicDataPtr()->moab, pcomm->sharedh_tag(), ent, NULL))[0];
-  } else {
-    return 0;
-  }
-}
-
-template <int N> int BasicEntity<N>::getOwnerProc() const {
-  ParallelComm *pcomm = ParallelComm::get_pcomm(
-      &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
-  auto pstat = *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
-      this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), ent, NULL));
-  if (!(pstat & PSTATUS_NOT_OWNED)) {
-    return pcomm->rank();
-  } else if (pstat & PSTATUS_MULTISHARED) {
-    return static_cast<int *>(MoFEM::get_tag_ptr(
-        this->getBasicDataPtr()->moab, pcomm->sharedps_tag(), ent, NULL))[0];
-  } else if (pstat & PSTATUS_SHARED) {
-    return static_cast<int *>(MoFEM::get_tag_ptr(
-        this->getBasicDataPtr()->moab, pcomm->sharedp_tag(), ent, NULL))[0];
-  } else {
-    return -1;
-  }
-}
-
-template <int N> int BasicEntity<N>::getPartProc() const {
-  ParallelComm *pcomm = ParallelComm::get_pcomm(
-      &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
-  return *static_cast<int *>(MoFEM::get_tag_ptr(
-      this->getBasicDataPtr()->moab, pcomm->partition_tag(), ent, NULL));
-}
-
-template <int N> int &BasicEntity<N>::getPartProc() {
-  ParallelComm *pcomm = ParallelComm::get_pcomm(
-      &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
-  return *static_cast<int *>(MoFEM::get_tag_ptr(
-      this->getBasicDataPtr()->moab, pcomm->partition_tag(), ent, NULL));
-}
-
-template <int N> unsigned char BasicEntity<N>::getPStatus() const {
-  ParallelComm *pcomm = ParallelComm::get_pcomm(
-      &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
-  return *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
-      this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), ent, NULL));
-}
-
 template <int N> EntityHandle *RefEntityTmp<N>::getParentEntPtr() const {
   return static_cast<EntityHandle *>(get_tag_ptr(
       this->getBasicDataPtr()->moab,
@@ -1033,7 +1031,7 @@ template <int N> BitRefLevel *RefEntityTmp<N>::getBitRefLevelPtr() const {
 template <int N>
 MoFEMErrorCode
 RefEntityTmp<N>::getBitRefLevel(moab::Interface &moab, Range ents,
-                             std::vector<BitRefLevel> &vec_bit_ref_level) {
+                                std::vector<BitRefLevel> &vec_bit_ref_level) {
 
   MoFEMFunctionBegin;
   Tag th_ref_bit_level;
