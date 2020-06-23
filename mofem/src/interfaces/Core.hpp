@@ -25,16 +25,6 @@ namespace MoFEM {
 // This is to have obsolete back compatibility
 struct MeshsetsManager;
 
-// template<int N>
-// struct CSCoreInt : public CSCoreInt<N-1> {
-//   static constexpr const int value = N;
-// };
-
-// template<>
-// struct CSCoreInt<0>  {
-//   static constexpr const int value = 0;
-// };
-
 /** \brief Core (interface) class
 * \ingroup mofem
 * \nosubgrouping
@@ -58,10 +48,6 @@ etc.
 
 */
 struct Core : public Interface {
-
-  // template <int N>
-  // static void cs_register(CSCoreInt<N>) {}
-  // static constexpr CSCoreInt<0> cs_register(CSCoreInt<0>);
 
   /**
    * Construct core database
@@ -887,6 +873,8 @@ protected:
    * @return return communicator rank/processor
    */
   inline int get_comm_rank() const { return rAnk; }
+
+  /**@}*/
 
 private:
   struct WrapMPIComm {
