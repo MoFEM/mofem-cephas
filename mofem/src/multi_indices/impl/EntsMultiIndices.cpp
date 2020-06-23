@@ -23,17 +23,6 @@ namespace MoFEM {
 
 static moab::Error error;
 
-inline void *get_tag_ptr(moab::Interface &moab, Tag th, EntityHandle ent,
-                         int *tag_size) {
-  void *ret_val;
-  rval = moab.tag_get_by_ptr(th, &ent, 1, (const void **)&ret_val, tag_size);
-  if (rval != MB_SUCCESS) {
-    *tag_size = 0;
-    return NULL;
-  } else {
-    return ret_val;
-  }
-}
 
 BasicEntityData::BasicEntityData(const moab::Interface &moab,
                                  const int pcomm_id)
@@ -45,134 +34,8 @@ BasicEntityData::BasicEntityData(const moab::Interface &moab,
   MOAB_THROW(rval);
 }
 
-// basic moab ent
-BasicEntity::BasicEntity(
-    const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
-    const EntityHandle ent)
-    : basicDataPtr(basic_data_ptr), ent(ent) {
-  switch (getEntType()) {
-  case MBVERTEX:
-  case MBEDGE:
-  case MBTRI:
-  case MBQUAD:
-  case MBTET:
-  case MBPRISM:
-  case MBENTITYSET:
-    break;
-  default:
-    THROW_MESSAGE("this entity type is currently not implemented");
-  }
-}
-
-EntityHandle BasicEntity::getOwnerEnt() const {
-  ParallelComm *pcomm =
-      ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
-  auto pstat = *static_cast<unsigned char *>(
-      MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->pstatus_tag(), ent, NULL));
-  if (!(pstat & PSTATUS_NOT_OWNED)) {
-    return ent;
-  } else if (pstat & PSTATUS_MULTISHARED) {
-    return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
-        basicDataPtr->moab, pcomm->sharedhs_tag(), ent, NULL))[0];
-  } else if (pstat & PSTATUS_SHARED) {
-    return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
-        basicDataPtr->moab, pcomm->sharedh_tag(), ent, NULL))[0];
-  } else {
-    return 0;
-  }
-}
-
-int BasicEntity::getOwnerProc() const {
-  ParallelComm *pcomm =
-      ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
-  auto pstat = *static_cast<unsigned char *>(
-      MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->pstatus_tag(), ent, NULL));
-  if (!(pstat & PSTATUS_NOT_OWNED)) {
-    return pcomm->rank();
-  } else if (pstat & PSTATUS_MULTISHARED) {
-    return static_cast<int *>(MoFEM::get_tag_ptr(
-        basicDataPtr->moab, pcomm->sharedps_tag(), ent, NULL))[0];
-  } else if (pstat & PSTATUS_SHARED) {
-    return static_cast<int *>(MoFEM::get_tag_ptr(
-        basicDataPtr->moab, pcomm->sharedp_tag(), ent, NULL))[0];
-  } else {
-    return -1;
-  }
-}
-
-int BasicEntity::getPartProc() const {
-  ParallelComm *pcomm =
-      ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
-  return *static_cast<int *>(MoFEM::get_tag_ptr(
-      basicDataPtr->moab, pcomm->partition_tag(), ent, NULL));
-}
-
-int &BasicEntity::getPartProc() {
-  ParallelComm *pcomm =
-      ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
-  return *static_cast<int *>(MoFEM::get_tag_ptr(
-      basicDataPtr->moab, pcomm->partition_tag(), ent, NULL));
-}
-
-unsigned char BasicEntity::getPStatus() const {
-  ParallelComm *pcomm =
-      ParallelComm::get_pcomm(&basicDataPtr->moab, basicDataPtr->pcommID);
-  return *static_cast<unsigned char *>(
-      MoFEM::get_tag_ptr(basicDataPtr->moab, pcomm->pstatus_tag(), ent, NULL));
-}
-
 // ref moab ent
 BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);
-RefEntity::RefEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
-                     const EntityHandle ent)
-    : BasicEntity(basic_data_ptr, ent) {}
-
-EntityHandle *RefEntity::getParentEntPtr() const {
-  return static_cast<EntityHandle *>(get_tag_ptr(
-      basicDataPtr->moab, basicDataPtr->th_RefParentHandle, ent, NULL));
-}
-
-BitRefLevel *RefEntity::getBitRefLevelPtr() const {
-  return static_cast<BitRefLevel *>(
-      get_tag_ptr(basicDataPtr->moab, basicDataPtr->th_RefBitLevel, ent, NULL));
-}
-
-MoFEMErrorCode getParentEnt(moab::Interface &moab, Range ents,
-                            std::vector<EntityHandle> vec_patent_ent) {
-
-  MoFEMFunctionBegin;
-  Tag th_ref_parent_handle;
-  CHKERR moab.tag_get_handle("_RefParentHandle", th_ref_parent_handle);
-  vec_patent_ent.resize(ents.size());
-  CHKERR moab.tag_get_data(th_ref_parent_handle, ents,
-                           &*vec_patent_ent.begin());
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-RefEntity::getBitRefLevel(moab::Interface &moab, Range ents,
-                          std::vector<BitRefLevel> &vec_bit_ref_level) {
-
-  MoFEMFunctionBegin;
-  Tag th_ref_bit_level;
-  CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
-  vec_bit_ref_level.resize(ents.size());
-  CHKERR moab.tag_get_data(th_ref_bit_level, ents, &*vec_bit_ref_level.begin());
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode RefEntity::getBitRefLevel(
-    moab::Interface &moab, Range ents,
-    std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level) {
-  MoFEMFunctionBegin;
-  Tag th_ref_bit_level;
-  CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
-  vec_ptr_bit_ref_level.resize(ents.size());
-  CHKERR moab.tag_get_by_ptr(
-      th_ref_bit_level, ents,
-      reinterpret_cast<const void **>(&*vec_ptr_bit_ref_level.begin()));
-  MoFEMFunctionReturn(0);
-}
 
 std::ostream &operator<<(std::ostream &os, const RefEntity &e) {
   os << "ent " << e.ent;

@@ -41,7 +41,6 @@ struct __attribute__((__packed__)) SideNumber {
       : ent(_ent), side_number(_side_number), sense(_sense), offset(_offset),
         brother_side_number(-1) {}
   virtual ~SideNumber() = default;
-
 };
 
 /**
@@ -69,7 +68,8 @@ typedef multi_index_container<
     SideNumber_multiIndex;
 
 /**
- * \brief PipelineManager data. like access to moab interface and basic tag handlers.
+ * \brief PipelineManager data. like access to moab interface and basic tag
+ * handlers.
  */
 struct BasicEntityData {
   moab::Interface &moab;
@@ -96,20 +96,25 @@ private:
   without need of using native MoAB functions.
 
  */
-struct BasicEntity {
+template <int N = 1> struct BasicEntity : public BasicEntity<N - 1> {
 
   EntityHandle ent;
 
   BasicEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
-              const EntityHandle ent);
-  virtual ~BasicEntity() = default;
-
-  inline boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
-    return basicDataPtr;
-  }
-
-  inline const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
-    return basicDataPtr;
+              const EntityHandle ent)
+      : BasicEntity<N - 1>(basic_data_ptr), ent(ent) {
+    switch (getEntType()) {
+    case MBVERTEX:
+    case MBEDGE:
+    case MBTRI:
+    case MBQUAD:
+    case MBTET:
+    case MBPRISM:
+    case MBENTITYSET:
+      break;
+    default:
+      THROW_MESSAGE("this entity type is currently not implemented");
+    }
   }
 
   /** \brief Get entity type
@@ -177,9 +182,10 @@ struct BasicEntity {
 
   */
   int *getSharingProcsPtr() const {
-    moab::Interface &moab = basicDataPtr->moab;
+    auto &moab = this->getBasicDataPtr()->moab;
     int *sharing_procs_ptr = NULL;
-    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, basicDataPtr->pcommID);
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&moab, this->getBasicDataPtr()->pcommID);
     if (getPStatus() & PSTATUS_MULTISHARED) {
       // entity is multi shared
       rval = moab.tag_get_by_ptr(pcomm->sharedps_tag(), &ent, 1,
@@ -219,8 +225,9 @@ struct BasicEntity {
     */
   inline EntityHandle *getSharingHandlersPtr() const {
     EntityHandle *sharing_handlers_ptr = NULL;
-    moab::Interface &moab = basicDataPtr->moab;
-    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, basicDataPtr->pcommID);
+    auto &moab = this->getBasicDataPtr()->moab;
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&moab, this->getBasicDataPtr()->pcommID);
     if (getPStatus() & PSTATUS_MULTISHARED) {
       // entity is multi shared
       rval = moab.tag_get_by_ptr(pcomm->sharedhs_tag(), &ent, 1,
@@ -233,6 +240,21 @@ struct BasicEntity {
       MOAB_THROW(rval);
     }
     return sharing_handlers_ptr;
+  }
+};
+
+template <> struct BasicEntity<0> {
+
+  BasicEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr)
+      : basicDataPtr(basic_data_ptr) {}
+  virtual ~BasicEntity() = default;
+
+  virtual boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
+    return basicDataPtr;
+  }
+
+  virtual const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
+    return basicDataPtr;
   }
 
 protected:
@@ -247,12 +269,13 @@ protected:
   waste of space.
 
  */
-struct RefEntity : public BasicEntity {
+template <int N = 1> struct RefEntityTmp : public BasicEntity<N> {
 
-  RefEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
-            const EntityHandle ent);
+  RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+               const EntityHandle ent)
+      : BasicEntity<N>(basic_data_ptr, ent) {}
 
-  virtual ~RefEntity() = default;
+  virtual ~RefEntityTmp() = default;
 
   static MoFEMErrorCode getParentEnt(Interface &moab, Range ents,
                                      std::vector<EntityHandle> vec_patent_ent);
@@ -290,7 +313,7 @@ struct RefEntity : public BasicEntity {
 
   /** \brief Get entity
    */
-  inline EntityHandle getRefEnt() const { return ent; }
+  inline EntityHandle getRefEnt() const { return this->ent; }
 
   /** \brief Get patent entity
    */
@@ -317,8 +340,10 @@ struct RefEntity : public BasicEntity {
     return getBitRefLevel().to_ulong();
   }
 
-  friend std::ostream &operator<<(std::ostream &os, const RefEntity &e);
+  friend std::ostream &operator<<(std::ostream &os, const RefEntityTmp &e);
 };
+
+using RefEntity = RefEntityTmp<>;
 
 /**
  * \brief interface to RefEntity
@@ -403,40 +428,62 @@ template <typename T> struct interface_RefEntity {
  * \param ordered_non_unique Composite_EntType_And_ParentEntType_mi_tag
  * \param ordered_non_unique Composite_ParentEnt_And_EntType_mi_tag
  */
-typedef multi_index_container<
+using RefEntity_multiIndex = multi_index_container<
     boost::shared_ptr<RefEntity>,
     indexed_by<
-        ordered_unique<tag<Ent_mi_tag>, member<RefEntity::BasicEntity,
-                                               EntityHandle, &RefEntity::ent>>,
+        ordered_unique<
+
+            tag<Ent_mi_tag>, member<typename RefEntity::BasicEntity,
+                                    EntityHandle, &RefEntity::ent>
+
+            >,
+
         ordered_non_unique<
+
             tag<Ent_Ent_mi_tag>,
-            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt>>,
-        ordered_non_unique<tag<EntType_mi_tag>,
-                           const_mem_fun<RefEntity::BasicEntity, EntityType,
-                                         &RefEntity::getEntType>>,
+            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt>
+
+            >,
+
         ordered_non_unique<
+
+            tag<EntType_mi_tag>,
+            const_mem_fun<typename RefEntity::BasicEntity, EntityType,
+                          &RefEntity::getEntType>
+
+            >,
+
+        ordered_non_unique<
+
             tag<ParentEntType_mi_tag>,
-            const_mem_fun<RefEntity, EntityType, &RefEntity::getParentEntType>>,
+            const_mem_fun<RefEntity, EntityType, &RefEntity::getParentEntType>
+
+            >,
+
         ordered_non_unique<
             tag<Composite_EntType_and_ParentEntType_mi_tag>,
             composite_key<RefEntity,
-                          const_mem_fun<RefEntity::BasicEntity, EntityType,
-                                        &RefEntity::getEntType>,
+                          const_mem_fun<typename RefEntity::BasicEntity,
+                                        EntityType, &RefEntity::getEntType>,
                           const_mem_fun<RefEntity, EntityType,
-                                        &RefEntity::getParentEntType>>>,
+                                        &RefEntity::getParentEntType>>
+
+            >,
+
         ordered_non_unique<
             tag<Composite_ParentEnt_And_EntType_mi_tag>,
             composite_key<RefEntity,
-                          const_mem_fun<RefEntity::BasicEntity, EntityType,
-                                        &RefEntity::getEntType>,
+                          const_mem_fun<typename RefEntity::BasicEntity,
+                                        EntityType, &RefEntity::getEntType>,
                           const_mem_fun<RefEntity, EntityHandle,
-                                        &RefEntity::getParentEnt>>>>>
-    RefEntity_multiIndex;
+                                        &RefEntity::getParentEnt>>>>
+
+    >;
 
 /** \brief multi-index view of RefEntity by parent entity
   \ingroup ent_multi_indices
 */
-typedef multi_index_container<
+using RefEntity_multiIndex_view_by_hashed_parent_entity = multi_index_container<
     boost::shared_ptr<RefEntity>,
     indexed_by<
         hashed_non_unique<
@@ -448,31 +495,29 @@ typedef multi_index_container<
                                     const_mem_fun<RefEntity, EntityHandle,
                                                   &RefEntity::getParentEnt>>>>
 
-    >
-    RefEntity_multiIndex_view_by_hashed_parent_entity;
+    >;
 
-typedef multi_index_container<
+using RefEntity_multiIndex_view_by_ordered_parent_entity =
+    multi_index_container<
+        boost::shared_ptr<RefEntity>,
+        indexed_by<ordered_non_unique<const_mem_fun<RefEntity, EntityHandle,
+                                                    &RefEntity::getParentEnt>>,
+                   hashed_unique<
+                       tag<Composite_EntType_and_ParentEntType_mi_tag>,
+                       composite_key<boost::shared_ptr<RefEntity>,
+                                     const_mem_fun<RefEntity, EntityHandle,
+                                                   &RefEntity::getRefEnt>,
+                                     const_mem_fun<RefEntity, EntityHandle,
+                                                   &RefEntity::getParentEnt>>>>
+
+        >;
+
+using RefEntity_multiIndex_view_sequence_ordered_view = multi_index_container<
     boost::shared_ptr<RefEntity>,
-    indexed_by<
-        ordered_non_unique<
-            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt>>,
-        hashed_unique<tag<Composite_EntType_and_ParentEntType_mi_tag>,
-                      composite_key<boost::shared_ptr<RefEntity>,
-                                    const_mem_fun<RefEntity, EntityHandle,
-                                                  &RefEntity::getRefEnt>,
-                                    const_mem_fun<RefEntity, EntityHandle,
-                                                  &RefEntity::getParentEnt>>>>
-
-    >
-    RefEntity_multiIndex_view_by_ordered_parent_entity;
-
-typedef multi_index_container<
-    boost::shared_ptr<RefEntity>,
-    indexed_by<
-        sequenced<>,
-        ordered_unique<tag<Ent_mi_tag>, member<RefEntity::BasicEntity,
-                                               EntityHandle, &RefEntity::ent>>>>
-    RefEntity_multiIndex_view_sequence_ordered_view;
+    indexed_by<sequenced<>,
+               ordered_unique<tag<Ent_mi_tag>,
+                              member<typename RefEntity::BasicEntity,
+                                     EntityHandle, &RefEntity::ent>>>>;
 
 template <class T> struct Entity_update_pcomm_data {
   const int pcommID;
@@ -904,11 +949,119 @@ struct BaseFEEntity {
   inline int getSideNumber() { return sideNumberPtr->side_number; }
 };
 
+inline void *get_tag_ptr(moab::Interface &moab, Tag th, EntityHandle ent,
+                         int *tag_size) {
+  void *ret_val;
+  rval = moab.tag_get_by_ptr(th, &ent, 1, (const void **)&ret_val, tag_size);
+  if (rval != MB_SUCCESS) {
+    *tag_size = 0;
+    return NULL;
+  } else {
+    return ret_val;
+  }
+}
+
+template <int N> EntityHandle BasicEntity<N>::getOwnerEnt() const {
+  ParallelComm *pcomm = ParallelComm::get_pcomm(
+      &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
+  auto pstat = *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
+      this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), ent, NULL));
+  if (!(pstat & PSTATUS_NOT_OWNED)) {
+    return ent;
+  } else if (pstat & PSTATUS_MULTISHARED) {
+    return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
+        this->getBasicDataPtr()->moab, pcomm->sharedhs_tag(), ent, NULL))[0];
+  } else if (pstat & PSTATUS_SHARED) {
+    return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
+        this->getBasicDataPtr()->moab, pcomm->sharedh_tag(), ent, NULL))[0];
+  } else {
+    return 0;
+  }
+}
+
+template <int N> int BasicEntity<N>::getOwnerProc() const {
+  ParallelComm *pcomm = ParallelComm::get_pcomm(
+      &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
+  auto pstat = *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
+      this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), ent, NULL));
+  if (!(pstat & PSTATUS_NOT_OWNED)) {
+    return pcomm->rank();
+  } else if (pstat & PSTATUS_MULTISHARED) {
+    return static_cast<int *>(MoFEM::get_tag_ptr(
+        this->getBasicDataPtr()->moab, pcomm->sharedps_tag(), ent, NULL))[0];
+  } else if (pstat & PSTATUS_SHARED) {
+    return static_cast<int *>(MoFEM::get_tag_ptr(
+        this->getBasicDataPtr()->moab, pcomm->sharedp_tag(), ent, NULL))[0];
+  } else {
+    return -1;
+  }
+}
+
+template <int N> int BasicEntity<N>::getPartProc() const {
+  ParallelComm *pcomm = ParallelComm::get_pcomm(
+      &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
+  return *static_cast<int *>(MoFEM::get_tag_ptr(
+      this->getBasicDataPtr()->moab, pcomm->partition_tag(), ent, NULL));
+}
+
+template <int N> int &BasicEntity<N>::getPartProc() {
+  ParallelComm *pcomm = ParallelComm::get_pcomm(
+      &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
+  return *static_cast<int *>(MoFEM::get_tag_ptr(
+      this->getBasicDataPtr()->moab, pcomm->partition_tag(), ent, NULL));
+}
+
+template <int N> unsigned char BasicEntity<N>::getPStatus() const {
+  ParallelComm *pcomm = ParallelComm::get_pcomm(
+      &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
+  return *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
+      this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), ent, NULL));
+}
+
+template <int N> EntityHandle *RefEntityTmp<N>::getParentEntPtr() const {
+  return static_cast<EntityHandle *>(get_tag_ptr(
+      this->getBasicDataPtr()->moab,
+      this->getBasicDataPtr()->th_RefParentHandle, this->ent, NULL));
+}
+
+template <int N> BitRefLevel *RefEntityTmp<N>::getBitRefLevelPtr() const {
+  return static_cast<BitRefLevel *>(
+      get_tag_ptr(this->getBasicDataPtr()->moab,
+                  this->getBasicDataPtr()->th_RefBitLevel, this->ent, NULL));
+}
+
+template <int N>
+MoFEMErrorCode
+RefEntityTmp<N>::getBitRefLevel(moab::Interface &moab, Range ents,
+                             std::vector<BitRefLevel> &vec_bit_ref_level) {
+
+  MoFEMFunctionBegin;
+  Tag th_ref_bit_level;
+  CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
+  vec_bit_ref_level.resize(ents.size());
+  CHKERR moab.tag_get_data(th_ref_bit_level, ents, &*vec_bit_ref_level.begin());
+  MoFEMFunctionReturn(0);
+}
+
+template <int N>
+MoFEMErrorCode RefEntityTmp<N>::getBitRefLevel(
+    moab::Interface &moab, Range ents,
+    std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level) {
+  MoFEMFunctionBegin;
+  Tag th_ref_bit_level;
+  CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
+  vec_ptr_bit_ref_level.resize(ents.size());
+  CHKERR moab.tag_get_by_ptr(
+      th_ref_bit_level, ents,
+      reinterpret_cast<const void **>(&*vec_ptr_bit_ref_level.begin()));
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM
 
 #endif // __ENTSMULTIINDICES_HPP__
 
-/***************************************************************************/ /**
-                                                                               * \defgroup ent_multi_indices Entities structures and multi-indices
-                                                                               * \ingroup mofem
-                                                                               ******************************************************************************/
+/**
+ * \defgroup ent_multi_indices Entities structures and multi-indices
+ * \ingroup mofem
+ **/
