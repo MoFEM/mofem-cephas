@@ -208,11 +208,11 @@ MoFEMErrorCode Hdiv_FaceShapeFunctions_ONHEX(int       *sense[6],
                                              double    *div_faceN[6],
                                              int       nb_integration_pts);
 
-// MoFEMErrorCode Hdiv_FaceShapeFunctions_ONHEX(int      *p, 
-//                                              double   *N,
-//                                              double   *faceN[],
-//                                              double   *div_faceN[],
-//                                              int      nb_integration_pts);
+MoFEMErrorCode Hdiv_InteriorShapeFunctions_ONHEX(int      *p, 
+                                                 double   *N,
+                                                 double   *bubleN[3],
+                                                 double   *div_bubleN[3],
+                                                 int      nb_integration_pts);
 
 struct RefHex {
   RefHex(double *N, int nb_integration_pts)
