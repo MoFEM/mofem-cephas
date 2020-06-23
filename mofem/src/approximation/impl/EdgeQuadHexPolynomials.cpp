@@ -326,9 +326,9 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
                                                       int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   double coords[4][2] = {{0.0, 0.0},
-                      {1.0, 0.0},
-                      {1.0, 1.0},
-                      {0.0, 1.0}};
+                         {1.0, 0.0},
+                         {1.0, 1.0},
+                         {0.0, 1.0}};
   for (int q = 0; q != nb_integration_pts; q++) {
     int shift = 4 * q;
     double ksi = 0.0; double eta = 0.0;
@@ -433,6 +433,9 @@ MoFEMErrorCode MoFEM::Hcurl_FaceShapeFunctions_ONQUAD(int *p, double *N,
         for (int j = 0; j != pp - 1; j++) {
           faceN[typ][2 * (qd_shift + n) + 0] = Phi[j] * E[i] * diff_mu_eta_ksi[typ][0];
           faceN[typ][2 * (qd_shift + n) + 1] = Phi[j] * E[i] * diff_mu_eta_ksi[typ][1];
+          
+
+
 
           curl_faceN[typ][qd_shift + n] = sgn[typ] * diffPhi[j] * E[i];
           ++n;
@@ -756,4 +759,158 @@ MoFEMErrorCode MoFEM::H1_InteriorShapeFunctions_ONHEX(int *p,
   }
   MoFEMFunctionReturnHot(0);
 }
-                   
+
+MoFEMErrorCode MoFEM::L2_InteriorShapeFunctions_ONHEX(int *p, double *N,
+                                                      double *volN,
+                                                      int nb_integration_pts){
+  MoFEMFunctionBeginHot;
+  RefHex ref_hex(N, nb_integration_pts);
+  auto volume_coords = ref_hex.get_integrationPts();
+
+  
+
+  for(int qq = 0; qq != nb_integration_pts; qq++){
+    double ksi = volume_coords[qq][0];
+    double eta = volume_coords[qq][1];
+    double gma = volume_coords[qq][2];
+
+    double P0[p[0]];
+    double P1[p[1]];
+    double P2[p[2]];
+   
+    int qd_shift = qq * p[0] * p[1] * p[2];
+
+    CHKERR Legendre_polynomials01(p[0]-1, ksi, P0);
+    CHKERR Legendre_polynomials01(p[1]-1, eta, P1);
+    CHKERR Legendre_polynomials01(p[2]-1, gma, P2);
+    int n = 0;
+    for(int ii = 0; ii != p[0]; ii++){
+      for(int jj = 0; jj != p[1]; jj++){
+        for(int kk = 0; kk != p[2]; kk++){
+          volN[qd_shift + n] = P0[ii] * P1[jj] * P2[kk];
+        }
+      }
+    }
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode MoFEM::Hcurl_EdgeShapeFunctions_ONHEX(int *sense, int *p,
+                                                     double *N,
+                                                     double *edgeN[12],
+                                                     double *curl_edgeN[12],
+                                                     int nb_integration_pts) {
+  MoFEMFunctionBeginHot;
+  RefHex ref_hex(N, nb_integration_pts);
+  auto mu = ref_hex.get_edge_affines();
+  auto diff_mu = ref_hex.get_edge_diff_affines();
+  auto ksi = ref_hex.get_edge_coords();
+  auto diff_ksi = ref_hex.get_edge_diff_coords();
+
+  for (int qq = 0; qq != nb_integration_pts; qq++){
+    int pp[12] = {p[0], p[1], p[0], p[1], p[2], p[2], p[2], p[2] ,p[0], p[1], p[0], p[1]};
+    for (int ee = 0; ee != 12; ee++){
+
+      double L[pp[ee]];
+      double diff_ss[3] = {(double)sense[ee] * diff_ksi[ee][0],
+                           (double)sense[ee] * diff_ksi[ee][1],
+                           (double)sense[ee] * diff_ksi[ee][2]};
+      double ss = (double)sense[ee] * ksi[qq][ee] + 0.5 * (1.0 - (double)sense[ee]);
+      CHKERR Legendre_polynomials01(pp[ee] - 1, ss, L);
+      int qd_shift = pp[ee] * qq;
+
+      for (int ii = 0; ii != pp[ee]; ii++){
+        edgeN[ee][3 * (qd_shift + ii) + 0] = mu[qq][2 * ee + 0] * mu[qq][2 * ee + 1] * L[ii] * diff_ss[0];
+        edgeN[ee][3 * (qd_shift + ii) + 1] = mu[qq][2 * ee + 0] * mu[qq][2 * ee + 1] * L[ii] * diff_ss[1];
+        edgeN[ee][3 * (qd_shift + ii) + 2] = mu[qq][2 * ee + 0] * mu[qq][2 * ee + 1] * L[ii] * diff_ss[2];
+
+        double E1[3] = {diff_mu[ee][0][0] * mu[qq][2 * ee + 1] + mu[qq][2 * ee + 0] * diff_mu[ee][1][0],
+                        diff_mu[ee][0][1] * mu[qq][2 * ee + 1] + mu[qq][2 * ee + 0] * diff_mu[ee][1][1],
+                        diff_mu[ee][0][2] * mu[qq][2 * ee + 1] + mu[qq][2 * ee + 0] * diff_mu[ee][1][2]};
+        double E2[3] = {L[ii] * diff_ss[0], L[ii] * diff_ss[1], L[ii] * diff_ss[2]};
+
+        auto cross_product = ref_hex.Cross_product(E1, E2);
+        curl_edgeN[ee][3 * (qd_shift + ii) + 0] = cross_product[0];
+        curl_edgeN[ee][3 * (qd_shift + ii) + 1] = cross_product[1];
+        curl_edgeN[ee][3 * (qd_shift + ii) + 2] = cross_product[2];
+      }
+      
+    }
+    
+  }
+  
+
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode MoFEM::Hcurl_FaceShapeFunctions_ONHEX(int *face_nodes[6], 
+                                                     int *p,
+                                                     double *N,
+                                                     double *faceN[6][2],
+                                                     double *curl_faceN[6][2],
+                                                     int nb_integration_pts) {
+  MoFEMFunctionBeginHot;
+  RefHex ref_hex(N, nb_integration_pts);
+  auto ksi = ref_hex.get_face_coords(face_nodes);
+  auto diff_ksi = ref_hex.get_face_diff_coords(face_nodes);
+  auto mu = ref_hex.get_face_affines();
+  auto diff_mu = ref_hex.get_face_diff_affines();
+  for (int qq = 0; qq != nb_integration_pts; qq++){
+
+    for(int ff = 0; ff != 6; ff++){
+      double ksi_eta[2] = {ksi[qq][2 * ff + 0], ksi[qq][2 * ff + 1]};
+      double eta_ksi[2] = {ksi[qq][2 * ff + 1], ksi[qq][2 * ff + 0]};
+
+      double *diff_ksi_eta[2] = {diff_ksi[ff][0], diff_ksi[ff][1]};
+      double *diff_eta_ksi[2] = {diff_ksi[ff][1], diff_ksi[ff][0]};
+
+      int pq[2] = {p[0], p[1]};
+      int qp[2] = {p[1], p[0]};
+      
+      for (int fam = 0; fam != 2; fam++){
+        int pp = pq[fam];
+
+        double Phi[pp - 1];
+        double diffPhi[pp - 1];
+        CHKERR Integrated_Legendre01(pp, ksi_eta[fam], Phi, diffPhi);
+
+        int qq = qp[fam];
+        double E[qq];
+        CHKERR Legendre_polynomials01(qq - 1, eta_ksi[fam], E);
+
+        int qd_shift = (pp - 1) * qq * qq;
+        int n = 0;
+        for (int i = 0; i != qq; i++) {
+          for (int j = 0; j != pp - 1; j++) {
+            faceN[ff][fam][3 * (qd_shift + n) + 0] = mu[qq][ff] * Phi[j] * E[i] * diff_eta_ksi[fam][0];
+            faceN[ff][fam][3 * (qd_shift + n) + 0] = mu[qq][ff] * Phi[j] * E[i] * diff_eta_ksi[fam][1];
+            faceN[ff][fam][3 * (qd_shift + n) + 0] = mu[qq][ff] * Phi[j] * E[i] * diff_eta_ksi[fam][2];
+
+            double Ei[3] = {E[i] * diff_eta_ksi[fam][0],
+                            E[i] * diff_eta_ksi[fam][1],
+                            E[i] * diff_eta_ksi[fam][2]};
+            double Eij[3] = {Phi[j] * Ei[0], Phi[j] * Ei[1], Phi[j] * Ei[2]};
+
+            double diff_Phi[3] = {diffPhi[j] * diff_ksi_eta[fam][0],
+                                  diffPhi[j] * diff_ksi_eta[fam][1],
+                                  diffPhi[j] * diff_ksi_eta[fam][2]};
+            double diff_muVec[3] = {diff_mu[ff][0], diff_mu[ff][1], diff_mu[ff][2]};
+            auto diff_mu_cross_Eij = ref_hex.Cross_product(diff_muVec, Eij);
+            auto diff_Phi_cross_Ei = ref_hex.Cross_product(diff_Phi, Ei);
+
+            curl_faceN[ff][fam][3 * (qd_shift + n) + 0] = mu[qq][ff] * diff_Phi_cross_Ei[0] + diff_mu_cross_Eij[0];
+            curl_faceN[ff][fam][3 * (qd_shift + n) + 0] = mu[qq][ff] * diff_Phi_cross_Ei[1] + diff_mu_cross_Eij[1];
+            curl_faceN[ff][fam][3 * (qd_shift + n) + 0] = mu[qq][ff] * diff_Phi_cross_Ei[2] + diff_mu_cross_Eij[2];
+            ++n;
+          }
+        }
+      }
+      
+
+    }
+
+
+  }
+  MoFEMFunctionReturnHot(0);
+}
