@@ -55,7 +55,7 @@ RefElement_PRISM::RefElement_PRISM(
     const boost::shared_ptr<RefEntity> &ref_ents_ptr)
     : RefElement(ref_ents_ptr) {
   Tag th_RefBitEdge;
-  moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
+  moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   rval = moab.tag_get_handle("_RefBitEdge", th_RefBitEdge);
   MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefBitEdge, &ref_ents_ptr->ent, 1,
@@ -91,7 +91,7 @@ RefElement_PRISM::RefElement_PRISM(
 const boost::shared_ptr<SideNumber> &
 RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {
 
-  moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
+  moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
 
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   // this int is in table then return pointer
@@ -293,7 +293,7 @@ RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {
 RefElement_TET::RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ents_ptr)
     : RefElement(ref_ents_ptr), tag_BitRefEdges(NULL) {
   Tag th_RefBitEdge;
-  moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
+  moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   rval = moab.tag_get_handle("_RefBitEdge", th_RefBitEdge);
   MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefBitEdge, &ref_ents_ptr->ent, 1,
@@ -311,7 +311,7 @@ RefElement_TET::RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ents_ptr)
 
 const boost::shared_ptr<SideNumber> &
 RefElement_TET::getSideNumberPtr(const EntityHandle ent) const {
-  moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
+  moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   auto miit = side_number_table.find(ent);
   if (miit != side_number_table.end())
     return *miit;
@@ -334,9 +334,9 @@ RefElement_TET::getSideNumberPtr(const EntityHandle ent) const {
                     .insert(boost::make_shared<SideNumber>(ent, side_number,
                                                            sense, offset));
   miit = p_miit.first;
-  if (miit->get()->ent != ent) 
+  if (miit->get()->ent != ent)
     THROW_MESSAGE("this not working");
-  
+
   return *miit;
 }
 std::ostream &operator<<(std::ostream &os, const RefElement_TET &e) {
@@ -366,7 +366,7 @@ RefElementFace::RefElementFace(const boost::shared_ptr<RefEntity> &ref_ents_ptr)
   EntityHandle tri = getRefEnt();
   int num_nodes;
   const EntityHandle *conn;
-  moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
+  moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   rval = moab.get_connectivity(tri, conn, num_nodes, true);
   MOAB_THROW(rval);
   for (int nn = 0; nn < nb_nodes; nn++) {
@@ -389,7 +389,7 @@ RefElementFace::RefElementFace(const boost::shared_ptr<RefEntity> &ref_ents_ptr)
 }
 const boost::shared_ptr<SideNumber> &
 RefElementFace::getSideNumberPtr(const EntityHandle ent) const {
-  moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
+  moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if (miit != side_number_table.end())
     return *miit;
@@ -433,7 +433,7 @@ RefElement_EDGE::RefElement_EDGE(
 }
 const boost::shared_ptr<SideNumber> &
 RefElement_EDGE::getSideNumberPtr(const EntityHandle ent) const {
-  moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
+  moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if (miit != side_number_table.end())
     return *miit;
@@ -477,7 +477,7 @@ RefElement_VERTEX::RefElement_VERTEX(
 }
 const boost::shared_ptr<SideNumber> &
 RefElement_VERTEX::getSideNumberPtr(const EntityHandle ent) const {
-  moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
+  moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if (miit != side_number_table.end())
     return *miit;
@@ -875,48 +875,48 @@ std::ostream &operator<<(std::ostream &os, const FiniteElement &e) {
   return os;
 }
 
-void FiniteElement_col_change_bit_add::
-operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_col_change_bit_add::operator()(
+    boost::shared_ptr<FiniteElement> &fe) {
   *static_cast<BitFieldId *>(fe->tag_BitFieldId_col_data) |= fIdCol;
 }
 
-void FiniteElement_row_change_bit_add::
-operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_row_change_bit_add::operator()(
+    boost::shared_ptr<FiniteElement> &fe) {
   *static_cast<BitFieldId *>(fe->tag_BitFieldId_row_data) |= fIdRow;
 }
 
-void FiniteElement_change_bit_add::
-operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_change_bit_add::operator()(
+    boost::shared_ptr<FiniteElement> &fe) {
   *static_cast<BitFieldId *>(fe->tag_BitFieldId_data) |= fIdData;
 }
 
-void FiniteElement_col_change_bit_off::
-operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_col_change_bit_off::operator()(
+    boost::shared_ptr<FiniteElement> &fe) {
   *static_cast<BitFieldId *>(fe->tag_BitFieldId_col_data) &= fIdCol.flip();
 }
 
-void FiniteElement_row_change_bit_off::
-operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_row_change_bit_off::operator()(
+    boost::shared_ptr<FiniteElement> &fe) {
   *static_cast<BitFieldId *>(fe->tag_BitFieldId_row_data) &= fIdRow.flip();
 }
 
-void FiniteElement_change_bit_off::
-operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_change_bit_off::operator()(
+    boost::shared_ptr<FiniteElement> &fe) {
   *static_cast<BitFieldId *>(fe->tag_BitFieldId_data) &= fIdData.flip();
 }
 
-void FiniteElement_col_change_bit_reset::
-operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_col_change_bit_reset::operator()(
+    boost::shared_ptr<FiniteElement> &fe) {
   static_cast<BitFieldId *>(fe->tag_BitFieldId_col_data)->reset();
 }
 
-void FiniteElement_row_change_bit_reset::
-operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_row_change_bit_reset::operator()(
+    boost::shared_ptr<FiniteElement> &fe) {
   static_cast<BitFieldId *>(fe->tag_BitFieldId_row_data)->reset();
 }
 
-void FiniteElement_change_bit_reset::
-operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_change_bit_reset::operator()(
+    boost::shared_ptr<FiniteElement> &fe) {
   static_cast<BitFieldId *>(fe->tag_BitFieldId_data)->reset();
 }
 
@@ -956,7 +956,7 @@ std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
 MoFEMErrorCode
 EntFiniteElement::getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
                                       Range &adjacency) {
-  moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
+  moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   MoFEMFunctionBegin;
   const EntFiniteElement *this_fe_ptr = this;
   if (get_MoFEMFiniteElementPtr()->elementAdjacencyTable[getEntType()] ==

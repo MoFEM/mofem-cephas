@@ -237,7 +237,7 @@ std::ostream &operator<<(std::ostream &os, const FieldEntity &e) {
 
 void FieldEntity_change_order::operator()(FieldEntity *e) {
 
-  moab::Interface &moab = e->sPtr->basicDataPtr->moab;
+  moab::Interface &moab = e->sPtr->getBasicDataPtr()->moab;
   const EntityHandle ent = e->getEnt();
   *const_cast<ApproximationOrder *>(e->getMaxOrderPtr()) = order;
   std::size_t nb_dofs = e->getOrderNbDofs(order) * e->getNbOfCoeffs();

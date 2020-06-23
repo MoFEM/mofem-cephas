@@ -98,8 +98,6 @@ private:
  */
 struct BasicEntity {
 
-  mutable boost::shared_ptr<BasicEntityData> basicDataPtr;
-
   EntityHandle ent;
 
   BasicEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
@@ -236,6 +234,9 @@ struct BasicEntity {
     }
     return sharing_handlers_ptr;
   }
+
+protected:
+  mutable boost::shared_ptr<BasicEntityData> basicDataPtr;
 };
 
 /**
