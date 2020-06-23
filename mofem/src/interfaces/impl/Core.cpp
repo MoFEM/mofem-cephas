@@ -231,24 +231,19 @@ MoFEMErrorCode Core::registerSubInterfaces() {
 };
 
 BitFieldId Core::getFieldShift() {
-  if (*fShift >= BITFIELDID_SIZE) {
-    char msg[] = "number of fields exceeded";
-    PetscTraceBackErrorHandler(cOmm, __LINE__, PETSC_FUNCTION_NAME, __FILE__,
-                               MOFEM_DATA_INCONSISTENCY, PETSC_ERROR_INITIAL,
-                               msg, PETSC_NULL);
-    PetscMPIAbortErrorHandler(cOmm, __LINE__, PETSC_FUNCTION_NAME, __FILE__,
-                              MOFEM_DATA_INCONSISTENCY, PETSC_ERROR_INITIAL,
-                              msg, PETSC_NULL);
-  }
+  if (*fShift >= BITFIELDID_SIZE)
+    THROW_MESSAGE("Number of field elements exceeded");
   return BitFieldId().set(((*fShift)++) - 1);
 }
 BitFEId Core::getFEShift() {
-  assert((unsigned int)*feShift < BitFEId().set().to_ulong());
+  if (*feShift >= BitFEId().set().to_ulong())
+    THROW_MESSAGE("Number of finite elements exceeded");
   return BitFEId(1 << (((*feShift)++) - 1));
 }
 
 BitProblemId Core::getProblemShift() {
-  assert((unsigned int)*pShift < BitProblemId().set().to_ulong());
+  if (*pShift >= BitProblemId().set().to_ulong())
+    THROW_MESSAGE("Number of problems exceeded");
   return BitProblemId(1 << (((*pShift)++) - 1));
 }
 
