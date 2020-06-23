@@ -931,3 +931,56 @@ MoFEMErrorCode MoFEM::Hcurl_InteriorShapeFunctions_ONHEX(int *p,
 
   MoFEMFunctionReturnHot(0);
 }
+
+MoFEMErrorCode MoFEM::Hdiv_FaceShapeFunctions_ONHEX(int *face_nodes[6], 
+                                                    int *p, 
+                                                    double *N,
+                                                    double *faceN[6],
+                                                    double *div_faceN[6],
+                                                    int nb_integration_pts){
+  MoFEMFunctionBeginHot;
+  RefHex ref_hex(N, nb_integration_pts);
+  auto ksi = ref_hex.get_face_coords(face_nodes);
+  auto diff_ksi = ref_hex.get_face_diff_coords(face_nodes);
+  auto mu = ref_hex.get_face_affines();
+  auto diff_mu = ref_hex.get_face_diff_affines();
+  int pp[6][2] = {{p[0], p[1]},
+                  {p[0], p[2]},
+                  {p[1], p[2]},
+                  {p[0], p[2]},
+                  {p[1], p[2]},
+                  {p[0], p[1]}};
+
+  for (int qq = 0; qq < 6; qq++){
+    for (int ff = 0; ff < 6; ff++) {
+      double EI[pp[ff][0]];
+      CHKERR Legendre_polynomials01(pp[ff][0] - 1, ksi[qq][2 * ff + 0], EI);
+
+      double EJ[pp[ff][1]];
+      CHKERR Legendre_polynomials01(pp[ff][1] - 1, ksi[qq][2 * ff + 1], EJ);
+      int qd_shift = pp[ff][0] * pp[ff][1] * qq;
+      int n = 0;
+      for (int ii = 0; ii < pp[ff][0]; ii++){
+        for (int jj = 0; jj < pp[ff][1]; jj++){
+          double EEI[3] = {EI[ii] * diff_ksi[ff][0][0], EI[ii] * diff_ksi[ff][0][1], EI[ii] * diff_ksi[ff][0][2]};
+          double EEJ[3] = {EJ[jj] * diff_ksi[ff][1][0], EJ[jj] * diff_ksi[ff][1][1], EJ[jj] * diff_ksi[ff][1][2]};
+          auto VIJ_square = ref_hex.Cross_product(EEI, EEJ);
+
+          faceN[ff][3 * (qd_shift + n) + 0] = mu[qq][ff] * VIJ_square[0];
+          faceN[ff][3 * (qd_shift + n) + 1] = mu[qq][ff] * VIJ_square[1];
+          faceN[ff][3 * (qd_shift + n) + 2] = mu[qq][ff] * VIJ_square[2];
+
+          double div_VIJ = diff_mu[ff][0] * VIJ_square[0] +
+                           diff_mu[ff][1] * VIJ_square[1] +
+                           diff_mu[ff][2] * VIJ_square[2];
+
+          n++;
+        }
+        
+      }
+      
+    }
+  }
+  MoFEMFunctionReturnHot(0);
+
+}

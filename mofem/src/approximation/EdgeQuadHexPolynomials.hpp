@@ -201,12 +201,12 @@ MoFEMErrorCode Hcurl_InteriorShapeFunctions_ONHEX(int *p,
                                               double *curl_volN[3],
                                               int nb_integration_pts);
 
-// MoFEMErrorCode Hdiv_EdgeShapeFunctions_ONHEX(int       *sense, 
-//                                              int       *p, 
-//                                              double    *N,
-//                                              double    *edgeN[],
-//                                              double    *div_edgeN[],
-//                                              int       nb_integration_pts);
+MoFEMErrorCode Hdiv_FaceShapeFunctions_ONHEX(int       *sense[6], 
+                                             int       *p, 
+                                             double    *N,
+                                             double    *faceN[6],
+                                             double    *div_faceN[6],
+                                             int       nb_integration_pts);
 
 // MoFEMErrorCode Hdiv_FaceShapeFunctions_ONHEX(int      *p, 
 //                                              double   *N,
