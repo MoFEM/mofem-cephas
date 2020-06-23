@@ -34,73 +34,6 @@ MoFEMErrorCode MoFEM::Integrated_Legendre01(int p, double s01, double *L,
 
   MoFEMFunctionReturnHot(0);
 }
-
-// MoFEMErrorCode MoFEM::Face_orientMat(int *face_nodes, double orientMat[2][2]) {
-
-//   MoFEMFunctionBeginHot;
-
-//   for (int i = 0; i != 2; i++)
-//     for (int j = 0; j != 2; j++)
-//       orientMat[i][j] = 0.0;
-
-//   int node0 = face_nodes[0]; int node1 = face_nodes[1];
-
-//   switch (node0) {
-//   case 0 : 
-//     switch (node1){
-//       case 1 :  //positive direction: identity
-//         orientMat[0][0] = 1.0;   
-//         orientMat[1][1] = 1.0; //
-//         break;
-//       case 3 :  // negative direction: reflection about the 
-//         orientMat[0][1] = 1.0;
-//         orientMat[1][0] = 1.0; //
-//         break;
-//     }
-//     break;
-//   case 1 : 
-//     switch (node1){
-//     case 2 :  //positive direction
-//       orientMat[0][1] = 1.0;
-//       orientMat[1][0] = -1.0; //
-//       break;
-//       case 0 :  // negative direction
-//         orientMat[0][0] = -1.0;
-//         orientMat[1][1] = 1.0; //
-//         break;
-//     }
-//     break;
-//   case 2 : 
-//     switch (node1){
-//       case 3 :
-//         orientMat[0][0] = -1.0;
-//         orientMat[1][1] = -1.0;
-//         break;
-//       case 1 :
-//         orientMat[0][1] = -1.0;
-//         orientMat[1][0] = -1.0;
-//         break; 
-//     }
-//     break;
-//     case 3 :
-//       switch (node1){
-//         case 0 :
-//           orientMat[0][1] = -1.0;
-//           orientMat[1][0] = 1.0;
-//           break;
-//         case 2 :
-//           orientMat[0][0] = 1.0;
-//           orientMat[1][1] = -1.0;
-//           break;
-//       }
-//       break;
-//     default :
-//       break;
-//   }
-
-//   MoFEMFunctionReturnHot(0);
-// }
-
 /*
 
     0--------------1
@@ -912,5 +845,89 @@ MoFEMErrorCode MoFEM::Hcurl_FaceShapeFunctions_ONHEX(int *face_nodes[6],
 
 
   }
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode MoFEM::Hcurl_InteriorShapeFunctions_ONHEX(int *p, 
+                                                         double *N,
+                                                         double *volN[3],
+                                                         double *curl_volN[3],
+                                                         int nb_integration_pts){
+  MoFEMFunctionBeginHot;
+  RefHex ref_hex(N, nb_integration_pts);
+  auto ksi = ref_hex.get_integrationPts();
+  auto diff_ksi = ref_hex.get_volume_diff_coords();
+
+  for (int qq = 0; qq < nb_integration_pts; qq++){
+    double ksi_eta_gma[3] = {ksi[qq][0], ksi[qq][1], ksi[qq][2]};
+    double eta_gma_ksi[3] = {ksi[qq][1], ksi[qq][2], ksi[qq][0]};   
+    double gma_ksi_eta[3] = {ksi[qq][2], ksi[qq][0], ksi[qq][1]};   
+
+    double *diff_ksi_eta_gma[3] = {diff_ksi[0], diff_ksi[1], diff_ksi[2]};
+    double *diff_eta_gma_ksi[3] = {diff_ksi[1], diff_ksi[2], diff_ksi[0]};
+    double *diff_gma_ksi_eta[3] = {diff_ksi[2], diff_ksi[0], diff_ksi[1]};
+
+    int pqr[3] = {p[0], p[1], p[2]};
+    int qrp[3] = {p[1], p[2], p[0]};
+    int rpq[3] = {p[2], p[0], p[1]};
+    for (int fam = 0; fam < 3; fam++){
+
+      int ppp = pqr[fam];
+      double PhiJ[ppp - 1];
+      double diffPhiJ[ppp - 1];
+      CHKERR Integrated_Legendre01(ppp, ksi_eta_gma[fam], PhiJ, diffPhiJ);
+
+      int qqq = qrp[fam];
+      double EI[qqq];
+      CHKERR Legendre_polynomials01(qqq - 1, eta_gma_ksi[fam], EI);
+
+      int rrr = rpq[fam];
+
+      double PhiK[rrr - 1];
+      double diffPhiK[rrr - 1];
+      CHKERR Integrated_Legendre01(rrr, gma_ksi_eta[fam], PhiK, diffPhiK);
+
+      int qd_shift = (ppp - 1) * qqq * (rrr - 1) * qq;
+      int n = 0;
+      for (int ii = 0; ii < qqq; ii++){
+        for (int jj = 0; jj < ppp - 1; jj++){
+          for (int kk = 0; kk < rrr - 1; kk++){
+            volN[fam][3 * (qd_shift + n) + 0] = PhiK[kk] * PhiJ[jj] * EI[ii] * diff_eta_gma_ksi[fam][0];
+            volN[fam][3 * (qd_shift + n) + 1] = PhiK[kk] * PhiJ[jj] * EI[ii] * diff_eta_gma_ksi[fam][1];
+            volN[fam][3 * (qd_shift + n) + 2] = PhiK[kk] * PhiJ[jj] * EI[ii] * diff_eta_gma_ksi[fam][2];
+
+            double EEI[3] = {EI[ii] * diff_eta_gma_ksi[fam][0],
+                             EI[ii] * diff_eta_gma_ksi[fam][1],
+                             EI[ii] * diff_eta_gma_ksi[fam][2]};
+
+            double EEIJ[3] = {PhiJ[jj] * EEI[0], PhiJ[jj] * EEI[1], PhiJ[jj] * EEI[2]};
+
+            double diff_PhiJ[3] = {diffPhiJ[jj] * diff_ksi_eta_gma[fam][0],
+                                   diffPhiJ[jj] * diff_ksi_eta_gma[fam][1],
+                                   diffPhiJ[jj] * diff_ksi_eta_gma[fam][2]};
+
+            double diff_PhiK[3] = {diffPhiK[jj] * diff_gma_ksi_eta[fam][0],
+                                   diffPhiJ[jj] * diff_gma_ksi_eta[fam][1],
+                                   diffPhiJ[jj] * diff_gma_ksi_eta[fam][2]};
+
+            auto diff_PhiK_cross_EEIJ = ref_hex.Cross_product(diff_PhiK, EEIJ);
+            auto diff_PhiJ_cross_EEI = ref_hex.Cross_product(diff_PhiJ, EEI);
+
+            curl_volN[fam][3 * (qd_shift + n) + 0] = PhiK[kk] * diff_PhiJ_cross_EEI[0] + diff_PhiK_cross_EEIJ[0];
+            curl_volN[fam][3 * (qd_shift + n) + 1] = PhiK[kk] * diff_PhiJ_cross_EEI[1] + diff_PhiK_cross_EEIJ[1];
+            curl_volN[fam][3 * (qd_shift + n) + 2] = PhiK[kk] * diff_PhiJ_cross_EEI[2] + diff_PhiK_cross_EEIJ[2];
+            
+            n++;
+          }
+          
+        }
+        
+      }
+      
+    }
+    
+  }
+  
+
   MoFEMFunctionReturnHot(0);
 }
