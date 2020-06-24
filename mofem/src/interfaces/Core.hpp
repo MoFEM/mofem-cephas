@@ -25,6 +25,15 @@ namespace MoFEM {
 // This is to have obsolete back compatibility
 struct MeshsetsManager;
 
+template <int N> struct CoreTmp : public CoreTmp<N - 1> {
+  using CoreTmp<N - 1>::CoreTmp;
+
+protected:
+  virtual void setBasicDataPtr() const {
+    BasicEntity<N>::basicDataPtr = this->basicEntityDataPtr;
+  }
+};
+
 /** \brief Core (interface) class
 * \ingroup mofem
 * \nosubgrouping
@@ -47,24 +56,25 @@ libs like PETSc. Moreover initialization functions should set error handlers,
 etc.
 
 */
-struct Core : public Interface {
+template <> struct CoreTmp<0> : public Interface {
 
   /**
    * Construct core database
    */
-  Core(moab::Interface &moab,             ///< MoAB interface
-       MPI_Comm comm = PETSC_COMM_WORLD,  ///< MPI communicator
-       const int verbose = VERBOSE,       ///< Verbosity level
-       const bool distributed_mesh = true ///< UId of entities and dofs depends
-                                          ///< on owing processor, assumed that
-                                          ///< mesh is distributed. Otherwise
-                                          ///< is assumed that all processors
-                                          ///< have the same meshes and same
-                                          ///< entity handlers.
+  CoreTmp(
+      moab::Interface &moab,             ///< MoAB interface
+      MPI_Comm comm = PETSC_COMM_WORLD,  ///< MPI communicator
+      const int verbose = VERBOSE,       ///< Verbosity level
+      const bool distributed_mesh = true ///< UId of entities and dofs depends
+                                         ///< on owing processor, assumed that
+                                         ///< mesh is distributed. Otherwise
+                                         ///< is assumed that all processors
+                                         ///< have the same meshes and same
+                                         ///< entity handlers.
 
   );
 
-  ~Core();
+  ~CoreTmp();
 
   /** \name Global initialisation and finalisation  */
 
@@ -990,7 +1000,19 @@ private:
    * @return MoFEMErrorCode 
    */
   template <class IFACE> MoFEMErrorCode regSubInterface(const MOFEMuuid &uid);
+
+  virtual void setBasicDataPtr() const {
+    BasicEntity<0>::basicDataPtr = basicEntityDataPtr;
+  }
+
 };
+
+template <> struct CoreTmp<-1> : public CoreTmp<0> {
+protected:
+  virtual void setBasicDataPtr() const {}
+};
+
+using Core = CoreTmp<0>;
 
 } // namespace MoFEM
 

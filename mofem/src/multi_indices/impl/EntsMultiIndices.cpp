@@ -21,8 +21,7 @@
 
 namespace MoFEM {
 
-static moab::Error error;
-
+// static moab::Error error;
 
 BasicEntityData::BasicEntityData(const moab::Interface &moab,
                                  const int pcomm_id)
@@ -33,6 +32,8 @@ BasicEntityData::BasicEntityData(const moab::Interface &moab,
   rval = moab.tag_get_handle("_RefBitLevel", th_RefBitLevel);
   MOAB_THROW(rval);
 }
+
+boost::shared_ptr<BasicEntityData> BasicEntity<0>::basicDataPtr;
 
 // ref moab ent
 BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);

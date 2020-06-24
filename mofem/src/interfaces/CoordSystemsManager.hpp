@@ -27,8 +27,6 @@ namespace MoFEM {
 static const MOFEMuuid IDD_MOFEMCoordsSystemsManager =
     MOFEMuuid(BitIntefaceId(COORDSSYSTEMMANAGER_INTERFACE));
 
-struct Core;
-
 struct CoordSystemsManager : public UnknownInterface {
 
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,

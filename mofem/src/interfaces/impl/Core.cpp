@@ -110,7 +110,7 @@ MoFEMErrorCode Core::regSubInterface(const MOFEMuuid &uid) {
   MoFEMFunctionReturn(0);
 }
 
-Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
+Core::CoreTmp(moab::Interface &moab, MPI_Comm comm, const int verbose,
            const bool distributed_mesh)
     : moab(moab), cOmm(0), verbose(verbose),
       initaliseAndBuildField(PETSC_FALSE),
@@ -174,6 +174,7 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
     basicEntityDataPtr->setDistributedMesh();
   else
     basicEntityDataPtr->unSetDistributedMesh();
+  setBasicDataPtr();
 
   ierr = getOptions(verbose);
   CHKERRABORT(cOmm, ierr);
@@ -181,7 +182,7 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
   CHKERRABORT(cOmm, ierr);
 }
 
-Core::~Core() {
+Core::~CoreTmp() {
   PetscBool is_finalized;
   PetscFinalized(&is_finalized);
   // Destroy interfaces
@@ -543,6 +544,7 @@ MoFEMErrorCode Core::set_moab_interface(moab::Interface &new_moab, int verb,
     basicEntityDataPtr->setDistributedMesh();
   else
     basicEntityDataPtr->unSetDistributedMesh();
+  setBasicDataPtr();
 
   // Initalise database
   CHKERR initialiseDatabaseFromMesh(verb);
