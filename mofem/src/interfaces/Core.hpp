@@ -26,6 +26,9 @@ namespace MoFEM {
 struct MeshsetsManager;
 
 template <int N> struct CoreTmp : public CoreTmp<N - 1> {
+
+  static constexpr const int value = N;
+
   using CoreTmp<N - 1>::CoreTmp;
 
 protected:
@@ -57,6 +60,8 @@ etc.
 
 */
 template <> struct CoreTmp<0> : public Interface {
+
+  static constexpr const int value = 0;
 
   /**
    * Construct core database
@@ -1008,6 +1013,9 @@ private:
 };
 
 template <> struct CoreTmp<-1> : public CoreTmp<0> {
+
+  static constexpr const int value = -1;
+
 protected:
   virtual void setBasicDataPtr() const {}
 };
