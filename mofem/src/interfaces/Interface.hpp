@@ -48,7 +48,7 @@ struct CoreInterface : public UnknownInterface {
    * 
    * @return int 
    */
-  virtual const int getValue() = 0;
+  virtual const int getValue() const = 0;
 
   /** \name Interfaces */
 

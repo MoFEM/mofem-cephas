@@ -509,7 +509,7 @@ int main(int argc, char *argv[]) {
       EntityHandle tet;
       CHKERR moab_ref.create_element(MBTET, nodes, 4, tet);
 
-      MoFEM::Core m_core_ref(moab_ref, PETSC_COMM_SELF, -2);
+      MoFEM::CoreTmp<-1> m_core_ref(moab_ref, PETSC_COMM_SELF, -2);
       MoFEM::Interface &m_field_ref = m_core_ref;
       CHKERR m_field_ref.getInterface<BitRefManager>()->setBitRefLevelByDim(
           0, 3, BitRefLevel().set(0));

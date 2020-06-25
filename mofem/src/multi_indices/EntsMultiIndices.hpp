@@ -1050,45 +1050,6 @@ struct BaseFEEntity {
   inline int getSideNumber() { return sideNumberPtr->side_number; }
 };
 
-// template <> EntityHandle *RefEntityTmp<0>::getParentEntPtr() const {
-//   return static_cast<EntityHandle *>(get_tag_ptr(
-//       this->getBasicDataPtr()->moab,
-//       this->getBasicDataPtr()->th_RefParentHandle, this->ent, NULL));
-// }
-
-// template <> BitRefLevel *RefEntityTmp<0>::getBitRefLevelPtr() const {
-//   return static_cast<BitRefLevel *>(
-//       get_tag_ptr(this->getBasicDataPtr()->moab,
-//                   this->getBasicDataPtr()->th_RefBitLevel, this->ent, NULL));
-// }
-
-// template <>
-// MoFEMErrorCode
-// RefEntityTmp<0>::getBitRefLevel(moab::Interface &moab, Range ents,
-//                                 std::vector<BitRefLevel> &vec_bit_ref_level) {
-
-//   MoFEMFunctionBegin;
-//   Tag th_ref_bit_level;
-//   CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
-//   vec_bit_ref_level.resize(ents.size());
-//   CHKERR moab.tag_get_data(th_ref_bit_level, ents, &*vec_bit_ref_level.begin());
-//   MoFEMFunctionReturn(0);
-// }
-
-// template <>
-// MoFEMErrorCode RefEntityTmp<0>::getBitRefLevel(
-//     moab::Interface &moab, Range ents,
-//     std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level) {
-//   MoFEMFunctionBegin;
-//   Tag th_ref_bit_level;
-//   CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
-//   vec_ptr_bit_ref_level.resize(ents.size());
-//   CHKERR moab.tag_get_by_ptr(
-//       th_ref_bit_level, ents,
-//       reinterpret_cast<const void **>(&*vec_ptr_bit_ref_level.begin()));
-//   MoFEMFunctionReturn(0);
-// }
-
 } // namespace MoFEM
 
 #endif // __ENTSMULTIINDICES_HPP__

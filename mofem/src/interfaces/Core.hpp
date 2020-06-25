@@ -30,7 +30,7 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
   using CoreTmp<N - 1>::CoreTmp;
 
   static constexpr const int value = N;
-  constexpr const int getValue() { return value; }
+  const int getValue() const { return value; }
 
 protected:
   virtual void setBasicDataPtr() const {
@@ -65,7 +65,13 @@ etc.
 template <> struct CoreTmp<0> : public Interface {
 
   static constexpr int value = 0;
-  const int getValue() { return value; }
+  const int getValue() const { return value; }
+  RefEntityTmp<0> getRefEntity(const EntityHandle ent) {
+    return RefEntityTmp<0>(this->basicEntityDataPtr, ent);
+  }
+  boost::shared_ptr<RefEntityTmp<0>> getRefEntityPtr(const EntityHandle ent) {
+    return boost::make_shared<RefEntityTmp<0>>(this->basicEntityDataPtr, ent);
+  }
 
   /**
    * Construct core database
@@ -1021,13 +1027,38 @@ template <> struct CoreTmp<-1> : public CoreTmp<0> {
   using CoreTmp<0>::CoreTmp;
 
   static constexpr const int value = -1;
-  const int getValue() { return value; }
+  const int getValue() const { return value; }
 
 protected:
   virtual void setBasicDataPtr() const {}
 };
 
 using Core = CoreTmp<0>;
+
+template <typename C>
+auto getRefEntityPtr(const C &core, const EntityHandle ent) {
+
+  boost::shared_ptr<RefEntityTmp<0>> ref_ent_ptr;
+
+  boost::hana::for_each(
+
+      boost::hana::make_range(boost::hana::int_c<-1>,
+                              boost::hana::int_c<MAX_CORE_TMP>),
+
+      [&](auto r) {
+        if (core.getValue() == r)
+          ref_ent_ptr = boost::shared_ptr<RefEntityTmp<0>>(
+
+              new RefEntityTmp<r>(
+                  const_cast<C &>(core).get_basic_entity_data_ptr(), ent)
+
+          );
+      }
+
+  );
+
+  return ref_ent_ptr;
+}
 
 } // namespace MoFEM
 

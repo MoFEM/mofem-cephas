@@ -241,11 +241,10 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesVerticesOnTets(
     // check if vertex has a parent and parent is on parent bit level
     EntityHandle parent_ent;
     parent_ent = (*it)->getParentEnt();
-    const RefEntity ref_parent_ent(m_field.get_basic_entity_data_ptr(),
-                                   parent_ent);
-    if ((ref_parent_ent.getBitRefLevel() & parent_level).any()) {
+    const auto ref_parent_ent = getRefEntityPtr(m_field, parent_ent);
+    if ((ref_parent_ent->getBitRefLevel() & parent_level).any())
       continue;
-    }
+    
 
     // check if vertex is on child entities set
     EntityHandle node = (*it)->getRefEnt();
@@ -323,9 +322,8 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesEdgesFacesVolumes(
     // check if entity has a parent and parent is on parent bit level
     EntityHandle parent_ent;
     parent_ent = (*it)->getParentEnt();
-    const RefEntity ref_parent_ent(m_field.get_basic_entity_data_ptr(),
-                                   parent_ent);
-    if ((ref_parent_ent.getBitRefLevel() & parent_level).any()) {
+    const auto ref_parent_ent = getRefEntityPtr(m_field, parent_ent);
+    if ((ref_parent_ent->getBitRefLevel() & parent_level).any()) {
       if (!vErify)
         continue;
     }
@@ -338,8 +336,7 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesEdgesFacesVolumes(
     CHKERRG(ierr);
     conn_parents.resize(num_nodes);
     for (int nn = 0; nn < num_nodes; nn++) {
-      const RefEntity ent(m_field.get_basic_entity_data_ptr(), conn[nn]);
-      conn_parents[nn] = ent.getParentEnt();
+      conn_parents[nn] = getRefEntityPtr(m_field, conn[nn])->getParentEnt();
       RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator cit;
       cit = refined_ptr->get<Ent_mi_tag>().find(conn_parents[nn]);
       if (cit == refined_ptr->end()) {
@@ -536,10 +533,8 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
                   "inconsistent type");
         }
         // ref ent pointers
-        auto ref_parent_ptr = boost::make_shared<RefEntity>(
-            m_field.get_basic_entity_data_ptr(), *pit);
-        auto ref_child_ptr = boost::make_shared<RefEntity>(
-            m_field.get_basic_entity_data_ptr(), *cit);
+        auto ref_parent_ptr = getRefEntityPtr(m_field,  *pit);
+        auto ref_child_ptr = getRefEntityPtr(m_field, *cit);
         // create mofem entity objects
         boost::shared_ptr<FieldEntity> mofem_ent_parent(new FieldEntity(
             *fit, ref_parent_ptr,
@@ -634,10 +629,10 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
   std::vector<EntityHandle> parents;
   std::vector<EntityHandle> children;
   for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
-    RefEntity ref_ent(m_field.get_basic_entity_data_ptr(), *eit);
-    if (ref_ent.getParentEntType() == ref_ent.getEntType()) {
+    const auto ref_ent = getRefEntityPtr(m_field, *eit);
+    if (ref_ent->getParentEntType() == ref_ent->getEntType()) {
       children.push_back(*eit);
-      parents.push_back(ref_ent.getParentEnt());
+      parents.push_back(ref_ent->getParentEnt());
     }
   }
   ierr = copyFieldDataFromParentToChildren(parents, children, verify);

@@ -283,7 +283,7 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
               boost::hana::for_each(
 
                   boost::hana::make_range(boost::hana::int_c<-1>,
-                                          boost::hana::int_c<9>),
+                                          boost::hana::int_c<MAX_CORE_TMP>),
 
                   [&](auto r) {
                     if (m_field.getValue() == r)
@@ -326,7 +326,7 @@ MoFEMErrorCode BitRefManager::setElementsBitRefLevel(const Range &ents,
       boost::hana::for_each(
 
           boost::hana::make_range(boost::hana::int_c<-1>,
-                                  boost::hana::int_c<9>),
+                                  boost::hana::int_c<MAX_CORE_TMP>),
 
           [&](auto r) {
             if (m_field.getValue() == r)
@@ -335,7 +335,6 @@ MoFEMErrorCode BitRefManager::setElementsBitRefLevel(const Range &ents,
           }
 
       );
-
     }
     Range seed_fe_range;
     CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
@@ -372,7 +371,7 @@ MoFEMErrorCode BitRefManager::setEntitiesBitRefLevel(const Range &ents,
       boost::hana::for_each(
 
           boost::hana::make_range(boost::hana::int_c<-1>,
-                                  boost::hana::int_c<9>),
+                                  boost::hana::int_c<MAX_CORE_TMP>),
 
           [&](auto r) {
             if (m_field.getValue() == r)
@@ -381,7 +380,6 @@ MoFEMErrorCode BitRefManager::setEntitiesBitRefLevel(const Range &ents,
           }
 
       );
-
     }
   }
   MoFEMFunctionReturn(0);
