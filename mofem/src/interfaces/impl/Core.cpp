@@ -22,6 +22,9 @@ void macro_is_deprecated_using_deprecated_function() {}
 
 namespace MoFEM {
 
+constexpr const int CoreTmp<0>::value;
+constexpr const int CoreTmp<-1>::value;
+
 MoFEMErrorCode Core::query_interface(const MOFEMuuid &uuid,
                                      UnknownInterface **iface) const {
   MoFEMFunctionBeginHot;

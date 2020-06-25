@@ -27,15 +27,18 @@ struct MeshsetsManager;
 
 template <int N> struct CoreTmp : public CoreTmp<N - 1> {
 
-  static constexpr const int value = N;
-
   using CoreTmp<N - 1>::CoreTmp;
+
+  static constexpr const int value = N;
+  constexpr const int getValue() { return value; }
 
 protected:
   virtual void setBasicDataPtr() const {
-    BasicEntity<N>::basicDataPtr = this->basicEntityDataPtr;
+    RefEntityTmp<N>::basicDataPtr = this->basicEntityDataPtr;
   }
 };
+
+template <int N> constexpr const int CoreTmp<N>::value;
 
 /** \brief Core (interface) class
 * \ingroup mofem
@@ -61,7 +64,8 @@ etc.
 */
 template <> struct CoreTmp<0> : public Interface {
 
-  static constexpr const int value = 0;
+  static constexpr int value = 0;
+  const int getValue() { return value; }
 
   /**
    * Construct core database
@@ -1007,14 +1011,17 @@ private:
   template <class IFACE> MoFEMErrorCode regSubInterface(const MOFEMuuid &uid);
 
   virtual void setBasicDataPtr() const {
-    BasicEntity<0>::basicDataPtr = basicEntityDataPtr;
+    RefEntityTmp<0>::basicDataPtr = basicEntityDataPtr;
   }
 
 };
 
 template <> struct CoreTmp<-1> : public CoreTmp<0> {
 
+  using CoreTmp<0>::CoreTmp;
+
   static constexpr const int value = -1;
+  const int getValue() { return value; }
 
 protected:
   virtual void setBasicDataPtr() const {}

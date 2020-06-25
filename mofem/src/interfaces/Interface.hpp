@@ -43,6 +43,13 @@ struct CoreInterface : public UnknownInterface {
 
   virtual ~CoreInterface() = default;
 
+  /**
+   * @brief Get the core
+   * 
+   * @return int 
+   */
+  virtual const int getValue() = 0;
+
   /** \name Interfaces */
 
   /**@{*/

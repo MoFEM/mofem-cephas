@@ -108,18 +108,9 @@ private:
   bool distributedMesh;
 };
 
-/**
- * \brief this struct keeps basic methods for moab entity
- * \ingroup ent_multi_indices
+template <int N> struct RefEntityTmp : public RefEntityTmp<N - 1> {
 
-  \todo BasicEntity in should be linked to directly to MoAB data structures
-  such that connectivity and nodal coordinates could be quickly accessed,
-  without need of using native MoAB functions.
-
- */
-template <int N> struct BasicEntity : public BasicEntity<N - 1> {
-
-  using BasicEntity<N - 1>::BasicEntity;
+  using RefEntityTmp<N - 1>::RefEntityTmp;
 
   virtual boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
     return basicDataPtr;
@@ -133,44 +124,7 @@ template <int N> struct BasicEntity : public BasicEntity<N - 1> {
 };
 
 template <int N>
-boost::shared_ptr<BasicEntityData> BasicEntity<N>::basicDataPtr;
-
-template <> struct BasicEntity<0> {
-
-  EntityHandle ent;
-
-  BasicEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
-              const EntityHandle ent)
-      : ent(ent) {}
-  virtual ~BasicEntity() = default;
-
-  virtual boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
-    return basicDataPtr;
-  }
-
-  virtual const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
-    return basicDataPtr;
-  }
-
-  static boost::shared_ptr<BasicEntityData> basicDataPtr;
-};
-
-template <> struct BasicEntity<-1> : public BasicEntity<0> {
-
-  BasicEntity(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
-              const EntityHandle ent)
-      : BasicEntity<0>(basic_data_ptr, ent), basicDataPtr(basic_data_ptr) {}
-
-    virtual boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
-      return basicDataPtr;
-    }
-
-    virtual const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
-      return basicDataPtr;
-    }
-
-    mutable boost::shared_ptr<BasicEntityData> basicDataPtr;
-  };
+boost::shared_ptr<BasicEntityData> RefEntityTmp<N>::basicDataPtr;
 
 /**
  * \brief Struct keeps handle to refined handle.
@@ -180,13 +134,21 @@ template <> struct BasicEntity<-1> : public BasicEntity<0> {
   waste of space.
 
  */
-template <int N> struct RefEntityTmp : public BasicEntity<N> {
+template <> struct RefEntityTmp<0> {
 
   RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
                const EntityHandle ent)
-      : BasicEntity<N>(basic_data_ptr, ent) {}
+      : ent(ent) {}
 
   virtual ~RefEntityTmp() = default;
+
+  virtual boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
+    return basicDataPtr;
+  }
+
+  virtual const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
+    return basicDataPtr;
+  }
 
   /**
    * @brief Get the entity handle
@@ -380,11 +342,28 @@ template <int N> struct RefEntityTmp : public BasicEntity<N> {
 
   static MoFEMErrorCode
   getBitRefLevel(Interface &moab, Range ents,
-                 std::vector<BitRefLevel> &vec_bit_ref_level);
+                 std::vector<BitRefLevel> &vec_bit_ref_level) {
+    MoFEMFunctionBegin;
+    Tag th_ref_bit_level;
+    CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
+    vec_bit_ref_level.resize(ents.size());
+    CHKERR moab.tag_get_data(th_ref_bit_level, ents,
+                             &*vec_bit_ref_level.begin());
+    MoFEMFunctionReturn(0);
+  }
 
   static MoFEMErrorCode
   getBitRefLevel(Interface &moab, Range ents,
-                 std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level);
+                 std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level) {
+    MoFEMFunctionBegin;
+    Tag th_ref_bit_level;
+    CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
+    vec_ptr_bit_ref_level.resize(ents.size());
+    CHKERR moab.tag_get_by_ptr(
+        th_ref_bit_level, ents,
+        reinterpret_cast<const void **>(&*vec_ptr_bit_ref_level.begin()));
+    MoFEMFunctionReturn(0);
+  }
 
   /**
    * \brief Get pointer to parent entity tag.
@@ -394,7 +373,11 @@ template <int N> struct RefEntityTmp : public BasicEntity<N> {
    *
    * @return Pointer to tag on entity
    */
-  EntityHandle *getParentEntPtr() const;
+  EntityHandle *getParentEntPtr() const {
+    return static_cast<EntityHandle *>(get_tag_ptr(
+        this->getBasicDataPtr()->moab,
+        this->getBasicDataPtr()->th_RefParentHandle, this->ent, NULL));
+  }
 
   /**
    * \brief Get pointer to bit ref level tag
@@ -407,7 +390,11 @@ template <int N> struct RefEntityTmp : public BasicEntity<N> {
 
    * @return Return pointer to tag.
    */
-  BitRefLevel *getBitRefLevelPtr() const;
+  BitRefLevel *getBitRefLevelPtr() const {
+    return static_cast<BitRefLevel *>(
+        get_tag_ptr(this->getBasicDataPtr()->moab,
+                    this->getBasicDataPtr()->th_RefBitLevel, this->ent, NULL));
+  }
 
   /** \brief Get patent entity
    */
@@ -435,9 +422,30 @@ template <int N> struct RefEntityTmp : public BasicEntity<N> {
   }
 
   friend std::ostream &operator<<(std::ostream &os, const RefEntityTmp &e);
+
+  EntityHandle ent;
+  static boost::shared_ptr<BasicEntityData> basicDataPtr;
 };
 
-using RefEntity = RefEntityTmp<-1>;
+template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
+
+  RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+               const EntityHandle ent)
+      : RefEntityTmp<0>(basic_data_ptr, ent), basicDataPtr(basic_data_ptr) {}
+
+  virtual boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
+    return basicDataPtr;
+  }
+
+  virtual const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
+    return basicDataPtr;
+  }
+
+private:
+  mutable boost::shared_ptr<BasicEntityData> basicDataPtr;
+};
+
+using RefEntity = RefEntityTmp<0>;
 
 /**
  * \brief interface to RefEntity
@@ -1042,44 +1050,44 @@ struct BaseFEEntity {
   inline int getSideNumber() { return sideNumberPtr->side_number; }
 };
 
-template <int N> EntityHandle *RefEntityTmp<N>::getParentEntPtr() const {
-  return static_cast<EntityHandle *>(get_tag_ptr(
-      this->getBasicDataPtr()->moab,
-      this->getBasicDataPtr()->th_RefParentHandle, this->ent, NULL));
-}
+// template <> EntityHandle *RefEntityTmp<0>::getParentEntPtr() const {
+//   return static_cast<EntityHandle *>(get_tag_ptr(
+//       this->getBasicDataPtr()->moab,
+//       this->getBasicDataPtr()->th_RefParentHandle, this->ent, NULL));
+// }
 
-template <int N> BitRefLevel *RefEntityTmp<N>::getBitRefLevelPtr() const {
-  return static_cast<BitRefLevel *>(
-      get_tag_ptr(this->getBasicDataPtr()->moab,
-                  this->getBasicDataPtr()->th_RefBitLevel, this->ent, NULL));
-}
+// template <> BitRefLevel *RefEntityTmp<0>::getBitRefLevelPtr() const {
+//   return static_cast<BitRefLevel *>(
+//       get_tag_ptr(this->getBasicDataPtr()->moab,
+//                   this->getBasicDataPtr()->th_RefBitLevel, this->ent, NULL));
+// }
 
-template <int N>
-MoFEMErrorCode
-RefEntityTmp<N>::getBitRefLevel(moab::Interface &moab, Range ents,
-                                std::vector<BitRefLevel> &vec_bit_ref_level) {
+// template <>
+// MoFEMErrorCode
+// RefEntityTmp<0>::getBitRefLevel(moab::Interface &moab, Range ents,
+//                                 std::vector<BitRefLevel> &vec_bit_ref_level) {
 
-  MoFEMFunctionBegin;
-  Tag th_ref_bit_level;
-  CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
-  vec_bit_ref_level.resize(ents.size());
-  CHKERR moab.tag_get_data(th_ref_bit_level, ents, &*vec_bit_ref_level.begin());
-  MoFEMFunctionReturn(0);
-}
+//   MoFEMFunctionBegin;
+//   Tag th_ref_bit_level;
+//   CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
+//   vec_bit_ref_level.resize(ents.size());
+//   CHKERR moab.tag_get_data(th_ref_bit_level, ents, &*vec_bit_ref_level.begin());
+//   MoFEMFunctionReturn(0);
+// }
 
-template <int N>
-MoFEMErrorCode RefEntityTmp<N>::getBitRefLevel(
-    moab::Interface &moab, Range ents,
-    std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level) {
-  MoFEMFunctionBegin;
-  Tag th_ref_bit_level;
-  CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
-  vec_ptr_bit_ref_level.resize(ents.size());
-  CHKERR moab.tag_get_by_ptr(
-      th_ref_bit_level, ents,
-      reinterpret_cast<const void **>(&*vec_ptr_bit_ref_level.begin()));
-  MoFEMFunctionReturn(0);
-}
+// template <>
+// MoFEMErrorCode RefEntityTmp<0>::getBitRefLevel(
+//     moab::Interface &moab, Range ents,
+//     std::vector<const BitRefLevel *> &vec_ptr_bit_ref_level) {
+//   MoFEMFunctionBegin;
+//   Tag th_ref_bit_level;
+//   CHKERR moab.tag_get_handle("_RefBitLevel", th_ref_bit_level);
+//   vec_ptr_bit_ref_level.resize(ents.size());
+//   CHKERR moab.tag_get_by_ptr(
+//       th_ref_bit_level, ents,
+//       reinterpret_cast<const void **>(&*vec_ptr_bit_ref_level.begin()));
+//   MoFEMFunctionReturn(0);
+// }
 
 } // namespace MoFEM
 

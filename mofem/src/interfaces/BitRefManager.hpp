@@ -44,7 +44,7 @@ struct BitRefManager : public UnknownInterface {
   /**
    * \brief Destructor
    */
-  ~BitRefManager();
+  virtual ~BitRefManager() = default;
 
   /** \name Setting and shifting bits */
 
