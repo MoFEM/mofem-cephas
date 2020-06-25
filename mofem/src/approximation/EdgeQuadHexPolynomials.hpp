@@ -286,7 +286,7 @@ struct RefHex {
     for (int ee = 0; ee < 12; ee++) {
       int cc = free_edge_coords[ee];
       edge_coords[ee] =
-          sense[ee] * volume_coords[cc] + 0.5 * (1.0 - sense[ee]);
+          (double)sense[ee] * volume_coords[cc] + 0.5 * (1.0 - (double)sense[ee]);
     }
   }
   void get_edge_diff_coords(int *sense, double (&edge_diff_coords)[12][3]) {
@@ -297,7 +297,7 @@ struct RefHex {
     for (int ee = 0; ee < 12; ee++) {
       for (int cc = 0; cc < 3; cc++) {
         int n = free_edge_coords[ee];
-        edge_diff_coords[ee][cc] = sense[ee] * diff_coords[n][cc];
+        edge_diff_coords[ee][cc] = (double) sense[ee] * diff_coords[n][cc];
       }
     }
   }

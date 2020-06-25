@@ -91,13 +91,13 @@ MoFEMErrorCode MoFEM::L2_ShapeFunctions_ONSEGMENT(int p, double *N,
 
 /*
       Quads
- 4-------3------3
+ 3-------2------2
  |              |       eta
  |              |       ^
- 4              2       |
+ 3              1       |
  |              |       |
  |              |       0-----  > ksi
- 1-------1------2
+ 0-------0------1
 */
 
 
@@ -501,30 +501,30 @@ MoFEMErrorCode MoFEM::Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
   MoFEMFunctionReturnHot(0);
 }
 /* Reference Hex and its cannonical vertex and edge numbering
-               8 ---------11--------- 7 
+               7 ---------10--------- 6 
               /|                    /|
              / |                   / |
-           12  |                 10  |             x3
-           /   8                 /   |             |     
-          /    |                /    7             |    x2
-        5 ----------9--------- 6     |             |   /
+           11  |                  9  |             x3
+           /   7                 /   |             |     
+          /    |                /    6             |    x2
+        4 ----------8--------- 5     |             |   /
          |     |               |     |             |  /
-         |    4 ----------3---------- 3            | /
-        5|    /                |    /              o -------- x1
-         |   /                 6   /
-         |  4                  |  2
+         |    3 ----------2---------- 2            | /
+         4    /                |    /              o -------- x1
+         |   /                 5   /   
+         |  3                  |  1
          | /                   | / 
          |/                    |/
-        1 ---------1---------- 2
+        0 ---------0---------- 1
 
   Hex Face Cannonical numbering
 
-        1. 1 2 3 4
-        2. 1 2 6 5
-        3. 2 3 7 6
-        4. 4 3 7 8
-        5. 1 4 8 5
-        6. 5 6 7 8
+        1. 0 1 2 3
+        2. 0 1 5 4
+        3. 1 2 6 5
+        4. 3 2 6 7
+        5. 0 3 7 4
+        6. 4 5 6 7
 */
 
 MoFEMErrorCode MoFEM::H1_EdgeShapeFunctions_ONHEX(int        *sense, 
@@ -863,6 +863,15 @@ MoFEMErrorCode MoFEM::Hcurl_FaceShapeFunctions_ONHEX(int *face_nodes[6],
         double diff_ksi[6][2][3];
         ref_hex.get_face_diff_coords(face_nodes, diff_ksi);
 
+        int px[6][2] = {{p[0], p[1]},
+                        {p[0], p[2]},
+                        {p[1], p[2]},
+                        {p[0], p[2]},
+                        {p[1], p[2]},
+                        {p[0], p[1]}};
+
+        
+
         for (int ff = 0; ff != 6; ff++) {
           double ksi_eta[2] = {ksi[ff][0], ksi[ff][1]};
           double eta_ksi[2] = {ksi[ff][1], ksi[ff][0]};
@@ -870,27 +879,27 @@ MoFEMErrorCode MoFEM::Hcurl_FaceShapeFunctions_ONHEX(int *face_nodes[6],
           double *diff_ksi_eta[2] = {diff_ksi[ff][0], diff_ksi[ff][1]};
           double *diff_eta_ksi[2] = {diff_ksi[ff][1], diff_ksi[ff][0]};
 
-          int pq[2] = {p[0], p[1]};
-          int qp[2] = {p[1], p[0]};
+          int pq[2] = {px[ff][0], px[ff][1]};
+          int qp[2] = {px[ff][1], px[ff][0]};
 
           for (int fam = 0; fam != 2; fam++) {
-            int pp = pq[fam];
 
-            double Phi[pp - 1];
-            double diffPhi[pp - 1];
-            CHKERR Integrated_Legendre01(pp, ksi_eta[fam], Phi, diffPhi);
 
-            int qq = qp[fam];
-            double E[qq];
-            CHKERR Legendre_polynomials01(qq - 1, eta_ksi[fam], E);
+            double Phi[pq[fam] - 1];
+            double diffPhi[pq[fam] - 1];
+            CHKERR Integrated_Legendre01(pq[fam], ksi_eta[fam], Phi, diffPhi);
 
-            int qd_shift = (pp - 1) * qq * qq;
+ 
+            double E[qp[fam]];
+            CHKERR Legendre_polynomials01(qp[fam] - 1, eta_ksi[fam], E);
+
+            int qd_shift = (pq[fam] - 1) * qp[fam] * qq;
             int n = 0;
-            for (int i = 0; i != qq; i++) {
-              for (int j = 0; j != pp - 1; j++) {
+            for (int i = 0; i != qp[fam]; i++) {
+              for (int j = 0; j != pq[fam] - 1; j++) {
                 faceN[ff][fam][3 * (qd_shift + n) + 0] = mu[ff] * Phi[j] * E[i] * diff_eta_ksi[fam][0];
-                faceN[ff][fam][3 * (qd_shift + n) + 0] = mu[ff] * Phi[j] * E[i] * diff_eta_ksi[fam][1];
-                faceN[ff][fam][3 * (qd_shift + n) + 0] = mu[ff] * Phi[j] * E[i] * diff_eta_ksi[fam][2];
+                faceN[ff][fam][3 * (qd_shift + n) + 1] = mu[ff] * Phi[j] * E[i] * diff_eta_ksi[fam][1];
+                faceN[ff][fam][3 * (qd_shift + n) + 2] = mu[ff] * Phi[j] * E[i] * diff_eta_ksi[fam][2];
 
                 double Ei[3] = {E[i] * diff_eta_ksi[fam][0],
                                 E[i] * diff_eta_ksi[fam][1],
@@ -910,8 +919,8 @@ MoFEMErrorCode MoFEM::Hcurl_FaceShapeFunctions_ONHEX(int *face_nodes[6],
                 ref_hex.Cross_product(diff_Phi, Ei, diff_Phi_cross_Ei);
 
                 curl_faceN[ff][fam][3 * (qd_shift + n) + 0] = mu[ff] * diff_Phi_cross_Ei[0] + diff_mu_cross_Eij[0];
-                curl_faceN[ff][fam][3 * (qd_shift + n) + 0] = mu[ff] * diff_Phi_cross_Ei[1] + diff_mu_cross_Eij[1];
-                curl_faceN[ff][fam][3 * (qd_shift + n) + 0] = mu[ff] * diff_Phi_cross_Ei[2] + diff_mu_cross_Eij[2];
+                curl_faceN[ff][fam][3 * (qd_shift + n) + 1] = mu[ff] * diff_Phi_cross_Ei[1] + diff_mu_cross_Eij[1];
+                curl_faceN[ff][fam][3 * (qd_shift + n) + 2] = mu[ff] * diff_Phi_cross_Ei[2] + diff_mu_cross_Eij[2];
                 ++n;
               }
             }
@@ -1137,7 +1146,7 @@ MoFEMErrorCode MoFEM::Hdiv_InteriorShapeFunctions_ONHEX(int *p, double *N,
       double EJ[rpq[fam]];
       CHKERR Legendre_polynomials01(rpq[fam] - 1, gma_ksi_eta[fam], EJ);
 
-      int qd_shift = pqr[fam] * (qrp[fam] - 1) * (rpq[fam] - 1) * qq;
+      int qd_shift = (pqr[fam] - 1) * qrp[fam] * rpq[fam] * qq;
       int n = 0;
       for (int ii = 0; ii < qrp[fam]; ii++){
         for (int jj = 0; jj < rpq[fam]; jj++){
@@ -1149,7 +1158,7 @@ MoFEMErrorCode MoFEM::Hdiv_InteriorShapeFunctions_ONHEX(int *p, double *N,
               ref_hex.Cross_product(EEI, EEJ, VIJ_square);
 
               bubbleN[fam][3 * (qd_shift + n) + 0] = PhiK[kk] * VIJ_square[0];
-              bubbleN[fam][3 * (qd_shift + n) + 1] = PhiK[kk] * VIJ_square[2];
+              bubbleN[fam][3 * (qd_shift + n) + 1] = PhiK[kk] * VIJ_square[1];
               bubbleN[fam][3 * (qd_shift + n) + 2] = PhiK[kk] * VIJ_square[2];
 
               div_bubbleN[fam][qd_shift + n] = diffPhiK[kk] * diff_ksi_eta_gma[fam][0] * VIJ_square[0] +
