@@ -113,47 +113,40 @@ MoFEMErrorCode Core::regSubInterface(const MOFEMuuid &uid) {
   MoFEMFunctionReturn(0);
 }
 
-Core::CoreTmp(moab::Interface &moab, MPI_Comm comm, const int verbose,
-           const bool distributed_mesh)
-    : moab(moab), cOmm(0), verbose(verbose),
-      initaliseAndBuildField(PETSC_FALSE),
-      initaliseAndBuildFiniteElements(PETSC_FALSE) {
+MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
+                                            MPI_Comm comm, const int verbose,
+                                            const bool distributed_mesh) {
+  MoFEMFunctionBegin;
 
   // This is deprecated ONE should use MoFEM::Core::Initialize
-  if (!isGloballyInitialised) {
-    PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
-    isGloballyInitialised = true;
-  }
+  if (!isGloballyInitialised)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "MoFEM globall is not initialised, call MoFEM::Core::Initialize");
 
   // Create duplicate communicator
   wrapMPIComm = boost::make_shared<WrapMPIComm>(comm, cOmm);
   MPI_Comm_size(cOmm, &sIze);
   MPI_Comm_rank(cOmm, &rAnk);
+
   // CHeck if moab has set communicator if not set communicator interbally
   ParallelComm *pComm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-  if (pComm == NULL) {
+  if (pComm == NULL) 
     pComm = new ParallelComm(&moab, cOmm);
-  }
 
   // Register interfaces for this implementation
-  ierr = registerInterface<UnknownInterface>(IDD_MOFEMUnknown);
-  CHKERRABORT(comm, ierr);
-  ierr = registerInterface<CoreInterface>(IDD_MOFEMCoreInterface);
-  CHKERRABORT(comm, ierr);
-  ierr = registerInterface<DeprecatedCoreInterface>(
+  CHKERR registerInterface<UnknownInterface>(IDD_MOFEMUnknown);
+  CHKERR registerInterface<CoreInterface>(IDD_MOFEMCoreInterface);
+  CHKERR registerInterface<DeprecatedCoreInterface>(
       IDD_MOFEMDeprecatedCoreInterface);
-  CHKERRABORT(comm, ierr);
 
   // Register sub-interfaces
-  ierr = registerSubInterfaces();
-  CHKERRABORT(PETSC_COMM_SELF, ierr);
+  CHKERR registerSubInterfaces();
 
   // Print version
   if (verbose > QUIET) {
     MOFEM_LOG_CHANNEL("WORLD");
     char petsc_version[255];
-    ierr = PetscGetVersion(petsc_version, 255);
-    CHKERRABORT(comm, ierr);
+    CHKERR PetscGetVersion(petsc_version, 255);
     MOFEM_LOG_C("WORLD", Sev::inform, "MoFEM version %d.%d.%d (%s %s)",
                 MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD,
                 MOAB_VERSION_STRING, petsc_version);
@@ -167,22 +160,13 @@ Core::CoreTmp(moab::Interface &moab, MPI_Comm comm, const int verbose,
   PetscLogEventRegister("MoFEMCreateMat", 0, &MOFEM_EVENT_createMat);
 
   // Initialize database
-  ierr = getTags();
-  CHKERRABORT(cOmm, ierr);
-  ierr = clearMap();
-  CHKERRABORT(cOmm, ierr);
+  CHKERR getTags();
+  CHKERR clearMap();
 
-  basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
-  if (distributed_mesh)
-    basicEntityDataPtr->setDistributedMesh();
-  else
-    basicEntityDataPtr->unSetDistributedMesh();
-  setBasicDataPtr();
+  // Read Core options
+  CHKERR getOptions(verbose);
 
-  ierr = getOptions(verbose);
-  CHKERRABORT(cOmm, ierr);
-  ierr = initialiseDatabaseFromMesh(verbose);
-  CHKERRABORT(cOmm, ierr);
+  MoFEMFunctionReturn(0);
 }
 
 Core::~CoreTmp() {
@@ -547,7 +531,6 @@ MoFEMErrorCode Core::set_moab_interface(moab::Interface &new_moab, int verb,
     basicEntityDataPtr->setDistributedMesh();
   else
     basicEntityDataPtr->unSetDistributedMesh();
-  setBasicDataPtr();
 
   // Initalise database
   CHKERR initialiseDatabaseFromMesh(verb);

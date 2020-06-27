@@ -25,18 +25,31 @@ namespace MoFEM {
 // This is to have obsolete back compatibility
 struct MeshsetsManager;
 
+template <int V> struct CoreValue {};
+
 template <int N> struct CoreTmp : public CoreTmp<N - 1> {
 
   using CoreTmp<N - 1>::CoreTmp;
 
+  /**
+   * Construct core database
+   */
+  CoreTmp(
+      moab::Interface &moab,             ///< MoAB interface
+      MPI_Comm comm = PETSC_COMM_WORLD,  ///< MPI communicator
+      const int verbose = VERBOSE,       ///< Verbosity level
+      const bool distributed_mesh = true ///< UId of entities and dofs depends
+                                         ///< on owing processor, assumed that
+                                         ///< mesh is distributed. Otherwise
+                                         ///< is assumed that all processors
+                                         ///< have the same meshes and same
+                                         ///< entity handlers.
+      )
+      : CoreTmp<N - 1>(moab, comm, verbose, distributed_mesh, CoreValue<N>()) {}
+
   static constexpr const int value = N;
   const int getValue() const { return value; }
-
-protected:
-  virtual void setBasicDataPtr() const {
-    RefEntityTmp<N>::basicDataPtr = this->basicEntityDataPtr;
-  }
-};
+  };
 
 template <int N> constexpr const int CoreTmp<N>::value;
 
@@ -86,8 +99,8 @@ template <> struct CoreTmp<0> : public Interface {
                                          ///< is assumed that all processors
                                          ///< have the same meshes and same
                                          ///< entity handlers.
-
-  );
+      )
+      : CoreTmp(moab, comm, verbose, distributed_mesh, CoreValue<0>()) { cerr << "BB" << endl;}
 
   ~CoreTmp();
 
@@ -218,6 +231,25 @@ template <> struct CoreTmp<0> : public Interface {
   /**@}*/
 
 protected:
+  /**
+   * Construct core database
+   */
+  template <int V>
+  CoreTmp(moab::Interface &moab,       ///< MoAB interface
+          MPI_Comm comm,               ///< MPI communicator
+          const int verbose,           ///< Verbosity level
+          const bool distributed_mesh, ///< UId of entities and dofs depends
+                                       ///< on owing processor, assumed that
+                                       ///< mesh is distributed. Otherwise
+                                       ///< is assumed that all processors
+                                       ///< have the same meshes and same
+                                       ///< entity handlers.
+          CoreValue<V>);
+
+  MoFEMErrorCode coreGenericConstructor(moab::Interface &moab, MPI_Comm comm,
+                                        const int verbose,
+                                        const bool distributed_mesh);
+
   /** \name Tags to data on mesh and entities */
 
   /**@{*/
@@ -1016,24 +1048,64 @@ private:
    */
   template <class IFACE> MoFEMErrorCode regSubInterface(const MOFEMuuid &uid);
 
-  virtual void setBasicDataPtr() const {
-    RefEntityTmp<0>::basicDataPtr = basicEntityDataPtr;
-  }
 
 };
 
 template <> struct CoreTmp<-1> : public CoreTmp<0> {
 
-  using CoreTmp<0>::CoreTmp;
+  /**
+   * Construct core database
+   */
+  CoreTmp(
+      moab::Interface &moab,             ///< MoAB interface
+      MPI_Comm comm = PETSC_COMM_WORLD,  ///< MPI communicator
+      const int verbose = VERBOSE,       ///< Verbosity level
+      const bool distributed_mesh = true ///< UId of entities and dofs depends
+                                         ///< on owing processor, assumed that
+                                         ///< mesh is distributed. Otherwise
+                                         ///< is assumed that all processors
+                                         ///< have the same meshes and same
+                                         ///< entity handlers.
+      )
+      : CoreTmp<0>(moab, comm, verbose, distributed_mesh, CoreValue<-1>()) {}
 
   static constexpr const int value = -1;
   const int getValue() const { return value; }
-
-protected:
-  virtual void setBasicDataPtr() const {}
 };
 
 using Core = CoreTmp<0>;
+
+template <int V, typename std::enable_if<(V >= 0), int>::type * = nullptr>
+void set_ref_ent_basic_data_ptr_impl(boost::shared_ptr<BasicEntityData> &ptr) {
+  RefEntityTmp<V>::basicDataPtr = ptr;
+};
+
+template <int V, typename std::enable_if<(V < 0), int>::type * = nullptr>
+void set_ref_ent_basic_data_ptr_impl(boost::shared_ptr<BasicEntityData> &ptr) {
+  return;
+};
+
+template <int V>
+CoreTmp<0>::CoreTmp(moab::Interface &moab, MPI_Comm comm, const int verbose,
+                    const bool distributed_mesh, CoreValue<V>)
+    : moab(moab), cOmm(0), verbose(verbose),
+      initaliseAndBuildField(PETSC_FALSE),
+      initaliseAndBuildFiniteElements(PETSC_FALSE) {
+
+  ierr = coreGenericConstructor(moab, comm, verbose, distributed_mesh);
+  CHKERRABORT(comm, ierr);
+
+  basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
+  if (distributed_mesh)
+    basicEntityDataPtr->setDistributedMesh();
+  else
+    basicEntityDataPtr->unSetDistributedMesh();
+
+  set_ref_ent_basic_data_ptr_impl<V>(basicEntityDataPtr);
+
+  ierr = initialiseDatabaseFromMesh(verbose);
+  CHKERRABORT(cOmm, ierr);
+}
 
 template <typename C>
 auto getRefEntityPtr(const C &core, const EntityHandle ent) {
