@@ -100,7 +100,7 @@ template <> struct CoreTmp<0> : public Interface {
                                          ///< have the same meshes and same
                                          ///< entity handlers.
       )
-      : CoreTmp(moab, comm, verbose, distributed_mesh, CoreValue<0>()) { cerr << "BB" << endl;}
+      : CoreTmp(moab, comm, verbose, distributed_mesh, CoreValue<0>()) {}
 
   ~CoreTmp();
 
