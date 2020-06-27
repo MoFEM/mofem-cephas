@@ -761,7 +761,7 @@ struct FieldEntity : public interface_Field<Field>,
    * @return       Number of DOFs
    */
   inline int getOrderNbDofs(ApproximationOrder order) const {
-    return (this->sFieldPtr->forderTable[getEntType()])(order);
+    return (this->getFieldPtr()->forderTable[getEntType()])(order);
   }
 
   /**
@@ -857,8 +857,6 @@ struct FieldEntity : public interface_Field<Field>,
     return this->sFieldPtr;
   }
 
-  friend std::ostream &operator<<(std::ostream &os, const FieldEntity &e);
-
   /**
    * \brief get hash-map relating dof index on entity with its order
    *
@@ -870,6 +868,8 @@ struct FieldEntity : public interface_Field<Field>,
   inline std::array<int, MAX_DOFS_ON_ENTITY> &getDofOrderMap() const {
     return getFieldPtr()->getDofOrderMap(getEntType());
   }
+
+  friend std::ostream &operator<<(std::ostream &os, const FieldEntity &e);
 
 private:
   mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;

@@ -45,7 +45,7 @@ DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
 std::ostream &operator<<(std::ostream &os, const DofEntity &e) {
   os << "dof_uid " << e.getGlobalUniqueId() << " dof_order " << e.getDofOrder()
      << " dof_rank " << e.getDofCoeffIdx() << " dof " << e.getEntDofIdx()
-     << " active " << (e.dof < 0 ? false : true) << " " << *(e.sFieldPtr);
+     << " active " << (e.dof < 0 ? false : true) << " " << *(e.getFieldPtr());
   return os;
 }
 
@@ -81,7 +81,7 @@ NumeredDofEntity::NumeredDofEntity(
 std::ostream &operator<<(std::ostream &os, const NumeredDofEntity &e) {
   os << "idx " << e.dofIdx << " part " << e.pArt << " petsc idx "
      << e.petscGloablDofIdx << " ( " << e.petscLocalDofIdx << " ) "
-     << *e.sFieldPtr;
+     << *e.getFieldPtr();
   return os;
 }
 
@@ -98,7 +98,7 @@ FEDofEntity::FEDofEntity(const boost::shared_ptr<SideNumber> &side_number_ptr,
 std::ostream &operator<<(std::ostream &os, const FEDofEntity &e) {
   os << "local dof FiniteElement idx "
      << "side_number " << (int)e.sideNumberPtr->side_number << " "
-     << "sense " << (int)e.sideNumberPtr->sense << " " << *e.sFieldPtr;
+     << "sense " << (int)e.sideNumberPtr->sense << " " << *e.getFieldPtr();
   return os;
 }
 
@@ -117,7 +117,7 @@ FENumeredDofEntity::FENumeredDofEntity(
 std::ostream &operator<<(std::ostream &os, const FENumeredDofEntity &e) {
   os << "local dof FiniteElement idx "
      << "side_number " << (int)e.sideNumberPtr->side_number << " "
-     << "sense " << (int)e.sideNumberPtr->sense << " " << *e.sFieldPtr;
+     << "sense " << (int)e.sideNumberPtr->sense << " " << *e.getFieldPtr();
   return os;
 }
 

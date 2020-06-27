@@ -95,7 +95,7 @@ std::ostream &operator<<(std::ostream &os, const FieldEntity &e) {
      << " entity " << e.getEnt() << " type " << e.getEntType() << " pstatus "
      << std::bitset<8>(e.getPStatus()) << " owner handle " << e.getOwnerEnt()
      << " owner proc " << e.getOwnerProc() << " order " << e.getMaxOrder()
-     << " " << *e.sFieldPtr;
+     << " " << *e.getFieldPtr();
   return os;
 }
 
@@ -110,26 +110,26 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
   int tag_field_data_size = 0;
 
   auto set_verts = [&]() {
-    if (e->sFieldPtr->th_FieldDataVertsType == MB_TAG_SPARSE) {
+    if (e->getFieldPtr()->th_FieldDataVertsType == MB_TAG_SPARSE) {
       // Get pointer and size of field values tag
-      rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
+      rval = moab.tag_get_by_ptr(e->getFieldPtr()->th_FieldDataVerts, &ent, 1,
                                  (const void **)&tag_field_data,
                                  &tag_field_data_size);
       if (nb_dofs) {
         if (nb_dofs != tag_field_data_size) {
-          rval = moab.tag_set_data(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
+          rval = moab.tag_set_data(e->getFieldPtr()->th_FieldDataVerts, &ent, 1,
                                    &*data.begin());
           MOAB_THROW(rval);
         }
       } else if (rval == MB_SUCCESS) {
-        rval = moab.tag_delete_data(e->sFieldPtr->th_FieldDataVerts, &ent, 1);
+        rval = moab.tag_delete_data(e->getFieldPtr()->th_FieldDataVerts, &ent, 1);
         MOAB_THROW(rval);
       }
     } else {
-      rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
+      rval = moab.tag_get_by_ptr(e->getFieldPtr()->th_FieldDataVerts, &ent, 1,
                                  (const void **)&tag_field_data);
       MOAB_THROW(rval);
-      rval = moab.tag_set_data(e->sFieldPtr->th_FieldDataVerts, &ent, 1,
+      rval = moab.tag_set_data(e->getFieldPtr()->th_FieldDataVerts, &ent, 1,
                                tag_field_data);
       MOAB_THROW(rval);
     }
@@ -139,7 +139,7 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
     if (reduceTagSize || nb_dofs) {
 
       // Get pointer and size of field values tag
-      rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldData, &ent, 1,
+      rval = moab.tag_get_by_ptr(e->getFieldPtr()->th_FieldData, &ent, 1,
                                  (const void **)&tag_field_data,
                                  &tag_field_data_size);
 
@@ -164,17 +164,17 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
           int tag_size[1];
           tag_size[0] = data.size();
           void const *tag_data[] = {&data[0]};
-          rval = moab.tag_set_by_ptr(e->sFieldPtr->th_FieldData, &ent, 1,
+          rval = moab.tag_set_by_ptr(e->getFieldPtr()->th_FieldData, &ent, 1,
                                      tag_data, tag_size);
           MOAB_THROW(rval);
-          rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldData, &ent, 1,
+          rval = moab.tag_get_by_ptr(e->getFieldPtr()->th_FieldData, &ent, 1,
                                      (const void **)&tag_field_data,
                                      &tag_field_data_size);
           MOAB_THROW(rval);
 
         } else {
 
-          rval = moab.tag_delete_data(e->sFieldPtr->th_FieldData, &ent, 1);
+          rval = moab.tag_delete_data(e->getFieldPtr()->th_FieldData, &ent, 1);
           MOAB_THROW(rval);
         }
       }
