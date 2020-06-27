@@ -963,7 +963,6 @@ private:
   mutable boost::ptr_map<unsigned long, UnknownInterface> iFaces;
 
   mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
-  static bool isGloballyInitialised; ///< Core base globally initialized
 
   std::string optionsPrefix; ///< Prefix for options on command line
 
@@ -972,6 +971,10 @@ private:
 
   PetscBool initaliseAndBuildFiniteElements; // If true build finite elements on
                                              // database initialisation
+
+  static bool isGloballyInitialised; ///< Core base globally initialized
+  static int mpiInitialised;         ///< mpi was initialised by other agent
+  static PetscBool isInitialized;    ///< petsc was initialised by other agent
 
   /**
    * @brief add problem

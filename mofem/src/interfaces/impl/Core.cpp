@@ -50,30 +50,50 @@ MoFEMErrorCode Core::query_interface(const MOFEMuuid &uuid,
 }
 
 bool Core::isGloballyInitialised = false;
+int Core::mpiInitialised;
+PetscBool Core::isInitialized;
 
 MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
                                 const char help[]) {
-  MPI_Init(argc, args);
+
+  MPI_Initialized(&mpiInitialised);
+  if (!mpiInitialised)
+    MPI_Init(argc, args);
+
+  PetscInitialized(&isInitialized);
+  if (isInitialized == PETSC_FALSE) {
+    PetscInitialize(argc, args, file, help);
+    PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
+  }
+
   LogManager::createDefaultSinks(MPI_COMM_WORLD);
   PetscVFPrintf = LogManager::logPetscFPrintf;
-
-  ierr = PetscInitialize(argc, args, file, help);
-  CHKERRG(ierr);
-
-  ierr = PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
-  CHKERRG(ierr);
-
   isGloballyInitialised = true;
+
   return MOFEM_SUCCESS;
 }
 
 MoFEMErrorCode Core::Finalize() {
-  CHKERRQ(ierr);
-  ierr = PetscPopErrorHandler();
-  CHKERRG(ierr);
-  isGloballyInitialised = false;
-  PetscFinalize();
-  return MPI_Finalize();
+  if (isGloballyInitialised) {
+    PetscPopErrorHandler();
+    isGloballyInitialised = false;
+
+    if (isInitialized == PETSC_FALSE) {
+      PetscBool is_finalized;
+      PetscFinalized(&is_finalized);
+      if (!is_finalized)
+        PetscFinalize();
+    }
+
+    if (!mpiInitialised) {
+      int mpi_finalized;
+      MPI_Finalized(&mpi_finalized);
+      if (!mpi_finalized)
+        MPI_Finalize();
+    }
+  }
+
+  return 0;
 }
 
 // Use SFINAE to decide which template should be run,
@@ -121,7 +141,7 @@ MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
   // This is deprecated ONE should use MoFEM::Core::Initialize
   if (!isGloballyInitialised)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "MoFEM globall is not initialised, call MoFEM::Core::Initialize");
+            "MoFEM globally is not initialised, call MoFEM::Core::Initialize");
 
   // Create duplicate communicator
   wrapMPIComm = boost::make_shared<WrapMPIComm>(comm, cOmm);
