@@ -55,6 +55,10 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
             const FieldApproximationBase base,
             const FieldCoefficientsNumber nb_of_coefficients,
             const TagType tag_type, const enum MoFEMTypes bh, int verb);
+
+  MoFEMErrorCode set_moab_interface(moab::Interface &new_moab, int verb,
+                                    const bool distributed_mesh); 
+
 };
 
 template <int N> constexpr const int CoreTmp<N>::value;
@@ -332,6 +336,10 @@ protected:
   MoFEMErrorCode set_moab_interface(moab::Interface &new_moab,
                                     int verb = VERBOSE,
                                     const bool distributed_mesh = true);
+
+  template <int CoreValue>
+  MoFEMErrorCode setMoabInterface(moab::Interface &new_moab, int verb = VERBOSE,
+                                  const bool distributed_mesh = true);
 
   /**@}*/
 
@@ -1061,7 +1069,7 @@ private:
   /**
    * \brief Initialize database getting information on mesh
    */
-  template <int CoreN>
+  template <int CoreValue>
   MoFEMErrorCode initialiseDatabaseFromMesh(int verb = DEFAULT_VERBOSITY);
 
   /**
@@ -1542,6 +1550,48 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
 
   MoFEMFunctionReturn(0);
 }
+
+template <int CoreValue>
+MoFEMErrorCode Core::setMoabInterface(moab::Interface &new_moab, int verb,
+                                      const bool distributed_mesh) {
+  MoFEMFunctionBegin;
+  if (verb == -1)
+    verb = verbose;
+
+  // clear moab database
+  CHKERR clearMap();
+
+  // set new reference
+  moab = std::ref(new_moab);
+
+  // check if moab has set communicator if not set communicator internally
+  ParallelComm *pComm = ParallelComm::get_pcomm(&new_moab, MYPCOMM_INDEX);
+  if (pComm == NULL) {
+    pComm = new ParallelComm(&new_moab, cOmm);
+  }
+
+  // create MoFEM tags
+  CHKERR getTags();
+
+  // Create basic entity data struture
+  basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
+  if (distributed_mesh)
+    basicEntityDataPtr->setDistributedMesh();
+  else
+    basicEntityDataPtr->unSetDistributedMesh();
+
+  // Initalise database
+  CHKERR initialiseDatabaseFromMesh<CoreValue>(verb);
+
+  MoFEMFunctionReturn(0);
+};
+
+template <int N>
+MoFEMErrorCode CoreTmp<N>::set_moab_interface(moab::Interface &new_moab,
+                                              int verb,
+                                              const bool distributed_mesh) {
+  return CoreTmp<0>::setMoabInterface<N>(new_moab, verb, distributed_mesh);
+};
 
 } // namespace MoFEM
 

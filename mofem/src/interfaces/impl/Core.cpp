@@ -523,36 +523,7 @@ MoFEMErrorCode Core::rebuild_database(int verb) {
 
 MoFEMErrorCode Core::set_moab_interface(moab::Interface &new_moab, int verb,
                                         const bool distributed_mesh) {
-  MoFEMFunctionBegin;
-  if (verb == -1)
-    verb = verbose;
-
-  // clear moab database
-  CHKERR clearMap();
-
-  // set new reference
-  moab = std::ref(new_moab);
-
-  // check if moab has set communicator if not set communicator internally
-  ParallelComm *pComm = ParallelComm::get_pcomm(&new_moab, MYPCOMM_INDEX);
-  if (pComm == NULL) {
-    pComm = new ParallelComm(&new_moab, cOmm);
-  }
-
-  // create MoFEM tags
-  CHKERR getTags();
-
-  // Create basic entity data struture
-  basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
-  if (distributed_mesh)
-    basicEntityDataPtr->setDistributedMesh();
-  else
-    basicEntityDataPtr->unSetDistributedMesh();
-
-  // Initalise database
-  CHKERR initialiseDatabaseFromMesh<0>(verb);
-
-  MoFEMFunctionReturn(0);
+  return setMoabInterface<0>(new_moab, verb, distributed_mesh);
 };
 
 MoFEMErrorCode Core::getOptions(int verb) {
