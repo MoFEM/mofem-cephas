@@ -581,6 +581,7 @@ MoFEMErrorCode Core::getOptions(int verb) {
 }
 
 MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
+  MOFEM_LOG_CHANNEL("WORLD");
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -618,11 +619,9 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
 
       p = fIelds.insert(
           boost::shared_ptr<Field>(new Field(moab, *mit, cs_ptr)));
-      if (verb >= VERBOSE) {
-        std::ostringstream ss;
-        ss << "read field " << **p.first << std::endl;
-        PetscPrintf(cOmm, ss.str().c_str());
-      }
+      if (verb > QUIET)
+        MOFEM_LOG("WORLD", Sev::verbose) << "Read field " << **p.first;
+      
       if (!p.second) {
         // Field meshset exists, remove duplicate meshsets from other
         // processors.
@@ -643,11 +642,9 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       std::pair<FiniteElement_multiIndex::iterator, bool> p =
           finiteElements.insert(
               boost::shared_ptr<FiniteElement>(new FiniteElement(moab, *mit)));
-      if (verb >= VERBOSE) {
-        std::ostringstream ss;
-        ss << "read finite element " << **p.first << std::endl;
-        PetscPrintf(cOmm, ss.str().c_str());
-      }
+      if (verb > QUIET)
+        MOFEM_LOG("WORLD", Sev::verbose) << "Read finite element " << **p.first;
+
       Range ents;
       CHKERR get_moab().get_entities_by_type(*mit, MBENTITYSET, ents, false);
       CHKERR get_moab().get_entities_by_handle(*mit, ents, true);
@@ -668,13 +665,13 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
     if (problem_id != 0) {
       std::pair<Problem_multiIndex::iterator, bool> p =
           pRoblems.insert(Problem(moab, *mit));
-      if (verb >= VERBOSE) {
-        std::ostringstream ss;
-        ss << "read problem " << *p.first << " bit ref "
-           << p.first->getBitRefLevel() << " bit mask "
-           << p.first->getMaskBitRefLevel() << std::endl;
-        PetscPrintf(cOmm, ss.str().c_str());
+      if (verb > QUIET) {
+        MOFEM_LOG("WORLD", Sev::verbose) << "Read problem " << *p.first;
+        MOFEM_LOG("WORLD", Sev::noisy)
+            << "\tBitRef " << p.first->getBitRefLevel() << " BitMask "
+            << p.first->getMaskBitRefLevel();
       }
+
       if (!p.second) {
         // Problem meshset exists, could be created on other processor.
         // Remove duplicate.
