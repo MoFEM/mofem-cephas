@@ -1228,7 +1228,7 @@ make_shared_field(Field_multiIndex &fields, const int size,
                Field(moab, meshset, coord_sys_ptr).getName().c_str());
   }
 
-  if (verb > QUIET)`
+  if (verb > QUIET)
     MOFEM_LOG("SYNC", Sev::inform) << "Add field " << **p.first;
   MoFEMFunctionReturn(0);
 };
