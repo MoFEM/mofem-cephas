@@ -25,7 +25,10 @@ const bool Idx_mi_tag::IamNotPartitioned = true;
 const bool PetscGlobalIdx_mi_tag::IamNotPartitioned = false;
 const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 
+constexpr const int FieldTmp<0, 0>::CoreValue;
 constexpr const int FieldTmp<0, 0>::FieldValue;
+constexpr const int FieldTmp<-1, -1>::CoreValue;
+constexpr const int FieldTmp<-1, -1>::FieldValue;
 
 // fields
 Field::FieldTmp(const moab::Interface &moab, const EntityHandle meshset,

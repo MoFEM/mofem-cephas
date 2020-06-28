@@ -50,11 +50,11 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
   static constexpr const int value = N;
   const int getValue() const { return value; }
 
-  MoFEMErrorCode add_field(const std::string &name, const FieldSpace space,
-                           const FieldApproximationBase base,
-                           const FieldCoefficientsNumber nb_of_coefficients,
-                           const TagType tag_type, const enum MoFEMTypes bh,
-                           int verb);
+  virtual MoFEMErrorCode
+  add_field(const std::string &name, const FieldSpace space,
+            const FieldApproximationBase base,
+            const FieldCoefficientsNumber nb_of_coefficients,
+            const TagType tag_type, const enum MoFEMTypes bh, int verb);
 };
 
 template <int N> constexpr const int CoreTmp<N>::value;
@@ -425,12 +425,12 @@ protected:
   will make only problems
 
   */
-  MoFEMErrorCode add_field(const std::string &name, const FieldSpace space,
-                           const FieldApproximationBase base,
-                           const FieldCoefficientsNumber nb_coefficients,
-                           const TagType tag_type = MB_TAG_SPARSE,
-                           const enum MoFEMTypes bh = MF_EXCL,
-                           int verb = DEFAULT_VERBOSITY);
+  virtual MoFEMErrorCode
+  add_field(const std::string &name, const FieldSpace space,
+            const FieldApproximationBase base,
+            const FieldCoefficientsNumber nb_coefficients,
+            const TagType tag_type = MB_TAG_SPARSE,
+            const enum MoFEMTypes bh = MF_EXCL, int verb = DEFAULT_VERBOSITY);
 
   /**
    * @brief Template for add_field
@@ -1175,6 +1175,64 @@ auto getRefEntityPtr(const C &core, const EntityHandle ent) {
   return ref_ent_ptr;
 }
 
+template <int V, typename std::enable_if<(V >= 0), int>::type * = nullptr>
+MoFEMErrorCode
+make_shared_field(Field_multiIndex &fields, const int size,
+                  const enum MoFEMTypes bh, int verb,
+                  const moab::Interface &moab, const EntityHandle meshset,
+                  const boost::shared_ptr<CoordSys> coord_sys_ptr) {
+  MoFEMFunctionBegin;
+
+  boost::hana::for_each(
+
+      boost::hana::make_range(boost::hana::int_c<0>,
+                              boost::hana::int_c<BITFIELDID_SIZE>),
+
+      [&](auto r) {
+        MoFEMFunctionBegin;
+        if (size == r) {
+          auto p = fields.insert(
+              boost::make_shared<FieldTmp<V, r>>(moab, meshset, coord_sys_ptr));
+          if (bh == MF_EXCL) {
+            if (!p.second)
+              SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+                       "field not inserted %s (top tip, it could be already "
+                       "there)",
+                       Field(moab, meshset, coord_sys_ptr).getName().c_str());
+          }
+
+          if (verb > QUIET)
+            MOFEM_LOG("SYNC", Sev::inform) << "Add field " << **p.first;
+        }
+        MoFEMFunctionReturn(0);
+      }
+
+  );
+  MoFEMFunctionReturn(0);
+};
+
+template <int V, typename std::enable_if<(V < 0), int>::type * = nullptr>
+MoFEMErrorCode
+make_shared_field(Field_multiIndex &fields, const int size,
+                  const enum MoFEMTypes bh, int verb,
+                  const moab::Interface &moab, const EntityHandle meshset,
+                  const boost::shared_ptr<CoordSys> coord_sys_ptr) {
+  MoFEMFunctionBegin;
+  auto p = fields.insert(
+      boost::make_shared<FieldTmp<-1, -1>>(moab, meshset, coord_sys_ptr));
+  if (bh == MF_EXCL) {
+    if (!p.second)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+               "field not inserted %s (top tip, it could be already "
+               "there)",
+               Field(moab, meshset, coord_sys_ptr).getName().c_str());
+  }
+
+  if (verb > QUIET)`
+    MOFEM_LOG("SYNC", Sev::inform) << "Add field " << **p.first;
+  MoFEMFunctionReturn(0);
+};
+
 template <int CoreValue>
 MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
                               const FieldApproximationBase base,
@@ -1305,41 +1363,8 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
     CHKERR create_undefined_cs(undefined_cs_ptr);
     CHKERR add_field_meshset_to_cs(undefined_cs_ptr);
 
-    auto make_shared_field = [&]() {
-      MoFEMFunctionBegin;
-      const int size = *fShift - 1;
-
-      boost::hana::for_each(
-
-          boost::hana::make_range(boost::hana::int_c<-1>,
-                                  boost::hana::int_c<BITFIELDID_SIZE>),
-
-          [&](auto r) {
-            MoFEMFunctionBegin;
-            if (size == r) {
-              auto p = fIelds.insert(boost::make_shared<FieldTmp<CoreValue, 0>>(
-                  moab, meshset, undefined_cs_ptr));
-              if (bh == MF_EXCL) {
-                if (!p.second)
-                  SETERRQ1(
-                      PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-                      "field not inserted %s (top tip, it could be already "
-                      "there)",
-                      Field(moab, meshset, undefined_cs_ptr).getName().c_str());
-              }
-
-              if (verb > QUIET)
-                MOFEM_LOG("SYNC", Sev::inform) << "Add field " << **p.first;
-
-            }
-            MoFEMFunctionReturn(0);
-          }
-
-      );
-      MoFEMFunctionReturn(0);
-    };
-
-    CHKERR make_shared_field();
+    CHKERR make_shared_field<CoreValue>(fIelds, *fShift - 1, bh, verb, moab,
+                                        meshset, undefined_cs_ptr);
 
   }
 

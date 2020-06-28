@@ -429,6 +429,17 @@ private:
   mutable DofsOrderMap dofOrderMap;
 };
 
+template <> struct FieldTmp<-1, -1> : public FieldTmp<0, 0> {
+
+  static constexpr const int CoreValue = -1;
+  static constexpr const int FieldValue = -1;
+
+  virtual int getCoreValue() { return CoreValue; }
+  virtual int getFieldValue() { return FieldValue; }
+
+  using FieldTmp<0, 0>::FieldTmp;
+};
+
 using Field = FieldTmp<0, 0>;
 
 /**
