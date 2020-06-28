@@ -703,8 +703,9 @@ struct DofEntity;
 struct FieldEntity : public interface_Field<Field>,
                      interface_RefEntity<RefEntity> {
 
-  typedef interface_Field<Field> interface_type_Field;
-  typedef interface_RefEntity<RefEntity> interface_type_RefEntity;
+  using interface_type_Field = interface_Field<Field>;
+  using interface_type_RefEntity = interface_RefEntity<RefEntity>;
+  
   UId globalUId; ///< Global unique id for this entity
 
   FieldEntity(const boost::shared_ptr<Field> &field_ptr,
