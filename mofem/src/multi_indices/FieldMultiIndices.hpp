@@ -42,6 +42,35 @@ typedef FieldOrderFunct FieldOrderTable[MBMAXTYPE];
 struct FieldEntity;
 struct DofEntity;
 
+template <int N, int F> struct FieldTmp : public FieldTmp<N, F - 1> {
+
+  static constexpr const int CoreValue = N;
+  static constexpr const int FieldValue = F;
+
+  virtual int getCoreValue() { return N; }
+  virtual int getFieldValue() { return F; }
+
+  using FieldTmp<N, F - 1>::FieldTmp;
+};
+
+template <int N, int F> constexpr const int FieldTmp<N, F>::CoreValue;
+template <int N, int F> constexpr const int FieldTmp<N, F>::FieldValue;
+
+template <int N>
+struct FieldTmp<N, 0> : public FieldTmp<N - 1, BITFIELDID_SIZE - 1> {
+
+  static constexpr const int CoreValue = N;
+  static constexpr const int FieldValue = 0;
+
+  virtual int getCoreValue() { return CoreValue; }
+  virtual int getFieldValue() { return FieldValue; }
+
+  using FieldTmp<N - 1, BITFIELDID_SIZE - 1>::FieldTmp;
+};
+
+template <int N> constexpr const int FieldTmp<N, 0>::CoreValue;
+template <int N> constexpr const int FieldTmp<N, 0>::FieldValue;
+
 /**
  * \brief Provide data structure for (tensor) field approximation.
  * \ingroup dof_multi_indices
@@ -61,9 +90,23 @@ struct DofEntity;
  * those entities.
  *
  */
-struct Field {
+template <> struct FieldTmp<0, 0> {
 
-  virtual ~Field() = default;
+  static constexpr const int CoreValue = 0;
+  static constexpr const int FieldValue = 0;
+
+  virtual int getCoreValue() { return CoreValue; }
+  virtual int getFieldValue() { return FieldValue; }
+
+  /**
+   * \brief constructor for moab field
+   *
+   * \param meshset which keeps entities for this field
+   */
+  FieldTmp(const moab::Interface &moab, const EntityHandle meshset,
+           const boost::shared_ptr<CoordSys> coord_sys_ptr);
+
+  virtual ~FieldTmp() = default;
 
   typedef multi_index_container<boost::weak_ptr<std::vector<FieldEntity>>,
                                 indexed_by<sequenced<>>>
@@ -143,14 +186,6 @@ struct Field {
                                       const int owner_proc) const {
     return generateGlobalUniqueIdForTypeHi(bitNumber, type, owner_proc);
   }
-
-  /**
-   * \brief constructor for moab field
-   *
-   * \param meshset which keeps entities for this field
-   */
-  Field(const moab::Interface &moab, const EntityHandle meshset,
-        const boost::shared_ptr<CoordSys> coord_sys_ptr);
 
   /**
    * \brief Get field meshset
@@ -319,8 +354,6 @@ struct Field {
     return 0;
   }
 
-  friend std::ostream &operator<<(std::ostream &os, const Field &e);
-
   /**
    * \brief Get reference to sequence data container
    *
@@ -388,19 +421,23 @@ struct Field {
 
   MoFEMErrorCode rebuildDofsOrderMap() const;
 
+  friend std::ostream &operator<<(std::ostream &os, const FieldTmp &e);
+
 private:
   mutable SequenceEntContainer sequenceEntContainer;
   mutable SequenceDofContainer sequenceDofContainer;
   mutable DofsOrderMap dofOrderMap;
-
 };
+
+using Field = FieldTmp<0, 0>;
 
 /**
  * \brief Pointer interface for MoFEM::Field
  *
- * MoFEM::Field class is keeps data and methods. This class is interface to that
- * class, and all other classes, like MoFEMEntities, DofEntity and derived form
- * them inherits pointer interface, not MoFEM::Field class directly.
+ * MoFEM::Field class is keeps data and methods. This class is interface to
+ * that class, and all other classes, like MoFEMEntities, DofEntity and
+ * derived form them inherits pointer interface, not MoFEM::Field class
+ * directly.
  *
  * \ingroup dof_multi_indices
  */
@@ -410,9 +447,6 @@ template <typename T> struct interface_Field {
 
   interface_Field(const boost::shared_ptr<T> &field_ptr)
       : sFieldPtr(field_ptr) {}
-
-  interface_Field(const interface_Field<T> &interface)
-      : sFieldPtr(interface.getFieldPtr()) {}
 
   virtual ~interface_Field() = default;
 

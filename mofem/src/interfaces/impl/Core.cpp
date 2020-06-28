@@ -70,6 +70,14 @@ MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
   PetscVFPrintf = LogManager::logPetscFPrintf;
   isGloballyInitialised = true;
 
+  MOFEM_LOG_CHANNEL("WORLD");
+  char petsc_version[255];
+  CHKERR PetscGetVersion(petsc_version, 255);
+  MOFEM_LOG_C("WORLD", Sev::inform, "MoFEM version %d.%d.%d (%s %s)",
+              MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD,
+              MOAB_VERSION_STRING, petsc_version);
+  MOFEM_LOG_C("WORLD", Sev::inform, "git commit id %s", GIT_SHA1_NAME);
+
   return MOFEM_SUCCESS;
 }
 
@@ -161,17 +169,6 @@ MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
 
   // Register sub-interfaces
   CHKERR registerSubInterfaces();
-
-  // Print version
-  if (verbose > QUIET) {
-    MOFEM_LOG_CHANNEL("WORLD");
-    char petsc_version[255];
-    CHKERR PetscGetVersion(petsc_version, 255);
-    MOFEM_LOG_C("WORLD", Sev::inform, "MoFEM version %d.%d.%d (%s %s)",
-                MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD,
-                MOAB_VERSION_STRING, petsc_version);
-    MOFEM_LOG_C("WORLD", Sev::inform, "git commit id %s", GIT_SHA1_NAME);
-  }
 
   // Register MOFEM events in PETSc
   PetscLogEventRegister("FE_preProcess", 0, &MOFEM_EVENT_preProcess);

@@ -25,9 +25,11 @@ const bool Idx_mi_tag::IamNotPartitioned = true;
 const bool PetscGlobalIdx_mi_tag::IamNotPartitioned = false;
 const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 
+constexpr const int FieldTmp<0, 0>::FieldValue;
+
 // fields
-Field::Field(const moab::Interface &moab, const EntityHandle meshset,
-             const boost::shared_ptr<CoordSys> coord_sys_ptr)
+Field::FieldTmp(const moab::Interface &moab, const EntityHandle meshset,
+                const boost::shared_ptr<CoordSys> coord_sys_ptr)
     : moab(const_cast<moab::Interface &>(moab)), meshSet(meshset),
       coordSysPtr(coord_sys_ptr), tagId(NULL), tagSpaceData(NULL),
       tagNbCoeffData(NULL), tagName(NULL), tagNameSize(0) {

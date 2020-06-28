@@ -21,6 +21,7 @@
   MOFEM_LOG_CHANNEL("WORLD");                                                  \
   MOFEM_LOG_CHANNEL("SYNC");                                                   \
   MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("WORLD", "FieldCore");                                         \
   MOFEM_LOG_TAG("SYNC", "FieldCore");
 
 namespace MoFEM {
@@ -100,138 +101,7 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
                                const FieldCoefficientsNumber nb_of_coefficients,
                                const TagType tag_type, const enum MoFEMTypes bh,
                                int verb) {
-  FieldCoreFunctionBegin;
-  if (verb == -1)
-    verb = verbose;
-  *buildMoFEM = 0;
-  auto fit = fIelds.get<FieldName_mi_tag>().find(name);
-  if (fit != fIelds.get<FieldName_mi_tag>().end()) {
-
-    if (bh == MF_EXCL)
-      SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-               "field is <%s> in database", name.c_str());
-
-  } else {
-
-    EntityHandle meshset;
-    CHKERR get_moab().create_meshset(MESHSET_SET, meshset);
-
-    // Add field mesh set to partion meshset. In case of no elements
-    // on processor part, when mesh file is read, finite element meshset is
-    // prevented from deletion by moab reader.
-    auto add_meshset_to_partition = [&](auto meshset) {
-      MoFEMFunctionBegin;
-      const void *tag_vals[] = {&rAnk};
-      ParallelComm *pcomm = ParallelComm::get_pcomm(
-          &get_moab(), get_basic_entity_data_ptr()->pcommID);
-      Tag part_tag = pcomm->part_tag();
-      Range tagged_sets;
-      CHKERR get_moab().get_entities_by_type_and_tag(0, MBENTITYSET, &part_tag,
-                                                     tag_vals, 1, tagged_sets,
-                                                     moab::Interface::UNION);
-      for (auto s : tagged_sets)
-        CHKERR get_moab().add_entities(s, &meshset, 1);
-      MoFEMFunctionReturn(0);
-    };
-    CHKERR add_meshset_to_partition(meshset);
-
-    // id
-    BitFieldId id = getFieldShift();
-
-    auto create_tags = [&]() {
-      MoFEMFunctionBegin;
-      CHKERR
-      get_moab().tag_set_data(th_FieldId, &meshset, 1, &id);
-      // space
-      CHKERR get_moab().tag_set_data(th_FieldSpace, &meshset, 1, &space);
-      // base
-      CHKERR get_moab().tag_set_data(th_FieldBase, &meshset, 1, &base);
-
-      // name
-      void const *tag_data[] = {name.c_str()};
-      int tag_sizes[1];
-      tag_sizes[0] = name.size();
-      CHKERR get_moab().tag_set_by_ptr(th_FieldName, &meshset, 1, tag_data,
-                                       tag_sizes);
-      // name data prefix
-      const std::string name_data_prefix("_App_Data");
-      void const *tag_prefix_data[] = {name_data_prefix.c_str()};
-      int tag_prefix_sizes[1];
-      tag_prefix_sizes[0] = name_data_prefix.size();
-      CHKERR get_moab().tag_set_by_ptr(th_FieldName_DataNamePrefix, &meshset, 1,
-                                       tag_prefix_data, tag_prefix_sizes);
-      Tag th_app_order, th_field_data, th_field_data_vert, th_rank;
-      // data
-      std::string tag_data_name = name_data_prefix + name;
-      const int def_len = 0;
-      CHKERR get_moab().tag_get_handle(
-          tag_data_name.c_str(), def_len, MB_TYPE_DOUBLE, th_field_data,
-          MB_TAG_CREAT | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
-      std::string tag_data_name_verts = name_data_prefix + name + "V";
-      VectorDouble def_vert_data(nb_of_coefficients);
-      def_vert_data.clear();
-      CHKERR get_moab().tag_get_handle(
-          tag_data_name_verts.c_str(), nb_of_coefficients, MB_TYPE_DOUBLE,
-          th_field_data_vert, MB_TAG_CREAT | tag_type, &*def_vert_data.begin());
-      // order
-      ApproximationOrder def_ApproximationOrder = -1;
-      const std::string Tag_ApproximationOrder_name = "_App_Order_" + name;
-      CHKERR get_moab().tag_get_handle(
-          Tag_ApproximationOrder_name.c_str(), 1, MB_TYPE_INTEGER, th_app_order,
-          MB_TAG_CREAT | tag_type, &def_ApproximationOrder);
-      // rank
-      int def_rank = 1;
-      const std::string tag_rank_name = "_Field_Rank_" + name;
-      CHKERR get_moab().tag_get_handle(tag_rank_name.c_str(), 1,
-                                       MB_TYPE_INTEGER, th_rank,
-                                       MB_TAG_CREAT | MB_TAG_SPARSE, &def_rank);
-      CHKERR get_moab().tag_set_data(th_rank, &meshset, 1, &nb_of_coefficients);
-
-      MoFEMFunctionReturn(0);
-    };
-
-    auto create_undefined_cs = [&](auto &undefined_cs_ptr) {
-      MoFEMFunctionBegin;
-      const int unidefined_cs_dim[] = {-1, 0, 0, 0};
-      CHKERR getInterface<CoordSystemsManager>()->addCoordinateSystem(
-          unidefined_cs_dim, "UNDEFINED", MF_ZERO);
-      CHKERR getInterface<CoordSystemsManager>()->getCoordSysPtr(
-          "UNDEFINED", undefined_cs_ptr);
-      MoFEMFunctionReturn(0);
-    };
-
-    auto add_field_meshset_to_cs = [&](auto &undefined_cs_ptr) {
-      MoFEMFunctionBegin;
-      int cs_name_size[1];
-      cs_name_size[0] = undefined_cs_ptr->getName().size();
-      void const *cs_name[] = {&*undefined_cs_ptr->getNameRef().begin()};
-      CHKERR get_moab().tag_set_by_ptr(
-          getInterface<CoordSystemsManager>()->get_th_CoordSysName(), &meshset,
-          1, cs_name, cs_name_size);
-      EntityHandle coord_sys_meshset = undefined_cs_ptr->getMeshset();
-      CHKERR get_moab().add_entities(coord_sys_meshset, &meshset, 1);
-      MoFEMFunctionReturn(0);
-    };
-
-    CHKERR create_tags();
-    boost::shared_ptr<CoordSys> undefined_cs_ptr;
-    CHKERR create_undefined_cs(undefined_cs_ptr);
-    CHKERR add_field_meshset_to_cs(undefined_cs_ptr);
-
-    auto p = fIelds.insert(
-        boost::make_shared<Field>(moab, meshset, undefined_cs_ptr));
-    if (bh == MF_EXCL) {
-      if (!p.second)
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-                 "field not inserted %s (top tip, it could be already there)",
-                 Field(moab, meshset, undefined_cs_ptr).getName().c_str());
-    }
-
-    if (verb > QUIET)
-      MOFEM_LOG("SYNC", Sev::inform) << "Add field " << **p.first;
-  }
-
-  MoFEMFunctionReturn(0);
+  return addField<0>(name, space, base, nb_of_coefficients, tag_type, bh, verb);
 }
 
 MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
