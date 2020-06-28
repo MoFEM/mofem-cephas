@@ -1305,17 +1305,42 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
     CHKERR create_undefined_cs(undefined_cs_ptr);
     CHKERR add_field_meshset_to_cs(undefined_cs_ptr);
 
-    auto p = fIelds.insert(boost::make_shared<FieldTmp<CoreValue, 0>>(
-        moab, meshset, undefined_cs_ptr));
-    if (bh == MF_EXCL) {
-      if (!p.second)
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-                 "field not inserted %s (top tip, it could be already there)",
-                 Field(moab, meshset, undefined_cs_ptr).getName().c_str());
-    }
+    auto make_shared_field = [&]() {
+      MoFEMFunctionBegin;
+      const int size = *fShift - 1;
 
-    if (verb > QUIET)
-      MOFEM_LOG("SYNC", Sev::inform) << "Add field " << **p.first;
+      boost::hana::for_each(
+
+          boost::hana::make_range(boost::hana::int_c<-1>,
+                                  boost::hana::int_c<BITFIELDID_SIZE>),
+
+          [&](auto r) {
+            MoFEMFunctionBegin;
+            if (size == r) {
+              auto p = fIelds.insert(boost::make_shared<FieldTmp<CoreValue, 0>>(
+                  moab, meshset, undefined_cs_ptr));
+              if (bh == MF_EXCL) {
+                if (!p.second)
+                  SETERRQ1(
+                      PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+                      "field not inserted %s (top tip, it could be already "
+                      "there)",
+                      Field(moab, meshset, undefined_cs_ptr).getName().c_str());
+              }
+
+              if (verb > QUIET)
+                MOFEM_LOG("SYNC", Sev::inform) << "Add field " << **p.first;
+
+            }
+            MoFEMFunctionReturn(0);
+          }
+
+      );
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR make_shared_field();
+
   }
 
   MoFEMFunctionReturn(0);
