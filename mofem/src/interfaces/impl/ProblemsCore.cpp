@@ -520,21 +520,21 @@ MoFEMErrorCode Core::loop_dofs(const Problem *problem_ptr,
     dofs = &problem_ptr->numeredDofsCols->get<Composite_Name_And_Part_mi_tag>();
     break;
   default:
-    SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "not implemented");
+    SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Not implemented");
   }
+
+  auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
+  if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
+    method.fieldPtr = *field_it;
+  } else {
+    SETERRQ(cOmm, MOFEM_NOT_FOUND, ("Field not found " + field_name).c_str());
+  }
+
   NumeredDofsByNameAndPart::iterator miit =
       dofs->lower_bound(boost::make_tuple(field_name, lower_rank));
   NumeredDofsByNameAndPart::iterator hi_miit =
       dofs->upper_bound(boost::make_tuple(field_name, upper_rank));
-  if (miit != hi_miit) {
-    method.fieldPtr = miit->get()->getFieldPtr();
-  } else {
-    Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it =
-        fIelds.get<FieldName_mi_tag>().find(field_name);
-    if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
-      method.fieldPtr = *field_it;
-    }
-  }
+
   CHKERR method.preProcess();
   for (; miit != hi_miit; miit++) {
     method.dofPtr = miit->get()->getDofEntityPtr();
@@ -585,16 +585,17 @@ MoFEMErrorCode Core::loop_dofs(const std::string &field_name, DofMethod &method,
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
   SET_BASIC_METHOD(method, nullptr);
+
+  auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
+  if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
+    method.fieldPtr = *field_it;
+  } else {
+    SETERRQ(cOmm, MOFEM_NOT_FOUND, ("Field not found " + field_name).c_str());
+  }
+
   auto miit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
   auto hi_miit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
-  if (miit != hi_miit) {
-    method.fieldPtr = miit->get()->getFieldPtr();
-  } else {
-    auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
-    if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
-      method.fieldPtr = *field_it;
-    }
-  }
+
   method.loopSize = std::distance(miit, hi_miit);
   CHKERR method.preProcess();
   for (int nn = 0; miit != hi_miit; miit++, nn++) {
@@ -625,19 +626,18 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
     SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY,
             "It works only with rows or columns");
   }
+
+  auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
+  if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
+    method.fieldPtr = *field_it;
+  } else {
+    SETERRQ(cOmm, MOFEM_NOT_FOUND, ("Field not found " + field_name).c_str());
+  }
+  
   auto miit = dofs->get<Composite_Name_And_Part_mi_tag>().lower_bound(
       boost::make_tuple(field_name, lower_rank));
   auto hi_miit = dofs->get<Composite_Name_And_Part_mi_tag>().upper_bound(
       boost::make_tuple(field_name, upper_rank));
-  if (miit != hi_miit) {
-    method.fieldPtr = miit->get()->getFieldPtr();
-  } else {
-    Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it =
-        fIelds.get<FieldName_mi_tag>().find(field_name);
-    if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
-      method.fieldPtr = *field_it;
-    }
-  }
 
   typedef multi_index_container<
       boost::shared_ptr<FieldEntity>,

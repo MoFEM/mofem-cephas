@@ -442,6 +442,52 @@ template <> struct FieldTmp<-1, -1> : public FieldTmp<0, 0> {
 
 using Field = FieldTmp<0, 0>;
 
+template <typename T> struct interface_FieldData {
+
+  interface_FieldData(const boost::shared_ptr<T> &field_ptr)
+      : sFieldPtr(field_ptr) {}
+  virtual ~interface_FieldData() = default;
+
+  virtual boost::shared_ptr<T> getFieldPtr() const { return this->sFieldPtr; }
+
+protected:
+  mutable boost::shared_ptr<T> sFieldPtr;
+};
+
+template <int V, int F>
+struct interface_FieldData<FieldTmp<V, F>> {
+
+  interface_FieldData(const boost::shared_ptr<FieldTmp<V, F>> &field_ptr)
+      : sFieldPtr(field_ptr) {}
+  virtual ~interface_FieldData() = default;
+
+  virtual boost::shared_ptr<FieldTmp<V, F>> getFieldPtr() const {
+    return this->sFieldPtr;
+  }
+
+protected:
+  mutable boost::shared_ptr<FieldTmp<V, F>> sFieldPtr;
+};
+
+// template <int V, int F>
+// boost::shared_ptr<FieldTmp<V, F>>
+//     interface_FieldData<FieldTmp<V, F>>::sFieldPtr;
+
+template <>
+struct interface_FieldData<FieldTmp<-1, -1>> {
+
+  interface_FieldData(const boost::shared_ptr<FieldTmp<-1, -1>> &field_ptr)
+      : sFieldPtr(field_ptr) {}
+  virtual ~interface_FieldData() = default;
+
+  virtual boost::shared_ptr<FieldTmp<-1, -1>> getFieldPtr() const {
+    return this->sFieldPtr;
+  }
+
+protected:
+  mutable boost::shared_ptr<FieldTmp<-1, -1>> sFieldPtr;
+};
+
 /**
  * \brief Pointer interface for MoFEM::Field
  *
@@ -452,20 +498,17 @@ using Field = FieldTmp<0, 0>;
  *
  * \ingroup dof_multi_indices
  */
-template <typename T> struct interface_Field {
+template <typename T> struct interface_Field : public interface_FieldData<T> {
 
-  mutable boost::shared_ptr<T> sFieldPtr;
-
-  interface_Field(const boost::shared_ptr<T> &field_ptr)
-      : sFieldPtr(field_ptr) {}
-
-  virtual ~interface_Field() = default;
+  using interface_FieldData<T>::interface_FieldData;
 
   inline EntityHandle getMeshset() const {
-    return this->sFieldPtr->getMeshset();
+    return this->getFieldPtr()->getMeshset();
   }
 
-  inline int getCoordSysId() const { return this->sFieldPtr->getCoordSysId(); }
+  inline int getCoordSysId() const {
+    return this->getFieldPtr()->getCoordSysId();
+  }
 
   /**
     * \brief Get dimension of general two-point tensor \ref
@@ -475,73 +518,72 @@ template <typename T> struct interface_Field {
 
     */
   inline int getCoordSysDim(const int d = 0) const {
-    return this->sFieldPtr->getCoordSysDim(d);
+    return this->getFieldPtr()->getCoordSysDim(d);
   }
 
   inline MoFEMErrorCode get_E_Base(const double m[]) const {
     MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(this->sFieldPtr->get_E_Base(m));
+    MoFEMFunctionReturnHot(this->getFieldPtr()->get_E_Base(m));
   }
   inline MoFEMErrorCode get_E_DualBase(const double m[]) const {
     MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(this->sFieldPtr->get_E_DualBase(m));
+    MoFEMFunctionReturnHot(this->getFieldPtr()->get_E_DualBase(m));
   }
   inline MoFEMErrorCode get_e_Base(const double m[]) const {
     MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(this->sFieldPtr->get_e_Base(m));
+    MoFEMFunctionReturnHot(this->getFieldPtr()->get_e_Base(m));
   }
 
   inline MoFEMErrorCode get_e_DualBase(const double m[]) const {
     MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(this->sFieldPtr->get_e_DualBase(m));
+    MoFEMFunctionReturnHot(this->getFieldPtr()->get_e_DualBase(m));
   }
 
   /// @return return meshset for coordinate system
   inline EntityHandle getCoordSysMeshSet() const {
-    return this->sFieldPtr->getCoordSysMeshSet();
+    return this->getFieldPtr()->getCoordSysMeshSet();
   }
 
   /// @return return coordinate system name for field
   inline std::string getCoordSysName() const {
-    return this->sFieldPtr->getCoordSysName();
+    return this->getFieldPtr()->getCoordSysName();
   }
 
   /// @return return coordinate system name for field
   inline boost::string_ref getCoordSysNameRef() const {
-    return this->sFieldPtr->getCoordSysNameRef();
+    return this->getFieldPtr()->getCoordSysNameRef();
   }
 
   /// @return get field Id
-  inline const BitFieldId &getId() const { return this->sFieldPtr->getId(); }
-
-  /// @return get field name
-  inline boost::string_ref getNameRef() const {
-    return this->sFieldPtr->getNameRef();
+  inline const BitFieldId &getId() const {
+    return this->getFieldPtr()->getId();
   }
 
   /// @return get field name
-  inline std::string getName() const { return this->sFieldPtr->getName(); }
+  inline boost::string_ref getNameRef() const {
+    return this->getFieldPtr()->getNameRef();
+  }
+
+  /// @return get field name
+  inline std::string getName() const { return this->getFieldPtr()->getName(); }
 
   /// @return get approximation space
-  inline FieldSpace getSpace() const { return this->sFieldPtr->getSpace(); }
+  inline FieldSpace getSpace() const { return this->getFieldPtr()->getSpace(); }
 
   /// @return get approximation base
   inline FieldApproximationBase getApproxBase() const {
-    return this->sFieldPtr->getApproxBase();
+    return this->getFieldPtr()->getApproxBase();
   }
 
   /// @return get number of coefficients for DOF
   inline FieldCoefficientsNumber getNbOfCoeffs() const {
-    return this->sFieldPtr->getNbOfCoeffs();
+    return this->getFieldPtr()->getNbOfCoeffs();
   }
 
   /// @return get bit number if filed Id
   inline unsigned int getBitNumber() const {
-    return this->sFieldPtr->getBitNumber();
+    return this->getFieldPtr()->getBitNumber();
   }
-
-  /// @return get pointer to the field data structure
-  inline boost::shared_ptr<T> &getFieldPtr() const { return this->sFieldPtr; }
 
   /**
    * \brief get hash-map relating dof index on entity with its order
@@ -553,7 +595,7 @@ template <typename T> struct interface_Field {
    */
   inline std::vector<ApproximationOrder> &
   getDofOrderMap(const EntityType type) const {
-    return this->sFieldPtr->getDofOrderMap(type);
+    return this->getFieldPtr()->getDofOrderMap(type);
   }
 };
 
@@ -595,8 +637,6 @@ struct FieldChangeCoordinateSystem {
   void operator()(boost::shared_ptr<Field> &e) { e->coordSysPtr = csPtr; }
 };
 
-
 } // namespace MoFEM
 
 #endif // __FIELDMULTIINDICES_HPP__
-  

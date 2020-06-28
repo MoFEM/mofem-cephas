@@ -852,13 +852,6 @@ struct FieldEntity : public interface_Field<Field>,
   inline boost::shared_ptr<RefEntity> &getRefEntityPtr() { return this->sPtr; }
 
   /**
-   * \brief Get pointer to Field data structure associated with this entity
-   */
-  inline boost::shared_ptr<Field> &getFieldPtr() const {
-    return this->sFieldPtr;
-  }
-
-  /**
    * \brief get hash-map relating dof index on entity with its order
    *
    * DOFs of given field are indexed on entity
@@ -924,11 +917,6 @@ struct interface_FieldEntity : public interface_Field<T>,
   /// @return return pointer to reference entity data structure
   inline boost::shared_ptr<RefEntity> &getRefEntityPtr() const {
     return this->sPtr->getRefEntityPtr();
-  }
-
-  /// @return get pointer to field data structure
-  inline boost::shared_ptr<Field> &getFieldPtr() const {
-    return this->sFieldPtr->getFieldPtr();
   }
 
   /// @return get pointer to mofem entity data structure
