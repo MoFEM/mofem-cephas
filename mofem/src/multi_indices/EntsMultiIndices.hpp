@@ -716,6 +716,15 @@ struct FieldEntity : public interface_Field<Field>,
   virtual ~FieldEntity() = default;
 
   /**
+   * @brief Get the Field pointer
+   * 
+   * @return boost::shared_ptr<FieldTmp<0, 0>> 
+   */
+  inline boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
+    return interface_type_Field::getFieldPtr();
+  }
+
+  /**
    * \brief Get entity handle
    * @return EntityHandle
    */
