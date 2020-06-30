@@ -50,6 +50,15 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual const int getValue() const = 0;
 
+  /**
+   * @brief Get RefEntity
+   * 
+   * @param ent 
+   * @return boost::shared_ptr<RefEntityTmp<0>> 
+   */
+  virtual boost::shared_ptr<RefEntityTmp<0>>
+  make_shared_ref_entity(const EntityHandle ent) = 0;
+
   /** \name Interfaces */
 
   /**@{*/
