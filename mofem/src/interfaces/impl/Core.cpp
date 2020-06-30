@@ -293,7 +293,8 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       else
         CHKERR cs_manger_ptr->getCoordSysPtr("UNDEFINED", cs_ptr);
 
-      auto p = makeSharedField(*this, fIelds, field_nb, moab, mit, cs_ptr);
+      auto p =
+          fIelds.insert(makeSharedField(*this, field_nb, moab, mit, cs_ptr));
       field_nb++;
 
       if (verb > QUIET)
@@ -944,11 +945,12 @@ void Core::setRefEntBasicDataPtr(MoFEM::Interface &m_field,
 };
 
 template <int V, typename std::enable_if<(V >= 0), int>::type * = nullptr>
-std::pair<Field_multiIndex::iterator, bool>
-make_shared_field_impl(Field_multiIndex &fields, const int size,
-                       const moab::Interface &moab, const EntityHandle meshset,
+boost::shared_ptr<FieldTmp<0, 0>>
+make_shared_field_impl(const int size, const moab::Interface &moab,
+                       const EntityHandle meshset,
                        const boost::shared_ptr<CoordSys> coord_sys_ptr) {
-  std::pair<Field_multiIndex::iterator, bool> p;
+
+  boost::shared_ptr<FieldTmp<0, 0>> ptr;
 
   boost::hana::for_each(
 
@@ -957,32 +959,29 @@ make_shared_field_impl(Field_multiIndex &fields, const int size,
 
       [&](auto r) {
         if (size == r)
-          p = fields.insert(
-              boost::make_shared<FieldTmp<V, r>>(moab, meshset, coord_sys_ptr));
+          ptr =
+              boost::make_shared<FieldTmp<V, r>>(moab, meshset, coord_sys_ptr);
+              
       }
 
   );
 
-  return p;
+  return ptr;
 };
 
 template <int V, typename std::enable_if<(V < 0), int>::type * = nullptr>
-std::pair<Field_multiIndex::iterator, bool>
-make_shared_field_impl(Field_multiIndex &fields, const int size,
-                       const moab::Interface &moab, const EntityHandle meshset,
+boost::shared_ptr<FieldTmp<0, 0>>
+make_shared_field_impl(const int size, const moab::Interface &moab,
+                       const EntityHandle meshset,
                        const boost::shared_ptr<CoordSys> coord_sys_ptr) {
-  std::pair<Field_multiIndex::iterator, bool> p = fields.insert(
-      boost::make_shared<FieldTmp<-1, -1>>(moab, meshset, coord_sys_ptr));
-  return p;
+  return boost::make_shared<FieldTmp<-1, -1>>(moab, meshset, coord_sys_ptr);
 };
 
-std::pair<Field_multiIndex::iterator, bool>
-Core::makeSharedField(MoFEM::Interface &m_field, Field_multiIndex &fields,
-                        const int size, const moab::Interface &moab,
-                        const EntityHandle meshset,
-                        const boost::shared_ptr<CoordSys> coord_sys_ptr) {
-
-  std::pair<Field_multiIndex::iterator, bool> p;
+boost::shared_ptr<FieldTmp<0, 0>>
+Core::makeSharedField(MoFEM::Interface &m_field, const int size,
+                      const moab::Interface &moab, const EntityHandle meshset,
+                      const boost::shared_ptr<CoordSys> coord_sys_ptr) {
+  boost::shared_ptr<FieldTmp<0, 0>> ptr;
 
   boost::hana::for_each(
 
@@ -991,13 +990,12 @@ Core::makeSharedField(MoFEM::Interface &m_field, Field_multiIndex &fields,
 
       [&](auto r) {
         if (m_field.getValue() == r)
-          p = make_shared_field_impl<r>(fields, size, moab, meshset,
-                                        coord_sys_ptr);
+          ptr = make_shared_field_impl<r>(size, moab, meshset, coord_sys_ptr);
       }
 
   );
 
-  return p;
+  return ptr;
 };
 
 boost::shared_ptr<RefEntityTmp<0>>

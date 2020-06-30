@@ -187,11 +187,10 @@ template <> struct CoreTmp<0> : public Interface {
   setRefEntBasicDataPtr(MoFEM::Interface &m_field,
                              boost::shared_ptr<BasicEntityData> &ptr);
 
-  static std::pair<Field_multiIndex::iterator, bool>
-  makeSharedField(MoFEM::Interface &m_field, Field_multiIndex &fields,
-                    const int size, const moab::Interface &moab,
-                    const EntityHandle meshset,
-                    const boost::shared_ptr<CoordSys> coord_sys_ptr);
+  boost::shared_ptr<FieldTmp<0, 0>>
+  makeSharedField(MoFEM::Interface &m_field, const int size,
+                  const moab::Interface &moab, const EntityHandle meshset,
+                  const boost::shared_ptr<CoordSys> coord_sys_ptr);
 
   static boost::shared_ptr<RefEntityTmp<0>>
   makeSharedRefEntity(MoFEM::Interface &m_field, const EntityHandle ent);

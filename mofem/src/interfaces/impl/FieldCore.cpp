@@ -224,8 +224,8 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
     CHKERR create_undefined_cs(undefined_cs_ptr);
     CHKERR add_field_meshset_to_cs(undefined_cs_ptr);
 
-    auto p = makeSharedField(*this, fIelds, *fShift - 1, moab, meshset,
-                               undefined_cs_ptr);
+    auto p = fIelds.insert(this->makeSharedField(*this, *fShift - 1, moab,
+                                                 meshset, undefined_cs_ptr));
     if (verb > QUIET)
       MOFEM_LOG("SYNC", Sev::inform) << "Add field " << **p.first;
 
