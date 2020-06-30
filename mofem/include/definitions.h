@@ -281,7 +281,7 @@ enum VERBOSITY_LEVELS {
   VERY_NOISY
 };
 
-#define MAX_CORE_TMP 9       ///< maximal number of cores
+#define MAX_CORE_TMP 3       ///< maximal number of cores
 #define BITREFEDGES_SIZE 6   ///< number of edges on tetrahedral
 #define BITREFLEVEL_SIZE 128 ///< max number of refinements
 #define BITFIELDID_SIZE 32   ///< max number of fields
