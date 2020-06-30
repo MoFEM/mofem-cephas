@@ -37,6 +37,8 @@ BitRefManager::BitRefManager(const MoFEM::Core &core)
 /// tool class with methods used more than twp times
 struct SetBitRefLevelTool {
 
+  MoFEM::Interface &mField;
+
   const BitRefLevel &bIt;                     ///< bit to set
   const RefEntity_multiIndex *refEntsPtr;     ///< access to ents database
   const RefElement_multiIndex *refElementPtr; ///< access to fe database
@@ -47,7 +49,8 @@ struct SetBitRefLevelTool {
   SetBitRefLevelTool(MoFEM::Interface &m_field, const BitRefLevel &bit,
                      const RefEntity_multiIndex *ref_ents_ptr,
                      const RefElement_multiIndex *ref_element_ptr)
-      : bIt(bit), refEntsPtr(ref_ents_ptr), refElementPtr(ref_element_ptr),
+      : mField(m_field), bIt(bit), refEntsPtr(ref_ents_ptr),
+        refElementPtr(ref_element_ptr),
         baseEntData(m_field.get_basic_entity_data_ptr()) {}
 
   /// find entities and change entity bit if in database
@@ -89,7 +92,7 @@ struct SetBitRefLevelTool {
 
   /// add entities to database
   template <int N>
-  MoFEMErrorCode addEntsToDatabase(const Range &seed_ents_range) const {
+  MoFEMErrorCode addEntsToDatabaseImpl(const Range &seed_ents_range) const {
     MoFEMFunctionBeginHot;
     std::vector<boost::shared_ptr<RefEntity>> shared_ref_ents_vec;
     shared_ref_ents_vec.reserve(seed_ents_range.size());
@@ -133,6 +136,26 @@ struct SetBitRefLevelTool {
     MoFEMFunctionReturnHot(0);
   }
 
+   MoFEMErrorCode addEntsToDatabase(const Range &seed_ents_range) const {
+     MoFEMFunctionBeginHot;
+
+     boost::hana::for_each(
+
+         boost::hana::make_range(boost::hana::int_c<-1>,
+                                 boost::hana::int_c<MAX_CORE_TMP>),
+
+         [&](auto r) {
+           if (mField.getValue() == r)
+             CHKERR addEntsToDatabaseImpl<r>(seed_ents_range);
+         }
+
+     );
+
+     MoFEMFunctionReturnHot(0);
+   }
+
+ 
+ 
   MoFEMErrorCode findElementsToAdd(EntityHandle f, EntityHandle s,
                                    Range &seed_fe_range) const {
     MoFEMFunctionBeginHot;
@@ -278,22 +301,9 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
             EntityHandle s = pit->second;
             CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
                 .findEntsToAdd(f, s, seed_ents_range);
-            if (!seed_ents_range.empty()) {
-
-              boost::hana::for_each(
-
-                  boost::hana::make_range(boost::hana::int_c<-1>,
-                                          boost::hana::int_c<MAX_CORE_TMP>),
-
-                  [&](auto r) {
-                    if (m_field.getValue() == r)
-                      CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr,
-                                                ref_fe_ptr)
-                          .addEntsToDatabase<r>(seed_ents_range);
-                  }
-
-              );
-            }
+            if (!seed_ents_range.empty())
+              CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
+                  .addEntsToDatabase(seed_ents_range);
           }
         }
       }
@@ -321,21 +331,10 @@ MoFEMErrorCode BitRefManager::setElementsBitRefLevel(const Range &ents,
     CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
         .findEntsToAdd(f, s, seed_ents_range);
     // add elements
-    if (!seed_ents_range.empty()) {
+    if (!seed_ents_range.empty())
+      CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
+          .addEntsToDatabase(seed_ents_range);
 
-      boost::hana::for_each(
-
-          boost::hana::make_range(boost::hana::int_c<-1>,
-                                  boost::hana::int_c<MAX_CORE_TMP>),
-
-          [&](auto r) {
-            if (m_field.getValue() == r)
-              CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
-                  .addEntsToDatabase<r>(seed_ents_range);
-          }
-
-      );
-    }
     Range seed_fe_range;
     CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
         .findElementsToAdd(f, s, seed_fe_range);
@@ -366,21 +365,10 @@ MoFEMErrorCode BitRefManager::setEntitiesBitRefLevel(const Range &ents,
     CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
         .findEntsToAdd(f, s, seed_ents_range);
     // add elements
-    if (!seed_ents_range.empty()) {
-
-      boost::hana::for_each(
-
-          boost::hana::make_range(boost::hana::int_c<-1>,
-                                  boost::hana::int_c<MAX_CORE_TMP>),
-
-          [&](auto r) {
-            if (m_field.getValue() == r)
-              CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
-                  .addEntsToDatabase<r>(seed_ents_range);
-          }
-
-      );
-    }
+    if (!seed_ents_range.empty()) 
+      CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
+          .addEntsToDatabase(seed_ents_range);
+    
   }
   MoFEMFunctionReturn(0);
 }
