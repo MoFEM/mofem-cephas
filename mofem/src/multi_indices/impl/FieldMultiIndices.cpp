@@ -278,8 +278,7 @@ MoFEMErrorCode Field::rebuildDofsOrderMap() const {
 }
 
 std::ostream &operator<<(std::ostream &os, const Field &e) {
-  os << "name " << e.getNameRef() << " BitFieldId " << e.getId().to_ulong()
-     << " bit number " << e.getBitNumber() << " space "
+  os << e.getNameRef() << " field_id " << e.getId().to_ulong() << " space "
      << FieldSpaceNames[e.getSpace()] << " approximation base "
      << ApproximationBaseNames[e.getApproxBase()] << " rank "
      << e.getNbOfCoeffs() << " meshset " << e.meshSet;

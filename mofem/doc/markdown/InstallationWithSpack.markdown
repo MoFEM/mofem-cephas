@@ -1,4 +1,4 @@
-Installation with Spack (Recommended for Linux, macOS, HPC) {#install_spack}
+Installation with Spack (Linux, macOS, HPC) {#install_spack}
 ==========================================================
 
 Spack is "A flexible package manager that supports multiple versions,
@@ -29,13 +29,13 @@ installation can use the following scripts for different purposes:
 - For user only (just the binary files): [`install_mofem_user.sh`](scripts/install_mofem_user.sh)
 - For developer (full source and binary files): [`install_mofem_developer.sh`](scripts/install_mofem_developer.sh)
 
-After downloading the appropriate file of choice, one should copy the file to
-the directory where MoFEM will be installed. Then simply run the file from the
-terminal by executing the command, for example,
+You will copy the script to the directory where MoFEM will be installed and run
+it from the terminal, for example
 ~~~~~~
 ./install_mofem_user.sh
 ~~~~~~ 
-It is worth noting that running the scripts may require user password for sudo privileges.
+
+\note Running the scripts may require user password for sudo privileges.
 
 ## Scripts on secure server
 
@@ -57,40 +57,6 @@ and then you can install MoFEM
 ~~~~~
 ./install_mofem_user.sh
 ~~~~~
-
-## Update fracture module
-
-This script allows you to update a user version of the fracture module: [`update_mofem_fracture_module.sh`](scripts/update_mofem_fracture_module.sh)
-
-If you would like to update and install the newest version of the fracture
-module, run the script like this
-~~~~~~
-./update_mofem_fracture_module.sh
-~~~~~~
-The installation will create a directory named, for example,
-`fracture_module_v0.9.60` in the same location where the script is run and the
-new directory contains the executables of fracture module in _fracture_module_v0.9.60/um_view/fracture_mechanics/_.
-
-
-For the update and installation of a specific version of the fracture
-module, you will add an argument of the version to the command line. For
-example, the following will install fracture module version 0.9.60
-~~~~~~
-./update_mofem_fracture_module.sh 0.9.60
-~~~~~~ 
-
-
-You can run the command line below for the list of all available versions of the
-fracture module in MoFEM
-~~~~~~
-spack info mofem-fracture-module
-~~~~~~ 
-
-Please note that this script should be used only if MoFEM has already been installed using
-spack in advance. If MoFEM has not been installed, install it using
-[`install_mofem_user.sh`](scripts/install_mofem_user.sh) or
-[`install_mofem_developer.sh`](scripts/install_mofem_developer.sh) described
-in the previous section before running this script.
 
 # Prerequisites {#spack_prerequisites}
 

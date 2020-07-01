@@ -148,8 +148,7 @@ int main(int argc, char *argv[]) {
     myfile << "<<<< Dofs (X-Translation, Y-Translation, Z-Translation) >>>>>"
            << std::endl;
 
-    const DofEntity_multiIndex *dofs_ptr;
-    CHKERR m_field.get_dofs(&dofs_ptr);
+    auto dofs_ptr = m_field.get_dofs();
     DofEntity_multiIndex_uid_view dofs_view;
     for (_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field, "MESH_NODE_POSITIONS",
                                               dof_ptr)) {

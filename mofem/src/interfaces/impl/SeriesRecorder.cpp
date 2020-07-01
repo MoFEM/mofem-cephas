@@ -16,6 +16,14 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#define SeriesRecorderFunctionBegin                                            \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_CHANNEL("SYNC");                                                   \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("SYNC", "SeriesRecorder");                                     \
+  MOFEM_LOG_TAG("WORLD", "SeriesRecorder")
+
 namespace MoFEM {
 
 // const static int debug = 1;
@@ -57,7 +65,7 @@ MoFEMErrorCode SeriesRecorder::clearMap() {
 MoFEMErrorCode SeriesRecorder::initialiseDatabaseFromMesh(int verb) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  SeriesRecorderFunctionBegin;
   Range meshsets;
   const int def_val_len = 0;
   CHKERR moab.tag_get_handle(
@@ -73,11 +81,8 @@ MoFEMErrorCode SeriesRecorder::initialiseDatabaseFromMesh(int verb) {
     if (rval == MB_SUCCESS) {
       std::pair<Series_multiIndex::iterator, bool> p =
           sEries.insert(FieldSeries(moab, *mit));
-      if (verb > 0) {
-        std::ostringstream ss;
-        ss << "read series " << *p.first << std::endl;
-        PetscPrintf(m_field.get_comm(), ss.str().c_str());
-      }
+      if (verb > QUIET)
+        MOFEM_LOG("SYNC", Sev::inform) << "read series " << *p.first;
     }
   }
   // //build series steps
@@ -89,11 +94,8 @@ MoFEMErrorCode SeriesRecorder::initialiseDatabaseFromMesh(int verb) {
     for (; ss < nb_steps; ss++) {
       std::pair<SeriesStep_multiIndex::iterator, bool> p =
           seriesSteps.insert(FieldSeriesStep(moab, &*sit, ss));
-      if (verb > 0) {
-        std::ostringstream ss;
-        ss << "add series step " << *p.first << std::endl;
-        PetscPrintf(m_field.get_comm(), ss.str().c_str());
-      }
+      if (verb > QUIET)
+        MOFEM_LOG("SYNC", Sev::inform) << "add series step " << *p.first;
     }
   }
   MoFEMFunctionReturn(0);
@@ -106,7 +108,7 @@ SeriesRecorder::add_series_recorder(const std::string &series_name) {
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   EntityHandle meshset;
-  CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR moab.create_meshset(MESHSET_SET, meshset);
   void const *tag_data[] = {series_name.c_str()};
   int tag_sizes[1];
   tag_sizes[0] = series_name.size();
@@ -195,11 +197,9 @@ MoFEMErrorCode SeriesRecorder::record_field(const std::string &serie_name,
                                             const std::string &field_name,
                                             const BitRefLevel &bit,
                                             const BitRefLevel &mask) {
-
   Interface &m_field = cOre;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_dofs(&dofs_ptr);
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit =
       sEries.get<SeriesName_mi_tag>().find(serie_name);
   if (sit == sEries.get<SeriesName_mi_tag>().end()) {
@@ -296,21 +296,14 @@ SeriesRecorder::finalize_series_recorder(const std::string &serie_name) {
 }
 
 MoFEMErrorCode SeriesRecorder::print_series_steps() {
-  //
-  Interface &m_field = cOre;
-  MoFEMFunctionBegin;
-  std::ostringstream ss;
-  Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit =
-      sEries.get<SeriesName_mi_tag>().begin();
-  for (; sit != sEries.get<SeriesName_mi_tag>().end(); sit++) {
-    ss << "series " << *sit << std::endl;
-  }
-  SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator ssit =
-      seriesSteps.get<SeriesName_mi_tag>().begin();
-  for (; ssit != seriesSteps.get<SeriesName_mi_tag>().end(); ssit++) {
-    ss << "serises steps " << *ssit << std::endl;
-  }
-  PetscPrintf(m_field.get_comm(), ss.str().c_str());
+  SeriesRecorderFunctionBegin;
+
+  for (auto &sit : sEries.get<SeriesName_mi_tag>())
+    MOFEM_LOG("SYNC", Sev::inform) << "series " << sit;
+
+  for (auto &ssit : seriesSteps.get<SeriesName_mi_tag>())
+    MOFEM_LOG("SYNC", Sev::inform) << "series steps " << ssit;
+
   MoFEMFunctionReturn(0);
 }
 
@@ -327,7 +320,7 @@ MoFEMErrorCode SeriesRecorder::load_series_data(const std::string &serie_name,
 
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  const DofEntity_multiIndex *dofs_ptr;
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
   SeriesStep_multiIndex::index<
       Composite_SeriesName_And_Step_mi_tag>::type::iterator sit;
@@ -337,7 +330,6 @@ MoFEMErrorCode SeriesRecorder::load_series_data(const std::string &serie_name,
     SETERRQ2(PETSC_COMM_SELF, 1, "series <%s> and step %d not found",
              serie_name.c_str(), step_number);
   }
-  CHKERR m_field.get_dofs(&dofs_ptr);
   CHKERR sit->get(moab, *(const_cast<DofEntity_multiIndex *>(dofs_ptr)));
   MoFEMFunctionReturn(0);
 }

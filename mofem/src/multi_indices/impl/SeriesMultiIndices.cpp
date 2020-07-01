@@ -193,7 +193,7 @@ MoFEMErrorCode FieldSeries::save(moab::Interface &moab) const {
   }
   for (unsigned int mm = nb_contained; mm < ia.size() - 1; mm++) {
     EntityHandle new_meshset;
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, new_meshset);
+    CHKERR moab.create_meshset(MESHSET_SET, new_meshset);
     CHKERR moab.add_entities(meshset, &new_meshset, 1);
   }
   contained.resize(0);

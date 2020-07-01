@@ -577,10 +577,8 @@ MoFEMErrorCode PrismInterface::splitSides(
     const bool add_interface_entities, const bool recursive, int verb) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  const RefEntity_multiIndex *refined_ents_ptr;
+  auto refined_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-
-  CHKERR m_field.get_ref_ents(&refined_ents_ptr);
 
   std::vector<EntityHandle> children;
   // get children meshsets
@@ -1223,9 +1221,7 @@ MoFEMErrorCode PrismInterface::splitSides(
 
   auto reconstruct_refined_ents = [&]() {
     MoFEMFunctionBegin;
-    const RefEntity_multiIndex *refined_ents_ptr;
-    CHKERR m_field.get_ref_ents(&refined_ents_ptr);
-    CHKERR reconstructMultiIndex(*refined_ents_ptr);
+    CHKERR reconstructMultiIndex(*m_field.get_ref_ents());
     MoFEMFunctionReturn(0);
   };
 

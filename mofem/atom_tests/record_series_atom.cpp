@@ -160,8 +160,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field2.getInterface(recorder2_ptr);
     CHKERR recorder2_ptr->print_series_steps();
 
-    const DofEntity_multiIndex *dofs_ptr;
-    CHKERR m_field.get_dofs(&dofs_ptr);
+    auto dofs_ptr = m_field.get_dofs();;
 
     my_split << "TEST_SERIES1" << std::endl;
     for (_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder2_ptr, "TEST_SERIES1",

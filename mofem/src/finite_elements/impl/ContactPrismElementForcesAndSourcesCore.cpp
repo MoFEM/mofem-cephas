@@ -919,7 +919,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
       noalias(ent_field_data) = dof.getEntFieldData();
       ent_field_dofs.resize(nb_dofs_on_ent, false);
       for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
-        ent_field_dofs[ii] = *dit;
+        const_cast<FEDofEntity *&>(ent_field_dofs[ii]) = (*dit).get();
         ++dit;
       }
     }
@@ -1019,7 +1019,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
         auto ent_filed_data_vec = dof.getEntFieldData();
         for (int ii = 0; ii != nb_dof_idx; ++ii) {
           nodes_data[pos] = ent_filed_data_vec[ii];
-          nodes_dofs[pos] = *dit;
+          const_cast<FEDofEntity *&>(nodes_dofs[pos]) = (*dit).get();
           ++pos;
           ++dit;
         }

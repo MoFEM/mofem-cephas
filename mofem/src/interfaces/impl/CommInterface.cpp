@@ -37,9 +37,8 @@ CommInterface::~CommInterface() {}
 
 MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
   MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ents_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
 
   // make a buffer
   std::vector<std::vector<EntityHandle>> sbuffer(m_field.get_comm_size());
@@ -493,8 +492,7 @@ MoFEMErrorCode CommInterface::exchangeFieldData(const std::string field_name,
   MoFEMFunctionBegin;
   if (m_field.get_comm_size() > 1) {
 
-    const FieldEntity_multiIndex *field_ents;
-    CHKERR m_field.get_field_ents(&field_ents);
+    auto *field_ents = m_field.get_field_ents();
 
     Range exchange_ents_data_verts, exchange_ents_data;
 

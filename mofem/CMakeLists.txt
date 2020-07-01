@@ -37,8 +37,8 @@ project(MoFEM C CXX)
 
 # Set fallback version. Fallback version is version of MoFEM which is used
 # as default version if version from the git tags can not be extracted. For exammple 
-# that is a keys when somone commole mofem frome tarball.
-set(MoFEM_FALLBACK_VERSION "0.9.1" CACHE STRING "Fallback version")
+# that is a keys when somone install mofem from tarball.
+set(MoFEM_FALLBACK_VERSION "0.9.2" CACHE STRING "Fallback version")
 message(STATUS "Falback vecrsion v${MoFEM_FALLBACK_VERSION}")
 
 # Options
@@ -209,7 +209,7 @@ resolve_libraries(SYSTEM_PROJECT_LIBS "
   ${MOAB_LIBS_LINK}
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}
-  ${BOOST_PROGRAM_OPTIONS_LIB}
+  ${Boost_LIBRARIES} 
   ${BLAS_LINKER_FLAGS}
   ${CBLAS_LIBIBRARY}")
 # Set project libs compiled with the MoFEM as external libs
