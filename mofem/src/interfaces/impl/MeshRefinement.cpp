@@ -92,9 +92,8 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middle_of_edges(
     const Range &ents, const BitRefLevel &bit, int verb, EntityHandle start_v) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  const RefEntity_multiIndex *refined_ents_ptr;
+  auto refined_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_ref_ents(&refined_ents_ptr);
   auto miit =
       refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>()
           .lower_bound(boost::make_tuple(MBVERTEX, MBEDGE));
@@ -207,8 +206,8 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
 
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  const RefEntity_multiIndex *refined_ents_ptr;
-  const RefElement_multiIndex *refined_finite_elements_ptr;
+  auto refined_ents_ptr = m_field.get_ref_ents();
+  auto refined_finite_elements_ptr = m_field.get_ref_finite_elements();
   ReadUtilIface *read_util;
   MoFEMFunctionBegin;
 
@@ -312,9 +311,6 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
   SetParent set_parent;
 
   Range ents_to_set_bit;
-
-  CHKERR m_field.get_ref_ents(&refined_ents_ptr);
-  CHKERR m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
   Check check;
   if (debug)
@@ -766,16 +762,13 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
 
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  const RefEntity_multiIndex *refined_ents_ptr;
-  const RefElement_multiIndex *refined_finite_elements_ptr;
+  auto refined_ents_ptr = m_field.get_ref_ents();
+  auto refined_finite_elements_ptr = m_field.get_ref_finite_elements();
 
   // FIXME: refinement is based on entity handlers, should work on global ids of
   // nodes, this will allow parallelise algorithm in the future
 
   MoFEMFunctionBegin;
-
-  CHKERR m_field.get_ref_ents(&refined_ents_ptr);
-  CHKERR m_field.get_ref_finite_elements(&refined_finite_elements_ptr);
 
   typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
 
@@ -958,9 +951,8 @@ MoFEMErrorCode MeshRefinement::refine_MESHSET(const EntityHandle meshset,
                                               const BitRefLevel &bit,
                                               const bool recursive, int verb) {
   Interface &m_field = cOre;
-  const RefEntity_multiIndex *refined_ents_ptr;
+  auto refined_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_ref_ents(&refined_ents_ptr);
   typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
   RefEntsByEnt::iterator miit = refined_ents_ptr->find(meshset);
   if (miit == refined_ents_ptr->end()) {

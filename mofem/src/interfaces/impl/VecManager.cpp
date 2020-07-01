@@ -392,11 +392,9 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
     const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
     ScatterMode scatter_mode) const {
   const MoFEM::Interface &m_field = cOre;
-  const Field_multiIndex *fields_ptr;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto fields_ptr = m_field.get_fields();
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_fields(&fields_ptr);
-  CHKERR m_field.get_dofs(&dofs_ptr);
   typedef NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type DofsByName;
   DofsByName *dofs;
   switch (rc) {
@@ -523,13 +521,10 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
     const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
     ScatterMode scatter_mode) const {
   const MoFEM::Interface &m_field = cOre;
-  const Field_multiIndex *fields_ptr;
-  const DofEntity_multiIndex *dofs_ptr;
-  const FieldEntity_multiIndex *field_ents;
+  auto fields_ptr = m_field.get_fields();
+  auto dofs_ptr = m_field.get_dofs();
+  auto *field_ents = m_field.get_field_ents();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_fields(&fields_ptr);
-  CHKERR m_field.get_dofs(&dofs_ptr);
-  CHKERR m_field.get_field_ents(&field_ents);
   typedef NumeredDofEntityByFieldName DofsByName;
   DofsByName *dofs;
   DofIdx nb_dofs;

@@ -27,11 +27,13 @@ using namespace boost::numeric;
 namespace MoFEM {
 
 typedef ublas::unbounded_array<
-    boost::shared_ptr<const FEDofEntity>,
-    std::allocator<boost::shared_ptr<const FEDofEntity>>>
+
+    FEDofEntity *, std::allocator<FEDofEntity *>
+
+    >
     DofsAllocator;
-typedef ublas::vector<boost::shared_ptr<const FEDofEntity>, DofsAllocator>
-    VectorDofs;
+
+typedef ublas::vector<FEDofEntity *, DofsAllocator> VectorDofs;
 
 /** \brief data structure for finite element entity
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -1152,8 +1154,8 @@ const VectorInt &DataForcesAndSourcesCore::EntData::getIndices() const {
 const VectorIntAdaptor
 DataForcesAndSourcesCore::EntData::getIndicesUpToOrder(int order) {
   unsigned int size = 0;
-  if (iNdices.size()) {
-    size = dOfs[0]->getOrderNbDofs(order) * dOfs[0]->getNbOfCoeffs();
+  if (auto dof = dOfs[0]) {
+    size = dof->getOrderNbDofs(order) * dof->getNbOfCoeffs();
     size = size < iNdices.size() ? size : iNdices.size();
   }
   int *data = &*iNdices.data().begin();
@@ -1167,8 +1169,8 @@ const VectorInt &DataForcesAndSourcesCore::EntData::getLocalIndices() const {
 const VectorIntAdaptor
 DataForcesAndSourcesCore::EntData::getLocalIndicesUpToOrder(int order) {
   unsigned int size = 0;
-  if (localIndices.size()) {
-    size = dOfs[0]->getOrderNbDofs(order) * dOfs[0]->getNbOfCoeffs();
+  if (auto dof = dOfs[0]) {
+    size = dof->getOrderNbDofs(order) * dof->getNbOfCoeffs();
     size = size < localIndices.size() ? size : localIndices.size();
   }
   int *data = &*localIndices.data().begin();
@@ -1194,8 +1196,8 @@ const VectorDouble &DataForcesAndSourcesCore::EntData::getFieldData() const {
 const VectorAdaptor
 DataForcesAndSourcesCore::EntData::getFieldDataUpToOrder(int order) {
   unsigned int size = 0;
-  if (fieldData.size()) {
-    size = dOfs[0]->getOrderNbDofs(order) * dOfs[0]->getNbOfCoeffs();
+  if (auto dof = dOfs[0]) {
+    size = dof->getOrderNbDofs(order) * dof->getNbOfCoeffs();
     size = size < fieldData.size() ? size : fieldData.size();
   }
   double *data = &*fieldData.data().begin();

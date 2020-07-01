@@ -33,7 +33,9 @@ struct RefElement : public interface_RefEntity<RefEntity> {
   static BitRefEdges DummyBitRefEdges;
 
   SideNumber_multiIndex side_number_table;
-  RefElement(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElement(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
+  virtual ~RefElement() = default;
+
   virtual const BitRefEdges &getBitRefEdges() const { return DummyBitRefEdges; }
 
   virtual int getBitRefEdgesUlong() const { return 0; }
@@ -65,7 +67,8 @@ struct RefElement : public interface_RefEntity<RefEntity> {
  * \ingroup fe_multi_indices
  */
 struct RefElement_MESHSET : public RefElement {
-  RefElement_MESHSET(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElement_MESHSET(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
+  virtual ~RefElement_MESHSET() = default;
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
 };
@@ -75,7 +78,9 @@ struct RefElement_MESHSET : public RefElement {
  */
 struct RefElement_PRISM : public RefElement {
   BitRefEdges *tag_BitRefEdges;
-  RefElement_PRISM(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElement_PRISM(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
+  virtual ~RefElement_PRISM() = default;
+
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
   const BitRefEdges &getBitRefEdges() const { return *tag_BitRefEdges; }
@@ -89,7 +94,9 @@ struct RefElement_PRISM : public RefElement {
 struct RefElement_TET : public RefElement {
   BitRefEdges *tag_BitRefEdges;
   const int *tag_type_data;
-  RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElement_TET(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
+  virtual ~RefElement_TET() = default;
+
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
   SideNumber_multiIndex &getSideNumberTable() const {
@@ -104,7 +111,8 @@ struct RefElement_TET : public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElementFace : public RefElement {
-  RefElementFace(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElementFace(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
+  virtual ~RefElementFace() = default;
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream &operator<<(std::ostream &os, const RefElementFace &e);
@@ -115,7 +123,8 @@ struct RefElementFace : public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_EDGE : public RefElement {
-  RefElement_EDGE(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElement_EDGE(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
+  virtual ~RefElement_EDGE() = default;
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream &operator<<(std::ostream &os, const RefElement_EDGE &e);
@@ -126,7 +135,8 @@ struct RefElement_EDGE : public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_VERTEX : public RefElement {
-  RefElement_VERTEX(const boost::shared_ptr<RefEntity> &ref_ent_ptr);
+  RefElement_VERTEX(const boost::shared_ptr<RefEntity> &ref_ents_ptr);
+  virtual ~RefElement_VERTEX() = default;
   const boost::shared_ptr<SideNumber> &
   getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream &operator<<(std::ostream &os, const RefElement_VERTEX &e);
@@ -143,6 +153,7 @@ template <typename T> struct interface_RefElement : interface_RefEntity<T> {
 
   interface_RefElement(const boost::shared_ptr<T> &sptr)
       : interface_RefEntity<T>(sptr) {}
+  virtual ~interface_RefElement() = default;
 
   inline int getBitRefEdgesUlong() const {
     return this->sPtr->getBitRefEdgesUlong();
@@ -165,7 +176,6 @@ template <typename T> struct interface_RefElement : interface_RefEntity<T> {
     return this->sPtr;
   }
 
-  virtual ~interface_RefElement() {}
 };
 
 /**
@@ -347,6 +357,7 @@ template <typename T> struct interface_FiniteElement {
   mutable boost::shared_ptr<T> sFePtr;
 
   interface_FiniteElement(const boost::shared_ptr<T> &ptr) : sFePtr(ptr){};
+  virtual ~interface_FiniteElement() = default;
 
   inline const boost::shared_ptr<FiniteElement> &get_MoFEMFiniteElementPtr() {
     return this->sFePtr;
@@ -433,6 +444,7 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
 
   EntFiniteElement(const boost::shared_ptr<RefElement> &ref_finite_element,
                    const boost::shared_ptr<FiniteElement> &fe_ptr);
+  virtual ~EntFiniteElement() = default;
 
   /**
    * \brief Get unique UId for finite element entity
@@ -549,6 +561,7 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
 
   interface_EntFiniteElement(const boost::shared_ptr<T> &sptr)
       : interface_FiniteElement<T>(sptr), interface_RefElement<T>(sptr) {}
+  virtual ~interface_EntFiniteElement() = default;
 
   inline const FEDofEntity_multiIndex &getDataDofs() const {
     return this->sPtr->getDataDofs();
@@ -582,24 +595,10 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
     return this->sPtr->getSideNumberTable();
   }
 
-  // /** \deprecated Use getSideNumberTable() instead
-  // */
-  // DEPRECATED SideNumber_multiIndex &get_side_number_table() const {
-  //   return this->sPtr->getSideNumberTable();
-  // }
-
   inline MoFEMErrorCode getElementAdjacency(const Field *field_ptr,
                                             Range &adjacency) {
     return this->getElementAdjacency(field_ptr, adjacency);
   }
-
-  // /** \deprecated Use getElementAdjacency() instead
-  // */
-  // DEPRECATED inline MoFEMErrorCode get_element_adjacency(
-  //   const Field *field_ptr,Range &adjacency
-  // ) {
-  //   return this->getElementAdjacency(field_ptr,adjacency);
-  // }
 
   inline boost::shared_ptr<RefElement> &getRefElement() const {
     return this->sPtr->getRefElement();
@@ -617,6 +616,8 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
  */
 struct NumeredEntFiniteElement
     : public interface_EntFiniteElement<EntFiniteElement> {
+
+  virtual ~NumeredEntFiniteElement() = default;      
 
   typedef interface_FiniteElement<EntFiniteElement>
       interface_type_FiniteElement;
@@ -764,6 +765,7 @@ struct interface_NumeredEntFiniteElement
 
   interface_NumeredEntFiniteElement(const boost::shared_ptr<T> &sptr)
       : interface_EntFiniteElement<T>(sptr){};
+  virtual ~interface_NumeredEntFiniteElement() = default;
 
   /**
    * \brief Get partition number

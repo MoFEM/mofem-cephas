@@ -19,6 +19,14 @@
 #ifndef __MESHSETSMANAGER_HPP__
 #define __MESHSETSMANAGER_HPP__
 
+#define MeshsetsManagerFunctionBegin                                           \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_CHANNEL("SYNC");                                                   \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("WORLD", "MeshsetsManager");                                   \
+  MOFEM_LOG_TAG("SYNC", "MeshsetsManager");
+
 namespace MoFEM {
 
 typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type
@@ -771,14 +779,13 @@ protected:
 template <class CUBIT_BC_DATA_TYPE>
 MoFEMErrorCode MeshsetsManager::printBcSet(CUBIT_BC_DATA_TYPE &data,
                                            unsigned long int type) const {
-  MoFEMFunctionBegin;
+  MeshsetsManagerFunctionBegin;
   const MoFEM::Interface &m_field = cOre;
   const moab::Interface &moab = m_field.get_moab();
   for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_((*this), type, it)) {
     CHKERR it->getBcDataStructure(data);
-    std::ostringstream ss;
-    ss << *it << std::endl;
-    ss << data << std::endl;
+    MOFEM_LOG("WORLD", Sev::inform) << *it;
+    MOFEM_LOG("WORLD", Sev::inform) << data;
     int tets, tris, edges, nodes, prisms, quads;
     CHKERR moab.get_number_entities_by_type(it->meshset, MBTET, tets, true);
     CHKERR moab.get_number_entities_by_type(it->meshset, MBTRI, tris, true);
@@ -786,15 +793,19 @@ MoFEMErrorCode MeshsetsManager::printBcSet(CUBIT_BC_DATA_TYPE &data,
     CHKERR moab.get_number_entities_by_type(it->meshset, MBVERTEX, nodes, true);
     CHKERR moab.get_number_entities_by_type(it->meshset, MBPRISM, prisms, true);
     CHKERR moab.get_number_entities_by_type(it->meshset, MBQUAD, quads, true);
-    ss << "name " << it->getName() << std::endl;
-    ss << "msId " << it->getMeshsetId() << " nb. tets " << tets << std::endl;
-    ss << "msId " << it->getMeshsetId() << " nb. prisms " << prisms << std::endl;
-    ss << "msId " << it->getMeshsetId() << " nb. quads " << quads << std::endl;
-    ss << "msId " << it->getMeshsetId() << " nb. tris " << tris << std::endl;
-    ss << "msId " << it->getMeshsetId() << " nb. edges " << edges << std::endl;
-    ss << "msId " << it->getMeshsetId() << " nb. nodes " << nodes << std::endl;
-    ss << std::endl;
-    PetscPrintf(m_field.get_comm(), ss.str().c_str());
+    MOFEM_LOG("WORLD", Sev::inform) << "name " << it->getName();
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "msId " << it->getMeshsetId() << " nb. tets " << tets;
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "msId " << it->getMeshsetId() << " nb. prisms " << prisms;
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "msId " << it->getMeshsetId() << " nb. quads " << quads;
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "msId " << it->getMeshsetId() << " nb. tris " << tris;
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "msId " << it->getMeshsetId() << " nb. edges " << edges;
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "msId " << it->getMeshsetId() << " nb. nodes " << nodes;
   }
   MoFEMFunctionReturn(0);
 }

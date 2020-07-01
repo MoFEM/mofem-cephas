@@ -102,8 +102,7 @@ MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(
     }
     if (number_nodes > 3) {
       EntityHandle meshset;
-      CHKERR m_field.get_moab().create_meshset(
-          MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+      CHKERR m_field.get_moab().create_meshset(MESHSET_SET, meshset);
       CHKERR m_field.get_moab().add_entities(meshset, &f4, 1);
       for (int ee = 0; ee <= 2; ee++) {
         EntityHandle e2;
@@ -128,14 +127,13 @@ MoFEMErrorCode PrismsFromSurfaceInterface::createPrisms(
 
 MoFEMErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(
     Range &prisms, const BitRefLevel &bit, int verb) {
-  MoFEMFunctionBegin;
   Interface &m_field = cOre;
-  const RefEntity_multiIndex *const_refined_entities_ptr;
-  CHKERR m_field.get_ref_ents(&const_refined_entities_ptr);
+  auto ref_ents_ptr = m_field.get_ref_ents();
+  MoFEMFunctionBegin;
   MPI_Comm comm = m_field.get_comm();
   RefEntity_multiIndex *refined_entities_ptr;
   refined_entities_ptr =
-      const_cast<RefEntity_multiIndex *>(const_refined_entities_ptr);
+      const_cast<RefEntity_multiIndex *>(ref_ents_ptr);
   if (!prisms.empty()) {
     int dim = m_field.get_moab().dimension_from_handle(prisms[0]);
     for (int dd = 0; dd <= dim; dd++) {

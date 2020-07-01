@@ -50,10 +50,16 @@ bool Core::isGloballyInitialised = false;
 
 MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
                                 const char help[]) {
+  MPI_Init(argc, args);
+  LogManager::createDefaultSinks(MPI_COMM_WORLD);
+  PetscVFPrintf = LogManager::logPetscFPrintf;
+
   ierr = PetscInitialize(argc, args, file, help);
   CHKERRG(ierr);
+
   ierr = PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
   CHKERRG(ierr);
+
   isGloballyInitialised = true;
   return MOFEM_SUCCESS;
 }
@@ -63,7 +69,8 @@ MoFEMErrorCode Core::Finalize() {
   ierr = PetscPopErrorHandler();
   CHKERRG(ierr);
   isGloballyInitialised = false;
-  return PetscFinalize();
+  PetscFinalize();
+  return MPI_Finalize();
 }
 
 // Use SFINAE to decide which template should be run,
@@ -138,6 +145,18 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
   ierr = registerSubInterfaces();
   CHKERRABORT(PETSC_COMM_SELF, ierr);
 
+  // Print version
+  if (verbose > QUIET) {
+    MOFEM_LOG_CHANNEL("WORLD");
+    char petsc_version[255];
+    ierr = PetscGetVersion(petsc_version, 255);
+    CHKERRABORT(comm, ierr);
+    MOFEM_LOG_C("WORLD", Sev::inform, "MoFEM version %d.%d.%d (%s %s)",
+                MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD,
+                MOAB_VERSION_STRING, petsc_version);
+    MOFEM_LOG_C("WORLD", Sev::inform, "git commit id %s", GIT_SHA1_NAME);
+  }
+
   // Register MOFEM events in PETSc
   PetscLogEventRegister("FE_preProcess", 0, &MOFEM_EVENT_preProcess);
   PetscLogEventRegister("FE_operator", 0, &MOFEM_EVENT_operator);
@@ -160,19 +179,6 @@ Core::Core(moab::Interface &moab, MPI_Comm comm, const int verbose,
   CHKERRABORT(cOmm, ierr);
   ierr = initialiseDatabaseFromMesh(verbose);
   CHKERRABORT(cOmm, ierr);
-
-  // Print version
-  if (verbose > QUIET) {
-    char petsc_version[255];
-    ierr = PetscGetVersion(petsc_version, 255);
-    CHKERRABORT(cOmm, ierr);
-    ierr = PetscPrintf(cOmm, "MoFEM version %d.%d.%d (%s %s) \n",
-                       MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR,
-                       MoFEM_VERSION_BUILD, MOAB_VERSION_STRING, petsc_version);
-    CHKERRABORT(cOmm, ierr);
-    ierr = PetscPrintf(cOmm, "git commit id %s\n", GIT_SHA1_NAME);
-    CHKERRABORT(cOmm, ierr);
-  }
 }
 
 Core::~Core() {
@@ -192,6 +198,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   iFaces.clear();
 
   // Register sub interfaces
+  CHKERR regSubInterface<LogManager>(IDD_MOFEMLogManager);
   CHKERR regSubInterface<Simple>(IDD_MOFEMSimple);
   CHKERR regSubInterface<PipelineManager>(IDD_MOFEMBasic);
   CHKERR regSubInterface<ProblemsManager>(IDD_MOFEMProblemsManager);
@@ -616,7 +623,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
         ss << "read field " << **p.first << std::endl;
         PetscPrintf(cOmm, ss.str().c_str());
       }
-      if(!p.second) {
+      if (!p.second) {
         // Field meshset exists, remove duplicate meshsets from other
         // processors.
         Range ents;
@@ -645,7 +652,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       CHKERR get_moab().get_entities_by_type(*mit, MBENTITYSET, ents, false);
       CHKERR get_moab().get_entities_by_handle(*mit, ents, true);
       ref_elems_to_add.merge(ents);
-      if(!p.second) {
+      if (!p.second) {
         // Finite element mesh set exist, could be created on other processor.
         // Remove duplicate.
         CHKERR get_moab().add_entities((*p.first)->getMeshset(), ents);
@@ -668,7 +675,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
            << p.first->getMaskBitRefLevel() << std::endl;
         PetscPrintf(cOmm, ss.str().c_str());
       }
-      if(!p.second) {
+      if (!p.second) {
         // Problem meshset exists, could be created on other processor.
         // Remove duplicate.
         Range ents;
@@ -782,6 +789,20 @@ MoFEMErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
   MoFEMFunctionReturnHot(0);
 }
 
+MoFEMErrorCode
+Core::get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const {
+  MoFEMFunctionBeginHot;
+  *fe_ptr = &finiteElements;
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode Core::get_ents_finite_elements(
+    const EntFiniteElement_multiIndex **fe_ent_ptr) const {
+  MoFEMFunctionBeginHot;
+  *fe_ent_ptr = &entsFiniteElements;
+  MoFEMFunctionReturnHot(0);
+}
+
 MeshsetsManager *Core::get_meshsets_manager_ptr() {
   MeshsetsManager *meshsets_manager_ptr;
   getInterface(meshsets_manager_ptr);
@@ -792,6 +813,36 @@ const MeshsetsManager *Core::get_meshsets_manager_ptr() const {
   MeshsetsManager *meshsets_manager_ptr;
   getInterface(meshsets_manager_ptr);
   return meshsets_manager_ptr;
+}
+
+const Field_multiIndex *Core::get_fields() const {
+  return &fIelds;
+}
+const RefEntity_multiIndex *Core::get_ref_ents() const {
+  return &refinedEntities;
+}
+const RefElement_multiIndex *Core::get_ref_finite_elements() const {
+  return &refinedFiniteElements;
+}
+const FiniteElement_multiIndex *Core::get_finite_elements() const {
+  return &finiteElements;
+}
+const EntFiniteElement_multiIndex *Core::get_ents_finite_elements() const {
+  return &entsFiniteElements;
+}
+const FieldEntity_multiIndex *Core::get_field_ents() const {
+  return &entsFields;
+}
+const DofEntity_multiIndex *Core::get_dofs() const {
+  return &dofsField;
+}
+const Problem *Core::get_problem(const std::string &problem_name) const {
+  const Problem *prb;
+  CHKERR get_problem(problem_name, &prb);
+  return prb;
+}
+const Problem_multiIndex *Core::get_problems() const {
+  return &pRoblems;
 }
 
 } // namespace MoFEM

@@ -19,6 +19,7 @@ set(MOFEM_INTERFACES_SRC
   impl/MatPartitioningApply_Parmetis_MoFEM.cpp
   impl/All.cpp
   impl/AllInterfaces.cpp
+  impl/LogManager.cpp
 )
 
 if(PRECOMPILED_HEADRES)
@@ -29,6 +30,11 @@ if(PRECOMPILED_HEADRES)
   )
   set_source_files_properties(
     AllInterfaces.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
+  )
+  set_source_files_properties(
+    LogManager.cpp
     PROPERTIES
     COMPILE_FLAGS "-include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
   )

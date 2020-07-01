@@ -218,55 +218,33 @@ PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "dim > 3");
   if (p < 2)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "p < 2");
+
   p -= 2; // polynomial order starts from 2
-  double l[p + 2];
-  ierr = Legendre_polynomials(p + 1, s, NULL, l, NULL, 1);
+  double l[p + 3];
+  ierr = Legendre_polynomials(p + 2, s, NULL, l, NULL, 1);
   CHKERRQ(ierr);
-  {
-    // Derivatives
-    int k = 0;
-    for (; k <= p; k++) {
-      if (diffL != NULL) {
-        if (diff_s == NULL) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
-        }
-        double a = l[k + 1];
-        diffL[0 * (p + 1) + k] = a * diff_s[0];
-        if (dim >= 2) {
-          diffL[1 * (p + 1) + k] = a * diff_s[1];
-          if (dim == 3) {
-            diffL[2 * (p + 1) + k] = a * diff_s[2];
-          }
+
+  // Derivatives are Legender function
+  for (int k = 0; k <= p; k++) {
+    if (diffL != NULL) {
+      if (diff_s == NULL) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
+      }
+      double a = 0.5 * l[k + 1];
+      diffL[0 * (p + 1) + k] = a * diff_s[0];
+      if (dim >= 2) {
+        diffL[1 * (p + 1) + k] = a * diff_s[1];
+        if (dim == 3) {
+          diffL[2 * (p + 1) + k] = a * diff_s[2];
         }
       }
     }
   }
-  {
-    // Functions
-    bzero(L, (p + 1) * sizeof(double));
-    int nb_gauss_pts = QUAD_1D_TABLE[p + 2]->npoints;
-    double *points = QUAD_1D_TABLE[p + 2]->points;
-    double *weights = QUAD_1D_TABLE[p + 2]->weights;
-    s = s + 1;
-    int gg = 0;
-    for (; gg != nb_gauss_pts; gg++) {
-      double ksi = points[2 * gg + 1];
-      double zeta = s * ksi - 1;
-      ierr = Legendre_polynomials(p + 1, zeta, NULL, l, NULL, 1);
-      CHKERRQ(ierr);
-      double w = s * weights[gg];
-      cblas_daxpy(p + 1, w, &l[1], 1, &L[0], 1);
-    }
-  }
-  {
-    int k = 0;
-    for (; k <= p; k++) {
-      double a = 4 * sqrt(k + 2 - 0.5);
-      if (L != NULL)
-        L[k] *= a;
-      if (diffL != NULL)
-        diffL[k] *= a;
-    }
+  
+  // Integrated Legendre
+  for (int k = 0; k <= p; k++) {
+    double factor = 2.0 * (2.0 * (k + 1.0) + 1.0);
+    L[k] = 1.0 / factor * (l[k + 2] - l[k]);
   }
   MoFEMFunctionReturnHot(0);
 }
