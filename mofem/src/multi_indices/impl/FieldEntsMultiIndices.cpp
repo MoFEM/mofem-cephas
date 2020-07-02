@@ -21,6 +21,43 @@
 
 namespace MoFEM {
 
+FieldEntityTmp<0, 0>::FieldEntityTmp(
+    const boost::shared_ptr<FieldTmp<0, 0>> &field_ptr,
+    const boost::shared_ptr<RefEntity> &ref_ents_ptr,
+    boost::shared_ptr<double *const> &&field_data_adaptor_ptr,
+    boost::shared_ptr<const int> &&t_max_order_ptr)
+    : interface_Field<FieldTmp<0, 0>, RefEntity>(field_ptr, ref_ents_ptr),
+      tagMaxOrderPtr(t_max_order_ptr),
+      fieldDataAdaptorPtr(field_data_adaptor_ptr) {
+  globalUId = getGlobalUniqueIdCalculate();
+
+  if (PetscUnlikely(!fieldDataAdaptorPtr))
+    THROW_MESSAGE("Pointer to field data adaptor not set");
+
+  if (PetscUnlikely(!tagMaxOrderPtr))
+    THROW_MESSAGE("Pointer to max order not set");
+}
+
+boost::shared_ptr<FieldData *const>
+FieldEntityTmp<0, 0>::makeSharedFieldDataAdaptorPtr(
+    const boost::shared_ptr<Field> &field_ptr,
+    const boost::shared_ptr<RefEntity> &ref_ents_ptr) {
+  int size;
+  FieldData *ptr;
+  switch (ref_ents_ptr->getEntType()) {
+  case MBVERTEX:
+    size = field_ptr->getNbOfCoeffs();
+    ptr = static_cast<FieldData *>(
+        MoFEM::get_tag_ptr(field_ptr->moab, field_ptr->th_FieldDataVerts,
+                           ref_ents_ptr->ent, &size));
+    break;
+  default:
+    ptr = static_cast<FieldData *>(MoFEM::get_tag_ptr(
+        field_ptr->moab, field_ptr->th_FieldData, ref_ents_ptr->ent, &size));
+  }
+  return boost::make_shared<FieldData *const>(ptr);
+}
+
 std::ostream &operator<<(std::ostream &os, const FieldEntity &e) {
   os << "ent_global_uid "
      << (UId)e.getGlobalUniqueId()

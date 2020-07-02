@@ -364,12 +364,14 @@ template <> struct FieldTmp<0, 0> {
   // /**
   //  * \brief Get reference to sequence data container
   //  *
-  //  * In sequence data container data are physically stored. The purpose of this
+  //  * In sequence data container data are physically stored. The purpose of
+  //  this
   //  * is to allocate MoFEMEntities data in bulk, having only one allocation
   //  * instead each time entity is inserted. That makes code efficient.
   //  *
   //  * The vector in sequence is destroyed if last entity inside that vector is
-  //  * destroyed. All MoFEM::MoFEMEntities have aliased shared_ptr which points to
+  //  * destroyed. All MoFEM::MoFEMEntities have aliased shared_ptr which points
+  //  to
   //  * the vector.
   //  *
   //  * @return MoFEM::Field::SequenceEntContainer
@@ -449,53 +451,6 @@ template <> struct FieldTmp<-1, -1> : public FieldTmp<0, 0> {
 
 using Field = FieldTmp<0, 0>;
 
-template <typename T> struct interface_FieldData {
-
-  interface_FieldData(const boost::shared_ptr<T> &field_ptr)
-      : sFieldPtr(field_ptr) {}
-  virtual ~interface_FieldData() = default;
-
-  virtual boost::shared_ptr<T> getFieldPtr() const { return this->sFieldPtr; }
-
-  mutable boost::shared_ptr<T> sFieldPtr;
-};
-
-template <int V, int F>
-struct interface_FieldData<FieldTmp<V, F>>
-    : public interface_RefEntity<RefEntity> {
-
-  interface_FieldData(const boost::shared_ptr<FieldTmp<V, F>> &field_ptr,
-                      const boost::shared_ptr<RefEntity> &ref_ents_ptr)
-      : interface_RefEntity<RefEntity>(ref_ents_ptr) {}
-  virtual ~interface_FieldData() = default;
-
-  virtual boost::shared_ptr<FieldTmp<V, F>> getFieldPtr() const {
-    return this->sFieldPtr;
-  }
-
-  static boost::shared_ptr<FieldTmp<V, F>> sFieldPtr;
-};
-
-template <int V, int F>
-boost::shared_ptr<FieldTmp<V, F>>
-    interface_FieldData<FieldTmp<V, F>>::sFieldPtr;
-
-template <>
-struct interface_FieldData<FieldTmp<-1, -1>>
-    : public interface_RefEntity<RefEntity> {
-
-  interface_FieldData(const boost::shared_ptr<FieldTmp<-1, -1>> &field_ptr,
-                      const boost::shared_ptr<RefEntity> &ref_ents_ptr)
-      : interface_RefEntity<RefEntity>(ref_ents_ptr), sFieldPtr(field_ptr) {}
-  virtual ~interface_FieldData() = default;
-
-  virtual boost::shared_ptr<FieldTmp<-1, -1>> getFieldPtr() const {
-    return this->sFieldPtr;
-  }
-
-  mutable boost::shared_ptr<FieldTmp<-1, -1>> sFieldPtr;
-};
-
 /**
  * \brief Pointer interface for MoFEM::Field
  *
@@ -506,21 +461,20 @@ struct interface_FieldData<FieldTmp<-1, -1>>
  *
  * \ingroup dof_multi_indices
  */
-template <typename T> struct interface_Field : public interface_FieldData<T> {
+template <typename FIELD, typename REFENT>
+struct interface_FieldImpl : public interface_RefEntity<REFENT> {
 
-  using interface_FieldData<T>::interface_FieldData;
+  interface_FieldImpl(const boost::shared_ptr<FIELD> &field_ptr,
+                      const boost::shared_ptr<REFENT> &ref_ents_ptr)
+      : interface_RefEntity<REFENT>(ref_ents_ptr) {}
+  virtual ~interface_FieldImpl() = default;
+
+  virtual boost::shared_ptr<FIELD> getFieldPtr() const = 0;
 
   inline EntityHandle getMeshset() const {
     return this->getFieldPtr()->getMeshset();
   }
 
-  /**
-    * \brief Get dimension of general two-point tensor \ref
-    MoFEM::CoordSys::getDim
-
-    See details here \ref MoFEM::CoordSys::getDim
-
-    */
   inline int getCoordSysDim(const int d = 0) const {
     return this->getFieldPtr()->getCoordSysDim(d);
   }
@@ -601,6 +555,59 @@ template <typename T> struct interface_Field : public interface_FieldData<T> {
   getDofOrderMap(const EntityType type) const {
     return this->getFieldPtr()->getDofOrderMap(type);
   }
+};
+
+template <typename FIELD, typename REFENT>
+struct interface_Field : public interface_FieldImpl<FIELD, REFENT> {
+  using interface_FieldImpl<FIELD, REFENT>::interface_FieldImpl;
+};
+
+template <typename T>
+struct interface_Field<T, T> : public interface_FieldImpl<T, T> {
+
+  interface_Field(const boost::shared_ptr<T> &ptr)
+      : interface_FieldImpl<T, T>(ptr, ptr), sFieldPtr(ptr) {}
+
+  virtual boost::shared_ptr<T> getFieldPtr() const { return sFieldPtr; };
+
+  mutable boost::shared_ptr<T> sFieldPtr;
+};
+
+template <int V, int F>
+struct interface_Field<FieldTmp<V, F>, RefEntity>
+    : public interface_FieldImpl<FieldTmp<V, F>, RefEntity> {
+
+  interface_Field(const boost::shared_ptr<FieldTmp<V, F>> &field_ptr,
+                  const boost::shared_ptr<RefEntity> &ref_ents_ptr)
+      : interface_FieldImpl<FieldTmp<V, F>, RefEntity>(field_ptr, ref_ents_ptr),
+        sFieldPtr(field_ptr) {}
+
+  virtual boost::shared_ptr<FieldTmp<V, F>> getFieldPtr() const {
+    return this->sFieldPtr;
+  }
+
+  mutable boost::shared_ptr<FieldTmp<V, F>> sFieldPtr;
+};
+
+// template <int V, int F>
+// boost::shared_ptr<FieldTmp<V, F>>
+//     interface_Field<FieldTmp<V, F>, RefEntity>::sFieldPtr;
+
+template <>
+struct interface_Field<FieldTmp<-1, -1>, RefEntity>
+    : public interface_FieldImpl<FieldTmp<-1, -1>, RefEntity> {
+
+  interface_Field(const boost::shared_ptr<FieldTmp<-1, -1>> &field_ptr,
+                  const boost::shared_ptr<RefEntity> &ref_ents_ptr)
+      : interface_FieldImpl<FieldTmp<-1, -1>, RefEntity>(field_ptr,
+                                                         ref_ents_ptr),
+        sFieldPtr(field_ptr) {}
+
+  virtual boost::shared_ptr<FieldTmp<-1, -1>> getFieldPtr() const {
+    return this->sFieldPtr;
+  }
+
+  mutable boost::shared_ptr<FieldTmp<-1, -1>> sFieldPtr;
 };
 
 /**

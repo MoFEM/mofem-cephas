@@ -29,11 +29,11 @@ namespace MoFEM {
  */
 struct DofEntity : public interface_FieldEntity<FieldEntity> {
 
-  virtual ~DofEntity() = default; 
+  virtual ~DofEntity() = default;
 
-  typedef interface_Field<FieldEntity> interface_type_Field;
-  typedef interface_FieldEntity<FieldEntity> interface_type_FieldEntity;
-  typedef interface_RefEntity<FieldEntity> interface_type_RefEntity;
+  using interface_type_Field = interface_FieldImpl<FieldEntity, FieldEntity>;
+  using interface_type_FieldEntity = interface_FieldEntity<FieldEntity>;
+  using interface_type_RefEntity = interface_RefEntity<FieldEntity>;
 
   static inline UId getGlobalUniqueIdCalculate(const DofIdx dof,
                                                UId ent_uid) {
@@ -221,9 +221,11 @@ struct NumeredDofEntity : public interface_DofEntity<DofEntity> {
 
   virtual ~NumeredDofEntity() = default;
 
-  typedef interface_Field<DofEntity> interface_type_Field;
-  typedef interface_FieldEntity<DofEntity> interface_type_FieldEntity;
-  typedef interface_DofEntity<DofEntity> interface_type_DofEntity;
+  using interface_type_Field = interface_FieldImpl<DofEntity, DofEntity>;
+  using interface_type_FieldEntity = interface_FieldEntity<DofEntity>;
+  using interface_type_DofEntity = interface_DofEntity<DofEntity>;
+  using interface_type_RefEntity = interface_RefEntity<DofEntity>;
+
   DofIdx dofIdx;
   DofIdx petscGloablDofIdx;
   DofIdx petscLocalDofIdx;
@@ -296,9 +298,11 @@ struct FEDofEntity : public BaseFEEntity, interface_DofEntity<DofEntity> {
 
   virtual ~FEDofEntity() = default;
 
-  typedef interface_Field<DofEntity> interface_type_Field;
-  typedef interface_DofEntity<DofEntity> interface_type_DofEntity;
-  typedef interface_RefEntity<DofEntity> interface_type_RefEntity;
+  using interface_type_Field = interface_FieldImpl<DofEntity, DofEntity>;
+  using interface_type_FieldEntity = interface_FieldEntity<DofEntity>;
+  using interface_type_DofEntity = interface_DofEntity<DofEntity>;
+  using interface_type_RefEntity = interface_RefEntity<DofEntity>;
+  
   FEDofEntity(const boost::shared_ptr<SideNumber> &side_number_ptr,
               const boost::shared_ptr<DofEntity> &dof_ptr);
   FEDofEntity(const boost::tuple<const boost::shared_ptr<SideNumber> &,
@@ -315,9 +319,12 @@ struct FENumeredDofEntity : public BaseFEEntity,
 
   virtual ~FENumeredDofEntity() = default;
 
-  typedef interface_Field<NumeredDofEntity> interface_type_Field;
-  typedef interface_DofEntity<NumeredDofEntity> interface_type_DofEntity;
-  typedef interface_RefEntity<NumeredDofEntity> interface_type_RefEntity;
+  using interface_type_Field =
+      interface_FieldImpl<NumeredDofEntity, NumeredDofEntity>;
+  using interface_type_FieldEntity = interface_FieldEntity<NumeredDofEntity>;
+  using interface_type_DofEntity = interface_DofEntity<NumeredDofEntity>;
+  using interface_type_RefEntity = interface_RefEntity<NumeredDofEntity>;
+
   typedef interface_NumeredDofEntity<NumeredDofEntity>
       interface_type_NumeredDofEntity;
   FENumeredDofEntity(const boost::shared_ptr<SideNumber> &side_number_ptr,

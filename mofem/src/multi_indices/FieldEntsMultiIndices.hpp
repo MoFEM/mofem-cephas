@@ -25,19 +25,31 @@ namespace MoFEM {
 
 struct DofEntity;
 
+template <int N, int F>
+struct FieldEntityTmp : public FieldEntityTmp<N, F - 1> {
+  using FieldEntityTmp<N, F - 1>::FieldEntityTmp;
+};
+
+template <int N>
+struct FieldEntityTmp<N, 0>
+    : public FieldEntityTmp<N - 1, BITFIELDID_SIZE - 1> {
+  using FieldEntityTmp<N - 1, BITFIELDID_SIZE - 1>::FieldEntityTmp;
+};
+
 /**
  * \brief Struct keeps handle to entity in the field.
  * \ingroup ent_multi_indices
  */
-template <int N, int F>
-struct FieldEntityTmp : public interface_Field<FieldTmp<N, F>> {
+template <>
+struct FieldEntityTmp<0, 0>
+    : public interface_Field<FieldTmp<0, 0>, RefEntity> {
 
-  using interface_type_Field = interface_Field<FieldTmp<N, F>>;
+  using interface_type_Field = interface_FieldImpl<FieldTmp<0, 0>, RefEntity>;
   using interface_type_RefEntity = interface_RefEntity<RefEntity>;
   
   UId globalUId; ///< Global unique id for this entity
 
-  FieldEntityTmp(const boost::shared_ptr<FieldTmp<N, F>> &field_ptr,
+  FieldEntityTmp(const boost::shared_ptr<FieldTmp<0, 0>> &field_ptr,
                  const boost::shared_ptr<RefEntity> &ref_ents_ptr,
                  boost::shared_ptr<double *const> &&field_data_adaptor_ptr,
                  boost::shared_ptr<const int> &&t_max_order_ptr);
@@ -211,45 +223,9 @@ private:
   mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
 };
 
-// moab ent
-template <int N, int F>
-FieldEntityTmp<N, F>::FieldEntityTmp(
-    const boost::shared_ptr<FieldTmp<N, F>> &field_ptr,
-    const boost::shared_ptr<RefEntity> &ref_ents_ptr,
-    boost::shared_ptr<double *const> &&field_data_adaptor_ptr,
-    boost::shared_ptr<const int> &&t_max_order_ptr)
-    : interface_Field<FieldTmp<N, F>>(field_ptr, ref_ents_ptr),
-      tagMaxOrderPtr(t_max_order_ptr),
-      fieldDataAdaptorPtr(field_data_adaptor_ptr) {
-  globalUId = getGlobalUniqueIdCalculate();
-
-  if (PetscUnlikely(!fieldDataAdaptorPtr))
-    THROW_MESSAGE("Pointer to field data adaptor not set");
-
-  if (PetscUnlikely(!tagMaxOrderPtr))
-    THROW_MESSAGE("Pointer to max order not set");
-}
-
-template <int N, int F>
-boost::shared_ptr<FieldData *const>
-FieldEntityTmp<N, F>::makeSharedFieldDataAdaptorPtr(
-    const boost::shared_ptr<Field> &field_ptr,
-    const boost::shared_ptr<RefEntity> &ref_ents_ptr) {
-  int size;
-  FieldData *ptr;
-  switch (ref_ents_ptr->getEntType()) {
-  case MBVERTEX:
-    size = field_ptr->getNbOfCoeffs();
-    ptr = static_cast<FieldData *>(
-        MoFEM::get_tag_ptr(field_ptr->moab, field_ptr->th_FieldDataVerts,
-                           ref_ents_ptr->ent, &size));
-    break;
-  default:
-    ptr = static_cast<FieldData *>(MoFEM::get_tag_ptr(
-        field_ptr->moab, field_ptr->th_FieldData, ref_ents_ptr->ent, &size));
-  }
-  return boost::make_shared<FieldData *const>(ptr);
-}
+template <> struct FieldEntityTmp<-1, -1> : public FieldEntityTmp<0, 0> {
+  using FieldEntityTmp<0, 0>::FieldEntityTmp;
+};
 
 /**
  * \brief Interface to FieldEntity
@@ -258,11 +234,10 @@ FieldEntityTmp<N, F>::makeSharedFieldDataAdaptorPtr(
  * interface to FieldEntity
  */
 template <typename T>
-struct interface_FieldEntity : public interface_Field<T>,
-                               interface_RefEntity<T> {
+struct interface_FieldEntity : public interface_Field<T, T> {
 
   interface_FieldEntity(const boost::shared_ptr<T> &sptr)
-      : interface_Field<T>(sptr), interface_RefEntity<T>(sptr) {}
+      : interface_Field<T, T>(sptr) {}
 
   /// @return get entity handle
   inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
