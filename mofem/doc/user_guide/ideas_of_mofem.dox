@@ -298,7 +298,7 @@ data structures, short set-up time and memory efficiency without redundancies.
 This aim is realised by use boost multi-indices, aliased shared pointers and
 vector sequences. See for example \ref MoFEM::NumeredDofEntity or \ref
 MoFEM::DofEntity. Data are accessed by multi-indices, for example, defined in
-\ref DofsMultiIndices.hpp, \ref EntsMultiIndices.hpp or \ref FieldMultiIndices.hpp.
+\ref DofsMultiIndices.hpp, \ref FieldEntsMultiIndices.hpp or \ref FieldMultiIndices.hpp.
 The similar data structures are created for finite
 elements and problems.
 

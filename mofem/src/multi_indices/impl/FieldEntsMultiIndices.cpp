@@ -1,4 +1,4 @@
-/** \file EntsMultiIndices.cpp
+/** \file FieldEntsMultiIndices.cpp
  * \brief Multi-index containers for entities
  */
 
@@ -20,73 +20,6 @@
 #include <moab/Error.hpp>
 
 namespace MoFEM {
-
-// static moab::Error error;
-
-BasicEntityData::BasicEntityData(const moab::Interface &moab,
-                                 const int pcomm_id)
-    : moab(const_cast<moab::Interface &>(moab)), pcommID(pcomm_id),
-      distributedMesh(true) {
-  rval = moab.tag_get_handle("_RefParentHandle", th_RefParentHandle);
-  MOAB_THROW(rval);
-  rval = moab.tag_get_handle("_RefBitLevel", th_RefBitLevel);
-  MOAB_THROW(rval);
-}
-
-boost::shared_ptr<BasicEntityData> RefEntityTmp<0>::basicDataPtr;
-
-// ref moab ent
-BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);
-
-std::ostream &operator<<(std::ostream &os, const RefEntity &e) {
-  os << "ent " << e.ent;
-  os << " pstatus " << std::bitset<8>(e.getPStatus());
-  os << " owner ent " << e.getOwnerEnt();
-  os << " owner proc " << e.getOwnerProc();
-  os << " parent ent " << e.getParentEnt();
-  // os << " BitRefLevel " << e.getBitRefLevel();
-  os << " ent type " << e.getEntType();
-  os << " ent parent type " << e.getParentEntType();
-  return os;
-}
-
-// moab ent
-FieldEntity::FieldEntity(
-    const boost::shared_ptr<Field> &field_ptr,
-    const boost::shared_ptr<RefEntity> &ref_ents_ptr,
-    boost::shared_ptr<double *const> &&field_data_adaptor_ptr,
-    boost::shared_ptr<const int> &&t_max_order_ptr)
-    : interface_Field<Field>(field_ptr), interface_RefEntity<RefEntity>(
-                                             ref_ents_ptr),
-      tagMaxOrderPtr(t_max_order_ptr),
-      fieldDataAdaptorPtr(field_data_adaptor_ptr) {
-  globalUId = getGlobalUniqueIdCalculate();
-
-  if (PetscUnlikely(!fieldDataAdaptorPtr))
-    THROW_MESSAGE("Pointer to field data adaptor not set");
-
-  if (PetscUnlikely(!tagMaxOrderPtr))
-    THROW_MESSAGE("Pointer to max order not set");
-}
-
-boost::shared_ptr<FieldData *const> FieldEntity::makeSharedFieldDataAdaptorPtr(
-    const boost::shared_ptr<Field> &field_ptr,
-    const boost::shared_ptr<RefEntity> &ref_ents_ptr) {
-  int size;
-  FieldData *ptr;
-  switch (ref_ents_ptr->getEntType()) {
-  case MBVERTEX:
-    size = field_ptr->getNbOfCoeffs();
-    ptr = static_cast<FieldData *>(
-        MoFEM::get_tag_ptr(field_ptr->moab, field_ptr->th_FieldDataVerts,
-                           ref_ents_ptr->ent, &size));
-    break;
-  default:
-    ptr = static_cast<FieldData *>(MoFEM::get_tag_ptr(
-        field_ptr->moab, field_ptr->th_FieldData, ref_ents_ptr->ent, &size));
-  }
-  return boost::make_shared<FieldData *const>(ptr);
-}
 
 std::ostream &operator<<(std::ostream &os, const FieldEntity &e) {
   os << "ent_global_uid "

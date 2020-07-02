@@ -63,6 +63,15 @@ CoreTmp<N>::make_shared_ref_entity(const EntityHandle ent) {
   return Core::makeSharedRefEntity(*this, ent);
 }
 
+template <int N>
+MoFEMErrorCode
+CoreTmp<N>::set_field_order(const Range &ents, const BitFieldId id,
+                            const ApproximationOrder order, int verb) {
+  MoFEMFunctionBegin;
+  CHKERR this->setFieldOrder(ents, id, order, verb);
+  MoFEMFunctionReturn(0);
+}
+
 template <int V>
 CoreTmp<0>::CoreTmp(moab::Interface &moab, MPI_Comm comm, const int verbose,
                     const bool distributed_mesh, CoreValue<V>)

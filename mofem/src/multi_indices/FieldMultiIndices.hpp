@@ -29,6 +29,12 @@
 
 namespace MoFEM {
 
+template <int N, int F> struct FieldEntityTmp;
+template <typename T> struct interface_RefEntity;
+struct DofEntity;
+
+using FieldEntity = FieldEntityTmp<0, 0>;
+
 /** \brief user adjacency function
  * \ingroup fe_multi_indices
  */
@@ -38,9 +44,6 @@ typedef boost::function<int(const int order)> FieldOrderFunct;
  * \ingroup dof_multi_indices
  */
 typedef FieldOrderFunct FieldOrderTable[MBMAXTYPE];
-
-struct FieldEntity;
-struct DofEntity;
 
 template <int N, int F> struct FieldTmp : public FieldTmp<N, F - 1> {
 
@@ -108,13 +111,17 @@ template <> struct FieldTmp<0, 0> {
 
   virtual ~FieldTmp() = default;
 
-  typedef multi_index_container<boost::weak_ptr<std::vector<FieldEntity>>,
-                                indexed_by<sequenced<>>>
-      SequenceEntContainer;
+  // using SequenceEntContainer = multi_index_container<
 
-  typedef multi_index_container<boost::weak_ptr<std::vector<DofEntity>>,
-                                indexed_by<sequenced<>>>
-      SequenceDofContainer;
+  //     boost::weak_ptr<std::vector<FieldEntityTmp<0, 0>>>,
+
+  //     indexed_by<sequenced<>>>;
+
+  using SequenceDofContainer = multi_index_container<
+
+      boost::weak_ptr<std::vector<DofEntity>>,
+
+      indexed_by<sequenced<>>>;
 
   typedef std::array<std::array<int, MAX_DOFS_ON_ENTITY>, MBMAXTYPE>
       DofsOrderMap;
@@ -354,22 +361,22 @@ template <> struct FieldTmp<0, 0> {
     return 0;
   }
 
-  /**
-   * \brief Get reference to sequence data container
-   *
-   * In sequence data container data are physically stored. The purpose of this
-   * is to allocate MoFEMEntities data in bulk, having only one allocation
-   * instead each time entity is inserted. That makes code efficient.
-   *
-   * The vector in sequence is destroyed if last entity inside that vector is
-   * destroyed. All MoFEM::MoFEMEntities have aliased shared_ptr which points to
-   * the vector.
-   *
-   * @return MoFEM::Field::SequenceEntContainer
-   */
-  inline SequenceEntContainer &getEntSequenceContainer() const {
-    return sequenceEntContainer;
-  }
+  // /**
+  //  * \brief Get reference to sequence data container
+  //  *
+  //  * In sequence data container data are physically stored. The purpose of this
+  //  * is to allocate MoFEMEntities data in bulk, having only one allocation
+  //  * instead each time entity is inserted. That makes code efficient.
+  //  *
+  //  * The vector in sequence is destroyed if last entity inside that vector is
+  //  * destroyed. All MoFEM::MoFEMEntities have aliased shared_ptr which points to
+  //  * the vector.
+  //  *
+  //  * @return MoFEM::Field::SequenceEntContainer
+  //  */
+  // virtual SequenceEntContainer &getEntSequenceContainer() const {
+  //   return sequenceEntContainer;
+  // }
 
   /**
    * \brief Get reference to sequence data container
@@ -424,7 +431,7 @@ template <> struct FieldTmp<0, 0> {
   friend std::ostream &operator<<(std::ostream &os, const FieldTmp &e);
 
 private:
-  mutable SequenceEntContainer sequenceEntContainer;
+  // mutable SequenceEntContainer sequenceEntContainer;
   mutable SequenceDofContainer sequenceDofContainer;
   mutable DofsOrderMap dofOrderMap;
 };
@@ -450,41 +457,42 @@ template <typename T> struct interface_FieldData {
 
   virtual boost::shared_ptr<T> getFieldPtr() const { return this->sFieldPtr; }
 
-protected:
   mutable boost::shared_ptr<T> sFieldPtr;
 };
 
 template <int V, int F>
-struct interface_FieldData<FieldTmp<V, F>> {
+struct interface_FieldData<FieldTmp<V, F>>
+    : public interface_RefEntity<RefEntity> {
 
-  interface_FieldData(const boost::shared_ptr<FieldTmp<V, F>> &field_ptr)
-      : sFieldPtr(field_ptr) {}
+  interface_FieldData(const boost::shared_ptr<FieldTmp<V, F>> &field_ptr,
+                      const boost::shared_ptr<RefEntity> &ref_ents_ptr)
+      : interface_RefEntity<RefEntity>(ref_ents_ptr) {}
   virtual ~interface_FieldData() = default;
 
   virtual boost::shared_ptr<FieldTmp<V, F>> getFieldPtr() const {
     return this->sFieldPtr;
   }
 
-protected:
-  mutable boost::shared_ptr<FieldTmp<V, F>> sFieldPtr;
+  static boost::shared_ptr<FieldTmp<V, F>> sFieldPtr;
 };
 
-// template <int V, int F>
-// boost::shared_ptr<FieldTmp<V, F>>
-//     interface_FieldData<FieldTmp<V, F>>::sFieldPtr;
+template <int V, int F>
+boost::shared_ptr<FieldTmp<V, F>>
+    interface_FieldData<FieldTmp<V, F>>::sFieldPtr;
 
 template <>
-struct interface_FieldData<FieldTmp<-1, -1>> {
+struct interface_FieldData<FieldTmp<-1, -1>>
+    : public interface_RefEntity<RefEntity> {
 
-  interface_FieldData(const boost::shared_ptr<FieldTmp<-1, -1>> &field_ptr)
-      : sFieldPtr(field_ptr) {}
+  interface_FieldData(const boost::shared_ptr<FieldTmp<-1, -1>> &field_ptr,
+                      const boost::shared_ptr<RefEntity> &ref_ents_ptr)
+      : interface_RefEntity<RefEntity>(ref_ents_ptr), sFieldPtr(field_ptr) {}
   virtual ~interface_FieldData() = default;
 
   virtual boost::shared_ptr<FieldTmp<-1, -1>> getFieldPtr() const {
     return this->sFieldPtr;
   }
 
-protected:
   mutable boost::shared_ptr<FieldTmp<-1, -1>> sFieldPtr;
 };
 
@@ -504,10 +512,6 @@ template <typename T> struct interface_Field : public interface_FieldData<T> {
 
   inline EntityHandle getMeshset() const {
     return this->getFieldPtr()->getMeshset();
-  }
-
-  inline int getCoordSysId() const {
-    return this->getFieldPtr()->getCoordSysId();
   }
 
   /**

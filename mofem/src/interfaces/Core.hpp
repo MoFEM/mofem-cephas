@@ -63,6 +63,10 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
                                     const bool distributed_mesh);
 
   virtual MoFEMErrorCode rebuild_database(int verb = DEFAULT_VERBOSITY);
+
+  virtual MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,
+                                         const ApproximationOrder order,
+                                         int verb = DEFAULT_VERBOSITY);
 };
 
 template <int N> constexpr const int CoreTmp<N>::value;
@@ -507,9 +511,26 @@ protected:
 
   /// \name Set approximation order
 
+  MoFEMErrorCode setFieldOrder(const Range &ents, const BitFieldId id,
+                               const ApproximationOrder order, int ver);
+
+  template <int V, typename std::enable_if<(V >= 0), int>::type * = nullptr>
+  MoFEMErrorCode setFieldOrderImpl1(const Range &ents, const BitFieldId id,
+                                    const ApproximationOrder order, int verb);
+
+  template <int V, typename std::enable_if<(V < 0), int>::type * = nullptr>
+  MoFEMErrorCode setFieldOrderImpl1(const Range &ents, const BitFieldId id,
+                                    const ApproximationOrder order, int verb);
+
+  template <int V, int F>
+  MoFEMErrorCode setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
+                                    const Range &ents,
+                                    const ApproximationOrder order, int verb);
+
   MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,
                                  const ApproximationOrder order,
                                  int verb = DEFAULT_VERBOSITY);
+
   MoFEMErrorCode set_field_order(const EntityHandle meshset,
                                  const EntityType type, const BitFieldId id,
                                  const ApproximationOrder order,
@@ -1142,6 +1163,10 @@ template <> struct CoreTmp<-1> : public CoreTmp<0> {
                                             const bool distributed_mesh = true);
 
   virtual MoFEMErrorCode rebuild_database(int verb = DEFAULT_VERBOSITY);
+
+  virtual MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,
+                                         const ApproximationOrder order,
+                                         int verb = DEFAULT_VERBOSITY);
 };
 
 using Core = CoreTmp<0>;

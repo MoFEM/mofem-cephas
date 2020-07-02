@@ -51,8 +51,9 @@
 #include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
+#include <RefEntsMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
+#include <FieldEntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
 #include <FEMultiIndices.hpp>
 #include <ProblemsMultiIndices.hpp>

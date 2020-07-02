@@ -958,10 +958,12 @@ make_shared_field_impl(const int size, const moab::Interface &moab,
                               boost::hana::int_c<BITFIELDID_SIZE>),
 
       [&](auto r) {
-        if (size == r)
-          ptr =
+        if (size == r) {
+          auto tmp_ptr =
               boost::make_shared<FieldTmp<V, r>>(moab, meshset, coord_sys_ptr);
-              
+          interface_FieldData<FieldTmp<V, r>>::sFieldPtr = tmp_ptr;
+          ptr = tmp_ptr;
+        }
       }
 
   );
