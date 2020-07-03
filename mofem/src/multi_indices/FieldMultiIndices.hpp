@@ -469,7 +469,7 @@ struct interface_FieldImpl : public interface_RefEntity<REFENT> {
       : interface_RefEntity<REFENT>(ref_ents_ptr) {}
   virtual ~interface_FieldImpl() = default;
 
-  virtual boost::shared_ptr<FIELD> getFieldPtr() const = 0;
+  virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const = 0;
 
   inline EntityHandle getMeshset() const {
     return this->getFieldPtr()->getMeshset();
@@ -568,46 +568,11 @@ struct interface_Field<T, T> : public interface_FieldImpl<T, T> {
   interface_Field(const boost::shared_ptr<T> &ptr)
       : interface_FieldImpl<T, T>(ptr, ptr), sFieldPtr(ptr) {}
 
-  virtual boost::shared_ptr<T> getFieldPtr() const { return sFieldPtr; };
+  virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
+    return sFieldPtr->getFieldPtr();
+  };
 
   mutable boost::shared_ptr<T> sFieldPtr;
-};
-
-template <int V, int F>
-struct interface_Field<FieldTmp<V, F>, RefEntity>
-    : public interface_FieldImpl<FieldTmp<V, F>, RefEntity> {
-
-  interface_Field(const boost::shared_ptr<FieldTmp<V, F>> &field_ptr,
-                  const boost::shared_ptr<RefEntity> &ref_ents_ptr)
-      : interface_FieldImpl<FieldTmp<V, F>, RefEntity>(field_ptr, ref_ents_ptr),
-        sFieldPtr(field_ptr) {}
-
-  virtual boost::shared_ptr<FieldTmp<V, F>> getFieldPtr() const {
-    return this->sFieldPtr;
-  }
-
-  mutable boost::shared_ptr<FieldTmp<V, F>> sFieldPtr;
-};
-
-// template <int V, int F>
-// boost::shared_ptr<FieldTmp<V, F>>
-//     interface_Field<FieldTmp<V, F>, RefEntity>::sFieldPtr;
-
-template <>
-struct interface_Field<FieldTmp<-1, -1>, RefEntity>
-    : public interface_FieldImpl<FieldTmp<-1, -1>, RefEntity> {
-
-  interface_Field(const boost::shared_ptr<FieldTmp<-1, -1>> &field_ptr,
-                  const boost::shared_ptr<RefEntity> &ref_ents_ptr)
-      : interface_FieldImpl<FieldTmp<-1, -1>, RefEntity>(field_ptr,
-                                                         ref_ents_ptr),
-        sFieldPtr(field_ptr) {}
-
-  virtual boost::shared_ptr<FieldTmp<-1, -1>> getFieldPtr() const {
-    return this->sFieldPtr;
-  }
-
-  mutable boost::shared_ptr<FieldTmp<-1, -1>> sFieldPtr;
 };
 
 /**

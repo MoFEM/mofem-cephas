@@ -21,15 +21,23 @@
 
 namespace MoFEM {
 
+boost::shared_ptr<FieldTmp<0, 0>> FieldEntityTmp<0, 0>::sFieldPtr;
+
 FieldEntityTmp<0, 0>::FieldEntityTmp(
-    const boost::shared_ptr<FieldTmp<0, 0>> &field_ptr,
-    const boost::shared_ptr<RefEntity> &ref_ents_ptr,
-    boost::shared_ptr<double *const> &&field_data_adaptor_ptr,
-    boost::shared_ptr<const int> &&t_max_order_ptr)
-    : interface_Field<FieldTmp<0, 0>, RefEntity>(field_ptr, ref_ents_ptr),
+    const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
+    const boost::shared_ptr<RefEntity> ref_ents_ptr,
+    boost::shared_ptr<double *const> field_data_adaptor_ptr,
+    boost::shared_ptr<const int> t_max_order_ptr)
+    : interface_FieldImpl<FieldTmp<0, 0>, RefEntity>(field_ptr, ref_ents_ptr),
       tagMaxOrderPtr(t_max_order_ptr),
       fieldDataAdaptorPtr(field_data_adaptor_ptr) {
-  globalUId = getGlobalUniqueIdCalculate();
+        
+  globalUId = getGlobalUniqueIdCalculate(
+      ref_ents_ptr->getOwnerProc(), field_ptr->getBitNumber(),
+      ref_ents_ptr->getOwnerEnt(),
+      ref_ents_ptr->getBasicDataPtr()->trueIfDistributedMesh());
+
+  // getGlobalUniqueIdCalculate();
 
   if (PetscUnlikely(!fieldDataAdaptorPtr))
     THROW_MESSAGE("Pointer to field data adaptor not set");
@@ -37,6 +45,15 @@ FieldEntityTmp<0, 0>::FieldEntityTmp(
   if (PetscUnlikely(!tagMaxOrderPtr))
     THROW_MESSAGE("Pointer to max order not set");
 }
+
+FieldEntityTmp<-1, -1>::FieldEntityTmp(
+    const boost::shared_ptr<FieldTmp<-1, -1>> field_ptr,
+    const boost::shared_ptr<RefEntity> ref_ents_ptr,
+    boost::shared_ptr<double *const> field_data_adaptor_ptr,
+    boost::shared_ptr<const int> t_max_order_ptr)
+    : FieldEntityTmp<0, 0>(field_ptr, ref_ents_ptr, field_data_adaptor_ptr,
+                           t_max_order_ptr),
+      sFieldPtr(field_ptr) {}
 
 boost::shared_ptr<FieldData *const>
 FieldEntityTmp<0, 0>::makeSharedFieldDataAdaptorPtr(

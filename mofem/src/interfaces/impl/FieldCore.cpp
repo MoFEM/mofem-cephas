@@ -756,8 +756,7 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
       // Add entities to database
       auto hint = entsFields.end();
       for (auto &v : *ents_array) {
-        hint = entsFields.emplace_hint(
-            hint, ents_array, reinterpret_cast<FieldEntityTmp<0, 0> *>(&v));
+        hint = entsFields.emplace_hint(hint, ents_array, &v);
       }
     }
   }

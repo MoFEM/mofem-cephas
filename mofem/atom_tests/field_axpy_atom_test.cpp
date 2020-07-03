@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 
     // Create MoFEM database
     // Note: Is MoFEM::CoreTmp<1> for testing purposes only
-    MoFEM::CoreTmp<0> core(moab);
+    MoFEM::CoreTmp<-1> core(moab);
     MoFEM::Interface &m_field = core;
 
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(

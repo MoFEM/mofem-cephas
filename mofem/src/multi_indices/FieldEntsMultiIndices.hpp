@@ -27,14 +27,36 @@ struct DofEntity;
 
 template <int N, int F>
 struct FieldEntityTmp : public FieldEntityTmp<N, F - 1> {
+
   using FieldEntityTmp<N, F - 1>::FieldEntityTmp;
+
+  virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
+    cerr << "A " << N << " " << F << endl;
+    return sFieldPtr;
+  }
+
+  static boost::shared_ptr<FieldTmp<N, F>> sFieldPtr;
 };
 
 template <int N>
 struct FieldEntityTmp<N, 0>
     : public FieldEntityTmp<N - 1, BITFIELDID_SIZE - 1> {
+
   using FieldEntityTmp<N - 1, BITFIELDID_SIZE - 1>::FieldEntityTmp;
+
+  virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
+    cerr << "A " << N << " -1" << endl;
+    return sFieldPtr;
+  }
+
+  static boost::shared_ptr<FieldTmp<N, 0>> sFieldPtr;
 };
+
+template <int N, int F>
+boost::shared_ptr<FieldTmp<N, F>> FieldEntityTmp<N, F>::sFieldPtr;
+
+template <int N>
+boost::shared_ptr<FieldTmp<N, 0>> FieldEntityTmp<N, 0>::sFieldPtr;
 
 /**
  * \brief Struct keeps handle to entity in the field.
@@ -42,28 +64,24 @@ struct FieldEntityTmp<N, 0>
  */
 template <>
 struct FieldEntityTmp<0, 0>
-    : public interface_Field<FieldTmp<0, 0>, RefEntity> {
+    : public interface_FieldImpl<FieldTmp<0, 0>, RefEntity> {
 
   using interface_type_Field = interface_FieldImpl<FieldTmp<0, 0>, RefEntity>;
   using interface_type_RefEntity = interface_RefEntity<RefEntity>;
-  
+
   UId globalUId; ///< Global unique id for this entity
 
-  FieldEntityTmp(const boost::shared_ptr<FieldTmp<0, 0>> &field_ptr,
-                 const boost::shared_ptr<RefEntity> &ref_ents_ptr,
-                 boost::shared_ptr<double *const> &&field_data_adaptor_ptr,
-                 boost::shared_ptr<const int> &&t_max_order_ptr);
+  FieldEntityTmp(const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
+                 const boost::shared_ptr<RefEntity> ref_ents_ptr,
+                 boost::shared_ptr<double *const> field_data_adaptor_ptr,
+                 boost::shared_ptr<const int> t_max_order_ptr);
 
   virtual ~FieldEntityTmp() = default;
 
-  // /**
-  //  * @brief Get the Field pointer
-  //  * 
-  //  * @return boost::shared_ptr<FieldTmp<0, 0>> 
-  //  */
-  // inline boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
-  //   return interface_type_Field::getFieldPtr();
-  // }
+  virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
+    cerr << "A 0 0" << endl;
+    return sFieldPtr;
+  }
 
   /**
    * \brief Get entity handle
@@ -218,14 +236,29 @@ struct FieldEntityTmp<0, 0>
 
   friend std::ostream &operator<<(std::ostream &os, const FieldEntity &e);
 
+  static boost::shared_ptr<FieldTmp<0, 0>> sFieldPtr;
+
 private:
   mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
   mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
 };
 
 template <> struct FieldEntityTmp<-1, -1> : public FieldEntityTmp<0, 0> {
-  using FieldEntityTmp<0, 0>::FieldEntityTmp;
+
+  FieldEntityTmp(const boost::shared_ptr<FieldTmp<-1, -1>> field_ptr,
+                 const boost::shared_ptr<RefEntity> ref_ents_ptr,
+                 boost::shared_ptr<double *const> field_data_adaptor_ptr,
+                 boost::shared_ptr<const int> t_max_order_ptr);
+
+  virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
+    cerr << "A -1 -1" << endl;
+    return sFieldPtr;
+  }
+
+  mutable boost::shared_ptr<FieldTmp<-1, -1>> sFieldPtr;
 };
+
+using FieldEntity = FieldEntityTmp<0, 0>;
 
 /**
  * \brief Interface to FieldEntity
