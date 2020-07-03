@@ -31,7 +31,6 @@ struct FieldEntityTmp : public FieldEntityTmp<N, F - 1> {
   using FieldEntityTmp<N, F - 1>::FieldEntityTmp;
 
   virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
-    cerr << "A " << N << " " << F << endl;
     return sFieldPtr;
   }
 
@@ -45,7 +44,6 @@ struct FieldEntityTmp<N, 0>
   using FieldEntityTmp<N - 1, BITFIELDID_SIZE - 1>::FieldEntityTmp;
 
   virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
-    cerr << "A " << N << " -1" << endl;
     return sFieldPtr;
   }
 
@@ -79,7 +77,6 @@ struct FieldEntityTmp<0, 0>
   virtual ~FieldEntityTmp() = default;
 
   virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
-    cerr << "A 0 0" << endl;
     return sFieldPtr;
   }
 
@@ -251,7 +248,6 @@ template <> struct FieldEntityTmp<-1, -1> : public FieldEntityTmp<0, 0> {
                  boost::shared_ptr<const int> t_max_order_ptr);
 
   virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
-    cerr << "A -1 -1" << endl;
     return sFieldPtr;
   }
 
