@@ -24,3 +24,4 @@ extern "C" {
 #include "impl/FatPrismElementForcesAndSourcesCore.cpp"
 #include "impl/VolumeElementForcesAndSourcesCoreOnSide.cpp"
 #include "impl/FaceElementForcesAndSourcesCoreOnSide.cpp"
+#include "impl/VolumeElementForcesAndSourcesCoreOnContactPrismSide.cpp"
