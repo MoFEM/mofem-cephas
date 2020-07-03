@@ -948,7 +948,7 @@ MoFEMErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
 MoFEMErrorCode
 Core::buildFieldForNoField(const BitFieldId id,
                            std::map<EntityType, int> &dof_counter, int verb) {
-  MoFEMFunctionBegin;
+  FieldCoreFunctionBegin;
   if (verb == -1)
     verb = verbose;
   // field it
@@ -962,10 +962,9 @@ Core::buildFieldForNoField(const BitFieldId id,
   Range ents_of_id_meshset;
   CHKERR get_moab().get_entities_by_handle((*miit)->meshSet, ents_of_id_meshset,
                                            false);
-  if (verb > VERY_NOISY)
-    PetscSynchronizedPrintf(cOmm, "ents in field %s meshset %d\n",
-                            (*miit)->getName().c_str(),
-                            ents_of_id_meshset.size());
+  if (verb > VERBOSE)
+    MOFEM_LOG_C("SYNC", Sev::noisy, "Ents in field %s meshset %d\n",
+                (*miit)->getName().c_str(), ents_of_id_meshset.size());
 
   // ent view by field id (in set all MoabEnts has the same FieldId)
   auto eiit =
@@ -984,11 +983,10 @@ Core::buildFieldForNoField(const BitFieldId id,
     // search if field meshset is in database
     RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent;
     miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
-    if (miit_ref_ent == refinedEntities.get<Ent_mi_tag>().end()) {
+    if (miit_ref_ent == refinedEntities.get<Ent_mi_tag>().end()) 
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "Entity is not in MoFEM database, entities in field meshset need "
               "to be seeded (i.e. bit ref level add to them)");
-    }
 
     auto add_dofs = [&](auto field_eit) {
       MoFEMFunctionBegin;
@@ -1037,17 +1035,14 @@ Core::buildFieldForNoField(const BitFieldId id,
     }
   }
 
-  if (verb > VERY_VERBOSE) {
+  if (verb > VERBOSE) {
     auto lo_dof = dofsField.get<FieldName_mi_tag>().lower_bound(
         miit->get()->getNameRef());
     auto hi_dof = dofsField.get<FieldName_mi_tag>().upper_bound(
         miit->get()->getNameRef());
-    for (; lo_dof != hi_dof; lo_dof++) {
-      std::ostringstream ss;
-      ss << *lo_dof << std::endl;
-      PetscSynchronizedPrintf(cOmm, ss.str().c_str());
-    }
-    PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+    for (; lo_dof != hi_dof; lo_dof++) 
+      MOFEM_LOG("SYNC", Sev::noisy) << **lo_dof;
+    MOFEM_LOG_SYNCHORMISE(cOmm);
   }
 
   MoFEMFunctionReturn(0);
