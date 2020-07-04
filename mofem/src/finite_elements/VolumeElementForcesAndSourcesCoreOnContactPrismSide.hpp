@@ -122,6 +122,10 @@ struct VolumeElementForcesAndSourcesCoreOnContactPrismSideBase
      * @return error code
      */
     inline int getFaceSideNumber() const;
+
+  protected:
+    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
+    
   };
 
   int getRule(int order);

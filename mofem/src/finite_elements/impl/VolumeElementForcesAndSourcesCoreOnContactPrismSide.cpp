@@ -137,4 +137,15 @@ VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::setGaussPts(int order) 
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator::setPtrFE(
+    ForcesAndSourcesCore *ptr) {
+  MoFEMFunctionBeginHot;
+  if (!(ptrFE =
+            dynamic_cast<VolumeElementForcesAndSourcesCoreOnContactPrismSideBase *>(ptr)))
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "User operator and finite element do not work together");
+  MoFEMFunctionReturnHot(0);
+}
+
 } // namespace MoFEM
