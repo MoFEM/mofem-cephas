@@ -730,7 +730,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
     if (dof.getNbDofsOnEnt()) {
 
       const EntityType type = dof.getEntType();
-      const int side = dof.sideNumberPtr->side_number;
+      const int side = dof.getSideNumberPtr()->side_number;
 
       switch (type) {
       case MBEDGE:
@@ -754,7 +754,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
                 "Entity type not implemented");
       };
 
-      const int brother_side = dof.sideNumberPtr->brother_side_number;
+      const int brother_side = dof.getSideNumberPtr()->brother_side_number;
       if (brother_side != -1)
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                 "Case with brother side not implemented");
@@ -810,7 +810,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
     for (; dit != hi_dit;) {
       const auto &dof_ptr = *dit;
       const auto &dof = *dof_ptr;
-      const auto &sn = *dof.sideNumberPtr;
+      const auto &sn = *dof.getSideNumberPtr();
       int side = sn.side_number;
 
       auto set_data = [&](auto &nodes_data, auto &nodes_dofs, int pos) {
@@ -888,7 +888,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
     if (dof.getNbDofsOnEnt()) {
 
       const EntityType type = dof.getEntType();
-      const int side = dof.sideNumberPtr->side_number;
+      const int side = dof.getSideNumberPtr()->side_number;
 
       switch (type) {
       case MBEDGE:
@@ -912,7 +912,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
                 "Entity type not implemented");
       };
 
-      const int brother_side = dof.sideNumberPtr->brother_side_number;
+      const int brother_side = dof.getSideNumberPtr()->brother_side_number;
       if (brother_side != -1)
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
     }
@@ -968,7 +968,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
 
     for (; dit != hi_dit; dit++) {
       auto &dof = **dit;
-      const int side = dof.sideNumberPtr->side_number;
+      const int side = dof.getSideNumberPtr()->side_number;
 
       if (side < 3)
         get_indices(master_nodes_indices, master_local_nodes_indices, dof,
@@ -979,7 +979,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
       else
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
 
-      const int brother_side = (*dit)->sideNumberPtr->brother_side_number;
+      const int brother_side = (*dit)->getSideNumberPtr()->brother_side_number;
       if (brother_side != -1)
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
     }

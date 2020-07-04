@@ -813,11 +813,11 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
           dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
                     .lower_bound(boost::make_tuple(
                         (*cit)->getName(), (*cit)->getEntType(),
-                        (*cit)->sideNumberPtr->side_number));
+                        (*cit)->getSideNumberPtr()->side_number));
           hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
                        .upper_bound(boost::make_tuple(
                            (*cit)->getName(), (*cit)->getEntType(),
-                           (*cit)->sideNumberPtr->side_number));
+                           (*cit)->getSideNumberPtr()->side_number));
           int nb_dofs_on_ent = std::distance(dit, hi_dit);
 
           int max_order = (*cit)->getMaxOrder();
@@ -909,11 +909,11 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
           dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
                     .lower_bound(boost::make_tuple(
                         (*rit)->getName(), (*rit)->getEntType(),
-                        (*rit)->sideNumberPtr->side_number));
+                        (*rit)->getSideNumberPtr()->side_number));
           hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
                        .upper_bound(boost::make_tuple(
                            (*rit)->getName(), (*rit)->getEntType(),
-                           (*rit)->sideNumberPtr->side_number));
+                           (*rit)->getSideNumberPtr()->side_number));
           int nb_dofs_on_ent = std::distance(dit, hi_dit);
 
           int max_order = (*rit)->getMaxOrder();

@@ -98,8 +98,8 @@ FEDofEntity::FEDofEntity(const boost::shared_ptr<SideNumber> &side_number_ptr,
 
 std::ostream &operator<<(std::ostream &os, const FEDofEntity &e) {
   os << "local dof FiniteElement idx "
-     << "side_number " << (int)e.sideNumberPtr->side_number << " "
-     << "sense " << (int)e.sideNumberPtr->sense << " "
+     << "side_number " << (int)e.getSideNumberPtr()->side_number << " "
+     << "sense " << (int)e.getSideNumberPtr()->sense << " "
      << *e.getFieldEntityPtr();
   return os;
 }
@@ -118,8 +118,8 @@ FENumeredDofEntity::FENumeredDofEntity(
 
 std::ostream &operator<<(std::ostream &os, const FENumeredDofEntity &e) {
   os << "local dof FiniteElement idx "
-     << "side_number " << (int)e.sideNumberPtr->side_number << " "
-     << "sense " << (int)e.sideNumberPtr->sense << " "
+     << "side_number " << (int)e.getSideNumberPtr()->side_number << " "
+     << "sense " << (int)e.getSideNumberPtr()->sense << " "
      << *e.getFieldEntityPtr();
   return os;
 }

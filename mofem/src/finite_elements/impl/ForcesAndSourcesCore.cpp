@@ -191,12 +191,12 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
       auto &dof = **dit;
       const int idx = dof.getPetscGlobalDofIdx();
       const int local_idx = dof.getPetscLocalDofIdx();
-      const int side_number = dof.sideNumberPtr->side_number;
+      const int side_number = dof.getSideNumberPtr()->side_number;
       const int pos = side_number * nb_dofs_on_vert + dof.getDofCoeffIdx();
       nodes_indices[pos] = idx;
       local_nodes_indices[pos] = local_idx;
       const int brother_side_number =
-          (*dit)->sideNumberPtr->brother_side_number;
+          (*dit)->getSideNumberPtr()->brother_side_number;
       if (brother_side_number != -1) {
         const int elem_idx =
             brother_side_number * nb_dofs_on_vert + (*dit)->getDofCoeffIdx();
@@ -255,14 +255,14 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
   for (; dit != hi_dit; ++dit) {
     auto &dof = **dit;
     const EntityType type = dof.getEntType();
-    const int side = dof.sideNumberPtr->side_number;
+    const int side = dof.getSideNumberPtr()->side_number;
 
     if (side >= 0) {
 
       auto &dat = data.dataOnEntities[type][side];
       const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
       if (nb_dofs_on_ent) {
-        const int brother_side = dof.sideNumberPtr->brother_side_number;
+        const int brother_side = dof.getSideNumberPtr()->brother_side_number;
         auto &ent_field_indices = dat.getIndices();
         auto &ent_field_local_indices = dat.getLocalIndices();
         if (ent_field_indices.empty()) {
@@ -486,7 +486,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
       for (; dit != hi_dit;) {
         const auto &dof_ptr = *dit;
         const auto &dof = *dof_ptr;
-        const auto &sn = *dof.sideNumberPtr;
+        const auto &sn = *dof.getSideNumberPtr();
         const int side_number = sn.side_number;
         const int brother_side_number = sn.brother_side_number;
         if (brother_side_number != -1)
@@ -505,7 +505,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
 
       for (auto &dof_ptr : brother_dofs_vec) {
         if (const auto d = dof_ptr.lock()) {
-          const auto &sn = d->sideNumberPtr;
+          const auto &sn = d->getSideNumberPtr();
           const int side_number = sn->side_number;
           const int brother_side_number = sn->brother_side_number;
           bb_node_order[brother_side_number] = bb_node_order[side_number];
@@ -568,13 +568,13 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
     if (nb_dofs_on_ent) {
 
       const EntityType type = dof.getEntType();
-      const int side = dof.sideNumberPtr->side_number;
+      const int side = dof.getSideNumberPtr()->side_number;
       if (side >= 0) {
 
         auto &dat = data.dataOnEntities[type][side];
         auto &ent_field_dofs = dat.getFieldDofs();
         auto &ent_field_data = dat.getFieldData();
-        const int brother_side = dof.sideNumberPtr->brother_side_number;
+        const int brother_side = dof.getSideNumberPtr()->brother_side_number;
         if (brother_side != -1)
           brother_dofs_vec.emplace_back(*dit);
 
@@ -607,8 +607,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
   for (auto &dof_ptr : brother_dofs_vec) {
     if (auto d = dof_ptr.lock()) {
       const EntityType type = d->getEntType();
-      const int side = d->sideNumberPtr->side_number;
-      const int brother_side = d->sideNumberPtr->brother_side_number;
+      const int side = d->getSideNumberPtr()->side_number;
+      const int brother_side = d->getSideNumberPtr()->brother_side_number;
       auto &dat = data.dataOnEntities[type][side];
       auto &dat_brother = data.dataOnEntities[type][brother_side];
       dat_brother.getBase() = dat.getBase();
@@ -891,7 +891,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
       for (; dit != hi_dit;) {
         const auto &dof_ptr = *dit;
         const auto &dof = *dof_ptr;
-        const auto &sn = *dof.sideNumberPtr;
+        const auto &sn = *dof.getSideNumberPtr();
         const int side_number = sn.side_number;
         const int brother_side_number = sn.brother_side_number;
         if (brother_side_number != -1)
@@ -903,7 +903,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
 
       for (auto &dof_ptr : brother_dofs_vec) {
         if (const auto d = dof_ptr.lock()) {
-          const auto &sn = d->sideNumberPtr;
+          const auto &sn = d->getSideNumberPtr();
           const int side_number = sn->side_number;
           const int brother_side_number = sn->brother_side_number;
           bb_node_order[brother_side_number] = bb_node_order[side_number];
@@ -943,10 +943,10 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
       const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
       if (nb_dofs_on_ent) {
         const EntityType type = dof.getEntType();
-        const int side = dof.sideNumberPtr->side_number;
+        const int side = dof.getSideNumberPtr()->side_number;
         auto &dat = data.dataOnEntities[type][side];
 
-        const int brother_side = dof.sideNumberPtr->brother_side_number;
+        const int brother_side = dof.getSideNumberPtr()->brother_side_number;
         if (brother_side != -1)
           brother_dofs_vec.emplace_back(*dit);
 
@@ -964,8 +964,8 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
     for (auto &dof_ptr : brother_dofs_vec) {
       if (auto d = dof_ptr.lock()) {
         const EntityType type = d->getEntType();
-        const int side = d->sideNumberPtr->side_number;
-        const int brother_side = d->sideNumberPtr->brother_side_number;
+        const int side = d->getSideNumberPtr()->side_number;
+        const int brother_side = d->getSideNumberPtr()->brother_side_number;
         auto &dat = data.dataOnEntities[type][side];
         auto &dat_brother = data.dataOnEntities[type][brother_side];
         dat_brother.getBase() = dat.getBase();

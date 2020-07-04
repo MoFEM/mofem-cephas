@@ -256,7 +256,7 @@ MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
       for (; dit != hi_dit;) {
         const auto &dof_ptr = *dit;
         const auto &dof = *dof_ptr;
-        const auto &sn = *dof.sideNumberPtr;
+        const auto &sn = *dof.getSideNumberPtr();
         const int side_number = sn.side_number;
 
         int pos = side_number * nb_dof_idx;
