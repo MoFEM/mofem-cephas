@@ -67,6 +67,12 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
   virtual MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,
                                          const ApproximationOrder order,
                                          int verb = DEFAULT_VERBOSITY);
+
+  virtual MoFEMErrorCode build_fields(int verb = DEFAULT_VERBOSITY);
+
+  virtual MoFEMErrorCode build_field(const std::string field_name,
+                             int verb = DEFAULT_VERBOSITY);
+
 };
 
 template <int N> constexpr const int CoreTmp<N>::value;
@@ -553,9 +559,25 @@ protected:
 
   /// \name Build fields
 
+  template <int V, int F>
+  MoFEMErrorCode
+  buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr, 
+                            std::map<EntityType, int> &dof_counter, int verb);
+
+  template <int V, typename std::enable_if<(V >= 0), int>::type * = nullptr>
+  MoFEMErrorCode
+  buildFieldForNoFieldImpl1(const BitFieldId id,
+                            std::map<EntityType, int> &dof_counter, int verb);
+
+  template <int V, typename std::enable_if<(V < 0), int>::type * = nullptr>
+  MoFEMErrorCode
+  buildFieldForNoFieldImpl1(const BitFieldId id,
+                            std::map<EntityType, int> &dof_counter, int verb);
+
   MoFEMErrorCode buildFieldForNoField(const BitFieldId id,
                                       std::map<EntityType, int> &dof_counter,
                                       int verb = DEFAULT_VERBOSITY);
+
   MoFEMErrorCode
   buildFieldForL2H1HcurlHdiv(const BitFieldId id,
                              std::map<EntityType, int> &dof_counter,
@@ -1167,6 +1189,11 @@ template <> struct CoreTmp<-1> : public CoreTmp<0> {
   virtual MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,
                                          const ApproximationOrder order,
                                          int verb = DEFAULT_VERBOSITY);
+
+  virtual MoFEMErrorCode build_fields(int verb = DEFAULT_VERBOSITY);
+
+  virtual MoFEMErrorCode build_field(const std::string field_name,
+                             int verb = DEFAULT_VERBOSITY);
 };
 
 using Core = CoreTmp<0>;
