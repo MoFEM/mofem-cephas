@@ -112,19 +112,17 @@ template <int N> struct RefEntityTmp : public RefEntityTmp<N - 1> {
 
   using RefEntityTmp<N-1>::RefEntityTmp;
 
-  virtual boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
-    return basicDataPtr;
+  virtual const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
+    if(auto ptr = basicDataPtr.lock())
+      return ptr;
+    else 
+      return nullptr;
   }
 
-  virtual const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
-    return basicDataPtr;
-  }
-
-  static boost::shared_ptr<BasicEntityData> basicDataPtr;
+  static boost::weak_ptr<BasicEntityData> basicDataPtr;
 };
 
-template <int N>
-boost::shared_ptr<BasicEntityData> RefEntityTmp<N>::basicDataPtr;
+template <int N> boost::weak_ptr<BasicEntityData> RefEntityTmp<N>::basicDataPtr;
 
 /**
  * \brief Struct keeps handle to refined handle.
@@ -142,12 +140,11 @@ template <> struct RefEntityTmp<0> {
 
   virtual ~RefEntityTmp() = default;
 
-  virtual boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
-    return basicDataPtr;
-  }
-
-  virtual const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
-    return basicDataPtr;
+  virtual const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
+    if(auto ptr = basicDataPtr.lock())
+      return ptr;
+    else 
+      return nullptr;
   }
 
   /**
@@ -424,7 +421,7 @@ template <> struct RefEntityTmp<0> {
   friend std::ostream &operator<<(std::ostream &os, const RefEntityTmp &e);
 
   EntityHandle ent;
-  static boost::shared_ptr<BasicEntityData> basicDataPtr;
+  static boost::weak_ptr<BasicEntityData> basicDataPtr;
 };
 
 template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
@@ -433,16 +430,15 @@ template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
                const EntityHandle ent)
       : RefEntityTmp<0>(basic_data_ptr, ent), basicDataPtr(basic_data_ptr) {}
 
-  virtual boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
-    return basicDataPtr;
-  }
-
-  virtual const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
-    return basicDataPtr;
+  virtual const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
+    if(auto ptr = basicDataPtr.lock())
+      return ptr;
+    else 
+      return nullptr;
   }
 
 private:
-  mutable boost::shared_ptr<BasicEntityData> basicDataPtr;
+  mutable boost::weak_ptr<BasicEntityData> basicDataPtr;
 };
 
 using RefEntity = RefEntityTmp<0>;
@@ -462,11 +458,11 @@ template <typename T> struct interface_RefEntity {
 
   virtual ~interface_RefEntity() = default;
 
-  inline boost::shared_ptr<BasicEntityData> &getBasicDataPtr() {
-    return this->sPtr->getBasicDataPtr();
-  }
+  // inline boost::weak_ptr<BasicEntityData> &getBasicDataPtr() {
+  //   return this->sPtr->getBasicDataPtr();
+  // }
 
-  inline const boost::shared_ptr<BasicEntityData> &getBasicDataPtr() const {
+  inline const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
     return this->sPtr->getBasicDataPtr();
   }
 

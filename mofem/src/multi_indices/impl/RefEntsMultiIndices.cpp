@@ -33,7 +33,7 @@ BasicEntityData::BasicEntityData(const moab::Interface &moab,
   MOAB_THROW(rval);
 }
 
-boost::shared_ptr<BasicEntityData> RefEntityTmp<0>::basicDataPtr;
+boost::weak_ptr<BasicEntityData> RefEntityTmp<0>::basicDataPtr;
 
 // ref moab ent
 BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);
