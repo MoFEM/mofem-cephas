@@ -544,7 +544,7 @@ template <int I> struct BuildFiniteElements {
         // buildFiniteElements, weak_ptr will not give pointer
         auto data_dofs_array_vec = fe_ptr->getDofsSequence().lock();
         // Create shared pointers vector
-        auto data_dofs =
+        auto &data_dofs =
             const_cast<FEDofEntity_multiIndex &>(fe_ptr->getDataDofs());
         auto hint = data_dofs.end();
         for (auto &vit : *data_dofs_array_vec)

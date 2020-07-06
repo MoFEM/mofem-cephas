@@ -484,7 +484,7 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
     return *dataDofs;
   };
 
-  inline boost::shared_ptr<FEDofEntity_multiIndex> getDataDofsPtr() const {
+  inline boost::shared_ptr<FEDofEntity_multiIndex> &getDataDofsPtr() {
     return dataDofs;
   };
 
@@ -568,7 +568,7 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
     return this->sPtr->getDataDofs();
   }
 
-  inline const FEDofEntity_multiIndex &getDataDofsPtr() const {
+  inline boost::shared_ptr<FEDofEntity_multiIndex> &getDataDofsPtr() {
     return this->sPtr->getDataDofsPtr();
   }
 

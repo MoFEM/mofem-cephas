@@ -451,7 +451,6 @@ MoFEMErrorCode Core::loop_finite_elements(
     method.dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
     method.rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
     method.colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
-    method.dataPtr = (*miit)->sPtr->getDataDofsPtr();
     method.rowPtr = (*miit)->rows_dofs;
     method.colPtr = (*miit)->cols_dofs;
 

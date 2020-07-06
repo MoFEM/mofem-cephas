@@ -868,14 +868,14 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
     auto &bb_node_order = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder();
 
     auto &dofs_by_name_and_type =
-        dataPtr->get<Composite_Name_And_Type_mi_tag>();
+        getDataDofs().get<Composite_Name_And_Type_mi_tag>();
     auto tuple = boost::make_tuple(field_name, MBVERTEX);
     auto dit = dofs_by_name_and_type.lower_bound(tuple);
     if (dit == dofs_by_name_and_type.end())
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "No nodal dofs on element");
     auto hi_dit =
-        dataPtr->get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
+        getDataDofs().get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
 
     if (dit != hi_dit) {
       auto &first_dof = **dit;
@@ -1338,7 +1338,6 @@ ForcesAndSourcesCore::UserDataOperator::loopSide(const string &fe_name,
       side_fe->dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
       side_fe->rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
       side_fe->colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
-      side_fe->dataPtr = (*miit)->sPtr->getDataDofsPtr();
       side_fe->rowPtr = (*miit)->rows_dofs;
       side_fe->colPtr = (*miit)->cols_dofs;
       CHKERR (*side_fe)();

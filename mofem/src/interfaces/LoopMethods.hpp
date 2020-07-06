@@ -379,8 +379,6 @@ struct FEMethod : public BasicMethod {
       rowPtr; ///< Pointer to finite element rows dofs view
   boost::shared_ptr<const FENumeredDofEntity_multiIndex>
       colPtr; ///< Pointer to finite element columns dofs view
-  boost::shared_ptr<const FEDofEntity_multiIndex>
-      dataPtr; ///< Pointer to finite element data dofs
 
   boost::shared_ptr<const FieldEntity_vector_view>
       rowFieldEntsPtr; ///< Pointer to finite element field entities row view
@@ -388,6 +386,16 @@ struct FEMethod : public BasicMethod {
       colFieldEntsPtr; ///< Pointer to finite element field entities column view
   boost::shared_ptr<const FieldEntity_multiIndex_spaceType_view>
       dataFieldEntsPtr; ///< Pointer to finite element field entities data view
+
+  inline const FEDofEntity_multiIndex &getDataDofs() const {
+    return numeredEntFiniteElementPtr->getDataDofs();
+  };
+
+  inline boost::shared_ptr<FEDofEntity_multiIndex> &getDataDofsPtr() {
+    return const_cast<NumeredEntFiniteElement *>(
+               numeredEntFiniteElementPtr.get())
+        ->getDataDofsPtr();
+  };
 
   /// \brief Get number of DOFs on element
   MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
@@ -480,6 +488,7 @@ struct FEMethod : public BasicMethod {
   IT != FE->get_end<FEDofEntityByFieldName>(                                   \
             FE->dataPtr->get<FieldName_mi_tag>(), NAME);                       \
   IT++
+
 };
 
 inline EntityHandle FEMethod::getFEEntityHandle() const {

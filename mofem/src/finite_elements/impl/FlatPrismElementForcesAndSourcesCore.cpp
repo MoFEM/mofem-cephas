@@ -191,8 +191,9 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     }
   }
 
-  if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
-      dataPtr->get<FieldName_mi_tag>().end()) {
+  auto &data_dofs = getDataDofs();
+  if (data_dofs.get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
+      data_dofs.get<FieldName_mi_tag>().end()) {
     hoCoordsAtGaussPtsF3.resize(nb_gauss_pts, 3, false);
     nOrmals_at_GaussPtF3.resize(nb_gauss_pts, 3, false);
     tAngent1_at_GaussPtF3.resize(nb_gauss_pts, 3, false);

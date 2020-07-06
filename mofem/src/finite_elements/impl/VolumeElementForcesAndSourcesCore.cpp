@@ -247,8 +247,9 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformBaseFunctions() {
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::calculateHoJacobian() {
   MoFEMFunctionBegin;
-  if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
-      dataPtr->get<FieldName_mi_tag>().end()) {
+  auto &data_dofs = getDataDofs();
+  if (data_dofs.get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
+      data_dofs.get<FieldName_mi_tag>().end()) {
     const Field *field_struture =
         mField.get_field_structure(meshPositionsFieldName);
     BitFieldId id = field_struture->getId();

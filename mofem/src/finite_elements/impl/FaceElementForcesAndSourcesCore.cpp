@@ -349,10 +349,11 @@ FaceElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
 
 MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
   MoFEMFunctionBegin;
+  auto &data_dofs = getDataDofs();
   // Check if field for high-order geometry is set and if it is set calculate
   // higher-order normals and face tangent vectors.
-  if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
-      dataPtr->get<FieldName_mi_tag>().end()) {
+  if (data_dofs.get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
+      data_dofs.get<FieldName_mi_tag>().end()) {
 
     const Field *field_struture =
         mField.get_field_structure(meshPositionsFieldName);

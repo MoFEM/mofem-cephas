@@ -440,9 +440,10 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
 
   auto calc_ho_triangle_face_normals = [&]() {
     MoFEMFunctionBegin;
+    auto &data_dofs = getDataDofs();
     // Calculate ho-geometry tangents and normals
-    if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
-        dataPtr->get<FieldName_mi_tag>().end()) {
+    if (data_dofs.get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
+        data_dofs.get<FieldName_mi_tag>().end()) {
       hoCoordsAtGaussPtsF3.resize(nb_gauss_pts_on_faces, 3, false);
       nOrmals_at_GaussPtF3.resize(nb_gauss_pts_on_faces, 3, false);
       tAngent1_at_GaussPtF3.resize(nb_gauss_pts_on_faces, 3, false);
