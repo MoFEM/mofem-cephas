@@ -22,8 +22,6 @@ the following directories when you install MoFEM with developer version \ref ins
 Each tutorial in this page includes code name and keywords for quick reference
 and search within the browser. 
 
-Our way of creating tutorials is inspired by [deal.II](https://www.dealii.org).
-
 \note You do not need to go through all the tutorials in the order they are
 listed in this page before jumping into the topic in which you are
 interested. However, we do recommend you to have a look at the first few tutorials
@@ -212,7 +210,7 @@ continuing with the one you are most excited about.
   </tr>
 
   <tr valign="top">
-       <td width="350px">\ref ADV-3: Mixed dimension</td>
+       <td width="350px">\ref ADV-5: Elasticity with spring and rod elements</td>
        <td> Problem with mixed dimension (1D, 2D, 3D)
        <br/> *Keywords:* 
        </td>
@@ -224,5 +222,6 @@ continuing with the one you are most excited about.
 
 Contains all existing tutorials with various styles and structures
 
+\note Our way of creating tutorials is inspired by [deal.II](https://www.dealii.org).
 
 */
