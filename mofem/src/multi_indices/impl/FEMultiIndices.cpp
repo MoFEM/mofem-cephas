@@ -929,16 +929,16 @@ EntFiniteElement::EntFiniteElement(
     const boost::shared_ptr<FiniteElement> &fe_ptr)
     : interface_FiniteElement<FiniteElement>(fe_ptr),
       interface_RefElement<RefElement>(ref_finite_element),
-      data_dofs(new FEDofEntity_multiIndex()),
       row_field_ents_view(new FieldEntity_vector_view()),
       col_field_ents_view(new FieldEntity_vector_view()),
-      data_field_ents_view(new FieldEntity_multiIndex_spaceType_view()) {}
+      data_field_ents_view(new FieldEntity_multiIndex_spaceType_view()),
+      dataDofs(new FEDofEntity_multiIndex()) {}
 
 std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   os << *e.sFePtr << std::endl;
   os << *e.sPtr << std::endl;
   os << "data dof_uids ";
-  for (auto &dit : *e.data_dofs) {
+  for (auto &dit : *e.dataDofs) {
     if (!dit) {
       os << "null ptr";
     } else {

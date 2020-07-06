@@ -1338,7 +1338,7 @@ ForcesAndSourcesCore::UserDataOperator::loopSide(const string &fe_name,
       side_fe->dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
       side_fe->rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
       side_fe->colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
-      side_fe->dataPtr = (*miit)->sPtr->data_dofs;
+      side_fe->dataPtr = (*miit)->sPtr->getDataDofsPtr();
       side_fe->rowPtr = (*miit)->rows_dofs;
       side_fe->colPtr = (*miit)->cols_dofs;
       CHKERR (*side_fe)();

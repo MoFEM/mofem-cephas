@@ -544,10 +544,11 @@ template <int I> struct BuildFiniteElements {
         // buildFiniteElements, weak_ptr will not give pointer
         auto data_dofs_array_vec = fe_ptr->getDofsSequence().lock();
         // Create shared pointers vector
-        auto hint = fe_ptr->data_dofs->end();
+        auto data_dofs =
+            const_cast<FEDofEntity_multiIndex &>(fe_ptr->getDataDofs());
+        auto hint = data_dofs.end();
         for (auto &vit : *data_dofs_array_vec)
-          hint =
-              fe_ptr->data_dofs->emplace_hint(hint, data_dofs_array_vec, &vit);
+          hint = data_dofs.emplace_hint(hint, data_dofs_array_vec, &vit);
       }
     }
   }
@@ -764,7 +765,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       }
 
       // Clear finite element data structures
-      fe_raw_ptr->data_dofs->clear();
+      const_cast<FEDofEntity_multiIndex &>(fe_raw_ptr->getDataDofs()).clear();
 
       // Reserve memory for data FE Dofs
       auto data_dofs_array_vec = boost::make_shared<std::vector<FEDofEntity>>();

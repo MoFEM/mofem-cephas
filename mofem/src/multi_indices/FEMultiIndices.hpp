@@ -437,7 +437,6 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   typedef interface_RefEntity<RefElement> interface_type_RefEntity;
   typedef interface_RefElement<RefElement> interface_type_RefElement;
   typedef interface_FiniteElement<FiniteElement> interface_type_FiniteElement;
-  boost::shared_ptr<FEDofEntity_multiIndex> data_dofs;
   boost::shared_ptr<FieldEntity_vector_view> row_field_ents_view;
   boost::shared_ptr<FieldEntity_vector_view> col_field_ents_view;
   boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> data_field_ents_view;
@@ -475,14 +474,18 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
    * \brief Get number of DOFs on data
    * @return Number of dofs on data
    */
-  inline DofIdx getNbDofsData() const { return data_dofs->size(); }
+  inline DofIdx getNbDofsData() const { return dataDofs->size(); }
 
   /**
    * \brief Get data data dos multi-index structure
    * @return Reference multi-index FEDofEntity_multiIndex
    */
   inline const FEDofEntity_multiIndex &getDataDofs() const {
-    return *data_dofs;
+    return *dataDofs;
+  };
+
+  inline boost::shared_ptr<FEDofEntity_multiIndex> getDataDofsPtr() const {
+    return dataDofs;
   };
 
   friend std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e);
@@ -540,9 +543,13 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
     return dofsSequce;
   }
 
+protected:
+  boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
+
 private:
   // Keep vector of DoFS on entity
   mutable boost::weak_ptr<std::vector<FEDofEntity>> dofsSequce;
+
 };
 
 /**
@@ -559,6 +566,10 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
 
   inline const FEDofEntity_multiIndex &getDataDofs() const {
     return this->sPtr->getDataDofs();
+  }
+
+  inline const FEDofEntity_multiIndex &getDataDofsPtr() const {
+    return this->sPtr->getDataDofsPtr();
   }
 
   /**
