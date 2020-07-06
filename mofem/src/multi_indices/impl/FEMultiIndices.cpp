@@ -18,6 +18,9 @@
 
 namespace MoFEM {
 
+// ref moab ent
+BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);
+
 const boost::shared_ptr<SideNumber> RefElement::nullSideNumber =
     boost::shared_ptr<SideNumber>();
 

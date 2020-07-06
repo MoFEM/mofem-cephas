@@ -33,10 +33,18 @@ BasicEntityData::BasicEntityData(const moab::Interface &moab,
   MOAB_THROW(rval);
 }
 
-boost::weak_ptr<BasicEntityData> RefEntityTmp<0>::basicDataPtr;
+MoFEMErrorCode RefEntityTmp<0>::setFESideNumberPtr(const RefElement &fe) {
+  MoFEMFunctionBegin;
+  if (auto ptr = fe.getSideNumberPtr(ent))
+    sideNumberPtr = ptr;
+  else
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+            "Side entity on element ot found");
+  MoFEMFunctionReturn(0);
+}
 
-// ref moab ent
-BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);
+boost::weak_ptr<BasicEntityData> RefEntityTmp<0>::basicDataPtr;
+boost::weak_ptr<SideNumber> RefEntityTmp<0>::sideNumberPtr;
 
 std::ostream &operator<<(std::ostream &os, const RefEntity &e) {
   os << "ent " << e.ent;

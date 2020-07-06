@@ -124,6 +124,8 @@ template <int N> struct RefEntityTmp : public RefEntityTmp<N - 1> {
 
 template <int N> boost::weak_ptr<BasicEntityData> RefEntityTmp<N>::basicDataPtr;
 
+struct RefElement;
+
 /**
  * \brief Struct keeps handle to refined handle.
  * \ingroup ent_multi_indices
@@ -144,6 +146,18 @@ template <> struct RefEntityTmp<0> {
     if(auto ptr = basicDataPtr.lock())
       return ptr;
     else 
+      return nullptr;
+  }
+
+  MoFEMErrorCode setFESideNumberPtr(const RefElement &fe);
+
+  inline const boost::shared_ptr<SideNumber> getFESideNumberPtr() const {
+    if (auto ptr = sideNumberPtr.lock()) {
+      if (PetscLikely(ptr->ent == this->getRefEnt()))
+        return ptr;
+      else
+        return nullptr;
+    } else 
       return nullptr;
   }
 
@@ -422,6 +436,7 @@ template <> struct RefEntityTmp<0> {
 
   EntityHandle ent;
   static boost::weak_ptr<BasicEntityData> basicDataPtr;
+  static boost::weak_ptr<SideNumber> sideNumberPtr;
 };
 
 template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
@@ -437,7 +452,6 @@ template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
       return nullptr;
   }
 
-private:
   mutable boost::weak_ptr<BasicEntityData> basicDataPtr;
 };
 
@@ -457,6 +471,14 @@ template <typename T> struct interface_RefEntity {
       : sPtr(interface.getRefEntityPtr()) {}
 
   virtual ~interface_RefEntity() = default;
+
+  inline MoFEMErrorCode setFESideNumberPtr(const RefElement &fe) {
+    return this->sPtr->setFESideNumberPtr();
+  }
+
+  inline const boost::shared_ptr<SideNumber> getFESideNumberPtr() const {
+    return this->sPtr->getFESideNumberPtr();
+  }
 
   // inline boost::weak_ptr<BasicEntityData> &getBasicDataPtr() {
   //   return this->sPtr->getBasicDataPtr();
