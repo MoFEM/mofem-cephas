@@ -931,8 +931,8 @@ EntFiniteElement::EntFiniteElement(
       interface_RefElement<RefElement>(ref_finite_element),
       row_field_ents_view(new FieldEntity_vector_view()),
       col_field_ents_view(new FieldEntity_vector_view()),
-      data_field_ents_view(new FieldEntity_multiIndex_spaceType_view()),
-      dataDofs(new FEDofEntity_multiIndex()) {}
+      dataDofs(new FEDofEntity_multiIndex()),
+      dataFieldEntsView(new FieldEntity_multiIndex_spaceType_view()) {}
 
 std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   os << *e.sFePtr << std::endl;

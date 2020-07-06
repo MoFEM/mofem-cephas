@@ -100,7 +100,7 @@ static inline int getMaxOrder(const ENTMULTIINDEX &multi_index) {
 
 int ForcesAndSourcesCore::getMaxDataOrder() const {
   int max_order = 0;
-  for (auto e : *dataFieldEntsPtr) {
+  for (auto e : getDataFieldEnts()) {
     const int order = e->getMaxOrder();
     max_order = (max_order < order) ? order : max_order;
   }
@@ -126,7 +126,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
     data[s].getDataOrder() = 0;
 
   auto &fields_ents =
-      dataFieldEntsPtr->get<Composite_EntType_and_Space_mi_tag>();
+      getDataFieldEnts().get<Composite_EntType_and_Space_mi_tag>();
 
   for (auto r = fields_ents.equal_range(boost::make_tuple(type, space));
        r.first != r.second; ++r.first) {
@@ -766,8 +766,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
     }
   }
 
-  if (dataFieldEntsPtr)
-    for (auto e : *dataFieldEntsPtr) {
+  if (getDataFieldEntsPtr())
+    for (auto e : getDataFieldEnts()) {
       // get data from entity
       const EntityType type = e->getEntType();
       const FieldSpace space = e->getSpace();
@@ -976,8 +976,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
     MoFEMFunctionReturn(0);
   };
 
-  auto &ents_data = *dataFieldEntsPtr;
-  for (auto &e : ents_data) {
+  for (auto &e : getDataFieldEnts()) {
     if (e->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
       auto space = e->getSpace();
       for (EntityType t = MBVERTEX; t != MBPOLYHEDRON; ++t) {
@@ -993,7 +992,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
     }
   }
 
-  for (auto &e : ents_data) {
+  for (auto &e : getDataFieldEnts()) {
     if (e->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
       auto field_name = e->getName();
       auto space = e->getSpace();
@@ -1335,7 +1334,6 @@ ForcesAndSourcesCore::UserDataOperator::loopSide(const string &fe_name,
     if (miit != numered_fe.end()) {
       side_fe->nInTheLoop = nn++;
       side_fe->numeredEntFiniteElementPtr = *miit;
-      side_fe->dataFieldEntsPtr = (*miit)->sPtr->data_field_ents_view;
       side_fe->rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
       side_fe->colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
       side_fe->rowPtr = (*miit)->rows_dofs;

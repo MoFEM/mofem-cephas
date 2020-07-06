@@ -439,7 +439,6 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   typedef interface_FiniteElement<FiniteElement> interface_type_FiniteElement;
   boost::shared_ptr<FieldEntity_vector_view> row_field_ents_view;
   boost::shared_ptr<FieldEntity_vector_view> col_field_ents_view;
-  boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> data_field_ents_view;
 
   EntFiniteElement(const boost::shared_ptr<RefElement> &ref_finite_element,
                    const boost::shared_ptr<FiniteElement> &fe_ptr);
@@ -486,6 +485,16 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
 
   inline boost::shared_ptr<FEDofEntity_multiIndex> &getDataDofsPtr() {
     return dataDofs;
+  };
+
+  inline const FieldEntity_multiIndex_spaceType_view &
+  getDataFieldEntsView() const {
+    return *dataFieldEntsView;
+  };
+
+  inline boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> &
+  getDataFieldEntsViewPtr() {
+    return dataFieldEntsView;
   };
 
   friend std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e);
@@ -545,6 +554,7 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
 
 protected:
   boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
+  boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> dataFieldEntsView;
 
 private:
   // Keep vector of DoFS on entity
@@ -571,6 +581,16 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
   inline boost::shared_ptr<FEDofEntity_multiIndex> &getDataDofsPtr() {
     return this->sPtr->getDataDofsPtr();
   }
+
+  inline const FieldEntity_multiIndex_spaceType_view &
+  getDataFieldEntsView() const {
+    return this->sPtr->getDataFieldEntsView();
+  };
+
+  inline boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> &
+  getDataFieldEntsViewPtr() {
+    return this->sPtr->getDataFieldEntsViewPtr();
+  };
 
   /**
    * \brief Get number of DOFs on data

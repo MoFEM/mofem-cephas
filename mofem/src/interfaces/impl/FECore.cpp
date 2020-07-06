@@ -750,7 +750,9 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       // Data
       sort(data_field_ents_view.begin(), data_field_ents_view.end(), uid_comp);
       for (auto e : data_field_ents_view)
-        fe_raw_ptr->data_field_ents_view->emplace_back(e);
+        const_cast<FieldEntity_multiIndex_spaceType_view &>(
+            fe_raw_ptr->getDataFieldEntsView())
+            .emplace_back(e);
 
       // Row
       sort(fe_raw_ptr->row_field_ents_view->begin(),
@@ -926,7 +928,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(
             BYDATA);
         auto hint = entFEAdjacencies.end();
-        for (auto &e : *(*fit)->data_field_ents_view) {
+        for (auto &e : (*fit)->getDataFieldEntsView()) {
           hint = entFEAdjacencies.emplace_hint(hint, e, *fit);
           bool success = entFEAdjacencies.modify(hint, modify_data);
           if (!success)
