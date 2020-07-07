@@ -631,19 +631,17 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
       // Allocate space for etities view
       data_field_ents_view.clear();
-      fe_raw_ptr->getRowFieldEntsViewPtr()->reserve(
-          last_row_field_ents_view_size);
+      fe_raw_ptr->getRowFieldEntsPtr()->reserve(last_row_field_ents_view_size);
       // Create shared pointer for entities view
       if (fe_fields[ROW] == fe_fields[COL]) {
-        fe_raw_ptr->getColFieldEntsViewPtr() =
-            fe_raw_ptr->getRowFieldEntsViewPtr();
+        fe_raw_ptr->getColFieldEntsPtr() = fe_raw_ptr->getRowFieldEntsPtr();
       } else {
         // row and columns are diffent
-        if (fe_raw_ptr->getColFieldEntsViewPtr() ==
-            fe_raw_ptr->getRowFieldEntsViewPtr())
-          fe_raw_ptr->getColFieldEntsViewPtr() =
+        if (fe_raw_ptr->getColFieldEntsPtr() ==
+            fe_raw_ptr->getRowFieldEntsPtr())
+          fe_raw_ptr->getColFieldEntsPtr() =
               boost::make_shared<FieldEntity_vector_view>();
-        fe_raw_ptr->getColFieldEntsViewPtr()->reserve(
+        fe_raw_ptr->getColFieldEntsPtr()->reserve(
             last_col_field_ents_view_size);
       }
 
@@ -730,12 +728,12 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
                 data_field_ents_view.emplace_back(*meit);
               }
               if (add_to_row) {
-                fe_raw_ptr->getRowFieldEntsViewPtr()->emplace_back(*meit);
+                fe_raw_ptr->getRowFieldEntsPtr()->emplace_back(*meit);
               }
               if (add_to_col) {
-                if (fe_raw_ptr->getColFieldEntsViewPtr() !=
-                    fe_raw_ptr->getRowFieldEntsViewPtr())
-                  fe_raw_ptr->getColFieldEntsViewPtr()->emplace_back(*meit);
+                if (fe_raw_ptr->getColFieldEntsPtr() !=
+                    fe_raw_ptr->getRowFieldEntsPtr())
+                  fe_raw_ptr->getColFieldEntsPtr()->emplace_back(*meit);
               }
               // add finite element to processed list
               fe_vec.emplace_back(*hint_p);
@@ -755,22 +753,21 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       sort(data_field_ents_view.begin(), data_field_ents_view.end(), uid_comp);
       for (auto e : data_field_ents_view)
         const_cast<FieldEntity_multiIndex_spaceType_view &>(
-            fe_raw_ptr->getDataFieldEntsView())
+            fe_raw_ptr->getDataFieldEnts())
             .emplace_back(e);
 
       // Row
-      sort(fe_raw_ptr->getRowFieldEntsViewPtr()->begin(),
-           fe_raw_ptr->getRowFieldEntsViewPtr()->end(), uid_comp);
-      last_row_field_ents_view_size =
-          fe_raw_ptr->getRowFieldEntsViewPtr()->size();
+      sort(fe_raw_ptr->getRowFieldEntsPtr()->begin(),
+           fe_raw_ptr->getRowFieldEntsPtr()->end(), uid_comp);
+      last_row_field_ents_view_size = fe_raw_ptr->getRowFieldEntsPtr()->size();
 
       // Column
-      if (fe_raw_ptr->getColFieldEntsViewPtr() !=
-          fe_raw_ptr->getRowFieldEntsViewPtr()) {
-        sort(fe_raw_ptr->getColFieldEntsViewPtr()->begin(),
-             fe_raw_ptr->getColFieldEntsViewPtr()->end(), uid_comp);
+      if (fe_raw_ptr->getColFieldEntsPtr() !=
+          fe_raw_ptr->getRowFieldEntsPtr()) {
+        sort(fe_raw_ptr->getColFieldEntsPtr()->begin(),
+             fe_raw_ptr->getColFieldEntsPtr()->end(), uid_comp);
         last_col_field_ents_view_size =
-            fe_raw_ptr->getColFieldEntsViewPtr()->size();
+            fe_raw_ptr->getColFieldEntsPtr()->size();
       }
 
       // Clear finite element data structures
@@ -909,7 +906,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         by |= BYDATA;
       FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
       auto hint = entFEAdjacencies.end();
-      for (auto e : *(*fit)->getRowFieldEntsViewPtr()) {
+      for (auto e : *(*fit)->getRowFieldEntsPtr()) {
         hint = entFEAdjacencies.emplace_hint(hint, e.lock(), *fit);
         bool success = entFEAdjacencies.modify(hint, modify_row);
         if (!success)
@@ -922,7 +919,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
           by |= BYDATA;
         FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_col(by);
         auto hint = entFEAdjacencies.end();
-        for (auto e : *(*fit)->getColFieldEntsViewPtr()) {
+        for (auto e : *(*fit)->getColFieldEntsPtr()) {
           hint = entFEAdjacencies.emplace_hint(hint, e.lock(), *fit);
           bool success = entFEAdjacencies.modify(hint, modify_col);
           if (!success)
@@ -935,7 +932,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
         FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(
             BYDATA);
         auto hint = entFEAdjacencies.end();
-        for (auto &e : (*fit)->getDataFieldEntsView()) {
+        for (auto &e : (*fit)->getDataFieldEnts()) {
           hint = entFEAdjacencies.emplace_hint(hint, e, *fit);
           bool success = entFEAdjacencies.modify(hint, modify_data);
           if (!success)

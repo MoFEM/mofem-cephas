@@ -930,9 +930,9 @@ EntFiniteElement::EntFiniteElement(
     : interface_FiniteElement<FiniteElement>(fe_ptr),
       interface_RefElement<RefElement>(ref_finite_element),
       dataDofs(new FEDofEntity_multiIndex()),
-      dataFieldEntsView(new FieldEntity_multiIndex_spaceType_view()),
-      rowFieldEntsView(new FieldEntity_vector_view()),
-      colFieldEntsView(new FieldEntity_vector_view()) {}
+      dataFieldEnts(new FieldEntity_multiIndex_spaceType_view()),
+      rowFieldEnts(new FieldEntity_vector_view()),
+      colFieldEnts(new FieldEntity_vector_view()) {}
 
 std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   os << *e.sFePtr << std::endl;
@@ -971,9 +971,9 @@ EntFiniteElement::getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
   MoFEMFunctionReturn(0);
 }
 
-  /**
-   * \Construct indexed finite element
-   */
+/**
+ * \Construct indexed finite element
+ */
 NumeredEntFiniteElement::NumeredEntFiniteElement(
     const boost::shared_ptr<EntFiniteElement> &sptr)
     : interface_EntFiniteElement<EntFiniteElement>(sptr), part(-1),

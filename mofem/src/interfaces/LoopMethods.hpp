@@ -387,36 +387,36 @@ struct FEMethod : public BasicMethod {
   };
 
   inline const FieldEntity_multiIndex_spaceType_view &getDataFieldEnts() const {
-    return numeredEntFiniteElementPtr->getDataFieldEntsView();
+    return numeredEntFiniteElementPtr->getDataFieldEnts();
   }
 
   inline boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> &
   getDataFieldEntsPtr() const {
     return const_cast<NumeredEntFiniteElement *>(
                numeredEntFiniteElementPtr.get())
-        ->getDataFieldEntsViewPtr();
+        ->getDataFieldEntsPtr();
   }
 
-  inline const FieldEntity_vector_view &getRowFieldEntsView() const {
-    return numeredEntFiniteElementPtr->getRowFieldEntsView();
+  inline const FieldEntity_vector_view &getRowFieldEnts() const {
+    return numeredEntFiniteElementPtr->getRowFieldEnts();
   };
 
   inline boost::shared_ptr<FieldEntity_vector_view> &
-  getRowFieldEntsViewPtr() const {
+  getRowFieldEntsPtr() const {
     return const_cast<NumeredEntFiniteElement *>(
                numeredEntFiniteElementPtr.get())
-        ->getRowFieldEntsViewPtr();
+        ->getRowFieldEntsPtr();
   };
 
-  inline const FieldEntity_vector_view &getColFieldEntsView() const {
-    return numeredEntFiniteElementPtr->getColFieldEntsView();
+  inline const FieldEntity_vector_view &getColFieldEnts() const {
+    return numeredEntFiniteElementPtr->getColFieldEnts();
   };
 
   inline boost::shared_ptr<FieldEntity_vector_view> &
-  getColFieldEntsViewPtr() const {
+  getColFieldEntsPtr() const {
     return const_cast<NumeredEntFiniteElement *>(
                numeredEntFiniteElementPtr.get())
-        ->getColFieldEntsViewPtr();
+        ->getColFieldEntsPtr();
   };
 
   inline const FENumeredDofEntity_multiIndex &getRowDofs() const {

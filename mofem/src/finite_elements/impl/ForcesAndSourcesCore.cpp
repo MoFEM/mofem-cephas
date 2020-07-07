@@ -108,11 +108,11 @@ int ForcesAndSourcesCore::getMaxDataOrder() const {
 }
 
 int ForcesAndSourcesCore::getMaxRowOrder() const {
-  return getMaxOrder(getRowFieldEntsView());
+  return getMaxOrder(getRowFieldEnts());
 }
 
 int ForcesAndSourcesCore::getMaxColOrder() const {
-  return getMaxOrder(getColFieldEntsView());
+  return getMaxOrder(getColFieldEnts());
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
@@ -284,7 +284,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
           dat_brother.getLocalIndices()[idx] = dat.getLocalIndices()[idx];
         }
       }
-      
     }
   }
 
@@ -375,7 +374,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
   } else {
     nodes_indices.resize(0, false);
   }
-
 
   MoFEMFunctionReturnHot(0);
 }
@@ -598,9 +596,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
 
         for (int ii = 0; ii != nb_dofs_on_ent; ++ii)
           ++dit;
-
       }
-
     }
   }
 
@@ -1251,7 +1247,6 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         }
 
         CHKERR swap_bases();
-
       }
     }
     CATCH_OP_ERRORS(*oit);

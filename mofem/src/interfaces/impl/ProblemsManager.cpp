@@ -2429,9 +2429,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
 
   if (!do_cols_prob) {
     for (auto &fe : *numbered_good_elems_ptr) {
-      if (fe.sPtr->getRowFieldEntsViewPtr() ==
-          fe.sPtr->getColFieldEntsViewPtr()) {
-        fe.getColFieldEntsViewPtr() = fe.getRowFieldEntsViewPtr();
+      if (fe.sPtr->getRowFieldEntsPtr() == fe.sPtr->getColFieldEntsPtr()) {
+        fe.getColFieldEntsPtr() = fe.getRowFieldEntsPtr();
       }
     }
   }
@@ -2477,8 +2476,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       std::array<FENumeredDofEntity_multiIndex *, 2> fe_dofs{
           fe.getRowDofsPtr().get(), fe.getColDofsPtr().get()};
 
-      for (int ss = 0; ss != ((fe.getColDofsPtr() != fe.getRowDofsPtr()) ? 2 : 1);
-           ss++) {
+      for (int ss = 0;
+           ss != ((fe.getColDofsPtr() != fe.getRowDofsPtr()) ? 2 : 1); ss++) {
         // Following reserve memory in sequences, only two allocations are here,
         // once for array of objects, next for array of shared pointers
 
@@ -2525,8 +2524,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       // tasks which do not assemble matrices or vectors, but evaluate fields or
       // modify base functions.
 
-      return (!fe.sPtr->getRowFieldEntsView().empty() ||
-              !fe.sPtr->getColFieldEntsView().empty())
+      return (!fe.sPtr->getRowFieldEnts().empty() ||
+              !fe.sPtr->getColFieldEnts().empty())
 
              ||
 

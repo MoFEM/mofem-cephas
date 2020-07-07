@@ -486,30 +486,29 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
     return dataDofs;
   };
 
-  inline const FieldEntity_multiIndex_spaceType_view &
-  getDataFieldEntsView() const {
-    return *dataFieldEntsView;
+  inline const FieldEntity_multiIndex_spaceType_view &getDataFieldEnts() const {
+    return *dataFieldEnts;
   };
 
   inline boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> &
-  getDataFieldEntsViewPtr() {
-    return dataFieldEntsView;
+  getDataFieldEntsPtr() {
+    return dataFieldEnts;
   };
 
-  inline const FieldEntity_vector_view &getRowFieldEntsView() const {
-    return *rowFieldEntsView;
+  inline const FieldEntity_vector_view &getRowFieldEnts() const {
+    return *rowFieldEnts;
   };
 
-  inline boost::shared_ptr<FieldEntity_vector_view> &getRowFieldEntsViewPtr() {
-    return rowFieldEntsView;
+  inline boost::shared_ptr<FieldEntity_vector_view> &getRowFieldEntsPtr() {
+    return rowFieldEnts;
   };
 
-  inline const FieldEntity_vector_view &getColFieldEntsView() const {
-    return *colFieldEntsView;
+  inline const FieldEntity_vector_view &getColFieldEnts() const {
+    return *colFieldEnts;
   };
 
-  inline boost::shared_ptr<FieldEntity_vector_view> &getColFieldEntsViewPtr() {
-    return colFieldEntsView;
+  inline boost::shared_ptr<FieldEntity_vector_view> &getColFieldEntsPtr() {
+    return colFieldEnts;
   };
 
   friend std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e);
@@ -536,16 +535,14 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   inline MoFEMErrorCode
   getRowDofView(const MOFEM_DOFS &mofem_dofs, MOFEM_DOFS_VIEW &dofs_view,
                 const int operation_type = moab::Interface::UNION) {
-    return getDofView(getRowFieldEntsView(), mofem_dofs, dofs_view,
-                      operation_type);
+    return getDofView(getRowFieldEnts(), mofem_dofs, dofs_view, operation_type);
   }
 
   template <typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
   inline MoFEMErrorCode
   getColDofView(const MOFEM_DOFS &mofem_dofs, MOFEM_DOFS_VIEW &dofs_view,
                 const int operation_type = moab::Interface::UNION) {
-    return getDofView(getColFieldEntsView(), mofem_dofs, dofs_view,
-                      operation_type);
+    return getDofView(getColFieldEnts(), mofem_dofs, dofs_view, operation_type);
   }
 
   MoFEMErrorCode getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
@@ -569,9 +566,9 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
 
 protected:
   boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
-  boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> dataFieldEntsView;
-  boost::shared_ptr<FieldEntity_vector_view> rowFieldEntsView;
-  boost::shared_ptr<FieldEntity_vector_view> colFieldEntsView;
+  boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> dataFieldEnts;
+  boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
+  boost::shared_ptr<FieldEntity_vector_view> colFieldEnts;
 
 private:
   // Keep vector of DoFS on entity
@@ -598,30 +595,29 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
     return this->sPtr->getDataDofsPtr();
   }
 
-  inline const FieldEntity_multiIndex_spaceType_view &
-  getDataFieldEntsView() const {
-    return this->sPtr->getDataFieldEntsView();
+  inline const FieldEntity_multiIndex_spaceType_view &getDataFieldEnts() const {
+    return this->sPtr->getDataFieldEnts();
   };
 
   inline boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> &
-  getDataFieldEntsViewPtr() {
-    return this->sPtr->getDataFieldEntsViewPtr();
+  getDataFieldEntsPtr() {
+    return this->sPtr->getDataFieldEntsPtr();
   };
 
-  inline const FieldEntity_vector_view &getRowFieldEntsView() const {
-    return this->sPtr->getRowFieldEntsView();
+  inline const FieldEntity_vector_view &getRowFieldEnts() const {
+    return this->sPtr->getRowFieldEnts();
   };
 
-  inline boost::shared_ptr<FieldEntity_vector_view> &getRowFieldEntsViewPtr() {
-    return this->sPtr->getRowFieldEntsViewPtr();
+  inline boost::shared_ptr<FieldEntity_vector_view> &getRowFieldEntsPtr() {
+    return this->sPtr->getRowFieldEntsPtr();
   }
 
-  inline const FieldEntity_vector_view &getColFieldEntsView() const {
-    return this->sPtr->getColFieldEntsView();
+  inline const FieldEntity_vector_view &getColFieldEnts() const {
+    return this->sPtr->getColFieldEnts();
   };
 
-  inline boost::shared_ptr<FieldEntity_vector_view> &getColFieldEntsViewPtr() {
-    return this->sPtr->getColFieldEntsViewPtr();
+  inline boost::shared_ptr<FieldEntity_vector_view> &getColFieldEntsPtr() {
+    return this->sPtr->getColFieldEntsPtr();
   };
 
   /**
