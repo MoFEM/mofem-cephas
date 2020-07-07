@@ -895,7 +895,7 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         if ((*rit)->getEntType() != MBVERTEX) {
 
           auto range =
-              getRowDofsPtr()->get<Ent_mi_tag>().equal_range((*cit)->getEnt());
+              getRowDofsPtr()->get<Ent_mi_tag>().equal_range((*rit)->getEnt());
           int nb_dofs_on_ent = std::distance(range.first, range.second);
 
           int max_order = (*rit)->getMaxOrder();
