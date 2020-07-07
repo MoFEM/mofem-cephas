@@ -813,38 +813,6 @@ private:
   mutable boost::weak_ptr<std::vector<FENumeredDofEntity>> dofsColSequce;
 };
 
-/** \brief interface for NumeredEntFiniteElement
- * \ingroup fe_multi_indices
- */
-template <typename T>
-struct interface_NumeredEntFiniteElement
-    : public interface_EntFiniteElement<T> {
-
-  interface_NumeredEntFiniteElement(const boost::shared_ptr<T> &sptr)
-      : interface_EntFiniteElement<T>(sptr){};
-  virtual ~interface_NumeredEntFiniteElement() = default;
-
-  /**
-   * \brief Get partition number
-   * @return Partition number
-   */
-  inline unsigned int getPart() const { return this->sPtr->getPart(); }
-
-  /** \brief get FE dof on row
-   * \ingroup mofem_dofs
-   */
-  inline const FENumeredDofEntity_multiIndex &getRowDofs() const {
-    return this->sPtr->getRowDofs();
-  };
-
-  /** \brief get FE dof on column
-   * \ingroup mofem_dofs
-   */
-  inline const FENumeredDofEntity_multiIndex &getColDofs() const {
-    return this->sPtr->getColDofs();
-  };
-};
-
 /**
  * @relates multi_index_container
  * \brief MultiIndex container for EntFiniteElement
