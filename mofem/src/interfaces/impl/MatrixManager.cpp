@@ -772,8 +772,8 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
                 "data inconsistency");
       }
 
-      for (FENumeredDofEntity_multiIndex::iterator cit = colPtr->begin();
-           cit != colPtr->end(); cit++) {
+      for (FENumeredDofEntity_multiIndex::iterator cit = getColDofs().begin();
+           cit != getColDofs().end(); cit++) {
 
         if (refinedEntitiesPtr->find((*cit)->getEnt()) ==
             refinedEntitiesPtr->end()) {
@@ -832,8 +832,8 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         }
       }
 
-      FENumeredDofEntity_multiIndex::iterator rit = rowPtr->begin();
-      for (; rit != rowPtr->end(); rit++) {
+      FENumeredDofEntity_multiIndex::iterator rit = getRowDofs().begin();
+      for (; rit != getRowDofs().end(); rit++) {
 
         if (refinedEntitiesPtr->find((*rit)->getEnt()) ==
             refinedEntitiesPtr->end()) {
@@ -876,8 +876,8 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         }
         int row = (*rit)->getPetscGlobalDofIdx();
 
-        FENumeredDofEntity_multiIndex::iterator cit = colPtr->begin();
-        for (; cit != colPtr->end(); cit++) {
+        FENumeredDofEntity_multiIndex::iterator cit = getColDofs().begin();
+        for (; cit != getColDofs().end(); cit++) {
 
           int col = (*cit)->getPetscGlobalDofIdx();
 

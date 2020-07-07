@@ -1334,8 +1334,6 @@ ForcesAndSourcesCore::UserDataOperator::loopSide(const string &fe_name,
     if (miit != numered_fe.end()) {
       side_fe->nInTheLoop = nn++;
       side_fe->numeredEntFiniteElementPtr = *miit;
-      side_fe->rowPtr = (*miit)->rows_dofs;
-      side_fe->colPtr = (*miit)->cols_dofs;
       CHKERR (*side_fe)();
     }
   }

@@ -375,10 +375,6 @@ struct FEMethod : public BasicMethod {
   boost::shared_ptr<const NumeredEntFiniteElement>
       numeredEntFiniteElementPtr; ///< Pointer to finite element database
                                   ///< structure
-  boost::shared_ptr<const FENumeredDofEntity_multiIndex>
-      rowPtr; ///< Pointer to finite element rows dofs view
-  boost::shared_ptr<const FENumeredDofEntity_multiIndex>
-      colPtr; ///< Pointer to finite element columns dofs view
 
   inline const FEDofEntity_multiIndex &getDataDofs() const {
     return numeredEntFiniteElementPtr->getDataDofs();
@@ -421,6 +417,28 @@ struct FEMethod : public BasicMethod {
     return const_cast<NumeredEntFiniteElement *>(
                numeredEntFiniteElementPtr.get())
         ->getColFieldEntsViewPtr();
+  };
+
+  inline const FENumeredDofEntity_multiIndex &getRowDofs() const {
+    return numeredEntFiniteElementPtr->getRowsDofs();
+  };
+
+  inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
+  getRowDofsPtr() const {
+    return const_cast<NumeredEntFiniteElement *>(
+               numeredEntFiniteElementPtr.get())
+        ->rows_dofs;
+  };
+
+  inline const FENumeredDofEntity_multiIndex &getColDofs() const {
+    return numeredEntFiniteElementPtr->getColsDofs();
+  };
+
+  inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
+  getColDofsPtr() const {
+    return const_cast<NumeredEntFiniteElement *>(
+               numeredEntFiniteElementPtr.get())
+        ->cols_dofs;
   };
 
   /// \brief Get number of DOFs on element

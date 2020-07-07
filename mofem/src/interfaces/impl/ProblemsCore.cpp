@@ -448,8 +448,6 @@ MoFEMErrorCode Core::loop_finite_elements(
 
     method.nInTheLoop = nn;
     method.numeredEntFiniteElementPtr = *miit;
-    method.rowPtr = (*miit)->rows_dofs;
-    method.colPtr = (*miit)->cols_dofs;
 
     PetscLogEventBegin(MOFEM_EVENT_operator, 0, 0, 0, 0);
     CHKERR method();
