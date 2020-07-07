@@ -710,14 +710,14 @@ struct NumeredEntFiniteElement
   /** \brief get FE dof on row
    * \ingroup mofem_dofs
    */
-  inline const FENumeredDofEntity_multiIndex &getRowsDofs() const {
+  inline const FENumeredDofEntity_multiIndex &getRowDofs() const {
     return *rows_dofs;
   };
 
   /** \brief get FE dof on column
    * \ingroup mofem_dofs
    */
-  inline const FENumeredDofEntity_multiIndex &getColsDofs() const {
+  inline const FENumeredDofEntity_multiIndex &getColDofs() const {
     return *cols_dofs;
   };
 
@@ -833,15 +833,15 @@ struct interface_NumeredEntFiniteElement
   /** \brief get FE dof on row
    * \ingroup mofem_dofs
    */
-  inline const FENumeredDofEntity_multiIndex &getRowsDofs() const {
-    return this->sPtr->getRowsDofs();
+  inline const FENumeredDofEntity_multiIndex &getRowDofs() const {
+    return this->sPtr->getRowDofs();
   };
 
   /** \brief get FE dof on column
    * \ingroup mofem_dofs
    */
-  inline const FENumeredDofEntity_multiIndex &getColsDofs() const {
-    return this->sPtr->getColsDofs();
+  inline const FENumeredDofEntity_multiIndex &getColDofs() const {
+    return this->sPtr->getColDofs();
   };
 };
 

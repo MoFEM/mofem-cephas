@@ -218,7 +218,7 @@ ForcesAndSourcesCore::getRowNodesIndices(DataForcesAndSourcesCore &data,
                                          const std::string &field_name) const {
   return getNodesIndices(field_name,
                          const_cast<FENumeredDofEntity_multiIndex &>(
-                             numeredEntFiniteElementPtr->getRowsDofs()),
+                             numeredEntFiniteElementPtr->getRowDofs()),
                          data.dataOnEntities[MBVERTEX][0].getIndices(),
                          data.dataOnEntities[MBVERTEX][0].getLocalIndices());
 }
@@ -228,7 +228,7 @@ ForcesAndSourcesCore::getColNodesIndices(DataForcesAndSourcesCore &data,
                                          const std::string &field_name) const {
   return getNodesIndices(field_name,
                          const_cast<FENumeredDofEntity_multiIndex &>(
-                             numeredEntFiniteElementPtr->getColsDofs()),
+                             numeredEntFiniteElementPtr->getColDofs()),
                          data.dataOnEntities[MBVERTEX][0].getIndices(),
                          data.dataOnEntities[MBVERTEX][0].getLocalIndices());
 }
@@ -314,7 +314,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldRowIndices(
   }
   CHKERR getNoFieldIndices(field_name,
                            const_cast<FENumeredDofEntity_multiIndex &>(
-                               numeredEntFiniteElementPtr->getRowsDofs()),
+                               numeredEntFiniteElementPtr->getRowDofs()),
                            data.dataOnEntities[MBENTITYSET][0].getIndices());
   MoFEMFunctionReturn(0);
 }
@@ -327,7 +327,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldColIndices(
   }
   CHKERR getNoFieldIndices(field_name,
                            const_cast<FENumeredDofEntity_multiIndex &>(
-                               numeredEntFiniteElementPtr->getColsDofs()),
+                               numeredEntFiniteElementPtr->getColDofs()),
                            data.dataOnEntities[MBENTITYSET][0].getIndices());
   MoFEMFunctionReturn(0);
 }

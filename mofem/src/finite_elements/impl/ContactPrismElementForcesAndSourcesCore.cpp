@@ -486,13 +486,13 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
               CHKERR getEntityIndices(
                   *op_master_data[ss], *op_slave_data[ss], field_name,
                   const_cast<FENumeredDofEntity_multiIndex &>(
-                      numeredEntFiniteElementPtr->getRowsDofs()),
+                      numeredEntFiniteElementPtr->getRowDofs()),
                   MBEDGE);
             else
               CHKERR getEntityIndices(
                   *op_master_data[ss], *op_slave_data[ss], field_name,
                   const_cast<FENumeredDofEntity_multiIndex &>(
-                      numeredEntFiniteElementPtr->getColsDofs()),
+                      numeredEntFiniteElementPtr->getColDofs()),
                   MBEDGE);
 
             switch (space) {
@@ -531,12 +531,12 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                 CHKERR get_indices(
                     *op_master_data[ss], *op_slave_data[ss],
                     const_cast<FENumeredDofEntity_multiIndex &>(
-                        numeredEntFiniteElementPtr->getRowsDofs()));
+                        numeredEntFiniteElementPtr->getRowDofs()));
               else
                 CHKERR get_indices(
                     *op_master_data[ss], *op_slave_data[ss],
                     const_cast<FENumeredDofEntity_multiIndex &>(
-                        numeredEntFiniteElementPtr->getColsDofs()));
+                        numeredEntFiniteElementPtr->getColDofs()));
 
               CHKERR get_data(*op_master_data[ss], *op_slave_data[ss]);
 

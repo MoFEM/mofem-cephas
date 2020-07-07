@@ -420,7 +420,7 @@ struct FEMethod : public BasicMethod {
   };
 
   inline const FENumeredDofEntity_multiIndex &getRowDofs() const {
-    return numeredEntFiniteElementPtr->getRowsDofs();
+    return numeredEntFiniteElementPtr->getRowDofs();
   };
 
   inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
@@ -431,7 +431,7 @@ struct FEMethod : public BasicMethod {
   };
 
   inline const FENumeredDofEntity_multiIndex &getColDofs() const {
-    return numeredEntFiniteElementPtr->getColsDofs();
+    return numeredEntFiniteElementPtr->getColDofs();
   };
 
   inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &

@@ -855,7 +855,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityRowIndices(
     const EntityType type_lo, const EntityType type_hi) const {
   return getEntityIndices(data, field_name,
                           const_cast<FENumeredDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getRowsDofs()),
+                              numeredEntFiniteElementPtr->getRowDofs()),
                           type_lo, type_hi);
 }
 
@@ -864,7 +864,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityColIndices(
     const EntityType type_lo, const EntityType type_hi) const {
   return getEntityIndices(data, field_name,
                           const_cast<FENumeredDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getColsDofs()),
+                              numeredEntFiniteElementPtr->getColDofs()),
                           type_lo, type_hi);
 }
 
