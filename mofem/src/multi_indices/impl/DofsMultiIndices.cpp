@@ -99,16 +99,8 @@ std::ostream &operator<<(std::ostream &os, const FEDofEntity &e) {
 }
 
 FENumeredDofEntity::FENumeredDofEntity(
-    const boost::shared_ptr<SideNumber> &side_number_ptr,
     const boost::shared_ptr<NumeredDofEntity> &dof_ptr)
-    : BaseFEEntity(side_number_ptr),
-      interface_NumeredDofEntity<NumeredDofEntity>(dof_ptr) {}
-
-FENumeredDofEntity::FENumeredDofEntity(
-    const boost::tuple<const boost::shared_ptr<SideNumber> &,
-                       const boost::shared_ptr<NumeredDofEntity> &> &t)
-    : BaseFEEntity(t.get<0>()), interface_NumeredDofEntity<NumeredDofEntity>(
-                                       t.get<1>()) {}
+    : interface_NumeredDofEntity<NumeredDofEntity>(dof_ptr) {}
 
 std::ostream &operator<<(std::ostream &os, const FENumeredDofEntity &e) {
   os << "local dof FiniteElement idx "

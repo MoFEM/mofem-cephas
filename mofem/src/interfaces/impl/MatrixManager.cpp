@@ -134,7 +134,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
       // Create dofs objects
       for (auto &dof : cols_view) {
         auto side_number_ptr = fe_ptr->getSideNumberPtr(dof->getEnt());
-        dofs_array->emplace_back(side_number_ptr, dof);
+        dofs_array->emplace_back(dof);
       }
 
       // Finally add DoFS to multi-indices

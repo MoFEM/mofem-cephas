@@ -2497,7 +2497,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
 
         // create elements objects
         for (; vit != hi_vit; vit++)
-          dofs_array->emplace_back(fe.getSideNumberPtr((*vit)->getEnt()), *vit);
+          dofs_array->emplace_back(*vit);
 
         // finally add DoFS to multi-indices
         auto hint = fe_dofs[ss]->end();

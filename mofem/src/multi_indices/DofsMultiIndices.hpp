@@ -312,8 +312,7 @@ struct FEDofEntity : public interface_DofEntity<DofEntity> {
  * \brief keeps information about indexed dofs for the finite element
  * \ingroup dof_multi_indices
  */
-struct FENumeredDofEntity : public BaseFEEntity,
-                            interface_NumeredDofEntity<NumeredDofEntity> {
+struct FENumeredDofEntity : interface_NumeredDofEntity<NumeredDofEntity> {
 
   virtual ~FENumeredDofEntity() = default;
 
@@ -323,15 +322,11 @@ struct FENumeredDofEntity : public BaseFEEntity,
   using interface_type_DofEntity = interface_DofEntity<NumeredDofEntity>;
   using interface_type_RefEntity = interface_RefEntity<NumeredDofEntity>;
 
-  using BaseFEEntity::getSideNumberPtr;
-
   typedef interface_NumeredDofEntity<NumeredDofEntity>
       interface_type_NumeredDofEntity;
-  FENumeredDofEntity(const boost::shared_ptr<SideNumber> &side_number_ptr,
-                     const boost::shared_ptr<NumeredDofEntity> &dof_ptr);
-  FENumeredDofEntity(
-      const boost::tuple<const boost::shared_ptr<SideNumber> &,
-                         const boost::shared_ptr<NumeredDofEntity> &> &t);
+
+  FENumeredDofEntity(const boost::shared_ptr<NumeredDofEntity> &dof_ptr);
+
   friend std::ostream &operator<<(std::ostream &os,
                                   const FENumeredDofEntity &e);
 };

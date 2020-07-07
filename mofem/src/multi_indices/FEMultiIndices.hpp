@@ -702,10 +702,12 @@ struct NumeredEntFiniteElement
    * \ingroup mofem_dofs
    */
   inline const FENumeredDofEntity_multiIndex &getRowDofs() const {
+    RefEntityTmp<0>::refElementPtr = this->getRefElement();
     return *rowDofs;
   }
 
   inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &getRowDofsPtr() {
+    RefEntityTmp<0>::refElementPtr = this->getRefElement();
     return rowDofs;
   }
 
@@ -713,10 +715,12 @@ struct NumeredEntFiniteElement
    * \ingroup mofem_dofs
    */
   inline const FENumeredDofEntity_multiIndex &getColDofs() const {
+    RefEntityTmp<0>::refElementPtr = this->getRefElement();
     return *colDofs;
   }
 
   inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &getColDofsPtr() {
+    RefEntityTmp<0>::refElementPtr = this->getRefElement();
     return colDofs;
   }
 

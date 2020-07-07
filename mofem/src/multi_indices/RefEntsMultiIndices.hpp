@@ -711,28 +711,6 @@ struct RefEntity_change_right_shift {
   };
 };
 
-/**
- * \brief Keeps basic information about entity on the finite element
- */
-struct BaseFEEntity {
-  BaseFEEntity(const boost::shared_ptr<SideNumber> &side_number_ptr)
-      : sideNumberPtr(side_number_ptr){};
-  virtual ~BaseFEEntity() = default;
-  inline int getSideNumber() { return sideNumberPtr->side_number; }
-  inline boost::shared_ptr<SideNumber> getSideNumberPtr() const {
-    return sideNumberPtr;
-  }
-
-  inline boost::shared_ptr<SideNumber> &getSideNumberPtr() {
-    return sideNumberPtr;
-  }
-
-private:
-  boost::shared_ptr<SideNumber> sideNumberPtr;
-
-
-};
-
 } // namespace MoFEM
 
 #endif // __REF_ENTSMULTIINDICES_HPP__
