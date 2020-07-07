@@ -33,18 +33,21 @@ BasicEntityData::BasicEntityData(const moab::Interface &moab,
   MOAB_THROW(rval);
 }
 
-MoFEMErrorCode RefEntityTmp<0>::setFESideNumberPtr(const RefElement &fe) {
-  MoFEMFunctionBegin;
-  if (auto ptr = fe.getSideNumberPtr(ent))
-    sideNumberPtr = ptr;
-  else
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-            "Side entity on element ot found");
-  MoFEMFunctionReturn(0);
+boost::weak_ptr<BasicEntityData> RefEntityTmp<0>::basicDataPtr;
+boost::weak_ptr<RefElement> RefEntityTmp<0>::refElementPtr;
+
+RefEntityTmp<0>::RefEntityTmp(
+    const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
+    const EntityHandle ent)
+    : ent(ent) {}
+
+int RefEntityTmp<0>::getSideNumber() const {
+  return getRefElementPtr()->getSideNumberPtr(ent)->side_number;
 }
 
-boost::weak_ptr<BasicEntityData> RefEntityTmp<0>::basicDataPtr;
-boost::weak_ptr<SideNumber> RefEntityTmp<0>::sideNumberPtr;
+boost::shared_ptr<SideNumber> RefEntityTmp<0>::getSideNumberPtr() const {
+  return getRefElementPtr()->getSideNumberPtr(ent);
+}
 
 std::ostream &operator<<(std::ostream &os, const RefEntity &e) {
   os << "ent " << e.ent;

@@ -137,8 +137,7 @@ struct RefElement;
 template <> struct RefEntityTmp<0> {
 
   RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
-               const EntityHandle ent)
-      : ent(ent) {}
+               const EntityHandle ent);
 
   virtual ~RefEntityTmp() = default;
 
@@ -149,17 +148,16 @@ template <> struct RefEntityTmp<0> {
       return nullptr;
   }
 
-  MoFEMErrorCode setFESideNumberPtr(const RefElement &fe);
-
-  inline const boost::shared_ptr<SideNumber> getFESideNumberPtr() const {
-    if (auto ptr = sideNumberPtr.lock()) {
-      if (PetscLikely(ptr->ent == this->getRefEnt()))
-        return ptr;
-      else
-        return nullptr;
-    } else 
+  inline const boost::shared_ptr<RefElement> getRefElementPtr() const {
+    if (auto ptr = refElementPtr.lock())
+      return ptr;
+    else
       return nullptr;
   }
+
+  int getSideNumber() const;
+
+  boost::shared_ptr<SideNumber> getSideNumberPtr() const;
 
   /**
    * @brief Get the entity handle
@@ -436,7 +434,7 @@ template <> struct RefEntityTmp<0> {
 
   EntityHandle ent;
   static boost::weak_ptr<BasicEntityData> basicDataPtr;
-  static boost::weak_ptr<SideNumber> sideNumberPtr;
+  static boost::weak_ptr<RefElement> refElementPtr;
 };
 
 template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
@@ -472,17 +470,18 @@ template <typename T> struct interface_RefEntity {
 
   virtual ~interface_RefEntity() = default;
 
-  inline MoFEMErrorCode setFESideNumberPtr(const RefElement &fe) {
-    return this->sPtr->setFESideNumberPtr();
+  inline const boost::shared_ptr<RefElement> getRefElementPtr() const {
+    return this->sPtr->getRefElementPtr();
   }
 
-  inline const boost::shared_ptr<SideNumber> getFESideNumberPtr() const {
-    return this->sPtr->getFESideNumberPtr();
+  inline int getSideNumber() const {
+    return this->sPtr->getSideNumber();
   }
 
-  // inline boost::weak_ptr<BasicEntityData> &getBasicDataPtr() {
-  //   return this->sPtr->getBasicDataPtr();
-  // }
+  inline boost::shared_ptr<SideNumber> getSideNumberPtr() const {
+    return this->sPtr->getSideNumberPtr();
+  }
+
 
   inline const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
     return this->sPtr->getBasicDataPtr();

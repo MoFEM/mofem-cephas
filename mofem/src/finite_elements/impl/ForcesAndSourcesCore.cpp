@@ -108,11 +108,11 @@ int ForcesAndSourcesCore::getMaxDataOrder() const {
 }
 
 int ForcesAndSourcesCore::getMaxRowOrder() const {
-  return getMaxOrder(*rowFieldEntsPtr);
+  return getMaxOrder(getRowFieldEntsView());
 }
 
 int ForcesAndSourcesCore::getMaxColOrder() const {
-  return getMaxOrder(*colFieldEntsPtr);
+  return getMaxOrder(getColFieldEntsView());
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
@@ -1334,8 +1334,6 @@ ForcesAndSourcesCore::UserDataOperator::loopSide(const string &fe_name,
     if (miit != numered_fe.end()) {
       side_fe->nInTheLoop = nn++;
       side_fe->numeredEntFiniteElementPtr = *miit;
-      side_fe->rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
-      side_fe->colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
       side_fe->rowPtr = (*miit)->rows_dofs;
       side_fe->colPtr = (*miit)->cols_dofs;
       CHKERR (*side_fe)();

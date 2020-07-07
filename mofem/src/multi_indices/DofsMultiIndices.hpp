@@ -294,7 +294,7 @@ struct interface_NumeredDofEntity : public interface_DofEntity<T> {
  * \brief keeps information about indexed dofs for the finite element
  * \ingroup dof_multi_indices
  */
-struct FEDofEntity : public BaseFEEntity, interface_DofEntity<DofEntity> {
+struct FEDofEntity : public interface_DofEntity<DofEntity> {
 
   virtual ~FEDofEntity() = default;
 
@@ -302,11 +302,9 @@ struct FEDofEntity : public BaseFEEntity, interface_DofEntity<DofEntity> {
   using interface_type_FieldEntity = interface_FieldEntity<DofEntity>;
   using interface_type_DofEntity = interface_DofEntity<DofEntity>;
   using interface_type_RefEntity = interface_RefEntity<DofEntity>;
+
+  FEDofEntity(const boost::shared_ptr<DofEntity> &dof_ptr);
   
-  FEDofEntity(const boost::shared_ptr<SideNumber> &side_number_ptr,
-              const boost::shared_ptr<DofEntity> &dof_ptr);
-  FEDofEntity(const boost::tuple<const boost::shared_ptr<SideNumber> &,
-                                 const boost::shared_ptr<DofEntity> &> &t);
   friend std::ostream &operator<<(std::ostream &os, const FEDofEntity &e);
 };
 
@@ -324,6 +322,8 @@ struct FENumeredDofEntity : public BaseFEEntity,
   using interface_type_FieldEntity = interface_FieldEntity<NumeredDofEntity>;
   using interface_type_DofEntity = interface_DofEntity<NumeredDofEntity>;
   using interface_type_RefEntity = interface_RefEntity<NumeredDofEntity>;
+
+  using BaseFEEntity::getSideNumberPtr;
 
   typedef interface_NumeredDofEntity<NumeredDofEntity>
       interface_type_NumeredDofEntity;
@@ -488,22 +488,7 @@ typedef multi_index_container<
                 const_mem_fun<FEDofEntity::interface_type_Field,
                               boost::string_ref, &FEDofEntity::getNameRef>,
                 const_mem_fun<FEDofEntity::interface_type_DofEntity,
-                              EntityHandle, &FEDofEntity::getEnt>>>,
-
-        // This is only used by obsolete modules, should be removed with
-        // brother of Cephas, i.e. Pawel.
-        ordered_non_unique<
-            tag<Composite_Name_Type_And_Side_Number_mi_tag>,
-            composite_key<
-                FEDofEntity,
-                const_mem_fun<FEDofEntity::interface_type_Field,
-                              boost::string_ref, &FEDofEntity::getNameRef>,
-                const_mem_fun<FEDofEntity::interface_type_RefEntity, EntityType,
-                              &FEDofEntity::getEntType>,
-                KeyFromKey<member<SideNumber, char, &SideNumber::side_number>,
-                           const_mem_fun<FEDofEntity::BaseFEEntity,
-                                         boost::shared_ptr<SideNumber>,
-                                         &FEDofEntity::getSideNumberPtr>>>>
+                              EntityHandle, &FEDofEntity::getEnt>>>
 
         >>
     FEDofEntity_multiIndex;
@@ -550,20 +535,20 @@ typedef multi_index_container<
             tag<FieldName_mi_tag>,
             const_mem_fun<FENumeredDofEntity::interface_type_Field,
                           boost::string_ref, &FENumeredDofEntity::getNameRef>>,
-        ordered_non_unique<
-            tag<Composite_Name_Type_And_Side_Number_mi_tag>,
-            composite_key<
-                FENumeredDofEntity,
-                const_mem_fun<FENumeredDofEntity::interface_type_Field,
-                              boost::string_ref,
-                              &FENumeredDofEntity::getNameRef>,
-                const_mem_fun<FENumeredDofEntity::interface_type_RefEntity,
-                              EntityType, &FENumeredDofEntity::getEntType>,
-                KeyFromKey<
-                    member<SideNumber, char, &SideNumber::side_number>,
-                    const_mem_fun<FENumeredDofEntity::BaseFEEntity,
-                                  boost::shared_ptr<SideNumber>,
-                                  &FENumeredDofEntity::getSideNumberPtr>>>>,
+        // ordered_non_unique<
+        //     tag<Composite_Name_Type_And_Side_Number_mi_tag>,
+        //     composite_key<
+        //         FENumeredDofEntity,
+        //         const_mem_fun<FENumeredDofEntity::interface_type_Field,
+        //                       boost::string_ref,
+        //                       &FENumeredDofEntity::getNameRef>,
+        //         const_mem_fun<FENumeredDofEntity::interface_type_RefEntity,
+        //                       EntityType, &FENumeredDofEntity::getEntType>,
+        //         KeyFromKey<
+        //             member<SideNumber, char, &SideNumber::side_number>,
+        //             const_mem_fun<FENumeredDofEntity::BaseFEEntity,
+        //                           boost::shared_ptr<SideNumber>,
+        //                           &FENumeredDofEntity::getSideNumberPtr>>>>,
         ordered_non_unique<
             tag<Composite_Name_And_Type_mi_tag>,
             composite_key<

@@ -86,20 +86,14 @@ std::ostream &operator<<(std::ostream &os, const NumeredDofEntity &e) {
   return os;
 }
 
-FEDofEntity::FEDofEntity(
-    const boost::tuple<const boost::shared_ptr<SideNumber> &,
-                       const boost::shared_ptr<DofEntity> &> &t)
-    : BaseFEEntity(t.get<0>()), interface_DofEntity<DofEntity>(t.get<1>()) {}
-
-FEDofEntity::FEDofEntity(const boost::shared_ptr<SideNumber> &side_number_ptr,
-                         const boost::shared_ptr<DofEntity> &dof_ptr)
-    : BaseFEEntity(side_number_ptr), interface_DofEntity<DofEntity>(
-                                            dof_ptr) {}
+FEDofEntity::FEDofEntity(const boost::shared_ptr<DofEntity> &dof_ptr)
+    : interface_DofEntity<DofEntity>(dof_ptr) {}
 
 std::ostream &operator<<(std::ostream &os, const FEDofEntity &e) {
   os << "local dof FiniteElement idx "
-     << "side_number " << (int)e.getSideNumberPtr()->side_number << " "
-     << "sense " << (int)e.getSideNumberPtr()->sense << " "
+     << "side_number " << static_cast<int>(e.getSideNumberPtr()->side_number)
+     << " "
+     << "sense " << static_cast<int>(e.getSideNumberPtr()->sense) << " "
      << *e.getFieldEntityPtr();
   return os;
 }

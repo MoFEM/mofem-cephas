@@ -448,8 +448,6 @@ MoFEMErrorCode Core::loop_finite_elements(
 
     method.nInTheLoop = nn;
     method.numeredEntFiniteElementPtr = *miit;
-    method.rowFieldEntsPtr = (*miit)->sPtr->row_field_ents_view;
-    method.colFieldEntsPtr = (*miit)->sPtr->col_field_ents_view;
     method.rowPtr = (*miit)->rows_dofs;
     method.colPtr = (*miit)->cols_dofs;
 

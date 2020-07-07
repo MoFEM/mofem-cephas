@@ -2429,8 +2429,9 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
 
   if (!do_cols_prob) {
     for (auto &fe : *numbered_good_elems_ptr) {
-      if (fe.sPtr->row_field_ents_view == fe.sPtr->col_field_ents_view) {
-        fe.cols_dofs = fe.rows_dofs;
+      if (fe.sPtr->getRowFieldEntsViewPtr() ==
+          fe.sPtr->getColFieldEntsViewPtr()) {
+        fe.getColFieldEntsViewPtr() = fe.getRowFieldEntsViewPtr();
       }
     }
   }
@@ -2523,8 +2524,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       // tasks which do not assemble matrices or vectors, but evaluate fields or
       // modify base functions.
 
-      return (!fe.sPtr->row_field_ents_view->empty() ||
-              !fe.sPtr->col_field_ents_view->empty())
+      return (!fe.sPtr->getRowFieldEntsView().empty() ||
+              !fe.sPtr->getColFieldEntsView().empty())
 
              ||
 

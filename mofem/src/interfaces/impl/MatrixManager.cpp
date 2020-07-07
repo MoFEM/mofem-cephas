@@ -807,28 +807,28 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
 
         if ((*cit)->getEntType() != MBVERTEX) {
 
-          FENumeredDofEntity_multiIndex::index<
-              Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,
-              hi_dit;
-          dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
-                    .lower_bound(boost::make_tuple(
-                        (*cit)->getName(), (*cit)->getEntType(),
-                        (*cit)->getSideNumberPtr()->side_number));
-          hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
-                       .upper_bound(boost::make_tuple(
-                           (*cit)->getName(), (*cit)->getEntType(),
-                           (*cit)->getSideNumberPtr()->side_number));
-          int nb_dofs_on_ent = std::distance(dit, hi_dit);
+          // FENumeredDofEntity_multiIndex::index<
+          //     Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,
+          //     hi_dit;
+          // dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
+          //           .lower_bound(boost::make_tuple(
+          //               (*cit)->getName(), (*cit)->getEntType(),
+          //               (*cit)->getSideNumberPtr()->side_number));
+          // hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
+          //              .upper_bound(boost::make_tuple(
+          //                  (*cit)->getName(), (*cit)->getEntType(),
+          //                  (*cit)->getSideNumberPtr()->side_number));
+          // int nb_dofs_on_ent = std::distance(dit, hi_dit);
 
-          int max_order = (*cit)->getMaxOrder();
-          if ((*cit)->getNbOfCoeffs() * (*cit)->getOrderNbDofs(max_order) !=
-              nb_dofs_on_ent) {
-            std::cerr << "Warning: Number of Dofs in Col diffrent than number "
-                         "of dofs for given entity order "
-                      << (*cit)->getNbOfCoeffs() *
-                             (*cit)->getOrderNbDofs(max_order)
-                      << " " << nb_dofs_on_ent << std::endl;
-          }
+          // int max_order = (*cit)->getMaxOrder();
+          // if ((*cit)->getNbOfCoeffs() * (*cit)->getOrderNbDofs(max_order) !=
+          //     nb_dofs_on_ent) {
+          //   std::cerr << "Warning: Number of Dofs in Col diffrent than number "
+          //                "of dofs for given entity order "
+          //             << (*cit)->getNbOfCoeffs() *
+          //                    (*cit)->getOrderNbDofs(max_order)
+          //             << " " << nb_dofs_on_ent << std::endl;
+          // }
         }
       }
 
@@ -903,28 +903,28 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
 
         if ((*rit)->getEntType() != MBVERTEX) {
 
-          FENumeredDofEntity_multiIndex::index<
-              Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,
-              hi_dit;
-          dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
-                    .lower_bound(boost::make_tuple(
-                        (*rit)->getName(), (*rit)->getEntType(),
-                        (*rit)->getSideNumberPtr()->side_number));
-          hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
-                       .upper_bound(boost::make_tuple(
-                           (*rit)->getName(), (*rit)->getEntType(),
-                           (*rit)->getSideNumberPtr()->side_number));
-          int nb_dofs_on_ent = std::distance(dit, hi_dit);
+          // FENumeredDofEntity_multiIndex::index<
+          //     Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,
+          //     hi_dit;
+          // dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
+          //           .lower_bound(boost::make_tuple(
+          //               (*rit)->getName(), (*rit)->getEntType(),
+          //               (*rit)->getSideNumberPtr()->side_number));
+          // hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
+          //              .upper_bound(boost::make_tuple(
+          //                  (*rit)->getName(), (*rit)->getEntType(),
+          //                  (*rit)->getSideNumberPtr()->side_number));
+          // int nb_dofs_on_ent = std::distance(dit, hi_dit);
 
-          int max_order = (*rit)->getMaxOrder();
-          if ((*rit)->getNbOfCoeffs() * (*rit)->getOrderNbDofs(max_order) !=
-              nb_dofs_on_ent) {
-            std::cerr << "Warning: Number of Dofs in Row diffrent than number "
-                         "of dofs for given entity order "
-                      << (*rit)->getNbOfCoeffs() *
-                             (*rit)->getOrderNbDofs(max_order)
-                      << " " << nb_dofs_on_ent << std::endl;
-          }
+          // int max_order = (*rit)->getMaxOrder();
+          // if ((*rit)->getNbOfCoeffs() * (*rit)->getOrderNbDofs(max_order) !=
+          //     nb_dofs_on_ent) {
+          //   std::cerr << "Warning: Number of Dofs in Row diffrent than number "
+          //                "of dofs for given entity order "
+          //             << (*rit)->getNbOfCoeffs() *
+          //                    (*rit)->getOrderNbDofs(max_order)
+          //             << " " << nb_dofs_on_ent << std::endl;
+          // }
         }
       }
 
