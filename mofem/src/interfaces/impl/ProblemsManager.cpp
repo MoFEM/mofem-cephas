@@ -2455,7 +2455,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
     // partition is used to set partition of the element
     CHKERR fe.sPtr->getRowDofView(*(p_miit->numeredDofsRows), rows_view,
                                   moab::Interface::UNION);
-    if (fe.cols_dofs != fe.rows_dofs)
+    if (fe.getColDofsPtr() != fe.getRowDofsPtr())
       CHKERR fe.sPtr->getColDofView(*(p_miit->numeredDofsCols), cols_view,
                                     moab::Interface::UNION);
 
@@ -2475,9 +2475,10 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       std::array<NumeredDofEntity_multiIndex_uid_view_ordered *, 2> dofs_view{
           &rows_view, &cols_view};
       std::array<FENumeredDofEntity_multiIndex *, 2> fe_dofs{
-          fe.rows_dofs.get(), fe.cols_dofs.get()};
+          fe.getRowDofsPtr().get(), fe.getColDofsPtr().get()};
 
-      for (int ss = 0; ss != ((fe.cols_dofs != fe.rows_dofs) ? 2 : 1); ss++) {
+      for (int ss = 0; ss != ((fe.getColDofsPtr() != fe.getRowDofsPtr()) ? 2 : 1);
+           ss++) {
         // Following reserve memory in sequences, only two allocations are here,
         // once for array of objects, next for array of shared pointers
 
@@ -2608,7 +2609,7 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
     // rows
     auto hint_r = ghost_idx_row_view.begin();
     for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
-      for (auto &dof_ptr : *(*fe_ptr)->rows_dofs) {
+      for (auto &dof_ptr : *(*fe_ptr)->getRowDofsPtr()) {
         if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
           hint_r = ghost_idx_row_view.emplace_hint(
               hint_r, dof_ptr->getNumeredDofEntityPtr());
@@ -2620,7 +2621,7 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
     if (p_miit->numeredDofsCols == p_miit->numeredDofsRows) {
       auto hint_c = ghost_idx_col_view.begin();
       for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
-        for (auto &dof_ptr : *(*fe_range.first)->cols_dofs) {
+        for (auto &dof_ptr : *(*fe_range.first)->getColDofsPtr()) {
           if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
             hint_c = ghost_idx_col_view.emplace_hint(
                 hint_c, dof_ptr->getNumeredDofEntityPtr());

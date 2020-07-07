@@ -971,11 +971,22 @@ EntFiniteElement::getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
   MoFEMFunctionReturn(0);
 }
 
+  /**
+   * \Construct indexed finite element
+   */
+NumeredEntFiniteElement::NumeredEntFiniteElement(
+    const boost::shared_ptr<EntFiniteElement> &sptr)
+    : interface_EntFiniteElement<EntFiniteElement>(sptr), part(-1),
+      rowDofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(
+          new FENumeredDofEntity_multiIndex())),
+      colDofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(
+          new FENumeredDofEntity_multiIndex())){};
+
 boost::weak_ptr<FENumeredDofEntity>
 NumeredEntFiniteElement::getRowDofsByPetscGlobalDofIdx(const int idx) const {
   auto comp = [idx](const auto &a) { return a->getPetscGlobalDofIdx() == idx; };
-  auto dit = std::find_if(rows_dofs->begin(), rows_dofs->end(), comp);
-  if (dit != rows_dofs->end())
+  auto dit = std::find_if(rowDofs->begin(), rowDofs->end(), comp);
+  if (dit != rowDofs->end())
     return *dit;
   else
     return boost::weak_ptr<FENumeredDofEntity>();
@@ -984,8 +995,8 @@ NumeredEntFiniteElement::getRowDofsByPetscGlobalDofIdx(const int idx) const {
 boost::weak_ptr<FENumeredDofEntity>
 NumeredEntFiniteElement::getColDofsByPetscGlobalDofIdx(const int idx) const {
   auto comp = [idx](const auto &a) { return a->getPetscGlobalDofIdx() == idx; };
-  auto dit = std::find_if(cols_dofs->begin(), cols_dofs->end(), comp);
-  if (dit != cols_dofs->end())
+  auto dit = std::find_if(colDofs->begin(), colDofs->end(), comp);
+  if (dit != colDofs->end())
     return *dit;
   else
     return boost::weak_ptr<FENumeredDofEntity>();

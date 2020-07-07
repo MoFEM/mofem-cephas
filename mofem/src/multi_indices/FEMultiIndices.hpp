@@ -682,10 +682,6 @@ struct NumeredEntFiniteElement
       interface_type_EntFiniteElement;
 
   unsigned int part; ///< Partition number
-  boost::shared_ptr<FENumeredDofEntity_multiIndex>
-      rows_dofs; ///< indexed dofs on rows
-  boost::shared_ptr<FENumeredDofEntity_multiIndex>
-      cols_dofs; ///< indexed dofs on columns
 
   inline boost::shared_ptr<EntFiniteElement> &getEntFiniteElement() const {
     return this->sPtr;
@@ -694,12 +690,7 @@ struct NumeredEntFiniteElement
   /**
    * \Construct indexed finite element
    */
-  NumeredEntFiniteElement(const boost::shared_ptr<EntFiniteElement> &sptr)
-      : interface_EntFiniteElement<EntFiniteElement>(sptr), part(-1),
-        rows_dofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(
-            new FENumeredDofEntity_multiIndex())),
-        cols_dofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(
-            new FENumeredDofEntity_multiIndex())){};
+  NumeredEntFiniteElement(const boost::shared_ptr<EntFiniteElement> &sptr);
 
   /**
    * \brief Get partition number
@@ -711,15 +702,23 @@ struct NumeredEntFiniteElement
    * \ingroup mofem_dofs
    */
   inline const FENumeredDofEntity_multiIndex &getRowDofs() const {
-    return *rows_dofs;
-  };
+    return *rowDofs;
+  }
+
+  inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &getRowDofsPtr() {
+    return rowDofs;
+  }
 
   /** \brief get FE dof on column
    * \ingroup mofem_dofs
    */
   inline const FENumeredDofEntity_multiIndex &getColDofs() const {
-    return *cols_dofs;
-  };
+    return *colDofs;
+  }
+
+  inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &getColDofsPtr() {
+    return colDofs;
+  }
 
   /** \brief get FE dof by petsc index
    * \ingroup mofem_dofs
@@ -806,6 +805,12 @@ struct NumeredEntFiniteElement
   getColDofsSequence() const {
     return dofsColSequce;
   }
+
+protected:
+  boost::shared_ptr<FENumeredDofEntity_multiIndex>
+      rowDofs; ///< indexed dofs on rows
+  boost::shared_ptr<FENumeredDofEntity_multiIndex>
+      colDofs; ///< indexed dofs on columns
 
 private:
   // Keep vector of DoFS on entity
@@ -1078,8 +1083,8 @@ struct FiniteElement_change_bit_reset {
  * \ingroup fe_multi_indices
  */
 #define _IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR, IT)                              \
-  FENumeredDofEntity_multiIndex::iterator IT = FEPTR->rows_dofs->begin();      \
-  IT != FEPTR->rows_dofs->end();                                               \
+  auto IT = FEPTR->getRowDofsPtr()->begin();                                   \
+  IT != FEPTR->getRowDofsPtr()->end();                                         \
   IT++
 
 /// \deprecated use _IT_FENUMEREDDOF_ROW_FOR_LOOP_
@@ -1094,8 +1099,8 @@ struct FiniteElement_change_bit_reset {
  * \ingroup fe_multi_indices
  */
 #define _IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR, IT)                              \
-  FENumeredDofEntity_multiIndex::iterator IT = FEPTR->cols_dofs->begin();      \
-  IT != FEPTR->cols_dofs->end();                                               \
+  auto IT = FEPTR->getColDofsPtr()->begin();                                   \
+  IT != FEPTR->getColDofsPtr()->end();                                         \
   IT++
 
 /// \deprecated use _IT_FENUMEREDDOF_COL_FOR_LOOP_ instead
@@ -1112,9 +1117,8 @@ struct FiniteElement_change_bit_reset {
  * fe_multi_indices
  */
 #define _IT_FENUMEREDDOF_BY_NAME_ROW_FOR_LOOP_(FEPTR, NAME, IT)                \
-  FENumeredDofEntityByFieldName::iterator IT =                                 \
-      FEPTR->rows_dofs->get<FieldName_mi_tag>().lower_bound(NAME);             \
-  IT != FEPTR->rows_dofs->get<FieldName_mi_tag>().upper_bound(NAME);           \
+  auto IT = FEPTR->getRowDofsPtr()->get<FieldName_mi_tag>().lower_bound(NAME); \
+  IT != FEPTR->getRowDofsPtr()->get<FieldName_mi_tag>().upper_bound(NAME);     \
   IT++
 
 /// \deprecated use _IT_FENUMEREDDOF_BY_NAME_ROW_FOR_LOOP_ instead
@@ -1131,9 +1135,8 @@ struct FiniteElement_change_bit_reset {
  * fe_multi_indices
  */
 #define _IT_FENUMEREDDOF_BY_NAME_COL_FOR_LOOP_(FEPTR, NAME, IT)                \
-  FENumeredDofEntityByFieldName::iterator IT =                                 \
-      FEPTR->cols_dofs->get<FieldName_mi_tag>().lower_bound(NAME);             \
-  IT != FEPTR->cols_dofs->get<FieldName_mi_tag>().upper_bound(NAME);           \
+  auto IT = FEPTR->getColDofsPtr()->get<FieldName_mi_tag>().lower_bound(NAME); \
+  IT != FEPTR->getColDofsPtr()->get<FieldName_mi_tag>().upper_bound(NAME);     \
   IT++
 
 /// \deprecated use _IT_FENUMEREDDOF_BY_NAME_COL_FOR_LOOP_ instead

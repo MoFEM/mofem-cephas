@@ -118,7 +118,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
   if (fe_ptr) {
 
     // Build DOFs on columns
-    if (fe_ptr->cols_dofs->empty()) {
+    if (fe_ptr->getColDofsPtr()->empty()) {
 
       // Get dofs on columns
       NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
@@ -138,9 +138,9 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
       }
 
       // Finally add DoFS to multi-indices
-      auto hint = fe_ptr->cols_dofs->end();
+      auto hint = fe_ptr->getColDofsPtr()->end();
       for (auto &dof : *dofs_array)
-        hint = fe_ptr->cols_dofs->emplace_hint(hint, dofs_array, &dof);
+        hint = fe_ptr->getColDofsPtr()->emplace_hint(hint, dofs_array, &dof);
     }
 
   } else
@@ -198,8 +198,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
       if (fe_ptr) {
         for (FENumeredDofEntity_multiIndex::iterator vit =
-                 fe_ptr.get()->cols_dofs->begin();
-             vit != fe_ptr.get()->cols_dofs->end(); vit++) {
+                 fe_ptr.get()->getColDofsPtr()->begin();
+             vit != fe_ptr.get()->getColDofsPtr()->end(); vit++) {
           const int idx = TAG::get_index(vit);
           if (idx >= 0)
             dofs_col_view.push_back(idx);
@@ -214,8 +214,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
           std::stringstream ss;
           ss << "rank " << rAnk << ":  numeredDofsCols" << std::endl;
           FENumeredDofEntity_multiIndex::iterator dit, hi_dit;
-          dit = fe_ptr.get()->cols_dofs->begin();
-          hi_dit = fe_ptr.get()->cols_dofs->end();
+          dit = fe_ptr.get()->getColDofsPtr()->begin();
+          hi_dit = fe_ptr.get()->getColDofsPtr()->end();
           for (; dit != hi_dit; dit++) {
             ss << "\t" << **dit << std::endl;
           }

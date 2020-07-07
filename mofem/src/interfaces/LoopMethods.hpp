@@ -427,7 +427,7 @@ struct FEMethod : public BasicMethod {
   getRowDofsPtr() const {
     return const_cast<NumeredEntFiniteElement *>(
                numeredEntFiniteElementPtr.get())
-        ->rows_dofs;
+        ->getRowDofsPtr();
   };
 
   inline const FENumeredDofEntity_multiIndex &getColDofs() const {
@@ -438,7 +438,7 @@ struct FEMethod : public BasicMethod {
   getColDofsPtr() const {
     return const_cast<NumeredEntFiniteElement *>(
                numeredEntFiniteElementPtr.get())
-        ->cols_dofs;
+        ->getColDofsPtr();
   };
 
   /// \brief Get number of DOFs on element
