@@ -470,7 +470,7 @@ template <typename T> struct interface_RefEntity {
 
   virtual ~interface_RefEntity() = default;
 
-  inline const boost::shared_ptr<RefElement> getRefElementPtr() const {
+  inline const boost::shared_ptr<RefElement> &getRefElementPtr() const {
     return this->sPtr->getRefElementPtr();
   }
 

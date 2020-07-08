@@ -161,87 +161,128 @@ struct DefaultElementAdjacency {
  * \brief Inetface for FE
  * \ingroup fe_multi_indices
  */
-template <typename T> struct interface_FiniteElement {
+template <typename FE, typename REFENT>
+struct interface_FiniteElementImpl : public interface_RefElement<REFENT> {
 
-  mutable boost::shared_ptr<T> sFePtr;
+  interface_FiniteElementImpl(const boost::shared_ptr<FE> fe_ptr,
+                              const boost::shared_ptr<REFENT> ref_ents_ptr)
+      : interface_RefElement<REFENT>(ref_ents_ptr){};
 
-  interface_FiniteElement(const boost::shared_ptr<T> &ptr) : sFePtr(ptr){};
-  virtual ~interface_FiniteElement() = default;
+  virtual ~interface_FiniteElementImpl() = default;
 
-  inline const boost::shared_ptr<FiniteElement> &get_MoFEMFiniteElementPtr() {
-    return this->sFePtr;
+  virtual boost::shared_ptr<FiniteElement> getFiniteElementPtr() const = 0;
+
+  /**
+   * @deprecated use getFiniteElementPtr
+   */
+  DEPRECATED inline const boost::shared_ptr<FiniteElement> &
+  get_MoFEMFiniteElementPtr() {
+    return this->getFiniteElementPtr();
   };
 
   /**
    * @copydoc MoFEM::FiniteElement::getFEUId
    */
-  inline const UId &getFEUId() const { return this->sFePtr->getFEUId(); }
+  inline const UId &getFEUId() const {
+    return this->getFiniteElementPtr()->getFEUId();
+  }
 
   /**
    * @copydoc MoFEM::FiniteElement::getId
    */
-  inline BitFEId getId() const { return this->sFePtr->getId(); }
+  inline BitFEId getId() const { return this->getFiniteElementPtr()->getId(); }
 
   /**
    * @copydoc MoFEM::FiniteElement::getMeshset
    */
-  inline EntityHandle getMeshset() const { return this->sFePtr->getMeshset(); }
+  inline EntityHandle getMeshset() const {
+    return this->getFiniteElementPtr()->getMeshset();
+  }
 
   /**
    * @copydoc MoFEM::FiniteElement::getNameRef
    */
   inline boost::string_ref getNameRef() const {
-    return this->sFePtr->getNameRef();
+    return this->getFiniteElementPtr()->getNameRef();
   }
 
   /**
    * @copydoc MoFEM::FiniteElement::getName
    */
-  inline std::string getName() const { return this->sFePtr->getName(); }
+  inline std::string getName() const {
+    return this->getFiniteElementPtr()->getName();
+  }
 
   /**
    * @copydoc MoFEM::FiniteElement::getBitFieldIdCol
    */
   inline BitFieldId getBitFieldIdCol() const {
-    return this->sFePtr->getBitFieldIdCol();
+    return this->getFiniteElementPtr()->getBitFieldIdCol();
   }
 
   /**
    * @copydoc MoFEM::FiniteElement::getBitFieldIdRow
    */
   inline BitFieldId getBitFieldIdRow() const {
-    return this->sFePtr->getBitFieldIdRow();
+    return this->getFiniteElementPtr()->getBitFieldIdRow();
   }
 
   /**
    * @copydoc MoFEM::FiniteElement::getBitFieldIdData
    */
   inline BitFieldId getBitFieldIdData() const {
-    return this->sFePtr->getBitFieldIdData();
+    return this->getFiniteElementPtr()->getBitFieldIdData();
   }
 
   /**
    * @copydoc MoFEM::FiniteElement::getBitNumber
    */
   inline unsigned int getBitNumber() const {
-    return this->sFePtr->getBitNumber();
+    return this->getFiniteElementPtr()->getBitNumber();
   }
+};
+
+template <typename FE, typename REFENT>
+struct interface_FiniteElement : public interface_RefElement<REFENT> {
+  using interface_FiniteElementImpl<FE, REFENT>::interface_FiniteElementImpl;
+  virtual ~interface_FiniteElement() = default;
+};
+
+template <typename T>
+struct interface_FiniteElement<T, T>
+    : public interface_FiniteElementImpl<T, T> {
+
+  interface_FiniteElement(const boost::shared_ptr<T> fe_ptr,
+                          const boost::shared_ptr<T> ref_ents_ptr)
+      : interface_FiniteElementImpl<T, T>(fe_ptr, ref_ents_ptr),
+        sFiniteElementPtr(fe_ptr) {}
+
+  virtual boost::shared_ptr<FiniteElement> getFiniteElementPtr() const {
+    return this->sFiniteElementPtr->getFiniteElementPtr();
+  }
+
+  mutable boost::shared_ptr<T> sFiniteElementPtr;
 };
 
 /**
  * \brief Finite element data for entity
  * \ingroup fe_multi_indices
  */
-struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
-                          interface_RefElement<RefElement> {
+struct EntFiniteElement
+    : public interface_FiniteElementImpl<FiniteElement, RefElement> {
 
-  typedef interface_RefEntity<RefElement> interface_type_RefEntity;
-  typedef interface_RefElement<RefElement> interface_type_RefElement;
-  typedef interface_FiniteElement<FiniteElement> interface_type_FiniteElement;
+  using interface_type_RefEntity = interface_RefEntity<RefElement>;
+  using interface_type_RefElement = interface_RefElement<RefElement>;
+  using interface_type_FiniteElement =
+      interface_FiniteElementImpl<FiniteElement, RefElement>;
 
   EntFiniteElement(const boost::shared_ptr<RefElement> &ref_finite_element,
                    const boost::shared_ptr<FiniteElement> &fe_ptr);
   virtual ~EntFiniteElement() = default;
+
+  virtual boost::shared_ptr<FiniteElement> getFiniteElementPtr() const {
+    return finiteElementPtr;
+  }
 
   /**
    * \brief Get unique UId for finite element entity
@@ -350,10 +391,6 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   MoFEMErrorCode getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
                                      Range &adjacency);
 
-  inline boost::shared_ptr<RefElement> &getRefElement() const {
-    return this->sPtr;
-  }
-
   /**
    * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
    *
@@ -367,6 +404,7 @@ struct EntFiniteElement : public interface_FiniteElement<FiniteElement>,
   }
 
 protected:
+  boost::shared_ptr<FiniteElement> finiteElementPtr;
   boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
   boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> dataFieldEnts;
   boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
@@ -382,11 +420,10 @@ private:
  * \ingroup fe_multi_indices
  */
 template <typename T>
-struct interface_EntFiniteElement : public interface_FiniteElement<T>,
-                                    interface_RefElement<T> {
+struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
 
   interface_EntFiniteElement(const boost::shared_ptr<T> &sptr)
-      : interface_FiniteElement<T>(sptr), interface_RefElement<T>(sptr) {}
+      : interface_FiniteElement<T, T>(sptr, sptr) {}
   virtual ~interface_EntFiniteElement() = default;
 
   inline const FEDofEntity_multiIndex &getDataDofs() const {
@@ -455,7 +492,7 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T>,
     return this->getElementAdjacency(field_ptr, adjacency);
   }
 
-  inline boost::shared_ptr<RefElement> &getRefElement() const {
+  inline const boost::shared_ptr<RefElement> &getRefElement() const {
     return this->sPtr->getRefElement();
   }
 };
@@ -474,10 +511,10 @@ struct NumeredEntFiniteElement
 
   virtual ~NumeredEntFiniteElement() = default;
 
-  typedef interface_FiniteElement<EntFiniteElement>
-      interface_type_FiniteElement;
-  typedef interface_EntFiniteElement<EntFiniteElement>
-      interface_type_EntFiniteElement;
+  using interface_type_FiniteElement =
+      interface_FiniteElementImpl<EntFiniteElement, EntFiniteElement>;
+  using interface_type_EntFiniteElement =
+      interface_EntFiniteElement<EntFiniteElement>;
 
   unsigned int part; ///< Partition number
 
@@ -576,12 +613,6 @@ struct NumeredEntFiniteElement
     MoFEMFunctionReturn(0);
   }
 
-  friend std::ostream &operator<<(std::ostream &os,
-                                  const NumeredEntFiniteElement &e) {
-    os << "part " << e.part << " " << *(e.sFePtr);
-    return os;
-  }
-
   /**
    * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
    *
@@ -607,6 +638,9 @@ struct NumeredEntFiniteElement
   getColDofsSequence() const {
     return dofsColSequce;
   }
+
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const NumeredEntFiniteElement &e);
 
 protected:
   boost::shared_ptr<FENumeredDofEntity_multiIndex>

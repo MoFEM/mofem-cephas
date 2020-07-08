@@ -438,16 +438,16 @@ void FiniteElement_change_bit_reset::operator()(
 // FiniteElement data
 EntFiniteElement::EntFiniteElement(
     const boost::shared_ptr<RefElement> &ref_finite_element,
-    const boost::shared_ptr<FiniteElement> &fe_ptr)
-    : interface_FiniteElement<FiniteElement>(fe_ptr),
-      interface_RefElement<RefElement>(ref_finite_element),
-      dataDofs(new FEDofEntity_multiIndex()),
-      dataFieldEnts(new FieldEntity_multiIndex_spaceType_view()),
-      rowFieldEnts(new FieldEntity_vector_view()),
-      colFieldEnts(new FieldEntity_vector_view()) {}
+    const boost::shared_ptr<FiniteElement> &fe_ptr):
+    interface_FiniteElementImpl<FiniteElement, RefElement>(fe_ptr,
+                                                           ref_finite_element),
+    finiteElementPtr(fe_ptr), dataDofs(new FEDofEntity_multiIndex()),
+    dataFieldEnts(new FieldEntity_multiIndex_spaceType_view()),
+    rowFieldEnts(new FieldEntity_vector_view()),
+    colFieldEnts(new FieldEntity_vector_view()) {}
 
 std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
-  os << *e.sFePtr << std::endl;
+  os << *e.getFiniteElementPtr() << std::endl;
   os << *e.sPtr << std::endl;
   os << "data dof_uids ";
   for (auto &dit : *e.dataDofs) {
@@ -474,11 +474,11 @@ EntFiniteElement::getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
   moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   MoFEMFunctionBegin;
   const EntFiniteElement *this_fe_ptr = this;
-  if (get_MoFEMFiniteElementPtr()->elementAdjacencyTable[getEntType()] ==
+  if (getFiniteElementPtr()->elementAdjacencyTable[getEntType()] ==
       NULL) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
   }
-  CHKERR get_MoFEMFiniteElementPtr()->elementAdjacencyTable[getEntType()](
+  CHKERR getFiniteElementPtr()->elementAdjacencyTable[getEntType()](
       moab, *field_ptr, *this_fe_ptr, adjacency);
   MoFEMFunctionReturn(0);
 }
@@ -512,6 +512,11 @@ NumeredEntFiniteElement::getColDofsByPetscGlobalDofIdx(const int idx) const {
     return *dit;
   else
     return boost::weak_ptr<FENumeredDofEntity>();
+}
+
+std::ostream &operator<<(std::ostream &os, const NumeredEntFiniteElement &e) {
+  os << "part " << e.part << " " << *(e.getEntFiniteElement());
+  return os;
 }
 
 } // namespace MoFEM
