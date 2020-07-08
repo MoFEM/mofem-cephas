@@ -55,6 +55,7 @@
 #include <FieldMultiIndices.hpp>
 #include <FieldEntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
+#include <RefElementMultiIndices.hpp>
 #include <FEMultiIndices.hpp>
 #include <ProblemsMultiIndices.hpp>
 #include <AdjacencyMultiIndices.hpp>
