@@ -141,6 +141,11 @@ template <> struct RefEntityTmp<0> {
 
   virtual ~RefEntityTmp() = default;
 
+  /**
+   * @brief Get pointer to basic data struture
+   * 
+   * @return const boost::shared_ptr<BasicEntityData> 
+   */
   virtual const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
     if(auto ptr = basicDataPtr.lock())
       return ptr;
@@ -148,6 +153,11 @@ template <> struct RefEntityTmp<0> {
       return nullptr;
   }
 
+  /**
+   * @brief Get the pointer to reference element
+   * 
+   * @return const boost::shared_ptr<RefElement> 
+   */
   inline const boost::shared_ptr<RefElement> getRefElementPtr() const {
     if (auto ptr = refElementPtr.lock())
       return ptr;
@@ -157,6 +167,11 @@ template <> struct RefEntityTmp<0> {
 
   int getSideNumber() const;
 
+  /**
+   * @brief Get the Side number
+   *
+   * @return int
+   */
   boost::shared_ptr<SideNumber> getSideNumberPtr() const;
 
   /**
@@ -470,67 +485,126 @@ template <typename T> struct interface_RefEntity {
 
   virtual ~interface_RefEntity() = default;
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getRefElementPtr
+   */
   inline const boost::shared_ptr<RefElement> &getRefElementPtr() const {
     return this->sPtr->getRefElementPtr();
   }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getSideNumber
+   */
   inline int getSideNumber() const {
     return this->sPtr->getSideNumber();
   }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getSideNumberPtr
+   */
   inline boost::shared_ptr<SideNumber> getSideNumberPtr() const {
     return this->sPtr->getSideNumberPtr();
   }
 
-
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getSideNumberPtr
+   */
   inline const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
     return this->sPtr->getBasicDataPtr();
   }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getRefEnt
+   */
   inline EntityHandle getRefEnt() const { return this->sPtr->getRefEnt(); }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getParentEntType
+   */
   inline EntityType getParentEntType() const {
     return this->sPtr->getParentEntType();
   };
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getParentEnt
+   */
   inline EntityHandle getParentEnt() const {
     return this->sPtr->getParentEnt();
   }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getBitRefLevelPtr
+   */
   inline BitRefLevel *getBitRefLevelPtr() const {
     return this->sPtr->getBitRefLevelPtr();
   }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getBitRefLevel
+   */
   inline const BitRefLevel &getBitRefLevel() const {
     return this->sPtr->getBitRefLevel();
   }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getBitRefLevelULong
+   */
   inline unsigned long int getBitRefLevelULong() const {
     return this->sPtr->getBitRefLevelULong();
   }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getEntType
+   */
   inline EntityType getEntType() const { return this->sPtr->getEntType(); };
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getEntId
+   */
   inline EntityID getEntId() const { return this->sPtr->getEntId(); };
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getOwnerEnt
+   */
   inline EntityHandle getOwnerEnt() const { return this->sPtr->getOwnerEnt(); }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getOwnerEnt
+   */
   inline EntityHandle &getOwnerEnt() { return this->sPtr->getOwnerEnt(); }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getOwnerProc
+   */
   inline int getOwnerProc() const { return this->sPtr->getOwnerProc(); }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getPartProc
+   */
   inline int getPartProc() const { return this->sPtr->getPartProc(); }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getPartProc
+   */
   inline unsigned char getPStatus() const { return this->sPtr->getPStatus(); }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getSharingProcsPtr
+   */
   inline int *getSharingProcsPtr() const {
     return this->sPtr->getSharingProcsPtr();
   }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getSharingHandlersPtr
+   */
   inline EntityHandle *getSharingHandlersPtr() const {
     return this->sPtr->getSharingHandlersPtr();
   }
 
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getRefEntityPtr
+   */
   inline boost::shared_ptr<T> &getRefEntityPtr() const { return this->sPtr; }
 };
 
