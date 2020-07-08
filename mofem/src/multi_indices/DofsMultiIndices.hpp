@@ -328,8 +328,10 @@ struct FENumeredDofEntity : interface_NumeredDofEntity<NumeredDofEntity> {
   FENumeredDofEntity(const boost::shared_ptr<NumeredDofEntity> &dof_ptr);
 
   friend std::ostream &operator<<(std::ostream &os,
-                                  const FENumeredDofEntity  e);
+                                  const FENumeredDofEntity &e);
 };
+
+std::ostream &operator<<(std::ostream &os, const FENumeredDofEntity &e);
 
 /**
  * @relates multi_index_container
