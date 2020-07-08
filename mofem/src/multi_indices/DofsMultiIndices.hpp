@@ -328,7 +328,7 @@ struct FENumeredDofEntity : interface_NumeredDofEntity<NumeredDofEntity> {
   FENumeredDofEntity(const boost::shared_ptr<NumeredDofEntity> &dof_ptr);
 
   friend std::ostream &operator<<(std::ostream &os,
-                                  const FENumeredDofEntity &e);
+                                  const FENumeredDofEntity  e);
 };
 
 /**
@@ -870,7 +870,7 @@ template <class T> struct Dof_shared_ptr_change {
 } // namespace MoFEM
 #endif // __DOFSMULTIINDICES_HPP__
 
-/***************************************************************************/ /**
+/**
  * \defgroup dof_multi_indices Dofs structures and multi-indices
  * \ingroup mofem
-******************************************************************************/
+ **/
