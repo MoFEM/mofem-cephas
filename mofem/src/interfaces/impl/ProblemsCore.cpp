@@ -691,7 +691,7 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
   SET_BASIC_METHOD(method, nullptr);
   auto r = entsFields.get<FieldName_mi_tag>().equal_range(field_name);
   if (r.first != r.second) {
-    method.fieldPtr = (*r.first)->getFieldPtr();
+    // method.fieldPtr = (*r.first)->getFieldPtr();
   } else {
     auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
     if (field_it != fIelds.get<FieldName_mi_tag>().end()) {

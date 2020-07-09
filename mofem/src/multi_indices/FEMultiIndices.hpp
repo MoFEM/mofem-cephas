@@ -257,7 +257,7 @@ struct interface_FiniteElement<T, T>
       : interface_FiniteElementImpl<T, T>(fe_ptr, ref_ents_ptr),
         sFiniteElementPtr(fe_ptr) {}
 
-  virtual boost::shared_ptr<FiniteElement> getFiniteElementPtr() const {
+  inline boost::shared_ptr<FiniteElement> getFiniteElementPtr() const {
     return this->sFiniteElementPtr->getFiniteElementPtr();
   }
 

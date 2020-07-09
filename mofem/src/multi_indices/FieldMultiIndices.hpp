@@ -469,7 +469,7 @@ struct interface_FieldImpl : public interface_RefEntity<REFENT> {
       : interface_RefEntity<REFENT>(ref_ents_ptr) {}
   virtual ~interface_FieldImpl() = default;
 
-  virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const = 0;
+  virtual boost::shared_ptr<const FieldTmp<0, 0>> &getFieldPtr() const = 0;
 
   inline EntityHandle getMeshset() const {
     return this->getFieldPtr()->getMeshset();
@@ -568,7 +568,7 @@ struct interface_Field<T, T> : public interface_FieldImpl<T, T> {
   interface_Field(const boost::shared_ptr<T> &ptr)
       : interface_FieldImpl<T, T>(ptr, ptr), sFieldPtr(ptr) {}
 
-  virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
+  inline boost::shared_ptr<const FieldTmp<0, 0>> &getFieldPtr() const {
     return sFieldPtr->getFieldPtr();
   };
 

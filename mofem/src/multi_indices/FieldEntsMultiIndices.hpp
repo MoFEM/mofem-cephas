@@ -30,11 +30,11 @@ struct FieldEntityTmp : public FieldEntityTmp<N, F - 1> {
 
   using FieldEntityTmp<N, F - 1>::FieldEntityTmp;
 
-  virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
+  virtual boost::shared_ptr<const FieldTmp<0, 0>> &getFieldPtr() const {
     return sFieldPtr;
   }
 
-  static boost::shared_ptr<FieldTmp<N, F>> sFieldPtr;
+  static boost::shared_ptr<const FieldTmp<0, 0>> sFieldPtr;
 };
 
 template <int N>
@@ -43,18 +43,18 @@ struct FieldEntityTmp<N, 0>
 
   using FieldEntityTmp<N - 1, BITFIELDID_SIZE - 1>::FieldEntityTmp;
 
-  virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
+  virtual boost::shared_ptr<const FieldTmp<0, 0>> &getFieldPtr() const {
     return sFieldPtr;
   }
 
-  static boost::shared_ptr<FieldTmp<N, 0>> sFieldPtr;
+  static boost::shared_ptr<const FieldTmp<0, 0>> sFieldPtr;
 };
 
 template <int N, int F>
-boost::shared_ptr<FieldTmp<N, F>> FieldEntityTmp<N, F>::sFieldPtr;
+boost::shared_ptr<const FieldTmp<0, 0>> FieldEntityTmp<N, F>::sFieldPtr;
 
 template <int N>
-boost::shared_ptr<FieldTmp<N, 0>> FieldEntityTmp<N, 0>::sFieldPtr;
+boost::shared_ptr<const FieldTmp<0, 0>> FieldEntityTmp<N, 0>::sFieldPtr;
 
 /**
  * \brief Struct keeps handle to entity in the field.
@@ -76,7 +76,7 @@ struct FieldEntityTmp<0, 0>
 
   virtual ~FieldEntityTmp() = default;
 
-  virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
+  virtual boost::shared_ptr<const FieldTmp<0, 0>> &getFieldPtr() const {
     return sFieldPtr;
   }
 
@@ -233,7 +233,7 @@ struct FieldEntityTmp<0, 0>
 
   friend std::ostream &operator<<(std::ostream &os, const FieldEntity &e);
 
-  static boost::shared_ptr<FieldTmp<0, 0>> sFieldPtr;
+  static boost::shared_ptr<const FieldTmp<0, 0>> sFieldPtr;
 
 private:
   mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
@@ -247,11 +247,11 @@ template <> struct FieldEntityTmp<-1, -1> : public FieldEntityTmp<0, 0> {
                  boost::shared_ptr<double *const> field_data_adaptor_ptr,
                  boost::shared_ptr<const int> t_max_order_ptr);
 
-  virtual boost::shared_ptr<FieldTmp<0, 0>> getFieldPtr() const {
+  virtual boost::shared_ptr<const FieldTmp<0, 0>> &getFieldPtr() const {
     return sFieldPtr;
   }
 
-  mutable boost::shared_ptr<FieldTmp<-1, -1>> sFieldPtr;
+  mutable boost::shared_ptr<const FieldTmp<0, 0>> sFieldPtr;
 };
 
 using FieldEntity = FieldEntityTmp<0, 0>;

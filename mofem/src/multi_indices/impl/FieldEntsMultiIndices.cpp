@@ -21,7 +21,7 @@
 
 namespace MoFEM {
 
-boost::shared_ptr<FieldTmp<0, 0>> FieldEntityTmp<0, 0>::sFieldPtr;
+boost::shared_ptr<const FieldTmp<0, 0>> FieldEntityTmp<0, 0>::sFieldPtr;
 
 FieldEntityTmp<0, 0>::FieldEntityTmp(
     const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
