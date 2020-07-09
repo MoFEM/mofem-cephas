@@ -946,14 +946,14 @@ MoFEMErrorCode PrismInterface::splitSides(
       switch (ents_3d.size()) {
       case 0:
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                "Did not find adjacent tets on one side of the interface, "
-                "check its definition and try creating separate sidesets for "
-                "each surface");
+                "Did not find adjacent tets on one side of the interface; if "
+                "this error appears for a contact interface, try creating "
+                "separate blocksets for each contact surface");
       case 2:
-        SETERRQ(
-            m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-            "Found both adjacent tets on one side of the interface, check its "
-            "definition and try creating separate sidesets for each surface");
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                "Found both adjacent tets on one side of the interface, if "
+                "this error appears for a contact interface, try creating "
+                "separate blocksets for each contact surface");
       default:
         break;
       }
@@ -1007,10 +1007,10 @@ MoFEMErrorCode PrismInterface::splitSides(
         EntityHandle prism_conn[6] = {conn[0],     conn[1],     conn[2],
                                       new_conn[0], new_conn[1], new_conn[2]};
         if (sense != 1 && sense != -1) {
-          SETERRQ(
-              m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-              "Undefined sense of a trinagle on the interface, check its "
-              "definition and try creating separate sidesets for each surface");
+          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                  "Undefined sense of a triangle; if this error appears for a "
+                  "contact interface, try creating separate blocksets for each "
+                  "contact surface");
         }
         if (sense == -1) {
           // swap nodes in triangles for correct prism creation
