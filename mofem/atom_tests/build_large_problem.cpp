@@ -62,16 +62,17 @@ int main(int argc, char *argv[]) {
         0, 3, BitRefLevel().set(0));
 
     // fields
-    CHKERR m_field.add_field("F1", L2, AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERR m_field.add_field("F1", H1, AINSWORTH_LEGENDRE_BASE, 1,
+                             MB_TAG_DENSE);
 
     // meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     // add entities to field
-    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "F1");
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBVERTEX, "F1");
 
     // set app. order
-    constexpr int order = 4;
-    CHKERR m_field.set_field_order(root_set, MBTET, "F1", order);
+    constexpr int order = 1;
+    CHKERR m_field.set_field_order(root_set, MBVERTEX, "F1", order);
 
     CHKERR m_field.build_fields();
 
@@ -95,9 +96,14 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionProblem("P1");
     CHKERR prb_mng_ptr->partitionFiniteElements("P1");
     CHKERR prb_mng_ptr->partitionGhostDofs("P1");
+
+    // MOFEM_LOG_CHANNEL("WORLD");
+    // MOFEM_LOG("WORLD", Sev::inform) << "Create matrix";
+    // SmartPetscObj<Mat> A;
     // CHKERR m_field.getInterface<MatrixManager>()
-    //     ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>("P1", -1, -1,
-    //                                                                0);
+    //     ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("P1", A);
+    // MOFEM_LOG("WORLD", Sev::inform) << "Done";
+
 
   }
   CATCH_ERRORS;
