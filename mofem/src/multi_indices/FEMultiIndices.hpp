@@ -170,15 +170,16 @@ struct interface_FiniteElementImpl : public interface_RefElement<REFENT> {
 
   virtual ~interface_FiniteElementImpl() = default;
 
-  virtual boost::shared_ptr<FiniteElement> getFiniteElementPtr() const = 0;
+  virtual boost::shared_ptr<const FiniteElement> &
+  getFiniteElementPtr() const = 0;
 
-  /**
-   * @deprecated use getFiniteElementPtr
-   */
-  DEPRECATED inline const boost::shared_ptr<FiniteElement> &
-  get_MoFEMFiniteElementPtr() {
-    return this->getFiniteElementPtr();
-  };
+  // /**
+  //  * @deprecated use getFiniteElementPtr
+  //  */
+  // DEPRECATED inline const boost::shared_ptr<FiniteElement> &
+  // get_MoFEMFiniteElementPtr() {
+  //   return this->getFiniteElementPtr();
+  // };
 
   /**
    * @copydoc MoFEM::FiniteElement::getFEUId
@@ -257,7 +258,7 @@ struct interface_FiniteElement<T, T>
       : interface_FiniteElementImpl<T, T>(fe_ptr, ref_ents_ptr),
         sFiniteElementPtr(fe_ptr) {}
 
-  inline boost::shared_ptr<FiniteElement> getFiniteElementPtr() const {
+  inline boost::shared_ptr<const FiniteElement> &getFiniteElementPtr() const {
     return this->sFiniteElementPtr->getFiniteElementPtr();
   }
 
@@ -280,7 +281,7 @@ struct EntFiniteElement
                    const boost::shared_ptr<FiniteElement> &fe_ptr);
   virtual ~EntFiniteElement() = default;
 
-  virtual boost::shared_ptr<FiniteElement> getFiniteElementPtr() const {
+  virtual boost::shared_ptr<const FiniteElement> &getFiniteElementPtr() const {
     return finiteElementPtr;
   }
 
@@ -404,7 +405,7 @@ struct EntFiniteElement
   }
 
 protected:
-  boost::shared_ptr<FiniteElement> finiteElementPtr;
+  mutable boost::shared_ptr<const FiniteElement> finiteElementPtr;
   boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
   boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> dataFieldEnts;
   boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
