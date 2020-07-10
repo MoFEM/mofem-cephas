@@ -32,8 +32,8 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
   static constexpr const int value = N;
   const int getValue() const { return value; }
 
-  boost::shared_ptr<RefEntityTmp<0>>
-  virtual make_shared_ref_entity(const EntityHandle ent);
+  boost::shared_ptr<RefEntityTmp<0>> virtual make_shared_ref_entity(
+      const EntityHandle ent);
 
   using CoreTmp<N - 1>::CoreTmp;
 
@@ -51,7 +51,6 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
                                          ///< have the same meshes and same
                                          ///< entity handlers.
   );
-
 
   virtual MoFEMErrorCode
   add_field(const std::string &name, const FieldSpace space,
@@ -71,8 +70,7 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
   virtual MoFEMErrorCode build_fields(int verb = DEFAULT_VERBOSITY);
 
   virtual MoFEMErrorCode build_field(const std::string field_name,
-                             int verb = DEFAULT_VERBOSITY);
-
+                                     int verb = DEFAULT_VERBOSITY);
 };
 
 template <int N> constexpr const int CoreTmp<N>::value;
@@ -193,9 +191,8 @@ template <> struct CoreTmp<0> : public Interface {
 
   /** \name Static functions */
 
-  static void
-  setRefEntBasicDataPtr(MoFEM::Interface &m_field,
-                             boost::shared_ptr<BasicEntityData> &ptr);
+  static void setRefEntBasicDataPtr(MoFEM::Interface &m_field,
+                                    boost::shared_ptr<BasicEntityData> &ptr);
 
   boost::shared_ptr<FieldTmp<0, 0>>
   makeSharedField(MoFEM::Interface &m_field, const int size,
@@ -561,7 +558,7 @@ protected:
 
   template <int V, int F>
   MoFEMErrorCode
-  buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr, 
+  buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
                             std::map<EntityType, int> &dof_counter, int verb);
 
   template <int V, typename std::enable_if<(V >= 0), int>::type * = nullptr>
@@ -951,6 +948,9 @@ protected:
   MoFEMErrorCode get_problem(const std::string &problem_name,
                              const Problem **problem_ptr) const;
   MoFEMErrorCode get_problems(const Problem_multiIndex **problems_ptr) const;
+  MoFEMErrorCode get_ents_elements_adjacency(
+      const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
+          *dofs_elements_adjacency) const;
 
   const Field_multiIndex *get_fields() const;
   const RefEntity_multiIndex *get_ref_ents() const;
@@ -961,6 +961,8 @@ protected:
   const DofEntity_multiIndex *get_dofs() const;
   const Problem *get_problem(const std::string &problem_name) const;
   const Problem_multiIndex *get_problems() const;
+  const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
+  get_ents_elements_adjacency() const;
 
   FieldEntityByFieldName::iterator
   get_ent_field_by_name_begin(const std::string &field_name) const;
@@ -1173,7 +1175,6 @@ template <> struct CoreTmp<-1> : public CoreTmp<0> {
                                          ///< entity handlers.
   );
 
-
   virtual MoFEMErrorCode
   add_field(const std::string &name, const FieldSpace space,
             const FieldApproximationBase base,
@@ -1193,7 +1194,7 @@ template <> struct CoreTmp<-1> : public CoreTmp<0> {
   virtual MoFEMErrorCode build_fields(int verb = DEFAULT_VERBOSITY);
 
   virtual MoFEMErrorCode build_field(const std::string field_name,
-                             int verb = DEFAULT_VERBOSITY);
+                                     int verb = DEFAULT_VERBOSITY);
 };
 
 using Core = CoreTmp<0>;

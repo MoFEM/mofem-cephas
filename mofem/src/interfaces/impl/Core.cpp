@@ -894,6 +894,19 @@ const MeshsetsManager *Core::get_meshsets_manager_ptr() const {
   return meshsets_manager_ptr;
 }
 
+MoFEMErrorCode Core::get_ents_elements_adjacency(
+    const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
+        *dofs_elements_adjacency) const {
+  MoFEMFunctionBeginHot;
+  *dofs_elements_adjacency = &entFEAdjacencies;
+  MoFEMFunctionReturnHot(0);
+}
+
+const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
+Core::get_ents_elements_adjacency() const {
+  return &entFEAdjacencies;
+}
+
 const Field_multiIndex *Core::get_fields() const { return &fIelds; }
 const RefEntity_multiIndex *Core::get_ref_ents() const {
   return &refinedEntities;
