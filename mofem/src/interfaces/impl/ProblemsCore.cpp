@@ -690,13 +690,13 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
     verb = verbose;
   SET_BASIC_METHOD(method, nullptr);
   auto r = entsFields.get<FieldName_mi_tag>().equal_range(field_name);
-  if (r.first != r.second) {
-    // method.fieldPtr = (*r.first)->getFieldPtr();
+  
+  auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
+  if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
+    method.fieldPtr = *field_it;
   } else {
-    auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
-    if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
-      method.fieldPtr = *field_it;
-    }
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field not found %s",
+             field_name);
   }
 
   typedef multi_index_container<
