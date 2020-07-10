@@ -696,7 +696,7 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
     method.fieldPtr = *field_it;
   } else {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field not found %s",
-             field_name);
+             field_name.c_str());
   }
 
   typedef multi_index_container<
