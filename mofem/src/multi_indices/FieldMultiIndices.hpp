@@ -54,6 +54,14 @@ template <int N, int F> struct FieldTmp : public FieldTmp<N, F - 1> {
   virtual int getFieldValue() { return F; }
 
   using FieldTmp<N, F - 1>::FieldTmp;
+
+  ~FieldTmp() {
+    if (!this->destructorCalled)
+      FieldEntityTmp<N, F>::sFieldPtr.reset();
+
+    this->destructorCalled = true;
+  }
+
 };
 
 template <int N, int F> constexpr const int FieldTmp<N, F>::CoreValue;
@@ -69,6 +77,13 @@ struct FieldTmp<N, 0> : public FieldTmp<N - 1, BITFIELDID_SIZE - 1> {
   virtual int getFieldValue() { return FieldValue; }
 
   using FieldTmp<N - 1, BITFIELDID_SIZE - 1>::FieldTmp;
+
+  ~FieldTmp() {
+    if (!this->destructorCalled)
+      FieldEntityTmp<N, 0>::sFieldPtr.reset();
+
+    this->destructorCalled = true;
+  }
 };
 
 template <int N> constexpr const int FieldTmp<N, 0>::CoreValue;
@@ -109,7 +124,7 @@ template <> struct FieldTmp<0, 0> {
   FieldTmp(const moab::Interface &moab, const EntityHandle meshset,
            const boost::shared_ptr<CoordSys> coord_sys_ptr);
 
-  virtual ~FieldTmp() = default;
+  virtual ~FieldTmp();
 
   // using SequenceEntContainer = multi_index_container<
 
@@ -432,6 +447,9 @@ template <> struct FieldTmp<0, 0> {
 
   friend std::ostream &operator<<(std::ostream &os, const FieldTmp &e);
 
+protected:
+  bool destructorCalled;
+
 private:
   // mutable SequenceEntContainer sequenceEntContainer;
   mutable SequenceDofContainer sequenceDofContainer;
@@ -447,6 +465,7 @@ template <> struct FieldTmp<-1, -1> : public FieldTmp<0, 0> {
   virtual int getFieldValue() { return FieldValue; }
 
   using FieldTmp<0, 0>::FieldTmp;
+  ~FieldTmp();
 };
 
 using Field = FieldTmp<0, 0>;

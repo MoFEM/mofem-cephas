@@ -35,7 +35,8 @@ Field::FieldTmp(const moab::Interface &moab, const EntityHandle meshset,
                 const boost::shared_ptr<CoordSys> coord_sys_ptr)
     : moab(const_cast<moab::Interface &>(moab)), meshSet(meshset),
       coordSysPtr(coord_sys_ptr), tagId(NULL), tagSpaceData(NULL),
-      tagNbCoeffData(NULL), tagName(NULL), tagNameSize(0) {
+      tagNbCoeffData(NULL), tagName(NULL), tagNameSize(0),
+      destructorCalled(false) {
 
   auto get_tag_data_ptr = [&](const auto name, auto &tag_data) {
     MoFEMFunctionBegin;
@@ -243,6 +244,15 @@ Field::FieldTmp(const moab::Interface &moab, const EntityHandle meshset,
   ierr = rebuildDofsOrderMap();
   CHKERRABORT(PETSC_COMM_SELF, ierr);
 };
+
+FieldTmp<0, 0>::~FieldTmp() {
+  if (!destructorCalled) 
+    FieldEntityTmp<0, 0>::sFieldPtr.reset();
+  
+  destructorCalled = true;
+}
+
+FieldTmp<-1, -1>::~FieldTmp() { this->destructorCalled = true; }
 
 MoFEMErrorCode Field::rebuildDofsOrderMap() const {
   MoFEMFunctionBegin;
