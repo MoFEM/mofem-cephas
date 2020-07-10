@@ -45,16 +45,16 @@ struct CoreInterface : public UnknownInterface {
 
   /**
    * @brief Get the core
-   * 
-   * @return int 
+   *
+   * @return int
    */
   virtual const int getValue() const = 0;
 
   /**
    * @brief Get RefEntity
-   * 
-   * @param ent 
-   * @return boost::shared_ptr<RefEntityTmp<0>> 
+   *
+   * @param ent
+   * @return boost::shared_ptr<RefEntityTmp<0>>
    */
   virtual boost::shared_ptr<RefEntityTmp<0>>
   make_shared_ref_entity(const EntityHandle ent) = 0;
@@ -1631,6 +1631,24 @@ struct CoreInterface : public UnknownInterface {
    * @return const Problem_multiIndex*
    */
   virtual const Problem_multiIndex *get_problems() const = 0;
+
+  /**
+   * @brief Get the dofs elements adjacency object
+   *
+   * @param dofs_elements_adjacency
+   * @return MoFEMErrorCode
+   */
+  virtual MoFEMErrorCode get_ents_elements_adjacency(
+      const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
+          *dofs_elements_adjacency) const = 0;
+
+  /**
+   * @brief Get the dofs elements adjacency object
+   *
+   * @return const FieldEntityEntFiniteElementAdjacencyMap_multiIndex*
+   */
+  virtual const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
+  get_ents_elements_adjacency() const = 0;
 
   /** \brief Get fields multi-index from database
    * \ingroup mofem_access
