@@ -97,14 +97,69 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionFiniteElements("P1");
     CHKERR prb_mng_ptr->partitionGhostDofs("P1");
 
-    // MOFEM_LOG_CHANNEL("WORLD");
-    // MOFEM_LOG("WORLD", Sev::inform) << "Create matrix";
-    // SmartPetscObj<Mat> A;
-    // CHKERR m_field.getInterface<MatrixManager>()
-    //     ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("P1", A);
-    // MOFEM_LOG("WORLD", Sev::inform) << "Done";
+    auto ref_ents = m_field.get_ref_ents();
+    auto ref_fe_ents = m_field.get_ref_finite_elements();
+    auto field_ents = m_field.get_field_ents();
+    auto dofs = m_field.get_dofs();
+    auto finite_elements = m_field.get_finite_elements();
+    auto adjacencies = m_field.get_ents_elements_adjacency();
 
+    // This realease data structures not used by the code. Once problem is
+    // build, and you not plan create more problems, you can realease those data
+    // structures. However, underlying data, on entities are not realeased,
+    // since data can be sill acessed form finite element.
+    const_cast<RefEntity_multiIndex *>(ref_ents)->clear();
+    const_cast<RefElement_multiIndex *>(ref_fe_ents)->clear();
+    const_cast<FieldEntity_multiIndex *>(field_ents)->clear();
+    const_cast<DofEntity_multiIndex *>(dofs)->clear();
+    const_cast<FiniteElement_multiIndex *>(finite_elements)->clear();
 
+    MOFEM_LOG_CHANNEL("WORLD");
+    MOFEM_LOG("WORLD", Sev::inform) << "Create matrix";
+    SmartPetscObj<Mat> A;
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("P1", A);
+    MOFEM_LOG("WORLD", Sev::inform) << "Done";
+
+    // Once matrix is created we do not need adjacencies data structures
+    const_cast<FieldEntityEntFiniteElementAdjacencyMap_multiIndex *>(
+        adjacencies)
+        ->clear();
+
+    auto fe_ptr = boost::make_shared<FEMethod>();
+
+    auto pre_proc_hook = [&]() {
+      MoFEMFunctionBegin;
+      MoFEMFunctionReturn(0);
+    };
+
+    auto post_proc_hook = [&]() {
+      MoFEMFunctionBegin;
+      MoFEMFunctionReturn(0);
+    };
+
+    auto op_hook = [&]() {
+      MoFEMFunctionBegin;
+
+      MOFEM_LOG_CHANNEL("WORLD");
+      MOFEM_LOG("WORLD", Sev::verbose)
+          << "Iterate finite element " << *(fe_ptr->numeredEntFiniteElementPtr);
+
+      auto row_dofs = fe_ptr->getRowDofs();
+      for (auto &dof : row_dofs)
+        MOFEM_LOG("WORLD", Sev::noisy) << *dof << endl;
+
+      MoFEMFunctionReturn(0);
+    };
+
+    fe_ptr->preProcessHook = pre_proc_hook;
+    fe_ptr->postProcessHook = post_proc_hook;
+    fe_ptr->operatorHook = op_hook;
+
+    MOFEM_LOG_CHANNEL("WORLD");
+    MOFEM_LOG("WORLD", Sev::inform) << "Iterate finite elements";
+    CHKERR m_field.loop_finite_elements("P1", "E1", *fe_ptr);
+    MOFEM_LOG("WORLD", Sev::inform) << "Done";
   }
   CATCH_ERRORS;
 
