@@ -695,12 +695,13 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
 
   auto &dofs = const_cast<FEDofEntity_multiIndex &>(
       numeredEntFiniteElementPtr->getDataDofs());
-  auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
-  auto dit = dofs_by_type.lower_bound(boost::make_tuple(field_name, type_lo));
+  auto &dofs_by_type = dofs.get<Composite_Name_And_Ent_mi_tag>();
+  auto dit = dofs_by_type.lower_bound(
+      boost::make_tuple(field_name, get_id_for_min_type(type_lo)));
   if (dit == dofs_by_type.end())
     MoFEMFunctionReturnHot(0);
-  auto hi_dit =
-      dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
+  auto hi_dit = dofs_by_type.lower_bound(
+      boost::make_tuple(field_name, get_id_for_max_type(type_hi)));
 
   auto get_data = [&](auto &data, auto &dof, auto type, auto side) {
     auto &dat = data.dataOnEntities[type][side];
@@ -780,13 +781,14 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
   set_zero(master_nodes_data, master_nodes_dofs);
   set_zero(slave_nodes_data, slave_nodes_dofs);
 
-  auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Type_mi_tag>();
-  auto tuple = boost::make_tuple(field_name, MBVERTEX);
-  auto dit = dofs_by_name_and_type.lower_bound(tuple);
+  auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Ent_mi_tag>();
+  auto dit = dofs_by_name_and_type.lower_bound(
+      boost::make_tuple(field_name, get_id_for_min_type<MBVERTEX>()));
   if (dit == dofs_by_name_and_type.end())
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "No nodal dofs on element");
-  auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
+  auto hi_dit = dofs.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+      boost::make_tuple(field_name, get_id_for_max_type<MBVERTEX>()));
 
   if (dit != hi_dit) {
     auto &first_dof = **dit;
@@ -855,12 +857,13 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
   clear_data(master_data);
   clear_data(slave_data);
 
-  auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
-  auto dit = dofs_by_type.lower_bound(boost::make_tuple(field_name, type_lo));
+  auto &dofs_by_type = dofs.get<Composite_Name_And_Ent_mi_tag>();
+  auto dit = dofs_by_type.lower_bound(
+      boost::make_tuple(field_name, get_id_for_min_type(type_lo)));
   if (dit == dofs_by_type.end())
     MoFEMFunctionReturnHot(0);
-  auto hi_dit =
-      dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
+  auto hi_dit = dofs_by_type.lower_bound(
+      boost::make_tuple(field_name, get_id_for_max_type(type_hi)));
 
   auto get_indices = [&](auto &data, auto &dof, const auto type,
                          const auto side) {
@@ -928,10 +931,11 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
     VectorInt &slave_local_nodes_indices) const {
   MoFEMFunctionBegin;
 
-  auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
-  auto tuple = boost::make_tuple(field_name, MBVERTEX);
-  auto dit = dofs_by_type.lower_bound(tuple);
-  auto hi_dit = dofs_by_type.upper_bound(tuple);
+  auto &dofs_by_type = dofs.get<Composite_Name_And_Ent_mi_tag>();
+  auto dit = dofs_by_type.lower_bound(
+      boost::make_tuple(field_name, get_id_for_min_type<MBVERTEX>()));
+  auto hi_dit = dofs_by_type.upper_bound(
+      boost::make_tuple(field_name, get_id_for_max_type<MBVERTEX>()));
 
   master_nodes_indices.resize(0, false);
   master_local_nodes_indices.resize(0, false);

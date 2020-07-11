@@ -1836,7 +1836,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByNameAndType::iterator
+  virtual DofEntityByNameAndEnt::iterator
   get_dofs_by_name_and_type_begin(const std::string &field_name,
                                   const EntityType type) const = 0;
 
@@ -1853,7 +1853,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByNameAndType::iterator
+  virtual DofEntityByNameAndEnt::iterator
   get_dofs_by_name_and_type_end(const std::string &field_name,
                                 const EntityType type) const = 0;
 
@@ -1861,7 +1861,7 @@ struct CoreInterface : public UnknownInterface {
    * \ingroup mofem_field
    */
 #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD, NAME, TYPE, IT)  \
-  DofEntityByNameAndType::iterator IT =                                        \
+  DofEntityByNameAndEnt::iterator IT =                                         \
       (MFIELD).get_dofs_by_name_and_type_begin(NAME, TYPE);                    \
   IT != (MFIELD).get_dofs_by_name_and_type_end(NAME, TYPE);                    \
   IT++

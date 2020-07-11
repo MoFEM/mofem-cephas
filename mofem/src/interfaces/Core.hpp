@@ -978,10 +978,10 @@ protected:
   DofEntityByNameAndEnt::iterator
   get_dofs_by_name_and_ent_end(const std::string &field_name,
                                const EntityHandle ent) const;
-  DofEntityByNameAndType::iterator
+  DofEntityByNameAndEnt::iterator
   get_dofs_by_name_and_type_begin(const std::string &field_name,
                                   const EntityType type) const;
-  DofEntityByNameAndType::iterator
+  DofEntityByNameAndEnt::iterator
   get_dofs_by_name_and_type_end(const std::string &field_name,
                                 const EntityType ent) const;
   EntFiniteElementByName::iterator

@@ -466,30 +466,36 @@ struct FEMethod : public BasicMethod {
  * type \ingroup mofem_loops
  */
 #define _IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(FE, NAME, TYPE, IT)               \
-  auto IT = FE->get_begin<FENumeredDofEntityByNameAndType>(                    \
-      FE->rowPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);          \
-  IT != FE->get_end<FENumeredDofEntityByNameAndType>(                          \
-            FE->rowPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);    \
+  auto IT = FE->get_begin<FEDofEntityByNameAndEnt>(                            \
+      FE->rowPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME,                  \
+      get_id_for_min_type(TYPE));                                              \
+  IT != FE->get_end<FEDofEntityByNameAndEnt>(                                  \
+            FE->rowPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME,            \
+            get_id_for_max_type(TYPE));                                        \
   IT++
 
 /** \brief loop over all dofs which are on a particular FE column, field and
  * entity type \ingroup mofem_loops
  */
 #define _IT_GET_FECOL_BY_TYPE_DOFS_FOR_LOOP_(FE, NAME, TYPE, IT)               \
-  auto IT = FE->get_begin<FENumeredDofEntityByNameAndType>(                    \
-      FE->colPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);          \
-  IT != FE->get_end<FENumeredDofEntityByNameAndType>(                          \
-            FE->colPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);    \
+  auto IT = FE->get_begin<FEDofEntityByNameAndEnt>(                            \
+      FE->colPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME,                  \
+      get_id_for_min_type(TYPE));                                              \
+  IT != FE->get_end<FEDofEntityByNameAndEnt>(                                  \
+            FE->colPtr->get<Composite_Name_And_Ent_mi_tag>(), NAME,            \
+            get_id_for_max_type(TYPE));                                        \
   IT++
 
 /** \brief loop over all dofs which are on a particular FE data, field and
  * entity type \ingroup mofem_loops
  */
 #define _IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(FE, NAME, TYPE, IT)              \
-  auto IT = FE->get_begin<FEDofEntityByNameAndType>(                           \
-      FE->dataPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);         \
-  IT != FE->get_end<FEDofEntityByNameAndType>(                                 \
-            FE->dataPtr->get<Composite_Name_And_Type_mi_tag>(), NAME, TYPE);   \
+  auto IT = FE->get_begin<FEDofEntityByNameAndEnt>(                            \
+      FE->dataPtr->get<FEDofEntityByNameAndEnt>(), NAME,                       \
+      get_id_for_min_type(TYPE));                                              \
+  IT != FE->get_end<FEDofEntityByNameAndEnt>(                                  \
+            FE->dataPtr->get<FEDofEntityByNameAndEnt>(), NAME,                 \
+            get_id_for_max_type(TYPE));                                        \
   IT++
 
   template <class MULTIINDEX>

@@ -110,28 +110,6 @@ int main(int argc, char *argv[]) {
     auto finite_elements = m_field.get_finite_elements();
     auto adjacencies = m_field.get_ents_elements_adjacency();
 
-    auto test1 = [&](DofEntity_multiIndex *dofs) {
-      MoFEMFunctionBegin;
-      auto dit1 = dofs->get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-          boost::make_tuple("F1", get_id_for_min_type<MBEDGE>()));
-      auto hi_dit1 = dofs->get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-          boost::make_tuple("F1", get_id_for_max_type<MBEDGE>()));
-      auto dit2 = dofs->get<Composite_Name_And_Type_mi_tag>().lower_bound(
-          boost::make_tuple("F1", MBEDGE));
-      auto hi_dit2 = dofs->get<Composite_Name_And_Type_mi_tag>().upper_bound(
-          boost::make_tuple("F1", MBEDGE));
-
-      const auto d1 = std::distance(dit1, hi_dit1);
-      const auto d2 = std::distance(dit2, hi_dit2);
-
-      if (d1 != d2)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "Wrong range %d != %d", d1, d2);
-      MoFEMFunctionReturn(0);
-    };
-
-    CHKERR test1(const_cast<DofEntity_multiIndex *>(dofs));
-
     // This realease data structures not used by the code. Once problem is
     // build, and you not plan create more problems, you can realease those
     // data structures. However, underlying data, on entities are not

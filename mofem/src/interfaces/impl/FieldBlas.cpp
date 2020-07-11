@@ -243,16 +243,13 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
   auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBeginHot;
 
-  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
-      dit,
-      hi_dit;
-  dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, type));
-  hi_dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, type));
-  for (; dit != hi_dit; dit++) {
+  auto dit = dofs_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(
+      boost::make_tuple(field_name, get_id_for_min_type(type)));
+  auto hi_dit = dofs_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+      boost::make_tuple(field_name, get_id_for_max_type(type)));
+  for (; dit != hi_dit; dit++) 
     (*dit)->getFieldData() = val;
-  }
+  
   MoFEMFunctionReturnHot(0);
 }
 
@@ -263,13 +260,10 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
   auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBeginHot;
 
-  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
-      dit,
-      hi_dit;
-  dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, type));
-  hi_dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, type));
+  auto dit = dofs_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(
+      boost::make_tuple(field_name, get_id_for_min_type(type)));
+  auto hi_dit = dofs_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+      boost::make_tuple(field_name, get_id_for_max_type(type)));
   EntityHandle ent, last = 0;
   bool cont = true;
   for (; dit != hi_dit; dit++) {

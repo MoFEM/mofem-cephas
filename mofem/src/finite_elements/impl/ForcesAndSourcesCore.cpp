@@ -168,10 +168,11 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
     const boost::string_ref field_name, FENumeredDofEntity_multiIndex &dofs,
     VectorInt &nodes_indices, VectorInt &local_nodes_indices) const {
   MoFEMFunctionBegin;
-  auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
-  auto tuple = boost::make_tuple(field_name, MBVERTEX);
-  auto dit = dofs_by_type.lower_bound(tuple);
-  auto hi_dit = dofs_by_type.upper_bound(tuple);
+  auto &dofs_by_type = dofs.get<Composite_Name_And_Ent_mi_tag>();
+  auto dit = dofs_by_type.lower_bound(
+      boost::make_tuple(field_name, get_id_for_min_type<MBVERTEX>()));
+  auto hi_dit = dofs_by_type.upper_bound(
+      boost::make_tuple(field_name, get_id_for_max_type<MBVERTEX>()));
 
   if (dit != hi_dit) {
 
@@ -246,12 +247,13 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
     }
   }
 
-  auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
-  auto dit = dofs_by_type.lower_bound(boost::make_tuple(field_name, type_lo));
+  auto &dofs_by_type = dofs.get<Composite_Name_And_Ent_mi_tag>();
+  auto dit = dofs_by_type.lower_bound(
+      boost::make_tuple(field_name, get_id_for_min_type(type_lo)));
   if (dit == dofs_by_type.end())
     MoFEMFunctionReturnHot(0);
-  auto hi_dit =
-      dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
+  auto hi_dit = dofs_by_type.lower_bound(
+      boost::make_tuple(field_name, get_id_for_max_type(type_hi)));
   for (; dit != hi_dit; ++dit) {
     auto &dof = **dit;
     const EntityType type = dof.getEntType();
@@ -458,13 +460,14 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
                                   VectorInt &bb_node_order) {
     MoFEMFunctionBegin;
 
-    auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Type_mi_tag>();
-    auto tuple = boost::make_tuple(field_name, MBVERTEX);
-    auto dit = dofs_by_name_and_type.lower_bound(tuple);
+    auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Ent_mi_tag>();
+    auto dit = dofs_by_name_and_type.lower_bound(
+        boost::make_tuple(field_name, get_id_for_min_type<MBVERTEX>()));
     if (dit == dofs_by_name_and_type.end())
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "No nodal dofs on element");
-    auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
+    auto hi_dit = dofs.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+        boost::make_tuple(field_name, get_id_for_max_type<MBVERTEX>()));
 
     if (dit != hi_dit) {
       auto &first_dof = **dit;
@@ -552,12 +555,13 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
 
   auto &dofs = const_cast<FEDofEntity_multiIndex &>(
       numeredEntFiniteElementPtr->getDataDofs());
-  auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
-  auto dit = dofs_by_type.lower_bound(boost::make_tuple(field_name, type_lo));
+  auto &dofs_by_type = dofs.get<Composite_Name_And_Ent_mi_tag>();
+  auto dit = dofs_by_type.lower_bound(
+      boost::make_tuple(field_name, get_id_for_min_type(type_lo)));
   if (dit == dofs_by_type.end())
     MoFEMFunctionReturnHot(0);
-  auto hi_dit =
-      dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
+  auto hi_dit = dofs_by_type.lower_bound(
+      boost::make_tuple(field_name, get_id_for_max_type(type_hi)));
   std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
   for (; dit != hi_dit;) {
 
@@ -864,14 +868,15 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
     auto &bb_node_order = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder();
 
     auto &dofs_by_name_and_type =
-        getDataDofs().get<Composite_Name_And_Type_mi_tag>();
-    auto tuple = boost::make_tuple(field_name, MBVERTEX);
-    auto dit = dofs_by_name_and_type.lower_bound(tuple);
+        getDataDofs().get<Composite_Name_And_Ent_mi_tag>();
+    auto dit = dofs_by_name_and_type.lower_bound(
+        boost::make_tuple(field_name, get_id_for_min_type<MBVERTEX>()));
     if (dit == dofs_by_name_and_type.end())
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "No nodal dofs on element");
     auto hi_dit =
-        getDataDofs().get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
+        getDataDofs().get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+            boost::make_tuple(field_name, get_id_for_max_type<MBVERTEX>()));
 
     if (dit != hi_dit) {
       auto &first_dof = **dit;
@@ -926,12 +931,13 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
 
     auto &dofs = const_cast<FEDofEntity_multiIndex &>(
         numeredEntFiniteElementPtr->getDataDofs());
-    auto &dofs_by_type = dofs.get<Composite_Name_And_Type_mi_tag>();
-    auto dit = dofs_by_type.lower_bound(boost::make_tuple(field_name, type_lo));
+    auto &dofs_by_type = dofs.get<Composite_Name_And_Ent_mi_tag>();
+    auto dit = dofs_by_type.lower_bound(
+        boost::make_tuple(field_name, get_id_for_min_type(type_lo)));
     if (dit == dofs_by_type.end())
       MoFEMFunctionReturnHot(0);
-    auto hi_dit =
-        dofs_by_type.lower_bound(boost::make_tuple(field_name, type_hi));
+    auto hi_dit = dofs_by_type.lower_bound(
+        boost::make_tuple(field_name, get_id_for_max_type(type_hi)));
     std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
     for (; dit != hi_dit;) {
 

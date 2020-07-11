@@ -1462,17 +1462,17 @@ Core::get_dofs_by_name_and_ent_end(const std::string &field_name,
   return dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
       boost::make_tuple(field_name, ent));
 }
-DofEntityByNameAndType::iterator
+DofEntityByNameAndEnt::iterator
 Core::get_dofs_by_name_and_type_begin(const std::string &field_name,
                                       const EntityType type) const {
-  return dofsField.get<Composite_Name_And_Type_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, type));
+  return dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
+      boost::make_tuple(field_name, get_id_for_min_type(type)));
 }
-DofEntityByNameAndType::iterator
+DofEntityByNameAndEnt::iterator
 Core::get_dofs_by_name_and_type_end(const std::string &field_name,
                                     const EntityType type) const {
-  return dofsField.get<Composite_Name_And_Type_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, type));
+  return dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+      boost::make_tuple(field_name, get_id_for_max_type(type)));
 }
 MoFEMErrorCode
 Core::check_number_of_ents_in_ents_field(const std::string &name) const {
