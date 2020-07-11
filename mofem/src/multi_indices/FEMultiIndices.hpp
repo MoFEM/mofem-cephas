@@ -679,12 +679,6 @@ typedef multi_index_container<
                           boost::string_ref, &EntFiniteElement::getNameRef>>,
 
         ordered_non_unique<
-            tag<BitFEId_mi_tag>,
-            const_mem_fun<EntFiniteElement::interface_type_FiniteElement,
-                          BitFEId, &EntFiniteElement::getId>,
-            LtBit<BitFEId>>,
-
-        ordered_non_unique<
             tag<Composite_Name_And_Ent_mi_tag>,
             composite_key<
                 EntFiniteElement,

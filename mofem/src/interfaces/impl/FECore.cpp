@@ -237,12 +237,9 @@ Core::modify_finite_element_off_field_col(const std::string &fe_name,
 }
 
 BitFEId Core::getBitFEId(const std::string &name) const {
-  typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
-      FiniteElements_by_name;
-  const FiniteElements_by_name &set =
-      finiteElements.get<FiniteElement_name_mi_tag>();
-  FiniteElements_by_name::iterator miit = set.find(name);
-  if (miit == set.end())
+  auto &fe_by_id = finiteElements.get<FiniteElement_name_mi_tag>();
+  auto miit = fe_by_id.find(name);
+  if (miit == fe_by_id.end())
     THROW_MESSAGE(
         ("finite element < " + name + " > not found (top tip: check spelling)")
             .c_str());
@@ -250,20 +247,17 @@ BitFEId Core::getBitFEId(const std::string &name) const {
 }
 
 std::string Core::getBitFEIdName(const BitFEId id) const {
-  typedef FiniteElement_multiIndex::index<BitFEId_mi_tag>::type
-      finiteElements_by_id;
-  const finiteElements_by_id &set = finiteElements.get<BitFEId_mi_tag>();
-  finiteElements_by_id::iterator miit = set.find(id);
-  assert(miit != set.end());
+  auto &fe_by_id = finiteElements.get<BitFEId_mi_tag>();
+  auto miit = fe_by_id.find(id);
+  if (miit == fe_by_id.end())
+    THROW_MESSAGE("finite element not found");
   return (*miit)->getName();
 }
 
 EntityHandle Core::get_finite_element_meshset(const BitFEId id) const {
-  typedef FiniteElement_multiIndex::index<BitFEId_mi_tag>::type
-      finiteElements_by_id;
-  const finiteElements_by_id &set = finiteElements.get<BitFEId_mi_tag>();
-  finiteElements_by_id::iterator miit = set.find(id);
-  if (miit == set.end())
+  auto &fe_by_id = finiteElements.get<BitFEId_mi_tag>();
+  auto miit = fe_by_id.find(id);
+  if (miit == fe_by_id.end())
     THROW_MESSAGE("finite element not found");
   return (*miit)->meshset;
 }
@@ -308,19 +302,12 @@ Core::get_finite_element_entities_by_handle(const std::string name,
 }
 
 MoFEMErrorCode Core::list_finite_elements() const {
-  MoFEMFunctionBeginHot;
-  typedef FiniteElement_multiIndex::index<BitFEId_mi_tag>::type
-      finiteElements_by_id;
-  const finiteElements_by_id &BitFEId_set =
-      finiteElements.get<BitFEId_mi_tag>();
-  finiteElements_by_id::iterator miit = BitFEId_set.begin();
-  for (; miit != BitFEId_set.end(); miit++) {
-    std::ostringstream ss;
-    ss << *miit << std::endl;
-    PetscSynchronizedPrintf(cOmm, ss.str().c_str());
-  }
-  PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionBegin;
+  for (auto &fe : finiteElements.get<FiniteElement_name_mi_tag>()) 
+    MOFEM_LOG("SYNC", Sev::inform) << fe;
+  
+  MOFEM_LOG_SYNCHORMISE(cOmm);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::add_ents_to_finite_element_by_type(
@@ -812,10 +799,10 @@ MoFEMErrorCode Core::build_finite_elements(int verb) {
 
   if (verb > QUIET) {
 
-    auto &fe_ents = entsFiniteElements.get<BitFEId_mi_tag>();
+    auto &fe_ents = entsFiniteElements.get<FiniteElement_name_mi_tag>();
     for (auto &fe : finiteElements) {
-      auto miit = fe_ents.lower_bound(fe->getId());
-      auto hi_miit = fe_ents.upper_bound(fe->getId());
+      auto miit = fe_ents.lower_bound(fe->getName());
+      auto hi_miit = fe_ents.upper_bound(fe->getName());
       const auto count = std::distance(miit, hi_miit);
       MOFEM_LOG("SYNC", Sev::inform)
           << "Finite element " << fe->getName()
@@ -868,9 +855,9 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
   CHKERR buildFiniteElements(*fe_miit, ents_ptr, verb);
 
   if (verb >= VERBOSE) {
-    auto &fe_ents = entsFiniteElements.get<BitFEId_mi_tag>();
-    auto miit = fe_ents.lower_bound((*fe_miit)->getId());
-    auto hi_miit = fe_ents.upper_bound((*fe_miit)->getId());
+    auto &fe_ents = entsFiniteElements.get<FiniteElement_name_mi_tag>();
+    auto miit = fe_ents.lower_bound((*fe_miit)->getName());
+    auto hi_miit = fe_ents.upper_bound((*fe_miit)->getName());
     const auto count = std::distance(miit, hi_miit);
     MOFEM_LOG("SYNC", Sev::inform) << "Finite element " << fe_name
                                    << " added. Nb. of elements added " << count;
