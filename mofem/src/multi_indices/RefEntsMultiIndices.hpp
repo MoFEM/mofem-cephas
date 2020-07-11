@@ -633,7 +633,6 @@ template <typename T> struct interface_RefEntity {
  * \param hashed_unique Ent_mi_tag
  * \param ordered_non_unique Meshset_mi_tag
  * \param ordered_non_unique Ent_Ent_mi_tag
- * \param ordered_non_unique ParentEntType_mi_tag
  * \param ordered_non_unique Composite_EntType_And_ParentEntType_mi_tag
  * \param ordered_non_unique Composite_ParentEnt_And_EntType_mi_tag
  */
