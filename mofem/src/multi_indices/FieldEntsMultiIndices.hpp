@@ -183,22 +183,13 @@ struct FieldEntityTmp<0, 0>
     constexpr int ent_shift = 8 * sizeof(EntityHandle);
     if (true_if_distributed_mesh)
       return (static_cast<UId>(moab_owner_handle) |
-              static_cast<UId>(bit_number) << ent_shift |
-              static_cast<UId>(owner_proc) << 5 + ent_shift)
+              static_cast<UId>(owner_proc) << 5 |
+              static_cast<UId>(bit_number) << 5 + ent_shift)
              << 9;
     else
       return (static_cast<UId>(moab_owner_handle) | static_cast<UId>(bit_number)
-                                                        << ent_shift)
+                                                        << 5 + ent_shift)
              << 9;
-  }
-
-  static inline UId getGlobalUniqueIdCalculate_Low_Proc(const int owner_proc) {
-    return getGlobalUniqueIdCalculate(owner_proc, 0, 0, true);
-  }
-
-  static inline UId getGlobalUniqueIdCalculate_Hi_Proc(const int owner_proc) {
-    return getGlobalUniqueIdCalculate(owner_proc, BITFIELDID_SIZE - 1,
-                                      MBMAXTYPE, true);
   }
 
   /**

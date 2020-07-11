@@ -57,17 +57,6 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
     return getGlobalUniqueIdCalculate(dof, ent_ptr->getGlobalUniqueId());
   }
 
-  static inline UId getGlobalUniqueIdCalculate_Low_Proc(const int owner_proc) {
-    return getGlobalUniqueIdCalculate(
-        0, FieldEntity::getGlobalUniqueIdCalculate_Low_Proc(owner_proc));
-  }
-
-  static inline UId getGlobalUniqueIdCalculate_Hi_Proc(const int owner_proc) {
-    return getGlobalUniqueIdCalculate(
-        MAX_DOFS_ON_ENTITY - 1,
-        FieldEntity::getGlobalUniqueIdCalculate_Hi_Proc(owner_proc));
-  }
-
   static inline ShortId
   getNonNonuniqueShortId(const DofIdx dof,
                          const boost::shared_ptr<FieldEntity> &ent_ptr) {
