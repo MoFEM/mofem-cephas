@@ -655,13 +655,6 @@ using RefEntity_multiIndex = multi_index_container<
             >,
 
         ordered_non_unique<
-
-            tag<ParentEntType_mi_tag>,
-            const_mem_fun<RefEntity, EntityType, &RefEntity::getParentEntType>
-
-            >,
-
-        ordered_non_unique<
             tag<Composite_EntType_and_ParentEntType_mi_tag>,
             composite_key<
                 RefEntity,

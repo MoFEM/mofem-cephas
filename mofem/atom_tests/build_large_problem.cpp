@@ -69,10 +69,16 @@ int main(int argc, char *argv[]) {
     EntityHandle root_set = moab.get_root_set();
     // add entities to field
     CHKERR m_field.add_ents_to_field_by_type(root_set, MBVERTEX, "F1");
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBEDGE, "F1");
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTRI, "F1");
+    CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "F1");
 
     // set app. order
-    constexpr int order = 1;
-    CHKERR m_field.set_field_order(root_set, MBVERTEX, "F1", order);
+    constexpr int order = 2;
+    CHKERR m_field.set_field_order(root_set, MBVERTEX, "F1", 1);
+    CHKERR m_field.set_field_order(root_set, MBEDGE, "F1", order);
+    CHKERR m_field.set_field_order(root_set, MBTRI, "F1", order);
+    CHKERR m_field.set_field_order(root_set, MBTET, "F1", order);
 
     CHKERR m_field.build_fields();
 
@@ -104,10 +110,32 @@ int main(int argc, char *argv[]) {
     auto finite_elements = m_field.get_finite_elements();
     auto adjacencies = m_field.get_ents_elements_adjacency();
 
+    auto test1 = [&](DofEntity_multiIndex *dofs) {
+      MoFEMFunctionBegin;
+      auto dit1 = dofs->get<Composite_Name_And_Ent_mi_tag>().lower_bound(
+          boost::make_tuple("F1", get_id_for_min_type<MBEDGE>()));
+      auto hi_dit1 = dofs->get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+          boost::make_tuple("F1", get_id_for_max_type<MBEDGE>()));
+      auto dit2 = dofs->get<Composite_Name_And_Type_mi_tag>().lower_bound(
+          boost::make_tuple("F1", MBEDGE));
+      auto hi_dit2 = dofs->get<Composite_Name_And_Type_mi_tag>().upper_bound(
+          boost::make_tuple("F1", MBEDGE));
+
+      const auto d1 = std::distance(dit1, hi_dit1);
+      const auto d2 = std::distance(dit2, hi_dit2);
+
+      if (d1 != d2)
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Wrong range %d != %d", d1, d2);
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR test1(const_cast<DofEntity_multiIndex *>(dofs));
+
     // This realease data structures not used by the code. Once problem is
-    // build, and you not plan create more problems, you can realease those data
-    // structures. However, underlying data, on entities are not realeased,
-    // since data can be sill acessed form finite element.
+    // build, and you not plan create more problems, you can realease those
+    // data structures. However, underlying data, on entities are not
+    // realeased, since data can be sill acessed form finite element.
     const_cast<RefEntity_multiIndex *>(ref_ents)->clear();
     const_cast<RefElement_multiIndex *>(ref_fe_ents)->clear();
     const_cast<FieldEntity_multiIndex *>(field_ents)->clear();

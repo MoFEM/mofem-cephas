@@ -753,9 +753,9 @@ MoFEMErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel bit,
   MoFEM::Interface &m_field = cOre;
   auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-  auto &ref_ents = ref_ents_ptr->get<ParentEntType_mi_tag>();
-  auto it = ref_ents.lower_bound(type);
-  auto hi_it = ref_ents.upper_bound(type);
+  auto &ref_ents = ref_ents_ptr->get<Ent_Ent_mi_tag>();
+  auto it = ref_ents.lower_bound(get_id_for_min_type(type));
+  auto hi_it = ref_ents.upper_bound(get_id_for_max_type(type));
   std::vector<EntityHandle> ents_vec;
   ents_vec.reserve(std::distance(it, hi_it));
   for (; it != hi_it; it++) {
