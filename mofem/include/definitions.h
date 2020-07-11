@@ -303,6 +303,7 @@ enum VERBOSITY_LEVELS {
 #define MB_ID_MASK (~MB_TYPE_MASK)
 
 #define MAX_DOFS_ON_ENTITY 512 ///< Maximal number of DOFs on entity
+#define MAX_PROCESSORS_NUMBER 1024 ///< Maximal number of processors
 #define DOF_UID_MASK                                                           \
   (MAX_DOFS_ON_ENTITY - 1) ///< Mask for DOF number on entity form UId
 #define ENTITY_UID_MASK (~DOF_UID_MASK)

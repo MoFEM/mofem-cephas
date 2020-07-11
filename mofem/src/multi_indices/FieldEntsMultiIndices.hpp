@@ -166,6 +166,8 @@ struct FieldEntityTmp<0, 0>
    *
    * UId is constructed such that all DOFs are ordered by processor, entity,
    * field.
+   * 
+   * UId is 128 bit 
    *
    * @param  owner_proc               owning processor
    * @param  bit_number               field bit number
@@ -178,18 +180,44 @@ struct FieldEntityTmp<0, 0>
   getGlobalUniqueIdCalculate(const int owner_proc, const char bit_number,
                              const EntityHandle moab_owner_handle,
                              const bool true_if_distributed_mesh) {
-    // assert(bit_number < 32);
-    // assert(owner_proc < 1024);
-    constexpr int ent_shift = 8 * sizeof(EntityHandle);
+    constexpr int dof_shift = 9; // Maximal number of DOFs on entity
+    constexpr int ent_shift = 64;  // EntityHandle size
+    constexpr int proc_shift = 10; // Maximal number of 1024 processors
     if (true_if_distributed_mesh)
-      return (static_cast<UId>(moab_owner_handle) |
-              static_cast<UId>(owner_proc) << 5 |
-              static_cast<UId>(bit_number) << 5 + ent_shift)
-             << 9;
+      return
+
+          (static_cast<UId>(moab_owner_handle) |
+           static_cast<UId>(owner_proc) << ent_shift |
+           static_cast<UId>(bit_number) << proc_shift + ent_shift)
+          << dof_shift;
     else
-      return (static_cast<UId>(moab_owner_handle) | static_cast<UId>(bit_number)
-                                                        << 5 + ent_shift)
-             << 9;
+      return
+
+          (static_cast<UId>(moab_owner_handle) | static_cast<UId>(bit_number)
+                                                     << proc_shift + ent_shift)
+          << dof_shift;
+  }
+
+  static inline UId getLoBitNumberUId(const char bit_number) {
+    constexpr int dof_shift = 9;   // Maximal number of DOFs on entity
+    constexpr int ent_shift = 64;  // EntityHandle size
+    constexpr int proc_shift = 10; // Maximal number of 1024 processors
+    return
+
+        static_cast<UId>(bit_number) << dof_shift + ent_shift + proc_shift;
+  }
+
+  static inline UId getHiBitNumberUId(const char bit_number) {
+    constexpr int dof_shift = 9;   // Maximal number of DOFs on entity
+    constexpr int ent_shift = 64;  // EntityHandle size
+    constexpr int proc_shift = 10; // Maximal number of 1024 processors
+
+    return static_cast<UId>(MAX_DOFS_ON_ENTITY - 1) |
+           static_cast<UId>(std::numeric_limits<EntityHandle>::max())
+               << dof_shift |
+           static_cast<UId>(MAX_PROCESSORS_NUMBER - 1)
+               << dof_shift + ent_shift |
+           static_cast<UId>(bit_number) << dof_shift + proc_shift + ent_shift;
   }
 
   /**
