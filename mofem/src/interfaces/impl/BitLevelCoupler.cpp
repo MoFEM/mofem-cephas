@@ -223,9 +223,10 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesVerticesOnTets(
   // find parents of all nodes, if node has no parent then tetrahedral
   // containing that node is searched  node on tetrahedra my by part of face or
   // edge on that tetrahedral, this need to be verified
-  RefEntity_multiIndex::index<EntType_mi_tag>::type::iterator it, hi_it;
-  it = refined_ptr->get<EntType_mi_tag>().lower_bound(MBVERTEX);
-  hi_it = refined_ptr->get<EntType_mi_tag>().upper_bound(MBVERTEX);
+  auto it = refined_ptr->get<Ent_mi_tag>().lower_bound(
+      get_id_for_min_type<MBVERTEX>());
+  auto hi_it = refined_ptr->get<Ent_mi_tag>().upper_bound(
+      get_id_for_max_type<MBVERTEX>());
 
   for (; it != hi_it; it++) {
 

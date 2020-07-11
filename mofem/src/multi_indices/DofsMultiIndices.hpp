@@ -465,10 +465,6 @@ typedef multi_index_container<
             const_mem_fun<FEDofEntity::interface_type_Field, boost::string_ref,
                           &FEDofEntity::getNameRef>>,
 
-        ordered_non_unique<tag<EntType_mi_tag>,
-                           const_mem_fun<FEDofEntity::interface_type_RefEntity,
-                                         EntityType, &FEDofEntity::getEntType>>,
-
         ordered_non_unique<
             tag<Composite_Name_And_Type_mi_tag>,
             composite_key<

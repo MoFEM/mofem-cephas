@@ -685,11 +685,6 @@ typedef multi_index_container<
             LtBit<BitFEId>>,
 
         ordered_non_unique<
-            tag<EntType_mi_tag>,
-            const_mem_fun<EntFiniteElement::interface_type_RefEntity,
-                          EntityType, &EntFiniteElement::getEntType>>,
-
-        ordered_non_unique<
             tag<Composite_Name_And_Ent_mi_tag>,
             composite_key<
                 EntFiniteElement,

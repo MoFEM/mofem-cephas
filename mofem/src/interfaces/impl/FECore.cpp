@@ -470,9 +470,9 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_bit_ref(
   const BitFEId id = getBitFEId(name);
   const EntityHandle idm = get_finite_element_meshset(id);
 
-  auto &ref_MoFEMFiniteElement = refinedFiniteElements.get<EntType_mi_tag>();
-  auto miit = ref_MoFEMFiniteElement.lower_bound(type);
-  auto hi_miit = ref_MoFEMFiniteElement.upper_bound(type);
+  auto &ref_MoFEMFiniteElement = refinedFiniteElements.get<Ent_mi_tag>();
+  auto miit = ref_MoFEMFiniteElement.lower_bound(get_id_for_min_type(type));
+  auto hi_miit = ref_MoFEMFiniteElement.upper_bound(get_id_for_max_type(type));
 
   int nb_add_fes = 0;
   for (; miit != hi_miit; miit++) {

@@ -190,13 +190,9 @@ template <typename T> struct interface_RefElement : interface_RefEntity<T> {
 typedef multi_index_container<
     boost::shared_ptr<RefElement>,
     // ptrWrapperRefElement,
-    indexed_by<
-        ordered_unique<tag<Ent_mi_tag>,
-                       const_mem_fun<RefElement::interface_type_RefEntity,
-                                     EntityHandle, &RefElement::getRefEnt>>,
-        ordered_non_unique<tag<EntType_mi_tag>,
-                           const_mem_fun<RefElement::interface_type_RefEntity,
-                                         EntityType, &RefElement::getEntType>>>>
+    indexed_by<ordered_unique<
+        tag<Ent_mi_tag>, const_mem_fun<RefElement::interface_type_RefEntity,
+                                       EntityHandle, &RefElement::getRefEnt>>>>
     RefElement_multiIndex;
 
 typedef multi_index_container<

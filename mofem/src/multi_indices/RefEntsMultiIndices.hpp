@@ -23,6 +23,24 @@
 
 namespace MoFEM {
 
+template <EntityType TYPE> inline EntityHandle get_id_for_max_type() {
+  return (static_cast<EntityHandle>(TYPE) << MB_ID_WIDTH) |
+         (~static_cast<EntityHandle>(MB_TYPE_MASK));
+};
+
+template <EntityType TYPE> inline EntityHandle get_id_for_min_type() {
+  return (static_cast<EntityHandle>(TYPE) << MB_ID_WIDTH);
+};
+
+inline EntityHandle get_id_for_max_type(const EntityType type) {
+  return (static_cast<EntityHandle>(type) << MB_ID_WIDTH) |
+         (~static_cast<EntityHandle>(MB_TYPE_MASK));
+};
+
+inline EntityHandle get_id_for_min_type(const EntityType type) {
+  return (static_cast<EntityHandle>(type) << MB_ID_WIDTH);
+};
+
 /**
  * @brief Get the tag ptr object
  *
@@ -55,7 +73,7 @@ struct __attribute__((__packed__)) SideNumber {
   char offset;
   char brother_side_number;
   inline EntityType getEntType() const {
-    return (EntityType)((ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
+    return static_cast<EntityType>((ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
   }
 
   SideNumber(EntityHandle _ent, int _side_number, int _sense, int _offset)
@@ -110,12 +128,12 @@ private:
 
 template <int N> struct RefEntityTmp : public RefEntityTmp<N - 1> {
 
-  using RefEntityTmp<N-1>::RefEntityTmp;
+  using RefEntityTmp<N - 1>::RefEntityTmp;
 
   virtual const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
-    if(auto ptr = basicDataPtr.lock())
+    if (auto ptr = basicDataPtr.lock())
       return ptr;
-    else 
+    else
       return nullptr;
   }
 
@@ -143,20 +161,20 @@ template <> struct RefEntityTmp<0> {
 
   /**
    * @brief Get pointer to basic data struture
-   * 
-   * @return const boost::shared_ptr<BasicEntityData> 
+   *
+   * @return const boost::shared_ptr<BasicEntityData>
    */
   virtual const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
-    if(auto ptr = basicDataPtr.lock())
+    if (auto ptr = basicDataPtr.lock())
       return ptr;
-    else 
+    else
       return nullptr;
   }
 
   /**
    * @brief Get the pointer to reference element
-   * 
-   * @return const boost::shared_ptr<RefElement> 
+   *
+   * @return const boost::shared_ptr<RefElement>
    */
   inline const boost::shared_ptr<RefElement> getRefElementPtr() const {
     if (auto ptr = refElementPtr.lock())
@@ -260,7 +278,8 @@ template <> struct RefEntityTmp<0> {
   /** \brief get pstatus
    * This tag stores various aspects of parallel status in bits; see also
    * define following, to be used in bit mask operations.  If an entity is
-   * not shared with any other processors, the pstatus is 0, otherwise it's > 0
+   * not shared with any other processors, the pstatus is 0, otherwise it's >
+   * 0
    *
    * bit 0: !owned (0=owned, 1=not owned)
    * bit 1: shared (0=not shared, 1=shared)
@@ -459,9 +478,9 @@ template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
       : RefEntityTmp<0>(basic_data_ptr, ent), basicDataPtr(basic_data_ptr) {}
 
   virtual const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
-    if(auto ptr = basicDataPtr.lock())
+    if (auto ptr = basicDataPtr.lock())
       return ptr;
-    else 
+    else
       return nullptr;
   }
 
@@ -495,9 +514,7 @@ template <typename T> struct interface_RefEntity {
   /**
    * @copydoc MoFEM::RefEntityTmp<0>::getSideNumber
    */
-  inline int getSideNumber() const {
-    return this->sPtr->getSideNumber();
-  }
+  inline int getSideNumber() const { return this->sPtr->getSideNumber(); }
 
   /**
    * @copydoc MoFEM::RefEntityTmp<0>::getSideNumberPtr
@@ -616,7 +633,6 @@ template <typename T> struct interface_RefEntity {
  * \param hashed_unique Ent_mi_tag
  * \param ordered_non_unique Meshset_mi_tag
  * \param ordered_non_unique Ent_Ent_mi_tag
- * \param ordered_non_unique EntType_mi_tag
  * \param ordered_non_unique ParentEntType_mi_tag
  * \param ordered_non_unique Composite_EntType_And_ParentEntType_mi_tag
  * \param ordered_non_unique Composite_ParentEnt_And_EntType_mi_tag
@@ -635,13 +651,6 @@ using RefEntity_multiIndex = multi_index_container<
 
             tag<Ent_Ent_mi_tag>,
             const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt>
-
-            >,
-
-        ordered_non_unique<
-
-            tag<EntType_mi_tag>,
-            const_mem_fun<RefEntity, EntityType, &RefEntity::getEntType>
 
             >,
 
@@ -738,7 +747,8 @@ template <class T> struct Entity_update_pcomm_data {
 /** \brief change parent
   * \ingroup ent_multi_indices
   *
-  * Use this function with care. Some other multi-indices can deponent on this.
+  * Use this function with care. Some other multi-indices can deponent on
+  this.
 
   Known dependent multi-indices (verify if that list is full):
   - RefEntity_multiIndex
@@ -784,7 +794,6 @@ struct RefEntity_change_right_shift {
     *(e->getBitRefLevelPtr()) = ((bit & mask) >> shift) | (bit & ~mask);
   };
 };
-
 } // namespace MoFEM
 
 #endif // __REF_ENTSMULTIINDICES_HPP__

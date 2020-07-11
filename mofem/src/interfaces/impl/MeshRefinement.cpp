@@ -336,8 +336,10 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       RefEntByParentAndRefEdges;
   RefElement_multiIndex_parents_view ref_ele_parent_view;
   ref_ele_parent_view.insert(
-      refined_finite_elements_ptr->get<EntType_mi_tag>().lower_bound(MBTET),
-      refined_finite_elements_ptr->get<EntType_mi_tag>().upper_bound(MBTET));
+      refined_finite_elements_ptr->get<Ent_mi_tag>().lower_bound(
+          get_id_for_min_type<MBTET>()),
+      refined_finite_elements_ptr->get<Ent_mi_tag>().upper_bound(
+          get_id_for_max_type<MBTET>()));
   RefEntByParentAndRefEdges &ref_ele_by_parent_and_ref_edges =
       ref_ele_parent_view
           .get<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
@@ -777,8 +779,10 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
       RefEntByParentAndRefEdges;
   RefElement_multiIndex_parents_view ref_ele_parent_view;
   ref_ele_parent_view.insert(
-      refined_finite_elements_ptr->get<EntType_mi_tag>().lower_bound(MBPRISM),
-      refined_finite_elements_ptr->get<EntType_mi_tag>().upper_bound(MBPRISM));
+      refined_finite_elements_ptr->get<Ent_mi_tag>().lower_bound(
+          get_id_for_min_type<MBPRISM>()),
+      refined_finite_elements_ptr->get<Ent_mi_tag>().upper_bound(
+          get_id_for_max_type<MBPRISM>()));
   RefEntByParentAndRefEdges &ref_ele_by_parent_and_ref_edges =
       ref_ele_parent_view
           .get<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
