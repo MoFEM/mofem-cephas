@@ -36,6 +36,14 @@ BitFieldId Core::getBitFieldId(const std::string &name) const {
   return (*miit)->getId();
 }
 
+unsigned int Core::get_field_bit_number(const std::string name) const {
+  auto &set = fIelds.get<FieldName_mi_tag>();
+  auto miit = set.find(name);
+  if (miit == set.end())
+    THROW_MESSAGE("field not in database (top tip: check spelling)");
+  return (*miit)->getBitNumber();
+}
+
 EntityHandle Core::get_field_meshset(const BitFieldId id) const {
   auto &set = fIelds.get<BitFieldId_mi_tag>();
   auto miit = set.find(id);
@@ -44,7 +52,7 @@ EntityHandle Core::get_field_meshset(const BitFieldId id) const {
   return (*miit)->meshSet;
 }
 
-EntityHandle Core::get_field_meshset(const std::string &name) const {
+EntityHandle Core::get_field_meshset(const std::string name) const {
   return get_field_meshset(getBitFieldId(name));
 }
 
@@ -452,12 +460,12 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
                 field_ptr->getName().c_str(), field_ents.size());
 
   // ent view by field id (in set all MoabEnts has the same FieldId)
-  auto eiit =
-      entsFields.get<FieldName_mi_tag>().lower_bound(field_ptr->getNameRef());
+  auto eiit = entsFields.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(field_ptr->getBitNumber()));
   FieldEntity_multiIndex_ent_view ents_id_view;
-  if (eiit != entsFields.get<FieldName_mi_tag>().end()) {
-    auto hi_eiit =
-        entsFields.get<FieldName_mi_tag>().upper_bound(field_ptr->getNameRef());
+  if (eiit != entsFields.get<Unique_mi_tag>().end()) {
+    auto hi_eiit = entsFields.get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getHiBitNumberUId(field_ptr->getBitNumber()));
     std::copy(eiit, hi_eiit, std::back_inserter(ents_id_view));
   }
 
@@ -959,12 +967,12 @@ Core::buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
                 field_ptr->getName().c_str(), ents.size());
 
   // ent view by field id (in set all MoabEnts has the same FieldId)
-  auto eiit =
-      entsFields.get<FieldName_mi_tag>().lower_bound(field_ptr->getNameRef());
+  auto eiit = entsFields.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(field_ptr->getBitNumber()));
   FieldEntity_multiIndex_ent_view ents_id_view;
-  if (eiit != entsFields.get<FieldName_mi_tag>().end()) {
-    auto hi_eiit =
-        entsFields.get<FieldName_mi_tag>().upper_bound(field_ptr->getNameRef());
+  if (eiit != entsFields.get<Unique_mi_tag>().end()) {
+    auto hi_eiit = entsFields.get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getHiBitNumberUId(field_ptr->getBitNumber()));
     std::copy(eiit, hi_eiit, std::back_inserter(ents_id_view));
   }
 
@@ -1434,13 +1442,15 @@ Core::get_problem_finite_elements_entities(const std::string &problem_name,
   MoFEMFunctionReturn(0);
 }
 
-FieldEntityByFieldName::iterator
+FieldEntityByUId::iterator
 Core::get_ent_field_by_name_begin(const std::string &field_name) const {
-  return entsFields.get<FieldName_mi_tag>().lower_bound(field_name);
+  return entsFields.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(get_field_bit_number(field_name)));
 }
-FieldEntityByFieldName::iterator
+FieldEntityByUId::iterator
 Core::get_ent_field_by_name_end(const std::string &field_name) const {
-  return entsFields.get<FieldName_mi_tag>().upper_bound(field_name);
+  return entsFields.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(get_field_bit_number(field_name)));
 }
 DofEntityByFieldName::iterator
 Core::get_dofs_by_name_begin(const std::string &field_name) const {
@@ -1485,8 +1495,17 @@ Core::check_number_of_ents_in_ents_field(const std::string &name) const {
   EntityHandle meshset = (*it)->getMeshset();
   int num_entities;
   CHKERR get_moab().get_number_entities_by_handle(meshset, num_entities);
-  if (entsFields.get<FieldName_mi_tag>().count((*it)->getName()) >
-      (unsigned int)num_entities) {
+
+  auto count_field_ents = [&]() {
+    auto bit_number = (*it)->getBitNumber();
+    auto low_eit = entsFields.get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getLoBitNumberUId(bit_number));
+    auto hi_eit = entsFields.get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getHiBitNumberUId(bit_number));
+    return std::distance(low_eit, hi_eit);
+  };
+
+  if (count_field_ents() > (unsigned int)num_entities) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "not equal number of entities in meshset and field multiindex "
              "< %s >",
@@ -1503,8 +1522,17 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_field() const {
     EntityHandle meshset = it->getMeshset();
     int num_entities;
     CHKERR get_moab().get_number_entities_by_handle(meshset, num_entities);
-    if (entsFields.get<FieldName_mi_tag>().count(it->getName()) >
-        (unsigned int)num_entities) {
+
+    auto count_field_ents = [&]() {
+      auto bit_number = it->getBitNumber();
+      auto low_eit = entsFields.get<Unique_mi_tag>().lower_bound(
+          FieldEntity::getLoBitNumberUId(bit_number));
+      auto hi_eit = entsFields.get<Unique_mi_tag>().lower_bound(
+          FieldEntity::getHiBitNumberUId(bit_number));
+      return std::distance(low_eit, hi_eit);
+    };
+
+    if (count_field_ents() > (unsigned int)num_entities) {
       SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "not equal number of entities in meshset and field "
                "multiindex < %s >",

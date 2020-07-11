@@ -96,8 +96,10 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
   DofEntity_multiIndex_composite_view dof_composite_view;
   dof_composite_view.insert(dof_lo_for_view, dof_hi_for_view);
 
-  auto x_eit = field_ents->get<FieldName_mi_tag>().lower_bound(field_name_x);
-  auto x_eit_hi = field_ents->get<FieldName_mi_tag>().upper_bound(field_name_x);
+  auto x_eit = field_ents->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId((*x_fit)->getBitNumber()));
+  auto x_eit_hi = field_ents->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId((*x_fit)->getBitNumber()));
   for (; x_eit != x_eit_hi; x_eit++) {
     int nb_dofs_on_x_entity = (*x_eit)->getNbDofsOnEnt();
     VectorAdaptor field_data = (*x_eit)->getEntFieldData();

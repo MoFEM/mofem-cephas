@@ -629,8 +629,9 @@ protected:
   MoFEMErrorCode list_dofs_by_field_name(const std::string &name) const;
   MoFEMErrorCode list_fields() const;
   BitFieldId getBitFieldId(const std::string &name) const;
+  unsigned int get_field_bit_number(const std::string name) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
-  EntityHandle get_field_meshset(const std::string &name) const;
+  EntityHandle get_field_meshset(const std::string name) const;
   MoFEMErrorCode get_field_entities_by_dimension(const std::string name,
                                                  int dim, Range &ents) const;
   MoFEMErrorCode get_field_entities_by_type(const std::string name,
@@ -964,9 +965,9 @@ protected:
   const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
   get_ents_elements_adjacency() const;
 
-  FieldEntityByFieldName::iterator
+  FieldEntityByUId::iterator
   get_ent_field_by_name_begin(const std::string &field_name) const;
-  FieldEntityByFieldName::iterator
+  FieldEntityByUId::iterator
   get_ent_field_by_name_end(const std::string &field_name) const;
   DofEntityByFieldName::iterator
   get_dofs_by_name_begin(const std::string &field_name) const;

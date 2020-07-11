@@ -689,8 +689,7 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
   SET_BASIC_METHOD(method, nullptr);
-  auto r = entsFields.get<FieldName_mi_tag>().equal_range(field_name);
-  
+
   auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
   if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
     method.fieldPtr = *field_it;
@@ -698,6 +697,11 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field not found %s",
              field_name.c_str());
   }
+
+  auto lo_eit = entsFields.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId((*field_it)->getBitNumber()));
+  auto hi_eit = entsFields.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
 
   typedef multi_index_container<
       boost::shared_ptr<FieldEntity>,
@@ -708,7 +712,7 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
       FieldEntity_view_multiIndex;
 
   FieldEntity_view_multiIndex ents_view;
-  ents_view.insert(r.first, r.second);
+  ents_view.insert(lo_eit, hi_eit);
 
   method.loopSize = ents_view.size();
   CHKERR method.preProcess();

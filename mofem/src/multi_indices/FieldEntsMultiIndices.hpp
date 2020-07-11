@@ -217,7 +217,7 @@ struct FieldEntityTmp<0, 0>
                << dof_shift |
            static_cast<UId>(MAX_PROCESSORS_NUMBER - 1)
                << dof_shift + ent_shift |
-           static_cast<UId>(bit_number) << dof_shift + proc_shift + ent_shift;
+           static_cast<UId>(bit_number) << dof_shift + ent_shift + proc_shift;
   }
 
   /**
@@ -373,10 +373,6 @@ typedef multi_index_container<
         ordered_unique<tag<Unique_mi_tag>,
                        member<FieldEntity, UId, &FieldEntity::globalUId>>,
         ordered_non_unique<
-            tag<FieldName_mi_tag>,
-            const_mem_fun<FieldEntity::interface_type_Field, boost::string_ref,
-                          &FieldEntity::getNameRef>>,
-        ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt>>,
         ordered_non_unique<
@@ -393,8 +389,7 @@ typedef multi_index_container<
  *
  * \ingroup ent_multi_indices
  */
-typedef FieldEntity_multiIndex::index<FieldName_mi_tag>::type
-    FieldEntityByFieldName;
+using FieldEntityByUId = FieldEntity_multiIndex::index<Unique_mi_tag>::type;
 
 typedef multi_index_container<
     boost::shared_ptr<FieldEntity>,

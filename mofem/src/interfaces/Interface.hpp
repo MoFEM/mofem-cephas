@@ -496,6 +496,15 @@ struct CoreInterface : public UnknownInterface {
   virtual MoFEMErrorCode build_field(const std::string field_name,
                                      int verb = DEFAULT_VERBOSITY) = 0;
 
+  /** \brief get field bit number
+  *
+  * \param name of Field
+  * Example:\code
+  auto field_number = mField.get_field_bit_number("DISPLACEMENT");
+  * \endcode
+  */
+  virtual unsigned int get_field_bit_number(const std::string name) const = 0;
+
   /** \brief get field meshset
   *
   * \param name of Field
@@ -503,7 +512,7 @@ struct CoreInterface : public UnknownInterface {
   EntityHandle disp_files_meshset = mField.get_field_meshset("DISPLACEMENT");
   * \endcode
   */
-  virtual EntityHandle get_field_meshset(const std::string &name) const = 0;
+  virtual EntityHandle get_field_meshset(const std::string name) const = 0;
 
   /**
   * \brief get entities in the field by dimension
@@ -1721,7 +1730,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual FieldEntityByFieldName::iterator
+  virtual FieldEntityByUId::iterator
   get_ent_field_by_name_begin(const std::string &field_name) const = 0;
 
   /**
@@ -1735,7 +1744,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual FieldEntityByFieldName::iterator
+  virtual FieldEntityByUId::iterator
   get_ent_field_by_name_end(const std::string &field_name) const = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
