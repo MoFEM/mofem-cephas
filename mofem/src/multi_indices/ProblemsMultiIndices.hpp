@@ -488,34 +488,6 @@ struct Problem {
   IT != PROBLEMPTR->getNumeredDofsColsEnd(NAME);                               \
   IT++
 
-  /// get begin iterator for numeredDofsRows (insted you can use
-  /// #_IT_NUMEREDDOF_ROW_BY_NAME_FOR_LOOP_ for loops)
-  NumeredDofEntityByFieldName::iterator
-  getNumeredDofsRowsBegin(const std::string &name) const {
-    return numeredDofsRows->get<FieldName_mi_tag>().lower_bound(name);
-  }
-
-  /// get end iterator for numeredDofsRows (insted you can use
-  /// #_IT_NUMEREDDOF_ROW_BY_NAME_FOR_LOOP_ for loops)
-  NumeredDofEntityByFieldName::iterator
-  getNumeredDofsRowsEnd(const std::string &name) const {
-    return numeredDofsRows->get<FieldName_mi_tag>().upper_bound(name);
-  }
-
-  /// get begin iterator for numeredDofsCols (insted you can use
-  /// #_IT_NUMEREDDOF_COL_BY_NAME_FOR_LOOP_ for loops)
-  NumeredDofEntityByFieldName::iterator
-  getNumeredDofsColsBegin(const std::string &name) const {
-    return numeredDofsCols->get<FieldName_mi_tag>().lower_bound(name);
-  }
-
-  /// get end iterator for numeredDofsCols (insted you can use
-  /// #_IT_NUMEREDDOF_COL_BY_NAME_FOR_LOOP_ for loops)
-  NumeredDofEntityByFieldName::iterator
-  getNumeredDofsColsEnd(const std::string &name) const {
-    return numeredDofsCols->get<FieldName_mi_tag>().upper_bound(name);
-  }
-
 /**
  * \brief use with loops to iterate row DOFs
  * \ingroup problems_multi_indices

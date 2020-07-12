@@ -933,45 +933,9 @@ struct FiniteElement_change_bit_reset {
 #define _IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR, IT)                   \
   _IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR, IT)
 
-/**
- * Loop over DOFs in row on element for particular filed
- * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
- * @param  NAME  name of filed
- * @param  IT    iterator
- * @return       user return in
- * for(_IT_FENUMEREDDOF_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT)) \ingroup
- * fe_multi_indices
- */
-#define _IT_FENUMEREDDOF_BY_NAME_ROW_FOR_LOOP_(FEPTR, NAME, IT)                \
-  auto IT = FEPTR->getRowDofsPtr()->get<FieldName_mi_tag>().lower_bound(NAME); \
-  IT != FEPTR->getRowDofsPtr()->get<FieldName_mi_tag>().upper_bound(NAME);     \
-  IT++
-
-/// \deprecated use _IT_FENUMEREDDOF_BY_NAME_ROW_FOR_LOOP_ instead
-#define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_ROW_FOR_LOOP_(FEPTR, NAME, IT)     \
-  _IT_FENUMEREDDOF_BY_NAME_ROW_FOR_LOOP_(FEPTR, NAME, IT)
-
-/**
- * Loop over DOFs in col on element for particular filed
- * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
- * @param  NAME  name of filed
- * @param  IT    iterator
- * @return       user return in
- * for(_IT_FENUMEREDDOF_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT)) \ingroup
- * fe_multi_indices
- */
-#define _IT_FENUMEREDDOF_BY_NAME_COL_FOR_LOOP_(FEPTR, NAME, IT)                \
-  auto IT = FEPTR->getColDofsPtr()->get<FieldName_mi_tag>().lower_bound(NAME); \
-  IT != FEPTR->getColDofsPtr()->get<FieldName_mi_tag>().upper_bound(NAME);     \
-  IT++
-
-/// \deprecated use _IT_FENUMEREDDOF_BY_NAME_COL_FOR_LOOP_ instead
-#define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_COL_FOR_LOOP_(FEPTR, NAME, IT)     \
-  _IT_FENUMEREDDOF_BY_NAME_COL_FOR_LOOP_(FEPTR, NAME, IT)
-
 #endif // __FEMMULTIINDICES_HPP__
 
-/***************************************************************************/ /**
-                                                                               * \defgroup fe_multi_indices Finite elements structures and multi-indices
-                                                                               * \ingroup mofem
-                                                                               ******************************************************************************/
+/**
+ * \defgroup fe_multi_indices Finite elements structures and multi-indices
+ * \ingroup mofem
+ **/
