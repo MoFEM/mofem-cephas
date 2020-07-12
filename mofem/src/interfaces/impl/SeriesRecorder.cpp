@@ -203,16 +203,19 @@ MoFEMErrorCode SeriesRecorder::record_field(const std::string &serie_name,
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit =
       sEries.get<SeriesName_mi_tag>().find(serie_name);
   if (sit == sEries.get<SeriesName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, 1, "serie recorder <%s> not exist",
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "serie recorder <%s> not exist",
              serie_name.c_str());
   }
-  DofEntityByFieldName::iterator dit =
-      dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name);
-  if (dit == dofs_ptr->get<FieldName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF, 1, "field <%s> not exist", field_name.c_str());
-  }
-  DofEntityByFieldName::iterator hi_dit =
-      dofs_ptr->get<FieldName_mi_tag>().upper_bound(field_name);
+
+  const auto bit_number = m_field.get_field_bit_number(field_name);
+
+  auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(bit_number));
+  if (dit == dofs_ptr->get<Unique_mi_tag>().end())
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "field <%s> not exist", field_name.c_str());
+  auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(bit_number));
+
   for (; dit != hi_dit; dit++) {
     const BitRefLevel &dof_bit = (*dit)->getBitRefLevel();
     if ((dof_bit & mask) != dof_bit)
