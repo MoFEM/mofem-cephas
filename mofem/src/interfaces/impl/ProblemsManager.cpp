@@ -724,12 +724,14 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     for (Field_multiIndex::iterator fit = fields_ptr->begin();
          fit != fields_ptr->end(); fit++) {
       if ((fit->get()->getId() & (fields_ids_row | fields_ids_col)).any()) {
-        for (DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit =
-                 dofs_field_ptr->get<FieldName_mi_tag>().lower_bound(
-                     fit->get()->getName());
-             dit != dofs_field_ptr->get<FieldName_mi_tag>().upper_bound(
-                        fit->get()->getName());
-             dit++) {
+
+        auto dit = dofs_field_ptr->get<Unique_mi_tag>().lower_bound(
+            FieldEntity::getLoBitNumberUId((*fit)->getBitNumber()));
+        auto hi_dit = dofs_field_ptr->get<Unique_mi_tag>().lower_bound(
+            FieldEntity::getHiBitNumberUId((*fit)->getBitNumber()));
+
+        for (; dit != hi_dit; dit++) {
+
           const int owner_proc = dit->get()->getOwnerProc();
           if (owner_proc != m_field.get_comm_rank()) {
             const unsigned char pstatus = dit->get()->getPStatus();
@@ -1311,10 +1313,11 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
         out_problem_it->getColDofsSequence()->emplace_back(dofs_array);
 
       // create elements objects
-      auto dit =
-          main_problem_dofs[ss]->get<FieldName_mi_tag>().lower_bound(field);
-      auto hi_dit =
-          main_problem_dofs[ss]->get<FieldName_mi_tag>().upper_bound(field);
+      auto bit_number = m_field.get_field_bit_number(field);
+      auto dit = main_problem_dofs[ss]->get<Unique_mi_tag>().lower_bound(
+          FieldEntity::getLoBitNumberUId(bit_number));
+      auto hi_dit = main_problem_dofs[ss]->get<Unique_mi_tag>().lower_bound(
+          FieldEntity::getHiBitNumberUId(bit_number));
 
       auto add_dit_to_dofs_array = [&](auto &dit) {
         dofs_array->emplace_back(
