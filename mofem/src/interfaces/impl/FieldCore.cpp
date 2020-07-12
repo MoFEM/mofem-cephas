@@ -1039,9 +1039,10 @@ Core::buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
 
   if (verb > VERBOSE) {
     auto lo_dof =
-        dofsField.get<FieldName_mi_tag>().lower_bound(field_ptr->getNameRef());
-    auto hi_dof =
-        dofsField.get<FieldName_mi_tag>().upper_bound(field_ptr->getNameRef());
+        dofsField.get<Unique_mi_tag>().lower_bound(
+          FieldEntity::getLoBitNumberUId(field_ptr->getBitNumber()));
+    auto hi_dof = dofsField.get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getHiBitNumberUId(field_ptr->getBitNumber()));
     for (; lo_dof != hi_dof; lo_dof++)
       MOFEM_LOG("SYNC", Sev::noisy) << **lo_dof;
     MOFEM_LOG_SYNCHORMISE(cOmm);

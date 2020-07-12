@@ -134,9 +134,12 @@ MoFEMErrorCode
 EdgeElementForcesAndSourcesCoreBase::calculateHoCoordsAtIntegrationPts() {
   MoFEMFunctionBegin;
 
-  auto &data_dofs = getDataDofs();
-  if (data_dofs.get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
-      data_dofs.get<FieldName_mi_tag>().end()) {
+  auto field_it =
+      fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
+  BitFieldId field_id = (*field_it)->getId();
+
+  if (field_it != fieldsPtr->get<FieldName_mi_tag>().end() &&
+      (numeredEntFiniteElementPtr->getBitFieldIdData() & field_id).any()) {
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
     CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
     CHKERR opGetHoTangentOnEdge.opRhs(dataH1);

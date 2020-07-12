@@ -89,10 +89,11 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
           >>
       DofEntity_multiIndex_composite_view;
 
-  auto dof_lo_for_view =
-      dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name_y);
-  auto dof_hi_for_view =
-      dofs_ptr->get<FieldName_mi_tag>().upper_bound(field_name_y);
+  auto dof_lo_for_view = dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId((*y_fit)->getBitNumber()));
+  auto dof_hi_for_view = dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId((*y_fit)->getBitNumber()));
+      
   DofEntity_multiIndex_composite_view dof_composite_view;
   dof_composite_view.insert(dof_lo_for_view, dof_hi_for_view);
 

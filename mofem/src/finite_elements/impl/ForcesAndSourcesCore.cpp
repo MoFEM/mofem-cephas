@@ -297,8 +297,11 @@ ForcesAndSourcesCore::getNoFieldIndices(const std::string &field_name,
                                         FENumeredDofEntity_multiIndex &dofs,
                                         VectorInt &indices) const {
   MoFEMFunctionBeginHot;
-  auto dit = dofs.get<FieldName_mi_tag>().lower_bound(field_name);
-  auto hi_dit = dofs.get<FieldName_mi_tag>().upper_bound(field_name);
+  auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+  auto dit = dofs.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId((*field_it)->getBitNumber()));
+  auto hi_dit = dofs.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
   indices.resize(std::distance(dit, hi_dit));
   for (; dit != hi_dit; dit++) {
     int idx = (*dit)->getPetscGlobalDofIdx();
@@ -626,8 +629,13 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
     const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
     VectorDouble &ent_field_data, VectorDofs &ent_field_dofs) const {
   MoFEMFunctionBeginHot;
-  auto dit = dofs.get<FieldName_mi_tag>().lower_bound(field_name);
-  auto hi_dit = dofs.get<FieldName_mi_tag>().upper_bound(field_name);
+  auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+
+  auto dit = dofs.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId((*field_it)->getBitNumber()));
+  auto hi_dit = dofs.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
+      
   int size = std::distance(dit, hi_dit);
   ent_field_data.resize(size, false);
   ent_field_dofs.resize(size, false);

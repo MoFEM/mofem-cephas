@@ -453,19 +453,18 @@ typedef multi_index_container<
         >>
     FEDofEntity_multiIndex;
 
-/** \brief Finite element DoF multi-index by field name
+/** \brief Dof entity multi-index by UId and entity
  *
  * \ingroup dof_multi_indices
  */
-typedef FEDofEntity_multiIndex::index<FieldName_mi_tag>::type
-    FEDofEntityByFieldName;
+using FEDofEntityByUId = FEDofEntity_multiIndex::index<Unique_mi_tag>::type;
 
 /** \brief Dof entity multi-index by field name and entity
  *
  * \ingroup dof_multi_indices
  */
-typedef FEDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type
-    FEDofEntityByNameAndEnt;
+using FEDofEntityByNameAndEnt =
+    FEDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type;
 
 /**
  * @relates multi_index_container
@@ -499,33 +498,26 @@ typedef multi_index_container<
                               EntityHandle, &FENumeredDofEntity::getEnt>>>>>
     FENumeredDofEntity_multiIndex;
 
-/** \brief Finite element numbered DoF multi-index by field name
- *
- * \ingroup dof_multi_indices
- */
-typedef FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type
-    FENumeredDofEntityByFieldName;
-
 /** \brief Dof entity multi-index by field name and entity
  *
  * \ingroup dof_multi_indices
  */
-typedef FENumeredDofEntity_multiIndex::index<
-    Composite_Name_And_Ent_mi_tag>::type FENumeredDofEntityByNameAndEnt;
+using FENumeredDofEntityByNameAndEnt =
+    FENumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type;
 
 /** \brief Dof entity multi-index by UId
  *
  * \ingroup dof_multi_indices
  */
-typedef FENumeredDofEntity_multiIndex::index<Unique_mi_tag>::type
-    FENumeredDofEntityByUId;
+using FENumeredDofEntityByUId =
+    FENumeredDofEntity_multiIndex::index<Unique_mi_tag>::type;
 
 /** \brief Numbered DoF multi-index by entity
  *
  * \ingroup dof_multi_indices
  */
-typedef FENumeredDofEntity_multiIndex::index<Ent_mi_tag>::type
-    FENumeredDofEntityByEnt;
+using FENumeredDofEntityByEnt =
+    FENumeredDofEntity_multiIndex::index<Ent_mi_tag>::type;
 
 /**
  * @relates multi_index_container

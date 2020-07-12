@@ -349,19 +349,14 @@ FaceElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
 
 MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
   MoFEMFunctionBegin;
-  auto &data_dofs = getDataDofs();
-  // Check if field for high-order geometry is set and if it is set calculate
-  // higher-order normals and face tangent vectors.
-  if (data_dofs.get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
-      data_dofs.get<FieldName_mi_tag>().end()) {
 
-    const Field *field_struture =
-        mField.get_field_structure(meshPositionsFieldName);
-    BitFieldId id = field_struture->getId();
+  auto field_it =
+      fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
+  BitFieldId field_id = (*field_it)->getId();
 
-    if ((numeredEntFiniteElementPtr->getBitFieldIdData() & id).none())
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-              "no MESH_NODE_POSITIONS in element data");
+  // Check if field meshPositionsFieldName exist
+  if (field_it != fieldsPtr->get<FieldName_mi_tag>().end() &&
+      (numeredEntFiniteElementPtr->getBitFieldIdData() & field_id).any()) {
 
     // Calculate normal for high-order geometry
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
@@ -369,7 +364,6 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
     CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
     CHKERR opHOCoordsAndNormals.opRhs(dataH1);
     CHKERR opHOCoordsAndNormals.calculateNormals();
-
   } else if (numeredEntFiniteElementPtr->getEntType() == MBTRI) {
     hoCoordsAtGaussPts.resize(0, 0, false);
     normalsAtGaussPts.resize(0, 0, false);

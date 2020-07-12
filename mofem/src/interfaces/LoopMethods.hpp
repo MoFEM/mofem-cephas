@@ -284,6 +284,15 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
       *adjacenciesPtr; ///< raw pointer to container to adjacencies between dofs
                        ///< and finite elements
 
+  inline unsigned int getFieldBitNumber(std::string field_name) const {
+    auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+    if(field_it != fieldsPtr->get<FieldName_mi_tag>().end())
+      return (*field_it)->getBitNumber();
+    else
+      return BITFEID_SIZE;
+  }
+
+
   /**
    * @brief Copy data from other base method to this base method
    *
@@ -455,6 +464,7 @@ struct FEMethod : public BasicMethod {
                                           const EntityType type) const {
     return index.lower_bound(boost::make_tuple(field_name, type));
   }
+
   template <class MULTIINDEX>
   typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,
                                         const std::string &field_name,
@@ -513,30 +523,36 @@ struct FEMethod : public BasicMethod {
  * \ingroup mofem_loops
  */
 #define _IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                     \
-  auto IT = FE->get_begin<FENumeredDofEntityByFieldName>(                      \
-      FE->rowPtr->get<FieldName_mi_tag>(), NAME);                              \
-  IT != FE->get_end<FENumeredDofEntityByFieldName>(                            \
-            FE->rowPtr->get<FieldName_mi_tag>(), NAME);                        \
+  auto IT = FE->get_begin<FENumeredDofEntityByUId>(                            \
+      FE->rowPtr->get<Unique_mi_tag>(),                                        \
+      FieldEntity::getLoBitNumberUId(getFieldBitNumber(NAME)));                \
+  IT != FE->get_end<FENumeredDofEntityByUId>(                                  \
+            FE->rowPtr->get<Unique_mi_tag>(),                                  \
+            FieldEntity::getHiBitNumberUId(getFieldBitNumber(NAME)));          \
   IT++
 
 /** \brief loop over all dofs which are on a particular FE column and field
  * \ingroup mofem_loops
  */
 #define _IT_GET_FECOL_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                     \
-  auto IT = FE->get_begin<FENumeredDofEntityByFieldName>(                      \
-      FE->colPtr->get<FieldName_mi_tag>(), NAME);                              \
-  IT != FE->get_end<FENumeredDofEntityByFieldName>(                            \
-            FE->colPtr->get<FieldName_mi_tag>(), NAME);                        \
+  auto IT = FE->get_begin<FENumeredDofEntityByUId>(                            \
+      FE->colPtr->get<Unique_mi_tag>(),                                        \
+      FieldEntity::getLoBitNumberUId(getFieldBitNumber(NAME)));                \
+  IT != FE->get_end<FENumeredDofEntityByUId>(                                  \
+            FE->colPtr->get<Unique_mi_tag>(),                                  \
+            FieldEntity::getHiBitNumberUId(getFieldBitNumber(NAME)));          \
   IT++
 
 /** \brief loop over all dofs which are on a particular FE data and field
  * \ingroup mofem_loops
  */
 #define _IT_GET_FEDATA_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                    \
-  auto IT = FE->get_begin<FEDofEntityByFieldName>(                             \
-      FE->dataPtr->get<FieldName_mi_tag>(), NAME);                             \
-  IT != FE->get_end<FEDofEntityByFieldName>(                                   \
-            FE->dataPtr->get<FieldName_mi_tag>(), NAME);                       \
+  auto IT = FE->get_begin<FEDofEntityByUId>(                                   \
+      FE->dataPtr->get<Unique_mi_tag>(),                                       \
+      FieldEntity::getLoBitNumberUId(getFieldBitNumber(NAME)));                \
+  IT != FE->get_end<FEDofEntityByUId>(                                         \
+            FE->dataPtr->get<Unique_mi_tag>(),                                 \
+            FieldEntity::getHiBitNumberUId(getFieldBitNumber(NAME)));          \
   IT++
 };
 
