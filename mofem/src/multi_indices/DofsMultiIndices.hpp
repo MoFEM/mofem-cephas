@@ -610,29 +610,29 @@ typedef NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type
  *
  * \ingroup dof_multi_indices
  */
-typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type
-    NumeredDofEntityByUId;
+using NumeredDofEntityByUId =
+    NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type;
 
 /** \brief Numbered DoF multi-index by local index
  *
  * \ingroup dof_multi_indices
  */
-typedef NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type
-    NumeredDofEntityByLocalIdx;
+using NumeredDofEntityByLocalIdx =
+    NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type;
 
 /** \brief Numbered DoF multi-index by entity
  *
  * \ingroup dof_multi_indices
  */
-typedef NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type
-    NumeredDofEntityByEnt;
+using NumeredDofEntityByEnt =
+    NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type;
 
 /** \brief Numbered DoF multi-index by name entity and partition
  *
  * \ingroup dof_multi_indices
  */
-typedef NumeredDofEntity_multiIndex::index<
-    Composite_Name_Ent_And_Part_mi_tag>::type NumeredDofEntityByNameEntAndPart;
+using NumeredDofEntityByNameEntAndPart = NumeredDofEntity_multiIndex::index<
+    Composite_Name_Ent_And_Part_mi_tag>::type;
 
 typedef multi_index_container<
     boost::shared_ptr<NumeredDofEntity>,

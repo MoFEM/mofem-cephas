@@ -395,34 +395,38 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
   auto fields_ptr = m_field.get_fields();
   auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
-  typedef NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type DofsByName;
-  DofsByName *dofs;
+  using DofsByUId = NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type;
+  DofsByUId *dofs;
+
   switch (rc) {
   case ROW:
-    dofs = const_cast<DofsByName *>(
-        &problem_ptr->numeredDofsRows->get<FieldName_mi_tag>());
+    dofs = const_cast<DofsByUId *>(
+        &problem_ptr->numeredDofsRows->get<Unique_mi_tag>());
     break;
   case COL:
-    dofs = const_cast<DofsByName *>(
-        &problem_ptr->numeredDofsCols->get<FieldName_mi_tag>());
+    dofs = const_cast<DofsByUId *>(
+        &problem_ptr->numeredDofsCols->get<Unique_mi_tag>());
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
   }
-  Field_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit =
-      fields_ptr->get<FieldName_mi_tag>().find(cpy_field_name);
+
+  auto cpy_fit = fields_ptr->get<FieldName_mi_tag>().find(cpy_field_name);
   if (cpy_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "cpy field < %s > not found, (top tip: check spelling)",
              cpy_field_name.c_str());
   }
-  DofsByName::iterator miit = dofs->lower_bound(field_name);
+  auto miit = dofs->lower_bound(
+      FieldEntity::getLoBitNumberUId(m_field.get_field_bit_number(field_name)));
   if (miit == dofs->end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "cpy field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
   }
-  DofsByName::iterator hi_miit = dofs->upper_bound(field_name);
+  auto hi_miit = dofs->upper_bound(
+      FieldEntity::getHiBitNumberUId(m_field.get_field_bit_number(field_name)));
+
   if ((*miit)->getSpace() != (*cpy_fit)->getSpace()) {
     SETERRQ4(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "fields have to have same space (%s) %s != (%s) %s",
@@ -525,19 +529,18 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
   auto dofs_ptr = m_field.get_dofs();
   auto *field_ents = m_field.get_field_ents();
   MoFEMFunctionBegin;
-  typedef NumeredDofEntityByFieldName DofsByName;
-  DofsByName *dofs;
+  NumeredDofEntityByUId *dofs;
   DofIdx nb_dofs;
   switch (rc) {
   case ROW:
     nb_dofs = problem_ptr->getNbDofsRow();
-    dofs = const_cast<DofsByName *>(
-        &problem_ptr->numeredDofsRows->get<FieldName_mi_tag>());
+    dofs = const_cast<NumeredDofEntityByUId *>(
+        &problem_ptr->numeredDofsRows->get<Unique_mi_tag>());
     break;
   case COL:
     nb_dofs = problem_ptr->getNbDofsCol();
-    dofs = const_cast<DofsByName *>(
-        &problem_ptr->numeredDofsCols->get<FieldName_mi_tag>());
+    dofs = const_cast<NumeredDofEntityByUId *>(
+        &problem_ptr->numeredDofsCols->get<Unique_mi_tag>());
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "not implemented");
@@ -548,13 +551,15 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
              "cpy field < %s > not found, (top tip: check spelling)",
              cpy_field_name.c_str());
   }
-  auto miit = dofs->lower_bound(field_name);
+  auto miit = dofs->lower_bound(
+      FieldEntity::getLoBitNumberUId(m_field.get_field_bit_number(field_name)));
   if (miit == dofs->end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "problem field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
   }
-  auto hi_miit = dofs->upper_bound(field_name);
+  auto hi_miit = dofs->upper_bound(
+      FieldEntity::getHiBitNumberUId(m_field.get_field_bit_number(field_name)));
   if ((*miit)->getSpace() != (*cpy_fit)->getSpace()) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "fields have to have same space");
