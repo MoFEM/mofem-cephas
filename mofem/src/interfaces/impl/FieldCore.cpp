@@ -1400,8 +1400,10 @@ MoFEMErrorCode CoreTmp<-1>::build_fields(int verb) {
 MoFEMErrorCode
 Core::list_dofs_by_field_name(const std::string &field_name) const {
   FieldCoreFunctionBegin;
-  auto dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
-  auto hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
+  auto dit = dofsField.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(get_field_bit_number((field_name))));
+  auto hi_dit = dofsField.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(get_field_bit_number(field_name)));
   MOFEM_LOG("SYNC", Sev::inform) << "List DOFs:";
   for (; dit != hi_dit; dit++)
     MOFEM_LOG("SYNC", Sev::inform) << *dit;
@@ -1453,13 +1455,15 @@ Core::get_ent_field_by_name_end(const std::string &field_name) const {
   return entsFields.get<Unique_mi_tag>().upper_bound(
       FieldEntity::getHiBitNumberUId(get_field_bit_number(field_name)));
 }
-DofEntityByFieldName::iterator
+DofEntityByUId::iterator
 Core::get_dofs_by_name_begin(const std::string &field_name) const {
-  return dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
+  return dofsField.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(get_field_bit_number(field_name)));
 }
-DofEntityByFieldName::iterator
+DofEntityByUId::iterator
 Core::get_dofs_by_name_end(const std::string &field_name) const {
-  return dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
+  return dofsField.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(get_field_bit_number(field_name)));
 }
 DofEntityByNameAndEnt::iterator
 Core::get_dofs_by_name_and_ent_begin(const std::string &field_name,

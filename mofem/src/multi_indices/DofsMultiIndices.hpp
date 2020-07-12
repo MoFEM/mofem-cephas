@@ -346,10 +346,10 @@ typedef multi_index_container<
         ordered_non_unique<tag<Unique_Ent_mi_tag>,
                            const_mem_fun<DofEntity, const UId &,
                                          &DofEntity::getEntGlobalUniqueId>>,
-        ordered_non_unique<
-            tag<FieldName_mi_tag>,
-            const_mem_fun<DofEntity::interface_type_Field, boost::string_ref,
-                          &DofEntity::getNameRef>>,
+        // ordered_non_unique<
+        //     tag<FieldName_mi_tag>,
+        //     const_mem_fun<DofEntity::interface_type_Field, boost::string_ref,
+        //                   &DofEntity::getNameRef>>,
         ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>>,
@@ -364,25 +364,20 @@ typedef multi_index_container<
         >>
     DofEntity_multiIndex;
 
-/** \brief Dof multi-index by field name
- *
- * \ingroup dof_multi_indices
- */
-typedef DofEntity_multiIndex::index<FieldName_mi_tag>::type
-    DofEntityByFieldName;
+using DofEntityByUId = DofEntity_multiIndex::index<Unique_mi_tag>::type;
 
 /** \brief Dof multi-index by entity
  *
  * \ingroup dof_multi_indices
  */
-typedef DofEntity_multiIndex::index<Ent_mi_tag>::type DofEntityByEnt;
+using DofEntityByEnt = DofEntity_multiIndex::index<Ent_mi_tag>::type;
 
 /** \brief Dof multi-index by field name and entity
  *
  * \ingroup dof_multi_indices
  */
-typedef DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type
-    DofEntityByNameAndEnt;
+using DofEntityByNameAndEnt =
+    DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type;
 
 /** \brief multi-index view on DofEntity by uid
   \ingroup dof_multi_indices

@@ -969,9 +969,9 @@ protected:
   get_ent_field_by_name_begin(const std::string &field_name) const;
   FieldEntityByUId::iterator
   get_ent_field_by_name_end(const std::string &field_name) const;
-  DofEntityByFieldName::iterator
+  DofEntityByUId::iterator
   get_dofs_by_name_begin(const std::string &field_name) const;
-  DofEntityByFieldName::iterator
+  DofEntityByUId::iterator
   get_dofs_by_name_end(const std::string &field_name) const;
   DofEntityByNameAndEnt::iterator
   get_dofs_by_name_and_ent_begin(const std::string &field_name,

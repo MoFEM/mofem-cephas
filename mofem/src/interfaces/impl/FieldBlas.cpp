@@ -299,8 +299,10 @@ MoFEMErrorCode FieldBlas::setField(const double val,
              field_name.c_str());
   }
 
-  auto dit = dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name);
-  auto hi_dit = dofs_ptr->get<FieldName_mi_tag>().upper_bound(field_name);
+  auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId((*fit)->getBitNumber()));
+  auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId((*fit)->getBitNumber()));
   for (; dit != hi_dit; dit++) {
     (*dit)->getFieldData() = val;
   }
@@ -315,18 +317,18 @@ MoFEMErrorCode FieldBlas::fieldScale(const double alpha,
   MoFEMFunctionBeginHot;
 
   auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
-  if (fit == fields_ptr->get<FieldName_mi_tag>().end()) {
+  if (fit == fields_ptr->get<FieldName_mi_tag>().end()) 
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              " field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
-  }
 
-  DofEntityByFieldName::iterator dit, hi_dit;
-  dit = dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name);
-  hi_dit = dofs_ptr->get<FieldName_mi_tag>().upper_bound(field_name);
-  for (; dit != hi_dit; dit++) {
+  auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId((*fit)->getBitNumber()));
+  auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId((*fit)->getBitNumber()));
+  for (; dit != hi_dit; dit++) 
     (*dit)->getFieldData() *= alpha;
-  }
+  
   MoFEMFunctionReturnHot(0);
 }
 

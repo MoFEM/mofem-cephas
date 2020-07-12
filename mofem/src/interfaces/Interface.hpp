@@ -1767,7 +1767,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByFieldName::iterator
+  virtual DofEntityByUId::iterator
   get_dofs_by_name_begin(const std::string &field_name) const = 0;
 
   /**
@@ -1781,14 +1781,14 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByFieldName::iterator
+  virtual DofEntityByUId::iterator
   get_dofs_by_name_end(const std::string &field_name) const = 0;
 
   /** loop over all dofs from a moFEM field and particular field
    * \ingroup mofem_field
    */
 #define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD, NAME, IT)                 \
-  DofEntityByFieldName::iterator IT = (MFIELD).get_dofs_by_name_begin(NAME);   \
+  DofEntityByUId::iterator IT = (MFIELD).get_dofs_by_name_begin(NAME);         \
   IT != (MFIELD).get_dofs_by_name_end(NAME);                                   \
   IT++
 
