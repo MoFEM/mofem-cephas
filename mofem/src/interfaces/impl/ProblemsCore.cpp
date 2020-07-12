@@ -587,8 +587,10 @@ MoFEMErrorCode Core::loop_dofs(const std::string &field_name, DofMethod &method,
     SETERRQ(cOmm, MOFEM_NOT_FOUND, ("Field not found " + field_name).c_str());
   }
 
-  auto miit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
-  auto hi_miit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
+  auto miit = dofsField.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId((*field_it)->getBitNumber()));
+  auto hi_miit = dofsField.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
 
   method.loopSize = std::distance(miit, hi_miit);
   CHKERR method.preProcess();
