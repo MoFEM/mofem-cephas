@@ -362,22 +362,22 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
 
   NumeredDofEntity_view_multiIndex dofs_view;
 
+  auto bit_number = m_field.get_field_bit_number(x_field_name);
+
   switch (x_rc) {
   case ROW:
-    dofs_view.insert(
-        dofs_view.end(),
-        px_ptr->numeredDofsRows->get<FieldName_mi_tag>().lower_bound(
-            x_field_name),
-        px_ptr->numeredDofsRows->get<FieldName_mi_tag>().upper_bound(
-            x_field_name));
+    dofs_view.insert(dofs_view.end(),
+                     px_ptr->numeredDofsRows->get<Unique_mi_tag>().lower_bound(
+                         FieldEntity::getLoBitNumberUId(bit_number)),
+                     px_ptr->numeredDofsRows->get<Unique_mi_tag>().upper_bound(
+                         FieldEntity::getLoBitNumberUId(bit_number)));
     break;
   case COL:
-    dofs_view.insert(
-        dofs_view.end(),
-        px_ptr->numeredDofsCols->get<FieldName_mi_tag>().lower_bound(
-            x_field_name),
-        px_ptr->numeredDofsCols->get<FieldName_mi_tag>().upper_bound(
-            x_field_name));
+    dofs_view.insert(dofs_view.end(),
+                     px_ptr->numeredDofsCols->get<Unique_mi_tag>().lower_bound(
+                         FieldEntity::getLoBitNumberUId(bit_number)),
+                     px_ptr->numeredDofsCols->get<Unique_mi_tag>().upper_bound(
+                         FieldEntity::getLoBitNumberUId(bit_number)));
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
