@@ -346,10 +346,6 @@ typedef multi_index_container<
         ordered_non_unique<tag<Unique_Ent_mi_tag>,
                            const_mem_fun<DofEntity, const UId &,
                                          &DofEntity::getEntGlobalUniqueId>>,
-        // ordered_non_unique<
-        //     tag<FieldName_mi_tag>,
-        //     const_mem_fun<DofEntity::interface_type_Field, boost::string_ref,
-        //                   &DofEntity::getNameRef>>,
         ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>>,
