@@ -594,7 +594,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
           noalias(ent_field_data) = dof.getEntFieldData();
           ent_field_dofs.resize(nb_dofs_on_ent, false);
           for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
-            ent_field_dofs[ii] = (*dit).get();
+            ent_field_dofs[(*dit)->getEntDofIdx()] = (*dit).get();
             ++dit;
           }
         }
