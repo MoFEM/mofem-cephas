@@ -231,13 +231,6 @@ struct FieldEntityTmp<0, 0>
         this->getBasicDataPtr()->trueIfDistributedMesh());
   }
 
-  // /**
-  //  * \brief Get pointer to RefEntity
-  //  */
-  // inline boost::shared_ptr<RefEntity> &getRefEntityPtr() {
-  //   return this->getRefEntityPtr();
-  // }
-
   /**
    * \brief get hash-map relating dof index on entity with its order
    *
