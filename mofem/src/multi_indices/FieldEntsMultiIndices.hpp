@@ -220,6 +220,14 @@ struct FieldEntityTmp<0, 0>
            static_cast<UId>(bit_number) << dof_shift + ent_shift + proc_shift;
   }
 
+  static inline UId getLoEntBitNumberUId(const UId &uid) {
+    return ((~static_cast<UId>(MAX_DOFS_ON_ENTITY - 1)) & uid);
+  }
+
+  static inline UId getHiEntBitNumberUId(const UId &uid) {
+    return getLoEntBitNumberUId(uid) | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1);
+  }
+
   /**
    * \brief Calculate global UId
    * @return Global UId

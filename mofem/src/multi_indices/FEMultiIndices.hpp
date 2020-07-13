@@ -365,9 +365,11 @@ struct EntFiniteElement
     if (operation_type == moab::Interface::UNION) {
       for (auto &it : fe_ents_view) {
         if (auto e = it.lock()) {
-          auto r = mofem_dofs.template get<Unique_Ent_mi_tag>().equal_range(
-              e->getGlobalUniqueId());
-          dofs_view.insert(r.first, r.second);
+          auto dit = mofem_dofs.template get<Unique_mi_tag>().lower_bound(
+              FieldEntity::getLoEntBitNumberUId(e->getGlobalUniqueId()));
+          auto hi_dit = mofem_dofs.template get<Unique_mi_tag>().upper_bound(
+              FieldEntity::getHiEntBitNumberUId(e->getGlobalUniqueId()));
+          dofs_view.insert(dit, hi_dit);
         }
       }
     } else

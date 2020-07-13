@@ -334,6 +334,7 @@ typedef multi_index_container<
         ordered_unique<
             tag<Unique_mi_tag>,
             const_mem_fun<DofEntity, UId, &DofEntity::getGlobalUniqueId>>,
+
         // non_unique
         ordered_non_unique<
             tag<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>,
@@ -343,12 +344,11 @@ typedef multi_index_container<
                               boost::string_ref, &DofEntity::getNameRef>,
                 const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>,
                 const_mem_fun<DofEntity, DofIdx, &DofEntity::getEntDofIdx>>>,
-        ordered_non_unique<tag<Unique_Ent_mi_tag>,
-                           const_mem_fun<DofEntity, const UId &,
-                                         &DofEntity::getEntGlobalUniqueId>>,
+                
         ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>>,
+
         ordered_non_unique<
             tag<Composite_Name_And_Ent_mi_tag>,
             composite_key<
@@ -517,12 +517,6 @@ typedef multi_index_container<
                           &NumeredDofEntity::getGlobalUniqueId>>,
 
         // non unique
-        ordered_non_unique<
-            tag<Unique_Ent_mi_tag>,
-            const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-                          const UId &,
-                          &NumeredDofEntity::getEntGlobalUniqueId>>,
-
         ordered_non_unique<
             tag<Part_mi_tag>,
             member<NumeredDofEntity, unsigned int, &NumeredDofEntity::pArt>>,

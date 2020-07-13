@@ -502,10 +502,10 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_MESHSET(
 template <int I> struct BuildFiniteElements {
 
   template <typename T1, typename T2>
-  static inline void addToData(T1 &range_dit, T2 &fe_vec) {
+  static inline void addToData(T1 &dit, T1 &hi_dit, T2 &fe_vec) {
     static_assert(I == DATA, "t should be set to DATA");
 
-    for (auto dit = range_dit.first; dit != range_dit.second; ++dit) {
+    for (; dit != hi_dit; ++dit) {
       const EntityHandle dof_ent = dit->get()->getEnt();
       // Fill array
       for (auto fe_it : fe_vec) {
@@ -769,17 +769,21 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
     }
   }
 
-  auto &dofs_by_ent_uid = dofsField.get<Unique_Ent_mi_tag>();
+  auto &dofs_by_ent_uid = dofsField.get<Unique_mi_tag>();
 
   // Loop over hash map, which has all entities on given elemnts
   boost::shared_ptr<SideNumber> side_number_ptr;
   for (auto &mit : ent_uid_and_fe_vec) {
-    auto range_dit = dofs_by_ent_uid.equal_range(*mit.first);
-    if (range_dit.first != range_dit.second) {
-      const BitFieldId field_id = range_dit.first->get()->getId();
+    auto dit = dofs_by_ent_uid.lower_bound(
+        FieldEntity::getLoEntBitNumberUId(*mit.first));
+    auto hi_dit = dofs_by_ent_uid.upper_bound(
+        FieldEntity::getHiEntBitNumberUId(*mit.first));
+    if (std::distance(dit, hi_dit)) {
+      const BitFieldId field_id = (*dit)->getId();
       if ((field_id & fe_fields[DATA]).any())
-        BuildFiniteElements<DATA>::addToData(range_dit, mit.second);
+        BuildFiniteElements<DATA>::addToData(dit, hi_dit, mit.second);
     }
+
   }
 
   BuildFiniteElements<DATA>::emplaceHint(processed_fes);
