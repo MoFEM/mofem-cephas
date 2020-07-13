@@ -1,5 +1,6 @@
 /** \file AdjacencyMultiIndices.hpp
- * \brief Myltindex containes, data structures for mofem adjacencies and other low-level functions
+ * \brief Myltindex containes, data structures for mofem adjacencies and other
+ * low-level functions
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -13,18 +14,18 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __ADJACENCYMULTIINDICES_HPP__
 #define __ADJACENCYMULTIINDICES_HPP__
 
-
 namespace MoFEM {
 
 /**
-  * \brief FieldEntityEntFiniteElementAdjacencyMap of mofem finite element and entities
-  *
-  */
+ * \brief FieldEntityEntFiniteElementAdjacencyMap of mofem finite element and
+ * entities
+ *
+ */
 struct FieldEntityEntFiniteElementAdjacencyMap {
   unsigned int byWhat;                              ///< see options \ref ByWhat
   const boost::shared_ptr<FieldEntity> entFieldPtr; ///< field entity
@@ -58,7 +59,9 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
   /**
    * \brief get entity meshset carrying its field
    */
-  inline EntityHandle getEntMeshset() const { return entFieldPtr->getMeshset(); }
+  inline EntityHandle getEntMeshset() const {
+    return entFieldPtr->getMeshset();
+  }
 
   /**
    * \brief get entity handle
@@ -75,70 +78,61 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
    */
   BitFEId getBitFEId() const { return entFePtr->getId(); }
 
-  friend std::ostream& operator<<(std::ostream& os,const FieldEntityEntFiniteElementAdjacencyMap &e);
+  friend std::ostream &
+  operator<<(std::ostream &os,
+             const FieldEntityEntFiniteElementAdjacencyMap &e);
 };
 
 /**
  * @relates multi_index_container
- * \brief MultiIndex container keeps Adjacencies Element and dof entities adjacencies and vice versa.
+ * \brief MultiIndex container keeps Adjacencies Element and dof entities
+ adjacencies and vice versa.
 
  */
 typedef multi_index_container<
-  FieldEntityEntFiniteElementAdjacencyMap,
-  indexed_by<
-    ordered_unique<
-      tag<Composite_Unique_mi_tag>,
-      composite_key<
-	      FieldEntityEntFiniteElementAdjacencyMap,
-	      const_mem_fun<
-          FieldEntityEntFiniteElementAdjacencyMap,UId,
-          &FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId
-        >,
-	      const_mem_fun<
-          FieldEntityEntFiniteElementAdjacencyMap,UId,
-          &FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId
-        >
-      >
-    >,
-    ordered_non_unique<
-      tag<Unique_mi_tag>,
-      const_mem_fun<
-        FieldEntityEntFiniteElementAdjacencyMap,UId,
-        &FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId
-      >
-    >,
-    ordered_non_unique<
-      tag<FE_Unique_mi_tag>,
-      const_mem_fun<
-        FieldEntityEntFiniteElementAdjacencyMap,UId,
-        &FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId
-      >
-    >,
-    ordered_non_unique<
-      tag<FEEnt_mi_tag>,
-      const_mem_fun<
-        FieldEntityEntFiniteElementAdjacencyMap,EntityHandle,
-        &FieldEntityEntFiniteElementAdjacencyMap::getFeHandle
-      >
-    >,
-    ordered_non_unique<
-      tag<Ent_mi_tag>,
-      const_mem_fun<
-        FieldEntityEntFiniteElementAdjacencyMap,EntityHandle,
-        &FieldEntityEntFiniteElementAdjacencyMap::getEntHandle
-      >
-    >
-  >
-> FieldEntityEntFiniteElementAdjacencyMap_multiIndex;
+    FieldEntityEntFiniteElementAdjacencyMap,
+    indexed_by<
+        ordered_unique<
+            tag<Composite_Unique_mi_tag>,
+            composite_key<
+                FieldEntityEntFiniteElementAdjacencyMap,
+                const_mem_fun<
+                    FieldEntityEntFiniteElementAdjacencyMap, UId,
+                    &FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId>,
+                const_mem_fun<
+                    FieldEntityEntFiniteElementAdjacencyMap, UId,
+                    &FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId>>>,
+        ordered_non_unique<
+            tag<Unique_mi_tag>,
+            const_mem_fun<
+                FieldEntityEntFiniteElementAdjacencyMap, UId,
+                &FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId>>,
+        ordered_non_unique<
+            tag<FE_Unique_mi_tag>,
+            const_mem_fun<
+                FieldEntityEntFiniteElementAdjacencyMap, UId,
+                &FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId>>,
+        ordered_non_unique<
+            tag<FEEnt_mi_tag>,
+            const_mem_fun<
+                FieldEntityEntFiniteElementAdjacencyMap, EntityHandle,
+                &FieldEntityEntFiniteElementAdjacencyMap::getFeHandle>>,
+        ordered_non_unique<
+            tag<Ent_mi_tag>,
+            const_mem_fun<
+                FieldEntityEntFiniteElementAdjacencyMap, EntityHandle,
+                &FieldEntityEntFiniteElementAdjacencyMap::getEntHandle>>>>
+    FieldEntityEntFiniteElementAdjacencyMap_multiIndex;
 
 struct FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat {
   int bY;
-  FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat(const int by): bY(by) {}
+  FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat(const int by)
+      : bY(by) {}
   void operator()(FieldEntityEntFiniteElementAdjacencyMap &e) {
     e.byWhat |= bY;
   }
 };
 
-}
+} // namespace MoFEM
 
 #endif // __ADJACENCYMULTIINDICES_HPP__
