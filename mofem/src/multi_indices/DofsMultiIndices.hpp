@@ -526,13 +526,9 @@ typedef multi_index_container<
         ordered_non_unique<
             tag<Part_mi_tag>,
             member<NumeredDofEntity, unsigned int, &NumeredDofEntity::pArt>>,
+
         ordered_non_unique<tag<Idx_mi_tag>, member<NumeredDofEntity, DofIdx,
                                                    &NumeredDofEntity::dofIdx>>,
-
-        ordered_non_unique<
-            tag<FieldName_mi_tag>,
-            const_mem_fun<NumeredDofEntity::interface_type_Field,
-                          boost::string_ref, &NumeredDofEntity::getNameRef>>,
 
         ordered_non_unique<tag<PetscGlobalIdx_mi_tag>,
                            member<NumeredDofEntity, DofIdx,
@@ -580,13 +576,6 @@ typedef multi_index_container<
 
         >>
     NumeredDofEntity_multiIndex;
-
-/** \brief Numbered DoF multi-index by field name
- *
- * \ingroup dof_multi_indices
- */
-typedef NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type
-    NumeredDofEntityByFieldName;
 
 /** \brief Numbered DoF multi-index by UId
  *
