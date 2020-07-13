@@ -561,17 +561,6 @@ typedef multi_index_container<
                 const_mem_fun<NumeredDofEntity::interface_type_Field,
                               boost::string_ref, &NumeredDofEntity::getNameRef>,
                 member<NumeredDofEntity, unsigned int,
-                       &NumeredDofEntity::pArt>>>,
-
-        ordered_non_unique<
-            tag<Composite_Name_Ent_And_Part_mi_tag>,
-            composite_key<
-                NumeredDofEntity,
-                const_mem_fun<NumeredDofEntity::interface_type_Field,
-                              boost::string_ref, &NumeredDofEntity::getNameRef>,
-                const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-                              EntityHandle, &NumeredDofEntity::getEnt>,
-                member<NumeredDofEntity, unsigned int,
                        &NumeredDofEntity::pArt>>>
 
         >>
@@ -597,13 +586,6 @@ using NumeredDofEntityByLocalIdx =
  */
 using NumeredDofEntityByEnt =
     NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type;
-
-/** \brief Numbered DoF multi-index by name entity and partition
- *
- * \ingroup dof_multi_indices
- */
-using NumeredDofEntityByNameEntAndPart = NumeredDofEntity_multiIndex::index<
-    Composite_Name_Ent_And_Part_mi_tag>::type;
 
 typedef multi_index_container<
     boost::shared_ptr<NumeredDofEntity>,
