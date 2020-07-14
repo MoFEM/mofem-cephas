@@ -72,14 +72,14 @@ struct __attribute__((__packed__)) SideNumber {
   char sense;
   char offset;
   char brother_side_number;
+
   inline EntityType getEntType() const {
     return static_cast<EntityType>((ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
   }
 
-  SideNumber(EntityHandle _ent, int _side_number, int _sense, int _offset)
-      : ent(_ent), side_number(_side_number), sense(_sense), offset(_offset),
+  SideNumber(EntityHandle ent, int side_number, int sense, int offset)
+      : ent(ent), side_number(side_number), sense(sense), offset(offset),
         brother_side_number(-1) {}
-  virtual ~SideNumber() = default;
 };
 
 /**
@@ -91,7 +91,7 @@ struct __attribute__((__packed__)) SideNumber {
 typedef multi_index_container<
     boost::shared_ptr<SideNumber>,
     indexed_by<
-        hashed_unique<member<SideNumber, EntityHandle, &SideNumber::ent>>,
+        ordered_unique<member<SideNumber, EntityHandle, &SideNumber::ent>>,
         ordered_non_unique<
 
             composite_key<
@@ -99,9 +99,7 @@ typedef multi_index_container<
                 const_mem_fun<SideNumber, EntityType, &SideNumber::getEntType>,
                 member<SideNumber, char, &SideNumber::side_number>
 
-                >>,
-        ordered_non_unique<
-            const_mem_fun<SideNumber, EntityType, &SideNumber::getEntType>>
+                >>
 
         >>
     SideNumber_multiIndex;
