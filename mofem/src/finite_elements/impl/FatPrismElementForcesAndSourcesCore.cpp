@@ -439,13 +439,20 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
 
   auto calc_ho_triangle_face_normals = [&]() {
     MoFEMFunctionBegin;
-    auto field_it =
-        fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
-    BitFieldId field_id = (*field_it)->getId();
+
+    auto check_field = [&]() {
+      auto field_it =
+          fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
+      if (field_it != fieldsPtr->get<FieldName_mi_tag>().end())
+        if ((numeredEntFiniteElementPtr->getBitFieldIdData() &
+             (*field_it)->getId())
+                .any())
+          return true;
+      return false;
+    };
 
     // Check if field meshPositionsFieldName exist
-    if (field_it != fieldsPtr->get<FieldName_mi_tag>().end() &&
-        (numeredEntFiniteElementPtr->getBitFieldIdData() & field_id).any()) {
+    if (check_field()) {
       hoCoordsAtGaussPtsF3.resize(nb_gauss_pts_on_faces, 3, false);
       nOrmals_at_GaussPtF3.resize(nb_gauss_pts_on_faces, 3, false);
       tAngent1_at_GaussPtF3.resize(nb_gauss_pts_on_faces, 3, false);
