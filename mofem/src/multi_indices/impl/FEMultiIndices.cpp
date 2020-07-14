@@ -266,20 +266,16 @@ MoFEMErrorCode DefaultElementAdjacency::defaultPrism(moab::Interface &moab,
     }
     adjacency.insert(nodes.begin(), nodes.end());
   case HCURL: {
-    SideNumber_multiIndex::nth_index<2>::type::iterator siit, hi_siit;
-    siit = side_table.get<2>().lower_bound(MBEDGE);
-    hi_siit = side_table.get<2>().upper_bound(MBEDGE);
+    auto siit = side_table.get<0>().lower_bound(get_id_for_min_type<MBEDGE>());
+    auto hi_siit =
+        side_table.get<0>().upper_bound(get_id_for_max_type<MBEDGE>());
     for (; siit != hi_siit; siit++)
       adjacency.insert(siit->get()->ent);
   }
   case HDIV: {
-    SideNumber_multiIndex::nth_index<2>::type::iterator siit, hi_siit;
-    siit = side_table.get<2>().lower_bound(MBTRI);
-    hi_siit = side_table.get<2>().upper_bound(MBTRI);
-    for (; siit != hi_siit; siit++)
-      adjacency.insert(siit->get()->ent);
-    siit = side_table.get<2>().lower_bound(MBQUAD);
-    hi_siit = side_table.get<2>().upper_bound(MBQUAD);
+    auto siit = side_table.get<0>().lower_bound(get_id_for_min_type<MBTRI>());
+    auto hi_siit =
+        side_table.get<0>().upper_bound(get_id_for_max_type<MBQUAD>());
     for (; siit != hi_siit; siit++)
       adjacency.insert(siit->get()->ent);
   }
