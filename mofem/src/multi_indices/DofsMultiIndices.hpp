@@ -291,18 +291,9 @@ private:
   using DofEntity::DofEntity;
 
   // DO NOT MAKE ANY MAMBER DATA HARE !!!
-
-  // using interface_type_Field = interface_FieldImpl<DofEntity, DofEntity>;
-  // using interface_type_FieldEntity = interface_FieldEntity<DofEntity>;
-  // using interface_type_DofEntity = interface_DofEntity<DofEntity>;
-  // using interface_type_RefEntity = interface_RefEntity<DofEntity>;
-
-  // FEDofEntity(const boost::shared_ptr<DofEntity> &dof_ptr);
   
   friend std::ostream &operator<<(std::ostream &os, const FEDofEntity &e);
 };
-
-// using FEDofEntity = DofEntity;
 
 /**
  * \brief keeps information about indexed dofs for the finite element
