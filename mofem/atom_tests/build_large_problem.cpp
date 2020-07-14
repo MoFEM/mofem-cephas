@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
         0, 3, BitRefLevel().set(0));
 
     // fields
-    CHKERR m_field.add_field("F1", H1, AINSWORTH_LEGENDRE_BASE, 1,
+    CHKERR m_field.add_field("F1", H1, AINSWORTH_LEGENDRE_BASE, 3,
                              MB_TAG_DENSE);
 
     // meshset consisting all entities in mesh
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_ents_to_field_by_type(root_set, MBTET, "F1");
 
     // set app. order
-    constexpr int order = 2;
+    constexpr int order = 3;
     CHKERR m_field.set_field_order(root_set, MBVERTEX, "F1", 1);
     CHKERR m_field.set_field_order(root_set, MBEDGE, "F1", order);
     CHKERR m_field.set_field_order(root_set, MBTRI, "F1", order);
@@ -125,6 +125,7 @@ int main(int argc, char *argv[]) {
     SmartPetscObj<Mat> A;
     CHKERR m_field.getInterface<MatrixManager>()
         ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("P1", A);
+    MOFEM_LOG_CHANNEL("WORLD");
     MOFEM_LOG("WORLD", Sev::inform) << "Done";
 
     // Once matrix is created we do not need adjacencies data structures
