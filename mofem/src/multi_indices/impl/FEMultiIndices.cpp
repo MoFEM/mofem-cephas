@@ -450,14 +450,10 @@ std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
     if (!dit) {
       os << "null ptr";
     } else {
-      if (!dit->getDofEntityPtr()) {
-        os << "( null ptr to dof ) ";
+      if (!dit->getFieldEntityPtr()) {
+        os << "(( null ptr to field entity )) ";
       } else {
-        if (!dit->getFieldEntityPtr()) {
-          os << "(( null ptr to field entity )) ";
-        } else {
-          os << dit->getGlobalUniqueId() << " ";
-        }
+        os << dit->getGlobalUniqueId() << " ";
       }
     }
   }

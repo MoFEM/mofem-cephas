@@ -86,9 +86,6 @@ std::ostream &operator<<(std::ostream &os, const NumeredDofEntity &e) {
   return os;
 }
 
-FEDofEntity::FEDofEntity(const boost::shared_ptr<DofEntity> &dof_ptr)
-    : interface_DofEntity<DofEntity>(dof_ptr) {}
-
 std::ostream &operator<<(std::ostream &os, const FEDofEntity &e) {
   os << "local dof FiniteElement idx "
      << "side_number " << static_cast<int>(e.getSideNumberPtr()->side_number)

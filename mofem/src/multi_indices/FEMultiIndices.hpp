@@ -394,17 +394,17 @@ struct EntFiniteElement
   MoFEMErrorCode getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
                                      Range &adjacency);
 
-  /**
-   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
-   *
-   * Vector is automatically destroy when last DOF in vector os destroyed. Every
-   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that
-   * vector. That do the trick.
-   *
-   */
-  inline boost::weak_ptr<std::vector<FEDofEntity>> &getDofsSequence() const {
-    return dofsSequce;
-  }
+  // /**
+  //  * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
+  //  *
+  //  * Vector is automatically destroy when last DOF in vector os destroyed. Every
+  //  * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that
+  //  * vector. That do the trick.
+  //  *
+  //  */
+  // inline boost::weak_ptr<std::vector<FEDofEntity>> &getDofsSequence() const {
+  //   return dofsSequce;
+  // }
 
 protected:
   mutable boost::shared_ptr<const FiniteElement> finiteElementPtr;
@@ -413,9 +413,9 @@ protected:
   boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
   boost::shared_ptr<FieldEntity_vector_view> colFieldEnts;
 
-private:
-  // Keep vector of DoFS on entity
-  mutable boost::weak_ptr<std::vector<FEDofEntity>> dofsSequce;
+// private:
+//   // Keep vector of DoFS on entity
+//   mutable boost::weak_ptr<std::vector<FEDofEntity>> dofsSequce;
 };
 
 /**

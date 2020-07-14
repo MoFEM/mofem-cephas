@@ -283,19 +283,26 @@ struct interface_NumeredDofEntity : public interface_DofEntity<T> {
  * \brief keeps information about indexed dofs for the finite element
  * \ingroup dof_multi_indices
  */
-struct FEDofEntity : public interface_DofEntity<DofEntity> {
+struct FEDofEntity : public DofEntity {
 
-  virtual ~FEDofEntity() = default;
+  FEDofEntity() = delete;
 
-  using interface_type_Field = interface_FieldImpl<DofEntity, DofEntity>;
-  using interface_type_FieldEntity = interface_FieldEntity<DofEntity>;
-  using interface_type_DofEntity = interface_DofEntity<DofEntity>;
-  using interface_type_RefEntity = interface_RefEntity<DofEntity>;
+private:
+  using DofEntity::DofEntity;
 
-  FEDofEntity(const boost::shared_ptr<DofEntity> &dof_ptr);
+  // DO NOT MAKE ANY MAMBER DATA HARE !!!
+
+  // using interface_type_Field = interface_FieldImpl<DofEntity, DofEntity>;
+  // using interface_type_FieldEntity = interface_FieldEntity<DofEntity>;
+  // using interface_type_DofEntity = interface_DofEntity<DofEntity>;
+  // using interface_type_RefEntity = interface_RefEntity<DofEntity>;
+
+  // FEDofEntity(const boost::shared_ptr<DofEntity> &dof_ptr);
   
   friend std::ostream &operator<<(std::ostream &os, const FEDofEntity &e);
 };
+
+// using FEDofEntity = DofEntity;
 
 /**
  * \brief keeps information about indexed dofs for the finite element
@@ -420,12 +427,12 @@ typedef multi_index_container<
     indexed_by<
 
         ordered_unique<tag<Unique_mi_tag>,
-                       const_mem_fun<FEDofEntity::interface_type_DofEntity, UId,
+                       const_mem_fun<FEDofEntity::DofEntity, UId,
                                      &FEDofEntity::getGlobalUniqueId>>,
 
         ordered_non_unique<tag<Ent_mi_tag>,
-                           const_mem_fun<FEDofEntity::interface_type_DofEntity,
-                                         EntityHandle, &FEDofEntity::getEnt>>,
+                           const_mem_fun<FEDofEntity::DofEntity, EntityHandle,
+                                         &FEDofEntity::getEnt>>,
 
         ordered_non_unique<
             tag<Composite_Name_And_Ent_mi_tag>,
@@ -433,8 +440,8 @@ typedef multi_index_container<
                 FEDofEntity,
                 const_mem_fun<FEDofEntity::interface_type_Field,
                               boost::string_ref, &FEDofEntity::getNameRef>,
-                const_mem_fun<FEDofEntity::interface_type_DofEntity,
-                              EntityHandle, &FEDofEntity::getEnt>>>
+                const_mem_fun<FEDofEntity::DofEntity, EntityHandle,
+                              &FEDofEntity::getEnt>>>
 
         >>
     FEDofEntity_multiIndex;

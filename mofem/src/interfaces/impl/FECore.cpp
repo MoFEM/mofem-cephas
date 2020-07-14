@@ -504,41 +504,18 @@ template <int I> struct BuildFiniteElements {
   template <typename T1, typename T2>
   static inline void addToData(T1 &dit, T1 &hi_dit, T2 &fe_vec) {
     static_assert(I == DATA, "t should be set to DATA");
-
-    for (; dit != hi_dit; ++dit) {
-      const EntityHandle dof_ent = dit->get()->getEnt();
-      // Fill array
-      for (auto fe_it : fe_vec) {
-        if (auto fe_ptr = fe_it.lock()) {
-          // Add FEDofEntity, first create dofs, one by one, note that memory
-          // is already reserved. Then create shared pointers and finally add
-          // th_FEName to element multi-index
-          // There are data dofs on this element
-          // auto &side_number_ptr = fe_ptr->getSideNumberPtr(dof_ent);
-          fe_ptr->getDofsSequence().lock()->emplace_back(*dit);
-        }
-      }
-    }
-  }
-
-  template <typename T> static inline void emplaceHint(T &fe_vec) {
-    static_assert(I == DATA, "t should be set to DATA");
-
-    // Add to data in FE
     for (auto fe_it : fe_vec) {
       if (auto fe_ptr = fe_it.lock()) {
-        // It is a but unsafe, since if one mess up something in
-        // buildFiniteElements, weak_ptr will not give pointer
-        auto data_dofs_array_vec = fe_ptr->getDofsSequence().lock();
-        // Create shared pointers vector
         auto &data_dofs =
             const_cast<FEDofEntity_multiIndex &>(fe_ptr->getDataDofs());
         auto hint = data_dofs.end();
-        for (auto &vit : *data_dofs_array_vec)
-          hint = data_dofs.emplace_hint(hint, data_dofs_array_vec, &vit);
+        for (auto dit_insert = dit; dit_insert != hi_dit; ++dit_insert)
+          hint = data_dofs.emplace_hint(
+              hint, boost::reinterpret_pointer_cast<FEDofEntity>(*dit_insert));
       }
     }
   }
+
 };
 
 MoFEMErrorCode
@@ -574,8 +551,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   typedef std::vector<boost::weak_ptr<EntFiniteElement>> VecOfWeakFEPtrs;
   typedef std::map<const UId *, VecOfWeakFEPtrs> MapEntUIdAndVecOfWeakFEPtrs;
   MapEntUIdAndVecOfWeakFEPtrs ent_uid_and_fe_vec;
-  std::map<EntityHandle, boost::shared_ptr<std::vector<FEDofEntity>>>
-      data_dofs_array;
   VecOfWeakFEPtrs processed_fes;
   processed_fes.reserve(fe_ents.size());
 
@@ -760,12 +735,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       // Clear finite element data structures
       const_cast<FEDofEntity_multiIndex &>(fe_raw_ptr->getDataDofs()).clear();
 
-      // Reserve memory for data FE Dofs
-      auto data_dofs_array_vec = boost::make_shared<std::vector<FEDofEntity>>();
-      data_dofs_array[fe_raw_ptr->getEnt()] = data_dofs_array_vec;
-      data_dofs_array_vec->reserve(nb_dofs_on_data);
-
-      fe_raw_ptr->getDofsSequence() = data_dofs_array_vec;
     }
   }
 
@@ -786,8 +755,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       }
     }
   }
-
-  BuildFiniteElements<DATA>::emplaceHint(processed_fes);
 
   MoFEMFunctionReturn(0);
 }
