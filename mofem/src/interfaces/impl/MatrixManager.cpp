@@ -125,22 +125,11 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
       CHKERR fe_ptr->getEntFiniteElement()->getColDofView(
           *(p_miit->numeredDofsCols), cols_view, moab::Interface::UNION);
 
-      // Reserve memory for field  dofs
-      boost::shared_ptr<std::vector<FENumeredDofEntity>> dofs_array(
-          new std::vector<FENumeredDofEntity>());
-      fe_ptr->getColDofsSequence() = dofs_array;
-      dofs_array->reserve(cols_view.size());
-
-      // Create dofs objects
-      for (auto &dof : cols_view) {
-        auto side_number_ptr = fe_ptr->getSideNumberPtr(dof->getEnt());
-        dofs_array->emplace_back(dof);
-      }
-
       // Finally add DoFS to multi-indices
       auto hint = fe_ptr->getColDofsPtr()->end();
-      for (auto &dof : *dofs_array)
-        hint = fe_ptr->getColDofsPtr()->emplace_hint(hint, dofs_array, &dof);
+      for (auto &dof_ptr : cols_view)
+        hint = fe_ptr->getColDofsPtr()->emplace_hint(
+            hint, boost::reinterpret_pointer_cast<FENumeredDofEntity>(dof_ptr));
     }
 
   } else

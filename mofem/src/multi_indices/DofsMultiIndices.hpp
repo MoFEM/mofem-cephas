@@ -244,42 +244,6 @@ struct NumeredDofEntity : public interface_DofEntity<DofEntity> {
 };
 
 /**
- * \brief interface to NumeredDofEntity
- * \ingroup dof_multi_indices
- */
-template <typename T>
-struct interface_NumeredDofEntity : public interface_DofEntity<T> {
-
-  virtual ~interface_NumeredDofEntity() = default;
-
-  interface_NumeredDofEntity(const boost::shared_ptr<T> &sptr)
-      : interface_DofEntity<T>(sptr){};
-
-  /// @return get dof index on entity
-  inline DofIdx getDofIdx() const { return this->sPtr->getDofIdx(); }
-
-  /// @return get petsc global index on entity
-  inline DofIdx getPetscGlobalDofIdx() const {
-    return this->sPtr->getPetscGlobalDofIdx();
-  }
-
-  /// @return get pe
-  inline DofIdx getPetscLocalDofIdx() const {
-    return this->sPtr->getPetscLocalDofIdx();
-  }
-
-  inline unsigned int getPart() const { return this->sPtr->getPart(); }
-
-  inline bool getHasLocalIndex() const {
-    return this->sPtr->getHasLocalIndex();
-  }
-
-  inline boost::shared_ptr<NumeredDofEntity> &getNumeredDofEntityPtr() const {
-    return this->sPtr;
-  };
-};
-
-/**
  * \brief keeps information about indexed dofs for the finite element
  * \ingroup dof_multi_indices
  */
@@ -299,23 +263,17 @@ private:
  * \brief keeps information about indexed dofs for the finite element
  * \ingroup dof_multi_indices
  */
-struct FENumeredDofEntity : interface_NumeredDofEntity<NumeredDofEntity> {
+struct FENumeredDofEntity : public NumeredDofEntity {
 
-  virtual ~FENumeredDofEntity() = default;
+  FENumeredDofEntity() = delete;
 
-  using interface_type_Field =
-      interface_FieldImpl<NumeredDofEntity, NumeredDofEntity>;
-  using interface_type_FieldEntity = interface_FieldEntity<NumeredDofEntity>;
-  using interface_type_DofEntity = interface_DofEntity<NumeredDofEntity>;
-  using interface_type_RefEntity = interface_RefEntity<NumeredDofEntity>;
+  private:
+    using NumeredDofEntity::NumeredDofEntity;
 
-  typedef interface_NumeredDofEntity<NumeredDofEntity>
-      interface_type_NumeredDofEntity;
+    // DO NOT MAKE ANY MAMBER DATA HARE !!!
 
-  FENumeredDofEntity(const boost::shared_ptr<NumeredDofEntity> &dof_ptr);
-
-  friend std::ostream &operator<<(std::ostream &os,
-                                  const FENumeredDofEntity &e);
+    friend std::ostream &operator<<(std::ostream &os,
+                                    const FENumeredDofEntity &e);
 };
 
 std::ostream &operator<<(std::ostream &os, const FENumeredDofEntity &e);

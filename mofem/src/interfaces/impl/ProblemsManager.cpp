@@ -2481,30 +2481,13 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
 
       for (int ss = 0;
            ss != ((fe.getColDofsPtr() != fe.getRowDofsPtr()) ? 2 : 1); ss++) {
-        // Following reserve memory in sequences, only two allocations are here,
-        // once for array of objects, next for array of shared pointers
-
-        // reserve memory for field  dofs
-        auto dofs_array = boost::make_shared<std::vector<FENumeredDofEntity>>();
-        if (!ss) {
-          fe.getRowDofsSequence() = dofs_array;
-          fe.getColDofsSequence() = dofs_array;
-        } else
-          fe.getColDofsSequence() = dofs_array;
-
-        auto vit = dofs_view[ss]->begin();
-        auto hi_vit = dofs_view[ss]->end();
-
-        dofs_array->reserve(std::distance(vit, hi_vit));
-
-        // create elements objects
-        for (; vit != hi_vit; vit++)
-          dofs_array->emplace_back(*vit);
 
         // finally add DoFS to multi-indices
         auto hint = fe_dofs[ss]->end();
-        for (auto &v : *dofs_array)
-          hint = fe_dofs[ss]->emplace_hint(hint, dofs_array, &v);
+        for (auto &dof_ptr : *dofs_view[ss])
+          hint = fe_dofs[ss]->emplace_hint(
+              hint,
+              boost::reinterpret_pointer_cast<FENumeredDofEntity>(dof_ptr));
       }
     }
   }
@@ -2613,8 +2596,7 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
     for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
       for (auto &dof_ptr : *(*fe_ptr)->getRowDofsPtr()) {
         if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
-          hint_r = ghost_idx_row_view.emplace_hint(
-              hint_r, dof_ptr->getNumeredDofEntityPtr());
+          hint_r = ghost_idx_row_view.emplace_hint(hint_r, dof_ptr);
         }
       }
     }
@@ -2625,8 +2607,7 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
       for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
         for (auto &dof_ptr : *(*fe_range.first)->getColDofsPtr()) {
           if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
-            hint_c = ghost_idx_col_view.emplace_hint(
-                hint_c, dof_ptr->getNumeredDofEntityPtr());
+            hint_c = ghost_idx_col_view.emplace_hint(hint_c, dof_ptr);
           }
         }
       }

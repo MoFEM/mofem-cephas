@@ -601,32 +601,6 @@ struct NumeredEntFiniteElement
     MoFEMFunctionReturn(0);
   }
 
-  /**
-   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
-   *
-   * Vector is automatically destroy when last DOF in vector os destroyed. Every
-   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that
-   * vector. That do the trick.
-   *
-   */
-  inline boost::weak_ptr<std::vector<FENumeredDofEntity>> &
-  getRowDofsSequence() const {
-    return dofsRowSequce;
-  }
-
-  /**
-   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
-   *
-   * Vector is automatically destroy when last DOF in vector os destroyed. Every
-   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that
-   * vector. That do the trick.
-   *
-   */
-  inline boost::weak_ptr<std::vector<FENumeredDofEntity>> &
-  getColDofsSequence() const {
-    return dofsColSequce;
-  }
-
   friend std::ostream &operator<<(std::ostream &os,
                                   const NumeredEntFiniteElement &e);
 
@@ -636,10 +610,6 @@ protected:
   boost::shared_ptr<FENumeredDofEntity_multiIndex>
       colDofs; ///< indexed dofs on columns
 
-private:
-  // Keep vector of DoFS on entity
-  mutable boost::weak_ptr<std::vector<FENumeredDofEntity>> dofsRowSequce;
-  mutable boost::weak_ptr<std::vector<FENumeredDofEntity>> dofsColSequce;
 };
 
 /**
