@@ -663,7 +663,6 @@ ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &data) const {
   auto siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI, 0));
   auto hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI, 4));
   if (std::distance(siit, hi_siit) != 4) {
-    cerr << " distance is " << std::distance(siit, hi_siit) << "\n";
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Should be 4 triangles on tet, side_table not initialized");
   }

@@ -1,7 +1,7 @@
 /** \file continuity_check_on_contact_prism_side_ele.cpp
  * \example continuity_check_on_contact_prism_side_ele.cpp
  *
- * \brief Testing integration on integration on volume side on contact element
+ * \brief Testing integration on volume side on contact element
  *
  * Checking continuity of H1  ( later hdiv and hcurl spaces on faces), and
  * testing methods for integration on volume side on contact element.
