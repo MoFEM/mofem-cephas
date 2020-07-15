@@ -53,7 +53,7 @@ MoFEMErrorCode MeshsetsManager::clearMap() {
 MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  MeshsetsManagerFunctionBegin;
   Range meshsets;
   CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
   for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
@@ -63,16 +63,12 @@ MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
             .any()) {
       std::pair<CubitMeshSet_multiIndex::iterator, bool> p =
           cubitMeshsets.insert(base_meshset);
-      if (!p.second) {
+      if (!p.second)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "meshset not inserted");
-      }
-      if (verb > QUIET) {
-        std::ostringstream ss;
-        ss << "read cubit " << base_meshset << std::endl;
-        // PetscSynchronizedPrintf(comm,ss.str().c_str());
-        PetscPrintf(m_field.get_comm(), ss.str().c_str());
-      }
+
+      if (verb > QUIET)
+        MOFEM_LOG("WORLD", Sev::inform) << "read cubit " << base_meshset;
     }
   }
   MoFEMFunctionReturn(0);
@@ -164,36 +160,28 @@ MoFEMErrorCode MeshsetsManager::printMaterialsSet() const {
            (*this), BLOCKSET | MAT_ELASTICSET, it)) {
     Mat_Elastic data;
     CHKERR it->getAttributeDataStructure(data);
-    std::ostringstream ss;
-    ss << *it << std::endl;
-    ss << data;
+    MOFEM_LOG("WORLD", Sev::inform) << *it;
+    MOFEM_LOG("WORLD", Sev::inform) << data;
     Range tets;
     CHKERR moab.get_entities_by_type(it->meshset, MBTET, tets, true);
-
-    ss << "MAT_ELATIC msId " << it->getMeshsetId() << " nb. tets "
-       << tets.size() << std::endl;
-    ss << std::endl;
-    PetscPrintf(m_field.get_comm(), ss.str().c_str());
+    MOFEM_LOG("WORLD", Sev::inform) << "MAT_ELATIC msId " << it->getMeshsetId()
+                                    << " nb. tets " << tets.size();
   }
 
   for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
            m_field, BLOCKSET | MAT_THERMALSET, it)) {
     Mat_Thermal data;
     CHKERR it->getAttributeDataStructure(data);
-    std::ostringstream ss;
-    ss << *it << std::endl;
-    ss << data;
-    PetscPrintf(m_field.get_comm(), ss.str().c_str());
+    MOFEM_LOG("WORLD", Sev::inform) << *it;
+    MOFEM_LOG("WORLD", Sev::inform) << data;
   }
 
   for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
            m_field, BLOCKSET | MAT_MOISTURESET, it)) {
     Mat_Moisture data;
     CHKERR it->getAttributeDataStructure(data);
-    std::ostringstream ss;
-    ss << *it << std::endl;
-    ss << data;
-    PetscPrintf(m_field.get_comm(), ss.str().c_str());
+    MOFEM_LOG("WORLD", Sev::inform) << *it;
+    MOFEM_LOG("WORLD", Sev::inform) << data;
   }
   MoFEMFunctionReturn(0);
 }
@@ -267,7 +255,7 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cannot find Cubit meshset with id: %d", ms_id);
   }
   EntityHandle meshset = cit->getMeshset();
   CHKERR moab.add_entities(meshset, ents);
@@ -288,7 +276,7 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cannot find Cubit meshset with id: %d", ms_id);
   }
   EntityHandle meshset = cit->getMeshset();
   CHKERR moab.add_entities(meshset, ents, nb_ents);
@@ -309,7 +297,7 @@ MeshsetsManager::setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cannot find Cubit meshset with id: %d", ms_id);
   }
   if (name.size() > 0) {
     bool success = cubitMeshsets.modify(cubitMeshsets.project<0>(cit),
@@ -340,7 +328,7 @@ MoFEMErrorCode MeshsetsManager::setAtributesByDataStructure(
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cannot find Cubit meshset with id: %d", ms_id);
   }
   if (name.size() > 0) {
     bool success = cubitMeshsets.modify(cubitMeshsets.project<0>(cit),
@@ -371,7 +359,7 @@ MoFEMErrorCode MeshsetsManager::setBcData(const CubitBCType cubit_bc_type,
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cubit meshset with id is already there", ms_id);
   }
   bool success =
       cubitMeshsets.modify(cubitMeshsets.project<0>(cit),
@@ -565,8 +553,7 @@ struct BlockData {
 MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
                                                    bool clean_file_options) {
   Interface &m_field = cOre;
-  // moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBegin;
+  MeshsetsManagerFunctionBegin;
   std::ifstream ini_file(file_name.c_str(), std::ifstream::in);
   po::variables_map vm;
   if (clean_file_options) {
@@ -902,8 +889,7 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
       collect_unrecognized(parsed.options, po::include_positional);
   for (std::vector<std::string>::iterator vit = additional_parameters.begin();
        vit != additional_parameters.end(); vit++) {
-    CHKERR PetscPrintf(m_field.get_comm(),
-                       "** WARNING Unrecognized option %s\n", vit->c_str());
+    MOFEM_LOG_C("WORLD", Sev::warning, "Unrecognized option %s", vit->c_str());
   }
   for (map<int, BlockData>::iterator mit = block_lists.begin();
        mit != block_lists.end(); mit++) {

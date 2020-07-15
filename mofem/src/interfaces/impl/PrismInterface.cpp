@@ -954,12 +954,30 @@ MoFEMErrorCode PrismInterface::splitSides(
   auto get_conn = [&](const auto e) {
     int num_nodes;
     const EntityHandle *conn;
-    CHKERR moab.get_connectivity(e, conn, num_nodes, true);
-    return std::make_pair(conn, num_nodes);
-  };
-
-  auto get_new_conn = [&](auto conn) {
-    std::array<EntityHandle, 8> new_conn;
+    CHKERR moab.get_connectivity(*eit, conn, num_nodes, true);
+    int sense = 0; ///< sense of the triangle used to create a prism
+    if (moab.type_from_handle(*eit) == MBTRI) {
+      Range ents_3d;
+      CHKERR moab.get_adjacencies(&*eit, 1, 3, false, ents_3d);
+      ents_3d = intersect(ents_3d, side_ents3d);
+      switch (ents_3d.size()) {
+      case 0:
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                "Did not find adjacent tets on one side of the interface; if "
+                "this error appears for a contact interface, try creating "
+                "separate blocksets for each contact surface");
+      case 2:
+        SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                "Found both adjacent tets on one side of the interface, if "
+                "this error appears for a contact interface, try creating "
+                "separate blocksets for each contact surface");
+      default:
+        break;
+      }
+      int side, offset;
+      CHKERR moab.side_number(ents_3d.front(), *eit, side, sense, offset);
+    }
+    EntityHandle new_conn[num_nodes];
     int nb_new_conn = 0;
     for (int ii = 0; ii != conn.second; ++ii) {
       auto mit = map_nodes.find(conn.first[ii]);
@@ -1024,83 +1042,31 @@ MoFEMErrorCode PrismInterface::splitSides(
       auto hi = refined_ents_ptr->upper_bound(s);
       if (std::distance(lo, hi) != (s - f + 1))
         SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                "Some triangles are not in database");
-
-      for (; f <= s; ++f) {
-
-        auto conn = get_conn(f);
-        auto new_conn = get_new_conn(conn);
-
-        if (new_conn.second) {
-
-          auto set_side_tag = [&](auto new_triangle) {
-            int new_side = 1;
-            CHKERR moab.tag_set_data(th_interface_side, &new_triangle, 1,
-                                     &new_side);
-          };
-
-          auto get_ent3d = [&](auto e) {
-            Range ents_3d;
-            CHKERR moab.get_adjacencies(&e, 1, 3, false, ents_3d);
-            ents_3d = intersect(ents_3d, side_ents3d);
-
-            switch (ents_3d.size()) {
-            case 0:
-              THROW_MESSAGE(
-                  "Did not find adjacent tets on one side of the interface, "
-                  "check its definition and try creating separate sidesets for "
-                  "each surface");
-            case 2:
-              THROW_MESSAGE(
-                  "Found both adjacent tets on one side of the interface, "
-                  "check "
-                  "its "
-                  "definition and try creating separate sidesets for each "
-                  "surface");
-            default:
-              break;
-            }
-
-            return ents_3d.front();
-          };
-
-          auto get_sense = [&](auto e, auto ent3d) {
-            int sense, side, offset;
-            CHKERR moab.side_number(ent3d, e, side, sense, offset);
-            if (sense != 1 && sense != -1) {
-              SETERRQ(
-                  m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "Undefined sense of a trinagle on the interface, check its "
-                  "definition and try creating separate sidesets for each "
-                  "surface");
-            }
-            return sense;
-          };
-
-          auto new_triangle = get_new_ent(new_conn, 3, 2);
-          set_side_tag(new_triangle);
-
-          if (add_interface_entities) {
-
-            if (inhered_from_bit_level.any())
-              SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                      "not implemented for inhered_from_bit_level");
-
-            // set prism connectivity
-            EntityHandle prism_conn[6] = {
-                conn.first[0],     conn.first[1],     conn.first[2],
-
-                new_conn.first[0], new_conn.first[1], new_conn.first[2]};
-            if (get_sense(f, get_ent3d(f)) == -1) {
-              // swap nodes in triangles for correct prism creation
-              std::swap(prism_conn[1], prism_conn[2]);
-              std::swap(prism_conn[4], prism_conn[5]);
-            }
-
-            EntityHandle prism;
-            CHKERR moab.create_element(MBPRISM, prism_conn, 6, prism);
-            CHKERR moab.add_entities(meshset_for_bit_level, &prism, 1);
-          }
+                "this tri should be in moab database");
+      int new_side = 1;
+      CHKERR moab.tag_set_data(th_interface_side, &*new_ent.begin(), 1,
+                               &new_side);
+      if (verb >= VERY_VERBOSE)
+        PetscPrintf(m_field.get_comm(), "new_ent %u\n", new_ent.size());
+      // add prism element
+      if (add_interface_entities) {
+        if (inhered_from_bit_level.any()) {
+          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                  "not implemented for inhered_from_bit_level");
+        }
+        // set prism connectivity
+        EntityHandle prism_conn[6] = {conn[0],     conn[1],     conn[2],
+                                      new_conn[0], new_conn[1], new_conn[2]};
+        if (sense != 1 && sense != -1) {
+          SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+                  "Undefined sense of a triangle; if this error appears for a "
+                  "contact interface, try creating separate blocksets for each "
+                  "contact surface");
+        }
+        if (sense == -1) {
+          // swap nodes in triangles for correct prism creation
+          std::swap(prism_conn[1], prism_conn[2]);
+          std::swap(prism_conn[4], prism_conn[5]);
         }
       }
     }

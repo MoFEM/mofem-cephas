@@ -848,9 +848,6 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual MoFEMErrorCode list_finite_elements() const = 0;
 
-  /// list adjacencies
-  virtual MoFEMErrorCode list_adjacencies() const = 0;
-
   /**@}*/
 
   /** \name Problems */
