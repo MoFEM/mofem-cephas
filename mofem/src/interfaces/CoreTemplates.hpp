@@ -51,9 +51,8 @@ template <int N> MoFEMErrorCode CoreTmp<N>::rebuild_database(int verb) {
 
 template <int N>
 MoFEMErrorCode CoreTmp<N>::set_moab_interface(moab::Interface &new_moab,
-                                              int verb,
-                                              const bool distributed_mesh) {
-  return this->setMoabInterface(new_moab, verb, distributed_mesh);
+                                              int verb) {
+  return this->setMoabInterface(new_moab, verb);
 };
 
 template <int N>
@@ -110,12 +109,12 @@ template <int N> MoFEMErrorCode CoreTmp<N>::build_fields(int verb) {
 
 template <int V>
 CoreTmp<0>::CoreTmp(moab::Interface &moab, MPI_Comm comm, const int verbose,
-                    const bool distributed_mesh, CoreValue<V>)
+                    CoreValue<V>)
     : moab(moab), cOmm(0), verbose(verbose),
       initaliseAndBuildField(PETSC_FALSE),
       initaliseAndBuildFiniteElements(PETSC_FALSE) {
 
-  ierr = coreGenericConstructor(moab, comm, verbose, distributed_mesh);
+  ierr = coreGenericConstructor(moab, comm, verbose);
   CHKERRABORT(comm, ierr);
 
   if (verbose > QUIET) {
@@ -125,18 +124,11 @@ CoreTmp<0>::CoreTmp(moab::Interface &moab, MPI_Comm comm, const int verbose,
 }
 
 template <int N>
-CoreTmp<N>::CoreTmp(
-    moab::Interface &moab,      ///< MoAB interface
-    MPI_Comm comm,              ///< MPI communicator
-    const int verbose,          ///< Verbosity level
-    const bool distributed_mesh ///< UId of entities and dofs depends
-                                ///< on owing processor, assumed that
-                                ///< mesh is distributed. Otherwise
-                                ///< is assumed that all processors
-                                ///< have the same meshes and same
-                                ///< entity handlers.
-    )
-    : CoreTmp<N - 1>(moab, comm, verbose, distributed_mesh, CoreValue<N>()) {
+CoreTmp<N>::CoreTmp(moab::Interface &moab, ///< MoAB interface
+                    MPI_Comm comm,         ///< MPI communicator
+                    const int verbose      ///< Verbosity level
+                    )
+    : CoreTmp<N - 1>(moab, comm, verbose, CoreValue<N>()) {
 
   // Register sub-interfaces
   ierr = this->registerSubInterfaces();
@@ -149,10 +141,6 @@ CoreTmp<N>::CoreTmp(
   CHKERRABORT(comm, ierr);
 
   this->basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
-  if (distributed_mesh)
-    this->basicEntityDataPtr->setDistributedMesh();
-  else
-    this->basicEntityDataPtr->unSetDistributedMesh();
   this->setRefEntBasicDataPtr(*this, this->basicEntityDataPtr);
 
   ierr = this->initialiseDatabaseFromMesh(verbose);

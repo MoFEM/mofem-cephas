@@ -40,16 +40,10 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
   /**
    * Construct core database
    */
-  CoreTmp(
-      moab::Interface &moab,             ///< MoAB interface
-      MPI_Comm comm = PETSC_COMM_WORLD,  ///< MPI communicator
-      const int verbose = VERBOSE,       ///< Verbosity level
-      const bool distributed_mesh = true ///< UId of entities and dofs depends
-                                         ///< on owing processor, assumed that
-                                         ///< mesh is distributed. Otherwise
-                                         ///< is assumed that all processors
-                                         ///< have the same meshes and same
-                                         ///< entity handlers.
+  CoreTmp(moab::Interface &moab,            ///< MoAB interface
+          MPI_Comm comm = PETSC_COMM_WORLD, ///< MPI communicator
+          const int verbose = VERBOSE       ///< Verbosity level
+
   );
 
   virtual MoFEMErrorCode
@@ -58,8 +52,7 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
             const FieldCoefficientsNumber nb_of_coefficients,
             const TagType tag_type, const enum MoFEMTypes bh, int verb);
 
-  MoFEMErrorCode set_moab_interface(moab::Interface &new_moab, int verb,
-                                    const bool distributed_mesh);
+  MoFEMErrorCode set_moab_interface(moab::Interface &new_moab, int verb);
 
   virtual MoFEMErrorCode rebuild_database(int verb = DEFAULT_VERBOSITY);
 
@@ -114,13 +107,8 @@ template <> struct CoreTmp<0> : public Interface {
   CoreTmp(
       moab::Interface &moab,             ///< MoAB interface
       MPI_Comm comm = PETSC_COMM_WORLD,  ///< MPI communicator
-      const int verbose = VERBOSE,       ///< Verbosity level
-      const bool distributed_mesh = true ///< UId of entities and dofs depends
-                                         ///< on owing processor, assumed that
-                                         ///< mesh is distributed. Otherwise
-                                         ///< is assumed that all processors
-                                         ///< have the same meshes and same
-                                         ///< entity handlers.
+      const int verbose = VERBOSE      ///< Verbosity level
+
   );
 
   ~CoreTmp();
@@ -273,20 +261,12 @@ protected:
    * Construct core database
    */
   template <int V>
-  CoreTmp(moab::Interface &moab,       ///< MoAB interface
-          MPI_Comm comm,               ///< MPI communicator
-          const int verbose,           ///< Verbosity level
-          const bool distributed_mesh, ///< UId of entities and dofs depends
-                                       ///< on owing processor, assumed that
-                                       ///< mesh is distributed. Otherwise
-                                       ///< is assumed that all processors
-                                       ///< have the same meshes and same
-                                       ///< entity handlers.
-          CoreValue<V>);
+  CoreTmp(moab::Interface &moab, ///< MoAB interface
+          MPI_Comm comm,         ///< MPI communicator
+          const int verbose, CoreValue<V>);
 
   MoFEMErrorCode coreGenericConstructor(moab::Interface &moab, MPI_Comm comm,
-                                        const int verbose,
-                                        const bool distributed_mesh);
+                                        const int verbose);
 
   /** \name Tags to data on mesh and entities */
 
@@ -362,11 +342,10 @@ protected:
   inline const moab::Interface &get_moab() const { return moab; }
 
   MoFEMErrorCode set_moab_interface(moab::Interface &new_moab,
-                                    int verb = VERBOSE,
-                                    const bool distributed_mesh = true);
+                                    int verb = VERBOSE);
 
-  MoFEMErrorCode setMoabInterface(moab::Interface &new_moab, int verb = VERBOSE,
-                                  const bool distributed_mesh = true);
+  MoFEMErrorCode setMoabInterface(moab::Interface &new_moab,
+                                  int verb = VERBOSE);
 
   /**@}*/
 
@@ -1167,13 +1146,8 @@ template <> struct CoreTmp<-1> : public CoreTmp<0> {
   CoreTmp(
       moab::Interface &moab,             ///< MoAB interface
       MPI_Comm comm = PETSC_COMM_WORLD,  ///< MPI communicator
-      const int verbose = VERBOSE,       ///< Verbosity level
-      const bool distributed_mesh = true ///< UId of entities and dofs depends
-                                         ///< on owing processor, assumed that
-                                         ///< mesh is distributed. Otherwise
-                                         ///< is assumed that all processors
-                                         ///< have the same meshes and same
-                                         ///< entity handlers.
+      const int verbose = VERBOSE      ///< Verbosity level
+
   );
 
   virtual MoFEMErrorCode
@@ -1183,8 +1157,7 @@ template <> struct CoreTmp<-1> : public CoreTmp<0> {
             const TagType tag_type, const enum MoFEMTypes bh, int verb);
 
   virtual MoFEMErrorCode set_moab_interface(moab::Interface &new_moab,
-                                            int verb = VERBOSE,
-                                            const bool distributed_mesh = true);
+                                            int verb = VERBOSE);
 
   virtual MoFEMErrorCode rebuild_database(int verb = DEFAULT_VERBOSITY);
 

@@ -78,12 +78,10 @@ struct CoreInterface : public UnknownInterface {
    *
    * @param new_moab
    * @param verb
-   * @param distributed_mesh
    * @return MoFEMErrorCode
    */
-  virtual MoFEMErrorCode
-  set_moab_interface(moab::Interface &new_moab, int verb = VERBOSE,
-                     const bool distributed_mesh = true) = 0;
+  virtual MoFEMErrorCode set_moab_interface(moab::Interface &new_moab,
+                                            int verb = VERBOSE) = 0;
 
   /** \brief get MeshsetsManager pointer
    */

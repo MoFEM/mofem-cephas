@@ -172,30 +172,21 @@ struct FieldEntityTmp<0, 0>
    * @param  owner_proc               owning processor
    * @param  bit_number               field bit number
    * @param  moab_owner_handle        entity handle on owning processor
-   * @param  true_if_distributed_mesh if true UId is constructed for distributed
    * meshes
    * @return                          UId
    */
   static inline UId
   getGlobalUniqueIdCalculate(const int owner_proc, const char bit_number,
-                             const EntityHandle moab_owner_handle,
-                             const bool true_if_distributed_mesh) {
+                             const EntityHandle moab_owner_handle) {
     constexpr int dof_shift = 9; // Maximal number of DOFs on entity
     constexpr int ent_shift = 64;  // EntityHandle size
     constexpr int proc_shift = 10; // Maximal number of 1024 processors
-    if (true_if_distributed_mesh)
-      return
+    return
 
-          (static_cast<UId>(moab_owner_handle) |
-           static_cast<UId>(owner_proc) << ent_shift |
-           static_cast<UId>(bit_number) << proc_shift + ent_shift)
-          << dof_shift;
-    else
-      return
-
-          (static_cast<UId>(moab_owner_handle) | static_cast<UId>(bit_number)
-                                                     << proc_shift + ent_shift)
-          << dof_shift;
+        (static_cast<UId>(moab_owner_handle) |
+         static_cast<UId>(owner_proc) << ent_shift |
+         static_cast<UId>(bit_number) << proc_shift + ent_shift)
+        << dof_shift;
   }
 
   static inline UId getLoBitNumberUId(const char bit_number) {
@@ -233,10 +224,9 @@ struct FieldEntityTmp<0, 0>
    * @return Global UId
    */
   inline UId getGlobalUniqueIdCalculate() const {
-    return getGlobalUniqueIdCalculate(
-        this->getRefEntityPtr()->getOwnerProc(), this->getBitNumber(),
-        this->getRefEntityPtr()->getOwnerEnt(),
-        this->getBasicDataPtr()->trueIfDistributedMesh());
+    return getGlobalUniqueIdCalculate(this->getRefEntityPtr()->getOwnerProc(),
+                                      this->getBitNumber(),
+                                      this->getRefEntityPtr()->getOwnerEnt());
   }
 
   /**

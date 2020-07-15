@@ -142,8 +142,7 @@ MoFEMErrorCode Core::regSubInterface(const MOFEMuuid &uid) {
 }
 
 MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
-                                            MPI_Comm comm, const int verbose,
-                                            const bool distributed_mesh) {
+                                            MPI_Comm comm, const int verbose) {
   MoFEMFunctionBegin;
 
   // This is deprecated ONE should use MoFEM::Core::Initialize
@@ -176,17 +175,12 @@ MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
   MoFEMFunctionReturn(0);
 }
 
-Core::CoreTmp(moab::Interface &moab,      ///< MoAB interface
-              MPI_Comm comm,              ///< MPI communicator
-              const int verbose,          ///< Verbosity level
-              const bool distributed_mesh ///< UId of entities and dofs depends
-                                          ///< on owing processor, assumed that
-                                          ///< mesh is distributed. Otherwise
-                                          ///< is assumed that all processors
-                                          ///< have the same meshes and same
-                                          ///< entity handlers.
+Core::CoreTmp(moab::Interface &moab, ///< MoAB interface
+              MPI_Comm comm,         ///< MPI communicator
+              const int verbose      ///< Verbosity level
+
               )
-    : CoreTmp(moab, comm, verbose, distributed_mesh, CoreValue<0>()) {
+    : CoreTmp(moab, comm, verbose, CoreValue<0>()) {
 
   // Register sub-interfaces
   ierr = this->registerSubInterfaces();
@@ -199,10 +193,6 @@ Core::CoreTmp(moab::Interface &moab,      ///< MoAB interface
   CHKERRABORT(comm, ierr);
 
   this->basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
-  if (distributed_mesh)
-    this->basicEntityDataPtr->setDistributedMesh();
-  else
-    this->basicEntityDataPtr->unSetDistributedMesh();
   setRefEntBasicDataPtr(*this, this->basicEntityDataPtr);
 
   ierr = this->initialiseDatabaseFromMesh(verbose);
@@ -212,15 +202,10 @@ Core::CoreTmp(moab::Interface &moab,      ///< MoAB interface
 CoreTmp<-1>::CoreTmp(
     moab::Interface &moab,      ///< MoAB interface
     MPI_Comm comm,              ///< MPI communicator
-    const int verbose,          ///< Verbosity level
-    const bool distributed_mesh ///< UId of entities and dofs depends
-                                ///< on owing processor, assumed that
-                                ///< mesh is distributed. Otherwise
-                                ///< is assumed that all processors
-                                ///< have the same meshes and same
-                                ///< entity handlers.
+    const int verbose          ///< Verbosity level
+
     )
-    : CoreTmp<0>(moab, comm, verbose, distributed_mesh, CoreValue<-1>()) {
+    : CoreTmp<0>(moab, comm, verbose, CoreValue<-1>()) {
 
   // Register sub-interfaces
   ierr = this->registerSubInterfaces();
@@ -233,10 +218,6 @@ CoreTmp<-1>::CoreTmp(
   CHKERRABORT(comm, ierr);
 
   this->basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
-  if (distributed_mesh)
-    this->basicEntityDataPtr->setDistributedMesh();
-  else
-    this->basicEntityDataPtr->unSetDistributedMesh();
   setRefEntBasicDataPtr(*this, this->basicEntityDataPtr);
 
   ierr = this->initialiseDatabaseFromMesh(verbose);
@@ -408,8 +389,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::setMoabInterface(moab::Interface &new_moab, int verb,
-                                      const bool distributed_mesh) {
+MoFEMErrorCode Core::setMoabInterface(moab::Interface &new_moab, int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -431,10 +411,6 @@ MoFEMErrorCode Core::setMoabInterface(moab::Interface &new_moab, int verb,
 
   // Create basic entity data struture
   basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
-  if (distributed_mesh)
-    basicEntityDataPtr->setDistributedMesh();
-  else
-    basicEntityDataPtr->unSetDistributedMesh();
   setRefEntBasicDataPtr(*this, this->basicEntityDataPtr);
 
   // Initalise database
@@ -777,15 +753,13 @@ MoFEMErrorCode CoreTmp<-1>::rebuild_database(int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::set_moab_interface(moab::Interface &new_moab, int verb,
-                                        const bool distributed_mesh) {
-  return this->setMoabInterface(new_moab, verb, distributed_mesh);
+MoFEMErrorCode Core::set_moab_interface(moab::Interface &new_moab, int verb) {
+  return this->setMoabInterface(new_moab, verb);
 };
 
 MoFEMErrorCode CoreTmp<-1>::set_moab_interface(moab::Interface &new_moab,
-                                               int verb,
-                                               const bool distributed_mesh) {
-  return this->setMoabInterface(new_moab, verb, distributed_mesh);
+                                               int verb) {
+  return this->setMoabInterface(new_moab, verb);
 };
 
 MoFEMErrorCode Core::getOptions(int verb) {

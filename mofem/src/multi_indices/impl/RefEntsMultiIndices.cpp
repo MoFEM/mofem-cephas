@@ -23,8 +23,7 @@ namespace MoFEM {
 
 BasicEntityData::BasicEntityData(const moab::Interface &moab,
                                  const int pcomm_id)
-    : moab(const_cast<moab::Interface &>(moab)), pcommID(pcomm_id),
-      distributedMesh(true) {
+    : moab(const_cast<moab::Interface &>(moab)), pcommID(pcomm_id) {
   rval = moab.tag_get_handle("_RefParentHandle", th_RefParentHandle);
   MOAB_THROW(rval);
   rval = moab.tag_get_handle("_RefBitLevel", th_RefBitLevel);

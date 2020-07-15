@@ -246,7 +246,6 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string name,
 
   const Field *field_ptr   = get_field_structure(name);
   int field_bit_number     = field_ptr->getBitNumber();
-  bool is_distributed_mesh = basicEntityDataPtr->trueIfDistributedMesh();
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
 
@@ -267,11 +266,9 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string name,
 
     // Get UId
     UId first_uid = FieldEntity::getGlobalUniqueIdCalculate(
-        f_owner_proc, field_bit_number, f_moab_owner_handle,
-        is_distributed_mesh);
+        f_owner_proc, field_bit_number, f_moab_owner_handle);
     UId second_uid = FieldEntity::getGlobalUniqueIdCalculate(
-        s_owner_proc, field_bit_number, s_moab_owner_handle,
-        is_distributed_mesh);
+        s_owner_proc, field_bit_number, s_moab_owner_handle);
 
     // Find adjacencies
     FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<

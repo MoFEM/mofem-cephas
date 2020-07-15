@@ -31,13 +31,10 @@ FieldEntityTmp<0, 0>::FieldEntityTmp(
     : interface_FieldImpl<FieldTmp<0, 0>, RefEntity>(field_ptr, ref_ents_ptr),
       tagMaxOrderPtr(t_max_order_ptr),
       fieldDataAdaptorPtr(field_data_adaptor_ptr) {
-        
-  globalUId = getGlobalUniqueIdCalculate(
-      ref_ents_ptr->getOwnerProc(), field_ptr->getBitNumber(),
-      ref_ents_ptr->getOwnerEnt(),
-      ref_ents_ptr->getBasicDataPtr()->trueIfDistributedMesh());
 
-  // getGlobalUniqueIdCalculate();
+  globalUId = getGlobalUniqueIdCalculate(ref_ents_ptr->getOwnerProc(),
+                                         field_ptr->getBitNumber(),
+                                         ref_ents_ptr->getOwnerEnt());
 
   if (PetscUnlikely(!fieldDataAdaptorPtr))
     THROW_MESSAGE("Pointer to field data adaptor not set");

@@ -116,12 +116,6 @@ struct BasicEntityData {
   BasicEntityData(const moab::Interface &mfield,
                   const int pcomm_id = MYPCOMM_INDEX);
   virtual ~BasicEntityData() = default;
-  inline void setDistributedMesh() { distributedMesh = true; }
-  inline void unSetDistributedMesh() { distributedMesh = false; }
-  inline bool trueIfDistributedMesh() const { return distributedMesh; }
-
-private:
-  bool distributedMesh;
 };
 
 template <int N> struct RefEntityTmp : public RefEntityTmp<N - 1> {
@@ -729,10 +723,6 @@ template <class T> struct Entity_update_pcomm_data {
         ParallelComm::get_pcomm(&e->getBasicDataPtr()->moab, pcommID);
     if (pcomm == NULL)
       THROW_MESSAGE("pcomm is null");
-    if (e->getBasicDataPtr()->trueIfDistributedMesh()) {
-      THROW_MESSAGE("Can not change owner proc if distributed mesh, this will "
-                    "make undetermined behavior");
-    }
     rval = pcomm->get_owner_handle(e->getRefEnt(), e->getOwnerProc(),
                                    e->getOwnerEnt());
     MOAB_THROW(rval);
