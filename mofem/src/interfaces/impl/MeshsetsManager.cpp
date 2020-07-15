@@ -255,7 +255,7 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cannot find Cubit meshset with id: %d", ms_id);
   }
   EntityHandle meshset = cit->getMeshset();
   CHKERR moab.add_entities(meshset, ents);
@@ -276,7 +276,7 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cannot find Cubit meshset with id: %d", ms_id);
   }
   EntityHandle meshset = cit->getMeshset();
   CHKERR moab.add_entities(meshset, ents, nb_ents);
@@ -297,7 +297,7 @@ MeshsetsManager::setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cannot find Cubit meshset with id: %d", ms_id);
   }
   if (name.size() > 0) {
     bool success = cubitMeshsets.modify(cubitMeshsets.project<0>(cit),
@@ -328,7 +328,7 @@ MoFEMErrorCode MeshsetsManager::setAtributesByDataStructure(
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cannot find Cubit meshset with id: %d", ms_id);
   }
   if (name.size() > 0) {
     bool success = cubitMeshsets.modify(cubitMeshsets.project<0>(cit),
@@ -359,7 +359,7 @@ MoFEMErrorCode MeshsetsManager::setBcData(const CubitBCType cubit_bc_type,
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cubit meshset with id is already there", ms_id);
   }
   bool success =
       cubitMeshsets.modify(cubitMeshsets.project<0>(cit),
