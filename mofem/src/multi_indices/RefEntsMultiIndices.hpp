@@ -169,18 +169,6 @@ template <> struct RefEntityTmp<0> {
       return nullptr;
   }
 
-  /**
-   * @brief Get the pointer to reference element
-   *
-   * @return const boost::shared_ptr<RefElement>
-   */
-  inline const boost::shared_ptr<RefElement> getRefElementPtr() const {
-    if (auto ptr = refElementPtr.lock())
-      return ptr;
-    else
-      return nullptr;
-  }
-
   int getSideNumber() const;
 
   /**
@@ -466,7 +454,26 @@ template <> struct RefEntityTmp<0> {
 
   EntityHandle ent;
   static boost::weak_ptr<BasicEntityData> basicDataPtr;
+
+private:
+  // template <typename T> friend struct interface_RefEntity;
+  friend struct EntFiniteElement;
+  friend struct NumeredEntFiniteElement;
+
+  /**
+   * @brief Get the pointer to reference element
+   *
+   * @return const boost::shared_ptr<RefElement>
+   */
+  inline const boost::shared_ptr<RefElement> getRefElementPtr() const {
+    if (auto ptr = refElementPtr.lock())
+      return ptr;
+    else
+      return nullptr;
+  }
+
   static boost::weak_ptr<RefElement> refElementPtr;
+
 };
 
 template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
@@ -501,13 +508,6 @@ template <typename T> struct interface_RefEntity {
       : sPtr(interface.getRefEntityPtr()) {}
 
   virtual ~interface_RefEntity() = default;
-
-  /**
-   * @copydoc MoFEM::RefEntityTmp<0>::getRefElementPtr
-   */
-  inline const boost::shared_ptr<RefElement> &getRefElementPtr() const {
-    return this->sPtr->getRefElementPtr();
-  }
 
   /**
    * @copydoc MoFEM::RefEntityTmp<0>::getSideNumber
@@ -621,6 +621,15 @@ template <typename T> struct interface_RefEntity {
    * @copydoc MoFEM::RefEntityTmp<0>::getRefEntityPtr
    */
   inline boost::shared_ptr<T> &getRefEntityPtr() const { return this->sPtr; }
+
+// protected:
+//   /**
+//    * @copydoc MoFEM::RefEntityTmp<0>::getRefElementPtr
+//    */
+//   inline const boost::shared_ptr<RefElement> &getRefElementPtr() const {
+//     return this->sPtr->getRefElementPtr();
+//   }
+
 };
 
 /**

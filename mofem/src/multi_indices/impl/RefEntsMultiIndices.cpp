@@ -21,8 +21,6 @@
 
 namespace MoFEM {
 
-// static moab::Error error;
-
 BasicEntityData::BasicEntityData(const moab::Interface &moab,
                                  const int pcomm_id)
     : moab(const_cast<moab::Interface &>(moab)), pcommID(pcomm_id),
@@ -55,7 +53,6 @@ std::ostream &operator<<(std::ostream &os, const RefEntity &e) {
   os << " owner ent " << e.getOwnerEnt();
   os << " owner proc " << e.getOwnerProc();
   os << " parent ent " << e.getParentEnt();
-  // os << " BitRefLevel " << e.getBitRefLevel();
   os << " ent type " << e.getEntType();
   os << " ent parent type " << e.getParentEntType();
   return os;
