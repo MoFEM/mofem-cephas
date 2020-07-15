@@ -235,22 +235,23 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   const Problem *problem_ptr;
   MoFEMFunctionBegin;
   CHKERR m_field.get_problem(problem, &problem_ptr);
-  typedef NumeredDofEntity_multiIndex::index<
-      Composite_Name_And_Part_mi_tag>::type DofsByNamePartAndCoeffIdx;
-  int rank = m_field.get_comm_rank();
-  DofsByNamePartAndCoeffIdx::iterator it, hi_it;
+  const int rank = m_field.get_comm_rank();
+  const auto bit_number = m_field.get_field_bit_number(field);
+
+  typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type DofsByUId;
+  DofsByUId::iterator it, hi_it;
   switch (rc) {
   case ROW:
-    it = problem_ptr->numeredDofsRows->get<Composite_Name_And_Part_mi_tag>()
-             .lower_bound(boost::make_tuple(field, rank));
-    hi_it = problem_ptr->numeredDofsRows->get<Composite_Name_And_Part_mi_tag>()
-                .upper_bound(boost::make_tuple(field, rank));
+    it = problem_ptr->numeredDofsRows->get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getLoBitNumberUId(bit_number));
+    hi_it = problem_ptr->numeredDofsRows->get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getHiBitNumberUId(bit_number));
     break;
   case COL:
-    it = problem_ptr->numeredDofsCols->get<Composite_Name_And_Part_mi_tag>()
-             .lower_bound(boost::make_tuple(field, rank));
-    hi_it = problem_ptr->numeredDofsCols->get<Composite_Name_And_Part_mi_tag>()
-                .upper_bound(boost::make_tuple(field, rank));
+    it = problem_ptr->numeredDofsCols->get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getLoBitNumberUId(bit_number));
+    hi_it = problem_ptr->numeredDofsCols->get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getHiBitNumberUId(bit_number));
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
@@ -283,8 +284,18 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator
       vit,
       hi_vit;
-  vit = dof_loc_idx_view.begin();
-  hi_vit = dof_loc_idx_view.end();
+  vit = dof_loc_idx_view.lower_bound(0);
+  auto get_nb_loc_dofs = [&]() {
+    switch (rc) {
+    case ROW:
+      return problem_ptr->getNbLocalDofsRow();
+    case COL:
+      return problem_ptr->getNbLocalDofsCol();
+    default:
+      return -1;
+    }
+  };
+  hi_vit = dof_loc_idx_view.upper_bound(get_nb_loc_dofs());
   int size = std::distance(vit, hi_vit);
   int *id;
   CHKERR PetscMalloc(size * sizeof(int), &id);
@@ -362,22 +373,22 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
 
   NumeredDofEntity_view_multiIndex dofs_view;
 
-  auto bit_number = m_field.get_field_bit_number(x_field_name);
+  auto x_bit_number = m_field.get_field_bit_number(x_field_name);
 
   switch (x_rc) {
   case ROW:
     dofs_view.insert(dofs_view.end(),
                      px_ptr->numeredDofsRows->get<Unique_mi_tag>().lower_bound(
-                         FieldEntity::getLoBitNumberUId(bit_number)),
+                         FieldEntity::getLoBitNumberUId(x_bit_number)),
                      px_ptr->numeredDofsRows->get<Unique_mi_tag>().upper_bound(
-                         FieldEntity::getLoBitNumberUId(bit_number)));
+                         FieldEntity::getHiBitNumberUId(x_bit_number)));
     break;
   case COL:
     dofs_view.insert(dofs_view.end(),
                      px_ptr->numeredDofsCols->get<Unique_mi_tag>().lower_bound(
-                         FieldEntity::getLoBitNumberUId(bit_number)),
+                         FieldEntity::getLoBitNumberUId(x_bit_number)),
                      px_ptr->numeredDofsCols->get<Unique_mi_tag>().upper_bound(
-                         FieldEntity::getLoBitNumberUId(bit_number)));
+                         FieldEntity::getHiBitNumberUId(x_bit_number)));
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -398,15 +409,20 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
   }
 
   std::map<int, int> global_dofs_map;
-  for (auto r = dofs_ptr->get<Composite_Name_And_Part_mi_tag>().equal_range(
-           boost::make_tuple(y_field_name, m_field.get_comm_rank()));
-       r.first != r.second; ++r.first) {
-
-    auto x_dit = dofs_view.get<Composite_Ent_And_EntDofIdx_mi_tag>().find(
-        boost::make_tuple((*r.first)->getEnt(), (*r.first)->getEntDofIdx()));
-    if (x_dit != dofs_view.get<Composite_Ent_And_EntDofIdx_mi_tag>().end()) {
-      global_dofs_map[(*x_dit)->getPetscGlobalDofIdx()] =
-          (*r.first)->getPetscGlobalDofIdx();
+  const auto y_bit_number = m_field.get_field_bit_number(y_field_name);
+  auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(y_bit_number));
+  auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(y_bit_number));
+  const auto rank = m_field.get_comm_rank();
+  for (; dit != hi_dit; ++dit) {
+    if ((*dit)->getPart() == rank) {
+      auto x_dit = dofs_view.get<Composite_Ent_And_EntDofIdx_mi_tag>().find(
+          boost::make_tuple((*dit)->getEnt(), (*dit)->getEntDofIdx()));
+      if (x_dit != dofs_view.get<Composite_Ent_And_EntDofIdx_mi_tag>().end()) {
+        global_dofs_map[(*x_dit)->getPetscGlobalDofIdx()] =
+            (*dit)->getPetscGlobalDofIdx();
+      }
     }
   }
 

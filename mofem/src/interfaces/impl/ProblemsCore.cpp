@@ -503,15 +503,15 @@ MoFEMErrorCode Core::loop_dofs(const Problem *problem_ptr,
                                int upper_rank, int verb) {
   MoFEMFunctionBegin;
   SET_BASIC_METHOD(method, &*problem_ptr);
-  typedef NumeredDofEntity_multiIndex::index<
-      Composite_Name_And_Part_mi_tag>::type NumeredDofsByNameAndPart;
-  NumeredDofsByNameAndPart *dofs;
+  typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type
+      NumeredDofsByUId;
+  NumeredDofsByUId *dofs;
   switch (rc) {
   case ROW:
-    dofs = &problem_ptr->numeredDofsRows->get<Composite_Name_And_Part_mi_tag>();
+    dofs = &problem_ptr->numeredDofsRows->get<Unique_mi_tag>();
     break;
   case COL:
-    dofs = &problem_ptr->numeredDofsCols->get<Composite_Name_And_Part_mi_tag>();
+    dofs = &problem_ptr->numeredDofsCols->get<Unique_mi_tag>();
     break;
   default:
     SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Not implemented");
@@ -524,16 +524,18 @@ MoFEMErrorCode Core::loop_dofs(const Problem *problem_ptr,
     SETERRQ(cOmm, MOFEM_NOT_FOUND, ("Field not found " + field_name).c_str());
   }
 
-  NumeredDofsByNameAndPart::iterator miit =
-      dofs->lower_bound(boost::make_tuple(field_name, lower_rank));
-  NumeredDofsByNameAndPart::iterator hi_miit =
-      dofs->upper_bound(boost::make_tuple(field_name, upper_rank));
+  auto miit = dofs->lower_bound(
+      FieldEntity::getLoBitNumberUId((*field_it)->getBitNumber()));
+  auto hi_miit = dofs->upper_bound(
+      FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
 
   CHKERR method.preProcess();
   for (; miit != hi_miit; miit++) {
-    method.dofPtr = miit->get()->getDofEntityPtr();
-    method.dofNumeredPtr = *miit;
-    CHKERR method();
+    if ((*miit)->getPart() >= lower_rank && (*miit)->getPart() <= upper_rank) {
+      method.dofPtr = miit->get()->getDofEntityPtr();
+      method.dofNumeredPtr = *miit;
+      CHKERR method();
+    }
   }
   CHKERR method.postProcess();
   MoFEMFunctionReturn(0);
@@ -630,10 +632,10 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
     SETERRQ(cOmm, MOFEM_NOT_FOUND, ("Field not found " + field_name).c_str());
   }
   
-  auto miit = dofs->get<Composite_Name_And_Part_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, lower_rank));
-  auto hi_miit = dofs->get<Composite_Name_And_Part_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, upper_rank));
+  auto miit = dofs->lower_bound(
+      FieldEntity::getLoBitNumberUId((*field_it)->getBitNumber()));
+  auto hi_miit = dofs->upper_bound(
+      FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
 
   typedef multi_index_container<
       boost::shared_ptr<FieldEntity>,
@@ -644,16 +646,17 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
   FieldEntity_view_multiIndex ents_view;
   auto hint = ents_view.begin();
   for (; miit != hi_miit; ++miit)
-    ents_view.emplace_hint(hint, (*miit)->getFieldEntityPtr());
+    if ((*miit)->getPart() >= lower_rank && (*miit)->getPart() <= upper_rank)
+      ents_view.emplace_hint(hint, (*miit)->getFieldEntityPtr());
 
-  method.loopSize = ents_view.size();
-  SET_BASIC_METHOD(method, problem_ptr);
-  CHKERR method.preProcess();
-  method.nInTheLoop = 0;
-  for (auto &field_ent : ents_view) {
-    method.entPtr = field_ent;
-    CHKERR method();
-    ++method.nInTheLoop;
+      method.loopSize = ents_view.size();
+      SET_BASIC_METHOD(method, problem_ptr);
+      CHKERR method.preProcess();
+      method.nInTheLoop = 0;
+      for (auto &field_ent : ents_view) {
+        method.entPtr = field_ent;
+        CHKERR method();
+        ++method.nInTheLoop;
   }
   CHKERR method.postProcess();
   MoFEMFunctionReturn(0);
