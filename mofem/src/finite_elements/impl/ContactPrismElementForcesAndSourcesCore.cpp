@@ -253,17 +253,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       ++t_diff;
     }
 
-    // jacSlave.clear();
-    // for (auto n : {0, 1, 2}) {
-    //   tJacSlave(i, j) += t_coords_slave(i) * t_diff(j);
-    //   ++t_coords_slave;
-    //   ++t_diff;
-    // }
-
-    // double area;
-    // CHKERR determinantTensor3by3(tJacSlave, area);
-    // CHKERR invertTensor3by3(tJacSlave, area, tInvJacSlave);
-
     t_t2_master(j) =
         FTensor::levi_civita(i, j, k) * t_normal_master(k) * t_t1_master(i);
 
@@ -298,10 +287,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
     CHKERR getEntitySense<MBTRI>(data_div);
     CHKERR getEntityDataOrder<MBTRI>(data_div, HDIV);
-    // CHKERR getEntitySense<MBTRI>(dataHdivSlave);
-    // CHKERR getEntityDataOrder<MBTRI>(dataHdivSlave, HDIV);
-    // CHKERR getEntitySense<MBTRI>(dataHdivMaster);
-    // CHKERR getEntityDataOrder<MBTRI>(dataHdivMaster, HDIV);
     dataHdivSlave.spacesOnEntities[MBTRI].set(HDIV);
     dataHdivMaster.spacesOnEntities[MBTRI].set(HDIV);
     data_div.spacesOnEntities[MBTRI].set(HDIV);
@@ -502,9 +487,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
           dataHdivSlave.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
               dataOnSlave[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
                   NOBASE);
-          // dataOnElement[HDIV].dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
-          //     dataOnMaster[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
-          //         NOBASE);
         }
       }
     }
@@ -530,8 +512,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       case DEMKOWICZ_JACOBI_BASE:
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
 
-          // normalsAtGaussPtsSlave.resize(0, 0, false);
-
           auto get_ftensor_from_mat_3d = [](MatrixDouble &m) {
             return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
                 &m(0, 0), &m(0, 1), &m(0, 2));
@@ -548,8 +528,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
           auto normal_slave = get_tensor_vec(nOrmalSlave);
 
           auto slave_normal_data = get_tensor_vec(normal, 3);
-
-          // FTensor::Index<'i', 3> i;
 
           normal_slave(i) = slave_normal_data(i);
         
