@@ -83,7 +83,7 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
       if (verb >= NOISY)
         PetscSynchronizedPrintf(
             m_field.get_comm(), "send %lu (%lu) to %d at %d\n",
-            (*meit)->getRefEnt(), handle_on_sharing_proc,
+            (*meit)->getEnt(), handle_on_sharing_proc,
             (*meit)->getSharingProcsPtr()[proc], m_field.get_comm_rank());
 
       if (!(pstatus & PSTATUS_MULTISHARED))
@@ -189,9 +189,9 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
       if (verb >= VERY_VERBOSE)
         PetscSynchronizedPrintf(
             m_field.get_comm(), "received %ul (%ul) from %d at %d\n",
-            (*meit)->getRefEnt(), ent, onodes[kk], m_field.get_comm_rank());
+            (*meit)->getEnt(), ent, onodes[kk], m_field.get_comm_rank());
 
-      ents.insert((*meit)->getRefEnt());
+      ents.insert((*meit)->getEnt());
     }
   }
 
@@ -511,9 +511,9 @@ MoFEMErrorCode CommInterface::exchangeFieldData(const std::string field_name,
 
       ) {
         if ((*it)->getEntType() == MBVERTEX)
-          exchange_ents_data_verts.insert((*it)->getRefEnt());
+          exchange_ents_data_verts.insert((*it)->getEnt());
         else
-          exchange_ents_data.insert((*it)->getRefEnt());
+          exchange_ents_data.insert((*it)->getEnt());
       }
 
     auto field_ptr = m_field.get_field_structure(field_name);

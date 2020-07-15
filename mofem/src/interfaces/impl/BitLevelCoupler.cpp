@@ -248,7 +248,7 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesVerticesOnTets(
     
 
     // check if vertex is on child entities set
-    EntityHandle node = (*it)->getRefEnt();
+    EntityHandle node = (*it)->getEnt();
     if (children.find(node) == children.end()) {
       continue;
     }
@@ -363,7 +363,7 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesEdgesFacesVolumes(
         rval = m_field.get_moab().get_adjacencies(
             &*conn_parents.begin(), num_nodes, max_dim, false, parent_ents);
         CHKERRQ_MOAB(rval);
-        parent_ents.erase((*it)->getRefEnt());
+        parent_ents.erase((*it)->getEnt());
         if (!parent_ents.empty()) {
           ierr = chanegParent(refined_ptr->project<0>(it), *parent_ents.begin());
           CHKERRG(ierr);
@@ -441,7 +441,7 @@ MoFEMErrorCode BitLevelCoupler::verifyParent(RefEntity_multiIndex::iterator it,
   if (parent != (*it)->getParentEnt()) {
     SETERRQ3(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "data inconsistency %lu != %lu for ent %lu", parent,
-             (*it)->getParentEnt(), (*it)->getRefEnt());
+             (*it)->getParentEnt(), (*it)->getEnt());
   }
 
   MoFEMFunctionReturnHot(0);

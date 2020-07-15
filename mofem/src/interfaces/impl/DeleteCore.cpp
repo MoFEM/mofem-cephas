@@ -513,7 +513,7 @@ MoFEMErrorCode Core::remove_parents_by_ents(const Range &ents, int verb) {
     auto lo = refinedEntities.lower_bound(f);
     for (; f <= s; ++f) {
 
-      if ((*lo)->getRefEnt() == f) {
+      if ((*lo)->getEnt() == f) {
           bool success = refinedEntities.modify(lo, RefEntity_change_parent(0));
           if (!success)
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,

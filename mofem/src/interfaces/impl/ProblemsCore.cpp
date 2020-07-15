@@ -638,8 +638,8 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
   typedef multi_index_container<
       boost::shared_ptr<FieldEntity>,
       indexed_by<ordered_unique<
-          tag<Ent_mi_tag>,
-          const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt>>>>
+          tag<Ent_mi_tag>, const_mem_fun<FieldEntity::interface_type_RefEntity,
+                                         EntityHandle, &FieldEntity::getEnt>>>>
       FieldEntity_view_multiIndex;
   FieldEntity_view_multiIndex ents_view;
   auto hint = ents_view.begin();
@@ -710,7 +710,7 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
       indexed_by<
           ordered_unique<tag<Ent_mi_tag>,
                          const_mem_fun<FieldEntity::interface_RefEntity,
-                                       EntityHandle, &FieldEntity::getRefEnt>>>>
+                                       EntityHandle, &FieldEntity::getEnt>>>>
       FieldEntity_view_multiIndex;
 
   FieldEntity_view_multiIndex ents_view;

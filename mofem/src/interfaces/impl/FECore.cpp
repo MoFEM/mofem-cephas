@@ -467,7 +467,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_bit_ref(
     if ((bit2 & mask) != bit2)
       continue;
     if ((bit2 & bit).any()) {
-      EntityHandle ent = miit->get()->getRefEnt();
+      EntityHandle ent = miit->get()->getEnt();
       CHKERR get_moab().add_entities(idm, &ent, 1);
       nb_add_fes++;
     }

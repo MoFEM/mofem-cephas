@@ -81,12 +81,6 @@ struct FieldEntityTmp<0, 0>
   }
 
   /**
-   * \brief Get entity handle
-   * @return EntityHandle
-   */
-  inline EntityHandle getEnt() const { return this->getRefEnt(); }
-
-  /**
    * \brief Get number of active DOFs on entity
    * @return Number of DOFs
    */
@@ -278,9 +272,6 @@ struct interface_FieldEntity : public interface_Field<T, T> {
   interface_FieldEntity(const boost::shared_ptr<T> &sptr)
       : interface_Field<T, T>(sptr) {}
 
-  /// @return get entity handle
-  inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
-
   /// @return get number of dofs on entity
   inline int getNbDofsOnEnt() const { return this->sPtr->getNbDofsOnEnt(); }
 
@@ -363,17 +354,17 @@ typedef multi_index_container<
     indexed_by<
         ordered_unique<tag<Unique_mi_tag>,
                        member<FieldEntity, UId, &FieldEntity::globalUId>>,
-        ordered_non_unique<
-            tag<Ent_mi_tag>,
-            const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt>>,
+        ordered_non_unique<tag<Ent_mi_tag>,
+                           const_mem_fun<FieldEntity::interface_type_RefEntity,
+                                         EntityHandle, &FieldEntity::getEnt>>,
         ordered_non_unique<
             tag<Composite_Name_And_Ent_mi_tag>,
             composite_key<
                 FieldEntity,
                 const_mem_fun<FieldEntity::interface_type_Field,
                               boost::string_ref, &FieldEntity::getNameRef>,
-                const_mem_fun<FieldEntity, EntityHandle,
-                              &FieldEntity::getEnt>>>>>
+                const_mem_fun<FieldEntity::interface_type_RefEntity,
+                              EntityHandle, &FieldEntity::getEnt>>>>>
     FieldEntity_multiIndex;
 
 /** \brief Entity index by field name
@@ -388,9 +379,9 @@ typedef multi_index_container<
 
         sequenced<>,
 
-        ordered_non_unique<
-            tag<Ent_mi_tag>,
-            const_mem_fun<FieldEntity, EntityHandle, &FieldEntity::getEnt>>
+        ordered_non_unique<tag<Ent_mi_tag>,
+                           const_mem_fun<FieldEntity::interface_type_RefEntity,
+                                         EntityHandle, &FieldEntity::getEnt>>
 
         >>
     FieldEntity_multiIndex_ent_view;

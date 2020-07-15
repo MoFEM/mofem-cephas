@@ -633,7 +633,7 @@ invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
 struct RefEntExtractor {
   template <typename Iterator>
   static inline EntityHandle extract(const Iterator &it) {
-    return (*it)->getRefEnt();
+    return (*it)->getEnt();
   }
 };
 

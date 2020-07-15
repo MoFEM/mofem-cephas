@@ -70,7 +70,7 @@ RefElement_PRISM::RefElement_PRISM(
   default:
     THROW_MESSAGE("this work only for PRISMs");
   }
-  EntityHandle prism = getRefEnt();
+  EntityHandle prism = getEnt();
   int num_nodes;
   const EntityHandle *conn;
   rval = moab.get_connectivity(prism, conn, num_nodes, true);
@@ -366,7 +366,7 @@ RefElementFace::RefElementFace(const boost::shared_ptr<RefEntity> &ref_ents_ptr)
     THROW_MESSAGE("this works only for TRIs and QUADs");
   }
   int side_number, sense, offset;
-  EntityHandle tri = getRefEnt();
+  EntityHandle tri = getEnt();
   int num_nodes;
   const EntityHandle *conn;
   moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;

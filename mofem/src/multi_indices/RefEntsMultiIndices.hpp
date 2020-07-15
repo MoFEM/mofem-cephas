@@ -177,7 +177,7 @@ template <> struct RefEntityTmp<0> {
    *
    * @return EntityHandle
    */
-  inline EntityHandle getRefEnt() const { return this->ent; }
+  inline EntityHandle getEnt() const { return this->ent; }
 
   /** \brief Get entity type
    */
@@ -523,9 +523,9 @@ template <typename T> struct interface_RefEntity {
   }
 
   /**
-   * @copydoc MoFEM::RefEntityTmp<0>::getRefEnt
+   * @copydoc MoFEM::RefEntityTmp<0>::getEnt
    */
-  inline EntityHandle getRefEnt() const { return this->sPtr->getRefEnt(); }
+  inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
 
   /**
    * @copydoc MoFEM::RefEntityTmp<0>::getParentEntType
@@ -643,7 +643,7 @@ using RefEntity_multiIndex = multi_index_container<
         ordered_unique<
 
             tag<Ent_mi_tag>,
-            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getRefEnt>
+            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getEnt>
 
             >,
 
@@ -685,7 +685,7 @@ using RefEntity_multiIndex_view_by_hashed_parent_entity = multi_index_container<
         hashed_unique<tag<Composite_EntType_and_ParentEntType_mi_tag>,
                       composite_key<boost::shared_ptr<RefEntity>,
                                     const_mem_fun<RefEntity, EntityHandle,
-                                                  &RefEntity::getRefEnt>,
+                                                  &RefEntity::getEnt>,
                                     const_mem_fun<RefEntity, EntityHandle,
                                                   &RefEntity::getParentEnt>>>>
 
@@ -700,7 +700,7 @@ using RefEntity_multiIndex_view_by_ordered_parent_entity =
                        tag<Composite_EntType_and_ParentEntType_mi_tag>,
                        composite_key<boost::shared_ptr<RefEntity>,
                                      const_mem_fun<RefEntity, EntityHandle,
-                                                   &RefEntity::getRefEnt>,
+                                                   &RefEntity::getEnt>,
                                      const_mem_fun<RefEntity, EntityHandle,
                                                    &RefEntity::getParentEnt>>>>
 
@@ -711,7 +711,7 @@ using RefEntity_multiIndex_view_sequence_ordered_view = multi_index_container<
     indexed_by<
         sequenced<>,
         ordered_unique<tag<Ent_mi_tag>, const_mem_fun<RefEntity, EntityHandle,
-                                                      &RefEntity::getRefEnt>>>>;
+                                                      &RefEntity::getEnt>>>>;
 
 template <class T> struct Entity_update_pcomm_data {
   const int pcommID;
@@ -723,10 +723,10 @@ template <class T> struct Entity_update_pcomm_data {
         ParallelComm::get_pcomm(&e->getBasicDataPtr()->moab, pcommID);
     if (pcomm == NULL)
       THROW_MESSAGE("pcomm is null");
-    rval = pcomm->get_owner_handle(e->getRefEnt(), e->getOwnerProc(),
+    rval = pcomm->get_owner_handle(e->getEnt(), e->getOwnerProc(),
                                    e->getOwnerEnt());
     MOAB_THROW(rval);
-    EntityHandle ent = e->getRefEnt();
+    EntityHandle ent = e->getEnt();
     rval = e->getBasicDataPtr()->moab.tag_get_data(pcomm->part_tag(), &ent, 1,
                                                    &e->getPartProc());
     MOAB_THROW(rval);

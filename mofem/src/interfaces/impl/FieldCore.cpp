@@ -631,7 +631,7 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
         auto hi = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
         Range in;
         for (; miit_ref_ent != hi; ++miit_ref_ent)
-          in.insert(miit_ref_ent->get()->getRefEnt());
+          in.insert(miit_ref_ent->get()->getEnt());
         return in;
       };
 

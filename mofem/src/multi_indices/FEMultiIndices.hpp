@@ -305,12 +305,6 @@ struct EntFiniteElement
   }
 
   /**
-   * \brief Get element entity
-   * @return Element entity handle
-   */
-  inline EntityHandle getEnt() const { return getRefEnt(); }
-
-  /**
    * \brief Get number of DOFs on data
    * @return Number of dofs on data
    */
@@ -452,16 +446,6 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
    * @return Number of dofs on data
    */
   inline DofIdx getNbDofsData() const { return this->sPtr->getNbDofsData(); }
-
-  /**
-   * \brief Get element entity
-   * @return Element entity handle
-   */
-  inline EntityHandle getEnt() const { return this->sPtr->getRefEnt(); }
-
-  // /** \deprecated Use getEnt() instead
-  // */
-  // DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
 
   /**
    * \brief Get unique UId for finite element entity
@@ -626,9 +610,10 @@ typedef multi_index_container<
                        const_mem_fun<EntFiniteElement, UId,
                                      &EntFiniteElement::getGlobalUniqueId>>,
 
-        ordered_non_unique<tag<Ent_mi_tag>,
-                           const_mem_fun<EntFiniteElement, EntityHandle,
-                                         &EntFiniteElement::getEnt>>,
+        ordered_non_unique<
+            tag<Ent_mi_tag>,
+            const_mem_fun<EntFiniteElement::interface_type_RefEntity,
+                          EntityHandle, &EntFiniteElement::getEnt>>,
 
         ordered_non_unique<
             tag<FiniteElement_name_mi_tag>,
@@ -641,8 +626,8 @@ typedef multi_index_container<
                 EntFiniteElement,
                 const_mem_fun<EntFiniteElement::interface_type_FiniteElement,
                               boost::string_ref, &EntFiniteElement::getNameRef>,
-                const_mem_fun<EntFiniteElement, EntityHandle,
-                              &EntFiniteElement::getEnt>>>
+                const_mem_fun<EntFiniteElement::interface_type_RefEntity,
+                              EntityHandle, &EntFiniteElement::getEnt>>>
 
         >>
     EntFiniteElement_multiIndex;
@@ -678,9 +663,8 @@ typedef multi_index_container<
                           &NumeredEntFiniteElement::getNameRef>>,
         ordered_non_unique<
             tag<Ent_mi_tag>,
-            const_mem_fun<
-                NumeredEntFiniteElement::interface_type_EntFiniteElement,
-                EntityHandle, &NumeredEntFiniteElement::getEnt>>,
+            const_mem_fun<NumeredEntFiniteElement::interface_type_RefEntity,
+                          EntityHandle, &NumeredEntFiniteElement::getEnt>>,
         ordered_non_unique<
             tag<Composite_Name_And_Ent_mi_tag>,
             composite_key<
@@ -688,9 +672,8 @@ typedef multi_index_container<
                 const_mem_fun<
                     NumeredEntFiniteElement::interface_type_FiniteElement,
                     boost::string_ref, &NumeredEntFiniteElement::getNameRef>,
-                const_mem_fun<
-                    NumeredEntFiniteElement::interface_type_EntFiniteElement,
-                    EntityHandle, &NumeredEntFiniteElement::getEnt>>>,
+                const_mem_fun<NumeredEntFiniteElement::interface_type_RefEntity,
+                              EntityHandle, &NumeredEntFiniteElement::getEnt>>>,
         ordered_non_unique<
             tag<Composite_Name_And_Part_mi_tag>,
             composite_key<

@@ -192,7 +192,7 @@ typedef multi_index_container<
     // ptrWrapperRefElement,
     indexed_by<ordered_unique<
         tag<Ent_mi_tag>, const_mem_fun<RefElement::interface_type_RefEntity,
-                                       EntityHandle, &RefElement::getRefEnt>>>>
+                                       EntityHandle, &RefElement::getEnt>>>>
     RefElement_multiIndex;
 
 typedef multi_index_container<
@@ -201,7 +201,7 @@ typedef multi_index_container<
     indexed_by<
         ordered_unique<tag<Ent_mi_tag>,
                        const_mem_fun<RefElement::interface_type_RefEntity,
-                                     EntityHandle, &RefElement::getRefEnt>>,
+                                     EntityHandle, &RefElement::getEnt>>,
         ordered_non_unique<
             tag<Ent_Ent_mi_tag>,
             const_mem_fun<RefElement::interface_type_RefEntity, EntityHandle,

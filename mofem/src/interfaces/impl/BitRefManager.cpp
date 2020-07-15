@@ -170,7 +170,7 @@ struct SetBitRefLevelTool {
       // some entities from range are in database
       hi_rit = refElementPtr->upper_bound(s);
       for (; rit != hi_rit; ++rit) {
-        seed_fe_range.erase(rit->get()->getRefEnt());
+        seed_fe_range.erase(rit->get()->getEnt());
       }
     }
     MoFEMFunctionReturnHot(0);
@@ -761,7 +761,7 @@ MoFEMErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel bit,
   for (; it != hi_it; it++) {
     const BitRefLevel &ent_bit = it->get()->getBitRefLevel();
     if ((ent_bit & mask) == ent_bit && (ent_bit & bit).any())
-      ents_vec.emplace_back(it->get()->getRefEnt());
+      ents_vec.emplace_back(it->get()->getEnt());
   }
   ents.insert_list(ents_vec.begin(), ents_vec.end());
   if (verb > NOISY)
@@ -940,7 +940,7 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
     children_ents_vec.reserve(std::distance(lo_mit, hi_mit));
     for (; lo_mit != hi_mit; ++lo_mit)
       if (check(*(*lo_mit)->getBitRefLevelPtr()))
-        children_ents_vec.emplace_back((*lo_mit)->getRefEnt());
+        children_ents_vec.emplace_back((*lo_mit)->getEnt());
     children_ents.insert_list(children_ents_vec.begin(),
                               children_ents_vec.end());
   }
@@ -1046,7 +1046,7 @@ MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
           SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
                   "this should not happen");
         }
-        child_ents_vec.emplace_back((*it)->getRefEnt());
+        child_ents_vec.emplace_back((*it)->getEnt());
       }
     }
   }

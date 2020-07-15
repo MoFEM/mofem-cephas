@@ -135,7 +135,7 @@ MoFEMErrorCode MeshRefinement::add_vertices_in_the_middle_of_edges(
            miit_view != hi_miit_view; ++miit_view) {
         edge_having_parent_vertex.insert(edge_having_parent_vertex.end(),
                                          miit_view->get()->getParentEnt());
-        add_bit.insert(add_bit.end(), miit_view->get()->getRefEnt());
+        add_bit.insert(add_bit.end(), miit_view->get()->getEnt());
       }
     }
 
@@ -265,7 +265,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "No vertex on trim edges, that make no sense");
         } else {
-          entParentMap[vit->get()->getParentEnt()] = vit->get()->getRefEnt();
+          entParentMap[vit->get()->getParentEnt()] = vit->get()->getEnt();
         }
       }
       MoFEMFunctionReturn(0);
@@ -388,7 +388,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
           ref_parent_ents_view.find(edge);
       if (eit != ref_parent_ents_view.end()) {
         if (((*eit)->getBitRefLevel() & bit).any()) {
-          edge_new_nodes[ee] = (*eit)->getRefEnt();
+          edge_new_nodes[ee] = (*eit)->getEnt();
           {
             const EntityHandle *conn_edge;
             int num_nodes;
@@ -517,7 +517,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
       ents_to_set_bit_vec.reserve(nb_new_tets);
       for (int tt = 0; it_by_ref_edges.first != it_by_ref_edges.second;
            it_by_ref_edges.first++, tt++) {
-        auto tet = (*it_by_ref_edges.first)->getRefEnt();
+        auto tet = (*it_by_ref_edges.first)->getEnt();
         ents_to_set_bit_vec.emplace_back(tet);
         // set ref tets entities
         if (debug) {
@@ -603,7 +603,7 @@ MoFEMErrorCode MeshRefinement::refine_TET(const Range &_tets,
         if (eit != ref_parent_ents_view.end()) {
           if (((*eit)->getBitRefLevel() & bit).any()) {
             map_ref_nodes_by_edges[(*eit)->getParentEnt()] =
-                eit->get()->getRefEnt();
+                eit->get()->getEnt();
           }
         }
       }
@@ -832,7 +832,7 @@ MoFEMErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,
           ref_parent_ents_view.find(edges[ee]);
       if (miit_view != ref_parent_ents_view.end()) {
         if (((*miit_view)->getBitRefLevel() & bit).any()) {
-          edge_nodes[ee] = (*miit_view)->getRefEnt();
+          edge_nodes[ee] = (*miit_view)->getEnt();
           split_edges.set(ee);
         }
       }
