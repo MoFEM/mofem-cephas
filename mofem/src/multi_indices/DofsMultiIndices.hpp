@@ -503,17 +503,6 @@ typedef multi_index_container<
                               EntityHandle, &NumeredDofEntity::getEnt>,
                 const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
                               DofIdx, &NumeredDofEntity::getEntDofIdx>>>
-                              
-                              // ,
-
-        // ordered_non_unique<
-        //     tag<Composite_Name_And_Part_mi_tag>,
-        //     composite_key<
-        //         NumeredDofEntity,
-        //         const_mem_fun<NumeredDofEntity::interface_type_Field,
-        //                       boost::string_ref, &NumeredDofEntity::getNameRef>,
-        //         member<NumeredDofEntity, unsigned int,
-        //                &NumeredDofEntity::pArt>>>
 
         >>
     NumeredDofEntity_multiIndex;
