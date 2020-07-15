@@ -4,7 +4,7 @@
 The tutorials contain a number of basic programs that are built on top of each
 other. Those with the full source code has the following structure
 
-1. **Introduction**: Intended learning outcome, problem being solved,
+1. **Introduction**: Problem being solved,
 mathematical equations and derivations leading to finite element implementation
 2. **Implementation**: Detailed explanation of the source code where tasks are separated in different functions
 3. **Results**: How to run the program, output, visualisation, interpretation
@@ -15,9 +15,9 @@ The source code and corresponding binary files of the tutorials are located at
 the following directories when you install MoFEM with developer version \ref install
 
 - Source code:
-  *$HOME/mofem_install/mofem-cephas/mofem/users_modules/basic_finite_elements/tutorials*
+  *$HOME/mofem_install/mofem-cephas/mofem/users_modules/tutorials*
 - Binary files (build directory):
-  *$HOME/mofem_install/um/build/basic_finite_elements/tutorials* 
+  *$HOME/mofem_install/um/build/tutorials* 
 
 Each tutorial in this page includes code name and keywords for quick reference
 and search within the browser. 
