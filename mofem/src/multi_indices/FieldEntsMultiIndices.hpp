@@ -177,8 +177,9 @@ struct FieldEntityTmp<0, 0>
     constexpr int proc_shift = 10; // Maximal number of 1024 processors
     return
 
-        (static_cast<UId>(moab_owner_handle) |
-         static_cast<UId>(owner_proc) << ent_shift |
+        (
+         static_cast<UId>(owner_proc) |
+         static_cast<UId>(moab_owner_handle) << proc_shift |
          static_cast<UId>(bit_number) << proc_shift + ent_shift)
         << dof_shift;
   }
@@ -198,10 +199,10 @@ struct FieldEntityTmp<0, 0>
     constexpr int proc_shift = 10; // Maximal number of 1024 processors
 
     return static_cast<UId>(MAX_DOFS_ON_ENTITY - 1) |
-           static_cast<UId>(std::numeric_limits<EntityHandle>::max())
-               << dof_shift |
            static_cast<UId>(MAX_PROCESSORS_NUMBER - 1)
-               << dof_shift + ent_shift |
+               << dof_shift |
+           static_cast<UId>(std::numeric_limits<EntityHandle>::max())
+               << dof_shift + proc_shift |
            static_cast<UId>(bit_number) << dof_shift + ent_shift + proc_shift;
   }
 
