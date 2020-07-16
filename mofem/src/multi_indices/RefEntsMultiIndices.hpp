@@ -191,48 +191,54 @@ template <> struct RefEntityTmp<0> {
     return (EntityID)(this->ent & MB_ID_MASK);
   };
 
-  /** \brief Owner handle on this or other processors
-   */
-  inline EntityHandle getOwnerEnt() const {
-    ParallelComm *pcomm = ParallelComm::get_pcomm(
-        &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
+  static inline EntityHandle
+  getOwnerEnt(const EntityHandle ent,
+              boost::shared_ptr<BasicEntityData> basic_ent_data) {
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&basic_ent_data->moab, basic_ent_data->pcommID);
     auto pstat = *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
-        this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), this->ent, NULL));
+        basic_ent_data->moab, pcomm->pstatus_tag(), ent, NULL));
     if (!(pstat & PSTATUS_NOT_OWNED)) {
-      return this->ent;
+      return ent;
     } else if (pstat & PSTATUS_MULTISHARED) {
-      return static_cast<EntityHandle *>(
-          MoFEM::get_tag_ptr(this->getBasicDataPtr()->moab,
-                             pcomm->sharedhs_tag(), this->ent, NULL))[0];
+      return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
+          basic_ent_data->moab, pcomm->sharedhs_tag(), ent, NULL))[0];
     } else if (pstat & PSTATUS_SHARED) {
-      return static_cast<EntityHandle *>(
-          MoFEM::get_tag_ptr(this->getBasicDataPtr()->moab,
-                             pcomm->sharedh_tag(), this->ent, NULL))[0];
+      return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
+          basic_ent_data->moab, pcomm->sharedh_tag(), ent, NULL))[0];
     } else {
       return 0;
     }
   }
 
-  /** \brief Get processor owning entity
+  /** \brief Owner handle on this or other processors
    */
-  inline int getOwnerProc() const {
-    ParallelComm *pcomm = ParallelComm::get_pcomm(
-        &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
+  inline EntityHandle getOwnerEnt() const {
+    return getOwnerEnt(this->ent, this->getBasicDataPtr());
+  }
+
+  static inline int
+  getOwnerProc(const EntityHandle ent,
+               boost::shared_ptr<BasicEntityData> basic_ent_data) {
+    ParallelComm *pcomm =
+        ParallelComm::get_pcomm(&basic_ent_data->moab, basic_ent_data->pcommID);
     auto pstat = *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
-        this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), this->ent, NULL));
+        basic_ent_data->moab, pcomm->pstatus_tag(), ent, NULL));
     if (!(pstat & PSTATUS_NOT_OWNED)) {
       return pcomm->rank();
     } else if (pstat & PSTATUS_MULTISHARED) {
-      return static_cast<int *>(
-          MoFEM::get_tag_ptr(this->getBasicDataPtr()->moab,
-                             pcomm->sharedps_tag(), this->ent, NULL))[0];
+      return static_cast<int *>(MoFEM::get_tag_ptr(
+          basic_ent_data->moab, pcomm->sharedps_tag(), ent, NULL))[0];
     } else if (pstat & PSTATUS_SHARED) {
-      return static_cast<int *>(
-          MoFEM::get_tag_ptr(this->getBasicDataPtr()->moab,
-                             pcomm->sharedp_tag(), this->ent, NULL))[0];
+      return static_cast<int *>(MoFEM::get_tag_ptr(
+          basic_ent_data->moab, pcomm->sharedp_tag(), ent, NULL))[0];
     } else {
       return -1;
     }
+  }
+
+  inline int getOwnerProc() const {
+    return getOwnerProc(this->ent, this->getBasicDataPtr());
   }
 
   /** \brief Get processor
@@ -467,7 +473,6 @@ private:
   }
 
   static boost::weak_ptr<RefElement> refElementPtr;
-
 };
 
 template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
@@ -616,14 +621,13 @@ template <typename T> struct interface_RefEntity {
    */
   inline boost::shared_ptr<T> &getRefEntityPtr() const { return this->sPtr; }
 
-// protected:
-//   /**
-//    * @copydoc MoFEM::RefEntityTmp<0>::getRefElementPtr
-//    */
-//   inline const boost::shared_ptr<RefElement> &getRefElementPtr() const {
-//     return this->sPtr->getRefElementPtr();
-//   }
-
+  // protected:
+  //   /**
+  //    * @copydoc MoFEM::RefEntityTmp<0>::getRefElementPtr
+  //    */
+  //   inline const boost::shared_ptr<RefElement> &getRefElementPtr() const {
+  //     return this->sPtr->getRefElementPtr();
+  //   }
 };
 
 /**
@@ -639,38 +643,37 @@ template <typename T> struct interface_RefEntity {
  */
 using RefEntity_multiIndex = multi_index_container<
     boost::shared_ptr<RefEntity>,
-    indexed_by<
-        ordered_unique<
+    indexed_by<ordered_unique<
 
-            tag<Ent_mi_tag>,
-            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getEnt>
+                   tag<Ent_mi_tag>,
+                   const_mem_fun<RefEntity, EntityHandle, &RefEntity::getEnt>
 
-            >,
+                   >,
 
-        ordered_non_unique<
+               ordered_non_unique<
 
-            tag<Ent_Ent_mi_tag>,
-            const_mem_fun<RefEntity, EntityHandle, &RefEntity::getParentEnt>
+                   tag<Ent_Ent_mi_tag>, const_mem_fun<RefEntity, EntityHandle,
+                                                      &RefEntity::getParentEnt>
 
-            >,
+                   >,
 
-        ordered_non_unique<
-            tag<Composite_EntType_and_ParentEntType_mi_tag>,
-            composite_key<
-                RefEntity,
-                const_mem_fun<RefEntity, EntityType, &RefEntity::getEntType>,
-                const_mem_fun<RefEntity, EntityType,
-                              &RefEntity::getParentEntType>>
+               ordered_non_unique<
+                   tag<Composite_EntType_and_ParentEntType_mi_tag>,
+                   composite_key<RefEntity,
+                                 const_mem_fun<RefEntity, EntityType,
+                                               &RefEntity::getEntType>,
+                                 const_mem_fun<RefEntity, EntityType,
+                                               &RefEntity::getParentEntType>>
 
-            >,
+                   >,
 
-        ordered_non_unique<
-            tag<Composite_ParentEnt_And_EntType_mi_tag>,
-            composite_key<
-                RefEntity,
-                const_mem_fun<RefEntity, EntityType, &RefEntity::getEntType>,
-                const_mem_fun<RefEntity, EntityHandle,
-                              &RefEntity::getParentEnt>>>>
+               ordered_non_unique<
+                   tag<Composite_ParentEnt_And_EntType_mi_tag>,
+                   composite_key<RefEntity,
+                                 const_mem_fun<RefEntity, EntityType,
+                                               &RefEntity::getEntType>,
+                                 const_mem_fun<RefEntity, EntityHandle,
+                                               &RefEntity::getParentEnt>>>>
 
     >;
 
