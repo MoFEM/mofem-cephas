@@ -520,6 +520,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // Try to be smart reserving memory
     if (j.capacity() < j.size() + dofs_vec.size()) {
 
+      // TODO: [CORE-55] Improve algorithm estimating size of compressed matrix
       unsigned int nb_nonzero = j.size() + dofs_vec.size();
       unsigned int average_row_fill =
           nb_nonzero / i.size() + nb_nonzero % i.size();
