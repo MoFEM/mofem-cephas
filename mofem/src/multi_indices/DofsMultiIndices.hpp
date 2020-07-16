@@ -35,6 +35,31 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   using interface_type_FieldEntity = interface_FieldEntity<FieldEntity>;
   using interface_type_RefEntity = interface_RefEntity<FieldEntity>;
 
+  static inline ShortId
+  getNonNonuniqueShortId(const DofIdx dof,
+                         const boost::shared_ptr<FieldEntity> &ent_ptr) {
+    return static_cast<ShortId>(dof) |
+           (static_cast<ShortId>(ent_ptr->getBitNumber()) << 9);
+  }
+
+  DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
+            const ApproximationOrder dof_order,
+            const FieldCoefficientsNumber dof_rank, const DofIdx dof);
+
+  /// @return get dof index on entity
+  inline DofIdx getEntDofIdx() const { return std::abs(dof); }
+
+  /// @return get field data on dof
+  inline FieldData &getFieldData() const {
+    return const_cast<FieldData &>(
+        (*this->sPtr->getEntFieldDataPtr())[getEntDofIdx()]);
+  }
+
+  /// @return get entity unique dof id
+  inline const UId &getEntGlobalUniqueId() const {
+    return this->sPtr->getGlobalUniqueId();
+  }
+
   static inline UId getGlobalUniqueIdCalculate(const DofIdx dof,
                                                UId ent_uid) {
     return ent_uid | dof;
@@ -56,39 +81,14 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
                              const boost::shared_ptr<FieldEntity> &ent_ptr) {
     return getGlobalUniqueIdCalculate(dof, ent_ptr->getGlobalUniqueId());
   }
-
-  static inline ShortId
-  getNonNonuniqueShortId(const DofIdx dof,
-                         const boost::shared_ptr<FieldEntity> &ent_ptr) {
-    return static_cast<ShortId>(dof) |
-           (static_cast<ShortId>(ent_ptr->getBitNumber()) << 9);
-  }
-
-  DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
-            const ApproximationOrder dof_order,
-            const FieldCoefficientsNumber dof_rank, const DofIdx dof);
-
-  /// @return get dof index on entity
-  inline DofIdx getEntDofIdx() const { return std::abs(dof); }
-
-  /// @return get field data on dof
-  inline FieldData &getFieldData() const {
-    return const_cast<FieldData &>(
-        (*this->sPtr->getEntFieldDataPtr())[getEntDofIdx()]);
-  }
-
+  
   /// @return get unique dof id
   inline UId getGlobalUniqueId() const {
     return getGlobalUniqueIdCalculate(std::abs(dof),
                                       this->sPtr->getGlobalUniqueId());
   }
 
-  /// @return get entity unique dof id
-  inline const UId &getEntGlobalUniqueId() const {
-    return this->sPtr->getGlobalUniqueId();
-  }
-
-  /** \brief get short uid it is unique in combination with entity handle
+   /** \brief get short uid it is unique in combination with entity handle
    *
    * EntityHandle are controlled by MOAB, which is unique in
    * MOAB instance. However two MOAB instances, can have attached different
