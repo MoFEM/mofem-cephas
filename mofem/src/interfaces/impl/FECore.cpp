@@ -26,20 +26,6 @@
 
 namespace MoFEM {
 
-MoFEMErrorCode
-Core::get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const {
-  MoFEMFunctionBeginHot;
-  *fe_ptr = &finiteElements;
-  MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode Core::get_ents_finite_elements(
-    const EntFiniteElement_multiIndex **fe_ent_ptr) const {
-  MoFEMFunctionBeginHot;
-  *fe_ent_ptr = &entsFiniteElements;
-  MoFEMFunctionReturnHot(0);
-}
-
 bool Core::check_finite_element(const std::string &name) const {
   typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
       FeSetByName;
@@ -72,7 +58,7 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
       MoFEMFunctionReturnHot(0);
   }
   EntityHandle meshset;
-  CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR get_moab().create_meshset(MESHSET_SET, meshset);
 
   // id
   BitFEId id = getFEShift();

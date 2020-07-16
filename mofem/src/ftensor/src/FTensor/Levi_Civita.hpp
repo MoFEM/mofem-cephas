@@ -1,4 +1,4 @@
-/// Fully Antisymmetric Levi-Civita Tensor
+// Fully Antisymmetric Levi-Civita Tensor
 
 #pragma once
 

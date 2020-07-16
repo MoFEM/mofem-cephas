@@ -271,7 +271,7 @@ LogManager::createSink(boost::shared_ptr<std::ostream> stream_ptr,
   return sink;
 }
 
-void LogManager::createSinks(MPI_Comm comm) {
+void LogManager::createDefaultSinks(MPI_Comm comm) {
   
   internalDataPtr = boost::make_shared<InternalData>(comm);
 
@@ -280,9 +280,9 @@ void LogManager::createSinks(MPI_Comm comm) {
   core_log->add_sink(LogManager::createSink(
       boost::shared_ptr<std::ostream>(&std::clog, boost::null_deleter()),
       "PETSC"));
-  core_log->add_sink(createSink(internalDataPtr->getStrmSelf(), "SELF"));
-  core_log->add_sink(createSink(internalDataPtr->getStrmWorld(), "WORLD"));
-  core_log->add_sink(createSink(internalDataPtr->getStrmSync(), "SYNC"));
+  core_log->add_sink(createSink(getStrmSelf(), "SELF"));
+  core_log->add_sink(createSink(getStrmWorld(), "WORLD"));
+  core_log->add_sink(createSink(getStrmSync(), "SYNC"));
 
   LogManager::setLog("PETSC");
   LogManager::setLog("SELF");
@@ -294,6 +294,18 @@ void LogManager::createSinks(MPI_Comm comm) {
   int rank;
   MPI_Comm_rank(comm, &rank);
   core_log->add_global_attribute("Proc", attrs::constant<unsigned int>(rank));
+}
+
+boost::shared_ptr<std::ostream> LogManager::getStrmSelf() {
+  return internalDataPtr->getStrmSelf();
+}
+
+boost::shared_ptr<std::ostream> LogManager::getStrmWorld() {
+  return internalDataPtr->getStrmWorld();
+}
+
+boost::shared_ptr<std::ostream> LogManager::getStrmSync() {
+  return internalDataPtr->getStrmSync();
 }
 
 static char dummy_file;

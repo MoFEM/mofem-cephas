@@ -45,6 +45,14 @@ extern "C" {
 
 #include <MedInterface.hpp>
 
+#define MedFunctionBegin                                                       \
+  MoFEMFunctionBegin;                                                          \
+  MOFEM_LOG_CHANNEL("WORLD");                                                  \
+  MOFEM_LOG_CHANNEL("SYNC");                                                   \
+  MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("SYNC", "MedInterface");                                       \
+  MOFEM_LOG_TAG("WORLD", "MedInterface")
+
 namespace MoFEM {
 
 MoFEMErrorCode MedInterface::query_interface(const MOFEMuuid &uuid,
@@ -83,7 +91,7 @@ MoFEMErrorCode MedInterface::getFileNameFromCommandLine(int verb) {
 
 MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
   Interface &m_field = cOre;
-  MoFEMFunctionBegin;
+  MedFunctionBegin;
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
     SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
@@ -125,11 +133,9 @@ MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
     fieldNames[field_name].dtUnit = std::string(&dt_unit[0]);
     fieldNames[field_name].ncSteps = num_steps;
 
-    if (verb > 0) {
-      std::ostringstream ss;
-      ss << fieldNames[name] << std::endl;
-      CHKERR PetscPrintf(m_field.get_comm(), ss.str().c_str());
-    }
+    if (verb > 0) 
+      MOFEM_LOG("WORLD", Sev::inform) << fieldNames[name];
+    
   }
   if (MEDfileClose(fid) < 0) {
     SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
@@ -139,7 +145,7 @@ MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
 }
 
 MoFEMErrorCode MedInterface::medGetFieldNames(int verb) {
-  MoFEMFunctionBegin;
+  MedFunctionBegin;
   if (medFileName.empty()) {
     CHKERR getFileNameFromCommandLine(verb);
   }
@@ -149,7 +155,7 @@ MoFEMErrorCode MedInterface::medGetFieldNames(int verb) {
 
 MoFEMErrorCode MedInterface::readMed(const string &file, int verb) {
   Interface &m_field = cOre;
-  MoFEMFunctionBegin;
+  MedFunctionBegin;
 
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
@@ -161,11 +167,11 @@ MoFEMErrorCode MedInterface::readMed(const string &file, int verb) {
   MEDlibraryNumVersion(&v[0], &v[1], &v[2]);
   MEDfileNumVersionRd(fid, &vf[0], &vf[1], &vf[2]);
 
-  if (verb > 0) {
-    PetscPrintf(m_field.get_comm(),
-                "Reading MED file V%d.%d.%d using MED library V%d.%d.%d\n",
+  if (verb > 0) 
+    MOFEM_LOG_C("WORLD", Sev::inform,
+                "Reading MED file V%d.%d.%d using MED library V%d.%d.%d",
                 vf[0], vf[1], vf[2], v[0], v[1], v[2]);
-  }
+  
   if (vf[0] < 2 || (vf[0] == 2 && vf[1] < 2)) {
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
             "Cannot read MED file older than V2.2");
@@ -190,7 +196,7 @@ MoFEMErrorCode MedInterface::readMed(const string &file, int verb) {
     }
     meshNames.push_back(std::string(mesh_name));
     if (verb > 0) {
-      PetscPrintf(m_field.get_comm(), "Check mesh %s nsteps %d\n", mesh_name,
+      MOFEM_LOG_C("WORLD", Sev::inform, "Check mesh %s nsteps %d", mesh_name,
                   n_step);
     }
   }
@@ -240,7 +246,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
                                       int verb) {
 
   Interface &m_field = cOre;
-  MoFEMFunctionBegin;
+  MedFunctionBegin;
 
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
@@ -250,13 +256,11 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
   med_int v[3], vf[3];
   MEDlibraryNumVersion(&v[0], &v[1], &v[2]);
   MEDfileNumVersionRd(fid, &vf[0], &vf[1], &vf[2]);
-  // if(verb>1) {
-  //   PetscPrintf(
-  //     m_field.get_comm(),
-  //     "Reading MED file V%d.%d.%d using MED library V%d.%d.%d\n",
-  //     vf[0], vf[1], vf[2], v[0], v[1], v[2]
-  //   );
-  // }
+  if (verb > 1)
+    MOFEM_LOG_C("WORLD", Sev::noisy,
+                "Reading MED file V%d.%d.%d using MED library V%d.%d.%d", vf[0],
+                vf[1], vf[2], v[0], v[1], v[2]);
+  
   if (vf[0] < 2 || (vf[0] == 2 && vf[1] < 2)) {
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
             "Cannot read MED file older than V2.2");
@@ -278,10 +282,9 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
     SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
             "Unable to read mesh information");
   }
-  if (verb > 0) {
-    PetscPrintf(m_field.get_comm(), "Reading mesh %s nsteps %d\n", mesh_name,
+  if (verb > 0)
+    MOFEM_LOG_C("WORLD", Sev::inform, "Reading mesh %s nsteps %d", mesh_name,
                 n_step);
-  }
 
   switch (axis_type) {
   case MED_CARTESIAN:
@@ -331,9 +334,8 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
     SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
             "No nodes in MED mesh");
   }
-  if (verb > 0) {
-    PetscPrintf(m_field.get_comm(), "Read number of nodes %d\n", num_nodes);
-  }
+  if (verb > 0)
+    MOFEM_LOG_C("WORLD", Sev::inform, "Read number of nodes %d", num_nodes);
 
   std::vector<med_float> coord_med(space_dim * num_nodes);
   if (MEDmeshNodeCoordinateRd(fid, mesh_name, MED_NO_DT, MED_NO_IT,
@@ -499,7 +501,7 @@ MedInterface::readFamily(const string &file, const int index,
                          std::map<string, Range> &group_elem_map, int verb) {
   //
   Interface &m_field = cOre;
-  MoFEMFunctionBegin;
+  MedFunctionBegin;
 
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
@@ -509,13 +511,12 @@ MedInterface::readFamily(const string &file, const int index,
   med_int v[3], vf[3];
   MEDlibraryNumVersion(&v[0], &v[1], &v[2]);
   MEDfileNumVersionRd(fid, &vf[0], &vf[1], &vf[2]);
-  // if(verb>1) {
-  //   PetscPrintf(
-  //     m_field.get_comm(),
-  //     "Reading MED file V%d.%d.%d using MED library V%d.%d.%d\n",
-  //     vf[0], vf[1], vf[2], v[0], v[1], v[2]
-  //   );
-  // }
+
+  if(verb>1) {
+    MOFEM_LOG_C("WORLD", Sev::noisy,
+                "Reading MED file V%d.%d.%d using MED library V%d.%d.%d", vf[0],
+                vf[1], vf[2], v[0], v[1], v[2]);
+  }
   if (vf[0] < 2 || (vf[0] == 2 && vf[1] < 2)) {
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
             "Cannot read MED file older than V2.2");
@@ -568,12 +569,11 @@ MedInterface::readFamily(const string &file, const int index,
           std::string(&group_names[MED_LNAME_SIZE * g], MED_LNAME_SIZE - 1);
       name.resize(NAME_TAG_SIZE - 1);
       if (family_elem_map.find(family_num) == family_elem_map.end()) {
-        PetscPrintf(
-            PETSC_COMM_SELF,
-            "Warring: \n Family %d not read, likely type of element is not "
-            "added "
+        MOFEM_LOG_C(
+            "WORLD", Sev::warning,
+            "Family %d not read, likely type of element is not added "
             "to moab database. Currently only triangle, quad, tetrahedral and "
-            "hexahedral elements are read to moab database\n",
+            "hexahedral elements are read to moab database",
             family_num);
       } else {
         group_elem_map[name].merge(family_elem_map.at(family_num));
@@ -595,7 +595,7 @@ MedInterface::makeBlockSets(const std::map<string, Range> &group_elem_map,
                             int verb) {
 
   Interface &m_field = cOre;
-  MoFEMFunctionBegin;
+  MedFunctionBegin;
   MeshsetsManager *meshsets_manager_ptr;
   CHKERR m_field.getInterface(meshsets_manager_ptr);
 
@@ -605,10 +605,8 @@ MedInterface::makeBlockSets(const std::map<string, Range> &group_elem_map,
   }
   max_id++;
 
-  // cerr << group_elem_map.size() << endl;
   for (std::map<string, Range>::const_iterator git = group_elem_map.begin();
        git != group_elem_map.end(); git++) {
-    // cerr << "AAA\n";
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, max_id, git->first);
     CubitMeshSet_multiIndex::index<
         Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator cit;
@@ -621,24 +619,16 @@ MedInterface::makeBlockSets(const std::map<string, Range> &group_elem_map,
       CHKERR m_field.get_moab().add_entities(meshsets, git->second);
     }
     max_id++;
-    // cerr << git->second << endl;
   }
 
-  // if(verb>0) {
-  for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, cit)) {
-    PetscPrintf(
-        m_field.get_comm(), "%s\n",
-        static_cast<std::ostringstream &>(std::ostringstream().seekp(0) << *cit)
-            .str()
-            .c_str());
-  }
-  // }
+  for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, cit))
+    MOFEM_LOG("WORLD", Sev::verbose) << *cit;
 
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode MedInterface::readMed(int verb) {
-  MoFEMFunctionBegin;
+  MedFunctionBegin;
   if (medFileName.empty()) {
     CHKERR getFileNameFromCommandLine(verb);
   }
@@ -800,13 +790,13 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
                 "Could not read field values");
       }
 
-      if (verb > 2) {
-        // FIXME: This not looks ok for me
-        cerr << ent << " " << ele << endl;
-        cerr << string(meshName) << " : " << string(profileName) << " : "
-             << string(locName) << " : " << profileSize << " : " << ngauss
-             << endl;
-      }
+      // if (verb > 2) {
+      //   // FIXME: This not looks ok for me
+      //   cerr << ent << " " << ele << endl;
+      //   cerr << string(meshName) << " : " << string(profileName) << " : "
+      //        << string(locName) << " : " << profileSize << " : " << ngauss
+      //        << endl;
+      // }
 
       switch (ent) {
       case MED_CELL: {
@@ -820,8 +810,8 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
           ent_type = MBHEX;
           break;
         default:
-          PetscPrintf(PETSC_COMM_SELF,
-                      "Warring:\n Not yet implemented for this cell %d\n", ele);
+          MOFEM_LOG_C("WORLD", Sev::warning,
+                      "Not yet implemented for this cell %d", ele);
         }
         if (ent_type != MBMAXTYPE) {
           if (ngauss == 1) {
@@ -869,8 +859,8 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
       case MED_NODE:
       case MED_NODE_ELEMENT:
       default:
-        PetscPrintf(PETSC_COMM_SELF,
-                    "Warning: \n Entity type %d not implemented\n", ent);
+        MOFEM_LOG_C("WORLD", Sev::inform, "Entity type %d not implemented",
+                    ent);
       }
     }
   }

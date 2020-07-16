@@ -316,9 +316,9 @@ protected:
   MoFEMErrorCode remove_parents_by_ents(const Range &ents,
                                         int verb = DEFAULT_VERBOSITY);
 
-  MoFEMErrorCode remove_parents_by_by_bit_ref(const BitRefLevel &bit,
-                                              const BitRefLevel &mask,
-                                              int verb = DEFAULT_VERBOSITY);
+  MoFEMErrorCode remove_parents_by_bit_ref(const BitRefLevel bit,
+                                           const BitRefLevel mask,
+                                           int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode remove_parents_by_parents(const Range &ents,
                                            int verb = DEFAULT_VERBOSITY);
@@ -796,6 +796,17 @@ protected:
   MoFEMErrorCode get_problem(const std::string &problem_name,
                              const Problem **problem_ptr) const;
   MoFEMErrorCode get_problems(const Problem_multiIndex **problems_ptr) const;
+
+  const Field_multiIndex *get_fields() const;
+  const RefEntity_multiIndex *get_ref_ents() const;
+  const RefElement_multiIndex *get_ref_finite_elements() const;
+  const FiniteElement_multiIndex *get_finite_elements() const;
+  const EntFiniteElement_multiIndex *get_ents_finite_elements() const;
+  const FieldEntity_multiIndex *get_field_ents() const;
+  const DofEntity_multiIndex *get_dofs() const;
+  const Problem *get_problem(const std::string &problem_name) const;
+  const Problem_multiIndex *get_problems() const;
+
   FieldEntityByFieldName::iterator
   get_ent_field_by_name_begin(const std::string &field_name) const;
   FieldEntityByFieldName::iterator
