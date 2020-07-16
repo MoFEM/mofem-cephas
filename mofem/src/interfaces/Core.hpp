@@ -609,6 +609,7 @@ protected:
   MoFEMErrorCode list_fields() const;
   BitFieldId getBitFieldId(const std::string &name) const;
   unsigned int get_field_bit_number(const std::string name) const;
+  unsigned int get_field_bit_number(const boost::string_ref name) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const std::string name) const;
   MoFEMErrorCode get_field_entities_by_dimension(const std::string name,

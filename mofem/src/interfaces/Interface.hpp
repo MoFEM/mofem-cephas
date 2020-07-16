@@ -503,6 +503,16 @@ struct CoreInterface : public UnknownInterface {
   */
   virtual unsigned int get_field_bit_number(const std::string name) const = 0;
 
+  /** \brief get field bit number
+  *
+  * \param name of Field
+  * Example:\code
+  auto field_number = mField.get_field_bit_number("DISPLACEMENT");
+  * \endcode
+  */
+  virtual unsigned int
+  get_field_bit_number(const boost::string_ref name) const = 0;
+
   /** \brief get field meshset
   *
   * \param name of Field

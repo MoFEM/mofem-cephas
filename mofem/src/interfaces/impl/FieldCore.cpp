@@ -44,6 +44,14 @@ unsigned int Core::get_field_bit_number(const std::string name) const {
   return (*miit)->getBitNumber();
 }
 
+unsigned int Core::get_field_bit_number(const boost::string_ref name) const {
+  auto &set = fIelds.get<FieldName_mi_tag>();
+  auto miit = set.find(name);
+  if (miit == set.end())
+    THROW_MESSAGE("field not in database (top tip: check spelling)");
+  return (*miit)->getBitNumber();
+}
+
 EntityHandle Core::get_field_meshset(const BitFieldId id) const {
   auto &set = fIelds.get<BitFieldId_mi_tag>();
   auto miit = set.find(id);
