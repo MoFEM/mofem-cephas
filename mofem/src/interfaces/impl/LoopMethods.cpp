@@ -238,12 +238,13 @@ MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
                                   VectorDouble &nodes_data) {
     MoFEMFunctionBegin;
 
-    auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Ent_mi_tag>();
-
-    auto dit = dofs_by_name_and_type.lower_bound(
-        boost::make_tuple(field_name, get_id_for_min_type<MBVERTEX>()));
-    auto hi_dit = dofs.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-        boost::make_tuple(field_name, get_id_for_max_type<MBVERTEX>()));
+    auto bit_number = getFieldBitNumber(field_name);
+    auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
+    auto dit = dofs_by_uid.lower_bound(FieldEntity::getLocalUniqueIdCalculate(
+        bit_number, get_id_for_min_type<MBVERTEX>()));
+    auto hi_dit =
+        dofs_by_uid.upper_bound(FieldEntity::getLocalUniqueIdCalculate(
+            bit_number, get_id_for_max_type<MBVERTEX>()));
 
     if (dit != hi_dit) {
       auto &first_dof = **dit;
