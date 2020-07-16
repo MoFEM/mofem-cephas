@@ -744,10 +744,10 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   boost::shared_ptr<SideNumber> side_number_ptr;
   for (auto &mit : ent_uid_and_fe_vec) {
     auto dit = dofs_by_ent_uid.lower_bound(
-        FieldEntity::getLoEntBitNumberUId(*mit.first));
+        FieldEntity::getLoFieldEntityUId(*mit.first));
     if (dit != dofs_by_ent_uid.end()) {
       auto hi_dit = dofs_by_ent_uid.upper_bound(
-          FieldEntity::getHiEntBitNumberUId(*mit.first));
+          FieldEntity::getHiFieldEntityUId(*mit.first));
       if (std::distance(dit, hi_dit)) {
         const BitFieldId field_id = (*dit)->getId();
         if ((field_id & fe_fields[DATA]).any())

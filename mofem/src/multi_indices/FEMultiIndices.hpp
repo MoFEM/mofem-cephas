@@ -360,9 +360,9 @@ struct EntFiniteElement
       for (auto &it : fe_ents_view) {
         if (auto e = it.lock()) {
           auto dit = mofem_dofs.template get<Unique_mi_tag>().lower_bound(
-              FieldEntity::getLoEntBitNumberUId(e->getGlobalUniqueId()));
+              FieldEntity::getLoFieldEntityUId(e->getGlobalUniqueId()));
           auto hi_dit = mofem_dofs.template get<Unique_mi_tag>().upper_bound(
-              FieldEntity::getHiEntBitNumberUId(e->getGlobalUniqueId()));
+              FieldEntity::getHiFieldEntityUId(e->getGlobalUniqueId()));
           dofs_view.insert(dit, hi_dit);
         }
       }
