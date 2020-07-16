@@ -32,9 +32,6 @@ FieldEntityTmp<0, 0>::FieldEntityTmp(
       tagMaxOrderPtr(t_max_order_ptr),
       fieldDataAdaptorPtr(field_data_adaptor_ptr) {
 
-  globalUId = getGlobalUniqueIdCalculate(ref_ents_ptr->getOwnerProc(),
-                                         field_ptr->getBitNumber(),
-                                         ref_ents_ptr->getOwnerEnt());
   localUId = getLocalUniqueIdCalculate(field_ptr->getBitNumber(),
                                        ref_ents_ptr->getEnt());
 

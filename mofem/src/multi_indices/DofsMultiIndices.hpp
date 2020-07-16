@@ -61,7 +61,7 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   }
 
   /// @return get entity unique dof id
-  inline const UId &getEntGlobalUniqueId() const {
+  inline const UId getEntGlobalUniqueId() const {
     return this->sPtr->getGlobalUniqueId();
   }
 
