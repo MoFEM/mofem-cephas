@@ -105,7 +105,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
     MoFEMFunctionReturnHot(0);
 
   auto fe_it =
-      p_miit->numeredFiniteElements->find(ent_fe_ptr->getGlobalUniqueId());
+      p_miit->numeredFiniteElements->find(ent_fe_ptr->getLocalUniqueId());
 
   // Create element if is not there
   if (fe_it == p_miit->numeredFiniteElements->end()) {
@@ -160,7 +160,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
   dofs_col_view.clear();
   for (auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(
-           mofem_ent_ptr->getGlobalUniqueId());
+           mofem_ent_ptr->getLocalUniqueId());
        r.first != r.second; ++r.first) {
 
     if (r.first->byWhat & BYROW) {
@@ -312,8 +312,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
         bool get_adj_col = true;
         if (mofem_ent_ptr) {
-          if (mofem_ent_ptr->getGlobalUniqueId() ==
-              (*mit_row)->getFieldEntityPtr()->getGlobalUniqueId()) {
+          if (mofem_ent_ptr->getLocalUniqueId() ==
+              (*mit_row)->getFieldEntityPtr()->getLocalUniqueId()) {
             get_adj_col = false;
           }
         }
@@ -478,8 +478,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // same adjacencies.
     if ((!mofem_ent_ptr)
             ? 1
-            : (mofem_ent_ptr->getGlobalUniqueId() !=
-               (*miit_row)->getFieldEntityPtr()->getGlobalUniqueId())) {
+            : (mofem_ent_ptr->getLocalUniqueId() !=
+               (*miit_row)->getFieldEntityPtr()->getLocalUniqueId())) {
 
       // get entity adjacencies
       mofem_ent_ptr = (*miit_row)->getFieldEntityPtr();
@@ -778,8 +778,8 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
             Composite_Unique_mi_tag>::type::iterator ait;
         ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-            boost::make_tuple((*cit)->getFieldEntityPtr()->getGlobalUniqueId(),
-                              numeredEntFiniteElementPtr->getGlobalUniqueId()));
+            boost::make_tuple((*cit)->getFieldEntityPtr()->getLocalUniqueId(),
+                              numeredEntFiniteElementPtr->getLocalUniqueId()));
         if (ait == adjacenciesPtr->end()) {
           SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "adjacencies data inconsistency");
@@ -789,7 +789,7 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
             SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "data inconsistency");
           }
-          if (dofsPtr->find((*cit)->getGlobalUniqueId()) == dofsPtr->end()) {
+          if (dofsPtr->find((*cit)->getLocalUniqueId()) == dofsPtr->end()) {
             SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "data inconsistency");
           }
@@ -829,8 +829,8 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
             Composite_Unique_mi_tag>::type::iterator ait;
         ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-            boost::make_tuple((*rit)->getFieldEntityPtr()->getGlobalUniqueId(),
-                              numeredEntFiniteElementPtr->getGlobalUniqueId()));
+            boost::make_tuple((*rit)->getFieldEntityPtr()->getLocalUniqueId(),
+                              numeredEntFiniteElementPtr->getLocalUniqueId()));
         if (ait == adjacenciesPtr->end()) {
           std::ostringstream ss;
           ss << *(*rit) << std::endl;
@@ -850,7 +850,7 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
             SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "data inconsistency");
           }
-          if (dofsPtr->find((*rit)->getGlobalUniqueId()) == dofsPtr->end()) {
+          if (dofsPtr->find((*rit)->getLocalUniqueId()) == dofsPtr->end()) {
             SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "data inconsistency");
           }

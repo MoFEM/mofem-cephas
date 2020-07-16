@@ -680,7 +680,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
               // Add entity to map with key entity uids pointers  and data
               // finite elements weak ptrs. I using pointers to uids instead
               // uids because this is faster.
-              const UId *uid_ptr = &(meit->get()->getGlobalUniqueId());
+              const UId *uid_ptr = &(meit->get()->getLocalUniqueId());
               auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
               // get number of dofs on entities to pre-allocate memory for
               // element
@@ -706,7 +706,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
       // Sort field ents by uid
       auto uid_comp = [](const auto &a, const auto &b) {
-        return a.lock()->getGlobalUniqueId() < b.lock()->getGlobalUniqueId();
+        return a.lock()->getLocalUniqueId() < b.lock()->getLocalUniqueId();
       };
 
       // Sort all views

@@ -501,7 +501,7 @@ MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
     }
     NumeredDofEntityByUId::iterator x_dit;
-    x_dit = x_numered_dofs_by_uid->find((*y_dit)->getGlobalUniqueId());
+    x_dit = x_numered_dofs_by_uid->find((*y_dit)->getLocalUniqueId());
     if (x_dit == x_numered_dofs_by_uid->end())
       continue;
     idx.push_back((*x_dit)->getPetscGlobalDofIdx());

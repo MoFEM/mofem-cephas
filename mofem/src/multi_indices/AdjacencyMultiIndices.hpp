@@ -39,7 +39,7 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
   /**
    * \brief get unique iD of finite element entity
    */
-  inline UId getFeUniqueId() const { return entFePtr->getGlobalUniqueId(); }
+  inline UId getFeUniqueId() const { return entFePtr->getLocalUniqueId(); }
 
   /**
    * \brief get meshset of finite element
@@ -54,7 +54,7 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
   /**
    * \brief get unique iD of entity on field
    */
-  inline UId getEntUniqueId() const { return entFieldPtr->getGlobalUniqueId(); }
+  inline UId getEntUniqueId() const { return entFieldPtr->getLocalUniqueId(); }
 
   /**
    * \brief get entity meshset carrying its field

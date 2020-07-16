@@ -1113,7 +1113,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
   CHKERR PetscFree(status);
 
-  DofEntity_multiIndex_uid_view dofs_glob_uid_view;
+  DofEntity_multiIndex_global_uid_view dofs_glob_uid_view;
   auto hint = dofs_glob_uid_view.begin();
   for (auto dof : *m_field.get_dofs())
     dofs_glob_uid_view.emplace_hint(hint, dof);
@@ -1148,7 +1148,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
                    "no such dof %s in mofem database", zz.str().c_str());
         }
 
-        auto dit = numered_dofs_ptr[ss]->find((*ddit)->getGlobalUniqueId());
+        auto dit = numered_dofs_ptr[ss]->find((*ddit)->getLocalUniqueId());
         if (dit == numered_dofs_ptr[ss]->end()) {
 
           // Dof is shared to this processor, however there is no element which
@@ -2002,8 +2002,8 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
                 "check finite element definition, nb. of rows is not equal to "
                 "number for columns");
       }
-      if (mit_row->get()->getGlobalUniqueId() !=
-          mit_col->get()->getGlobalUniqueId()) {
+      if (mit_row->get()->getLocalUniqueId() !=
+          mit_col->get()->getLocalUniqueId()) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "check finite element definition, nb. of rows is not equal to "
                 "number for columns");
@@ -2161,7 +2161,7 @@ MoFEMErrorCode ProblemsManager::inheritPartition(
                composed_dofs[ss]->begin();
            dit != composed_dofs[ss]->end(); dit++) {
         NumeredDofEntityByUId::iterator diit =
-            dofs_by_uid.find((*dit)->getGlobalUniqueId());
+            dofs_by_uid.find((*dit)->getLocalUniqueId());
         if (diit == dofs_by_uid.end()) {
           SETERRQ(
               m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
@@ -2630,7 +2630,7 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
     for (int ss = 0; ss != loop_size; ++ss) {
       for (auto &gid : *ghost_idx_view[ss]) {
         NumeredDofEntityByUId::iterator dof =
-            dof_by_uid_no_const[ss]->find(gid->getGlobalUniqueId());
+            dof_by_uid_no_const[ss]->find(gid->getLocalUniqueId());
         if (PetscUnlikely((*dof)->petscLocalDofIdx != (DofIdx)-1))
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "inconsistent data, ghost dof already set");
@@ -2715,7 +2715,7 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string name,
         ghost_idx_view.emplace_back(numered_dofs[ss]->project<0>(r.first));
 
       auto cmp = [](auto a, auto b) {
-        return (*a)->getGlobalUniqueId() < (*b)->getGlobalUniqueId();
+        return (*a)->getLocalUniqueId() < (*b)->getLocalUniqueId();
       };
       sort(ghost_idx_view.begin(), ghost_idx_view.end(), cmp);
 
@@ -2874,7 +2874,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
       // erase dofs from problem
       for (auto weak_dit : dosf_weak_view)
         if (auto dit = weak_dit.lock()) {
-          numered_dofs[s]->erase(dit->getGlobalUniqueId());
+          numered_dofs[s]->erase(dit->getLocalUniqueId());
         }
 
       if (verb >= NOISY)

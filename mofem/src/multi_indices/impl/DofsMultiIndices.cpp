@@ -43,7 +43,7 @@ DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
 }
 
 std::ostream &operator<<(std::ostream &os, const DofEntity &e) {
-  os << "dof_uid " << e.getGlobalUniqueId() << " dof_order " << e.getDofOrder()
+  os << "dof_uid " << e.getLocalUniqueId() << " dof_order " << e.getDofOrder()
      << " dof_rank " << e.getDofCoeffIdx() << " dof " << e.getEntDofIdx()
      << " active " << (e.dof < 0 ? false : true) << " "
      << *e.getFieldEntityPtr();

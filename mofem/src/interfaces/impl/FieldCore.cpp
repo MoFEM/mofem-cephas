@@ -533,7 +533,7 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
         if (old_approximation_order != order) {
 
           FieldEntity_multiIndex::iterator miit =
-              entsFields.get<Unique_mi_tag>().find((*vit)->getGlobalUniqueId());
+              entsFields.get<Unique_mi_tag>().find((*vit)->getLocalUniqueId());
 
           if ((*miit)->getMaxOrder() < order)
             nb_ents_set_order_up++;

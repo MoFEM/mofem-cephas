@@ -561,7 +561,7 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
         } else {
           // approximation orders is different
           FieldEntity_multiIndex::iterator fcit =
-              field_ents->find(mofem_ent_child->getGlobalUniqueId());
+              field_ents->find(mofem_ent_child->getLocalUniqueId());
           if (fcit == field_ents->end()) {
             // entity not in database, set order and copy data
             (FieldEntity_change_order(mofem_ent_parent->getMaxOrder()))(

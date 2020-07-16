@@ -289,9 +289,9 @@ struct EntFiniteElement
    * \brief Get unique UId for finite element entity
    * @return UId
    */
-  inline UId getGlobalUniqueId() const { return getGlobalUniqueIdCalculate(); }
+  inline UId getLocalUniqueId() const { return getLocalUniqueIdCalculate(); }
 
-  static inline UId getGlobalUniqueIdCalculate(const EntityHandle ent,
+  static inline UId getLocalUniqueIdCalculate(const EntityHandle ent,
                                                UId fe_uid) {
     return fe_uid |= ent;
   }
@@ -300,8 +300,8 @@ struct EntFiniteElement
    * \brief Generate UId for finite element entity
    * @return finite element entity unique Id
    */
-  inline UId getGlobalUniqueIdCalculate() const {
-    return getGlobalUniqueIdCalculate(getEnt(), getFEUId());
+  inline UId getLocalUniqueIdCalculate() const {
+    return getLocalUniqueIdCalculate(getEnt(), getFEUId());
   }
 
   /**
@@ -360,9 +360,9 @@ struct EntFiniteElement
       for (auto &it : fe_ents_view) {
         if (auto e = it.lock()) {
           auto dit = mofem_dofs.template get<Unique_mi_tag>().lower_bound(
-              FieldEntity::getLoFieldEntityUId(e->getGlobalUniqueId()));
+              FieldEntity::getLoFieldEntityUId(e->getLocalUniqueId()));
           auto hi_dit = mofem_dofs.template get<Unique_mi_tag>().upper_bound(
-              FieldEntity::getHiFieldEntityUId(e->getGlobalUniqueId()));
+              FieldEntity::getHiFieldEntityUId(e->getLocalUniqueId()));
           dofs_view.insert(dit, hi_dit);
         }
       }
@@ -451,8 +451,8 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
    * \brief Get unique UId for finite element entity
    * @return UId
    */
-  inline UId getGlobalUniqueId() const {
-    return this->sPtr->getGlobalUniqueId();
+  inline UId getLocalUniqueId() const {
+    return this->sPtr->getLocalUniqueId();
   }
 
   SideNumber_multiIndex &getSideNumberTable() const {
@@ -608,7 +608,7 @@ typedef multi_index_container<
 
         ordered_unique<tag<Unique_mi_tag>,
                        const_mem_fun<EntFiniteElement, UId,
-                                     &EntFiniteElement::getGlobalUniqueId>>,
+                                     &EntFiniteElement::getLocalUniqueId>>,
 
         ordered_non_unique<
             tag<Ent_mi_tag>,
@@ -652,7 +652,7 @@ typedef multi_index_container<
             tag<Unique_mi_tag>,
             const_mem_fun<
                 NumeredEntFiniteElement::interface_type_EntFiniteElement, UId,
-                &NumeredEntFiniteElement::getGlobalUniqueId>>,
+                &NumeredEntFiniteElement::getLocalUniqueId>>,
         ordered_non_unique<tag<Part_mi_tag>,
                            member<NumeredEntFiniteElement, unsigned int,
                                   &NumeredEntFiniteElement::part>>,

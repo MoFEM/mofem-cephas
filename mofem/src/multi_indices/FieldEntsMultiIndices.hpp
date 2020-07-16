@@ -420,7 +420,7 @@ typedef multi_index_container<
     boost::shared_ptr<FieldEntity>,
     indexed_by<
         ordered_unique<tag<Unique_mi_tag>,
-                       member<FieldEntity, UId, &FieldEntity::globalUId>>,
+                       member<FieldEntity, UId, &FieldEntity::localUId>>,
         ordered_non_unique<tag<Ent_mi_tag>,
                            const_mem_fun<FieldEntity::interface_type_RefEntity,
                                          EntityHandle, &FieldEntity::getEnt>>,

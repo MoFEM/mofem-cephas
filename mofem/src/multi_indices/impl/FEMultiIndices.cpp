@@ -453,7 +453,7 @@ std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
       if (!dit->getFieldEntityPtr()) {
         os << "(( null ptr to field entity )) ";
       } else {
-        os << dit->getGlobalUniqueId() << " ";
+        os << dit->getLocalUniqueId() << " ";
       }
     }
   }

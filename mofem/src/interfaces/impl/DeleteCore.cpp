@@ -256,19 +256,11 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string name,
     const EntityHandle first  = p_eit->first;
     const EntityHandle second = p_eit->second;
 
-    // Get owner proc and owner handle
-    int f_owner_proc;
-    EntityHandle f_moab_owner_handle;
-    CHKERR pcomm->get_owner_handle(first, f_owner_proc, f_moab_owner_handle);
-    int s_owner_proc;
-    EntityHandle s_moab_owner_handle;
-    CHKERR pcomm->get_owner_handle(second, s_owner_proc, s_moab_owner_handle);
-
     // Get UId
-    UId first_uid = FieldEntity::getGlobalUniqueIdCalculate(
-        f_owner_proc, field_bit_number, f_moab_owner_handle);
-    UId second_uid = FieldEntity::getGlobalUniqueIdCalculate(
-        s_owner_proc, field_bit_number, s_moab_owner_handle);
+    UId first_uid =
+        FieldEntity::getLocalUniqueIdCalculate(field_bit_number, first);
+    UId second_uid =
+        FieldEntity::getLocalUniqueIdCalculate(field_bit_number, second);
 
     // Find adjacencies
     FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
@@ -385,9 +377,9 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string name,
 
       // Get UId
       UId first_uid =
-          EntFiniteElement::getGlobalUniqueIdCalculate(first, fe_uid);
+          EntFiniteElement::getLocalUniqueIdCalculate(first, fe_uid);
       UId second_uid =
-          EntFiniteElement::getGlobalUniqueIdCalculate(second, fe_uid);
+          EntFiniteElement::getLocalUniqueIdCalculate(second, fe_uid);
 
       // Find and remove adjacencies
       FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<

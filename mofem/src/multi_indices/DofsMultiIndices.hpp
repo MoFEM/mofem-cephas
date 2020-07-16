@@ -312,7 +312,7 @@ typedef multi_index_container<
         // unique
         ordered_unique<
             tag<Unique_mi_tag>,
-            const_mem_fun<DofEntity, UId, &DofEntity::getGlobalUniqueId>>,
+            const_mem_fun<DofEntity, UId, &DofEntity::getLocalUniqueId>>,
 
         // non_unique
         ordered_non_unique<
@@ -357,7 +357,19 @@ using DofEntityByNameAndEnt =
 /** \brief multi-index view on DofEntity by uid
   \ingroup dof_multi_indices
 */
-using DofEntity_multiIndex_uid_view = multi_index_container<
+using DofEntity_multiIndex_uid_view =
+    multi_index_container<boost::shared_ptr<DofEntity>,
+                          indexed_by<
+
+                              ordered_unique<const_mem_fun<
+                                  DofEntity, UId, &DofEntity::getLocalUniqueId>>
+
+                              >>;
+
+/** \brief multi-index view on DofEntity by uid
+  \ingroup dof_multi_indices
+*/
+using DofEntity_multiIndex_global_uid_view = multi_index_container<
     boost::shared_ptr<DofEntity>,
     indexed_by<
 
@@ -379,7 +391,7 @@ typedef multi_index_container<
     indexed_by<
 
         ordered_unique<
-            const_mem_fun<DofEntity, UId, &DofEntity::getGlobalUniqueId>>,
+            const_mem_fun<DofEntity, UId, &DofEntity::getLocalUniqueId>>,
 
         ordered_non_unique<
             const_mem_fun<DofEntity, char, &DofEntity::getActive>>
@@ -399,7 +411,7 @@ typedef multi_index_container<
 
         ordered_unique<tag<Unique_mi_tag>,
                        const_mem_fun<FEDofEntity::DofEntity, UId,
-                                     &FEDofEntity::getGlobalUniqueId>>,
+                                     &FEDofEntity::getLocalUniqueId>>,
 
         ordered_non_unique<tag<Ent_mi_tag>,
                            const_mem_fun<FEDofEntity::DofEntity, EntityHandle,
@@ -442,7 +454,7 @@ typedef multi_index_container<
         ordered_unique<
             tag<Unique_mi_tag>,
             const_mem_fun<FENumeredDofEntity::interface_type_DofEntity, UId,
-                          &FENumeredDofEntity::getGlobalUniqueId>>,
+                          &FENumeredDofEntity::getLocalUniqueId>>,
         ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,
@@ -489,10 +501,9 @@ typedef multi_index_container<
 
     // unique
     indexed_by<
-        ordered_unique<
-            tag<Unique_mi_tag>,
-            const_mem_fun<NumeredDofEntity::interface_type_DofEntity, UId,
-                          &NumeredDofEntity::getGlobalUniqueId>>,
+        ordered_unique<tag<Unique_mi_tag>,
+                       const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
+                                     UId, &NumeredDofEntity::getLocalUniqueId>>,
 
         // non unique
         ordered_non_unique<
@@ -557,7 +568,7 @@ using NumeredDofEntity_multiIndex_uid_view_ordered =
                               ordered_unique<const_mem_fun<
 
                                   NumeredDofEntity::interface_type_DofEntity,
-                                  UId, &NumeredDofEntity::getGlobalUniqueId
+                                  UId, &NumeredDofEntity::getLocalUniqueId
 
                                   >>
 
