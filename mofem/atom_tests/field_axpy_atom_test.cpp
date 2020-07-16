@@ -107,8 +107,7 @@ int main(int argc, char *argv[]) {
     // FIELD_B *= -0.5
     CHKERR fb->fieldScale(-0.5, "FIELD_B");
 
-    const DofEntity_multiIndex *dofs_ptr;
-    CHKERR m_field.get_dofs(&dofs_ptr);
+    auto dofs_ptr = m_field.get_dofs();
     for (auto dit : *dofs_ptr) {
 
       auto check = [&](const std::string name, const double expected) {

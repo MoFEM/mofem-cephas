@@ -632,8 +632,7 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
 
-  const Problem_multiIndex *problems_ptr;
-  CHKERR m_field.get_problems(&problems_ptr);
+  auto problems_ptr = m_field.get_problems();
   auto &prb = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb.find(name);
   if (p_miit == prb.end()) {
@@ -669,8 +668,7 @@ MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAdjWithArrays, 0, 0, 0, 0);
 
-  const Problem_multiIndex *problems_ptr;
-  CHKERR m_field.get_problems(&problems_ptr);
+  auto problems_ptr = m_field.get_problems();
   auto &prb = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb.find(name);
   if (p_miit == prb.end()) {
@@ -706,8 +704,7 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
 
-  const Problem_multiIndex *problems_ptr;
-  CHKERR m_field.get_problems(&problems_ptr);
+  auto problems_ptr = m_field.get_problems();
   auto &prb = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb.find(name);
   if (p_miit == prb.end()) {
@@ -963,8 +960,7 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
   TestMatrixFillIn method(&m_field, A, row_print, col_print);
 
   // get problem
-  const Problem_multiIndex *problems_ptr;
-  CHKERR m_field.get_problems(&problems_ptr);
+  auto problems_ptr = m_field.get_problems();
   auto &prb_set = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb_set.find(problem_name);
   if (p_miit == prb_set.end())
@@ -977,8 +973,7 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
                 problem_name.c_str());
 
   // loop all elements in problem and check if assemble is without error
-  const FiniteElement_multiIndex *fe_ptr;
-  CHKERR m_field.get_finite_elements(&fe_ptr);
+  auto fe_ptr = m_field.get_finite_elements();
   for (auto &fe : *fe_ptr) {
     if (verb >= VERBOSE)
       PetscPrintf(m_field.get_comm(), "\tcheck element %s\n",

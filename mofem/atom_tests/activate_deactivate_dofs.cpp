@@ -99,8 +99,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.clear_inactive_dofs();
     CHKERR m_field.build_fields();
 
-    const DofEntity_multiIndex *dofs_ptr;
-    CHKERR m_field.get_dofs(&dofs_ptr);
+    auto dofs_ptr = m_field.get_dofs();
     const unsigned int expected_size = 300;
     if (dofs_ptr->size() != expected_size) {
       SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,

@@ -133,6 +133,27 @@ struct LogManager : public UnknownInterface {
   static void addTag(const std::string channel, const std::string tag);
 
   /**
+   * @brief Get the strm self object
+   * 
+   * @return boost::shared_ptr<std::ostream> 
+   */
+  static boost::shared_ptr<std::ostream> getStrmSelf(); 
+
+  /**
+   * @brief Get the strm world object
+   * 
+   * @return boost::shared_ptr<std::ostream> 
+   */
+  static boost::shared_ptr<std::ostream> getStrmWorld();
+
+  /**
+   * @brief Get the strm sync object
+   * 
+   * @return boost::shared_ptr<std::ostream> 
+   */
+  static boost::shared_ptr<std::ostream> getStrmSync();
+
+  /**
    * @brief Create a sink object
    *
    * @param stream_ptr
@@ -145,10 +166,10 @@ struct LogManager : public UnknownInterface {
 
 
   /**
-   * @brief Create sinks
+   * @brief Create default sinks
    *
    */
-  static void createSinks(MPI_Comm comm);
+  static void createDefaultSinks(MPI_Comm comm);
 
   /**
    * @brief Get the Interface Options

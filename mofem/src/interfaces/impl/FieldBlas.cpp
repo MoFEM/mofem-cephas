@@ -41,13 +41,10 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
                                       bool error_if_missing,
                                       bool creat_if_missing) {
   const MoFEM::Interface &m_field = cOre;
-  const Field_multiIndex *fields_ptr;
-  const FieldEntity_multiIndex *field_ents;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto fields_ptr = m_field.get_fields();
+  auto field_ents = m_field.get_field_ents();
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_fields(&fields_ptr);
-  CHKERR m_field.get_field_ents(&field_ents);
-  CHKERR m_field.get_dofs(&dofs_ptr);
 
   auto x_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_x);
   if (x_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
@@ -243,9 +240,8 @@ MoFEMErrorCode FieldBlas::setVertexDofs(FieldBlas::VertexCoordsFunction lambda,
 MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
                                    const std::string field_name) {
   const MoFEM::Interface &m_field = cOre;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBeginHot;
-  CHKERR m_field.get_dofs(&dofs_ptr);
 
   DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
       dit,
@@ -264,9 +260,8 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
                                    const Range &ents,
                                    const std::string field_name) {
   const MoFEM::Interface &m_field = cOre;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBeginHot;
-  CHKERR m_field.get_dofs(&dofs_ptr);
 
   DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
       dit,
@@ -297,17 +292,15 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
 MoFEMErrorCode FieldBlas::setField(const double val,
                                    const std::string field_name) {
   const MoFEM::Interface &m_field = cOre;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto fields_ptr = m_field.get_fields();
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
-  const Field_multiIndex *fields_ptr;
-  CHKERR m_field.get_fields(&fields_ptr);
   auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
   if (fit == fields_ptr->get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              " field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
   }
-  CHKERR m_field.get_dofs(&dofs_ptr);
 
   auto dit = dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name);
   auto hi_dit = dofs_ptr->get<FieldName_mi_tag>().upper_bound(field_name);
@@ -320,10 +313,9 @@ MoFEMErrorCode FieldBlas::setField(const double val,
 MoFEMErrorCode FieldBlas::fieldScale(const double alpha,
                                      const std::string field_name) {
   const MoFEM::Interface &m_field = cOre;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto fields_ptr = m_field.get_fields();
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBeginHot;
-  const Field_multiIndex *fields_ptr;
-  CHKERR m_field.get_fields(&fields_ptr);
 
   auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
   if (fit == fields_ptr->get<FieldName_mi_tag>().end()) {
@@ -331,7 +323,6 @@ MoFEMErrorCode FieldBlas::fieldScale(const double alpha,
              " field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
   }
-  CHKERR m_field.get_dofs(&dofs_ptr);
 
   DofEntityByFieldName::iterator dit, hi_dit;
   dit = dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name);

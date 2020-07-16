@@ -214,17 +214,15 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesVerticesOnTets(
     const BitRefLevel &parent_level, Range &children, bool vertex_elements,
     const double iter_tol, const double inside_tol, bool throw_error,
     int verb) {
-  MoFEMFunctionBeginHot;
   Interface &m_field = cOre;
+  auto refined_ptr = m_field.get_ref_ents();
+  MoFEMFunctionBeginHot;
   // build Tree
   bool init_tree = false;
 
   // find parents of all nodes, if node has no parent then tetrahedral
   // containing that node is searched  node on tetrahedra my by part of face or
   // edge on that tetrahedral, this need to be verified
-  const RefEntity_multiIndex *refined_ptr;
-  ierr = m_field.get_ref_ents(&refined_ptr);
-  CHKERRG(ierr);
   RefEntity_multiIndex::index<EntType_mi_tag>::type::iterator it, hi_it;
   it = refined_ptr->get<EntType_mi_tag>().lower_bound(MBVERTEX);
   hi_it = refined_ptr->get<EntType_mi_tag>().upper_bound(MBVERTEX);
@@ -284,17 +282,12 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesVerticesOnTets(
 
 MoFEMErrorCode BitLevelCoupler::buildAdjacenciesEdgesFacesVolumes(
     const BitRefLevel &parent_level, Range &children, bool elements, int verb) {
+  Interface &m_field = cOre;
+  auto refined_ptr = m_field.get_ref_ents();
   MoFEMFunctionBeginHot;
 
   if (verb > 2)
     std::cout << children << std::endl;
-
-  Interface &m_field = cOre;
-
-  // access to ref dofs multi-index
-  const RefEntity_multiIndex *refined_ptr;
-  ierr = m_field.get_ref_ents(&refined_ptr);
-  CHKERRG(ierr);
 
   std::vector<EntityHandle> conn_parents;
 
@@ -397,12 +390,10 @@ MoFEMErrorCode BitLevelCoupler::buildAdjacenciesEdgesFacesVolumes(
 
 MoFEMErrorCode BitLevelCoupler::chanegParent(RefEntity_multiIndex::iterator it,
                                              EntityHandle parent) {
+  Interface &m_field = cOre;
+  auto refined_ptr = m_field.get_ref_ents();
   MoFEMFunctionBeginHot;
 
-  Interface &m_field = cOre;
-  const RefEntity_multiIndex *refined_ptr;
-  ierr = m_field.get_ref_ents(&refined_ptr);
-  CHKERRG(ierr);
 
   if (vErify) {
     ierr = verifyParent(it, parent);
@@ -422,15 +413,11 @@ MoFEMErrorCode BitLevelCoupler::chanegParent(RefEntity_multiIndex::iterator it,
 
 MoFEMErrorCode BitLevelCoupler::resetParents(Range &children, bool elements,
                                              int verb) {
+  Interface &m_field = cOre;
+  auto refined_ptr = m_field.get_ref_ents();
   MoFEMFunctionBeginHot;
 
-  Interface &m_field = cOre;
-
   // access to ref dofs multi-index
-  const RefEntity_multiIndex *refined_ptr;
-  ierr = m_field.get_ref_ents(&refined_ptr);
-  CHKERRG(ierr);
-
   Range::iterator eit, hi_eit;
   eit = children.begin();
   hi_eit = children.end();
@@ -504,6 +491,7 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
     const std::vector<EntityHandle> &children, const bool verify) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
+  auto fields_ptr = m_field.get_fields();
   MoFEMFunctionBegin;
 
   if (parents.size() != children.size()) {
@@ -516,15 +504,12 @@ MoFEMErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
   std::vector<double *> data(nb_elems);
   std::vector<int> data_size(nb_elems);
 
-  const Field_multiIndex *fields_ptr;
-  CHKERR m_field.get_fields(&fields_ptr);
   for (auto fit = fields_ptr->begin(); fit != fields_ptr->end(); fit++) {
 
     // Verify consistency with database
     if (verify) {
       // Get pointer to multi-index with field entities
-      const FieldEntity_multiIndex *field_ents;
-      CHKERR m_field.get_field_ents(&field_ents);
+      auto *field_ents = m_field.get_field_ents();
 
       auto get_ents_max_order = [&](const std::vector<EntityHandle> &ents) {
         boost::shared_ptr<std::vector<const void *>> ents_max_order(

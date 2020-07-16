@@ -114,8 +114,7 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
   } else {
 
     EntityHandle meshset;
-    CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER,
-                                     meshset);
+    CHKERR get_moab().create_meshset(MESHSET_SET, meshset);
 
     // Add field mesh set to partion meshset. In case of no elements
     // on processor part, when mesh file is read, finite element meshset is
