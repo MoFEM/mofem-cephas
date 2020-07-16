@@ -56,13 +56,29 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   }
 
   /// @return get entity unique dof id
+  inline const UId &getEntLocalUniqueId() const {
+    return this->sPtr->getLocalUniqueId();
+  }
+
+  /// @return get entity unique dof id
   inline const UId &getEntGlobalUniqueId() const {
     return this->sPtr->getGlobalUniqueId();
   }
 
-  static inline UId getGlobalUniqueIdCalculate(const DofIdx dof,
+  static inline UId getUniqueIdCalculate(const DofIdx dof,
                                                UId ent_uid) {
     return ent_uid | dof;
+  }
+
+  static inline UId
+  getLocalUniqueIdCalculate(const DofIdx dof,
+                             const boost::shared_ptr<FieldEntity> &ent_ptr) {
+    return getUniqueIdCalculate(dof, ent_ptr->getLocalUniqueId());
+  }
+
+  /// @return get unique dof id
+  inline UId getLocalUniqueId() const {
+    return getUniqueIdCalculate(std::abs(dof), this->sPtr->getLocalUniqueId());
   }
 
   /**
@@ -79,13 +95,12 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   static inline UId
   getGlobalUniqueIdCalculate(const DofIdx dof,
                              const boost::shared_ptr<FieldEntity> &ent_ptr) {
-    return getGlobalUniqueIdCalculate(dof, ent_ptr->getGlobalUniqueId());
+    return getUniqueIdCalculate(dof, ent_ptr->getGlobalUniqueId());
   }
   
   /// @return get unique dof id
   inline UId getGlobalUniqueId() const {
-    return getGlobalUniqueIdCalculate(std::abs(dof),
-                                      this->sPtr->getGlobalUniqueId());
+    return getUniqueIdCalculate(std::abs(dof), this->sPtr->getGlobalUniqueId());
   }
 
    /** \brief get short uid it is unique in combination with entity handle
@@ -157,6 +172,14 @@ struct interface_DofEntity : public interface_FieldEntity<T> {
   /// @return return entity unique id
   inline const UId &getEntGlobalUniqueId() const {
     return this->sPtr->getEntGlobalUniqueId();
+  }
+
+  /// @return return dof unique id
+  inline UId getLocalUniqueId() const { return this->sPtr->getLocalUniqueId(); }
+
+  /// @return return entity unique id
+  inline const UId &getEntLocallUniqueId() const {
+    return this->sPtr->getEntLocalUniqueId();
   }
 
   /// @return return short id (used by data recorder)

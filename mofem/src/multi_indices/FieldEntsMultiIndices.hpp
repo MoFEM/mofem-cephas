@@ -68,6 +68,7 @@ struct FieldEntityTmp<0, 0>
   using interface_type_RefEntity = interface_RefEntity<RefEntity>;
 
   UId globalUId; ///< Global unique id for this entity
+  UId localUId; ///< Global unique id for this entity
 
   FieldEntityTmp(const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
                  const boost::shared_ptr<RefEntity> ref_ents_ptr,
@@ -183,6 +184,12 @@ struct FieldEntityTmp<0, 0>
    * @return Global UId
    */
   const UId &getGlobalUniqueId() const { return globalUId; }
+
+  /**
+   * \brief Get global unique id
+   * @return Global UId
+   */
+  const UId &getLocalUniqueId() const { return localUId; }
 
   /**
    * \brief Calculate UId for field entity
@@ -353,6 +360,11 @@ struct interface_FieldEntity : public interface_Field<T, T> {
   /// @return get entity UId
   inline UId getGlobalUniqueId() const {
     return this->sPtr->getGlobalUniqueId();
+  }
+
+  /// @return get entity UId
+  inline UId getLocalUniqueId() const {
+    return this->sPtr->getLocalUniqueId();
   }
 
   /// @return return pointer to reference entity data structure

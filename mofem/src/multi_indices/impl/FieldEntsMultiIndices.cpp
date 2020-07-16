@@ -35,6 +35,8 @@ FieldEntityTmp<0, 0>::FieldEntityTmp(
   globalUId = getGlobalUniqueIdCalculate(ref_ents_ptr->getOwnerProc(),
                                          field_ptr->getBitNumber(),
                                          ref_ents_ptr->getOwnerEnt());
+  localUId = getLocalUniqueIdCalculate(field_ptr->getBitNumber(),
+                                       ref_ents_ptr->getEnt());
 
   if (PetscUnlikely(!fieldDataAdaptorPtr))
     THROW_MESSAGE("Pointer to field data adaptor not set");
