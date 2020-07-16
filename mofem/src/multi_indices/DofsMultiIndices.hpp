@@ -357,15 +357,14 @@ using DofEntityByNameAndEnt =
 /** \brief multi-index view on DofEntity by uid
   \ingroup dof_multi_indices
 */
-typedef multi_index_container<
+using DofEntity_multiIndex_uid_view = multi_index_container<
     boost::shared_ptr<DofEntity>,
     indexed_by<
 
         ordered_unique<
             const_mem_fun<DofEntity, UId, &DofEntity::getGlobalUniqueId>>
 
-        >>
-    DofEntity_multiIndex_uid_view;
+        >>;
 
 /** \brief vector view on DofEntity by uid
   \ingroup dof_multi_indices

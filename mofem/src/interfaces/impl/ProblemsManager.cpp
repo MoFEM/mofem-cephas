@@ -660,10 +660,10 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
   CHKERR getOptions();
 
-  if (problem_ptr->getBitRefLevel().none()) {
-    SETERRQ1(PETSC_COMM_SELF, 1, "problem <%s> refinement level not set",
+  if (problem_ptr->getBitRefLevel().none()) 
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+             "problem <%s> refinement level not set",
              problem_ptr->getName().c_str());
-  }
 
   int loop_size = 2;
   if (square_matrix) {
@@ -708,7 +708,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     }
   }
 
-  // Add DOFS to the proble by searching all the filedes, and adding to problem
+  // Add DOFS to the problem by searching all the filedes, and adding to problem
   // owned or shared DOFs
   if (buildProblemFromFields == PETSC_TRUE) {
     // Get fields IDs on elements
@@ -1089,7 +1089,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     MPI_Request *s_waits_col; // status of sens messages
     CHKERR PetscMalloc1(nsends_cols, &s_waits_col);
 
-    // Send messeges
+    // Send messages
     for (int proc = 0, kk = 0; proc < m_field.get_comm_size(); proc++) {
       if (!lengths_cols[proc])
         continue; // no message to send to this proc
@@ -1113,6 +1113,11 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
   CHKERR PetscFree(status);
 
+  DofEntity_multiIndex_uid_view dofs_glob_uid_view;
+  auto hint = dofs_glob_uid_view.begin();
+  for (auto dof : *m_field.get_dofs())
+    dofs_glob_uid_view.emplace_hint(hint, dof);
+
   // set values received from other processors
   for (int ss = 0; ss != loop_size; ++ss) {
 
@@ -1129,26 +1134,27 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       data_procs = rbuf_col;
     }
 
-    auto dofs_ptr = m_field.get_dofs();
-
     UId uid;
-    NumeredDofEntity_multiIndex::iterator dit;
     for (int kk = 0; kk != nrecvs; ++kk) {
       int len = olengths[kk];
       int *data_from_proc = data_procs[kk];
       for (int dd = 0; dd < len; dd += data_block_size) {
         uid = IdxDataTypePtr(&data_from_proc[dd]).getUId();
-        dit = numered_dofs_ptr[ss]->find(uid);
+        auto ddit = dofs_glob_uid_view.find(uid);
+        if (ddit == dofs_glob_uid_view.end()) {
+          std::ostringstream zz;
+          zz << **ddit << std::endl;
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                   "no such dof %s in mofem database", zz.str().c_str());
+        }
+
+        auto dit = numered_dofs_ptr[ss]->find((*ddit)->getGlobalUniqueId());
         if (dit == numered_dofs_ptr[ss]->end()) {
+
           // Dof is shared to this processor, however there is no element which
           // have this dof
-          // continue;
-          DofEntity_multiIndex::iterator ddit = dofs_ptr->find(uid);
-          if (ddit != dofs_ptr->end()) {
-            unsigned char pstatus = ddit->get()->getPStatus();
-            if (pstatus > 0) {
-              continue;
-            } else {
+          if (ddit != dofs_glob_uid_view.end()) {
+            if (ddit->get()->getPStatus() > 0) {
               std::ostringstream zz;
               zz << **ddit << std::endl;
               SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
@@ -1157,22 +1163,15 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
                        "%s",
                        zz.str().c_str());
             }
-          } else {
-            std::ostringstream zz;
-            zz << uid << std::endl;
-            SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                     "no such dof %s in mofem database", zz.str().c_str());
           }
-          std::ostringstream zz;
-          zz << uid << std::endl;
-          SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                   "dof %s not found", zz.str().c_str());
+
         }
+
         int global_idx = IdxDataTypePtr(&data_from_proc[dd]).getDofIdx();
-        if (global_idx < 0) {
+        if (global_idx < 0) 
           SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                   "received negative dof");
-        }
+        
         bool success;
         success = numered_dofs_ptr[ss]->modify(
             dit, NumeredDofEntity_mofem_index_change(global_idx));
