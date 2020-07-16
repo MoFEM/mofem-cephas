@@ -150,6 +150,35 @@ struct FieldEntityTmp<0, 0>
   }
 
   /**
+   * @brief Get the Local Unique Id Calculate 
+   * 
+   * @param bit_number 
+   * @param handle 
+   * @return UId 
+   */
+  static inline UId
+  getLocalUniqueIdCalculate(const char bit_number,
+                            const EntityHandle handle) {
+    constexpr int dof_shift = 9; // Maximal number of DOFs on entity
+    constexpr int ent_shift = 64;  // EntityHandle size
+    constexpr int proc_shift = 10; // Maximal number of 1024 processors
+    return
+
+        (static_cast<UId>(handle) << proc_shift | static_cast<UId>(bit_number)
+                                                      << proc_shift + ent_shift)
+        << dof_shift;
+  }
+
+  /**
+   * @brief Get the Local Unique Id Calculate object
+   * 
+   * @return UId 
+   */
+  inline UId getLocalUniqueIdCalculate() {
+    return getLocalUniqueIdCalculate(this->getBitNumber(), this->getEnt());
+  }
+
+  /**
    * \brief Get global unique id
    * @return Global UId
    */
@@ -182,6 +211,16 @@ struct FieldEntityTmp<0, 0>
          static_cast<UId>(moab_owner_handle) << proc_shift |
          static_cast<UId>(bit_number) << proc_shift + ent_shift)
         << dof_shift;
+  }
+
+  /**
+   * \brief Calculate global UId
+   * @return Global UId
+   */
+  inline UId getGlobalUniqueIdCalculate() const {
+    return getGlobalUniqueIdCalculate(this->getRefEntityPtr()->getOwnerProc(),
+                                      this->getBitNumber(),
+                                      this->getRefEntityPtr()->getOwnerEnt());
   }
 
   static inline UId getLoBitNumberUId(const char bit_number) {
@@ -237,16 +276,6 @@ struct FieldEntityTmp<0, 0>
         RefEntity::getOwnerEnt(ent, basic_ent_data)
 
     );
-  }
-
-  /**
-   * \brief Calculate global UId
-   * @return Global UId
-   */
-  inline UId getGlobalUniqueIdCalculate() const {
-    return getGlobalUniqueIdCalculate(this->getRefEntityPtr()->getOwnerProc(),
-                                      this->getBitNumber(),
-                                      this->getRefEntityPtr()->getOwnerEnt());
   }
 
   /**

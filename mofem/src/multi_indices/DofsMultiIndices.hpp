@@ -528,38 +528,36 @@ using NumeredDofEntityByLocalIdx =
 using NumeredDofEntityByEnt =
     NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type;
 
-typedef multi_index_container<
-    boost::shared_ptr<NumeredDofEntity>,
-    indexed_by<
+using NumeredDofEntity_multiIndex_uid_view_ordered =
+    multi_index_container<boost::shared_ptr<NumeredDofEntity>,
+                          indexed_by<
 
-        ordered_unique<const_mem_fun<
+                              ordered_unique<const_mem_fun<
 
-            NumeredDofEntity::interface_type_DofEntity, UId,
-            &NumeredDofEntity::getGlobalUniqueId
+                                  NumeredDofEntity::interface_type_DofEntity,
+                                  UId, &NumeredDofEntity::getGlobalUniqueId
 
-            >>
+                                  >>
 
-        >>
-    NumeredDofEntity_multiIndex_uid_view_ordered;
+                              >>;
 
-typedef multi_index_container<
+using NumeredDofEntity_multiIndex_idx_view_hashed = multi_index_container<
     boost::shared_ptr<NumeredDofEntity>,
     indexed_by<hashed_unique<const_mem_fun<NumeredDofEntity, DofIdx,
-                                           &NumeredDofEntity::getDofIdx> > > >
-    NumeredDofEntity_multiIndex_idx_view_hashed;
+                                           &NumeredDofEntity::getDofIdx>>>>;
 
-typedef multi_index_container<
-    boost::shared_ptr<NumeredDofEntity>,
-    indexed_by<ordered_non_unique<const_mem_fun<
-        NumeredDofEntity, DofIdx, &NumeredDofEntity::getPetscLocalDofIdx> > > >
-    NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique;
+using NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique =
+    multi_index_container<boost::shared_ptr<NumeredDofEntity>,
+                          indexed_by<ordered_non_unique<const_mem_fun<
+                              NumeredDofEntity, DofIdx,
+                              &NumeredDofEntity::getPetscLocalDofIdx>>>>;
 
-typedef multi_index_container<
-    boost::shared_ptr<NumeredDofEntity>,
-    indexed_by<ordered_non_unique<const_mem_fun<
-        NumeredDofEntity::interface_type_DofEntity, FieldCoefficientsNumber,
-        &NumeredDofEntity::getDofCoeffIdx> > > >
-    NumeredDofEntity_multiIndex_coeff_idx_ordered_non_unique;
+using NumeredDofEntity_multiIndex_coeff_idx_ordered_non_unique =
+    multi_index_container<
+        boost::shared_ptr<NumeredDofEntity>,
+        indexed_by<ordered_non_unique<const_mem_fun<
+            NumeredDofEntity::interface_type_DofEntity, FieldCoefficientsNumber,
+            &NumeredDofEntity::getDofCoeffIdx>>>>;
 
 /**
  * Activate or deactivate dofs (multi-index modifier)
