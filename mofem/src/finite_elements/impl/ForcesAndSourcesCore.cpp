@@ -188,11 +188,13 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
     const boost::string_ref field_name, FENumeredDofEntity_multiIndex &dofs,
     VectorInt &nodes_indices, VectorInt &local_nodes_indices) const {
   MoFEMFunctionBegin;
-  auto &dofs_by_type = dofs.get<Composite_Name_And_Ent_mi_tag>();
-  auto dit = dofs_by_type.lower_bound(
-      boost::make_tuple(field_name, get_id_for_min_type<MBVERTEX>()));
-  auto hi_dit = dofs_by_type.upper_bound(
-      boost::make_tuple(field_name, get_id_for_max_type<MBVERTEX>()));
+
+  auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
+  auto bit_number = mField.get_field_bit_number(field_name);
+  auto dit = dofs_by_uid.lower_bound(FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_min_type<MBVERTEX>()));
+  auto hi_dit = dofs_by_uid.upper_bound(FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_max_type<MBVERTEX>()));
 
   if (dit != hi_dit) {
 
@@ -267,13 +269,16 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
     }
   }
 
-  auto &dofs_by_type = dofs.get<Composite_Name_And_Ent_mi_tag>();
-  auto dit = dofs_by_type.lower_bound(
-      boost::make_tuple(field_name, get_id_for_min_type(type_lo)));
-  if (dit == dofs_by_type.end())
+  auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
+  auto bit_number = mField.get_field_bit_number(field_name);
+
+  auto dit = dofs_by_uid.lower_bound(FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_min_type(type_lo)));
+  if (dit == dofs_by_uid.end())
     MoFEMFunctionReturnHot(0);
-  auto hi_dit = dofs_by_type.lower_bound(
-      boost::make_tuple(field_name, get_id_for_max_type(type_hi)));
+  auto hi_dit = dofs_by_uid.upper_bound(FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_max_type(type_hi)));
+
   for (; dit != hi_dit; ++dit) {
     auto &dof = **dit;
     const EntityType type = dof.getEntType();
