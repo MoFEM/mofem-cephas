@@ -415,16 +415,8 @@ typedef multi_index_container<
 
         ordered_non_unique<tag<Ent_mi_tag>,
                            const_mem_fun<FEDofEntity::DofEntity, EntityHandle,
-                                         &FEDofEntity::getEnt>>,
+                                         &FEDofEntity::getEnt>>
 
-        ordered_non_unique<
-            tag<Composite_Name_And_Ent_mi_tag>,
-            composite_key<
-                FEDofEntity,
-                const_mem_fun<FEDofEntity::interface_type_Field,
-                              boost::string_ref, &FEDofEntity::getNameRef>,
-                const_mem_fun<FEDofEntity::DofEntity, EntityHandle,
-                              &FEDofEntity::getEnt>>>
 
         >>
     FEDofEntity_multiIndex;
@@ -435,12 +427,6 @@ typedef multi_index_container<
  */
 using FEDofEntityByUId = FEDofEntity_multiIndex::index<Unique_mi_tag>::type;
 
-/** \brief Dof entity multi-index by field name and entity
- *
- * \ingroup dof_multi_indices
- */
-using FEDofEntityByNameAndEnt =
-    FEDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type;
 
 /**
  * @relates multi_index_container
