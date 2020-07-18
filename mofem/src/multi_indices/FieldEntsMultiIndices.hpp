@@ -414,15 +414,11 @@ typedef multi_index_container<
                        member<FieldEntity, UId, &FieldEntity::localUId>>,
         ordered_non_unique<tag<Ent_mi_tag>,
                            const_mem_fun<FieldEntity::interface_type_RefEntity,
-                                         EntityHandle, &FieldEntity::getEnt>>,
-        ordered_non_unique<
-            tag<Composite_Name_And_Ent_mi_tag>,
-            composite_key<
-                FieldEntity,
-                const_mem_fun<FieldEntity::interface_type_Field,
-                              boost::string_ref, &FieldEntity::getNameRef>,
-                const_mem_fun<FieldEntity::interface_type_RefEntity,
-                              EntityHandle, &FieldEntity::getEnt>>>>>
+                                         EntityHandle, &FieldEntity::getEnt>>
+                                         
+                              >>
+
+
     FieldEntity_multiIndex;
 
 /** \brief Entity index by field name

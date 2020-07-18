@@ -144,20 +144,19 @@ MoFEMErrorCode Core::clear_ents_fields(const std::string name,
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
+  auto bit_number = get_field_bit_number(name);
   CHKERR clear_dofs_fields(name, ents, verb);
   CHKERR clear_adjacencies_entities(name, ents, verb);
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
-    EntityHandle first  = p_eit->first;
+    EntityHandle first = p_eit->first;
     EntityHandle second = p_eit->second;
-    FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator
-        dit,
-        hi_dit;
-    dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-        boost::make_tuple(name, first));
-    hi_dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-        boost::make_tuple(name, second));
-    entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
+    const auto uid = FieldEntity::getLocalUniqueIdCalculate(bit_number, first);
+    auto dit = entsFields.get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getLocalUniqueIdCalculate(bit_number, first));
+    auto hi_dit = entsFields.get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getLocalUniqueIdCalculate(bit_number, second));
+    entsFields.get<Unique_mi_tag>().erase(dit, hi_dit);
   }
   MoFEMFunctionReturn(0);
 }

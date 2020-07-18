@@ -628,6 +628,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                   "Data inconsistency");
         }
+        auto field_bit_number = (*miit)->getBitNumber();
 
         // Loop over adjacencies of element and find field entities on those
         // adjacencies, that create hash map map_uid_fe which is used later
@@ -649,20 +650,20 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
           const EntityHandle first = p_eit->first;
           const EntityHandle second = p_eit->second;
 
-          typedef FieldEntity_multiIndex::index<
-              Composite_Name_And_Ent_mi_tag>::type FieldEntityByComposite;
-          auto &field_ents_by_name_and_ent =
-              entsFields.get<Composite_Name_And_Ent_mi_tag>();
+          typedef FieldEntity_multiIndex::index<Unique_mi_tag>::type
+              FieldEntityByComposite;
+          auto &field_ents_by_name_and_ent = entsFields.get<Unique_mi_tag>();
           FieldEntityByComposite::iterator meit;
+
+          const auto uid =
+              FieldEntity::getLocalUniqueIdCalculate(field_bit_number, first);
 
           // If one entity in the pair search for one, otherwise search for
           // range
           if (first == second)
-            meit = field_ents_by_name_and_ent.find(
-                boost::make_tuple(field_name, first));
+            meit = field_ents_by_name_and_ent.find(uid);
           else
-            meit = field_ents_by_name_and_ent.lower_bound(
-                boost::make_tuple(field_name, first));
+            meit = field_ents_by_name_and_ent.lower_bound(uid);
 
           if (meit != field_ents_by_name_and_ent.end()) {
 
@@ -672,8 +673,7 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
               hi_meit = meit;
               ++hi_meit;
             } else
-              hi_meit = field_ents_by_name_and_ent.upper_bound(
-                  boost::make_tuple(field_name, second));
+              hi_meit = field_ents_by_name_and_ent.upper_bound(uid);
 
             // Add to view and create list of finite elements with this dof UId
             for (; meit != hi_meit; ++meit) {
