@@ -149,9 +149,8 @@ MoFEMErrorCode Core::clear_ents_fields(const std::string name,
   CHKERR clear_adjacencies_entities(name, ents, verb);
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
-    EntityHandle first = p_eit->first;
-    EntityHandle second = p_eit->second;
-    const auto uid = FieldEntity::getLocalUniqueIdCalculate(bit_number, first);
+    const auto first = p_eit->first;
+    const auto second = p_eit->second;
     auto dit = entsFields.get<Unique_mi_tag>().lower_bound(
         FieldEntity::getLocalUniqueIdCalculate(bit_number, first));
     auto hi_dit = entsFields.get<Unique_mi_tag>().upper_bound(

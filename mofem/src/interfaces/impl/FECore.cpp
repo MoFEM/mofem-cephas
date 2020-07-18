@@ -655,15 +655,15 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
           auto &field_ents_by_name_and_ent = entsFields.get<Unique_mi_tag>();
           FieldEntityByComposite::iterator meit;
 
-          const auto uid =
+          const auto lo_uid =
               FieldEntity::getLocalUniqueIdCalculate(field_bit_number, first);
 
           // If one entity in the pair search for one, otherwise search for
           // range
           if (first == second)
-            meit = field_ents_by_name_and_ent.find(uid);
+            meit = field_ents_by_name_and_ent.find(lo_uid);
           else
-            meit = field_ents_by_name_and_ent.lower_bound(uid);
+            meit = field_ents_by_name_and_ent.lower_bound(lo_uid);
 
           if (meit != field_ents_by_name_and_ent.end()) {
 
@@ -673,7 +673,9 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
               hi_meit = meit;
               ++hi_meit;
             } else
-              hi_meit = field_ents_by_name_and_ent.upper_bound(uid);
+              hi_meit = field_ents_by_name_and_ent.upper_bound(
+                  FieldEntity::getLocalUniqueIdCalculate(field_bit_number,
+                                                         second));
 
             // Add to view and create list of finite elements with this dof UId
             for (; meit != hi_meit; ++meit) {
