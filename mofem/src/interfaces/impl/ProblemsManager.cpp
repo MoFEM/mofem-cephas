@@ -786,21 +786,22 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       CHKERR m_field.getInterface<CommInterface>()->synchroniseEntities(
           ents_to_synchronise, verb);
       ents_to_synchronise = subtract(ents_to_synchronise, tmp_ents);
-      for (Field_multiIndex::iterator fit = fields_ptr->begin();
-           fit != fields_ptr->end(); fit++) {
+      for (auto fit = fields_ptr->begin(); fit != fields_ptr->end(); fit++) {
         if ((fit->get()->getId() & *fields_ids[ss]).any()) {
+          const auto bit_number = (*fit)->getBitNumber();
           for (Range::pair_iterator pit = ents_to_synchronise.pair_begin();
                pit != ents_to_synchronise.pair_end(); ++pit) {
-            const EntityHandle f = pit->first;
-            const EntityHandle s = pit->second;
-            DofEntity_multiIndex::index<
-                Composite_Name_And_Ent_mi_tag>::type::iterator dit,
-                hi_dit;
-            dit = dofs_field_ptr->get<Composite_Name_And_Ent_mi_tag>()
-                      .lower_bound(boost::make_tuple(fit->get()->getName(), f));
-            hi_dit =
-                dofs_field_ptr->get<Composite_Name_And_Ent_mi_tag>()
-                    .upper_bound(boost::make_tuple(fit->get()->getName(), s));
+            const auto f = pit->first;
+            const auto s = pit->second;
+            const auto lo_uid =
+                FieldEntity::getLocalUniqueIdCalculate(bit_number, f);
+            const auto hi_uid =
+                FieldEntity::getLocalUniqueIdCalculate(bit_number, s);
+
+            auto dit = dofs_field_ptr->get<Unique_mi_tag>().lower_bound(lo_uid);
+            auto hi_dit =
+                dofs_field_ptr->get<Unique_mi_tag>().upper_bound(hi_uid);
+
             dofs_ptr[ss]->insert(dit, hi_dit);
           }
         }

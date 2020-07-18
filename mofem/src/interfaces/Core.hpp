@@ -104,10 +104,9 @@ template <> struct CoreTmp<0> : public Interface {
   /**
    * Construct core database
    */
-  CoreTmp(
-      moab::Interface &moab,             ///< MoAB interface
-      MPI_Comm comm = PETSC_COMM_WORLD,  ///< MPI communicator
-      const int verbose = VERBOSE      ///< Verbosity level
+  CoreTmp(moab::Interface &moab,            ///< MoAB interface
+          MPI_Comm comm = PETSC_COMM_WORLD, ///< MPI communicator
+          const int verbose = VERBOSE       ///< Verbosity level
 
   );
 
@@ -953,16 +952,16 @@ protected:
   get_dofs_by_name_begin(const std::string &field_name) const;
   DofEntityByUId::iterator
   get_dofs_by_name_end(const std::string &field_name) const;
-  DofEntityByNameAndEnt::iterator
+  DofEntityByUId::iterator
   get_dofs_by_name_and_ent_begin(const std::string &field_name,
                                  const EntityHandle ent) const;
-  DofEntityByNameAndEnt::iterator
+  DofEntityByUId::iterator
   get_dofs_by_name_and_ent_end(const std::string &field_name,
                                const EntityHandle ent) const;
-  DofEntityByNameAndEnt::iterator
+  DofEntityByUId::iterator
   get_dofs_by_name_and_type_begin(const std::string &field_name,
                                   const EntityType type) const;
-  DofEntityByNameAndEnt::iterator
+  DofEntityByUId::iterator
   get_dofs_by_name_and_type_end(const std::string &field_name,
                                 const EntityType ent) const;
   EntFiniteElementByName::iterator
@@ -1144,10 +1143,9 @@ template <> struct CoreTmp<-1> : public CoreTmp<0> {
   /**
    * Construct core database
    */
-  CoreTmp(
-      moab::Interface &moab,             ///< MoAB interface
-      MPI_Comm comm = PETSC_COMM_WORLD,  ///< MPI communicator
-      const int verbose = VERBOSE      ///< Verbosity level
+  CoreTmp(moab::Interface &moab,            ///< MoAB interface
+          MPI_Comm comm = PETSC_COMM_WORLD, ///< MPI communicator
+          const int verbose = VERBOSE       ///< Verbosity level
 
   );
 

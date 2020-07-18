@@ -1812,7 +1812,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByNameAndEnt::iterator
+  virtual DofEntityByUId::iterator
   get_dofs_by_name_and_ent_begin(const std::string &field_name,
                                  const EntityHandle ent) const = 0;
 
@@ -1827,7 +1827,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByNameAndEnt::iterator
+  virtual DofEntityByUId::iterator
   get_dofs_by_name_and_ent_end(const std::string &field_name,
                                const EntityHandle ent) const = 0;
 
@@ -1853,7 +1853,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByNameAndEnt::iterator
+  virtual DofEntityByUId::iterator
   get_dofs_by_name_and_type_begin(const std::string &field_name,
                                   const EntityType type) const = 0;
 
@@ -1870,7 +1870,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByNameAndEnt::iterator
+  virtual DofEntityByUId::iterator
   get_dofs_by_name_and_type_end(const std::string &field_name,
                                 const EntityType type) const = 0;
 

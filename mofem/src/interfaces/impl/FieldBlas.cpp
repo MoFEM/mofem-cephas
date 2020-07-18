@@ -246,10 +246,15 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
   auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBeginHot;
 
-  auto dit = dofs_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, get_id_for_min_type(type)));
-  auto hi_dit = dofs_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, get_id_for_max_type(type)));
+  const auto bit_number = m_field.get_field_bit_number(field_name);
+  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_min_type(type));
+  const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_max_type(type));
+
+  auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(lo_uid);
+  auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(hi_uid);
+
   for (; dit != hi_dit; dit++) 
     (*dit)->getFieldData() = val;
   
@@ -263,10 +268,15 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
   auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBeginHot;
 
-  auto dit = dofs_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, get_id_for_min_type(type)));
-  auto hi_dit = dofs_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, get_id_for_max_type(type)));
+  const auto bit_number = m_field.get_field_bit_number(field_name);
+  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_min_type(type));
+  const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_max_type(type));
+
+  auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(lo_uid);
+  auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(hi_uid);
+
   EntityHandle ent, last = 0;
   bool cont = true;
   for (; dit != hi_dit; dit++) {
@@ -279,9 +289,9 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
       }
       last = ent;
     }
-    if (cont)
-      continue;
-    (*dit)->getFieldData() = val;
+    if (!cont)
+      (*dit)->getFieldData() = val;
+    
   }
   MoFEMFunctionReturnHot(0);
 }

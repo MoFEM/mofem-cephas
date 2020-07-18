@@ -455,7 +455,8 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
 
   MOFEM_LOG("WORLD", Sev::noisy) << "Test field " << *field_ptr;
 
-  const EntityHandle field_meshset = field_ptr->getMeshset();
+  const auto field_meshset = field_ptr->getMeshset();
+  const auto bit_number = field_ptr->getBitNumber();
 
   // intersection with field meshset
   Range ents_of_id_meshset;
@@ -545,13 +546,14 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
           // increased)
 
           bool can_change_size = true;
-          auto dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-              boost::make_tuple((*miit)->getNameRef(), (*miit)->getEnt()));
-          if (dit != dofsField.get<Composite_Name_And_Ent_mi_tag>().end()) {
-            auto hi_dit =
-                dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-                    boost::make_tuple((*miit)->getNameRef(),
-                                      (*miit)->getEnt()));
+          auto dit = dofsField.get<Unique_mi_tag>().lower_bound(
+              FieldEntity::getLoLocalEntityBitNumber(bit_number,
+                                                     (*miit)->getEnt()));
+          if (dit != dofsField.get<Unique_mi_tag>().end()) {
+            auto hi_dit = dofsField.get<Unique_mi_tag>().upper_bound(
+                FieldEntity::getHiLocalEntityBitNumber(bit_number,
+                                                       (*miit)->getEnt()));
+
             if (dit != hi_dit)
               can_change_size = false;
             for (; dit != hi_dit; dit++) {
@@ -966,6 +968,8 @@ Core::buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
                                 int verb) {
   FieldCoreFunctionBegin;
 
+  const auto bit_number = field_ptr->getBitNumber();
+
   // ents in the field meshset
   Range ents;
   CHKERR get_moab().get_entities_by_handle(field_ptr->getMeshset(), ents,
@@ -1035,20 +1039,18 @@ Core::buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
 
       // If there are DOFs in that range is more pragmatic to remove them
       // rather than to find sub-ranges or make them inactive
-      auto dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-          boost::make_tuple((*field_ent_it)->getNameRef(), ent));
-      auto hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-          boost::make_tuple((*field_ent_it)->getNameRef(), ent));
-      dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
-
+      auto dit = dofsField.get<Unique_mi_tag>().lower_bound(
+          FieldEntity::getLoLocalEntityBitNumber(bit_number, ent));
+      auto hi_dit = dofsField.get<Unique_mi_tag>().upper_bound(
+          FieldEntity::getHiLocalEntityBitNumber(bit_number, ent));
+      dofsField.get<Unique_mi_tag>().erase(dit, hi_dit);
       CHKERR add_dofs(*field_ent_it);
     }
   }
 
   if (verb > VERBOSE) {
-    auto lo_dof =
-        dofsField.get<Unique_mi_tag>().lower_bound(
-          FieldEntity::getLoBitNumberUId(field_ptr->getBitNumber()));
+    auto lo_dof = dofsField.get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getLoBitNumberUId(field_ptr->getBitNumber()));
     auto hi_dof = dofsField.get<Unique_mi_tag>().upper_bound(
         FieldEntity::getHiBitNumberUId(field_ptr->getBitNumber()));
     for (; lo_dof != hi_dof; lo_dof++)
@@ -1158,6 +1160,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
   if (field_it == set_id.end()) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field not found");
   }
+  const int bit_number = field_it->get()->getBitNumber();
   const int rank = field_it->get()->getNbOfCoeffs();
   const boost::string_ref &field_name = field_it->get()->getNameRef();
 
@@ -1176,21 +1179,21 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
 
     const EntityHandle first = p_eit->first;
     const EntityHandle second = p_eit->second;
+    const auto lo_uid =
+        FieldEntity::getLoLocalEntityBitNumber(bit_number, first);
+    const auto hi_uid =
+        FieldEntity::getHiLocalEntityBitNumber(bit_number, second);
 
-    auto feit = entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-        boost::make_tuple(field_name, first));
-    if (feit == entsFields.get<Composite_Name_And_Ent_mi_tag>().end())
+    auto feit = entsFields.get<Unique_mi_tag>().lower_bound(lo_uid);
+    if (feit == entsFields.get<Unique_mi_tag>().end())
       continue;
-    auto hi_feit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-        boost::make_tuple(field_name, second));
+    auto hi_feit = entsFields.get<Unique_mi_tag>().upper_bound(hi_uid);
 
     // If there are DOFs in that range is more pragmatic to remove them
     // rather than to find sub-ranges or make them inactive
-    auto dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-        boost::make_tuple(field_name, first));
-    auto hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-        boost::make_tuple(field_name, second));
-    dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
+    auto dit = dofsField.get<Unique_mi_tag>().lower_bound(lo_uid);
+    auto hi_dit = dofsField.get<Unique_mi_tag>().upper_bound(hi_uid);
+    dofsField.get<Unique_mi_tag>().erase(dit, hi_dit);
 
     // Add vertices DOFs by bulk
     boost::shared_ptr<std::vector<DofEntity>> dofs_array =
@@ -1473,29 +1476,33 @@ Core::get_dofs_by_name_end(const std::string &field_name) const {
   return dofsField.get<Unique_mi_tag>().upper_bound(
       FieldEntity::getHiBitNumberUId(get_field_bit_number(field_name)));
 }
-DofEntityByNameAndEnt::iterator
+DofEntityByUId::iterator
 Core::get_dofs_by_name_and_ent_begin(const std::string &field_name,
                                      const EntityHandle ent) const {
-  return dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, ent));
+  return dofsField.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoLocalEntityBitNumber(get_field_bit_number(field_name),
+                                             ent));
 }
-DofEntityByNameAndEnt::iterator
+DofEntityByUId::iterator
 Core::get_dofs_by_name_and_ent_end(const std::string &field_name,
                                    const EntityHandle ent) const {
-  return dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, ent));
+  return dofsField.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiLocalEntityBitNumber(get_field_bit_number(field_name),
+                                             ent));
 }
-DofEntityByNameAndEnt::iterator
+DofEntityByUId::iterator
 Core::get_dofs_by_name_and_type_begin(const std::string &field_name,
                                       const EntityType type) const {
-  return dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, get_id_for_min_type(type)));
+  return dofsField.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoLocalEntityBitNumber(get_field_bit_number(field_name),
+                                             get_id_for_min_type(type)));
 }
-DofEntityByNameAndEnt::iterator
+DofEntityByUId::iterator
 Core::get_dofs_by_name_and_type_end(const std::string &field_name,
                                     const EntityType type) const {
-  return dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, get_id_for_max_type(type)));
+  return dofsField.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiLocalEntityBitNumber(get_field_bit_number(field_name),
+                                             get_id_for_max_type(type)));
 }
 MoFEMErrorCode
 Core::check_number_of_ents_in_ents_field(const std::string &name) const {

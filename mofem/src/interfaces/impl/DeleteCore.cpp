@@ -91,16 +91,19 @@ MoFEMErrorCode Core::clear_dofs_fields(const std::string name,
   if (verb == -1)
     verb = verbose;
 
+  const auto bit_number = get_field_bit_number(name);
+
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
-    EntityHandle first  = p_eit->first;
-    EntityHandle second = p_eit->second;
-    DofEntityByNameAndEnt::iterator dit, hi_dit;
-    dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-        boost::make_tuple(name, first));
-    hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-        boost::make_tuple(name, second));
-    dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
+    const auto first  = p_eit->first;
+    const auto second = p_eit->second;
+    const auto lo_uid =
+        FieldEntity::getLocalUniqueIdCalculate(bit_number, first);
+    const auto hi_uid =
+        FieldEntity::getLocalUniqueIdCalculate(bit_number, second);
+    auto dit = dofsField.get<Unique_mi_tag>().lower_bound(lo_uid);
+    auto hi_dit = dofsField.get<Unique_mi_tag>().upper_bound(hi_uid);
+    dofsField.get<Unique_mi_tag>().erase(dit, hi_dit);
   }
   MoFEMFunctionReturnHot(0);
 }
