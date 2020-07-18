@@ -361,18 +361,17 @@ VecManager::setGlobalGhostVector(const std::string &name, RowColData rc, Vec V,
 template <int MODE> struct SetOtherLocalGhostVector {
   template <typename A0, typename A1, typename A2, typename A3, typename A4>
   inline MoFEMErrorCode operator()(A0 dofs_ptr, A1 array, A2 miit, A3 hi_miit,
-                                   A4 &cpy_field_name) {
+                                   A4 &cpy_bit_number) {
     MoFEMFunctionBegin;
     for (; miit != hi_miit; miit++) {
       if (miit->get()->getHasLocalIndex()) {
-        auto diiiit =
-            dofs_ptr
-                ->template get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
-                .find(boost::make_tuple(cpy_field_name, (*miit)->getEnt(),
-                                        (*miit)->getEntDofIdx()));
+        const auto uid = DofEntity::getUniqueIdCalculate(
+            (*miit)->getEntDofIdx(), FieldEntity::getLocalUniqueIdCalculate(
+                                         cpy_bit_number, (*miit)->getEnt()));
+        auto diiiit = dofs_ptr->template get<Unique_mi_tag>().find(uid);
         if (diiiit ==
             dofs_ptr
-                ->template get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
+                ->template get<Unique_mi_tag>()
                 .end()) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                   "Automatic creation of entity and dof not implemented");
@@ -412,11 +411,12 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
   }
 
   auto cpy_fit = fields_ptr->get<FieldName_mi_tag>().find(cpy_field_name);
-  if (cpy_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
+  if (cpy_fit == fields_ptr->get<FieldName_mi_tag>().end()) 
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "cpy field < %s > not found, (top tip: check spelling)",
              cpy_field_name.c_str());
-  }
+  const auto cpy_bit_number = (*cpy_fit)->getBitNumber();
+  
   auto miit = dofs->lower_bound(
       FieldEntity::getLoBitNumberUId(m_field.get_field_bit_number(field_name)));
   if (miit == dofs->end()) {
@@ -445,10 +445,10 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
     CHKERR VecGetArray(V, &array);
     if (mode == INSERT_VALUES)
       CHKERR SetOtherLocalGhostVector<INSERT_VALUES>()(dofs_ptr, array, miit,
-                                                       hi_miit, cpy_field_name);
+                                                       hi_miit, cpy_bit_number);
     else if (mode == ADD_VALUES)
       CHKERR SetOtherLocalGhostVector<ADD_VALUES>()(dofs_ptr, array, miit,
-                                                    hi_miit, cpy_field_name);
+                                                    hi_miit, cpy_bit_number);
     else
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
               "Operation mode not implemented");
@@ -458,14 +458,11 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
     for (; miit != hi_miit; miit++) {
       if (!miit->get()->getHasLocalIndex())
         continue;
-      DofEntity_multiIndex::index<
-          Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator diiiit;
-      diiiit =
-          dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
-              boost::make_tuple(cpy_field_name, (*miit)->getEnt(),
-                                (*miit)->getEntDofIdx()));
-      if (diiiit ==
-          dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().end()) {
+      const auto uid = DofEntity::getUniqueIdCalculate(
+          (*miit)->getEntDofIdx(), FieldEntity::getLocalUniqueIdCalculate(
+                                       cpy_bit_number, (*miit)->getEnt()));
+      auto diiiit = dofs_ptr->get<Unique_mi_tag>().find(uid);
+      if (diiiit == dofs_ptr->get<Unique_mi_tag>().end()) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "no data to fill the vector (top tip: you want scatter forward "
                 "or scatter reverse?)");
@@ -498,16 +495,14 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
 template <int MODE> struct SetOtherGlobalGhostVector {
   template <typename A0, typename A1, typename A2, typename A3, typename A4>
   inline MoFEMErrorCode operator()(A0 dofs_ptr, A1 array, A2 miit, A3 hi_miit,
-                                   A4 &cpy_field_name) {
+                                   A4 &cpy_bit_number) {
     MoFEMFunctionBegin;
     for (; miit != hi_miit; miit++) {
-      auto diiiit =
-          dofs_ptr->template get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
-              .find(boost::make_tuple(cpy_field_name, (*miit)->getEnt(),
-                                      (*miit)->getEntDofIdx()));
-      if (diiiit ==
-          dofs_ptr->template get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
-              .end()) {
+      const auto uid = DofEntity::getUniqueIdCalculate(
+          (*miit)->getEntDofIdx(), FieldEntity::getLocalUniqueIdCalculate(
+                                       cpy_bit_number, (*miit)->getEnt()));
+      auto diiiit = dofs_ptr->template get<Unique_mi_tag>().find(uid);
+      if (diiiit == dofs_ptr->template get<Unique_mi_tag>().end()) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                 "Automatic creation of entity and dof not implemented");
       }
@@ -551,6 +546,8 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
              "cpy field < %s > not found, (top tip: check spelling)",
              cpy_field_name.c_str());
   }
+  const auto cpy_bit_number = (*cpy_fit)->getBitNumber();
+
   auto miit = dofs->lower_bound(
       FieldEntity::getLoBitNumberUId(m_field.get_field_bit_number(field_name)));
   if (miit == dofs->end()) {
@@ -586,10 +583,10 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
 
     if (mode == INSERT_VALUES)
       CHKERR SetOtherGlobalGhostVector<INSERT_VALUES>()(
-          dofs_ptr, array, miit, hi_miit, cpy_field_name);
+          dofs_ptr, array, miit, hi_miit, cpy_bit_number);
     else if (mode == ADD_VALUES)
       CHKERR SetOtherGlobalGhostVector<ADD_VALUES>()(dofs_ptr, array, miit,
-                                                     hi_miit, cpy_field_name);
+                                                     hi_miit, cpy_bit_number);
     else
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
               "Operation mode not implemented");
@@ -600,12 +597,12 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
   } break;
   case SCATTER_FORWARD: {
     for (; miit != hi_miit; miit++) {
-      auto diiiit =
-          dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
-              boost::make_tuple(cpy_field_name, (*miit)->getEnt(),
-                                (*miit)->getEntDofIdx()));
+      const auto uid = DofEntity::getUniqueIdCalculate(
+          (*miit)->getEntDofIdx(), FieldEntity::getLocalUniqueIdCalculate(
+                                       cpy_bit_number, (*miit)->getEnt()));
+      auto diiiit = dofs_ptr->get<Unique_mi_tag>().find(uid);
       if (diiiit ==
-          dofs_ptr->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().end()) {
+          dofs_ptr->get<Unique_mi_tag>().end()) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "No data to fill the vector (top tip: you want scatter forward "
                 "or scatter reverse?)");

@@ -316,15 +316,6 @@ typedef multi_index_container<
 
         // non_unique
         ordered_non_unique<
-            tag<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>,
-            composite_key<
-                DofEntity,
-                const_mem_fun<DofEntity::interface_type_Field,
-                              boost::string_ref, &DofEntity::getNameRef>,
-                const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>,
-                const_mem_fun<DofEntity, DofIdx, &DofEntity::getEntDofIdx>>>,
-                
-        ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>>
             
