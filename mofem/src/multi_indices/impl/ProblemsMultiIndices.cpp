@@ -153,7 +153,7 @@ MoFEMErrorCode Problem::getNumberOfElementsByPart(MPI_Comm comm,
 }
 
 MoFEMErrorCode Problem::getDofByNameEntAndEntDofIdx(
-    const string name, const EntityHandle ent, const int ent_dof_idx,
+    const int field_bit_number, const EntityHandle ent, const int ent_dof_idx,
     const RowColData row_or_col,
     boost::shared_ptr<NumeredDofEntity> &dof_ptr) const {
   MoFEMFunctionBegin;
@@ -177,11 +177,12 @@ MoFEMErrorCode Problem::getDofByNameEntAndEntDofIdx(
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
             "Only ROW and COL is possible for 3rd argument");
   }
+
   auto it =
-      numered_dofs->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
-          boost::make_tuple(name, ent, ent_dof_idx));
-  if (it !=
-      numered_dofs->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().end()) {
+      numered_dofs->get<Unique_mi_tag>().find(DofEntity::getUniqueIdCalculate(
+          ent_dof_idx,
+          FieldEntity::getLocalUniqueIdCalculate(field_bit_number, ent)));
+  if (it != numered_dofs->get<Unique_mi_tag>().end()) {
     dof_ptr = *it;
   } else {
     dof_ptr = boost::shared_ptr<NumeredDofEntity>();

@@ -260,8 +260,7 @@ struct FieldEntityTmp<0, 0>
   }
 
   static inline UId
-  getLoLocalEntityBitNumber(const char bit_number, const EntityHandle ent,
-                       boost::shared_ptr<BasicEntityData> basic_ent_data) {
+  getLoLocalEntityBitNumber(const char bit_number, const EntityHandle ent) {
     return getLocalUniqueIdCalculate(
 
         bit_number,
@@ -272,9 +271,8 @@ struct FieldEntityTmp<0, 0>
   }
 
   static inline UId
-  getHiLocalEntityBitNumber(const char bit_number, const EntityHandle ent,
-                       boost::shared_ptr<BasicEntityData> basic_ent_data) {
-    return getLoLocalEntityBitNumber(bit_number, ent, basic_ent_data) |
+  getHiLocalEntityBitNumber(const char bit_number, const EntityHandle ent) {
+    return getLoLocalEntityBitNumber(bit_number, ent) |
            static_cast<UId>(MAX_DOFS_ON_ENTITY - 1);
   }
 

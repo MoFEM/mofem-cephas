@@ -388,13 +388,12 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
       if (siit->get()->side_number == -1)
         continue;
 
+      auto bit_number = mField.get_field_bit_number(field_name);
       const EntityHandle ent = siit->get()->ent;
-      auto dit =
-          dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().lower_bound(
-              boost::make_tuple(field_name, ent, 0));
-      auto hi_dit =
-          dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().upper_bound(
-              boost::make_tuple(field_name, ent, 10000)); /// very large number
+      auto dit = dofs.get<Unique_mi_tag>().lower_bound(
+          FieldEntity::getLoLocalEntityBitNumber(bit_number, ent));
+      auto hi_dit = dofs.get<Unique_mi_tag>().upper_bound(
+          FieldEntity::getHiLocalEntityBitNumber(bit_number, ent));
       for (; dit != hi_dit; dit++) {
         nodes_indices[siit->get()->side_number * (*dit)->getNbOfCoeffs() +
                       (*dit)->getDofCoeffIdx()] =
@@ -428,15 +427,11 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemTypeIndices(
       continue;
 
     const EntityHandle ent = siit->get()->ent;
-    NumeredDofEntity_multiIndex::index<
-        Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator dit,
-        hi_dit;
-    dit = dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().lower_bound(
-        boost::make_tuple(field_name, ent, 0));
-    hi_dit =
-        dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().upper_bound(
-            boost::make_tuple(field_name, ent, 10000)); /// very large number
-
+    auto bit_number = mField.get_field_bit_number(field_name);
+    auto dit = dofs.get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getLoLocalEntityBitNumber(bit_number, ent));
+    auto hi_dit = dofs.get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getHiLocalEntityBitNumber(bit_number, ent));
     indices.resize(std::distance(dit, hi_dit));
     for (; dit != hi_dit; dit++) {
 

@@ -660,7 +660,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
   CHKERR getOptions();
 
-  if (problem_ptr->getBitRefLevel().none()) 
+  if (problem_ptr->getBitRefLevel().none())
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "problem <%s> refinement level not set",
              problem_ptr->getName().c_str());
@@ -1164,14 +1164,13 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
                        zz.str().c_str());
             }
           }
-
         }
 
         int global_idx = IdxDataTypePtr(&data_from_proc[dd]).getDofIdx();
-        if (global_idx < 0) 
+        if (global_idx < 0)
           SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                   "received negative dof");
-        
+
         bool success;
         success = numered_dofs_ptr[ss]->modify(
             dit, NumeredDofEntity_mofem_index_change(global_idx));
@@ -2822,19 +2821,17 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
           >
           NumeredDofEntity_it_view_multiIndex;
 
+      const auto bit_number = m_field.get_field_bit_number(field_name);
       NumeredDofEntity_it_view_multiIndex dofs_it_view;
 
       // Set -1 to global and local dofs indices
       for (auto pit = ents.const_pair_begin(); pit != ents.const_pair_end();
            ++pit) {
-        auto lo =
-            numered_dofs[s]
-                ->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
-                .lower_bound(boost::make_tuple(field_name, pit->first, 0));
-        auto hi = numered_dofs[s]
-                      ->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>()
-                      .lower_bound(boost::make_tuple(field_name, pit->second,
-                                                     MAX_DOFS_ON_ENTITY));
+        auto lo = numered_dofs[s]->get<Unique_mi_tag>().lower_bound(
+            FieldEntity::getLoLocalEntityBitNumber(bit_number, pit->first));
+        auto hi = numered_dofs[s]->get<Unique_mi_tag>().upper_bound(
+            FieldEntity::getHiLocalEntityBitNumber(bit_number, pit->second));
+
         for (; lo != hi; ++lo)
           if ((*lo)->getDofCoeffIdx() >= lo_coeff &&
               (*lo)->getDofCoeffIdx() <= hi_coeff)
@@ -2842,12 +2839,10 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
       }
 
       if (verb >= VERY_NOISY) {
-        for (auto &dof : dofs_it_view) {
-          std::ostringstream ss;
-          ss << **dof;
-          PetscSynchronizedPrintf(m_field.get_comm(), "%s\n", ss.str().c_str());
-        }
-        PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+        for (auto &dof : dofs_it_view)
+          MOFEM_LOG("SYNC", Sev::noisy) << *dof;
+
+        MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
       }
 
       // set negative index
@@ -2866,10 +2861,9 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         dosf_weak_view.push_back(*dit);
 
       if (verb >= NOISY)
-        PetscSynchronizedPrintf(
-            m_field.get_comm(),
-            "Number of DOFs in multi-index %d and to delete %d\n",
-            numered_dofs[s]->size(), dofs_it_view.size());
+        MOFEM_LOG_C("SYNC", Sev::noisy,
+                    "Number of DOFs in multi-index %d and to delete %d\n",
+                    numered_dofs[s]->size(), dofs_it_view.size());
 
       // erase dofs from problem
       for (auto weak_dit : dosf_weak_view)
@@ -2878,10 +2872,9 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         }
 
       if (verb >= NOISY)
-        PetscSynchronizedPrintf(
-            m_field.get_comm(),
-            "Number of DOFs in multi-index after delete %d\n",
-            numered_dofs[s]->size());
+        MOFEM_LOG_C("SYNC", Sev::noisy, 
+                    "Number of DOFs in multi-index after delete %d\n",
+                    numered_dofs[s]->size());
 
       // get current number of ghost dofs
       int nb_local_dofs = 0;
@@ -2993,8 +2986,8 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
     }
 
   if (verb > QUIET) {
-    PetscSynchronizedPrintf(
-        m_field.get_comm(),
+    MOFEM_LOG_C(
+        "SYNC", Sev::inform,
         "removed ents on rank %d from problem %s dofs [ %d / %d  (before %d / "
         "%d) local, %d / %d (before %d / %d) "
         "ghost, %d / %d (before %d / %d) global]\n",
@@ -3004,7 +2997,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         prb_ptr->getNbGhostDofsCol(), nb_init_ghost_row_dofs,
         nb_init_ghost_col_dofs, prb_ptr->getNbDofsRow(),
         prb_ptr->getNbDofsCol(), nb_init_loc_row_dofs, nb_init_loc_col_dofs);
-    PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+    MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
   }
 
   MoFEMFunctionReturn(0);

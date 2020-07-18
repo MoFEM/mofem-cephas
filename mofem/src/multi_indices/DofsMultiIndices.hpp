@@ -497,18 +497,8 @@ typedef multi_index_container<
         ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-                          EntityHandle, &NumeredDofEntity::getEnt>>,
-
-        ordered_non_unique<
-            tag<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>,
-            composite_key<
-                NumeredDofEntity,
-                const_mem_fun<NumeredDofEntity::interface_type_Field,
-                              boost::string_ref, &NumeredDofEntity::getNameRef>,
-                const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-                              EntityHandle, &NumeredDofEntity::getEnt>,
-                const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-                              DofIdx, &NumeredDofEntity::getEntDofIdx>>>
+                          EntityHandle, &NumeredDofEntity::getEnt>>
+                          
 
         >>
     NumeredDofEntity_multiIndex;

@@ -232,7 +232,8 @@ struct Problem {
    * on the entity. The coefficient number and local index of DOFs or entity are
    * the same on vertices and H1 approximation.
    *
-   * @param  name       field name
+   * @param  field_bit_number       field name field_bit_number = (use
+   * m_field.get_field_bit_number(field_name);
    * @param  ent        entity handle
    * @param  ent_dof_idx index of DOFs on entity
    * @param  row_or_col ROW or COL
@@ -240,7 +241,7 @@ struct Problem {
    * @return            error code
    */
   MoFEMErrorCode getDofByNameEntAndEntDofIdx(
-      const string name, const EntityHandle ent, const int ent_dof_idx,
+      const int field_bit_number, const EntityHandle ent, const int ent_dof_idx,
       const RowColData row_or_col,
       boost::shared_ptr<NumeredDofEntity> &dof_ptr) const;
 
