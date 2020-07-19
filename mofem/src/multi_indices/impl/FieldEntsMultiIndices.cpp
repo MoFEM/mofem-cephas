@@ -73,8 +73,7 @@ FieldEntityTmp<0, 0>::makeSharedFieldDataAdaptorPtr(
 
 std::ostream &operator<<(std::ostream &os, const FieldEntity &e) {
   os << "ent_global_uid "
-     << (UId)e.getGlobalUniqueId()
-     // << " ent_local_uid " << (UId)e.get_local_unique_id()
+     << e.getLocalUniqueId()
      << " entity " << e.getEnt() << " type " << e.getEntType() << " pstatus "
      << std::bitset<8>(e.getPStatus()) << " owner handle " << e.getOwnerEnt()
      << " owner proc " << e.getOwnerProc() << " order " << e.getMaxOrder()
