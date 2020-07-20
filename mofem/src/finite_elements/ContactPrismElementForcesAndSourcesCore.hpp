@@ -275,14 +275,7 @@ protected:
   MatrixDouble tangentTwoAtGaussPtsSlave;
   
   OpSetContravariantPiolaTransformOnFace opContravariantTransform;
-  // OpSetInvJacHdivAndHcurl opSetInvJacHdivAndHcurl;
-
-  // MatrixDouble3by3 jacSlave, jacMaster;
-  // MatrixDouble3by3 invJacSlave, invJacMaster;
-
-  // FTensor::Tensor2<double *, 3, 3> tJacSlave;
-  // FTensor::Tensor2<double *, 3, 3> tInvJacSlave;
-
+  
   /**
    * @brief Entity data on element entity rows fields
    *

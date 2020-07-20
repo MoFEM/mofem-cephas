@@ -189,50 +189,38 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                                         &*coords.data().begin());
     normal.resize(6, false);
 
-    tangentMasterOne.resize(3, false);
-    tangentMasterTwo.resize(3, false);
-
-    tangentSlaveOne.resize(3, false);
-    tangentSlaveTwo.resize(3, false);
-
-    tangentMasterOne.clear();
-    tangentMasterTwo.clear();
-
-    tangentSlaveOne.clear();
-    tangentSlaveTwo.clear();
+    auto my_array_tangents = {&tangentMasterOne, &tangentMasterTwo, &tangentSlaveOne,
+                     &tangentSlaveTwo};
+    for (auto &v : {&tangentMasterOne, &tangentMasterTwo, &tangentSlaveOne,
+                    &tangentSlaveTwo}) {
+      v->resize(3);
+      v->clear();
+    }
 
     const size_t nb_gauss_pts = gaussPtsSlave.size2();
-    normalsAtGaussPtsSlave.resize(nb_gauss_pts, 3);
-    tangentOneAtGaussPtsSlave.resize(nb_gauss_pts, 3);
-    tangentTwoAtGaussPtsSlave.resize(nb_gauss_pts, 3);
-    normalsAtGaussPtsSlave.clear();
-    tangentOneAtGaussPtsSlave.clear();
-    tangentTwoAtGaussPtsSlave.clear();
-
+    for (auto &v : {&normalsAtGaussPtsSlave, &tangentOneAtGaussPtsSlave,
+                    &tangentTwoAtGaussPtsSlave}) {
+      v->resize(nb_gauss_pts, 3);
+      v->clear();
+    }
 
     CHKERR Tools::getTriNormal(&coords[0], &normal[0]);
     CHKERR Tools::getTriNormal(&coords[9], &normal[3]);
 
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_master(
-        &coords[0], &coords[1], &coords[2]);
+    auto get_vec_ptr = [](VectorDouble &vec_double, int r = 0) {
+      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+          &vec_double(r + 0), &vec_double(r + 1), &vec_double(r + 2));
+    };
 
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords_slave(
-        &coords[9], &coords[10], &coords[11]);
+    auto t_coords_master = get_vec_ptr(coords);
+    auto t_coords_slave = get_vec_ptr(coords, 9);
+    auto t_normal_master = get_vec_ptr(normal);
+    auto t_normal_slave = get_vec_ptr(normal, 3);
 
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_normal_master(
-        &normal[0], &normal[1], &normal[2]);
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_normal_slave(
-        &normal[3], &normal[4], &normal[5]);
-
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1_master(
-        &tangentMasterOne[0], &tangentMasterOne[1], &tangentMasterOne[2]);
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2_master(
-        &tangentMasterTwo[0], &tangentMasterTwo[1], &tangentMasterTwo[2]);
-
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t1_slave(
-        &tangentSlaveOne[0], &tangentSlaveOne[1], &tangentSlaveOne[2]);
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_t2_slave(
-        &tangentSlaveTwo[0], &tangentSlaveTwo[1], &tangentSlaveTwo[2]);
+    auto t_t1_master = get_vec_ptr(tangentMasterOne);
+    auto t_t2_master = get_vec_ptr(tangentMasterOne);
+    auto t_t1_slave = get_vec_ptr(tangentMasterOne);
+    auto t_t2_slave = get_vec_ptr(tangentMasterOne);
 
     const double *diff_ptr = Tools::diffShapeFunMBTRI.data();
     FTensor::Tensor1<FTensor::PackPtr<const double *, 2>, 2> t_diff(

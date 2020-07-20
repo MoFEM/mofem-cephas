@@ -211,8 +211,7 @@ Contravariant Piola transformation
 struct OpSetContravariantPiolaTransform : public DataOperator {
 
   double &vOlume;
-  // MatrixDouble3by3 &jAc;
-
+  
   FTensor::Tensor2<double *, 3, 3> tJac;
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
