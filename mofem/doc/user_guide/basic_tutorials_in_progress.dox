@@ -1,4 +1,4 @@
-/*! \page basic_tutorials_in_progress Basic tutorials (in progress)
+/*! \page tutorials_in_progress Tutorials (in progress)
 
 
 The tutorials contain a number of basic programs that are built on top of each
@@ -12,12 +12,12 @@ and comments, possible extensions.
 4. **Plain program**: Full source code without extended comments
 
 The source code and corresponding binary files of the tutorials are located at
-the following directories when you install MoFEM with developer version \ref install
+the following directories when you install MoFEM with developer version \ref installation
 
 - Source code:
-  *$HOME/mofem_install/mofem-cephas/mofem/users_modules/tutorials*
+  `$HOME/mofem_install/mofem-cephas/mofem/users_modules/tutorials`
 - Binary files (build directory):
-  *$HOME/mofem_install/um/build/tutorials* 
+  `$HOME/mofem_install/um/build/tutorials`
 
 Each tutorial in this page includes code name and keywords for quick reference
 and search within the browser. 
@@ -52,7 +52,7 @@ continuing with the one you are most excited about.
 </table>
 
 
-\subsection tutorials_mesh_creation Mesh creation (here or at the end of page)
+\subsection tutorials_mesh_creation Mesh creation
 
 <table style="width:100%">
 
@@ -218,10 +218,8 @@ continuing with the one you are most excited about.
 
 </table>
 
-\subsection tutorials_vector_archived_docs Archived documents (put here or other pages)
 
-Contains all existing tutorials with various styles and structures
+Our way of creating tutorials is inspired by [deal.II](https://www.dealii.org).
 
-\note Our way of creating tutorials is inspired by [deal.II](https://www.dealii.org).
-
+\note We also have some tutorials that created some time ago at \ref old_tutorials and \ref runningprograms
 */
