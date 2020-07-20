@@ -522,21 +522,13 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
       // TODO: [CORE-55] Improve algorithm estimating size of compressed matrix
       unsigned int nb_nonzero = j.size() + dofs_vec.size();
-      unsigned int average_row_fill =
-          nb_nonzero / i.size() + nb_nonzero % i.size();
-      if (j.capacity() < rows_to_fill * average_row_fill) {
-        j.reserve(rows_to_fill * average_row_fill);
-      }
+      unsigned int average_row_fill = nb_nonzero / i.size() + 1;
+      j.reserve(rows_to_fill * average_row_fill);
+      
     }
 
-    // add indices to compressed matrix
-    if (verb >= VERY_VERBOSE) {
-      PetscSynchronizedPrintf(cOmm, "rank %d: ", rAnk);
-    }
-    std::vector<int>::iterator diit, hi_diit;
-    diit = dofs_vec.begin();
-    hi_diit = dofs_vec.end();
-    for (; diit != hi_diit; diit++) {
+    auto hi_diit = dofs_vec.end();
+    for (auto diit = dofs_vec.begin(); diit != hi_diit; diit++) {
 
       if (no_diagonals) {
         if (*diit == TAG::get_index(miit_row)) {
@@ -632,6 +624,7 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
   }
 
   std::vector<int> i_vec, j_vec;
+  j_vec.reserve(10000);
   CHKERR core_ptr->createMatArrays<PetscGlobalIdx_mi_tag>(
       p_miit, MATMPIAIJ, i_vec, j_vec, false, verb);
 
@@ -668,6 +661,7 @@ MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
   }
 
   std::vector<int> i_vec, j_vec;
+  j_vec.reserve(10000);
   CHKERR core_ptr->createMatArrays<Idx_mi_tag>(p_miit, MATMPIADJ, i_vec, j_vec,
                                                true, verb);
   int *_i, *_j;
@@ -704,6 +698,7 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
   }
 
   std::vector<int> i_vec, j_vec;
+  j_vec.reserve(10000);
   CHKERR core_ptr->createMatArrays<PetscGlobalIdx_mi_tag>(p_miit, MATAIJ, i_vec,
                                                           j_vec, false, verb);
 
