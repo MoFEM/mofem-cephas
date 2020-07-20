@@ -41,6 +41,8 @@ static const MOFEMuuid IDD_MOFEMDeprecatedCoreInterface =
  */
 struct CoreInterface : public UnknownInterface {
 
+  virtual ~CoreInterface() = default;
+
   /** \name Interfaces */
 
   /**@{*/
@@ -120,7 +122,6 @@ struct CoreInterface : public UnknownInterface {
    */
   virtual int get_comm_rank() const = 0;
 
-
   /** \name Check consistency */
 
   /**@{*/
@@ -183,9 +184,25 @@ struct CoreInterface : public UnknownInterface {
   virtual MoFEMErrorCode
   remove_parents_by_ents(const Range &ents, int verb = DEFAULT_VERBOSITY) = 0;
 
+  /**
+   * @brief Remove parent from entities on bit level
+   *
+   * Evert entity created by refinement, split or any other change on the mesh
+   * can have parent. This function remove parent from entity,
+   *
+   * \note Functions makeing topological changes on entities should repsect
+   * parents child relation. This erase that relation. If you going to split
+   * faces and create interface is recommended to call this function before
+   * split opeartion.
+   *
+   * @param bit level
+   * @param mask of bit level
+   * @param verb verbosity level
+   * @return MoFEMErrorCode
+   */
   virtual MoFEMErrorCode
-  remove_parents_by_by_bit_ref(const BitRefLevel &bit, const BitRefLevel &mask,
-                               int verb = DEFAULT_VERBOSITY) = 0;
+  remove_parents_by_bit_ref(const BitRefLevel bit, const BitRefLevel mask,
+                            int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
    * @brief Remove paremts from entities having parents in passed range
@@ -334,7 +351,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * Create vertices and add them to field. Those vertices would be carring
    * DOFs of the filed.
-   * 
+   *
    * \note This function is typically used when NOFIELD is created, for example
    * load factor in arc-length control.
    *
@@ -1525,6 +1542,80 @@ struct CoreInterface : public UnknownInterface {
 
   /**@{*/
 
+  /**
+   * @brief Get the fields object
+   * @ingroup mofem_access
+   *
+   * @return const Field_multiIndex*
+   */
+  virtual const Field_multiIndex *get_fields() const = 0;
+
+  /**
+   * @brief Get the ref ents object
+   * @ingroup mofem_access
+   *
+   * @return const RefEntity_multiIndex*
+   */
+  virtual const RefEntity_multiIndex *get_ref_ents() const = 0;
+
+  /**
+   * @brief Get the ref finite elements object
+   * @ingroup mofem_access
+   *
+   * @return const RefElement_multiIndex*
+   */
+  virtual const RefElement_multiIndex *get_ref_finite_elements() const = 0;
+
+  /**
+   * @brief Get the finite elements object
+   * @ingroup mofem_access
+   *
+   * @return const FiniteElement_multiIndex*
+   */
+  virtual const FiniteElement_multiIndex *get_finite_elements() const = 0;
+
+  /**
+   * @brief Get the ents finite elements object
+   * @ingroup mofem_access
+   *
+   * @return const EntFiniteElement_multiIndex*
+   */
+  virtual const EntFiniteElement_multiIndex *
+  get_ents_finite_elements() const = 0;
+
+  /**
+   * @brief Get the field ents object
+   * @ingroup mofem_access
+   *
+   * @return const FieldEntity_multiIndex*
+   */
+  virtual const FieldEntity_multiIndex *get_field_ents() const = 0;
+
+  /**
+   * @brief Get the dofs object
+   * @ingroup mofem_access
+   *
+   * @return const DofEntity_multiIndex*
+   */
+  virtual const DofEntity_multiIndex *get_dofs() const = 0;
+
+  /**
+   * @brief Get the problem object
+   * @ingroup mofem_access
+   *
+   * @param problem_name
+   * @return const Problem*
+   */
+  virtual const Problem *get_problem(const std::string &problem_name) const = 0;
+
+  /**
+   * @brief Get the problems object
+   * @ingroup mofem_access
+   *
+   * @return const Problem_multiIndex*
+   */
+  virtual const Problem_multiIndex *get_problems() const = 0;
+
   /** \brief Get fields multi-index from database
    * \ingroup mofem_access
    */
@@ -1788,7 +1879,6 @@ namespace MoFEM {
 using Interface = DeprecatedCoreInterface;
 
 } // namespace MoFEM
-
 
 #endif // __INTERFACE_HPP__
 

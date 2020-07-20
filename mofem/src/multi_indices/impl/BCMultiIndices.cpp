@@ -104,7 +104,7 @@ CubitMeshSets::CubitMeshSets(moab::Interface &moab,
       tagName(nullptr), meshsets_mask(NODESET | SIDESET | BLOCKSET) {
 
   CHKERR getTagsHandlers(moab);
-  CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR moab.create_meshset(MESHSET_SET, meshset);
   switch (cubitBcType.to_ulong()) {
   case NODESET:
     CHKERR moab.tag_set_data(nsTag, &meshset, 1, &_ms_id);

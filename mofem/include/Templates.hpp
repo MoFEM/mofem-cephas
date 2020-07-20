@@ -671,6 +671,36 @@ moab::Range::iterator insertOrdered(Range &r, Extractor, Iterator begin_iter,
   return hint;
 };
 
+/**
+ * @brief Do nothing, used to rebuild database
+ *
+ */
+struct Modify_change_nothing {
+  Modify_change_nothing() = default;
+  template <typename T> inline void operator()(T &e) {}
+};
+
+/**
+ * @brief Template used to reconstruct multi-index
+ * 
+ * @tparam MI multi-index
+ * @tparam Modifier 
+ * @param mi 
+ * @param mo 
+ * @return MoFEMErrorCode 
+ */
+template <typename MI, typename MO = Modify_change_nothing>
+inline MoFEMErrorCode reconstructMultiIndex(const MI &mi,
+                                            MO &&mo = Modify_change_nothing()) {
+  MoFEMFunctionBegin;
+  for (auto it = mi.begin(); it != mi.end(); ++it) {
+    if (!const_cast<MI &>(mi).modify(it, mo))
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Houston we have a problem");
+  }
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM
 
 #endif //__TEMPLATES_HPP__

@@ -1573,7 +1573,7 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   if (1) {
 
     EntityHandle meshset;
-    CHKERR moab_ref.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+    CHKERR moab_ref.create_meshset(MESHSET_SET, meshset);
     CHKERR moab_ref.add_entities(meshset, tets);
     CHKERR moab_ref.convert_entities(meshset, true, false, false);
     CHKERR moab_ref.delete_entities(&meshset, 1);
@@ -1964,7 +1964,7 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   // }
 
   EntityHandle meshset;
-  CHKERR moab_ref.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR moab_ref.create_meshset(MESHSET_SET, meshset);
   CHKERR moab_ref.add_entities(meshset, tets);
   CHKERR moab_ref.write_file(file_name.c_str(), "VTK", "", &meshset, 1);
 
@@ -2659,7 +2659,7 @@ MoFEMErrorCode VTK_Demkowicz_Hcurl_MBTET(const string file_name) {
   // Use 10 node tets to print base
   if (1) {
     EntityHandle meshset;
-    CHKERR moab_ref.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+    CHKERR moab_ref.create_meshset(MESHSET_SET, meshset);
     CHKERR moab_ref.add_entities(meshset, tets);
     CHKERR moab_ref.convert_entities(meshset, true, false, false);
     CHKERR moab_ref.delete_entities(&meshset, 1);
@@ -2786,7 +2786,7 @@ MoFEMErrorCode VTK_Demkowicz_Hcurl_MBTET(const string file_name) {
   }
 
   EntityHandle meshset;
-  CHKERR moab_ref.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR moab_ref.create_meshset(MESHSET_SET, meshset);
   CHKERR moab_ref.add_entities(meshset, tets);
   CHKERR moab_ref.write_file(file_name.c_str(), "VTK", "", &meshset, 1);
 

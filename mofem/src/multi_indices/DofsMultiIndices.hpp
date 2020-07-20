@@ -29,6 +29,8 @@ namespace MoFEM {
  */
 struct DofEntity : public interface_FieldEntity<FieldEntity> {
 
+  virtual ~DofEntity() = default; 
+
   typedef interface_Field<FieldEntity> interface_type_Field;
   typedef interface_FieldEntity<FieldEntity> interface_type_FieldEntity;
   typedef interface_RefEntity<FieldEntity> interface_type_RefEntity;
@@ -154,6 +156,8 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
 template <typename T>
 struct interface_DofEntity : public interface_FieldEntity<T> {
 
+  virtual ~interface_DofEntity() = default;
+
   interface_DofEntity(const boost::shared_ptr<T> &sptr)
       : interface_FieldEntity<T>(sptr) {}
 
@@ -216,6 +220,8 @@ struct interface_DofEntity : public interface_FieldEntity<T> {
  */
 struct NumeredDofEntity : public interface_DofEntity<DofEntity> {
 
+  virtual ~NumeredDofEntity() = default;
+
   typedef interface_Field<DofEntity> interface_type_Field;
   typedef interface_FieldEntity<DofEntity> interface_type_FieldEntity;
   typedef interface_DofEntity<DofEntity> interface_type_DofEntity;
@@ -254,6 +260,8 @@ struct NumeredDofEntity : public interface_DofEntity<DofEntity> {
 template <typename T>
 struct interface_NumeredDofEntity : public interface_DofEntity<T> {
 
+  virtual ~interface_NumeredDofEntity() = default;
+
   interface_NumeredDofEntity(const boost::shared_ptr<T> &sptr)
       : interface_DofEntity<T>(sptr){};
 
@@ -286,6 +294,9 @@ struct interface_NumeredDofEntity : public interface_DofEntity<T> {
  * \ingroup dof_multi_indices
  */
 struct FEDofEntity : public BaseFEEntity, interface_DofEntity<DofEntity> {
+
+  virtual ~FEDofEntity() = default;
+
   typedef interface_Field<DofEntity> interface_type_Field;
   typedef interface_DofEntity<DofEntity> interface_type_DofEntity;
   typedef interface_RefEntity<DofEntity> interface_type_RefEntity;
@@ -302,6 +313,9 @@ struct FEDofEntity : public BaseFEEntity, interface_DofEntity<DofEntity> {
  */
 struct FENumeredDofEntity : public BaseFEEntity,
                             interface_NumeredDofEntity<NumeredDofEntity> {
+
+  virtual ~FENumeredDofEntity() = default;
+
   typedef interface_Field<NumeredDofEntity> interface_type_Field;
   typedef interface_DofEntity<NumeredDofEntity> interface_type_DofEntity;
   typedef interface_RefEntity<NumeredDofEntity> interface_type_RefEntity;

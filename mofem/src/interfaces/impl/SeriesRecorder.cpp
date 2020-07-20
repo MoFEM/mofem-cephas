@@ -108,7 +108,7 @@ SeriesRecorder::add_series_recorder(const std::string &series_name) {
   moab::Interface &moab = m_field.get_moab();
   MoFEMFunctionBegin;
   EntityHandle meshset;
-  CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR moab.create_meshset(MESHSET_SET, meshset);
   void const *tag_data[] = {series_name.c_str()};
   int tag_sizes[1];
   tag_sizes[0] = series_name.size();
@@ -197,11 +197,9 @@ MoFEMErrorCode SeriesRecorder::record_field(const std::string &serie_name,
                                             const std::string &field_name,
                                             const BitRefLevel &bit,
                                             const BitRefLevel &mask) {
-
   Interface &m_field = cOre;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_dofs(&dofs_ptr);
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit =
       sEries.get<SeriesName_mi_tag>().find(serie_name);
   if (sit == sEries.get<SeriesName_mi_tag>().end()) {
@@ -322,7 +320,7 @@ MoFEMErrorCode SeriesRecorder::load_series_data(const std::string &serie_name,
 
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  const DofEntity_multiIndex *dofs_ptr;
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
   SeriesStep_multiIndex::index<
       Composite_SeriesName_And_Step_mi_tag>::type::iterator sit;
@@ -332,7 +330,6 @@ MoFEMErrorCode SeriesRecorder::load_series_data(const std::string &serie_name,
     SETERRQ2(PETSC_COMM_SELF, 1, "series <%s> and step %d not found",
              serie_name.c_str(), step_number);
   }
-  CHKERR m_field.get_dofs(&dofs_ptr);
   CHKERR sit->get(moab, *(const_cast<DofEntity_multiIndex *>(dofs_ptr)));
   MoFEMFunctionReturn(0);
 }

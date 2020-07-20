@@ -149,7 +149,7 @@ MoFEMErrorCode CoordSystemsManager::addCoordinateSystem(
     Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     EntityHandle meshset;
-    CHKERR moab.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+    CHKERR moab.create_meshset(MESHSET_SET, meshset);
     CHKERR moab.tag_set_data(th_CoordSysDim, &meshset, 1, cs_dim);
     void const *cs_name_ptr[] = {cs_name.c_str()};
     int cs_name_size[1];
@@ -185,9 +185,8 @@ CoordSystemsManager::setFieldCoordinateSystem(const std::string field_name,
                                               const std::string cs_name) {
 
   Interface &m_field = cOre;
-  const Field_multiIndex *fields_ptr;
+  auto fields_ptr = m_field.get_fields();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_fields(&fields_ptr);
 
   // Find field
   auto field_it = fields_ptr->get<FieldName_mi_tag>().find(field_name);

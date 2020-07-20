@@ -1298,8 +1298,7 @@ PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields,
   }
 
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
-  const Field_multiIndex *fields_ptr;
-  CHKERR dm_field->mField_ptr->get_fields(&fields_ptr);
+  auto fields_ptr = dm_field->mField_ptr->get_fields();
   Field_multiIndex::iterator fit, hi_fit;
   fit = fields_ptr->begin();
   hi_fit = fields_ptr->end();

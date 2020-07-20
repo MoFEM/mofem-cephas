@@ -1,7 +1,6 @@
 /** \file ForcesAndSourcesCore.cpp
 
 \brief Implementation of Elements on Entities for Forces and Sources
-
 */
 
 /* This file is part of MoFEM.
@@ -498,7 +497,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
         auto ent_filed_data_vec = dof.getEntFieldData();
         for (int ii = 0; ii != nb_dof_idx; ++ii) {
           nodes_data[pos] = ent_filed_data_vec[ii];
-          nodes_dofs[pos] = *dit;
+          nodes_dofs[pos] = (*dit).get();
           ++pos;
           ++dit;
         }
@@ -590,7 +589,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
           noalias(ent_field_data) = dof.getEntFieldData();
           ent_field_dofs.resize(nb_dofs_on_ent, false);
           for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
-            ent_field_dofs[ii] = *dit;
+            ent_field_dofs[ii] = (*dit).get();
             ++dit;
           }
         }
@@ -635,7 +634,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
   for (; dit != hi_dit; dit++) {
     int idx = (*dit)->getDofCoeffIdx();
     ent_field_data[idx] = (*dit)->getFieldData();
-    ent_field_dofs[idx] = *dit;
+    ent_field_dofs[idx] = (*dit).get();
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -1253,6 +1252,7 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         }
 
         CHKERR swap_bases();
+
       }
     }
     CATCH_OP_ERRORS(*oit);

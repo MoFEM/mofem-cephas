@@ -63,6 +63,8 @@ struct DofEntity;
  */
 struct Field {
 
+  virtual ~Field() = default;
+
   typedef multi_index_container<boost::weak_ptr<std::vector<FieldEntity>>,
                                 indexed_by<sequenced<>>>
       SequenceEntContainer;

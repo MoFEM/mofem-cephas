@@ -42,7 +42,7 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
   if (verb == -1)
     verb = verbose;
   EntityHandle meshset;
-  CHKERR get_moab().create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR get_moab().create_meshset(MESHSET_SET, meshset);
   CHKERR get_moab().tag_set_data(th_ProblemId, &meshset, 1, &id);
 
   // Add problem meshset to partion meshset. In case of no elements
@@ -74,7 +74,7 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
   if (!p.second)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Problem not added");
 
-  MOFEM_LOG("WORLD", Sev::inform) << "Add probken " << name;
+  MOFEM_LOG("WORLD", Sev::inform) << "Add problem " << name;
 
   MoFEMFunctionReturn(0);
 }
