@@ -81,6 +81,18 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
     return getUniqueIdCalculate(std::abs(dof), this->sPtr->getLocalUniqueId());
   }
 
+  static inline UId getLoFieldEntityUId(const FieldBitNumber bit,
+                                        const EntityHandle ent) {
+    return FieldEntity::getLoFieldEntityUId(
+        FieldEntity::getLocalUniqueIdCalculate(bit, ent));
+  }
+
+  static inline UId getHiFieldEntityUId(const FieldBitNumber bit,
+                                        const EntityHandle ent) {
+    return FieldEntity::getHiFieldEntityUId(
+        FieldEntity::getLocalUniqueIdCalculate(bit, ent));
+  }
+
   /**
    * \brief Calculate UId for DOF
    *

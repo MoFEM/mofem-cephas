@@ -229,7 +229,7 @@ struct FieldEntityTmp<0, 0>
                                       this->getRefEntityPtr()->getOwnerEnt());
   }
 
-  static inline UId getLoBitNumberUId(const char bit_number) {
+  static inline UId getLoBitNumberUId(const FieldBitNumber bit_number) {
     constexpr int dof_shift = 9;   // Maximal number of DOFs on entity
     constexpr int ent_shift = 64;  // EntityHandle size
     constexpr int proc_shift = 10; // Maximal number of 1024 processors
@@ -238,7 +238,7 @@ struct FieldEntityTmp<0, 0>
         static_cast<UId>(bit_number) << dof_shift + ent_shift + proc_shift;
   }
 
-  static inline UId getHiBitNumberUId(const char bit_number) {
+  static inline UId getHiBitNumberUId(const FieldBitNumber bit_number) {
     constexpr int dof_shift = 9;   // Maximal number of DOFs on entity
     constexpr int ent_shift = 64;  // EntityHandle size
     constexpr int proc_shift = 10; // Maximal number of 1024 processors

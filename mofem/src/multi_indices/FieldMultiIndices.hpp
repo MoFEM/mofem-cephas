@@ -355,7 +355,7 @@ template <> struct FieldTmp<0, 0> {
    * Each field has uid, get getBitNumber get number of bit set for given field.
    * Field ID has only one bit set for each field.
    */
-  inline unsigned int getBitNumber() const { return bitNumber; }
+  inline FieldBitNumber getBitNumber() const { return bitNumber; }
 
   /**
    * \brief Calculate number of set bit in Field ID.
@@ -558,7 +558,7 @@ struct interface_FieldImpl : public interface_RefEntity<REFENT> {
   }
 
   /// @return get bit number if filed Id
-  inline unsigned int getBitNumber() const {
+  inline FieldBitNumber getBitNumber() const {
     return this->getFieldPtr()->getBitNumber();
   }
 

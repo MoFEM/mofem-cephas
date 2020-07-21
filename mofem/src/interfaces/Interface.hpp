@@ -501,17 +501,7 @@ struct CoreInterface : public UnknownInterface {
   auto field_number = mField.get_field_bit_number("DISPLACEMENT");
   * \endcode
   */
-  virtual unsigned int get_field_bit_number(const std::string name) const = 0;
-
-  /** \brief get field bit number
-  *
-  * \param name of Field
-  * Example:\code
-  auto field_number = mField.get_field_bit_number("DISPLACEMENT");
-  * \endcode
-  */
-  virtual unsigned int
-  get_field_bit_number(const boost::string_ref name) const = 0;
+  virtual FieldBitNumber get_field_bit_number(const std::string name) const = 0;
 
   /** \brief get field meshset
   *
@@ -1835,7 +1825,7 @@ struct CoreInterface : public UnknownInterface {
    * \ingroup mofem_access
    */
 #define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD, NAME, ENT, IT)    \
-  DofEntityByNameAndEnt::iterator IT =                                         \
+  DofEntityByUId::iterator IT =                                                \
       (MFIELD).get_dofs_by_name_and_ent_begin(NAME, ENT);                      \
   IT != (MFIELD).get_dofs_by_name_and_ent_end(NAME, ENT);                      \
   IT++
@@ -1878,7 +1868,7 @@ struct CoreInterface : public UnknownInterface {
    * \ingroup mofem_field
    */
 #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD, NAME, TYPE, IT)  \
-  DofEntityByNameAndEnt::iterator IT =                                         \
+  DofEntityByUId::iterator IT =                                                \
       (MFIELD).get_dofs_by_name_and_type_begin(NAME, TYPE);                    \
   IT != (MFIELD).get_dofs_by_name_and_type_end(NAME, TYPE);                    \
   IT++

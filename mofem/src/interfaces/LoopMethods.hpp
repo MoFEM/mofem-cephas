@@ -286,12 +286,11 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
 
   inline unsigned int getFieldBitNumber(std::string field_name) const {
     auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
-    if(field_it != fieldsPtr->get<FieldName_mi_tag>().end())
+    if (field_it != fieldsPtr->get<FieldName_mi_tag>().end())
       return (*field_it)->getBitNumber();
     else
       return BITFEID_SIZE;
   }
-
 
   /**
    * @brief Copy data from other base method to this base method
@@ -500,11 +499,11 @@ struct FEMethod : public BasicMethod {
  */
 #define _IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                     \
   auto IT = FE->get_begin<FENumeredDofEntityByUId>(                            \
-      FE->rowPtr->get<Unique_mi_tag>(),                                        \
-      FieldEntity::getLoBitNumberUId(getFieldBitNumber(NAME)));                \
+      FE->getRowDofs().get<Unique_mi_tag>(),                                   \
+      FieldEntity::getLoBitNumberUId(FE->getFieldBitNumber(NAME)));            \
   IT != FE->get_end<FENumeredDofEntityByUId>(                                  \
-            FE->rowPtr->get<Unique_mi_tag>(),                                  \
-            FieldEntity::getHiBitNumberUId(getFieldBitNumber(NAME)));          \
+            FE->getRowDofs()->get<Unique_mi_tag>(),                            \
+            FieldEntity::getHiBitNumberUId(FE->getFieldBitNumber(NAME)));      \
   IT++
 
 /** \brief loop over all dofs which are on a particular FE column and field
@@ -512,11 +511,11 @@ struct FEMethod : public BasicMethod {
  */
 #define _IT_GET_FECOL_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                     \
   auto IT = FE->get_begin<FENumeredDofEntityByUId>(                            \
-      FE->colPtr->get<Unique_mi_tag>(),                                        \
-      FieldEntity::getLoBitNumberUId(getFieldBitNumber(NAME)));                \
+      FE->getColDofs().get<Unique_mi_tag>(),                                   \
+      FieldEntity::getLoBitNumberUId(FE->getFieldBitNumber(NAME)));            \
   IT != FE->get_end<FENumeredDofEntityByUId>(                                  \
-            FE->colPtr->get<Unique_mi_tag>(),                                  \
-            FieldEntity::getHiBitNumberUId(getFieldBitNumber(NAME)));          \
+            FE->getColDofs()->get<Unique_mi_tag>(),                            \
+            FieldEntity::getHiBitNumberUId(FE->getFieldBitNumber(NAME)));      \
   IT++
 
 /** \brief loop over all dofs which are on a particular FE data and field
@@ -525,10 +524,10 @@ struct FEMethod : public BasicMethod {
 #define _IT_GET_FEDATA_BY_NAME_DOFS_FOR_LOOP_(FE, NAME, IT)                    \
   auto IT = FE->get_begin<FEDofEntityByUId>(                                   \
       FE->dataPtr->get<Unique_mi_tag>(),                                       \
-      FieldEntity::getLoBitNumberUId(getFieldBitNumber(NAME)));                \
+      FieldEntity::getLoBitNumberUId(FE->getFieldBitNumber(NAME)));            \
   IT != FE->get_end<FEDofEntityByUId>(                                         \
             FE->dataPtr->get<Unique_mi_tag>(),                                 \
-            FieldEntity::getHiBitNumberUId(getFieldBitNumber(NAME)));          \
+            FieldEntity::getHiBitNumberUId(FE->getFieldBitNumber(NAME)));      \
   IT++
 };
 

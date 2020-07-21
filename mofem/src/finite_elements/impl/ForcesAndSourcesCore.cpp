@@ -190,7 +190,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
   MoFEMFunctionBegin;
 
   auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
-  auto bit_number = mField.get_field_bit_number(field_name);
+  auto bit_number = mField.get_field_bit_number(&field_name[0]);
   auto dit = dofs_by_uid.lower_bound(FieldEntity::getLocalUniqueIdCalculate(
       bit_number, get_id_for_min_type<MBVERTEX>()));
   auto hi_dit = dofs_by_uid.upper_bound(FieldEntity::getLocalUniqueIdCalculate(

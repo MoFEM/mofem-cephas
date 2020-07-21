@@ -783,7 +783,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
   set_zero(slave_nodes_data, slave_nodes_dofs);
 
   auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
-  auto bit_number = mField.get_field_bit_number(field_name);
+  auto bit_number = mField.get_field_bit_number(&field_name[0]);
   auto dit = dofs_by_uid.lower_bound(FieldEntity::getLocalUniqueIdCalculate(
       bit_number, get_id_for_min_type<MBVERTEX>()));
   if (dit == dofs_by_uid.end())
@@ -936,7 +936,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
   MoFEMFunctionBegin;
 
   auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
-  auto bit_number = mField.get_field_bit_number(field_name);
+  auto bit_number = mField.get_field_bit_number(&field_name[0]);
 
   auto dit = dofs_by_uid.lower_bound(FieldEntity::getLocalUniqueIdCalculate(
       bit_number, get_id_for_min_type<MBVERTEX>()));
