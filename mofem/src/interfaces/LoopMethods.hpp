@@ -285,11 +285,16 @@ struct BasicMethod : public KspMethod, SnesMethod, TSMethod {
                        ///< and finite elements
 
   inline unsigned int getFieldBitNumber(std::string field_name) const {
-    auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
-    if (field_it != fieldsPtr->get<FieldName_mi_tag>().end())
-      return (*field_it)->getBitNumber();
-    else
+    if (fieldsPtr) {
+      auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+      if (field_it != fieldsPtr->get<FieldName_mi_tag>().end())
+        return (*field_it)->getBitNumber();
+      else
+        return BITFEID_SIZE;
+    } else {
+      THROW_MESSAGE("Pointer to fields multi-index is not set");
       return BITFEID_SIZE;
+    }
   }
 
   /**
