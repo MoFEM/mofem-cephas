@@ -2991,7 +2991,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         "SYNC", Sev::inform,
         "removed ents on rank %d from problem %s dofs [ %d / %d  (before %d / "
         "%d) local, %d / %d (before %d / %d) "
-        "ghost, %d / %d (before %d / %d) global]\n",
+        "ghost, %d / %d (before %d / %d) global]",
         m_field.get_comm_rank(), prb_ptr->getName().c_str(),
         prb_ptr->getNbLocalDofsRow(), prb_ptr->getNbLocalDofsCol(),
         nb_init_row_dofs, nb_init_col_dofs, prb_ptr->getNbGhostDofsRow(),
