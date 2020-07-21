@@ -2829,9 +2829,9 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
       for (auto pit = ents.const_pair_begin(); pit != ents.const_pair_end();
            ++pit) {
         auto lo = numered_dofs[s]->get<Unique_mi_tag>().lower_bound(
-            FieldEntity::getLoLocalEntityBitNumber(bit_number, pit->first));
+            DofEntity::getLoFieldEntityUId(bit_number, pit->first));
         auto hi = numered_dofs[s]->get<Unique_mi_tag>().upper_bound(
-            FieldEntity::getHiLocalEntityBitNumber(bit_number, pit->second));
+            DofEntity::getHiFieldEntityUId(bit_number, pit->second));
 
         for (; lo != hi; ++lo)
           if ((*lo)->getDofCoeffIdx() >= lo_coeff &&
@@ -2839,9 +2839,9 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
             dofs_it_view.emplace_back(numered_dofs[s]->project<0>(lo));
       }
 
-      if (verb >= VERY_NOISY) {
+      if (verb > QUIET) {
         for (auto &dof : dofs_it_view)
-          MOFEM_LOG("SYNC", Sev::noisy) << *dof;
+          MOFEM_LOG("SYNC", Sev::noisy) << **dof;
 
         MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
       }
