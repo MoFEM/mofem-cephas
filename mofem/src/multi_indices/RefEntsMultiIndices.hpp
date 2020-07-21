@@ -137,13 +137,13 @@ template <int N> boost::weak_ptr<BasicEntityData> RefEntityTmp<N>::basicDataPtr;
 struct RefElement;
 
 /**
- * \brief Struct keeps handle to refined handle.
- * \ingroup ent_multi_indices
+* \brief Struct keeps handle to refined handle.
+* \ingroup ent_multi_indices
 
-  \todo th_RefType "_RefType" is set as two integers, need to be fixed, it is
-  waste of space.
+\todo th_RefType "_RefType" is set as two integers, need to be fixed, it is
+waste of space.
 
- */
+*/
 template <> struct RefEntityTmp<0> {
 
   RefEntityTmp(const boost::shared_ptr<BasicEntityData> &basic_data_ptr,
@@ -194,20 +194,31 @@ template <> struct RefEntityTmp<0> {
   static inline EntityHandle
   getOwnerEnt(const EntityHandle ent,
               boost::shared_ptr<BasicEntityData> basic_ent_data) {
-    ParallelComm *pcomm =
+    auto *pcomm =
         ParallelComm::get_pcomm(&basic_ent_data->moab, basic_ent_data->pcommID);
-    auto pstat = *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
-        basic_ent_data->moab, pcomm->pstatus_tag(), ent, NULL));
-    if (!(pstat & PSTATUS_NOT_OWNED)) {
-      return ent;
-    } else if (pstat & PSTATUS_MULTISHARED) {
-      return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
-          basic_ent_data->moab, pcomm->sharedhs_tag(), ent, NULL))[0];
-    } else if (pstat & PSTATUS_SHARED) {
-      return static_cast<EntityHandle *>(MoFEM::get_tag_ptr(
-          basic_ent_data->moab, pcomm->sharedh_tag(), ent, NULL))[0];
+
+    auto get_owner_ent = [&](auto tag) {
+      if (auto owner_ent_ptr = static_cast<EntityHandle *>(
+              MoFEM::get_tag_ptr(basic_ent_data->moab, tag, ent, NULL))) {
+        return owner_ent_ptr[0];
+      } else {
+        return ent;
+      }
+    };
+
+    if (auto pstat_ptr = static_cast<unsigned char *>(MoFEM::get_tag_ptr(
+            basic_ent_data->moab, pcomm->pstatus_tag(), ent, NULL))) {
+      if (!(*pstat_ptr & PSTATUS_NOT_OWNED)) {
+        return ent;
+      } else if (*pstat_ptr & PSTATUS_MULTISHARED) {
+        return get_owner_ent(pcomm->sharedhs_tag());
+      } else if (*pstat_ptr & PSTATUS_SHARED) {
+        return get_owner_ent(pcomm->sharedh_tag());
+      } else {
+        return ent;
+      }
     } else {
-      return 0;
+      return ent;
     }
   }
 
@@ -220,20 +231,31 @@ template <> struct RefEntityTmp<0> {
   static inline int
   getOwnerProc(const EntityHandle ent,
                boost::shared_ptr<BasicEntityData> basic_ent_data) {
-    ParallelComm *pcomm =
+    auto *pcomm =
         ParallelComm::get_pcomm(&basic_ent_data->moab, basic_ent_data->pcommID);
-    auto pstat = *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
-        basic_ent_data->moab, pcomm->pstatus_tag(), ent, NULL));
-    if (!(pstat & PSTATUS_NOT_OWNED)) {
-      return pcomm->rank();
-    } else if (pstat & PSTATUS_MULTISHARED) {
-      return static_cast<int *>(MoFEM::get_tag_ptr(
-          basic_ent_data->moab, pcomm->sharedps_tag(), ent, NULL))[0];
-    } else if (pstat & PSTATUS_SHARED) {
-      return static_cast<int *>(MoFEM::get_tag_ptr(
-          basic_ent_data->moab, pcomm->sharedp_tag(), ent, NULL))[0];
+
+    auto get_owner_proc = [&](auto tag) {
+      if (auto owner_proc = static_cast<int *>(
+              MoFEM::get_tag_ptr(basic_ent_data->moab, tag, ent, NULL))) {
+        return owner_proc[0];
+      } else {
+        return 0;
+      }
+    };
+
+    if (auto pstat_ptr = static_cast<unsigned char *>(MoFEM::get_tag_ptr(
+            basic_ent_data->moab, pcomm->pstatus_tag(), ent, NULL))) {
+      if (!(*pstat_ptr & PSTATUS_NOT_OWNED)) {
+        return pcomm->rank();
+      } else if (*pstat_ptr & PSTATUS_MULTISHARED) {
+        return get_owner_proc(pcomm->sharedps_tag());
+      } else if (*pstat_ptr & PSTATUS_SHARED) {
+        return get_owner_proc(pcomm->sharedp_tag());
+      } else {
+        return 0;
+      }
     } else {
-      return -1;
+      return 0;
     }
   }
 
@@ -244,21 +266,14 @@ template <> struct RefEntityTmp<0> {
   /** \brief Get processor
    */
   inline int getPartProc() const {
-    ParallelComm *pcomm = ParallelComm::get_pcomm(
-        &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
-    return *static_cast<int *>(MoFEM::get_tag_ptr(this->getBasicDataPtr()->moab,
-                                                  pcomm->partition_tag(),
-                                                  this->ent, NULL));
-  }
-
-  /** \brief Get processor owning entity
-   */
-  int &getPartProc() {
-    ParallelComm *pcomm = ParallelComm::get_pcomm(
-        &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
-    return *static_cast<int *>(MoFEM::get_tag_ptr(this->getBasicDataPtr()->moab,
-                                                  pcomm->partition_tag(),
-                                                  this->ent, NULL));
+    auto *pcomm = ParallelComm::get_pcomm(&this->getBasicDataPtr()->moab,
+                                          this->getBasicDataPtr()->pcommID);
+    if (auto part_ptr = static_cast<int *>(
+            MoFEM::get_tag_ptr(this->getBasicDataPtr()->moab,
+                               pcomm->partition_tag(), ent, NULL))) {
+      return *part_ptr >= 0 ? *part_ptr : 0;
+    } else
+      return 0;
   }
 
   /** \brief get pstatus
@@ -275,10 +290,14 @@ template <> struct RefEntityTmp<0> {
    *
    */
   inline unsigned char getPStatus() const {
-    ParallelComm *pcomm = ParallelComm::get_pcomm(
-        &this->getBasicDataPtr()->moab, this->getBasicDataPtr()->pcommID);
-    return *static_cast<unsigned char *>(MoFEM::get_tag_ptr(
-        this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), this->ent, NULL));
+    auto *pcomm = ParallelComm::get_pcomm(&this->getBasicDataPtr()->moab,
+                                          this->getBasicDataPtr()->pcommID);
+    if (auto pstat_ptr = static_cast<unsigned char *>(MoFEM::get_tag_ptr(
+            this->getBasicDataPtr()->moab, pcomm->pstatus_tag(), ent, NULL))) {
+      return *pstat_ptr;
+    } else {
+      return 0;
+    }
   }
 
   /** \brief get shared processors
@@ -346,7 +365,7 @@ template <> struct RefEntityTmp<0> {
     }
   \endcode
 
-    */
+  */
   inline EntityHandle *getSharingHandlersPtr() const {
     EntityHandle *sharing_handlers_ptr = NULL;
     auto &moab = this->getBasicDataPtr()->moab;
@@ -678,7 +697,7 @@ using RefEntity_multiIndex = multi_index_container<
     >;
 
 /** \brief multi-index view of RefEntity by parent entity
-  \ingroup ent_multi_indices
+\ingroup ent_multi_indices
 */
 using RefEntity_multiIndex_view_by_hashed_parent_entity = multi_index_container<
     boost::shared_ptr<RefEntity>,
@@ -716,37 +735,17 @@ using RefEntity_multiIndex_view_sequence_ordered_view = multi_index_container<
         ordered_unique<tag<Ent_mi_tag>, const_mem_fun<RefEntity, EntityHandle,
                                                       &RefEntity::getEnt>>>>;
 
-template <class T> struct Entity_update_pcomm_data {
-  const int pcommID;
-  Entity_update_pcomm_data(const int pcomm_id = MYPCOMM_INDEX)
-      : pcommID(pcomm_id) {}
-  void operator()(boost::shared_ptr<T> &e) {
-    e->getBasicDataPtr()->pcommID = pcommID;
-    ParallelComm *pcomm =
-        ParallelComm::get_pcomm(&e->getBasicDataPtr()->moab, pcommID);
-    if (pcomm == NULL)
-      THROW_MESSAGE("pcomm is null");
-    rval = pcomm->get_owner_handle(e->getEnt(), e->getOwnerProc(),
-                                   e->getOwnerEnt());
-    MOAB_THROW(rval);
-    EntityHandle ent = e->getEnt();
-    rval = e->getBasicDataPtr()->moab.tag_get_data(pcomm->part_tag(), &ent, 1,
-                                                   &e->getPartProc());
-    MOAB_THROW(rval);
-  }
-};
-
 /** \brief change parent
-  * \ingroup ent_multi_indices
-  *
-  * Use this function with care. Some other multi-indices can deponent on
-  this.
+* \ingroup ent_multi_indices
+*
+* Use this function with care. Some other multi-indices can deponent on
+this.
 
-  Known dependent multi-indices (verify if that list is full):
-  - RefEntity_multiIndex
-  - RefElement_multiIndex
+Known dependent multi-indices (verify if that list is full):
+- RefEntity_multiIndex
+- RefElement_multiIndex
 
-  */
+*/
 struct RefEntity_change_parent {
   EntityHandle pArent;
   RefEntity_change_parent(EntityHandle parent) : pArent(parent) {}
