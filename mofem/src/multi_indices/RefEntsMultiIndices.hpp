@@ -276,6 +276,19 @@ template <> struct RefEntityTmp<0> {
       return 0;
   }
 
+  /**
+   * @brief Get pointer to partition tag
+   * 
+   * @return int* 
+   */
+  inline int *getPartProcPtr() const {
+    auto *pcomm = ParallelComm::get_pcomm(&this->getBasicDataPtr()->moab,
+                                          this->getBasicDataPtr()->pcommID);
+    return static_cast<int *>(
+            MoFEM::get_tag_ptr(this->getBasicDataPtr()->moab,
+                               pcomm->partition_tag(), ent, NULL));
+  }
+
   /** \brief get pstatus
    * This tag stores various aspects of parallel status in bits; see also
    * define following, to be used in bit mask operations.  If an entity is
@@ -615,6 +628,11 @@ template <typename T> struct interface_RefEntity {
    * @copydoc MoFEM::RefEntityTmp<0>::getPartProc
    */
   inline int getPartProc() const { return this->sPtr->getPartProc(); }
+
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getPartProcPtr
+   */
+  inline int *getPartProcPtr() const { return this->sPtr->getPartProcPtr(); }
 
   /**
    * @copydoc MoFEM::RefEntityTmp<0>::getPartProc
