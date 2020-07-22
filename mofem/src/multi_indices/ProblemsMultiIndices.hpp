@@ -460,16 +460,18 @@ struct Problem {
  * \ingroup problems_multi_indices
  *
  * \code
- * for(_IT_NUMEREDDOF_BY_NAME_ROW_FOR_LOOP_(PROBLEMPTR,NAME,IT)) {
+ * for(_IT_NUMEREDDOF_BY_NAME_ROW_FOR_LOOP_(PROBLEMPTR,m_field.get_field_bit_number(FIELD_BIT_NUMBER),IT))
+ * {
  *   ...
  * }
  * \endcode
  *
  */
-#define _IT_NUMEREDDOF_ROW_BY_NAME_FOR_LOOP_(PROBLEMPTR, NAME, IT)             \
-  NumeredDofEntityByFieldName::iterator IT =                                   \
-      PROBLEMPTR->getNumeredDofsRowsBegin(NAME);                               \
-  IT != PROBLEMPTR->getNumeredDofsRowsEnd(NAME);                               \
+#define _IT_NUMEREDDOF_ROW_BY_NAME_FOR_LOOP_(PROBLEMPTR, FIELD_BIT_NUMBER, IT) \
+  auto IT = PROBLEMPTR->numeredDofsRows->lower_bound(                          \
+      FieldEntity::getLoBitNumberUId(FIELD_BIT_NUMBER));                       \
+  IT != PROBLEMPTR->numeredDofsRows->upper_bound(                              \
+            FieldEntity::getHiBitNumberUId(FIELD_BIT_NUMBER));                 \
   IT++
 
 /**
@@ -477,16 +479,18 @@ struct Problem {
  * \ingroup problems_multi_indices
  *
  * \code
- * for(_IT_NUMEREDDOF_COL_BY_NAME_FOR_LOOP_(PROBLEMPTR,NAME,IT)) {
+ * for(_IT_NUMEREDDOF_COL_BY_NAME_FOR_LOOP_(PROBLEMPTR,m_field.get_field_bit_number(FIELD_BIT_NUMBER),IT))
+ * {
  *   ...
  * }
  * \endcode
  *
  */
-#define _IT_NUMEREDDOF_COL_BY_NAME_FOR_LOOP_(PROBLEMPTR, NAME, IT)             \
-  NumeredDofEntityByFieldName::iterator IT =                                   \
-      PROBLEMPTR->getNumeredDofsColsBegin(NAME);                               \
-  IT != PROBLEMPTR->getNumeredDofsColsEnd(NAME);                               \
+#define _IT_NUMEREDDOF_COL_BY_NAME_FOR_LOOP_(PROBLEMPTR, FIELD_BIT_NUMBER, IT) \
+  auto IT = PROBLEMPTR->numeredDofsCols->lower_bound(                          \
+      FieldEntity::getLoBitNumberUId(FIELD_BIT_NUMBER));                       \
+  IT != PROBLEMPTR->numeredDofsCols->upper_bound(                              \
+            FieldEntity::getHiBitNumberUId(FIELD_BIT_NUMBER));                 \
   IT++
 
   Problem(Interface &moab, const EntityHandle meshset);
