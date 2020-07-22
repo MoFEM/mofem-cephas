@@ -328,9 +328,9 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       CHKERR m_field.get_moab().get_entities_by_type_and_tag(
           0, MBENTITYSET, &part_tag, NULL, 1, tagged_sets,
           moab::Interface::UNION);
-      if (!tagged_sets.empty()) 
+      if (!tagged_sets.empty())
         CHKERR m_field.get_moab().tag_delete_data(part_tag, tagged_sets);
-      
+
       if (n_parts > (int)tagged_sets.size()) {
         // too few partition sets - create missing ones
         int num_new = n_parts - tagged_sets.size();
@@ -1138,46 +1138,47 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
         auto ddit = dofs_glob_uid_view.find(uid);
         if (ddit == dofs_glob_uid_view.end()) {
           std::ostringstream zz;
-          zz << **ddit << std::endl;
+          zz << uid << std::endl;
           SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                    "no such dof %s in mofem database", zz.str().c_str());
         }
 
         auto dit = numered_dofs_ptr[ss]->find((*ddit)->getLocalUniqueId());
-        if (dit == numered_dofs_ptr[ss]->end()) {
 
-          // Dof is shared to this processor, however there is no element which
-          // have this dof
-          if (ddit != dofs_glob_uid_view.end()) {
-            if (ddit->get()->getPStatus() > 0) {
-              std::ostringstream zz;
-              zz << **ddit << std::endl;
-              SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                       "data inconsistency, dofs is not shared, but received "
-                       "from other proc\n"
-                       "%s",
-                       zz.str().c_str());
-            }
-          }
+        if (dit != numered_dofs_ptr[ss]->end()) {
+
+          int global_idx = IdxDataTypePtr(&data_from_proc[dd]).getDofIdx();
+          if (global_idx < 0)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "received negative dof");
+          bool success;
+          success = numered_dofs_ptr[ss]->modify(
+              dit, NumeredDofEntity_mofem_index_change(global_idx));
+          if (!success)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "modification unsuccessful");
+          success = numered_dofs_ptr[ss]->modify(
+              dit, NumeredDofEntity_part_and_glob_idx_change((*dit)->getPart(),
+                                                             global_idx));
+          if (!success)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "modification unsuccessful");
+                    
+        } else if (ddit->get()->getPStatus() == 0) {
+
+          // Dof is shared on this processor, however there is no element
+          // which have this dof. If DOF is not shared and received from other
+          // processor, but not marked as a shared on other that means that is
+          // data inconstancy and error should be thorwed.
+
+          std::ostringstream zz;
+          zz << **ddit << std::endl;
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                   "data inconsistency, dofs is not shared, but received "
+                   "from other proc\n"
+                   "%s",
+                   zz.str().c_str());
         }
-
-        int global_idx = IdxDataTypePtr(&data_from_proc[dd]).getDofIdx();
-        if (global_idx < 0)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                  "received negative dof");
-
-        bool success;
-        success = numered_dofs_ptr[ss]->modify(
-            dit, NumeredDofEntity_mofem_index_change(global_idx));
-        if (!success)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                  "modification unsuccessful");
-        success = numered_dofs_ptr[ss]->modify(
-            dit, NumeredDofEntity_part_and_glob_idx_change((*dit)->getPart(),
-                                                           global_idx));
-        if (!success)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                  "modification unsuccessful");
       }
     }
   }
@@ -2867,7 +2868,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         }
 
       if (verb >= NOISY)
-        MOFEM_LOG_C("SYNC", Sev::noisy, 
+        MOFEM_LOG_C("SYNC", Sev::noisy,
                     "Number of DOFs in multi-index after delete %d\n",
                     numered_dofs[s]->size());
 
