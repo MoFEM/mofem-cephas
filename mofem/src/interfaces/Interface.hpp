@@ -1749,8 +1749,7 @@ struct CoreInterface : public UnknownInterface {
    * \ingroup mofem_field
    */
 #define _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD, NAME, IT)                  \
-  FieldEntityByFieldName::iterator IT =                                        \
-      (MFIELD).get_ent_field_by_name_begin(NAME);                              \
+  auto IT = (MFIELD).get_ent_field_by_name_begin(NAME);                        \
   IT != (MFIELD).get_ent_field_by_name_end(NAME);                              \
   IT++
 
