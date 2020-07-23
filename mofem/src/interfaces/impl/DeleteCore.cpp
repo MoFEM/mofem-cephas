@@ -98,9 +98,9 @@ MoFEMErrorCode Core::clear_dofs_fields(const std::string name,
     const auto first  = p_eit->first;
     const auto second = p_eit->second;
     const auto lo_uid =
-        FieldEntity::getLocalUniqueIdCalculate(bit_number, first);
+        DofEntity::getLoFieldEntityUId(bit_number, first);
     const auto hi_uid =
-        FieldEntity::getLocalUniqueIdCalculate(bit_number, second);
+        DofEntity::getHiFieldEntityUId(bit_number, second);
     auto dit = dofsField.get<Unique_mi_tag>().lower_bound(lo_uid);
     auto hi_dit = dofsField.get<Unique_mi_tag>().upper_bound(hi_uid);
     dofsField.get<Unique_mi_tag>().erase(dit, hi_dit);
@@ -144,7 +144,7 @@ MoFEMErrorCode Core::clear_ents_fields(const std::string name,
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  auto bit_number = get_field_bit_number(name);
+  const auto bit_number = get_field_bit_number(name);
   CHKERR clear_dofs_fields(name, ents, verb);
   CHKERR clear_adjacencies_entities(name, ents, verb);
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
@@ -264,11 +264,8 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string name,
         FieldEntity::getLocalUniqueIdCalculate(field_bit_number, second);
 
     // Find adjacencies
-    FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-        Unique_mi_tag>::type::iterator ait,
-        hi_ait;
-    ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(first_uid);
-    hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(second_uid);
+    auto ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(first_uid);
+    auto hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(second_uid);
     entFEAdjacencies.get<Unique_mi_tag>().erase(ait, hi_ait);
   }
   MoFEMFunctionReturnHot(0);

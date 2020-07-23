@@ -503,7 +503,7 @@ template <int I> struct BuildFiniteElements {
 
   template <typename T1, typename T2>
   static inline void addToData(T1 &dit, T1 &hi_dit, T2 &fe_vec) {
-    static_assert(I == DATA, "t should be set to DATA");
+    static_assert(I == DATA, "I should be set to DATA");
     for (auto fe_it : fe_vec) {
       if (auto fe_ptr = fe_it.lock()) {
         auto &data_dofs =

@@ -457,7 +457,7 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
   Range field_ents = intersect(ents, ents_of_id_meshset);
   if (verb > QUIET)
     MOFEM_LOG_C("SYNC", Sev::noisy,
-                "nb. of ents for order change in the field <%s> %d",
+                "change nb. of ents for order in the field <%s> %d",
                 field_ptr->getName().c_str(), field_ents.size());
 
   // ent view by field id (in set all MoabEnts has the same FieldId)
@@ -472,7 +472,7 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
 
   if (verb > QUIET)
     MOFEM_LOG_C("SYNC", Sev::noisy,
-                "nb. of ents in the multi index field <%s> %d",
+                "current nb. of ents in the multi index field <%s> %d",
                 field_ptr->getName().c_str(), ents_id_view.size());
 
   // loop over ents
@@ -783,6 +783,16 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
         "nb. of entities in field <%s> for which order set %d (order %d)",
         field_ptr->getName().c_str(), nb_ents_set_order_new, order);
     MOFEM_LOG_SYNCHORMISE(cOmm);
+  }
+
+  if (verb > QUIET) {
+    auto eiit = entsFields.get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getLoBitNumberUId(field_ptr->getBitNumber()));
+    auto hi_eiit = entsFields.get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getHiBitNumberUId(field_ptr->getBitNumber()));
+    MOFEM_LOG_C("SYNC", Sev::noisy,
+                "nb. of ents in the multi index field <%s> %d",
+                field_ptr->getName().c_str(), std::distance(eiit, hi_eiit));
   }
 
   MoFEMFunctionReturn(0);
