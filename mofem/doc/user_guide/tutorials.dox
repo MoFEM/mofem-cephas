@@ -30,6 +30,10 @@ implementation is done in MoFEM. We also make a recommendation at the beginning
 of each tutorial regarding which tutorial(s) you should read (prerequisites) before
 continuing with the one you are most excited about.
 
+<br>
+
+\note The tutorials are under development. Send us your feedback on [Q&A](https://groups.google.com/forum/#!categories/mofem-group) regarding the tutorials that already done and the missing ones that you most prefer to see.
+
 \subsection tutorials_fundamentals Fundamentals
 
 <table style="width:100%">
