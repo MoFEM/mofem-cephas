@@ -33,6 +33,12 @@ continuing with the one you are most excited about.
 \subsection tutorials_fundamentals Fundamentals
 
 <table style="width:100%">
+  <tr valign="top">
+       <td>\ref lessons_introduction</td>
+       <td> Brief introduction about MoFEM interfaces which enable users to implement the codes with different level of complexity.
+       <br/> *Keywords:* 
+       </td>
+  </tr>
 
   <tr valign="top">
        <td width="350px">\ref hierarchical_approximation_1</td>
@@ -221,5 +227,5 @@ continuing with the one you are most excited about.
 
 Our way of creating tutorials is inspired by [deal.II](https://www.dealii.org).
 
-\note We also have some tutorials that created some time ago at \ref old_tutorials and \ref runningprograms
+\note We also have some tutorials that created some time ago at \ref old_tutorials and \ref runningprograms.
 */

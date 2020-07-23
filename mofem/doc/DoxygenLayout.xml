@@ -3,74 +3,88 @@
   <!-- Navigation index tabs for HTML output -->
  <navindex>
     <tab type="user" visible="yes" url="@ref mainpage" title="" intro=""/>
+    
     <tab type="user" visible="yes" title="Getting started" url="@ref usersmain" intro="">
       <tab type="user" url="@ref installation" title="Installation" intro=""/>
       <tab type="user" url="@ref motivation" title="Features" intro=""/>
       <tab type="user" url="https://www.youtube.com/playlist?list=PLW49at2nN39gsTI1vWxvHBOjFK0q_h83s" title="Video guides"/>
-      <tab type="user" url="@ref runningprograms" title="Examples" intro=""/>
       <tab type="user" url="@ref faqs" title="Frequently Asked Questions" intro=""/>
       <tab type="user" url="@ref google_search" title="Search" intro=""/>
     </tab>
+    
     <tab type="usergroup" visible="yes" title="Developer" url="@ref developersmain" intro="">
-      <tab type="user" url="@ref developer_useful_links" title="Tutorials and examples" intro="">
-        <tab type="user" url="@ref general_data_structure" title="Basic design" intro=""/>
-        <tab type="user" url="@ref tutorials" title="Tutorials" intro=""/>
-        <tab type="user" url="@ref work_in_progress" visible="no" title="Work in progess" intro=""/>
-        <tab type="user" url="@ref basic_tutorials_in_progress" visible="no"
-        title="Basic tutorials in progess" intro=""/>
-        <tab type="examples" visible="yes" title="" intro=""/>
-      </tab>
+      <tab type="user" url="@ref tutorials_in_progress" title="Tutorials"/>
+      <tab type="user" url="@ref work_in_progress" visible="no" title="Work in progess" intro=""/>
+      <tab type="examples" visible="yes" title="" intro=""/>
+      <tab type="user" url="@ref general_data_structure" title="Basic design" intro=""/>
+      
       <tab type="user" title="Source code" url="@ref developer_source_code" intro="">
         <tab type="modules" visible="yes" title="Source groups" intro=""/>
         <tab type="files" visible="yes" title="Source files" intro=""/>
         <tab type="namespaces" visible="yes" title="Name spaces" intro=""/>
         <tab type="classes" visible="yes" title="Classes" intro=""/>
       </tab>
+      
       <tab type="user" title="Coding practice" url="@ref mofem_practice" intro="">
         <tab type="user" url="@ref coding_practice" title="Coding practice" intro=""/>
         <tab type="user" url="@ref guidelines_bug_reporting" title="Guidelines for bug reporting" intro=""/>
         <tab type="user" url="@ref a_guide_to_writing_documentation" title="Writing documentation" intro=""/>
         <tab type="user" url="@ref being_a_good_citizen" title="Being a good citizen" intro=""/>   
       </tab>
+      
       <tab type="user" title="Todo, bugs, and other lists" url="@ref mofem_management" intro="">
         <tab type="user" url="@ref bug" title="Bug List" intro=""/>
         <tab type="user" url="@ref todo" title="Todo List" intro=""/>
         <tab type="user" url="@ref deprecated" title="Deprecated List" intro=""/>
       </tab>
-        <tab type="user" url="http://cdash.eng.gla.ac.uk/cdash" title="CDash testing"/>
-        <tab type="user" url="@ref citelist" title="Bibliography"/>
-       <tab type="pages" visible="yes" title="" intro=""/>
+      
+      <tab type="user" url="http://cdash.eng.gla.ac.uk/cdash" title="CDash testing"/>
+      
+      <tab type="user" url="@ref citelist" title="Bibliography"/>
+      
+      <tab type="pages" visible="yes" title="" intro=""/>
+
     </tab>
+    
     <tab type="user" title="Modules" url="@ref mod_gallery" intro=""/>
+    
     <tab type="user" url="https://groups.google.com/forum/#!categories/mofem-group" title="Q&amp;A"/>
+    
     <tab type="user" url="https://bitbucket.org/likask/mofem-cephas" title="Repository"/>
+    
     <tab type="user" url="https://zenodo.org/communities/mofem/" title="Library"/>
+    
     <tab type="user" title="About"url="@ref about_us" intro=""/>
 
     <tab type="namespaces" visible="no" title="">
       <tab type="namespacelist" visible="yes" title="" intro=""/>
       <tab type="namespacemembers" visible="yes" title="" intro=""/>
     </tab>
+    
     <tab type="interfaces" visible="no" title="">
       <tab type="interfacelist" visible="yes" title="" intro=""/>
       <tab type="interfaceindex" visible="$ALPHABETICAL_INDEX" title=""/> 
       <tab type="interfacehierarchy" visible="yes" title="" intro=""/>
     </tab>
+    
     <tab type="classes" visible="no" title="">
       <tab type="classlist" visible="yes" title="" intro=""/>
       <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/> 
       <tab type="hierarchy" visible="yes" title="" intro=""/>
       <tab type="classmembers" visible="yes" title="" intro=""/>
     </tab>
+    
     <tab type="structs" visible="no" title="">
       <tab type="structlist" visible="yes" title="" intro=""/>
       <tab type="structindex" visible="$ALPHABETICAL_INDEX" title=""/> 
     </tab>
+    
     <tab type="exceptions" visible="no" title="">
       <tab type="exceptionlist" visible="yes" title="" intro=""/>
       <tab type="exceptionindex" visible="$ALPHABETICAL_INDEX" title=""/> 
       <tab type="exceptionhierarchy" visible="yes" title="" intro=""/>
     </tab>
+    
     <tab type="files" visible="no" title="">
       <tab type="filelist" visible="yes" title="" intro=""/>
       <tab type="globals" visible="yes" title="" intro=""/>
