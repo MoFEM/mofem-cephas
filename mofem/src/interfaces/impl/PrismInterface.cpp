@@ -1039,14 +1039,12 @@ MoFEMErrorCode PrismInterface::splitSides(
 
             switch (ents_3d.size()) {
             case 0:
-              SETERRQ(
-                  m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+              THROW_MESSAGE(
                   "Did not find adjacent tets on one side of the interface; if "
                   "this error appears for a contact interface, try creating "
                   "separate blocksets for each contact surface");
             case 2:
-              SETERRQ(
-                  m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+              THROW_MESSAGE(
                   "Found both adjacent tets on one side of the interface, if "
                   "this error appears for a contact interface, try creating "
                   "separate blocksets for each contact surface");
@@ -1061,8 +1059,7 @@ MoFEMErrorCode PrismInterface::splitSides(
             int sense, side, offset;
             CHKERR moab.side_number(ent3d, e, side, sense, offset);
             if (sense != 1 && sense != -1) {
-              SETERRQ(
-                  m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
+              THROW_MESSAGE(
                   "Undefined sense of a triangle; if this error appears for a "
                   "contact interface, try creating separate blocksets for each "
                   "contact surface");
