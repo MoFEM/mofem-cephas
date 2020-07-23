@@ -398,13 +398,16 @@ struct ForcesAndSourcesCore : public FEMethod {
      * face. This function calls finite element with is operator to do
      * calculations.
      *
-     * @param fe_name
-     * @param side_fe
-     * @param dim
+     * @param fe_name       name of the side element
+     * @param side_fe       pointer to the side element instance
+     * @param dim           dimension the of side element
+     * @param ent_for_side  entity handle for which adjacent volume or face will
+     * be accessed
      * @return MoFEMErrorCode
      */
     MoFEMErrorCode loopSide(const string &fe_name,
-                            ForcesAndSourcesCore *side_fe, const size_t dim);
+                            ForcesAndSourcesCore *side_fe, const size_t dim,
+                            const EntityHandle ent_for_side = 0);
 
     friend class ForcesAndSourcesCore;
     friend class EdgeElementForcesAndSourcesCoreBase;
@@ -845,6 +848,7 @@ private:
 
   friend class VolumeElementForcesAndSourcesCoreOnSideBase;
   friend class FaceElementForcesAndSourcesCoreOnSideBase;
+  friend class VolumeElementForcesAndSourcesCoreOnContactPrismSideBase;
 };
 
 /// \deprecated Used ForcesAndSourcesCore instead

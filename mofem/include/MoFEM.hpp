@@ -119,6 +119,7 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <ContactPrismElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSourcesCore.hpp>
 #include <VolumeElementForcesAndSourcesCoreOnSide.hpp>
+#include <VolumeElementForcesAndSourcesCoreOnContactPrismSide.hpp>
 #include <FaceElementForcesAndSourcesCoreOnSide.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <UserDataOperators.hpp>

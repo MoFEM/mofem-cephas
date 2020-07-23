@@ -284,7 +284,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
           dat_brother.getLocalIndices()[idx] = dat.getLocalIndices()[idx];
         }
       }
-      
     }
   }
 
@@ -375,7 +374,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesIndices(
   } else {
     nodes_indices.resize(0, false);
   }
-
 
   MoFEMFunctionReturnHot(0);
 }
@@ -598,9 +596,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
 
         for (int ii = 0; ii != nb_dofs_on_ent; ++ii)
           ++dit;
-
       }
-
     }
   }
 
@@ -1301,12 +1297,12 @@ ForcesAndSourcesCore::setSideFEPtr(const ForcesAndSourcesCore *side_fe_ptr) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode
-ForcesAndSourcesCore::UserDataOperator::loopSide(const string &fe_name,
-                                                 ForcesAndSourcesCore *side_fe,
-                                                 const size_t side_dim) {
+MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
+    const string &fe_name, ForcesAndSourcesCore *side_fe, const size_t side_dim,
+    const EntityHandle ent_for_side) {
   MoFEMFunctionBegin;
-  const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
+  const EntityHandle ent = ent_for_side ? ent_for_side : getFEEntityHandle();
+
   const Problem *problem_ptr = getFEMethod()->problemPtr;
   Range adjacent_ents;
   CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
