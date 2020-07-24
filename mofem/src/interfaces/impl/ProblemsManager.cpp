@@ -328,6 +328,12 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       CHKERR m_field.get_moab().get_entities_by_type_and_tag(
           0, MBENTITYSET, &part_tag, NULL, 1, tagged_sets,
           moab::Interface::UNION);
+      // Remove sets which have set BitRefLevel
+      auto multi_index_sets = tagged_sets;
+      CHKERR m_field.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
+          BitRefLevel().set(), BitRefLevel().set(), multi_index_sets);
+      tagged_sets = subtract(tagged_sets, multi_index_sets);
+
       if (!tagged_sets.empty())
         CHKERR m_field.get_moab().tag_delete_data(part_tag, tagged_sets);
 
