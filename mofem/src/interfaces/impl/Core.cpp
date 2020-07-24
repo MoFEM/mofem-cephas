@@ -948,7 +948,7 @@ make_shared_field_impl(const int size, const moab::Interface &moab,
           cerr << V << " " << r << endl;
           auto tmp_ptr =
               boost::make_shared<FieldTmp<V, r>>(moab, meshset, coord_sys_ptr);
-          FieldEntityTmp<V, r>::sFieldPtr = tmp_ptr;
+          FieldEntityTmp<V, r>::sFieldRawPtr = tmp_ptr.get();
           ptr = tmp_ptr;
         }
       }

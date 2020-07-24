@@ -55,7 +55,8 @@ inline void *get_tag_ptr(moab::Interface &moab, Tag th, EntityHandle ent,
   void *ret_val;
   rval = moab.tag_get_by_ptr(th, &ent, 1, (const void **)&ret_val, tag_size);
   if (rval != MB_SUCCESS) {
-    *tag_size = 0;
+    if (tag_size)
+      *tag_size = 0;
     return NULL;
   } else {
     return ret_val;

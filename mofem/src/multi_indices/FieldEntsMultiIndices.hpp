@@ -30,11 +30,11 @@ struct FieldEntityTmp : public FieldEntityTmp<N, F - 1> {
 
   using FieldEntityTmp<N, F - 1>::FieldEntityTmp;
 
-  virtual boost::shared_ptr<const FieldTmp<0, 0>> &getFieldPtr() const {
-    return sFieldPtr;
-  }
+  virtual const FieldTmp<0, 0> *getFieldRawPtr() const { return sFieldRawPtr; }
+  static FieldTmp<0, 0> *sFieldRawPtr;
 
-  static boost::shared_ptr<const FieldTmp<0, 0>> sFieldPtr;
+private:
+  template <int S> friend struct CoreTmp;
 };
 
 template <int N>
@@ -43,18 +43,14 @@ struct FieldEntityTmp<N, 0>
 
   using FieldEntityTmp<N - 1, BITFIELDID_SIZE - 1>::FieldEntityTmp;
 
-  virtual boost::shared_ptr<const FieldTmp<0, 0>> &getFieldPtr() const {
-    return sFieldPtr;
-  }
+  virtual const FieldTmp<0, 0> *getFieldRawPtr() const { return sFieldRawPtr; }
+  static FieldTmp<0, 0> *sFieldRawPtr;
 
-  static boost::shared_ptr<const FieldTmp<0, 0>> sFieldPtr;
+private:
 };
 
-template <int N, int F>
-boost::shared_ptr<const FieldTmp<0, 0>> FieldEntityTmp<N, F>::sFieldPtr;
-
-template <int N>
-boost::shared_ptr<const FieldTmp<0, 0>> FieldEntityTmp<N, 0>::sFieldPtr;
+template <int N, int F> FieldTmp<0, 0> *FieldEntityTmp<N, F>::sFieldRawPtr;
+template <int N> FieldTmp<0, 0> *FieldEntityTmp<N, 0>::sFieldRawPtr;
 
 /**
  * \brief Struct keeps handle to entity in the field.
@@ -75,10 +71,6 @@ struct FieldEntityTmp<0, 0>
                  boost::shared_ptr<const int> t_max_order_ptr);
 
   virtual ~FieldEntityTmp() = default;
-
-  virtual boost::shared_ptr<const FieldTmp<0, 0>> &getFieldPtr() const {
-    return sFieldPtr;
-  }
 
   /**
    * \brief Get number of active DOFs on entity
@@ -121,7 +113,7 @@ struct FieldEntityTmp<0, 0>
    * @return       Number of DOFs
    */
   inline int getOrderNbDofs(ApproximationOrder order) const {
-    return (this->getFieldPtr()->forderTable[this->getEntType()])(order);
+    return (this->getFieldRawPtr()->forderTable[this->getEntType()])(order);
   }
 
   /**
@@ -150,16 +142,15 @@ struct FieldEntityTmp<0, 0>
   }
 
   /**
-   * @brief Get the Local Unique Id Calculate 
-   * 
-   * @param bit_number 
-   * @param handle 
-   * @return UId 
+   * @brief Get the Local Unique Id Calculate
+   *
+   * @param bit_number
+   * @param handle
+   * @return UId
    */
-  static inline UId
-  getLocalUniqueIdCalculate(const char bit_number,
-                            const EntityHandle handle) {
-    constexpr int dof_shift = 9; // Maximal number of DOFs on entity
+  static inline UId getLocalUniqueIdCalculate(const char bit_number,
+                                              const EntityHandle handle) {
+    constexpr int dof_shift = 9;   // Maximal number of DOFs on entity
     constexpr int ent_shift = 64;  // EntityHandle size
     constexpr int proc_shift = 10; // Maximal number of 1024 processors
     return
@@ -171,8 +162,8 @@ struct FieldEntityTmp<0, 0>
 
   /**
    * @brief Get the Local Unique Id Calculate object
-   * 
-   * @return UId 
+   *
+   * @return UId
    */
   inline UId getLocalUniqueIdCalculate() {
     return getLocalUniqueIdCalculate(this->getBitNumber(), this->getEnt());
@@ -195,8 +186,8 @@ struct FieldEntityTmp<0, 0>
    *
    * UId is constructed such that all DOFs are ordered by processor, entity,
    * field.
-   * 
-   * UId is 128 bit 
+   *
+   * UId is 128 bit
    *
    * @param  owner_proc               owning processor
    * @param  bit_number               field bit number
@@ -207,13 +198,12 @@ struct FieldEntityTmp<0, 0>
   static inline UId
   getGlobalUniqueIdCalculate(const int owner_proc, const char bit_number,
                              const EntityHandle moab_owner_handle) {
-    constexpr int dof_shift = 9; // Maximal number of DOFs on entity
+    constexpr int dof_shift = 9;   // Maximal number of DOFs on entity
     constexpr int ent_shift = 64;  // EntityHandle size
     constexpr int proc_shift = 10; // Maximal number of 1024 processors
     return
 
-        (
-         static_cast<UId>(owner_proc) |
+        (static_cast<UId>(owner_proc) |
          static_cast<UId>(moab_owner_handle) << proc_shift |
          static_cast<UId>(bit_number) << proc_shift + ent_shift)
         << dof_shift;
@@ -244,8 +234,7 @@ struct FieldEntityTmp<0, 0>
     constexpr int proc_shift = 10; // Maximal number of 1024 processors
 
     return static_cast<UId>(MAX_DOFS_ON_ENTITY - 1) |
-           static_cast<UId>(MAX_PROCESSORS_NUMBER - 1)
-               << dof_shift |
+           static_cast<UId>(MAX_PROCESSORS_NUMBER - 1) << dof_shift |
            static_cast<UId>(std::numeric_limits<EntityHandle>::max())
                << dof_shift + proc_shift |
            static_cast<UId>(bit_number) << dof_shift + ent_shift + proc_shift;
@@ -259,8 +248,8 @@ struct FieldEntityTmp<0, 0>
     return getLoFieldEntityUId(uid) | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1);
   }
 
-  static inline UId
-  getLoLocalEntityBitNumber(const char bit_number, const EntityHandle ent) {
+  static inline UId getLoLocalEntityBitNumber(const char bit_number,
+                                              const EntityHandle ent) {
     return getLocalUniqueIdCalculate(
 
         bit_number,
@@ -270,8 +259,8 @@ struct FieldEntityTmp<0, 0>
     );
   }
 
-  static inline UId
-  getHiLocalEntityBitNumber(const char bit_number, const EntityHandle ent) {
+  static inline UId getHiLocalEntityBitNumber(const char bit_number,
+                                              const EntityHandle ent) {
     return getLoLocalEntityBitNumber(bit_number, ent) |
            static_cast<UId>(MAX_DOFS_ON_ENTITY - 1);
   }
@@ -285,12 +274,13 @@ struct FieldEntityTmp<0, 0>
    *
    */
   inline std::array<int, MAX_DOFS_ON_ENTITY> &getDofOrderMap() const {
-    return this->getFieldPtr()->getDofOrderMap(this->getEntType());
+    return this->getFieldRawPtr()->getDofOrderMap(this->getEntType());
   }
 
   friend std::ostream &operator<<(std::ostream &os, const FieldEntity &e);
 
-  static boost::shared_ptr<const FieldTmp<0, 0>> sFieldPtr;
+  virtual const FieldTmp<0, 0> *getFieldRawPtr() const { return sFieldRawPtr; }
+  static FieldTmp<0, 0> *sFieldRawPtr;
 
 private:
   mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
@@ -304,10 +294,12 @@ template <> struct FieldEntityTmp<-1, -1> : public FieldEntityTmp<0, 0> {
                  boost::shared_ptr<double *const> field_data_adaptor_ptr,
                  boost::shared_ptr<const int> t_max_order_ptr);
 
-  virtual boost::shared_ptr<const FieldTmp<0, 0>> &getFieldPtr() const {
-    return sFieldPtr;
+  virtual const FieldTmp<0, 0> *getFieldRawPtr() const {
+    return sFieldPtr.get();
   }
 
+private:
+  template <int S> friend struct CoreTmp;
   mutable boost::shared_ptr<const FieldTmp<0, 0>> sFieldPtr;
 };
 
@@ -415,9 +407,8 @@ typedef multi_index_container<
         ordered_non_unique<tag<Ent_mi_tag>,
                            const_mem_fun<FieldEntity::interface_type_RefEntity,
                                          EntityHandle, &FieldEntity::getEnt>>
-                                         
-                              >>
 
+        >>
 
     FieldEntity_multiIndex;
 

@@ -55,13 +55,6 @@ template <int N, int F> struct FieldTmp : public FieldTmp<N, F - 1> {
 
   using FieldTmp<N, F - 1>::FieldTmp;
 
-  ~FieldTmp() {
-    if (!this->destructorCalled)
-      FieldEntityTmp<N, F>::sFieldPtr.reset();
-
-    this->destructorCalled = true;
-  }
-
 };
 
 template <int N, int F> constexpr const int FieldTmp<N, F>::CoreValue;
@@ -77,13 +70,6 @@ struct FieldTmp<N, 0> : public FieldTmp<N - 1, BITFIELDID_SIZE - 1> {
   virtual int getFieldValue() { return FieldValue; }
 
   using FieldTmp<N - 1, BITFIELDID_SIZE - 1>::FieldTmp;
-
-  ~FieldTmp() {
-    if (!this->destructorCalled)
-      FieldEntityTmp<N, 0>::sFieldPtr.reset();
-
-    this->destructorCalled = true;
-  }
 };
 
 template <int N> constexpr const int FieldTmp<N, 0>::CoreValue;
@@ -124,13 +110,7 @@ template <> struct FieldTmp<0, 0> {
   FieldTmp(const moab::Interface &moab, const EntityHandle meshset,
            const boost::shared_ptr<CoordSys> coord_sys_ptr);
 
-  virtual ~FieldTmp();
-
-  // using SequenceEntContainer = multi_index_container<
-
-  //     boost::weak_ptr<std::vector<FieldEntityTmp<0, 0>>>,
-
-  //     indexed_by<sequenced<>>>;
+  virtual ~FieldTmp() = default;
 
   using SequenceDofContainer = multi_index_container<
 
@@ -362,38 +342,23 @@ template <> struct FieldTmp<0, 0> {
    * Each field has uid, get getBitNumber get number of bit set for given field.
    * Field ID has only one bit set for each field.
    */
-  inline unsigned int getBitNumberCalculate() const {
-    int b = ffsl(((BitFieldId *)tagId)->to_ulong());
+  static inline FieldBitNumber getBitNumberCalculate(const BitFieldId &id) {
+    static_assert(BITFIELDID_SIZE >= 32,
+                  "Too many fields allowed, can be more but ...");
+    FieldBitNumber b = ffsl(id.to_ulong());
     if (b != 0)
       return b;
-    for (int ll = 1; ll < BITFIELDID_SIZE / 32; ll++) {
-      BitFieldId id;
-      id = (*tagId) >> ll * 32;
-      b = ll * 32 + ffsl(id.to_ulong());
-      if (b != 0)
-        return b;
-    }
     return 0;
   }
 
-  // /**
-  //  * \brief Get reference to sequence data container
-  //  *
-  //  * In sequence data container data are physically stored. The purpose of
-  //  this
-  //  * is to allocate MoFEMEntities data in bulk, having only one allocation
-  //  * instead each time entity is inserted. That makes code efficient.
-  //  *
-  //  * The vector in sequence is destroyed if last entity inside that vector is
-  //  * destroyed. All MoFEM::MoFEMEntities have aliased shared_ptr which points
-  //  to
-  //  * the vector.
-  //  *
-  //  * @return MoFEM::Field::SequenceEntContainer
-  //  */
-  // virtual SequenceEntContainer &getEntSequenceContainer() const {
-  //   return sequenceEntContainer;
-  // }
+  /**
+   * \brief Calculate number of set bit in Field ID.
+   * Each field has uid, get getBitNumber get number of bit set for given field.
+   * Field ID has only one bit set for each field.
+   */
+  inline FieldBitNumber getBitNumberCalculate() const {
+    return getBitNumberCalculate(static_cast<BitFieldId &>(*tagId));
+  }
 
   /**
    * \brief Get reference to sequence data container
@@ -447,9 +412,6 @@ template <> struct FieldTmp<0, 0> {
 
   friend std::ostream &operator<<(std::ostream &os, const FieldTmp &e);
 
-protected:
-  bool destructorCalled;
-
 private:
   // mutable SequenceEntContainer sequenceEntContainer;
   mutable SequenceDofContainer sequenceDofContainer;
@@ -465,7 +427,6 @@ template <> struct FieldTmp<-1, -1> : public FieldTmp<0, 0> {
   virtual int getFieldValue() { return FieldValue; }
 
   using FieldTmp<0, 0>::FieldTmp;
-  ~FieldTmp();
 };
 
 using Field = FieldTmp<0, 0>;
@@ -488,78 +449,78 @@ struct interface_FieldImpl : public interface_RefEntity<REFENT> {
       : interface_RefEntity<REFENT>(ref_ents_ptr) {}
   virtual ~interface_FieldImpl() = default;
 
-  virtual boost::shared_ptr<const FieldTmp<0, 0>> &getFieldPtr() const = 0;
+  virtual const FieldTmp<0, 0> *getFieldRawPtr() const = 0;
 
   inline EntityHandle getMeshset() const {
-    return this->getFieldPtr()->getMeshset();
+    return this->getFieldRawPtr()->getMeshset();
   }
 
   inline int getCoordSysDim(const int d = 0) const {
-    return this->getFieldPtr()->getCoordSysDim(d);
+    return this->getFieldRawPtr()->getCoordSysDim(d);
   }
 
   inline MoFEMErrorCode get_E_Base(const double m[]) const {
     MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(this->getFieldPtr()->get_E_Base(m));
+    MoFEMFunctionReturnHot(this->getFieldRawPtr()->get_E_Base(m));
   }
   inline MoFEMErrorCode get_E_DualBase(const double m[]) const {
     MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(this->getFieldPtr()->get_E_DualBase(m));
+    MoFEMFunctionReturnHot(this->getFieldRawPtr()->get_E_DualBase(m));
   }
   inline MoFEMErrorCode get_e_Base(const double m[]) const {
     MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(this->getFieldPtr()->get_e_Base(m));
+    MoFEMFunctionReturnHot(this->getFieldRawPtr()->get_e_Base(m));
   }
 
   inline MoFEMErrorCode get_e_DualBase(const double m[]) const {
     MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(this->getFieldPtr()->get_e_DualBase(m));
+    MoFEMFunctionReturnHot(this->getFieldRawPtr()->get_e_DualBase(m));
   }
 
   /// @return return meshset for coordinate system
   inline EntityHandle getCoordSysMeshSet() const {
-    return this->getFieldPtr()->getCoordSysMeshSet();
+    return this->getFieldRawPtr()->getCoordSysMeshSet();
   }
 
   /// @return return coordinate system name for field
   inline std::string getCoordSysName() const {
-    return this->getFieldPtr()->getCoordSysName();
+    return this->getFieldRawPtr()->getCoordSysName();
   }
 
   /// @return return coordinate system name for field
   inline boost::string_ref getCoordSysNameRef() const {
-    return this->getFieldPtr()->getCoordSysNameRef();
+    return this->getFieldRawPtr()->getCoordSysNameRef();
   }
 
   /// @return get field Id
   inline const BitFieldId &getId() const {
-    return this->getFieldPtr()->getId();
+    return this->getFieldRawPtr()->getId();
   }
 
   /// @return get field name
   inline boost::string_ref getNameRef() const {
-    return this->getFieldPtr()->getNameRef();
+    return this->getFieldRawPtr()->getNameRef();
   }
 
   /// @return get field name
-  inline std::string getName() const { return this->getFieldPtr()->getName(); }
+  inline std::string getName() const { return this->getFieldRawPtr()->getName(); }
 
   /// @return get approximation space
-  inline FieldSpace getSpace() const { return this->getFieldPtr()->getSpace(); }
+  inline FieldSpace getSpace() const { return this->getFieldRawPtr()->getSpace(); }
 
   /// @return get approximation base
   inline FieldApproximationBase getApproxBase() const {
-    return this->getFieldPtr()->getApproxBase();
+    return this->getFieldRawPtr()->getApproxBase();
   }
 
   /// @return get number of coefficients for DOF
   inline FieldCoefficientsNumber getNbOfCoeffs() const {
-    return this->getFieldPtr()->getNbOfCoeffs();
+    return this->getFieldRawPtr()->getNbOfCoeffs();
   }
 
   /// @return get bit number if filed Id
   inline FieldBitNumber getBitNumber() const {
-    return this->getFieldPtr()->getBitNumber();
+    return this->getFieldRawPtr()->getBitNumber();
   }
 
   /**
@@ -572,7 +533,7 @@ struct interface_FieldImpl : public interface_RefEntity<REFENT> {
    */
   inline std::vector<ApproximationOrder> &
   getDofOrderMap(const EntityType type) const {
-    return this->getFieldPtr()->getDofOrderMap(type);
+    return this->getFieldRawPtr()->getDofOrderMap(type);
   }
 };
 
@@ -585,13 +546,13 @@ template <typename T>
 struct interface_Field<T, T> : public interface_FieldImpl<T, T> {
 
   interface_Field(const boost::shared_ptr<T> &ptr)
-      : interface_FieldImpl<T, T>(ptr, ptr), sFieldPtr(ptr) {}
+      : interface_FieldImpl<T, T>(ptr, ptr), sFieldRawPtr(ptr) {}
 
-  inline boost::shared_ptr<const FieldTmp<0, 0>> &getFieldPtr() const {
-    return sFieldPtr->getFieldPtr();
+  inline const FieldTmp<0, 0> *getFieldRawPtr() const {
+    return sFieldRawPtr->getFieldRawPtr();
   };
 
-  mutable boost::shared_ptr<T> sFieldPtr;
+  mutable boost::shared_ptr<T> sFieldRawPtr;
 };
 
 /**
