@@ -742,6 +742,12 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
         ++vit_max_order;
         ++vit_field_data;
       }
+      if (!ents_array->empty())
+        if ((*ents_array)[0].getFieldRawPtr() != field_ptr.get())
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Get field ent poiter and field pointer do not match for "
+                  "field %s",
+                  field_ptr->getName().c_str());
       nb_ents_set_order_new += ents_in_ref_ent.size();
 
       // Check if any of entities in the range has bit level but is not added
@@ -841,7 +847,7 @@ MoFEMErrorCode Core::setFieldOrderImpl1(const Range &ents, const BitFieldId id,
                                         const ApproximationOrder order,
                                         int verb) {
   MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_TAG("WORLD", "FieldCore");                                          
+  MOFEM_LOG_TAG("WORLD", "FieldCore");
   MoFEMFunctionBegin;
 
   // check field & meshset
@@ -1034,6 +1040,12 @@ Core::buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
               boost::shared_ptr<const int>(zero_order, zero_order.get()))
 
       );
+
+      if ((*p.first)->getFieldRawPtr() != field_ptr.get())
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Get field ent poiter and field pointer do not match for "
+                 "field %s",
+                 field_ptr->getName().c_str());
 
       if (!p.second)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
