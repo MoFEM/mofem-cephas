@@ -255,7 +255,6 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   Range meshsets;
   CHKERR get_moab().get_entities_by_type(0, MBENTITYSET, meshsets, false);
   Range special_meshsets;
-  int field_nb = 0;
   for (auto mit : meshsets) {
     BitFieldId field_id;
     // Get bit id form field tag
@@ -274,9 +273,8 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       else
         CHKERR cs_manger_ptr->getCoordSysPtr("UNDEFINED", cs_ptr);
 
-      auto p =
-          fIelds.insert(makeSharedField(*this, field_nb, moab, mit, cs_ptr));
-      field_nb++;
+      auto p = fIelds.insert(makeSharedField(
+          *this, Field::getBitNumberCalculate(field_id), moab, mit, cs_ptr));
 
       if (verb > QUIET)
         MOFEM_LOG("WORLD", Sev::verbose) << "Read field " << **p.first;
@@ -946,6 +944,8 @@ make_shared_field_impl(const int size, const moab::Interface &moab,
 
       [&](auto r) {
         if (size == r) {
+
+          cerr << V << " " << r << endl;
           auto tmp_ptr =
               boost::make_shared<FieldTmp<V, r>>(moab, meshset, coord_sys_ptr);
           FieldEntityTmp<V, r>::sFieldPtr = tmp_ptr;
