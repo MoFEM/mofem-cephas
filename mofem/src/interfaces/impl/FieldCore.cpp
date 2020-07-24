@@ -802,7 +802,9 @@ template <int V, typename std::enable_if<(V >= 0), int>::type *>
 MoFEMErrorCode Core::setFieldOrderImpl1(const Range &ents, const BitFieldId id,
                                         const ApproximationOrder order,
                                         int verb) {
-
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_TAG("WORLD", "FieldCore");
+  MOFEM_LOG_FUNCTION();
   MoFEMFunctionBegin;
 
   // check field & meshset
@@ -838,6 +840,8 @@ template <int V, typename std::enable_if<(V < 0), int>::type *>
 MoFEMErrorCode Core::setFieldOrderImpl1(const Range &ents, const BitFieldId id,
                                         const ApproximationOrder order,
                                         int verb) {
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_TAG("WORLD", "FieldCore");                                          
   MoFEMFunctionBegin;
 
   // check field & meshset
@@ -1091,6 +1095,8 @@ MoFEMErrorCode Core::buildFieldForNoFieldImpl1(
         if ((*field_it)->getFieldValue() == r) {
           auto cast_field_ptr =
               boost::dynamic_pointer_cast<FieldTmp<V, r>>(*field_it);
+
+          cerr << "Build field " << V << " " << r << endl;
           CHKERR this->buildFieldForNoFieldImpl2<V, r>(cast_field_ptr,
                                                        dof_counter, verb);
         }
