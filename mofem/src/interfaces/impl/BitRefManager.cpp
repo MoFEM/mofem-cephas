@@ -772,23 +772,20 @@ MoFEMErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel bit,
 MoFEMErrorCode BitRefManager::getAllEntitiesNotInDatabase(Range &ents) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBeginHot;
-  rval = moab.get_entities_by_handle(0, ents, false);
-  CHKERRG(rval);
+  MoFEMFunctionBegin;
+  CHKERR moab.get_entities_by_handle(0, ents, false);
   ents = subtract(ents, ents.subset_by_type(MBENTITYSET));
-  ierr = filterEntitiesNotInDatabase(ents);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR filterEntitiesNotInDatabase(ents);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::filterEntitiesNotInDatabase(Range &ents) const {
   MoFEM::Interface &m_field = cOre;
   auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBeginHot;
-  Range::iterator eit = ents.begin();
+  auto eit = ents.begin();
   for (; eit != ents.end();) {
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator rit;
-    rit = ref_ents_ptr->get<Ent_mi_tag>().find(*eit);
+    auto rit = ref_ents_ptr->get<Ent_mi_tag>().find(*eit);
     if (rit != ref_ents_ptr->get<Ent_mi_tag>().end()) {
       eit = ents.erase(eit);
     } else {
