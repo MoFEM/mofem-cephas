@@ -78,6 +78,17 @@ MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
               MOAB_VERSION_STRING, petsc_version);
   MOFEM_LOG_C("WORLD", Sev::inform, "git commit id %s", GIT_SHA1_NAME);
 
+  auto log_time = [&](const auto perefix, auto time) {
+    MOFEM_LOG("WORLD", Sev::inform)
+        << perefix << time.date().year() << "-" << time.date().month() << "-"
+        << time.date().day() << " " << time.time_of_day().hours() << ":"
+        << time.time_of_day().minutes() << ":" << time.time_of_day().seconds();
+  };
+
+  // Get current system time
+  log_time("Local time: ", boost::posix_time::second_clock::local_time());
+  log_time("UTC time: ", boost::posix_time::second_clock::universal_time());
+
   return MOFEM_SUCCESS;
 }
 
