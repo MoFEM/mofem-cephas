@@ -60,6 +60,8 @@ MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
   ierr = PetscPushErrorHandler(mofem_error_handler, PETSC_NULL);
   CHKERRG(ierr);
 
+  CHKERR LogManager::getOptions();
+
   isGloballyInitialised = true;
   return MOFEM_SUCCESS;
 }

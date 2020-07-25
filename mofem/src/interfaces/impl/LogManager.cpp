@@ -134,8 +134,6 @@ MoFEMErrorCode LogManager::query_interface(const MOFEMuuid &uuid,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode LogManager::getSubInterfaceOptions() { return getOptions(); }
-
 MoFEMErrorCode LogManager::getOptions() {
   MoFEMFunctionBegin;
   PetscInt sev_level = SeverityLevel::inform;
@@ -165,8 +163,6 @@ MoFEMErrorCode LogManager::getOptions() {
 
   ierr = PetscOptionsEnd();
   CHKERRG(ierr);
-
-  CHKERR setUpLog();
 
   logging::core::get()->set_filter(MoFEM::LogKeywords::severity >= sev_level);
 
@@ -333,12 +329,6 @@ boost::shared_ptr<std::ostream> LogManager::getStrmSync() {
 
 static char dummy_file;
 FILE *LogManager::dummy_mofem_fd = (FILE *)&dummy_file;
-
-MoFEMErrorCode LogManager::setUpLog() {
-  MoFEM::Interface &m_field = cOre;
-  MoFEMFunctionBegin;
-  MoFEMFunctionReturn(0);
-}
 
 void LogManager::addAttributes(LogManager::LoggerType &lg, const int bit) {
 
