@@ -1704,5 +1704,12 @@ target_link_libraries(log
   mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS}
-  
+)
+add_test(log
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/log
+  -log_severity_level noisy
+  -log_scope
+  -log_time
+  -log_no_color
 )
