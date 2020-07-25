@@ -1148,7 +1148,10 @@ target_link_libraries(dm_mofem
   ${PROJECT_LIBS}
 )
 add_test(dm_mofem_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
-  ${CMAKE_CURRENT_BINARY_DIR}/dm_mofem -my_file disp01.h5m)
+  ${CMAKE_CURRENT_BINARY_DIR}/dm_mofem 
+  -my_file disp01.h5m
+  -log_no_color
+)
 add_test(dm_mofem_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/dm_mofem.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_mofem.txt
@@ -1281,6 +1284,7 @@ add_test(remove_entities_from_problem
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
   ${CMAKE_CURRENT_BINARY_DIR}/remove_entities_from_problem 
   -my_file disp01_2parts.h5m 
+  -log_no_color 
 )
 
 # teting build mesh on partinoned (not distributed) mesh and composite problems
@@ -1436,7 +1440,9 @@ target_link_libraries(edge_and_bubble_shape_functions_on_quad
   ${PROJECT_LIBS}
 )
 add_test(edge_and_bubble_shape_functions_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/edge_and_bubble_shape_functions_on_quad -my_file quad_mesh.h5m
+  ${CMAKE_CURRENT_BINARY_DIR}/edge_and_bubble_shape_functions_on_quad 
+  -my_file quad_mesh.h5m
+  -log_no_color
 )
 
 my_add_executable(gauss_points_on_quad gauss_points_on_quad.cpp)
@@ -1510,7 +1516,9 @@ list(INSERT testing_base_list
 foreach(test_base ${testing_base_list})
   add_test(testing_base_functions_${test_base}
     ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-    ${CMAKE_CURRENT_BINARY_DIR}/testing_base_functions -base ${test_base}
+    ${CMAKE_CURRENT_BINARY_DIR}/testing_base_functions 
+    -base ${test_base}
+    -log_no_color
   )
 endforeach(test_base IN testing_base_list)
 
@@ -1523,6 +1531,7 @@ if(ADOL-C_LIBRARY)
   add_test(
     adol-c_atom_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom
+    -log_no_color
   )
 endif(ADOL-C_LIBRARY)
 
