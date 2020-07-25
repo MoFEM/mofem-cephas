@@ -1108,7 +1108,6 @@ MoFEMErrorCode Core::buildFieldForNoFieldImpl1(
           auto cast_field_ptr =
               boost::dynamic_pointer_cast<FieldTmp<V, r>>(*field_it);
 
-          cerr << "Build field " << V << " " << r << endl;
           CHKERR this->buildFieldForNoFieldImpl2<V, r>(cast_field_ptr,
                                                        dof_counter, verb);
         }
