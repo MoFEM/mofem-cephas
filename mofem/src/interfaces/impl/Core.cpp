@@ -68,6 +68,7 @@ MoFEMErrorCode Core::Initialize(int *argc, char ***args, const char file[],
 
   LogManager::createDefaultSinks(MPI_COMM_WORLD);
   PetscVFPrintf = LogManager::logPetscFPrintf;
+  CHKERR LogManager::getOptions();
   isGloballyInitialised = true;
 
   MOFEM_LOG_CHANNEL("WORLD");
