@@ -654,9 +654,7 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
                 new std::vector<double *>());
             vec->reserve(ents.size());
 
-	    const int nb_dofs = get_nb_dofs_on_order(order) * field_rank;
-
-            if (nb_dofs == 0) {
+            if (order >= 0 && nb_dofs == 0) {
               // set empty vector adaptor
               for (int i = 0; i != ents.size(); ++i)
                 vec->emplace_back(nullptr);
@@ -700,8 +698,11 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
                 auto dit = vec->begin();
                 for (auto eit = ents.begin(); eit != ents.end();
                      ++eit, ++oit, ++dit) {
-	          const auto ent_order = *static_cast<const ApproximationOrder *>(*oit); 
-	          const int ent_nb_dofs = get_nb_dofs_on_order(ent_order) * field_rank;		
+
+                  const int ent_order =
+                      *static_cast<const ApproximationOrder *>(*oit);
+                  const int ent_nb_dofs = get_nb_dofs_on_order(ent_order);
+
                   if (ent_nb_dofs) {
                     int tag_size;
                     const void *ret_val;
