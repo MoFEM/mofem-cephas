@@ -602,14 +602,14 @@ MoFEMErrorCode Core::getTags(int verb) {
     const int def_part = -1;
     CHKERR get_moab().tag_get_handle("PARTITION", 1, MB_TYPE_INTEGER, th_Part,
                                      MB_TAG_CREAT | MB_TAG_SPARSE, &def_part);
-    int def_elem_type = MBMAXTYPE;
-    CHKERR get_moab().tag_get_handle("ElemType", 1, MB_TYPE_INTEGER,
-                                     th_ElemType, MB_TAG_CREAT | MB_TAG_SPARSE,
-                                     &def_elem_type);
   }
 
   // Tags Ref
   {
+    const int def_part = -1;
+    CHKERR get_moab().tag_get_handle("_MeshsetPartition", 1, MB_TYPE_INTEGER,
+                                     th_Part, MB_TAG_CREAT | MB_TAG_SPARSE,
+                                     &def_part);
     EntityHandle def_handle = 0;
     CHKERR get_moab().tag_get_handle("_RefParentHandle", 1, MB_TYPE_HANDLE,
                                      th_RefParentHandle,

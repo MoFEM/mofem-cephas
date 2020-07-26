@@ -114,6 +114,7 @@ struct BasicEntityData {
   int pcommID;
   Tag th_RefParentHandle;
   Tag th_RefBitLevel;
+  Tag th_MeshsetPart;
   BasicEntityData(const moab::Interface &mfield,
                   const int pcomm_id = MYPCOMM_INDEX);
   virtual ~BasicEntityData() = default;
@@ -264,17 +265,27 @@ template <> struct RefEntityTmp<0> {
     return getOwnerProc(this->ent, this->getBasicDataPtr());
   }
 
-  /** \brief Get processor
-   */
-  inline int getPartProc() const {
-    auto *pcomm = ParallelComm::get_pcomm(&this->getBasicDataPtr()->moab,
-                                          this->getBasicDataPtr()->pcommID);
+  static inline int
+  getPartProc(const EntityHandle ent, const Tag th,
+              const boost::shared_ptr<BasicEntityData> &basic_ptr) {
     if (auto part_ptr = static_cast<int *>(
-            MoFEM::get_tag_ptr(this->getBasicDataPtr()->moab,
-                               pcomm->partition_tag(), ent, NULL))) {
+            MoFEM::get_tag_ptr(basic_ptr->moab, th, ent, NULL))) {
       return *part_ptr >= 0 ? *part_ptr : 0;
     } else
       return 0;
+  };
+
+  /** \brief Get processor
+   */
+  inline int getPartProc() const {
+    if (PetscUnlikely(getEntType() == MBENTITYSET)) {
+      return getPartProc(ent, this->getBasicDataPtr()->th_MeshsetPart,
+                         this->getBasicDataPtr());
+    } else {
+      auto *pcomm = ParallelComm::get_pcomm(&this->getBasicDataPtr()->moab,
+                                            this->getBasicDataPtr()->pcommID);
+      return getPartProc(ent, pcomm->partition_tag(), this->getBasicDataPtr());
+    }
   }
 
   /**
@@ -283,11 +294,16 @@ template <> struct RefEntityTmp<0> {
    * @return int* 
    */
   inline int *getPartProcPtr() const {
-    auto *pcomm = ParallelComm::get_pcomm(&this->getBasicDataPtr()->moab,
-                                          this->getBasicDataPtr()->pcommID);
-    return static_cast<int *>(
-            MoFEM::get_tag_ptr(this->getBasicDataPtr()->moab,
-                               pcomm->partition_tag(), ent, NULL));
+    if (PetscUnlikely(getEntType() == MBENTITYSET)) {
+      return static_cast<int *>(MoFEM::get_tag_ptr(
+          this->getBasicDataPtr()->moab,
+          this->getBasicDataPtr()->th_MeshsetPart, ent, NULL));
+    } else {
+      auto *pcomm = ParallelComm::get_pcomm(&this->getBasicDataPtr()->moab,
+                                            this->getBasicDataPtr()->pcommID);
+      return static_cast<int *>(MoFEM::get_tag_ptr(
+          this->getBasicDataPtr()->moab, pcomm->partition_tag(), ent, NULL));
+    }
   }
 
   /** \brief get pstatus

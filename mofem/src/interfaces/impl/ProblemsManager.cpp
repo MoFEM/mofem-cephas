@@ -328,12 +328,6 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       CHKERR m_field.get_moab().get_entities_by_type_and_tag(
           0, MBENTITYSET, &part_tag, NULL, 1, tagged_sets,
           moab::Interface::UNION);
-      // Remove sets which have set BitRefLevel
-      auto multi_index_sets = tagged_sets;
-      CHKERR m_field.getInterface<BitRefManager>()->filterEntitiesByRefLevel(
-          BitRefLevel().set(), BitRefLevel().set(), multi_index_sets);
-      tagged_sets = subtract(tagged_sets, multi_index_sets);
-
       if (!tagged_sets.empty())
         CHKERR m_field.get_moab().tag_delete_data(part_tag, tagged_sets);
 
@@ -375,15 +369,11 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
                                                        true);
           }
           parts_ents[pp].merge(adj_ents);
-          // std::cerr << pp << " add " << parts_ents[pp].size() << std::endl;
         }
       }
       for (int pp = 1; pp != n_parts; pp++) {
         for (int ppp = 0; ppp != pp; ppp++) {
-          // std::cerr << pp << "<-" << ppp << " " << parts_ents[pp].size() << "
-          // " << parts_ents[ppp].size();
           parts_ents[pp] = subtract(parts_ents[pp], parts_ents[ppp]);
-          // std::cerr << " " << parts_ents[pp].size() << std::endl;
         }
       }
       if (debug) {
@@ -401,21 +391,12 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       for (int pp = 0; pp != n_parts; pp++) {
         CHKERR m_field.get_moab().add_entities(tagged_sets[pp], parts_ents[pp]);
       }
-      // for(int rr = 0;rr!=m_field.get_comm_size();rr++) {
-      //   ostringstream ss;
-      //   ss << "out_part_meshsets_" << rr << ".vtk";
-      //   EntityHandle meshset = tagged_sets[rr];
-      //   rval =
-      //   m_field.get_moab().write_file(ss.str().c_str(),"VTK","",&meshset,1);
-      //   CHKERRQ_MOAB(rval);
-      // }
 
       // set gid to lower dimension entities
       for (int dd = 0; dd <= dim; dd++) {
         int gid = 1; // moab indexing from 1
         for (int pp = 0; pp != n_parts; pp++) {
           Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
-          // std::cerr << dim_ents.size() << " " << dd  << " " << pp <<
           // std::endl;
           for (Range::iterator eit = dim_ents.begin(); eit != dim_ents.end();
                eit++) {

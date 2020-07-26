@@ -28,6 +28,8 @@ BasicEntityData::BasicEntityData(const moab::Interface &moab,
   MOAB_THROW(rval);
   rval = moab.tag_get_handle("_RefBitLevel", th_RefBitLevel);
   MOAB_THROW(rval);
+  rval = moab.tag_get_handle("_MeshsetPartition", th_MeshsetPart);
+  MOAB_THROW(rval);
 }
 
 boost::weak_ptr<BasicEntityData> RefEntityTmp<0>::basicDataPtr;
