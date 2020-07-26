@@ -835,6 +835,7 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
     const auto count = std::distance(miit, hi_miit);
     MOFEM_LOG("SYNC", Sev::inform) << "Finite element " << fe_name
                                    << " added. Nb. of elements added " << count;
+    MOFEM_LOG_SYNCHORMISE(cOmm);
   }
 
   *buildMoFEM |= 1 << 1;
