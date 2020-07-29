@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
       auto field_bit_number = m_field.get_field_bit_number(field_name);
       auto lo = field_ents->get<Unique_mi_tag>().lower_bound(
           FieldEntity::getLoBitNumberUId(field_bit_number));
-      auto hi = field_ents->get<Unique_mi_tag>().lower_bound(
+      auto hi = field_ents->get<Unique_mi_tag>().upper_bound(
           FieldEntity::getHiBitNumberUId(field_bit_number));
       for (auto it = lo; it != hi; ++it) {
         std::ostringstream ss;
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
         auto field_bit_number = m_field.get_field_bit_number(field_name);
         auto lo = field_ents->get<Unique_mi_tag>().lower_bound(
             FieldEntity::getLoBitNumberUId(field_bit_number));
-        auto hi = field_ents->get<Unique_mi_tag>().lower_bound(
+        auto hi = field_ents->get<Unique_mi_tag>().upper_bound(
             FieldEntity::getHiBitNumberUId(field_bit_number));
         for (auto it = lo; it != hi; ++it) {
           VectorDouble field_data = (*it)->getEntFieldData();

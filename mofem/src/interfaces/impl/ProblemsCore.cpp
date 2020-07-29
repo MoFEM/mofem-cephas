@@ -705,7 +705,7 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
 
   auto lo_eit = entsFields.get<Unique_mi_tag>().lower_bound(
       FieldEntity::getLoBitNumberUId((*field_it)->getBitNumber()));
-  auto hi_eit = entsFields.get<Unique_mi_tag>().lower_bound(
+  auto hi_eit = entsFields.get<Unique_mi_tag>().upper_bound(
       FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
 
   typedef multi_index_container<

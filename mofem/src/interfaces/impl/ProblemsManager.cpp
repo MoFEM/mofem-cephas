@@ -708,7 +708,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
 
         auto dit = dofs_field_ptr->get<Unique_mi_tag>().lower_bound(
             FieldEntity::getLoBitNumberUId((*fit)->getBitNumber()));
-        auto hi_dit = dofs_field_ptr->get<Unique_mi_tag>().lower_bound(
+        auto hi_dit = dofs_field_ptr->get<Unique_mi_tag>().upper_bound(
             FieldEntity::getHiBitNumberUId((*fit)->getBitNumber()));
 
         for (; dit != hi_dit; dit++) {
@@ -1297,7 +1297,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
       auto bit_number = m_field.get_field_bit_number(field);
       auto dit = main_problem_dofs[ss]->get<Unique_mi_tag>().lower_bound(
           FieldEntity::getLoBitNumberUId(bit_number));
-      auto hi_dit = main_problem_dofs[ss]->get<Unique_mi_tag>().lower_bound(
+      auto hi_dit = main_problem_dofs[ss]->get<Unique_mi_tag>().upper_bound(
           FieldEntity::getHiBitNumberUId(bit_number));
 
       auto add_dit_to_dofs_array = [&](auto &dit) {

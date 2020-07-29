@@ -1539,7 +1539,7 @@ Core::check_number_of_ents_in_ents_field(const std::string &name) const {
     auto bit_number = (*it)->getBitNumber();
     auto low_eit = entsFields.get<Unique_mi_tag>().lower_bound(
         FieldEntity::getLoBitNumberUId(bit_number));
-    auto hi_eit = entsFields.get<Unique_mi_tag>().lower_bound(
+    auto hi_eit = entsFields.get<Unique_mi_tag>().upper_bound(
         FieldEntity::getHiBitNumberUId(bit_number));
     return std::distance(low_eit, hi_eit);
   };
@@ -1566,7 +1566,7 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_field() const {
       auto bit_number = it->getBitNumber();
       auto low_eit = entsFields.get<Unique_mi_tag>().lower_bound(
           FieldEntity::getLoBitNumberUId(bit_number));
-      auto hi_eit = entsFields.get<Unique_mi_tag>().lower_bound(
+      auto hi_eit = entsFields.get<Unique_mi_tag>().upper_bound(
           FieldEntity::getHiBitNumberUId(bit_number));
       return std::distance(low_eit, hi_eit);
     };
