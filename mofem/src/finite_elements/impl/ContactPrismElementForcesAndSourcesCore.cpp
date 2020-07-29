@@ -189,8 +189,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                                         &*coords.data().begin());
     normal.resize(6, false);
 
-    auto my_array_tangents = {&tangentMasterOne, &tangentMasterTwo, &tangentSlaveOne,
-                     &tangentSlaveTwo};
     for (auto &v : {&tangentMasterOne, &tangentMasterTwo, &tangentSlaveOne,
                     &tangentSlaveTwo}) {
       v->resize(3);
@@ -218,20 +216,19 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     auto t_normal_slave = get_vec_ptr(normal, 3);
 
     auto t_t1_master = get_vec_ptr(tangentMasterOne);
-    auto t_t2_master = get_vec_ptr(tangentMasterOne);
-    auto t_t1_slave = get_vec_ptr(tangentMasterOne);
-    auto t_t2_slave = get_vec_ptr(tangentMasterOne);
+    auto t_t2_master = get_vec_ptr(tangentMasterTwo);
+    auto t_t1_slave = get_vec_ptr(tangentSlaveOne);
+    auto t_t2_slave = get_vec_ptr(tangentSlaveTwo);
 
     const double *diff_ptr = Tools::diffShapeFunMBTRI.data();
     FTensor::Tensor1<FTensor::PackPtr<const double *, 2>, 2> t_diff(
-        diff_ptr, &diff_ptr[1]);
+        &diff_ptr[0], &diff_ptr[1]);
 
     FTensor::Index<'i', 3> i;
     FTensor::Index<'j', 3> j;
     FTensor::Index<'k', 3> k;
 
     FTensor::Number<0> N0;
-    FTensor::Number<1> N1;
 
     for (int nn = 0; nn != 3; ++nn) {
       t_t1_master(i) += t_coords_master(i) * t_diff(N0);
@@ -529,14 +526,13 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
           normalsAtGaussPtsSlave.resize(gaussPtsSlave.size2(), 3);
           normalsAtGaussPtsSlave.clear();
           auto t_normal = get_ftensor_from_mat_3d(normalsAtGaussPtsSlave);
-
+          
           for (int ii = 0; ii != nbGaussPts; ++ii) {
             t_normal(i) = normal_slave(i);
             ++t_normal;
           }
 
           CHKERR opContravariantTransform.opRhs(dataHdivSlave);
-          // CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdivSlave);
         }
 
         if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
