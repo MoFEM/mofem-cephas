@@ -182,41 +182,6 @@ make doc
 \endcode
 This create directory \em html. Open file \em html/index.html to see results in your browser.
 
-\subsection configure_vs_code How to configure MoFEM in Visual Studio Code?
-
-Basic support for C/C++ languages is provided with <a
-href="https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools">
-Microsoft C/C++ extension</a>. To configure IntelliSense code-completion tool
-add \p -DCMAKE_EXPORT_COMPILE_COMMANDS=ON to users_modules's `cmake` command 
-(or after `spyconfig.py` if installation with Spack is used).
-This will generate \p compile_commands.json file which has to be added to \p
-.vscode/c_cpp_properties.json file located in the working project. Example \p
-c_cpp_properties configuration on Mac should look like follows:
-\code
-{
-    "configurations": [
-        {
-            "name": "Mac",
-            "includePath": [
-                "${workspaceFolder}/**"
-            ],
-            "defines": [],
-            "macFrameworkPath": [
-                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/
-                SDKs/MacOSX10.13.sdk/System/Library/Frameworks"
-            ],
-            "compilerPath": "/usr/bin/clang",
-            "cStandard": "c11",
-            "cppStandard": "c++14",
-            "intelliSenseMode": "clang-x64",
-            "compileCommands": "/Users/User1/mofem_install/users_modules_debug/compile_commands.json"
-
-        }
-    ],
-    "version": 4
-}
-\endcode
-
 \subsection slack_message_send How to send message to Slack e.g. to report program crash?
 To send a message to your Slack (in mofem.slack.com workspace) 
 from command line or a script on a server, use the following command:
@@ -464,6 +429,41 @@ It is one non trivial trick that you have to do, to make debugging possible in
 docker, you need to run docker container in \em privileged mode, for example
 \code
 docker run --privileged -it --name work --hostname mofem -v $HOME:/mnt/home -v mofem_build:/my_build likask/mofem_build:v0.2 /bin/bash
+\endcode
+
+\subsection configure_vs_code How to configure MoFEM in Visual Studio Code?
+
+Basic support for C/C++ languages is provided with <a
+href="https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools">
+Microsoft C/C++ extension</a>. To configure IntelliSense code-completion tool
+add \p -DCMAKE_EXPORT_COMPILE_COMMANDS=ON to users_modules's `cmake` command 
+(or after `spyconfig.py` if installation with Spack is used).
+This will generate \p compile_commands.json file which has to be added to \p
+.vscode/c_cpp_properties.json file located in the working project. Example \p
+c_cpp_properties configuration on Mac should look like follows:
+\code
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [],
+            "macFrameworkPath": [
+                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/
+                SDKs/MacOSX10.13.sdk/System/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "clang-x64",
+            "compileCommands": "/Users/User1/mofem_install/users_modules_debug/compile_commands.json"
+
+        }
+    ],
+    "version": 4
+}
 \endcode
 
 \subsection vs_code_debug How to setup LLDB debugger in Visual Studio Code?
