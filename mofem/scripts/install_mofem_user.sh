@@ -200,7 +200,7 @@ echo "Current directory: $PWD"
 echo -e "\nFinished testing fracture module.\n"
 
 # Check the output message and finalise the installation
-if tail -n 1 log | grep -q "Done rank = 0"
+if tail -n 1 log | grep -q "Crack surface area"
 then
   echo -e "\nInstallation SUCCESSFUL!\n"
   
