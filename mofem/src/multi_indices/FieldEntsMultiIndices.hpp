@@ -248,6 +248,9 @@ struct FieldEntityTmp<0, 0>
     return getLoFieldEntityUId(uid) | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1);
   }
 
+  template <typename T> void getLoFieldEntityUId(T &uid) = delete;
+  template <typename T> void getHiFieldEntityUId(T &uid) = delete;
+
   static inline UId getLoLocalEntityBitNumber(const char bit_number,
                                               const EntityHandle ent) {
     return getLocalUniqueIdCalculate(
