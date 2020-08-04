@@ -467,7 +467,8 @@ struct Problem {
  * \endcode
  *
  */
-#define _IT_NUMEREDDOF_ROW_BY_BITNUMBER_FOR_LOOP_(PROBLEMPTR, FIELD_BIT_NUMBER, IT) \
+#define _IT_NUMEREDDOF_ROW_BY_BITNUMBER_FOR_LOOP_(PROBLEMPTR,                  \
+                                                  FIELD_BIT_NUMBER, IT)        \
   auto IT = PROBLEMPTR->numeredDofsRows->lower_bound(                          \
       FieldEntity::getLoBitNumberUId(FIELD_BIT_NUMBER));                       \
   IT != PROBLEMPTR->numeredDofsRows->upper_bound(                              \
@@ -486,7 +487,8 @@ struct Problem {
  * \endcode
  *
  */
-#define _IT_NUMEREDDOF_COL_BY_BITNUMBER_FOR_LOOP_(PROBLEMPTR, FIELD_BIT_NUMBER, IT) \
+#define _IT_NUMEREDDOF_COL_BY_BITNUMBER_FOR_LOOP_(PROBLEMPTR,                  \
+                                                  FIELD_BIT_NUMBER, IT)        \
   auto IT = PROBLEMPTR->numeredDofsCols->lower_bound(                          \
       FieldEntity::getLoBitNumberUId(FIELD_BIT_NUMBER));                       \
   IT != PROBLEMPTR->numeredDofsCols->upper_bound(                              \
@@ -515,11 +517,11 @@ struct Problem {
 
   /**
    * @brief Get the Row Dofs By Petsc Global Dof Idx object
-   * 
-   * @param idx 
-   * @param dof_ptr 
+   *
+   * @param idx
+   * @param dof_ptr
    * @param bh
-   * @return MoFEMErrorCode 
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,
                                                const NumeredDofEntity **dof_ptr,
@@ -527,11 +529,11 @@ struct Problem {
 
   /**
    * @brief Get the Col Dofs By Petsc Global Dof Idx object
-   * 
-   * @param idx 
-   * @param dof_ptr 
+   *
+   * @param idx
+   * @param dof_ptr
    * @param bh
-   * @return MoFEMErrorCode 
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,
                                                const NumeredDofEntity **dof_ptr,
@@ -539,18 +541,18 @@ struct Problem {
 
   /**
    * @brief Get the Row Dofs By Petsc Global Dof Idx object
-   * 
-   * @param idx 
-   * @return boost::weak_ptr<NumeredDofEntity> 
+   *
+   * @param idx
+   * @return boost::weak_ptr<NumeredDofEntity>
    */
   boost::weak_ptr<NumeredDofEntity>
   getRowDofsByPetscGlobalDofIdx(DofIdx idx) const;
 
   /**
    * @brief Get the Col Dofs By Petsc Global Dof Idx object
-   * 
-   * @param idx 
-   * @return boost::weak_ptr<NumeredDofEntity> 
+   *
+   * @param idx
+   * @return boost::weak_ptr<NumeredDofEntity>
    */
   boost::weak_ptr<NumeredDofEntity>
   getColDofsByPetscGlobalDofIdx(DofIdx idx) const;
@@ -611,8 +613,8 @@ struct Problem {
   MoFEMErrorCode getNumberOfElementsByPart(MPI_Comm comm,
                                            PetscLayout *layout) const;
 
-  typedef multi_index_container<boost::weak_ptr<std::vector<NumeredDofEntity> >,
-                                indexed_by<sequenced<> > >
+  typedef multi_index_container<boost::weak_ptr<std::vector<NumeredDofEntity>>,
+                                indexed_by<sequenced<>>>
       SequenceDofContainer;
 
   /**
@@ -669,13 +671,12 @@ typedef multi_index_container<
     Problem,
     indexed_by<
         ordered_unique<tag<Meshset_mi_tag>,
-                       member<Problem, EntityHandle, &Problem::meshset> >,
+                       member<Problem, EntityHandle, &Problem::meshset>>,
         hashed_unique<tag<BitProblemId_mi_tag>,
                       const_mem_fun<Problem, BitProblemId, &Problem::getId>,
-                      HashBit<BitProblemId>, EqBit<BitProblemId> >,
-        hashed_unique<
-            tag<Problem_mi_tag>,
-            const_mem_fun<Problem, std::string, &Problem::getName> > > >
+                      HashBit<BitProblemId>, EqBit<BitProblemId>>,
+        hashed_unique<tag<Problem_mi_tag>,
+                      const_mem_fun<Problem, std::string, &Problem::getName>>>>
     Problem_multiIndex;
 
 /** \brief add ref level to problem
