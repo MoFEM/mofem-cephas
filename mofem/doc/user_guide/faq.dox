@@ -87,6 +87,22 @@ code is verified during when a pull request is accepted and merged and validated
 when the test on the development server are passed. If tests are passed
 CDashBranch is merged to master branch.
 
+\subsection mbconvert How to convert output h5m files to the vtk format?
+In order to convert a single \em h5m file to \em vtk, you can use the \em mbconvert tool:
+\code
+mbconvert out.h5m out.vtk
+\endcode
+Moreover, to convert a set of files with one command you can use a multiprocessing script convert.py:
+\code
+$USER_MODULES/tools/convert.py -np 2 out*
+\endcode
+The above command will convert all \em h5m files in the current directory having name starting with "out" to \em vtk files with the same name, using a pool of two processes. 
+To see all parameters of the script and their descriptions you can run:
+\code
+$USER_MODULES/tools/convert.py -h
+\endcode
+Note that the script is compatible with both \em Python \em 2.x and \em 3.x.
+
 \subsection partition_mesh How to partition mesh?
 
 If problem is large, mesh can be partitioned for to save memory and improve efficiency. This can be done using native MoFEM tool,
@@ -124,6 +140,80 @@ mpirun -np 4 ./elasticity \
 - In line \code
 -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps
 \endcode a direct solver for coarse mesh is set.
+
+\subsection how_to_make_2nd_order_geometry How to make 2nd order geometry in cubit and transfer it to MoFEM?
+
+In cubit you need to generate 10 node tetrahedral. You simply create block
+and set element type to TETRA10, as follows
+\code
+set duplicate block elements on
+block 2 volume 1
+block 2 element type TETRA10
+\endcode
+
+In the code, you need to create field to keep geometry
+\code
+CHKERR m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO);
+CHKERR m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",2); 
+\endcode
+Next set order of approximation field. If you have 10 node tetrahedrons, you
+need to have at least 2nd order polynomials to approximate geometry;
+\code
+CHKERR m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2);
+CHKERR m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2);
+CHKERR m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2);
+CHKERR m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1);
+\endcode
+
+The last step is to prject information from 10 node terahedrons on
+hierarchical approximation field, as follows
+\code
+Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
+CHKERR m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); 
+\endcode
+
+Look at examples of use to user modules, for example elasticity.cpp.
+
+\subsection own_documentation How to generate this documentation on your local machine?
+
+In you library directory execute
+\code
+make doc
+\endcode
+This create directory \em html. Open file \em html/index.html to see results in your browser.
+
+\subsection slack_message_send How to send message to Slack e.g. to report program crash?
+To send a message to your Slack (in mofem.slack.com workspace) 
+from command line or a script on a server, use the following command:
+\code
+curl -X POST "https://slack.com/api/chat.postMessage" -H  "accept: application/json" \
+-d token=TOKEN \
+-d channel=CHANNEL -d text="My analysis crashed!"
+\endcode
+
+Where \e TOKEN is our app authentication token and can be found 
+<a href=https://drive.google.com/uc?export=download&id=11tsc-ePGrsMQ0BDkLKVZxZQkuqRDZB5m> here</a>.
+
+
+As \e CHANNEL one can use desired channel name, user name or user id. User id can be found e.g. by going to
+<https://mofem.slack.com/messages> and searching for \e user_id in the page source.
+On Chrome, right-click and choose \e View \e Page \e Source.
+
+\subsection msteam_message_send How to send message to Microsoft Teams
+
+Similar process to send message to MS Teams can be done using their APIs
+
+\code
+TITLE="Title of your message"
+MESSAGE="Body of your message"
+JSON="{\"title\": \"${TITLE}\", \"text\": \"${MESSAGE}\" }"
+WEBHOOK_URL="https://outlook.office.com/webhook/43c9f281-c5e1-4833-be78-27addb5d8529@6e725c29-763a-4f50-81f2-2e254f0133c8/IncomingWebhook/441a73f641534b14ac0d65ead4adb94b/4b2fd8be-d98a-492f-b349-c2ae11c04573"
+
+curl -H "Content-Type: application/json" -d "${JSON}" "${WEBHOOK_URL}"
+\endcode
+
+Where WEBHOOK_URL is the webhook URL of the channel to which the message will be
+sent. How to get webhook URL can be found <a href=https://learning.postman.com/docs/integrations/microsoft-teams/> here</a>.
 
 \section faq_git Git and repository
 
@@ -313,7 +403,7 @@ check_mofem_version(0 3 6)
 add_subdirectory(${PROJECT_SOURCE_DIR}/homogenisation)
 \endcode
 
-\section openmpi_error_in_docer OpenMPI error in docker
+\subsection openmpi_error_in_docer OpenMPI error in docker
 
 If in docker you have following error
 \code
@@ -340,47 +430,6 @@ docker, you need to run docker container in \em privileged mode, for example
 \code
 docker run --privileged -it --name work --hostname mofem -v $HOME:/mnt/home -v mofem_build:/my_build likask/mofem_build:v0.2 /bin/bash
 \endcode
-
-\subsection how_to_make_2nd_order_geometry How to make 2nd order geometry in cubit and transfer it to MoFEM?
-
-In cubit you need to generate 10 node tetrahedral. You simply create block
-and set element type to TETRA10, as follows
-\code
-set duplicate block elements on
-block 2 volume 1
-block 2 element type TETRA10
-\endcode
-
-In the code, you need to create field to keep geometry
-\code
-CHKERR m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO);
-CHKERR m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",2); 
-\endcode
-Next set order of approximation field. If you have 10 node tetrahedrons, you
-need to have at least 2nd order polynomials to approximate geometry;
-\code
-CHKERR m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2);
-CHKERR m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2);
-CHKERR m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2);
-CHKERR m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1);
-\endcode
-
-The last step is to prject information from 10 node terahedrons on
-hierarchical approximation field, as follows
-\code
-Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
-CHKERR m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); 
-\endcode
-
-Look at examples of use to user modules, for example elasticity.cpp.
-
-\subsection own_documentation How to generate this documentation on your local machine?
-
-In you library directory execute
-\code
-make doc
-\endcode
-This create directory \em html. Open file \em html/index.html to see results in your browser.
 
 \subsection configure_vs_code How to configure MoFEM in Visual Studio Code?
 
@@ -482,38 +531,5 @@ If you like to see diffrence of jacobians, add option:
 \code
 -snes_test_jacobian_display
 \endcode
-
-\subsection slack_message_send How to send message to Slack e.g. to report program crash?
-To send a message to your Slack (in mofem.slack.com workspace) 
-from command line or a script on a server, use the following command:
-\code
-curl -X POST "https://slack.com/api/chat.postMessage" -H  "accept: application/json" \
--d token=TOKEN \
--d channel=CHANNEL -d text="My analysis crashed!"
-\endcode
-
-Where \e TOKEN is our app authentication token and can be found 
-<a href=https://drive.google.com/uc?export=download&id=11tsc-ePGrsMQ0BDkLKVZxZQkuqRDZB5m> here</a>.
-
-
-As \e CHANNEL one can use desired channel name, user name or user id. User id can be found e.g. by going to
-<https://mofem.slack.com/messages> and searching for \e user_id in the page source.
-On Chrome, right-click and choose \e View \e Page \e Source.
-
-\subsection msteam_message_send How to send message to Microsoft Teams
-
-Similar process to send message to MS Teams can be done using their APIs
-
-\code
-TITLE="Title of your message"
-MESSAGE="Body of your message"
-JSON="{\"title\": \"${TITLE}\", \"text\": \"${MESSAGE}\" }"
-WEBHOOK_URL="https://outlook.office.com/webhook/43c9f281-c5e1-4833-be78-27addb5d8529@6e725c29-763a-4f50-81f2-2e254f0133c8/IncomingWebhook/441a73f641534b14ac0d65ead4adb94b/4b2fd8be-d98a-492f-b349-c2ae11c04573"
-
-curl -H "Content-Type: application/json" -d "${JSON}" "${WEBHOOK_URL}"
-\endcode
-
-Where WEBHOOK_URL is the webhook URL of the channel to which the message will be
-sent. How to get webhook URL can be found <a href=https://learning.postman.com/docs/integrations/microsoft-teams/> here</a>.
 
 */

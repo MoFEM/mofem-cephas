@@ -49,6 +49,7 @@ cm_export_file("../meshes/mat_interf.h5m" export_atom_tests)
 cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
 cm_export_file("../meshes/rectangle.h5m" export_atom_tests)
 cm_export_file("../meshes/quad_mesh.h5m" export_atom_tests)
+cm_export_file("../meshes/2_tets_contact.cub" export_atom_tests)
 
 set(PERCOMPILED_MOFEM_HEADER "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
 
@@ -1758,6 +1759,22 @@ add_test(continuity_check_on_skeleton_with_simple_2d_demkowicz
   -log_no_color
 )
 
+#test integration on contact prism side element
+my_add_executable(
+  continuity_check_on_contact_prism_side_ele
+  continuity_check_on_contact_prism_side_ele.cpp
+)
+target_link_libraries(continuity_check_on_contact_prism_side_ele
+mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
 my_add_executable(
   continuity_check_on_skeleton_with_simple_2d_for_hdiv
   continuity_check_on_skeleton_with_simple_2d_for_hdiv.cpp
@@ -1772,6 +1789,14 @@ target_link_libraries(continuity_check_on_skeleton_with_simple_2d_for_hdiv
   mofem_third_party
   ${PROJECT_LIBS}
 )
+
+add_test(
+  continuity_check_on_contact_prism_side_ele_h1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_contact_prism_side_ele
+  -my_file 2_tets_contact.cub -base ainsworth -space h1
+)
+
 add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 

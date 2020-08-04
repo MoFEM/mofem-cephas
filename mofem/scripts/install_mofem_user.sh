@@ -141,7 +141,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
     if [ ! -f "$PWD/mirror.tgz" ]; then
       echo "Downloading mirror of spack packages for MoFEM..."
       mkdir -p $SPACK_MIRROR_DIR && \
-      curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
+      curl -s -L http://mofem.eng.gla.ac.uk/downloads/mirror_v0.9.2.tar.gz \
       | tar xzC $SPACK_MIRROR_DIR --strip 1
       echo -e "Done.\n"
     else 
@@ -200,7 +200,7 @@ echo "Current directory: $PWD"
 echo -e "\nFinished testing fracture module.\n"
 
 # Check the output message and finalise the installation
-if tail -n 1 log | grep -q "Done rank = 0"
+if tail -n 1 log | grep -q "Crack surface area"
 then
   echo -e "\nInstallation SUCCESSFUL!\n"
   

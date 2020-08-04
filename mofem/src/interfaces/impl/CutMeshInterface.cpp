@@ -2948,7 +2948,9 @@ MoFEMErrorCode CutMeshInterface::mergeBadEdges(
     min_p = min;
     CHKERR LengthMap(m_field, th, aveLength)(proc_tets, edges_to_merge,
                                              length_map, ave);
-    min = length_map.get<2>().begin()->qUality;
+
+    if(!length_map.empty())
+      min = length_map.get<2>().begin()->qUality;
     if (pp == 0) {
       ave0 = ave;
     }
