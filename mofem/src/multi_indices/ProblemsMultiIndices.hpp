@@ -467,7 +467,7 @@ struct Problem {
  * \endcode
  *
  */
-#define _IT_NUMEREDDOF_ROW_BY_NAME_FOR_LOOP_(PROBLEMPTR, FIELD_BIT_NUMBER, IT) \
+#define _IT_NUMEREDDOF_ROW_BY_BITNUMBER_FOR_LOOP_(PROBLEMPTR, FIELD_BIT_NUMBER, IT) \
   auto IT = PROBLEMPTR->numeredDofsRows->lower_bound(                          \
       FieldEntity::getLoBitNumberUId(FIELD_BIT_NUMBER));                       \
   IT != PROBLEMPTR->numeredDofsRows->upper_bound(                              \
@@ -479,14 +479,14 @@ struct Problem {
  * \ingroup problems_multi_indices
  *
  * \code
- * for(_IT_NUMEREDDOF_COL_BY_NAME_FOR_LOOP_(PROBLEMPTR,m_field.get_field_bit_number(FIELD_BIT_NUMBER),IT))
+ * for(_IT_NUMEREDDOF_COL_BY_BITNUMBER_FOR_LOOP_(PROBLEMPTR,m_field.get_field_bit_number(FIELD_BIT_NUMBER),IT))
  * {
  *   ...
  * }
  * \endcode
  *
  */
-#define _IT_NUMEREDDOF_COL_BY_NAME_FOR_LOOP_(PROBLEMPTR, FIELD_BIT_NUMBER, IT) \
+#define _IT_NUMEREDDOF_COL_BY_BITNUMBER_FOR_LOOP_(PROBLEMPTR, FIELD_BIT_NUMBER, IT) \
   auto IT = PROBLEMPTR->numeredDofsCols->lower_bound(                          \
       FieldEntity::getLoBitNumberUId(FIELD_BIT_NUMBER));                       \
   IT != PROBLEMPTR->numeredDofsCols->upper_bound(                              \
