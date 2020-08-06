@@ -173,14 +173,6 @@ struct interface_FiniteElementImpl : public interface_RefElement<REFENT> {
   virtual boost::shared_ptr<const FiniteElement> &
   getFiniteElementPtr() const = 0;
 
-  // /**
-  //  * @deprecated use getFiniteElementPtr
-  //  */
-  // DEPRECATED inline const boost::shared_ptr<FiniteElement> &
-  // get_MoFEMFiniteElementPtr() {
-  //   return this->getFiniteElementPtr();
-  // };
-
   /**
    * @copydoc MoFEM::FiniteElement::getFEUId
    */
