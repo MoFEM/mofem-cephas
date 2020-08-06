@@ -390,12 +390,13 @@ struct EntFiniteElement
   MoFEMErrorCode getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
                                      Range &adjacency);
 
-protected:
+private:
   mutable boost::shared_ptr<const FiniteElement> finiteElementPtr;
   boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
   boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> dataFieldEnts;
   boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
   boost::shared_ptr<FieldEntity_vector_view> colFieldEnts;
+
 };
 
 /**
