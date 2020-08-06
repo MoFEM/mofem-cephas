@@ -292,7 +292,7 @@ struct EntFiniteElement
   inline UId getLocalUniqueId() const { return getLocalUniqueIdCalculate(); }
 
   static inline UId getLocalUniqueIdCalculate(const EntityHandle ent,
-                                               UId fe_uid) {
+                                              UId fe_uid) {
     return fe_uid |= ent;
   }
 
@@ -359,11 +359,13 @@ struct EntFiniteElement
     if (operation_type == moab::Interface::UNION) {
       for (auto &it : fe_ents_view) {
         if (auto e = it.lock()) {
-          auto dit = mofem_dofs.template get<Unique_mi_tag>().lower_bound(
-              FieldEntity::getLoFieldEntityUId(e->getLocalUniqueId()));
-          auto hi_dit = mofem_dofs.template get<Unique_mi_tag>().upper_bound(
-              FieldEntity::getHiFieldEntityUId(e->getLocalUniqueId()));
-          dofs_view.insert(dit, hi_dit);
+          const auto &uid = e->getLocalUniqueId();
+          auto dit = mofem_dofs.lower_bound(uid);
+          if (dit != mofem_dofs.end()) {
+            auto hi_dit = mofem_dofs.upper_bound(
+                uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
+            dofs_view.insert(dit, hi_dit);
+          }
         }
       }
     } else
@@ -394,7 +396,6 @@ protected:
   boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> dataFieldEnts;
   boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
   boost::shared_ptr<FieldEntity_vector_view> colFieldEnts;
-
 };
 
 /**
@@ -451,9 +452,7 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
    * \brief Get unique UId for finite element entity
    * @return UId
    */
-  inline UId getLocalUniqueId() const {
-    return this->sPtr->getLocalUniqueId();
-  }
+  inline UId getLocalUniqueId() const { return this->sPtr->getLocalUniqueId(); }
 
   SideNumber_multiIndex &getSideNumberTable() const {
     return this->sPtr->getSideNumberTable();
@@ -593,7 +592,6 @@ protected:
       rowDofs; ///< indexed dofs on rows
   boost::shared_ptr<FENumeredDofEntity_multiIndex>
       colDofs; ///< indexed dofs on columns
-
 };
 
 /**
