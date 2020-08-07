@@ -167,6 +167,14 @@ int main(int argc, char *argv[]) {
     MOFEM_LOG("WORLD", Sev::inform) << "Iterate finite elements";
     CHKERR m_field.loop_finite_elements("P1", "E1", *fe_ptr);
     MOFEM_LOG("WORLD", Sev::inform) << "Done";
+
+    auto vol_ptr =
+        boost::make_shared<VolumeElementForcesAndSourcesCore>(m_field);
+    MOFEM_LOG_CHANNEL("WORLD");
+    MOFEM_LOG("WORLD", Sev::inform) << "Iterate volume finite elements";
+    CHKERR m_field.loop_finite_elements("P1", "E1", *vol_ptr);
+    MOFEM_LOG("WORLD", Sev::inform) << "Done";
+
   }
   CATCH_ERRORS;
 
