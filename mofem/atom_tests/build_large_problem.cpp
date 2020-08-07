@@ -86,6 +86,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_finite_element("E1");
     CHKERR m_field.modify_finite_element_add_field_row("E1", "F1");
     CHKERR m_field.modify_finite_element_add_field_col("E1", "F1");
+    CHKERR m_field.modify_finite_element_add_field_data("E1", "F1");
     CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBTET, "E1");
     CHKERR m_field.build_finite_elements();
     CHKERR m_field.build_adjacencies(BitRefLevel().set(0));
