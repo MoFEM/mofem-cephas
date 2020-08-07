@@ -675,13 +675,6 @@ template <typename T> struct interface_RefEntity {
    */
   inline boost::shared_ptr<T> &getRefEntityPtr() const { return this->sPtr; }
 
-  // protected:
-  //   /**
-  //    * @copydoc MoFEM::RefEntityTmp<0>::getRefElementPtr
-  //    */
-  //   inline const boost::shared_ptr<RefElement> &getRefElementPtr() const {
-  //     return this->sPtr->getRefElementPtr();
-  //   }
 };
 
 /**
