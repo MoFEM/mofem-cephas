@@ -105,8 +105,10 @@ static inline int getMaxOrder(const ENTMULTIINDEX &multi_index) {
 int ForcesAndSourcesCore::getMaxDataOrder() const {
   int max_order = 0;
   for (auto e : getDataFieldEnts()) {
-    const int order = e->getMaxOrder();
-    max_order = (max_order < order) ? order : max_order;
+    if (auto ptr = e.lock()) {
+      const int order = ptr->getMaxOrder();
+      max_order = (max_order < order) ? order : max_order;
+    }
   }
   return max_order;
 }
@@ -117,6 +119,28 @@ int ForcesAndSourcesCore::getMaxRowOrder() const {
 
 int ForcesAndSourcesCore::getMaxColOrder() const {
   return getMaxOrder(getColFieldEnts());
+}
+
+static auto cmp_uid_lo(const boost::weak_ptr<FieldEntity> &a, const UId &b) {
+  if (auto a_ptr = a.lock()) {
+    if (a_ptr->getLocalUniqueId() < b)
+      return true;
+    else
+      return false;
+  } else {
+    return false;
+  }
+}
+
+static auto cmp_uid_hi(const UId &b, const boost::weak_ptr<FieldEntity> &a) {
+  if (auto a_ptr = a.lock()) {
+    if (b < a_ptr->getLocalUniqueId())
+      return true;
+    else
+      return false;
+  } else {
+    return true;
+  }
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
@@ -131,29 +155,48 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
     for (unsigned int s = 0; s != data.size(); ++s)
       data[s].getDataOrder() = 0;
 
-    auto &fields_ents =
-        getDataFieldEnts().get<Composite_EntType_and_Space_mi_tag>();
 
-    for (auto r = fields_ents.equal_range(boost::make_tuple(type, space));
+    const FieldEntity_vector_view &data_field_ent = getDataFieldEnts();
+
+    for (auto r = fieldsPtr->get<BitFieldId_space_mi_tag>().equal_range(space);
          r.first != r.second; ++r.first) {
 
-      auto &e = **r.first;
+      const auto field_bit_number = (*r.first)->getBitNumber();
+      const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+          field_bit_number, get_id_for_min_type(type));
+      auto lo = std::lower_bound(data_field_ent.begin(), data_field_ent.end(),
+                                 lo_uid, cmp_uid_lo);
+      if (lo != data_field_ent.end()) {
+        const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+            field_bit_number, get_id_for_max_type(type));
+        auto hi =
+            std::upper_bound(lo, data_field_ent.end(), hi_uid, cmp_uid_hi);
+        for(;lo!=hi; ++lo) {
 
-      auto sit = side_table.find(e.getEnt());
-      if (sit != side_table.end()) {
+          if (auto ptr = lo->lock()) {
 
-        auto &side = *sit;
-        const int side_number = side->side_number;
-        if (side_number >= 0) {
-          ApproximationOrder ent_order = e.getMaxOrder();
-          auto &dat = data[side_number];
-          dat.getDataOrder() =
-              dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+            auto &e = *ptr;
+            auto sit = side_table.find(e.getEnt());
+            if (sit != side_table.end()) {
+              auto &side = *sit;
+              const int side_number = side->side_number;
+              if (side_number >= 0) {
+                ApproximationOrder ent_order = e.getMaxOrder();
+                auto &dat = data[side_number];
+                dat.getDataOrder() = dat.getDataOrder() > ent_order
+                                         ? dat.getDataOrder()
+                                         : ent_order;
+              }
+            } else
+              SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                      "Entity on side of the element not found");
+
+          }
         }
-      } else
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Entity on side of the element not found");
+      }
+
     }
+
     MoFEMFunctionReturnHot(0);
   };
 
@@ -798,17 +841,19 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
 
   if (getDataFieldEntsPtr())
     for (auto e : getDataFieldEnts()) {
-      // get data from entity
-      const EntityType type = e->getEntType();
-      const FieldSpace space = e->getSpace();
-      const FieldApproximationBase approx = e->getApproxBase();
+      if (auto ptr = e.lock()) {
+        // get data from entity
+        const EntityType type = ptr->getEntType();
+        const FieldSpace space = ptr->getSpace();
+        const FieldApproximationBase approx = ptr->getApproxBase();
 
-      // set data
-      data.sPace.set(space);
-      data.bAse.set(approx);
-      data.spacesOnEntities[type].set(space);
-      data.basesOnEntities[type].set(approx);
-      data.basesOnSpaces[space].set(approx);
+        // set data
+        data.sPace.set(space);
+        data.bAse.set(approx);
+        data.spacesOnEntities[type].set(space);
+        data.basesOnEntities[type].set(approx);
+        data.basesOnSpaces[space].set(approx);
+      }
     }
   else
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -1010,33 +1055,37 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
   };
 
   for (auto &e : getDataFieldEnts()) {
-    if (e->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
-      auto space = e->getSpace();
-      for (EntityType t = MBVERTEX; t != MBPOLYHEDRON; ++t) {
-        for (auto &dat : (*dataOnElement[space]).dataOnEntities[t]) {
-          for (auto &ptr : dat.getBBAlphaIndicesByOrderArray())
-            ptr.reset();
-          for (auto &ptr : dat.getBBNByOrderArray())
-            ptr.reset();
-          for (auto &ptr : dat.getBBDiffNByOrderArray())
-            ptr.reset();
+    if (auto ent_data_ptr = e.lock()) {
+      if (ent_data_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
+        auto space = ent_data_ptr->getSpace();
+        for (EntityType t = MBVERTEX; t != MBPOLYHEDRON; ++t) {
+          for (auto &dat : (*dataOnElement[space]).dataOnEntities[t]) {
+            for (auto &ptr : dat.getBBAlphaIndicesByOrderArray())
+              ptr.reset();
+            for (auto &ptr : dat.getBBNByOrderArray())
+              ptr.reset();
+            for (auto &ptr : dat.getBBDiffNByOrderArray())
+              ptr.reset();
+          }
         }
       }
     }
   }
 
   for (auto &e : getDataFieldEnts()) {
-    if (e->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
-      auto field_name = e->getName();
-      auto space = e->getSpace();
-      CHKERR get_nodal_base_data(*dataOnElement[space], field_name);
-      CHKERR get_entity_base_data(*dataOnElement[space], field_name, MBEDGE,
-                                  MBPOLYHEDRON);
-      CHKERR getElementPolynomialBase()->getValue(
-          gaussPts,
-          boost::make_shared<EntPolynomialBaseCtx>(
-              *dataOnElement[space], field_name, static_cast<FieldSpace>(space),
-              AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE));
+    if (auto ent_data_ptr = e.lock()) {
+      if (ent_data_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
+        auto field_name = ent_data_ptr->getName();
+        auto space = ent_data_ptr->getSpace();
+        CHKERR get_nodal_base_data(*dataOnElement[space], field_name);
+        CHKERR get_entity_base_data(*dataOnElement[space], field_name, MBEDGE,
+                                    MBPOLYHEDRON);
+        CHKERR getElementPolynomialBase()->getValue(
+            gaussPts, boost::make_shared<EntPolynomialBaseCtx>(
+                          *dataOnElement[space], field_name,
+                          static_cast<FieldSpace>(space),
+                          AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE));
+      }
     }
   }
 

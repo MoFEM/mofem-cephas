@@ -18,6 +18,9 @@
 
 namespace MoFEM {
 
+// boost::shared_ptr<FieldEntity_multiIndex_spaceType_view>
+//     EntFiniteElement::dataDofsBySpaceAndType = null;
+
 MoFEMErrorCode DefaultElementAdjacency::defaultVertex(
     moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
     Range &adjacency) {
@@ -434,13 +437,13 @@ void FiniteElement_change_bit_reset::operator()(
 // FiniteElement data
 EntFiniteElement::EntFiniteElement(
     const boost::shared_ptr<RefElement> &ref_finite_element,
-    const boost::shared_ptr<FiniteElement> &fe_ptr):
-    interface_FiniteElementImpl<FiniteElement, RefElement>(fe_ptr,
-                                                           ref_finite_element),
-    finiteElementPtr(fe_ptr), dataDofs(new FEDofEntity_multiIndex()),
-    dataFieldEnts(new FieldEntity_multiIndex_spaceType_view()),
-    rowFieldEnts(new FieldEntity_vector_view()),
-    colFieldEnts(new FieldEntity_vector_view()) {}
+    const boost::shared_ptr<FiniteElement> &fe_ptr)
+    : interface_FiniteElementImpl<FiniteElement, RefElement>(
+          fe_ptr, ref_finite_element),
+      finiteElementPtr(fe_ptr), dataDofs(new FEDofEntity_multiIndex()),
+      dataFieldEnts(new FieldEntity_vector_view()),
+      rowFieldEnts(new FieldEntity_vector_view()),
+      colFieldEnts(new FieldEntity_vector_view()) {}
 
 std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   os << *e.getFiniteElementPtr() << std::endl;

@@ -303,9 +303,9 @@ Core::get_finite_element_entities_by_handle(const std::string name,
 
 MoFEMErrorCode Core::list_finite_elements() const {
   MoFEMFunctionBegin;
-  for (auto &fe : finiteElements.get<FiniteElement_name_mi_tag>()) 
+  for (auto &fe : finiteElements.get<FiniteElement_name_mi_tag>())
     MOFEM_LOG("SYNC", Sev::inform) << fe;
-  
+
   MOFEM_LOG_SYNCHORMISE(cOmm);
   MoFEMFunctionReturn(0);
 }
@@ -515,7 +515,6 @@ template <int I> struct BuildFiniteElements {
       }
     }
   }
-
 };
 
 MoFEMErrorCode
@@ -554,18 +553,16 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
   VecOfWeakFEPtrs processed_fes;
   processed_fes.reserve(fe_ents.size());
 
+  int last_data_field_ents_view_size = 0;
   int last_row_field_ents_view_size = 0;
   int last_col_field_ents_view_size = 0;
-
-  // View of field entities on element
-  FieldEntity_vector_view data_field_ents_view;
 
   // Loop meshset finite element ents and add finite elements
   for (Range::const_pair_iterator peit = fe_ents.const_pair_begin();
        peit != fe_ents.const_pair_end(); peit++) {
 
-    EntityHandle first = peit->first;
-    EntityHandle second = peit->second;
+    const auto first = peit->first;
+    const auto second = peit->second;
 
     // Find range of ref entities that is sequence
     // note: iterator is a wrapper
@@ -592,15 +589,40 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       auto fe_raw_ptr = hint_p->get();
 
       // Allocate space for etities view
-      data_field_ents_view.clear();
-      fe_raw_ptr->getRowFieldEntsPtr()->reserve(last_row_field_ents_view_size);
-      // Create shared pointer for entities view
-      if (fe_fields[ROW] == fe_fields[COL]) {
+      bool row_as_data = false, col_as_row = false;
+      if (fe_fields[DATA] == fe_fields[ROW])
+        row_as_data = true;
+      if (fe_fields[ROW] == fe_fields[COL])
+        col_as_row = true;
+
+      fe_raw_ptr->getDataFieldEntsPtr()->reserve(
+          last_data_field_ents_view_size);
+
+      if (row_as_data) {
+        fe_raw_ptr->getRowFieldEntsPtr() = fe_raw_ptr->getDataFieldEntsPtr();
+      } else {
+        // row and col are diffent
+        if (fe_raw_ptr->getRowFieldEntsPtr() ==
+            fe_raw_ptr->getDataFieldEntsPtr())
+          fe_raw_ptr->getRowFieldEntsPtr() =
+              boost::make_shared<FieldEntity_vector_view>();
+        fe_raw_ptr->getRowFieldEntsPtr()->reserve(
+            last_row_field_ents_view_size);
+      }
+
+      if (row_as_data && col_as_row) {
+        fe_raw_ptr->getColFieldEntsPtr() = fe_raw_ptr->getDataFieldEntsPtr();
+      } else if (col_as_row) {
         fe_raw_ptr->getColFieldEntsPtr() = fe_raw_ptr->getRowFieldEntsPtr();
       } else {
-        // row and columns are diffent
-        if (fe_raw_ptr->getColFieldEntsPtr() ==
-            fe_raw_ptr->getRowFieldEntsPtr())
+        if (
+
+            fe_raw_ptr->getColFieldEntsPtr() ==
+                fe_raw_ptr->getRowFieldEntsPtr() ||
+            fe_raw_ptr->getColFieldEntsPtr() ==
+                fe_raw_ptr->getDataFieldEntsPtr()
+
+        )
           fe_raw_ptr->getColFieldEntsPtr() =
               boost::make_shared<FieldEntity_vector_view>();
         fe_raw_ptr->getColFieldEntsPtr()->reserve(
@@ -684,21 +706,16 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
               // uids because this is faster.
               const UId *uid_ptr = &(meit->get()->getLocalUniqueId());
               auto &fe_vec = ent_uid_and_fe_vec[uid_ptr];
-              // get number of dofs on entities to pre-allocate memory for
-              // element
-              const int nb_dofs_on_ent = meit->get()->getNbDofsOnEnt();
               if (add_to_data) {
-                nb_dofs_on_data += nb_dofs_on_ent;
-                data_field_ents_view.emplace_back(*meit);
+                fe_raw_ptr->getDataFieldEntsPtr()->emplace_back(*meit);
               }
-              if (add_to_row) {
+              if (add_to_row && !row_as_data) {
                 fe_raw_ptr->getRowFieldEntsPtr()->emplace_back(*meit);
               }
-              if (add_to_col) {
-                if (fe_raw_ptr->getColFieldEntsPtr() !=
-                    fe_raw_ptr->getRowFieldEntsPtr())
-                  fe_raw_ptr->getColFieldEntsPtr()->emplace_back(*meit);
+              if (add_to_col && !col_as_row) {
+                fe_raw_ptr->getColFieldEntsPtr()->emplace_back(*meit);
               }
+
               // add finite element to processed list
               fe_vec.emplace_back(*hint_p);
             }
@@ -714,20 +731,21 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
       // Sort all views
 
       // Data
-      sort(data_field_ents_view.begin(), data_field_ents_view.end(), uid_comp);
-      for (auto e : data_field_ents_view)
-        const_cast<FieldEntity_multiIndex_spaceType_view &>(
-            fe_raw_ptr->getDataFieldEnts())
-            .emplace_back(e);
+      sort(fe_raw_ptr->getDataFieldEntsPtr()->begin(),
+           fe_raw_ptr->getDataFieldEntsPtr()->end(), uid_comp);
+      last_data_field_ents_view_size =
+          fe_raw_ptr->getDataFieldEntsPtr()->size();
 
       // Row
-      sort(fe_raw_ptr->getRowFieldEntsPtr()->begin(),
-           fe_raw_ptr->getRowFieldEntsPtr()->end(), uid_comp);
-      last_row_field_ents_view_size = fe_raw_ptr->getRowFieldEntsPtr()->size();
+      if (!row_as_data) {
+        sort(fe_raw_ptr->getRowFieldEntsPtr()->begin(),
+             fe_raw_ptr->getRowFieldEntsPtr()->end(), uid_comp);
+        last_row_field_ents_view_size =
+            fe_raw_ptr->getRowFieldEntsPtr()->size();
+      }
 
       // Column
-      if (fe_raw_ptr->getColFieldEntsPtr() !=
-          fe_raw_ptr->getRowFieldEntsPtr()) {
+      if (!col_as_row) {
         sort(fe_raw_ptr->getColFieldEntsPtr()->begin(),
              fe_raw_ptr->getColFieldEntsPtr()->end(), uid_comp);
         last_col_field_ents_view_size =
@@ -736,7 +754,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
 
       // Clear finite element data structures
       const_cast<FEDofEntity_multiIndex &>(fe_raw_ptr->getDataDofs()).clear();
-
     }
   }
 
@@ -895,7 +912,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
             BYDATA);
         auto hint = entFEAdjacencies.end();
         for (auto &e : (*fit)->getDataFieldEnts()) {
-          hint = entFEAdjacencies.emplace_hint(hint, e, *fit);
+          hint = entFEAdjacencies.emplace_hint(hint, e.lock(), *fit);
           bool success = entFEAdjacencies.modify(hint, modify_data);
           if (!success)
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,

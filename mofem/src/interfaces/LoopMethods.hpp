@@ -399,11 +399,11 @@ struct FEMethod : public BasicMethod {
         ->getDataDofsPtr();
   };
 
-  inline const FieldEntity_multiIndex_spaceType_view &getDataFieldEnts() const {
+  inline const FieldEntity_vector_view &getDataFieldEnts() const {
     return numeredEntFiniteElementPtr->getDataFieldEnts();
   }
 
-  inline boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> &
+  inline boost::shared_ptr<FieldEntity_vector_view> &
   getDataFieldEntsPtr() const {
     return const_cast<NumeredEntFiniteElement *>(
                numeredEntFiniteElementPtr.get())

@@ -316,12 +316,11 @@ struct EntFiniteElement
     return dataDofs;
   };
 
-  inline const FieldEntity_multiIndex_spaceType_view &getDataFieldEnts() const {
+  inline const FieldEntity_vector_view &getDataFieldEnts() const {
     return *dataFieldEnts;
   };
 
-  inline boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> &
-  getDataFieldEntsPtr() {
+  inline boost::shared_ptr<FieldEntity_vector_view> &getDataFieldEntsPtr() {
     return dataFieldEnts;
   };
 
@@ -384,11 +383,11 @@ struct EntFiniteElement
 
 private:
   mutable boost::shared_ptr<const FiniteElement> finiteElementPtr;
-  mutable boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
-  mutable boost::shared_ptr<FieldEntity_multiIndex_spaceType_view>
-      dataFieldEnts;
+  mutable boost::shared_ptr<FieldEntity_vector_view> dataFieldEnts;
   mutable boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
   mutable boost::shared_ptr<FieldEntity_vector_view> colFieldEnts;
+
+  mutable boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
 
 };
 
@@ -411,12 +410,11 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
     return this->sPtr->getDataDofsPtr();
   }
 
-  inline const FieldEntity_multiIndex_spaceType_view &getDataFieldEnts() const {
+  inline const FieldEntity_vector_view &getDataFieldEnts() const {
     return this->sPtr->getDataFieldEnts();
   };
 
-  inline boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> &
-  getDataFieldEntsPtr() {
+  inline boost::shared_ptr<FieldEntity_vector_view> &getDataFieldEntsPtr() {
     return this->sPtr->getDataFieldEntsPtr();
   };
 
