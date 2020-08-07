@@ -346,7 +346,7 @@ struct EntFiniteElement
   template <typename FE_ENTS, typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
   inline MoFEMErrorCode
   getDofView(const FE_ENTS &fe_ents_view, const MOFEM_DOFS &mofem_dofs,
-             MOFEM_DOFS_VIEW &dofs_view, const int operation_type) {
+             MOFEM_DOFS_VIEW &dofs_view, const int operation_type) const {
     MoFEMFunctionBeginHot;
     if (operation_type == moab::Interface::UNION) {
       for (auto &it : fe_ents_view) {
@@ -384,10 +384,11 @@ struct EntFiniteElement
 
 private:
   mutable boost::shared_ptr<const FiniteElement> finiteElementPtr;
-  boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
-  boost::shared_ptr<FieldEntity_multiIndex_spaceType_view> dataFieldEnts;
-  boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
-  boost::shared_ptr<FieldEntity_vector_view> colFieldEnts;
+  mutable boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
+  mutable boost::shared_ptr<FieldEntity_multiIndex_spaceType_view>
+      dataFieldEnts;
+  mutable boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
+  mutable boost::shared_ptr<FieldEntity_vector_view> colFieldEnts;
 
 };
 
