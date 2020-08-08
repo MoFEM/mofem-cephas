@@ -678,8 +678,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                                   DataForcesAndSourcesCore &slave_data) {
                 return getNodesFieldData(
                     field_name,
-                    const_cast<FEDofEntity_multiIndex &>(
-                        numeredEntFiniteElementPtr->getDataDofs()),
+                    const_cast<FEDofEntity_multiIndex &>(getDataDofs()),
                     master_data.dataOnEntities[MBVERTEX][0].getFieldData(),
                     slave_data.dataOnEntities[MBVERTEX][0].getFieldData(),
                     master_data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
@@ -856,8 +855,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
   reset_data(master_data);
   reset_data(slave_data);
 
-  auto &dofs = const_cast<FEDofEntity_multiIndex &>(
-      numeredEntFiniteElementPtr->getDataDofs());
+  auto &dofs = const_cast<FEDofEntity_multiIndex &>(getDataDofs());
   auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
   auto bit_number = mField.get_field_bit_number(field_name);
   auto dit = dofs_by_uid.lower_bound(FieldEntity::getLocalUniqueIdCalculate(

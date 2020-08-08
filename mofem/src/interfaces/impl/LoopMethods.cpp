@@ -277,9 +277,8 @@ MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
     MoFEMFunctionReturn(0);
   };
 
-  return get_nodes_field_data(const_cast<FEDofEntity_multiIndex &>(
-                                  numeredEntFiniteElementPtr->getDataDofs()),
-                              data);
+  return get_nodes_field_data(
+      const_cast<FEDofEntity_multiIndex &>(getDataDofs()), data);
 
   MoFEMFunctionReturn(0);
 }

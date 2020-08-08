@@ -271,7 +271,7 @@ struct EntFiniteElement
 
   EntFiniteElement(const boost::shared_ptr<RefElement> &ref_finite_element,
                    const boost::shared_ptr<FiniteElement> &fe_ptr);
-  virtual ~EntFiniteElement() = default;
+  virtual ~EntFiniteElement();
 
   virtual boost::shared_ptr<const FiniteElement> &getFiniteElementPtr() const {
     return finiteElementPtr;
@@ -297,22 +297,32 @@ struct EntFiniteElement
   }
 
   /**
-   * \brief Get number of DOFs on data
-   * @return Number of dofs on data
-   */
-  inline DofIdx getNbDofsData() const { return dataDofs->size(); }
-
-  /**
    * \brief Get data data dos multi-index structure
    * @return Reference multi-index FEDofEntity_multiIndex
    */
-  inline const FEDofEntity_multiIndex &getDataDofs() const {
+  inline const FEDofEntity_multiIndex &
+  getDataDofs(const DofEntity_multiIndex &dofs_field) const {
     RefEntityTmp<0>::refElementPtr = this->getRefElement();
+    if (lastSeenEntFiniteElement != this) {
+      dataDofs = boost::make_shared<FEDofEntity_multiIndex>();
+      if (getDofView(getDataFieldEnts(), dofs_field, *dataDofs,
+                     moab::Interface::UNION))
+        THROW_MESSAGE("dataDofs can not be created");
+      lastSeenEntFiniteElement = this;
+    }
     return *dataDofs;
   };
 
-  inline boost::shared_ptr<FEDofEntity_multiIndex> &getDataDofsPtr() {
+  inline boost::shared_ptr<FEDofEntity_multiIndex> &
+  getDataDofsPtr(const DofEntity_multiIndex &dofs_field) {
     RefEntityTmp<0>::refElementPtr = this->getRefElement();
+    if (lastSeenEntFiniteElement != this) {
+      dataDofs = boost::make_shared<FEDofEntity_multiIndex>();
+      if (getDofView(getDataFieldEnts(), dofs_field, *dataDofs,
+                     moab::Interface::UNION))
+        THROW_MESSAGE("dataDofs can not be created");
+      lastSeenEntFiniteElement = this;
+    }
     return dataDofs;
   };
 
@@ -347,15 +357,22 @@ struct EntFiniteElement
   getDofView(const FE_ENTS &fe_ents_view, const MOFEM_DOFS &mofem_dofs,
              MOFEM_DOFS_VIEW &dofs_view, const int operation_type) const {
     MoFEMFunctionBeginHot;
+
     if (operation_type == moab::Interface::UNION) {
+
+      auto hint = dofs_view.begin();
+      using ValType = typename std::remove_reference<decltype(**hint)>::type;
+
       for (auto &it : fe_ents_view) {
         if (auto e = it.lock()) {
           const auto &uid = e->getLocalUniqueId();
           auto dit = mofem_dofs.lower_bound(uid);
           if (dit != mofem_dofs.end()) {
-            auto hi_dit = mofem_dofs.upper_bound(
+            const auto hi_dit = mofem_dofs.upper_bound(
                 uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
-            dofs_view.insert(dit, hi_dit);
+            for (; dit != hi_dit; ++dit)
+              hint = dofs_view.emplace_hint(
+                  hint, boost::reinterpret_pointer_cast<ValType>(*dit));
           }
         }
       }
@@ -387,8 +404,8 @@ private:
   mutable boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
   mutable boost::shared_ptr<FieldEntity_vector_view> colFieldEnts;
 
-  mutable boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
-
+  static const EntFiniteElement *lastSeenEntFiniteElement;
+  static boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
 };
 
 /**
@@ -402,12 +419,14 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
       : interface_FiniteElement<T, T>(sptr, sptr) {}
   virtual ~interface_EntFiniteElement() = default;
 
-  inline const FEDofEntity_multiIndex &getDataDofs() const {
-    return this->sPtr->getDataDofs();
+  inline const FEDofEntity_multiIndex &
+  getDataDofs(const DofEntity_multiIndex &dofs_field) const {
+    return this->sPtr->getDataDofs(dofs_field);
   }
 
-  inline boost::shared_ptr<FEDofEntity_multiIndex> &getDataDofsPtr() {
-    return this->sPtr->getDataDofsPtr();
+  inline boost::shared_ptr<FEDofEntity_multiIndex> &
+  getDataDofsPtr(const DofEntity_multiIndex &dofs_field) {
+    return this->sPtr->getDataDofsPtr(dofs_field);
   }
 
   inline const FieldEntity_vector_view &getDataFieldEnts() const {
@@ -433,12 +452,6 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
   inline boost::shared_ptr<FieldEntity_vector_view> &getColFieldEntsPtr() {
     return this->sPtr->getColFieldEntsPtr();
   };
-
-  /**
-   * \brief Get number of DOFs on data
-   * @return Number of dofs on data
-   */
-  inline DofIdx getNbDofsData() const { return this->sPtr->getNbDofsData(); }
 
   /**
    * \brief Get unique UId for finite element entity

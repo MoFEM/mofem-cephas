@@ -619,8 +619,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
     }
   }
 
-  auto &dofs = const_cast<FEDofEntity_multiIndex &>(
-      numeredEntFiniteElementPtr->getDataDofs());
+  auto &dofs = const_cast<FEDofEntity_multiIndex &>(getDataDofs());
   auto bit_number = mField.get_field_bit_number(field_name);
   auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
   auto dit = dofs_by_uid.lower_bound(
@@ -719,9 +718,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
   CHKERR getNoFieldFieldData(
-      field_name,
-      const_cast<FEDofEntity_multiIndex &>(
-          numeredEntFiniteElementPtr->getDataDofs()),
+      field_name, const_cast<FEDofEntity_multiIndex &>(getDataDofs()),
       data.dataOnEntities[MBENTITYSET][0].getFieldData(),
       data.dataOnEntities[MBENTITYSET][0].getFieldDofs());
   MoFEMFunctionReturn(0);
@@ -1003,8 +1000,7 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
       }
     }
 
-    auto &dofs = const_cast<FEDofEntity_multiIndex &>(
-        numeredEntFiniteElementPtr->getDataDofs());
+    auto &dofs = const_cast<FEDofEntity_multiIndex &>(getDataDofs());
     auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
     auto bit_number = mField.get_field_bit_number(field_name);
     auto dit = dofs_by_uid.lower_bound(DofEntity::getLoFieldEntityUId(

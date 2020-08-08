@@ -390,13 +390,13 @@ struct FEMethod : public BasicMethod {
                                   ///< structure
 
   inline const FEDofEntity_multiIndex &getDataDofs() const {
-    return numeredEntFiniteElementPtr->getDataDofs();
+    return numeredEntFiniteElementPtr->getDataDofs(*dofsPtr);
   };
 
   inline boost::shared_ptr<FEDofEntity_multiIndex> &getDataDofsPtr() const {
     return const_cast<NumeredEntFiniteElement *>(
                numeredEntFiniteElementPtr.get())
-        ->getDataDofsPtr();
+        ->getDataDofsPtr(*dofsPtr);
   };
 
   inline const FieldEntity_vector_view &getDataFieldEnts() const {

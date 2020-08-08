@@ -499,24 +499,6 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_MESHSET(
   MoFEMFunctionReturn(0);
 }
 
-template <int I> struct BuildFiniteElements {
-
-  template <typename T1, typename T2>
-  static inline void addToData(T1 &dit, T1 &hi_dit, T2 &fe_vec) {
-    static_assert(I == DATA, "I should be set to DATA");
-    for (auto fe_it : fe_vec) {
-      if (auto fe_ptr = fe_it.lock()) {
-        auto &data_dofs =
-            const_cast<FEDofEntity_multiIndex &>(fe_ptr->getDataDofs());
-        auto hint = data_dofs.end();
-        for (auto dit_insert = dit; dit_insert != hi_dit; ++dit_insert)
-          hint = data_dofs.emplace_hint(
-              hint, boost::reinterpret_pointer_cast<FEDofEntity>(*dit_insert));
-      }
-    }
-  }
-};
-
 MoFEMErrorCode
 Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
                           const Range *ents_ptr, int verb) {
@@ -752,28 +734,10 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
             fe_raw_ptr->getColFieldEntsPtr()->size();
       }
 
-      // Clear finite element data structures
-      const_cast<FEDofEntity_multiIndex &>(fe_raw_ptr->getDataDofs()).clear();
     }
   }
 
   auto &dofs_by_ent_uid = dofsField.get<Unique_mi_tag>();
-
-  // Loop over hash map, which has all entities on given elemnts
-  boost::shared_ptr<SideNumber> side_number_ptr;
-  for (auto &mit : ent_uid_and_fe_vec) {
-    auto dit = dofs_by_ent_uid.lower_bound(
-        FieldEntity::getLoFieldEntityUId(*mit.first));
-    if (dit != dofs_by_ent_uid.end()) {
-      auto hi_dit = dofs_by_ent_uid.upper_bound(
-          FieldEntity::getHiFieldEntityUId(*mit.first));
-      if (std::distance(dit, hi_dit)) {
-        const BitFieldId field_id = (*dit)->getId();
-        if ((field_id & fe_fields[DATA]).any())
-          BuildFiniteElements<DATA>::addToData(dit, hi_dit, mit.second);
-      }
-    }
-  }
 
   MoFEMFunctionReturn(0);
 }

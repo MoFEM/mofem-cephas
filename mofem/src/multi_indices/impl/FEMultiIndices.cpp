@@ -18,8 +18,8 @@
 
 namespace MoFEM {
 
-// boost::shared_ptr<FieldEntity_multiIndex_spaceType_view>
-//     EntFiniteElement::dataDofsBySpaceAndType = null;
+const EntFiniteElement *EntFiniteElement::lastSeenEntFiniteElement = nullptr;
+boost::shared_ptr<FEDofEntity_multiIndex> EntFiniteElement::dataDofs;
 
 MoFEMErrorCode DefaultElementAdjacency::defaultVertex(
     moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
@@ -440,26 +440,18 @@ EntFiniteElement::EntFiniteElement(
     const boost::shared_ptr<FiniteElement> &fe_ptr)
     : interface_FiniteElementImpl<FiniteElement, RefElement>(
           fe_ptr, ref_finite_element),
-      finiteElementPtr(fe_ptr), dataDofs(new FEDofEntity_multiIndex()),
-      dataFieldEnts(new FieldEntity_vector_view()),
+      finiteElementPtr(fe_ptr), dataFieldEnts(new FieldEntity_vector_view()),
       rowFieldEnts(new FieldEntity_vector_view()),
       colFieldEnts(new FieldEntity_vector_view()) {}
+
+EntFiniteElement::~EntFiniteElement() {
+  dataDofs.reset();
+  lastSeenEntFiniteElement = nullptr;
+}
 
 std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   os << *e.getFiniteElementPtr() << std::endl;
   os << *e.sPtr << std::endl;
-  os << "data dof_uids ";
-  for (auto &dit : *e.dataDofs) {
-    if (!dit) {
-      os << "null ptr";
-    } else {
-      if (!dit->getFieldEntityPtr()) {
-        os << "(( null ptr to field entity )) ";
-      } else {
-        os << dit->getLocalUniqueId() << " ";
-      }
-    }
-  }
   return os;
 }
 
