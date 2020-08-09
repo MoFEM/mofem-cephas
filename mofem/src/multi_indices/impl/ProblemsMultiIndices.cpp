@@ -20,8 +20,8 @@ namespace MoFEM {
 
 // moab problem
 Problem::Problem(moab::Interface &moab, const EntityHandle meshset)
-    : meshset(meshset), numeredDofsRows(new NumeredDofEntity_multiIndex()),
-      numeredDofsCols(new NumeredDofEntity_multiIndex()),
+    : meshset(meshset), numeredRowDofs(new NumeredDofEntity_multiIndex()),
+      numeredColDofs(new NumeredDofEntity_multiIndex()),
       numeredFiniteElements(new NumeredEntFiniteElement_multiIndex()),
       sequenceRowDofContainer(new SequenceDofContainer()),
       sequenceColDofContainer(new SequenceDofContainer()) {
@@ -72,8 +72,8 @@ Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx) const {
   MoFEMFunctionBeginHot;
   boost::weak_ptr<NumeredDofEntity> dof_weak_ptr;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
-  dit = numeredDofsRows->get<PetscGlobalIdx_mi_tag>().find(idx);
-  if (dit != numeredDofsRows->get<PetscGlobalIdx_mi_tag>().end())
+  dit = numeredRowDofs->get<PetscGlobalIdx_mi_tag>().find(idx);
+  if (dit != numeredRowDofs->get<PetscGlobalIdx_mi_tag>().end())
     dof_weak_ptr = *dit;
   return dof_weak_ptr;
 }
@@ -83,8 +83,8 @@ Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx) const {
   MoFEMFunctionBeginHot;
   boost::weak_ptr<NumeredDofEntity> dof_weak_ptr;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
-  dit = numeredDofsCols->get<PetscGlobalIdx_mi_tag>().find(idx);
-  if (dit != numeredDofsCols->get<PetscGlobalIdx_mi_tag>().end())
+  dit = numeredColDofs->get<PetscGlobalIdx_mi_tag>().find(idx);
+  if (dit != numeredColDofs->get<PetscGlobalIdx_mi_tag>().end())
     dof_weak_ptr = *dit;
   return dof_weak_ptr;
 }
@@ -157,21 +157,21 @@ MoFEMErrorCode Problem::getDofByNameEntAndEntDofIdx(
     const RowColData row_or_col,
     boost::shared_ptr<NumeredDofEntity> &dof_ptr) const {
   MoFEMFunctionBegin;
-  decltype(numeredDofsRows) numered_dofs;
+  decltype(numeredRowDofs) numered_dofs;
   switch (row_or_col) {
   case ROW:
-    if (!numeredDofsRows) {
+    if (!numeredRowDofs) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
               "Row numbered index in problem not allocated");
     }
-    numered_dofs = numeredDofsRows;
+    numered_dofs = numeredRowDofs;
     break;
   case COL:
-    if (!numeredDofsCols) {
+    if (!numeredColDofs) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
               "Col numbered index in problem not allocated");
     }
-    numered_dofs = numeredDofsCols;
+    numered_dofs = numeredColDofs;
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
@@ -200,13 +200,13 @@ void ProblemZeroNbRowsChange::operator()(Problem &e) {
   e.nbDofsRow = 0;
   e.nbLocDofsRow = 0;
   e.nbGhostDofsRow = 0;
-  e.numeredDofsRows->clear();
+  e.numeredRowDofs->clear();
 }
 void ProblemZeroNbColsChange::operator()(Problem &e) {
   e.nbDofsCol = 0;
   e.nbLocDofsCol = 0;
   e.nbGhostDofsCol = 0;
-  e.numeredDofsCols->clear();
+  e.numeredColDofs->clear();
 }
 void ProblemClearNumeredFiniteElementsChange::operator()(Problem &e) {
   e.numeredFiniteElements->clear();

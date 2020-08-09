@@ -167,13 +167,13 @@ MoFEMErrorCode SeriesRecorder::record_problem(const std::string &serie_name,
   switch (rc) {
   case ROW:
     CHKERR const_cast<FieldSeries *>(&*sit)->push_dofs(
-        problemPtr->numeredDofsRows->begin(),
-        problemPtr->numeredDofsRows->end());
+        problemPtr->numeredRowDofs->begin(),
+        problemPtr->numeredRowDofs->end());
     break;
   case COL:
     CHKERR const_cast<FieldSeries *>(&*sit)->push_dofs(
-        problemPtr->numeredDofsCols->begin(),
-        problemPtr->numeredDofsCols->end());
+        problemPtr->numeredColDofs->begin(),
+        problemPtr->numeredColDofs->end());
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");

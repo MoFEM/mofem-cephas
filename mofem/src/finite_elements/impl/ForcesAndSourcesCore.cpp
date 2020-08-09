@@ -483,7 +483,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemTypeIndices(
 
 MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesRowIndices(
     const std::string &field_name, VectorInt &nodes_indices) const {
-  return getProblemNodesIndices(field_name, *(problemPtr->numeredDofsRows),
+  return getProblemNodesIndices(field_name, *(problemPtr->numeredRowDofs),
                                 nodes_indices);
 }
 
@@ -491,13 +491,13 @@ MoFEMErrorCode
 ForcesAndSourcesCore::getProblemTypeRowIndices(const std::string &field_name,
                                                EntityType type, int side_number,
                                                VectorInt &indices) const {
-  return getProblemTypeIndices(field_name, *(problemPtr->numeredDofsRows), type,
+  return getProblemTypeIndices(field_name, *(problemPtr->numeredRowDofs), type,
                                side_number, indices);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesColIndices(
     const std::string &field_name, VectorInt &nodes_indices) const {
-  return getProblemNodesIndices(field_name, *(problemPtr->numeredDofsCols),
+  return getProblemNodesIndices(field_name, *(problemPtr->numeredColDofs),
                                 nodes_indices);
 }
 
@@ -505,7 +505,7 @@ MoFEMErrorCode
 ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,
                                                EntityType type, int side_number,
                                                VectorInt &indices) const {
-  return getProblemTypeIndices(field_name, *(problemPtr->numeredDofsCols), type,
+  return getProblemTypeIndices(field_name, *(problemPtr->numeredColDofs), type,
                                side_number, indices);
 }
 

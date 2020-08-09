@@ -517,10 +517,10 @@ MoFEMErrorCode Core::loop_dofs(const Problem *problem_ptr,
   NumeredDofsByUId *dofs;
   switch (rc) {
   case ROW:
-    dofs = &problem_ptr->numeredDofsRows->get<Unique_mi_tag>();
+    dofs = &problem_ptr->numeredRowDofs->get<Unique_mi_tag>();
     break;
   case COL:
-    dofs = &problem_ptr->numeredDofsCols->get<Unique_mi_tag>();
+    dofs = &problem_ptr->numeredColDofs->get<Unique_mi_tag>();
     break;
   default:
     SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Not implemented");
@@ -621,13 +621,13 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
   MoFEMFunctionBegin;
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
-  decltype(problem_ptr->numeredDofsRows) dofs;
+  decltype(problem_ptr->numeredRowDofs) dofs;
   switch (rc) {
   case ROW:
-    dofs = problem_ptr->numeredDofsRows;
+    dofs = problem_ptr->numeredRowDofs;
     break;
   case COL:
-    dofs = problem_ptr->numeredDofsCols;
+    dofs = problem_ptr->numeredColDofs;
     break;
   default:
     SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY,

@@ -136,7 +136,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
   // check if dofs and columns are the same, i.e. structurally symmetric problem
   bool do_cols_prob;
-  if (p_miit->numeredDofsRows == p_miit->numeredDofsCols)
+  if (p_miit->numeredRowDofs == p_miit->numeredColDofs)
     do_cols_prob = false;
   else
     do_cols_prob = true;
@@ -187,7 +187,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
         if (verb >= NOISY) {
           MOFEM_LOG("SYNC", Sev::noisy)
-              << "rank " << rAnk << ":  numeredDofsCols" << std::endl;
+              << "rank " << rAnk << ":  numeredColDofs" << std::endl;
           for (auto &dof_ptr :
                fe_ptr->getColDofs(*(p_miit->getNumeredColDofs())))
             MOFEM_LOG("SYNC", Sev::noisy) << *dof_ptr;
@@ -219,7 +219,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
   // Get multi-indices for rows and columns
   const NumeredDofEntitysByIdx &dofs_row_by_idx =
-      p_miit->numeredDofsRows->get<TAG>();
+      p_miit->numeredRowDofs->get<TAG>();
   int nb_dofs_row = p_miit->getNbDofsRow();
   if (nb_dofs_row == 0) {
     SETERRQ1(cOmm, MOFEM_DATA_INCONSISTENCY, "problem <%s> has zero rows",
@@ -408,10 +408,10 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
         if (debug) {
 
           DofByGlobalPetscIndex::iterator dit;
-          dit = p_miit->numeredDofsRows->get<PetscGlobalIdx_mi_tag>().find(
+          dit = p_miit->numeredRowDofs->get<PetscGlobalIdx_mi_tag>().find(
               row_idx);
           if (dit ==
-              p_miit->numeredDofsRows->get<PetscGlobalIdx_mi_tag>().end()) {
+              p_miit->numeredRowDofs->get<PetscGlobalIdx_mi_tag>().end()) {
             SETERRQ1(cOmm, MOFEM_DATA_INCONSISTENCY,
                      "dof %d can not be found in problem", row_idx);
           }

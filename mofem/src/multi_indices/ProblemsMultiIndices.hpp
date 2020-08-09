@@ -95,24 +95,24 @@ struct Problem {
   mutable DofIdx nbGhostDofsCol; ///< Number of ghost DOFs in col
 
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex>
-      numeredDofsRows; ///< store DOFs on rows for this problem
+      numeredRowDofs; ///< store DOFs on rows for this problem
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex>
-      numeredDofsCols; ///< store DOFs on columns for this problem
+      numeredColDofs; ///< store DOFs on columns for this problem
   mutable boost::shared_ptr<NumeredEntFiniteElement_multiIndex>
       numeredFiniteElements; ///< store finite elements
 
   /**
-   * \brief get access to numeredDofsRows storing DOFs on rows
+   * \brief get access to numeredRowDofs storing DOFs on rows
    */
   boost::shared_ptr<NumeredDofEntity_multiIndex> &getNumeredRowDofs() const {
-    return numeredDofsRows;
+    return numeredRowDofs;
   }
 
   /**
-   * \brief get access to numeredDofsCols storing DOFs on cols
+   * \brief get access to numeredColDofs storing DOFs on cols
    */
   boost::shared_ptr<NumeredDofEntity_multiIndex> &getNumeredColDofs() const {
-    return numeredDofsCols;
+    return numeredColDofs;
   }
 
   /**
@@ -304,28 +304,28 @@ struct Problem {
   IT != PROBLEMPTR->getNumeredColDofsEnd();                                   \
   IT++
 
-  /// get begin iterator for numeredDofsRows (insted you can use
+  /// get begin iterator for numeredRowDofs (insted you can use
   /// #_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_ for loops)
   NumeredDofEntity_multiIndex::iterator getNumeredRowDofsBegin() const {
-    return numeredDofsRows->begin();
+    return numeredRowDofs->begin();
   }
 
-  /// get end iterator for numeredDofsRows (insted you can use
+  /// get end iterator for numeredRowDofs (insted you can use
   /// #_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_ for loops)
   NumeredDofEntity_multiIndex::iterator getNumeredRowDofsEnd() const {
-    return numeredDofsRows->end();
+    return numeredRowDofs->end();
   }
 
-  /// get begin iterator for numeredDofsCols (insted you can use
+  /// get begin iterator for numeredColDofs (insted you can use
   /// #_IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_ for loops)
   NumeredDofEntity_multiIndex::iterator getNumeredColDofsBegin() const {
-    return numeredDofsCols->begin();
+    return numeredColDofs->begin();
   }
 
-  /// get end iterator for numeredDofsCols (insted you can use
+  /// get end iterator for numeredColDofs (insted you can use
   /// #_IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_ for loops)
   NumeredDofEntity_multiIndex::iterator getNumeredColDofsEnd() const {
-    return numeredDofsCols->end();
+    return numeredColDofs->end();
   }
 
 /**
@@ -363,32 +363,32 @@ struct Problem {
             PROBLEMPTR->getNbLocalDofsRow() - 1);                              \
   IT++
 
-  /// get begin iterator for numeredDofsRows (insted you can use
+  /// get begin iterator for numeredRowDofs (insted you can use
   /// #_IT_NUMEREDDOF_ROW_FOR_LOOP_ for loops)
   NumeredDofEntityByLocalIdx::iterator
   getNumeredRowDofsByLocIdxBegin(const DofIdx locidx) const {
-    return numeredDofsRows->get<PetscLocalIdx_mi_tag>().lower_bound(locidx);
+    return numeredRowDofs->get<PetscLocalIdx_mi_tag>().lower_bound(locidx);
   }
 
-  /// get end iterator for numeredDofsRows (insted you can use
+  /// get end iterator for numeredRowDofs (insted you can use
   /// #_IT_NUMEREDDOF_ROW_FOR_LOOP_ for loops)
   NumeredDofEntityByLocalIdx::iterator
   getNumeredRowDofsByLocIdxEnd(const DofIdx locidx) const {
-    return numeredDofsRows->get<PetscLocalIdx_mi_tag>().upper_bound(locidx);
+    return numeredRowDofs->get<PetscLocalIdx_mi_tag>().upper_bound(locidx);
   }
 
-  /// get begin iterator for numeredDofsCols (insted you can use
+  /// get begin iterator for numeredColDofs (insted you can use
   /// #_IT_NUMEREDDOF_COL_FOR_LOOP_ for loops)
   NumeredDofEntityByLocalIdx::iterator
   getNumeredColDofsByLocIdxBegin(const DofIdx locidx) const {
-    return numeredDofsCols->get<PetscLocalIdx_mi_tag>().lower_bound(locidx);
+    return numeredColDofs->get<PetscLocalIdx_mi_tag>().lower_bound(locidx);
   }
 
-  /// get end iterator for numeredDofsCols (insted you can use
+  /// get end iterator for numeredColDofs (insted you can use
   /// #_IT_NUMEREDDOF_COL_FOR_LOOP_ for loops)
   NumeredDofEntityByLocalIdx::iterator
   getNumeredColDofsByLocIdxEnd(const DofIdx locidx) const {
-    return numeredDofsCols->get<PetscLocalIdx_mi_tag>().upper_bound(locidx);
+    return numeredColDofs->get<PetscLocalIdx_mi_tag>().upper_bound(locidx);
   }
 
 /**
@@ -425,32 +425,32 @@ struct Problem {
   IT != PROBLEMPTR->getNumeredColDofsByEntEnd(ENT);                           \
   IT++
 
-  /// get begin iterator for numeredDofsRows (insted you can use
+  /// get begin iterator for numeredRowDofs (insted you can use
   /// #_IT_NUMEREDDOF_ROW_BY_ENT_FOR_LOOP_ for loops)
   NumeredDofEntityByEnt::iterator
   getNumeredRowDofsByEntBegin(const EntityHandle ent) const {
-    return numeredDofsRows->get<Ent_mi_tag>().lower_bound(ent);
+    return numeredRowDofs->get<Ent_mi_tag>().lower_bound(ent);
   }
 
-  /// get end iterator for numeredDofsRows (insted you can use
+  /// get end iterator for numeredRowDofs (insted you can use
   /// #_IT_NUMEREDDOF_ROW_BY_ENT_FOR_LOOP_ for loops)
   NumeredDofEntityByEnt::iterator
   getNumeredRowDofsByEntEnd(const EntityHandle ent) const {
-    return numeredDofsRows->get<Ent_mi_tag>().upper_bound(ent);
+    return numeredRowDofs->get<Ent_mi_tag>().upper_bound(ent);
   }
 
-  /// get begin iterator for numeredDofsCols (insted you can use
+  /// get begin iterator for numeredColDofs (insted you can use
   /// #_IT_NUMEREDDOF_COL_BY_ENT_FOR_LOOP_ for loops)
   NumeredDofEntityByEnt::iterator
   getNumeredColDofsByEntBegin(const EntityHandle ent) const {
-    return numeredDofsCols->get<Ent_mi_tag>().lower_bound(ent);
+    return numeredColDofs->get<Ent_mi_tag>().lower_bound(ent);
   }
 
-  /// get end iterator for numeredDofsCols (insted you can use
+  /// get end iterator for numeredColDofs (insted you can use
   /// #_IT_NUMEREDDOF_COL_BY_ENT_FOR_LOOP_ for loops)
   NumeredDofEntityByEnt::iterator
   getNumeredColDofsByEntEnd(const EntityHandle ent) const {
-    return numeredDofsCols->get<Ent_mi_tag>().upper_bound(ent);
+    return numeredColDofs->get<Ent_mi_tag>().upper_bound(ent);
   }
 
 /**
@@ -467,9 +467,9 @@ struct Problem {
  */
 #define _IT_NUMEREDDOF_ROW_BY_BITNUMBER_FOR_LOOP_(PROBLEMPTR,                  \
                                                   FIELD_BIT_NUMBER, IT)        \
-  auto IT = PROBLEMPTR->numeredDofsRows->lower_bound(                          \
+  auto IT = PROBLEMPTR->numeredRowDofs->lower_bound(                          \
       FieldEntity::getLoBitNumberUId(FIELD_BIT_NUMBER));                       \
-  IT != PROBLEMPTR->numeredDofsRows->upper_bound(                              \
+  IT != PROBLEMPTR->numeredRowDofs->upper_bound(                              \
             FieldEntity::getHiBitNumberUId(FIELD_BIT_NUMBER));                 \
   IT++
 
@@ -487,9 +487,9 @@ struct Problem {
  */
 #define _IT_NUMEREDDOF_COL_BY_BITNUMBER_FOR_LOOP_(PROBLEMPTR,                  \
                                                   FIELD_BIT_NUMBER, IT)        \
-  auto IT = PROBLEMPTR->numeredDofsCols->lower_bound(                          \
+  auto IT = PROBLEMPTR->numeredColDofs->lower_bound(                          \
       FieldEntity::getLoBitNumberUId(FIELD_BIT_NUMBER));                       \
-  IT != PROBLEMPTR->numeredDofsCols->upper_bound(                              \
+  IT != PROBLEMPTR->numeredColDofs->upper_bound(                              \
             FieldEntity::getHiBitNumberUId(FIELD_BIT_NUMBER));                 \
   IT++
 
