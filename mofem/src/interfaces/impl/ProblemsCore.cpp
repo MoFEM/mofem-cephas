@@ -452,11 +452,20 @@ MoFEMErrorCode Core::loop_finite_elements(
     PetscLogEventBegin(MOFEM_EVENT_operator, 0, 0, 0, 0);
     CHKERR method();
     PetscLogEventEnd(MOFEM_EVENT_operator, 0, 0, 0, 0);
+
+    EntFiniteElement::getDataDofsClear();
+    NumeredEntFiniteElement::getRowDofsClear();
+    NumeredEntFiniteElement::getColDofsClear();
+
   }
 
   PetscLogEventBegin(MOFEM_EVENT_postProcess, 0, 0, 0, 0);
   CHKERR method.postProcess();
   PetscLogEventEnd(MOFEM_EVENT_postProcess, 0, 0, 0, 0);
+
+  EntFiniteElement::getDataDofsReset();
+  NumeredEntFiniteElement::getRowDofsReset();
+  NumeredEntFiniteElement::getColDofsReset();
 
   MoFEMFunctionReturn(0);
 }

@@ -115,27 +115,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
   }
   fe_ptr = *fe_it;
 
-  if (fe_ptr) {
-
-    // Build DOFs on columns
-    if (fe_ptr->getColDofsPtr(*(p_miit->getNumeredColDofs()))->empty()) {
-
-      // Get dofs on columns
-      NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
-      CHKERR fe_ptr->getEntFiniteElement()->getColDofView(
-          *(p_miit->getNumeredColDofs()), cols_view, moab::Interface::UNION);
-
-      // Finally add DoFS to multi-indices
-      auto hint = fe_ptr->getColDofsPtr(*(p_miit->getNumeredColDofs()))->end();
-      for (auto &dof_ptr : cols_view)
-        hint =
-            fe_ptr->getColDofsPtr(*(p_miit->getNumeredColDofs()))
-                ->emplace_hint(
-                    hint, boost::reinterpret_pointer_cast<FENumeredDofEntity>(
-                              dof_ptr));
-    }
-
-  } else
+  if (!fe_ptr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "At that point ptr to finite element should be well known");
 
@@ -189,12 +169,10 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
       CHKERR buildFECol(p_miit, r.first->entFePtr, do_cols_prob, fe_ptr);
 
       if (fe_ptr) {
-        for (FENumeredDofEntity_multiIndex::iterator vit =
-                 fe_ptr.get()
-                     ->getColDofsPtr(*(p_miit->getNumeredColDofs()))
-                     ->begin();
+        for (auto vit =
+                 fe_ptr->getColDofsPtr(*(p_miit->getNumeredColDofs()))->begin();
              vit !=
-             fe_ptr.get()->getColDofsPtr(*(p_miit->getNumeredColDofs()))->end();
+             fe_ptr->getColDofsPtr(*(p_miit->getNumeredColDofs()))->end();
              vit++) {
           const int idx = TAG::get_index(vit);
           if (idx >= 0)
@@ -206,21 +184,16 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
             SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, zz.str().c_str());
           }
         }
+
         if (verb >= NOISY) {
-          std::stringstream ss;
-          ss << "rank " << rAnk << ":  numeredDofsCols" << std::endl;
-          FENumeredDofEntity_multiIndex::iterator dit, hi_dit;
-          dit = fe_ptr.get()
-                    ->getColDofsPtr(*(p_miit->getNumeredColDofs()))
-                    ->begin();
-          hi_dit = fe_ptr.get()
-                       ->getColDofsPtr(*(p_miit->getNumeredColDofs()))
-                       ->end();
-          for (; dit != hi_dit; dit++) {
-            ss << "\t" << **dit << std::endl;
-          }
-          PetscSynchronizedPrintf(cOmm, "%s", ss.str().c_str());
+          MOFEM_LOG("SYNC", Sev::noisy)
+              << "rank " << rAnk << ":  numeredDofsCols" << std::endl;
+          for (auto &dof_ptr :
+               fe_ptr->getColDofs(*(p_miit->getNumeredColDofs())))
+            MOFEM_LOG("SYNC", Sev::noisy) << *dof_ptr;
+          MOFEM_LOG_SYNCHORMISE(cOmm)
         }
+
       } else
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Element should be here, otherwise matrix will have missing "
@@ -767,8 +740,7 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
                 "data inconsistency");
       }
 
-      for (FENumeredDofEntity_multiIndex::iterator cit = getColDofs().begin();
-           cit != getColDofs().end(); cit++) {
+      for (auto cit = getColDofs().begin(); cit != getColDofs().end(); cit++) {
 
         if (refinedEntitiesPtr->find((*cit)->getEnt()) ==
             refinedEntitiesPtr->end()) {
@@ -818,8 +790,7 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         }
       }
 
-      FENumeredDofEntity_multiIndex::iterator rit = getRowDofs().begin();
-      for (; rit != getRowDofs().end(); rit++) {
+      for (auto rit = getRowDofs().begin(); rit != getRowDofs().end(); rit++) {
 
         if (refinedEntitiesPtr->find((*rit)->getEnt()) ==
             refinedEntitiesPtr->end()) {
@@ -862,8 +833,8 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         }
         int row = (*rit)->getPetscGlobalDofIdx();
 
-        FENumeredDofEntity_multiIndex::iterator cit = getColDofs().begin();
-        for (; cit != getColDofs().end(); cit++) {
+        for (auto cit = getColDofs().begin(); cit != getColDofs().end();
+             cit++) {
 
           int col = (*cit)->getPetscGlobalDofIdx();
 

@@ -2432,16 +2432,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
   for (auto &fe : *numbered_good_elems_ptr) {
 
     NumeredDofEntity_multiIndex_uid_view_ordered rows_view;
-    NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
-
-    // Count partition of the dofs in row, the larges dofs with given
-    // partition is used to set partition of the element
     CHKERR fe.sPtr->getRowDofView(*(p_miit->numeredDofsRows), rows_view,
                                   moab::Interface::UNION);
-    if (fe.getColDofsPtr(*(p_miit->getNumeredColDofs())) !=
-        fe.getRowDofsPtr(*(p_miit->getNumeredRowDofs())))
-      CHKERR fe.sPtr->getColDofView(*(p_miit->numeredDofsCols), cols_view,
-                                    moab::Interface::UNION);
 
     if (!part_from_moab) {
       std::vector<int> parts(m_field.get_comm_size(), 0);
@@ -2452,31 +2444,6 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       fe.part = max_part;
     }
 
-    // set dofs on rows and columns (if are different)
-    if ((fe.getPart() >= (unsigned int)low_proc) &&
-        (fe.getPart() <= (unsigned int)hi_proc)) {
-
-      std::array<NumeredDofEntity_multiIndex_uid_view_ordered *, 2> dofs_view{
-          &rows_view, &cols_view};
-      std::array<FENumeredDofEntity_multiIndex *, 2> fe_dofs{
-          fe.getRowDofsPtr(*(p_miit->getNumeredRowDofs())).get(),
-          fe.getColDofsPtr(*(p_miit->getNumeredColDofs())).get()};
-
-      for (int ss = 0;
-           ss != ((fe.getColDofsPtr(*(p_miit->getNumeredColDofs())) !=
-                   fe.getRowDofsPtr(*(p_miit->getNumeredRowDofs())))
-                      ? 2
-                      : 1);
-           ss++) {
-
-        // finally add DoFS to multi-indices
-        auto hint = fe_dofs[ss]->end();
-        for (auto &dof_ptr : *dofs_view[ss])
-          hint = fe_dofs[ss]->emplace_hint(
-              hint,
-              boost::reinterpret_pointer_cast<FENumeredDofEntity>(dof_ptr));
-      }
-    }
   }
 
   for (auto &fe : *numbered_good_elems_ptr) {

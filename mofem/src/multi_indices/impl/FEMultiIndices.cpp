@@ -470,16 +470,35 @@ EntFiniteElement::getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
   MoFEMFunctionReturn(0);
 }
 
+const NumeredDofEntity_multiIndex
+    *NumeredEntFiniteElement::lastSeenNumeredRows = nullptr;
+const NumeredEntFiniteElement
+    *NumeredEntFiniteElement::lastSeenRowFiniteElement = nullptr;
+boost::shared_ptr<FENumeredDofEntity_multiIndex>
+    NumeredEntFiniteElement::rowDofs; ///< indexed dofs on rows
+
+const NumeredDofEntity_multiIndex
+    *NumeredEntFiniteElement::lastSeenNumeredCols = nullptr;
+const NumeredEntFiniteElement
+    *NumeredEntFiniteElement::lastSeenColFiniteElement = nullptr;
+boost::shared_ptr<FENumeredDofEntity_multiIndex>
+    NumeredEntFiniteElement::colDofs; ///< indexed dofs on columns
+
 /**
  * \Construct indexed finite element
  */
 NumeredEntFiniteElement::NumeredEntFiniteElement(
     const boost::shared_ptr<EntFiniteElement> &sptr)
-    : interface_EntFiniteElement<EntFiniteElement>(sptr), part(-1),
-      rowDofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(
-          new FENumeredDofEntity_multiIndex())),
-      colDofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(
-          new FENumeredDofEntity_multiIndex())){};
+    : interface_EntFiniteElement<EntFiniteElement>(sptr), part(-1){};
+
+NumeredEntFiniteElement::~NumeredEntFiniteElement() {
+  lastSeenRowFiniteElement = nullptr;
+  lastSeenNumeredRows = nullptr;
+  rowDofs.reset();
+  lastSeenColFiniteElement = nullptr;
+  lastSeenNumeredCols = nullptr;
+  colDofs.reset();
+}
 
 boost::weak_ptr<FENumeredDofEntity>
 NumeredEntFiniteElement::getRowDofsByPetscGlobalDofIdx(const int idx) const {

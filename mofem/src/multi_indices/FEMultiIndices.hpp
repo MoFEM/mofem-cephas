@@ -309,7 +309,10 @@ struct EntFiniteElement
   getDataDofsPtr(const DofEntity_multiIndex &dofs_field) const {
     RefEntityTmp<0>::refElementPtr = this->getRefElement();
     if (lastSeenDataEntFiniteElement != this) {
-      dataDofs = boost::make_shared<FEDofEntity_multiIndex>();
+      if (dataDofs)
+        dataDofs->clear();
+      else
+        dataDofs = boost::make_shared<FEDofEntity_multiIndex>();
       if (getDofView(getDataFieldEnts(), dofs_field, *dataDofs,
                      moab::Interface::UNION))
         THROW_MESSAGE("dataDofs can not be created");
@@ -317,6 +320,7 @@ struct EntFiniteElement
     }
     return dataDofs;
   };
+
 
   inline const FieldEntity_vector_view &getDataFieldEnts() const {
     return *dataFieldEnts;
@@ -330,7 +334,8 @@ struct EntFiniteElement
     return *rowFieldEnts;
   };
 
-  inline boost::shared_ptr<FieldEntity_vector_view> &getRowFieldEntsPtr() {
+  inline boost::shared_ptr<FieldEntity_vector_view> &
+  getRowFieldEntsPtr() const {
     return rowFieldEnts;
   };
 
@@ -338,7 +343,8 @@ struct EntFiniteElement
     return *colFieldEnts;
   };
 
-  inline boost::shared_ptr<FieldEntity_vector_view> &getColFieldEntsPtr() {
+  inline boost::shared_ptr<FieldEntity_vector_view> &
+  getColFieldEntsPtr() const {
     return colFieldEnts;
   };
 
@@ -390,6 +396,17 @@ struct EntFiniteElement
   MoFEMErrorCode getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
                                      Range &adjacency);
 
+  inline static void getDataDofsClear() {
+    lastSeenDataEntFiniteElement = nullptr;
+    if (dataDofs)
+      dataDofs->clear();
+  }
+
+  inline static void getDataDofsReset() {
+    lastSeenDataEntFiniteElement = nullptr;
+    dataDofs.reset();
+  }
+
 private:
   mutable boost::shared_ptr<const FiniteElement> finiteElementPtr;
   mutable boost::shared_ptr<FieldEntity_vector_view> dataFieldEnts;
@@ -433,7 +450,8 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
     return this->sPtr->getRowFieldEnts();
   };
 
-  inline boost::shared_ptr<FieldEntity_vector_view> &getRowFieldEntsPtr() {
+  inline boost::shared_ptr<FieldEntity_vector_view> &
+  getRowFieldEntsPtr() const {
     return this->sPtr->getRowFieldEntsPtr();
   }
 
@@ -441,7 +459,8 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
     return this->sPtr->getColFieldEnts();
   };
 
-  inline boost::shared_ptr<FieldEntity_vector_view> &getColFieldEntsPtr() {
+  inline boost::shared_ptr<FieldEntity_vector_view> &
+  getColFieldEntsPtr() const {
     return this->sPtr->getColFieldEntsPtr();
   };
 
@@ -477,7 +496,7 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
 struct NumeredEntFiniteElement
     : public interface_EntFiniteElement<EntFiniteElement> {
 
-  virtual ~NumeredEntFiniteElement() = default;
+  virtual ~NumeredEntFiniteElement();
 
   using interface_type_FiniteElement =
       interface_FiniteElementImpl<EntFiniteElement, EntFiniteElement>;
@@ -512,6 +531,17 @@ struct NumeredEntFiniteElement
   inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
   getRowDofsPtr(const NumeredDofEntity_multiIndex &dofs_prb) const {
     RefEntityTmp<0>::refElementPtr = this->getRefElement();
+    if (lastSeenRowFiniteElement != this) {
+      if (rowDofs)
+        rowDofs->clear();
+      else
+        rowDofs = boost::make_shared<FENumeredDofEntity_multiIndex>();
+      if (getEntFiniteElement()->getDofView(getRowFieldEnts(), dofs_prb,
+                                            *rowDofs, moab::Interface::UNION))
+        THROW_MESSAGE("rowDofs can not be created");
+      lastSeenRowFiniteElement = this;
+      lastSeenNumeredRows = &dofs_prb;
+    }
     return rowDofs;
   }
 
@@ -526,6 +556,25 @@ struct NumeredEntFiniteElement
   inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
   getColDofsPtr(const NumeredDofEntity_multiIndex &dofs_prb) const {
     RefEntityTmp<0>::refElementPtr = this->getRefElement();
+    if (lastSeenColFiniteElement != this) {
+      if (lastSeenNumeredRows == &dofs_prb &&
+          getBitFieldIdRow() == getBitFieldIdCol() &&
+          getRowFieldEntsPtr() == getColFieldEntsPtr()) {
+        colDofs = getRowDofsPtr(dofs_prb);
+      } else {
+
+        if (colDofs)
+          colDofs->clear();
+        else
+          colDofs = boost::make_shared<FENumeredDofEntity_multiIndex>();
+        if (getEntFiniteElement()->getDofView(getColFieldEnts(), dofs_prb,
+                                              *colDofs, moab::Interface::UNION))
+          THROW_MESSAGE("colDofs can not be created");
+      }
+
+      lastSeenColFiniteElement = this;
+      lastSeenNumeredCols = &dofs_prb;
+    }
     return colDofs;
   }
 
@@ -544,10 +593,42 @@ struct NumeredEntFiniteElement
   friend std::ostream &operator<<(std::ostream &os,
                                   const NumeredEntFiniteElement &e);
 
+
+  inline static void getRowDofsClear() {
+    lastSeenNumeredRows = nullptr;
+    lastSeenRowFiniteElement = nullptr;
+    if (rowDofs)
+      rowDofs->clear();
+  }
+
+  inline static void getRowDofsReset() {
+    lastSeenNumeredRows = nullptr;
+    lastSeenRowFiniteElement = nullptr;
+    rowDofs.reset();
+  }
+
+  inline static void getColDofsClear() {
+    lastSeenNumeredCols = nullptr;
+    lastSeenColFiniteElement = nullptr;
+    if (colDofs)
+      colDofs->clear();
+  }
+
+  inline static void getColDofsReset() {
+    lastSeenNumeredCols = nullptr;
+    lastSeenColFiniteElement = nullptr;
+    colDofs.reset();
+  }
+
 private:
-  mutable boost::shared_ptr<FENumeredDofEntity_multiIndex>
+  static const NumeredDofEntity_multiIndex *lastSeenNumeredRows;
+  static const NumeredEntFiniteElement *lastSeenRowFiniteElement;
+  static boost::shared_ptr<FENumeredDofEntity_multiIndex>
       rowDofs; ///< indexed dofs on rows
-  mutable boost::shared_ptr<FENumeredDofEntity_multiIndex>
+
+  static const NumeredDofEntity_multiIndex *lastSeenNumeredCols;
+  static const NumeredEntFiniteElement *lastSeenColFiniteElement;
+  static boost::shared_ptr<FENumeredDofEntity_multiIndex>
       colDofs; ///< indexed dofs on columns
 };
 
@@ -795,36 +876,6 @@ struct FiniteElement_change_bit_reset {
 };
 
 } // namespace MoFEM
-
-// /**
-//  * Loop over DOFs in row on element
-//  * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
-//  * @param  IT    iterator
-//  * @return       user return in for(_IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR,IT))
-//  * \ingroup fe_multi_indices
-//  */
-// #define _IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR, IT) \
-//   auto IT = FEPTR->getRowDofsPtr()->begin(); \
-//   IT != FEPTR->getRowDofsPtr()->end(); \ IT++
-
-// /// \deprecated use _IT_FENUMEREDDOF_ROW_FOR_LOOP_
-// #define _IT_FENUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(FEPTR, IT) \
-//   _IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR, IT)
-
-// /**
-//  * Loop over DOFs in col on element
-//  * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
-//  * @param  IT    iterator
-//  * @return       user return in for(_IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR,IT))
-//  * \ingroup fe_multi_indices
-//  */
-// #define _IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR, IT) \
-//   auto IT = FEPTR->getColDofsPtr()->begin(); \
-//   IT != FEPTR->getColDofsPtr()->end(); \ IT++
-
-// /// \deprecated use _IT_FENUMEREDDOF_COL_FOR_LOOP_ instead
-// #define _IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR, IT) \
-//   _IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR, IT)
 
 #endif // __FEMMULTIINDICES_HPP__
 
