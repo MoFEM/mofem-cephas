@@ -504,12 +504,13 @@ struct NumeredEntFiniteElement
   /** \brief get FE dof on row
    * \ingroup mofem_dofs
    */
-  inline const FENumeredDofEntity_multiIndex &getRowDofs() const {
-    RefEntityTmp<0>::refElementPtr = this->getRefElement();
-    return *rowDofs;
+  inline const FENumeredDofEntity_multiIndex &
+  getRowDofs(const NumeredDofEntity_multiIndex &dofs_prb) const {
+    return *getRowDofsPtr(dofs_prb);
   }
 
-  inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &getRowDofsPtr() {
+  inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
+  getRowDofsPtr(const NumeredDofEntity_multiIndex &dofs_prb) const {
     RefEntityTmp<0>::refElementPtr = this->getRefElement();
     return rowDofs;
   }
@@ -517,12 +518,13 @@ struct NumeredEntFiniteElement
   /** \brief get FE dof on column
    * \ingroup mofem_dofs
    */
-  inline const FENumeredDofEntity_multiIndex &getColDofs() const {
-    RefEntityTmp<0>::refElementPtr = this->getRefElement();
-    return *colDofs;
+  inline const FENumeredDofEntity_multiIndex &
+  getColDofs(const NumeredDofEntity_multiIndex &dofs_prb) const {
+    return *getColDofsPtr(dofs_prb);
   }
 
-  inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &getColDofsPtr() {
+  inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
+  getColDofsPtr(const NumeredDofEntity_multiIndex &dofs_prb) const {
     RefEntityTmp<0>::refElementPtr = this->getRefElement();
     return colDofs;
   }
@@ -543,9 +545,9 @@ struct NumeredEntFiniteElement
                                   const NumeredEntFiniteElement &e);
 
 private:
-  boost::shared_ptr<FENumeredDofEntity_multiIndex>
+  mutable boost::shared_ptr<FENumeredDofEntity_multiIndex>
       rowDofs; ///< indexed dofs on rows
-  boost::shared_ptr<FENumeredDofEntity_multiIndex>
+  mutable boost::shared_ptr<FENumeredDofEntity_multiIndex>
       colDofs; ///< indexed dofs on columns
 };
 
@@ -794,37 +796,35 @@ struct FiniteElement_change_bit_reset {
 
 } // namespace MoFEM
 
-/**
- * Loop over DOFs in row on element
- * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
- * @param  IT    iterator
- * @return       user return in for(_IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR,IT))
- * \ingroup fe_multi_indices
- */
-#define _IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR, IT)                              \
-  auto IT = FEPTR->getRowDofsPtr()->begin();                                   \
-  IT != FEPTR->getRowDofsPtr()->end();                                         \
-  IT++
+// /**
+//  * Loop over DOFs in row on element
+//  * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
+//  * @param  IT    iterator
+//  * @return       user return in for(_IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR,IT))
+//  * \ingroup fe_multi_indices
+//  */
+// #define _IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR, IT) \
+//   auto IT = FEPTR->getRowDofsPtr()->begin(); \
+//   IT != FEPTR->getRowDofsPtr()->end(); \ IT++
 
-/// \deprecated use _IT_FENUMEREDDOF_ROW_FOR_LOOP_
-#define _IT_FENUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(FEPTR, IT)                   \
-  _IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR, IT)
+// /// \deprecated use _IT_FENUMEREDDOF_ROW_FOR_LOOP_
+// #define _IT_FENUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(FEPTR, IT) \
+//   _IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR, IT)
 
-/**
- * Loop over DOFs in col on element
- * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
- * @param  IT    iterator
- * @return       user return in for(_IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR,IT))
- * \ingroup fe_multi_indices
- */
-#define _IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR, IT)                              \
-  auto IT = FEPTR->getColDofsPtr()->begin();                                   \
-  IT != FEPTR->getColDofsPtr()->end();                                         \
-  IT++
+// /**
+//  * Loop over DOFs in col on element
+//  * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
+//  * @param  IT    iterator
+//  * @return       user return in for(_IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR,IT))
+//  * \ingroup fe_multi_indices
+//  */
+// #define _IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR, IT) \
+//   auto IT = FEPTR->getColDofsPtr()->begin(); \
+//   IT != FEPTR->getColDofsPtr()->end(); \ IT++
 
-/// \deprecated use _IT_FENUMEREDDOF_COL_FOR_LOOP_ instead
-#define _IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR, IT)                   \
-  _IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR, IT)
+// /// \deprecated use _IT_FENUMEREDDOF_COL_FOR_LOOP_ instead
+// #define _IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR, IT) \
+//   _IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR, IT)
 
 #endif // __FEMMULTIINDICES_HPP__
 

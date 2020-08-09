@@ -1150,7 +1150,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
           if (!success)
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                     "modification unsuccessful");
-                    
+
         } else if (ddit->get()->getPStatus() == 0) {
 
           // Dof is shared on this processor, however there is no element
@@ -2438,7 +2438,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
     // partition is used to set partition of the element
     CHKERR fe.sPtr->getRowDofView(*(p_miit->numeredDofsRows), rows_view,
                                   moab::Interface::UNION);
-    if (fe.getColDofsPtr() != fe.getRowDofsPtr())
+    if (fe.getColDofsPtr(*(p_miit->getNumeredColDofs())) !=
+        fe.getRowDofsPtr(*(p_miit->getNumeredRowDofs())))
       CHKERR fe.sPtr->getColDofView(*(p_miit->numeredDofsCols), cols_view,
                                     moab::Interface::UNION);
 
@@ -2458,10 +2459,15 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       std::array<NumeredDofEntity_multiIndex_uid_view_ordered *, 2> dofs_view{
           &rows_view, &cols_view};
       std::array<FENumeredDofEntity_multiIndex *, 2> fe_dofs{
-          fe.getRowDofsPtr().get(), fe.getColDofsPtr().get()};
+          fe.getRowDofsPtr(*(p_miit->getNumeredRowDofs())).get(),
+          fe.getColDofsPtr(*(p_miit->getNumeredColDofs())).get()};
 
       for (int ss = 0;
-           ss != ((fe.getColDofsPtr() != fe.getRowDofsPtr()) ? 2 : 1); ss++) {
+           ss != ((fe.getColDofsPtr(*(p_miit->getNumeredColDofs())) !=
+                   fe.getRowDofsPtr(*(p_miit->getNumeredRowDofs())))
+                      ? 2
+                      : 1);
+           ss++) {
 
         // finally add DoFS to multi-indices
         auto hint = fe_dofs[ss]->end();
@@ -2575,7 +2581,8 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
     // rows
     auto hint_r = ghost_idx_row_view.begin();
     for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
-      for (auto &dof_ptr : *(*fe_ptr)->getRowDofsPtr()) {
+      for (auto &dof_ptr :
+           *(*fe_ptr)->getRowDofsPtr(*(p_miit->numeredDofsRows))) {
         if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
           hint_r = ghost_idx_row_view.emplace_hint(hint_r, dof_ptr);
         }
@@ -2586,7 +2593,8 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
     if (p_miit->numeredDofsCols == p_miit->numeredDofsRows) {
       auto hint_c = ghost_idx_col_view.begin();
       for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
-        for (auto &dof_ptr : *(*fe_range.first)->getColDofsPtr()) {
+        for (auto &dof_ptr :
+             *(*fe_range.first)->getColDofsPtr(*(p_miit->numeredDofsCols))) {
           if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
             hint_c = ghost_idx_col_view.emplace_hint(hint_c, dof_ptr);
           }
@@ -2997,10 +3005,10 @@ MoFEMErrorCode ProblemsManager::markDofs(const std::string problem_name,
   boost::shared_ptr<NumeredDofEntity_multiIndex> dofs;
   switch (rc) {
   case ROW:
-    dofs = problem_ptr->getNumeredDofsRows();
+    dofs = problem_ptr->getNumeredRowDofs();
     break;
   case COL:
-    dofs = problem_ptr->getNumeredDofsCols();
+    dofs = problem_ptr->getNumeredColDofs();
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
   }

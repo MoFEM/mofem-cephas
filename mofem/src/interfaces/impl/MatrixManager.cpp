@@ -118,18 +118,21 @@ MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
   if (fe_ptr) {
 
     // Build DOFs on columns
-    if (fe_ptr->getColDofsPtr()->empty()) {
+    if (fe_ptr->getColDofsPtr(*(p_miit->getNumeredColDofs()))->empty()) {
 
       // Get dofs on columns
       NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
       CHKERR fe_ptr->getEntFiniteElement()->getColDofView(
-          *(p_miit->numeredDofsCols), cols_view, moab::Interface::UNION);
+          *(p_miit->getNumeredColDofs()), cols_view, moab::Interface::UNION);
 
       // Finally add DoFS to multi-indices
-      auto hint = fe_ptr->getColDofsPtr()->end();
+      auto hint = fe_ptr->getColDofsPtr(*(p_miit->getNumeredColDofs()))->end();
       for (auto &dof_ptr : cols_view)
-        hint = fe_ptr->getColDofsPtr()->emplace_hint(
-            hint, boost::reinterpret_pointer_cast<FENumeredDofEntity>(dof_ptr));
+        hint =
+            fe_ptr->getColDofsPtr(*(p_miit->getNumeredColDofs()))
+                ->emplace_hint(
+                    hint, boost::reinterpret_pointer_cast<FENumeredDofEntity>(
+                              dof_ptr));
     }
 
   } else
@@ -187,8 +190,12 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
       if (fe_ptr) {
         for (FENumeredDofEntity_multiIndex::iterator vit =
-                 fe_ptr.get()->getColDofsPtr()->begin();
-             vit != fe_ptr.get()->getColDofsPtr()->end(); vit++) {
+                 fe_ptr.get()
+                     ->getColDofsPtr(*(p_miit->getNumeredColDofs()))
+                     ->begin();
+             vit !=
+             fe_ptr.get()->getColDofsPtr(*(p_miit->getNumeredColDofs()))->end();
+             vit++) {
           const int idx = TAG::get_index(vit);
           if (idx >= 0)
             dofs_col_view.push_back(idx);
@@ -203,8 +210,12 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
           std::stringstream ss;
           ss << "rank " << rAnk << ":  numeredDofsCols" << std::endl;
           FENumeredDofEntity_multiIndex::iterator dit, hi_dit;
-          dit = fe_ptr.get()->getColDofsPtr()->begin();
-          hi_dit = fe_ptr.get()->getColDofsPtr()->end();
+          dit = fe_ptr.get()
+                    ->getColDofsPtr(*(p_miit->getNumeredColDofs()))
+                    ->begin();
+          hi_dit = fe_ptr.get()
+                       ->getColDofsPtr(*(p_miit->getNumeredColDofs()))
+                       ->end();
           for (; dit != hi_dit; dit++) {
             ss << "\t" << **dit << std::endl;
           }
@@ -524,7 +535,6 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
       unsigned int nb_nonzero = j.size() + dofs_vec.size();
       unsigned int average_row_fill = nb_nonzero / i.size() + 1;
       j.reserve(rows_to_fill * average_row_fill);
-      
     }
 
     auto hi_diit = dofs_vec.end();

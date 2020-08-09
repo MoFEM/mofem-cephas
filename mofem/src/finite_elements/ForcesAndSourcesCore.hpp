@@ -857,19 +857,19 @@ DEPRECATED typedef ForcesAndSourcesCore ForcesAndSurcesCore;
 MoFEMErrorCode ForcesAndSourcesCore::getEntityRowIndices(
     DataForcesAndSourcesCore &data, const std::string &field_name,
     const EntityType type_lo, const EntityType type_hi) const {
-  return getEntityIndices(data, field_name,
-                          const_cast<FENumeredDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getRowDofs()),
-                          type_lo, type_hi);
+  return getEntityIndices(
+      data, field_name,
+      const_cast<FENumeredDofEntity_multiIndex &>(getRowDofs()), type_lo,
+      type_hi);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getEntityColIndices(
     DataForcesAndSourcesCore &data, const std::string &field_name,
     const EntityType type_lo, const EntityType type_hi) const {
-  return getEntityIndices(data, field_name,
-                          const_cast<FENumeredDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getColDofs()),
-                          type_lo, type_hi);
+  return getEntityIndices(
+      data, field_name,
+      const_cast<FENumeredDofEntity_multiIndex &>(getColDofs()), type_lo,
+      type_hi);
 }
 
 boost::shared_ptr<const NumeredEntFiniteElement>

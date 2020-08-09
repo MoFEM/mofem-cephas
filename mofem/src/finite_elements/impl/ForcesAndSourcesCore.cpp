@@ -282,21 +282,19 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
 MoFEMErrorCode
 ForcesAndSourcesCore::getRowNodesIndices(DataForcesAndSourcesCore &data,
                                          const std::string &field_name) const {
-  return getNodesIndices(field_name,
-                         const_cast<FENumeredDofEntity_multiIndex &>(
-                             numeredEntFiniteElementPtr->getRowDofs()),
-                         data.dataOnEntities[MBVERTEX][0].getIndices(),
-                         data.dataOnEntities[MBVERTEX][0].getLocalIndices());
+  return getNodesIndices(
+      field_name, const_cast<FENumeredDofEntity_multiIndex &>(getRowDofs()),
+      data.dataOnEntities[MBVERTEX][0].getIndices(),
+      data.dataOnEntities[MBVERTEX][0].getLocalIndices());
 }
 
 MoFEMErrorCode
 ForcesAndSourcesCore::getColNodesIndices(DataForcesAndSourcesCore &data,
                                          const std::string &field_name) const {
-  return getNodesIndices(field_name,
-                         const_cast<FENumeredDofEntity_multiIndex &>(
-                             numeredEntFiniteElementPtr->getColDofs()),
-                         data.dataOnEntities[MBVERTEX][0].getIndices(),
-                         data.dataOnEntities[MBVERTEX][0].getLocalIndices());
+  return getNodesIndices(
+      field_name, const_cast<FENumeredDofEntity_multiIndex &>(getColDofs()),
+      data.dataOnEntities[MBVERTEX][0].getIndices(),
+      data.dataOnEntities[MBVERTEX][0].getLocalIndices());
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getEntityIndices(
@@ -384,10 +382,9 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldRowIndices(
   if (data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
-  CHKERR getNoFieldIndices(field_name,
-                           const_cast<FENumeredDofEntity_multiIndex &>(
-                               numeredEntFiniteElementPtr->getRowDofs()),
-                           data.dataOnEntities[MBENTITYSET][0].getIndices());
+  CHKERR getNoFieldIndices(
+      field_name, const_cast<FENumeredDofEntity_multiIndex &>(getRowDofs()),
+      data.dataOnEntities[MBENTITYSET][0].getIndices());
   MoFEMFunctionReturn(0);
 }
 
@@ -397,10 +394,9 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldColIndices(
   if (data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
-  CHKERR getNoFieldIndices(field_name,
-                           const_cast<FENumeredDofEntity_multiIndex &>(
-                               numeredEntFiniteElementPtr->getColDofs()),
-                           data.dataOnEntities[MBENTITYSET][0].getIndices());
+  CHKERR getNoFieldIndices(
+      field_name, const_cast<FENumeredDofEntity_multiIndex &>(getColDofs()),
+      data.dataOnEntities[MBENTITYSET][0].getIndices());
   MoFEMFunctionReturn(0);
 }
 

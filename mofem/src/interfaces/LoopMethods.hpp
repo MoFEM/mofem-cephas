@@ -433,25 +433,25 @@ struct FEMethod : public BasicMethod {
   };
 
   inline const FENumeredDofEntity_multiIndex &getRowDofs() const {
-    return numeredEntFiniteElementPtr->getRowDofs();
+    return *getRowDofsPtr();
   };
 
   inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
   getRowDofsPtr() const {
     return const_cast<NumeredEntFiniteElement *>(
                numeredEntFiniteElementPtr.get())
-        ->getRowDofsPtr();
+        ->getRowDofsPtr(*(problemPtr->getNumeredRowDofs()));
   };
 
   inline const FENumeredDofEntity_multiIndex &getColDofs() const {
-    return numeredEntFiniteElementPtr->getColDofs();
+    return *getColDofsPtr();
   };
 
   inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
   getColDofsPtr() const {
     return const_cast<NumeredEntFiniteElement *>(
                numeredEntFiniteElementPtr.get())
-        ->getColDofsPtr();
+        ->getColDofsPtr(*(problemPtr->getNumeredColDofs()));
   };
 
   /// \brief Get number of DOFs on element
