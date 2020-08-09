@@ -302,26 +302,18 @@ struct EntFiniteElement
    */
   inline const FEDofEntity_multiIndex &
   getDataDofs(const DofEntity_multiIndex &dofs_field) const {
-    RefEntityTmp<0>::refElementPtr = this->getRefElement();
-    if (lastSeenEntFiniteElement != this) {
-      dataDofs = boost::make_shared<FEDofEntity_multiIndex>();
-      if (getDofView(getDataFieldEnts(), dofs_field, *dataDofs,
-                     moab::Interface::UNION))
-        THROW_MESSAGE("dataDofs can not be created");
-      lastSeenEntFiniteElement = this;
-    }
-    return *dataDofs;
+    return *getDataDofsPtr(dofs_field);
   };
 
   inline boost::shared_ptr<FEDofEntity_multiIndex> &
-  getDataDofsPtr(const DofEntity_multiIndex &dofs_field) {
+  getDataDofsPtr(const DofEntity_multiIndex &dofs_field) const {
     RefEntityTmp<0>::refElementPtr = this->getRefElement();
-    if (lastSeenEntFiniteElement != this) {
+    if (lastSeenDataEntFiniteElement != this) {
       dataDofs = boost::make_shared<FEDofEntity_multiIndex>();
       if (getDofView(getDataFieldEnts(), dofs_field, *dataDofs,
                      moab::Interface::UNION))
         THROW_MESSAGE("dataDofs can not be created");
-      lastSeenEntFiniteElement = this;
+      lastSeenDataEntFiniteElement = this;
     }
     return dataDofs;
   };
@@ -404,7 +396,7 @@ private:
   mutable boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
   mutable boost::shared_ptr<FieldEntity_vector_view> colFieldEnts;
 
-  static const EntFiniteElement *lastSeenEntFiniteElement;
+  static const EntFiniteElement *lastSeenDataEntFiniteElement;
   static boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
 };
 

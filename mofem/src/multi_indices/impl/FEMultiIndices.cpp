@@ -18,7 +18,7 @@
 
 namespace MoFEM {
 
-const EntFiniteElement *EntFiniteElement::lastSeenEntFiniteElement = nullptr;
+const EntFiniteElement *EntFiniteElement::lastSeenDataEntFiniteElement = nullptr;
 boost::shared_ptr<FEDofEntity_multiIndex> EntFiniteElement::dataDofs;
 
 MoFEMErrorCode DefaultElementAdjacency::defaultVertex(
@@ -446,7 +446,7 @@ EntFiniteElement::EntFiniteElement(
 
 EntFiniteElement::~EntFiniteElement() {
   dataDofs.reset();
-  lastSeenEntFiniteElement = nullptr;
+  lastSeenDataEntFiniteElement = nullptr;
 }
 
 std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
