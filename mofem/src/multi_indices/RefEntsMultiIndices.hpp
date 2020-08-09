@@ -570,7 +570,7 @@ template <typename T> struct interface_RefEntity {
   }
 
   /**
-   * @copydoc MoFEM::RefEntityTmp<0>::getSideNumberPtr
+   * @copydoc MoFEM::RefEntityTmp<0>::getBasicDataPtr
    */
   inline const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
     return this->sPtr->getBasicDataPtr();
