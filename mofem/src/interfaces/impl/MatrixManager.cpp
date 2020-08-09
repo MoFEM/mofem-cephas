@@ -191,7 +191,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
           for (auto &dof_ptr :
                fe_ptr->getColDofs(*(p_miit->getNumeredColDofs())))
             MOFEM_LOG("SYNC", Sev::noisy) << *dof_ptr;
-          MOFEM_LOG_SYNCHORMISE(cOmm)
+          MOFEM_LOG_SYNCHRONISE(cOmm)
         }
 
       } else
@@ -252,7 +252,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     if (verb >= VERBOSE) {
       MOFEM_LOG("SYNC", Sev::noisy)
           << "row lower " << rstart << " row upper " << rend;
-      MOFEM_LOG_SYNCHORMISE(cOmm)
+      MOFEM_LOG_SYNCHRONISE(cOmm)
     }
 
     miit_row = dofs_row_by_idx.lower_bound(rstart);

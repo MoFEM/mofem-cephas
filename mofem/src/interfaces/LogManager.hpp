@@ -337,7 +337,7 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
  * @brief Synchronise "SYNC" channel
  * 
  */
-#define MOFEM_LOG_SYNCHORMISE(comm)                                            \
+#define MOFEM_LOG_SYNCHRONISE(comm)                                            \
   PetscSynchronizedFlush(comm, MoFEM::LogManager::dummy_mofem_fd);
 
 #endif //__LOGMANAGER_HPP__

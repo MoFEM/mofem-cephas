@@ -306,7 +306,7 @@ MoFEMErrorCode Core::list_finite_elements() const {
   for (auto &fe : finiteElements.get<FiniteElement_name_mi_tag>())
     MOFEM_LOG("SYNC", Sev::inform) << fe;
 
-  MOFEM_LOG_SYNCHORMISE(cOmm);
+  MOFEM_LOG_SYNCHRONISE(cOmm);
   MoFEMFunctionReturn(0);
 }
 
@@ -477,7 +477,7 @@ MoFEMErrorCode Core::add_ents_to_finite_element_by_bit_ref(
       << "Finite element " << name << " added. Nb. of elements added "
       << nb_add_fes << " out of " << std::distance(miit, hi_miit);
 
-  MOFEM_LOG_SYNCHORMISE(cOmm)
+  MOFEM_LOG_SYNCHRONISE(cOmm)
 
   MoFEMFunctionReturn(0);
 }
@@ -782,7 +782,7 @@ MoFEMErrorCode Core::build_finite_elements(int verb) {
       }
     }
 
-    MOFEM_LOG_SYNCHORMISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(cOmm);
   }
 
   *buildMoFEM |= 1 << 1;
@@ -816,7 +816,7 @@ MoFEMErrorCode Core::build_finite_elements(const string fe_name,
     const auto count = std::distance(miit, hi_miit);
     MOFEM_LOG("SYNC", Sev::inform) << "Finite element " << fe_name
                                    << " added. Nb. of elements added " << count;
-    MOFEM_LOG_SYNCHORMISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(cOmm);
   }
 
   *buildMoFEM |= 1 << 1;
@@ -889,7 +889,7 @@ MoFEMErrorCode Core::build_adjacencies(const Range &ents, int verb) {
   if (verb >= VERBOSE) {
     MOFEM_LOG("WORLD", Sev::inform)
         << "Number of adjacencies " << entFEAdjacencies.size();
-    MOFEM_LOG_SYNCHORMISE(cOmm)
+    MOFEM_LOG_SYNCHRONISE(cOmm)
   }
 
   *buildMoFEM |= 1 << 2;

@@ -788,7 +788,7 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
         "SYNC", Sev::noisy,
         "nb. of entities in field <%s> for which order set %d (order %d)",
         field_ptr->getName().c_str(), nb_ents_set_order_new, order);
-    MOFEM_LOG_SYNCHORMISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(cOmm);
   }
 
   if (verb > QUIET) {
@@ -1073,7 +1073,7 @@ Core::buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
         FieldEntity::getHiBitNumberUId(field_ptr->getBitNumber()));
     for (; lo_dof != hi_dof; lo_dof++)
       MOFEM_LOG("SYNC", Sev::noisy) << **lo_dof;
-    MOFEM_LOG_SYNCHORMISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(cOmm);
   }
 
   MoFEMFunctionReturn(0);
@@ -1375,7 +1375,7 @@ MoFEMErrorCode Core::build_field(const std::string field_name, int verb) {
 
   CHKERR this->buildField(*field_it, verb);
   if (verb > QUIET)
-    MOFEM_LOG_SYNCHORMISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(cOmm);
   MoFEMFunctionReturn(0);
 }
 
@@ -1389,7 +1389,7 @@ MoFEMErrorCode CoreTmp<-1>::build_field(const std::string field_name,
 
   CHKERR this->buildField(*field_it, verb);
   if (verb > QUIET)
-    MOFEM_LOG_SYNCHORMISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(cOmm);
   MoFEMFunctionReturn(0);
 }
 
@@ -1404,7 +1404,7 @@ MoFEMErrorCode Core::build_fields(int verb) {
   *buildMoFEM = 1 << 0;
   if (verb > QUIET) {
     MOFEM_LOG("SYNC", Sev::inform) << "Number of dofs " << dofsField.size();
-    MOFEM_LOG_SYNCHORMISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(cOmm);
   }
 
   MoFEMFunctionReturn(0);
@@ -1421,7 +1421,7 @@ MoFEMErrorCode CoreTmp<-1>::build_fields(int verb) {
   *buildMoFEM = 1 << 0;
   if (verb > QUIET) {
     MOFEM_LOG("SYNC", Sev::inform) << "Number of dofs " << dofsField.size();
-    MOFEM_LOG_SYNCHORMISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(cOmm);
   }
 
   MoFEMFunctionReturn(0);
@@ -1438,7 +1438,7 @@ Core::list_dofs_by_field_name(const std::string &field_name) const {
   for (; dit != hi_dit; dit++)
     MOFEM_LOG("SYNC", Sev::inform) << *dit;
 
-  MOFEM_LOG_SYNCHORMISE(cOmm);
+  MOFEM_LOG_SYNCHRONISE(cOmm);
   MoFEMFunctionReturn(0);
 }
 
@@ -1448,7 +1448,7 @@ MoFEMErrorCode Core::list_fields() const {
   for (auto &miit : fIelds.get<BitFieldId_mi_tag>())
     MOFEM_LOG("SYNC", Sev::inform) << *miit;
 
-  MOFEM_LOG_SYNCHORMISE(cOmm);
+  MOFEM_LOG_SYNCHRONISE(cOmm);
   MoFEMFunctionReturn(0);
 }
 

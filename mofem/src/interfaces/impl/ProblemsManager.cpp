@@ -123,7 +123,7 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       MOFEM_LOG("SYNC", Sev::inform)
           << "Finite elements in problem: row lower " << rstart << " row upper "
           << rend << " nb. elems " << nb_elems << " ( " << ents.size() << " )";
-      MOFEM_LOG_SYNCHORMISE(m_field.get_comm())
+      MOFEM_LOG_SYNCHRONISE(m_field.get_comm())
     }
   }
 
@@ -572,7 +572,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
         << problem_ptr->getName() << " Nb. local dofs "
         << problem_ptr->numeredRowDofs->size() << " by "
         << problem_ptr->numeredColDofs->size();
-    MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
   }
 
   if (verb >= NOISY) {
@@ -591,7 +591,7 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
         << problem_ptr->getNbDofsCol();
     for (auto &miit : *problem_ptr->numeredColDofs)
       MOFEM_LOG("SYNC", Sev::noisy) << *miit;
-    MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
   }
 
   cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM; // It is assumed that user who
@@ -2254,7 +2254,7 @@ ProblemsManager::printPartitionedProblem(const Problem *problem_ptr, int verb) {
         << problem_ptr->getNbLocalDofsCol() << " nb global dofs "
         << problem_ptr->getNbDofsRow() << " by " << problem_ptr->getNbDofsCol();
 
-    MOFEM_LOG_SYNCHORMISE(m_field.get_comm())
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm())
   }
 
   MoFEMFunctionReturn(0);
@@ -2500,7 +2500,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
           << std::distance(e_range.first, e_range.second);
     }
 
-    MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
   }
 
   cOre.getBuildMoFEM() |= Core::PARTITION_FE;
@@ -2611,7 +2611,7 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
         << p_miit->getNbGhostDofsCol() << " Nb. local dof "
         << p_miit->getNbLocalDofsCol() << " by " << p_miit->getNbLocalDofsCol();
 
-    MOFEM_LOG_SYNCHORMISE(m_field.get_comm())
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm())
   }
 
   cOre.getBuildMoFEM() |= Core::PARTITION_GHOST_DOFS;
@@ -2698,7 +2698,7 @@ ProblemsManager::partitionGhostDofsOnDistributedMesh(const std::string name,
         << p_miit->getNbGhostDofsCol() << " Nb. local dof "
         << p_miit->getNbLocalDofsCol() << " by " << p_miit->getNbLocalDofsCol();
 
-    MOFEM_LOG_SYNCHORMISE(m_field.get_comm())
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm())
   }
 
   cOre.getBuildMoFEM() |= Core::PARTITION_GHOST_DOFS;
@@ -2800,7 +2800,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         for (auto &dof : dofs_it_view)
           MOFEM_LOG("SYNC", Sev::noisy) << **dof;
 
-        MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
+        MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
       }
 
       // set negative index
@@ -2955,7 +2955,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         prb_ptr->getNbGhostDofsCol(), nb_init_ghost_row_dofs,
         nb_init_ghost_col_dofs, prb_ptr->getNbDofsRow(),
         prb_ptr->getNbDofsCol(), nb_init_loc_row_dofs, nb_init_loc_col_dofs);
-    MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
   }
 
   MoFEMFunctionReturn(0);

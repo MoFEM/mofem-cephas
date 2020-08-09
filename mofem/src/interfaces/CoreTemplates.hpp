@@ -81,7 +81,7 @@ MoFEMErrorCode CoreTmp<N>::build_field(const std::string field_name, int verb) {
 
   CHKERR this->buildField(*field_it, verb);
   if (verb > QUIET)
-    MOFEM_LOG_SYNCHORMISE(this->cOmm);
+    MOFEM_LOG_SYNCHRONISE(this->cOmm);
   MoFEMFunctionReturn(0);
 }
 
@@ -101,7 +101,7 @@ template <int N> MoFEMErrorCode CoreTmp<N>::build_fields(int verb) {
   if (verb > QUIET) {
     MOFEM_LOG("SYNC", Sev::inform)
         << "Number of dofs " << this->dofsField.size();
-    MOFEM_LOG_SYNCHORMISE(this->cOmm);
+    MOFEM_LOG_SYNCHRONISE(this->cOmm);
   }
 
   MoFEMFunctionReturn(0);
