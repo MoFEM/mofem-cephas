@@ -416,48 +416,40 @@ struct FEMethod : public BasicMethod {
         ->getDataFieldEntsPtr();
   }
 
-  inline const FieldEntity_vector_view &getRowFieldEnts() const {
+  inline auto &getRowFieldEnts() const {
     return numeredEntFiniteElementPtr->getRowFieldEnts();
   };
 
-  inline boost::shared_ptr<FieldEntity_vector_view> &
-  getRowFieldEntsPtr() const {
-    return const_cast<NumeredEntFiniteElement *>(
-               numeredEntFiniteElementPtr.get())
-        ->getRowFieldEntsPtr();
+  inline auto &getRowFieldEntsPtr() const {
+    return numeredEntFiniteElementPtr->getRowFieldEntsPtr();
   };
 
-  inline const FieldEntity_vector_view &getColFieldEnts() const {
+  inline auto &getColFieldEnts() const {
     return numeredEntFiniteElementPtr->getColFieldEnts();
   };
 
-  inline boost::shared_ptr<FieldEntity_vector_view> &
-  getColFieldEntsPtr() const {
-    return const_cast<NumeredEntFiniteElement *>(
-               numeredEntFiniteElementPtr.get())
-        ->getColFieldEntsPtr();
+  inline auto &getColFieldEntsPtr() const {
+    return numeredEntFiniteElementPtr->getColFieldEntsPtr();
   };
 
-  inline const FENumeredDofEntity_multiIndex &getRowDofs() const {
-    return *getRowDofsPtr();
+  inline auto &getRowDofs() const {
+    return numeredEntFiniteElementPtr->getRowDofs(
+        *(problemPtr->getNumeredRowDofs()));
   };
 
-  inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
-  getRowDofsPtr() const {
-    return const_cast<NumeredEntFiniteElement *>(
-               numeredEntFiniteElementPtr.get())
-        ->getRowDofsPtr(*(problemPtr->getNumeredRowDofs()));
+  inline auto &getRowDofsPtr() const {
+    return numeredEntFiniteElementPtr->getRowDofsPtr(
+        *(problemPtr->getNumeredRowDofs()));
   };
 
-  inline const FENumeredDofEntity_multiIndex &getColDofs() const {
-    return *getColDofsPtr();
+  inline auto &getColDofs() const {
+    return numeredEntFiniteElementPtr->getColDofs(
+        *(problemPtr->getNumeredColDofs()));
   };
 
-  inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
-  getColDofsPtr() const {
-    return const_cast<NumeredEntFiniteElement *>(
-               numeredEntFiniteElementPtr.get())
-        ->getColDofsPtr(*(problemPtr->getNumeredColDofs()));
+  inline auto &getColDofsPtr() const {
+    return numeredEntFiniteElementPtr->getColDofsPtr(
+        *(problemPtr->getNumeredColDofs()));
   };
 
   /// \brief Get number of DOFs on element

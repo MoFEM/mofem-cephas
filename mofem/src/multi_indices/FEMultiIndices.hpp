@@ -347,7 +347,7 @@ struct EntFiniteElement
     return dataVectorDofs;
   };
 
-  inline const FieldEntity_vector_view &getDataFieldEnts() const {
+  inline FieldEntity_vector_view &getDataFieldEnts() const {
     return *dataFieldEnts;
   };
 
@@ -355,7 +355,7 @@ struct EntFiniteElement
     return dataFieldEnts;
   };
 
-  inline const FieldEntity_vector_view &getRowFieldEnts() const {
+  inline FieldEntity_vector_view &getRowFieldEnts() const {
     return *rowFieldEnts;
   };
 
