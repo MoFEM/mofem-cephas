@@ -351,9 +351,9 @@ struct EntFiniteElement
   friend std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e);
 
   template <typename FE_ENTS, typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
-  inline MoFEMErrorCode
+  static MoFEMErrorCode
   getDofView(const FE_ENTS &fe_ents_view, const MOFEM_DOFS &mofem_dofs,
-             MOFEM_DOFS_VIEW &dofs_view, const int operation_type) const {
+             MOFEM_DOFS_VIEW &dofs_view, const int operation_type) {
     MoFEMFunctionBeginHot;
 
     if (operation_type == moab::Interface::UNION) {
@@ -371,6 +371,33 @@ struct EntFiniteElement
             for (; dit != hi_dit; ++dit)
               hint = dofs_view.emplace_hint(
                   hint, boost::reinterpret_pointer_cast<ValType>(*dit));
+          }
+        }
+      }
+    } else
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    MoFEMFunctionReturnHot(0);
+  }
+
+  template <typename FE_ENTS, typename MOFEM_DOFS, typename VEC_DOFS>
+  static MoFEMErrorCode
+  getDofVectorView(const FE_ENTS &fe_ents_view, const MOFEM_DOFS &mofem_dofs,
+                   std::vector<boost::shared_ptr<VEC_DOFS>> &dofs_view,
+                   const int operation_type) {
+    MoFEMFunctionBeginHot;
+
+    if (operation_type == moab::Interface::UNION) {
+
+      for (auto &it : fe_ents_view) {
+        if (auto e = it.lock()) {
+          const auto &uid = e->getLocalUniqueId();
+          auto dit = mofem_dofs.lower_bound(uid);
+          if (dit != mofem_dofs.end()) {
+            const auto hi_dit = mofem_dofs.upper_bound(
+                uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
+            for (; dit != hi_dit; ++dit)
+              dofs_view.emplace_back(
+                  boost::reinterpret_pointer_cast<VEC_DOFS>(*dit));
           }
         }
       }
@@ -536,8 +563,8 @@ struct NumeredEntFiniteElement
         rowDofs->clear();
       else
         rowDofs = boost::make_shared<FENumeredDofEntity_multiIndex>();
-      if (getEntFiniteElement()->getDofView(getRowFieldEnts(), dofs_prb,
-                                            *rowDofs, moab::Interface::UNION))
+      if (EntFiniteElement::getDofView(getRowFieldEnts(), dofs_prb, *rowDofs,
+                                       moab::Interface::UNION))
         THROW_MESSAGE("rowDofs can not be created");
       lastSeenRowFiniteElement = this;
       lastSeenNumeredRows = &dofs_prb;
@@ -567,8 +594,8 @@ struct NumeredEntFiniteElement
           colDofs->clear();
         else
           colDofs = boost::make_shared<FENumeredDofEntity_multiIndex>();
-        if (getEntFiniteElement()->getDofView(getColFieldEnts(), dofs_prb,
-                                              *colDofs, moab::Interface::UNION))
+        if (EntFiniteElement::getDofView(getColFieldEnts(), dofs_prb, *colDofs,
+                                         moab::Interface::UNION))
           THROW_MESSAGE("colDofs can not be created");
       }
 

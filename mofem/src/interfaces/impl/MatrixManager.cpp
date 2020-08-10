@@ -141,6 +141,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   else
     do_cols_prob = true;
 
+  std::vector<boost::shared_ptr<NumeredDofEntity>> fe_col_dofs_view;
+
   dofs_col_view.clear();
   for (auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(
            mofem_ent_ptr->getLocalUniqueId());
@@ -169,10 +171,12 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
       CHKERR buildFECol(p_miit, r.first->entFePtr, do_cols_prob, fe_ptr);
 
       if (fe_ptr) {
-        for (auto vit =
-                 fe_ptr->getColDofsPtr(*(p_miit->getNumeredColDofs()))->begin();
-             vit !=
-             fe_ptr->getColDofsPtr(*(p_miit->getNumeredColDofs()))->end();
+
+        fe_col_dofs_view.clear();
+        CHKERR EntFiniteElement::getDofVectorView(
+            fe_ptr->getColFieldEnts(), *(p_miit->getNumeredColDofs()),
+            fe_col_dofs_view, moab::Interface::UNION);
+        for (auto vit = fe_col_dofs_view.begin(); vit != fe_col_dofs_view.end();
              vit++) {
           const int idx = TAG::get_index(vit);
           if (idx >= 0)

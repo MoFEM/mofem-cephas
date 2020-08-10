@@ -2546,10 +2546,16 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
     // get dofs on elements which are not part of this partition
 
     // rows
+    std::vector<boost::shared_ptr<NumeredDofEntity>> fe_vec_view;
     auto hint_r = ghost_idx_row_view.begin();
     for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
-      for (auto &dof_ptr :
-           *(*fe_ptr)->getRowDofsPtr(*(p_miit->numeredRowDofs))) {
+
+      fe_vec_view.clear();
+      CHKERR EntFiniteElement::getDofVectorView(
+          (*fe_ptr)->getRowFieldEnts(), *(p_miit->getNumeredRowDofs()),
+          fe_vec_view, moab::Interface::UNION);
+
+      for (auto &dof_ptr : fe_vec_view) {
         if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
           hint_r = ghost_idx_row_view.emplace_hint(hint_r, dof_ptr);
         }
@@ -2558,10 +2564,16 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
 
     // columns
     if (p_miit->numeredColDofs == p_miit->numeredRowDofs) {
+
       auto hint_c = ghost_idx_col_view.begin();
       for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
-        for (auto &dof_ptr :
-             *(*fe_range.first)->getColDofsPtr(*(p_miit->numeredColDofs))) {
+
+        fe_vec_view.clear();
+        CHKERR EntFiniteElement::getDofVectorView(
+            (*fe_ptr)->getColFieldEnts(), *(p_miit->getNumeredColDofs()),
+            fe_vec_view, moab::Interface::UNION);
+
+        for (auto &dof_ptr : fe_vec_view) {
           if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
             hint_c = ghost_idx_col_view.emplace_hint(hint_c, dof_ptr);
           }
