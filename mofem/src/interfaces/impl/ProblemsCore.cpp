@@ -454,6 +454,7 @@ MoFEMErrorCode Core::loop_finite_elements(
     PetscLogEventEnd(MOFEM_EVENT_operator, 0, 0, 0, 0);
 
     EntFiniteElement::getDataDofsClear();
+    EntFiniteElement::getDataVectorDofsClear();
     NumeredEntFiniteElement::getRowDofsClear();
     NumeredEntFiniteElement::getColDofsClear();
 
@@ -464,6 +465,7 @@ MoFEMErrorCode Core::loop_finite_elements(
   PetscLogEventEnd(MOFEM_EVENT_postProcess, 0, 0, 0, 0);
 
   EntFiniteElement::getDataDofsReset();
+  EntFiniteElement::getDataVectorDofsReset();
   NumeredEntFiniteElement::getRowDofsReset();
   NumeredEntFiniteElement::getColDofsReset();
 

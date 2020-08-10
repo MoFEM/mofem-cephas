@@ -389,14 +389,20 @@ struct FEMethod : public BasicMethod {
       numeredEntFiniteElementPtr; ///< Pointer to finite element database
                                   ///< structure
 
-  inline const FEDofEntity_multiIndex &getDataDofs() const {
+  inline auto &getDataDofs() const {
     return numeredEntFiniteElementPtr->getDataDofs(*dofsPtr);
   };
 
-  inline boost::shared_ptr<FEDofEntity_multiIndex> &getDataDofsPtr() const {
-    return const_cast<NumeredEntFiniteElement *>(
-               numeredEntFiniteElementPtr.get())
-        ->getDataDofsPtr(*dofsPtr);
+  inline auto &getDataDofsPtr() const {
+    return numeredEntFiniteElementPtr->getDataDofsPtr(*dofsPtr);
+  };
+
+  inline auto &getDataVectorDofs() const {
+    return numeredEntFiniteElementPtr->getDataVectorDofs(*dofsPtr);
+  };
+
+  inline auto &getDataVectorDofsPtr() const {
+    return numeredEntFiniteElementPtr->getDataVectorDofsPtr(*dofsPtr);
   };
 
   inline const FieldEntity_vector_view &getDataFieldEnts() const {

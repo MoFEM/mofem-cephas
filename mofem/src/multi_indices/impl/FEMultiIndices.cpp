@@ -18,9 +18,6 @@
 
 namespace MoFEM {
 
-const EntFiniteElement *EntFiniteElement::lastSeenDataEntFiniteElement = nullptr;
-boost::shared_ptr<FEDofEntity_multiIndex> EntFiniteElement::dataDofs;
-
 MoFEMErrorCode DefaultElementAdjacency::defaultVertex(
     moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
     Range &adjacency) {
@@ -434,6 +431,15 @@ void FiniteElement_change_bit_reset::operator()(
   static_cast<BitFieldId *>(fe->tag_BitFieldId_data)->reset();
 }
 
+const EntFiniteElement *EntFiniteElement::lastSeenDataEntFiniteElement =
+    nullptr;
+boost::shared_ptr<FEDofEntity_multiIndex> EntFiniteElement::dataDofs;
+
+const EntFiniteElement *EntFiniteElement::lastSeenDataVectorEntFiniteElement =
+    nullptr;
+boost::shared_ptr<std::vector<boost::shared_ptr<FEDofEntity>>>
+    EntFiniteElement::dataVectorDofs;
+
 // FiniteElement data
 EntFiniteElement::EntFiniteElement(
     const boost::shared_ptr<RefElement> &ref_finite_element,
@@ -445,7 +451,9 @@ EntFiniteElement::EntFiniteElement(
       colFieldEnts(new FieldEntity_vector_view()) {}
 
 EntFiniteElement::~EntFiniteElement() {
-  dataDofs.reset();
+  dataVectorDofs.reset();
+  lastSeenDataVectorEntFiniteElement = nullptr;
+  dataVectorDofs.reset();
   lastSeenDataEntFiniteElement = nullptr;
 }
 
