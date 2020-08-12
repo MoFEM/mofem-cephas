@@ -23,11 +23,11 @@ DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
                      const FieldCoefficientsNumber dof_rank, const DofIdx dof)
     : interface_FieldEntity<FieldEntity>(entity_ptr), dof(dof) {
 
-  if (PetscUnlikely(!entity_ptr)) 
+  if (PetscUnlikely(!entity_ptr))
     THROW_MESSAGE("FieldEntity pointer not initialized");
-  if (PetscUnlikely(!sPtr)) 
+  if (PetscUnlikely(!sPtr))
     THROW_MESSAGE("FieldEntity pointer not initialized");
-  if (PetscUnlikely(!getFieldEntityPtr())) 
+  if (PetscUnlikely(!getFieldEntityPtr()))
     THROW_MESSAGE("FieldEntity pointer not initialized");
   // verify dof order
   if (PetscUnlikely(dof_order != getDofOrderMap()[dof]))
@@ -54,7 +54,7 @@ DofEntity_active_change::DofEntity_active_change(bool active)
     : aCtive(active) {}
 void DofEntity_active_change::operator()(boost::shared_ptr<DofEntity> &dof) {
 
-  if(aCtive)
+  if (aCtive)s
     dof->dof = std::abs(dof->dof);
   else
     dof->dof = -std::abs(dof->dof);

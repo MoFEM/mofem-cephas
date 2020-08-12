@@ -65,14 +65,13 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
     return this->sPtr->getGlobalUniqueId();
   }
 
-  static inline UId getUniqueIdCalculate(const DofIdx dof,
-                                               UId ent_uid) {
+  static inline UId getUniqueIdCalculate(const DofIdx dof, UId ent_uid) {
     return ent_uid | dof;
   }
 
   static inline UId
   getLocalUniqueIdCalculate(const DofIdx dof,
-                             const boost::shared_ptr<FieldEntity> &ent_ptr) {
+                            const boost::shared_ptr<FieldEntity> &ent_ptr) {
     return getUniqueIdCalculate(dof, ent_ptr->getLocalUniqueId());
   }
 
@@ -109,13 +108,13 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
                              const boost::shared_ptr<FieldEntity> &ent_ptr) {
     return getUniqueIdCalculate(dof, ent_ptr->getGlobalUniqueId());
   }
-  
+
   /// @return get unique dof id
   inline UId getGlobalUniqueId() const {
     return getUniqueIdCalculate(std::abs(dof), this->sPtr->getGlobalUniqueId());
   }
 
-   /** \brief get short uid it is unique in combination with entity handle
+  /** \brief get short uid it is unique in combination with entity handle
    *
    * EntityHandle are controlled by MOAB, which is unique in
    * MOAB instance. However two MOAB instances, can have attached different
@@ -153,11 +152,9 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   friend std::ostream &operator<<(std::ostream &os, const DofEntity &e);
 
 private:
-
   DofIdx dof;
 
   friend struct DofEntity_active_change;
-
 };
 
 /**
@@ -230,7 +227,6 @@ struct interface_DofEntity : public interface_FieldEntity<T> {
   inline boost::shared_ptr<FieldEntity> &getFieldEntityPtr() const {
     return this->sPtr->getFieldEntityPtr();
   }
-
 };
 
 /**
@@ -290,7 +286,7 @@ private:
   using DofEntity::DofEntity;
 
   // DO NOT MAKE ANY MAMBER DATA HARE !!!
-  
+
   friend std::ostream &operator<<(std::ostream &os, const FEDofEntity &e);
 };
 
@@ -302,13 +298,13 @@ struct FENumeredDofEntity : public NumeredDofEntity {
 
   FENumeredDofEntity() = delete;
 
-  private:
-    using NumeredDofEntity::NumeredDofEntity;
+private:
+  using NumeredDofEntity::NumeredDofEntity;
 
-    // DO NOT MAKE ANY MAMBER DATA HARE !!!
+  // DO NOT MAKE ANY MAMBER DATA HARE !!!
 
-    friend std::ostream &operator<<(std::ostream &os,
-                                    const FENumeredDofEntity &e);
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const FENumeredDofEntity &e);
 };
 
 std::ostream &operator<<(std::ostream &os, const FENumeredDofEntity &e);
@@ -330,7 +326,7 @@ typedef multi_index_container<
         ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>>
-            
+
         >>
     DofEntity_multiIndex;
 
@@ -405,7 +401,6 @@ typedef multi_index_container<
                            const_mem_fun<FEDofEntity::DofEntity, EntityHandle,
                                          &FEDofEntity::getEnt>>
 
-
         >>
     FEDofEntity_multiIndex;
 
@@ -415,7 +410,6 @@ typedef multi_index_container<
  */
 using FEDofEntityByUId = FEDofEntity_multiIndex::index<Unique_mi_tag>::type;
 
-
 /**
  * @relates multi_index_container
  * \brief MultiIndex container keeps FENumeredDofEntity
@@ -424,19 +418,17 @@ using FEDofEntityByUId = FEDofEntity_multiIndex::index<Unique_mi_tag>::type;
  */
 typedef multi_index_container<
     boost::shared_ptr<FENumeredDofEntity>,
-    indexed_by<
-        ordered_unique<
-            tag<Unique_mi_tag>,
-            const_mem_fun<FENumeredDofEntity::interface_type_DofEntity, UId,
-                          &FENumeredDofEntity::getLocalUniqueId>>,
-        ordered_non_unique<
-            tag<Ent_mi_tag>,
-            const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,
-                          EntityHandle, &FENumeredDofEntity::getEnt>>
-                          
-                              >>
-    FENumeredDofEntity_multiIndex;
+    indexed_by<ordered_unique<
+                   tag<Unique_mi_tag>,
+                   const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,
+                                 UId, &FENumeredDofEntity::getLocalUniqueId>>,
+               ordered_non_unique<
+                   tag<Ent_mi_tag>,
+                   const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,
+                                 EntityHandle, &FENumeredDofEntity::getEnt>>
 
+               >>
+    FENumeredDofEntity_multiIndex;
 
 /** \brief Dof entity multi-index by UId
  *
@@ -486,7 +478,6 @@ typedef multi_index_container<
             tag<Ent_mi_tag>,
             const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
                           EntityHandle, &NumeredDofEntity::getEnt>>
-                          
 
         >>
     NumeredDofEntity_multiIndex;
@@ -647,20 +638,6 @@ struct NumeredDofEntity_part_and_all_indices_change {
     dof->petscGloablDofIdx = petscGloablDofIdx;
     dof->petscLocalDofIdx = petscLocalDofIdx;
   }
-};
-
-/**
- * Replace dofs shared_ptr
- *
- * DOFs on entities are stored by sequences. If DOFs to entities are added,
- * whole entity sequence is change to preserve continuity in memory
- *
- * \ingroup dof_multi_indices
- */
-template <class T> struct Dof_shared_ptr_change {
-  boost::shared_ptr<T> &dofPtr;
-  Dof_shared_ptr_change(boost::shared_ptr<T> &dof_ptr) : dofPtr(dof_ptr){};
-  inline void operator()(boost::shared_ptr<T> &dof) { dof = dofPtr; }
 };
 
 } // namespace MoFEM
