@@ -27,10 +27,12 @@ FieldEntityTmp<0, 0>::FieldEntityTmp(
     const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
     const boost::shared_ptr<RefEntity> ref_ents_ptr,
     boost::shared_ptr<double *const> field_data_adaptor_ptr,
-    boost::shared_ptr<const int> t_max_order_ptr)
+    boost::shared_ptr<const int> t_max_order_ptr,
+    boost::shared_ptr<EntityCacheDofs *> ents_cache_dofs)
     : interface_FieldImpl<FieldTmp<0, 0>, RefEntity>(field_ptr, ref_ents_ptr),
       tagMaxOrderPtr(t_max_order_ptr),
-      fieldDataAdaptorPtr(field_data_adaptor_ptr) {
+      fieldDataAdaptorPtr(field_data_adaptor_ptr),
+      entityCacheDofs(ents_cache_dofs) {
 
   localUId = getLocalUniqueIdCalculate(field_ptr->getBitNumber(),
                                        ref_ents_ptr->getEnt());
@@ -46,9 +48,10 @@ FieldEntityTmp<-1, -1>::FieldEntityTmp(
     const boost::shared_ptr<FieldTmp<-1, -1>> field_ptr,
     const boost::shared_ptr<RefEntity> ref_ents_ptr,
     boost::shared_ptr<double *const> field_data_adaptor_ptr,
-    boost::shared_ptr<const int> t_max_order_ptr)
+    boost::shared_ptr<const int> t_max_order_ptr,
+    boost::shared_ptr<EntityCacheDofs *> ents_cache_dofs)
     : FieldEntityTmp<0, 0>(field_ptr, ref_ents_ptr, field_data_adaptor_ptr,
-                           t_max_order_ptr),
+                           t_max_order_ptr, ents_cache_dofs),
       sFieldPtr(field_ptr) {}
 
 boost::shared_ptr<FieldData *const>

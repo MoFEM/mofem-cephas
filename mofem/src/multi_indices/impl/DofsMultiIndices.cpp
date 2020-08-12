@@ -54,7 +54,7 @@ DofEntity_active_change::DofEntity_active_change(bool active)
     : aCtive(active) {}
 void DofEntity_active_change::operator()(boost::shared_ptr<DofEntity> &dof) {
 
-  if (aCtive)s
+  if (aCtive)
     dof->dof = std::abs(dof->dof);
   else
     dof->dof = -std::abs(dof->dof);
@@ -77,7 +77,8 @@ NumeredDofEntity::NumeredDofEntity(
     )
     : interface_DofEntity<DofEntity>(dof_entity_ptr), dofIdx(dof_idx),
       petscGloablDofIdx(petsc_gloabl_dof_idx),
-      petscLocalDofIdx(petsc_local_dof_idx), pArt(part) {}
+      petscLocalDofIdx(petsc_local_dof_idx), pArt(part) {
+}
 
 std::ostream &operator<<(std::ostream &os, const NumeredDofEntity &e) {
   os << "idx " << e.dofIdx << " part " << e.pArt << " petsc idx "

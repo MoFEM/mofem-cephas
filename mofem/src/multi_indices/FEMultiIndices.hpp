@@ -257,6 +257,11 @@ struct interface_FiniteElement<T, T>
   mutable boost::shared_ptr<T> sFiniteElementPtr;
 };
 
+
+struct EntityCacheDofs {
+};
+
+
 /**
  * \brief Finite element data for entity
  * \ingroup fe_multi_indices

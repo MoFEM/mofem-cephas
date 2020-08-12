@@ -730,17 +730,24 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
       auto ent_field_data =
           get_ents_field_data_vector_adaptor(ents_in_ref_ent, ents_max_order);
 
+      auto cache_dofs_vec = boost::make_shared<std::vector<EntityCacheDofs *>>(
+          ents_in_ref_ent.size(), nullptr);
+
       auto vit_max_order = ents_max_order->begin();
       auto vit_field_data = ent_field_data->begin();
+      auto vit_cache_dofs = cache_dofs_vec->begin();
       for (auto ent : ents_in_ref_ent) {
         ents_array->emplace_back(
             field_ptr, *miit_ref_ent,
             boost::shared_ptr<double *const>(ent_field_data, &*vit_field_data),
             boost::shared_ptr<const int>(
-                ents_max_order, static_cast<const int *>(*vit_max_order)));
+                ents_max_order, static_cast<const int *>(*vit_max_order)),
+            boost::shared_ptr<EntityCacheDofs *>(cache_dofs_vec,
+                                                 &*vit_cache_dofs));
         ++miit_ref_ent;
         ++vit_max_order;
         ++vit_field_data;
+        ++vit_cache_dofs;
       }
       if (!ents_array->empty())
         if ((*ents_array)[0].getFieldRawPtr() != field_ptr.get())
@@ -1037,7 +1044,8 @@ Core::buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
               field_ptr, *ref_ent_it,
               FieldEntity::makeSharedFieldDataAdaptorPtr(field_ptr,
                                                          *ref_ent_it),
-              boost::shared_ptr<const int>(zero_order, zero_order.get()))
+              boost::shared_ptr<const int>(zero_order, zero_order.get()),
+              nullptr)
 
       );
 
