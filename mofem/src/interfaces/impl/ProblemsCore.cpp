@@ -457,7 +457,6 @@ MoFEMErrorCode Core::loop_finite_elements(
     EntFiniteElement::getDataVectorDofsClear();
     NumeredEntFiniteElement::getRowDofsClear();
     NumeredEntFiniteElement::getColDofsClear();
-
   }
 
   PetscLogEventBegin(MOFEM_EVENT_postProcess, 0, 0, 0, 0);
@@ -642,7 +641,7 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
   } else {
     SETERRQ(cOmm, MOFEM_NOT_FOUND, ("Field not found " + field_name).c_str());
   }
-  
+
   auto miit = dofs->lower_bound(
       FieldEntity::getLoBitNumberUId((*field_it)->getBitNumber()));
   auto hi_miit = dofs->upper_bound(
@@ -660,14 +659,14 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
     if ((*miit)->getPart() >= lower_rank && (*miit)->getPart() <= upper_rank)
       ents_view.emplace_hint(hint, (*miit)->getFieldEntityPtr());
 
-      method.loopSize = ents_view.size();
-      SET_BASIC_METHOD(method, problem_ptr);
-      CHKERR method.preProcess();
-      method.nInTheLoop = 0;
-      for (auto &field_ent : ents_view) {
-        method.entPtr = field_ent;
-        CHKERR method();
-        ++method.nInTheLoop;
+  method.loopSize = ents_view.size();
+  SET_BASIC_METHOD(method, problem_ptr);
+  CHKERR method.preProcess();
+  method.nInTheLoop = 0;
+  for (auto &field_ent : ents_view) {
+    method.entPtr = field_ent;
+    CHKERR method();
+    ++method.nInTheLoop;
   }
   CHKERR method.postProcess();
   MoFEMFunctionReturn(0);
@@ -721,10 +720,9 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
 
   typedef multi_index_container<
       boost::shared_ptr<FieldEntity>,
-      indexed_by<
-          ordered_unique<tag<Ent_mi_tag>,
-                         const_mem_fun<FieldEntity::interface_RefEntity,
-                                       EntityHandle, &FieldEntity::getEnt>>>>
+      indexed_by<ordered_unique<
+          tag<Ent_mi_tag>, const_mem_fun<FieldEntity::interface_RefEntity,
+                                         EntityHandle, &FieldEntity::getEnt>>>>
       FieldEntity_view_multiIndex;
 
   FieldEntity_view_multiIndex ents_view;
