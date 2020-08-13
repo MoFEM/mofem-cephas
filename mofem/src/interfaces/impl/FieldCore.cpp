@@ -730,8 +730,9 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
       auto ent_field_data =
           get_ents_field_data_vector_adaptor(ents_in_ref_ent, ents_max_order);
 
-      auto cache_dofs_vec = boost::make_shared<std::vector<EntityCacheDofs *>>(
-          ents_in_ref_ent.size(), nullptr);
+      auto cache_dofs_vec =
+          boost::make_shared<std::vector<boost::weak_ptr<EntityCacheDofs>>>(
+              ents_in_ref_ent.size());
 
       auto vit_max_order = ents_max_order->begin();
       auto vit_field_data = ent_field_data->begin();
@@ -742,8 +743,8 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
             boost::shared_ptr<double *const>(ent_field_data, &*vit_field_data),
             boost::shared_ptr<const int>(
                 ents_max_order, static_cast<const int *>(*vit_max_order)),
-            boost::shared_ptr<EntityCacheDofs *>(cache_dofs_vec,
-                                                 &*vit_cache_dofs));
+            boost::shared_ptr<boost::weak_ptr<EntityCacheDofs>>(
+                cache_dofs_vec, &*vit_cache_dofs));
         ++miit_ref_ent;
         ++vit_max_order;
         ++vit_field_data;

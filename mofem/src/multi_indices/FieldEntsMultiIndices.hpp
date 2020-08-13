@@ -65,11 +65,12 @@ struct FieldEntityTmp<0, 0>
 
   UId localUId; ///< Global unique id for this entity
 
-  FieldEntityTmp(const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
-                 const boost::shared_ptr<RefEntity> ref_ents_ptr,
-                 boost::shared_ptr<double *const> field_data_adaptor_ptr,
-                 boost::shared_ptr<const int> t_max_order_ptr,
-                 boost::shared_ptr<EntityCacheDofs *> ents_cache_dofs);
+  FieldEntityTmp(
+      const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
+      const boost::shared_ptr<RefEntity> ref_ents_ptr,
+      boost::shared_ptr<double *const> field_data_adaptor_ptr,
+      boost::shared_ptr<const int> t_max_order_ptr,
+      boost::shared_ptr<boost::weak_ptr<EntityCacheDofs>> ents_cache_dofs);
 
   virtual ~FieldEntityTmp() = default;
 
@@ -291,16 +292,17 @@ private:
   mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
 
   friend struct EntFiniteElement;
-  mutable boost::shared_ptr<EntityCacheDofs *> entityCacheDofs;
+  mutable boost::shared_ptr<boost::weak_ptr<EntityCacheDofs>> entityCacheDofs;
 };
 
 template <> struct FieldEntityTmp<-1, -1> : public FieldEntityTmp<0, 0> {
 
-  FieldEntityTmp(const boost::shared_ptr<FieldTmp<-1, -1>> field_ptr,
-                 const boost::shared_ptr<RefEntity> ref_ents_ptr,
-                 boost::shared_ptr<double *const> field_data_adaptor_ptr,
-                 boost::shared_ptr<const int> t_max_order_ptr,
-                 boost::shared_ptr<EntityCacheDofs *> ents_cache_dofs);
+  FieldEntityTmp(
+      const boost::shared_ptr<FieldTmp<-1, -1>> field_ptr,
+      const boost::shared_ptr<RefEntity> ref_ents_ptr,
+      boost::shared_ptr<double *const> field_data_adaptor_ptr,
+      boost::shared_ptr<const int> t_max_order_ptr,
+      boost::shared_ptr<boost::weak_ptr<EntityCacheDofs>> ents_cache_dofs);
 
   virtual const FieldTmp<0, 0> *getFieldRawPtr() const {
     return sFieldPtr.get();
