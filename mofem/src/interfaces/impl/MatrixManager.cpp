@@ -75,15 +75,14 @@ struct CreateRowComressedADJMatrix : public Core {
       boost::shared_ptr<FieldEntity> mofem_ent_ptr,
       std::vector<int> &dofs_col_view, int verb) const;
 
-  MoFEMErrorCode
-  buildFECol(ProblemsByName::iterator p_miit,
-             boost::shared_ptr<EntFiniteElement> ent_fe_ptr, bool do_cols_prob,
-             boost::shared_ptr<NumeredEntFiniteElement> &fe_ptr) const;
+  MoFEMErrorCode buildFECol(ProblemsByName::iterator p_miit,
+                            boost::shared_ptr<EntFiniteElement> ent_fe_ptr,
+                            boost::shared_ptr<NumeredEntFiniteElement> &fe_ptr) const;
 };
 
 MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
     ProblemsByName::iterator p_miit,
-    boost::shared_ptr<EntFiniteElement> ent_fe_ptr, bool do_cols_prob,
+    boost::shared_ptr<EntFiniteElement> ent_fe_ptr,
     boost::shared_ptr<NumeredEntFiniteElement> &fe_ptr) const {
   MoFEMFunctionBegin;
 
@@ -134,15 +133,6 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   BitRefLevel prb_bit = p_miit->getBitRefLevel();
   BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
 
-  // check if dofs and columns are the same, i.e. structurally symmetric problem
-  bool do_cols_prob;
-  if (p_miit->numeredRowDofs == p_miit->numeredColDofs)
-    do_cols_prob = false;
-  else
-    do_cols_prob = true;
-
-  std::vector<boost::shared_ptr<NumeredDofEntity>> fe_col_dofs_view;
-
   dofs_col_view.clear();
   for (auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(
            mofem_ent_ptr->getLocalUniqueId());
@@ -163,45 +153,47 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
         continue;
       BitRefLevel dof_bit = mit_row->get()->getBitRefLevel();
       // if entity is not problem refinement level
-      if ((fe_bit & dof_bit).none())
-        continue;
+      if ((fe_bit & dof_bit).any()) {
 
-      boost::shared_ptr<NumeredEntFiniteElement> fe_ptr;
-      // get element, if element is not in database build columns dofs
-      CHKERR buildFECol(p_miit, r.first->entFePtr, do_cols_prob, fe_ptr);
+        boost::shared_ptr<NumeredEntFiniteElement> fe_ptr;
+        // get element, if element is not in database build columns dofs
+        CHKERR buildFECol(p_miit, r.first->entFePtr, fe_ptr);
 
-      if (fe_ptr) {
+        if (fe_ptr) {
 
-        fe_col_dofs_view.clear();
-        CHKERR EntFiniteElement::getDofVectorView(
-            fe_ptr->getColFieldEnts(), *(p_miit->getNumeredColDofs()),
-            fe_col_dofs_view, moab::Interface::UNION);
-        for (auto vit = fe_col_dofs_view.begin(); vit != fe_col_dofs_view.end();
-             vit++) {
-          const int idx = TAG::get_index(vit);
-          if (idx >= 0)
-            dofs_col_view.push_back(idx);
-          if (idx >= p_miit->getNbDofsCol()) {
-            std::ostringstream zz;
-            zz << "rank " << rAnk << " ";
-            zz << *(*vit) << std::endl;
-            SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, zz.str().c_str());
+          for (auto &it : fe_ptr->getColFieldEnts()) {
+            if (auto e = it.lock()) {
+              if (auto cache = e->entityCacheColDofs.lock())
+                for (auto vit = cache->loHi[0]; vit != cache->loHi[1]; vit++) {
+                  const int idx = TAG::get_index(vit);
+                  if (idx >= 0)
+                    dofs_col_view.push_back(idx);
+                  if (idx >= p_miit->getNbDofsCol()) {
+                    std::ostringstream zz;
+                    zz << "rank " << rAnk << " ";
+                    zz << *(*vit) << std::endl;
+                    SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, zz.str().c_str());
+                  }
+                }
+              else
+                SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Cache not set");
+            }
           }
-        }
 
-        if (verb >= NOISY) {
-          MOFEM_LOG("SYNC", Sev::noisy)
-              << "rank " << rAnk << ":  numeredColDofs" << std::endl;
-          for (auto &dof_ptr :
-               fe_ptr->getColDofs(*(p_miit->getNumeredColDofs())))
-            MOFEM_LOG("SYNC", Sev::noisy) << *dof_ptr;
-          MOFEM_LOG_SYNCHRONISE(cOmm)
-        }
+          if (verb >= NOISY) {
+            MOFEM_LOG("SYNC", Sev::noisy)
+                << "rank " << rAnk << ":  numeredColDofs" << std::endl;
+            for (auto &dof_ptr :
+                 fe_ptr->getColDofs(*(p_miit->getNumeredColDofs())))
+              MOFEM_LOG("SYNC", Sev::noisy) << *dof_ptr;
+            MOFEM_LOG_SYNCHRONISE(cOmm)
+          }
 
-      } else
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Element should be here, otherwise matrix will have missing "
-                "elements");
+        } else
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Element should be here, otherwise matrix will have missing "
+                  "elements");
+      }
     }
   }
 
@@ -216,6 +208,37 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
   MatrixManagerFunctionBegin;
 
   PetscLogEventBegin(MOFEM_EVENT_createMat, 0, 0, 0, 0);
+
+  auto cache = boost::make_shared<std::vector<EntityCacheNumeredDofs>>(
+      entsFields.size());
+
+  size_t idx = 0;
+  for (auto it = entsFields.begin(); it != entsFields.end(); ++it, ++idx) {
+
+    const auto uid = (*it)->getLocalUniqueId();
+    auto lo = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(uid);
+    auto hi = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(uid);
+    for (; lo != hi; ++lo) {
+
+      if ((lo->getBitFEId() & p_miit->getBitFEId()).any()) {
+
+        auto dit = p_miit->numeredColDofs->lower_bound(uid);
+
+        decltype(dit) hi_dit;
+        if (dit != p_miit->numeredColDofs->end())
+          hi_dit = p_miit->numeredColDofs->upper_bound(
+              uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
+        else
+          hi_dit = dit;
+
+        (*it)->entityCacheColDofs =
+            boost::shared_ptr<EntityCacheNumeredDofs>(cache, &((*cache)[idx]));
+        (*cache)[idx].loHi = {dit, hi_dit};
+
+        break;
+      }
+    }
+  }
 
   typedef
       typename boost::multi_index::index<NumeredDofEntity_multiIndex, TAG>::type
