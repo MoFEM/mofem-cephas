@@ -259,8 +259,12 @@ struct interface_FiniteElement<T, T>
 
 
 struct EntityCacheDofs {
+  std::array<DofEntity_multiIndex::iterator, 2> loHi;
 };
 
+struct EntityCacheNumeredDofs {
+  std::array<NumeredDofEntity_multiIndex::iterator, 2> loHi;
+};
 
 /**
  * \brief Finite element data for entity

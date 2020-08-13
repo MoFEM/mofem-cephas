@@ -686,11 +686,10 @@ MoFEMErrorCode Core::loop_entities(const std::string problem_name,
   MoFEMFunctionBegin;
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   // find p_miit
-  ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
-  ProblemsByName::iterator p_miit = pRoblems_set.find(problem_name);
-  if (p_miit == pRoblems_set.end())
+  auto &prb = pRoblems.get<Problem_mi_tag>();
+  auto p_miit = prb.find(problem_name);
+  if (p_miit == prb.end())
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem not in database %s",
              problem_name.c_str());
   CHKERR loop_entities(&*p_miit, field_name, rc, method, lower_rank, upper_rank,
