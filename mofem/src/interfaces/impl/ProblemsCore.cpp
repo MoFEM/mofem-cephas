@@ -647,12 +647,19 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
   auto hi_miit = dofs->upper_bound(
       FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
 
-  typedef multi_index_container<
+  using FieldEntity_view_multiIndex = multi_index_container<
+
       boost::shared_ptr<FieldEntity>,
-      indexed_by<ordered_unique<
-          tag<Ent_mi_tag>, const_mem_fun<FieldEntity::interface_type_RefEntity,
-                                         EntityHandle, &FieldEntity::getEnt>>>>
-      FieldEntity_view_multiIndex;
+      indexed_by<
+
+          ordered_unique<
+
+              tag<Ent_mi_tag>,
+              const_mem_fun<FieldEntity::interface_type_RefEntity, EntityHandle,
+                            &FieldEntity::getEnt>>
+
+          >>;
+
   FieldEntity_view_multiIndex ents_view;
   auto hint = ents_view.begin();
   for (; miit != hi_miit; ++miit)
