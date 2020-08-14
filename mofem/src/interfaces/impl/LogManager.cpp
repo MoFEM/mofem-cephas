@@ -88,6 +88,7 @@ struct LogManager::InternalData
   static bool logQuiet;
   static bool noColors;
   static bool sinksAdd;
+  static bool logTime;
 
   static std::map<std::string, LoggerType> logChannels;
 
@@ -111,6 +112,8 @@ struct LogManager::InternalData
 bool LogManager::InternalData::logQuiet = false;
 bool LogManager::InternalData::noColors = false;
 bool LogManager::InternalData::sinksAdd = true;
+bool LogManager::InternalData::logTime = false;
+
 std::map<std::string, LogManager::LoggerType>
     LogManager::InternalData::logChannels;
 
@@ -131,14 +134,13 @@ MoFEMErrorCode LogManager::query_interface(const MOFEMuuid &uuid,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode LogManager::getSubInterfaceOptions() { return getOptions(); }
-
 MoFEMErrorCode LogManager::getOptions() {
   MoFEMFunctionBegin;
   PetscInt sev_level = SeverityLevel::inform;
   PetscBool log_scope = PETSC_FALSE;
   PetscBool log_quiet = PETSC_FALSE;
   PetscBool log_no_colors = PETSC_FALSE;
+  PetscBool log_time = PETSC_FALSE;
 
   CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "log_",
                            "Logging interface options", "none");
@@ -156,10 +158,11 @@ MoFEMErrorCode LogManager::getOptions() {
   CHKERR PetscOptionsBool("-no_color", "Terminal with no colors", "",
                           log_no_colors, &log_no_colors, NULL);
 
+  CHKERR PetscOptionsBool("-time", "Log time", "",
+                          log_time, &log_time, NULL);
+
   ierr = PetscOptionsEnd();
   CHKERRG(ierr);
-
-  CHKERR setUpLog();
 
   logging::core::get()->set_filter(MoFEM::LogKeywords::severity >= sev_level);
 
@@ -171,6 +174,9 @@ MoFEMErrorCode LogManager::getOptions() {
 
   if (log_no_colors)
     LogManager::InternalData::noColors = true;
+
+  if (log_time)
+    LogManager::InternalData::logTime = true;
 
   MoFEMFunctionReturn(0);
 }
@@ -193,6 +199,19 @@ void LogManager::recordFormatterDefault(logging::record_view const &rec,
         strm << str;
 #endif
     };
+
+    if(LogManager::InternalData::logTime) {
+
+      auto local_time = boost::posix_time::second_clock::local_time();
+      strm << "(Local time ";
+      strm << local_time.date().year() << "-" << local_time.date().month()
+           << "-" << local_time.date().day() << " "
+           << local_time.time_of_day().hours() << ":"
+           << local_time.time_of_day().minutes() << ":"
+           << local_time.time_of_day().seconds();
+      strm << ") ";
+
+    }
 
     if (!p.empty()) {
       strm << "[";
@@ -310,12 +329,6 @@ boost::shared_ptr<std::ostream> LogManager::getStrmSync() {
 
 static char dummy_file;
 FILE *LogManager::dummy_mofem_fd = (FILE *)&dummy_file;
-
-MoFEMErrorCode LogManager::setUpLog() {
-  MoFEM::Interface &m_field = cOre;
-  MoFEMFunctionBegin;
-  MoFEMFunctionReturn(0);
-}
 
 void LogManager::addAttributes(LogManager::LoggerType &lg, const int bit) {
 

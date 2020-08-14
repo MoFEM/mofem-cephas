@@ -164,28 +164,20 @@ struct LogManager : public UnknownInterface {
   createSink(boost::shared_ptr<std::ostream> stream_ptr,
              std::string comm_filter);
 
-
   /**
    * @brief Create default sinks
    *
    */
   static void createDefaultSinks(MPI_Comm comm);
 
-  /**
-   * @brief Get the Interface Options
+  /** @brief Get logger option 
    *
    * This function is called by MoFEM core when this interface is registred
    * into database.
    *
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode getSubInterfaceOptions();
-
-  /**
-   * \brief Get options from command line
-   * @return error code
-   */
-  MoFEMErrorCode getOptions();
+  static MoFEMErrorCode getOptions();
 
   /**
    * @brief Dummy file pointer (DO NOT USE)
@@ -240,8 +232,6 @@ private:
 
   struct InternalData;
   static boost::shared_ptr<InternalData> internalDataPtr;
-
-  MoFEMErrorCode setUpLog();
 
   static std::string petscStringCache;
 
