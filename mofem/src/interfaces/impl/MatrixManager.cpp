@@ -153,9 +153,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
   for (auto it = entsFields.begin(); it != entsFields.end(); ++it, ++idx) {
 
     const auto uid = (*it)->getLocalUniqueId();
-    auto lo = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(uid);
-    auto hi = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(uid);
-    for (; lo != hi; ++lo) {
+    auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(uid);
+    for (auto lo = r.first; lo != r.second; ++lo) {
 
       if ((lo->getBitFEId() & p_miit->getBitFEId()).any()) {
 
@@ -177,9 +176,9 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     }
   }
 
-  typedef
-      typename boost::multi_index::index<NumeredDofEntity_multiIndex, TAG>::type
-          NumeredDofEntitysByIdx;
+  using NumeredDofEntitysByIdx =
+      typename boost::multi_index::index<NumeredDofEntity_multiIndex,
+                                         TAG>::type;
 
   // Get multi-indices for rows and columns
   const NumeredDofEntitysByIdx &dofs_row_by_idx =
