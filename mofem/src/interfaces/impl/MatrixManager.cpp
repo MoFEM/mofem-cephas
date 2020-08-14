@@ -74,52 +74,7 @@ struct CreateRowComressedADJMatrix : public Core {
                                          TAG>::type::iterator mit_row,
       boost::shared_ptr<FieldEntity> mofem_ent_ptr,
       std::vector<int> &dofs_col_view, int verb) const;
-
-  MoFEMErrorCode buildFECol(ProblemsByName::iterator p_miit,
-                            boost::shared_ptr<EntFiniteElement> ent_fe_ptr,
-                            boost::shared_ptr<NumeredEntFiniteElement> &fe_ptr) const;
 };
-
-MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
-    ProblemsByName::iterator p_miit,
-    boost::shared_ptr<EntFiniteElement> ent_fe_ptr,
-    boost::shared_ptr<NumeredEntFiniteElement> &fe_ptr) const {
-  MoFEMFunctionBegin;
-
-  if (!ent_fe_ptr)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Pointer to EntFiniteElement not given");
-
-  // if element is not part of problem
-  if ((ent_fe_ptr->getId() & p_miit->getBitFEId()).none())
-    MoFEMFunctionReturnHot(0);
-
-  BitRefLevel prb_bit = p_miit->getBitRefLevel();
-  BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
-  BitRefLevel fe_bit = ent_fe_ptr->getBitRefLevel();
-  // if entity is not problem refinement level
-  if ((fe_bit & prb_mask) != fe_bit)
-    MoFEMFunctionReturnHot(0);
-  if ((fe_bit & prb_bit) != prb_bit)
-    MoFEMFunctionReturnHot(0);
-
-  auto fe_it =
-      p_miit->numeredFiniteElements->find(ent_fe_ptr->getLocalUniqueId());
-
-  // Create element if is not there
-  if (fe_it == p_miit->numeredFiniteElements->end()) {
-    auto p = p_miit->numeredFiniteElements->insert(
-        boost::make_shared<NumeredEntFiniteElement>(ent_fe_ptr));
-    fe_it = p.first;
-  }
-  fe_ptr = *fe_it;
-
-  if (!fe_ptr)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "At that point ptr to finite element should be well known");
-
-  MoFEMFunctionReturn(0);
-}
 
 template <typename TAG>
 MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
@@ -155,44 +110,26 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
       // if entity is not problem refinement level
       if ((fe_bit & dof_bit).any()) {
 
-        boost::shared_ptr<NumeredEntFiniteElement> fe_ptr;
-        // get element, if element is not in database build columns dofs
-        CHKERR buildFECol(p_miit, r.first->entFePtr, fe_ptr);
-
-        if (fe_ptr) {
-
-          for (auto &it : fe_ptr->getColFieldEnts()) {
-            if (auto e = it.lock()) {
-              if (auto cache = e->entityCacheColDofs.lock())
-                for (auto vit = cache->loHi[0]; vit != cache->loHi[1]; vit++) {
-                  const int idx = TAG::get_index(vit);
-                  if (idx >= 0)
-                    dofs_col_view.push_back(idx);
-                  if (idx >= p_miit->getNbDofsCol()) {
-                    std::ostringstream zz;
-                    zz << "rank " << rAnk << " ";
-                    zz << *(*vit) << std::endl;
-                    SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, zz.str().c_str());
-                  }
+        for (auto &it : r.first->entFePtr->getColFieldEnts()) {
+          if (auto e = it.lock()) {
+            if (auto cache = e->entityCacheColDofs.lock()) {
+              const auto lo = cache->loHi[0];
+              const auto hi = cache->loHi[1];
+              for (auto vit = lo; vit != hi; ++vit) {
+                const int idx = TAG::get_index(vit);
+                if (idx >= 0)
+                  dofs_col_view.push_back(idx);
+                if (idx >= p_miit->getNbDofsCol()) {
+                  std::ostringstream zz;
+                  zz << "rank " << rAnk << " ";
+                  zz << *(*vit) << std::endl;
+                  SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, zz.str().c_str());
                 }
-              else
-                SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Cache not set");
-            }
+              }
+            } else
+              SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Cache not set");
           }
-
-          if (verb >= NOISY) {
-            MOFEM_LOG("SYNC", Sev::noisy)
-                << "rank " << rAnk << ":  numeredColDofs" << std::endl;
-            for (auto &dof_ptr :
-                 fe_ptr->getColDofs(*(p_miit->getNumeredColDofs())))
-              MOFEM_LOG("SYNC", Sev::noisy) << *dof_ptr;
-            MOFEM_LOG_SYNCHRONISE(cOmm)
-          }
-
-        } else
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Element should be here, otherwise matrix will have missing "
-                  "elements");
+        }
       }
     }
   }
