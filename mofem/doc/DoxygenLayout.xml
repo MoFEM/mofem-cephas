@@ -15,7 +15,7 @@
     <tab type="usergroup" visible="yes" title="Developer" url="@ref developersmain" intro="">
       <tab type="user" url="@ref tutorials_in_progress" title="Tutorials"/>
       <tab type="user" url="@ref work_in_progress" visible="no" title="Work in progess" intro=""/>
-      <tab type="examples" visible="yes" title="" intro=""/>
+      <tab type="examples" visible="no" title="" intro=""/>
       <tab type="user" url="@ref general_data_structure" title="Basic design" intro=""/>
       
       <tab type="user" title="Source code" url="@ref developer_source_code" intro="">
