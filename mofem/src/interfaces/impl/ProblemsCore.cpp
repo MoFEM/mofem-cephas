@@ -422,6 +422,14 @@ MoFEMErrorCode Core::loop_finite_elements(
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
 
+  boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col, cache_row;
+  CHKERR cacheProblemEntities(problem_ptr->getName(), fe_name, cache_data,
+                              cache_row, cache_col);
+
+  if (!cache_data)
+    SETERRQ(get_comm(), MOFEM_DATA_INCONSISTENCY, "cache data not set");
+
   method.feName = fe_name;
   SET_BASIC_METHOD(method, &*problem_ptr)
   PetscLogEventBegin(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
@@ -756,4 +764,98 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
   CHKERR method.postProcess();
   MoFEMFunctionReturn(0);
 }
+
+MoFEMErrorCode Core::cacheProblemEntities(
+    const std::string prb_name, const std::string fe_name,
+    boost::shared_ptr<std::vector<EntityCacheDofs>> &cache_data,
+    boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &cache_row,
+    boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &cache_col) {
+  ProblemCoreFunctionBegin;
+
+  auto p_miit = pRoblems.get<Problem_mi_tag>().find(prb_name);
+  if (p_miit == pRoblems.get<Problem_mi_tag>().end())
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem not in database %s",
+             prb_name.c_str());
+
+  auto &row_dofs = p_miit->numeredRowDofs;
+  auto &col_dofs = p_miit->numeredColDofs;
+
+  auto fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
+  if (fe_miit == finiteElements.get<FiniteElement_name_mi_tag>().end())
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+             "finite element not in database %s", fe_name.c_str());
+  const auto fe_uid = (*fe_miit)->getFEUId();
+
+  if (!cache_row)
+    cache_row = boost::make_shared<std::vector<EntityCacheNumeredDofs>>(
+        entsFields.size());
+
+  if (!cache_col) {
+    if (row_dofs == col_dofs &&
+        ((*fe_miit)->getBitFieldIdCol() == (*fe_miit)->getBitFieldIdRow()))
+      cache_col = cache_row;
+    else
+      cache_col = boost::make_shared<std::vector<EntityCacheNumeredDofs>>(
+          entsFields.size());
+  }
+
+  if (!cache_data)
+    cache_data =
+        boost::make_shared<std::vector<EntityCacheDofs>>(entsFields.size());
+
+  size_t idx = 0;
+  for (auto it = entsFields.begin(); it != entsFields.end(); ++it, ++idx) {
+
+    const auto uid = (*it)->getLocalUniqueId();
+    auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(uid);
+    for (auto lo = r.first; lo != r.second; ++lo) {
+
+      if (lo->entFePtr->getId() == (*fe_miit)->getId()) {
+
+        auto cache_numered_dofs = [&](auto &numered_dofs, auto &cache_vec,
+                                      auto &ent_cache) {
+          auto dit = numered_dofs->lower_bound(uid);
+          decltype(dit) hi_dit;
+          if (dit != numered_dofs->end())
+            hi_dit = numered_dofs->upper_bound(
+                uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
+          else
+            hi_dit = dit;
+
+          ent_cache = boost::shared_ptr<EntityCacheNumeredDofs>(
+              cache_vec, &((*cache_vec)[idx]));
+          (*cache_vec)[idx].loHi = {dit, hi_dit};
+        };
+
+        auto cache_dofs = [&](auto &dofs, auto &cache_vec, auto &ent_cache) {
+          auto dit = dofs.lower_bound(uid);
+          decltype(dit) hi_dit;
+          if (dit != dofs.end())
+            hi_dit = dofs.upper_bound(uid |
+                                      static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
+          else
+            hi_dit = dit;
+
+          ent_cache = boost::shared_ptr<EntityCacheDofs>(cache_vec,
+                                                         &((*cache_vec)[idx]));
+          (*cache_vec)[idx].loHi = {dit, hi_dit};
+        };
+
+        cache_numered_dofs(col_dofs, cache_col, (*it)->entityCacheColDofs);
+        if (cache_row != cache_col)
+          cache_numered_dofs(row_dofs, cache_row, (*it)->entityCacheRowDofs);
+        else
+          (*it)->entityCacheRowDofs = (*it)->entityCacheColDofs;
+
+        cache_dofs(dofsField, cache_data, (*it)->entityCacheDataDofs);
+
+        break;
+
+      } 
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+} 
+
 } // namespace MoFEM
