@@ -1056,6 +1056,22 @@ protected:
   static PetscBool isInitialized;    ///< petsc was initialised by other agent
 
   /**
+   * @brief Cache variables
+   *
+   * @param prb_name
+   * @param fe_elements
+   * @param ent_data_cache
+   * @param ent_row_cache
+   * @param ent_col_cache
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode cacheProblemEntities(
+      const std::string prb_name, const std::string fe_elements,
+      boost::shared_ptr<std::vector<EntityCacheDofs>> &ent_data_cache,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &ent_row_cache,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &ent_col_cache);
+
+  /**
    * @brief add problem
    *
    * @param id  problem id
