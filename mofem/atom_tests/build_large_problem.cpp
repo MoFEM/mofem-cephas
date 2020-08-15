@@ -104,23 +104,6 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionFiniteElements("P1");
     CHKERR prb_mng_ptr->partitionGhostDofs("P1");
 
-    auto ref_ents = m_field.get_ref_ents();
-    auto ref_fe_ents = m_field.get_ref_finite_elements();
-    auto field_ents = m_field.get_field_ents();
-    auto dofs = m_field.get_dofs();
-    auto finite_elements = m_field.get_finite_elements();
-    auto adjacencies = m_field.get_ents_elements_adjacency();
-
-    // This realease data structures not used by the code. Once problem is
-    // build, and you not plan create more problems, you can realease those
-    // data structures. However, underlying data, on entities are not
-    // realeased, since data can be sill acessed form finite element.
-    const_cast<RefEntity_multiIndex *>(ref_ents)->clear();
-    const_cast<RefElement_multiIndex *>(ref_fe_ents)->clear();
-    const_cast<FieldEntity_multiIndex *>(field_ents)->clear();
-    const_cast<DofEntity_multiIndex *>(dofs)->clear();
-    const_cast<FiniteElement_multiIndex *>(finite_elements)->clear();
-
     MOFEM_LOG_CHANNEL("WORLD");
     MOFEM_LOG("WORLD", Sev::inform) << "Create matrix";
     SmartPetscObj<Mat> A;
@@ -128,11 +111,6 @@ int main(int argc, char *argv[]) {
         ->createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>("P1", A);
     MOFEM_LOG_CHANNEL("WORLD");
     MOFEM_LOG("WORLD", Sev::inform) << "Done";
-
-    // Once matrix is created we do not need adjacencies data structures
-    const_cast<FieldEntityEntFiniteElementAdjacencyMap_multiIndex *>(
-        adjacencies)
-        ->clear();
 
     auto fe_ptr = boost::make_shared<FEMethod>();
 
