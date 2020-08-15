@@ -79,7 +79,7 @@ ContactPrismElementForcesAndSourcesCore::
       dataL2Master(*dataOnMaster[L2].get()),
       dataHdivSlave(*dataOnSlave[HDIV].get()),
       dataL2Slave(*dataOnSlave[L2].get()),
-      opContravariantTransform(nOrmalSlave, normalsAtGaussPtsSlave){
+      opContravariantTransform(nOrmalSlave, normalsAtGaussPtsSlave) {
 
   getUserPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
@@ -446,12 +446,12 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 
   for (int space = HCURL; space != LASTSPACE; ++space)
     if (dataOnElement[space]) {
- 
+
       dataH1Master.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
           dataOnMaster[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
       dataH1Slave.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
           dataOnSlave[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-     
+
       if (space == HDIV) {
 
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
@@ -515,18 +515,17 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
           auto slave_normal_data = get_tensor_vec(normal, 3);
 
           normal_slave(i) = slave_normal_data(i);
-        
+
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsSlave,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
 
-          
           normalsAtGaussPtsSlave.resize(gaussPtsSlave.size2(), 3);
           normalsAtGaussPtsSlave.clear();
           auto t_normal = get_ftensor_from_mat_3d(normalsAtGaussPtsSlave);
-          
+
           for (int ii = 0; ii != nbGaussPts; ++ii) {
             t_normal(i) = normal_slave(i);
             ++t_normal;
@@ -676,7 +675,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                                   DataForcesAndSourcesCore &slave_data) {
                 return getNodesFieldData(
                     field_name,
-                    const_cast<FEDofEntity_multiIndex &>(getDataDofs()),
                     master_data.dataOnEntities[MBVERTEX][0].getFieldData(),
                     slave_data.dataOnEntities[MBVERTEX][0].getFieldData(),
                     master_data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
@@ -924,11 +922,10 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
 }
 
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
-    const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
-    VectorDouble &master_nodes_data, VectorDouble &slave_nodes_data,
-    VectorDofs &master_nodes_dofs, VectorDofs &slave_nodes_dofs,
-    FieldSpace &master_space, FieldSpace &slave_space,
-    FieldApproximationBase &master_base,
+    const std::string field_name, VectorDouble &master_nodes_data,
+    VectorDouble &slave_nodes_data, VectorDofs &master_nodes_dofs,
+    VectorDofs &slave_nodes_dofs, FieldSpace &master_space,
+    FieldSpace &slave_space, FieldApproximationBase &master_base,
     FieldApproximationBase &slave_base) const {
   MoFEMFunctionBegin;
 
@@ -939,67 +936,73 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
   set_zero(master_nodes_data, master_nodes_dofs);
   set_zero(slave_nodes_data, slave_nodes_dofs);
 
-  auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
-  auto bit_number = mField.get_field_bit_number(&field_name[0]);
-  auto dit = dofs_by_uid.lower_bound(FieldEntity::getLocalUniqueIdCalculate(
-      bit_number, get_id_for_min_type<MBVERTEX>()));
-  if (dit == dofs_by_uid.end())
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "No nodal dofs on element");
-  auto hi_dit = dofs_by_uid.upper_bound(FieldEntity::getLocalUniqueIdCalculate(
-      bit_number, get_id_for_max_type<MBVERTEX>()));
+  auto &field_ents = getDataFieldEnts();
+  auto bit_number = mField.get_field_bit_number(field_name);
+  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_min_type<MBVERTEX>());
+  auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
+                             cmp_uid_lo);
+  if (lo != field_ents.end()) {
+    const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+        bit_number, get_id_for_max_type<MBVERTEX>());
+    auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
+    if (lo != hi) {
 
-  if (dit != hi_dit) {
-    auto &first_dof = **dit;
-    const int nb_dof_idx = first_dof.getNbOfCoeffs();
+      for (auto it = lo; it != hi; ++it)
+        if (auto first_e = it->lock()) {
 
-    auto init_set = [&](auto &nodes_data, auto &nodes_dofs, auto &space,
-                        auto &base) {
-      constexpr int num_nodes = 3;
-      const int max_nb_dofs = nb_dof_idx * num_nodes;
-      space = first_dof.getSpace();
-      base = first_dof.getApproxBase();
-      nodes_data.resize(max_nb_dofs, false);
-      nodes_dofs.resize(max_nb_dofs, false);
-      nodes_data.clear();
-    };
+          const int nb_dof_idx = first_e->getNbOfCoeffs();
 
-    init_set(master_nodes_data, master_nodes_dofs, master_space, master_base);
-    init_set(slave_nodes_data, slave_nodes_dofs, slave_space, slave_base);
+          auto init_set = [&](auto &nodes_data, auto &nodes_dofs, auto &space,
+                              auto &base) {
+            constexpr int num_nodes = 3;
+            const int max_nb_dofs = nb_dof_idx * num_nodes;
+            space = first_e->getSpace();
+            base = first_e->getApproxBase();
+            nodes_data.resize(max_nb_dofs, false);
+            nodes_dofs.resize(max_nb_dofs, false);
+            nodes_data.clear();
+            fill(nodes_dofs.begin(), nodes_dofs.end(), nullptr);
+          };
 
-    std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
+          init_set(master_nodes_data, master_nodes_dofs, master_space,
+                   master_base);
+          init_set(slave_nodes_data, slave_nodes_dofs, slave_space, slave_base);
 
-    for (; dit != hi_dit;) {
-      const auto &dof_ptr = *dit;
-      const auto &dof = *dof_ptr;
-      const auto &sn = *dof.getSideNumberPtr();
-      int side = sn.side_number;
+          for (; it != hi; ++it) {
+            if (auto e = it->lock()) {
 
-      auto set_data = [&](auto &nodes_data, auto &nodes_dofs, int pos) {
-        auto ent_filed_data_vec = dof.getEntFieldData();
-        for (int ii = 0; ii != nb_dof_idx; ++ii) {
-          nodes_data[pos] = ent_filed_data_vec[ii];
-          const_cast<FEDofEntity *&>(nodes_dofs[pos]) = (*dit).get();
-          ++pos;
-          ++dit;
+              const auto &sn = e->getSideNumberPtr();
+              int side = sn->side_number;
+
+              auto set_data = [&](auto &nodes_data, auto &nodes_dofs, int pos) {
+                if (auto cache = e->entityCacheDataDofs.lock()) {
+                  for (auto dit = cache->loHi[0]; dit != cache->loHi[1];
+                       ++dit) {
+                    const auto dof_idx = (*dit)->getEntDofIdx();
+                    nodes_data[pos + dof_idx] = (*dit)->getFieldData();
+                    nodes_dofs[pos + dof_idx] =
+                        reinterpret_cast<FEDofEntity *>((*dit).get());
+                  }
+                }
+              };
+
+              if (side < 3)
+                set_data(master_nodes_data, master_nodes_dofs,
+                         side * nb_dof_idx);
+              else
+                set_data(slave_nodes_data, slave_nodes_dofs,
+                         (side - 3) * nb_dof_idx);
+
+              const int brother_side = sn->brother_side_number;
+              if (brother_side != -1)
+                SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                        "Not implemented (FIXME please)");
+            }
+          }
+
+          break;
         }
-      };
-
-      if (side == -1) {
-        for (int ii = 0; ii != nb_dof_idx; ++ii) {
-          ++dit;
-        }
-        continue;
-      }
-
-      if (side < 3)
-        set_data(master_nodes_data, master_nodes_dofs, side * nb_dof_idx);
-      else
-        set_data(slave_nodes_data, slave_nodes_dofs, (side - 3) * nb_dof_idx);
-
-      const int brother_side = sn.brother_side_number;
-      if (brother_side != -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
     }
   }
 
@@ -1155,7 +1158,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
 
       const int brother_side = (*dit)->getSideNumberPtr()->brother_side_number;
-      
+
       if (brother_side != -1)
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
     }

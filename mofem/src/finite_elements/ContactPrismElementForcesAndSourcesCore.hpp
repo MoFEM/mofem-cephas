@@ -391,11 +391,10 @@ protected:
    * \param slave_base base for slave face
    */
   MoFEMErrorCode getNodesFieldData(
-      const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
-      VectorDouble &master_nodes_data, VectorDouble &slave_nodes_data,
-      VectorDofs &master_nodes_dofs, VectorDofs &slave_nodes_dofs,
-      FieldSpace &master_space, FieldSpace &slave_space,
-      FieldApproximationBase &master_base,
+      const std::string field_name, VectorDouble &master_nodes_data,
+      VectorDouble &slave_nodes_data, VectorDofs &master_nodes_dofs,
+      VectorDofs &slave_nodes_dofs, FieldSpace &master_space,
+      FieldSpace &slave_space, FieldApproximationBase &master_base,
       FieldApproximationBase &slave_base) const;
 
 private:
