@@ -314,21 +314,8 @@ struct EntFiniteElement
     return *getDataDofsPtr(dofs_field);
   };
 
-  inline boost::shared_ptr<FEDofEntity_multiIndex> &
-  getDataDofsPtr(const DofEntity_multiIndex &dofs_field) const {
-    RefEntityTmp<0>::refElementPtr = this->getRefElement();
-    if (lastSeenDataEntFiniteElement != this) {
-      if (dataDofs)
-        dataDofs->clear();
-      else
-        dataDofs = boost::make_shared<FEDofEntity_multiIndex>();
-      if (getDofView(getDataFieldEnts(), dofs_field, *dataDofs,
-                     moab::Interface::UNION))
-        THROW_MESSAGE("dataDofs can not be created");
-      lastSeenDataEntFiniteElement = this;
-    }
-    return dataDofs;
-  };
+  boost::shared_ptr<FEDofEntity_multiIndex> &
+  getDataDofsPtr(const DofEntity_multiIndex &dofs_field) const;
 
   /**
    * \brief Get data data dos multi-index structure
@@ -339,50 +326,44 @@ struct EntFiniteElement
     return *getDataVectorDofsPtr(dofs_field);
   };
 
-  inline boost::shared_ptr<std::vector<boost::shared_ptr<FEDofEntity>>> &
-  getDataVectorDofsPtr(const DofEntity_multiIndex &dofs_field) const {
-    RefEntityTmp<0>::refElementPtr = this->getRefElement();
-    if (lastSeenDataVectorEntFiniteElement != this) {
-      if (dataVectorDofs)
-        dataVectorDofs->clear();
-      else
-        dataVectorDofs =
-            boost::make_shared<std::vector<boost::shared_ptr<FEDofEntity>>>();
-      if (getDofVectorView(getDataFieldEnts(), dofs_field, *dataVectorDofs,
-                           moab::Interface::UNION))
-        THROW_MESSAGE("dataDofs can not be created");
-      lastSeenDataVectorEntFiniteElement = this;
-    }
-    return dataVectorDofs;
-  };
+  boost::shared_ptr<std::vector<boost::shared_ptr<FEDofEntity>>> &
+  getDataVectorDofsPtr(const DofEntity_multiIndex &dofs_field) const;
 
   inline FieldEntity_vector_view &getDataFieldEnts() const {
-    return *dataFieldEnts;
+    return *getDataFieldEntsPtr();
   };
 
-  inline boost::shared_ptr<FieldEntity_vector_view> &getDataFieldEntsPtr() {
+  inline boost::shared_ptr<FieldEntity_vector_view> &
+  getDataFieldEntsPtr() const {
+    RefEntityTmp<0>::refElementPtr = this->getRefElement();
     return dataFieldEnts;
   };
 
   inline FieldEntity_vector_view &getRowFieldEnts() const {
-    return *rowFieldEnts;
+    return *getRowFieldEntsPtr();
   };
 
   inline boost::shared_ptr<FieldEntity_vector_view> &
   getRowFieldEntsPtr() const {
+    RefEntityTmp<0>::refElementPtr = this->getRefElement();
     return rowFieldEnts;
   };
 
   inline const FieldEntity_vector_view &getColFieldEnts() const {
-    return *colFieldEnts;
+    return *getColFieldEntsPtr();
   };
 
   inline boost::shared_ptr<FieldEntity_vector_view> &
   getColFieldEntsPtr() const {
+    RefEntityTmp<0>::refElementPtr = this->getRefElement();
     return colFieldEnts;
   };
 
   friend std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e);
+
+  MoFEMErrorCode getCacheDataDofsView() const;
+
+  MoFEMErrorCode getCacheDataVectorDofsView() const;
 
   template <typename FE_ENTS, typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
   static MoFEMErrorCode

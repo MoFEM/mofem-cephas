@@ -286,17 +286,13 @@ struct FieldEntityTmp<0, 0>
   virtual const FieldTmp<0, 0> *getFieldRawPtr() const { return sFieldRawPtr; }
   static FieldTmp<0, 0> *sFieldRawPtr;
 
-private:
-  mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
-  mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
-
-  friend struct EntFiniteElement;
-  friend struct CreateRowComressedADJMatrix;
-  template <int V> friend struct CoreTmp;
-
   mutable boost::weak_ptr<EntityCacheDofs> entityCacheDataDofs;
   mutable boost::weak_ptr<EntityCacheNumeredDofs> entityCacheRowDofs;
   mutable boost::weak_ptr<EntityCacheNumeredDofs> entityCacheColDofs;
+
+private:
+  mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
+  mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
 };
 
 template <> struct FieldEntityTmp<-1, -1> : public FieldEntityTmp<0, 0> {

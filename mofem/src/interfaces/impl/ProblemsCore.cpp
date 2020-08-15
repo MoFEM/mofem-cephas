@@ -810,7 +810,7 @@ MoFEMErrorCode Core::cacheProblemEntities(
     auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(uid);
     for (auto lo = r.first; lo != r.second; ++lo) {
 
-      if (lo->entFePtr->getId() == (*fe_miit)->getId()) {
+      if ((lo->getBitFEId() & p_miit->getBitFEId()).any()) {
 
         auto cache_numered_dofs = [&](auto &numered_dofs, auto &cache_vec,
                                       auto &ent_cache) {
@@ -850,8 +850,7 @@ MoFEMErrorCode Core::cacheProblemEntities(
         cache_dofs(dofsField, cache_data, (*it)->entityCacheDataDofs);
 
         break;
-
-      } 
+      }
     }
   }
 

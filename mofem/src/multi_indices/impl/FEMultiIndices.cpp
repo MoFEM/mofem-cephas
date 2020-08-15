@@ -533,4 +533,73 @@ std::ostream &operator<<(std::ostream &os, const NumeredEntFiniteElement &e) {
   return os;
 }
 
+boost::shared_ptr<FEDofEntity_multiIndex> &
+EntFiniteElement::getDataDofsPtr(const DofEntity_multiIndex &dofs_field) const {
+  RefEntityTmp<0>::refElementPtr = this->getRefElement();
+  if (lastSeenDataEntFiniteElement != this) {
+    if (dataDofs)
+      dataDofs->clear();
+    else
+      dataDofs = boost::make_shared<FEDofEntity_multiIndex>();
+    if (getCacheDataDofsView())
+      THROW_MESSAGE("dataDofs can not be created");
+    lastSeenDataEntFiniteElement = this;
+  }
+  return dataDofs;
+};
+
+boost::shared_ptr<std::vector<boost::shared_ptr<FEDofEntity>>> &
+EntFiniteElement::getDataVectorDofsPtr(
+    const DofEntity_multiIndex &dofs_field) const {
+  RefEntityTmp<0>::refElementPtr = this->getRefElement();
+  if (lastSeenDataVectorEntFiniteElement != this) {
+    if (dataVectorDofs)
+      dataVectorDofs->clear();
+    else
+      dataVectorDofs =
+          boost::make_shared<std::vector<boost::shared_ptr<FEDofEntity>>>();
+    if (getCacheDataVectorDofsView())
+      THROW_MESSAGE("dataDofs can not be created");
+    lastSeenDataVectorEntFiniteElement = this;
+  }
+  return dataVectorDofs;
+};
+
+MoFEMErrorCode EntFiniteElement::getCacheDataDofsView() const {
+  MoFEMFunctionBeginHot;
+
+  auto hint = dataDofs->begin();
+  for (auto &it : *dataFieldEnts) {
+    if (auto e = it.lock()) {
+
+      if (auto cache = e->entityCacheDataDofs.lock())
+        for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit)
+          hint = dataDofs->emplace_hint(
+              hint, boost::reinterpret_pointer_cast<FEDofEntity>(*dit));
+      else
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Cache not set");
+    }
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode EntFiniteElement::getCacheDataVectorDofsView() const {
+  MoFEMFunctionBeginHot;
+
+  for (auto &it : *dataFieldEnts) {
+    if (auto e = it.lock()) {
+
+      if (auto cache = e->entityCacheDataDofs.lock())
+        for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit)
+          dataVectorDofs->emplace_back(
+              boost::reinterpret_pointer_cast<FEDofEntity>(*dit));
+      else
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Cache not set");
+    }
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
 } // namespace MoFEM
