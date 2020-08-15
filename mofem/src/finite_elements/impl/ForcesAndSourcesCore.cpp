@@ -622,70 +622,68 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
     }
   }
 
-  auto &dofs = const_cast<FEDofEntity_multiIndex &>(getDataDofs());
+  auto &field_ents = getDataFieldEnts();
   auto bit_number = mField.get_field_bit_number(field_name);
-  auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
-  auto dit = dofs_by_uid.lower_bound(
-      DofEntity::getLoFieldEntityUId(bit_number, get_id_for_min_type(type_lo)));
-  if (dit == dofs_by_uid.end())
-    MoFEMFunctionReturnHot(0);
-  auto hi_dit = dofs_by_uid.upper_bound(
-      DofEntity::getHiFieldEntityUId(bit_number, get_id_for_max_type(type_hi)));
+  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_min_type(type_lo));
+  auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
+                             cmp_uid_lo);
+  if (lo != field_ents.end()) {
+    const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+        bit_number, get_id_for_max_type(type_hi));
+    auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
+    if (lo != hi) {
 
-  std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
-  for (; dit != hi_dit;) {
+      std::vector<boost::weak_ptr<FieldEntity>> brother_ents_vec;
 
-    auto &dof = **dit;
-    const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
-    if (nb_dofs_on_ent) {
+      for (auto it = lo; it != hi; ++it)
+        if (auto e = it->lock()) {
 
-      const EntityType type = dof.getEntType();
-      const int side = dof.getSideNumberPtr()->side_number;
-      if (side >= 0) {
+          const EntityType type = e->getEntType();
+          const int side = e->getSideNumberPtr()->side_number;
+          if (side >= 0) {
 
-        auto &dat = data.dataOnEntities[type][side];
-        auto &ent_field_dofs = dat.getFieldDofs();
-        auto &ent_field_data = dat.getFieldData();
-        const int brother_side = dof.getSideNumberPtr()->brother_side_number;
-        if (brother_side != -1)
-          brother_dofs_vec.emplace_back(*dit);
+            auto &dat = data.dataOnEntities[type][side];
+            auto &ent_field_dofs = dat.getFieldDofs();
+            auto &ent_field_data = dat.getFieldData();
 
-        if (ent_field_data.empty()) {
+            const int brother_side = e->getSideNumberPtr()->brother_side_number;
+            if (brother_side != -1)
+              brother_ents_vec.emplace_back(e);
 
-          dat.getBase() = dof.getApproxBase();
-          dat.getSpace() = dof.getSpace();
-          const int ent_order = dof.getMaxOrder();
-          dat.getDataOrder() =
-              dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
-          ent_field_data.resize(nb_dofs_on_ent, false);
-          noalias(ent_field_data) = dof.getEntFieldData();
-          ent_field_dofs.resize(nb_dofs_on_ent, false);
-          for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
-            ent_field_dofs[(*dit)->getEntDofIdx()] = (*dit).get();
-            ++dit;
+            dat.getBase() = e->getApproxBase();
+            dat.getSpace() = e->getSpace();
+            const int ent_order = e->getMaxOrder();
+            dat.getDataOrder() =
+                dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+
+            ent_field_data.resize(e->getEntFieldData().size(), false);
+            noalias(ent_field_data) = e->getEntFieldData();
+            ent_field_dofs.resize(ent_field_data.size(), false);
+            std::fill(ent_field_dofs.begin(), ent_field_dofs.end(), nullptr);
+            if (auto cache = e->entityCacheDataDofs.lock()) {
+              for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
+                ent_field_dofs[(*dit)->getEntDofIdx()] =
+                    reinterpret_cast<FEDofEntity *>((*dit).get());
+              }
+            }
           }
         }
 
-      } else {
-
-        for (int ii = 0; ii != nb_dofs_on_ent; ++ii)
-          ++dit;
+      for (auto &it : brother_ents_vec) {
+        if (const auto e = it.lock()) {
+          const EntityType type = e->getEntType();
+          const int side = e->getSideNumberPtr()->side_number;
+          const int brother_side = e->getSideNumberPtr()->brother_side_number;
+          auto &dat = data.dataOnEntities[type][side];
+          auto &dat_brother = data.dataOnEntities[type][brother_side];
+          dat_brother.getBase() = dat.getBase();
+          dat_brother.getSpace() = dat.getSpace();
+          dat_brother.getDataOrder() = dat.getDataOrder();
+          dat_brother.getFieldData() = dat.getFieldData();
+          dat_brother.getFieldDofs() = dat.getFieldDofs();
+        }
       }
-    }
-  }
-
-  for (auto &dof_ptr : brother_dofs_vec) {
-    if (auto d = dof_ptr.lock()) {
-      const EntityType type = d->getEntType();
-      const int side = d->getSideNumberPtr()->side_number;
-      const int brother_side = d->getSideNumberPtr()->brother_side_number;
-      auto &dat = data.dataOnEntities[type][side];
-      auto &dat_brother = data.dataOnEntities[type][brother_side];
-      dat_brother.getBase() = dat.getBase();
-      dat_brother.getSpace() = dat.getSpace();
-      dat_brother.getDataOrder() = dat.getDataOrder();
-      dat_brother.getFieldData() = dat.getFieldData();
-      dat_brother.getFieldDofs() = dat.getFieldDofs();
     }
   }
 
