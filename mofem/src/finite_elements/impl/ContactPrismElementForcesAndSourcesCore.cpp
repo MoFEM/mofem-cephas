@@ -849,72 +849,73 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
   reset_data(master_data);
   reset_data(slave_data);
 
-  auto &dofs = const_cast<FEDofEntity_multiIndex &>(getDataDofs());
-  auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
+  auto &field_ents = getDataFieldEnts();
   auto bit_number = mField.get_field_bit_number(field_name);
-  auto dit = dofs_by_uid.lower_bound(FieldEntity::getLocalUniqueIdCalculate(
-      bit_number, get_id_for_min_type(type_lo)));
-  if (dit == dofs_by_uid.end())
-    MoFEMFunctionReturnHot(0);
-  auto hi_dit = dofs_by_uid.upper_bound(FieldEntity::getLocalUniqueIdCalculate(
-      bit_number, get_id_for_max_type(type_hi)));
+  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_min_type(type_lo));
+  auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
+                             cmp_uid_lo);
+  if (lo != field_ents.end()) {
+    const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+        bit_number, get_id_for_max_type(type_hi));
+    auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
+    if (lo != hi) {
+      for (auto it = lo; it != hi; ++it)
+        if (auto e = it->lock()) {
 
-  auto get_data = [&](auto &data, auto &dof, auto type, auto side) {
-    auto &dat = data.dataOnEntities[type][side];
-    auto &ent_field_dofs = dat.getFieldDofs();
-    auto &ent_field_data = dat.getFieldData();
-    if (ent_field_data.empty()) {
-      dat.getBase() = dof.getApproxBase();
-      dat.getSpace() = dof.getSpace();
-      const int ent_order = dof.getMaxOrder();
-      dat.getDataOrder() =
-          dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
-      const auto dof_ent_field_data = dof.getEntFieldData();
-      const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
-      ent_field_data.resize(nb_dofs_on_ent, false);
-      noalias(ent_field_data) = dof.getEntFieldData();
-      ent_field_dofs.resize(nb_dofs_on_ent, false);
-      for (int ii = 0; ii != nb_dofs_on_ent; ++ii) {
-        const_cast<FEDofEntity *&>(ent_field_dofs[ii]) = (*dit).get();
-        ++dit;
-      }
-    }
-  };
+          auto get_data = [&](auto &data, auto type, auto side) {
+            auto &dat = data.dataOnEntities[type][side];
+            auto &ent_field_dofs = dat.getFieldDofs();
+            auto &ent_field_data = dat.getFieldData();
+            dat.getBase() = e->getApproxBase();
+            dat.getSpace() = e->getSpace();
+            const int ent_order = e->getMaxOrder();
+            dat.getDataOrder() =
+                dat.getDataOrder() > ent_order ? dat.getDataOrder() : ent_order;
+            const auto dof_ent_field_data = e->getEntFieldData();
+            const int nb_dofs_on_ent = e->getNbDofsOnEnt();
+            ent_field_data.resize(nb_dofs_on_ent, false);
+            noalias(ent_field_data) = e->getEntFieldData();
+            ent_field_dofs.resize(nb_dofs_on_ent, false);
+            std::fill(ent_field_dofs.begin(), ent_field_dofs.end(), nullptr);
+            if (auto cache = e->entityCacheDataDofs.lock()) {
+              for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
+                ent_field_dofs[(*dit)->getEntDofIdx()] =
+                    reinterpret_cast<FEDofEntity *>((*dit).get());
+              }
+            }
+          };
 
-  for (; dit != hi_dit;) {
+          const EntityType type = e->getEntType();
+          const int side = e->getSideNumberPtr()->side_number;
 
-    auto &dof = **dit;
-    if (dof.getNbDofsOnEnt()) {
+          switch (type) {
+          case MBEDGE:
 
-      const EntityType type = dof.getEntType();
-      const int side = dof.getSideNumberPtr()->side_number;
+            if (side < 3)
+              get_data(master_data, type, side);
+            else if (side > 5)
+              get_data(slave_data, type, side - 6);
 
-      switch (type) {
-      case MBEDGE:
+            break;
+          case MBTRI:
 
-        if (side < 3)
-          get_data(master_data, dof, type, side);
-        else if (side > 5)
-          get_data(slave_data, dof, type, side - 6);
+            if (side == 3)
+              get_data(master_data, type, 0);
+            if (side == 4)
+              get_data(slave_data, type, 0);
 
-        break;
-      case MBTRI:
+            break;
+          default:
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Entity type not implemented (FIXME)");
+          };
 
-        if (side == 3)
-          get_data(master_data, dof, type, 0);
-        if (side == 4)
-          get_data(slave_data, dof, type, 0);
-
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Entity type not implemented");
-      };
-
-      const int brother_side = dof.getSideNumberPtr()->brother_side_number;
-      if (brother_side != -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "Case with brother side not implemented");
+          const int brother_side = e->getSideNumberPtr()->brother_side_number;
+          if (brother_side != -1)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                    "Case with brother side not implemented (FIXME)");
+        }
     }
   }
 
