@@ -257,7 +257,6 @@ struct interface_FiniteElement<T, T>
   mutable boost::shared_ptr<T> sFiniteElementPtr;
 };
 
-
 struct EntityCacheDofs {
   std::array<DofEntity_multiIndex::iterator, 2> loHi;
 };
@@ -309,25 +308,23 @@ struct EntFiniteElement
    * \brief Get data data dos multi-index structure
    * @return Reference multi-index FEDofEntity_multiIndex
    */
-  inline const FEDofEntity_multiIndex &
-  getDataDofs(const DofEntity_multiIndex &dofs_field) const {
-    return *getDataDofsPtr(dofs_field);
+  inline const FEDofEntity_multiIndex &getDataDofs() const {
+    return *getDataDofsPtr();
   };
 
-  boost::shared_ptr<FEDofEntity_multiIndex> &
-  getDataDofsPtr(const DofEntity_multiIndex &dofs_field) const;
+  boost::shared_ptr<FEDofEntity_multiIndex> &getDataDofsPtr() const;
 
   /**
    * \brief Get data data dos multi-index structure
    * @return Reference multi-index FEDofEntity_multiIndex
    */
   inline std::vector<boost::shared_ptr<FEDofEntity>> &
-  getDataVectorDofs(const DofEntity_multiIndex &dofs_field) const {
-    return *getDataVectorDofsPtr(dofs_field);
+  getDataVectorDofs() const {
+    return *getDataVectorDofsPtr();
   };
 
   boost::shared_ptr<std::vector<boost::shared_ptr<FEDofEntity>>> &
-  getDataVectorDofsPtr(const DofEntity_multiIndex &dofs_field) const;
+  getDataVectorDofsPtr() const;
 
   inline FieldEntity_vector_view &getDataFieldEnts() const {
     return *getDataFieldEntsPtr();
@@ -484,21 +481,16 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
       : interface_FiniteElement<T, T>(sptr, sptr) {}
   virtual ~interface_EntFiniteElement() = default;
 
-  inline const auto &getDataDofs(const DofEntity_multiIndex &dofs_field) const {
-    return this->sPtr->getDataDofs(dofs_field);
-  }
+  inline const auto &getDataDofs() const { return this->sPtr->getDataDofs(); }
 
-  inline auto &getDataDofsPtr(const DofEntity_multiIndex &dofs_field) const {
-    return this->sPtr->getDataDofsPtr(dofs_field);
-  }
+  inline auto &getDataDofsPtr() const { return this->sPtr->getDataDofsPtr(); }
 
-  inline auto &getDataVectorDofs(const DofEntity_multiIndex &dofs_field) const {
-    return this->sPtr->getDataVectorDofs(dofs_field);
+  inline auto &getDataVectorDofs() const {
+    return this->sPtr->getDataVectorDofs();
   };
 
-  inline auto &
-  getDataVectorDofsPtr(const DofEntity_multiIndex &dofs_field) const {
-    return this->sPtr->getDataVectorDofsPtr(dofs_field);
+  inline auto &getDataVectorDofsPtr() const {
+    return this->sPtr->getDataVectorDofsPtr();
   };
 
   inline const FieldEntity_vector_view &getDataFieldEnts() const {
@@ -655,7 +647,6 @@ struct NumeredEntFiniteElement
 
   friend std::ostream &operator<<(std::ostream &os,
                                   const NumeredEntFiniteElement &e);
-
 
   inline static void getRowDofsClear() {
     lastSeenNumeredRows = nullptr;

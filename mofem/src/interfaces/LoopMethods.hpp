@@ -390,19 +390,19 @@ struct FEMethod : public BasicMethod {
                                   ///< structure
 
   inline auto &getDataDofs() const {
-    return numeredEntFiniteElementPtr->getDataDofs(*dofsPtr);
+    return numeredEntFiniteElementPtr->getDataDofs();
   };
 
   inline auto &getDataDofsPtr() const {
-    return numeredEntFiniteElementPtr->getDataDofsPtr(*dofsPtr);
+    return numeredEntFiniteElementPtr->getDataDofsPtr();
   };
 
   inline auto &getDataVectorDofs() const {
-    return numeredEntFiniteElementPtr->getDataVectorDofs(*dofsPtr);
+    return numeredEntFiniteElementPtr->getDataVectorDofs();
   };
 
   inline auto &getDataVectorDofsPtr() const {
-    return numeredEntFiniteElementPtr->getDataVectorDofsPtr(*dofsPtr);
+    return numeredEntFiniteElementPtr->getDataVectorDofsPtr();
   };
 
   inline const FieldEntity_vector_view &getDataFieldEnts() const {

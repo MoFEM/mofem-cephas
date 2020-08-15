@@ -534,7 +534,7 @@ std::ostream &operator<<(std::ostream &os, const NumeredEntFiniteElement &e) {
 }
 
 boost::shared_ptr<FEDofEntity_multiIndex> &
-EntFiniteElement::getDataDofsPtr(const DofEntity_multiIndex &dofs_field) const {
+EntFiniteElement::getDataDofsPtr() const {
   RefEntityTmp<0>::refElementPtr = this->getRefElement();
   if (lastSeenDataEntFiniteElement != this) {
     if (dataDofs)
@@ -549,8 +549,7 @@ EntFiniteElement::getDataDofsPtr(const DofEntity_multiIndex &dofs_field) const {
 };
 
 boost::shared_ptr<std::vector<boost::shared_ptr<FEDofEntity>>> &
-EntFiniteElement::getDataVectorDofsPtr(
-    const DofEntity_multiIndex &dofs_field) const {
+EntFiniteElement::getDataVectorDofsPtr() const {
   RefEntityTmp<0>::refElementPtr = this->getRefElement();
   if (lastSeenDataVectorEntFiniteElement != this) {
     if (dataVectorDofs)
