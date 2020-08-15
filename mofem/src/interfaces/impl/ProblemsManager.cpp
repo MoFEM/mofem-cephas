@@ -449,8 +449,9 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
                                              const bool square_matrix,
                                              int verb) {
   MoFEM::Interface &m_field = cOre;
-  auto fe_ent_ptr = m_field.get_ents_finite_elements();
   auto dofs_field_ptr = m_field.get_dofs();
+  auto ents_field_ptr = m_field.get_field_ents();
+  auto adjacencies_ptr = m_field.get_ents_elements_adjacency();
   ProblemManagerFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
@@ -467,29 +468,57 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
   problem_ptr->numeredFiniteElements->clear();
 
   DofEntity_multiIndex_active_view dofs_rows, dofs_cols;
-  {
-    EntFiniteElement_multiIndex::iterator miit = fe_ent_ptr->begin();
-    EntFiniteElement_multiIndex::iterator hi_miit = fe_ent_ptr->end();
-    // iterate all finite element entities in database
-    for (; miit != hi_miit; miit++) {
-      // if element is in problem
-      if (((*miit)->getId() & problem_ptr->getBitFEId()).any()) {
-        BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
-        BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
-        BitRefLevel fe_bit = (*miit)->getBitRefLevel();
-        // if entity is not problem refinement level
-        if ((fe_bit & prb_mask) != fe_bit)
-          continue;
-        if ((fe_bit & prb_bit) != prb_bit)
-          continue;
-        // get dof uids for rows and columns
-        CHKERR(*miit)->getRowDofView(*dofs_field_ptr, dofs_rows);
-        if (!square_matrix) {
-          CHKERR(*miit)->getColDofView(*dofs_field_ptr, dofs_cols);
+  auto make_rows_and_cols_view = [&](auto &dofs_rows, auto &dofs_cols) {
+    MoFEMFunctionBeginHot;
+    for (auto it = ents_field_ptr->begin(); it != ents_field_ptr->end(); ++it) {
+
+      const auto uid = (*it)->getLocalUniqueId();
+
+      auto r = adjacencies_ptr->get<Unique_mi_tag>().equal_range(uid);
+      for (auto lo = r.first; lo != r.second; ++lo) {
+
+        if ((lo->getBitFEId() & problem_ptr->getBitFEId()).any()) {
+          std::array<bool, 2> row_col = {false, false};
+
+          const BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
+          const BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
+          const BitRefLevel fe_bit = lo->entFePtr->getBitRefLevel();
+
+          // if entity is not problem refinement level
+          if ((fe_bit & prb_mask) != fe_bit)
+            continue;
+          if ((fe_bit & prb_bit) != prb_bit)
+            continue;
+
+          auto add_to_view = [&](auto &nb_dofs, auto &view, auto rc) {
+            auto dit = nb_dofs->lower_bound(uid);
+            decltype(dit) hi_dit;
+            if (dit != nb_dofs->end()) {
+              hi_dit = nb_dofs->upper_bound(
+                  uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
+              view.insert(dit, hi_dit);
+              row_col[rc] = true;
+            }
+          };
+
+          if ((lo->entFePtr->getBitFieldIdRow() & (*it)->getId()).any())
+            add_to_view(dofs_field_ptr, dofs_rows, ROW);
+
+          if (!square_matrix)
+            if ((lo->entFePtr->getBitFieldIdCol() & (*it)->getId()).any())
+              add_to_view(dofs_field_ptr, dofs_cols, COL);
+
+          if (square_matrix && row_col[ROW])
+            break;
+          else if (row_col[ROW] && row_col[COL])
+            break;
         }
       }
     }
-  }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR make_rows_and_cols_view(dofs_rows, dofs_cols);
 
   // Add row dofs to problem
   {
@@ -576,10 +605,6 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
   }
 
   if (verb >= NOISY) {
-    MOFEM_LOG("SYNC", Sev::noisy) << "FEs data for problem " << *problem_ptr;
-    for (auto &miit : *fe_ent_ptr)
-      MOFEM_LOG("SYNC", Sev::noisy) << *miit;
-
     MOFEM_LOG("SYNC", Sev::noisy)
         << "FEs row dofs " << *problem_ptr << " Nb. row dof "
         << problem_ptr->getNbDofsRow();
@@ -595,8 +620,8 @@ MoFEMErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,
   }
 
   cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM; // It is assumed that user who
-                                               // uses this function knows what
-                                               // he is doing
+                                               // uses this function knows
+                                               // what he is doing
 
   PetscLogEventEnd(MOFEM_EVENT_ProblemsManager, 0, 0, 0, 0);
 
@@ -665,32 +690,65 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   // Add DOFs to problem by visiting all elements and adding DOFs from
   // elements to the problem
   if (buildProblemFromFields == PETSC_FALSE) {
-    // fe_miit iterator for finite elements
-    EntFiniteElement_multiIndex::iterator fe_miit = fe_ent_ptr->begin();
-    EntFiniteElement_multiIndex::iterator hi_fe_miit = fe_ent_ptr->end();
-    // iterate all finite elements entities in database
-    for (; fe_miit != hi_fe_miit; fe_miit++) {
-      // if element is in problem
-      if (((*fe_miit)->getId() & problem_ptr->getBitFEId()).any()) {
 
-        const BitRefLevel fe_bit = (*fe_miit)->getBitRefLevel();
-        // if entity is not problem refinement level
-        if ((fe_bit & prb_mask) != fe_bit)
-          continue;
-        if ((fe_bit & prb_bit) != prb_bit)
-          continue;
+    auto make_rows_and_cols_view = [&](auto &dofs_rows, auto &dofs_cols) {
+      auto ents_field_ptr = m_field.get_field_ents();
+      auto adjacencies_ptr = m_field.get_ents_elements_adjacency();
+      MoFEMFunctionBeginHot;
+      for (auto it = ents_field_ptr->begin(); it != ents_field_ptr->end();
+           ++it) {
 
-        // get dof uids for rows and columns
-        CHKERR(*fe_miit)->getRowDofView(*dofs_field_ptr, dofs_rows);
-        if (!square_matrix) {
-          CHKERR(*fe_miit)->getColDofView(*dofs_field_ptr, dofs_cols);
+        const auto uid = (*it)->getLocalUniqueId();
+
+        auto r = adjacencies_ptr->get<Unique_mi_tag>().equal_range(uid);
+        for (auto lo = r.first; lo != r.second; ++lo) {
+
+          if ((lo->getBitFEId() & problem_ptr->getBitFEId()).any()) {
+            std::array<bool, 2> row_col = {false, false};
+
+            const BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
+            const BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
+            const BitRefLevel fe_bit = lo->entFePtr->getBitRefLevel();
+
+            // if entity is not problem refinement level
+            if ((fe_bit & prb_mask) != fe_bit)
+              continue;
+            if ((fe_bit & prb_bit) != prb_bit)
+              continue;
+
+            auto add_to_view = [&](auto &nb_dofs, auto &view, auto rc) {
+              auto dit = nb_dofs->lower_bound(uid);
+              decltype(dit) hi_dit;
+              if (dit != nb_dofs->end()) {
+                hi_dit = nb_dofs->upper_bound(
+                    uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
+                view.insert(dit, hi_dit);
+                row_col[rc] = true;
+              }
+            };
+
+            if ((lo->entFePtr->getBitFieldIdRow() & (*it)->getId()).any())
+              add_to_view(dofs_field_ptr, dofs_rows, ROW);
+
+            if (!square_matrix)
+              if ((lo->entFePtr->getBitFieldIdCol() & (*it)->getId()).any())
+                add_to_view(dofs_field_ptr, dofs_cols, COL);
+
+            if (square_matrix && row_col[ROW])
+              break;
+            else if (row_col[ROW] && row_col[COL])
+              break;
+          }
         }
       }
-    }
+      MoFEMFunctionReturnHot(0);
+    };
+
+    CHKERR make_rows_and_cols_view(dofs_rows, dofs_cols);
   }
 
-  // Add DOFS to the problem by searching all the filedes, and adding to problem
-  // owned or shared DOFs
+  // Add DOFS to the problem by searching all the filedes, and adding to
+  // problem owned or shared DOFs
   if (buildProblemFromFields == PETSC_TRUE) {
     // Get fields IDs on elements
     BitFieldId fields_ids_row, fields_ids_col;
@@ -805,8 +863,8 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     *(ghost_nbdof_ptr[ss]) = 0;
   }
 
-  // Loop over dofs on rows and columns and add to multi-indices in dofs problem
-  // structure,  set partition for each dof
+  // Loop over dofs on rows and columns and add to multi-indices in dofs
+  // problem structure,  set partition for each dof
   int nb_local_dofs[] = {0, 0};
   for (int ss = 0; ss < loop_size; ss++) {
     DofEntity_multiIndex_active_view::nth_index<1>::type::iterator miit,
@@ -859,8 +917,8 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       m_field.get_comm_size()),
       ids_data_packed_cols(m_field.get_comm_size());
 
-  // Loop over dofs on this processor and prepare those dofs to send on another
-  // proc
+  // Loop over dofs on this processor and prepare those dofs to send on
+  // another proc
   for (int ss = 0; ss != loop_size; ++ss) {
 
     DofEntity_multiIndex_active_view::nth_index<0>::type::iterator miit,
@@ -996,8 +1054,8 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
                                      &onodes_rows, &olengths_rows);
 
     // Gets a unique new tag from a PETSc communicator. All processors that
-    // share the communicator MUST call this routine EXACTLY the same number of
-    // times. This tag should only be used with the current objects
+    // share the communicator MUST call this routine EXACTLY the same number
+    // of times. This tag should only be used with the current objects
     // communicator; do NOT use it with any other MPI communicator.
     int tag_row;
     CHKERR PetscCommGetNewTag(m_field.get_comm(), &tag_row);
@@ -1857,12 +1915,12 @@ MoFEMErrorCode ProblemsManager::partitionSimpleProblem(const std::string name,
       hi_miit_col = dofs_col_by_idx.lower_bound(ranges_col[part + 1]);
       if (std::distance(miit_col, hi_miit_col) !=
           ranges_col[part + 1] - ranges_col[part]) {
-        SETERRQ4(
-            PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
-            "data inconsistency, std::distance(miit_col,hi_miit_col) != rend - "
-            "rstart (%d != %d - %d = %d) ",
-            std::distance(miit_col, hi_miit_col), ranges_col[part + 1],
-            ranges_col[part], ranges_col[part + 1] - ranges_col[part]);
+        SETERRQ4(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
+                 "data inconsistency, std::distance(miit_col,hi_miit_col) != "
+                 "rend - "
+                 "rstart (%d != %d - %d = %d) ",
+                 std::distance(miit_col, hi_miit_col), ranges_col[part + 1],
+                 ranges_col[part], ranges_col[part + 1] - ranges_col[part]);
       }
       // loop cols
       for (; miit_col != hi_miit_col; miit_col++) {
@@ -2372,7 +2430,8 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
   // Clear all elements and data, build it again
   problem_finite_elements.clear();
 
-  // Check if dofs and columns are the same, i.e. structurally symmetric problem
+  // Check if dofs and columns are the same, i.e. structurally symmetric
+  // problem
   bool do_cols_prob = true;
   if (p_miit->numeredRowDofs == p_miit->numeredColDofs) {
     do_cols_prob = false;
@@ -2443,7 +2502,6 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
       const auto max_part = std::distance(parts.begin(), pos);
       fe.part = max_part;
     }
-
   }
 
   for (auto &fe : *numbered_good_elems_ptr) {
@@ -2459,10 +2517,10 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
         }
       }
 
-      // Adding elements if row or column has DOFs, or there is no field set to
-      // rows and columns. The second case would be used by elements performing
-      // tasks which do not assemble matrices or vectors, but evaluate fields or
-      // modify base functions.
+      // Adding elements if row or column has DOFs, or there is no field set
+      // to rows and columns. The second case would be used by elements
+      // performing tasks which do not assemble matrices or vectors, but
+      // evaluate fields or modify base functions.
 
       return (!fe.sPtr->getRowFieldEnts().empty() ||
               !fe.sPtr->getColFieldEnts().empty())
@@ -2765,8 +2823,8 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
   const Problem *prb_ptr;
   CHKERR m_field.get_problem(problem_name, &prb_ptr);
 
-  decltype(prb_ptr->numeredRowDofs) numered_dofs[2] = {
-      prb_ptr->numeredRowDofs, nullptr};
+  decltype(prb_ptr->numeredRowDofs) numered_dofs[2] = {prb_ptr->numeredRowDofs,
+                                                       nullptr};
   if (prb_ptr->numeredRowDofs != prb_ptr->numeredColDofs)
     numered_dofs[1] = prb_ptr->numeredColDofs;
 
@@ -2956,17 +3014,18 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
     }
 
   if (verb > QUIET) {
-    MOFEM_LOG_C(
-        "SYNC", Sev::inform,
-        "removed ents on rank %d from problem %s dofs [ %d / %d  (before %d / "
-        "%d) local, %d / %d (before %d / %d) "
-        "ghost, %d / %d (before %d / %d) global]",
-        m_field.get_comm_rank(), prb_ptr->getName().c_str(),
-        prb_ptr->getNbLocalDofsRow(), prb_ptr->getNbLocalDofsCol(),
-        nb_init_row_dofs, nb_init_col_dofs, prb_ptr->getNbGhostDofsRow(),
-        prb_ptr->getNbGhostDofsCol(), nb_init_ghost_row_dofs,
-        nb_init_ghost_col_dofs, prb_ptr->getNbDofsRow(),
-        prb_ptr->getNbDofsCol(), nb_init_loc_row_dofs, nb_init_loc_col_dofs);
+    MOFEM_LOG_C("SYNC", Sev::inform,
+                "removed ents on rank %d from problem %s dofs [ %d / %d  "
+                "(before %d / "
+                "%d) local, %d / %d (before %d / %d) "
+                "ghost, %d / %d (before %d / %d) global]",
+                m_field.get_comm_rank(), prb_ptr->getName().c_str(),
+                prb_ptr->getNbLocalDofsRow(), prb_ptr->getNbLocalDofsCol(),
+                nb_init_row_dofs, nb_init_col_dofs,
+                prb_ptr->getNbGhostDofsRow(), prb_ptr->getNbGhostDofsCol(),
+                nb_init_ghost_row_dofs, nb_init_ghost_col_dofs,
+                prb_ptr->getNbDofsRow(), prb_ptr->getNbDofsCol(),
+                nb_init_loc_row_dofs, nb_init_loc_col_dofs);
     MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
   }
 
