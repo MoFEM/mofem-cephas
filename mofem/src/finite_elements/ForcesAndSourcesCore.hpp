@@ -606,13 +606,12 @@ protected:
   /**
    * \brief Get field data on nodes
    */
-  MoFEMErrorCode getNoFieldFieldData(const boost::string_ref field_name,
-                                     FEDofEntity_multiIndex &dofs,
+  MoFEMErrorCode getNoFieldFieldData(const std::string field_name,
                                      VectorDouble &ent_field_data,
                                      VectorDofs &ent_field_dofs) const;
 
   MoFEMErrorCode getNoFieldFieldData(DataForcesAndSourcesCore &data,
-                                     const boost::string_ref field_name) const;
+                                     const std::string field_name) const;
 
   /**
    * \brief Get data on nodes

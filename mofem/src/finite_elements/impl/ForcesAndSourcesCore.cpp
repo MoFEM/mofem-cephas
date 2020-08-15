@@ -690,37 +690,53 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
-    const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
-    VectorDouble &ent_field_data, VectorDofs &ent_field_dofs) const {
+MoFEMErrorCode
+ForcesAndSourcesCore::getNoFieldFieldData(const std::string field_name,
+                                          VectorDouble &ent_field_data,
+                                          VectorDofs &ent_field_dofs) const {
   MoFEMFunctionBeginHot;
-  auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
 
-  auto dit = dofs.get<Unique_mi_tag>().lower_bound(
-      FieldEntity::getLoBitNumberUId((*field_it)->getBitNumber()));
-  auto hi_dit = dofs.get<Unique_mi_tag>().upper_bound(
-      FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
+  auto &field_ents = getDataFieldEnts();
+  auto bit_number = mField.get_field_bit_number(field_name);
+  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_min_type<MBVERTEX>());
+  auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
+                             cmp_uid_lo);
+  if (lo != field_ents.end()) {
+    const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+        bit_number, get_id_for_max_type<MBVERTEX>());
+    auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
+    if (lo != hi) {
 
-  int size = std::distance(dit, hi_dit);
-  ent_field_data.resize(size, false);
-  ent_field_dofs.resize(size, false);
-  for (; dit != hi_dit; dit++) {
-    int idx = (*dit)->getDofCoeffIdx();
-    ent_field_data[idx] = (*dit)->getFieldData();
-    ent_field_dofs[idx] = (*dit).get();
+      for (auto it = lo; it != hi; ++it)
+        if (auto e = it->lock()) {
+
+          const auto size = e->getEntFieldData().size();
+          ent_field_data.resize(size, false);
+          ent_field_dofs.resize(size, false);
+          noalias(ent_field_data) = e->getEntFieldData();
+          if (auto cache = e->entityCacheDataDofs.lock()) {
+            for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
+              ent_field_dofs[(*dit)->getEntDofIdx()] =
+                  reinterpret_cast<FEDofEntity *>((*dit).get());
+            }
+          }
+        }
+    }
   }
+
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
-    DataForcesAndSourcesCore &data, const boost::string_ref field_name) const {
+    DataForcesAndSourcesCore &data, const std::string field_name) const {
   MoFEMFunctionBegin;
-  if (data.dataOnEntities[MBENTITYSET].size() == 0) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
-  }
+  if (data.dataOnEntities[MBENTITYSET].size() == 0)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "No space to insert data");
+
   CHKERR getNoFieldFieldData(
-      field_name, const_cast<FEDofEntity_multiIndex &>(getDataDofs()),
-      data.dataOnEntities[MBENTITYSET][0].getFieldData(),
+      field_name, data.dataOnEntities[MBENTITYSET][0].getFieldData(),
       data.dataOnEntities[MBENTITYSET][0].getFieldDofs());
   MoFEMFunctionReturn(0);
 }
