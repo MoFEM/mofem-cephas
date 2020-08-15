@@ -512,85 +512,95 @@ MoFEMErrorCode
 ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
                                         const std::string &field_name) const {
 
-  auto get_nodes_field_data =
-      [&](FEDofEntity_multiIndex &dofs, VectorDouble &nodes_data,
-          VectorDofs &nodes_dofs, FieldSpace &space,
-          FieldApproximationBase &base, VectorInt &bb_node_order) {
-        MoFEMFunctionBegin;
+  auto get_nodes_field_data = [&](VectorDouble &nodes_data,
+                                  VectorDofs &nodes_dofs, FieldSpace &space,
+                                  FieldApproximationBase &base,
+                                  VectorInt &bb_node_order) {
+    MoFEMFunctionBegin;
 
-        auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
-        auto bit_number = mField.get_field_bit_number(field_name);
-        auto dit = dofs_by_uid.lower_bound(DofEntity::getLoFieldEntityUId(
-            bit_number, get_id_for_min_type<MBVERTEX>()));
-        decltype(dit) hi_dit;
-        if (dit == dofs_by_uid.end())
-          hi_dit = dit;
-        else
-          hi_dit = dofs_by_uid.upper_bound(DofEntity::getHiFieldEntityUId(
-              bit_number, get_id_for_max_type<MBVERTEX>()));
+    nodes_data.resize(0, false);
+    nodes_dofs.resize(0, false);
 
-        if (dit != hi_dit) {
-          auto &first_dof = **dit;
-          space = first_dof.getSpace();
-          base = first_dof.getApproxBase();
-          int num_nodes;
-          CHKERR getNumberOfNodes(num_nodes);
-          bb_node_order.resize(num_nodes, false);
-          bb_node_order.clear();
-          const int nb_dof_idx = first_dof.getNbOfCoeffs();
-          const int max_nb_dofs = nb_dof_idx * num_nodes;
-          nodes_data.resize(max_nb_dofs, false);
-          nodes_dofs.resize(max_nb_dofs, false);
-          nodes_data.clear();
+    auto &field_ents = getDataFieldEnts();
+    auto bit_number = mField.get_field_bit_number(field_name);
+    const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+        bit_number, get_id_for_min_type<MBVERTEX>());
+    auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
+                               cmp_uid_lo);
+    if (lo != field_ents.end()) {
+      const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+          bit_number, get_id_for_max_type<MBVERTEX>());
+      auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
+      if (lo != hi) {
 
-          std::vector<boost::weak_ptr<FEDofEntity>> brother_dofs_vec;
-          for (; dit != hi_dit;) {
-            const auto &dof_ptr = *dit;
-            const auto &dof = *dof_ptr;
-            const auto &sn = *dof.getSideNumberPtr();
-            const int side_number = sn.side_number;
-            const int brother_side_number = sn.brother_side_number;
-            if (brother_side_number != -1)
-              brother_dofs_vec.emplace_back(dof_ptr);
+        for (auto it = lo; it != hi; ++it)
+          if (auto first_e = it->lock()) {
 
-            bb_node_order[side_number] = dof.getMaxOrder();
-            int pos = side_number * nb_dof_idx;
-            auto ent_filed_data_vec = dof.getEntFieldData();
-            for (int ii = 0; ii != nb_dof_idx; ++ii) {
-              nodes_data[pos] = ent_filed_data_vec[ii];
-              nodes_dofs[pos] = (*dit).get();
-              ++pos;
-              ++dit;
-            }
-          }
+            space = first_e->getSpace();
+            base = first_e->getApproxBase();
+            int num_nodes;
+            CHKERR getNumberOfNodes(num_nodes);
+            bb_node_order.resize(num_nodes, false);
+            bb_node_order.clear();
+            const int nb_dof_idx = first_e->getNbOfCoeffs();
+            const int max_nb_dofs = nb_dof_idx * num_nodes;
+            nodes_data.resize(max_nb_dofs, false);
+            nodes_dofs.resize(max_nb_dofs, false);
+            std::fill(nodes_data.begin(), nodes_data.end(), 0);
+            std::fill(nodes_dofs.begin(), nodes_dofs.end(), nullptr);
 
-          for (auto &dof_ptr : brother_dofs_vec) {
-            if (const auto d = dof_ptr.lock()) {
-              const auto &sn = d->getSideNumberPtr();
-              const int side_number = sn->side_number;
-              const int brother_side_number = sn->brother_side_number;
-              bb_node_order[brother_side_number] = bb_node_order[side_number];
-              int pos = side_number * nb_dof_idx;
-              int brother_pos = brother_side_number * nb_dof_idx;
-              for (int ii = 0; ii != nb_dof_idx; ++ii) {
-                nodes_data[brother_pos] = nodes_data[pos];
-                nodes_dofs[brother_pos] = nodes_dofs[pos];
-                ++pos;
-                ++brother_pos;
+            std::vector<boost::weak_ptr<FieldEntity>> brother_ents_vec;
+
+            for (; it != hi; ++it) {
+              if (auto e = it->lock()) {
+
+                const auto &sn = e->getSideNumberPtr();
+                const int side_number = sn->side_number;
+                const int brother_side_number = sn->brother_side_number;
+                if (brother_side_number != -1)
+                  brother_ents_vec.emplace_back(e);
+
+                bb_node_order[side_number] = e->getMaxOrder();
+                int pos = side_number * nb_dof_idx;
+                auto ent_filed_data_vec = e->getEntFieldData();
+                if (auto cache = e->entityCacheDataDofs.lock()) {
+                  for (auto dit = cache->loHi[0]; dit != cache->loHi[1];
+                       ++dit) {
+                    const auto dof_idx = (*dit)->getEntDofIdx();
+                    nodes_data[pos + dof_idx] = ent_filed_data_vec[dof_idx];
+                    nodes_dofs[pos + dof_idx] =
+                        reinterpret_cast<FEDofEntity *>((*dit).get());
+                  }
+                }
               }
             }
+
+            for (auto &it : brother_ents_vec) {
+              if (const auto e = it.lock()) {
+                const auto &sn = e->getSideNumberPtr();
+                const int side_number = sn->side_number;
+                const int brother_side_number = sn->brother_side_number;
+                bb_node_order[brother_side_number] = bb_node_order[side_number];
+                int pos = side_number * nb_dof_idx;
+                int brother_pos = brother_side_number * nb_dof_idx;
+                for (int ii = 0; ii != nb_dof_idx; ++ii) {
+                  nodes_data[brother_pos] = nodes_data[pos];
+                  nodes_dofs[brother_pos] = nodes_dofs[pos];
+                  ++pos;
+                  ++brother_pos;
+                }
+              }
+            }
+
+            break;
           }
+      }
+    }
 
-        } else {
-          nodes_data.resize(0, false);
-          nodes_dofs.resize(0, false);
-        }
-
-        MoFEMFunctionReturn(0);
-      };
+    MoFEMFunctionReturn(0);
+  };
 
   return get_nodes_field_data(
-      const_cast<FEDofEntity_multiIndex &>(getDataDofs()),
       data.dataOnEntities[MBVERTEX][0].getFieldData(),
       data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
       data.dataOnEntities[MBVERTEX][0].getSpace(),
