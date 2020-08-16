@@ -37,15 +37,6 @@ struct SnesCtx {
   MatAssemblyType typeOfAssembly; ///< type of assembly at the end
   bool vErify;                    ///< If true verify vector
 
-  /// \deprecated use PairNameFEMethodPtr
-  DEPRECATED typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
-
-  /// \deprecated use FEMethodsSequence
-  DEPRECATED typedef MoFEM::FEMethodsSequence loops_to_do_type;
-
-  /// \deprecated use BasicMethodsSequence
-  DEPRECATED typedef MoFEM::BasicMethodsSequence basic_method_to_do;
-
   typedef MoFEM::PairNameFEMethodPtr PairNameFEMethodPtr;
   typedef MoFEM::FEMethodsSequence FEMethodsSequence;
   typedef MoFEM::BasicMethodsSequence BasicMethodsSequence;
@@ -98,7 +89,7 @@ struct SnesCtx {
     PetscLogEventRegister("LoopSNESMat", 0, &MOFEM_EVENT_SnesMat);
   }
 
-  virtual ~SnesCtx() {}
+  virtual ~SnesCtx() = default;
 
   /**
    * @return return reference to vector with FEMethod to calculate tangent
