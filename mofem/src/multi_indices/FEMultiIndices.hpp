@@ -358,73 +358,70 @@ struct EntFiniteElement
 
   friend std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e);
 
-  template <typename FE_ENTS, typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
+  template <typename FE_ENTS, typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW,
+            typename INSERTER>
   static MoFEMErrorCode
   getDofView(const FE_ENTS &fe_ents_view, const MOFEM_DOFS &mofem_dofs,
-             MOFEM_DOFS_VIEW &dofs_view, const int operation_type) {
+             MOFEM_DOFS_VIEW &dofs_view, INSERTER &&inserter) {
     MoFEMFunctionBeginHot;
 
-    if (operation_type == moab::Interface::UNION) {
+    auto hint = dofs_view.end();
+    using ValType = typename std::remove_reference<decltype(**hint)>::type;
 
-      auto hint = dofs_view.begin();
-      using ValType = typename std::remove_reference<decltype(**hint)>::type;
-
-      for (auto &it : fe_ents_view) {
-        if (auto e = it.lock()) {
-          const auto &uid = e->getLocalUniqueId();
-          auto dit = mofem_dofs.lower_bound(uid);
-          if (dit != mofem_dofs.end()) {
-            const auto hi_dit = mofem_dofs.upper_bound(
-                uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
-            for (; dit != hi_dit; ++dit)
-              hint = dofs_view.emplace_hint(
-                  hint, boost::reinterpret_pointer_cast<ValType>(*dit));
-          }
+    for (auto &it : fe_ents_view) {
+      if (auto e = it.lock()) {
+        const auto &uid = e->getLocalUniqueId();
+        auto dit = mofem_dofs.lower_bound(uid);
+        if (dit != mofem_dofs.end()) {
+          const auto hi_dit = mofem_dofs.upper_bound(
+              uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
+          for (; dit != hi_dit; ++dit)
+            hint = inserter(dofs_view, hint,
+                            boost::reinterpret_pointer_cast<ValType>(*dit));
         }
       }
-    } else
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
-    MoFEMFunctionReturnHot(0);
-  }
-
-  template <typename FE_ENTS, typename MOFEM_DOFS, typename VEC_DOFS>
-  static MoFEMErrorCode
-  getDofVectorView(const FE_ENTS &fe_ents_view, const MOFEM_DOFS &mofem_dofs,
-                   std::vector<boost::shared_ptr<VEC_DOFS>> &dofs_view,
-                   const int operation_type) {
-    MoFEMFunctionBeginHot;
-
-    if (operation_type == moab::Interface::UNION) {
-
-      for (auto &it : fe_ents_view) {
-        if (auto e = it.lock()) {
-          const auto &uid = e->getLocalUniqueId();
-          auto dit = mofem_dofs.lower_bound(uid);
-          if (dit != mofem_dofs.end()) {
-            const auto hi_dit = mofem_dofs.upper_bound(
-                uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
-            for (; dit != hi_dit; ++dit)
-              dofs_view.emplace_back(
-                  boost::reinterpret_pointer_cast<VEC_DOFS>(*dit));
-          }
-        }
-      }
-    } else
-      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    }
     MoFEMFunctionReturnHot(0);
   }
 
   template <typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
   inline MoFEMErrorCode
-  getRowDofView(const MOFEM_DOFS &mofem_dofs, MOFEM_DOFS_VIEW &dofs_view,
-                const int operation_type = moab::Interface::UNION) {
-    return getDofView(getRowFieldEnts(), mofem_dofs, dofs_view, operation_type);
+  getRowDofView(const MOFEM_DOFS &mofem_dofs, MOFEM_DOFS_VIEW &dofs_view) {
+
+    auto hint = dofs_view.end();
+    using ValType = typename std::remove_reference<decltype(**hint)>::type;
+    using IndexType = MOFEM_DOFS_VIEW;
+
+    struct Inserter {
+      using Idx = IndexType;
+      using It = typename Idx::iterator;
+      It operator()(Idx &dofs_view, It &hint,
+                    boost::shared_ptr<ValType> &&dof) {
+        return dofs_view.emplace_hint(hint, dof);
+      }
+    };
+
+    return getDofView(getRowFieldEnts(), mofem_dofs, dofs_view, Inserter());
   }
 
   template <typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
   inline MoFEMErrorCode
   getColDofView(const MOFEM_DOFS &mofem_dofs, MOFEM_DOFS_VIEW &dofs_view,
                 const int operation_type = moab::Interface::UNION) {
+
+    auto hint = dofs_view.end();
+    using ValType = typename std::remove_reference<decltype(**hint)>::type;
+    using IndexType = MOFEM_DOFS_VIEW;
+
+    struct Inserter {
+      using Idx = IndexType;
+      using It = typename Idx::iterator;
+      It operator()(Idx &dofs_view, It &hint,
+                    boost::shared_ptr<ValType> &&dof) {
+        return dofs_view.emplace_hint(hint, dof);
+      }
+    };
+
     return getDofView(getColFieldEnts(), mofem_dofs, dofs_view, operation_type);
   }
 

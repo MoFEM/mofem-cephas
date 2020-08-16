@@ -2491,8 +2491,7 @@ MoFEMErrorCode ProblemsManager::partitionFiniteElements(const std::string name,
   for (auto &fe : *numbered_good_elems_ptr) {
 
     NumeredDofEntity_multiIndex_uid_view_ordered rows_view;
-    CHKERR fe.sPtr->getRowDofView(*(p_miit->numeredRowDofs), rows_view,
-                                  moab::Interface::UNION);
+    CHKERR fe.sPtr->getRowDofView(*(p_miit->numeredRowDofs), rows_view);
 
     if (!part_from_moab) {
       std::vector<int> parts(m_field.get_comm_size(), 0);
@@ -2603,15 +2602,25 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
 
     // get dofs on elements which are not part of this partition
 
+    struct Inserter {
+      using Vec = std::vector<boost::shared_ptr<NumeredDofEntity>>;
+      using It = Vec::iterator;
+      It operator()(Vec &dofs_view, It &hint,
+                    boost::shared_ptr<NumeredDofEntity> &&dof) {
+        dofs_view.emplace_back(dof);
+        return dofs_view.end();
+      }
+    };
+
     // rows
     std::vector<boost::shared_ptr<NumeredDofEntity>> fe_vec_view;
     auto hint_r = ghost_idx_row_view.begin();
     for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
 
       fe_vec_view.clear();
-      CHKERR EntFiniteElement::getDofVectorView(
-          (*fe_ptr)->getRowFieldEnts(), *(p_miit->getNumeredRowDofs()),
-          fe_vec_view, moab::Interface::UNION);
+      CHKERR EntFiniteElement::getDofView((*fe_ptr)->getRowFieldEnts(),
+                                          *(p_miit->getNumeredRowDofs()),
+                                          fe_vec_view, Inserter());
 
       for (auto &dof_ptr : fe_vec_view) {
         if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
@@ -2627,9 +2636,9 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
       for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
 
         fe_vec_view.clear();
-        CHKERR EntFiniteElement::getDofVectorView(
+        CHKERR EntFiniteElement::getDofView(
             (*fe_ptr)->getColFieldEnts(), *(p_miit->getNumeredColDofs()),
-            fe_vec_view, moab::Interface::UNION);
+            fe_vec_view, Inserter());
 
         for (auto &dof_ptr : fe_vec_view) {
           if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
