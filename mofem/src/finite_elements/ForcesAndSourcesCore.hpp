@@ -557,9 +557,8 @@ protected:
   template <typename EXTRACTOR>
   MoFEMErrorCode
   getNodesIndices(const std::string &field_name,
-                 FieldEntity_vector_view &ents_field,
-                  VectorInt &nodes_indices, VectorInt &local_nodes_indices,
-                  EXTRACTOR &&extractor) const;
+                  FieldEntity_vector_view &ents_field, VectorInt &nodes_indices,
+                  VectorInt &local_nodes_indices, EXTRACTOR &&extractor) const;
 
   /// \brief get row node indices from FENumeredDofEntity_multiIndex
   MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
@@ -569,18 +568,21 @@ protected:
   MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
                                     const std::string &field_name) const;
 
-  MoFEMErrorCode getEntityIndices(
-      DataForcesAndSourcesCore &data, const std::string &field_name,
-      FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo = MBVERTEX,
-      const EntityType type_hi = MBPOLYHEDRON) const;
+  template <typename EXTRACTOR>
+  MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &data,
+                                  const std::string &field_name,
+                                  FieldEntity_vector_view &ents_field,
+                                  const EntityType type_lo,
+                                  const EntityType type_hi,
+                                  EXTRACTOR &&extractor) const;
 
-  inline MoFEMErrorCode
+  MoFEMErrorCode
   getEntityRowIndices(DataForcesAndSourcesCore &data,
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
                       const EntityType type_hi = MBPOLYHEDRON) const;
 
-  inline MoFEMErrorCode
+  MoFEMErrorCode
   getEntityColIndices(DataForcesAndSourcesCore &data,
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
@@ -855,23 +857,6 @@ private:
 /// \deprecated Used ForcesAndSourcesCore instead
 DEPRECATED typedef ForcesAndSourcesCore ForcesAndSurcesCore;
 
-MoFEMErrorCode ForcesAndSourcesCore::getEntityRowIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name,
-    const EntityType type_lo, const EntityType type_hi) const {
-  return getEntityIndices(
-      data, field_name,
-      const_cast<FENumeredDofEntity_multiIndex &>(getRowDofs()), type_lo,
-      type_hi);
-}
-
-MoFEMErrorCode ForcesAndSourcesCore::getEntityColIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name,
-    const EntityType type_lo, const EntityType type_hi) const {
-  return getEntityIndices(
-      data, field_name,
-      const_cast<FENumeredDofEntity_multiIndex &>(getColDofs()), type_lo,
-      type_hi);
-}
 
 boost::shared_ptr<const NumeredEntFiniteElement>
 ForcesAndSourcesCore::UserDataOperator::getNumeredEntFiniteElementPtr() const {
