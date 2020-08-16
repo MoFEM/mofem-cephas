@@ -353,11 +353,14 @@ protected:
    * \param type_lo lowest dimension entity type to be searched
    * \param type_hi highest dimension entity type to be searched
    */
-  MoFEMErrorCode getEntityIndices(
-      DataForcesAndSourcesCore &master_data,
-      DataForcesAndSourcesCore &slave_data, const std::string &field_name,
-      FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo = MBVERTEX,
-      const EntityType type_hi = MBPOLYHEDRON) const;
+  template <typename EXTRACTOR>
+  MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &master_data,
+                                  DataForcesAndSourcesCore &slave_data,
+                                  const std::string &field_name,
+                                  FieldEntity_vector_view &ents_field,
+                                  const EntityType type_lo,
+                                  const EntityType type_hi,
+                                  EXTRACTOR &&extractor) const;
 
   /** \brief function that gets nodes indices.
    *
@@ -370,12 +373,14 @@ protected:
    * \param slave_local_nodes_indices vector containing local master nodes
    * indices
    */
-  MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
-                                 FENumeredDofEntity_multiIndex &dofs,
+  template <typename EXTRACTOR>
+  MoFEMErrorCode getNodesIndices(const std::string field_name,
+                                 FieldEntity_vector_view &ents_field,
                                  VectorInt &master_nodes_indices,
                                  VectorInt &master_local_nodes_indices,
                                  VectorInt &slave_nodes_indices,
-                                 VectorInt &slave_local_nodes_indices) const;
+                                 VectorInt &slave_local_nodes_indices,
+                                 EXTRACTOR &&extractor) const;
 
   /** \brief function that gets nodes field data.
    *

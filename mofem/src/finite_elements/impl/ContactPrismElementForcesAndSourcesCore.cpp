@@ -644,16 +644,27 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
             CHKERR getEntityFieldData(*op_master_data[ss], *op_slave_data[ss],
                                       field_name, MBEDGE);
 
-            if (!ss)
-              CHKERR getEntityIndices(
-                  *op_master_data[ss], *op_slave_data[ss], field_name,
-                  const_cast<FENumeredDofEntity_multiIndex &>(getRowDofs()),
-                  MBEDGE);
-            else
-              CHKERR getEntityIndices(
-                  *op_master_data[ss], *op_slave_data[ss], field_name,
-                  const_cast<FENumeredDofEntity_multiIndex &>(getColDofs()),
-                  MBEDGE);
+            if (!ss) {
+              struct Extractor {
+                boost::weak_ptr<EntityCacheNumeredDofs>
+                operator()(boost::shared_ptr<FieldEntity> &e) {
+                  return e->entityCacheRowDofs;
+                }
+              };
+
+              CHKERR getEntityIndices(*op_master_data[ss], *op_slave_data[ss],
+                                      field_name, getRowFieldEnts(), MBEDGE,
+                                      MBPRISM, Extractor());
+            } else {
+              struct Extractor {
+                boost::weak_ptr<EntityCacheNumeredDofs>
+                operator()(boost::shared_ptr<FieldEntity> &e) {
+                  return e->entityCacheColDofs;
+                }
+              };
+              CHKERR getEntityIndices(*op_master_data[ss], *op_slave_data[ss],
+                                      field_name, getRowFieldEnts(), MBEDGE, MBPRISM, Extractor());
+            }
 
             switch (space) {
             case NOSPACE:
@@ -662,13 +673,14 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
               break;
             case H1: {
 
-              auto get_indices = [&](auto &master, auto &slave, auto &dofs) {
+              auto get_indices = [&](auto &master, auto &slave, auto &ents,
+                                     auto &&ex) {
                 return getNodesIndices(
-                    field_name, dofs,
+                    field_name, ents,
                     master.dataOnEntities[MBVERTEX][0].getIndices(),
                     master.dataOnEntities[MBVERTEX][0].getLocalIndices(),
                     slave.dataOnEntities[MBVERTEX][0].getIndices(),
-                    slave.dataOnEntities[MBVERTEX][0].getLocalIndices());
+                    slave.dataOnEntities[MBVERTEX][0].getLocalIndices(), ex);
               };
 
               auto get_data = [&](DataForcesAndSourcesCore &master_data,
@@ -685,14 +697,28 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                     slave_data.dataOnEntities[MBVERTEX][0].getBase());
               };
 
-              if (!ss)
-                CHKERR get_indices(
-                    *op_master_data[ss], *op_slave_data[ss],
-                    const_cast<FENumeredDofEntity_multiIndex &>(getRowDofs()));
-              else
-                CHKERR get_indices(
-                    *op_master_data[ss], *op_slave_data[ss],
-                    const_cast<FENumeredDofEntity_multiIndex &>(getColDofs()));
+              if (!ss) {
+
+                struct Extractor {
+                  boost::weak_ptr<EntityCacheNumeredDofs>
+                  operator()(boost::shared_ptr<FieldEntity> &e) {
+                    return e->entityCacheRowDofs;
+                  }
+                };
+
+                CHKERR get_indices(*op_master_data[ss], *op_slave_data[ss],
+                                   getRowFieldEnts(), Extractor());
+              } else {
+                struct Extractor {
+                  boost::weak_ptr<EntityCacheNumeredDofs>
+                  operator()(boost::shared_ptr<FieldEntity> &e) {
+                    return e->entityCacheColDofs;
+                  }
+                };
+
+                CHKERR get_indices(*op_master_data[ss], *op_slave_data[ss],
+                                   getColFieldEnts(), Extractor());
+              }
 
               CHKERR get_data(*op_master_data[ss], *op_slave_data[ss]);
 
@@ -1010,10 +1036,12 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
   MoFEMFunctionReturn(0);
 }
 
+template <typename EXTRACTOR>
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
     DataForcesAndSourcesCore &master_data, DataForcesAndSourcesCore &slave_data,
-    const std::string &field_name, FENumeredDofEntity_multiIndex &dofs,
-    const EntityType type_lo, const EntityType type_hi) const {
+    const std::string &field_name, FieldEntity_vector_view &ents_field,
+    const EntityType type_lo, const EntityType type_hi,
+    EXTRACTOR &&extractor) const {
   MoFEMFunctionBegin;
 
   auto clear_data = [type_lo, type_hi](auto &data) {
@@ -1028,140 +1056,163 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityIndices(
   clear_data(master_data);
   clear_data(slave_data);
 
-  auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
   auto bit_number = mField.get_field_bit_number(field_name);
+  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_min_type(type_lo));
+  auto lo = std::lower_bound(ents_field.begin(), ents_field.end(), lo_uid,
+                             cmp_uid_lo);
+  if (lo != ents_field.end()) {
+    const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+        bit_number, get_id_for_max_type(type_hi));
+    auto hi = std::upper_bound(lo, ents_field.end(), hi_uid, cmp_uid_hi);
+    if (lo != hi) {
 
-  auto dit = dofs_by_uid.lower_bound(FieldEntity::getLocalUniqueIdCalculate(
-      bit_number, get_id_for_min_type(type_lo)));
-  if (dit == dofs_by_uid.end())
-    MoFEMFunctionReturnHot(0);
-  auto hi_dit = dofs_by_uid.upper_bound(FieldEntity::getLocalUniqueIdCalculate(
-      bit_number, get_id_for_max_type(type_hi)));
+      std::vector<boost::weak_ptr<FieldEntity>> brother_ents_vec;
 
-  auto get_indices = [&](auto &data, auto &dof, const auto type,
-                         const auto side) {
-    auto &dat = data.dataOnEntities[type][side];
-    auto &ent_field_indices = dat.getIndices();
-    auto &ent_field_local_indices = dat.getLocalIndices();
-    if (ent_field_indices.empty()) {
-      const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
-      ent_field_indices.resize(nb_dofs_on_ent, false);
-      ent_field_local_indices.resize(nb_dofs_on_ent, false);
-      std::fill(ent_field_indices.data().begin(),
-                ent_field_indices.data().end(), -1);
-      std::fill(ent_field_local_indices.data().begin(),
-                ent_field_local_indices.data().end(), -1);
-    }
-    const int idx = dof.getEntDofIdx();
-    ent_field_indices[idx] = dof.getPetscGlobalDofIdx();
-    ent_field_local_indices[idx] = dof.getPetscLocalDofIdx();
-  };
+      for (auto it = lo; it != hi; ++it)
+        if (auto e = it->lock()) {
 
-  for (; dit != hi_dit; ++dit) {
+          const EntityType type = e->getEntType();
+          const int side = e->getSideNumberPtr()->side_number;
+          const int brother_side = e->getSideNumberPtr()->brother_side_number;
+          if (brother_side != -1)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                    "Not implemented case");
 
-    auto &dof = **dit;
+          auto get_indices = [&](auto &data, const auto type, const auto side) {
+            if (auto cache = extractor(e).lock()) {
+              for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
+                auto &dof = (**dit);
+                auto &dat = data.dataOnEntities[type][side];
+                auto &ent_field_indices = dat.getIndices();
+                auto &ent_field_local_indices = dat.getLocalIndices();
+                if (ent_field_indices.empty()) {
+                  const int nb_dofs_on_ent = dof.getNbDofsOnEnt();
+                  ent_field_indices.resize(nb_dofs_on_ent, false);
+                  ent_field_local_indices.resize(nb_dofs_on_ent, false);
+                  std::fill(ent_field_indices.data().begin(),
+                            ent_field_indices.data().end(), -1);
+                  std::fill(ent_field_local_indices.data().begin(),
+                            ent_field_local_indices.data().end(), -1);
+                }
+                const int idx = dof.getEntDofIdx();
+                ent_field_indices[idx] = dof.getPetscGlobalDofIdx();
+                ent_field_local_indices[idx] = dof.getPetscLocalDofIdx();
+              }
+            }
+          };
 
-    if (dof.getNbDofsOnEnt()) {
+          switch (type) {
+          case MBEDGE:
 
-      const EntityType type = dof.getEntType();
-      const int side = dof.getSideNumberPtr()->side_number;
+            if (side < 3)
+              get_indices(master_data, type, side);
+            else if (side > 5)
+              get_indices(slave_data, type, side - 6);
 
-      switch (type) {
-      case MBEDGE:
+            break;
+          case MBTRI:
 
-        if (side < 3)
-          get_indices(master_data, dof, type, side);
-        else if (side > 5)
-          get_indices(slave_data, dof, type, side - 6);
+            if (side == 3)
+              get_indices(master_data, type, 0);
+            if (side == 4)
+              get_indices(slave_data, type, 0);
 
-        break;
-      case MBTRI:
-
-        if (side == 3)
-          get_indices(master_data, dof, type, 0);
-        if (side == 4)
-          get_indices(slave_data, dof, type, 0);
-
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Entity type not implemented");
-      };
-
-      const int brother_side = dof.getSideNumberPtr()->brother_side_number;
-      if (brother_side != -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
+            break;
+          default:
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Entity type not implemented");
+          }
+        }
     }
   }
 
   MoFEMFunctionReturn(0);
 }
 
+template <typename EXTRACTOR>
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
-    const boost::string_ref field_name, FENumeredDofEntity_multiIndex &dofs,
+    const std::string field_name, FieldEntity_vector_view &ents_field,
     VectorInt &master_nodes_indices, VectorInt &master_local_nodes_indices,
-    VectorInt &slave_nodes_indices,
-    VectorInt &slave_local_nodes_indices) const {
+    VectorInt &slave_nodes_indices, VectorInt &slave_local_nodes_indices,
+    EXTRACTOR &&extractor) const {
   MoFEMFunctionBegin;
-
-  auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
-  auto bit_number = mField.get_field_bit_number(&field_name[0]);
-
-  auto dit = dofs_by_uid.lower_bound(FieldEntity::getLocalUniqueIdCalculate(
-      bit_number, get_id_for_min_type<MBVERTEX>()));
-  auto hi_dit = dofs_by_uid.upper_bound(FieldEntity::getLocalUniqueIdCalculate(
-      bit_number, get_id_for_max_type<MBVERTEX>()));
 
   master_nodes_indices.resize(0, false);
   master_local_nodes_indices.resize(0, false);
   slave_nodes_indices.resize(0, false);
   slave_local_nodes_indices.resize(0, false);
 
-  if (dit != hi_dit) {
+  auto bit_number = mField.get_field_bit_number(field_name);
+  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_min_type<MBVERTEX>());
+  auto lo = std::lower_bound(ents_field.begin(), ents_field.end(), lo_uid,
+                             cmp_uid_lo);
+  if (lo != ents_field.end()) {
+    const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+        bit_number, get_id_for_max_type<MBVERTEX>());
+    auto hi = std::upper_bound(lo, ents_field.end(), hi_uid, cmp_uid_hi);
+    if (lo != hi) {
 
-    const int num_nodes = 3;
-    int max_nb_dofs = 0;
-    const int nb_dofs_on_vert = (*dit)->getNbOfCoeffs();
-    max_nb_dofs = nb_dofs_on_vert * num_nodes;
+      for (auto it = lo; it != hi; ++it)
+        if (auto first_e = it->lock()) {
 
-    auto set_vec_size = [&](auto &nodes_indices, auto &local_nodes_indices) {
-      nodes_indices.resize(max_nb_dofs, false);
-      local_nodes_indices.resize(max_nb_dofs, false);
-      if (std::distance(dit, hi_dit) != max_nb_dofs) {
-        std::fill(nodes_indices.begin(), nodes_indices.end(), -1);
-        std::fill(local_nodes_indices.begin(), local_nodes_indices.end(), -1);
-      }
-    };
+          constexpr int num_nodes = 3;
+          const int nb_dofs_on_vert = first_e->getNbOfCoeffs();
+          const int max_nb_dofs = nb_dofs_on_vert * num_nodes;
 
-    set_vec_size(master_nodes_indices, master_local_nodes_indices);
-    set_vec_size(slave_nodes_indices, slave_local_nodes_indices);
+          auto set_vec_size = [&](auto &nodes_indices,
+                                  auto &local_nodes_indices) {
+            nodes_indices.resize(max_nb_dofs, false);
+            local_nodes_indices.resize(max_nb_dofs, false);
+            std::fill(nodes_indices.begin(), nodes_indices.end(), -1);
+            std::fill(local_nodes_indices.begin(), local_nodes_indices.end(),
+                      -1);
+          };
 
-    auto get_indices = [&](auto &nodes_indices, auto &local_nodes_indices,
-                           auto &dof, const auto side) {
-      const int idx = dof.getPetscGlobalDofIdx();
-      const int local_idx = dof.getPetscLocalDofIdx();
-      const int pos = side * nb_dofs_on_vert + dof.getDofCoeffIdx();
-      nodes_indices[pos] = idx;
-      local_nodes_indices[pos] = local_idx;
-    };
+          set_vec_size(master_nodes_indices, master_local_nodes_indices);
+          set_vec_size(slave_nodes_indices, slave_local_nodes_indices);
 
-    for (; dit != hi_dit; dit++) {
-      auto &dof = **dit;
-      const int side = dof.getSideNumberPtr()->side_number;
+          for (; it != hi; ++it) {
+            if (auto e = it->lock()) {
 
-      if (side < 3)
-        get_indices(master_nodes_indices, master_local_nodes_indices, dof,
-                    side);
-      else if (side > 2)
-        get_indices(slave_nodes_indices, slave_local_nodes_indices, dof,
-                    side - 3);
-      else
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Impossible case");
+              const int side = e->getSideNumberPtr()->side_number;
+              const int brother_side =
+                  e->getSideNumberPtr()->brother_side_number;
+              if (brother_side != -1)
+                SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                        "Not implemented case");
 
-      const int brother_side = (*dit)->getSideNumberPtr()->brother_side_number;
+              auto get_indices = [&](auto &nodes_indices,
+                                     auto &local_nodes_indices,
+                                     const auto side) {
+                if (auto cache = extractor(e).lock()) {
+                  for (auto dit = cache->loHi[0]; dit != cache->loHi[1];
+                       ++dit) {
+                    const int idx = (*dit)->getPetscGlobalDofIdx();
+                    const int local_idx = (*dit)->getPetscLocalDofIdx();
+                    const int pos =
+                        side * nb_dofs_on_vert + (*dit)->getDofCoeffIdx();
+                    nodes_indices[pos] = idx;
+                    local_nodes_indices[pos] = local_idx;
+                  }
+                }
+              };
 
-      if (brother_side != -1)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented case");
+              if (side < 3)
+                get_indices(master_nodes_indices, master_local_nodes_indices,
+                            side);
+              else if (side > 2)
+                get_indices(slave_nodes_indices, slave_local_nodes_indices,
+                            side - 3);
+              else
+                SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                        "Impossible case");
+            }
+          }
+
+          break;
+        }
     }
   }
 
