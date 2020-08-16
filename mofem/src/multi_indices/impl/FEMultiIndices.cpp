@@ -601,4 +601,48 @@ MoFEMErrorCode EntFiniteElement::getCacheDataVectorDofsView() const {
   MoFEMFunctionReturnHot(0);
 }
 
+boost::shared_ptr<FENumeredDofEntity_multiIndex> &
+NumeredEntFiniteElement::getRowDofsPtr(
+    const NumeredDofEntity_multiIndex &dofs_prb) const {
+  RefEntityTmp<0>::refElementPtr = this->getRefElement();
+  if (lastSeenRowFiniteElement != this) {
+    if (rowDofs)
+      rowDofs->clear();
+    else
+      rowDofs = boost::make_shared<FENumeredDofEntity_multiIndex>();
+    if (EntFiniteElement::getDofView(getRowFieldEnts(), dofs_prb, *rowDofs,
+                                     moab::Interface::UNION))
+      THROW_MESSAGE("rowDofs can not be created");
+    lastSeenRowFiniteElement = this;
+    lastSeenNumeredRows = &dofs_prb;
+  }
+  return rowDofs;
+}
+
+boost::shared_ptr<FENumeredDofEntity_multiIndex> &
+NumeredEntFiniteElement::getColDofsPtr(
+    const NumeredDofEntity_multiIndex &dofs_prb) const {
+  RefEntityTmp<0>::refElementPtr = this->getRefElement();
+  if (lastSeenColFiniteElement != this) {
+    if (lastSeenNumeredRows == &dofs_prb &&
+        getBitFieldIdRow() == getBitFieldIdCol() &&
+        getRowFieldEntsPtr() == getColFieldEntsPtr()) {
+      colDofs = getRowDofsPtr(dofs_prb);
+    } else {
+
+      if (colDofs)
+        colDofs->clear();
+      else
+        colDofs = boost::make_shared<FENumeredDofEntity_multiIndex>();
+      if (EntFiniteElement::getDofView(getColFieldEnts(), dofs_prb, *colDofs,
+                                       moab::Interface::UNION))
+        THROW_MESSAGE("colDofs can not be created");
+    }
+
+    lastSeenColFiniteElement = this;
+    lastSeenNumeredCols = &dofs_prb;
+  }
+  return colDofs;
+}
+
 } // namespace MoFEM

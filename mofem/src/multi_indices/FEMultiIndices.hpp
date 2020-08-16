@@ -584,54 +584,18 @@ struct NumeredEntFiniteElement
   }
 
   inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
-  getRowDofsPtr(const NumeredDofEntity_multiIndex &dofs_prb) const {
-    RefEntityTmp<0>::refElementPtr = this->getRefElement();
-    if (lastSeenRowFiniteElement != this) {
-      if (rowDofs)
-        rowDofs->clear();
-      else
-        rowDofs = boost::make_shared<FENumeredDofEntity_multiIndex>();
-      if (EntFiniteElement::getDofView(getRowFieldEnts(), dofs_prb, *rowDofs,
-                                       moab::Interface::UNION))
-        THROW_MESSAGE("rowDofs can not be created");
-      lastSeenRowFiniteElement = this;
-      lastSeenNumeredRows = &dofs_prb;
-    }
-    return rowDofs;
-  }
+  getRowDofsPtr(const NumeredDofEntity_multiIndex &dofs_prb) const;
 
   /** \brief get FE dof on column
    * \ingroup mofem_dofs
    */
-  inline const FENumeredDofEntity_multiIndex &
+  const FENumeredDofEntity_multiIndex &
   getColDofs(const NumeredDofEntity_multiIndex &dofs_prb) const {
     return *getColDofsPtr(dofs_prb);
   }
 
-  inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
-  getColDofsPtr(const NumeredDofEntity_multiIndex &dofs_prb) const {
-    RefEntityTmp<0>::refElementPtr = this->getRefElement();
-    if (lastSeenColFiniteElement != this) {
-      if (lastSeenNumeredRows == &dofs_prb &&
-          getBitFieldIdRow() == getBitFieldIdCol() &&
-          getRowFieldEntsPtr() == getColFieldEntsPtr()) {
-        colDofs = getRowDofsPtr(dofs_prb);
-      } else {
-
-        if (colDofs)
-          colDofs->clear();
-        else
-          colDofs = boost::make_shared<FENumeredDofEntity_multiIndex>();
-        if (EntFiniteElement::getDofView(getColFieldEnts(), dofs_prb, *colDofs,
-                                         moab::Interface::UNION))
-          THROW_MESSAGE("colDofs can not be created");
-      }
-
-      lastSeenColFiniteElement = this;
-      lastSeenNumeredCols = &dofs_prb;
-    }
-    return colDofs;
-  }
+  boost::shared_ptr<FENumeredDofEntity_multiIndex> &
+  getColDofsPtr(const NumeredDofEntity_multiIndex &dofs_prb) const;
 
   /** \brief get FE dof by petsc index
    * \ingroup mofem_dofs
