@@ -358,10 +358,6 @@ struct EntFiniteElement
 
   friend std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e);
 
-  MoFEMErrorCode getCacheDataDofsView() const;
-
-  MoFEMErrorCode getCacheDataVectorDofsView() const;
-
   template <typename FE_ENTS, typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
   static MoFEMErrorCode
   getDofView(const FE_ENTS &fe_ents_view, const MOFEM_DOFS &mofem_dofs,
@@ -578,18 +574,18 @@ struct NumeredEntFiniteElement
   /** \brief get FE dof on row
    * \ingroup mofem_dofs
    */
-  inline const FENumeredDofEntity_multiIndex &
+  inline FENumeredDofEntity_multiIndex &
   getRowDofs(const NumeredDofEntity_multiIndex &dofs_prb) const {
     return *getRowDofsPtr(dofs_prb);
   }
 
-  inline boost::shared_ptr<FENumeredDofEntity_multiIndex> &
+  boost::shared_ptr<FENumeredDofEntity_multiIndex> &
   getRowDofsPtr(const NumeredDofEntity_multiIndex &dofs_prb) const;
 
   /** \brief get FE dof on column
    * \ingroup mofem_dofs
    */
-  const FENumeredDofEntity_multiIndex &
+  inline FENumeredDofEntity_multiIndex &
   getColDofs(const NumeredDofEntity_multiIndex &dofs_prb) const {
     return *getColDofsPtr(dofs_prb);
   }

@@ -533,6 +533,32 @@ std::ostream &operator<<(std::ostream &os, const NumeredEntFiniteElement &e) {
   return os;
 }
 
+template <typename ENTSVIEW, typename DOFSVIEW, typename EXTRACTOR,
+          typename INSERTER>
+inline static MoFEMErrorCode get_cache_data_dofs_view(ENTSVIEW &ents_view,
+                                                      DOFSVIEW &dofs_view,
+                                                      EXTRACTOR &&extractor,
+                                                      INSERTER &&inserter) {
+  MoFEMFunctionBeginHot;
+
+  auto hint = dofs_view->end();
+  using ValType = typename std::remove_reference<decltype(**hint)>::type;
+
+  for (auto &it : *ents_view) {
+    if (auto e = it.lock()) {
+
+      if (auto cache = extractor(e).lock())
+        for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit)
+          hint = inserter(dofs_view, hint,
+                          boost::reinterpret_pointer_cast<ValType>(*dit));
+      else
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Cache not set");
+    }
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
 boost::shared_ptr<FEDofEntity_multiIndex> &
 EntFiniteElement::getDataDofsPtr() const {
   RefEntityTmp<0>::refElementPtr = this->getRefElement();
@@ -541,7 +567,25 @@ EntFiniteElement::getDataDofsPtr() const {
       dataDofs->clear();
     else
       dataDofs = boost::make_shared<FEDofEntity_multiIndex>();
-    if (getCacheDataDofsView())
+
+    struct Extractor {
+      boost::weak_ptr<EntityCacheDofs> operator()(
+          boost::shared_ptr<FieldEntity> &e) {
+        return e->entityCacheDataDofs;
+      }
+    };
+
+    struct Inserter {
+      FEDofEntity_multiIndex::iterator
+      operator()(boost::shared_ptr<FEDofEntity_multiIndex> &dofs_view,
+                 FEDofEntity_multiIndex::iterator &hint,
+                 boost::shared_ptr<FEDofEntity> &&dof) {
+        return dofs_view->emplace_hint(hint, dof);
+      }
+    };
+
+    if (get_cache_data_dofs_view(dataFieldEnts, dataDofs, Extractor(),
+                                 Inserter()))
       THROW_MESSAGE("dataDofs can not be created");
     lastSeenDataEntFiniteElement = this;
   }
@@ -557,49 +601,31 @@ EntFiniteElement::getDataVectorDofsPtr() const {
     else
       dataVectorDofs =
           boost::make_shared<std::vector<boost::shared_ptr<FEDofEntity>>>();
-    if (getCacheDataVectorDofsView())
+
+    struct Extractor {
+      boost::weak_ptr<EntityCacheDofs>
+      operator()(boost::shared_ptr<FieldEntity> &e) {
+        return e->entityCacheDataDofs;
+      }
+    };
+
+    struct Inserter {
+      using Vec = std::vector<boost::shared_ptr<FEDofEntity>>;
+      using It = Vec::iterator;
+      It operator()(boost::shared_ptr<Vec> &dofs_view, It &hint,
+                    boost::shared_ptr<FEDofEntity> &&dof) {
+        dofs_view->emplace_back(dof);
+        return dofs_view->end();
+      }
+    };
+
+    if (get_cache_data_dofs_view(dataFieldEnts, dataVectorDofs, Extractor(),
+                                 Inserter()))
       THROW_MESSAGE("dataDofs can not be created");
     lastSeenDataVectorEntFiniteElement = this;
   }
   return dataVectorDofs;
 };
-
-MoFEMErrorCode EntFiniteElement::getCacheDataDofsView() const {
-  MoFEMFunctionBeginHot;
-
-  auto hint = dataDofs->begin();
-  for (auto &it : *dataFieldEnts) {
-    if (auto e = it.lock()) {
-
-      if (auto cache = e->entityCacheDataDofs.lock())
-        for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit)
-          hint = dataDofs->emplace_hint(
-              hint, boost::reinterpret_pointer_cast<FEDofEntity>(*dit));
-      else
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Cache not set");
-    }
-  }
-
-  MoFEMFunctionReturnHot(0);
-}
-
-MoFEMErrorCode EntFiniteElement::getCacheDataVectorDofsView() const {
-  MoFEMFunctionBeginHot;
-
-  for (auto &it : *dataFieldEnts) {
-    if (auto e = it.lock()) {
-
-      if (auto cache = e->entityCacheDataDofs.lock())
-        for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit)
-          dataVectorDofs->emplace_back(
-              boost::reinterpret_pointer_cast<FEDofEntity>(*dit));
-      else
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Cache not set");
-    }
-  }
-
-  MoFEMFunctionReturnHot(0);
-}
 
 boost::shared_ptr<FENumeredDofEntity_multiIndex> &
 NumeredEntFiniteElement::getRowDofsPtr(
@@ -610,9 +636,27 @@ NumeredEntFiniteElement::getRowDofsPtr(
       rowDofs->clear();
     else
       rowDofs = boost::make_shared<FENumeredDofEntity_multiIndex>();
-    if (EntFiniteElement::getDofView(getRowFieldEnts(), dofs_prb, *rowDofs,
-                                     moab::Interface::UNION))
+
+    struct Extractor {
+      boost::weak_ptr<EntityCacheNumeredDofs>
+      operator()(boost::shared_ptr<FieldEntity> &e) {
+        return e->entityCacheRowDofs;
+      }
+    };
+
+    struct Inserter {
+      using Idx = FENumeredDofEntity_multiIndex;
+      using It = Idx::iterator;
+      It operator()(boost::shared_ptr<Idx> &dofs_view, It &hint,
+                    boost::shared_ptr<FENumeredDofEntity> &&dof) {
+        return dofs_view->emplace_hint(hint, dof);
+      }
+    };
+
+    if (get_cache_data_dofs_view(getRowFieldEntsPtr(), rowDofs, Extractor(),
+                                 Inserter()))
       THROW_MESSAGE("rowDofs can not be created");
+
     lastSeenRowFiniteElement = this;
     lastSeenNumeredRows = &dofs_prb;
   }
@@ -630,12 +674,29 @@ NumeredEntFiniteElement::getColDofsPtr(
       colDofs = getRowDofsPtr(dofs_prb);
     } else {
 
+      struct Extractor {
+        boost::weak_ptr<EntityCacheNumeredDofs>
+        operator()(boost::shared_ptr<FieldEntity> &e) {
+          return e->entityCacheColDofs;
+        }
+      };
+
+      struct Inserter {
+        using Idx = FENumeredDofEntity_multiIndex;
+        using It = Idx::iterator;
+        It operator()(boost::shared_ptr<Idx> &dofs_view, It &hint,
+                      boost::shared_ptr<FENumeredDofEntity> &&dof) {
+          return dofs_view->emplace_hint(hint, dof);
+        }
+      };
+
       if (colDofs)
         colDofs->clear();
       else
         colDofs = boost::make_shared<FENumeredDofEntity_multiIndex>();
-      if (EntFiniteElement::getDofView(getColFieldEnts(), dofs_prb, *colDofs,
-                                       moab::Interface::UNION))
+
+      if (get_cache_data_dofs_view(getColFieldEntsPtr(), colDofs, Extractor(),
+                                   Inserter()))
         THROW_MESSAGE("colDofs can not be created");
     }
 
