@@ -478,15 +478,11 @@ EntFiniteElement::getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
   MoFEMFunctionReturn(0);
 }
 
-const NumeredDofEntity_multiIndex
-    *NumeredEntFiniteElement::lastSeenNumeredRows = nullptr;
 const NumeredEntFiniteElement
     *NumeredEntFiniteElement::lastSeenRowFiniteElement = nullptr;
 boost::shared_ptr<FENumeredDofEntity_multiIndex>
     NumeredEntFiniteElement::rowDofs; ///< indexed dofs on rows
 
-const NumeredDofEntity_multiIndex
-    *NumeredEntFiniteElement::lastSeenNumeredCols = nullptr;
 const NumeredEntFiniteElement
     *NumeredEntFiniteElement::lastSeenColFiniteElement = nullptr;
 boost::shared_ptr<FENumeredDofEntity_multiIndex>
@@ -501,10 +497,8 @@ NumeredEntFiniteElement::NumeredEntFiniteElement(
 
 NumeredEntFiniteElement::~NumeredEntFiniteElement() {
   lastSeenRowFiniteElement = nullptr;
-  lastSeenNumeredRows = nullptr;
   rowDofs.reset();
   lastSeenColFiniteElement = nullptr;
-  lastSeenNumeredCols = nullptr;
   colDofs.reset();
 }
 
@@ -628,8 +622,7 @@ EntFiniteElement::getDataVectorDofsPtr() const {
 };
 
 boost::shared_ptr<FENumeredDofEntity_multiIndex> &
-NumeredEntFiniteElement::getRowDofsPtr(
-    const NumeredDofEntity_multiIndex &dofs_prb) const {
+NumeredEntFiniteElement::getRowDofsPtr() const {
   RefEntityTmp<0>::refElementPtr = this->getRefElement();
   if (lastSeenRowFiniteElement != this) {
     if (rowDofs)
@@ -658,20 +651,18 @@ NumeredEntFiniteElement::getRowDofsPtr(
       THROW_MESSAGE("rowDofs can not be created");
 
     lastSeenRowFiniteElement = this;
-    lastSeenNumeredRows = &dofs_prb;
   }
   return rowDofs;
 }
 
 boost::shared_ptr<FENumeredDofEntity_multiIndex> &
-NumeredEntFiniteElement::getColDofsPtr(
-    const NumeredDofEntity_multiIndex &dofs_prb) const {
+NumeredEntFiniteElement::getColDofsPtr() const {
   RefEntityTmp<0>::refElementPtr = this->getRefElement();
   if (lastSeenColFiniteElement != this) {
-    if (lastSeenNumeredRows == &dofs_prb &&
-        getBitFieldIdRow() == getBitFieldIdCol() &&
+
+    if (getBitFieldIdRow() == getBitFieldIdCol() &&
         getRowFieldEntsPtr() == getColFieldEntsPtr()) {
-      colDofs = getRowDofsPtr(dofs_prb);
+      colDofs = getRowDofsPtr();
     } else {
 
       struct Extractor {
@@ -701,7 +692,6 @@ NumeredEntFiniteElement::getColDofsPtr(
     }
 
     lastSeenColFiniteElement = this;
-    lastSeenNumeredCols = &dofs_prb;
   }
   return colDofs;
 }

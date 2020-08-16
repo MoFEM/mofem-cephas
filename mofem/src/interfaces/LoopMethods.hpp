@@ -433,23 +433,19 @@ struct FEMethod : public BasicMethod {
   };
 
   inline auto &getRowDofs() const {
-    return numeredEntFiniteElementPtr->getRowDofs(
-        *(problemPtr->getNumeredRowDofs()));
+    return numeredEntFiniteElementPtr->getRowDofs();
   };
 
   inline auto &getRowDofsPtr() const {
-    return numeredEntFiniteElementPtr->getRowDofsPtr(
-        *(problemPtr->getNumeredRowDofs()));
+    return numeredEntFiniteElementPtr->getRowDofsPtr();
   };
 
   inline auto &getColDofs() const {
-    return numeredEntFiniteElementPtr->getColDofs(
-        *(problemPtr->getNumeredColDofs()));
+    return numeredEntFiniteElementPtr->getColDofs();
   };
 
   inline auto &getColDofsPtr() const {
-    return numeredEntFiniteElementPtr->getColDofsPtr(
-        *(problemPtr->getNumeredColDofs()));
+    return numeredEntFiniteElementPtr->getColDofsPtr();
   };
 
   /// \brief Get number of DOFs on element

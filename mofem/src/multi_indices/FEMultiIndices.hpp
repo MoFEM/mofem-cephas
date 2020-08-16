@@ -574,24 +574,20 @@ struct NumeredEntFiniteElement
   /** \brief get FE dof on row
    * \ingroup mofem_dofs
    */
-  inline FENumeredDofEntity_multiIndex &
-  getRowDofs(const NumeredDofEntity_multiIndex &dofs_prb) const {
-    return *getRowDofsPtr(dofs_prb);
+  inline FENumeredDofEntity_multiIndex &getRowDofs() const {
+    return *getRowDofsPtr();
   }
 
-  boost::shared_ptr<FENumeredDofEntity_multiIndex> &
-  getRowDofsPtr(const NumeredDofEntity_multiIndex &dofs_prb) const;
+  boost::shared_ptr<FENumeredDofEntity_multiIndex> &getRowDofsPtr() const;
 
   /** \brief get FE dof on column
    * \ingroup mofem_dofs
    */
-  inline FENumeredDofEntity_multiIndex &
-  getColDofs(const NumeredDofEntity_multiIndex &dofs_prb) const {
-    return *getColDofsPtr(dofs_prb);
+  inline FENumeredDofEntity_multiIndex &getColDofs() const {
+    return *getColDofsPtr();
   }
 
-  boost::shared_ptr<FENumeredDofEntity_multiIndex> &
-  getColDofsPtr(const NumeredDofEntity_multiIndex &dofs_prb) const;
+  boost::shared_ptr<FENumeredDofEntity_multiIndex> &getColDofsPtr() const;
 
   /** \brief get FE dof by petsc index
    * \ingroup mofem_dofs
@@ -609,27 +605,23 @@ struct NumeredEntFiniteElement
                                   const NumeredEntFiniteElement &e);
 
   inline static void getRowDofsClear() {
-    lastSeenNumeredRows = nullptr;
     lastSeenRowFiniteElement = nullptr;
     if (rowDofs)
       rowDofs->clear();
   }
 
   inline static void getRowDofsReset() {
-    lastSeenNumeredRows = nullptr;
     lastSeenRowFiniteElement = nullptr;
     rowDofs.reset();
   }
 
   inline static void getColDofsClear() {
-    lastSeenNumeredCols = nullptr;
     lastSeenColFiniteElement = nullptr;
     if (colDofs)
       colDofs->clear();
   }
 
   inline static void getColDofsReset() {
-    lastSeenNumeredCols = nullptr;
     lastSeenColFiniteElement = nullptr;
     colDofs.reset();
   }
@@ -640,7 +632,6 @@ private:
   static boost::shared_ptr<FENumeredDofEntity_multiIndex>
       rowDofs; ///< indexed dofs on rows
 
-  static const NumeredDofEntity_multiIndex *lastSeenNumeredCols;
   static const NumeredEntFiniteElement *lastSeenColFiniteElement;
   static boost::shared_ptr<FENumeredDofEntity_multiIndex>
       colDofs; ///< indexed dofs on columns
