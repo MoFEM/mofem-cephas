@@ -1161,20 +1161,23 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
     }
   }
 
+  std::set<string> fields_list;
   for (auto &e : getDataFieldEnts()) {
     if (auto ent_data_ptr = e.lock()) {
       if (ent_data_ptr->getApproxBase() == AINSWORTH_BERNSTEIN_BEZIER_BASE) {
         auto field_name = ent_data_ptr->getName();
-        auto space = ent_data_ptr->getSpace();
-        CHKERR get_nodal_base_data(*dataOnElement[space], field_name);
-        CHKERR get_entity_base_data(*dataOnElement[space], field_name, MBEDGE,
-                                    MBPOLYHEDRON);
-        CHKERR getElementPolynomialBase()->getValue(
-            gaussPts, boost::make_shared<EntPolynomialBaseCtx>(
-                          *dataOnElement[space], field_name,
-                          static_cast<FieldSpace>(space),
-                          AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE));
-        break;
+        if (fields_list.find(field_name) == fields_list.end()) {
+          auto space = ent_data_ptr->getSpace();
+          CHKERR get_nodal_base_data(*dataOnElement[space], field_name);
+          CHKERR get_entity_base_data(*dataOnElement[space], field_name, MBEDGE,
+                                      MBPOLYHEDRON);
+          CHKERR getElementPolynomialBase()->getValue(
+              gaussPts, boost::make_shared<EntPolynomialBaseCtx>(
+                            *dataOnElement[space], field_name,
+                            static_cast<FieldSpace>(space),
+                            AINSWORTH_BERNSTEIN_BEZIER_BASE, NOBASE));
+          fields_list.insert(field_name);
+        }
       }
     }
   }
