@@ -36,6 +36,8 @@ struct KspCtx {
   typedef MoFEM::FEMethodsSequence FEMethodsSequence;
   typedef MoFEM::BasicMethodsSequence BasicMethodsSequence;
 
+  FEMethodsSequence loops_to_do_Mat; ///< Sequence of finite elements instances
+                                     ///< assembling tangent matrix
   FEMethodsSequence loops_to_do_Rhs;   ///< Sequence of finite elements
                                        ///< instances assembling residual vector
   BasicMethodsSequence preProcess_Mat; ///< Sequence of methods run before
