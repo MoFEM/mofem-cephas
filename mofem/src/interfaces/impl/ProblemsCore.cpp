@@ -812,6 +812,16 @@ MoFEMErrorCode Core::cacheProblemEntities(
 
       if ((lo->getBitFEId() & p_miit->getBitFEId()).any()) {
 
+        const BitRefLevel prb_bit = p_miit->getBitRefLevel();
+        const BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
+        const BitRefLevel fe_bit = lo->entFePtr->getBitRefLevel();
+
+        // if entity is not problem refinement level
+        if ((fe_bit & prb_mask) != fe_bit)
+          continue;
+        if ((fe_bit & prb_bit) != prb_bit)
+          continue;
+
         auto cache_numered_dofs = [&](auto &numered_dofs, auto &cache_vec,
                                       auto &ent_cache) {
           auto dit = numered_dofs->lower_bound(uid);

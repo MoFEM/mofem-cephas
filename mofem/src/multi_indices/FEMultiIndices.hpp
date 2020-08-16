@@ -346,7 +346,7 @@ struct EntFiniteElement
     return rowFieldEnts;
   };
 
-  inline const FieldEntity_vector_view &getColFieldEnts() const {
+  inline FieldEntity_vector_view &getColFieldEnts() const {
     return *getColFieldEntsPtr();
   };
 
@@ -486,7 +486,7 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
     return this->sPtr->getDataVectorDofsPtr();
   };
 
-  inline const FieldEntity_vector_view &getDataFieldEnts() const {
+  inline FieldEntity_vector_view &getDataFieldEnts() const {
     return this->sPtr->getDataFieldEnts();
   };
 
@@ -494,7 +494,7 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
     return this->sPtr->getDataFieldEntsPtr();
   };
 
-  inline const FieldEntity_vector_view &getRowFieldEnts() const {
+  inline FieldEntity_vector_view &getRowFieldEnts() const {
     return this->sPtr->getRowFieldEnts();
   };
 
@@ -503,7 +503,7 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
     return this->sPtr->getRowFieldEntsPtr();
   }
 
-  inline const FieldEntity_vector_view &getColFieldEnts() const {
+  inline FieldEntity_vector_view &getColFieldEnts() const {
     return this->sPtr->getColFieldEnts();
   };
 

@@ -88,6 +88,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   BitRefLevel prb_bit = p_miit->getBitRefLevel();
   BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
 
+  const DofIdx nb_dofs_col = p_miit->getNbDofsCol();
+
   dofs_col_view.clear();
   for (auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(
            mofem_ent_ptr->getLocalUniqueId());
@@ -100,13 +102,14 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
         continue;
       }
 
-      BitRefLevel fe_bit = r.first->entFePtr->getBitRefLevel();
+      const BitRefLevel fe_bit = r.first->entFePtr->getBitRefLevel();
       // if entity is not problem refinement level
       if ((fe_bit & prb_mask) != fe_bit)
         continue;
       if ((fe_bit & prb_bit) != prb_bit)
         continue;
-      BitRefLevel dof_bit = mit_row->get()->getBitRefLevel();
+      const BitRefLevel dof_bit = mit_row->get()->getBitRefLevel();
+
       // if entity is not problem refinement level
       if ((fe_bit & dof_bit).any()) {
 
@@ -117,9 +120,9 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
               const auto hi = cache->loHi[1];
               for (auto vit = lo; vit != hi; ++vit) {
                 const int idx = TAG::get_index(vit);
-                if (idx >= 0)
+                if (PetscLikely(idx >= 0))
                   dofs_col_view.push_back(idx);
-                if (idx >= p_miit->getNbDofsCol()) {
+                if (PetscUnlikely(idx >= nb_dofs_col)) {
                   std::ostringstream zz;
                   zz << "rank " << rAnk << " ";
                   zz << *(*vit) << std::endl;
@@ -157,6 +160,16 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     for (auto lo = r.first; lo != r.second; ++lo) {
 
       if ((lo->getBitFEId() & p_miit->getBitFEId()).any()) {
+
+        const BitRefLevel prb_bit = p_miit->getBitRefLevel();
+        const BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
+        const BitRefLevel fe_bit = lo->entFePtr->getBitRefLevel();
+
+        // if entity is not problem refinement level
+        if ((fe_bit & prb_mask) != fe_bit)
+          continue;
+        if ((fe_bit & prb_bit) != prb_bit)
+          continue;
 
         auto dit = p_miit->numeredColDofs->lower_bound(uid);
 
