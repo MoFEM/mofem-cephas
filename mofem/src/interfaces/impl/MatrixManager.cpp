@@ -896,6 +896,12 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
     PetscPrintf(m_field.get_comm(), "check problem < %s >\n",
                 problem_name.c_str());
 
+  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
+  CHKERR m_field.cache_problem_entities(problem_name, ent_data_cache,
+                                        ent_row_cache, ent_col_cache);
+
   // loop all elements in problem and check if assemble is without error
   auto fe_ptr = m_field.get_finite_elements();
   for (auto &fe : *fe_ptr) {
@@ -903,7 +909,8 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
       PetscPrintf(m_field.get_comm(), "\tcheck element %s\n",
                   fe->getName().c_str());
     CHKERR m_field.loop_finite_elements(problem_name, fe->getName(), method,
-                                        nullptr, MF_EXIST, verb);
+                                        nullptr, MF_EXIST, ent_data_cache,
+                                        ent_row_cache, ent_col_cache, verb);
   }
 
   CHKERR MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);

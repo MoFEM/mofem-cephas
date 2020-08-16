@@ -1339,6 +1339,22 @@ struct CoreInterface : public UnknownInterface {
                                    BasicMethod &method,
                                    int verb = DEFAULT_VERBOSITY) = 0;
 
+  /**
+   * @brief Cache variables
+   *
+   * @param prb_name
+   * @param ent_data_cache
+   * @param ent_row_cache
+   * @param ent_col_cache
+   * @return MoFEMErrorCode
+   */
+  virtual MoFEMErrorCode cache_problem_entities(
+      const std::string prb_name,
+      boost::shared_ptr<std::vector<EntityCacheDofs>> &ent_data_cache,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &ent_row_cache,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>>
+          &ent_col_cache) = 0;
+
   /** \brief Make a loop over finite elements.
   *
   * This function is like swiss knife, is can be used to post-processing or
@@ -1365,6 +1381,9 @@ struct CoreInterface : public UnknownInterface {
   * @param  fe_ptr       pointer to finite elements multi-index
   * @param  bh           if bH = MF_EXIST, throws error if fe_name does not
   exist
+  * @param  cache_data   cache data vector
+  * @param  cache_row    cache row vector
+  * @param  cache_col    cache row vector
   * @param  verb         verbosity level
   * @return              error code
 
@@ -1374,7 +1393,13 @@ struct CoreInterface : public UnknownInterface {
       const std::string &problem_name, const std::string &fe_name,
       FEMethod &method,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
-      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY) = 0;
+      MoFEMTypes bh = MF_EXIST,
+      boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data = nullptr,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_row =
+          nullptr,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col =
+          nullptr,
+      int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to
   lower rank.
@@ -1405,6 +1430,9 @@ struct CoreInterface : public UnknownInterface {
   * @param  fe_ptr       pointer to finite elements multi-index
   * @param  bh           if bH = MF_EXIST, throws error if fe_name does not
   exist
+  * @param  cache_data   cache data vector
+  * @param  cache_row    cache row vector
+  * @param  cache_col    cache row vector
   * @param  verb         verbosity level
   * @return              error code
 
@@ -1414,7 +1442,13 @@ struct CoreInterface : public UnknownInterface {
       const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
       int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
-      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY) = 0;
+      MoFEMTypes bh = MF_EXIST,
+      boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data = nullptr,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_row =
+          nullptr,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col =
+          nullptr,
+      int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to
   lower rank.
@@ -1443,6 +1477,9 @@ struct CoreInterface : public UnknownInterface {
   * @param  fe_ptr       pointer to finite elements multi-index
   * @param  bh           if bH = MF_EXIST, throws error if fe_name does not
   exist
+  * @param  cache_data   cache data vector
+  * @param  cache_row    cache row vector
+  * @param  cache_col    cache row vector
   * @param  verb         verbosity level
   * @return              error code
 
@@ -1452,7 +1489,13 @@ struct CoreInterface : public UnknownInterface {
       const std::string &problem_name, const std::string &fe_name,
       FEMethod &method, int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
-      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY) = 0;
+      MoFEMTypes bh = MF_EXIST,
+      boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data = nullptr,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_row =
+          nullptr,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col =
+          nullptr,
+      int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief Make a loop over dofs
 

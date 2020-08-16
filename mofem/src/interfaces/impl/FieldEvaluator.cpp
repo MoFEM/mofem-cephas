@@ -206,10 +206,16 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
       PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
     }
 
-    CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, *fe_ptr,
-                                        lower_rank, upper_rank, numered_fes, bh,
-                                        verb);
-  } else
+    boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
+    boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
+    boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
+    CHKERR m_field.cache_problem_entities(prb_ptr->getName(), ent_data_cache,
+                                          ent_row_cache, ent_col_cache);
+    CHKERR m_field.loop_finite_elements(
+        prb_ptr, finite_element, *fe_ptr, lower_rank, upper_rank, numered_fes,
+        bh, ent_data_cache, ent_row_cache, ent_col_cache, verb);
+
+    } else
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer to element does not exists");
 

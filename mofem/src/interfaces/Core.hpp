@@ -860,21 +860,50 @@ protected:
                                    BasicMethod &method,
                                    int verb = DEFAULT_VERBOSITY);
 
+  /**
+   * @copydoc MoFEM::CoreInterface::cache_problem_entities
+   */
+  MoFEMErrorCode cache_problem_entities(
+      const std::string prb_name,
+      boost::shared_ptr<std::vector<EntityCacheDofs>> &ent_data_cache,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &ent_row_cache,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &ent_col_cache);
+
   MoFEMErrorCode loop_finite_elements(
       const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
       int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
-      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY);
+      MoFEMTypes bh = MF_EXIST,
+      boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data = nullptr,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_row =
+          nullptr,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col =
+          nullptr,
+      int verb = DEFAULT_VERBOSITY);
+
   MoFEMErrorCode loop_finite_elements(
       const std::string &problem_name, const std::string &fe_name,
       FEMethod &method, int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
-      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY);
+      MoFEMTypes bh = MF_EXIST,
+      boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data = nullptr,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_row =
+          nullptr,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col =
+          nullptr,
+      int verb = DEFAULT_VERBOSITY);
+
   MoFEMErrorCode loop_finite_elements(
       const std::string &problem_name, const std::string &fe_name,
       FEMethod &method,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
-      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY);
+      MoFEMTypes bh = MF_EXIST,
+      boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data = nullptr,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_row =
+          nullptr,
+      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col =
+          nullptr,
+      int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode loop_dofs(const Problem *problem_ptr,
                            const std::string &field_name, RowColData rc,
@@ -1054,22 +1083,6 @@ protected:
   static bool isGloballyInitialised; ///< Core base globally initialized
   static int mpiInitialised;         ///< mpi was initialised by other agent
   static PetscBool isInitialized;    ///< petsc was initialised by other agent
-
-  /**
-   * @brief Cache variables
-   *
-   * @param prb_name
-   * @param fe_elements
-   * @param ent_data_cache
-   * @param ent_row_cache
-   * @param ent_col_cache
-   * @return MoFEMErrorCode
-   */
-  MoFEMErrorCode cacheProblemEntities(
-      const std::string prb_name, const std::string fe_elements,
-      boost::shared_ptr<std::vector<EntityCacheDofs>> &ent_data_cache,
-      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &ent_row_cache,
-      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &ent_col_cache);
 
   /**
    * @brief add problem

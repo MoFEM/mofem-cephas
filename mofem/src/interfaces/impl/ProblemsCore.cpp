@@ -417,15 +417,16 @@ MoFEMErrorCode Core::loop_finite_elements(
     const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
     int lower_rank, int upper_rank,
     boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
+    boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data,
+    boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_row,
+    boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col,
     int verb) {
   MoFEMFunctionBegin;
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
 
-  boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col, cache_row;
-  CHKERR cacheProblemEntities(problem_ptr->getName(), fe_name, cache_data,
-                              cache_row, cache_col);
+  CHKERR cache_problem_entities(problem_ptr->getName(), cache_data, cache_row,
+                                cache_col);
 
   if (!cache_data)
     SETERRQ(get_comm(), MOFEM_DATA_INCONSISTENCY, "cache data not set");
@@ -483,13 +484,16 @@ MoFEMErrorCode Core::loop_finite_elements(
     const std::string &problem_name, const std::string &fe_name,
     FEMethod &method,
     boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
+    boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data,
+    boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_row,
+    boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col,
     int verb) {
   MoFEMFunctionBegin;
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
 
   CHKERR loop_finite_elements(problem_name, fe_name, method, rAnk, rAnk, fe_ptr,
-                              bh, verb);
+                              bh, cache_data, cache_row, cache_col, verb);
 
   MoFEMFunctionReturn(0);
 }
@@ -498,6 +502,9 @@ MoFEMErrorCode Core::loop_finite_elements(
     const std::string &problem_name, const std::string &fe_name,
     FEMethod &method, int lower_rank, int upper_rank,
     boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
+    boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data,
+    boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_row,
+    boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col,
     int verb) {
   MoFEMFunctionBegin;
   if (verb == DEFAULT_VERBOSITY)
@@ -510,7 +517,8 @@ MoFEMErrorCode Core::loop_finite_elements(
              problem_name.c_str());
 
   CHKERR loop_finite_elements(&*p_miit, fe_name, method, lower_rank, upper_rank,
-                              fe_ptr, bh, verb);
+                              fe_ptr, bh, cache_data, cache_row, cache_col,
+                              verb);
 
   MoFEMFunctionReturn(0);
 }
@@ -765,8 +773,8 @@ MoFEMErrorCode Core::loop_entities(const std::string field_name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::cacheProblemEntities(
-    const std::string prb_name, const std::string fe_name,
+MoFEMErrorCode Core::cache_problem_entities(
+    const std::string prb_name,
     boost::shared_ptr<std::vector<EntityCacheDofs>> &cache_data,
     boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &cache_row,
     boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &cache_col) {
@@ -780,19 +788,12 @@ MoFEMErrorCode Core::cacheProblemEntities(
   auto &row_dofs = p_miit->numeredRowDofs;
   auto &col_dofs = p_miit->numeredColDofs;
 
-  auto fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
-  if (fe_miit == finiteElements.get<FiniteElement_name_mi_tag>().end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-             "finite element not in database %s", fe_name.c_str());
-  const auto fe_uid = (*fe_miit)->getFEUId();
-
   if (!cache_row)
     cache_row = boost::make_shared<std::vector<EntityCacheNumeredDofs>>(
         entsFields.size());
 
   if (!cache_col) {
-    if (row_dofs == col_dofs &&
-        ((*fe_miit)->getBitFieldIdCol() == (*fe_miit)->getBitFieldIdRow()))
+    if (row_dofs == col_dofs)
       cache_col = cache_row;
     else
       cache_col = boost::make_shared<std::vector<EntityCacheNumeredDofs>>(
@@ -851,13 +852,17 @@ MoFEMErrorCode Core::cacheProblemEntities(
           (*cache_vec)[idx].loHi = {dit, hi_dit};
         };
 
-        cache_numered_dofs(col_dofs, cache_col, (*it)->entityCacheColDofs);
-        if (cache_row != cache_col)
-          cache_numered_dofs(row_dofs, cache_row, (*it)->entityCacheRowDofs);
-        else
+        if(!(*it)->entityCacheColDofs.lock())
+          cache_numered_dofs(col_dofs, cache_col, (*it)->entityCacheColDofs);
+        if (cache_row != cache_col) {
+          if (!(*it)->entityCacheRowDofs.lock())
+            cache_numered_dofs(row_dofs, cache_row, (*it)->entityCacheRowDofs);
+        } else {
           (*it)->entityCacheRowDofs = (*it)->entityCacheColDofs;
+        }
 
-        cache_dofs(dofsField, cache_data, (*it)->entityCacheDataDofs);
+        if (!(*it)->entityCacheDataDofs.lock())
+          cache_dofs(dofsField, cache_data, (*it)->entityCacheDataDofs);
 
         break;
       }
@@ -865,6 +870,6 @@ MoFEMErrorCode Core::cacheProblemEntities(
   }
 
   MoFEMFunctionReturn(0);
-} 
+}
 
 } // namespace MoFEM

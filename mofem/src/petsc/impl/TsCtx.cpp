@@ -72,6 +72,12 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
+  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
+  CHKERR ts_ctx->mField.cache_problem_entities(
+      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+
   // preprocess
   for (auto &bit : ts_ctx->preProcess_IFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
@@ -87,7 +93,8 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     lit.second->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
-        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
+        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH,
+        ent_data_cache, ent_row_cache, ent_col_cache);
     unset(*lit.second);
     ts_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
@@ -162,6 +169,12 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
+  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
+  CHKERR ts_ctx->mField.cache_problem_entities(
+      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+
   // preproces
   for (auto &bit : ts_ctx->preProcess_IJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
@@ -176,7 +189,8 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
-        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
+        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH,
+        ent_data_cache, ent_row_cache, ent_col_cache);
     unset(*lit.second);
     ts_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
@@ -226,6 +240,12 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
+  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
+  CHKERR ts_ctx->mField.cache_problem_entities(
+      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+
   // preproces
   for (auto &bit : ts_ctx->preProcess_Monitor) {
     set(*bit);
@@ -237,7 +257,8 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
   for (auto &lit : ts_ctx->loops_to_do_Monitor) {
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
-        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
+        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH,
+        ent_data_cache, ent_row_cache, ent_col_cache);
     unset(*lit.second);
   }
 
@@ -307,6 +328,12 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
+  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
+  CHKERR ts_ctx->mField.cache_problem_entities(
+      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+
   for (auto &bit : ts_ctx->preProcess_RHSJacobian) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*bit);
@@ -321,7 +348,8 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     lit.second->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
-        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
+        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH,
+        ent_data_cache, ent_row_cache, ent_col_cache);
     unset(*lit.second);
     ts_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
@@ -392,6 +420,12 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
+  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
+  CHKERR ts_ctx->mField.cache_problem_entities(
+      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+
   // preprocess
   for (auto &bit : ts_ctx->preProcess_RHSJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
@@ -407,7 +441,8 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
-        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
+        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH,
+        ent_data_cache, ent_row_cache, ent_col_cache);
     unset(*lit.second);
     ts_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
@@ -485,6 +520,12 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
+  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
+  CHKERR ts_ctx->mField.cache_problem_entities(
+      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+
   // preproces
   for (auto &bit : ts_ctx->preProcess_IJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
@@ -499,7 +540,8 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
-        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
+        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH,
+        ent_data_cache, ent_row_cache, ent_col_cache);
     unset(*lit.second);
     ts_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
@@ -584,6 +626,12 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
+  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
+  CHKERR ts_ctx->mField.cache_problem_entities(
+      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+
   // preprocess
   for (auto &bit : ts_ctx->preProcess_IFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
@@ -599,7 +647,8 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     lit.second->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*lit.second);
     CHKERR ts_ctx->mField.loop_finite_elements(
-        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH);
+        ts_ctx->problemName, lit.first, *(lit.second), nullptr, ts_ctx->bH,
+        ent_data_cache, ent_row_cache, ent_col_cache);
     unset(*lit.second);
     ts_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }

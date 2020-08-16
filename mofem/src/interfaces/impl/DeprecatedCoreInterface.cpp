@@ -578,14 +578,16 @@ MoFEMErrorCode DeprecatedCoreInterface::loop_finite_elements(
     const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
     int lower_rank, int upper_rank, MoFEMTypes bh, int verb) {
   return getInterface<CoreInterface>()->loop_finite_elements(
-      problem_ptr, fe_name, method, lower_rank, upper_rank, nullptr, bh, verb);
+      problem_ptr, fe_name, method, lower_rank, upper_rank, nullptr, bh,
+      nullptr, nullptr, nullptr, verb);
 }
 
 MoFEMErrorCode DeprecatedCoreInterface::loop_finite_elements(
     const std::string &problem_name, const std::string &fe_name,
     FEMethod &method, int lower_rank, int upper_rank, MoFEMTypes bh, int verb) {
   return getInterface<CoreInterface>()->loop_finite_elements(
-      problem_name, fe_name, method, lower_rank, upper_rank, nullptr, bh, verb);
+      problem_name, fe_name, method, lower_rank, upper_rank, nullptr, bh,
+      nullptr, nullptr, nullptr, verb);
 }
 
 MoFEMErrorCode DeprecatedCoreInterface::loop_finite_elements(
@@ -593,7 +595,7 @@ MoFEMErrorCode DeprecatedCoreInterface::loop_finite_elements(
     FEMethod &method, MoFEMTypes bh, int verb) {
   return getInterface<CoreInterface>()->loop_finite_elements(
       problem_name, fe_name, method, get_comm_rank(), get_comm_rank(), nullptr,
-      bh, verb);
+      bh, nullptr, nullptr, nullptr, verb);
 }
 
 MoFEMErrorCode DeprecatedCoreInterface::make_entities_multishared(

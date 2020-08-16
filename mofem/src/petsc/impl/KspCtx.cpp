@@ -40,6 +40,12 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
+  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
+  CHKERR ksp_ctx->mField.cache_problem_entities(
+      ksp_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+
   // pre-process
   for (auto &bit : ksp_ctx->preProcess_Rhs) {
     bit->vecAssembleSwitch = boost::move(ksp_ctx->vecAssembleSwitch);
@@ -55,7 +61,8 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
     lit.second->vecAssembleSwitch = boost::move(ksp_ctx->vecAssembleSwitch);
     set(*lit.second);
     CHKERR ksp_ctx->mField.loop_finite_elements(
-        ksp_ctx->problemName, lit.first, *(lit.second), nullptr, ksp_ctx->bH);
+        ksp_ctx->problemName, lit.first, *(lit.second), nullptr, ksp_ctx->bH,
+        ent_data_cache, ent_row_cache, ent_col_cache);
     unset(*lit.second);
     ksp_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
@@ -100,6 +107,12 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
+  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
+  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
+  CHKERR ksp_ctx->mField.cache_problem_entities(
+      ksp_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+
   // pre-procsess
   for (auto &bit : ksp_ctx->preProcess_Mat) {
     bit->matAssembleSwitch = boost::move(ksp_ctx->matAssembleSwitch);
@@ -115,7 +128,8 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
     lit.second->matAssembleSwitch = boost::move(ksp_ctx->matAssembleSwitch);
     set(*lit.second);
     CHKERR ksp_ctx->mField.loop_finite_elements(
-        ksp_ctx->problemName, lit.first, *(lit.second), nullptr, ksp_ctx->bH);
+        ksp_ctx->problemName, lit.first, *(lit.second), nullptr, ksp_ctx->bH,
+        ent_data_cache, ent_row_cache, ent_col_cache);
     unset(*lit.second);
     ksp_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }
