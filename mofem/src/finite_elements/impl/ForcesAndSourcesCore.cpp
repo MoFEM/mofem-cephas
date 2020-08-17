@@ -226,9 +226,9 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
 
 template <typename EXTRACTOR>
 MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
-    const std::string &field_name, FENumeredDofEntity_multiIndex &dofs,
-    FieldEntity_vector_view &ents_field, VectorInt &nodes_indices,
-    VectorInt &local_nodes_indices, EXTRACTOR &&extractor) const {
+    const std::string &field_name, FieldEntity_vector_view &ents_field,
+    VectorInt &nodes_indices, VectorInt &local_nodes_indices,
+    EXTRACTOR &&extractor) const {
   MoFEMFunctionBegin;
 
   auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
