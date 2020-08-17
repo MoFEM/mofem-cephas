@@ -469,8 +469,7 @@ EntFiniteElement::getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
   moab::Interface &moab = getRefEntityPtr()->getBasicDataPtr()->moab;
   MoFEMFunctionBegin;
   const EntFiniteElement *this_fe_ptr = this;
-  if (getFiniteElementPtr()->elementAdjacencyTable[getEntType()] ==
-      NULL) {
+  if (getFiniteElementPtr()->elementAdjacencyTable[getEntType()] == NULL) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
   }
   CHKERR getFiniteElementPtr()->elementAdjacencyTable[getEntType()](
@@ -529,10 +528,9 @@ std::ostream &operator<<(std::ostream &os, const NumeredEntFiniteElement &e) {
 
 template <typename ENTSVIEW, typename DOFSVIEW, typename EXTRACTOR,
           typename INSERTER>
-inline static MoFEMErrorCode get_cache_data_dofs_view(ENTSVIEW &ents_view,
-                                                      DOFSVIEW &dofs_view,
-                                                      EXTRACTOR &&extractor,
-                                                      INSERTER &&inserter) {
+inline static MoFEMErrorCode
+get_cache_data_dofs_view(ENTSVIEW &ents_view, DOFSVIEW &dofs_view,
+                         EXTRACTOR &&extractor, INSERTER &&inserter) {
   MoFEMFunctionBeginHot;
 
   auto hint = dofs_view->end();
@@ -563,8 +561,8 @@ EntFiniteElement::getDataDofsPtr() const {
       dataDofs = boost::make_shared<FEDofEntity_multiIndex>();
 
     struct Extractor {
-      boost::weak_ptr<EntityCacheDofs> operator()(
-          boost::shared_ptr<FieldEntity> &e) {
+      boost::weak_ptr<EntityCacheDofs>
+      operator()(boost::shared_ptr<FieldEntity> &e) {
         return e->entityCacheDataDofs;
       }
     };
@@ -660,36 +658,30 @@ NumeredEntFiniteElement::getColDofsPtr() const {
   RefEntityTmp<0>::refElementPtr = this->getRefElement();
   if (lastSeenColFiniteElement != this) {
 
-    if (getBitFieldIdRow() == getBitFieldIdCol() &&
-        getRowFieldEntsPtr() == getColFieldEntsPtr()) {
-      colDofs = getRowDofsPtr();
-    } else {
+    struct Extractor {
+      boost::weak_ptr<EntityCacheNumeredDofs>
+      operator()(boost::shared_ptr<FieldEntity> &e) {
+        return e->entityCacheColDofs;
+      }
+    };
 
-      struct Extractor {
-        boost::weak_ptr<EntityCacheNumeredDofs>
-        operator()(boost::shared_ptr<FieldEntity> &e) {
-          return e->entityCacheColDofs;
-        }
-      };
+    struct Inserter {
+      using Idx = FENumeredDofEntity_multiIndex;
+      using It = Idx::iterator;
+      It operator()(boost::shared_ptr<Idx> &dofs_view, It &hint,
+                    boost::shared_ptr<FENumeredDofEntity> &&dof) {
+        return dofs_view->emplace_hint(hint, dof);
+      }
+    };
 
-      struct Inserter {
-        using Idx = FENumeredDofEntity_multiIndex;
-        using It = Idx::iterator;
-        It operator()(boost::shared_ptr<Idx> &dofs_view, It &hint,
-                      boost::shared_ptr<FENumeredDofEntity> &&dof) {
-          return dofs_view->emplace_hint(hint, dof);
-        }
-      };
+    if (colDofs)
+      colDofs->clear();
+    else
+      colDofs = boost::make_shared<FENumeredDofEntity_multiIndex>();
 
-      if (colDofs)
-        colDofs->clear();
-      else
-        colDofs = boost::make_shared<FENumeredDofEntity_multiIndex>();
-
-      if (get_cache_data_dofs_view(getColFieldEntsPtr(), colDofs, Extractor(),
-                                   Inserter()))
-        THROW_MESSAGE("colDofs can not be created");
-    }
+    if (get_cache_data_dofs_view(getColFieldEntsPtr(), colDofs, Extractor(),
+                                 Inserter()))
+      THROW_MESSAGE("colDofs can not be created");
 
     lastSeenColFiniteElement = this;
   }
