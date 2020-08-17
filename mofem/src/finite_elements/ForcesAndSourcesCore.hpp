@@ -557,9 +557,8 @@ protected:
   template <typename EXTRACTOR>
   MoFEMErrorCode
   getNodesIndices(const std::string &field_name,
-                 FieldEntity_vector_view &ents_field,
-                  VectorInt &nodes_indices, VectorInt &local_nodes_indices,
-                  EXTRACTOR &&extractor) const;
+                  FieldEntity_vector_view &ents_field, VectorInt &nodes_indices,
+                  VectorInt &local_nodes_indices, EXTRACTOR &&extractor) const;
 
   /// \brief get row node indices from FENumeredDofEntity_multiIndex
   MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,

@@ -226,111 +226,84 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityDataOrder(
 
 template <typename EXTRACTOR>
 MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
-    const std::string &field_name, FieldEntity_vector_view &ents_field,
-    VectorInt &nodes_indices, VectorInt &local_nodes_indices,
-    EXTRACTOR &&extractor) const {
+    const std::string &field_name, FENumeredDofEntity_multiIndex &dofs,
+    FieldEntity_vector_view &ents_field, VectorInt &nodes_indices,
+    VectorInt &local_nodes_indices, EXTRACTOR &&extractor) const {
   MoFEMFunctionBegin;
 
-  nodes_indices.resize(0, false);
-  local_nodes_indices.resize(0, false);
+  auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+  if (field_it != fieldsPtr->get<FieldName_mi_tag>().end()) {
+    
+    auto bit_number = (*field_it)->getBitNumber();
+    const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+        bit_number, get_id_for_min_type<MBVERTEX>());
+    auto lo = std::lower_bound(ents_field.begin(), ents_field.end(), lo_uid,
+                               cmp_uid_lo);
+    if (lo != ents_field.end()) {
+      const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+          bit_number, get_id_for_max_type<MBVERTEX>());
+      auto hi = std::upper_bound(lo, ents_field.end(), hi_uid, cmp_uid_hi);
 
-  auto bit_number = mField.get_field_bit_number(field_name);
-  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
-      bit_number, get_id_for_min_type<MBVERTEX>());
-  auto lo = std::lower_bound(ents_field.begin(), ents_field.end(), lo_uid,
-                             cmp_uid_lo);
-  if (lo != ents_field.end()) {
-    const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
-        bit_number, get_id_for_max_type<MBVERTEX>());
-    auto hi = std::upper_bound(lo, ents_field.end(), hi_uid, cmp_uid_hi);
-    if (lo != hi) {
+      int num_nodes;
+      CHKERR getNumberOfNodes(num_nodes);
+      const int nb_dofs_on_vert = (*field_it)->getNbOfCoeffs();
+      const int max_nb_dofs = nb_dofs_on_vert * num_nodes;
 
-      for (auto it = lo; it != hi; ++it)
-        if (auto first_e = it->lock()) {
+      int nb_dofs = 0;
+      for (auto it = lo; it != hi; ++it) {
+        if (auto e = it->lock()) {
+          if (auto cache = extractor(e).lock()) {
+            if (cache->loHi[0] != cache->loHi[1]) {
+              nb_dofs += std::distance(cache->loHi[0], cache->loHi[1]);
+              break;
+            }
+          }
+        }
+      }
 
-          int num_nodes;
-          CHKERR getNumberOfNodes(num_nodes);
-          int max_nb_dofs = 0;
-          const int nb_dofs_on_vert = first_e->getNbOfCoeffs();
-          max_nb_dofs = nb_dofs_on_vert * num_nodes;
-          nodes_indices.resize(max_nb_dofs, false);
-          local_nodes_indices.resize(max_nb_dofs, false);
-          std::fill(nodes_indices.begin(), nodes_indices.end(), -1);
-          std::fill(local_nodes_indices.begin(), local_nodes_indices.end(), -1);
+      if(nb_dofs) {
+        nodes_indices.resize(max_nb_dofs, false);
+        local_nodes_indices.resize(max_nb_dofs, false);
+      } else {
+        nodes_indices.resize(0, false);
+        local_nodes_indices.resize(0, false); 
+      }
 
-          for (; it != hi; ++it) {
-            if (auto e = it->lock()) {
-              if (auto cache = extractor(e).lock()) {
-                for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
-                  auto &dof = **dit;
-                  const int idx = dof.getPetscGlobalDofIdx();
-                  const int local_idx = dof.getPetscLocalDofIdx();
-                  const int side_number = dof.getSideNumberPtr()->side_number;
-                  const int pos =
-                      side_number * nb_dofs_on_vert + dof.getDofCoeffIdx();
-                  nodes_indices[pos] = idx;
-                  local_nodes_indices[pos] = local_idx;
-                  const int brother_side_number =
-                      (*dit)->getSideNumberPtr()->brother_side_number;
-                  if (brother_side_number != -1) {
-                    const int elem_idx = brother_side_number * nb_dofs_on_vert +
-                                         (*dit)->getDofCoeffIdx();
-                    nodes_indices[elem_idx] = idx;
-                    local_nodes_indices[elem_idx] = local_idx;
-                  }
-                }
+      if (nb_dofs != max_nb_dofs) {
+        std::fill(nodes_indices.begin(), nodes_indices.end(), -1);
+        std::fill(local_nodes_indices.begin(), local_nodes_indices.end(), -1);
+      }
+
+      for (auto it = lo; it != hi; ++it) {
+        if (auto e = it->lock()) {
+          if (auto cache = extractor(e).lock()) {
+            for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
+              auto &dof = **dit;
+              const int idx = dof.getPetscGlobalDofIdx();
+              const int local_idx = dof.getPetscLocalDofIdx();
+              const int side_number = dof.getSideNumberPtr()->side_number;
+              const int pos =
+                  side_number * nb_dofs_on_vert + dof.getDofCoeffIdx();
+              nodes_indices[pos] = idx;
+              local_nodes_indices[pos] = local_idx;
+              const int brother_side_number =
+                  (*dit)->getSideNumberPtr()->brother_side_number;
+              if (brother_side_number != -1) {
+                const int elem_idx = brother_side_number * nb_dofs_on_vert +
+                                     (*dit)->getDofCoeffIdx();
+                nodes_indices[elem_idx] = idx;
+                local_nodes_indices[elem_idx] = local_idx;
               }
             }
           }
         }
+      }
     }
-  }
 
-  // auto &dofs_by_uid = dofs.get<Unique_mi_tag>();
-  // auto bit_number = mField.get_field_bit_number(&field_name[0]);
-  // auto dit = dofs_by_uid.lower_bound(DofEntity::getLoFieldEntityUId(
-  //     bit_number, get_id_for_min_type<MBVERTEX>()));
-  // auto hi_dit = dofs_by_uid.upper_bound(DofEntity::getHiFieldEntityUId(
-  //     bit_number, get_id_for_max_type<MBVERTEX>()));
-
-  // if (dit != hi_dit) {
-
-  //   int num_nodes;
-  //   CHKERR getNumberOfNodes(num_nodes);
-  //   int max_nb_dofs = 0;
-  //   const int nb_dofs_on_vert = (*dit)->getNbOfCoeffs();
-  //   max_nb_dofs = nb_dofs_on_vert * num_nodes;
-  //   nodes_indices.resize(max_nb_dofs, false);
-  //   local_nodes_indices.resize(max_nb_dofs, false);
-  //   if (std::distance(dit, hi_dit) != max_nb_dofs) {
-  //     std::fill(nodes_indices.begin(), nodes_indices.end(), -1);
-  //     std::fill(local_nodes_indices.begin(), local_nodes_indices.end(), -1);
-  //   }
-
-
-
-  //   for (; dit != hi_dit; dit++) {
-  //     auto &dof = **dit;
-  //     const int idx = dof.getPetscGlobalDofIdx();
-  //     const int local_idx = dof.getPetscLocalDofIdx();
-  //     const int side_number = dof.getSideNumberPtr()->side_number;
-  //     const int pos = side_number * nb_dofs_on_vert + dof.getDofCoeffIdx();
-  //     nodes_indices[pos] = idx;
-  //     local_nodes_indices[pos] = local_idx;
-  //     const int brother_side_number =
-  //         (*dit)->getSideNumberPtr()->brother_side_number;
-  //     if (brother_side_number != -1) {
-  //       const int elem_idx =
-  //           brother_side_number * nb_dofs_on_vert + (*dit)->getDofCoeffIdx();
-  //       nodes_indices[elem_idx] = idx;
-  //       local_nodes_indices[elem_idx] = local_idx;
-  //     }
-  //   }
-
-  // } else {
-  //   nodes_indices.resize(0, false);
-  //   local_nodes_indices.resize(0, false);
-  // }
+  } else {
+    nodes_indices.resize(0, false);
+    local_nodes_indices.resize(0, false);
+  } 
 
   MoFEMFunctionReturn(0);
 }
@@ -803,8 +776,9 @@ ForcesAndSourcesCore::getNoFieldFieldData(const std::string field_name,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
-    DataForcesAndSourcesCore &data, const std::string field_name) const {
+MoFEMErrorCode
+ForcesAndSourcesCore::getNoFieldFieldData(DataForcesAndSourcesCore &data,
+                                          const std::string field_name) const {
   MoFEMFunctionBegin;
   if (data.dataOnEntities[MBENTITYSET].size() == 0)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
