@@ -964,40 +964,47 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
   set_zero(master_nodes_data, master_nodes_dofs);
   set_zero(slave_nodes_data, slave_nodes_dofs);
 
-  auto &field_ents = getDataFieldEnts();
-  auto bit_number = mField.get_field_bit_number(field_name);
-  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
-      bit_number, get_id_for_min_type<MBVERTEX>());
-  auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
-                             cmp_uid_lo);
-  if (lo != field_ents.end()) {
-    const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
-        bit_number, get_id_for_max_type<MBVERTEX>());
-    auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
-    if (lo != hi) {
+  auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+  if (field_it != fieldsPtr->get<FieldName_mi_tag>().end()) {
 
-      for (auto it = lo; it != hi; ++it)
-        if (auto first_e = it->lock()) {
+    auto bit_number = (*field_it)->getBitNumber();
+    const int nb_dofs_on_vert = (*field_it)->getNbOfCoeffs();
+    master_space = slave_space = (*field_it)->getSpace();
+    master_base = slave_base = (*field_it)->getApproxBase();
 
-          const int nb_dof_idx = first_e->getNbOfCoeffs();
+    auto &field_ents = getDataFieldEnts();
+    const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+        bit_number, get_id_for_min_type<MBVERTEX>());
+    auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
+                               cmp_uid_lo);
+    if (lo != field_ents.end()) {
+      const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+          bit_number, get_id_for_max_type<MBVERTEX>());
+      auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
+      if (lo != hi) {
 
-          auto init_set = [&](auto &nodes_data, auto &nodes_dofs, auto &space,
-                              auto &base) {
+        int nb_dofs = 0;
+        for (auto it = lo; it != hi; ++it) {
+          if (auto e = it->lock()) {
+            nb_dofs += e->getEntFieldData().size();
+          }
+        }
+
+        if (nb_dofs) {
+
+          auto init_set = [&](auto &nodes_data, auto &nodes_dofs) {
             constexpr int num_nodes = 3;
-            const int max_nb_dofs = nb_dof_idx * num_nodes;
-            space = first_e->getSpace();
-            base = first_e->getApproxBase();
+            const int max_nb_dofs = nb_dofs_on_vert * num_nodes;
             nodes_data.resize(max_nb_dofs, false);
             nodes_dofs.resize(max_nb_dofs, false);
             nodes_data.clear();
             fill(nodes_dofs.begin(), nodes_dofs.end(), nullptr);
           };
 
-          init_set(master_nodes_data, master_nodes_dofs, master_space,
-                   master_base);
-          init_set(slave_nodes_data, slave_nodes_dofs, slave_space, slave_base);
+          init_set(master_nodes_data, master_nodes_dofs);
+          init_set(slave_nodes_data, slave_nodes_dofs);
 
-          for (; it != hi; ++it) {
+          for (auto it = lo; it != hi; ++it) {
             if (auto e = it->lock()) {
 
               const auto &sn = e->getSideNumberPtr();
@@ -1017,10 +1024,10 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
 
               if (side < 3)
                 set_data(master_nodes_data, master_nodes_dofs,
-                         side * nb_dof_idx);
+                         side * nb_dofs_on_vert);
               else
                 set_data(slave_nodes_data, slave_nodes_dofs,
-                         (side - 3) * nb_dof_idx);
+                         (side - 3) * nb_dofs_on_vert);
 
               const int brother_side = sn->brother_side_number;
               if (brother_side != -1)
@@ -1028,9 +1035,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
                         "Not implemented (FIXME please)");
             }
           }
-
-          break;
         }
+      }
     }
   }
 
