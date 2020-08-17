@@ -663,7 +663,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                 }
               };
               CHKERR getEntityIndices(*op_master_data[ss], *op_slave_data[ss],
-                                      field_name, getRowFieldEnts(), MBEDGE, MBPRISM, Extractor());
+                                      field_name, getRowFieldEnts(), MBEDGE,
+                                      MBPRISM, Extractor());
             }
 
             switch (space) {
@@ -1143,22 +1144,34 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
   slave_nodes_indices.resize(0, false);
   slave_local_nodes_indices.resize(0, false);
 
-  auto bit_number = mField.get_field_bit_number(field_name);
-  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
-      bit_number, get_id_for_min_type<MBVERTEX>());
-  auto lo = std::lower_bound(ents_field.begin(), ents_field.end(), lo_uid,
-                             cmp_uid_lo);
-  if (lo != ents_field.end()) {
-    const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
-        bit_number, get_id_for_max_type<MBVERTEX>());
-    auto hi = std::upper_bound(lo, ents_field.end(), hi_uid, cmp_uid_hi);
-    if (lo != hi) {
+  auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+  if (field_it != fieldsPtr->get<FieldName_mi_tag>().end()) {
 
-      for (auto it = lo; it != hi; ++it)
-        if (auto first_e = it->lock()) {
+    auto bit_number = (*field_it)->getBitNumber();
+    const int nb_dofs_on_vert = (*field_it)->getNbOfCoeffs();
+
+    const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+        bit_number, get_id_for_min_type<MBVERTEX>());
+    auto lo = std::lower_bound(ents_field.begin(), ents_field.end(), lo_uid,
+                               cmp_uid_lo);
+    if (lo != ents_field.end()) {
+      const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+          bit_number, get_id_for_max_type<MBVERTEX>());
+      auto hi = std::upper_bound(lo, ents_field.end(), hi_uid, cmp_uid_hi);
+      if (lo != hi) {
+
+        int nb_dofs = 0;
+        for (auto it = lo; it != hi; ++it) {
+          if (auto e = it->lock()) {
+            if (auto cache = extractor(e).lock()) {
+              nb_dofs += std::distance(cache->loHi[0], cache->loHi[1]);
+            }
+          }
+        }
+
+        if (nb_dofs) {
 
           constexpr int num_nodes = 3;
-          const int nb_dofs_on_vert = first_e->getNbOfCoeffs();
           const int max_nb_dofs = nb_dofs_on_vert * num_nodes;
 
           auto set_vec_size = [&](auto &nodes_indices,
@@ -1173,7 +1186,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
           set_vec_size(master_nodes_indices, master_local_nodes_indices);
           set_vec_size(slave_nodes_indices, slave_local_nodes_indices);
 
-          for (; it != hi; ++it) {
+          for (auto it = lo; it != hi; ++it) {
             if (auto e = it->lock()) {
 
               const int side = e->getSideNumberPtr()->side_number;
@@ -1210,9 +1223,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesIndices(
                         "Impossible case");
             }
           }
-
-          break;
         }
+      }
     }
   }
 
