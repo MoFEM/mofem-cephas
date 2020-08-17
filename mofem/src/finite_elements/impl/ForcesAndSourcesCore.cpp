@@ -610,29 +610,39 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
     nodes_data.resize(0, false);
     nodes_dofs.resize(0, false);
 
-    auto &field_ents = getDataFieldEnts();
-    auto bit_number = mField.get_field_bit_number(field_name);
-    const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
-        bit_number, get_id_for_min_type<MBVERTEX>());
-    auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
-                               cmp_uid_lo);
-    if (lo != field_ents.end()) {
-      const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
-          bit_number, get_id_for_max_type<MBVERTEX>());
-      auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
-      if (lo != hi) {
+    auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+    if (field_it != fieldsPtr->get<FieldName_mi_tag>().end()) {
 
-        for (auto it = lo; it != hi; ++it)
-          if (auto first_e = it->lock()) {
+      auto bit_number = (*field_it)->getBitNumber();
+      const int nb_dofs_on_vert = (*field_it)->getNbOfCoeffs();
+      space = (*field_it)->getSpace();
+      base = (*field_it)->getApproxBase();
 
-            space = first_e->getSpace();
-            base = first_e->getApproxBase();
+      auto &field_ents = getDataFieldEnts();
+      const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+          bit_number, get_id_for_min_type<MBVERTEX>());
+      auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
+                                 cmp_uid_lo);
+      if (lo != field_ents.end()) {
+        const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+            bit_number, get_id_for_max_type<MBVERTEX>());
+        auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
+        if (lo != hi) {
+
+          int nb_dofs = 0;
+          for (auto it = lo; it != hi; ++it) {
+            if (auto e = it->lock()) {
+              nb_dofs += e->getEntFieldData().size();
+            }
+          }
+
+          if (nb_dofs) {
+
             int num_nodes;
             CHKERR getNumberOfNodes(num_nodes);
             bb_node_order.resize(num_nodes, false);
             bb_node_order.clear();
-            const int nb_dof_idx = first_e->getNbOfCoeffs();
-            const int max_nb_dofs = nb_dof_idx * num_nodes;
+            const int max_nb_dofs = nb_dofs_on_vert * num_nodes;
             nodes_data.resize(max_nb_dofs, false);
             nodes_dofs.resize(max_nb_dofs, false);
             std::fill(nodes_data.begin(), nodes_data.end(), 0);
@@ -640,7 +650,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
 
             std::vector<boost::weak_ptr<FieldEntity>> brother_ents_vec;
 
-            for (; it != hi; ++it) {
+            for (auto it = lo; it != hi; ++it) {
               if (auto e = it->lock()) {
 
                 const auto &sn = e->getSideNumberPtr();
@@ -650,7 +660,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
                   brother_ents_vec.emplace_back(e);
 
                 bb_node_order[side_number] = e->getMaxOrder();
-                int pos = side_number * nb_dof_idx;
+                int pos = side_number * nb_dofs_on_vert;
                 auto ent_filed_data_vec = e->getEntFieldData();
                 if (auto cache = e->entityCacheDataDofs.lock()) {
                   for (auto dit = cache->loHi[0]; dit != cache->loHi[1];
@@ -670,9 +680,9 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
                 const int side_number = sn->side_number;
                 const int brother_side_number = sn->brother_side_number;
                 bb_node_order[brother_side_number] = bb_node_order[side_number];
-                int pos = side_number * nb_dof_idx;
-                int brother_pos = brother_side_number * nb_dof_idx;
-                for (int ii = 0; ii != nb_dof_idx; ++ii) {
+                int pos = side_number * nb_dofs_on_vert;
+                int brother_pos = brother_side_number * nb_dofs_on_vert;
+                for (int ii = 0; ii != nb_dofs_on_vert; ++ii) {
                   nodes_data[brother_pos] = nodes_data[pos];
                   nodes_dofs[brother_pos] = nodes_dofs[pos];
                   ++pos;
@@ -680,9 +690,8 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
                 }
               }
             }
-
-            break;
           }
+        }
       }
     }
 
