@@ -1048,14 +1048,15 @@ MoFEMErrorCode
 ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
   MoFEMFunctionBegin;
 
-  auto get_nodal_base_data = [&](auto &data, auto field_ptr) {
+  auto get_nodal_base_data = [&](DataForcesAndSourcesCore &data,
+                                 auto field_ptr) {
     MoFEMFunctionBegin;
     auto &space = data.dataOnEntities[MBVERTEX][0].getSpace();
     auto &base = data.dataOnEntities[MBVERTEX][0].getBase();
     auto &bb_node_order = data.dataOnEntities[MBVERTEX][0].getBBNodeOrder();
 
-    auto bit_number = field_ptr->getBitNumber();
     auto &field_ents = getDataFieldEnts();
+    auto bit_number = field_ptr->getBitNumber();
     const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
         bit_number, get_id_for_min_type<MBVERTEX>());
     auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
@@ -1066,48 +1067,49 @@ ForcesAndSourcesCore::calBernsteinBezierBaseFunctionsOnElement() {
       auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
       if (lo != hi) {
 
-
-        for (auto it = lo; it != hi; ++it) {
-          if (auto e = it->lock()) {
-            space = e->getSpace();
-            base = e->getApproxBase();
+        for (auto it = lo; it != hi; ++it)
+          if (auto first_e = it->lock()) {
+            space = first_e->getSpace();
+            base = first_e->getApproxBase();
             int num_nodes;
             CHKERR getNumberOfNodes(num_nodes);
             bb_node_order.resize(num_nodes, false);
             bb_node_order.clear();
+            const int nb_dof_idx = first_e->getNbOfCoeffs();
+
+            std::vector<boost::weak_ptr<FieldEntity>> brother_ents_vec;
+
+            for (; it != hi; ++it) {
+              if (auto e = it->lock()) {
+                const auto &sn = e->getSideNumberPtr();
+                const int side_number = sn->side_number;
+                const int brother_side_number = sn->brother_side_number;
+                if (brother_side_number != -1)
+                  brother_ents_vec.emplace_back(e);
+                bb_node_order[side_number] = e->getMaxOrder();
+              }
+            }
+
+            for (auto &it : brother_ents_vec) {
+              if (const auto e = it.lock()) {
+                const auto &sn = e->getSideNumberPtr();
+                const int side_number = sn->side_number;
+                const int brother_side_number = sn->brother_side_number;
+                bb_node_order[brother_side_number] = bb_node_order[side_number];
+              }
+            }
+
             break;
           }
-        }
-
-        std::vector<boost::weak_ptr<FieldEntity>> brother_ents_vec;
-
-        for (auto it = lo; it != hi; ++it) {
-          if (auto e = it->lock()) {
-            const auto &sn = e->getSideNumberPtr();
-            const int side_number = sn->side_number;
-            const int brother_side_number = sn->brother_side_number;
-            if (brother_side_number != -1)
-              brother_ents_vec.emplace_back(e);
-            bb_node_order[side_number] = e->getMaxOrder();
-          }
-        }
-
-        for (auto &it : brother_ents_vec) {
-          if (const auto e = it.lock()) {
-            const auto &sn = e->getSideNumberPtr();
-            const int side_number = sn->side_number;
-            const int brother_side_number = sn->brother_side_number;
-            bb_node_order[brother_side_number] = bb_node_order[side_number];
-          }
-        }
       }
     }
 
     MoFEMFunctionReturn(0);
   };
 
-  auto get_entity_base_data = [&](auto &data, auto field_ptr,
-                                  const auto type_lo, const auto type_hi) {
+  auto get_entity_base_data = [&](DataForcesAndSourcesCore &data,
+                                  auto field_ptr, const EntityType type_lo,
+                                  const EntityType type_hi) {
     MoFEMFunctionBegin;
     for (EntityType t = type_lo; t != type_hi; ++t) {
       for (auto &dat : data.dataOnEntities[t]) {
