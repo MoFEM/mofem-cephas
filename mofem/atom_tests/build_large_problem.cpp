@@ -147,8 +147,25 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.loop_finite_elements("P1", "E1", *fe_ptr);
     MOFEM_LOG("WORLD", Sev::inform) << "Done";
 
-    auto vol_ptr =
-        boost::make_shared<VolumeElementForcesAndSourcesCore>(m_field);
+    using Vol = VolumeElementForcesAndSourcesCore;
+    using VolOp = VolumeElementForcesAndSourcesCore::UserDataOperator;
+    using EntData = DataForcesAndSourcesCore::EntData;
+
+    auto vol_ptr = boost::make_shared<Vol>(m_field);
+
+    struct Op : public VolOp {
+
+      Op() : VolOp("F1", VolOp::OPROWCOL, true) {}
+
+      MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                            EntityType col_type, EntData &row_data,
+                            EntData &col_data) {
+        return 0;
+      };
+    };
+
+    vol_ptr->getOpPtrVector().push_back(new Op());
+
     MOFEM_LOG_CHANNEL("WORLD");
     MOFEM_LOG("WORLD", Sev::inform) << "Iterate volume finite elements";
     CHKERR m_field.loop_finite_elements("P1", "E1", *vol_ptr);
