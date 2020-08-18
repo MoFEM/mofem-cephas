@@ -852,17 +852,14 @@ MoFEMErrorCode Core::cache_problem_entities(
           (*cache_vec)[idx].loHi = {dit, hi_dit};
         };
 
-        if(!(*it)->entityCacheColDofs.lock())
-          cache_numered_dofs(col_dofs, cache_col, (*it)->entityCacheColDofs);
+        cache_numered_dofs(col_dofs, cache_col, (*it)->entityCacheColDofs);
         if (cache_row != cache_col) {
-          if (!(*it)->entityCacheRowDofs.lock())
-            cache_numered_dofs(row_dofs, cache_row, (*it)->entityCacheRowDofs);
+          cache_numered_dofs(row_dofs, cache_row, (*it)->entityCacheRowDofs);
         } else {
           (*it)->entityCacheRowDofs = (*it)->entityCacheColDofs;
         }
 
-        if (!(*it)->entityCacheDataDofs.lock())
-          cache_dofs(dofsField, cache_data, (*it)->entityCacheDataDofs);
+        cache_dofs(dofsField, cache_data, (*it)->entityCacheDataDofs);
 
         break;
       }
