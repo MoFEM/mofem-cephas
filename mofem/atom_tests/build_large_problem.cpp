@@ -131,8 +131,8 @@ int main(int argc, char *argv[]) {
       MOFEM_LOG("WORLD", Sev::verbose)
           << "Iterate finite element " << *(fe_ptr->numeredEntFiniteElementPtr);
 
-      auto row_dofs = fe_ptr->getRowDofs();
-      for (auto &dof : row_dofs)
+      auto row_dofs = fe_ptr->getRowDofsPtr();
+      for (auto &dof : *row_dofs)
         MOFEM_LOG("WORLD", Sev::noisy) << *dof << endl;
 
       MoFEMFunctionReturn(0);

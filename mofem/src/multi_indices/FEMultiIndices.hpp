@@ -279,7 +279,7 @@ struct EntFiniteElement
 
   EntFiniteElement(const boost::shared_ptr<RefElement> &ref_finite_element,
                    const boost::shared_ptr<FiniteElement> &fe_ptr);
-  virtual ~EntFiniteElement();
+  virtual ~EntFiniteElement() = default;
 
   virtual boost::shared_ptr<const FiniteElement> &getFiniteElementPtr() const {
     return finiteElementPtr;
@@ -304,26 +304,20 @@ struct EntFiniteElement
     return getLocalUniqueIdCalculate(getEnt(), getFEUId());
   }
 
+  // TODO: [CORE-61] Get FEDofs by entity type
+
+  /**
+   * @brief Get the Data Dofs Ptr object
+   * 
+   * @return boost::shared_ptr<FEDofEntity_multiIndex> 
+   */
+  boost::shared_ptr<FEDofEntity_multiIndex> getDataDofsPtr() const;
+
   /**
    * \brief Get data data dos multi-index structure
    * @return Reference multi-index FEDofEntity_multiIndex
    */
-  inline const FEDofEntity_multiIndex &getDataDofs() const {
-    return *getDataDofsPtr();
-  };
-
-  boost::shared_ptr<FEDofEntity_multiIndex> &getDataDofsPtr() const;
-
-  /**
-   * \brief Get data data dos multi-index structure
-   * @return Reference multi-index FEDofEntity_multiIndex
-   */
-  inline std::vector<boost::shared_ptr<FEDofEntity>> &
-  getDataVectorDofs() const {
-    return *getDataVectorDofsPtr();
-  };
-
-  boost::shared_ptr<std::vector<boost::shared_ptr<FEDofEntity>>> &
+  boost::shared_ptr<std::vector<boost::shared_ptr<FEDofEntity>>>
   getDataVectorDofsPtr() const;
 
   inline FieldEntity_vector_view &getDataFieldEnts() const {
@@ -428,39 +422,12 @@ struct EntFiniteElement
   MoFEMErrorCode getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
                                      Range &adjacency);
 
-  inline static void getDataDofsClear() {
-    lastSeenDataEntFiniteElement = nullptr;
-    if (dataDofs)
-      dataDofs->clear();
-  }
-
-  inline static void getDataDofsReset() {
-    lastSeenDataEntFiniteElement = nullptr;
-    dataDofs.reset();
-  }
-
-  inline static void getDataVectorDofsClear() {
-    lastSeenDataEntFiniteElement = nullptr;
-    if (dataDofs)
-      dataDofs->clear();
-  }
-
-  inline static void getDataVectorDofsReset() {
-    lastSeenDataEntFiniteElement = nullptr;
-    dataDofs.reset();
-  }
 
 private:
   mutable boost::shared_ptr<const FiniteElement> finiteElementPtr;
   mutable boost::shared_ptr<FieldEntity_vector_view> dataFieldEnts;
   mutable boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
   mutable boost::shared_ptr<FieldEntity_vector_view> colFieldEnts;
-
-  static const EntFiniteElement *lastSeenDataEntFiniteElement;
-  static boost::shared_ptr<FEDofEntity_multiIndex> dataDofs;
-  static const EntFiniteElement *lastSeenDataVectorEntFiniteElement;
-  static boost::shared_ptr<std::vector<boost::shared_ptr<FEDofEntity>>>
-      dataVectorDofs;
 };
 
 /**
@@ -474,15 +441,9 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
       : interface_FiniteElement<T, T>(sptr, sptr) {}
   virtual ~interface_EntFiniteElement() = default;
 
-  inline const auto &getDataDofs() const { return this->sPtr->getDataDofs(); }
+  inline auto getDataDofsPtr() const { return this->sPtr->getDataDofsPtr(); }
 
-  inline auto &getDataDofsPtr() const { return this->sPtr->getDataDofsPtr(); }
-
-  inline auto &getDataVectorDofs() const {
-    return this->sPtr->getDataVectorDofs();
-  };
-
-  inline auto &getDataVectorDofsPtr() const {
+  inline auto getDataVectorDofsPtr() const {
     return this->sPtr->getDataVectorDofsPtr();
   };
 
@@ -544,7 +505,7 @@ struct interface_EntFiniteElement : public interface_FiniteElement<T, T> {
 struct NumeredEntFiniteElement
     : public interface_EntFiniteElement<EntFiniteElement> {
 
-  virtual ~NumeredEntFiniteElement();
+  virtual ~NumeredEntFiniteElement() = default;
 
   using interface_type_FiniteElement =
       interface_FiniteElementImpl<EntFiniteElement, EntFiniteElement>;
@@ -571,20 +532,12 @@ struct NumeredEntFiniteElement
   /** \brief get FE dof on row
    * \ingroup mofem_dofs
    */
-  inline FENumeredDofEntity_multiIndex &getRowDofs() const {
-    return *getRowDofsPtr();
-  }
-
-  boost::shared_ptr<FENumeredDofEntity_multiIndex> &getRowDofsPtr() const;
-
+  boost::shared_ptr<FENumeredDofEntity_multiIndex> getRowDofsPtr() const;
+  
   /** \brief get FE dof on column
    * \ingroup mofem_dofs
    */
-  inline FENumeredDofEntity_multiIndex &getColDofs() const {
-    return *getColDofsPtr();
-  }
-
-  boost::shared_ptr<FENumeredDofEntity_multiIndex> &getColDofsPtr() const;
+  boost::shared_ptr<FENumeredDofEntity_multiIndex> getColDofsPtr() const;
 
   /** \brief get FE dof by petsc index
    * \ingroup mofem_dofs
@@ -601,37 +554,6 @@ struct NumeredEntFiniteElement
   friend std::ostream &operator<<(std::ostream &os,
                                   const NumeredEntFiniteElement &e);
 
-  inline static void getRowDofsClear() {
-    lastSeenRowFiniteElement = nullptr;
-    if (rowDofs)
-      rowDofs->clear();
-  }
-
-  inline static void getRowDofsReset() {
-    lastSeenRowFiniteElement = nullptr;
-    rowDofs.reset();
-  }
-
-  inline static void getColDofsClear() {
-    lastSeenColFiniteElement = nullptr;
-    if (colDofs)
-      colDofs->clear();
-  }
-
-  inline static void getColDofsReset() {
-    lastSeenColFiniteElement = nullptr;
-    colDofs.reset();
-  }
-
-private:
-  static const NumeredDofEntity_multiIndex *lastSeenNumeredRows;
-  static const NumeredEntFiniteElement *lastSeenRowFiniteElement;
-  static boost::shared_ptr<FENumeredDofEntity_multiIndex>
-      rowDofs; ///< indexed dofs on rows
-
-  static const NumeredEntFiniteElement *lastSeenColFiniteElement;
-  static boost::shared_ptr<FENumeredDofEntity_multiIndex>
-      colDofs; ///< indexed dofs on columns
 };
 
 // TODO: [CORE-59] Fix multi-indices for element

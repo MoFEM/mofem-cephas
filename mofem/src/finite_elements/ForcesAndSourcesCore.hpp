@@ -589,9 +589,10 @@ protected:
                       const EntityType type_hi = MBPOLYHEDRON) const;
 
   /// \brief get NoField indices
-  MoFEMErrorCode getNoFieldIndices(const std::string &field_name,
-                                   FENumeredDofEntity_multiIndex &dofs,
-                                   VectorInt &nodes_indices) const;
+  MoFEMErrorCode
+  getNoFieldIndices(const std::string &field_name,
+                    boost::shared_ptr<FENumeredDofEntity_multiIndex> dofs,
+                    VectorInt &nodes_indices) const;
 
   /// \brief get col NoField indices
   MoFEMErrorCode getNoFieldRowIndices(DataForcesAndSourcesCore &data,

@@ -389,19 +389,11 @@ struct FEMethod : public BasicMethod {
       numeredEntFiniteElementPtr; ///< Pointer to finite element database
                                   ///< structure
 
-  inline auto &getDataDofs() const {
-    return numeredEntFiniteElementPtr->getDataDofs();
-  };
-
-  inline auto &getDataDofsPtr() const {
+  inline auto getDataDofsPtr() const {
     return numeredEntFiniteElementPtr->getDataDofsPtr();
   };
 
-  inline auto &getDataVectorDofs() const {
-    return numeredEntFiniteElementPtr->getDataVectorDofs();
-  };
-
-  inline auto &getDataVectorDofsPtr() const {
+  inline auto getDataVectorDofsPtr() const {
     return numeredEntFiniteElementPtr->getDataVectorDofsPtr();
   };
 
@@ -432,19 +424,11 @@ struct FEMethod : public BasicMethod {
     return numeredEntFiniteElementPtr->getColFieldEntsPtr();
   };
 
-  inline auto &getRowDofs() const {
-    return numeredEntFiniteElementPtr->getRowDofs();
-  };
-
-  inline auto &getRowDofsPtr() const {
+  inline auto getRowDofsPtr() const {
     return numeredEntFiniteElementPtr->getRowDofsPtr();
   };
 
-  inline auto &getColDofs() const {
-    return numeredEntFiniteElementPtr->getColDofs();
-  };
-
-  inline auto &getColDofsPtr() const {
+  inline auto getColDofsPtr() const {
     return numeredEntFiniteElementPtr->getColDofsPtr();
   };
 

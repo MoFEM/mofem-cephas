@@ -444,15 +444,15 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityColIndices(
                           Extractor());
 }
 
-MoFEMErrorCode
-ForcesAndSourcesCore::getNoFieldIndices(const std::string &field_name,
-                                        FENumeredDofEntity_multiIndex &dofs,
-                                        VectorInt &indices) const {
+MoFEMErrorCode ForcesAndSourcesCore::getNoFieldIndices(
+    const std::string &field_name,
+    boost::shared_ptr<FENumeredDofEntity_multiIndex> dofs,
+    VectorInt &indices) const {
   MoFEMFunctionBeginHot;
   auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
-  auto dit = dofs.get<Unique_mi_tag>().lower_bound(
+  auto dit = dofs->get<Unique_mi_tag>().lower_bound(
       FieldEntity::getLoBitNumberUId((*field_it)->getBitNumber()));
-  auto hi_dit = dofs.get<Unique_mi_tag>().upper_bound(
+  auto hi_dit = dofs->get<Unique_mi_tag>().upper_bound(
       FieldEntity::getHiBitNumberUId((*field_it)->getBitNumber()));
   indices.resize(std::distance(dit, hi_dit));
   for (; dit != hi_dit; dit++) {
@@ -468,9 +468,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldRowIndices(
   if (data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
-  CHKERR getNoFieldIndices(
-      field_name, const_cast<FENumeredDofEntity_multiIndex &>(getRowDofs()),
-      data.dataOnEntities[MBENTITYSET][0].getIndices());
+  CHKERR getNoFieldIndices(field_name, getRowDofsPtr(),
+                           data.dataOnEntities[MBENTITYSET][0].getIndices());
   MoFEMFunctionReturn(0);
 }
 
@@ -480,9 +479,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldColIndices(
   if (data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "data inconsistency");
   }
-  CHKERR getNoFieldIndices(
-      field_name, const_cast<FENumeredDofEntity_multiIndex &>(getColDofs()),
-      data.dataOnEntities[MBENTITYSET][0].getIndices());
+  CHKERR getNoFieldIndices(field_name, getColDofsPtr(),
+                           data.dataOnEntities[MBENTITYSET][0].getIndices());
   MoFEMFunctionReturn(0);
 }
 

@@ -716,7 +716,10 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
                 "data inconsistency");
       }
 
-      for (auto cit = getColDofs().begin(); cit != getColDofs().end(); cit++) {
+      auto row_dofs = getRowDofsPtr();
+      auto col_dofs = getColDofsPtr();
+
+      for (auto cit = col_dofs->begin(); cit != col_dofs->end(); cit++) {
 
         if (refinedEntitiesPtr->find((*cit)->getEnt()) ==
             refinedEntitiesPtr->end()) {
@@ -751,7 +754,7 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         if ((*cit)->getEntType() != MBVERTEX) {
 
           auto range =
-              getColDofsPtr()->get<Ent_mi_tag>().equal_range((*cit)->getEnt());
+              col_dofs->get<Ent_mi_tag>().equal_range((*cit)->getEnt());
           int nb_dofs_on_ent = std::distance(range.first, range.second);
 
           int max_order = (*cit)->getMaxOrder();
@@ -766,7 +769,8 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         }
       }
 
-      for (auto rit = getRowDofs().begin(); rit != getRowDofs().end(); rit++) {
+
+      for (auto rit = row_dofs->begin(); rit != row_dofs->end(); rit++) {
 
         if (refinedEntitiesPtr->find((*rit)->getEnt()) ==
             refinedEntitiesPtr->end()) {
@@ -809,8 +813,8 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         }
         int row = (*rit)->getPetscGlobalDofIdx();
 
-        for (auto cit = getColDofs().begin(); cit != getColDofs().end();
-             cit++) {
+        auto col_dofs = getColDofsPtr();
+        for (auto cit = col_dofs->begin(); cit != col_dofs->end(); cit++) {
 
           int col = (*cit)->getPetscGlobalDofIdx();
 
@@ -837,7 +841,7 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         if ((*rit)->getEntType() != MBVERTEX) {
 
           auto range =
-              getRowDofsPtr()->get<Ent_mi_tag>().equal_range((*rit)->getEnt());
+              row_dofs->get<Ent_mi_tag>().equal_range((*rit)->getEnt());
           int nb_dofs_on_ent = std::distance(range.first, range.second);
 
           int max_order = (*rit)->getMaxOrder();
