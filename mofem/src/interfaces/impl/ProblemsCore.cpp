@@ -782,6 +782,8 @@ MoFEMErrorCode Core::cache_problem_entities(
   if (!cache_row)
     cache_row = boost::make_shared<std::vector<EntityCacheNumeredDofs>>(
         entsFields.size());
+  else
+    cache_row->resize(entsFields.size());
 
   if (!cache_col) {
     if (row_dofs == col_dofs)
@@ -789,11 +791,15 @@ MoFEMErrorCode Core::cache_problem_entities(
     else
       cache_col = boost::make_shared<std::vector<EntityCacheNumeredDofs>>(
           entsFields.size());
+  } else {
+    cache_col->resize(entsFields.size());
   }
 
   if (!cache_data)
     cache_data =
         boost::make_shared<std::vector<EntityCacheDofs>>(entsFields.size());
+  else
+    cache_data->resize(entsFields.size());
 
   size_t idx = 0;
   for (auto it = entsFields.begin(); it != entsFields.end(); ++it, ++idx) {

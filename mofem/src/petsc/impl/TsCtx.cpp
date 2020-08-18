@@ -72,11 +72,11 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
-  CHKERR ts_ctx->mField.cache_problem_entities(
-      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+  auto ent_data_cache = boost::make_shared<std::vector<EntityCacheDofs>>();
+  auto ent_row_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
+  auto ent_col_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
 
   // preprocess
   for (auto &bit : ts_ctx->preProcess_IFunction) {
@@ -169,11 +169,11 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
-  CHKERR ts_ctx->mField.cache_problem_entities(
-      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+  auto ent_data_cache = boost::make_shared<std::vector<EntityCacheDofs>>();
+  auto ent_row_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
+  auto ent_col_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
 
   // preproces
   for (auto &bit : ts_ctx->preProcess_IJacobian) {
@@ -240,11 +240,11 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
-  CHKERR ts_ctx->mField.cache_problem_entities(
-      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+  auto ent_data_cache = boost::make_shared<std::vector<EntityCacheDofs>>();
+  auto ent_row_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
+  auto ent_col_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
 
   // preproces
   for (auto &bit : ts_ctx->preProcess_Monitor) {
@@ -328,11 +328,11 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
-  CHKERR ts_ctx->mField.cache_problem_entities(
-      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+  auto ent_data_cache = boost::make_shared<std::vector<EntityCacheDofs>>();
+  auto ent_row_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
+  auto ent_col_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
 
   for (auto &bit : ts_ctx->preProcess_RHSJacobian) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
@@ -420,11 +420,11 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
-  CHKERR ts_ctx->mField.cache_problem_entities(
-      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+  auto ent_data_cache = boost::make_shared<std::vector<EntityCacheDofs>>();
+  auto ent_row_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
+  auto ent_col_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
 
   // preprocess
   for (auto &bit : ts_ctx->preProcess_RHSJacobian) {
@@ -520,11 +520,11 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
-  CHKERR ts_ctx->mField.cache_problem_entities(
-      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+  auto ent_data_cache = boost::make_shared<std::vector<EntityCacheDofs>>();
+  auto ent_row_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
+  auto ent_col_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
 
   // preproces
   for (auto &bit : ts_ctx->preProcess_IJacobian) {
@@ -626,11 +626,11 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  boost::shared_ptr<std::vector<EntityCacheDofs>> ent_data_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_row_cache;
-  boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> ent_col_cache;
-  CHKERR ts_ctx->mField.cache_problem_entities(
-      ts_ctx->problemName, ent_data_cache, ent_row_cache, ent_col_cache);
+  auto ent_data_cache = boost::make_shared<std::vector<EntityCacheDofs>>();
+  auto ent_row_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
+  auto ent_col_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
 
   // preprocess
   for (auto &bit : ts_ctx->preProcess_IFunction) {
