@@ -634,6 +634,8 @@ private:
       colDofs; ///< indexed dofs on columns
 };
 
+// TODO: [CORE-59] Fix multi-indices for element
+
 /**
  * @relates multi_index_container
  * \brief MultiIndex container for EntFiniteElement
