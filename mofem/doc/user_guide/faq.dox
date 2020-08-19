@@ -182,7 +182,7 @@ make doc
 \endcode
 This create directory \em html. Open file \em html/index.html to see results in your browser.
 
-\subsection slack_message_send How to send message to Slack e.g. to report program crash?
+\subsection slack_message_send Use webhook to send message to Slack e.g. to report program crash
 To send a message to your Slack (in mofem.slack.com workspace) 
 from command line or a script on a server, use the following command:
 \code
@@ -199,7 +199,7 @@ As \e CHANNEL one can use desired channel name, user name or user id. User id ca
 <https://mofem.slack.com/messages> and searching for \e user_id in the page source.
 On Chrome, right-click and choose \e View \e Page \e Source.
 
-\subsection msteam_message_send How to send message to Microsoft Teams
+\subsection msteam_message_send Use webhook to send message to Microsoft Teams
 
 Similar process to send message to MS Teams can be done using their APIs
 
@@ -207,13 +207,15 @@ Similar process to send message to MS Teams can be done using their APIs
 TITLE="Title of your message"
 MESSAGE="Body of your message"
 JSON="{\"title\": \"${TITLE}\", \"text\": \"${MESSAGE}\" }"
-WEBHOOK_URL="https://outlook.office.com/webhook/43c9f281-c5e1-4833-be78-27addb5d8529@6e725c29-763a-4f50-81f2-2e254f0133c8/IncomingWebhook/441a73f641534b14ac0d65ead4adb94b/4b2fd8be-d98a-492f-b349-c2ae11c04573"
-
+WEBHOOK_URL="https://outlook.office.com/webhook/abcd1234xyz"
+ 
 curl -H "Content-Type: application/json" -d "${JSON}" "${WEBHOOK_URL}"
 \endcode
 
-Where WEBHOOK_URL is the webhook URL of the channel to which the message will be
-sent. How to get webhook URL can be found <a href=https://learning.postman.com/docs/integrations/microsoft-teams/> here</a>.
+Where WEBHOOK_URL is the webhook URL of the Teams channel to which the message
+will be sent. To get webhook URL click on the three-dot sign (next to a channel
+name) -> Connectors -> Configure (Incoming Webhook) -> Give a name and click
+Create -> Copy the URL.
 
 \section faq_git Git and repository
 
@@ -345,6 +347,8 @@ If you have packages installed, follow instruction from <http://kcachegrind.sour
 \section faq_programing Programming
 
 \subsection adding_user_module How to add user module?
+
+You can see here \ref how_to_add_new_module_and_program or read the following.
 
 MoFEM is a core library providing functionality for implementation of user
 modules where applications for particular finite elements or problems are

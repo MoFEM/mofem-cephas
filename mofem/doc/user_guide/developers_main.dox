@@ -2,11 +2,10 @@
 
 \tableofcontents
 
-\section developer_useful_links Tutorials and examples
 
-- \subpage general_data_structure
-- \subpage tutorials
+- \subpage tutorials_in_progress
 - <a style="font-weight:bold" href="examples.html">Examples</a>
+- \subpage general_data_structure
 
 \section developer_source_code Source code
 
@@ -38,7 +37,7 @@
 
 \section list_pages All pages in one place
 
-- <a style="font-weight:bold" href="pages.html">All pages</a>
+- <a style="font-weight:bold" href="pages.html">Related Pages</a>
 
 
 */
