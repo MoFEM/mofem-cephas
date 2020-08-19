@@ -1128,6 +1128,9 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
     const boost::shared_ptr<MatrixDouble> &
     getBBDiffNSharedPtr(const std::string &field_name) const;
 
+    /**
+     * @copydoc MoFEM::DataForcesAndSourcesCore::EntData::swapBaseNPtr
+     */
     MoFEMErrorCode baseSwap(const std::string &field_name,
                             const FieldApproximationBase base);
 
