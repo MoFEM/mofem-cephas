@@ -68,11 +68,9 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  auto ent_data_cache = boost::make_shared<std::vector<EntityCacheDofs>>();
-  auto ent_row_cache =
-      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
-  auto ent_col_cache =
-      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
+                                                 cache_ptr);
 
   for (auto &bit : snes_ctx->preProcess_Rhs) {
     bit->vecAssembleSwitch = boost::move(snes_ctx->vecAssembleSwitch);
@@ -88,7 +86,7 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     set(*lit.second);
     CHKERR snes_ctx->mField.loop_finite_elements(
         snes_ctx->problemName, lit.first, *lit.second, nullptr, snes_ctx->bH,
-        ent_data_cache, ent_row_cache, ent_col_cache);
+        cache_ptr);
     unset(*lit.second);
     if (snes_ctx->vErify) {
       // Verify finite elements, check for not a number
@@ -151,11 +149,9 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  auto ent_data_cache = boost::make_shared<std::vector<EntityCacheDofs>>();
-  auto ent_row_cache =
-      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
-  auto ent_col_cache =
-      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
+                                                 cache_ptr);
 
   CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
@@ -175,7 +171,7 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     set(*lit.second);
     CHKERR snes_ctx->mField.loop_finite_elements(
         snes_ctx->problemName, lit.first, *(lit.second), nullptr, snes_ctx->bH,
-        ent_data_cache, ent_row_cache, ent_col_cache);
+        cache_ptr);
     unset(*lit.second);
     snes_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }

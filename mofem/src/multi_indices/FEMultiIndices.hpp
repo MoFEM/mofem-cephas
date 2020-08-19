@@ -265,6 +265,16 @@ struct EntityCacheNumeredDofs {
   std::array<NumeredDofEntity_multiIndex::iterator, 2> loHi;
 };
 
+using CacheTuple = std::tuple<
+
+    std::vector<EntityCacheDofs>, std::vector<EntityCacheNumeredDofs>,
+    std::vector<EntityCacheNumeredDofs>
+
+    >;
+
+using CacheTupleWeakPtr = boost::weak_ptr<CacheTuple>;
+using CacheTupleSharedPtr = boost::shared_ptr<CacheTuple>;
+
 /**
  * \brief Finite element data for entity
  * \ingroup fe_multi_indices
