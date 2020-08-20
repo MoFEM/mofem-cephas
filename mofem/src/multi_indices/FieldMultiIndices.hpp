@@ -391,7 +391,7 @@ template <> struct FieldTmp<0, 0> {
    * coefficients, are sorted in the way.
    *
    */
-  inline std::array<int, MAX_DOFS_ON_ENTITY> &
+  inline std::array<ApproximationOrder, MAX_DOFS_ON_ENTITY> &
   getDofOrderMap(const EntityType type) const {
     return dofOrderMap[type];
   }
@@ -503,7 +503,9 @@ struct interface_FieldImpl : public interface_RefEntity<REFENT> {
   }
 
   /// @return get field name
-  inline std::string getName() const { return this->getFieldRawPtr()->getName(); }
+  inline std::string getName() const {
+    return this->getFieldRawPtr()->getName();
+  }
 
   /// @return get approximation space
   inline FieldSpace getSpace() const { return this->getFieldRawPtr()->getSpace(); }
@@ -531,7 +533,7 @@ struct interface_FieldImpl : public interface_RefEntity<REFENT> {
    * coefficients, are sorted in the way.
    *
    */
-  inline std::vector<ApproximationOrder> &
+  inline std::array<ApproximationOrder, MAX_DOFS_ON_ENTITY> &
   getDofOrderMap(const EntityType type) const {
     return this->getFieldRawPtr()->getDofOrderMap(type);
   }
