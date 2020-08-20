@@ -631,7 +631,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
           int nb_dofs = 0;
           for (auto it = lo; it != hi; ++it) {
             if (auto e = it->lock()) {
-              nb_dofs += e->getEntFieldData().size();
+              nb_dofs += e->getNbDofsOnEnt();
             }
           }
 
@@ -810,7 +810,7 @@ ForcesAndSourcesCore::getNoFieldFieldData(const std::string field_name,
       for (auto it = lo; it != hi; ++it)
         if (auto e = it->lock()) {
 
-          const auto size = e->getEntFieldData().size();
+          const auto size = e->getNbDofsOnEnt();
           ent_field_data.resize(size, false);
           ent_field_dofs.resize(size, false);
           noalias(ent_field_data) = e->getEntFieldData();
