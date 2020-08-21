@@ -16,6 +16,10 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#include <MoFEM.hpp>
+
+#include "impl/ErrorHandler.cpp"
+
 extern "C" {
 void macro_is_deprecated_using_deprecated_function() {}
 }

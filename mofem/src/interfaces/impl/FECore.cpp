@@ -16,6 +16,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#include <MoFEM.hpp>
+
 #define FECoreFunctionBegin                                                    \
   MoFEMFunctionBegin;                                                          \
   MOFEM_LOG_CHANNEL("WORLD");                                                  \

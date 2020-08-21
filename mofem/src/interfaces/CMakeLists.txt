@@ -17,9 +17,16 @@ include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
 #multi_indices
 set(MOFEM_INTERFACES_SRC
   impl/MatPartitioningApply_Parmetis_MoFEM.cpp
-  impl/All.cpp
-  impl/AllInterfaces.cpp
+  impl/Core.cpp
+  impl/DeprecatedCoreInterface.cpp
+  impl/FieldCore.cpp
+  impl/FECore.cpp
+  impl/ProblemsCore.cpp
+  impl/DeleteCore.cpp
+  impl/LoopMethods.cpp
   impl/LogManager.cpp
+  impl/AllCoreInterfaces.cpp
+  impl/AllInterfaces.cpp
 )
 
 if(PRECOMPILED_HEADRES)
