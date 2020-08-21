@@ -285,8 +285,9 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       else
         CHKERR cs_manger_ptr->getCoordSysPtr("UNDEFINED", cs_ptr);
 
-      auto p = fIelds.insert(makeSharedField(
-          *this, Field::getBitNumberCalculate(field_id), moab, mit, cs_ptr));
+      auto p = fIelds.insert(
+          makeSharedField(*this, Field::getBitNumberCalculate(field_id) - 1,
+                          moab, mit, cs_ptr));
 
       if (verb > QUIET)
         MOFEM_LOG("WORLD", Sev::verbose) << "Read field " << **p.first;

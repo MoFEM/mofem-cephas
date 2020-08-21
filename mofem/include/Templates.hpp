@@ -20,6 +20,8 @@
 
 namespace MoFEM {
 
+template <typename T> using ShardVec = boost::shared_ptr<std::vector<T>>;
+
 /**
  * @brief Get Vector adaptor
  *

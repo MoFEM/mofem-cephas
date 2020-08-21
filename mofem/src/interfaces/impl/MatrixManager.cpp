@@ -907,8 +907,8 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
       PetscPrintf(m_field.get_comm(), "\tcheck element %s\n",
                   fe->getName().c_str());
     CHKERR m_field.loop_finite_elements(problem_name, fe->getName(), method,
-                                        nullptr, MF_EXIST, nullptr,
-                                        nullptr, nullptr, verb);
+                                        nullptr, MF_EXIST,
+                                        CacheTupleSharedPtr(), verb);
   }
 
   CHKERR MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);

@@ -863,22 +863,15 @@ protected:
   /**
    * @copydoc MoFEM::CoreInterface::cache_problem_entities
    */
-  MoFEMErrorCode cache_problem_entities(
-      const std::string prb_name,
-      boost::shared_ptr<std::vector<EntityCacheDofs>> &ent_data_cache,
-      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &ent_row_cache,
-      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> &ent_col_cache);
+  MoFEMErrorCode cache_problem_entities(const std::string prb_name,
+                                        CacheTupleWeakPtr cache_ptr);
 
   MoFEMErrorCode loop_finite_elements(
       const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
       int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
       MoFEMTypes bh = MF_EXIST,
-      boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data = nullptr,
-      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_row =
-          nullptr,
-      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col =
-          nullptr,
+      CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr(),
       int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode loop_finite_elements(
@@ -886,11 +879,7 @@ protected:
       FEMethod &method, int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
       MoFEMTypes bh = MF_EXIST,
-      boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data = nullptr,
-      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_row =
-          nullptr,
-      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col =
-          nullptr,
+      CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr(),
       int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode loop_finite_elements(
@@ -898,11 +887,7 @@ protected:
       FEMethod &method,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
       MoFEMTypes bh = MF_EXIST,
-      boost::shared_ptr<std::vector<EntityCacheDofs>> cache_data = nullptr,
-      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_row =
-          nullptr,
-      boost::shared_ptr<std::vector<EntityCacheNumeredDofs>> cache_col =
-          nullptr,
+      CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr(),
       int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode loop_dofs(const Problem *problem_ptr,
