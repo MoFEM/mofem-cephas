@@ -764,6 +764,10 @@ MoFEMErrorCode Core::cache_problem_entities(const std::string prb_name,
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem not in database %s",
                prb_name.c_str());
 
+    const BitRefLevel prb_bit = p_miit->getBitRefLevel();
+    const BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
+    const BitFEId prb_fe_id = p_miit->getBitFEId();
+
     auto &row_dofs = p_miit->numeredRowDofs;
     auto &col_dofs = p_miit->numeredColDofs;
 
@@ -783,16 +787,13 @@ MoFEMErrorCode Core::cache_problem_entities(const std::string prb_name,
       auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(uid);
       for (auto lo = r.first; lo != r.second; ++lo) {
 
-        if ((lo->getBitFEId() & p_miit->getBitFEId()).any()) {
+        if ((lo->getBitFEId() & prb_fe_id).any()) {
 
-          const BitRefLevel prb_bit = p_miit->getBitRefLevel();
-          const BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
           const BitRefLevel fe_bit = lo->entFePtr->getBitRefLevel();
 
           // if entity is not problem refinement level
-          if ((fe_bit & prb_mask) != fe_bit)
-            continue;
-          if ((fe_bit & prb_bit) != prb_bit)
+          if (((fe_bit & prb_mask) != fe_bit) ||
+              ((fe_bit & prb_bit) != prb_bit))
             continue;
 
           auto cache_numered_dofs = [&](auto &numered_dofs, auto &cache_vec,
