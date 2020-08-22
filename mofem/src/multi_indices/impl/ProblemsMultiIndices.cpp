@@ -57,8 +57,6 @@ Problem::Problem(moab::Interface &moab, const EntityHandle meshset)
   MOAB_THROW(rval);
 }
 
-Problem::~Problem() {}
-
 std::ostream &operator<<(std::ostream &os, const Problem &e) {
   os << "problem id " << e.getId() << " FiniteElement id " << e.getBitFEId()
      << " name " << e.getName();

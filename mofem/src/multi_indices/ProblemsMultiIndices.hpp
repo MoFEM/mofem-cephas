@@ -495,7 +495,7 @@ struct Problem {
 
   Problem(Interface &moab, const EntityHandle meshset);
 
-  virtual ~Problem();
+  virtual ~Problem() = default;
 
   inline BitProblemId getId() const { return *((BitProblemId *)tagId); }
 
