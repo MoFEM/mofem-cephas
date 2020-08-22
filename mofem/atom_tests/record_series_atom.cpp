@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 
     // Create MoFEM 
     // Starting from one  MoFEM::CoreTmp<1> for testing purposes
-    MoFEM::CoreTmp<1> core(moab);
+    MoFEM::CoreTmp<0> core(moab);
     MoFEM::Interface &m_field = core;
 
     // stl::bitset see for more details
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface<FieldBlas>()->fieldScale(2, "FIELD_A");
 
     // Setting MoFEM::CoreTmp<-1> for testing purposes
-    MoFEM::CoreTmp<2> core2(moab);
+    MoFEM::CoreTmp<1> core2(moab);
     MoFEM::Interface &m_field2 = core2;
 
     // build field
