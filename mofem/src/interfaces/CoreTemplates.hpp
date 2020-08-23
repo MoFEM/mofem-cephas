@@ -28,16 +28,6 @@ namespace MoFEM {
 
 using Sev = MoFEM::LogManager::SeverityLevel;
 
-template <int N> MoFEMErrorCode CoreTmp<N>::rebuild_database(int verb) {
-  MoFEMFunctionBegin;
-  if (verb == -1)
-    verb = this->verbose;
-  CHKERR this->clearMap();
-  CHKERR this->getTags(verb);
-  CHKERR this->initialiseDatabaseFromMesh(verb);
-  MoFEMFunctionReturn(0);
-}
-
 template <int N>
 MoFEMErrorCode CoreTmp<N>::set_moab_interface(moab::Interface &new_moab,
                                               int verb) {

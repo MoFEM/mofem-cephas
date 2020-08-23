@@ -263,16 +263,6 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
                         verb);
 }
 
-MoFEMErrorCode
-CoreTmp<-1>::add_field(const std::string &name, const FieldSpace space,
-                       const FieldApproximationBase base,
-                       const FieldCoefficientsNumber nb_of_coefficients,
-                       const TagType tag_type, const enum MoFEMTypes bh,
-                       int verb) {
-  return this->addField(name, space, base, nb_of_coefficients, tag_type, bh,
-                        verb);
-}
-
 MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
                                          const std::string &name, int verb) {
 

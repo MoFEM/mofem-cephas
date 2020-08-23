@@ -48,7 +48,6 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
 
   MoFEMErrorCode set_moab_interface(moab::Interface &new_moab, int verb);
 
-  virtual MoFEMErrorCode rebuild_database(int verb = DEFAULT_VERBOSITY);
 };
 
 template <int N> constexpr const int CoreTmp<N>::value;
@@ -1122,16 +1121,9 @@ template <> struct CoreTmp<-1> : public CoreTmp<0> {
 
   );
 
-  virtual MoFEMErrorCode
-  add_field(const std::string &name, const FieldSpace space,
-            const FieldApproximationBase base,
-            const FieldCoefficientsNumber nb_of_coefficients,
-            const TagType tag_type, const enum MoFEMTypes bh, int verb);
-
   virtual MoFEMErrorCode set_moab_interface(moab::Interface &new_moab,
                                             int verb = VERBOSE);
 
-  virtual MoFEMErrorCode rebuild_database(int verb = DEFAULT_VERBOSITY);
 };
 
 using Core = CoreTmp<0>;

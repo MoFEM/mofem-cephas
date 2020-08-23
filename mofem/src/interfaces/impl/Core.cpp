@@ -756,16 +756,6 @@ MoFEMErrorCode Core::rebuild_database(int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CoreTmp<-1>::rebuild_database(int verb) {
-  MoFEMFunctionBegin;
-  if (verb == -1)
-    verb = verbose;
-  CHKERR this->clearMap();
-  CHKERR this->getTags(verb);
-  CHKERR this->initialiseDatabaseFromMesh(verb);
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode Core::set_moab_interface(moab::Interface &new_moab, int verb) {
   return this->setMoabInterface(new_moab, verb);
 };
