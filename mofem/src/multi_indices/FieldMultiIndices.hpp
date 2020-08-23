@@ -548,13 +548,14 @@ template <typename T>
 struct interface_Field<T, T> : public interface_FieldImpl<T, T> {
 
   interface_Field(const boost::shared_ptr<T> &ptr)
-      : interface_FieldImpl<T, T>(ptr, ptr), sFieldRawPtr(ptr) {}
+      : interface_FieldImpl<T, T>(ptr, ptr), sFieldPtr(ptr) {}
 
   inline const FieldTmp<0, 0> *getFieldRawPtr() const {
-    return sFieldRawPtr->getFieldRawPtr();
+    return sFieldPtr->getFieldRawPtr();
   };
 
-  mutable boost::shared_ptr<T> sFieldRawPtr;
+private:
+  mutable boost::shared_ptr<T> sFieldPtr;
 };
 
 /**
