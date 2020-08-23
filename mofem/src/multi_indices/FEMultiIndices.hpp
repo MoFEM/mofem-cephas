@@ -239,7 +239,7 @@ struct interface_FiniteElement : public interface_RefElement<REFENT> {
     return getFiniteElementPtr()->getBitNumber();
   }
 
-  inline boost::shared_ptr<FE> getFiniteElementPtr() const {
+  inline boost::shared_ptr<FE> &getFiniteElementPtr() const {
     return sFiniteElementPtr;
   }
 
@@ -316,7 +316,7 @@ struct interface_FiniteElement<T, T>
     return getFiniteElementPtr()->getBitNumber();
   }
 
-  inline boost::shared_ptr<FiniteElement> getFiniteElementPtr() const {
+  inline boost::shared_ptr<FiniteElement> &getFiniteElementPtr() const {
     return boost::static_pointer_cast<T>(this->getRefElement())
         ->getFiniteElementPtr();
   };
@@ -355,10 +355,6 @@ struct EntFiniteElement
   EntFiniteElement(const boost::shared_ptr<RefElement> &ref_finite_element,
                    const boost::shared_ptr<FiniteElement> &fe_ptr);
   virtual ~EntFiniteElement() = default;
-
-  inline boost::shared_ptr<FiniteElement> &getFiniteElementPtr() const {
-    return finiteElementPtr;
-  }
 
   /**
    * \brief Get unique UId for finite element entity
@@ -499,7 +495,6 @@ struct EntFiniteElement
 
 
 private:
-  mutable boost::shared_ptr<FiniteElement> finiteElementPtr;
   mutable boost::shared_ptr<FieldEntity_vector_view> dataFieldEnts;
   mutable boost::shared_ptr<FieldEntity_vector_view> rowFieldEnts;
   mutable boost::shared_ptr<FieldEntity_vector_view> colFieldEnts;

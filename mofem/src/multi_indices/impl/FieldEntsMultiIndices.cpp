@@ -28,7 +28,7 @@ FieldEntity::FieldEntity(
     boost::shared_ptr<const int> t_max_order_ptr)
     : interface_Field<Field, RefEntity>(field_ptr, ref_ents_ptr),
       tagMaxOrderPtr(t_max_order_ptr),
-      fieldDataAdaptorPtr(field_data_adaptor_ptr), sFieldPtr(field_ptr) {
+      fieldDataAdaptorPtr(field_data_adaptor_ptr) {
 
   localUId = getLocalUniqueIdCalculate(field_ptr->getBitNumber(),
                                        ref_ents_ptr->getEnt());

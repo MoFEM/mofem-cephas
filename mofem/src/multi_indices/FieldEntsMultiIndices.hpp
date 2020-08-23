@@ -261,7 +261,6 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
 private:
   mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
   mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
-  mutable boost::shared_ptr<const Field> sFieldPtr;
 };
 
 /**
