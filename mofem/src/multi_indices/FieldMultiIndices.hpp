@@ -54,7 +54,6 @@ template <int N, int F> struct FieldTmp : public FieldTmp<N, F - 1> {
   virtual int getFieldValue() { return F; }
 
   using FieldTmp<N, F - 1>::FieldTmp;
-
 };
 
 template <int N, int F> constexpr const int FieldTmp<N, F>::CoreValue;
@@ -412,8 +411,9 @@ template <> struct FieldTmp<0, 0> {
 
   friend std::ostream &operator<<(std::ostream &os, const FieldTmp &e);
 
+  inline const FieldTmp<0, 0> *getFieldRawPtr() const { return this; };
+
 private:
-  // mutable SequenceEntContainer sequenceEntContainer;
   mutable SequenceDofContainer sequenceDofContainer;
   mutable DofsOrderMap dofOrderMap;
 };
@@ -444,85 +444,96 @@ using Field = FieldTmp<0, 0>;
 template <typename FIELD, typename REFENT>
 struct interface_FieldImpl : public interface_RefEntity<REFENT> {
 
+  using interface_type_RefEntity = interface_RefEntity<REFENT>;
+
   interface_FieldImpl(const boost::shared_ptr<FIELD> &field_ptr,
                       const boost::shared_ptr<REFENT> &ref_ents_ptr)
       : interface_RefEntity<REFENT>(ref_ents_ptr) {}
   virtual ~interface_FieldImpl() = default;
+};
 
-  virtual const FieldTmp<0, 0> *getFieldRawPtr() const = 0;
+template <typename FIELD, typename REFENT>
+struct interface_Field : public interface_FieldImpl<FIELD, REFENT> {
+
+  interface_Field(const boost::shared_ptr<FIELD> &field_ptr,
+                  const boost::shared_ptr<REFENT> &ref_ents_ptr)
+      : interface_FieldImpl<FIELD, REFENT>(field_ptr, ref_ents_ptr),
+        sFieldPtr(field_ptr) {}
 
   inline EntityHandle getMeshset() const {
-    return this->getFieldRawPtr()->getMeshset();
+    return getFieldRawPtr()->getMeshset();
   }
 
   inline int getCoordSysDim(const int d = 0) const {
-    return this->getFieldRawPtr()->getCoordSysDim(d);
+    return getFieldRawPtr()->getCoordSysDim(d);
   }
 
   inline MoFEMErrorCode get_E_Base(const double m[]) const {
     MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(this->getFieldRawPtr()->get_E_Base(m));
+    MoFEMFunctionReturnHot(getFieldRawPtr()->get_E_Base(m));
   }
   inline MoFEMErrorCode get_E_DualBase(const double m[]) const {
     MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(this->getFieldRawPtr()->get_E_DualBase(m));
+    MoFEMFunctionReturnHot(getFieldRawPtr()->get_E_DualBase(m));
   }
   inline MoFEMErrorCode get_e_Base(const double m[]) const {
     MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(this->getFieldRawPtr()->get_e_Base(m));
+    MoFEMFunctionReturnHot(getFieldRawPtr()->get_e_Base(m));
   }
 
   inline MoFEMErrorCode get_e_DualBase(const double m[]) const {
     MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(this->getFieldRawPtr()->get_e_DualBase(m));
+    MoFEMFunctionReturnHot(getFieldRawPtr()->get_e_DualBase(m));
   }
 
   /// @return return meshset for coordinate system
   inline EntityHandle getCoordSysMeshSet() const {
-    return this->getFieldRawPtr()->getCoordSysMeshSet();
+    return getFieldRawPtr()->getCoordSysMeshSet();
   }
 
   /// @return return coordinate system name for field
   inline std::string getCoordSysName() const {
-    return this->getFieldRawPtr()->getCoordSysName();
+    return getFieldRawPtr()->getCoordSysName();
   }
 
   /// @return return coordinate system name for field
   inline boost::string_ref getCoordSysNameRef() const {
-    return this->getFieldRawPtr()->getCoordSysNameRef();
+    return getFieldRawPtr()->getCoordSysNameRef();
   }
 
   /// @return get field Id
   inline const BitFieldId &getId() const {
-    return this->getFieldRawPtr()->getId();
+    return getFieldRawPtr()->getId();
   }
 
   /// @return get field name
   inline boost::string_ref getNameRef() const {
-    return this->getFieldRawPtr()->getNameRef();
+    return getFieldRawPtr()->getNameRef();
   }
 
   /// @return get field name
   inline std::string getName() const {
-    return this->getFieldRawPtr()->getName();
+    return getFieldRawPtr()->getName();
   }
 
   /// @return get approximation space
-  inline FieldSpace getSpace() const { return this->getFieldRawPtr()->getSpace(); }
+  inline FieldSpace getSpace() const {
+    return getFieldRawPtr()->getSpace();
+  }
 
   /// @return get approximation base
   inline FieldApproximationBase getApproxBase() const {
-    return this->getFieldRawPtr()->getApproxBase();
+    return getFieldRawPtr()->getApproxBase();
   }
 
   /// @return get number of coefficients for DOF
   inline FieldCoefficientsNumber getNbOfCoeffs() const {
-    return this->getFieldRawPtr()->getNbOfCoeffs();
+    return getFieldRawPtr()->getNbOfCoeffs();
   }
 
   /// @return get bit number if filed Id
   inline FieldBitNumber getBitNumber() const {
-    return this->getFieldRawPtr()->getBitNumber();
+    return getFieldRawPtr()->getBitNumber();
   }
 
   /**
@@ -535,27 +546,117 @@ struct interface_FieldImpl : public interface_RefEntity<REFENT> {
    */
   inline std::array<ApproximationOrder, MAX_DOFS_ON_ENTITY> &
   getDofOrderMap(const EntityType type) const {
-    return this->getFieldRawPtr()->getDofOrderMap(type);
+    return getFieldRawPtr()->getDofOrderMap(type);
   }
-};
-
-template <typename FIELD, typename REFENT>
-struct interface_Field : public interface_FieldImpl<FIELD, REFENT> {
-  using interface_FieldImpl<FIELD, REFENT>::interface_FieldImpl;
-};
-
-template <typename T>
-struct interface_Field<T, T> : public interface_FieldImpl<T, T> {
-
-  interface_Field(const boost::shared_ptr<T> &ptr)
-      : interface_FieldImpl<T, T>(ptr, ptr), sFieldPtr(ptr) {}
 
   inline const FieldTmp<0, 0> *getFieldRawPtr() const {
     return sFieldPtr->getFieldRawPtr();
   };
 
 private:
-  mutable boost::shared_ptr<T> sFieldPtr;
+  mutable boost::shared_ptr<FIELD> sFieldPtr;
+};
+
+template <typename T>
+struct interface_Field<T, T> : public interface_FieldImpl<T, T> {
+  interface_Field(const boost::shared_ptr<T> &ptr)
+      : interface_FieldImpl<T, T>(ptr, ptr) {}
+
+  using interface_type_FieldImpl = interface_FieldImpl<T,T>;
+
+  inline EntityHandle getMeshset() const {
+    return getFieldRawPtr()->getMeshset();
+  }
+
+  inline int getCoordSysDim(const int d = 0) const {
+    return getFieldRawPtr()->getCoordSysDim(d);
+  }
+
+  inline MoFEMErrorCode get_E_Base(const double m[]) const {
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(getFieldRawPtr()->get_E_Base(m));
+  }
+  inline MoFEMErrorCode get_E_DualBase(const double m[]) const {
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(getFieldRawPtr()->get_E_DualBase(m));
+  }
+  inline MoFEMErrorCode get_e_Base(const double m[]) const {
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(getFieldRawPtr()->get_e_Base(m));
+  }
+
+  inline MoFEMErrorCode get_e_DualBase(const double m[]) const {
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(getFieldRawPtr()->get_e_DualBase(m));
+  }
+
+  /// @return return meshset for coordinate system
+  inline EntityHandle getCoordSysMeshSet() const {
+    return getFieldRawPtr()->getCoordSysMeshSet();
+  }
+
+  /// @return return coordinate system name for field
+  inline std::string getCoordSysName() const {
+    return getFieldRawPtr()->getCoordSysName();
+  }
+
+  /// @return return coordinate system name for field
+  inline boost::string_ref getCoordSysNameRef() const {
+    return getFieldRawPtr()->getCoordSysNameRef();
+  }
+
+  /// @return get field Id
+  inline const BitFieldId &getId() const {
+    return getFieldRawPtr()->getId();
+  }
+
+  /// @return get field name
+  inline boost::string_ref getNameRef() const {
+    return getFieldRawPtr()->getNameRef();
+  }
+
+  /// @return get field name
+  inline std::string getName() const {
+    return getFieldRawPtr()->getName();
+  }
+
+  /// @return get approximation space
+  inline FieldSpace getSpace() const {
+    return getFieldRawPtr()->getSpace();
+  }
+
+  /// @return get approximation base
+  inline FieldApproximationBase getApproxBase() const {
+    return getFieldRawPtr()->getApproxBase();
+  }
+
+  /// @return get number of coefficients for DOF
+  inline FieldCoefficientsNumber getNbOfCoeffs() const {
+    return getFieldRawPtr()->getNbOfCoeffs();
+  }
+
+  /// @return get bit number if filed Id
+  inline FieldBitNumber getBitNumber() const {
+    return getFieldRawPtr()->getBitNumber();
+  }
+
+  /**
+   * \brief get hash-map relating dof index on entity with its order
+   *
+   * Dofs of given field are indexed on entity
+   * of the same type, same space, approximation base and number of
+   * coefficients, are sorted in the way.
+   *
+   */
+  inline std::array<ApproximationOrder, MAX_DOFS_ON_ENTITY> &
+  getDofOrderMap(const EntityType type) const {
+    return getFieldRawPtr()->getDofOrderMap(type);
+  }
+
+  inline const FieldTmp<0, 0> *getFieldRawPtr() const {
+    return boost::static_pointer_cast<T>(this->getRefEntityPtr())
+        ->getFieldRawPtr();
+  };
 };
 
 /**
