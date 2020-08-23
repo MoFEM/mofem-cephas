@@ -29,11 +29,8 @@
 
 namespace MoFEM {
 
-template <int N, int F> struct FieldEntityTmp;
 template <typename T> struct interface_RefEntity;
 struct DofEntity;
-
-using FieldEntity = FieldEntityTmp<0, 0>;
 
 /** \brief user adjacency function
  * \ingroup fe_multi_indices

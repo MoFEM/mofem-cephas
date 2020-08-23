@@ -587,7 +587,7 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
       const int nb_dofs = nb_dofs_on_order * field_rank;
 
       // reserve memory for field  dofs
-      auto ents_array = boost::make_shared<std::vector<FieldEntityTmp<V, F>>>();
+      auto ents_array = boost::make_shared<std::vector<FieldEntity>>();
 
       // Add sequence to field data structure. Note that entities are allocated
       // once into vector. This vector is passed into sequence as a weak_ptr.
@@ -1035,7 +1035,7 @@ Core::buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
 
       auto p = entsFields.insert(
 
-          boost::make_shared<FieldEntityTmp<V, F>>(
+          boost::make_shared<FieldEntity>(
               field_ptr, *ref_ent_it,
               FieldEntity::makeSharedFieldDataAdaptorPtr(field_ptr,
                                                          *ref_ent_it),

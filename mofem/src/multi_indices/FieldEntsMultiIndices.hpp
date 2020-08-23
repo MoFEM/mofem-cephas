@@ -26,36 +26,23 @@ namespace MoFEM {
 struct EntityCacheDofs;
 struct EntityCacheNumeredDofs;
 
-template <int N, int F>
-struct FieldEntityTmp : public FieldEntityTmp<N, F - 1> {
-  using FieldEntityTmp<N, F - 1>::FieldEntityTmp;
-};
-
-template <int N>
-struct FieldEntityTmp<N, 0>
-    : public FieldEntityTmp<N - 1, BITFIELDID_SIZE - 1> {
-  using FieldEntityTmp<N - 1, BITFIELDID_SIZE - 1>::FieldEntityTmp;
-};
-
 /**
  * \brief Struct keeps handle to entity in the field.
  * \ingroup ent_multi_indices
  */
-template <>
-struct FieldEntityTmp<0, 0>
-    : public interface_Field<FieldTmp<0, 0>, RefEntity> {
+struct FieldEntity : public interface_Field<FieldTmp<0, 0>, RefEntity> {
 
   using interface_type_Field = interface_Field<FieldTmp<0, 0>, RefEntity>;
   using interface_type_RefEntity = interface_RefEntity<RefEntity>;
 
   UId localUId; ///< Global unique id for this entity
 
-  FieldEntityTmp(const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
+  FieldEntity(const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
                  const boost::shared_ptr<RefEntity> ref_ents_ptr,
                  boost::shared_ptr<double *const> field_data_adaptor_ptr,
                  boost::shared_ptr<const int> t_max_order_ptr);
 
-  virtual ~FieldEntityTmp() = default;
+  virtual ~FieldEntity() = default;
 
   /**
    * \brief Get number of active DOFs on entity
@@ -276,17 +263,6 @@ private:
   mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
   mutable boost::shared_ptr<const FieldTmp<0, 0>> sFieldPtr;
 };
-
-template <> struct FieldEntityTmp<-1, -1> : public FieldEntityTmp<0, 0> {
-
-  FieldEntityTmp(const boost::shared_ptr<FieldTmp<-1, -1>> field_ptr,
-                 const boost::shared_ptr<RefEntity> ref_ents_ptr,
-                 boost::shared_ptr<double *const> field_data_adaptor_ptr,
-                 boost::shared_ptr<const int> t_max_order_ptr);
-
-};
-
-using FieldEntity = FieldEntityTmp<0, 0>;
 
 /**
  * \brief Interface to FieldEntity

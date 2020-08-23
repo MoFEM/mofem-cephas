@@ -21,7 +21,7 @@
 
 namespace MoFEM {
 
-FieldEntityTmp<0, 0>::FieldEntityTmp(
+FieldEntity::FieldEntity(
     const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
     const boost::shared_ptr<RefEntity> ref_ents_ptr,
     boost::shared_ptr<double *const> field_data_adaptor_ptr,
@@ -40,16 +40,7 @@ FieldEntityTmp<0, 0>::FieldEntityTmp(
     THROW_MESSAGE("Pointer to max order not set");
 }
 
-FieldEntityTmp<-1, -1>::FieldEntityTmp(
-    const boost::shared_ptr<FieldTmp<-1, -1>> field_ptr,
-    const boost::shared_ptr<RefEntity> ref_ents_ptr,
-    boost::shared_ptr<double *const> field_data_adaptor_ptr,
-    boost::shared_ptr<const int> t_max_order_ptr)
-    : FieldEntityTmp<0, 0>(field_ptr, ref_ents_ptr, field_data_adaptor_ptr,
-                           t_max_order_ptr) {}
-
-boost::shared_ptr<FieldData *const>
-FieldEntityTmp<0, 0>::makeSharedFieldDataAdaptorPtr(
+boost::shared_ptr<FieldData *const> FieldEntity::makeSharedFieldDataAdaptorPtr(
     const boost::shared_ptr<Field> &field_ptr,
     const boost::shared_ptr<RefEntity> &ref_ents_ptr) {
   int size;
