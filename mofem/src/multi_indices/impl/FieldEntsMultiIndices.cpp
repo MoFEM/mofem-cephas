@@ -22,11 +22,11 @@
 namespace MoFEM {
 
 FieldEntity::FieldEntity(
-    const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
+    const boost::shared_ptr<Field> field_ptr,
     const boost::shared_ptr<RefEntity> ref_ents_ptr,
     boost::shared_ptr<double *const> field_data_adaptor_ptr,
     boost::shared_ptr<const int> t_max_order_ptr)
-    : interface_Field<FieldTmp<0, 0>, RefEntity>(field_ptr, ref_ents_ptr),
+    : interface_Field<Field, RefEntity>(field_ptr, ref_ents_ptr),
       tagMaxOrderPtr(t_max_order_ptr),
       fieldDataAdaptorPtr(field_data_adaptor_ptr), sFieldPtr(field_ptr) {
 

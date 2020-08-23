@@ -289,9 +289,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
       else
         CHKERR cs_manger_ptr->getCoordSysPtr("UNDEFINED", cs_ptr);
 
-      auto p = fIelds.insert(
-          makeSharedField(*this, Field::getBitNumberCalculate(field_id) - 1,
-                          moab, mit, cs_ptr));
+      auto p = fIelds.insert(boost::make_shared<Field>(moab, mit, cs_ptr));
 
       if (verb > QUIET)
         MOFEM_LOG("WORLD", Sev::verbose) << "Read field " << **p.first;
@@ -944,61 +942,6 @@ void Core::setRefEntBasicDataPtr(MoFEM::Interface &m_field,
       }
 
   );
-};
-
-template <int V, typename std::enable_if<(V >= 0), int>::type * = nullptr>
-boost::shared_ptr<FieldTmp<0, 0>>
-make_shared_field_impl(const int size, const moab::Interface &moab,
-                       const EntityHandle meshset,
-                       const boost::shared_ptr<CoordSys> coord_sys_ptr) {
-
-  boost::shared_ptr<FieldTmp<0, 0>> ptr;
-
-  boost::hana::for_each(
-
-      boost::hana::make_range(boost::hana::int_c<0>,
-                              boost::hana::int_c<BITFIELDID_SIZE>),
-
-      [&](auto r) {
-        if (size == r) {
-          auto tmp_ptr =
-              boost::make_shared<FieldTmp<V, r>>(moab, meshset, coord_sys_ptr);
-          ptr = tmp_ptr;
-        }
-      }
-
-  );
-
-  return ptr;
-};
-
-template <int V, typename std::enable_if<(V < 0), int>::type * = nullptr>
-boost::shared_ptr<FieldTmp<0, 0>>
-make_shared_field_impl(const int size, const moab::Interface &moab,
-                       const EntityHandle meshset,
-                       const boost::shared_ptr<CoordSys> coord_sys_ptr) {
-  return boost::make_shared<FieldTmp<-1, -1>>(moab, meshset, coord_sys_ptr);
-};
-
-boost::shared_ptr<FieldTmp<0, 0>>
-Core::makeSharedField(MoFEM::Interface &m_field, const int size,
-                      const moab::Interface &moab, const EntityHandle meshset,
-                      const boost::shared_ptr<CoordSys> coord_sys_ptr) {
-  boost::shared_ptr<FieldTmp<0, 0>> ptr;
-
-  boost::hana::for_each(
-
-      boost::hana::make_range(boost::hana::int_c<-1>,
-                              boost::hana::int_c<MAX_CORE_TMP>),
-
-      [&](auto r) {
-        if (m_field.getValue() == r)
-          ptr = make_shared_field_impl<r>(size, moab, meshset, coord_sys_ptr);
-      }
-
-  );
-
-  return ptr;
 };
 
 boost::shared_ptr<RefEntityTmp<0>>

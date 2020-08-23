@@ -30,17 +30,17 @@ struct EntityCacheNumeredDofs;
  * \brief Struct keeps handle to entity in the field.
  * \ingroup ent_multi_indices
  */
-struct FieldEntity : public interface_Field<FieldTmp<0, 0>, RefEntity> {
+struct FieldEntity : public interface_Field<Field, RefEntity> {
 
-  using interface_type_Field = interface_Field<FieldTmp<0, 0>, RefEntity>;
+  using interface_type_Field = interface_Field<Field, RefEntity>;
   using interface_type_RefEntity = interface_RefEntity<RefEntity>;
 
   UId localUId; ///< Global unique id for this entity
 
-  FieldEntity(const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
-                 const boost::shared_ptr<RefEntity> ref_ents_ptr,
-                 boost::shared_ptr<double *const> field_data_adaptor_ptr,
-                 boost::shared_ptr<const int> t_max_order_ptr);
+  FieldEntity(const boost::shared_ptr<Field> field_ptr,
+              const boost::shared_ptr<RefEntity> ref_ents_ptr,
+              boost::shared_ptr<double *const> field_data_adaptor_ptr,
+              boost::shared_ptr<const int> t_max_order_ptr);
 
   virtual ~FieldEntity() = default;
 
@@ -261,7 +261,7 @@ struct FieldEntity : public interface_Field<FieldTmp<0, 0>, RefEntity> {
 private:
   mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
   mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
-  mutable boost::shared_ptr<const FieldTmp<0, 0>> sFieldPtr;
+  mutable boost::shared_ptr<const Field> sFieldPtr;
 };
 
 /**

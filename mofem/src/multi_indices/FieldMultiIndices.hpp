@@ -42,35 +42,6 @@ typedef boost::function<int(const int order)> FieldOrderFunct;
  */
 typedef FieldOrderFunct FieldOrderTable[MBMAXTYPE];
 
-template <int N, int F> struct FieldTmp : public FieldTmp<N, F - 1> {
-
-  static constexpr const int CoreValue = N;
-  static constexpr const int FieldValue = F;
-
-  virtual int getCoreValue() { return N; }
-  virtual int getFieldValue() { return F; }
-
-  using FieldTmp<N, F - 1>::FieldTmp;
-};
-
-template <int N, int F> constexpr const int FieldTmp<N, F>::CoreValue;
-template <int N, int F> constexpr const int FieldTmp<N, F>::FieldValue;
-
-template <int N>
-struct FieldTmp<N, 0> : public FieldTmp<N - 1, BITFIELDID_SIZE - 1> {
-
-  static constexpr const int CoreValue = N;
-  static constexpr const int FieldValue = 0;
-
-  virtual int getCoreValue() { return CoreValue; }
-  virtual int getFieldValue() { return FieldValue; }
-
-  using FieldTmp<N - 1, BITFIELDID_SIZE - 1>::FieldTmp;
-};
-
-template <int N> constexpr const int FieldTmp<N, 0>::CoreValue;
-template <int N> constexpr const int FieldTmp<N, 0>::FieldValue;
-
 /**
  * \brief Provide data structure for (tensor) field approximation.
  * \ingroup dof_multi_indices
@@ -90,23 +61,17 @@ template <int N> constexpr const int FieldTmp<N, 0>::FieldValue;
  * those entities.
  *
  */
-template <> struct FieldTmp<0, 0> {
-
-  static constexpr const int CoreValue = 0;
-  static constexpr const int FieldValue = 0;
-
-  virtual int getCoreValue() { return CoreValue; }
-  virtual int getFieldValue() { return FieldValue; }
+struct Field {
 
   /**
    * \brief constructor for moab field
    *
    * \param meshset which keeps entities for this field
    */
-  FieldTmp(const moab::Interface &moab, const EntityHandle meshset,
+  Field(const moab::Interface &moab, const EntityHandle meshset,
            const boost::shared_ptr<CoordSys> coord_sys_ptr);
 
-  virtual ~FieldTmp() = default;
+  virtual ~Field() = default;
 
   using SequenceDofContainer = multi_index_container<
 
@@ -406,27 +371,14 @@ template <> struct FieldTmp<0, 0> {
 
   MoFEMErrorCode rebuildDofsOrderMap() const;
 
-  friend std::ostream &operator<<(std::ostream &os, const FieldTmp &e);
+  friend std::ostream &operator<<(std::ostream &os, const Field &e);
 
-  inline const FieldTmp<0, 0> *getFieldRawPtr() const { return this; };
+  inline const Field *getFieldRawPtr() const { return this; };
 
 private:
   mutable SequenceDofContainer sequenceDofContainer;
   mutable DofsOrderMap dofOrderMap;
 };
-
-template <> struct FieldTmp<-1, -1> : public FieldTmp<0, 0> {
-
-  static constexpr const int CoreValue = -1;
-  static constexpr const int FieldValue = -1;
-
-  virtual int getCoreValue() { return CoreValue; }
-  virtual int getFieldValue() { return FieldValue; }
-
-  using FieldTmp<0, 0>::FieldTmp;
-};
-
-using Field = FieldTmp<0, 0>;
 
 /**
  * \brief Pointer interface for MoFEM::Field
@@ -546,7 +498,7 @@ struct interface_Field : public interface_FieldImpl<FIELD, REFENT> {
     return getFieldRawPtr()->getDofOrderMap(type);
   }
 
-  inline const FieldTmp<0, 0> *getFieldRawPtr() const {
+  inline const Field *getFieldRawPtr() const {
     return sFieldPtr->getFieldRawPtr();
   };
 
@@ -650,7 +602,7 @@ struct interface_Field<T, T> : public interface_FieldImpl<T, T> {
     return getFieldRawPtr()->getDofOrderMap(type);
   }
 
-  inline const FieldTmp<0, 0> *getFieldRawPtr() const {
+  inline const Field *getFieldRawPtr() const {
     return boost::static_pointer_cast<T>(this->getRefEntityPtr())
         ->getFieldRawPtr();
   };

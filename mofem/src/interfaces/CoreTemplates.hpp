@@ -28,17 +28,6 @@ namespace MoFEM {
 
 using Sev = MoFEM::LogManager::SeverityLevel;
 
-template <int CoreValue>
-MoFEMErrorCode
-CoreTmp<CoreValue>::add_field(const std::string &name, const FieldSpace space,
-                              const FieldApproximationBase base,
-                              const FieldCoefficientsNumber nb_of_coefficients,
-                              const TagType tag_type, const enum MoFEMTypes bh,
-                              int verb) {
-  return this->addField(name, space, base, nb_of_coefficients, tag_type, bh,
-                        verb);
-}
-
 template <int N> MoFEMErrorCode CoreTmp<N>::rebuild_database(int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
@@ -59,52 +48,6 @@ template <int N>
 boost::shared_ptr<RefEntityTmp<0>>
 CoreTmp<N>::make_shared_ref_entity(const EntityHandle ent) {
   return Core::makeSharedRefEntity(*this, ent);
-}
-
-template <int N>
-MoFEMErrorCode
-CoreTmp<N>::set_field_order(const Range &ents, const BitFieldId id,
-                            const ApproximationOrder order, int verb) {
-  MoFEMFunctionBegin;
-  CHKERR this->setFieldOrder(ents, id, order, verb);
-  MoFEMFunctionReturn(0);
-}
-
-template <int N>
-MoFEMErrorCode CoreTmp<N>::build_field(const std::string field_name, int verb) {
-  MoFEMFunctionBegin;
-  auto field_it =
-      this->fIelds.template get<FieldName_mi_tag>().find(field_name);
-  if (field_it == this->fIelds.template get<FieldName_mi_tag>().end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field < %s > not found",
-             field_name.c_str());
-
-  CHKERR this->buildField(*field_it, verb);
-  if (verb > QUIET)
-    MOFEM_LOG_SYNCHRONISE(this->cOmm);
-  MoFEMFunctionReturn(0);
-}
-
-template <int N> MoFEMErrorCode CoreTmp<N>::build_fields(int verb) {
-  MoFEMFunctionBegin;
-  MOFEM_LOG_CHANNEL("SYNC");                                                   
-  MOFEM_LOG_FUNCTION();                                                        
-  MOFEM_LOG_TAG("SYNC", "FieldCore");
-
-  if (verb == -1)
-    verb = this->verbose;
-
-  for (auto field : this->fIelds.template get<BitFieldId_mi_tag>())
-    CHKERR this->buildField(field, verb);
-
-  *this->buildMoFEM = 1 << 0;
-  if (verb > QUIET) {
-    MOFEM_LOG("SYNC", Sev::inform)
-        << "Number of dofs " << this->dofsField.size();
-    MOFEM_LOG_SYNCHRONISE(this->cOmm);
-  }
-
-  MoFEMFunctionReturn(0);
 }
 
 template <int V>
