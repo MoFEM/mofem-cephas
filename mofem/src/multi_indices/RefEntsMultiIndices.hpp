@@ -505,7 +505,6 @@ template <> struct RefEntityTmp<0> {
   static boost::weak_ptr<BasicEntityData> basicDataPtr;
 
 private:
-  // template <typename T> friend struct interface_RefEntity;
   friend struct EntFiniteElement;
   friend struct NumeredEntFiniteElement;
 
@@ -537,6 +536,7 @@ template <> struct RefEntityTmp<-1> : public RefEntityTmp<0> {
       return nullptr;
   }
 
+private:
   mutable boost::weak_ptr<BasicEntityData> basicDataPtr;
 };
 
@@ -547,8 +547,6 @@ using RefEntity = RefEntityTmp<0>;
  * \ingroup ent_multi_indices
  */
 template <typename T> struct interface_RefEntity {
-
-  mutable boost::shared_ptr<T> sPtr;
 
   interface_RefEntity(const boost::shared_ptr<T> &sptr) : sPtr(sptr) {}
 
@@ -675,6 +673,7 @@ template <typename T> struct interface_RefEntity {
    */
   inline boost::shared_ptr<T> &getRefEntityPtr() const { return this->sPtr; }
 
+  mutable boost::shared_ptr<T> sPtr;
 };
 
 /**
