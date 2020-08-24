@@ -234,14 +234,14 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
     CHKERR create_undefined_cs(undefined_cs_ptr);
     CHKERR add_field_meshset_to_cs(undefined_cs_ptr);
 
-    auto p = fIelds.insert(this->makeSharedField(*this, (*fShift) - 2, moab,
-                                                 meshset, undefined_cs_ptr));
+    auto p = fIelds.insert(
+      boost::make_shared<Field>(moab, meshset, undefined_cs_ptr));
     if (verb > QUIET) {
       MOFEM_LOG("WORLD", Sev::inform) << "Add field " << **p.first;
       MOFEM_LOG("WORLD", Sev::noisy)
           << "Field " << (*p.first)->getName() << " core value < "
-          << (*p.first)->getCoreValue() << " > field value < "
-          << (*p.first)->getFieldValue() << " >";
+          << this->getValue() << " > field value ) "
+          << (*p.first)->getBitNumber() << " )";
     }
 
     if (!p.second)
@@ -259,16 +259,6 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
                                const FieldCoefficientsNumber nb_of_coefficients,
                                const TagType tag_type, const enum MoFEMTypes bh,
                                int verb) {
-  return this->addField(name, space, base, nb_of_coefficients, tag_type, bh,
-                        verb);
-}
-
-MoFEMErrorCode
-CoreTmp<-1>::add_field(const std::string &name, const FieldSpace space,
-                       const FieldApproximationBase base,
-                       const FieldCoefficientsNumber nb_of_coefficients,
-                       const TagType tag_type, const enum MoFEMTypes bh,
-                       int verb) {
   return this->addField(name, space, base, nb_of_coefficients, tag_type, bh,
                         verb);
 }
@@ -436,11 +426,10 @@ MoFEMErrorCode Core::create_vertices_and_add_to_field(const std::string name,
   MoFEMFunctionReturn(0);
 }
 
-template <int V, int F>
-MoFEMErrorCode
-Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
-                         const Range &ents, const ApproximationOrder order,
-                         int verb) {
+MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
+                                       const Range &ents,
+                                       const ApproximationOrder order,
+                                       int verb) {
   FieldCoreFunctionBegin;
 
   if (verb == DEFAULT_VERBOSITY)
@@ -587,7 +576,7 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
       const int nb_dofs = nb_dofs_on_order * field_rank;
 
       // reserve memory for field  dofs
-      auto ents_array = boost::make_shared<std::vector<FieldEntityTmp<V, F>>>();
+      auto ents_array = boost::make_shared<std::vector<FieldEntity>>();
 
       // Add sequence to field data structure. Note that entities are allocated
       // once into vector. This vector is passed into sequence as a weak_ptr.
@@ -806,10 +795,8 @@ Core::setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
   MoFEMFunctionReturn(0);
 }
 
-template <int V, typename std::enable_if<(V >= 0), int>::type *>
-MoFEMErrorCode Core::setFieldOrderImpl1(const Range &ents, const BitFieldId id,
-                                        const ApproximationOrder order,
-                                        int verb) {
+MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
+                                     const ApproximationOrder order, int verb) {
   MOFEM_LOG_CHANNEL("WORLD");
   MOFEM_LOG_TAG("WORLD", "FieldCore");
   MOFEM_LOG_FUNCTION();
@@ -822,89 +809,11 @@ MoFEMErrorCode Core::setFieldOrderImpl1(const Range &ents, const BitFieldId id,
 
   MOFEM_LOG("WORLD", Sev::noisy)
       << "Field " << (*field_it)->getName() << " core value < "
-      << (*field_it)->getCoreValue() << " > field value < "
-      << (*field_it)->getFieldValue() << " >";
+      << this->getValue() << " > field value ( " << (*field_it)->getBitNumber()
+      << " )";
 
-  boost::hana::for_each(
+  CHKERR this->setFieldOrderImpl(*field_it, ents, order, verb);
 
-      boost::hana::make_range(boost::hana::int_c<0>,
-                              boost::hana::int_c<BITFEID_SIZE>),
-
-      [&](auto r) {
-        if ((*field_it)->getFieldValue() == r) {
-          auto cast_field_ptr =
-              boost::dynamic_pointer_cast<FieldTmp<V, r>>(*field_it);
-          CHKERR this->setFieldOrderImpl2<V, r>(cast_field_ptr, ents, order,
-                                                verb);
-        }
-      }
-
-  );
-
-  MoFEMFunctionReturn(0);
-}
-
-template <int V, typename std::enable_if<(V < 0), int>::type *>
-MoFEMErrorCode Core::setFieldOrderImpl1(const Range &ents, const BitFieldId id,
-                                        const ApproximationOrder order,
-                                        int verb) {
-  MOFEM_LOG_CHANNEL("WORLD");
-  MOFEM_LOG_TAG("WORLD", "FieldCore");
-  MoFEMFunctionBegin;
-
-  // check field & meshset
-  auto field_it = this->fIelds.get<BitFieldId_mi_tag>().find(id);
-  if (field_it == this->fIelds.get<BitFieldId_mi_tag>().end())
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "no filed found");
-
-  MOFEM_LOG("WORLD", Sev::noisy)
-      << "Field " << (*field_it)->getName() << " core value < "
-      << (*field_it)->getCoreValue() << " > field value < "
-      << (*field_it)->getFieldValue() << " >";
-
-  if (V != -1)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Not implemented case");
-
-  auto cast_field_ptr =
-      boost::dynamic_pointer_cast<FieldTmp<-1, -1>>(*field_it);
-  CHKERR this->setFieldOrderImpl2<-1, -1>(cast_field_ptr, ents, order, verb);
-
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode Core::setFieldOrder(const Range &ents, const BitFieldId id,
-                                   const ApproximationOrder order, int verb) {
-  MoFEMFunctionBegin;
-
-  boost::hana::for_each(
-
-      boost::hana::make_range(boost::hana::int_c<-1>,
-                              boost::hana::int_c<MAX_CORE_TMP>),
-
-      [&](auto r) {
-        if (this->getValue() == r) {
-          CHKERR this->setFieldOrderImpl1<r>(ents, id, order, verb);
-        }
-      }
-
-  );
-
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
-                                     const ApproximationOrder order, int verb) {
-  MoFEMFunctionBegin;
-  CHKERR this->setFieldOrder(ents, id, order, verb);
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode CoreTmp<-1>::set_field_order(const Range &ents,
-                                            const BitFieldId id,
-                                            const ApproximationOrder order,
-                                            int verb) {
-  MoFEMFunctionBegin;
-  CHKERR this->setFieldOrder(ents, id, order, verb);
   MoFEMFunctionReturn(0);
 }
 
@@ -975,9 +884,8 @@ MoFEMErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   MoFEMFunctionReturn(0);
 }
 
-template <int V, int F>
 MoFEMErrorCode
-Core::buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
+Core::buildFieldForNoFieldImpl(boost::shared_ptr<Field> field_ptr,
                                 std::map<EntityType, int> &dof_counter,
                                 int verb) {
   FieldCoreFunctionBegin;
@@ -1035,7 +943,7 @@ Core::buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
 
       auto p = entsFields.insert(
 
-          boost::make_shared<FieldEntityTmp<V, F>>(
+          boost::make_shared<FieldEntity>(
               field_ptr, *ref_ent_it,
               FieldEntity::makeSharedFieldDataAdaptorPtr(field_ptr,
                                                          *ref_ent_it),
@@ -1081,89 +989,27 @@ Core::buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
   MoFEMFunctionReturn(0);
 }
 
-template <int V, typename std::enable_if<(V >= 0), int>::type *>
-MoFEMErrorCode Core::buildFieldForNoFieldImpl1(
-    const BitFieldId id, std::map<EntityType, int> &dof_counter, int verb) {
-  FieldCoreFunctionBegin;
-
-  if (verb == -1)
-    verb = verbose;
-
-  // find fields
-  auto field_it = fIelds.get<BitFieldId_mi_tag>().find(id);
-  if (field_it == fIelds.get<BitFieldId_mi_tag>().end())
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field not found");
-
-  if (verb > QUIET)
-    MOFEM_LOG("WORLD", Sev::noisy)
-        << "Field " << (*field_it)->getName() << " core value < "
-        << (*field_it)->getCoreValue() << " > field value < "
-        << (*field_it)->getFieldValue() << " >";
-
-  boost::hana::for_each(
-
-      boost::hana::make_range(boost::hana::int_c<0>,
-                              boost::hana::int_c<BITFEID_SIZE>),
-
-      [&](auto r) {
-        if ((*field_it)->getFieldValue() == r) {
-          auto cast_field_ptr =
-              boost::dynamic_pointer_cast<FieldTmp<V, r>>(*field_it);
-
-          CHKERR this->buildFieldForNoFieldImpl2<V, r>(cast_field_ptr,
-                                                       dof_counter, verb);
-        }
-      }
-
-  );
-
-  MoFEMFunctionReturn(0);
-}
-
-template <int V, typename std::enable_if<(V < 0), int>::type *>
-MoFEMErrorCode Core::buildFieldForNoFieldImpl1(
-    const BitFieldId id, std::map<EntityType, int> &dof_counter, int verb) {
-  FieldCoreFunctionBegin;
-
-  if (verb == -1)
-    verb = verbose;
-
-  // find fields
-  auto field_it = fIelds.get<BitFieldId_mi_tag>().find(id);
-  if (field_it == fIelds.get<BitFieldId_mi_tag>().end())
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field not found");
-
-  if (verb > QUIET)
-    MOFEM_LOG("WORLD", Sev::noisy)
-        << "Field " << (*field_it)->getName() << " core value < "
-        << (*field_it)->getCoreValue() << " > field value < "
-        << (*field_it)->getFieldValue() << " >";
-
-  auto cast_field_ptr =
-      boost::dynamic_pointer_cast<FieldTmp<-1, -1>>(*field_it);
-  CHKERR this->buildFieldForNoFieldImpl2<-1, -1>(cast_field_ptr, dof_counter,
-                                                 verb);
-
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode
 Core::buildFieldForNoField(const BitFieldId id,
                            std::map<EntityType, int> &dof_counter, int verb) {
   FieldCoreFunctionBegin;
 
-  boost::hana::for_each(
+  if (verb == -1)
+    verb = verbose;
 
-      boost::hana::make_range(boost::hana::int_c<-1>,
-                              boost::hana::int_c<MAX_CORE_TMP>),
+  // find fields
+  auto field_it = fIelds.get<BitFieldId_mi_tag>().find(id);
+  if (field_it == fIelds.get<BitFieldId_mi_tag>().end())
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field not found");
 
-      [&](auto r) {
-        if (this->getValue() == r) {
-          CHKERR this->buildFieldForNoFieldImpl1<r>(id, dof_counter, verb);
-        }
-      }
+  if (verb > QUIET)
+    MOFEM_LOG("WORLD", Sev::noisy)
+        << "Field " << (*field_it)->getName() << " core value < "
+        << this->getValue() << " > field value () "
+        << (*field_it)->getBitNumber() << " )";
 
-  );
+  CHKERR this->buildFieldForNoFieldImpl(*field_it, dof_counter,
+                                                 verb);
 
   MoFEMFunctionReturn(0);
 }
@@ -1381,38 +1227,7 @@ MoFEMErrorCode Core::build_field(const std::string field_name, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode CoreTmp<-1>::build_field(const std::string field_name,
-                                        int verb) {
-  FieldCoreFunctionBegin;
-  auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
-  if (field_it == fIelds.get<FieldName_mi_tag>().end())
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field < %s > not found",
-             field_name.c_str());
-
-  CHKERR this->buildField(*field_it, verb);
-  if (verb > QUIET)
-    MOFEM_LOG_SYNCHRONISE(cOmm);
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode Core::build_fields(int verb) {
-  FieldCoreFunctionBegin;
-  if (verb == -1)
-    verb = verbose;
-
-  for (auto field : fIelds.get<BitFieldId_mi_tag>())
-    CHKERR this->buildField(field, verb);
-
-  *buildMoFEM = 1 << 0;
-  if (verb > QUIET) {
-    MOFEM_LOG("SYNC", Sev::inform) << "Number of dofs " << dofsField.size();
-    MOFEM_LOG_SYNCHRONISE(cOmm);
-  }
-
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode CoreTmp<-1>::build_fields(int verb) {
   FieldCoreFunctionBegin;
   if (verb == -1)
     verb = verbose;

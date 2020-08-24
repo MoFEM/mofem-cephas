@@ -1961,19 +1961,9 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
 
   MOFEM_LOG("WORLD", Sev::noisy) << "Partition problem " << name;
 
-  if (!(cOre.getBuildMoFEM() & (1 << 0)))
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "fields not build");
-  if (!(cOre.getBuildMoFEM() & (1 << 1)))
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "FEs not build");
-  if (!(cOre.getBuildMoFEM() & (1 << 2)))
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "entFEAdjacencies not build");
-  if (!(cOre.getBuildMoFEM() & (1 << 3)))
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Problems not build");
-
-  typedef NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type
-      NumeredDofEntitysByIdx;
-  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  using NumeredDofEntitysByIdx =
+      NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type;
+  using ProblemsByName = Problem_multiIndex::index<Problem_mi_tag>::type;
 
   // Find problem pointer by name
   auto &problems_set =
@@ -1986,146 +1976,190 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
   }
   int nb_dofs_row = p_miit->getNbDofsRow();
 
-  Mat Adj;
-  CHKERR m_field.getInterface<MatrixManager>()
-      ->createMPIAdjWithArrays<Idx_mi_tag>(name, &Adj, verb);
+  if (m_field.get_comm_size() != 1) {
 
-  int m, n;
-  CHKERR MatGetSize(Adj, &m, &n);
-  if (verb > VERY_VERBOSE)
-    MatView(Adj, PETSC_VIEWER_STDOUT_WORLD);
+    if (!(cOre.getBuildMoFEM() & (1 << 0)))
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "fields not build");
+    if (!(cOre.getBuildMoFEM() & (1 << 1)))
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "FEs not build");
+    if (!(cOre.getBuildMoFEM() & (1 << 2)))
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "entFEAdjacencies not build");
+    if (!(cOre.getBuildMoFEM() & (1 << 3)))
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Problems not build");
 
-  // partitioning
-  MatPartitioning part;
-  IS is;
-  CHKERR MatPartitioningCreate(m_field.get_comm(), &part);
-  CHKERR MatPartitioningSetAdjacency(part, Adj);
-  CHKERR MatPartitioningSetFromOptions(part);
-  CHKERR MatPartitioningSetNParts(part, m_field.get_comm_size());
-  CHKERR MatPartitioningApply(part, &is);
-  if (verb > VERY_VERBOSE)
-    ISView(is, PETSC_VIEWER_STDOUT_WORLD);
+    Mat Adj;
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->createMPIAdjWithArrays<Idx_mi_tag>(name, &Adj, verb);
 
-  // gather
-  IS is_gather, is_num, is_gather_num;
-  CHKERR ISAllGather(is, &is_gather);
-  CHKERR ISPartitioningToNumbering(is, &is_num);
-  CHKERR ISAllGather(is_num, &is_gather_num);
-  const int *part_number, *petsc_idx;
-  CHKERR ISGetIndices(is_gather, &part_number);
-  CHKERR ISGetIndices(is_gather_num, &petsc_idx);
-  int size_is_num, size_is_gather;
-  CHKERR ISGetSize(is_gather, &size_is_gather);
-  if (size_is_gather != (int)nb_dofs_row)
-    SETERRQ2(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ, "data inconsistency %d != %d",
-             size_is_gather, nb_dofs_row);
+    int m, n;
+    CHKERR MatGetSize(Adj, &m, &n);
+    if (verb > VERY_VERBOSE)
+      MatView(Adj, PETSC_VIEWER_STDOUT_WORLD);
 
-  CHKERR ISGetSize(is_num, &size_is_num);
-  if (size_is_num != (int)nb_dofs_row)
-    SETERRQ2(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ, "data inconsistency %d != %d",
-             size_is_num, nb_dofs_row);
+    // partitioning
+    MatPartitioning part;
+    IS is;
+    CHKERR MatPartitioningCreate(m_field.get_comm(), &part);
+    CHKERR MatPartitioningSetAdjacency(part, Adj);
+    CHKERR MatPartitioningSetFromOptions(part);
+    CHKERR MatPartitioningSetNParts(part, m_field.get_comm_size());
+    CHKERR MatPartitioningApply(part, &is);
+    if (verb > VERY_VERBOSE)
+      ISView(is, PETSC_VIEWER_STDOUT_WORLD);
 
-  bool square_matrix = false;
-  if (p_miit->numeredRowDofs == p_miit->numeredColDofs)
-    square_matrix = true;
+    // gather
+    IS is_gather, is_num, is_gather_num;
+    CHKERR ISAllGather(is, &is_gather);
+    CHKERR ISPartitioningToNumbering(is, &is_num);
+    CHKERR ISAllGather(is_num, &is_gather_num);
+    const int *part_number, *petsc_idx;
+    CHKERR ISGetIndices(is_gather, &part_number);
+    CHKERR ISGetIndices(is_gather_num, &petsc_idx);
+    int size_is_num, size_is_gather;
+    CHKERR ISGetSize(is_gather, &size_is_gather);
+    if (size_is_gather != (int)nb_dofs_row)
+      SETERRQ2(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
+               "data inconsistency %d != %d", size_is_gather, nb_dofs_row);
 
-  if (!square_matrix) {
-    // FIXME: This is for back compatibility, if deprecate interface function
-    // build interfaces is removed, this part of the code will be obsolete
-    auto mit_row = p_miit->numeredRowDofs->get<Idx_mi_tag>().begin();
-    auto hi_mit_row = p_miit->numeredRowDofs->get<Idx_mi_tag>().end();
-    auto mit_col = p_miit->numeredColDofs->get<Idx_mi_tag>().begin();
-    auto hi_mit_col = p_miit->numeredColDofs->get<Idx_mi_tag>().end();
-    for (; mit_row != hi_mit_row; mit_row++, mit_col++) {
-      if (mit_col == hi_mit_col) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "check finite element definition, nb. of rows is not equal to "
-                "number for columns");
+    CHKERR ISGetSize(is_num, &size_is_num);
+    if (size_is_num != (int)nb_dofs_row)
+      SETERRQ2(PETSC_COMM_SELF, PETSC_ERR_ARG_SIZ,
+               "data inconsistency %d != %d", size_is_num, nb_dofs_row);
+
+    bool square_matrix = false;
+    if (p_miit->numeredRowDofs == p_miit->numeredColDofs)
+      square_matrix = true;
+
+    // if (!square_matrix) {
+    //   // FIXME: This is for back compatibility, if deprecate interface function
+    //   // build interfaces is removed, this part of the code will be obsolete
+    //   auto mit_row = p_miit->numeredRowDofs->get<Idx_mi_tag>().begin();
+    //   auto hi_mit_row = p_miit->numeredRowDofs->get<Idx_mi_tag>().end();
+    //   auto mit_col = p_miit->numeredColDofs->get<Idx_mi_tag>().begin();
+    //   auto hi_mit_col = p_miit->numeredColDofs->get<Idx_mi_tag>().end();
+    //   for (; mit_row != hi_mit_row; mit_row++, mit_col++) {
+    //     if (mit_col == hi_mit_col) {
+    //       SETERRQ(
+    //           PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    //           "check finite element definition, nb. of rows is not equal to "
+    //           "number for columns");
+    //     }
+    //     if (mit_row->get()->getLocalUniqueId() !=
+    //         mit_col->get()->getLocalUniqueId()) {
+    //       SETERRQ(
+    //           PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+    //           "check finite element definition, nb. of rows is not equal to "
+    //           "number for columns");
+    //     }
+    //   }
+    // }
+
+    auto number_dofs = [&](auto &dofs_idx, auto &counter) {
+      MoFEMFunctionBegin;
+      for (auto miit_dofs_row = dofs_idx.begin();
+           miit_dofs_row != dofs_idx.end(); miit_dofs_row++) {
+        const int part = part_number[(*miit_dofs_row)->dofIdx];
+        if (part == (unsigned int)m_field.get_comm_rank()) {
+          const bool success = dofs_idx.modify(
+              miit_dofs_row,
+              NumeredDofEntity_part_and_indices_change(
+                  part, petsc_idx[(*miit_dofs_row)->dofIdx], counter++));
+          if (!success) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "modification unsuccessful");
+          }
+        } else {
+          const bool success = dofs_idx.modify(
+              miit_dofs_row, NumeredDofEntity_part_and_glob_idx_change(
+                                 part, petsc_idx[(*miit_dofs_row)->dofIdx]));
+          if (!success) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                    "modification unsuccessful");
+          }
+        }
       }
-      if (mit_row->get()->getLocalUniqueId() !=
-          mit_col->get()->getLocalUniqueId()) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "check finite element definition, nb. of rows is not equal to "
-                "number for columns");
-      }
-    }
-  }
+      MoFEMFunctionReturn(0);
+    };
 
-  // Set petsc global indices
-  auto &dofs_row_by_idx_no_const = const_cast<NumeredDofEntitysByIdx &>(
-      p_miit->numeredRowDofs->get<Idx_mi_tag>());
-  int &nb_row_local_dofs = p_miit->nbLocDofsRow;
-  int &nb_row_ghost_dofs = p_miit->nbGhostDofsRow;
-  nb_row_local_dofs = 0;
-  nb_row_ghost_dofs = 0;
+    // Set petsc global indices
+    auto &dofs_row_by_idx_no_const = const_cast<NumeredDofEntitysByIdx &>(
+        p_miit->numeredRowDofs->get<Idx_mi_tag>());
+    int &nb_row_local_dofs = p_miit->nbLocDofsRow;
+    int &nb_row_ghost_dofs = p_miit->nbGhostDofsRow;
+    nb_row_local_dofs = 0;
+    nb_row_ghost_dofs = 0;
 
-  for (auto miit_dofs_row = dofs_row_by_idx_no_const.begin();
-       miit_dofs_row != dofs_row_by_idx_no_const.end(); miit_dofs_row++) {
-    const int part = part_number[(*miit_dofs_row)->dofIdx];
-    if (part == (unsigned int)m_field.get_comm_rank()) {
-      const bool success = dofs_row_by_idx_no_const.modify(
-          miit_dofs_row,
-          NumeredDofEntity_part_and_indices_change(
-              part, petsc_idx[(*miit_dofs_row)->dofIdx], nb_row_local_dofs++));
-      if (!success) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                "modification unsuccessful");
-      }
+    CHKERR number_dofs(dofs_row_by_idx_no_const, nb_row_local_dofs);
+
+    int &nb_col_local_dofs = p_miit->nbLocDofsCol;
+    int &nb_col_ghost_dofs = p_miit->nbGhostDofsCol;
+    if (square_matrix) {
+      nb_col_local_dofs = nb_row_local_dofs;
+      nb_col_ghost_dofs = nb_row_ghost_dofs;
     } else {
-      const bool success = dofs_row_by_idx_no_const.modify(
-          miit_dofs_row, NumeredDofEntity_part_and_glob_idx_change(
-                             part, petsc_idx[(*miit_dofs_row)->dofIdx]));
-      if (!success) {
-        SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                "modification unsuccessful");
-      }
+      NumeredDofEntitysByIdx &dofs_col_by_idx_no_const =
+          const_cast<NumeredDofEntitysByIdx &>(
+              p_miit->numeredColDofs->get<Idx_mi_tag>());
+      nb_col_local_dofs = 0;
+      nb_col_ghost_dofs = 0;
+      CHKERR number_dofs(dofs_col_by_idx_no_const, nb_col_local_dofs);
     }
-  }
 
-  int &nb_col_local_dofs = p_miit->nbLocDofsCol;
-  int &nb_col_ghost_dofs = p_miit->nbGhostDofsCol;
-  if (square_matrix) {
-    nb_col_local_dofs = nb_row_local_dofs;
-    nb_col_ghost_dofs = nb_row_ghost_dofs;
+    CHKERR ISRestoreIndices(is_gather, &part_number);
+    CHKERR ISRestoreIndices(is_gather_num, &petsc_idx);
+    CHKERR ISDestroy(&is_num);
+    CHKERR ISDestroy(&is_gather_num);
+    CHKERR ISDestroy(&is_gather);
+    CHKERR ISDestroy(&is);
+    CHKERR MatPartitioningDestroy(&part);
+    CHKERR MatDestroy(&Adj);
+    CHKERR printPartitionedProblem(&*p_miit, verb);
   } else {
-    NumeredDofEntitysByIdx &dofs_col_by_idx_no_const =
-        const_cast<NumeredDofEntitysByIdx &>(
-            p_miit->numeredColDofs->get<Idx_mi_tag>());
-    nb_col_local_dofs = 0;
-    nb_col_ghost_dofs = 0;
-    for (auto miit_dofs_col = dofs_col_by_idx_no_const.begin();
-         miit_dofs_col != dofs_col_by_idx_no_const.end(); miit_dofs_col++) {
-      const int part = part_number[(*miit_dofs_col)->dofIdx];
-      if (part == (unsigned int)m_field.get_comm_rank()) {
-        const bool success = dofs_col_by_idx_no_const.modify(
-            miit_dofs_col, NumeredDofEntity_part_and_indices_change(
-                               part, petsc_idx[(*miit_dofs_col)->dofIdx],
-                               nb_col_local_dofs++));
+
+    auto number_dofs = [&](auto &dof_idx, auto &counter) {
+      MoFEMFunctionBeginHot;
+      for (auto miit_dofs_row = dof_idx.begin();
+           miit_dofs_row != dof_idx.end(); miit_dofs_row++) {
+        const bool success = dof_idx.modify(
+            miit_dofs_row,
+            NumeredDofEntity_part_and_indices_change(0, counter, counter));
+        ++counter;
         if (!success) {
-          SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
-                  "modification unsuccessful");
-        }
-      } else {
-        const bool success = dofs_col_by_idx_no_const.modify(
-            miit_dofs_col, NumeredDofEntity_part_and_glob_idx_change(
-                               part, petsc_idx[(*miit_dofs_col)->dofIdx]));
-        if (!success) {
-          SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                   "modification unsuccessful");
         }
       }
+      MoFEMFunctionReturnHot(0);
+    };
+
+    auto &dofs_row_by_idx_no_const = const_cast<NumeredDofEntitysByIdx &>(
+        p_miit->numeredRowDofs->get<Idx_mi_tag>());
+   int &nb_row_local_dofs = p_miit->nbLocDofsRow;
+    int &nb_row_ghost_dofs = p_miit->nbGhostDofsRow;
+    nb_row_local_dofs = 0;
+    nb_row_ghost_dofs = 0;
+
+    CHKERR number_dofs(dofs_row_by_idx_no_const, nb_row_local_dofs);
+
+    bool square_matrix = false;
+    if (p_miit->numeredRowDofs == p_miit->numeredColDofs)
+      square_matrix = true;
+
+    int &nb_col_local_dofs = p_miit->nbLocDofsCol;
+    int &nb_col_ghost_dofs = p_miit->nbGhostDofsCol;
+    if (square_matrix) {
+      nb_col_local_dofs = nb_row_local_dofs;
+      nb_col_ghost_dofs = nb_row_ghost_dofs;
+    } else {
+      NumeredDofEntitysByIdx &dofs_col_by_idx_no_const =
+          const_cast<NumeredDofEntitysByIdx &>(
+              p_miit->numeredColDofs->get<Idx_mi_tag>());
+      nb_col_local_dofs = 0;
+      nb_col_ghost_dofs = 0;
+      CHKERR number_dofs(dofs_col_by_idx_no_const, nb_col_local_dofs);
     }
   }
-
-  CHKERR ISRestoreIndices(is_gather, &part_number);
-  CHKERR ISRestoreIndices(is_gather_num, &petsc_idx);
-  CHKERR ISDestroy(&is_num);
-  CHKERR ISDestroy(&is_gather_num);
-  CHKERR ISDestroy(&is_gather);
-  CHKERR ISDestroy(&is);
-  CHKERR MatPartitioningDestroy(&part);
-  CHKERR MatDestroy(&Adj);
-  CHKERR printPartitionedProblem(&*p_miit, verb);
 
   cOre.getBuildMoFEM() |= 1 << 4;
   MoFEMFunctionReturn(0);

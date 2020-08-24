@@ -46,24 +46,8 @@ template <int N> struct CoreTmp : public CoreTmp<N - 1> {
 
   );
 
-  virtual MoFEMErrorCode
-  add_field(const std::string &name, const FieldSpace space,
-            const FieldApproximationBase base,
-            const FieldCoefficientsNumber nb_of_coefficients,
-            const TagType tag_type, const enum MoFEMTypes bh, int verb);
-
   MoFEMErrorCode set_moab_interface(moab::Interface &new_moab, int verb);
 
-  virtual MoFEMErrorCode rebuild_database(int verb = DEFAULT_VERBOSITY);
-
-  virtual MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,
-                                         const ApproximationOrder order,
-                                         int verb = DEFAULT_VERBOSITY);
-
-  virtual MoFEMErrorCode build_fields(int verb = DEFAULT_VERBOSITY);
-
-  virtual MoFEMErrorCode build_field(const std::string field_name,
-                                     int verb = DEFAULT_VERBOSITY);
 };
 
 template <int N> constexpr const int CoreTmp<N>::value;
@@ -180,11 +164,6 @@ template <> struct CoreTmp<0> : public Interface {
 
   static void setRefEntBasicDataPtr(MoFEM::Interface &m_field,
                                     boost::shared_ptr<BasicEntityData> &ptr);
-
-  boost::shared_ptr<FieldTmp<0, 0>>
-  makeSharedField(MoFEM::Interface &m_field, const int size,
-                  const moab::Interface &moab, const EntityHandle meshset,
-                  const boost::shared_ptr<CoordSys> coord_sys_ptr);
 
   static boost::shared_ptr<RefEntityTmp<0>>
   makeSharedRefEntity(MoFEM::Interface &m_field, const EntityHandle ent);
@@ -495,18 +474,9 @@ protected:
   MoFEMErrorCode setFieldOrder(const Range &ents, const BitFieldId id,
                                const ApproximationOrder order, int ver);
 
-  template <int V, typename std::enable_if<(V >= 0), int>::type * = nullptr>
-  MoFEMErrorCode setFieldOrderImpl1(const Range &ents, const BitFieldId id,
-                                    const ApproximationOrder order, int verb);
-
-  template <int V, typename std::enable_if<(V < 0), int>::type * = nullptr>
-  MoFEMErrorCode setFieldOrderImpl1(const Range &ents, const BitFieldId id,
-                                    const ApproximationOrder order, int verb);
-
-  template <int V, int F>
-  MoFEMErrorCode setFieldOrderImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
-                                    const Range &ents,
-                                    const ApproximationOrder order, int verb);
+  MoFEMErrorCode setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
+                                   const Range &ents,
+                                   const ApproximationOrder order, int verb);
 
   MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,
                                  const ApproximationOrder order,
@@ -534,20 +504,9 @@ protected:
 
   /// \name Build fields
 
-  template <int V, int F>
   MoFEMErrorCode
-  buildFieldForNoFieldImpl2(boost::shared_ptr<FieldTmp<V, F>> field_ptr,
-                            std::map<EntityType, int> &dof_counter, int verb);
-
-  template <int V, typename std::enable_if<(V >= 0), int>::type * = nullptr>
-  MoFEMErrorCode
-  buildFieldForNoFieldImpl1(const BitFieldId id,
-                            std::map<EntityType, int> &dof_counter, int verb);
-
-  template <int V, typename std::enable_if<(V < 0), int>::type * = nullptr>
-  MoFEMErrorCode
-  buildFieldForNoFieldImpl1(const BitFieldId id,
-                            std::map<EntityType, int> &dof_counter, int verb);
+  buildFieldForNoFieldImpl(boost::shared_ptr<Field> field_ptr,
+                           std::map<EntityType, int> &dof_counter, int verb);
 
   MoFEMErrorCode buildFieldForNoField(const BitFieldId id,
                                       std::map<EntityType, int> &dof_counter,
@@ -1162,25 +1121,9 @@ template <> struct CoreTmp<-1> : public CoreTmp<0> {
 
   );
 
-  virtual MoFEMErrorCode
-  add_field(const std::string &name, const FieldSpace space,
-            const FieldApproximationBase base,
-            const FieldCoefficientsNumber nb_of_coefficients,
-            const TagType tag_type, const enum MoFEMTypes bh, int verb);
-
   virtual MoFEMErrorCode set_moab_interface(moab::Interface &new_moab,
                                             int verb = VERBOSE);
 
-  virtual MoFEMErrorCode rebuild_database(int verb = DEFAULT_VERBOSITY);
-
-  virtual MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,
-                                         const ApproximationOrder order,
-                                         int verb = DEFAULT_VERBOSITY);
-
-  virtual MoFEMErrorCode build_fields(int verb = DEFAULT_VERBOSITY);
-
-  virtual MoFEMErrorCode build_field(const std::string field_name,
-                                     int verb = DEFAULT_VERBOSITY);
 };
 
 using Core = CoreTmp<0>;

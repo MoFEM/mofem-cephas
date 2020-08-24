@@ -435,9 +435,9 @@ void FiniteElement_change_bit_reset::operator()(
 EntFiniteElement::EntFiniteElement(
     const boost::shared_ptr<RefElement> &ref_finite_element,
     const boost::shared_ptr<FiniteElement> &fe_ptr)
-    : interface_FiniteElementImpl<FiniteElement, RefElement>(
-          fe_ptr, ref_finite_element),
-      finiteElementPtr(fe_ptr), dataFieldEnts(new FieldEntity_vector_view()),
+    : interface_FiniteElement<FiniteElement, RefElement>(fe_ptr,
+                                                         ref_finite_element),
+      dataFieldEnts(new FieldEntity_vector_view()),
       rowFieldEnts(new FieldEntity_vector_view()),
       colFieldEnts(new FieldEntity_vector_view()) {}
 

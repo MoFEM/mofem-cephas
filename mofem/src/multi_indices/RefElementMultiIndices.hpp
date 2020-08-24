@@ -172,9 +172,7 @@ template <typename T> struct interface_RefElement : interface_RefEntity<T> {
     return this->sPtr->getRefEntityPtr();
   }
 
-  inline const boost::shared_ptr<T> &getRefElement() const {
-    return this->sPtr;
-  }
+  inline boost::shared_ptr<T> &getRefElement() const { return this->sPtr; }
 };
 
 /**

@@ -26,52 +26,23 @@ namespace MoFEM {
 struct EntityCacheDofs;
 struct EntityCacheNumeredDofs;
 
-template <int N, int F>
-struct FieldEntityTmp : public FieldEntityTmp<N, F - 1> {
-
-  using FieldEntityTmp<N, F - 1>::FieldEntityTmp;
-
-  virtual const FieldTmp<0, 0> *getFieldRawPtr() const { return sFieldRawPtr; }
-  static FieldTmp<0, 0> *sFieldRawPtr;
-
-private:
-  template <int S> friend struct CoreTmp;
-};
-
-template <int N>
-struct FieldEntityTmp<N, 0>
-    : public FieldEntityTmp<N - 1, BITFIELDID_SIZE - 1> {
-
-  using FieldEntityTmp<N - 1, BITFIELDID_SIZE - 1>::FieldEntityTmp;
-
-  virtual const FieldTmp<0, 0> *getFieldRawPtr() const { return sFieldRawPtr; }
-  static FieldTmp<0, 0> *sFieldRawPtr;
-
-private:
-};
-
-template <int N, int F> FieldTmp<0, 0> *FieldEntityTmp<N, F>::sFieldRawPtr;
-template <int N> FieldTmp<0, 0> *FieldEntityTmp<N, 0>::sFieldRawPtr;
-
 /**
  * \brief Struct keeps handle to entity in the field.
  * \ingroup ent_multi_indices
  */
-template <>
-struct FieldEntityTmp<0, 0>
-    : public interface_FieldImpl<FieldTmp<0, 0>, RefEntity> {
+struct FieldEntity : public interface_Field<Field, RefEntity> {
 
-  using interface_type_Field = interface_FieldImpl<FieldTmp<0, 0>, RefEntity>;
+  using interface_type_Field = interface_Field<Field, RefEntity>;
   using interface_type_RefEntity = interface_RefEntity<RefEntity>;
 
   UId localUId; ///< Global unique id for this entity
 
-  FieldEntityTmp(const boost::shared_ptr<FieldTmp<0, 0>> field_ptr,
-                 const boost::shared_ptr<RefEntity> ref_ents_ptr,
-                 boost::shared_ptr<double *const> field_data_adaptor_ptr,
-                 boost::shared_ptr<const int> t_max_order_ptr);
+  FieldEntity(const boost::shared_ptr<Field> field_ptr,
+              const boost::shared_ptr<RefEntity> ref_ents_ptr,
+              boost::shared_ptr<double *const> field_data_adaptor_ptr,
+              boost::shared_ptr<const int> t_max_order_ptr);
 
-  virtual ~FieldEntityTmp() = default;
+  virtual ~FieldEntity() = default;
 
   /**
    * \brief Get number of active DOFs on entity
@@ -283,9 +254,6 @@ struct FieldEntityTmp<0, 0>
 
   friend std::ostream &operator<<(std::ostream &os, const FieldEntity &e);
 
-  virtual const FieldTmp<0, 0> *getFieldRawPtr() const { return sFieldRawPtr; }
-  static FieldTmp<0, 0> *sFieldRawPtr;
-
   mutable boost::weak_ptr<EntityCacheDofs> entityCacheDataDofs;
   mutable boost::weak_ptr<EntityCacheNumeredDofs> entityCacheRowDofs;
   mutable boost::weak_ptr<EntityCacheNumeredDofs> entityCacheColDofs;
@@ -294,24 +262,6 @@ private:
   mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
   mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
 };
-
-template <> struct FieldEntityTmp<-1, -1> : public FieldEntityTmp<0, 0> {
-
-  FieldEntityTmp(const boost::shared_ptr<FieldTmp<-1, -1>> field_ptr,
-                 const boost::shared_ptr<RefEntity> ref_ents_ptr,
-                 boost::shared_ptr<double *const> field_data_adaptor_ptr,
-                 boost::shared_ptr<const int> t_max_order_ptr);
-
-  virtual const FieldTmp<0, 0> *getFieldRawPtr() const {
-    return sFieldPtr.get();
-  }
-
-private:
-  template <int S> friend struct CoreTmp;
-  mutable boost::shared_ptr<const FieldTmp<0, 0>> sFieldPtr;
-};
-
-using FieldEntity = FieldEntityTmp<0, 0>;
 
 /**
  * \brief Interface to FieldEntity
