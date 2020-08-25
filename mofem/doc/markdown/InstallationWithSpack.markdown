@@ -50,7 +50,7 @@ curl -L https://api.github.com/repos/likask/spack/tarball/mofem \
 ~~~~~~
 and download mirror
 ~~~~~~
-curl -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
+curl -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.9.2.tar.gz \
 --output mirror.tgz
 ~~~~~~
 and then you can install MoFEM
@@ -139,7 +139,7 @@ Initialise Spack's environment variables:
 Download spack packages in the mirror necessary to install MoFEM
 ~~~~~~
 mkdir -p mofem_mirror &&
-curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
+curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.9.2.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 spack mirror add mofem_mirror $PWD/mofem_mirror
 ~~~~~~
@@ -425,7 +425,8 @@ Buckethead you will find
 
 Load cluster modules
 ~~~~~
-module load mpi/openmpi/3.0.0
+module load mpi/openmpi/4.0.2
+module load gcc/9.2.0 
 module load gridengine
 ~~~~~
 
@@ -439,7 +440,7 @@ curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
 Download packages mirror
 ~~~~~
 mkdir -p mofem_mirror &&\
-curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
+curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.9.2.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 ~~~~~
 
@@ -456,7 +457,7 @@ Edit file `.spack/packages.yaml`
 packages:
   openmpi:
     paths:
-      openmpi@3.0.0%gcc@6.4.0 arch=linux-x86_64-debian7: /software/mpi/openmpi/3.0.0-fix
+      openmpi@4.0.2%gcc@9.2.0 arch=linux-x86_64-debian7: /software/mpi/openmpi/4.0.2
 ~~~~~
 
 Edit file `.spack/linux/compilers.yaml`
@@ -478,16 +479,16 @@ compilers:
 - compiler:
     environment: {}
     extra_rpaths: 
-        - /software/compilers/gcc/6.4.0/lib64
+        - /software/compilers/gcc/9.2.0/lib64
     flags: {}
     modules: []
     operating_system: centos7
     paths:
-      cc: /software/compilers/gcc/6.4.0/bin/gcc
-      cxx: /software/compilers/gcc/6.4.0/bin/g++
-      f77: /software/compilers/gcc/6.4.0/bin/gfortran
-      fc: /software/compilers/gcc/6.4.0/bin/gfortran
-    spec: gcc@6.4.0
+      cc: /software/compilers/gcc/9.2.0/bin/gcc
+      cxx: /software/compilers/gcc/9.2.0/bin/g++
+      f77: /software/compilers/gcc/9.2.0/bin/gfortran
+      fc: /software/compilers/gcc/9.2.0/bin/gfortran
+    spec: gcc@9.2.0
     target: x86_64
 ~~~~~
 
@@ -498,7 +499,7 @@ spack compiler find
 however you have to put line 
 ~~~~~
     extra_rpaths: 
-        - /software/compilers/gcc/6.4.0/lib64
+        - /software/compilers/gcc/9.2.0/lib64
 ~~~~~
 which a enable linking std lib c++ libraries.
 
@@ -507,7 +508,7 @@ which a enable linking std lib c++ libraries.
 At that point, we can follow the standard installation procedure, as follows
 ~~~~~
 spack bootstrap
-spack install -j 2 -v --only dependencies mofem-cephas%gcc@6.4.0 ^openmpi@3.0.0%gcc@6.4.0
+spack install -j 2 -v --only dependencies mofem-cephas%gcc@9.2.0 ^openmpi@4.0.2%gcc@9.2.0
 spack install mofem-users-modules
 ~~~~~
 
@@ -555,7 +556,7 @@ echo "$NSLOTS received"
 cat $PE_HOSTFILE
 
 # Load compiler
-module load mpi/openmpi/3.0.0
+module load mpi/openmpi/4.0.2
 
 # List of commands which do the actual work
 cd $HOME/um_view/elasticity
@@ -692,7 +693,7 @@ You can download mirror with all necessary packages from MoFEM repository and
 untar and unzip to director
 ~~~~~
 mkdir -p mofem_mirror &&
-curl -s -L https://bitbucket.org/likask/mofem-cephas/downloads/mirror_v0.9.1.tar.gz \
+curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.9.2.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 ~~~~~
 Note that packages are expanded to directory `mofem_mirror`, and mirror is
