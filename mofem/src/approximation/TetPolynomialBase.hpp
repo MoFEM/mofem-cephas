@@ -47,6 +47,8 @@ private:
   MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
 
   MoFEMErrorCode getValueL2(MatrixDouble &pts);
+  MoFEMErrorCode getValueL2AinsworthBase(MatrixDouble &pts);
+  MoFEMErrorCode getValueL2BernsteinBezierBase(MatrixDouble &pts);
 
   ublas::matrix<MatrixDouble> N_face_edge;
   ublas::vector<MatrixDouble> N_face_bubble;
