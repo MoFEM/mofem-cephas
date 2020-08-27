@@ -456,6 +456,24 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
 MoFEMErrorCode TetPolynomialBase::getValueL2(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
+  switch (cTx->bAse) {
+  case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
+    CHKERR getValueL2AinsworthBase(pts);
+    break;
+  case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+    CHKERR getValueL2BernsteinBezierBase(pts);
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode TetPolynomialBase::getValueL2AinsworthBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
@@ -478,6 +496,16 @@ MoFEMErrorCode TetPolynomialBase::getValueL2(MatrixDouble &pts) {
       &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
       nb_gauss_pts, base_polynomials);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+          "L2 space for Bezier Base not yet implemented.");
 
   MoFEMFunctionReturn(0);
 }
