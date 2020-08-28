@@ -761,7 +761,8 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
       // Add entities to database
       auto hint = entsFields.end();
       for (auto &v : *ents_array) {
-        hint = entsFields.emplace_hint(hint, ents_array, &v);
+        if (v.getNbDofsOnEnt())
+          hint = entsFields.emplace_hint(hint, ents_array, &v);
       }
     }
   }
