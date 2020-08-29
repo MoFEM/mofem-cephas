@@ -18,6 +18,25 @@
 
 namespace MoFEM {
 
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defVertexTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defEdgeTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defTriTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defQuadTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defTetTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defHexTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defPrismTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defMeshsetTypeMap;
+constexpr std::array<const DefaultElementAdjacency::DefEntTypeMap *, MBMAXTYPE>
+    DefaultElementAdjacency::defTypeMap;
+
 MoFEMErrorCode DefaultElementAdjacency::defaultVertex(
     moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
     Range &adjacency) {
