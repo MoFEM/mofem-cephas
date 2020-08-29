@@ -78,6 +78,14 @@ struct __attribute__((__packed__)) SideNumber {
     return static_cast<EntityType>((ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
   }
 
+  inline int getEntDimension() const {
+    return moab::CN::Dimension(getEntType());
+  }
+
+  inline const char *getEntTypeName() const {
+    return moab::CN::EntityTypeName(getEntType());
+  }
+
   SideNumber(EntityHandle ent, int side_number, int sense, int offset)
       : ent(ent), side_number(side_number), sense(sense), offset(offset),
         brother_side_number(-1) {}
@@ -185,6 +193,24 @@ template <> struct RefEntityTmp<0> {
    */
   inline EntityType getEntType() const {
     return (EntityType)((this->ent & MB_TYPE_MASK) >> MB_ID_WIDTH);
+  }
+
+  /**
+   * @brief Get the Ent Dimension 
+   * 
+   * @return int 
+   */
+  inline int getEntDimension() const {
+    return moab::CN::Dimension(getEntType());
+  }
+
+  /**
+   * @brief Get the Ent Type Name 
+   * 
+   * @return const char* 
+   */
+  inline const char *getEntTypeName() const {
+    return moab::CN::EntityTypeName(getEntType());
   }
 
   /** \brief get entity id
@@ -618,6 +644,18 @@ template <typename T> struct interface_RefEntity {
    * @copydoc MoFEM::RefEntityTmp<0>::getEntType
    */
   inline EntityType getEntType() const { return this->sPtr->getEntType(); };
+
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getEntDimension
+   */
+  inline int getEntDimension() const { return this->sPtr->getEntDimension(); }
+
+  /**
+   * @copydoc MoFEM::RefEntityTmp<0>::getEntTypeName
+   */
+  inline const char *getEntTypeName() const {
+    return this->sPtr->getEntTypeName();
+  }
 
   /**
    * @copydoc MoFEM::RefEntityTmp<0>::getEntId
