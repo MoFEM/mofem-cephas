@@ -60,11 +60,11 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
       case H1:
         CHKERR moab.get_connectivity(bride_adjacency_edge, bride_adjacency,
                                      true);
-      case L2:
       case HCURL:
       case HDIV:
         CHKERR moab.get_adjacencies(bride_adjacency_edge, 1, false,
                                     bride_adjacency, moab::Interface::UNION);
+      case L2:
         bride_adjacency.merge(bride_adjacency_edge);
         break;
       case NOFIELD:
@@ -118,10 +118,10 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
       case HCURL:
         CHKERR moab.get_adjacencies(bride_adjacency_face, 1, false,
                                     bride_adjacency, moab::Interface::UNION);
-      case L2:
       case HDIV:
         CHKERR moab.get_adjacencies(bride_adjacency_face, 2, false,
                                     bride_adjacency, moab::Interface::UNION);
+      case L2:
         bride_adjacency.merge(bride_adjacency_face);
         break;
       case NOFIELD:
