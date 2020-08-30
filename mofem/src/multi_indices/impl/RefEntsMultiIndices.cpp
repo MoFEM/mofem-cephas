@@ -54,7 +54,7 @@ std::ostream &operator<<(std::ostream &os, const RefEntity &e) {
   os << " owner ent " << e.getOwnerEnt();
   os << " owner proc " << e.getOwnerProc();
   os << " parent ent " << e.getParentEnt();
-  os << " ent type " << e.getEntType();
+  os << " ent type " << e.getEntTypeName();
   os << " ent parent type " << e.getParentEntType();
   return os;
 }
