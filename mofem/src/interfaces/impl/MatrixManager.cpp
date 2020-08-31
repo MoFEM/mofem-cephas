@@ -666,7 +666,6 @@ MoFEMErrorCode MatrixManager::createMPIAIJ<PetscGlobalIdx_mi_tag>(
   CHKERR MatSetSizes(*Aij, nb_local_dofs_row, nb_local_dofs_col, nb_row_dofs,
                      nb_col_dofs);
   CHKERR MatSetType(*Aij, MATMPIAIJ);
-  CHKERR MatSeqAIJSetPreallocation(*Aij, 0, &*d_nnz.begin());
   CHKERR MatMPIAIJSetPreallocation(*Aij, 0, &*d_nnz.begin(), 0,
                                    &*o_nnz.begin());
 
