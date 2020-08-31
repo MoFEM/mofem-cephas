@@ -562,7 +562,7 @@ MatrixManager::MatrixManager(const MoFEM::Core &core)
   PetscLogEventRegister("MatrixManagerCreateSeqAIJWithArrays", 0,
                         &MOFEM_EVENT_createSeqAIJWithArrays);
   PetscLogEventRegister("MatrixManagerCheckMPIAIJWithArraysMatrixFillIn", 0,
-                        &MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn);
+                        &MOFEM_EVENT_checkMatrixFillIn);
 }
 
 template <>
@@ -751,14 +751,13 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
   MoFEMFunctionReturn(0);
 }
 
-template <>
-MoFEMErrorCode
-MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
-    const std::string problem_name, int row_print, int col_print, int verb) {
+MoFEMErrorCode MatrixManager::checkMatrixFillIn(const std::string problem_name,
+                                                int row_print, int col_print,
+                                                Mat A, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
   MatrixManagerFunctionBegin;
 
-  PetscLogEventBegin(MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn, 0, 0, 0, 0);
+  PetscLogEventBegin(MOFEM_EVENT_checkMatrixFillIn, 0, 0, 0, 0);
 
   struct TestMatrixFillIn : public FEMethod {
     CoreInterface *mFieldPtr;
@@ -831,11 +830,11 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
           int max_order = (*cit)->getMaxOrder();
           if ((*cit)->getNbOfCoeffs() * (*cit)->getOrderNbDofs(max_order) !=
               nb_dofs_on_ent) {
-            std::cerr << "Warning: Number of Dofs in Col diffrent than number "
-                         "of dofs for given entity order "
-                      << (*cit)->getNbOfCoeffs() *
-                             (*cit)->getOrderNbDofs(max_order)
-                      << " " << nb_dofs_on_ent << std::endl;
+            MOFEM_LOG("SELF", Sev::warning)
+                << "Warning: Number of Dofs in Col diffrent than number "
+                   "of dofs for given entity order "
+                << (*cit)->getNbOfCoeffs() * (*cit)->getOrderNbDofs(max_order)
+                << " " << nb_dofs_on_ent;
           }
         }
       }
@@ -859,16 +858,17 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
             boost::make_tuple((*rit)->getFieldEntityPtr()->getLocalUniqueId(),
                               numeredEntFiniteElementPtr->getLocalUniqueId()));
         if (ait == adjacenciesPtr->end()) {
-          std::ostringstream ss;
-          ss << *(*rit) << std::endl;
-          ss << *numeredEntFiniteElementPtr << std::endl;
-          ss << "dof: " << (*rit)->getBitRefLevel() << std::endl;
-          ss << "fe: " << numeredEntFiniteElementPtr->getBitRefLevel()
-             << std::endl;
-          ss << "problem: " << problemPtr->getBitRefLevel() << std::endl;
-          ss << "problem mask: " << problemPtr->getMaskBitRefLevel()
-             << std::endl;
-          PetscPrintf(mFieldPtr->get_comm(), "%s", ss.str().c_str());
+          MOFEM_LOG_ATTRIBUTES("SYNC", LogManager::BitScope);
+          MOFEM_LOG("SELF", Sev::error) << *(*rit);
+          MOFEM_LOG("SELF", Sev::error) << *(*rit);
+          MOFEM_LOG("SELF", Sev::error) << *numeredEntFiniteElementPtr;
+          MOFEM_LOG("SELF", Sev::error) << "dof: " << (*rit)->getBitRefLevel();
+          MOFEM_LOG("SELF", Sev::error)
+              << "fe: " << numeredEntFiniteElementPtr->getBitRefLevel();
+          MOFEM_LOG("SELF", Sev::error)
+              << "problem: " << problemPtr->getBitRefLevel();
+          MOFEM_LOG("SELF", Sev::error)
+              << "problem mask: " << problemPtr->getMaskBitRefLevel();
           SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "adjacencies data inconsistency");
         } else {
@@ -890,20 +890,17 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
           int col = (*cit)->getPetscGlobalDofIdx();
 
           if (row == rowPrint && col == colPrint) {
-
-            std::ostringstream ss;
-            ss << "fe:\n" << *numeredEntFiniteElementPtr << std::endl;
-            ss << "row:\n" << *(*rit) << std::endl;
-            ss << "col:\n" << *(*cit) << std::endl;
-
-            ss << "fe:\n"
-               << numeredEntFiniteElementPtr->getBitRefLevel() << std::endl;
-            ss << "row:\n" << (*rit)->getBitRefLevel() << std::endl;
-            ss << "col:\n" << (*cit)->getBitRefLevel() << std::endl;
-
-            std::cerr << ss.str() << std::endl;
-
-            // PetscPrintf(mFieldPtr->get_comm(),"%s\n",ss.str().c_str());
+            MOFEM_LOG("SELF", Sev::noisy) << "fe:\n"
+                                          << *numeredEntFiniteElementPtr;
+            MOFEM_LOG("SELF", Sev::noisy) << "row:\n" << *(*rit);
+            MOFEM_LOG("SELF", Sev::noisy) << "col:\n" << *(*cit);
+            MOFEM_LOG("SELF", Sev::noisy)
+                << "fe:\n"
+                << numeredEntFiniteElementPtr->getBitRefLevel();
+            MOFEM_LOG("SELF", Sev::noisy) << "row:\n"
+                                          << (*rit)->getBitRefLevel();
+            MOFEM_LOG("SELF", Sev::noisy) << "col:\n"
+                                          << (*cit)->getBitRefLevel();
           }
 
           CHKERR MatSetValue(A, row, col, 1, INSERT_VALUES);
@@ -918,11 +915,11 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
           int max_order = (*rit)->getMaxOrder();
           if ((*rit)->getNbOfCoeffs() * (*rit)->getOrderNbDofs(max_order) !=
               nb_dofs_on_ent) {
-            std::cerr << "Warning: Number of Dofs in Row diffrent than number "
-                         "of dofs for given entity order "
-                      << (*rit)->getNbOfCoeffs() *
-                             (*rit)->getOrderNbDofs(max_order)
-                      << " " << nb_dofs_on_ent << std::endl;
+            MOFEM_LOG("SELF", Sev::warning)
+                << "Warning: Number of Dofs in Row diffrent than number "
+                   "of dofs for given entity order "
+                << (*rit)->getNbOfCoeffs() * (*rit)->getOrderNbDofs(max_order)
+                << " " << nb_dofs_on_ent;
           }
         }
       }
@@ -942,8 +939,6 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
   };
 
   // create matrix
-  Mat A;
-  CHKERR createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(problem_name, &A, verb);
   CHKERR MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
 
   if (verb >= VERY_VERBOSE) {
@@ -966,17 +961,14 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "problem < %s > not found (top tip: check spelling)",
              problem_name.c_str());
-
-  if (verb >= VERBOSE)
-    PetscPrintf(m_field.get_comm(), "check problem < %s >\n",
-                problem_name.c_str());
+  MOFEM_LOG_C("WORLD", Sev::inform, "check problem < %s >",
+              problem_name.c_str());
 
   // loop all elements in problem and check if assemble is without error
   auto fe_ptr = m_field.get_finite_elements();
   for (auto &fe : *fe_ptr) {
-    if (verb >= VERBOSE)
-      PetscPrintf(m_field.get_comm(), "\tcheck element %s\n",
-                  fe->getName().c_str());
+    MOFEM_LOG_C("WORLD", Sev::verbose, "\tcheck element %s",
+                fe->getName().c_str());
     CHKERR m_field.loop_finite_elements(problem_name, fe->getName(), method,
                                         nullptr, MF_EXIST,
                                         CacheTupleSharedPtr(), verb);
@@ -984,10 +976,36 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
 
   CHKERR MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   CHKERR MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-  CHKERR MatDestroy(&A);
 
-  PetscLogEventEnd(MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn, 0, 0, 0, 0);
+  PetscLogEventEnd(MOFEM_EVENT_checkMatrixFillIn, 0, 0, 0, 0);
 
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode
+MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
+    const std::string problem_name, int row_print, int col_print, int verb) {
+  MoFEM::CoreInterface &m_field = cOre;
+  MatrixManagerFunctionBegin;
+  // create matrix
+  SmartPetscObj<Mat> A;
+  CHKERR createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(problem_name, A, verb);
+  CHKERR MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+  CHKERR checkMatrixFillIn(problem_name, row_print, col_print, A, verb);
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode MatrixManager::checkMPIAIJMatrixFillIn<PetscGlobalIdx_mi_tag>(
+    const std::string problem_name, int row_print, int col_print, int verb) {
+  MoFEM::CoreInterface &m_field = cOre;
+  MatrixManagerFunctionBegin;
+  // create matrix
+  SmartPetscObj<Mat> A;
+  CHKERR createMPIAIJ<PetscGlobalIdx_mi_tag>(problem_name, A, verb);
+  CHKERR MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+  CHKERR checkMatrixFillIn(problem_name, row_print, col_print, A, verb);
   MoFEMFunctionReturn(0);
 }
 

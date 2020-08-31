@@ -172,6 +172,10 @@ int main(int argc, char *argv[]) {
         ->checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
             "TEST_PROBLEM", -1, -1, 1);
 
+    CHKERR m_field.getInterface<MatrixManager>()
+        ->checkMPIAIJMatrixFillIn<PetscGlobalIdx_mi_tag>("TEST_PROBLEM", -1, -1,
+                                                         1);
+
     std::vector<std::string> fields_list;
     fields_list.push_back("FIELD1");
 

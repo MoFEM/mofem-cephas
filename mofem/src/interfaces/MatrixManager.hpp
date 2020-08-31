@@ -210,6 +210,22 @@ struct MatrixManager : public UnknownInterface {
   additional non-zero elements in matrix, this function can help detect
   problem. Should be used as a part of atom tests
 
+  * @param problem_name
+  * @param row print info at particular row
+  * @param col print info at particular col
+  * @return MoFEMErrorCode
+
+  */
+  MoFEMErrorCode checkMatrixFillIn(const std::string problem_name,
+                                   int row_print, int col_print, Mat A,
+                                   int verb = QUIET);
+
+  /** \brief check if matrix fill in correspond to finite element indices
+
+  This is used to check consistency of code. If problem is notices with
+  additional non-zero elements in matrix, this function can help detect
+  problem. Should be used as a part of atom tests
+
   * @tparam Tag
   * @param problem_name
   * @param row print info at particular row
@@ -226,12 +242,33 @@ struct MatrixManager : public UnknownInterface {
     return 0;
   }
 
+  /** \brief check if matrix fill in correspond to finite element indices
+
+  This is used to check consistency of code. If problem is notices with
+  additional non-zero elements in matrix, this function can help detect
+  problem. Should be used as a part of atom tests
+
+  * @tparam Tag
+  * @param problem_name
+  * @param row print info at particular row
+  * @param col print info at particular col
+  * @return MoFEMErrorCode
+
+  */
+  template <class Tag>
+  MoFEMErrorCode checkMPIAIJMatrixFillIn(const std::string problem_name,
+                                         int row_print, int col_print,
+                                         int verb = QUIET) {
+    static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
+    return 0;
+  }
+
 private:
   PetscLogEvent MOFEM_EVENT_createMPIAIJ;
   PetscLogEvent MOFEM_EVENT_createMPIAIJWithArrays;
   PetscLogEvent MOFEM_EVENT_createMPIAdjWithArrays;
   PetscLogEvent MOFEM_EVENT_createSeqAIJWithArrays;
-  PetscLogEvent MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn;
+  PetscLogEvent MOFEM_EVENT_checkMatrixFillIn;
 };
 
 template <>
@@ -255,6 +292,10 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
 template <>
 MoFEMErrorCode
 MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
+    const std::string problem_name, int row_print, int col_print, int verb);
+
+template <>
+MoFEMErrorCode MatrixManager::checkMPIAIJMatrixFillIn<PetscGlobalIdx_mi_tag>(
     const std::string problem_name, int row_print, int col_print, int verb);
 
 } // namespace MoFEM
