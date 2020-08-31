@@ -629,8 +629,6 @@ MoFEMErrorCode MatrixManager::createMPIAIJ<PetscGlobalIdx_mi_tag>(
   int nb_local_dofs_row = p_miit->getNbLocalDofsRow();
   int nb_local_dofs_col = p_miit->getNbLocalDofsCol();
 
-  
-
   auto get_layout = [&]() {
     int start_ranges, end_ranges;
     PetscLayout layout;
