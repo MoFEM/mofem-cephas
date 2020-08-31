@@ -42,7 +42,7 @@ struct MatrixManager : public UnknownInterface {
   /**
    * \brief Destructor
    */
-  ~MatrixManager();
+  virtual ~MatrixManager() = default;
 
   /**
    * @brief Creates a MPI AIJ matrix using arrays that contain in standard CSR
@@ -65,19 +65,7 @@ struct MatrixManager : public UnknownInterface {
     return 0;
   }
 
-  /**
-   * @brief Creates a MPI AIJ matrix using arrays that contain in standard CSR
-   * format the local rows.
-   *
-   * <a
-   href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateMPIAIJWithArrays.html>See
-   PETSc for details</a>
-
-   * @tparam Tag
-   * @param name
-   * @param Aij (SmartPetscObj)
-   * @param verb
-   * @return MoFEMErrorCode
+  /** \copydoc MoFEM::MatrixManager::createMPIAIJWithArrays
    */
   template <class Tag>
   MoFEMErrorCode createMPIAIJWithArrays(const std::string name,
@@ -86,6 +74,40 @@ struct MatrixManager : public UnknownInterface {
     MoFEMFunctionBegin;
     Mat aij;
     CHKERR createMPIAIJWithArrays<Tag>(name, &aij, verb);
+    aij_ptr.reset(aij, false);
+    MoFEMFunctionReturn(0);
+  }
+
+  /**
+   * @brief Creates a MPI AIJ matrix using arrays that contain in standard CSR
+   * format the local rows.
+   *
+   * <a
+   href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MATMPIAIJ.html>See
+   PETSc for details</a>
+
+   * @tparam Tag
+   * @param name
+   * @param Aij
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  template <class Tag>
+  MoFEMErrorCode createMPIAIJ(const std::string name, Mat *Aij,
+                                        int verb = QUIET) {
+    static_assert(!std::is_same<Tag, Tag>::value, "not implemented");
+    return 0;
+  }
+
+  /** \copydoc MoFEM::MatrixManager::createMPIAIJ
+   */
+  template <class Tag>
+  MoFEMErrorCode createMPIAIJ(const std::string name,
+                                        SmartPetscObj<Mat> &aij_ptr,
+                                        int verb = QUIET) {
+    MoFEMFunctionBegin;
+    Mat aij;
+    CHKERR createMPIAIJ<Tag>(name, &aij, verb);
     aij_ptr.reset(aij, false);
     MoFEMFunctionReturn(0);
   }
@@ -205,6 +227,7 @@ struct MatrixManager : public UnknownInterface {
   }
 
 private:
+  PetscLogEvent MOFEM_EVENT_createMPIAIJ;
   PetscLogEvent MOFEM_EVENT_createMPIAIJWithArrays;
   PetscLogEvent MOFEM_EVENT_createMPIAdjWithArrays;
   PetscLogEvent MOFEM_EVENT_createSeqAIJWithArrays;
@@ -214,6 +237,11 @@ private:
 template <>
 MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
     const std::string name, Mat *Aij, int verb);
+
+template <>
+MoFEMErrorCode
+MatrixManager::createMPIAIJ<PetscGlobalIdx_mi_tag>(const std::string name,
+                                                   Mat *Aij, int verb);
 
 template <>
 MoFEMErrorCode

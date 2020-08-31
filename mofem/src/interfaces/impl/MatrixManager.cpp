@@ -553,6 +553,8 @@ MoFEMErrorCode MatrixManager::query_interface(const MOFEMuuid &uuid,
 
 MatrixManager::MatrixManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)) {
+  PetscLogEventRegister("MatrixManagerCreateMPIAIJ", 0,
+                        &MOFEM_EVENT_createMPIAIJ);
   PetscLogEventRegister("MatrixManagerCreateMPIAIJWithArrays", 0,
                         &MOFEM_EVENT_createMPIAIJWithArrays);
   PetscLogEventRegister("MatrixManagerCreateMPIAdjWithArrays", 0,
@@ -562,7 +564,6 @@ MatrixManager::MatrixManager(const MoFEM::Core &core)
   PetscLogEventRegister("MatrixManagerCheckMPIAIJWithArraysMatrixFillIn", 0,
                         &MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn);
 }
-MatrixManager::~MatrixManager() {}
 
 template <>
 MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
@@ -597,6 +598,79 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
       nb_col_dofs, &*i_vec.begin(), &*j_vec.begin(), PETSC_NULL, Aij);
 
   PetscLogEventEnd(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode MatrixManager::createMPIAIJ<PetscGlobalIdx_mi_tag>(
+    const std::string name, Mat *Aij, int verb) {
+  MoFEM::CoreInterface &m_field = cOre;
+  CreateRowComressedADJMatrix *core_ptr =
+      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  MoFEMFunctionBegin;
+  PetscLogEventBegin(MOFEM_EVENT_createMPIAIJ, 0, 0, 0, 0);
+
+  auto problems_ptr = m_field.get_problems();
+  auto &prb = problems_ptr->get<Problem_mi_tag>();
+  auto p_miit = prb.find(name);
+  if (p_miit == prb.end()) {
+    SETERRQ1(m_field.get_comm(), MOFEM_NOT_FOUND,
+             "problem < %s > is not found (top tip: check spelling)",
+             name.c_str());
+  }
+
+  std::vector<int> i_vec, j_vec;
+  j_vec.reserve(10000);
+  CHKERR core_ptr->createMatArrays<PetscGlobalIdx_mi_tag>(
+      p_miit, MATMPIAIJ, i_vec, j_vec, false, verb);
+
+  int nb_row_dofs = p_miit->getNbDofsRow();
+  int nb_col_dofs = p_miit->getNbDofsCol();
+  int nb_local_dofs_row = p_miit->getNbLocalDofsRow();
+  int nb_local_dofs_col = p_miit->getNbLocalDofsCol();
+
+  
+
+  auto get_layout = [&]() {
+    int start_ranges, end_ranges;
+    PetscLayout layout;
+    CHKERR PetscLayoutCreate(m_field.get_comm(), &layout);
+    CHKERR PetscLayoutSetBlockSize(layout, 1);
+    CHKERR PetscLayoutSetLocalSize(layout, nb_local_dofs_col);
+    CHKERR PetscLayoutSetUp(layout);
+    CHKERR PetscLayoutGetRange(layout, &start_ranges, &end_ranges);
+    CHKERR PetscLayoutDestroy(&layout);
+    return std::make_pair(start_ranges, end_ranges);
+  };
+
+  auto get_nnz = [&](auto &d_nnz, auto &o_nnz) {
+    MoFEMFunctionBeginHot;
+    auto layout = get_layout();
+    int j = 0;
+    for (int i = 0; i != nb_local_dofs_row; ++i) {
+      for (; j != i_vec[i + 1]; ++j) {
+        if (j_vec[j] < layout.second && j_vec[j] >= layout.first)
+          ++(d_nnz[i]);
+        else
+          ++(o_nnz[i]);
+      }
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  std::vector<int> d_nnz(nb_local_dofs_row, 0), o_nnz(nb_local_dofs_row, 0);
+  CHKERR get_nnz(d_nnz, o_nnz);
+
+
+  CHKERR MatCreate(m_field.get_comm(), Aij);
+  CHKERR MatSetSizes(*Aij, nb_local_dofs_row, nb_local_dofs_col, nb_row_dofs,
+                     nb_col_dofs);
+  CHKERR MatSetType(*Aij, MATMPIAIJ);
+  CHKERR MatSeqAIJSetPreallocation(*Aij, 0, &*d_nnz.begin());
+  CHKERR MatMPIAIJSetPreallocation(*Aij, 0, &*d_nnz.begin(), 0,
+                                   &*o_nnz.begin());
+
+  PetscLogEventEnd(MOFEM_EVENT_createMPIAIJ, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
 }
 
