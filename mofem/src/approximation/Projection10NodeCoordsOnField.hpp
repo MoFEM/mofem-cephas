@@ -111,6 +111,8 @@ struct Projection10NodeCoordsOnField : public DofMethod {
     case AINSWORTH_LOBATTO_BASE:
       edge_shape_function_val *= LOBATTO_PHI0(0);
       break;
+    case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+      break;
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not yet implemented");
     }
@@ -245,6 +247,9 @@ struct ProjectionFieldOn10NodeTet : public Projection10NodeCoordsOnField {
       approx_val = 0.25 * L[dofPtr->getDofOrder() - 2] * dofPtr->getFieldData();
       break;
     case AINSWORTH_LOBATTO_BASE:
+      approx_val = 0.25 * K[dofPtr->getDofOrder() - 2] * dofPtr->getFieldData();
+      break;
+    case AINSWORTH_BERNSTEIN_BEZIER_BASE:
       approx_val = 0.25 * K[dofPtr->getDofOrder() - 2] * dofPtr->getFieldData();
       break;
     default:

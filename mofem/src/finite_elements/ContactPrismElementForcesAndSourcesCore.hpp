@@ -275,7 +275,8 @@ protected:
   MatrixDouble tangentTwoAtGaussPtsSlave;
   
   OpSetContravariantPiolaTransformOnFace opContravariantTransform;
-  
+  // OpSetInvJacHdivAndHcurl opInvJacHdivAndHcurl;
+
   /**
    * @brief Entity data on element entity rows fields
    *

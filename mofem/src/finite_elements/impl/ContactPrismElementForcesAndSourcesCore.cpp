@@ -238,11 +238,11 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       ++t_diff;
     }
 
-    t_t2_master(j) =
-        FTensor::levi_civita(i, j, k) * t_normal_master(k) * t_t1_master(i);
+    t_t2_master(i) =
+        FTensor::levi_civita(i, j, k) * t_normal_master(j) * t_t1_master(k);
 
-    t_t2_slave(j) =
-        FTensor::levi_civita(i, j, k) * t_normal_slave(k) * t_t1_slave(i);
+    t_t2_slave(i) =
+        FTensor::levi_civita(i, j, k) * t_normal_slave(j) * t_t1_slave(k);
 
     aRea[0] = cblas_dnrm2(3, &normal[0], 1) * 0.5;
     aRea[1] = cblas_dnrm2(3, &normal[3], 1) * 0.5;
@@ -481,6 +481,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       switch (static_cast<FieldApproximationBase>(b)) {
       case AINSWORTH_LEGENDRE_BASE:
       case AINSWORTH_LOBATTO_BASE:
+      case AINSWORTH_BERNSTEIN_BEZIER_BASE:
         if (dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsMaster,
@@ -511,11 +512,11 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
           };
 
           auto normal_slave = get_tensor_vec(nOrmalSlave);
-
+          
           auto slave_normal_data = get_tensor_vec(normal, 3);
 
           normal_slave(i) = slave_normal_data(i);
-        
+          
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsSlave,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
