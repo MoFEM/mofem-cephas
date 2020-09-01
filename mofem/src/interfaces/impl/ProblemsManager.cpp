@@ -2958,7 +2958,9 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         else if ((*dit)->getPetscLocalDofIdx() >= *(local_nbdof_ptr[s]))
           ++nb_ghost_dofs;
         else
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Imposible case");
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Imposible case. You could run problem on no distributed "
+                  "mesh. That is not implemented.");
       }
 
       // get indices
