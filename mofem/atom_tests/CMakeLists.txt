@@ -1593,6 +1593,26 @@ add_test(
   -log_no_color
 )
 
+my_add_executable(test_cache_on_entities test_cache_on_entities.cpp)
+target_link_libraries(test_cache_on_entities
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
+add_test(
+  test_cache_on_entities ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/test_cache_on_entities 
+  -file_name disp01_2parts.h5m 
+  -log_summary
+  -log_no_color
+)
+
 # Tetsing mesh cuttiong
 
 cm_export_file("../meshes/test_mesh_cut.cub" export_atom_tests)
