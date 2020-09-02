@@ -26,14 +26,13 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-typedef ublas::unbounded_array<
+using DofsAllocator = ublas::unbounded_array<
 
     FEDofEntity *, std::allocator<FEDofEntity *>
 
-    >
-    DofsAllocator;
+    >;
 
-typedef ublas::vector<FEDofEntity *, DofsAllocator> VectorDofs;
+using VectorDofs = ublas::vector<FEDofEntity *, DofsAllocator>;
 
 /** \brief data structure for finite element entity
  * \ingroup mofem_forces_and_sources_user_data_operators
