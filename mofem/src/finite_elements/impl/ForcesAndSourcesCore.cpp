@@ -601,6 +601,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
                                         const std::string &field_name) const {
 
   auto get_nodes_field_data = [&](VectorDouble &nodes_data,
+                                  VectorFieldEntities &field_entities,
                                   VectorDofs &nodes_dofs, FieldSpace &space,
                                   FieldApproximationBase &base,
                                   VectorInt &bb_node_order) {
@@ -608,6 +609,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
 
     nodes_data.resize(0, false);
     nodes_dofs.resize(0, false);
+    field_entities.resize(0, false);
 
     auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
     if (field_it != fieldsPtr->get<FieldName_mi_tag>().end()) {
@@ -644,19 +646,24 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
             const int max_nb_dofs = nb_dofs_on_vert * num_nodes;
             nodes_data.resize(max_nb_dofs, false);
             nodes_dofs.resize(max_nb_dofs, false);
+            field_entities.resize(num_nodes, false);
             std::fill(nodes_data.begin(), nodes_data.end(), 0);
             std::fill(nodes_dofs.begin(), nodes_dofs.end(), nullptr);
+            std::fill(field_entities.begin(), field_entities.end(), nullptr);
 
             std::vector<boost::weak_ptr<FieldEntity>> brother_ents_vec;
 
             for (auto it = lo; it != hi; ++it) {
               if (auto e = it->lock()) {
-
                 const auto &sn = e->getSideNumberPtr();
                 const int side_number = sn->side_number;
                 const int brother_side_number = sn->brother_side_number;
-                if (brother_side_number != -1)
+
+                field_entities[side_number] = e.get();
+                if (brother_side_number != -1) {
                   brother_ents_vec.emplace_back(e);
+                  field_entities[side_number] = field_entities[side_number];
+                }
 
                 bb_node_order[side_number] = e->getMaxOrder();
                 int pos = side_number * nb_dofs_on_vert;
@@ -699,6 +706,7 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
 
   return get_nodes_field_data(
       data.dataOnEntities[MBVERTEX][0].getFieldData(),
+      data.dataOnEntities[MBVERTEX][0].getFieldEntities(),
       data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
       data.dataOnEntities[MBVERTEX][0].getSpace(),
       data.dataOnEntities[MBVERTEX][0].getBase(),
@@ -716,6 +724,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
       dat.getSpace() = NOSPACE;
       dat.getFieldData().resize(0, false);
       dat.getFieldDofs().resize(0, false);
+      dat.getFieldEntities().resize(0, false);
     }
   }
 
@@ -742,6 +751,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
           if (side >= 0) {
 
             auto &dat = data.dataOnEntities[type][side];
+            auto &ent_field = dat.getFieldEntities();
             auto &ent_field_dofs = dat.getFieldDofs();
             auto &ent_field_data = dat.getFieldData();
 
@@ -760,6 +770,8 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
             noalias(ent_field_data) = ent_data;
             ent_field_dofs.resize(ent_data.size(), false);
             std::fill(ent_field_dofs.begin(), ent_field_dofs.end(), nullptr);
+            ent_field.resize(1, false);
+            ent_field[0] = e.get();
             if (auto cache = e->entityCacheDataDofs.lock()) {
               for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
                 ent_field_dofs[(*dit)->getEntDofIdx()] =
@@ -781,6 +793,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
           dat_brother.getDataOrder() = dat.getDataOrder();
           dat_brother.getFieldData() = dat.getFieldData();
           dat_brother.getFieldDofs() = dat.getFieldDofs();
+          dat_brother.getFieldEntities() = dat.getFieldEntities();
         }
       }
     }
@@ -789,11 +802,15 @@ MoFEMErrorCode ForcesAndSourcesCore::getEntityFieldData(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-ForcesAndSourcesCore::getNoFieldFieldData(const std::string field_name,
-                                          VectorDouble &ent_field_data,
-                                          VectorDofs &ent_field_dofs) const {
+MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
+    const std::string field_name, VectorDouble &ent_field_data,
+    VectorDofs &ent_field_dofs, VectorFieldEntities &ent_field) const {
+
   MoFEMFunctionBeginHot;
+
+  ent_field_data.resize(0, false);
+  ent_field_dofs.resize(0, false);
+  ent_field.resize(0, false);
 
   auto &field_ents = getDataFieldEnts();
   auto bit_number = mField.get_field_bit_number(field_name);
@@ -802,18 +819,26 @@ ForcesAndSourcesCore::getNoFieldFieldData(const std::string field_name,
   auto lo = std::lower_bound(field_ents.begin(), field_ents.end(), lo_uid,
                              cmp_uid_lo);
   if (lo != field_ents.end()) {
+
+    ent_field.resize(field_ents.size(), false);
+    std::fill(ent_field.begin(), ent_field.end(), nullptr);
+
     const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
         bit_number, get_id_for_max_type<MBVERTEX>());
     auto hi = std::upper_bound(lo, field_ents.end(), hi_uid, cmp_uid_hi);
     if (lo != hi) {
 
-      for (auto it = lo; it != hi; ++it)
+      int side = 0;
+      for (auto it = lo; it != hi; ++it, ++side)
         if (auto e = it->lock()) {
 
           const auto size = e->getNbDofsOnEnt();
           ent_field_data.resize(size, false);
           ent_field_dofs.resize(size, false);
+          ent_field[side] = e.get();
           noalias(ent_field_data) = e->getEntFieldData();
+
+
           if (auto cache = e->entityCacheDataDofs.lock()) {
             for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
               ent_field_dofs[(*dit)->getEntDofIdx()] =
@@ -837,7 +862,8 @@ ForcesAndSourcesCore::getNoFieldFieldData(DataForcesAndSourcesCore &data,
 
   CHKERR getNoFieldFieldData(
       field_name, data.dataOnEntities[MBENTITYSET][0].getFieldData(),
-      data.dataOnEntities[MBENTITYSET][0].getFieldDofs());
+      data.dataOnEntities[MBENTITYSET][0].getFieldDofs(),
+      data.dataOnEntities[MBENTITYSET][0].getFieldEntities());
   MoFEMFunctionReturn(0);
 }
 

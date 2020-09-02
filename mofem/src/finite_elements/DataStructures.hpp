@@ -34,6 +34,14 @@ using DofsAllocator = ublas::unbounded_array<
 
 using VectorDofs = ublas::vector<FEDofEntity *, DofsAllocator>;
 
+using FieldEntAllocator = ublas::unbounded_array<
+
+    FieldEntity *, std::allocator<FieldEntity *>
+
+    >;
+
+using VectorFieldEntities = ublas::vector<FieldEntity *, FieldEntAllocator>;
+
 /** \brief data structure for finite element entity
  * \ingroup mofem_forces_and_sources_user_data_operators
  *
@@ -106,7 +114,14 @@ struct DataForcesAndSourcesCore {
     /// \brief get dofs data stature FEDofEntity
     inline const VectorDofs &getFieldDofs() const;
 
+    /// \brief get dofs data stature FEDofEntity
     inline VectorDouble &getFieldData();
+
+    /// \brief get field entities
+    inline const VectorFieldEntities &getFieldEntities() const;
+
+    /// \brief get field entities
+    inline VectorFieldEntities &getFieldEntities();
 
     /**
      * @brief Return FTensor of rank 1, i.e. vector from filed data coeffinects
@@ -986,6 +1001,7 @@ struct DataForcesAndSourcesCore {
     VectorInt iNdices;           ///< Global indices on entity
     VectorInt localIndices;      ///< Local indices on entity
     VectorDofs dOfs;             ///< DoFs on entity
+    VectorFieldEntities fieldEntities; ///< Field entities
     VectorDouble fieldData;      ///< Field data on entity
     std::array<boost::shared_ptr<MatrixDouble>, LASTBASE> N; ///< Base functions
     std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>
@@ -1221,8 +1237,19 @@ const VectorDofs &DataForcesAndSourcesCore::EntData::getFieldDofs() const {
   return dOfs;
 }
 
+VectorDofs &DataForcesAndSourcesCore::EntData::getFieldDofs() { return dOfs; }
+
 VectorDouble &DataForcesAndSourcesCore::EntData::getFieldData() {
   return fieldData;
+}
+
+VectorFieldEntities &DataForcesAndSourcesCore::EntData::getFieldEntities() {
+  return fieldEntities;
+}
+
+const VectorFieldEntities &
+DataForcesAndSourcesCore::EntData::getFieldEntities() const {
+  return fieldEntities;
 }
 
 template <int Tensor_Dim>
@@ -1251,8 +1278,6 @@ DataForcesAndSourcesCore::EntData::getFTensor2SymmetricFieldData() {
   s << "Not implemented for this dimension dim = " << Tensor_Dim;
   THROW_MESSAGE(s.str());
 }
-
-VectorDofs &DataForcesAndSourcesCore::EntData::getFieldDofs() { return dOfs; }
 
 FieldApproximationBase &DataForcesAndSourcesCore::EntData::getBase() {
   return bAse;
