@@ -20,17 +20,14 @@ namespace MoFEM {
 // moab dof
 DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
                      const ApproximationOrder dof_order,
-                     const FieldCoefficientsNumber dof_rank, const DofIdx dof,
-                     const bool is_active)
-    : interface_FieldEntity<FieldEntity>(entity_ptr), active(is_active) {
+                     const FieldCoefficientsNumber dof_rank, const DofIdx dof)
+    : interface_FieldEntity<FieldEntity>(entity_ptr), dof(dof) {
 
-  globalUId = getGlobalUniqueIdCalculate(dof, entity_ptr);
-
-  if (PetscUnlikely(!entity_ptr)) 
+  if (PetscUnlikely(!entity_ptr))
     THROW_MESSAGE("FieldEntity pointer not initialized");
-  if (PetscUnlikely(!sPtr)) 
+  if (PetscUnlikely(!sPtr))
     THROW_MESSAGE("FieldEntity pointer not initialized");
-  if (PetscUnlikely(!getFieldEntityPtr())) 
+  if (PetscUnlikely(!getFieldEntityPtr()))
     THROW_MESSAGE("FieldEntity pointer not initialized");
   // verify dof order
   if (PetscUnlikely(dof_order != getDofOrderMap()[dof]))
@@ -43,22 +40,29 @@ DofEntity::DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
   // verify dof rank
   if (PetscUnlikely(dof_rank != dof % getNbOfCoeffs()))
     THROW_MESSAGE("Inconsistent DOFs rank with index of DOF on entity");
-    
 }
 
 std::ostream &operator<<(std::ostream &os, const DofEntity &e) {
-  os << "dof_uid " << e.getGlobalUniqueId() << " dof_order " << e.getDofOrder()
+  os << "dof_uid " << e.getLocalUniqueId() << " dof_order " << e.getDofOrder()
      << " dof_rank " << e.getDofCoeffIdx() << " dof " << e.getEntDofIdx()
-     << " active " << e.active << " " << *(e.sFieldPtr);
+     << " active " << (e.dof < 0 ? false : true) << " "
+     << *e.getFieldEntityPtr();
   return os;
 }
 
 DofEntity_active_change::DofEntity_active_change(bool active)
     : aCtive(active) {}
 void DofEntity_active_change::operator()(boost::shared_ptr<DofEntity> &dof) {
-  dof->active = aCtive;
-  if (aCtive && dof->getDofOrder() > dof->getMaxOrder()) {
-    cerr << *dof << endl;
+
+  if (aCtive)
+    dof->dof = std::abs(dof->dof);
+  else
+    dof->dof = -std::abs(dof->dof);
+
+  if (PetscUnlikely(aCtive && dof->getDofOrder() > dof->getMaxOrder())) {
+    MOFEM_LOG_CHANNEL("SELF");
+    MOFEM_LOG_TAG("SELF", "DofEntity_active_change");
+    MOFEM_LOG("SELF", Sev::error) << *dof;
     THROW_MESSAGE("Set DoF active which has order larger than maximal order "
                   "set to entity");
   }
@@ -73,48 +77,30 @@ NumeredDofEntity::NumeredDofEntity(
     )
     : interface_DofEntity<DofEntity>(dof_entity_ptr), dofIdx(dof_idx),
       petscGloablDofIdx(petsc_gloabl_dof_idx),
-      petscLocalDofIdx(petsc_local_dof_idx), pArt(part) {}
+      petscLocalDofIdx(petsc_local_dof_idx), pArt(part) {
+}
 
 std::ostream &operator<<(std::ostream &os, const NumeredDofEntity &e) {
   os << "idx " << e.dofIdx << " part " << e.pArt << " petsc idx "
      << e.petscGloablDofIdx << " ( " << e.petscLocalDofIdx << " ) "
-     << *e.sFieldPtr;
+     << *e.getFieldEntityPtr();
   return os;
 }
-
-FEDofEntity::FEDofEntity(
-    const boost::tuple<const boost::shared_ptr<SideNumber> &,
-                       const boost::shared_ptr<DofEntity> &> &t)
-    : BaseFEEntity(t.get<0>()), interface_DofEntity<DofEntity>(t.get<1>()) {}
-
-FEDofEntity::FEDofEntity(const boost::shared_ptr<SideNumber> &side_number_ptr,
-                         const boost::shared_ptr<DofEntity> &dof_ptr)
-    : BaseFEEntity(side_number_ptr), interface_DofEntity<DofEntity>(
-                                            dof_ptr) {}
 
 std::ostream &operator<<(std::ostream &os, const FEDofEntity &e) {
   os << "local dof FiniteElement idx "
-     << "side_number " << (int)e.sideNumberPtr->side_number << " "
-     << "sense " << (int)e.sideNumberPtr->sense << " " << *e.sFieldPtr;
+     << "side_number " << static_cast<int>(e.getSideNumberPtr()->side_number)
+     << " "
+     << "sense " << static_cast<int>(e.getSideNumberPtr()->sense) << " "
+     << *e.getFieldEntityPtr();
   return os;
 }
 
-FENumeredDofEntity::FENumeredDofEntity(
-    const boost::shared_ptr<SideNumber> &side_number_ptr,
-    const boost::shared_ptr<NumeredDofEntity> &dof_ptr)
-    : BaseFEEntity(side_number_ptr),
-      interface_NumeredDofEntity<NumeredDofEntity>(dof_ptr) {}
-
-FENumeredDofEntity::FENumeredDofEntity(
-    const boost::tuple<const boost::shared_ptr<SideNumber> &,
-                       const boost::shared_ptr<NumeredDofEntity> &> &t)
-    : BaseFEEntity(t.get<0>()), interface_NumeredDofEntity<NumeredDofEntity>(
-                                       t.get<1>()) {}
-
 std::ostream &operator<<(std::ostream &os, const FENumeredDofEntity &e) {
   os << "local dof FiniteElement idx "
-     << "side_number " << (int)e.sideNumberPtr->side_number << " "
-     << "sense " << (int)e.sideNumberPtr->sense << " " << *e.sFieldPtr;
+     << "side_number " << (int)e.getSideNumberPtr()->side_number << " "
+     << "sense " << (int)e.getSideNumberPtr()->sense << " "
+     << *e.getFieldEntityPtr();
   return os;
 }
 

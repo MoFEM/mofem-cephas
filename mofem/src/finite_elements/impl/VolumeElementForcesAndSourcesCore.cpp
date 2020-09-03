@@ -247,8 +247,20 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformBaseFunctions() {
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::calculateHoJacobian() {
   MoFEMFunctionBegin;
-  if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
-      dataPtr->get<FieldName_mi_tag>().end()) {
+
+  auto check_field = [&]() {
+    auto field_it =
+        fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
+    if (field_it != fieldsPtr->get<FieldName_mi_tag>().end())
+      if ((numeredEntFiniteElementPtr->getBitFieldIdData() &
+           (*field_it)->getId())
+              .any())
+        return true;
+    return false;
+  };
+
+  // Check if field meshPositionsFieldName exist
+  if (check_field()) {
     const Field *field_struture =
         mField.get_field_structure(meshPositionsFieldName);
     BitFieldId id = field_struture->getId();
@@ -278,7 +290,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::calculateHoJacobian() {
         &hoGaussPtsInvJac(0, 4), &hoGaussPtsInvJac(0, 5),
         &hoGaussPtsInvJac(0, 6), &hoGaussPtsInvJac(0, 7),
         &hoGaussPtsInvJac(0, 8));
-        
+
     const size_t nb_gauss_pts = gaussPts.size2();
     hoGaussPtsDetJac.resize(nb_gauss_pts, false);
     FTensor::Tensor0<double *> det(&hoGaussPtsDetJac[0]);

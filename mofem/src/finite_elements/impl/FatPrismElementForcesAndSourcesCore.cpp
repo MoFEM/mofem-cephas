@@ -417,7 +417,7 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
 
     double vol = 0;
     auto t_w = get_t_w();
-    for(int gg = 0; gg!=nb_gauss_pts; ++gg) {
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
 
       auto t_coords = get_t_coords();
       t_jac(i, j) = 0;
@@ -434,15 +434,25 @@ MoFEMErrorCode FatPrismElementForcesAndSourcesCore::operator()() {
       ++t_w;
     }
 
-
     return vol;
   };
 
   auto calc_ho_triangle_face_normals = [&]() {
     MoFEMFunctionBegin;
-    // Calculate ho-geometry tangents and normals
-    if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
-        dataPtr->get<FieldName_mi_tag>().end()) {
+
+    auto check_field = [&]() {
+      auto field_it =
+          fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
+      if (field_it != fieldsPtr->get<FieldName_mi_tag>().end())
+        if ((numeredEntFiniteElementPtr->getBitFieldIdData() &
+             (*field_it)->getId())
+                .any())
+          return true;
+      return false;
+    };
+
+    // Check if field meshPositionsFieldName exist
+    if (check_field()) {
       hoCoordsAtGaussPtsF3.resize(nb_gauss_pts_on_faces, 3, false);
       nOrmals_at_GaussPtF3.resize(nb_gauss_pts_on_faces, 3, false);
       tAngent1_at_GaussPtF3.resize(nb_gauss_pts_on_faces, 3, false);

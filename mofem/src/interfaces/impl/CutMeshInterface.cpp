@@ -1366,7 +1366,7 @@ MoFEMErrorCode CutMeshInterface::cutEdgesInMiddle(const BitRefLevel bit,
     }
     const boost::shared_ptr<RefEntity> &ref_ent = *vit;
     if ((ref_ent->getBitRefLevel() & bit).any()) {
-      EntityHandle vert = ref_ent->getRefEnt();
+      EntityHandle vert = ref_ent->getEnt();
       cut_verts.insert(vert);
       verticesOnCutEdges[vert] = m.second;
     } else {
@@ -2012,7 +2012,7 @@ MoFEMErrorCode CutMeshInterface::trimEdgesInTheMiddle(const BitRefLevel bit,
 
     const boost::shared_ptr<RefEntity> &ref_ent = *vit;
     if ((ref_ent->getBitRefLevel() & bit).any()) {
-      EntityHandle vert = ref_ent->getRefEnt();
+      EntityHandle vert = ref_ent->getEnt();
       trimNewVertices.insert(vert);
       verticesOnTrimEdges[vert] = mit->second;
     }

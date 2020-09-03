@@ -66,8 +66,9 @@ int main(int argc, char *argv[]) {
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
-    // Create MoFEM (Joseph) database
-    MoFEM::Core core(moab);
+    // Create MoFEM 
+    // Starting from one  MoFEM::CoreTmp<1> for testing purposes
+    MoFEM::CoreTmp<0> core(moab);
     MoFEM::Interface &m_field = core;
 
     // stl::bitset see for more details
@@ -75,7 +76,6 @@ int main(int argc, char *argv[]) {
     bit_level0.set(0);
     EntityHandle meshset_level0;
     CHKERR moab.create_meshset(MESHSET_SET, meshset_level0);
-    CHKERRG(rval);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
         0, 3, bit_level0);
     CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
@@ -144,7 +144,8 @@ int main(int argc, char *argv[]) {
 
     CHKERR m_field.getInterface<FieldBlas>()->fieldScale(2, "FIELD_A");
 
-    MoFEM::Core core2(moab);
+    // Setting MoFEM::CoreTmp<-1> for testing purposes
+    MoFEM::CoreTmp<-1> core2(moab);
     MoFEM::Interface &m_field2 = core2;
 
     // build field

@@ -68,6 +68,10 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
+                                                 cache_ptr);
+
   for (auto &bit : snes_ctx->preProcess_Rhs) {
     bit->vecAssembleSwitch = boost::move(snes_ctx->vecAssembleSwitch);
     set(*bit);
@@ -81,8 +85,9 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     lit.second->vecAssembleSwitch = boost::move(snes_ctx->vecAssembleSwitch);
     set(*lit.second);
     CHKERR snes_ctx->mField.loop_finite_elements(
-        snes_ctx->problemName, lit.first, *lit.second, nullptr, snes_ctx->bH);
-    unset(*lit.second); 
+        snes_ctx->problemName, lit.first, *lit.second, nullptr, snes_ctx->bH,
+        cache_ptr);
+    unset(*lit.second);
     if (snes_ctx->vErify) {
       // Verify finite elements, check for not a number
       CHKERR VecAssemblyBegin(f);
@@ -135,8 +140,7 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     fe.snes_B = B;
     fe.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
     fe.ksp_ctx = KspMethod::CTX_OPERATORS;
-    fe.data_ctx =
-        PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX;
+    fe.data_ctx = PetscData::CtxSetA | PetscData::CtxSetB | PetscData::CtxSetX;
   };
 
   auto unset = [&](auto &fe) {
@@ -144,6 +148,10 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     fe.ksp_ctx = KspMethod::CTX_KSPNONE;
     fe.data_ctx = PetscData::CtxSetNone;
   };
+
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
+                                                 cache_ptr);
 
   CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
@@ -162,7 +170,8 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     lit.second->matAssembleSwitch = boost::move(snes_ctx->matAssembleSwitch);
     set(*lit.second);
     CHKERR snes_ctx->mField.loop_finite_elements(
-        snes_ctx->problemName, lit.first, *(lit.second), nullptr, snes_ctx->bH);
+        snes_ctx->problemName, lit.first, *(lit.second), nullptr, snes_ctx->bH,
+        cache_ptr);
     unset(*lit.second);
     snes_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }

@@ -1257,13 +1257,30 @@ target_link_libraries(build_problems
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS}
-)
+  ${PROJECT_LIBS})
 add_test(
   build_problems_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m
   -log_no_color
+)
+
+#test for build problems
+my_add_executable(build_large_problem build_large_problem.cpp)
+target_link_libraries(build_large_problem
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})
+add_test(
+  build_large_problem
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/build_large_problem -my_file disp01.h5m
+  -log_no_color 
 )
 
 # tetsing removing enetities from the problem

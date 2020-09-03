@@ -740,11 +740,11 @@ MoFEMErrorCode PrismInterface::splitSides(
       CHKERR moab.get_coords(nodes_in_range, &*coords_range.begin());
       int pos = 0;
       for (; lo != hi; ++lo, pos += 3) {
-        const EntityHandle node = (*lo)->getRefEnt();
+        const EntityHandle node = (*lo)->getEnt();
         EntityHandle child_entity = 0;
         auto child_it = ref_parent_ents_view.find(node);
         if (child_it != ref_parent_ents_view.end())
-          child_entity = (*child_it)->getRefEnt();
+          child_entity = (*child_it)->getEnt();
         if (child_entity == 0) {
           CHKERR create_side_nodes(&coords_range[pos], node);
         } else {
@@ -813,7 +813,7 @@ MoFEMErrorCode PrismInterface::splitSides(
     // Check if child entity has the same connectivity
     for (; child_iit != hi_child_iit; child_iit++) {
       const EntityHandle *conn_ref_tet;
-      CHKERR moab.get_connectivity(child_iit->get()->getRefEnt(), conn_ref_tet,
+      CHKERR moab.get_connectivity(child_iit->get()->getEnt(), conn_ref_tet,
                                    num_nodes, true);
       int nn = 0;
       for (; nn < num_nodes; nn++) {
@@ -825,7 +825,7 @@ MoFEMErrorCode PrismInterface::splitSides(
         if (existing_ent != 0)
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "Should be only one child entity with the same connectivity");
-        existing_ent = child_iit->get()->getRefEnt();
+        existing_ent = child_iit->get()->getEnt();
       }
     }
 

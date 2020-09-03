@@ -16,11 +16,14 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#include <MoFEM.hpp>
+
 #define FieldCoreFunctionBegin                                                 \
   MoFEMFunctionBegin;                                                          \
   MOFEM_LOG_CHANNEL("WORLD");                                                  \
   MOFEM_LOG_CHANNEL("SYNC");                                                   \
   MOFEM_LOG_FUNCTION();                                                        \
+  MOFEM_LOG_TAG("WORLD", "FieldCore");                                         \
   MOFEM_LOG_TAG("SYNC", "FieldCore");
 
 namespace MoFEM {
@@ -35,6 +38,14 @@ BitFieldId Core::getBitFieldId(const std::string &name) const {
   return (*miit)->getId();
 }
 
+FieldBitNumber Core::get_field_bit_number(const std::string name) const {
+  auto &set = fIelds.get<FieldName_mi_tag>();
+  auto miit = set.find(name);
+  if (miit == set.end())
+    THROW_MESSAGE("field not in database (top tip: check spelling)");
+  return (*miit)->getBitNumber();
+}
+
 EntityHandle Core::get_field_meshset(const BitFieldId id) const {
   auto &set = fIelds.get<BitFieldId_mi_tag>();
   auto miit = set.find(id);
@@ -43,7 +54,7 @@ EntityHandle Core::get_field_meshset(const BitFieldId id) const {
   return (*miit)->meshSet;
 }
 
-EntityHandle Core::get_field_meshset(const std::string &name) const {
+EntityHandle Core::get_field_meshset(const std::string name) const {
   return get_field_meshset(getBitFieldId(name));
 }
 
@@ -95,18 +106,23 @@ MoFEMErrorCode Core::get_field_entities_by_handle(const std::string name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
-                               const FieldApproximationBase base,
-                               const FieldCoefficientsNumber nb_of_coefficients,
-                               const TagType tag_type, const enum MoFEMTypes bh,
-                               int verb) {
-  FieldCoreFunctionBegin;
+MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
+                              const FieldApproximationBase base,
+                              const FieldCoefficientsNumber nb_of_coefficients,
+                              const TagType tag_type, const enum MoFEMTypes bh,
+                              int verb) {
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_TAG("WORLD", "FieldCore");
+  MOFEM_LOG_CHANNEL("SYNC");
+  MOFEM_LOG_TAG("SYNC", "FieldCore");
+  MOFEM_LOG_FUNCTION();
+  MoFEMFunctionBegin;
+
   if (verb == -1)
     verb = verbose;
   *buildMoFEM = 0;
   auto fit = fIelds.get<FieldName_mi_tag>().find(name);
   if (fit != fIelds.get<FieldName_mi_tag>().end()) {
-
     if (bh == MF_EXCL)
       SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
                "field is <%s> in database", name.c_str());
@@ -219,19 +235,32 @@ MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
     CHKERR add_field_meshset_to_cs(undefined_cs_ptr);
 
     auto p = fIelds.insert(
-        boost::make_shared<Field>(moab, meshset, undefined_cs_ptr));
-    if (bh == MF_EXCL) {
-      if (!p.second)
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
-                 "field not inserted %s (top tip, it could be already there)",
-                 Field(moab, meshset, undefined_cs_ptr).getName().c_str());
+      boost::make_shared<Field>(moab, meshset, undefined_cs_ptr));
+    if (verb > QUIET) {
+      MOFEM_LOG("WORLD", Sev::inform) << "Add field " << **p.first;
+      MOFEM_LOG("WORLD", Sev::noisy)
+          << "Field " << (*p.first)->getName() << " core value < "
+          << this->getValue() << " > field value ) "
+          << (*p.first)->getBitNumber() << " )";
     }
 
-    if (verb > QUIET)
-      MOFEM_LOG("SYNC", Sev::inform) << "Add field " << **p.first;
+    if (!p.second)
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
+               "field not inserted %s (top tip, it could be already "
+               "there)",
+               Field(moab, meshset, undefined_cs_ptr).getName().c_str());
   }
 
   MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::add_field(const std::string &name, const FieldSpace space,
+                               const FieldApproximationBase base,
+                               const FieldCoefficientsNumber nb_of_coefficients,
+                               const TagType tag_type, const enum MoFEMTypes bh,
+                               int verb) {
+  return this->addField(name, space, base, nb_of_coefficients, tag_type, bh,
+                        verb);
 }
 
 MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
@@ -397,41 +426,45 @@ MoFEMErrorCode Core::create_vertices_and_add_to_field(const std::string name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
-                                     const ApproximationOrder order, int verb) {
-  MoFEMFunctionBegin;
+MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
+                                       const Range &ents,
+                                       const ApproximationOrder order,
+                                       int verb) {
+  FieldCoreFunctionBegin;
+
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
   *buildMoFEM = 0;
 
-  // check field & meshset
-  auto miit = fIelds.get<BitFieldId_mi_tag>().find(id);
-  if (miit == fIelds.get<BitFieldId_mi_tag>().end())
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "no filed found");
+  MOFEM_LOG("WORLD", Sev::noisy) << "Test field " << *field_ptr;
 
-  EntityHandle idm = get_field_meshset(id);
+  const auto field_meshset = field_ptr->getMeshset();
+  const auto bit_number = field_ptr->getBitNumber();
+
   // intersection with field meshset
   Range ents_of_id_meshset;
-  CHKERR get_moab().get_entities_by_handle(idm, ents_of_id_meshset, false);
+  CHKERR get_moab().get_entities_by_handle(field_meshset, ents_of_id_meshset,
+                                           false);
   Range field_ents = intersect(ents, ents_of_id_meshset);
-  if (verb > VERBOSE)
-    PetscSynchronizedPrintf(
-        cOmm, "nb. of ents for order change in the field <%s> %d\n",
-        miit->get()->getName().c_str(), field_ents.size());
+  if (verb > QUIET)
+    MOFEM_LOG_C("SYNC", Sev::noisy,
+                "change nb. of ents for order in the field <%s> %d",
+                field_ptr->getName().c_str(), field_ents.size());
 
   // ent view by field id (in set all MoabEnts has the same FieldId)
-  auto eiit =
-      entsFields.get<FieldName_mi_tag>().lower_bound(miit->get()->getNameRef());
+  auto eiit = entsFields.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(field_ptr->getBitNumber()));
   FieldEntity_multiIndex_ent_view ents_id_view;
-  if (eiit != entsFields.get<FieldName_mi_tag>().end()) {
-    auto hi_eiit = entsFields.get<FieldName_mi_tag>().upper_bound(
-        miit->get()->getNameRef());
+  if (eiit != entsFields.get<Unique_mi_tag>().end()) {
+    auto hi_eiit = entsFields.get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getHiBitNumberUId(field_ptr->getBitNumber()));
     std::copy(eiit, hi_eiit, std::back_inserter(ents_id_view));
   }
-  if (verb > VERBOSE)
-    PetscSynchronizedPrintf(
-        cOmm, "nb. of ents in the multi index field <%s> %d\n",
-        miit->get()->getName().c_str(), ents_id_view.size());
+
+  if (verb > QUIET)
+    MOFEM_LOG_C("SYNC", Sev::noisy,
+                "current nb. of ents in the multi index field <%s> %d",
+                field_ptr->getName().c_str(), ents_id_view.size());
 
   // loop over ents
   int nb_ents_set_order_up = 0;
@@ -447,7 +480,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
     EntityHandle second = pit->second;
 
     // Sanity check
-    switch ((*miit)->getSpace()) {
+    switch (field_ptr->getSpace()) {
     case H1:
       break;
     case HCURL:
@@ -484,7 +517,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         if (old_approximation_order != order) {
 
           FieldEntity_multiIndex::iterator miit =
-              entsFields.get<Unique_mi_tag>().find((*vit)->getGlobalUniqueId());
+              entsFields.get<Unique_mi_tag>().find((*vit)->getLocalUniqueId());
 
           if ((*miit)->getMaxOrder() < order)
             nb_ents_set_order_up++;
@@ -496,13 +529,14 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
           // increased)
 
           bool can_change_size = true;
-          auto dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-              boost::make_tuple((*miit)->getNameRef(), (*miit)->getEnt()));
-          if (dit != dofsField.get<Composite_Name_And_Ent_mi_tag>().end()) {
-            auto hi_dit =
-                dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-                    boost::make_tuple((*miit)->getNameRef(),
-                                      (*miit)->getEnt()));
+          auto dit = dofsField.get<Unique_mi_tag>().lower_bound(
+              FieldEntity::getLoLocalEntityBitNumber(bit_number,
+                                                     (*miit)->getEnt()));
+          if (dit != dofsField.get<Unique_mi_tag>().end()) {
+            auto hi_dit = dofsField.get<Unique_mi_tag>().upper_bound(
+                FieldEntity::getHiLocalEntityBitNumber(bit_number,
+                                                       (*miit)->getEnt()));
+
             if (dit != hi_dit)
               can_change_size = false;
             for (; dit != hi_dit; dit++) {
@@ -534,22 +568,21 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       EntityHandle second = pit->second;
       const EntityType ent_type = get_moab().type_from_handle(first);
       auto get_nb_dofs_on_order = [&](const int order) {
-        return order >= 0 ? ((*miit)->getFieldOrderTable()[ent_type])(order)
+        return order >= 0 ? (field_ptr->getFieldOrderTable()[ent_type])(order)
                           : 0;
       };
-      const int field_rank = (*miit)->getNbOfCoeffs();
+      const int field_rank = field_ptr->getNbOfCoeffs();
       const int nb_dofs_on_order = get_nb_dofs_on_order(order);
       const int nb_dofs = nb_dofs_on_order * field_rank;
 
       // reserve memory for field  dofs
-      boost::shared_ptr<std::vector<FieldEntity>> ents_array(
-          new std::vector<FieldEntity>());
+      auto ents_array = boost::make_shared<std::vector<FieldEntity>>();
 
       // Add sequence to field data structure. Note that entities are allocated
       // once into vector. This vector is passed into sequence as a weak_ptr.
       // Vector is destroyed at the point last entity inside that vector is
       // destroyed.
-      miit->get()->getEntSequenceContainer().push_back(ents_array);
+      // field_ptr->getEntSequenceContainer().push_back(ents_array);
       ents_array->reserve(second - first + 1);
 
       // Entity is not in database and order is changed or reset
@@ -559,7 +592,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         MoFEMFunctionBegin;
         if (order >= 0) {
           std::vector<ApproximationOrder> o_vec(ents.size(), order);
-          CHKERR get_moab().tag_set_data((*miit)->th_AppOrder, ents,
+          CHKERR get_moab().tag_set_data(field_ptr->th_AppOrder, ents,
                                          &*o_vec.begin());
         }
         MoFEMFunctionReturn(0);
@@ -572,13 +605,13 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
           if (nb_dofs > 0) {
             if (ent_type == MBVERTEX) {
               std::vector<FieldData> d_vec(nb_dofs * ents.size(), 0);
-              CHKERR get_moab().tag_set_data((*miit)->th_FieldDataVerts, ents,
+              CHKERR get_moab().tag_set_data(field_ptr->th_FieldDataVerts, ents,
                                              &*d_vec.begin());
             } else {
               std::vector<int> tag_size(ents.size(), nb_dofs);
               std::vector<FieldData> d_vec(nb_dofs, 0);
               std::vector<void const *> d_vec_ptr(ents.size(), &*d_vec.begin());
-              CHKERR get_moab().tag_set_by_ptr((*miit)->th_FieldData, ents,
+              CHKERR get_moab().tag_set_by_ptr(field_ptr->th_FieldData, ents,
                                                &*d_vec_ptr.begin(),
                                                &*tag_size.begin());
             }
@@ -591,7 +624,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         auto hi = refinedEntities.get<Ent_mi_tag>().upper_bound(second);
         Range in;
         for (; miit_ref_ent != hi; ++miit_ref_ent)
-          in.insert(miit_ref_ent->get()->getRefEnt());
+          in.insert(miit_ref_ent->get()->getEnt());
         return in;
       };
 
@@ -599,7 +632,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         boost::shared_ptr<std::vector<const void *>> vec(
             new std::vector<const void *>());
         vec->resize(ents.size());
-        CHKERR get_moab().tag_get_by_ptr((*miit)->th_AppOrder, ents,
+        CHKERR get_moab().tag_get_by_ptr(field_ptr->th_AppOrder, ents,
                                          &*vec->begin());
         return vec;
       };
@@ -612,11 +645,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                 new std::vector<double *>());
             vec->reserve(ents.size());
 
-            auto get_nb_dofs = [&](const auto order) {
-              return get_nb_dofs_on_order(order) * field_rank;
-            };
-
-            if (order >= 0 && get_nb_dofs(order) == 0) {
+            if (order >= 0 && nb_dofs == 0) {
               // set empty vector adaptor
               for (int i = 0; i != ents.size(); ++i)
                 vec->emplace_back(nullptr);
@@ -627,11 +656,11 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
 
               // get tags data
               if (ent_type == MBVERTEX)
-                rval = get_moab().tag_get_by_ptr((*miit)->th_FieldDataVerts,
+                rval = get_moab().tag_get_by_ptr(field_ptr->th_FieldDataVerts,
                                                  ents, &*d_vec_ptr.begin(),
                                                  &*tag_size.begin());
               else
-                rval = get_moab().tag_get_by_ptr((*miit)->th_FieldData, ents,
+                rval = get_moab().tag_get_by_ptr(field_ptr->th_FieldData, ents,
                                                  &*d_vec_ptr.begin(),
                                                  &*tag_size.begin());
 
@@ -660,17 +689,22 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
                 auto dit = vec->begin();
                 for (auto eit = ents.begin(); eit != ents.end();
                      ++eit, ++oit, ++dit) {
-                  if (get_nb_dofs(
-                          *static_cast<const ApproximationOrder *>(*oit))) {
+
+                  const int ent_order =
+                      *static_cast<const ApproximationOrder *>(*oit);
+                  const int ent_nb_dofs = get_nb_dofs_on_order(ent_order);
+
+                  if (ent_nb_dofs) {
                     int tag_size;
                     const void *ret_val;
                     if (ent_type == MBVERTEX)
                       CHKERR get_moab().tag_get_by_ptr(
-                          (*miit)->th_FieldDataVerts, &*eit, 1, &ret_val,
+                          field_ptr->th_FieldDataVerts, &*eit, 1, &ret_val,
                           &tag_size);
                     else
-                      CHKERR get_moab().tag_get_by_ptr(
-                          (*miit)->th_FieldData, &*eit, 1, &ret_val, &tag_size);
+                      CHKERR get_moab().tag_get_by_ptr(field_ptr->th_FieldData,
+                                                       &*eit, 1, &ret_val,
+                                                       &tag_size);
                     const_cast<FieldData *&>(*dit) = cast(ret_val);
                   }
                 }
@@ -691,7 +725,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
       auto vit_field_data = ent_field_data->begin();
       for (auto ent : ents_in_ref_ent) {
         ents_array->emplace_back(
-            *miit, *miit_ref_ent,
+            field_ptr, *miit_ref_ent,
             boost::shared_ptr<double *const>(ent_field_data, &*vit_field_data),
             boost::shared_ptr<const int>(
                 ents_max_order, static_cast<const int *>(*vit_max_order)));
@@ -699,6 +733,12 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
         ++vit_max_order;
         ++vit_field_data;
       }
+      if (!ents_array->empty())
+        if ((*ents_array)[0].getFieldRawPtr() != field_ptr.get())
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "Get field ent poiter and field pointer do not match for "
+                  "field %s",
+                  field_ptr->getName().c_str());
       nb_ents_set_order_new += ents_in_ref_ent.size();
 
       // Check if any of entities in the range has bit level but is not added
@@ -726,26 +766,57 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
     }
   }
 
-  if (verb >= VERY_VERBOSE) {
-    PetscSynchronizedPrintf(cOmm,
-                            "nb. of entities in field <%s> for which order was "
-                            "increased %d (order %d)\n",
-                            miit->get()->getName().c_str(),
-                            nb_ents_set_order_up, order);
-    PetscSynchronizedPrintf(cOmm,
-                            "nb. of entities in field <%s> for which order was "
-                            "reduced %d (order %d)\n",
-                            miit->get()->getName().c_str(),
-                            nb_ents_set_order_down, order);
-    PetscSynchronizedPrintf(
-        cOmm,
-        "nb. of entities in field <%s> for which order set %d (order %d)\n",
-        miit->get()->getName().c_str(), nb_ents_set_order_new, order);
-    PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+  if (verb > QUIET) {
+    MOFEM_LOG_C("SYNC", Sev::noisy,
+                "nb. of entities in field <%s> for which order was "
+                "increased %d (order %d)",
+                field_ptr->getName().c_str(), nb_ents_set_order_up, order);
+    MOFEM_LOG_C("SYNC", Sev::noisy,
+                "nb. of entities in field <%s> for which order was "
+                "reduced %d (order %d)",
+                field_ptr->getName().c_str(), nb_ents_set_order_down, order);
+    MOFEM_LOG_C(
+        "SYNC", Sev::noisy,
+        "nb. of entities in field <%s> for which order set %d (order %d)",
+        field_ptr->getName().c_str(), nb_ents_set_order_new, order);
+    MOFEM_LOG_SYNCHRONISE(cOmm);
+  }
+
+  if (verb > QUIET) {
+    auto eiit = entsFields.get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getLoBitNumberUId(field_ptr->getBitNumber()));
+    auto hi_eiit = entsFields.get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getHiBitNumberUId(field_ptr->getBitNumber()));
+    MOFEM_LOG_C("SYNC", Sev::noisy,
+                "nb. of ents in the multi index field <%s> %d",
+                field_ptr->getName().c_str(), std::distance(eiit, hi_eiit));
   }
 
   MoFEMFunctionReturn(0);
 }
+
+MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
+                                     const ApproximationOrder order, int verb) {
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_TAG("WORLD", "FieldCore");
+  MOFEM_LOG_FUNCTION();
+  MoFEMFunctionBegin;
+
+  // check field & meshset
+  auto field_it = fIelds.get<BitFieldId_mi_tag>().find(id);
+  if (field_it == fIelds.get<BitFieldId_mi_tag>().end())
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "no filed found");
+
+  MOFEM_LOG("WORLD", Sev::noisy)
+      << "Field " << (*field_it)->getName() << " core value < "
+      << this->getValue() << " > field value ( " << (*field_it)->getBitNumber()
+      << " )";
+
+  CHKERR this->setFieldOrderImpl(*field_it, ents, order, verb);
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode Core::set_field_order(const EntityHandle meshset,
                                      const EntityType type, const BitFieldId id,
                                      const ApproximationOrder order, int verb) {
@@ -759,7 +830,7 @@ MoFEMErrorCode Core::set_field_order(const EntityHandle meshset,
     PetscSynchronizedPrintf(cOmm, "nb. of ents for order change %d\n",
                             ents.size());
   }
-  CHKERR set_field_order(ents, id, order, verb);
+  CHKERR this->set_field_order(ents, id, order, verb);
   if (verb > VERBOSE) {
     PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
   }
@@ -773,7 +844,7 @@ MoFEMErrorCode Core::set_field_order(const EntityHandle meshset,
   if (verb == -1)
     verb = verbose;
   *buildMoFEM = 0;
-  CHKERR set_field_order(meshset, type, getBitFieldId(name), order, verb);
+  CHKERR this->set_field_order(meshset, type, getBitFieldId(name), order, verb);
   MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode Core::set_field_order(const Range &ents, const std::string &name,
@@ -782,7 +853,7 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const std::string &name,
   if (verb == -1)
     verb = verbose;
   *buildMoFEM = 0;
-  CHKERR set_field_order(ents, getBitFieldId(name), order, verb);
+  CHKERR this->set_field_order(ents, getBitFieldId(name), order, verb);
   MoFEMFunctionReturn(0);
 }
 MoFEMErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
@@ -795,7 +866,7 @@ MoFEMErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   Range ents;
   CHKERR BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit, mask, type,
                                                            ents, verb);
-  CHKERR set_field_order(ents, id, order, verb);
+  CHKERR this->set_field_order(ents, id, order, verb);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -809,116 +880,136 @@ MoFEMErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   Range ents;
   CHKERR BitRefManager(*this).getEntitiesByTypeAndRefLevel(bit, mask, type,
                                                            ents, verb);
-  CHKERR set_field_order(ents, getBitFieldId(name), order, verb);
+  CHKERR this->set_field_order(ents, getBitFieldId(name), order, verb);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+Core::buildFieldForNoFieldImpl(boost::shared_ptr<Field> field_ptr,
+                                std::map<EntityType, int> &dof_counter,
+                                int verb) {
+  FieldCoreFunctionBegin;
+
+  const auto bit_number = field_ptr->getBitNumber();
+
+  // ents in the field meshset
+  Range ents;
+  CHKERR get_moab().get_entities_by_handle(field_ptr->getMeshset(), ents,
+                                           false);
+  if (verb > VERBOSE)
+    MOFEM_LOG_C("SYNC", Sev::noisy, "Ents in field %s meshset %d\n",
+                field_ptr->getName().c_str(), ents.size());
+
+  // ent view by field id (in set all MoabEnts has the same FieldId)
+  auto eiit = entsFields.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(field_ptr->getBitNumber()));
+  FieldEntity_multiIndex_ent_view ents_id_view;
+  if (eiit != entsFields.get<Unique_mi_tag>().end()) {
+    auto hi_eiit = entsFields.get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getHiBitNumberUId(field_ptr->getBitNumber()));
+    std::copy(eiit, hi_eiit, std::back_inserter(ents_id_view));
+  }
+
+  boost::shared_ptr<const int> zero_order(new const int(0));
+
+  for (auto ent : ents) {
+    // search if field meshset is in database
+    auto ref_ent_it = refinedEntities.get<Ent_mi_tag>().find(ent);
+    if (ref_ent_it == refinedEntities.get<Ent_mi_tag>().end())
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Entity is not in MoFEM database, entities in field meshset need "
+              "to be seeded (i.e. bit ref level add to them)");
+
+    auto add_dofs = [&](auto field_eit) {
+      MoFEMFunctionBegin;
+      // create dofs on this entity (nb. of dofs is equal to rank)
+      for (FieldCoefficientsNumber rank = 0; rank < field_ptr->getNbOfCoeffs();
+           rank++) {
+        // insert dof
+        auto p = dofsField.insert(
+            boost::make_shared<DofEntity>(field_eit, 0, rank, rank));
+        if (p.second) {
+          dof_counter[MBENTITYSET]++; // Count entities in the meshset
+        } else
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                  "Dof expected to be created");
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    // create database entity
+    auto field_ent_it = ents_id_view.get<1>().find(ent);
+    if (field_ent_it == ents_id_view.get<1>().end()) {
+
+      auto p = entsFields.insert(
+
+          boost::make_shared<FieldEntity>(
+              field_ptr, *ref_ent_it,
+              FieldEntity::makeSharedFieldDataAdaptorPtr(field_ptr,
+                                                         *ref_ent_it),
+              boost::shared_ptr<const int>(zero_order, zero_order.get()))
+
+      );
+
+      if ((*p.first)->getFieldRawPtr() != field_ptr.get())
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Get field ent poiter and field pointer do not match for "
+                 "field %s",
+                 field_ptr->getName().c_str());
+
+      if (!p.second)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Entity should be created");
+
+      CHKERR add_dofs(*(p.first));
+
+    } else {
+
+      // If there are DOFs in that range is more pragmatic to remove them
+      // rather than to find sub-ranges or make them inactive
+      auto dit = dofsField.get<Unique_mi_tag>().lower_bound(
+          FieldEntity::getLoLocalEntityBitNumber(bit_number, ent));
+      auto hi_dit = dofsField.get<Unique_mi_tag>().upper_bound(
+          FieldEntity::getHiLocalEntityBitNumber(bit_number, ent));
+      dofsField.get<Unique_mi_tag>().erase(dit, hi_dit);
+      CHKERR add_dofs(*field_ent_it);
+    }
+  }
+
+  if (verb > VERBOSE) {
+    auto lo_dof = dofsField.get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getLoBitNumberUId(field_ptr->getBitNumber()));
+    auto hi_dof = dofsField.get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getHiBitNumberUId(field_ptr->getBitNumber()));
+    for (; lo_dof != hi_dof; lo_dof++)
+      MOFEM_LOG("SYNC", Sev::noisy) << **lo_dof;
+    MOFEM_LOG_SYNCHRONISE(cOmm);
+  }
+
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 Core::buildFieldForNoField(const BitFieldId id,
                            std::map<EntityType, int> &dof_counter, int verb) {
-  MoFEMFunctionBegin;
+  FieldCoreFunctionBegin;
+
   if (verb == -1)
     verb = verbose;
-  // field it
-  auto &set_id = fIelds.get<BitFieldId_mi_tag>();
+
   // find fields
-  auto miit = set_id.find(id);
-  if (miit == set_id.end())
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "field not found");
+  auto field_it = fIelds.get<BitFieldId_mi_tag>().find(id);
+  if (field_it == fIelds.get<BitFieldId_mi_tag>().end())
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field not found");
 
-  // ents in the field meshset
-  Range ents_of_id_meshset;
-  CHKERR get_moab().get_entities_by_handle((*miit)->meshSet, ents_of_id_meshset,
-                                           false);
-  if (verb > VERY_NOISY)
-    PetscSynchronizedPrintf(cOmm, "ents in field %s meshset %d\n",
-                            (*miit)->getName().c_str(),
-                            ents_of_id_meshset.size());
+  if (verb > QUIET)
+    MOFEM_LOG("WORLD", Sev::noisy)
+        << "Field " << (*field_it)->getName() << " core value < "
+        << this->getValue() << " > field value () "
+        << (*field_it)->getBitNumber() << " )";
 
-  // ent view by field id (in set all MoabEnts has the same FieldId)
-  auto eiit =
-      entsFields.get<FieldName_mi_tag>().lower_bound(miit->get()->getNameRef());
-  FieldEntity_multiIndex_ent_view ents_id_view;
-  if (eiit != entsFields.get<FieldName_mi_tag>().end()) {
-    auto hi_eiit = entsFields.get<FieldName_mi_tag>().upper_bound(
-        miit->get()->getNameRef());
-    std::copy(eiit, hi_eiit, std::back_inserter(ents_id_view));
-  }
-
-  boost::shared_ptr<const int> zero_order(new const int(0));
-
-  for (Range::iterator eit = ents_of_id_meshset.begin();
-       eit != ents_of_id_meshset.end(); eit++) {
-    // search if field meshset is in database
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent;
-    miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
-    if (miit_ref_ent == refinedEntities.get<Ent_mi_tag>().end()) {
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-              "Entity is not in MoFEM database, entities in field meshset need "
-              "to be seeded (i.e. bit ref level add to them)");
-    }
-
-    auto add_dofs = [&](auto field_eit) {
-      MoFEMFunctionBegin;
-      // create dofs on this entity (nb. of dofs is equal to rank)
-      for (FieldCoefficientsNumber rank = 0; rank < (*miit)->getNbOfCoeffs();
-           rank++) {
-        std::pair<DofEntity_multiIndex::iterator, bool> d_miit;
-        // insert dof
-        d_miit = dofsField.insert(
-            boost::make_shared<DofEntity>(field_eit, 0, rank, rank, true));
-        if (d_miit.second) {
-          dof_counter[MBENTITYSET]++; // Count entities in the meshset
-        } else {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                  "Dof should be created");
-        }
-      }
-      MoFEMFunctionReturn(0);
-    };
-
-    // create database entity
-    auto field_eit = ents_id_view.get<1>().find(*eit);
-    if (field_eit == ents_id_view.get<1>().end()) {
-
-      std::pair<FieldEntity_multiIndex::iterator, bool> e_miit;
-      e_miit = entsFields.insert(boost::make_shared<FieldEntity>(
-          *miit, *miit_ref_ent,
-          FieldEntity::makeSharedFieldDataAdaptorPtr(*miit, *miit_ref_ent),
-          boost::shared_ptr<const int>(zero_order, zero_order.get())));
-
-      if (!e_miit.second)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Entity should be created");
-
-      CHKERR add_dofs(*(e_miit.first));
-
-    } else {
-
-      // If there are DOFs in that range is more pragmatic to remove them
-      // rather than to find sub-ranges or make them inactive
-      auto dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-          boost::make_tuple((*miit)->getNameRef(), *eit));
-      auto hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-          boost::make_tuple((*miit)->getNameRef(), *eit));
-      dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
-
-      CHKERR add_dofs(*field_eit);
-    }
-  }
-
-  if (verb > VERY_VERBOSE) {
-    auto lo_dof = dofsField.get<FieldName_mi_tag>().lower_bound(
-        miit->get()->getNameRef());
-    auto hi_dof = dofsField.get<FieldName_mi_tag>().upper_bound(
-        miit->get()->getNameRef());
-    for (; lo_dof != hi_dof; lo_dof++) {
-      std::ostringstream ss;
-      ss << *lo_dof << std::endl;
-      PetscSynchronizedPrintf(cOmm, ss.str().c_str());
-    }
-    PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
-  }
+  CHKERR this->buildFieldForNoFieldImpl(*field_it, dof_counter,
+                                                 verb);
 
   MoFEMFunctionReturn(0);
 }
@@ -936,6 +1027,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
   if (field_it == set_id.end()) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field not found");
   }
+  const int bit_number = field_it->get()->getBitNumber();
   const int rank = field_it->get()->getNbOfCoeffs();
   const boost::string_ref &field_name = field_it->get()->getNameRef();
 
@@ -954,21 +1046,21 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
 
     const EntityHandle first = p_eit->first;
     const EntityHandle second = p_eit->second;
+    const auto lo_uid =
+        FieldEntity::getLoLocalEntityBitNumber(bit_number, first);
+    const auto hi_uid =
+        FieldEntity::getHiLocalEntityBitNumber(bit_number, second);
 
-    auto feit = entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-        boost::make_tuple(field_name, first));
-    if (feit == entsFields.get<Composite_Name_And_Ent_mi_tag>().end())
+    auto feit = entsFields.get<Unique_mi_tag>().lower_bound(lo_uid);
+    if (feit == entsFields.get<Unique_mi_tag>().end())
       continue;
-    auto hi_feit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-        boost::make_tuple(field_name, second));
+    auto hi_feit = entsFields.get<Unique_mi_tag>().upper_bound(hi_uid);
 
     // If there are DOFs in that range is more pragmatic to remove them
     // rather than to find sub-ranges or make them inactive
-    auto dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-        boost::make_tuple(field_name, first));
-    auto hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-        boost::make_tuple(field_name, second));
-    dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
+    auto dit = dofsField.get<Unique_mi_tag>().lower_bound(lo_uid);
+    auto hi_dit = dofsField.get<Unique_mi_tag>().upper_bound(hi_uid);
+    dofsField.get<Unique_mi_tag>().erase(dit, hi_dit);
 
     // Add vertices DOFs by bulk
     boost::shared_ptr<std::vector<DofEntity>> dofs_array =
@@ -993,7 +1085,7 @@ MoFEMErrorCode Core::buildFieldForL2H1HcurlHdiv(
         for (int dd = 0; dd < feit->get()->getOrderNbDofsDiff(oo); ++dd) {
           // Loop rank
           for (int rr = 0; rr < rank; ++rr, ++DD) {
-            dofs_array->emplace_back(*feit, oo, rr, DD, true);
+            dofs_array->emplace_back(*feit, oo, rr, DD);
             ++dof_counter[feit->get()->getEntType()];
           }
         }
@@ -1054,14 +1146,14 @@ MoFEMErrorCode Core::buildField(const boost::shared_ptr<Field> &field,
 
   switch (field->getSpace()) {
   case NOFIELD:
-    CHKERR buildFieldForNoField(field->getId(), dof_counter, verb);
+    CHKERR this->buildFieldForNoField(field->getId(), dof_counter, verb);
     break;
   case L2:
   case H1:
   case HCURL:
   case HDIV:
-    CHKERR buildFieldForL2H1HcurlHdiv(field->getId(), dof_counter,
-                                      inactive_dof_counter, verb);
+    CHKERR this->buildFieldForL2H1HcurlHdiv(field->getId(), dof_counter,
+                                            inactive_dof_counter, verb);
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
@@ -1124,14 +1216,14 @@ MoFEMErrorCode Core::buildField(const boost::shared_ptr<Field> &field,
 
 MoFEMErrorCode Core::build_field(const std::string field_name, int verb) {
   FieldCoreFunctionBegin;
-  auto miit = fIelds.get<FieldName_mi_tag>().find(field_name);
-  if (miit == fIelds.get<FieldName_mi_tag>().end()) {
+  auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
+  if (field_it == fIelds.get<FieldName_mi_tag>().end())
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "Field < %s > not found",
              field_name.c_str());
-  }
-  CHKERR buildField((*miit), verb);
+
+  CHKERR this->buildField(*field_it, verb);
   if (verb > QUIET)
-    MOFEM_LOG_SYNCHORMISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(cOmm);
   MoFEMFunctionReturn(0);
 }
 
@@ -1140,13 +1232,13 @@ MoFEMErrorCode Core::build_fields(int verb) {
   if (verb == -1)
     verb = verbose;
 
-  for (auto miit : fIelds.get<BitFieldId_mi_tag>())
-    CHKERR buildField(miit, verb);
+  for (auto field : fIelds.get<BitFieldId_mi_tag>())
+    CHKERR this->buildField(field, verb);
 
   *buildMoFEM = 1 << 0;
   if (verb > QUIET) {
     MOFEM_LOG("SYNC", Sev::inform) << "Number of dofs " << dofsField.size();
-    MOFEM_LOG_SYNCHORMISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(cOmm);
   }
 
   MoFEMFunctionReturn(0);
@@ -1155,13 +1247,15 @@ MoFEMErrorCode Core::build_fields(int verb) {
 MoFEMErrorCode
 Core::list_dofs_by_field_name(const std::string &field_name) const {
   FieldCoreFunctionBegin;
-  auto dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
-  auto hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
+  auto dit = dofsField.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(get_field_bit_number((field_name))));
+  auto hi_dit = dofsField.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(get_field_bit_number(field_name)));
   MOFEM_LOG("SYNC", Sev::inform) << "List DOFs:";
   for (; dit != hi_dit; dit++)
     MOFEM_LOG("SYNC", Sev::inform) << *dit;
 
-  MOFEM_LOG_SYNCHORMISE(cOmm);
+  MOFEM_LOG_SYNCHRONISE(cOmm);
   MoFEMFunctionReturn(0);
 }
 
@@ -1171,7 +1265,7 @@ MoFEMErrorCode Core::list_fields() const {
   for (auto &miit : fIelds.get<BitFieldId_mi_tag>())
     MOFEM_LOG("SYNC", Sev::inform) << *miit;
 
-  MOFEM_LOG_SYNCHORMISE(cOmm);
+  MOFEM_LOG_SYNCHRONISE(cOmm);
   MoFEMFunctionReturn(0);
 }
 
@@ -1198,45 +1292,53 @@ Core::get_problem_finite_elements_entities(const std::string &problem_name,
   MoFEMFunctionReturn(0);
 }
 
-FieldEntityByFieldName::iterator
+FieldEntityByUId::iterator
 Core::get_ent_field_by_name_begin(const std::string &field_name) const {
-  return entsFields.get<FieldName_mi_tag>().lower_bound(field_name);
+  return entsFields.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(get_field_bit_number(field_name)));
 }
-FieldEntityByFieldName::iterator
+FieldEntityByUId::iterator
 Core::get_ent_field_by_name_end(const std::string &field_name) const {
-  return entsFields.get<FieldName_mi_tag>().upper_bound(field_name);
+  return entsFields.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(get_field_bit_number(field_name)));
 }
-DofEntityByFieldName::iterator
+DofEntityByUId::iterator
 Core::get_dofs_by_name_begin(const std::string &field_name) const {
-  return dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
+  return dofsField.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(get_field_bit_number(field_name)));
 }
-DofEntityByFieldName::iterator
+DofEntityByUId::iterator
 Core::get_dofs_by_name_end(const std::string &field_name) const {
-  return dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
+  return dofsField.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(get_field_bit_number(field_name)));
 }
-DofEntityByNameAndEnt::iterator
+DofEntityByUId::iterator
 Core::get_dofs_by_name_and_ent_begin(const std::string &field_name,
                                      const EntityHandle ent) const {
-  return dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, ent));
+  return dofsField.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoLocalEntityBitNumber(get_field_bit_number(field_name),
+                                             ent));
 }
-DofEntityByNameAndEnt::iterator
+DofEntityByUId::iterator
 Core::get_dofs_by_name_and_ent_end(const std::string &field_name,
                                    const EntityHandle ent) const {
-  return dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, ent));
+  return dofsField.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiLocalEntityBitNumber(get_field_bit_number(field_name),
+                                             ent));
 }
-DofEntityByNameAndType::iterator
+DofEntityByUId::iterator
 Core::get_dofs_by_name_and_type_begin(const std::string &field_name,
                                       const EntityType type) const {
-  return dofsField.get<Composite_Name_And_Type_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, type));
+  return dofsField.get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoLocalEntityBitNumber(get_field_bit_number(field_name),
+                                             get_id_for_min_type(type)));
 }
-DofEntityByNameAndType::iterator
+DofEntityByUId::iterator
 Core::get_dofs_by_name_and_type_end(const std::string &field_name,
                                     const EntityType type) const {
-  return dofsField.get<Composite_Name_And_Type_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, type));
+  return dofsField.get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiLocalEntityBitNumber(get_field_bit_number(field_name),
+                                             get_id_for_max_type(type)));
 }
 MoFEMErrorCode
 Core::check_number_of_ents_in_ents_field(const std::string &name) const {
@@ -1249,8 +1351,17 @@ Core::check_number_of_ents_in_ents_field(const std::string &name) const {
   EntityHandle meshset = (*it)->getMeshset();
   int num_entities;
   CHKERR get_moab().get_number_entities_by_handle(meshset, num_entities);
-  if (entsFields.get<FieldName_mi_tag>().count((*it)->getName()) >
-      (unsigned int)num_entities) {
+
+  auto count_field_ents = [&]() {
+    auto bit_number = (*it)->getBitNumber();
+    auto low_eit = entsFields.get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getLoBitNumberUId(bit_number));
+    auto hi_eit = entsFields.get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getHiBitNumberUId(bit_number));
+    return std::distance(low_eit, hi_eit);
+  };
+
+  if (count_field_ents() > (unsigned int)num_entities) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "not equal number of entities in meshset and field multiindex "
              "< %s >",
@@ -1267,8 +1378,17 @@ MoFEMErrorCode Core::check_number_of_ents_in_ents_field() const {
     EntityHandle meshset = it->getMeshset();
     int num_entities;
     CHKERR get_moab().get_number_entities_by_handle(meshset, num_entities);
-    if (entsFields.get<FieldName_mi_tag>().count(it->getName()) >
-        (unsigned int)num_entities) {
+
+    auto count_field_ents = [&]() {
+      auto bit_number = it->getBitNumber();
+      auto low_eit = entsFields.get<Unique_mi_tag>().lower_bound(
+          FieldEntity::getLoBitNumberUId(bit_number));
+      auto hi_eit = entsFields.get<Unique_mi_tag>().upper_bound(
+          FieldEntity::getHiBitNumberUId(bit_number));
+      return std::distance(low_eit, hi_eit);
+    };
+
+    if (count_field_ents() > (unsigned int)num_entities) {
       SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                "not equal number of entities in meshset and field "
                "multiindex < %s >",

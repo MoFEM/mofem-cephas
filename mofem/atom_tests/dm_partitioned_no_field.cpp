@@ -91,11 +91,12 @@ int main(int argc, char *argv[]) {
 
     auto print_field_ents = [&](const std::string field_name) {
       auto *field_ents = m_field.get_field_ents();
-      for (auto it =
-               field_ents->get<FieldName_mi_tag>().lower_bound(field_name);
-           it != field_ents->get<FieldName_mi_tag>().upper_bound(field_name);
-           ++it) {
-
+      auto field_bit_number = m_field.get_field_bit_number(field_name);
+      auto lo = field_ents->get<Unique_mi_tag>().lower_bound(
+          FieldEntity::getLoBitNumberUId(field_bit_number));
+      auto hi = field_ents->get<Unique_mi_tag>().upper_bound(
+          FieldEntity::getHiBitNumberUId(field_bit_number));
+      for (auto it = lo; it != hi; ++it) {
         std::ostringstream ss;
         ss << "Rank " << m_field.get_comm_rank() << " -> " << **it << endl;
         PetscSynchronizedPrintf(m_field.get_comm(), "%s", ss.str().c_str());
@@ -117,10 +118,12 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       if (m_field.get_comm_rank() != 0) {
         auto *field_ents = m_field.get_field_ents();
-        for (auto it =
-                 field_ents->get<FieldName_mi_tag>().lower_bound(field_name);
-             it != field_ents->get<FieldName_mi_tag>().upper_bound(field_name);
-             ++it) {
+        auto field_bit_number = m_field.get_field_bit_number(field_name);
+        auto lo = field_ents->get<Unique_mi_tag>().lower_bound(
+            FieldEntity::getLoBitNumberUId(field_bit_number));
+        auto hi = field_ents->get<Unique_mi_tag>().upper_bound(
+            FieldEntity::getHiBitNumberUId(field_bit_number));
+        for (auto it = lo; it != hi; ++it) {
           VectorDouble field_data = (*it)->getEntFieldData();
           for (auto v : field_data)
             if (v != 1)

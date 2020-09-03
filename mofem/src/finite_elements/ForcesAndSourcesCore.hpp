@@ -554,10 +554,11 @@ protected:
   /**@{*/
 
   /// \brief get node indices
-  MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
-                                 FENumeredDofEntity_multiIndex &dofs,
-                                 VectorInt &nodes_indices,
-                                 VectorInt &local_nodes_indices) const;
+  template <typename EXTRACTOR>
+  MoFEMErrorCode
+  getNodesIndices(const std::string &field_name,
+                  FieldEntity_vector_view &ents_field, VectorInt &nodes_indices,
+                  VectorInt &local_nodes_indices, EXTRACTOR &&extractor) const;
 
   /// \brief get row node indices from FENumeredDofEntity_multiIndex
   MoFEMErrorCode getRowNodesIndices(DataForcesAndSourcesCore &data,
@@ -567,27 +568,31 @@ protected:
   MoFEMErrorCode getColNodesIndices(DataForcesAndSourcesCore &data,
                                     const std::string &field_name) const;
 
-  MoFEMErrorCode getEntityIndices(
-      DataForcesAndSourcesCore &data, const std::string &field_name,
-      FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo = MBVERTEX,
-      const EntityType type_hi = MBPOLYHEDRON) const;
+  template <typename EXTRACTOR>
+  MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &data,
+                                  const std::string &field_name,
+                                  FieldEntity_vector_view &ents_field,
+                                  const EntityType type_lo,
+                                  const EntityType type_hi,
+                                  EXTRACTOR &&extractor) const;
 
-  inline MoFEMErrorCode
+  MoFEMErrorCode
   getEntityRowIndices(DataForcesAndSourcesCore &data,
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
                       const EntityType type_hi = MBPOLYHEDRON) const;
 
-  inline MoFEMErrorCode
+  MoFEMErrorCode
   getEntityColIndices(DataForcesAndSourcesCore &data,
                       const std::string &field_name,
                       const EntityType type_lo = MBVERTEX,
                       const EntityType type_hi = MBPOLYHEDRON) const;
 
   /// \brief get NoField indices
-  MoFEMErrorCode getNoFieldIndices(const std::string &field_name,
-                                   FENumeredDofEntity_multiIndex &dofs,
-                                   VectorInt &nodes_indices) const;
+  MoFEMErrorCode
+  getNoFieldIndices(const std::string &field_name,
+                    boost::shared_ptr<FENumeredDofEntity_multiIndex> dofs,
+                    VectorInt &nodes_indices) const;
 
   /// \brief get col NoField indices
   MoFEMErrorCode getNoFieldRowIndices(DataForcesAndSourcesCore &data,
@@ -606,13 +611,12 @@ protected:
   /**
    * \brief Get field data on nodes
    */
-  MoFEMErrorCode getNoFieldFieldData(const boost::string_ref field_name,
-                                     FEDofEntity_multiIndex &dofs,
+  MoFEMErrorCode getNoFieldFieldData(const std::string field_name,
                                      VectorDouble &ent_field_data,
                                      VectorDofs &ent_field_dofs) const;
 
   MoFEMErrorCode getNoFieldFieldData(DataForcesAndSourcesCore &data,
-                                     const boost::string_ref field_name) const;
+                                     const std::string field_name) const;
 
   /**
    * \brief Get data on nodes
@@ -854,23 +858,6 @@ private:
 /// \deprecated Used ForcesAndSourcesCore instead
 DEPRECATED typedef ForcesAndSourcesCore ForcesAndSurcesCore;
 
-MoFEMErrorCode ForcesAndSourcesCore::getEntityRowIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name,
-    const EntityType type_lo, const EntityType type_hi) const {
-  return getEntityIndices(data, field_name,
-                          const_cast<FENumeredDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getRowsDofs()),
-                          type_lo, type_hi);
-}
-
-MoFEMErrorCode ForcesAndSourcesCore::getEntityColIndices(
-    DataForcesAndSourcesCore &data, const std::string &field_name,
-    const EntityType type_lo, const EntityType type_hi) const {
-  return getEntityIndices(data, field_name,
-                          const_cast<FENumeredDofEntity_multiIndex &>(
-                              numeredEntFiniteElementPtr->getColsDofs()),
-                          type_lo, type_hi);
-}
 
 boost::shared_ptr<const NumeredEntFiniteElement>
 ForcesAndSourcesCore::UserDataOperator::getNumeredEntFiniteElementPtr() const {

@@ -83,7 +83,7 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
       if (verb >= NOISY)
         PetscSynchronizedPrintf(
             m_field.get_comm(), "send %lu (%lu) to %d at %d\n",
-            (*meit)->getRefEnt(), handle_on_sharing_proc,
+            (*meit)->getEnt(), handle_on_sharing_proc,
             (*meit)->getSharingProcsPtr()[proc], m_field.get_comm_rank());
 
       if (!(pstatus & PSTATUS_MULTISHARED))
@@ -189,9 +189,9 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
       if (verb >= VERY_VERBOSE)
         PetscSynchronizedPrintf(
             m_field.get_comm(), "received %ul (%ul) from %d at %d\n",
-            (*meit)->getRefEnt(), ent, onodes[kk], m_field.get_comm_rank());
+            (*meit)->getEnt(), ent, onodes[kk], m_field.get_comm_rank());
 
-      ents.insert((*meit)->getRefEnt());
+      ents.insert((*meit)->getEnt());
     }
   }
 
@@ -492,13 +492,17 @@ MoFEMErrorCode CommInterface::exchangeFieldData(const std::string field_name,
   MoFEMFunctionBegin;
   if (m_field.get_comm_size() > 1) {
 
-    auto *field_ents = m_field.get_field_ents();
 
     Range exchange_ents_data_verts, exchange_ents_data;
 
-    for (auto it = field_ents->get<FieldName_mi_tag>().lower_bound(field_name);
-         it != field_ents->get<FieldName_mi_tag>().upper_bound(field_name);
-         ++it)
+    auto *field_ents = m_field.get_field_ents();
+    auto field_bit_number = m_field.get_field_bit_number(field_name);
+    auto lo = field_ents->get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getLoBitNumberUId(field_bit_number));
+    auto hi = field_ents->get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getHiBitNumberUId(field_bit_number));
+
+    for (auto it = lo; it != hi; ++it)
       if (
 
           ((*it)->getPStatus()) &&
@@ -507,9 +511,9 @@ MoFEMErrorCode CommInterface::exchangeFieldData(const std::string field_name,
 
       ) {
         if ((*it)->getEntType() == MBVERTEX)
-          exchange_ents_data_verts.insert((*it)->getRefEnt());
+          exchange_ents_data_verts.insert((*it)->getEnt());
         else
-          exchange_ents_data.insert((*it)->getRefEnt());
+          exchange_ents_data.insert((*it)->getEnt());
       }
 
     auto field_ptr = m_field.get_field_structure(field_name);

@@ -66,7 +66,8 @@ int main(int argc, char *argv[]) {
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
     // Create MoFEM database
-    MoFEM::Core core(moab);
+    // Note: Is MoFEM::CoreTmp<1> for testing purposes only
+    MoFEM::CoreTmp<-1> core(moab);
     MoFEM::Interface &m_field = core;
 
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
@@ -116,7 +117,7 @@ int main(int argc, char *argv[]) {
           cout << name << " " << dit->getFieldData() << " " << expected << endl;
           if (dit->getFieldData() != expected)
             SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
-                     "Wrong DOF value 0 != $4.3e for %s", dit->getFieldData(),
+                     "Wrong DOF value 0 != %4.3e for %s", dit->getFieldData(),
                      boost::lexical_cast<std::string>(*dit).c_str());
         }
 

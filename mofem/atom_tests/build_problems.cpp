@@ -1,5 +1,5 @@
-/** \file build_problems.cpp
-  \example build_problems.cpp
+/** \file build_large_problem.cpp
+  \example build_large_problem.cpp
   \brief Atom test for building problems
 
   \bug Not verifying what if partitioned mesh is loaded.

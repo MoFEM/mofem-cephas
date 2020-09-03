@@ -1040,10 +1040,21 @@ struct DataForcesAndSourcesCore {
 
   /**
    * @brief Swap approximation base
+   *
+   * Bernstein-Bezier (BB) base is not hierarchical, and is calculated for
+   * particular field, since it all shape functions change with the order. BB
+   * base is precalculated for every field, and when user push operator with
+   * paricular field using BB base, pointers to shape funtions and direvatives
+   * of shape futions are set to particular location, once operator is executed,
+   * pointers are switch back to its oroginal position.
    * 
-   * @param field_name 
-   * @param base 
-   * @return MoFEMErrorCode 
+   * getNSharedPtr(base) <=== getBBNSharedPtr(field_name);
+   * // DO OPERATOR WORK
+   * getNSharedPtr(base) ==> getBBNSharedPtr(field_name);
+   *
+   * @param field_name
+   * @param base
+   * @return MoFEMErrorCode
    */
   virtual MoFEMErrorCode baseSwap(const std::string &field_name,
                                   const FieldApproximationBase base);
@@ -1128,6 +1139,9 @@ struct DerivedDataForcesAndSourcesCore : public DataForcesAndSourcesCore {
     const boost::shared_ptr<MatrixDouble> &
     getBBDiffNSharedPtr(const std::string &field_name) const;
 
+    /**
+     * @copydoc MoFEM::DataForcesAndSourcesCore::EntData::swapBaseNPtr
+     */
     MoFEMErrorCode baseSwap(const std::string &field_name,
                             const FieldApproximationBase base);
 

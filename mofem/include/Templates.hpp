@@ -20,6 +20,8 @@
 
 namespace MoFEM {
 
+template <typename T> using ShardVec = boost::shared_ptr<std::vector<T>>;
+
 /**
  * @brief Get Vector adaptor
  *
@@ -633,7 +635,7 @@ invertTensor3by3<FTensor::Tensor2_symmetric<double, 3>, double,
 struct RefEntExtractor {
   template <typename Iterator>
   static inline EntityHandle extract(const Iterator &it) {
-    return (*it)->getRefEnt();
+    return (*it)->getEnt();
   }
 };
 

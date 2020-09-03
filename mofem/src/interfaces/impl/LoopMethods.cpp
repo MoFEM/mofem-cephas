@@ -16,6 +16,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
+#include <MoFEM.hpp>
+
 namespace MoFEM {
 
 constexpr PetscData::Switches PetscData::CtxSetNone;
@@ -234,50 +236,54 @@ MoFEMErrorCode FEMethod::getNodeData(const std::string field_name,
                                      const bool reset_dofs) {
   MoFEMFunctionBegin;
 
-  auto get_nodes_field_data = [&](FEDofEntity_multiIndex &dofs,
-                                  VectorDouble &nodes_data) {
-    MoFEMFunctionBegin;
+  // TODO: [CORE-60] Fix implementation not to use DOFs
 
-    auto &dofs_by_name_and_type = dofs.get<Composite_Name_And_Type_mi_tag>();
+  auto get_nodes_field_data =
+      [&](boost::shared_ptr<FEDofEntity_multiIndex> &&dofs,
+          VectorDouble &nodes_data) {
+        MoFEMFunctionBegin;
 
-    auto tuple = boost::make_tuple(field_name, MBVERTEX);
-    auto dit = dofs_by_name_and_type.lower_bound(tuple);
-    auto hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
+        auto bit_number = getFieldBitNumber(field_name);
+        auto &dofs_by_uid = dofs->get<Unique_mi_tag>();
+        auto dit =
+            dofs_by_uid.lower_bound(FieldEntity::getLocalUniqueIdCalculate(
+                bit_number, get_id_for_min_type<MBVERTEX>()));
+        auto hi_dit =
+            dofs_by_uid.upper_bound(FieldEntity::getLocalUniqueIdCalculate(
+                bit_number, get_id_for_max_type<MBVERTEX>()));
 
-    if (dit != hi_dit) {
-      auto &first_dof = **dit;
-      int num_nodes;
-      CHKERR getNumberOfNodes(num_nodes);
-      const int nb_dof_idx = first_dof.getNbOfCoeffs();
-      const int max_nb_dofs = nb_dof_idx * num_nodes;
-      nodes_data.resize(max_nb_dofs, false);
-      nodes_data.clear();
+        if (dit != hi_dit) {
+          auto &first_dof = **dit;
+          int num_nodes;
+          CHKERR getNumberOfNodes(num_nodes);
+          const int nb_dof_idx = first_dof.getNbOfCoeffs();
+          const int max_nb_dofs = nb_dof_idx * num_nodes;
+          nodes_data.resize(max_nb_dofs, false);
+          nodes_data.clear();
 
-      for (; dit != hi_dit;) {
-        const auto &dof_ptr = *dit;
-        const auto &dof = *dof_ptr;
-        const auto &sn = *dof.sideNumberPtr;
-        const int side_number = sn.side_number;
+          for (; dit != hi_dit;) {
+            const auto &dof_ptr = *dit;
+            const auto &dof = *dof_ptr;
+            const auto &sn = *dof.getSideNumberPtr();
+            const int side_number = sn.side_number;
 
-        int pos = side_number * nb_dof_idx;
-        auto ent_filed_data_vec = dof.getEntFieldData();
-        for (int ii = 0; ii != nb_dof_idx; ++ii) {
-          nodes_data[pos] = ent_filed_data_vec[ii];
-          ++pos;
-          ++dit;
+            int pos = side_number * nb_dof_idx;
+            auto ent_filed_data_vec = dof.getEntFieldData();
+            for (int ii = 0; ii != nb_dof_idx; ++ii) {
+              nodes_data[pos] = ent_filed_data_vec[ii];
+              ++pos;
+              ++dit;
+            }
+          }
+
+        } else if (reset_dofs) {
+          nodes_data.resize(0, false);
         }
-      }
 
-    } else if(reset_dofs) {
-      nodes_data.resize(0, false);
-    }
-  
-    MoFEMFunctionReturn(0);
-  };
+        MoFEMFunctionReturn(0);
+      };
 
-  return get_nodes_field_data(const_cast<FEDofEntity_multiIndex &>(
-                                  numeredEntFiniteElementPtr->getDataDofs()),
-                              data);
+  return get_nodes_field_data(getDataDofsPtr(), data);
 
   MoFEMFunctionReturn(0);
 }
