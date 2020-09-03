@@ -258,6 +258,17 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
   mutable boost::weak_ptr<EntityCacheNumeredDofs> entityCacheRowDofs;
   mutable boost::weak_ptr<EntityCacheNumeredDofs> entityCacheColDofs;
 
+  /**
+   * @brief Get the Weak Storage pointer
+   * 
+   * @return boost::weak_ptr<EntityStorage>& 
+   */
+  inline boost::weak_ptr<void> &getWeakStoragePtr() const {
+    return weakStoragePtr;
+  }
+
+  mutable boost::weak_ptr<void> weakStoragePtr;
+
 private:
   mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
   mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
@@ -328,6 +339,11 @@ struct interface_FieldEntity : public interface_Field<T, T> {
    */
   inline std::array<int, MAX_DOFS_ON_ENTITY> &getDofOrderMap() const {
     return this->sPtr->getDofOrderMap();
+  }
+
+  /// @copydoc FieldEntity::getWeakStoragePtr
+  inline boost::weak_ptr<void> &getWeakStoragePtr() const {
+    return this->sPtr->getWeakStoragePtr;
   }
 };
 
