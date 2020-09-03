@@ -36,6 +36,11 @@ using VolOp = VolEle::UserDataOperator;
 using FaceEle = FaceElementForcesAndSourcesCore;
 using FaceOp = FaceEle::UserDataOperator;
 
+/**
+ * @brief Operator set cache stored data, in this example, global indices, but
+ * it can be any structure
+ *
+ */
 struct OpVolumeSet : public VolOp {
   OpVolumeSet(const std::string &field_name) : VolOp(field_name, OPROW) {}
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -45,16 +50,23 @@ struct OpVolumeSet : public VolOp {
     MOFEM_LOG_CHANNEL("WORLD");
     MOFEM_LOG_TAG("WORLD", "OpVolumeSet");
 
+    // Clear data when start process element
     if(type == MBVERTEX)
       entsIndices.clear();
 
+    // Get field entity pointer
     auto field_ents = data.getFieldEntities();
     if (auto e_ptr = field_ents[0]) {
+      // Add indices to global storage
       entsIndices.push_back(boost::make_shared<VectorInt>(data.getIndices()));
+      // Store pointer to data on entity
       e_ptr->getWeakStoragePtr() = entsIndices.back();
+
       MOFEM_LOG("WORLD", Sev::inform)
           << "Set " << e_ptr->getEntTypeName() << " " << side << " : "
           << entsIndices.size();
+
+      // Check if all works
       if (auto void_ptr = e_ptr->getWeakStoragePtr().lock()) {
         auto storage_indices_ptr =
             boost::reinterpret_pointer_cast<VectorInt>(void_ptr);
@@ -74,11 +86,16 @@ struct OpVolumeSet : public VolOp {
   }
 
   using SharedVecInt = boost::shared_ptr<VectorInt>;
-  static std::vector<SharedVecInt> entsIndices;
+  static std::vector<SharedVecInt>
+      entsIndices; ///< This is global static storage
 };
 
 std::vector<OpVolumeSet::SharedVecInt> OpVolumeSet::entsIndices;
 
+/**
+ * @brief Test if cached data can be accessed, and check consistency of data
+ * 
+ */
 struct OpVolumeTest : public VolOp {
   OpVolumeTest(const std::string &field_name) : VolOp(field_name, OPROW) {}
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -88,18 +105,28 @@ struct OpVolumeTest : public VolOp {
     MOFEM_LOG_CHANNEL("WORLD");
     MOFEM_LOG_TAG("WORLD", "OpVolumeTest");
 
+    // Get pointer to field entities
     auto field_ents = data.getFieldEntities();
     if (auto e_ptr = field_ents[0]) {
 
       MOFEM_LOG("WORLD", Sev::inform)
           << "Test " << e_ptr->getEntTypeName() << " " << side;
 
+      // Check if data are cached on entity, and if code is correct, data should
+      // accessible.
       if (auto void_ptr = e_ptr->getWeakStoragePtr().lock()) {
+
+        // Get data. Note data pointer has to be casted, since native pointer is
+        // generic, and type of void. Person who implement operator set the
+        // paricular type to data.
         auto storage_indices_ptr =
             boost::reinterpret_pointer_cast<VectorInt>(void_ptr);
+
         MOFEM_LOG("WORLD", Sev::verbose)
             << data.getIndices() << " : " << *storage_indices_ptr;
 
+        // Check constancy of data. Stored data are indices, and expected stored
+        // that should be indices, thus difference between should be zero.
         auto diff = data.getIndices() - *storage_indices_ptr;
         auto dot = inner_prod(diff,diff);
         if(dot > 0)
@@ -166,7 +193,7 @@ int main(int argc, char *argv[]) {
       // set integration rule
       domain_fe->getRuleHook = VolRule();
 
-      // set operator to the volume element
+      // set operator to the volume elements
       domain_fe->getOpPtrVector().push_back(new OpVolumeSet("FIELD"));
       domain_fe->getOpPtrVector().push_back(new OpVolumeTest("FIELD"));
       // make integration in volume (here real calculations starts)
