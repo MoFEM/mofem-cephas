@@ -46,16 +46,13 @@ int main(int argc, char *argv[]) {
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
     }
-    PetscInt order;
+    PetscInt order = 3;
 #if PETSC_VERSION_GE(3, 6, 4)
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-my_order", &order, &flg);
 #else
     CHKERR PetscOptionsGetInt(PETSC_NULL, PETSC_NULL, "-my_order", &order,
                               &flg);
 #endif
-    if (flg != PETSC_TRUE) {
-      order = 3;
-    }
 
     // Read mesh to MOAB
     const char *option;
@@ -72,14 +69,9 @@ int main(int argc, char *argv[]) {
     MoFEM::Interface &m_field = core;
 
     // stl::bitset see for more details
-    BitRefLevel bit_level0;
-    bit_level0.set(0);
-    EntityHandle meshset_level0;
-    CHKERR moab.create_meshset(MESHSET_SET, meshset_level0);
+    auto bit_level0 = BitRefLevel().set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-        0, 3, bit_level0);
-    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-        bit_level0, BitRefLevel().set(), meshset_level0);
+        0, 3, BitRefLevel().set(0));
 
     /***/
     // Define problem

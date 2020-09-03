@@ -61,7 +61,7 @@ boost::shared_ptr<FieldData *const> FieldEntity::makeSharedFieldDataAdaptorPtr(
 
 std::ostream &operator<<(std::ostream &os, const FieldEntity &e) {
   os << "ent_global_uid " << e.getLocalUniqueId() << " entity " << e.getEnt()
-     << " type " << e.getEntType() << " pstatus "
+     << " type " << e.getEntTypeName() << " pstatus "
      << std::bitset<8>(e.getPStatus()) << " owner handle " << e.getOwnerEnt()
      << " owner proc " << e.getOwnerProc() << " order " << e.getMaxOrder()
      << " " << *e.getFieldRawPtr();

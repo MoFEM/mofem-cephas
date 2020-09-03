@@ -613,8 +613,6 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
             last_col_field_ents_view_size);
       }
 
-      int nb_dofs_on_data = 0;
-
       // Iterate over all field and check which one is on the element
       for (unsigned int ii = 0; ii != BitFieldId().size(); ++ii) {
 
@@ -630,10 +628,8 @@ Core::buildFiniteElements(const boost::shared_ptr<FiniteElement> &fe,
         // Find in database data associated with the field (ii)
         const BitFieldId field_id = BitFieldId().set(ii);
         auto miit = fields_by_id.find(field_id);
-        if (miit == fields_by_id.end()) {
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Data inconsistency");
-        }
+        if (miit == fields_by_id.end())
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Field not found");
         auto field_bit_number = (*miit)->getBitNumber();
 
         // Loop over adjacencies of element and find field entities on those

@@ -937,6 +937,7 @@ ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &data) const {
 
 // ** Space and Base **
 
+
 MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
     DataForcesAndSourcesCore &data) const {
   MoFEMFunctionBeginHot;
@@ -953,20 +954,23 @@ MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
     }
   }
 
+  auto fe_type = numeredEntFiniteElementPtr->getEntType();
+
   if (getDataFieldEntsPtr())
     for (auto e : getDataFieldEnts()) {
       if (auto ptr = e.lock()) {
         // get data from entity
         const EntityType type = ptr->getEntType();
-        const FieldSpace space = ptr->getSpace();
-        const FieldApproximationBase approx = ptr->getApproxBase();
-
-        // set data
-        data.sPace.set(space);
-        data.bAse.set(approx);
-        data.spacesOnEntities[type].set(space);
-        data.basesOnEntities[type].set(approx);
-        data.basesOnSpaces[space].set(approx);
+        if (DefaultElementAdjacency::getDefTypeMap(fe_type, type)) {
+          const FieldSpace space = ptr->getSpace();
+          const FieldApproximationBase approx = ptr->getApproxBase();
+          // set data
+          data.sPace.set(space);
+          data.bAse.set(approx);
+          data.spacesOnEntities[type].set(space);
+          data.basesOnEntities[type].set(approx);
+          data.basesOnSpaces[space].set(approx);
+        }
       }
     }
   else
@@ -1619,4 +1623,4 @@ ForcesAndSourcesCore::UserDataOperator::setPtrFE(ForcesAndSourcesCore *ptr) {
   MoFEMFunctionReturnHot(0);
 }
 
-} // namespace MoFEM
+  } // namespace MoFEM

@@ -47,7 +47,8 @@ struct DataOperator {
                                 DataForcesAndSourcesCore::EntData &row_data,
                                 DataForcesAndSourcesCore::EntData &col_data) {
     MoFEMFunctionBeginHot;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "doWork function is not implemented for this operator");
     MoFEMFunctionReturnHot(0);
   }
 
@@ -60,7 +61,8 @@ struct DataOperator {
   virtual MoFEMErrorCode doWork(int side, EntityType type,
                                 DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBeginHot;
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "doWork function is not implemented for this operator");
     MoFEMFunctionReturnHot(0);
   }
 
@@ -72,7 +74,7 @@ struct DataOperator {
   std::array<bool, MBMAXTYPE>
       doEntities; ///< If true operator is executed for entity.
 
-  // Deprecated variables. Use doEntities instead. I keep them for back 
+  // Deprecated variables. Use doEntities instead. I keep them for back
   // compatibility with some older modules. It will be removed in some future.
 
   bool &doVertices; ///< \deprectaed If false skip vertices
@@ -101,7 +103,6 @@ struct DataOperator {
   inline void unSetSymm() { sYmm = false; }
 
 private:
-
   template <bool Symm>
   inline MoFEMErrorCode opLhs(DataForcesAndSourcesCore &row_data,
                               DataForcesAndSourcesCore &col_data);
@@ -211,7 +212,7 @@ Contravariant Piola transformation
 struct OpSetContravariantPiolaTransform : public DataOperator {
 
   double &vOlume;
-  
+
   FTensor::Tensor2<double *, 3, 3> tJac;
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;

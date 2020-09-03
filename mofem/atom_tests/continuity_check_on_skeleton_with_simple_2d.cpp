@@ -205,9 +205,12 @@ int main(int argc, char *argv[]) {
       // add fields
       auto base = get_base();
       CHKERR simple_interface->addDomainField("FIELD", HCURL, base, 1);
+      CHKERR simple_interface->addDomainField("TEST_FIELD", L2,
+                                              AINSWORTH_LEGENDRE_BASE, 1);
       CHKERR simple_interface->addSkeletonField("FIELD", HCURL, base, 1);
       // set fields order
       CHKERR simple_interface->setFieldOrder("FIELD", 2);
+      CHKERR simple_interface->setFieldOrder("TEST_FIELD", 1);
       // setup problem
       CHKERR simple_interface->setUp();
       // get dm

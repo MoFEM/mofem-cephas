@@ -235,19 +235,21 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   const Problem *problem_ptr;
   MoFEMFunctionBegin;
   CHKERR m_field.get_problem(problem, &problem_ptr);
-  const int rank = m_field.get_comm_rank();
   const auto bit_number = m_field.get_field_bit_number(field);
 
   typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type DofsByUId;
   DofsByUId::iterator it, hi_it;
+  int nb_loc_dofs;
   switch (rc) {
   case ROW:
+    nb_loc_dofs = problem_ptr->getNbLocalDofsRow();
     it = problem_ptr->numeredRowDofs->get<Unique_mi_tag>().lower_bound(
         FieldEntity::getLoBitNumberUId(bit_number));
     hi_it = problem_ptr->numeredRowDofs->get<Unique_mi_tag>().upper_bound(
         FieldEntity::getHiBitNumberUId(bit_number));
     break;
   case COL:
+    nb_loc_dofs = problem_ptr->getNbLocalDofsCol();
     it = problem_ptr->numeredColDofs->get<Unique_mi_tag>().lower_bound(
         FieldEntity::getLoBitNumberUId(bit_number));
     hi_it = problem_ptr->numeredColDofs->get<Unique_mi_tag>().upper_bound(
@@ -257,55 +259,47 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
   }
 
-  NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique
-      dof_loc_idx_view;
-  {
-    // get min and max bound coefficient index
-    NumeredDofEntity_multiIndex_coeff_idx_ordered_non_unique
-        dofs_view_coeff_idx;
-    dofs_view_coeff_idx.insert(it, hi_it);
-    NumeredDofEntity_multiIndex_coeff_idx_ordered_non_unique::iterator vit,
-        hi_vit;
-    vit = dofs_view_coeff_idx.lower_bound(min_coeff_idx);
-    hi_vit = dofs_view_coeff_idx.upper_bound(max_coeff_idx);
-    // sort by local index
-    dof_loc_idx_view.insert(vit, hi_vit);
+
+
+  std::vector<int> idx_vec;
+  idx_vec.reserve(std::distance(it, hi_it));
+  for (; it != hi_it; ++it) {
+
+    auto true_if_dof_on_entity = [&]() {
+      if (ents_ptr) {
+        return ents_ptr->find((*it)->getEnt()) != ents_ptr->end();
+      } else {
+        return true;
+      }
+    };
+
+    auto check = [&]() {
+      const auto ceff_idx = (*it)->getDofCoeffIdx();
+      if (
+
+          (*it)->getPetscLocalDofIdx() >= nb_loc_dofs ||
+
+          ceff_idx < min_coeff_idx || ceff_idx > max_coeff_idx
+
+      )
+        return false;
+      else
+        return true;
+    };
+
+    if (check()) {
+      if (true_if_dof_on_entity()) {
+        idx_vec.emplace_back((*it)->getPetscGlobalDofIdx());
+      }
+    }
   }
 
-  auto true_if_dof_on_entity = [ents_ptr](auto &dof) {
-    if (ents_ptr) {
-      return ents_ptr->find(dof->get()->getEnt()) != ents_ptr->end();
-    } else {
-      return true;
-    }
-  };
-
-  // create IS
-  NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator
-      vit,
-      hi_vit;
-  vit = dof_loc_idx_view.lower_bound(0);
-  auto get_nb_loc_dofs = [&]() {
-    switch (rc) {
-    case ROW:
-      return problem_ptr->getNbLocalDofsRow();
-    case COL:
-      return problem_ptr->getNbLocalDofsCol();
-    default:
-      return -1;
-    }
-  };
-  hi_vit = dof_loc_idx_view.upper_bound(get_nb_loc_dofs());
-  int size = std::distance(vit, hi_vit);
   int *id;
-  CHKERR PetscMalloc(size * sizeof(int), &id);
-  int ii = 0;
-  for (; vit != hi_vit; vit++) {
-    if (true_if_dof_on_entity(vit)) {
-      id[ii++] = (*vit)->getPetscGlobalDofIdx();
-    }
-  }
-  CHKERR ISCreateGeneral(PETSC_COMM_WORLD, ii, id, PETSC_OWN_POINTER, is);
+  CHKERR PetscMalloc(idx_vec.size() * sizeof(int), &id);
+  std::copy(idx_vec.begin(), idx_vec.end(), id);
+  CHKERR ISCreateGeneral(PETSC_COMM_WORLD, idx_vec.size(), id,
+                         PETSC_OWN_POINTER, is);
+
   MoFEMFunctionReturn(0);
 }
 

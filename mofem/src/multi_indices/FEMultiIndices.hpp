@@ -155,6 +155,170 @@ struct DefaultElementAdjacency {
   static MoFEMErrorCode defaultMeshset(Interface &moab, const Field &field,
                                        const EntFiniteElement &fe,
                                        Range &adjacency);
+
+  using DefEntTypeMap = std::array<bool, MBMAXTYPE>;
+
+  static constexpr DefEntTypeMap defVertexTypeMap = {
+      // clang-format off
+      true, //  MBVERTEX
+      false, //  MBEDGE
+      false, //  MBTRI
+      false, //  MBQUAD
+      false, //  MBPOLYGON
+      false, //  MBTET
+      false, //  MBPYRAMID
+      false, //  MBPRISM
+      false, //  MBKNIFE
+      false, //  MBHEX
+      false, //  MBPOLYHEDRON
+      false //  MBENTITYSET
+      // clang-format on
+  };
+
+  static constexpr DefEntTypeMap defEdgeTypeMap = {
+      // clang-format off
+      true, //  MBVERTEX
+      true, //  MBEDGE
+      false, //  MBTRI
+      false, //  MBQUAD
+      false, //  MBPOLYGON
+      false, //  MBTET
+      false, //  MBPYRAMID
+      false, //  MBPRISM
+      false, //  MBKNIFE
+      false, //  MBHEX
+      false, //  MBPOLYHEDRON
+      false //  MBENTITYSET
+      // clang-format on
+  };
+
+  static constexpr DefEntTypeMap defTriTypeMap = {
+      // clang-format off
+      true, //  MBVERTEX
+      true, //  MBEDGE
+      true, //  MBTRI
+      false, //  MBQUAD
+      false, //  MBPOLYGON
+      false, //  MBTET
+      false, //  MBPYRAMID
+      false, //  MBPRISM
+      false, //  MBKNIFE
+      false, //  MBHEX
+      false, //  MBPOLYHEDRON
+      false //  MBENTITYSET
+      // clang-format on
+  };
+
+  static constexpr DefEntTypeMap defQuadTypeMap = {
+      // clang-format off
+      true, //  MBVERTEX
+      true, //  MBEDGE
+      false, //  MBTRI
+      true, //  MBQUAD
+      false, //  MBPOLYGON
+      false, //  MBTET
+      false, //  MBPYRAMID
+      false, //  MBPRISM
+      false, //  MBKNIFE
+      false, //  MBHEX
+      false, //  MBPOLYHEDRON
+      false //  MBENTITYSET
+      // clang-format on
+  };
+
+  static constexpr DefEntTypeMap defTetTypeMap = {
+      // clang-format off
+      true, //  MBVERTEX
+      true, //  MBEDGE
+      true, //  MBTRI
+      false, //  MBQUAD
+      false, //  MBPOLYGON
+      true, //  MBTET
+      false, //  MBPYRAMID
+      false, //  MBPRISM
+      false, //  MBKNIFE
+      false, //  MBHEX
+      false, //  MBPOLYHEDRON
+      false //  MBENTITYSET
+      // clang-format on
+  };
+
+  static constexpr DefEntTypeMap defHexTypeMap = {
+      // clang-format off
+      true, //  MBVERTEX
+      true, //  MBEDGE
+      false, //  MBTRI
+      true, //  MBQUAD
+      false, //  MBPOLYGON
+      false, //  MBTET
+      false, //  MBPYRAMID
+      false, //  MBPRISM
+      false, //  MBKNIFE
+      true, //  MBHEX
+      false, //  MBPOLYHEDRON
+      false //  MBENTITYSET
+      // clang-format on
+  };
+
+  static constexpr DefEntTypeMap defPrismTypeMap = {
+      // clang-format off
+      true, //  MBVERTEX
+      true, //  MBEDGE
+      true, //  MBTRI
+      true, //  MBQUAD
+      false, //  MBPOLYGON
+      false, //  MBTET
+      false, //  MBPYRAMID
+      true, //  MBPRISM
+      false, //  MBKNIFE
+      false, //  MBHEX
+      false, //  MBPOLYHEDRON
+      false //  MBENTITYSET
+      // clang-format on
+  };
+
+  static constexpr DefEntTypeMap defMeshsetTypeMap = {
+      // clang-format off
+      true, //  MBVERTEX
+      true, //  MBEDGE
+      true, //  MBTRI
+      true, //  MBQUAD
+      true, //  MBPOLYGON
+      true, //  MBTET
+      true, //  MBPYRAMID
+      true, //  MBPRISM
+      true, //  MBKNIFE
+      true, //  MBHEX
+      true, //  MBPOLYHEDRON
+      true //  MBENTITYSET
+      // clang-format on
+  };
+
+  static constexpr std::array<const DefEntTypeMap *, MBMAXTYPE> defTypeMap = {
+      // clang-format off
+      &defVertexTypeMap, //  MBVERTEX
+      &defEdgeTypeMap, //  MBEDGE
+      &defTriTypeMap, //  MBTRI
+      &defQuadTypeMap, //  MBQUAD
+      nullptr, //  MBPOLYGON
+      &defTetTypeMap, //  MBTET
+      nullptr, //  MBPYRAMID
+      &defPrismTypeMap, //  MBPRISM
+      nullptr, //  MBKNIFE
+      &defHexTypeMap, //  MBHEX
+      nullptr, //  MBPOLYHEDRON
+      &defMeshsetTypeMap //  MBENTITYSET
+      // clang-format on
+  };
+
+  static inline bool getDefTypeMap(const EntityType fe_type,
+                                   const EntityType ent_type) {
+    if(auto ptr = defTypeMap[fe_type])
+      return (*ptr)[ent_type];
+    THROW_MESSAGE("DefTypeMap is not defined by this element. This is propably "
+                  "new implementation, and has to be implemented");
+    return false;
+  }
 };
 
 /**
@@ -379,8 +543,8 @@ struct EntFiniteElement
 
   /**
    * @brief Get the Data Dofs Ptr object
-   * 
-   * @return boost::shared_ptr<FEDofEntity_multiIndex> 
+   *
+   * @return boost::shared_ptr<FEDofEntity_multiIndex>
    */
   boost::shared_ptr<FEDofEntity_multiIndex> getDataDofsPtr() const;
 
@@ -450,8 +614,8 @@ struct EntFiniteElement
   }
 
   template <typename MOFEM_DOFS, typename MOFEM_DOFS_VIEW>
-  inline MoFEMErrorCode
-  getRowDofView(const MOFEM_DOFS &mofem_dofs, MOFEM_DOFS_VIEW &dofs_view) {
+  inline MoFEMErrorCode getRowDofView(const MOFEM_DOFS &mofem_dofs,
+                                      MOFEM_DOFS_VIEW &dofs_view) {
 
     auto hint = dofs_view.end();
     using ValType = typename std::remove_reference<decltype(**hint)>::type;
@@ -492,7 +656,6 @@ struct EntFiniteElement
 
   MoFEMErrorCode getElementAdjacency(const boost::shared_ptr<Field> field_ptr,
                                      Range &adjacency);
-
 
 private:
   mutable boost::shared_ptr<FieldEntity_vector_view> dataFieldEnts;
@@ -603,7 +766,7 @@ struct NumeredEntFiniteElement
    * \ingroup mofem_dofs
    */
   boost::shared_ptr<FENumeredDofEntity_multiIndex> getRowDofsPtr() const;
-  
+
   /** \brief get FE dof on column
    * \ingroup mofem_dofs
    */
@@ -623,7 +786,6 @@ struct NumeredEntFiniteElement
 
   friend std::ostream &operator<<(std::ostream &os,
                                   const NumeredEntFiniteElement &e);
-
 };
 
 // TODO: [CORE-59] Fix multi-indices for element

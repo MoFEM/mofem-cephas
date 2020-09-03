@@ -18,6 +18,25 @@
 
 namespace MoFEM {
 
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defVertexTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defEdgeTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defTriTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defQuadTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defTetTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defHexTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defPrismTypeMap;
+constexpr DefaultElementAdjacency::DefEntTypeMap
+    DefaultElementAdjacency::defMeshsetTypeMap;
+constexpr std::array<const DefaultElementAdjacency::DefEntTypeMap *, MBMAXTYPE>
+    DefaultElementAdjacency::defTypeMap;
+
 MoFEMErrorCode DefaultElementAdjacency::defaultVertex(
     moab::Interface &moab, const Field &field, const EntFiniteElement &fe,
     Range &adjacency) {
@@ -113,9 +132,11 @@ MoFEMErrorCode DefaultElementAdjacency::defaultFace(moab::Interface &moab,
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "this field is not implemented for TRI finite element");
   }
+
   // build side table
-  for (Range::iterator eit = adjacency.begin(); eit != adjacency.end(); eit++)
-    fe.getSideNumberPtr(*eit);
+  for (auto ent : adjacency)
+    fe.getSideNumberPtr(ent);
+
   MoFEMFunctionReturn(0);
 }
 
@@ -443,7 +464,7 @@ EntFiniteElement::EntFiniteElement(
 
 std::ostream &operator<<(std::ostream &os, const EntFiniteElement &e) {
   os << *e.getFiniteElementPtr() << std::endl;
-  os << *e.sPtr << std::endl;
+  os << *e.sPtr;
   return os;
 }
 
