@@ -36,6 +36,11 @@ using VolOp = VolEle::UserDataOperator;
 using FaceEle = FaceElementForcesAndSourcesCore;
 using FaceOp = FaceEle::UserDataOperator;
 
+struct MyStorage : EntityStorage {
+  MyStorage(VectorInt &data) : globalIndices(data) {}
+  VectorInt globalIndices;
+};
+
 /**
  * @brief Operator set cache stored data, in this example, global indices, but
  * it can be any structure
@@ -58,7 +63,7 @@ struct OpVolumeSet : public VolOp {
     auto field_ents = data.getFieldEntities();
     if (auto e_ptr = field_ents[0]) {
       // Add indices to global storage
-      entsIndices.push_back(boost::make_shared<VectorInt>(data.getIndices()));
+      entsIndices.push_back(boost::make_shared<MyStorage>(data.getIndices()));
       // Store pointer to data on entity
       e_ptr->getWeakStoragePtr() = entsIndices.back();
 
@@ -67,11 +72,21 @@ struct OpVolumeSet : public VolOp {
           << entsIndices.size();
 
       // Check if all works
-      if (auto void_ptr = e_ptr->getWeakStoragePtr().lock()) {
-        auto storage_indices_ptr =
-            boost::reinterpret_pointer_cast<VectorInt>(void_ptr);
+      if (auto ptr = e_ptr->getStoragePtr<EntityStorage>()) {
+
+        if (auto cast_ptr = boost::dynamic_pointer_cast<MyStorage>(ptr))
+          MOFEM_LOG("WORLD", Sev::noisy) << "Cast works";
+        else
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Cast not works");
+
+      } else {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Pointer to stored data is expected to be set");
+      }
+
+      if (auto ptr = e_ptr->getStoragePtr<MyStorage>()) {
         MOFEM_LOG("WORLD", Sev::verbose)
-            << data.getIndices() << " : " << *storage_indices_ptr;
+            << data.getIndices() << " : " << ptr->globalIndices;
       } else {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Pointer to stored data is expected to be set");
@@ -85,7 +100,7 @@ struct OpVolumeSet : public VolOp {
     MoFEMFunctionReturn(0);
   }
 
-  using SharedVecInt = boost::shared_ptr<VectorInt>;
+  using SharedVecInt = boost::shared_ptr<MyStorage>;
   static std::vector<SharedVecInt>
       entsIndices; ///< This is global static storage
 };
@@ -114,20 +129,14 @@ struct OpVolumeTest : public VolOp {
 
       // Check if data are cached on entity, and if code is correct, data should
       // accessible.
-      if (auto void_ptr = e_ptr->getWeakStoragePtr().lock()) {
-
-        // Get data. Note data pointer has to be casted, since native pointer is
-        // generic, and type of void. Person who implement operator set the
-        // paricular type to data.
-        auto storage_indices_ptr =
-            boost::reinterpret_pointer_cast<VectorInt>(void_ptr);
+      if (auto ptr = e_ptr->getStoragePtr<MyStorage>()) {
 
         MOFEM_LOG("WORLD", Sev::verbose)
-            << data.getIndices() << " : " << *storage_indices_ptr;
+            << data.getIndices() << " : " << ptr->globalIndices;
 
         // Check constancy of data. Stored data are indices, and expected stored
         // that should be indices, thus difference between should be zero.
-        auto diff = data.getIndices() - *storage_indices_ptr;
+        auto diff = data.getIndices() - ptr->globalIndices;
         auto dot = inner_prod(diff,diff);
         if(dot > 0)
           SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Test failed");

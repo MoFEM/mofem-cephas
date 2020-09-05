@@ -26,6 +26,10 @@ namespace MoFEM {
 struct EntityCacheDofs;
 struct EntityCacheNumeredDofs;
 
+struct EntityStorage {
+  virtual ~EntityStorage() = default;
+};
+
 /**
  * \brief Struct keeps handle to entity in the field.
  * \ingroup ent_multi_indices
@@ -263,16 +267,27 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
    * 
    * @return boost::weak_ptr<EntityStorage>& 
    */
-  inline boost::weak_ptr<void> &getWeakStoragePtr() const {
+  template <typename T = EntityStorage>
+  inline boost::shared_ptr<T> getStoragePtr() const {
+    return boost::dynamic_pointer_cast<T>(weakStoragePtr.lock());
+  }
+
+  inline boost::weak_ptr<EntityStorage> &getWeakStoragePtr() const {
     return weakStoragePtr;
   }
 
-  mutable boost::weak_ptr<void> weakStoragePtr;
+  mutable boost::weak_ptr<EntityStorage> weakStoragePtr;
 
 private:
   mutable boost::shared_ptr<const ApproximationOrder> tagMaxOrderPtr;
   mutable boost::shared_ptr<FieldData *const> fieldDataAdaptorPtr;
 };
+
+template <>
+inline boost::shared_ptr<EntityStorage> 
+FieldEntity::getStoragePtr<EntityStorage>() const {
+  return weakStoragePtr.lock();
+}
 
 /**
  * \brief Interface to FieldEntity
@@ -341,9 +356,14 @@ struct interface_FieldEntity : public interface_Field<T, T> {
     return this->sPtr->getDofOrderMap();
   }
 
-  /// @copydoc FieldEntity::getWeakStoragePtr
-  inline boost::weak_ptr<void> &getWeakStoragePtr() const {
-    return this->sPtr->getWeakStoragePtr;
+  /// @copydoc FieldEntity::getStoragePtr
+  template <typename S = EntityStorage>
+  inline boost::shared_ptr<S> getStoragePtr() const {
+    return this->sPtr->template getStoragePtr<S>();
+  }
+
+  inline boost::weak_ptr<EntityStorage> &getWeakStoragePtr() const {
+    return this->sPtr->getWeakStoragePtr();
   }
 };
 
