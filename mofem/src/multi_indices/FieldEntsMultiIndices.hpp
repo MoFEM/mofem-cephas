@@ -264,11 +264,11 @@ struct FieldEntity : public interface_Field<Field, RefEntity> {
 
   /**
    * @brief Get the Weak Storage pointer
-   * 
-   * @return boost::weak_ptr<EntityStorage>& 
+   *
+   * @return boost::weak_ptr<EntityStorage>&
    */
   template <typename T = EntityStorage>
-  inline boost::shared_ptr<T> getStoragePtr() const {
+  inline boost::shared_ptr<T> getSharedStoragePtr() const {
     return boost::dynamic_pointer_cast<T>(weakStoragePtr.lock());
   }
 
@@ -284,8 +284,8 @@ private:
 };
 
 template <>
-inline boost::shared_ptr<EntityStorage> 
-FieldEntity::getStoragePtr<EntityStorage>() const {
+inline boost::shared_ptr<EntityStorage>
+FieldEntity::getSharedStoragePtr<EntityStorage>() const {
   return weakStoragePtr.lock();
 }
 
@@ -356,10 +356,10 @@ struct interface_FieldEntity : public interface_Field<T, T> {
     return this->sPtr->getDofOrderMap();
   }
 
-  /// @copydoc FieldEntity::getStoragePtr
+  /// @copydoc FieldEntity::getSharedStoragePtr
   template <typename S = EntityStorage>
-  inline boost::shared_ptr<S> getStoragePtr() const {
-    return this->sPtr->template getStoragePtr<S>();
+  inline boost::shared_ptr<S> getSharedStoragePtr() const {
+    return this->sPtr->template getSharedStoragePtr<S>();
   }
 
   inline boost::weak_ptr<EntityStorage> &getWeakStoragePtr() const {

@@ -56,7 +56,7 @@ struct OpVolumeSet : public VolOp {
     MOFEM_LOG_TAG("WORLD", "OpVolumeSet");
 
     // Clear data when start process element
-    if(type == MBVERTEX)
+    if (type == MBVERTEX)
       entsIndices.clear();
 
     // Get field entity pointer
@@ -72,7 +72,7 @@ struct OpVolumeSet : public VolOp {
           << entsIndices.size();
 
       // Check if all works
-      if (auto ptr = e_ptr->getStoragePtr<EntityStorage>()) {
+      if (auto ptr = e_ptr->getSharedStoragePtr<EntityStorage>()) {
 
         if (auto cast_ptr = boost::dynamic_pointer_cast<MyStorage>(ptr))
           MOFEM_LOG("WORLD", Sev::noisy) << "Cast works";
@@ -84,7 +84,7 @@ struct OpVolumeSet : public VolOp {
                 "Pointer to stored data is expected to be set");
       }
 
-      if (auto ptr = e_ptr->getStoragePtr<MyStorage>()) {
+      if (auto ptr = e_ptr->getSharedStoragePtr<MyStorage>()) {
         MOFEM_LOG("WORLD", Sev::verbose)
             << data.getIndices() << " : " << ptr->globalIndices;
       } else {
@@ -109,7 +109,7 @@ std::vector<OpVolumeSet::SharedVecInt> OpVolumeSet::entsIndices;
 
 /**
  * @brief Test if cached data can be accessed, and check consistency of data
- * 
+ *
  */
 struct OpVolumeTest : public VolOp {
   OpVolumeTest(const std::string &field_name) : VolOp(field_name, OPROW) {}
@@ -129,7 +129,7 @@ struct OpVolumeTest : public VolOp {
 
       // Check if data are cached on entity, and if code is correct, data should
       // accessible.
-      if (auto ptr = e_ptr->getStoragePtr<MyStorage>()) {
+      if (auto ptr = e_ptr->getSharedStoragePtr<MyStorage>()) {
 
         MOFEM_LOG("WORLD", Sev::verbose)
             << data.getIndices() << " : " << ptr->globalIndices;
@@ -137,8 +137,8 @@ struct OpVolumeTest : public VolOp {
         // Check constancy of data. Stored data are indices, and expected stored
         // that should be indices, thus difference between should be zero.
         auto diff = data.getIndices() - ptr->globalIndices;
-        auto dot = inner_prod(diff,diff);
-        if(dot > 0)
+        auto dot = inner_prod(diff, diff);
+        if (dot > 0)
           SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Test failed");
 
       } else {
@@ -153,7 +153,6 @@ struct OpVolumeTest : public VolOp {
 
     MoFEMFunctionReturn(0);
   }
-
 };
 
 struct VolRule {
@@ -210,8 +209,6 @@ int main(int argc, char *argv[]) {
                                       domain_fe);
 
       OpVolumeSet::entsIndices.clear();
-
-
     }
   }
   CATCH_ERRORS;
