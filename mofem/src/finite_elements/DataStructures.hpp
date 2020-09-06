@@ -244,7 +244,7 @@ struct DataForcesAndSourcesCore {
 
     /**
      * @copydoc MoFEM::DataForcesAndSourcesCore::EntData::getN
-     */ 
+     */
     inline MatrixDouble &getN(const std::string &field_name);
 
     /**
@@ -979,8 +979,8 @@ struct DataForcesAndSourcesCore {
 
     static constexpr size_t MaxBernsteinBezierOrder = BITFEID_SIZE;
 
-    virtual std::array<boost::shared_ptr<MatrixInt>, MaxBernsteinBezierOrder>
-        &getBBAlphaIndicesByOrderArray();
+    virtual std::array<boost::shared_ptr<MatrixInt>, MaxBernsteinBezierOrder> &
+    getBBAlphaIndicesByOrderArray();
 
     virtual std::array<boost::shared_ptr<MatrixDouble>, MaxBernsteinBezierOrder>
         &getBBNByOrderArray();
@@ -989,20 +989,20 @@ struct DataForcesAndSourcesCore {
         &getBBDiffNByOrderArray();
 
     virtual MoFEMErrorCode baseSwap(const std::string &field_name,
-                            const FieldApproximationBase base);
+                                    const FieldApproximationBase base);
 
     /**@}*/
 
   protected:
-    int sEnse;                   ///< Entity sense (orientation)
-    ApproximationOrder oRder;    ///< Entity order
-    FieldSpace sPace;            ///< Entity space
-    FieldApproximationBase bAse; ///< Field approximation base
-    VectorInt iNdices;           ///< Global indices on entity
-    VectorInt localIndices;      ///< Local indices on entity
-    VectorDofs dOfs;             ///< DoFs on entity
+    int sEnse;                         ///< Entity sense (orientation)
+    ApproximationOrder oRder;          ///< Entity order
+    FieldSpace sPace;                  ///< Entity space
+    FieldApproximationBase bAse;       ///< Field approximation base
+    VectorInt iNdices;                 ///< Global indices on entity
+    VectorInt localIndices;            ///< Local indices on entity
+    VectorDofs dOfs;                   ///< DoFs on entity
     VectorFieldEntities fieldEntities; ///< Field entities
-    VectorDouble fieldData;      ///< Field data on entity
+    VectorDouble fieldData;            ///< Field data on entity
     std::array<boost::shared_ptr<MatrixDouble>, LASTBASE> N; ///< Base functions
     std::array<boost::shared_ptr<MatrixDouble>, LASTBASE>
         diffN; ///< Derivatives of base functions
@@ -1024,7 +1024,6 @@ struct DataForcesAndSourcesCore {
   protected:
     boost::shared_ptr<MatrixDouble> swapBaseNPtr;
     boost::shared_ptr<MatrixDouble> swapBaseDiffNPtr;
-
   };
 
   std::bitset<LASTSPACE> sPace; ///< spaces on element
@@ -1062,7 +1061,7 @@ struct DataForcesAndSourcesCore {
    * paricular field using BB base, pointers to shape funtions and direvatives
    * of shape futions are set to particular location, once operator is executed,
    * pointers are switch back to its oroginal position.
-   * 
+   *
    * getNSharedPtr(base) <=== getBBNSharedPtr(field_name);
    * // DO OPERATOR WORK
    * getNSharedPtr(base) ==> getBBNSharedPtr(field_name);
@@ -1545,9 +1544,6 @@ DerivedDataForcesAndSourcesCore::DerivedEntData::getDerivedDiffNSharedPtr(
 
 /**@}*/
 
-/// \deprecated Use DataForcesAndSourcesCore
-DEPRECATED typedef DataForcesAndSourcesCore DataForcesAndSurcesCore;
-
 /**
  * @brief Assemble PETSc vector
  *
@@ -1563,9 +1559,21 @@ DEPRECATED typedef DataForcesAndSourcesCore DataForcesAndSurcesCore;
  * @param iora
  * @return MoFEMErrorCode
  */
+template <typename T = EntityStorage>
 inline MoFEMErrorCode
 VecSetValues(Vec V, const DataForcesAndSourcesCore::EntData &data,
              const double *ptr, InsertMode iora) {
+  static_assert(
+      !std::is_same<T, T>::value,
+      "VecSetValues value for this data storage is not implemented");
+  return MOFEM_NOT_IMPLEMENTED;
+}
+
+template <>
+inline MoFEMErrorCode
+VecSetValues<EntityStorage>(Vec V,
+                            const DataForcesAndSourcesCore::EntData &data,
+                            const double *ptr, InsertMode iora) {
   return VecSetValues(V, data.getIndices().size(), &*data.getIndices().begin(),
                       ptr, iora);
 }
@@ -1586,10 +1594,22 @@ VecSetValues(Vec V, const DataForcesAndSourcesCore::EntData &data,
  * @param iora
  * @return MoFEMErrorCode
  */
+template <typename T = EntityStorage>
 inline MoFEMErrorCode
 MatSetValues(Mat M, const DataForcesAndSourcesCore::EntData &row_data,
              const DataForcesAndSourcesCore::EntData &col_data,
              const double *ptr, InsertMode iora) {
+  static_assert(!std::is_same<T, T>::value,
+                "MatSetValues value for this data storage is not implemented");
+  return MOFEM_NOT_IMPLEMENTED;
+}
+
+template <>
+inline MoFEMErrorCode
+MatSetValues<EntityStorage>(Mat M,
+                            const DataForcesAndSourcesCore::EntData &row_data,
+                            const DataForcesAndSourcesCore::EntData &col_data,
+                            const double *ptr, InsertMode iora) {
   return MatSetValues(
       M, row_data.getIndices().size(), &*row_data.getIndices().begin(),
       col_data.getIndices().size(), &*col_data.getIndices().begin(), ptr, iora);
@@ -1601,8 +1621,7 @@ MatSetValues(Mat M, const DataForcesAndSourcesCore::EntData &row_data,
 
 template <>
 FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-DataForcesAndSourcesCore::EntData::getFTensor1N<3>(
-    FieldApproximationBase base);
+DataForcesAndSourcesCore::EntData::getFTensor1N<3>(FieldApproximationBase base);
 
 template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
@@ -1610,7 +1629,6 @@ DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
     FieldApproximationBase base);
 
 /**@}*/
-
 
 /** \name Specializations for direcatives of base functions */
 
