@@ -692,6 +692,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                     slave_data.dataOnEntities[MBVERTEX][0].getFieldData(),
                     master_data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
                     slave_data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
+                    master_data.dataOnEntities[MBVERTEX][0].getFieldEntities(),
+                    slave_data.dataOnEntities[MBVERTEX][0].getFieldEntities(),
                     master_data.dataOnEntities[MBVERTEX][0].getSpace(),
                     slave_data.dataOnEntities[MBVERTEX][0].getSpace(),
                     master_data.dataOnEntities[MBVERTEX][0].getBase(),
@@ -870,6 +872,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
         dat.getSpace() = NOSPACE;
         dat.getFieldData().resize(0, false);
         dat.getFieldDofs().resize(0, false);
+        dat.getFieldEntities().resize(0, false);
       }
     }
   };
@@ -894,6 +897,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
             auto &dat = data.dataOnEntities[type][side];
             auto &ent_field_dofs = dat.getFieldDofs();
             auto &ent_field_data = dat.getFieldData();
+            dat.getFieldEntities().resize(1, false);
+            dat.getFieldEntities()[0] = e.get();
             dat.getBase() = e->getApproxBase();
             dat.getSpace() = e->getSpace();
             const int ent_order = e->getMaxOrder();
@@ -952,17 +957,22 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
     const std::string field_name, VectorDouble &master_nodes_data,
     VectorDouble &slave_nodes_data, VectorDofs &master_nodes_dofs,
-    VectorDofs &slave_nodes_dofs, FieldSpace &master_space,
+    VectorDofs &slave_nodes_dofs, 
+    
+    VectorFieldEntities &master_field_entities, VectorFieldEntities &slave_field_entities, 
+    
+    FieldSpace &master_space,
     FieldSpace &slave_space, FieldApproximationBase &master_base,
     FieldApproximationBase &slave_base) const {
   MoFEMFunctionBegin;
 
-  auto set_zero = [](auto &nodes_data, auto &nodes_dofs) {
+  auto set_zero = [](auto &nodes_data, auto &nodes_dofs, auto &field_entities) {
     nodes_data.resize(0, false);
     nodes_dofs.resize(0, false);
+    field_entities.resize(0, false);
   };
-  set_zero(master_nodes_data, master_nodes_dofs);
-  set_zero(slave_nodes_data, slave_nodes_dofs);
+  set_zero(master_nodes_data, master_nodes_dofs, master_field_entities);
+  set_zero(slave_nodes_data, slave_nodes_dofs, slave_field_entities);
 
   auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
   if (field_it != fieldsPtr->get<FieldName_mi_tag>().end()) {
@@ -992,17 +1002,20 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
 
         if (nb_dofs) {
 
-          auto init_set = [&](auto &nodes_data, auto &nodes_dofs) {
+          auto init_set = [&](auto &nodes_data, auto &nodes_dofs,
+                              auto &field_entities) {
             constexpr int num_nodes = 3;
             const int max_nb_dofs = nb_dofs_on_vert * num_nodes;
             nodes_data.resize(max_nb_dofs, false);
             nodes_dofs.resize(max_nb_dofs, false);
+            field_entities.resize(num_nodes, false);
             nodes_data.clear();
             fill(nodes_dofs.begin(), nodes_dofs.end(), nullptr);
+            fill(field_entities.begin(), field_entities.end(), nullptr);
           };
 
-          init_set(master_nodes_data, master_nodes_dofs);
-          init_set(slave_nodes_data, slave_nodes_dofs);
+          init_set(master_nodes_data, master_nodes_dofs, master_field_entities);
+          init_set(slave_nodes_data, slave_nodes_dofs, slave_field_entities);
 
           for (auto it = lo; it != hi; ++it) {
             if (auto e = it->lock()) {
@@ -1010,7 +1023,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
               const auto &sn = e->getSideNumberPtr();
               int side = sn->side_number;
 
-              auto set_data = [&](auto &nodes_data, auto &nodes_dofs, int pos) {
+              auto set_data = [&](auto &nodes_data, auto &nodes_dofs,
+                                  auto &field_entities, int side, int pos) {
+                field_entities[side] = e.get();
                 if (auto cache = e->entityCacheDataDofs.lock()) {
                   for (auto dit = cache->loHi[0]; dit != cache->loHi[1];
                        ++dit) {
@@ -1024,9 +1039,10 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
 
               if (side < 3)
                 set_data(master_nodes_data, master_nodes_dofs,
-                         side * nb_dofs_on_vert);
+                         master_field_entities, side, side * nb_dofs_on_vert);
               else
                 set_data(slave_nodes_data, slave_nodes_dofs,
+                         slave_field_entities, (side - 3),
                          (side - 3) * nb_dofs_on_vert);
 
               const int brother_side = sn->brother_side_number;
