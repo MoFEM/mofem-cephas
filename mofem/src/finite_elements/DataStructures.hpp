@@ -1632,6 +1632,8 @@ DataForcesAndSourcesCore::EntData::getFTensor2N<3, 3>(
 
 /** \name Specializations for direcatives of base functions */
 
+/**@{*/
+
 template <>
 FTensor::Tensor1<double *, 3>
 DataForcesAndSourcesCore::EntData::getFTensor1DiffN<3>(
