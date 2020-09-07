@@ -46,16 +46,13 @@ int main(int argc, char *argv[]) {
     if (flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
     }
-    PetscInt order;
+    PetscInt order = 3;
 #if PETSC_VERSION_GE(3, 6, 4)
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-my_order", &order, &flg);
 #else
     CHKERR PetscOptionsGetInt(PETSC_NULL, PETSC_NULL, "-my_order", &order,
                               &flg);
 #endif
-    if (flg != PETSC_TRUE) {
-      order = 3;
-    }
 
     // Read mesh to MOAB
     const char *option;
@@ -66,20 +63,15 @@ int main(int argc, char *argv[]) {
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
-    // Create MoFEM (Joseph) database
-    MoFEM::Core core(moab);
+    // Create MoFEM 
+    // Starting from one  MoFEM::CoreTmp<1> for testing purposes
+    MoFEM::CoreTmp<0> core(moab);
     MoFEM::Interface &m_field = core;
 
     // stl::bitset see for more details
-    BitRefLevel bit_level0;
-    bit_level0.set(0);
-    EntityHandle meshset_level0;
-    CHKERR moab.create_meshset(MESHSET_SET, meshset_level0);
-    CHKERRG(rval);
+    auto bit_level0 = BitRefLevel().set(0);
     CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-        0, 3, bit_level0);
-    CHKERR m_field.getInterface<BitRefManager>()->getEntitiesByRefLevel(
-        bit_level0, BitRefLevel().set(), meshset_level0);
+        0, 3, BitRefLevel().set(0));
 
     /***/
     // Define problem
@@ -144,7 +136,8 @@ int main(int argc, char *argv[]) {
 
     CHKERR m_field.getInterface<FieldBlas>()->fieldScale(2, "FIELD_A");
 
-    MoFEM::Core core2(moab);
+    // Setting MoFEM::CoreTmp<-1> for testing purposes
+    MoFEM::CoreTmp<-1> core2(moab);
     MoFEM::Interface &m_field2 = core2;
 
     // build field
@@ -160,8 +153,7 @@ int main(int argc, char *argv[]) {
     CHKERR m_field2.getInterface(recorder2_ptr);
     CHKERR recorder2_ptr->print_series_steps();
 
-    const DofEntity_multiIndex *dofs_ptr;
-    CHKERR m_field.get_dofs(&dofs_ptr);
+    auto dofs_ptr = m_field.get_dofs();;
 
     my_split << "TEST_SERIES1" << std::endl;
     for (_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder2_ptr, "TEST_SERIES1",

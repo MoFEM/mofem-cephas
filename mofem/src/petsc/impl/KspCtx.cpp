@@ -40,6 +40,10 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ksp_ctx->mField.cache_problem_entities(ksp_ctx->problemName,
+                                                cache_ptr);
+
   // pre-process
   for (auto &bit : ksp_ctx->preProcess_Rhs) {
     bit->vecAssembleSwitch = boost::move(ksp_ctx->vecAssembleSwitch);
@@ -54,8 +58,9 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
   for (auto &lit : ksp_ctx->loops_to_do_Rhs) {
     lit.second->vecAssembleSwitch = boost::move(ksp_ctx->vecAssembleSwitch);
     set(*lit.second);
-    CHKERR ksp_ctx->mField.loop_finite_elements(
-        ksp_ctx->problemName, lit.first, *(lit.second), nullptr, ksp_ctx->bH);
+    CHKERR ksp_ctx->mField.loop_finite_elements(ksp_ctx->problemName, lit.first,
+                                                *(lit.second), nullptr,
+                                                ksp_ctx->bH, cache_ptr);
     unset(*lit.second);
     ksp_ctx->vecAssembleSwitch = boost::move(lit.second->vecAssembleSwitch);
   }
@@ -100,6 +105,12 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
+  auto ent_data_cache = boost::make_shared<std::vector<EntityCacheDofs>>();
+  auto ent_row_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
+  auto ent_col_cache =
+      boost::make_shared<std::vector<EntityCacheNumeredDofs>>();
+
   // pre-procsess
   for (auto &bit : ksp_ctx->preProcess_Mat) {
     bit->matAssembleSwitch = boost::move(ksp_ctx->matAssembleSwitch);
@@ -110,12 +121,17 @@ PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx) {
     ksp_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
 
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ksp_ctx->mField.cache_problem_entities(ksp_ctx->problemName,
+                                                cache_ptr);
+
   // operators
   for (auto &lit : ksp_ctx->loops_to_do_Mat) {
     lit.second->matAssembleSwitch = boost::move(ksp_ctx->matAssembleSwitch);
     set(*lit.second);
-    CHKERR ksp_ctx->mField.loop_finite_elements(
-        ksp_ctx->problemName, lit.first, *(lit.second), nullptr, ksp_ctx->bH);
+    CHKERR ksp_ctx->mField.loop_finite_elements(ksp_ctx->problemName, lit.first,
+                                                *(lit.second), nullptr,
+                                                ksp_ctx->bH, cache_ptr);
     unset(*lit.second);
     ksp_ctx->matAssembleSwitch = boost::move(lit.second->matAssembleSwitch);
   }

@@ -26,7 +26,7 @@ ctest_build()
 #endif(CTEST_MEMORYCHECK_COMMAND)
 ctest_test()
 if(CTEST_COVERAGE_COMMAND)
-  ctest_coverage()
+  ctest_coverage(QUIET)
 endif(CTEST_COVERAGE_COMMAND)
 ctest_submit()
 

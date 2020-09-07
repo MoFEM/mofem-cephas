@@ -126,7 +126,6 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
                 triangles.size());
 
   auto get_skin_edges_boundary = [&]() {
-
     // get nodes, edges and 3d ents (i.e. tets and prisms)
     auto ents3d_with_prisms = get_adj(get_adj(triangles, 0), 3);
     if (mesh_bit_level.any())
@@ -238,7 +237,6 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
     CHKERR save_range("ents3d.vtk", ents3d);
     CHKERR save_range("skin_nodes_boundary.vtk", skin_nodes_boundary);
   }
-
 
   auto find_tetrahedrons_on_the_side = [&]() {
     auto seed = intersect(get_adj(triangles, 3), ents3d);
@@ -577,10 +575,8 @@ MoFEMErrorCode PrismInterface::splitSides(
     const bool add_interface_entities, const bool recursive, int verb) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  const RefEntity_multiIndex *refined_ents_ptr;
+  auto refined_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-
-  CHKERR m_field.get_ref_ents(&refined_ents_ptr);
 
   std::vector<EntityHandle> children;
   // get children meshsets
@@ -622,7 +618,6 @@ MoFEMErrorCode PrismInterface::splitSides(
     PetscPrintf(m_field.get_comm(), "split sides nodes %u\n", nodes.size());
   }
 
-
   struct PartentAndChild {
     EntityHandle parent;
     EntityHandle child;
@@ -642,7 +637,6 @@ MoFEMErrorCode PrismInterface::splitSides(
       ParentChildMI;
 
   ParentChildMI parent_child;
-  
 
   typedef std::map<EntityHandle, /*node on "mother" side*/
                    EntityHandle  /*node on "father" side*/
@@ -746,11 +740,11 @@ MoFEMErrorCode PrismInterface::splitSides(
       CHKERR moab.get_coords(nodes_in_range, &*coords_range.begin());
       int pos = 0;
       for (; lo != hi; ++lo, pos += 3) {
-        const EntityHandle node = (*lo)->getRefEnt();
+        const EntityHandle node = (*lo)->getEnt();
         EntityHandle child_entity = 0;
         auto child_it = ref_parent_ents_view.find(node);
         if (child_it != ref_parent_ents_view.end())
-          child_entity = (*child_it)->getRefEnt();
+          child_entity = (*child_it)->getEnt();
         if (child_entity == 0) {
           CHKERR create_side_nodes(&coords_range[pos], node);
         } else {
@@ -819,7 +813,7 @@ MoFEMErrorCode PrismInterface::splitSides(
     // Check if child entity has the same connectivity
     for (; child_iit != hi_child_iit; child_iit++) {
       const EntityHandle *conn_ref_tet;
-      CHKERR moab.get_connectivity(child_iit->get()->getRefEnt(), conn_ref_tet,
+      CHKERR moab.get_connectivity(child_iit->get()->getEnt(), conn_ref_tet,
                                    num_nodes, true);
       int nn = 0;
       for (; nn < num_nodes; nn++) {
@@ -831,7 +825,7 @@ MoFEMErrorCode PrismInterface::splitSides(
         if (existing_ent != 0)
           SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "Should be only one child entity with the same connectivity");
-        existing_ent = child_iit->get()->getRefEnt();
+        existing_ent = child_iit->get()->getEnt();
       }
     }
 
@@ -1015,7 +1009,6 @@ MoFEMErrorCode PrismInterface::splitSides(
                                th_interface_side, MB_TAG_CREAT | MB_TAG_SPARSE,
                                def_side);
 
-
     for (auto p = triangles.pair_begin(); p != triangles.pair_end(); ++p) {
       auto f = p->first;
       auto s = p->second;
@@ -1047,16 +1040,14 @@ MoFEMErrorCode PrismInterface::splitSides(
             switch (ents_3d.size()) {
             case 0:
               THROW_MESSAGE(
-                  "Did not find adjacent tets on one side of the interface, "
-                  "check its definition and try creating separate sidesets for "
-                  "each surface");
+                  "Did not find adjacent tets on one side of the interface; if "
+                  "this error appears for a contact interface, try creating "
+                  "separate blocksets for each contact surface");
             case 2:
               THROW_MESSAGE(
-                  "Found both adjacent tets on one side of the interface, "
-                  "check "
-                  "its "
-                  "definition and try creating separate sidesets for each "
-                  "surface");
+                  "Found both adjacent tets on one side of the interface, if "
+                  "this error appears for a contact interface, try creating "
+                  "separate blocksets for each contact surface");
             default:
               break;
             }
@@ -1068,11 +1059,10 @@ MoFEMErrorCode PrismInterface::splitSides(
             int sense, side, offset;
             CHKERR moab.side_number(ent3d, e, side, sense, offset);
             if (sense != 1 && sense != -1) {
-              SETERRQ(
-                  m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-                  "Undefined sense of a trinagle on the interface, check its "
-                  "definition and try creating separate sidesets for each "
-                  "surface");
+              THROW_MESSAGE(
+                  "Undefined sense of a triangle; if this error appears for a "
+                  "contact interface, try creating separate blocksets for each "
+                  "contact surface");
             }
             return sense;
           };
@@ -1122,7 +1112,6 @@ MoFEMErrorCode PrismInterface::splitSides(
         if (rev_conn.second) {
           auto rev_ent = get_new_ent(rev_conn, conn.second, conn.second - 1);
           CHKERR set_parent(f, rev_ent, refined_ents_ptr);
-
         }
       }
     };
@@ -1223,9 +1212,7 @@ MoFEMErrorCode PrismInterface::splitSides(
 
   auto reconstruct_refined_ents = [&]() {
     MoFEMFunctionBegin;
-    const RefEntity_multiIndex *refined_ents_ptr;
-    CHKERR m_field.get_ref_ents(&refined_ents_ptr);
-    CHKERR reconstructMultiIndex(*refined_ents_ptr);
+    CHKERR reconstructMultiIndex(*m_field.get_ref_ents());
     MoFEMFunctionReturn(0);
   };
 

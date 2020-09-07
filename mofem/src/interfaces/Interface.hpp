@@ -41,6 +41,24 @@ static const MOFEMuuid IDD_MOFEMDeprecatedCoreInterface =
  */
 struct CoreInterface : public UnknownInterface {
 
+  virtual ~CoreInterface() = default;
+
+  /**
+   * @brief Get the core
+   *
+   * @return int
+   */
+  virtual const int getValue() const = 0;
+
+  /**
+   * @brief Get RefEntity
+   *
+   * @param ent
+   * @return boost::shared_ptr<RefEntityTmp<0>>
+   */
+  virtual boost::shared_ptr<RefEntityTmp<0>>
+  make_shared_ref_entity(const EntityHandle ent) = 0;
+
   /** \name Interfaces */
 
   /**@{*/
@@ -60,12 +78,10 @@ struct CoreInterface : public UnknownInterface {
    *
    * @param new_moab
    * @param verb
-   * @param distributed_mesh
    * @return MoFEMErrorCode
    */
-  virtual MoFEMErrorCode
-  set_moab_interface(moab::Interface &new_moab, int verb = VERBOSE,
-                     const bool distributed_mesh = true) = 0;
+  virtual MoFEMErrorCode set_moab_interface(moab::Interface &new_moab,
+                                            int verb = VERBOSE) = 0;
 
   /** \brief get MeshsetsManager pointer
    */
@@ -119,7 +135,6 @@ struct CoreInterface : public UnknownInterface {
    * get comm rank
    */
   virtual int get_comm_rank() const = 0;
-
 
   /** \name Check consistency */
 
@@ -350,7 +365,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * Create vertices and add them to field. Those vertices would be carring
    * DOFs of the filed.
-   * 
+   *
    * \note This function is typically used when NOFIELD is created, for example
    * load factor in arc-length control.
    *
@@ -479,6 +494,15 @@ struct CoreInterface : public UnknownInterface {
   virtual MoFEMErrorCode build_field(const std::string field_name,
                                      int verb = DEFAULT_VERBOSITY) = 0;
 
+  /** \brief get field bit number
+  *
+  * \param name of Field
+  * Example:\code
+  auto field_number = mField.get_field_bit_number("DISPLACEMENT");
+  * \endcode
+  */
+  virtual FieldBitNumber get_field_bit_number(const std::string name) const = 0;
+
   /** \brief get field meshset
   *
   * \param name of Field
@@ -486,7 +510,7 @@ struct CoreInterface : public UnknownInterface {
   EntityHandle disp_files_meshset = mField.get_field_meshset("DISPLACEMENT");
   * \endcode
   */
-  virtual EntityHandle get_field_meshset(const std::string &name) const = 0;
+  virtual EntityHandle get_field_meshset(const std::string name) const = 0;
 
   /**
   * \brief get entities in the field by dimension
@@ -1315,6 +1339,17 @@ struct CoreInterface : public UnknownInterface {
                                    BasicMethod &method,
                                    int verb = DEFAULT_VERBOSITY) = 0;
 
+  /**
+   * @brief Cache variables
+   *
+   * @param prb_name
+   * @param cache_ptr 
+   * @return MoFEMErrorCode
+   */
+  virtual MoFEMErrorCode
+  cache_problem_entities(const std::string prb_name,
+                         CacheTupleWeakPtr cache_ptr) = 0;
+
   /** \brief Make a loop over finite elements.
   *
   * This function is like swiss knife, is can be used to post-processing or
@@ -1341,6 +1376,7 @@ struct CoreInterface : public UnknownInterface {
   * @param  fe_ptr       pointer to finite elements multi-index
   * @param  bh           if bH = MF_EXIST, throws error if fe_name does not
   exist
+  * @param  cache_tuple_ptr  cache
   * @param  verb         verbosity level
   * @return              error code
 
@@ -1350,7 +1386,9 @@ struct CoreInterface : public UnknownInterface {
       const std::string &problem_name, const std::string &fe_name,
       FEMethod &method,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
-      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY) = 0;
+      MoFEMTypes bh = MF_EXIST,
+      CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr(),
+      int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to
   lower rank.
@@ -1381,6 +1419,9 @@ struct CoreInterface : public UnknownInterface {
   * @param  fe_ptr       pointer to finite elements multi-index
   * @param  bh           if bH = MF_EXIST, throws error if fe_name does not
   exist
+  * @param  cache_data   cache data vector
+  * @param  cache_row    cache row vector
+  * @param  cache_col    cache row vector
   * @param  verb         verbosity level
   * @return              error code
 
@@ -1390,7 +1431,9 @@ struct CoreInterface : public UnknownInterface {
       const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
       int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
-      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY) = 0;
+      MoFEMTypes bh = MF_EXIST,
+      CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr(),
+      int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to
   lower rank.
@@ -1419,6 +1462,9 @@ struct CoreInterface : public UnknownInterface {
   * @param  fe_ptr       pointer to finite elements multi-index
   * @param  bh           if bH = MF_EXIST, throws error if fe_name does not
   exist
+  * @param  cache_data   cache data vector
+  * @param  cache_row    cache row vector
+  * @param  cache_col    cache row vector
   * @param  verb         verbosity level
   * @return              error code
 
@@ -1428,7 +1474,9 @@ struct CoreInterface : public UnknownInterface {
       const std::string &problem_name, const std::string &fe_name,
       FEMethod &method, int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
-      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY) = 0;
+      MoFEMTypes bh = MF_EXIST,
+      CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr(),
+      int verb = DEFAULT_VERBOSITY) = 0;
 
   /** \brief Make a loop over dofs
 
@@ -1541,6 +1589,98 @@ struct CoreInterface : public UnknownInterface {
 
   /**@{*/
 
+  /**
+   * @brief Get the fields object
+   * @ingroup mofem_access
+   *
+   * @return const Field_multiIndex*
+   */
+  virtual const Field_multiIndex *get_fields() const = 0;
+
+  /**
+   * @brief Get the ref ents object
+   * @ingroup mofem_access
+   *
+   * @return const RefEntity_multiIndex*
+   */
+  virtual const RefEntity_multiIndex *get_ref_ents() const = 0;
+
+  /**
+   * @brief Get the ref finite elements object
+   * @ingroup mofem_access
+   *
+   * @return const RefElement_multiIndex*
+   */
+  virtual const RefElement_multiIndex *get_ref_finite_elements() const = 0;
+
+  /**
+   * @brief Get the finite elements object
+   * @ingroup mofem_access
+   *
+   * @return const FiniteElement_multiIndex*
+   */
+  virtual const FiniteElement_multiIndex *get_finite_elements() const = 0;
+
+  /**
+   * @brief Get the ents finite elements object
+   * @ingroup mofem_access
+   *
+   * @return const EntFiniteElement_multiIndex*
+   */
+  virtual const EntFiniteElement_multiIndex *
+  get_ents_finite_elements() const = 0;
+
+  /**
+   * @brief Get the field ents object
+   * @ingroup mofem_access
+   *
+   * @return const FieldEntity_multiIndex*
+   */
+  virtual const FieldEntity_multiIndex *get_field_ents() const = 0;
+
+  /**
+   * @brief Get the dofs object
+   * @ingroup mofem_access
+   *
+   * @return const DofEntity_multiIndex*
+   */
+  virtual const DofEntity_multiIndex *get_dofs() const = 0;
+
+  /**
+   * @brief Get the problem object
+   * @ingroup mofem_access
+   *
+   * @param problem_name
+   * @return const Problem*
+   */
+  virtual const Problem *get_problem(const std::string &problem_name) const = 0;
+
+  /**
+   * @brief Get the problems object
+   * @ingroup mofem_access
+   *
+   * @return const Problem_multiIndex*
+   */
+  virtual const Problem_multiIndex *get_problems() const = 0;
+
+  /**
+   * @brief Get the dofs elements adjacency object
+   *
+   * @param dofs_elements_adjacency
+   * @return MoFEMErrorCode
+   */
+  virtual MoFEMErrorCode get_ents_elements_adjacency(
+      const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
+          *dofs_elements_adjacency) const = 0;
+
+  /**
+   * @brief Get the dofs elements adjacency object
+   *
+   * @return const FieldEntityEntFiniteElementAdjacencyMap_multiIndex*
+   */
+  virtual const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
+  get_ents_elements_adjacency() const = 0;
+
   /** \brief Get fields multi-index from database
    * \ingroup mofem_access
    */
@@ -1612,7 +1752,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual FieldEntityByFieldName::iterator
+  virtual FieldEntityByUId::iterator
   get_ent_field_by_name_begin(const std::string &field_name) const = 0;
 
   /**
@@ -1626,15 +1766,14 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual FieldEntityByFieldName::iterator
+  virtual FieldEntityByUId::iterator
   get_ent_field_by_name_end(const std::string &field_name) const = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
    * \ingroup mofem_field
    */
 #define _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD, NAME, IT)                  \
-  FieldEntityByFieldName::iterator IT =                                        \
-      (MFIELD).get_ent_field_by_name_begin(NAME);                              \
+  auto IT = (MFIELD).get_ent_field_by_name_begin(NAME);                        \
   IT != (MFIELD).get_ent_field_by_name_end(NAME);                              \
   IT++
 
@@ -1649,7 +1788,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByFieldName::iterator
+  virtual DofEntityByUId::iterator
   get_dofs_by_name_begin(const std::string &field_name) const = 0;
 
   /**
@@ -1663,14 +1802,14 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByFieldName::iterator
+  virtual DofEntityByUId::iterator
   get_dofs_by_name_end(const std::string &field_name) const = 0;
 
   /** loop over all dofs from a moFEM field and particular field
    * \ingroup mofem_field
    */
 #define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD, NAME, IT)                 \
-  DofEntityByFieldName::iterator IT = (MFIELD).get_dofs_by_name_begin(NAME);   \
+  DofEntityByUId::iterator IT = (MFIELD).get_dofs_by_name_begin(NAME);         \
   IT != (MFIELD).get_dofs_by_name_end(NAME);                                   \
   IT++
 
@@ -1686,7 +1825,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByNameAndEnt::iterator
+  virtual DofEntityByUId::iterator
   get_dofs_by_name_and_ent_begin(const std::string &field_name,
                                  const EntityHandle ent) const = 0;
 
@@ -1701,7 +1840,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByNameAndEnt::iterator
+  virtual DofEntityByUId::iterator
   get_dofs_by_name_and_ent_end(const std::string &field_name,
                                const EntityHandle ent) const = 0;
 
@@ -1709,7 +1848,7 @@ struct CoreInterface : public UnknownInterface {
    * \ingroup mofem_access
    */
 #define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD, NAME, ENT, IT)    \
-  DofEntityByNameAndEnt::iterator IT =                                         \
+  DofEntityByUId::iterator IT =                                                \
       (MFIELD).get_dofs_by_name_and_ent_begin(NAME, ENT);                      \
   IT != (MFIELD).get_dofs_by_name_and_ent_end(NAME, ENT);                      \
   IT++
@@ -1727,7 +1866,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByNameAndType::iterator
+  virtual DofEntityByUId::iterator
   get_dofs_by_name_and_type_begin(const std::string &field_name,
                                   const EntityType type) const = 0;
 
@@ -1744,7 +1883,7 @@ struct CoreInterface : public UnknownInterface {
    *
    * \param field_name
    */
-  virtual DofEntityByNameAndType::iterator
+  virtual DofEntityByUId::iterator
   get_dofs_by_name_and_type_end(const std::string &field_name,
                                 const EntityType type) const = 0;
 
@@ -1752,7 +1891,7 @@ struct CoreInterface : public UnknownInterface {
    * \ingroup mofem_field
    */
 #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD, NAME, TYPE, IT)  \
-  DofEntityByNameAndType::iterator IT =                                        \
+  DofEntityByUId::iterator IT =                                                \
       (MFIELD).get_dofs_by_name_and_type_begin(NAME, TYPE);                    \
   IT != (MFIELD).get_dofs_by_name_and_type_end(NAME, TYPE);                    \
   IT++
@@ -1804,7 +1943,6 @@ namespace MoFEM {
 using Interface = DeprecatedCoreInterface;
 
 } // namespace MoFEM
-
 
 #endif // __INTERFACE_HPP__
 

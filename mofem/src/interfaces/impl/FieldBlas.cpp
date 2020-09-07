@@ -41,13 +41,10 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
                                       bool error_if_missing,
                                       bool creat_if_missing) {
   const MoFEM::Interface &m_field = cOre;
-  const Field_multiIndex *fields_ptr;
-  const FieldEntity_multiIndex *field_ents;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto fields_ptr = m_field.get_fields();
+  auto field_ents = m_field.get_field_ents();
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_fields(&fields_ptr);
-  CHKERR m_field.get_field_ents(&field_ents);
-  CHKERR m_field.get_dofs(&dofs_ptr);
 
   auto x_fit = fields_ptr->get<FieldName_mi_tag>().find(field_name_x);
   if (x_fit == fields_ptr->get<FieldName_mi_tag>().end()) {
@@ -92,15 +89,18 @@ MoFEMErrorCode FieldBlas::fieldLambda(FieldBlas::TwoFieldFunction lambda,
           >>
       DofEntity_multiIndex_composite_view;
 
-  auto dof_lo_for_view =
-      dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name_y);
-  auto dof_hi_for_view =
-      dofs_ptr->get<FieldName_mi_tag>().upper_bound(field_name_y);
+  auto dof_lo_for_view = dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId((*y_fit)->getBitNumber()));
+  auto dof_hi_for_view = dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId((*y_fit)->getBitNumber()));
+      
   DofEntity_multiIndex_composite_view dof_composite_view;
   dof_composite_view.insert(dof_lo_for_view, dof_hi_for_view);
 
-  auto x_eit = field_ents->get<FieldName_mi_tag>().lower_bound(field_name_x);
-  auto x_eit_hi = field_ents->get<FieldName_mi_tag>().upper_bound(field_name_x);
+  auto x_eit = field_ents->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId((*x_fit)->getBitNumber()));
+  auto x_eit_hi = field_ents->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId((*x_fit)->getBitNumber()));
   for (; x_eit != x_eit_hi; x_eit++) {
     int nb_dofs_on_x_entity = (*x_eit)->getNbDofsOnEnt();
     VectorAdaptor field_data = (*x_eit)->getEntFieldData();
@@ -243,20 +243,21 @@ MoFEMErrorCode FieldBlas::setVertexDofs(FieldBlas::VertexCoordsFunction lambda,
 MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
                                    const std::string field_name) {
   const MoFEM::Interface &m_field = cOre;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBeginHot;
-  CHKERR m_field.get_dofs(&dofs_ptr);
 
-  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
-      dit,
-      hi_dit;
-  dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, type));
-  hi_dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, type));
-  for (; dit != hi_dit; dit++) {
+  const auto bit_number = m_field.get_field_bit_number(field_name);
+  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_min_type(type));
+  const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_max_type(type));
+
+  auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(lo_uid);
+  auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(hi_uid);
+
+  for (; dit != hi_dit; dit++) 
     (*dit)->getFieldData() = val;
-  }
+  
   MoFEMFunctionReturnHot(0);
 }
 
@@ -264,17 +265,18 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
                                    const Range &ents,
                                    const std::string field_name) {
   const MoFEM::Interface &m_field = cOre;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBeginHot;
-  CHKERR m_field.get_dofs(&dofs_ptr);
 
-  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
-      dit,
-      hi_dit;
-  dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag>().lower_bound(
-      boost::make_tuple(field_name, type));
-  hi_dit = dofs_ptr->get<Composite_Name_And_Type_mi_tag>().upper_bound(
-      boost::make_tuple(field_name, type));
+  const auto bit_number = m_field.get_field_bit_number(field_name);
+  const auto lo_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_min_type(type));
+  const auto hi_uid = FieldEntity::getLocalUniqueIdCalculate(
+      bit_number, get_id_for_max_type(type));
+
+  auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(lo_uid);
+  auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(hi_uid);
+
   EntityHandle ent, last = 0;
   bool cont = true;
   for (; dit != hi_dit; dit++) {
@@ -287,9 +289,9 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
       }
       last = ent;
     }
-    if (cont)
-      continue;
-    (*dit)->getFieldData() = val;
+    if (!cont)
+      (*dit)->getFieldData() = val;
+    
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -297,20 +299,20 @@ MoFEMErrorCode FieldBlas::setField(const double val, const EntityType type,
 MoFEMErrorCode FieldBlas::setField(const double val,
                                    const std::string field_name) {
   const MoFEM::Interface &m_field = cOre;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto fields_ptr = m_field.get_fields();
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBegin;
-  const Field_multiIndex *fields_ptr;
-  CHKERR m_field.get_fields(&fields_ptr);
   auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
   if (fit == fields_ptr->get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              " field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
   }
-  CHKERR m_field.get_dofs(&dofs_ptr);
 
-  auto dit = dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name);
-  auto hi_dit = dofs_ptr->get<FieldName_mi_tag>().upper_bound(field_name);
+  auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId((*fit)->getBitNumber()));
+  auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId((*fit)->getBitNumber()));
   for (; dit != hi_dit; dit++) {
     (*dit)->getFieldData() = val;
   }
@@ -320,25 +322,23 @@ MoFEMErrorCode FieldBlas::setField(const double val,
 MoFEMErrorCode FieldBlas::fieldScale(const double alpha,
                                      const std::string field_name) {
   const MoFEM::Interface &m_field = cOre;
-  const DofEntity_multiIndex *dofs_ptr;
+  auto fields_ptr = m_field.get_fields();
+  auto dofs_ptr = m_field.get_dofs();
   MoFEMFunctionBeginHot;
-  const Field_multiIndex *fields_ptr;
-  CHKERR m_field.get_fields(&fields_ptr);
 
   auto fit = fields_ptr->get<FieldName_mi_tag>().find(field_name);
-  if (fit == fields_ptr->get<FieldName_mi_tag>().end()) {
+  if (fit == fields_ptr->get<FieldName_mi_tag>().end()) 
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              " field < %s > not found, (top tip: check spelling)",
              field_name.c_str());
-  }
-  CHKERR m_field.get_dofs(&dofs_ptr);
 
-  DofEntityByFieldName::iterator dit, hi_dit;
-  dit = dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name);
-  hi_dit = dofs_ptr->get<FieldName_mi_tag>().upper_bound(field_name);
-  for (; dit != hi_dit; dit++) {
+  auto dit = dofs_ptr->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId((*fit)->getBitNumber()));
+  auto hi_dit = dofs_ptr->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId((*fit)->getBitNumber()));
+  for (; dit != hi_dit; dit++) 
     (*dit)->getFieldData() *= alpha;
-  }
+  
   MoFEMFunctionReturnHot(0);
 }
 

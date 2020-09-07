@@ -1540,7 +1540,7 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   EntityHandle tet;
   CHKERR moab_ref.create_element(MBTET, nodes, 4, tet);
 
-  MoFEM::Core m_core_ref(moab_ref, PETSC_COMM_SELF, -2);
+  MoFEM::CoreTmp<-1> m_core_ref(moab_ref, PETSC_COMM_SELF, -2);
   MoFEM::Interface &m_field_ref = m_core_ref;
 
   CHKERR m_field_ref.getInterface<BitRefManager>()->setBitRefLevelByDim(
@@ -1573,7 +1573,7 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   if (1) {
 
     EntityHandle meshset;
-    CHKERR moab_ref.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+    CHKERR moab_ref.create_meshset(MESHSET_SET, meshset);
     CHKERR moab_ref.add_entities(meshset, tets);
     CHKERR moab_ref.convert_entities(meshset, true, false, false);
     CHKERR moab_ref.delete_entities(&meshset, 1);
@@ -1964,7 +1964,7 @@ MoFEMErrorCode VTK_Ainsworth_Hcurl_MBTET(const string file_name) {
   // }
 
   EntityHandle meshset;
-  CHKERR moab_ref.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR moab_ref.create_meshset(MESHSET_SET, meshset);
   CHKERR moab_ref.add_entities(meshset, tets);
   CHKERR moab_ref.write_file(file_name.c_str(), "VTK", "", &meshset, 1);
 
@@ -2627,7 +2627,7 @@ MoFEMErrorCode VTK_Demkowicz_Hcurl_MBTET(const string file_name) {
   EntityHandle tet;
   CHKERR moab_ref.create_element(MBTET, nodes, 4, tet);
 
-  MoFEM::Core m_core_ref(moab_ref, PETSC_COMM_SELF, -2);
+  MoFEM::CoreTmp<-1> m_core_ref(moab_ref, PETSC_COMM_SELF, -2);
   MoFEM::Interface &m_field_ref = m_core_ref;
 
   CHKERR m_field_ref.getInterface<BitRefManager>()->setBitRefLevelByDim(
@@ -2659,7 +2659,7 @@ MoFEMErrorCode VTK_Demkowicz_Hcurl_MBTET(const string file_name) {
   // Use 10 node tets to print base
   if (1) {
     EntityHandle meshset;
-    CHKERR moab_ref.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+    CHKERR moab_ref.create_meshset(MESHSET_SET, meshset);
     CHKERR moab_ref.add_entities(meshset, tets);
     CHKERR moab_ref.convert_entities(meshset, true, false, false);
     CHKERR moab_ref.delete_entities(&meshset, 1);
@@ -2786,7 +2786,7 @@ MoFEMErrorCode VTK_Demkowicz_Hcurl_MBTET(const string file_name) {
   }
 
   EntityHandle meshset;
-  CHKERR moab_ref.create_meshset(MESHSET_SET | MESHSET_TRACK_OWNER, meshset);
+  CHKERR moab_ref.create_meshset(MESHSET_SET, meshset);
   CHKERR moab_ref.add_entities(meshset, tets);
   CHKERR moab_ref.write_file(file_name.c_str(), "VTK", "", &meshset, 1);
 

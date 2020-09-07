@@ -33,10 +33,11 @@ MoFEMErrorCode BitRefManager::query_interface(const MOFEMuuid &uuid,
 
 BitRefManager::BitRefManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
-BitRefManager::~BitRefManager() {}
 
 /// tool class with methods used more than twp times
 struct SetBitRefLevelTool {
+
+  MoFEM::Interface &mField;
 
   const BitRefLevel &bIt;                     ///< bit to set
   const RefEntity_multiIndex *refEntsPtr;     ///< access to ents database
@@ -48,7 +49,8 @@ struct SetBitRefLevelTool {
   SetBitRefLevelTool(MoFEM::Interface &m_field, const BitRefLevel &bit,
                      const RefEntity_multiIndex *ref_ents_ptr,
                      const RefElement_multiIndex *ref_element_ptr)
-      : bIt(bit), refEntsPtr(ref_ents_ptr), refElementPtr(ref_element_ptr),
+      : mField(m_field), bIt(bit), refEntsPtr(ref_ents_ptr),
+        refElementPtr(ref_element_ptr),
         baseEntData(m_field.get_basic_entity_data_ptr()) {}
 
   /// find entities and change entity bit if in database
@@ -83,14 +85,14 @@ struct SetBitRefLevelTool {
         } else
           break;
       }
-
     }
 
     MoFEMFunctionReturnHot(0);
   }
 
   /// add entities to database
-  MoFEMErrorCode addEntsToDatabase(const Range &seed_ents_range) const {
+  template <int N>
+  MoFEMErrorCode addEntsToDatabaseImpl(const Range &seed_ents_range) const {
     MoFEMFunctionBeginHot;
     std::vector<boost::shared_ptr<RefEntity>> shared_ref_ents_vec;
     shared_ref_ents_vec.reserve(seed_ents_range.size());
@@ -99,8 +101,8 @@ struct SetBitRefLevelTool {
       // add entities to database
       EntityHandle f = pit->first;
       EntityHandle s = pit->second;
-      boost::shared_ptr<std::vector<RefEntity>> ref_ents_vec(
-          new std::vector<RefEntity>());
+      boost::shared_ptr<std::vector<RefEntityTmp<N>>> ref_ents_vec(
+          new std::vector<RefEntityTmp<N>>());
       ref_ents_vec->reserve(s - f + 1);
       for (auto f : Range(f, s))
         ref_ents_vec->emplace_back(baseEntData, f);
@@ -118,7 +120,8 @@ struct SetBitRefLevelTool {
       }
 
       for (auto &re : *ref_ents_vec)
-        shared_ref_ents_vec.emplace_back(ref_ents_vec, &re);
+        shared_ref_ents_vec.emplace_back(ref_ents_vec,
+                                         static_cast<RefEntity *>(&re));
     }
     if (!shared_ref_ents_vec.empty()) {
       int s0 = refEntsPtr->size();
@@ -133,6 +136,26 @@ struct SetBitRefLevelTool {
     MoFEMFunctionReturnHot(0);
   }
 
+   MoFEMErrorCode addEntsToDatabase(const Range &seed_ents_range) const {
+     MoFEMFunctionBeginHot;
+
+     boost::hana::for_each(
+
+         boost::hana::make_range(boost::hana::int_c<-1>,
+                                 boost::hana::int_c<MAX_CORE_TMP>),
+
+         [&](auto r) {
+           if (mField.getValue() == r)
+             CHKERR addEntsToDatabaseImpl<r>(seed_ents_range);
+         }
+
+     );
+
+     MoFEMFunctionReturnHot(0);
+   }
+
+ 
+ 
   MoFEMErrorCode findElementsToAdd(EntityHandle f, EntityHandle s,
                                    Range &seed_fe_range) const {
     MoFEMFunctionBeginHot;
@@ -147,7 +170,7 @@ struct SetBitRefLevelTool {
       // some entities from range are in database
       hi_rit = refElementPtr->upper_bound(s);
       for (; rit != hi_rit; ++rit) {
-        seed_fe_range.erase(rit->get()->getRefEnt());
+        seed_fe_range.erase(rit->get()->getEnt());
       }
     }
     MoFEMFunctionReturnHot(0);
@@ -247,13 +270,11 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
                                              const bool only_tets,
                                              int verb) const {
   MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ents_ptr;
-  const RefElement_multiIndex *ref_fe_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
+  auto ref_fe_ptr = m_field.get_ref_finite_elements();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR m_field.get_ref_finite_elements(&ref_fe_ptr);
 
-  if (verb > VERBOSE) 
+  if (verb > VERBOSE)
     PetscSynchronizedPrintf(PETSC_COMM_SELF, "nb. entities to add %d\n",
                             ents.size());
 
@@ -280,10 +301,9 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
             EntityHandle s = pit->second;
             CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
                 .findEntsToAdd(f, s, seed_ents_range);
-            if (!seed_ents_range.empty()) {
+            if (!seed_ents_range.empty())
               CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
                   .addEntsToDatabase(seed_ents_range);
-            }
           }
         }
       }
@@ -297,11 +317,9 @@ MoFEMErrorCode BitRefManager::setElementsBitRefLevel(const Range &ents,
                                                      const BitRefLevel bit,
                                                      int verb) const {
   MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ents_ptr;
-  const RefElement_multiIndex *ref_fe_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
+  auto ref_fe_ptr = m_field.get_ref_finite_elements();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR m_field.get_ref_finite_elements(&ref_fe_ptr);
 
   for (Range::const_pair_iterator pit = ents.pair_begin();
        pit != ents.pair_end(); pit++) {
@@ -313,10 +331,10 @@ MoFEMErrorCode BitRefManager::setElementsBitRefLevel(const Range &ents,
     CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
         .findEntsToAdd(f, s, seed_ents_range);
     // add elements
-    if (!seed_ents_range.empty()) {
+    if (!seed_ents_range.empty())
       CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
           .addEntsToDatabase(seed_ents_range);
-    }
+
     Range seed_fe_range;
     CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
         .findElementsToAdd(f, s, seed_fe_range);
@@ -333,11 +351,9 @@ MoFEMErrorCode BitRefManager::setEntitiesBitRefLevel(const Range &ents,
                                                      const BitRefLevel bit,
                                                      int verb) const {
   MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ents_ptr;
-  const RefElement_multiIndex *ref_fe_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
+  auto ref_fe_ptr = m_field.get_ref_finite_elements();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR m_field.get_ref_finite_elements(&ref_fe_ptr);
 
   for (Range::const_pair_iterator pit = ents.pair_begin();
        pit != ents.pair_end(); pit++) {
@@ -349,10 +365,10 @@ MoFEMErrorCode BitRefManager::setEntitiesBitRefLevel(const Range &ents,
     CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
         .findEntsToAdd(f, s, seed_ents_range);
     // add elements
-    if (!seed_ents_range.empty()) {
+    if (!seed_ents_range.empty()) 
       CHKERR SetBitRefLevelTool(m_field, bit, ref_ents_ptr, ref_fe_ptr)
           .addEntsToDatabase(seed_ents_range);
-    }
+    
   }
   MoFEMFunctionReturn(0);
 }
@@ -393,11 +409,9 @@ MoFEMErrorCode BitRefManager::setBitLevelToMeshset(const EntityHandle meshset,
                                                    const BitRefLevel bit,
                                                    int verb) const {
   MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ents_ptr;
-  const RefElement_multiIndex *ref_fe_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
+  auto ref_fe_ptr = m_field.get_ref_finite_elements();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERR m_field.get_ref_finite_elements(&ref_fe_ptr);
   // Add ref entity
   std::pair<RefEntity_multiIndex::iterator, bool> p_ent =
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)
@@ -493,12 +507,11 @@ MoFEMErrorCode BitRefManager::setNthBitRefLevel(const Range &ents, const int n,
 MoFEMErrorCode BitRefManager::setNthBitRefLevel(const int n, const bool b,
                                                 int verb) const {
   MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ent_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&ref_ent_ptr);
   RefEntity_multiIndex::iterator dit, hi_dit;
-  dit = ref_ent_ptr->begin();
-  hi_dit = ref_ent_ptr->end();
+  dit = ref_ents_ptr->begin();
+  hi_dit = ref_ents_ptr->end();
   for (; dit != hi_dit; dit++) {
     (*const_cast<RefEntity *>(dit->get())->getBitRefLevelPtr())[n] = b;
     if (verb >= VERY_VERBOSE) {
@@ -520,9 +533,8 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
                                                const BitRefLevel mask,
                                                int verb) const {
   MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ent_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_ref_ents(&ref_ent_ptr);
   RefEntity_change_right_shift right_shift(1, mask);
   for (int ii = 0; ii < shift; ii++) {
     // delete bits on the right which are shifted to zero
@@ -531,8 +543,8 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
       CHKERR m_field.delete_ents_by_bit_ref(delete_bits, delete_bits, true,
                                             verb);
     }
-    for (RefEntity_multiIndex::iterator ent_it = ref_ent_ptr->begin();
-         ent_it != ref_ent_ptr->end(); ent_it++) {
+    for (RefEntity_multiIndex::iterator ent_it = ref_ents_ptr->begin();
+         ent_it != ref_ents_ptr->end(); ent_it++) {
       if (verb > NOISY) {
         std::cerr << (*ent_it)->getBitRefLevel() << " : ";
       }
@@ -630,7 +642,7 @@ MoFEMErrorCode BitRefManager::filterEntitiesByRefLevel(const BitRefLevel bit,
 
     // get bits on entities
     rval = moab.tag_get_by_ptr(cOre.get_th_RefBitLevel(), Range(f, s),
-                             (const void **)(&*tags_bits_ptr_vec.begin()));
+                               (const void **)(&*tags_bits_ptr_vec.begin()));
 
     if (rval == MB_SUCCESS) {
 
@@ -662,7 +674,6 @@ MoFEMErrorCode BitRefManager::filterEntitiesByRefLevel(const BitRefLevel bit,
 
           hint = swap_ents.insert(hint, start, f - 1);
         }
-
       }
     }
   }
@@ -740,18 +751,17 @@ MoFEMErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel bit,
                                                       Range &ents,
                                                       const int verb) const {
   MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ents_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
-  auto &ref_ents = ref_ents_ptr->get<ParentEntType_mi_tag>();
-  auto it = ref_ents.lower_bound(type);
-  auto hi_it = ref_ents.upper_bound(type);
+  auto &ref_ents = ref_ents_ptr->get<Ent_Ent_mi_tag>();
+  auto it = ref_ents.lower_bound(get_id_for_min_type(type));
+  auto hi_it = ref_ents.upper_bound(get_id_for_max_type(type));
   std::vector<EntityHandle> ents_vec;
   ents_vec.reserve(std::distance(it, hi_it));
   for (; it != hi_it; it++) {
     const BitRefLevel &ent_bit = it->get()->getBitRefLevel();
     if ((ent_bit & mask) == ent_bit && (ent_bit & bit).any())
-      ents_vec.emplace_back(it->get()->getRefEnt());
+      ents_vec.emplace_back(it->get()->getEnt());
   }
   ents.insert_list(ents_vec.begin(), ents_vec.end());
   if (verb > NOISY)
@@ -762,25 +772,20 @@ MoFEMErrorCode BitRefManager::getEntitiesByParentType(const BitRefLevel bit,
 MoFEMErrorCode BitRefManager::getAllEntitiesNotInDatabase(Range &ents) const {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MoFEMFunctionBeginHot;
-  rval = moab.get_entities_by_handle(0, ents, false);
-  CHKERRG(rval);
+  MoFEMFunctionBegin;
+  CHKERR moab.get_entities_by_handle(0, ents, false);
   ents = subtract(ents, ents.subset_by_type(MBENTITYSET));
-  ierr = filterEntitiesNotInDatabase(ents);
-  CHKERRG(ierr);
-  MoFEMFunctionReturnHot(0);
+  CHKERR filterEntitiesNotInDatabase(ents);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode BitRefManager::filterEntitiesNotInDatabase(Range &ents) const {
   MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ents_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBeginHot;
-  ierr = m_field.get_ref_ents(&ref_ents_ptr);
-  CHKERRG(ierr);
-  Range::iterator eit = ents.begin();
+  auto eit = ents.begin();
   for (; eit != ents.end();) {
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator rit;
-    rit = ref_ents_ptr->get<Ent_mi_tag>().find(*eit);
+    auto rit = ref_ents_ptr->get<Ent_mi_tag>().find(*eit);
     if (rit != ref_ents_ptr->get<Ent_mi_tag>().end()) {
       eit = ents.erase(eit);
     } else {
@@ -901,9 +906,8 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
     EntityType child_type, const bool recursive, int verb) {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  const RefEntity_multiIndex *ref_ents_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   Range ents;
   CHKERR moab.get_entities_by_handle(parent, ents, recursive);
   CHKERR filterEntitiesByRefLevel(parent_bit, parent_mask, ents, verb);
@@ -933,7 +937,7 @@ MoFEMErrorCode BitRefManager::updateMeshsetByEntitiesChildren(
     children_ents_vec.reserve(std::distance(lo_mit, hi_mit));
     for (; lo_mit != hi_mit; ++lo_mit)
       if (check(*(*lo_mit)->getBitRefLevelPtr()))
-        children_ents_vec.emplace_back((*lo_mit)->getRefEnt());
+        children_ents_vec.emplace_back((*lo_mit)->getEnt());
     children_ents.insert_list(children_ents_vec.begin(),
                               children_ents_vec.end());
   }
@@ -956,11 +960,9 @@ MoFEMErrorCode BitRefManager::updateFieldMeshsetByEntitiesChildren(
     const BitRefLevel &child_bit, int verb) {
   MoFEM::Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  const Field_multiIndex *fields_ptr;
-  const RefEntity_multiIndex *ref_ents_ptr;
+  auto fields_ptr = m_field.get_fields();
+  auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_fields(&fields_ptr);
-  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
 
   for (auto &fit : (*fields_ptr)) {
 
@@ -1025,9 +1027,8 @@ MoFEMErrorCode BitRefManager::updateFiniteElementMeshsetByEntitiesChildren(
 MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
                                           Range &child_ents) {
   MoFEM::Interface &m_field = cOre;
-  const RefEntity_multiIndex *ref_ents_ptr;
+  auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
-  CHKERR m_field.get_ref_ents(&ref_ents_ptr);
   auto &ref_ents =
       const_cast<RefEntity_multiIndex *>(ref_ents_ptr)->get<Ent_Ent_mi_tag>();
   std::vector<EntityHandle> child_ents_vec;
@@ -1042,7 +1043,7 @@ MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
           SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
                   "this should not happen");
         }
-        child_ents_vec.emplace_back((*it)->getRefEnt());
+        child_ents_vec.emplace_back((*it)->getEnt());
       }
     }
   }

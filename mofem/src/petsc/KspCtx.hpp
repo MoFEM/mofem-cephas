@@ -32,31 +32,22 @@ struct KspCtx {
   std::string problemName; ///< Problem name
   MoFEMTypes bH;           ///< If set to MF_EXIST check if element exist
 
-  /// \deprecated use PairNameFEMethodPtr
-  DEPRECATED typedef MoFEM::PairNameFEMethodPtr loop_pair_type;
-
-  /// \deprecated use FEMethodsSequence
-  DEPRECATED typedef MoFEM::FEMethodsSequence loops_to_do_type;
-
-  /// \deprecated use BasicMethodsSequence
-  DEPRECATED typedef MoFEM::BasicMethodsSequence basic_method_to_do;
-
   typedef MoFEM::PairNameFEMethodPtr PairNameFEMethodPtr;
   typedef MoFEM::FEMethodsSequence FEMethodsSequence;
   typedef MoFEM::BasicMethodsSequence BasicMethodsSequence;
 
   FEMethodsSequence loops_to_do_Mat; ///< Sequence of finite elements instances
                                      ///< assembling tangent matrix
-  FEMethodsSequence loops_to_do_Rhs; ///< Sequence of finite elements instances
-                                     ///< assembling residual vector
-  BasicMethodsSequence preProcess_Mat;  ///< Sequence of methods run before
-                                        ///< tangent matrix is assembled
+  FEMethodsSequence loops_to_do_Rhs;   ///< Sequence of finite elements
+                                       ///< instances assembling residual vector
+  BasicMethodsSequence preProcess_Mat; ///< Sequence of methods run before
+                                       ///< tangent matrix is assembled
   BasicMethodsSequence postProcess_Mat; ///< Sequence of methods run after
                                         ///< tangent matrix is assembled
-  BasicMethodsSequence
-      preProcess_Rhs; ///< Sequence of methods run before residual is assembled
-  BasicMethodsSequence
-      postProcess_Rhs; ///< Sequence of methods run after residual is assembled
+  BasicMethodsSequence preProcess_Rhs;  ///< Sequence of methods run before
+                                        ///< residual is assembled
+  BasicMethodsSequence postProcess_Rhs; ///< Sequence of methods run after
+                                        ///< residual is assembled
 
   KspCtx(MoFEM::Interface &m_field, const std::string &_problem_name)
       : mField(m_field), moab(m_field.get_moab()), problemName(_problem_name),
@@ -64,7 +55,7 @@ struct KspCtx {
     PetscLogEventRegister("LoopKSPRhs", 0, &MOFEM_EVENT_KspRhs);
     PetscLogEventRegister("LoopKSPMat", 0, &MOFEM_EVENT_KspMat);
   }
-  virtual ~KspCtx() {}
+  virtual ~KspCtx() = default;
 
   /**
    * @return return reference to vector with FEMethod to calculate matrix
@@ -112,13 +103,11 @@ struct KspCtx {
   friend PetscErrorCode KspMat(KSP ksp, Mat A, Mat B, void *ctx);
 
 private:
-
   PetscLogEvent MOFEM_EVENT_KspRhs;
   PetscLogEvent MOFEM_EVENT_KspMat;
 
   boost::movelib::unique_ptr<bool> vecAssembleSwitch;
   boost::movelib::unique_ptr<bool> matAssembleSwitch;
-
 };
 
 /**

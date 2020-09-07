@@ -77,6 +77,14 @@ int main(int argc, char *argv[]) {
                        "\nTesting logging for obsolete way of printing "
                        "messages\nnext line\nnext line\n\n");
 
+    CHKERR PetscPrintf(PETSC_COMM_WORLD,
+                       "Ala have ");
+    CHKERR PetscPrintf(PETSC_COMM_WORLD, "a ");
+    CHKERR PetscPrintf(PETSC_COMM_WORLD,
+                       "cat\n");
+
+    CHKERR PetscPrintf(PETSC_COMM_WORLD, "WARNING\n");
+
     // Set "WORLD channel"
     MOFEM_LOG_CHANNEL("WORLD");
     {
@@ -95,7 +103,7 @@ int main(int argc, char *argv[]) {
     {
       CHKERR log_fun1();
       CHKERR log_fun2();
-      MOFEM_LOG_SYNCHORMISE(m_field.get_comm());
+      MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
     }
 
     // SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "Trigger error");

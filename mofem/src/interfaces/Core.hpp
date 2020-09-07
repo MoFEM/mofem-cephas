@@ -25,6 +25,33 @@ namespace MoFEM {
 // This is to have obsolete back compatibility
 struct MeshsetsManager;
 
+template <int V> struct CoreValue {};
+
+template <int N> struct CoreTmp : public CoreTmp<N - 1> {
+
+  static constexpr const int value = N;
+  const int getValue() const { return value; }
+
+  boost::shared_ptr<RefEntityTmp<0>> virtual make_shared_ref_entity(
+      const EntityHandle ent);
+
+  using CoreTmp<N - 1>::CoreTmp;
+
+  /**
+   * Construct core database
+   */
+  CoreTmp(moab::Interface &moab,            ///< MoAB interface
+          MPI_Comm comm = PETSC_COMM_WORLD, ///< MPI communicator
+          const int verbose = VERBOSE       ///< Verbosity level
+
+  );
+
+  MoFEMErrorCode set_moab_interface(moab::Interface &new_moab, int verb);
+
+};
+
+template <int N> constexpr const int CoreTmp<N>::value;
+
 /** \brief Core (interface) class
 * \ingroup mofem
 * \nosubgrouping
@@ -47,24 +74,27 @@ libs like PETSc. Moreover initialization functions should set error handlers,
 etc.
 
 */
-struct Core : public Interface {
+template <> struct CoreTmp<0> : public Interface {
+
+  static constexpr int value = 0;
+  const int getValue() const { return value; }
+  RefEntityTmp<0> getRefEntity(const EntityHandle ent) {
+    return RefEntityTmp<0>(this->basicEntityDataPtr, ent);
+  }
+
+  virtual boost::shared_ptr<RefEntityTmp<0>>
+  make_shared_ref_entity(const EntityHandle ent);
 
   /**
    * Construct core database
    */
-  Core(moab::Interface &moab,             ///< MoAB interface
-       MPI_Comm comm = PETSC_COMM_WORLD,  ///< MPI communicator
-       const int verbose = VERBOSE,       ///< Verbosity level
-       const bool distributed_mesh = true ///< UId of entities and dofs depends
-                                          ///< on owing processor, assumed that
-                                          ///< mesh is distributed. Otherwise
-                                          ///< is assumed that all processors
-                                          ///< have the same meshes and same
-                                          ///< entity handlers.
+  CoreTmp(moab::Interface &moab,            ///< MoAB interface
+          MPI_Comm comm = PETSC_COMM_WORLD, ///< MPI communicator
+          const int verbose = VERBOSE       ///< Verbosity level
 
   );
 
-  ~Core();
+  ~CoreTmp();
 
   /** \name Global initialisation and finalisation  */
 
@@ -128,7 +158,19 @@ struct Core : public Interface {
 
   /**@}*/
 
-  /** \name Assessing interfaces */
+  /**@{*/
+
+  /** \name Static functions */
+
+  static void setRefEntBasicDataPtr(MoFEM::Interface &m_field,
+                                    boost::shared_ptr<BasicEntityData> &ptr);
+
+  static boost::shared_ptr<RefEntityTmp<0>>
+  makeSharedRefEntity(MoFEM::Interface &m_field, const EntityHandle ent);
+
+  /**@}&*/
+
+  /** \name Assessing interfaces **/
 
   /**@{*/
 
@@ -193,6 +235,17 @@ struct Core : public Interface {
   /**@}*/
 
 protected:
+  /**
+   * Construct core database
+   */
+  template <int V>
+  CoreTmp(moab::Interface &moab, ///< MoAB interface
+          MPI_Comm comm,         ///< MPI communicator
+          const int verbose, CoreValue<V>);
+
+  MoFEMErrorCode coreGenericConstructor(moab::Interface &moab, MPI_Comm comm,
+                                        const int verbose);
+
   /** \name Tags to data on mesh and entities */
 
   /**@{*/
@@ -267,8 +320,10 @@ protected:
   inline const moab::Interface &get_moab() const { return moab; }
 
   MoFEMErrorCode set_moab_interface(moab::Interface &new_moab,
-                                    int verb = VERBOSE,
-                                    const bool distributed_mesh = true);
+                                    int verb = VERBOSE);
+
+  MoFEMErrorCode setMoabInterface(moab::Interface &new_moab,
+                                  int verb = VERBOSE);
 
   /**@}*/
 
@@ -357,16 +412,37 @@ protected:
   efficient. MB_TAG_DENSE uses memory more efficient and in principle allow for
   better efficiency if properly utilized.
 
+
   FIXME: \bug Need to resolve problem of dense tags at this stage of development
   will make only problems
 
   */
-  MoFEMErrorCode add_field(const std::string &name, const FieldSpace space,
-                           const FieldApproximationBase base,
-                           const FieldCoefficientsNumber nb_coefficients,
-                           const TagType tag_type = MB_TAG_SPARSE,
-                           const enum MoFEMTypes bh = MF_EXCL,
-                           int verb = DEFAULT_VERBOSITY);
+  virtual MoFEMErrorCode
+  add_field(const std::string &name, const FieldSpace space,
+            const FieldApproximationBase base,
+            const FieldCoefficientsNumber nb_coefficients,
+            const TagType tag_type = MB_TAG_SPARSE,
+            const enum MoFEMTypes bh = MF_EXCL, int verb = DEFAULT_VERBOSITY);
+
+  /**
+   * @brief Template for add_field
+   *
+   * @tparam CoreN
+   * @param name
+   * @param space
+   * @param base
+   * @param nb_coefficients
+   * @param tag_type
+   * @param bh
+   * @param verb
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode addField(const std::string &name, const FieldSpace space,
+                          const FieldApproximationBase base,
+                          const FieldCoefficientsNumber nb_coefficients,
+                          const TagType tag_type, const enum MoFEMTypes bh,
+                          int verb);
+
   MoFEMErrorCode addEntsToFieldByDim(const Range &ents, const int dim,
                                      const std::string &name,
                                      int verb = DEFAULT_VERBOSITY);
@@ -395,9 +471,17 @@ protected:
 
   /// \name Set approximation order
 
+  MoFEMErrorCode setFieldOrder(const Range &ents, const BitFieldId id,
+                               const ApproximationOrder order, int ver);
+
+  MoFEMErrorCode setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
+                                   const Range &ents,
+                                   const ApproximationOrder order, int verb);
+
   MoFEMErrorCode set_field_order(const Range &ents, const BitFieldId id,
                                  const ApproximationOrder order,
                                  int verb = DEFAULT_VERBOSITY);
+
   MoFEMErrorCode set_field_order(const EntityHandle meshset,
                                  const EntityType type, const BitFieldId id,
                                  const ApproximationOrder order,
@@ -420,9 +504,14 @@ protected:
 
   /// \name Build fields
 
+  MoFEMErrorCode
+  buildFieldForNoFieldImpl(boost::shared_ptr<Field> field_ptr,
+                           std::map<EntityType, int> &dof_counter, int verb);
+
   MoFEMErrorCode buildFieldForNoField(const BitFieldId id,
                                       std::map<EntityType, int> &dof_counter,
                                       int verb = DEFAULT_VERBOSITY);
+
   MoFEMErrorCode
   buildFieldForL2H1HcurlHdiv(const BitFieldId id,
                              std::map<EntityType, int> &dof_counter,
@@ -477,8 +566,9 @@ protected:
   MoFEMErrorCode list_dofs_by_field_name(const std::string &name) const;
   MoFEMErrorCode list_fields() const;
   BitFieldId getBitFieldId(const std::string &name) const;
+  FieldBitNumber get_field_bit_number(const std::string name) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
-  EntityHandle get_field_meshset(const std::string &name) const;
+  EntityHandle get_field_meshset(const std::string name) const;
   MoFEMErrorCode get_field_entities_by_dimension(const std::string name,
                                                  int dim, Range &ents) const;
   MoFEMErrorCode get_field_entities_by_type(const std::string name,
@@ -729,21 +819,35 @@ protected:
                                    BasicMethod &method,
                                    int verb = DEFAULT_VERBOSITY);
 
+  /**
+   * @copydoc MoFEM::CoreInterface::cache_problem_entities
+   */
+  MoFEMErrorCode cache_problem_entities(const std::string prb_name,
+                                        CacheTupleWeakPtr cache_ptr);
+
   MoFEMErrorCode loop_finite_elements(
       const Problem *problem_ptr, const std::string &fe_name, FEMethod &method,
       int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
-      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY);
+      MoFEMTypes bh = MF_EXIST,
+      CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr(),
+      int verb = DEFAULT_VERBOSITY);
+
   MoFEMErrorCode loop_finite_elements(
       const std::string &problem_name, const std::string &fe_name,
       FEMethod &method, int lower_rank, int upper_rank,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
-      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY);
+      MoFEMTypes bh = MF_EXIST,
+      CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr(),
+      int verb = DEFAULT_VERBOSITY);
+
   MoFEMErrorCode loop_finite_elements(
       const std::string &problem_name, const std::string &fe_name,
       FEMethod &method,
       boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr = nullptr,
-      MoFEMTypes bh = MF_EXIST, int verb = DEFAULT_VERBOSITY);
+      MoFEMTypes bh = MF_EXIST,
+      CacheTupleWeakPtr cache_ptr = CacheTupleSharedPtr(),
+      int verb = DEFAULT_VERBOSITY);
 
   MoFEMErrorCode loop_dofs(const Problem *problem_ptr,
                            const std::string &field_name, RowColData rc,
@@ -796,24 +900,40 @@ protected:
   MoFEMErrorCode get_problem(const std::string &problem_name,
                              const Problem **problem_ptr) const;
   MoFEMErrorCode get_problems(const Problem_multiIndex **problems_ptr) const;
-  FieldEntityByFieldName::iterator
+  MoFEMErrorCode get_ents_elements_adjacency(
+      const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
+          *dofs_elements_adjacency) const;
+
+  const Field_multiIndex *get_fields() const;
+  const RefEntity_multiIndex *get_ref_ents() const;
+  const RefElement_multiIndex *get_ref_finite_elements() const;
+  const FiniteElement_multiIndex *get_finite_elements() const;
+  const EntFiniteElement_multiIndex *get_ents_finite_elements() const;
+  const FieldEntity_multiIndex *get_field_ents() const;
+  const DofEntity_multiIndex *get_dofs() const;
+  const Problem *get_problem(const std::string &problem_name) const;
+  const Problem_multiIndex *get_problems() const;
+  const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
+  get_ents_elements_adjacency() const;
+
+  FieldEntityByUId::iterator
   get_ent_field_by_name_begin(const std::string &field_name) const;
-  FieldEntityByFieldName::iterator
+  FieldEntityByUId::iterator
   get_ent_field_by_name_end(const std::string &field_name) const;
-  DofEntityByFieldName::iterator
+  DofEntityByUId::iterator
   get_dofs_by_name_begin(const std::string &field_name) const;
-  DofEntityByFieldName::iterator
+  DofEntityByUId::iterator
   get_dofs_by_name_end(const std::string &field_name) const;
-  DofEntityByNameAndEnt::iterator
+  DofEntityByUId::iterator
   get_dofs_by_name_and_ent_begin(const std::string &field_name,
                                  const EntityHandle ent) const;
-  DofEntityByNameAndEnt::iterator
+  DofEntityByUId::iterator
   get_dofs_by_name_and_ent_end(const std::string &field_name,
                                const EntityHandle ent) const;
-  DofEntityByNameAndType::iterator
+  DofEntityByUId::iterator
   get_dofs_by_name_and_type_begin(const std::string &field_name,
                                   const EntityType type) const;
-  DofEntityByNameAndType::iterator
+  DofEntityByUId::iterator
   get_dofs_by_name_and_type_end(const std::string &field_name,
                                 const EntityType ent) const;
   EntFiniteElementByName::iterator
@@ -863,7 +983,9 @@ protected:
    */
   inline int get_comm_rank() const { return rAnk; }
 
-private:
+  /**@}*/
+
+protected:
   struct WrapMPIComm {
     WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm)
         : comm(comm), duplicatedComm(duplicated_comm) {
@@ -893,7 +1015,6 @@ private:
   mutable boost::ptr_map<unsigned long, UnknownInterface> iFaces;
 
   mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
-  static bool isGloballyInitialised; ///< Core base globally initialized
 
   std::string optionsPrefix; ///< Prefix for options on command line
 
@@ -902,6 +1023,10 @@ private:
 
   PetscBool initaliseAndBuildFiniteElements; // If true build finite elements on
                                              // database initialisation
+
+  static bool isGloballyInitialised; ///< Core base globally initialized
+  static int mpiInitialised;         ///< mpi was initialised by other agent
+  static PetscBool isInitialized;    ///< petsc was initialised by other agent
 
   /**
    * @brief add problem
@@ -971,14 +1096,40 @@ private:
 
   /**
    * @brief Register subinterfac in core interface
-   * 
-   * @tparam IFACE 
-   * @param uid 
-   * @return MoFEMErrorCode 
+   *
+   * @tparam IFACE
+   * @param uid
+   * @return MoFEMErrorCode
    */
   template <class IFACE> MoFEMErrorCode regSubInterface(const MOFEMuuid &uid);
 };
 
+template <> struct CoreTmp<-1> : public CoreTmp<0> {
+
+  static constexpr const int value = -1;
+  const int getValue() const { return value; }
+
+  virtual boost::shared_ptr<RefEntityTmp<0>>
+  make_shared_ref_entity(const EntityHandle ent);
+
+  /**
+   * Construct core database
+   */
+  CoreTmp(moab::Interface &moab,            ///< MoAB interface
+          MPI_Comm comm = PETSC_COMM_WORLD, ///< MPI communicator
+          const int verbose = VERBOSE       ///< Verbosity level
+
+  );
+
+  virtual MoFEMErrorCode set_moab_interface(moab::Interface &new_moab,
+                                            int verb = VERBOSE);
+
+};
+
+using Core = CoreTmp<0>;
+
 } // namespace MoFEM
+
+#include <CoreTemplates.hpp>
 
 #endif // __CORE_HPP__

@@ -17,19 +17,6 @@
 #ifndef __LOGMANAGER_HPP__
 #define __LOGMANAGER_HPP__
 
-#define BOOST_LOG_DYN_LINK
-#include <boost/log/sources/severity_channel_logger.hpp>
-#include <boost/log/attributes.hpp>
-#include <boost/log/attributes/scoped_attribute.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sources/severity_feature.hpp>
-#include <boost/log/sinks/text_ostream_backend.hpp>
-#include <boost/log/sinks/sync_frontend.hpp>
-#include <boost/log/sources/severity_feature.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/core/null_deleter.hpp>
-
 namespace attrs = boost::log::attributes;
 namespace logging = boost::log;
 namespace keywords = boost::log::keywords;
@@ -146,6 +133,27 @@ struct LogManager : public UnknownInterface {
   static void addTag(const std::string channel, const std::string tag);
 
   /**
+   * @brief Get the strm self object
+   * 
+   * @return boost::shared_ptr<std::ostream> 
+   */
+  static boost::shared_ptr<std::ostream> getStrmSelf(); 
+
+  /**
+   * @brief Get the strm world object
+   * 
+   * @return boost::shared_ptr<std::ostream> 
+   */
+  static boost::shared_ptr<std::ostream> getStrmWorld();
+
+  /**
+   * @brief Get the strm sync object
+   * 
+   * @return boost::shared_ptr<std::ostream> 
+   */
+  static boost::shared_ptr<std::ostream> getStrmSync();
+
+  /**
    * @brief Create a sink object
    *
    * @param stream_ptr
@@ -156,28 +164,20 @@ struct LogManager : public UnknownInterface {
   createSink(boost::shared_ptr<std::ostream> stream_ptr,
              std::string comm_filter);
 
-
   /**
-   * @brief Create sinks
+   * @brief Create default sinks
    *
    */
-  static void createSinks(MPI_Comm comm);
+  static void createDefaultSinks(MPI_Comm comm);
 
-  /**
-   * @brief Get the Interface Options
+  /** @brief Get logger option 
    *
    * This function is called by MoFEM core when this interface is registred
    * into database.
    *
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode getSubInterfaceOptions();
-
-  /**
-   * \brief Get options from command line
-   * @return error code
-   */
-  MoFEMErrorCode getOptions();
+  static MoFEMErrorCode getOptions();
 
   /**
    * @brief Dummy file pointer (DO NOT USE)
@@ -233,8 +233,7 @@ private:
   struct InternalData;
   static boost::shared_ptr<InternalData> internalDataPtr;
 
-  MoFEMErrorCode setUpLog();
-  
+  static std::string petscStringCache;
 
 };
 
@@ -338,7 +337,7 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
  * @brief Synchronise "SYNC" channel
  * 
  */
-#define MOFEM_LOG_SYNCHORMISE(comm)                                            \
+#define MOFEM_LOG_SYNCHRONISE(comm)                                            \
   PetscSynchronizedFlush(comm, MoFEM::LogManager::dummy_mofem_fd);
 
 #endif //__LOGMANAGER_HPP__

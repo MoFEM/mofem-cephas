@@ -37,8 +37,8 @@ project(MoFEM C CXX)
 
 # Set fallback version. Fallback version is version of MoFEM which is used
 # as default version if version from the git tags can not be extracted. For exammple 
-# that is a keys when somone commole mofem frome tarball.
-set(MoFEM_FALLBACK_VERSION "0.9.1" CACHE STRING "Fallback version")
+# that is a keys when somone install mofem from tarball.
+set(MoFEM_FALLBACK_VERSION "0.10.0" CACHE STRING "Fallback version" FORCE)
 message(STATUS "Falback vecrsion v${MoFEM_FALLBACK_VERSION}")
 
 # Options
@@ -130,7 +130,9 @@ message(STATUS "MoFEM GIT_TAG ${VERSION}")
 get_git_version(
   ${VERSION} MoFEM_VERSION_MAJOR MoFEM_VERSION_MINOR MoFEM_VERSION_BUILD)
 set(MoFEM_VERSON 
-  ${MoFEM_VERSION_MAJOR}.${MoFEM_VERSION_MINOR}.${MoFEM_VERSION_BUILD})
+  ${MoFEM_VERSION_MAJOR}.${MoFEM_VERSION_MINOR}.${MoFEM_VERSION_BUILD} 
+  CACHE STRING "MoFEM version" FORCE)
+
 message(STATUS "MoFEM Version v${MoFEM_VERSON}")
 add_definitions(
   -DMoFEM_VERSION_MAJOR=${MoFEM_VERSION_MAJOR} 

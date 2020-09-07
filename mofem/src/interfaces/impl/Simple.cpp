@@ -60,11 +60,11 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
       case H1:
         CHKERR moab.get_connectivity(bride_adjacency_edge, bride_adjacency,
                                      true);
-      case L2:
       case HCURL:
       case HDIV:
         CHKERR moab.get_adjacencies(bride_adjacency_edge, 1, false,
                                     bride_adjacency, moab::Interface::UNION);
+      case L2:
         bride_adjacency.merge(bride_adjacency_edge);
         break;
       case NOFIELD:
@@ -118,10 +118,10 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
       case HCURL:
         CHKERR moab.get_adjacencies(bride_adjacency_face, 1, false,
                                     bride_adjacency, moab::Interface::UNION);
-      case L2:
       case HDIV:
         CHKERR moab.get_adjacencies(bride_adjacency_face, 2, false,
                                     bride_adjacency, moab::Interface::UNION);
+      case L2:
         bride_adjacency.merge(bride_adjacency_face);
         break;
       case NOFIELD:
@@ -390,8 +390,7 @@ MoFEMErrorCode Simple::defineFiniteElements() {
 
   auto clear_rows_and_cols = [&](auto &fe_name) {
     MoFEMFunctionBeginHot;
-    const FiniteElement_multiIndex *fe_ptr;
-    CHKERR m_field.get_finite_elements(&fe_ptr);
+    auto fe_ptr = m_field.get_finite_elements();
     auto &fe_by_name = const_cast<FiniteElement_multiIndex *>(fe_ptr)
                            ->get<FiniteElement_name_mi_tag>();
     auto it_fe = fe_by_name.find(fe_name);

@@ -255,7 +255,7 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cannot find Cubit meshset with id: %d", ms_id);
   }
   EntityHandle meshset = cit->getMeshset();
   CHKERR moab.add_entities(meshset, ents);
@@ -276,7 +276,7 @@ MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cannot find Cubit meshset with id: %d", ms_id);
   }
   EntityHandle meshset = cit->getMeshset();
   CHKERR moab.add_entities(meshset, ents, nb_ents);
@@ -297,7 +297,7 @@ MeshsetsManager::setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cannot find Cubit meshset with id: %d", ms_id);
   }
   if (name.size() > 0) {
     bool success = cubitMeshsets.modify(cubitMeshsets.project<0>(cit),
@@ -328,7 +328,7 @@ MoFEMErrorCode MeshsetsManager::setAtributesByDataStructure(
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cannot find Cubit meshset with id: %d", ms_id);
   }
   if (name.size() > 0) {
     bool success = cubitMeshsets.modify(cubitMeshsets.project<0>(cit),
@@ -359,7 +359,7 @@ MoFEMErrorCode MeshsetsManager::setBcData(const CubitBCType cubit_bc_type,
   if (cit ==
       cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "such cubit meshset is already there", ms_id);
+             "Cubit meshset with id is already there", ms_id);
   }
   bool success =
       cubitMeshsets.modify(cubitMeshsets.project<0>(cit),
@@ -889,8 +889,7 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
       collect_unrecognized(parsed.options, po::include_positional);
   for (std::vector<std::string>::iterator vit = additional_parameters.begin();
        vit != additional_parameters.end(); vit++) {
-    MOFEM_LOG_C("WORLD", Sev::warning, "Unrecognized option %s\n",
-                vit->c_str());
+    MOFEM_LOG_C("WORLD", Sev::warning, "Unrecognized option %s", vit->c_str());
   }
   for (map<int, BlockData>::iterator mit = block_lists.begin();
        mit != block_lists.end(); mit++) {
@@ -982,9 +981,8 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
           mit->second.dispBc.data.flag6 = 0;
         if (mit->second.dispBc.data.flag6)
           mit->second.dispBc.data.flag6 = 1;
-        ierr =
-            setBcData(mit->second.bcType, mit->second.iD, mit->second.dispBc);
-        CHKERRG(ierr);
+        CHKERR setBcData(mit->second.bcType, mit->second.iD,
+                         mit->second.dispBc);
       }
       if (mit->second.forceBc.data.value1 != 0 ||
           mit->second.forceBc.data.value2 != 0) {
@@ -1086,8 +1084,7 @@ MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(
   CHKERR getCubitMeshsetPtr(ms_id, cubit_bc_type, &cubit_meshset_ptr);
   EntityHandle meshset = cubit_meshset_ptr->getMeshset();
   CHKERR m_field.get_moab().write_file(file_name.c_str(), file_type.c_str(),
-                                       options.c_str(), &meshset, 1, nullptr,
-                                       0);
+                                       options.c_str(), &meshset, 1);
   MoFEMFunctionReturn(0);
 }
 
@@ -1105,7 +1102,7 @@ MoFEMErrorCode MeshsetsManager::saveMeshsetToFile(
   CHKERR moab.create_meshset(MESHSET_SET, meshset);
   CHKERR moab.add_entities(meshset, entities);
   CHKERR moab.write_file(file_name.c_str(), file_type.c_str(), options.c_str(),
-                         &meshset, 1, nullptr, 0);
+                         &meshset, 1);
   CHKERR moab.delete_entities(&meshset, 1);
   MoFEMFunctionReturn(0);
 }

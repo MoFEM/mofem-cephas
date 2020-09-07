@@ -36,6 +36,7 @@ typedef int EntPart;                 ///< Partition owning entity
 typedef double FieldData;            ///< Field data type
 typedef int ApproximationOrder;      ///< Approximation on the entity
 typedef int FieldCoefficientsNumber; ///< Number of field coefficients
+typedef char FieldBitNumber;         ///< Field bit number
 
 // typedef checked_uint128_t UId;
 typedef uint128_t UId; ///< Unique Id

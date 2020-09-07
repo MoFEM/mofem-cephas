@@ -29,14 +29,67 @@ namespace MoFEM {
  */
 struct DofEntity : public interface_FieldEntity<FieldEntity> {
 
-  typedef interface_Field<FieldEntity> interface_type_Field;
-  typedef interface_FieldEntity<FieldEntity> interface_type_FieldEntity;
-  typedef interface_RefEntity<FieldEntity> interface_type_RefEntity;
+  virtual ~DofEntity() = default;
 
-  static inline UId getGlobalUniqueIdCalculate(const DofIdx dof,
-                                               const UId &ent_uid) {
-    // if(dof>=MAX_DOFS_ON_ENTITY) THROW_MESSAGE("dof >= MAX_DOFS_ON_ENTITY");
-    return static_cast<UId>(dof) | ent_uid;
+  using interface_type_Field = interface_FieldImpl<FieldEntity, FieldEntity>;
+  using interface_type_FieldEntity = interface_FieldEntity<FieldEntity>;
+  using interface_type_RefEntity = interface_RefEntity<FieldEntity>;
+
+  static inline ShortId
+  getNonNonuniqueShortId(const DofIdx dof,
+                         const boost::shared_ptr<FieldEntity> &ent_ptr) {
+    return static_cast<ShortId>(dof) |
+           (static_cast<ShortId>(ent_ptr->getBitNumber()) << 9);
+  }
+
+  DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
+            const ApproximationOrder dof_order,
+            const FieldCoefficientsNumber dof_rank, const DofIdx dof);
+
+  /// @return get dof index on entity
+  inline DofIdx getEntDofIdx() const { return std::abs(dof); }
+
+  /// @return get field data on dof
+  inline FieldData &getFieldData() const {
+    return const_cast<FieldData &>(
+        (*this->sPtr->getEntFieldDataPtr())[getEntDofIdx()]);
+  }
+
+  /// @return get entity unique dof id
+  inline const UId &getEntLocalUniqueId() const {
+    return this->sPtr->getLocalUniqueId();
+  }
+
+  /// @return get entity unique dof id
+  inline const UId getEntGlobalUniqueId() const {
+    return this->sPtr->getGlobalUniqueId();
+  }
+
+  static inline UId getUniqueIdCalculate(const DofIdx dof, UId ent_uid) {
+    return ent_uid | dof;
+  }
+
+  static inline UId
+  getLocalUniqueIdCalculate(const DofIdx dof,
+                            const boost::shared_ptr<FieldEntity> &ent_ptr) {
+    return getUniqueIdCalculate(dof, ent_ptr->getLocalUniqueId());
+  }
+
+  /// @return get unique dof id
+  inline UId getLocalUniqueId() const {
+    return getUniqueIdCalculate(std::abs(dof), this->sPtr->getLocalUniqueId());
+  }
+
+  static inline UId getLoFieldEntityUId(const FieldBitNumber bit,
+                                        const EntityHandle ent) {
+    return FieldEntity::getLoFieldEntityUId(
+        FieldEntity::getLocalUniqueIdCalculate(bit, ent));
+  }
+
+  static inline UId getHiFieldEntityUId(const FieldBitNumber bit,
+                                        const EntityHandle ent) {
+    return FieldEntity::getHiFieldEntityUId(
+        FieldEntity::getLocalUniqueIdCalculate(bit, ent));
   }
 
   /**
@@ -53,56 +106,12 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   static inline UId
   getGlobalUniqueIdCalculate(const DofIdx dof,
                              const boost::shared_ptr<FieldEntity> &ent_ptr) {
-    return getGlobalUniqueIdCalculate(dof, ent_ptr->getGlobalUniqueId());
-  }
-
-  static inline UId getGlobalUniqueIdCalculate_Low_Proc(const int owner_proc) {
-    return getGlobalUniqueIdCalculate(
-        0, FieldEntity::getGlobalUniqueIdCalculate_Low_Proc(owner_proc));
-  }
-
-  static inline UId getGlobalUniqueIdCalculate_Hi_Proc(const int owner_proc) {
-    return getGlobalUniqueIdCalculate(
-        MAX_DOFS_ON_ENTITY - 1,
-        FieldEntity::getGlobalUniqueIdCalculate_Hi_Proc(owner_proc));
-  }
-
-  static inline ShortId
-  getNonNonuniqueShortId(const DofIdx dof,
-                         const boost::shared_ptr<FieldEntity> &ent_ptr) {
-    // if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)<
-    // sizeof(char)+2")
-    return static_cast<ShortId>(dof) |
-           (static_cast<ShortId>(ent_ptr->getBitNumber()) << 9);
-  }
-
-  bool active;   ///< true if dof is active
-  UId globalUId; ///< global unique id for this dof
-
-  DofEntity(const boost::shared_ptr<FieldEntity> &entity_ptr,
-            const ApproximationOrder dof_order,
-            const FieldCoefficientsNumber dof_rank, const DofIdx dof,
-            const bool is_active = false);
-
-  /// @return get dof index on entity
-  inline DofIdx getEntDofIdx() const {
-    DofIdx dof;
-    memcpy(&dof, &globalUId, 2);
-    return DOF_UID_MASK & dof;
-  }
-
-  /// @return get field data on dof
-  inline FieldData &getFieldData() const {
-    return const_cast<FieldData &>(
-        (*this->sPtr->getEntFieldDataPtr())[getEntDofIdx()]);
+    return getUniqueIdCalculate(dof, ent_ptr->getGlobalUniqueId());
   }
 
   /// @return get unique dof id
-  inline const UId &getGlobalUniqueId() const { return globalUId; }
-
-  /// @return get entity unique dof id
-  inline const UId &getEntGlobalUniqueId() const {
-    return this->sPtr->getGlobalUniqueId();
+  inline UId getGlobalUniqueId() const {
+    return getUniqueIdCalculate(std::abs(dof), this->sPtr->getGlobalUniqueId());
   }
 
   /** \brief get short uid it is unique in combination with entity handle
@@ -138,9 +147,14 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
   }
 
   /// @return return true if dof us active
-  inline char getActive() const { return active ? 1 : 0; }
+  inline char getActive() const { return dof < 0 ? 0 : 1; }
 
   friend std::ostream &operator<<(std::ostream &os, const DofEntity &e);
+
+private:
+  DofIdx dof;
+
+  friend struct DofEntity_active_change;
 };
 
 /**
@@ -154,17 +168,27 @@ struct DofEntity : public interface_FieldEntity<FieldEntity> {
 template <typename T>
 struct interface_DofEntity : public interface_FieldEntity<T> {
 
+  virtual ~interface_DofEntity() = default;
+
   interface_DofEntity(const boost::shared_ptr<T> &sptr)
       : interface_FieldEntity<T>(sptr) {}
 
   /// @return return dof unique id
-  inline const UId &getGlobalUniqueId() const {
+  inline UId getGlobalUniqueId() const {
     return this->sPtr->getGlobalUniqueId();
   }
 
   /// @return return entity unique id
   inline const UId &getEntGlobalUniqueId() const {
     return this->sPtr->getEntGlobalUniqueId();
+  }
+
+  /// @return return dof unique id
+  inline UId getLocalUniqueId() const { return this->sPtr->getLocalUniqueId(); }
+
+  /// @return return entity unique id
+  inline const UId &getEntLocallUniqueId() const {
+    return this->sPtr->getEntLocalUniqueId();
   }
 
   /// @return return short id (used by data recorder)
@@ -203,7 +227,6 @@ struct interface_DofEntity : public interface_FieldEntity<T> {
   inline boost::shared_ptr<FieldEntity> &getFieldEntityPtr() const {
     return this->sPtr->getFieldEntityPtr();
   }
-
 };
 
 /**
@@ -216,9 +239,13 @@ struct interface_DofEntity : public interface_FieldEntity<T> {
  */
 struct NumeredDofEntity : public interface_DofEntity<DofEntity> {
 
-  typedef interface_Field<DofEntity> interface_type_Field;
-  typedef interface_FieldEntity<DofEntity> interface_type_FieldEntity;
-  typedef interface_DofEntity<DofEntity> interface_type_DofEntity;
+  virtual ~NumeredDofEntity() = default;
+
+  using interface_type_Field = interface_FieldImpl<DofEntity, DofEntity>;
+  using interface_type_FieldEntity = interface_FieldEntity<DofEntity>;
+  using interface_type_DofEntity = interface_DofEntity<DofEntity>;
+  using interface_type_RefEntity = interface_RefEntity<DofEntity>;
+
   DofIdx dofIdx;
   DofIdx petscGloablDofIdx;
   DofIdx petscLocalDofIdx;
@@ -248,51 +275,18 @@ struct NumeredDofEntity : public interface_DofEntity<DofEntity> {
 };
 
 /**
- * \brief interface to NumeredDofEntity
- * \ingroup dof_multi_indices
- */
-template <typename T>
-struct interface_NumeredDofEntity : public interface_DofEntity<T> {
-
-  interface_NumeredDofEntity(const boost::shared_ptr<T> &sptr)
-      : interface_DofEntity<T>(sptr){};
-
-  /// @return get dof index on entity
-  inline DofIdx getDofIdx() const { return this->sPtr->getDofIdx(); }
-
-  /// @return get petsc global index on entity
-  inline DofIdx getPetscGlobalDofIdx() const {
-    return this->sPtr->getPetscGlobalDofIdx();
-  }
-
-  /// @return get pe
-  inline DofIdx getPetscLocalDofIdx() const {
-    return this->sPtr->getPetscLocalDofIdx();
-  }
-
-  inline unsigned int getPart() const { return this->sPtr->getPart(); }
-
-  inline bool getHasLocalIndex() const {
-    return this->sPtr->getHasLocalIndex();
-  }
-
-  inline boost::shared_ptr<NumeredDofEntity> &getNumeredDofEntityPtr() const {
-    return this->sPtr;
-  };
-};
-
-/**
  * \brief keeps information about indexed dofs for the finite element
  * \ingroup dof_multi_indices
  */
-struct FEDofEntity : public BaseFEEntity, interface_DofEntity<DofEntity> {
-  typedef interface_Field<DofEntity> interface_type_Field;
-  typedef interface_DofEntity<DofEntity> interface_type_DofEntity;
-  typedef interface_RefEntity<DofEntity> interface_type_RefEntity;
-  FEDofEntity(const boost::shared_ptr<SideNumber> &side_number_ptr,
-              const boost::shared_ptr<DofEntity> &dof_ptr);
-  FEDofEntity(const boost::tuple<const boost::shared_ptr<SideNumber> &,
-                                 const boost::shared_ptr<DofEntity> &> &t);
+struct FEDofEntity : public DofEntity {
+
+  FEDofEntity() = delete;
+
+private:
+  using DofEntity::DofEntity;
+
+  // DO NOT MAKE ANY MAMBER DATA HARE !!!
+
   friend std::ostream &operator<<(std::ostream &os, const FEDofEntity &e);
 };
 
@@ -300,21 +294,20 @@ struct FEDofEntity : public BaseFEEntity, interface_DofEntity<DofEntity> {
  * \brief keeps information about indexed dofs for the finite element
  * \ingroup dof_multi_indices
  */
-struct FENumeredDofEntity : public BaseFEEntity,
-                            interface_NumeredDofEntity<NumeredDofEntity> {
-  typedef interface_Field<NumeredDofEntity> interface_type_Field;
-  typedef interface_DofEntity<NumeredDofEntity> interface_type_DofEntity;
-  typedef interface_RefEntity<NumeredDofEntity> interface_type_RefEntity;
-  typedef interface_NumeredDofEntity<NumeredDofEntity>
-      interface_type_NumeredDofEntity;
-  FENumeredDofEntity(const boost::shared_ptr<SideNumber> &side_number_ptr,
-                     const boost::shared_ptr<NumeredDofEntity> &dof_ptr);
-  FENumeredDofEntity(
-      const boost::tuple<const boost::shared_ptr<SideNumber> &,
-                         const boost::shared_ptr<NumeredDofEntity> &> &t);
+struct FENumeredDofEntity : public NumeredDofEntity {
+
+  FENumeredDofEntity() = delete;
+
+private:
+  using NumeredDofEntity::NumeredDofEntity;
+
+  // DO NOT MAKE ANY MAMBER DATA HARE !!!
+
   friend std::ostream &operator<<(std::ostream &os,
                                   const FENumeredDofEntity &e);
 };
+
+std::ostream &operator<<(std::ostream &os, const FENumeredDofEntity &e);
 
 /**
  * @relates multi_index_container
@@ -325,83 +318,49 @@ typedef multi_index_container<
     boost::shared_ptr<DofEntity>,
     indexed_by<
         // unique
-        ordered_unique<tag<Unique_mi_tag>,
-                       member<DofEntity, UId, &DofEntity::globalUId>>,
+        ordered_unique<
+            tag<Unique_mi_tag>,
+            const_mem_fun<DofEntity, UId, &DofEntity::getLocalUniqueId>>,
+
         // non_unique
         ordered_non_unique<
-            tag<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>,
-            composite_key<
-                DofEntity,
-                const_mem_fun<DofEntity::interface_type_Field,
-                              boost::string_ref, &DofEntity::getNameRef>,
-                const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>,
-                const_mem_fun<DofEntity, DofIdx, &DofEntity::getEntDofIdx>>>,
-        ordered_non_unique<tag<Unique_Ent_mi_tag>,
-                           const_mem_fun<DofEntity, const UId &,
-                                         &DofEntity::getEntGlobalUniqueId>>,
-        ordered_non_unique<
-            tag<FieldName_mi_tag>,
-            const_mem_fun<DofEntity::interface_type_Field, boost::string_ref,
-                          &DofEntity::getNameRef>>,
-        ordered_non_unique<
             tag<Ent_mi_tag>,
-            const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>>,
-        ordered_non_unique<
-            tag<Composite_Name_And_Ent_mi_tag>,
-            composite_key<
-                DofEntity,
-                const_mem_fun<DofEntity::interface_type_Field,
-                              boost::string_ref, &DofEntity::getNameRef>,
-                const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>>>,
-        ordered_non_unique<
-            tag<Composite_Name_And_Type_mi_tag>,
-            composite_key<
-                DofEntity,
-                const_mem_fun<DofEntity::interface_type_Field,
-                              boost::string_ref, &DofEntity::getNameRef>,
-                const_mem_fun<DofEntity::interface_type_RefEntity, EntityType,
-                              &DofEntity::getEntType>>>>>
+            const_mem_fun<DofEntity, EntityHandle, &DofEntity::getEnt>>
+
+        >>
     DofEntity_multiIndex;
 
-/** \brief Dof multi-index by field name
- *
- * \ingroup dof_multi_indices
- */
-typedef DofEntity_multiIndex::index<FieldName_mi_tag>::type
-    DofEntityByFieldName;
+using DofEntityByUId = DofEntity_multiIndex::index<Unique_mi_tag>::type;
 
 /** \brief Dof multi-index by entity
  *
  * \ingroup dof_multi_indices
  */
-typedef DofEntity_multiIndex::index<Ent_mi_tag>::type DofEntityByEnt;
-
-/** \brief Dof multi-index by field name and entity
- *
- * \ingroup dof_multi_indices
- */
-typedef DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type
-    DofEntityByNameAndEnt;
-
-/** \brief Dof multi-index by field name and entity type
- *
- * \ingroup dof_multi_indices
- */
-typedef DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type
-    DofEntityByNameAndType;
+using DofEntityByEnt = DofEntity_multiIndex::index<Ent_mi_tag>::type;
 
 /** \brief multi-index view on DofEntity by uid
   \ingroup dof_multi_indices
 */
-typedef multi_index_container<
+using DofEntity_multiIndex_uid_view =
+    multi_index_container<boost::shared_ptr<DofEntity>,
+                          indexed_by<
+
+                              ordered_unique<const_mem_fun<
+                                  DofEntity, UId, &DofEntity::getLocalUniqueId>>
+
+                              >>;
+
+/** \brief multi-index view on DofEntity by uid
+  \ingroup dof_multi_indices
+*/
+using DofEntity_multiIndex_global_uid_view = multi_index_container<
     boost::shared_ptr<DofEntity>,
     indexed_by<
 
-        ordered_unique<const_mem_fun<DofEntity, const UId &,
-                                     &DofEntity::getGlobalUniqueId>>
+        ordered_unique<
+            const_mem_fun<DofEntity, UId, &DofEntity::getGlobalUniqueId>>
 
-        >>
-    DofEntity_multiIndex_uid_view;
+        >>;
 
 /** \brief vector view on DofEntity by uid
   \ingroup dof_multi_indices
@@ -415,8 +374,8 @@ typedef multi_index_container<
     boost::shared_ptr<DofEntity>,
     indexed_by<
 
-        ordered_unique<const_mem_fun<DofEntity, const UId &,
-                                     &DofEntity::getGlobalUniqueId>>,
+        ordered_unique<
+            const_mem_fun<DofEntity, UId, &DofEntity::getLocalUniqueId>>,
 
         ordered_non_unique<
             const_mem_fun<DofEntity, char, &DofEntity::getActive>>
@@ -434,80 +393,22 @@ typedef multi_index_container<
     boost::shared_ptr<FEDofEntity>,
     indexed_by<
 
-        ordered_unique<
-            tag<Unique_mi_tag>,
-            const_mem_fun<FEDofEntity::interface_type_DofEntity, const UId &,
-                          &FEDofEntity::getGlobalUniqueId>>,
+        ordered_unique<tag<Unique_mi_tag>,
+                       const_mem_fun<FEDofEntity::DofEntity, UId,
+                                     &FEDofEntity::getLocalUniqueId>>,
 
         ordered_non_unique<tag<Ent_mi_tag>,
-                           const_mem_fun<FEDofEntity::interface_type_DofEntity,
-                                         EntityHandle, &FEDofEntity::getEnt>>,
-
-        ordered_non_unique<
-            tag<FieldName_mi_tag>,
-            const_mem_fun<FEDofEntity::interface_type_Field, boost::string_ref,
-                          &FEDofEntity::getNameRef>>,
-
-        ordered_non_unique<tag<EntType_mi_tag>,
-                           const_mem_fun<FEDofEntity::interface_type_RefEntity,
-                                         EntityType, &FEDofEntity::getEntType>>,
-
-        ordered_non_unique<
-            tag<Composite_Name_And_Type_mi_tag>,
-            composite_key<
-                FEDofEntity,
-                const_mem_fun<FEDofEntity::interface_type_Field,
-                              boost::string_ref, &FEDofEntity::getNameRef>,
-                const_mem_fun<FEDofEntity::interface_type_RefEntity, EntityType,
-                              &FEDofEntity::getEntType>>>,
-
-        ordered_non_unique<
-            tag<Composite_Name_And_Ent_mi_tag>,
-            composite_key<
-                FEDofEntity,
-                const_mem_fun<FEDofEntity::interface_type_Field,
-                              boost::string_ref, &FEDofEntity::getNameRef>,
-                const_mem_fun<FEDofEntity::interface_type_DofEntity,
-                              EntityHandle, &FEDofEntity::getEnt>>>,
-
-        // This is only used by obsolete modules, should be removed with
-        // brother of Cephas, i.e. Pawel.
-        ordered_non_unique<
-            tag<Composite_Name_Type_And_Side_Number_mi_tag>,
-            composite_key<
-                FEDofEntity,
-                const_mem_fun<FEDofEntity::interface_type_Field,
-                              boost::string_ref, &FEDofEntity::getNameRef>,
-                const_mem_fun<FEDofEntity::interface_type_RefEntity, EntityType,
-                              &FEDofEntity::getEntType>,
-                KeyFromKey<member<SideNumber, char, &SideNumber::side_number>,
-                           member<FEDofEntity::BaseFEEntity,
-                                  boost::shared_ptr<SideNumber>,
-                                  &FEDofEntity::sideNumberPtr>>>>
+                           const_mem_fun<FEDofEntity::DofEntity, EntityHandle,
+                                         &FEDofEntity::getEnt>>
 
         >>
     FEDofEntity_multiIndex;
 
-/** \brief Finite element DoF multi-index by field name
+/** \brief Dof entity multi-index by UId and entity
  *
  * \ingroup dof_multi_indices
  */
-typedef FEDofEntity_multiIndex::index<FieldName_mi_tag>::type
-    FEDofEntityByFieldName;
-
-/** \brief Dof entity multi-index by field name and entity
- *
- * \ingroup dof_multi_indices
- */
-typedef FEDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type
-    FEDofEntityByNameAndEnt;
-
-/** \brief Dof entity multi-index by field name and entity type
- *
- * \ingroup dof_multi_indices
- */
-typedef FEDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type
-    FEDofEntityByNameAndType;
+using FEDofEntityByUId = FEDofEntity_multiIndex::index<Unique_mi_tag>::type;
 
 /**
  * @relates multi_index_container
@@ -517,86 +418,31 @@ typedef FEDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type
  */
 typedef multi_index_container<
     boost::shared_ptr<FENumeredDofEntity>,
-    indexed_by<
-        ordered_unique<
-            tag<Unique_mi_tag>,
-            const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,
-                          const UId &, &FENumeredDofEntity::getGlobalUniqueId>>,
-        ordered_non_unique<
-            tag<Ent_mi_tag>,
-            const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,
-                          EntityHandle, &FENumeredDofEntity::getEnt>>,
-        ordered_non_unique<
-            tag<FieldName_mi_tag>,
-            const_mem_fun<FENumeredDofEntity::interface_type_Field,
-                          boost::string_ref, &FENumeredDofEntity::getNameRef>>,
-        ordered_non_unique<
-            tag<Composite_Name_Type_And_Side_Number_mi_tag>,
-            composite_key<
-                FENumeredDofEntity,
-                const_mem_fun<FENumeredDofEntity::interface_type_Field,
-                              boost::string_ref,
-                              &FENumeredDofEntity::getNameRef>,
-                const_mem_fun<FENumeredDofEntity::interface_type_RefEntity,
-                              EntityType, &FENumeredDofEntity::getEntType>,
-                KeyFromKey<member<SideNumber, char, &SideNumber::side_number>,
-                           member<FENumeredDofEntity::BaseFEEntity,
-                                  boost::shared_ptr<SideNumber>,
-                                  &FENumeredDofEntity::sideNumberPtr>>>>,
-        ordered_non_unique<
-            tag<Composite_Name_And_Type_mi_tag>,
-            composite_key<
-                FENumeredDofEntity,
-                const_mem_fun<FENumeredDofEntity::interface_type_Field,
-                              boost::string_ref,
-                              &FENumeredDofEntity::getNameRef>,
-                const_mem_fun<FENumeredDofEntity::interface_type_RefEntity,
-                              EntityType, &FENumeredDofEntity::getEntType>>>,
-        ordered_non_unique<
-            tag<Composite_Name_And_Ent_mi_tag>,
-            composite_key<
-                FENumeredDofEntity,
-                const_mem_fun<FENumeredDofEntity::interface_type_Field,
-                              boost::string_ref,
-                              &FENumeredDofEntity::getNameRef>,
-                const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,
-                              EntityHandle, &FENumeredDofEntity::getEnt>>>>>
+    indexed_by<ordered_unique<
+                   tag<Unique_mi_tag>,
+                   const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,
+                                 UId, &FENumeredDofEntity::getLocalUniqueId>>,
+               ordered_non_unique<
+                   tag<Ent_mi_tag>,
+                   const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,
+                                 EntityHandle, &FENumeredDofEntity::getEnt>>
+
+               >>
     FENumeredDofEntity_multiIndex;
-
-/** \brief Finite element numbered DoF multi-index by field name
- *
- * \ingroup dof_multi_indices
- */
-typedef FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type
-    FENumeredDofEntityByFieldName;
-
-/** \brief Dof entity multi-index by field name and entity
- *
- * \ingroup dof_multi_indices
- */
-typedef FENumeredDofEntity_multiIndex::index<
-    Composite_Name_And_Ent_mi_tag>::type FENumeredDofEntityByNameAndEnt;
-
-/** \brief Dof entity multi-index by field name and entity type
- *
- * \ingroup dof_multi_indices
- */
-typedef FENumeredDofEntity_multiIndex::index<
-    Composite_Name_And_Type_mi_tag>::type FENumeredDofEntityByNameAndType;
 
 /** \brief Dof entity multi-index by UId
  *
  * \ingroup dof_multi_indices
  */
-typedef FENumeredDofEntity_multiIndex::index<Unique_mi_tag>::type
-    FENumeredDofEntityByUId;
+using FENumeredDofEntityByUId =
+    FENumeredDofEntity_multiIndex::index<Unique_mi_tag>::type;
 
 /** \brief Numbered DoF multi-index by entity
  *
  * \ingroup dof_multi_indices
  */
-typedef FENumeredDofEntity_multiIndex::index<Ent_mi_tag>::type
-    FENumeredDofEntityByEnt;
+using FENumeredDofEntityByEnt =
+    FENumeredDofEntity_multiIndex::index<Ent_mi_tag>::type;
 
 /**
  * @relates multi_index_container
@@ -608,28 +454,17 @@ typedef multi_index_container<
 
     // unique
     indexed_by<
-        ordered_unique<
-            tag<Unique_mi_tag>,
-            const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-                          const UId &, &NumeredDofEntity::getGlobalUniqueId>>,
+        ordered_unique<tag<Unique_mi_tag>,
+                       const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
+                                     UId, &NumeredDofEntity::getLocalUniqueId>>,
 
         // non unique
         ordered_non_unique<
-            tag<Unique_Ent_mi_tag>,
-            const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-                          const UId &,
-                          &NumeredDofEntity::getEntGlobalUniqueId>>,
-
-        ordered_non_unique<
             tag<Part_mi_tag>,
             member<NumeredDofEntity, unsigned int, &NumeredDofEntity::pArt>>,
+
         ordered_non_unique<tag<Idx_mi_tag>, member<NumeredDofEntity, DofIdx,
                                                    &NumeredDofEntity::dofIdx>>,
-
-        ordered_non_unique<
-            tag<FieldName_mi_tag>,
-            const_mem_fun<NumeredDofEntity::interface_type_Field,
-                          boost::string_ref, &NumeredDofEntity::getNameRef>>,
 
         ordered_non_unique<tag<PetscGlobalIdx_mi_tag>,
                            member<NumeredDofEntity, DofIdx,
@@ -642,102 +477,62 @@ typedef multi_index_container<
         ordered_non_unique<
             tag<Ent_mi_tag>,
             const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-                          EntityHandle, &NumeredDofEntity::getEnt>>,
-
-        ordered_non_unique<
-            tag<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>,
-            composite_key<
-                NumeredDofEntity,
-                const_mem_fun<NumeredDofEntity::interface_type_Field,
-                              boost::string_ref, &NumeredDofEntity::getNameRef>,
-                const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-                              EntityHandle, &NumeredDofEntity::getEnt>,
-                const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-                              DofIdx, &NumeredDofEntity::getEntDofIdx>>>,
-
-        ordered_non_unique<
-            tag<Composite_Name_And_Part_mi_tag>,
-            composite_key<
-                NumeredDofEntity,
-                const_mem_fun<NumeredDofEntity::interface_type_Field,
-                              boost::string_ref, &NumeredDofEntity::getNameRef>,
-                member<NumeredDofEntity, unsigned int,
-                       &NumeredDofEntity::pArt>>>,
-
-        ordered_non_unique<
-            tag<Composite_Name_Ent_And_Part_mi_tag>,
-            composite_key<
-                NumeredDofEntity,
-                const_mem_fun<NumeredDofEntity::interface_type_Field,
-                              boost::string_ref, &NumeredDofEntity::getNameRef>,
-                const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-                              EntityHandle, &NumeredDofEntity::getEnt>,
-                member<NumeredDofEntity, unsigned int,
-                       &NumeredDofEntity::pArt>>>
+                          EntityHandle, &NumeredDofEntity::getEnt>>
 
         >>
     NumeredDofEntity_multiIndex;
-
-/** \brief Numbered DoF multi-index by field name
- *
- * \ingroup dof_multi_indices
- */
-typedef NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type
-    NumeredDofEntityByFieldName;
 
 /** \brief Numbered DoF multi-index by UId
  *
  * \ingroup dof_multi_indices
  */
-typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type
-    NumeredDofEntityByUId;
+using NumeredDofEntityByUId =
+    NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type;
 
 /** \brief Numbered DoF multi-index by local index
  *
  * \ingroup dof_multi_indices
  */
-typedef NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type
-    NumeredDofEntityByLocalIdx;
+using NumeredDofEntityByLocalIdx =
+    NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type;
 
 /** \brief Numbered DoF multi-index by entity
  *
  * \ingroup dof_multi_indices
  */
-typedef NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type
-    NumeredDofEntityByEnt;
+using NumeredDofEntityByEnt =
+    NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type;
 
-/** \brief Numbered DoF multi-index by name entity and partition
- *
- * \ingroup dof_multi_indices
- */
-typedef NumeredDofEntity_multiIndex::index<
-    Composite_Name_Ent_And_Part_mi_tag>::type NumeredDofEntityByNameEntAndPart;
+using NumeredDofEntity_multiIndex_uid_view_ordered =
+    multi_index_container<boost::shared_ptr<NumeredDofEntity>,
+                          indexed_by<
 
-typedef multi_index_container<
-    boost::shared_ptr<NumeredDofEntity>,
-    indexed_by<ordered_unique<
-        const_mem_fun<NumeredDofEntity::interface_type_DofEntity, const UId &,
-                      &NumeredDofEntity::getGlobalUniqueId>>>>
-    NumeredDofEntity_multiIndex_uid_view_ordered;
+                              ordered_unique<const_mem_fun<
 
-typedef multi_index_container<
+                                  NumeredDofEntity::interface_type_DofEntity,
+                                  UId, &NumeredDofEntity::getLocalUniqueId
+
+                                  >>
+
+                              >>;
+
+using NumeredDofEntity_multiIndex_idx_view_hashed = multi_index_container<
     boost::shared_ptr<NumeredDofEntity>,
     indexed_by<hashed_unique<const_mem_fun<NumeredDofEntity, DofIdx,
-                                           &NumeredDofEntity::getDofIdx> > > >
-    NumeredDofEntity_multiIndex_idx_view_hashed;
+                                           &NumeredDofEntity::getDofIdx>>>>;
 
-typedef multi_index_container<
-    boost::shared_ptr<NumeredDofEntity>,
-    indexed_by<ordered_non_unique<const_mem_fun<
-        NumeredDofEntity, DofIdx, &NumeredDofEntity::getPetscLocalDofIdx> > > >
-    NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique;
+using NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique =
+    multi_index_container<boost::shared_ptr<NumeredDofEntity>,
+                          indexed_by<ordered_non_unique<const_mem_fun<
+                              NumeredDofEntity, DofIdx,
+                              &NumeredDofEntity::getPetscLocalDofIdx>>>>;
 
-typedef multi_index_container<
-    boost::shared_ptr<NumeredDofEntity>,
-    indexed_by<ordered_non_unique<const_mem_fun<
-        NumeredDofEntity::interface_type_DofEntity, FieldCoefficientsNumber,
-        &NumeredDofEntity::getDofCoeffIdx> > > >
-    NumeredDofEntity_multiIndex_coeff_idx_ordered_non_unique;
+using NumeredDofEntity_multiIndex_coeff_idx_ordered_non_unique =
+    multi_index_container<
+        boost::shared_ptr<NumeredDofEntity>,
+        indexed_by<ordered_non_unique<const_mem_fun<
+            NumeredDofEntity::interface_type_DofEntity, FieldCoefficientsNumber,
+            &NumeredDofEntity::getDofCoeffIdx>>>>;
 
 /**
  * Activate or deactivate dofs (multi-index modifier)
@@ -845,24 +640,10 @@ struct NumeredDofEntity_part_and_all_indices_change {
   }
 };
 
-/**
- * Replace dofs shared_ptr
- *
- * DOFs on entities are stored by sequences. If DOFs to entities are added,
- * whole entity sequence is change to preserve continuity in memory
- *
- * \ingroup dof_multi_indices
- */
-template <class T> struct Dof_shared_ptr_change {
-  boost::shared_ptr<T> &dofPtr;
-  Dof_shared_ptr_change(boost::shared_ptr<T> &dof_ptr) : dofPtr(dof_ptr){};
-  inline void operator()(boost::shared_ptr<T> &dof) { dof = dofPtr; }
-};
-
 } // namespace MoFEM
 #endif // __DOFSMULTIINDICES_HPP__
 
-/***************************************************************************/ /**
+/**
  * \defgroup dof_multi_indices Dofs structures and multi-indices
  * \ingroup mofem
-******************************************************************************/
+ **/

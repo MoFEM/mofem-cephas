@@ -12,6 +12,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+// #define BOOST_DISABLE_ASSERTS
+
 #ifndef __MOFEM_HPP__
 #define __MOFEM_HPP__
 
@@ -52,9 +54,11 @@
 #include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
+#include <RefEntsMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
-#include <EntsMultiIndices.hpp>
+#include <FieldEntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
+#include <RefElementMultiIndices.hpp>
 #include <FEMultiIndices.hpp>
 #include <ProblemsMultiIndices.hpp>
 #include <AdjacencyMultiIndices.hpp>
@@ -120,6 +124,7 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <ContactPrismElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSourcesCore.hpp>
 #include <VolumeElementForcesAndSourcesCoreOnSide.hpp>
+#include <VolumeElementForcesAndSourcesCoreOnContactPrismSide.hpp>
 #include <FaceElementForcesAndSourcesCoreOnSide.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <UserDataOperators.hpp>

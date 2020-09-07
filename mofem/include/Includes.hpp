@@ -60,6 +60,23 @@
 #include <cmath>
 
 //BOOST
+#define BOOST_LOG_DYN_LINK
+#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
+
+#include <boost/log/sources/severity_channel_logger.hpp>
+#include <boost/log/attributes.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sources/severity_feature.hpp>
+#include <boost/log/sinks/text_ostream_backend.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/sources/severity_feature.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+#include <boost/core/null_deleter.hpp>
+
+#define BOOST_DISABLE_THREADS
+
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
@@ -77,9 +94,6 @@
 #include <boost/math/special_functions/binomial.hpp>
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/math/constants/constants.hpp>
-
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-
 #include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/symmetric.hpp>

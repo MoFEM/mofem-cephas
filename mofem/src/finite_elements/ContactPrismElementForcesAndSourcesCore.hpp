@@ -24,6 +24,8 @@
 #define __CONTACTPRISMELEMENTFORCESANDSURCESCORE_HPP__
 
 namespace MoFEM {
+template <int SWITCH>
+struct VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch;
 
 /** \brief ContactPrism finite element
  \ingroup mofem_forces_and_sources_prism_element
@@ -101,6 +103,9 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline int getFaceType() const;
 
+    inline boost::shared_ptr<const NumeredEntFiniteElement>
+    getNumeredEntFiniteElementPtr() const;
+
     /** \brief get face aRea Master
      */
     inline double getAreaMaster();
@@ -113,9 +118,25 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline VectorAdaptor getNormalMaster();
 
+    /** \brief get first face tangent vector to Master face
+     */
+    inline VectorAdaptor getTangentMasterOne();
+
+    /** \brief get second face tangent vector to Master face
+     */
+    inline VectorAdaptor getTangentMasterTwo();
+
     /** \brief get face normal vector to Slave face
      */
     inline VectorAdaptor getNormalSlave();
+
+    /** \brief get first face tangent vector to Slave face
+     */
+    inline VectorAdaptor getTangentSlaveOne();
+
+    /** \brief get second face tangent vector to Slave face
+     */
+    inline VectorAdaptor getTangentSlaveTwo();
 
     /** \brief get Gauss point at Master face
      */
@@ -126,10 +147,10 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     inline MatrixDouble &getGaussPtsSlave();
 
     /**
-     * @brief Get integration weights
+     * @brief Get integration weights for slave side
      *
      * \code
-     * auto t_w = getFTensor0IntegrationWeightSlave();
+     * auto t_w = getFTensor0IntegrationWeight();
      * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
      *  // integrate something
      *  ++t_w;
@@ -141,10 +162,10 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
     inline auto getFTensor0IntegrationWeightSlave();
 
     /**
-     * @brief Get integration weights
+     * @brief Get integration weights for master side
      *
      * \code
-     * auto t_w = getFTensor0IntegrationWeightMaster();
+     * auto t_w = getFTensor0IntegrationWeight();
      * for(int gg = 0; gg!=getGaussPts.size2(); ++gg) {
      *  // integrate something
      *  ++t_w;
@@ -189,9 +210,46 @@ struct ContactPrismElementForcesAndSourcesCore : public ForcesAndSourcesCore {
      */
     inline const ContactPrismElementForcesAndSourcesCore *
     getContactPrismElementForcesAndSourcesCore();
+
+    /**
+     *
+     * User call this function to loop over elements on the side of face. This
+     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnContactPrismSide with
+     * is operator to do calculations.
+     *
+     * @param  fe_name Name of the element
+     * @param  method  Finite element object
+     * @param  side_type  states the side from which side element will work (0
+     * for master 1 for slave)
+     * @return         error code
+     */
+    template <int SWITCH>
+    MoFEMErrorCode loopSideVolumes(
+        const string &fe_name,
+        VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<SWITCH> &fe_method,
+        const int side_type, const EntityHandle ent_for_side);
+
+  protected:
+    inline ForcesAndSourcesCore *getSidePtrFE() const;
   };
 
   MoFEMErrorCode operator()();
+
+  inline const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
+                          LASTSPACE>
+  getDataOnMasterFromEleSide() {
+    return dataOnMaster;
+  }
+
+  inline const std::array<boost::shared_ptr<DataForcesAndSourcesCore>,
+                          LASTSPACE>
+  getDataOnSlaveFromEleSide() {
+    return dataOnSlave;
+  }
+
+  inline MatrixDouble &getGaussPtsMasterFromEleSide() { return gaussPtsMaster; }
+
+  inline MatrixDouble &getGaussPtsSlaveFromEleSide() { return gaussPtsSlave; }
 
 protected:
   std::array<double, 2> aRea; ///< Array storing master and slave faces areas
@@ -209,6 +267,15 @@ protected:
   MatrixDouble gaussPtsSlave;  ///< matrix storing slave Gauss points local
                                ///< coordinates and weights
 
+  VectorDouble nOrmalSlave, tangentSlaveOne, tangentSlaveTwo;
+  VectorDouble nOrmalMaster, tangentMasterOne, tangentMasterTwo;
+
+  MatrixDouble normalsAtGaussPtsSlave;
+  MatrixDouble tangentOneAtGaussPtsSlave;
+  MatrixDouble tangentTwoAtGaussPtsSlave;
+  
+  OpSetContravariantPiolaTransformOnFace opContravariantTransform;
+  
   /**
    * @brief Entity data on element entity rows fields
    *
@@ -253,6 +320,15 @@ protected:
    */
   MoFEMErrorCode loopOverOperators();
 
+  /**
+   * @brief Iterate user data operators
+   *
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts,
+                                           FieldApproximationBase m_s_base,
+                                           DataForcesAndSourcesCore &m_s_data);
+
   /** \brief function that gets entity field data.
    *
    * \param master_data data fot master face
@@ -277,11 +353,14 @@ protected:
    * \param type_lo lowest dimension entity type to be searched
    * \param type_hi highest dimension entity type to be searched
    */
-  MoFEMErrorCode getEntityIndices(
-      DataForcesAndSourcesCore &master_data,
-      DataForcesAndSourcesCore &slave_data, const std::string &field_name,
-      FENumeredDofEntity_multiIndex &dofs, const EntityType type_lo = MBVERTEX,
-      const EntityType type_hi = MBPOLYHEDRON) const;
+  template <typename EXTRACTOR>
+  MoFEMErrorCode getEntityIndices(DataForcesAndSourcesCore &master_data,
+                                  DataForcesAndSourcesCore &slave_data,
+                                  const std::string &field_name,
+                                  FieldEntity_vector_view &ents_field,
+                                  const EntityType type_lo,
+                                  const EntityType type_hi,
+                                  EXTRACTOR &&extractor) const;
 
   /** \brief function that gets nodes indices.
    *
@@ -294,12 +373,14 @@ protected:
    * \param slave_local_nodes_indices vector containing local master nodes
    * indices
    */
-  MoFEMErrorCode getNodesIndices(const boost::string_ref field_name,
-                                 FENumeredDofEntity_multiIndex &dofs,
+  template <typename EXTRACTOR>
+  MoFEMErrorCode getNodesIndices(const std::string field_name,
+                                 FieldEntity_vector_view &ents_field,
                                  VectorInt &master_nodes_indices,
                                  VectorInt &master_local_nodes_indices,
                                  VectorInt &slave_nodes_indices,
-                                 VectorInt &slave_local_nodes_indices) const;
+                                 VectorInt &slave_local_nodes_indices,
+                                 EXTRACTOR &&extractor) const;
 
   /** \brief function that gets nodes field data.
    *
@@ -315,17 +396,37 @@ protected:
    * \param slave_base base for slave face
    */
   MoFEMErrorCode getNodesFieldData(
-      const boost::string_ref field_name, FEDofEntity_multiIndex &dofs,
-      VectorDouble &master_nodes_data, VectorDouble &slave_nodes_data,
-      VectorDofs &master_nodes_dofs, VectorDofs &slave_nodes_dofs,
-      FieldSpace &master_space, FieldSpace &slave_space,
-      FieldApproximationBase &master_base,
+      const std::string field_name, VectorDouble &master_nodes_data,
+      VectorDouble &slave_nodes_data, VectorDofs &master_nodes_dofs,
+      VectorDofs &slave_nodes_dofs, 
+      
+      VectorFieldEntities &master_field_entities, VectorFieldEntities &slave_field_entities, 
+      
+      
+      FieldSpace &master_space,
+      FieldSpace &slave_space, FieldApproximationBase &master_base,
       FieldApproximationBase &slave_base) const;
 
 private:
   int nbGaussPts;
 
 };
+
+boost::shared_ptr<const NumeredEntFiniteElement>
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getNumeredEntFiniteElementPtr() const {
+  return static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+      ->numeredEntFiniteElementPtr;
+};
+
+template <int SWITCH>
+MoFEMErrorCode
+ContactPrismElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
+    const string &fe_name,
+    VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<SWITCH> &fe_method,
+    const int side_type, const EntityHandle ent_for_side) {
+  return loopSide(fe_name, &fe_method, side_type, ent_for_side);
+}
 
 inline int
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::getFaceType() const {
@@ -349,10 +450,38 @@ ContactPrismElementForcesAndSourcesCore::UserDataOperator::getNormalMaster() {
   return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
 }
 
+inline VectorAdaptor ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getTangentMasterOne() {
+  double *data = &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+                       ->tangentMasterOne[0]);
+  return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
+}
+
+inline VectorAdaptor ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getTangentMasterTwo() {
+  double *data = &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+                       ->tangentMasterTwo[0]);
+  return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
+}
+
 inline VectorAdaptor
 ContactPrismElementForcesAndSourcesCore::UserDataOperator::getNormalSlave() {
   double *data = &(
       static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)->normal[3]);
+  return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
+}
+
+inline VectorAdaptor ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getTangentSlaveOne() {
+  double *data = &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+                       ->tangentSlaveOne[0]);
+  return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
+}
+
+inline VectorAdaptor ContactPrismElementForcesAndSourcesCore::UserDataOperator::
+    getTangentSlaveTwo() {
+  double *data = &(static_cast<ContactPrismElementForcesAndSourcesCore *>(ptrFE)
+                       ->tangentSlaveTwo[0]);
   return VectorAdaptor(3, ublas::shallow_array_adaptor<double>(3, data));
 }
 

@@ -191,8 +191,20 @@ MoFEMErrorCode FlatPrismElementForcesAndSourcesCore::operator()() {
     }
   }
 
-  if (dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName) !=
-      dataPtr->get<FieldName_mi_tag>().end()) {
+  auto check_field = [&]() {
+    auto field_it =
+        fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
+    if (field_it != fieldsPtr->get<FieldName_mi_tag>().end())
+      if ((numeredEntFiniteElementPtr->getBitFieldIdData() &
+           (*field_it)->getId())
+              .any())
+        return true;
+    return false;
+  };
+
+  // Check if field meshPositionsFieldName exist
+  if (check_field()) {
+
     hoCoordsAtGaussPtsF3.resize(nb_gauss_pts, 3, false);
     nOrmals_at_GaussPtF3.resize(nb_gauss_pts, 3, false);
     tAngent1_at_GaussPtF3.resize(nb_gauss_pts, 3, false);

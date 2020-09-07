@@ -29,6 +29,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
+#include <MoFEM.hpp>
+
 #define DeleteCoreFunctionBegin                                                \
   MoFEMFunctionBegin;                                                          \
   MOFEM_LOG_CHANNEL("WORLD");                                                  \
@@ -91,16 +93,19 @@ MoFEMErrorCode Core::clear_dofs_fields(const std::string name,
   if (verb == -1)
     verb = verbose;
 
+  const auto bit_number = get_field_bit_number(name);
+
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
-    EntityHandle first  = p_eit->first;
-    EntityHandle second = p_eit->second;
-    DofEntityByNameAndEnt::iterator dit, hi_dit;
-    dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-        boost::make_tuple(name, first));
-    hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-        boost::make_tuple(name, second));
-    dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
+    const auto first  = p_eit->first;
+    const auto second = p_eit->second;
+    const auto lo_uid =
+        DofEntity::getLoFieldEntityUId(bit_number, first);
+    const auto hi_uid =
+        DofEntity::getHiFieldEntityUId(bit_number, second);
+    auto dit = dofsField.get<Unique_mi_tag>().lower_bound(lo_uid);
+    auto hi_dit = dofsField.get<Unique_mi_tag>().upper_bound(hi_uid);
+    dofsField.get<Unique_mi_tag>().erase(dit, hi_dit);
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -141,20 +146,18 @@ MoFEMErrorCode Core::clear_ents_fields(const std::string name,
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
+  const auto bit_number = get_field_bit_number(name);
   CHKERR clear_dofs_fields(name, ents, verb);
   CHKERR clear_adjacencies_entities(name, ents, verb);
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
-    EntityHandle first  = p_eit->first;
-    EntityHandle second = p_eit->second;
-    FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator
-        dit,
-        hi_dit;
-    dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(
-        boost::make_tuple(name, first));
-    hi_dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(
-        boost::make_tuple(name, second));
-    entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit, hi_dit);
+    const auto first = p_eit->first;
+    const auto second = p_eit->second;
+    auto dit = entsFields.get<Unique_mi_tag>().lower_bound(
+        FieldEntity::getLocalUniqueIdCalculate(bit_number, first));
+    auto hi_dit = entsFields.get<Unique_mi_tag>().upper_bound(
+        FieldEntity::getLocalUniqueIdCalculate(bit_number, second));
+    entsFields.get<Unique_mi_tag>().erase(dit, hi_dit);
   }
   MoFEMFunctionReturn(0);
 }
@@ -246,7 +249,6 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string name,
 
   const Field *field_ptr   = get_field_structure(name);
   int field_bit_number     = field_ptr->getBitNumber();
-  bool is_distributed_mesh = basicEntityDataPtr->trueIfDistributedMesh();
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
 
@@ -257,28 +259,15 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string name,
     const EntityHandle first  = p_eit->first;
     const EntityHandle second = p_eit->second;
 
-    // Get owner proc and owner handle
-    int f_owner_proc;
-    EntityHandle f_moab_owner_handle;
-    CHKERR pcomm->get_owner_handle(first, f_owner_proc, f_moab_owner_handle);
-    int s_owner_proc;
-    EntityHandle s_moab_owner_handle;
-    CHKERR pcomm->get_owner_handle(second, s_owner_proc, s_moab_owner_handle);
-
     // Get UId
-    UId first_uid = FieldEntity::getGlobalUniqueIdCalculate(
-        f_owner_proc, field_bit_number, f_moab_owner_handle,
-        is_distributed_mesh);
-    UId second_uid = FieldEntity::getGlobalUniqueIdCalculate(
-        s_owner_proc, field_bit_number, s_moab_owner_handle,
-        is_distributed_mesh);
+    UId first_uid =
+        FieldEntity::getLocalUniqueIdCalculate(field_bit_number, first);
+    UId second_uid =
+        FieldEntity::getLocalUniqueIdCalculate(field_bit_number, second);
 
     // Find adjacencies
-    FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
-        Unique_mi_tag>::type::iterator ait,
-        hi_ait;
-    ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(first_uid);
-    hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(second_uid);
+    auto ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(first_uid);
+    auto hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(second_uid);
     entFEAdjacencies.get<Unique_mi_tag>().erase(ait, hi_ait);
   }
   MoFEMFunctionReturnHot(0);
@@ -377,7 +366,7 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string name,
       it_fe = finiteElements.get<FiniteElement_name_mi_tag>().find(name);
   if (it_fe != finiteElements.get<FiniteElement_name_mi_tag>().end()) {
 
-    const int fe_bit_number = it_fe->get()->getBitNumber();
+    const auto fe_uid = (*it_fe)->getFEUId();
 
     for (Range::const_pair_iterator p_eit = ents.pair_begin();
          p_eit != ents.pair_end(); p_eit++) {
@@ -388,9 +377,9 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string name,
 
       // Get UId
       UId first_uid =
-          EntFiniteElement::getGlobalUniqueIdCalculate(first, fe_bit_number);
+          EntFiniteElement::getLocalUniqueIdCalculate(first, fe_uid);
       UId second_uid =
-          EntFiniteElement::getGlobalUniqueIdCalculate(second, fe_bit_number);
+          EntFiniteElement::getLocalUniqueIdCalculate(second, fe_uid);
 
       // Find and remove adjacencies
       FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
@@ -516,7 +505,7 @@ MoFEMErrorCode Core::remove_parents_by_ents(const Range &ents, int verb) {
     auto lo = refinedEntities.lower_bound(f);
     for (; f <= s; ++f) {
 
-      if ((*lo)->getRefEnt() == f) {
+      if ((*lo)->getEnt() == f) {
           bool success = refinedEntities.modify(lo, RefEntity_change_parent(0));
           if (!success)
             SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,

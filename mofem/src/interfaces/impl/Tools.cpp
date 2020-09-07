@@ -220,11 +220,11 @@ MoFEMErrorCode Tools::checkVectorForNotANumber(const Problem *prb_ptr,
   switch (row_or_col) {
   case ROW:
     prb_loc_size = prb_ptr->getNbLocalDofsRow();
-    prb_dofs = prb_ptr->getNumeredDofsRows();
+    prb_dofs = prb_ptr->getNumeredRowDofs();
     break;
   case COL:
     prb_loc_size = prb_ptr->getNbLocalDofsCol();
-    prb_dofs = prb_ptr->getNumeredDofsCols();
+    prb_dofs = prb_ptr->getNumeredColDofs();
     break;
     break;
   default:

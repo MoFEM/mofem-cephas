@@ -281,6 +281,7 @@ enum VERBOSITY_LEVELS {
   VERY_NOISY
 };
 
+#define MAX_CORE_TMP 1       ///< maximal number of cores
 #define BITREFEDGES_SIZE 6   ///< number of edges on tetrahedral
 #define BITREFLEVEL_SIZE 128 ///< max number of refinements
 #define BITFIELDID_SIZE 32   ///< max number of fields
@@ -302,6 +303,7 @@ enum VERBOSITY_LEVELS {
 #define MB_ID_MASK (~MB_TYPE_MASK)
 
 #define MAX_DOFS_ON_ENTITY 512 ///< Maximal number of DOFs on entity
+#define MAX_PROCESSORS_NUMBER 1024 ///< Maximal number of processors
 #define DOF_UID_MASK                                                           \
   (MAX_DOFS_ON_ENTITY - 1) ///< Mask for DOF number on entity form UId
 #define ENTITY_UID_MASK (~DOF_UID_MASK)

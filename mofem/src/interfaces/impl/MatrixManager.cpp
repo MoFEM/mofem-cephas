@@ -74,81 +74,7 @@ struct CreateRowComressedADJMatrix : public Core {
                                          TAG>::type::iterator mit_row,
       boost::shared_ptr<FieldEntity> mofem_ent_ptr,
       std::vector<int> &dofs_col_view, int verb) const;
-
-  MoFEMErrorCode
-  buildFECol(ProblemsByName::iterator p_miit,
-             boost::shared_ptr<EntFiniteElement> ent_fe_ptr, bool do_cols_prob,
-             boost::shared_ptr<NumeredEntFiniteElement> &fe_ptr) const;
 };
-
-MoFEMErrorCode CreateRowComressedADJMatrix::buildFECol(
-    ProblemsByName::iterator p_miit,
-    boost::shared_ptr<EntFiniteElement> ent_fe_ptr, bool do_cols_prob,
-    boost::shared_ptr<NumeredEntFiniteElement> &fe_ptr) const {
-  MoFEMFunctionBegin;
-
-  if (!ent_fe_ptr)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Pointer to EntFiniteElement not given");
-
-  // if element is not part of problem
-  if ((ent_fe_ptr->getId() & p_miit->getBitFEId()).none())
-    MoFEMFunctionReturnHot(0);
-
-  BitRefLevel prb_bit = p_miit->getBitRefLevel();
-  BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
-  BitRefLevel fe_bit = ent_fe_ptr->getBitRefLevel();
-  // if entity is not problem refinement level
-  if ((fe_bit & prb_mask) != fe_bit)
-    MoFEMFunctionReturnHot(0);
-  if ((fe_bit & prb_bit) != prb_bit)
-    MoFEMFunctionReturnHot(0);
-
-  auto fe_it =
-      p_miit->numeredFiniteElements->find(ent_fe_ptr->getGlobalUniqueId());
-
-  // Create element if is not there
-  if (fe_it == p_miit->numeredFiniteElements->end()) {
-    auto p = p_miit->numeredFiniteElements->insert(
-        boost::make_shared<NumeredEntFiniteElement>(ent_fe_ptr));
-    fe_it = p.first;
-  }
-  fe_ptr = *fe_it;
-
-  if (fe_ptr) {
-
-    // Build DOFs on columns
-    if (fe_ptr->cols_dofs->empty()) {
-
-      // Get dofs on columns
-      NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
-      CHKERR fe_ptr->getEntFiniteElement()->getColDofView(
-          *(p_miit->numeredDofsCols), cols_view, moab::Interface::UNION);
-
-      // Reserve memory for field  dofs
-      boost::shared_ptr<std::vector<FENumeredDofEntity>> dofs_array(
-          new std::vector<FENumeredDofEntity>());
-      fe_ptr->getColDofsSequence() = dofs_array;
-      dofs_array->reserve(cols_view.size());
-
-      // Create dofs objects
-      for (auto &dof : cols_view) {
-        auto side_number_ptr = fe_ptr->getSideNumberPtr(dof->getEnt());
-        dofs_array->emplace_back(side_number_ptr, dof);
-      }
-
-      // Finally add DoFS to multi-indices
-      auto hint = fe_ptr->cols_dofs->end();
-      for (auto &dof : *dofs_array)
-        hint = fe_ptr->cols_dofs->emplace_hint(hint, dofs_array, &dof);
-    }
-
-  } else
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "At that point ptr to finite element should be well known");
-
-  MoFEMFunctionReturn(0);
-}
 
 template <typename TAG>
 MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
@@ -162,16 +88,11 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   BitRefLevel prb_bit = p_miit->getBitRefLevel();
   BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
 
-  // check if dofs and columns are the same, i.e. structurally symmetric problem
-  bool do_cols_prob;
-  if (p_miit->numeredDofsRows == p_miit->numeredDofsCols)
-    do_cols_prob = false;
-  else
-    do_cols_prob = true;
+  const DofIdx nb_dofs_col = p_miit->getNbDofsCol();
 
   dofs_col_view.clear();
   for (auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(
-           mofem_ent_ptr->getGlobalUniqueId());
+           mofem_ent_ptr->getLocalUniqueId());
        r.first != r.second; ++r.first) {
 
     if (r.first->byWhat & BYROW) {
@@ -181,50 +102,38 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
         continue;
       }
 
-      BitRefLevel fe_bit = r.first->entFePtr->getBitRefLevel();
+      const BitRefLevel fe_bit = r.first->entFePtr->getBitRefLevel();
       // if entity is not problem refinement level
       if ((fe_bit & prb_mask) != fe_bit)
         continue;
       if ((fe_bit & prb_bit) != prb_bit)
         continue;
-      BitRefLevel dof_bit = mit_row->get()->getBitRefLevel();
+      const BitRefLevel dof_bit = mit_row->get()->getBitRefLevel();
+
       // if entity is not problem refinement level
-      if ((fe_bit & dof_bit).none())
-        continue;
+      if ((fe_bit & dof_bit).any()) {
 
-      boost::shared_ptr<NumeredEntFiniteElement> fe_ptr;
-      // get element, if element is not in database build columns dofs
-      CHKERR buildFECol(p_miit, r.first->entFePtr, do_cols_prob, fe_ptr);
-
-      if (fe_ptr) {
-        for (FENumeredDofEntity_multiIndex::iterator vit =
-                 fe_ptr.get()->cols_dofs->begin();
-             vit != fe_ptr.get()->cols_dofs->end(); vit++) {
-          const int idx = TAG::get_index(vit);
-          if (idx >= 0)
-            dofs_col_view.push_back(idx);
-          if (idx >= p_miit->getNbDofsCol()) {
-            std::ostringstream zz;
-            zz << "rank " << rAnk << " ";
-            zz << *(*vit) << std::endl;
-            SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, zz.str().c_str());
+        for (auto &it : r.first->entFePtr->getColFieldEnts()) {
+          if (auto e = it.lock()) {
+            if (auto cache = e->entityCacheColDofs.lock()) {
+              const auto lo = cache->loHi[0];
+              const auto hi = cache->loHi[1];
+              for (auto vit = lo; vit != hi; ++vit) {
+                const int idx = TAG::get_index(vit);
+                if (PetscLikely(idx >= 0))
+                  dofs_col_view.push_back(idx);
+                if (PetscUnlikely(idx >= nb_dofs_col)) {
+                  std::ostringstream zz;
+                  zz << "rank " << rAnk << " ";
+                  zz << *(*vit) << std::endl;
+                  SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, zz.str().c_str());
+                }
+              }
+            } else
+              SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Cache not set");
           }
         }
-        if (verb >= NOISY) {
-          std::stringstream ss;
-          ss << "rank " << rAnk << ":  numeredDofsCols" << std::endl;
-          FENumeredDofEntity_multiIndex::iterator dit, hi_dit;
-          dit = fe_ptr.get()->cols_dofs->begin();
-          hi_dit = fe_ptr.get()->cols_dofs->end();
-          for (; dit != hi_dit; dit++) {
-            ss << "\t" << **dit << std::endl;
-          }
-          PetscSynchronizedPrintf(cOmm, "%s", ss.str().c_str());
-        }
-      } else
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "Element should be here, otherwise matrix will have missing "
-                "elements");
+      }
     }
   }
 
@@ -240,13 +149,53 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
   PetscLogEventBegin(MOFEM_EVENT_createMat, 0, 0, 0, 0);
 
-  typedef
-      typename boost::multi_index::index<NumeredDofEntity_multiIndex, TAG>::type
-          NumeredDofEntitysByIdx;
+  auto cache = boost::make_shared<std::vector<EntityCacheNumeredDofs>>(
+      entsFields.size());
+
+  size_t idx = 0;
+  for (auto it = entsFields.begin(); it != entsFields.end(); ++it, ++idx) {
+
+    const auto uid = (*it)->getLocalUniqueId();
+    auto r = entFEAdjacencies.get<Unique_mi_tag>().equal_range(uid);
+    for (auto lo = r.first; lo != r.second; ++lo) {
+
+      if ((lo->getBitFEId() & p_miit->getBitFEId()).any()) {
+
+        const BitRefLevel prb_bit = p_miit->getBitRefLevel();
+        const BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
+        const BitRefLevel fe_bit = lo->entFePtr->getBitRefLevel();
+
+        // if entity is not problem refinement level
+        if ((fe_bit & prb_mask) != fe_bit)
+          continue;
+        if ((fe_bit & prb_bit) != prb_bit)
+          continue;
+
+        auto dit = p_miit->numeredColDofs->lower_bound(uid);
+
+        decltype(dit) hi_dit;
+        if (dit != p_miit->numeredColDofs->end())
+          hi_dit = p_miit->numeredColDofs->upper_bound(
+              uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
+        else
+          hi_dit = dit;
+
+        (*it)->entityCacheColDofs =
+            boost::shared_ptr<EntityCacheNumeredDofs>(cache, &((*cache)[idx]));
+        (*cache)[idx].loHi = {dit, hi_dit};
+
+        break;
+      }
+    }
+  }
+
+  using NumeredDofEntitysByIdx =
+      typename boost::multi_index::index<NumeredDofEntity_multiIndex,
+                                         TAG>::type;
 
   // Get multi-indices for rows and columns
   const NumeredDofEntitysByIdx &dofs_row_by_idx =
-      p_miit->numeredDofsRows->get<TAG>();
+      p_miit->numeredRowDofs->get<TAG>();
   int nb_dofs_row = p_miit->getNbDofsRow();
   if (nb_dofs_row == 0) {
     SETERRQ1(cOmm, MOFEM_DATA_INCONSISTENCY, "problem <%s> has zero rows",
@@ -279,7 +228,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     if (verb >= VERBOSE) {
       MOFEM_LOG("SYNC", Sev::noisy)
           << "row lower " << rstart << " row upper " << rend;
-      MOFEM_LOG_SYNCHORMISE(cOmm)
+      MOFEM_LOG_SYNCHRONISE(cOmm)
     }
 
     miit_row = dofs_row_by_idx.lower_bound(rstart);
@@ -323,8 +272,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
         bool get_adj_col = true;
         if (mofem_ent_ptr) {
-          if (mofem_ent_ptr->getGlobalUniqueId() ==
-              (*mit_row)->getFieldEntityPtr()->getGlobalUniqueId()) {
+          if (mofem_ent_ptr->getLocalUniqueId() ==
+              (*mit_row)->getFieldEntityPtr()->getLocalUniqueId()) {
             get_adj_col = false;
           }
         }
@@ -435,10 +384,10 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
         if (debug) {
 
           DofByGlobalPetscIndex::iterator dit;
-          dit = p_miit->numeredDofsRows->get<PetscGlobalIdx_mi_tag>().find(
+          dit = p_miit->numeredRowDofs->get<PetscGlobalIdx_mi_tag>().find(
               row_idx);
           if (dit ==
-              p_miit->numeredDofsRows->get<PetscGlobalIdx_mi_tag>().end()) {
+              p_miit->numeredRowDofs->get<PetscGlobalIdx_mi_tag>().end()) {
             SETERRQ1(cOmm, MOFEM_DATA_INCONSISTENCY,
                      "dof %d can not be found in problem", row_idx);
           }
@@ -489,8 +438,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // same adjacencies.
     if ((!mofem_ent_ptr)
             ? 1
-            : (mofem_ent_ptr->getGlobalUniqueId() !=
-               (*miit_row)->getFieldEntityPtr()->getGlobalUniqueId())) {
+            : (mofem_ent_ptr->getLocalUniqueId() !=
+               (*miit_row)->getFieldEntityPtr()->getLocalUniqueId())) {
 
       // get entity adjacencies
       mofem_ent_ptr = (*miit_row)->getFieldEntityPtr();
@@ -531,22 +480,14 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // Try to be smart reserving memory
     if (j.capacity() < j.size() + dofs_vec.size()) {
 
+      // TODO: [CORE-55] Improve algorithm estimating size of compressed matrix
       unsigned int nb_nonzero = j.size() + dofs_vec.size();
-      unsigned int average_row_fill =
-          nb_nonzero / i.size() + nb_nonzero % i.size();
-      if (j.capacity() < rows_to_fill * average_row_fill) {
-        j.reserve(rows_to_fill * average_row_fill);
-      }
+      unsigned int average_row_fill = nb_nonzero / i.size() + 1;
+      j.reserve(rows_to_fill * average_row_fill);
     }
 
-    // add indices to compressed matrix
-    if (verb >= VERY_VERBOSE) {
-      PetscSynchronizedPrintf(cOmm, "rank %d: ", rAnk);
-    }
-    std::vector<int>::iterator diit, hi_diit;
-    diit = dofs_vec.begin();
-    hi_diit = dofs_vec.end();
-    for (; diit != hi_diit; diit++) {
+    auto hi_diit = dofs_vec.end();
+    for (auto diit = dofs_vec.begin(); diit != hi_diit; diit++) {
 
       if (no_diagonals) {
         if (*diit == TAG::get_index(miit_row)) {
@@ -612,6 +553,8 @@ MoFEMErrorCode MatrixManager::query_interface(const MOFEMuuid &uuid,
 
 MatrixManager::MatrixManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)) {
+  PetscLogEventRegister("MatrixManagerCreateMPIAIJ", 0,
+                        &MOFEM_EVENT_createMPIAIJ);
   PetscLogEventRegister("MatrixManagerCreateMPIAIJWithArrays", 0,
                         &MOFEM_EVENT_createMPIAIJWithArrays);
   PetscLogEventRegister("MatrixManagerCreateMPIAdjWithArrays", 0,
@@ -619,9 +562,8 @@ MatrixManager::MatrixManager(const MoFEM::Core &core)
   PetscLogEventRegister("MatrixManagerCreateSeqAIJWithArrays", 0,
                         &MOFEM_EVENT_createSeqAIJWithArrays);
   PetscLogEventRegister("MatrixManagerCheckMPIAIJWithArraysMatrixFillIn", 0,
-                        &MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn);
+                        &MOFEM_EVENT_checkMatrixFillIn);
 }
-MatrixManager::~MatrixManager() {}
 
 template <>
 MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
@@ -632,8 +574,7 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
 
-  const Problem_multiIndex *problems_ptr;
-  CHKERR m_field.get_problems(&problems_ptr);
+  auto problems_ptr = m_field.get_problems();
   auto &prb = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb.find(name);
   if (p_miit == prb.end()) {
@@ -643,6 +584,7 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
   }
 
   std::vector<int> i_vec, j_vec;
+  j_vec.reserve(10000);
   CHKERR core_ptr->createMatArrays<PetscGlobalIdx_mi_tag>(
       p_miit, MATMPIAIJ, i_vec, j_vec, false, verb);
 
@@ -660,17 +602,15 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
 }
 
 template <>
-MoFEMErrorCode
-MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
-                                                  Mat *Adj, int verb) {
+MoFEMErrorCode MatrixManager::createMPIAIJ<PetscGlobalIdx_mi_tag>(
+    const std::string name, Mat *Aij, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
   CreateRowComressedADJMatrix *core_ptr =
       static_cast<CreateRowComressedADJMatrix *>(&cOre);
   MoFEMFunctionBegin;
-  PetscLogEventBegin(MOFEM_EVENT_createMPIAdjWithArrays, 0, 0, 0, 0);
+  PetscLogEventBegin(MOFEM_EVENT_createMPIAIJ, 0, 0, 0, 0);
 
-  const Problem_multiIndex *problems_ptr;
-  CHKERR m_field.get_problems(&problems_ptr);
+  auto problems_ptr = m_field.get_problems();
   auto &prb = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb.find(name);
   if (p_miit == prb.end()) {
@@ -680,6 +620,78 @@ MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
   }
 
   std::vector<int> i_vec, j_vec;
+  j_vec.reserve(10000);
+  CHKERR core_ptr->createMatArrays<PetscGlobalIdx_mi_tag>(
+      p_miit, MATMPIAIJ, i_vec, j_vec, false, verb);
+
+  int nb_row_dofs = p_miit->getNbDofsRow();
+  int nb_col_dofs = p_miit->getNbDofsCol();
+  int nb_local_dofs_row = p_miit->getNbLocalDofsRow();
+  int nb_local_dofs_col = p_miit->getNbLocalDofsCol();
+
+  auto get_layout = [&]() {
+    int start_ranges, end_ranges;
+    PetscLayout layout;
+    CHKERR PetscLayoutCreate(m_field.get_comm(), &layout);
+    CHKERR PetscLayoutSetBlockSize(layout, 1);
+    CHKERR PetscLayoutSetLocalSize(layout, nb_local_dofs_col);
+    CHKERR PetscLayoutSetUp(layout);
+    CHKERR PetscLayoutGetRange(layout, &start_ranges, &end_ranges);
+    CHKERR PetscLayoutDestroy(&layout);
+    return std::make_pair(start_ranges, end_ranges);
+  };
+
+  auto get_nnz = [&](auto &d_nnz, auto &o_nnz) {
+    MoFEMFunctionBeginHot;
+    auto layout = get_layout();
+    int j = 0;
+    for (int i = 0; i != nb_local_dofs_row; ++i) {
+      for (; j != i_vec[i + 1]; ++j) {
+        if (j_vec[j] < layout.second && j_vec[j] >= layout.first)
+          ++(d_nnz[i]);
+        else
+          ++(o_nnz[i]);
+      }
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  std::vector<int> d_nnz(nb_local_dofs_row, 0), o_nnz(nb_local_dofs_row, 0);
+  CHKERR get_nnz(d_nnz, o_nnz);
+
+
+  CHKERR MatCreate(m_field.get_comm(), Aij);
+  CHKERR MatSetSizes(*Aij, nb_local_dofs_row, nb_local_dofs_col, nb_row_dofs,
+                     nb_col_dofs);
+  CHKERR MatSetType(*Aij, MATMPIAIJ);
+  CHKERR MatMPIAIJSetPreallocation(*Aij, 0, &*d_nnz.begin(), 0,
+                                   &*o_nnz.begin());
+
+  PetscLogEventEnd(MOFEM_EVENT_createMPIAIJ, 0, 0, 0, 0);
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode
+MatrixManager::createMPIAdjWithArrays<Idx_mi_tag>(const std::string name,
+                                                  Mat *Adj, int verb) {
+  MoFEM::CoreInterface &m_field = cOre;
+  CreateRowComressedADJMatrix *core_ptr =
+      static_cast<CreateRowComressedADJMatrix *>(&cOre);
+  MoFEMFunctionBegin;
+  PetscLogEventBegin(MOFEM_EVENT_createMPIAdjWithArrays, 0, 0, 0, 0);
+
+  auto problems_ptr = m_field.get_problems();
+  auto &prb = problems_ptr->get<Problem_mi_tag>();
+  auto p_miit = prb.find(name);
+  if (p_miit == prb.end()) {
+    SETERRQ1(m_field.get_comm(), MOFEM_NOT_FOUND,
+             "problem < %s > is not found (top tip: check spelling)",
+             name.c_str());
+  }
+
+  std::vector<int> i_vec, j_vec;
+  j_vec.reserve(10000);
   CHKERR core_ptr->createMatArrays<Idx_mi_tag>(p_miit, MATMPIADJ, i_vec, j_vec,
                                                true, verb);
   int *_i, *_j;
@@ -706,8 +718,7 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
   MoFEMFunctionBegin;
   PetscLogEventBegin(MOFEM_EVENT_createMPIAIJWithArrays, 0, 0, 0, 0);
 
-  const Problem_multiIndex *problems_ptr;
-  CHKERR m_field.get_problems(&problems_ptr);
+  auto problems_ptr = m_field.get_problems();
   auto &prb = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb.find(name);
   if (p_miit == prb.end()) {
@@ -717,6 +728,7 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
   }
 
   std::vector<int> i_vec, j_vec;
+  j_vec.reserve(10000);
   CHKERR core_ptr->createMatArrays<PetscGlobalIdx_mi_tag>(p_miit, MATAIJ, i_vec,
                                                           j_vec, false, verb);
 
@@ -739,14 +751,13 @@ MoFEMErrorCode MatrixManager::createSeqAIJWithArrays<PetscLocalIdx_mi_tag>(
   MoFEMFunctionReturn(0);
 }
 
-template <>
-MoFEMErrorCode
-MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
-    const std::string problem_name, int row_print, int col_print, int verb) {
+MoFEMErrorCode MatrixManager::checkMatrixFillIn(const std::string problem_name,
+                                                int row_print, int col_print,
+                                                Mat A, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
   MatrixManagerFunctionBegin;
 
-  PetscLogEventBegin(MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn, 0, 0, 0, 0);
+  PetscLogEventBegin(MOFEM_EVENT_checkMatrixFillIn, 0, 0, 0, 0);
 
   struct TestMatrixFillIn : public FEMethod {
     CoreInterface *mFieldPtr;
@@ -775,8 +786,10 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
                 "data inconsistency");
       }
 
-      for (FENumeredDofEntity_multiIndex::iterator cit = colPtr->begin();
-           cit != colPtr->end(); cit++) {
+      auto row_dofs = getRowDofsPtr();
+      auto col_dofs = getColDofsPtr();
+
+      for (auto cit = col_dofs->begin(); cit != col_dofs->end(); cit++) {
 
         if (refinedEntitiesPtr->find((*cit)->getEnt()) ==
             refinedEntitiesPtr->end()) {
@@ -791,8 +804,8 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
             Composite_Unique_mi_tag>::type::iterator ait;
         ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-            boost::make_tuple((*cit)->getFieldEntityPtr()->getGlobalUniqueId(),
-                              numeredEntFiniteElementPtr->getGlobalUniqueId()));
+            boost::make_tuple((*cit)->getFieldEntityPtr()->getLocalUniqueId(),
+                              numeredEntFiniteElementPtr->getLocalUniqueId()));
         if (ait == adjacenciesPtr->end()) {
           SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "adjacencies data inconsistency");
@@ -802,7 +815,7 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
             SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "data inconsistency");
           }
-          if (dofsPtr->find((*cit)->getGlobalUniqueId()) == dofsPtr->end()) {
+          if (dofsPtr->find((*cit)->getLocalUniqueId()) == dofsPtr->end()) {
             SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "data inconsistency");
           }
@@ -810,33 +823,24 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
 
         if ((*cit)->getEntType() != MBVERTEX) {
 
-          FENumeredDofEntity_multiIndex::index<
-              Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,
-              hi_dit;
-          dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
-                    .lower_bound(boost::make_tuple(
-                        (*cit)->getName(), (*cit)->getEntType(),
-                        (*cit)->sideNumberPtr->side_number));
-          hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
-                       .upper_bound(boost::make_tuple(
-                           (*cit)->getName(), (*cit)->getEntType(),
-                           (*cit)->sideNumberPtr->side_number));
-          int nb_dofs_on_ent = std::distance(dit, hi_dit);
+          auto range =
+              col_dofs->get<Ent_mi_tag>().equal_range((*cit)->getEnt());
+          int nb_dofs_on_ent = std::distance(range.first, range.second);
 
           int max_order = (*cit)->getMaxOrder();
           if ((*cit)->getNbOfCoeffs() * (*cit)->getOrderNbDofs(max_order) !=
               nb_dofs_on_ent) {
-            std::cerr << "Warning: Number of Dofs in Col diffrent than number "
-                         "of dofs for given entity order "
-                      << (*cit)->getNbOfCoeffs() *
-                             (*cit)->getOrderNbDofs(max_order)
-                      << " " << nb_dofs_on_ent << std::endl;
+            MOFEM_LOG("SELF", Sev::warning)
+                << "Warning: Number of Dofs in Col diffrent than number "
+                   "of dofs for given entity order "
+                << (*cit)->getNbOfCoeffs() * (*cit)->getOrderNbDofs(max_order)
+                << " " << nb_dofs_on_ent;
           }
         }
       }
 
-      FENumeredDofEntity_multiIndex::iterator rit = rowPtr->begin();
-      for (; rit != rowPtr->end(); rit++) {
+
+      for (auto rit = row_dofs->begin(); rit != row_dofs->end(); rit++) {
 
         if (refinedEntitiesPtr->find((*rit)->getEnt()) ==
             refinedEntitiesPtr->end()) {
@@ -851,19 +855,20 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
         FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
             Composite_Unique_mi_tag>::type::iterator ait;
         ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-            boost::make_tuple((*rit)->getFieldEntityPtr()->getGlobalUniqueId(),
-                              numeredEntFiniteElementPtr->getGlobalUniqueId()));
+            boost::make_tuple((*rit)->getFieldEntityPtr()->getLocalUniqueId(),
+                              numeredEntFiniteElementPtr->getLocalUniqueId()));
         if (ait == adjacenciesPtr->end()) {
-          std::ostringstream ss;
-          ss << *(*rit) << std::endl;
-          ss << *numeredEntFiniteElementPtr << std::endl;
-          ss << "dof: " << (*rit)->getBitRefLevel() << std::endl;
-          ss << "fe: " << numeredEntFiniteElementPtr->getBitRefLevel()
-             << std::endl;
-          ss << "problem: " << problemPtr->getBitRefLevel() << std::endl;
-          ss << "problem mask: " << problemPtr->getMaskBitRefLevel()
-             << std::endl;
-          PetscPrintf(mFieldPtr->get_comm(), "%s", ss.str().c_str());
+          MOFEM_LOG_ATTRIBUTES("SYNC", LogManager::BitScope);
+          MOFEM_LOG("SELF", Sev::error) << *(*rit);
+          MOFEM_LOG("SELF", Sev::error) << *(*rit);
+          MOFEM_LOG("SELF", Sev::error) << *numeredEntFiniteElementPtr;
+          MOFEM_LOG("SELF", Sev::error) << "dof: " << (*rit)->getBitRefLevel();
+          MOFEM_LOG("SELF", Sev::error)
+              << "fe: " << numeredEntFiniteElementPtr->getBitRefLevel();
+          MOFEM_LOG("SELF", Sev::error)
+              << "problem: " << problemPtr->getBitRefLevel();
+          MOFEM_LOG("SELF", Sev::error)
+              << "problem mask: " << problemPtr->getMaskBitRefLevel();
           SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                   "adjacencies data inconsistency");
         } else {
@@ -872,33 +877,30 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
             SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "data inconsistency");
           }
-          if (dofsPtr->find((*rit)->getGlobalUniqueId()) == dofsPtr->end()) {
+          if (dofsPtr->find((*rit)->getLocalUniqueId()) == dofsPtr->end()) {
             SETERRQ(mFieldPtr->get_comm(), MOFEM_DATA_INCONSISTENCY,
                     "data inconsistency");
           }
         }
         int row = (*rit)->getPetscGlobalDofIdx();
 
-        FENumeredDofEntity_multiIndex::iterator cit = colPtr->begin();
-        for (; cit != colPtr->end(); cit++) {
+        auto col_dofs = getColDofsPtr();
+        for (auto cit = col_dofs->begin(); cit != col_dofs->end(); cit++) {
 
           int col = (*cit)->getPetscGlobalDofIdx();
 
           if (row == rowPrint && col == colPrint) {
-
-            std::ostringstream ss;
-            ss << "fe:\n" << *numeredEntFiniteElementPtr << std::endl;
-            ss << "row:\n" << *(*rit) << std::endl;
-            ss << "col:\n" << *(*cit) << std::endl;
-
-            ss << "fe:\n"
-               << numeredEntFiniteElementPtr->getBitRefLevel() << std::endl;
-            ss << "row:\n" << (*rit)->getBitRefLevel() << std::endl;
-            ss << "col:\n" << (*cit)->getBitRefLevel() << std::endl;
-
-            std::cerr << ss.str() << std::endl;
-
-            // PetscPrintf(mFieldPtr->get_comm(),"%s\n",ss.str().c_str());
+            MOFEM_LOG("SELF", Sev::noisy) << "fe:\n"
+                                          << *numeredEntFiniteElementPtr;
+            MOFEM_LOG("SELF", Sev::noisy) << "row:\n" << *(*rit);
+            MOFEM_LOG("SELF", Sev::noisy) << "col:\n" << *(*cit);
+            MOFEM_LOG("SELF", Sev::noisy)
+                << "fe:\n"
+                << numeredEntFiniteElementPtr->getBitRefLevel();
+            MOFEM_LOG("SELF", Sev::noisy) << "row:\n"
+                                          << (*rit)->getBitRefLevel();
+            MOFEM_LOG("SELF", Sev::noisy) << "col:\n"
+                                          << (*cit)->getBitRefLevel();
           }
 
           CHKERR MatSetValue(A, row, col, 1, INSERT_VALUES);
@@ -906,27 +908,18 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
 
         if ((*rit)->getEntType() != MBVERTEX) {
 
-          FENumeredDofEntity_multiIndex::index<
-              Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,
-              hi_dit;
-          dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
-                    .lower_bound(boost::make_tuple(
-                        (*rit)->getName(), (*rit)->getEntType(),
-                        (*rit)->sideNumberPtr->side_number));
-          hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>()
-                       .upper_bound(boost::make_tuple(
-                           (*rit)->getName(), (*rit)->getEntType(),
-                           (*rit)->sideNumberPtr->side_number));
-          int nb_dofs_on_ent = std::distance(dit, hi_dit);
+          auto range =
+              row_dofs->get<Ent_mi_tag>().equal_range((*rit)->getEnt());
+          int nb_dofs_on_ent = std::distance(range.first, range.second);
 
           int max_order = (*rit)->getMaxOrder();
           if ((*rit)->getNbOfCoeffs() * (*rit)->getOrderNbDofs(max_order) !=
               nb_dofs_on_ent) {
-            std::cerr << "Warning: Number of Dofs in Row diffrent than number "
-                         "of dofs for given entity order "
-                      << (*rit)->getNbOfCoeffs() *
-                             (*rit)->getOrderNbDofs(max_order)
-                      << " " << nb_dofs_on_ent << std::endl;
+            MOFEM_LOG("SELF", Sev::warning)
+                << "Warning: Number of Dofs in Row diffrent than number "
+                   "of dofs for given entity order "
+                << (*rit)->getNbOfCoeffs() * (*rit)->getOrderNbDofs(max_order)
+                << " " << nb_dofs_on_ent;
           }
         }
       }
@@ -946,8 +939,6 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
   };
 
   // create matrix
-  Mat A;
-  CHKERR createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(problem_name, &A, verb);
   CHKERR MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
 
   if (verb >= VERY_VERBOSE) {
@@ -963,36 +954,58 @@ MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
   TestMatrixFillIn method(&m_field, A, row_print, col_print);
 
   // get problem
-  const Problem_multiIndex *problems_ptr;
-  CHKERR m_field.get_problems(&problems_ptr);
+  auto problems_ptr = m_field.get_problems();
   auto &prb_set = problems_ptr->get<Problem_mi_tag>();
   auto p_miit = prb_set.find(problem_name);
   if (p_miit == prb_set.end())
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
              "problem < %s > not found (top tip: check spelling)",
              problem_name.c_str());
-
-  if (verb >= VERBOSE)
-    PetscPrintf(m_field.get_comm(), "check problem < %s >\n",
-                problem_name.c_str());
+  MOFEM_LOG_C("WORLD", Sev::inform, "check problem < %s >",
+              problem_name.c_str());
 
   // loop all elements in problem and check if assemble is without error
-  const FiniteElement_multiIndex *fe_ptr;
-  CHKERR m_field.get_finite_elements(&fe_ptr);
+  auto fe_ptr = m_field.get_finite_elements();
   for (auto &fe : *fe_ptr) {
-    if (verb >= VERBOSE)
-      PetscPrintf(m_field.get_comm(), "\tcheck element %s\n",
-                  fe->getName().c_str());
+    MOFEM_LOG_C("WORLD", Sev::verbose, "\tcheck element %s",
+                fe->getName().c_str());
     CHKERR m_field.loop_finite_elements(problem_name, fe->getName(), method,
-                                        nullptr, MF_EXIST, verb);
+                                        nullptr, MF_EXIST,
+                                        CacheTupleSharedPtr(), verb);
   }
 
   CHKERR MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   CHKERR MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-  CHKERR MatDestroy(&A);
 
-  PetscLogEventEnd(MOFEM_EVENT_checkMPIAIJWithArraysMatrixFillIn, 0, 0, 0, 0);
+  PetscLogEventEnd(MOFEM_EVENT_checkMatrixFillIn, 0, 0, 0, 0);
 
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode
+MatrixManager::checkMPIAIJWithArraysMatrixFillIn<PetscGlobalIdx_mi_tag>(
+    const std::string problem_name, int row_print, int col_print, int verb) {
+  MoFEM::CoreInterface &m_field = cOre;
+  MatrixManagerFunctionBegin;
+  // create matrix
+  SmartPetscObj<Mat> A;
+  CHKERR createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(problem_name, A, verb);
+  CHKERR MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+  CHKERR checkMatrixFillIn(problem_name, row_print, col_print, A, verb);
+  MoFEMFunctionReturn(0);
+}
+
+template <>
+MoFEMErrorCode MatrixManager::checkMPIAIJMatrixFillIn<PetscGlobalIdx_mi_tag>(
+    const std::string problem_name, int row_print, int col_print, int verb) {
+  MoFEM::CoreInterface &m_field = cOre;
+  MatrixManagerFunctionBegin;
+  // create matrix
+  SmartPetscObj<Mat> A;
+  CHKERR createMPIAIJ<PetscGlobalIdx_mi_tag>(problem_name, A, verb);
+  CHKERR MatSetOption(A, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+  CHKERR checkMatrixFillIn(problem_name, row_print, col_print, A, verb);
   MoFEMFunctionReturn(0);
 }
 

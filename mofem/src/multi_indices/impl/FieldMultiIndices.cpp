@@ -296,7 +296,7 @@ std::ostream &operator<<(std::ostream &os,
                          const FieldEntityEntFiniteElementAdjacencyMap &e) {
   os << "byWhat " << std::bitset<3>(e.byWhat) << " " << *e.entFieldPtr
      << std::endl
-     << *e.entFePtr->sFePtr;
+     << *e.entFePtr->getFiniteElementPtr();
   return os;
 }
 

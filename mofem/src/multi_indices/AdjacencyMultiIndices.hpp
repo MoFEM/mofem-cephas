@@ -1,5 +1,6 @@
 /** \file AdjacencyMultiIndices.hpp
- * \brief Myltindex containes, data structures for mofem adjacencies and other low-level functions
+ * \brief Myltindex containes, data structures for mofem adjacencies and other
+ * low-level functions
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -13,18 +14,18 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #ifndef __ADJACENCYMULTIINDICES_HPP__
 #define __ADJACENCYMULTIINDICES_HPP__
 
-
 namespace MoFEM {
 
 /**
-  * \brief FieldEntityEntFiniteElementAdjacencyMap of mofem finite element and entities
-  *
-  */
+ * \brief FieldEntityEntFiniteElementAdjacencyMap of mofem finite element and
+ * entities
+ *
+ */
 struct FieldEntityEntFiniteElementAdjacencyMap {
   unsigned int byWhat;                              ///< see options \ref ByWhat
   const boost::shared_ptr<FieldEntity> entFieldPtr; ///< field entity
@@ -33,10 +34,12 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
       const boost::shared_ptr<FieldEntity> &ent_field_ptr,
       const boost::shared_ptr<EntFiniteElement> &ent_fe_ptr);
 
+  virtual ~FieldEntityEntFiniteElementAdjacencyMap() = default;
+
   /**
    * \brief get unique iD of finite element entity
    */
-  inline UId getFeUniqueId() const { return entFePtr->getGlobalUniqueId(); }
+  inline UId getFeUniqueId() const { return entFePtr->getLocalUniqueId(); }
 
   /**
    * \brief get meshset of finite element
@@ -51,12 +54,14 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
   /**
    * \brief get unique iD of entity on field
    */
-  inline UId getEntUniqueId() const { return entFieldPtr->getGlobalUniqueId(); }
+  inline UId getEntUniqueId() const { return entFieldPtr->getLocalUniqueId(); }
 
   /**
    * \brief get entity meshset carrying its field
    */
-  inline EntityHandle getEntMeshset() const { return entFieldPtr->getMeshset(); }
+  inline EntityHandle getEntMeshset() const {
+    return entFieldPtr->getMeshset();
+  }
 
   /**
    * \brief get entity handle
@@ -73,98 +78,61 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
    */
   BitFEId getBitFEId() const { return entFePtr->getId(); }
 
-  // /** \deprecated use getFeUniqueId
-  // */
-  // DEPRECATED inline UId get_MoFEMFiniteElement_unique_id() const { return getFeUniqueId(); }
-  //
-  // /** \deprecated use getFeMeshset
-  // */
-  // DEPRECATED inline EntityHandle get_MoFEMFiniteElement_meshset() const { return getFeMeshset(); }
-  //
-  // /** \deprecated use getFeHandle
-  // */
-  // DEPRECATED inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return getFeHandle(); }
-  //
-  // /** \deprecated use getEntUniqueId
-  // */
-  // DEPRECATED inline UId get_ent_unique_id() const { return getEntUniqueId(); }
-  //
-  // /** \deprecated use getEntMeshset
-  // */
-  // DEPRECATED inline EntityHandle get_ent_meshset() const { return getEntMeshset(); }
-  //
-  // /** \deprecated use getEntHandle
-  // */
-  // DEPRECATED inline EntityHandle get_ent_entity_handle() const { return getEntHandle(); }
-  //
-  // /** \deprecated use getBitFEId
-  // */
-  // DEPRECATED BitFEId get_BitFEId() const { return getBitFEId(); }
-
-  friend std::ostream& operator<<(std::ostream& os,const FieldEntityEntFiniteElementAdjacencyMap &e);
+  friend std::ostream &
+  operator<<(std::ostream &os,
+             const FieldEntityEntFiniteElementAdjacencyMap &e);
 };
 
 /**
  * @relates multi_index_container
- * \brief MultiIndex container keeps Adjacencies Element and dof entities adjacencies and vice versa.
+ * \brief MultiIndex container keeps Adjacencies Element and dof entities
+ adjacencies and vice versa.
 
  */
 typedef multi_index_container<
-  FieldEntityEntFiniteElementAdjacencyMap,
-  indexed_by<
-    ordered_unique<
-      tag<Composite_Unique_mi_tag>,
-      composite_key<
-	      FieldEntityEntFiniteElementAdjacencyMap,
-	      const_mem_fun<
-          FieldEntityEntFiniteElementAdjacencyMap,UId,
-          &FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId
-        >,
-	      const_mem_fun<
-          FieldEntityEntFiniteElementAdjacencyMap,UId,
-          &FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId
-        >
-      >
-    >,
-    ordered_non_unique<
-      tag<Unique_mi_tag>,
-      const_mem_fun<
-        FieldEntityEntFiniteElementAdjacencyMap,UId,
-        &FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId
-      >
-    >,
-    ordered_non_unique<
-      tag<FE_Unique_mi_tag>,
-      const_mem_fun<
-        FieldEntityEntFiniteElementAdjacencyMap,UId,
-        &FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId
-      >
-    >,
-    ordered_non_unique<
-      tag<FEEnt_mi_tag>,
-      const_mem_fun<
-        FieldEntityEntFiniteElementAdjacencyMap,EntityHandle,
-        &FieldEntityEntFiniteElementAdjacencyMap::getFeHandle
-      >
-    >,
-    ordered_non_unique<
-      tag<Ent_mi_tag>,
-      const_mem_fun<
-        FieldEntityEntFiniteElementAdjacencyMap,EntityHandle,
-        &FieldEntityEntFiniteElementAdjacencyMap::getEntHandle
-      >
-    >
-  >
-> FieldEntityEntFiniteElementAdjacencyMap_multiIndex;
+    FieldEntityEntFiniteElementAdjacencyMap,
+    indexed_by<
+        ordered_unique<
+            tag<Composite_Unique_mi_tag>,
+            composite_key<
+                FieldEntityEntFiniteElementAdjacencyMap,
+                const_mem_fun<
+                    FieldEntityEntFiniteElementAdjacencyMap, UId,
+                    &FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId>,
+                const_mem_fun<
+                    FieldEntityEntFiniteElementAdjacencyMap, UId,
+                    &FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId>>>,
+        ordered_non_unique<
+            tag<Unique_mi_tag>,
+            const_mem_fun<
+                FieldEntityEntFiniteElementAdjacencyMap, UId,
+                &FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId>>,
+        ordered_non_unique<
+            tag<FE_Unique_mi_tag>,
+            const_mem_fun<
+                FieldEntityEntFiniteElementAdjacencyMap, UId,
+                &FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId>>,
+        ordered_non_unique<
+            tag<FEEnt_mi_tag>,
+            const_mem_fun<
+                FieldEntityEntFiniteElementAdjacencyMap, EntityHandle,
+                &FieldEntityEntFiniteElementAdjacencyMap::getFeHandle>>,
+        ordered_non_unique<
+            tag<Ent_mi_tag>,
+            const_mem_fun<
+                FieldEntityEntFiniteElementAdjacencyMap, EntityHandle,
+                &FieldEntityEntFiniteElementAdjacencyMap::getEntHandle>>>>
+    FieldEntityEntFiniteElementAdjacencyMap_multiIndex;
 
 struct FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat {
   int bY;
-  FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat(const int by): bY(by) {}
+  FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat(const int by)
+      : bY(by) {}
   void operator()(FieldEntityEntFiniteElementAdjacencyMap &e) {
     e.byWhat |= bY;
   }
 };
 
-}
+} // namespace MoFEM
 
 #endif // __ADJACENCYMULTIINDICES_HPP__

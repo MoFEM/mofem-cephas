@@ -1,175 +1,218 @@
+/**
+ * @file add_cubit_meshsets.cpp
+ * @example add_cubit_meshsets.cpp
+ * @brief Test and example setting cubit meshsets
+ *
+ */
+
 #include <MoFEM.hpp>
 
 using namespace MoFEM;
-
-
-
 
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
     moab::Core mb_instance;
-    moab::Interface& moab = mb_instance;
+    moab::Interface &moab = mb_instance;
     int rank;
-    MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-    //Create MoFEM (Joseph) database
+    // Create MoFEM (Joseph) database
     MoFEM::Core core(moab);
-    MoFEM::Interface& m_field = core;
+    MoFEM::Interface &m_field = core;
 
     MeshsetsManager *meshsets_manager_ptr;
-    ierr = m_field.getInterface(meshsets_manager_ptr); CHKERRG(ierr);
+    CHKERR m_field.getInterface(meshsets_manager_ptr);
 
-    std::cout << "<<<< SIDESETs >>>>>" << std::endl;
+    MOFEM_LOG_CHANNEL("WORLD")
+    MOFEM_LOG_ATTRIBUTES("WORLD", LogManager::BitLineID | LogManager::BitScope);
+
+    MOFEM_LOG("WORLD", Sev::verbose) << "<<<< SIDESETs >>>>>";
 
     bool add_block_is_there = false;
-    ierr = meshsets_manager_ptr->addMeshset(SIDESET,1002); CHKERRG(ierr);
+    CHKERR meshsets_manager_ptr->addMeshset(SIDESET, 1002);
     {
       PressureCubitBcData mybc;
-      strncpy(mybc.data.name,"Pressure",8);
+      strncpy(mybc.data.name, "Pressure", 8);
       mybc.data.flag1 = 0;
       mybc.data.flag2 = 0;
       mybc.data.value1 = 1;
-      ierr = meshsets_manager_ptr->setBcData(SIDESET,1002,mybc); CHKERRG(ierr);
+      CHKERR meshsets_manager_ptr->setBcData(SIDESET, 1002, mybc);
     }
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
-      if(it->getMeshsetId()!=1002) continue;
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, SIDESET, it)) {
+      if (it->getMeshsetId() != 1002)
+        continue;
       add_block_is_there = true;
       PressureCubitBcData mydata;
-      ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
-      //Print data
-      std::cout << mydata;
+      CHKERR it->getBcDataStructure(mydata);
+      // Print data
+      MOFEM_LOG("WORLD", Sev::inform) << mydata;
     }
-    if(!add_block_is_there) {
-      SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
-    }
+    if (!add_block_is_there) 
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_OPERATION_UNSUCCESSFUL,
+              "no added block set");
 
-    std::cout << "<<<< BLOCKSETs >>>>>" << std::endl;
+    MOFEM_LOG("WORLD", Sev::inform) << "<<<< BLOCKSETs >>>>>";
 
     add_block_is_there = false;
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1000,"ADD_BLOCK_SET"); CHKERRG(ierr);
+    CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1000, "ADD_BLOCK_SET");
     std::vector<double> attr(3);
     attr[0] = 0;
     attr[1] = 1;
     attr[2] = 2;
-    ierr = meshsets_manager_ptr->setAtributes(BLOCKSET,1000,attr); CHKERRG(ierr);
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-      //Get block name
+    CHKERR meshsets_manager_ptr->setAtributes(BLOCKSET, 1000, attr);
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
+      // Get block name
       std::string name = it->getName();
-      if (name.compare(0,13,"ADD_BLOCK_SET") == 0) {
+      if (name.compare(0, 13, "ADD_BLOCK_SET") == 0) {
         add_block_is_there = true;
         std::vector<double> attributes;
         it->getAttributes(attributes);
-        if(attributes.size()!=3) {
-          SETERRQ1(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"should be 3 attributes but is %d",attributes.size());
+        if (attributes.size() != 3) {
+          SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                   "should be 3 attributes but is %d", attributes.size());
         }
-        if(attributes[0]!=0 || attributes[1]!=1 || attributes[2]!=2) {
-          SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"wrong values of attributes");
+        if (attributes[0] != 0 || attributes[1] != 1 || attributes[2] != 2) {
+          SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                  "wrong values of attributes");
         }
       }
     }
-    if(!add_block_is_there) {
-      SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
+    if (!add_block_is_there) {
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_OPERATION_UNSUCCESSFUL,
+              "no added block set");
     }
     add_block_is_there = false;
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1001,"MAT_ELASTIC"); CHKERRG(ierr);
+    CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1001, "MAT_ELASTIC");
     {
       Mat_Elastic mydata;
       mydata.data.Young = 1;
       mydata.data.Poisson = 0.25;
-      ierr = meshsets_manager_ptr->setAtributesByDataStructure(BLOCKSET,1001,mydata); CHKERRG(ierr);
+      CHKERR meshsets_manager_ptr->setAtributesByDataStructure(BLOCKSET, 1001,
+                                                               mydata);
     }
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-      if(it->getMeshsetId()!=1001) continue;
-      //Get block name
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
+      if (it->getMeshsetId() != 1001)
+        continue;
+      // Get block name
       std::string name = it->getName();
-      if(name.compare(0,13,"MAT_ELASTIC") == 0 && (it->getBcType()&CubitBCType(MAT_ELASTICSET)).any()) {
+      if (name.compare(0, 13, "MAT_ELASTIC") == 0 &&
+          (it->getBcType() & CubitBCType(MAT_ELASTICSET)).any()) {
         add_block_is_there = true;
         Mat_Elastic mydata;
-        ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
-        //Print data
-        std::cout << mydata;
-        if(mydata.data.Young != 1 || mydata.data.Poisson != 0.25) {
-          SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"wrong values of attributes");
+        CHKERR it->getAttributeDataStructure(mydata);
+        // Print data
+        MOFEM_LOG("WORLD", Sev::inform) << mydata;
+        if (mydata.data.Young != 1 || mydata.data.Poisson != 0.25) {
+          SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                  "wrong values of attributes");
         }
       }
     }
-    if(!add_block_is_there) {
-      SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
+    if (!add_block_is_there) {
+      SETERRQ(PETSC_COMM_WORLD, MOFEM_OPERATION_UNSUCCESSFUL,
+              "no added block set");
     }
 
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1002,"ADD_BLOCK_SET"); CHKERRG(ierr);
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1003,"ADD_BLOCK_SET"); CHKERRG(ierr);
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1004,"ADD_BLOCK_SET"); CHKERRG(ierr);
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1005,"ADD_BLOCK_SET"); CHKERRG(ierr);
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1006,"ADD_BLOCK_SET"); CHKERRG(ierr);
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1007,"ADD_BLOCK_SET"); CHKERRG(ierr);
-    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1008,"ADD_BLOCK_SET"); CHKERRG(ierr);
+    MOFEM_LOG("WORLD", Sev::inform) << "<<<< NODESET >>>>>";
 
-    std::cout << "<<<< ADD BLOCKSETs FROM CONFIG FILE >>>>>" << std::endl;
+    CHKERR meshsets_manager_ptr->addMeshset(NODESET, 1010);
+    DisplacementCubitBcData disp_bc;
+    std::memcpy(disp_bc.data.name, "Displacement", 12);
+    disp_bc.data.flag1 = 1;
+    disp_bc.data.flag2 = 1;
+    disp_bc.data.flag3 = 1;
+    disp_bc.data.flag4 = 0;
+    disp_bc.data.flag5 = 0;
+    disp_bc.data.flag6 = 0;
+    disp_bc.data.value1 = 0;
+    disp_bc.data.value2 = 0;
+    disp_bc.data.value3 = 0;
+    disp_bc.data.value4 = 0;
+    disp_bc.data.value5 = 0;
+    disp_bc.data.value6 = 0;
 
-    ierr = meshsets_manager_ptr->setMeshsetFromFile(/*"add_cubit_meshsets.in"*/); CHKERRG(ierr);
+    CHKERR meshsets_manager_ptr->setBcData(NODESET, 1010, disp_bc);
+
+    for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
+             m_field, NODESET | DISPLACEMENTSET, it)) {
+      DisplacementCubitBcData disp_data;
+      CHKERR it->getBcDataStructure(disp_data);
+      MOFEM_LOG("WORLD", Sev::inform) << disp_data;
+    }
+
+    MOFEM_LOG("WORLD", Sev::inform)
+        << "<<<< ADD BLOCKSETs FROM CONFIG FILE >>>>>";
+
+    CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1002, "ADD_BLOCK_SET");
+    CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1003, "ADD_BLOCK_SET");
+    CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1004, "ADD_BLOCK_SET");
+    CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1005, "ADD_BLOCK_SET");
+    CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1006, "ADD_BLOCK_SET");
+    CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1007, "ADD_BLOCK_SET");
+    CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1008, "ADD_BLOCK_SET");
+
+    CHKERR meshsets_manager_ptr->setMeshsetFromFile(
+        /*"add_cubit_meshsets.in"*/);
 
     // List all meshsets
-    for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,it)) {
-      std::cout << *it << endl;
-      if((it->getBcType()&CubitBCType(BLOCKSET)).any()) {
+    for (_IT_CUBITMESHSETS_FOR_LOOP_(m_field, it)) {
+      MOFEM_LOG("WORLD", Sev::inform) << *it;
+      if ((it->getBcType() & CubitBCType(BLOCKSET)).any()) {
         std::vector<double> attributes;
         it->getAttributes(attributes);
-        std::cout << "Attr: ";
-        for(unsigned int ii = 0;ii!=attributes.size();ii++) {
-          std::cout << attributes[ii] << " ";
+        std::ostringstream ss;
+        ss << "Attr: ";
+        for (unsigned int ii = 0; ii != attributes.size(); ii++) {
+          ss << attributes[ii] << " ";
         }
-        std::cout << endl;
+        MOFEM_LOG("WORLD", Sev::inform) << ss.str(); 
       }
-      if((it->getBcType()&CubitBCType(MAT_ELASTICSET)).any()) {
+      if ((it->getBcType() & CubitBCType(MAT_ELASTICSET)).any()) {
         Mat_Elastic mydata;
-        ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
-        std::cout << "Mat elastic found " << endl << mydata << endl;
+        CHKERR it->getAttributeDataStructure(mydata);
+        MOFEM_LOG("WORLD", Sev::inform) << "Mat elastic found ";
+        MOFEM_LOG("WORLD", Sev::inform) << mydata;
       }
-      if((it->getBcType()&CubitBCType(MAT_THERMALSET)).any()) {
+      if ((it->getBcType() & CubitBCType(MAT_THERMALSET)).any()) {
         Mat_Thermal mydata;
-        ierr = it->getAttributeDataStructure(mydata); CHKERRG(ierr);
-        std::cout << "Mat thermal found " << endl << mydata << endl;
+        CHKERR it->getAttributeDataStructure(mydata);
+        MOFEM_LOG("WORLD", Sev::inform) << "Mat thermal found ";
+        MOFEM_LOG("WORLD", Sev::inform) << mydata;
       }
-      if((it->getBcType()&CubitBCType(DISPLACEMENTSET)).any()) {
+      if ((it->getBcType() & CubitBCType(DISPLACEMENTSET)).any()) {
         DisplacementCubitBcData mydata;
-        ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
-        std::cout << mydata;
+        CHKERR it->getBcDataStructure(mydata);
+        MOFEM_LOG("WORLD", Sev::inform) << mydata;
       }
-      if((it->getBcType()&CubitBCType(FORCESET)).any()) {
+      if ((it->getBcType() & CubitBCType(FORCESET)).any()) {
         ForceCubitBcData mydata;
-        ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
-        std::cout << mydata;
+        CHKERR it->getBcDataStructure(mydata);
+        MOFEM_LOG("WORLD", Sev::inform) << mydata;
       }
-      if((it->getBcType()&CubitBCType(PRESSURESET)).any()) {
+      if ((it->getBcType() & CubitBCType(PRESSURESET)).any()) {
         PressureCubitBcData mydata;
-        ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
-        std::cout << mydata;
+        CHKERR it->getBcDataStructure(mydata);
+        MOFEM_LOG("WORLD", Sev::inform) << mydata;
       }
-      if((it->getBcType()&CubitBCType(TEMPERATURESET)).any()) {
+      if ((it->getBcType() & CubitBCType(TEMPERATURESET)).any()) {
         TemperatureCubitBcData mydata;
-        ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
-        std::cout << mydata;
+        CHKERR it->getBcDataStructure(mydata);
+        MOFEM_LOG("WORLD", Sev::inform) << mydata;
       }
-      if((it->getBcType()&CubitBCType(HEATFLUXSET)).any()) {
+      if ((it->getBcType() & CubitBCType(HEATFLUXSET)).any()) {
         HeatFluxCubitBcData mydata;
-        ierr = it->getBcDataStructure(mydata); CHKERRG(ierr);
-        std::cout << mydata;
+        CHKERR it->getBcDataStructure(mydata);
+        MOFEM_LOG("WORLD", Sev::inform) << mydata;
       }
     }
-
-
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
+  CATCH_ERRORS;
 
   MoFEM::Core::Finalize();
-
 }
