@@ -3096,7 +3096,7 @@ MoFEMErrorCode ProblemsManager::markDofs(const std::string problem_name,
     SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
   }
   marker.resize(dofs->size());
-  marker.clear();
+  std::fill(marker.begin(), marker.end(), false);
   for (auto p = ents.pair_begin(); p != ents.pair_end(); ++p) {
     auto lo = dofs->get<Ent_mi_tag>().lower_bound(p->first);
     auto hi = dofs->get<Ent_mi_tag>().upper_bound(p->second);
