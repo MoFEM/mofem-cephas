@@ -425,7 +425,7 @@ Buckethead you will find
 
 Load cluster modules
 ~~~~~
-module load mpi/openmpi/4.0.2
+module load mpi/openmpi/3.1.4
 module load gcc/9.2.0 
 module load gridengine
 ~~~~~
@@ -457,7 +457,7 @@ Edit file `.spack/packages.yaml`
 packages:
   openmpi:
     paths:
-      openmpi@4.0.2%gcc@9.2.0 arch=linux-x86_64-debian7: /software/mpi/openmpi/4.0.2
+      openmpi@3.1.4%gcc@9.2.0 arch=linux-x86_64-debian7: /software/mpi/openmpi/3.1.4
 ~~~~~
 
 Edit file `.spack/linux/compilers.yaml`
@@ -508,7 +508,7 @@ which a enable linking std lib c++ libraries.
 At that point, we can follow the standard installation procedure, as follows
 ~~~~~
 spack bootstrap
-spack install -j 2 -v --only dependencies mofem-cephas%gcc@9.2.0 ^openmpi@4.0.2%gcc@9.2.0
+spack install -j 2 -v --only dependencies mofem-cephas%gcc@9.2.0 ^openmpi@3.1.4%gcc@9.2.0
 spack install mofem-users-modules
 ~~~~~
 
@@ -556,7 +556,7 @@ echo "$NSLOTS received"
 cat $PE_HOSTFILE
 
 # Load compiler
-module load mpi/openmpi/4.0.2
+module load mpi/openmpi/3.1.4
 
 # List of commands which do the actual work
 cd $HOME/um_view/elasticity
