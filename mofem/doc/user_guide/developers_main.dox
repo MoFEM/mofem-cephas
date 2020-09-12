@@ -2,7 +2,9 @@
 
 \tableofcontents
 
+\section developer_useful_links Tutorials and examples
 
+- \subpage old_tutorials
 - \subpage tutorials_in_progress
 - <a style="font-weight:bold" href="examples.html">Examples</a>
 - \subpage general_data_structure
