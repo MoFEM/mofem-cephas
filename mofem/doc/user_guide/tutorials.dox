@@ -53,7 +53,7 @@ continuing with the one you are most excited about.
   </tr>
 
   <tr valign="top">
-       <td>\ref lesson1</td>
+       <td>\ref integration</td>
        <td> Numerical integration is essential for most of the numerical methods employed to solve partial differential equations (PDEs)
        <br/> *Keywords:* 
        </td>
