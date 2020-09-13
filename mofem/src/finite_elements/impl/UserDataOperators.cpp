@@ -20,6 +20,131 @@
 
 namespace MoFEM {
 
+//! [Storage and set boundary conditions]
+
+// struct EssentialBcStorage : public EntityStorage {
+//   EssentialBcStorage(VectorInt &indices) : entityIndices(indices) {}
+//   VectorInt entityIndices;
+//   using HashVectorStorage =
+//       map<std::string, std::vector<boost::shared_ptr<EssentialBcStorage>>>;
+//   static HashVectorStorage feStorage;
+// };
+
+EssentialBcStorage::HashVectorStorage EssentialBcStorage::feStorage;
+
+OpSetBc::OpSetBc(std::string field_name, bool yes_set,
+                 boost::shared_ptr<std::vector<bool>> boundary_marker)
+    : ForcesAndSourcesCore::UserDataOperator(
+          field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+      yesSet(yes_set), boundaryMarker(boundary_marker) {}
+
+MoFEMErrorCode OpSetBc::doWork(int side, EntityType type,
+                               DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+  if (boundaryMarker) {
+    if (!data.getIndices().empty())
+      if (!data.getFieldEntities().empty()) {
+        if (auto e_ptr = data.getFieldEntities()[0]) {
+          auto indices = data.getIndices();
+          for (int r = 0; r != data.getIndices().size(); ++r) {
+            const auto loc_index = data.getLocalIndices()[r];
+            if (loc_index >= 0) {
+              if (yesSet) {
+                if ((*boundaryMarker)[loc_index]) {
+                  indices[r] = -1;
+                }
+              } else {
+                if (!(*boundaryMarker)[loc_index]) {
+                  indices[r] = -1;
+                }
+              }
+            }
+          }
+          EssentialBcStorage::feStorage[e_ptr->getName()].push_back(
+              boost::make_shared<EssentialBcStorage>(indices));
+          e_ptr->getWeakStoragePtr() =
+              EssentialBcStorage::feStorage[e_ptr->getName()].back();
+        }
+      }
+  }
+  MoFEMFunctionReturn(0);
+}
+
+OpUnSetBc::OpUnSetBc(std::string field_name)
+    : ForcesAndSourcesCore::UserDataOperator(
+          field_name, ForcesAndSourcesCore::UserDataOperator::OPROW) {}
+
+MoFEMErrorCode OpUnSetBc::doWork(int side, EntityType type,
+                                 DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+  EssentialBcStorage::feStorage[rowFieldName].clear();
+  MoFEMFunctionReturn(0);
+}
+
+// /**
+//  * @brief Set values to vector in operator
+//  *
+//  * @param V
+//  * @param data
+//  * @param ptr
+//  * @param iora
+//  * @return MoFEMErrorCode
+//  */
+// template <>
+// inline MoFEMErrorCode
+// VecSetValues<EssentialBcStorage>(Vec V,
+//                                  const DataForcesAndSourcesCore::EntData &data,
+//                                  const double *ptr, InsertMode iora) {
+//   MoFEMFunctionBegin;
+//   CHKERR VecSetOption(V, VEC_IGNORE_NEGATIVE_INDICES, PETSC_TRUE);
+//   if (!data.getFieldEntities().empty()) {
+//     if (auto e_ptr = data.getFieldEntities()[0]) {
+//       if (auto stored_data_ptr =
+//               e_ptr->getSharedStoragePtr<EssentialBcStorage>()) {
+//         return ::VecSetValues(V, stored_data_ptr->entityIndices.size(),
+//                               &*stored_data_ptr->entityIndices.begin(), ptr,
+//                               iora);
+//       }
+//     }
+//   }
+//   return ::VecSetValues(V, data.getIndices().size(),
+//                         &*data.getIndices().begin(), ptr, iora);
+//   MoFEMFunctionReturn(0);
+// }
+
+/**
+ * @brief Set valyes to matrix in operator
+ *
+ * @param M
+ * @param row_data
+ * @param col_data
+ * @param ptr
+ * @param iora
+ * @return MoFEMErrorCode
+ */
+template <>
+inline MoFEMErrorCode MatSetValues<EssentialBcStorage>(
+    Mat M, const DataForcesAndSourcesCore::EntData &row_data,
+    const DataForcesAndSourcesCore::EntData &col_data, const double *ptr,
+    InsertMode iora) {
+  if (!row_data.getFieldEntities().empty()) {
+    if (auto e_ptr = row_data.getFieldEntities()[0]) {
+      if (auto stored_data_ptr =
+              e_ptr->getSharedStoragePtr<EssentialBcStorage>()) {
+        return ::MatSetValues(M, stored_data_ptr->entityIndices.size(),
+                              &*stored_data_ptr->entityIndices.begin(),
+                              col_data.getIndices().size(),
+                              &*col_data.getIndices().begin(), ptr, iora);
+      }
+    }
+  }
+  return ::MatSetValues(
+      M, row_data.getIndices().size(), &*row_data.getIndices().begin(),
+      col_data.getIndices().size(), &*col_data.getIndices().begin(), ptr, iora);
+}
+
+//! [Storage and set boundary conditions]
+
 MoFEMErrorCode
 OpCalculateJacForFace::doWork(int side, EntityType type,
                               DataForcesAndSourcesCore::EntData &data) {
@@ -251,7 +376,6 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
     MoFEMFunctionReturn(0);
   };
 
-
   for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
     FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
     CHKERR apply_transform(data.getDiffN(base));
@@ -267,7 +391,6 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
       if (ptr)
         CHKERR apply_transform(*ptr);
   }
-
 
   MoFEMFunctionReturn(0);
 }
@@ -536,7 +659,7 @@ MoFEMErrorCode OpMultiplyDeterminantOfJacobianAndWeightsForFatPrisms::doWork(
 
     const int nb_gauss_pts = data.getN(NOBASE).size1();
     auto t_diff_n = data.getFTensor1DiffN<3>(NOBASE);
- 
+
     FTensor::Index<'i', 3> i;
     FTensor::Index<'j', 3> j;
     FTensor::Tensor2<double, 3, 3> t_jac;
@@ -566,7 +689,6 @@ MoFEMErrorCode OpMultiplyDeterminantOfJacobianAndWeightsForFatPrisms::doWork(
       t_w_scaled /= vol;
       ++t_w_scaled;
     }
-
   }
 
   doEntities[MBVERTEX] = true;
@@ -611,7 +733,6 @@ OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
       CHKERR determinantTensor3by3(t_jac, det);
       CHKERR invertTensor3by3(t_jac, det, t_inv_jac);
       ++t_inv_jac;
-
     }
   }
 

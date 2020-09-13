@@ -22,12 +22,96 @@
 
 namespace MoFEM {
 
+//! [Storage and set boundary conditions]
+
+struct EssentialBcStorage : public EntityStorage {
+  EssentialBcStorage(VectorInt &indices) : entityIndices(indices) {}
+  VectorInt entityIndices;
+  using HashVectorStorage =
+      map<std::string, std::vector<boost::shared_ptr<EssentialBcStorage>>>;
+  static HashVectorStorage feStorage;
+};
+
+/**
+ * @brief Set indices on entities on finite element
+ *
+ * If indices is marked, set its value to -1. DOF which such indice is not
+ * assembled into system.
+ *
+ * Indices are strored on on entity.
+ *
+ */
+struct OpSetBc : public ForcesAndSourcesCore::UserDataOperator {
+  OpSetBc(std::string field_name, bool yes_set,
+          boost::shared_ptr<std::vector<bool>> boundary_marker);
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+public:
+  bool yesSet;
+  boost::shared_ptr<std::vector<bool>> boundaryMarker;
+};
+
+struct OpUnSetBc : public ForcesAndSourcesCore::UserDataOperator {
+  OpUnSetBc(std::string field_name);
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+/**
+ * @brief Set values to vector in operator
+ *
+ * @param V
+ * @param data
+ * @param ptr
+ * @param iora
+ * @return MoFEMErrorCode
+ */
+template <>
+MoFEMErrorCode
+VecSetValues<EssentialBcStorage>(Vec V,
+                                 const DataForcesAndSourcesCore::EntData &data,
+                                 const double *ptr, InsertMode iora) {
+  MoFEMFunctionBegin;
+  CHKERR VecSetOption(V, VEC_IGNORE_NEGATIVE_INDICES, PETSC_TRUE);
+  if (!data.getFieldEntities().empty()) {
+    if (auto e_ptr = data.getFieldEntities()[0]) {
+      if (auto stored_data_ptr =
+              e_ptr->getSharedStoragePtr<EssentialBcStorage>()) {
+        return ::VecSetValues(V, stored_data_ptr->entityIndices.size(),
+                              &*stored_data_ptr->entityIndices.begin(), ptr,
+                              iora);
+      }
+    }
+  }
+  return ::VecSetValues(V, data.getIndices().size(),
+                        &*data.getIndices().begin(), ptr, iora);
+  MoFEMFunctionReturn(0);
+}
+
+/**
+ * @brief Set valyes to matrix in operator
+ *
+ * @param M
+ * @param row_data
+ * @param col_data
+ * @param ptr
+ * @param iora
+ * @return MoFEMErrorCode
+ */
+template <>
+MoFEMErrorCode MatSetValues<EssentialBcStorage>(
+    Mat M, const DataForcesAndSourcesCore::EntData &row_data,
+    const DataForcesAndSourcesCore::EntData &col_data, const double *ptr,
+    InsertMode iora);
+
+//! [Storage and set boundary conditions]
+
 // GET VALUES AT GAUSS PTS
 
 // TENSOR0
 
 /** \brief Calculate field values for tenor field rank 0, i.e. scalar field
- * 
+ *
  */
 template <class T, class A>
 struct OpCalculateScalarFieldValues_General
@@ -41,7 +125,7 @@ struct OpCalculateScalarFieldValues_General
       boost::shared_ptr<ublas::vector<T, A>> data_ptr,
       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
-            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+            field_name, OPROW),
         dataPtr(data_ptr), zeroType(zero_type) {
     if (!dataPtr)
       THROW_MESSAGE("Pointer is not set");
@@ -60,7 +144,7 @@ struct OpCalculateScalarFieldValues_General
 
 /**
  * \brief Specialization of member function
- * 
+ *
  */
 template <class T, class A>
 MoFEMErrorCode OpCalculateScalarFieldValues_General<T, A>::doWork(
@@ -74,7 +158,7 @@ MoFEMErrorCode OpCalculateScalarFieldValues_General<T, A>::doWork(
 
 /**
  * \brief Get value at integration points for scalar field
- * 
+ *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 struct OpCalculateScalarFieldValues
@@ -131,7 +215,7 @@ struct OpCalculateScalarFieldValues
 
 /**
  * @brief Get rate of scalar field at integration points
- * 
+ *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 struct OpCalculateScalarFieldValuesDot
@@ -201,14 +285,14 @@ struct OpCalculateScalarFieldValuesDot
 
 /**
  * \depreacted Name inconstent with other operators
- * 
+ *
  */
 using OpCalculateScalarValuesDot = OpCalculateScalarFieldValuesDot;
 
 // TENSOR1
 
 /** \brief Calculate field values for tenor field rank 1, i.e. vector field
- * 
+ *
  */
 template <int Tensor_Dim, class T, class L, class A>
 struct OpCalculateVectorFieldValues_General
@@ -252,8 +336,8 @@ OpCalculateVectorFieldValues_General<Tensor_Dim, T, L, A>::doWork(
 }
 
 /** \brief Calculate field values (template specialization) for tensor field
- * rank 1, i.e. vector field 
- * 
+ * rank 1, i.e. vector field
+ *
  */
 template <int Tensor_Dim>
 struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
@@ -263,9 +347,9 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
   boost::shared_ptr<MatrixDouble> dataPtr;
   const EntityHandle zeroType;
 
-  OpCalculateVectorFieldValues_General(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
-      const EntityType zero_type = MBVERTEX)
+  OpCalculateVectorFieldValues_General(const std::string field_name,
+                                       boost::shared_ptr<MatrixDouble> data_ptr,
+                                       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type) {
@@ -279,7 +363,7 @@ struct OpCalculateVectorFieldValues_General<Tensor_Dim, double,
 
 /**
  * \brief Member function specialization calculating values for tenor field rank
- * 
+ *
  */
 template <int Tensor_Dim>
 MoFEMErrorCode OpCalculateVectorFieldValues_General<
@@ -329,8 +413,8 @@ MoFEMErrorCode OpCalculateVectorFieldValues_General<
 }
 
 /** \brief Get values at integration pts for tensor filed rank 1, i.e. vector
- * field 
- * 
+ * field
+ *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
@@ -347,8 +431,8 @@ struct OpCalculateVectorFieldValues
 };
 
 /** \brief Get time direvatives of values at integration pts for tensor filed
- * rank 1, i.e. vector field 
- * 
+ * rank 1, i.e. vector field
+ *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
@@ -435,7 +519,7 @@ inline auto OpCalculateVectorFieldValuesDot<3>::getFTensorDotData<3>() {
 }
 
 /** \brief Calculate field values for tenor field rank 2.
- * 
+ *
  */
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 struct OpCalculateTensor2FieldValues_General
@@ -538,8 +622,8 @@ MoFEMErrorCode OpCalculateTensor2FieldValues_General<
 }
 
 /** \brief Get values at integration pts for tensor filed rank 2, i.e. matrix
- * field 
- * 
+ * field
+ *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
@@ -558,7 +642,7 @@ struct OpCalculateTensor2FieldValues
 
 /** \brief Get time direvarive values at integration pts for tensor filed rank
  * 2, i.e. matrix field
- * 
+ *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
@@ -648,8 +732,8 @@ inline auto OpCalculateTensor2FieldValuesDot<3, 3>::getFTensorDotData<3, 3>() {
 
 /**
  * @brief Calculate symmetric tensor field values at integration pts.
- * 
- * @tparam Tensor_Dim 
+ *
+ * @tparam Tensor_Dim
 
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
@@ -681,9 +765,9 @@ struct OpCalculateTensor2SymmetricFieldValues
       mat.clear();
     }
     const int nb_dofs = data.getFieldData().size();
-    if (!nb_dofs) 
+    if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    
+
     const int nb_base_functions = data.getN().size2();
     auto base_function = data.getFTensor0N();
     auto values_at_gauss_pts = getFTensor2SymmetricFromMat<Tensor_Dim>(mat);
@@ -709,9 +793,9 @@ struct OpCalculateTensor2SymmetricFieldValues
 
 /**
  * @brief Calculate symmetric tensor field rates ant integratio pts.
- * 
- * @tparam Tensor_Dim 
- * 
+ *
+ * @tparam Tensor_Dim
+ *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
@@ -806,8 +890,8 @@ OpCalculateTensor2SymmetricFieldValuesDot<2>::getFTensorDotData<2>() {
 
 /**
  * \brief Evaluate field gradient values for scalar field, i.e. gradient is
- * tensor rank 1 (vector) 
- * 
+ * tensor rank 1 (vector)
+ *
  */
 template <int Tensor_Dim, class T, class L, class A>
 struct OpCalculateScalarFieldGradient_General
@@ -821,8 +905,8 @@ struct OpCalculateScalarFieldGradient_General
 };
 
 /** \brief Evaluate field gradient values for scalar field, i.e. gradient is
- * tensor rank 1 (vector), specialization 
- * 
+ * tensor rank 1 (vector), specialization
+ *
  */
 template <int Tensor_Dim>
 struct OpCalculateScalarFieldGradient_General<Tensor_Dim, double,
@@ -850,8 +934,8 @@ struct OpCalculateScalarFieldGradient_General<Tensor_Dim, double,
 
 /**
  * \brief Member function specialization calculating scalar field gradients for
- * tenor field rank 1 
- * 
+ * tenor field rank 1
+ *
  */
 template <int Tensor_Dim>
 MoFEMErrorCode OpCalculateScalarFieldGradient_General<
@@ -859,7 +943,7 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
-  if (!this->dataPtr) 
+  if (!this->dataPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Data pointer not allocated");
 
@@ -892,7 +976,7 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
       }
     }
 
-  } else if(type == this->zeroType) {
+  } else if (type == this->zeroType) {
     this->dataPtr->resize(Tensor_Dim, 0, false);
   }
 
@@ -900,8 +984,8 @@ MoFEMErrorCode OpCalculateScalarFieldGradient_General<
 }
 
 /** \brief Get field gradients at integration pts for scalar filed rank 0, i.e.
- * vector field 
- * 
+ * vector field
+ *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
@@ -919,8 +1003,8 @@ struct OpCalculateScalarFieldGradient
 
 /**
  * \brief Evaluate field gradient values for vector field, i.e. gradient is
- * tensor rank 2 
- * 
+ * tensor rank 2
+ *
  */
 template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 struct OpCalculateVectorFieldGradient_General
@@ -962,8 +1046,8 @@ struct OpCalculateVectorFieldGradient_General<Tensor_Dim0, Tensor_Dim1, double,
 
 /**
  * \brief Member function specialization calculating vector field gradients for
- * tenor field rank 2 
- * 
+ * tenor field rank 2
+ *
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
 MoFEMErrorCode OpCalculateVectorFieldGradient_General<
@@ -971,7 +1055,7 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
-  if (!this->dataPtr) 
+  if (!this->dataPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Data pointer not allocated");
 
@@ -1020,8 +1104,8 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
 }
 
 /** \brief Get field gradients at integration pts for scalar filed rank 0, i.e.
- * vector field 
- * 
+ * vector field
+ *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
@@ -1039,8 +1123,8 @@ struct OpCalculateVectorFieldGradient
 };
 
 /** \brief Get field gradients time derivative at integration pts for scalar
- * filed rank 0, i.e. vector field 
- * 
+ * filed rank 0, i.e. vector field
+ *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, int Tensor_Dim1>
@@ -1137,7 +1221,7 @@ inline auto OpCalculateVectorFieldGradientDot<2, 2>::getFTensorDotData<2>() {
 }
 
 /** \brief Get vector field for H-div approximation
- * 
+ *
  */
 template <int Tensor_Dim0, class T, class L, class A>
 struct OpCalculateHdivVectorField_General
@@ -1181,7 +1265,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<Tensor_Dim, T, L, A>::doWork(
 }
 
 /** \brief Get vector field for H-div approximation
- * 
+ *
  */
 template <int Tensor_Dim>
 struct OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
@@ -1248,7 +1332,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
 }
 
 /** \brief Get vector field for H-div approximation
- * 
+ *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
@@ -1565,7 +1649,7 @@ struct OpCalculateHVecTensorDivergence
   }
 };
 
-// Face opeartors 
+// Face opeartors
 
 /** \brief Calculate jacobian for face element
 
@@ -1667,9 +1751,9 @@ struct OpMakeHdivFromHcurl
 };
 
 /** \brief Apply contravariant (Piola) transfer to Hdiv space on face
- * 
+ *
  * \note Hdiv space is generated by Hcurl space in 2d.
- * 
+ *
  * Contravariant Piola transformation
  * \f[
  * \psi_i|_t = \frac{1}{\textrm{det}(J)}J_{ij}\hat{\psi}_j\\
@@ -1677,10 +1761,10 @@ struct OpMakeHdivFromHcurl
  * =
  * \frac{1}{\textrm{det}(J)}J_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
  * \f]
- * 
+ *
  * \ingroup mofem_forces_and_sources
  *
-  */
+ */
 struct OpSetContravariantPiolaTransformFace
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
@@ -1694,8 +1778,8 @@ struct OpSetContravariantPiolaTransformFace
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
-  private:
-    MatrixDouble &jAc;
+private:
+  MatrixDouble &jAc;
 };
 
 // Edge
@@ -1762,9 +1846,9 @@ struct OpCalculateInvJacForFatPrism
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
-  private:
-    const boost::shared_ptr<MatrixDouble> invJacPtr;
-    MatrixDouble &invJac;
+private:
+  const boost::shared_ptr<MatrixDouble> invJacPtr;
+  MatrixDouble &invJac;
 };
 
 /** \brief Transform local reference derivatives of shape functions to global
@@ -1790,11 +1874,10 @@ struct OpSetInvJacH1ForFatPrism
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
-  private:
-    const boost::shared_ptr<MatrixDouble> invJacPtr;
-    MatrixDouble &invJac;
-    MatrixDouble diffNinvJac;
-
+private:
+  const boost::shared_ptr<MatrixDouble> invJacPtr;
+  MatrixDouble &invJac;
+  MatrixDouble diffNinvJac;
 };
 
 // Flat prism

@@ -155,6 +155,24 @@ struct OpVolumeTest : public VolOp {
   }
 };
 
+struct OpVolumeAssemble : public VolOp {
+  OpVolumeAssemble(const std::string &field_name, Vec v)
+      : VolOp(field_name, OPROW), V(v) {}
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+    auto nb_dofs = data.getIndices().size();
+    if (nb_dofs) {
+      std::vector<double> v(nb_dofs, 1);
+      CHKERR VecSetValues<EssentialBcStorage>(V, data, &v[0], ADD_VALUES);
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  Vec V;
+};
+
 struct VolRule {
   int operator()(int, int, int) const { return 1; }
 };
@@ -201,14 +219,68 @@ int main(int argc, char *argv[]) {
       // set integration rule
       domain_fe->getRuleHook = VolRule();
 
+      auto get_skin = [&]() {
+        Range ents;
+        CHKERR m_field.get_moab().get_entities_by_dimension(0, 3, ents, true);
+        Skinner skin(&m_field.get_moab());
+        Range skin_ents;
+        CHKERR skin.find_skin(0, ents, false, skin_ents);
+        // filter not owned entities, those are not on boundary
+        ParallelComm *pcomm =
+            ParallelComm::get_pcomm(&m_field.get_moab(), MYPCOMM_INDEX);
+        Range proc_skin;
+        CHKERR pcomm->filter_pstatus(skin_ents,
+                                     PSTATUS_SHARED | PSTATUS_MULTISHARED,
+                                     PSTATUS_NOT, -1, &proc_skin);
+        Range adj;
+        for(auto d : {0,1,2})
+          CHKERR m_field.get_moab().get_adjacencies(proc_skin, d, false, adj,
+                                                    moab::Interface::UNION);
+        proc_skin.merge(adj);
+        return proc_skin;
+      };
+
+      auto get_mark_skin_dofs = [&](Range &&skin) {
+        auto problem_manager = m_field.getInterface<ProblemsManager>();
+        auto marker_ptr = boost::make_shared<std::vector<bool>>();
+        problem_manager->markDofs(simple_interface->getProblemName(), ROW, skin,
+                                  *marker_ptr);
+        return marker_ptr;
+      };
+
       // set operator to the volume elements
       domain_fe->getOpPtrVector().push_back(new OpVolumeSet("FIELD"));
       domain_fe->getOpPtrVector().push_back(new OpVolumeTest("FIELD"));
+
+      auto mark_dofs = get_mark_skin_dofs(get_skin());
+      domain_fe->getOpPtrVector().push_back(
+          new OpSetBc("FIELD", true, mark_dofs));
+      SmartPetscObj<Vec> v;
+      CHKERR DMCreateGlobalVector_MoFEM(dm, v);
+      domain_fe->getOpPtrVector().push_back(new OpVolumeAssemble("FIELD", v));
+      domain_fe->getOpPtrVector().push_back(new OpUnSetBc("FIELD"));
+
       // make integration in volume (here real calculations starts)
       CHKERR DMoFEMLoopFiniteElements(dm, simple_interface->getDomainFEName(),
                                       domain_fe);
-
       OpVolumeSet::entsIndices.clear();
+
+      CHKERR VecAssemblyBegin(v);
+      CHKERR VecAssemblyEnd(v);
+
+      const MoFEM::Problem *problem_ptr;
+      CHKERR DMMoFEMGetProblemPtr(dm, &problem_ptr);
+
+      double *array;
+      CHKERR VecGetArray(v, &array);
+      for(auto dof : *(problem_ptr->getNumeredRowDofs())) {
+        auto loc_idx = dof->getPetscLocalDofIdx();
+        if ((*mark_dofs)[loc_idx] && (array[loc_idx] != 0))
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "Dof assembled, but it should be not");
+      }
+
+      CHKERR VecRestoreArray(v, &array);
     }
   }
   CATCH_ERRORS;

@@ -1609,7 +1609,6 @@ add_test(
   test_cache_on_entities ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/test_cache_on_entities 
   -file_name disp01_2parts.h5m 
-  -log_summary
   -log_no_color
 )
 

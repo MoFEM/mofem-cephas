@@ -87,6 +87,13 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
+       <td width="350px">\ref basic_tutorials_least_square_approximation</td>
+       <td> Solve the least square problem to approximate scalar function
+       <br/> *Keywords:* [Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [KSP](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html) solver, [mofem_part](http://mofem.eng.gla.ac.uk/mofem/html/mofem__part_8cpp.html), [mbconvert](https://gitlab.kitware.com/third-party/moab/-/blob/17ddd284930a23d8e8e48efa4510ff6fe56ade4f/tools/mbconvert.man), 3D extension
+       </td>
+  </tr>
+
+  <tr valign="top">
        <td width="350px">\ref basic_tutorials_poisson_homogeneous</td>
        <td> Solve the Poisson's equation with zero value boundary conditions
        <br/> *Keywords:* [Simple Interface](http://mofem.eng.gla.ac.uk/mofem/html/group__mofem__simple__interface.html#details), [KSP](https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/KSP/index.html) solver, [mofem_part](http://mofem.eng.gla.ac.uk/mofem/html/mofem__part_8cpp.html), [mbconvert](https://gitlab.kitware.com/third-party/moab/-/blob/17ddd284930a23d8e8e48efa4510ff6fe56ade4f/tools/mbconvert.man), 3D extension
