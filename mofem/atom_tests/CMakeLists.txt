@@ -1606,7 +1606,7 @@ target_link_libraries(test_cache_on_entities
 )
 
 add_test(
-  test_cache_on_entities ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  test_cache_on_entities ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/test_cache_on_entities 
   -file_name disp01_2parts.h5m 
   -log_no_color

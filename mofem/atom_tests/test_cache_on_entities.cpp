@@ -52,8 +52,8 @@ struct OpVolumeSet : public VolOp {
                         DataForcesAndSourcesCore::EntData &data) {
 
     MoFEMFunctionBegin;
-    MOFEM_LOG_CHANNEL("WORLD");
-    MOFEM_LOG_TAG("WORLD", "OpVolumeSet");
+    MOFEM_LOG_CHANNEL("SYNC");
+    MOFEM_LOG_TAG("SYNC", "OpVolumeSet");
 
     // Clear data when start process element
     if (type == MBVERTEX)
@@ -67,15 +67,14 @@ struct OpVolumeSet : public VolOp {
       // Store pointer to data on entity
       e_ptr->getWeakStoragePtr() = entsIndices.back();
 
-      MOFEM_LOG("WORLD", Sev::inform)
-          << "Set " << e_ptr->getEntTypeName() << " " << side << " : "
-          << entsIndices.size();
+      MOFEM_LOG("SYNC", Sev::inform) << "Set " << e_ptr->getEntTypeName() << " "
+                                     << side << " : " << entsIndices.size();
 
       // Check if all works
       if (auto ptr = e_ptr->getSharedStoragePtr<EntityStorage>()) {
 
         if (auto cast_ptr = boost::dynamic_pointer_cast<MyStorage>(ptr))
-          MOFEM_LOG("WORLD", Sev::noisy) << "Cast works";
+          MOFEM_LOG("SYNC", Sev::noisy) << "Cast works";
         else
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Cast not works");
 
@@ -85,7 +84,7 @@ struct OpVolumeSet : public VolOp {
       }
 
       if (auto ptr = e_ptr->getSharedStoragePtr<MyStorage>()) {
-        MOFEM_LOG("WORLD", Sev::verbose)
+        MOFEM_LOG("SYNC", Sev::verbose)
             << data.getIndices() << " : " << ptr->globalIndices;
       } else {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
@@ -117,21 +116,21 @@ struct OpVolumeTest : public VolOp {
                         DataForcesAndSourcesCore::EntData &data) {
 
     MoFEMFunctionBegin;
-    MOFEM_LOG_CHANNEL("WORLD");
-    MOFEM_LOG_TAG("WORLD", "OpVolumeTest");
+    MOFEM_LOG_CHANNEL("SYNC");
+    MOFEM_LOG_TAG("SYNC", "OpVolumeTest");
 
     // Get pointer to field entities
     auto field_ents = data.getFieldEntities();
     if (auto e_ptr = field_ents[0]) {
 
-      MOFEM_LOG("WORLD", Sev::inform)
+      MOFEM_LOG("SYNC", Sev::inform)
           << "Test " << e_ptr->getEntTypeName() << " " << side;
 
       // Check if data are cached on entity, and if code is correct, data should
       // accessible.
       if (auto ptr = e_ptr->getSharedStoragePtr<MyStorage>()) {
 
-        MOFEM_LOG("WORLD", Sev::verbose)
+        MOFEM_LOG("SYNC", Sev::verbose)
             << data.getIndices() << " : " << ptr->globalIndices;
 
         // Check constancy of data. Stored data are indices, and expected stored
@@ -233,10 +232,10 @@ int main(int argc, char *argv[]) {
                                      PSTATUS_SHARED | PSTATUS_MULTISHARED,
                                      PSTATUS_NOT, -1, &proc_skin);
         Range adj;
-        for(auto d : {0,1,2})
+        for (auto d : {0, 1, 2})
           CHKERR m_field.get_moab().get_adjacencies(proc_skin, d, false, adj,
                                                     moab::Interface::UNION);
-        proc_skin.merge(adj);
+        // proc_skin.merge(adj);
         return proc_skin;
       };
 
@@ -248,15 +247,16 @@ int main(int argc, char *argv[]) {
         return marker_ptr;
       };
 
+      SmartPetscObj<Vec> v;
+      CHKERR DMCreateGlobalVector_MoFEM(dm, v);
+      auto mark_dofs = get_mark_skin_dofs(get_skin());
+
       // set operator to the volume elements
       domain_fe->getOpPtrVector().push_back(new OpVolumeSet("FIELD"));
       domain_fe->getOpPtrVector().push_back(new OpVolumeTest("FIELD"));
 
-      auto mark_dofs = get_mark_skin_dofs(get_skin());
       domain_fe->getOpPtrVector().push_back(
           new OpSetBc("FIELD", true, mark_dofs));
-      SmartPetscObj<Vec> v;
-      CHKERR DMCreateGlobalVector_MoFEM(dm, v);
       domain_fe->getOpPtrVector().push_back(new OpVolumeAssemble("FIELD", v));
       domain_fe->getOpPtrVector().push_back(new OpUnSetBc("FIELD"));
 
@@ -265,19 +265,40 @@ int main(int argc, char *argv[]) {
                                       domain_fe);
       OpVolumeSet::entsIndices.clear();
 
+      MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
       CHKERR VecAssemblyBegin(v);
       CHKERR VecAssemblyEnd(v);
+      CHKERR VecGhostUpdateBegin(v, ADD_VALUES, SCATTER_REVERSE);
+      CHKERR VecGhostUpdateEnd(v, ADD_VALUES, SCATTER_REVERSE);
+      CHKERR VecGhostUpdateBegin(v, INSERT_VALUES, SCATTER_FORWARD);
+      CHKERR VecGhostUpdateEnd(v, INSERT_VALUES, SCATTER_FORWARD);
+
+      CHKERR DMoFEMMeshToLocalVector(simple_interface->getDM(), v,
+                                     INSERT_VALUES, SCATTER_REVERSE);
+
+      // CHKERR VecView(v,PETSC_VIEWER_STDOUT_WORLD);
 
       const MoFEM::Problem *problem_ptr;
       CHKERR DMMoFEMGetProblemPtr(dm, &problem_ptr);
 
       double *array;
       CHKERR VecGetArray(v, &array);
-      for(auto dof : *(problem_ptr->getNumeredRowDofs())) {
+      for (auto dof : *(problem_ptr->getNumeredRowDofs())) {
         auto loc_idx = dof->getPetscLocalDofIdx();
-        if ((*mark_dofs)[loc_idx] && (array[loc_idx] != 0))
+
+        if (dof->getFieldData() != array[loc_idx])
           SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                  "Dof assembled, but it should be not");
+                  "Data inconsistency");
+
+        if ((*mark_dofs)[loc_idx]) {
+          if (array[loc_idx] != 0)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "Dof assembled, but it should be not");
+        } else {
+          if (array[loc_idx] == 0)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "Dof not assembled, but it should be");
+        }
       }
 
       CHKERR VecRestoreArray(v, &array);

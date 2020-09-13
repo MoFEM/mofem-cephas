@@ -22,13 +22,13 @@ namespace MoFEM {
 
 //! [Storage and set boundary conditions]
 
-// struct EssentialBcStorage : public EntityStorage {
-//   EssentialBcStorage(VectorInt &indices) : entityIndices(indices) {}
-//   VectorInt entityIndices;
-//   using HashVectorStorage =
-//       map<std::string, std::vector<boost::shared_ptr<EssentialBcStorage>>>;
-//   static HashVectorStorage feStorage;
-// };
+struct EssentialBcStorage : public EntityStorage {
+  EssentialBcStorage(VectorInt &indices) : entityIndices(indices) {}
+  VectorInt entityIndices;
+  using HashVectorStorage =
+      map<std::string, std::vector<boost::shared_ptr<EssentialBcStorage>>>;
+  static HashVectorStorage feStorage;
+};
 
 EssentialBcStorage::HashVectorStorage EssentialBcStorage::feStorage;
 
@@ -81,36 +81,36 @@ MoFEMErrorCode OpUnSetBc::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-// /**
-//  * @brief Set values to vector in operator
-//  *
-//  * @param V
-//  * @param data
-//  * @param ptr
-//  * @param iora
-//  * @return MoFEMErrorCode
-//  */
-// template <>
-// inline MoFEMErrorCode
-// VecSetValues<EssentialBcStorage>(Vec V,
-//                                  const DataForcesAndSourcesCore::EntData &data,
-//                                  const double *ptr, InsertMode iora) {
-//   MoFEMFunctionBegin;
-//   CHKERR VecSetOption(V, VEC_IGNORE_NEGATIVE_INDICES, PETSC_TRUE);
-//   if (!data.getFieldEntities().empty()) {
-//     if (auto e_ptr = data.getFieldEntities()[0]) {
-//       if (auto stored_data_ptr =
-//               e_ptr->getSharedStoragePtr<EssentialBcStorage>()) {
-//         return ::VecSetValues(V, stored_data_ptr->entityIndices.size(),
-//                               &*stored_data_ptr->entityIndices.begin(), ptr,
-//                               iora);
-//       }
-//     }
-//   }
-//   return ::VecSetValues(V, data.getIndices().size(),
-//                         &*data.getIndices().begin(), ptr, iora);
-//   MoFEMFunctionReturn(0);
-// }
+/**
+ * @brief Set values to vector in operator
+ *
+ * @param V
+ * @param data
+ * @param ptr
+ * @param iora
+ * @return MoFEMErrorCode
+ */
+template <>
+MoFEMErrorCode
+VecSetValues<EssentialBcStorage>(Vec V,
+                                 const DataForcesAndSourcesCore::EntData &data,
+                                 const double *ptr, InsertMode iora) {
+  MoFEMFunctionBegin;
+  CHKERR VecSetOption(V, VEC_IGNORE_NEGATIVE_INDICES, PETSC_TRUE);
+  if (!data.getFieldEntities().empty()) {
+    if (auto e_ptr = data.getFieldEntities()[0]) {
+      if (auto stored_data_ptr =
+              e_ptr->getSharedStoragePtr<EssentialBcStorage>()) {
+        return ::VecSetValues(V, stored_data_ptr->entityIndices.size(),
+                              &*stored_data_ptr->entityIndices.begin(), ptr,
+                              iora);
+      }
+    }
+  }
+  return ::VecSetValues(V, data.getIndices().size(),
+                        &*data.getIndices().begin(), ptr, iora);
+  MoFEMFunctionReturn(0);
+}
 
 /**
  * @brief Set valyes to matrix in operator
@@ -123,7 +123,7 @@ MoFEMErrorCode OpUnSetBc::doWork(int side, EntityType type,
  * @return MoFEMErrorCode
  */
 template <>
-inline MoFEMErrorCode MatSetValues<EssentialBcStorage>(
+MoFEMErrorCode MatSetValues<EssentialBcStorage>(
     Mat M, const DataForcesAndSourcesCore::EntData &row_data,
     const DataForcesAndSourcesCore::EntData &col_data, const double *ptr,
     InsertMode iora) {

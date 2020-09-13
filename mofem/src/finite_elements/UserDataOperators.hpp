@@ -24,13 +24,7 @@ namespace MoFEM {
 
 //! [Storage and set boundary conditions]
 
-struct EssentialBcStorage : public EntityStorage {
-  EssentialBcStorage(VectorInt &indices) : entityIndices(indices) {}
-  VectorInt entityIndices;
-  using HashVectorStorage =
-      map<std::string, std::vector<boost::shared_ptr<EssentialBcStorage>>>;
-  static HashVectorStorage feStorage;
-};
+struct EssentialBcStorage;
 
 /**
  * @brief Set indices on entities on finite element
@@ -70,23 +64,7 @@ template <>
 MoFEMErrorCode
 VecSetValues<EssentialBcStorage>(Vec V,
                                  const DataForcesAndSourcesCore::EntData &data,
-                                 const double *ptr, InsertMode iora) {
-  MoFEMFunctionBegin;
-  CHKERR VecSetOption(V, VEC_IGNORE_NEGATIVE_INDICES, PETSC_TRUE);
-  if (!data.getFieldEntities().empty()) {
-    if (auto e_ptr = data.getFieldEntities()[0]) {
-      if (auto stored_data_ptr =
-              e_ptr->getSharedStoragePtr<EssentialBcStorage>()) {
-        return ::VecSetValues(V, stored_data_ptr->entityIndices.size(),
-                              &*stored_data_ptr->entityIndices.begin(), ptr,
-                              iora);
-      }
-    }
-  }
-  return ::VecSetValues(V, data.getIndices().size(),
-                        &*data.getIndices().begin(), ptr, iora);
-  MoFEMFunctionReturn(0);
-}
+                                 const double *ptr, InsertMode iora);
 
 /**
  * @brief Set valyes to matrix in operator
