@@ -716,6 +716,9 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
                               &tag_size);
 
                           if (rval != MB_SUCCESS) {
+                            MOFEM_LOG_ATTRIBUTES("SELF",
+                                                 LogManager::BitLineID |
+                                                     LogManager::BitScope);
                             MOFEM_LOG("SELF", Sev::error)
                                 << "Error is triggered in MOAB, field tag data "
                                    "for same reason can not be for accessed.";
