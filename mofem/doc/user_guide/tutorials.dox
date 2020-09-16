@@ -199,6 +199,26 @@ continuing with the one you are most excited about.
 
 </table>
 
+\section tutorials_magnetics Maxwell problems
+
+<table style="width:100%">
+
+  <tr valign="top">
+       <td width="350px">\ref MAX-0: Magnetostatics</td>
+       <td> Magnetostatics
+       <br/> *Keywords:* 
+       </td>
+  </tr>
+
+  <tr valign="top">
+       <td width="350px">\ref MAX-1: Lortenz force</td>
+       <td> Lorenz force
+       <br/> *Keywords:* 
+       </td>
+  </tr>
+
+</table>
+
 \section tutorials_vector_complex_advanced_topics Advanced topics
 
 
