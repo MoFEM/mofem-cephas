@@ -242,7 +242,5 @@ continuing with the one you are most excited about.
 </table>
 
 
-Our way of creating tutorials is inspired by [deal.II](https://www.dealii.org).
-
 \note We also have some tutorials that created some time ago at \ref old_tutorials and \ref runningprograms.
 */
