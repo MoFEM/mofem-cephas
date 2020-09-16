@@ -610,9 +610,8 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
                                                  &*tag_size.begin());
               }
             }
-
-          } else {
           }
+
           MoFEMFunctionReturn(0);
         };
 
@@ -715,19 +714,24 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
                           rval = get_moab().tag_get_by_ptr(
                               field_ptr->th_FieldData, &*eit, 1, &ret_val,
                               &tag_size);
-                              
+
                           if (rval != MB_SUCCESS) {
-                            MOFEM_LOG("SELF", Sev::error) << "order " << order;
+                            MOFEM_LOG_ATTRIBUTES("SELF",
+                                                 LogManager::BitLineID |
+                                                     LogManager::BitScope);
                             MOFEM_LOG("SELF", Sev::error)
-                                << "nb_dofs " << nb_dofs;
+                                << "Error is triggered in MOAB, field tag data "
+                                   "for same reason can not be for accessed.";
                             MOFEM_LOG("SELF", Sev::error)
-                                << "ent_nb_dofs " << ent_nb_dofs;
+                                << "Set order: " << order;
                             MOFEM_LOG("SELF", Sev::error)
-                                << "set_tag_size " << set_tag_size[0];
+                                << "Nb. dofs on entity for given order: "
+                                << set_tag_size[0];
                             MOFEM_LOG("SELF", Sev::error)
-                                << "Entity type "
+                                << "Entity type: "
                                 << moab::CN::EntityTypeName(ent_type);
-                            MOFEM_LOG("SELF", Sev::error) << *field_ptr;
+                            MOFEM_LOG("SELF", Sev::error)
+                                << "Field: " << *field_ptr;
                             CHKERR rval;
                           }
                         }
