@@ -1,6 +1,5 @@
 /*! \page tutorials_in_progress Tutorials (work in progress)
 
-
 The tutorials contain a number of basic programs that are built on top of each
 other. Those with the full source code has the following structure
 
@@ -22,6 +21,8 @@ the following directories when you install MoFEM with developer version \ref ins
 Each tutorial in this page includes code name and keywords for quick reference
 and search within the browser. 
 
+\tableofcontents
+
 \note You do not need to go through all the tutorials in the order they are
 listed in this page before jumping into the topic in which you are
 interested. However, we do recommend you to have a look at the first few tutorials
@@ -34,7 +35,7 @@ continuing with the one you are most excited about.
 
 \note The tutorials are under development. Send us your feedback on [Q&A](https://groups.google.com/forum/#!categories/mofem-group) regarding the tutorials that already done and the missing ones that you most prefer to see.
 
-\subsection tutorials_fundamentals Fundamentals
+\section tutorials_fundamentals Fundamentals
 
 <table style="width:100%">
   <tr valign="top">
@@ -62,7 +63,7 @@ continuing with the one you are most excited about.
 </table>
 
 
-\subsection tutorials_mesh_creation Mesh creation
+\section tutorials_mesh_creation Mesh creation
 
 <table style="width:100%">
 
@@ -82,7 +83,7 @@ continuing with the one you are most excited about.
   
 </table>
 
-\subsection tutorials_scalar_field_problems Scalar-field problems
+\section tutorials_scalar_field_problems Scalar-field problems
 
 <table style="width:100%">
 
@@ -151,20 +152,20 @@ continuing with the one you are most excited about.
 
 </table>
 
-\subsection tutorials_comples_field_problems
+\section tutorials_complex_field_problems Problems with complex variable fields
 
 <table style="width:100%">
 
   <tr valign="top">
        <td width="350px">\ref tutorial_hemholtz_problem</td>
-       <td> Hemholtz problem 
+       <td> Hemholtz problem for acoustics
        <br/> *Keywords:* Complex variable, Linear Solver
        </td>
-  </tr>
+  </tr
 
 </table>
 
-\subsection tutorials_vector_field_problems Vector-field problems
+\section tutorials_vector_field_problems Vector-field problems
 
 <table style="width:100%">
 
@@ -185,16 +186,9 @@ continuing with the one you are most excited about.
 </table>
 
 
-\subsection tutorials_vector_complex_field_problems Complex and mixed field problems
+\section tutorials_vector_complex_field_problems Complex and mixed field problems
 
 <table style="width:100%">
-
-  <tr valign="top">
-       <td width="350px">\ref MIX-1: Acoustic wave</td>
-       <td> Acoustic wave problem
-       <br/> *Keywords:* 
-       </td>
-  </tr>
 
   <tr valign="top">
        <td width="350px">\ref MIX-2: Mixed problem</td>
@@ -205,7 +199,7 @@ continuing with the one you are most excited about.
 
 </table>
 
-\subsection tutorials_vector_complex_advanced_topics Advanced topics
+\section tutorials_vector_complex_advanced_topics Advanced topics
 
 
 <table style="width:100%">
