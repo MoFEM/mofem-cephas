@@ -610,8 +610,7 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
                                                  &*tag_size.begin());
               }
             }
-
-          } 
+          }
 
           MoFEMFunctionReturn(0);
         };
@@ -715,8 +714,11 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
                           rval = get_moab().tag_get_by_ptr(
                               field_ptr->th_FieldData, &*eit, 1, &ret_val,
                               &tag_size);
-                              
+
                           if (rval != MB_SUCCESS) {
+                            MOFEM_LOG("SELF", Sev::error)
+                                << "Error is triggered in MOAB, field tag data "
+                                   "for same reason can not be for accessed.";
                             MOFEM_LOG("SELF", Sev::error)
                                 << "Set order: " << order;
                             MOFEM_LOG("SELF", Sev::error)
