@@ -61,30 +61,7 @@ Tutorial for the implementation of Winkler spring elements
 
 - \subpage spring_element
 
-\section core_interface Core interface
-
-\subsection snes_nonlinear_tut Nonlinear problem
-
-Minimal surface area (soap film on the wire): Tutorial showing step by step
-implementation of nonlinear problem. It presents how to set up the problem
-from scratch, calculate matrices and solve the problem using MoFEM and
-PETSc
-
-- \subpage sope_film
-
-\subsection mix_adpativity_tut Mix formulation and h-adaptivity
-
-This example shows how to solve transport problem using mix element with an
-independent approximation for fluxes and function values.  Also, it shows how to
-integrate over mesh skeleton to evaluate error and how to use a posterior error
-estimator to drive mesh adaptivity (h-adaptivity).
-
-- \subpage mix_transport
-
-In this tutorial, we show how to solve time dependent nonlinear problem using
-mix formulation applied to unsaturated water transport in heterogeneous soil.
-
-- \subpage mix_us_flow
-
-
 */
+
+
+

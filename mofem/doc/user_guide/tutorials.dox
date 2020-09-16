@@ -199,19 +199,30 @@ continuing with the one you are most excited about.
 
 </table>
 
+\section tutorials_data_driven Data driven problems
+
+<table style="width:100%">
+
+  <tr valign="top">
+       <td width="350px">\ref DD-0: Tranport data driven</td>
+       <td> Data driven for transport or heat conduction problems
+       <br/> *Keywords:* Scalar problem
+       </td>
+  </tr>
+
 \section tutorials_magnetics Maxwell problems
 
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px">\ref MAX-0: Magnetostatics</td>
+       <td width="350px">\ref tutorial_magnetostatic</td>
        <td> Magnetostatics
        <br/> *Keywords:* 
        </td>
   </tr>
 
   <tr valign="top">
-       <td width="350px">\ref MAX-1: Lortenz force</td>
+       <td width="350px">\ref tutorial_lorenz_force</td>
        <td> Lorenz force
        <br/> *Keywords:* 
        </td>
@@ -260,6 +271,34 @@ continuing with the one you are most excited about.
   </tr>
 
 </table>
+
+\section tutorials_old Low level tutorials and older implementations
+
+<table style="width:100%">
+
+  <tr valign="top">
+       <td width="350px">LOW-0: \subpage sope_film</td>
+       <td> Sope film as module
+       <br/> *Keywords:* Module implementations
+       </td>
+  </tr>
+  
+  <tr valign="top">
+       <td width="350px">LOW-1: \subpage mix_transport</td>
+       <td> Mix formulation for transport problem
+       <br/> *Keywords:* h-adaptivity and error estimator
+       </td>
+  </tr>
+
+  <tr valign="top">
+       <td width="350px">LOW-2: \subpage mix_us_flow</td>
+       <td> Mix formulation for capilary flo
+       <br/> *Keywords:* Caplilary flow in unsaturated soil. Nonlinear mix-formulation
+       </td>
+  </tr>
+
+</table>
+
 
 
 \note We also have some tutorials that created some time ago at \ref old_tutorials and \ref runningprograms.
