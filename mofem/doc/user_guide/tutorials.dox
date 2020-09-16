@@ -156,9 +156,9 @@ continuing with the one you are most excited about.
 <table style="width:100%">
 
   <tr valign="top">
-       <td width="350px">\ref CLX-0: Hemholtz problem</td>
+       <td width="350px">\ref tutorial_hemholtz_problem</td>
        <td> Hemholtz problem 
-       <br/> *Keywords:* 
+       <br/> *Keywords:* Complex variable, Linear Solver
        </td>
   </tr>
 
