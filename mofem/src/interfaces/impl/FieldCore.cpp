@@ -235,7 +235,7 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
     CHKERR add_field_meshset_to_cs(undefined_cs_ptr);
 
     auto p = fIelds.insert(
-      boost::make_shared<Field>(moab, meshset, undefined_cs_ptr));
+        boost::make_shared<Field>(moab, meshset, undefined_cs_ptr));
     if (verb > QUIET) {
       MOFEM_LOG("WORLD", Sev::inform) << "Add field " << **p.first;
       MOFEM_LOG("WORLD", Sev::noisy)
@@ -573,7 +573,7 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
       };
       const int nb_dofs_on_order = get_nb_dofs_on_order(order);
       if (nb_dofs_on_order || order == -1) {
-        
+
         const int field_rank = field_ptr->getNbOfCoeffs();
         const int nb_dofs = nb_dofs_on_order * field_rank;
 
@@ -611,6 +611,7 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
               }
             }
           }
+
           MoFEMFunctionReturn(0);
         };
 
@@ -676,6 +677,7 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
                   // set empty vector adaptor
                   for (int i = 0; i != ents.size(); ++i)
                     vec->emplace_back(nullptr);
+
                   // check order on all entities, and if for that order non zero
                   // dofs are expected get pointer to tag data and reset vector
                   // adaptor
@@ -691,14 +693,49 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
                     if (ent_nb_dofs) {
                       int tag_size;
                       const void *ret_val;
-                      if (ent_type == MBVERTEX)
-                        CHKERR get_moab().tag_get_by_ptr(
+                      if (ent_type == MBVERTEX) {
+                        rval = get_moab().tag_get_by_ptr(
                             field_ptr->th_FieldDataVerts, &*eit, 1, &ret_val,
                             &tag_size);
-                      else
-                        CHKERR get_moab().tag_get_by_ptr(
+                      } else {
+                        rval = get_moab().tag_get_by_ptr(
                             field_ptr->th_FieldData, &*eit, 1, &ret_val,
                             &tag_size);
+                        if (rval != MB_SUCCESS) {
+
+                          const int set_tag_size[] = {ent_nb_dofs * field_rank};
+                          std::array<FieldData, MAX_DOFS_ON_ENTITY> set_d_vec;
+                          std::fill(set_d_vec.begin(),
+                                    &set_d_vec[set_tag_size[0]], 0);
+                          const void *set_d_vec_ptr[] = {set_d_vec.data()};
+                          CHKERR get_moab().tag_set_by_ptr(
+                              field_ptr->th_FieldData, &*eit, 1, set_d_vec_ptr,
+                              set_tag_size);
+                          rval = get_moab().tag_get_by_ptr(
+                              field_ptr->th_FieldData, &*eit, 1, &ret_val,
+                              &tag_size);
+
+                          if (rval != MB_SUCCESS) {
+                            MOFEM_LOG_ATTRIBUTES("SELF",
+                                                 LogManager::BitLineID |
+                                                     LogManager::BitScope);
+                            MOFEM_LOG("SELF", Sev::error)
+                                << "Error is triggered in MOAB, field tag data "
+                                   "for same reason can not be for accessed.";
+                            MOFEM_LOG("SELF", Sev::error)
+                                << "Set order: " << order;
+                            MOFEM_LOG("SELF", Sev::error)
+                                << "Nb. dofs on entity for given order: "
+                                << set_tag_size[0];
+                            MOFEM_LOG("SELF", Sev::error)
+                                << "Entity type: "
+                                << moab::CN::EntityTypeName(ent_type);
+                            MOFEM_LOG("SELF", Sev::error)
+                                << "Field: " << *field_ptr;
+                            CHKERR rval;
+                          }
+                        }
+                      }
                       const_cast<FieldData *&>(*dit) = cast(ret_val);
                     }
                   }
@@ -890,8 +927,8 @@ MoFEMErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
 
 MoFEMErrorCode
 Core::buildFieldForNoFieldImpl(boost::shared_ptr<Field> field_ptr,
-                                std::map<EntityType, int> &dof_counter,
-                                int verb) {
+                               std::map<EntityType, int> &dof_counter,
+                               int verb) {
   FieldCoreFunctionBegin;
 
   const auto bit_number = field_ptr->getBitNumber();
@@ -1012,8 +1049,7 @@ Core::buildFieldForNoField(const BitFieldId id,
         << this->getValue() << " > field value () "
         << (*field_it)->getBitNumber() << " )";
 
-  CHKERR this->buildFieldForNoFieldImpl(*field_it, dof_counter,
-                                                 verb);
+  CHKERR this->buildFieldForNoFieldImpl(*field_it, dof_counter, verb);
 
   MoFEMFunctionReturn(0);
 }
