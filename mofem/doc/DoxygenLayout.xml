@@ -3,6 +3,8 @@
   <!-- Navigation index tabs for HTML output -->
  <navindex>
     <tab type="user" visible="yes" url="@ref mainpage" title="" intro=""/>
+
+    <tab type="user" visible="yes" title="News" url="@ref news" intro=""/>
     
     <tab type="user" visible="yes" title="Getting started" url="@ref usersmain" intro="">
       <tab type="user" url="@ref installation" title="Installation" intro=""/>
