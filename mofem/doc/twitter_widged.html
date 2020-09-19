@@ -1,19 +1,34 @@
-<!-- <div align="center"> -->
-<div class="twitterborder">
-  <a class="twitter-timeline" href="https://twitter.com/mofemjoseph" data-widget-id="617464376874897408" width="500px"
-    height="1000"> </a>
+<dev align=center>
+  <div class="twitter-feed">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <!-- Twitter Embed Code -->
+          <a class="twitter-timeline" data-lang="en" data-width="650" data-height="1000" data-dnt="true"
+            href="https://twitter.com/mofemjoseph?ref_src=twsrc%5Etfw">Tweets by mofemjoseph</a>
+          <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+          <!-- / Twitter Embed Code -->
+        </div>
+      </div>
+    </div>
+  </div>
+</dev>
 
-  <script>
-    ! function (d, s, id) {
-      var js, fjs = d.getElementsByTagName(s)[0],
-        p = /^http:/.test(d.location) ? 'http' : 'https';
-      if (!d.getElementById(id)) {
-        js = d.createElement(s);
-        js.id = id;
-        js.src = p + "://platform.twitter.com/widgets.js";
-        fjs.parentNode.insertBefore(js, fjs);
-      }
-    }(document, "script", "twitter-wjs");
-  </script>
-</div>
-<!-- </div> -->
+<script>
+  // Twitter Overrides -----------------------------------------------------------------------------
+  $('.twitter-feed').delegate('#twitter-widget-0', 'DOMSubtreeModified propertychange', function () {
+    customizeTweetMedia();
+  });
+
+  var customizeTweetMedia = function () {
+    // CSS Overrides
+    $('.twitter-feed').find('.twitter-timeline').contents().find('span.TweetAuthor-name').css('font-size', '14px')
+    $('.twitter-feed').find('.twitter-timeline').contents().find('span.TweetAuthor-name').css('font-family', 'sans-serif')
+    $('.twitter-feed').find('.twitter-timeline').contents().find('span.TweetAuthor-screenName').css('font-size', '14px');
+    $('.twitter-feed').find('.twitter-timeline').contents().find('span.TweetAuthor-screenName').css('font-family', 'sans-serif');
+    $('.twitter-feed').find('.twitter-timeline').contents().find('p.timeline-tweet-text').css('font-size', '14px');
+    $('.twitter-feed').find('.twitter-timeline').contents().find('p.timeline-tweet-text').css('line-height', '1.4');
+    $('.twitter-feed').find('.twitter-timeline').contents().find('p.timeline-tweet-text').css('font-family', 'sans-serif');
+  }
+</script>
+
