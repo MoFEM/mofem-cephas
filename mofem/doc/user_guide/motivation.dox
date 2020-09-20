@@ -4,7 +4,7 @@
 
 MoFEM (Mesh-oriented Finite Element Method) is a C++ library for managing complexities related to the finite element method (FEM). FEM is a widely used numerical approach for solving partial differential equations (PDEs) arising in various physical problems. %MoFEM is developed to provide a finite element library incorporating modern approximation approaches and data structures for engineers, students and academics.
 
-%MoFEM belongs to a class of open source finite element libraries, which provide users with generic tools for solving PDEs and developers with frameworks for implementing bespoke finite elements. %MoFEM is specifically designed to solve complex engineering problems, enabling seamless integration of meshes that comprise multiple element types and element shapes, which are typically encountered in industrial applications. The development of %MoFEM has been primarily targeting the problem of crack propagation for structural integrity assessment of safety critical structures like on \ref Figure_1_motivation "Figuree 1".
+%MoFEM belongs to a class of open source finite element libraries, which provide users with generic tools for solving PDEs and developers with frameworks for implementing bespoke finite elements. %MoFEM is specifically designed to solve complex engineering problems, enabling seamless integration of meshes that comprise multiple element types and element shapes, which are typically encountered in industrial applications. The development of %MoFEM has been primarily targeting the problem of crack propagation for structural integrity assessment of safety critical structures like on \ref Figure_1_motivation "Figure 1".
 
 Unique for %MoFEM is that it was created for engineers to solve practical problems, which can not be easily (or not at all) solved by commercial codes. In particular, %MoFEM development was driven by the needs of nuclear engineers in EDF and Jacobs to model crack propagation in nuclear graphite bricks in real core environment. %MoFEM is a research tool, which is design for researchers in computational mechanics which like to make their methods available to engineers.
 
@@ -21,7 +21,7 @@ Support for hanling boundary conditions and material sets
 - Cubit/Trelis
 - Gmsh
 
-Also using MOAB liberay MoFEM can read/wrire from file formats
+Also using <a style="font-weight:bold" href=https://ftp.mcs.anl.gov/pub/fathom/moab-docs/index.html>MOAB</a> liberay MoFEM can read/wrire from file formats
 \verbatim
 Format               Name     Read    Write   File name description
 ------------------  ------  -------- -------  ----------------
@@ -65,7 +65,7 @@ Template input      TEMPLATE  yes      yes
 FGetting started
 \subsection mofem_features_mesh_types Range of mesh types and topological operations
 
-%MoFEM is implemented with the use of MoAB and deliver the great flexibility of
+%MoFEM is implemented with the use of MOAB and deliver the great flexibility of
 managing meshes. We can manage range elements types, e.g. prisms, triangles,
 quads, bricks and more.
 
