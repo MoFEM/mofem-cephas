@@ -6,16 +6,15 @@
 
     <tab type="user" visible="yes" title="Getting started" url="@ref usersmain" intro="">
       <tab type="user" url="@ref installation" title="Installation" intro=""/>
-      <tab type="user" url="@ref news" title="News" intro=""/>
       <tab type="user" url="@ref motivation" title="Features" intro=""/>
+      <tab type="user" url="@ref news" title="News" intro=""/>
       <tab type="user" url="https://www.youtube.com/playlist?list=PLW49at2nN39gsTI1vWxvHBOjFK0q_h83s" title="Video guides"/>
       <tab type="user" url="@ref faqs" title="Frequently Asked Questions" intro=""/>
       <tab type="user" url="@ref google_search" title="Search" intro=""/>
     </tab>
     
-    <tab type="usergroup" visible="yes" title="Developer" url="@ref developersmain" intro="">
-      <tab type="user" url="@ref old_tutorials" title="Tutorials (Old)"/>
-      <tab type="user" url="@ref tutorials_in_progress" title="Tutorials (New - work in progress)"/>
+    <tab type="usergroup" visible="yes" title="User" url="@ref developersmain" intro="">
+      <tab type="user" url="@ref tutorials_in_progress" title="Tutorials"/>
       <tab type="user" url="@ref work_in_progress" visible="no" title="Work in progess" intro=""/>
       <tab type="examples" visible="no" title="" intro=""/>
       <tab type="user" url="@ref general_data_structure" title="Basic design" intro=""/>
