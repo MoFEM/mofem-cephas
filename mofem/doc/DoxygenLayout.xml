@@ -4,7 +4,7 @@
  <navindex>
     <tab type="user" visible="yes" url="@ref mainpage" title="" intro=""/>
 
-    <tab type="user" visible="yes" title="Getting started" intro="">
+    <tab type="user" visible="yes" title="Getting started" url="@ref installation" intro="">
       <tab type="user" url="@ref installation" title="Installation" intro=""/>
       <tab type="user" url="@ref motivation" title="Features" intro=""/>
       <tab type="user" url="@ref news" title="News" intro=""/>
@@ -12,16 +12,14 @@
       <tab type="user" url="@ref google_search" title="Search" intro=""/>
     </tab>
     
-    <tab type="user" visible="yes" title="User" intro="">
+    <tab type="user" visible="yes" title="User" url="@ref tutorials" intro="">
       <tab type="user" url="@ref tutorials" title="Tutorials"/>
       <tab type="user" url="@ref other_tutorials" title="Other tutorials"/>
-      <tab type="examples" visible="yes" title="" intro=""/>
-      <tab type="user" url="@ref general_data_structure" title="Basic design" intro=""/>
+      <tab type="user" url="@ref general_data_structure" title="Design" intro=""/>
       <tab type="user" url="@ref faqs" title="Frequently Asked Questions" intro=""/>
       <tab type="modules" visible="yes" title="Source groups" intro=""/>
       <tab type="files" visible="yes" title="Source files" intro=""/>
-      <tab type="namespaces" visible="no" title="Name spaces" intro=""/>
-      <tab type="classes" visible="no" title="Classes" intro=""/>
+      <tab type="examples" visible="yes" title="" intro=""/>
       <tab type="user" url="@ref coding_practice" title="Coding practice" intro=""/>
       <tab type="user" url="@ref guidelines_bug_reporting" title="Bug reporting" intro=""/>
       <tab type="user" url="@ref a_guide_to_writing_documentation" title="Writing documentation" intro=""/>
