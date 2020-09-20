@@ -4,11 +4,12 @@
 
 MoFEM (Mesh-oriented Finite Element Method) is a C++ library for managing complexities related to the finite element method (FEM). FEM is a widely used numerical approach for solving partial differential equations (PDEs) arising in various physical problems. %MoFEM is developed to provide a finite element library incorporating modern approximation approaches and data structures for engineers, students and academics.
 
-%MoFEM belongs to a class of open source finite element libraries, which provide users with generic tools for solving PDEs and developers with frameworks for implementing bespoke finite elements. %MoFEM is specifically designed to solve complex engineering problems, enabling seamless integration of meshes that comprise multiple element types and element shapes, which are typically encountered in industrial applications. The development of %MoFEM has been primarily targeting the problem of crack propagation for structural integrity assessment of safety critical structures like on figure bellow.
+%MoFEM belongs to a class of open source finite element libraries, which provide users with generic tools for solving PDEs and developers with frameworks for implementing bespoke finite elements. %MoFEM is specifically designed to solve complex engineering problems, enabling seamless integration of meshes that comprise multiple element types and element shapes, which are typically encountered in industrial applications. The development of %MoFEM has been primarily targeting the problem of crack propagation for structural integrity assessment of safety critical structures like on \ref Figure_1_motivation "Figuree 1".
 
-\image html motivation_brick.png "Brittle crack propagation" width=600px
+Unique for %MoFEM is that it was created for engineers to solve practical problems, which can not be easily (or not at all) solved by commercial codes. In particular, %MoFEM development was driven by the needs of nuclear engineers in EDF and Jacobs to model crack propagation in nuclear graphite bricks in real core environment. %MoFEM is a research tool, which is design for researchers in computational mechanics which like to make their methods available to engineers.
 
-%MoFEM is that in its birth was created as a research code which is used by engineers to solve practical engineering problems. In particular, %MoFEM development was driven by the needs of nuclear engineers in EDF and Jacobs to model crack propagation in nuclear graphite bricks in real core environment. We make %MoFEM a tool for researchers in computational mechanics which like to make their methods available to engineers.
+\anchor Figure_1_motivation
+\image html motivation_brick.png "Figure 1: Brittle crack propagation and contact problem." width=600px
 
 \section mofem_features Features
 
@@ -46,7 +47,7 @@ Template input      TEMPLATE  yes      yes
 
 \subsection mofem_features_ho Higher-order finite element spaces
 
-- MoFEM supports wide range of spaces, L2, H1, H-div and H-curl
+- %MoFEM supports wide range of spaces, L2, H1, H-div and H-curl
 
 - Numerical trace (interfacial) spaces, on faces and edges
 
@@ -64,7 +65,7 @@ Template input      TEMPLATE  yes      yes
 FGetting started
 \subsection mofem_features_mesh_types Range of mesh types and topological operations
 
-MoFEM is implemented with the use of MoAB and deliver the great flexibility of
+%MoFEM is implemented with the use of MoAB and deliver the great flexibility of
 managing meshes. We can manage range elements types, e.g. prisms, triangles,
 quads, bricks and more.
 
@@ -88,7 +89,7 @@ quads, bricks and more.
 
 \subsection mofem_features_hpc Parallel and scalable
 
-MoFEM supports MPI-based parallelism throughout the library, and can readily be
+%MoFEM supports MPI-based parallelism throughout the library, and can readily be
 used as a scalable unstructured finite element problem generator. Algebra is
 building on top of PETSc and geometry description on top of MoAB, both
 implementations are tailored for massive parallel calculations.
