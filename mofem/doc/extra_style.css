@@ -12,9 +12,6 @@ div.contents {
         background-color: white;
 }
 
-div.image img[src="slice_anim.gif"]{
-    width:500px;
-}
 div.image img[src="crack_surface_slice.png"]{
     width:500px;
 }
