@@ -4,10 +4,9 @@
  <navindex>
     <tab type="user" visible="yes" url="@ref mainpage" title="" intro=""/>
 
-    <tab type="user" visible="yes" title="News" url="@ref news" intro=""/>
-    
     <tab type="user" visible="yes" title="Getting started" url="@ref usersmain" intro="">
       <tab type="user" url="@ref installation" title="Installation" intro=""/>
+      <tab type="user" url="@ref news" title="News" intro=""/>
       <tab type="user" url="@ref motivation" title="Features" intro=""/>
       <tab type="user" url="https://www.youtube.com/playlist?list=PLW49at2nN39gsTI1vWxvHBOjFK0q_h83s" title="Video guides"/>
       <tab type="user" url="@ref faqs" title="Frequently Asked Questions" intro=""/>
