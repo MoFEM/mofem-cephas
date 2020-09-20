@@ -1,10 +1,10 @@
 /*! \page guidelines_bug_reporting Guidelines for bug reporting
-\brief Instruction how to report bugs.
+
+\section Report bug on issue in BitBucket
 
 \tableofcontents
 
-Send error to <a href="https://bitbucket.org/likask/mofem-cephas/issues?status=new&status=open">issues</a> on BitBucket, 
-you can
+Send issue/error to <a href="https://bitbucket.org/likask/mofem-cephas/issues?status=new&status=open">issues</a> on BitBucket.
 
 - report bugs,
 - ask for help in tracking down bugs, and

@@ -64,12 +64,6 @@ if(DOXYGEN_FOUND)
   )
   add_dependencies(doc doxygen_copy_figures)
 
-  add_custom_target(doxygen_copy_avatar_figures
-    ${CMAKE_COMMAND} -E copy_directory
-    ${PROJECT_SOURCE_DIR}/doc/user_guide/figures ${PROJECT_BINARY_DIR}/html
-  )
-  add_dependencies(doc doxygen_copy_avatar_figures)
-
   # copy slider to html directory created by doxygen
   add_custom_target(doxygen_copy_slider
     ${CMAKE_COMMAND} -E copy_directory
