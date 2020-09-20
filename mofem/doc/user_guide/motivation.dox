@@ -2,50 +2,47 @@
 
 \tableofcontents
 
-MoFEM (Mesh Oriented Finite Element Method) \cite mofem_v0.5.42 it is C++
-library supporting the solution of finite elements problems. Is developed to
-provide free and open, inclusive, participation community finite element code
-for engineers, students and academics.
+MoFEM (Mesh-oriented Finite Element Method) is a C++ library for managing complexities related to the finite element method (FEM). FEM is a widely used numerical approach for solving partial differential equations (PDEs) arising in various physical problems. %MoFEM is developed to provide a finite element library incorporating modern approximation approaches and data structures for engineers, students and academics.
 
-MoFEM is a finite element analysis code tailored for the solution of
-multi-physics problems with arbitrary levels of approximation, different levels
-of mesh refinement and optimised for high-performance computing. It is designed
-to be able to manage complexities related to a heterogeneous order of
-approximations for L2,H1,H-div and H-curl spaces, see \cite NME:NME847 
-and \cite fuentes2015orientation.
+%MoFEM belongs to a class of open source finite element libraries, which provide users with generic tools for solving PDEs and developers with frameworks for implementing bespoke finite elements. %MoFEM is specifically designed to solve complex engineering problems, enabling seamless integration of meshes that comprise multiple element types and element shapes, which are typically encountered in industrial applications. The development of %MoFEM has been primarily targeting the problem of crack propagation for structural integrity assessment of safety critical structures like on figure bellow.
 
-MoFEM manages complexity related to finite element approximation and bookkeeping
-related do degrees of freedom and finite elements. It is part of bigger
-software ecosystem, composed of the Boost MultiIndex containers, MOAB (Mesh
-Oriented Database) \cite tautges_moab:2004 and PETSc (Portable, Extensible
-Toolkit for Scientific Computation) \cite petsc-user-ref. MoFEM is developed in
-C++ and it is open-source software under the GNU Lesser General Public License
-(see \ref legal_stuff) Stuff.
+\image html motivation_brick.png "Brittle crack propagation" width=600px
 
-MoFEM can read and write a number of mesh file formats using functionality
-provided by MoAB.  The current version of MoFEM has full support for
-CUBIT/TRELIS, TetGEN, Salome/Code_Aster (MED format) for pre-processing and
-ParaView for post-processing.
-
-\section mofem_motivation Motivation
-
-Building a scientific simulation environment for finite element methods is a
-complicated task. The greatest part of finite element code development is often
-expended in dealing with technical problems related to software implementation,
-rather than resolving the underlying physics that the code is intended to
-tackle.
-
-The demand for accurate solution of increasingly complicated real-world problems
-means that the underlying data structures also become increasingly complicated.
-This is particularly evident with multi-physics, hp-adaptivity, and/or evolving
-geometries (e.g. crack propagation). Established commercial software is often
-limited in this respect, or can be relatively slow to adopt new technologies.
-This is the problem that MoFEM attempts to work around, recognising that it is
-increasingly necessary for engineers, scientists and mathematicians to carry out
-calculations using several mesh refinements, different approximation orders,
-multiple degrees of freedom and/or different scales.
+%MoFEM is that in its birth was created as a research code which is used by engineers to solve practical engineering problems. In particular, %MoFEM development was driven by the needs of nuclear engineers in EDF and Jacobs to model crack propagation in nuclear graphite bricks in real core environment. We make %MoFEM a tool for researchers in computational mechanics which like to make their methods available to engineers.
 
 \section mofem_features Features
+
+\subsection Supported File Formats
+
+Support for hanling boundary conditions and material sets
+
+- Salome/Code_Aster 
+- Cubit/Trelis
+- Gmsh
+
+Also using MOAB liberay MoFEM can read/wrire from file formats
+\verbatim
+Format               Name     Read    Write   File name description
+------------------  ------  -------- -------  ----------------
+MOAB native (HDF5)  MOAB      yes      yes     h5m mhdf
+Exodus II           EXODUS    yes      yes     exo exoII exo2 g gen
+Climate NC          NC        yes      yes     nc
+IDEAS Format        UNV       yes      no      unv
+MCNP5 Format        MESHTAL   yes      no      meshtal
+NASTRAN format      NAS       yes      no      nas bdf
+Abaqus mesh format  ABAQUS    yes      no      abq
+Kitware VTK         VTK       yes      yes     vtk
+RPI SMS             SMS       yes      no      sms
+Cubit               CUBIT     yes      no      cub
+QSlim format        SMF       yes      yes     smf
+SLAC                SLAC      no       yes     slac
+GMV                 GMV       no       yes     gmv
+Ansys               ANSYS     no       yes     ans
+Gmsh                GMSH      yes      yes     msh gmsh
+Stereo Lithography  STL       yes      yes     stl
+TetGen mesh files   TETGEN    yes      no      node ele face edge
+Template input      TEMPLATE  yes      yes  
+\endverbatim
 
 \subsection mofem_features_ho Higher-order finite element spaces
 
@@ -55,6 +52,8 @@ multiple degrees of freedom and/or different scales.
 
 - Integration on skeleton, (enabling easy implementation of Discontinuous Galerkin or Nitsche method)
 
+- Problems with mixed elements shapes (tetrahedrons, prisms, quads, triangles, edges, etc.)
+
 \subsection mofem_features_discretisation Flexible discretization
 
 - Mixed and coupled finite elements
@@ -62,9 +61,7 @@ multiple degrees of freedom and/or different scales.
 - Interface (e.g. cohesive) elements and shell elements
 
 - Automatic Differentiation by OverLoading in C++ (<a href=https://projects.coin-or.org/ADOL-C>ADOL-C</a>). 
-	Applied to automatic calculation of consistent tangent
-	matrix for any smooth plastic surface and non-associated plastic flow potential.
-
+FGetting started
 \subsection mofem_features_mesh_types Range of mesh types and topological operations
 
 MoFEM is implemented with the use of MoAB and deliver the great flexibility of
