@@ -14,7 +14,7 @@
       <tab type="user" url="@ref google_search" title="Search" intro=""/>
     </tab>
     
-    <tab type="user" visible="yes" title="Develope" url="@ref tutorials" intro="">
+    <tab type="user" visible="yes" title="Developer" url="@ref tutorials" intro="">
       <tab type="user" url="@ref tutorials" title="Tutorials"/>
       <tab type="user" url="@ref other_tutorials" title="Other tutorials"/>
       <tab type="user" url="@ref general_data_structure" title="Design" intro=""/>
