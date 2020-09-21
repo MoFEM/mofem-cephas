@@ -6,27 +6,30 @@
 
     <tab type="user" visible="yes" title="Getting started" url="@ref installation" intro="">
       <tab type="user" url="@ref installation" title="Installation" intro=""/>
+      <tab type="user" url="@ref running_code" title="Running code"/>
       <tab type="user" url="@ref motivation" title="Features" intro=""/>
       <tab type="user" url="@ref news" title="News" intro=""/>
       <tab type="user" url="https://www.youtube.com/playlist?list=PLW49at2nN39gsTI1vWxvHBOjFK0q_h83s" title="Video guides"/>
+      <tab type="user" url="@ref citelist" title="Bibliography"/>
       <tab type="user" url="@ref google_search" title="Search" intro=""/>
     </tab>
     
-    <tab type="user" visible="yes" title="User" url="@ref tutorials" intro="">
+    <tab type="user" visible="yes" title="Develope" url="@ref tutorials" intro="">
       <tab type="user" url="@ref tutorials" title="Tutorials"/>
       <tab type="user" url="@ref other_tutorials" title="Other tutorials"/>
       <tab type="user" url="@ref general_data_structure" title="Design" intro=""/>
       <tab type="user" url="@ref faqs" title="Frequently Asked Questions" intro=""/>
-      <tab type="modules" visible="yes" title="Source groups" intro=""/>
-      <tab type="files" visible="yes" title="Source files" intro=""/>
-      <tab type="examples" visible="yes" title="" intro=""/>
-      <tab type="user" url="@ref coding_practice" title="Coding practice" intro=""/>
-      <tab type="user" url="@ref guidelines_bug_reporting" title="Bug reporting" intro=""/>
       <tab type="user" url="@ref a_guide_to_writing_documentation" title="Writing documentation" intro=""/>
+      <tab type="user" url="@ref coding_practice" title="Coding practice" intro=""/>
+      <tab type="user" url="@ref a_guide_to_writing_documentation" title="Writing documentation" intro=""/>
+    </tab>
+
+    <tab type="user" visible="yes" title="Source Code" url="@ref tutorials" intro="">
+      <tab type="files" visible="yes" title="Source files" intro=""/>
+      <tab type="modules" visible="yes" title="Source groups" intro=""/>
+      <tab type="examples" visible="yes" title="" intro=""/>
       <tab type="user" url="http://cactus.eng.gla.ac.uk:8080/login?from=%2F" title="Jenkins"/>     
       <tab type="user" url="http://cdash.eng.gla.ac.uk/cdash" title="CDash"/>
-      <tab type="user" url="@ref citelist" title="Bibliography"/>
-      <tab type="pages" visible="yes" title="" intro=""/>
     </tab>
     
     <tab type="user" title="Modules" url="@ref mod_gallery" intro=""/>
