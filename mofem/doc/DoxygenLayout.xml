@@ -29,6 +29,7 @@
       <tab type="examples" visible="yes" title="" intro=""/>
       <tab type="user" url="http://cactus.eng.gla.ac.uk:8080/login?from=%2F" title="Jenkins"/>     
       <tab type="user" url="http://cdash.eng.gla.ac.uk/cdash" title="CDash"/>
+      <tab type="pages" visible="yes" title="" intro=""/>
     </tab>
     
     <tab type="user" title="Modules" url="@ref mod_gallery" intro=""/>
