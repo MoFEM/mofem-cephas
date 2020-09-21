@@ -4,11 +4,12 @@
  <navindex>
     <tab type="user" visible="yes" url="@ref mainpage" title="" intro=""/>
 
+    <tab type="user" url="@ref news" title="News" intro=""/>
+
     <tab type="user" visible="yes" title="Getting started" url="@ref installation" intro="">
       <tab type="user" url="@ref installation" title="Installation" intro=""/>
       <tab type="user" url="@ref running_code" title="Running code"/>
       <tab type="user" url="@ref motivation" title="Features" intro=""/>
-      <tab type="user" url="@ref news" title="News" intro=""/>
       <tab type="user" url="https://www.youtube.com/playlist?list=PLW49at2nN39gsTI1vWxvHBOjFK0q_h83s" title="Video guides"/>
       <tab type="user" url="@ref citelist" title="Bibliography"/>
       <tab type="user" url="@ref google_search" title="Search" intro=""/>
