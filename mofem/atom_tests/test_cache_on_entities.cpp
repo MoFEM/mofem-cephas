@@ -1,6 +1,6 @@
 /**
- * \file test_cache_entities.cpp
- * \example test_cache_entities.cpp
+ * \file test_cache_on_entities.cpp
+ * \example test_cache_on_entities.cpp
  *
  * Tetsing entities cache. Entities acache is data abstraction enabling user to
  * pass data between operators, finite elements, and problems, in convinient
