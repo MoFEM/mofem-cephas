@@ -117,13 +117,6 @@ template <typename EleOp> struct FormsIntegrators {
     template <IntegrationType I> struct LinearForm;
     template <IntegrationType I> struct BiLinearForm;
 
-    //   struct BiLinearFrom {
-
- 
-
-    
-    //   }; // BiLinearFrom
-    // };   // SfSb
   }; // Assembly
 };   // namespace MoFEM
 
