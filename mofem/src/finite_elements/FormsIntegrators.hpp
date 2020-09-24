@@ -98,6 +98,7 @@ MoFEMErrorCode MatSetValues<EssentialBcStorage>(
 //! [Storage and set boundary conditions]
 
 enum AssemblyType { PETSC };
+enum IntegrationType { GAUSS };
 
 template <typename EleOp> struct FormsIntegrators {
 
@@ -107,336 +108,163 @@ template <typename EleOp> struct FormsIntegrators {
   typedef boost::function<double(const double, const double, const double)>
       ScalarFun;
 
-  template <AssemblyType A> struct OpBase : public EleOp {
-
-    OpBase(const std::string row_field_name, const std::string col_field_name,
-           const OpType type)
-        : EleOp(row_field_name, col_field_name, type, false) {}
-
-    /**
-     * \brief Do calculations for the left hand side
-     * @param  row_side row side number (local number) of entity on element
-     * @param  col_side column side number (local number) of entity on element
-     * @param  row_type type of row entity MBVERTEX, MBEDGE, MBTRI or MBTET
-     * @param  col_type type of column entity MBVERTEX, MBEDGE, MBTRI or MBTET
-     * @param  row_data data for row
-     * @param  col_data data for column
-     * @return          error code
-     */
-    MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
-                          EntityType col_type, EntData &row_data,
-                          EntData &col_data) {
-      MoFEMFunctionBegin;
-      // get number of dofs on row
-      OpBase::nbRows = row_data.getIndices().size();
-      // if no dofs on row, exit that work, nothing to do here
-      if (!OpBase::nbRows)
-        MoFEMFunctionReturnHot(0);
-      // get number of dofs on column
-      OpBase::nbCols = col_data.getIndices().size();
-      // if no dofs on Columbia, exit nothing to do here
-      if (!OpBase::nbCols)
-        MoFEMFunctionReturnHot(0);
-      // get number of integration points
-      OpBase::nbIntegrationPts = OpBase::getGaussPts().size2();
-      // set size of local entity bock
-      OpBase::locMat.resize(OpBase::nbRows, OpBase::nbCols, false);
-      // clear matrix
-      OpBase::locMat.clear();
-      // integrate local matrix for entity block
-      CHKERR this->iNtegrate(row_data, col_data);
-      // assemble local matrix
-      CHKERR this->aSsemble(row_data, col_data);
-      MoFEMFunctionReturn(0);
-    }
-
-    /**
-     * @brief Do calculations for the right hand side
-     *
-     * @param row_side
-     * @param row_type
-     * @param row_data
-     * @return MoFEMErrorCode
-     */
-    MoFEMErrorCode doWork(int row_side, EntityType row_type,
-                          EntData &row_data) {
-      MoFEMFunctionBegin;
-      // get number of dofs on row
-      OpBase::nbRows = row_data.getIndices().size();
-      if (!OpBase::nbRows)
-        MoFEMFunctionReturnHot(0);
-      // get number of integration points
-      OpBase::nbIntegrationPts = OpBase::getGaussPts().size2();
-      // resize and clear the right hand side vector
-      OpBase::locF.resize(nbRows);
-      OpBase::locF.clear();
-      // integrate local vector
-      CHKERR this->iNtegrate(row_data);
-      // assemble local vector
-      CHKERR this->aSsemble(row_data);
-      MoFEMFunctionReturn(0);
-    }
-
-  protected:
-    int nbRows;           ///< number of dofs on rows
-    int nbCols;           ///< number if dof on column
-    int nbIntegrationPts; ///< number of integration points
-
-    MatrixDouble locMat; ///< local entity block matrix
-    VectorDouble locF;   ///< local entity vector
-
-    /**
-     * \brief Integrate grad-grad operator
-     * @param  row_data row data (consist base functions on row entity)
-     * @param  col_data column data (consist base functions on column entity)
-     * @return          error code
-     */
-    virtual MoFEMErrorCode iNtegrate(EntData &row_data, EntData &col_data) {
-      return MOFEM_NOT_IMPLEMENTED;
-    }
-
-    template <AssemblyType T>
-    inline MoFEMErrorCode aSsembleImpl(EntData &row_data, EntData &col_data) {
-      return MOFEM_NOT_IMPLEMENTED;
-    }
-
-    template <>
-    inline MoFEMErrorCode aSsembleImpl<PETSC>(EntData &row_data,
-                                              EntData &col_data) {
-      MoFEMFunctionBegin;
-      // assemble local matrix
-      CHKERR MatSetValues<EssentialBcStorage>(this->getKSPB(), row_data,
-                                              col_data, &*locMat.data().begin(),
-                                              ADD_VALUES);
-      MoFEMFunctionReturn(0);
-    }
-
-    MoFEMErrorCode aSsemble(EntData &row_data, EntData &col_data) {
-      return aSsembleImpl<A>(row_data, col_data);
-    }
-
-    /**
-     * \brief Class dedicated to integrate operator
-     * @param  data entity data on element row
-     * @return      error code
-     */
-    virtual MoFEMErrorCode iNtegrate(EntData &data) {
-      return MOFEM_NOT_IMPLEMENTED;
-    }
-
-    /**
-     * \brief Class dedicated to assemble operator to global system vector
-     * @param  data entity data (indices, base functions, etc. ) on element row
-     * @return      error code
-     */
-    template <AssemblyType T> MoFEMErrorCode aSsembleImpl(EntData &data);
-
-    template <>
-    MoFEMErrorCode aSsembleImpl<PETSC>(FormsIntegrators<EleOp>::EntData &data) {
-      MoFEMFunctionBegin;
-      // get values from local vector
-      const double *vals = &*locF.data().begin();
-      // assemble vector
-      CHKERR VecSetValues<EssentialBcStorage>(this->getKSPf(), data, vals,
-                                              ADD_VALUES);
-      MoFEMFunctionReturn(0);
-    }
-
-    MoFEMErrorCode aSsemble(EntData &data) { return aSsembleImpl<A>(data); }
-  };
+  template <AssemblyType A> struct OpBase;
 
   template <AssemblyType A> struct Assembly {
 
-    using Base = OpBase<A>;
+    using OpBase = OpBase<A>;
 
-    //! [Source operator]
-    struct OpSfSbLSource : public Base {
+    template <IntegrationType I> struct LinearForm;
+    template <IntegrationType I> struct BiLinearForm;
 
-      OpSfSbLSource(const std::string field_name, ScalarFun source_fun)
-          : Base(field_name, field_name, Base::OPROW), sourceFun(source_fun) {}
+    //   struct BiLinearFrom {
 
-    protected:
-      ScalarFun sourceFun;
+ 
 
-      MoFEMErrorCode iNtegrate(EntData &row_data) {
-        MoFEMFunctionBegin;
-        // get element volume
-        const double vol = Base::getMeasure();
-        // get integration weights
-        auto t_w = Base::getFTensor0IntegrationWeight();
-        // get base function gradient on rows
-        auto t_row_base = row_data.getFTensor0N();
-        // get coordinate at integration points
-        auto t_coords = Base::getFTensor1CoordsAtGaussPts();
-        // loop over integration points
-        for (int gg = 0; gg != Base::nbIntegrationPts; gg++) {
-          // take into account Jacobean
-          const double alpha =
-              t_w * vol * sourceFun(t_coords(0), t_coords(1), t_coords(2));
-          // loop over rows base functions
-          for (int rr = 0; rr != Base::nbRows; ++rr) {
-            Base::locF[rr] += alpha * t_row_base;
-            ++t_row_base;
-          }
-          ++t_coords;
-          ++t_w; // move to another integration weight
-        }
-        MoFEMFunctionReturn(0);
-      }
-    };
-    //! [Source operator]
+    
+    //   }; // BiLinearFrom
+    // };   // SfSb
+  }; // Assembly
+};   // namespace MoFEM
 
-    //! [Grad operator]
-    template <int DIM> struct OpSfSbLGradGrad : public Base {
+template <typename EleOp>
+template <AssemblyType A>
+struct FormsIntegrators<EleOp>::OpBase : public EleOp {
 
-      FTensor::Index<'i', DIM> i; ///< summit Index
+  OpBase(const std::string row_field_name, const std::string col_field_name,
+         const OpType type)
+      : EleOp(row_field_name, col_field_name, type, false) {}
 
-      OpSfSbLGradGrad(const std::string row_field_name,
-                      const std::string col_field_name, ScalarFun beta)
-          : Base(row_field_name, col_field_name, Base::OPROWCOL),
-            betaCoeff(beta) {}
+  /**
+   * \brief Do calculations for the left hand side
+   * @param  row_side row side number (local number) of entity on element
+   * @param  col_side column side number (local number) of entity on element
+   * @param  row_type type of row entity MBVERTEX, MBEDGE, MBTRI or MBTET
+   * @param  col_type type of column entity MBVERTEX, MBEDGE, MBTRI or MBTET
+   * @param  row_data data for row
+   * @param  col_data data for column
+   * @return          error code
+   */
+  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
+                        EntityType col_type, EntData &row_data,
+                        EntData &col_data) {
+    MoFEMFunctionBegin;
+    // get number of dofs on row
+    OpBase::nbRows = row_data.getIndices().size();
+    // if no dofs on row, exit that work, nothing to do here
+    if (!OpBase::nbRows)
+      MoFEMFunctionReturnHot(0);
+    // get number of dofs on column
+    OpBase::nbCols = col_data.getIndices().size();
+    // if no dofs on Columbia, exit nothing to do here
+    if (!OpBase::nbCols)
+      MoFEMFunctionReturnHot(0);
+    // get number of integration points
+    OpBase::nbIntegrationPts = OpBase::getGaussPts().size2();
+    // set size of local entity bock
+    OpBase::locMat.resize(OpBase::nbRows, OpBase::nbCols, false);
+    // clear matrix
+    OpBase::locMat.clear();
+    // integrate local matrix for entity block
+    CHKERR this->iNtegrate(row_data, col_data);
+    // assemble local matrix
+    CHKERR this->aSsemble(row_data, col_data);
+    MoFEMFunctionReturn(0);
+  }
 
-    protected:
-      ScalarFun betaCoeff;
+  /**
+   * @brief Do calculations for the right hand side
+   *
+   * @param row_side
+   * @param row_type
+   * @param row_data
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode doWork(int row_side, EntityType row_type, EntData &row_data) {
+    MoFEMFunctionBegin;
+    // get number of dofs on row
+    OpBase::nbRows = row_data.getIndices().size();
+    if (!OpBase::nbRows)
+      MoFEMFunctionReturnHot(0);
+    // get number of integration points
+    OpBase::nbIntegrationPts = OpBase::getGaussPts().size2();
+    // resize and clear the right hand side vector
+    OpBase::locF.resize(nbRows);
+    OpBase::locF.clear();
+    // integrate local vector
+    CHKERR this->iNtegrate(row_data);
+    // assemble local vector
+    CHKERR this->aSsemble(row_data);
+    MoFEMFunctionReturn(0);
+  }
 
-      MoFEMErrorCode iNtegrate(EntData &row_data, EntData &col_data) {
-        MoFEMFunctionBegin;
-        // get element volume
-        const double vol = Base::getMeasure();
-        // get integration weights
-        auto t_w = Base::getFTensor0IntegrationWeight();
-        // get base function gradient on rows
-        auto t_row_grad = row_data.getFTensor1DiffN<DIM>();
-        // get coordinate at integration points
-        auto t_coords = Base::getFTensor1CoordsAtGaussPts();
+protected:
+  int nbRows;           ///< number of dofs on rows
+  int nbCols;           ///< number if dof on column
+  int nbIntegrationPts; ///< number of integration points
 
-        // loop over integration points
-        for (int gg = 0; gg != Base::nbIntegrationPts; gg++) {
-          const double beta =
-              vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
-          // take into account Jacobean
-          const double alpha = t_w * beta;
-          // loop over rows base functions
-          for (int rr = 0; rr != Base::nbRows; rr++) {
-            // get column base functions gradient at gauss point gg
-            auto t_col_grad = col_data.getFTensor1DiffN<DIM>(gg, 0);
-            // loop over columns
-            for (int cc = 0; cc != Base::nbCols; cc++) {
-              // calculate element of local matrix
-              Base::locMat(rr, cc) += alpha * (t_row_grad(i) * t_col_grad(i));
-              ++t_col_grad; // move to another gradient of base function on
-                            // column
-            }
-            ++t_row_grad; // move to another element of gradient of base
-                          // function on row
-          }
-          ++t_coords;
-          ++t_w; // move to another integration weight
-        }
-        MoFEMFunctionReturn(0);
-      }
-    };
-    //! [Grad operator]
+  MatrixDouble locMat; ///< local entity block matrix
+  VectorDouble locF;   ///< local entity vector
 
-    //! [Grad residual operator]
-    template <int DIM> struct OpSfSbLGradGradResidual : public Base {
+  /**
+   * \brief Integrate grad-grad operator
+   * @param  row_data row data (consist base functions on row entity)
+   * @param  col_data column data (consist base functions on column entity)
+   * @return          error code
+   */
+  virtual MoFEMErrorCode iNtegrate(EntData &row_data, EntData &col_data) {
+    return MOFEM_NOT_IMPLEMENTED;
+  }
 
-      FTensor::Index<'i', DIM> i; ///< summit Index
+  template <AssemblyType T>
+  MoFEMErrorCode aSsembleImpl(EntData &row_data, EntData &col_data) {
+    return MOFEM_NOT_IMPLEMENTED;
+  }
 
-      OpSfSbLGradGradResidual(const std::string field_name, ScalarFun beta,
-                              boost::shared_ptr<MatrixDouble> &approx_grad_vals)
-          : Base(field_name, field_name, Base::OPROW),
-            approxGradVals(approx_grad_vals), betaCoeff(beta) {}
+  template <>
+  inline MoFEMErrorCode aSsembleImpl<PETSC>(EntData &row_data,
+                                            EntData &col_data) {
+    MoFEMFunctionBegin;
+    // assemble local matrix
+    CHKERR MatSetValues<EssentialBcStorage>(this->getKSPB(), row_data, col_data,
+                                            &*locMat.data().begin(),
+                                            ADD_VALUES);
+    MoFEMFunctionReturn(0);
+  }
 
-    protected:
-      ScalarFun betaCoeff;
-      boost::shared_ptr<MatrixDouble> approxGradVals;
+  MoFEMErrorCode aSsemble(EntData &row_data, EntData &col_data) {
+    return aSsembleImpl<A>(row_data, col_data);
+  }
 
-      MoFEMErrorCode iNtegrate(EntData &row_data) {
-        MoFEMFunctionBegin;
-        // get element volume
-        const double vol = Base::getMeasure();
-        // get integration weights
-        auto t_w = Base::getFTensor0IntegrationWeight();
-        // get base function gradient on rows
-        auto t_row_grad = row_data.getFTensor1DiffN<DIM>();
-        // get filed gradient values
-        auto t_val_grad = getFTensor1FromMat<DIM>(*(approxGradVals));
-        // get coordinate at integration points
-        auto t_coords = Base::getFTensor1CoordsAtGaussPts();
+  /**
+   * \brief Class dedicated to integrate operator
+   * @param  data entity data on element row
+   * @return      error code
+   */
+  virtual MoFEMErrorCode iNtegrate(EntData &data) {
+    return MOFEM_NOT_IMPLEMENTED;
+  }
 
-        // loop over integration points
-        for (int gg = 0; gg != Base::nbIntegrationPts; gg++) {
-          const double beta =
-              vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
-          // take into account Jacobean
-          const double alpha = t_w * beta;
-          // loop over rows base functions
-          for (int rr = 0; rr != Base::nbRows; rr++) {
-            // calculate element of local matrix
-            Base::locF[rr] += alpha * (t_row_grad(i) * t_val_grad(i));
-            ++t_row_grad; // move to another element of gradient of base
-                          // function on row
-          }
-          ++t_coords;
-          ++t_val_grad;
-          ++t_w; // move to another integration weight
-        }
-        MoFEMFunctionReturn(0);
-      }
-    };
-    //! [Grad residual operator]
+  /**
+   * \brief Class dedicated to assemble operator to global system vector
+   * @param  data entity data (indices, base functions, etc. ) on element row
+   * @return      error code
+   */
+  template <AssemblyType T> MoFEMErrorCode aSsembleImpl(EntData &data);
 
-    //! [Mass operator]
-    struct OpSfSbLMass : public Base {
+  template <>
+  MoFEMErrorCode aSsembleImpl<PETSC>(FormsIntegrators<EleOp>::EntData &data) {
+    MoFEMFunctionBegin;
+    // get values from local vector
+    const double *vals = &*locF.data().begin();
+    // assemble vector
+    CHKERR VecSetValues<EssentialBcStorage>(this->getKSPf(), data, vals,
+                                            ADD_VALUES);
+    MoFEMFunctionReturn(0);
+  }
 
-      OpSfSbLMass(const std::string row_field_name,
-                  const std::string col_field_name, ScalarFun beta)
-          : Base(row_field_name, col_field_name, Base::OPROWCOL),
-            betaCoeff(beta) {}
-
-    protected:
-      ScalarFun betaCoeff;
-
-      MoFEMErrorCode iNtegrate(EntData &row_data, EntData &col_data) {
-        MoFEMFunctionBegin;
-        // get element volume
-        const double vol = Base::getMeasure();
-        // get integration weights
-        auto t_w = Base::getFTensor0IntegrationWeight();
-        // get base function gradient on rows
-        auto t_row_base = row_data.getFTensor0N();
-        // get coordinate at integration points
-        auto t_coords = Base::getFTensor1CoordsAtGaussPts();
-
-        // loop over integration points
-        for (int gg = 0; gg != Base::nbIntegrationPts; gg++) {
-          const double beta =
-              vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
-          // take into account Jacobean
-          const double alpha = t_w * beta;
-          // loop over rows base functions
-          for (int rr = 0; rr != Base::nbRows; rr++) {
-            // get column base functions gradient at gauss point gg
-            auto t_col_base = col_data.getFTensor0N(gg, 0);
-            // loop over columns
-            for (int cc = 0; cc != Base::nbCols; cc++) {
-              // calculate element of local matrix
-              Base::locMat(rr, cc) += alpha * (t_row_base * t_col_base);
-              ++t_col_base;
-            }
-            ++t_row_base;
-          }
-          ++t_coords;
-          ++t_w; // move to another integration weight
-        }
-        MoFEMFunctionReturn(0);
-      };
-      //! [Mass operator]
-    };
-  };
+  MoFEMErrorCode aSsemble(EntData &data) { return aSsembleImpl<A>(data); }
 };
-
 
 } // namespace MoFEM
 
