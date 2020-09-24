@@ -75,8 +75,66 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
       MoFEMFunctionReturn(0);
     }
   };
-
   //! [Source operator]
+
+  //! [Grad residual operator]
+  template <int SPACE_DIM> struct OpGradGradResidual : public OpBase {
+
+    FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
+
+    OpGradGradResidual(const std::string field_name, ScalarFun beta,
+                       boost::shared_ptr<MatrixDouble> &approx_grad_vals)
+        : OpBase(field_name, field_name, OpBase::OPROW),
+          approxGradVals(approx_grad_vals), betaCoeff(beta) {}
+
+  protected:
+    ScalarFun betaCoeff;
+    boost::shared_ptr<MatrixDouble> approxGradVals;
+
+    virtual MoFEMErrorCode iNtegrate(EntData &data) {
+      return integrateImpl<GAUSS>(data);
+    }
+
+    template <IntegrationType T>
+    MoFEMErrorCode integrateImpl(EntData &row_data) {
+      return MOFEM_NOT_IMPLEMENTED;
+    }
+
+    template <> inline MoFEMErrorCode integrateImpl<GAUSS>(EntData &row_data) {
+      MoFEMFunctionBegin;
+      // get element volume
+      const double vol = OpBase::getMeasure();
+      // get integration weights
+      auto t_w = OpBase::getFTensor0IntegrationWeight();
+      // get base function gradient on rows
+      auto t_row_grad = row_data.getFTensor1DiffN<SPACE_DIM>();
+      // get filed gradient values
+      auto t_val_grad = getFTensor1FromMat<SPACE_DIM>(*(approxGradVals));
+      // get coordinate at integration points
+      auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+
+      // loop over integration points
+      for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
+        const double beta =
+            vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
+        // take into account Jacobean
+        const double alpha = t_w * beta;
+        // loop over rows base functions
+        for (int rr = 0; rr != OpBase::nbRows; rr++) {
+          // calculate element of local matrix
+          OpBase::locF[rr] += alpha * (t_row_grad(i) * t_val_grad(i));
+          ++t_row_grad; // move to another element of gradient of base
+                        // function on row
+        }
+        ++t_coords;
+        ++t_val_grad;
+        ++t_w; // move to another integration weight
+      }
+      MoFEMFunctionReturn(0);
+    }
+  };
+  //! [Grad residual operator]
+
 };
 
 } // namespace MoFEM
