@@ -22,68 +22,6 @@
 
 namespace MoFEM {
 
-//! [Storage and set boundary conditions]
-
-struct EssentialBcStorage;
-
-/**
- * @brief Set indices on entities on finite element
- *
- * If indices is marked, set its value to -1. DOF which such indice is not
- * assembled into system.
- *
- * Indices are strored on on entity.
- *
- */
-struct OpSetBc : public ForcesAndSourcesCore::UserDataOperator {
-  OpSetBc(std::string field_name, bool yes_set,
-          boost::shared_ptr<std::vector<bool>> boundary_marker);
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-public:
-  bool yesSet;
-  boost::shared_ptr<std::vector<bool>> boundaryMarker;
-};
-
-struct OpUnSetBc : public ForcesAndSourcesCore::UserDataOperator {
-  OpUnSetBc(std::string field_name);
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
-/**
- * @brief Set values to vector in operator
- *
- * @param V
- * @param data
- * @param ptr
- * @param iora
- * @return MoFEMErrorCode
- */
-template <>
-MoFEMErrorCode
-VecSetValues<EssentialBcStorage>(Vec V,
-                                 const DataForcesAndSourcesCore::EntData &data,
-                                 const double *ptr, InsertMode iora);
-
-/**
- * @brief Set valyes to matrix in operator
- *
- * @param M
- * @param row_data
- * @param col_data
- * @param ptr
- * @param iora
- * @return MoFEMErrorCode
- */
-template <>
-MoFEMErrorCode MatSetValues<EssentialBcStorage>(
-    Mat M, const DataForcesAndSourcesCore::EntData &row_data,
-    const DataForcesAndSourcesCore::EntData &col_data, const double *ptr,
-    InsertMode iora);
-
-//! [Storage and set boundary conditions]
-
 // GET VALUES AT GAUSS PTS
 
 // TENSOR0
