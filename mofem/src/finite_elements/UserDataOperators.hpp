@@ -1160,7 +1160,91 @@ inline auto OpCalculateVectorFieldGradientDot<2, 2>::getFTensorDotData<2>() {
                                                             &dotVector[1]);
 }
 
-/**}*/
+/**@}*/
+
+/** \name Transform tensors and vectors */
+
+/**@{*/
+
+/**
+ * @brief Calculate \f$ \pmb\sigma_{ij} = \mathbf{D}_{ijkl} \pmb\varepsilon_{kl} \f$
+ *
+ * @tparam DIM
+ */
+template <int DIM, int S = 0>
+struct OpTensorTimesSymmetricTensor
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  using EntData = DataForcesAndSourcesCore::EntData;
+  using UserOp = ForcesAndSourcesCore::UserDataOperator;
+
+  OpTensorTimesSymmetricTensor(const std::string field_name,
+                               boost::shared_ptr<MatrixDouble> in_vec,
+                               boost::shared_ptr<MatrixDouble> out_vec,
+                               boost::shared_ptr<MatrixDouble> d_mat)
+      : UserOp(field_name, OPROW) {
+    // Only is run for vertices
+    std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
+    MoFEMFunctionBegin;
+    const size_t nb_gauss_pts = getGaussPts().size2();
+    auto &t_D = getD<DIM>();
+    auto t_in = getFTensor2SymmetricFromMat<DIM>(*(inVec));
+    auto t_out = getFTensor2SymmetricFromMat<DIM>(*(outVec));
+    for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+      t_out(i, j) = t_D(i, j, k, l) * t_in(k, l);
+      ++t_in;
+      ++t_out;
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+  private:
+    FTensor::Index<'i', DIM> i;
+    FTensor::Index<'j', DIM> j;
+    FTensor::Index<'k', DIM> k;
+    FTensor::Index<'l', DIM> l;
+
+    template <int DIM_TENSOR>
+    inline FTensor::Ddg<FTensor::PackPtr<double *, 1>, DIM, DIM> getD() {
+      static_assert(DIM != DIM, "Not Implemented");
+      return FTensor::Ddg<FTensor::PackPtr<double *, 1>, DIM, DIM>();
+    }
+
+    template <>
+    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1> getD<1>() {
+      auto m = *dMat;
+      return FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1>{&m(0, 0)};
+    }
+
+    template <>
+    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2> getD<2>() {
+      auto m = *dMat;
+      return FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2>{
+          &m(0, 0), &m(1, 0), &m(2, 0), &m(3, 0), &m(4, 0),
+          &m(5, 0), &m(6, 0), &m(7, 0), &m(8, 0)};
+    }
+
+    template <>
+    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3> getD<3>() {
+      auto m = *dMat;
+      return FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3>{
+          &m(0, 0),  &m(1, 0),  &m(2, 0),  &m(3, 0),  &m(4, 0),  &m(5, 0),
+          &m(6, 0),  &m(7, 0),  &m(8, 0),  &m(9, 0),  &m(10, 0), &m(11, 0),
+          &m(12, 0), &m(13, 0), &m(14, 0), &m(15, 0), &m(16, 0), &m(17, 0),
+          &m(18, 0), &m(19, 0), &m(20, 0), &m(21, 0), &m(22, 0), &m(23, 0),
+          &m(24, 0), &m(25, 0), &m(26, 0), &m(27, 0), &m(28, 0), &m(29, 0),
+          &m(30, 0), &m(31, 0), &m(32, 0), &m(33, 0), &m(34, 0), &m(35, 0)};
+    }
+
+    boost::shared_ptr<MatrixDouble> inVec;
+    boost::shared_ptr<MatrixDouble> outVec;
+    boost::shared_ptr<MatrixDouble> dMat;
+};
+
+/**@}*/
 
 /** \name H-div/H-curls (Vectorial bases) values at integration points */
 
