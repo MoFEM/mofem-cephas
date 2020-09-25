@@ -22,13 +22,17 @@
 
 namespace MoFEM {
 
-// GET VALUES AT GAUSS PTS
+/** \name Get values at Gauss pts */
 
-// TENSOR0
+/**@{*/
 
-/** \brief Calculate field values for tenor field rank 0, i.e. scalar field
+/** \name Scalar values */
+
+/**@{*/
+
+/** \brief Scalar field values at integration points
  *
- */
+ */ 
 template <class T, class A>
 struct OpCalculateScalarFieldValues_General
     : public ForcesAndSourcesCore::UserDataOperator {
@@ -205,7 +209,11 @@ struct OpCalculateScalarFieldValuesDot
  */
 using OpCalculateScalarValuesDot = OpCalculateScalarFieldValuesDot;
 
-// TENSOR1
+/**@}*/
+
+/** \name Vector field values at integration points */
+
+/**@{*/
 
 /** \brief Calculate field values for tenor field rank 1, i.e. vector field
  *
@@ -433,6 +441,12 @@ inline auto OpCalculateVectorFieldValuesDot<3>::getFTensorDotData<3>() {
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
       &dotVector[0], &dotVector[1], &dotVector[2]);
 }
+
+/**@}*/
+
+/** \name Tensor field values at integration points */
+
+/**@{*/
 
 /** \brief Calculate field values for tenor field rank 2.
  *
@@ -802,7 +816,11 @@ OpCalculateTensor2SymmetricFieldValuesDot<2>::getFTensorDotData<2>() {
       &dotVector[0], &dotVector[1], &dotVector[2]);
 }
 
-// GET GRADIENTS AT GAUSS POINTS
+/**@}*/
+
+/** \name Gradients of scalar fields at integration points */
+
+/**@{*/
 
 /**
  * \brief Evaluate field gradient values for scalar field, i.e. gradient is
@@ -916,6 +934,12 @@ struct OpCalculateScalarFieldGradient
             Tensor_Dim, double, ublas::row_major, DoubleAllocator>(
             field_name, data_ptr, zero_type) {}
 };
+
+/**}*/
+
+/** \name Gradients of tensor fields at integration points */
+
+/**@{*/
 
 /**
  * \brief Evaluate field gradient values for vector field, i.e. gradient is
@@ -1135,6 +1159,12 @@ inline auto OpCalculateVectorFieldGradientDot<2, 2>::getFTensorDotData<2>() {
   return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(&dotVector[0],
                                                             &dotVector[1]);
 }
+
+/**}*/
+
+/** \name H-div/H-curls (Vectorial bases) values at integration points */
+
+/**@{*/
 
 /** \brief Get vector field for H-div approximation
  *
@@ -1565,7 +1595,13 @@ struct OpCalculateHVecTensorDivergence
   }
 };
 
-// Face opeartors
+/**@}*/
+
+/**@}*/
+
+/** \name Operators for faces */
+
+/**@{*/
 
 /** \brief Calculate jacobian for face element
 
@@ -1698,7 +1734,12 @@ private:
   MatrixDouble &jAc;
 };
 
-// Edge
+/**@*/
+
+/** \name Operators for edges */
+
+/**@{*/
+
 
 struct OpSetContrariantPiolaTransformOnEdge
     : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
@@ -1710,7 +1751,11 @@ struct OpSetContrariantPiolaTransformOnEdge
                         DataForcesAndSourcesCore::EntData &data);
 };
 
-// Fat prims
+/**@}*/
+
+/** \name Operator for fat prisms */
+
+/**@{*/
 
 /**
  * @brief Operator for fat prism element updating integration weights in the
@@ -1840,6 +1885,9 @@ struct OpSetInvJacH1ForFlatPrism
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 };
+
+
+/**@}*/
 
 } // namespace MoFEM
 
