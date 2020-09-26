@@ -99,7 +99,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
                         // function on row
         }
         for (; rr < OpBase::nbRowBaseFunctions; ++rr)
-          +t_row_grad;
+          ++t_row_grad;
 
         ++t_coords;
         ++t_w; // move to another integration weight
