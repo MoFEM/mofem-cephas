@@ -354,9 +354,47 @@ getFTensor2SymmetricFromMat(MatrixDouble &data) {
 template <int Tensor_Dim01, int Tensor_Dim23, class T, class L, class A>
 static inline FTensor::Ddg<FTensor::PackPtr<T *, 1>, Tensor_Dim01, Tensor_Dim23>
 getFTensor4DdgFromMat(ublas::matrix<T, L, A> &data) {
-  static_assert(
-      !std::is_same<T, T>::value,
-      "Such getFTensor4DdgFromMat specialisation is not implemented");
+  static_assert(!std::is_same<T, T>::value,
+                "Such getFTensor4DdgFromMat specialisation is not implemented");
+}
+
+/**
+ * @brief Get symmetric tensor rank 4  on first two and last indices from
+ * form data matrix
+ *
+ * @param data matrix container which has 36 rows
+ * @return FTensor::Ddg<FTensor::PackPtr<T *, 1>, Tensor_Dim01, TensorDim23>
+ */
+template <>
+inline FTensor::Ddg<FTensor::PackPtr<double *, 1>, 1, 1>
+getFTensor4DdgFromMat(MatrixDouble &data) {
+  if (data.size1() != 1)
+    THROW_MESSAGE(
+        "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
+        "of rows should be 36 but is " +
+        boost::lexical_cast<std::string>(data.size1()));
+
+  return FTensor::Ddg<FTensor::PackPtr<double *, 1>, 1, 1>{&data(0, 0)};
+}
+
+/**
+ * @brief Get symmetric tensor rank 4  on first two and last indices from
+ * form data matrix
+ *
+ * @param data matrix container which has 36 rows
+ * @return FTensor::Ddg<FTensor::PackPtr<T *, 1>, Tensor_Dim01, TensorDim23>
+ */
+template <>
+inline FTensor::Ddg<FTensor::PackPtr<double *, 1>, 2, 2>
+getFTensor4DdgFromMat(MatrixDouble &data) {
+  if(data.size1() != 9) THROW_MESSAGE(
+      "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
+      "of rows should be 36 but is " +
+      boost::lexical_cast<std::string>(data.size1()));
+
+  return FTensor::Ddg<FTensor::PackPtr<double *, 1>, 2, 2>{
+      &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
+      &data(5, 0), &data(6, 0), &data(7, 0), &data(8, 0)};
 }
 
 /**
@@ -375,15 +413,15 @@ getFTensor4DdgFromMat(MatrixDouble &data) {
         "of rows should be 36 but is " +
         boost::lexical_cast<std::string>(data.size1()));
 
-  return FTensor::Ddg<FTensor::PackPtr<double *, 1>, 3, 3>(
-      &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
-      &data(5, 0), &data(6, 0), &data(7, 0), &data(8, 0), &data(9, 0),
+  return FTensor::Ddg<FTensor::PackPtr<double *, 1>, 3, 3>{
+      &data(0, 0),  &data(1, 0),  &data(2, 0),  &data(3, 0),  &data(4, 0),
+      &data(5, 0),  &data(6, 0),  &data(7, 0),  &data(8, 0),  &data(9, 0),
       &data(10, 0), &data(11, 0), &data(12, 0), &data(13, 0), &data(14, 0),
       &data(15, 0), &data(16, 0), &data(17, 0), &data(18, 0), &data(19, 0),
       &data(20, 0), &data(21, 0), &data(22, 0), &data(23, 0), &data(24, 0),
       &data(25, 0), &data(26, 0), &data(27, 0), &data(28, 0), &data(29, 0),
       &data(30, 0), &data(31, 0), &data(32, 0), &data(33, 0), &data(34, 0),
-      &data(35, 0));
+      &data(35, 0)};
 }
 
 /**
@@ -684,12 +722,12 @@ struct Modify_change_nothing {
 
 /**
  * @brief Template used to reconstruct multi-index
- * 
+ *
  * @tparam MI multi-index
- * @tparam Modifier 
- * @param mi 
- * @param mo 
- * @return MoFEMErrorCode 
+ * @tparam Modifier
+ * @param mi
+ * @param mo
+ * @return MoFEMErrorCode
  */
 template <typename MI, typename MO = Modify_change_nothing>
 inline MoFEMErrorCode reconstructMultiIndex(const MI &mi,

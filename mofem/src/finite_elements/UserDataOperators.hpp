@@ -84,14 +84,8 @@ MoFEMErrorCode OpCalculateScalarFieldValues_General<T, A>::doWork(
 struct OpCalculateScalarFieldValues
     : public OpCalculateScalarFieldValues_General<double, DoubleAllocator> {
 
-  OpCalculateScalarFieldValues(const std::string field_name,
-                               boost::shared_ptr<VectorDouble> data_ptr,
-                               const EntityType zero_type = MBVERTEX)
-      : OpCalculateScalarFieldValues_General<double, DoubleAllocator>(
-            field_name, data_ptr, zero_type) {
-    if (!dataPtr)
-      THROW_MESSAGE("Pointer is not set");
-  }
+  using OpCalculateScalarFieldValues_General<
+      double, DoubleAllocator>::OpCalculateScalarFieldValues_General;
 
   /**
    * \brief calculate values of scalar field at integration points
@@ -346,12 +340,9 @@ struct OpCalculateVectorFieldValues
     : public OpCalculateVectorFieldValues_General<
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
 
-  OpCalculateVectorFieldValues(const std::string field_name,
-                               boost::shared_ptr<MatrixDouble> data_ptr,
-                               const EntityType zero_type = MBVERTEX)
-      : OpCalculateVectorFieldValues_General<Tensor_Dim, double,
-                                             ublas::row_major, DoubleAllocator>(
-            field_name, data_ptr, zero_type) {}
+  using OpCalculateVectorFieldValues_General<
+      Tensor_Dim, double, ublas::row_major,
+      DoubleAllocator>::OpCalculateVectorFieldValues_General;
 };
 
 /** \brief Get time direvatives of values at integration pts for tensor filed
@@ -926,13 +917,9 @@ template <int Tensor_Dim>
 struct OpCalculateScalarFieldGradient
     : public OpCalculateScalarFieldGradient_General<
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
-
-  OpCalculateScalarFieldGradient(const std::string field_name,
-                                 boost::shared_ptr<MatrixDouble> data_ptr,
-                                 const EntityType zero_type = MBVERTEX)
-      : OpCalculateScalarFieldGradient_General<
-            Tensor_Dim, double, ublas::row_major, DoubleAllocator>(
-            field_name, data_ptr, zero_type) {}
+  using OpCalculateScalarFieldGradient_General<
+      Tensor_Dim, double, ublas::row_major,
+      DoubleAllocator>::OpCalculateScalarFieldGradient_General;
 };
 
 /**}*/
@@ -1170,6 +1157,8 @@ inline auto OpCalculateVectorFieldGradientDot<2, 2>::getFTensorDotData<2>() {
  * @brief Calculate \f$ \pmb\sigma_{ij} = \mathbf{D}_{ijkl} \pmb\varepsilon_{kl} \f$
  *
  * @tparam DIM
+ * 
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int DIM, int S = 0>
 struct OpTensorTimesSymmetricTensor
@@ -1251,7 +1240,7 @@ struct OpTensorTimesSymmetricTensor
 /**@{*/
 
 /** \brief Get vector field for H-div approximation
- *
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, class T, class L, class A>
 struct OpCalculateHdivVectorField_General
@@ -1295,7 +1284,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<Tensor_Dim, T, L, A>::doWork(
 }
 
 /** \brief Get vector field for H-div approximation
- *
+ * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
 struct OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,

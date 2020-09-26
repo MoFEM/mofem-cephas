@@ -1,5 +1,5 @@
 /** \file BiLinearFormsIntegrators.hpp
-  * \brief Bilinear forms inteegrators
+  * \brief Bilinear forms integrators
 
 */
 
@@ -22,6 +22,14 @@
 
 namespace MoFEM {
 
+/**
+ * @brief Bilinear integrator form
+ * @ingroup mofem_form
+ * 
+ * @tparam EleOp 
+ * @tparam A 
+ * @tparam I 
+ */
 template <typename EleOp>
 template <AssemblyType A>
 template <IntegrationType I>
@@ -30,6 +38,12 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
   //! [Grad operator]
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM> struct OpGradGrad;
 
+  /**
+   * @brief Integrate \f$(v_{,i},\beta(\mathbf{x}) u_{,j}))_\Omega\f$
+   * @ingroup mofem_forms
+   * 
+   * @tparam SPACE_DIM 
+   */
   template <int SPACE_DIM> struct OpGradGrad<1, 1, SPACE_DIM> : public OpBase {
 
     FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
@@ -69,8 +83,9 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
             vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
         // take into account Jacobean
         const double alpha = t_w * beta;
-        // loop over rows base functions
-        for (int rr = 0; rr != OpBase::nbRows; rr++) {
+        // loop over ros base functions
+        int rr = 0;
+        for (; rr != OpBase::nbRows; rr++) {
           // get column base functions gradient at gauss point gg
           auto t_col_grad = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
           // loop over columns
@@ -83,6 +98,9 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
           ++t_row_grad; // move to another element of gradient of base
                         // function on row
         }
+        for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+          +t_row_grad;
+
         ++t_coords;
         ++t_w; // move to another integration weight
       }
@@ -94,6 +112,12 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
   //! [Mass operator]
   template <int BASE_DIM, int FIELD_DIM> struct OpMass;
 
+  /**
+   * @brief Integrate \f$(v_i,\beta(\mathbf{x}) u_j)_\Omega\f$
+   * @ingroup mofem_forms
+   * 
+   * @tparam  
+   */
   template <> struct OpMass<1, 1> : public OpBase {
 
     OpMass(const std::string row_field_name, const std::string col_field_name,
@@ -122,7 +146,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
         // take into account Jacobean
         const double alpha = t_w * beta;
         // loop over rows base functions
-        for (int rr = 0; rr != OpBase::nbRows; rr++) {
+        int rr = 0;
+        for (; rr != OpBase::nbRows; rr++) {
           // get column base functions gradient at gauss point gg
           auto t_col_base = col_data.getFTensor0N(gg, 0);
           // loop over columns
@@ -133,7 +158,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
           }
           ++t_row_base;
         }
-        ++t_coords;
+        for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+          ++t_coords;
         ++t_w; // move to another integration weight
       }
       MoFEMFunctionReturn(0);
@@ -146,8 +172,18 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 0>
   struct OpGradSymTensorGrad;
 
+  /**
+   * @brief Integrate \f$(v_k,D_{ijkl} u_{,l})_\Omega\f$
+   * 
+   * \note \f$D_{ijkl}\f$ is * tensor with minor & major symmetry
+   * 
+   * @ingroup mofem_forms
+   *
+   * @tparam SPACE_DIM
+   * @tparam S
+   */
   template <int SPACE_DIM, int S>
-  struct OpGradSymTensorGrad<SPACE_DIM, 1, SPACE_DIM, S> : public OpBase {
+  struct OpGradSymTensorGrad<1, SPACE_DIM, SPACE_DIM, S> : public OpBase {
 
     FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
 
@@ -160,36 +196,63 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
   protected:
     boost::shared_ptr<MatrixDouble> matD;
 
-    template <int DIM>
-    inline FTensor::Ddg<FTensor::PackPtr<double *, 1>, DIM, DIM> getD() {
-      static_assert(DIM != DIM, "Not Implemented");
-      return FTensor::Ddg<FTensor::PackPtr<double *, 1>, DIM, DIM>();
+    template <>
+    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1>
+    getFTensor4DdgFromMat(MatrixDouble &data) {
+      if (data.size1() != 1)
+        THROW_MESSAGE(
+            "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
+            "of rows should be 36 but is " +
+            boost::lexical_cast<std::string>(data.size1()));
+
+      return FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1>{&data(0, 0)};
     }
 
+    /**
+     * @brief Get symmetric tensor rank 4  on first two and last indices from
+     * form data matrix
+     *
+     * @param data matrix container which has 36 rows
+     * @return FTensor::Ddg<FTensor::PackPtr<T *, 1>, Tensor_Dim01, TensorDim23>
+     */
     template <>
-    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1> getD<1>() {
-      auto m = *matD;
-      return FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1>{&m(0, 0)};
-    }
+    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2>
+    getFTensor4DdgFromMat(MatrixDouble &data) {
+      if(data.size1() != 9) THROW_MESSAGE(
+          "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
+          "of rows should be 36 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
 
-    template <>
-    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2> getD<2>() {
-      auto m = *matD;
       return FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2>{
-          &m(0, 0), &m(1, 0), &m(2, 0), &m(3, 0), &m(4, 0),
-          &m(5, 0), &m(6, 0), &m(7, 0), &m(8, 0)};
+          &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
+          &data(5, 0), &data(6, 0), &data(7, 0), &data(8, 0)};
     }
 
+    /**
+     * @brief Get symmetric tensor rank 4  on first two and last indices from
+     * form data matrix
+     *
+     * @param data matrix container which has 36 rows
+     * @return FTensor::Ddg<FTensor::PackPtr<T *, 1>, Tensor_Dim01, TensorDim23>
+     */
     template <>
-    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3> getD<3>() {
-      auto m = *matD;
+    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3>
+    getFTensor4DdgFromMat(MatrixDouble &data) {
+      if (data.size1() != 36)
+        THROW_MESSAGE(
+            "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
+            "of rows should be 36 but is " +
+            boost::lexical_cast<std::string>(data.size1()));
+
       return FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3>{
-          &m(0, 0),  &m(1, 0),  &m(2, 0),  &m(3, 0),  &m(4, 0),  &m(5, 0),
-          &m(6, 0),  &m(7, 0),  &m(8, 0),  &m(9, 0),  &m(10, 0), &m(11, 0),
-          &m(12, 0), &m(13, 0), &m(14, 0), &m(15, 0), &m(16, 0), &m(17, 0),
-          &m(18, 0), &m(19, 0), &m(20, 0), &m(21, 0), &m(22, 0), &m(23, 0),
-          &m(24, 0), &m(25, 0), &m(26, 0), &m(27, 0), &m(28, 0), &m(29, 0),
-          &m(30, 0), &m(31, 0), &m(32, 0), &m(33, 0), &m(34, 0), &m(35, 0)};
+          &data(0, 0),  &data(1, 0),  &data(2, 0),  &data(3, 0),  &data(4, 0),
+          &data(5, 0),  &data(6, 0),  &data(7, 0),  &data(8, 0),  &data(9, 0),
+          &data(10, 0), &data(11, 0), &data(12, 0), &data(13, 0), &data(14, 0),
+          &data(15, 0), &data(16, 0), &data(17, 0), &data(18, 0), &data(19, 0),
+          &data(20, 0), &data(21, 0), &data(22, 0), &data(23, 0), &data(24, 0),
+          &data(25, 0), &data(26, 0), &data(27, 0), &data(28, 0), &data(29, 0),
+          &data(30, 0), &data(31, 0), &data(32, 0), &data(33, 0), &data(34, 0),
+          &data(35, 0)};
     }
 
     virtual MoFEMErrorCode iNtegrate(EntData &row_data, EntData &col_data) {
@@ -232,11 +295,10 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
 
         // get derivatives of base functions on rows
         auto t_row_diff_base = row_data.getFTensor1DiffN<3>();
-        const int row_nb_base_fun = row_data.getN().size2();
 
         // Elastic stiffness tensor (4th rank tensor with minor and major
         // symmetry)
-        auto t_D = getD<SPACE_DIM>();
+        auto t_D = getFTensor4DdgFromMat<SPACE_DIM, SPACE_DIM>(*matD);
 
         // iterate over integration points
         for (int gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
@@ -249,7 +311,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
           for (; rr != OpBase::nbRows / 3; ++rr) {
 
             // get sub matrix for the row
-            auto t_m = get_tensor2(OpBase::locMat, 3 * rr, 0);
+            auto t_m = OpBase::template getLocMat<SPACE_DIM>(SPACE_DIM * rr);
 
             FTensor::Christof<double, 3, 3> t_rowD;
             // I mix up the indices here so that it behaves like a
@@ -277,7 +339,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
             ++t_row_diff_base;
           }
 
-          for (; rr != row_nb_base_fun; ++rr)
+          for (; rr < OpBase::nbRowBaseFunctions; ++rr)
             ++t_row_diff_base;
 
           // move to next integration weight
@@ -293,6 +355,5 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
 };
 
 } // namespace MoFEM
-
 
 #endif //__BILINEAR_FORMS_INTEGRATORS_HPP__

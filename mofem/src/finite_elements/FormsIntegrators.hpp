@@ -70,18 +70,6 @@ VecSetValues<EssentialBcStorage>(Vec V,
 /**
  * @brief Set valyes to matrix in operator
  *
- * Naming converion:
- * - Sf scalar field
- * - Sb scalar base
- * - Vf vector field
- * - Vb vector base
- * - L linear operator
- * - NL nonlinear operator
- *
- * Example:
- * - OpSfSbLSource linear operator integration scalar base and scalar field
- * - OpVfSbSource linear operator for vector field and scalar base
- *
  * @param M
  * @param row_data
  * @param col_data
@@ -100,16 +88,31 @@ MoFEMErrorCode MatSetValues<EssentialBcStorage>(
 enum AssemblyType { PETSC };
 enum IntegrationType { GAUSS };
 
+/**
+ * @brief Integrator forms
+ * @ingroup mofem_form
+ * 
+ * @tparam EleOp 
+ */
 template <typename EleOp> struct FormsIntegrators {
 
   using EntData = DataForcesAndSourcesCore::EntData;
   using OpType = typename EleOp::OpType;
 
   typedef boost::function<double(const double, const double, const double)>
+      VectorFun;
+
+  typedef boost::function<double(const double, const double, const double)>
       ScalarFun;
 
   template <AssemblyType A> struct OpBase;
 
+  /**
+   * @brief Assembly methods
+   * @ingroup mofem_form
+   * 
+   * @tparam A 
+   */
   template <AssemblyType A> struct Assembly {
 
     using OpBase = OpBase<A>;
@@ -154,6 +157,8 @@ struct FormsIntegrators<EleOp>::OpBase : public EleOp {
       MoFEMFunctionReturnHot(0);
     // get number of integration points
     OpBase::nbIntegrationPts = OpBase::getGaussPts().size2();
+    // get row base functions
+    OpBase::nbRowBaseFunctions = row_data.getN().size2();
     // set size of local entity bock
     OpBase::locMat.resize(OpBase::nbRows, OpBase::nbCols, false);
     // clear matrix
@@ -181,6 +186,8 @@ struct FormsIntegrators<EleOp>::OpBase : public EleOp {
       MoFEMFunctionReturnHot(0);
     // get number of integration points
     OpBase::nbIntegrationPts = OpBase::getGaussPts().size2();
+    // get row base functions
+    OpBase::nbRowBaseFunctions = row_data.getN().size2();
     // resize and clear the right hand side vector
     OpBase::locF.resize(nbRows);
     OpBase::locF.clear();
@@ -192,9 +199,59 @@ struct FormsIntegrators<EleOp>::OpBase : public EleOp {
   }
 
 protected:
-  int nbRows;           ///< number of dofs on rows
-  int nbCols;           ///< number if dof on column
-  int nbIntegrationPts; ///< number of integration points
+  template <int DIM>
+  inline FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM> getNf() {
+    static_assert(DIM != DIM, "Not Implemented");
+    return FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM>();
+  }
+
+  template <>
+  inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1> getNf() {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1>{&OpBase::locF[0]};
+  }
+
+  template <>
+  inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> getNf() {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{&OpBase::locF[0],
+                                                              &OpBase::locF[1]};
+  }
+
+  template <>
+  inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> getNf() {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{
+        &OpBase::locF[0], &OpBase::locF[1], &OpBase::locF[2]};
+  }
+
+  template <int DIM>
+  inline FTensor::Tensor2<FTensor::PackPtr<double *, DIM>, DIM, DIM>
+  getLocMat(const int rr) {
+    static_assert(DIM != DIM, "Not Implemented");
+    return FTensor::Tensor2<FTensor::PackPtr<double *, DIM>, DIM, DIM>();
+  }
+
+  template <>
+  inline FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 2, 2>
+  getLocMat(const int rr) {
+    return FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 2, 2>{
+        &OpBase::locMat(rr + 0, 0), &OpBase::locMat(rr + 0, 1),
+        &OpBase::locMat(rr + 1, 0), &OpBase::locMat(rr + 1, 2)};
+  }
+
+  template <>
+  inline FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>
+  getLocMat(const int rr) {
+    return FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>{
+        &OpBase::locMat(rr + 0, 0), &OpBase::locMat(rr + 0, 1),
+        &OpBase::locMat(rr + 0, 2), &OpBase::locMat(rr + 1, 0),
+        &OpBase::locMat(rr + 1, 1), &OpBase::locMat(rr + 1, 2),
+        &OpBase::locMat(rr + 2, 0), &OpBase::locMat(rr + 2, 1),
+        &OpBase::locMat(rr + 2, 2)};
+  }
+
+  int nbRows;             ///< number of dofs on rows
+  int nbCols;             ///< number if dof on column
+  int nbIntegrationPts;   ///< number of integration points
+  int nbRowBaseFunctions; ///< number or row base functions
 
   MatrixDouble locMat; ///< local entity block matrix
   VectorDouble locF;   ///< local entity vector
@@ -260,5 +317,14 @@ protected:
 };
 
 } // namespace MoFEM
+
+/**
+ * \defgroup mofem_forms Forms Integrators
+ *
+ * \brief Classes and functions used to evaluate fields at integration pts,
+ *jacobians, etc..
+ *
+ * \ingroup mofem_forces_and_sources
+ **/
 
 #endif //__FORMS_INTEGRATORS_HPP__
