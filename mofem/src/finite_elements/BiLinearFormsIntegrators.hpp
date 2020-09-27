@@ -196,75 +196,6 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
   protected:
     boost::shared_ptr<MatrixDouble> matD;
 
-    template <int Tensor_Dim01, int Tensor_Dim23, class T, class L, class ALLOCATION>
-    static inline FTensor::Ddg<FTensor::PackPtr<T *, S>, Tensor_Dim01,
-                               Tensor_Dim23>
-    getFTensor4DdgFromMat(ublas::matrix<T, L, ALLOCATION> &data)
-    {
-      static_assert(
-          !std::is_same<T, T>::value,
-          "Such getFTensor4DdgFromMat specialisation is not implemented");
-    }
-
-    template <>
-    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1>
-    getFTensor4DdgFromMat(MatrixDouble &data) {
-      if (data.size1() != 1)
-        THROW_MESSAGE(
-            "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
-            "of rows should be 36 but is " +
-            boost::lexical_cast<std::string>(data.size1()));
-
-      return FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1>{&data(0, 0)};
-    }
-
-    /**
-     * @brief Get symmetric tensor rank 4  on first two and last indices from
-     * form data matrix
-     *
-     * @param data matrix container which has 36 rows
-     * @return FTensor::Ddg<FTensor::PackPtr<T *, 1>, Tensor_Dim01, TensorDim23>
-     */
-    template <>
-    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2>
-    getFTensor4DdgFromMat(MatrixDouble &data) {
-      if(data.size1() != 9) THROW_MESSAGE(
-          "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
-          "of rows should be 36 but is " +
-          boost::lexical_cast<std::string>(data.size1()));
-
-      return FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2>{
-          &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
-          &data(5, 0), &data(6, 0), &data(7, 0), &data(8, 0)};
-    }
-
-    /**
-     * @brief Get symmetric tensor rank 4  on first two and last indices from
-     * form data matrix
-     *
-     * @param data matrix container which has 36 rows
-     * @return FTensor::Ddg<FTensor::PackPtr<T *, 1>, Tensor_Dim01, TensorDim23>
-     */
-    template <>
-    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3>
-    getFTensor4DdgFromMat(MatrixDouble &data) {
-      if (data.size1() != 36)
-        THROW_MESSAGE(
-            "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
-            "of rows should be 36 but is " +
-            boost::lexical_cast<std::string>(data.size1()));
-
-      return FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3>{
-          &data(0, 0),  &data(1, 0),  &data(2, 0),  &data(3, 0),  &data(4, 0),
-          &data(5, 0),  &data(6, 0),  &data(7, 0),  &data(8, 0),  &data(9, 0),
-          &data(10, 0), &data(11, 0), &data(12, 0), &data(13, 0), &data(14, 0),
-          &data(15, 0), &data(16, 0), &data(17, 0), &data(18, 0), &data(19, 0),
-          &data(20, 0), &data(21, 0), &data(22, 0), &data(23, 0), &data(24, 0),
-          &data(25, 0), &data(26, 0), &data(27, 0), &data(28, 0), &data(29, 0),
-          &data(30, 0), &data(31, 0), &data(32, 0), &data(33, 0), &data(34, 0),
-          &data(35, 0)};
-    }
-
     virtual MoFEMErrorCode iNtegrate(EntData &row_data, EntData &col_data) {
       return integrateImpl<GAUSS>(row_data, col_data);
     }
@@ -292,10 +223,10 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
               &m(r + 2, c + 0), &m(r + 2, c + 1), &m(r + 2, c + 2));
         };
 
-        FTensor::Index<'i', 3> i;
-        FTensor::Index<'j', 3> j;
-        FTensor::Index<'k', 3> k;
-        FTensor::Index<'l', 3> l;
+        FTensor::Index<'i', SPACE_DIM> i;
+        FTensor::Index<'j', SPACE_DIM> j;
+        FTensor::Index<'k', SPACE_DIM> k;
+        FTensor::Index<'l', SPACE_DIM> l;
 
         // get element volume
         double vol = OpBase::getMeasure();
@@ -308,7 +239,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
 
         // Elastic stiffness tensor (4th rank tensor with minor and major
         // symmetry)
-        auto t_D = getFTensor4DdgFromMat<SPACE_DIM, SPACE_DIM>(*matD);
+        auto t_D = getFTensor4DdgFromMat<SPACE_DIM, SPACE_DIM, S>(*matD);
 
         // iterate over integration points
         for (int gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
@@ -318,7 +249,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
 
           // iterate over row base functions
           int rr = 0;
-          for (; rr != OpBase::nbRows / 3; ++rr) {
+          for (; rr != OpBase::nbRows / SPACE_DIM; ++rr) {
 
             // get sub matrix for the row
             auto t_m = OpBase::template getLocMat<SPACE_DIM>(SPACE_DIM * rr);
@@ -333,7 +264,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
             auto t_col_diff_base = col_data.getFTensor1DiffN<3>(gg, 0);
 
             // iterate column base functions
-            for (int cc = 0; cc != OpBase::nbCols / 3; ++cc) {
+            for (int cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
 
               // integrate block local stiffens matrix
               t_m(i, j) += t_rowD(i, j, k) * t_col_diff_base(k);

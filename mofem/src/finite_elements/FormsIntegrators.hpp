@@ -234,7 +234,7 @@ protected:
   getLocMat(const int rr) {
     return FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 2, 2>{
         &OpBase::locMat(rr + 0, 0), &OpBase::locMat(rr + 0, 1),
-        &OpBase::locMat(rr + 1, 0), &OpBase::locMat(rr + 1, 2)};
+        &OpBase::locMat(rr + 1, 0), &OpBase::locMat(rr + 1, 1)};
   }
 
   template <>

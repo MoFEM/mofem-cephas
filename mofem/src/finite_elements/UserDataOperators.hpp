@@ -1160,7 +1160,7 @@ inline auto OpCalculateVectorFieldGradientDot<2, 2>::getFTensorDotData<2>() {
  * 
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
-template <int DIM, int S = 0>
+template <int DIM_01, int DIM_23, int S = 0>
 struct OpTensorTimesSymmetricTensor
     : public ForcesAndSourcesCore::UserDataOperator {
 
@@ -1174,14 +1174,21 @@ struct OpTensorTimesSymmetricTensor
       : UserOp(field_name, OPROW), inMat(in_mat), outMat(out_mat), dMat(d_mat) {
     // Only is run for vertices
     std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
+    if(!inMat)
+      THROW_MESSAGE("Pointer for in mat is null");
+    if (!outMat)
+      THROW_MESSAGE("Pointer for out mat is null");
+    if (!dMat)
+      THROW_MESSAGE("Pointer for tensor mat is null");
   }
 
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
     MoFEMFunctionBegin;
     const size_t nb_gauss_pts = getGaussPts().size2();
-    auto t_D = getD<DIM>();
-    auto t_in = getFTensor2SymmetricFromMat<DIM>(*(inMat));
-    auto t_out = getFTensor2SymmetricFromMat<DIM>(*(outMat));
+    auto t_D = getFTensor4DdgFromMat<DIM_01, DIM_23, S>(*(dMat));
+    auto t_in = getFTensor2SymmetricFromMat<DIM_01>(*(inMat));
+    outMat->resize((DIM_23 * (DIM_23 + 1)) / 2, nb_gauss_pts, false);
+    auto t_out = getFTensor2SymmetricFromMat<DIM_23>(*(outMat));
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
       t_out(i, j) = t_D(i, j, k, l) * t_in(k, l);
       ++t_in;
@@ -1191,45 +1198,11 @@ struct OpTensorTimesSymmetricTensor
   }
 
   private:
-    FTensor::Index<'i', DIM> i;
-    FTensor::Index<'j', DIM> j;
-    FTensor::Index<'k', DIM> k;
-    FTensor::Index<'l', DIM> l;
-
-    template <int DIM_TENSOR>
-    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, DIM_TENSOR, DIM_TENSOR>
-    getD() {
-      static_assert(DIM_TENSOR != DIM_TENSOR, "Not Implemented");
-      return FTensor::Ddg<FTensor::PackPtr<double *, S>, DIM_TENSOR,
-                          DIM_TENSOR>();
-    }
-
-    template <>
-    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1> getD<1>() {
-      auto m = *dMat;
-      return FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1>{&m(0, 0)};
-    }
-
-    template <>
-    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2> getD<2>() {
-      auto m = *dMat;
-      return FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2>{
-          &m(0, 0), &m(1, 0), &m(2, 0), &m(3, 0), &m(4, 0),
-          &m(5, 0), &m(6, 0), &m(7, 0), &m(8, 0)};
-    }
-
-    template <>
-    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3> getD<3>() {
-      auto m = *dMat;
-      return FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3>{
-          &m(0, 0),  &m(1, 0),  &m(2, 0),  &m(3, 0),  &m(4, 0),  &m(5, 0),
-          &m(6, 0),  &m(7, 0),  &m(8, 0),  &m(9, 0),  &m(10, 0), &m(11, 0),
-          &m(12, 0), &m(13, 0), &m(14, 0), &m(15, 0), &m(16, 0), &m(17, 0),
-          &m(18, 0), &m(19, 0), &m(20, 0), &m(21, 0), &m(22, 0), &m(23, 0),
-          &m(24, 0), &m(25, 0), &m(26, 0), &m(27, 0), &m(28, 0), &m(29, 0),
-          &m(30, 0), &m(31, 0), &m(32, 0), &m(33, 0), &m(34, 0), &m(35, 0)};
-    }
-
+    FTensor::Index<'i', DIM_01> i;
+    FTensor::Index<'j', DIM_01> j;
+    FTensor::Index<'k', DIM_23> k;
+    FTensor::Index<'l', DIM_23> l;
+  
     boost::shared_ptr<MatrixDouble> inMat;
     boost::shared_ptr<MatrixDouble> outMat;
     boost::shared_ptr<MatrixDouble> dMat;
@@ -1248,12 +1221,17 @@ struct OpSymmetrizeTensor
       : UserOp(field_name, OPROW), inMat(in_mat), outMat(out_mat) {
     // Only is run for vertices
     std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
+    if (!inMat)
+      THROW_MESSAGE("Pointer not set for in matrix");
+    if (!outMat)
+      THROW_MESSAGE("Pointer not set for in matrix");
   }
 
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
     MoFEMFunctionBegin;
     const size_t nb_gauss_pts = getGaussPts().size2();
     auto t_in = getFTensor2FromMat<DIM, DIM>(*(inMat));
+    outMat->resize((DIM * (DIM + 1)) / 2, nb_gauss_pts, false);
     auto t_out = getFTensor2SymmetricFromMat<DIM>(*(outMat));
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
       t_out(i, j) = (t_in(i, j) || t_in(j, i)) / 2;
