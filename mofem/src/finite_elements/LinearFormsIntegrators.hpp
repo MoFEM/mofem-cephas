@@ -238,10 +238,13 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
 
     OpGradTimesTensor(const std::string field_name,
                       boost::shared_ptr<MatrixDouble> mat_vals)
-        : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
+        : OpBase(field_name, field_name, OpBase::OPROW), matValsPtr(mat_vals) {
+      if (!matValsPtr)
+        THROW_MESSAGE("Pointer for tensor not set");
+    }
 
   protected:
-    boost::shared_ptr<MatrixDouble> matVals;
+    boost::shared_ptr<MatrixDouble> matValsPtr;
 
     virtual MoFEMErrorCode iNtegrate(EntData &data) {
       return integrateImpl<GAUSS>(data);
@@ -261,7 +264,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
       // get base function gradient on rows
       auto t_row_grad = row_data.getFTensor1DiffN<SPACE_DIM>();
       // get filed gradient values
-      auto t_val_grad = getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(*(matVals));
+      auto t_val_grad = getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(*(matValsPtr));
       // loop over integration points
       for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
         // take into account Jacobean
@@ -311,6 +314,10 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
     ScalarFun betaCoeff;
     boost::shared_ptr<MatrixDouble> matVals;
 
+    virtual MoFEMErrorCode iNtegrate(EntData &data) {
+      return integrateImpl<GAUSS>(data);
+    }
+
     template <IntegrationType T>
     MoFEMErrorCode integrateImpl(EntData &row_data) {
       return MOFEM_NOT_IMPLEMENTED;
@@ -329,16 +336,15 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
       auto t_row_grad = row_data.getFTensor1DiffN<SPACE_DIM>();
       // get filed gradient values
       auto t_val_mat = getFTensor2SymmetricFromMat<SPACE_DIM, S>(*(matVals));
-
       // loop over integration points
       for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
         // take into account Jacobean
         const double alpha = t_w * vol;
         // get rhs vector
-        auto t_nf = OpBase::template getNf();
+        auto t_nf = OpBase::template getNf<SPACE_DIM>();
         // loop over rows base functions
         int rr = 0;
-        for (; rr != OpBase::nbRows; rr++) {
+        for (; rr != OpBase::nbRows / SPACE_DIM; rr++) {
           // calculate element of local matrix
           t_nf(j) += alpha * (t_row_grad(i) * t_val_mat(i, j));
           ++t_row_grad; // move to another element of gradient of base
