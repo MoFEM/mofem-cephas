@@ -181,10 +181,10 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
 
   for (auto peit = in_tets.pair_begin(); peit != in_tets.pair_end(); ++peit) {
     auto lo =
-        prb_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>()
+        prb_ptr->numeredFiniteElementsPtr->get<Composite_Name_And_Ent_mi_tag>()
             .lower_bound(boost::make_tuple(finite_element, peit->first));
     auto hi =
-        prb_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>()
+        prb_ptr->numeredFiniteElementsPtr->get<Composite_Name_And_Ent_mi_tag>()
             .upper_bound(boost::make_tuple(finite_element, peit->second));
     numered_fes->insert(lo, hi);
 

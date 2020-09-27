@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
 
       double *array;
       CHKERR VecGetArray(v, &array);
-      for (auto dof : *(problem_ptr->getNumeredRowDofs())) {
+      for (auto dof : *(problem_ptr->getNumeredRowDofsPtr())) {
         auto loc_idx = dof->getPetscLocalDofIdx();
 
         if (dof->getFieldData() != array[loc_idx])

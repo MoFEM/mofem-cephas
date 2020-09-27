@@ -568,7 +568,7 @@ MoFEMErrorCode ForcesAndSourcesCore::getProblemTypeIndices(
 
 MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesRowIndices(
     const std::string &field_name, VectorInt &nodes_indices) const {
-  return getProblemNodesIndices(field_name, *(problemPtr->numeredRowDofs),
+  return getProblemNodesIndices(field_name, *(problemPtr->numeredRowDofsPtr),
                                 nodes_indices);
 }
 
@@ -576,13 +576,13 @@ MoFEMErrorCode
 ForcesAndSourcesCore::getProblemTypeRowIndices(const std::string &field_name,
                                                EntityType type, int side_number,
                                                VectorInt &indices) const {
-  return getProblemTypeIndices(field_name, *(problemPtr->numeredRowDofs), type,
+  return getProblemTypeIndices(field_name, *(problemPtr->numeredRowDofsPtr), type,
                                side_number, indices);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesColIndices(
     const std::string &field_name, VectorInt &nodes_indices) const {
-  return getProblemNodesIndices(field_name, *(problemPtr->numeredColDofs),
+  return getProblemNodesIndices(field_name, *(problemPtr->numeredColDofsPtr),
                                 nodes_indices);
 }
 
@@ -590,7 +590,7 @@ MoFEMErrorCode
 ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,
                                                EntityType type, int side_number,
                                                VectorInt &indices) const {
-  return getProblemTypeIndices(field_name, *(problemPtr->numeredColDofs), type,
+  return getProblemTypeIndices(field_name, *(problemPtr->numeredColDofsPtr), type,
                                side_number, indices);
 }
 
@@ -1547,7 +1547,7 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
   typedef NumeredEntFiniteElement_multiIndex::index<
       Composite_Name_And_Ent_mi_tag>::type FEByComposite;
   FEByComposite &numered_fe =
-      problem_ptr->numeredFiniteElements->get<Composite_Name_And_Ent_mi_tag>();
+      problem_ptr->numeredFiniteElementsPtr->get<Composite_Name_And_Ent_mi_tag>();
 
   side_fe->feName = fe_name;
 

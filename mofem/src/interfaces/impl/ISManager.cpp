@@ -48,7 +48,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
   BitFieldId fields_ids;
   switch (row_col) {
   case ROW:
-    dofs = problem_ptr->numeredRowDofs;
+    dofs = problem_ptr->numeredRowDofsPtr;
     for (FiniteElement_multiIndex::iterator fit = fe_ptr->begin();
          fit != fe_ptr->end(); fit++) {
       if ((fit->get()->getId() & problem_ptr->getBitFEId()).any()) {
@@ -57,7 +57,7 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
     }
     break;
   case COL:
-    dofs = problem_ptr->numeredColDofs;
+    dofs = problem_ptr->numeredColDofsPtr;
     for (FiniteElement_multiIndex::iterator fit = fe_ptr->begin();
          fit != fe_ptr->end(); fit++) {
       if ((fit->get()->getId() & problem_ptr->getBitFEId()).any()) {
@@ -204,10 +204,10 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
 
   switch (rc) {
   case ROW:
-    insert_part_range(problem_ptr->numeredRowDofs->get<Part_mi_tag>());
+    insert_part_range(problem_ptr->numeredRowDofsPtr->get<Part_mi_tag>());
     break;
   case COL:
-    insert_part_range(problem_ptr->numeredColDofs->get<Part_mi_tag>());
+    insert_part_range(problem_ptr->numeredColDofsPtr->get<Part_mi_tag>());
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
@@ -243,16 +243,16 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   switch (rc) {
   case ROW:
     nb_loc_dofs = problem_ptr->getNbLocalDofsRow();
-    it = problem_ptr->numeredRowDofs->get<Unique_mi_tag>().lower_bound(
+    it = problem_ptr->numeredRowDofsPtr->get<Unique_mi_tag>().lower_bound(
         FieldEntity::getLoBitNumberUId(bit_number));
-    hi_it = problem_ptr->numeredRowDofs->get<Unique_mi_tag>().upper_bound(
+    hi_it = problem_ptr->numeredRowDofsPtr->get<Unique_mi_tag>().upper_bound(
         FieldEntity::getHiBitNumberUId(bit_number));
     break;
   case COL:
     nb_loc_dofs = problem_ptr->getNbLocalDofsCol();
-    it = problem_ptr->numeredColDofs->get<Unique_mi_tag>().lower_bound(
+    it = problem_ptr->numeredColDofsPtr->get<Unique_mi_tag>().lower_bound(
         FieldEntity::getLoBitNumberUId(bit_number));
-    hi_it = problem_ptr->numeredColDofs->get<Unique_mi_tag>().upper_bound(
+    hi_it = problem_ptr->numeredColDofsPtr->get<Unique_mi_tag>().upper_bound(
         FieldEntity::getHiBitNumberUId(bit_number));
     break;
   default:
@@ -372,16 +372,16 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
   switch (x_rc) {
   case ROW:
     dofs_view.insert(dofs_view.end(),
-                     px_ptr->numeredRowDofs->get<Unique_mi_tag>().lower_bound(
+                     px_ptr->numeredRowDofsPtr->get<Unique_mi_tag>().lower_bound(
                          FieldEntity::getLoBitNumberUId(x_bit_number)),
-                     px_ptr->numeredRowDofs->get<Unique_mi_tag>().upper_bound(
+                     px_ptr->numeredRowDofsPtr->get<Unique_mi_tag>().upper_bound(
                          FieldEntity::getHiBitNumberUId(x_bit_number)));
     break;
   case COL:
     dofs_view.insert(dofs_view.end(),
-                     px_ptr->numeredColDofs->get<Unique_mi_tag>().lower_bound(
+                     px_ptr->numeredColDofsPtr->get<Unique_mi_tag>().lower_bound(
                          FieldEntity::getLoBitNumberUId(x_bit_number)),
-                     px_ptr->numeredColDofs->get<Unique_mi_tag>().upper_bound(
+                     px_ptr->numeredColDofsPtr->get<Unique_mi_tag>().upper_bound(
                          FieldEntity::getHiBitNumberUId(x_bit_number)));
     break;
   default:
@@ -389,13 +389,13 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
             "only makes sense for ROWS and COLS");
   }
 
-  decltype(py_ptr->numeredRowDofs) dofs_ptr;
+  decltype(py_ptr->numeredRowDofsPtr) dofs_ptr;
   switch (y_rc) {
   case ROW:
-    dofs_ptr = py_ptr->numeredRowDofs;
+    dofs_ptr = py_ptr->numeredRowDofsPtr;
     break;
   case COL:
-    dofs_ptr = py_ptr->numeredColDofs;
+    dofs_ptr = py_ptr->numeredColDofsPtr;
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -467,13 +467,13 @@ MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
   NumeredDofEntityByLocalIdx::iterator y_dit, hi_y_dit;
   switch (y_rc) {
   case ROW:
-    y_dit = py_ptr->numeredRowDofs->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-    hi_y_dit = py_ptr->numeredRowDofs->get<PetscLocalIdx_mi_tag>().lower_bound(
+    y_dit = py_ptr->numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(0);
+    hi_y_dit = py_ptr->numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(
         py_ptr->getNbLocalDofsRow()); // should be lower
     break;
   case COL:
-    y_dit = py_ptr->numeredColDofs->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-    hi_y_dit = py_ptr->numeredColDofs->get<PetscLocalIdx_mi_tag>().lower_bound(
+    y_dit = py_ptr->numeredColDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(0);
+    hi_y_dit = py_ptr->numeredColDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(
         py_ptr->getNbLocalDofsCol()); // should be lower
     break;
   default:
@@ -482,10 +482,10 @@ MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
   const NumeredDofEntityByUId *x_numered_dofs_by_uid;
   switch (x_rc) {
   case ROW:
-    x_numered_dofs_by_uid = &(px_ptr->numeredRowDofs->get<Unique_mi_tag>());
+    x_numered_dofs_by_uid = &(px_ptr->numeredRowDofsPtr->get<Unique_mi_tag>());
     break;
   case COL:
-    x_numered_dofs_by_uid = &(px_ptr->numeredColDofs->get<Unique_mi_tag>());
+    x_numered_dofs_by_uid = &(px_ptr->numeredColDofsPtr->get<Unique_mi_tag>());
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");

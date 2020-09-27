@@ -437,7 +437,7 @@ MoFEMErrorCode Core::loop_finite_elements(
   PetscLogEventEnd(MOFEM_EVENT_preProcess, 0, 0, 0, 0);
 
   if (!fe_ptr)
-    fe_ptr = problem_ptr->numeredFiniteElements;
+    fe_ptr = problem_ptr->numeredFiniteElementsPtr;
 
   auto miit = fe_ptr->get<Composite_Name_And_Part_mi_tag>().lower_bound(
       boost::make_tuple(fe_name, lower_rank));
@@ -517,10 +517,10 @@ MoFEMErrorCode Core::loop_dofs(const Problem *problem_ptr,
   NumeredDofsByUId *dofs;
   switch (rc) {
   case ROW:
-    dofs = &problem_ptr->numeredRowDofs->get<Unique_mi_tag>();
+    dofs = &problem_ptr->numeredRowDofsPtr->get<Unique_mi_tag>();
     break;
   case COL:
-    dofs = &problem_ptr->numeredColDofs->get<Unique_mi_tag>();
+    dofs = &problem_ptr->numeredColDofsPtr->get<Unique_mi_tag>();
     break;
   default:
     SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Not implemented");
@@ -621,13 +621,13 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
   MoFEMFunctionBegin;
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
-  decltype(problem_ptr->numeredRowDofs) dofs;
+  decltype(problem_ptr->numeredRowDofsPtr) dofs;
   switch (rc) {
   case ROW:
-    dofs = problem_ptr->numeredRowDofs;
+    dofs = problem_ptr->numeredRowDofsPtr;
     break;
   case COL:
-    dofs = problem_ptr->numeredColDofs;
+    dofs = problem_ptr->numeredColDofsPtr;
     break;
   default:
     SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY,
@@ -770,8 +770,8 @@ MoFEMErrorCode Core::cache_problem_entities(const std::string prb_name,
     const BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
     const BitFEId prb_fe_id = p_miit->getBitFEId();
 
-    auto &row_dofs = p_miit->numeredRowDofs;
-    auto &col_dofs = p_miit->numeredColDofs;
+    auto &row_dofs = p_miit->numeredRowDofsPtr;
+    auto &col_dofs = p_miit->numeredColDofsPtr;
 
     auto &cache_data = std::get<0>(*cache_ptr);
     auto &cache_row = std::get<1>(*cache_ptr);
