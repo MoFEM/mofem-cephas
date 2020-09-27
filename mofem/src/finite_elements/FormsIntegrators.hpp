@@ -85,8 +85,8 @@ MoFEMErrorCode MatSetValues<EssentialBcStorage>(
 
 //! [Storage and set boundary conditions]
 
-enum AssemblyType { PETSC };
-enum IntegrationType { GAUSS };
+enum AssemblyType { PETSC, USER_ASSEMBLE, LAST_ASSEMBLE };
+enum IntegrationType { GAUSS, USER_INTEGRATION, LAST_INTEGRATION };
 
 /**
  * @brief Integrator forms

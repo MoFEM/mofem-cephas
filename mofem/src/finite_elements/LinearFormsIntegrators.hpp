@@ -25,10 +25,10 @@ namespace MoFEM {
 /**
  * @brief Linear integrator form
  * @ingroup mofem_form
- * 
- * @tparam EleOp 
- * @tparam A 
- * @tparam I 
+ *
+ * @tparam EleOp
+ * @tparam A
+ * @tparam I
  */
 template <typename EleOp>
 template <AssemblyType A>
@@ -36,16 +36,16 @@ template <IntegrationType I>
 struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
 
   //! [Source operator]
- template <int BASE_DIM, int FIELD_DIM> struct OpSource;
+  template <int BASE_DIM, int FIELD_DIM> struct OpSource;
 
   /**
    * @brief Integrate \f$(v,f(\mathbf{x}))_\Omega\f$, f is a scalar
    * @ingroup mofem_forms
-   * 
+   *
    * @note \f$f(\mathbf{x})\$ is scalar function of coordinates
-   * 
-   * @tparam BASE_DIM 
-   * @tparam FIELD_DIM 
+   *
+   * @tparam BASE_DIM
+   * @tparam FIELD_DIM
    */
   template <> struct OpSource<1, 1> : public OpBase {
 
@@ -111,7 +111,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
   struct OpBaseTimesVector<1, SPACE_DIM, S> : public OpBase {
 
     OpBaseTimesVector(const std::string field_name,
-                   boost::shared_ptr<MatrixDouble> vec)
+                      boost::shared_ptr<MatrixDouble> vec)
         : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec) {}
 
   protected:
@@ -164,27 +164,26 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
   struct OpGradTimesTensor;
 
   /**
-   * @brief Integrate \f$(v_{,i},f_i)_\Omega\f$, f is a vector
+   * @brief Integrate \f$(v_{,i},f_{ij})_\Omega\f$, f is a vector
    * @ingroup mofem_forms
    *
-   * @note \f$f_i\$ is vector at integration points
+   * @note \f$f_{ij}\$ is tensor at integration points
    *
    * @tparam BASE_DIM
    * @tparam FIELD_DIM
    * @tparam SPACE_DIM
    */
   template <int SPACE_DIM>
-  struct OpGradTimesTensor<1, 1, SPACE_DIM> : public OpBase {
+  struct OpGradTimesTensor<1, SPACE_DIM, SPACE_DIM> : public OpBase {
 
     FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
 
-    OpGradTimesTensor(const std::string field_name, ScalarFun beta,
-                      boost::shared_ptr<MatrixDouble> &vector_vals)
-        : OpBase(field_name, field_name, OpBase::OPROW),
-          vectorVals(vector_vals) {}
+    OpGradTimesTensor(const std::string field_name,
+                      boost::shared_ptr<MatrixDouble> mat_vals)
+        : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
 
   protected:
-    boost::shared_ptr<MatrixDouble> vectorVals;
+    boost::shared_ptr<MatrixDouble> matVals;
 
     virtual MoFEMErrorCode iNtegrate(EntData &data) {
       return integrateImpl<GAUSS>(data);
@@ -204,7 +203,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
       // get base function gradient on rows
       auto t_row_grad = row_data.getFTensor1DiffN<SPACE_DIM>();
       // get filed gradient values
-      auto t_val_grad = getFTensor1FromMat<SPACE_DIM>(*(vectorVals));
+      auto t_val_grad = getFTensor1FromMat<SPACE_DIM>(*(matVals));
 
       // loop over integration points
       for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
@@ -236,7 +235,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
   /**
    * @brief Integrate \f$(v_{i},f_{ij})_\Omega\f$, f is symmetric tensor
    * @ingroup mofem_forms
-   * 
+   *
    * @note \f$f_{ij}\$ is tensor at integration points
    *
    * @tparam BASE_DIM

@@ -1168,10 +1168,10 @@ struct OpTensorTimesSymmetricTensor
   using UserOp = ForcesAndSourcesCore::UserDataOperator;
 
   OpTensorTimesSymmetricTensor(const std::string field_name,
-                               boost::shared_ptr<MatrixDouble> in_vec,
-                               boost::shared_ptr<MatrixDouble> out_vec,
+                               boost::shared_ptr<MatrixDouble> in_mat,
+                               boost::shared_ptr<MatrixDouble> out_mat,
                                boost::shared_ptr<MatrixDouble> d_mat)
-      : UserOp(field_name, OPROW) {
+      : UserOp(field_name, OPROW), inMat(in_mat), outMat(out_mat), dMat(d_mat) {
     // Only is run for vertices
     std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
   }
@@ -1179,9 +1179,9 @@ struct OpTensorTimesSymmetricTensor
   MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
     MoFEMFunctionBegin;
     const size_t nb_gauss_pts = getGaussPts().size2();
-    auto &t_D = getD<DIM>();
-    auto t_in = getFTensor2SymmetricFromMat<DIM>(*(inVec));
-    auto t_out = getFTensor2SymmetricFromMat<DIM>(*(outVec));
+    auto t_D = getD<DIM>();
+    auto t_in = getFTensor2SymmetricFromMat<DIM>(*(inMat));
+    auto t_out = getFTensor2SymmetricFromMat<DIM>(*(outMat));
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
       t_out(i, j) = t_D(i, j, k, l) * t_in(k, l);
       ++t_in;
@@ -1197,9 +1197,11 @@ struct OpTensorTimesSymmetricTensor
     FTensor::Index<'l', DIM> l;
 
     template <int DIM_TENSOR>
-    inline FTensor::Ddg<FTensor::PackPtr<double *, 1>, DIM, DIM> getD() {
-      static_assert(DIM != DIM, "Not Implemented");
-      return FTensor::Ddg<FTensor::PackPtr<double *, 1>, DIM, DIM>();
+    inline FTensor::Ddg<FTensor::PackPtr<double *, S>, DIM_TENSOR, DIM_TENSOR>
+    getD() {
+      static_assert(DIM_TENSOR != DIM_TENSOR, "Not Implemented");
+      return FTensor::Ddg<FTensor::PackPtr<double *, S>, DIM_TENSOR,
+                          DIM_TENSOR>();
     }
 
     template <>
@@ -1228,9 +1230,44 @@ struct OpTensorTimesSymmetricTensor
           &m(30, 0), &m(31, 0), &m(32, 0), &m(33, 0), &m(34, 0), &m(35, 0)};
     }
 
-    boost::shared_ptr<MatrixDouble> inVec;
-    boost::shared_ptr<MatrixDouble> outVec;
+    boost::shared_ptr<MatrixDouble> inMat;
+    boost::shared_ptr<MatrixDouble> outMat;
     boost::shared_ptr<MatrixDouble> dMat;
+};
+
+template <int DIM>
+struct OpSymmetrizeTensor
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  using EntData = DataForcesAndSourcesCore::EntData;
+  using UserOp = ForcesAndSourcesCore::UserDataOperator;
+
+  OpSymmetrizeTensor(const std::string field_name,
+                     boost::shared_ptr<MatrixDouble> in_mat,
+                     boost::shared_ptr<MatrixDouble> out_mat)
+      : UserOp(field_name, OPROW), inMat(in_mat), outMat(out_mat) {
+    // Only is run for vertices
+    std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
+    MoFEMFunctionBegin;
+    const size_t nb_gauss_pts = getGaussPts().size2();
+    auto t_in = getFTensor2FromMat<DIM, DIM>(*(inMat));
+    auto t_out = getFTensor2SymmetricFromMat<DIM>(*(outMat));
+    for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+      t_out(i, j) = (t_in(i, j) || t_in(j, i)) / 2;
+      ++t_in;
+      ++t_out;
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+  private:
+    FTensor::Index<'i', DIM> i;
+    FTensor::Index<'j', DIM> j;
+    boost::shared_ptr<MatrixDouble> inMat;
+    boost::shared_ptr<MatrixDouble> outMat;
 };
 
 /**@}*/
@@ -1812,7 +1849,6 @@ private:
 /** \name Operators for edges */
 
 /**@{*/
-
 
 struct OpSetContrariantPiolaTransformOnEdge
     : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {

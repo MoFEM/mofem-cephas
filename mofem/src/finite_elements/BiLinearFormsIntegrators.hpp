@@ -196,6 +196,16 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
   protected:
     boost::shared_ptr<MatrixDouble> matD;
 
+    template <int Tensor_Dim01, int Tensor_Dim23, class T, class L, class ALLOCATION>
+    static inline FTensor::Ddg<FTensor::PackPtr<T *, S>, Tensor_Dim01,
+                               Tensor_Dim23>
+    getFTensor4DdgFromMat(ublas::matrix<T, L, ALLOCATION> &data)
+    {
+      static_assert(
+          !std::is_same<T, T>::value,
+          "Such getFTensor4DdgFromMat specialisation is not implemented");
+    }
+
     template <>
     inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1>
     getFTensor4DdgFromMat(MatrixDouble &data) {
@@ -288,7 +298,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
         FTensor::Index<'l', 3> l;
 
         // get element volume
-        double vol = OpBase::getVolume();
+        double vol = OpBase::getMeasure();
 
         // get intergrayion weights
         auto t_w = OpBase::getFTensor0IntegrationWeight();
