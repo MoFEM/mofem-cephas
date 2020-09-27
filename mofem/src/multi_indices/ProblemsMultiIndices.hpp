@@ -137,7 +137,7 @@ struct Problem {
    * \deprecated Use getNumeredColDofsPtr
    */
   DEPRECATED boost::shared_ptr<NumeredDofEntity_multiIndex> &
-  getNumeredColDofsPtr() const {
+  getNumeredColDofs() const {
     return numeredColDofsPtr;
   }
 
