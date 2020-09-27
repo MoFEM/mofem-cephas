@@ -157,7 +157,6 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
         ++t_vec;
       }
 
-      
       MoFEMFunctionReturn(0);
     }
   };

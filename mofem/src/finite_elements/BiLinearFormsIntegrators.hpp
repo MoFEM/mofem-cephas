@@ -226,7 +226,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
         auto t_w = OpBase::getFTensor0IntegrationWeight();
 
         // get derivatives of base functions on rows
-        auto t_row_diff_base = row_data.getFTensor1DiffN<3>();
+        auto t_row_diff_base = row_data.getFTensor1DiffN<SPACE_DIM>();
 
         // Elastic stiffness tensor (4th rank tensor with minor and major
         // symmetry)
@@ -252,7 +252,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
             t_rowD(l, j, k) = t_D(i, j, k, l) * (a * t_row_diff_base(i));
 
             // get derivatives of base functions for columns
-            auto t_col_diff_base = col_data.getFTensor1DiffN<3>(gg, 0);
+            auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
 
             // iterate column base functions
             for (int cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
@@ -279,9 +279,6 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
           ++t_D;
         }
       }
-
-      cerr << "K\n" << OpBase::locMat << endl;
-      
 
       MoFEMFunctionReturn(0);
     }
