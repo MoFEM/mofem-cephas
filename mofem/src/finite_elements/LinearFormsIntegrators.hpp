@@ -156,6 +156,8 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
         ++t_w; // move to another integration weight
         ++t_vec;
       }
+
+      
       MoFEMFunctionReturn(0);
     }
   };

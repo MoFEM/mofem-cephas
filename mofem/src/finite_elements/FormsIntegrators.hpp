@@ -91,8 +91,8 @@ enum IntegrationType { GAUSS, USER_INTEGRATION, LAST_INTEGRATION };
 /**
  * @brief Integrator forms
  * @ingroup mofem_form
- * 
- * @tparam EleOp 
+ *
+ * @tparam EleOp
  */
 template <typename EleOp> struct FormsIntegrators {
 
@@ -110,8 +110,8 @@ template <typename EleOp> struct FormsIntegrators {
   /**
    * @brief Assembly methods
    * @ingroup mofem_form
-   * 
-   * @tparam A 
+   *
+   * @tparam A
    */
   template <AssemblyType A> struct Assembly {
 
@@ -207,19 +207,19 @@ protected:
 
   template <>
   inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1> getNf() {
-    return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1>{&OpBase::locF[0]};
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1>{&locF[0]};
   }
 
   template <>
   inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> getNf() {
-    return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{&OpBase::locF[0],
-                                                              &OpBase::locF[1]};
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{&locF[0],
+                                                              &locF[1]};
   }
 
   template <>
   inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> getNf() {
     return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{
-        &OpBase::locF[0], &OpBase::locF[1], &OpBase::locF[2]};
+        &locF[0], &locF[1], &locF[2]};
   }
 
   template <int DIM>
@@ -233,19 +233,17 @@ protected:
   inline FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 2, 2>
   getLocMat(const int rr) {
     return FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 2, 2>{
-        &OpBase::locMat(rr + 0, 0), &OpBase::locMat(rr + 0, 1),
-        &OpBase::locMat(rr + 1, 0), &OpBase::locMat(rr + 1, 1)};
+        &locMat(rr + 0, 0), &locMat(rr + 0, 1), &locMat(rr + 1, 0),
+        &locMat(rr + 1, 1)};
   }
 
   template <>
   inline FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>
   getLocMat(const int rr) {
     return FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>{
-        &OpBase::locMat(rr + 0, 0), &OpBase::locMat(rr + 0, 1),
-        &OpBase::locMat(rr + 0, 2), &OpBase::locMat(rr + 1, 0),
-        &OpBase::locMat(rr + 1, 1), &OpBase::locMat(rr + 1, 2),
-        &OpBase::locMat(rr + 2, 0), &OpBase::locMat(rr + 2, 1),
-        &OpBase::locMat(rr + 2, 2)};
+        &locMat(rr + 0, 0), &locMat(rr + 0, 1), &locMat(rr + 0, 2),
+        &locMat(rr + 1, 0), &locMat(rr + 1, 1), &locMat(rr + 1, 2),
+        &locMat(rr + 2, 0), &locMat(rr + 2, 1), &locMat(rr + 2, 2)};
   }
 
   int nbRows;             ///< number of dofs on rows

@@ -214,15 +214,6 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
 
       if (nb_row_dofs && nb_col_dofs) {
 
-        // get sub-block (3x3) of local stiffens matrix, here represented by
-        // second order tensor
-        auto get_tensor2 = [](MatrixDouble &m, const int r, const int c) {
-          return FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>(
-              &m(r + 0, c + 0), &m(r + 0, c + 1), &m(r + 0, c + 2),
-              &m(r + 1, c + 0), &m(r + 1, c + 1), &m(r + 1, c + 2),
-              &m(r + 2, c + 0), &m(r + 2, c + 1), &m(r + 2, c + 2));
-        };
-
         FTensor::Index<'i', SPACE_DIM> i;
         FTensor::Index<'j', SPACE_DIM> j;
         FTensor::Index<'k', SPACE_DIM> k;
@@ -254,7 +245,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
             // get sub matrix for the row
             auto t_m = OpBase::template getLocMat<SPACE_DIM>(SPACE_DIM * rr);
 
-            FTensor::Christof<double, 3, 3> t_rowD;
+            FTensor::Christof<double, SPACE_DIM, SPACE_DIM> t_rowD;
             // I mix up the indices here so that it behaves like a
             // Dg.  That way I don't have to have a separate wrapper
             // class Christof_Expr, which simplifies things.
@@ -288,6 +279,9 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
           ++t_D;
         }
       }
+
+      cerr << "K\n" << OpBase::locMat << endl;
+      
 
       MoFEMFunctionReturn(0);
     }
