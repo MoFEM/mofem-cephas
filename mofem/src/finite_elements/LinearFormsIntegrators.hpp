@@ -306,12 +306,11 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
   struct OpGradTimesSymmetricTensor<1, SPACE_DIM, SPACE_DIM, S>
       : public OpBase {
 
-    OpGradTimesSymmetricTensor(const std::string field_name, ScalarFun beta,
+    OpGradTimesSymmetricTensor(const std::string field_name, 
                                boost::shared_ptr<MatrixDouble> &mat_vals)
         : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
 
   protected:
-    ScalarFun betaCoeff;
     boost::shared_ptr<MatrixDouble> matVals;
 
     virtual MoFEMErrorCode iNtegrate(EntData &data) {
@@ -349,6 +348,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
           t_nf(j) += alpha * (t_row_grad(i) * t_val_mat(i, j));
           ++t_row_grad; // move to another element of gradient of base
                         // function on row
+          ++t_nf;
         }
         for (; rr < OpBase::nbRowBaseFunctions; ++rr)
           ++t_row_grad;
