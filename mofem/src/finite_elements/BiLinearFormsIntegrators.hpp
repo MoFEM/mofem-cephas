@@ -40,6 +40,23 @@ protected:
                            DataForcesAndSourcesCore::EntData &col_data);
 };
 
+template <int BASE_DIM, int FIELD_BASE, IntegrationType I, typename OpBase>
+struct OpMassImpl {};
+
+template <typename OpBase>
+struct OpMassImpl<1, 1, GAUSS, OpBase> : public OpBase {
+
+  OpMassImpl(const std::string row_field_name, const std::string col_field_name,
+         ScalarFun beta)
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
+        betaCoeff(beta) {}
+
+protected:
+  ScalarFun betaCoeff;
+  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
+                           DataForcesAndSourcesCore::EntData &col_data);
+};
+
 /**
  * @brief Bilinear integrator form
  * @ingroup mofem_form
@@ -66,63 +83,16 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
                          OpBase>::OpGradGradImpl;
   };
 
-  //! [Mass operator]
-  template <int BASE_DIM, int FIELD_DIM> struct OpMass;
-
   /**
    * @brief Integrate \f$(v_i,\beta(\mathbf{x}) u_j)_\Omega\f$
    * @ingroup mofem_forms
    *
    * @tparam
    */
-  template <> struct OpMass<1, 1> : public OpBase {
-
-    OpMass(const std::string row_field_name, const std::string col_field_name,
-           ScalarFun beta)
-        : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-          betaCoeff(beta) {}
-
-  protected:
-    ScalarFun betaCoeff;
-
-    MoFEMErrorCode iNtegrate(EntData &row_data, EntData &col_data) {
-      MoFEMFunctionBegin;
-      // get element volume
-      const double vol = OpBase::getMeasure();
-      // get integration weights
-      auto t_w = OpBase::getFTensor0IntegrationWeight();
-      // get base function gradient on rows
-      auto t_row_base = row_data.getFTensor0N();
-      // get coordinate at integration points
-      auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
-
-      // loop over integration points
-      for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-        const double beta =
-            vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
-        // take into account Jacobean
-        const double alpha = t_w * beta;
-        // loop over rows base functions
-        int rr = 0;
-        for (; rr != OpBase::nbRows; rr++) {
-          // get column base functions gradient at gauss point gg
-          auto t_col_base = col_data.getFTensor0N(gg, 0);
-          // loop over columns
-          for (int cc = 0; cc != OpBase::nbCols; cc++) {
-            // calculate element of local matrix
-            OpBase::locMat(rr, cc) += alpha * (t_row_base * t_col_base);
-            ++t_col_base;
-          }
-          ++t_row_base;
-        }
-        for (; rr < OpBase::nbRowBaseFunctions; ++rr)
-          ++t_coords;
-        ++t_w; // move to another integration weight
-      }
-      MoFEMFunctionReturn(0);
-    };
+  template <int BASE_DIM, int FIELD_DIM>
+  struct OpMass : public OpMassImpl<BASE_DIM, FIELD_DIM, I, OpBase> {
+    using OpMassImpl<BASE_DIM, FIELD_DIM, I, OpBase>::OpMassImpl;
   };
-  //! [Mass operator]
 
   //! [Grad SymD Grad]
 
@@ -285,6 +255,44 @@ MoFEMErrorCode OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   }
   MoFEMFunctionReturn(0);
 }
+
+template <typename OpBase>
+MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data) {
+  MoFEMFunctionBegin;
+  // get element volume
+  const double vol = OpBase::getMeasure();
+  // get integration weights
+  auto t_w = OpBase::getFTensor0IntegrationWeight();
+  // get base function gradient on rows
+  auto t_row_base = row_data.getFTensor0N();
+  // get coordinate at integration points
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+  // loop over integration points
+  for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
+    const double beta = vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
+    // take into account Jacobean
+    const double alpha = t_w * beta;
+    // loop over rows base functions
+    int rr = 0;
+    for (; rr != OpBase::nbRows; rr++) {
+      // get column base functions gradient at gauss point gg
+      auto t_col_base = col_data.getFTensor0N(gg, 0);
+      // loop over columns
+      for (int cc = 0; cc != OpBase::nbCols; cc++) {
+        // calculate element of local matrix
+        OpBase::locMat(rr, cc) += alpha * (t_row_base * t_col_base);
+        ++t_col_base;
+      }
+      ++t_row_base;
+    }
+    for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+      ++t_coords;
+    ++t_w; // move to another integration weight
+  }
+  MoFEMFunctionReturn(0);
+};
 
 } // namespace MoFEM
 
