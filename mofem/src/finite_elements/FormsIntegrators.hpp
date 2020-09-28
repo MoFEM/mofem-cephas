@@ -87,6 +87,8 @@ MoFEMErrorCode MatSetValues<EssentialBcStorage>(
 
 enum AssemblyType { PETSC, USER_ASSEMBLE, LAST_ASSEMBLE };
 enum IntegrationType { GAUSS, USER_INTEGRATION, LAST_INTEGRATION };
+typedef boost::function<double(const double, const double, const double)>
+    ScalarFun;
 
 /**
  * @brief Integrator forms
@@ -99,11 +101,7 @@ template <typename EleOp> struct FormsIntegrators {
   using EntData = DataForcesAndSourcesCore::EntData;
   using OpType = typename EleOp::OpType;
 
-  typedef boost::function<double(const double, const double, const double)>
-      VectorFun;
 
-  typedef boost::function<double(const double, const double, const double)>
-      ScalarFun;
 
   template <AssemblyType A> struct OpBase;
 

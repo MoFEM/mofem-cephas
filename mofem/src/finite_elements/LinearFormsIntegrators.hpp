@@ -22,6 +22,19 @@
 
 namespace MoFEM {
 
+template <int BASE_DIM, int FIELD_DIM, IntegrationType I, typename OpBase>
+struct OpSourceImpl;
+
+template <typename OpBase>
+struct OpSourceImpl<1, 1, GAUSS, OpBase> : public OpBase {
+  OpSourceImpl(const std::string field_name, ScalarFun source_fun)
+      : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun) {}
+
+protected:
+  ScalarFun sourceFun;
+  virtual MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
+};
+
 /**
  * @brief Linear integrator form
  * @ingroup mofem_form
@@ -35,9 +48,6 @@ template <AssemblyType A>
 template <IntegrationType I>
 struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
 
-  //! [Source operator]
-  template <int BASE_DIM, int FIELD_DIM> struct OpSource;
-
   /**
    * @brief Integrate \f$(v,f(\mathbf{x}))_\Omega\f$, f is a scalar
    * @ingroup mofem_forms
@@ -47,52 +57,9 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam BASE_DIM
    * @tparam FIELD_DIM
    */
-  template <> struct OpSource<1, 1> : public OpBase {
-
-    OpSource(const std::string field_name, ScalarFun source_fun)
-        : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun) {
-    }
-
-  protected:
-    ScalarFun sourceFun;
-
-    virtual MoFEMErrorCode iNtegrate(EntData &data) {
-      return integrateImpl<GAUSS>(data);
-    }
-
-    template <IntegrationType T>
-    MoFEMErrorCode integrateImpl(EntData &row_data) {
-      return MOFEM_NOT_IMPLEMENTED;
-    }
-
-    template <> inline MoFEMErrorCode integrateImpl<GAUSS>(EntData &row_data) {
-      MoFEMFunctionBegin;
-      // get element volume
-      const double vol = OpBase::getMeasure();
-      // get integration weights
-      auto t_w = OpBase::getFTensor0IntegrationWeight();
-      // get base function gradient on rows
-      auto t_row_base = row_data.getFTensor0N();
-      // get coordinate at integration points
-      auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
-      // loop over integration points
-      for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-        // take into account Jacobean
-        const double alpha =
-            t_w * vol * sourceFun(t_coords(0), t_coords(1), t_coords(2));
-        // loop over rows base functions
-        int rr = 0;
-        for (; rr != OpBase::nbRows; ++rr) {
-          OpBase::locF[rr] += alpha * t_row_base;
-          ++t_row_base;
-        }
-        for (; rr < OpBase::nbRowBaseFunctions; ++rr)
-          ++t_row_base;
-        ++t_coords;
-        ++t_w; // move to another integration weight
-      }
-      MoFEMFunctionReturn(0);
-    }
+  template <int BASE_DIM, int FIELD_DIM>
+  struct OpSource : public OpSourceImpl<BASE_DIM, FIELD_DIM, I, OpBase> {
+    using OpSourceImpl<BASE_DIM, FIELD_DIM, I, OpBase>::OpSourceImpl;
   };
 
   template <int BASE_DIM, int FIELD_DIM, int S = 0> struct OpBaseTimesVector;
@@ -165,7 +132,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
 
   //! [Grad times tensor]
 
-    /**
+  /**
    * @brief Integrate \f$(v_{,i},f_{ij})_\Omega\f$, f is a vector
    * @ingroup mofem_forms
    *
@@ -306,7 +273,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
   struct OpGradTimesSymmetricTensor<1, SPACE_DIM, SPACE_DIM, S>
       : public OpBase {
 
-    OpGradTimesSymmetricTensor(const std::string field_name, 
+    OpGradTimesSymmetricTensor(const std::string field_name,
                                boost::shared_ptr<MatrixDouble> &mat_vals)
         : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
 
@@ -360,6 +327,37 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
   };
   //! [Grad times tensor]
 };
+
+template <typename OpBase>
+MoFEMErrorCode OpSourceImpl<1, 1, GAUSS, OpBase>::iNtegrate(
+    DataForcesAndSourcesCore::EntData &row_data) {
+  MoFEMFunctionBegin;
+  // get element volume
+  const double vol = OpBase::getMeasure();
+  // get integration weights
+  auto t_w = OpBase::getFTensor0IntegrationWeight();
+  // get base function gradient on rows
+  auto t_row_base = row_data.getFTensor0N();
+  // get coordinate at integration points
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+  // loop over integration points
+  for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
+    // take into account Jacobean
+    const double alpha =
+        t_w * vol * sourceFun(t_coords(0), t_coords(1), t_coords(2));
+    // loop over rows base functions
+    int rr = 0;
+    for (; rr != OpBase::nbRows; ++rr) {
+      OpBase::locF[rr] += alpha * t_row_base;
+      ++t_row_base;
+    }
+    for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+      ++t_row_base;
+    ++t_coords;
+    ++t_w; // move to another integration weight
+  }
+  MoFEMFunctionReturn(0);
+}
 
 } // namespace MoFEM
 
