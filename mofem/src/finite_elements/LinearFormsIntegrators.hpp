@@ -72,6 +72,25 @@ protected:
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
 
+template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S, IntegrationType I,
+          typename OpBase>
+struct OpGradTimesSymmetricTensorImpl {};
+
+template <int SPACE_DIM, int S, typename OpBase>
+struct OpGradTimesSymmetricTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
+    : public OpBase {
+
+  OpGradTimesSymmetricTensorImpl(const std::string field_name,
+                                 boost::shared_ptr<MatrixDouble> &mat_vals)
+      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
+
+protected:
+  boost::shared_ptr<MatrixDouble> matVals;
+  FTensor::Index<'i', SPACE_DIM> i;
+  FTensor::Index<'j', SPACE_DIM> j;
+  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
+};
+
 /**
  * @brief Linear integrator form
  * @ingroup mofem_form
@@ -139,67 +158,6 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
                                 OpBase>::OpGradTimesTensorImpl;
   };
 
-  template <int SPACE_DIM>
-  struct OpGradTimesTensor<1, SPACE_DIM, SPACE_DIM, 1> : public OpBase {
-
-    FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
-
-    OpGradTimesTensor(const std::string field_name,
-                      boost::shared_ptr<MatrixDouble> mat_vals)
-        : OpBase(field_name, field_name, OpBase::OPROW), matValsPtr(mat_vals) {
-      if (!matValsPtr)
-        THROW_MESSAGE("Pointer for tensor not set");
-    }
-
-  protected:
-    boost::shared_ptr<MatrixDouble> matValsPtr;
-
-    virtual MoFEMErrorCode iNtegrate(EntData &data) {
-      return integrateImpl<GAUSS>(data);
-    }
-
-    template <IntegrationType T>
-    MoFEMErrorCode integrateImpl(EntData &row_data) {
-      return MOFEM_NOT_IMPLEMENTED;
-    }
-
-    template <> inline MoFEMErrorCode integrateImpl<GAUSS>(EntData &row_data) {
-      MoFEMFunctionBegin;
-      // get element volume
-      const double vol = OpBase::getMeasure();
-      // get integration weights
-      auto t_w = OpBase::getFTensor0IntegrationWeight();
-      // get base function gradient on rows
-      auto t_row_grad = row_data.getFTensor1DiffN<SPACE_DIM>();
-      // get filed gradient values
-      auto t_val_grad = getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(*(matValsPtr));
-      // loop over integration points
-      for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-        // take into account Jacobean
-        const double alpha = t_w * vol;
-        // loop over rows base functions
-        int rr = 0;
-        for (; rr != OpBase::nbRows; rr++) {
-          // calculate element of local matrix
-          OpBase::locF[rr] += alpha * (t_row_grad(i) * t_val_grad(i));
-          ++t_row_grad; // move to another element of gradient of base
-                        // function on row
-        }
-        for (; rr < OpBase::nbRowBaseFunctions; ++rr)
-          ++t_row_grad;
-
-        ++t_val_grad;
-        ++t_w; // move to another integration weight
-      }
-      MoFEMFunctionReturn(0);
-    }
-  };
-  //! [Grad times tensor]
-
-  //! [Grad times symmetric tensor]
-  template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 1>
-  struct OpGradTimesSymmetricTensor;
-
   /**
    * @brief Integrate \f$(v_{i},f_{ij})_\Omega\f$, f is symmetric tensor
    * @ingroup mofem_forms
@@ -210,63 +168,15 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam FIELD_DIM
    * @tparam SPACE_DIM
    */
-  template <int SPACE_DIM, int S>
-  struct OpGradTimesSymmetricTensor<1, SPACE_DIM, SPACE_DIM, S>
-      : public OpBase {
-
-    OpGradTimesSymmetricTensor(const std::string field_name,
-                               boost::shared_ptr<MatrixDouble> &mat_vals)
-        : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
-
-  protected:
-    boost::shared_ptr<MatrixDouble> matVals;
-
-    virtual MoFEMErrorCode iNtegrate(EntData &data) {
-      return integrateImpl<GAUSS>(data);
-    }
-
-    template <IntegrationType T>
-    MoFEMErrorCode integrateImpl(EntData &row_data) {
-      return MOFEM_NOT_IMPLEMENTED;
-    }
-
-    FTensor::Index<'i', SPACE_DIM> i;
-    FTensor::Index<'j', SPACE_DIM> j;
-
-    template <> inline MoFEMErrorCode integrateImpl<GAUSS>(EntData &row_data) {
-      MoFEMFunctionBegin;
-      // get element volume
-      const double vol = OpBase::getMeasure();
-      // get integration weights
-      auto t_w = OpBase::getFTensor0IntegrationWeight();
-      // get base function gradient on rows
-      auto t_row_grad = row_data.getFTensor1DiffN<SPACE_DIM>();
-      // get filed gradient values
-      auto t_val_mat = getFTensor2SymmetricFromMat<SPACE_DIM, S>(*(matVals));
-      // loop over integration points
-      for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-        // take into account Jacobean
-        const double alpha = t_w * vol;
-        // get rhs vector
-        auto t_nf = OpBase::template getNf<SPACE_DIM>();
-        // loop over rows base functions
-        int rr = 0;
-        for (; rr != OpBase::nbRows / SPACE_DIM; rr++) {
-          // calculate element of local matrix
-          t_nf(j) += alpha * (t_row_grad(i) * t_val_mat(i, j));
-          ++t_row_grad; // move to another element of gradient of base
-                        // function on row
-          ++t_nf;
-        }
-        for (; rr < OpBase::nbRowBaseFunctions; ++rr)
-          ++t_row_grad;
-        ++t_val_mat;
-        ++t_w; // move to another integration weight
-      }
-      MoFEMFunctionReturn(0);
-    }
+  template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 1>
+  struct OpGradTimesSymmetricTensor
+      : public OpGradTimesSymmetricTensorImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S,
+                                              I, OpBase> {
+    using OpGradTimesSymmetricTensorImpl<
+        BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
+        OpBase>::OpGradTimesSymmetricTensorImpl;
   };
-  //! [Grad times tensor]
+
 };
 
 template <typename OpBase>
@@ -362,6 +272,42 @@ OpGradTimesTensorImpl<1, 1, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
       ++t_row_grad;
 
     ++t_val_grad;
+    ++t_w; // move to another integration weight
+  }
+  MoFEMFunctionReturn(0);
+}
+
+template <int SPACE_DIM, int S, typename OpBase>
+MoFEMErrorCode
+OpGradTimesSymmetricTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::
+    iNtegrate(DataForcesAndSourcesCore::EntData &row_data) {
+  MoFEMFunctionBegin;
+  // get element volume
+  const double vol = OpBase::getMeasure();
+  // get integration weights
+  auto t_w = OpBase::getFTensor0IntegrationWeight();
+  // get base function gradient on rows
+  auto t_row_grad = row_data.getFTensor1DiffN<SPACE_DIM>();
+  // get filed gradient values
+  auto t_val_mat = getFTensor2SymmetricFromMat<SPACE_DIM, S>(*(matVals));
+  // loop over integration points
+  for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
+    // take into account Jacobean
+    const double alpha = t_w * vol;
+    // get rhs vector
+    auto t_nf = OpBase::template getNf<SPACE_DIM>();
+    // loop over rows base functions
+    int rr = 0;
+    for (; rr != OpBase::nbRows / SPACE_DIM; rr++) {
+      // calculate element of local matrix
+      t_nf(j) += alpha * (t_row_grad(i) * t_val_mat(i, j));
+      ++t_row_grad; // move to another element of gradient of base
+                    // function on row
+      ++t_nf;
+    }
+    for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+      ++t_row_grad;
+    ++t_val_mat;
     ++t_w; // move to another integration weight
   }
   MoFEMFunctionReturn(0);
