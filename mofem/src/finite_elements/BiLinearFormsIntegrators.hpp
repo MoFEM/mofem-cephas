@@ -217,7 +217,8 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
       ++t_row_base;
     }
     for (; rr < OpBase::nbRowBaseFunctions; ++rr)
-      ++t_coords;
+      ++t_row_base;
+    ++t_coords;
     ++t_w; // move to another integration weight
   }
   MoFEMFunctionReturn(0);
@@ -269,7 +270,8 @@ MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
       ++t_row_base;
     }
     for (; rr < OpBase::nbRowBaseFunctions; ++rr)
-      ++t_coords;
+      ++t_row_base;
+    ++t_coords;
     ++t_w; // move to another integration weight
   }
   MoFEMFunctionReturn(0);
