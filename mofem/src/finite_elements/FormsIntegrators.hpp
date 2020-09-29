@@ -187,7 +187,20 @@ template <typename EleOp> struct FormsIntegrators {
 
     using OpBase = OpBaseImpl<A, EleOp>;
 
+    /**
+     * @brief Linear form
+     * @ingroup mofem_forms
+     * 
+     * @tparam I 
+     */
     template <IntegrationType I> struct LinearForm;
+
+    /**
+     * @brief Bi linear form
+     * @ingroup mofem_forms
+     * 
+     * @tparam I 
+     */
     template <IntegrationType I> struct BiLinearForm;
 
   }; // Assembly
