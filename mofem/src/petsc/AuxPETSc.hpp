@@ -303,3 +303,10 @@ auto createPC = [](MPI_Comm comm) {
 } // namespace MoFEM
 
 #endif // __AUXPETSC_HPP__
+
+/**
+ * \defgroup mofem_petsc_solvers PETSc solvers
+ * \brief PETSc solvers
+ *
+ * \ingroup mofem
+ */

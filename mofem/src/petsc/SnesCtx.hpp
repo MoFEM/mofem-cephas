@@ -22,7 +22,7 @@
 namespace MoFEM {
 
 /** \brief Interface for nonlinear (SNES) solver
- * \ingroup petsc_context_struture
+ * \ingroup mofem_petsc_solvers
  */
 struct SnesCtx {
 
