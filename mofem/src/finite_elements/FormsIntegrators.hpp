@@ -168,7 +168,7 @@ protected:
 
 /**
  * @brief Integrator forms
- * @ingroup mofem_form
+ * @ingroup mofem_forms
  *
  * @tparam EleOp
  */
@@ -179,7 +179,7 @@ template <typename EleOp> struct FormsIntegrators {
 
   /**
    * @brief Assembly methods
-   * @ingroup mofem_form
+   * @ingroup mofem_forms
    *
    * @tparam A
    */

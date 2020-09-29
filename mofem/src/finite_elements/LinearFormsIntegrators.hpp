@@ -93,7 +93,7 @@ protected:
 
 /**
  * @brief Linear integrator form
- * @ingroup mofem_form
+ * @ingroup mofem_forms
  *
  * @tparam EleOp
  * @tparam A
