@@ -90,43 +90,12 @@ enum IntegrationType { GAUSS, USER_INTEGRATION, LAST_INTEGRATION };
 typedef boost::function<double(const double, const double, const double)>
     ScalarFun;
 
-/**
- * @brief Integrator forms
- * @ingroup mofem_form
- *
- * @tparam EleOp
- */
-template <typename EleOp> struct FormsIntegrators {
-
-  using EntData = DataForcesAndSourcesCore::EntData;
+template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
   using OpType = typename EleOp::OpType;
+  using EntData = DataForcesAndSourcesCore::EntData;
 
-
-
-  template <AssemblyType A> struct OpBase;
-
-  /**
-   * @brief Assembly methods
-   * @ingroup mofem_form
-   *
-   * @tparam A
-   */
-  template <AssemblyType A> struct Assembly {
-
-    using OpBase = OpBase<A>;
-
-    template <IntegrationType I> struct LinearForm;
-    template <IntegrationType I> struct BiLinearForm;
-
-  }; // Assembly
-};   // namespace MoFEM
-
-template <typename EleOp>
-template <AssemblyType A>
-struct FormsIntegrators<EleOp>::OpBase : public EleOp {
-
-  OpBase(const std::string row_field_name, const std::string col_field_name,
-         const OpType type)
+  OpBaseImpl(const std::string row_field_name, const std::string col_field_name,
+             const OpType type)
       : EleOp(row_field_name, col_field_name, type, false) {}
 
   /**
@@ -141,32 +110,7 @@ struct FormsIntegrators<EleOp>::OpBase : public EleOp {
    */
   MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
                         EntityType col_type, EntData &row_data,
-                        EntData &col_data) {
-    MoFEMFunctionBegin;
-    // get number of dofs on row
-    OpBase::nbRows = row_data.getIndices().size();
-    // if no dofs on row, exit that work, nothing to do here
-    if (!OpBase::nbRows)
-      MoFEMFunctionReturnHot(0);
-    // get number of dofs on column
-    OpBase::nbCols = col_data.getIndices().size();
-    // if no dofs on Columbia, exit nothing to do here
-    if (!OpBase::nbCols)
-      MoFEMFunctionReturnHot(0);
-    // get number of integration points
-    OpBase::nbIntegrationPts = OpBase::getGaussPts().size2();
-    // get row base functions
-    OpBase::nbRowBaseFunctions = row_data.getN().size2();
-    // set size of local entity bock
-    OpBase::locMat.resize(OpBase::nbRows, OpBase::nbCols, false);
-    // clear matrix
-    OpBase::locMat.clear();
-    // integrate local matrix for entity block
-    CHKERR this->iNtegrate(row_data, col_data);
-    // assemble local matrix
-    CHKERR this->aSsemble(row_data, col_data);
-    MoFEMFunctionReturn(0);
-  }
+                        EntData &col_data);
 
   /**
    * @brief Do calculations for the right hand side
@@ -176,72 +120,18 @@ struct FormsIntegrators<EleOp>::OpBase : public EleOp {
    * @param row_data
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode doWork(int row_side, EntityType row_type, EntData &row_data) {
-    MoFEMFunctionBegin;
-    // get number of dofs on row
-    OpBase::nbRows = row_data.getIndices().size();
-    if (!OpBase::nbRows)
-      MoFEMFunctionReturnHot(0);
-    // get number of integration points
-    OpBase::nbIntegrationPts = OpBase::getGaussPts().size2();
-    // get row base functions
-    OpBase::nbRowBaseFunctions = row_data.getN().size2();
-    // resize and clear the right hand side vector
-    OpBase::locF.resize(nbRows);
-    OpBase::locF.clear();
-    // integrate local vector
-    CHKERR this->iNtegrate(row_data);
-    // assemble local vector
-    CHKERR this->aSsemble(row_data);
-    MoFEMFunctionReturn(0);
-  }
+  MoFEMErrorCode doWork(int row_side, EntityType row_type, EntData &row_data);
 
 protected:
   template <int DIM>
   inline FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM> getNf() {
-    static_assert(DIM != DIM, "Not Implemented");
-    return FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM>();
-  }
-
-  template <>
-  inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1> getNf() {
-    return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1>{&locF[0]};
-  }
-
-  template <>
-  inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2> getNf() {
-    return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{&locF[0],
-                                                              &locF[1]};
-  }
-
-  template <>
-  inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> getNf() {
-    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{
-        &locF[0], &locF[1], &locF[2]};
+    return getFTensor1FromArray<DIM, DIM>(locF);
   }
 
   template <int DIM>
   inline FTensor::Tensor2<FTensor::PackPtr<double *, DIM>, DIM, DIM>
   getLocMat(const int rr) {
-    static_assert(DIM != DIM, "Not Implemented");
-    return FTensor::Tensor2<FTensor::PackPtr<double *, DIM>, DIM, DIM>();
-  }
-
-  template <>
-  inline FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 2, 2>
-  getLocMat(const int rr) {
-    return FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 2, 2>{
-        &locMat(rr + 0, 0), &locMat(rr + 0, 1), &locMat(rr + 1, 0),
-        &locMat(rr + 1, 1)};
-  }
-
-  template <>
-  inline FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>
-  getLocMat(const int rr) {
-    return FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>{
-        &locMat(rr + 0, 0), &locMat(rr + 0, 1), &locMat(rr + 0, 2),
-        &locMat(rr + 1, 0), &locMat(rr + 1, 1), &locMat(rr + 1, 2),
-        &locMat(rr + 2, 0), &locMat(rr + 2, 1), &locMat(rr + 2, 2)};
+    return getFTensor2FromArray<DIM, DIM, DIM>(locMat, rr);
   }
 
   int nbRows;             ///< number of dofs on rows
@@ -262,25 +152,7 @@ protected:
     return MOFEM_NOT_IMPLEMENTED;
   }
 
-  template <AssemblyType T>
-  MoFEMErrorCode aSsembleImpl(EntData &row_data, EntData &col_data) {
-    return MOFEM_NOT_IMPLEMENTED;
-  }
-
-  template <>
-  inline MoFEMErrorCode aSsembleImpl<PETSC>(EntData &row_data,
-                                            EntData &col_data) {
-    MoFEMFunctionBegin;
-    // assemble local matrix
-    CHKERR MatSetValues<EssentialBcStorage>(this->getKSPB(), row_data, col_data,
-                                            &*locMat.data().begin(),
-                                            ADD_VALUES);
-    MoFEMFunctionReturn(0);
-  }
-
-  MoFEMErrorCode aSsemble(EntData &row_data, EntData &col_data) {
-    return aSsembleImpl<A>(row_data, col_data);
-  }
+  virtual MoFEMErrorCode aSsemble(EntData &row_data, EntData &col_data) = 0;
 
   /**
    * \brief Class dedicated to integrate operator
@@ -291,25 +163,107 @@ protected:
     return MOFEM_NOT_IMPLEMENTED;
   }
 
-  /**
-   * \brief Class dedicated to assemble operator to global system vector
-   * @param  data entity data (indices, base functions, etc. ) on element row
-   * @return      error code
-   */
-  template <AssemblyType T> MoFEMErrorCode aSsembleImpl(EntData &data);
+  virtual MoFEMErrorCode aSsemble(EntData &data) = 0;
+};
 
-  template <>
-  MoFEMErrorCode aSsembleImpl<PETSC>(FormsIntegrators<EleOp>::EntData &data) {
-    MoFEMFunctionBegin;
-    // get values from local vector
-    const double *vals = &*locF.data().begin();
-    // assemble vector
-    CHKERR VecSetValues<EssentialBcStorage>(this->getKSPf(), data, vals,
-                                            ADD_VALUES);
-    MoFEMFunctionReturn(0);
+/**
+ * @brief Integrator forms
+ * @ingroup mofem_form
+ *
+ * @tparam EleOp
+ */
+template <typename EleOp> struct FormsIntegrators {
+
+  using EntData = DataForcesAndSourcesCore::EntData;
+  using OpType = typename EleOp::OpType;
+
+  /**
+   * @brief Assembly methods
+   * @ingroup mofem_form
+   *
+   * @tparam A
+   */
+  template <AssemblyType A> struct Assembly {
+
+    using OpBase = OpBaseImpl<A, EleOp>;
+
+    template <IntegrationType I> struct LinearForm;
+    template <IntegrationType I> struct BiLinearForm;
+
+  }; // Assembly
+};   // namespace MoFEM
+
+template <AssemblyType A, typename EleOp>
+MoFEMErrorCode
+OpBaseImpl<A, EleOp>::doWork(int row_side, int col_side, EntityType row_type,
+                             EntityType col_type,
+                             DataForcesAndSourcesCore::EntData &row_data,
+                             DataForcesAndSourcesCore::EntData &col_data) {
+  MoFEMFunctionBegin;
+  // get number of dofs on row
+  nbRows = row_data.getIndices().size();
+  // if no dofs on row, exit that work, nothing to do here
+  if (!nbRows)
+    MoFEMFunctionReturnHot(0);
+  // get number of dofs on column
+  nbCols = col_data.getIndices().size();
+  // if no dofs on Columbia, exit nothing to do here
+  if (!nbCols)
+    MoFEMFunctionReturnHot(0);
+  // get number of integration points
+  nbIntegrationPts = EleOp::getGaussPts().size2();
+  // get row base functions
+  nbRowBaseFunctions = row_data.getN().size2();
+  // set size of local entity bock
+  locMat.resize(nbRows, nbCols, false);
+  // clear matrix
+  locMat.clear();
+  // integrate local matrix for entity block
+  CHKERR this->iNtegrate(row_data, col_data);
+  // assemble local matrix
+  CHKERR this->aSsemble(row_data, col_data);
+  MoFEMFunctionReturn(0);
+}
+
+template <AssemblyType A, typename EleOp>
+MoFEMErrorCode OpBaseImpl<A, EleOp>::doWork(int row_side, EntityType row_type,
+                                            EntData &row_data) {
+  MoFEMFunctionBegin;
+  // get number of dofs on row
+  nbRows = row_data.getIndices().size();
+  if (!nbRows)
+    MoFEMFunctionReturnHot(0);
+  // get number of integration points
+  nbIntegrationPts = EleOp::getGaussPts().size2();
+  // get row base functions
+  nbRowBaseFunctions = row_data.getN().size2();
+  // resize and clear the right hand side vector
+  locF.resize(nbRows);
+  locF.clear();
+  // integrate local vector
+  CHKERR this->iNtegrate(row_data);
+  // assemble local vector
+  CHKERR this->aSsemble(row_data);
+  MoFEMFunctionReturn(0);
+}
+
+template <typename EleOp>
+struct OpBaseImpl<PETSC, EleOp> : public OpBaseImpl<LAST_ASSEMBLE, EleOp> {
+  using OpBaseImpl<LAST_ASSEMBLE, EleOp>::OpBaseImpl;
+
+protected:
+  MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &row_data,
+                          DataForcesAndSourcesCore::EntData &col_data) {
+    // assemble local matrix
+    return CHKERR MatSetValues<EssentialBcStorage>(
+        this->getKSPB(), row_data, col_data, &*this->locMat.data().begin(),
+        ADD_VALUES);
   }
 
-  MoFEMErrorCode aSsemble(EntData &data) { return aSsembleImpl<A>(data); }
+  MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {
+    return VecSetValues<EssentialBcStorage>(
+        this->getKSPf(), data, &*this->locF.data().begin(), ADD_VALUES);
+  }
 };
 
 } // namespace MoFEM
