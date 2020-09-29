@@ -153,10 +153,10 @@ getFTensor0FromVec<double, DoubleAllocator>(
 }
 
 template <int Tensor_Dim, int S, class T, class L, class A>
-struct getFTensor1FromMatImpl {};
+struct GetFTensor1FromMatImpl {};
 
 template <int S>
-struct getFTensor1FromMatImpl<3, S, double, ublas::row_major, DoubleAllocator> {
+struct GetFTensor1FromMatImpl<3, S, double, ublas::row_major, DoubleAllocator> {
   static inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, 3>
   get(MatrixDouble &data) {
     if (data.size1() != 3)
@@ -171,7 +171,7 @@ struct getFTensor1FromMatImpl<3, S, double, ublas::row_major, DoubleAllocator> {
 };
 
 template <int S>
-struct getFTensor1FromMatImpl<2, S, double, ublas::row_major, DoubleAllocator> {
+struct GetFTensor1FromMatImpl<2, S, double, ublas::row_major, DoubleAllocator> {
   static inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, 2>
   get(MatrixDouble &data) {
     if (data.size1() != 2)
@@ -199,7 +199,7 @@ getFTensor1FromMat(ublas::matrix<T, L, A> &data) {
 template <int Tensor_Dim, int S = 1>
 inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, Tensor_Dim>
 getFTensor1FromMat(MatrixDouble &data) {
-  return getFTensor1FromMatImpl<Tensor_Dim, S, double, ublas::row_major,
+  return GetFTensor1FromMatImpl<Tensor_Dim, S, double, ublas::row_major,
                                 DoubleAllocator>::get(data);
 }
 
@@ -273,10 +273,10 @@ getFTensor2FromMat(MatrixDouble &data) {
 }
 
 template <int Tensor_Dim, int S, class T, class L, class A>
-struct getFTensor2SymmetricFromMatImpl {};
+struct GetFTensor2SymmetricFromMatImpl {};
 
 template <int S, class T, class L, class A>
-struct getFTensor2SymmetricFromMatImpl<3, S, T, L, A> {
+struct GetFTensor2SymmetricFromMatImpl<3, S, T, L, A> {
   static inline FTensor::Tensor2_symmetric<FTensor::PackPtr<T *, S>, 3>
   get(ublas::matrix<T, L, A> &data) {
     if (data.size1() != 6)
@@ -292,7 +292,7 @@ struct getFTensor2SymmetricFromMatImpl<3, S, T, L, A> {
 };
 
 template <int S, class T, class L, class A>
-struct getFTensor2SymmetricFromMatImpl<2, S, T, L, A> {
+struct GetFTensor2SymmetricFromMatImpl<2, S, T, L, A> {
   static inline FTensor::Tensor2_symmetric<FTensor::PackPtr<T *, S>, 2>
   get(ublas::matrix<T, L, A> &data) {
     if (data.size1() != 3)
@@ -311,7 +311,7 @@ struct getFTensor2SymmetricFromMatImpl<2, S, T, L, A> {
 template <int Tensor_Dim, int S, class T, class L, class A>
 static inline FTensor::Tensor2_symmetric<FTensor::PackPtr<T *, S>, Tensor_Dim>
 getFTensor2SymmetricFromMat(ublas::matrix<T, L, A> &data) {
-  return getFTensor2SymmetricFromMatImpl<Tensor_Dim, S, T, L, A>::get(data);
+  return GetFTensor2SymmetricFromMatImpl<Tensor_Dim, S, T, L, A>::get(data);
 }
 
 template <int Tensor_Dim, int S = 1>
@@ -323,10 +323,10 @@ getFTensor2SymmetricFromMat(MatrixDouble &data) {
 }
 
 template <int Tensor_Dim01, int Tensor_Dim23, int S, class T, class L, class A>
-struct getFTensor4DdgFromMatImpl {};
+struct GetFTensor4DdgFromMatImpl {};
 
 template <int S>
-struct getFTensor4DdgFromMatImpl<1, 1, S, double, ublas::row_major,
+struct GetFTensor4DdgFromMatImpl<1, 1, S, double, ublas::row_major,
                                  DoubleAllocator> {
   static inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1>
   get(MatrixDouble &data) {
@@ -341,7 +341,7 @@ struct getFTensor4DdgFromMatImpl<1, 1, S, double, ublas::row_major,
 };
 
 template <int S>
-struct getFTensor4DdgFromMatImpl<2, 2, S, double, ublas::row_major,
+struct GetFTensor4DdgFromMatImpl<2, 2, S, double, ublas::row_major,
                                  DoubleAllocator> {
   static inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2>
   get(MatrixDouble &data) {
@@ -357,7 +357,7 @@ struct getFTensor4DdgFromMatImpl<2, 2, S, double, ublas::row_major,
 };
 
 template <int S>
-struct getFTensor4DdgFromMatImpl<3, 3, S, double, ublas::row_major,
+struct GetFTensor4DdgFromMatImpl<3, 3, S, double, ublas::row_major,
                                  DoubleAllocator> {
   static inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3>
   get(MatrixDouble &data) {
@@ -402,7 +402,7 @@ template <int Tensor_Dim01, int Tensor_Dim23, int S = 1>
 static inline FTensor::Ddg<FTensor::PackPtr<double *, S>, Tensor_Dim01,
                            Tensor_Dim23>
 getFTensor4DdgFromMat(MatrixDouble &data) {
-  return getFTensor4DdgFromMatImpl<Tensor_Dim01, Tensor_Dim23, S, double,
+  return GetFTensor4DdgFromMatImpl<Tensor_Dim01, Tensor_Dim23, S, double,
                                    ublas::row_major,
                                    DoubleAllocator>::get(data);
 }
@@ -464,6 +464,69 @@ FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3,
 
       &ptr[HVEC2_0], &ptr[HVEC2_1], &ptr[HVEC2_2]);
 };
+
+/**
+ * @brief Get FTensor1 from array
+ * 
+ * \todo Generalise for diffrent arrays and data types
+ * 
+ * @tparam DIM 
+ * @param data 
+ * @return FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM> 
+ */
+template <int DIM, int S>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
+getFTensor1FromArray(VectorDouble &data) {
+  static_assert(DIM != DIM, "not implemented");
+  return FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>();
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
+getFTensor1FromArray(VectorDouble &data) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{&data[0], &data[1]};
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+getFTensor1FromArray(VectorDouble &data) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{&data[0], &data[1],
+                                                            &data[2]};
+}
+
+/**
+ * @brief Get FTensor2 from array
+ * 
+ * \note Generalise for other data types 
+ * 
+ * @tparam DIM1 
+ * @tparam DIM2 
+ * @tparam S 
+ * @param data 
+ * @return FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2> 
+ */
+template <int DIM1, int DIM2, int S>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2>
+getFTensor2FromArray(MatrixDouble &data, const size_t rr) {
+  static_assert(DIM1 != DIM1, "not implemented");
+  return FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2>();
+}
+
+template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 2, 2>
+getFTensor2FromArray(MatrixDouble &data, const size_t rr) {
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 2>, 2, 2>{
+      &data(rr + 0, 0), &data(rr + 0, 1), &data(rr + 1, 0), &data(rr + 1, 1)};
+}
+
+template <>
+inline FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>
+getFTensor2FromArray(MatrixDouble &data, const size_t rr) {
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>{
+      &data(rr + 0, 0), &data(rr + 0, 1), &data(rr + 0, 2),
+      &data(rr + 1, 0), &data(rr + 1, 1), &data(rr + 1, 2),
+      &data(rr + 2, 0), &data(rr + 2, 1), &data(rr + 2, 2)};
+}
 
 /**
  * @brief Calculate the determinant of a 3x3 matrix or a tensor of rank 2
