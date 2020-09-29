@@ -57,6 +57,16 @@ protected:
                            DataForcesAndSourcesCore::EntData &col_data);
 };
 
+template <int FIELD_DIM, typename OpBase>
+struct OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>
+    : public OpMassImpl<1, 1, GAUSS, OpBase> {
+  using OpMassImpl<1, 1, GAUSS, OpBase>::OpMassImpl;
+protected:
+  using OpMassImpl<1, 1, GAUSS, OpBase>::betaCoeff;
+  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
+                           DataForcesAndSourcesCore::EntData &col_data);
+};
+
 template <int BASE_DIM, int FIELD_BASE, int SPACE_DIM, int S, IntegrationType I,
           typename OpBase>
 struct OpGradSymTensorGradImpl {};
@@ -203,6 +213,58 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
         // calculate element of local matrix
         OpBase::locMat(rr, cc) += alpha * (t_row_base * t_col_base);
         ++t_col_base;
+      }
+      ++t_row_base;
+    }
+    for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+      ++t_coords;
+    ++t_w; // move to another integration weight
+  }
+  MoFEMFunctionReturn(0);
+};
+
+template <int FIELD_DIM, typename OpBase>
+MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data) {
+  MoFEMFunctionBegin;
+  // get element volume
+  const double vol = OpBase::getMeasure();
+  // get integration weights
+  auto t_w = OpBase::getFTensor0IntegrationWeight();
+  // get base function gradient on rows
+  auto t_row_base = row_data.getFTensor0N();
+  // get coordinate at integration points
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+
+  FTensor::Index<'i', FIELD_DIM> i;
+  auto get_t_vec = [&](const int rr) {
+    std::array<double *, FIELD_DIM> ptrs;
+    for (auto i = 0; i != FIELD_DIM; ++i)
+      ptrs[i] = &OpBase::locMat(rr + i, i);
+    FTensor::Tensor1<FTensor::PackPtr<double *, FIELD_DIM>, FIELD_DIM> t_vec(
+        ptrs);
+    return t_vec;
+  };
+
+  // loop over integration points
+  for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
+    const double beta = vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
+    // take into account Jacobean
+    const double alpha = t_w * beta;
+    // loop over rows base functions
+    int rr = 0;
+    for (; rr != OpBase::nbRows / FIELD_DIM; rr++) {
+      // get column base functions gradient at gauss point gg
+      auto t_col_base = col_data.getFTensor0N(gg, 0);
+      // get mat vec
+      auto t_vec = get_t_vec(FIELD_DIM * rr);
+      // loop over columns
+      for (int cc = 0; cc != OpBase::nbCols / FIELD_DIM; cc++) {
+        // calculate element of local matrix
+        t_vec(i) += alpha * (t_row_base * t_col_base);
+        ++t_col_base;
+        ++t_vec;
       }
       ++t_row_base;
     }
