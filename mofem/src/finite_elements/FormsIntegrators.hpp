@@ -255,7 +255,7 @@ protected:
   MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &row_data,
                           DataForcesAndSourcesCore::EntData &col_data) {
     // assemble local matrix
-    return CHKERR MatSetValues<EssentialBcStorage>(
+    return MatSetValues<EssentialBcStorage>(
         this->getKSPB(), row_data, col_data, &*this->locMat.data().begin(),
         ADD_VALUES);
   }
