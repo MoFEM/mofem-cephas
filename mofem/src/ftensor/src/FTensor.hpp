@@ -20,6 +20,7 @@
 #include <cmath>
 #include <complex>
 #include <type_traits>
+#include <array>
 
 #ifdef FTENSOR_DEBUG
 #include <iostream>

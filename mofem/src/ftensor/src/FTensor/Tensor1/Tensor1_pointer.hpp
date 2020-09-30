@@ -134,7 +134,7 @@ public:
     template <class... U> Tensor1(U *... d) : Tensor1<T *, Tensor_Dim>(d...) {}
 
     template <class U>
-    Tensor1(std::array<U *, Tensor_Dim> &a) : Tensor1<T *, Tensor_Dim>(a){};
+    Tensor1(std::array<U *, Tensor_Dim> &a) : Tensor1<T *, Tensor_Dim>(a) {}
 
     Tensor1(): Tensor1<T *, Tensor_Dim>() {}
 
