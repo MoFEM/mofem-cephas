@@ -345,11 +345,12 @@ struct GetFTensor4DdgFromMatImpl<2, 2, S, double, ublas::row_major,
                                  DoubleAllocator> {
   static inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2>
   get(MatrixDouble &data) {
-    if (data.size1() != 9)
+    if (data.size1() != 9) {
       THROW_MESSAGE(
           "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
-          "of rows should be 36 but is " +
+          "of rows should be 9 but is " +
           boost::lexical_cast<std::string>(data.size1()));
+    }
     return FTensor::Ddg<FTensor::PackPtr<double *, S>, 2, 2>{
         &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
         &data(5, 0), &data(6, 0), &data(7, 0), &data(8, 0)};
@@ -361,12 +362,14 @@ struct GetFTensor4DdgFromMatImpl<3, 3, S, double, ublas::row_major,
                                  DoubleAllocator> {
   static inline FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3>
   get(MatrixDouble &data) {
-    if (data.size1() != 36)
+    if (data.size1() != 36) {
+      cerr << data.size1() << endl;
       THROW_MESSAGE(
           "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
           "of rows should be 36 but is " +
           boost::lexical_cast<std::string>(data.size1()));
-    return FTensor::Ddg<FTensor::PackPtr<double *, 1>, 3, 3>{
+    }
+    return FTensor::Ddg<FTensor::PackPtr<double *, S>, 3, 3>{
         &data(0, 0),  &data(1, 0),  &data(2, 0),  &data(3, 0),  &data(4, 0),
         &data(5, 0),  &data(6, 0),  &data(7, 0),  &data(8, 0),  &data(9, 0),
         &data(10, 0), &data(11, 0), &data(12, 0), &data(13, 0), &data(14, 0),
