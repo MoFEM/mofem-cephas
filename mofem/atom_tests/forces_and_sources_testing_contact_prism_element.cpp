@@ -277,7 +277,6 @@ int main(int argc, char *argv[]) {
     else
       CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, 3);
 
-
     CHKERR m_field.add_field("MESH_NODE_POSITIONS", H1, AINSWORTH_LEGENDRE_BASE,
                              3);
     CHKERR m_field.add_field("FIELD2", NOFIELD, NOBASE, 3);
@@ -344,15 +343,14 @@ int main(int argc, char *argv[]) {
     // (Mark Ainsworth & Joe Coyle)
     int order = 3;
 
-    if(is_hdiv){
-    CHKERR m_field.set_field_order(root_set, MBTET, "FIELD1", 0);
-    CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD1", order);
-    }
-    else { 
-    CHKERR m_field.set_field_order(root_set, MBTET, "FIELD1", order);
-    CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD1", order);
-    CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD1", order);
-    CHKERR m_field.set_field_order(root_set, MBVERTEX, "FIELD1", 1);
+    if (is_hdiv) {
+      CHKERR m_field.set_field_order(root_set, MBTET, "FIELD1", 0);
+      CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD1", order);
+    } else {
+      CHKERR m_field.set_field_order(root_set, MBTET, "FIELD1", order);
+      CHKERR m_field.set_field_order(root_set, MBTRI, "FIELD1", order);
+      CHKERR m_field.set_field_order(root_set, MBEDGE, "FIELD1", order);
+      CHKERR m_field.set_field_order(root_set, MBVERTEX, "FIELD1", 1);
     }
 
     CHKERR m_field.set_field_order(root_set, MBTET, "MESH_NODE_POSITIONS", 2);
@@ -392,50 +390,48 @@ int main(int argc, char *argv[]) {
     std::ofstream ofs;
     if (is_hdiv)
       ofs.open("forces_and_sources_testing_contact_prism_element_HDIV.txt");
-    else 
+    else
       ofs.open("forces_and_sources_testing_contact_prism_element.txt");
-    
 
-      TeeDevice my_tee(std::cout, ofs);
-      TeeStream my_split(my_tee);
+    TeeDevice my_tee(std::cout, ofs);
+    TeeStream my_split(my_tee);
 
-      using UMDataOp = ForcesAndSourcesCore::UserDataOperator;
-      using ContactDataOp =
-          ContactPrismElementForcesAndSourcesCore::UserDataOperator;
+    using UMDataOp = ForcesAndSourcesCore::UserDataOperator;
+    using ContactDataOp =
+        ContactPrismElementForcesAndSourcesCore::UserDataOperator;
 
-      ContactPrismElementForcesAndSourcesCore fe1(m_field);
-      fe1.getOpPtrVector().push_back(
-          new MyOp(my_split, UMDataOp::OPROW, ContactDataOp::FACEMASTER));
-      fe1.getOpPtrVector().push_back(
-          new MyOp(my_split, UMDataOp::OPROW, ContactDataOp::FACESLAVE));
-      fe1.getOpPtrVector().push_back(new MyOp(my_split, UMDataOp::OPROWCOL,
-                                              ContactDataOp::FACEMASTERMASTER));
-      fe1.getOpPtrVector().push_back(new MyOp(my_split, UMDataOp::OPROWCOL,
-                                              ContactDataOp::FACEMASTERSLAVE));
-      fe1.getOpPtrVector().push_back(new MyOp(my_split, UMDataOp::OPROWCOL,
-                                              ContactDataOp::FACESLAVEMASTER));
-      fe1.getOpPtrVector().push_back(new MyOp(my_split, UMDataOp::OPROWCOL,
-                                              ContactDataOp::FACESLAVESLAVE));
-      fe1.getOpPtrVector().push_back(new CallingOp(my_split, UMDataOp::OPCOL));
-      fe1.getOpPtrVector().push_back(new CallingOp(my_split, UMDataOp::OPROW));
-      fe1.getOpPtrVector().push_back(
-          new CallingOp(my_split, UMDataOp::OPROWCOL));
-      CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE1", fe1);
+    ContactPrismElementForcesAndSourcesCore fe1(m_field);
+    fe1.getOpPtrVector().push_back(
+        new MyOp(my_split, UMDataOp::OPROW, ContactDataOp::FACEMASTER));
+    fe1.getOpPtrVector().push_back(
+        new MyOp(my_split, UMDataOp::OPROW, ContactDataOp::FACESLAVE));
+    fe1.getOpPtrVector().push_back(new MyOp(my_split, UMDataOp::OPROWCOL,
+                                            ContactDataOp::FACEMASTERMASTER));
+    fe1.getOpPtrVector().push_back(
+        new MyOp(my_split, UMDataOp::OPROWCOL, ContactDataOp::FACEMASTERSLAVE));
+    fe1.getOpPtrVector().push_back(
+        new MyOp(my_split, UMDataOp::OPROWCOL, ContactDataOp::FACESLAVEMASTER));
+    fe1.getOpPtrVector().push_back(
+        new MyOp(my_split, UMDataOp::OPROWCOL, ContactDataOp::FACESLAVESLAVE));
+    fe1.getOpPtrVector().push_back(new CallingOp(my_split, UMDataOp::OPCOL));
+    fe1.getOpPtrVector().push_back(new CallingOp(my_split, UMDataOp::OPROW));
+    fe1.getOpPtrVector().push_back(new CallingOp(my_split, UMDataOp::OPROWCOL));
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE1", fe1);
 
-      ContactPrismElementForcesAndSourcesCore fe2(m_field);
-      fe2.getOpPtrVector().push_back(
-          new MyOp2(my_split, UMDataOp::OPCOL, ContactDataOp::FACEMASTER));
-      fe2.getOpPtrVector().push_back(
-          new MyOp2(my_split, UMDataOp::OPCOL, ContactDataOp::FACESLAVE));
-      fe2.getOpPtrVector().push_back(new MyOp2(
-          my_split, UMDataOp::OPROWCOL, ContactDataOp::FACEMASTERMASTER));
-      fe2.getOpPtrVector().push_back(new MyOp2(my_split, UMDataOp::OPROWCOL,
-                                               ContactDataOp::FACEMASTERSLAVE));
-      fe2.getOpPtrVector().push_back(new MyOp2(my_split, UMDataOp::OPROWCOL,
-                                               ContactDataOp::FACESLAVEMASTER));
-      fe2.getOpPtrVector().push_back(new MyOp2(my_split, UMDataOp::OPROWCOL,
-                                               ContactDataOp::FACESLAVESLAVE));
-      CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE2", fe2);
+    ContactPrismElementForcesAndSourcesCore fe2(m_field);
+    fe2.getOpPtrVector().push_back(
+        new MyOp2(my_split, UMDataOp::OPCOL, ContactDataOp::FACEMASTER));
+    fe2.getOpPtrVector().push_back(
+        new MyOp2(my_split, UMDataOp::OPCOL, ContactDataOp::FACESLAVE));
+    fe2.getOpPtrVector().push_back(new MyOp2(my_split, UMDataOp::OPROWCOL,
+                                             ContactDataOp::FACEMASTERMASTER));
+    fe2.getOpPtrVector().push_back(new MyOp2(my_split, UMDataOp::OPROWCOL,
+                                             ContactDataOp::FACEMASTERSLAVE));
+    fe2.getOpPtrVector().push_back(new MyOp2(my_split, UMDataOp::OPROWCOL,
+                                             ContactDataOp::FACESLAVEMASTER));
+    fe2.getOpPtrVector().push_back(
+        new MyOp2(my_split, UMDataOp::OPROWCOL, ContactDataOp::FACESLAVESLAVE));
+    CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE2", fe2);
   }
   CATCH_ERRORS;
 
