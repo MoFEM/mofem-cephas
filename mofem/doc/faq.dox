@@ -470,6 +470,65 @@ c_cpp_properties configuration on Mac should look like follows:
 }
 \endcode
 
+\subsection configure_vs_code_remonte How to configure MoFEM in Visual Studio Code for remonte and local use?
+
+You can have more than one config, that can be the case if you work in your Mac OSX and remotely on a development server where Linux is installed. In that case, make in \p
+.vscode/c_cpp_properties.json two sections for Mac and Linux, as follows:
+
+\code
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [],
+            "macFrameworkPath": [
+                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/
+                SDKs/MacOSX10.13.sdk/System/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "clang-x64",
+            "compileCommands": "/Users/User1/mofem_install/users_modules_debug/compile_commands.json"
+        },
+        {
+            "name": "Linux",
+            "includePath": [
+                "/usr/local/include",
+                "/usr/include",
+                "${workspaceRoot}",
+                ""
+            ],
+            "defines": [
+                "WITH_ADOL_C",
+                "WITH_TETGEN",
+                "WITH_MED"
+            ],
+            "intelliSenseMode": "gcc-x64",
+            "browse": {
+                "path": [
+                    "/usr/local/include",
+                    "/usr/include",
+                    "${workspaceRoot}",
+                    ""
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compileCommands": "/home/User1/mofem_install/lib_debug/   compile_commands.json"
+        },
+    ],
+    "version": 4
+}
+\endcode
+
+
 \subsection vs_code_debug How to setup LLDB debugger in Visual Studio Code?
 
 For debugging on Mac the most commonly used extension is <a
