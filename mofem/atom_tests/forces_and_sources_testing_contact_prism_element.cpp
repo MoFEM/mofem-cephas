@@ -27,12 +27,11 @@ static char help[] = "...\n\n";
 
 struct MyOp : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
 
-  TeeStream &mySplit;
   const char faceType;
-  MyOp(TeeStream &mySplit, const char type, const char face_type)
+  MyOp(const char type, const char face_type)
       : ContactPrismElementForcesAndSourcesCore::UserDataOperator(
             "FIELD1", "FIELD1", type, face_type),
-        mySplit(mySplit), faceType(face_type) {}
+        faceType(face_type) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
@@ -41,28 +40,37 @@ struct MyOp : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
     if (data.getFieldData().empty())
       MoFEMFunctionReturnHot(0);
 
-    mySplit << "NH1" << std::endl;
-    mySplit << "side: " << side << " type: " << type << std::endl;
-    mySplit << data << std::endl;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << "NH1";
+    MOFEM_LOG("ATOM_TEST", Sev::inform)
+        << "side: " << side << " type: " << type;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << data;
 
     if (faceType == FACEMASTER) {
-      mySplit << std::setprecision(3) << "coords Master " << getCoordsMaster()
-              << std::endl;
-      mySplit << std::setprecision(3) << "area Master " << getAreaMaster()
-              << std::endl;
-      mySplit << std::setprecision(3) << "normal Master " << getNormalMaster()
-              << std::endl;
-      mySplit << std::setprecision(3) << "coords at Gauss Pts Master "
-              << getCoordsAtGaussPtsMaster() << std::endl;
+      MOFEM_LOG("ATOM_TEST", Sev::inform)
+          << "coords Master " << std::scientific << std::setprecision(2)
+          << getCoordsMaster();
+      MOFEM_LOG("ATOM_TEST", Sev::inform)
+          << "area Master " << std::scientific << std::setprecision(2)
+          << getAreaMaster();
+      MOFEM_LOG("ATOM_TEST", Sev::inform)
+          << "normal Master " << std::scientific << std::setprecision(2)
+          << getNormalMaster();
+      MOFEM_LOG("ATOM_TEST", Sev::inform)
+          << "coords at Gauss Pts Master " << std::scientific
+          << std::setprecision(2) << getCoordsAtGaussPtsMaster();
     } else {
-      mySplit << std::setprecision(3) << "coords Slave " << getCoordsSlave()
-              << std::endl;
-      mySplit << std::setprecision(3) << "area Slave " << getAreaSlave()
-              << std::endl;
-      mySplit << std::setprecision(3) << "normal Slave " << getNormalSlave()
-              << std::endl;
-      mySplit << std::setprecision(3) << "coords at Gauss Pts Slave "
-              << getCoordsAtGaussPtsSlave() << std::endl;
+      MOFEM_LOG("ATOM_TEST", Sev::inform)
+          << "coords Slave " << std::scientific << std::setprecision(2)
+          << getCoordsSlave();
+      MOFEM_LOG("ATOM_TEST", Sev::inform)
+          << "area Slave " << std::scientific << std::setprecision(2)
+          << getAreaSlave();
+      MOFEM_LOG("ATOM_TEST", Sev::inform)
+          << "normal Slave " << std::scientific << std::setprecision(2)
+          << getNormalSlave();
+      MOFEM_LOG("ATOM_TEST", Sev::inform)
+          << "coords at Gauss Pts Slave " << std::scientific
+          << std::setprecision(2) << getCoordsAtGaussPtsSlave();
     }
     MoFEMFunctionReturnHot(0);
   }
@@ -76,14 +84,14 @@ struct MyOp : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
     if (row_data.getFieldData().empty())
       MoFEMFunctionReturnHot(0);
 
-    mySplit << "NH1NH1" << std::endl;
-    mySplit << "row side: " << row_side << " row_type: " << row_type
-            << std::endl;
-    mySplit << row_data << std::endl;
-    mySplit << "NH1NH1" << std::endl;
-    mySplit << "col side: " << col_side << " col_type: " << col_type
-            << std::endl;
-    mySplit << col_data << std::endl;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << "NH1NH1";
+    MOFEM_LOG("ATOM_TEST", Sev::inform)
+        << "row side: " << row_side << " row_type: " << row_type;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << row_data;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << "NH1NH1";
+    MOFEM_LOG("ATOM_TEST", Sev::inform)
+        << "col side: " << col_side << " col_type: " << col_type;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << col_data;
 
     MoFEMFunctionReturnHot(0);
   }
@@ -91,10 +99,8 @@ struct MyOp : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
 
 struct CallingOp : public ForcesAndSourcesCore::UserDataOperator {
 
-  TeeStream &mySplit;
-  CallingOp(TeeStream &mySplit, const char type)
-      : ForcesAndSourcesCore::UserDataOperator("FIELD1", "FIELD1", type),
-        mySplit(mySplit) {}
+  CallingOp(const char type)
+      : ForcesAndSourcesCore::UserDataOperator("FIELD1", "FIELD1", type) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
@@ -103,9 +109,10 @@ struct CallingOp : public ForcesAndSourcesCore::UserDataOperator {
     if (data.getFieldData().empty())
       MoFEMFunctionReturnHot(0);
 
-    mySplit << "Calling Operator NH1" << std::endl;
-    mySplit << "side: " << side << " type: " << type << std::endl;
-    mySplit << data << std::endl;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << "Calling Operator NH1";
+    MOFEM_LOG("ATOM_TEST", Sev::inform)
+        << "side: " << side << " type: " << type;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << data;
 
     MoFEMFunctionReturnHot(0);
   }
@@ -119,14 +126,14 @@ struct CallingOp : public ForcesAndSourcesCore::UserDataOperator {
     if (row_data.getFieldData().empty())
       MoFEMFunctionReturnHot(0);
 
-    mySplit << "Calling Operator NH1NH1" << std::endl;
-    mySplit << "row side: " << row_side << " row_type: " << row_type
-            << std::endl;
-    mySplit << row_data << std::endl;
-    mySplit << "NH1NH1" << std::endl;
-    mySplit << "col side: " << col_side << " col_type: " << col_type
-            << std::endl;
-    mySplit << col_data << std::endl;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << "Calling Operator NH1NH1";
+    MOFEM_LOG("ATOM_TEST", Sev::inform)
+        << "row side: " << row_side << " row_type: " << row_type;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << row_data;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << "NH1NH1";
+    MOFEM_LOG("ATOM_TEST", Sev::inform)
+        << "col side: " << col_side << " col_type: " << col_type;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << col_data;
 
     MoFEMFunctionReturnHot(0);
   }
@@ -135,11 +142,9 @@ struct CallingOp : public ForcesAndSourcesCore::UserDataOperator {
 struct MyOp2
     : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
 
-  TeeStream &mySplit;
-  MyOp2(TeeStream &my_split, const char type, const char face_type)
+  MyOp2(const char type, const char face_type)
       : ContactPrismElementForcesAndSourcesCore::UserDataOperator(
-            "FIELD1", "FIELD2", type, face_type),
-        mySplit(my_split) {}
+            "FIELD1", "FIELD2", type, face_type) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
@@ -148,9 +153,10 @@ struct MyOp2
     if (type != MBENTITYSET)
       MoFEMFunctionReturnHot(0);
 
-    mySplit << "NPFIELD" << std::endl;
-    mySplit << "side: " << side << " type: " << type << std::endl;
-    mySplit << data << std::endl;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << "NPFIELD";
+    MOFEM_LOG("ATOM_TEST", Sev::inform)
+        << "side: " << side << " type: " << type;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << data;
     MoFEMFunctionReturnHot(0);
   }
 
@@ -165,13 +171,13 @@ struct MyOp2
     if (col_type != MBENTITYSET)
       MoFEMFunctionReturnHot(0);
 
-    mySplit << "NOFILEDH1" << std::endl;
-    mySplit << "row side: " << row_side << " row_type: " << row_type
-            << std::endl;
-    mySplit << row_data << std::endl;
-    mySplit << "col side: " << col_side << " col_type: " << col_type
-            << std::endl;
-    mySplit << col_data << std::endl;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << "NOFILEDH1";
+    MOFEM_LOG("ATOM_TEST", Sev::inform)
+        << "row side: " << row_side << " row_type: " << row_type;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << row_data;
+    MOFEM_LOG("ATOM_TEST", Sev::inform)
+        << "col side: " << col_side << " col_type: " << col_type;
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << col_data;
 
     MoFEMFunctionReturnHot(0);
   }
@@ -313,8 +319,6 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.modify_finite_element_add_field_col("TEST_FE2", "FIELD2");
     CHKERR m_field.modify_finite_element_add_field_data("TEST_FE2", "FIELD1");
     CHKERR m_field.modify_finite_element_add_field_data("TEST_FE2", "FIELD2");
-    CHKERR m_field.modify_finite_element_add_field_data("TEST_FE2",
-                                                        "MESH_NODE_POSITIONS");
 
     // Problem
     CHKERR m_field.add_problem("TEST_PROBLEM");
@@ -387,14 +391,30 @@ int main(int argc, char *argv[]) {
     // what are ghost nodes, see Petsc Manual
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
-    std::ofstream ofs;
-    if (is_hdiv)
-      ofs.open("forces_and_sources_testing_contact_prism_element_HDIV.txt");
-    else
-      ofs.open("forces_and_sources_testing_contact_prism_element.txt");
+    auto add_atop_logging = [is_hdiv]() {
+      auto get_log_file_name = [is_hdiv]() {
+        if (is_hdiv)
+          return "forces_and_sources_testing_contact_prism_element_HDIV.txt";
+        else
+          return "forces_and_sources_testing_contact_prism_element.txt";
+      };
 
-    TeeDevice my_tee(std::cout, ofs);
-    TeeStream my_split(my_tee);
+      auto core_log = logging::core::get();
+      core_log->add_sink(
+          LogManager::createSink(LogManager::getStrmSelf(), "ATOM_TEST"));
+      LogManager::setLog("ATOM_TEST");
+      MOFEM_LOG_TAG("ATOM_TEST", "atom test");
+
+      auto backend = boost::make_shared<sinks::text_ostream_backend>();
+      backend->add_stream(
+          boost::make_shared<std::ofstream>(get_log_file_name()));
+      auto sink = boost::make_shared<LogManager::SinkType>(backend);
+      sink->set_filter((expr::has_attr(MoFEM::LogKeywords::channel) &&
+                        MoFEM::LogKeywords::channel == "ATOM_TEST"));
+      core_log->add_sink(sink);
+    };
+
+    add_atop_logging();
 
     using UMDataOp = ForcesAndSourcesCore::UserDataOperator;
     using ContactDataOp =
@@ -402,35 +422,35 @@ int main(int argc, char *argv[]) {
 
     ContactPrismElementForcesAndSourcesCore fe1(m_field);
     fe1.getOpPtrVector().push_back(
-        new MyOp(my_split, UMDataOp::OPROW, ContactDataOp::FACEMASTER));
+        new MyOp(UMDataOp::OPROW, ContactDataOp::FACEMASTER));
     fe1.getOpPtrVector().push_back(
-        new MyOp(my_split, UMDataOp::OPROW, ContactDataOp::FACESLAVE));
-    fe1.getOpPtrVector().push_back(new MyOp(my_split, UMDataOp::OPROWCOL,
-                                            ContactDataOp::FACEMASTERMASTER));
+        new MyOp(UMDataOp::OPROW, ContactDataOp::FACESLAVE));
     fe1.getOpPtrVector().push_back(
-        new MyOp(my_split, UMDataOp::OPROWCOL, ContactDataOp::FACEMASTERSLAVE));
+        new MyOp(UMDataOp::OPROWCOL, ContactDataOp::FACEMASTERMASTER));
     fe1.getOpPtrVector().push_back(
-        new MyOp(my_split, UMDataOp::OPROWCOL, ContactDataOp::FACESLAVEMASTER));
+        new MyOp(UMDataOp::OPROWCOL, ContactDataOp::FACEMASTERSLAVE));
     fe1.getOpPtrVector().push_back(
-        new MyOp(my_split, UMDataOp::OPROWCOL, ContactDataOp::FACESLAVESLAVE));
-    fe1.getOpPtrVector().push_back(new CallingOp(my_split, UMDataOp::OPCOL));
-    fe1.getOpPtrVector().push_back(new CallingOp(my_split, UMDataOp::OPROW));
-    fe1.getOpPtrVector().push_back(new CallingOp(my_split, UMDataOp::OPROWCOL));
+        new MyOp(UMDataOp::OPROWCOL, ContactDataOp::FACESLAVEMASTER));
+    fe1.getOpPtrVector().push_back(
+        new MyOp(UMDataOp::OPROWCOL, ContactDataOp::FACESLAVESLAVE));
+    fe1.getOpPtrVector().push_back(new CallingOp(UMDataOp::OPCOL));
+    fe1.getOpPtrVector().push_back(new CallingOp(UMDataOp::OPROW));
+    fe1.getOpPtrVector().push_back(new CallingOp(UMDataOp::OPROWCOL));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE1", fe1);
 
     ContactPrismElementForcesAndSourcesCore fe2(m_field);
     fe2.getOpPtrVector().push_back(
-        new MyOp2(my_split, UMDataOp::OPCOL, ContactDataOp::FACEMASTER));
+        new MyOp2(UMDataOp::OPCOL, ContactDataOp::FACEMASTER));
     fe2.getOpPtrVector().push_back(
-        new MyOp2(my_split, UMDataOp::OPCOL, ContactDataOp::FACESLAVE));
-    fe2.getOpPtrVector().push_back(new MyOp2(my_split, UMDataOp::OPROWCOL,
-                                             ContactDataOp::FACEMASTERMASTER));
-    fe2.getOpPtrVector().push_back(new MyOp2(my_split, UMDataOp::OPROWCOL,
-                                             ContactDataOp::FACEMASTERSLAVE));
-    fe2.getOpPtrVector().push_back(new MyOp2(my_split, UMDataOp::OPROWCOL,
-                                             ContactDataOp::FACESLAVEMASTER));
+        new MyOp2(UMDataOp::OPCOL, ContactDataOp::FACESLAVE));
     fe2.getOpPtrVector().push_back(
-        new MyOp2(my_split, UMDataOp::OPROWCOL, ContactDataOp::FACESLAVESLAVE));
+        new MyOp2(UMDataOp::OPROWCOL, ContactDataOp::FACEMASTERMASTER));
+    fe2.getOpPtrVector().push_back(
+        new MyOp2(UMDataOp::OPROWCOL, ContactDataOp::FACEMASTERSLAVE));
+    fe2.getOpPtrVector().push_back(
+        new MyOp2(UMDataOp::OPROWCOL, ContactDataOp::FACESLAVEMASTER));
+    fe2.getOpPtrVector().push_back(
+        new MyOp2(UMDataOp::OPROWCOL, ContactDataOp::FACESLAVESLAVE));
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE2", fe2);
   }
   CATCH_ERRORS;
