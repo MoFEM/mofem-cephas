@@ -709,9 +709,23 @@ add_test(forces_and_sources_testing_contact_prism_element_test
   -my_file templar.h5m
   -log_no_color
 )
-add_test(forces_and_sources_testing_contact_prism_element_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_contact_prism_element.txt
+add_test(forces_and_sources_testing_contact_prism_element_test_compare 
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_fles/forces_and_sources_testing_contact_prism_element.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_contact_prism_element.txt
+)
+
+add_test(forces_and_sources_testing_contact_prism_element_test_hdiv
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_contact_prism_element
+  -my_file templar.h5m
+  -is_hdiv
+  -log_no_color
+)
+add_test(forces_and_sources_testing_contact_prism_element_test_hdiv_compare 
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_contact_prism_element_HDIV.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_contact_prism_element_HDIV.txt
 )
 
 # Checking direvatives
