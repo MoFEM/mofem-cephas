@@ -267,13 +267,8 @@ protected:
   MatrixDouble gaussPtsSlave;  ///< matrix storing slave Gauss points local
                                ///< coordinates and weights
 
-  VectorDouble nOrmalSlave, tangentSlaveOne, tangentSlaveTwo;
-  VectorDouble nOrmalMaster, tangentMasterOne, tangentMasterTwo;
-
-  MatrixDouble normalsAtGaussPtsSlave;
-  MatrixDouble tangentOneAtGaussPtsSlave;
-  MatrixDouble tangentTwoAtGaussPtsSlave;
-  
+  VectorDouble tangentSlaveOne, tangentSlaveTwo;
+  VectorDouble tangentMasterOne, tangentMasterTwo;
   OpSetContravariantPiolaTransformOnFace opContravariantTransform;
   
   /**

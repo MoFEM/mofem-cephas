@@ -313,6 +313,8 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.modify_finite_element_add_field_col("TEST_FE2", "FIELD2");
     CHKERR m_field.modify_finite_element_add_field_data("TEST_FE2", "FIELD1");
     CHKERR m_field.modify_finite_element_add_field_data("TEST_FE2", "FIELD2");
+    CHKERR m_field.modify_finite_element_add_field_data("TEST_FE2",
+                                                        "MESH_NODE_POSITIONS");
 
     // Problem
     CHKERR m_field.add_problem("TEST_PROBLEM");
@@ -334,14 +336,12 @@ int main(int argc, char *argv[]) {
                                              "MESH_NODE_POSITIONS");
     // add entities to finite element
     CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBPRISM,
-                                                      "TEST_FE1", 10);
+                                                      "TEST_FE1");
     CHKERR m_field.add_ents_to_finite_element_by_type(root_set, MBPRISM,
-                                                      "TEST_FE2", 10);
+                                                      "TEST_FE2");
 
     // set app. order
-    // see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes
-    // (Mark Ainsworth & Joe Coyle)
-    int order = 3;
+    constexpr int order = 3;
 
     if (is_hdiv) {
       CHKERR m_field.set_field_order(root_set, MBTET, "FIELD1", 0);
@@ -359,13 +359,14 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.set_field_order(root_set, MBVERTEX, "MESH_NODE_POSITIONS",
                                    1);
 
-    /****/
-    // build database
     // build field
     CHKERR m_field.build_fields();
-    // set FIELD1 from positions of 10 node tets
-    Projection10NodeCoordsOnField ent_method_field1(m_field, "FIELD1");
-    CHKERR m_field.loop_dofs("FIELD1", ent_method_field1);
+
+    if (!is_hdiv) {
+      // set FIELD1 from positions of 10 node tets
+      Projection10NodeCoordsOnField ent_method_field1(m_field, "FIELD1");
+      CHKERR m_field.loop_dofs("FIELD1", ent_method_field1);
+    }
     Projection10NodeCoordsOnField ent_method_mesh_positions(
         m_field, "MESH_NODE_POSITIONS");
     CHKERR m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method_mesh_positions);
@@ -379,7 +380,6 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.getInterface(prb_mng_ptr);
     CHKERR prb_mng_ptr->buildProblem("TEST_PROBLEM", false);
 
-    /****/
     // mesh partitioning
     // partition
     CHKERR prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM");
