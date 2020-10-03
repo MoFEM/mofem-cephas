@@ -115,10 +115,10 @@ if(DOXYGEN_FOUND)
   find_program(RSYNC NAMES rsync)
   if(RSYNC)
 
-    # This work that script publish_doc.sh is created first in source
+    # This work that script publish_doc_likask.sh is created first in source
     # directory, then copied to binary direcyory with set premissions to execute.
-    # Script publish_doc.sh, run sftp, which itself run its on script
-    # from PROJECT_SOURCE_DIR/publish_doc
+    # Script publish_doc_likask.sh, run sftp, which itself run its on script
+    # from PROJECT_SOURCE_DIR/publish_doc_likask
 
     configure_file(
       ${PROJECT_SOURCE_DIR}/scripts/publish_doc_likask.sh.in
