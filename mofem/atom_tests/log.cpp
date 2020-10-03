@@ -106,6 +106,33 @@ int main(int argc, char *argv[]) {
       MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
     }
 
+    // Create channel
+    auto core_log = logging::core::get();
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSelf(), "ATOM_TEST"));
+    LogManager::setLog("ATOM_TEST");
+
+    // add sink to channel
+    core_log->add_sink(LogManager::createSink(
+        boost::make_shared<std::ofstream>("log0.log"), "ATOM_TEST"));
+
+    // add sink to channel other way
+    logging::add_file_log(keywords::file_name = "log1.log",
+                          keywords::channel = "ATOM_TEST");
+
+    // add skink to channel third way
+    auto backend = boost::make_shared<sinks::text_ostream_backend>();
+    backend->add_stream(boost::make_shared<std::ofstream>("log2.log"));
+    auto sink = boost::make_shared<LogManager::SinkType>(backend);
+    sink->set_filter((expr::has_attr(MoFEM::LogKeywords::channel) &&
+                      MoFEM::LogKeywords::channel == "ATOM_TEST"));
+    core_log->add_sink(sink);
+
+
+    MOFEM_LOG_TAG("ATOM_TEST", "atom test");
+    MOFEM_LOG("ATOM_TEST", Sev::inform) << "Test atom test channel";
+
+
     // SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY, "Trigger error");
   }
   CATCH_ERRORS;

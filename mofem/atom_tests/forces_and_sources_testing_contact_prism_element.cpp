@@ -405,13 +405,10 @@ int main(int argc, char *argv[]) {
       LogManager::setLog("ATOM_TEST");
       MOFEM_LOG_TAG("ATOM_TEST", "atom test");
 
-      auto backend = boost::make_shared<sinks::text_ostream_backend>();
-      backend->add_stream(
-          boost::make_shared<std::ofstream>(get_log_file_name()));
-      auto sink = boost::make_shared<LogManager::SinkType>(backend);
-      sink->set_filter((expr::has_attr(MoFEM::LogKeywords::channel) &&
-                        MoFEM::LogKeywords::channel == "ATOM_TEST"));
-      core_log->add_sink(sink);
+      // Add log to file
+      logging::add_file_log(keywords::file_name = get_log_file_name(),
+                            keywords::channel = "ATOM_TEST");
+
     };
 
     add_atop_logging();
