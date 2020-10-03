@@ -216,6 +216,31 @@ int main(int argc, char *argv[]) {
     option = "";
     CHKERR moab.load_file(mesh_file_name, 0, option);
 
+    // Create channel "ATOM_TEST" and add sink to file for that channel
+    auto add_atom_logging = [is_hdiv]() {
+      MoFEMFunctionBegin;
+      auto get_log_file_name = [is_hdiv]() {
+        if (is_hdiv)
+          return "forces_and_sources_testing_contact_prism_element_HDIV.txt";
+        else
+          return "forces_and_sources_testing_contact_prism_element.txt";
+      };
+
+      auto core_log = logging::core::get();
+      core_log->add_sink(
+          LogManager::createSink(LogManager::getStrmSelf(), "ATOM_TEST"));
+      LogManager::setLog("ATOM_TEST");
+      MOFEM_LOG_TAG("ATOM_TEST", "atom test");
+
+      // Add log to file
+      logging::add_file_log(keywords::file_name = get_log_file_name(),
+                            keywords::filter =
+                                MoFEM::LogKeywords::channel == "ATOM_TEST");
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR add_atom_logging();
+
     // Create MoFEM (Joseph) database
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
@@ -390,28 +415,6 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM");
     // what are ghost nodes, see Petsc Manual
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
-
-    auto add_atop_logging = [is_hdiv]() {
-      auto get_log_file_name = [is_hdiv]() {
-        if (is_hdiv)
-          return "forces_and_sources_testing_contact_prism_element_HDIV.txt";
-        else
-          return "forces_and_sources_testing_contact_prism_element.txt";
-      };
-
-      auto core_log = logging::core::get();
-      core_log->add_sink(
-          LogManager::createSink(LogManager::getStrmSelf(), "ATOM_TEST"));
-      LogManager::setLog("ATOM_TEST");
-      MOFEM_LOG_TAG("ATOM_TEST", "atom test");
-
-      // Add log to file
-      logging::add_file_log(keywords::file_name = get_log_file_name(),
-                            keywords::channel = "ATOM_TEST");
-
-    };
-
-    add_atop_logging();
 
     using UMDataOp = ForcesAndSourcesCore::UserDataOperator;
     using ContactDataOp =

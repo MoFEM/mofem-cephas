@@ -118,7 +118,8 @@ int main(int argc, char *argv[]) {
 
     // add sink to channel other way
     logging::add_file_log(keywords::file_name = "log1.log",
-                          keywords::channel = "ATOM_TEST");
+                          keywords::filter =
+                              MoFEM::LogKeywords::channel == "ATOM_TEST");
 
     // add skink to channel third way
     auto backend = boost::make_shared<sinks::text_ostream_backend>();
