@@ -711,7 +711,7 @@ add_test(forces_and_sources_testing_contact_prism_element_test
 )
 add_test(forces_and_sources_testing_contact_prism_element_test_compare 
   ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_fles/forces_and_sources_testing_contact_prism_element.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_contact_prism_element.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_contact_prism_element.txt
 )
 
