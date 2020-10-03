@@ -386,6 +386,10 @@ struct OpCalculateVectorFieldValuesDot
 
     dotVector.resize(nb_dofs, false);
     const double *array;
+
+    if ((getFEMethod()->data_ctx & PetscData::CtxSetX_T).any())
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Dot vector not set");
+
     CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
     for (int i = 0; i != local_indices.size(); ++i)
       if (local_indices[i] != -1)
