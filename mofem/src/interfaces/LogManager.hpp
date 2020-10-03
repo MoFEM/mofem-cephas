@@ -270,7 +270,7 @@ PetscErrorCode PetscVFPrintfDefault(FILE *fd, const char *format, va_list Argp);
  * MOFEM_LOG_CHANNEL("WORLD");
  * \endcode
  *
- * Are three default type of channels, SELF, ech processor prints to the
+ * Are three default type of channels, SELF, each processor prints to the
  * standard output, WORLD, only processor one prints, and SYNC all processors
  * prints synchronously.
  *
