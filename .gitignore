@@ -41,3 +41,4 @@ doxygen_warnlogfile
 .vscode
 
 spack-build*
+.DS_Store
