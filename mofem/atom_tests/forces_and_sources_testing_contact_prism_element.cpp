@@ -47,29 +47,29 @@ struct MyOp : public ContactPrismElementForcesAndSourcesCore::UserDataOperator {
 
     if (faceType == FACEMASTER) {
       MOFEM_LOG("ATOM_TEST", Sev::inform)
-          << "coords Master " << std::scientific << std::setprecision(2)
+          << "coords Master " << std::fixed << std::setprecision(2)
           << getCoordsMaster();
       MOFEM_LOG("ATOM_TEST", Sev::inform)
-          << "area Master " << std::scientific << std::setprecision(2)
+          << "area Master " << std::fixed << std::setprecision(2)
           << getAreaMaster();
       MOFEM_LOG("ATOM_TEST", Sev::inform)
-          << "normal Master " << std::scientific << std::setprecision(2)
+          << "normal Master " << std::fixed << std::setprecision(2)
           << getNormalMaster();
       MOFEM_LOG("ATOM_TEST", Sev::inform)
-          << "coords at Gauss Pts Master " << std::scientific
+          << "coords at Gauss Pts Master " << std::fixed
           << std::setprecision(2) << getCoordsAtGaussPtsMaster();
     } else {
       MOFEM_LOG("ATOM_TEST", Sev::inform)
-          << "coords Slave " << std::scientific << std::setprecision(2)
+          << "coords Slave " << std::fixed << std::setprecision(2)
           << getCoordsSlave();
       MOFEM_LOG("ATOM_TEST", Sev::inform)
-          << "area Slave " << std::scientific << std::setprecision(2)
+          << "area Slave " << std::fixed << std::setprecision(2)
           << getAreaSlave();
       MOFEM_LOG("ATOM_TEST", Sev::inform)
-          << "normal Slave " << std::scientific << std::setprecision(2)
+          << "normal Slave " << std::fixed << std::setprecision(2)
           << getNormalSlave();
       MOFEM_LOG("ATOM_TEST", Sev::inform)
-          << "coords at Gauss Pts Slave " << std::scientific
+          << "coords at Gauss Pts Slave " << std::fixed
           << std::setprecision(2) << getCoordsAtGaussPtsSlave();
     }
     MoFEMFunctionReturnHot(0);
@@ -196,16 +196,17 @@ int main(int argc, char *argv[]) {
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
     PetscBool flg = PETSC_TRUE;
-    PetscInt is_hdiv = 0;
+    PetscBool is_hdiv = PETSC_FALSE;
     char mesh_file_name[255];
 #if PETSC_VERSION_GE(3, 6, 4)
     CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
                                  255, &flg);
-    CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-is_hdiv", &is_hdiv, PETSC_NULL);
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_hdiv", &is_hdiv,
+                               PETSC_NULL);
 #else
     CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
                                  mesh_file_name, 255, &flg);
-    CHKERR PetscOptionsGetInt(PETSC_NULL, PETSC_NULL, "-is_hdiv", &is_hdiv,
+    CHKERR PetscOptionsGetBool(PETSC_NULL, PETSC_NULL, "-is_hdiv", &is_hdiv,
                               PETSC_NULL);
 #endif
 

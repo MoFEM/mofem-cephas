@@ -719,7 +719,7 @@ add_test(forces_and_sources_testing_contact_prism_element_test_hdiv
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_contact_prism_element
   -my_file templar.h5m
-  -is_hdiv
+  -is_hdiv 1
   -log_no_color
 )
 add_test(forces_and_sources_testing_contact_prism_element_test_hdiv_compare 
