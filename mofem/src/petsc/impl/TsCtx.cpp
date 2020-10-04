@@ -451,7 +451,7 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
 }
 
 PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
-                               PetscReal v, PetscReal a, Mat A, Mat B,
+                               PetscReal a, PetscReal aa, Mat A, Mat B,
                                void *ctx) {
   MoFEMFunctionBegin;
 
@@ -486,6 +486,7 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.ts_B = B;
     fe.ts_t = t;
     fe.ts_a = a;
+    fe.ts_aa = aa;
     fe.ts_step = step;
 
     fe.ts_ctx = TSMethod::CTX_TSSETIJACOBIAN;
