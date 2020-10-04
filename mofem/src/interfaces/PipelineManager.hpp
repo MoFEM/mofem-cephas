@@ -180,6 +180,15 @@ struct PipelineManager : public UnknownInterface {
    */
   SmartPetscObj<TS> createTS(SmartPetscObj<DM> dm = nullptr);
 
+  /**
+   * @brief Create TS (time) solver for scond orer equation in time
+   * @ingroup mofem_basic_interface
+   *
+   * @param dm
+   * @return SmartPetscObj<TS>
+   */
+  SmartPetscObj<TS> createTS2(SmartPetscObj<DM> dm = nullptr);
+
 private:
   MoFEM::Core &cOre;
 
