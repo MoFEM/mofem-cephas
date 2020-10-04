@@ -1,5 +1,6 @@
 /** \file BiLinearFormsIntegrators.hpp
   * \brief Bilinear forms integrators
+  * \ingroup mofem_form
 
 */
 

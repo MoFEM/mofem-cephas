@@ -1,5 +1,6 @@
 /** \file FormsIntegrators.hpp
   * \brief Forms inteegrators
+  * \ingroup mofem_form
 
 */
 
@@ -28,6 +29,7 @@ struct EssentialBcStorage;
 
 /**
  * @brief Set indices on entities on finite element
+ * @ingroup mofem_forms
  *
  * If indices is marked, set its value to -1. DOF which such indice is not
  * assembled into system.
@@ -54,6 +56,7 @@ struct OpUnSetBc : public ForcesAndSourcesCore::UserDataOperator {
 
 /**
  * @brief Set values to vector in operator
+ * @ingroup mofem_forms
  *
  * @param V
  * @param data
@@ -85,10 +88,37 @@ MoFEMErrorCode MatSetValues<EssentialBcStorage>(
 
 //! [Storage and set boundary conditions]
 
+/**
+ * @brief Form integrator assembly tpes
+ * @ingroup mofem_forms
+ * 
+ */
 enum AssemblyType { PETSC, USER_ASSEMBLE, LAST_ASSEMBLE };
+
+/**
+ * @brief Fom integrayors inegrator types
+ * @ingroup mofem_forms
+ * 
+ */
 enum IntegrationType { GAUSS, USER_INTEGRATION, LAST_INTEGRATION };
-typedef boost::function<double(const double, const double, const double)>
-    ScalarFun;
+
+/**
+ * @brief Sacalr function type
+ * @ingroup mofem_forms
+ * 
+ */
+using ScalarFun =
+    boost::function<double(const double, const double, const double)>;
+
+/**
+ * @brief Vector function type
+ * @ingroup mofem_forms
+ * 
+ * @tparam DIM dimension of the return
+ */
+template <int DIM>
+using VectorFun = boost::function<FTensor::Tensor1<double, DIM>(
+    const double, const double, const double)>;
 
 template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
   using OpType = typename EleOp::OpType;

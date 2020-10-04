@@ -1,5 +1,6 @@
 /** \file LinearFormsIntegrators.hpp
   * \brief Linear forms inteegrators
+  * \ingroup mofem_form
 
 */
 
@@ -32,6 +33,16 @@ struct OpSourceImpl<1, 1, GAUSS, OpBase> : public OpBase {
 
 protected:
   ScalarFun sourceFun;
+  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
+};
+
+template <int FIELD_DIM, typename OpBase>
+struct OpSourceImpl<1, FIELD_DIM, GAUSS, OpBase> : public OpBase {
+  OpSourceImpl(const std::string field_name, VectorFun<FIELD_DIM> source_fun)
+      : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun) {}
+
+protected:
+  VectorFun<FIELD_DIM> sourceFun;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
 
@@ -201,6 +212,41 @@ MoFEMErrorCode OpSourceImpl<1, 1, GAUSS, OpBase>::iNtegrate(
     for (; rr != OpBase::nbRows; ++rr) {
       OpBase::locF[rr] += alpha * t_row_base;
       ++t_row_base;
+    }
+    for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+      ++t_row_base;
+    ++t_coords;
+    ++t_w; // move to another integration weight
+  }
+  MoFEMFunctionReturn(0);
+}
+
+template <int FIELD_DIM, typename OpBase>
+MoFEMErrorCode OpSourceImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
+    DataForcesAndSourcesCore::EntData &row_data) {
+  FTensor::Index<'i', FIELD_DIM> i;
+  MoFEMFunctionBegin;
+  // get element volume
+  const double vol = OpBase::getMeasure();
+  // get integration weights
+  auto t_w = OpBase::getFTensor0IntegrationWeight();
+  // get base function gradient on rows
+  auto t_row_base = row_data.getFTensor0N();
+  // get coordinate at integration points
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+  // loop over integration points
+  for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
+    // source file
+    auto t_source = sourceFun(t_coords(0), t_coords(1), t_coords(2));
+    // take into account Jacobean
+    const double alpha = t_w * vol;
+    // loop over rows base functions
+    auto t_nf = getFTensor1FromArray<FIELD_DIM, FIELD_DIM>(OpBase::locF);
+    int rr = 0;
+    for (; rr != OpBase::nbRows; ++rr) {
+      t_nf(i) += alpha * t_row_base * t_source(i);
+      ++t_row_base;
+      ++t_nf;
     }
     for (; rr < OpBase::nbRowBaseFunctions; ++rr)
       ++t_row_base;
