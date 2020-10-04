@@ -74,13 +74,13 @@ protected:
 
 template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S, IntegrationType I,
           typename OpBase>
-struct OpGradTimesSymmetricTensorImpl {};
+struct OpGradTimesSymTensorImpl {};
 
 template <int SPACE_DIM, int S, typename OpBase>
-struct OpGradTimesSymmetricTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
+struct OpGradTimesSymTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
     : public OpBase {
 
-  OpGradTimesSymmetricTensorImpl(const std::string field_name,
+  OpGradTimesSymTensorImpl(const std::string field_name,
                                  boost::shared_ptr<MatrixDouble> &mat_vals)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
 
@@ -169,12 +169,12 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam SPACE_DIM
    */
   template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 1>
-  struct OpGradTimesSymmetricTensor
-      : public OpGradTimesSymmetricTensorImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S,
+  struct OpGradTimesSymTensor
+      : public OpGradTimesSymTensorImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S,
                                               I, OpBase> {
-    using OpGradTimesSymmetricTensorImpl<
+    using OpGradTimesSymTensorImpl<
         BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
-        OpBase>::OpGradTimesSymmetricTensorImpl;
+        OpBase>::OpGradTimesSymTensorImpl;
   };
 
 };
@@ -279,7 +279,7 @@ OpGradTimesTensorImpl<1, 1, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
 
 template <int SPACE_DIM, int S, typename OpBase>
 MoFEMErrorCode
-OpGradTimesSymmetricTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::
+OpGradTimesSymTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::
     iNtegrate(DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
   // get element volume
