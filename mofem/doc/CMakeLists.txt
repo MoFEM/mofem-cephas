@@ -21,14 +21,14 @@ if(DOXYGEN_FOUND)
     ${PROJECT_SOURCE_DIR}/Doxyfile.in
     ${PROJECT_BINARY_DIR}/Doxyfile
   )
-  set(DOXYGEN_GENERATE_HEADER
-    ${DOXYGEN_EXECUTABLE} -w html
-    ${PROJECT_SOURCE_DIR}/doc/header.html
-    ${PROJECT_SOURCE_DIR}/doc/footer.html
-    ${PROJECT_SOURCE_DIR}/doc/style.html
-    ${PROJECT_BINARY_DIR}/Doxyfile
-  )
-
+  
+  # set(DOXYGEN_GENERATE_HEADER
+  #   ${DOXYGEN_EXECUTABLE} -w html
+  #   ${PROJECT_SOURCE_DIR}/doc/header.html
+  #   ${PROJECT_SOURCE_DIR}/doc/footer.html
+  #   ${PROJECT_SOURCE_DIR}/doc/style.html
+  #   ${PROJECT_BINARY_DIR}/Doxyfile
+  # )
   # add_custom_target(doxygen_generating_header
   #   ${DOXYGEN_GENERATE_HEADER}
   #   COMMAND cat ${PROJECT_SOURCE_DIR}/doc/google_analytics.html | tee -a ${PROJECT_SOURCE_DIR}/doc/header.html
