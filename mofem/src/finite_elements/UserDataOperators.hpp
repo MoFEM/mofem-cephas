@@ -32,7 +32,7 @@ namespace MoFEM {
 
 /** \brief Scalar field values at integration points
  *
- */ 
+ */
 template <class T, class A>
 struct OpCalculateScalarFieldValues_General
     : public ForcesAndSourcesCore::UserDataOperator {
@@ -44,8 +44,7 @@ struct OpCalculateScalarFieldValues_General
       const std::string field_name,
       boost::shared_ptr<ublas::vector<T, A>> data_ptr,
       const EntityType zero_type = MBVERTEX)
-      : ForcesAndSourcesCore::UserDataOperator(
-            field_name, OPROW),
+      : ForcesAndSourcesCore::UserDataOperator(field_name, OPROW),
         dataPtr(data_ptr), zeroType(zero_type) {
     if (!dataPtr)
       THROW_MESSAGE("Pointer is not set");
@@ -345,26 +344,24 @@ struct OpCalculateVectorFieldValues
       DoubleAllocator>::OpCalculateVectorFieldValues_General;
 };
 
-/** \brief Get time direvatives of values at integration pts for tensor filed
- * rank 1, i.e. vector field
+/** \brief Approximate field valuse for given petsc vector
+ *
+ * \note Look at PetscData to see what vectors could be extarcted with that user
+ * data opetaor.
  *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
-template <int Tensor_Dim>
-struct OpCalculateVectorFieldValuesDot
+template <int Tensor_Dim, PetscData::DataContext CTX>
+struct OpCalculateVectorFieldValuesFromPetscVecImpl
     : public ForcesAndSourcesCore::UserDataOperator {
 
   boost::shared_ptr<MatrixDouble> dataPtr;
   const EntityHandle zeroAtType;
   VectorDouble dotVector;
 
-  template <int Dim> inline auto getFTensorDotData() {
-    static_assert(Dim || !Dim, "not implemented");
-  }
-
-  OpCalculateVectorFieldValuesDot(const std::string field_name,
-                                  boost::shared_ptr<MatrixDouble> data_ptr,
-                                  const EntityType zero_at_type = MBVERTEX)
+  OpCalculateVectorFieldValuesFromPetscVecImpl(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+      const EntityType zero_at_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroAtType(zero_at_type) {
@@ -384,19 +381,54 @@ struct OpCalculateVectorFieldValuesDot
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
 
-    dotVector.resize(nb_dofs, false);
     const double *array;
 
-    if ((getFEMethod()->data_ctx & PetscData::CtxSetX_T).any())
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Dot vector not set");
+    auto get_array = [&](const auto ctx, auto vec) {
+      MoFEMFunctionBegin;
+      if ((getFEMethod()->data_ctx & ctx).any())
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set");
+      CHKERR VecGetArrayRead(vec, &array);
+      MoFEMFunctionReturn(0);
+    };
 
-    CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
+    auto restore_array = [&](auto vec) {
+      return VecRestoreArrayRead(vec, &array);
+    };
+
+    switch (CTX) {
+    case PetscData::CTX_SET_X:
+      CHKERR get_array(PetscData::CtxSetX, getFEMethod()->ts_u);
+      break;
+    case PetscData::CTX_SET_X_T:
+      CHKERR get_array(PetscData::CtxSetX_T, getFEMethod()->ts_u_t);
+      break;
+    case PetscData::CTX_SET_X_TT:
+      CHKERR get_array(PetscData::CtxSetX_TT, getFEMethod()->ts_u_tt);
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "That case is not ompleementedd");
+    }
+
+    dotVector.resize(local_indices.size());
     for (int i = 0; i != local_indices.size(); ++i)
       if (local_indices[i] != -1)
         dotVector[i] = array[local_indices[i]];
       else
         dotVector[i] = 0;
-    CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
+
+    switch (CTX) {
+    case PetscData::CTX_SET_X:
+      CHKERR restore_array(getFEMethod()->ts_u);
+      break;
+    case PetscData::CTX_SET_X_T:
+      CHKERR restore_array(getFEMethod()->ts_u_t);
+      break;
+    case PetscData::CTX_SET_X_TT:
+      CHKERR restore_array(getFEMethod()->ts_u_tt);
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "That case is not ompleementedd");
+    }
 
     const int nb_gauss_pts = data.getN().size1();
     const int nb_base_functions = data.getN().size2();
@@ -413,7 +445,7 @@ struct OpCalculateVectorFieldValuesDot
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Data inconsistency");
     }
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-      auto field_data = getFTensorDotData<3>();
+      auto field_data = getFTensor1FromArray<Tensor_Dim, Tensor_Dim>(dotVector);
       int bb = 0;
       for (; bb != size; ++bb) {
         values_at_gauss_pts(I) += field_data(I) * base_function;
@@ -430,12 +462,25 @@ struct OpCalculateVectorFieldValuesDot
   }
 };
 
-template <>
-template <>
-inline auto OpCalculateVectorFieldValuesDot<3>::getFTensorDotData<3>() {
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-      &dotVector[0], &dotVector[1], &dotVector[2]);
-}
+/** \brief Get time direvatives of values at integration pts for tensor filed
+ * rank 1, i.e. vector field
+ *
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim>
+using OpCalculateVectorFieldValuesDot =
+    OpCalculateVectorFieldValuesFromPetscVecImpl<Tensor_Dim,
+                                                 PetscData::CTX_SET_X_T>;
+
+/** \brief Get second time direvatives of values at integration pts for tensor
+ * filed rank 1, i.e. vector field
+ *
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim>
+using OpCalculateVectorFieldValuesDotDot =
+    OpCalculateVectorFieldValuesFromPetscVecImpl<Tensor_Dim,
+                                                 PetscData::CTX_SET_X_TT>;                                                 
 
 /**@}*/
 
@@ -1158,10 +1203,11 @@ inline auto OpCalculateVectorFieldGradientDot<2, 2>::getFTensorDotData<2>() {
 /**@{*/
 
 /**
- * @brief Calculate \f$ \pmb\sigma_{ij} = \mathbf{D}_{ijkl} \pmb\varepsilon_{kl} \f$
+ * @brief Calculate \f$ \pmb\sigma_{ij} = \mathbf{D}_{ijkl} \pmb\varepsilon_{kl}
+ * \f$
  *
  * @tparam DIM
- * 
+ *
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int DIM_01, int DIM_23, int S = 0>
@@ -1178,7 +1224,7 @@ struct OpTensorTimesSymmetricTensor
       : UserOp(field_name, OPROW), inMat(in_mat), outMat(out_mat), dMat(d_mat) {
     // Only is run for vertices
     std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
-    if(!inMat)
+    if (!inMat)
       THROW_MESSAGE("Pointer for in mat is null");
     if (!outMat)
       THROW_MESSAGE("Pointer for out mat is null");
@@ -1201,20 +1247,19 @@ struct OpTensorTimesSymmetricTensor
     MoFEMFunctionReturn(0);
   }
 
-  private:
-    FTensor::Index<'i', DIM_01> i;
-    FTensor::Index<'j', DIM_01> j;
-    FTensor::Index<'k', DIM_23> k;
-    FTensor::Index<'l', DIM_23> l;
-  
-    boost::shared_ptr<MatrixDouble> inMat;
-    boost::shared_ptr<MatrixDouble> outMat;
-    boost::shared_ptr<MatrixDouble> dMat;
+private:
+  FTensor::Index<'i', DIM_01> i;
+  FTensor::Index<'j', DIM_01> j;
+  FTensor::Index<'k', DIM_23> k;
+  FTensor::Index<'l', DIM_23> l;
+
+  boost::shared_ptr<MatrixDouble> inMat;
+  boost::shared_ptr<MatrixDouble> outMat;
+  boost::shared_ptr<MatrixDouble> dMat;
 };
 
 template <int DIM>
-struct OpSymmetrizeTensor
-    : public ForcesAndSourcesCore::UserDataOperator {
+struct OpSymmetrizeTensor : public ForcesAndSourcesCore::UserDataOperator {
 
   using EntData = DataForcesAndSourcesCore::EntData;
   using UserOp = ForcesAndSourcesCore::UserDataOperator;
@@ -1245,11 +1290,11 @@ struct OpSymmetrizeTensor
     MoFEMFunctionReturn(0);
   }
 
-  private:
-    FTensor::Index<'i', DIM> i;
-    FTensor::Index<'j', DIM> j;
-    boost::shared_ptr<MatrixDouble> inMat;
-    boost::shared_ptr<MatrixDouble> outMat;
+private:
+  FTensor::Index<'i', DIM> i;
+  FTensor::Index<'j', DIM> j;
+  boost::shared_ptr<MatrixDouble> inMat;
+  boost::shared_ptr<MatrixDouble> outMat;
 };
 
 /**@}*/
@@ -1976,7 +2021,6 @@ struct OpSetInvJacH1ForFlatPrism
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 };
-
 
 /**@}*/
 
