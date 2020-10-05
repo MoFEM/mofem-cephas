@@ -1518,6 +1518,9 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
   Range adjacent_ents;
   CHKERR ptrFE->mField.getInterface<BitRefManager>()->getAdjacenciesAny(
       ent, side_dim, adjacent_ents);
+  Range adjacent_help = adjacent_ents.subset_by_type(MBTET);
+  adjacent_ents.clear();
+  adjacent_ents.merge(adjacent_help);
   typedef NumeredEntFiniteElement_multiIndex::index<
       Composite_Name_And_Ent_mi_tag>::type FEByComposite;
   FEByComposite &numered_fe =
