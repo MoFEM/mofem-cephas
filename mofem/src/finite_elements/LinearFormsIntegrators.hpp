@@ -243,7 +243,7 @@ MoFEMErrorCode OpSourceImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     // loop over rows base functions
     auto t_nf = getFTensor1FromArray<FIELD_DIM, FIELD_DIM>(OpBase::locF);
     int rr = 0;
-    for (; rr != OpBase::nbRows; ++rr) {
+    for (; rr != OpBase::nbRows / FIELD_DIM; ++rr) {
       t_nf(i) += alpha * t_row_base * t_source(i);
       ++t_row_base;
       ++t_nf;
