@@ -385,7 +385,7 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
 
     auto get_array = [&](const auto ctx, auto vec) {
       MoFEMFunctionBegin;
-      if ((getFEMethod()->data_ctx & ctx).any())
+      if ((getFEMethod()->data_ctx & ctx).none())
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Vector not set");
       CHKERR VecGetArrayRead(vec, &array);
       MoFEMFunctionReturn(0);
@@ -404,9 +404,10 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
       break;
     case PetscData::CTX_SET_X_TT:
       CHKERR get_array(PetscData::CtxSetX_TT, getFEMethod()->ts_u_tt);
+      break;
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-               "That case is not ompleementedd");
+               "That case is not implemented");
     }
 
     dotVector.resize(local_indices.size());
@@ -425,9 +426,10 @@ struct OpCalculateVectorFieldValuesFromPetscVecImpl
       break;
     case PetscData::CTX_SET_X_TT:
       CHKERR restore_array(getFEMethod()->ts_u_tt);
+      break;
     default:
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-               "That case is not ompleementedd");
+               "That case is not implemented");
     }
 
     const int nb_gauss_pts = data.getN().size1();
@@ -1293,6 +1295,37 @@ struct OpSymmetrizeTensor : public ForcesAndSourcesCore::UserDataOperator {
 private:
   FTensor::Index<'i', DIM> i;
   FTensor::Index<'j', DIM> j;
+  boost::shared_ptr<MatrixDouble> inMat;
+  boost::shared_ptr<MatrixDouble> outMat;
+};
+
+struct OpScaleMatrix : public ForcesAndSourcesCore::UserDataOperator {
+
+  using EntData = DataForcesAndSourcesCore::EntData;
+  using UserOp = ForcesAndSourcesCore::UserDataOperator;
+
+  OpScaleMatrix(const std::string field_name, const double scale,
+                boost::shared_ptr<MatrixDouble> in_mat,
+                boost::shared_ptr<MatrixDouble> out_mat)
+      : UserOp(field_name, OPROW), scale(scale), inMat(in_mat),
+        outMat(out_mat) {
+    // Only is run for vertices
+    std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
+    if (!inMat)
+      THROW_MESSAGE("Pointer not set for in matrix");
+    if (!outMat)
+      THROW_MESSAGE("Pointer not set for in matrix");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type, EntData &data) {
+    MoFEMFunctionBegin;
+    outMat->resize(inMat->size1(), inMat->size2(), false);
+    noalias(*outMat) = scale * (*inMat);
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  const double scale;
   boost::shared_ptr<MatrixDouble> inMat;
   boost::shared_ptr<MatrixDouble> outMat;
 };
