@@ -702,6 +702,20 @@ struct MeshsetsManager : public UnknownInterface {
    interface_ft = 1
    interface_Gf = 1
 
+
+   [block_1009]
+
+   # Example applying material block (isotropic trans iso material)
+   
+   id=2011
+   add=BLOCKSET
+   name=MAT_ELASTIC_TRANS_ISO
+   Youngp=1
+   Youngz=2
+   Poissonp=3
+   Poissonpz=4
+   Shearzp=5
+
    \endcode
 
    * @param  file_name config file
