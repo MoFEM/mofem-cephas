@@ -613,9 +613,11 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
     }
     // Mat Trans Iso
     {
-      // double Young; 			///< Young's modulus
-      // double Poisson; 		///< Poisson's ratio
-      // double ThermalExpansion;	///< Thermal expansion
+      // Young's modulus in xy plane (Ep)
+      // Young's modulus in z-direction (Ez)
+      // Poisson's ratio in xy plane (vp)
+      // Poisson's ratio in z-direction (vpz)
+      // Shear modulus in z-direction (Gzp)
       configFileOptionsPtr->add_options()(
           (prefix + ".Youngp").c_str(),
           po::value<double>(
