@@ -271,18 +271,15 @@ struct CubitMeshSets {
    */
   template <class ATTRIBUTE_TYPE>
   MoFEMErrorCode getAttributeDataStructure(ATTRIBUTE_TYPE &data) const {
-    MoFEMFunctionBeginHot;
-
+    MoFEMFunctionBegin;
     if ((cubitBcType & data.getType()).none()) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "attributes are not for ATTRIBUTE_TYPE structure");
     }
     std::vector<double> attributes;
-    ierr = getAttributes(attributes);
-    CHKERRG(ierr);
-    ierr = data.fill_data(attributes);
-    CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    CHKERR getAttributes(attributes);
+    CHKERR data.fill_data(attributes);
+    MoFEMFunctionReturn(0);
   }
 
   /**
@@ -290,16 +287,14 @@ struct CubitMeshSets {
    */
   template <class ATTRIBUTE_TYPE>
   MoFEMErrorCode setAttributeDataStructure(const ATTRIBUTE_TYPE &data) {
-    MoFEMFunctionBeginHot;
-
+    MoFEMFunctionBegin;
     if ((cubitBcType & data.getType()).none()) {
-      SETERRQ(PETSC_COMM_SELF, 1,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "attributes are not for ATTRIBUTE_TYPE structure");
     }
     double *ptr = const_cast<double *>(tag_block_attributes);
-    ierr = data.set_data(ptr, 8 * tag_block_attributes_size);
-    CHKERRG(ierr);
-    MoFEMFunctionReturnHot(0);
+    CHKERR data.set_data(ptr, 8 * tag_block_attributes_size);
+    MoFEMFunctionReturn(0);
   }
 
   template <class CUBIT_BC_DATA_TYPE>
