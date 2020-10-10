@@ -26,6 +26,7 @@ template <typename T, int DIM, int SHIFT> struct EigenProjection {
 
   using Val = FTensor::Tensor1<FTensor::PackPtr<T *, SHIFT>, DIM>;
   using Vec = FTensor::Tensor2<FTensor::PackPtr<T *, SHIFT>, DIM, DIM>;
+  using Fun = boost::function<double(const double)>;
 
   template <int a, int i> static inline T N(Vec &vec) { return vec(a, i); }
 
@@ -90,12 +91,77 @@ template <typename T, int DIM, int SHIFT> struct EigenProjection {
     return ret;
   }
 
+  template <int NB, int i, int j>
+  static inline T reconstructMatrix(Val &val, Vec &vec, Fun f) {
+    T ret = 0;
+
+    boost::hana::for_each(
+
+        boost::hana::make_range(boost::hana::int_c<0>, boost::hana::int_c<NB>),
+
+        [&](auto a) { ret += M<a, i, j>(vec) * f(L<a>(val)); }
+
+    );
+
+    return ret;
+  }
+
+  template <int NB, int i, int j, int k, int l>
+  static inline T firstMatrixDirective(Val &val, Vec &vec, Fun f, Fun d_f) {
+    T ret = 0;
+
+    boost::hana::for_each(
+
+        boost::hana::make_range(boost::hana::int_c<0>, boost::hana::int_c<NB>),
+
+        [&](auto a) {
+          ret +=
+              M<a, i, j>(vec) * M<a, k, l>(vec) * d_f(L<a>(val)) +
+              d2M<a, i, j, k, l>(val, vec) * f(L<a>(val)) / static_cast<T>(2);
+        }
+
+    );
+
+    return ret;
+  }
+
+  template <int NB, int i, int j, int k, int l, int m, int n>
+  static inline T secondMatrixDirective(Val &val, Vec &vec, Fun f, Fun d_f,
+                                        Fun dd_f) {
+    T ret = 0;
+
+    boost::hana::for_each(
+
+        boost::hana::make_range(boost::hana::int_c<0>, boost::hana::int_c<NB>),
+
+        [&](auto a) {
+          ret +=
+
+              d2M<a, i, j, m, n>(vec) * M<a, k, l>(vec) * d_f(L<a>(val)) /
+                  static_cast<T>(2) +
+
+              M<a, i, j>(vec) * d2M<a, k, l, m, n>(vec) * d_f(L<a>(val)) /
+                  static_cast<T>(2) +
+
+              M<a, i, j>(vec) * M<a, k, l>(vec) * dd_f(L<a>(val)) +
+
+              dd4M<a, i, j, k, l, m, n>(val, vec) * f(L<a>(val)) /
+                  static_cast<T>(4) +
+
+              d2M<a, i, j, k, l>(val, vec) * d_f(L<a>(val)) / static_cast<T>(2);
+        }
+
+    );
+
+    return ret;
+  }
+
 private:
   template <int a, int b, int i, int j>
   static inline T dFdNa(Val &val, Vec &vec) {
     return -M<a, a, i, j>(vec) /
            ((L<a>(val) - L<b>(val)) * (L<a>(val) - L<b>(val)));
-   }
+  }
 
   template <int a, int b, int i, int j>
   static inline T dFdNb(Val &val, Vec &vec) {
@@ -121,7 +187,6 @@ private:
     return d2G<a, b, i, j, k, l, m, n>(val, vec) +
            d2G<b, a, i, j, k, l, m, n>(val, vec);
   }
-
 };
 
 } // namespace MatrixFunction
