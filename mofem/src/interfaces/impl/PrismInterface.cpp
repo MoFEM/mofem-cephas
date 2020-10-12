@@ -1202,7 +1202,7 @@ MoFEMErrorCode PrismInterface::splitSides(
 
   CHKERR create_prisms();
 
-  CHKERR set_parnets(all_new_adj_entities(true));
+  CHKERR set_parnets(unite(all_new_adj_entities(true), side_ents3d));
   CHKERR add_new_prisms_which_parents_are_part_of_other_intefaces();
 
   CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
