@@ -242,7 +242,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
       get_ents3d_with_prisms(get_edges_without_boundary(), nodes_without_front);
   auto ents3d = ents3d_with_prisms.subset_by_type(MBTET);
 
-  MOFEM_LOG_C("PRISM_INTERFACE", Sev::verbose,
+  MOFEM_LOG_C("PRISM_INTERFACE", Sev::noisy,
               "adj. ents3d to front nodes %u", ents3d.size());
 
   if (verb >= NOISY) {
@@ -267,7 +267,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
 
         Range adj_tris;
         nb_side_ents3d = side_ents3d.size();
-        MOFEM_LOG_C("PRISM_INTERFACE", Sev::verbose, "nb_side_ents3d %u\n",
+        MOFEM_LOG_C("PRISM_INTERFACE", Sev::noisy, "nb_side_ents3d %u",
                     nb_side_ents3d);
 
         // get faces
@@ -277,7 +277,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
         if (mesh_bit_level.any())
           adj_tris = intersect(adj_tris, mesh_level_tris);
 
-        MOFEM_LOG_C("PRISM_INTERFACE", Sev::verbose, "adj_tris %u\n",
+        MOFEM_LOG_C("PRISM_INTERFACE", Sev::noisy, "adj_tris %u",
                     adj_tris.size());
 
         // get tets adjacent to faces
@@ -285,7 +285,7 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
                                     moab::Interface::UNION);
         // intersect tets with tets adjacent to inetface
         adj_ents3d = intersect(adj_ents3d, ents3d_with_prisms);
-        MOFEM_LOG_C("PRISM_INTERFACE", Sev::verbose, "adj_ents3d %u\n",
+        MOFEM_LOG_C("PRISM_INTERFACE", Sev::noisy, "adj_ents3d %u",
                     adj_ents3d.size());
 
         // add tets to side
@@ -383,10 +383,10 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   CHKERR moab.add_entities(child_nodes_and_skin_edges, skin_edges_boundary);
 
   MOFEM_LOG_C("PRISM_INTERFACE", Sev::verbose,
-              "Nb. of side 3d elements in set %u\n", side_ents3d.size());
+              "Nb. of side 3d elements in set %u", side_ents3d.size());
   MOFEM_LOG_C("PRISM_INTERFACE", Sev::verbose,
-              "Nb. of other side 3d elements in set %u\n", other_side.size());
-  MOFEM_LOG_C("PRISM_INTERFACE", Sev::verbose, "Nb. of boundary edges %u\n",
+              "Nb. of other side 3d elements in set %u", other_side.size());
+  MOFEM_LOG_C("PRISM_INTERFACE", Sev::verbose, "Nb. of boundary edges %u",
               skin_edges_boundary.size());
 
   if (verb >= NOISY) {
@@ -426,7 +426,7 @@ MoFEMErrorCode PrismInterface::findFacesWithThreeNodesOnInternalSurfaceSkin(
     triangles = intersect(triangles, mesh_level_tris);
   }
 
-  MOFEM_LOG_C("PRISM_INTERFACE", Sev::verbose, "Nb. of triangles in set %u\n",
+  MOFEM_LOG_C("PRISM_INTERFACE", Sev::verbose, "Nb. of triangles in set %u",
               triangles.size());
 
   // get nodes, edges and 3d ents (i.e. tets and prisms)
@@ -447,7 +447,7 @@ MoFEMErrorCode PrismInterface::findFacesWithThreeNodesOnInternalSurfaceSkin(
   Range skin_edges_boundary; // skin edges from triangles
   CHKERR skin.find_skin(0, triangles, false, skin_edges_boundary);
 
-  MOFEM_LOG_C("PRISM_INTERFACE", Sev::noisy, "skin_edges_boundary %u\n",
+  MOFEM_LOG_C("PRISM_INTERFACE", Sev::noisy, "skin_edges_boundary %u",
               skin_edges_boundary.size());
 
   // take all edges on skin faces (i.e. skin surface)
