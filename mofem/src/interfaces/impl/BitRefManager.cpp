@@ -1041,7 +1041,8 @@ MoFEMErrorCode BitRefManager::updateRange(const Range &parent_ents,
       for (; it != hi_it; it++) {
         if (it->get()->getEntType() == MBENTITYSET) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
-                  "this should not happen");
+                  "This should not happen; Entity should not have part of the "
+                  "meshset. It has no children.");
         }
         child_ents_vec.emplace_back((*it)->getEnt());
       }
