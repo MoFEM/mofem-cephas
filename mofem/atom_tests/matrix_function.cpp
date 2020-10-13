@@ -48,24 +48,15 @@ int main(int argc, char *argv[]) {
 
       FTensor::Tensor1<double, 3> t_L{0.873555, 2.00794, 3.11851};
 
-      MatrixDouble a_sym_mat(6, 1);
-      auto t_sym_a = getFTensor2SymmetricFromMat<3>(a_sym_mat);
-      t_sym_a(i, j) = (t_A(i, j) || t_A(i, j)) / 2;
+      auto f = [](double v) { return v; };
 
-      MatrixDouble n_mat(9, 1);
-      auto t_n = getFTensor2FromMat<3, 3>(n_mat);
-      t_n(i, j) = t_N(i, j);
+      // auto t_b = EigenProjection<double, double>::getMat<3>(t_L, t_N, f);
 
-      MatrixDouble l_mat(3, 1);
-      auto t_l = getFTensor1FromMat<3>(n_mat);
-      t_l(i) = t_L(i);
-
-      auto f = [](double) { return 1; };
-
-      auto t_b = EigenProjection<double, 3, 1>::getMat<3>(t_l, t_n, f);
+      // cout << t_A << endl;
+      // cout << t_b << endl;
+    }
   }
-}
-CATCH_ERRORS;
+  CATCH_ERRORS;
 
-CHKERR MoFEM::Core::Finalize();
+  CHKERR MoFEM::Core::Finalize();
 }
