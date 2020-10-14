@@ -42,7 +42,7 @@ struct PrismInterface : public UnknownInterface {
   PrismInterface(const MoFEM::Core &core);
 
   /// destructor
-  ~PrismInterface() {}
+  ~PrismInterface() = default;
 
   /** 
    * \brief Store tetrahedra from each side of the interface 
@@ -183,6 +183,7 @@ struct PrismInterface : public UnknownInterface {
                             const EntityHandle sideset,
                             const bool add_interface_entities,
                             const bool recursive = false, int verb = QUIET);
+
 };
 
 } // namespace MoFEM
