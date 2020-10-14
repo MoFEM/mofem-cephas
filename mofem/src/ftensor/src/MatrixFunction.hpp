@@ -21,15 +21,13 @@
 #pragma once
 
 template <typename E, typename C, int NB, int a, int i, int j, int k, int l>
-struct d2MImpl {
+struct d2MImpl : public d2MImpl<E, C, 1, a, i, j, k, l> {
+  using I = d2MImpl<E, C, 1, a, i, j, k, l>;
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   static inline C eval(Val &t_val, Vec &t_vec) {
-    if (a != NB - 1)
-      return E::F<a, NB - 1>(t_val) * E::S<a, NB - 1, i, j, k, l>(t_val) +
-             d2MImpl<E, C, NB - 1, a, i, j, k, l>::eval(t_val, t_vec);
-    else
-      return d2MImpl<E, C, NB - 1, a, i, j, k, l>::eval(t_val, t_vec);
+    return I::term<NB - 1>(t_val) +
+           d2MImpl<E, C, NB - 1, a, i, j, k, l>::eval(t_val, t_vec);
   }
 };
 
@@ -311,12 +309,15 @@ template <typename E, typename C, int a, int i, int j, int k, int l>
 struct d2MImpl<E, C, 1, a, i, j, k, l> {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
-  static inline C eval(Val &t_val, Vec &t_vec) {
-    if (a != 0)
-      return E::F<a, 0>(t_val) * E::S<a, 0, i, j, k, l>(t_val);
+
+  template <int b> static inline C term(Val &t_val, Vec &t_vec) {
+    if (a != b)
+      return E::F<a, b>(t_val) * E::S<a, b, i, j, k, l>(t_val);
     else
       return 0;
   }
+
+  static inline C eval(Val &t_val, Vec &t_vec) { return term<0>(t_val, t_vec); }
 };
 
 template <typename E, typename C, int a, int i, int j, int k, int l, int m,
