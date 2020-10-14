@@ -50,10 +50,10 @@ int main(int argc, char *argv[]) {
 
       auto f = [](double v) { return v; };
 
-      // auto t_b = EigenProjection<double, double>::getMat<3>(t_L, t_N, f);
+      auto t_b = EigenProjection<double, double>::getMat<3>(t_L, t_N, f);
 
-      // cout << t_A << endl;
-      // cout << t_b << endl;
+      cout << t_A << endl;
+      cout << t_b << endl;
     }
   }
   CATCH_ERRORS;

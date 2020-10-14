@@ -94,7 +94,46 @@ struct secondMatrixDirectiveImpl
   }
 };
 
-template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
+template <typename E, typename C, int NB, int I, int J> struct getMatImpl {
+  using Val = typename E::Val;
+  using Vac = typename E::Vec;
+  using Fun = typename E::Fun;
+  getMatImpl() = delete;
+  ~getMatImpl() = delete;
+  template <typename T>
+  static inline void set(Val &t_val, Vac &t_vec, Fun f, T &t_a) {
+    getMatImpl<E, C, NB, I, J - 1>::set(t_val, t_vec, f, t_a);
+    t_a(I - 1, J - 1) = 0;
+        reconstructMatImpl<E, C, NB, I - 1, J - 1>::eval(t_val, t_vec, f);
+  };
+};
+
+template <typename E, typename C, int NB, int I>
+struct getMatImpl<E, C, NB, I, 0> {
+  using Val = typename E::Val;
+  using Vac = typename E::Vec;
+  using Fun = typename E::Fun;
+  getMatImpl() = delete;
+  ~getMatImpl() = delete;
+  template <typename T>
+  static inline void set(Val &t_val, Vac &t_vec, Fun f, T &t_a) {
+    getMatImpl<E, C, NB, I - 1, I - 1>::set(t_val, t_vec, f, t_a);
+  }
+};
+
+template <typename E, typename C, int NB>
+struct getMatImpl<E, C, NB, 0, 0> {
+  using Val = typename E::Val;
+  using Vac = typename E::Vec;
+  using Fun = typename E::Fun;
+  getMatImpl() = delete;
+  ~getMatImpl() = delete;
+  template <typename T>
+  static inline void set(Val &t_val, Vac &t_vec, Fun f, T &t_a) {}
+};
+
+template <typename T1, typename T2, int Dim = 3>
+struct EigenProjection {
 
   using Val = const FTensor::Tensor1<T1, Dim>;
   using Vec = const FTensor::Tensor2<T2, Dim, Dim>;
@@ -129,7 +168,7 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
   static inline auto d2M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return d2MImpl<EigenProjection<T1, T2, NB>, V, NB, a, i, j, k, l>::eval(
+    return d2MImpl<EigenProjection<T1, T2, Dim>, V, NB, a, i, j, k, l>::eval(
         t_val, t_vec);
   }
 
@@ -137,16 +176,8 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
   static inline auto dd4M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return dd4MImpl<EigenProjection<T1, T2, NB>, V, NB, a, i, j, k, l, m,
+    return dd4MImpl<EigenProjection<T1, T2, Dim>, V, NB, a, i, j, k, l, m,
                     n>::eval(t_val, t_vec);
-  }
-
-  template <int NB, int i, int j>
-  static inline auto reconstructMatrix(Val &t_val, Vec &t_vec, Fun f) {
-    using V =
-        typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return reconstructMatImpl<EigenProjection<T1, T2, NB>, V, NB, i, j>::eval(
-        t_val, t_vec, f);
   }
 
   template <int NB, int i, int j, int k, int l>
@@ -154,8 +185,8 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
                                           Fun d_f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return firstMatrixDirectiveImpl<EigenProjection<T1, T2, NB>, V, NB, i, j, k,
-                                    l>::eval(t_val, t_vec, f, d_f);
+    return firstMatrixDirectiveImpl<EigenProjection<T1, T2, Dim>, V, NB, i, j,
+                                    k, l>::eval(t_val, t_vec, f, d_f);
   }
 
   template <int NB, int i, int j, int k, int l, int m, int n>
@@ -163,30 +194,17 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
                                            Fun d_f, Fun dd_f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return secondMatrixDirectiveImpl<EigenProjection<T1, T2, NB>, V, NB, i, j,
+    return secondMatrixDirectiveImpl<EigenProjection<T1, T2, Dim>, V, NB, i, j,
                                      k, l, m, n>::eval(t_val, t_vec, f, d_f,
                                                        dd_f);
   }
 
   template <int NB> static inline auto getMat(Val &t_val, Vec &t_vec, Fun f) {
-
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-
     FTensor::Tensor2_symmetric<V, Dim> t_A;
-
-    boost::hana::for_each(
-        boost::hana::make_range(boost::hana::int_c<0>, boost::hana::int_c<Dim>),
-        [&](auto i) {
-          boost::hana::for_each(
-              boost::hana::make_range(boost::hana::int_c<i>,
-                                      boost::hana::int_c<Dim>),
-              [&](auto j) {
-                if (i >= j)
-                  t_A(i, j) = reconstructMatrix<NB, i, j>(t_val, t_vec, f);
-              });
-        });
-
+    getMatImpl<EigenProjection<T1, T2, Dim>, V, NB, Dim, Dim>::set(t_val, t_vec,
+                                                                   f, t_A);
     return t_A;
   }
 
