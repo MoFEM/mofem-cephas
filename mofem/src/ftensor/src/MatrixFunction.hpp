@@ -20,33 +20,44 @@
 
 #pragma once
 
-template <typename E, typename C, int Dim, int a, int i, int j, int k, int l>
+template <typename E, typename C, int NB, int a, int i, int j, int k, int l>
 struct d2MImpl {
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   static inline C eval(Val &t_val, Vec &t_vec) {
-    if (a != Dim - 1)
-      return E::F<a, Dim - 1>(t_val) * E::S<a, Dim - 1, i, j, k, l>(t_val) +
-             d2MImpl<E, C, Dim - 1, a, i, j, k, l>::eval(t_val, t_vec);
+    if (a != NB - 1)
+      return E::F<a, NB - 1>(t_val) * E::S<a, NB - 1, i, j, k, l>(t_val) +
+             d2MImpl<E, C, NB - 1, a, i, j, k, l>::eval(t_val, t_vec);
     else
-      return d2MImpl<E, C, Dim - 1, a, i, j, k, l>::eval(t_val, t_vec);
+      return d2MImpl<E, C, NB - 1, a, i, j, k, l>::eval(t_val, t_vec);
   }
 };
 
-template <typename E, typename C, int Dim, int a, int i, int j, int k, int l,
+template <typename E, typename C, int NB, int a, int i, int j, int k, int l,
           int m, int n>
 struct dd4MImpl {
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   static inline C eval(Val &t_val, Vec &t_vec) {
-    if (a != Dim - 1)
-      return E::F<a, Dim - 1>(t_val) *
-                 E::d2S<a, Dim - 1, i, j, k, l, m, n>(t_val, t_vec) +
-             2 * E::dFdN<a, Dim - 1, m, n>(t_val, t_vec) *
-                 E::S<a, Dim - 1, i, j, k, l>(t_val, t_vec) +
-             dd4MImpl<E, C, Dim - 1, a, i, j, k, l, m, n>::eval(t_val, t_vec);
+    if (a != NB - 1)
+      return E::F<a, NB - 1>(t_val) *
+                 E::d2S<a, NB - 1, i, j, k, l, m, n>(t_val, t_vec) +
+             2 * E::dFdN<a, NB - 1, m, n>(t_val, t_vec) *
+                 E::S<a, NB - 1, i, j, k, l>(t_val, t_vec) +
+             dd4MImpl<E, C, NB - 1, a, i, j, k, l, m, n>::eval(t_val, t_vec);
     else
-      return dd4MImpl<E, C, Dim - 1, a, i, j, k, l, m, n>::eval(t_val, t_vec);
+      return dd4MImpl<E, C, NB - 1, a, i, j, k, l, m, n>::eval(t_val, t_vec);
+  }
+};
+
+template <typename E, typename C, int NB, int i, int j>
+struct reconstructMatImpl {
+  using Val = typename E::Val;
+  using Vac = typename E::Vec;
+  using Fun = typename E::Fun;
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f) {
+    return E::M<NB - 1, NB - 1, i, j>(t_vec) * f(E::L<NB>(t_val)) +
+           reconstructMatImpl<E, C, NB - 1, i, j>::eval(t_val, t_vec);
   }
 };
 
@@ -81,38 +92,28 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
            M<a, i, l>(t_vec) * M<b, j, k>(t_vec);
   }
 
-  template <int a, int i, int j, int k, int l>
+  template <int NB, int a, int i, int j, int k, int l>
   static inline auto d2M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return d2MImpl<EigenProjection<T1, T2, Dim>, V, 3, a, i, j, k, l>::eval(
+    return d2MImpl<EigenProjection<T1, T2, NB>, V, NB, a, i, j, k, l>::eval(
         t_val, t_vec);
   }
 
-  template <int a, int i, int j, int k, int l, int m, int n>
+  template <int NB, int a, int i, int j, int k, int l, int m, int n>
   static inline auto dd4M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return dd4MImpl<EigenProjection<T1, T2, Dim>, V, 3, a, i, j, k, l, m,
+    return dd4MImpl<EigenProjection<T1, T2, NB>, V, NB, a, i, j, k, l, m,
                     n>::eval(t_val, t_vec);
   }
 
   template <int NB, int i, int j>
   static inline auto reconstructMatrix(Val &t_val, Vec &t_vec, Fun f) {
-
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-
-    V ret = 0;
-
-    boost::hana::for_each(
-
-        boost::hana::make_range(boost::hana::int_c<0>, boost::hana::int_c<NB>),
-        [&](auto a) { ret += M<a, a, i, j>(t_vec) * f(L<0>(t_val)); }
-
-    );
-
-    return ret;
+    return reconstructMatImpl<EigenProjection<T1, T2, NB>, V, NB, i, j>::eval(
+        t_val, t_vec, f);
   }
 
   template <int NB, int i, int j, int k, int l>
@@ -123,17 +124,17 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
 
     V ret = 0;
 
-    boost::hana::for_each(
+    // boost::hana::for_each(
 
-        boost::hana::make_range(boost::hana::int_c<0>, boost::hana::int_c<NB>),
+    //     boost::hana::make_range(boost::hana::int_c<0>, boost::hana::int_c<NB>),
 
-        [&](auto a) {
-          ret += M<a, i, j>(t_vec) * M<a, k, l>(t_vec) * d_f(L<a>(t_val)) +
-                 d2M<a, i, j, k, l>(t_val, t_vec) * f(L<a>(t_val)) /
-                     static_cast<decltype(t_val(0))>(2);
-        }
+    //     [&](auto a) {
+    //       ret += M<a, i, j>(t_vec) * M<a, k, l>(t_vec) * d_f(L<a>(t_val)) +
+    //              d2M<a, i, j, k, l>(t_val, t_vec) * f(L<a>(t_val)) /
+    //                  static_cast<decltype(t_val(0))>(2);
+    //     }
 
-    );
+    // );
 
     return ret;
   }
@@ -147,29 +148,29 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
 
     V ret = 0;
 
-    boost::hana::for_each(
+    // boost::hana::for_each(
 
-        boost::hana::make_range(boost::hana::int_c<0>, boost::hana::int_c<NB>),
+    //     boost::hana::make_range(boost::hana::int_c<0>, boost::hana::int_c<NB>),
 
-        [&](auto a) {
-          ret +=
+    //     [&](auto a) {
+    //       ret +=
 
-              d2M<a, i, j, m, n>(t_vec) * M<a, k, l>(t_vec) * d_f(L<a>(t_val)) /
-                  static_cast<V>(2) +
+    //           d2M<a, i, j, m, n>(t_vec) * M<a, k, l>(t_vec) * d_f(L<a>(t_val)) /
+    //               static_cast<V>(2) +
 
-              M<a, i, j>(t_vec) * d2M<a, k, l, m, n>(t_vec) * d_f(L<a>(t_val)) /
-                  static_cast<V>(2) +
+    //           M<a, i, j>(t_vec) * d2M<a, k, l, m, n>(t_vec) * d_f(L<a>(t_val)) /
+    //               static_cast<V>(2) +
 
-              M<a, i, j>(t_vec) * M<a, k, l>(t_vec) * dd_f(L<a>(t_val)) +
+    //           M<a, i, j>(t_vec) * M<a, k, l>(t_vec) * dd_f(L<a>(t_val)) +
 
-              dd4M<a, i, j, k, l, m, n>(t_val, t_vec) * f(L<a>(t_val)) /
-                  static_cast<V>(4) +
+    //           dd4M<a, i, j, k, l, m, n>(t_val, t_vec) * f(L<a>(t_val)) /
+    //               static_cast<V>(4) +
 
-              d2M<a, i, j, k, l>(t_val, t_vec) * d_f(L<a>(t_val)) /
-                  static_cast<V>(2);
-        }
+    //           d2M<a, i, j, k, l>(t_val, t_vec) * d_f(L<a>(t_val)) /
+    //               static_cast<V>(2);
+    //     }
 
-    );
+    // );
 
     return ret;
   }
@@ -202,24 +203,24 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
 
-    boost::hana::for_each(
+    // boost::hana::for_each(
 
-        boost::hana::make_range(boost::hana::int_c<0>,
-                                boost::hana::int_c<Dim * Dim * Dim * Dim>),
+    //     boost::hana::make_range(boost::hana::int_c<0>,
+    //                             boost::hana::int_c<Dim * Dim * Dim * Dim>),
 
-        [&](auto s) {
-          constexpr int i = (s - s % (3 * 3 * 3)) / (3 * 3 * 3);
-          constexpr int j = (s - i * 3 * 3 * 3 - s % (3 * 3)) / (3 * 3);
-          constexpr int k = (s - i * 3 * 3 * 3 - j * 3 * 3 - s % 3) / 3;
-          constexpr int l = s - i * 3 * 3 * 3 - j * 3 * 3 - k * 3;
+    //     [&](auto s) {
+    //       constexpr int i = (s - s % (3 * 3 * 3)) / (3 * 3 * 3);
+    //       constexpr int j = (s - i * 3 * 3 * 3 - s % (3 * 3)) / (3 * 3);
+    //       constexpr int k = (s - i * 3 * 3 * 3 - j * 3 * 3 - s % 3) / 3;
+    //       constexpr int l = s - i * 3 * 3 * 3 - j * 3 * 3 - k * 3;
 
-          if (i >= j && k >= l) {
-            t_diff_A(i, j) =
-                firstMatrixDirective<NB, i, j, k, l>(t_val, t_vec, f, d_f);
-          }
-        }
+    //       if (i >= j && k >= l) {
+    //         t_diff_A(i, j) =
+    //             firstMatrixDirective<NB, i, j, k, l>(t_val, t_vec, f, d_f);
+    //       }
+    //     }
 
-    );
+    // );
 
     return t_diff_A;
   }
@@ -339,5 +340,15 @@ struct dd4MImpl<E, C, 1, a, i, j, k, l, m, n> {
                  E::S<a, 0, i, j, k, l>(t_val, t_vec);
     else
       return 0;
+  }
+};
+
+template <typename E, typename C, int i, int j>
+struct reconstructMatImpl<E, C, 1, i, j> {
+  using Val = typename E::Val;
+  using Vac = typename E::Vec;
+  using Fun = typename E::Fun;
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f) {
+    return E::M<0, 0, i, j>(t_vec) * f(E::L<0>(t_val));
   }
 };
