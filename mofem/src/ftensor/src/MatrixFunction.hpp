@@ -33,18 +33,13 @@ struct d2MImpl : public d2MImpl<E, C, 1, a, i, j, k, l> {
 
 template <typename E, typename C, int NB, int a, int i, int j, int k, int l,
           int m, int n>
-struct dd4MImpl {
+struct dd4MImpl : public dd4MImpl<E, C, 1, a, i, j, k, l, m, n> {
+  using I = dd4MImpl<E, C, 1, a, i, j, k, l, m, n>;
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   static inline C eval(Val &t_val, Vec &t_vec) {
-    if (a != NB - 1)
-      return E::F<a, NB - 1>(t_val) *
-                 E::d2S<a, NB - 1, i, j, k, l, m, n>(t_val, t_vec) +
-             2 * E::dFdN<a, NB - 1, m, n>(t_val, t_vec) *
-                 E::S<a, NB - 1, i, j, k, l>(t_val, t_vec) +
-             dd4MImpl<E, C, NB - 1, a, i, j, k, l, m, n>::eval(t_val, t_vec);
-    else
-      return dd4MImpl<E, C, NB - 1, a, i, j, k, l, m, n>::eval(t_val, t_vec);
+    return I::term<NB - 1>(t_val, t_vec) +
+           dd4MImpl<E, C, NB - 1, a, i, j, k, l, m, n>::eval(t_val, t_vec);
   }
 };
 
@@ -177,7 +172,7 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
               boost::hana::make_range(boost::hana::int_c<i>,
                                       boost::hana::int_c<Dim>),
               [&](auto j) {
-                if(i >= j)
+                if (i >= j)
                   t_A(i, j) = reconstructMatrix<NB, i, j>(t_val, t_vec, f);
               });
         });
@@ -325,14 +320,16 @@ template <typename E, typename C, int a, int i, int j, int k, int l, int m,
 struct dd4MImpl<E, C, 1, a, i, j, k, l, m, n> {
   using Val = typename E::Val;
   using Vac = typename E::Vec;
-  static inline C eval(Val &t_val, Vec &t_vec) {
-    if (a != 0)
-      return E::F<a, 0>(t_val) * E::d2S<a, 0, i, j, k, l, m, n>(t_val, t_vec) +
-             2 * E::dFdN<a, 0, m, n>(t_val, t_vec) *
-                 E::S<a, 0, i, j, k, l>(t_val, t_vec);
+
+  template <int b> static inline C term(Val &t_val, Vec &t_vec) {
+    if (a != b)
+      return E::F<a, b>(t_val) * E::d2S<a, b, i, j, k, l, m, n>(t_val, t_vec) +
+             2 * E::dFdN<a, b, m, n>(t_val, t_vec) *
+                 E::S<a, b, i, j, k, l>(t_val, t_vec);
     else
       return 0;
   }
+  static inline C eval(Val &t_val, Vec &t_vec) { return term<0>(t_val, t_vec); }
 };
 
 template <typename E, typename C, int i, int j>
@@ -341,8 +338,7 @@ struct reconstructMatImpl<E, C, 1, i, j> {
   using Vac = typename E::Vec;
   using Fun = typename E::Fun;
 
-  template <int a>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f) {
+  template <int a> static inline C term(Val &t_val, Vec &t_vec, Fun f) {
     return E::M<a, a, i, j>(t_vec) * f(E::L<a>(t_val));
   }
 
@@ -373,7 +369,7 @@ struct secondMatrixDirectiveImpl<E, C, 1, i, j, k, l, m, n> {
   using Vac = typename E::Vec;
   using Fun = typename E::Fun;
 
-  template<int a>
+  template <int a>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     return
 
