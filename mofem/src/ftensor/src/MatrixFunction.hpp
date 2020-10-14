@@ -57,7 +57,27 @@ struct reconstructMatImpl {
   using Fun = typename E::Fun;
   static inline C eval(Val &t_val, Vec &t_vec, Fun f) {
     return E::M<NB - 1, NB - 1, i, j>(t_vec) * f(E::L<NB>(t_val)) +
-           reconstructMatImpl<E, C, NB - 1, i, j>::eval(t_val, t_vec);
+           reconstructMatImpl<E, C, NB - 1, i, j>::eval(t_val, t_vec, f);
+  }
+};
+
+template <typename E, typename C, int NB, int i, int j, int k, int l>
+struct firstMatrixDirectiveImpl {
+  using Val = typename E::Val;
+  using Vac = typename E::Vec;
+  using Fun = typename E::Fun;
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
+    return
+
+        E::M<NB - 1, i, j>(t_vec) * E::M<NB - 1, k, l>(t_vec) *
+            d_f(E::L<NB - 1>(t_val)) +
+        E::d2M<NB - 1, i, j, k, l>(t_val, t_vec) * f(E::L<NB - 1>(t_val)) /
+            static_cast<C>(2)
+
+        +
+
+        firstMatrixDirectiveImpl<E, C, NB - 1, i, j, i, k>::eval(t_val, t_vec,
+                                                                 f);
   }
 };
 
@@ -121,22 +141,8 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
                                           Fun d_f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-
-    V ret = 0;
-
-    // boost::hana::for_each(
-
-    //     boost::hana::make_range(boost::hana::int_c<0>, boost::hana::int_c<NB>),
-
-    //     [&](auto a) {
-    //       ret += M<a, i, j>(t_vec) * M<a, k, l>(t_vec) * d_f(L<a>(t_val)) +
-    //              d2M<a, i, j, k, l>(t_val, t_vec) * f(L<a>(t_val)) /
-    //                  static_cast<decltype(t_val(0))>(2);
-    //     }
-
-    // );
-
-    return ret;
+    return firstMatrixDirectiveImpl<EigenProjection<T1, T2, NB>, V, NB, i, j, k,
+                                    l>::eval(t_val, t_vec, f);
   }
 
   template <int NB, int i, int j, int k, int l, int m, int n>
@@ -189,7 +195,8 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
               boost::hana::make_range(boost::hana::int_c<i>,
                                       boost::hana::int_c<Dim>),
               [&](auto j) {
-                t_A(i, j) = reconstructMatrix<NB, i, j>(t_val, t_vec, f);
+                if(i >= j)
+                  t_A(i, j) = reconstructMatrix<NB, i, j>(t_val, t_vec, f);
               });
         });
 
@@ -350,5 +357,19 @@ struct reconstructMatImpl<E, C, 1, i, j> {
   using Fun = typename E::Fun;
   static inline C eval(Val &t_val, Vec &t_vec, Fun f) {
     return E::M<0, 0, i, j>(t_vec) * f(E::L<0>(t_val));
+  }
+};
+
+template <typename E, typename C, int i, int j, int k, int l>
+struct firstMatrixDirectiveImpl<E, C, 1, i, j, k, l> {
+  using Val = typename E::Val;
+  using Vac = typename E::Vec;
+  using Fun = typename E::Fun;
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
+    return
+
+        E::M<0, i, j>(t_vec) * E::M<0, k, l>(t_vec) * d_f(E::L<0>(t_val)) +
+        E::d2M<0, i, j, k, l>(t_val, t_vec) * f(E::L<0>(t_val)) /
+            static_cast<C>(2);
   }
 };
