@@ -51,33 +51,43 @@ struct dd4MImpl {
 };
 
 template <typename E, typename C, int NB, int i, int j>
-struct reconstructMatImpl {
+struct reconstructMatImpl : public reconstructMatImpl<E, C, 1, i, j> {
+  using I = reconstructMatImpl<E, C, 1, i, j>;
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   using Fun = typename E::Fun;
   static inline C eval(Val &t_val, Vec &t_vec, Fun f) {
-    return E::M<NB - 1, NB - 1, i, j>(t_vec) * f(E::L<NB>(t_val)) +
+    return I::term<NB - 1>(t_val, t_vec, f) +
            reconstructMatImpl<E, C, NB - 1, i, j>::eval(t_val, t_vec, f);
   }
 };
 
 template <typename E, typename C, int NB, int i, int j, int k, int l>
-struct firstMatrixDirectiveImpl {
+struct firstMatrixDirectiveImpl
+    : public firstMatrixDirectiveImpl<E, C, 1, i, j, k, l> {
+  using I = firstMatrixDirectiveImpl<E, C, 1, i, j, k, l>;
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   using Fun = typename E::Fun;
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
-    return
+    return I::term<NB - 1>(t_val, t_vec, f, d_f) +
+           firstMatrixDirectiveImpl<E, C, NB - 1, i, j, i, k>::eval(t_val,
+                                                                    t_vec, f);
+  }
+};
 
-        E::M<NB - 1, i, j>(t_vec) * E::M<NB - 1, k, l>(t_vec) *
-            d_f(E::L<NB - 1>(t_val)) +
-        E::d2M<NB - 1, i, j, k, l>(t_val, t_vec) * f(E::L<NB - 1>(t_val)) /
-            static_cast<C>(2)
-
-        +
-
-        firstMatrixDirectiveImpl<E, C, NB - 1, i, j, i, k>::eval(t_val, t_vec,
-                                                                 f);
+template <typename E, typename C, int NB, int i, int j, int k, int l, int m,
+          int n>
+struct secondMatrixDirectiveImpl
+    : public secondMatrixDirectiveImpl<E, C, 1, i, j, k, l, m, n> {
+  using I = secondMatrixDirectiveImpl<E, C, 1, i, j, k, l, m, n>;
+  using Val = typename E::Val;
+  using Vac = typename E::Vec;
+  using Fun = typename E::Fun;
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
+    return I::term<NB - 1>(t_val, t_vec, f, d_f, dd_f) +
+           secondMatrixDirectiveImpl<E, C, NB - 1, i, j, k, l, m, n>::eval(
+               t_val, t_vec, f, d_f, dd_f);
   }
 };
 
@@ -142,43 +152,17 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     return firstMatrixDirectiveImpl<EigenProjection<T1, T2, NB>, V, NB, i, j, k,
-                                    l>::eval(t_val, t_vec, f);
+                                    l>::eval(t_val, t_vec, f, d_f);
   }
 
   template <int NB, int i, int j, int k, int l, int m, int n>
   static inline auto secondMatrixDirective(Val &t_val, Vec &t_vec, Fun f,
                                            Fun d_f, Fun dd_f) {
-
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-
-    V ret = 0;
-
-    // boost::hana::for_each(
-
-    //     boost::hana::make_range(boost::hana::int_c<0>, boost::hana::int_c<NB>),
-
-    //     [&](auto a) {
-    //       ret +=
-
-    //           d2M<a, i, j, m, n>(t_vec) * M<a, k, l>(t_vec) * d_f(L<a>(t_val)) /
-    //               static_cast<V>(2) +
-
-    //           M<a, i, j>(t_vec) * d2M<a, k, l, m, n>(t_vec) * d_f(L<a>(t_val)) /
-    //               static_cast<V>(2) +
-
-    //           M<a, i, j>(t_vec) * M<a, k, l>(t_vec) * dd_f(L<a>(t_val)) +
-
-    //           dd4M<a, i, j, k, l, m, n>(t_val, t_vec) * f(L<a>(t_val)) /
-    //               static_cast<V>(4) +
-
-    //           d2M<a, i, j, k, l>(t_val, t_vec) * d_f(L<a>(t_val)) /
-    //               static_cast<V>(2);
-    //     }
-
-    // );
-
-    return ret;
+    return secondMatrixDirectiveImpl<EigenProjection<T1, T2, NB>, V, NB, i, j,
+                                     k, l, m, n>::eval(t_val, t_vec, f, d_f,
+                                                       dd_f);
   }
 
   template <int NB> static inline auto getMat(Val &t_val, Vec &t_vec, Fun f) {
@@ -355,8 +339,14 @@ struct reconstructMatImpl<E, C, 1, i, j> {
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   using Fun = typename E::Fun;
+
+  template <int a>
+  static inline C term(Val &t_val, Vec &t_vec, Fun f) {
+    return E::M<a, a, i, j>(t_vec) * f(E::L<a>(t_val));
+  }
+
   static inline C eval(Val &t_val, Vec &t_vec, Fun f) {
-    return E::M<0, 0, i, j>(t_vec) * f(E::L<0>(t_val));
+    return term<0>(t_val, t_vec, f);
   }
 };
 
@@ -365,11 +355,43 @@ struct firstMatrixDirectiveImpl<E, C, 1, i, j, k, l> {
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   using Fun = typename E::Fun;
+  template <int a>
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
+    return E::M<a, i, j>(t_vec) * E::M<a, k, l>(t_vec) * d_f(E::L<a>(t_val)) +
+           E::d2M<a, i, j, k, l>(t_val, t_vec) * f(E::L<a>(t_val)) /
+               static_cast<C>(2);
+  }
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
+    return term<0>(t_val, t_vec, f, d_f);
+  }
+};
+
+template <typename E, typename C, int i, int j, int k, int l, int m, int n>
+struct secondMatrixDirectiveImpl<E, C, 1, i, j, k, l, m, n> {
+  using Val = typename E::Val;
+  using Vac = typename E::Vec;
+  using Fun = typename E::Fun;
+
+  template<int a>
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     return
 
-        E::M<0, i, j>(t_vec) * E::M<0, k, l>(t_vec) * d_f(E::L<0>(t_val)) +
-        E::d2M<0, i, j, k, l>(t_val, t_vec) * f(E::L<0>(t_val)) /
+        E::d2M<a, i, j, m, n>(t_vec) * E::M<a, k, l>(t_vec) *
+            d_f(E::L<a>(t_val)) / static_cast<C>(2) +
+
+        E::M<a, i, j>(t_vec) * E::d2M<a, k, l, m, n>(t_vec) *
+            d_f(E::L<a>(t_val)) / static_cast<C>(2) +
+
+        E::M<a, i, j>(t_vec) * E::M<a, k, l>(t_vec) * dd_f(E::L<a>(t_val)) +
+
+        E::dd4M<a, i, j, k, l, m, n>(t_val, t_vec) * f(E::L<a>(t_val)) /
+            static_cast<C>(4) +
+
+        E::d2M<a, i, j, k, l>(t_val, t_vec) * d_f(E::L<a>(t_val)) /
             static_cast<C>(2);
+  }
+
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
+    return term<0>(t_val, t_vec, f, d_f, dd_f);
   }
 };
