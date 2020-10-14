@@ -19,12 +19,13 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #pragma once
+#include <type_traits>
 
 template <typename E, typename C, int NB, int a, int i, int j, int k, int l>
 struct d2MImpl : public d2MImpl<E, C, 1, a, i, j, k, l> {
   using I = d2MImpl<E, C, 1, a, i, j, k, l>;
   using Val = typename E::Val;
-  using Vac = typename E::Vec;
+  using Vec = typename E::Vec;
   d2MImpl() = delete;
   ~d2MImpl() = delete;
   static inline C eval(Val &t_val, Vec &t_vec) {
@@ -38,7 +39,7 @@ template <typename E, typename C, int NB, int a, int i, int j, int k, int l,
 struct dd4MImpl : public dd4MImpl<E, C, 1, a, i, j, k, l, m, n> {
   using I = dd4MImpl<E, C, 1, a, i, j, k, l, m, n>;
   using Val = typename E::Val;
-  using Vac = typename E::Vec;
+  using Vec = typename E::Vec;
   dd4MImpl() = delete;
   ~dd4MImpl() = delete;
   static inline C eval(Val &t_val, Vec &t_vec) {
@@ -48,15 +49,16 @@ struct dd4MImpl : public dd4MImpl<E, C, 1, a, i, j, k, l, m, n> {
 };
 
 template <typename E, typename C, int NB, int i, int j>
-struct reconstructMatImpl : public reconstructMatImpl<E, C, 1, i, j> {
-  using I = reconstructMatImpl<E, C, 1, i, j>;
+struct reconstructMatImpl : public reconstructMatImpl<E, C, NB - 1, i, j> {
   using Val = typename E::Val;
-  using Vac = typename E::Vec;
+  using Vec = typename E::Vec;
   using Fun = typename E::Fun;
+
   reconstructMatImpl() = delete;
   ~reconstructMatImpl() = delete;
   static inline C eval(Val &t_val, Vec &t_vec, Fun f) {
-    return I::term<NB - 1>(t_val, t_vec, f) +
+    return /*reconstructMatImpl<E, C, NB - 1, i, j>::term<NB - 1>(t_val, t_vec,
+                                                                f) +*/
            reconstructMatImpl<E, C, NB - 1, i, j>::eval(t_val, t_vec, f);
   }
 };
@@ -66,7 +68,7 @@ struct firstMatrixDirectiveImpl
     : public firstMatrixDirectiveImpl<E, C, 1, i, j, k, l> {
   using I = firstMatrixDirectiveImpl<E, C, 1, i, j, k, l>;
   using Val = typename E::Val;
-  using Vac = typename E::Vec;
+  using Vec = typename E::Vec;
   using Fun = typename E::Fun;
   firstMatrixDirectiveImpl() = delete;
   ~firstMatrixDirectiveImpl() = delete;
@@ -83,7 +85,7 @@ struct secondMatrixDirectiveImpl
     : public secondMatrixDirectiveImpl<E, C, 1, i, j, k, l, m, n> {
   using I = secondMatrixDirectiveImpl<E, C, 1, i, j, k, l, m, n>;
   using Val = typename E::Val;
-  using Vac = typename E::Vec;
+  using Vec = typename E::Vec;
   using Fun = typename E::Fun;
   secondMatrixDirectiveImpl() = delete;
   ~secondMatrixDirectiveImpl() = delete;
@@ -96,12 +98,12 @@ struct secondMatrixDirectiveImpl
 
 template <typename E, typename C, int NB, int I, int J> struct getMatImpl {
   using Val = typename E::Val;
-  using Vac = typename E::Vec;
+  using Vec = typename E::Vec;
   using Fun = typename E::Fun;
   getMatImpl() = delete;
   ~getMatImpl() = delete;
   template <typename T>
-  static inline void set(Val &t_val, Vac &t_vec, Fun f, T &t_a) {
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a) {
     getMatImpl<E, C, NB, I, J - 1>::set(t_val, t_vec, f, t_a);
     t_a(I - 1, J - 1) = 0;
         reconstructMatImpl<E, C, NB, I - 1, J - 1>::eval(t_val, t_vec, f);
@@ -111,12 +113,12 @@ template <typename E, typename C, int NB, int I, int J> struct getMatImpl {
 template <typename E, typename C, int NB, int I>
 struct getMatImpl<E, C, NB, I, 0> {
   using Val = typename E::Val;
-  using Vac = typename E::Vec;
+  using Vec = typename E::Vec;
   using Fun = typename E::Fun;
   getMatImpl() = delete;
   ~getMatImpl() = delete;
   template <typename T>
-  static inline void set(Val &t_val, Vac &t_vec, Fun f, T &t_a) {
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a) {
     getMatImpl<E, C, NB, I - 1, I - 1>::set(t_val, t_vec, f, t_a);
   }
 };
@@ -124,12 +126,12 @@ struct getMatImpl<E, C, NB, I, 0> {
 template <typename E, typename C, int NB>
 struct getMatImpl<E, C, NB, 0, 0> {
   using Val = typename E::Val;
-  using Vac = typename E::Vec;
+  using Vec = typename E::Vec;
   using Fun = typename E::Fun;
   getMatImpl() = delete;
   ~getMatImpl() = delete;
   template <typename T>
-  static inline void set(Val &t_val, Vac &t_vec, Fun f, T &t_a) {}
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a) {}
 };
 
 template <typename T1, typename T2, int Dim = 3>
@@ -202,7 +204,7 @@ struct EigenProjection {
   template <int NB> static inline auto getMat(Val &t_val, Vec &t_vec, Fun f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    FTensor::Tensor2_symmetric<V, Dim> t_A;
+    FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim> t_A;
     getMatImpl<EigenProjection<T1, T2, Dim>, V, NB, Dim, Dim>::set(t_val, t_vec,
                                                                    f, t_A);
     return t_A;
@@ -328,6 +330,22 @@ struct EigenProjection {
   }
 };
 
+template <typename E, typename C, int i, int j>
+struct reconstructMatImpl<E, C, 1, i, j> {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+  using Fun = typename E::Fun;
+  reconstructMatImpl() = delete;
+  ~reconstructMatImpl() = delete;
+  template <int a> static inline C term(Val &t_val, Vec &t_vec, Fun f) {
+    return typename E::template M<a, a, i, j>(t_vec) *
+           f(typename E::template L<0>(t_val));
+  }
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f) {
+    return term<0>(t_val, t_vec, f);
+  }
+};
+
 template <typename E, typename C, int a, int i, int j, int k, int l>
 struct d2MImpl<E, C, 1, a, i, j, k, l> {
   using Val = typename E::Val;
@@ -348,7 +366,7 @@ template <typename E, typename C, int a, int i, int j, int k, int l, int m,
           int n>
 struct dd4MImpl<E, C, 1, a, i, j, k, l, m, n> {
   using Val = typename E::Val;
-  using Vac = typename E::Vec;
+  using Vec = typename E::Vec;
   dd4MImpl() = delete;
   ~dd4MImpl() = delete;
   template <int b> static inline C term(Val &t_val, Vec &t_vec) {
@@ -362,26 +380,12 @@ struct dd4MImpl<E, C, 1, a, i, j, k, l, m, n> {
   static inline C eval(Val &t_val, Vec &t_vec) { return term<0>(t_val, t_vec); }
 };
 
-template <typename E, typename C, int i, int j>
-struct reconstructMatImpl<E, C, 1, i, j> {
-  using Val = typename E::Val;
-  using Vac = typename E::Vec;
-  using Fun = typename E::Fun;
-  reconstructMatImpl() = delete;
-  ~reconstructMatImpl() = delete;
-  template <int a> static inline C term(Val &t_val, Vec &t_vec, Fun f) {
-    return E::M<a, a, i, j>(t_vec) * f(E::L<a>(t_val));
-  }
 
-  static inline C eval(Val &t_val, Vec &t_vec, Fun f) {
-    return term<0>(t_val, t_vec, f);
-  }
-};
 
 template <typename E, typename C, int i, int j, int k, int l>
 struct firstMatrixDirectiveImpl<E, C, 1, i, j, k, l> {
   using Val = typename E::Val;
-  using Vac = typename E::Vec;
+  using Vec = typename E::Vec;
   using Fun = typename E::Fun;
   firstMatrixDirectiveImpl() = delete;
   ~firstMatrixDirectiveImpl() = delete;
@@ -399,7 +403,7 @@ struct firstMatrixDirectiveImpl<E, C, 1, i, j, k, l> {
 template <typename E, typename C, int i, int j, int k, int l, int m, int n>
 struct secondMatrixDirectiveImpl<E, C, 1, i, j, k, l, m, n> {
   using Val = typename E::Val;
-  using Vac = typename E::Vec;
+  using Vec = typename E::Vec;
   using Fun = typename E::Fun;
   secondMatrixDirectiveImpl() = delete;
   ~secondMatrixDirectiveImpl() = delete;
