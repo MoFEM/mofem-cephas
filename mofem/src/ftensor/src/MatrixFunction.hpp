@@ -25,6 +25,8 @@ struct d2MImpl : public d2MImpl<E, C, 1, a, i, j, k, l> {
   using I = d2MImpl<E, C, 1, a, i, j, k, l>;
   using Val = typename E::Val;
   using Vac = typename E::Vec;
+  d2MImpl() = delete;
+  ~d2MImpl() = delete;
   static inline C eval(Val &t_val, Vec &t_vec) {
     return I::term<NB - 1>(t_val) +
            d2MImpl<E, C, NB - 1, a, i, j, k, l>::eval(t_val, t_vec);
@@ -37,6 +39,8 @@ struct dd4MImpl : public dd4MImpl<E, C, 1, a, i, j, k, l, m, n> {
   using I = dd4MImpl<E, C, 1, a, i, j, k, l, m, n>;
   using Val = typename E::Val;
   using Vac = typename E::Vec;
+  dd4MImpl() = delete;
+  ~dd4MImpl() = delete;
   static inline C eval(Val &t_val, Vec &t_vec) {
     return I::term<NB - 1>(t_val, t_vec) +
            dd4MImpl<E, C, NB - 1, a, i, j, k, l, m, n>::eval(t_val, t_vec);
@@ -49,6 +53,8 @@ struct reconstructMatImpl : public reconstructMatImpl<E, C, 1, i, j> {
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   using Fun = typename E::Fun;
+  reconstructMatImpl() = delete;
+  ~reconstructMatImpl() = delete;
   static inline C eval(Val &t_val, Vec &t_vec, Fun f) {
     return I::term<NB - 1>(t_val, t_vec, f) +
            reconstructMatImpl<E, C, NB - 1, i, j>::eval(t_val, t_vec, f);
@@ -62,6 +68,8 @@ struct firstMatrixDirectiveImpl
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   using Fun = typename E::Fun;
+  firstMatrixDirectiveImpl() = delete;
+  ~firstMatrixDirectiveImpl() = delete;
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
     return I::term<NB - 1>(t_val, t_vec, f, d_f) +
            firstMatrixDirectiveImpl<E, C, NB - 1, i, j, i, k>::eval(t_val,
@@ -77,6 +85,8 @@ struct secondMatrixDirectiveImpl
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   using Fun = typename E::Fun;
+  secondMatrixDirectiveImpl() = delete;
+  ~secondMatrixDirectiveImpl() = delete;
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     return I::term<NB - 1>(t_val, t_vec, f, d_f, dd_f) +
            secondMatrixDirectiveImpl<E, C, NB - 1, i, j, k, l, m, n>::eval(
@@ -304,7 +314,8 @@ template <typename E, typename C, int a, int i, int j, int k, int l>
 struct d2MImpl<E, C, 1, a, i, j, k, l> {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
-
+  d2MImpl() = delete;
+  ~d2MImpl() = delete;
   template <int b> static inline C term(Val &t_val, Vec &t_vec) {
     if (a != b)
       return E::F<a, b>(t_val) * E::S<a, b, i, j, k, l>(t_val);
@@ -320,7 +331,8 @@ template <typename E, typename C, int a, int i, int j, int k, int l, int m,
 struct dd4MImpl<E, C, 1, a, i, j, k, l, m, n> {
   using Val = typename E::Val;
   using Vac = typename E::Vec;
-
+  dd4MImpl() = delete;
+  ~dd4MImpl() = delete;
   template <int b> static inline C term(Val &t_val, Vec &t_vec) {
     if (a != b)
       return E::F<a, b>(t_val) * E::d2S<a, b, i, j, k, l, m, n>(t_val, t_vec) +
@@ -337,7 +349,8 @@ struct reconstructMatImpl<E, C, 1, i, j> {
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   using Fun = typename E::Fun;
-
+  reconstructMatImpl() = delete;
+  ~reconstructMatImpl() = delete;
   template <int a> static inline C term(Val &t_val, Vec &t_vec, Fun f) {
     return E::M<a, a, i, j>(t_vec) * f(E::L<a>(t_val));
   }
@@ -352,6 +365,8 @@ struct firstMatrixDirectiveImpl<E, C, 1, i, j, k, l> {
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   using Fun = typename E::Fun;
+  firstMatrixDirectiveImpl() = delete;
+  ~firstMatrixDirectiveImpl() = delete;
   template <int a>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
     return E::M<a, i, j>(t_vec) * E::M<a, k, l>(t_vec) * d_f(E::L<a>(t_val)) +
@@ -368,7 +383,8 @@ struct secondMatrixDirectiveImpl<E, C, 1, i, j, k, l, m, n> {
   using Val = typename E::Val;
   using Vac = typename E::Vec;
   using Fun = typename E::Fun;
-
+  secondMatrixDirectiveImpl() = delete;
+  ~secondMatrixDirectiveImpl() = delete;
   template <int a>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     return
