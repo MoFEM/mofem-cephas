@@ -505,15 +505,22 @@ MoFEMErrorCode Core::remove_parents_by_ents(const Range &ents, int verb) {
     auto lo = refinedEntities.lower_bound(f);
     for (; f <= s; ++f) {
 
-      if ((*lo)->getEnt() == f) {
-          bool success = refinedEntities.modify(lo, RefEntity_change_parent(0));
-          if (!success)
-            SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
-                    "Operation of removing parent unsuccessful");
-          ++lo;
+      auto check = [this](auto lo, auto f) {
+        if (lo == refinedEntities.end())
+          return false;
+        if ((*lo)->getEnt() == f)
+          return true;
+        return false;
+      };
+
+      if (check(lo, f)) {
+        bool success = refinedEntities.modify(lo, RefEntity_change_parent(0));
+        if (!success)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                  "Operation of removing parent unsuccessful");
+        ++lo;
       } else
         leftovers_ents.emplace_back(f);
-
     }
   }
 
