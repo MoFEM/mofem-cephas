@@ -1194,24 +1194,11 @@ MoFEMErrorCode PrismInterface::splitSides(
 
   CHKERR create_prisms();
 
-  auto set_parents_ents = all_new_adj_entities(true);
-
-  CHKERR set_parnets(all_new_adj_entities(true));
-  CHKERR add_new_prisms_which_parents_are_part_of_other_intefaces();
-
-  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
-      meshset_for_bit_level, 3, bit);
-  CHKERR moab.delete_entities(&meshset_for_bit_level, 1);
-  CHKERR moab.clear_meshset(&children[0], 3);
-
   auto reconstruct_refined_ents = [&]() {
     MoFEMFunctionBegin;
     CHKERR reconstructMultiIndex(*m_field.get_ref_ents());
     MoFEMFunctionReturn(0);
   };
-
-  // Finalise by adding new tets and prism ti bit level
-  CHKERR set_parent.override_parents(refined_ents_ptr);
 
   // Add function which reconstruct core multi-index. Node merging is messy
   // process and entity parent could be changed without notification to
@@ -1219,6 +1206,17 @@ MoFEMErrorCode PrismInterface::splitSides(
   // is better not to modify multi-index each time parent is changed, that makes
   // code slow. Is better to do it in the bulk as below.
   CHKERR reconstruct_refined_ents();
+
+  CHKERR set_parnets(all_new_adj_entities(true));
+  CHKERR add_new_prisms_which_parents_are_part_of_other_intefaces();
+
+  // Finalise by adding new tets and prism ti bit level
+  CHKERR set_parent.override_parents(refined_ents_ptr);
+
+  CHKERR m_field.getInterface<BitRefManager>()->setBitRefLevelByDim(
+      meshset_for_bit_level, 3, bit);
+  CHKERR moab.delete_entities(&meshset_for_bit_level, 1);
+  CHKERR moab.clear_meshset(&children[0], 3);
 
   MoFEMFunctionReturn(0);
 }
