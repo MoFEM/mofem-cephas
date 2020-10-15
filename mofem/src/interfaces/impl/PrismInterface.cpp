@@ -972,8 +972,8 @@ MoFEMErrorCode PrismInterface::splitSides(
         rev_conn[ii] = mit->second;
         nb_new_conn++;
         if (verb >= VERY_NOISY)
-          PetscPrintf(m_field.get_comm(), "nodes %u -> %d", conn.first[ii],
-                      rev_conn[ii]);
+          MOFEM_LOG_C("PRISM_INTERFACE", Sev::noisy, "nodes %u -> %d",
+                      conn.first[ii], rev_conn[ii]);
 
       } else {
         rev_conn[ii] = conn.first[ii];
