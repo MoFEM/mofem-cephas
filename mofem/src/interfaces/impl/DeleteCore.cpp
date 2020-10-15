@@ -564,7 +564,7 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
   }
 
   Range meshsets;
-  CHKERR get_moab().get_entities_by_type(0, MBENTITYSET, meshsets, false);
+  CHKERR get_moab().get_entities_by_type(0, MBENTITYSET, meshsets, true);
   for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
     CHKERR get_moab().remove_entities(*mit, ents);
   }
