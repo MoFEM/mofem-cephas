@@ -120,25 +120,25 @@ template <typename E, typename C, int NB> struct getMatImpl {
   template <typename T, int I, int J>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a,
                          const Number<I> &, const Number<J> &) {
-    // set(t_val, t_vec, f, t_a, I, J - 1);
+    set(t_val, t_vec, f, t_a, Number<I>(), Number<J - 1>());
     t_a(I - 1, J - 1) = reconstructMatImpl<E, C, I - 1, J - 1>::eval(
         t_val, t_vec, f, Number<NB>());
   };
 
-  // template <typename T, int I>
-  // static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a, Number<I> &,
-  //                        Number<1> &) {
-  //   // set(t_val, t_vec, f, t_a, I - 1 I - 1);
-  //   t_a(I - 1, 0) =
-  //       reconstructMatImpl<E, C, I - 1, 0>::eval(t_val, t_vec, f, Number<NB>());
-  // };
+  template <typename T, int I>
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a,
+                         const Number<I> &, const Number<1> &) {
+    set(t_val, t_vec, f, t_a, Number<I - 1>(), Number<I - 1>());
+    t_a(I - 1, 0) =
+        reconstructMatImpl<E, C, I - 1, 0>::eval(t_val, t_vec, f, Number<NB>());
+  };
 
-  // template <typename T>
-  // static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a, Number<1> &,
-  //                        Number<1> &) {
-  //   t_a(0, 0) =
-  //       reconstructMatImpl<E, C, 0, 0>::eval(t_val, t_vec, f, Number<NB>());
-  // };
+  template <typename T>
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a,
+                         const Number<1> &, const Number<1> &) {
+    t_a(0, 0) =
+        reconstructMatImpl<E, C, 0, 0>::eval(t_val, t_vec, f, Number<NB>());
+  };
 };
 
 template <typename T1, typename T2, int Dim = 3>
