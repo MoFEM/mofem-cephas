@@ -65,6 +65,16 @@ int main(int argc, char *argv[]) {
           t_L, t_N, FTensor::Number<0>(), FTensor::Number<3>());
       print_ddg(t_d2m_0);
 
+      cout << "Diff d2m 1" << endl;
+      auto t_d2m_1 = EigenProjection<double, double>::getD2M(
+          t_L, t_N, FTensor::Number<1>(), FTensor::Number<3>());
+      print_ddg(t_d2m_1);
+
+      cout << "Diff d2m 2" << endl;
+      auto t_d2m_2 = EigenProjection<double, double>::getD2M(
+          t_L, t_N, FTensor::Number<2>(), FTensor::Number<3>());
+      print_ddg(t_d2m_2);
+
       auto f = [](double v) { return v; };
 
       cout << "Reconstruct mat" << endl;
