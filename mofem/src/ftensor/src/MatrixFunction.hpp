@@ -297,6 +297,40 @@ template <typename E, typename C, int NB, int Dim> struct getDiffMatImpl {
                          const Number<0> &, const Number<0> &){}
 };
 
+template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+  using Fun = typename E::Fun;
+
+  template <int N> using Number = FTensor::Number<N>;
+
+  getDiffDiffMatImpl() = delete;
+  ~getDiffDiffMatImpl() = delete;
+
+  template <typename T1, typename T2, int I, int J, int K, int L, int M, int N>
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                         T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
+                         const Number<K> &, const Number<L> &,
+                         const Number<M> &, const Number<N> &) {
+    set(t_val, t_vec, f, d_f, t_a, Number<I>(), Number<J>(), Number<K>(),
+        Number<L>(), Number<M>(), Number<N - 1>());
+    t_a(I - 1, J - 1, K - 1, L - 1) +=
+        t_s(M - 1, N - 1) *
+        secondMatrixDirectiveImpl<E, C, NB, M - 1, N - 1, I - 1, J - 1, K - 1,
+                                  L - 1>::eval(t_val, t_vec, f, d_f, dd_f,
+                                               Number<NB>());
+  }
+
+  template <typename T1, typename T2, int I, int J, int K, int L, int M>
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                         T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
+                         const Number<K> &, const Number<L> &,
+                         const Number<M> &, const Number<0> &) {
+    // set(t_val, t_vec, f, d_f, t_a, Number<I>(), Number<J>(), Number<K>(),
+    // Number<L>(), Number<M>(), Numer<N>());
+  }
+};
+
 template <typename T1, typename T2, int Dim = 3>
 struct EigenProjection {
 
@@ -415,64 +449,17 @@ struct EigenProjection {
     return t_diff_A;
   }
 
-  // template <int NB, typename A>
-  // static inline auto getDiffDiffMat(FTensor::Tensor2_symmetric<A, Dim> &t_s,
-  //                                   Val &t_val, Vec &t_vec, Fun f, Fun d_f,
-  //                                   Fun dd_f, FTensor::Number<NB>) {
-
-  //   using V =
-  //       typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-
-  //   FTensor::Ddg<V, Dim, Dim> t_diff_diff_a;
-  //   {
-  //     FTensor::Index<'i', Dim> i;
-  //     FTensor::Index<'j', Dim> j;
-  //     FTensor::Index<'k', Dim> k;
-  //     FTensor::Index<'l', Dim> l;
-  //     t_diff_A(i, j, k, l) = 0;
-  //   }
-
-  //   // boost::hana::for_each(
-
-  //   //     boost::hana::make_range(boost::hana::int_c<0>,
-  //   //                             boost::hana::int_c<Dim * Dim * Dim * Dim>),
-
-  //   //     [&](auto s) {
-  //   //       constexpr int k = (s - s % (3 * 3 * 3)) / (3 * 3 * 3);
-  //   //       constexpr int l = (s - k * 3 * 3 * 3 - s % (3 * 3)) / (3 * 3);
-  //   //       constexpr int m = (s - k * 3 * 3 * 3 - l * 3 * 3 - s % 3) / 3;
-  //   //       constexpr int n = s - k * 3 * 3 * 3 - l * 3 * 3 - m * 3;
-
-  //   //       if (k >= l && m >= n) {
-
-  //   //         boost::hana::for_each(
-
-  //   //             boost::hana::make_range(boost::hana::int_c<0>,
-  //   //                                     boost::hana::int_c<Dim * Dim>),
-
-  //   //             [&](auto r) {
-  //   //               constexpr int i = (s - s % Dim) / Dim;
-  //   //               constexpr int j = s - 3 * j;
-
-  //   //               double a;
-  //   //               if (i >= j) {
-  //   //                 a = secondMatrixDirective<NB, i, j, k, l, m, n>(
-  //   //                     t_val, t_vec, f, d_f, dd_f);
-  //   //                 if (i != j)
-  //   //                   t_diff_diff_a(k, l, m, n) += 2 * a;
-  //   //                 else
-  //   //                   t_diff_diff_a(k, l, m, n) += a;
-  //   //               }
-  //   //             }
-
-  //   //         );
-  //   //       }
-  //   //     }
-
-  //   // );
-
-  //   return t_diff_diff_a;
-  // }
+  template <typename T, int nb>
+  static inline auto getDiffDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
+                                    Fun dd_f, T &t_S) {
+    using V =
+        typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
+    FTensor::Ddg<V, Dim, Dim> t_diff_A;
+    getDiffDiffMatImpl<EigenProjection<T1, T2, Dim>, V, nb, Dim>::set(
+        t_val, t_vec, f, d_f, t_S, t_diff_A, Number<Dim>(), Number<Dim>(),
+        Number<Dim>(), Number<Dim>(), Number<Dim>(), Number<Dim>());
+    return t_diff_A;
+  }
 
   template <int a, int b, int i, int j>
   static inline auto dFdNa(Val &t_val, Vec &t_vec) {
@@ -522,33 +509,3 @@ struct EigenProjection {
 };
 
 
-// template <typename E, typename C, int i, int j, int k, int l, int m, int n>
-// struct secondMatrixDirectiveImpl<E, C, 1, i, j, k, l, m, n> {
-//   using Val = typename E::Val;
-//   using Vec = typename E::Vec;
-//   using Fun = typename E::Fun;
-//   secondMatrixDirectiveImpl() = delete;
-//   ~secondMatrixDirectiveImpl() = delete;
-//   template <int a>
-//   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
-//     return
-
-//         E::d2M<a, i, j, m, n>(t_vec) * E::M<a, k, l>(t_vec) *
-//             d_f(E::L<a>(t_val)) / static_cast<C>(2) +
-
-//         E::M<a, i, j>(t_vec) * E::d2M<a, k, l, m, n>(t_vec) *
-//             d_f(E::L<a>(t_val)) / static_cast<C>(2) +
-
-//         E::M<a, i, j>(t_vec) * E::M<a, k, l>(t_vec) * dd_f(E::L<a>(t_val)) +
-
-//         E::dd4M<a, i, j, k, l, m, n>(t_val, t_vec) * f(E::L<a>(t_val)) /
-//             static_cast<C>(4) +
-
-//         E::d2M<a, i, j, k, l>(t_val, t_vec) * d_f(E::L<a>(t_val)) /
-//             static_cast<C>(2);
-//   }
-
-//   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
-//     return term<0>(t_val, t_vec, f, d_f, dd_f);
-//   }
-// };
