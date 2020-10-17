@@ -290,20 +290,20 @@ struct EigenProjection {
            M<a, a, i, l>(t_vec) * M<b, b, j, k>(t_vec);
   }
 
-  template <int NB, int a, int i, int j, int k, int l>
-  static inline auto d2M(Val &t_val, Vec &t_vec, const Number<NB> &,
+  template <int nb, int a, int i, int j, int k, int l>
+  static inline auto d2M(Val &t_val, Vec &t_vec, const Number<nb> &,
                          const Number<a> &, const Number<i> &,
                          const Number<j> &, const Number<k> &,
                          const Number<l> &) {
-    return d2M<NB, a, i, j, k, l>(t_val, t_vec);
+    return d2M<nb, a, i, j, k, l>(t_val, t_vec);
   }
 
-  template <int NB, int a, int i, int j, int k, int l>
+  template <int nb, int a, int i, int j, int k, int l>
   static inline auto d2M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     return d2MImpl<EigenProjection<T1, T2, Dim>, V, a, i, j, k, l>::eval(
-        t_val, t_vec, Number<NB>());
+        t_val, t_vec, Number<nb>());
   }
 
   // template <int NB, int a, int i, int j, int k, int l, int m, int n>
@@ -324,22 +324,22 @@ struct EigenProjection {
   //                                                      dd_f);
   // }
 
-  template<int NB>
+  template<int nb>
   static inline auto getMat(Val &t_val, Vec &t_vec, Fun f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim> t_A;
-    getMatImpl<EigenProjection<T1, T2, Dim>, V, NB>::set(
+    getMatImpl<EigenProjection<T1, T2, Dim>, V, nb>::set(
         t_val, t_vec, f, t_A, Number<Dim>(), Number<Dim>());
     return t_A;
   }
 
-  template <int NB>
+  template <int nb>
   static inline auto getDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
-    getDiffMatImpl<EigenProjection<T1, T2, Dim>, V, NB, Dim>::set(
+    getDiffMatImpl<EigenProjection<T1, T2, Dim>, V, nb, Dim>::set(
         t_val, t_vec, f, d_f, t_diff_A, Number<Dim>(), Number<Dim>(),
         Number<Dim>(), Number<Dim>());
     return t_diff_A;
