@@ -313,8 +313,8 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
                          T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
                          const Number<K> &, const Number<L> &,
                          const Number<M> &, const Number<N> &) {
-    // set(t_val, t_vec, f, d_f, dd_f, t_s, t_a, Number<I>(), Number<J>(),
-    //     Number<K>(), Number<L>(), Number<M>(), Number<N - 1>());
+    set(t_val, t_vec, f, d_f, dd_f, t_s, t_a, Number<I>(), Number<J>(),
+        Number<K>(), Number<L>(), Number<M>(), Number<N - 1>());
     t_a(I - 1, J - 1, K - 1, L - 1) +=
         t_s(M - 1, N - 1) *
         secondMatrixDirectiveImpl<E, C, NB, M - 1, N - 1, I - 1, J - 1, K - 1,
@@ -327,11 +327,11 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
                          T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
                          const Number<K> &, const Number<L> &,
                          const Number<M> &, const Number<0> &) {
-    // set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
+    set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
 
-    //     Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+        Number<I>(), Number<J>(), Number<K>(), Number<L>(),
 
-    //     Number<K - 1>(), Number<Dim>());
+        Number<M - 1>(), Number<Dim>());
   }
 
   template <typename T1, typename T2, int I, int J, int K, int L>
@@ -339,13 +339,24 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
                          T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
                          const Number<K> &, const Number<L> &,
                          const Number<0> &, const Number<0> &) {
+    set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
+
+        Number<I>(), Number<J>(), Number<K>(), Number<L - 1>(),
+
+        Number<Dim>(), Number<Dim>());
+  }
+
+  template <typename T1, typename T2, int I, int J, int K>
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                         T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
+                         const Number<K> &, const Number<0> &,
+                         const Number<0> &, const Number<0> &) {
     // set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
 
     //     Number<I>(), Number<J>(), Number<K>(), Number<L - 1>(),
 
     //     Number<Dim>(), Number<Dim>());
   }
-
 };
 
 template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
