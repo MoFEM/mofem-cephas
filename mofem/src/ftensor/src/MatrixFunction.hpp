@@ -351,9 +351,33 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
                          T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
                          const Number<K> &, const Number<0> &,
                          const Number<0> &, const Number<0> &) {
+    set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
+
+        Number<I>(), Number<J>(), Number<K - 1>(), Number<K - 1>(),
+
+        Number<Dim>(), Number<Dim>());
+  }
+
+  template <typename T1, typename T2, int I, int J>
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                         T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
+                         const Number<0> &, const Number<0> &,
+                         const Number<0> &, const Number<0> &) {
     // set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
 
-    //     Number<I>(), Number<J>(), Number<K>(), Number<L - 1>(),
+    //     Number<I>(), Number<J - 1>(), Number<Dim>(), Number<Dim>(),
+
+    //     Number<Dim>(), Number<Dim>());
+  }
+
+  template <typename T1, typename T2, int I>
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                         T1 &t_s, T2 &t_a, const Number<I> &, const Number<0> &,
+                         const Number<0> &, const Number<0> &,
+                         const Number<0> &, const Number<0> &) {
+    // set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
+
+    //     Number<I>(), Number<J - 1>(), Number<Dim>(), Number<Dim>(),
 
     //     Number<Dim>(), Number<Dim>());
   }
