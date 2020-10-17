@@ -61,18 +61,15 @@ int main(int argc, char *argv[]) {
       };
 
       cout << "Diff d2m 0" << endl;
-      auto t_d2m_0 = EigenProjection<double, double>::getD2M(
-          t_L, t_N, FTensor::Number<0>(), FTensor::Number<3>());
+      auto t_d2m_0 = EigenProjection<double, double>::getD2M<0, 3>(t_L, t_N);
       print_ddg(t_d2m_0);
 
       cout << "Diff d2m 1" << endl;
-      auto t_d2m_1 = EigenProjection<double, double>::getD2M(
-          t_L, t_N, FTensor::Number<1>(), FTensor::Number<3>());
+      auto t_d2m_1 = EigenProjection<double, double>::getD2M<1, 3>(t_L, t_N);
       print_ddg(t_d2m_1);
 
       cout << "Diff d2m 2" << endl;
-      auto t_d2m_2 = EigenProjection<double, double>::getD2M(
-          t_L, t_N, FTensor::Number<2>(), FTensor::Number<3>());
+      auto t_d2m_2 = EigenProjection<double, double>::getD2M<2, 3>(t_L, t_N);
       print_ddg(t_d2m_2);
 
       auto f = [](double v) { return v; };
