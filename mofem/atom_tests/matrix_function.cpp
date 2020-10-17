@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 
       auto t_d = EigenProjection<double, double>::getDiffMat<3>(t_L, t_N, f, f);
 
-      cout << "Diff";
+      cout << "Diff" << endl;
       for (int ii = 0; ii != 3; ++ii)
         for (int jj = 0; jj <= ii; ++jj)
           for (int kk = 0; kk != 3; ++kk)
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
       auto t_dd = EigenProjection<double, double>::getDiffDiffMat(
           t_L, t_N, f, f, f, t_S, FTensor::Number<3>());
 
-      cout << "Diff Diff";
+      cout << "Diff Diff" << endl;;
       for (int ii = 0; ii != 3; ++ii)
         for (int jj = 0; jj <= ii; ++jj)
           for (int kk = 0; kk != 3; ++kk)
