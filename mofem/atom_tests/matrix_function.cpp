@@ -56,6 +56,13 @@ int main(int argc, char *argv[]) {
       cout << t_b << endl;
 
       auto t_d = EigenProjection<double, double>::getDiffMat<3>(t_L, t_N, f, f);
+
+      for(int ii = 0; ii!=3; ++ii)
+        for (int jj = 0; jj <= ii; ++jj)
+          for (int kk = 0; kk != 3; ++kk)
+            for (int ll = 0; ll <=kk; ++ll)
+              cout << ii << " " << jj << " " << kk << " " << ll << " : "
+                   << t_d(ii, jj, kk, ll) << endl;
     }
   }
   CATCH_ERRORS;
