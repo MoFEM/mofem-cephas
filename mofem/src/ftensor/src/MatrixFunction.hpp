@@ -346,41 +346,48 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
         Number<Dim>(), Number<Dim>());
   }
 
-  template <typename T1, typename T2, int I, int J, int K>
+  template <typename T1, typename T2, int I, int J, int K, int M, int N>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                          T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
                          const Number<K> &, const Number<0> &,
-                         const Number<0> &, const Number<0> &) {
+                         const Number<M> &, const Number<N> &) {
     set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
 
         Number<I>(), Number<J>(), Number<K - 1>(), Number<K - 1>(),
 
-        Number<Dim>(), Number<Dim>());
+        Number<M>(), Number<N>());
   }
 
-  template <typename T1, typename T2, int I, int J>
+  template <typename T1, typename T2, int I, int J, int M, int N>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                          T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
                          const Number<0> &, const Number<0> &,
-                         const Number<0> &, const Number<0> &) {
-    // set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
+                         const Number<M> &, const Number<N> &) {
+    set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
 
-    //     Number<I>(), Number<J - 1>(), Number<Dim>(), Number<Dim>(),
+        Number<I>(), Number<J - 1>(), Number<Dim>(), Number<Dim>(),
 
-    //     Number<Dim>(), Number<Dim>());
+        Number<M>(), Number<N>());
   }
 
-  template <typename T1, typename T2, int I>
+  template <typename T1, typename T2, int I, int K, int L, int M, int N>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                          T1 &t_s, T2 &t_a, const Number<I> &, const Number<0> &,
-                         const Number<0> &, const Number<0> &,
-                         const Number<0> &, const Number<0> &) {
-    // set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
+                         const Number<K> &, const Number<L> &,
+                         const Number<M> &, const Number<N> &) {
+    set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
 
-    //     Number<I>(), Number<J - 1>(), Number<Dim>(), Number<Dim>(),
+        Number<I - 1>(), Number<I - 1>(), Number<K>(), Number<L>(),
 
-    //     Number<Dim>(), Number<Dim>());
+        Number<M>(), Number<N>());
   }
+
+  template <typename T1, typename T2, int K, int L, int M, int N>
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                         T1 &t_s, T2 &t_a, const Number<0> &, const Number<0> &,
+                         const Number<K> &, const Number<L> &,
+                         const Number<M> &, const Number<N> &) {}
+
 };
 
 template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
