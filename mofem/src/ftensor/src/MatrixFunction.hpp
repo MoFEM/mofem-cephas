@@ -166,17 +166,13 @@ template <typename E, typename C, int NB> struct getMatImpl {
 
   template <typename T, int I>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a,
-                         const Number<I> &, const Number<1> &) {
+                         const Number<I> &, const Number<0> &) {
     set(t_val, t_vec, f, t_a, Number<I - 1>(), Number<I - 1>());
-    t_a(I - 1, 0) =
-        reconstructMatImpl<E, C, I - 1, 0>::eval(t_val, t_vec, f, Number<NB>());
   };
 
   template <typename T>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a,
-                         const Number<1> &, const Number<1> &) {
-    t_a(0, 0) =
-        reconstructMatImpl<E, C, 0, 0>::eval(t_val, t_vec, f, Number<NB>());
+                         const Number<0> &, const Number<0> &) {
   };
 };
 
@@ -205,22 +201,17 @@ template <typename E, typename C, int NB, int Dim> struct getDiffMatImpl {
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, T &t_a,
                          const Number<I> &, const Number<J> &,
                          const Number<K> &, const Number<1> &) {
-    // set(t_val, t_vec, f, d_f, t_a, Number<I>(), Number<J>(), Number<K - 1>(),
-    //     Number<K - 1>());
-    t_a(I - 1, J - 1, K - 1, 0) =
-        firstMatrixDirectiveImpl<E, C, NB, I - 1, J - 1, K - 1, 0>::eval(
-            t_val, t_vec, f, d_f, Number<NB>());
+    set(t_val, t_vec, f, d_f, t_a, Number<I>(), Number<J>(), Number<K - 1>(),
+        Number<K - 1>());
   };
 
   template <typename T, int I, int J>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, T &t_a,
-                         const Number<I> &, const Number<I> &,
-                         const Number<1> &, const Number<1> &) {
-    // set(t_val, t_vec, f, d_f, t_a, Number<I>(), Number<J - 1>(), Number<Dim>(),
-        // Number<Dim>());
-    t_a(I - 1, J - 1, 0, 0) =
-        firstMatrixDirectiveImpl<E, C, NB, I - 1, J - 1, 0, 0>::eval(
-            t_val, t_vec, f, d_f, Number<NB>());
+                         const Number<I> &, const Number<J> &,
+                         const Number<0> &, const Number<0> &){
+      // set(t_val, t_vec, f, d_f, t_a, Number<I>(), Number<J - 1>(),
+      // Number<Dim>(),
+      //     Number<Dim>());
   };
 
   template <typename T, int I, int K, int L>
