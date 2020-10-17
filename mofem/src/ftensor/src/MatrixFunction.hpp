@@ -292,10 +292,6 @@ template <typename E, typename C, int NB, int Dim> struct getDiffMatImpl {
                          const Number<0> &, const Number<0> &,
                          const Number<K> &, const Number<L> &) {}
 
-  template <typename T>
-  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, T &t_a,
-                         const Number<0> &, const Number<0> &,
-                         const Number<0> &, const Number<0> &) {}
 };
 
 template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
