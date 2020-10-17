@@ -242,6 +242,57 @@ template <typename E, typename C, int NB> struct getMatImpl {
                          const Number<0> &, const Number<0> &) {}
 };
 
+template <typename E, typename C, int a, int NB, int Dim> struct getD2MImpl {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+  using Fun = typename E::Fun;
+
+  template <int N> using Number = FTensor::Number<N>;
+
+  getD2MImpl() = delete;
+  ~getD2MImpl() = delete;
+
+  template <typename T, int I, int J, int K, int L>
+  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
+                         const Number<J> &, const Number<K> &,
+                         const Number<L> &) {
+    set(t_val, t_vec, t_a, Number<I>(), Number<J>(), Number<K>(),
+        Number<L - 1>());
+    t_a(I - 1, J - 1, K - 1, L - 1) =
+        d2MImpl<E, C, a, I - 1, J - 1, K - 1, L - 1>::eval(t_val, t_vec,
+                                                           Number<NB>());
+  }
+
+  template <typename T, int I, int J, int K>
+  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
+                         const Number<J> &, const Number<K> &,
+                         const Number<0> &) {
+    set(t_val, t_vec, t_a, Number<I>(), Number<J>(), Number<K - 1>(),
+        Number<K - 1>());
+  }
+
+  template <typename T, int I, int J>
+  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
+                         const Number<J> &, const Number<0> &,
+                         const Number<0> &) {
+    set(t_val, t_vec, t_a, Number<I>(), Number<J - 1>(), Number<Dim>(),
+        Number<Dim>());
+  }
+
+  template <typename T, int I, int K, int L>
+  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
+                         const Number<0> &, const Number<K> &,
+                         const Number<L> &) {
+    set(t_val, t_vec, t_a, Number<I - 1>(), Number<I - 1>(),
+        Number<K>(), Number<L>());
+  }
+
+  template <typename T, int K, int L>
+  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<0> &,
+                         const Number<0> &, const Number<K> &,
+                         const Number<L> &) {}
+};
+
 template <typename E, typename C, int NB, int Dim> struct getDiffMatImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -480,6 +531,18 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
     getMatImpl<EigenProjection<T1, T2, Dim>, V, nb>::set(
         t_val, t_vec, f, t_A, Number<Dim>(), Number<Dim>());
     return t_A;
+  }
+
+  template <int a, int nb>
+  static inline auto getD2M(Val &t_val, Vec &t_vec, const Number<a> &,
+                            const Number<nb> &) {
+    using V =
+        typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
+    FTensor::Ddg<V, Dim, Dim> t_diff_2M;
+    getD2MImpl<EigenProjection<T1, T2, Dim>, V, a, nb, Dim>::set(
+        t_val, t_vec, t_diff_2M, Number<Dim>(), Number<Dim>(), Number<Dim>(),
+        Number<Dim>());
+    return t_diff_2M;
   }
 
   template <int nb>
