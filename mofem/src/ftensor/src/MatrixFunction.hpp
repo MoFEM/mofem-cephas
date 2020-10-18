@@ -242,11 +242,10 @@ template <typename E, typename C, int NB> struct getMatImpl {
                          const Number<0> &, const Number<0> &) {}
 };
 
-template <typename E, typename C, int a, int NB, int Dim, int k, int l>
+template <typename E, typename C, int NB, int a, int Dim, int k, int l>
 struct getD2MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
-  using Fun = typename E::Fun;
 
   template <int N> using Number = FTensor::Number<N>;
 
@@ -259,6 +258,37 @@ struct getD2MImpl {
     set(t_val, t_vec, t_a, Number<I>(), Number<J - 1>());
     t_a(I - 1, J - 1) =
         d2MImpl<E, C, a, I - 1, J - 1, k, l>::eval(t_val, t_vec, Number<NB>());
+  }
+
+  template <typename T, int I>
+  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
+                         const Number<0> &) {
+    set(t_val, t_vec, t_a, Number<I - 1>(), Number<I - 1>());
+  }
+
+  template <typename T>
+  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<0> &,
+                         const Number<0> &) {
+  }
+};
+
+template <typename E, typename C, int NB, int a, int Dim, int k, int l, int m,
+          int n>
+struct getDD4MImpl {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+
+  template <int N> using Number = FTensor::Number<N>;
+
+  getDD4MImpl() = delete;
+  ~getDD4MImpl() = delete;
+
+  template <typename T, int I, int J>
+  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
+                         const Number<J> &) {
+    set(t_val, t_vec, t_a, Number<I>(), Number<J - 1>());
+    t_a(I - 1, J - 1) = dd4MImpl<E, C, NB, a, I - 1, J - 1, k, l, m, n>::eval(
+        t_val, t_vec, Number<NB>());
   }
 
   template <typename T, int I>
@@ -513,19 +543,37 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
     return t_A;
   }
 
-  template <int a, int nb, int k, int l>
+  template <int nb,int a,  int k, int l>
   static inline auto getD2M(Val &t_val, Vec &t_vec, const Number<a> &,
                             const Number<nb> &, const Number<k> &,
                             const Number<l> &) {
     return getD2M<a, nb, k, l>(t_val, t_vec);
   }
 
-  template <int a, int nb, int k, int l>
+  template <int nb, int a, int k, int l>
   static inline auto getD2M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<V, Dim> t_diff_2M;
-    getD2MImpl<EigenProjection<T1, T2, Dim>, V, a, nb, Dim, k, l>::set(
+    getD2MImpl<EigenProjection<T1, T2, Dim>, V, nb, a, Dim, k, l>::set(
+        t_val, t_vec, t_diff_2M, Number<Dim>(), Number<Dim>());
+    return t_diff_2M;
+  }
+
+  template <int nb, int a, int k, int l, int m, int n>
+  static inline auto getDD4M(Val &t_val, Vec &t_vec, const Number<a> &,
+                             const Number<nb> &, const Number<k> &,
+                             const Number<l> &, const Number<m> &,
+                             const Number<n> &) {
+    return getDD4M<a, nb, k, l, m, n>(t_val, t_vec);
+  }
+
+  template <int a, int nb, int k, int l, int m, int n>
+  static inline auto getDD4M(Val &t_val, Vec &t_vec) {
+    using V =
+        typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
+    FTensor::Tensor2_symmetric<V, Dim> t_diff_2M;
+    getDD4MImpl<EigenProjection<T1, T2, Dim>, V, a, nb, Dim, k, l, m, n>::set(
         t_val, t_vec, t_diff_2M, Number<Dim>(), Number<Dim>());
     return t_diff_2M;
   }
