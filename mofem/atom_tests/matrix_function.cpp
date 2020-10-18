@@ -99,8 +99,9 @@ int main(int argc, char *argv[]) {
 
           0., 0., 1.};
 
-      auto t_dd = EigenProjection<double, double>::getDiffDiffMat(
-          t_L, t_N, f, f, f, t_S, FTensor::Number<3>());
+      auto t_dd =
+          EigenProjection<double, double>::getDiffDiffMat<decltype(t_S), 3>(
+              t_L, t_N, f, f, f, t_S);
 
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Diff Diff";
       print_ddg(t_dd);

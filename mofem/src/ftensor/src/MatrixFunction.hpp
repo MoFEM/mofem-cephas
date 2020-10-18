@@ -564,9 +564,14 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
   template <typename T, int nb>
   static inline auto getDiffDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
                                     Fun dd_f, T &t_S, const Number<nb> &) {
+    return getDiffDiffMat<T, nb>(t_val, t_vec, f, d_f, dd_f);
+  }
+
+  template <typename T, int nb>
+  static inline auto getDiffDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
+                                    Fun dd_f, T &t_S) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
     t_diff_A(I<'i'>(), I<'j'>(), I<'k'>(), I<'l'>()) = 0;
     getDiffDiffMatImpl<EigenProjection<T1, T2, Dim>, V, nb, Dim>::set(
