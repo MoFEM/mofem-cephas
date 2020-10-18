@@ -1,6 +1,8 @@
 /** \file FunctionMatrix.hpp
  * \brief Get function from matrix
  * \ingroup ftensor
+ * 
+ * For reference see \cite miehe2001algorithms
  *
  */
 
@@ -369,84 +371,91 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
   ~getDiffDiffMatImpl() = delete;
 
   template <typename T1, typename T2, int I, int J, int K, int L, int M, int N>
-  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+  static inline auto add(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                          T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
                          const Number<K> &, const Number<L> &,
                          const Number<M> &, const Number<N> &) {
-    set(t_val, t_vec, f, d_f, dd_f, t_s, t_a, Number<I>(), Number<J>(),
-        Number<K>(), Number<L>(), Number<M>(), Number<N - 1>());
-    t_a(I - 1, J - 1, K - 1, L - 1) +=
-        t_s(M - 1, N - 1) *
-        secondMatrixDirectiveImpl<E, C, NB, M - 1, N - 1, I - 1, J - 1, K - 1,
-                                  L - 1>::eval(t_val, t_vec, f, d_f, dd_f,
-                                               Number<NB>());
+    return t_s(M - 1, N - 1) *
+               secondMatrixDirectiveImpl<E, C, NB, M - 1, N - 1, I - 1, J - 1,
+                                         K - 1, L - 1>::eval(t_val, t_vec, f,
+                                                             d_f, dd_f,
+                                                             Number<NB>())
+
+           +
+
+           add(t_val, t_vec, f, d_f, dd_f, t_s, t_a, Number<I>(), Number<J>(),
+               Number<K>(), Number<L>(), Number<M>(), Number<N - 1>());
   }
 
   template <typename T1, typename T2, int I, int J, int K, int L, int M>
-  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+  static inline auto add(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                          T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
                          const Number<K> &, const Number<L> &,
-                         const Number<M> &, const Number<0> &) {
-    set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
+                         const Number<M> &, const Number<1> &) {
+    return t_s(M - 1, 0) *
+               secondMatrixDirectiveImpl<E, C, NB, M - 1, 0, I - 1, J - 1,
+                                         K - 1, 0>::eval(t_val, t_vec, f, d_f,
+                                                         dd_f, Number<NB>())
 
-        Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+           +
 
-        Number<M - 1>(), Number<Dim>());
+           add(t_val, t_vec, f, d_f, dd_f, t_s, t_a, Number<I>(), Number<J>(),
+               Number<K>(), Number<L>(), Number<M - 1>(), Number<Dim>());
+  }
+
+  template <typename T1, typename T2, int I, int J, int K, int L>
+  static inline auto add(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                         T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
+                         const Number<K> &, const Number<L> &,
+                         const Number<1> &, const Number<1> &) {
+    return t_s(0, 0) * secondMatrixDirectiveImpl<E, C, NB, 0, 0, I - 1, J - 1,
+                                                 K - 1, 0>::eval(t_val, t_vec,
+                                                                 f, d_f, dd_f,
+                                                                 Number<NB>());
   }
 
   template <typename T1, typename T2, int I, int J, int K, int L>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                          T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
-                         const Number<K> &, const Number<L> &,
+                         const Number<K> &, const Number<L> &) {
+    set(t_val, t_vec, f, d_f, dd_f, t_s, t_a, Number<I>(), Number<J>(),
+        Number<K>(), Number<L - 1>());
+    t_a(I - 1, J - 1, K - 1, L - 1) =
+        add(t_val, t_vec, f, d_f, dd_f, t_s, t_a, Number<I>(), Number<J>(),
+            Number<K>(), Number<L>(), Number<Dim>(), Number<Dim>());
+  }
+
+  template <typename T1, typename T2, int I, int J, int K>
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                         T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
+                         const Number<K> &, const Number<0> &) {
+    set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
+
+        Number<I>(), Number<J>(), Number<K - 1>(), Number<K - 1>());
+  }
+
+  template <typename T1, typename T2, int I, int J>
+  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                         T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
                          const Number<0> &, const Number<0> &) {
     set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
 
-        Number<I>(), Number<J>(), Number<K>(), Number<L - 1>(),
-
-        Number<Dim>(), Number<Dim>());
+        Number<I>(), Number<J - 1>(), Number<Dim>(), Number<Dim>());
   }
 
-  template <typename T1, typename T2, int I, int J, int K, int M, int N>
-  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                         T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
-                         const Number<K> &, const Number<0> &,
-                         const Number<M> &, const Number<N> &) {
-    set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
-
-        Number<I>(), Number<J>(), Number<K - 1>(), Number<K - 1>(),
-
-        Number<M>(), Number<N>());
-  }
-
-  template <typename T1, typename T2, int I, int J, int M, int N>
-  static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                         T1 &t_s, T2 &t_a, const Number<I> &, const Number<J> &,
-                         const Number<0> &, const Number<0> &,
-                         const Number<M> &, const Number<N> &) {
-    set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
-
-        Number<I>(), Number<J - 1>(), Number<Dim>(), Number<Dim>(),
-
-        Number<M>(), Number<N>());
-  }
-
-  template <typename T1, typename T2, int I, int K, int L, int M, int N>
+  template <typename T1, typename T2, int I, int K, int L>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                          T1 &t_s, T2 &t_a, const Number<I> &, const Number<0> &,
-                         const Number<K> &, const Number<L> &,
-                         const Number<M> &, const Number<N> &) {
+                         const Number<K> &, const Number<L> &) {
     set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
 
-        Number<I - 1>(), Number<I - 1>(), Number<K>(), Number<L>(),
-
-        Number<M>(), Number<N>());
+        Number<I - 1>(), Number<I - 1>(), Number<Dim>(), Number<Dim>());
   }
 
-  template <typename T1, typename T2, int K, int L, int M, int N>
+  template <typename T1, typename T2, int K, int L>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                          T1 &t_s, T2 &t_a, const Number<0> &, const Number<0> &,
-                         const Number<K> &, const Number<L> &,
-                         const Number<M> &, const Number<N> &) {}
+                         const Number<K> &, const Number<L> &) {}
 };
 
 template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
@@ -603,10 +612,9 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
-    t_diff_A(I<'i'>(), I<'j'>(), I<'k'>(), I<'l'>()) = 0;
     getDiffDiffMatImpl<EigenProjection<T1, T2, Dim>, V, nb, Dim>::set(
         t_val, t_vec, f, d_f, dd_f, t_S, t_diff_A, Number<Dim>(), Number<Dim>(),
-        Number<Dim>(), Number<Dim>(), Number<Dim>(), Number<Dim>());
+        Number<Dim>(), Number<Dim>());
     return t_diff_A;
   }
 
