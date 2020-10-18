@@ -68,17 +68,20 @@ int main(int argc, char *argv[]) {
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Diff A";
       print_mat(t_A);
 
-      auto t_d2m_0 = EigenProjection<double, double>::getD2M<0, 3>(t_L, t_N);
+      auto t_d2m_0 =
+          EigenProjection<double, double>::getD2M<0, 3, 0, 2>(t_L, t_N);
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Diff d2m 0";
-      print_ddg(t_d2m_0);
+      print_mat(t_d2m_0);
 
-      auto t_d2m_1 = EigenProjection<double, double>::getD2M<1, 3>(t_L, t_N);
+      auto t_d2m_1 =
+          EigenProjection<double, double>::getD2M<1, 3, 0, 2>(t_L, t_N);
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Diff d2m 1";
-      print_ddg(t_d2m_1);
+      print_mat(t_d2m_1);
 
-      auto t_d2m_2 = EigenProjection<double, double>::getD2M<2, 3>(t_L, t_N);
+      auto t_d2m_2 =
+          EigenProjection<double, double>::getD2M<2, 3, 0, 2>(t_L, t_N);
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Diff d2m 2";
-      print_ddg(t_d2m_2);
+      print_mat(t_d2m_2);
 
       auto f = [](double v) { return v; };
 
