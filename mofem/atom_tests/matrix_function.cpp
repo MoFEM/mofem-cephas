@@ -58,6 +58,14 @@ int main(int argc, char *argv[]) {
                     << " : " << t(ii, jj, kk, ll);
       };
 
+      auto print_ddg_direction = [](auto &t, auto kk, int ll) {
+        for (int ii = 0; ii != 3; ++ii)
+          for (int jj = 0; jj <= ii; ++jj)
+            MOFEM_LOG("ATOM_TEST", Sev::inform)
+                << ii + 1 << " " << jj + 1 << " " << kk + 1 << " " << ll + 1
+                << " : " << t(ii, jj, kk, ll);
+      };
+
       auto print_mat = [](auto &t) {
         for (int ii = 0; ii != 3; ++ii)
           for (int jj = 0; jj <= ii; ++jj)
@@ -98,9 +106,9 @@ int main(int argc, char *argv[]) {
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Diff dd4m 2";
       print_mat(t_dd4m_2);
 
-      auto f = [](double v) { return v; };
-      auto d_f = [](double v) { return 1; };
-      auto dd_f = [](double v) { return 0; };
+      auto f = [](double v) { return v*v; };
+      auto d_f = [](double v) { return 2*v; };
+      auto dd_f = [](double v) { return 2; };
 
       auto t_b = EigenProjection<double, double>::getMat<3>(t_L, t_N, f);
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Reconstruct mat";
@@ -110,7 +118,7 @@ int main(int argc, char *argv[]) {
           EigenProjection<double, double>::getDiffMat<3>(t_L, t_N, f, d_f);
 
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Diff";
-      print_ddg(t_d);
+      print_ddg_direction(t_d, 0, 2);
 
       FTensor::Tensor2<double, 3, 3> t_S{
 
