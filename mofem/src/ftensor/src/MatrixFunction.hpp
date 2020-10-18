@@ -536,12 +536,6 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
   template <int a, int nb>
   static inline auto getD2M(Val &t_val, Vec &t_vec, const Number<a> &,
                             const Number<nb> &) {
-    using V =
-        typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    FTensor::Ddg<V, Dim, Dim> t_diff_2M;
-    getD2MImpl<EigenProjection<T1, T2, Dim>, V, a, nb, Dim>::set(
-        t_val, t_vec, t_diff_2M, Number<Dim>(), Number<Dim>(), Number<Dim>(),
-        Number<Dim>());
     return getD2M<a, nb>(t_val, t_vec);
   }
 
