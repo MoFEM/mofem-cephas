@@ -99,12 +99,15 @@ int main(int argc, char *argv[]) {
       print_mat(t_dd4m_2);
 
       auto f = [](double v) { return v; };
+      auto d_f = [](double v) { return 1; };
+      auto dd_f = [](double v) { return 0; };
 
       auto t_b = EigenProjection<double, double>::getMat<3>(t_L, t_N, f);
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Reconstruct mat";
       print_mat(t_b);
 
-      auto t_d = EigenProjection<double, double>::getDiffMat<3>(t_L, t_N, f, f);
+      auto t_d =
+          EigenProjection<double, double>::getDiffMat<3>(t_L, t_N, f, d_f);
 
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Diff";
       print_ddg(t_d);
@@ -119,7 +122,7 @@ int main(int argc, char *argv[]) {
 
       auto t_dd =
           EigenProjection<double, double>::getDiffDiffMat<decltype(t_S), 3>(
-              t_L, t_N, f, f, f, t_S);
+              t_L, t_N, f, d_f, dd_f, t_S);
 
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Diff Diff";
       print_ddg(t_dd);
