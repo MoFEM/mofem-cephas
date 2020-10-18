@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
                   "Matrix not reeconstructed");
       }
 
-      // Teestsimg linear function second second direvarive zero
+      // Testsing linear function second second direvarive zero
       {
 
         auto f = [](double v) { return v; };
