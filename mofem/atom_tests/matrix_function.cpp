@@ -27,8 +27,6 @@ int main(int argc, char *argv[]) {
 
     FTensor::Index<'i', 3> i;
     FTensor::Index<'j', 3> j;
-    FTensor::Index<'k', 3> k;
-    FTensor::Index<'l', 3> l;
 
     // Test matrix
     {
