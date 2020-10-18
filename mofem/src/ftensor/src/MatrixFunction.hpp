@@ -449,7 +449,7 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
                          const Number<K> &, const Number<L> &) {
     set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
 
-        Number<I - 1>(), Number<I - 1>(), Number<Dim>(), Number<Dim>());
+        Number<I - 1>(), Number<I - 1>(), Number<K>(), Number<L>());
   }
 
   template <typename T1, typename T2, int K, int L>

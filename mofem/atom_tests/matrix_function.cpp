@@ -240,11 +240,6 @@ int main(int argc, char *argv[]) {
                   "Matrix not reeconstructed");
       }
 
-      // constexpr auto t_kd = FTensor::Kronecker_Delta_symmetric<int>();
-      // FTensor::Ddg<double, 3, 3> t_one;
-      // t_one(i, j, k, l) = (t_kd(i, k) ^ t_kd(j, l)) / 4;
-      // print_ddg(t_one);
-
       // Teestsimg linear function second second direvarive zero
       {
 
