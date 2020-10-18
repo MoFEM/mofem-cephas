@@ -240,10 +240,10 @@ int main(int argc, char *argv[]) {
                   "Matrix not reeconstructed");
       }
 
-      constexpr auto t_kd = FTensor::Kronecker_Delta_symmetric<int>();
-      FTensor::Ddg<double, 3, 3> t_one;
-      t_one(i, j, k, l) = t_kd(i, k) ^ t_kd(j, l);
-      print_ddg(t_one);
+      // constexpr auto t_kd = FTensor::Kronecker_Delta_symmetric<int>();
+      // FTensor::Ddg<double, 3, 3> t_one;
+      // t_one(i, j, k, l) = (t_kd(i, k) ^ t_kd(j, l)) / 4;
+      // print_ddg(t_one);
 
       // Teestsimg linear function second second direvarive zero
       {
@@ -256,7 +256,20 @@ int main(int argc, char *argv[]) {
 
         auto t_d =
             EigenProjection<double, double>::getDiffMat<3>(t_L, t_N, f, d_f);
-        print_ddg(t_d);
+        // print_ddg(t_d);
+
+        FTensor::Tensor2_symmetric<double, 3> t_c;
+        t_c(i, j) = t_d(i, j, k, l) * t_b(k, l) - t_b(i, j);
+        print_mat(t_c);
+        auto norm2_t_c = t_c(i, j) * t_c(i, j);
+        MOFEM_LOG("ATOM_TEST", Sev::verbose)
+            << "Directive of symmetric matrix multiplied by matrix itself, "
+               "should be equal to matrix itself "
+            << norm2_t_c;
+        constexpr double eps = 1e-10;
+        if (norm2_t_c > eps)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "This norm should be zero");
 
         FTensor::Tensor2<double, 3, 3> t_S{
 
@@ -272,7 +285,6 @@ int main(int argc, char *argv[]) {
 
         auto norm2_t_dd = get_norm_t4(t_dd);
         MOFEM_LOG("ATOM_TEST", Sev::inform) << "norm2_t_dd " << norm2_t_dd;
-        constexpr double eps = 1e-12;
         if (norm2_t_dd > eps)
           SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                   "This norm should be zero");
