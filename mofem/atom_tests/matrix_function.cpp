@@ -240,9 +240,12 @@ int main(int argc, char *argv[]) {
                   "Matrix not reeconstructed");
       }
 
+      constexpr auto t_kd = FTensor::Kronecker_Delta_symmetric<int>();
+      FTensor::Ddg<double, 3, 3> t_one;
+      t_one(i, j, k, l) = (t_kd(i, k) ^ t_kd(j, l)) / 4.;
+
       // Testsing linear function second second direvarive zero
       {
-
         auto f = [](double v) { return v; };
         auto d_f = [](double v) { return 1; };
         auto dd_f = [](double v) { return 0; };
@@ -251,16 +254,14 @@ int main(int argc, char *argv[]) {
 
         auto t_d =
             EigenProjection<double, double>::getDiffMat<3>(t_L, t_N, f, d_f);
-        // print_ddg(t_d);
 
         FTensor::Tensor2_symmetric<double, 3> t_c;
-        t_c(i, j) = t_d(i, j, k, l) * t_b(k, l) - t_b(i, j);
+        t_c(i, j) =
+            (t_d(i, j, k, l) * t_b(k, l)) - (t_one(i, j, k, l) * t_b(k, l));
         print_mat(t_c);
         auto norm2_t_c = t_c(i, j) * t_c(i, j);
         MOFEM_LOG("ATOM_TEST", Sev::verbose)
-            << "Directive of symmetric matrix multiplied by matrix itself, "
-               "should be equal to matrix itself "
-            << norm2_t_c;
+            << "Derivative should be unity matrix " << norm2_t_c;
         constexpr double eps = 1e-10;
         if (norm2_t_c > eps)
           SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
