@@ -601,17 +601,16 @@ struct EigenProjection {
    * \f]
    * where \f$a\f$ is eigen value number.
    *
-   * @tparam nb number of eigen values
    * @param t_val eiegn values vector
    * @param t_vec eigen vectors matrix
    * @param f function
    * @return auto function symmetric tensor rank two
    */
-  template <int nb> static inline auto getMat(Val &t_val, Vec &t_vec, Fun f) {
+  static inline auto getMat(Val &t_val, Vec &t_vec, Fun f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim> t_A;
-    getMatImpl<EigenProjection<T1, T2, NB, Dim>, V, nb>::set(
+    getMatImpl<EigenProjection<T1, T2, NB, Dim>, V, NB>::set(
         t_val, t_vec, f, t_A, Number<Dim>(), Number<Dim>());
     return t_A;
   }

@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
         auto d_f = [](double v) { return exp(v); };
         auto dd_f = [](double v) { return exp(v); };
 
-        auto t_b = EigenProjection<double, double, 3>::getMat<3>(t_L, t_N, f);
+        auto t_b = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Reconstruct mat";
         print_mat(t_b);
 
@@ -227,8 +227,8 @@ int main(int argc, char *argv[]) {
         auto d_f = [](double v) { return exp(v); };
         auto dd_f = [](double v) { return exp(v); };
 
-        auto t_b = EigenProjection<double, double, 3>::getMat<3>(t_L, t_N, f);
-        auto t_c = EigenProjection<double, double, 3>::getMat<3>(t_eig_vals,
+        auto t_b = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
+        auto t_c = EigenProjection<double, double, 3>::getMat(t_eig_vals,
                                                                  t_eig_vec, f);
         t_c(i, j) -= t_b(i, j);
         print_mat(t_c);
@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
 
         constexpr double eps = 1e-10;
         {
-          auto t_b = EigenProjection<double, double, 3>::getMat<3>(t_L, t_N, f);
+          auto t_b = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
           t_b(i, j) -= (t_A(i, j) || t_A(j, i)) / 2;
           auto norm2_t_b = t_b(i, j) * t_b(i, j);
           MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -268,7 +268,7 @@ int main(int argc, char *argv[]) {
         }
 
         {
-          auto t_b = EigenProjection<double, double, 3>::getMat<3>(t_L, t_N, f);
+          auto t_b = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
           auto t_d = EigenProjection<double, double, 3>::getDiffMat<3>(t_L, t_N,
                                                                        f, d_f);
           FTensor::Tensor2_symmetric<double, 3> t_c;
@@ -313,7 +313,7 @@ int main(int argc, char *argv[]) {
 
         // check if multiplication gives right value
         {
-          auto t_b = EigenProjection<double, double, 3>::getMat<3>(t_L, t_N, f);
+          auto t_b = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
           FTensor::Tensor2<double, 3, 3> t_a;
           t_a(i, j) = t_b(i, j) - t_A(i, k) * t_A(k, j);
           print_mat(t_a);
