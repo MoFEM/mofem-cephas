@@ -182,8 +182,8 @@ struct firstMatrixDirectiveImpl {
 
         +
 
-        E::d2M(t_val, t_vec, Number<NB>(), Number<a>(), Number<i>(),
-               Number<j>(), Number<k>(), Number<l>()) *
+        E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(), Number<k>(),
+               Number<l>()) *
             f(E::L(t_val, Number<a>())) / static_cast<C>(2);
   }
 
@@ -218,15 +218,15 @@ struct secondMatrixDirectiveImpl {
 
         (
 
-            E::d2M(t_val, t_vec, Number<NB>(), Number<a>(), Number<i>(),
-                   Number<j>(), Number<m>(), Number<n>()) *
+            E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
+                   Number<m>(), Number<n>()) *
                 E::M(t_vec, Number<a>(), Number<a>(), Number<k>(), Number<l>())
 
             +
 
             E::M(t_vec, Number<a>(), Number<a>(), Number<i>(), Number<j>()) *
-                E::d2M(t_val, t_vec, Number<NB>(), Number<a>(), Number<k>(),
-                       Number<l>(), Number<m>(), Number<n>())
+                E::d2M(t_val, t_vec, Number<a>(), Number<k>(), Number<l>(),
+                       Number<m>(), Number<n>())
 
                 ) *
             d_f(E::L(t_val, Number<a>())) / static_cast<C>(2) +
@@ -241,8 +241,8 @@ struct secondMatrixDirectiveImpl {
                 Number<n>()) *
             f(E::L(t_val, Number<a>())) / static_cast<C>(4) +
 
-        E::d2M(t_val, t_vec, Number<NB>(), Number<a>(), Number<i>(),
-               Number<j>(), Number<k>(), Number<l>()) *
+        E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(), Number<k>(),
+               Number<l>()) *
             E::M(t_vec, Number<a>(), Number<a>(), Number<m>(), Number<n>()) *
             d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
   }
@@ -558,20 +558,19 @@ struct EigenProjection {
            M<a, a, i, l>(t_vec) * M<b, b, j, k>(t_vec);
   }
 
-  template <int nb, int a, int i, int j, int k, int l>
-  static inline auto d2M(Val &t_val, Vec &t_vec, const Number<nb> &,
-                         const Number<a> &, const Number<i> &,
-                         const Number<j> &, const Number<k> &,
-                         const Number<l> &) {
-    return d2M<nb, a, i, j, k, l>(t_val, t_vec);
+  template <int a, int i, int j, int k, int l>
+  static inline auto d2M(Val &t_val, Vec &t_vec, const Number<a> &,
+                         const Number<i> &, const Number<j> &,
+                         const Number<k> &, const Number<l> &) {
+    return d2M<a, i, j, k, l>(t_val, t_vec);
   }
 
-  template <int nb, int a, int i, int j, int k, int l>
+  template <int a, int i, int j, int k, int l>
   static inline auto d2M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     return d2MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k, l>::eval(
-        t_val, t_vec, Number<nb>());
+        t_val, t_vec, Number<NB>());
   }
 
   template <int nb, int a, int i, int j, int k, int l, int m, int n>
@@ -591,17 +590,17 @@ struct EigenProjection {
   }
 
   /**
-   * @brief Get matrix  
-   * 
+   * @brief Get matrix
+   *
    * \f[
    * \mathbf{B} = f(\mathbf{A})
    * \f]
-   * 
+   *
    * \f[
-   * B_{ij} = sum_{a}^3 f(\lambda^a) n^a_i n^a_j 
+   * B_{ij} = sum_{a}^3 f(\lambda^a) n^a_i n^a_j
    * \f]
    * where \f$a\f$ is eigen value number.
-   * 
+   *
    * @tparam nb number of eigen values
    * @param t_val eiegn values vector
    * @param t_vec eigen vectors matrix
@@ -654,15 +653,15 @@ struct EigenProjection {
 
   /**
    * @brief Get derivative of matrix
-   * 
+   *
    * \f[
-   * P_{ijkl} = \frac{\partial B_{ij}}{\partial A_{kl}} 
+   * P_{ijkl} = \frac{\partial B_{ij}}{\partial A_{kl}}
    * \f]
-   * 
+   *
    * @tparam nb number of eigen values
    * @param t_val eiegn values vector
    * @param t_vec eiegn vectors matrix
-   * @param f function 
+   * @param f function
    * @param d_f directive of function
    * @return auto direvatives, forth order tensor with minor simetries
    */
@@ -679,13 +678,13 @@ struct EigenProjection {
 
   /**
    * @brief Get second direvarive of matrix
-   * 
+   *
    * \f[
-   * LS_{klmn} = 
-   * S_{ij} \frac{\partial^2 B_{ij}}{\partial A_{kl} \partial A_{mn} } 
+   * LS_{klmn} =
+   * S_{ij} \frac{\partial^2 B_{ij}}{\partial A_{kl} \partial A_{mn} }
    * \f]
-   * 
-   * @tparam T 
+   *
+   * @tparam T
    * @tparam nb nb number of eigen values
    * @param t_val eiegn values vector
    * @param t_vec eiegn vectors matrix
@@ -743,10 +742,10 @@ struct EigenProjection {
 
   template <int nb, int a, int b, int i, int j, int k, int l, int m, int n>
   static inline auto d2G(Val &t_val, Vec &t_vec) {
-    return d2M<nb, a, i, k, n, m>(t_val, t_vec) * M<b, b, j, l>(t_vec) +
-           M<a, a, i, k>(t_vec) * d2M<nb, b, j, l, m, n>(t_val, t_vec) +
-           d2M<nb, a, i, l, m, n>(t_val, t_vec) * M<b, b, j, k>(t_vec) +
-           M<a, a, i, l>(t_vec) * d2M<nb, b, j, k, m, n>(t_val, t_vec);
+    return d2M<a, i, k, n, m>(t_val, t_vec) * M<b, b, j, l>(t_vec) +
+           M<a, a, i, k>(t_vec) * d2M<b, j, l, m, n>(t_val, t_vec) +
+           d2M<a, i, l, m, n>(t_val, t_vec) * M<b, b, j, k>(t_vec) +
+           M<a, a, i, l>(t_vec) * d2M<b, j, k, m, n>(t_val, t_vec);
   }
 
   template <int nb, int a, int b, int i, int j, int k, int l, int m, int n>
