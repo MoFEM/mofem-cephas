@@ -385,11 +385,11 @@ int main(int argc, char *argv[]) {
 
           FTensor::Tensor2<double, 3, 3> t_S{
 
-              1., 0., 0.,
+              1.,      1. / 2., 1. / 3.,
 
-              0., 0., 0.,
+              2. / 2., 1.,      2. / 3.,
 
-              0., 0., 0.};
+              3. / 2., 1.,      3. / 3.};
 
           auto t_dd =
               EigenProjection<double, double>::getDiffDiffMat<decltype(t_S), 3>(
