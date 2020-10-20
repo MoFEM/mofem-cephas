@@ -121,20 +121,20 @@ int main(int argc, char *argv[]) {
         print_mat(t_d2m_2);
 
         auto t_dd4m_0 =
-            EigenProjection<double, double, 3>::getDD4M<3, 0, 0, 2, 0, 2>(t_L,
-                                                                          t_N);
+            EigenProjection<double, double, 3>::getDD4M<0, 0, 2, 0, 2>(t_L,
+                                                                       t_N);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff dd4m 0";
         print_mat(t_dd4m_0);
 
         auto t_dd4m_1 =
-            EigenProjection<double, double, 3>::getDD4M<3, 1, 0, 2, 0, 2>(t_L,
-                                                                          t_N);
+            EigenProjection<double, double, 3>::getDD4M<1, 0, 2, 0, 2>(t_L,
+                                                                       t_N);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff dd4m 1";
         print_mat(t_dd4m_1);
 
         auto t_dd4m_2 =
-            EigenProjection<double, double, 3>::getDD4M<3, 2, 0, 2, 0, 2>(t_L,
-                                                                          t_N);
+            EigenProjection<double, double, 3>::getDD4M<2, 0, 2, 0, 2>(t_L,
+                                                                       t_N);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff dd4m 2";
         print_mat(t_dd4m_2);
 
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
 
         auto t_b = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
         auto t_c = EigenProjection<double, double, 3>::getMat(t_eig_vals,
-                                                                 t_eig_vec, f);
+                                                              t_eig_vec, f);
         t_c(i, j) -= t_b(i, j);
         print_mat(t_c);
 
