@@ -16,15 +16,17 @@
  Calculate matrix here t_L are vector of eigen values, and t_N is matrix of
  eigen vectors.
  \code
- auto  t_A = EigenProjection<double, double>::getMat<3>(t_L, t_N, f);
+ auto  t_A = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
  \endcode
- where <3> means that are three unique eigen values. Return t_A is symmetric tensor rank two.
+ where <3> means that are three unique eigen values. Return t_A is symmetric
+ tensor rank two.
 
  Calculate directive
  \code
- auto t_P = EigenProjection<double, double>::getDiffMat<3>(t_L, t_N, f, d_f);
+ auto t_P = EigenProjection<double, double, 3>::getDiffMat(t_L, t_N, f, d_f);
  \endcode
- where return t_SL is 4th order Reainann tensor (symmetry on first two and second to indices, i.e. minor symmetrise)
+ where return t_SL is 4th order Reainann tensor (symmetry on first two and
+ second to indices, i.e. minor symmetrise)
 
  Calculate second derivative, L, such that S:L, for given S,
  \code
@@ -36,12 +38,13 @@
 
     0., 0., 1.};
 
-  auto t_SL = EigenProjection<double, double>::getDiffDiffMat<decltype(t_S), 3>(
+  auto t_SL = EigenProjection<double, double, 3>::getDiffDiffMat(
                   t_L, t_N, f, d_f, dd_f, t_S)
  \endcode
- where return t_SL is 4th order Reainann tensor (symmetry on first two and second to indices, i.e. minor symmetrise)
+ where return t_SL is 4th order Reainann tensor (symmetry on first two and
+ second to indices, i.e. minor symmetrise)
 
- You can calculate eigen values using lapack. 
+ You can calculate eigen values using lapack.
 
  *
  */
@@ -499,7 +502,8 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
                          const Number<K> &, const Number<L> &) {}
 };
 
-template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
+template <typename T1, typename T2, int NB, int Dim = 3>
+struct EigenProjection {
 
   using Val = const FTensor::Tensor1<T1, Dim>;
   using Vec = const FTensor::Tensor2<T2, Dim, Dim>;
@@ -566,7 +570,7 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
   static inline auto d2M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return d2MImpl<EigenProjection<T1, T2, Dim>, V, a, i, j, k, l>::eval(
+    return d2MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k, l>::eval(
         t_val, t_vec, Number<nb>());
   }
 
@@ -582,7 +586,7 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
   static inline auto dd4M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return dd4MImpl<EigenProjection<T1, T2, Dim>, V, nb, a, i, j, k, l, m,
+    return dd4MImpl<EigenProjection<T1, T2, NB, Dim>, V, nb, a, i, j, k, l, m,
                     n>::eval(t_val, t_vec, Number<nb>());
   }
 
@@ -608,7 +612,7 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim> t_A;
-    getMatImpl<EigenProjection<T1, T2, Dim>, V, nb>::set(
+    getMatImpl<EigenProjection<T1, T2, NB, Dim>, V, nb>::set(
         t_val, t_vec, f, t_A, Number<Dim>(), Number<Dim>());
     return t_A;
   }
@@ -625,7 +629,7 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<V, Dim> t_diff_2M;
-    getD2MImpl<EigenProjection<T1, T2, Dim>, V, nb, a, Dim, k, l>::set(
+    getD2MImpl<EigenProjection<T1, T2, NB, Dim>, V, nb, a, Dim, k, l>::set(
         t_val, t_vec, t_diff_2M, Number<Dim>(), Number<Dim>());
     return t_diff_2M;
   }
@@ -643,8 +647,8 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<V, Dim> t_diff_2M;
-    getDD4MImpl<EigenProjection<T1, T2, Dim>, V, a, nb, Dim, k, l, m, n>::set(
-        t_val, t_vec, t_diff_2M, Number<Dim>(), Number<Dim>());
+    getDD4MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, nb, Dim, k, l, m,
+                n>::set(t_val, t_vec, t_diff_2M, Number<Dim>(), Number<Dim>());
     return t_diff_2M;
   }
 
@@ -667,7 +671,7 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
-    getDiffMatImpl<EigenProjection<T1, T2, Dim>, V, nb, Dim>::set(
+    getDiffMatImpl<EigenProjection<T1, T2, NB, Dim>, V, nb, Dim>::set(
         t_val, t_vec, f, d_f, t_diff_A, Number<Dim>(), Number<Dim>(),
         Number<Dim>(), Number<Dim>());
     return t_diff_A;
@@ -698,7 +702,7 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
   }
 
   /**
-   * @copydoc EigenProjection< T1, T2, Dim >::getDiffDiffMat
+   * @copydoc EigenProjection< T1, T2, NB, Dim >::getDiffDiffMat
    *
    */
   template <typename T, int nb>
