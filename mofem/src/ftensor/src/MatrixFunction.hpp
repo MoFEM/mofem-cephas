@@ -1,8 +1,48 @@
 /** \file FunctionMatrix.hpp
- * \brief Get function from matrix
- * \ingroup ftensor
- * 
- * For reference see \cite miehe2001algorithms
+ \brief Get function from matrix
+ \ingroup ftensor
+
+  For reference see \cite miehe2001algorithms
+
+ Usage:
+
+ To calculate exponent of matrix, first and second derivatives
+ \code
+ auto f = [](double v) { return exp(v); };
+ auto d_f = [](double v) { return exp(v); };
+ auto dd_f = [](double v) { return exp(v); };
+ \endcode
+
+ Calculate matrix here t_L are vector of eigen values, and t_N is matrix of
+ eigen vectors.
+ \code
+ auto  t_A = EigenProjection<double, double>::getMat<3>(t_L, t_N, f);
+ \endcode
+ where <3> means that are three unique eigen values. Return t_A is symmetric tensor rank two.
+
+ Calculate directive
+ \code
+ auto t_P = EigenProjection<double, double>::getDiffMat<3>(t_L, t_N, f, d_f);
+ \endcode
+ where return t_SL is 4th order Reainann tensor (symmetry on first two and second to indices, i.e. minor symmetrise)
+
+ Calculate second derivative, L, such that S:L, for given S,
+ \code
+ FTensor::Tensor2<double, 3, 3> t_S{
+
+    1., 0., 0.,
+
+    0., 1., 0.,
+
+    0., 0., 1.};
+
+  auto t_SL = EigenProjection<double, double>::getDiffDiffMat<decltype(t_S), 3>(
+                  t_L, t_N, f, d_f, dd_f, t_S)
+ \endcode
+ where return t_SL is 4th order Reainann tensor (symmetry on first two and second to indices, i.e. minor symmetrise)
+
+ You can calculate eigen values using lapack. 
+
  *
  */
 
@@ -546,6 +586,24 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
                     n>::eval(t_val, t_vec, Number<nb>());
   }
 
+  /**
+   * @brief Get matrix  
+   * 
+   * \f[
+   * \mathbf{B} = f(\mathbf{A})
+   * \f]
+   * 
+   * \f[
+   * B_{ij} = sum_{a}^3 f(\lambda^a) n^a_i n^a_j 
+   * \f]
+   * where \f$a\f$ is eigen value number.
+   * 
+   * @tparam nb number of eigen values
+   * @param t_val eiegn values vector
+   * @param t_vec eigen vectors matrix
+   * @param f function
+   * @return auto function symmetric tensor rank two
+   */
   template <int nb> static inline auto getMat(Val &t_val, Vec &t_vec, Fun f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
@@ -590,6 +648,20 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
     return t_diff_2M;
   }
 
+  /**
+   * @brief Get derivative of matrix
+   * 
+   * \f[
+   * P_{ijkl} = \frac{\partial B_{ij}}{\partial A_{kl}} 
+   * \f]
+   * 
+   * @tparam nb number of eigen values
+   * @param t_val eiegn values vector
+   * @param t_vec eiegn vectors matrix
+   * @param f function 
+   * @param d_f directive of function
+   * @return auto direvatives, forth order tensor with minor simetries
+   */
   template <int nb>
   static inline auto getDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
     using V =
@@ -601,12 +673,34 @@ template <typename T1, typename T2, int Dim = 3> struct EigenProjection {
     return t_diff_A;
   }
 
+  /**
+   * @brief Get second direvarive of matrix
+   * 
+   * \f[
+   * LS_{klmn} = 
+   * S_{ij} \frac{\partial^2 B_{ij}}{\partial A_{kl} \partial A_{mn} } 
+   * \f]
+   * 
+   * @tparam T 
+   * @tparam nb nb number of eigen values
+   * @param t_val eiegn values vector
+   * @param t_vec eiegn vectors matrix
+   * @param f function
+   * @param d_f derivative of function
+   * @param dd_f second derivative of function
+   * @param t_S second rank tensor S
+   * @return auto second direvatives, forth order tensor with minor simetries
+   */
   template <typename T, int nb>
   static inline auto getDiffDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
                                     Fun dd_f, T &t_S, const Number<nb> &) {
     return getDiffDiffMat<T, nb>(t_val, t_vec, f, d_f, dd_f);
   }
 
+  /**
+   * @copydoc EigenProjection< T1, T2, Dim >::getDiffDiffMat
+   *
+   */
   template <typename T, int nb>
   static inline auto getDiffDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
                                     Fun dd_f, T &t_S) {

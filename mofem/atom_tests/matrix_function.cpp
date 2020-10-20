@@ -4,6 +4,7 @@
  * @brief Test and example for matrix function
  *
  * For reference see \cite miehe2001algorithms
+ * 
  */
 
 #define FTENSOR_DEBUG
