@@ -236,7 +236,7 @@ struct secondMatrixDirectiveImpl {
             E::M(t_vec, Number<a>(), Number<a>(), Number<m>(), Number<n>()) *
             dd_f(E::L(t_val, Number<a>())) +
 
-        E::dd4M(t_val, t_vec, Number<NB>(), Number<a>(), Number<i>(),
+        E::dd4M(t_val, t_vec,Number<a>(), Number<i>(),
                 Number<j>(), Number<k>(), Number<l>(), Number<m>(),
                 Number<n>()) *
             f(E::L(t_val, Number<a>())) / static_cast<C>(4) +
@@ -573,20 +573,20 @@ struct EigenProjection {
         t_val, t_vec, Number<NB>());
   }
 
-  template <int nb, int a, int i, int j, int k, int l, int m, int n>
+  template <int a, int i, int j, int k, int l, int m, int n>
   static inline auto
-  dd4M(Val &t_val, Vec &t_vec, const Number<nb> &, const Number<a> &,
+  dd4M(Val &t_val, Vec &t_vec, const Number<a> &,
        const Number<i> &, const Number<j> &, const Number<k> &,
        const Number<l> &, const Number<m> &, const Number<n> &) {
-    return dd4M<nb, a, i, j, k, l, m, n>(t_val, t_vec);
+    return dd4M<a, i, j, k, l, m, n>(t_val, t_vec);
   }
 
-  template <int nb, int a, int i, int j, int k, int l, int m, int n>
+  template <int a, int i, int j, int k, int l, int m, int n>
   static inline auto dd4M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return dd4MImpl<EigenProjection<T1, T2, NB, Dim>, V, nb, a, i, j, k, l, m,
-                    n>::eval(t_val, t_vec, Number<nb>());
+    return dd4MImpl<EigenProjection<T1, T2, NB, Dim>, V, NB, a, i, j, k, l, m,
+                    n>::eval(t_val, t_vec, Number<NB>());
   }
 
   /**
