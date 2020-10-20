@@ -59,14 +59,19 @@ int main(int argc, char *argv[]) {
 
           0., 0., 1.};
 
-      auto print_ddg = [](auto &t) {
+      auto print_ddg = [](auto &t, auto str = "") {
+        constexpr double eps = 1e-6;
         for (int ii = 0; ii != 3; ++ii)
-          for (int jj = 0; jj <= ii; ++jj)
+          for (int jj = 0; jj != 3; ++jj)
             for (int kk = 0; kk != 3; ++kk)
-              for (int ll = 0; ll <= kk; ++ll)
+              for (int ll = 0; ll != 3; ++ll) {
+                double v = t(ii, jj, kk, ll);
+                double w = std::abs(v) < eps ? 0 : v;
                 MOFEM_LOG("ATOM_TEST", Sev::verbose)
+                    << str << std::fixed << std::setprecision(3) << std::showpos
                     << ii + 1 << " " << jj + 1 << " " << kk + 1 << " " << ll + 1
-                    << " : " << t(ii, jj, kk, ll);
+                    << " : " << w;
+              }
       };
 
       auto print_ddg_direction = [](auto &t, auto kk, int ll) {
@@ -164,7 +169,7 @@ int main(int argc, char *argv[]) {
 
         constexpr double regression_t_b = 572.543;
         constexpr double regression_t_d = 859.939;
-        constexpr double regression_t_dd = 824.683;
+        constexpr double regression_t_dd = 859.939;
 
         constexpr double eps = 1e-2;
         if (std::abs(norm2_t_b - regression_t_b) > eps)
@@ -229,7 +234,7 @@ int main(int argc, char *argv[]) {
         print_mat(t_c);
 
         auto norm2_t_c = t_c(i, j) * t_c(i, j);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose)
+        MOFEM_LOG("ATOM_TEST", Sev::inform)
             << "Reconstruct mat difference with lapack eigen valyes and "
                "vectors "
             << norm2_t_c;
@@ -250,40 +255,212 @@ int main(int argc, char *argv[]) {
         auto d_f = [](double v) { return 1; };
         auto dd_f = [](double v) { return 0; };
 
-        auto t_b = EigenProjection<double, double>::getMat<3>(t_L, t_N, f);
-
-        auto t_d =
-            EigenProjection<double, double>::getDiffMat<3>(t_L, t_N, f, d_f);
-
-        FTensor::Tensor2_symmetric<double, 3> t_c;
-        t_c(i, j) =
-            (t_d(i, j, k, l) * t_b(k, l)) - (t_one(i, j, k, l) * t_b(k, l));
-        print_mat(t_c);
-        auto norm2_t_c = t_c(i, j) * t_c(i, j);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose)
-            << "Derivative should be unity matrix " << norm2_t_c;
         constexpr double eps = 1e-10;
-        if (norm2_t_c > eps)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                  "This norm should be zero");
+        {
+          auto t_b = EigenProjection<double, double>::getMat<3>(t_L, t_N, f);
+          t_b(i, j) -= (t_A(i, j) || t_A(j, i)) / 2;
+          auto norm2_t_b = t_b(i, j) * t_b(i, j);
+          MOFEM_LOG("ATOM_TEST", Sev::inform)
+              << "Result should be matrix itself " << norm2_t_b;
+          if (norm2_t_b > eps)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "This norm should be zero");
+        }
 
-        FTensor::Tensor2<double, 3, 3> t_S{
+        {
+          auto t_b = EigenProjection<double, double>::getMat<3>(t_L, t_N, f);
+          auto t_d =
+              EigenProjection<double, double>::getDiffMat<3>(t_L, t_N, f, d_f);
+          FTensor::Tensor2_symmetric<double, 3> t_c;
+          t_c(i, j) =
+              (t_d(i, j, k, l) * t_b(k, l)) - (t_one(i, j, k, l) * t_b(k, l));
+          print_mat(t_c);
+          auto norm2_t_c = t_c(i, j) * t_c(i, j);
+          MOFEM_LOG("ATOM_TEST", Sev::inform)
+              << "Derivative should be unity matrix " << norm2_t_c;
+          if (norm2_t_c > eps)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "This norm should be zero");
+        }
 
-            1., 0., 0.,
+        {
+          FTensor::Tensor2<double, 3, 3> t_S{
 
-            0., 1., 0.,
+              1., 0., 0.,
 
-            0., 0., 1.};
+              0., 1., 0.,
 
-        auto t_dd =
-            EigenProjection<double, double>::getDiffDiffMat<decltype(t_S), 3>(
-                t_L, t_N, f, d_f, dd_f, t_S);
+              0., 0., 1.};
 
-        auto norm2_t_dd = get_norm_t4(t_dd);
-        MOFEM_LOG("ATOM_TEST", Sev::inform) << "norm2_t_dd " << norm2_t_dd;
-        if (norm2_t_dd > eps)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                  "This norm should be zero");
+          auto t_dd =
+              EigenProjection<double, double>::getDiffDiffMat<decltype(t_S), 3>(
+                  t_L, t_N, f, d_f, dd_f, t_S);
+
+          auto norm2_t_dd = get_norm_t4(t_dd);
+          MOFEM_LOG("ATOM_TEST", Sev::inform) << "norm2_t_dd " << norm2_t_dd;
+          if (norm2_t_dd > eps)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "This norm should be zero");
+        }
+      }
+
+      // Testsing quadratic function second second direvarive zero
+      {
+        auto f = [](double v) { return v * v; };
+        auto d_f = [](double v) { return 2 * v; };
+        auto dd_f = [](double v) { return 2; };
+
+        constexpr double eps = 1e-9;
+
+        // check if multiplication gives right value
+        {
+          auto t_b = EigenProjection<double, double>::getMat<3>(t_L, t_N, f);
+          FTensor::Tensor2<double, 3, 3> t_a;
+          t_a(i, j) = t_b(i, j) - t_A(i, k) * t_A(k, j);
+          print_mat(t_a);
+          auto norm2_t_a = t_a(i, j) * t_a(i, j);
+          MOFEM_LOG("ATOM_TEST", Sev::inform)
+              << "Result should be matrix times matrix " << norm2_t_a;
+          if (norm2_t_a > eps)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "This norm should be zero");
+        }
+
+        // check first directive
+        {
+          auto t_d =
+              EigenProjection<double, double>::getDiffMat<3>(t_L, t_N, f, d_f);
+
+          print_ddg_direction(t_d, 0, 2);
+
+          {
+
+            constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+            FTensor::Tensor4<double, 3, 3, 3, 3> t_d_a;
+            t_d_a(i, j, k, l) = 0;
+
+            for (int ii = 0; ii != 3; ++ii)
+              for (int jj = 0; jj != 3; ++jj)
+                for (int kk = 0; kk != 3; ++kk)
+                  for (int ll = 0; ll != 3; ++ll)
+                    for (int zz = 0; zz != 3; ++zz) {
+
+                      auto diff = [&](auto ii, auto jj, auto kk, auto ll,
+                                      int zz) {
+                        return
+
+                            t_A(ii, zz) * t_kd(zz, kk) * t_kd(jj, ll)
+
+                            +
+
+                            t_kd(ii, kk) * t_kd(zz, ll) * t_A(zz, jj);
+                      };
+
+                      t_d_a(ii, jj, kk, ll) += (diff(ii, jj, kk, ll, zz) +
+                                                diff(ii, jj, ll, kk, zz)) /
+                                               2.;
+                    }
+
+            MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
+            print_ddg(t_d_a, "hand ");
+            MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
+            print_ddg(t_d, "code ");
+
+            for (int ii = 0; ii != 3; ++ii)
+              for (int jj = 0; jj != 3; ++jj)
+                for (int kk = 0; kk != 3; ++kk)
+                  for (int ll = 0; ll != 3; ++ll)
+                    t_d_a(ii, jj, kk, ll) -= t_d(ii, jj, kk, ll);
+
+            double nrm2_t_d_a = get_norm_t4(t_d_a);
+            MOFEM_LOG("ATOM_TEST", Sev::inform)
+                << "Direvarive hand calculation minus code " << nrm2_t_d_a;
+            if (nrm2_t_d_a > eps)
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                      "This norm should be zero");
+          }
+        }
+
+        {
+
+          FTensor::Tensor2<double, 3, 3> t_S{
+
+              1., 0., 0.,
+
+              0., 0., 0.,
+
+              0., 0., 0.};
+
+          auto t_dd =
+              EigenProjection<double, double>::getDiffDiffMat<decltype(t_S), 3>(
+                  t_L, t_N, f, d_f, dd_f, t_S);
+
+          {
+            constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+            FTensor::Tensor4<double, 3, 3, 3, 3> t_dd_a;
+            t_dd_a(i, j, k, l) = 0;
+
+            for (int ii = 0; ii != 3; ++ii)
+              for (int jj = 0; jj != 3; ++jj)
+                for (int kk = 0; kk != 3; ++kk)
+                  for (int ll = 0; ll != 3; ++ll)
+                    for (int mm = 0; mm != 3; ++mm)
+                      for (int nn = 0; nn != 3; ++nn)
+                        for (int zz = 0; zz != 3; ++zz) {
+
+                          auto diff = [&](auto ii, auto jj, auto kk, auto ll,
+                                          int mm, int nn, int zz) {
+                            return
+
+                                t_S(ii, jj) * (t_kd(ii, mm) * t_kd(zz, nn) *
+                                                   t_kd(zz, kk) * t_kd(jj, ll)
+
+                                               +
+
+                                               t_kd(ii, kk) * t_kd(zz, ll) *
+                                                   t_kd(zz, mm) * t_kd(jj, nn));
+                          };
+
+                          t_dd_a(kk, ll, mm, nn) +=
+                              (
+
+                                  diff(ii, jj, kk, ll, mm, nn, zz)
+
+                                  +
+
+                                  diff(ii, jj, ll, kk, mm, nn, zz)
+
+                                  +
+
+                                  diff(ii, jj, kk, ll, nn, mm, zz)
+
+                                  +
+
+                                  diff(ii, jj, ll, kk, nn, mm, zz)
+
+                                      ) /
+                              4.;
+                        }
+
+            MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
+            print_ddg(t_dd_a, "hand ");
+            MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
+            print_ddg(t_dd, "code ");
+
+            for (int ii = 0; ii != 3; ++ii)
+              for (int jj = 0; jj != 3; ++jj)
+                for (int kk = 0; kk != 3; ++kk)
+                  for (int ll = 0; ll != 3; ++ll)
+                    t_dd_a(ii, jj, kk, ll) -= t_dd(ii, jj, kk, ll);
+
+            double nrm2_t_dd_a = get_norm_t4(t_dd_a);
+            MOFEM_LOG("ATOM_TEST", Sev::inform)
+                << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
+            if (nrm2_t_dd_a > eps)
+              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                      "This norm should be zero");
+          }
+        }
       }
     }
   }
