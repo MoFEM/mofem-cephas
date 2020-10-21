@@ -67,16 +67,17 @@
 #include <type_traits>
 
 template <typename E, typename C, int a, int i, int j, int k, int l>
-struct d2MImpl {
+struct d2PImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
 
   template <int N> using Number = FTensor::Number<N>;
 
-  d2MImpl() = delete;
-  ~d2MImpl() = delete;
+  d2PImpl() = delete;
+  ~d2PImpl() = delete;
 
-  template <int b> static inline C term(Val &t_val, Vec &t_vec) {
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<3> &) {
     if (a != b)
       return E::F(t_val, Number<a>(), Number<b>()) *
              E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
@@ -85,13 +86,45 @@ struct d2MImpl {
       return 0;
   }
 
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<2> &) {
+    if (a == 0 && b == 1)
+      return E::F(t_val, Number<0>(), Number<1>()) *
+             (
+
+                 E::S(t_vec, Number<0>(), Number<1>(), Number<i>(), Number<j>(),
+                      Number<k>(), Number<l>()) +
+
+                 E::S(t_vec, Number<2>(), Number<1>(), Number<i>(), Number<j>(),
+                      Number<k>(), Number<l>())
+
+             );
+
+    if (a == 1 && b == 0)
+      return E::F(t_val, Number<1>(), Number<0>()) *
+                 E::S(t_vec, Number<1>(), Number<0>(), Number<i>(), Number<j>(),
+                      Number<k>(), Number<l>()) +
+              E::F(t_val, Number<1>(), Number<2>()) *
+                 E::S(t_vec, Number<1>(), Number<2>(), Number<i>(), Number<j>(),
+                      Number<k>(), Number<l>());
+
+    return 0;
+  }
+
+
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<1> &) {
+    return 0;
+  }
+
   template <int nb>
   static inline C eval(Val &t_val, Vec &t_vec, const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec) + eval(t_val, t_vec, Number<nb - 1>());
+    return term<nb - 1>(t_val, t_vec, typename E::NumberNb()) +
+           eval(t_val, t_vec, Number<nb - 1>());
   }
 
   static inline C eval(Val &t_val, Vec &t_vec, const Number<1> &) {
-    return term<0>(t_val, t_vec);
+    return term<0>(t_val, t_vec, typename E::NumberNb());
   }
 };
 
@@ -304,7 +337,7 @@ template <typename E, typename C, int a, int k, int l> struct getD2PImpl {
   static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
                          const Number<J> &) {
     set(t_val, t_vec, t_a, Number<I>(), Number<J - 1>());
-    t_a(I - 1, J - 1) = d2MImpl<E, C, a, I - 1, J - 1, k, l>::eval(
+    t_a(I - 1, J - 1) = d2PImpl<E, C, a, I - 1, J - 1, k, l>::eval(
         t_val, t_vec, typename E::NumberNb());
   }
 
@@ -628,7 +661,7 @@ struct EigenProjection {
 
 private:
   template <typename E, typename C, int a, int i, int j, int k, int l>
-  friend struct d2MImpl;
+  friend struct d2PImpl;
   template <typename E, typename C, int a, int i, int j, int k, int l, int m,
             int n>
   friend struct dd4MImpl;
@@ -720,7 +753,7 @@ private:
   static inline auto d2P(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return d2MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k, l>::eval(
+    return d2PImpl<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k, l>::eval(
         t_val, t_vec, Number<NB>());
   }
 
