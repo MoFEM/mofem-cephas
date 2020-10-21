@@ -400,7 +400,7 @@ template <typename E, typename C> struct getDiffMatImpl {
                          const Number<K> &, const Number<L> &) {}
 };
 
-template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
+template <typename E, typename C> struct getDiffDiffMatImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
@@ -417,9 +417,10 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
                          const Number<M> &, const Number<N> &) {
     return t_s(M - 1, N - 1) *
                secondMatrixDirectiveImpl<E, C, M - 1, N - 1, I - 1, J - 1,
-                                         K - 1, L - 1>::eval(t_val, t_vec, f,
-                                                             d_f, dd_f,
-                                                             Number<NB>())
+                                         K - 1,
+                                         L - 1>::eval(t_val, t_vec, f, d_f,
+                                                      dd_f,
+                                                      typename E::NumberNb())
 
            +
 
@@ -435,12 +436,14 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
     return t_s(M - 1, 0) *
                secondMatrixDirectiveImpl<E, C, M - 1, 0, I - 1, J - 1, K - 1,
                                          L - 1>::eval(t_val, t_vec, f, d_f,
-                                                      dd_f, Number<NB>())
+                                                      dd_f,
+                                                      typename E::NumberNb())
 
            +
 
            add(t_val, t_vec, f, d_f, dd_f, t_s, t_a, Number<I>(), Number<J>(),
-               Number<K>(), Number<L>(), Number<M - 1>(), Number<Dim>());
+               Number<K>(), Number<L>(), Number<M - 1>(),
+               typename E::NumberDim());
   }
 
   template <typename T1, typename T2, int I, int J, int K, int L>
@@ -451,7 +454,7 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
     return t_s(0, 0) *
            secondMatrixDirectiveImpl<E, C, 0, 0, I - 1, J - 1, K - 1,
                                      L - 1>::eval(t_val, t_vec, f, d_f, dd_f,
-                                                  Number<NB>());
+                                                  typename E::NumberNb());
   }
 
   template <typename T1, typename T2, int I, int J, int K, int L>
@@ -462,7 +465,8 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
         Number<K>(), Number<L - 1>());
     t_a(I - 1, J - 1, K - 1, L - 1) =
         add(t_val, t_vec, f, d_f, dd_f, t_s, t_a, Number<I>(), Number<J>(),
-            Number<K>(), Number<L>(), Number<Dim>(), Number<Dim>());
+            Number<K>(), Number<L>(), typename E::NumberDim(),
+            typename E::NumberDim());
   }
 
   template <typename T1, typename T2, int I, int J, int K>
@@ -480,7 +484,8 @@ template <typename E, typename C, int NB, int Dim> struct getDiffDiffMatImpl {
                          const Number<0> &, const Number<0> &) {
     set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
 
-        Number<I>(), Number<J - 1>(), Number<Dim>(), Number<Dim>());
+        Number<I>(), Number<J - 1>(), typename E::NumberDim(),
+        typename E::NumberDim());
   }
 
   template <typename T1, typename T2, int I, int K, int L>
@@ -693,7 +698,7 @@ struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
-    getDiffDiffMatImpl<EigenProjection<T1, T2, Dim>, V, NB, Dim>::set(
+    getDiffDiffMatImpl<EigenProjection<T1, T2, Dim>, V>::set(
         t_val, t_vec, f, d_f, dd_f, t_S, t_diff_A, Number<Dim>(), Number<Dim>(),
         Number<Dim>(), Number<Dim>());
     return t_diff_A;
