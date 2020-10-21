@@ -329,7 +329,7 @@ struct secondMatrixDirectiveImpl {
 
             +
 
-            E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
+            E::P(t_vec, Number<a>(), Number<i>(), Number<j>()) *
                 E::d2P(t_val, t_vec, Number<a>(), Number<k>(), Number<l>(),
                        Number<m>(), Number<n>())
 
