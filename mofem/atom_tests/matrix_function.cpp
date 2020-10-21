@@ -380,6 +380,7 @@ int main(int argc, char *argv[]) {
           }
         }
 
+        // check second directive
         {
 
           FTensor::Tensor2<double, 3, 3> t_S{
