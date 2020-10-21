@@ -666,7 +666,19 @@ private:
   template <int a, int i, int j>
   static inline auto P(Vec &t_vec, const Number<a> &, const Number<i> &,
                        const Number<j> &) {
-    return M<a, i, j>(t_vec);
+    if (NB == 3)
+      return M<a, i, j>(t_vec);
+    else if (NB == 2) {
+      if (a == 0)
+        return M<0, i, j>(t_vec) + M<1, i, j>(t_vec);
+      else if (a == 1)
+        return M<2, i, j>(t_vec);
+    } else if (NB == 1) {
+      if (i == j)
+        return static_cast<decltype(t_vec(0, 0))>(1);
+      else
+        return static_cast<decltype(t_vec(0, 0))>(0);
+    }
   }
 
   template <int a, int i, int j>
