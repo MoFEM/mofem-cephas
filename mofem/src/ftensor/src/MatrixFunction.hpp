@@ -263,7 +263,7 @@ struct secondMatrixDirectiveImpl {
   }
 };
 
-template <typename E, typename C, int NB> struct getMatImpl {
+template <typename E, typename C> struct getMatImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
@@ -611,7 +611,7 @@ struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim> t_A;
-    getMatImpl<EigenProjection<T1, T2, NB, Dim>, V, NB>::set(
+    getMatImpl<EigenProjection<T1, T2, Dim>, V>::set(
         t_val, t_vec, f, t_A, Number<Dim>(), Number<Dim>());
     return t_A;
   }
