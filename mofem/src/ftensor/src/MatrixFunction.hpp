@@ -110,9 +110,9 @@ struct dd4MImpl {
       return
 
           E::F(t_val, Number<a>(), Number<b>()) *
-              E::d2S(t_val, t_vec, Number<NB>(), Number<a>(), Number<b>(),
-                     Number<i>(), Number<j>(), Number<k>(), Number<l>(),
-                     Number<m>(), Number<n>())
+              E::d2S(t_val, t_vec, Number<a>(), Number<b>(), Number<i>(),
+                     Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                     Number<n>())
 
           +
 
@@ -655,7 +655,6 @@ struct EigenProjection {
    * P_{ijkl} = \frac{\partial B_{ij}}{\partial A_{kl}}
    * \f]
    *
-   * @tparam nb number of eigen values
    * @param t_val eiegn values vector
    * @param t_vec eiegn vectors matrix
    * @param f function
@@ -681,7 +680,6 @@ struct EigenProjection {
    * \f]
    *
    * @tparam T
-   * @tparam nb nb number of eigen values
    * @param t_val eiegn values vector
    * @param t_vec eiegn vectors matrix
    * @param f function
@@ -726,7 +724,7 @@ struct EigenProjection {
     return G<a, b, i, j, k, l>(t_vec) + G<b, a, i, j, k, l>(t_vec);
   }
 
-  template <int nb, int a, int b, int i, int j, int k, int l, int m, int n>
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
   static inline auto d2G(Val &t_val, Vec &t_vec) {
     return d2M<a, i, k, n, m>(t_val, t_vec) * M<b, b, j, l>(t_vec) +
            M<a, a, i, k>(t_vec) * d2M<b, j, l, m, n>(t_val, t_vec) +
@@ -734,18 +732,17 @@ struct EigenProjection {
            M<a, a, i, l>(t_vec) * d2M<b, j, k, m, n>(t_val, t_vec);
   }
 
-  template <int nb, int a, int b, int i, int j, int k, int l, int m, int n>
-  static inline auto d2S(Val &t_val, Vec &t_vec, const Number<nb> &,
-                         const Number<a> &, const Number<b> &,
-                         const Number<i> &, const Number<j> &,
-                         const Number<k> &, const Number<l> &,
-                         const Number<m> &, const Number<n> &) {
-    return d2S<nb, a, b, i, j, k, l, m, n>(t_val, t_vec);
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
+  static inline auto
+  d2S(Val &t_val, Vec &t_vec, const Number<a> &, const Number<b> &,
+      const Number<i> &, const Number<j> &, const Number<k> &,
+      const Number<l> &, const Number<m> &, const Number<n> &) {
+    return d2S<a, b, i, j, k, l, m, n>(t_val, t_vec);
   }
 
-  template <int nb, int a, int b, int i, int j, int k, int l, int m, int n>
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
   static inline auto d2S(Val &t_val, Vec &t_vec) {
-    return d2G<nb, a, b, i, j, k, l, m, n>(t_val, t_vec) +
-           d2G<nb, b, a, i, j, k, l, m, n>(t_val, t_vec);
+    return d2G<a, b, i, j, k, l, m, n>(t_val, t_vec) +
+           d2G<b, a, i, j, k, l, m, n>(t_val, t_vec);
   }
 };
