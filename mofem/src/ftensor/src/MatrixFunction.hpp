@@ -278,7 +278,7 @@ template <typename E, typename C, int NB> struct getMatImpl {
                          const Number<I> &, const Number<J> &) {
     set(t_val, t_vec, f, t_a, Number<I>(), Number<J - 1>());
     t_a(I - 1, J - 1) = reconstructMatImpl<E, C, I - 1, J - 1>::eval(
-        t_val, t_vec, f, Number<NB>());
+        t_val, t_vec, f, typename E::NumberNb());
   }
 
   template <typename T, int I>
@@ -509,6 +509,9 @@ struct EigenProjection {
 
   template <int N> using Number = FTensor::Number<N>;
   template <char c> using I = typename FTensor::Index<c, Dim>;
+
+  using NumberNb = Number<NB>;
+  using NumberDim = Number<Dim>;
 
   template <int a, int i> static inline auto N(Vec &t_vec) {
     return t_vec(a, i);
