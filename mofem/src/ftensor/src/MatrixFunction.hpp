@@ -146,7 +146,7 @@ template <typename E, typename C, int i, int j> struct reconstructMatImpl {
   ~reconstructMatImpl() = delete;
 
   template <int a> static inline C term(Val &t_val, Vec &t_vec, Fun f) {
-    return E::M(t_vec, Number<a>(), Number<a>(), Number<i>(), Number<j>()) *
+    return E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
            f(E::L(t_val, Number<a>()));
   }
 
@@ -176,8 +176,8 @@ struct firstMatrixDirectiveImpl {
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
     return
 
-        E::M(t_vec, Number<a>(), Number<a>(), Number<i>(), Number<j>()) *
-            E::M(t_vec, Number<a>(), Number<a>(), Number<k>(), Number<l>()) *
+        E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
+            E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
             d_f(E::L(t_val, Number<a>()))
 
         +
@@ -219,30 +219,29 @@ struct secondMatrixDirectiveImpl {
 
             E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
                    Number<m>(), Number<n>()) *
-                E::M(t_vec, Number<a>(), Number<a>(), Number<k>(), Number<l>())
+                E::M(t_vec, Number<a>(), Number<k>(), Number<l>())
 
             +
 
-            E::M(t_vec, Number<a>(), Number<a>(), Number<i>(), Number<j>()) *
+            E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
                 E::d2M(t_val, t_vec, Number<a>(), Number<k>(), Number<l>(),
                        Number<m>(), Number<n>())
 
                 ) *
             d_f(E::L(t_val, Number<a>())) / static_cast<C>(2) +
 
-        E::M(t_vec, Number<a>(), Number<a>(), Number<i>(), Number<j>()) *
-            E::M(t_vec, Number<a>(), Number<a>(), Number<k>(), Number<l>()) *
-            E::M(t_vec, Number<a>(), Number<a>(), Number<m>(), Number<n>()) *
+        E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
+            E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
+            E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
             dd_f(E::L(t_val, Number<a>())) +
 
-        E::dd4M(t_val, t_vec,Number<a>(), Number<i>(),
-                Number<j>(), Number<k>(), Number<l>(), Number<m>(),
-                Number<n>()) *
+        E::dd4M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
+                Number<k>(), Number<l>(), Number<m>(), Number<n>()) *
             f(E::L(t_val, Number<a>())) / static_cast<C>(4) +
 
         E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(), Number<k>(),
                Number<l>()) *
-            E::M(t_vec, Number<a>(), Number<a>(), Number<m>(), Number<n>()) *
+            E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
             d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
   }
 
@@ -534,14 +533,14 @@ struct EigenProjection {
     return static_cast<decltype(t_val(0))>(1) / (L<a>(t_val) - L<b>(t_val));
   }
 
-  template <int a, int b, int i, int j>
-  static inline auto M(Vec &t_vec, const Number<a> &, const Number<b> &,
-                       const Number<i> &, const Number<j> &) {
-    return M<a, b, i, j>(t_vec);
+  template <int a, int i, int j>
+  static inline auto M(Vec &t_vec, const Number<a> &, const Number<i> &,
+                       const Number<j> &) {
+    return M<a, i, j>(t_vec);
   }
 
-  template <int a, int b, int i, int j> static inline auto M(Vec &t_vec) {
-    return N<a, i>(t_vec) * N<b, j>(t_vec);
+  template <int a, int i, int j> static inline auto M(Vec &t_vec) {
+    return N<a, i>(t_vec) * N<a, j>(t_vec);
   }
 
   template <int a, int b, int i, int j>
@@ -558,8 +557,8 @@ struct EigenProjection {
 
   template <int a, int b, int i, int j, int k, int l>
   static inline auto G(Vec &t_vec) {
-    return M<a, a, i, k>(t_vec) * M<b, b, j, l>(t_vec) +
-           M<a, a, i, l>(t_vec) * M<b, b, j, k>(t_vec);
+    return M<a, i, k>(t_vec) * M<b, j, l>(t_vec) +
+           M<a, i, l>(t_vec) * M<b, j, k>(t_vec);
   }
 
   template <int a, int i, int j, int k, int l>
@@ -706,13 +705,13 @@ struct EigenProjection {
 
   template <int a, int b, int i, int j>
   static inline auto dFdNa(Val &t_val, Vec &t_vec) {
-    return -M<a, a, i, j>(t_vec) /
+    return -M<a, i, j>(t_vec) /
            ((L<a>(t_val) - L<b>(t_val)) * (L<a>(t_val) - L<b>(t_val)));
   }
 
   template <int a, int b, int i, int j>
   static inline auto dFdNb(Val &t_val, Vec &t_vec) {
-    return M<b, b, i, j>(t_vec) /
+    return M<b, i, j>(t_vec) /
            ((L<a>(t_val) - L<b>(t_val)) * (L<a>(t_val) - L<b>(t_val)));
   }
 
@@ -730,10 +729,10 @@ struct EigenProjection {
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
   static inline auto d2G(Val &t_val, Vec &t_vec) {
-    return d2M<a, i, k, n, m>(t_val, t_vec) * M<b, b, j, l>(t_vec) +
-           M<a, a, i, k>(t_vec) * d2M<b, j, l, m, n>(t_val, t_vec) +
-           d2M<a, i, l, m, n>(t_val, t_vec) * M<b, b, j, k>(t_vec) +
-           M<a, a, i, l>(t_vec) * d2M<b, j, k, m, n>(t_val, t_vec);
+    return d2M<a, i, k, n, m>(t_val, t_vec) * M<b, j, l>(t_vec) +
+           M<a, i, k>(t_vec) * d2M<b, j, l, m, n>(t_val, t_vec) +
+           d2M<a, i, l, m, n>(t_val, t_vec) * M<b, j, k>(t_vec) +
+           M<a, i, l>(t_vec) * d2M<b, j, k, m, n>(t_val, t_vec);
   }
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
