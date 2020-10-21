@@ -152,8 +152,8 @@ int main(int argc, char *argv[]) {
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff";
         print_ddg_direction(t_d, 0, 2);
 
-        auto t_dd = EigenProjection<double, double, 3>::getDiffDiffMat<
-            decltype(t_S), 3>(t_L, t_N, f, d_f, dd_f, t_S);
+        auto t_dd = EigenProjection<double, double, 3>::getDiffDiffMat(
+            t_L, t_N, f, d_f, dd_f, t_S);
 
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff Diff";
         print_ddg_direction(t_dd, 0, 2);
@@ -292,8 +292,8 @@ int main(int argc, char *argv[]) {
 
               0., 0., 1.};
 
-          auto t_dd = EigenProjection<double, double, 3>::getDiffDiffMat<
-              decltype(t_S), 3>(t_L, t_N, f, d_f, dd_f, t_S);
+          auto t_dd = EigenProjection<double, double, 3>::getDiffDiffMat(
+              t_L, t_N, f, d_f, dd_f, t_S);
 
           auto norm2_t_dd = get_norm_t4(t_dd);
           MOFEM_LOG("ATOM_TEST", Sev::inform) << "norm2_t_dd " << norm2_t_dd;
@@ -390,8 +390,8 @@ int main(int argc, char *argv[]) {
 
               3. / 2., 1.,      3. / 3.};
 
-          auto t_dd = EigenProjection<double, double, 3>::getDiffDiffMat<
-              decltype(t_S), 3>(t_L, t_N, f, d_f, dd_f, t_S);
+          auto t_dd = EigenProjection<double, double, 3>::getDiffDiffMat(
+              t_L, t_N, f, d_f, dd_f, t_S);
 
           {
             constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
