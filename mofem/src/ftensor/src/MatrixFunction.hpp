@@ -182,7 +182,7 @@ struct firstMatrixDirectiveImpl {
 
         +
 
-        E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(), Number<k>(),
+        E::d2P(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(), Number<k>(),
                Number<l>()) *
             f(E::L(t_val, Number<a>())) / static_cast<C>(2);
   }
@@ -217,14 +217,14 @@ struct secondMatrixDirectiveImpl {
 
         (
 
-            E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
+            E::d2P(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
                    Number<m>(), Number<n>()) *
                 E::P(t_vec, Number<a>(), Number<k>(), Number<l>())
 
             +
 
             E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-                E::d2M(t_val, t_vec, Number<a>(), Number<k>(), Number<l>(),
+                E::d2P(t_val, t_vec, Number<a>(), Number<k>(), Number<l>(),
                        Number<m>(), Number<n>())
 
                 ) *
@@ -239,7 +239,7 @@ struct secondMatrixDirectiveImpl {
                 Number<k>(), Number<l>(), Number<m>(), Number<n>()) *
             f(E::L(t_val, Number<a>())) / static_cast<C>(4) +
 
-        E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(), Number<k>(),
+        E::d2P(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(), Number<k>(),
                Number<l>()) *
             E::P(t_vec, Number<a>(), Number<m>(), Number<n>()) *
             d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
@@ -565,6 +565,13 @@ struct EigenProjection {
   static inline auto G(Vec &t_vec) {
     return M<a, i, k>(t_vec) * M<b, j, l>(t_vec) +
            M<a, i, l>(t_vec) * M<b, j, k>(t_vec);
+  }
+
+  template <int a, int i, int j, int k, int l>
+  static inline auto d2P(Val &t_val, Vec &t_vec, const Number<a> &,
+                         const Number<i> &, const Number<j> &,
+                         const Number<k> &, const Number<l> &) {
+    return d2M<a, i, j, k, l>(t_val, t_vec);
   }
 
   template <int a, int i, int j, int k, int l>
