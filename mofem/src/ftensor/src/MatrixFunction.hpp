@@ -292,8 +292,7 @@ template <typename E, typename C> struct getMatImpl {
                          const Number<0> &, const Number<0> &) {}
 };
 
-template <typename E, typename C, int NB, int a, int Dim, int k, int l>
-struct getD2MImpl {
+template <typename E, typename C, int a, int k, int l> struct getD2MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
 
@@ -306,8 +305,8 @@ struct getD2MImpl {
   static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
                          const Number<J> &) {
     set(t_val, t_vec, t_a, Number<I>(), Number<J - 1>());
-    t_a(I - 1, J - 1) =
-        d2MImpl<E, C, a, I - 1, J - 1, k, l>::eval(t_val, t_vec, Number<NB>());
+    t_a(I - 1, J - 1) = d2MImpl<E, C, a, I - 1, J - 1, k, l>::eval(
+        t_val, t_vec, typename E::NumberNb());
   }
 
   template <typename T, int I>
@@ -627,7 +626,7 @@ struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<V, Dim> t_diff_2M;
-    getD2MImpl<EigenProjection<T1, T2, NB, Dim>, V, NB, a, Dim, k, l>::set(
+    getD2MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, k, l>::set(
         t_val, t_vec, t_diff_2M, Number<Dim>(), Number<Dim>());
     return t_diff_2M;
   }
