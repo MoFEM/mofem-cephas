@@ -104,13 +104,12 @@ struct d2PImpl {
       return E::F(t_val, Number<1>(), Number<0>()) *
                  E::S(t_vec, Number<1>(), Number<0>(), Number<i>(), Number<j>(),
                       Number<k>(), Number<l>()) +
-              E::F(t_val, Number<1>(), Number<2>()) *
+             E::F(t_val, Number<1>(), Number<2>()) *
                  E::S(t_vec, Number<1>(), Number<2>(), Number<i>(), Number<j>(),
                       Number<k>(), Number<l>());
 
     return 0;
   }
-
 
   template <int b>
   static inline C term(Val &t_val, Vec &t_vec, const Number<1> &) {
@@ -138,7 +137,8 @@ struct dd4MImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  template <int b> static inline C term(Val &t_val, Vec &t_vec) {
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<3> &) {
     if (a != b)
       return
 
@@ -158,13 +158,86 @@ struct dd4MImpl {
       return 0;
   }
 
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<2> &) {
+    if (a == 0 && b == 1)
+      return
+
+          E::F(t_val, Number<0>(), Number<1>()) *
+              (E::d2S(t_val, t_vec, Number<0>(), Number<1>(), Number<i>(),
+                      Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                      Number<n>())
+
+               +
+
+               E::d2S(t_val, t_vec, Number<2>(), Number<1>(), Number<i>(),
+                      Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                      Number<n>())
+
+                   )
+
+          +
+
+          2 *
+              E::dFdN(t_val, t_vec, Number<0>(), Number<1>(), Number<m>(),
+                      Number<n>()) *
+              (E::S(t_vec, Number<0>(), Number<1>(), Number<i>(), Number<j>(),
+                    Number<k>(), Number<l>())
+
+               +
+
+               E::S(t_vec, Number<2>(), Number<0>(), Number<i>(), Number<j>(),
+                    Number<k>(), Number<l>())
+
+              );
+
+    if (a == 1 && b == 0)
+      return
+
+          E::F(t_val, Number<1>(), Number<0>()) *
+              E::d2S(t_val, t_vec, Number<1>(), Number<0>(), Number<i>(),
+                     Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                     Number<n>())
+
+          +
+
+          E::F(t_val, Number<1>(), Number<2>()) *
+              E::d2S(t_val, t_vec, Number<1>(), Number<2>(), Number<i>(),
+                     Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                     Number<n>())
+
+          +
+
+          2 *
+              E::dFdN(t_val, t_vec, Number<1>(), Number<0>(), Number<m>(),
+                      Number<n>()) *
+              E::S(t_vec, Number<1>(), Number<0>(), Number<i>(), Number<j>(),
+                   Number<k>(), Number<l>())
+
+          +
+
+          2 *
+              E::dFdN(t_val, t_vec, Number<1>(), Number<2>(), Number<m>(),
+                      Number<n>()) *
+              E::S(t_vec, Number<1>(), Number<2>(), Number<i>(), Number<j>(),
+                   Number<k>(), Number<l>());
+
+    return 0;
+  }
+
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<1> &) {
+    return 0;
+  }
+
   template <int nb>
   static inline C eval(Val &t_val, Vec &t_vec, const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec) + eval(t_val, t_vec, Number<nb - 1>());
+    return term<nb - 1>(t_val, t_vec, typename E::NumberNb()) +
+           eval(t_val, t_vec, Number<nb - 1>());
   }
 
   static inline C eval(Val &t_val, Vec &t_vec, const Number<1> &) {
-    return term<0>(t_val, t_vec);
+    return term<0>(t_val, t_vec, typename E::NumberNb());
   }
 };
 
