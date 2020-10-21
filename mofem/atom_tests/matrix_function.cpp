@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
         print_mat(t_b);
 
         auto t_d =
-            EigenProjection<double, double, 3>::getDiffMat<3>(t_L, t_N, f, d_f);
+            EigenProjection<double, double, 3>::getDiffMat(t_L, t_N, f, d_f);
 
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff";
         print_ddg_direction(t_d, 0, 2);
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
 
         {
           auto t_b = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
-          auto t_d = EigenProjection<double, double, 3>::getDiffMat<3>(t_L, t_N,
+          auto t_d = EigenProjection<double, double, 3>::getDiffMat(t_L, t_N,
                                                                        f, d_f);
           FTensor::Tensor2_symmetric<double, 3> t_c;
           t_c(i, j) =
@@ -327,7 +327,7 @@ int main(int argc, char *argv[]) {
 
         // check first directive
         {
-          auto t_d = EigenProjection<double, double, 3>::getDiffMat<3>(t_L, t_N,
+          auto t_d = EigenProjection<double, double, 3>::getDiffMat(t_L, t_N,
                                                                        f, d_f);
 
           print_ddg_direction(t_d, 0, 2);

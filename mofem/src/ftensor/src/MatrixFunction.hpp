@@ -662,12 +662,11 @@ struct EigenProjection {
    * @param d_f directive of function
    * @return auto direvatives, forth order tensor with minor simetries
    */
-  template <int nb>
   static inline auto getDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
-    getDiffMatImpl<EigenProjection<T1, T2, NB, Dim>, V, nb, Dim>::set(
+    getDiffMatImpl<EigenProjection<T1, T2, NB, Dim>, V, NB, Dim>::set(
         t_val, t_vec, f, d_f, t_diff_A, Number<Dim>(), Number<Dim>(),
         Number<Dim>(), Number<Dim>());
     return t_diff_A;
