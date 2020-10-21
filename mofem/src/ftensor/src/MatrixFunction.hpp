@@ -95,8 +95,8 @@ struct d2MImpl {
   }
 };
 
-template <typename E, typename C, int NB, int a, int i, int j, int k, int l,
-          int m, int n>
+template <typename E, typename C, int a, int i, int j, int k, int l, int m,
+          int n>
 struct dd4MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -337,7 +337,7 @@ struct getDD4MImpl {
   static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
                          const Number<J> &) {
     set(t_val, t_vec, t_a, Number<I>(), Number<J - 1>());
-    t_a(I - 1, J - 1) = dd4MImpl<E, C, NB, a, I - 1, J - 1, k, l, m, n>::eval(
+    t_a(I - 1, J - 1) = dd4MImpl<E, C, a, I - 1, J - 1, k, l, m, n>::eval(
         t_val, t_vec, Number<NB>());
   }
 
@@ -585,7 +585,7 @@ struct EigenProjection {
   static inline auto dd4M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return dd4MImpl<EigenProjection<T1, T2, NB, Dim>, V, NB, a, i, j, k, l, m,
+    return dd4MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k, l, m,
                     n>::eval(t_val, t_vec, Number<NB>());
   }
 
