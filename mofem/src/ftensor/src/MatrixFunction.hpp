@@ -291,14 +291,14 @@ template <typename E, typename C> struct getMatImpl {
                          const Number<0> &, const Number<0> &) {}
 };
 
-template <typename E, typename C, int a, int k, int l> struct getD2MImpl {
+template <typename E, typename C, int a, int k, int l> struct getD2PImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
 
   template <int N> using Number = FTensor::Number<N>;
 
-  getD2MImpl() = delete;
-  ~getD2MImpl() = delete;
+  getD2PImpl() = delete;
+  ~getD2PImpl() = delete;
 
   template <typename T, int I, int J>
   static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
@@ -320,14 +320,14 @@ template <typename E, typename C, int a, int k, int l> struct getD2MImpl {
 };
 
 template <typename E, typename C, int a, int k, int l, int m, int n>
-struct getDD4MImpl {
+struct getDD4PImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
 
   template <int N> using Number = FTensor::Number<N>;
 
-  getDD4MImpl() = delete;
-  ~getDD4MImpl() = delete;
+  getDD4PImpl() = delete;
+  ~getDD4PImpl() = delete;
 
   template <typename T, int I, int J>
   static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
@@ -542,34 +542,34 @@ struct EigenProjection {
   }
 
   template <int a, int k, int l>
-  static inline auto getD2M(Val &t_val, Vec &t_vec, const Number<a> &,
+  static inline auto getD2P(Val &t_val, Vec &t_vec, const Number<a> &,
                             const Number<k> &, const Number<l> &) {
-    return getD2M<a, k, l>(t_val, t_vec);
+    return getD2P<a, k, l>(t_val, t_vec);
   }
 
   template <int a, int k, int l>
-  static inline auto getD2M(Val &t_val, Vec &t_vec) {
+  static inline auto getD2P(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<V, Dim> t_diff_2M;
-    getD2MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, k, l>::set(
+    getD2PImpl<EigenProjection<T1, T2, NB, Dim>, V, a, k, l>::set(
         t_val, t_vec, t_diff_2M, Number<Dim>(), Number<Dim>());
     return t_diff_2M;
   }
 
   template <int a, int k, int l, int m, int n>
-  static inline auto getDD4M(Val &t_val, Vec &t_vec, const Number<a> &,
+  static inline auto getDD4P(Val &t_val, Vec &t_vec, const Number<a> &,
                              const Number<k> &, const Number<l> &,
                              const Number<m> &, const Number<n> &) {
-    return getDD4M<a, k, l, m, n>(t_val, t_vec);
+    return getDD4P<a, k, l, m, n>(t_val, t_vec);
   }
 
   template <int a, int k, int l, int m, int n>
-  static inline auto getDD4M(Val &t_val, Vec &t_vec) {
+  static inline auto getDD4P(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<V, Dim> t_diff_2M;
-    getDD4MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, k, l, m, n>::set(
+    getDD4PImpl<EigenProjection<T1, T2, NB, Dim>, V, a, k, l, m, n>::set(
         t_val, t_vec, t_diff_2M, Number<Dim>(), Number<Dim>());
     return t_diff_2M;
   }
@@ -639,9 +639,9 @@ private:
   template <typename E, typename C, int i, int j, int k, int l, int m, int n>
   friend struct secondMatrixDirectiveImpl;
   template <typename E, typename C, int a, int k, int l>
-  friend struct getD2MImpl;
+  friend struct getD2PImpl;
   template <typename E, typename C, int a, int k, int l, int m, int n>
-  friend struct getDD4MImpl;
+  friend struct getDD4PImpl;
   template <typename E, typename C> friend struct getDiffMatImpl;
   template <typename E, typename C> friend struct getDiffDiffMatImpl;
 
@@ -713,11 +713,11 @@ private:
   static inline auto d2P(Val &t_val, Vec &t_vec, const Number<a> &,
                          const Number<i> &, const Number<j> &,
                          const Number<k> &, const Number<l> &) {
-    return d2M<a, i, j, k, l>(t_val, t_vec);
+    return d2P<a, i, j, k, l>(t_val, t_vec);
   }
 
   template <int a, int i, int j, int k, int l>
-  static inline auto d2M(Val &t_val, Vec &t_vec) {
+  static inline auto d2P(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     return d2MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k, l>::eval(
@@ -729,11 +729,11 @@ private:
                           const Number<i> &, const Number<j> &,
                           const Number<k> &, const Number<l> &,
                           const Number<m> &, const Number<n> &) {
-    return dd4M<a, i, j, k, l, m, n>(t_val, t_vec);
+    return dd4P<a, i, j, k, l, m, n>(t_val, t_vec);
   }
 
   template <int a, int i, int j, int k, int l, int m, int n>
-  static inline auto dd4M(Val &t_val, Vec &t_vec) {
+  static inline auto dd4P(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     return dd4MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k, l, m,
@@ -766,10 +766,10 @@ private:
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
   static inline auto d2G(Val &t_val, Vec &t_vec) {
-    return d2M<a, i, k, n, m>(t_val, t_vec) * M<b, j, l>(t_vec) +
-           M<a, i, k>(t_vec) * d2M<b, j, l, m, n>(t_val, t_vec) +
-           d2M<a, i, l, m, n>(t_val, t_vec) * M<b, j, k>(t_vec) +
-           M<a, i, l>(t_vec) * d2M<b, j, k, m, n>(t_val, t_vec);
+    return d2P<a, i, k, n, m>(t_val, t_vec) * M<b, j, l>(t_vec) +
+           M<a, i, k>(t_vec) * d2P<b, j, l, m, n>(t_val, t_vec) +
+           d2P<a, i, l, m, n>(t_val, t_vec) * M<b, j, k>(t_vec) +
+           M<a, i, l>(t_vec) * d2P<b, j, k, m, n>(t_val, t_vec);
   }
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>

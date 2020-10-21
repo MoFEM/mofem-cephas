@@ -106,34 +106,34 @@ int main(int argc, char *argv[]) {
       // Testing against values in mathematica for 0,2 directive
       {
         auto t_d2m_0 =
-            EigenProjection<double, double, 3>::getD2M<0, 0, 2>(t_L, t_N);
+            EigenProjection<double, double, 3>::getD2P<0, 0, 2>(t_L, t_N);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 0";
         print_mat(t_d2m_0);
 
         auto t_d2m_1 =
-            EigenProjection<double, double, 3>::getD2M<1, 0, 2>(t_L, t_N);
+            EigenProjection<double, double, 3>::getD2P<1, 0, 2>(t_L, t_N);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 1";
         print_mat(t_d2m_1);
 
         auto t_d2m_2 =
-            EigenProjection<double, double, 3>::getD2M<2, 0, 2>(t_L, t_N);
+            EigenProjection<double, double, 3>::getD2P<2, 0, 2>(t_L, t_N);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 2";
         print_mat(t_d2m_2);
 
         auto t_dd4m_0 =
-            EigenProjection<double, double, 3>::getDD4M<0, 0, 2, 0, 2>(t_L,
+            EigenProjection<double, double, 3>::getDD4P<0, 0, 2, 0, 2>(t_L,
                                                                        t_N);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff dd4m 0";
         print_mat(t_dd4m_0);
 
         auto t_dd4m_1 =
-            EigenProjection<double, double, 3>::getDD4M<1, 0, 2, 0, 2>(t_L,
+            EigenProjection<double, double, 3>::getDD4P<1, 0, 2, 0, 2>(t_L,
                                                                        t_N);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff dd4m 1";
         print_mat(t_dd4m_1);
 
         auto t_dd4m_2 =
-            EigenProjection<double, double, 3>::getDD4M<2, 0, 2, 0, 2>(t_L,
+            EigenProjection<double, double, 3>::getDD4P<2, 0, 2, 0, 2>(t_L,
                                                                        t_N);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff dd4m 2";
         print_mat(t_dd4m_2);
