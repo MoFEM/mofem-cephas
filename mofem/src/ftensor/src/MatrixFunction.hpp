@@ -320,8 +320,7 @@ template <typename E, typename C, int a, int k, int l> struct getD2MImpl {
                          const Number<0> &) {}
 };
 
-template <typename E, typename C, int NB, int a, int Dim, int k, int l, int m,
-          int n>
+template <typename E, typename C, int a, int k, int l, int m, int n>
 struct getDD4MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -336,7 +335,7 @@ struct getDD4MImpl {
                          const Number<J> &) {
     set(t_val, t_vec, t_a, Number<I>(), Number<J - 1>());
     t_a(I - 1, J - 1) = dd4MImpl<E, C, a, I - 1, J - 1, k, l, m, n>::eval(
-        t_val, t_vec, Number<NB>());
+        t_val, t_vec, typename E::NumberNb());
   }
 
   template <typename T, int I>
@@ -350,7 +349,7 @@ struct getDD4MImpl {
                          const Number<0> &) {}
 };
 
-template <typename E, typename C, int NB, int Dim> struct getDiffMatImpl {
+template <typename E, typename C> struct getDiffMatImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
@@ -368,7 +367,7 @@ template <typename E, typename C, int NB, int Dim> struct getDiffMatImpl {
         Number<L - 1>());
     t_a(I - 1, J - 1, K - 1, L - 1) =
         firstMatrixDirectiveImpl<E, C, I - 1, J - 1, K - 1, L - 1>::eval(
-            t_val, t_vec, f, d_f, Number<NB>());
+            t_val, t_vec, f, d_f, typename E::NumberNb());
   }
 
   template <typename T, int I, int J, int K>
@@ -383,8 +382,8 @@ template <typename E, typename C, int NB, int Dim> struct getDiffMatImpl {
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, T &t_a,
                          const Number<I> &, const Number<J> &,
                          const Number<0> &, const Number<0> &) {
-    set(t_val, t_vec, f, d_f, t_a, Number<I>(), Number<J - 1>(), Number<Dim>(),
-        Number<Dim>());
+    set(t_val, t_vec, f, d_f, t_a, Number<I>(), Number<J - 1>(),
+        typename E::NumberDim(), typename E::NumberDim());
   }
 
   template <typename T, int I, int K, int L>
@@ -643,8 +642,8 @@ struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<V, Dim> t_diff_2M;
-    getDD4MImpl<EigenProjection<T1, T2, NB, Dim>, V, NB, a, Dim, k, l, m,
-                n>::set(t_val, t_vec, t_diff_2M, Number<Dim>(), Number<Dim>());
+    getDD4MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, k, l, m, n>::set(
+        t_val, t_vec, t_diff_2M, Number<Dim>(), Number<Dim>());
     return t_diff_2M;
   }
 
@@ -665,7 +664,7 @@ struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
-    getDiffMatImpl<EigenProjection<T1, T2, NB, Dim>, V, NB, Dim>::set(
+    getDiffMatImpl<EigenProjection<T1, T2, NB, Dim>, V>::set(
         t_val, t_vec, f, d_f, t_diff_A, Number<Dim>(), Number<Dim>(),
         Number<Dim>(), Number<Dim>());
     return t_diff_A;
