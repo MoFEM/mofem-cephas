@@ -778,10 +778,7 @@ private:
     }
 
     if (NB == 1) {
-      if (i == j)
-        return static_cast<decltype(t_vec(0, 0))>(1);
-      else
-        return static_cast<decltype(t_vec(0, 0))>(0);
+      return M<0, i, j>(t_vec) + M<1, i, j>(t_vec) + M<2, i, j>(t_vec);
     }
 
     return M<a, i, j>(t_vec);
