@@ -25,7 +25,7 @@
  \code
  auto t_P = EigenProjection<double, double, 3>::getDiffMat(t_L, t_N, f, d_f);
  \endcode
- where return t_SL is 4th order Reainann tensor (symmetry on first two and
+ where return t_SL is 4th order tensor (symmetry on first two and
  second to indices, i.e. minor symmetrise)
 
  Calculate second derivative, L, such that S:L, for given S,
@@ -41,7 +41,7 @@
   auto t_SL = EigenProjection<double, double, 3>::getDiffDiffMat(
                   t_L, t_N, f, d_f, dd_f, t_S)
  \endcode
- where return t_SL is 4th order Reainann tensor (symmetry on first two and
+ where return t_SL is 4th order tensor (symmetry on first two and
  second to indices, i.e. minor symmetrise)
 
  You can calculate eigen values using lapack.
@@ -90,15 +90,12 @@ struct d2PImpl {
   static inline C term(Val &t_val, Vec &t_vec, const Number<2> &) {
     if (a == 0 && b == 1)
       return E::F(t_val, Number<0>(), Number<1>()) *
-             (
-
                  E::S(t_vec, Number<0>(), Number<1>(), Number<i>(), Number<j>(),
                       Number<k>(), Number<l>()) +
 
+             E::F(t_val, Number<2>(), Number<1>()) *
                  E::S(t_vec, Number<2>(), Number<1>(), Number<i>(), Number<j>(),
-                      Number<k>(), Number<l>())
-
-             );
+                      Number<k>(), Number<l>());
 
     if (a == 1 && b == 0)
       return E::F(t_val, Number<1>(), Number<0>()) *
@@ -129,11 +126,11 @@ struct d2PImpl {
 
 template <typename E, typename C, int a, int i, int j, int k, int l, int m,
           int n>
-struct dd4MImpl {
+struct dd4PImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
-  dd4MImpl() = delete;
-  ~dd4MImpl() = delete;
+  dd4PImpl() = delete;
+  ~dd4PImpl() = delete;
 
   template <int N> using Number = FTensor::Number<N>;
 
@@ -164,32 +161,32 @@ struct dd4MImpl {
       return
 
           E::F(t_val, Number<0>(), Number<1>()) *
-              (E::d2S(t_val, t_vec, Number<0>(), Number<1>(), Number<i>(),
-                      Number<j>(), Number<k>(), Number<l>(), Number<m>(),
-                      Number<n>())
+              E::d2S(t_val, t_vec, Number<0>(), Number<1>(), Number<i>(),
+                     Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                     Number<n>())
 
-               +
+          +
 
-               E::d2S(t_val, t_vec, Number<2>(), Number<1>(), Number<i>(),
-                      Number<j>(), Number<k>(), Number<l>(), Number<m>(),
-                      Number<n>())
-
-                   )
+          E::F(t_val, Number<2>(), Number<1>()) *
+              E::d2S(t_val, t_vec, Number<2>(), Number<1>(), Number<i>(),
+                     Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                     Number<n>())
 
           +
 
           2 *
+
               E::dFdN(t_val, t_vec, Number<0>(), Number<1>(), Number<m>(),
                       Number<n>()) *
-              (E::S(t_vec, Number<0>(), Number<1>(), Number<i>(), Number<j>(),
-                    Number<k>(), Number<l>())
+              E::S(t_vec, Number<0>(), Number<1>(), Number<i>(), Number<j>(),
+                   Number<k>(), Number<l>())
 
-               +
+          +
 
-               E::S(t_vec, Number<2>(), Number<0>(), Number<i>(), Number<j>(),
-                    Number<k>(), Number<l>())
-
-              );
+          E::dFdN(t_val, t_vec, Number<0>(), Number<1>(), Number<m>(),
+                  Number<n>()) *
+              E::S(t_vec, Number<2>(), Number<0>(), Number<i>(), Number<j>(),
+                   Number<k>(), Number<l>());
 
     if (a == 1 && b == 0)
       return
@@ -341,7 +338,7 @@ struct secondMatrixDirectiveImpl {
             E::P(t_vec, Number<a>(), Number<m>(), Number<n>()) *
             dd_f(E::L(t_val, Number<a>())) +
 
-        E::dd4P(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
+        E::dd4M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
                 Number<k>(), Number<l>(), Number<m>(), Number<n>()) *
             f(E::L(t_val, Number<a>())) / static_cast<C>(4) +
 
@@ -439,7 +436,7 @@ struct getDD4PImpl {
   static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
                          const Number<J> &) {
     set(t_val, t_vec, t_a, Number<I>(), Number<J - 1>());
-    t_a(I - 1, J - 1) = dd4MImpl<E, C, a, I - 1, J - 1, k, l, m, n>::eval(
+    t_a(I - 1, J - 1) = dd4PImpl<E, C, a, I - 1, J - 1, k, l, m, n>::eval(
         t_val, t_vec, typename E::NumberNb());
   }
 
@@ -642,7 +639,7 @@ struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim> t_A;
-    getMatImpl<EigenProjection<T1, T2, Dim>, V>::set(
+    getMatImpl<EigenProjection<T1, T2, NB, Dim>, V>::set(
         t_val, t_vec, f, t_A, Number<Dim>(), Number<Dim>());
     return t_A;
   }
@@ -726,7 +723,7 @@ struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
-    getDiffDiffMatImpl<EigenProjection<T1, T2, Dim>, V>::set(
+    getDiffDiffMatImpl<EigenProjection<T1, T2, NB, Dim>, V>::set(
         t_val, t_vec, f, d_f, dd_f, t_S, t_diff_A, Number<Dim>(), Number<Dim>(),
         Number<Dim>(), Number<Dim>());
     return t_diff_A;
@@ -737,7 +734,7 @@ private:
   friend struct d2PImpl;
   template <typename E, typename C, int a, int i, int j, int k, int l, int m,
             int n>
-  friend struct dd4MImpl;
+  friend struct dd4PImpl;
   template <typename E, typename C, int i, int j>
   friend struct reconstructMatImpl;
   template <typename E, typename C, int i, int j, int k, int l>
@@ -772,6 +769,10 @@ private:
   template <int a, int i, int j>
   static inline auto P(Vec &t_vec, const Number<a> &, const Number<i> &,
                        const Number<j> &) {
+    return P<a, i, j>(t_vec);
+  }
+
+  template <int a, int i, int j> static inline auto P(Vec &t_vec) {
     if (NB == 2) {
       if (a == 0)
         return M<0, i, j>(t_vec) + M<2, i, j>(t_vec);
@@ -828,18 +829,18 @@ private:
   }
 
   template <int a, int i, int j, int k, int l, int m, int n>
-  static inline auto dd4P(Val &t_val, Vec &t_vec, const Number<a> &,
+  static inline auto dd4M(Val &t_val, Vec &t_vec, const Number<a> &,
                           const Number<i> &, const Number<j> &,
                           const Number<k> &, const Number<l> &,
                           const Number<m> &, const Number<n> &) {
-    return dd4P<a, i, j, k, l, m, n>(t_val, t_vec);
+    return dd4M<a, i, j, k, l, m, n>(t_val, t_vec);
   }
 
   template <int a, int i, int j, int k, int l, int m, int n>
-  static inline auto dd4P(Val &t_val, Vec &t_vec) {
+  static inline auto dd4M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return dd4MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k, l, m,
+    return dd4PImpl<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k, l, m,
                     n>::eval(t_val, t_vec, Number<NB>());
   }
 
