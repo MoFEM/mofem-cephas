@@ -536,7 +536,7 @@ int main(int argc, char *argv[]) {
 
           a[1 * 3 + 0], a[1 * 3 + 1], a[1 * 3 + 2]};
 
-      FTensor::Tensor1<double, 3> t_eig_vals{w[0] + 1e-12, w[2], w[1] - 1e-12};
+      FTensor::Tensor1<double, 3> t_eig_vals{w[0], w[2], w[1]};
 
       cerr << t_eig_vecs << endl;
       cerr << t_eig_vals << endl;
@@ -601,8 +601,17 @@ int main(int argc, char *argv[]) {
         for (int ii = 0; ii != 3; ++ii)
           for (int jj = 0; jj != 3; ++jj)
             for (int kk = 0; kk != 3; ++kk)
-              for (int ll = 0; ll != 3; ++ll)
+              for (int ll = 0; ll != 3; ++ll) {
+
+                if (std::abs(t_d_a(ii, jj, kk, ll) - t_d(ii, jj, kk, ll)) > eps)
+                  MOFEM_LOG("ATOM_TEST", Sev::error)
+                      << "Error " << ii << " " << jj << " " << kk << " " << ll
+                      << " " << t_d_a(ii, jj, kk, ll) << " "
+                      << t_d(ii, jj, kk, ll);
+
                 t_d_a(ii, jj, kk, ll) -= t_d(ii, jj, kk, ll);
+                
+              }
 
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
         print_ddg(t_d_a, "hand ");

@@ -77,11 +77,28 @@ struct d2MImpl {
   ~d2MImpl() = delete;
 
   template <int b> static inline C term(Val &t_val, Vec &t_vec) {
-    if (a != b)
+
+    if (a != b) {
+
+      double v = std::abs(E::L(t_val, Number<a>()) - E::L(t_val, Number<b>()));
+
+      // if(a== 0 && b == 2)
+      //   cerr << E::L(t_val, Number<a>()) << " " << E::L(t_val, Number<b>())
+      //        << endl;
+
+      if (v < 1e-6) {
+        // cerr << v << " " << a << " " << b << endl;
+        return E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
+                    Number<k>(), Number<l>()) /
+               (E::L(t_val, Number<a>()) + E::L(t_val, Number<b>()));
+      }
+ 
+
+      
       return E::F(t_val, Number<a>(), Number<b>()) *
              E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                   Number<k>(), Number<l>());
-    else
+    } else
       return 0;
   }
 
@@ -106,7 +123,9 @@ struct dd4MImpl {
   template <int N> using Number = FTensor::Number<N>;
 
   template <int b> static inline C term(Val &t_val, Vec &t_vec) {
-    if (a != b)
+
+    if (a != b) {
+
       return
 
           E::F(t_val, Number<a>(), Number<b>()) *
@@ -121,8 +140,10 @@ struct dd4MImpl {
                       Number<n>()) *
               E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                    Number<k>(), Number<l>());
-    else
+    } else
       return 0;
+
+    
   }
 
   template <int nb>
@@ -174,20 +195,6 @@ struct firstMatrixDirectiveImpl {
 
   template <int a>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
-    // if (std::abs(E::L(t_val, Number<0>()) - E::L(t_val, Number<2>())) < 1e-6) {
-    //   if (a == 0) {
-    //     return (E::M(t_vec, Number<0>(), Number<i>(), Number<j>()) +
-    //             E::M(t_vec, Number<2>(), Number<i>(), Number<j>())) *
-    //            (E::M(t_vec, Number<0>(), Number<i>(), Number<j>()) +
-    //             E::M(t_vec, Number<2>(), Number<i>(), Number<j>())) *
-    //            d_f(E::L(t_val, Number<a>())) / 2;
-    //   }
-
-    //   if (a == 2)
-    //     return 0;
-
-    // }
-
     return
 
         E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
