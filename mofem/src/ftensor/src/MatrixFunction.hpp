@@ -174,6 +174,20 @@ struct firstMatrixDirectiveImpl {
 
   template <int a>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
+    // if (std::abs(E::L(t_val, Number<0>()) - E::L(t_val, Number<2>())) < 1e-6) {
+    //   if (a == 0) {
+    //     return (E::M(t_vec, Number<0>(), Number<i>(), Number<j>()) +
+    //             E::M(t_vec, Number<2>(), Number<i>(), Number<j>())) *
+    //            (E::M(t_vec, Number<0>(), Number<i>(), Number<j>()) +
+    //             E::M(t_vec, Number<2>(), Number<i>(), Number<j>())) *
+    //            d_f(E::L(t_val, Number<a>())) / 2;
+    //   }
+
+    //   if (a == 2)
+    //     return 0;
+
+    // }
+
     return
 
         E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
@@ -304,8 +318,10 @@ template <typename E, typename C, int a, int k, int l> struct getD2MImpl {
   static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
                          const Number<J> &) {
     set(t_val, t_vec, t_a, Number<I>(), Number<J - 1>());
-    t_a(I - 1, J - 1) = d2MImpl<E, C, a, I - 1, J - 1, k, l>::eval(
-        t_val, t_vec, typename E::NumberNb());
+    t_a(I - 1, J - 1) =
+        d2MImpl<E, C, a, I - 1, J - 1, k, l>::eval(t_val, t_vec, Number<3>());
+
+    //  /*typename E::NumberDim()*/ /*typename E::NumberNb()*/);
   }
 
   template <typename T, int I>
@@ -660,6 +676,12 @@ private:
   }
 
   template <int a, int b> static inline auto F(Val &t_val) {
+    // if (std::abs(L<a>(t_val) - L<b>(t_val)) < 1e-6) {
+    //   if (a > b)
+    //     return -1 / static_cast<decltype(t_val(0))>(1e-12);
+    //   else
+    //     return 1 / static_cast<decltype(t_val(0))>(1e-12);
+    // }
     return static_cast<decltype(t_val(0))>(1) / (L<a>(t_val) - L<b>(t_val));
   }
 
@@ -682,7 +704,7 @@ private:
 
   template <int a, int b, int i, int j>
   static inline auto dFdN(Val &t_val, Vec &t_vec) {
-    return dFdNa<a, b, i, j>(t_val, t_vec)+ dFdNb<a, b, i, j>(t_val, t_vec);
+    return dFdNa<a, b, i, j>(t_val, t_vec) + dFdNb<a, b, i, j>(t_val, t_vec);
   }
 
   template <int a, int b, int i, int j, int k, int l>

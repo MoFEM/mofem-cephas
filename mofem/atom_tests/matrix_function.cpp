@@ -496,11 +496,11 @@ int main(int argc, char *argv[]) {
       double wkopt;
       double w[3];
 
-      std::array<double, 9> a{1.,  0., 0,
+      std::array<double, 9> a{0.1,  0., 0,
 
-                              0.,  1., 0.,
+                              0.,  0.1, 0.,
 
-                              0.0, 0., 2.};
+                              0.0, 0., 4.};
 
       FTensor::Tensor2<double, 3, 3> t_a{
 
@@ -528,7 +528,7 @@ int main(int argc, char *argv[]) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                 "The algorithm failed to compute eigenvalues.");
 
-      FTensor::Tensor2<double, 3, 3> t_eig_vec{
+      FTensor::Tensor2<double, 3, 3> t_eig_vecs{
 
           a[0 * 3 + 0], a[0 * 3 + 1], a[0 * 3 + 2],
 
@@ -536,15 +536,15 @@ int main(int argc, char *argv[]) {
 
           a[1 * 3 + 0], a[1 * 3 + 1], a[1 * 3 + 2]};
 
-      FTensor::Tensor1<double, 3> t_eig_vals{w[0], w[2], w[1]};
+      FTensor::Tensor1<double, 3> t_eig_vals{w[0] + 1e-12, w[2], w[1] - 1e-12};
 
-      cerr << t_eig_vec << endl;
+      cerr << t_eig_vecs << endl;
       cerr << t_eig_vals << endl;
 
       constexpr double eps = 1e-10;
       {
-        auto t_b = EigenProjection<double, double, 2>::getMat(t_eig_vals,
-                                                              t_eig_vec, f);
+        auto t_b = EigenProjection<double, double, 3>::getMat(t_eig_vals,
+                                                              t_eig_vecs, f);
         t_b(i, j) -= (t_a(i, j) || t_a(j, i)) / 2;
         auto norm2_t_b = t_b(i, j) * t_b(i, j);
         MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -555,21 +555,26 @@ int main(int argc, char *argv[]) {
       }
 
       {
-        auto t_d2m_0 = EigenProjection<double, double, 2>::getD2M<0, 0, 2>(
-            t_eig_vals, t_eig_vec);
+        auto t_d2m_0 = EigenProjection<double, double, 2>::getD2M<0, 0, 1>(
+            t_eig_vals, t_eig_vecs);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 0";
         print_mat(t_d2m_0);
 
-        auto t_d2m_1 = EigenProjection<double, double, 2>::getD2M<1, 0, 2>(
-            t_eig_vals, t_eig_vec);
+        auto t_d2m_1 = EigenProjection<double, double, 2>::getD2M<1, 0, 1>(
+            t_eig_vals, t_eig_vecs);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 1";
         print_mat(t_d2m_1);
+
+        auto t_d2m_2 = EigenProjection<double, double, 2>::getD2M<2, 0, 1>(
+            t_eig_vals, t_eig_vecs);
+        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 1";
+        print_mat(t_d2m_2);
       }
 
       {
 
-        auto t_d = EigenProjection<double, double, 2>::getDiffMat(
-            t_eig_vals, t_eig_vec, f, d_f);
+        auto t_d = EigenProjection<double, double, 3>::getDiffMat(
+            t_eig_vals, t_eig_vecs, f, d_f);
 
         constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
         FTensor::Tensor4<double, 3, 3, 3, 3> t_d_a;
@@ -598,6 +603,11 @@ int main(int argc, char *argv[]) {
             for (int kk = 0; kk != 3; ++kk)
               for (int ll = 0; ll != 3; ++ll)
                 t_d_a(ii, jj, kk, ll) -= t_d(ii, jj, kk, ll);
+
+        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
+        print_ddg(t_d_a, "hand ");
+        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
+        print_ddg(t_d, "code ");
 
         double nrm2_t_d_a = get_norm_t4(t_d_a);
         MOFEM_LOG("ATOM_TEST", Sev::inform)
