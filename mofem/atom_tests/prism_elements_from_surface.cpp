@@ -443,7 +443,7 @@ MoFEMErrorCode PrismOp::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-PrismFE::MrismFE(MoFEM::Interface &m_field, MatrixDouble &tri_coords)
+PrismFE::PrismFE(MoFEM::Interface &m_field, MatrixDouble &tri_coords)
     : FatPrismElementForcesAndSourcesCore(m_field), triCoords(tri_coords) {}
 
 int PrismFE::getRuleTrianglesOnly(int order) { return -1; };
