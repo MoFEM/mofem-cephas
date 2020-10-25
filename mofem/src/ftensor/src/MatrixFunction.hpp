@@ -89,40 +89,10 @@ struct d2MImpl {
   template <int b>
   static inline C term(Val &t_val, Vec &t_vec, const Number<2> &) {
     if (a != b) {
-
-      double v;
-
-      // if (a == 0)
-      //   v = 0;/*1 / (E::L(t_val, Number<0>()) + E::L(t_val, Number<2>())) *
-      //       E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
-      //            Number<k>(), Number<l>());*/
-      // else if (a == 2)
-      //   v = 0;/*1 / (E::L(t_val, Number<0>()) + E::L(t_val, Number<2>())) *
-      //       E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
-      //            Number<k>(), Number<l>());*/
-      if ((a == 1 || b == 1) && (a != b))
-        v = term<b>(t_val, t_vec, typename E::NumberDim());
-
-      else
-        v = 0;
-        // v = /*(1 / (E::L(t_val, Number<a>()) + E::L(t_val, Number<b>()))) **/
-        //     E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
-        //          Number<k>(), Number<l>());
-
-            // term<b>(t_val, t_vec, typename E::NumberDim());
-
-      if (i == 1 && j == 0 && k == 1 && l == 0)
-        cerr << "A " << a << " " << b << " : " << v << endl;
-
-      if (a == 0 && b == 2)
-        return v;
-
-      if (a == 2 && b == 0)
-        return v;
-
-      return v;
-    } else
-      return 0;
+      if (a == 1 || b == 1)
+        return term<b>(t_val, t_vec, typename E::NumberDim());
+    }
+    return 0;
   }
 
   template <int nb>
