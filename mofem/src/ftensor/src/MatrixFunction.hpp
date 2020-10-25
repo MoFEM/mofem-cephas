@@ -204,8 +204,8 @@ struct firstMatrixDirectiveImpl {
   template <int a>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
                        const Number<2> &) {
-                         
-    if(a == 0) {
+
+    if (a == 0)
 
       return
 
@@ -225,8 +225,7 @@ struct firstMatrixDirectiveImpl {
               E::G(t_vec, Number<0>(), Number<2>(), Number<i>(), Number<j>(),
                    Number<k>(), Number<l>()) /
               static_cast<C>(2);
-
-    } if(a==1) {
+    else if (a == 2)
 
       return
 
@@ -247,7 +246,7 @@ struct firstMatrixDirectiveImpl {
                    Number<k>(), Number<l>()) /
               static_cast<C>(2);
 
-    } else {
+    else
 
       return
 
@@ -260,7 +259,77 @@ struct firstMatrixDirectiveImpl {
           E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
                  Number<k>(), Number<l>()) *
               f(E::L(t_val, Number<a>())) / static_cast<C>(2);
-    }
+  }
+
+  template <int a>
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
+                       const Number<1> &) {
+
+    if (a == 0)
+
+      return
+
+          E::M(t_vec, Number<0>(), Number<i>(), Number<j>()) *
+              E::M(t_vec, Number<0>(), Number<k>(), Number<l>()) *
+              d_f(E::L(t_val, Number<a>()))
+
+          +
+
+          d_f(E::L(t_val, Number<1>())) *
+              E::G(t_vec, Number<0>(), Number<1>(), Number<i>(), Number<j>(),
+                   Number<k>(), Number<l>()) /
+              static_cast<C>(2)
+
+          +
+
+          d_f(E::L(t_val, Number<2>())) *
+              E::G(t_vec, Number<0>(), Number<2>(), Number<i>(), Number<j>(),
+                   Number<k>(), Number<l>()) /
+              static_cast<C>(2);
+
+    else if (a == 2)
+
+      return
+
+          E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
+              E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
+              d_f(E::L(t_val, Number<a>()))
+
+          +
+
+          d_f(E::L(t_val, Number<0>())) *
+              E::G(t_vec, Number<1>(), Number<0>(), Number<i>(), Number<j>(),
+                   Number<k>(), Number<l>()) /
+              static_cast<C>(2)
+
+          +
+
+          d_f(E::L(t_val, Number<2>())) *
+              E::G(t_vec, Number<1>(), Number<2>(), Number<i>(), Number<j>(),
+                   Number<k>(), Number<l>()) /
+              static_cast<C>(2);
+
+    else
+
+      return
+
+          E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
+              E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
+              d_f(E::L(t_val, Number<a>()))
+
+          +
+
+          d_f(E::L(t_val, Number<0>())) *
+              E::G(t_vec, Number<2>(), Number<0>(), Number<i>(), Number<j>(),
+                   Number<k>(), Number<l>()) /
+              static_cast<C>(2)
+
+          +
+
+          d_f(E::L(t_val, Number<1>())) *
+              E::G(t_vec, Number<2>(), Number<1>(), Number<i>(), Number<j>(),
+                   Number<k>(), Number<l>()) /
+              static_cast<C>(2);
   }
 
   template <int nb>
