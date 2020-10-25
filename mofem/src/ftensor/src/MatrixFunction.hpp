@@ -76,25 +76,9 @@ struct d2MImpl {
   d2MImpl() = delete;
   ~d2MImpl() = delete;
 
-  template <int b> static inline C term(Val &t_val, Vec &t_vec) {
-
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<3> &) {
     if (a != b) {
-
-      double v = std::abs(E::L(t_val, Number<a>()) - E::L(t_val, Number<b>()));
-
-      // if(a== 0 && b == 2)
-      //   cerr << E::L(t_val, Number<a>()) << " " << E::L(t_val, Number<b>())
-      //        << endl;
-
-      if (v < 1e-6) {
-        // cerr << v << " " << a << " " << b << endl;
-        return E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
-                    Number<k>(), Number<l>()) /
-               (E::L(t_val, Number<a>()) + E::L(t_val, Number<b>()));
-      }
- 
-
-      
       return E::F(t_val, Number<a>(), Number<b>()) *
              E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                   Number<k>(), Number<l>());
@@ -102,13 +86,22 @@ struct d2MImpl {
       return 0;
   }
 
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<2> &) {
+    if (a != b) {
+      return term<b>(t_val, t_vec, typename E::NumberDim());
+    } else
+      return 0;
+  }
+
   template <int nb>
   static inline C eval(Val &t_val, Vec &t_vec, const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec) + eval(t_val, t_vec, Number<nb - 1>());
+    return term<nb - 1>(t_val, t_vec, typename E::NumberNb()) +
+           eval(t_val, t_vec, Number<nb - 1>());
   }
 
   static inline C eval(Val &t_val, Vec &t_vec, const Number<1> &) {
-    return term<0>(t_val, t_vec);
+    return term<0>(t_val, t_vec, typename E::NumberNb());
   }
 };
 
@@ -142,8 +135,6 @@ struct dd4MImpl {
                    Number<k>(), Number<l>());
     } else
       return 0;
-
-    
   }
 
   template <int nb>
@@ -194,7 +185,8 @@ struct firstMatrixDirectiveImpl {
   ~firstMatrixDirectiveImpl() = delete;
 
   template <int a>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
+                       const Number<3> &) {
     return
 
         E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
@@ -208,16 +200,22 @@ struct firstMatrixDirectiveImpl {
             f(E::L(t_val, Number<a>())) / static_cast<C>(2);
   }
 
+  template <int a>
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
+                       const Number<2> &) {
+    return term<a>(t_val, t_vec, f, d_f, Number<3>());
+  }
+
   template <int nb>
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
                        const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec, f, d_f) +
+    return term<nb - 1>(t_val, t_vec, f, d_f, typename E::NumberNb()) +
            eval(t_val, t_vec, f, d_f, Number<nb - 1>());
   }
 
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
                        const Number<1> &) {
-    return term<0>(t_val, t_vec, f, d_f);
+    return term<0>(t_val, t_vec, f, d_f, typename E::NumberNb());
   }
 };
 
@@ -325,10 +323,8 @@ template <typename E, typename C, int a, int k, int l> struct getD2MImpl {
   static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
                          const Number<J> &) {
     set(t_val, t_vec, t_a, Number<I>(), Number<J - 1>());
-    t_a(I - 1, J - 1) =
-        d2MImpl<E, C, a, I - 1, J - 1, k, l>::eval(t_val, t_vec, Number<3>());
-
-    //  /*typename E::NumberDim()*/ /*typename E::NumberNb()*/);
+    t_a(I - 1, J - 1) = d2MImpl<E, C, a, I - 1, J - 1, k, l>::eval(
+        t_val, t_vec, typename E::NumberDim());
   }
 
   template <typename T, int I>
@@ -389,7 +385,7 @@ template <typename E, typename C> struct getDiffMatImpl {
         Number<L - 1>());
     t_a(I - 1, J - 1, K - 1, L - 1) =
         firstMatrixDirectiveImpl<E, C, I - 1, J - 1, K - 1, L - 1>::eval(
-            t_val, t_vec, f, d_f, typename E::NumberNb());
+            t_val, t_vec, f, d_f, typename E::NumberDim());
   }
 
   template <typename T, int I, int J, int K>
@@ -732,7 +728,7 @@ private:
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     return d2MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k, l>::eval(
-        t_val, t_vec, Number<NB>());
+        t_val, t_vec, Number<Dim>());
   }
 
   template <int a, int i, int j, int k, int l, int m, int n>
