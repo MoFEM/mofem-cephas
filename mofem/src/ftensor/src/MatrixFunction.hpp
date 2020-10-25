@@ -89,7 +89,38 @@ struct d2MImpl {
   template <int b>
   static inline C term(Val &t_val, Vec &t_vec, const Number<2> &) {
     if (a != b) {
-      return term<b>(t_val, t_vec, typename E::NumberDim());
+
+      double v;
+
+      // if (a == 0)
+      //   v = 0;/*1 / (E::L(t_val, Number<0>()) + E::L(t_val, Number<2>())) *
+      //       E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
+      //            Number<k>(), Number<l>());*/
+      // else if (a == 2)
+      //   v = 0;/*1 / (E::L(t_val, Number<0>()) + E::L(t_val, Number<2>())) *
+      //       E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
+      //            Number<k>(), Number<l>());*/
+      if ((a == 1 || b == 1) && (a != b))
+        v = term<b>(t_val, t_vec, typename E::NumberDim());
+
+      else
+        v = 0;
+        // v = /*(1 / (E::L(t_val, Number<a>()) + E::L(t_val, Number<b>()))) **/
+        //     E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
+        //          Number<k>(), Number<l>());
+
+            // term<b>(t_val, t_vec, typename E::NumberDim());
+
+      if (i == 1 && j == 0 && k == 1 && l == 0)
+        cerr << "A " << a << " " << b << " : " << v << endl;
+
+      if (a == 0 && b == 2)
+        return v;
+
+      if (a == 2 && b == 0)
+        return v;
+
+      return v;
     } else
       return 0;
   }
@@ -203,7 +234,34 @@ struct firstMatrixDirectiveImpl {
   template <int a>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
                        const Number<2> &) {
-    return term<a>(t_val, t_vec, f, d_f, Number<3>());
+
+    double v = 0;
+    if (a == 0) {
+      v = d_f(E::L(t_val, Number<a>())) *
+          E::G(t_vec, Number<0>(), Number<2>(), Number<i>(), Number<j>(),
+               Number<k>(), Number<l>()) /
+          static_cast<C>(2);
+    }
+
+    if (a == 2) {
+      v = d_f(E::L(t_val, Number<a>())) *
+          E::G(t_vec, Number<2>(), Number<0>(), Number<i>(), Number<j>(),
+               Number<k>(), Number<l>()) /
+          static_cast<C>(2);
+    }
+
+    return
+
+        E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
+            E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
+            d_f(E::L(t_val, Number<a>()))
+
+        +
+
+        E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(), Number<k>(),
+               Number<l>()) *
+            f(E::L(t_val, Number<a>())) / static_cast<C>(2) +
+        v;
   }
 
   template <int nb>
@@ -708,6 +766,14 @@ private:
   template <int a, int b, int i, int j>
   static inline auto dFdN(Val &t_val, Vec &t_vec) {
     return dFdNa<a, b, i, j>(t_val, t_vec) + dFdNb<a, b, i, j>(t_val, t_vec);
+  }
+
+  template <int a, int b, int i, int j, int k, int l>
+  static inline auto G(Vec &t_vec, const Number<a> &, const Number<b> &,
+                       const Number<i> &, const Number<j> &, const Number<k> &,
+                       const Number<l> &) {
+    return M<a, i, k>(t_vec) * M<b, j, l>(t_vec) +
+           M<a, i, l>(t_vec) * M<b, j, k>(t_vec);
   }
 
   template <int a, int b, int i, int j, int k, int l>
