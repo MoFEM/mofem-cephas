@@ -174,7 +174,6 @@ struct dd4MImpl {
   static inline C term(Val &t_val, Vec &t_vec, const Number<3> &) {
 
     if (a != b) {
-
       return
 
           E::F(t_val, Number<a>(), Number<b>()) *
@@ -189,8 +188,9 @@ struct dd4MImpl {
                       Number<n>()) *
               E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                    Number<k>(), Number<l>());
-    } else
-      return 0;
+    }
+
+    return 0;
   }
 
   template <int b>
@@ -199,6 +199,58 @@ struct dd4MImpl {
       if (a == 1 || b == 1)
         return term<b>(t_val, t_vec, typename E::NumberDim());
     }
+    return 0;
+  }
+
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<1> &) {
+    return 0;
+  }
+
+  template <int nb>
+  static inline C eval(Val &t_val, Vec &t_vec, const Number<nb> &) {
+    return term<nb - 1>(t_val, t_vec, typename E::NumberNb()) +
+           eval(t_val, t_vec, Number<nb - 1>());
+  }
+
+  static inline C eval(Val &t_val, Vec &t_vec, const Number<1> &) {
+    return term<0>(t_val, t_vec, typename E::NumberNb());
+  }
+};
+
+template <typename E, typename C, int a, int i, int j, int k, int l, int m,
+          int n>
+struct dd4MImpl_LHospital {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+  dd4MImpl_LHospital() = delete;
+  ~dd4MImpl_LHospital() = delete;
+
+  template <int N> using Number = FTensor::Number<N>;
+
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<3> &) {
+    return 0;
+  }
+
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<2> &) {
+    if (a != b) {
+      if (a == 1 || b == 1)
+        return 0;
+      else
+        return E::d2S(t_val, t_vec, Number<a>(), Number<b>(), Number<i>(),
+                      Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                      Number<n>());
+    }
+    return 0;
+  }
+
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<1> &) {
+    return E::d2S(t_val, t_vec, Number<a>(), Number<b>(), Number<i>(),
+                  Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                  Number<n>());
   }
 
   template <int nb>
