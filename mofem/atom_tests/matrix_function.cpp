@@ -244,6 +244,19 @@ int main(int argc, char *argv[]) {
                         4.;
                   }
 
+      constexpr double eps = 1e-4;
+      for (int ii = 0; ii != 3; ++ii)
+        for (int jj = 0; jj != 3; ++jj)
+          for (int kk = 0; kk != 3; ++kk)
+            for (int ll = 0; ll != 3; ++ll) {
+
+              if (std::abs(t_dd_a(ii, jj, kk, ll) - t_dd(ii, jj, kk, ll)) > eps)
+                MOFEM_LOG("ATOM_TEST", Sev::error)
+                    << "Error " << ii << " " << jj << " " << kk << " " << ll
+                    << " " << t_dd_a(ii, jj, kk, ll) << " "
+                    << t_dd(ii, jj, kk, ll);
+            }
+
       for (int ii = 0; ii != 3; ++ii)
         for (int jj = 0; jj != 3; ++jj)
           for (int kk = 0; kk != 3; ++kk)
@@ -704,35 +717,57 @@ int main(int argc, char *argv[]) {
                   "This norm should be zero");
       }
 
-      // // check second directive
-      // {
-      //   auto f = [](double v) { return v * v; };
-      //   auto d_f = [](double v) { return 2 * v; };
-      //   auto dd_f = [](double v) { return 2; };
-      //   FTensor::Tensor2<double, 3, 3> t_S{
+      // check second directive
+      {
+        auto f = [](double v) { return v; };
+        auto d_f = [](double v) { return 1; };
+        auto dd_f = [](double v) { return 0; };
+        FTensor::Tensor2<double, 3, 3> t_S{
 
-      //       1.,      1. / 2., 1. / 3.,
+            1.,      1. / 2., 1. / 3.,
 
-      //       2. / 2., 1.,      2. / 3.,
+            2. / 2., 1.,      2. / 3.,
 
-      //       3. / 2., 1.,      3. / 3.};
+            3. / 2., 1.,      3. / 3.};
 
-      //   auto t_dd = EigenProjection<double, double, 1>::getDiffDiffMat(
-      //       t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
-      //   auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
+        auto t_dd = EigenProjection<double, double, 1>::getDiffDiffMat(
+            t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
 
-      //   MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
-      //   print_ddg(t_dd_a, "hand ");
-      //   MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
-      //   print_ddg(t_dd, "code ");
+        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
+        print_ddg(t_dd, "code ");
 
-      //   double nrm2_t_dd_a = get_norm_t4(t_dd_a);
-      //   MOFEM_LOG("ATOM_TEST", Sev::inform)
-      //       << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
-      //   if (nrm2_t_dd_a > eps)
-      //     SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-      //             "This norm should be zero");
-      // }
+        double nrm2_t_dd = get_norm_t4(t_dd);
+        MOFEM_LOG("ATOM_TEST", Sev::inform)
+            << "Direvarive hand calculation minus code " << nrm2_t_dd;
+        if (nrm2_t_dd > eps)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "This norm should be zero");
+      }
+
+      // check second directive
+      {
+        auto f = [](double v) { return v * v; };
+        auto d_f = [](double v) { return 2 * v; };
+        auto dd_f = [](double v) { return v; };
+        FTensor::Tensor2<double, 3, 3> t_S{
+
+          1.0, 0., 0.,
+
+          0., 0., 0.,
+
+          0., 0., 0.};
+
+        auto t_dd = EigenProjection<double, double, 1>::getDiffDiffMat(
+            t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+        auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
+
+        double nrm2_t_dd_a = get_norm_t4(t_dd_a);
+        MOFEM_LOG("ATOM_TEST", Sev::inform)
+            << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
+        if (nrm2_t_dd_a > eps)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "This norm should be zero");
+      }
     }
   }
   CATCH_ERRORS;

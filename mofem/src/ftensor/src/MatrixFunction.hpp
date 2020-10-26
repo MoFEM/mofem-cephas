@@ -362,18 +362,43 @@ struct secondMatrixDirectiveImpl {
                 ) *
             d_f(E::L(t_val, Number<a>())) / static_cast<C>(2) +
 
+        (
+
+            d2MImpl_LHospital<E, C, a, i, j, m, n>::eval(t_val, t_vec,
+                                                         Number<3>()) *
+                E::M(t_vec, Number<a>(), Number<k>(), Number<l>())
+
+            +
+
+            E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
+                d2MImpl_LHospital<E, C, a, k, l, m, n>::eval(t_val, t_vec,
+                                                             Number<3>())
+
+                ) *
+            dd_f(E::L(t_val, Number<a>())) / static_cast<C>(4) +
+
         E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
             E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
             dd_f(E::L(t_val, Number<a>())) +
 
-        E::dd4M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
-                Number<k>(), Number<l>(), Number<m>(), Number<n>()) *
+        dd4MImpl<E, C, a, i, j, k, l, m, n>::eval(t_val, t_vec, Number<3>()) *
             f(E::L(t_val, Number<a>())) / static_cast<C>(4) +
+
+        dd4MImpl_LHospital<E, C, a, i, j, k, l, m, n>::eval(t_val, t_vec,
+                                                            Number<3>()) *
+            d_f(E::L(t_val, Number<a>())) / static_cast<C>(8) +
 
         d2MImpl<E, C, a, i, j, k, l>::eval(t_val, t_vec, Number<3>()) *
             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
-            d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
+            d_f(E::L(t_val, Number<a>())) / static_cast<C>(2)
+
+        +
+
+        d2MImpl_LHospital<E, C, a, i, j, k, l>::eval(t_val, t_vec,
+                                                     Number<3>()) *
+            E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
+            dd_f(E::L(t_val, Number<a>())) / static_cast<C>(4);
   }
 
   template <int nb>
@@ -765,6 +790,9 @@ private:
   template <typename E, typename C, int a, int i, int j, int k, int l, int m,
             int n>
   friend struct dd4MImpl;
+  template <typename E, typename C, int a, int i, int j, int k, int l, int m,
+            int n>
+  friend struct dd4MImpl_LHospital;
   template <typename E, typename C, int i, int j>
   friend struct reconstructMatImpl;
   template <typename E, typename C, int i, int j, int k, int l>
