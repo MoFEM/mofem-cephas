@@ -294,8 +294,7 @@ struct secondMatrixDirectiveImpl {
   ~secondMatrixDirectiveImpl() = delete;
 
   template <int a>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<3> &) {
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     return
 
         (
@@ -325,36 +324,10 @@ struct secondMatrixDirectiveImpl {
             d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
   }
 
-  template <int a>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<2> &) {
-    return 0;
-  }
-
-  template <int a>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<1> &) {
-    if (a == 0)
-      return E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-             E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
-             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
-             dd_f(E::L(t_val, Number<a>()));
-    if (a == 1)
-      return E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-             E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
-             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
-             dd_f(E::L(t_val, Number<a>()));
-    if (a == 2)
-      return E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-             E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
-             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
-             dd_f(E::L(t_val, Number<a>()));
-  }
-
   template <int nb>
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                        const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec, f, d_f, dd_f, typename E::NumberNb())
+    return term<nb - 1>(t_val, t_vec, f, d_f, dd_f)
 
            +
 
@@ -364,7 +337,7 @@ struct secondMatrixDirectiveImpl {
 
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                        const Number<1> &) {
-    return term<0>(t_val, t_vec, f, d_f, dd_f, typename E::NumberNb());
+    return term<0>(t_val, t_vec, f, d_f, dd_f);
   }
 };
 
