@@ -197,6 +197,62 @@ int main(int argc, char *argv[]) {
       return t_d_a;
     };
 
+    auto get_diff2_matrix2 = [i, j, k, l](auto &t_s, auto &t_dd) {
+      constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+      FTensor::Tensor4<double, 3, 3, 3, 3> t_dd_a;
+      t_dd_a(i, j, k, l) = 0;
+
+      for (int ii = 0; ii != 3; ++ii)
+        for (int jj = 0; jj != 3; ++jj)
+          for (int kk = 0; kk != 3; ++kk)
+            for (int ll = 0; ll != 3; ++ll)
+              for (int mm = 0; mm != 3; ++mm)
+                for (int nn = 0; nn != 3; ++nn)
+                  for (int zz = 0; zz != 3; ++zz) {
+
+                    auto diff = [&](auto ii, auto jj, auto kk, auto ll, int mm,
+                                    int nn, int zz) {
+                      return
+
+                          t_s(ii, jj) * (t_kd(ii, mm) * t_kd(zz, nn) *
+                                             t_kd(zz, kk) * t_kd(jj, ll)
+
+                                         +
+
+                                         t_kd(ii, kk) * t_kd(zz, ll) *
+                                             t_kd(zz, mm) * t_kd(jj, nn));
+                    };
+
+                    t_dd_a(kk, ll, mm, nn) +=
+                        (
+
+                            diff(ii, jj, kk, ll, mm, nn, zz)
+
+                            +
+
+                            diff(ii, jj, ll, kk, mm, nn, zz)
+
+                            +
+
+                            diff(ii, jj, kk, ll, nn, mm, zz)
+
+                            +
+
+                            diff(ii, jj, ll, kk, nn, mm, zz)
+
+                                ) /
+                        4.;
+                  }
+
+      for (int ii = 0; ii != 3; ++ii)
+        for (int jj = 0; jj != 3; ++jj)
+          for (int kk = 0; kk != 3; ++kk)
+            for (int ll = 0; ll != 3; ++ll)
+              t_dd_a(ii, jj, kk, ll) -= t_dd(ii, jj, kk, ll);
+
+      return t_dd_a;
+    };
+
     // Test matrix againsst mathematica results
     {
       FTensor::Tensor2<double, 3, 3> t_A{
@@ -451,7 +507,6 @@ int main(int argc, char *argv[]) {
 
         // check second directive
         {
-
           FTensor::Tensor2<double, 3, 3> t_S{
 
               1.,      1. / 2., 1. / 3.,
@@ -462,72 +517,19 @@ int main(int argc, char *argv[]) {
 
           auto t_dd = EigenProjection<double, double, 3>::getDiffDiffMat(
               t_L, t_N, f, d_f, dd_f, t_S);
+          auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
 
-          {
-            constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
-            FTensor::Tensor4<double, 3, 3, 3, 3> t_dd_a;
-            t_dd_a(i, j, k, l) = 0;
+          MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
+          print_ddg(t_dd_a, "hand ");
+          MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
+          print_ddg(t_dd, "code ");
 
-            for (int ii = 0; ii != 3; ++ii)
-              for (int jj = 0; jj != 3; ++jj)
-                for (int kk = 0; kk != 3; ++kk)
-                  for (int ll = 0; ll != 3; ++ll)
-                    for (int mm = 0; mm != 3; ++mm)
-                      for (int nn = 0; nn != 3; ++nn)
-                        for (int zz = 0; zz != 3; ++zz) {
-
-                          auto diff = [&](auto ii, auto jj, auto kk, auto ll,
-                                          int mm, int nn, int zz) {
-                            return
-
-                                t_S(ii, jj) * (t_kd(ii, mm) * t_kd(zz, nn) *
-                                                   t_kd(zz, kk) * t_kd(jj, ll)
-
-                                               +
-
-                                               t_kd(ii, kk) * t_kd(zz, ll) *
-                                                   t_kd(zz, mm) * t_kd(jj, nn));
-                          };
-
-                          t_dd_a(kk, ll, mm, nn) +=
-                              (
-
-                                  diff(ii, jj, kk, ll, mm, nn, zz)
-
-                                  +
-
-                                  diff(ii, jj, ll, kk, mm, nn, zz)
-
-                                  +
-
-                                  diff(ii, jj, kk, ll, nn, mm, zz)
-
-                                  +
-
-                                  diff(ii, jj, ll, kk, nn, mm, zz)
-
-                                      ) /
-                              4.;
-                        }
-
-            MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
-            print_ddg(t_dd_a, "hand ");
-            MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
-            print_ddg(t_dd, "code ");
-
-            for (int ii = 0; ii != 3; ++ii)
-              for (int jj = 0; jj != 3; ++jj)
-                for (int kk = 0; kk != 3; ++kk)
-                  for (int ll = 0; ll != 3; ++ll)
-                    t_dd_a(ii, jj, kk, ll) -= t_dd(ii, jj, kk, ll);
-
-            double nrm2_t_dd_a = get_norm_t4(t_dd_a);
-            MOFEM_LOG("ATOM_TEST", Sev::inform)
-                << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
-            if (nrm2_t_dd_a > eps)
-              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                      "This norm should be zero");
-          }
+          double nrm2_t_dd_a = get_norm_t4(t_dd_a);
+          MOFEM_LOG("ATOM_TEST", Sev::inform)
+              << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
+          if (nrm2_t_dd_a > eps)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "This norm should be zero");
         }
       }
     }
