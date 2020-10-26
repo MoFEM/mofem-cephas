@@ -632,52 +632,7 @@ int main(int argc, char *argv[]) {
 
           auto t_d = EigenProjection<double, double, 2>::getDiffMat(
               t_eig_vals, t_eig_vecs, f, d_f);
-
-          constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
-          FTensor::Tensor4<double, 3, 3, 3, 3> t_d_a;
-          t_d_a(i, j, k, l) = 0;
-
-          for (int ii = 0; ii != 3; ++ii)
-            for (int jj = 0; jj != 3; ++jj)
-              for (int kk = 0; kk != 3; ++kk)
-                for (int ll = 0; ll != 3; ++ll)
-                  for (int zz = 0; zz != 3; ++zz) {
-
-                    auto diff = [&](auto ii, auto jj, auto kk, auto ll,
-                                    int zz) {
-                      return
-
-                          t_a(ii, zz) * t_kd(zz, kk) * t_kd(jj, ll)
-
-                          +
-
-                          t_kd(ii, kk) * t_kd(zz, ll) * t_a(zz, jj);
-                    };
-
-                    t_d_a(ii, jj, kk, ll) +=
-                        (diff(ii, jj, kk, ll, zz) + diff(ii, jj, ll, kk, zz)) /
-                        2.;
-                  }
-
-          MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
-          print_ddg(t_d_a, "hand ");
-          MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
-          print_ddg(t_d, "code ");
-
-          for (int ii = 0; ii != 3; ++ii)
-            for (int jj = 0; jj != 3; ++jj)
-              for (int kk = 0; kk != 3; ++kk)
-                for (int ll = 0; ll != 3; ++ll) {
-
-                  if (std::abs(t_d_a(ii, jj, kk, ll) - t_d(ii, jj, kk, ll)) >
-                      eps)
-                    MOFEM_LOG("ATOM_TEST", Sev::error)
-                        << "Error " << ii << " " << jj << " " << kk << " " << ll
-                        << " " << t_d_a(ii, jj, kk, ll) << " "
-                        << t_d(ii, jj, kk, ll);
-
-                  t_d_a(ii, jj, kk, ll) -= t_d(ii, jj, kk, ll);
-                }
+          auto t_d_a = get_diff_matrix2(t_a, t_d);
 
           MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
           print_ddg(t_d_a, "hand ");
