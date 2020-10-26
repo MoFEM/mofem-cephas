@@ -748,14 +748,14 @@ int main(int argc, char *argv[]) {
       {
         auto f = [](double v) { return v * v; };
         auto d_f = [](double v) { return 2 * v; };
-        auto dd_f = [](double v) { return v; };
+        auto dd_f = [](double v) { return 2; };
         FTensor::Tensor2<double, 3, 3> t_S{
 
-          1.0, 0., 0.,
+            1., 0., 0.,
 
-          0., 0., 0.,
+            0., 0., 0.,
 
-          0., 0., 0.};
+            0., 0., 0.};
 
         auto t_dd = EigenProjection<double, double, 1>::getDiffDiffMat(
             t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
