@@ -72,7 +72,45 @@ int main(int argc, char *argv[]) {
       return r;
     };
 
-    // Test matrix
+    auto run_lapack = [](auto &a) {
+      int info;
+      double wkopt;
+      double w[3];
+
+      FTensor::Tensor2<double, 3, 3> t_a{
+
+          a[0], a[1], a[2],
+
+          a[3], a[4], a[5],
+
+          a[6], a[7], a[8]};
+
+      /* Query and allocate the optimal workspace */
+      int lwork = -1;
+      info = lapack_dsyev('V', 'U', 3, a.data(), 3, w, &wkopt, lwork);
+      if (info > 0)
+        THROW_MESSAGE("The algorithm failed to compute eigenvalues.");
+      lwork = (int)wkopt;
+      std::vector<double> work(lwork);
+      /* Solve eigenproblem */
+      info = lapack_dsyev('V', 'U', 3, a.data(), 3, w, &*work.begin(), lwork);
+      if (info > 0)
+        THROW_MESSAGE("The algorithm failed to compute eigenvalues.");
+
+      FTensor::Tensor2<double, 3, 3> t_eig_vec{
+
+          a[0 * 3 + 0], a[0 * 3 + 1], a[0 * 3 + 2],
+
+          a[2 * 3 + 0], a[2 * 3 + 1], a[2 * 3 + 2],
+
+          a[1 * 3 + 0], a[1 * 3 + 1], a[1 * 3 + 2]};
+
+      FTensor::Tensor1<double, 3> t_eig_vals{w[0], w[2], w[1]};
+
+      return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
+    };
+
+    // Test matrix againsst mathematica results
     {
       FTensor::Tensor2<double, 3, 3> t_A{
 
@@ -179,45 +217,6 @@ int main(int argc, char *argv[]) {
         if (std::abs(norm2_t_dd - regression_t_dd) > eps)
           SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID, "Wrong t_dd");
       }
-
-      auto run_lapack = [](auto &a) {
-        int info;
-        double wkopt;
-        double w[3];
-
-
-        FTensor::Tensor2<double, 3, 3> t_a{
-
-            a[0], a[1], a[2],
-
-            a[3], a[4], a[5],
-
-            a[6], a[7], a[8]};
-
-        /* Query and allocate the optimal workspace */
-        int lwork = -1;
-        info = lapack_dsyev('V', 'U', 3, a.data(), 3, w, &wkopt, lwork);
-        if (info > 0)
-          THROW_MESSAGE("The algorithm failed to compute eigenvalues.");
-        lwork = (int)wkopt;
-        std::vector<double> work(lwork);
-        /* Solve eigenproblem */
-        info = lapack_dsyev('V', 'U', 3, a.data(), 3, w, &*work.begin(), lwork);
-        if (info > 0)
-          THROW_MESSAGE("The algorithm failed to compute eigenvalues.");
-
-        FTensor::Tensor2<double, 3, 3> t_eig_vec{
-
-            a[0 * 3 + 0], a[0 * 3 + 1], a[0 * 3 + 2],
-
-            a[1 * 3 + 0], a[1 * 3 + 1], a[1 * 3 + 2],
-
-            a[2 * 3 + 0], a[2 * 3 + 1], a[2 * 3 + 2]};
-
-        FTensor::Tensor1<double, 3> t_eig_vals{w[0], w[1], w[2]};
-
-        return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
-      };
 
       // Comparing with lapack calculated eigen values. Note resulst should be
       // invarinat to the direction of eiegn vector. Eigen vector can be
@@ -508,56 +507,20 @@ int main(int argc, char *argv[]) {
     // Testing two same eigen values
     {
 
-      int info;
-      double wkopt;
-      double w[3];
-
       std::array<double, 9> a{0.1, 0.,  0,
 
                               0.,  0.1, 0.,
 
                               0.0, 0.,  4.};
 
-      FTensor::Tensor2<double, 3, 3> t_a{
-
-          a[0], a[1], a[2],
-
-          a[3], a[4], a[5],
-
-          a[6], a[7], a[8]};
+      auto tuple = run_lapack(a);
+      auto &t_a = std::get<0>(tuple);
+      auto &t_eig_vecs = std::get<1>(tuple);
+      auto &t_eig_vals = std::get<2>(tuple);
 
       auto f = [](double v) { return v; };
       auto d_f = [](double v) { return 1; };
       auto dd_f = [](double v) { return 0; };
-
-      /* Query and allocate the optimal workspace */
-      int lwork = -1;
-      info = lapack_dsyev('V', 'U', 3, a.data(), 3, w, &wkopt, lwork);
-      if (info > 0)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                "The algorithm failed to compute eigenvalues.");
-      lwork = (int)wkopt;
-      std::vector<double> work(lwork);
-      /* Solve eigenproblem */
-      info = lapack_dsyev('V', 'U', 3, a.data(), 3, w, &*work.begin(), lwork);
-      if (info > 0)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                "The algorithm failed to compute eigenvalues.");
-
-      FTensor::Tensor2<double, 3, 3> t_eig_vecs{
-
-          a[0 * 3 + 0], a[0 * 3 + 1], a[0 * 3 + 2],
-
-          a[2 * 3 + 0], a[2 * 3 + 1], a[2 * 3 + 2],
-
-          a[1 * 3 + 0], a[1 * 3 + 1], a[1 * 3 + 2]};
-
-      // FTensor::Tensor1<double, 3> t_eig_vals{w[0], w[2], w[1]};
-
-      FTensor::Tensor1<double, 3> t_eig_vals{w[0], w[2], w[1]};
-
-      // cerr << t_eig_vecs << endl;
-      // cerr << t_eig_vals << endl;
 
       constexpr double eps = 1e-10;
       {
