@@ -90,7 +90,61 @@ struct d2MImpl {
   static inline C term(Val &t_val, Vec &t_vec, const Number<2> &) {
     if (a != b) {
       if (a == 1 || b == 1)
-        return term<b>(t_val, t_vec, typename E::NumberDim());
+        return term<b>(t_val, t_vec, Number<3>());
+      else
+        return 0;
+    }
+    return 0;
+  }
+
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<1> &) {
+    return 0;
+  }
+
+  template <int nb>
+  static inline C eval(Val &t_val, Vec &t_vec, const Number<nb> &) {
+    return term<nb - 1>(t_val, t_vec, typename E::NumberNb()) +
+           eval(t_val, t_vec, Number<nb - 1>());
+  }
+
+  static inline C eval(Val &t_val, Vec &t_vec, const Number<1> &) {
+    return term<0>(t_val, t_vec, typename E::NumberNb());
+  }
+};
+
+template <typename E, typename C, int a, int i, int j, int k, int l>
+struct d2MImpl_LHospital {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+
+  template <int N> using Number = FTensor::Number<N>;
+
+  d2MImpl_LHospital() = delete;
+  ~d2MImpl_LHospital() = delete;
+
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<3> &) {
+    return 0;
+  }
+
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<2> &) {
+    if (a != b) {
+      if (a == 1 || b == 1)
+        return 0;
+      else
+        return E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
+                    Number<k>(), Number<l>());
+    }
+    return 0;
+  }
+
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<1> &) {
+    if (a != b) {
+      return E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
+                  Number<k>(), Number<l>());
     }
     return 0;
   }
@@ -116,7 +170,8 @@ struct dd4MImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  template <int b> static inline C term(Val &t_val, Vec &t_vec) {
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<3> &) {
 
     if (a != b) {
 
@@ -138,13 +193,22 @@ struct dd4MImpl {
       return 0;
   }
 
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, const Number<2> &) {
+    if (a != b) {
+      if (a == 1 || b == 1)
+        return term<b>(t_val, t_vec, typename E::NumberDim());
+    }
+  }
+
   template <int nb>
   static inline C eval(Val &t_val, Vec &t_vec, const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec) + eval(t_val, t_vec, Number<nb - 1>());
+    return term<nb - 1>(t_val, t_vec, typename E::NumberNb()) +
+           eval(t_val, t_vec, Number<nb - 1>());
   }
 
   static inline C eval(Val &t_val, Vec &t_vec, const Number<1> &) {
-    return term<0>(t_val, t_vec);
+    return term<0>(t_val, t_vec, typename E::NumberNb());
   }
 };
 
@@ -186,8 +250,7 @@ struct firstMatrixDirectiveImpl {
   ~firstMatrixDirectiveImpl() = delete;
 
   template <int a>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
-                       const Number<3> &) {
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
     return
 
         E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
@@ -196,152 +259,26 @@ struct firstMatrixDirectiveImpl {
 
         +
 
-        E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(), Number<k>(),
-               Number<l>()) *
-            f(E::L(t_val, Number<a>())) / static_cast<C>(2);
-  }
+        d2MImpl<E, C, a, i, j, k, l>::eval(t_val, t_vec, Number<3>()) *
+            f(E::L(t_val, Number<a>())) / static_cast<C>(2)
 
-  template <int a>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
-                       const Number<2> &) {
+        +
 
-    if (a == 0)
-
-      return
-
-          E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-              E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
-              d_f(E::L(t_val, Number<a>()))
-
-          +
-
-          E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
-                 Number<k>(), Number<l>()) *
-              f(E::L(t_val, Number<a>())) / static_cast<C>(2)
-
-          +
-
-          d_f(E::L(t_val, Number<0>())) *
-              E::G(t_vec, Number<0>(), Number<2>(), Number<i>(), Number<j>(),
-                   Number<k>(), Number<l>()) /
-              static_cast<C>(2);
-    else if (a == 2)
-
-      return
-
-          E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-              E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
-              d_f(E::L(t_val, Number<a>()))
-
-          +
-
-          E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
-                 Number<k>(), Number<l>()) *
-              f(E::L(t_val, Number<a>())) / static_cast<C>(2)
-
-          +
-
-          d_f(E::L(t_val, Number<2>())) *
-              E::G(t_vec, Number<2>(), Number<0>(), Number<i>(), Number<j>(),
-                   Number<k>(), Number<l>()) /
-              static_cast<C>(2);
-
-    else
-
-      return
-
-          E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-              E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
-              d_f(E::L(t_val, Number<a>()))
-
-          +
-
-          E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
-                 Number<k>(), Number<l>()) *
-              f(E::L(t_val, Number<a>())) / static_cast<C>(2);
-  }
-
-  template <int a>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
-                       const Number<1> &) {
-
-    if (a == 0)
-
-      return
-
-          E::M(t_vec, Number<0>(), Number<i>(), Number<j>()) *
-              E::M(t_vec, Number<0>(), Number<k>(), Number<l>()) *
-              d_f(E::L(t_val, Number<a>()))
-
-          +
-
-          d_f(E::L(t_val, Number<1>())) *
-              E::G(t_vec, Number<0>(), Number<1>(), Number<i>(), Number<j>(),
-                   Number<k>(), Number<l>()) /
-              static_cast<C>(2)
-
-          +
-
-          d_f(E::L(t_val, Number<2>())) *
-              E::G(t_vec, Number<0>(), Number<2>(), Number<i>(), Number<j>(),
-                   Number<k>(), Number<l>()) /
-              static_cast<C>(2);
-
-    else if (a == 2)
-
-      return
-
-          E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-              E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
-              d_f(E::L(t_val, Number<a>()))
-
-          +
-
-          d_f(E::L(t_val, Number<0>())) *
-              E::G(t_vec, Number<1>(), Number<0>(), Number<i>(), Number<j>(),
-                   Number<k>(), Number<l>()) /
-              static_cast<C>(2)
-
-          +
-
-          d_f(E::L(t_val, Number<2>())) *
-              E::G(t_vec, Number<1>(), Number<2>(), Number<i>(), Number<j>(),
-                   Number<k>(), Number<l>()) /
-              static_cast<C>(2);
-
-    else
-
-      return
-
-          E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-              E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
-              d_f(E::L(t_val, Number<a>()))
-
-          +
-
-          d_f(E::L(t_val, Number<0>())) *
-              E::G(t_vec, Number<2>(), Number<0>(), Number<i>(), Number<j>(),
-                   Number<k>(), Number<l>()) /
-              static_cast<C>(2)
-
-          +
-
-          d_f(E::L(t_val, Number<1>())) *
-              E::G(t_vec, Number<2>(), Number<1>(), Number<i>(), Number<j>(),
-                   Number<k>(), Number<l>()) /
-              static_cast<C>(2);
+        d2MImpl_LHospital<E, C, a, i, j, k, l>::eval(t_val, t_vec,
+                                                     Number<3>()) *
+            d_f(E::L(t_val, Number<a>())) / static_cast<C>(4);
   }
 
   template <int nb>
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
                        const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec, f, d_f, typename E::NumberNb()) +
+    return term<nb - 1>(t_val, t_vec, f, d_f) +
            eval(t_val, t_vec, f, d_f, Number<nb - 1>());
   }
 
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
                        const Number<1> &) {
-    return term<0>(t_val, t_vec, f, d_f, typename E::NumberNb());
+    return term<0>(t_val, t_vec, f, d_f);
   }
 };
 
@@ -357,7 +294,8 @@ struct secondMatrixDirectiveImpl {
   ~secondMatrixDirectiveImpl() = delete;
 
   template <int a>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                       const Number<3> &) {
     return
 
         (
@@ -390,10 +328,36 @@ struct secondMatrixDirectiveImpl {
             d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
   }
 
+  template <int a>
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                       const Number<2> &) {
+    return 0;
+  }
+
+  template <int a>
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                       const Number<1> &) {
+    if (a == 0)
+      return E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
+             E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
+             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
+             dd_f(E::L(t_val, Number<a>()));
+    if (a == 1)
+      return E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
+             E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
+             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
+             dd_f(E::L(t_val, Number<a>()));
+    if (a == 2)
+      return E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
+             E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
+             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
+             dd_f(E::L(t_val, Number<a>()));
+  }
+
   template <int nb>
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                        const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec, f, d_f, dd_f)
+    return term<nb - 1>(t_val, t_vec, f, d_f, dd_f, typename E::NumberNb())
 
            +
 
@@ -403,7 +367,7 @@ struct secondMatrixDirectiveImpl {
 
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                        const Number<1> &) {
-    return term<0>(t_val, t_vec, f, d_f, dd_f);
+    return term<0>(t_val, t_vec, f, d_f, dd_f, typename E::NumberNb());
   }
 };
 
@@ -774,6 +738,8 @@ struct EigenProjection {
 private:
   template <typename E, typename C, int a, int i, int j, int k, int l>
   friend struct d2MImpl;
+  template <typename E, typename C, int a, int i, int j, int k, int l>
+  friend struct d2MImpl_LHospital;
   template <typename E, typename C, int a, int i, int j, int k, int l, int m,
             int n>
   friend struct dd4MImpl;

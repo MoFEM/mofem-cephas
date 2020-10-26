@@ -703,6 +703,36 @@ int main(int argc, char *argv[]) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                   "This norm should be zero");
       }
+
+      // // check second directive
+      // {
+      //   auto f = [](double v) { return v * v; };
+      //   auto d_f = [](double v) { return 2 * v; };
+      //   auto dd_f = [](double v) { return 2; };
+      //   FTensor::Tensor2<double, 3, 3> t_S{
+
+      //       1.,      1. / 2., 1. / 3.,
+
+      //       2. / 2., 1.,      2. / 3.,
+
+      //       3. / 2., 1.,      3. / 3.};
+
+      //   auto t_dd = EigenProjection<double, double, 1>::getDiffDiffMat(
+      //       t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+      //   auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
+
+      //   MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
+      //   print_ddg(t_dd_a, "hand ");
+      //   MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
+      //   print_ddg(t_dd, "code ");
+
+      //   double nrm2_t_dd_a = get_norm_t4(t_dd_a);
+      //   MOFEM_LOG("ATOM_TEST", Sev::inform)
+      //       << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
+      //   if (nrm2_t_dd_a > eps)
+      //     SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+      //             "This norm should be zero");
+      // }
     }
   }
   CATCH_ERRORS;
