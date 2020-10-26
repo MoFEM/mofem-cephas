@@ -137,6 +137,40 @@ int main(int argc, char *argv[]) {
       return t_d_a;
     };
 
+    auto get_diff_matrix2 = [i, j, k, l](auto &t_a, auto &t_d) {
+      constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+      FTensor::Tensor4<double, 3, 3, 3, 3> t_d_a;
+      t_d_a(i, j, k, l) = 0;
+
+      for (int ii = 0; ii != 3; ++ii)
+        for (int jj = 0; jj != 3; ++jj)
+          for (int kk = 0; kk != 3; ++kk)
+            for (int ll = 0; ll != 3; ++ll)
+              for (int zz = 0; zz != 3; ++zz) {
+
+                auto diff = [&](auto ii, auto jj, auto kk, auto ll, int zz) {
+                  return
+
+                      t_a(ii, zz) * t_kd(zz, kk) * t_kd(jj, ll)
+
+                      +
+
+                      t_kd(ii, kk) * t_kd(zz, ll) * t_a(zz, jj);
+                };
+
+                t_d_a(ii, jj, kk, ll) +=
+                    (diff(ii, jj, kk, ll, zz) + diff(ii, jj, ll, kk, zz)) / 2.;
+              }
+
+      for (int ii = 0; ii != 3; ++ii)
+        for (int jj = 0; jj != 3; ++jj)
+          for (int kk = 0; kk != 3; ++kk)
+            for (int ll = 0; ll != 3; ++ll)
+              t_d_a(ii, jj, kk, ll) -= t_d(ii, jj, kk, ll);
+
+      return t_d_a;
+    };
+
     // Test matrix againsst mathematica results
     {
       FTensor::Tensor2<double, 3, 3> t_A{
@@ -375,55 +409,18 @@ int main(int argc, char *argv[]) {
         {
           auto t_d =
               EigenProjection<double, double, 3>::getDiffMat(t_L, t_N, f, d_f);
-
           print_ddg_direction(t_d, 0, 2);
-
-          {
-
-            constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
-            FTensor::Tensor4<double, 3, 3, 3, 3> t_d_a;
-            t_d_a(i, j, k, l) = 0;
-
-            for (int ii = 0; ii != 3; ++ii)
-              for (int jj = 0; jj != 3; ++jj)
-                for (int kk = 0; kk != 3; ++kk)
-                  for (int ll = 0; ll != 3; ++ll)
-                    for (int zz = 0; zz != 3; ++zz) {
-
-                      auto diff = [&](auto ii, auto jj, auto kk, auto ll,
-                                      int zz) {
-                        return
-
-                            t_A(ii, zz) * t_kd(zz, kk) * t_kd(jj, ll)
-
-                            +
-
-                            t_kd(ii, kk) * t_kd(zz, ll) * t_A(zz, jj);
-                      };
-
-                      t_d_a(ii, jj, kk, ll) += (diff(ii, jj, kk, ll, zz) +
-                                                diff(ii, jj, ll, kk, zz)) /
-                                               2.;
-                    }
-
-            MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
-            print_ddg(t_d_a, "hand ");
-            MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
-            print_ddg(t_d, "code ");
-
-            for (int ii = 0; ii != 3; ++ii)
-              for (int jj = 0; jj != 3; ++jj)
-                for (int kk = 0; kk != 3; ++kk)
-                  for (int ll = 0; ll != 3; ++ll)
-                    t_d_a(ii, jj, kk, ll) -= t_d(ii, jj, kk, ll);
-
-            double nrm2_t_d_a = get_norm_t4(t_d_a);
-            MOFEM_LOG("ATOM_TEST", Sev::inform)
-                << "Direvarive hand calculation minus code " << nrm2_t_d_a;
-            if (nrm2_t_d_a > eps)
-              SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                      "This norm should be zero");
-          }
+          auto t_d_a = get_diff_matrix2(t_A, t_d);
+          MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
+          print_ddg(t_d_a, "hand ");
+          MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
+          print_ddg(t_d, "code ");
+          double nrm2_t_d_a = get_norm_t4(t_d_a);
+          MOFEM_LOG("ATOM_TEST", Sev::inform)
+              << "Direvarive hand calculation minus code " << nrm2_t_d_a;
+          if (nrm2_t_d_a > eps)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                    "This norm should be zero");
         }
 
         // check second directive
