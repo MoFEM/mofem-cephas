@@ -609,9 +609,6 @@ int main(int argc, char *argv[]) {
       // Testing two same eigen values - second derivative
       {
 
-        int info;
-        double wkopt;
-        double w[3];
 
         std::array<double, 9> a{1,   0., 0,
 
@@ -619,41 +616,14 @@ int main(int argc, char *argv[]) {
 
                                 0.0, 0., 4.};
 
-        FTensor::Tensor2<double, 3, 3> t_a{
-
-            a[0], a[1], a[2],
-
-            a[3], a[4], a[5],
-
-            a[6], a[7], a[8]};
+        auto tuple = run_lapack(a);
+        auto &t_a = std::get<0>(tuple);
+        auto &t_eig_vec = std::get<1>(tuple);
+        auto &t_eig_vals = std::get<2>(tuple);
 
         auto f = [](double v) { return v * v; };
         auto d_f = [](double v) { return 2 * v; };
         auto dd_f = [](double v) { return 2; };
-
-        /* Query and allocate the optimal workspace */
-        int lwork = -1;
-        info = lapack_dsyev('V', 'U', 3, a.data(), 3, w, &wkopt, lwork);
-        if (info > 0)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                  "The algorithm failed to compute eigenvalues.");
-        lwork = (int)wkopt;
-        std::vector<double> work(lwork);
-        /* Solve eigenproblem */
-        info = lapack_dsyev('V', 'U', 3, a.data(), 3, w, &*work.begin(), lwork);
-        if (info > 0)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                  "The algorithm failed to compute eigenvalues.");
-
-        FTensor::Tensor2<double, 3, 3> t_eig_vecs{
-
-            a[0 * 3 + 0], a[0 * 3 + 1], a[0 * 3 + 2],
-
-            a[2 * 3 + 0], a[2 * 3 + 1], a[2 * 3 + 2],
-
-            a[1 * 3 + 0], a[1 * 3 + 1], a[1 * 3 + 2]};
-
-        FTensor::Tensor1<double, 3> t_eig_vals{w[0], w[2], w[1]};
 
         // cerr << t_eig_vecs << endl;
         // cerr << t_eig_vals << endl;
