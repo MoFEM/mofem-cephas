@@ -300,15 +300,13 @@ struct secondMatrixDirectiveImpl {
 
         (
 
-            E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(),
-                   Number<m>(), Number<n>()) *
+            d2MImpl<E, C, a, i, j, m, n>::eval(t_val, t_vec, Number<3>()) *
                 E::M(t_vec, Number<a>(), Number<k>(), Number<l>())
 
             +
 
             E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-                E::d2M(t_val, t_vec, Number<a>(), Number<k>(), Number<l>(),
-                       Number<m>(), Number<n>())
+                d2MImpl<E, C, a, k, l, m, n>::eval(t_val, t_vec, Number<3>())
 
                 ) *
             d_f(E::L(t_val, Number<a>())) / static_cast<C>(2) +
@@ -322,8 +320,7 @@ struct secondMatrixDirectiveImpl {
                 Number<k>(), Number<l>(), Number<m>(), Number<n>()) *
             f(E::L(t_val, Number<a>())) / static_cast<C>(4) +
 
-        E::d2M(t_val, t_vec, Number<a>(), Number<i>(), Number<j>(), Number<k>(),
-               Number<l>()) *
+        d2MImpl<E, C, a, i, j, k, l>::eval(t_val, t_vec, Number<3>()) *
             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
             d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
   }
