@@ -66,7 +66,37 @@
 #pragma once
 #include <type_traits>
 
-template <typename E, typename C> struct d2MCoefficients {
+template <typename E, typename C> struct d2MDiffCoeff {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+  using Fun = typename E::Fun;
+
+  template <int N> using Number = FTensor::Number<N>;
+
+  d2MDiffCoeff() = delete;
+  ~d2MDiffCoeff() = delete;
+
+  template <int a, int b>
+  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                         const Number<3> &, Fun f, Fun d_f) {
+    return E::F(t_val, Number<a>(), Number<b>());
+  }
+
+  template <int a, int b>
+  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                         const Number<2> &, Fun f, Fun d_f) {
+    return get(t_val, Number<a>(), Number<b>(), Number<3>(), f, d_f);
+  }
+
+  template <int a, int b>
+  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                         const Number<1>, Fun f, Fun d_f) {
+    return get(t_val, Number<a>(), Number<b>(), Number<3>(), f, d_f);
+  }
+};
+
+template <typename E, typename C>
+struct d2MCoefficients {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
@@ -695,7 +725,7 @@ struct EigenProjection {
     return t_diff_A;
   }
 
-private:
+// private:
   template <typename E, typename C> friend struct d2MCoefficients;
   template <typename E, typename C, typename G, int a, int i, int j, int k,
             int l>
@@ -771,8 +801,11 @@ private:
   static inline auto d2M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return d2MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k, l>::eval(
-        t_val, t_vec, Number<Dim>());
+    using E = EigenProjection<T1, T2, NB, Dim>;
+    using G = d2MDiffCoeff<E,V>;
+    auto z = [](const double) { return 0; };
+    return d2MImpl_tmp<E, V, G, a, i, j, k, l>::eval(t_val, t_vec, z, z,
+                                                     Number<Dim>());
   }
 
   template <int a, int b, int i, int j>
@@ -831,14 +864,6 @@ private:
   static inline auto d2S(Val &t_val, Vec &t_vec) {
     return d2G<a, b, i, j, k, l, m, n>(t_val, t_vec) +
            d2G<b, a, i, j, k, l, m, n>(t_val, t_vec);
-  }
-
-  template <int a, int b, int i, int j, int k, int l, int m, int n>
-  static inline auto
-  d2S_LHospital(Val &t_val, Vec &t_vec, const Number<a> &, const Number<b> &,
-      const Number<i> &, const Number<j> &, const Number<k> &,
-      const Number<l> &, const Number<m> &, const Number<n> &) {
-    return d2S_LHospital<a, b, i, j, k, l, m, n>(t_val, t_vec);
   }
 
 };
