@@ -369,16 +369,18 @@ struct secondMatrixDirectiveImpl {
 
         (
 
-            d2MImpl<E, C, a, i, j, m, n>::eval(t_val, t_vec, Number<3>()) *
+            d2MImpl_tmp<E, C, d2MCoefficients<E, C>, a, i, j, m, n>::eval(
+                t_val, t_vec, d_f, dd_f, Number<3>()) *
                 E::M(t_vec, Number<a>(), Number<k>(), Number<l>())
 
             +
 
             E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-                d2MImpl<E, C, a, k, l, m, n>::eval(t_val, t_vec, Number<3>())
+                d2MImpl_tmp<E, C, d2MCoefficients<E, C>, a, k, l, m, n>::eval(
+                    t_val, t_vec, d_f, dd_f, Number<3>())
 
-                ) *
-            d_f(E::L(t_val, Number<a>())) / static_cast<C>(2) +
+                ) /
+            static_cast<C>(2) +
 
         E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
             E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
@@ -392,10 +394,10 @@ struct secondMatrixDirectiveImpl {
                                                             Number<3>()) *
             d_f(E::L(t_val, Number<a>())) / static_cast<C>(8) +
 
-        d2MImpl<E, C, a, i, j, k, l>::eval(t_val, t_vec, Number<3>()) *
-            E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
-            d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
-
+        d2MImpl_tmp<E, C, d2MCoefficients<E, C>, a, i, j, k, l>::eval(
+            t_val, t_vec, d_f, dd_f, Number<3>()) *
+            E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) /
+            static_cast<C>(2);
   }
 
   template <int nb>
