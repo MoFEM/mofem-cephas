@@ -423,63 +423,6 @@ template <typename E, typename C> struct getMatImpl {
                          const Number<0> &, const Number<0> &) {}
 };
 
-template <typename E, typename C, int a, int k, int l> struct getD2MImpl {
-  using Val = typename E::Val;
-  using Vec = typename E::Vec;
-
-  template <int N> using Number = FTensor::Number<N>;
-
-  getD2MImpl() = delete;
-  ~getD2MImpl() = delete;
-
-  template <typename T, int I, int J>
-  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
-                         const Number<J> &) {
-    set(t_val, t_vec, t_a, Number<I>(), Number<J - 1>());
-    t_a(I - 1, J - 1) = d2MImpl<E, C, a, I - 1, J - 1, k, l>::eval(
-        t_val, t_vec, typename E::NumberDim());
-  }
-
-  template <typename T, int I>
-  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
-                         const Number<0> &) {
-    set(t_val, t_vec, t_a, Number<I - 1>(), Number<I - 1>());
-  }
-
-  template <typename T>
-  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<0> &,
-                         const Number<0> &) {}
-};
-
-template <typename E, typename C, int a, int k, int l, int m, int n>
-struct getDD4MImpl {
-  using Val = typename E::Val;
-  using Vec = typename E::Vec;
-
-  template <int N> using Number = FTensor::Number<N>;
-
-  getDD4MImpl() = delete;
-  ~getDD4MImpl() = delete;
-
-  template <typename T, int I, int J>
-  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
-                         const Number<J> &) {
-    set(t_val, t_vec, t_a, Number<I>(), Number<J - 1>());
-    t_a(I - 1, J - 1) = dd4MImpl<E, C, a, I - 1, J - 1, k, l, m, n>::eval(
-        t_val, t_vec, typename E::NumberNb());
-  }
-
-  template <typename T, int I>
-  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<I> &,
-                         const Number<0> &) {
-    set(t_val, t_vec, t_a, Number<I - 1>(), Number<I - 1>());
-  }
-
-  template <typename T>
-  static inline void set(Val &t_val, Vec &t_vec, T &t_a, const Number<0> &,
-                         const Number<0> &) {}
-};
-
 template <typename E, typename C> struct getDiffMatImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -742,10 +685,6 @@ struct EigenProjection {
   friend struct firstMatrixDirectiveImpl;
   template <typename E, typename C, int i, int j, int k, int l, int m, int n>
   friend struct secondMatrixDirectiveImpl;
-  template <typename E, typename C, int a, int k, int l>
-  friend struct getD2MImpl;
-  template <typename E, typename C, int a, int k, int l, int m, int n>
-  friend struct getDD4MImpl;
   template <typename E, typename C> friend struct getDiffMatImpl;
   template <typename E, typename C> friend struct getDiffDiffMatImpl;
 
