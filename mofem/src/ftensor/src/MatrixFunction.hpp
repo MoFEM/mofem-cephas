@@ -173,7 +173,7 @@ struct dd4MImpl {
   template <int N> using Number = FTensor::Number<N>;
 
   template <int b>
-  static inline C term(Val &t_val, Vec &t_vec, const Number<3> &) {
+  static inline C term(Val &t_val, Vec &t_vec) {
 
     if (a != b) {
       return
@@ -195,28 +195,13 @@ struct dd4MImpl {
     return 0;
   }
 
-  template <int b>
-  static inline C term(Val &t_val, Vec &t_vec, const Number<2> &) {
-    if (a != b) {
-      if (a == 1 || b == 1)
-        return term<b>(t_val, t_vec, typename E::NumberDim());
-    }
-    return 0;
-  }
-
-  template <int b>
-  static inline C term(Val &t_val, Vec &t_vec, const Number<1> &) {
-    return 0;
-  }
-
   template <int nb>
   static inline C eval(Val &t_val, Vec &t_vec, const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec, typename E::NumberNb()) +
-           eval(t_val, t_vec, Number<nb - 1>());
+    return term<nb - 1>(t_val, t_vec) + eval(t_val, t_vec, Number<nb - 1>());
   }
 
   static inline C eval(Val &t_val, Vec &t_vec, const Number<1> &) {
-    return term<0>(t_val, t_vec, typename E::NumberNb());
+    return term<0>(t_val, t_vec);
   }
 };
 
