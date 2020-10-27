@@ -299,39 +299,6 @@ int main(int argc, char *argv[]) {
 
       // Testing against values in mathematica for 0,2 directive
       {
-        auto t_d2m_0 =
-            EigenProjection<double, double, 3>::getD2M<0, 0, 2>(t_L, t_N);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 0";
-        print_mat(t_d2m_0);
-
-        auto t_d2m_1 =
-            EigenProjection<double, double, 3>::getD2M<1, 0, 2>(t_L, t_N);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 1";
-        print_mat(t_d2m_1);
-
-        auto t_d2m_2 =
-            EigenProjection<double, double, 3>::getD2M<2, 0, 2>(t_L, t_N);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 2";
-        print_mat(t_d2m_2);
-
-        auto t_dd4m_0 =
-            EigenProjection<double, double, 3>::getDD4M<0, 0, 2, 0, 2>(t_L,
-                                                                       t_N);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff dd4m 0";
-        print_mat(t_dd4m_0);
-
-        auto t_dd4m_1 =
-            EigenProjection<double, double, 3>::getDD4M<1, 0, 2, 0, 2>(t_L,
-                                                                       t_N);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff dd4m 1";
-        print_mat(t_dd4m_1);
-
-        auto t_dd4m_2 =
-            EigenProjection<double, double, 3>::getDD4M<2, 0, 2, 0, 2>(t_L,
-                                                                       t_N);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff dd4m 2";
-        print_mat(t_dd4m_2);
-
         auto f = [](double v) { return exp(v); };
         auto d_f = [](double v) { return exp(v); };
         auto dd_f = [](double v) { return exp(v); };
@@ -579,23 +546,6 @@ int main(int argc, char *argv[]) {
       }
 
       {
-        auto t_d2m_0 = EigenProjection<double, double, 2>::getD2M<0, 0, 1>(
-            t_eig_vals, t_eig_vecs);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 0";
-        print_mat(t_d2m_0);
-
-        auto t_d2m_1 = EigenProjection<double, double, 2>::getD2M<1, 0, 1>(
-            t_eig_vals, t_eig_vecs);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 1";
-        print_mat(t_d2m_1);
-
-        auto t_d2m_2 = EigenProjection<double, double, 2>::getD2M<2, 0, 1>(
-            t_eig_vals, t_eig_vecs);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 1";
-        print_mat(t_d2m_2);
-      }
-
-      {
         auto t_d = EigenProjection<double, double, 2>::getDiffMat(
             t_eig_vals, t_eig_vecs, f, d_f);
         auto t_d_a = get_diff_matrix(t_d);
@@ -663,23 +613,6 @@ int main(int argc, char *argv[]) {
         if (norm2_t_b > eps)
           SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                   "This norm should be zero");
-      }
-
-      {
-        auto t_d2m_0 = EigenProjection<double, double, 2>::getD2M<0, 0, 1>(
-            t_eig_vals, t_eig_vecs);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 0";
-        print_mat(t_d2m_0);
-
-        auto t_d2m_1 = EigenProjection<double, double, 2>::getD2M<1, 0, 1>(
-            t_eig_vals, t_eig_vecs);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 1";
-        print_mat(t_d2m_1);
-
-        auto t_d2m_2 = EigenProjection<double, double, 2>::getD2M<2, 0, 1>(
-            t_eig_vals, t_eig_vecs);
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff d2m 1";
-        print_mat(t_d2m_2);
       }
 
       {
