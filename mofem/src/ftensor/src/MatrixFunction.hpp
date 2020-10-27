@@ -652,12 +652,6 @@ struct EigenProjection {
   }
 
   template <int a, int b> static inline auto F(Val &t_val) {
-    // if (std::abs(L<a>(t_val) - L<b>(t_val)) < 1e-6) {
-    //   if (a > b)
-    //     return -1 / static_cast<decltype(t_val(0))>(1e-12);
-    //   else
-    //     return 1 / static_cast<decltype(t_val(0))>(1e-12);
-    // }
     return static_cast<decltype(t_val(0))>(1) / (L<a>(t_val) - L<b>(t_val));
   }
 
