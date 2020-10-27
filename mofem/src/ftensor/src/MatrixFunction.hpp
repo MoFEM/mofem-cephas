@@ -66,6 +66,70 @@
 #pragma once
 #include <type_traits>
 
+template <typename E, typename C> struct d2MCoefficientsForFirstOrder {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+  using Fun = typename E::Fun;
+
+  template <int N> using Number = FTensor::Number<N>;
+
+  template <int a, int b>
+  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                         const Number<3> &, Fun f, Fun d_f, Fun dd_f) {
+    return f(E::L(t_val, Number<a>())) * E::F(t_val, Number<a>(), Number<b>());
+  }
+
+  template <int a, int b>
+  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                         const Number<2> &, Fun f, Fun d_f, Fun dd_f) {
+    if(a==1 || b == 1)
+      return get(t_val, Number<a>(), Number<b>(), Number<3>(), f, d_f, dd_f);
+    else
+      return d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
+  }
+
+  template <int a, int b>
+  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                         const Number<1>, Fun f, Fun d_f, Fun dd_f) {
+    return d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
+  }
+};
+
+template <typename E, typename C, typename G, int a, int i, int j, int k, int l>
+struct d2MImpl_tmp {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+  using Fun = typename E::Fun;
+
+  template <int N> using Number = FTensor::Number<N>;
+
+  d2MImpl_tmp() = delete;
+  ~d2MImpl_tmp() = delete;
+
+  template <int b>
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
+    if (a != b) {
+      return G::get(t_val, Number<a>(), Number<b>(), typename E::NumberNb(), f,
+                    d_f, dd_f) *
+             E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
+                  Number<k>(), Number<l>());
+    }
+    return 0;
+  }
+
+  template <int nb>
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                       const Number<nb> &) {
+    return term<nb - 1>(t_val, t_vec, f, d_f, dd_f) +
+           eval(t_val, t_vec, f, d_f, dd_f, Number<nb - 1>());
+  }
+
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                       const Number<1> &) {
+    return term<0>(t_val, t_vec, f, d_f, dd_f);
+  }
+};
+
 template <typename E, typename C, int a, int i, int j, int k, int l>
 struct d2MImpl {
   using Val = typename E::Val;
@@ -314,14 +378,9 @@ struct firstMatrixDirectiveImpl {
 
         +
 
-        d2MImpl<E, C, a, i, j, k, l>::eval(t_val, t_vec, Number<3>()) *
-            f(E::L(t_val, Number<a>())) / static_cast<C>(2)
-
-        +
-
-        d2MImpl_LHospital<E, C, a, i, j, k, l>::eval(t_val, t_vec,
-                                                     Number<3>()) *
-            d_f(E::L(t_val, Number<a>())) / static_cast<C>(4);
+        d2MImpl_tmp<E, C, d2MCoefficientsForFirstOrder<E, C>, a, i, j, k,
+                    l>::eval(t_val, t_vec, f, d_f, d_f, Number<3>()) /
+            static_cast<C>(2);
   }
 
   template <int nb>
@@ -786,6 +845,13 @@ struct EigenProjection {
   }
 
 private:
+
+  template <typename E, typename C> friend struct d2MCoefficientsForFirstOrder;
+
+  template <typename E, typename C, typename G, int a, int i, int j, int k,
+            int l>
+  friend struct d2MImpl_tmp;
+
   template <typename E, typename C, int a, int i, int j, int k, int l>
   friend struct d2MImpl;
   template <typename E, typename C, int a, int i, int j, int k, int l>
