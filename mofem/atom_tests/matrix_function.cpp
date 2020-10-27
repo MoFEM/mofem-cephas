@@ -717,58 +717,104 @@ int main(int argc, char *argv[]) {
                   "This norm should be zero");
       }
 
-      // check second directive
-      {
-        auto f = [](double v) { return v; };
-        auto d_f = [](double v) { return 1; };
-        auto dd_f = [](double v) { return 0; };
-        FTensor::Tensor2<double, 3, 3> t_S{
-
-            1.,      1. / 2., 1. / 3.,
-
-            2. / 2., 1.,      2. / 3.,
-
-            3. / 2., 1.,      3. / 3.};
-
-        auto t_dd = EigenProjection<double, double, 1>::getDiffDiffMat(
-            t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
-
-        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
-        print_ddg(t_dd, "code ");
-
-        double nrm2_t_dd = get_norm_t4(t_dd);
-        MOFEM_LOG("ATOM_TEST", Sev::inform)
-            << "Direvarive hand calculation minus code " << nrm2_t_dd;
-        if (nrm2_t_dd > eps)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                  "This norm should be zero");
-      }
-
-      // check second directive
-      {
-        auto f = [](double v) { return v * v; };
-        auto d_f = [](double v) { return 2 * v; };
-        auto dd_f = [](double v) { return 2; };
-        FTensor::Tensor2<double, 3, 3> t_S{
-
-            1., 0., 0.,
-
-            0., 0., 0.,
-
-            0., 0., 0.};
-
-        auto t_dd = EigenProjection<double, double, 1>::getDiffDiffMat(
-            t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
-        auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
-
-        double nrm2_t_dd_a = get_norm_t4(t_dd_a);
-        MOFEM_LOG("ATOM_TEST", Sev::inform)
-            << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
-        if (nrm2_t_dd_a > eps)
-          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                  "This norm should be zero");
-      }
     }
+
+    // check second directive
+    {
+
+      std::array<double, 9> a{0.1, 0.,  0.,
+
+                              0.,  0.1, 0.,
+
+                              0.,  0.,  0.1};
+
+      auto tuple = run_lapack(a);
+      auto &t_a = std::get<0>(tuple);
+      auto &t_eig_vecs = std::get<1>(tuple);
+      auto &t_eig_vals = std::get<2>(tuple);
+
+      constexpr double eps = 1e-10;
+
+      auto f = [](double v) { return v; };
+      auto d_f = [](double v) { return 1; };
+      auto dd_f = [](double v) { return 0; };
+
+      FTensor::Tensor2<double, 3, 3> t_S{
+
+          0., 0., 0.,
+
+          0., 1., 0.,
+
+          0., 0., 0.};
+
+      // FTensor::Tensor2<double, 3, 3> t_S{
+
+      //     1.,      1. / 2., 1. / 3.,
+
+      //     2. / 2., 1.,      2. / 3.,
+
+      //     3. / 2., 1.,      3. / 3.};
+
+      auto t_dd = EigenProjection<double, double, 1>::getDiffDiffMat(
+          t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+
+      MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
+      print_ddg(t_dd, "test ");
+
+      double nrm2_t_dd = get_norm_t4(t_dd);
+      MOFEM_LOG("ATOM_TEST", Sev::inform)
+          << "Direvarive hand calculation minus code " << nrm2_t_dd;
+      if (nrm2_t_dd > eps)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                "This norm should be zero");
+    }
+
+    // // check second directive
+    // {
+
+    //   std::array<double, 9> a{0.1, 0.,  0.,
+
+    //                           0.,  0.1, 0.,
+
+    //                           0.,  0.,  0.1};
+
+    //   auto tuple = run_lapack(a);
+    //   auto &t_a = std::get<0>(tuple);
+    //   auto &t_eig_vecs = std::get<1>(tuple);
+    //   auto &t_eig_vals = std::get<2>(tuple);
+
+    //   constexpr double eps = 1e-10;
+
+    //   auto f = [](double v) { return v * v; };
+    //   auto d_f = [](double v) { return 2 * v; };
+    //   auto dd_f = [](double v) { return 2; };
+    //   FTensor::Tensor2<double, 3, 3> t_S{
+
+    //       0., 0., 0.,
+
+    //       0., 1., 0.,
+
+    //       0., 0., 0.};
+
+    //   cerr << t_eig_vecs << endl;
+    //   cerr << t_eig_vals << endl;
+
+    //   t_eig_vals(0) -= 1e-6;
+    //   t_eig_vals(2) += 1e-6;
+
+    //   auto t_dd = EigenProjection<double, double, 1>::getDiffDiffMat(
+    //       t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+    //   // print_ddg(t_dd, "test ");
+
+    //   auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
+
+    //   double nrm2_t_dd_a = get_norm_t4(t_dd_a);
+    //   MOFEM_LOG("ATOM_TEST", Sev::inform)
+    //       << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
+    //   if (nrm2_t_dd_a > eps)
+    //     SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+    //             "This norm should be zero");
+    // }
   }
   CATCH_ERRORS;
 

@@ -239,18 +239,21 @@ struct dd4MImpl_LHospital {
       if (a == 1 || b == 1)
         return 0;
       else
-        return E::d2S(t_val, t_vec, Number<a>(), Number<b>(), Number<i>(),
-                      Number<j>(), Number<k>(), Number<l>(), Number<m>(),
-                      Number<n>());
+        return E::d2S_LHospital(t_val, t_vec, Number<a>(), Number<b>(),
+                                Number<i>(), Number<j>(), Number<k>(),
+                                Number<l>(), Number<m>(), Number<n>());
     }
     return 0;
   }
 
   template <int b>
   static inline C term(Val &t_val, Vec &t_vec, const Number<1> &) {
-    return E::d2S(t_val, t_vec, Number<a>(), Number<b>(), Number<i>(),
-                  Number<j>(), Number<k>(), Number<l>(), Number<m>(),
-                  Number<n>());
+    if (a != b) {
+      return E::d2S_LHospital(t_val, t_vec, Number<a>(), Number<b>(),
+                              Number<i>(), Number<j>(), Number<k>(),
+                              Number<l>(), Number<m>(), Number<n>());
+    }
+    return 0;
   }
 
   template <int nb>
@@ -840,18 +843,6 @@ private:
     return N<a, i>(t_vec) * N<a, j>(t_vec);
   }
 
-  template <int a, int b, int i, int j>
-  static inline auto dFdN(Val &t_val, Vec &t_vec, const Number<a> &,
-                          const Number<b> &, const Number<i> &,
-                          const Number<j> &) {
-    return dFdN<a, b, i, j>(t_val, t_vec);
-  }
-
-  template <int a, int b, int i, int j>
-  static inline auto dFdN(Val &t_val, Vec &t_vec) {
-    return dFdNa<a, b, i, j>(t_val, t_vec) + dFdNb<a, b, i, j>(t_val, t_vec);
-  }
-
   template <int a, int b, int i, int j, int k, int l>
   static inline auto G(Vec &t_vec, const Number<a> &, const Number<b> &,
                        const Number<i> &, const Number<j> &, const Number<k> &,
@@ -867,13 +858,6 @@ private:
   }
 
   template <int a, int i, int j, int k, int l>
-  static inline auto d2M(Val &t_val, Vec &t_vec, const Number<a> &,
-                         const Number<i> &, const Number<j> &,
-                         const Number<k> &, const Number<l> &) {
-    return d2M<a, i, j, k, l>(t_val, t_vec);
-  }
-
-  template <int a, int i, int j, int k, int l>
   static inline auto d2M(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
@@ -881,20 +865,25 @@ private:
         t_val, t_vec, Number<Dim>());
   }
 
-  template <int a, int i, int j, int k, int l, int m, int n>
-  static inline auto dd4M(Val &t_val, Vec &t_vec, const Number<a> &,
-                          const Number<i> &, const Number<j> &,
-                          const Number<k> &, const Number<l> &,
-                          const Number<m> &, const Number<n> &) {
-    return dd4M<a, i, j, k, l, m, n>(t_val, t_vec);
-  }
-
-  template <int a, int i, int j, int k, int l, int m, int n>
-  static inline auto dd4M(Val &t_val, Vec &t_vec) {
+  template <int a, int i, int j, int k, int l>
+  static inline auto d2M_LHospital(Val &t_val, Vec &t_vec) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return dd4MImpl<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k, l, m,
-                    n>::eval(t_val, t_vec, Number<NB>());
+    return d2MImpl_LHospital<EigenProjection<T1, T2, NB, Dim>, V, a, i, j, k,
+                             l>::eval(t_val, t_vec, Number<Dim>());
+  }
+
+
+  template <int a, int b, int i, int j>
+  static inline auto dFdN(Val &t_val, Vec &t_vec, const Number<a> &,
+                          const Number<b> &, const Number<i> &,
+                          const Number<j> &) {
+    return dFdN<a, b, i, j>(t_val, t_vec);
+  }
+
+  template <int a, int b, int i, int j>
+  static inline auto dFdN(Val &t_val, Vec &t_vec) {
+    return dFdNa<a, b, i, j>(t_val, t_vec) + dFdNb<a, b, i, j>(t_val, t_vec);
   }
 
   template <int a, int b, int i, int j>
@@ -942,4 +931,27 @@ private:
     return d2G<a, b, i, j, k, l, m, n>(t_val, t_vec) +
            d2G<b, a, i, j, k, l, m, n>(t_val, t_vec);
   }
+
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
+  static inline auto d2G_LHospital(Val &t_val, Vec &t_vec) {
+    return d2M_LHospital<a, i, k, n, m>(t_val, t_vec) * M<b, j, l>(t_vec) +
+           M<a, i, k>(t_vec) * d2M_LHospital<b, j, l, m, n>(t_val, t_vec) +
+           d2M_LHospital<a, i, l, m, n>(t_val, t_vec) * M<b, j, k>(t_vec) +
+           M<a, i, l>(t_vec) * d2M_LHospital<b, j, k, m, n>(t_val, t_vec);
+  }
+
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
+  static inline auto
+  d2S_LHospital(Val &t_val, Vec &t_vec, const Number<a> &, const Number<b> &,
+      const Number<i> &, const Number<j> &, const Number<k> &,
+      const Number<l> &, const Number<m> &, const Number<n> &) {
+    return d2S_LHospital<a, b, i, j, k, l, m, n>(t_val, t_vec);
+  }
+
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
+  static inline auto d2S_LHospital(Val &t_val, Vec &t_vec) {
+    return d2G_LHospital<a, b, i, j, k, l, m, n>(t_val, t_vec) +
+           d2G_LHospital<b, a, i, j, k, l, m, n>(t_val, t_vec);
+  }
+
 };
