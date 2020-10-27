@@ -238,55 +238,6 @@ struct dd4MImpl {
   }
 };
 
-template <typename E, typename C, int a, int i, int j, int k, int l, int m,
-          int n>
-struct dd4MImpl_LHospital {
-  using Val = typename E::Val;
-  using Vec = typename E::Vec;
-  dd4MImpl_LHospital() = delete;
-  ~dd4MImpl_LHospital() = delete;
-
-  template <int N> using Number = FTensor::Number<N>;
-
-  template <int b>
-  static inline C term(Val &t_val, Vec &t_vec, const Number<3> &) {
-    return 0;
-  }
-
-  template <int b>
-  static inline C term(Val &t_val, Vec &t_vec, const Number<2> &) {
-    if (a != b) {
-      if (a == 1 || b == 1)
-        return 0;
-      else
-        return E::d2S_LHospital(t_val, t_vec, Number<a>(), Number<b>(),
-                                Number<i>(), Number<j>(), Number<k>(),
-                                Number<l>(), Number<m>(), Number<n>());
-    }
-    return 0;
-  }
-
-  template <int b>
-  static inline C term(Val &t_val, Vec &t_vec, const Number<1> &) {
-    if (a != b) {
-      return E::d2S_LHospital(t_val, t_vec, Number<a>(), Number<b>(),
-                              Number<i>(), Number<j>(), Number<k>(),
-                              Number<l>(), Number<m>(), Number<n>());
-    }
-    return 0;
-  }
-
-  template <int nb>
-  static inline C eval(Val &t_val, Vec &t_vec, const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec, typename E::NumberNb()) +
-           eval(t_val, t_vec, Number<nb - 1>());
-  }
-
-  static inline C eval(Val &t_val, Vec &t_vec, const Number<1> &) {
-    return term<0>(t_val, t_vec, typename E::NumberNb());
-  }
-};
-
 template <typename E, typename C, int i, int j> struct reconstructMatImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -389,10 +340,6 @@ struct secondMatrixDirectiveImpl {
 
         dd4MImpl<E, C, a, i, j, k, l, m, n>::eval(t_val, t_vec, Number<3>()) *
             f(E::L(t_val, Number<a>())) / static_cast<C>(4) +
-
-        dd4MImpl_LHospital<E, C, a, i, j, k, l, m, n>::eval(t_val, t_vec,
-                                                            Number<3>()) *
-            d_f(E::L(t_val, Number<a>())) / static_cast<C>(8) +
 
         d2MImpl_tmp<E, C, d2MCoefficients<E, C>, a, i, j, k, l>::eval(
             t_val, t_vec, d_f, dd_f, Number<3>()) *
@@ -792,9 +739,6 @@ private:
   template <typename E, typename C, int a, int i, int j, int k, int l, int m,
             int n>
   friend struct dd4MImpl;
-  template <typename E, typename C, int a, int i, int j, int k, int l, int m,
-            int n>
-  friend struct dd4MImpl_LHospital;
   template <typename E, typename C, int i, int j>
   friend struct reconstructMatImpl;
   template <typename E, typename C, int i, int j, int k, int l>
