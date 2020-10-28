@@ -233,7 +233,7 @@ struct dd4MImpl {
     if (a != b) {
       return
 
-          E::F(t_val, Number<a>(), Number<b>()) *
+          G1::get(t_val, Number<a>(), Number<b>(), Number<3>(), f, d_f) *
               E::d2S(t_val, t_vec, Number<a>(), Number<b>(), Number<i>(),
                      Number<j>(), Number<k>(), Number<l>(), Number<m>(),
                      Number<n>())
