@@ -216,8 +216,8 @@ struct d2MImpl {
   }
 };
 
-template <typename E, typename C, typename G2, int a, int i, int j, int k,
-          int l, int m, int n>
+template <typename E, typename C, typename G1, typename G2, int a, int i, int j,
+          int k, int l, int m, int n>
 struct dd4MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -365,8 +365,8 @@ struct secondMatrixDirectiveImpl {
             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
             dd_f(E::L(t_val, Number<a>())) +
 
-        dd4MImpl<E, C, dd4MCoefficientsType2<E, C>, a, i, j, k, l, m, n>::eval(
-            t_val, t_vec, f, d_f, dd_f, Number<3>()) *
+        dd4MImpl<E, C, d2MDiffCoeff<E, C>, dd4MCoefficientsType2<E, C>, a, i, j,
+                 k, l, m, n>::eval(t_val, t_vec, f, d_f, dd_f, Number<3>()) *
             f(E::L(t_val, Number<a>())) / static_cast<C>(4) +
 
         d2MImpl<E, C, d2MCoefficients<E, C>, a, i, j, k, l>::eval(
@@ -671,8 +671,8 @@ struct EigenProjection {
   template <typename E, typename C, typename G, int a, int i, int j, int k,
             int l>
   friend struct d2MImpl;
-  template <typename E, typename C, typename G1, int a, int i, int j, int k,
-            int l, int m, int n>
+  template <typename E, typename C, typename G1, typename G2, int a, int i,
+            int j, int k, int l, int m, int n>
   friend struct dd4MImpl;
   template <typename E, typename C, int i, int j>
   friend struct reconstructMatImpl;
