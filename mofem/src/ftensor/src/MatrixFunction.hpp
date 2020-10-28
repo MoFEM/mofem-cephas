@@ -127,6 +127,7 @@ template <typename E, typename C> struct d2MCoefficients {
   }
 };
 
+
 template <typename E, typename C, typename G, int a, int i, int j, int k, int l>
 struct d2MImpl {
   using Val = typename E::Val;
@@ -167,13 +168,14 @@ template <typename E, typename C, int a, int i, int j, int k, int l, int m,
 struct dd4MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
+  using Fun = typename E::Fun;
   dd4MImpl() = delete;
   ~dd4MImpl() = delete;
 
   template <int N> using Number = FTensor::Number<N>;
 
   template <int b>
-  static inline C term(Val &t_val, Vec &t_vec) {
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
 
     if (a != b) {
       return
@@ -196,12 +198,15 @@ struct dd4MImpl {
   }
 
   template <int nb>
-  static inline C eval(Val &t_val, Vec &t_vec, const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec) + eval(t_val, t_vec, Number<nb - 1>());
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                       const Number<nb> &) {
+    return term<nb - 1>(t_val, t_vec, f, d_f, dd_f) +
+           eval(t_val, t_vec, f, d_f, dd_f, Number<nb - 1>());
   }
 
-  static inline C eval(Val &t_val, Vec &t_vec, const Number<1> &) {
-    return term<0>(t_val, t_vec);
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                       const Number<1> &) {
+    return term<0>(t_val, t_vec, f, d_f, dd_f);
   }
 };
 
@@ -305,7 +310,8 @@ struct secondMatrixDirectiveImpl {
             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
             dd_f(E::L(t_val, Number<a>())) +
 
-        dd4MImpl<E, C, a, i, j, k, l, m, n>::eval(t_val, t_vec, Number<3>()) *
+        dd4MImpl<E, C, a, i, j, k, l, m, n>::eval(t_val, t_vec, f, d_f, dd_f,
+                                                  Number<3>()) *
             f(E::L(t_val, Number<a>())) / static_cast<C>(4) +
 
         d2MImpl<E, C, d2MCoefficients<E, C>, a, i, j, k, l>::eval(
