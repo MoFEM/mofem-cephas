@@ -142,9 +142,8 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
                          const Number<b> &, const Number<m> &,
                          const Number<n> &, const Number<3> &, Fun f,
                          Fun dd_f) {
-    return f(E::L(t_val, Number<a>())) * E::dFdN(t_val, t_vec, Number<a>(),
-                                                 Number<b>(), Number<m>(),
-                                                 Number<n>());
+    return /*f(E::L(t_val, Number<a>())) **/ E::dFdN(
+        t_val, t_vec, Number<a>(), Number<b>(), Number<m>(), Number<n>());
   }
 
   template <int a, int b, int m, int n>
@@ -242,8 +241,9 @@ struct dd4MImpl {
           +
 
           2 *
-              E::dFdN(t_val, t_vec, Number<a>(), Number<b>(), Number<m>(),
-                      Number<n>()) *
+
+              G2::get(t_val, t_vec, Number<a>(), Number<b>(), Number<m>(),
+                      Number<n>(), typename E::NumberNb(), f, dd_f) *
               E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                    Number<k>(), Number<l>());
     }
