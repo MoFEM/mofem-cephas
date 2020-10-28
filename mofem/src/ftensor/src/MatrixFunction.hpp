@@ -228,6 +228,35 @@ struct dd4MImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
+  template <int A, int I, int J, int K, int L>
+  static inline auto d2M(Val &t_val, Vec &t_vec) {
+    using V =
+        typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
+    using G = d2MDiffCoeff<E, V>;
+    auto z = [](const double) { return 0; };
+    return d2MImpl<E, V, G, A, I, J, K, L>::eval(t_val, t_vec, z, z,
+                                                 typename E::NumberDim());
+  }
+
+  template <int A, int B, int I, int J, int K, int L, int M, int N>
+  static inline auto d2G(Val &t_val, Vec &t_vec) {
+    return d2M<A, I, K, N, M>(t_val, t_vec) *
+               E::M(t_vec, Number<B>(), Number<J>(), Number<L>()) +
+           E::M(t_vec, Number<A>(), Number<I>(), Number<K>()) *
+               d2M<B, J, L, M, N>(t_val, t_vec) +
+           d2M<A, I, L, M, N>(t_val, t_vec) *
+               E::M(t_vec, Number<B>(), Number<J>(), Number<K>()) +
+           E::M(t_vec, Number<A>(), Number<I>(), Number<L>()) *
+               d2M<B, J, K, M, N>(t_val, t_vec);
+  }
+
+  template <int A, int B, int I, int J, int K, int L, int M, int N>
+  static inline auto d2S(Val &t_val, Vec &t_vec) {
+    return d2G<A, B, I, J, K, L, M, N>(t_val, t_vec) +
+           d2G<B, A, I, J, K, L, M, N>(t_val, t_vec);
+  }
+
+
   template <int b>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
 
@@ -235,9 +264,7 @@ struct dd4MImpl {
       return
 
           G1::get(t_val, Number<a>(), Number<b>(), Number<3>(), f, d_f) *
-              E::d2S(t_val, t_vec, Number<a>(), Number<b>(), Number<i>(),
-                     Number<j>(), Number<k>(), Number<l>(), Number<m>(),
-                     Number<n>())
+              d2S<a, b, i, j, k, l, m, n>(t_val, t_vec)
 
           +
 
