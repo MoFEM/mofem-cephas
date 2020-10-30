@@ -3,57 +3,40 @@
   <!-- Navigation index tabs for HTML output -->
  <navindex>
     <tab type="user" visible="yes" url="@ref mainpage" title="" intro=""/>
-    
-    <tab type="user" visible="yes" title="Getting started" url="@ref usersmain" intro="">
+
+    <tab type="user" url="@ref news" title="News" intro=""/>
+
+    <tab type="user" visible="yes" title="Getting started" url="@ref installation" intro="">
       <tab type="user" url="@ref installation" title="Installation" intro=""/>
+      <tab type="user" url="@ref running_code" title="Running code"/>
       <tab type="user" url="@ref motivation" title="Features" intro=""/>
       <tab type="user" url="https://www.youtube.com/playlist?list=PLW49at2nN39gsTI1vWxvHBOjFK0q_h83s" title="Video guides"/>
-      <tab type="user" url="@ref faqs" title="Frequently Asked Questions" intro=""/>
+      <tab type="user" url="@ref citelist" title="Bibliography"/>
       <tab type="user" url="@ref google_search" title="Search" intro=""/>
     </tab>
     
-    <tab type="usergroup" visible="yes" title="Developer" url="@ref developersmain" intro="">
-      <tab type="user" url="@ref tutorials_in_progress" title="Tutorials"/>
-      <tab type="user" url="@ref work_in_progress" visible="no" title="Work in progess" intro=""/>
-      <tab type="examples" visible="no" title="" intro=""/>
+    <tab type="user" visible="yes" title="Developer" url="@ref general_data_structure" intro="">
       <tab type="user" url="@ref general_data_structure" title="Basic design" intro=""/>
-      
-      <tab type="user" title="Source code" url="@ref developer_source_code" intro="">
-        <tab type="modules" visible="yes" title="Source groups" intro=""/>
-        <tab type="files" visible="yes" title="Source files" intro=""/>
-        <tab type="namespaces" visible="yes" title="Name spaces" intro=""/>
-        <tab type="classes" visible="yes" title="Classes" intro=""/>
-      </tab>
-      
-      <tab type="user" title="Coding practice" url="@ref mofem_practice" intro="">
-        <tab type="user" url="@ref coding_practice" title="Coding practice" intro=""/>
-        <tab type="user" url="@ref guidelines_bug_reporting" title="Guidelines for bug reporting" intro=""/>
-        <tab type="user" url="@ref a_guide_to_writing_documentation" title="Writing documentation" intro=""/>
-        <tab type="user" url="@ref being_a_good_citizen" title="Being a good citizen" intro=""/>   
-      </tab>
-      
-      <tab type="user" title="Todo, bugs, and other lists" url="@ref mofem_management" intro="">
-        <tab type="user" url="@ref bug" title="Bug List" intro=""/>
-        <tab type="user" url="@ref todo" title="Todo List" intro=""/>
-        <tab type="user" url="@ref deprecated" title="Deprecated List" intro=""/>
-      </tab>
-      
-      <tab type="user" url="http://cdash.eng.gla.ac.uk/cdash" title="CDash testing"/>
-      
-      <tab type="user" url="@ref citelist" title="Bibliography"/>
-      
-      <tab type="pages" visible="yes" title="" intro=""/>
+      <tab type="user" url="@ref tutorials" title="Tutorials"/>
+      <tab type="user" url="@ref other_tutorials" title="Other tutorials"/>
+      <tab type="user" url="@ref faqs" title="Frequently Asked Questions" intro=""/>
+      <tab type="user" url="@ref a_guide_to_writing_documentation" title="Writing documentation" intro=""/>
+      <tab type="user" url="@ref coding_practice" title="Coding practice" intro=""/>
+    </tab>
 
+    <tab type="user" visible="yes" title="Source Code" url="@ref tutorials" intro="">
+      <tab type="files" visible="yes" title="Source files" intro=""/>
+      <tab type="modules" visible="yes" title="Source groups" intro=""/>
+      <tab type="examples" visible="yes" title="" intro=""/>
+      <tab type="user" url="http://cactus.eng.gla.ac.uk:8080/login?from=%2F" title="Jenkins"/>     
+      <tab type="user" url="http://cdash.eng.gla.ac.uk/cdash" title="CDash"/>
+      <tab type="pages" visible="yes" title="" intro=""/>
     </tab>
     
     <tab type="user" title="Modules" url="@ref mod_gallery" intro=""/>
-    
     <tab type="user" url="https://groups.google.com/forum/#!categories/mofem-group" title="Q&amp;A"/>
-    
     <tab type="user" url="https://bitbucket.org/likask/mofem-cephas" title="Repository"/>
-    
     <tab type="user" url="https://zenodo.org/communities/mofem/" title="Library"/>
-    
     <tab type="user" title="About"url="@ref about_us" intro=""/>
 
     <tab type="namespaces" visible="no" title="">

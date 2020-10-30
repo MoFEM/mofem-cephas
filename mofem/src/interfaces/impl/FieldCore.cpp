@@ -1319,9 +1319,9 @@ Core::get_problem_finite_elements_entities(const std::string &problem_name,
   if (p_miit == prb.end())
     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
              "No such problem like < %s >", problem_name.c_str());
-  auto miit = p_miit->numeredFiniteElements->get<FiniteElement_name_mi_tag>()
+  auto miit = p_miit->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
                   .lower_bound(fe_name);
-  auto hi_miit = p_miit->numeredFiniteElements->get<FiniteElement_name_mi_tag>()
+  auto hi_miit = p_miit->numeredFiniteElementsPtr->get<FiniteElement_name_mi_tag>()
                      .upper_bound(fe_name);
   for (; miit != hi_miit; miit++) {
     EntityHandle ent = (*miit)->getEnt();

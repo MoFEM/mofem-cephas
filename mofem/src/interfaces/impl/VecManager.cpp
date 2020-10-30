@@ -70,14 +70,14 @@ MoFEMErrorCode VecManager::vecCreateGhost(const std::string &name,
     nb_local_dofs = problem_ptr->getNbLocalDofsRow();
     nb_ghost_dofs = problem_ptr->getNbGhostDofsRow();
     dofs = const_cast<NumeredDofEntityByLocalIdx *>(
-        &problem_ptr->numeredRowDofs->get<PetscLocalIdx_mi_tag>());
+        &problem_ptr->numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>());
     break;
   case COL:
     nb_dofs = problem_ptr->getNbDofsCol();
     nb_local_dofs = problem_ptr->getNbLocalDofsCol();
     nb_ghost_dofs = problem_ptr->getNbGhostDofsCol();
     dofs = const_cast<NumeredDofEntityByLocalIdx *>(
-        &problem_ptr->numeredColDofs->get<PetscLocalIdx_mi_tag>());
+        &problem_ptr->numeredColDofsPtr->get<PetscLocalIdx_mi_tag>());
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
@@ -193,13 +193,13 @@ MoFEMErrorCode VecManager::setLocalGhostVector(const Problem *problem_ptr,
     nb_local_dofs = problem_ptr->getNbLocalDofsRow();
     nb_ghost_dofs = problem_ptr->getNbGhostDofsRow();
     dofs = const_cast<NumeredDofEntityByLocalIdx *>(
-        &problem_ptr->numeredRowDofs->get<PetscLocalIdx_mi_tag>());
+        &problem_ptr->numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>());
     break;
   case COL:
     nb_local_dofs = problem_ptr->getNbLocalDofsCol();
     nb_ghost_dofs = problem_ptr->getNbGhostDofsCol();
     dofs = const_cast<NumeredDofEntityByLocalIdx *>(
-        &problem_ptr->numeredColDofs->get<PetscLocalIdx_mi_tag>());
+        &problem_ptr->numeredColDofsPtr->get<PetscLocalIdx_mi_tag>());
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
@@ -295,12 +295,12 @@ VecManager::setGlobalGhostVector(const Problem *problem_ptr, RowColData rc,
   case ROW:
     nb_dofs = problem_ptr->getNbDofsRow();
     dofs = const_cast<DofsByGlobalIdx *>(
-        &problem_ptr->numeredRowDofs->get<PetscGlobalIdx_mi_tag>());
+        &problem_ptr->numeredRowDofsPtr->get<PetscGlobalIdx_mi_tag>());
     break;
   case COL:
     nb_dofs = problem_ptr->getNbDofsCol();
     dofs = const_cast<DofsByGlobalIdx *>(
-        &problem_ptr->numeredColDofs->get<PetscGlobalIdx_mi_tag>());
+        &problem_ptr->numeredColDofsPtr->get<PetscGlobalIdx_mi_tag>());
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
@@ -400,11 +400,11 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
   switch (rc) {
   case ROW:
     dofs = const_cast<DofsByUId *>(
-        &problem_ptr->numeredRowDofs->get<Unique_mi_tag>());
+        &problem_ptr->numeredRowDofsPtr->get<Unique_mi_tag>());
     break;
   case COL:
     dofs = const_cast<DofsByUId *>(
-        &problem_ptr->numeredColDofs->get<Unique_mi_tag>());
+        &problem_ptr->numeredColDofsPtr->get<Unique_mi_tag>());
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
@@ -530,12 +530,12 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
   case ROW:
     nb_dofs = problem_ptr->getNbDofsRow();
     dofs = const_cast<NumeredDofEntityByUId *>(
-        &problem_ptr->numeredRowDofs->get<Unique_mi_tag>());
+        &problem_ptr->numeredRowDofsPtr->get<Unique_mi_tag>());
     break;
   case COL:
     nb_dofs = problem_ptr->getNbDofsCol();
     dofs = const_cast<NumeredDofEntityByUId *>(
-        &problem_ptr->numeredColDofs->get<Unique_mi_tag>());
+        &problem_ptr->numeredColDofsPtr->get<Unique_mi_tag>());
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "not implemented");

@@ -127,6 +127,8 @@ void test_T2s_45(const Tensor1<double, 3> &t1_2,
                  Tensor2_symmetric<double, 3> &t2s_1);
 void test_T2s_46(const Tensor1<double, 3> &t1_2,
                  Tensor2_symmetric<double, 3> &t2s_1);
+void test_T2s_47(const Tensor2_symmetric<double, 3> &t1s_1,
+                 const Tensor2_symmetric<double, 3> &t2s_2);
 
 void test_T2s(Tensor1<double, 3> &t1_1, const Tensor1<double, 3> &t1_2,
               Tensor2<double, 3, 3> &t2_1, const Tensor2<double, 3, 3> &t2_2,
@@ -181,4 +183,5 @@ void test_T2s(Tensor1<double, 3> &t1_1, const Tensor1<double, 3> &t1_2,
   test_T2s_44(t2_1, t2s_1, t2s_2);
   test_T2s_45(t1_2, t2s_1);
   test_T2s_46(t1_2, t2s_1);
+  test_T2s_47(t2s_1, t2s_2);
 }

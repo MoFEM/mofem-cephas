@@ -21,14 +21,14 @@ if(DOXYGEN_FOUND)
     ${PROJECT_SOURCE_DIR}/Doxyfile.in
     ${PROJECT_BINARY_DIR}/Doxyfile
   )
-  set(DOXYGEN_GENERATE_HEADER
-    ${DOXYGEN_EXECUTABLE} -w html
-    ${PROJECT_SOURCE_DIR}/doc/header.html
-    ${PROJECT_SOURCE_DIR}/doc/footer.html
-    ${PROJECT_SOURCE_DIR}/doc/style.html
-    ${PROJECT_BINARY_DIR}/Doxyfile
-  )
-
+  
+  # set(DOXYGEN_GENERATE_HEADER
+  #   ${DOXYGEN_EXECUTABLE} -w html
+  #   ${PROJECT_SOURCE_DIR}/doc/header.html
+  #   ${PROJECT_SOURCE_DIR}/doc/footer.html
+  #   ${PROJECT_SOURCE_DIR}/doc/style.html
+  #   ${PROJECT_BINARY_DIR}/Doxyfile
+  # )
   # add_custom_target(doxygen_generating_header
   #   ${DOXYGEN_GENERATE_HEADER}
   #   COMMAND cat ${PROJECT_SOURCE_DIR}/doc/google_analytics.html | tee -a ${PROJECT_SOURCE_DIR}/doc/header.html
@@ -63,12 +63,6 @@ if(DOXYGEN_FOUND)
     ${PROJECT_SOURCE_DIR}/doc/figures ${PROJECT_BINARY_DIR}/html
   )
   add_dependencies(doc doxygen_copy_figures)
-
-  add_custom_target(doxygen_copy_avatar_figures
-    ${CMAKE_COMMAND} -E copy_directory
-    ${PROJECT_SOURCE_DIR}/doc/user_guide/figures ${PROJECT_BINARY_DIR}/html
-  )
-  add_dependencies(doc doxygen_copy_avatar_figures)
 
   # copy slider to html directory created by doxygen
   add_custom_target(doxygen_copy_slider
@@ -121,10 +115,10 @@ if(DOXYGEN_FOUND)
   find_program(RSYNC NAMES rsync)
   if(RSYNC)
 
-    # This work that script publish_doc.sh is created first in source
+    # This work that script publish_doc_likask.sh is created first in source
     # directory, then copied to binary direcyory with set premissions to execute.
-    # Script publish_doc.sh, run sftp, which itself run its on script
-    # from PROJECT_SOURCE_DIR/publish_doc
+    # Script publish_doc_likask.sh, run sftp, which itself run its on script
+    # from PROJECT_SOURCE_DIR/publish_doc_likask
 
     configure_file(
       ${PROJECT_SOURCE_DIR}/scripts/publish_doc_likask.sh.in

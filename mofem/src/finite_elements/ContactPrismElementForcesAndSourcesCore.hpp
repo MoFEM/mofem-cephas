@@ -267,13 +267,8 @@ protected:
   MatrixDouble gaussPtsSlave;  ///< matrix storing slave Gauss points local
                                ///< coordinates and weights
 
-  VectorDouble nOrmalSlave, tangentSlaveOne, tangentSlaveTwo;
-  VectorDouble nOrmalMaster, tangentMasterOne, tangentMasterTwo;
-
-  MatrixDouble normalsAtGaussPtsSlave;
-  MatrixDouble tangentOneAtGaussPtsSlave;
-  MatrixDouble tangentTwoAtGaussPtsSlave;
-  
+  VectorDouble tangentSlaveOne, tangentSlaveTwo;
+  VectorDouble tangentMasterOne, tangentMasterTwo;
   OpSetContravariantPiolaTransformOnFace opContravariantTransform;
   
   /**
@@ -398,7 +393,12 @@ protected:
   MoFEMErrorCode getNodesFieldData(
       const std::string field_name, VectorDouble &master_nodes_data,
       VectorDouble &slave_nodes_data, VectorDofs &master_nodes_dofs,
-      VectorDofs &slave_nodes_dofs, FieldSpace &master_space,
+      VectorDofs &slave_nodes_dofs, 
+      
+      VectorFieldEntities &master_field_entities, VectorFieldEntities &slave_field_entities, 
+      
+      
+      FieldSpace &master_space,
       FieldSpace &slave_space, FieldApproximationBase &master_base,
       FieldApproximationBase &slave_base) const;
 

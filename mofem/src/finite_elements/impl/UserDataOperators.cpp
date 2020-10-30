@@ -1,6 +1,7 @@
-/** \file ForcesAndSourcesCore.cpp
+/** \file UserDataOperators.cpp
 
-\brief Implementation of Elements on Entities for Forces and Sources
+\brief Generic user data operators for evaluate fields, and other common
+purposes.
 
 */
 
@@ -251,7 +252,6 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
     MoFEMFunctionReturn(0);
   };
 
-
   for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
     FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
     CHKERR apply_transform(data.getDiffN(base));
@@ -267,7 +267,6 @@ OpSetInvJacH1ForFace::doWork(int side, EntityType type,
       if (ptr)
         CHKERR apply_transform(*ptr);
   }
-
 
   MoFEMFunctionReturn(0);
 }
@@ -536,7 +535,7 @@ MoFEMErrorCode OpMultiplyDeterminantOfJacobianAndWeightsForFatPrisms::doWork(
 
     const int nb_gauss_pts = data.getN(NOBASE).size1();
     auto t_diff_n = data.getFTensor1DiffN<3>(NOBASE);
- 
+
     FTensor::Index<'i', 3> i;
     FTensor::Index<'j', 3> j;
     FTensor::Tensor2<double, 3, 3> t_jac;
@@ -566,7 +565,6 @@ MoFEMErrorCode OpMultiplyDeterminantOfJacobianAndWeightsForFatPrisms::doWork(
       t_w_scaled /= vol;
       ++t_w_scaled;
     }
-
   }
 
   doEntities[MBVERTEX] = true;
@@ -611,7 +609,6 @@ OpCalculateInvJacForFatPrism::doWork(int side, EntityType type,
       CHKERR determinantTensor3by3(t_jac, det);
       CHKERR invertTensor3by3(t_jac, det, t_inv_jac);
       ++t_inv_jac;
-
     }
   }
 

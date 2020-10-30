@@ -1,0 +1,108 @@
+/*! \page motivation Features 
+
+\tableofcontents
+
+MoFEM (Mesh-oriented Finite Element Method) is a C++ library for managing complexities related to the finite element method (FEM). FEM is a widely used numerical approach for solving partial differential equations (PDEs) arising in various physical problems. %MoFEM is developed to provide a finite element library incorporating modern approximation approaches and data structures for engineers, students and academics.
+
+%MoFEM belongs to a class of open source finite element libraries, which provide users with generic tools for solving PDEs and developers with frameworks for implementing bespoke finite elements. %MoFEM is specifically designed to solve complex engineering problems, enabling seamless integration of meshes that comprise multiple element types and element shapes, which are typically encountered in industrial applications. The development of %MoFEM has been primarily targeting the problem of crack propagation for structural integrity assessment of safety critical structures like on \ref Figure_1_motivation "Figure 1".
+
+Unique for %MoFEM is that it was created for engineers to solve practical problems, which can not be easily (or not at all) solved by commercial codes. In particular, %MoFEM development was driven by the needs of nuclear engineers in EDF and Jacobs to model crack propagation in nuclear graphite bricks in real core environment. %MOFEM is currently the main numerical tool to predict cracks morphology in Advanced Gas-Cooled Reactors (AGR) in the UK. %MoFEM is a research tool, which is design for researchers in computational mechanics which like to make their methods available to engineers.
+
+%MoFEM is generic too to solve systems of partial differential equations using the finite element method; however, the development of particular applications of %MoFEM is separated from the development fo core library. Core %MoFEM library serves to implement various research and commercial applications and is open, free and has GNU license. Users modules are the application of %MoFEM to solve a particular problem. The key idea is that all contribute to the core library to serve the whole community. However, users modules repository, copyright and license are set by the discretion of developers, such that is serves needs of the research project, research group or industrial partner. 
+
+\anchor Figure_1_motivation
+\image html motivation_brick.png "Figure 1: Brittle crack propagation and contact problem." width=600px
+
+\section mofem_features Features
+
+\subsection Supported File Formats
+
+Support for hanling boundary conditions and material sets
+
+- Salome/Code_Aster 
+- Cubit/Trelis
+- Gmsh
+
+Also using <a style="font-weight:bold" href=https://ftp.mcs.anl.gov/pub/fathom/moab-docs/index.html>MOAB</a> liberay MoFEM can read/wrire from file formats
+\verbatim
+Format               Name     Read    Write   File name description
+------------------  ------  -------- -------  ----------------
+MOAB native (HDF5)  MOAB      yes      yes     h5m mhdf
+Exodus II           EXODUS    yes      yes     exo exoII exo2 g gen
+Climate NC          NC        yes      yes     nc
+IDEAS Format        UNV       yes      no      unv
+MCNP5 Format        MESHTAL   yes      no      meshtal
+NASTRAN format      NAS       yes      no      nas bdf
+Abaqus mesh format  ABAQUS    yes      no      abq
+Kitware VTK         VTK       yes      yes     vtk
+RPI SMS             SMS       yes      no      sms
+Cubit               CUBIT     yes      no      cub
+QSlim format        SMF       yes      yes     smf
+SLAC                SLAC      no       yes     slac
+GMV                 GMV       no       yes     gmv
+Ansys               ANSYS     no       yes     ans
+Gmsh                GMSH      yes      yes     msh gmsh
+Stereo Lithography  STL       yes      yes     stl
+TetGen mesh files   TETGEN    yes      no      node ele face edge
+Template input      TEMPLATE  yes      yes  
+\endverbatim
+
+\subsection mofem_features_ho Higher-order finite element spaces
+
+- %MoFEM supports wide range of spaces, L2, H1, H-div and H-curl
+
+- Numerical trace (interfacial) spaces, on faces and edges
+
+- Integration on skeleton, (enabling easy implementation of Discontinuous Galerkin or Nitsche method)
+
+- Problems with mixed elements shapes (tetrahedrons, prisms, quads, triangles, edges, etc.)
+
+\subsection mofem_features_discretisation Flexible discretization
+
+- Mixed and coupled finite elements
+
+- Interface (e.g. cohesive) elements and shell elements
+
+- Automatic Differentiation by OverLoading in C++ (<a href=https://projects.coin-or.org/ADOL-C>ADOL-C</a>). 
+FGetting started
+\subsection mofem_features_mesh_types Range of mesh types and topological operations
+
+%MoFEM is implemented with the use of MOAB and deliver the great flexibility of
+managing meshes. We can manage range elements types, e.g. prisms, triangles,
+quads, bricks and more.
+
+- Unique and extremely flexible \e BitRef Levels (see \ref mix_mesh_refinement)
+
+- Conforming mesh refinement and through MoAB non-conforming mesh refinement.
+
+- Spatial searching and ray tracing (MOAB)
+
+- Distributed meshes (MOAB)
+
+- Arbitrary order definition of mesh geometry
+
+- Readers and writers for many file formats (MOAB)
+
+- Meshing and re-meshing on the flay
+
+- Ability to capture evolving topologies, e.g. implicit crack propagation analysis
+
+- Mesh smoothing and Arbitrary Lagrangian Eulerian Formulation
+
+\subsection mofem_features_hpc Parallel and scalable
+
+%MoFEM supports MPI-based parallelism throughout the library, and can readily be
+used as a scalable unstructured finite element problem generator. Algebra is
+building on top of PETSc and geometry description on top of MoAB, both
+implementations are tailored for massive parallel calculations.
+
+- %Number of solvers available from PETSc
+
+- Multi-grid solvers
+
+- Efficient tensor library (see \ref ftenso_readme)
+
+- h/p- mesh adaptivity
+
+
+*/

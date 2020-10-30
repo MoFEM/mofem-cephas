@@ -33,6 +33,12 @@ public:
   /* Initializations for varying numbers of elements. */
   template <class... U> Tensor1(U *... d) : data(d...), inc(1) {}
 
+  /* Initialization from array */
+  template <class U>
+  Tensor1(std::array<U *, Tensor_Dim> &a, const int i = 1) : inc(i) {
+    std::copy(a.begin(), a.end(), data);
+  }
+
   Tensor1(const int i = 1) : inc(i) {}
 
   /* There are two operator(int)'s, one for non-consts that lets you
@@ -77,6 +83,18 @@ public:
       return data[N];
     }
 
+    T *&ptr(const int N) {
+#ifdef FTENSOR_DEBUG
+      if (N >= Tensor_Dim || N < 0) {
+        std::stringstream s;
+        s << "Bad index in Tensor1<T*," << Tensor_Dim << ">.ptr(" << N << ")"
+          << std::endl;
+        throw std::out_of_range(s.str());
+      }
+#endif
+      return data[N];
+    }
+
     /* These operator()'s are the first part in constructing template
        expressions.  They can be used to slice off lower dimensional
        parts. They are not entirely safe, since you can accidentaly use a
@@ -114,6 +132,9 @@ public:
   
     /* Initializations for varying numbers of elements. */
     template <class... U> Tensor1(U *... d) : Tensor1<T *, Tensor_Dim>(d...) {}
+
+    template <class U>
+    Tensor1(std::array<U *, Tensor_Dim> &a) : Tensor1<T *, Tensor_Dim>(a) {}
 
     Tensor1(): Tensor1<T *, Tensor_Dim>() {}
 

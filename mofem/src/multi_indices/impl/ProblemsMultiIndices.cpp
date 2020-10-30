@@ -20,9 +20,9 @@ namespace MoFEM {
 
 // moab problem
 Problem::Problem(moab::Interface &moab, const EntityHandle meshset)
-    : meshset(meshset), numeredRowDofs(new NumeredDofEntity_multiIndex()),
-      numeredColDofs(new NumeredDofEntity_multiIndex()),
-      numeredFiniteElements(new NumeredEntFiniteElement_multiIndex()),
+    : meshset(meshset), numeredRowDofsPtr(new NumeredDofEntity_multiIndex()),
+      numeredColDofsPtr(new NumeredDofEntity_multiIndex()),
+      numeredFiniteElementsPtr(new NumeredEntFiniteElement_multiIndex()),
       sequenceRowDofContainer(new SequenceDofContainer()),
       sequenceColDofContainer(new SequenceDofContainer()) {
   ErrorCode rval;
@@ -70,8 +70,8 @@ Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx) const {
   MoFEMFunctionBeginHot;
   boost::weak_ptr<NumeredDofEntity> dof_weak_ptr;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
-  dit = numeredRowDofs->get<PetscGlobalIdx_mi_tag>().find(idx);
-  if (dit != numeredRowDofs->get<PetscGlobalIdx_mi_tag>().end())
+  dit = numeredRowDofsPtr->get<PetscGlobalIdx_mi_tag>().find(idx);
+  if (dit != numeredRowDofsPtr->get<PetscGlobalIdx_mi_tag>().end())
     dof_weak_ptr = *dit;
   return dof_weak_ptr;
 }
@@ -81,8 +81,8 @@ Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx) const {
   MoFEMFunctionBeginHot;
   boost::weak_ptr<NumeredDofEntity> dof_weak_ptr;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
-  dit = numeredColDofs->get<PetscGlobalIdx_mi_tag>().find(idx);
-  if (dit != numeredColDofs->get<PetscGlobalIdx_mi_tag>().end())
+  dit = numeredColDofsPtr->get<PetscGlobalIdx_mi_tag>().find(idx);
+  if (dit != numeredColDofsPtr->get<PetscGlobalIdx_mi_tag>().end())
     dof_weak_ptr = *dit;
   return dof_weak_ptr;
 }
@@ -125,7 +125,7 @@ Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm, const std::string name,
   CHKERR PetscLayoutCreate(comm, layout);
   CHKERR PetscLayoutSetBlockSize(*layout, 1);
   const NumeredEntFiniteElementbyNameAndPart &fe_by_name_and_part =
-      numeredFiniteElements->get<Composite_Name_And_Part_mi_tag>();
+      numeredFiniteElementsPtr->get<Composite_Name_And_Part_mi_tag>();
   int nb_elems;
   nb_elems = fe_by_name_and_part.count(boost::make_tuple(name, rank));
   CHKERR PetscLayoutSetLocalSize(*layout, nb_elems);
@@ -142,7 +142,7 @@ MoFEMErrorCode Problem::getNumberOfElementsByPart(MPI_Comm comm,
   CHKERR PetscLayoutCreate(comm, layout);
   CHKERR PetscLayoutSetBlockSize(*layout, 1);
   typedef NumeredEntFiniteElement_multiIndex::index<Part_mi_tag>::type FeByPart;
-  const FeByPart &fe_by_part = numeredFiniteElements->get<Part_mi_tag>();
+  const FeByPart &fe_by_part = numeredFiniteElementsPtr->get<Part_mi_tag>();
   int nb_elems;
   nb_elems = fe_by_part.count(rank);
   CHKERR PetscLayoutSetLocalSize(*layout, nb_elems);
@@ -155,21 +155,21 @@ MoFEMErrorCode Problem::getDofByNameEntAndEntDofIdx(
     const RowColData row_or_col,
     boost::shared_ptr<NumeredDofEntity> &dof_ptr) const {
   MoFEMFunctionBegin;
-  decltype(numeredRowDofs) numered_dofs;
+  decltype(numeredRowDofsPtr) numered_dofs;
   switch (row_or_col) {
   case ROW:
-    if (!numeredRowDofs) {
+    if (!numeredRowDofsPtr) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
               "Row numbered index in problem not allocated");
     }
-    numered_dofs = numeredRowDofs;
+    numered_dofs = numeredRowDofsPtr;
     break;
   case COL:
-    if (!numeredColDofs) {
+    if (!numeredColDofsPtr) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
               "Col numbered index in problem not allocated");
     }
-    numered_dofs = numeredColDofs;
+    numered_dofs = numeredColDofsPtr;
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
@@ -198,16 +198,16 @@ void ProblemZeroNbRowsChange::operator()(Problem &e) {
   e.nbDofsRow = 0;
   e.nbLocDofsRow = 0;
   e.nbGhostDofsRow = 0;
-  e.numeredRowDofs->clear();
+  e.numeredRowDofsPtr->clear();
 }
 void ProblemZeroNbColsChange::operator()(Problem &e) {
   e.nbDofsCol = 0;
   e.nbLocDofsCol = 0;
   e.nbGhostDofsCol = 0;
-  e.numeredColDofs->clear();
+  e.numeredColDofsPtr->clear();
 }
 void ProblemClearNumeredFiniteElementsChange::operator()(Problem &e) {
-  e.numeredFiniteElements->clear();
+  e.numeredFiniteElementsPtr->clear();
 }
 
 } // namespace MoFEM

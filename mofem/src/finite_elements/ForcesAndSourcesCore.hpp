@@ -613,7 +613,8 @@ protected:
    */
   MoFEMErrorCode getNoFieldFieldData(const std::string field_name,
                                      VectorDouble &ent_field_data,
-                                     VectorDofs &ent_field_dofs) const;
+                                     VectorDofs &ent_field_dofs,
+                                     VectorFieldEntities &ent_field) const;
 
   MoFEMErrorCode getNoFieldFieldData(DataForcesAndSourcesCore &data,
                                      const std::string field_name) const;

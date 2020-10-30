@@ -189,7 +189,7 @@ mkdir -p lib_release
 cd lib_release
 
 spack install --only dependencies mofem-cephas+slepc ^petsc+X
-spack setup mofem-cephas@develop copy_user_modules=False \
+spack setup mofem-cephas@develop+slepc copy_user_modules=False \
   build_type=Release ^petsc+X
 
 echo -e "\n----------------------------\n"

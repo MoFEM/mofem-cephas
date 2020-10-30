@@ -1,0 +1,167 @@
+/*! \page mod_gallery Users modules
+
+MoFEM library itself is designed to be small, modular and extendable. Itself it
+is not a library of finite elements for solving particular problems of continuum
+mechanics, e.g. problem of thermal conduction. That is implemented in users
+modules using MoFEM. User module in principle is an independent project, located
+in a stand-alone repository, which can be public or private. It can have its own
+copyright and license. Such flexibility, allowing for privacy and different
+licensing parts of the code, is designed for needs both of academics and
+industry. Such code structure enables privacy of users modules, yet enables an industry and
+academics to contribute to open and free core library, without the need of code
+branching (which is often the case for industrial versions of open codes).
+
+You can see more documents, data sets, presentations, conference abstract
+related to users modules in
+\htmlonly
+<a href="https://zenodo.org/communities/mofem"><img src="zenodo-gradient-small.png" alt="Zenodo"></a>
+\endhtmlonly
+library.
+
+\section um_modules_list List of user modules
+
+
+<table>
+  <tr style="height:20px;">
+    <th> User module </th> 
+    <th>  </th>
+    <th> Useful links </th>
+  </tr>
+   <tr style="height:85px;">
+    <th> Basic finite elements </th> 
+    <td> \image html basic_user_mod_ava.png "" width = 80px </td>
+    <td> 
+    Basic finite element library. Required by most of the other modules. 
+    - \subpage elastic_dynamics
+    - <a href="https://bitbucket.org/mofem/users-modules-cephas">Bitbucket repository </a></td>
+  </tr>
+  <tr style="height:85px;">
+    <th> Fracture mechanics </th> 
+    <td> \image html fracture_ava.png "" width = 80px </td>
+    <td> 
+    Fracture mechanics using configurational mechanics approach.
+    - \subpage benchmarks_edf_tets
+    - \subpage frac_mech_simple_examples
+    - \subpage um_fracture_module_readme
+    - <a href="https://bitbucket.org/likask/mofem_um_fracture_mechanics">Bitbucket repository </a> </td>
+  </tr>
+  <tr style="height:85px;">
+    <th>  Bone remodelling </th> 
+    <td> \image html bone_ava.png "" width = 80px </td>
+    <td> 
+     Bone remodelling module using open-system thermodynamics approach. CT scan data mapping tool.
+     - \subpage density_map_example
+     - <a href="https://bitbucket.org/likask/mofem_um_bone_remodelling">Bitbucket repository </a> </td>
+  </tr>
+  <tr style="height:85px;">
+    <th> Solid shell element </th> 
+    <td> \image html solid_shell_ava.png "" width = 80px </td>
+    <td> 
+    Solid shell element user module. 
+    - \subpage solid_shell_element_doc
+    - <a href="https://bitbucket.org/likask/mofem_um_solid_shell_prism_element">Bitbucket repository </a></td>
+  </tr>
+  <tr style="height:85px;">
+    <th> Minimal surface area </th> 
+    <td> \image html soap_ava.png "" width = 80px </td>
+    <td> 
+    Example user module for calculating minimal surface area.
+    - <a href="https://bitbucket.org/likask/mofem_um_minimal_surface_equation">Bitbucket repository </a></td>
+  </tr>
+  <tr style="height:85px;">
+    <th> Gels </th> 
+    <td> \image html gel_ava.png "" width = 80px </td>
+    <td> 
+    User module for gel materials.
+    - \subpage gel_model_example
+    - \subpage gel_creep
+    - \subpage gel_sorption
+    - \subpage gel_layered
+    - \subpage gel_cell
+    - <a href="https://bitbucket.org/likask/mofem_um_gels">Bitbucket repository </a></td>
+  </tr>
+  <tr style="height:85px;">
+    <th> Homogenisation </th> 
+    <td> \image html homog_ava.png "" width = 80px </td>
+    <td> 
+    User module for computational homogenisation.
+    - \subpage comp_homo
+    - \subpage convergence_studies
+    - \subpage nitsche_periodic
+    - <a href="https://bitbucket.org/likask/mofem_um_homogenisation">Bitbucket repository </a></td>
+  </tr>
+  <tr style="height:85px;">
+    <th> Cell engineering </th> 
+    <td> \image html cell_ava.png  "" width = 80px </td>
+    <td> 
+    User module for cell force traction microscopy.
+    - \subpage cell_engineering_readme
+    - <a href="https://bitbucket.org/karol41/mofem_um_cell_engineering">Bitbucket repository </a></td>
+  </tr>
+  <tr style="height:85px;">
+    <th> Phase-field fracture </th> 
+    <td> \image html phase_field_ava.png "" width = 80px </td>
+    <td> 
+    Phase-field approach for brittle fracture.
+    - <a href="https://bitbucket.org/karol41/mofem_um_phase_field_fracture">Bitbucket repository </a></td>
+  </tr>
+  <tr style="height:85px;">
+    <th> Topology optimisation </th> 
+    <td> \image html topo_ava.png "" width = 80px </td>
+    <td> 
+    Topology optimisation using Solid Isotropic Material with Penalization (SIMP) method.
+    - <a href="https://bitbucket.org/karol41/mofem_um_topology_optimization">Bitbucket repository </a></td>
+  </tr>
+  <tr style="height:85px;">
+    <th> Small strain plasticity </th> 
+    <td> \image html small_strain_plast_ava.png "" width = 80px </td>
+    <td> 
+    Small strain plasticity using automatic differentiation.
+    - \subpage small_strain_plasticity_plate_with_hole
+    - <a href="https://bitbucket.org/likask/mofem_um_small_strain_plasticity">Bitbucket repository </a></td>
+  </tr>
+  <tr style="height:85px;">
+    <th> Von Mises plasticity </th> 
+    <td> \image html plasti_christop_ava.png "" width = 80px </td>
+    <td> 
+    Von Mises plasticity using return mapping algorithm. 
+    - <a href="https://bitbucket.org/Christophe97233/linear_isotropic_hardening">Bitbucket repository </a></td>
+  </tr>
+  <tr style="height:20px;">
+    <th colspan="3"> Under developement </th>
+  </tr>
+  <tr style="height:85px;">
+    <th> Contact mechanics </th> 
+    <td> \image html contact_ava.png "" width = 80px </td>
+    <td> 
+    User module for mortar contact approach. 
+    - <a href="https://bitbucket.org/IgnatiosAthanasiadis/mofem_um_contact_mechanics_ignatios">Bitbucket repository </a></td>
+  </tr>
+  <tr style="height:85px;">
+    <th> Eshelbian plasticity </th> 
+     <td> \image html eshelby_ava.png "" width = 80px </td>
+    <td> 
+    Eshelbian plasticity module. 
+    - <a href="https://bitbucket.org/mofem/um_eshelbian_plasticity/src/master/">Bitbucket repository </a></td>
+  </tr>
+  <tr style="height:20px;">
+    <th colspan="3"> No longer supported </th>
+  </tr>
+  <tr style="height:85px;">
+    <th> Acoustic wave </th> 
+    <td> \image html acoust_ava.png  "" width = 80px </td>
+    <td> 
+    User module for solving Helmholtz equation. 
+    - <a href="https://bitbucket.org/likask/mofem_um_helmholtz">Bitbucket repository </a></td>
+  </tr>
+    <tr style="height:20px;">
+    <th> Obsolete </th> 
+    <td> </td>
+    <td> 
+    Obsolete elements and methods used by some modules, no longer developed.
+     - <a href="https://bitbucket.org/likask/mofem_um_obsolete">Bitbucket repository </a>  </td>
+  </tr>
+</table>
+
+
+*/

@@ -195,8 +195,8 @@ struct TSMethod : virtual protected PetscData {
   DEPRECATED inline MoFEMErrorCode setTsCtx(TSContext ctx);
 
   PetscInt ts_step; ///< time step
-  PetscReal ts_a;   ///< shift for U_tt (see PETSc Time Solver)
-  PetscReal ts_v;   ///< shift for U_t shift for U_t
+  PetscReal ts_a;   ///< shift for U_t (see PETSc Time Solver)
+  PetscReal ts_aa;  ///< shift for U_tt shift for U_tt
   PetscReal ts_t;   ///< time
 
   Vec &ts_u;    ///< state vector

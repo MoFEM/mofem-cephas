@@ -528,6 +528,7 @@ struct BlockData {
 
   // Materials
   Mat_Elastic matElastic;
+  Mat_Elastic_TransIso matTransIso;
   Mat_Thermal matThermal;
   Mat_Interf matInterf;
 
@@ -608,6 +609,41 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
               &block_lists[it->getMeshsetId()].matElastic.data.ThermalExpansion)
               ->default_value(-1),
           "Thermal expansion");
+      // TODO Add users parameters
+    }
+    // Mat Trans Iso
+    {
+      // Young's modulus in xy plane (Ep)
+      // Young's modulus in z-direction (Ez)
+      // Poisson's ratio in xy plane (vp)
+      // Poisson's ratio in z-direction (vpz)
+      // Shear modulus in z-direction (Gzp)
+      configFileOptionsPtr->add_options()(
+          (prefix + ".Youngp").c_str(),
+          po::value<double>(
+              &block_lists[it->getMeshsetId()].matTransIso.data.Youngp)
+              ->default_value(-1),
+          "Youngp")(
+          (prefix + ".Youngz").c_str(),
+          po::value<double>(
+              &block_lists[it->getMeshsetId()].matTransIso.data.Youngz)
+              ->default_value(-1),
+          "Youngz")(
+          (prefix + ".Poissonp").c_str(),
+          po::value<double>(
+              &block_lists[it->getMeshsetId()].matTransIso.data.Poissonp)
+              ->default_value(0),
+          "Poissonp")(
+          (prefix + ".Poissonpz").c_str(),
+          po::value<double>(
+              &block_lists[it->getMeshsetId()].matTransIso.data.Poissonpz)
+              ->default_value(0),
+          "Poissonpz")(
+          (prefix + ".Shearzp").c_str(),
+          po::value<double>(
+              &block_lists[it->getMeshsetId()].matTransIso.data.Shearzp)
+              ->default_value(-1),
+          "Shearzp");
       // TODO Add users parameters
     }
     // Mat thermal
@@ -920,6 +956,10 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
       if (mit->second.matElastic.data.Young != -1) {
         CHKERR setAtributesByDataStructure(mit->second.bcType, mit->second.iD,
                                            mit->second.matElastic);
+      }
+      if (mit->second.matTransIso.data.Youngp != -1) {
+        CHKERR setAtributesByDataStructure(mit->second.bcType, mit->second.iD,
+                                           mit->second.matTransIso);
       }
       if (mit->second.matThermal.data.Conductivity != -1) {
         CHKERR setAtributesByDataStructure(mit->second.bcType, mit->second.iD,

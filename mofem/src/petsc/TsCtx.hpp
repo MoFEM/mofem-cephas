@@ -22,7 +22,7 @@
 namespace MoFEM {
 
 /** \brief Interface for Time Stepping (TS) solver
- * \ingroup petsc_context_struture
+ * \ingroup mofem_petsc_solvers
  */
 struct TsCtx {
 
@@ -367,18 +367,24 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
  * @brief Calculation Jaconian for second order PDE in time
  *
  * <a
- * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetI2Jacobian.html>PETSc
- * for details</a>
+ * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetI2Jacobian.html>See
+ * PETSc for details</a>
  *
  * @param ts
- * @param J
- * @param P
- * @param jac
- * @param ctx
+ * @param t time at step/stage being solved
+ * @param u state vectora
+ * @param u_t time derivative of state vector
+ * @param u_tt second time derivative of state vector
+ * @param a shift for u_t
+ * @param aa shift for u_tt
+ * @param A Jacobian of G(U) = F(t,U,W+v*U,W'+a*U), equivalent to dF/dU +
+ * v*dF/dU_t + a*dF/dU_tt
+ * @param B preconditioning matrix for J, may be same as J
+ * @param ctx TsCtx context for matrix evaluation routine
  * @return PetscErrorCode
  */
 PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
-                               PetscReal v, PetscReal a, Mat J, Mat P,
+                               PetscReal a, PetscReal aa, Mat A, Mat B,
                                void *ctx);
 
 /**
@@ -388,11 +394,14 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
  * href=https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSSetI2Function.html>PETSc
  * for details</a>
  *
- * @param ts
- * @param F
- * @param fun
- * @param ctx
- * @return PetscErrorCode
+ * @param ts 
+ * @param t 
+ * @param u 
+ * @param u_t 
+ * @param u_tt 
+ * @param F 
+ * @param ctx 
+ * @return PetscErrorCode 
  */
 PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
                                Vec F, void *ctx);

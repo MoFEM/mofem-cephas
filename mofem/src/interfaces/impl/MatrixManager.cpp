@@ -171,11 +171,11 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
         if ((fe_bit & prb_bit) != prb_bit)
           continue;
 
-        auto dit = p_miit->numeredColDofs->lower_bound(uid);
+        auto dit = p_miit->numeredColDofsPtr->lower_bound(uid);
 
         decltype(dit) hi_dit;
-        if (dit != p_miit->numeredColDofs->end())
-          hi_dit = p_miit->numeredColDofs->upper_bound(
+        if (dit != p_miit->numeredColDofsPtr->end())
+          hi_dit = p_miit->numeredColDofsPtr->upper_bound(
               uid | static_cast<UId>(MAX_DOFS_ON_ENTITY - 1));
         else
           hi_dit = dit;
@@ -195,7 +195,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
   // Get multi-indices for rows and columns
   const NumeredDofEntitysByIdx &dofs_row_by_idx =
-      p_miit->numeredRowDofs->get<TAG>();
+      p_miit->numeredRowDofsPtr->get<TAG>();
   int nb_dofs_row = p_miit->getNbDofsRow();
   if (nb_dofs_row == 0) {
     SETERRQ1(cOmm, MOFEM_DATA_INCONSISTENCY, "problem <%s> has zero rows",
@@ -384,10 +384,10 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
         if (debug) {
 
           DofByGlobalPetscIndex::iterator dit;
-          dit = p_miit->numeredRowDofs->get<PetscGlobalIdx_mi_tag>().find(
+          dit = p_miit->numeredRowDofsPtr->get<PetscGlobalIdx_mi_tag>().find(
               row_idx);
           if (dit ==
-              p_miit->numeredRowDofs->get<PetscGlobalIdx_mi_tag>().end()) {
+              p_miit->numeredRowDofsPtr->get<PetscGlobalIdx_mi_tag>().end()) {
             SETERRQ1(cOmm, MOFEM_DATA_INCONSISTENCY,
                      "dof %d can not be found in problem", row_idx);
           }

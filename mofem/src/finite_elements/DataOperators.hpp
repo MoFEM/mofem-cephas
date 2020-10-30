@@ -505,12 +505,34 @@ struct OpGetCoordsAndNormalsOnPrism : public DataOperator {
  */
 struct OpSetContravariantPiolaTransformOnFace : public DataOperator {
 
-  const VectorDouble &nOrmal;
-  const MatrixDouble &normalsAtGaussPts;
+  const VectorDouble
+      *normalRawPtr; //< Normal of the element for linear geometry
+  const MatrixDouble *normalsAtGaussPtsRawPtr; //< Normals at integration points
+                                               //for nonlinear geometry
+
+  /**
+   * @brief Shift in vector for linear geometry
+   *
+   * Normal can have size larger than three, for example normal for contact
+   * prism and flat prims element have six comonents, for top and bottom
+   * triangle of the prims.
+   *
+   */
+  int normalShift;
 
   OpSetContravariantPiolaTransformOnFace(const VectorDouble &normal,
-                                         const MatrixDouble &normals_at_pts)
-      : nOrmal(normal), normalsAtGaussPts(normals_at_pts) {}
+                                         const MatrixDouble &normals_at_pts,
+                                         const int normal_shift = 0)
+      : normalRawPtr(&normal), normalsAtGaussPtsRawPtr(&normals_at_pts),
+        normalShift(normal_shift) {}
+
+  OpSetContravariantPiolaTransformOnFace(
+      const VectorDouble *normal_raw_ptr = nullptr,
+      const MatrixDouble *normals_at_pts_ptr = nullptr,
+      const int normal_shift = 0)
+      : normalRawPtr(normal_raw_ptr),
+        normalsAtGaussPtsRawPtr(normals_at_pts_ptr), normalShift(normal_shift) {
+  }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);

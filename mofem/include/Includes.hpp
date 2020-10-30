@@ -74,6 +74,7 @@
 #include <boost/log/sources/severity_feature.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/core/null_deleter.hpp>
+#include <boost/log/utility/setup/file.hpp>
 
 #define BOOST_DISABLE_THREADS
 

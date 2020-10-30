@@ -631,7 +631,7 @@ MoFEMErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   double *phi_f = &*data.dataOnEntities[MBTRI][0].getN(base).data().begin();
   if (NBFACETRI_DEMKOWICZ_HDIV(order) == 0)
     MoFEMFunctionReturnHot(0);
-  int face_nodes[3] = {0, 1, 2};
+  int face_nodes[3] = {0, 1, 2};  
   CHKERR Hdiv_Demkowicz_Face_MBTET_ON_FACE(
       face_nodes, order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),

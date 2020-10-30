@@ -1,0 +1,53 @@
+/*! \page about_us About
+
+\tableofcontents
+
+\section contact Contact
+
+- \ref mofem_citation
+\htmlonly
+<a href="http://joss.theoj.org/papers/43d9625e5ed28d5c493bfc0fae6d8215"><img src="http://joss.theoj.org/papers/43d9625e5ed28d5c493bfc0fae6d8215/status.svg"></a>
+\endhtmlonly
+- Mailing list: <a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a>
+- Discussion channel: <https://mofem.slack.com/>
+- Version repository: <https://bitbucket.org/likask/mofem-cephas>
+
+\section mofem_openhub Stats 
+
+\htmlonly
+<script type='text/javascript' src='https://www.openhub.net/p/mofem/widgets/project_basic_stats?format=js'></script>
+\endhtmlonly
+
+\section thrid_party Third party libraries
+
+List of third party libraries and packages used by MoFEM:
+
+- SIGMA Tools <http://press3.mcs.anl.gov/sigma>
+- MOAB <http://ftp.mcs.anl.gov/pub/fathom/moab-docs/index.html>.
+- PETSc <http://www.mcs.anl.gov/petsc/documentation/index.html>
+- BOOST <http://www.boost.org>
+	- uBlas <http://www.boost.org/doc/libs/release/libs/numeric/>
+- ADOL-C <https://projects.coin-or.org/ADOL-C>
+- CMake <http://www.cmake.org>
+- ParaView <http://www.paraview.org>
+
+\section Acknowledgments
+
+\image html Acknowledgments.png width=1000.px
+
+\section legal_stuff Legal stuff
+
+MoFEM is free software: you can redistribute it and/or modify it under the terms
+of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+MoFEM is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with MoFEM. If not, see <http://www.gnu.org/licenses/>
+
+
+*/

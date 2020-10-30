@@ -410,7 +410,7 @@ struct Mat_Elastic_TransIso : public GenericAttributeData {
               "All material data not defined");
     }
     if (8 * attributes.size() != sizeof(data)) {
-      SETERRQ(PETSC_COMM_SELF, 1,
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
               "data inconsistency, please review the number of material "
               "properties defined");
     }

@@ -78,8 +78,7 @@ ContactPrismElementForcesAndSourcesCore::
       dataHdivMaster(*dataOnMaster[HDIV].get()),
       dataL2Master(*dataOnMaster[L2].get()),
       dataHdivSlave(*dataOnSlave[HDIV].get()),
-      dataL2Slave(*dataOnSlave[L2].get()),
-      opContravariantTransform(nOrmalSlave, normalsAtGaussPtsSlave) {
+      dataL2Slave(*dataOnSlave[L2].get()), opContravariantTransform() {
 
   getUserPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new TriPolynomialBase());
@@ -195,13 +194,6 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       v->clear();
     }
 
-    const size_t nb_gauss_pts = gaussPtsSlave.size2();
-    for (auto &v : {&normalsAtGaussPtsSlave, &tangentOneAtGaussPtsSlave,
-                    &tangentTwoAtGaussPtsSlave}) {
-      v->resize(nb_gauss_pts, 3);
-      v->clear();
-    }
-
     CHKERR Tools::getTriNormal(&coords[0], &normal[0]);
     CHKERR Tools::getTriNormal(&coords[9], &normal[3]);
 
@@ -238,14 +230,14 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
       ++t_diff;
     }
 
+    aRea[0] = sqrt(t_normal_master(i) * t_normal_master(i)) / 2.;
+    aRea[1] = sqrt(t_normal_slave(i) * t_normal_slave(i)) / 2.;
+
     t_t2_master(j) =
         FTensor::levi_civita(i, j, k) * t_normal_master(k) * t_t1_master(i);
-
     t_t2_slave(j) =
         FTensor::levi_civita(i, j, k) * t_normal_slave(k) * t_t1_slave(i);
 
-    aRea[0] = cblas_dnrm2(3, &normal[0], 1) * 0.5;
-    aRea[1] = cblas_dnrm2(3, &normal[3], 1) * 0.5;
     MoFEMFunctionReturn(0);
   };
   CHKERR get_coord_and_normal();
@@ -260,7 +252,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
     CHKERR getEntityDataOrder<MBTRI>(dataH1, H1);
   }
 
-  // H1
+  // Hcurl
   if ((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
     CHKERR getEntitySense<MBEDGE>(data_curl);
     CHKERR getEntityDataOrder<MBEDGE>(data_curl, HCURL);
@@ -308,17 +300,11 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
 
     data.sPace = copy_data.sPace;
     data.bAse = copy_data.bAse;
-    data.spacesOnEntities[MBVERTEX] = copy_data.spacesOnEntities[MBVERTEX];
-    data.spacesOnEntities[MBEDGE] = copy_data.spacesOnEntities[MBEDGE];
-    data.spacesOnEntities[MBTRI] = copy_data.spacesOnEntities[MBTRI];
-
-    data.basesOnEntities[MBVERTEX] = copy_data.basesOnEntities[MBVERTEX];
-    data.basesOnEntities[MBEDGE] = copy_data.basesOnEntities[MBEDGE];
-    data.basesOnEntities[MBTRI] = copy_data.basesOnEntities[MBTRI];
-
-    data.basesOnSpaces[MBVERTEX] = copy_data.basesOnSpaces[MBVERTEX];
-    data.basesOnSpaces[MBEDGE] = copy_data.basesOnSpaces[MBEDGE];
-    data.basesOnSpaces[MBTRI] = copy_data.basesOnSpaces[MBTRI];
+    for (auto t : {MBVERTEX, MBEDGE, MBTRI}) {
+      data.spacesOnEntities[t] = copy_data.spacesOnEntities[t];
+      data.basesOnEntities[t] = copy_data.basesOnEntities[t];
+      data.basesOnSpaces[t] = copy_data.basesOnSpaces[t];
+    }
 
     for (int ii = 0; ii != 3; ++ii) {
       data.dataOnEntities[MBEDGE][ii].getSense() =
@@ -352,32 +338,21 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
               "Wrong shift for contact prism element");
     }
 
-    auto &dat = copy_data.dataOnEntities[MBTRI][shift];
-    data.sPace = dat.getBase();
-    data.bAse = dat.getSpace();
+    data.sPace = copy_data.sPace;
+    data.bAse = copy_data.bAse;
 
-    // data.sPace = copy_data.sPace;
-    // data.bAse = copy_data.bAse;
-    data.spacesOnEntities[MBVERTEX] = copy_data.spacesOnEntities[MBVERTEX];
-    data.spacesOnEntities[MBTRI] = copy_data.spacesOnEntities[MBTRI];
-
-    data.basesOnEntities[MBVERTEX] = copy_data.basesOnEntities[MBVERTEX];
-    data.basesOnEntities[MBTRI] = copy_data.basesOnEntities[MBTRI];
-
-    data.basesOnSpaces[MBVERTEX] = copy_data.basesOnSpaces[MBVERTEX];
-    data.basesOnSpaces[MBTRI] = copy_data.basesOnSpaces[MBTRI];
-
-    if (shift == 3) {
-      data.dataOnEntities[MBTRI][0].getSense() =
-          copy_data.dataOnEntities[MBTRI][3].getSense();
-      data.dataOnEntities[MBTRI][0].getDataOrder() =
-          copy_data.dataOnEntities[MBTRI][3].getDataOrder();
-    } else {
-      data.dataOnEntities[MBTRI][0].getSense() =
-          copy_data.dataOnEntities[MBTRI][4].getSense();
-      data.dataOnEntities[MBTRI][0].getDataOrder() =
-          copy_data.dataOnEntities[MBTRI][4].getDataOrder();
+    for (auto t : {MBVERTEX, MBTRI}) {
+      data.spacesOnEntities[t] = copy_data.spacesOnEntities[MBVERTEX];
+      data.basesOnEntities[t] = copy_data.basesOnEntities[MBVERTEX];
+      data.basesOnSpaces[t] = copy_data.basesOnSpaces[MBVERTEX];
     }
+
+    auto &cpy_ent_dat = copy_data.dataOnEntities[MBTRI][shift];
+    auto &ent_dat = data.dataOnEntities[MBTRI][0];
+    ent_dat.getBase() = cpy_ent_dat.getBase();
+    ent_dat.getSpace() = cpy_ent_dat.getSpace();
+    ent_dat.getSense() = ent_dat.getSense();
+    ent_dat.getDataOrder() = cpy_ent_dat.getDataOrder();
 
     MoFEMFunctionReturn(0);
   };
@@ -457,14 +432,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
 
           CHKERR clean_data(dataHdivSlave);
-          CHKERR copy_data_hdiv(dataHdivSlave, dataH1, 4);
+          CHKERR copy_data_hdiv(dataHdivSlave, data_div, 4);
           CHKERR clean_data(dataHdivMaster);
-          CHKERR copy_data_hdiv(dataHdivMaster, dataH1, 3);
-
-          dataHdivMaster.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(
-              nbGaussPts, 3, false);
-          dataHdivSlave.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(
-              nbGaussPts, 3, false);
+          CHKERR copy_data_hdiv(dataHdivMaster, data_div, 3);
 
           dataHdivMaster.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
               dataOnMaster[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(
@@ -494,6 +464,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
                   dataH1Slave, H1, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
         }
+      break;
       case DEMKOWICZ_JACOBI_BASE:
         if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
 
@@ -501,37 +472,29 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::operator()() {
             return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
                 &m(0, 0), &m(0, 1), &m(0, 2));
           };
-
-          FTensor::Index<'i', 3> i;
-          nOrmalSlave.resize(3, false);
-          nOrmalSlave.clear();
+          
           auto get_tensor_vec = [](VectorDouble &n, const int r = 0) {
             return FTensor::Tensor1<double *, 3>(&n(r + 0), &n(r + 1),
                                                  &n(r + 2));
           };
 
-          auto normal_slave = get_tensor_vec(nOrmalSlave);
-
-          auto slave_normal_data = get_tensor_vec(normal, 3);
-
-          normal_slave(i) = slave_normal_data(i);
-
+          CHKERR getUserPolynomialBase()->getValue(
+              gaussPtsMaster,
+              boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
+                  dataHdivMaster, HDIV, static_cast<FieldApproximationBase>(b),
+                  NOBASE)));
           CHKERR getUserPolynomialBase()->getValue(
               gaussPtsSlave,
               boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
                   dataHdivSlave, HDIV, static_cast<FieldApproximationBase>(b),
                   NOBASE)));
 
-          normalsAtGaussPtsSlave.resize(gaussPtsSlave.size2(), 3);
-          normalsAtGaussPtsSlave.clear();
-          auto t_normal = get_ftensor_from_mat_3d(normalsAtGaussPtsSlave);
-
-          for (int ii = 0; ii != nbGaussPts; ++ii) {
-            t_normal(i) = normal_slave(i);
-            ++t_normal;
-          }
-
+          opContravariantTransform.normalRawPtr = &normal;
+          opContravariantTransform.normalShift = 0;      
+          CHKERR opContravariantTransform.opRhs(dataHdivMaster);
+          opContravariantTransform.normalShift = 3;
           CHKERR opContravariantTransform.opRhs(dataHdivSlave);
+          
         }
 
         if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
@@ -692,6 +655,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::loopOverOperators() {
                     slave_data.dataOnEntities[MBVERTEX][0].getFieldData(),
                     master_data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
                     slave_data.dataOnEntities[MBVERTEX][0].getFieldDofs(),
+                    master_data.dataOnEntities[MBVERTEX][0].getFieldEntities(),
+                    slave_data.dataOnEntities[MBVERTEX][0].getFieldEntities(),
                     master_data.dataOnEntities[MBVERTEX][0].getSpace(),
                     slave_data.dataOnEntities[MBVERTEX][0].getSpace(),
                     master_data.dataOnEntities[MBVERTEX][0].getBase(),
@@ -870,6 +835,7 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
         dat.getSpace() = NOSPACE;
         dat.getFieldData().resize(0, false);
         dat.getFieldDofs().resize(0, false);
+        dat.getFieldEntities().resize(0, false);
       }
     }
   };
@@ -894,6 +860,8 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
             auto &dat = data.dataOnEntities[type][side];
             auto &ent_field_dofs = dat.getFieldDofs();
             auto &ent_field_data = dat.getFieldData();
+            dat.getFieldEntities().resize(1, false);
+            dat.getFieldEntities()[0] = e.get();
             dat.getBase() = e->getApproxBase();
             dat.getSpace() = e->getSpace();
             const int ent_order = e->getMaxOrder();
@@ -952,17 +920,22 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getEntityFieldData(
 MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
     const std::string field_name, VectorDouble &master_nodes_data,
     VectorDouble &slave_nodes_data, VectorDofs &master_nodes_dofs,
-    VectorDofs &slave_nodes_dofs, FieldSpace &master_space,
+    VectorDofs &slave_nodes_dofs, 
+    
+    VectorFieldEntities &master_field_entities, VectorFieldEntities &slave_field_entities, 
+    
+    FieldSpace &master_space,
     FieldSpace &slave_space, FieldApproximationBase &master_base,
     FieldApproximationBase &slave_base) const {
   MoFEMFunctionBegin;
 
-  auto set_zero = [](auto &nodes_data, auto &nodes_dofs) {
+  auto set_zero = [](auto &nodes_data, auto &nodes_dofs, auto &field_entities) {
     nodes_data.resize(0, false);
     nodes_dofs.resize(0, false);
+    field_entities.resize(0, false);
   };
-  set_zero(master_nodes_data, master_nodes_dofs);
-  set_zero(slave_nodes_data, slave_nodes_dofs);
+  set_zero(master_nodes_data, master_nodes_dofs, master_field_entities);
+  set_zero(slave_nodes_data, slave_nodes_dofs, slave_field_entities);
 
   auto field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
   if (field_it != fieldsPtr->get<FieldName_mi_tag>().end()) {
@@ -992,17 +965,20 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
 
         if (nb_dofs) {
 
-          auto init_set = [&](auto &nodes_data, auto &nodes_dofs) {
+          auto init_set = [&](auto &nodes_data, auto &nodes_dofs,
+                              auto &field_entities) {
             constexpr int num_nodes = 3;
             const int max_nb_dofs = nb_dofs_on_vert * num_nodes;
             nodes_data.resize(max_nb_dofs, false);
             nodes_dofs.resize(max_nb_dofs, false);
+            field_entities.resize(num_nodes, false);
             nodes_data.clear();
             fill(nodes_dofs.begin(), nodes_dofs.end(), nullptr);
+            fill(field_entities.begin(), field_entities.end(), nullptr);
           };
 
-          init_set(master_nodes_data, master_nodes_dofs);
-          init_set(slave_nodes_data, slave_nodes_dofs);
+          init_set(master_nodes_data, master_nodes_dofs, master_field_entities);
+          init_set(slave_nodes_data, slave_nodes_dofs, slave_field_entities);
 
           for (auto it = lo; it != hi; ++it) {
             if (auto e = it->lock()) {
@@ -1010,7 +986,9 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
               const auto &sn = e->getSideNumberPtr();
               int side = sn->side_number;
 
-              auto set_data = [&](auto &nodes_data, auto &nodes_dofs, int pos) {
+              auto set_data = [&](auto &nodes_data, auto &nodes_dofs,
+                                  auto &field_entities, int side, int pos) {
+                field_entities[side] = e.get();
                 if (auto cache = e->entityCacheDataDofs.lock()) {
                   for (auto dit = cache->loHi[0]; dit != cache->loHi[1];
                        ++dit) {
@@ -1024,9 +1002,10 @@ MoFEMErrorCode ContactPrismElementForcesAndSourcesCore::getNodesFieldData(
 
               if (side < 3)
                 set_data(master_nodes_data, master_nodes_dofs,
-                         side * nb_dofs_on_vert);
+                         master_field_entities, side, side * nb_dofs_on_vert);
               else
                 set_data(slave_nodes_data, slave_nodes_dofs,
+                         slave_field_entities, (side - 3),
                          (side - 3) * nb_dofs_on_vert);
 
               const int brother_side = sn->brother_side_number;

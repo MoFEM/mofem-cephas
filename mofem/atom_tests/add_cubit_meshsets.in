@@ -103,3 +103,16 @@ add=BLOCKSET
 name=MAT_THERMAL # Hast to be set for Thermal Mat
 conductivity=1
 capacity=1
+
+[block_1009]
+
+# Example applying material block (isotropic trans iso material)
+
+id=2009
+add=BLOCKSET
+name=MAT_ELASTIC_TRANS_ISO
+Youngp=1
+Youngz=2
+Poissonp=3
+Poissonpz=4
+Shearzp=5

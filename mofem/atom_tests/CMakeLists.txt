@@ -709,9 +709,23 @@ add_test(forces_and_sources_testing_contact_prism_element_test
   -my_file templar.h5m
   -log_no_color
 )
-add_test(forces_and_sources_testing_contact_prism_element_test_compare ${CMAKE_COMMAND} -E compare_files
+add_test(forces_and_sources_testing_contact_prism_element_test_compare 
+  ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_contact_prism_element.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_contact_prism_element.txt
+)
+
+add_test(forces_and_sources_testing_contact_prism_element_test_hdiv
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_contact_prism_element
+  -my_file templar.h5m
+  -is_hdiv 1
+  -log_no_color
+)
+add_test(forces_and_sources_testing_contact_prism_element_test_hdiv_compare 
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_contact_prism_element_HDIV.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_contact_prism_element_HDIV.txt
 )
 
 # Checking direvatives
@@ -1590,6 +1604,25 @@ add_test(
   simple_interface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/simple_interface -file_name disp01_2parts.h5m 
   -log_summary
+  -log_no_color
+)
+
+my_add_executable(test_cache_on_entities test_cache_on_entities.cpp)
+target_link_libraries(test_cache_on_entities
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
+add_test(
+  test_cache_on_entities ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/test_cache_on_entities 
+  -file_name disp01_2parts.h5m 
   -log_no_color
 )
 

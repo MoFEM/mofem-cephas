@@ -895,50 +895,94 @@ MoFEMErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
 
 MoFEMErrorCode OpSetContravariantPiolaTransformOnFace::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBeginHot;
+  FTensor::Index<'i', 3> i;
+  MoFEMFunctionBegin;
 
   if (type != MBTRI)
     MoFEMFunctionReturnHot(0);
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+  if (normalRawPtr == nullptr && normalsAtGaussPtsRawPtr == nullptr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+            "Pointer to normal/normals not set");
 
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+  bool normal_is_at_gauss_pts = (normalsAtGaussPtsRawPtr != nullptr);
+  if (normal_is_at_gauss_pts)
+    normal_is_at_gauss_pts = (normalsAtGaussPtsRawPtr->size1() != 0);
 
-    int nb_gauss_pts = data.getN(base).size1();
-    if (nb_gauss_pts) {
-      FTensor::Index<'i', 3> i;
-      auto t_normal =
-          FTensor::Tensor1<double, 3>(nOrmal[0], nOrmal[1], nOrmal[2]);
-      const double l02 = t_normal(i) * t_normal(i);
-      int nb_base_functions = data.getN(base).size2() / 3;
-      auto t_n = data.getFTensor1N<3>(base);
-      if (normalsAtGaussPts.size1() == (unsigned int)nb_gauss_pts) {
-        auto t_ho_normal =
-            FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3>(
-                &normalsAtGaussPts(0, 0), &normalsAtGaussPts(0, 1),
-                &normalsAtGaussPts(0, 2));
-        for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-          for (int bb = 0; bb != nb_base_functions; ++bb) {
-            const double v = t_n(0);
-            const double l2 = t_ho_normal(i) * t_ho_normal(i);
-            t_n(i) = (v / l2) * t_ho_normal(i);
-            ++t_n;
-          }
-          ++t_ho_normal;
-        }
-      } else {
-        for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-          for (int bb = 0; bb != nb_base_functions; ++bb) {
-            const double v = t_n(0);
-            t_n(i) = (v / l02) * t_normal(i);
-            ++t_n;
-          }
-        }
+  auto apply_transform_linear_geometry = [&](auto base, auto nb_gauss_pts,
+                                             auto nb_base_functions) {
+    MoFEMFunctionBegin;
+    const auto &normal = *normalRawPtr;
+    auto t_normal = FTensor::Tensor1<double, 3>{normal[normalShift + 0],
+                                                normal[normalShift + 1],
+                                                normal[normalShift + 2]};
+    const auto l02 = t_normal(i) * t_normal(i);
+    auto t_base = data.getFTensor1N<3>(base);
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      for (int bb = 0; bb != nb_base_functions; ++bb) {
+        const auto v = t_base(0);
+        t_base(i) = (v / l02) * t_normal(i);
+        ++t_base;
+      }
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  auto apply_transform_nonlinear_geometry = [&](auto base, auto nb_gauss_pts,
+                                                auto nb_base_functions) {
+    MoFEMFunctionBegin;
+    const MatrixDouble &normals_at_pts = *normalsAtGaussPtsRawPtr;
+    auto t_normal = FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3>(
+        &normals_at_pts(0, 0), &normals_at_pts(0, 1), &normals_at_pts(0, 2));
+    auto t_base = data.getFTensor1N<3>(base);
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      for (int bb = 0; bb != nb_base_functions; ++bb) {
+        const auto v = t_base(0);
+        const auto l2 = t_normal(i) * t_normal(i);
+        t_base(i) = (v / l2) * t_normal(i);
+        ++t_base;
+      }
+      ++t_normal;
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  if (normal_is_at_gauss_pts) {
+    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+      const auto &base_functions = data.getN(base);
+      const auto nb_gauss_pts = base_functions.size1();
+
+      if (nb_gauss_pts) {
+
+        if (normalsAtGaussPtsRawPtr->size1() != nb_gauss_pts)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "normalsAtGaussPtsRawPtr has inconsistent number of "
+                  "integration "
+                  "points");
+
+        const auto nb_base_functions = base_functions.size2() / 3;
+        CHKERR apply_transform_nonlinear_geometry(base, nb_gauss_pts,
+                                                  nb_base_functions);
+      }
+    }
+  } else {
+    for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+      const auto &base_functions = data.getN(base);
+      const auto nb_gauss_pts = base_functions.size1();
+
+      if (nb_gauss_pts) {
+        const auto nb_base_functions = base_functions.size2() / 3;
+        CHKERR apply_transform_linear_geometry(base, nb_gauss_pts,
+                                               nb_base_functions);
       }
     }
   }
 
-  MoFEMFunctionReturnHot(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(

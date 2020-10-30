@@ -127,6 +127,9 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <FaceElementForcesAndSourcesCoreOnSide.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <UserDataOperators.hpp>
+#include <FormsIntegrators.hpp>
+#include <LinearFormsIntegrators.hpp>
+#include <BiLinearFormsIntegrators.hpp>
 
 // More interfaces
 

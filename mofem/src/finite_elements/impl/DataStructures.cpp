@@ -276,8 +276,8 @@ std::ostream &operator<<(std::ostream &os,
      << "oRder: " << e.getOrder() << std::endl
      << "global indices: " << e.getIndices() << std::endl
      << "local indices: " << e.getLocalIndices() << std::endl;
-  os.precision(2);
-  os << "fieldData: " << std::fixed << e.getFieldData() << std::endl;
+  // FIXME: precision should not be set here
+  os << "fieldData: " << std::fixed << std::setprecision(2) << e.getFieldData() << std::endl;
   MatrixDouble base = const_cast<DataForcesAndSourcesCore::EntData &>(e).getN();
   MatrixDouble diff_base =
       const_cast<DataForcesAndSourcesCore::EntData &>(e).getDiffN();

@@ -18,6 +18,7 @@
 #include "Tensor2_symmetric_times_Tensor1.hpp"
 #include "Tensor2_symmetric_times_Tensor2.hpp"
 #include "Tensor2_symmetric_times_Tensor2_symmetric.hpp"
+#include "Tensor2_symmetric_carat_Tensor2_symmetric.hpp"
 #include "Tensor2_symmetric_times_generic.hpp"
 #include "dTensor2_symmetric.hpp"
 #include "d_boundary_Tensor2_symmetric.hpp"
