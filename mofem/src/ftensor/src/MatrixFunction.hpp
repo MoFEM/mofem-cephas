@@ -241,7 +241,7 @@ struct dd4MImpl {
   template <int N> using Number = FTensor::Number<N>;
 
   template <int b, int A, int I, int J, int K, int L>
-  static inline auto d2M(Val &t_val, Vec &t_vec, Fun f, Fun dd_f) {
+  static inline auto fd2M(Val &t_val, Vec &t_vec, Fun f, Fun dd_f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     return d2MImpl<E, V, G1, A, a, b, I, J, K, L>::eval(
@@ -249,21 +249,21 @@ struct dd4MImpl {
   }
 
   template <int b, int A, int B, int I, int J, int K, int L, int M, int N>
-  static inline auto d2G(Val &t_val, Vec &t_vec, Fun f, Fun dd_f) {
-    return d2M<b, A, I, K, N, M>(t_val, t_vec, f, dd_f) *
+  static inline auto fd2G(Val &t_val, Vec &t_vec, Fun f, Fun dd_f) {
+    return fd2M<b, A, I, K, N, M>(t_val, t_vec, f, dd_f) *
                E::M(t_vec, Number<B>(), Number<J>(), Number<L>()) +
            E::M(t_vec, Number<A>(), Number<I>(), Number<K>()) *
-               d2M<b, B, J, L, M, N>(t_val, t_vec, f, dd_f) +
-           d2M<b, A, I, L, M, N>(t_val, t_vec, f, dd_f) *
+               fd2M<b, B, J, L, M, N>(t_val, t_vec, f, dd_f) +
+           fd2M<b, A, I, L, M, N>(t_val, t_vec, f, dd_f) *
                E::M(t_vec, Number<B>(), Number<J>(), Number<K>()) +
            E::M(t_vec, Number<A>(), Number<I>(), Number<L>()) *
-               d2M<b, B, J, K, M, N>(t_val, t_vec, f, dd_f);
+               fd2M<b, B, J, K, M, N>(t_val, t_vec, f, dd_f);
   }
 
   template <int A, int B, int I, int J, int K, int L, int M, int N>
-  static inline auto d2S(Val &t_val, Vec &t_vec, Fun f, Fun dd_f) {
-    return d2G<B, A, B, I, J, K, L, M, N>(t_val, t_vec, f, dd_f) +
-           d2G<B, B, A, I, J, K, L, M, N>(t_val, t_vec, f, dd_f);
+  static inline auto fd2S(Val &t_val, Vec &t_vec, Fun f, Fun dd_f) {
+    return fd2G<B, A, B, I, J, K, L, M, N>(t_val, t_vec, f, dd_f) +
+           fd2G<B, B, A, I, J, K, L, M, N>(t_val, t_vec, f, dd_f);
   }
 
   template <int b>
@@ -272,7 +272,7 @@ struct dd4MImpl {
     if (a != b) {
       return
 
-          d2S<a, b, i, j, k, l, m, n>(t_val, t_vec, f, dd_f)
+          fd2S<a, b, i, j, k, l, m, n>(t_val, t_vec, f, dd_f)
 
           +
 
@@ -401,9 +401,9 @@ struct secondMatrixDirectiveImpl {
             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
             dd_f(E::L(t_val, Number<a>())) +
 
-        dd4MImpl<E, C, dd4MCoefficientsType1<E, C>,
-                 dd4MCoefficientsType2<E, C>, a, i, j, k, l, m,
-                 n>::eval(t_val, t_vec, f, d_f, dd_f, Number<3>()) /
+        dd4MImpl<E, C, dd4MCoefficientsType1<E, C>, dd4MCoefficientsType2<E, C>,
+                 a, i, j, k, l, m, n>::eval(t_val, t_vec, f, d_f, dd_f,
+                                            Number<3>()) /
             static_cast<C>(4) +
 
         d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, -1, i, j, k, l>::eval(
