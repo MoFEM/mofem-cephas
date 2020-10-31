@@ -66,35 +66,6 @@
 #pragma once
 #include <type_traits>
 
-template <typename E, typename C> struct d2MDiffCoeff {
-  using Val = typename E::Val;
-  using Vec = typename E::Vec;
-  using Fun = typename E::Fun;
-
-  template <int N> using Number = FTensor::Number<N>;
-
-  d2MDiffCoeff() = delete;
-  ~d2MDiffCoeff() = delete;
-
-  template <int a, int b>
-  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<3> &, Fun f, Fun d_f) {
-    return E::F(t_val, Number<a>(), Number<b>());
-  }
-
-  template <int a, int b>
-  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<2> &, Fun f, Fun d_f) {
-    return get(t_val, Number<a>(), Number<b>(), Number<3>(), f, d_f);
-  }
-
-  template <int a, int b>
-  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<1>, Fun f, Fun d_f) {
-    return get(t_val, Number<a>(), Number<b>(), Number<3>(), f, d_f);
-  }
-};
-
 template <typename E, typename C> struct d2MCoefficients {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -124,6 +95,38 @@ template <typename E, typename C> struct d2MCoefficients {
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
                          const Number<1>, Fun f, Fun d_f) {
     return d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
+  }
+};
+
+template <typename E, typename C> struct dd4MCoefficientsType1Inner {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+  using Fun = typename E::Fun;
+
+  template <int N> using Number = FTensor::Number<N>;
+
+  dd4MCoefficientsType1Inner() = delete;
+  ~dd4MCoefficientsType1Inner() = delete;
+
+  template <int a, int b>
+  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                         const Number<3> &, Fun f, Fun d_f) {
+    return E::F(t_val, Number<a>(), Number<b>());
+  }
+
+  template <int a, int b>
+  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                         const Number<2> &, Fun f, Fun d_f) {
+    if (a == 1 || b == 1)
+      return get(t_val, Number<a>(), Number<b>(), Number<3>(), f, d_f);
+    else
+      return get(t_val, Number<a>(), Number<b>(), Number<1>(), f, d_f);
+  }
+
+  template <int a, int b>
+  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                         const Number<1>, Fun f, Fun d_f) {
+    return 0;
   }
 };
 
@@ -266,7 +269,7 @@ struct dd4MImpl {
   static inline auto d2M(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    using G = d2MDiffCoeff<E, V>;
+    using G = dd4MCoefficientsType1Inner<E, V>;
     return d2MImpl<E, V, G, A, I, J, K, L>::eval(t_val, t_vec, f, d_f,
                                                  typename E::NumberDim());
   }
@@ -785,17 +788,6 @@ struct EigenProjection {
   static inline auto G(Vec &t_vec) {
     return M<a, i, k>(t_vec) * M<b, j, l>(t_vec) +
            M<a, i, l>(t_vec) * M<b, j, k>(t_vec);
-  }
-
-  template <int a, int i, int j, int k, int l>
-  static inline auto d2M(Val &t_val, Vec &t_vec) {
-    using V =
-        typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    using E = EigenProjection<T1, T2, NB, Dim>;
-    using G = d2MDiffCoeff<E, V>;
-    auto z = [](const double) { return 0; };
-    return d2MImpl<E, V, G, a, i, j, k, l>::eval(t_val, t_vec, z, z,
-                                                 Number<Dim>());
   }
 
   template <int a, int b, int i, int j>
