@@ -221,7 +221,8 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
   }
 };
 
-template <typename E, typename C, typename G, int a, int i, int j, int k, int l>
+template <typename E, typename C, typename G, int a, int c, int i, int j, int k,
+          int l>
 struct d2MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -235,7 +236,7 @@ struct d2MImpl {
   template <int b>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
     if (a != b) {
-      return G::get(t_val, Number<a>(), Number<b>(), Number<-1>(),
+      return G::get(t_val, Number<a>(), Number<b>(), Number<c>(),
                     typename E::NumberNb(), f, d_f) *
              E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                   Number<k>(), Number<l>());
@@ -272,8 +273,8 @@ struct dd4MImpl {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     using G = dd4MCoefficientsType1Inner<E, V>;
-    return d2MImpl<E, V, G, A, I, J, K, L>::eval(t_val, t_vec, f, d_f,
-                                                 typename E::NumberDim());
+    return d2MImpl<E, V, G, A, a, I, J, K, L>::eval(t_val, t_vec, f, d_f,
+                                                    typename E::NumberDim());
   }
 
   template <int A, int B, int I, int J, int K, int L, int M, int N>
@@ -376,7 +377,7 @@ struct firstMatrixDirectiveImpl {
 
         +
 
-        d2MImpl<E, C, d2MCoefficients<E, C>, a, i, j, k, l>::eval(
+        d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, i, j, k, l>::eval(
             t_val, t_vec, f, d_f, Number<3>()) /
             static_cast<C>(2);
   }
@@ -412,14 +413,14 @@ struct secondMatrixDirectiveImpl {
 
         (
 
-            d2MImpl<E, C, d2MCoefficients<E, C>, a, i, j, m, n>::eval(
+            d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, i, j, m, n>::eval(
                 t_val, t_vec, d_f, dd_f, Number<3>()) *
                 E::M(t_vec, Number<a>(), Number<k>(), Number<l>())
 
             +
 
             E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-                d2MImpl<E, C, d2MCoefficients<E, C>, a, k, l, m, n>::eval(
+                d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, k, l, m, n>::eval(
                     t_val, t_vec, d_f, dd_f, Number<3>())
 
                 ) /
@@ -435,7 +436,7 @@ struct secondMatrixDirectiveImpl {
                                             Number<3>()) /
             static_cast<C>(4) +
 
-        d2MImpl<E, C, d2MCoefficients<E, C>, a, i, j, k, l>::eval(
+        d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, i, j, k, l>::eval(
             t_val, t_vec, d_f, dd_f, Number<3>()) *
             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) /
             static_cast<C>(2);
@@ -734,8 +735,8 @@ struct EigenProjection {
 
   // private:
   template <typename E, typename C> friend struct d2MCoefficients;
-  template <typename E, typename C, typename G, int a, int i, int j, int k,
-            int l>
+  template <typename E, typename C, typename G, int a, int c, int i, int j,
+            int k, int l>
   friend struct d2MImpl;
   template <typename E, typename C, typename G1, typename G2, int a, int i,
             int j, int k, int l, int m, int n>
