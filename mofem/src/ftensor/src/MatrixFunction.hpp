@@ -134,7 +134,7 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
                          const Number<c> &, const Number<d> &, const Number<1>,
                          Fun f, Fun dd_f) {
-    return dd_f(E::L(t_val, Number<c>())) / static_cast<C>(4);
+    return dd_f(E::L(t_val, Number<c>())) / static_cast<C>(2);
   }
 };
 
