@@ -233,7 +233,6 @@ struct dd4MImpl {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     using G = d2MDiffCoeff<E, V>;
-    auto z = [](const double) { return 0; };
     return d2MImpl<E, V, G, A, I, J, K, L>::eval(t_val, t_vec, f, d_f,
                                                  typename E::NumberDim());
   }
