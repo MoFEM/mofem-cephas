@@ -529,7 +529,7 @@ template <typename E, typename C> struct getDiffDiffMatImpl {
                                          K - 1,
                                          L - 1>::eval(t_val, t_vec, f, d_f,
                                                       dd_f,
-                                                      typename E::NumberNb())
+                                                      typename E::NumberDim())
 
            +
 
@@ -546,7 +546,7 @@ template <typename E, typename C> struct getDiffDiffMatImpl {
                secondMatrixDirectiveImpl<E, C, M - 1, 0, I - 1, J - 1, K - 1,
                                          L - 1>::eval(t_val, t_vec, f, d_f,
                                                       dd_f,
-                                                      typename E::NumberNb())
+                                                      typename E::NumberDim())
 
            +
 
@@ -563,7 +563,7 @@ template <typename E, typename C> struct getDiffDiffMatImpl {
     return t_s(0, 0) *
            secondMatrixDirectiveImpl<E, C, 0, 0, I - 1, J - 1, K - 1,
                                      L - 1>::eval(t_val, t_vec, f, d_f, dd_f,
-                                                  typename E::NumberNb());
+                                                  typename E::NumberDim());
   }
 
   template <typename T1, typename T2, int I, int J, int K, int L>
