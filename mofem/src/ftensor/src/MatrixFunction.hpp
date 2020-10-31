@@ -800,25 +800,4 @@ struct EigenProjection {
     return G<a, b, i, j, k, l>(t_vec) + G<b, a, i, j, k, l>(t_vec);
   }
 
-  template <int a, int b, int i, int j, int k, int l, int m, int n>
-  static inline auto d2G(Val &t_val, Vec &t_vec) {
-    return d2M<a, i, k, n, m>(t_val, t_vec) * M<b, j, l>(t_vec) +
-           M<a, i, k>(t_vec) * d2M<b, j, l, m, n>(t_val, t_vec) +
-           d2M<a, i, l, m, n>(t_val, t_vec) * M<b, j, k>(t_vec) +
-           M<a, i, l>(t_vec) * d2M<b, j, k, m, n>(t_val, t_vec);
-  }
-
-  template <int a, int b, int i, int j, int k, int l, int m, int n>
-  static inline auto
-  d2S(Val &t_val, Vec &t_vec, const Number<a> &, const Number<b> &,
-      const Number<i> &, const Number<j> &, const Number<k> &,
-      const Number<l> &, const Number<m> &, const Number<n> &) {
-    return d2S<a, b, i, j, k, l, m, n>(t_val, t_vec);
-  }
-
-  template <int a, int b, int i, int j, int k, int l, int m, int n>
-  static inline auto d2S(Val &t_val, Vec &t_vec) {
-    return d2G<a, b, i, j, k, l, m, n>(t_val, t_vec) +
-           d2G<b, a, i, j, k, l, m, n>(t_val, t_vec);
-  }
 };
