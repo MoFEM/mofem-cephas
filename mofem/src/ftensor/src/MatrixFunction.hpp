@@ -78,22 +78,25 @@ template <typename E, typename C> struct d2MCoefficients {
 
   template <int a, int b>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<3> &, Fun f, Fun d_f) {
+                         const Number<-1> &, const Number<3> &, Fun f,
+                         Fun d_f) {
     return f(E::L(t_val, Number<a>())) * E::F(t_val, Number<a>(), Number<b>());
   }
 
   template <int a, int b>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<2> &, Fun f, Fun d_f) {
+                         const Number<-1> &, const Number<2> &, Fun f,
+                         Fun d_f) {
     if (a == 1 || b == 1)
-      return get(t_val, Number<a>(), Number<b>(), Number<3>(), f, d_f);
+      return get(t_val, Number<a>(), Number<b>(), Number<-1>(), Number<3>(), f,
+                 d_f);
     else
       return d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
   }
 
   template <int a, int b>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<1>, Fun f, Fun d_f) {
+                         const Number<-1> &, const Number<1>, Fun f, Fun d_f) {
     return d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
   }
 };
@@ -108,24 +111,24 @@ template <typename E, typename C> struct dd4MCoefficientsType1Inner {
   dd4MCoefficientsType1Inner() = delete;
   ~dd4MCoefficientsType1Inner() = delete;
 
-  template <int a, int b>
+  template <int a, int b, int c>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<3> &, Fun f, Fun d_f) {
+                         const Number<c> &, const Number<3> &, Fun f, Fun d_f) {
     return E::F(t_val, Number<a>(), Number<b>());
   }
 
-  template <int a, int b>
+  template <int a, int b, int c>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<2> &, Fun f, Fun d_f) {
+                         const Number<c> &, const Number<2> &, Fun f, Fun d_f) {
     if (a == 1 || b == 1)
       return get(t_val, Number<a>(), Number<b>(), Number<3>(), f, d_f);
     else
       return get(t_val, Number<a>(), Number<b>(), Number<1>(), f, d_f);
   }
 
-  template <int a, int b>
+  template <int a, int b, int c>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<1>, Fun f, Fun d_f) {
+                         const Number<c> &, const Number<1>, Fun f, Fun d_f) {
     return 0;
   }
 };
@@ -218,7 +221,6 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
   }
 };
 
-
 template <typename E, typename C, typename G, int a, int i, int j, int k, int l>
 struct d2MImpl {
   using Val = typename E::Val;
@@ -233,8 +235,8 @@ struct d2MImpl {
   template <int b>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
     if (a != b) {
-      return G::get(t_val, Number<a>(), Number<b>(), typename E::NumberNb(), f,
-                    d_f) *
+      return G::get(t_val, Number<a>(), Number<b>(), Number<-1>(),
+                    typename E::NumberNb(), f, d_f) *
              E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                   Number<k>(), Number<l>());
     }
@@ -291,7 +293,6 @@ struct dd4MImpl {
     return d2G<A, B, I, J, K, L, M, N>(t_val, t_vec, f, d_f) +
            d2G<B, A, I, J, K, L, M, N>(t_val, t_vec, f, d_f);
   }
-
 
   template <int b>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
@@ -825,5 +826,4 @@ struct EigenProjection {
   static inline auto S(Vec &t_vec) {
     return G<a, b, i, j, k, l>(t_vec) + G<b, a, i, j, k, l>(t_vec);
   }
-
 };
