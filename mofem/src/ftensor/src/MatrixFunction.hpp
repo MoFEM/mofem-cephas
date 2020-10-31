@@ -127,6 +127,40 @@ template <typename E, typename C> struct d2MCoefficients {
   }
 };
 
+template <typename E, typename C> struct dd4MCoefficientsType1 {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+  using Fun = typename E::Fun;
+
+  template <int N> using Number = FTensor::Number<N>;
+
+  dd4MCoefficientsType1() = delete;
+  ~dd4MCoefficientsType1() = delete;
+
+  template <int a, int b>
+  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                         const Number<3> &, Fun f, Fun dd_f) {
+    return f(E::L(t_val, Number<a>())) * E::F(t_val, Number<a>(), Number<b>());
+  }
+
+  template <int a, int b>
+  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                         const Number<2> &, Fun f, Fun dd_f) {
+    if (a == 1 || b == 1)
+      return get(t_val, Number<a>(), Number<b>(), Number<3>(), f, dd_f);
+    else
+      return get(t_val, Number<a>(), Number<b>(), Number<1>(), f, dd_f);
+  }
+
+  template <int a, int b>
+  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                         const Number<1>, Fun f, Fun dd_f) {
+    if (a != b) {
+      return 0;
+    }
+  }
+};
+
 template <typename E, typename C> struct dd4MCoefficientsType2 {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -392,8 +426,9 @@ struct secondMatrixDirectiveImpl {
             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
             dd_f(E::L(t_val, Number<a>())) +
 
-        dd4MImpl<E, C, d2MCoefficients<E, C>, dd4MCoefficientsType2<E, C>, a, i,
-                 j, k, l, m, n>::eval(t_val, t_vec, f, d_f, dd_f, Number<3>()) /
+        dd4MImpl<E, C, dd4MCoefficientsType1<E, C>, dd4MCoefficientsType2<E, C>,
+                 a, i, j, k, l, m, n>::eval(t_val, t_vec, f, d_f, dd_f,
+                                            Number<3>()) /
             static_cast<C>(4) +
 
         d2MImpl<E, C, d2MCoefficients<E, C>, a, i, j, k, l>::eval(
