@@ -110,7 +110,27 @@ int main(int argc, char *argv[]) {
       return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
     };
 
-    auto get_diff_matrix = [i, j, k, l](auto &t_d) {
+    auto diff_ddg = [](auto &t_1, auto &t_2) {
+      constexpr double eps = 1e-4;
+      for (int ii = 0; ii != 3; ++ii)
+        for (int jj = 0; jj != 3; ++jj)
+          for (int kk = 0; kk != 3; ++kk)
+            for (int ll = 0; ll != 3; ++ll) {
+
+              if (std::abs(t_1(ii, jj, kk, ll) - t_2(ii, jj, kk, ll)) > eps)
+                MOFEM_LOG("ATOM_TEST", Sev::error)
+                    << "Error " << ii << " " << jj << " " << kk << " " << ll
+                    << " " << t_1(ii, jj, kk, ll) << " " << t_2(ii, jj, kk, ll);
+            }
+
+      for (int ii = 0; ii != 3; ++ii)
+        for (int jj = 0; jj != 3; ++jj)
+          for (int kk = 0; kk != 3; ++kk)
+            for (int ll = 0; ll != 3; ++ll)
+              t_1(ii, jj, kk, ll) -= t_2(ii, jj, kk, ll);
+    };
+
+    auto get_diff_matrix = [i, j, k, l, diff_ddg](auto &t_d) {
       constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
       FTensor::Tensor4<double, 3, 3, 3, 3> t_d_a;
       t_d_a(i, j, k, l) = 0;
@@ -128,29 +148,12 @@ int main(int argc, char *argv[]) {
                   (diff(ii, jj, kk, ll) + diff(ii, jj, ll, kk)) / 2.;
             }
 
-      constexpr double eps = 1e-4;
-      for (int ii = 0; ii != 3; ++ii)
-        for (int jj = 0; jj != 3; ++jj)
-          for (int kk = 0; kk != 3; ++kk)
-            for (int ll = 0; ll != 3; ++ll) {
-
-              if (std::abs(t_d_a(ii, jj, kk, ll) - t_d(ii, jj, kk, ll)) > eps)
-                MOFEM_LOG("ATOM_TEST", Sev::error)
-                    << "Error " << ii << " " << jj << " " << kk << " " << ll
-                    << " " << t_d_a(ii, jj, kk, ll) << " "
-                    << t_d(ii, jj, kk, ll);
-            }
-
-      for (int ii = 0; ii != 3; ++ii)
-        for (int jj = 0; jj != 3; ++jj)
-          for (int kk = 0; kk != 3; ++kk)
-            for (int ll = 0; ll != 3; ++ll)
-              t_d_a(ii, jj, kk, ll) -= t_d(ii, jj, kk, ll);
+      diff_ddg(t_d_a, t_d);
 
       return t_d_a;
     };
 
-    auto get_diff_matrix2 = [i, j, k, l](auto &t_a, auto &t_d) {
+    auto get_diff_matrix2 = [i, j, k, l, diff_ddg](auto &t_a, auto &t_d) {
       constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
       FTensor::Tensor4<double, 3, 3, 3, 3> t_d_a;
       t_d_a(i, j, k, l) = 0;
@@ -175,29 +178,12 @@ int main(int argc, char *argv[]) {
                     (diff(ii, jj, kk, ll, zz) + diff(ii, jj, ll, kk, zz)) / 2.;
               }
 
-      constexpr double eps = 1e-4;
-      for (int ii = 0; ii != 3; ++ii)
-        for (int jj = 0; jj != 3; ++jj)
-          for (int kk = 0; kk != 3; ++kk)
-            for (int ll = 0; ll != 3; ++ll) {
-
-              if (std::abs(t_d_a(ii, jj, kk, ll) - t_d(ii, jj, kk, ll)) > eps)
-                MOFEM_LOG("ATOM_TEST", Sev::error)
-                    << "Error " << ii << " " << jj << " " << kk << " " << ll
-                    << " " << t_d_a(ii, jj, kk, ll) << " "
-                    << t_d(ii, jj, kk, ll);
-            }
-
-      for (int ii = 0; ii != 3; ++ii)
-        for (int jj = 0; jj != 3; ++jj)
-          for (int kk = 0; kk != 3; ++kk)
-            for (int ll = 0; ll != 3; ++ll)
-              t_d_a(ii, jj, kk, ll) -= t_d(ii, jj, kk, ll);
+      diff_ddg(t_d_a, t_d);
 
       return t_d_a;
     };
 
-    auto get_diff2_matrix2 = [i, j, k, l](auto &t_s, auto &t_dd) {
+    auto get_diff2_matrix2 = [i, j, k, l, diff_ddg](auto &t_s, auto &t_dd) {
       constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
       FTensor::Tensor4<double, 3, 3, 3, 3> t_dd_a;
       t_dd_a(i, j, k, l) = 0;
@@ -244,24 +230,7 @@ int main(int argc, char *argv[]) {
                         4.;
                   }
 
-      constexpr double eps = 1e-4;
-      for (int ii = 0; ii != 3; ++ii)
-        for (int jj = 0; jj != 3; ++jj)
-          for (int kk = 0; kk != 3; ++kk)
-            for (int ll = 0; ll != 3; ++ll) {
-
-              if (std::abs(t_dd_a(ii, jj, kk, ll) - t_dd(ii, jj, kk, ll)) > eps)
-                MOFEM_LOG("ATOM_TEST", Sev::error)
-                    << "Error " << ii << " " << jj << " " << kk << " " << ll
-                    << " " << t_dd_a(ii, jj, kk, ll) << " "
-                    << t_dd(ii, jj, kk, ll);
-            }
-
-      for (int ii = 0; ii != 3; ++ii)
-        for (int jj = 0; jj != 3; ++jj)
-          for (int kk = 0; kk != 3; ++kk)
-            for (int ll = 0; ll != 3; ++ll)
-              t_dd_a(ii, jj, kk, ll) -= t_dd(ii, jj, kk, ll);
+      diff_ddg(t_dd_a, t_dd);
 
       return t_dd_a;
     };
@@ -719,9 +688,6 @@ int main(int argc, char *argv[]) {
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
-      t_eig_vals(0) -= 1e-4;
-      t_eig_vals(2) += 1e-4;
-
       constexpr double eps = 1e-10;
 
       auto f = [](double v) { return v * v; };
@@ -734,12 +700,6 @@ int main(int argc, char *argv[]) {
           2. / 1., 1.,      2. / 3.,
 
           3. / 1., 3. / 1., 1.};
-
-      cerr << t_eig_vecs << endl;
-      cerr << t_eig_vals << endl;
-
-      t_eig_vals(0) -= 1e-6;
-      t_eig_vals(2) += 1e-6;
 
       auto t_dd = EigenProjection<double, double, 1>::getDiffDiffMat(
           t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
@@ -754,6 +714,47 @@ int main(int argc, char *argv[]) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                 "This norm should be zero");
     }
+
+    // // check second directive exponent
+    // {
+
+    //   std::array<double, 9> a{2,  0., 0.,
+
+    //                           0., 2,  0.,
+
+    //                           0., 0., 2};
+
+    //   auto tuple = run_lapack(a);
+    //   auto &t_a = std::get<0>(tuple);
+    //   auto &t_eig_vecs = std::get<1>(tuple);
+    //   auto &t_eig_vals = std::get<2>(tuple);
+
+    //   t_eig_vals(0) -= 1e-6;
+    //   t_eig_vals(2) += 1e-6;
+
+    //   constexpr double eps = 1e-10;
+
+    //   auto f = [](double v) { return exp(v); };
+    //   auto d_f = [](double v) { return exp(v); };
+    //   auto dd_f = [](double v) { return exp(v); };
+    //   FTensor::Tensor2<double, 3, 3> t_S{
+
+    //       1.,      1. / 2., 1. / 3.,
+
+    //       2. / 1., 1.,      2. / 3.,
+
+    //       3. / 1., 3. / 1., 1.};
+
+    //   auto t_dd_1 = EigenProjection<double, double, 2>::getDiffDiffMat(
+    //       t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+
+    //   double nrm2_t_dd_a = get_norm_t4(t_dd_a);
+    //   MOFEM_LOG("ATOM_TEST", Sev::inform)
+    //       << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
+    //   if (nrm2_t_dd_a > eps)
+    //     SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+    //             "This norm should be zero");
+    // }
   }
   CATCH_ERRORS;
 
