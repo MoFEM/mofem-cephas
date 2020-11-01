@@ -731,11 +731,11 @@ int main(int argc, char *argv[]) {
       t_eig_vals(0) -= 1e-5;
       t_eig_vals(2) += 1e-5;
 
-      constexpr double eps = 1e-9;
+      constexpr double eps = 1e-7;
 
-      auto f = [](double v) { return v * v; };
-      auto d_f = [](double v) { return 2 * v; };
-      auto dd_f = [](double v) { return 2; };
+      auto f = [](double v) { return exp(v); };
+      auto d_f = [](double v) { return exp(v); };
+      auto dd_f = [](double v) { return exp(v); };
       FTensor::Tensor2<double, 3, 3> t_S{
 
           1.,      1. / 2., 1. / 3.,
