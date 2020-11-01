@@ -131,14 +131,15 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
     }
 
     if (a == 1 || b == 1) {
-      if ((c == 0 || c == 2) && (d == 0 || d == 2))
+      if ((d == 0 && c == 2) || (d == 2 && c == 0))
         return d_f(E::L(t_val, Number<c>())) *
                E::F(t_val, Number<a>(), Number<b>()) / static_cast<C>(2);
     }
 
     if (c == 1 || d == 1) {
-      if ((a == 0 && b == 2) || (a == 2 && b == 0))
-        return static_cast<C>(0);
+      if ((a == 0 && b == 2) || (b == 0 && a == 2))
+        return d_f(E::L(t_val, Number<c>())) *
+               E::F(t_val, Number<c>(), Number<d>()) / static_cast<C>(4);
     }
 
     return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
