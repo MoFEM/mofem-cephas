@@ -79,26 +79,26 @@ template <typename E, typename C> struct d2MCoefficients {
   template <int a, int b>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
                          const Number<-1> &, const Number<-1> &,
-                         const Number<3> &, Fun f, Fun d_f) {
+                         const Number<3> &, Fun f, Fun d_f, Fun dd_f) {
     return f(E::L(t_val, Number<a>())) * E::F(t_val, Number<a>(), Number<b>());
   }
 
   template <int a, int b>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
                          const Number<-1> &, const Number<-1> &,
-                         const Number<2> &, Fun f, Fun d_f) {
+                         const Number<2> &, Fun f, Fun d_f, Fun dd_f) {
     if (a == 1 || b == 1)
       return get(t_val, Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
-                 Number<3>(), f, d_f);
+                 Number<3>(), f, d_f, dd_f);
     else
       return get(t_val, Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
-                 Number<1>(), f, d_f);
+                 Number<1>(), f, d_f, dd_f);
   }
 
   template <int a, int b>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
                          const Number<-1> &, const Number<-1> &,
-                         const Number<1>, Fun f, Fun d_f) {
+                         const Number<1>, Fun f, Fun d_f, Fun dd_f) {
     return d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
   }
 };
@@ -116,7 +116,7 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   template <int a, int b, int c, int d>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
                          const Number<c> &, const Number<d> &,
-                         const Number<3> &, Fun f, Fun dd_f) {
+                         const Number<3> &, Fun f, Fun d_f, Fun dd_f) {
     return f(E::L(t_val, Number<c>())) * E::F(t_val, Number<c>(), Number<d>()) *
            E::F(t_val, Number<a>(), Number<b>());
   }
@@ -124,19 +124,19 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   template <int a, int b, int c, int d>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
                          const Number<c> &, const Number<d> &,
-                         const Number<2> &, Fun f, Fun dd_f) {
+                         const Number<2> &, Fun f, Fun d_f, Fun dd_f) {
     if (a == 1 || b == 1)
       return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
-                 Number<3>(), f, dd_f);
+                 Number<3>(), f, d_f, dd_f);
     else
       return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
-                 Number<1>(), f, dd_f);
+                 Number<1>(), f, d_f, dd_f);
   }
 
   template <int a, int b, int c, int d>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
                          const Number<c> &, const Number<d> &, const Number<1>,
-                         Fun f, Fun dd_f) {
+                         Fun f, Fun d_f, Fun dd_f) {
     if ((a != b && b != d) && (a != d && b != c))
       return dd_f(E::L(t_val, Number<c>())) / static_cast<C>(4);
     else
@@ -157,7 +157,7 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
   template <int a, int b, int m, int n>
   static inline auto get(Val &t_val, Vec &t_vec, const Number<a> &,
                          const Number<b> &, const Number<m> &,
-                         const Number<n> &, const Number<3> &, Fun f,
+                         const Number<n> &, const Number<3> &, Fun f, Fun d_f,
                          Fun dd_f) {
     return f(E::L(t_val, Number<a>())) * E::dFdN(t_val, t_vec, Number<a>(),
                                                  Number<b>(), Number<m>(),
@@ -167,20 +167,21 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
   template <int a, int b, int m, int n>
   static inline auto get(Val &t_val, Vec &t_vec, const Number<a> &,
                          const Number<b> &, const Number<m> &,
-                         const Number<n> &, const Number<2> &, Fun f,
+                         const Number<n> &, const Number<2> &, Fun f, Fun d_f,
                          Fun dd_f) {
     if (a == 1 || b == 1)
       return get(t_val, t_vec, Number<a>(), Number<b>(), Number<m>(),
-                 Number<n>(), Number<3>(), f, dd_f);
+                 Number<n>(), Number<3>(), f, d_f, dd_f);
     else
       return get(t_val, t_vec, Number<a>(), Number<b>(), Number<m>(),
-                 Number<n>(), Number<1>(), f, dd_f);
+                 Number<n>(), Number<1>(), f, d_f, dd_f);
   }
 
   template <int a, int b, int m, int n>
   static inline auto get(Val &t_val, Vec &t_vec, const Number<a> &,
                          const Number<b> &, const Number<m> &,
-                         const Number<n> &, const Number<1>, Fun f, Fun dd_f) {
+                         const Number<n> &, const Number<1>, Fun f, Fun d_f,
+                         Fun dd_f) {
     return static_cast<C>(0);
   }
 };
@@ -198,10 +199,10 @@ struct d2MImpl {
   ~d2MImpl() = delete;
 
   template <int b>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
+  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     if (a != b) {
       return G::get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
-                    typename E::NumberNb(), f, d_f) *
+                    typename E::NumberNb(), f, d_f, dd_f) *
              E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                   Number<k>(), Number<l>());
     }
@@ -209,15 +210,15 @@ struct d2MImpl {
   }
 
   template <int nb>
-  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                        const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec, f, d_f) +
-           eval(t_val, t_vec, f, d_f, Number<nb - 1>());
+    return term<nb - 1>(t_val, t_vec, f, d_f, dd_f) +
+           eval(t_val, t_vec, f, d_f, dd_f, Number<nb - 1>());
   }
 
-  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
+  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                        const Number<1> &) {
-    return term<0>(t_val, t_vec, f, d_f);
+    return term<0>(t_val, t_vec, f, d_f, dd_f);
   }
 };
 
@@ -233,29 +234,29 @@ struct fdd4MImpl {
   template <int N> using Number = FTensor::Number<N>;
 
   template <int b, int A, int I, int J, int K, int L>
-  static inline auto fd2M(Val &t_val, Vec &t_vec, Fun f, Fun dd_f) {
+  static inline auto fd2M(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     return d2MImpl<E, V, G1, A, a, b, I, J, K, L>::eval(
-        t_val, t_vec, f, dd_f, typename E::NumberDim());
+        t_val, t_vec, f, d_f, dd_f, typename E::NumberDim());
   }
 
   template <int b, int A, int B, int I, int J, int K, int L, int M, int N>
-  static inline auto fd2G(Val &t_val, Vec &t_vec, Fun f, Fun dd_f) {
-    return fd2M<b, A, I, K, N, M>(t_val, t_vec, f, dd_f) *
+  static inline auto fd2G(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
+    return fd2M<b, A, I, K, N, M>(t_val, t_vec, f, d_f, dd_f) *
                E::M(t_vec, Number<B>(), Number<J>(), Number<L>()) +
            E::M(t_vec, Number<A>(), Number<I>(), Number<K>()) *
-               fd2M<b, B, J, L, M, N>(t_val, t_vec, f, dd_f) +
-           fd2M<b, A, I, L, M, N>(t_val, t_vec, f, dd_f) *
+               fd2M<b, B, J, L, M, N>(t_val, t_vec, f, d_f, dd_f) +
+           fd2M<b, A, I, L, M, N>(t_val, t_vec, f, d_f, dd_f) *
                E::M(t_vec, Number<B>(), Number<J>(), Number<K>()) +
            E::M(t_vec, Number<A>(), Number<I>(), Number<L>()) *
-               fd2M<b, B, J, K, M, N>(t_val, t_vec, f, dd_f);
+               fd2M<b, B, J, K, M, N>(t_val, t_vec, f, d_f, dd_f);
   }
 
   template <int A, int B, int I, int J, int K, int L, int M, int N>
-  static inline auto fd2S(Val &t_val, Vec &t_vec, Fun f, Fun dd_f) {
-    return fd2G<B, A, B, I, J, K, L, M, N>(t_val, t_vec, f, dd_f) +
-           fd2G<B, B, A, I, J, K, L, M, N>(t_val, t_vec, f, dd_f);
+  static inline auto fd2S(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
+    return fd2G<B, A, B, I, J, K, L, M, N>(t_val, t_vec, f, d_f, dd_f) +
+           fd2G<B, B, A, I, J, K, L, M, N>(t_val, t_vec, f, d_f, dd_f);
   }
 
   template <int b>
@@ -264,14 +265,14 @@ struct fdd4MImpl {
     if (a != b) {
       return
 
-          fd2S<a, b, i, j, k, l, m, n>(t_val, t_vec, f, dd_f)
+          fd2S<a, b, i, j, k, l, m, n>(t_val, t_vec, f, d_f, dd_f)
 
           +
 
           2 *
 
               G2::get(t_val, t_vec, Number<a>(), Number<b>(), Number<m>(),
-                      Number<n>(), typename E::NumberNb(), f, dd_f) *
+                      Number<n>(), typename E::NumberNb(), f, d_f, dd_f) *
               E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                    Number<k>(), Number<l>());
     }
@@ -340,7 +341,7 @@ struct firstMatrixDirectiveImpl {
         +
 
         d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, -1, i, j, k, l>::eval(
-            t_val, t_vec, f, d_f, Number<3>()) /
+            t_val, t_vec, f, d_f, d_f, Number<3>()) /
             static_cast<C>(2);
   }
 
@@ -376,14 +377,14 @@ struct secondMatrixDirectiveImpl {
         (
 
             d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, -1, i, j, m, n>::eval(
-                t_val, t_vec, d_f, dd_f, Number<3>()) *
+                t_val, t_vec, d_f, dd_f, dd_f, Number<3>()) *
                 E::M(t_vec, Number<a>(), Number<k>(), Number<l>())
 
             +
 
             E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
                 d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, -1, k, l, m,
-                        n>::eval(t_val, t_vec, d_f, dd_f, Number<3>())
+                        n>::eval(t_val, t_vec, d_f, dd_f, dd_f, Number<3>())
 
                 ) /
             static_cast<C>(2) +
@@ -399,7 +400,7 @@ struct secondMatrixDirectiveImpl {
             static_cast<C>(4) +
 
         d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, -1, i, j, k, l>::eval(
-            t_val, t_vec, d_f, dd_f, Number<3>()) *
+            t_val, t_vec, d_f, dd_f, dd_f, Number<3>()) *
             E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) /
             static_cast<C>(2);
   }
