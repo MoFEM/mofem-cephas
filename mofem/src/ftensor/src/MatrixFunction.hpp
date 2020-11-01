@@ -91,7 +91,8 @@ template <typename E, typename C> struct d2MCoefficients {
       return get(t_val, Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
                  Number<3>(), f, d_f);
     else
-      return d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
+      return get(t_val, Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
+                 Number<1>(), f, d_f);
   }
 
   template <int a, int b>
