@@ -62,6 +62,7 @@ template <int FIELD_DIM, typename OpBase>
 struct OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>
     : public OpMassImpl<1, 1, GAUSS, OpBase> {
   using OpMassImpl<1, 1, GAUSS, OpBase>::OpMassImpl;
+
 protected:
   using OpMassImpl<1, 1, GAUSS, OpBase>::betaCoeff;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
@@ -79,6 +80,25 @@ struct OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
   OpGradSymTensorGradImpl(const std::string row_field_name,
                           const std::string col_field_name,
                           boost::shared_ptr<MatrixDouble> mat_D)
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D) {}
+
+protected:
+  boost::shared_ptr<MatrixDouble> matD;
+  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
+                           DataForcesAndSourcesCore::EntData &col_data);
+};
+
+template <int BASE_DIM, int FIELD_BASE, int SPACE_DIM, int S, IntegrationType I,
+          typename OpBase>
+struct OpGradTensorGradImpl {};
+
+template <int SPACE_DIM, int S, typename OpBase>
+struct OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
+    : public OpBase {
+  FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
+  OpGradTensorGradImpl(const std::string row_field_name,
+                       const std::string col_field_name,
+                       boost::shared_ptr<MatrixDouble> mat_D)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D) {}
 
 protected:
@@ -140,6 +160,24 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
                                        OpBase> {
     using OpGradSymTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
                                   OpBase>::OpGradSymTensorGradImpl;
+  };
+
+  /**
+   * @brief Integrate \f$(v_k,D_{ijkl} u_{,l})_\Omega\f$
+   *
+   * \note \f$D_{ijkl}\f$ is * tensor with no symmetries
+   *
+   * @ingroup mofem_forms
+   *
+   * @tparam SPACE_DIM
+   * @tparam S
+   */
+  template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S = 0>
+  struct OpGradTensorGrad
+      : public OpGradTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
+                                    OpBase> {
+    using OpGradTensorGradImpl<BASE_DIM, FIELD_DIM, SPACE_DIM, S, I,
+                               OpBase>::OpGradTensorGradImpl;
   };
 };
 
@@ -326,6 +364,83 @@ OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
         // Dg.  That way I don't have to have a separate wrapper
         // class Christof_Expr, which simplifies things.
         t_rowD(l, j, k) = t_D(i, j, k, l) * (a * t_row_diff_base(i));
+
+        // get derivatives of base functions for columns
+        auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
+
+        // iterate column base functions
+        for (int cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
+
+          // integrate block local stiffens matrix
+          t_m(i, j) += t_rowD(i, j, k) * t_col_diff_base(k);
+
+          // move to next column base function
+          ++t_col_diff_base;
+
+          // move to next block of local stiffens matrix
+          ++t_m;
+        }
+
+        // move to next row base function
+        ++t_row_diff_base;
+      }
+
+      for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+        ++t_row_diff_base;
+
+      // move to next integration weight
+      ++t_w;
+      ++t_D;
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+template <int SPACE_DIM, int S, typename OpBase>
+MoFEMErrorCode 
+OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data) {
+  MoFEMFunctionBegin;
+
+  const size_t nb_row_dofs = row_data.getIndices().size();
+  const size_t nb_col_dofs = col_data.getIndices().size();
+
+  if (nb_row_dofs && nb_col_dofs) {
+
+    FTensor::Index<'i', SPACE_DIM> i;
+    FTensor::Index<'j', SPACE_DIM> j;
+    FTensor::Index<'k', SPACE_DIM> k;
+    FTensor::Index<'l', SPACE_DIM> l;
+
+    // get element volume
+    double vol = OpBase::getMeasure();
+
+    // get intergrayion weights
+    auto t_w = OpBase::getFTensor0IntegrationWeight();
+
+    // get derivatives of base functions on rows
+    auto t_row_diff_base = row_data.getFTensor1DiffN<SPACE_DIM>();
+
+    //stiffness tensor (4th rank tensor)
+    auto t_D = getFTensor4FromMat<SPACE_DIM, SPACE_DIM, SPACE_DIM, SPACE_DIM, S>(*matD);
+
+    // iterate over integration points
+    for (int gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
+
+      // calculate scalar weight times element volume
+      double a = t_w * vol;
+
+      // iterate over row base functions
+      int rr = 0;
+      for (; rr != OpBase::nbRows / SPACE_DIM; ++rr) {
+
+        // get sub matrix for the row
+        auto t_m = OpBase::template getLocMat<SPACE_DIM>(SPACE_DIM * rr);
+
+        FTensor::Tensor3<double, SPACE_DIM, SPACE_DIM, SPACE_DIM> t_rowD;
+        t_rowD(j, k, l) = t_D(i, j, k, l) * (a * t_row_diff_base(i));
 
         // get derivatives of base functions for columns
         auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
