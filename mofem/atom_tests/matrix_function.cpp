@@ -729,11 +729,11 @@ int main(int argc, char *argv[]) {
       auto dd_f = [](double v) { return 2; };
       FTensor::Tensor2<double, 3, 3> t_S{
 
-          0., 0., 0.,
+          1.,      1. / 2., 1. / 3.,
 
-          0., 1., 0.,
+          2. / 1., 1.,      2. / 3.,
 
-          0., 0., 0.};
+          3. / 1., 3. / 1., 1.};
 
       cerr << t_eig_vecs << endl;
       cerr << t_eig_vals << endl;
