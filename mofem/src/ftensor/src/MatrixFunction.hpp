@@ -137,7 +137,10 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
                          const Number<c> &, const Number<d> &, const Number<1>,
                          Fun f, Fun dd_f) {
-    return dd_f(E::L(t_val, Number<c>()));
+    if ((a != b && b != d) && (a != d && b != c))
+      return dd_f(E::L(t_val, Number<c>())) / static_cast<C>(1);
+    else
+      return static_cast<C>(0);
   }
 };
 
@@ -178,18 +181,7 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
   static inline auto get(Val &t_val, Vec &t_vec, const Number<a> &,
                          const Number<b> &, const Number<m> &,
                          const Number<n> &, const Number<1>, Fun f, Fun dd_f) {
-    return
-
-        (
-
-            E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
-                dd_f(E::L(t_val, Number<a>())) +
-
-            E::M(t_vec, Number<b>(), Number<m>(), Number<n>()) *
-                dd_f(E::L(t_val, Number<b>()))
-
-                ) /
-        static_cast<C>(4);
+    return 0;
   }
 };
 
