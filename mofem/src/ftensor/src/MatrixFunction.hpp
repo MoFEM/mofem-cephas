@@ -125,12 +125,24 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
                          const Number<c> &, const Number<d> &,
                          const Number<2> &, Fun f, Fun d_f, Fun dd_f) {
-    if (a == 1 || b == 1)
+    if ((c == 1 || d == 1) && (a == 1 || b == 1)) {
       return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
                  Number<3>(), f, d_f, dd_f);
-    else
-      return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
-                 Number<1>(), f, d_f, dd_f);
+    }
+
+    if (a == 1 || b == 1) {
+      if ((c == 0 || c == 2) && (d == 0 || d == 2))
+        return d_f(E::L(t_val, Number<c>())) *
+               E::F(t_val, Number<a>(), Number<b>()) / static_cast<C>(2);
+    }
+
+    if (c == 1 || d == 1) {
+      if ((a == 0 && b == 2) || (a == 2 && b == 0))
+        return static_cast<C>(0);
+    }
+
+    return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
+               Number<1>(), f, d_f, dd_f);
   }
 
   template <int a, int b, int c, int d>
