@@ -181,7 +181,7 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
   static inline auto get(Val &t_val, Vec &t_vec, const Number<a> &,
                          const Number<b> &, const Number<m> &,
                          const Number<n> &, const Number<1>, Fun f, Fun dd_f) {
-    return 0; 
+    return static_cast<C>(0);
   }
 };
 
