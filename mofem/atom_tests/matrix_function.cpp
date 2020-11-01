@@ -581,7 +581,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    // Testing two same eigen values
+    // Testing three same eigen values
     {
 
       std::array<double, 9> a{4.,  0., 0,
@@ -666,6 +666,9 @@ int main(int argc, char *argv[]) {
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
+      t_eig_vals(0) -= 1e-4;
+      t_eig_vals(2) += 1e-4;
+
       constexpr double eps = 1e-10;
 
       auto f = [](double v) { return v; };
@@ -705,16 +708,19 @@ int main(int argc, char *argv[]) {
     // check second directive
     {
 
-      std::array<double, 9> a{0.1, 0.,  0.,
+      std::array<double, 9> a{2, 0.,  0.,
 
-                              0.,  0.1, 0.,
+                              0.,  2, 0.,
 
-                              0.,  0.,  0.1};
+                              0.,  0.,  2};
 
       auto tuple = run_lapack(a);
       auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
+
+      t_eig_vals(0) -= 1e-4;
+      t_eig_vals(2) += 1e-4;
 
       constexpr double eps = 1e-10;
 
