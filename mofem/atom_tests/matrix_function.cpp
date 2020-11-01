@@ -818,11 +818,12 @@ int main(int argc, char *argv[]) {
 
       double nrm2_t_dd_3 = get_norm_t4(t_dd_3);
       MOFEM_LOG("ATOM_TEST", Sev::inform)
-          << "Direvarive hand calculation minus code " << nrm2_t_dd_3;
+          << "Direvarive approx. calculation minus code " << nrm2_t_dd_3;
       if (nrm2_t_dd_3 > eps)
         SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                 "This norm should be zero");
     }
+
   }
   CATCH_ERRORS;
 
