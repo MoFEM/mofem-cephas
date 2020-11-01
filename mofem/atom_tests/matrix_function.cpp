@@ -715,46 +715,63 @@ int main(int argc, char *argv[]) {
                 "This norm should be zero");
     }
 
-    // // check second directive exponent
-    // {
+    // check second directive exponent
+    {
 
-    //   std::array<double, 9> a{2,  0., 0.,
+      std::array<double, 9> a{2,  0., 0.,
 
-    //                           0., 2,  0.,
+                              0., 2,  0.,
 
-    //                           0., 0., 2};
+                              0., 0., 2};
 
-    //   auto tuple = run_lapack(a);
-    //   auto &t_a = std::get<0>(tuple);
-    //   auto &t_eig_vecs = std::get<1>(tuple);
-    //   auto &t_eig_vals = std::get<2>(tuple);
+      auto tuple = run_lapack(a);
+      auto &t_a = std::get<0>(tuple);
+      auto &t_eig_vecs = std::get<1>(tuple);
+      auto &t_eig_vals = std::get<2>(tuple);
 
-    //   t_eig_vals(0) -= 1e-6;
-    //   t_eig_vals(2) += 1e-6;
+      t_eig_vals(0) -= 1e-5;
+      t_eig_vals(2) += 1e-5;
 
-    //   constexpr double eps = 1e-10;
+      constexpr double eps = 1e-10;
 
-    //   auto f = [](double v) { return exp(v); };
-    //   auto d_f = [](double v) { return exp(v); };
-    //   auto dd_f = [](double v) { return exp(v); };
-    //   FTensor::Tensor2<double, 3, 3> t_S{
+      auto f = [](double v) { return v * v; };
+      auto d_f = [](double v) { return 2 * v; };
+      auto dd_f = [](double v) { return 2; };
+      FTensor::Tensor2<double, 3, 3> t_S{
 
-    //       1.,      1. / 2., 1. / 3.,
+          1.,      1. / 2., 1. / 3.,
 
-    //       2. / 1., 1.,      2. / 3.,
+          2. / 1., 1.,      2. / 3.,
 
-    //       3. / 1., 3. / 1., 1.};
+          3. / 1., 3. / 1., 1.};
 
-    //   auto t_dd_1 = EigenProjection<double, double, 2>::getDiffDiffMat(
-    //       t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+      auto t_dd_1 = EigenProjection<double, double, 3>::getDiffDiffMat(
+          t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+      auto t_dd_2 = EigenProjection<double, double, 1>::getDiffDiffMat(
+          t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
 
-    //   double nrm2_t_dd_a = get_norm_t4(t_dd_a);
-    //   MOFEM_LOG("ATOM_TEST", Sev::inform)
-    //       << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
-    //   if (nrm2_t_dd_a > eps)
-    //     SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-    //             "This norm should be zero");
-    // }
+      double nrm2_t_dd_t1 = get_norm_t4(t_dd_1);
+      MOFEM_LOG("ATOM_TEST", Sev::inform)
+          << "Direvarive nor t_dd_1 " << nrm2_t_dd_t1;
+
+      double nrm2_t_dd_t2 = get_norm_t4(t_dd_2);
+      MOFEM_LOG("ATOM_TEST", Sev::inform)
+          << "Direvarive norm t_dd_2 " << nrm2_t_dd_t2;
+
+      print_ddg(t_dd_1, "t_dd_1 ");
+      print_ddg(t_dd_2, "t_dd_2 ");
+
+      diff_ddg(t_dd_1, t_dd_2);
+
+      double nrm2_t_dd_1 = get_norm_t4(t_dd_2);
+      MOFEM_LOG("ATOM_TEST", Sev::inform)
+          << "Direvarive hand calculation minus code " << nrm2_t_dd_1;
+      if (nrm2_t_dd_1 > eps)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                "This norm should be zero");
+
+    }
+    
   }
   CATCH_ERRORS;
 
