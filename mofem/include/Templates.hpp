@@ -493,7 +493,8 @@ struct GetFTensor4FromMatImpl<3, 3, 3, 3, S, double, ublas::row_major,
  * @tparam L the storage organization
  * @tparam A 	the type of Storage array
  * @param data data container
- * @return FTensor::Tensor4<FTensor::PackPtr<T *, 1>, Tensor_Dim01, TensorDim23>
+ * @return FTensor::Tensor4<FTensor::PackPtr<T *, 1>, Tensor_Dim0,
+                               Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>
  */
 template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int Tensor_Dim3,
           int S = 1, class T, class L, class A>
