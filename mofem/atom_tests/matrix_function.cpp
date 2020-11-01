@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
       return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
     };
 
-    auto diff_ddg = [](auto &t_1, auto &t_2) {
+    auto diff_ddg = [i, j, k, l](auto &t_1, auto &t_2) {
       constexpr double eps = 1e-4;
       for (int ii = 0; ii != 3; ++ii)
         for (int jj = 0; jj != 3; ++jj)
@@ -618,7 +618,6 @@ int main(int argc, char *argv[]) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                   "This norm should be zero");
       }
-
     }
 
     // check second directive
@@ -677,11 +676,11 @@ int main(int argc, char *argv[]) {
     // check second directive
     {
 
-      std::array<double, 9> a{2, 0.,  0.,
+      std::array<double, 9> a{2,  0., 0.,
 
-                              0.,  2, 0.,
+                              0., 2,  0.,
 
-                              0.,  0.,  2};
+                              0., 0., 2};
 
       auto tuple = run_lapack(a);
       auto &t_a = std::get<0>(tuple);
@@ -732,7 +731,7 @@ int main(int argc, char *argv[]) {
       t_eig_vals(0) -= 1e-5;
       t_eig_vals(2) += 1e-5;
 
-      constexpr double eps = 1e-10;
+      constexpr double eps = 1e-9;
 
       auto f = [](double v) { return v * v; };
       auto d_f = [](double v) { return 2 * v; };
@@ -761,17 +760,28 @@ int main(int argc, char *argv[]) {
       print_ddg(t_dd_1, "t_dd_1 ");
       print_ddg(t_dd_2, "t_dd_2 ");
 
-      diff_ddg(t_dd_1, t_dd_2);
+      FTensor::Ddg<double,3,3> t_dd_3;
+      t_dd_3(i, j, k, l) = t_dd_1(i, j, k, l) - t_dd_2(i, j, k, l);
 
-      double nrm2_t_dd_1 = get_norm_t4(t_dd_2);
+      for (int ii = 0; ii != 3; ++ii)
+        for (int jj = 0; jj != 3; ++jj)
+          for (int kk = 0; kk != 3; ++kk)
+            for (int ll = 0; ll != 3; ++ll) {
+              constexpr double eps = 1e-4;
+              if (std::abs(t_dd_3(ii, jj, kk, ll)) > eps)
+                MOFEM_LOG("ATOM_TEST", Sev::error)
+                    << "Error " << ii << " " << jj << " " << kk << " " << ll
+                    << " " << t_dd_1(ii, jj, kk, ll) << " "
+                    << t_dd_2(ii, jj, kk, ll);
+            }
+
+      double nrm2_t_dd_3 = get_norm_t4(t_dd_3);
       MOFEM_LOG("ATOM_TEST", Sev::inform)
-          << "Direvarive hand calculation minus code " << nrm2_t_dd_1;
-      if (nrm2_t_dd_1 > eps)
+          << "Direvarive hand calculation minus code " << nrm2_t_dd_3;
+      if (nrm2_t_dd_3 > eps)
         SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                 "This norm should be zero");
-
     }
-    
   }
   CATCH_ERRORS;
 
