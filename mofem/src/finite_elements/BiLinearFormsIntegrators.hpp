@@ -446,7 +446,7 @@ OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
         for (int cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
 
           // integrate block local stiffens matrix
-          t_m(i, j) +=
+          t_m(i, k) +=
               a * (t_D(i, j, k, l) * (t_row_diff_base(j) * t_col_diff_base(l)));
 
           // move to next column base function
