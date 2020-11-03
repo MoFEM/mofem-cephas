@@ -125,25 +125,24 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
                          const Number<c> &, const Number<d> &,
                          const Number<2> &, Fun f, Fun d_f, Fun dd_f) {
-    if ((c == 1 || d == 1) && (a == 1 || b == 1)) {
+
+    if ((c == 1 || d == 1) && (a == 1 || b == 1)) 
       return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
                  Number<3>(), f, d_f, dd_f);
-    }
 
-    if (a == 1 || b == 1) {
-      if ((d == 0 && c == 2) || (d == 2 && c == 0))
-        return d_f(E::L(t_val, Number<c>())) *
-               E::F(t_val, Number<a>(), Number<b>()) / static_cast<C>(2);
-    }
+    if (c!=1 && d!=1 && a!=1 && b!=1)
+      return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
+                 Number<1>(), f, d_f, dd_f);
 
-    if ((a == 0 && b == 2) || (b == 2 && a == 0)) {
-      if (d == 1)
-        return d_f(E::L(t_val, Number<c>())) *
-               E::F(t_val, Number<c>(), Number<d>()) / static_cast<C>(2);
-    }
+    if ((c != 1 && d != 1) && (a == 1 || b == 1))
+      return d_f(E::L(t_val, Number<c>())) *
+             E::F(t_val, Number<a>(), Number<b>()) / static_cast<C>(2);
 
-    return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
-               Number<1>(), f, d_f, dd_f);
+    if ((c == 1 || d == 1) && (a != 1 && b != 1))
+      return d_f(E::L(t_val, Number<c>())) *
+             E::F(t_val, Number<c>(), Number<d>()) / static_cast<C>(4);
+
+    return static_cast<C>(0);
   }
 
   template <int a, int b, int c, int d>
