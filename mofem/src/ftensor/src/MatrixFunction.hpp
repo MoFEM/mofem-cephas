@@ -642,8 +642,7 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
   using NumberNb = Number<NB>;
   using NumberDim = Number<Dim>;
 
-  // EigenProjection(Val &t_val, Vec &t_vec): tVal(t_val), tVec(t_vec) {}
-
+  EigenProjection(Val &t_val, Vec &t_vec): tVal(t_val), tVec(t_vec) {}
 
   /**
    * @brief Get matrix
@@ -724,30 +723,29 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
   }
 
   private:
+    Val &tVal;
+    Vec &tVec;
 
-  // Vec &tVal;
-  // Vec &tVec;
+    template <typename E, typename C> friend struct d2MCoefficients;
+    template <typename E, typename C> friend struct dd4MCoefficientsType1;
+    template <typename E, typename C> friend struct dd4MCoefficientsType2;
+    template <typename E, typename C, typename G, int a, int c, int d, int i,
+              int j, int k, int l>
+    friend struct d2MImpl;
+    template <typename E, typename C, typename G1, typename G2, int a, int i,
+              int j, int k, int l, int m, int n>
+    friend struct fdd4MImpl;
+    template <typename E, typename C, int i, int j>
+    friend struct reconstructMatImpl;
+    template <typename E, typename C, int i, int j, int k, int l>
+    friend struct firstMatrixDirectiveImpl;
+    template <typename E, typename C, int i, int j, int k, int l, int m, int n>
+    friend struct secondMatrixDirectiveImpl;
+    template <typename E, typename C> friend struct getDiffMatImpl;
+    template <typename E, typename C> friend struct getDiffDiffMatImpl;
 
-  template <typename E, typename C> friend struct d2MCoefficients;
-  template <typename E, typename C> friend struct dd4MCoefficientsType1;
-  template <typename E, typename C> friend struct dd4MCoefficientsType2;
-  template <typename E, typename C, typename G, int a, int c, int d, int i,
-            int j, int k, int l>
-  friend struct d2MImpl;
-  template <typename E, typename C, typename G1, typename G2, int a, int i,
-            int j, int k, int l, int m, int n>
-  friend struct fdd4MImpl;
-  template <typename E, typename C, int i, int j>
-  friend struct reconstructMatImpl;
-  template <typename E, typename C, int i, int j, int k, int l>
-  friend struct firstMatrixDirectiveImpl;
-  template <typename E, typename C, int i, int j, int k, int l, int m, int n>
-  friend struct secondMatrixDirectiveImpl;
-  template <typename E, typename C> friend struct getDiffMatImpl;
-  template <typename E, typename C> friend struct getDiffDiffMatImpl;
-
-  template <int a, int i> static inline auto N(Vec &t_vec) {
-    return t_vec(a, i);
+    template <int a, int i> static inline auto N(Vec &t_vec) {
+      return t_vec(a, i);
   }
 
   template <int a> static inline auto L(Val &t_val, const Number<a> &) {

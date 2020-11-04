@@ -272,17 +272,18 @@ int main(int argc, char *argv[]) {
         auto d_f = [](double v) { return exp(v); };
         auto dd_f = [](double v) { return exp(v); };
 
-        auto t_b = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
+        auto t_b =
+            EigenProjection<double, double, 3>(t_L, t_N).getMat(t_L, t_N, f);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Reconstruct mat";
         print_mat(t_b);
 
-        auto t_d =
-            EigenProjection<double, double, 3>::getDiffMat(t_L, t_N, f, d_f);
+        auto t_d = EigenProjection<double, double, 3>(t_L, t_N).getDiffMat(
+            t_L, t_N, f, d_f);
 
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff";
         print_ddg_direction(t_d, 0, 2);
 
-        auto t_dd = EigenProjection<double, double, 3>::getDiffDiffMat(
+        auto t_dd = EigenProjection<double, double, 3>(t_L, t_N).getDiffDiffMat(
             t_L, t_N, f, d_f, dd_f, t_S);
 
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Diff Diff";
@@ -335,9 +336,10 @@ int main(int argc, char *argv[]) {
         auto d_f = [](double v) { return exp(v); };
         auto dd_f = [](double v) { return exp(v); };
 
-        auto t_b = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
-        auto t_c = EigenProjection<double, double, 3>::getMat(t_eig_vals,
-                                                              t_eig_vec, f);
+        auto t_b =
+            EigenProjection<double, double, 3>(t_L, t_N).getMat(t_L, t_N, f);
+        auto t_c = EigenProjection<double, double, 3>(t_L, t_N).getMat(
+            t_eig_vals, t_eig_vec, f);
         t_c(i, j) -= t_b(i, j);
         print_mat(t_c);
 
@@ -365,7 +367,8 @@ int main(int argc, char *argv[]) {
 
         constexpr double eps = 1e-10;
         {
-          auto t_b = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
+          auto t_b =
+              EigenProjection<double, double, 3>(t_L, t_N).getMat(t_L, t_N, f);
           t_b(i, j) -= (t_A(i, j) || t_A(j, i)) / 2;
           auto norm2_t_b = t_b(i, j) * t_b(i, j);
           MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -377,8 +380,8 @@ int main(int argc, char *argv[]) {
 
         {
 
-          auto t_d =
-              EigenProjection<double, double, 3>::getDiffMat(t_L, t_N, f, d_f);
+          auto t_d = EigenProjection<double, double, 3>(t_L, t_N).getDiffMat(
+              t_L, t_N, f, d_f);
           auto t_d_a = get_diff_matrix(t_d);
 
           MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
@@ -403,8 +406,9 @@ int main(int argc, char *argv[]) {
 
               0., 0., 1.};
 
-          auto t_dd = EigenProjection<double, double, 3>::getDiffDiffMat(
-              t_L, t_N, f, d_f, dd_f, t_S);
+          auto t_dd =
+              EigenProjection<double, double, 3>(t_L, t_N).getDiffDiffMat(
+                  t_L, t_N, f, d_f, dd_f, t_S);
 
           auto norm2_t_dd = get_norm_t4(t_dd);
           MOFEM_LOG("ATOM_TEST", Sev::inform) << "norm2_t_dd " << norm2_t_dd;
@@ -424,7 +428,8 @@ int main(int argc, char *argv[]) {
 
         // check if multiplication gives right value
         {
-          auto t_b = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
+          auto t_b =
+              EigenProjection<double, double, 3>(t_L, t_N).getMat(t_L, t_N, f);
           FTensor::Tensor2<double, 3, 3> t_a;
           t_a(i, j) = t_b(i, j) - t_A(i, k) * t_A(k, j);
           print_mat(t_a);
@@ -438,8 +443,8 @@ int main(int argc, char *argv[]) {
 
         // check first directive
         {
-          auto t_d =
-              EigenProjection<double, double, 3>::getDiffMat(t_L, t_N, f, d_f);
+          auto t_d = EigenProjection<double, double, 3>(t_L, t_N).getDiffMat(
+              t_L, t_N, f, d_f);
           print_ddg_direction(t_d, 0, 2);
           auto t_d_a = get_diff_matrix2(t_A, t_d);
           MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
@@ -464,8 +469,9 @@ int main(int argc, char *argv[]) {
 
               3. / 2., 1.,      3. / 3.};
 
-          auto t_dd = EigenProjection<double, double, 3>::getDiffDiffMat(
-              t_L, t_N, f, d_f, dd_f, t_S);
+          auto t_dd =
+              EigenProjection<double, double, 3>(t_L, t_N).getDiffDiffMat(
+                  t_L, t_N, f, d_f, dd_f, t_S);
           auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
 
           MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
@@ -503,8 +509,8 @@ int main(int argc, char *argv[]) {
 
       constexpr double eps = 1e-10;
       {
-        auto t_b = EigenProjection<double, double, 3>::getMat(t_eig_vals,
-                                                              t_eig_vecs, f);
+        auto t_b = EigenProjection<double, double, 3>(t_eig_vals, t_eig_vecs)
+                       .getMat(t_eig_vals, t_eig_vecs, f);
         t_b(i, j) -= (t_a(i, j) || t_a(j, i)) / 2;
         auto norm2_t_b = t_b(i, j) * t_b(i, j);
         MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -515,8 +521,8 @@ int main(int argc, char *argv[]) {
       }
 
       {
-        auto t_d = EigenProjection<double, double, 2>::getDiffMat(
-            t_eig_vals, t_eig_vecs, f, d_f);
+        auto t_d = EigenProjection<double, double, 2>(t_eig_vals, t_eig_vecs)
+                       .getDiffMat(t_eig_vals, t_eig_vecs, f, d_f);
         auto t_d_a = get_diff_matrix(t_d);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
         print_ddg(t_d_a, "hand ");
@@ -534,8 +540,8 @@ int main(int argc, char *argv[]) {
         auto f = [](double v) { return v * v; };
         auto d_f = [](double v) { return 2 * v; };
         auto dd_f = [](double v) { return 2; };
-        auto t_d = EigenProjection<double, double, 2>::getDiffMat(
-            t_eig_vals, t_eig_vecs, f, d_f);
+        auto t_d = EigenProjection<double, double, 2>(t_eig_vals, t_eig_vecs)
+                       .getDiffMat(t_eig_vals, t_eig_vecs, f, d_f);
         auto t_d_a = get_diff_matrix2(t_a, t_d);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
         print_ddg(t_d_a, "hand ");
@@ -570,8 +576,8 @@ int main(int argc, char *argv[]) {
 
       constexpr double eps = 1e-10;
       {
-        auto t_b = EigenProjection<double, double, 3>::getMat(t_eig_vals,
-                                                              t_eig_vecs, f);
+        auto t_b = EigenProjection<double, double, 3>(t_eig_vals, t_eig_vecs)
+                       .getMat(t_eig_vals, t_eig_vecs, f);
         t_b(i, j) -= (t_a(i, j) || t_a(j, i)) / 2;
         auto norm2_t_b = t_b(i, j) * t_b(i, j);
         MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -582,8 +588,8 @@ int main(int argc, char *argv[]) {
       }
 
       {
-        auto t_d = EigenProjection<double, double, 1>::getDiffMat(
-            t_eig_vals, t_eig_vecs, f, d_f);
+        auto t_d = EigenProjection<double, double, 1>(t_eig_vals, t_eig_vecs)
+                       .getDiffMat(t_eig_vals, t_eig_vecs, f, d_f);
         auto t_d_a = get_diff_matrix(t_d);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
         print_ddg(t_d_a, "hand ");
@@ -601,8 +607,8 @@ int main(int argc, char *argv[]) {
         auto f = [](double v) { return v * v; };
         auto d_f = [](double v) { return 2 * v; };
         auto dd_f = [](double v) { return 2; };
-        auto t_d = EigenProjection<double, double, 1>::getDiffMat(
-            t_eig_vals, t_eig_vecs, f, d_f);
+        auto t_d = EigenProjection<double, double, 1>(t_eig_vals, t_eig_vecs)
+                       .getDiffMat(t_eig_vals, t_eig_vecs, f, d_f);
         auto t_d_a = get_diff_matrix2(t_a, t_d);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
         print_ddg(t_d_a, "hand ");
@@ -656,8 +662,9 @@ int main(int argc, char *argv[]) {
 
       //     3. / 2., 1.,      3. / 3.};
 
-      auto t_dd = EigenProjection<double, double, 1>::getDiffDiffMat(
-          t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+      auto t_dd =
+          EigenProjection<double, double, 1>(t_eig_vals, t_eig_vecs)
+              .getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
 
       MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
       print_ddg(t_dd, "test ");
@@ -697,8 +704,9 @@ int main(int argc, char *argv[]) {
 
           3. / 1., 3. / 1., 1.};
 
-      auto t_dd = EigenProjection<double, double, 1>::getDiffDiffMat(
-          t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+      auto t_dd =
+          EigenProjection<double, double, 1>(t_eig_vals, t_eig_vecs)
+              .getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
       // print_ddg(t_dd, "test ");
 
       auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
@@ -739,8 +747,9 @@ int main(int argc, char *argv[]) {
 
           3. / 1., 3. / 1., 1.};
 
-      auto t_dd = EigenProjection<double, double, 2>::getDiffDiffMat(
-          t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+      auto t_dd =
+          EigenProjection<double, double, 2>(t_eig_vals, t_eig_vecs)
+              .getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
       print_ddg(t_dd, "test ");
 
       auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
@@ -783,10 +792,12 @@ int main(int argc, char *argv[]) {
 
           3. / 1., 3. / 1., 1.};
 
-      auto t_dd_1 = EigenProjection<double, double, 3>::getDiffDiffMat(
-          t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
-      auto t_dd_2 = EigenProjection<double, double, 1>::getDiffDiffMat(
-          t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+      auto t_dd_1 =
+          EigenProjection<double, double, 3>(t_eig_vals, t_eig_vecs)
+              .getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+      auto t_dd_2 =
+          EigenProjection<double, double, 1>(t_eig_vals, t_eig_vecs)
+              .getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
 
       double nrm2_t_dd_t1 = get_norm_t4(t_dd_1);
       MOFEM_LOG("ATOM_TEST", Sev::verbose)
@@ -853,10 +864,12 @@ int main(int argc, char *argv[]) {
 
           3. / 1., 3. / 1., 1.};
 
-      auto t_dd_1 = EigenProjection<double, double, 3>::getDiffDiffMat(
-          t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
-      auto t_dd_2 = EigenProjection<double, double, 2>::getDiffDiffMat(
-          t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+      auto t_dd_1 =
+          EigenProjection<double, double, 3>(t_eig_vals, t_eig_vecs)
+              .getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+      auto t_dd_2 =
+          EigenProjection<double, double, 2>(t_eig_vals, t_eig_vecs)
+              .getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
 
       double nrm2_t_dd_t1 = get_norm_t4(t_dd_1);
       MOFEM_LOG("ATOM_TEST", Sev::verbose)
@@ -926,10 +939,12 @@ int main(int argc, char *argv[]) {
 
       t_eig_vals(0) += 2e-5;
       t_eig_vals(2) -= 2e-5;
-      auto t_dd_1 = EigenProjection<double, double, 3>::getDiffDiffMat(
-          t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
-      auto t_dd_2 = EigenProjection<double, double, 2>::getDiffDiffMat(
-          t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+      auto t_dd_1 =
+          EigenProjection<double, double, 3>(t_eig_vals, t_eig_vecs)
+              .getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+      auto t_dd_2 =
+          EigenProjection<double, double, 2>(t_eig_vals, t_eig_vecs)
+              .getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
 
       double nrm2_t_dd_t1 = get_norm_t4(t_dd_1);
       MOFEM_LOG("ATOM_TEST", Sev::verbose)
