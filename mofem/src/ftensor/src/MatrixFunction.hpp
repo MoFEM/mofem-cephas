@@ -126,26 +126,49 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
                          const Number<c> &, const Number<d> &,
                          const Number<2> &, Fun f, Fun d_f, Fun dd_f) {
 
-    if ((c == 1 || d == 1) && (a == 1 || b == 1)) 
+    if ((c == 1 || d == 1) && (a == 1 || b == 1))
       return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
                  Number<3>(), f, d_f, dd_f);
 
-    if (c!=1 && d!=1 && a!=1 && b!=1)
+    if (c != 1 && d != 1 && a != 1 && b != 1)
       return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
                  Number<1>(), f, d_f, dd_f);
 
-    if ((c != 1 && d != 1) && (a == 1 || b == 1)) 
+    if ((c != 1 && d != 1) && (a == 1 || b == 1))
       return d_f(E::L(t_val, Number<c>())) *
              E::F(t_val, Number<a>(), Number<b>()) / static_cast<C>(2);
 
     if ((c == 1 || d == 1) && (a != 1 && b != 1)) {
-      MOFEM_LOG("ATOM_TEST", Sev::warning)
-          << a << " " << b << " " << c << " " << d;
-      return d_f(E::L(t_val, Number<c>())) *
-             E::F(t_val, Number<c>(), Number<d>()) / static_cast<C>(4);
+
+      if ((c == 2 && d == 1) || (c == 2 && d == 1))
+        return (
+
+                   d_f(E::L(t_val, Number<c>()))
+
+                   -
+                   (f(E::L(t_val, Number<c>())) - f(E::L(t_val, Number<d>()))) *
+                       E::F(t_val, Number<c>(), Number<d>())
+
+                       ) *
+               E::F(t_val, Number<c>(), Number<d>());
+
+      // MOFEM_LOG("ATOM_TEST", Sev::warning)
+      // << a << " " << b << " " << c << " " << d;
+      // return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
+      //  Number<3>(), f, d_f, dd_f);
+
+      // return (
+
+      //            d_f(E::L(t_val, Number<c>()))
+
+      //            - (f(E::L(t_val, Number<c>())) - f(E::L(t_val,
+      //            Number<d>()))) *
+      //                  E::F(t_val, Number<c>(), Number<d>())
+
+      //                ) *
+      //        E::F(t_val, Number<c>(), Number<d>()) / static_cast<C>(4);
     }
 
-  
     return static_cast<C>(0);
   }
 
@@ -253,8 +276,8 @@ struct fdd4MImpl {
   static inline auto fd2M(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return d2MImpl<E, V, G1, A, a, b, I, J, K, L>::eval(
-        t_val, t_vec, f, d_f, dd_f, Number<3>());
+    return d2MImpl<E, V, G1, A, a, b, I, J, K, L>::eval(t_val, t_vec, f, d_f,
+                                                        dd_f, Number<3>());
   }
 
   template <int b, int A, int B, int I, int J, int K, int L, int M, int N>
@@ -279,6 +302,11 @@ struct fdd4MImpl {
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
 
     if (a != b) {
+
+      // MOFEM_LOG("ATOM_TEST", Sev::warning) << "AA "
+      //  << " " << i << " " << j << " " << k
+      //  << " " << l << " " << m << " " << n;
+
       return
 
           fd2S<a, b, i, j, k, l, m, n>(t_val, t_vec, f, d_f, dd_f)
@@ -500,8 +528,8 @@ template <typename E, typename C> struct getDiffMatImpl {
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, T &t_a,
                          const Number<I> &, const Number<J> &,
                          const Number<0> &, const Number<0> &) {
-    set(t_val, t_vec, f, d_f, t_a, Number<I>(), Number<J - 1>(),
-        Number<3>(), Number<3>());
+    set(t_val, t_vec, f, d_f, t_a, Number<I>(), Number<J - 1>(), Number<3>(),
+        Number<3>());
   }
 
   template <typename T, int I, int K, int L>
@@ -535,10 +563,9 @@ template <typename E, typename C> struct getDiffDiffMatImpl {
                          const Number<M> &, const Number<N> &) {
     return t_s(M - 1, N - 1) *
                secondMatrixDirectiveImpl<E, C, M - 1, N - 1, I - 1, J - 1,
-                                         K - 1,
-                                         L - 1>::eval(t_val, t_vec, f, d_f,
-                                                      dd_f,
-                                                      Number<3>())
+                                         K - 1, L - 1>::eval(t_val, t_vec, f,
+                                                             d_f, dd_f,
+                                                             Number<3>())
 
            +
 
@@ -554,14 +581,12 @@ template <typename E, typename C> struct getDiffDiffMatImpl {
     return t_s(M - 1, 0) *
                secondMatrixDirectiveImpl<E, C, M - 1, 0, I - 1, J - 1, K - 1,
                                          L - 1>::eval(t_val, t_vec, f, d_f,
-                                                      dd_f,
-                                                      Number<3>())
+                                                      dd_f, Number<3>())
 
            +
 
            add(t_val, t_vec, f, d_f, dd_f, t_s, t_a, Number<I>(), Number<J>(),
-               Number<K>(), Number<L>(), Number<M - 1>(),
-               Number<3>());
+               Number<K>(), Number<L>(), Number<M - 1>(), Number<3>());
   }
 
   template <typename T1, typename T2, int I, int J, int K, int L>
@@ -583,8 +608,7 @@ template <typename E, typename C> struct getDiffDiffMatImpl {
         Number<K>(), Number<L - 1>());
     t_a(I - 1, J - 1, K - 1, L - 1) =
         add(t_val, t_vec, f, d_f, dd_f, t_s, t_a, Number<I>(), Number<J>(),
-            Number<K>(), Number<L>(), Number<3>(),
-            Number<3>());
+            Number<K>(), Number<L>(), Number<3>(), Number<3>());
   }
 
   template <typename T1, typename T2, int I, int J, int K>
@@ -602,8 +626,7 @@ template <typename E, typename C> struct getDiffDiffMatImpl {
                          const Number<0> &, const Number<0> &) {
     set(t_val, t_vec, f, d_f, dd_f, t_s, t_a,
 
-        Number<I>(), Number<J - 1>(), Number<3>(),
-        Number<3>());
+        Number<I>(), Number<J - 1>(), Number<3>(), Number<3>());
   }
 
   template <typename T1, typename T2, int I, int K, int L>
@@ -621,8 +644,7 @@ template <typename E, typename C> struct getDiffDiffMatImpl {
                          const Number<K> &, const Number<L> &) {}
 };
 
-template <typename T1, typename T2, int NB>
-struct EigenProjection {
+template <typename T1, typename T2, int NB> struct EigenProjection {
 
   static constexpr int Dim = 3;
 
