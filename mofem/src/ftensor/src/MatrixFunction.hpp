@@ -642,6 +642,9 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
   using NumberNb = Number<NB>;
   using NumberDim = Number<Dim>;
 
+  // EigenProjection(Val &t_val, Vec &t_vec): tVal(t_val), tVec(t_vec) {}
+
+
   /**
    * @brief Get matrix
    *
@@ -720,8 +723,14 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
     return t_diff_A;
   }
 
-  // private:
+  private:
+
+  // Vec &tVal;
+  // Vec &tVec;
+
   template <typename E, typename C> friend struct d2MCoefficients;
+  template <typename E, typename C> friend struct dd4MCoefficientsType1;
+  template <typename E, typename C> friend struct dd4MCoefficientsType2;
   template <typename E, typename C, typename G, int a, int c, int d, int i,
             int j, int k, int l>
   friend struct d2MImpl;
