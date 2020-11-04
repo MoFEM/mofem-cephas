@@ -661,7 +661,7 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
    * @param f function
    * @return auto function symmetric tensor rank two
    */
-  static inline auto getMat(Val &t_val, Vec &t_vec, Fun f) {
+  inline auto getMat(Val &t_val, Vec &t_vec, Fun f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim> t_A;
@@ -683,7 +683,7 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
    * @param d_f directive of function
    * @return auto direvatives, forth order tensor with minor simetries
    */
-  static inline auto getDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
+  inline auto getDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
@@ -711,8 +711,8 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
    * @return auto second direvatives, forth order tensor with minor simetries
    */
   template <typename T>
-  static inline auto getDiffDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f,
-                                    Fun dd_f, T &t_S) {
+  inline auto getDiffDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                             T &t_S) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
