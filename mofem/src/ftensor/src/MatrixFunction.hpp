@@ -328,21 +328,21 @@ template <typename E, typename C, int i, int j> struct reconstructMatImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  reconstructMatImpl() = delete;
-  ~reconstructMatImpl() = delete;
+  reconstructMatImpl(E &e) : e(e) {}
+  E &e;
 
-  template <int a> static inline C term(Val &t_val, Vec &t_vec, Fun f) {
-    return E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-           f(E::L(t_val, Number<a>()));
+  template <int a> inline C term(Val &t_val, Vec &t_vec, Fun f) {
+    return e.M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
+           f(e.L(t_val, Number<a>()));
   }
 
   template <int nb>
-  static inline C eval(Val &t_val, Vec &t_vec, Fun f, const Number<nb> &) {
+  inline C eval(Val &t_val, Vec &t_vec, Fun f, const Number<nb> &) {
     return term<nb - 1>(t_val, t_vec, f) +
            eval(t_val, t_vec, f, Number<nb - 1>());
   }
 
-  static inline C eval(Val &t_val, Vec &t_vec, Fun f, const Number<1> &) {
+  inline C eval(Val &t_val, Vec &t_vec, Fun f, const Number<1> &) {
     return term<0>(t_val, t_vec, f);
   }
 };
@@ -457,26 +457,26 @@ template <typename E, typename C> struct getMatImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  getMatImpl() = delete;
-  ~getMatImpl() = delete;
+  getMatImpl(E &e) : e(e) {}
+  E &e;
 
   template <typename T, int I, int J>
-  static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a,
-                         const Number<I> &, const Number<J> &) {
+  inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a, const Number<I> &,
+                  const Number<J> &) {
     set(t_val, t_vec, f, t_a, Number<I>(), Number<J - 1>());
-    t_a(I - 1, J - 1) = reconstructMatImpl<E, C, I - 1, J - 1>::eval(
-        t_val, t_vec, f, typename E::NumberNb());
+    t_a(I - 1, J - 1) = reconstructMatImpl<E, C, I - 1, J - 1>(e).eval(
+        t_val, t_vec, f, Number<3>());
   }
 
   template <typename T, int I>
-  static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a,
-                         const Number<I> &, const Number<0> &) {
+  inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a, const Number<I> &,
+                  const Number<0> &) {
     set(t_val, t_vec, f, t_a, Number<I - 1>(), Number<I - 1>());
   }
 
   template <typename T>
-  static inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a,
-                         const Number<0> &, const Number<0> &) {}
+  inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a, const Number<0> &,
+                  const Number<0> &) {}
 };
 
 template <typename E, typename C> struct getDiffMatImpl {
@@ -665,7 +665,7 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim> t_A;
-    getMatImpl<EigenProjection<T1, T2, NB>, V>::set(
+    getMatImpl<EigenProjection<T1, T2, NB>, V>(*this).set(
         t_val, t_vec, f, t_A, Number<Dim>(), Number<Dim>());
     return t_A;
   }
