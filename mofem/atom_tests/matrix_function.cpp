@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
             for (int ll = 0; ll != 3; ++ll) {
               double v = t(ii, jj, kk, ll);
               double w = std::abs(v) < eps ? 0 : v;
-              MOFEM_LOG("ATOM_TEST", Sev::verbose)
+              MOFEM_LOG("ATOM_TEST", Sev::noisy)
                   << str << std::fixed << std::setprecision(3) << std::showpos
                   << ii + 1 << " " << jj + 1 << " " << kk + 1 << " " << ll + 1
                   << " : " << w;
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     auto print_ddg_direction = [](auto &t, auto kk, int ll) {
       for (int ii = 0; ii != 3; ++ii)
         for (int jj = 0; jj <= ii; ++jj)
-          MOFEM_LOG("ATOM_TEST", Sev::verbose)
+          MOFEM_LOG("ATOM_TEST", Sev::noisy)
               << ii + 1 << " " << jj + 1 << " " << kk + 1 << " " << ll + 1
               << " : " << t(ii, jj, kk, ll);
     };
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     auto print_mat = [](auto &t) {
       for (int ii = 0; ii != 3; ++ii)
         for (int jj = 0; jj != 3; ++jj)
-          MOFEM_LOG("ATOM_TEST", Sev::verbose)
+          MOFEM_LOG("ATOM_TEST", Sev::noisy)
               << ii + 1 << " " << jj + 1 << " : " << t(ii, jj);
     };
 
@@ -789,11 +789,11 @@ int main(int argc, char *argv[]) {
           t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
 
       double nrm2_t_dd_t1 = get_norm_t4(t_dd_1);
-      MOFEM_LOG("ATOM_TEST", Sev::inform)
+      MOFEM_LOG("ATOM_TEST", Sev::verbose)
           << "Direvarive nor t_dd_1 " << nrm2_t_dd_t1;
 
       double nrm2_t_dd_t2 = get_norm_t4(t_dd_2);
-      MOFEM_LOG("ATOM_TEST", Sev::inform)
+      MOFEM_LOG("ATOM_TEST", Sev::verbose)
           << "Direvarive norm t_dd_2 " << nrm2_t_dd_t2;
 
       print_ddg(t_dd_1, "t_dd_1 ");
@@ -859,11 +859,11 @@ int main(int argc, char *argv[]) {
           t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
 
       double nrm2_t_dd_t1 = get_norm_t4(t_dd_1);
-      MOFEM_LOG("ATOM_TEST", Sev::inform)
+      MOFEM_LOG("ATOM_TEST", Sev::verbose)
           << "Direvarive nor t_dd_1 " << nrm2_t_dd_t1;
 
       double nrm2_t_dd_t2 = get_norm_t4(t_dd_2);
-      MOFEM_LOG("ATOM_TEST", Sev::inform)
+      MOFEM_LOG("ATOM_TEST", Sev::verbose)
           << "Direvarive norm t_dd_2 " << nrm2_t_dd_t2;
 
       print_ddg(t_dd_1, "t_dd_1 ");
@@ -887,9 +887,9 @@ int main(int argc, char *argv[]) {
       double nrm2_t_dd_3 = get_norm_t4(t_dd_3);
       MOFEM_LOG("ATOM_TEST", Sev::inform)
           << "Direvarive approx. calculation minus code " << nrm2_t_dd_3;
-      // if (nrm2_t_dd_3 > eps)
-      //   SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-      //           "This norm should be zero");
+      if (nrm2_t_dd_3 > eps)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                "This norm should be zero");
     }
 
 
@@ -918,40 +918,25 @@ int main(int argc, char *argv[]) {
 
       FTensor::Tensor2<double, 3, 3> t_S{
 
-          0., 1., 0.,
+          1.,      1. / 2., 1. / 3.,
 
-          1., 0., 1.,
+          2. / 1., 1.,      2. / 3.,
 
-          0., 1., 0.};
-
-      // FTensor::Tensor2<double, 3, 3> t_S{
-
-      //     1.,      1. / 2., 1. / 3.,
-
-      //     2. / 1., 1.,      2. / 3.,
-
-      //     3. / 1., 3. / 1., 1.};
+          3. / 1., 3. / 1., 1.};
 
       t_eig_vals(0) += 2e-5;
       t_eig_vals(2) -= 2e-5;
       auto t_dd_1 = EigenProjection<double, double, 3>::getDiffDiffMat(
           t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
-      // auto t_dd_1 = EigenProjection<double, double, 3>::getDiffMat(
-      //     t_eig_vals, t_eig_vecs, f, d_f);
-
-      // t_eig_vals(0) += 1e-3;
-      // t_eig_vals(2) -= 1e-3;
       auto t_dd_2 = EigenProjection<double, double, 2>::getDiffDiffMat(
           t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
-      // auto t_dd_2 = EigenProjection<double, double, 2>::getDiffMat(
-      //     t_eig_vals, t_eig_vecs, f, d_f);
 
       double nrm2_t_dd_t1 = get_norm_t4(t_dd_1);
-      MOFEM_LOG("ATOM_TEST", Sev::inform)
+      MOFEM_LOG("ATOM_TEST", Sev::verbose)
           << "Direvarive nor t_dd_1 " << nrm2_t_dd_t1;
 
       double nrm2_t_dd_t2 = get_norm_t4(t_dd_2);
-      MOFEM_LOG("ATOM_TEST", Sev::inform)
+      MOFEM_LOG("ATOM_TEST", Sev::verbose)
           << "Direvarive norm t_dd_2 " << nrm2_t_dd_t2;
 
       print_ddg(t_dd_1, "t_dd_1 ");
@@ -975,9 +960,9 @@ int main(int argc, char *argv[]) {
       double nrm2_t_dd_3 = get_norm_t4(t_dd_3);
       MOFEM_LOG("ATOM_TEST", Sev::inform)
           << "Direvarive approx. calculation minus code " << nrm2_t_dd_3;
-      // if (nrm2_t_dd_3 > eps)
-      //   SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-      //           "This norm should be zero");
+      if (nrm2_t_dd_3 > eps)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                "This norm should be zero");
     }
 
   }
