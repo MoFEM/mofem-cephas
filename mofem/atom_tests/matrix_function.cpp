@@ -568,9 +568,6 @@ int main(int argc, char *argv[]) {
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
-      // cerr << t_eig_vecs << endl;
-      // cerr << t_eig_vals << endl;
-
       constexpr double eps = 1e-10;
       {
         auto t_b = EigenProjection<double, double, 3>::getMat(t_eig_vals,
@@ -728,8 +725,6 @@ int main(int argc, char *argv[]) {
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
 
-      cerr << t_eig_vals << endl;
-
       constexpr double eps = 1e-10;
 
       auto f = [](double v) { return v * v; };
@@ -738,32 +733,24 @@ int main(int argc, char *argv[]) {
 
       FTensor::Tensor2<double, 3, 3> t_S{
 
-          0., 0., 0.,
+          1.,      1. / 2., 1. / 3.,
 
-          0., 0., 1.,
+          2. / 1., 1.,      2. / 3.,
 
-          0., 0., 0.};
-
-      // FTensor::Tensor2<double, 3, 3> t_S{
-
-      //     1.,      1. / 2., 1. / 3.,
-
-      //     2. / 1., 1.,      2. / 3.,
-
-      //     3. / 1., 3. / 1., 1.};
+          3. / 1., 3. / 1., 1.};
 
       auto t_dd = EigenProjection<double, double, 2>::getDiffDiffMat(
           t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
-      // print_ddg(t_dd, "test ");
+      print_ddg(t_dd, "test ");
 
       auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
 
       double nrm2_t_dd_a = get_norm_t4(t_dd_a);
       MOFEM_LOG("ATOM_TEST", Sev::inform)
-          << "Direvarive hand calculation minus code AAA " << nrm2_t_dd_a;
-      // if (nrm2_t_dd_a > eps)
-      //   SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-      //           "This norm should be zero");
+          << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
+      if (nrm2_t_dd_a > eps)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                "This norm should be zero");
     }
 
     // check second directive exponent
@@ -860,19 +847,11 @@ int main(int argc, char *argv[]) {
 
       FTensor::Tensor2<double, 3, 3> t_S{
 
-          0., 1., 0.,
+          1.,      1. / 2., 1. / 3.,
 
-          1., 0., 1.,
+          2. / 1., 1.,      2. / 3.,
 
-          0., 1., 0.};
-
-      // FTensor::Tensor2<double, 3, 3> t_S{
-
-      //     1.,      1. / 2., 1. / 3.,
-
-      //     2. / 1., 1.,      2. / 3.,
-
-      //     3. / 1., 3. / 1., 1.};
+          3. / 1., 3. / 1., 1.};
 
       auto t_dd_1 = EigenProjection<double, double, 3>::getDiffDiffMat(
           t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
@@ -927,13 +906,9 @@ int main(int argc, char *argv[]) {
       auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
-      cerr << t_eig_vecs << endl;
-      cerr << t_eig_vals << endl;
-
 
       constexpr double eps = 1e-4;
       constexpr int p = 3;
-
 
       auto f = [](double v) { return pow(v, p); };
       auto d_f = [](double v) { return p * pow(v, p - 1); };

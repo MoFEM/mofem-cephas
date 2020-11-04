@@ -151,22 +151,6 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
 
                        ) *
                E::F(t_val, Number<c>(), Number<d>());
-
-      // MOFEM_LOG("ATOM_TEST", Sev::warning)
-      // << a << " " << b << " " << c << " " << d;
-      // return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
-      //  Number<3>(), f, d_f, dd_f);
-
-      // return (
-
-      //            d_f(E::L(t_val, Number<c>()))
-
-      //            - (f(E::L(t_val, Number<c>())) - f(E::L(t_val,
-      //            Number<d>()))) *
-      //                  E::F(t_val, Number<c>(), Number<d>())
-
-      //                ) *
-      //        E::F(t_val, Number<c>(), Number<d>()) / static_cast<C>(4);
     }
 
     return static_cast<C>(0);
