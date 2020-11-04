@@ -321,7 +321,7 @@ struct fdd4MImpl {
   }
 };
 
-template <typename E, typename C, int i, int j> struct reconstructMatImpl {
+template <typename E, typename C> struct reconstructMatImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
@@ -331,19 +331,22 @@ template <typename E, typename C, int i, int j> struct reconstructMatImpl {
   reconstructMatImpl(E &e) : e(e) {}
   E &e;
 
-  template <int a> inline C term(Val &t_val, Vec &t_vec, Fun f) {
+  template <int a, int i, int j> inline C term(Val &t_val, Vec &t_vec, Fun f) {
     return e.M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
            f(e.L(t_val, Number<a>()));
   }
 
-  template <int nb>
-  inline C eval(Val &t_val, Vec &t_vec, Fun f, const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec, f) +
-           eval(t_val, t_vec, f, Number<nb - 1>());
+  template <int nb, int i, int j>
+  inline C eval(Val &t_val, Vec &t_vec, Fun f, const Number<nb> &,
+                const Number<i> &, const Number<j> &) {
+    return term<nb - 1, i, j>(t_val, t_vec, f) +
+           eval(t_val, t_vec, f, Number<nb - 1>(), Number<i>(), Number<j>());
   }
 
-  inline C eval(Val &t_val, Vec &t_vec, Fun f, const Number<1> &) {
-    return term<0>(t_val, t_vec, f);
+  template <int i, int j>
+  inline C eval(Val &t_val, Vec &t_vec, Fun f, const Number<1> &,
+                const Number<i> &, const Number<j> &) {
+    return term<0, i, j>(t_val, t_vec, f);
   }
 };
 
@@ -457,15 +460,15 @@ template <typename E, typename C> struct getMatImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  getMatImpl(E &e) : e(e) {}
-  E &e;
+  getMatImpl(E &e) : r(e) {}
+  reconstructMatImpl<E, C> r;
 
   template <typename T, int I, int J>
   inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a, const Number<I> &,
                   const Number<J> &) {
     set(t_val, t_vec, f, t_a, Number<I>(), Number<J - 1>());
-    t_a(I - 1, J - 1) = reconstructMatImpl<E, C, I - 1, J - 1>(e).eval(
-        t_val, t_vec, f, Number<3>());
+    t_a(I - 1, J - 1) =
+        r.eval(t_val, t_vec, f, Number<3>(), Number<I - 1>(), Number<J - 1>());
   }
 
   template <typename T, int I>
@@ -735,8 +738,7 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
     template <typename E, typename C, typename G1, typename G2, int a, int i,
               int j, int k, int l, int m, int n>
     friend struct fdd4MImpl;
-    template <typename E, typename C, int i, int j>
-    friend struct reconstructMatImpl;
+    template <typename E, typename C> friend struct reconstructMatImpl;
     template <typename E, typename C, int i, int j, int k, int l>
     friend struct firstMatrixDirectiveImpl;
     template <typename E, typename C, int i, int j, int k, int l, int m, int n>
