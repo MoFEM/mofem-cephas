@@ -387,7 +387,7 @@ template <typename E, typename C> struct firstMatrixDirectiveImpl {
   }
 };
 
-template <typename E, typename C, int i, int j, int k, int l, int m, int n>
+template <typename E, typename C>
 struct secondMatrixDirectiveImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -398,7 +398,7 @@ struct secondMatrixDirectiveImpl {
   secondMatrixDirectiveImpl() = delete;
   ~secondMatrixDirectiveImpl() = delete;
 
-  template <int a>
+  template <int a, int i, int j, int k, int l, int m, int n>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
 
     return
@@ -434,20 +434,25 @@ struct secondMatrixDirectiveImpl {
             static_cast<C>(2);
   }
 
-  template <int nb>
+  template <int nb, int i, int j, int k, int l, int m, int n>
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec, f, d_f, dd_f)
+                       const Number<nb> &, const Number<i>&, const Number<j>&,
+                       const Number<k>&, const Number<l>&, const Number<m>&, const Number<n>&) {
+    return term<nb - 1, i, j, k, l, m, n>(t_val, t_vec, f, d_f, dd_f)
 
            +
 
-           secondMatrixDirectiveImpl<E, C, i, j, k, l, m, n>::eval(
-               t_val, t_vec, f, d_f, dd_f, Number<nb - 1>());
+           secondMatrixDirectiveImpl<E, C>::eval(
+               t_val, t_vec, f, d_f, dd_f, Number<nb - 1>(), Number<i>(),
+               Number<j>(), Number<k>(), Number<l>(), Number<m>(), Number<n>());
   }
 
+  template <int i, int j, int k, int l, int m, int n>
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<1> &) {
-    return term<0>(t_val, t_vec, f, d_f, dd_f);
+                       const Number<1> &, const Number<i> &, const Number<j> &,
+                       const Number<k> &, const Number<l> &, const Number<m> &,
+                       const Number<n>) {
+    return term<0, i, j, k, l, m, n>(t_val, t_vec, f, d_f, dd_f);
   }
 };
 
@@ -544,11 +549,11 @@ struct getDiffDiffMatImpl {
   inline auto add(Fun f, Fun d_f, Fun dd_f, const Number<I> &,
                   const Number<J> &, const Number<K> &, const Number<L> &,
                   const Number<M> &, const Number<N> &) {
-    return tS(M - 1, N - 1) *
-               secondMatrixDirectiveImpl<E, C, M - 1, N - 1, I - 1, J - 1,
-                                         K - 1, L - 1>::eval(e.tVal, e.tVec, f,
-                                                             d_f, dd_f,
-                                                             Number<3>())
+    return tS(M - 1, N - 1) * secondMatrixDirectiveImpl<E, C>::eval(
+                                  e.tVal, e.tVec, f, d_f, dd_f, Number<3>(),
+                                  Number<M - 1>(), Number<N - 1>(),
+                                  Number<I - 1>(), Number<J - 1>(),
+                                  Number<K - 1>(), Number<L - 1>())
 
            +
 
@@ -560,10 +565,10 @@ struct getDiffDiffMatImpl {
   inline auto add(Fun f, Fun d_f, Fun dd_f, const Number<I> &,
                   const Number<J> &, const Number<K> &, const Number<L> &,
                   const Number<M> &, const Number<1> &) {
-    return tS(M - 1, 0) *
-               secondMatrixDirectiveImpl<E, C, M - 1, 0, I - 1, J - 1, K - 1,
-                                         L - 1>::eval(e.tVal, e.tVec, f, d_f,
-                                                      dd_f, Number<3>())
+    return tS(M - 1, 0) * secondMatrixDirectiveImpl<E, C>::eval(
+                              e.tVal, e.tVec, f, d_f, dd_f, Number<3>(),
+                              Number<M - 1>(), Number<0>(), Number<I - 1>(),
+                              Number<J - 1>(), Number<K - 1>(), Number<L - 1>())
 
            +
 
@@ -575,10 +580,10 @@ struct getDiffDiffMatImpl {
   inline auto add(Fun f, Fun d_f, Fun dd_f, const Number<I> &, const Number<J> &,
                   const Number<K> &, const Number<L> &, const Number<1> &,
                   const Number<1> &) {
-    return tS(0, 0) * secondMatrixDirectiveImpl<E, C, 0, 0, I - 1, J - 1, K - 1,
-                                                L - 1>::eval(e.tVal, e.tVec, f,
-                                                             d_f, dd_f,
-                                                             Number<3>());
+    return tS(0, 0) * secondMatrixDirectiveImpl<E, C>::eval(
+                          e.tVal, e.tVec, f, d_f, dd_f, Number<3>(),
+                          Number<0>(), Number<0>(), Number<I - 1>(),
+                          Number<J - 1>(), Number<K - 1>(), Number<L - 1>());
   }
 
   template <int I, int J, int K, int L>
@@ -761,8 +766,7 @@ private:
   friend struct fdd4MImpl;
   template <typename E, typename C> friend struct reconstructMatImpl;
   template <typename E, typename C> friend struct firstMatrixDirectiveImpl;
-  template <typename E, typename C, int i, int j, int k, int l, int m, int n>
-  friend struct secondMatrixDirectiveImpl;
+  template <typename E, typename C> friend struct secondMatrixDirectiveImpl;
   template <typename E, typename C, typename T> friend struct getDiffMatImpl;
   template <typename E, typename C, typename T3, typename T4>
   friend struct getDiffDiffMatImpl;
