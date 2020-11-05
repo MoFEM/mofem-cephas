@@ -77,29 +77,30 @@ template <typename E, typename C> struct d2MCoefficients {
   E &e;
 
   template <int a, int b>
-  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<-1> &, const Number<-1> &,
-                         const Number<3> &, Fun f, Fun d_f, Fun dd_f) {
-    return f(E::L(t_val, Number<a>())) * E::F(t_val, Number<a>(), Number<b>());
+  inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
+                  const Number<-1> &, const Number<3> &, Fun f, Fun d_f,
+                  Fun dd_f) {
+    return f(e.tVal(a)) *
+           E::F(e.tVal, Number<a>(), Number<b>());
   }
 
   template <int a, int b>
-  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<-1> &, const Number<-1> &,
-                         const Number<2> &, Fun f, Fun d_f, Fun dd_f) {
+  inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
+                  const Number<-1> &, const Number<2> &, Fun f, Fun d_f,
+                  Fun dd_f) {
     if (a == 1 || b == 1)
-      return get(t_val, Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
+      return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
                  Number<3>(), f, d_f, dd_f);
     else
-      return get(t_val, Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
+      return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
                  Number<1>(), f, d_f, dd_f);
   }
 
   template <int a, int b>
-  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<-1> &, const Number<-1> &,
-                         const Number<1>, Fun f, Fun d_f, Fun dd_f) {
-    return d_f(E::L(t_val, Number<a>())) / static_cast<C>(2);
+  inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
+                  const Number<-1> &, const Number<1>, Fun f, Fun d_f,
+                  Fun dd_f) {
+    return d_f(e.tVal(a)) / static_cast<C>(2);
   }
 };
 
@@ -114,54 +115,53 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   E &e;
 
   template <int a, int b, int c, int d>
-  inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+  inline auto get(const Number<a> &, const Number<b> &,
                   const Number<c> &, const Number<d> &, const Number<3> &,
                   Fun f, Fun d_f, Fun dd_f) {
-    return f(E::L(t_val, Number<c>())) * E::F(t_val, Number<c>(), Number<d>()) *
-           E::F(t_val, Number<a>(), Number<b>());
+    return f(e.tVal(c)) * E::F(e.tVal, Number<c>(), Number<d>()) *
+           E::F(e.tVal, Number<a>(), Number<b>());
   }
 
   template <int a, int b, int c, int d>
-  inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                  const Number<c> &, const Number<d> &, const Number<2> &,
-                  Fun f, Fun d_f, Fun dd_f) {
+  inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
+                  const Number<d> &, const Number<2> &, Fun f, Fun d_f,
+                  Fun dd_f) {
 
     if ((c == 1 || d == 1) && (a == 1 || b == 1))
-      return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
+      return get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
                  Number<3>(), f, d_f, dd_f);
 
     if (c != 1 && d != 1 && a != 1 && b != 1)
-      return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
+      return get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
                  Number<1>(), f, d_f, dd_f);
 
     if ((c != 1 && d != 1) && (a == 1 || b == 1))
-      return d_f(E::L(t_val, Number<c>())) *
-             E::F(t_val, Number<a>(), Number<b>()) / static_cast<C>(2);
+      return d_f(e.tVal(c)) * E::F(e.tVal, Number<a>(), Number<b>()) /
+             static_cast<C>(2);
 
     if ((c == 1 || d == 1) && (a != 1 && b != 1)) {
 
       if ((c == 2 && d == 1) || (c == 2 && d == 1))
         return (
 
-                   d_f(E::L(t_val, Number<c>()))
+                   d_f(e.tVal(c))
 
-                   -
-                   (f(E::L(t_val, Number<c>())) - f(E::L(t_val, Number<d>()))) *
-                       E::F(t_val, Number<c>(), Number<d>())
+                   - (f(e.tVal(c)) - f(e.tVal(d))) *
+                         E::F(e.tVal, Number<c>(), Number<d>())
 
                        ) *
-               E::F(t_val, Number<c>(), Number<d>());
+               E::F(e.tVal, Number<c>(), Number<d>());
     }
 
     return static_cast<C>(0);
   }
 
   template <int a, int b, int c, int d>
-  inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                  const Number<c> &, const Number<d> &, const Number<1>, Fun f,
-                  Fun d_f, Fun dd_f) {
+  inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
+                  const Number<d> &, const Number<1>, Fun f, Fun d_f,
+                  Fun dd_f) {
     if ((a != b && b != d) && (a != d && b != c))
-      return dd_f(E::L(t_val, Number<c>())) / static_cast<C>(4);
+      return dd_f(e.tVal(c)) / static_cast<C>(4);
     else
       return static_cast<C>(0);
   }
@@ -218,7 +218,7 @@ template <typename E, typename C, typename G> struct d2MImpl {
   template <int b, int a, int c, int d, int i, int j, int k, int l>
   inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     if (a != b) {
-      return g.get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
+      return g.get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
                    typename E::NumberNb(), f, d_f, dd_f) *
              E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                   Number<k>(), Number<l>());
