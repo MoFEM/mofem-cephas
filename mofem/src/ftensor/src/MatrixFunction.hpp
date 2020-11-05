@@ -212,9 +212,8 @@ struct d2MImpl {
   using Fun = typename E::Fun;
 
   template <int N> using Number = FTensor::Number<N>;
-
-  d2MImpl() = delete;
-  ~d2MImpl() = delete;
+  d2MImpl(E &e): e(e) {}
+  E &e;
 
   template <int b, int a, int c, int d, int i, int j, int k, int l>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
@@ -253,7 +252,8 @@ struct fdd4MImpl {
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
 
-  fdd4MImpl(E &e): g2(e), e(e) {}
+  fdd4MImpl(E &e) : r(e), g2(e), e(e) {}
+  d2MImpl<E, C, G1> r;
   G2 g2;
   E &e;
 
@@ -261,11 +261,9 @@ struct fdd4MImpl {
 
   template <int a, int b, int A, int I, int J, int K, int L>
   inline auto fd2M(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
-    using V =
-        typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    return d2MImpl<E, V, G1>::eval(
-        t_val, t_vec, f, d_f, dd_f, Number<3>(), Number<A>(), Number<a>(),
-        Number<b>(), Number<I>(), Number<J>(), Number<K>(), Number<L>());
+    return r.eval(t_val, t_vec, f, d_f, dd_f, Number<3>(), Number<A>(),
+                  Number<a>(), Number<b>(), Number<I>(), Number<J>(),
+                  Number<K>(), Number<L>());
   }
 
   template <int a, int b, int A, int B, int I, int J, int K, int L, int M,
@@ -362,7 +360,8 @@ template <typename E, typename C> struct firstMatrixDirectiveImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  firstMatrixDirectiveImpl(E &e) : e(e) {}
+  firstMatrixDirectiveImpl(E &e) : r(e), e(e) {}
+  d2MImpl<E, C, d2MCoefficients<E, C>> r;
   E &e;
 
   template <int a, int i, int j, int k, int l>
@@ -373,9 +372,9 @@ template <typename E, typename C> struct firstMatrixDirectiveImpl {
 
         +
 
-        d2MImpl<E, C, d2MCoefficients<E, C>>::eval(
-            t_val, t_vec, f, d_f, d_f, Number<3>(), Number<a>(), Number<-1>(),
-            Number<-1>(), Number<i>(), Number<j>(), Number<k>(), Number<l>()) /
+        r.eval(t_val, t_vec, f, d_f, d_f, Number<3>(), Number<a>(),
+               Number<-1>(), Number<-1>(), Number<i>(), Number<j>(),
+               Number<k>(), Number<l>()) /
             static_cast<C>(2);
   }
 
@@ -404,7 +403,8 @@ struct secondMatrixDirectiveImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  secondMatrixDirectiveImpl(E &e) : r(e), e(e) {}
+  secondMatrixDirectiveImpl(E &e) : w(e), r(e), e(e) {}
+  d2MImpl<E, C, d2MCoefficients<E, C>> w;
   fdd4MImpl<E, C, dd4MCoefficientsType1<E, C>, dd4MCoefficientsType2<E, C>> r;
   E &e;
 
@@ -415,19 +415,17 @@ struct secondMatrixDirectiveImpl {
 
         (
 
-            d2MImpl<E, C, d2MCoefficients<E, C>>::eval(
-                e.tVal, e.tVec, d_f, dd_f, dd_f, Number<3>(), Number<a>(),
-                Number<-1>(), Number<-1>(), Number<i>(), Number<j>(),
-                Number<m>(), Number<n>()) *
+            w.eval(e.tVal, e.tVec, d_f, dd_f, dd_f, Number<3>(), Number<a>(),
+                   Number<-1>(), Number<-1>(), Number<i>(), Number<j>(),
+                   Number<m>(), Number<n>()) *
                 e.aM(a, k, l)
 
             +
 
-            e.aM(a, i, j) * d2MImpl<E, C, d2MCoefficients<E, C>>::eval(
-                                e.tVal, e.tVec, d_f, dd_f, dd_f, Number<3>(),
-                                Number<a>(), Number<-1>(), Number<-1>(),
-                                Number<k>(), Number<l>(), Number<m>(),
-                                Number<n>())) /
+            e.aM(a, i, j) * w.eval(e.tVal, e.tVec, d_f, dd_f, dd_f, Number<3>(),
+                                   Number<a>(), Number<-1>(), Number<-1>(),
+                                   Number<k>(), Number<l>(), Number<m>(),
+                                   Number<n>())) /
             static_cast<C>(2) +
 
         e.aM(a, i, j) * e.aM(a, k, l) * e.aM(a, m, n) * e.ddfVal(a)
@@ -439,10 +437,9 @@ struct secondMatrixDirectiveImpl {
                Number<n>()) /
             static_cast<C>(4) +
 
-        d2MImpl<E, C, d2MCoefficients<E, C>>::eval(
-            e.tVal, e.tVec, d_f, dd_f, dd_f, Number<3>(), Number<a>(),
-            Number<-1>(), Number<-1>(), Number<i>(), Number<j>(), Number<k>(),
-            Number<l>()) *
+        w.eval(e.tVal, e.tVec, d_f, dd_f, dd_f, Number<3>(), Number<a>(),
+               Number<-1>(), Number<-1>(), Number<i>(), Number<j>(),
+               Number<k>(), Number<l>()) *
             e.aM(a, m, n) / static_cast<C>(2);
   }
 
