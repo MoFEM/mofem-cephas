@@ -268,12 +268,12 @@ struct fdd4MImpl {
             int N>
   inline auto fd2G(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     return fd2M<a, b, A, I, K, N, M>(t_val, t_vec, f, d_f, dd_f) *
-               E::M(t_vec, Number<B>(), Number<J>(), Number<L>()) +
-           E::M(t_vec, Number<A>(), Number<I>(), Number<K>()) *
+               e.aM(B, J, L) +
+           e.aM(A, I, K) *
                fd2M<a, b, B, J, L, M, N>(t_val, t_vec, f, d_f, dd_f) +
            fd2M<a, b, A, I, L, M, N>(t_val, t_vec, f, d_f, dd_f) *
-               E::M(t_vec, Number<B>(), Number<J>(), Number<K>()) +
-           E::M(t_vec, Number<A>(), Number<I>(), Number<L>()) *
+               e.aM(B, J, K) +
+           e.aM(A, I, L) *
                fd2M<a, b, B, J, K, M, N>(t_val, t_vec, f, d_f, dd_f);
   }
 
