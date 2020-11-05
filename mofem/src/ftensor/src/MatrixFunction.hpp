@@ -73,8 +73,8 @@ template <typename E, typename C> struct d2MCoefficients {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  d2MCoefficients() = delete;
-  ~d2MCoefficients() = delete;
+  d2MCoefficients(E &e) : e(e) {}
+  E &e;
 
   template <int a, int b>
   static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
@@ -110,21 +110,21 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  dd4MCoefficientsType1() = delete;
-  ~dd4MCoefficientsType1() = delete;
+  dd4MCoefficientsType1(E &e) : e(e) {}
+  E &e;
 
   template <int a, int b, int c, int d>
-  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<c> &, const Number<d> &,
-                         const Number<3> &, Fun f, Fun d_f, Fun dd_f) {
+  inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                  const Number<c> &, const Number<d> &, const Number<3> &,
+                  Fun f, Fun d_f, Fun dd_f) {
     return f(E::L(t_val, Number<c>())) * E::F(t_val, Number<c>(), Number<d>()) *
            E::F(t_val, Number<a>(), Number<b>());
   }
 
   template <int a, int b, int c, int d>
-  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<c> &, const Number<d> &,
-                         const Number<2> &, Fun f, Fun d_f, Fun dd_f) {
+  inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                  const Number<c> &, const Number<d> &, const Number<2> &,
+                  Fun f, Fun d_f, Fun dd_f) {
 
     if ((c == 1 || d == 1) && (a == 1 || b == 1))
       return get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
@@ -157,9 +157,9 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   }
 
   template <int a, int b, int c, int d>
-  static inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
-                         const Number<c> &, const Number<d> &, const Number<1>,
-                         Fun f, Fun d_f, Fun dd_f) {
+  inline auto get(Val &t_val, const Number<a> &, const Number<b> &,
+                  const Number<c> &, const Number<d> &, const Number<1>, Fun f,
+                  Fun d_f, Fun dd_f) {
     if ((a != b && b != d) && (a != d && b != c))
       return dd_f(E::L(t_val, Number<c>())) / static_cast<C>(4);
     else
@@ -174,7 +174,7 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  dd4MCoefficientsType2(E &e): e(e) {}
+  dd4MCoefficientsType2(E &e) : e(e) {}
   E &e;
 
   template <int a, int b, int m, int n>
@@ -205,21 +205,21 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
   }
 };
 
-template <typename E, typename C, typename G>
-struct d2MImpl {
+template <typename E, typename C, typename G> struct d2MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
 
   template <int N> using Number = FTensor::Number<N>;
-  d2MImpl(E &e): e(e) {}
+  d2MImpl(E &e) : g(e), e(e) {}
+  G g;
   E &e;
 
   template <int b, int a, int c, int d, int i, int j, int k, int l>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
+  inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     if (a != b) {
-      return G::get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
-                    typename E::NumberNb(), f, d_f, dd_f) *
+      return g.get(t_val, Number<a>(), Number<b>(), Number<c>(), Number<d>(),
+                   typename E::NumberNb(), f, d_f, dd_f) *
              E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                   Number<k>(), Number<l>());
     }
@@ -227,10 +227,10 @@ struct d2MImpl {
   }
 
   template <int nb, int a, int c, int d, int i, int j, int k, int l>
-  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<nb> &, const Number<a> &, const Number<c> &,
-                       const Number<d> &, const Number<i> &, const Number<j> &,
-                       const Number<k> &, const Number<l> &) {
+  inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                const Number<nb> &, const Number<a> &, const Number<c> &,
+                const Number<d> &, const Number<i> &, const Number<j> &,
+                const Number<k> &, const Number<l> &) {
     return term<nb - 1, a, c, d, i, j, k, l>(t_val, t_vec, f, d_f, dd_f) +
            eval(t_val, t_vec, f, d_f, dd_f, Number<nb - 1>(), Number<a>(),
                 Number<c>(), Number<d>(), Number<i>(), Number<j>(), Number<k>(),
@@ -238,16 +238,15 @@ struct d2MImpl {
   }
 
   template <int a, int c, int d, int i, int j, int k, int l>
-  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<1> &, const Number<a> &, const Number<c> &,
-                       const Number<d> &, const Number<i> &, const Number<j> &,
-                       const Number<k> &, const Number<l> &) {
+  inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                const Number<1> &, const Number<a> &, const Number<c> &,
+                const Number<d> &, const Number<i> &, const Number<j> &,
+                const Number<k> &, const Number<l> &) {
     return term<0, a, c, d, i, j, k, l>(t_val, t_vec, f, d_f, dd_f);
   }
 };
 
-template <typename E, typename C, typename G1, typename G2>
-struct fdd4MImpl {
+template <typename E, typename C, typename G1, typename G2> struct fdd4MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
@@ -395,8 +394,7 @@ template <typename E, typename C> struct firstMatrixDirectiveImpl {
   }
 };
 
-template <typename E, typename C>
-struct secondMatrixDirectiveImpl {
+template <typename E, typename C> struct secondMatrixDirectiveImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
@@ -583,9 +581,9 @@ struct getDiffDiffMatImpl {
   }
 
   template <int I, int J, int K, int L>
-  inline auto add(Fun f, Fun d_f, Fun dd_f, const Number<I> &, const Number<J> &,
-                  const Number<K> &, const Number<L> &, const Number<1> &,
-                  const Number<1> &) {
+  inline auto add(Fun f, Fun d_f, Fun dd_f, const Number<I> &,
+                  const Number<J> &, const Number<K> &, const Number<L> &,
+                  const Number<1> &, const Number<1> &) {
     return tS(0, 0) * r.eval(f, d_f, dd_f, Number<3>(), Number<0>(),
                              Number<0>(), Number<I - 1>(), Number<J - 1>(),
                              Number<K - 1>(), Number<L - 1>());
