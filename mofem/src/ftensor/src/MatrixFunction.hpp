@@ -174,24 +174,21 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  dd4MCoefficientsType2() = delete;
-  ~dd4MCoefficientsType2() = delete;
+  dd4MCoefficientsType2(E &e): e(e) {}
+  E &e;
 
   template <int a, int b, int m, int n>
-  static inline auto get(Val &t_val, Vec &t_vec, const Number<a> &,
-                         const Number<b> &, const Number<m> &,
-                         const Number<n> &, const Number<3> &, Fun f, Fun d_f,
-                         Fun dd_f) {
-    return f(E::L(t_val, Number<a>())) * E::dFdN(t_val, t_vec, Number<a>(),
-                                                 Number<b>(), Number<m>(),
-                                                 Number<n>());
+  inline auto get(Val &t_val, Vec &t_vec, const Number<a> &, const Number<b> &,
+                  const Number<m> &, const Number<n> &, const Number<3> &,
+                  Fun f, Fun d_f, Fun dd_f) {
+    return e.fVal(a) * E::dFdN(t_val, t_vec, Number<a>(), Number<b>(),
+                               Number<m>(), Number<n>());
   }
 
   template <int a, int b, int m, int n>
-  static inline auto get(Val &t_val, Vec &t_vec, const Number<a> &,
-                         const Number<b> &, const Number<m> &,
-                         const Number<n> &, const Number<2> &, Fun f, Fun d_f,
-                         Fun dd_f) {
+  inline auto get(Val &t_val, Vec &t_vec, const Number<a> &, const Number<b> &,
+                  const Number<m> &, const Number<n> &, const Number<2> &,
+                  Fun f, Fun d_f, Fun dd_f) {
     if (a == 1 || b == 1)
       return get(t_val, t_vec, Number<a>(), Number<b>(), Number<m>(),
                  Number<n>(), Number<3>(), f, d_f, dd_f);
@@ -201,10 +198,9 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
   }
 
   template <int a, int b, int m, int n>
-  static inline auto get(Val &t_val, Vec &t_vec, const Number<a> &,
-                         const Number<b> &, const Number<m> &,
-                         const Number<n> &, const Number<1>, Fun f, Fun d_f,
-                         Fun dd_f) {
+  inline auto get(Val &t_val, Vec &t_vec, const Number<a> &, const Number<b> &,
+                  const Number<m> &, const Number<n> &, const Number<1>, Fun f,
+                  Fun d_f, Fun dd_f) {
     return static_cast<C>(0);
   }
 };
@@ -251,7 +247,8 @@ struct fdd4MImpl {
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
 
-  fdd4MImpl(E &e): e(e) {}
+  fdd4MImpl(E &e): g2(e), e(e) {}
+  G2 g2;
   E &e;
 
   template <int N> using Number = FTensor::Number<N>;
@@ -296,8 +293,8 @@ struct fdd4MImpl {
 
           2 *
 
-              G2::get(t_val, t_vec, Number<a>(), Number<b>(), Number<m>(),
-                      Number<n>(), typename E::NumberNb(), f, d_f, dd_f) *
+              g2.get(t_val, t_vec, Number<a>(), Number<b>(), Number<m>(),
+                     Number<n>(), typename E::NumberNb(), f, d_f, dd_f) *
               E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                    Number<k>(), Number<l>());
     }
