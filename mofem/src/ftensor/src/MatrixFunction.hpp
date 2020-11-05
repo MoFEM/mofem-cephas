@@ -250,13 +250,14 @@ struct fdd4MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
-  fdd4MImpl() = delete;
-  ~fdd4MImpl() = delete;
+
+  fdd4MImpl(E &e): e(e) {}
+  E &e;
 
   template <int N> using Number = FTensor::Number<N>;
 
   template <int a, int b, int A, int I, int J, int K, int L>
-  static inline auto fd2M(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
+  inline auto fd2M(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     return d2MImpl<E, V, G1, A, a, b, I, J, K, L>::eval(t_val, t_vec, f, d_f,
@@ -265,7 +266,7 @@ struct fdd4MImpl {
 
   template <int a, int b, int A, int B, int I, int J, int K, int L, int M,
             int N>
-  static inline auto fd2G(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
+  inline auto fd2G(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     return fd2M<a, b, A, I, K, N, M>(t_val, t_vec, f, d_f, dd_f) *
                E::M(t_vec, Number<B>(), Number<J>(), Number<L>()) +
            E::M(t_vec, Number<A>(), Number<I>(), Number<K>()) *
@@ -277,13 +278,13 @@ struct fdd4MImpl {
   }
 
   template <int a, int A, int B, int I, int J, int K, int L, int M, int N>
-  static inline auto fd2S(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
+  inline auto fd2S(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     return fd2G<a, B, A, B, I, J, K, L, M, N>(t_val, t_vec, f, d_f, dd_f) +
            fd2G<a, B, B, A, I, J, K, L, M, N>(t_val, t_vec, f, d_f, dd_f);
   }
 
- template <int a, int b, int i, int j, int k, int l, int m, int n>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
+  inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
 
     if (a != b) {
 
@@ -305,10 +306,10 @@ struct fdd4MImpl {
   }
 
   template <int nb, int a, int i, int j, int k, int l, int m, int n>
-  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<nb> &, const Number<a> &, const Number<i> &,
-                       const Number<j> &, const Number<k> &, const Number<l> &,
-                       const Number<m> &, const Number<n> &) {
+  inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                const Number<nb> &, const Number<a> &, const Number<i> &,
+                const Number<j> &, const Number<k> &, const Number<l> &,
+                const Number<m> &, const Number<n> &) {
     return term<a, nb - 1, i, j, k, l, m, n>(t_val, t_vec, f, d_f, dd_f) +
            eval(t_val, t_vec, f, d_f, dd_f, Number<nb - 1>(), Number<a>(),
                 Number<i>(), Number<j>(), Number<k>(), Number<l>(), Number<m>(),
@@ -316,10 +317,10 @@ struct fdd4MImpl {
   }
 
   template <int a, int i, int j, int k, int l, int m, int n>
-  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<1> &, const Number<a> &, const Number<i> &,
-                       const Number<j> &, const Number<k> &, const Number<l> &,
-                       const Number<m> &, const Number<n> &) {
+  inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
+                const Number<1> &, const Number<a> &, const Number<i> &,
+                const Number<j> &, const Number<k> &, const Number<l> &,
+                const Number<m> &, const Number<n> &) {
     return term<a, 0, i, j, k, l, m, n>(t_val, t_vec, f, d_f, dd_f);
   }
 };
@@ -398,7 +399,8 @@ struct secondMatrixDirectiveImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  secondMatrixDirectiveImpl(E &e): e(e) {}
+  secondMatrixDirectiveImpl(E &e) : r(e), e(e) {}
+  fdd4MImpl<E, C, dd4MCoefficientsType1<E, C>, dd4MCoefficientsType2<E, C>> r;
   E &e;
 
   template <int a, int i, int j, int k, int l, int m, int n>
@@ -425,13 +427,9 @@ struct secondMatrixDirectiveImpl {
 
         +
 
-        fdd4MImpl<E, C, dd4MCoefficientsType1<E, C>,
-                  dd4MCoefficientsType2<E, C>>::eval(e.tVal, e.tVec, f, d_f,
-                                                     dd_f, Number<3>(),
-                                                     Number<a>(), Number<i>(),
-                                                     Number<j>(), Number<k>(),
-                                                     Number<l>(), Number<m>(),
-                                                     Number<n>()) /
+        r.eval(e.tVal, e.tVec, f, d_f, dd_f, Number<3>(), Number<a>(),
+               Number<i>(), Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+               Number<n>()) /
             static_cast<C>(4) +
 
         d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, -1, i, j, k, l>::eval(
