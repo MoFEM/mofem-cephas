@@ -26,6 +26,8 @@ int main(int argc, char *argv[]) {
   core_log->add_sink(
       LogManager::createSink(LogManager::getStrmSelf(), "ATOM_TEST"));
   LogManager::setLog("ATOM_TEST");
+  BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", attrs::timer());
+  MOFEM_LOG_ATTRIBUTES("ATOM_TEST", LogManager::BitLineID);
 
   try {
 
