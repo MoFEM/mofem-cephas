@@ -178,29 +178,26 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
   E &e;
 
   template <int a, int b, int m, int n>
-  inline auto get(Val &t_val, Vec &t_vec, const Number<a> &, const Number<b> &,
-                  const Number<m> &, const Number<n> &, const Number<3> &,
-                  Fun f, Fun d_f, Fun dd_f) {
-    return e.fVal(a) * E::dFdN(t_val, t_vec, Number<a>(), Number<b>(),
+  inline auto get(const Number<a> &, const Number<b> &, const Number<m> &,
+                  const Number<n> &, const Number<3> &) {
+    return e.fVal(a) * E::dFdN(e.tVal, e.tVec, Number<a>(), Number<b>(),
                                Number<m>(), Number<n>());
   }
 
   template <int a, int b, int m, int n>
-  inline auto get(Val &t_val, Vec &t_vec, const Number<a> &, const Number<b> &,
-                  const Number<m> &, const Number<n> &, const Number<2> &,
-                  Fun f, Fun d_f, Fun dd_f) {
+  inline auto get(const Number<a> &, const Number<b> &, const Number<m> &,
+                  const Number<n> &, const Number<2> &) {
     if (a == 1 || b == 1)
-      return get(t_val, t_vec, Number<a>(), Number<b>(), Number<m>(),
-                 Number<n>(), Number<3>(), f, d_f, dd_f);
+      return get(Number<a>(), Number<b>(), Number<m>(), Number<n>(),
+                 Number<3>());
     else
-      return get(t_val, t_vec, Number<a>(), Number<b>(), Number<m>(),
-                 Number<n>(), Number<1>(), f, d_f, dd_f);
+      return get(Number<a>(), Number<b>(), Number<m>(), Number<n>(),
+                 Number<1>());
   }
 
   template <int a, int b, int m, int n>
-  inline auto get(Val &t_val, Vec &t_vec, const Number<a> &, const Number<b> &,
-                  const Number<m> &, const Number<n> &, const Number<1>, Fun f,
-                  Fun d_f, Fun dd_f) {
+  inline auto get(const Number<a> &, const Number<b> &, const Number<m> &,
+                  const Number<n> &, const Number<1>) {
     return static_cast<C>(0);
   }
 };
@@ -297,8 +294,8 @@ template <typename E, typename C, typename G1, typename G2> struct fdd4MImpl {
 
           2 *
 
-              g2.get(t_val, t_vec, Number<a>(), Number<b>(), Number<m>(),
-                     Number<n>(), typename E::NumberNb(), f, d_f, dd_f) *
+              g2.get(Number<a>(), Number<b>(), Number<m>(), Number<n>(),
+                     typename E::NumberNb()) *
               E::S(t_vec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                    Number<k>(), Number<l>());
     }
