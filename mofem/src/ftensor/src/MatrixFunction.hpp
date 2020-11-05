@@ -245,8 +245,7 @@ struct d2MImpl {
   }
 };
 
-template <typename E, typename C, typename G1, typename G2, int a, int i, int j,
-          int k, int l, int m, int n>
+template <typename E, typename C, typename G1, typename G2>
 struct fdd4MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -256,7 +255,7 @@ struct fdd4MImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  template <int b, int A, int I, int J, int K, int L>
+  template <int a, int b, int A, int I, int J, int K, int L>
   static inline auto fd2M(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
@@ -264,36 +263,33 @@ struct fdd4MImpl {
                                                         dd_f, Number<3>());
   }
 
-  template <int b, int A, int B, int I, int J, int K, int L, int M, int N>
+  template <int a, int b, int A, int B, int I, int J, int K, int L, int M,
+            int N>
   static inline auto fd2G(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
-    return fd2M<b, A, I, K, N, M>(t_val, t_vec, f, d_f, dd_f) *
+    return fd2M<a, b, A, I, K, N, M>(t_val, t_vec, f, d_f, dd_f) *
                E::M(t_vec, Number<B>(), Number<J>(), Number<L>()) +
            E::M(t_vec, Number<A>(), Number<I>(), Number<K>()) *
-               fd2M<b, B, J, L, M, N>(t_val, t_vec, f, d_f, dd_f) +
-           fd2M<b, A, I, L, M, N>(t_val, t_vec, f, d_f, dd_f) *
+               fd2M<a, b, B, J, L, M, N>(t_val, t_vec, f, d_f, dd_f) +
+           fd2M<a, b, A, I, L, M, N>(t_val, t_vec, f, d_f, dd_f) *
                E::M(t_vec, Number<B>(), Number<J>(), Number<K>()) +
            E::M(t_vec, Number<A>(), Number<I>(), Number<L>()) *
-               fd2M<b, B, J, K, M, N>(t_val, t_vec, f, d_f, dd_f);
+               fd2M<a, b, B, J, K, M, N>(t_val, t_vec, f, d_f, dd_f);
   }
 
-  template <int A, int B, int I, int J, int K, int L, int M, int N>
+  template <int a, int A, int B, int I, int J, int K, int L, int M, int N>
   static inline auto fd2S(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
-    return fd2G<B, A, B, I, J, K, L, M, N>(t_val, t_vec, f, d_f, dd_f) +
-           fd2G<B, B, A, I, J, K, L, M, N>(t_val, t_vec, f, d_f, dd_f);
+    return fd2G<a, B, A, B, I, J, K, L, M, N>(t_val, t_vec, f, d_f, dd_f) +
+           fd2G<a, B, B, A, I, J, K, L, M, N>(t_val, t_vec, f, d_f, dd_f);
   }
 
-  template <int b>
+ template <int a, int b, int i, int j, int k, int l, int m, int n>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
 
     if (a != b) {
 
-      // MOFEM_LOG("ATOM_TEST", Sev::warning) << "AA "
-      //  << " " << i << " " << j << " " << k
-      //  << " " << l << " " << m << " " << n;
-
       return
 
-          fd2S<a, b, i, j, k, l, m, n>(t_val, t_vec, f, d_f, dd_f)
+          fd2S<a, a, b, i, j, k, l, m, n>(t_val, t_vec, f, d_f, dd_f)
 
           +
 
@@ -308,16 +304,23 @@ struct fdd4MImpl {
     return 0;
   }
 
-  template <int nb>
+  template <int nb, int a, int i, int j, int k, int l, int m, int n>
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<nb> &) {
-    return term<nb - 1>(t_val, t_vec, f, d_f, dd_f) +
-           eval(t_val, t_vec, f, d_f, dd_f, Number<nb - 1>());
+                       const Number<nb> &, const Number<a> &, const Number<i> &,
+                       const Number<j> &, const Number<k> &, const Number<l> &,
+                       const Number<m> &, const Number<n> &) {
+    return term<a, nb - 1, i, j, k, l, m, n>(t_val, t_vec, f, d_f, dd_f) +
+           eval(t_val, t_vec, f, d_f, dd_f, Number<nb - 1>(), Number<a>(),
+                Number<i>(), Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                Number<n>());
   }
 
+  template <int a, int i, int j, int k, int l, int m, int n>
   static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<1> &) {
-    return term<0>(t_val, t_vec, f, d_f, dd_f);
+                       const Number<1> &, const Number<a> &, const Number<i> &,
+                       const Number<j> &, const Number<k> &, const Number<l> &,
+                       const Number<m> &, const Number<n> &) {
+    return term<a, 0, i, j, k, l, m, n>(t_val, t_vec, f, d_f, dd_f);
   }
 };
 
@@ -423,8 +426,12 @@ struct secondMatrixDirectiveImpl {
         +
 
         fdd4MImpl<E, C, dd4MCoefficientsType1<E, C>,
-                  dd4MCoefficientsType2<E, C>, a, i, j, k, l, m,
-                  n>::eval(e.tVal, e.tVec, f, d_f, dd_f, Number<3>()) /
+                  dd4MCoefficientsType2<E, C>>::eval(e.tVal, e.tVec, f, d_f,
+                                                     dd_f, Number<3>(),
+                                                     Number<a>(), Number<i>(),
+                                                     Number<j>(), Number<k>(),
+                                                     Number<l>(), Number<m>(),
+                                                     Number<n>()) /
             static_cast<C>(4) +
 
         d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, -1, i, j, k, l>::eval(
@@ -755,8 +762,7 @@ private:
   template <typename E, typename C, typename G, int a, int c, int d, int i,
             int j, int k, int l>
   friend struct d2MImpl;
-  template <typename E, typename C, typename G1, typename G2, int a, int i,
-            int j, int k, int l, int m, int n>
+  template <typename E, typename C, typename G1, typename G2>
   friend struct fdd4MImpl;
   template <typename E, typename C> friend struct reconstructMatImpl;
   template <typename E, typename C> friend struct firstMatrixDirectiveImpl;
