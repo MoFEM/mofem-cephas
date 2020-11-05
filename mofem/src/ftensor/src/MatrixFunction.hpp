@@ -395,8 +395,8 @@ struct secondMatrixDirectiveImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  secondMatrixDirectiveImpl() = delete;
-  ~secondMatrixDirectiveImpl() = delete;
+  secondMatrixDirectiveImpl(E &e): e(e) {}
+  E &e;
 
   template <int a, int i, int j, int k, int l, int m, int n>
   static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
@@ -442,9 +442,9 @@ struct secondMatrixDirectiveImpl {
 
            +
 
-           secondMatrixDirectiveImpl<E, C>::eval(
-               t_val, t_vec, f, d_f, dd_f, Number<nb - 1>(), Number<i>(),
-               Number<j>(), Number<k>(), Number<l>(), Number<m>(), Number<n>());
+           eval(t_val, t_vec, f, d_f, dd_f, Number<nb - 1>(), Number<i>(),
+                Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+                Number<n>());
   }
 
   template <int i, int j, int k, int l, int m, int n>
@@ -540,7 +540,8 @@ struct getDiffDiffMatImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  getDiffDiffMatImpl(E &e, T1 &t_a, T2 &t_S) : e(e), tA(t_a), tS(t_S) {}
+  getDiffDiffMatImpl(E &e, T1 &t_a, T2 &t_S) : r(e), e(e), tA(t_a), tS(t_S) {}
+  secondMatrixDirectiveImpl<E, C> r;
   E &e;
   T1 &tA;
   T2 &tS;
@@ -549,11 +550,10 @@ struct getDiffDiffMatImpl {
   inline auto add(Fun f, Fun d_f, Fun dd_f, const Number<I> &,
                   const Number<J> &, const Number<K> &, const Number<L> &,
                   const Number<M> &, const Number<N> &) {
-    return tS(M - 1, N - 1) * secondMatrixDirectiveImpl<E, C>::eval(
-                                  e.tVal, e.tVec, f, d_f, dd_f, Number<3>(),
-                                  Number<M - 1>(), Number<N - 1>(),
-                                  Number<I - 1>(), Number<J - 1>(),
-                                  Number<K - 1>(), Number<L - 1>())
+    return tS(M - 1, N - 1) * r.eval(e.tVal, e.tVec, f, d_f, dd_f, Number<3>(),
+                                     Number<M - 1>(), Number<N - 1>(),
+                                     Number<I - 1>(), Number<J - 1>(),
+                                     Number<K - 1>(), Number<L - 1>())
 
            +
 
@@ -565,10 +565,10 @@ struct getDiffDiffMatImpl {
   inline auto add(Fun f, Fun d_f, Fun dd_f, const Number<I> &,
                   const Number<J> &, const Number<K> &, const Number<L> &,
                   const Number<M> &, const Number<1> &) {
-    return tS(M - 1, 0) * secondMatrixDirectiveImpl<E, C>::eval(
-                              e.tVal, e.tVec, f, d_f, dd_f, Number<3>(),
-                              Number<M - 1>(), Number<0>(), Number<I - 1>(),
-                              Number<J - 1>(), Number<K - 1>(), Number<L - 1>())
+    return tS(M - 1, 0) * r.eval(e.tVal, e.tVec, f, d_f, dd_f, Number<3>(),
+                                 Number<M - 1>(), Number<0>(), Number<I - 1>(),
+                                 Number<J - 1>(), Number<K - 1>(),
+                                 Number<L - 1>())
 
            +
 
@@ -580,10 +580,9 @@ struct getDiffDiffMatImpl {
   inline auto add(Fun f, Fun d_f, Fun dd_f, const Number<I> &, const Number<J> &,
                   const Number<K> &, const Number<L> &, const Number<1> &,
                   const Number<1> &) {
-    return tS(0, 0) * secondMatrixDirectiveImpl<E, C>::eval(
-                          e.tVal, e.tVec, f, d_f, dd_f, Number<3>(),
-                          Number<0>(), Number<0>(), Number<I - 1>(),
-                          Number<J - 1>(), Number<K - 1>(), Number<L - 1>());
+    return tS(0, 0) * r.eval(e.tVal, e.tVec, f, d_f, dd_f, Number<3>(),
+                             Number<0>(), Number<0>(), Number<I - 1>(),
+                             Number<J - 1>(), Number<K - 1>(), Number<L - 1>());
   }
 
   template <int I, int J, int K, int L>
