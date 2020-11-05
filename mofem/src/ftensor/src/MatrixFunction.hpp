@@ -331,22 +331,19 @@ template <typename E, typename C> struct reconstructMatImpl {
   reconstructMatImpl(E &e) : e(e) {}
   E &e;
 
-  template <int a, int i, int j> inline C term(Val &t_val, Vec &t_vec, Fun f) {
-    return e.M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-           f(e.L(t_val, Number<a>()));
+  template <int a, int i, int j> inline C term() {
+    return e.aM(a, i, j) * e.fVal(a);
   }
 
   template <int nb, int i, int j>
-  inline C eval(Val &t_val, Vec &t_vec, Fun f, const Number<nb> &,
-                const Number<i> &, const Number<j> &) {
-    return term<nb - 1, i, j>(t_val, t_vec, f) +
-           eval(t_val, t_vec, f, Number<nb - 1>(), Number<i>(), Number<j>());
+  inline C eval(const Number<nb> &, const Number<i> &, const Number<j> &) {
+    return term<nb - 1, i, j>() +
+           eval(Number<nb - 1>(), Number<i>(), Number<j>());
   }
 
   template <int i, int j>
-  inline C eval(Val &t_val, Vec &t_vec, Fun f, const Number<1> &,
-                const Number<i> &, const Number<j> &) {
-    return term<0, i, j>(t_val, t_vec, f);
+  inline C eval(const Number<1> &, const Number<i> &, const Number<j> &) {
+    return term<0, i, j>();
   }
 };
 
@@ -453,33 +450,28 @@ struct secondMatrixDirectiveImpl {
   }
 };
 
-template <typename E, typename C> struct getMatImpl {
+template <typename E, typename C, typename T> struct getMatImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
 
   template <int N> using Number = FTensor::Number<N>;
 
-  getMatImpl(E &e) : r(e) {}
+  getMatImpl(E &e, T &t_a) : r(e), tA(t_a) {}
   reconstructMatImpl<E, C> r;
+  T &tA;
 
-  template <typename T, int I, int J>
-  inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a, const Number<I> &,
-                  const Number<J> &) {
-    set(t_val, t_vec, f, t_a, Number<I>(), Number<J - 1>());
-    t_a(I - 1, J - 1) =
-        r.eval(t_val, t_vec, f, Number<3>(), Number<I - 1>(), Number<J - 1>());
+  template <int I, int J>
+  inline void set(const Number<I> &, const Number<J> &) {
+    set(Number<I>(), Number<J - 1>());
+    tA(I - 1, J - 1) = r.eval(Number<3>(), Number<I - 1>(), Number<J - 1>());
   }
 
-  template <typename T, int I>
-  inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a, const Number<I> &,
-                  const Number<0> &) {
-    set(t_val, t_vec, f, t_a, Number<I - 1>(), Number<I - 1>());
+  template <int I> inline void set(const Number<I> &, const Number<0> &) {
+    set(Number<I - 1>(), Number<I - 1>());
   }
 
-  template <typename T>
-  inline void set(Val &t_val, Vec &t_vec, Fun f, T &t_a, const Number<0> &,
-                  const Number<0> &) {}
+  inline void set(const Number<0> &, const Number<0> &) {}
 };
 
 template <typename E, typename C> struct getDiffMatImpl {
@@ -645,7 +637,13 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
   using NumberNb = Number<NB>;
   using NumberDim = Number<Dim>;
 
-  EigenProjection(Val &t_val, Vec &t_vec): tVal(t_val), tVec(t_vec) {}
+  EigenProjection(Val &t_val, Vec &t_vec) : tVal(t_val), tVec(t_vec) {
+
+    for (auto aa : {0, 1, 2})
+      for (auto ii : {0, 1, 2})
+        for (auto jj = 0; jj <= ii; ++jj)
+          aM(aa, ii, jj) = tVec(aa, ii) * tVec(aa, jj);
+  }
 
   /**
    * @brief Get matrix
@@ -664,12 +662,18 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
    * @param f function
    * @return auto function symmetric tensor rank two
    */
-  inline auto getMat(Val &t_val, Vec &t_vec, Fun f) {
+  inline auto getMat(Fun f) {
+
+    for (auto aa : {0, 1, 2})
+      fVal(aa) = f(tVal(aa));
+
     using V =
-        typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim> t_A;
-    getMatImpl<EigenProjection<T1, T2, NB>, V>(*this).set(
-        t_val, t_vec, f, t_A, Number<Dim>(), Number<Dim>());
+        typename FTensor::promote<decltype(tVal(0)), decltype(tVec(0, 0))>::V;
+    using T3 =
+        FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim>;
+    T3 t_A;
+    getMatImpl<EigenProjection<T1, T2, NB>, V, T3>(*this, t_A)
+        .set(Number<Dim>(), Number<Dim>());
     return t_A;
   }
 
@@ -687,6 +691,14 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
    * @return auto direvatives, forth order tensor with minor simetries
    */
   inline auto getDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
+
+    for (auto aa : {0, 1, 2})
+      fVal(aa) = f(tVal(aa));
+
+    for (auto aa : {0, 1, 2})
+      dfVal(aa) = d_f(tVal(aa));
+
+
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
@@ -716,6 +728,16 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
   template <typename T>
   inline auto getDiffDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
                              T &t_S) {
+
+    for (auto aa : {0, 1, 2})
+      fVal(aa) = f(tVal(aa));
+
+    for (auto aa : {0, 1, 2})
+      dfVal(aa) = d_f(tVal(aa));
+
+    for (auto aa : {0, 1, 2})
+      ddfVal(aa) = dd_f(tVal(aa));
+
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     FTensor::Ddg<V, Dim, Dim> t_diff_A;
@@ -725,29 +747,33 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
     return t_diff_A;
   }
 
-  private:
-    Val &tVal;
-    Vec &tVec;
+private:
+  Val &tVal;
+  Vec &tVec;
+  FTensor::Christof<T2, Dim, Dim> aM;
+  FTensor::Tensor1<T1, Dim> fVal;
+  FTensor::Tensor1<T1, Dim> dfVal;
+  FTensor::Tensor1<T1, Dim> ddfVal;
 
-    template <typename E, typename C> friend struct d2MCoefficients;
-    template <typename E, typename C> friend struct dd4MCoefficientsType1;
-    template <typename E, typename C> friend struct dd4MCoefficientsType2;
-    template <typename E, typename C, typename G, int a, int c, int d, int i,
-              int j, int k, int l>
-    friend struct d2MImpl;
-    template <typename E, typename C, typename G1, typename G2, int a, int i,
-              int j, int k, int l, int m, int n>
-    friend struct fdd4MImpl;
-    template <typename E, typename C> friend struct reconstructMatImpl;
-    template <typename E, typename C, int i, int j, int k, int l>
-    friend struct firstMatrixDirectiveImpl;
-    template <typename E, typename C, int i, int j, int k, int l, int m, int n>
-    friend struct secondMatrixDirectiveImpl;
-    template <typename E, typename C> friend struct getDiffMatImpl;
-    template <typename E, typename C> friend struct getDiffDiffMatImpl;
+  template <typename E, typename C> friend struct d2MCoefficients;
+  template <typename E, typename C> friend struct dd4MCoefficientsType1;
+  template <typename E, typename C> friend struct dd4MCoefficientsType2;
+  template <typename E, typename C, typename G, int a, int c, int d, int i,
+            int j, int k, int l>
+  friend struct d2MImpl;
+  template <typename E, typename C, typename G1, typename G2, int a, int i,
+            int j, int k, int l, int m, int n>
+  friend struct fdd4MImpl;
+  template <typename E, typename C> friend struct reconstructMatImpl;
+  template <typename E, typename C, int i, int j, int k, int l>
+  friend struct firstMatrixDirectiveImpl;
+  template <typename E, typename C, int i, int j, int k, int l, int m, int n>
+  friend struct secondMatrixDirectiveImpl;
+  template <typename E, typename C> friend struct getDiffMatImpl;
+  template <typename E, typename C> friend struct getDiffDiffMatImpl;
 
-    template <int a, int i> static inline auto N(Vec &t_vec) {
-      return t_vec(a, i);
+  template <int a, int i> static inline auto N(Vec &t_vec) {
+    return t_vec(a, i);
   }
 
   template <int a> static inline auto L(Val &t_val, const Number<a> &) {

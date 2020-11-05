@@ -9,10 +9,12 @@
 
 #define FTENSOR_DEBUG
 #include <FTensor.hpp>
-#include <MatrixFunction.hpp>
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
+
+#include <MatrixFunction.hpp>
+
 
 static char help[] = "...\n\n";
 
@@ -272,8 +274,7 @@ int main(int argc, char *argv[]) {
         auto d_f = [](double v) { return exp(v); };
         auto dd_f = [](double v) { return exp(v); };
 
-        auto t_b =
-            EigenProjection<double, double, 3>(t_L, t_N).getMat(t_L, t_N, f);
+        auto t_b = EigenProjection<double, double, 3>(t_L, t_N).getMat(f);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Reconstruct mat";
         print_mat(t_b);
 
@@ -336,10 +337,9 @@ int main(int argc, char *argv[]) {
         auto d_f = [](double v) { return exp(v); };
         auto dd_f = [](double v) { return exp(v); };
 
-        auto t_b =
-            EigenProjection<double, double, 3>(t_L, t_N).getMat(t_L, t_N, f);
-        auto t_c = EigenProjection<double, double, 3>(t_L, t_N).getMat(
-            t_eig_vals, t_eig_vec, f);
+        auto t_b = EigenProjection<double, double, 3>(t_L, t_N).getMat(f);
+        auto t_c =
+            EigenProjection<double, double, 3>(t_eig_vals, t_eig_vec).getMat(f);
         t_c(i, j) -= t_b(i, j);
         print_mat(t_c);
 
@@ -367,8 +367,7 @@ int main(int argc, char *argv[]) {
 
         constexpr double eps = 1e-10;
         {
-          auto t_b =
-              EigenProjection<double, double, 3>(t_L, t_N).getMat(t_L, t_N, f);
+          auto t_b = EigenProjection<double, double, 3>(t_L, t_N).getMat(f);
           t_b(i, j) -= (t_A(i, j) || t_A(j, i)) / 2;
           auto norm2_t_b = t_b(i, j) * t_b(i, j);
           MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -428,8 +427,7 @@ int main(int argc, char *argv[]) {
 
         // check if multiplication gives right value
         {
-          auto t_b =
-              EigenProjection<double, double, 3>(t_L, t_N).getMat(t_L, t_N, f);
+          auto t_b = EigenProjection<double, double, 3>(t_L, t_N).getMat(f);
           FTensor::Tensor2<double, 3, 3> t_a;
           t_a(i, j) = t_b(i, j) - t_A(i, k) * t_A(k, j);
           print_mat(t_a);
@@ -510,7 +508,7 @@ int main(int argc, char *argv[]) {
       constexpr double eps = 1e-10;
       {
         auto t_b = EigenProjection<double, double, 3>(t_eig_vals, t_eig_vecs)
-                       .getMat(t_eig_vals, t_eig_vecs, f);
+                       .getMat(f);
         t_b(i, j) -= (t_a(i, j) || t_a(j, i)) / 2;
         auto norm2_t_b = t_b(i, j) * t_b(i, j);
         MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -577,7 +575,7 @@ int main(int argc, char *argv[]) {
       constexpr double eps = 1e-10;
       {
         auto t_b = EigenProjection<double, double, 3>(t_eig_vals, t_eig_vecs)
-                       .getMat(t_eig_vals, t_eig_vecs, f);
+                       .getMat(f);
         t_b(i, j) -= (t_a(i, j) || t_a(j, i)) / 2;
         auto norm2_t_b = t_b(i, j) * t_b(i, j);
         MOFEM_LOG("ATOM_TEST", Sev::inform)
