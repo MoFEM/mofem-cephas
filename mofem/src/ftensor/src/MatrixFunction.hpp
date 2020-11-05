@@ -474,17 +474,18 @@ template <typename E, typename C, typename T> struct getMatImpl {
   inline void set(const Number<0> &, const Number<0> &) {}
 };
 
-template <typename E, typename C> struct getDiffMatImpl {
+template <typename E, typename C, typename T> struct getDiffMatImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
 
   template <int N> using Number = FTensor::Number<N>;
 
-  getDiffMatImpl() = delete;
-  ~getDiffMatImpl() = delete;
+  getDiffMatImpl(E &e, T &t_a) : r(e), tA(t_a) {}
+  reconstructMatImpl<E, C> r;
+  T &tA;
 
-  template <typename T, int I, int J, int K, int L>
+  template <int I, int J, int K, int L>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, T &t_a,
                          const Number<I> &, const Number<J> &,
                          const Number<K> &, const Number<L> &) {
@@ -495,7 +496,7 @@ template <typename E, typename C> struct getDiffMatImpl {
             t_val, t_vec, f, d_f, Number<3>());
   }
 
-  template <typename T, int I, int J, int K>
+  template <int I, int J, int K>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, T &t_a,
                          const Number<I> &, const Number<J> &,
                          const Number<K> &, const Number<0> &) {
@@ -503,7 +504,7 @@ template <typename E, typename C> struct getDiffMatImpl {
         Number<K - 1>());
   }
 
-  template <typename T, int I, int J>
+  template <int I, int J>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, T &t_a,
                          const Number<I> &, const Number<J> &,
                          const Number<0> &, const Number<0> &) {
@@ -511,7 +512,7 @@ template <typename E, typename C> struct getDiffMatImpl {
         Number<3>());
   }
 
-  template <typename T, int I, int K, int L>
+  template <int I, int K, int L>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, T &t_a,
                          const Number<I> &, const Number<0> &,
                          const Number<K> &, const Number<L> &) {
@@ -519,7 +520,7 @@ template <typename E, typename C> struct getDiffMatImpl {
         Number<K>(), Number<L>());
   }
 
-  template <typename T, int K, int L>
+  template <int K, int L>
   static inline void set(Val &t_val, Vec &t_vec, Fun f, Fun d_f, T &t_a,
                          const Number<0> &, const Number<0> &,
                          const Number<K> &, const Number<L> &) {}
@@ -701,10 +702,12 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
 
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
-    FTensor::Ddg<V, Dim, Dim> t_diff_A;
-    getDiffMatImpl<EigenProjection<T1, T2, NB>, V>::set(
-        t_val, t_vec, f, d_f, t_diff_A, Number<Dim>(), Number<Dim>(),
-        Number<Dim>(), Number<Dim>());
+    using T3 = FTensor::Ddg<V, Dim, Dim>;
+    T3 t_diff_A;
+
+    getDiffMatImpl<EigenProjection<T1, T2, NB>, V, T3>(*this, t_diff_A)
+        .set(t_val, t_vec, f, d_f, t_diff_A, Number<Dim>(), Number<Dim>(),
+             Number<Dim>(), Number<Dim>());
     return t_diff_A;
   }
 
@@ -769,7 +772,7 @@ private:
   friend struct firstMatrixDirectiveImpl;
   template <typename E, typename C, int i, int j, int k, int l, int m, int n>
   friend struct secondMatrixDirectiveImpl;
-  template <typename E, typename C> friend struct getDiffMatImpl;
+  template <typename E, typename C, typename T> friend struct getDiffMatImpl;
   template <typename E, typename C> friend struct getDiffDiffMatImpl;
 
   template <int a, int i> static inline auto N(Vec &t_vec) {
