@@ -399,60 +399,56 @@ struct secondMatrixDirectiveImpl {
   E &e;
 
   template <int a, int i, int j, int k, int l, int m, int n>
-  static inline C term(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f) {
+  inline C term(Fun f, Fun d_f, Fun dd_f) {
 
     return
 
         (
 
             d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, -1, i, j, m, n>::eval(
-                t_val, t_vec, d_f, dd_f, dd_f, Number<3>()) *
-                E::M(t_vec, Number<a>(), Number<k>(), Number<l>())
+                e.tVal, e.tVec, d_f, dd_f, dd_f, Number<3>()) *
+                e.aM(a, k, l)
 
             +
 
-            E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
+            e.aM(a, i, j) *
                 d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, -1, k, l, m,
-                        n>::eval(t_val, t_vec, d_f, dd_f, dd_f, Number<3>())
+                        n>::eval(e.tVal, e.tVec, d_f, dd_f, dd_f, Number<3>())
 
                 ) /
             static_cast<C>(2) +
 
-        E::M(t_vec, Number<a>(), Number<i>(), Number<j>()) *
-            E::M(t_vec, Number<a>(), Number<k>(), Number<l>()) *
-            E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) *
-            dd_f(E::L(t_val, Number<a>())) +
+        e.aM(a, i, j) * e.aM(a, k, l) * e.aM(a, m, n) * e.ddfVal(a)
+
+        +
 
         fdd4MImpl<E, C, dd4MCoefficientsType1<E, C>,
                   dd4MCoefficientsType2<E, C>, a, i, j, k, l, m,
-                  n>::eval(t_val, t_vec, f, d_f, dd_f, Number<3>()) /
+                  n>::eval(e.tVal, e.tVec, f, d_f, dd_f, Number<3>()) /
             static_cast<C>(4) +
 
         d2MImpl<E, C, d2MCoefficients<E, C>, a, -1, -1, i, j, k, l>::eval(
-            t_val, t_vec, d_f, dd_f, dd_f, Number<3>()) *
-            E::M(t_vec, Number<a>(), Number<m>(), Number<n>()) /
-            static_cast<C>(2);
+            e.tVal, e.tVec, d_f, dd_f, dd_f, Number<3>()) *
+            e.aM(a, m, n) / static_cast<C>(2);
   }
 
   template <int nb, int i, int j, int k, int l, int m, int n>
-  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<nb> &, const Number<i>&, const Number<j>&,
-                       const Number<k>&, const Number<l>&, const Number<m>&, const Number<n>&) {
-    return term<nb - 1, i, j, k, l, m, n>(t_val, t_vec, f, d_f, dd_f)
+  inline C eval(Fun f, Fun d_f, Fun dd_f, const Number<nb> &, const Number<i> &,
+                const Number<j> &, const Number<k> &, const Number<l> &,
+                const Number<m> &, const Number<n> &) {
+    return term<nb - 1, i, j, k, l, m, n>(f, d_f, dd_f)
 
            +
 
-           eval(t_val, t_vec, f, d_f, dd_f, Number<nb - 1>(), Number<i>(),
-                Number<j>(), Number<k>(), Number<l>(), Number<m>(),
-                Number<n>());
+           eval(f, d_f, dd_f, Number<nb - 1>(), Number<i>(), Number<j>(),
+                Number<k>(), Number<l>(), Number<m>(), Number<n>());
   }
 
   template <int i, int j, int k, int l, int m, int n>
-  static inline C eval(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                       const Number<1> &, const Number<i> &, const Number<j> &,
-                       const Number<k> &, const Number<l> &, const Number<m> &,
-                       const Number<n>) {
-    return term<0, i, j, k, l, m, n>(t_val, t_vec, f, d_f, dd_f);
+  inline C eval(Fun f, Fun d_f, Fun dd_f, const Number<1> &, const Number<i> &,
+                const Number<j> &, const Number<k> &, const Number<l> &,
+                const Number<m> &, const Number<n>) {
+    return term<0, i, j, k, l, m, n>(f, d_f, dd_f);
   }
 };
 
@@ -550,10 +546,10 @@ struct getDiffDiffMatImpl {
   inline auto add(Fun f, Fun d_f, Fun dd_f, const Number<I> &,
                   const Number<J> &, const Number<K> &, const Number<L> &,
                   const Number<M> &, const Number<N> &) {
-    return tS(M - 1, N - 1) * r.eval(e.tVal, e.tVec, f, d_f, dd_f, Number<3>(),
-                                     Number<M - 1>(), Number<N - 1>(),
-                                     Number<I - 1>(), Number<J - 1>(),
-                                     Number<K - 1>(), Number<L - 1>())
+    return tS(M - 1, N - 1) * r.eval(f, d_f, dd_f, Number<3>(), Number<M - 1>(),
+                                     Number<N - 1>(), Number<I - 1>(),
+                                     Number<J - 1>(), Number<K - 1>(),
+                                     Number<L - 1>())
 
            +
 
@@ -565,10 +561,9 @@ struct getDiffDiffMatImpl {
   inline auto add(Fun f, Fun d_f, Fun dd_f, const Number<I> &,
                   const Number<J> &, const Number<K> &, const Number<L> &,
                   const Number<M> &, const Number<1> &) {
-    return tS(M - 1, 0) * r.eval(e.tVal, e.tVec, f, d_f, dd_f, Number<3>(),
-                                 Number<M - 1>(), Number<0>(), Number<I - 1>(),
-                                 Number<J - 1>(), Number<K - 1>(),
-                                 Number<L - 1>())
+    return tS(M - 1, 0) * r.eval(f, d_f, dd_f, Number<3>(), Number<M - 1>(),
+                                 Number<0>(), Number<I - 1>(), Number<J - 1>(),
+                                 Number<K - 1>(), Number<L - 1>())
 
            +
 
@@ -580,9 +575,9 @@ struct getDiffDiffMatImpl {
   inline auto add(Fun f, Fun d_f, Fun dd_f, const Number<I> &, const Number<J> &,
                   const Number<K> &, const Number<L> &, const Number<1> &,
                   const Number<1> &) {
-    return tS(0, 0) * r.eval(e.tVal, e.tVec, f, d_f, dd_f, Number<3>(),
-                             Number<0>(), Number<0>(), Number<I - 1>(),
-                             Number<J - 1>(), Number<K - 1>(), Number<L - 1>());
+    return tS(0, 0) * r.eval(f, d_f, dd_f, Number<3>(), Number<0>(),
+                             Number<0>(), Number<I - 1>(), Number<J - 1>(),
+                             Number<K - 1>(), Number<L - 1>());
   }
 
   template <int I, int J, int K, int L>
