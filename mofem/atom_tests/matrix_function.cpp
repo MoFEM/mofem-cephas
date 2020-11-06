@@ -1001,7 +1001,6 @@ int main(int argc, char *argv[]) {
 
         MOFEM_LOG("ATOM_TEST", Sev::inform) << "Start";
 
-        BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", ;
         for (int ii = 0; ii != 100; ++ii) {
           auto t_dd =
               EigenProjection<double, double, 3>(t_eig_vals, t_eig_vecs)
