@@ -771,20 +771,6 @@ private:
   template <typename E, typename C, typename T3, typename T4>
   friend struct getDiffDiffMatImpl;
 
-  template <int a, int i> static inline auto N(Vec &t_vec) {
-    return t_vec(a, i);
-  }
-
-  template <int a, int i, int j>
-  static inline auto M(Vec &t_vec, const Number<a> &, const Number<i> &,
-                       const Number<j> &) {
-    return M<a, i, j>(t_vec);
-  }
-
-  template <int a, int i, int j> static inline auto M(Vec &t_vec) {
-    return N<a, i>(t_vec) * N<a, j>(t_vec);
-  }
-
   template <int a, int b, int i, int j>
   inline auto dFdN(const Number<a> &, const Number<b> &, const Number<i> &,
                    const Number<j> &) {
