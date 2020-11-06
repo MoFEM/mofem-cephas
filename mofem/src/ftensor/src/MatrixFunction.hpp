@@ -204,8 +204,8 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
   template <int a, int b, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<m> &,
                   const Number<n> &, const Number<3> &) {
-    return e.fVal(a) * E::dFdN(e.tVal, e.tVec, Number<a>(), Number<b>(),
-                               Number<m>(), Number<n>());
+    return e.fVal(a) * e.dFdN(e.tVal, e.tVec, Number<a>(), Number<b>(),
+                              Number<m>(), Number<n>());
   }
 
   template <int a, int b, int m, int n>
@@ -772,20 +772,6 @@ private:
     return t_vec(a, i);
   }
 
-  template <int a> static inline auto L(Val &t_val, const Number<a> &) {
-    return L<a>(t_val);
-  }
-  template <int a> static inline auto L(Val &t_val) { return t_val(a); }
-
-  template <int a, int b>
-  static inline auto F(Val &t_val, const Number<a> &, const Number<b> &) {
-    return F<a, b>(t_val);
-  }
-
-  template <int a, int b> static inline auto F(Val &t_val) {
-    return static_cast<decltype(t_val(0))>(1) / (L<a>(t_val) - L<b>(t_val));
-  }
-
   template <int a, int i, int j>
   static inline auto M(Vec &t_vec, const Number<a> &, const Number<i> &,
                        const Number<j> &) {
@@ -811,27 +797,25 @@ private:
   }
 
   template <int a, int b, int i, int j>
-  static inline auto dFdN(Val &t_val, Vec &t_vec, const Number<a> &,
+  inline auto dFdN(Val &t_val, Vec &t_vec, const Number<a> &,
                           const Number<b> &, const Number<i> &,
                           const Number<j> &) {
     return dFdN<a, b, i, j>(t_val, t_vec);
   }
 
   template <int a, int b, int i, int j>
-  static inline auto dFdN(Val &t_val, Vec &t_vec) {
+  inline auto dFdN(Val &t_val, Vec &t_vec) {
     return dFdNa<a, b, i, j>(t_val, t_vec) + dFdNb<a, b, i, j>(t_val, t_vec);
   }
 
   template <int a, int b, int i, int j>
-  static inline auto dFdNa(Val &t_val, Vec &t_vec) {
-    return -M<a, i, j>(t_vec) /
-           ((L<a>(t_val) - L<b>(t_val)) * (L<a>(t_val) - L<b>(t_val)));
+  inline auto dFdNa(Val &t_val, Vec &t_vec) {
+    return -aM(a, i, j) / ((tVal(a) - tVal(b)) * (tVal(a) - tVal(b)));
   }
 
   template <int a, int b, int i, int j>
-  static inline auto dFdNb(Val &t_val, Vec &t_vec) {
-    return M<b, i, j>(t_vec) /
-           ((L<a>(t_val) - L<b>(t_val)) * (L<a>(t_val) - L<b>(t_val)));
+  inline auto dFdNb(Val &t_val, Vec &t_vec) {
+    return aM(b, i, j) / ((tVal(a) - tVal(b)) * (tVal(a) - tVal(b)));
   }
 
   template <int a, int b, int i, int j, int k, int l>

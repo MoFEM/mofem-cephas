@@ -648,19 +648,11 @@ int main(int argc, char *argv[]) {
 
       FTensor::Tensor2<double, 3, 3> t_S{
 
-          0., 0., 0.,
+          1.,      1. / 2., 1. / 3.,
 
-          0., 1., 0.,
+          2. / 2., 1.,      2. / 3.,
 
-          0., 0., 0.};
-
-      // FTensor::Tensor2<double, 3, 3> t_S{
-
-      //     1.,      1. / 2., 1. / 3.,
-
-      //     2. / 2., 1.,      2. / 3.,
-
-      //     3. / 2., 1.,      3. / 3.};
+          3. / 2., 1.,      3. / 3.};
 
       auto t_dd =
           EigenProjection<double, double, 1>(t_eig_vals, t_eig_vecs)
@@ -979,6 +971,45 @@ int main(int argc, char *argv[]) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                 "This norm should be zero");
     }
+
+    // Speed
+    {
+
+        std::array<double, 9> a{1.,   0.1, -0.5,
+
+                                0.1,  2.,  0.,
+
+                                -0.5, 0.,  3.};
+
+        auto tuple = run_lapack(a);
+        auto &t_a = std::get<0>(tuple);
+        auto &t_eig_vecs = std::get<1>(tuple);
+        auto &t_eig_vals = std::get<2>(tuple);
+
+        auto f = [](double v) { return exp(v); };
+        auto d_f = [](double v) { return exp(v); };
+        auto dd_f = [](double v) { return exp(v); };
+
+        FTensor::Tensor2<double, 3, 3> t_S{
+
+            1.,      1. / 2., 1. / 3.,
+
+            2. / 1., 1.,      2. / 3.,
+
+            3. / 1., 3. / 1., 1.};
+
+
+        MOFEM_LOG("ATOM_TEST", Sev::inform) << "Start";
+
+        BOOST_LOG_SCOPED_THREAD_ATTR("Timeline", ;
+        for (int ii = 0; ii != 100; ++ii) {
+          auto t_dd =
+              EigenProjection<double, double, 3>(t_eig_vals, t_eig_vecs)
+                  .getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+        }
+        MOFEM_LOG("ATOM_TEST", Sev::inform) << "End";
+    }
+    
 
   }
   CATCH_ERRORS;
