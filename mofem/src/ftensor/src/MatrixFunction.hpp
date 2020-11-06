@@ -688,6 +688,7 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
       for (auto bb = 0; bb != aa; ++bb) {
         aF(aa, bb) = 1 / (tVal(aa) - tVal(bb));
         aF(bb, aa) = -aF(aa, bb);
+        aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
       }
 
     using V =
@@ -733,6 +734,7 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
       for (auto bb = 0; bb != aa; ++bb) {
         aF(aa, bb) = 1 / (tVal(aa) - tVal(bb));
         aF(bb, aa) = -aF(aa, bb);
+        aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
       }
 
     using V =
@@ -750,6 +752,7 @@ private:
   Vec &tVec;
   FTensor::Christof<T2, Dim, Dim> aM;
   FTensor::Tensor2<T1, Dim, Dim> aF;
+  FTensor::Tensor2<T1, Dim, Dim> aF2;
   FTensor::Tensor1<T1, Dim> fVal;
   FTensor::Tensor1<T1, Dim> dfVal;
   FTensor::Tensor1<T1, Dim> ddfVal;
@@ -803,7 +806,7 @@ private:
   }
 
   template <int a, int b, int i, int j> inline auto dFdN() {
-    return (-aM(a, i, j) + aM(b, i, j)) * (aF(a, b) * aF(a, b));
+    return (-aM(a, i, j) + aM(b, i, j)) * aF2(a, b);
   }
 
   template <int a, int b, int i, int j, int k, int l>
