@@ -241,8 +241,8 @@ template <typename E, typename C, typename G> struct d2MImpl {
     if (a != b) {
       return g.get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
                    typename E::NumberNb()) *
-             E::S(e.tVec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
-                  Number<k>(), Number<l>());
+             e.S(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
+                 Number<k>(), Number<l>());
     }
     return 0;
   }
@@ -312,8 +312,8 @@ template <typename E, typename C, typename G1, typename G2> struct fdd4MImpl {
 
               g2.get(Number<a>(), Number<b>(), Number<m>(), Number<n>(),
                      typename E::NumberNb()) *
-              E::S(e.tVec, Number<a>(), Number<b>(), Number<i>(), Number<j>(),
-                   Number<k>(), Number<l>());
+              e.S(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
+                  Number<k>(), Number<l>());
     }
 
     return 0;
@@ -785,20 +785,6 @@ private:
     return N<a, i>(t_vec) * N<a, j>(t_vec);
   }
 
-  template <int a, int b, int i, int j, int k, int l>
-  static inline auto G(Vec &t_vec, const Number<a> &, const Number<b> &,
-                       const Number<i> &, const Number<j> &, const Number<k> &,
-                       const Number<l> &) {
-    return M<a, i, k>(t_vec) * M<b, j, l>(t_vec) +
-           M<a, i, l>(t_vec) * M<b, j, k>(t_vec);
-  }
-
-  template <int a, int b, int i, int j, int k, int l>
-  static inline auto G(Vec &t_vec) {
-    return M<a, i, k>(t_vec) * M<b, j, l>(t_vec) +
-           M<a, i, l>(t_vec) * M<b, j, k>(t_vec);
-  }
-
   template <int a, int b, int i, int j>
   inline auto dFdN(const Number<a> &, const Number<b> &, const Number<i> &,
                    const Number<j> &) {
@@ -810,14 +796,22 @@ private:
   }
 
   template <int a, int b, int i, int j, int k, int l>
-  static inline auto S(Vec &t_vec, const Number<a> &, const Number<b> &,
-                       const Number<i> &, const Number<j> &, const Number<k> &,
-                       const Number<l> &) {
-    return S<a, b, i, j, k, l>(t_vec);
+  inline auto G(const Number<a> &, const Number<b> &, const Number<i> &,
+                const Number<j> &, const Number<k> &, const Number<l> &) {
+    return G<a, b, i, j, k, l>();
+  }
+
+  template <int a, int b, int i, int j, int k, int l> inline auto G() {
+    return aM(a, i, k) * aM(b, j, l) + aM(a, i, l) * aM(b, j, k);
   }
 
   template <int a, int b, int i, int j, int k, int l>
-  static inline auto S(Vec &t_vec) {
-    return G<a, b, i, j, k, l>(t_vec) + G<b, a, i, j, k, l>(t_vec);
+  inline auto S(const Number<a> &, const Number<b> &, const Number<i> &,
+                const Number<j> &, const Number<k> &, const Number<l> &) {
+    return S<a, b, i, j, k, l>();
+  }
+
+  template <int a, int b, int i, int j, int k, int l> inline auto S() {
+    return G<a, b, i, j, k, l>() + G<b, a, i, j, k, l>();
   }
 };

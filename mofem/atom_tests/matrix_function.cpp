@@ -1000,11 +1000,11 @@ int main(int argc, char *argv[]) {
 
 
         MOFEM_LOG("ATOM_TEST", Sev::inform) << "Start";
-
-        for (int ii = 0; ii != 100; ++ii) {
+        auto e = EigenProjection<double, double, 3>(t_eig_vals, t_eig_vecs);
+        for (int ii = 0; ii != 1000; ++ii) {
+          auto t_d = e.getDiffMat(t_eig_vals, t_eig_vecs, f, d_f);
           auto t_dd =
-              EigenProjection<double, double, 3>(t_eig_vals, t_eig_vecs)
-                  .getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
+              e.getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f, dd_f, t_S);
         }
         MOFEM_LOG("ATOM_TEST", Sev::inform) << "End";
     }
