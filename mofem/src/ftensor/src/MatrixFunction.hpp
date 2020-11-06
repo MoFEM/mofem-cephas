@@ -803,16 +803,7 @@ private:
   }
 
   template <int a, int b, int i, int j> inline auto dFdN() {
-    return dFdNa<a, b, i, j>() + dFdNb<a, b, i, j>();
-  }
-
-  template <int a, int b, int i, int j>
-  inline auto dFdNa() {
-    return -aM(a, i, j) / ((tVal(a) - tVal(b)) * (tVal(a) - tVal(b)));
-  }
-
-  template <int a, int b, int i, int j> inline auto dFdNb() {
-    return aM(b, i, j) / ((tVal(a) - tVal(b)) * (tVal(a) - tVal(b)));
+    return (-aM(a, i, j) + aM(b, i, j)) * (aF(a, b) * aF(a, b));
   }
 
   template <int a, int b, int i, int j, int k, int l>
