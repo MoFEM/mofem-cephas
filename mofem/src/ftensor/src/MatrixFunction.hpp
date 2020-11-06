@@ -79,7 +79,7 @@ template <typename E, typename C> struct d2MCoefficients {
   template <int a, int b>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
                   const Number<-1> &, const Number<3> &) {
-    return e.fVal(a) * E::F(e.tVal, Number<a>(), Number<b>());
+    return e.fVal(a) * e.aF(a, b);
   }
 
   template <int a, int b>
@@ -113,7 +113,7 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
   template <int a, int b>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
                   const Number<-1> &, const Number<3> &) {
-    return e.dfVal(a) * E::F(e.tVal, Number<a>(), Number<b>());
+    return e.dfVal(a) * e.aF(a, b);
   }
 
   template <int a, int b>
@@ -147,8 +147,7 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   template <int a, int b, int c, int d>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
                   const Number<d> &, const Number<3> &) {
-    return e.fVal(c) * E::F(e.tVal, Number<c>(), Number<d>()) *
-           E::F(e.tVal, Number<a>(), Number<b>());
+    return e.fVal(c) * e.aF(c, d) * e.aF(a, b);
   }
 
   template <int a, int b, int c, int d>
@@ -164,8 +163,7 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
                  Number<1>());
 
     if ((c != 1 && d != 1) && (a == 1 || b == 1))
-      return e.dfVal(c) * E::F(e.tVal, Number<a>(), Number<b>()) /
-             static_cast<C>(2);
+      return e.dfVal(c) * e.aF(a, b) / static_cast<C>(2);
 
     if ((c == 1 || d == 1) && (a != 1 && b != 1)) {
 
@@ -174,11 +172,10 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
 
                    e.dfVal(c)
 
-                   - (e.fVal(c) - e.fVal(d)) *
-                         E::F(e.tVal, Number<c>(), Number<d>())
+                   - (e.fVal(c) - e.fVal(d)) * e.aF(c, d)
 
                        ) *
-               E::F(e.tVal, Number<c>(), Number<d>());
+               e.aF(c, d);
     }
 
     return static_cast<C>(0);
@@ -687,6 +684,12 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
     for (auto aa : {0, 1, 2})
       dfVal(aa) = d_f(tVal(aa));
 
+    for (auto aa : {0, 1, 2})
+      for (auto bb = 0; bb != aa; ++bb) {
+        aF(aa, bb) = 1 / (tVal(aa) - tVal(bb));
+        aF(bb, aa) = -aF(aa, bb);
+      }
+
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
@@ -726,6 +729,12 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
     for (auto aa : {0, 1, 2})
       ddfVal(aa) = dd_f(tVal(aa));
 
+    for(auto aa : {0, 1, 2})
+      for (auto bb = 0; bb != aa; ++bb) {
+        aF(aa, bb) = 1 / (tVal(aa) - tVal(bb));
+        aF(bb, aa) = -aF(aa, bb);
+      }
+
     using V =
         typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
@@ -740,6 +749,7 @@ private:
   Val &tVal;
   Vec &tVec;
   FTensor::Christof<T2, Dim, Dim> aM;
+  FTensor::Tensor2<T1, Dim, Dim> aF;
   FTensor::Tensor1<T1, Dim> fVal;
   FTensor::Tensor1<T1, Dim> dfVal;
   FTensor::Tensor1<T1, Dim> ddfVal;
