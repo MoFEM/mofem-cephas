@@ -676,7 +676,7 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
    * @param d_f directive of function
    * @return auto direvatives, forth order tensor with minor simetries
    */
-  inline auto getDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f) {
+  inline auto getDiffMat(Fun f, Fun d_f) {
 
     for (auto aa : {0, 1, 2})
       fVal(aa) = f(tVal(aa));
@@ -691,8 +691,7 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
         aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
       }
 
-    using V =
-        typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
+    using V = typename FTensor::promote<T1, T2>::V;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     T3 t_diff_A;
     getDiffMatImpl<EigenProjection<T1, T2, NB>, V, T3>(*this, t_diff_A)
@@ -718,8 +717,7 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
    * @return auto second direvatives, forth order tensor with minor simetries
    */
   template <typename T>
-  inline auto getDiffDiffMat(Val &t_val, Vec &t_vec, Fun f, Fun d_f, Fun dd_f,
-                             T &t_S) {
+  inline auto getDiffDiffMat(Fun f, Fun d_f, Fun dd_f, T &t_S) {
 
     for (auto aa : {0, 1, 2})
       fVal(aa) = f(tVal(aa));
@@ -737,8 +735,7 @@ template <typename T1, typename T2, int NB> struct EigenProjection {
         aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
       }
 
-    using V =
-        typename FTensor::promote<decltype(t_val(0)), decltype(t_vec(0, 0))>::V;
+    using V = typename FTensor::promote<T1, T2>::V;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     T3 t_diff_A;
     getDiffDiffMatImpl<EigenProjection<T1, T2, NB>, V, T3, T>(*this, t_diff_A,
