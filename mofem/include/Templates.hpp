@@ -525,8 +525,15 @@ getFTensor4FromMat(MatrixDouble &data) {
 template <int DIM>
 inline FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM>
 getFTensor1FromPtr(double *ptr) {
-  static_assert(DIM != 3,
+  static_assert(DIM != 3 && DIM != 2,
                 "Such getFTensor1FromPtr specialization is not implemented");
+};
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
+getFTensor1FromPtr<2>(double *ptr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(
+      &ptr[HVEC0], &ptr[HVEC1]);
 };
 
 template <>
@@ -600,6 +607,37 @@ inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
 getFTensor1FromArray(VectorDouble &data) {
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{&data[0], &data[1],
                                                             &data[2]};
+}
+
+/**
+ * @brief Get FTensor1 from array
+ *
+ * \todo Generalise for diffrent arrays and data types
+ *
+ * @tparam DIM
+ * @param data
+ * @param rr
+ * @return FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM>
+ */
+template <int DIM, int S>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
+getFTensor1FromArrayDiag(MatrixDouble &data, const size_t rr) {
+  static_assert(DIM != DIM, "not implemented");
+  return FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>();
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
+getFTensor1FromArrayDiag(MatrixDouble &data, const size_t rr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{&data(rr + 0, 0),
+                                                            &data(rr + 1, 1)};
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+getFTensor1FromArrayDiag(MatrixDouble &data, const size_t rr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{
+      &data(rr + 0, 0), &data(rr + 1, 1), &data(rr + 2, 2)};
 }
 
 /**
