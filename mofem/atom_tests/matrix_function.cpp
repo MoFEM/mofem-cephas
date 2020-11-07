@@ -15,6 +15,156 @@ using namespace MoFEM;
 
 #include <MatrixFunction.hpp>
 
+FTensor::Index<'i', 3> i;
+FTensor::Index<'j', 3> j;
+FTensor::Index<'k', 3> k;
+FTensor::Index<'l', 3> l;
+
+template <typename T1, typename T2, int DIM>
+void diff_ddg(T1 &t_1, T2 &t_2, const FTensor::Number<DIM> &) {
+  constexpr double eps = 1e-4;
+  for (int ii = 0; ii != DIM; ++ii)
+    for (int jj = 0; jj != DIM; ++jj)
+      for (int kk = 0; kk != DIM; ++kk)
+        for (int ll = 0; ll != DIM; ++ll) {
+
+          if (std::abs(t_1(ii, jj, kk, ll) - t_2(ii, jj, kk, ll)) > eps)
+            MOFEM_LOG("ATOM_TEST", Sev::error)
+                << "Error " << ii << " " << jj << " " << kk << " " << ll << " "
+                << t_1(ii, jj, kk, ll) << " " << t_2(ii, jj, kk, ll);
+        }
+
+  for (int ii = 0; ii != DIM; ++ii)
+    for (int jj = 0; jj != DIM; ++jj)
+      for (int kk = 0; kk != DIM; ++kk)
+        for (int ll = 0; ll != DIM; ++ll)
+          t_1(ii, jj, kk, ll) -= t_2(ii, jj, kk, ll);
+};
+
+template <typename T1, typename T2, int DIM>
+auto get_diff_matrix2(T1 &t_a, T2 &t_d, const FTensor::Number<DIM> &) {
+  constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+  FTensor::Tensor4<double, DIM, DIM, DIM, DIM> t_d_a;
+
+  FTensor::Index<'i', DIM> i;
+  FTensor::Index<'j', DIM> j;
+  FTensor::Index<'k', DIM> k;
+  FTensor::Index<'l', DIM> l;
+
+  t_d_a(i, j, k, l) = 0;
+
+  for (int ii = 0; ii != DIM; ++ii)
+    for (int jj = 0; jj != DIM; ++jj)
+      for (int kk = 0; kk != DIM; ++kk)
+        for (int ll = 0; ll != DIM; ++ll)
+          for (int zz = 0; zz != DIM; ++zz) {
+
+            auto diff = [&](auto ii, auto jj, auto kk, auto ll, int zz) {
+              return
+
+                  t_a(ii, zz) * t_kd(zz, kk) * t_kd(jj, ll)
+
+                  +
+
+                  t_kd(ii, kk) * t_kd(zz, ll) * t_a(zz, jj);
+            };
+
+            t_d_a(ii, jj, kk, ll) +=
+                (diff(ii, jj, kk, ll, zz) + diff(ii, jj, ll, kk, zz)) / 2.;
+          }
+
+  diff_ddg(t_d_a, t_d, FTensor::Number<DIM>());
+
+  return t_d_a;
+};
+
+template <typename T1, typename T2, int DIM>
+auto get_diff2_matrix2(T1 &t_s, T2 &t_dd, const FTensor::Number<DIM> &) {
+  constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+  FTensor::Tensor4<double, DIM, DIM, DIM, DIM> t_dd_a;
+
+  FTensor::Index<'i', DIM> i;
+  FTensor::Index<'j', DIM> j;
+  FTensor::Index<'k', DIM> k;
+  FTensor::Index<'l', DIM> l;
+
+  t_dd_a(i, j, k, l) = 0;
+
+  for (int ii = 0; ii != DIM; ++ii)
+    for (int jj = 0; jj != DIM; ++jj)
+      for (int kk = 0; kk != DIM; ++kk)
+        for (int ll = 0; ll != DIM; ++ll)
+          for (int mm = 0; mm != DIM; ++mm)
+            for (int nn = 0; nn != DIM; ++nn)
+              for (int zz = 0; zz != DIM; ++zz) {
+
+                auto diff = [&](auto ii, auto jj, auto kk, auto ll, int mm,
+                                int nn, int zz) {
+                  return
+
+                      t_s(ii, jj) *
+                      (t_kd(ii, mm) * t_kd(zz, nn) * t_kd(zz, kk) * t_kd(jj, ll)
+
+                       +
+
+                       t_kd(ii, kk) * t_kd(zz, ll) * t_kd(zz, mm) *
+                           t_kd(jj, nn));
+                };
+
+                t_dd_a(kk, ll, mm, nn) += (
+
+                                              diff(ii, jj, kk, ll, mm, nn, zz)
+
+                                              +
+
+                                              diff(ii, jj, ll, kk, mm, nn, zz)
+
+                                              +
+
+                                              diff(ii, jj, kk, ll, nn, mm, zz)
+
+                                              +
+
+                                              diff(ii, jj, ll, kk, nn, mm, zz)
+
+                                                  ) /
+                                          4.;
+              }
+
+  diff_ddg(t_dd_a, t_dd, FTensor::Number<DIM>());
+
+  return t_dd_a;
+};
+
+template <typename T1, int DIM>
+auto get_diff_matrix(T1 &t_d, const FTensor::Number<DIM> &) {
+  constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
+  FTensor::Tensor4<double, DIM, DIM, DIM, DIM> t_d_a;
+
+  FTensor::Index<'i', DIM> i;
+  FTensor::Index<'j', DIM> j;
+  FTensor::Index<'k', DIM> k;
+  FTensor::Index<'l', DIM> l;
+
+  t_d_a(i, j, k, l) = 0;
+
+  for (int ii = 0; ii != DIM; ++ii)
+    for (int jj = 0; jj != DIM; ++jj)
+      for (int kk = 0; kk != DIM; ++kk)
+        for (int ll = 0; ll != DIM; ++ll) {
+
+          auto diff = [&](auto ii, auto jj, auto kk, auto ll) {
+            return t_kd(ii, kk) * t_kd(jj, ll);
+          };
+
+          t_d_a(ii, jj, kk, ll) =
+              (diff(ii, jj, kk, ll) + diff(ii, jj, ll, kk)) / 2.;
+        }
+
+  diff_ddg(t_d_a, t_d, FTensor::Number<3>());
+
+  return t_d_a;
+};
 
 static char help[] = "...\n\n";
 
@@ -30,11 +180,6 @@ int main(int argc, char *argv[]) {
   MOFEM_LOG_ATTRIBUTES("ATOM_TEST", LogManager::BitLineID);
 
   try {
-
-    FTensor::Index<'i', 3> i;
-    FTensor::Index<'j', 3> j;
-    FTensor::Index<'k', 3> k;
-    FTensor::Index<'l', 3> l;
 
     auto print_ddg = [](auto &t, auto str = "") {
       constexpr double eps = 1e-6;
@@ -114,130 +259,7 @@ int main(int argc, char *argv[]) {
       return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
     };
 
-    auto diff_ddg = [i, j, k, l](auto &t_1, auto &t_2) {
-      constexpr double eps = 1e-4;
-      for (int ii = 0; ii != 3; ++ii)
-        for (int jj = 0; jj != 3; ++jj)
-          for (int kk = 0; kk != 3; ++kk)
-            for (int ll = 0; ll != 3; ++ll) {
-
-              if (std::abs(t_1(ii, jj, kk, ll) - t_2(ii, jj, kk, ll)) > eps)
-                MOFEM_LOG("ATOM_TEST", Sev::error)
-                    << "Error " << ii << " " << jj << " " << kk << " " << ll
-                    << " " << t_1(ii, jj, kk, ll) << " " << t_2(ii, jj, kk, ll);
-            }
-
-      for (int ii = 0; ii != 3; ++ii)
-        for (int jj = 0; jj != 3; ++jj)
-          for (int kk = 0; kk != 3; ++kk)
-            for (int ll = 0; ll != 3; ++ll)
-              t_1(ii, jj, kk, ll) -= t_2(ii, jj, kk, ll);
-    };
-
-    auto get_diff_matrix = [i, j, k, l, diff_ddg](auto &t_d) {
-      constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
-      FTensor::Tensor4<double, 3, 3, 3, 3> t_d_a;
-      t_d_a(i, j, k, l) = 0;
-
-      for (int ii = 0; ii != 3; ++ii)
-        for (int jj = 0; jj != 3; ++jj)
-          for (int kk = 0; kk != 3; ++kk)
-            for (int ll = 0; ll != 3; ++ll) {
-
-              auto diff = [&](auto ii, auto jj, auto kk, auto ll) {
-                return t_kd(ii, kk) * t_kd(jj, ll);
-              };
-
-              t_d_a(ii, jj, kk, ll) =
-                  (diff(ii, jj, kk, ll) + diff(ii, jj, ll, kk)) / 2.;
-            }
-
-      diff_ddg(t_d_a, t_d);
-
-      return t_d_a;
-    };
-
-    auto get_diff_matrix2 = [i, j, k, l, diff_ddg](auto &t_a, auto &t_d) {
-      constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
-      FTensor::Tensor4<double, 3, 3, 3, 3> t_d_a;
-      t_d_a(i, j, k, l) = 0;
-
-      for (int ii = 0; ii != 3; ++ii)
-        for (int jj = 0; jj != 3; ++jj)
-          for (int kk = 0; kk != 3; ++kk)
-            for (int ll = 0; ll != 3; ++ll)
-              for (int zz = 0; zz != 3; ++zz) {
-
-                auto diff = [&](auto ii, auto jj, auto kk, auto ll, int zz) {
-                  return
-
-                      t_a(ii, zz) * t_kd(zz, kk) * t_kd(jj, ll)
-
-                      +
-
-                      t_kd(ii, kk) * t_kd(zz, ll) * t_a(zz, jj);
-                };
-
-                t_d_a(ii, jj, kk, ll) +=
-                    (diff(ii, jj, kk, ll, zz) + diff(ii, jj, ll, kk, zz)) / 2.;
-              }
-
-      diff_ddg(t_d_a, t_d);
-
-      return t_d_a;
-    };
-
-    auto get_diff2_matrix2 = [i, j, k, l, diff_ddg](auto &t_s, auto &t_dd) {
-      constexpr auto t_kd = FTensor::Kronecker_Delta<double>();
-      FTensor::Tensor4<double, 3, 3, 3, 3> t_dd_a;
-      t_dd_a(i, j, k, l) = 0;
-
-      for (int ii = 0; ii != 3; ++ii)
-        for (int jj = 0; jj != 3; ++jj)
-          for (int kk = 0; kk != 3; ++kk)
-            for (int ll = 0; ll != 3; ++ll)
-              for (int mm = 0; mm != 3; ++mm)
-                for (int nn = 0; nn != 3; ++nn)
-                  for (int zz = 0; zz != 3; ++zz) {
-
-                    auto diff = [&](auto ii, auto jj, auto kk, auto ll, int mm,
-                                    int nn, int zz) {
-                      return
-
-                          t_s(ii, jj) * (t_kd(ii, mm) * t_kd(zz, nn) *
-                                             t_kd(zz, kk) * t_kd(jj, ll)
-
-                                         +
-
-                                         t_kd(ii, kk) * t_kd(zz, ll) *
-                                             t_kd(zz, mm) * t_kd(jj, nn));
-                    };
-
-                    t_dd_a(kk, ll, mm, nn) +=
-                        (
-
-                            diff(ii, jj, kk, ll, mm, nn, zz)
-
-                            +
-
-                            diff(ii, jj, ll, kk, mm, nn, zz)
-
-                            +
-
-                            diff(ii, jj, kk, ll, nn, mm, zz)
-
-                            +
-
-                            diff(ii, jj, ll, kk, nn, mm, zz)
-
-                                ) /
-                        4.;
-                  }
-
-      diff_ddg(t_dd_a, t_dd);
-
-      return t_dd_a;
-    };
+ 
 
     // Test matrix againsst mathematica results
     {
@@ -379,7 +401,7 @@ int main(int argc, char *argv[]) {
         {
 
           auto t_d = EigenMatrix::getDiffMat(t_L, t_N, f, d_f, 3);
-          auto t_d_a = get_diff_matrix(t_d);
+          auto t_d_a = get_diff_matrix(t_d, FTensor::Number<3>());
 
           MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
           print_ddg(t_d_a, "hand ");
@@ -440,7 +462,7 @@ int main(int argc, char *argv[]) {
         {
           auto t_d = EigenMatrix::getDiffMat(t_L, t_N, f, d_f, 3);
           print_ddg_direction(t_d, 0, 2);
-          auto t_d_a = get_diff_matrix2(t_A, t_d);
+          auto t_d_a = get_diff_matrix2(t_A, t_d, FTensor::Number<3>());
           MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
           print_ddg(t_d_a, "hand ");
           MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
@@ -465,7 +487,7 @@ int main(int argc, char *argv[]) {
 
           auto t_dd =
               EigenMatrix::getDiffDiffMat(t_L, t_N, f, d_f, dd_f, t_S, 3);
-          auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
+          auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<3>());
 
           MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
           print_ddg(t_dd_a, "hand ");
@@ -514,7 +536,7 @@ int main(int argc, char *argv[]) {
 
       {
         auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 2);
-        auto t_d_a = get_diff_matrix(t_d);
+        auto t_d_a = get_diff_matrix(t_d, FTensor::Number<3>());
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
         print_ddg(t_d_a, "hand ");
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
@@ -532,7 +554,7 @@ int main(int argc, char *argv[]) {
         auto d_f = [](double v) { return 2 * v; };
         auto dd_f = [](double v) { return 2; };
         auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 2);
-        auto t_d_a = get_diff_matrix2(t_a, t_d);
+        auto t_d_a = get_diff_matrix2(t_a, t_d, FTensor::Number<3>());
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
         print_ddg(t_d_a, "hand ");
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
@@ -578,7 +600,7 @@ int main(int argc, char *argv[]) {
 
       {
         auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 1);
-        auto t_d_a = get_diff_matrix(t_d);
+        auto t_d_a = get_diff_matrix(t_d, FTensor::Number<3>());
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
         print_ddg(t_d_a, "hand ");
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
@@ -596,7 +618,7 @@ int main(int argc, char *argv[]) {
         auto d_f = [](double v) { return 2 * v; };
         auto dd_f = [](double v) { return 2; };
         auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 1);
-        auto t_d_a = get_diff_matrix2(t_a, t_d);
+        auto t_d_a = get_diff_matrix2(t_a, t_d, FTensor::Number<3>());
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
         print_ddg(t_d_a, "hand ");
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
@@ -686,7 +708,7 @@ int main(int argc, char *argv[]) {
                                               dd_f, t_S, 1);
       // print_ddg(t_dd, "test ");
 
-      auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
+      auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<3>());
 
       double nrm2_t_dd_a = get_norm_t4(t_dd_a);
       MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -728,7 +750,7 @@ int main(int argc, char *argv[]) {
                                               dd_f, t_S, 2);
       print_ddg(t_dd, "test ");
 
-      auto t_dd_a = get_diff2_matrix2(t_S, t_dd);
+      auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<3>());
 
       double nrm2_t_dd_a = get_norm_t4(t_dd_a);
       MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -784,7 +806,7 @@ int main(int argc, char *argv[]) {
       print_ddg(t_dd_1, "t_dd_1 ");
       print_ddg(t_dd_2, "t_dd_2 ");
 
-      FTensor::Ddg<double,3,3> t_dd_3;
+      FTensor::Ddg<double, 3, 3> t_dd_3;
       t_dd_3(i, j, k, l) = t_dd_1(i, j, k, l) - t_dd_2(i, j, k, l);
 
       for (int ii = 0; ii != 3; ++ii)
@@ -854,7 +876,7 @@ int main(int argc, char *argv[]) {
       print_ddg(t_dd_1, "t_dd_1 ");
       print_ddg(t_dd_2, "t_dd_2 ");
 
-      FTensor::Ddg<double,3,3> t_dd_3;
+      FTensor::Ddg<double, 3, 3> t_dd_3;
       t_dd_3(i, j, k, l) = t_dd_1(i, j, k, l) - t_dd_2(i, j, k, l);
 
       for (int ii = 0; ii != 3; ++ii)
@@ -877,15 +899,14 @@ int main(int argc, char *argv[]) {
                 "This norm should be zero");
     }
 
-
     // check second directive exponent
     {
 
-      std::array<double, 9> a{0.5, 0.,  0.,
+      std::array<double, 9> a{0.5, 0., 0.,
 
                               0.,  2., 0.,
 
-                              0.,  0.,  0.5};
+                              0.,  0., 0.5};
 
       auto tuple = run_lapack(a);
       auto &t_a = std::get<0>(tuple);
@@ -927,7 +948,7 @@ int main(int argc, char *argv[]) {
       print_ddg(t_dd_1, "t_dd_1 ");
       print_ddg(t_dd_2, "t_dd_2 ");
 
-      FTensor::Ddg<double,3,3> t_dd_3;
+      FTensor::Ddg<double, 3, 3> t_dd_3;
       t_dd_3(i, j, k, l) = t_dd_1(i, j, k, l) - t_dd_2(i, j, k, l);
 
       for (int ii = 0; ii != 3; ++ii)
@@ -953,39 +974,74 @@ int main(int argc, char *argv[]) {
     // Speed
     {
 
-        std::array<double, 9> a{1.,   0.1, -0.5,
+      std::array<double, 9> a{1.,   0.1, -0.5,
 
-                                0.1,  2.,  0.,
+                              0.1,  2.,  0.,
 
-                                -0.5, 0.,  3.};
+                              -0.5, 0.,  3.};
 
-        auto tuple = run_lapack(a);
-        auto &t_a = std::get<0>(tuple);
-        auto &t_eig_vecs = std::get<1>(tuple);
-        auto &t_eig_vals = std::get<2>(tuple);
+      auto tuple = run_lapack(a);
+      auto &t_a = std::get<0>(tuple);
+      auto &t_eig_vecs = std::get<1>(tuple);
+      auto &t_eig_vals = std::get<2>(tuple);
 
-        auto f = [](double v) { return exp(v); };
-        auto d_f = [](double v) { return exp(v); };
-        auto dd_f = [](double v) { return exp(v); };
+      auto f = [](double v) { return exp(v); };
+      auto d_f = [](double v) { return exp(v); };
+      auto dd_f = [](double v) { return exp(v); };
 
-        FTensor::Tensor2<double, 3, 3> t_S{
+      FTensor::Tensor2<double, 3, 3> t_S{
 
-            1.,      1. / 2., 1. / 3.,
+          1.,      1. / 2., 1. / 3.,
 
-            2. / 1., 1.,      2. / 3.,
+          2. / 1., 1.,      2. / 3.,
 
-            3. / 1., 3. / 1., 1.};
+          3. / 1., 3. / 1., 1.};
 
-
-        MOFEM_LOG("ATOM_TEST", Sev::inform) << "Start";
-        for (int ii = 0; ii != 1000; ++ii) {
-          auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 3);
-          auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f,
-                                                  d_f, dd_f, t_S, 3);
-        }
-        MOFEM_LOG("ATOM_TEST", Sev::inform) << "End";
+      MOFEM_LOG("ATOM_TEST", Sev::inform) << "Start";
+      for (int ii = 0; ii != 1000; ++ii) {
+        auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 3);
+        auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
+                                                dd_f, t_S, 3);
+      }
+      MOFEM_LOG("ATOM_TEST", Sev::inform) << "End";
     }
-    
+
+    // 2d case
+
+    auto run_lapack2d = [](auto &a) {
+      int info;
+      double wkopt;
+      double w[2];
+
+      FTensor::Tensor2<double, 2, 2> t_a{
+
+          a[0], a[1],
+
+          a[2], a[3]};
+
+      /* Query and allocate the optimal workspace */
+      int lwork = -1;
+      info = lapack_dsyev('V', 'U', 2, a.data(), 2, w, &wkopt, lwork);
+      if (info > 0)
+        THROW_MESSAGE("The algorithm failed to compute eigenvalues.");
+      lwork = (int)wkopt;
+      std::vector<double> work(lwork);
+      /* Solve eigenproblem */
+      info = lapack_dsyev('V', 'U', 2, a.data(), 2, w, &*work.begin(), lwork);
+      if (info > 0)
+        THROW_MESSAGE("The algorithm failed to compute eigenvalues.");
+
+      FTensor::Tensor2<double, 2, 2> t_eig_vec{
+
+          a[0 * 2 + 0], a[0 * 2 + 1],
+
+          a[1 * 2 + 0], a[1 * 2 + 1]};
+
+      FTensor::Tensor1<double, 2> t_eig_vals{w[0], w[1]};
+
+      return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
+    };
+
 
   }
   CATCH_ERRORS;
