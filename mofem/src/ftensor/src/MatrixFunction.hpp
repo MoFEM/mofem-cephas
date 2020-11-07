@@ -71,19 +71,57 @@ template <typename T> using Val = const FTensor::Tensor1<T, 3>;
 template <typename T> using Vec = const FTensor::Tensor2<T, 3, 3>;
 template <typename T> using Fun = boost::function<T(const T)>;
 
+/**
+ * @brief Get the Mat object
+ * 
+ * @param t_val 
+ * @param t_vec 
+ * @param f 
+ * @param nb 
+ * @return FTensor::Tensor2_symmetric<double, 3> 
+ */
 FTensor::Tensor2_symmetric<double, 3> getMat(Val<double> &t_val,
                                              Vec<double> &t_vec, Fun<double> f,
                                              const int nb);
 
+/**
+ * @brief Get the Diff Mat object
+ * 
+ * @param t_val 
+ * @param t_vec 
+ * @param f 
+ * @param d_f 
+ * @param nb 
+ * @return FTensor::Ddg<double, 3, 3> 
+ */
 FTensor::Ddg<double, 3, 3> getDiffMat(Val<double> &t_val, Vec<double> &t_vec,
                                       Fun<double> f, Fun<double> d_f,
                                       const int nb);
 
+/**
+ * @brief Get the Diff Diff Mat object
+ * 
+ * @param t_val 
+ * @param t_vec 
+ * @param f 
+ * @param d_f 
+ * @param dd_f 
+ * @param t_S 
+ * @param nb 
+ * @return FTensor::Ddg<double, 3, 3> 
+ */
 FTensor::Ddg<double, 3, 3> getDiffDiffMat(Val<double> &t_val,
                                           Vec<double> &t_vec, Fun<double> f,
                                           Fun<double> d_f, Fun<double> dd_f,
                                           FTensor::Tensor2<double, 3, 3> &t_S,
                                           const int nb);
 
+/**
+ * @copydoc EigenMatrix::getDiffDiffMat
+ */
+FTensor::Ddg<double, 3, 3>
+getDiffDiffMat(Val<double> &t_val, Vec<double> &t_vec, Fun<double> f,
+               Fun<double> d_f, Fun<double> dd_f,
+               FTensor::Tensor2_symmetric<double, 3> &t_S, const int nb);
 
 } // namespace EigenMatrix
