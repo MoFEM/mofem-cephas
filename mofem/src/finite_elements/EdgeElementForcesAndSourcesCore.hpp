@@ -74,6 +74,14 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     inline VectorDouble &getDirection();
 
     /**
+     * \brief get edge normal 
+     * NOTE: it should be used only in 2D analysis
+     */
+    inline VectorDouble &getNormal();
+
+    inline auto getFTensor1Normal();
+
+    /**
      * \brief get edge node coordinates
      */
     inline VectorDouble &getCoords();
@@ -128,7 +136,6 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
   protected:
     MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-    
   };
 
   enum Switches {
@@ -148,6 +155,7 @@ protected:
   int numNodes;
   const EntityHandle *cOnn;
   VectorDouble dIrection;
+  VectorDouble nOrmal;
   VectorDouble cOords;
   MatrixDouble coordsAtGaussPts;
 
@@ -261,6 +269,15 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getCoordsAtGaussPts() {
       ->coordsAtGaussPts;
 }
 
+VectorDouble &
+EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getNormal() {
+  auto &dir =
+      static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->dIrection;
+  auto &nrm = static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->nOrmal;
+  nrm = VectorDouble({-dir(1), dir(0), dir(2)});
+  return nrm;
+}
+
 auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
     getFTensor1CoordsAtGaussPts() {
   double *ptr = &*getCoordsAtGaussPts().data().begin();
@@ -298,6 +315,12 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
   double *ptr = &*getTangetAtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
+}
+
+auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
+    getFTensor1Normal() {
+  double *ptr = &*getNormal().data().begin();
+  return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
 }
 
 template <int SWITCH>
