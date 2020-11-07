@@ -263,12 +263,12 @@ template <typename E, typename C, typename G> struct d2MImpl {
   }
 };
 
-template <typename E, typename C, typename G1, typename G2> struct fdd4MImpl {
+template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
 
-  fdd4MImpl(E &e) : r(e), g2(e), e(e) {}
+  Fdd4MImpl(E &e) : r(e), g2(e), e(e) {}
   d2MImpl<E, C, G1> r;
   G2 g2;
   E &e;
@@ -408,7 +408,7 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
   SecondMatrixDirectiveImpl(E &e) : w(e), r(e), e(e) {}
   d2MImpl<E, C, d2MCoefficientsType0<E, C>> w;
-  fdd4MImpl<E, C, dd4MCoefficientsType1<E, C>, dd4MCoefficientsType2<E, C>> r;
+  Fdd4MImpl<E, C, dd4MCoefficientsType1<E, C>, dd4MCoefficientsType2<E, C>> r;
   E &e;
 
   template <int a, int i, int j, int k, int l, int m, int n> inline C term() {
@@ -759,7 +759,7 @@ private:
   template <typename E, typename C> friend struct dd4MCoefficientsType2;
   template <typename E, typename C, typename G> friend struct d2MImpl;
   template <typename E, typename C, typename G1, typename G2>
-  friend struct fdd4MImpl;
+  friend struct Fdd4MImpl;
   template <typename E, typename C> friend struct ReconstructMatImpl;
   template <typename E, typename C> friend struct FirstMatrixDirectiveImpl;
   template <typename E, typename C> friend struct SecondMatrixDirectiveImpl;
