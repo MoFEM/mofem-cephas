@@ -271,11 +271,7 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getCoordsAtGaussPts() {
 
 VectorDouble &
 EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getNormal() {
-  auto &dir =
-      static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->dIrection;
-  auto &nrm = static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->nOrmal;
-  nrm = VectorDouble({-dir(1), dir(0), dir(2)});
-  return nrm;
+  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->nOrmal;
 }
 
 auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
