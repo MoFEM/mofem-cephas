@@ -16,14 +16,14 @@
  Calculate matrix here t_L are vector of eigen values, and t_N is matrix of
  eigen vectors.
  \code
- auto  t_A = EigenProjection<double, double, 3>::getMat(t_L, t_N, f);
+ auto  t_A = EigenProjection<double, double, 3, 3>::getMat(t_L, t_N, f);
  \endcode
  where <3> means that are three unique eigen values. Return t_A is symmetric
  tensor rank two.
 
  Calculate directive
  \code
- auto t_P = EigenProjection<double, double, 3>::getDiffMat(t_L, t_N, f, d_f);
+ auto t_P = EigenProjection<double, double, 3, 3>::getDiffMat(t_L, t_N, f, d_f);
  \endcode
  where return t_SL is 4th order tensor (symmetry on first two and
  second to indices, i.e. minor symmetrise)
@@ -38,7 +38,7 @@
 
     0., 0., 1.};
 
-  auto t_SL = EigenProjection<double, double, 3>::getDiffDiffMat(
+  auto t_SL = EigenProjection<double, double, 3, 3>::getDiffDiffMat(
                   t_L, t_N, f, d_f, dd_f, t_S)
  \endcode
  where return t_SL is 4th order tensor (symmetry on first two and
@@ -614,7 +614,7 @@ struct GetDiffDiffMatImpl {
                   const Number<L> &) {}
 };
 
-template <typename T1, typename T2, int NB, int Dim = 3>
+template <typename T1, typename T2, int NB, int Dim>
 struct EigenProjection {
 
   using Val = const FTensor::Tensor1<T1, Dim>;
@@ -662,7 +662,7 @@ struct EigenProjection {
     using T3 =
         FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim>;
     T3 t_A;
-    GetMatImpl<EigenProjection<T1, T2, NB>, V, T3>(*this, t_A)
+    GetMatImpl<EigenProjection<T1, T2, NB, Dim>, V, T3>(*this, t_A)
         .set(Number<Dim>(), Number<Dim>());
     return t_A;
   }
@@ -698,7 +698,7 @@ struct EigenProjection {
     using V = typename FTensor::promote<T1, T2>::V;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     T3 t_diff_A;
-    GetDiffMatImpl<EigenProjection<T1, T2, NB>, V, T3>(*this, t_diff_A)
+    GetDiffMatImpl<EigenProjection<T1, T2, NB, Dim>, V, T3>(*this, t_diff_A)
         .set(Number<Dim>(), Number<Dim>(), Number<Dim>(), Number<Dim>());
     return t_diff_A;
   }
@@ -742,8 +742,8 @@ struct EigenProjection {
     using V = typename FTensor::promote<T1, T2>::V;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     T3 t_diff_A;
-    GetDiffDiffMatImpl<EigenProjection<T1, T2, NB>, V, T3, T>(*this, t_diff_A,
-                                                              t_S)
+    GetDiffDiffMatImpl<EigenProjection<T1, T2, NB, Dim>, V, T3, T>(
+        *this, t_diff_A, t_S)
         .set(Number<Dim>(), Number<Dim>(), Number<Dim>(), Number<Dim>());
     return t_diff_A;
   }
