@@ -643,7 +643,7 @@ struct EigenMatrixImp {
    * \f]
    *
    * \f[
-   * B_{ij} = sum_{a}^3 f(\lambda^a) n^a_i n^a_j
+   * B_{ij} = \sum_{a}^3 f(\lambda^a) n^a_i n^a_j
    * \f]
    * where \f$a\f$ is eigen value number.
    *
