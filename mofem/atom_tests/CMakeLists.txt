@@ -1946,6 +1946,7 @@ my_add_executable(
   matrix_function.cpp
 )
 target_link_libraries(matrix_function
+  mofem_matrix_function
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices

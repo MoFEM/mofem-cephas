@@ -11,7 +11,14 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
+include_directories(${PROJECT_SOURCE_DIR}/src/approximation)
+include_directories(${PROJECT_SOURCE_DIR}/src/approximation/c)
+include_directories(${PROJECT_SOURCE_DIR}/src/multi_indices)
+include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
+include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
+include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
 
 if(MOFEM_BUILD_TESTS)
   file(GLOB_RECURSE FTENSOR_CONFORMANCE_TEST_FILES
@@ -125,3 +132,13 @@ else(STAND_ALLONE_USERS_MODULES)
     endif(IS_DIRECTORY ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor/${DIR})
   endforeach(DIR)
 endif(STAND_ALLONE_USERS_MODULES)
+
+add_library(
+  mofem_matrix_function
+  src/impl/MatrixFunction.cpp
+)
+if(PRECOMPILED_HEADRES)
+  add_dependencies(mofem_matrix_function Includes.hpp.pch_copy)
+endif(PRECOMPILED_HEADRES)
+
+install(TARGETS mofem_matrix_function DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
