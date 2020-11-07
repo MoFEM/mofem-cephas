@@ -8,18 +8,8 @@
 namespace EigenMatrix {
 
 template <typename T, int Dim>
-FTensor::Tensor2_symmetric<T, Dim>
-getMatImpl(Val<T, Dim> &t_val, Vec<T, Dim> &t_vec, Fun<T> f, const int nb) {
-  switch (nb) {
-  case 1:
-    return EigenMatrixImp<T, T, 1, Dim>(t_val, t_vec).getMat(f);
-  case 2:
-    return EigenMatrixImp<T, T, 2, Dim>(t_val, t_vec).getMat(f);
-  case 3:
-    break;
-  default:
-    THROW_MESSAGE("third parameter should be 1,2 or 3");
-  }
+FTensor::Tensor2_symmetric<T, Dim> getMatImpl(Val<T, Dim> &t_val,
+                                              Vec<T, Dim> &t_vec, Fun<T> f) {
   return EigenMatrixImp<T, T, 3, Dim>(t_val, t_vec).getMat(f);
 }
 
@@ -60,9 +50,8 @@ getDiffDiffMatImpl(Val<T, Dim> &t_val, Vec<T, Dim> &t_vec, Fun<T> f, Fun<T> d_f,
 };
 
 FTensor::Tensor2_symmetric<double, 3> getMat(Val<double, 3> &t_val,
-                                             Vec<double, 3> &t_vec,
-                                             Fun<double> f, const int nb) {
-  return getMatImpl<double, 3>(t_val, t_vec, f, nb);
+                                             Vec<double, 3> &t_vec, Fun<double> f) {
+  return getMatImpl<double, 3>(t_val, t_vec, f);
 }
 
 FTensor::Ddg<double, 3, 3> getDiffMat(Val<double, 3> &t_val,
@@ -90,8 +79,8 @@ getDiffDiffMat(Val<double, 3> &t_val, Vec<double, 3> &t_vec, Fun<double> f,
 
 FTensor::Tensor2_symmetric<double, 2> getMat(Val<double, 2> &t_val,
                                              Vec<double, 2> &t_vec,
-                                             Fun<double> f, const int nb) {
-  return getMatImpl<double, 2>(t_val, t_vec, f, nb);
+                                             Fun<double> f) {
+  return getMatImpl<double, 2>(t_val, t_vec, f);
 }
 
 FTensor::Ddg<double, 2, 2> getDiffMat(Val<double, 2> &t_val,
