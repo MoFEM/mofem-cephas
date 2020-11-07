@@ -1040,7 +1040,7 @@ int main(int argc, char *argv[]) {
       return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
     };
 
-    // 2
+    // 2d
 
     auto run_lapack_2d = [](auto &a) {
       int info;
@@ -1065,7 +1065,7 @@ int main(int argc, char *argv[]) {
       if (info > 0)
         THROW_MESSAGE("The algorithm failed to compute eigenvalues.");
 
-      FTensor::Tensor2<double, 2, 2> t_eig_vec{
+      FTensor::Tensor2<double, 2, 2> t_eig_vecs{
 
           a[0 * 2 + 0], a[0 * 2 + 1],
 
@@ -1073,69 +1073,83 @@ int main(int argc, char *argv[]) {
 
       FTensor::Tensor1<double, 2> t_eig_vals{w[0], w[1]};
 
-      return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
+      return std::make_tuple(t_a, t_eig_vecs, t_eig_vals);
     };
 
-    // // Testsing quadratic function second second direvarive zero
-    // {
-    //   auto f = [](double v) { return v * v; };
-    //   auto d_f = [](double v) { return 2 * v; };
-    //   auto dd_f = [](double v) { return 2; };
+    // Testsing quadratic function second second direvarive zero
+    {
 
-    //   constexpr double eps = 1e-9;
+      std::array<double, 9> a{1., 0.1,
 
-    //   // check if multiplication gives right value
-    //   {
-    //     auto t_b = EigenMatrix::getMat(t_L, t_N, f, 2);
-    //     FTensor::Tensor2<double, 2, 2> t_a;
-    //     t_a(i, j) = t_b(i, j) - t_A(i, k) * t_A(k, j);
-    //     print_mat(t_a);
-    //     auto norm2_t_a = t_a(i, j) * t_a(i, j);
-    //     MOFEM_LOG("ATOM_TEST", Sev::inform)
-    //         << "Result should be matrix times matrix " << norm2_t_a;
-    //     if (norm2_t_a > eps)
-    //       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-    //               "This norm should be zero");
-    //   }
+                              0.1, 2.};
 
-    //   // check first directive
-    //   {
-    //     auto t_d = EigenMatrix::getDiffMat(t_L, t_N, f, d_f, 2);
-    //     auto t_d_a = get_diff_matrix2(t_A, t_d, FTensor::Number<2>());
-    //     MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d_a";
-    //     MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
-    //     double nrm2_t_d_a = get_norm_t4(t_d_a);
-    //     MOFEM_LOG("ATOM_TEST", Sev::inform)
-    //         << "Direvarive hand calculation minus code " << nrm2_t_d_a;
-    //     if (nrm2_t_d_a > eps)
-    //       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-    //               "This norm should be zero");
-    //   }
+      auto tuple = run_lapack_2d(a);
+      auto &t_A = std::get<0>(tuple);
+      auto &t_eig_vecs = std::get<1>(tuple);
+      auto &t_eig_vals = std::get<2>(tuple);
 
-    //   // check second directive
-    //   {
-    //     FTensor::Tensor2<double, 2, 2> t_S{
+      auto f = [](double v) { return v * v; };
+      auto d_f = [](double v) { return 2 * v; };
+      auto dd_f = [](double v) { return 2; };
 
-    //         1.,      1. / 2,
+      constexpr double eps = 1e-6;
 
-    //         2. / 2., 1.};
+      FTensor::Index<'i', 2> i;
+      FTensor::Index<'j', 2> j;
+      FTensor::Index<'k', 2> k;
+      FTensor::Index<'l', 2> l;
 
-    //     auto t_dd = EigenMatrix::getDiffDiffMat(t_L, t_N, f, d_f, dd_f, t_S, 2);
-    //     auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<2>());
+      // check if multiplication gives right value
+      {
+        auto t_b = EigenMatrix::getMat(t_eig_vals, t_eig_vecs, f, 2);
+        FTensor::Tensor2<double, 2, 2> t_a;
+        t_a(i, j) = t_b(i, j) - t_A(i, k) * t_A(k, j);
+        print_mat(t_a);
+        auto norm2_t_a = t_a(i, j) * t_a(i, j);
+        MOFEM_LOG("ATOM_TEST", Sev::inform)
+            << "Result should be matrix times matrix " << norm2_t_a;
+        if (norm2_t_a > eps)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "This norm should be zero");
+      }
 
-    //     MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
-    //     print_ddg(t_dd_a, "hand ");
-    //     MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
-    //     print_ddg(t_dd, "code ");
+      // check first directive
+      {
+        auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 2);
+        auto t_d_a = get_diff_matrix2(t_A, t_d, FTensor::Number<2>());
+        double nrm2_t_d_a = get_norm_t4(t_d_a);
+        MOFEM_LOG("ATOM_TEST", Sev::inform)
+            << "Direvarive hand calculation minus code " << nrm2_t_d_a;
+        if (nrm2_t_d_a > eps)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "This norm should be zero");
+      }
 
-    //     double nrm2_t_dd_a = get_norm_t4(t_dd_a);
-    //     MOFEM_LOG("ATOM_TEST", Sev::inform)
-    //         << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
-    //     if (nrm2_t_dd_a > eps)
-    //       SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-    //               "This norm should be zero");
-    //   }
-    // }
+      // check second directive
+      {
+        FTensor::Tensor2<double, 2, 2> t_S{
+
+            1.,      1. / 2,
+
+            2. / 2., 1.};
+
+        auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
+                                                dd_f, t_S, 2);
+        auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<2>());
+
+        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
+        print_ddg(t_dd_a, "hand ");
+        MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
+        print_ddg(t_dd, "code ");
+
+        double nrm2_t_dd_a = get_norm_t4(t_dd_a);
+        MOFEM_LOG("ATOM_TEST", Sev::inform)
+            << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
+        if (nrm2_t_dd_a > eps)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                  "This norm should be zero");
+      }
+    }
   }
   CATCH_ERRORS;
 
