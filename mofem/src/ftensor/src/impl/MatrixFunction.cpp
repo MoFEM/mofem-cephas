@@ -8,7 +8,7 @@
 namespace EigenMatrix {
 
 template <typename T, int Dim>
-FTensor::Tensor2_symmetric<T, 3>
+FTensor::Tensor2_symmetric<T, Dim>
 getMatImpl(Val<T, Dim> &t_val, Vec<T, Dim> &t_vec, Fun<T> f, const int nb) {
   switch (nb) {
   case 1:
@@ -24,8 +24,8 @@ getMatImpl(Val<T, Dim> &t_val, Vec<T, Dim> &t_vec, Fun<T> f, const int nb) {
 }
 
 template <typename T, int Dim>
-FTensor::Ddg<T, 3, 3> getDiffMatImpl(Val<T, Dim> &t_val, Vec<T, Dim> &t_vec,
-                                     Fun<T> f, Fun<T> d_f, const int nb) {
+FTensor::Ddg<T, Dim, Dim> getDiffMatImpl(Val<T, Dim> &t_val, Vec<T, Dim> &t_vec,
+                                         Fun<T> f, Fun<T> d_f, const int nb) {
   switch (nb) {
   case 1:
     return EigenMatrixImp<T, T, 1, Dim>(t_val, t_vec).getDiffMat(f, d_f);
@@ -40,9 +40,9 @@ FTensor::Ddg<T, 3, 3> getDiffMatImpl(Val<T, Dim> &t_val, Vec<T, Dim> &t_vec,
 };
 
 template <typename T, typename S, int Dim>
-FTensor::Ddg<T, 3, 3> getDiffDiffMatImpl(Val<T, Dim> &t_val, Vec<T, Dim> &t_vec,
-                                         Fun<T> f, Fun<T> d_f, Fun<T> dd_f,
-                                         S &t_S, const int nb) {
+FTensor::Ddg<T, Dim, Dim>
+getDiffDiffMatImpl(Val<T, Dim> &t_val, Vec<T, Dim> &t_vec, Fun<T> f, Fun<T> d_f,
+                   Fun<T> dd_f, S &t_S, const int nb) {
   switch (nb) {
   case 1:
     return EigenMatrixImp<T, T, 1, Dim>(t_val, t_vec)
@@ -85,6 +85,35 @@ getDiffDiffMat(Val<double, 3> &t_val, Vec<double, 3> &t_vec, Fun<double> f,
                Fun<double> d_f, Fun<double> dd_f,
                FTensor::Tensor2_symmetric<double, 3> &t_S, const int nb) {
   return getDiffDiffMatImpl<double, FTensor::Tensor2_symmetric<double, 3>, 3>(
+      t_val, t_vec, f, d_f, dd_f, t_S, nb);
+}
+
+FTensor::Tensor2_symmetric<double, 2> getMat(Val<double, 2> &t_val,
+                                             Vec<double, 2> &t_vec,
+                                             Fun<double> f, const int nb) {
+  return getMatImpl<double, 2>(t_val, t_vec, f, nb);
+}
+
+FTensor::Ddg<double, 2, 2> getDiffMat(Val<double, 2> &t_val,
+                                      Vec<double, 2> &t_vec, Fun<double> f,
+                                      Fun<double> d_f, const int nb) {
+  return getDiffMatImpl<double, 2>(t_val, t_vec, f, d_f, nb);
+}
+
+FTensor::Ddg<double, 2, 2> getDiffDiffMat(Val<double, 2> &t_val,
+                                          Vec<double, 2> &t_vec, Fun<double> f,
+                                          Fun<double> d_f, Fun<double> dd_f,
+                                          FTensor::Tensor2<double, 2, 2> &t_S,
+                                          const int nb) {
+  return getDiffDiffMatImpl<double, FTensor::Tensor2<double, 2, 2>, 2>(
+      t_val, t_vec, f, d_f, dd_f, t_S, nb);
+}
+
+FTensor::Ddg<double, 2, 2>
+getDiffDiffMat(Val<double, 2> &t_val, Vec<double, 2> &t_vec, Fun<double> f,
+               Fun<double> d_f, Fun<double> dd_f,
+               FTensor::Tensor2_symmetric<double, 2> &t_S, const int nb) {
+  return getDiffDiffMatImpl<double, FTensor::Tensor2_symmetric<double, 2>, 2>(
       t_val, t_vec, f, d_f, dd_f, t_S, nb);
 }
 

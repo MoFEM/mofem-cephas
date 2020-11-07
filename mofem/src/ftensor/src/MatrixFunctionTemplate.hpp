@@ -77,7 +77,7 @@ template <typename E, typename C> struct d2MCoefficients {
 
   template <int a, int b>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const typename E::NumberDim &) {
+                  const Number<-1> &, const Number<3> &) {
     return e.fVal(a) * e.aF(a, b);
   }
 
@@ -86,7 +86,7 @@ template <typename E, typename C> struct d2MCoefficients {
                   const Number<-1> &, const Number<2> &) {
     if (a == 1 || b == 1)
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
-                 typename E::NumberDim());
+                 Number<3>());
     else
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
                  Number<1>());
@@ -111,7 +111,7 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
 
   template <int a, int b>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const typename E::NumberDim &) {
+                  const Number<-1> &, const Number<3> &) {
     return e.dfVal(a) * e.aF(a, b);
   }
 
@@ -120,7 +120,7 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
                   const Number<-1> &, const Number<2> &) {
     if (a == 1 || b == 1)
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
-                 typename E::NumberDim());
+                 Number<3>());
     else
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
                  Number<1>());
@@ -145,7 +145,7 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
 
   template <int a, int b, int c, int d>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
-                  const Number<d> &, const typename E::NumberDim &) {
+                  const Number<d> &, const Number<3> &) {
     return e.fVal(c) * e.aF(c, d) * e.aF(a, b);
   }
 
@@ -155,7 +155,7 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
 
     if ((c == 1 || d == 1) && (a == 1 || b == 1))
       return get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
-                 typename E::NumberDim());
+                 Number<3>());
 
     if (c != 1 && d != 1 && a != 1 && b != 1)
       return get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
@@ -202,7 +202,7 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
 
   template <int a, int b, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<m> &,
-                  const Number<n> &, const typename E::NumberDim &) {
+                  const Number<n> &, const Number<3> &) {
     return e.fVal(a) *
            e.dFdN(Number<a>(), Number<b>(), Number<m>(), Number<n>());
   }
@@ -212,7 +212,7 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
                   const Number<n> &, const Number<2> &) {
     if (a == 1 || b == 1)
       return get(Number<a>(), Number<b>(), Number<m>(), Number<n>(),
-                 typename E::NumberDim());
+                 Number<3>());
     else
       return get(Number<a>(), Number<b>(), Number<m>(), Number<n>(),
                  Number<1>());
@@ -629,8 +629,8 @@ struct EigenMatrixImp {
 
   EigenMatrixImp(Val &t_val, Vec &t_vec) : tVal(t_val), tVec(t_vec) {
 
-    for (auto aa : {0, 1, 2})
-      for (auto ii : {0, 1, 2})
+    for (auto aa = 0; aa != Dim; ++aa)
+      for (auto ii = 0; ii != Dim; ++ii)
         for (auto jj = 0; jj <= ii; ++jj)
           aM(aa, ii, jj) = tVec(aa, ii) * tVec(aa, jj);
   }
@@ -654,7 +654,7 @@ struct EigenMatrixImp {
    */
   inline auto getMat(Fun f) {
 
-    for (auto aa : {0, 1, 2})
+    for (auto aa = 0; aa != Dim; ++aa)
       fVal(aa) = f(tVal(aa));
 
     using V =
@@ -682,13 +682,13 @@ struct EigenMatrixImp {
    */
   inline auto getDiffMat(Fun f, Fun d_f) {
 
-    for (auto aa : {0, 1, 2})
+    for (auto aa = 0; aa != Dim; ++aa)
       fVal(aa) = f(tVal(aa));
 
-    for (auto aa : {0, 1, 2})
+    for (auto aa = 0; aa != Dim; ++aa)
       dfVal(aa) = d_f(tVal(aa));
 
-    for (auto aa : {0, 1, 2})
+    for (auto aa = 0; aa != Dim; ++aa)
       for (auto bb = 0; bb != aa; ++bb) {
         aF(aa, bb) = 1 / (tVal(aa) - tVal(bb));
         aF(bb, aa) = -aF(aa, bb);
@@ -723,16 +723,16 @@ struct EigenMatrixImp {
   template <typename T>
   inline auto getDiffDiffMat(Fun f, Fun d_f, Fun dd_f, T &t_S) {
 
-    for (auto aa : {0, 1, 2})
+    for (auto aa = 0; aa != Dim; ++aa)
       fVal(aa) = f(tVal(aa));
 
-    for (auto aa : {0, 1, 2})
+    for (auto aa = 0; aa != Dim; ++aa)
       dfVal(aa) = d_f(tVal(aa));
 
-    for (auto aa : {0, 1, 2})
+    for (auto aa = 0; aa != Dim; ++aa)
       ddfVal(aa) = dd_f(tVal(aa));
 
-    for (auto aa : {0, 1, 2})
+    for (auto aa = 0; aa != Dim; ++aa)
       for (auto bb = 0; bb != aa; ++bb) {
         aF(aa, bb) = 1 / (tVal(aa) - tVal(bb));
         aF(bb, aa) = -aF(aa, bb);
