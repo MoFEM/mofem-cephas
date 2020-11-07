@@ -1938,3 +1938,27 @@ add_test(log
   -log_time
   -log_no_color
 )
+
+# Matrix function
+
+my_add_executable(
+  matrix_function
+  matrix_function.cpp
+)
+target_link_libraries(matrix_function
+  mofem_matrix_function
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(matrix_function
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/matrix_function
+  -log_severity_level inform
+  -log_no_color
+)
