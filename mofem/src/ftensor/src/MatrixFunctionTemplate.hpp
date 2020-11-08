@@ -152,41 +152,13 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   template <int a, int b, int c, int d>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
                   const Number<d> &, const Number<2> &) const {
-
-    if ((c == 1 || d == 1) && (a == 1 || b == 1))
-      return get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
-                 Number<3>());
-
-    if (c != 1 && d != 1 && a != 1 && b != 1)
-      return get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
-                 Number<1>());
-
-    if ((c != 1 && d != 1) && (a == 1 || b == 1))
-      return e.dfVal(c) * e.aF(a, b) / static_cast<C>(2);
-
-    if ((c == 1 || d == 1) && (a != 1 && b != 1)) {
-
-      if ((c == 2 && d == 1) || (c == 2 && d == 1))
-        return (
-
-                   e.dfVal(c)
-
-                   - (e.fVal(c) - e.fVal(d)) * e.aF(c, d)
-
-                       ) *
-               e.aF(c, d);
-    }
-
-    return static_cast<C>(0);
+    return e.coefficientsType1(a, b, c, d);
   }
 
   template <int a, int b, int c, int d>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
                   const Number<d> &, const Number<1>) const {
-    if ((a != b && b != d) && (a != d && b != c))
-      return e.ddfVal(c) / static_cast<C>(4);
-    else
-      return static_cast<C>(0);
+    return e.coefficientsType1(a, b, c, d);
   }
 };
 
@@ -262,6 +234,50 @@ template <typename E, typename C, typename G> struct d2MImpl {
     return term<0, a, c, d, i, j, k, l>();
   }
 };
+
+// template <typename E, typename C, typename G, typename T, int a, int c, int
+// d> struct d2MEval {
+//   using Val = typename E::Val;
+//   using Vec = typename E::Vec;
+//   using Fun = typename E::Fun;
+
+//   template <int N> using Number = FTensor::Number<N>;
+//   d2MEval(E &e, T &t_A) : r(e), tA(t_A) {}
+//   d2MImpl r;
+//   T &tA;
+
+//   template <int I, int J, int K, int L>
+//   inline void set(const Number<I> &, const Number<J> &, const Number<K> &,
+//                   const Number<L> &) {
+//     set(Number<I>(), Number<J>(), Number<K>(), Number<L - 1>());
+//     tA(I - 1, J - 1, K - 1, L - 1) = r.eval(
+//         typename E::NumberDim(), Number<a>(), Number<c>(), Number<d>(),
+//         umber<I - 1>(), Number<J - 1>(), Number<K - 1>(), Number<L - 1>());
+//   }
+
+//   template <int I, int J, int K>
+//   inline void set(const Number<I> &, const Number<J> &, const Number<K> &,
+//                   const Number<0> &) {
+//     set(Number<I>(), Number<J>(), Number<K - 1>(), Number<K - 1>());
+//   }
+
+//   template <int I, int J>
+//   inline void set(const Number<I> &, const Number<J> &, const Number<0> &,
+//                   const Number<0> &) {
+//     set(Number<I>(), Number<J - 1>(), typename E::NumberDim(),
+//         typename E::NumberDim());
+//   }
+
+//   template <int I, int K, int L>
+//   inline void set(const Number<I> &, const Number<0> &, const Number<K> &,
+//                   const Number<L> &) {
+//     set(Number<I - 1>(), Number<I - 1>(), Number<K>(), Number<L>());
+//   }
+
+//   template <int K, int L>
+//   inline void set(const Number<0> &, const Number<0> &, const Number<K> &,
+//                   const Number<L> &) {}
+// };
 
 template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
   using Val = typename E::Val;
@@ -738,16 +754,70 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
       }
 
-    for (auto aa = 0; aa != Dim; ++aa) {
-      for (auto bb = 0; bb != Dim; ++bb) {
-        for (auto cc = 0; cc != Dim; ++cc) {
-          for (auto dd = 0; dd != Dim; ++dd) {
-            coefficientsType1(aa, bb, cc, dd) =
-                fVal(cc) * aF(cc, dd) * aF(aa, bb);
+    if (NB == 3)
+      for (auto aa = 0; aa != Dim; ++aa) {
+        for (auto bb = 0; bb != Dim; ++bb) {
+          for (auto cc = 0; cc != Dim; ++cc) {
+            for (auto dd = 0; dd != Dim; ++dd) {
+              coefficientsType1(aa, bb, cc, dd) =
+                  fVal(cc) * aF(cc, dd) * aF(aa, bb);
+            }
           }
         }
       }
-    }
+
+    if (NB == 2)
+      for (auto aa = 0; aa != Dim; ++aa) {
+        for (auto bb = 0; bb != Dim; ++bb) {
+          for (auto cc = 0; cc != Dim; ++cc) {
+            for (auto dd = 0; dd != Dim; ++dd) {
+
+              auto &r = coefficientsType1(aa, bb, cc, dd);
+
+              if ((cc == 1 || dd == 1) && (aa == 1 || bb == 1))
+                r = coefficientsType1(aa, bb, cc, dd) =
+                    fVal(cc) * aF(cc, dd) * aF(aa, bb);
+              else if (cc != 1 && dd != 1 && aa != 1 && bb != 1) {
+                if ((aa != bb && bb != dd) && (aa != dd && bb != cc))
+                  r = ddfVal(cc) / 4;
+                else
+                  r = 0;
+              } else if ((cc != 1 && dd != 1) && (aa == 1 || bb == 1))
+                r = dfVal(cc) * aF(aa, bb) / 2;
+              else if ((cc == 1 || dd == 1) && (aa != 1 && bb != 1)) {
+                if ((cc == 2 && dd == 1) || (cc == 2 && dd == 1))
+                  r = (
+
+                          dfVal(cc)
+
+                          - (fVal(cc) - fVal(dd)) * aF(cc, dd)
+
+                              ) *
+                      aF(cc, dd);
+
+                else
+                  r = 0;
+              } else
+                r = 0;
+            }
+          }
+        }
+      }
+
+    if (NB == 1)
+      for (auto aa = 0; aa != Dim; ++aa) {
+        for (auto bb = 0; bb != Dim; ++bb) {
+          for (auto cc = 0; cc != Dim; ++cc) {
+            for (auto dd = 0; dd != Dim; ++dd) {
+              auto &r = coefficientsType1(aa, bb, cc, dd);
+              if ((aa != bb && bb != dd) && (aa != dd && bb != cc))
+                r = ddfVal(cc) / 4;
+              else
+                r = 0;
+            }
+          }
+        }
+      }
 
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
