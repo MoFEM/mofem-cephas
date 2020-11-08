@@ -439,7 +439,7 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
   template <int a, int i, int j, int k, int l, int m, int n>
   inline C term() const {
 
-    if(e.nB == 3) {
+    if (e.nB == 3) {
 
       return
 
@@ -452,8 +452,15 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
                   +
 
                   e.aM(a, i, j) *
-                      e.d2MEvalForSecondDirectiveType1[a](k, l, m, n)) /
-              static_cast<C>(2) +
+                      e.d2MEvalForSecondDirectiveType1[a](k, l, m, n)
+
+                  + e.d2MEvalForSecondDirectiveType1[a](i, j, k, l) *
+                        e.aM(a, m, n)
+
+                      ) /
+              static_cast<C>(2)
+
+          +
 
           e.aM(a, i, j) * e.aM(a, k, l) * e.aM(a, m, n) * e.ddfVal(a)
 
@@ -461,11 +468,8 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
           r.eval(typename E::NumberDim(), Number<a>(), Number<i>(), Number<j>(),
                  Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
-              static_cast<C>(4) +
-
-          e.dfVal(a) * e.d2MEvalForSecondDirectiveType1[a](i, j, k, l) *
-              e.aM(a, m, n) / static_cast<C>(2);
-    } 
+              static_cast<C>(4);
+    }
 
     return
 
@@ -826,7 +830,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
                 else
                   r = 0;
 
-              } else if ((cc != 1 && dd != 1) && (aa == 1 || bb == 1)) 
+              } else if ((cc != 1 && dd != 1) && (aa == 1 || bb == 1))
                 r = dfVal(cc) * aF(aa, bb) / 2;
               else if ((cc == 1 || dd == 1) && (aa != 1 && bb != 1)) {
 
@@ -865,7 +869,6 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         }
       }
 
-
     using THIS = EigenMatrixImp<T1, T2, NB, Dim>;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     using CT1 = dd4MCoefficientsType1<THIS, V>;
@@ -876,9 +879,8 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     d2MEval<THIS, V, CT1, T3, 1, 1>(*this, d2MEvalForSecondDirectiveType1[1])
         .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
              Number<Dim>());
-    if(Dim == 3)
-      d2MEval<THIS, V, CT1, T3, 1, 1>(*this,
-                                         d2MEvalForSecondDirectiveType1[2])
+    if (Dim == 3)
+      d2MEval<THIS, V, CT1, T3, 1, 1>(*this, d2MEvalForSecondDirectiveType1[2])
           .set(Number<2>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
                Number<Dim>());
 
