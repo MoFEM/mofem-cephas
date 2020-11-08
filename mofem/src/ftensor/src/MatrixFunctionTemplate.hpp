@@ -297,8 +297,7 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
   inline auto fd2M() const {
 
     if (e.nB == 3)
-      return e.fVal(a) * e.aF(a, b) *
-             e.d2MEvalForSecondDirectiveType1[A](I, J, K, L);
+      return e.d2MEvalForSecondDirectiveType1[A](I, J, K, L);
 
     return r.eval(typename E::NumberDim(), Number<A>(), Number<a>(),
                   Number<b>(), Number<I>(), Number<J>(), Number<K>(),
@@ -316,6 +315,11 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
 
   template <int a, int B, int I, int J, int K, int L, int M, int N>
   inline auto fd2S() const {
+    if (e.nB == 3)
+      return e.fVal(a) * e.aF(a, B) *
+             (fd2G<a, B, a, B, I, J, K, L, M, N>() +
+              fd2G<a, B, B, a, I, J, K, L, M, N>());
+
     return fd2G<a, B, a, B, I, J, K, L, M, N>() +
            fd2G<a, B, B, a, I, J, K, L, M, N>();
   }
@@ -642,9 +646,13 @@ struct GetDiffDiffMatImpl {
   inline void set(const Number<I> &, const Number<J> &, const Number<K> &,
                   const Number<L> &) {
     set(Number<I>(), Number<J>(), Number<K>(), Number<L - 1>());
-    tA(I - 1, J - 1, K - 1, L - 1) =
-        add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-            typename E::NumberDim(), typename E::NumberDim());
+    if (I <= K && J <= K) {
+      tA(I - 1, J - 1, K - 1, L - 1) =
+          add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+              typename E::NumberDim(), typename E::NumberDim());
+      if (K != I || L != J)
+        tA(K - 1, L - 1, I - 1, J - 1) = tA(I - 1, J - 1, K - 1, L - 1);
+    }
   }
 
   template <int I, int J, int K>
