@@ -421,7 +421,7 @@ struct GetFTensor4FromMatImpl<1, 1, 1, 1, S, double, ublas::row_major,
   get(MatrixDouble &data) {
     if (data.size1() != 1)
       THROW_MESSAGE(
-          "getFTensor4FromMat<1, 1>: wrong size of data matrix, number "
+          "getFTensor4FromMat<1, 1, 1, 1>: wrong size of data matrix, number "
           "of rows should be 1 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 
@@ -437,7 +437,7 @@ struct GetFTensor4FromMatImpl<2, 2, 2, 2, S, double, ublas::row_major,
   get(MatrixDouble &data) {
     if (data.size1() != 16) {
       THROW_MESSAGE(
-          "getFTensor4FromMat<2, 2>: wrong size of data matrix, number "
+          "getFTensor4FromMat<2, 2, 2, 2>: wrong size of data matrix, number "
           "of rows should be 16 but is " +
           boost::lexical_cast<std::string>(data.size1()));
     }
@@ -457,7 +457,7 @@ struct GetFTensor4FromMatImpl<3, 3, 3, 3, S, double, ublas::row_major,
     if (data.size1() != 81) {
       cerr << data.size1() << endl;
       THROW_MESSAGE(
-          "getFTensor4FromMat<3, 3>: wrong size of data matrix, number "
+          "getFTensor4FromMat<3, 3, 3, 3>: wrong size of data matrix, number "
           "of rows should be 81 but is " +
           boost::lexical_cast<std::string>(data.size1()));
     }
