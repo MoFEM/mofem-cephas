@@ -111,13 +111,13 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
 
   template <int a, int b>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const Number<3> &) {
-    return e.dfVal(a) * e.aF(a, b);
+                  const Number<-1> &, const Number<3> &) const {
+    return e.coefficientsType0(a, b);
   }
 
   template <int a, int b>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const Number<2> &) {
+                  const Number<-1> &, const Number<2> &) const {
     if (a == 1 || b == 1)
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
                  Number<3>());
@@ -128,7 +128,7 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
 
   template <int a, int b>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const Number<1> &) {
+                  const Number<-1> &, const Number<1> &) const {
     return e.ddfVal(a) / static_cast<C>(2);
   }
 };
@@ -202,14 +202,14 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
 
   template <int a, int b, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<m> &,
-                  const Number<n> &, const Number<3> &) {
+                  const Number<n> &, const Number<3> &) const {
     return e.fVal(a) *
            e.dFdN(Number<a>(), Number<b>(), Number<m>(), Number<n>());
   }
 
   template <int a, int b, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<m> &,
-                  const Number<n> &, const Number<2> &) {
+                  const Number<n> &, const Number<2> &) const {
     if (a == 1 || b == 1)
       return get(Number<a>(), Number<b>(), Number<m>(), Number<n>(),
                  Number<3>());
@@ -220,7 +220,7 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
 
   template <int a, int b, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<m> &,
-                  const Number<n> &, const Number<1>) {
+                  const Number<n> &, const Number<1>) const {
     return static_cast<C>(0);
   }
 };
@@ -750,6 +750,12 @@ struct EigenMatrixImp {
       }
     }
 
+    for (auto aa = 0; aa != Dim; ++aa) {
+      for (auto bb = 0; bb != Dim; ++bb) {
+        coefficientsType0(aa, bb) = dfVal(aa) * aF(aa, bb);
+      }
+    }
+
     using V = typename FTensor::promote<T1, T2>::V;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     T3 t_diff_A;
@@ -768,6 +774,7 @@ private:
   FTensor::Tensor1<T1, Dim> fVal;
   FTensor::Tensor1<T1, Dim> dfVal;
   FTensor::Tensor1<T1, Dim> ddfVal;
+  FTensor::Tensor2<T1, Dim, Dim> coefficientsType0;
   FTensor::Tensor4<T1, Dim,Dim,Dim,Dim> coefficientsType1;
 
   template <typename E, typename C> friend struct d2MCoefficients;
