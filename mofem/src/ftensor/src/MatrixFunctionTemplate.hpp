@@ -607,28 +607,51 @@ struct GetDiffDiffMatImpl {
   template <int I, int J, int K, int L, int M, int N>
   inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
                   const Number<L> &, const Number<M> &, const Number<N> &) {
-    return tS(M - 1, N - 1) * r.eval(typename E::NumberDim(), Number<M - 1>(),
-                                     Number<N - 1>(), Number<I - 1>(),
-                                     Number<J - 1>(), Number<K - 1>(),
-                                     Number<L - 1>())
+    if (N != M)
+      return (tS(M - 1, N - 1) + tS(N - 1, M - 1)) *
+                 r.eval(typename E::NumberDim(), Number<M - 1>(),
+                        Number<N - 1>(), Number<I - 1>(), Number<J - 1>(),
+                        Number<K - 1>(), Number<L - 1>())
 
-           +
+             +
 
-           add(Number<I>(), Number<J>(), Number<K>(), Number<L>(), Number<M>(),
-               Number<N - 1>());
+             add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+                 Number<M>(), Number<N - 1>());
+    else
+      return tS(M - 1, N - 1) * r.eval(typename E::NumberDim(), Number<M - 1>(),
+                                       Number<N - 1>(), Number<I - 1>(),
+                                       Number<J - 1>(), Number<K - 1>(),
+                                       Number<L - 1>())
+
+             +
+
+             add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+                 Number<M>(), Number<N - 1>());
   }
 
   template <int I, int J, int K, int L, int M>
   inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
                   const Number<L> &, const Number<M> &, const Number<1> &) {
-    return tS(M - 1, 0) * r.eval(typename E::NumberDim(), Number<M - 1>(),
-                                 Number<0>(), Number<I - 1>(), Number<J - 1>(),
-                                 Number<K - 1>(), Number<L - 1>())
+    if (M != 1)
+      return (tS(M - 1, 0) + tS(0, M - 1)) *
+                 r.eval(typename E::NumberDim(), Number<M - 1>(), Number<0>(),
+                        Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
+                        Number<L - 1>())
 
-           +
+             +
 
-           add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-               Number<M - 1>(), typename E::NumberDim());
+             add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+                 Number<M - 1>(), Number<M - 1>());
+
+    else
+      return tS(0, 0) * r.eval(typename E::NumberDim(), Number<M - 1>(),
+                               Number<0>(), Number<I - 1>(), Number<J - 1>(),
+                               Number<K - 1>(), Number<L - 1>())
+
+             +
+
+             add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+                 Number<M - 1>(), Number<M - 1>());
   }
 
   template <int I, int J, int K, int L>
