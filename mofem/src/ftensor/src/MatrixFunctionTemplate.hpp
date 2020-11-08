@@ -463,9 +463,7 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
                  Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
               static_cast<C>(4) +
 
-          w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(),
-                 Number<-1>(), Number<i>(), Number<j>(), Number<k>(),
-                 Number<l>()) *
+          e.dfVal(a) * e.d2MEvalForSecondDirectiveType1[a](i, j, k, l) *
               e.aM(a, m, n) / static_cast<C>(2);
     } 
 
