@@ -258,7 +258,7 @@ template <typename E, typename C, typename G> struct d2MImpl {
   template <int a, int c, int d, int i, int j, int k, int l>
   inline C eval(const Number<1> &, const Number<a> &, const Number<c> &,
                 const Number<d> &, const Number<i> &, const Number<j> &,
-                const Number<k> &, const Number<l> &) const{
+                const Number<k> &, const Number<l> &) const {
     return term<0, a, c, d, i, j, k, l>();
   }
 };
@@ -616,8 +616,7 @@ struct GetDiffDiffMatImpl {
                   const Number<L> &) {}
 };
 
-template <typename T1, typename T2, int NB, int Dim>
-struct EigenMatrixImp {
+template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
 
   using Val = const FTensor::Tensor1<T1, Dim>;
   using Vec = const FTensor::Tensor2<T2, Dim, Dim>;
@@ -758,8 +757,8 @@ struct EigenMatrixImp {
 
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     T3 t_diff_A;
-    GetDiffDiffMatImpl<EigenMatrixImp<T1, T2, NB, Dim>, V, T3, T>(
-        *this, t_diff_A, t_S)
+    GetDiffDiffMatImpl<EigenMatrixImp<T1, T2, NB, Dim>, V, T3, T>(*this,
+                                                                  t_diff_A, t_S)
         .set(Number<Dim>(), Number<Dim>(), Number<Dim>(), Number<Dim>());
     return t_diff_A;
   }
@@ -774,7 +773,7 @@ private:
   FTensor::Tensor1<T1, Dim> dfVal;
   FTensor::Tensor1<T1, Dim> ddfVal;
   FTensor::Tensor2<T1, Dim, Dim> coefficientsType0;
-  FTensor::Tensor4<T1, Dim,Dim,Dim,Dim> coefficientsType1;
+  FTensor::Tensor4<T1, Dim, Dim, Dim, Dim> coefficientsType1;
 
   template <typename E, typename C> friend struct d2MCoefficients;
   template <typename E, typename C> friend struct d2MCoefficientsType0;
