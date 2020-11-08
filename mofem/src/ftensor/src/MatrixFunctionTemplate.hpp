@@ -298,9 +298,7 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
 
     if (e.nB == 3)
       return e.fVal(a) * e.aF(a, b) *
-             r.eval(typename E::NumberDim(), Number<A>(), Number<a>(),
-                    Number<b>(), Number<I>(), Number<J>(), Number<K>(),
-                    Number<L>());
+             e.d2MEvalForSecondDirectiveType1[A](I, J, K, L);
 
     return r.eval(typename E::NumberDim(), Number<A>(), Number<a>(),
                   Number<b>(), Number<I>(), Number<J>(), Number<K>(),
@@ -440,6 +438,36 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
   template <int a, int i, int j, int k, int l, int m, int n>
   inline C term() const {
+
+    if(e.nB == 3) {
+
+      return
+
+          e.dfVal(a) *
+              (
+
+                  e.d2MEvalForSecondDirectiveType1[a](i, j, m, n) *
+                      e.aM(a, k, l)
+
+                  +
+
+                  e.aM(a, i, j) *
+                      e.d2MEvalForSecondDirectiveType1[a](k, l, m, n)) /
+              static_cast<C>(2) +
+
+          e.aM(a, i, j) * e.aM(a, k, l) * e.aM(a, m, n) * e.ddfVal(a)
+
+          +
+
+          r.eval(typename E::NumberDim(), Number<a>(), Number<i>(), Number<j>(),
+                 Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
+              static_cast<C>(4) +
+
+          w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(),
+                 Number<-1>(), Number<i>(), Number<j>(), Number<k>(),
+                 Number<l>()) *
+              e.aM(a, m, n) / static_cast<C>(2);
+    } 
 
     return
 
