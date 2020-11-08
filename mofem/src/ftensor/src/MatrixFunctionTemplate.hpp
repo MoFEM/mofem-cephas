@@ -145,13 +145,13 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
 
   template <int a, int b, int c, int d>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
-                  const Number<d> &, const Number<3> &) {
-    return e.fVal(c) * e.aF(c, d) * e.aF(a, b);
+                  const Number<d> &, const Number<3> &) const {
+    return e.coefficientsType1(a, b, c, d);
   }
 
   template <int a, int b, int c, int d>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
-                  const Number<d> &, const Number<2> &) {
+                  const Number<d> &, const Number<2> &) const {
 
     if ((c == 1 || d == 1) && (a == 1 || b == 1))
       return get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
@@ -182,7 +182,7 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
 
   template <int a, int b, int c, int d>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
-                  const Number<d> &, const Number<1>) {
+                  const Number<d> &, const Number<1>) const {
     if ((a != b && b != d) && (a != d && b != c))
       return e.ddfVal(c) / static_cast<C>(4);
     else
@@ -739,6 +739,17 @@ struct EigenMatrixImp {
         aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
       }
 
+    for (auto aa = 0; aa != Dim; ++aa) {
+      for (auto bb = 0; bb != Dim; ++bb) {
+        for (auto cc = 0; cc != Dim; ++cc) {
+          for (auto dd = 0; dd != Dim; ++dd) {
+            coefficientsType1(aa, bb, cc, dd) =
+                fVal(cc) * aF(cc, dd) * aF(aa, bb);
+          }
+        }
+      }
+    }
+
     using V = typename FTensor::promote<T1, T2>::V;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     T3 t_diff_A;
@@ -757,6 +768,7 @@ private:
   FTensor::Tensor1<T1, Dim> fVal;
   FTensor::Tensor1<T1, Dim> dfVal;
   FTensor::Tensor1<T1, Dim> ddfVal;
+  FTensor::Tensor4<T1, Dim,Dim,Dim,Dim> coefficientsType1;
 
   template <typename E, typename C> friend struct d2MCoefficients;
   template <typename E, typename C> friend struct d2MCoefficientsType0;
