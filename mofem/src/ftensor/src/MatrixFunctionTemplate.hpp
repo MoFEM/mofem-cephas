@@ -646,13 +646,11 @@ struct GetDiffDiffMatImpl {
   inline void set(const Number<I> &, const Number<J> &, const Number<K> &,
                   const Number<L> &) {
     set(Number<I>(), Number<J>(), Number<K>(), Number<L - 1>());
-    if (I <= K && J <= K) {
-      tA(I - 1, J - 1, K - 1, L - 1) =
-          add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-              typename E::NumberDim(), typename E::NumberDim());
-      if (K != I || L != J)
-        tA(K - 1, L - 1, I - 1, J - 1) = tA(I - 1, J - 1, K - 1, L - 1);
-    }
+    tA(I - 1, J - 1, K - 1, L - 1) =
+        add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+            typename E::NumberDim(), typename E::NumberDim());
+    if (K != I || L != J)
+      tA(K - 1, L - 1, I - 1, J - 1) = tA(I - 1, J - 1, K - 1, L - 1);
   }
 
   template <int I, int J, int K>
@@ -664,8 +662,7 @@ struct GetDiffDiffMatImpl {
   template <int I, int J>
   inline void set(const Number<I> &, const Number<J> &, const Number<0> &,
                   const Number<0> &) {
-    set(Number<I>(), Number<J - 1>(), typename E::NumberDim(),
-        typename E::NumberDim());
+    set(Number<I>(), Number<J - 1>(), Number<I>(), Number<J>());
   }
 
   template <int I, int K, int L>
