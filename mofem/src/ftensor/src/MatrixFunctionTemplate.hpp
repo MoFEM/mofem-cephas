@@ -622,6 +622,7 @@ struct EigenMatrixImp {
   using Val = const FTensor::Tensor1<T1, Dim>;
   using Vec = const FTensor::Tensor2<T2, Dim, Dim>;
   using Fun = boost::function<double(const double)>;
+  using V = typename FTensor::promote<T1, T2>::V;
 
   template <int N> using Number = FTensor::Number<N>;
   template <char c> using I = typename FTensor::Index<c, Dim>;
@@ -659,8 +660,6 @@ struct EigenMatrixImp {
     for (auto aa = 0; aa != Dim; ++aa)
       fVal(aa) = f(tVal(aa));
 
-    using V =
-        typename FTensor::promote<decltype(tVal(0)), decltype(tVec(0, 0))>::V;
     using T3 =
         FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim>;
     T3 t_A;
@@ -697,7 +696,6 @@ struct EigenMatrixImp {
         aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
       }
 
-    using V = typename FTensor::promote<T1, T2>::V;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     T3 t_diff_A;
     GetDiffMatImpl<EigenMatrixImp<T1, T2, NB, Dim>, V, T3>(*this, t_diff_A)
@@ -758,7 +756,6 @@ struct EigenMatrixImp {
       }
     }
 
-    using V = typename FTensor::promote<T1, T2>::V;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     T3 t_diff_A;
     GetDiffDiffMatImpl<EigenMatrixImp<T1, T2, NB, Dim>, V, T3, T>(
