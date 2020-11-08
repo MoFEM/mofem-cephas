@@ -291,10 +291,10 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
            e.aM(A, I, L) * fd2M<a, b, B, J, K, M, N>();
   }
 
-  template <int a, int A, int B, int I, int J, int K, int L, int M, int N>
+  template <int a, int B, int I, int J, int K, int L, int M, int N>
   inline auto fd2S() const {
-    return fd2G<a, B, A, B, I, J, K, L, M, N>() +
-           fd2G<a, B, B, A, I, J, K, L, M, N>();
+    return fd2G<a, B, a, B, I, J, K, L, M, N>() +
+           fd2G<a, B, B, a, I, J, K, L, M, N>();
   }
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
@@ -304,7 +304,7 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
 
       return
 
-          fd2S<a, a, b, i, j, k, l, m, n>()
+          fd2S<a, b, i, j, k, l, m, n>()
 
           +
 
