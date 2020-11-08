@@ -297,7 +297,7 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
   inline auto fd2M() const {
 
     if (e.nB == 3)
-      return e.d2MEvalForSecondDirectiveType1[A](I, J, K, L);
+      return e.d2MVals[A](I, J, K, L);
 
     return r.eval(typename E::NumberDim(), Number<A>(), Number<a>(),
                   Number<b>(), Number<I>(), Number<J>(), Number<K>(),
@@ -450,16 +450,13 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
           e.dfVal(a) *
               (
 
-                  e.d2MEvalForSecondDirectiveType1[a](i, j, m, n) *
-                      e.aM(a, k, l)
+                  e.d2MVals[a](i, j, m, n) * e.aM(a, k, l)
 
                   +
 
-                  e.aM(a, i, j) *
-                      e.d2MEvalForSecondDirectiveType1[a](k, l, m, n)
+                  e.aM(a, i, j) * e.d2MVals[a](k, l, m, n)
 
-                  + e.d2MEvalForSecondDirectiveType1[a](i, j, k, l) *
-                        e.aM(a, m, n)
+                  + e.d2MVals[a](i, j, k, l) * e.aM(a, m, n)
 
                       ) /
               static_cast<C>(2)
@@ -878,14 +875,14 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     using CT1 = dd4MCoefficientsType1<THIS, V>;
 
-    d2MEval<THIS, V, CT1, T3, 1, 1>(*this, d2MEvalForSecondDirectiveType1[0])
+    d2MEval<THIS, V, CT1, T3, 1, 1>(*this, d2MVals[0])
         .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
              Number<Dim>());
-    d2MEval<THIS, V, CT1, T3, 1, 1>(*this, d2MEvalForSecondDirectiveType1[1])
+    d2MEval<THIS, V, CT1, T3, 1, 1>(*this, d2MVals[1])
         .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
              Number<Dim>());
     if (Dim == 3)
-      d2MEval<THIS, V, CT1, T3, 1, 1>(*this, d2MEvalForSecondDirectiveType1[2])
+      d2MEval<THIS, V, CT1, T3, 1, 1>(*this, d2MVals[2])
           .set(Number<2>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
                Number<Dim>());
 
@@ -906,7 +903,7 @@ private:
   FTensor::Tensor1<T1, Dim> ddfVal;
   FTensor::Tensor2<T1, Dim, Dim> coefficientsType0;
   FTensor::Tensor4<T1, Dim, Dim, Dim, Dim> coefficientsType1;
-  std::array<FTensor::Ddg<V, Dim, Dim>, Dim> d2MEvalForSecondDirectiveType1;
+  std::array<FTensor::Ddg<V, Dim, Dim>, Dim> d2MVals;
 
   template <typename E, typename C> friend struct d2MCoefficients;
   template <typename E, typename C> friend struct d2MCoefficientsType0;

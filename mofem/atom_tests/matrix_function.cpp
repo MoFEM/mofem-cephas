@@ -7,7 +7,7 @@
  *
  */
 
-#define FTENSOR_DEBUG
+//#define FTENSOR_DEBUG
 #include <FTensor.hpp>
 
 #include <MoFEM.hpp>
@@ -996,7 +996,7 @@ int main(int argc, char *argv[]) {
           3. / 1., 3. / 1., 1.};
 
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Start";
-      for (int ii = 0; ii != 100000; ++ii) {
+      for (int ii = 0; ii != 1000; ++ii) {
         auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 3);
         auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
                                                 dd_f, t_S, 3);
