@@ -235,7 +235,7 @@ template <typename E, typename C, typename G> struct d2MImpl {
   }
 };
 
-template <typename E, typename C, typename G, typename T, int a, int c, int d>
+template <typename E, typename C, typename G, typename T, int c, int d>
 struct d2MEval {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -251,7 +251,7 @@ struct d2MEval {
                   const Number<K> &, const Number<L> &) {
     set(Number<A>(), Number<I>(), Number<J>(), Number<K>(), Number<L - 1>());
     tA(I - 1, J - 1, K - 1, L - 1) = r.eval(
-        typename E::NumberDim(), Number<a>(), Number<c>(), Number<d>(),
+        typename E::NumberDim(), Number<A>(), Number<c>(), Number<d>(),
         Number<I - 1>(), Number<J - 1>(), Number<K - 1>(), Number<L - 1>());
   }
 
@@ -295,6 +295,13 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
 
   template <int a, int b, int A, int I, int J, int K, int L>
   inline auto fd2M() const {
+
+    if (e.nB == 3)
+      return e.fVal(a) * e.aF(a, b) *
+             r.eval(typename E::NumberDim(), Number<A>(), Number<a>(),
+                    Number<b>(), Number<I>(), Number<J>(), Number<K>(),
+                    Number<L>());
+
     return r.eval(typename E::NumberDim(), Number<A>(), Number<a>(),
                   Number<b>(), Number<I>(), Number<J>(), Number<K>(),
                   Number<L>());
@@ -647,6 +654,8 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
   using NumberNb = Number<NB>;
   using NumberDim = Number<Dim>;
 
+  static constexpr int nB = NB;
+
   EigenMatrixImp(Val &t_val, Vec &t_vec) : tVal(t_val), tVec(t_vec) {
 
     for (auto aa = 0; aa != Dim; ++aa)
@@ -756,13 +765,19 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
       }
 
+    for (auto aa = 0; aa != Dim; ++aa) {
+      for (auto bb = 0; bb != Dim; ++bb) {
+        coefficientsType0(aa, bb) = dfVal(aa) * aF(aa, bb);
+      }
+    }
+
     if (NB == 3)
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
           for (auto cc = 0; cc != Dim; ++cc) {
             for (auto dd = 0; dd != Dim; ++dd) {
               coefficientsType1(aa, bb, cc, dd) =
-                  fVal(cc) * aF(cc, dd) * aF(aa, bb);
+                  /*fVal(cc) * aF(cc, dd) **/ aF(aa, bb);
             }
           }
         }
@@ -777,16 +792,18 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
               auto &r = coefficientsType1(aa, bb, cc, dd);
 
               if ((cc == 1 || dd == 1) && (aa == 1 || bb == 1))
-                r = coefficientsType1(aa, bb, cc, dd) =
-                    fVal(cc) * aF(cc, dd) * aF(aa, bb);
+                r = fVal(cc) * aF(cc, dd) * aF(aa, bb);
               else if (cc != 1 && dd != 1 && aa != 1 && bb != 1) {
+
                 if ((aa != bb && bb != dd) && (aa != dd && bb != cc))
                   r = ddfVal(cc) / 4;
                 else
                   r = 0;
-              } else if ((cc != 1 && dd != 1) && (aa == 1 || bb == 1))
+
+              } else if ((cc != 1 && dd != 1) && (aa == 1 || bb == 1)) 
                 r = dfVal(cc) * aF(aa, bb) / 2;
               else if ((cc == 1 || dd == 1) && (aa != 1 && bb != 1)) {
+
                 if ((cc == 2 && dd == 1) || (cc == 2 && dd == 1))
                   r = (
 
@@ -799,6 +816,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
 
                 else
                   r = 0;
+
               } else
                 r = 0;
             }
@@ -821,24 +839,19 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         }
       }
 
-    for (auto aa = 0; aa != Dim; ++aa) {
-      for (auto bb = 0; bb != Dim; ++bb) {
-        coefficientsType0(aa, bb) = dfVal(aa) * aF(aa, bb);
-      }
-    }
 
     using THIS = EigenMatrixImp<T1, T2, NB, Dim>;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     using CT1 = dd4MCoefficientsType1<THIS, V>;
 
-    d2MEval<THIS, V, CT1, T3, 0, 1, 1>(*this, d2MEvalForSecondDirectiveType1[0])
+    d2MEval<THIS, V, CT1, T3, 1, 1>(*this, d2MEvalForSecondDirectiveType1[0])
         .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
              Number<Dim>());
-    d2MEval<THIS, V, CT1, T3, 1, 1, 1>(*this, d2MEvalForSecondDirectiveType1[1])
+    d2MEval<THIS, V, CT1, T3, 1, 1>(*this, d2MEvalForSecondDirectiveType1[1])
         .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
              Number<Dim>());
     if(Dim == 3)
-      d2MEval<THIS, V, CT1, T3, 2, 1, 1>(*this,
+      d2MEval<THIS, V, CT1, T3, 1, 1>(*this,
                                          d2MEvalForSecondDirectiveType1[2])
           .set(Number<2>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
                Number<Dim>());
