@@ -885,7 +885,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
           for (auto cc = 0; cc != Dim; ++cc) {
             for (auto dd = 0; dd != Dim; ++dd) {
               auto &r = coefficientsType1(aa, bb, cc, dd);
-              if ((aa != bb && bb != dd) && (aa != dd && bb != cc))
+              if ((bb != dd) && (aa != dd && bb != cc))
                 r = ddfVal(cc) / 4;
               else
                 r = 0;
