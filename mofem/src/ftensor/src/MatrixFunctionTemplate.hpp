@@ -320,6 +320,10 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
              (fd2G<a, B, a, B, I, J, K, L, M, N>() +
               fd2G<a, B, B, a, I, J, K, L, M, N>());
 
+    if (e.nB == 1)
+      return (e.ddfVal(a) / 4) * (fd2G<a, B, a, B, I, J, K, L, M, N>() +
+                                  fd2G<a, B, B, a, I, J, K, L, M, N>());
+
     return fd2G<a, B, a, B, I, J, K, L, M, N>() +
            fd2G<a, B, B, a, I, J, K, L, M, N>();
   }
@@ -471,6 +475,8 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
                  Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
               static_cast<C>(4);
     }
+
+
 
     return
 
@@ -886,7 +892,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
             for (auto dd = 0; dd != Dim; ++dd) {
               auto &r = coefficientsType1(aa, bb, cc, dd);
               if ((bb != dd) && (aa != dd && bb != cc))
-                r = ddfVal(cc) / 4;
+                r = 1;//ddfVal(cc) / 4;
               else
                 r = 0;
             }
