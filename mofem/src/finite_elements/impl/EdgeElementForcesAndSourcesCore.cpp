@@ -51,7 +51,6 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::calculateEdgeDirection() {
   cblas_dcopy(3, &cOords[3], 1, &*dIrection.data().begin(), 1);
   cblas_daxpy(3, -1., &cOords[0], 1, &*dIrection.data().begin(), 1);
   lEngth = cblas_dnrm2(3, &*dIrection.data().begin(), 1);
-  nOrmal = VectorDouble({-dIrection(1), dIrection(0), dIrection(2)});
   MoFEMFunctionReturn(0);
 }
 

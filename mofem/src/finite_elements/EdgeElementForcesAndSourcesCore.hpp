@@ -77,7 +77,7 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
      * \brief get edge normal 
      * NOTE: it should be used only in 2D analysis
      */
-    inline VectorDouble &getNormal();
+    inline VectorDouble getNormal();
 
     inline auto getFTensor1Normal();
 
@@ -163,7 +163,6 @@ protected:
   int numNodes;
   const EntityHandle *cOnn;
   VectorDouble dIrection;
-  VectorDouble nOrmal;
   VectorDouble cOords;
   MatrixDouble coordsAtGaussPts;
 
@@ -277,9 +276,11 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getCoordsAtGaussPts() {
       ->coordsAtGaussPts;
 }
 
-VectorDouble &
+VectorDouble
 EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getNormal() {
-  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->nOrmal;
+  auto &dir =
+      static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->dIrection;
+  return VectorDouble({-dir(1), dir(0), dir(2)});
 }
 
 auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
@@ -323,8 +324,8 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
 
 auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
     getFTensor1Normal() {
-  double *ptr = &*getNormal().data().begin();
-  return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
+  auto norm = getNormal();
+  return FTensor::Tensor1<double, 3>(norm(0), norm(1), norm(2));
 }
 
 auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
