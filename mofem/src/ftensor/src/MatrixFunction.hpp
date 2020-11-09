@@ -72,25 +72,38 @@ template <typename T> using Fun = boost::function<T(const T)>;
 
 /**
  * @brief Get the Mat object
+ * 
+ * \f[
+ * \mathbf{B} = f(\mathbf{A})
+ * \f]
  *
- * @param t_val
- * @param t_vec
- * @param f
- * @param nb
+ * \f[
+ * B_{ij} = \sum_{a}^d f(\lambda^a) n^a_i n^a_j
+ * \f]
+ * where \f$a\f$ is eigen value number.
+ *
+ * @param t_val eigen values
+ * @param t_vec eigen vector
+ * @param f function
  * @return FTensor::Tensor2_symmetric<double, 3>
  */
-FTensor::Tensor2_symmetric<double, 3> getMat(Val<double, 3> &t_val,
-                                             Vec<double, 3> &t_vec,
-                                             Fun<double> f, const int nb);
+FTensor::Tensor2_symmetric<double, 3>
+getMat(Val<double, 3> &t_val, Vec<double, 3> &t_vec, Fun<double> f);
 
 /**
  * @brief Get the Diff Mat object
+ * 
+ * \f[
+ * P_{ijkl} = \frac{\partial B_{ij}}{\partial A_{kl}}
+ * \f]
  *
- * @param t_val
- * @param t_vec
- * @param f
- * @param d_f
- * @param nb
+ * \note Eiegn vetore are in rows.
+ * 
+ * @param t_val eigen values
+ * @param t_vec eigen vector
+ * @param f function
+ * @param d_f directive of function
+ * @param nb number of nonequal eigen valuse
  * @return FTensor::Ddg<double, 3, 3>
  */
 FTensor::Ddg<double, 3, 3> getDiffMat(Val<double, 3> &t_val,
@@ -99,14 +112,21 @@ FTensor::Ddg<double, 3, 3> getDiffMat(Val<double, 3> &t_val,
 
 /**
  * @brief Get the Diff Diff Mat object
+ * 
+ * \f[
+ * LS_{klmn} =
+ * S_{ij} \frac{\partial^2 B_{ij}}{\partial A_{kl} \partial A_{mn} }
+ * \f]
  *
- * @param t_val
- * @param t_vec
- * @param f
- * @param d_f
- * @param dd_f
- * @param t_S
- * @param nb
+ * \note Eiegn vetore are in rows.
+ * 
+ * @param t_val eiegn values
+ * @param t_vec eigen vectors
+ * @param f function
+ * @param d_f directive of function
+ * @param dd_f second directive of function
+ * @param t_S S tensor
+ * @param nb number of nonzero eigen values
  * @return FTensor::Ddg<double, 3, 3>
  */
 FTensor::Ddg<double, 3, 3> getDiffDiffMat(Val<double, 3> &t_val,
@@ -123,44 +143,22 @@ getDiffDiffMat(Val<double, 3> &t_val, Vec<double, 3> &t_vec, Fun<double> f,
                Fun<double> d_f, Fun<double> dd_f,
                FTensor::Tensor2_symmetric<double, 3> &t_S, const int nb);
 
-/*
- * @brief Get the Mat object
- *
- * @param t_val
- * @param t_vec
- * @param f
- * @param nb
- * @return FTensor::Tensor2_symmetric<double, 3>
+/**
+ * @copydoc EigenMatrix::getMat
  */
 FTensor::Tensor2_symmetric<double, 2> getMat(Val<double, 2> &t_val,
                                              Vec<double, 2> &t_vec,
-                                             Fun<double> f, const int nb);
+                                             Fun<double> f);
 
 /**
- * @brief Get the Diff Mat object
- *
- * @param t_val
- * @param t_vec
- * @param f
- * @param d_f
- * @param nb
- * @return FTensor::Ddg<double, 3, 3>
+ * @copydoc EigenMatrix::getDiffMat
  */
 FTensor::Ddg<double, 2, 2> getDiffMat(Val<double, 2> &t_val,
                                       Vec<double, 2> &t_vec, Fun<double> f,
                                       Fun<double> d_f, const int nb);
 
 /**
- * @brief Get the Diff Diff Mat object
- *
- * @param t_val
- * @param t_vec
- * @param f
- * @param d_f
- * @param dd_f
- * @param t_S
- * @param nb
- * @return FTensor::Ddg<double, 3, 3>
+ * @copydoc EigenMatrix::getDiffDiffMat
  */
 FTensor::Ddg<double, 2, 2> getDiffDiffMat(Val<double, 2> &t_val,
                                           Vec<double, 2> &t_vec, Fun<double> f,

@@ -7,7 +7,7 @@
  *
  */
 
-#define FTENSOR_DEBUG
+//#define FTENSOR_DEBUG
 #include <FTensor.hpp>
 
 #include <MoFEM.hpp>
@@ -166,6 +166,17 @@ auto get_diff_matrix(T1 &t_d, const FTensor::Number<DIM> &) {
   return t_d_a;
 };
 
+template <typename T, int DIM>
+auto get_norm_t4(T &t, const FTensor::Number<DIM> &) {
+  double r = 0;
+  for (int ii = 0; ii != DIM; ++ii)
+    for (int jj = 0; jj != DIM; ++jj)
+      for (int kk = 0; kk != DIM; ++kk)
+        for (int ll = 0; ll != DIM; ++ll)
+          r += t(ii, jj, kk, ll) * t(ii, jj, kk, ll);
+  return r;
+};
+
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
@@ -209,16 +220,6 @@ int main(int argc, char *argv[]) {
         for (int jj = 0; jj != 3; ++jj)
           MOFEM_LOG("ATOM_TEST", Sev::noisy)
               << ii + 1 << " " << jj + 1 << " : " << t(ii, jj);
-    };
-
-    auto get_norm_t4 = [](auto t) {
-      double r = 0;
-      for (int ii = 0; ii != 3; ++ii)
-        for (int jj = 0; jj != 3; ++jj)
-          for (int kk = 0; kk != 3; ++kk)
-            for (int ll = 0; ll != 3; ++ll)
-              r += t(ii, jj, kk, ll) * t(ii, jj, kk, ll);
-      return r;
     };
 
     auto run_lapack = [](auto &a) {
@@ -296,7 +297,7 @@ int main(int argc, char *argv[]) {
         auto d_f = [](double v) { return exp(v); };
         auto dd_f = [](double v) { return exp(v); };
 
-        auto t_b = EigenMatrix::getMat(t_L, t_N, f, 3);
+        auto t_b = EigenMatrix::getMat(t_L, t_N, f);
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "Reconstruct mat";
         print_mat(t_b);
 
@@ -313,10 +314,10 @@ int main(int argc, char *argv[]) {
         auto norm2_t_b = t_b(i, j) * t_b(i, j);
         MOFEM_LOG("ATOM_TEST", Sev::inform) << "norm2_t_b " << norm2_t_b;
 
-        auto norm2_t_d = get_norm_t4(t_d);
+        auto norm2_t_d = get_norm_t4(t_d, FTensor::Number<3>());
         MOFEM_LOG("ATOM_TEST", Sev::inform) << "norm2_t_d " << norm2_t_d;
 
-        auto norm2_t_dd = get_norm_t4(t_dd);
+        auto norm2_t_dd = get_norm_t4(t_dd, FTensor::Number<3>());
         MOFEM_LOG("ATOM_TEST", Sev::inform) << "norm2_t_dd " << norm2_t_dd;
 
         constexpr double regression_t_b = 572.543;
@@ -357,8 +358,8 @@ int main(int argc, char *argv[]) {
         auto d_f = [](double v) { return exp(v); };
         auto dd_f = [](double v) { return exp(v); };
 
-        auto t_b = EigenMatrix::getMat(t_L, t_N, f, 3);
-        auto t_c = EigenMatrix::getMat(t_eig_vals, t_eig_vec, f, 3);
+        auto t_b = EigenMatrix::getMat(t_L, t_N, f);
+        auto t_c = EigenMatrix::getMat(t_eig_vals, t_eig_vec, f);
         t_c(i, j) -= t_b(i, j);
         print_mat(t_c);
 
@@ -386,7 +387,7 @@ int main(int argc, char *argv[]) {
 
         constexpr double eps = 1e-10;
         {
-          auto t_b = EigenMatrix::getMat(t_L, t_N, f, 3);
+          auto t_b = EigenMatrix::getMat(t_L, t_N, f);
           t_b(i, j) -= (t_A(i, j) || t_A(j, i)) / 2;
           auto norm2_t_b = t_b(i, j) * t_b(i, j);
           MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -406,7 +407,7 @@ int main(int argc, char *argv[]) {
           MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
           print_ddg(t_d, "code ");
 
-          double nrm2_t_d_a = get_norm_t4(t_d_a);
+          double nrm2_t_d_a = get_norm_t4(t_d_a, FTensor::Number<3>());
           MOFEM_LOG("ATOM_TEST", Sev::inform)
               << "Direvarive hand calculation minus code " << nrm2_t_d_a;
           if (nrm2_t_d_a > eps)
@@ -426,7 +427,7 @@ int main(int argc, char *argv[]) {
           auto t_dd =
               EigenMatrix::getDiffDiffMat(t_L, t_N, f, d_f, dd_f, t_S, 3);
 
-          auto norm2_t_dd = get_norm_t4(t_dd);
+          auto norm2_t_dd = get_norm_t4(t_dd, FTensor::Number<3>());
           MOFEM_LOG("ATOM_TEST", Sev::inform) << "norm2_t_dd " << norm2_t_dd;
           if (norm2_t_dd > eps)
             SETERRQ(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
@@ -444,7 +445,7 @@ int main(int argc, char *argv[]) {
 
         // check if multiplication gives right value
         {
-          auto t_b = EigenMatrix::getMat(t_L, t_N, f, 3);
+          auto t_b = EigenMatrix::getMat(t_L, t_N, f);
           FTensor::Tensor2<double, 3, 3> t_a;
           t_a(i, j) = t_b(i, j) - t_A(i, k) * t_A(k, j);
           print_mat(t_a);
@@ -465,7 +466,7 @@ int main(int argc, char *argv[]) {
           print_ddg(t_d_a, "hand ");
           MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
           print_ddg(t_d, "code ");
-          double nrm2_t_d_a = get_norm_t4(t_d_a);
+          double nrm2_t_d_a = get_norm_t4(t_d_a, FTensor::Number<3>());
           MOFEM_LOG("ATOM_TEST", Sev::inform)
               << "Direvarive hand calculation minus code " << nrm2_t_d_a;
           if (nrm2_t_d_a > eps)
@@ -492,7 +493,7 @@ int main(int argc, char *argv[]) {
           MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
           print_ddg(t_dd, "code ");
 
-          double nrm2_t_dd_a = get_norm_t4(t_dd_a);
+          double nrm2_t_dd_a = get_norm_t4(t_dd_a, FTensor::Number<3>());
           MOFEM_LOG("ATOM_TEST", Sev::inform)
               << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
           if (nrm2_t_dd_a > eps)
@@ -522,7 +523,7 @@ int main(int argc, char *argv[]) {
 
       constexpr double eps = 1e-10;
       {
-        auto t_b = EigenMatrix::getMat(t_eig_vals, t_eig_vecs, f, 3);
+        auto t_b = EigenMatrix::getMat(t_eig_vals, t_eig_vecs, f);
         t_b(i, j) -= (t_a(i, j) || t_a(j, i)) / 2;
         auto norm2_t_b = t_b(i, j) * t_b(i, j);
         MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -539,7 +540,7 @@ int main(int argc, char *argv[]) {
         print_ddg(t_d_a, "hand ");
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
         print_ddg(t_d, "code ");
-        double nrm2_t_d_a = get_norm_t4(t_d_a);
+        double nrm2_t_d_a = get_norm_t4(t_d_a, FTensor::Number<3>());
         MOFEM_LOG("ATOM_TEST", Sev::inform)
             << "Direvarive hand calculation minus code " << nrm2_t_d_a;
         if (nrm2_t_d_a > eps)
@@ -557,7 +558,7 @@ int main(int argc, char *argv[]) {
         print_ddg(t_d_a, "hand ");
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
         print_ddg(t_d, "code ");
-        double nrm2_t_d_a = get_norm_t4(t_d_a);
+        double nrm2_t_d_a = get_norm_t4(t_d_a, FTensor::Number<3>());
         MOFEM_LOG("ATOM_TEST", Sev::inform)
             << "Direvarive hand calculation minus code " << nrm2_t_d_a;
         if (nrm2_t_d_a > eps)
@@ -586,7 +587,7 @@ int main(int argc, char *argv[]) {
 
       constexpr double eps = 1e-10;
       {
-        auto t_b = EigenMatrix::getMat(t_eig_vals, t_eig_vecs, f, 3);
+        auto t_b = EigenMatrix::getMat(t_eig_vals, t_eig_vecs, f);
         t_b(i, j) -= (t_a(i, j) || t_a(j, i)) / 2;
         auto norm2_t_b = t_b(i, j) * t_b(i, j);
         MOFEM_LOG("ATOM_TEST", Sev::inform)
@@ -603,7 +604,7 @@ int main(int argc, char *argv[]) {
         print_ddg(t_d_a, "hand ");
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
         print_ddg(t_d, "code ");
-        double nrm2_t_d_a = get_norm_t4(t_d_a);
+        double nrm2_t_d_a = get_norm_t4(t_d_a, FTensor::Number<3>());
         MOFEM_LOG("ATOM_TEST", Sev::inform)
             << "Direvarive hand calculation minus code " << nrm2_t_d_a;
         if (nrm2_t_d_a > eps)
@@ -621,7 +622,7 @@ int main(int argc, char *argv[]) {
         print_ddg(t_d_a, "hand ");
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_d";
         print_ddg(t_d, "code ");
-        double nrm2_t_d_a = get_norm_t4(t_d_a);
+        double nrm2_t_d_a = get_norm_t4(t_d_a, FTensor::Number<3>());
         MOFEM_LOG("ATOM_TEST", Sev::inform)
             << "Direvarive hand calculation minus code " << nrm2_t_d_a;
         if (nrm2_t_d_a > eps)
@@ -667,7 +668,7 @@ int main(int argc, char *argv[]) {
       MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
       print_ddg(t_dd, "test ");
 
-      double nrm2_t_dd = get_norm_t4(t_dd);
+      double nrm2_t_dd = get_norm_t4(t_dd, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::inform)
           << "Direvarive hand calculation minus code " << nrm2_t_dd;
       if (nrm2_t_dd > eps)
@@ -708,7 +709,7 @@ int main(int argc, char *argv[]) {
 
       auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<3>());
 
-      double nrm2_t_dd_a = get_norm_t4(t_dd_a);
+      double nrm2_t_dd_a = get_norm_t4(t_dd_a, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::inform)
           << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
       if (nrm2_t_dd_a > eps)
@@ -750,7 +751,7 @@ int main(int argc, char *argv[]) {
 
       auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<3>());
 
-      double nrm2_t_dd_a = get_norm_t4(t_dd_a);
+      double nrm2_t_dd_a = get_norm_t4(t_dd_a, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::inform)
           << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
       if (nrm2_t_dd_a > eps)
@@ -793,11 +794,11 @@ int main(int argc, char *argv[]) {
       auto t_dd_2 = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
                                                 dd_f, t_S, 1);
 
-      double nrm2_t_dd_t1 = get_norm_t4(t_dd_1);
+      double nrm2_t_dd_t1 = get_norm_t4(t_dd_1, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::verbose)
           << "Direvarive nor t_dd_1 " << nrm2_t_dd_t1;
 
-      double nrm2_t_dd_t2 = get_norm_t4(t_dd_2);
+      double nrm2_t_dd_t2 = get_norm_t4(t_dd_2, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::verbose)
           << "Direvarive norm t_dd_2 " << nrm2_t_dd_t2;
 
@@ -819,7 +820,7 @@ int main(int argc, char *argv[]) {
                     << t_dd_2(ii, jj, kk, ll);
             }
 
-      double nrm2_t_dd_3 = get_norm_t4(t_dd_3);
+      double nrm2_t_dd_3 = get_norm_t4(t_dd_3, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::inform)
           << "Direvarive approx. calculation minus code " << nrm2_t_dd_3;
       if (nrm2_t_dd_3 > eps)
@@ -863,11 +864,11 @@ int main(int argc, char *argv[]) {
       auto t_dd_2 = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
                                                 dd_f, t_S, 2);
 
-      double nrm2_t_dd_t1 = get_norm_t4(t_dd_1);
+      double nrm2_t_dd_t1 = get_norm_t4(t_dd_1, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::verbose)
           << "Direvarive nor t_dd_1 " << nrm2_t_dd_t1;
 
-      double nrm2_t_dd_t2 = get_norm_t4(t_dd_2);
+      double nrm2_t_dd_t2 = get_norm_t4(t_dd_2, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::verbose)
           << "Direvarive norm t_dd_2 " << nrm2_t_dd_t2;
 
@@ -889,7 +890,7 @@ int main(int argc, char *argv[]) {
                     << t_dd_2(ii, jj, kk, ll);
             }
 
-      double nrm2_t_dd_3 = get_norm_t4(t_dd_3);
+      double nrm2_t_dd_3 = get_norm_t4(t_dd_3, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::inform)
           << "Direvarive approx. calculation minus code " << nrm2_t_dd_3;
       if (nrm2_t_dd_3 > eps)
@@ -935,11 +936,11 @@ int main(int argc, char *argv[]) {
       auto t_dd_2 = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
                                                 dd_f, t_S, 2);
 
-      double nrm2_t_dd_t1 = get_norm_t4(t_dd_1);
+      double nrm2_t_dd_t1 = get_norm_t4(t_dd_1, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::verbose)
           << "Direvarive nor t_dd_1 " << nrm2_t_dd_t1;
 
-      double nrm2_t_dd_t2 = get_norm_t4(t_dd_2);
+      double nrm2_t_dd_t2 = get_norm_t4(t_dd_2, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::verbose)
           << "Direvarive norm t_dd_2 " << nrm2_t_dd_t2;
 
@@ -961,7 +962,7 @@ int main(int argc, char *argv[]) {
                     << t_dd_2(ii, jj, kk, ll) << " " << t_dd_3(ii, jj, kk, ll);
             }
 
-      double nrm2_t_dd_3 = get_norm_t4(t_dd_3);
+      double nrm2_t_dd_3 = get_norm_t4(t_dd_3, FTensor::Number<3>());
       MOFEM_LOG("ATOM_TEST", Sev::inform)
           << "Direvarive approx. calculation minus code " << nrm2_t_dd_3;
       if (nrm2_t_dd_3 > eps)
@@ -996,7 +997,7 @@ int main(int argc, char *argv[]) {
           3. / 1., 3. / 1., 1.};
 
       MOFEM_LOG("ATOM_TEST", Sev::inform) << "Start";
-      for (int ii = 0; ii != 100; ++ii) {
+      for (int ii = 0; ii != 1000; ++ii) {
         auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 3);
         auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
                                                 dd_f, t_S, 3);
@@ -1065,7 +1066,7 @@ int main(int argc, char *argv[]) {
 
       // check if multiplication gives right value
       {
-        auto t_b = EigenMatrix::getMat(t_eig_vals, t_eig_vecs, f, 2);
+        auto t_b = EigenMatrix::getMat(t_eig_vals, t_eig_vecs, f);
         FTensor::Tensor2<double, 2, 2> t_a;
         t_a(i, j) = t_b(i, j) - t_A(i, k) * t_A(k, j);
         print_mat(t_a);
@@ -1081,7 +1082,7 @@ int main(int argc, char *argv[]) {
       {
         auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 2);
         auto t_d_a = get_diff_matrix2(t_A, t_d, FTensor::Number<2>());
-        double nrm2_t_d_a = get_norm_t4(t_d_a);
+        double nrm2_t_d_a = get_norm_t4(t_d_a, FTensor::Number<2>());
         MOFEM_LOG("ATOM_TEST", Sev::inform)
             << "Direvarive hand calculation minus code " << nrm2_t_d_a;
         if (nrm2_t_d_a > eps)
@@ -1102,11 +1103,9 @@ int main(int argc, char *argv[]) {
         auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<2>());
 
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
-        print_ddg(t_dd_a, "hand ");
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
-        print_ddg(t_dd, "code ");
 
-        double nrm2_t_dd_a = get_norm_t4(t_dd_a);
+        double nrm2_t_dd_a = get_norm_t4(t_dd_a, FTensor::Number<2>());
         MOFEM_LOG("ATOM_TEST", Sev::inform)
             << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
         if (nrm2_t_dd_a > eps)
@@ -1140,7 +1139,7 @@ int main(int argc, char *argv[]) {
 
       // check if multiplication gives right value
       {
-        auto t_b = EigenMatrix::getMat(t_eig_vals, t_eig_vecs, f, 1);
+        auto t_b = EigenMatrix::getMat(t_eig_vals, t_eig_vecs, f);
         FTensor::Tensor2<double, 2, 2> t_a;
         t_a(i, j) = t_b(i, j) - t_A(i, k) * t_A(k, j);
         print_mat(t_a);
@@ -1156,7 +1155,7 @@ int main(int argc, char *argv[]) {
       {
         auto t_d = EigenMatrix::getDiffMat(t_eig_vals, t_eig_vecs, f, d_f, 1);
         auto t_d_a = get_diff_matrix2(t_A, t_d, FTensor::Number<2>());
-        double nrm2_t_d_a = get_norm_t4(t_d_a);
+        double nrm2_t_d_a = get_norm_t4(t_d_a, FTensor::Number<2>());
         MOFEM_LOG("ATOM_TEST", Sev::inform)
             << "Direvarive hand calculation minus code " << nrm2_t_d_a;
         if (nrm2_t_d_a > eps)
@@ -1173,15 +1172,13 @@ int main(int argc, char *argv[]) {
             2. / 2., 1.};
 
         auto t_dd = EigenMatrix::getDiffDiffMat(t_eig_vals, t_eig_vecs, f, d_f,
-                                                dd_f, t_S, 2);
+                                                dd_f, t_S, 1);
         auto t_dd_a = get_diff2_matrix2(t_S, t_dd, FTensor::Number<2>());
 
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd_a";
-        print_ddg(t_dd_a, "hand ");
         MOFEM_LOG("ATOM_TEST", Sev::verbose) << "t_dd";
-        print_ddg(t_dd, "code ");
 
-        double nrm2_t_dd_a = get_norm_t4(t_dd_a);
+        double nrm2_t_dd_a = get_norm_t4(t_dd_a, FTensor::Number<2>());
         MOFEM_LOG("ATOM_TEST", Sev::inform)
             << "Direvarive hand calculation minus code " << nrm2_t_dd_a;
         if (nrm2_t_dd_a > eps)
