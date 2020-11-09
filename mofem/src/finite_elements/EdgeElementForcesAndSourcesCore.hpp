@@ -82,6 +82,14 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     inline auto getFTensor1Normal();
 
     /**
+     * @brief get ftensor1 edge normal
+     *
+     * @param vec vector in third direction
+     * @return auto
+     */
+    inline auto getFTensor1Normal(const FTensor::Tensor1<double, 3> &vec);
+
+    /**
      * \brief get edge node coordinates
      */
     inline VectorDouble &getCoords();
@@ -317,6 +325,17 @@ auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
     getFTensor1Normal() {
   double *ptr = &*getNormal().data().begin();
   return FTensor::Tensor1<double *, 3>(ptr, &ptr[1], &ptr[2]);
+}
+
+auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
+    getFTensor1Normal(const FTensor::Tensor1<double, 3> &vec) {
+  FTensor::Tensor1<double, 3> t_normal;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+  auto t_dir = getFTensor1Direction();
+  t_normal(i) = FTensor::levi_civita(i, j, k) * t_dir(j) * vec(k);
+  return t_normal;
 }
 
 template <int SWITCH>
