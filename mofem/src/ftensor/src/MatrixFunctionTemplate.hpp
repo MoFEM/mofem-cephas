@@ -141,7 +141,7 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
                   const Number<l> &, const Number<m> &, const Number<n> &,
 
                   const Number<3> &) const {
-    return e.aS[a][b](i, j, k, l) * e.coefficientsType0(a, b);
+    return e.aSM[a][b][m][n](i, j, k, l) * e.coefficientsType0(a, b);
   }
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
@@ -173,7 +173,7 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
                   const Number<l> &, const Number<m> &, const Number<n> &,
 
                   const Number<1> &) const {
-    return e.aS[a][b](i, j, k, l) * e.ddfVal(a) / static_cast<C>(2);
+    return e.aSM[a][b][m][n](i, j, k, l) * e.ddfVal(a) / static_cast<C>(2);
   }
 };
 
@@ -477,15 +477,13 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
             w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(),
                    Number<-1>(), Number<i>(), Number<j>(), Number<m>(),
-                   Number<n>(), Number<k>(), Number<l>()) *
-                e.aM[a](k, l)
+                   Number<n>(), Number<k>(), Number<l>())
 
             +
 
-            e.aM[a](i, j) * w.eval(typename E::NumberDim(), Number<a>(),
-                                   Number<-1>(), Number<-1>(), Number<k>(),
-                                   Number<l>(), Number<m>(), Number<n>(),
-                                   Number<i>(), Number<j>())) /
+            w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(),
+                   Number<-1>(), Number<k>(), Number<l>(), Number<m>(),
+                   Number<n>(), Number<i>(), Number<j>())) /
             static_cast<C>(2) +
 
         e.aMM[a][a](i, j, k, l) * e.aM[a](m, n) * e.ddfVal(a)
@@ -498,8 +496,8 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
         w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(), Number<-1>(),
                Number<i>(), Number<j>(), Number<k>(), Number<l>(), Number<m>(),
-               Number<n>()) *
-            e.aM[a](m, n) / static_cast<C>(2);
+               Number<n>()) /
+            static_cast<C>(2);
   }
 
   template <int nb, int i, int j, int k, int l, int m, int n>
