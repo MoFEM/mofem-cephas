@@ -282,9 +282,8 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
           2 *
 
               g2.get(Number<a>(), Number<b>(), Number<m>(), Number<n>(),
-                     typename E::NumberNb()) * 
-              e.S(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
-                  Number<k>(), Number<l>());
+                     typename E::NumberNb()) *
+              e.aS[a][b](i, j, k, l);
     }
 
     return 0;
