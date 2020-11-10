@@ -172,27 +172,34 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
   dd4MCoefficientsType2(E &e) : e(e) {}
   E &e;
 
-  template <int a, int b, int m, int n>
-  inline auto get(const Number<a> &, const Number<b> &, const Number<m> &,
-                  const Number<n> &, const Number<3> &) const {
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
+  inline auto get(const Number<a> &, const Number<b> &, const Number<i> &,
+                  const Number<j> &, const Number<k> &, const Number<l> &,
+                  const Number<m> &, const Number<n> &,
+                  const Number<3> &) const {
     return e.fVal(a) *
            e.dFdN(Number<a>(), Number<b>(), Number<m>(), Number<n>());
   }
 
-  template <int a, int b, int m, int n>
-  inline auto get(const Number<a> &, const Number<b> &, const Number<m> &,
-                  const Number<n> &, const Number<2> &) const {
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
+  inline auto get(const Number<a> &, const Number<b> &, const Number<i> &,
+                  const Number<j> &, const Number<k> &, const Number<l> &,
+                  const Number<m> &, const Number<n> &,
+                  const Number<2> &) const {
     if (a == 1 || b == 1)
-      return get(Number<a>(), Number<b>(), Number<m>(), Number<n>(),
+      return get(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
+                 Number<k>(), Number<l>(), Number<m>(), Number<n>(),
                  Number<3>());
     else
-      return get(Number<a>(), Number<b>(), Number<m>(), Number<n>(),
+      return get(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
+                 Number<k>(), Number<l>(), Number<m>(), Number<n>(),
                  Number<1>());
   }
 
-  template <int a, int b, int m, int n>
-  inline auto get(const Number<a> &, const Number<b> &, const Number<m> &,
-                  const Number<n> &, const Number<1>) const {
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
+  inline auto get(const Number<a> &, const Number<b> &, const Number<i> &,
+                  const Number<j> &, const Number<k> &, const Number<l> &,
+                  const Number<m> &, const Number<n> &, const Number<1>) const {
     return static_cast<C>(0);
   }
 };
@@ -281,7 +288,8 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
 
           2 *
 
-              g2.get(Number<a>(), Number<b>(), Number<m>(), Number<n>(),
+              g2.get(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
+                     Number<k>(), Number<l>(), Number<m>(), Number<n>(),
                      typename E::NumberNb()) *
               e.aS[a][b](i, j, k, l);
     }
