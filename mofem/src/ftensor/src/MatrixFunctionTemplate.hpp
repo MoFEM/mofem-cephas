@@ -680,21 +680,10 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
           auto &Gab = aG[aa][bb];
           auto &Gba = aG[bb][aa];
           auto &S = aS[aa][bb];
-          for (int ii = 0; ii != Dim; ++ii) {
-            for (int jj = ii; jj != Dim; ++jj) {
-              for (int kk = 0; kk != Dim; ++kk) {
-                for (int ll = kk; ll != Dim; ++ll) {
-                  S(ii, jj, kk, ll) = Gab(ii, jj, kk, ll) + Gba(ii, jj, kk, ll);
-                }
-              }
-            }
-          }
+          S(i, j, k, l) = Gab(i, j, k, l) + Gba(i, j, k, l);
         }
       }
     }
-
-
-
   }
 
   /**
@@ -797,7 +786,6 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         aF(bb, aa) = -aF(aa, bb);
         aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
       }
-
 
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
