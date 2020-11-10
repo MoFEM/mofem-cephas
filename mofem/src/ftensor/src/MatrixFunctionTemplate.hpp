@@ -642,20 +642,17 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
           M(ii, jj) = tVec(aa, ii) * tVec(aa, jj);
     }
 
+    FTensor::Index<'i', Dim> i;
+    FTensor::Index<'j', Dim> j;
+    FTensor::Index<'k', Dim> k;
+    FTensor::Index<'l', Dim> l;
+
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
         auto &Ma = aM[aa];
         auto &Mb = aM[bb];
         auto &MM = aMM[aa][bb];
-        for (int ii = 0; ii != Dim; ++ii) {
-          for (int jj = ii; jj != Dim; ++jj) {
-            for (int kk = 0; kk != Dim; ++kk) {
-              for (int ll = kk; ll != Dim; ++ll) {
-                MM(ii, jj, kk, ll) = Ma(ii, jj) * Mb(kk, ll);
-              }
-            }
-          }
-        }
+        MM(i, j, k, l) = Ma(i, j) * Mb(k, l);
       }
     }
 
