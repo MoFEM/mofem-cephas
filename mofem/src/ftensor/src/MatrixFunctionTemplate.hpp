@@ -349,7 +349,7 @@ template <typename E, typename C> struct FirstMatrixDirectiveImpl {
   template <int a, int i, int j, int k, int l> inline C term() const {
     return
 
-        e.aM(a, i, j) * e.aM(a, k, l) * e.dfVal(a)
+        e.aMM[a][a](i, j, k, l) * e.dfVal(a)
 
         +
 
