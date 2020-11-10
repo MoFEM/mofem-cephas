@@ -83,7 +83,7 @@ template <typename E, typename C> struct d2MCoefficients {
                   const Number<l> &,
 
                   const Number<3> &) const {
-    return e.fVal(a) * e.aF(a, b);
+    return  e.aS[a][b](i, j, k, l) * e.fVal(a) * e.aF(a, b);
   }
 
   template <int a, int b, int i, int j, int k, int l>
@@ -116,7 +116,7 @@ template <typename E, typename C> struct d2MCoefficients {
                   const Number<l> &,
 
                   const Number<1>) const {
-    return e.dfVal(a) / static_cast<C>(2);
+    return e.aS[a][b](i, j, k, l) * e.dfVal(a) / static_cast<C>(2);
   }
 };
 
@@ -138,7 +138,7 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
                   const Number<l> &,
 
                   const Number<3> &) const {
-    return e.coefficientsType0(a, b);
+    return e.aS[a][b](i, j, k, l) * e.coefficientsType0(a, b);
   }
 
   template <int a, int b, int i, int j, int k, int l>
@@ -170,7 +170,7 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
                   const Number<l> &,
 
                   const Number<1> &) const {
-    return e.ddfVal(a) / static_cast<C>(2);
+    return e.aS[a][b](i, j, k, l) * e.ddfVal(a) / static_cast<C>(2);
   }
 };
 
@@ -192,7 +192,7 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
                   const Number<l> &,
 
                   const Number<3> &) const {
-    return e.coefficientsType1(a, b, c, d);
+    return e.aS[a][b](i, j, k, l) * e.coefficientsType1(a, b, c, d);
   }
 
   template <int a, int b, int c, int d, int i, int j, int k, int l>
@@ -203,7 +203,7 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
                   const Number<l> &,
 
                   const Number<2> &) const {
-    return e.coefficientsType1(a, b, c, d);
+    return e.aS[a][b](i, j, k, l) * e.coefficientsType1(a, b, c, d);
   }
 
   template <int a, int b, int c, int d, int i, int j, int k, int l>
@@ -214,7 +214,7 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
                   const Number<l> &,
 
                   const Number<1>) const {
-    return e.coefficientsType1(a, b, c, d);
+    return e.aS[a][b](i, j, k, l) * e.coefficientsType1(a, b, c, d);
   }
 };
 
@@ -275,8 +275,7 @@ template <typename E, typename C, typename G> struct d2MImpl {
     if (a != b) {
       return g.get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
                    Number<i>(), Number<j>(), Number<k>(), Number<l>(),
-                   typename E::NumberNb()) *
-             e.aS[a][b](i, j, k, l);
+                   typename E::NumberNb());
     }
     return 0;
   }
@@ -348,8 +347,6 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
               g2.get(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                      Number<k>(), Number<l>(), Number<m>(), Number<n>(),
                      typename E::NumberNb());
-      //        *
-      // e.aS[a][b](i, j, k, l);
     }
 
     return 0;
