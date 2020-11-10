@@ -75,29 +75,30 @@ template <typename E, typename C> struct d2MCoefficients {
   d2MCoefficients(E &e) : e(e) {}
   E &e;
 
-  template <int a, int b, int i, int j, int k, int l>
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
                   const Number<-1> &,
 
                   const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &,
+                  const Number<l> &, const Number<m> &, const Number<n> &,
 
                   const Number<3> &) const {
     return  e.aS[a][b](i, j, k, l) * e.fVal(a) * e.aF(a, b);
   }
 
-  template <int a, int b, int i, int j, int k, int l>
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
                   const Number<-1> &,
 
                   const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &,
+                  const Number<l> &, const Number<m> &, const Number<n> &,
 
                   const Number<2> &) const {
     if (a == 1 || b == 1)
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
 
                  Number<i>(), Number<j>(), Number<k>(), Number<l>(),
+                  Number<m>(), Number<n>(),
 
                  Number<3>());
     else
@@ -105,15 +106,17 @@ template <typename E, typename C> struct d2MCoefficients {
 
                  Number<i>(), Number<j>(), Number<k>(), Number<l>(),
 
+                  Number<m>(), Number<n>(),
+
                  Number<1>());
   }
 
-  template <int a, int b, int i, int j, int k, int l>
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
                   const Number<-1> &,
 
                   const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &,
+                  const Number<l> &, const Number<m> &, const Number<n> &,
 
                   const Number<1>) const {
     return e.aS[a][b](i, j, k, l) * e.dfVal(a) / static_cast<C>(2);
@@ -130,44 +133,44 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
   d2MCoefficientsType0(E &e) : e(e) {}
   E &e;
 
-  template <int a, int b, int i, int j, int k, int l>
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
                   const Number<-1> &,
 
                   const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &,
+                  const Number<l> &, const Number<m> &, const Number<n> &,
 
                   const Number<3> &) const {
     return e.aS[a][b](i, j, k, l) * e.coefficientsType0(a, b);
   }
 
-  template <int a, int b, int i, int j, int k, int l>
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
                   const Number<-1> &,
 
                   const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &,
+                  const Number<l> &, const Number<m> &, const Number<n> &,
 
                   const Number<2> &) const {
     if (a == 1 || b == 1)
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
 
-                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),
+                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),Number<m>(), Number<n>(),
 
                  Number<3>());
     else
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
 
-                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),
+                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),Number<m>(), Number<n>(),
                  Number<1>());
   }
 
-  template <int a, int b, int i, int j, int k, int l>
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
                   const Number<-1> &,
 
                   const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &,
+                  const Number<l> &, const Number<m> &, const Number<n> &,
 
                   const Number<1> &) const {
     return e.aS[a][b](i, j, k, l) * e.ddfVal(a) / static_cast<C>(2);
@@ -184,34 +187,34 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   dd4MCoefficientsType1(E &e) : e(e) {}
   E &e;
 
-  template <int a, int b, int c, int d, int i, int j, int k, int l>
+  template <int a, int b, int c, int d, int i, int j, int k, int l, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
                   const Number<d> &,
 
                   const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &,
+                  const Number<l> &, const Number<m> &, const Number<n> &,
 
                   const Number<3> &) const {
     return e.aS[a][b](i, j, k, l) * e.coefficientsType1(a, b, c, d);
   }
 
-  template <int a, int b, int c, int d, int i, int j, int k, int l>
+  template <int a, int b, int c, int d, int i, int j, int k, int l, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
                   const Number<d> &,
 
                   const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &,
+                  const Number<l> &, const Number<m> &, const Number<n> &,
 
                   const Number<2> &) const {
     return e.aS[a][b](i, j, k, l) * e.coefficientsType1(a, b, c, d);
   }
 
-  template <int a, int b, int c, int d, int i, int j, int k, int l>
+  template <int a, int b, int c, int d, int i, int j, int k, int l, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
                   const Number<d> &,
 
                   const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &,
+                  const Number<l> &, const Number<m> &, const Number<n> &,
 
                   const Number<1>) const {
     return e.aS[a][b](i, j, k, l) * e.coefficientsType1(a, b, c, d);
@@ -270,30 +273,48 @@ template <typename E, typename C, typename G> struct d2MImpl {
   G g;
   E &e;
 
-  template <int b, int a, int c, int d, int i, int j, int k, int l>
+  template <int b, int a, int c, int d, int i, int j, int k, int l, int m,
+            int n>
   inline C term() const {
     if (a != b) {
       return g.get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
                    Number<i>(), Number<j>(), Number<k>(), Number<l>(),
+
+                   Number<m>(), Number<n>(),
+
                    typename E::NumberNb());
     }
     return 0;
   }
 
-  template <int nb, int a, int c, int d, int i, int j, int k, int l>
+  template <int nb, int a, int c, int d, int i, int j, int k, int l, int m, int n>
   inline C eval(const Number<nb> &, const Number<a> &, const Number<c> &,
                 const Number<d> &, const Number<i> &, const Number<j> &,
-                const Number<k> &, const Number<l> &) const {
-    return term<nb - 1, a, c, d, i, j, k, l>() +
+                const Number<k> &, const Number<l> &,
+                
+                const Number<m> &, const Number<n> &
+                
+                )
+                
+                 const {
+    return term<nb - 1, a, c, d, i, j, k, l, m, n>() +
            eval(Number<nb - 1>(), Number<a>(), Number<c>(), Number<d>(),
-                Number<i>(), Number<j>(), Number<k>(), Number<l>());
+                Number<i>(), Number<j>(), Number<k>(), Number<l>(),
+
+                Number<m>(), Number<n>()
+
+           );
   }
 
-  template <int a, int c, int d, int i, int j, int k, int l>
+  template <int a, int c, int d, int i, int j, int k, int l, int m, int n>
   inline C eval(const Number<1> &, const Number<a> &, const Number<c> &,
                 const Number<d> &, const Number<i> &, const Number<j> &,
-                const Number<k> &, const Number<l> &) const {
-    return term<0, a, c, d, i, j, k, l>();
+                const Number<k> &, const Number<l> &,
+                
+                const Number<m> &, const Number<n> &
+                
+                ) const {
+    return term<0, a, c, d, i, j, k, l, m, n>();
   }
 };
 
@@ -309,20 +330,20 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  template <int a, int b, int A, int I, int J, int K, int L>
+  template <int a, int b, int A, int I, int J, int K, int L, int M, int N>
   inline auto fd2M() const {
     return r.eval(typename E::NumberDim(), Number<A>(), Number<a>(),
                   Number<b>(), Number<I>(), Number<J>(), Number<K>(),
-                  Number<L>());
+                  Number<L>(), Number<M>(), Number<N>());
   }
 
   template <int a, int b, int A, int B, int I, int J, int K, int L, int M,
             int N>
   inline auto fd2G() const {
-    return fd2M<a, b, A, I, K, N, M>() * e.aM[B](J, L) +
-           e.aM[A](I, K) * fd2M<a, b, B, J, L, M, N>() +
-           fd2M<a, b, A, I, L, M, N>() * e.aM[B](J, K) +
-           e.aM[A](I, L) * fd2M<a, b, B, J, K, M, N>();
+    return fd2M<a, b, A, I, K, N, M, J, L>() * e.aM[B](J, L) +
+           e.aM[A](I, K) * fd2M<a, b, B, J, L, M, N, I, K>() +
+           fd2M<a, b, A, I, L, M, N, J, K>() * e.aM[B](J, K) +
+           e.aM[A](I, L) * fd2M<a, b, B, J, K, M, N, I, L>();
   }
 
   template <int a, int B, int I, int J, int K, int L, int M, int N>
@@ -415,7 +436,8 @@ template <typename E, typename C> struct FirstMatrixDirectiveImpl {
         +
 
         r.eval(typename E::NumberDim(), Number<a>(), Number<-1>(), Number<-1>(),
-               Number<i>(), Number<j>(), Number<k>(), Number<l>()) /
+               Number<i>(), Number<j>(), Number<k>(), Number<l>(), Number<-1>(),
+               Number<-1>()) /
             static_cast<C>(2);
   }
 
@@ -455,14 +477,15 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
             w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(),
                    Number<-1>(), Number<i>(), Number<j>(), Number<m>(),
-                   Number<n>()) *
+                   Number<n>(), Number<k>(), Number<l>()) *
                 e.aM[a](k, l)
 
             +
 
             e.aM[a](i, j) * w.eval(typename E::NumberDim(), Number<a>(),
                                    Number<-1>(), Number<-1>(), Number<k>(),
-                                   Number<l>(), Number<m>(), Number<n>())) /
+                                   Number<l>(), Number<m>(), Number<n>(),
+                                   Number<i>(), Number<j>())) /
             static_cast<C>(2) +
 
         e.aMM[a][a](i, j, k, l) * e.aM[a](m, n) * e.ddfVal(a)
@@ -474,7 +497,8 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
             static_cast<C>(4) +
 
         w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(), Number<-1>(),
-               Number<i>(), Number<j>(), Number<k>(), Number<l>()) *
+               Number<i>(), Number<j>(), Number<k>(), Number<l>(), Number<m>(),
+               Number<n>()) *
             e.aM[a](m, n) / static_cast<C>(2);
   }
 
