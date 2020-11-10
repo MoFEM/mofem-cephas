@@ -377,6 +377,85 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
   }
 };
 
+template <typename E, typename C, typename T>
+struct Fdd4MSet {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+  using Fun = typename E::Fun;
+
+  template <int N> using Number = FTensor::Number<N>;
+
+  Fdd4MSet(E &e, T &t_a) : r(e), tA(t_a) {}
+  Fdd4MImpl<E, C, dd4MCoefficientsType1<E, C>, dd4MCoefficientsType2<E, C>> r;
+  T &tA;
+
+  template <int a, int I, int J, int K, int L, int M, int N>
+  inline auto set(const Number<a> &, const Number<I> &, const Number<J> &,
+                  const Number<K> &, const Number<L> &, const Number<M> &,
+                  const Number<N> &) {
+    set(Number<a>(), Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+        Number<M>(), Number<N - 1>());
+
+    tA[a][M - 1][N - 1](I - 1, J - 1, K - 1, L - 1) =
+        r.eval(typename E::NumberDim(), Number<a>(), Number<I - 1>(),
+               Number<J - 1>(), Number<K - 1>(), Number<L - 1>(),
+               Number<M - 1>(), Number<N - 1>()) /
+        static_cast<C>(4);
+
+    tA[a][N - 1][M - 1](I - 1, J - 1, K - 1, L - 1) =
+        tA[a][M - 1][N - 1](I - 1, J - 1, K - 1, L - 1);
+    // tA[a][K - 1][L - 1](I - 1, J - 1, M - 1, N - 1) =
+    //     tA[a][M - 1][N - 1](I - 1, J - 1, K - 1, L - 1);
+    // tA[a][L - 1][K - 1](I - 1, J - 1, M - 1, N - 1) =
+    //     tA[a][M - 1][N - 1](I - 1, J - 1, K - 1, L - 1);
+  }
+
+  template <int a, int I, int J, int K, int L, int M>
+  inline auto set(const Number<a> &, const Number<I> &, const Number<J> &,
+                  const Number<K> &, const Number<L> &, const Number<M> &,
+                  const Number<0> &) {
+    set(Number<a>(), Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+        Number<M - 1>(), Number<M - 1>());
+  }
+
+  template <int a, int I, int J, int K, int L>
+  inline auto set(const Number<a> &, const Number<I> &, const Number<J> &,
+                  const Number<K> &, const Number<L> &, const Number<0> &,
+                  const Number<0> &) {
+    set(Number<a>(), Number<I>(), Number<J>(), Number<K>(), Number<L - 1>(),
+        typename E::NumberDim(), typename E::NumberDim());
+  }
+
+  template <int a, int I, int J, int K, int M, int N>
+  inline auto set(const Number<a> &, const Number<I> &, const Number<J> &,
+                  const Number<K> &, const Number<0> &, const Number<M> &,
+                  const Number<N> &) {
+    set(Number<a>(), Number<I>(), Number<J>(), Number<K - 1>(), Number<K - 1>(),
+        Number<M>(), Number<N>());
+  }
+
+  template <int a, int I, int J,int M, int N>
+  inline auto set(const Number<a> &, const Number<I> &, const Number<J> &,
+                  const Number<0> &, const Number<0> &, const Number<M> &,
+                  const Number<N> &) {
+    set(Number<a>(), Number<I>(), Number<J - 1>(), typename E::NumberDim(),
+        typename E::NumberDim(), Number<M>(), Number<N>());
+  }
+
+  template <int a, int I, int K, int L, int M, int N>
+  inline auto set(const Number<a> &, const Number<I> &, const Number<0> &,
+                  const Number<K> &, const Number<L> &, const Number<M> &,
+                  const Number<N> &) {
+    set(Number<a>(), Number<I - 1>(), Number<I - 1>(), Number<K>(), Number<L>(),
+        Number<M>(), Number<N>());
+  }
+
+  template <int a, int K, int L, int M, int N>
+  inline auto set(const Number<a> &, const Number<0> &, const Number<0> &,
+                  const Number<K> &, const Number<L> &, const Number<M> &,
+                  const Number<N> &) {}
+};
+
 template <typename E, typename C> struct ReconstructMatImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -458,6 +537,11 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
   template <int a, int i, int j, int k, int l, int m, int n>
   inline C term() const {
 
+    double v =
+        r.eval(typename E::NumberDim(), Number<a>(), Number<i>(), Number<j>(),
+               Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
+        static_cast<C>(4);
+
     return
 
         (
@@ -477,9 +561,12 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
         +
 
-        r.eval(typename E::NumberDim(), Number<a>(), Number<i>(), Number<j>(),
-               Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
-            static_cast<C>(4) +
+        e.ddd4M[a][m][n](i, j, k, l) +
+
+        // r.eval(typename E::NumberDim(), Number<a>(), Number<i>(),
+        // Number<j>(),
+        //        Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
+        //     static_cast<C>(4) +
 
         w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(), Number<-1>(),
                Number<i>(), Number<j>(), Number<k>(), Number<l>(), Number<m>(),
@@ -967,7 +1054,19 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
 
     using THIS = EigenMatrixImp<T1, T2, NB, Dim>;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
+    using T4 = FTensor::Ddg<V, Dim, Dim>[Dim][Dim][Dim];
     using CT1 = dd4MCoefficientsType1<THIS, V>;
+
+    Fdd4MSet<THIS, V, T4>(*this, ddd4M)
+        .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+             Number<Dim>(), Number<Dim>(), Number<Dim>());
+    Fdd4MSet<THIS, V, T4>(*this, ddd4M)
+        .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+             Number<Dim>(), Number<Dim>(), Number<Dim>());
+    if (Dim == 3)
+      Fdd4MSet<THIS, V, T4>(*this, ddd4M)
+          .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>(), Number<Dim>(), Number<Dim>());
 
     T3 t_diff_A;
     GetDiffDiffMatImpl<THIS, V, T3, T>(*this, t_diff_A, t_S)
@@ -984,6 +1083,7 @@ private:
   FTensor::Ddg<V, Dim, Dim> aS[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aSM[Dim][Dim][Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> coefficientsType0[Dim][Dim][Dim][Dim];
+  FTensor::Ddg<V, Dim, Dim> ddd4M[Dim][Dim][Dim];
   FTensor::Tensor2<T1, Dim, Dim> aF;
   FTensor::Tensor2<T1, Dim, Dim> aF2;
   FTensor::Tensor1<T1, Dim> fVal;
