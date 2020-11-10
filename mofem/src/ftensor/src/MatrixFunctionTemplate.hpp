@@ -138,7 +138,7 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
                   const Number<-1> &, const Number<i> &, const Number<j> &,
                   const Number<k> &, const Number<l> &, const Number<m> &,
                   const Number<n> &, const Number<3> &) const {
-    return e.aSM[a][b][m][n](i, j, k, l) * e.coefficientsType0(a, b);
+    return e.coefficientsType0[a][b][m][n](i, j, k, l);
   }
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
@@ -868,10 +868,24 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
       }
 
+    FTensor::Index<'i', Dim> i;
+    FTensor::Index<'j', Dim> j;
+    FTensor::Index<'k', Dim> k;
+    FTensor::Index<'l', Dim> l;
+
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
-        if (aa != bb)
-          coefficientsType0(aa, bb) = dfVal(aa) * aF(aa, bb);
+        if (aa != bb) {
+          const double v = dfVal(aa) * aF(aa, bb);
+          for (auto mm = 0; mm != Dim; ++mm) {
+            for (auto nn = mm; nn != Dim; ++nn) {
+              coefficientsType0[aa][bb][mm][nn](i, j, k, l) =
+                  v * aSM[aa][bb][mm][nn](i, j, k, l);
+              coefficientsType0[aa][bb][nn][mm](i, j, k, l) =
+                  coefficientsType0[aa][bb][mm][nn](i, j, k, l);
+            }
+          }
+        }
       }
     }
 
@@ -969,12 +983,12 @@ private:
   FTensor::Ddg<V, Dim, Dim> aG[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aS[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aSM[Dim][Dim][Dim][Dim];
+  FTensor::Ddg<V, Dim, Dim> coefficientsType0[Dim][Dim][Dim][Dim];
   FTensor::Tensor2<T1, Dim, Dim> aF;
   FTensor::Tensor2<T1, Dim, Dim> aF2;
   FTensor::Tensor1<T1, Dim> fVal;
   FTensor::Tensor1<T1, Dim> dfVal;
   FTensor::Tensor1<T1, Dim> ddfVal;
-  FTensor::Tensor2<T1, Dim, Dim> coefficientsType0;
   FTensor::Tensor4<T1, Dim, Dim, Dim, Dim> coefficientsType1;
 
   template <typename E, typename C> friend struct d2MCoefficients;
