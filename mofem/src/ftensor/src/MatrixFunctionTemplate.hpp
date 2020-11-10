@@ -75,26 +75,47 @@ template <typename E, typename C> struct d2MCoefficients {
   d2MCoefficients(E &e) : e(e) {}
   E &e;
 
-  template <int a, int b>
+  template <int a, int b, int i, int j, int k, int l>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const Number<3> &) const {
+                  const Number<-1> &,
+
+                  const Number<i> &, const Number<j> &, const Number<k> &,
+                  const Number<l> &,
+
+                  const Number<3> &) const {
     return e.fVal(a) * e.aF(a, b);
   }
 
-  template <int a, int b>
+  template <int a, int b, int i, int j, int k, int l>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const Number<2> &) const {
+                  const Number<-1> &,
+
+                  const Number<i> &, const Number<j> &, const Number<k> &,
+                  const Number<l> &,
+
+                  const Number<2> &) const {
     if (a == 1 || b == 1)
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
+
+                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),
+
                  Number<3>());
     else
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
+
+                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),
+
                  Number<1>());
   }
 
-  template <int a, int b>
+  template <int a, int b, int i, int j, int k, int l>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const Number<1>) const {
+                  const Number<-1> &,
+
+                  const Number<i> &, const Number<j> &, const Number<k> &,
+                  const Number<l> &,
+
+                  const Number<1>) const {
     return e.dfVal(a) / static_cast<C>(2);
   }
 };
@@ -109,26 +130,46 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
   d2MCoefficientsType0(E &e) : e(e) {}
   E &e;
 
-  template <int a, int b>
+  template <int a, int b, int i, int j, int k, int l>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const Number<3> &) const {
+                  const Number<-1> &,
+
+                  const Number<i> &, const Number<j> &, const Number<k> &,
+                  const Number<l> &,
+
+                  const Number<3> &) const {
     return e.coefficientsType0(a, b);
   }
 
-  template <int a, int b>
+  template <int a, int b, int i, int j, int k, int l>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const Number<2> &) const {
+                  const Number<-1> &,
+
+                  const Number<i> &, const Number<j> &, const Number<k> &,
+                  const Number<l> &,
+
+                  const Number<2> &) const {
     if (a == 1 || b == 1)
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
+
+                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),
+
                  Number<3>());
     else
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
+
+                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),
                  Number<1>());
   }
 
-  template <int a, int b>
+  template <int a, int b, int i, int j, int k, int l>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const Number<1> &) const {
+                  const Number<-1> &,
+
+                  const Number<i> &, const Number<j> &, const Number<k> &,
+                  const Number<l> &,
+
+                  const Number<1> &) const {
     return e.ddfVal(a) / static_cast<C>(2);
   }
 };
@@ -143,21 +184,36 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   dd4MCoefficientsType1(E &e) : e(e) {}
   E &e;
 
-  template <int a, int b, int c, int d>
+  template <int a, int b, int c, int d, int i, int j, int k, int l>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
-                  const Number<d> &, const Number<3> &) const {
+                  const Number<d> &,
+
+                  const Number<i> &, const Number<j> &, const Number<k> &,
+                  const Number<l> &,
+
+                  const Number<3> &) const {
     return e.coefficientsType1(a, b, c, d);
   }
 
-  template <int a, int b, int c, int d>
+  template <int a, int b, int c, int d, int i, int j, int k, int l>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
-                  const Number<d> &, const Number<2> &) const {
+                  const Number<d> &,
+
+                  const Number<i> &, const Number<j> &, const Number<k> &,
+                  const Number<l> &,
+
+                  const Number<2> &) const {
     return e.coefficientsType1(a, b, c, d);
   }
 
-  template <int a, int b, int c, int d>
+  template <int a, int b, int c, int d, int i, int j, int k, int l>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
-                  const Number<d> &, const Number<1>) const {
+                  const Number<d> &,
+
+                  const Number<i> &, const Number<j> &, const Number<k> &,
+                  const Number<l> &,
+
+                  const Number<1>) const {
     return e.coefficientsType1(a, b, c, d);
   }
 };
@@ -218,6 +274,7 @@ template <typename E, typename C, typename G> struct d2MImpl {
   inline C term() const {
     if (a != b) {
       return g.get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
+                   Number<i>(), Number<j>(), Number<k>(), Number<l>(),
                    typename E::NumberNb()) *
              e.aS[a][b](i, j, k, l);
     }
@@ -291,8 +348,8 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
               g2.get(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                      Number<k>(), Number<l>(), Number<m>(), Number<n>(),
                      typename E::NumberNb());
-              //        *
-              // e.aS[a][b](i, j, k, l);
+      //        *
+      // e.aS[a][b](i, j, k, l);
     }
 
     return 0;
