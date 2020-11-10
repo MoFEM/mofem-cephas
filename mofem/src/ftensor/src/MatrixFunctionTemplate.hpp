@@ -895,9 +895,9 @@ private:
   Val &tVal;
   Vec &tVec;
   FTensor::Christof<T2, Dim, Dim> aM;
-  std::array<std::array<FTensor::Ddg<V, Dim, Dim>, Dim>, Dim> aMM;
-  std::array<std::array<FTensor::Ddg<V, Dim, Dim>, Dim>, Dim> aG;
-  std::array<std::array<FTensor::Ddg<V, Dim, Dim>, Dim>, Dim> aS;
+  FTensor::Ddg<V, Dim, Dim> aMM[Dim][Dim];
+  FTensor::Ddg<V, Dim, Dim> aG[Dim][Dim];
+  FTensor::Ddg<V, Dim, Dim> aS[Dim][Dim];
   FTensor::Tensor2<T1, Dim, Dim> aF;
   FTensor::Tensor2<T1, Dim, Dim> aF2;
   FTensor::Tensor1<T1, Dim> fVal;
