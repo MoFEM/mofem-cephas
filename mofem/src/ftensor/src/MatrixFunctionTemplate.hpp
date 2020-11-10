@@ -335,7 +335,7 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  template <int a, int b, int A, int I, int J, int K, int L, int M, int N>
+  template <int A, int a, int b, int I, int J, int K, int L, int M, int N>
   inline auto fd2M() const {
     return r.eval(typename E::NumberDim(), Number<A>(), Number<a>(),
                   Number<b>(), Number<I>(), Number<J>(), Number<K>(),
@@ -345,16 +345,16 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
   template <int a, int b, int A, int B, int I, int J, int K, int L, int M,
             int N>
   inline auto fd2G() const {
-    return fd2M<a, b, A, I, K, N, M, J, L>() * e.aM[B](J, L) +
-           e.aM[A](I, K) * fd2M<a, b, B, J, L, M, N, I, K>() +
-           fd2M<a, b, A, I, L, M, N, J, K>() * e.aM[B](J, K) +
-           e.aM[A](I, L) * fd2M<a, b, B, J, K, M, N, I, L>();
+    return fd2M<A, a, b, I, K, N, M, J, L>() * e.aM[B](J, L) +
+           e.aM[A](I, K) * fd2M<B, a, b, J, L, M, N, I, K>() +
+           fd2M<A, a, b, I, L, M, N, J, K>() * e.aM[B](J, K) +
+           e.aM[A](I, L) * fd2M<B, a, b, J, K, M, N, I, L>();
   }
 
-  template <int a, int B, int I, int J, int K, int L, int M, int N>
+  template <int a, int b, int I, int J, int K, int L, int M, int N>
   inline auto fd2S() const {
-    return fd2G<a, B, a, B, I, J, K, L, M, N>() +
-           fd2G<a, B, B, a, I, J, K, L, M, N>();
+    return fd2G<a, b, a, b, I, J, K, L, M, N>() +
+           fd2G<a, b, b, a, I, J, K, L, M, N>();
   }
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
