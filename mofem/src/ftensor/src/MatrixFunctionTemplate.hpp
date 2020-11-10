@@ -222,8 +222,7 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
                   const Number<j> &, const Number<k> &, const Number<l> &,
                   const Number<m> &, const Number<n> &,
                   const Number<3> &) const {
-    return (e.fVal(a) * e.aF2(a, b)) *
-           (-e.aSM[a][b][m][n](i, j, k, l) + e.aSM[b][a][m][n](i, j, k, l));
+    return e.coefficientsType2[a][b][m][n](i, j, k, l);
   }
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
@@ -305,6 +304,53 @@ template <typename E, typename C, typename G> struct d2MImpl {
   }
 };
 
+template <typename E, typename C, typename G, typename T, int c, int d>
+struct d2MEval {
+  using Val = typename E::Val;
+  using Vec = typename E::Vec;
+  using Fun = typename E::Fun;
+
+  template <int N> using Number = FTensor::Number<N>;
+  d2MEval(E &e, T &t_A) : r(e), tA(t_A) {}
+  d2MImpl<E, C, G> r;
+  T &tA;
+
+  template <int A, int I, int J, int K, int L>
+  inline void set(const Number<A> &, const Number<I> &, const Number<J> &,
+                  const Number<K> &, const Number<L> &) {
+    set(Number<A>(), Number<I>(), Number<J>(), Number<K>(), Number<L - 1>());
+    tA(I - 1, J - 1, K - 1, L - 1) =
+        r.eval(typename E::NumberDim(), Number<A>(), Number<c>(), Number<d>(),
+               Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
+               Number<L - 1>(), Number<-1>(), Number<-1>());
+  }
+
+  template <int A, int I, int J, int K>
+  inline void set(const Number<A> &, const Number<I> &, const Number<J> &,
+                  const Number<K> &, const Number<0> &) {
+    set(Number<A>(), Number<I>(), Number<J>(), Number<K - 1>(),
+        Number<K - 1>());
+  }
+
+  template <int A, int I, int J>
+  inline void set(const Number<A> &, const Number<I> &, const Number<J> &,
+                  const Number<0> &, const Number<0> &) {
+    set(Number<A>(), Number<I>(), Number<J - 1>(), typename E::NumberDim(),
+        typename E::NumberDim());
+  }
+
+  template <int A, int I, int K, int L>
+  inline void set(const Number<A> &, const Number<I> &, const Number<0> &,
+                  const Number<K> &, const Number<L> &) {
+    set(Number<A>(), Number<I - 1>(), Number<I - 1>(), Number<K>(),
+        Number<L>());
+  }
+
+  template <int A, int K, int L>
+  inline void set(const Number<A> &, const Number<0> &, const Number<0> &,
+                  const Number<K> &, const Number<L> &) {}
+};
+
 template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -319,9 +365,7 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
 
   template <int A, int a, int b, int I, int J, int K, int L, int M, int N>
   inline auto fd2M() const {
-    return r.eval(typename E::NumberDim(), Number<A>(), Number<a>(),
-                  Number<b>(), Number<I>(), Number<J>(), Number<K>(),
-                  Number<L>(), Number<M>(), Number<N>());
+    return e.d2MType1[A][a][b](I, J, K, L);
   }
 
   template <int a, int b, int A, int B, int I, int J, int K, int L, int M,
@@ -375,85 +419,6 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
                 const Number<m> &, const Number<n> &) const {
     return term<a, 0, i, j, k, l, m, n>();
   }
-};
-
-template <typename E, typename C, typename T>
-struct Fdd4MSet {
-  using Val = typename E::Val;
-  using Vec = typename E::Vec;
-  using Fun = typename E::Fun;
-
-  template <int N> using Number = FTensor::Number<N>;
-
-  Fdd4MSet(E &e, T &t_a) : r(e), tA(t_a) {}
-  Fdd4MImpl<E, C, dd4MCoefficientsType1<E, C>, dd4MCoefficientsType2<E, C>> r;
-  T &tA;
-
-  template <int a, int I, int J, int K, int L, int M, int N>
-  inline auto set(const Number<a> &, const Number<I> &, const Number<J> &,
-                  const Number<K> &, const Number<L> &, const Number<M> &,
-                  const Number<N> &) {
-    set(Number<a>(), Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-        Number<M>(), Number<N - 1>());
-
-    tA[a][M - 1][N - 1](I - 1, J - 1, K - 1, L - 1) =
-        r.eval(typename E::NumberDim(), Number<a>(), Number<I - 1>(),
-               Number<J - 1>(), Number<K - 1>(), Number<L - 1>(),
-               Number<M - 1>(), Number<N - 1>()) /
-        static_cast<C>(4);
-
-    tA[a][N - 1][M - 1](I - 1, J - 1, K - 1, L - 1) =
-        tA[a][M - 1][N - 1](I - 1, J - 1, K - 1, L - 1);
-    // tA[a][K - 1][L - 1](I - 1, J - 1, M - 1, N - 1) =
-    //     tA[a][M - 1][N - 1](I - 1, J - 1, K - 1, L - 1);
-    // tA[a][L - 1][K - 1](I - 1, J - 1, M - 1, N - 1) =
-    //     tA[a][M - 1][N - 1](I - 1, J - 1, K - 1, L - 1);
-  }
-
-  template <int a, int I, int J, int K, int L, int M>
-  inline auto set(const Number<a> &, const Number<I> &, const Number<J> &,
-                  const Number<K> &, const Number<L> &, const Number<M> &,
-                  const Number<0> &) {
-    set(Number<a>(), Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-        Number<M - 1>(), Number<M - 1>());
-  }
-
-  template <int a, int I, int J, int K, int L>
-  inline auto set(const Number<a> &, const Number<I> &, const Number<J> &,
-                  const Number<K> &, const Number<L> &, const Number<0> &,
-                  const Number<0> &) {
-    set(Number<a>(), Number<I>(), Number<J>(), Number<K>(), Number<L - 1>(),
-        typename E::NumberDim(), typename E::NumberDim());
-  }
-
-  template <int a, int I, int J, int K, int M, int N>
-  inline auto set(const Number<a> &, const Number<I> &, const Number<J> &,
-                  const Number<K> &, const Number<0> &, const Number<M> &,
-                  const Number<N> &) {
-    set(Number<a>(), Number<I>(), Number<J>(), Number<K - 1>(), Number<K - 1>(),
-        Number<M>(), Number<N>());
-  }
-
-  template <int a, int I, int J,int M, int N>
-  inline auto set(const Number<a> &, const Number<I> &, const Number<J> &,
-                  const Number<0> &, const Number<0> &, const Number<M> &,
-                  const Number<N> &) {
-    set(Number<a>(), Number<I>(), Number<J - 1>(), typename E::NumberDim(),
-        typename E::NumberDim(), Number<M>(), Number<N>());
-  }
-
-  template <int a, int I, int K, int L, int M, int N>
-  inline auto set(const Number<a> &, const Number<I> &, const Number<0> &,
-                  const Number<K> &, const Number<L> &, const Number<M> &,
-                  const Number<N> &) {
-    set(Number<a>(), Number<I - 1>(), Number<I - 1>(), Number<K>(), Number<L>(),
-        Number<M>(), Number<N>());
-  }
-
-  template <int a, int K, int L, int M, int N>
-  inline auto set(const Number<a> &, const Number<0> &, const Number<0> &,
-                  const Number<K> &, const Number<L> &, const Number<M> &,
-                  const Number<N> &) {}
 };
 
 template <typename E, typename C> struct ReconstructMatImpl {
@@ -537,11 +502,6 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
   template <int a, int i, int j, int k, int l, int m, int n>
   inline C term() const {
 
-    double v =
-        r.eval(typename E::NumberDim(), Number<a>(), Number<i>(), Number<j>(),
-               Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
-        static_cast<C>(4);
-
     return
 
         (
@@ -561,12 +521,9 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
         +
 
-        e.ddd4M[a][m][n](i, j, k, l) +
-
-        // r.eval(typename E::NumberDim(), Number<a>(), Number<i>(),
-        // Number<j>(),
-        //        Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
-        //     static_cast<C>(4) +
+        r.eval(typename E::NumberDim(), Number<a>(), Number<i>(), Number<j>(),
+               Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
+            static_cast<C>(4) +
 
         w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(), Number<-1>(),
                Number<i>(), Number<j>(), Number<k>(), Number<l>(), Number<m>(),
@@ -705,26 +662,17 @@ struct GetDiffDiffMatImpl {
   template <int I, int J, int K, int L, int M>
   inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
                   const Number<L> &, const Number<M> &, const Number<1> &) {
-    if (M != 1)
-      return (tS(M - 1, 0) + tS(0, M - 1)) *
-                 r.eval(typename E::NumberDim(), Number<M - 1>(), Number<0>(),
-                        Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
-                        Number<L - 1>())
+    return (tS(M - 1, 0) + tS(0, M - 1)) *
+               r.eval(typename E::NumberDim(), Number<M - 1>(), Number<0>(),
+                      Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
+                      Number<L - 1>())
 
-             +
+           +
 
-             add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-                 Number<M - 1>(), Number<M - 1>());
+           add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+               Number<M - 1>(), Number<M - 1>());
 
-    else
-      return tS(0, 0) * r.eval(typename E::NumberDim(), Number<M - 1>(),
-                               Number<0>(), Number<I - 1>(), Number<J - 1>(),
-                               Number<K - 1>(), Number<L - 1>())
-
-             +
-
-             add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-                 Number<M - 1>(), Number<M - 1>());
+    ;
   }
 
   template <int I, int J, int K, int L>
@@ -976,6 +924,22 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       }
     }
 
+    for (auto aa = 0; aa != Dim; ++aa) {
+      for (auto bb = 0; bb != Dim; ++bb) {
+        if (aa != bb) {
+          for (auto mm = 0; mm != Dim; ++mm) {
+            for (auto nn = mm; nn != Dim; ++nn) {
+              coefficientsType2[aa][bb][mm][nn](i, j, k, l) =
+                  (fVal(aa) * aF2(aa, bb)) * (-aSM[aa][bb][mm][nn](i, j, k, l) +
+                                              aSM[bb][aa][mm][nn](i, j, k, l));
+              coefficientsType2[aa][bb][nn][mm](i, j, k, l) =
+                  coefficientsType2[aa][bb][mm][nn](i, j, k, l);
+            }
+          }
+        }
+      }
+    }
+
     if (NB == 3)
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
@@ -1054,19 +1018,68 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
 
     using THIS = EigenMatrixImp<T1, T2, NB, Dim>;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
-    using T4 = FTensor::Ddg<V, Dim, Dim>[Dim][Dim][Dim];
     using CT1 = dd4MCoefficientsType1<THIS, V>;
 
-    Fdd4MSet<THIS, V, T4>(*this, ddd4M)
+    d2MEval<THIS, V, CT1, T3, 0, 1>(*this, d2MType1[0][0][1])
         .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-             Number<Dim>(), Number<Dim>(), Number<Dim>());
-    Fdd4MSet<THIS, V, T4>(*this, ddd4M)
+             Number<Dim>());
+    d2MEval<THIS, V, CT1, T3, 1, 0>(*this, d2MType1[0][1][0])
+        .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+             Number<Dim>());
+
+    d2MEval<THIS, V, CT1, T3, 0, 1>(*this, d2MType1[1][0][1])
         .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-             Number<Dim>(), Number<Dim>(), Number<Dim>());
-    if (Dim == 3)
-      Fdd4MSet<THIS, V, T4>(*this, ddd4M)
+             Number<Dim>());
+    d2MEval<THIS, V, CT1, T3, 1, 0>(*this, d2MType1[1][1][0])
+        .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+             Number<Dim>());
+
+    if (Dim == 3) {
+      d2MEval<THIS, V, CT1, T3, 0, 2>(*this, d2MType1[0][0][2])
+          .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+      d2MEval<THIS, V, CT1, T3, 2, 0>(*this, d2MType1[0][2][0])
+          .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+      d2MEval<THIS, V, CT1, T3, 1, 2>(*this, d2MType1[0][1][2])
+          .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+      d2MEval<THIS, V, CT1, T3, 2, 1>(*this, d2MType1[0][2][1])
+          .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+
+      d2MEval<THIS, V, CT1, T3, 0, 2>(*this, d2MType1[1][0][2])
+          .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+      d2MEval<THIS, V, CT1, T3, 2, 0>(*this, d2MType1[1][2][0])
+          .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+      d2MEval<THIS, V, CT1, T3, 1, 2>(*this, d2MType1[1][1][2])
+          .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+      d2MEval<THIS, V, CT1, T3, 2, 1>(*this, d2MType1[1][2][1])
+          .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+
+      d2MEval<THIS, V, CT1, T3, 0, 1>(*this, d2MType1[2][0][1])
           .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>(), Number<Dim>(), Number<Dim>());
+               Number<Dim>());
+      d2MEval<THIS, V, CT1, T3, 1, 0>(*this, d2MType1[2][1][0])
+          .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+      d2MEval<THIS, V, CT1, T3, 2, 0>(*this, d2MType1[2][2][0])
+          .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+      d2MEval<THIS, V, CT1, T3, 0, 2>(*this, d2MType1[2][0][2])
+          .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+      d2MEval<THIS, V, CT1, T3, 2, 1>(*this, d2MType1[2][2][1])
+          .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+      d2MEval<THIS, V, CT1, T3, 1, 2>(*this, d2MType1[2][1][2])
+          .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+               Number<Dim>());
+    }
 
     T3 t_diff_A;
     GetDiffDiffMatImpl<THIS, V, T3, T>(*this, t_diff_A, t_S)
@@ -1083,13 +1096,14 @@ private:
   FTensor::Ddg<V, Dim, Dim> aS[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aSM[Dim][Dim][Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> coefficientsType0[Dim][Dim][Dim][Dim];
-  FTensor::Ddg<V, Dim, Dim> ddd4M[Dim][Dim][Dim];
+  FTensor::Tensor4<T1, Dim, Dim, Dim, Dim> coefficientsType1;
+  FTensor::Ddg<V, Dim, Dim> coefficientsType2[Dim][Dim][Dim][Dim];
+  FTensor::Ddg<V, Dim, Dim> d2MType1[Dim][Dim][Dim];
   FTensor::Tensor2<T1, Dim, Dim> aF;
   FTensor::Tensor2<T1, Dim, Dim> aF2;
   FTensor::Tensor1<T1, Dim> fVal;
   FTensor::Tensor1<T1, Dim> dfVal;
   FTensor::Tensor1<T1, Dim> ddfVal;
-  FTensor::Tensor4<T1, Dim, Dim, Dim, Dim> coefficientsType1;
 
   template <typename E, typename C> friend struct d2MCoefficients;
   template <typename E, typename C> friend struct d2MCoefficientsType0;
