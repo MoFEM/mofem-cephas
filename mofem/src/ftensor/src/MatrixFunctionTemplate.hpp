@@ -404,7 +404,7 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
                                    Number<l>(), Number<m>(), Number<n>())) /
             static_cast<C>(2) +
 
-        e.aM(a, i, j) * e.aM(a, k, l) * e.aM(a, m, n) * e.ddfVal(a)
+        e.aMM[a][a](i, j, k, l) * e.aM(a, m, n) * e.ddfVal(a)
 
         +
 
@@ -636,14 +636,12 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
 
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
-        if (aa != bb) {
-          auto &MM= aMM[aa][bb];
-          for (int ii = 0; ii != Dim; ++ii) {
-            for (int jj = ii; jj != Dim; ++jj) {
-              for (int kk = 0; kk != Dim; ++kk) {
-                for (int ll = kk; ll != Dim; ++ll) {
-                  MM(ii, jj, kk, ll) = aM(aa, ii, jj) * aM(bb, kk, ll);
-                }
+        auto &MM = aMM[aa][bb];
+        for (int ii = 0; ii != Dim; ++ii) {
+          for (int jj = ii; jj != Dim; ++jj) {
+            for (int kk = 0; kk != Dim; ++kk) {
+              for (int ll = kk; ll != Dim; ++ll) {
+                MM(ii, jj, kk, ll) = aM(aa, ii, jj) * aM(bb, kk, ll);
               }
             }
           }
