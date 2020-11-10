@@ -83,7 +83,7 @@ template <typename E, typename C> struct d2MCoefficients {
                   const Number<l> &, const Number<m> &, const Number<n> &,
 
                   const Number<3> &) const {
-    return  e.aS[a][b](i, j, k, l) * e.fVal(a) * e.aF(a, b);
+    return e.aS[a][b](i, j, k, l) * e.fVal(a) * e.aF(a, b);
   }
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
@@ -98,7 +98,7 @@ template <typename E, typename C> struct d2MCoefficients {
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
 
                  Number<i>(), Number<j>(), Number<k>(), Number<l>(),
-                  Number<m>(), Number<n>(),
+                 Number<m>(), Number<n>(),
 
                  Number<3>());
     else
@@ -106,7 +106,7 @@ template <typename E, typename C> struct d2MCoefficients {
 
                  Number<i>(), Number<j>(), Number<k>(), Number<l>(),
 
-                  Number<m>(), Number<n>(),
+                 Number<m>(), Number<n>(),
 
                  Number<1>());
   }
@@ -155,14 +155,15 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
     if (a == 1 || b == 1)
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
 
-                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),Number<m>(), Number<n>(),
+                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),
+                 Number<m>(), Number<n>(),
 
                  Number<3>());
     else
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
 
-                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),Number<m>(), Number<n>(),
-                 Number<1>());
+                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),
+                 Number<m>(), Number<n>(), Number<1>());
   }
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
@@ -187,7 +188,8 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   dd4MCoefficientsType1(E &e) : e(e) {}
   E &e;
 
-  template <int a, int b, int c, int d, int i, int j, int k, int l, int m, int n>
+  template <int a, int b, int c, int d, int i, int j, int k, int l, int m,
+            int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
                   const Number<d> &,
 
@@ -198,7 +200,8 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
     return e.aS[a][b](i, j, k, l) * e.coefficientsType1(a, b, c, d);
   }
 
-  template <int a, int b, int c, int d, int i, int j, int k, int l, int m, int n>
+  template <int a, int b, int c, int d, int i, int j, int k, int l, int m,
+            int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
                   const Number<d> &,
 
@@ -209,7 +212,8 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
     return e.aS[a][b](i, j, k, l) * e.coefficientsType1(a, b, c, d);
   }
 
-  template <int a, int b, int c, int d, int i, int j, int k, int l, int m, int n>
+  template <int a, int b, int c, int d, int i, int j, int k, int l, int m,
+            int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
                   const Number<d> &,
 
@@ -287,16 +291,17 @@ template <typename E, typename C, typename G> struct d2MImpl {
     return 0;
   }
 
-  template <int nb, int a, int c, int d, int i, int j, int k, int l, int m, int n>
+  template <int nb, int a, int c, int d, int i, int j, int k, int l, int m,
+            int n>
   inline C eval(const Number<nb> &, const Number<a> &, const Number<c> &,
                 const Number<d> &, const Number<i> &, const Number<j> &,
                 const Number<k> &, const Number<l> &,
-                
+
                 const Number<m> &, const Number<n> &
-                
-                )
-                
-                 const {
+
+  )
+
+      const {
     return term<nb - 1, a, c, d, i, j, k, l, m, n>() +
            eval(Number<nb - 1>(), Number<a>(), Number<c>(), Number<d>(),
                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),
@@ -310,10 +315,10 @@ template <typename E, typename C, typename G> struct d2MImpl {
   inline C eval(const Number<1> &, const Number<a> &, const Number<c> &,
                 const Number<d> &, const Number<i> &, const Number<j> &,
                 const Number<k> &, const Number<l> &,
-                
+
                 const Number<m> &, const Number<n> &
-                
-                ) const {
+
+  ) const {
     return term<0, a, c, d, i, j, k, l, m, n>();
   }
 };
