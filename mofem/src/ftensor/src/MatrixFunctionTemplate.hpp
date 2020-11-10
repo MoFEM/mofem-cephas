@@ -263,10 +263,10 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
   template <int a, int b, int A, int B, int I, int J, int K, int L, int M,
             int N>
   inline auto fd2G() const {
-    return fd2M<a, b, A, I, K, N, M>() * e.aM(B, J, L) +
-           e.aM(A, I, K) * fd2M<a, b, B, J, L, M, N>() +
-           fd2M<a, b, A, I, L, M, N>() * e.aM(B, J, K) +
-           e.aM(A, I, L) * fd2M<a, b, B, J, K, M, N>();
+    return fd2M<a, b, A, I, K, N, M>() * e.aM[B](J, L) +
+           e.aM[A](I, K) * fd2M<a, b, B, J, L, M, N>() +
+           fd2M<a, b, A, I, L, M, N>() * e.aM[B](J, K) +
+           e.aM[A](I, L) * fd2M<a, b, B, J, K, M, N>();
   }
 
   template <int a, int B, int I, int J, int K, int L, int M, int N>
@@ -325,7 +325,7 @@ template <typename E, typename C> struct ReconstructMatImpl {
   E &e;
 
   template <int a, int i, int j> inline C term() const {
-    return e.aM(a, i, j) * e.fVal(a);
+    return e.aM[a](i, j) * e.fVal(a);
   }
 
   template <int nb, int i, int j>
@@ -401,16 +401,16 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
             w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(),
                    Number<-1>(), Number<i>(), Number<j>(), Number<m>(),
                    Number<n>()) *
-                e.aM(a, k, l)
+                e.aM[a](k, l)
 
             +
 
-            e.aM(a, i, j) * w.eval(typename E::NumberDim(), Number<a>(),
+            e.aM[a](i, j) * w.eval(typename E::NumberDim(), Number<a>(),
                                    Number<-1>(), Number<-1>(), Number<k>(),
                                    Number<l>(), Number<m>(), Number<n>())) /
             static_cast<C>(2) +
 
-        e.aMM[a][a](i, j, k, l) * e.aM(a, m, n) * e.ddfVal(a)
+        e.aMM[a][a](i, j, k, l) * e.aM[a](m, n) * e.ddfVal(a)
 
         +
 
@@ -420,7 +420,7 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
         w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(), Number<-1>(),
                Number<i>(), Number<j>(), Number<k>(), Number<l>()) *
-            e.aM(a, m, n) / static_cast<C>(2);
+            e.aM[a](m, n) / static_cast<C>(2);
   }
 
   template <int nb, int i, int j, int k, int l, int m, int n>
@@ -635,19 +635,23 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
 
   EigenMatrixImp(Val &t_val, Vec &t_vec) : tVal(t_val), tVec(t_vec) {
 
-    for (auto aa = 0; aa != Dim; ++aa)
+    for (auto aa = 0; aa != Dim; ++aa) {
+      auto &M = aM[aa];
       for (auto ii = 0; ii != Dim; ++ii)
         for (auto jj = 0; jj <= ii; ++jj)
-          aM(aa, ii, jj) = tVec(aa, ii) * tVec(aa, jj);
+          M(ii, jj) = tVec(aa, ii) * tVec(aa, jj);
+    }
 
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
+        auto &Ma = aM[aa];
+        auto &Mb = aM[bb];
         auto &MM = aMM[aa][bb];
         for (int ii = 0; ii != Dim; ++ii) {
           for (int jj = ii; jj != Dim; ++jj) {
             for (int kk = 0; kk != Dim; ++kk) {
               for (int ll = kk; ll != Dim; ++ll) {
-                MM(ii, jj, kk, ll) = aM(aa, ii, jj) * aM(bb, kk, ll);
+                MM(ii, jj, kk, ll) = Ma(ii, jj) * Mb(kk, ll);
               }
             }
           }
@@ -894,7 +898,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
 private:
   Val &tVal;
   Vec &tVec;
-  FTensor::Christof<T2, Dim, Dim> aM;
+  FTensor::Tensor2_symmetric<T2, Dim> aM[Dim];
   FTensor::Ddg<V, Dim, Dim> aMM[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aG[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aS[Dim][Dim];
@@ -927,7 +931,7 @@ private:
   }
 
   template <int a, int b, int i, int j> inline auto dFdN() {
-    return (-aM(a, i, j) + aM(b, i, j)) * aF2(a, b);
+    return (-aM[a](i, j) + aM[b](i, j)) * aF2(a, b);
   }
 
 }; // namespace EigenMatrix
