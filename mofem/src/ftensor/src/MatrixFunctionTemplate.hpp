@@ -922,24 +922,5 @@ private:
     return (-aM(a, i, j) + aM(b, i, j)) * aF2(a, b);
   }
 
-  template <int a, int b, int i, int j, int k, int l>
-  inline auto G(const Number<a> &, const Number<b> &, const Number<i> &,
-                const Number<j> &, const Number<k> &, const Number<l> &) {
-    return G<a, b, i, j, k, l>();
-  }
-
-  template <int a, int b, int i, int j, int k, int l> inline auto G() {
-    return aG[a][b](i, j, k, l);
-  }
-
-  template <int a, int b, int i, int j, int k, int l>
-  inline auto S(const Number<a> &, const Number<b> &, const Number<i> &,
-                const Number<j> &, const Number<k> &, const Number<l> &) {
-    return S<a, b, i, j, k, l>();
-  }
-
-  template <int a, int b, int i, int j, int k, int l> inline auto S() {
-    return aS[a][b](i, j, k, l);
-  }
 }; // namespace EigenMatrix
 } // namespace EigenMatrix
