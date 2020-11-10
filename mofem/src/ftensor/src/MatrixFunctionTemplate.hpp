@@ -672,13 +672,14 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
         if (aa != bb) {
-          auto &G = aG[aa][bb];
+          auto &Gab = aG[aa][bb];
+          auto &Gba = aG[bb][aa];
           auto &S = aS[aa][bb];
           for (int ii = 0; ii != Dim; ++ii) {
             for (int jj = ii; jj != Dim; ++jj) {
               for (int kk = 0; kk != Dim; ++kk) {
                 for (int ll = kk; ll != Dim; ++ll) {
-                  S(ii, jj, kk, ll) = G(ii, jj, kk, ll) + G(ii, jj, kk, ll);
+                  S(ii, jj, kk, ll) = Gab(ii, jj, kk, ll) + Gba(ii, jj, kk, ll);
                 }
               }
             }
@@ -942,7 +943,7 @@ private:
   }
 
   template <int a, int b, int i, int j, int k, int l> inline auto S() {
-    return G<a, b, i, j, k, l>() + G<b, a, i, j, k, l>();
+    return aS[a][b](i, j, k, l);
   }
 }; // namespace EigenMatrix
 } // namespace EigenMatrix
