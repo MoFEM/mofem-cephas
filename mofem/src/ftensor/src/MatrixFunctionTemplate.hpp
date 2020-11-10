@@ -212,8 +212,7 @@ template <typename E, typename C, typename G> struct d2MImpl {
     if (a != b) {
       return g.get(Number<a>(), Number<b>(), Number<c>(), Number<d>(),
                    typename E::NumberNb()) *
-             e.S(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
-                 Number<k>(), Number<l>());
+             e.aS[a][b](i, j, k, l);
     }
     return 0;
   }
