@@ -177,8 +177,8 @@ template <typename E, typename C> struct dd4MCoefficientsType2 {
                   const Number<j> &, const Number<k> &, const Number<l> &,
                   const Number<m> &, const Number<n> &,
                   const Number<3> &) const {
-    return e.fVal(a) *
-           e.dFdN(Number<a>(), Number<b>(), Number<m>(), Number<n>());
+    return (e.fVal(a) * e.aF2(a, b)) *
+           (-e.aSM[a][b][m][n](i, j, k, l) + e.aSM[b][a][m][n](i, j, k, l));
   }
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
@@ -290,8 +290,9 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
 
               g2.get(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                      Number<k>(), Number<l>(), Number<m>(), Number<n>(),
-                     typename E::NumberNb()) *
-              e.aS[a][b](i, j, k, l);
+                     typename E::NumberNb());
+              //        *
+              // e.aS[a][b](i, j, k, l);
     }
 
     return 0;
@@ -684,6 +685,23 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         }
       }
     }
+
+    for (auto aa = 0; aa != Dim; ++aa) {
+      for (auto bb = 0; bb != Dim; ++bb) {
+        if (aa != bb) {
+          auto &S = aS[aa][bb];
+          auto &M = aM[aa];
+          for (auto mm = 0; mm != Dim; ++mm) {
+            for (auto nn = mm; nn != Dim; ++nn) {
+              auto &SMmn = aSM[aa][bb][mm][nn];
+              auto &SMnm = aSM[aa][bb][nn][mm];
+              SMmn(i, j, k, l) = aS[aa][bb](i, j, k, l) * M(mm, nn);
+              SMnm(i, j, k, l) = SMmn(i, j, k, l);
+            }
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -887,6 +905,7 @@ private:
   FTensor::Ddg<V, Dim, Dim> aMM[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aG[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aS[Dim][Dim];
+  FTensor::Ddg<V, Dim, Dim> aSM[Dim][Dim][Dim][Dim];
   FTensor::Tensor2<T1, Dim, Dim> aF;
   FTensor::Tensor2<T1, Dim, Dim> aF2;
   FTensor::Tensor1<T1, Dim> fVal;
@@ -908,16 +927,6 @@ private:
   template <typename E, typename C, typename T> friend struct GetDiffMatImpl;
   template <typename E, typename C, typename T3, typename T4>
   friend struct GetDiffDiffMatImpl;
-
-  template <int a, int b, int i, int j>
-  inline auto dFdN(const Number<a> &, const Number<b> &, const Number<i> &,
-                   const Number<j> &) {
-    return dFdN<a, b, i, j>();
-  }
-
-  template <int a, int b, int i, int j> inline auto dFdN() {
-    return (-aM[a](i, j) + aM[b](i, j)) * aF2(a, b);
-  }
 
 }; // namespace EigenMatrix
 } // namespace EigenMatrix
