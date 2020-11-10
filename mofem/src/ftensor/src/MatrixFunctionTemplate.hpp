@@ -135,23 +135,17 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &,
-
-                  const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &, const Number<m> &, const Number<n> &,
-
-                  const Number<3> &) const {
+                  const Number<-1> &, const Number<i> &, const Number<j> &,
+                  const Number<k> &, const Number<l> &, const Number<m> &,
+                  const Number<n> &, const Number<3> &) const {
     return e.aSM[a][b][m][n](i, j, k, l) * e.coefficientsType0(a, b);
   }
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &,
-
-                  const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &, const Number<m> &, const Number<n> &,
-
-                  const Number<2> &) const {
+                  const Number<-1> &, const Number<i> &, const Number<j> &,
+                  const Number<k> &, const Number<l> &, const Number<m> &,
+                  const Number<n> &, const Number<2> &) const {
     if (a == 1 || b == 1)
       return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
 
@@ -168,12 +162,9 @@ template <typename E, typename C> struct d2MCoefficientsType0 {
 
   template <int a, int b, int i, int j, int k, int l, int m, int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &,
-
-                  const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &, const Number<m> &, const Number<n> &,
-
-                  const Number<1> &) const {
+                  const Number<-1> &, const Number<i> &, const Number<j> &,
+                  const Number<k> &, const Number<l> &, const Number<m> &,
+                  const Number<n> &, const Number<1> &) const {
     return e.aSM[a][b][m][n](i, j, k, l) * e.ddfVal(a) / static_cast<C>(2);
   }
 };
@@ -191,36 +182,27 @@ template <typename E, typename C> struct dd4MCoefficientsType1 {
   template <int a, int b, int c, int d, int i, int j, int k, int l, int m,
             int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
-                  const Number<d> &,
-
-                  const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &, const Number<m> &, const Number<n> &,
-
-                  const Number<3> &) const {
+                  const Number<d> &, const Number<i> &, const Number<j> &,
+                  const Number<k> &, const Number<l> &, const Number<m> &,
+                  const Number<n> &, const Number<3> &) const {
     return e.aS[a][b](i, j, k, l) * e.coefficientsType1(a, b, c, d);
   }
 
   template <int a, int b, int c, int d, int i, int j, int k, int l, int m,
             int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
-                  const Number<d> &,
-
-                  const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &, const Number<m> &, const Number<n> &,
-
-                  const Number<2> &) const {
+                  const Number<d> &, const Number<i> &, const Number<j> &,
+                  const Number<k> &, const Number<l> &, const Number<m> &,
+                  const Number<n> &, const Number<2> &) const {
     return e.aS[a][b](i, j, k, l) * e.coefficientsType1(a, b, c, d);
   }
 
   template <int a, int b, int c, int d, int i, int j, int k, int l, int m,
             int n>
   inline auto get(const Number<a> &, const Number<b> &, const Number<c> &,
-                  const Number<d> &,
-
-                  const Number<i> &, const Number<j> &, const Number<k> &,
-                  const Number<l> &, const Number<m> &, const Number<n> &,
-
-                  const Number<1>) const {
+                  const Number<d> &, const Number<i> &, const Number<j> &,
+                  const Number<k> &, const Number<l> &, const Number<m> &,
+                  const Number<n> &, const Number<1>) const {
     return e.aS[a][b](i, j, k, l) * e.coefficientsType1(a, b, c, d);
   }
 };
