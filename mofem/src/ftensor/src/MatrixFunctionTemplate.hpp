@@ -283,7 +283,7 @@ template <typename E, typename C, typename G1, typename G2> struct Fdd4MImpl {
           2 *
 
               g2.get(Number<a>(), Number<b>(), Number<m>(), Number<n>(),
-                     typename E::NumberNb()) *
+                     typename E::NumberNb()) * 
               e.S(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
                   Number<k>(), Number<l>());
     }
@@ -633,6 +633,62 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       for (auto ii = 0; ii != Dim; ++ii)
         for (auto jj = 0; jj <= ii; ++jj)
           aM(aa, ii, jj) = tVec(aa, ii) * tVec(aa, jj);
+
+    for (auto aa = 0; aa != Dim; ++aa) {
+      for (auto bb = 0; bb != Dim; ++bb) {
+        if (aa != bb) {
+          auto &MM= aMM[aa][bb];
+          for (int ii = 0; ii != Dim; ++ii) {
+            for (int jj = ii; jj != Dim; ++jj) {
+              for (int kk = 0; kk != Dim; ++kk) {
+                for (int ll = kk; ll != Dim; ++ll) {
+                  MM(ii, jj, kk, ll) = aM(aa, ii, jj) * aM(bb, kk, ll);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    for (auto aa = 0; aa != Dim; ++aa) {
+      for (auto bb = 0; bb != Dim; ++bb) {
+        if (aa != bb) {
+          auto &MM = aMM[aa][bb];
+          auto &G = aG[aa][bb];
+          for (int ii = 0; ii != Dim; ++ii) {
+            for (int jj = ii; jj != Dim; ++jj) {
+              for (int kk = 0; kk != Dim; ++kk) {
+                for (int ll = kk; ll != Dim; ++ll) {
+                  G(ii, jj, kk, ll) = MM(ii, kk, jj, ll) + MM(ii, ll, jj, kk);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    for (auto aa = 0; aa != Dim; ++aa) {
+      for (auto bb = 0; bb != Dim; ++bb) {
+        if (aa != bb) {
+          auto &G = aG[aa][bb];
+          auto &S = aS[aa][bb];
+          for (int ii = 0; ii != Dim; ++ii) {
+            for (int jj = ii; jj != Dim; ++jj) {
+              for (int kk = 0; kk != Dim; ++kk) {
+                for (int ll = kk; ll != Dim; ++ll) {
+                  S(ii, jj, kk, ll) = G(ii, jj, kk, ll) + G(ii, jj, kk, ll);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+
+
   }
 
   /**
@@ -736,8 +792,6 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         aF2(aa, bb) = aF2(bb, aa) = aF(aa, bb) * aF(aa, bb);
       }
 
-      
-
 
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
@@ -836,6 +890,8 @@ private:
   Val &tVal;
   Vec &tVec;
   FTensor::Christof<T2, Dim, Dim> aM;
+  std::array<std::array<FTensor::Ddg<V, Dim, Dim>, Dim>, Dim> aMM;
+  std::array<std::array<FTensor::Ddg<V, Dim, Dim>, Dim>, Dim> aG;
   std::array<std::array<FTensor::Ddg<V, Dim, Dim>, Dim>, Dim> aS;
   FTensor::Tensor2<T1, Dim, Dim> aF;
   FTensor::Tensor2<T1, Dim, Dim> aF2;
@@ -844,7 +900,6 @@ private:
   FTensor::Tensor1<T1, Dim> ddfVal;
   FTensor::Tensor2<T1, Dim, Dim> coefficientsType0;
   FTensor::Tensor4<T1, Dim, Dim, Dim, Dim> coefficientsType1;
-
 
   template <typename E, typename C> friend struct d2MCoefficients;
   template <typename E, typename C> friend struct d2MCoefficientsType0;
@@ -877,7 +932,7 @@ private:
   }
 
   template <int a, int b, int i, int j, int k, int l> inline auto G() {
-    return aM(a, i, k) * aM(b, j, l) + aM(a, i, l) * aM(b, j, k);
+    return aG[a][b](i, j, k, l);
   }
 
   template <int a, int b, int i, int j, int k, int l>
@@ -889,5 +944,5 @@ private:
   template <int a, int b, int i, int j, int k, int l> inline auto S() {
     return G<a, b, i, j, k, l>() + G<b, a, i, j, k, l>();
   }
-};
+}; // namespace EigenMatrix
 } // namespace EigenMatrix
