@@ -135,53 +135,6 @@ template <typename E, typename C, typename G> struct d2MImpl {
   }
 };
 
-template <typename E, typename C, typename G, typename T, int c, int d>
-struct d2MEval {
-  using Val = typename E::Val;
-  using Vec = typename E::Vec;
-  using Fun = typename E::Fun;
-
-  template <int N> using Number = FTensor::Number<N>;
-  d2MEval(E &e, T &t_A) : r(e), tA(t_A) {}
-  d2MImpl<E, C, G> r;
-  T &tA;
-
-  template <int A, int I, int J, int K, int L>
-  inline void set(const Number<A> &, const Number<I> &, const Number<J> &,
-                  const Number<K> &, const Number<L> &) {
-    set(Number<A>(), Number<I>(), Number<J>(), Number<K>(), Number<L - 1>());
-    tA(I - 1, J - 1, K - 1, L - 1) =
-        r.eval(typename E::NumberDim(), Number<A>(), Number<c>(), Number<d>(),
-               Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
-               Number<L - 1>(), Number<-1>(), Number<-1>());
-  }
-
-  template <int A, int I, int J, int K>
-  inline void set(const Number<A> &, const Number<I> &, const Number<J> &,
-                  const Number<K> &, const Number<0> &) {
-    set(Number<A>(), Number<I>(), Number<J>(), Number<K - 1>(),
-        Number<K - 1>());
-  }
-
-  template <int A, int I, int J>
-  inline void set(const Number<A> &, const Number<I> &, const Number<J> &,
-                  const Number<0> &, const Number<0> &) {
-    set(Number<A>(), Number<I>(), Number<J - 1>(), typename E::NumberDim(),
-        typename E::NumberDim());
-  }
-
-  template <int A, int I, int K, int L>
-  inline void set(const Number<A> &, const Number<I> &, const Number<0> &,
-                  const Number<K> &, const Number<L> &) {
-    set(Number<A>(), Number<I - 1>(), Number<I - 1>(), Number<K>(),
-        Number<L>());
-  }
-
-  template <int A, int K, int L>
-  inline void set(const Number<A> &, const Number<0> &, const Number<0> &,
-                  const Number<K> &, const Number<L> &) {}
-};
-
 template <typename E, typename C> struct Fdd4MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -807,12 +760,13 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
             const auto &S = aS[aa][bb];
             const auto v0 = aF(aa, bb);
             for (auto cc = 0; cc != Dim; ++cc) {
-              for (auto dd = 0; dd != Dim; ++dd) {
-                if (cc != dd) {
-                  const double v1 = fVal(cc) * aF(cc, dd);
-                  d2MType1[aa][cc][dd](i, j, k, l) += (v1 * v0) * S(i, j, k, l);
+                for (auto dd = 0; dd != Dim; ++dd) {
+                  if (cc != dd) {
+                    const double v1 = fVal(cc) * aF(cc, dd);
+                    d2MType1[aa][cc][dd](i, j, k, l) +=
+                        (v1 * v0) * S(i, j, k, l);
+                  }
                 }
-              }
             }
           }
         }
