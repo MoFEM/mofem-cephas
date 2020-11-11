@@ -261,13 +261,20 @@ template <typename E, typename C> struct Fdd4MImpl {
 
     if (a != b) {
 
-      return
+      if (e.nB == 1) {
+        return
 
-          fd2S<a, b, i, j, k, l, m, n>()
+            fd2S<a, b, i, j, k, l, m, n>();
 
-          +
+      } else {
+        return
 
-          e.coefficientsType2[a][b][m][n](i, j, k, l);
+            fd2S<a, b, i, j, k, l, m, n>()
+
+            +
+
+            e.coefficientsType2[a][b][m][n](i, j, k, l);
+      }
     }
 
     return 0;
