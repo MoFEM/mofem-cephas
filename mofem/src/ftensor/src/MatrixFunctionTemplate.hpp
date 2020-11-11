@@ -309,11 +309,7 @@ template <typename E, typename C, typename G2> struct Fdd4MImpl {
 
           +
 
-          2 *
-
-              g2.get(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
-                     Number<k>(), Number<l>(), Number<m>(), Number<n>(),
-                     typename E::NumberNb());
+          2 * e.coefficientsType2[a][b][m][n](i, j, k, l);
     }
 
     return 0;
@@ -430,7 +426,7 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
             e.d2MType0[a][m][n](i, j, k, l)
 
-            ) /
+                ) /
             static_cast<C>(2) +
 
         e.aMM[a][a](i, j, k, l) * e.aM[a](m, n) * e.ddfVal(a)
@@ -694,8 +690,6 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         }
       }
     }
-
-    
   }
 
   /**
@@ -899,16 +893,51 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         if (aa != bb) {
           for (auto mm = 0; mm != Dim; ++mm) {
             for (auto nn = mm; nn != Dim; ++nn) {
-              coefficientsType2[aa][bb][mm][nn](i, j, k, l) =
-                  (fVal(aa) * aF2(aa, bb)) * (-aSM[aa][bb][mm][nn](i, j, k, l) +
-                                              aSM[bb][aa][mm][nn](i, j, k, l));
-              coefficientsType2[aa][bb][nn][mm](i, j, k, l) =
-                  coefficientsType2[aa][bb][mm][nn](i, j, k, l);
+              coefficientsType2[aa][bb][nn][mm](i, j, k, l) = 0;
+              coefficientsType2[aa][bb][mm][nn](i, j, k, l) = 0;
             }
           }
         }
       }
     }
+
+    if (NB == 3)
+      for (auto aa = 0; aa != Dim; ++aa) {
+        for (auto bb = 0; bb != Dim; ++bb) {
+          if (aa != bb) {
+            for (auto mm = 0; mm != Dim; ++mm) {
+              for (auto nn = mm; nn != Dim; ++nn) {
+                coefficientsType2[aa][bb][mm][nn](i, j, k, l) =
+                    (fVal(aa) * aF2(aa, bb)) *
+                    (-aSM[aa][bb][mm][nn](i, j, k, l) +
+                     aSM[bb][aa][mm][nn](i, j, k, l));
+                coefficientsType2[aa][bb][nn][mm](i, j, k, l) =
+                    coefficientsType2[aa][bb][mm][nn](i, j, k, l);
+              }
+            }
+          }
+        }
+      }
+
+    if (NB == 2)
+      for (auto aa = 0; aa != Dim; ++aa) {
+        for (auto bb = 0; bb != Dim; ++bb) {
+          if (aa != bb) {
+            if (aa == 1 || bb == 1) {
+              for (auto mm = 0; mm != Dim; ++mm) {
+                for (auto nn = mm; nn != Dim; ++nn) {
+                  coefficientsType2[aa][bb][mm][nn](i, j, k, l) =
+                      (fVal(aa) * aF2(aa, bb)) *
+                      (-aSM[aa][bb][mm][nn](i, j, k, l) +
+                       aSM[bb][aa][mm][nn](i, j, k, l));
+                  coefficientsType2[aa][bb][nn][mm](i, j, k, l) =
+                      coefficientsType2[aa][bb][mm][nn](i, j, k, l);
+                }
+              }
+            }
+          }
+        }
+      }
 
     if (NB == 3)
       for (auto aa = 0; aa != Dim; ++aa) {
