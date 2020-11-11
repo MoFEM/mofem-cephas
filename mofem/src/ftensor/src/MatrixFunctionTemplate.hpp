@@ -123,47 +123,6 @@ template <typename E, typename C> struct d2MCoefficients {
   }
 };
 
-template <typename E, typename C> struct dd4MCoefficientsType2 {
-  using Val = typename E::Val;
-  using Vec = typename E::Vec;
-  using Fun = typename E::Fun;
-
-  template <int N> using Number = FTensor::Number<N>;
-
-  dd4MCoefficientsType2(E &e) : e(e) {}
-  E &e;
-
-  template <int a, int b, int i, int j, int k, int l, int m, int n>
-  inline auto get(const Number<a> &, const Number<b> &, const Number<i> &,
-                  const Number<j> &, const Number<k> &, const Number<l> &,
-                  const Number<m> &, const Number<n> &,
-                  const Number<3> &) const {
-    return e.coefficientsType2[a][b][m][n](i, j, k, l);
-  }
-
-  template <int a, int b, int i, int j, int k, int l, int m, int n>
-  inline auto get(const Number<a> &, const Number<b> &, const Number<i> &,
-                  const Number<j> &, const Number<k> &, const Number<l> &,
-                  const Number<m> &, const Number<n> &,
-                  const Number<2> &) const {
-    if (a == 1 || b == 1)
-      return get(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
-                 Number<k>(), Number<l>(), Number<m>(), Number<n>(),
-                 Number<3>());
-    else
-      return get(Number<a>(), Number<b>(), Number<i>(), Number<j>(),
-                 Number<k>(), Number<l>(), Number<m>(), Number<n>(),
-                 Number<1>());
-  }
-
-  template <int a, int b, int i, int j, int k, int l, int m, int n>
-  inline auto get(const Number<a> &, const Number<b> &, const Number<i> &,
-                  const Number<j> &, const Number<k> &, const Number<l> &,
-                  const Number<m> &, const Number<n> &, const Number<1>) const {
-    return static_cast<C>(0);
-  }
-};
-
 template <typename E, typename C, typename G> struct d2MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -267,13 +226,12 @@ struct d2MEval {
                   const Number<K> &, const Number<L> &) {}
 };
 
-template <typename E, typename C, typename G2> struct Fdd4MImpl {
+template <typename E, typename C> struct Fdd4MImpl {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
   using Fun = typename E::Fun;
 
-  Fdd4MImpl(E &e) : g2(e), e(e) {}
-  G2 g2;
+  Fdd4MImpl(E &e) : e(e) {}
   E &e;
 
   template <int N> using Number = FTensor::Number<N>;
@@ -406,7 +364,7 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
   template <int N> using Number = FTensor::Number<N>;
 
   SecondMatrixDirectiveImpl(E &e) : r(e), e(e) {}
-  Fdd4MImpl<E, C, dd4MCoefficientsType2<E, C>> r;
+  Fdd4MImpl<E, C> r;
   E &e;
 
   template <int a, int i, int j, int k, int l, int m, int n>
@@ -1050,9 +1008,8 @@ private:
   FTensor::Tensor1<T1, Dim> ddfVal;
 
   template <typename E, typename C> friend struct d2MCoefficients;
-  template <typename E, typename C> friend struct dd4MCoefficientsType2;
   template <typename E, typename C, typename G> friend struct d2MImpl;
-  template <typename E, typename C, typename G2> friend struct Fdd4MImpl;
+  template <typename E, typename C> friend struct Fdd4MImpl;
   template <typename E, typename C> friend struct ReconstructMatImpl;
   template <typename E, typename C> friend struct FirstMatrixDirectiveImpl;
   template <typename E, typename C> friend struct SecondMatrixDirectiveImpl;
