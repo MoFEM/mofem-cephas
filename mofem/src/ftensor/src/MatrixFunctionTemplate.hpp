@@ -845,19 +845,6 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       }
     }
 
-    for (auto aa = 0; aa != Dim; ++aa) {
-      for (auto bb = 0; bb != Dim; ++bb) {
-        if (aa != bb) {
-          for (auto mm = 0; mm != Dim; ++mm) {
-            for (auto nn = mm; nn != Dim; ++nn) {
-              coefficientsType2[aa][bb][nn][mm](i, j, k, l) = 0;
-              coefficientsType2[aa][bb][mm][nn](i, j, k, l) = 0;
-            }
-          }
-        }
-      }
-    }
-
     if (NB == 3)
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
@@ -941,24 +928,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
           }
         }
       }
-
-    auto fd2M = [&](int A, int a, int b, int I, int J, int K, int L) {
-      return d2MType1[A][a][b](I, J, K, L);
-    };
-
-    auto fd2G = [&](int a, int b, int A, int B, int I, int J, int K, int L,
-                    int M, int N) {
-      return fd2M(A, a, b, I, K, N, M) * aM[B](J, L) +
-             aM[A](I, K) * fd2M(B, a, b, J, L, M, N) +
-             fd2M(A, a, b, I, L, M, N) * aM[B](J, K) +
-             aM[A](I, L) * fd2M(B, a, b, J, K, M, N);
-    };
-
-    auto fd2S = [&](int a, int b, int I, int J, int K, int L, int M, int N) {
-      return fd2G(a, b, a, b, I, J, K, L, M, N) +
-             fd2G(a, b, b, a, I, J, K, L, M, N);
-    };
-
+ 
     if (NB == 3)
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
@@ -981,15 +951,18 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
           if (aa != bb) {
-            if (aa == 1 || bb == 1) {
-              for (auto mm = 0; mm != Dim; ++mm) {
-                for (auto nn = mm; nn != Dim; ++nn) {
+            for (auto mm = 0; mm != Dim; ++mm) {
+              for (auto nn = mm; nn != Dim; ++nn) {
+                if (aa == 1 || bb == 1) {
                   coefficientsType2[aa][bb][mm][nn](i, j, k, l) =
                       2 * (fVal(aa) * aF2(aa, bb)) *
                       (-aSM[aa][bb][mm][nn](i, j, k, l) +
                        aSM[bb][aa][mm][nn](i, j, k, l));
                   coefficientsType2[aa][bb][nn][mm](i, j, k, l) =
                       coefficientsType2[aa][bb][mm][nn](i, j, k, l);
+                } else {
+                  coefficientsType2[aa][bb][mm][nn](i, j, k, l) = 0;
+                  coefficientsType2[aa][bb][nn][mm](i, j, k, l) = 0;
                 }
               }
             }
