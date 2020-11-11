@@ -625,15 +625,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         if (aa != bb) {
           auto &MM = aMM[aa][bb];
           auto &G = aG[aa][bb];
-          for (int ii = 0; ii != Dim; ++ii) {
-            for (int jj = ii; jj != Dim; ++jj) {
-              for (int kk = 0; kk != Dim; ++kk) {
-                for (int ll = kk; ll != Dim; ++ll) {
-                  G(ii, jj, kk, ll) = MM(ii, kk, jj, ll) + MM(ii, ll, jj, kk);
-                }
-              }
-            }
-          }
+          G(i, j, k, l) = MM(i, k, j, l) || MM(i, l, j, k);
         }
       }
     }
