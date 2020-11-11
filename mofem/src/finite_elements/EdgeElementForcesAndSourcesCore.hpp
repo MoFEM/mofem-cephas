@@ -77,8 +77,6 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
      * \brief get edge normal 
      * NOTE: it should be used only in 2D analysis
      */
-    inline VectorDouble getNormal();
-
     inline auto getFTensor1Normal();
 
     /**
@@ -276,13 +274,6 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getCoordsAtGaussPts() {
       ->coordsAtGaussPts;
 }
 
-VectorDouble
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getNormal() {
-  auto &dir =
-      static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->dIrection;
-  return VectorDouble({-dir(1), dir(0), dir(2)});
-}
-
 auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
     getFTensor1CoordsAtGaussPts() {
   double *ptr = &*getCoordsAtGaussPts().data().begin();
@@ -323,12 +314,6 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
 }
 
 auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1Normal() {
-  auto norm = getNormal();
-  return FTensor::Tensor1<double, 3>(norm(0), norm(1), norm(2));
-}
-
-auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
     getFTensor1Normal(const FTensor::Tensor1<double, 3> &vec) {
   FTensor::Tensor1<double, 3> t_normal;
   FTensor::Index<'i',3> i;
@@ -337,6 +322,12 @@ auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
   auto t_dir = getFTensor1Direction();
   t_normal(i) = FTensor::levi_civita(i, j, k) * t_dir(j) * vec(k);
   return t_normal;
+}
+
+auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
+    getFTensor1Normal() {
+  FTensor::Tensor1<double, 3> t_normal{0., 0., 1.};
+  return getFTensor1Normal(t_normal);
 }
 
 template <int SWITCH>
