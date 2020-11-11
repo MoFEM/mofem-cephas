@@ -123,52 +123,6 @@ template <typename E, typename C> struct d2MCoefficients {
   }
 };
 
-template <typename E, typename C> struct d2MCoefficientsType0 {
-  using Val = typename E::Val;
-  using Vec = typename E::Vec;
-  using Fun = typename E::Fun;
-
-  template <int N> using Number = FTensor::Number<N>;
-
-  d2MCoefficientsType0(E &e) : e(e) {}
-  E &e;
-
-  template <int a, int b, int i, int j, int k, int l, int m, int n>
-  inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const Number<i> &, const Number<j> &,
-                  const Number<k> &, const Number<l> &, const Number<m> &,
-                  const Number<n> &, const Number<3> &) const {
-    return e.coefficientsType0[a][b][m][n](i, j, k, l);
-  }
-
-  template <int a, int b, int i, int j, int k, int l, int m, int n>
-  inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const Number<i> &, const Number<j> &,
-                  const Number<k> &, const Number<l> &, const Number<m> &,
-                  const Number<n> &, const Number<2> &) const {
-    if (a == 1 || b == 1)
-      return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
-
-                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),
-                 Number<m>(), Number<n>(),
-
-                 Number<3>());
-    else
-      return get(Number<a>(), Number<b>(), Number<-1>(), Number<-1>(),
-
-                 Number<i>(), Number<j>(), Number<k>(), Number<l>(),
-                 Number<m>(), Number<n>(), Number<1>());
-  }
-
-  template <int a, int b, int i, int j, int k, int l, int m, int n>
-  inline auto get(const Number<a> &, const Number<b> &, const Number<-1> &,
-                  const Number<-1> &, const Number<i> &, const Number<j> &,
-                  const Number<k> &, const Number<l> &, const Number<m> &,
-                  const Number<n> &, const Number<1> &) const {
-    return e.aSM[a][b][m][n](i, j, k, l) * e.ddfVal(a) / static_cast<C>(2);
-  }
-};
-
 template <typename E, typename C> struct dd4MCoefficientsType1 {
   using Val = typename E::Val;
   using Vec = typename E::Vec;
@@ -494,8 +448,7 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  SecondMatrixDirectiveImpl(E &e) : w(e), r(e), e(e) {}
-  d2MImpl<E, C, d2MCoefficientsType0<E, C>> w;
+  SecondMatrixDirectiveImpl(E &e) : r(e), e(e) {}
   Fdd4MImpl<E, C, dd4MCoefficientsType1<E, C>, dd4MCoefficientsType2<E, C>> r;
   E &e;
 
@@ -506,15 +459,17 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
         (
 
-            w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(),
-                   Number<-1>(), Number<i>(), Number<j>(), Number<m>(),
-                   Number<n>(), Number<k>(), Number<l>())
+            e.d2MType0[a][k][l](i, j, m, n)
 
             +
 
-            w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(),
-                   Number<-1>(), Number<k>(), Number<l>(), Number<m>(),
-                   Number<n>(), Number<i>(), Number<j>())) /
+            e.d2MType0[a][i][j](k, l, m, n)
+
+            +
+
+            e.d2MType0[a][m][n](i, j, k, l)
+
+            ) /
             static_cast<C>(2) +
 
         e.aMM[a][a](i, j, k, l) * e.aM[a](m, n) * e.ddfVal(a)
@@ -523,12 +478,7 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
         r.eval(typename E::NumberDim(), Number<a>(), Number<i>(), Number<j>(),
                Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
-            static_cast<C>(4) +
-
-        w.eval(typename E::NumberDim(), Number<a>(), Number<-1>(), Number<-1>(),
-               Number<i>(), Number<j>(), Number<k>(), Number<l>(), Number<m>(),
-               Number<n>()) /
-            static_cast<C>(2);
+            static_cast<C>(4);
   }
 
   template <int nb, int i, int j, int k, int l, int m, int n>
@@ -909,20 +859,68 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     FTensor::Index<'l', Dim> l;
 
     for (auto aa = 0; aa != Dim; ++aa) {
-      for (auto bb = 0; bb != Dim; ++bb) {
-        if (aa != bb) {
-          const double v = dfVal(aa) * aF(aa, bb);
-          for (auto mm = 0; mm != Dim; ++mm) {
-            for (auto nn = mm; nn != Dim; ++nn) {
-              coefficientsType0[aa][bb][mm][nn](i, j, k, l) =
-                  v * aSM[aa][bb][mm][nn](i, j, k, l);
-              coefficientsType0[aa][bb][nn][mm](i, j, k, l) =
-                  coefficientsType0[aa][bb][mm][nn](i, j, k, l);
+      for (auto mm = 0; mm != Dim; ++mm) {
+        for (auto nn = mm; nn != Dim; ++nn) {
+          d2MType0[aa][nn][mm](i, j, k, l) = 0;
+          d2MType0[aa][mm][nn](i, j, k, l) = 0;
+        }
+      }
+    }
+
+    if (NB == 3)
+      for (auto aa = 0; aa != Dim; ++aa) {
+        for (auto bb = 0; bb != Dim; ++bb) {
+          if (aa != bb) {
+            const double v = dfVal(aa) * aF(aa, bb);
+            for (auto mm = 0; mm != Dim; ++mm) {
+              for (auto nn = mm; nn != Dim; ++nn) {
+                d2MType0[aa][mm][nn](i, j, k, l) +=
+                    v * aSM[aa][bb][mm][nn](i, j, k, l);
+                d2MType0[aa][nn][mm](i, j, k, l) =
+                    d2MType0[aa][mm][nn](i, j, k, l);
+              }
             }
           }
         }
       }
-    }
+
+    if (NB == 2)
+      for (auto aa = 0; aa != Dim; ++aa) {
+        for (auto bb = 0; bb != Dim; ++bb) {
+          if (aa != bb) {
+            double v;
+            if (aa == 1 || bb == 1)
+              v = dfVal(aa) * aF(aa, bb);
+            else
+              v = ddfVal(aa) / 2;
+            for (auto mm = 0; mm != Dim; ++mm) {
+              for (auto nn = mm; nn != Dim; ++nn) {
+                d2MType0[aa][mm][nn](i, j, k, l) +=
+                    v * aSM[aa][bb][mm][nn](i, j, k, l);
+                d2MType0[aa][nn][mm](i, j, k, l) =
+                    d2MType0[aa][mm][nn](i, j, k, l);
+              }
+            }
+          }
+        }
+      }
+
+    if (NB == 1)
+      for (auto aa = 0; aa != Dim; ++aa) {
+        for (auto bb = 0; bb != Dim; ++bb) {
+          if (aa != bb) {
+            const double v = ddfVal(aa) / 2;
+            for (auto mm = 0; mm != Dim; ++mm) {
+              for (auto nn = mm; nn != Dim; ++nn) {
+                d2MType0[aa][mm][nn](i, j, k, l) +=
+                    v * aSM[aa][bb][mm][nn](i, j, k, l);
+                d2MType0[aa][nn][mm](i, j, k, l) =
+                    d2MType0[aa][mm][nn](i, j, k, l);
+              }
+            }
+          }
+        }
+      }
 
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
@@ -1095,9 +1093,9 @@ private:
   FTensor::Ddg<V, Dim, Dim> aG[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aS[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aSM[Dim][Dim][Dim][Dim];
-  FTensor::Ddg<V, Dim, Dim> coefficientsType0[Dim][Dim][Dim][Dim];
   FTensor::Tensor4<T1, Dim, Dim, Dim, Dim> coefficientsType1;
   FTensor::Ddg<V, Dim, Dim> coefficientsType2[Dim][Dim][Dim][Dim];
+  FTensor::Ddg<V, Dim, Dim> d2MType0[Dim][Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> d2MType1[Dim][Dim][Dim];
   FTensor::Tensor2<T1, Dim, Dim> aF;
   FTensor::Tensor2<T1, Dim, Dim> aF2;
