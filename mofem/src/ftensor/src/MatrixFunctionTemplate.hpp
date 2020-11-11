@@ -734,22 +734,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       }
     }
 
-    for (auto aa = 0; aa != Dim; ++aa) {
-      for (auto bb = 0; bb != Dim; ++bb) {
-        if (aa != bb) {
-          auto &S = aS[aa][bb];
-          auto &M = aM[aa];
-          for (auto mm = 0; mm != Dim; ++mm) {
-            for (auto nn = mm; nn != Dim; ++nn) {
-              auto &SMmn = aSM[aa][bb][mm][nn];
-              auto &SMnm = aSM[aa][bb][nn][mm];
-              SMmn(i, j, k, l) = aS[aa][bb](i, j, k, l) * M(mm, nn);
-              SMnm(i, j, k, l) = SMmn(i, j, k, l);
-            }
-          }
-        }
-      }
-    }
+    
   }
 
   /**
@@ -857,6 +842,23 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     FTensor::Index<'j', Dim> j;
     FTensor::Index<'k', Dim> k;
     FTensor::Index<'l', Dim> l;
+
+    for (auto aa = 0; aa != Dim; ++aa) {
+      for (auto bb = 0; bb != Dim; ++bb) {
+        if (aa != bb) {
+          auto &S = aS[aa][bb];
+          auto &M = aM[aa];
+          for (auto mm = 0; mm != Dim; ++mm) {
+            for (auto nn = mm; nn != Dim; ++nn) {
+              auto &SMmn = aSM[aa][bb][mm][nn];
+              auto &SMnm = aSM[aa][bb][nn][mm];
+              SMmn(i, j, k, l) = aS[aa][bb](i, j, k, l) * M(mm, nn);
+              SMnm(i, j, k, l) = SMmn(i, j, k, l);
+            }
+          }
+        }
+      }
+    }
 
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto mm = 0; mm != Dim; ++mm) {
@@ -1104,7 +1106,6 @@ private:
   FTensor::Tensor1<T1, Dim> ddfVal;
 
   template <typename E, typename C> friend struct d2MCoefficients;
-  template <typename E, typename C> friend struct d2MCoefficientsType0;
   template <typename E, typename C> friend struct dd4MCoefficientsType1;
   template <typename E, typename C> friend struct dd4MCoefficientsType2;
   template <typename E, typename C, typename G> friend struct d2MImpl;
