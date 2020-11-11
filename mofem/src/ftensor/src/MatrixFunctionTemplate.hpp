@@ -267,7 +267,7 @@ template <typename E, typename C> struct Fdd4MImpl {
 
           +
 
-          2 * e.coefficientsType2[a][b][m][n](i, j, k, l);
+          e.coefficientsType2[a][b][m][n](i, j, k, l);
     }
 
     return 0;
@@ -863,44 +863,6 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
           if (aa != bb) {
-            for (auto mm = 0; mm != Dim; ++mm) {
-              for (auto nn = mm; nn != Dim; ++nn) {
-                coefficientsType2[aa][bb][mm][nn](i, j, k, l) =
-                    (fVal(aa) * aF2(aa, bb)) *
-                    (-aSM[aa][bb][mm][nn](i, j, k, l) +
-                     aSM[bb][aa][mm][nn](i, j, k, l));
-                coefficientsType2[aa][bb][nn][mm](i, j, k, l) =
-                    coefficientsType2[aa][bb][mm][nn](i, j, k, l);
-              }
-            }
-          }
-        }
-      }
-
-    if (NB == 2)
-      for (auto aa = 0; aa != Dim; ++aa) {
-        for (auto bb = 0; bb != Dim; ++bb) {
-          if (aa != bb) {
-            if (aa == 1 || bb == 1) {
-              for (auto mm = 0; mm != Dim; ++mm) {
-                for (auto nn = mm; nn != Dim; ++nn) {
-                  coefficientsType2[aa][bb][mm][nn](i, j, k, l) =
-                      (fVal(aa) * aF2(aa, bb)) *
-                      (-aSM[aa][bb][mm][nn](i, j, k, l) +
-                       aSM[bb][aa][mm][nn](i, j, k, l));
-                  coefficientsType2[aa][bb][nn][mm](i, j, k, l) =
-                      coefficientsType2[aa][bb][mm][nn](i, j, k, l);
-                }
-              }
-            }
-          }
-        }
-      }
-
-    if (NB == 3)
-      for (auto aa = 0; aa != Dim; ++aa) {
-        for (auto bb = 0; bb != Dim; ++bb) {
-          if (aa != bb) {
             const auto &S = aS[aa][bb];
             const auto v0 = aF(aa, bb);
             for (auto cc = 0; cc != Dim; ++cc) {
@@ -974,6 +936,61 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
                     d2MType1[aa][cc][dd](i, j, k, l) +=
                         r * aS[aa][bb](i, j, k, l);
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+
+    auto fd2M = [&](int A, int a, int b, int I, int J, int K, int L) {
+      return d2MType1[A][a][b](I, J, K, L);
+    };
+
+    auto fd2G = [&](int a, int b, int A, int B, int I, int J, int K, int L,
+                    int M, int N) {
+      return fd2M(A, a, b, I, K, N, M) * aM[B](J, L) +
+             aM[A](I, K) * fd2M(B, a, b, J, L, M, N) +
+             fd2M(A, a, b, I, L, M, N) * aM[B](J, K) +
+             aM[A](I, L) * fd2M(B, a, b, J, K, M, N);
+    };
+
+    auto fd2S = [&](int a, int b, int I, int J, int K, int L, int M, int N) {
+      return fd2G(a, b, a, b, I, J, K, L, M, N) +
+             fd2G(a, b, b, a, I, J, K, L, M, N);
+    };
+
+    if (NB == 3)
+      for (auto aa = 0; aa != Dim; ++aa) {
+        for (auto bb = 0; bb != Dim; ++bb) {
+          if (aa != bb) {
+            for (auto mm = 0; mm != Dim; ++mm) {
+              for (auto nn = mm; nn != Dim; ++nn) {
+                coefficientsType2[aa][bb][mm][nn](i, j, k, l) =
+                    2 * (fVal(aa) * aF2(aa, bb)) *
+                    (-aSM[aa][bb][mm][nn](i, j, k, l) +
+                     aSM[bb][aa][mm][nn](i, j, k, l));
+                coefficientsType2[aa][bb][nn][mm](i, j, k, l) =
+                    coefficientsType2[aa][bb][mm][nn](i, j, k, l);
+              }
+            }
+          }
+        }
+      }
+
+    if (NB == 2)
+      for (auto aa = 0; aa != Dim; ++aa) {
+        for (auto bb = 0; bb != Dim; ++bb) {
+          if (aa != bb) {
+            if (aa == 1 || bb == 1) {
+              for (auto mm = 0; mm != Dim; ++mm) {
+                for (auto nn = mm; nn != Dim; ++nn) {
+                  coefficientsType2[aa][bb][mm][nn](i, j, k, l) =
+                      2 * (fVal(aa) * aF2(aa, bb)) *
+                      (-aSM[aa][bb][mm][nn](i, j, k, l) +
+                       aSM[bb][aa][mm][nn](i, j, k, l));
+                  coefficientsType2[aa][bb][nn][mm](i, j, k, l) =
+                      coefficientsType2[aa][bb][mm][nn](i, j, k, l);
                 }
               }
             }
