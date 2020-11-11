@@ -229,7 +229,7 @@ template <typename E, typename C> struct Fdd4MImpl {
 
             +
 
-            e.coefficientsType2[a][b][m][n](i, j, k, l);
+            e.d2MType2[a][b][m][n](i, j, k, l);
       }
     }
 
@@ -890,12 +890,12 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
           if (aa != bb) {
             for (auto mm = 0; mm != Dim; ++mm) {
               for (auto nn = mm; nn != Dim; ++nn) {
-                coefficientsType2[aa][bb][mm][nn](i, j, k, l) =
+                d2MType2[aa][bb][mm][nn](i, j, k, l) =
                     2 * (fVal(aa) * aF2(aa, bb)) *
                     (-aSM[aa][bb][mm][nn](i, j, k, l) +
                      aSM[bb][aa][mm][nn](i, j, k, l));
-                coefficientsType2[aa][bb][nn][mm](i, j, k, l) =
-                    coefficientsType2[aa][bb][mm][nn](i, j, k, l);
+                d2MType2[aa][bb][nn][mm](i, j, k, l) =
+                    d2MType2[aa][bb][mm][nn](i, j, k, l);
               }
             }
           }
@@ -909,15 +909,15 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
             for (auto mm = 0; mm != Dim; ++mm) {
               for (auto nn = mm; nn != Dim; ++nn) {
                 if (aa == 1 || bb == 1) {
-                  coefficientsType2[aa][bb][mm][nn](i, j, k, l) =
+                  d2MType2[aa][bb][mm][nn](i, j, k, l) =
                       2 * (fVal(aa) * aF2(aa, bb)) *
                       (-aSM[aa][bb][mm][nn](i, j, k, l) +
                        aSM[bb][aa][mm][nn](i, j, k, l));
-                  coefficientsType2[aa][bb][nn][mm](i, j, k, l) =
-                      coefficientsType2[aa][bb][mm][nn](i, j, k, l);
+                  d2MType2[aa][bb][nn][mm](i, j, k, l) =
+                      d2MType2[aa][bb][mm][nn](i, j, k, l);
                 } else {
-                  coefficientsType2[aa][bb][mm][nn](i, j, k, l) = 0;
-                  coefficientsType2[aa][bb][nn][mm](i, j, k, l) = 0;
+                  d2MType2[aa][bb][mm][nn](i, j, k, l) = 0;
+                  d2MType2[aa][bb][nn][mm](i, j, k, l) = 0;
                 }
               }
             }
@@ -942,7 +942,7 @@ private:
   FTensor::Ddg<V, Dim, Dim> aG[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aS[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aSM[Dim][Dim][Dim][Dim];
-  FTensor::Ddg<V, Dim, Dim> coefficientsType2[Dim][Dim][Dim][Dim];
+  FTensor::Ddg<V, Dim, Dim> d2MType2[Dim][Dim][Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> d2MType0[Dim][Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> d2MType1[Dim][Dim][Dim];
   FTensor::Tensor2<T1, Dim, Dim> aF;
