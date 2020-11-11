@@ -925,6 +925,15 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       }
 
     for (auto aa = 0; aa != Dim; ++aa) {
+      for (auto mm = 0; mm != Dim; ++mm) {
+        for (auto nn = mm; nn != Dim; ++nn) {
+          d2MType1[aa][nn][mm](i, j, k, l) = 0;
+          d2MType1[aa][mm][nn](i, j, k, l) = 0;
+        }
+      }
+    }
+
+    for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
         if (aa != bb) {
           for (auto mm = 0; mm != Dim; ++mm) {
@@ -943,14 +952,19 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     if (NB == 3)
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
-          if (aa != bb)
+          if (aa != bb) {
             for (auto cc = 0; cc != Dim; ++cc) {
               for (auto dd = 0; dd != Dim; ++dd) {
-                if (cc != dd)
+                if (cc != dd) {
                   coefficientsType1(aa, bb, cc, dd) =
                       fVal(cc) * aF(cc, dd) * aF(aa, bb);
+                  d2MType1[aa][cc][dd](i, j, k, l) +=
+                      coefficientsType1(aa, bb, cc, dd) *
+                      aS[aa][bb](i, j, k, l);
+                }
               }
             }
+          }
         }
       }
 
@@ -992,6 +1006,9 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
 
                   } else
                     r = 0;
+
+                  d2MType1[aa][cc][dd](i, j, k, l) +=
+                      r * aS[aa][bb](i, j, k, l);
                 }
             }
         }
@@ -1009,6 +1026,9 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
                     r = ddfVal(cc) / 4;
                   else
                     r = 0;
+
+                  d2MType1[aa][cc][dd](i, j, k, l) +=
+                      r * aS[aa][bb](i, j, k, l);
                 }
               }
             }
@@ -1020,66 +1040,66 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     using CT1 = dd4MCoefficientsType1<THIS, V>;
 
-    d2MEval<THIS, V, CT1, T3, 0, 1>(*this, d2MType1[0][0][1])
-        .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-             Number<Dim>());
-    d2MEval<THIS, V, CT1, T3, 1, 0>(*this, d2MType1[0][1][0])
-        .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-             Number<Dim>());
+    // d2MEval<THIS, V, CT1, T3, 0, 1>(*this, d2MType1[0][0][1])
+    //     .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //          Number<Dim>());
+    // d2MEval<THIS, V, CT1, T3, 1, 0>(*this, d2MType1[0][1][0])
+    //     .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //          Number<Dim>());
 
-    d2MEval<THIS, V, CT1, T3, 0, 1>(*this, d2MType1[1][0][1])
-        .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-             Number<Dim>());
-    d2MEval<THIS, V, CT1, T3, 1, 0>(*this, d2MType1[1][1][0])
-        .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-             Number<Dim>());
+    // d2MEval<THIS, V, CT1, T3, 0, 1>(*this, d2MType1[1][0][1])
+    //     .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //          Number<Dim>());
+    // d2MEval<THIS, V, CT1, T3, 1, 0>(*this, d2MType1[1][1][0])
+    //     .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //          Number<Dim>());
 
-    if (Dim == 3) {
-      d2MEval<THIS, V, CT1, T3, 0, 2>(*this, d2MType1[0][0][2])
-          .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
-      d2MEval<THIS, V, CT1, T3, 2, 0>(*this, d2MType1[0][2][0])
-          .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
-      d2MEval<THIS, V, CT1, T3, 1, 2>(*this, d2MType1[0][1][2])
-          .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
-      d2MEval<THIS, V, CT1, T3, 2, 1>(*this, d2MType1[0][2][1])
-          .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
+    // if (Dim == 3) {
+    //   d2MEval<THIS, V, CT1, T3, 0, 2>(*this, d2MType1[0][0][2])
+    //       .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
+    //   d2MEval<THIS, V, CT1, T3, 2, 0>(*this, d2MType1[0][2][0])
+    //       .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
+    //   d2MEval<THIS, V, CT1, T3, 1, 2>(*this, d2MType1[0][1][2])
+    //       .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
+    //   d2MEval<THIS, V, CT1, T3, 2, 1>(*this, d2MType1[0][2][1])
+    //       .set(Number<0>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
 
-      d2MEval<THIS, V, CT1, T3, 0, 2>(*this, d2MType1[1][0][2])
-          .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
-      d2MEval<THIS, V, CT1, T3, 2, 0>(*this, d2MType1[1][2][0])
-          .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
-      d2MEval<THIS, V, CT1, T3, 1, 2>(*this, d2MType1[1][1][2])
-          .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
-      d2MEval<THIS, V, CT1, T3, 2, 1>(*this, d2MType1[1][2][1])
-          .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
+    //   d2MEval<THIS, V, CT1, T3, 0, 2>(*this, d2MType1[1][0][2])
+    //       .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
+    //   d2MEval<THIS, V, CT1, T3, 2, 0>(*this, d2MType1[1][2][0])
+    //       .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
+    //   d2MEval<THIS, V, CT1, T3, 1, 2>(*this, d2MType1[1][1][2])
+    //       .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
+    //   d2MEval<THIS, V, CT1, T3, 2, 1>(*this, d2MType1[1][2][1])
+    //       .set(Number<1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
 
-      d2MEval<THIS, V, CT1, T3, 0, 1>(*this, d2MType1[2][0][1])
-          .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
-      d2MEval<THIS, V, CT1, T3, 1, 0>(*this, d2MType1[2][1][0])
-          .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
-      d2MEval<THIS, V, CT1, T3, 2, 0>(*this, d2MType1[2][2][0])
-          .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
-      d2MEval<THIS, V, CT1, T3, 0, 2>(*this, d2MType1[2][0][2])
-          .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
-      d2MEval<THIS, V, CT1, T3, 2, 1>(*this, d2MType1[2][2][1])
-          .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
-      d2MEval<THIS, V, CT1, T3, 1, 2>(*this, d2MType1[2][1][2])
-          .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
-               Number<Dim>());
-    }
+    //   d2MEval<THIS, V, CT1, T3, 0, 1>(*this, d2MType1[2][0][1])
+    //       .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
+    //   d2MEval<THIS, V, CT1, T3, 1, 0>(*this, d2MType1[2][1][0])
+    //       .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
+    //   d2MEval<THIS, V, CT1, T3, 2, 0>(*this, d2MType1[2][2][0])
+    //       .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
+    //   d2MEval<THIS, V, CT1, T3, 0, 2>(*this, d2MType1[2][0][2])
+    //       .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
+    //   d2MEval<THIS, V, CT1, T3, 2, 1>(*this, d2MType1[2][2][1])
+    //       .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
+    //   d2MEval<THIS, V, CT1, T3, 1, 2>(*this, d2MType1[2][1][2])
+    //       .set(Number<Dim - 1>(), Number<Dim>(), Number<Dim>(), Number<Dim>(),
+    //            Number<Dim>());
+    // }
 
     T3 t_diff_A;
     GetDiffDiffMatImpl<THIS, V, T3, T>(*this, t_diff_A, t_S)
