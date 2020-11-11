@@ -83,6 +83,22 @@ protected:
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
 
+template <int SPACE_DIM, typename OpBase>
+struct OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, 1, GAUSS, OpBase>
+    : public OpBase {
+
+  FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
+  FTensor::Index<'j', SPACE_DIM> j; ///< summit Index
+
+  OpGradTimesTensorImpl(const std::string field_name,
+                        boost::shared_ptr<MatrixDouble> mat_vals)
+      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
+
+protected:
+  boost::shared_ptr<MatrixDouble> matVals;
+  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
+};
+
 template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S, IntegrationType I,
           typename OpBase>
 struct OpGradTimesSymTensorImpl {};
@@ -313,6 +329,43 @@ OpGradTimesTensorImpl<1, 1, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
       OpBase::locF[rr] += alpha * (t_row_grad(i) * t_val_grad(i));
       ++t_row_grad; // move to another element of gradient of base
                     // function on row
+    }
+    for (; rr < OpBase::nbRowBaseFunctions; ++rr)
+      ++t_row_grad;
+
+    ++t_val_grad;
+    ++t_w; // move to another integration weight
+  }
+  MoFEMFunctionReturn(0);
+}
+
+template <int SPACE_DIM, typename OpBase>
+MoFEMErrorCode
+OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
+    DataForcesAndSourcesCore::EntData &row_data) {
+  MoFEMFunctionBegin;
+  // get element volume
+  const double vol = OpBase::getMeasure();
+  // get integration weights
+  auto t_w = OpBase::getFTensor0IntegrationWeight();
+  // get base function gradient on rows
+  auto t_row_grad = row_data.getFTensor1DiffN<SPACE_DIM>();
+  // get filed gradient values
+  auto t_val_grad = getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(*(matVals));
+  // loop over integration points
+  for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
+    // take into account Jacobean
+    const double alpha = t_w * vol;
+    // get rhs vector
+    auto t_nf = OpBase::template getNf<SPACE_DIM>();
+    // loop over rows base functions
+    int rr = 0;
+    for (; rr != OpBase::nbRows / SPACE_DIM; rr++) {
+      // calculate element of local matrix
+      t_nf(i) += alpha * (t_row_grad(j) * t_val_grad(i, j));
+      ++t_row_grad; // move to another element of gradient of base
+      // function on row
+      ++t_nf;
     }
     for (; rr < OpBase::nbRowBaseFunctions; ++rr)
       ++t_row_grad;
