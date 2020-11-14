@@ -106,9 +106,15 @@ endfunction(link_header_for_ftensor)
 if(STAND_ALLONE_USERS_MODULES)
   install(
     DIRECTORY
-    ${PROJECT_SOURCE_DIR}/src/ftensor/src
+    ${PROJECT_SOURCE_DIR}/src/ftensor/src/FTensor
     DESTINATION
     ${CMAKE_INSTALL_PREFIX}/include/ftensor)
+  install(
+    DIRECTORY
+    ${PROJECT_SOURCE_DIR}/src/ftensor/src/
+    DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/include/ftensor
+    FILES_MATCHING PATTERN "*.hpp")  
 else(STAND_ALLONE_USERS_MODULES)
   install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/include/ftensor)
   install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/include/ftensor/FTensor)
