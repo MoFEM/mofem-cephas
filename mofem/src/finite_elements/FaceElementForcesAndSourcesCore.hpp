@@ -37,7 +37,6 @@ template <int SWITCH> struct VolumeElementForcesAndSourcesCoreOnSideSwitch;
 struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
   std::string meshPositionsFieldName; ///< Name of the field with geometry
-  FaceElementForcesAndSourcesCoreBase(Interface &m_field);
 
   /** \brief default operator for TRI element
    * \ingroup mofem_forces_and_sources_tri_element
@@ -246,6 +245,7 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   template <int SWITCH> MoFEMErrorCode OpSwitch();
 
 protected:
+  FaceElementForcesAndSourcesCoreBase(Interface &m_field);
 
   MoFEMErrorCode getNumberOfNodes(int &num_nodes) const;
 
@@ -320,8 +320,8 @@ template <int SWITCH>
 struct FaceElementForcesAndSourcesCoreSwitch
     : public FaceElementForcesAndSourcesCoreBase {
 
-  using FaceElementForcesAndSourcesCoreBase::
-      FaceElementForcesAndSourcesCoreBase;
+  FaceElementForcesAndSourcesCoreSwitch(Interface &m_field)
+      : FaceElementForcesAndSourcesCoreBase(m_field) {}
 
   using UserDataOperator =
       FaceElementForcesAndSourcesCoreBase::UserDataOperator;

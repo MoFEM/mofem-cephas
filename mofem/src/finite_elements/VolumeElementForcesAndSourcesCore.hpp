@@ -39,9 +39,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
   std::string meshPositionsFieldName;
 
-  VolumeElementForcesAndSourcesCoreBase(Interface &m_field,
-                                        const EntityType type = MBTET);
-
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
    */
@@ -230,6 +227,10 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   template <int SWITCH> MoFEMErrorCode OpSwitch();
 
 protected:
+
+  VolumeElementForcesAndSourcesCoreBase(Interface &m_field,
+                                        const EntityType type = MBTET);
+
   // Note that functions below could be overloaded by user to change default
   // behavior of the element.
 
@@ -337,8 +338,8 @@ template <int SWITCH>
 struct VolumeElementForcesAndSourcesCoreSwitch
     : public VolumeElementForcesAndSourcesCoreBase {
 
-  using VolumeElementForcesAndSourcesCoreBase::
-      VolumeElementForcesAndSourcesCoreBase;
+  VolumeElementForcesAndSourcesCoreSwitch(Interface &m_field,
+                                        const EntityType type = MBTET): VolumeElementForcesAndSourcesCoreBase(m_field, MBTET) {}
   using UserDataOperator =
       VolumeElementForcesAndSourcesCoreBase::UserDataOperator;
 

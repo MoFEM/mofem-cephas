@@ -153,8 +153,8 @@ template <int SWITCH>
 struct FaceElementForcesAndSourcesCoreOnSideSwitch
     : public FaceElementForcesAndSourcesCoreOnSideBase {
 
-  using FaceElementForcesAndSourcesCoreOnSideBase::
-      FaceElementForcesAndSourcesCoreOnSideBase;
+  FaceElementForcesAndSourcesCoreOnSideSwitch(MoFEM::Interface &m_field)
+      : FaceElementForcesAndSourcesCoreOnSideBase(m_field) {}
 
   using UserDataOperator =
       FaceElementForcesAndSourcesCoreOnSideBase::UserDataOperator;
