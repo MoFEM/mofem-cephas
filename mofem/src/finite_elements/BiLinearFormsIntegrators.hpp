@@ -23,7 +23,7 @@
 
 namespace MoFEM {
 
-template <int BASE_DIM, int FIELD_BASE, int SPACE_DIM, IntegrationType I,
+template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, IntegrationType I,
           typename OpBase>
 struct OpGradGradImpl {};
 
@@ -41,7 +41,7 @@ protected:
                            DataForcesAndSourcesCore::EntData &col_data);
 };
 
-template <int BASE_DIM, int FIELD_BASE, IntegrationType I, typename OpBase>
+template <int BASE_DIM, int FIELD_DIM, IntegrationType I, typename OpBase>
 struct OpMassImpl {};
 
 template <typename OpBase>
@@ -69,7 +69,7 @@ protected:
                            DataForcesAndSourcesCore::EntData &col_data);
 };
 
-template <int BASE_DIM, int FIELD_BASE, int SPACE_DIM, int S, IntegrationType I,
+template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S, IntegrationType I,
           typename OpBase>
 struct OpGradSymTensorGradImpl {};
 
@@ -88,7 +88,7 @@ protected:
                            DataForcesAndSourcesCore::EntData &col_data);
 };
 
-template <int BASE_DIM, int FIELD_BASE, int SPACE_DIM, int S, IntegrationType I,
+template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S, IntegrationType I,
           typename OpBase>
 struct OpGradTensorGradImpl {};
 
@@ -103,6 +103,27 @@ struct OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
 
 protected:
   boost::shared_ptr<MatrixDouble> matD;
+  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
+                           DataForcesAndSourcesCore::EntData &col_data);
+};
+
+template <int FIELD_DIM_U, int FIELD_DIM_DIV, int SPACE_DIM, IntegrationType I,
+          typename OpBase>
+struct OpMixUTimesDivergenceImpl {};
+
+template <int SPACE_DIM, typename OpBase>
+struct OpMixUTimesDivergenceImpl<1, 3, SPACE_DIM, GAUSS, typename OpBase>
+    : public OpBase {
+  FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
+  OpMixUTimesDivergenceImpl(const std::string row_field_name,
+                        const std::string col_field_name,
+                        boost::shared_ptr<MatrixDouble> mat_D, bool symm)
+       OpBase(row_field_name, col_field_name, OpBase::OPROWCOL) {
+    sYmm = symm;
+  }
+
+protected:
+  boost::shared_ptr<MatrixDouble> matLoc;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
 };
@@ -467,6 +488,75 @@ OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
       ++t_w;
       ++t_D;
     }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+template <int SPACE_DIM, typename OpBase>
+MoFEMErrorCode
+OpMixUTimesDivergenceImpL<1, 3, space_dim, GAUSS, typename OpBase>::iNtegrate(
+    DataForcesAndSourcesCore::EntData &row_data,
+    DataForcesAndSourcesCore::EntData &col_data) {
+
+  MoFEMFunctionBegin;
+
+  const size_t nb_gauss_pts = getGaussPts().size2();
+  const size_t row_nb_dofs = row_data.getIndices().size();
+  const size_t col_nb_dofs = col_data.getIndices().size();
+
+  if (row_nb_dofs && col_nb_dofs) {
+
+    auto t_w = getFTensor0IntegrationWeight();
+
+    locMat.resize(row_nb_dofs, col_nb_dofs, false);
+    locMat.clear();
+    transLocMat.resize(col_nb_dofs, row_nb_dofs, false);
+
+    size_t nb_base_functions = row_data.getN().size2() / 3;
+    auto t_row_base = row_data.getFTensor1N<3>();
+    auto t_row_diff_base = row_data.getFTensor2DiffN<3, SPACE_DIM>();
+
+    for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+
+      const double alpha = getMeasure() * t_w;
+
+      size_t rr = 0;
+      for (; rr != row_nb_dofs / SPACE_DIM; ++rr) {
+
+        auto t_mat_diag = getFTensor1FromArrayDiag<SPACE_DIM, SPACE_DIM>(
+            locMat, SPACE_DIM * rr);
+        const double t_row_div_base = t_row_diff_base(i, i);
+
+        auto t_col_base = col_data.getFTensor0N(gg, 0);
+        auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
+
+        for (size_t cc = 0; cc != col_nb_dofs / SPACE_DIM; ++cc) {
+
+          t_mat_diag(i) += alpha * t_row_base(j) * t_col_diff_base(j);
+          t_mat_diag(i) += alpha * t_row_div_base * t_col_base;
+
+          ++t_col_base;
+          ++t_col_diff_base;
+          ++t_mat_diag;
+        }
+
+        ++t_row_diff_base;
+        ++t_row_base;
+      }
+      for (; rr < nb_base_functions; ++rr) {
+        ++t_row_diff_base;
+        ++t_row_base;
+      }
+
+      ++t_w;
+    }
+
+    CHKERR MatSetValues(getSNESB(), row_data, col_data, &*locMat.data().begin(),
+                        ADD_VALUES);
+    noalias(transLocMat) = trans(locMat);
+    CHKERR MatSetValues(getSNESB(), col_data, row_data,
+                        &*transLocMat.data().begin(), ADD_VALUES);
   }
 
   MoFEMFunctionReturn(0);
