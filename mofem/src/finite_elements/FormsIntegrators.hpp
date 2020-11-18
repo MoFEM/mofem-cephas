@@ -127,7 +127,7 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
   OpBaseImpl(const std::string row_field_name, const std::string col_field_name,
              const OpType type)
       : EleOp(row_field_name, col_field_name, type, false),
-        assembleTranspose(false) {}
+        assembleTranspose(false), onlyTranspose(false) {}
 
   /**
    * \brief Do calculations for the left hand side
@@ -171,6 +171,7 @@ protected:
   int nbRowBaseFunctions; ///< number or row base functions
 
   bool assembleTranspose;
+  bool onlyTranspose;
 
   MatrixDouble locMat;          ///< local entity block matrix
   MatrixDouble locMatTranspose; ///< local entity block matrix
@@ -328,10 +329,12 @@ protected:
           &*this->locMatTranspose.data().begin(), ADD_VALUES);
     }
 
-    // assemble local matrix
-    CHKERR MatSetValues<EssentialBcStorage>(this->getKSPB(), row_data, col_data,
-                                            &*this->locMat.data().begin(),
-                                            ADD_VALUES);
+    if (!this->onlyTranspose) {
+      // assemble local matrix
+      CHKERR MatSetValues<EssentialBcStorage>(
+          this->getKSPB(), row_data, col_data, &*this->locMat.data().begin(),
+          ADD_VALUES);
+    }
 
     MoFEMFunctionReturn(0);
   }
