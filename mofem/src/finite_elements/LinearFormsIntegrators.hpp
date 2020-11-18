@@ -132,8 +132,20 @@ protected:
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
 
-// template <int SPACE_DIM, IntegrationType I, typename OpBase>
-// struct OpMixDVecTimesDivLambdaImpl {};
+template <int SPACE_DIM, IntegrationType I, typename OpBase>
+struct OpMixVecTimesDivLambdaImpl {};
+
+template <int SPACE_DIM, typename OpBase>
+struct OpMixVecTimesDivLambdaImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
+  OpMixVecTimesDivLambdaImpl(const std::string field_name,
+                             boost::shared_ptr<MatrixDouble> &mat_vals)
+      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
+
+protected:
+  boost::shared_ptr<MatrixDouble> matVals;
+  FTensor::Index<'i', SPACE_DIM> i;
+  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
+};
 
 template <int SPACE_DIM, IntegrationType I, typename OpBase>
 struct OpMixTensorTimesGradUImpl {};
@@ -150,9 +162,6 @@ protected:
   FTensor::Index<'j', SPACE_DIM> j;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
-
-// template <int SPACE_DIM, IntegrationType I, typename OpBase>
-// struct OpMixGradTimesLambdaImpl {};
 
 /**
  * @brief Linear integrator form
@@ -248,6 +257,13 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
       : public OpMixTensorTimesGradUImpl<SPACE_DIM, I, OpBase> {
     using OpMixTensorTimesGradUImpl<SPACE_DIM, I,
                                     OpBase>::OpMixTensorTimesGradUImpl;
+  };
+
+  template <int SPACE_DIM>
+  struct OpMixVecTimesDivLambda
+      : public OpMixVecTimesDivLambdaImpl<SPACE_DIM, I, OpBase> {
+    using OpMixVecTimesDivLambdaImpl<SPACE_DIM, I,
+                                     OpBase>::OpMixVecTimesDivLambdaImpl;
   };
 };
 
@@ -514,6 +530,36 @@ MoFEMErrorCode OpMixTensorTimesGradUImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
       ++t_base;
 
     ++t_grad;
+    ++t_w;
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+template <int SPACE_DIM, typename OpBase>
+MoFEMErrorCode OpMixVecTimesDivLambdaImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
+    DataForcesAndSourcesCore::EntData &row_data) {
+  MoFEMFunctionBegin;
+
+  const size_t nb_base_functions = row_data.getN().size2();
+  auto t_w = this->getFTensor0IntegrationWeight();
+  auto t_base = row_data.getFTensor0N();
+  auto t_div = getFTensor1FromMat<SPACE_DIM>(*(matVals));
+
+  for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
+    const double alpha = this->getMeasure() * t_w;
+    auto t_nf = OpBase::template getNf<SPACE_DIM>();
+
+    size_t bb = 0;
+    for (; bb != this->nbRows / SPACE_DIM; ++bb) {
+      t_nf(i) += alpha * t_base * t_div(i);
+      ++t_nf;
+      ++t_base;
+    }
+    for (; bb < nb_base_functions; ++bb)
+      ++t_base;
+
+    ++t_div;
     ++t_w;
   }
 
