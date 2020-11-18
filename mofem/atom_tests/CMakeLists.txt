@@ -1652,16 +1652,16 @@ add_test(
   -tol 1e-4,3.3e-1,3.3e-1 -test
   -log_no_color
 )
-add_test(
-  mesh_cut_cylinder ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test 
-  -my_file cylinder_cut.h5m 
-  -side_set 204
-  -shift -0.0,0.0,0.
-  -tol 1e-2,3.3e-1,3.3e-1
-  -test
-  -log_no_color
-)
+# add_test(
+#   mesh_cut_cylinder ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+#   ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test 
+#   -my_file cylinder_cut.h5m 
+#   -side_set 204
+#   -shift -0.0,0.0,0.
+#   -tol 1e-2,3.3e-1,3.3e-1
+#   -test
+#   -log_no_color
+# )
 
 my_add_executable(segments_distance segments_distance.cpp)
 target_link_libraries(segments_distance
