@@ -551,43 +551,34 @@ MoFEMErrorCode OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &col_data) {
   MoFEMFunctionBegin;
 
-  const size_t row_nb_dofs = row_data.getIndices().size();
-  const size_t col_nb_dofs = col_data.getIndices().size();
+  auto t_w = this->getFTensor0IntegrationWeight();
 
-  if (row_nb_dofs && col_nb_dofs) {
+  size_t nb_base_functions = row_data.getN().size2() / 3;
+  auto t_row_diff_base = row_data.getFTensor2DiffN<3, SPACE_DIM>();
 
-    auto t_w = this->getFTensor0IntegrationWeight();
+  for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
-    this->locMat.resize(row_nb_dofs, col_nb_dofs, false);
-    this->locMat.clear();
+    const double alpha = alphaConstant * this->getMeasure() * t_w;
 
-    size_t nb_base_functions = row_data.getN().size2() / 3;
-    auto t_row_diff_base = row_data.getFTensor2DiffN<3, SPACE_DIM>();
+    size_t rr = 0;
+    for (; rr != OpBase::nbRows / SPACE_DIM; ++rr) {
+      auto t_mat_diag = getFTensor1FromArrayDiag<SPACE_DIM, SPACE_DIM>(
+          this->locMat, SPACE_DIM * rr);
+      const double t_row_div_base = t_row_diff_base(i, i);
+      auto t_col_base = col_data.getFTensor0N(gg, 0);
 
-    for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
-
-      const double alpha = alphaConstant * this->getMeasure() * t_w;
-
-      size_t rr = 0;
-      for (; rr != row_nb_dofs / SPACE_DIM; ++rr) {
-        auto t_mat_diag = getFTensor1FromArrayDiag<SPACE_DIM, SPACE_DIM>(
-            this->locMat, SPACE_DIM * rr);
-        const double t_row_div_base = t_row_diff_base(i, i);
-        auto t_col_base = col_data.getFTensor0N(gg, 0);
-
-        for (size_t cc = 0; cc != col_nb_dofs / SPACE_DIM; ++cc) {
-          t_mat_diag(i) += alpha * t_row_div_base * t_col_base;
-          ++t_col_base;
-          ++t_mat_diag;
-        }
-
-        ++t_row_diff_base;
+      for (size_t cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
+        t_mat_diag(i) += alpha * t_row_div_base * t_col_base;
+        ++t_col_base;
+        ++t_mat_diag;
       }
-      for (; rr < nb_base_functions; ++rr)
-        ++t_row_diff_base;
 
-      ++t_w;
+      ++t_row_diff_base;
     }
+    for (; rr < nb_base_functions; ++rr)
+      ++t_row_diff_base;
+
+    ++t_w;
   }
 
   MoFEMFunctionReturn(0);
@@ -599,42 +590,33 @@ MoFEMErrorCode OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &col_data) {
   MoFEMFunctionBegin;
 
-  const size_t row_nb_dofs = row_data.getIndices().size();
-  const size_t col_nb_dofs = col_data.getIndices().size();
+  auto t_w = this->getFTensor0IntegrationWeight();
 
-  if (row_nb_dofs && col_nb_dofs) {
+  size_t nb_base_functions = row_data.getN().size2() / 3;
+  auto t_row_base = row_data.getFTensor1N<3>();
 
-    auto t_w = this->getFTensor0IntegrationWeight();
+  for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
-    this->locMat.resize(row_nb_dofs, col_nb_dofs, false);
-    this->locMat.clear();
+    const double alpha = alphaConstant * this->getMeasure() * t_w;
 
-    size_t nb_base_functions = row_data.getN().size2() / 3;
-    auto t_row_base = row_data.getFTensor1N<3>();
+    size_t rr = 0;
+    for (; rr != OpBase::nbRows / SPACE_DIM; ++rr) {
+      auto t_mat_diag = getFTensor1FromArrayDiag<SPACE_DIM, SPACE_DIM>(
+          this->locMat, SPACE_DIM * rr);
+      auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
 
-    for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
-
-      const double alpha = alphaConstant * this->getMeasure() * t_w;
-
-      size_t rr = 0;
-      for (; rr != row_nb_dofs / SPACE_DIM; ++rr) {
-        auto t_mat_diag = getFTensor1FromArrayDiag<SPACE_DIM, SPACE_DIM>(
-            this->locMat, SPACE_DIM * rr);
-        auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
-
-        for (size_t cc = 0; cc != col_nb_dofs / SPACE_DIM; ++cc) {
-          t_mat_diag(i) += alpha * t_row_base(j) * t_col_diff_base(j);
-          ++t_col_diff_base;
-          ++t_mat_diag;
-        }
-
-        ++t_row_base;
+      for (size_t cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
+        t_mat_diag(i) += alpha * t_row_base(j) * t_col_diff_base(j);
+        ++t_col_diff_base;
+        ++t_mat_diag;
       }
-      for (; rr < nb_base_functions; ++rr)
-        ++t_row_base;
 
-      ++t_w;
+      ++t_row_base;
     }
+    for (; rr < nb_base_functions; ++rr)
+      ++t_row_base;
+
+    ++t_w;
   }
 
   MoFEMFunctionReturn(0);
