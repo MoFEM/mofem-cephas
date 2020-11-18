@@ -123,10 +123,12 @@ template <int SPACE_DIM, typename OpBase>
 struct OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpMixDivTimesVecImpl(const std::string row_field_name,
                        const std::string col_field_name, const double alpha = 1,
-                       bool assemble_transpose = false)
+                       const bool assemble_transpose = false,
+                       const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         alphaConstant(alpha) {
     this->assembleTranspose = assemble_transpose;
+    this->onlyTranspose = only_transpose;
   }
 
 protected:
@@ -145,10 +147,13 @@ struct OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpMixTensorTimesGradImpl(const std::string row_field_name,
                            const std::string col_field_name,
                            const double alpha = 1,
-                           bool assemble_transpose = false)
+                           const bool assemble_transpose = false,
+                           const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        alphaConstant(alpha) {
+        alphaConstant(alpha)
+  {
     this->assembleTranspose = assemble_transpose;
+    this->onlyTranspose = only_transpose;
   }
 
 protected:
