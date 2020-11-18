@@ -91,21 +91,21 @@ MoFEMErrorCode MatSetValues<EssentialBcStorage>(
 /**
  * @brief Form integrator assembly tpes
  * @ingroup mofem_forms
- * 
+ *
  */
 enum AssemblyType { PETSC, USER_ASSEMBLE, LAST_ASSEMBLE };
 
 /**
  * @brief Fom integrayors inegrator types
  * @ingroup mofem_forms
- * 
+ *
  */
 enum IntegrationType { GAUSS, USER_INTEGRATION, LAST_INTEGRATION };
 
 /**
  * @brief Sacalr function type
  * @ingroup mofem_forms
- * 
+ *
  */
 using ScalarFun =
     boost::function<double(const double, const double, const double)>;
@@ -113,7 +113,7 @@ using ScalarFun =
 /**
  * @brief Vector function type
  * @ingroup mofem_forms
- * 
+ *
  * @tparam DIM dimension of the return
  */
 template <int DIM>
@@ -126,7 +126,8 @@ template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
 
   OpBaseImpl(const std::string row_field_name, const std::string col_field_name,
              const OpType type)
-      : EleOp(row_field_name, col_field_name, type, false) {}
+      : EleOp(row_field_name, col_field_name, type, false),
+        assembleTranspose(false) {}
 
   /**
    * \brief Do calculations for the left hand side
@@ -169,8 +170,11 @@ protected:
   int nbIntegrationPts;   ///< number of integration points
   int nbRowBaseFunctions; ///< number or row base functions
 
-  MatrixDouble locMat; ///< local entity block matrix
-  VectorDouble locF;   ///< local entity vector
+  bool assembleTranspose;
+
+  MatrixDouble locMat;          ///< local entity block matrix
+  MatrixDouble locMatTranspose; ///< local entity block matrix
+  VectorDouble locF;            ///< local entity vector
 
   /**
    * \brief Integrate grad-grad operator
@@ -182,7 +186,8 @@ protected:
     return MOFEM_NOT_IMPLEMENTED;
   }
 
-  virtual MoFEMErrorCode aSsemble(EntData &row_data, EntData &col_data) = 0;
+  virtual MoFEMErrorCode aSsemble(EntData &row_data, EntData &col_data,
+                                  const bool trans) = 0;
 
   /**
    * \brief Class dedicated to integrate operator
@@ -220,16 +225,16 @@ template <typename EleOp> struct FormsIntegrators {
     /**
      * @brief Linear form
      * @ingroup mofem_forms
-     * 
-     * @tparam I 
+     *
+     * @tparam I
      */
     template <IntegrationType I> struct LinearForm;
 
     /**
      * @brief Bi linear form
      * @ingroup mofem_forms
-     * 
-     * @tparam I 
+     *
+     * @tparam I
      */
     template <IntegrationType I> struct BiLinearForm;
 
@@ -263,8 +268,21 @@ OpBaseImpl<A, EleOp>::doWork(int row_side, int col_side, EntityType row_type,
   locMat.clear();
   // integrate local matrix for entity block
   CHKERR this->iNtegrate(row_data, col_data);
+
   // assemble local matrix
-  CHKERR this->aSsemble(row_data, col_data);
+  auto check_if_assemble_transpose = [&] {
+    if (this->sYmm) {
+      if (row_side != col_side || row_type != col_type)
+        return true;
+      else 
+        return false;
+    } else if (assembleTranspose) {
+      return true;
+    }
+
+    return false;
+  };
+  CHKERR aSsemble(row_data, col_data, check_if_assemble_transpose());
   MoFEMFunctionReturn(0);
 }
 
@@ -296,11 +314,26 @@ struct OpBaseImpl<PETSC, EleOp> : public OpBaseImpl<LAST_ASSEMBLE, EleOp> {
 
 protected:
   MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &row_data,
-                          DataForcesAndSourcesCore::EntData &col_data) {
+                          DataForcesAndSourcesCore::EntData &col_data,
+                          const bool transpose) {
+    MoFEMFunctionBegin;
+
+    // Assemble transpose
+    if (transpose) {
+      this->locMatTranspose.resize(this->locMat.size2(), this->locMat.size1(),
+                                   false);
+      noalias(this->locMatTranspose) = trans(this->locMat);
+      CHKERR MatSetValues<EssentialBcStorage>(
+          this->getKSPB(), col_data, row_data,
+          &*this->locMatTranspose.data().begin(), ADD_VALUES);
+    }
+
     // assemble local matrix
-    return MatSetValues<EssentialBcStorage>(
-        this->getKSPB(), row_data, col_data, &*this->locMat.data().begin(),
-        ADD_VALUES);
+    CHKERR MatSetValues<EssentialBcStorage>(this->getKSPB(), row_data, col_data,
+                                            &*this->locMat.data().begin(),
+                                            ADD_VALUES);
+
+    MoFEMFunctionReturn(0);
   }
 
   MoFEMErrorCode aSsemble(DataForcesAndSourcesCore::EntData &data) {

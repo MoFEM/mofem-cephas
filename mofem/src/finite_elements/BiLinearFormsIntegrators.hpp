@@ -33,7 +33,10 @@ struct OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpGradGradImpl(const std::string row_field_name,
                  const std::string col_field_name, ScalarFun beta)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        betaCoeff(beta) {}
+        betaCoeff(beta) {
+    if(row_field_name == col_field_name)
+      this->sYmm = true;
+  }
 
 protected:
   ScalarFun betaCoeff;
@@ -50,7 +53,10 @@ struct OpMassImpl<1, 1, GAUSS, OpBase> : public OpBase {
   OpMassImpl(const std::string row_field_name, const std::string col_field_name,
              ScalarFun beta)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        betaCoeff(beta) {}
+        betaCoeff(beta) {
+    if(row_field_name == col_field_name)
+      this->sYmm = true;
+  }
 
 protected:
   ScalarFun betaCoeff;
@@ -80,7 +86,10 @@ struct OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
   OpGradSymTensorGradImpl(const std::string row_field_name,
                           const std::string col_field_name,
                           boost::shared_ptr<MatrixDouble> mat_D)
-      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D) {}
+      : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL), matD(mat_D) {
+    if (row_field_name == col_field_name)
+      this->sYmm = true;
+  }
 
 protected:
   boost::shared_ptr<MatrixDouble> matD;
