@@ -34,7 +34,7 @@ struct OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
                  const std::string col_field_name, ScalarFun beta)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         betaCoeff(beta) {
-    if(row_field_name == col_field_name)
+    if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
@@ -54,7 +54,7 @@ struct OpMassImpl<1, 1, GAUSS, OpBase> : public OpBase {
              ScalarFun beta)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         betaCoeff(beta) {
-    if(row_field_name == col_field_name)
+    if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
@@ -117,14 +117,13 @@ protected:
 };
 
 template <int SPACE_DIM, IntegrationType I, typename OpBase>
-struct OpMixDivLambdaTimesUImpl {};
+struct OpMixDivTimesVecImpl {};
 
 template <int SPACE_DIM, typename OpBase>
-struct OpMixDivLambdaTimesUImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
-  OpMixDivLambdaTimesUImpl(const std::string row_field_name,
-                            const std::string col_field_name,
-                            const double alpha = 1,
-                            bool assemble_transpose = false)
+struct OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
+  OpMixDivTimesVecImpl(const std::string row_field_name,
+                       const std::string col_field_name, const double alpha = 1,
+                       bool assemble_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         alphaConstant(alpha) {
     this->assembleTranspose = assemble_transpose;
@@ -139,14 +138,14 @@ protected:
 };
 
 template <int SPACE_DIM, IntegrationType I, typename OpBase>
-struct OpMixLambdaTimesGradUImpl {};
+struct OpMixTensorTimesGradImpl {};
 
 template <int SPACE_DIM, typename OpBase>
-struct OpMixLambdaTimesGradUImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
-  OpMixLambdaTimesGradUImpl(const std::string row_field_name,
-                            const std::string col_field_name,
-                            const double alpha = 1,
-                            bool assemble_transpose = false)
+struct OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
+  OpMixTensorTimesGradImpl(const std::string row_field_name,
+                           const std::string col_field_name,
+                           const double alpha = 1,
+                           bool assemble_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
         alphaConstant(alpha) {
     this->assembleTranspose = assemble_transpose;
@@ -235,17 +234,16 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
   };
 
   template <int SPACE_DIM>
-  struct OpMixDivLambdaTimesU
-      : public OpMixDivLambdaTimesUImpl<SPACE_DIM, I, OpBase> {
-    using OpMixDivLambdaTimesUImpl<SPACE_DIM, I,
-                                   OpBase>::OpMixDivLambdaTimesUImpl;
+  struct OpMixDivTimesVec
+      : public OpMixDivTimesVecImpl<SPACE_DIM, I, OpBase> {
+    using OpMixDivTimesVecImpl<SPACE_DIM, I, OpBase>::OpMixDivTimesVecImpl;
   };
 
   template <int SPACE_DIM>
-  struct OpMixLambdaTimesGradU
-      : public OpMixLambdaTimesGradUImpl<SPACE_DIM, I, OpBase> {
-    using OpMixLambdaTimesGradUImpl<SPACE_DIM, I,
-                                    OpBase>::OpMixLambdaTimesGradUImpl;
+  struct OpMixTensorTimesGrad
+      : public OpMixTensorTimesGradImpl<SPACE_DIM, I, OpBase> {
+    using OpMixTensorTimesGradImpl<SPACE_DIM, I,
+                                   OpBase>::OpMixTensorTimesGradImpl;
   };
 };
 
@@ -385,7 +383,7 @@ MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
 };
 
 template <int SPACE_DIM, int S, typename OpBase>
-MoFEMErrorCode 
+MoFEMErrorCode
 OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data) {
@@ -466,7 +464,7 @@ OpGradSymTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
 }
 
 template <int SPACE_DIM, int S, typename OpBase>
-MoFEMErrorCode 
+MoFEMErrorCode
 OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data) {
@@ -491,8 +489,10 @@ OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     // get derivatives of base functions on rows
     auto t_row_diff_base = row_data.getFTensor1DiffN<SPACE_DIM>();
 
-    //stiffness tensor (4th rank tensor)
-    auto t_D = getFTensor4FromMat<SPACE_DIM, SPACE_DIM, SPACE_DIM, SPACE_DIM, S>(*matD);
+    // stiffness tensor (4th rank tensor)
+    auto t_D =
+        getFTensor4FromMat<SPACE_DIM, SPACE_DIM, SPACE_DIM, SPACE_DIM, S>(
+            *matD);
 
     // iterate over integration points
     for (int gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
@@ -541,7 +541,7 @@ OpGradTensorGradImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
 }
 
 template <int SPACE_DIM, typename OpBase>
-MoFEMErrorCode OpMixDivLambdaTimesUImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
+MoFEMErrorCode OpMixDivTimesVecImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data) {
   MoFEMFunctionBegin;
@@ -578,7 +578,7 @@ MoFEMErrorCode OpMixDivLambdaTimesUImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
         ++t_row_diff_base;
       }
-      for (; rr < nb_base_functions; ++rr) 
+      for (; rr < nb_base_functions; ++rr)
         ++t_row_diff_base;
 
       ++t_w;
@@ -589,7 +589,7 @@ MoFEMErrorCode OpMixDivLambdaTimesUImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 }
 
 template <int SPACE_DIM, typename OpBase>
-MoFEMErrorCode OpMixLambdaTimesGradUImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
+MoFEMErrorCode OpMixTensorTimesGradImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data) {
   MoFEMFunctionBegin;
