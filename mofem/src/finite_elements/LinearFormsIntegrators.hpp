@@ -54,10 +54,13 @@ template <int FIELD_DIM, int S, typename OpBase>
 struct OpBaseTimesVectorImpl<1, FIELD_DIM, S, GAUSS, OpBase> : public OpBase {
 
   OpBaseTimesVectorImpl(const std::string field_name,
-                        boost::shared_ptr<MatrixDouble> vec)
-      : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec) {}
+                        boost::shared_ptr<MatrixDouble> vec,
+                        const double beta_coeff = 1)
+      : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
+        betaCoeff(beta_coeff) {}
 
 protected:
+  const double betaCoeff;
   boost::shared_ptr<MatrixDouble> sourceVec;
   FTensor::Index<'i', FIELD_DIM> i;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
@@ -348,7 +351,7 @@ MoFEMErrorCode OpBaseTimesVectorImpl<1, FIELD_DIM, S, GAUSS, OpBase>::iNtegrate(
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobean
-    const double alpha = t_w * vol;
+    const double alpha = t_w * vol * betaCoeff;
     // get loc vector tensor
     auto t_nf = OpBase::template getNf<FIELD_DIM>();
     // loop over rows base functions
