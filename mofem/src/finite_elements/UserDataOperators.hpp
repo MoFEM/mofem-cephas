@@ -1765,6 +1765,64 @@ struct OpCalculateHVecTensorDivergence
   }
 };
 
+/**
+ * @brief Calculate trace of vector (Hdiv/Hcurl) space
+ * 
+ * @tparam Tensor_Dim 
+ * @tparam OpBase 
+ */
+template <int Tensor_Dim, typename OpBase>
+struct OpCalculateHVecTensorTrace : public OpBase {
+
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  const EntityHandle zeroType;
+  const int zeroSide;
+  FTensor::Index<'i', Tensor_Dim> i;
+  FTensor::Index<'j', Tensor_Dim> j;
+
+  OpCalculateHVecTensorTrace(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+      const EntityType zero_type = MBEDGE, const int zero_side = 0)
+      : OpBase(field_name, OpBase::OPROW), dataPtr(data_ptr),
+        zeroType(zero_type), zeroSide(zero_side) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+    const int nb_integration_points = OpBase::getGaussPts().size2();
+    if (type == zeroType && side == 0) {
+      dataPtr->resize(Tensor_Dim, nb_integration_points, false);
+      dataPtr->clear();
+    }
+    const int nb_dofs = data.getFieldData().size();
+    if (nb_dofs) {
+      auto t_normal = OpBase::getFTensor1Normal();
+      t_normal(i) /= sqrt(t_normal(j) * t_normal(j));
+      const int nb_base_functions = data.getN().size2() / 3;
+      FTensor::Index<'i', Tensor_Dim> i;
+      FTensor::Index<'j', Tensor_Dim> j;
+      auto t_base = data.getFTensor1N<3>();
+      auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
+      for (int gg = 0; gg != nb_integration_points; ++gg) {
+        auto t_dof = data.getFTensor1FieldData<Tensor_Dim>();
+        int bb = 0;
+        for (; bb != nb_dofs / Tensor_Dim; ++bb) {
+          t_data(i) += t_dof(i) * (t_base(j) * t_normal(j));
+          ++t_base;
+          ++t_dof;
+        }
+        for (; bb < nb_base_functions; ++bb)
+          ++t_base;
+        ++t_data;
+      }
+    }
+    MoFEMFunctionReturn(0);
+  }
+};
+
 /**@}*/
 
 /**@}*/
