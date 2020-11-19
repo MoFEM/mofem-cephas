@@ -250,11 +250,21 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
                                    OpBase>::OpGradTimesSymTensorImpl;
   };
 
+  /**
+   * @brief Integrate \f$(\lambda_{ij,j},u_{i})_\Omega\f$
+   * 
+   * @tparam SPACE_DIM 
+   */
   template <int SPACE_DIM>
   struct OpMixDivTimesU : public OpMixDivTimesUImpl<SPACE_DIM, I, OpBase> {
     using OpMixDivTimesUImpl<SPACE_DIM, I, OpBase>::OpMixDivTimesUImpl;
   };
 
+  /**
+   * @brief Integrate \f$(\lambda_{ij},u_{i,j})_\Omega\f$
+   * 
+   * @tparam SPACE_DIM 
+   */
   template <int SPACE_DIM>
   struct OpMixTensorTimesGradU
       : public OpMixTensorTimesGradUImpl<SPACE_DIM, I, OpBase> {
@@ -262,6 +272,11 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
                                     OpBase>::OpMixTensorTimesGradUImpl;
   };
 
+  /**
+   * @brief Integrate \f$(u_{i},\lambda_{ij,j})_\Omega\f$
+   * 
+   * @tparam SPACE_DIM 
+   */
   template <int SPACE_DIM>
   struct OpMixVecTimesDivLambda
       : public OpMixVecTimesDivLambdaImpl<SPACE_DIM, I, OpBase> {
