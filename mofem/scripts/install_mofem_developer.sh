@@ -179,9 +179,10 @@ else
   echo -e "\nMoFEM source directory is found"
 fi
 
-# Clone MoFEM Fracture Module
+# Clone MoFEM Fracture Module and Mortar Contact Module
 cd $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
 git clone -b develop https://bitbucket.org/likask/mofem_um_fracture_mechanics.git
+git clone -b develop https://bitbucket.org/mofem/mortar_contact.git
 
 # Installation of core library
 cd $MOFEM_INSTALL_DIR
