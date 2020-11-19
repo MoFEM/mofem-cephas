@@ -238,12 +238,22 @@ struct FormsIntegrators<EleOp>::Assembly<A>::BiLinearForm {
                                OpBase>::OpGradTensorGradImpl;
   };
 
+  /**
+   * @brief Integrate \f$(\lambda_{ij,j},u_{i})_\Omega\f$
+   * 
+   * @tparam SPACE_DIM 
+   */
   template <int SPACE_DIM>
   struct OpMixDivTimesVec
       : public OpMixDivTimesVecImpl<SPACE_DIM, I, OpBase> {
     using OpMixDivTimesVecImpl<SPACE_DIM, I, OpBase>::OpMixDivTimesVecImpl;
   };
 
+  /**
+   * @brief Integrate \f$(\lambda_{ij},u_{i,j})_\Omega\f$
+   * 
+   * @tparam SPACE_DIM 
+   */
   template <int SPACE_DIM>
   struct OpMixTensorTimesGrad
       : public OpMixTensorTimesGradImpl<SPACE_DIM, I, OpBase> {
