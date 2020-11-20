@@ -203,7 +203,7 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    * @tparam FIELD_DIM
    * @tparam 0
    */
-  template <int BASE_DIM, int FIELD_DIM, int S = 0>
+  template <int BASE_DIM, int FIELD_DIM, int S>
   struct OpBaseTimesVector
       : public OpBaseTimesVectorImpl<BASE_DIM, FIELD_DIM, S, I, OpBase> {
     using OpBaseTimesVectorImpl<BASE_DIM, FIELD_DIM, S, I,
