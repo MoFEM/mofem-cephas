@@ -522,16 +522,16 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    // Testing two same eigen values
+    // Testing two same eigen values 
     {
 
-      std::array<double, 9> a{0.1, 0.,  0,
+      std::array<double, 9> a{5.,   4., 0,
 
-                              0.,  0.1, 0.,
+                              4.,  5,  0.,
 
-                              0.0, 0.,  4.};
+                              0.0, 0., 9};
 
-      auto tuple = run_lapack(a);
+      auto tuple = run_lapack(a, swap01);
       auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
@@ -736,16 +736,16 @@ int main(int argc, char *argv[]) {
                 "This norm should be zero");
     }
 
-    // check second directive
+    // check second directive two reapeating eiegn values
     {
 
-      std::array<double, 9> a{0.2, 0.,  0.,
+      std::array<double, 9> a{5., 4.,  0.,
 
-                              0.,  0.2, 0.,
+                              4.,  5., 0.,
 
-                              0.,  0.,  2};
+                              0.,  0.,  9};
 
-      auto tuple = run_lapack(a);
+      auto tuple = run_lapack(a, swap01);
       auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
@@ -847,7 +847,7 @@ int main(int argc, char *argv[]) {
                 "This norm should be zero");
     }
 
-    // check second directive exponent
+    // check second directive exponent agains perturned
     {
 
       std::array<double, 9> a{0.5, 0.,  0.,
