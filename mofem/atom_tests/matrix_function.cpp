@@ -222,7 +222,8 @@ int main(int argc, char *argv[]) {
               << ii + 1 << " " << jj + 1 << " : " << t(ii, jj);
     };
 
-    auto run_lapack = [](auto &a) {
+    enum swap { swap12, swap01 };
+    auto run_lapack = [](auto &a, swap s = swap12) {
       int info;
       double wkopt;
       double w[3];
@@ -247,17 +248,35 @@ int main(int argc, char *argv[]) {
       if (info > 0)
         THROW_MESSAGE("The algorithm failed to compute eigenvalues.");
 
-      FTensor::Tensor2<double, 3, 3> t_eig_vec{
+      switch (s) {
+      case swap12: {
+        FTensor::Tensor2<double, 3, 3> t_eig_vec{
 
-          a[0 * 3 + 0], a[0 * 3 + 1], a[0 * 3 + 2],
+            a[0 * 3 + 0], a[0 * 3 + 1], a[0 * 3 + 2],
 
-          a[2 * 3 + 0], a[2 * 3 + 1], a[2 * 3 + 2],
+            a[2 * 3 + 0], a[2 * 3 + 1], a[2 * 3 + 2],
 
-          a[1 * 3 + 0], a[1 * 3 + 1], a[1 * 3 + 2]};
+            a[1 * 3 + 0], a[1 * 3 + 1], a[1 * 3 + 2]};
 
-      FTensor::Tensor1<double, 3> t_eig_vals{w[0], w[2], w[1]};
+        FTensor::Tensor1<double, 3> t_eig_vals{w[0], w[2], w[1]};
+        return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
+      }
+      case swap01: {
+        FTensor::Tensor2<double, 3, 3> t_eig_vec{
 
-      return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
+            a[1 * 3 + 0], a[1 * 3 + 1], a[1 * 3 + 2],
+
+            a[0 * 3 + 0], a[0 * 3 + 1], a[0 * 3 + 2],
+
+            a[2 * 3 + 0], a[2 * 3 + 1], a[2 * 3 + 2],
+
+        };
+
+        FTensor::Tensor1<double, 3> t_eig_vals{w[1], w[0], w[2]};
+        return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
+      }
+      }
+        
     };
 
     // Test matrix againsst mathematica results
