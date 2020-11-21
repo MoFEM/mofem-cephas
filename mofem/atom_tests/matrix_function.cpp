@@ -920,13 +920,13 @@ int main(int argc, char *argv[]) {
     // check second directive exponent
     {
 
-      std::array<double, 9> a{0.5, 0., 0.,
+      std::array<double, 9> a{5., 4., 0.,
 
-                              0.,  2., 0.,
+                              4., 5., 0.,
 
-                              0.,  0., 0.5};
+                              0., 0., 9};
 
-      auto tuple = run_lapack(a);
+      auto tuple = run_lapack(a, swap01);
       auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
