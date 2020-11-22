@@ -72,9 +72,6 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
-
   // preprocess
   for (auto &bit : ts_ctx->preProcess_IFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
@@ -84,6 +81,9 @@ PetscErrorCode TsSetIFunction(TS ts, PetscReal t, Vec u, Vec u_t, Vec F,
     unset(*bit);
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
+
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   // fe loops
   for (auto &lit : ts_ctx->loops_to_do_IFunction) {
@@ -165,9 +165,6 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
-
   // preproces
   for (auto &bit : ts_ctx->preProcess_IJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
@@ -177,6 +174,9 @@ PetscErrorCode TsSetIJacobian(TS ts, PetscReal t, Vec u, Vec u_t, PetscReal a,
     unset(*bit);
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
+
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   for (auto &lit : ts_ctx->loops_to_do_IJacobian) {
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
@@ -233,9 +233,6 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
-
   // preproces
   for (auto &bit : ts_ctx->preProcess_Monitor) {
     set(*bit);
@@ -243,6 +240,9 @@ PetscErrorCode TsMonitorSet(TS ts, PetscInt step, PetscReal t, Vec u,
                                                           *bit);
     unset(*bit);
   }
+
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   for (auto &lit : ts_ctx->loops_to_do_Monitor) {
     set(*lit.second);
@@ -318,9 +318,6 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
-
   for (auto &bit : ts_ctx->preProcess_RHSJacobian) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
     set(*bit);
@@ -329,6 +326,9 @@ PetscErrorCode TsSetRHSFunction(TS ts, PetscReal t, Vec u, Vec F, void *ctx) {
     unset(*bit);
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
+
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   // fe loops
   for (auto &lit : ts_ctx->loops_to_do_RHSFunction) {
@@ -407,9 +407,6 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
-
   // preprocess
   for (auto &bit : ts_ctx->preProcess_RHSJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
@@ -419,6 +416,9 @@ PetscErrorCode TsSetRHSJacobian(TS ts, PetscReal t, Vec u, Mat A, Mat B,
     unset(*bit);
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
+
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   // fe loops
   for (auto &lit : ts_ctx->loops_to_do_RHSJacobian) {
@@ -505,9 +505,6 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
-
   // preproces
   for (auto &bit : ts_ctx->preProcess_IJacobian) {
     bit->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
@@ -517,6 +514,9 @@ PetscErrorCode TsSetI2Jacobian(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     unset(*bit);
     ts_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
+
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   for (auto &lit : ts_ctx->loops_to_do_IJacobian) {
     lit.second->matAssembleSwitch = boost::move(ts_ctx->matAssembleSwitch);
@@ -608,9 +608,6 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
-
   // preprocess
   for (auto &bit : ts_ctx->preProcess_IFunction) {
     bit->vecAssembleSwitch = boost::move(ts_ctx->vecAssembleSwitch);
@@ -620,6 +617,9 @@ PetscErrorCode TsSetI2Function(TS ts, PetscReal t, Vec u, Vec u_t, Vec u_tt,
     unset(*bit);
     ts_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
+
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ts_ctx->mField.cache_problem_entities(ts_ctx->problemName, cache_ptr);
 
   // fe loops
   for (auto &lit : ts_ctx->loops_to_do_IFunction) {

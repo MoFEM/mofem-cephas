@@ -68,10 +68,6 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
-                                                 cache_ptr);
-
   for (auto &bit : snes_ctx->preProcess_Rhs) {
     bit->vecAssembleSwitch = boost::move(snes_ctx->vecAssembleSwitch);
     set(*bit);
@@ -80,6 +76,10 @@ PetscErrorCode SnesRhs(SNES snes, Vec x, Vec f, void *ctx) {
     unset(*bit);
     snes_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
+
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
+                                                 cache_ptr);
 
   for (auto &lit : snes_ctx->loops_to_do_Rhs) {
     lit.second->vecAssembleSwitch = boost::move(snes_ctx->vecAssembleSwitch);
@@ -149,9 +149,6 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
-                                                 cache_ptr);
 
   CHKERR VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
   CHKERR VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
@@ -165,6 +162,10 @@ PetscErrorCode SnesMat(SNES snes, Vec x, Mat A, Mat B, void *ctx) {
     unset(*bit);
     snes_ctx->matAssembleSwitch = boost::move(bit->matAssembleSwitch);
   }
+
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR snes_ctx->mField.cache_problem_entities(snes_ctx->problemName,
+                                                 cache_ptr);
 
   for (auto &lit : snes_ctx->loops_to_do_Mat) {
     lit.second->matAssembleSwitch = boost::move(snes_ctx->matAssembleSwitch);
