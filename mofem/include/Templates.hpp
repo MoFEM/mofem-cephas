@@ -410,6 +410,111 @@ getFTensor4DdgFromMat(MatrixDouble &data) {
                                    DoubleAllocator>::get(data);
 }
 
+template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int Tensor_Dim3,
+          int S, class T, class L, class A>
+struct GetFTensor4FromMatImpl {};
+
+template <int S>
+struct GetFTensor4FromMatImpl<1, 1, 1, 1, S, double, ublas::row_major,
+                              DoubleAllocator> {
+  static inline FTensor::Tensor4<FTensor::PackPtr<double *, S>, 1, 1, 1, 1>
+  get(MatrixDouble &data) {
+    if (data.size1() != 1)
+      THROW_MESSAGE(
+          "getFTensor4FromMat<1, 1, 1, 1>: wrong size of data matrix, number "
+          "of rows should be 1 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+
+    return FTensor::Tensor4<FTensor::PackPtr<double *, S>, 1, 1, 1, 1>{
+        &data(0, 0)};
+  }
+};
+
+template <int S>
+struct GetFTensor4FromMatImpl<2, 2, 2, 2, S, double, ublas::row_major,
+                              DoubleAllocator> {
+  static inline FTensor::Tensor4<FTensor::PackPtr<double *, S>, 2, 2, 2, 2>
+  get(MatrixDouble &data) {
+    if (data.size1() != 16) {
+      THROW_MESSAGE(
+          "getFTensor4FromMat<2, 2, 2, 2>: wrong size of data matrix, number "
+          "of rows should be 16 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+    }
+    return FTensor::Tensor4<FTensor::PackPtr<double *, S>, 2, 2, 2, 2>{
+        &data(0, 0),  &data(1, 0),  &data(2, 0),  &data(3, 0),
+        &data(4, 0),  &data(5, 0),  &data(6, 0),  &data(7, 0),
+        &data(8, 0),  &data(9, 0),  &data(10, 0), &data(11, 0),
+        &data(12, 0), &data(13, 0), &data(14, 0), &data(15, 0)};
+  }
+};
+
+template <int S>
+struct GetFTensor4FromMatImpl<3, 3, 3, 3, S, double, ublas::row_major,
+                              DoubleAllocator> {
+  static inline FTensor::Tensor4<FTensor::PackPtr<double *, S>, 3, 3, 3, 3>
+  get(MatrixDouble &data) {
+    if (data.size1() != 81) {
+      cerr << data.size1() << endl;
+      THROW_MESSAGE(
+          "getFTensor4FromMat<3, 3, 3, 3>: wrong size of data matrix, number "
+          "of rows should be 81 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+    }
+    return FTensor::Tensor4<FTensor::PackPtr<double *, S>, 3, 3, 3, 3>{
+        &data(0, 0),  &data(1, 0),  &data(2, 0),  &data(3, 0),  &data(4, 0),
+        &data(5, 0),  &data(6, 0),  &data(7, 0),  &data(8, 0),  &data(9, 0),
+        &data(10, 0), &data(11, 0), &data(12, 0), &data(13, 0), &data(14, 0),
+        &data(15, 0), &data(16, 0), &data(17, 0), &data(18, 0), &data(19, 0),
+        &data(20, 0), &data(21, 0), &data(22, 0), &data(23, 0), &data(24, 0),
+        &data(25, 0), &data(26, 0), &data(27, 0), &data(28, 0), &data(29, 0),
+        &data(30, 0), &data(31, 0), &data(32, 0), &data(33, 0), &data(34, 0),
+        &data(35, 0), &data(36, 0), &data(37, 0), &data(38, 0), &data(39, 0),
+        &data(40, 0), &data(41, 0), &data(42, 0), &data(43, 0), &data(44, 0),
+        &data(45, 0), &data(46, 0), &data(47, 0), &data(48, 0), &data(49, 0),
+        &data(50, 0), &data(51, 0), &data(52, 0), &data(53, 0), &data(54, 0),
+        &data(55, 0), &data(56, 0), &data(57, 0), &data(58, 0), &data(59, 0),
+        &data(60, 0), &data(61, 0), &data(62, 0), &data(63, 0), &data(64, 0),
+        &data(65, 0), &data(66, 0), &data(67, 0), &data(68, 0), &data(69, 0),
+        &data(70, 0), &data(71, 0), &data(72, 0), &data(73, 0), &data(74, 0),
+        &data(75, 0), &data(76, 0), &data(77, 0), &data(78, 0), &data(79, 0),
+        &data(80, 0)};
+  }
+};
+
+/**
+ * @brief Get tensor rank 4 (non symmetric) form data matrix
+ *
+ * @tparam Tensor_Dim0 dimension of frirst index
+ * @tparam Tensor_Dim1 dimension of second index
+ * @tparam Tensor_Dim2 dimension of third index
+ * @tparam Tensor_Dim3 dimension of fourth index
+ * @tparam T the type of object stored
+ * @tparam L the storage organization
+ * @tparam A 	the type of Storage array
+ * @param data data container
+ * @return FTensor::Tensor4<FTensor::PackPtr<T *, 1>, Tensor_Dim0,
+                               Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>
+ */
+template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int Tensor_Dim3,
+          int S = 1, class T, class L, class A>
+static inline FTensor::Tensor4<FTensor::PackPtr<T *, 1>, Tensor_Dim0,
+                               Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>
+getFTensor4FromMat(ublas::matrix<T, L, A> &data) {
+  static_assert(!std::is_same<T, T>::value,
+                "Such getFTensor4FromMat specialisation is not implemented");
+}
+
+template <int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2, int Tensor_Dim3,
+          int S = 1>
+static inline FTensor::Tensor4<FTensor::PackPtr<double *, S>, Tensor_Dim0,
+                               Tensor_Dim1, Tensor_Dim2, Tensor_Dim3>
+getFTensor4FromMat(MatrixDouble &data) {
+  return GetFTensor4FromMatImpl<Tensor_Dim0, Tensor_Dim1, Tensor_Dim2,
+                                Tensor_Dim3, S, double, ublas::row_major,
+                                DoubleAllocator>::get(data);
+}
+
 /**
  * @brief Make Tensor1 from pointer
  *
@@ -420,8 +525,15 @@ getFTensor4DdgFromMat(MatrixDouble &data) {
 template <int DIM>
 inline FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM>
 getFTensor1FromPtr(double *ptr) {
-  static_assert(DIM != 3,
+  static_assert(DIM != 3 && DIM != 2,
                 "Such getFTensor1FromPtr specialization is not implemented");
+};
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
+getFTensor1FromPtr<2>(double *ptr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(
+      &ptr[HVEC0], &ptr[HVEC1]);
 };
 
 template <>
@@ -470,12 +582,12 @@ FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3,
 
 /**
  * @brief Get FTensor1 from array
- * 
+ *
  * \todo Generalise for diffrent arrays and data types
- * 
- * @tparam DIM 
- * @param data 
- * @return FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM> 
+ *
+ * @tparam DIM
+ * @param data
+ * @return FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM>
  */
 template <int DIM, int S>
 inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
@@ -498,15 +610,46 @@ getFTensor1FromArray(VectorDouble &data) {
 }
 
 /**
+ * @brief Get FTensor1 from array
+ *
+ * \todo Generalise for diffrent arrays and data types
+ *
+ * @tparam DIM
+ * @param data
+ * @param rr
+ * @return FTensor::Tensor1<FTensor::PackPtr<double *, DIM>, DIM>
+ */
+template <int DIM, int S>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
+getFTensor1FromArrayDiag(MatrixDouble &data, const size_t rr) {
+  static_assert(DIM != DIM, "not implemented");
+  return FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>();
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
+getFTensor1FromArrayDiag(MatrixDouble &data, const size_t rr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>{&data(rr + 0, 0),
+                                                            &data(rr + 1, 1)};
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+getFTensor1FromArrayDiag(MatrixDouble &data, const size_t rr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{
+      &data(rr + 0, 0), &data(rr + 1, 1), &data(rr + 2, 2)};
+}
+
+/**
  * @brief Get FTensor2 from array
- * 
- * \note Generalise for other data types 
- * 
- * @tparam DIM1 
- * @tparam DIM2 
- * @tparam S 
- * @param data 
- * @return FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2> 
+ *
+ * \note Generalise for other data types
+ *
+ * @tparam DIM1
+ * @tparam DIM2
+ * @tparam S
+ * @param data
+ * @return FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2>
  */
 template <int DIM1, int DIM2, int S>
 inline FTensor::Tensor2<FTensor::PackPtr<double *, S>, DIM1, DIM2>
