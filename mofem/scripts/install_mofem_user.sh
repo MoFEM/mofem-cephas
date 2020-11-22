@@ -175,8 +175,8 @@ cd $MOFEM_INSTALL_DIR
 echo "Current directory: $PWD"
   
 # Install MoFEM packages
-spack install  -j 2 mofem-fracture-module build_type=Release
-  
+spack install  -j 2 mofem-fracture-module build_type=Release ^petsc+X
+
 # Activate fracture module
 spack view --verbose symlink -i um_view mofem-fracture-module
  
