@@ -187,7 +187,7 @@ struct interface_DofEntity : public interface_FieldEntity<T> {
   inline UId getLocalUniqueId() const { return this->sPtr->getLocalUniqueId(); }
 
   /// @return return entity unique id
-  inline const UId &getEntLocallUniqueId() const {
+  inline const UId &getEntLocalUniqueId() const {
     return this->sPtr->getEntLocalUniqueId();
   }
 
