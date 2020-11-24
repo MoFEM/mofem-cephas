@@ -204,6 +204,51 @@ namespace FTensor
                                   k, l>(TensorExpr(a, b));
   }
 
+  /* B(i,j)*A(i,j,k,l) */
+
+  template <class A, class B, class T, class U, int Dim01, int Dim23, char i,
+            char j, char k, char l>
+  Tensor2_symmetric_Expr<
+      Ddg_times_Tensor2_01<A, B, T, U, Dim01, Dim23, i, j, k, l>,
+      typename promote<T, U>::V, Dim23, k, l>
+  operator*(const Tensor2_Expr<B, U, Dim01, Dim01, i, j> &b,
+            const Ddg_Expr<A, T, Dim01, Dim23, i, j, k, l> &a) {
+    using TensorExpr =
+        Ddg_times_Tensor2_01<A, B, T, U, Dim01, Dim23, i, j, k, l>;
+    return Tensor2_symmetric_Expr<TensorExpr, typename promote<T, U>::V, Dim23,
+                                  k, l>(TensorExpr(a, b));
+  }
+
+  /* A(j,i,k,l)*B(i,j) */
+
+  template <class A, class B, class T, class U, int Dim01, int Dim23, char i,
+            char j, char k, char l>
+  Tensor2_symmetric_Expr<
+      Ddg_times_Tensor2_01<A, B, T, U, Dim01, Dim23, i, j, k, l>,
+      typename promote<T, U>::V, Dim23, k, l>
+  operator*(const Ddg_Expr<A, T, Dim01, Dim23, j, i, k, l> &a,
+            const Tensor2_Expr<B, U, Dim01, Dim01, i, j> &b) {
+    using TensorExpr =
+        Ddg_times_Tensor2_01<A, B, T, U, Dim01, Dim23, i, j, k, l>;
+    return Tensor2_symmetric_Expr<TensorExpr, typename promote<T, U>::V, Dim23,
+                                  k, l>(TensorExpr(a, b));
+  }
+
+  /* B(i,j)*A(j,i,k,l) */
+
+  template <class A, class B, class T, class U, int Dim01, int Dim23, char i,
+            char j, char k, char l>
+  Tensor2_symmetric_Expr<
+      Ddg_times_Tensor2_01<A, B, T, U, Dim01, Dim23, i, j, k, l>,
+      typename promote<T, U>::V, Dim23, k, l>
+  operator*(const Tensor2_Expr<B, U, Dim01, Dim01, i, j> &b,
+            const Ddg_Expr<A, T, Dim01, Dim23, j, i, k, l> &a) {
+    using TensorExpr =
+        Ddg_times_Tensor2_01<A, B, T, U, Dim01, Dim23, i, j, k, l>;
+    return Tensor2_symmetric_Expr<TensorExpr, typename promote<T, U>::V, Dim23,
+                                  k, l>(TensorExpr(a, b));
+  }
+
   /* This operatores will yield tensor 2 */
 
   /* A(i,j,k,l)*B(j,l) */
