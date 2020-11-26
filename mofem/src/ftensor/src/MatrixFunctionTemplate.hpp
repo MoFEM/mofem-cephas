@@ -502,7 +502,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
   using Val = const FTensor::Tensor1<T1, Dim>;
   using Vec = const FTensor::Tensor2<T2, Dim, Dim>;
   using Fun = boost::function<double(const double)>;
-  using V = typename FTensor::promote<T1, T2>::V;
+  using V = double; //typename FTensor::promote<T1, T2>::V;
 
   template <int N> using Number = FTensor::Number<N>;
   template <char c> using I = typename FTensor::Index<c, Dim>;
@@ -891,7 +891,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
 private:
   Val &tVal;
   Vec &tVec;
-  FTensor::Tensor2_symmetric<T2, Dim> aM[Dim];
+  FTensor::Tensor2_symmetric<V, Dim> aM[Dim];
   FTensor::Ddg<V, Dim, Dim> aMM[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aG[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aS[Dim][Dim];
@@ -899,11 +899,11 @@ private:
   FTensor::Ddg<V, Dim, Dim> d2MType2[Dim][Dim][Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> d2MType0[Dim][Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> d2MType1[Dim][Dim][Dim];
-  FTensor::Tensor2<T1, Dim, Dim> aF;
-  FTensor::Tensor2<T1, Dim, Dim> aF2;
-  FTensor::Tensor1<T1, Dim> fVal;
-  FTensor::Tensor1<T1, Dim> dfVal;
-  FTensor::Tensor1<T1, Dim> ddfVal;
+  FTensor::Tensor2<V, Dim, Dim> aF;
+  FTensor::Tensor2<V, Dim, Dim> aF2;
+  FTensor::Tensor1<V, Dim> fVal;
+  FTensor::Tensor1<V, Dim> dfVal;
+  FTensor::Tensor1<V, Dim> ddfVal;
 
   template <typename E, typename C> friend struct d2MCoefficients;
   template <typename E, typename C, typename G> friend struct d2MImpl;
