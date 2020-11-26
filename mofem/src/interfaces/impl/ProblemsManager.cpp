@@ -311,22 +311,20 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
     // set partition tag and gid tag to entities
     ParallelComm *pcomm = ParallelComm::get_pcomm(
         &m_field.get_moab(), m_field.get_basic_entity_data_ptr()->pcommID);
-    Tag gid_tag;
     Tag part_tag = pcomm->part_tag();
-    {
-      const int zero = 0;
-      CHKERR m_field.get_moab().tag_get_handle(
-          GLOBAL_ID_TAG_NAME, 1, MB_TYPE_INTEGER, gid_tag,
-          MB_TAG_DENSE | MB_TAG_CREAT, &zero);
-      // get any sets already with this tag, and clear them
-      CHKERR m_field.get_moab().tag_set_data(part_tag, ents, part_number);
-      // rval = moab.tag_set_data(gid_tag,ents,&gids[0]); CHKERRQ_MOAB(rval);
-      // std::vector<int> add_one(ents.size());
-      // for(int ii = 0;ii<ents.size();ii++) {
-      //   add_one[ii] = gids[ii]+1;
-      // }
-      // rval = moab.tag_set_data(gid_tag,ents,&add_one[0]); CHKERRQ_MOAB(rval);
-    }
+    CHKERR m_field.get_moab().tag_set_data(part_tag, ents, part_number);
+    auto get_gid_tag = [&]() {
+      Tag gid_tag;
+      rval = m_field.get_moab().tag_get_handle(GLOBAL_ID_TAG_NAME, gid_tag);
+      if (rval != MB_SUCCESS) {
+        const int zero = 0;
+        CHKERR m_field.get_moab().tag_get_handle(
+            GLOBAL_ID_TAG_NAME, 1, MB_TYPE_INTEGER, gid_tag,
+            MB_TAG_DENSE | MB_TAG_CREAT, &zero);
+      }
+      return gid_tag;
+    };
+    Tag gid_tag = get_gid_tag();
 
     std::map<int, Range> parts_ents;
     {
@@ -339,13 +337,9 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       CHKERR m_field.get_moab().get_entities_by_type_and_tag(
           0, MBENTITYSET, &part_tag, NULL, 1, tagged_sets,
           moab::Interface::UNION);
-      // if(!tagged_sets.empty()) {
-      //   CHKERR m_field.get_moab().delete_entities(tagged_sets);
-      //   tagged_sets.clear();
-      // }
-      if (!tagged_sets.empty()) {
+      if (!tagged_sets.empty()) 
         CHKERR m_field.get_moab().tag_delete_data(part_tag, tagged_sets);
-      }
+      
       if (n_parts > (int)tagged_sets.size()) {
         // too few partition sets - create missing ones
         int num_new = n_parts - tagged_sets.size();
