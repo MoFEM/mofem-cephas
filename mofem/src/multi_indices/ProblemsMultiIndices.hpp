@@ -155,10 +155,19 @@ struct Problem {
    */
   struct SubProblemData {
 
-    IS rowIs;  ///< indices of main problem of which sub problem is this
-    IS colIs;  ///< indices of main problem of which sub problem is this
-    AO rowMap; ///< mapping form main problem indices to sub-problem indices
-    AO colMap;
+    SmartPetscObj<IS>
+        rowIs; ///< indices of main problem of which sub problem is this
+    SmartPetscObj<IS>
+        colIs; ///< indices of main problem of which sub problem is this
+    SmartPetscObj<AO>
+        rowMap; ///< mapping form main problem indices to sub-problem indices
+    SmartPetscObj<AO>
+        colMap; ///< mapping form main problem indices to sub-problem indices
+
+    inline auto getSmartRowIs() { return rowIs; }
+    inline auto getSmartColIs() { return colIs; }
+    inline auto getSmartRowMap() { return rowMap; }
+    inline auto getSmartColMap() { return colMap; }
 
     /**
      * get row Is for sub problem
@@ -208,19 +217,8 @@ struct Problem {
       MoFEMFunctionReturnHot(0);
     }
 
-    SubProblemData()
-        : rowIs(PETSC_NULL), colIs(PETSC_NULL), rowMap(PETSC_NULL),
-          colMap(PETSC_NULL) {}
-    virtual ~SubProblemData() {
-      // int flg;
-      // MPI_Finalized(&flg);
-      // if(!flg) {
-      ISDestroy(&rowIs);
-      ISDestroy(&colIs);
-      AODestroy(&rowMap);
-      AODestroy(&colMap);
-      // }
-    }
+    SubProblemData() = default;
+    virtual ~SubProblemData() = default;
   };
 
   /**
