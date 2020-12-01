@@ -90,20 +90,21 @@ int main(int argc, char *argv[]) {
       int P = NBFACEQUAD_H1(p);
       MatrixDouble quad_bubbles(verts.size(), P);
       MatrixDouble quad_diff_bubbles(verts.size(), P * 2);
-      double eps = 1e-8;
-      double quad_bubbles_sum = 1.795608e+01;
-      double quad_diff_bubbles_sum = 2.198488e+02;
+      constexpr double eps = 1e-4;
+      double quad_bubbles_sum = 3.275491e+01;
+      double quad_diff_bubbles_sum = 5.838131e+02;
 
       CHKERR H1_QuadShapeFunctions_MBQUAD(
           faces_nodes.data(), p, &*N.data().begin(), &*diffN.data().begin(),
           &*quad_bubbles.data().begin(), &*quad_diff_bubbles.data().begin(),
           verts.size(), Legendre_polynomials);
 
-      if (fabs(quad_bubbles_sum - sum_matrix(quad_bubbles)) > eps) {
+      if (std::abs(quad_bubbles_sum - sum_matrix(quad_bubbles)) > eps) {
         SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                  "wrong result = %8.6e", sum_matrix(quad_bubbles));
       }
-      if (fabs(quad_diff_bubbles_sum - sum_matrix(quad_diff_bubbles)) > eps) {
+      if (std::abs(quad_diff_bubbles_sum - sum_matrix(quad_diff_bubbles)) >
+          eps) {
         SETERRQ1(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                  "wrong result = %8.6e", sum_matrix(quad_diff_bubbles));
       }

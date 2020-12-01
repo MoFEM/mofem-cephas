@@ -68,7 +68,7 @@ extern "C" {
 /**
  * @brief Number of base functions on quad for H1 space
  */
-#define NBFACEQUAD_H1(P) (((P) > 2) ? ((P - 3) * (P - 2) / 2) : 0)
+#define NBFACEQUAD_H1(P) (((P) > 1) ? ((P - 1) * (P - 1)) : 0)
 
 /**
  * @brief Number of base functions on quad for L2 space
