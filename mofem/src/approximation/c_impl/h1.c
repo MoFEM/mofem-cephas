@@ -594,9 +594,9 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
 
   int P[3];
   int ff = 0;
-  for (; ff < 3; ff++) 
+  for (; ff < 3; ff++)
     P[ff] = NBFACEQUAD_H1(p[ff]);
-  
+
   double ksi_faces[6];
   double diff_ksiL0F0[3], diff_ksiL3F0[3];
   double diff_ksiL0F1[3], diff_ksiL3F1[3];
@@ -623,13 +623,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
       double eta1 = N[node_shift + n2] + N[node_shift + n3];
       ksi_faces[e0] = ksi1 - ksi0;
       ksi_faces[e1] = eta1 - eta0;
-      // double eps = 1e-14;
-      // if (ksi_faces[e0] < -(1 + eps) || ksi_faces[e0] > (1 + eps)) {
-      //   SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
-      // }
-      // if (ksi_faces[e1] < -(1 + eps) || ksi_faces[e1] > (1 + eps)) {
-      //   SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
-      // }
+
       int dd = 0;
       for (; dd < 3; dd++) {
         double diff_ksi0 = diffN[node_diff_shift + 3 * n0 + dd] +
@@ -668,38 +662,71 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
 
       int shift;
       shift = ii * P[ff];
-      int jj = 0;
-      int oo = 0;
-      for (; oo <= (p[ff] - 4); oo++) {
-        int pp0 = 0;
-        for (; pp0 <= oo; pp0++) {
-          int pp1 = oo - pp0;
-          if (pp1 >= 0) {
-            if (faceN != NULL) {
-              if (faceN[ff] != NULL) {
-                faceN[ff][shift + jj] = v * L0[pp0] * L1[pp1];
-              }
-            }
-            if (diff_faceN != NULL) {
-              if (diff_faceN[ff] != NULL) {
-                dd = 0;
-                for (; dd < 3; dd++) {
-                  diff_faceN[ff][3 * shift + 3 * jj + dd] =
 
-                      (L0[pp0] * diffL1[dd * (p[ff] + 1) + pp1] +
-                       diffL0[dd * (p[ff] + 1) + pp0] * L1[pp1]) *
-                          v +
-
-                      L0[pp0] * L1[pp1] * diff_v[dd];
-                }
-              }
+      if (faceN != NULL) {
+        if (faceN[ff] != NULL) {
+          int jj = 0;
+          int oo = 0;
+          for (; oo <= p[ff] - 2; ++oo) {
+            int pp0 = 0;
+            for (; pp0 < oo; ++pp0) {
+              int pp1 = oo;
+              faceN[ff][shift + jj] = L0[pp0] * L1[pp1] * v;
+              ++jj;
+              faceN[ff][shift + jj] = L0[pp1] * L1[pp0] * v;
+              ++jj;
             }
-            jj++;
+            faceN[ff][shift + jj] = L0[oo] * L1[oo] * v;
+            ++jj;
           }
+          if (jj != P[ff])
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                     "Inconsistent implementation (bug in the code) %d != %d",
+                     jj, P);
         }
       }
-      if (jj != P[ff])
-        SETERRQ2(PETSC_COMM_SELF, 1, "wrong order %d != %d", jj, P[ff]);
+
+      if (diff_faceN != NULL) {
+        if (diff_faceN[ff] != NULL) {
+          int jj = 0;
+          int oo = 0;
+          for (; oo <= p[ff] - 2; ++oo) {
+            int pp0 = 0;
+            for (; pp0 < oo; ++pp0) {
+              int pp1 = oo;
+              int dd;
+              for (dd = 0; dd < 3; dd++) {
+                diff_faceN[ff][3 * shift + 3 * jj + dd] =
+                    (L0[pp0] * diffL1[dd * (p[ff] + 1) + pp1] +
+                     diffL0[dd * (p[ff] + 1) + pp0] * L1[pp1]) *
+                        v +
+                    L0[pp0] * L1[pp1] * diff_v[dd];
+              }
+              ++jj;
+              for (dd = 0; dd < 3; dd++) {
+                diff_faceN[ff][3 * shift + 3 * jj + dd] =
+                    (L0[pp1] * diffL1[dd * (p[ff] + 1) + pp0] +
+                     diffL0[dd * (p[ff] + 1) + pp1] * L1[pp0]) *
+                        v +
+                    L0[pp1] * L1[pp0] * diff_v[dd];
+              }
+              ++jj;
+            }
+            for (dd = 0; dd < 3; dd++) {
+              diff_faceN[ff][3 * shift + 3 * jj + dd] =
+                  (L0[oo] * diffL1[dd * (p[ff] + 1) + oo] +
+                   diffL0[dd * (p[ff] + 1) + oo] * L1[oo]) *
+                      v +
+                  L0[oo] * L1[oo] * diff_v[dd];
+            }
+            ++jj;
+          }
+          if (jj != P[ff])
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                     "Inconsistent implementation (bug in the code) %d != %d",
+                     jj, P);
+        }
+      }
     }
   }
   MoFEMFunctionReturnHot(0);
@@ -813,7 +840,6 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
 
             ++jj;
           }
-
         }
       }
     }
@@ -824,6 +850,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
   }
   MoFEMFunctionReturnHot(0);
 }
+
 PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
     int *faces_nodes, int p, double *N, double *diffN, double *faceN,
     double *diff_faceN, int GDIM,
@@ -853,13 +880,6 @@ PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
     double eta1 = N[node_shift + n2] + N[node_shift + n3];
     double ksi_faces = ksi1 - ksi0;
     double eta_faces = eta1 - eta0;
-    // double eps = 1e-14;
-    // if (ksi_faces < -(1 + eps) || ksi_faces > (1 + eps)) {
-    //   SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
-    // }
-    // if (eta_faces < -(1 + eps) || eta_faces > (1 + eps)) {
-    //   SETERRQ(PETSC_COMM_SELF, 1, "Data inconsistency");
-    // }
     double diff_ksi_faces[2];
     double diff_eta_faces[2];
     int dd = 0;
@@ -878,11 +898,9 @@ PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
     }
     double L0[p + 1], L1[p + 1];
     double diffL0[2 * (p + 1)], diffL1[2 * (p + 1)];
-    ierr =
-        base_polynomials(p, ksi_faces, diff_ksi_faces, L0, diffL0, 2);
+    ierr = base_polynomials(p, ksi_faces, diff_ksi_faces, L0, diffL0, 2);
     CHKERRQ(ierr);
-    ierr =
-        base_polynomials(p, eta_faces, diff_eta_faces, L1, diffL1, 2);
+    ierr = base_polynomials(p, eta_faces, diff_eta_faces, L1, diffL1, 2);
     CHKERRQ(ierr);
 
     double v = N[node_shift + n0] * N[node_shift + n2] +
@@ -899,37 +917,68 @@ PetscErrorCode H1_QuadShapeFunctions_MBQUAD(
           diffN[node_diff_shift + 2 * n1 + dd] * N[node_shift + n3] +
           N[node_shift + n1] * diffN[node_diff_shift + 2 * n3 + dd];
 
+    const int shift = ii * P;
 
-    int shift;
-    shift = ii * P;
-    int jj = 0;
-    int oo = 0;
-    for (; oo <= (p - 4); oo++) {
-      int pp0 = 0;
-      for (; pp0 <= oo; pp0++) {
-        int pp1 = oo - pp0;
-        if (pp1 >= 0) {
-          if (faceN != NULL) {
-            faceN[shift + jj] = L0[pp0] * L1[pp1] * v;
-          }
-          if (diff_faceN != NULL) {
-            dd = 0;
-            for (; dd < 2; dd++) {
-              diff_faceN[2 * shift + 2 * jj + dd] =
-                  (L0[pp0] * diffL1[dd * (p + 1) + pp1] +
-                   diffL0[dd * (p + 1) + pp0] * L1[pp1]) *
-                  v;
-              diff_faceN[2 * shift + 2 * jj + dd] +=
-                  L0[pp0] * L1[pp1] * diff_v[dd];
-            }
-          }
-          jj++;
+    if (faceN != NULL) {
+      int jj = 0;
+      int oo = 0;
+      for (; oo <= p - 2; ++oo) {
+        int pp0 = 0;
+        for (; pp0 < oo; ++pp0) {
+          int pp1 = oo;
+          faceN[shift + jj] = L0[pp0] * L1[pp1] * v;
+          ++jj;
+          faceN[shift + jj] = L0[pp1] * L1[pp0] * v;
+          ++jj;
         }
+        faceN[shift + jj] = L0[oo] * L1[oo] * v;
+        ++jj;
       }
+      if (jj != P)
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Inconsistent implementation (bug in the code) %d != %d", jj,
+                 P);
     }
-    if (jj != P)
-      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "wrong order %d != %d", jj, P);
+
+    if (diff_faceN != NULL) {
+      int jj = 0;
+      int oo = 0;
+      for (; oo <= p - 2; ++oo) {
+        int pp0 = 0;
+        for (; pp0 < oo; ++pp0) {
+          int pp1 = oo;
+          int dd;
+          for (dd = 0; dd < 2; dd++) {
+            diff_faceN[2 * shift + 2 * jj + dd] =
+                (L0[pp0] * diffL1[dd * (p + 1) + pp1] +
+                 diffL0[dd * (p + 1) + pp0] * L1[pp1]) *
+                    v +
+                L0[pp0] * L1[pp1] * diff_v[dd];
+          }
+          ++jj;
+          for (dd = 0; dd < 2; dd++) {
+            diff_faceN[2 * shift + 2 * jj + dd] =
+                (L0[pp1] * diffL1[dd * (p + 1) + pp0] +
+                 diffL0[dd * (p + 1) + pp1] * L1[pp0]) *
+                    v +
+                L0[pp1] * L1[pp0] * diff_v[dd];
+          }
+          ++jj;
+        }
+        for (dd = 0; dd < 2; dd++) {
+          diff_faceN[2 * shift + 2 * jj + dd] =
+              (L0[oo] * diffL1[dd * (p + 1) + oo] +
+               diffL0[dd * (p + 1) + oo] * L1[oo]) *
+                  v +
+              L0[oo] * L1[oo] * diff_v[dd];
+        }
+        ++jj;
+      }
+      if (jj != P)
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Inconsistent implementation (bug in the code) %d != %d", jj,
+                 P);
+    }
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -1017,9 +1066,9 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
       diff_extrude_zeta23[d] = diff_shape2 + diff_shape3;
       diff_extrude_ksi30[d] = diff_shape0 + diff_shape3;
       diff_bubble_ksi[d] = diff_extrude_ksi12[d] * extrude_ksi30 +
-                            extrude_ksi12 * diff_extrude_ksi30[d];
+                           extrude_ksi12 * diff_extrude_ksi30[d];
       diff_bubble_zeta[d] = diff_extrude_zeta01[d] * extrude_zeta23 +
-                             extrude_zeta01 * diff_extrude_zeta23[d];
+                            extrude_zeta01 * diff_extrude_zeta23[d];
     }
 
     double L01[p[0] + 1], L12[p[1] + 1], L23[p[2] + 1], L30[p[3] + 1];

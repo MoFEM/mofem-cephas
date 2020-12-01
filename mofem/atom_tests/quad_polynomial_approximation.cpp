@@ -270,7 +270,7 @@ MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
       for (auto d : {0, 1}) 
         if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
           SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                   "Wrong directive value (%d) %6.4e != %6.4e", diff_f[d],
+                   "Wrong direvative value (%d) %6.4e != %6.4e", diff_f[d],
                    (*diffFieldVals)(d, gg));
       
 
