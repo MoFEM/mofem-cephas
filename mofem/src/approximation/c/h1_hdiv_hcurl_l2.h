@@ -58,12 +58,12 @@ extern "C" {
 /**
  * @brief Numer of base function on edge for H1 space
  */
-#define NBEDGE_H1(P) (((P) > 0) ? (P - 1) : 0)
+#define NBEDGE_H1(P) (((P) > 1) ? (P - 1) : 0)
 
 /**
  * @brief Number of base function on triangle for H1 space
  */
-#define NBFACETRI_H1(P) (((P) > 1) ? ((P - 2) * (P - 1) / 2) : 0)
+#define NBFACETRI_H1(P) (((P) > 2) ? ((P - 2) * (P - 1) / 2) : 0)
 
 /**
  * @brief Number of base functions on quad for H1 space
@@ -73,7 +73,7 @@ extern "C" {
 /**
  * @brief Number of base functions on quad for L2 space
  */
-#define NBFACEQUAD_L2(P) (((P) > 0) ? ((P - 1) * (P - 1)) : 0)
+#define NBFACEQUAD_L2(P) (((P) > 1) ? ((P - 1) * (P - 1)) : 0)
 
 /**
  * @brief Number of base functions on quad edge for Hcurl space
@@ -87,12 +87,12 @@ extern "C" {
 /**
  * @brief Number of base functions on quad for H1 space
  */
-#define NBFACEQUAD_FULL_H1(P) (((P) > 2) ? ((P - 1) * (P - 1)) : 0)
+#define NBFACEQUAD_FULL_H1(P) (((P) > 1) ? ((P - 1) * (P - 1)) : 0)
 
 /**
  * @brief Number of base functions on tetrahedron for H1 space
  */
-#define NBVOLUMETET_H1(P) (((P) > 2) ? ((P - 3) * (P - 2) * (P - 1) / 6) : 0)
+#define NBVOLUMETET_H1(P) (((P) > 3) ? ((P - 3) * (P - 2) * (P - 1) / 6) : 0)
 
 /**
  * @brief Number of base functions on prism for H1 space
