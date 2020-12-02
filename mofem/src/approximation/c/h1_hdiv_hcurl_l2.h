@@ -97,7 +97,7 @@ extern "C" {
 /**
  * @brief Number of base functions on prism for H1 space
  */
-#define NBVOLUMEPRISM_H1(P) ((P > 4) ? ((P - 2) * (P - 3) * (P - 4) / 6) : 0)
+#define NBVOLUMEPRISM_H1(P) ((P > 3) ? ((P - 2) * (P - 2) * (P - 2)) : 0)
 
 // H curl
 
