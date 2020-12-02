@@ -6,7 +6,6 @@
 
 using namespace MoFEM;
 
-
 struct RefHex {
   RefHex()
       : vertices{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0},
@@ -217,7 +216,9 @@ private:
 
 // Auxilary functions
 
-MoFEMErrorCode MoFEM::Legendre_polynomials01(int p, double s01, double *L) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Legendre_polynomials01(int p,
+                                                                  double s01,
+                                                                  double *L) {
 
   MoFEMFunctionBeginHot;
   double s = 2.0 * s01 - 1.0;
@@ -226,8 +227,9 @@ MoFEMErrorCode MoFEM::Legendre_polynomials01(int p, double s01, double *L) {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Integrated_Legendre01(int p, double s01, double *L,
-                                            double *diffL) {
+MoFEMErrorCode
+MoFEM::DemkowiczHexAndQuad::Integrated_Legendre01(int p, double s01, double *L,
+                                                  double *diffL) {
 
   MoFEMFunctionBeginHot;
 
@@ -249,7 +251,7 @@ MoFEMErrorCode MoFEM::Integrated_Legendre01(int p, double s01, double *L,
 
 */
 MoFEMErrorCode
-MoFEM::H1_BubbleShapeFunctions_ONSEGMENT(int p, double *N, double *bubbleN,
+MoFEM::DemkowiczHexAndQuad::H1_BubbleShapeFunctions_ONSEGMENT(int p, double *N, double *bubbleN,
                                          double *diff_bubbleN,
                                          int nb_integration_pts) {
   MoFEMFunctionBeginHot;
@@ -278,9 +280,8 @@ MoFEM::H1_BubbleShapeFunctions_ONSEGMENT(int p, double *N, double *bubbleN,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::L2_ShapeFunctions_ONSEGMENT(int p, double *N,
-                                                  double *funN,
-                                                  int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_ShapeFunctions_ONSEGMENT(
+    int p, double *N, double *funN, int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   double coords[2] = {0.,
                       1.}; // vertex coordinates of the reference element [0, 1]
@@ -312,10 +313,9 @@ MoFEMErrorCode MoFEM::L2_ShapeFunctions_ONSEGMENT(int p, double *N,
  0-------0------1
 */
 
-MoFEMErrorCode MoFEM::H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
-                                                   double *N, double *edgeN[4],
-                                                   double *diff_edgeN[4],
-                                                   int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONQUAD(
+    int *sense, int *p, double *N, double *edgeN[4], double *diff_edgeN[4],
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   double coords[4][2] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}};
   for (int q = 0; q != nb_integration_pts; q++) {
@@ -367,10 +367,9 @@ MoFEMErrorCode MoFEM::H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::H1_FaceShapeFunctions_ONQUAD(int *p, double *N,
-                                                   double *faceN,
-                                                   double *diff_faceN,
-                                                   int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONQUAD(
+    int *p, double *N, double *faceN, double *diff_faceN,
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   double coords[4][2] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}};
   for (int q = 0; q != nb_integration_pts; q++) {
@@ -419,10 +418,9 @@ MoFEMErrorCode MoFEM::H1_FaceShapeFunctions_ONQUAD(int *p, double *N,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::L2_FaceShapeFunctions_ONQUAD(int *p, double *N,
-                                                   double *faceN,
-                                                   double *diff_faceN,
-                                                   int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_FaceShapeFunctions_ONQUAD(
+    int *p, double *N, double *faceN, double *diff_faceN,
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   double coords[4][2] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}};
   for (int q = 0; q != nb_integration_pts; q++) {
@@ -459,11 +457,9 @@ MoFEMErrorCode MoFEM::L2_FaceShapeFunctions_ONQUAD(int *p, double *N,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
-                                                      double *N,
-                                                      double *edgeN[4],
-                                                      double *curl_edgeN[4],
-                                                      int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
+    int *sense, int *p, double *N, double *edgeN[4], double *curl_edgeN[4],
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   double coords[4][2] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}};
   for (int q = 0; q != nb_integration_pts; q++) {
@@ -517,10 +513,9 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_FaceShapeFunctions_ONQUAD(int *p, double *N,
-                                                      double *faceN[2],
-                                                      double *curl_faceN[2],
-                                                      int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
+    int *p, double *N, double *faceN[2], double *curl_faceN[2],
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   double coords[4][2] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}};
   for (int q = 0; q != nb_integration_pts; q++) {
@@ -576,10 +571,9 @@ MoFEMErrorCode MoFEM::Hcurl_FaceShapeFunctions_ONQUAD(int *p, double *N,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hdiv_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
-                                                     double *N, double *edgeN[],
-                                                     double *div_edgeN[],
-                                                     int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_EdgeShapeFunctions_ONQUAD(
+    int *sense, int *p, double *N, double *edgeN[], double *div_edgeN[],
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   double coords[4][2] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}};
   for (int q = 0; q != nb_integration_pts; q++) {
@@ -633,10 +627,9 @@ MoFEMErrorCode MoFEM::Hdiv_EdgeShapeFunctions_ONQUAD(int *sense, int *p,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
-                                                     double *faceN[],
-                                                     double *div_faceN[],
-                                                     int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONQUAD(
+    int *p, double *N, double *faceN[], double *div_faceN[],
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   double coords[4][2] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}};
   for (int q = 0; q != nb_integration_pts; q++) {
@@ -718,10 +711,9 @@ MoFEMErrorCode MoFEM::Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
         6. 4 5 6 7
 */
 
-MoFEMErrorCode MoFEM::H1_EdgeShapeFunctions_ONHEX(int *sense, int *p, double *N,
-                                                  double *edgeN[12],
-                                                  double *diff_edgeN[12],
-                                                  int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
+    int *sense, int *p, double *N, double *edgeN[12], double *diff_edgeN[12],
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
 
@@ -777,10 +769,9 @@ MoFEMErrorCode MoFEM::H1_EdgeShapeFunctions_ONHEX(int *sense, int *p, double *N,
   MoFEMFunctionReturnHot(0);
 }
 // TODO
-MoFEMErrorCode MoFEM::H1_FaceShapeFunctions_ONHEX(int *face_nodes[6], int *p,
-                                                  double *N, double *faceN[6],
-                                                  double *diff_faceN[6],
-                                                  int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
+    int *face_nodes[6], int *p, double *N, double *faceN[6],
+    double *diff_faceN[6], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
 
   RefHex ref_hex;
@@ -852,10 +843,9 @@ MoFEMErrorCode MoFEM::H1_FaceShapeFunctions_ONHEX(int *face_nodes[6], int *p,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::H1_InteriorShapeFunctions_ONHEX(int *p, double *N,
-                                                      double *faceN,
-                                                      double *diff_faceN,
-                                                      int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
+    int *p, double *N, double *faceN, double *diff_faceN,
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
 
@@ -918,9 +908,8 @@ MoFEMErrorCode MoFEM::H1_InteriorShapeFunctions_ONHEX(int *p, double *N,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::L2_InteriorShapeFunctions_ONHEX(int *p, double *N,
-                                                      double *volN,
-                                                      int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
+    int *p, double *N, double *volN, int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
   for (int qq = 0; qq != nb_integration_pts; qq++) {
@@ -957,11 +946,9 @@ MoFEMErrorCode MoFEM::L2_InteriorShapeFunctions_ONHEX(int *p, double *N,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_EdgeShapeFunctions_ONHEX(int *sense, int *p,
-                                                     double *N,
-                                                     double *edgeN[12],
-                                                     double *curl_edgeN[12],
-                                                     int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONHEX(
+    int *sense, int *p, double *N, double *edgeN[12], double *curl_edgeN[12],
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
 
@@ -1023,11 +1010,9 @@ MoFEMErrorCode MoFEM::Hcurl_EdgeShapeFunctions_ONHEX(int *sense, int *p,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hcurl_FaceShapeFunctions_ONHEX(int *face_nodes[6], int *p,
-                                                     double *N,
-                                                     double *faceN[6][2],
-                                                     double *curl_faceN[6][2],
-                                                     int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONHEX(
+    int *face_nodes[6], int *p, double *N, double *faceN[6][2],
+    double *curl_faceN[6][2], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
   for (int qq = 0; qq != nb_integration_pts; qq++) {
@@ -1119,10 +1104,9 @@ MoFEMErrorCode MoFEM::Hcurl_FaceShapeFunctions_ONHEX(int *face_nodes[6], int *p,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode
-MoFEM::Hcurl_InteriorShapeFunctions_ONHEX(int *p, double *N, double *volN[3],
-                                          double *curl_volN[3],
-                                          int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_InteriorShapeFunctions_ONHEX(
+    int *p, double *N, double *volN[3], double *curl_volN[3],
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
 
@@ -1218,10 +1202,9 @@ MoFEM::Hcurl_InteriorShapeFunctions_ONHEX(int *p, double *N, double *volN[3],
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::Hdiv_FaceShapeFunctions_ONHEX(int *face_nodes[6], int *p,
-                                                    double *N, double *faceN[6],
-                                                    double *div_faceN[6],
-                                                    int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONHEX(
+    int *face_nodes[6], int *p, double *N, double *faceN[6],
+    double *div_faceN[6], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
 
@@ -1285,10 +1268,9 @@ MoFEMErrorCode MoFEM::Hdiv_FaceShapeFunctions_ONHEX(int *face_nodes[6], int *p,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode
-MoFEM::Hdiv_InteriorShapeFunctions_ONHEX(int *p, double *N, double *bubbleN[3],
-                                         double *div_bubbleN[3],
-                                         int nb_integration_pts) {
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_InteriorShapeFunctions_ONHEX(
+    int *p, double *N, double *bubbleN[3], double *div_bubbleN[3],
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
 

@@ -11,6 +11,7 @@
 #define __EDGE_QUAD_HEX_HPP__
 
 namespace MoFEM {
+namespace DemkowiczHexAndQuad {
 
 MoFEMErrorCode Legendre_polynomials01(int p, double s, double *L);
 
@@ -197,6 +198,7 @@ MoFEMErrorCode Hdiv_InteriorShapeFunctions_ONHEX(int *p, double *N,
                                                  double *div_bubleN[3],
                                                  int nb_integration_pts);
 
+} // namespace DemkowiczHexAndQuad
 
 } // namespace MoFEM
 

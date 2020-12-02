@@ -18,6 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 using namespace MoFEM;
+using namespace MoFEM::DemkowiczHexAndQuad;
 
 QuadPolynomialBase::QuadPolynomialBase() {}
 QuadPolynomialBase::~QuadPolynomialBase() {}
