@@ -2,7 +2,7 @@
 
   \brief Implementation of base functions on 1D segment (Edge), .
 
-  Based on Hierarchic Finite Element Bases on Unstructured QUADS (2D) 
+  Based on Hierarchic Finite Element Bases on Unstructured QUADS (2D)
   and HEXES (3D) Meshes
 
 */
@@ -12,12 +12,9 @@
 
 namespace MoFEM {
 
-
-
 MoFEMErrorCode Legendre_polynomials01(int p, double s, double *L);
 
-MoFEMErrorCode Integrated_Legendre01(int p, double s, double *L,
-                                          double *diffL);
+MoFEMErrorCode Integrated_Legendre01(int p, double s, double *L, double *diffL);
 
 MoFEMErrorCode Face_orientMat(int *face_nodes, double orientMat[2][2]);
 
@@ -29,7 +26,7 @@ Segment (1d) basis functions
 MoFEMErrorCode H1_BubbleShapeFunctions_ONSEGMENT(int p, double *L,
                                                  double *bubbleN,
                                                  double *diff_bubbleN,
-                                                int nb_integration_pts);
+                                                 int nb_integration_pts);
 
 MoFEMErrorCode L2_ShapeFunctions_ONSEGMENT(int p, double *L, double *funN,
                                            int nb_integration_pts);
@@ -87,7 +84,8 @@ Legendre)
 * @return                  error code
 */
 MoFEMErrorCode H1_FaceShapeFunctions_ONQUAD(int *p, double *N, double *faceN,
-                                            double *diff_faceN, int nb_integration_pts);
+                                            double *diff_faceN,
+                                            int nb_integration_pts);
 
 /**
 * \brief L2 Face base functions on Quad
@@ -105,8 +103,9 @@ integration point
 Legendre)
 * @return                  error code
 */
-MoFEMErrorCode L2_FaceShapeFunctions_ONQUAD(int *p, double *N, 
-                                            double *face_buble, double *diff_face_bubble,
+MoFEMErrorCode L2_FaceShapeFunctions_ONQUAD(int *p, double *N,
+                                            double *face_buble,
+                                            double *diff_face_bubble,
                                             int nb_integration_pts);
 
 MoFEMErrorCode Hcurl_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
@@ -120,14 +119,14 @@ MoFEMErrorCode Hcurl_FaceShapeFunctions_ONQUAD(int *p, double *N,
                                                int nb_integration_pts);
 
 MoFEMErrorCode Hdiv_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
-                                               double *edgeN[],
-                                               double *div_edgeN[],
-                                               int nb_integration_pts);
+                                              double *edgeN[],
+                                              double *div_edgeN[],
+                                              int nb_integration_pts);
 
 MoFEMErrorCode Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
-                                               double *faceN[],
-                                               double *div_faceN[],
-                                               int nb_integration_pts);
+                                              double *faceN[],
+                                              double *div_faceN[],
+                                              int nb_integration_pts);
 
 /* Reference Hex and its canonical vertex and edge numbering
                8 ---------11--------- 7
@@ -156,63 +155,47 @@ MoFEMErrorCode Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
         6. 5 6 7 8
 */
 
-MoFEMErrorCode H1_EdgeShapeFunctions_ONHEX(int        *sense, 
-                                           int         *p,   
-                                           double      *N,
-                                           double      *edgeN[12],
-                                           double      *diff_edgeN[12],
-                                           int         nb_integration_pts);
+MoFEMErrorCode H1_EdgeShapeFunctions_ONHEX(int *sense, int *p, double *N,
+                                           double *edgeN[12],
+                                           double *diff_edgeN[12],
+                                           int nb_integration_pts);
 
-MoFEMErrorCode H1_FaceShapeFunctions_ONHEX(int        *face_nodes[6],
-                                           int        *p, 
-                                           double     *N, 
-                                           double     *faceN[6],
-                                           double     *diff_faceN[6],
-                                           int        nb_integration_pts);
+MoFEMErrorCode H1_FaceShapeFunctions_ONHEX(int *face_nodes[6], int *p,
+                                           double *N, double *faceN[6],
+                                           double *diff_faceN[6],
+                                           int nb_integration_pts);
 
-MoFEMErrorCode H1_InteriorShapeFunctions_ONHEX(int       *p, 
-                                               double    *N,
-                                               double    *faceN,
-                                               double    *diff_faceN,
-                                               int       nb_integration_pts);
+MoFEMErrorCode H1_InteriorShapeFunctions_ONHEX(int *p, double *N, double *faceN,
+                                               double *diff_faceN,
+                                               int nb_integration_pts);
 
-MoFEMErrorCode L2_InteriorShapeFunctions_ONHEX(int        *p, 
-                                           double     *N,
-                                           double     *volN,
-                                           int        nb_integration_pts);
+MoFEMErrorCode L2_InteriorShapeFunctions_ONHEX(int *p, double *N, double *volN,
+                                               int nb_integration_pts);
 
-MoFEMErrorCode Hcurl_EdgeShapeFunctions_ONHEX(int       *sense, 
-                                              int       *p, 
-                                              double    *N,
-                                              double    *edgeN[12],
-                                              double    *curl_edgeN[12],
-                                              int       nb_integration_pts);
-
-MoFEMErrorCode Hcurl_FaceShapeFunctions_ONHEX(int *face_nodes[6],
-                                              int       *p, 
-                                              double    *N,
-                                              double    *faceN[6][2],
-                                              double    *curl_faceN[6][2],
-                                              int       nb_integration_pts);
-
-MoFEMErrorCode Hcurl_InteriorShapeFunctions_ONHEX(int *p, 
-                                              double *N,
-                                              double *volN[3],
-                                              double *curl_volN[3],
+MoFEMErrorCode Hcurl_EdgeShapeFunctions_ONHEX(int *sense, int *p, double *N,
+                                              double *edgeN[12],
+                                              double *curl_edgeN[12],
                                               int nb_integration_pts);
 
-MoFEMErrorCode Hdiv_FaceShapeFunctions_ONHEX(int       *sense[6], 
-                                             int       *p, 
-                                             double    *N,
-                                             double    *faceN[6],
-                                             double    *div_faceN[6],
-                                             int       nb_integration_pts);
+MoFEMErrorCode Hcurl_FaceShapeFunctions_ONHEX(int *face_nodes[6], int *p,
+                                              double *N, double *faceN[6][2],
+                                              double *curl_faceN[6][2],
+                                              int nb_integration_pts);
 
-MoFEMErrorCode Hdiv_InteriorShapeFunctions_ONHEX(int      *p, 
-                                                 double   *N,
-                                                 double   *bubleN[3],
-                                                 double   *div_bubleN[3],
-                                                 int      nb_integration_pts);
+MoFEMErrorCode Hcurl_InteriorShapeFunctions_ONHEX(int *p, double *N,
+                                                  double *volN[3],
+                                                  double *curl_volN[3],
+                                                  int nb_integration_pts);
+
+MoFEMErrorCode Hdiv_FaceShapeFunctions_ONHEX(int *sense[6], int *p, double *N,
+                                             double *faceN[6],
+                                             double *div_faceN[6],
+                                             int nb_integration_pts);
+
+MoFEMErrorCode Hdiv_InteriorShapeFunctions_ONHEX(int *p, double *N,
+                                                 double *bubleN[3],
+                                                 double *div_bubleN[3],
+                                                 int nb_integration_pts);
 
 struct RefHex {
   RefHex()
@@ -279,14 +262,15 @@ struct RefHex {
       }
     }
   }
-  void get_edge_coords(int *sense, double (&volume_coords)[3], double (&edge_coords)[12]) {
+  void get_edge_coords(int *sense, double (&volume_coords)[3],
+                       double (&edge_coords)[12]) {
 
     int free_edge_coords[12] = {0, 1, 0, 1, 2, 2, 2, 2, 0, 1, 0, 1};
 
     for (int ee = 0; ee < 12; ee++) {
       int cc = free_edge_coords[ee];
-      edge_coords[ee] =
-          (double)sense[ee] * volume_coords[cc] + 0.5 * (1.0 - (double)sense[ee]);
+      edge_coords[ee] = (double)sense[ee] * volume_coords[cc] +
+                        0.5 * (1.0 - (double)sense[ee]);
     }
   }
   void get_edge_diff_coords(int *sense, double (&edge_diff_coords)[12][3]) {
@@ -297,7 +281,7 @@ struct RefHex {
     for (int ee = 0; ee < 12; ee++) {
       for (int cc = 0; cc < 3; cc++) {
         int n = free_edge_coords[ee];
-        edge_diff_coords[ee][cc] = (double) sense[ee] * diff_coords[n][cc];
+        edge_diff_coords[ee][cc] = (double)sense[ee] * diff_coords[n][cc];
       }
     }
   }
@@ -330,7 +314,7 @@ struct RefHex {
   }
 
   void get_face_coords(int *face_nodes[6], double (&Nq)[8],
-                         double (&face_coords)[6][2]) {
+                       double (&face_coords)[6][2]) {
 
     int par_face_nodes[6][8] = {
         {4, 5, 6, 7, 0, 1, 2, 3}, {3, 2, 1, 0, 7, 6, 5, 4},
