@@ -151,9 +151,9 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
       diffH1edgeN[ee] = &*ent_dat.getDiffN(base).data().begin();
     }
     int pp[2] = {order[0], order[1]};
-    CHKERR H1_EdgeShapeFunctions_ONQUAD(
-        sense, pp, &*vert_dat.getN(base).data().begin(), H1edgeN, diffH1edgeN,
-        nb_gauss_pts);
+    CHKERR H1_EdgeShapeFunctions_ONQUAD(sense, pp,
+                                        &*vert_dat.getN(base).data().begin(),
+                                        H1edgeN, diffH1edgeN, nb_gauss_pts);
   }
 
   if (data.spacesOnEntities[MBQUAD].test(H1)) {
@@ -170,8 +170,8 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
     ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
     ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
 
-    CHKERR H1_FaceShapeFunctions_ONQUAD(order,
-        &*vert_dat.getN(base).data().begin(),
+    CHKERR H1_FaceShapeFunctions_ONQUAD(
+        order, &*vert_dat.getN(base).data().begin(),
         &*ent_dat.getN(base).data().begin(),
         &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
   }
@@ -194,20 +194,19 @@ MoFEMErrorCode QuadPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
   int nb_gauss_pts = pts.size2();
   auto &vert_dat = data.dataOnEntities[MBVERTEX][0];
 
-    auto &ent_dat = data.dataOnEntities[MBQUAD][0];
-    int p = ent_dat.getDataOrder();
-    int order[2] = {p, p};
-    int nb_dofs = NBFACEQUAD_L2(p);
-    ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
-    ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
+  auto &ent_dat = data.dataOnEntities[MBQUAD][0];
+  int p = ent_dat.getDataOrder();
+  int order[2] = {p, p};
+  int nb_dofs = NBFACEQUAD_L2(p);
+  ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
+  ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
 
-    CHKERR L2_FaceShapeFunctions_ONQUAD(
-        order,
-        &*vert_dat.getN(base).data().begin(),
-        &*ent_dat.getN(base).data().begin(),
-        &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
+  CHKERR L2_FaceShapeFunctions_ONQUAD(
+      order, &*vert_dat.getN(base).data().begin(),
+      &*ent_dat.getN(base).data().begin(),
+      &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
 
-    MoFEMFunctionReturn(0);
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
@@ -223,10 +222,9 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
   if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
 
     if (data.dataOnEntities[MBEDGE].size() != 4)
-      SETERRQ1(
-          PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-          "wrong number of edges on quad, should be 4 but is %d",
-          data.dataOnEntities[MBEDGE].size());
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "wrong number of edges on quad, should be 4 but is %d",
+               data.dataOnEntities[MBEDGE].size());
 
     int sense[4], order[4];
     double *hcurl_edge_n[4];
@@ -254,11 +252,9 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     }
     int pp[2] = {order[0], order[1]};
     CHKERR Hcurl_EdgeShapeFunctions_ONQUAD(
-        sense, pp,
-        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        sense, pp, &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         hcurl_edge_n, curl_edge_n, nb_gauss_pts);
-
-  } 
+  }
 
   if (data.spacesOnEntities[MBQUAD].test(HCURL)) {
 
@@ -271,8 +267,7 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
     double *hcurl_curl_face_n[2];
     int p = data.dataOnEntities[MBQUAD][0].getDataOrder();
     int order[2] = {p, p};
-    for (int typ = 0; typ != 2; typ++)
-    {
+    for (int typ = 0; typ != 2; typ++) {
       int nb_dofs = NBFACE_TYP_QUAD_FULL_HCURL(p);
       data.dataOnEntities[MBQUAD][typ].getN(base).resize(nb_gauss_pts,
                                                          2 * nb_dofs, false);
@@ -283,14 +278,11 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
       hcurl_curl_face_n[typ] =
           &*data.dataOnEntities[MBQUAD][typ].getDiffN(base).data().begin();
     }
-  
-    CHKERR Hcurl_FaceShapeFunctions_ONQUAD(order,
-        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-        hcurl_val_face_n,
-        hcurl_curl_face_n,
-        nb_gauss_pts);
 
-  } 
+    CHKERR Hcurl_FaceShapeFunctions_ONQUAD(
+        order, &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        hcurl_val_face_n, hcurl_curl_face_n, nb_gauss_pts);
+  }
   MoFEMFunctionReturn(0);
 }
 
