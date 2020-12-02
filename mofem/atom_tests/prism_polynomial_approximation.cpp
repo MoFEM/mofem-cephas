@@ -149,10 +149,10 @@ int main(int argc, char *argv[]) {
     CHKERR m_field.add_ents_to_field_by_type(0, MBPRISM, "FIELD1");
 
     CHKERR m_field.set_field_order(0, MBVERTEX, "FIELD1", 1);
-    CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", approx_order + 1);
-    CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", approx_order + 1);
-    CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", approx_order + 1);
-    CHKERR m_field.set_field_order(0, MBPRISM, "FIELD1", approx_order + 1);
+    CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", approx_order);
+    CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", approx_order);
+    CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", approx_order);
+    CHKERR m_field.set_field_order(0, MBPRISM, "FIELD1", approx_order);
     CHKERR m_field.build_fields();
 
     // FE
@@ -278,19 +278,22 @@ MoFEMErrorCode PrismOpCheck::doWork(int side, EntityType type,
       double f = ApproxFunction::fun(t_coords(0), t_coords(1), t_coords(2));
       VectorDouble3 diff_f =
           ApproxFunction::diff_fun(t_coords(0), t_coords(1), t_coords(2));
-      constexpr double eps = 1e-6;
-      if (std::abs(f - (*fieldVals)[gg]) > eps)
-        SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                 "Wrong value %6.4e != %6.4e (%6.4e)", f, (*fieldVals)[gg],
-                 f - (*fieldVals)[gg]);
-      
+
       std::cout << f - (*fieldVals)[gg] << " : ";
       for (auto d : {0, 1, 2}) 
         std::cout << diff_f[d] - (*diffFieldVals)(d, gg) << " ";
       std::cout << std::endl;
-
+          
+      constexpr double eps = 1e-6;
+      if (std::abs(f - (*fieldVals)[gg]) > eps ||
+          !std::isnormal((*fieldVals)[gg]))
+        SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Wrong value %6.4e != %6.4e (%6.4e)", f, (*fieldVals)[gg],
+                 f - (*fieldVals)[gg]);
+      
       for (auto d : {0, 1, 2})
-        if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
+        if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps ||
+            !std::isnormal((*diffFieldVals)(d, gg)))
           SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong diff value %6.4e != %6.4e (%6.4e)", diff_f[d],
                    (*diffFieldVals)(d, gg),

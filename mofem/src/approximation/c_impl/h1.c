@@ -807,28 +807,49 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
 
     int shift = ii * P;
 
-    int jj = 0;
-    int oo = 5;
-    for (; oo <= p; ++oo) {
+    if (volumeN != NULL) {
+      int jj = 0;
+      int oo, pp0, pp1, zz;
+      for (oo = 0; oo <= p - 3; ++oo) {
+        for (pp0 = 0; pp0 < oo; ++pp0) {
+          for (pp1 = 0; pp1 < oo; ++pp1) {
+            const int perm[3][3] = {
+                {oo, pp0, pp1}, {pp0, oo, pp1}, {pp0, pp1, oo}};
+            for (zz = 0; zz != 3; ++zz) {
+              volumeN[shift + jj] =
+                  L0[perm[zz][0]] * L1[perm[zz][1]] * L2[perm[zz][2]] * v;
+              ++jj;
+            }
+          }
+          const int perm[3][3] = {{pp0, oo, oo}, {oo, pp0, oo}, {oo, oo, pp0}};
+          for (zz = 0; zz != 3; ++zz) {
+            volumeN[shift + jj] =
+                L0[perm[zz][0]] * L1[perm[zz][1]] * L2[perm[zz][2]] * v;
+            ++jj;
+          }
+        }
+        volumeN[shift + jj] = L0[oo] * L1[oo] * L2[oo] * v;
+        ++jj;
+      }
+      if (jj != P)
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Inconsistent implementation (bug in the code) %d != %d", jj,
+                 P);
+    }
 
-      int oo_ksi_eta = 3;
-      for (; oo_ksi_eta <= oo; ++oo_ksi_eta) {
-
-        int oo_zeta = oo - oo_ksi_eta;
-        if (oo_zeta >= 2) {
-
-          int k = oo_zeta - 2;
-
-          int i = 0;
-          for (; i <= (oo_ksi_eta - 3); ++i) {
-            int j = (oo_ksi_eta - 3) - i;
-
-            if (volumeN != NULL)
-              volumeN[shift + jj] = L0[i] * L1[j] * L2[k] * v;
-
-            if (diff_volumeN != NULL) {
-              dd = 0;
-              for (; dd < 3; dd++) {
+    if (diff_volumeN != NULL) {
+      int jj = 0;
+      int oo, pp0, pp1, zz, dd;
+      for (oo = 0; oo <= p - 3; ++oo) {
+        for (pp0 = 0; pp0 < oo; ++pp0) {
+          for (pp1 = 0; pp1 < oo; ++pp1) {
+            const int perm[3][3] = {
+                {oo, pp0, pp1}, {pp0, oo, pp1}, {pp0, pp1, oo}};
+            for (zz = 0; zz != 3; ++zz) {
+              const int i = perm[zz][0];
+              const int j = perm[zz][1];
+              const int k = perm[zz][2];
+              for (dd = 0; dd != 3; ++dd) {
                 diff_volumeN[3 * shift + 3 * jj + dd] =
                     (diffL0[dd * (p + 1) + i] * L1[j] * L2[k] +
                      L0[i] * diffL1[dd * (p + 1) + j] * L2[k] +
@@ -836,17 +857,45 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
                         v +
                     L0[i] * L1[j] * L2[k] * diff_v[dd];
               }
+              ++jj;
             }
-
+          }
+          const int perm[3][3] = {{pp0, oo, oo}, {oo, pp0, oo}, {oo, oo, pp0}};
+          for (zz = 0; zz != 3; ++zz) {
+            const int i = perm[zz][0];
+            const int j = perm[zz][1];
+            const int k = perm[zz][2];
+            for (dd = 0; dd != 3; ++dd) {
+              diff_volumeN[3 * shift + 3 * jj + dd] =
+                  (diffL0[dd * (p + 1) + i] * L1[j] * L2[k] +
+                   L0[i] * diffL1[dd * (p + 1) + j] * L2[k] +
+                   L0[i] * L1[j] * diffL2[dd * (p + 1) + k]) *
+                      v +
+                  L0[i] * L1[j] * L2[k] * diff_v[dd];
+            }
             ++jj;
           }
         }
-      }
-    }
 
-    if (jj != P)
-      SETERRQ3(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-               "wrong order %d != %d (%d order)", jj, P, p);
+        const int i = oo;
+        const int j = oo;
+        const int k = oo;
+        for (dd = 0; dd != 3; ++dd) {
+          diff_volumeN[3 * shift + 3 * jj + dd] =
+              (diffL0[dd * (p + 1) + i] * L1[j] * L2[k] +
+               L0[i] * diffL1[dd * (p + 1) + j] * L2[k] +
+               L0[i] * L1[j] * diffL2[dd * (p + 1) + k]) *
+                  v +
+              L0[i] * L1[j] * L2[k] * diff_v[dd];
+        }
+
+        ++jj;
+      }
+      if (jj != P)
+        SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Inconsistent implementation (bug in the code) %d != %d", jj,
+                 P);
+    }
   }
   MoFEMFunctionReturnHot(0);
 }
