@@ -223,17 +223,14 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Legendre_polynomials01(int p,
   MoFEMFunctionBeginHot;
   double s = 2.0 * s01 - 1.0;
   CHKERR Legendre_polynomials(p, s, NULL, L, NULL, 1);
-
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode
 MoFEM::DemkowiczHexAndQuad::Integrated_Legendre01(int p, double s01, double *L,
                                                   double *diffL) {
-
   MoFEMFunctionBeginHot;
-
-  double l[p + 1];
+  double l[p + 3];
   CHKERR Legendre_polynomials01(p, s01, l);
   if (p >= 2) {
     for (int i = 0; i != p - 1; i++) {
@@ -242,7 +239,6 @@ MoFEM::DemkowiczHexAndQuad::Integrated_Legendre01(int p, double s01, double *L,
       diffL[i] = l[i + 1];
     }
   }
-
   MoFEMFunctionReturnHot(0);
 }
 /*
@@ -432,7 +428,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_FaceShapeFunctions_ONQUAD(
       eta += coords[vv][1] * N[shift + vv];
     }
 
-    // Affine coordinates of each eadge mu0 and mu1
+    // Affine coordinates of each edge mu0 and mu1
     double mu_ksi[2] = {1.0 - ksi, ksi};
     double mu_eta[2] = {1.0 - eta, eta};
 

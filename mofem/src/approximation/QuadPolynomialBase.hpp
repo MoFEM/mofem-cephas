@@ -47,11 +47,8 @@ private:
   MoFEMErrorCode getValueH1(MatrixDouble &pts);
   MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueH1DemkowiczBase(MatrixDouble &pts);
-
   MoFEMErrorCode getValueL2DemkowiczBase(MatrixDouble &pts);
-
   MoFEMErrorCode getValueHcurlDemkowiczBase(MatrixDouble &pts);
-
   MoFEMErrorCode getValueHdivDemkowiczBase(MatrixDouble &pts);
 
   ublas::matrix<MatrixDouble> N_face_edge;

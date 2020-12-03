@@ -1067,6 +1067,10 @@ MoFEMErrorCode ForcesAndSourcesCore::calHierarchicalBaseFunctionsOnElement() {
   for (int space = HCURL; space != LASTSPACE; ++space) {
     dataOnElement[space]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) =
         dataOnElement[H1]->dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+    dataOnElement[space]->dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(
+        NOBASE) =
+        dataOnElement[H1]->dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(
+            NOBASE);
   }
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
     CHKERR calHierarchicalBaseFunctionsOnElement(

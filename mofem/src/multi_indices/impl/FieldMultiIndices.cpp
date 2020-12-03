@@ -169,6 +169,7 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
         };
         forderTable[MBEDGE] = [](int P) -> int { return NBEDGE_L2(P); };
         forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_L2(P); };
+        forderTable[MBQUAD] = [](int P) -> int { return NBFACEQUAD_L2(P); };
         forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_L2(P); };
         break;
       default:
@@ -177,6 +178,14 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
       break;
     case DEMKOWICZ_JACOBI_BASE:
       switch (*tagSpaceData) {
+      case H1:
+        forderTable[MBVERTEX] = [](int P) -> int { return (P > 0) ? 1 : 0; };
+        forderTable[MBEDGE] = [](int P) -> int { return NBEDGE_H1(P); };
+        forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_H1(P); };
+        forderTable[MBQUAD] = [](int P) -> int { return NBFACEQUAD_H1(P); };
+        forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_H1(P); };
+        forderTable[MBPRISM] = [](int P) -> int { return NBVOLUMEPRISM_H1(P); };
+        break;
       case HCURL:
         forderTable[MBVERTEX] = [](int P) -> int {
           (void)P;
@@ -207,6 +216,16 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
         forderTable[MBTET] = [](int P) -> int {
           return NBVOLUMETET_DEMKOWICZ_HDIV(P);
         };
+        break;
+      case L2:
+        forderTable[MBVERTEX] = [](int P) -> int {
+          (void)P;
+          return 1;
+        };
+        forderTable[MBEDGE] = [](int P) -> int { return NBEDGE_L2(P); };
+        forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_L2(P); };
+        forderTable[MBQUAD] = [](int P) -> int { return NBFACEQUAD_L2(P); };
+        forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_L2(P); };
         break;
       default:
         THROW_MESSAGE("unknown approximation space or not yet implemented");

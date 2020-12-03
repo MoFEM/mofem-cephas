@@ -73,7 +73,7 @@ extern "C" {
 /**
  * @brief Number of base functions on quad for L2 space
  */
-#define NBFACEQUAD_L2(P) (((P) > 1) ? ((P - 1) * (P - 1)) : 0)
+#define NBFACEQUAD_L2(P) (((P) > 0) ? P * P : 0)
 
 /**
  * @brief Number of base functions on quad edge for Hcurl space
@@ -84,10 +84,6 @@ extern "C" {
  * @brief Number of base functions on quad for Hcurl space
  */
 #define NBFACE_TYP_QUAD_FULL_HCURL(P) (((P) > 1) ? P * (P - 1) : 0)
-/**
- * @brief Number of base functions on quad for H1 space
- */
-#define NBFACEQUAD_FULL_H1(P) (((P) > 1) ? ((P - 1) * (P - 1)) : 0)
 
 /**
  * @brief Number of base functions on tetrahedron for H1 space

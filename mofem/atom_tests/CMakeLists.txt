@@ -827,7 +827,8 @@ add_test(forces_and_sources_h1_continuity_check_atom
 )
 
 # Check approxination on H1 space in 2d
-my_add_executable(scalar_check_approximation_2d scalar_check_approximation_2d.cpp)
+my_add_executable(
+  scalar_check_approximation_2d scalar_check_approximation_2d.cpp)
 target_link_libraries(scalar_check_approximation_2d
   mofem_finite_elements
   mofem_interfaces
@@ -855,6 +856,7 @@ add_test(h1_check_approx_2d_bernstein
 add_test(l2_check_approx_2d_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle.h5m
   -base ainsworth -space l2 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
@@ -862,6 +864,7 @@ add_test(l2_check_approx_2d_ainsworth
 add_test(l2_check_approx_2d_bernstein
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle.h5m
   -base bernstein -space l2 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
@@ -1890,11 +1893,32 @@ target_link_libraries(quad_polynomial_approximation
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(quad_polynomial_approximation
+add_test(
+  quad_polynomial_approximation_h1_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation -pc_type lu
-  -log_no_color
-)
+  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
+  -pc_type lu
+  -base ainsworth
+  -space h1
+  -log_no_color)
+
+add_test(
+  quad_polynomial_approximation_h1_demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
+  -pc_type lu
+  -base demkowicz
+  -space h1
+  -log_no_color)
+
+add_test(
+  quad_polynomial_approximation_l2_demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
+  -pc_type lu
+  -base demkowicz
+  -space l2
+  -log_no_color)
 
 my_add_executable(
   bernstein_bezier_generate_base

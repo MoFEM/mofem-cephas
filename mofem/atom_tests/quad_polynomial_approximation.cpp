@@ -98,6 +98,37 @@ int main(int argc, char *argv[]) {
 
   try {
 
+    // Declare elements
+    enum bases { AINSWORTH, DEMKOWICZ, BERNSTEIN, LASBASETOP };
+    const char *list_bases[] = {"ainsworth", "demkowicz", "bernstein"};
+    PetscBool flg;
+    PetscInt choice_base_value = AINSWORTH;
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
+                                LASBASETOP, &choice_base_value, &flg);
+
+    if (flg != PETSC_TRUE)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "base not set");
+    FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
+    if (choice_base_value == AINSWORTH)
+      base = AINSWORTH_LEGENDRE_BASE;
+    else if (choice_base_value == DEMKOWICZ)
+      base = DEMKOWICZ_JACOBI_BASE;
+    else if (choice_base_value == BERNSTEIN)
+      base = AINSWORTH_BERNSTEIN_BEZIER_BASE;
+
+    enum spaces { H1SPACE, L2SPACE, LASBASETSPACE };
+    const char *list_spaces[] = {"h1", "l2"};
+    PetscInt choice_space_value = H1SPACE;
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
+                                LASBASETSPACE, &choice_space_value, &flg);
+    if (flg != PETSC_TRUE)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "space not set");
+    FieldSpace space = H1;
+    if (choice_space_value == H1SPACE)
+      space = H1;
+    else if (choice_space_value == L2SPACE)
+      space = L2;
+
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
 
@@ -128,12 +159,12 @@ int main(int argc, char *argv[]) {
         0, 2, bit_level0);
 
     // Fields
-    CHKERR m_field.add_field("FIELD1", H1, AINSWORTH_LEGENDRE_BASE, 1);
+    CHKERR m_field.add_field("FIELD1", space, base, 1);
     CHKERR m_field.add_ents_to_field_by_type(0, MBQUAD, "FIELD1");
 
     CHKERR m_field.set_field_order(0, MBVERTEX, "FIELD1", 1);
-    CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", approx_order);
-    CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", approx_order);
+    CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", approx_order + 1);
+    CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", approx_order + 1);
     CHKERR m_field.build_fields();
 
     // FE
@@ -186,8 +217,10 @@ int main(int argc, char *argv[]) {
       Ele fe(m_field);
       fe.getRuleHook = rule;
       MatrixDouble inv_jac;
-      fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
-      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
+      if (space != L2) {
+        fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+        fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
+      }
       fe.getOpPtrVector().push_back(new QuadOpRhs(F));
       fe.getOpPtrVector().push_back(new QuadOpLhs(A));
       CHKERR VecZeroEntries(F);
@@ -220,13 +253,18 @@ int main(int argc, char *argv[]) {
       fe.getRuleHook = rule;
       boost::shared_ptr<VectorDouble> field_vals_ptr(new VectorDouble());
       boost::shared_ptr<MatrixDouble> diff_field_vals_ptr(new MatrixDouble());
+      if (space == L2)
+        fe.getOpPtrVector().push_back(
+            new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr, MBQUAD));
       MatrixDouble inv_jac;
-      fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
-      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
-      fe.getOpPtrVector().push_back(
-          new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr));
-      fe.getOpPtrVector().push_back(
-          new OpCalculateScalarFieldGradient<2>("FIELD1", diff_field_vals_ptr));
+      if (space != L2) {
+        fe.getOpPtrVector().push_back(
+            new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr));
+        fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+        fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
+        fe.getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<2>(
+            "FIELD1", diff_field_vals_ptr));
+      }
       fe.getOpPtrVector().push_back(
           new QuadOpCheck(field_vals_ptr, diff_field_vals_ptr));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "QUAD", fe);
@@ -252,27 +290,31 @@ MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
                                    DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (type == MBVERTEX) {
+  if (type == MBQUAD) {
     const int nb_gauss_pts = data.getN().size1();
     auto t_coords = getFTensor1CoordsAtGaussPts();
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
       double f = ApproxFunction::fun(t_coords(0), t_coords(1));
       constexpr double eps = 1e-6;
+
+      std::cout << f - (*fieldVals)[gg] << std::endl;
+
       if (std::abs(f - (*fieldVals)[gg]) > eps)
-        SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                 "Wrong value %6.4e != %6.4e", f, (*fieldVals)[gg]);
-      VectorDouble3 diff_f = ApproxFunction::diff_fun(t_coords(0), t_coords(1));
+        SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                 "Wrong value %d : %6.4e != %6.4e", gg, f, (*fieldVals)[gg]);
 
-      std::cout << f - (*fieldVals)[gg] << " : ";
-      for (auto d : {0, 1})
-        std::cout << diff_f[d] - (*diffFieldVals)(d, gg) << " ";
-      std::cout << std::endl;
-
-      for (auto d : {0, 1})
-        if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
-          SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                   "Wrong direvative value (%d) %6.4e != %6.4e", diff_f[d],
-                   (*diffFieldVals)(d, gg));
+      if (data.getSpace() != L2) {
+        VectorDouble3 diff_f =
+            ApproxFunction::diff_fun(t_coords(0), t_coords(1));
+        for (auto d : {0, 1})
+          std::cout << diff_f[d] - (*diffFieldVals)(d, gg) << " ";
+        std::cout << std::endl;
+        for (auto d : {0, 1})
+          if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
+            SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                     "Wrong direvative value (%d) %6.4e != %6.4e", diff_f[d],
+                     (*diffFieldVals)(d, gg));
+      }
 
       ++t_coords;
     }
@@ -288,7 +330,7 @@ MoFEMErrorCode QuadOpRhs::doWork(int side, EntityType type,
                                  DataForcesAndSourcesCore::EntData &data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
-  const int nb_dofs = data.getN().size2();
+  const int nb_dofs = data.getIndices().size();
   if (nb_dofs) {
     const int nb_gauss_pts = data.getN().size1();
     VectorDouble nf(nb_dofs);
@@ -329,8 +371,8 @@ MoFEMErrorCode QuadOpLhs::doWork(int row_side, int col_side,
                                  DataForcesAndSourcesCore::EntData &col_data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
-  const int row_nb_dofs = row_data.getN().size2();
-  const int col_nb_dofs = col_data.getN().size2();
+  const int row_nb_dofs = row_data.getIndices().size();
+  const int col_nb_dofs = col_data.getIndices().size();
   if (row_nb_dofs && col_nb_dofs) {
     const int nb_gauss_pts = row_data.getN().size1();
     MatrixDouble m(row_nb_dofs, col_nb_dofs);

@@ -44,7 +44,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
   case AINSWORTH_LEGENDRE_BASE:
     CHKERR getValueH1AinsworthBase(pts);
     break;
-  case AINSWORTH_LOBATTO_BASE:
+  case DEMKOWICZ_JACOBI_BASE:
     CHKERR getValueH1DemkowiczBase(pts);
     break;
   case AINSWORTH_BERNSTEIN_BEZIER_BASE:
@@ -151,8 +151,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
       H1edgeN[ee] = &*ent_dat.getN(base).data().begin();
       diffH1edgeN[ee] = &*ent_dat.getDiffN(base).data().begin();
     }
-    int pp[2] = {order[0], order[1]};
-    CHKERR H1_EdgeShapeFunctions_ONQUAD(sense, pp,
+    CHKERR H1_EdgeShapeFunctions_ONQUAD(sense, order,
                                         &*vert_dat.getN(base).data().begin(),
                                         H1edgeN, diffH1edgeN, nb_gauss_pts);
   }
@@ -165,7 +164,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
               "should be one quad to store bubble base on quad");
 
     auto &ent_dat = data.dataOnEntities[MBQUAD][0];
-    int nb_dofs = NBFACEQUAD_FULL_H1(ent_dat.getDataOrder());
+    int nb_dofs = NBFACEQUAD_H1(ent_dat.getDataOrder());
     int p = ent_dat.getDataOrder();
     int order[2] = {p, p};
     ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
@@ -185,12 +184,6 @@ MoFEMErrorCode QuadPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
 
   DataForcesAndSourcesCore &data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
-  if (cTx->basePolynomialsType0 == NULL)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Polynomial type not set");
-  PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s, double *L,
-                                     double *diffL, const int dim) =
-      cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
   auto &vert_dat = data.dataOnEntities[MBVERTEX][0];
@@ -404,10 +397,11 @@ QuadPolynomialBase::getValue(MatrixDouble &pts,
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Number of shape functions should be four");
   if (diff_base.size1() != pts.size2())
-    SETERRQ(
+    SETERRQ2(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Number of diff base functions integration points not equal number of "
-        "set integration point");
+        "set integration point %d != %d",
+        diff_base.size1(), pts.size2());
   if (diff_base.size2() != 8)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Number of shape functions should be four");
