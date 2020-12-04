@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 
     std::array<double, 12> one_quad_coords = {0, 0, 0,
 
-                                              1, 0, 0,
+                                              2, 0, 0,
 
                                               1, 1, 0,
 
@@ -221,6 +221,7 @@ int main(int argc, char *argv[]) {
         fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
         fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
       }
+      fe.getOpPtrVector().push_back(new OpMakeHighOrderGeometryWeightsOnFace());
       fe.getOpPtrVector().push_back(new QuadOpRhs(F));
       fe.getOpPtrVector().push_back(new QuadOpLhs(A));
       CHKERR VecZeroEntries(F);
@@ -338,10 +339,10 @@ MoFEMErrorCode QuadOpRhs::doWork(int side, EntityType type,
     auto t_base = data.getFTensor0N();
     auto t_coords = getFTensor1CoordsAtGaussPts();
     auto t_w = getFTensor0IntegrationWeight();
-    auto t_normal = getFTensor1NormalsAtGaussPts();
+    auto a = getMeasure();
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
       double f = ApproxFunction::fun(t_coords(0), t_coords(1));
-      double v = t_w * f * sqrt(t_normal(i) * t_normal(i));
+      double v = a * t_w * f;
       double *val = &*nf.begin();
       for (int bb = 0; bb != nb_dofs; ++bb) {
         *val += v * t_base;
@@ -350,7 +351,7 @@ MoFEMErrorCode QuadOpRhs::doWork(int side, EntityType type,
       }
       ++t_coords;
       ++t_w;
-      ++t_normal;
+      // ++t_normal;
     }
     CHKERR VecSetValues(F, data, &*nf.data().begin(), ADD_VALUES);
   }
@@ -378,20 +379,16 @@ MoFEMErrorCode QuadOpLhs::doWork(int row_side, int col_side,
     MatrixDouble m(row_nb_dofs, col_nb_dofs);
     m.clear();
     auto t_w = getFTensor0IntegrationWeight();
-    auto t_normal = getFTensor1NormalsAtGaussPts();
-
+    auto a = getMeasure();
     double *row_base_ptr = &*row_data.getN().data().begin();
     double *col_base_ptr = &*col_data.getN().data().begin();
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-
-      double v = t_w * sqrt(t_normal(i) * t_normal(i));
+      double v = a * t_w;
       cblas_dger(CblasRowMajor, row_nb_dofs, col_nb_dofs, v, row_base_ptr, 1,
                  col_base_ptr, 1, &*m.data().begin(), col_nb_dofs);
-
       row_base_ptr += row_nb_dofs;
       col_base_ptr += col_nb_dofs;
       ++t_w;
-      ++t_normal;
     }
     CHKERR MatSetValues(A, row_data, col_data, &*m.data().begin(), ADD_VALUES);
   }
