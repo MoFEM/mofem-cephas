@@ -373,15 +373,24 @@ OpMakeHdivFromHcurl::doWork(int side, EntityType type,
 MoFEMErrorCode OpMakeHighOrderGeometryWeightsOnFace::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
-  const double a = getMeasure();
   const size_t nb_int_pts = getGaussPts().size2();
-  auto t_w = getFTensor0IntegrationWeight();
-  auto t_normal = getFTensor1NormalsAtGaussPts();
-  FTensor::Index<'i', 3> i;
-  for (size_t gg = 0; gg != nb_int_pts; ++gg) {
-    t_w *= sqrt(t_normal(i) * t_normal(i)) / a;
-    ++t_w;
-    ++t_normal;
+  if (getNormalsAtGaussPts().size1()) {
+    if (getNormalsAtGaussPts().size1() == nb_int_pts) {
+      const double a = getMeasure();
+      auto t_w = getFTensor0IntegrationWeight();
+      auto t_normal = getFTensor1NormalsAtGaussPts();
+      FTensor::Index<'i', 3> i;
+      for (size_t gg = 0; gg != nb_int_pts; ++gg) {
+        t_w *= sqrt(t_normal(i) * t_normal(i)) / a;
+        ++t_w;
+        ++t_normal;
+      }
+    } else {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+               "Number of rows in getNormalsAtGaussPts should be equal to "
+               "number of integration points, but is not, i.e. %d != %d",
+               getNormalsAtGaussPts().size1(), nb_int_pts);
+    }
   }
   MoFEMFunctionReturn(0);
 }
