@@ -34,15 +34,33 @@ using FaceEle = MoFEM::FaceElementForcesAndSourcesCoreSwitch<
 using FaceEleOp = FaceEle::UserDataOperator;
 using EntData = DataForcesAndSourcesCore::EntData;
 
+static constexpr int approx_order = 3;
+
 struct ApproxFunctions {
   static double fUn(const double x, const double y) {
-    return pow(x, 4) + pow(y, 4) + pow(x, 2) * pow(y, 2) + x * y + x + y;
+    double r = 1;
+    for (int o = 1; o <= approx_order; ++o) {
+      for (int i = 0; i <= o; ++i) {
+        int j = o - i;
+        if (j >= 0)
+          r += pow(x, i) * pow(y, j);
+      }
+    }
+    return r;
   }
 
   static FTensor::Tensor1<double, 2> diffFun(const double x, const double y) {
-    return FTensor::Tensor1<double, 2>(
-        4 * pow(x, 3) + 2 * x * pow(y, 2) + y + 1.,
-        4 * pow(y, 3) + 2 * y * pow(x, 2) + x + 1.);
+    FTensor::Tensor1<double, 2> r{0., 0.};
+    for (int o = 1; o <= approx_order; ++o) {
+      for (int i = 0; i <= o; ++i) {
+        int j = o - i;
+        if (j >= 0) {
+          r(0) += i > 0 ? i * pow(x, i - 1) * pow(y, j) : 0;
+          r(1) += j > 0 ? j * pow(x, i) * pow(y, j - 1) : 0;
+        }
+      }
+    }
+    return r;
   }
 };
 
@@ -306,13 +324,12 @@ int main(int argc, char *argv[]) {
       space = L2;
 
     CHKERR simple_interface->addDomainField("FIELD1", space, base, 1);
-    constexpr int order = 4;
-    CHKERR simple_interface->setFieldOrder("FIELD1", order);
+    CHKERR simple_interface->setFieldOrder("FIELD1", approx_order);
     CHKERR simple_interface->setUp();
     auto dm = simple_interface->getDM();
 
     VectorDouble vals;
-    MatrixDouble jac(2, 2), inv_jac(2, 2), diff_vals;
+    MatrixDouble jac, inv_jac, diff_vals;
 
     auto assemble_matrices_and_vectors = [&]() {
       MoFEMFunctionBegin;
