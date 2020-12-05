@@ -70,22 +70,22 @@ OpCalculateJacForFace::doWork(int side, EntityType type,
            ++gg, ++t_jac, ++ksi_ptr, ++zeta_ptr) {
         const double &ksi = *ksi_ptr;
         const double &zeta = *zeta_ptr;
-        jac(0, 0) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0x(zeta) +
-                    coords_ptr[3 * 1 + 0] * diffN_MBQUAD1x(zeta) +
-                    coords_ptr[3 * 2 + 0] * diffN_MBQUAD2x(zeta) +
-                    coords_ptr[3 * 3 + 0] * diffN_MBQUAD3x(zeta);
-        jac(0, 1) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0y(ksi) +
-                    coords_ptr[3 * 1 + 0] * diffN_MBQUAD1y(ksi) +
-                    coords_ptr[3 * 2 + 0] * diffN_MBQUAD2y(ksi) +
-                    coords_ptr[3 * 3 + 0] * diffN_MBQUAD3y(ksi);
-        jac(1, 0) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0x(zeta) +
-                    coords_ptr[3 * 1 + 1] * diffN_MBQUAD1x(zeta) +
-                    coords_ptr[3 * 2 + 1] * diffN_MBQUAD2x(zeta) +
-                    coords_ptr[3 * 3 + 1] * diffN_MBQUAD3x(zeta);
-        jac(1, 1) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0y(ksi) +
-                    coords_ptr[3 * 1 + 1] * diffN_MBQUAD1y(ksi) +
-                    coords_ptr[3 * 2 + 1] * diffN_MBQUAD2y(ksi) +
-                    coords_ptr[3 * 3 + 1] * diffN_MBQUAD3y(ksi);
+        t_jac(0, 0) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0x(zeta) +
+                      coords_ptr[3 * 1 + 0] * diffN_MBQUAD1x(zeta) +
+                      coords_ptr[3 * 2 + 0] * diffN_MBQUAD2x(zeta) +
+                      coords_ptr[3 * 3 + 0] * diffN_MBQUAD3x(zeta);
+        t_jac(0, 1) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0y(ksi) +
+                      coords_ptr[3 * 1 + 0] * diffN_MBQUAD1y(ksi) +
+                      coords_ptr[3 * 2 + 0] * diffN_MBQUAD2y(ksi) +
+                      coords_ptr[3 * 3 + 0] * diffN_MBQUAD3y(ksi);
+        t_jac(1, 0) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0x(zeta) +
+                      coords_ptr[3 * 1 + 1] * diffN_MBQUAD1x(zeta) +
+                      coords_ptr[3 * 2 + 1] * diffN_MBQUAD2x(zeta) +
+                      coords_ptr[3 * 3 + 1] * diffN_MBQUAD3x(zeta);
+        t_jac(1, 1) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0y(ksi) +
+                      coords_ptr[3 * 1 + 1] * diffN_MBQUAD1y(ksi) +
+                      coords_ptr[3 * 2 + 1] * diffN_MBQUAD2y(ksi) +
+                      coords_ptr[3 * 3 + 1] * diffN_MBQUAD3y(ksi);
       }
     }
     MoFEMFunctionReturnHot(0);
