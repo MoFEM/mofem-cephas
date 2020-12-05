@@ -28,7 +28,7 @@ using EntData = DataForcesAndSourcesCore::EntData;
 
 static char help[] = "...\n\n";
 
-static constexpr int approx_order = 5;
+static constexpr int approx_order = 6;
 struct ApproxFunction {
   static inline double fun(double x, double y) {
     double r = 1;
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 
     std::array<double, 12> one_quad_coords = {0, 0, 0,
 
-                                              2, 0, 0,
+                                              1, 0, 0,
 
                                               1, 1, 0,
 
@@ -217,10 +217,8 @@ int main(int argc, char *argv[]) {
       Ele fe(m_field);
       fe.getRuleHook = rule;
       MatrixDouble inv_jac;
-      if (space != L2) {
-        fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
-        fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
-      }
+      fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
       fe.getOpPtrVector().push_back(new OpMakeHighOrderGeometryWeightsOnFace());
       fe.getOpPtrVector().push_back(new QuadOpRhs(F));
       fe.getOpPtrVector().push_back(new QuadOpLhs(A));
@@ -254,18 +252,13 @@ int main(int argc, char *argv[]) {
       fe.getRuleHook = rule;
       boost::shared_ptr<VectorDouble> field_vals_ptr(new VectorDouble());
       boost::shared_ptr<MatrixDouble> diff_field_vals_ptr(new MatrixDouble());
-      if (space == L2)
-        fe.getOpPtrVector().push_back(
-            new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr, MBQUAD));
       MatrixDouble inv_jac;
-      if (space != L2) {
-        fe.getOpPtrVector().push_back(
-            new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr));
-        fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
-        fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
-        fe.getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<2>(
-            "FIELD1", diff_field_vals_ptr));
-      }
+      fe.getOpPtrVector().push_back(
+          new OpCalculateScalarFieldValues("FIELD1", field_vals_ptr));
+      fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+      fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
+      fe.getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<2>(
+          "FIELD1", diff_field_vals_ptr, space == L2 ? MBQUAD : MBVERTEX));
       fe.getOpPtrVector().push_back(
           new QuadOpCheck(field_vals_ptr, diff_field_vals_ptr));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "QUAD", fe);
@@ -304,18 +297,15 @@ MoFEMErrorCode QuadOpCheck::doWork(int side, EntityType type,
         SETERRQ3(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value %d : %6.4e != %6.4e", gg, f, (*fieldVals)[gg]);
 
-      if (data.getSpace() != L2) {
-        VectorDouble3 diff_f =
-            ApproxFunction::diff_fun(t_coords(0), t_coords(1));
-        for (auto d : {0, 1})
-          std::cout << diff_f[d] - (*diffFieldVals)(d, gg) << " ";
-        std::cout << std::endl;
-        for (auto d : {0, 1})
-          if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
-            SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-                     "Wrong direvative value (%d) %6.4e != %6.4e", diff_f[d],
-                     (*diffFieldVals)(d, gg));
-      }
+      VectorDouble3 diff_f = ApproxFunction::diff_fun(t_coords(0), t_coords(1));
+      for (auto d : {0, 1})
+        std::cout << diff_f[d] - (*diffFieldVals)(d, gg) << " ";
+      std::cout << std::endl;
+      for (auto d : {0, 1})
+        if (std::abs(diff_f[d] - (*diffFieldVals)(d, gg)) > eps)
+          SETERRQ2(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong direvative value (%d) %6.4e != %6.4e", diff_f[d],
+                   (*diffFieldVals)(d, gg));
 
       ++t_coords;
     }

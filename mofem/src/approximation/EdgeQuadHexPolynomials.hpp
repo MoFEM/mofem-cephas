@@ -65,8 +65,8 @@ Integrated Legendre)
 * @return                  error code
 */
 MoFEMErrorCode H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
-                                            double *edgeN[4],
-                                            double *diff_edgeN[4],
+                                            double *diffN, double *edgeN[4],
+                                            double *edgeDiffN[4],
                                             int nb_integration_pts);
 
 /**
@@ -74,8 +74,8 @@ MoFEMErrorCode H1_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
 
 Function generates hierarchical base of H1 comforting functions on a 2D quad.
 
-* @param  sense            array of orientation of edges (take 1 or -1)
-* @param  p               array of orders (in each direction) of base functions
+* @param  face_nodes       face nodes order
+* @param  p                array of orders (in each direction) of base functions
 * @param  N                array vertex shape functions evaluated at each
 integration point
 * @param  diffN            derivatives of vertex shape functions
@@ -86,7 +86,8 @@ integration point
 Legendre)
 * @return                  error code
 */
-MoFEMErrorCode H1_FaceShapeFunctions_ONQUAD(int *p, double *N, double *faceN,
+MoFEMErrorCode H1_FaceShapeFunctions_ONQUAD(int *face_nodes, int *p, double *N,
+                                            double *diffN, double *faceN,
                                             double *diff_faceN,
                                             int nb_integration_pts);
 
@@ -106,7 +107,7 @@ integration point
 Legendre)
 * @return                  error code
 */
-MoFEMErrorCode L2_FaceShapeFunctions_ONQUAD(int *p, double *N,
+MoFEMErrorCode L2_FaceShapeFunctions_ONQUAD(int *p, double *N, double *diffN,
                                             double *face_buble,
                                             double *diff_face_bubble,
                                             int nb_integration_pts);

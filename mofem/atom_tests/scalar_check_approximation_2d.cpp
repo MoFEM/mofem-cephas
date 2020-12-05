@@ -34,7 +34,7 @@ using FaceEle = MoFEM::FaceElementForcesAndSourcesCoreSwitch<
 using FaceEleOp = FaceEle::UserDataOperator;
 using EntData = DataForcesAndSourcesCore::EntData;
 
-static constexpr int approx_order = 3;
+static constexpr int approx_order = 6;
 
 struct ApproxFunctions {
   static double fUn(const double x, const double y) {
@@ -221,12 +221,14 @@ struct OpCheckValsDiffVals : public FaceEleOp {
       const double delta_val = t_vals - ApproxFunctions::fUn(x, y);
 
       double err_val = std::fabs(delta_val * delta_val);
+      cerr << err_val << " : " << t_vals << endl;
       if (err_val > eps)
         SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Wrong value %4.3e",
                  err_val);
 
       // Check H1 user data operators
-      err_val = t_vals - t_ptr_vals;
+      err_val = std::abs(t_vals - t_ptr_vals);
+
       if (err_val > eps)
         SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                  "Wrong value from operator %4.3e", err_val);
@@ -246,15 +248,16 @@ struct OpCheckValsDiffVals : public FaceEleOp {
 
         // Check approximation
         FTensor::Tensor1<double, 2> t_delta_diff_val;
-        t_delta_diff_val(i) =
-            t_diff_vals(i) - ApproxFunctions::diffFun(x, y)(i);
+        auto t_diff_anal = ApproxFunctions::diffFun(x, y);
+        t_delta_diff_val(i) = t_diff_vals(i) - t_diff_anal(i);
 
         double err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
         cerr << err_diff_val << " : " << sqrt(t_diff_vals(i) * t_diff_vals(i))
-             << endl;
-        // if (err_diff_val > eps)
-        //   SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
-        //            "Wrong derivative of value %4.3e", err_diff_val);
+             << " :  " << t_diff_vals(0) / t_diff_anal(0) << " "
+             << t_diff_vals(1) / t_diff_anal(1) << endl;
+        if (err_diff_val > eps)
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
+                   "Wrong derivative of value %4.3e", err_diff_val);
 
         t_delta_diff_val(i) = t_diff_vals(i) - t_ptr_diff_vals(i);
         err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
@@ -293,8 +296,15 @@ int main(int argc, char *argv[]) {
     CHKERR simple_interface->loadFile("", "");
 
     // Declare elements
-    enum bases { AINSWORTH, DEMKOWICZ, BERNSTEIN, LASBASETOP };
-    const char *list_bases[] = {"ainsworth", "demkowicz", "bernstein"};
+    enum bases {
+      AINSWORTH,
+      AINSWORTH_LOBATTO,
+      DEMKOWICZ,
+      BERNSTEIN,
+      LASBASETOP
+    };
+    const char *list_bases[] = {"ainsworth", "ainsworth_labatto", "demkowicz",
+                                "bernstein"};
     PetscBool flg;
     PetscInt choice_base_value = AINSWORTH;
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
@@ -305,6 +315,8 @@ int main(int argc, char *argv[]) {
     FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
     if (choice_base_value == AINSWORTH)
       base = AINSWORTH_LEGENDRE_BASE;
+    if (choice_base_value == AINSWORTH_LOBATTO)
+      base = AINSWORTH_LOBATTO_BASE;
     else if (choice_base_value == DEMKOWICZ)
       base = DEMKOWICZ_JACOBI_BASE;
     else if (choice_base_value == BERNSTEIN)
@@ -343,7 +355,9 @@ int main(int argc, char *argv[]) {
           new OpMakeHighOrderGeometryWeightsOnFace());
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpAssembleMat());
 
-      auto integration_rule = [](int, int, int p_data) { return 2 * p_data; };
+      auto integration_rule = [](int, int, int p_data) {
+        return 2 * p_data + 1;
+      };
       CHKERR pipeline_mng->setDomainRhsIntegrationRule(integration_rule);
       CHKERR pipeline_mng->setDomainLhsIntegrationRule(integration_rule);
 

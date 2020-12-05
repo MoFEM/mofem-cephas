@@ -41,6 +41,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1(MatrixDouble &pts) {
 
   switch (cTx->bAse) {
   case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
     CHKERR getValueH1AinsworthBase(pts);
     break;
   case DEMKOWICZ_JACOBI_BASE:
@@ -151,8 +152,9 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
       diffH1edgeN[ee] = &*ent_dat.getDiffN(base).data().begin();
     }
     CHKERR DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONQUAD(
-        sense, order, &*vert_dat.getN(base).data().begin(), H1edgeN,
-        diffH1edgeN, nb_gauss_pts);
+        sense, order, &*vert_dat.getN(base).data().begin(),
+        &*vert_dat.getDiffN(base).data().begin(), H1edgeN, diffH1edgeN,
+        nb_gauss_pts);
   }
 
   if (data.spacesOnEntities[MBQUAD].test(H1)) {
@@ -169,8 +171,10 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
     ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
     ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
 
+    int face_nodes[] = {0, 1, 2, 3};
     CHKERR DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONQUAD(
-        order, &*vert_dat.getN(base).data().begin(),
+        face_nodes, order, &*vert_dat.getN(base).data().begin(),
+        &*vert_dat.getDiffN(base).data().begin(),
         &*ent_dat.getN(base).data().begin(),
         &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
   }
@@ -196,6 +200,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
 
   CHKERR DemkowiczHexAndQuad::L2_FaceShapeFunctions_ONQUAD(
       order, &*vert_dat.getN(base).data().begin(),
+      &*vert_dat.getDiffN(base).data().begin(),
       &*ent_dat.getN(base).data().begin(),
       &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
 
