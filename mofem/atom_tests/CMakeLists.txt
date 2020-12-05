@@ -842,6 +842,7 @@ target_link_libraries(scalar_check_approximation_2d
 add_test(h1_check_approx_2d_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle.h5m
   -base ainsworth -space h1 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
@@ -849,6 +850,7 @@ add_test(h1_check_approx_2d_ainsworth
 add_test(h1_check_approx_2d_bernstein
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle.h5m
   -base bernstein -space h1 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
