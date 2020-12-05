@@ -316,12 +316,14 @@ MoFEMErrorCode EdgePolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
       Nshape(gg, 1) = mu1;
     }
 
-    CHKERR H1_BubbleShapeFunctions_ONSEGMENT(
+    CHKERR DemkowiczHexAndQuad::H1_BubbleShapeFunctions_ONSEGMENT(
         order, &*Nshape.data().begin(),
         &*data.dataOnEntities[MBEDGE][side_number].getN(base).data().begin(),
-        &*data.dataOnEntities[MBEDGE][side_number].getDiffN(base).data().begin(),
+        &*data.dataOnEntities[MBEDGE][side_number]
+              .getDiffN(base)
+              .data()
+              .begin(),
         nb_gauss_pts);
-
   }
 
   MoFEMFunctionReturnHot(0);
@@ -355,7 +357,7 @@ MoFEMErrorCode EdgePolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
       Nshape(gg, 1) = mu1;
     }
 
-    CHKERR L2_ShapeFunctions_ONSEGMENT(
+    CHKERR DemkowiczHexAndQuad::L2_ShapeFunctions_ONSEGMENT(
         order, &*Nshape.data().begin(),
         &*data.dataOnEntities[MBEDGE][side_number].getN(base).data().begin(),
         nb_gauss_pts);

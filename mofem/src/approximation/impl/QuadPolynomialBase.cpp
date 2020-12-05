@@ -18,7 +18,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 using namespace MoFEM;
-using namespace MoFEM::DemkowiczHexAndQuad;
 
 QuadPolynomialBase::QuadPolynomialBase() {}
 QuadPolynomialBase::~QuadPolynomialBase() {}
@@ -151,9 +150,9 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
       H1edgeN[ee] = &*ent_dat.getN(base).data().begin();
       diffH1edgeN[ee] = &*ent_dat.getDiffN(base).data().begin();
     }
-    CHKERR H1_EdgeShapeFunctions_ONQUAD(sense, order,
-                                        &*vert_dat.getN(base).data().begin(),
-                                        H1edgeN, diffH1edgeN, nb_gauss_pts);
+    CHKERR DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONQUAD(
+        sense, order, &*vert_dat.getN(base).data().begin(), H1edgeN,
+        diffH1edgeN, nb_gauss_pts);
   }
 
   if (data.spacesOnEntities[MBQUAD].test(H1)) {
@@ -170,7 +169,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
     ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
     ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
 
-    CHKERR H1_FaceShapeFunctions_ONQUAD(
+    CHKERR DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONQUAD(
         order, &*vert_dat.getN(base).data().begin(),
         &*ent_dat.getN(base).data().begin(),
         &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
@@ -195,7 +194,7 @@ MoFEMErrorCode QuadPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
   ent_dat.getN(base).resize(nb_gauss_pts, nb_dofs, false);
   ent_dat.getDiffN(base).resize(nb_gauss_pts, 2 * nb_dofs, false);
 
-  CHKERR L2_FaceShapeFunctions_ONQUAD(
+  CHKERR DemkowiczHexAndQuad::L2_FaceShapeFunctions_ONQUAD(
       order, &*vert_dat.getN(base).data().begin(),
       &*ent_dat.getN(base).data().begin(),
       &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
@@ -245,7 +244,7 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
           &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
     int pp[2] = {order[0], order[1]};
-    CHKERR Hcurl_EdgeShapeFunctions_ONQUAD(
+    CHKERR DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
         sense, pp, &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         hcurl_edge_n, curl_edge_n, nb_gauss_pts);
   }
@@ -273,7 +272,7 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
           &*data.dataOnEntities[MBQUAD][typ].getDiffN(base).data().begin();
     }
 
-    CHKERR Hcurl_FaceShapeFunctions_ONQUAD(
+    CHKERR DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
         order, &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         hcurl_val_face_n, hcurl_curl_face_n, nb_gauss_pts);
   }
@@ -322,7 +321,7 @@ QuadPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
           &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
     int pp[2] = {order[0], order[1]};
-    CHKERR Hdiv_EdgeShapeFunctions_ONQUAD(
+    CHKERR DemkowiczHexAndQuad::Hdiv_EdgeShapeFunctions_ONQUAD(
         sense, pp, &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         hdiv_edge_n, div_edge_n, nb_gauss_pts);
   }
@@ -350,7 +349,7 @@ QuadPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
           &*data.dataOnEntities[MBQUAD][typ].getDiffN(base).data().begin();
     }
 
-    CHKERR Hdiv_FaceShapeFunctions_ONQUAD(
+    CHKERR DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONQUAD(
         order, &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         hdiv_val_face_n, hdiv_div_face_n, nb_gauss_pts);
   }
