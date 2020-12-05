@@ -19,6 +19,8 @@ MoFEMErrorCode Integrated_Legendre01(int p, double s, double *L, double *diffL);
 
 MoFEMErrorCode Face_orientMat(int *face_nodes, double orientMat[2][2]);
 
+MoFEMErrorCode MonomOrdering(int perm[][3], int p, int q, int r = 0);
+
 /*
 Segment (1d) basis functions
 
