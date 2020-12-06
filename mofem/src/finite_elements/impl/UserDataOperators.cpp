@@ -206,8 +206,8 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode
-OpSetInvJacH1ForFace::doWork(int side, EntityType type,
-                             DataForcesAndSourcesCore::EntData &data) {
+OpSetInvJacSpaceForFace::doWork(int side, EntityType type,
+                                DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
   if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&

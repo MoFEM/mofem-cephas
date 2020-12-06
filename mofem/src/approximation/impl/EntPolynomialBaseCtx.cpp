@@ -84,7 +84,6 @@ MoFEMErrorCode EntPolynomialBaseCtx::setBase() {
     case HDIV:
     case L2:
       basePolynomialsType0 = Lobatto_polynomials;
-      //  basePolynomialsType0 = LobattoKernel_polynomials;
       break;
     default:
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,

@@ -175,10 +175,10 @@ int main(int argc, char *argv[]) {
         double diff_sum = sum_matrix(*diff_base_ptr);
         std::cout << sum << std::endl;
         std::cout << diff_sum << std::endl;
-        if (fabs(-1.6053 - sum) > eps) {
+        if (fabs(9.38201 - sum) > eps) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
         }
-        if (fabs(3.07745 - diff_sum) > eps) {
+        if (fabs(12.0516 - diff_sum) > eps) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
         }
       }

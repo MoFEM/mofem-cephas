@@ -1880,11 +1880,11 @@ derivatives
 \ingroup mofem_forces_and_sources_tri_element
 
 */
-struct OpSetInvJacH1ForFace
+struct OpSetInvJacSpaceForFace
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(H1),
+  OpSetInvJacSpaceForFace(MatrixDouble &inv_jac, FieldSpace space)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space),
         invJac(inv_jac) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -1893,6 +1893,16 @@ struct OpSetInvJacH1ForFace
 private:
   MatrixDouble &invJac;
   MatrixDouble diffNinvJac;
+};
+
+struct OpSetInvJacH1ForFace: public OpSetInvJacSpaceForFace {
+  OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
+      : OpSetInvJacSpaceForFace(inv_jac, H1) {}
+};
+
+struct OpSetInvJacL2ForFace: public OpSetInvJacSpaceForFace {
+  OpSetInvJacL2ForFace(MatrixDouble &inv_jac)
+      : OpSetInvJacSpaceForFace(inv_jac, L2) {}
 };
 
 /**

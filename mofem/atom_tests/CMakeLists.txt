@@ -851,7 +851,7 @@ add_test(h1_check_approx_2d_ainsworth_lobatto
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
   -file_name rectangle.h5m
-  -base ainsworth_labattainsworth_labattoo -space h1 
+  -base ainsworth_labatto -space h1 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
