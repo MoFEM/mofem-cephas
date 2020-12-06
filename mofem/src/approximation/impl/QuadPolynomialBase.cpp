@@ -182,6 +182,26 @@ MoFEMErrorCode QuadPolynomialBase::getValueH1DemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode QuadPolynomialBase::getValueL2(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  switch (cTx->bAse) {
+  case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Ainsworth not implemented on quad for L2 base");
+    break;
+  case DEMKOWICZ_JACOBI_BASE:
+    CHKERR getValueL2DemkowiczBase(pts);
+    break;
+  case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode QuadPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
@@ -203,6 +223,26 @@ MoFEMErrorCode QuadPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
       &*vert_dat.getDiffN(base).data().begin(),
       &*ent_dat.getN(base).data().begin(),
       &*ent_dat.getDiffN(base).data().begin(), nb_gauss_pts);
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode QuadPolynomialBase::getValueHcurl(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  switch (cTx->bAse) {
+  case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Ainsworth not implemented on quad for Hcurl base");
+    break;
+  case DEMKOWICZ_JACOBI_BASE:
+    CHKERR getValueHcurlDemkowiczBase(pts);
+    break;
+  case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -281,6 +321,26 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
         order, &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         hcurl_val_face_n, hcurl_curl_face_n, nb_gauss_pts);
   }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode QuadPolynomialBase::getValueHdiv(MatrixDouble &pts) {
+  MoFEMFunctionBegin;
+
+  switch (cTx->bAse) {
+  case AINSWORTH_LEGENDRE_BASE:
+  case AINSWORTH_LOBATTO_BASE:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Ainsworth not implemented on quad for Hdiv base");
+    break;
+  case DEMKOWICZ_JACOBI_BASE:
+    CHKERR getValueHdivDemkowiczBase(pts);
+    break;
+  case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not implemented");
+  }
+
   MoFEMFunctionReturn(0);
 }
 
@@ -415,13 +475,13 @@ QuadPolynomialBase::getValue(MatrixDouble &pts,
     CHKERR getValueH1(pts);
     break;
   case L2:
-    CHKERR getValueL2DemkowiczBase(pts);
+    CHKERR getValueL2(pts);
     break;
   case HCURL:
-    CHKERR getValueHcurlDemkowiczBase(pts);
+    CHKERR getValueHcurl(pts);
     break;
   case HDIV:
-    CHKERR getValueHdivDemkowiczBase(pts);
+    CHKERR getValueHdiv(pts);
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "Not yet implemented");

@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
     Simple *simple_interface = m_field.getInterface<Simple>();
     PipelineManager *pipeline_mng = m_field.getInterface<PipelineManager>();
     CHKERR simple_interface->getOptions();
-    CHKERR simple_interface->loadFile("", "rectangle.h5m");
+    CHKERR simple_interface->loadFile("", "rectangle_tri.h5m");
 
     // Declare elements
     enum bases { AINSWORTH, DEMKOWICZ, LASBASETOP };

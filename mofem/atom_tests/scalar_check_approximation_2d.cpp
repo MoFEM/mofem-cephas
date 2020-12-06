@@ -34,7 +34,7 @@ using FaceEle = MoFEM::FaceElementForcesAndSourcesCoreSwitch<
 using FaceEleOp = FaceEle::UserDataOperator;
 using EntData = DataForcesAndSourcesCore::EntData;
 
-static constexpr int approx_order = 6;
+static constexpr int approx_order = 5;
 
 struct ApproxFunctions {
   static double fUn(const double x, const double y) {

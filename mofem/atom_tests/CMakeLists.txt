@@ -47,11 +47,13 @@ cm_export_file("../meshes/mat_elastic.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_elastic_transiso.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_interf.h5m" export_atom_tests)
 cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
-cm_export_file("../meshes/rectangle.h5m" export_atom_tests)
+cm_export_file("../meshes/rectangle_tri.h5m" export_atom_tests)
+cm_export_file("../meshes/rectangle_quad.h5m" export_atom_tests)
 cm_export_file("../meshes/quad_mesh.h5m" export_atom_tests)
 cm_export_file("../meshes/2_tets_contact.cub" export_atom_tests)
 
-set(PERCOMPILED_MOFEM_HEADER "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
+set(PERCOMPILED_MOFEM_HEADER 
+  "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
 
 # add_executable(cubit_bc_test cubit_bc_test.cpp)
 my_add_executable(cubit_bc_test cubit_bc_test.cpp)
@@ -839,43 +841,67 @@ target_link_libraries(scalar_check_approximation_2d
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(h1_check_approx_2d_ainsworth
+add_test(h1_check_approx_2d_ainsworth_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
-  -file_name rectangle.h5m
+  -file_name rectangle_tri.h5m
   -base ainsworth -space h1 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
-add_test(h1_check_approx_2d_ainsworth_lobatto
+add_test(h1_check_approx_2d_ainsworth_lobatto_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
-  -file_name rectangle.h5m
+  -file_name rectangle_tri.h5m
   -base ainsworth_labatto -space h1 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
-add_test(h1_check_approx_2d_bernstein
+add_test(h1_check_approx_2d_bernstein_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
-  -file_name rectangle.h5m
+  -file_name rectangle_tri.h5m
   -base bernstein -space h1 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
-add_test(l2_check_approx_2d_ainsworth
+add_test(l2_check_approx_2d_ainsworth_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
-  -file_name rectangle.h5m
+  -file_name rectangle_tri.h5m
   -base ainsworth -space l2 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
-add_test(l2_check_approx_2d_bernstein
+add_test(l2_check_approx_2d_bernstein_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
-  -file_name rectangle.h5m
+  -file_name rectangle_tri.h5m
   -base bernstein -space l2 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(h1_check_approx_2d_ainsworth_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_quad.h5m
+  -base ainsworth -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(h1_check_approx_2d_demkowicz_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_quad.h5m
+  -base demkowicz -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(l2_check_approx_2d_demkowicz_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_quad.h5m
+  -base demkowicz -space l2
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
@@ -1757,7 +1783,8 @@ target_link_libraries(boundary_marker
 )
 add_test(boundary_marker
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/boundary_marker -file_name rectangle.h5m
+  ${CMAKE_CURRENT_BINARY_DIR}/boundary_marker 
+  -file_name rectangle_tri.h5m
   -log_no_color
 )
 
@@ -1794,14 +1821,14 @@ target_link_libraries(continuity_check_on_skeleton_with_simple_2d
 add_test(continuity_check_on_skeleton_with_simple_2d_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
-  -file_name rectangle.h5m -base ainsworth
+  -file_name rectangle_tri.h5m -base ainsworth
   -log_no_color
 )
 
 add_test(continuity_check_on_skeleton_with_simple_2d_demkowicz
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
-  -file_name rectangle.h5m -base demkowicz
+  -file_name rectangle_tri.h5m -base demkowicz
   -log_no_color
 )
 
@@ -1846,14 +1873,14 @@ add_test(
 add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
-  -file_name rectangle.h5m -base ainsworth
+  -file_name rectangle_tri.h5m -base ainsworth
   -log_no_color
 )
 
 add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_demkowicz
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
-  -file_name rectangle.h5m -base demkowicz
+  -file_name rectangle_tri.h5m -base demkowicz
   -log_no_color
 )
 

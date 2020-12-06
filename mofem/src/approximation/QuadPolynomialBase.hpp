@@ -45,6 +45,10 @@ private:
   EntPolynomialBaseCtx *cTx;
 
   MoFEMErrorCode getValueH1(MatrixDouble &pts);
+  MoFEMErrorCode getValueL2(MatrixDouble &pts);
+  MoFEMErrorCode getValueHcurl(MatrixDouble &pts);
+  MoFEMErrorCode getValueHdiv(MatrixDouble &pts);
+
   MoFEMErrorCode getValueH1AinsworthBase(MatrixDouble &pts);
   MoFEMErrorCode getValueH1DemkowiczBase(MatrixDouble &pts);
   MoFEMErrorCode getValueL2DemkowiczBase(MatrixDouble &pts);
