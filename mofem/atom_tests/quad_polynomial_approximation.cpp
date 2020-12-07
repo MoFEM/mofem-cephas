@@ -99,8 +99,15 @@ int main(int argc, char *argv[]) {
   try {
 
     // Declare elements
-    enum bases { AINSWORTH, DEMKOWICZ, BERNSTEIN, LASBASETOP };
-    const char *list_bases[] = {"ainsworth", "demkowicz", "bernstein"};
+    enum bases {
+      AINSWORTH,
+      AINSWORTH_LOBATTO,
+      DEMKOWICZ,
+      BERNSTEIN,
+      LASBASETOP
+    };
+    const char *list_bases[] = {"ainsworth", "ainsworth_labatto", "demkowicz",
+                                "bernstein"};
     PetscBool flg;
     PetscInt choice_base_value = AINSWORTH;
     CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-base", list_bases,
@@ -111,6 +118,8 @@ int main(int argc, char *argv[]) {
     FieldApproximationBase base = AINSWORTH_LEGENDRE_BASE;
     if (choice_base_value == AINSWORTH)
       base = AINSWORTH_LEGENDRE_BASE;
+    if (choice_base_value == AINSWORTH_LOBATTO)
+      base = AINSWORTH_LOBATTO_BASE;
     else if (choice_base_value == DEMKOWICZ)
       base = DEMKOWICZ_JACOBI_BASE;
     else if (choice_base_value == BERNSTEIN)

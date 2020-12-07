@@ -1930,12 +1930,22 @@ target_link_libraries(quad_polynomial_approximation
   mofem_third_party
   ${PROJECT_LIBS}
 )
+
 add_test(
   quad_polynomial_approximation_h1_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
   -pc_type lu
   -base ainsworth
+  -space h1
+  -log_no_color)
+
+add_test(
+  quad_polynomial_approximation_h1_ainsworth_lobatto
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
+  -pc_type lu
+  -base ainsworth_labatto
   -space h1
   -log_no_color)
 
