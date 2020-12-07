@@ -141,8 +141,8 @@ MoFEMErrorCode Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
         5 ----------9--------- 6     |             |   /
          |     |               |     |             |  /
          |    4 ----------3---------- 3            | /
-        5|    /                |    /              o -------- x1
-         |   /                 6   /
+         |    /                |    /              o -------- x1
+         5   /                 6   /
          |  4                  |  2
          | /                   | /
          |/                    |/

@@ -237,7 +237,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::MonomOrdering(int perm[][3], int p,
 }
 // Auxilary functions
 
-MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Legendre_polynomials01(int p,
+MoFEMErrorCode 
+MoFEM::DemkowiczHexAndQuad::Legendre_polynomials01(int p,
                                                                   double s01,
                                                                   double *L) {
 
@@ -253,19 +254,19 @@ MoFEM::DemkowiczHexAndQuad::Integrated_Legendre01(int p, double s01, double *L,
   MoFEMFunctionBeginHot;
   double l[p + 3];
   CHKERR Legendre_polynomials01(p, s01, l);
-  if (p >= 2) {
-    for (int i = 0; i != p - 1; i++) {
-      double factor = 1.0 / (2 * (2.0 * (i + 1) + 1.0));
-      L[i] = factor * (l[i + 2] - l[i]);
-      diffL[i] = l[i + 1];
+  if(p >= 2){
+    for (int i = 2; i != p + 1; i++) {
+      double factor = 1.0 / (2.0 * (2.0 * (double)i - 1.0));
+      L[i - 2] = factor * (l[i] - l[i - 2]);
+      diffL[i-2]  = l[i-1];
     }
   }
+  
   MoFEMFunctionReturnHot(0);
 }
+
 /*
-
-    0--------------1
-
+    0 *------------* 1
 */
 MoFEMErrorCode
 MoFEM::DemkowiczHexAndQuad::H1_BubbleShapeFunctions_ONSEGMENT(int p, double *N, double *bubbleN,
@@ -455,6 +456,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_FaceShapeFunctions_ONQUAD(
   MoFEMFunctionBeginHot;
   int permute[(p[0] - 0) * (p[1] - 0)][3];
   CHKERR MonomOrdering(permute, p[0] - 1, p[1] - 1);
+
   double coords[4][2] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}};
   for (int q = 0; q != nb_integration_pts; q++) {
     int shift = 4 * q;
