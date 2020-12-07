@@ -26,12 +26,13 @@ Segment (1d) basis functions
 
        0-----------1
 */
-MoFEMErrorCode H1_BubbleShapeFunctions_ONSEGMENT(int p, double *L,
-                                                 double *bubbleN,
+MoFEMErrorCode H1_BubbleShapeFunctions_ONSEGMENT(int p, double *N,
+                                                 double *diffN, double *bubbleN,
                                                  double *diff_bubbleN,
                                                  int nb_integration_pts);
 
-MoFEMErrorCode L2_ShapeFunctions_ONSEGMENT(int p, double *L, double *funN,
+MoFEMErrorCode L2_ShapeFunctions_ONSEGMENT(int p, double *N, double *diffN,
+                                           double *funN, double *funDiffN,
                                            int nb_integration_pts);
 
 /*

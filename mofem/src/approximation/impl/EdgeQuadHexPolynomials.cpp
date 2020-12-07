@@ -268,51 +268,44 @@ MoFEM::DemkowiczHexAndQuad::Integrated_Legendre01(int p, double s01, double *L,
 
 */
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_BubbleShapeFunctions_ONSEGMENT(
-    int p, double *N, double *bubbleN, double *diff_bubbleN,
+    int p, double *N, double *diffN, double *bubbleN, double *diff_bubbleN,
     int nb_integration_pts) {
   MoFEMFunctionBeginHot;
-  double coords[2] = {0.,
-                      1.}; // vertex coordinates of the reference element [0, 1]
+  constexpr int n0 = 0;
+  constexpr int n1 = 1;
+  double diff_mu = diffN[n1] - diffN[n0];
   for (int q = 0; q != nb_integration_pts; q++) {
     int shift = 2 * q;
-
-    double ksi = coords[0] * N[shift + 0] + coords[1] * N[shift + 1];
-
-    double mu[2] = {1.0 - ksi,
-                    ksi}; // affine coordinates of the ref. element [0, 1]
-
-    double diff_mu[2] = {-1.0, 1.0};
-
-    double L[p - 1];
-    double diffL[p - 1];
-    CHKERR Integrated_Legendre01(p, mu[1], L, diffL); // diffL = (d L)/(d ksi)
+    double mu = N[shift + n1] - N[shift + n0];
+    double L[p + 2];
+    double diffL[p + 2];
+    CHKERR Lobatto_polynomials(p + 1, mu, &diff_mu, L, diffL, 1);
     int qd_shift = (p - 1) * q;
     for (int n = 0; n != p - 1; n++) {
-      bubbleN[qd_shift + n] = L[n];
-      diff_bubbleN[qd_shift + n] =
-          diffL[n] * diff_mu[1]; // diff_bubbleN = (d bubbleN) / (d gp)
+      bubbleN[qd_shift + n] = L[n + 2];
+      diff_bubbleN[qd_shift + n] = diffL[n + 2];
     }
   }
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_ShapeFunctions_ONSEGMENT(
-    int p, double *N, double *funN, int nb_integration_pts) {
+    int p, double *N, double *diffN, double *funN, double *funDiffN,
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
-  double coords[2] = {0.,
-                      1.}; // vertex coordinates of the reference element [0, 1]
+  constexpr int n0 = 0;
+  constexpr int n1 = 1;
+  double diff_mu = diffN[n1] - diffN[n0];
   for (int q = 0; q != nb_integration_pts; q++) {
     int shift = 2 * q;
-    double ksi = coords[0] * N[shift + 0] + coords[1] * N[shift + 1];
-
-    double mu[2] = {1.0 - ksi,
-                    ksi}; // affine coordinates over the ref element [0, 1]
-
-    double L[p];
-    CHKERR Legendre_polynomials01(p - 1, ksi, L);
-    int qd_shift = p * q;
-    for (int n = 0; n != p; n++) {
-      funN[qd_shift + n] = L[n] * mu[1];
+    double mu = N[shift + n1] - N[shift + n0];
+    double L[p + 1];
+    double diffL[p + 1];
+    CHKERR Legendre_polynomials(p, mu, &diff_mu, L, diffL, 1);
+    int qd_shift = (p + 1) * q;
+    for (int n = 0; n <= p; n++) {
+      funN[qd_shift + n] = L[n];
+      funDiffN[qd_shift + n] = diffL[n];
     }
   }
   MoFEMFunctionReturnHot(0);
