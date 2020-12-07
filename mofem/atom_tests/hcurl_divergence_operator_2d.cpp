@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
     moab::Interface &moab = mb_instance;
 
     // Read mesh to MOAB
-    CHKERR moab.load_file("rectangle.h5m", 0, "");
+    CHKERR moab.load_file("rectangle_tri.h5m", 0, "");
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);

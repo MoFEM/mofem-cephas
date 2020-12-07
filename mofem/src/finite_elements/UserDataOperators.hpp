@@ -1880,11 +1880,11 @@ derivatives
 \ingroup mofem_forces_and_sources_tri_element
 
 */
-struct OpSetInvJacH1ForFace
+struct OpSetInvJacSpaceForFace
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(H1),
+  OpSetInvJacSpaceForFace(MatrixDouble &inv_jac, FieldSpace space)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space),
         invJac(inv_jac) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -1893,6 +1893,16 @@ struct OpSetInvJacH1ForFace
 private:
   MatrixDouble &invJac;
   MatrixDouble diffNinvJac;
+};
+
+struct OpSetInvJacH1ForFace: public OpSetInvJacSpaceForFace {
+  OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
+      : OpSetInvJacSpaceForFace(inv_jac, H1) {}
+};
+
+struct OpSetInvJacL2ForFace: public OpSetInvJacSpaceForFace {
+  OpSetInvJacL2ForFace(MatrixDouble &inv_jac)
+      : OpSetInvJacSpaceForFace(inv_jac, L2) {}
 };
 
 /**
@@ -1926,6 +1936,13 @@ struct OpMakeHdivFromHcurl
   OpMakeHdivFromHcurl()
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL) {}
 
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+struct OpMakeHighOrderGeometryWeightsOnFace : public   FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+  OpMakeHighOrderGeometryWeightsOnFace()
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 };

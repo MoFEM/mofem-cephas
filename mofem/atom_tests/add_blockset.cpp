@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
     const char *option = "";
-    CHKERR moab.load_file("rectangle.h5m", 0, option);
+    CHKERR moab.load_file("rectangle_tri.h5m", 0, option);
 
     auto meshsets_mng = m_field.getInterface<MeshsetsManager>();
 

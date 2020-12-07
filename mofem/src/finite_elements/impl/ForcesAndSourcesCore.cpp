@@ -57,7 +57,7 @@ ForcesAndSourcesCore::ForcesAndSourcesCore(Interface &m_field)
       mField(m_field), getRuleHook(0), setRuleHook(0),
       dataOnElement{
 
-          nullptr,
+          boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // NOSPACE,
           boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // NOFIELD
           boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // H1
           boost::make_shared<DataForcesAndSourcesCore>(MBENTITYSET), // HCURL
@@ -1320,7 +1320,10 @@ MoFEMErrorCode ForcesAndSourcesCore::loopOverOperators() {
         // Set field
         switch (oit->sPace) {
         case NOSPACE:
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Unknown space");
+          CHKERR oit->doWork(
+              0, MBENTITYSET,
+              dataOnElement[oit->sPace]->dataOnEntities[MBENTITYSET][0]);
+          break;
         case NOFIELD:
         case H1:
         case HCURL:
