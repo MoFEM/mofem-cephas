@@ -47,12 +47,6 @@ extern "C" {
  */
 #define NBEDGE_L2(P) (P + 1)
 
-/**
- * @brief Number of base functions on edge for L2 (Demkowicz) space
- *
- */
-#define NBEDGE_EXACT_L2(P) (P)
-
 // H1
 
 /**
@@ -75,15 +69,6 @@ extern "C" {
  */
 #define NBFACEQUAD_L2(P) (((P) > 0) ? P * P : 0)
 
-/**
- * @brief Number of base functions on quad edge for Hcurl space
- */
-#define NBEDGEQUAD_FULL_HCURL(P) (((P) > 0) ? P : 0)
-
-/**
- * @brief Number of base functions on quad for Hcurl space
- */
-#define NBFACE_TYP_QUAD_FULL_HCURL(P) (((P) > 1) ? P * (P - 1) : 0)
 
 /**
  * @brief Number of base functions on tetrahedron for H1 space
@@ -112,6 +97,13 @@ extern "C" {
 #define NBFACETRI_DEMKOWICZ_HCURL(P) (((P) > 1) ? (P) * ((P)-1) : 0)
 #define NBVOLUMETET_DEMKOWICZ_HCURL(P)                                         \
   (((P) > 2) ? ((P) * ((P)-1) * ((P)-2) / 2) : 0)
+
+/**
+ * @brief Number of base functions on quad for Hcurl space
+ */
+#define NBFACE_FAMILY_QUAD_HCURL(P, Q)                                    \
+  (((P) > 0 && (Q) > 1) ? P * (Q - 1) : 0)
+#define NBFACE_QUAD_HCURL(P) (2 * NBFACE_FAMILY_QUAD_HCURL(P, P))
 
 // H div
 

@@ -52,8 +52,6 @@ private:
 
   MoFEMErrorCode getValueH1DemkowiczBase(MatrixDouble &pts);
 
-  
-
   MoFEMErrorCode getValueH1BernsteinBezierBase(MatrixDouble &pts);
 
   MoFEMErrorCode getValueL2(MatrixDouble &pts);
