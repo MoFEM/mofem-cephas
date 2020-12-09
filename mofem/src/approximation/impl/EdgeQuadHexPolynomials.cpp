@@ -604,11 +604,11 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
       // int qd_shift = pp[e] * q;
       for (int n = 0; n != pp[e]; ++n) {
         for (int d = 0; d != 2; ++d) {
-          t_n(d) = mu_const[e] * L[n] * diff_mu[e][d];
+          t_n(d) = mu_const[e] * L[n] * diff_mu[e][d] / 2;
           for (int j = 0; j != 2; ++j) {
             t_diff_n(d, j) =
                 (diff_mu_const[e][j] * L[n] + mu_const[e] * diffL[2 * n + j]) *
-                diff_mu[e][d];
+                diff_mu[e][d] / 2;
           }
         }
         t_n(2) = 0;

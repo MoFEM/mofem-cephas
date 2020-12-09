@@ -197,6 +197,9 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
         forderTable[MBTRI] = [](int P) -> int {
           return NBFACETRI_DEMKOWICZ_HCURL(P);
         };
+        forderTable[MBQUAD] = [](int P) -> int {
+          return NBFACEQUAD_DEMKOWICZ_HCURL(P);
+        };
         forderTable[MBTET] = [](int P) -> int {
           return NBVOLUMETET_DEMKOWICZ_HCURL(P);
         };

@@ -20,7 +20,7 @@ to use base functions. Need to be changed.
 #define __H1_HDIV_HCURL_L2_H__
 
 #ifndef DEPRECATED
-  #define DEPRECATED
+#define DEPRECATED
 #endif
 
 #ifdef __cplusplus
@@ -43,7 +43,7 @@ extern "C" {
 
 /**
  * @brief Number of base functions on edge fro L2 space
- * 
+ *
  */
 #define NBEDGE_L2(P) (P + 1)
 
@@ -68,7 +68,6 @@ extern "C" {
  * @brief Number of base functions on quad for L2 space
  */
 #define NBFACEQUAD_L2(P) (((P) > 0) ? P * P : 0)
-
 
 /**
  * @brief Number of base functions on tetrahedron for H1 space
@@ -101,9 +100,10 @@ extern "C" {
 /**
  * @brief Number of base functions on quad for Hcurl space
  */
-#define NBFACE_FAMILY_QUAD_HCURL(P, Q)                                    \
+#define NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HCURL(P, Q)                           \
   (((P) > 0 && (Q) > 1) ? P * (Q - 1) : 0)
-#define NBFACE_QUAD_HCURL(P) (2 * NBFACE_FAMILY_QUAD_HCURL(P, P))
+#define NBFACEQUAD_DEMKOWICZ_HCURL(P)                                          \
+  (2 * NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HCURL(P, P))
 
 // H div
 
@@ -125,15 +125,16 @@ extern "C" {
 
 /**
  * @brief Get base functions on triangle for L2 space
- * 
+ *
  * @param p polynomial order
- * @param N barycentric coordinates (shape functions) at integration points 
- * @param diffN direvatives of barycentric coordinates, i.e. direvatives of shape functions 
+ * @param N barycentric coordinates (shape functions) at integration points
+ * @param diffN direvatives of barycentric coordinates, i.e. direvatives of
+ * shape functions
  * @param L2N values of L2 base at integration points
  * @param diff_L2N dirvatives of base functions at integration points
  * @param GDIM number of integration points
- * @param base_polynomials polynomial base used to construct L2 base on element 
- * @return PetscErrorCode 
+ * @param base_polynomials polynomial base used to construct L2 base on element
+ * @return PetscErrorCode
  */
 PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTRI(
     int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
@@ -142,15 +143,16 @@ PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTRI(
                                        const int dim));
 /**
  * @brief Get base functions on tetrahedron for L2 space
- * 
+ *
  * @param p polynomial order
- * @param N barycentric coordinates (shape functions) at integration points 
- * @param diffN direvatives of barycentric coordinates, i.e. direvatives of shape functions 
+ * @param N barycentric coordinates (shape functions) at integration points
+ * @param diffN direvatives of barycentric coordinates, i.e. direvatives of
+ * shape functions
  * @param L2N values of L2 base at integration points
  * @param diff_L2N dirvatives of base functions at integration points
  * @param GDIM number of integration points
- * @param base_polynomials polynomial base used to construct L2 base on element 
- * @return PetscErrorCode 
+ * @param base_polynomials polynomial base used to construct L2 base on element
+ * @return PetscErrorCode
  */
 PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTET(
     int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
@@ -159,7 +161,7 @@ PetscErrorCode L2_Ainsworth_ShapeFunctions_MBTET(
                                        const int dim));
 
 /**
- * \deprecated Use L2_Ainsworth_ShapeFunctions_MBTRI 
+ * \deprecated Use L2_Ainsworth_ShapeFunctions_MBTRI
  */
 DEPRECATED PetscErrorCode L2_ShapeFunctions_MBTRI(
     int p, double *N, double *diffN, double *L2N, double *diff_L2N, int GDIM,
@@ -228,13 +230,14 @@ PetscErrorCode H1_VolumeShapeDiffMBTETinvJ(int base_p, int p,
                                            int GDIM);
 
 PetscErrorCode H1_EdgeGradientOfDeformation_hierarchical(int p, double *diffN,
-                                                        double *dofs,
-                                                        double *F);
+                                                         double *dofs,
+                                                         double *F);
 PetscErrorCode H1_FaceGradientOfDeformation_hierarchical(int p, double *diffN,
-                                                        double *dofs,
-                                                        double *F);
+                                                         double *dofs,
+                                                         double *F);
 PetscErrorCode H1_VolumeGradientOfDeformation_hierarchical(int p, double *diffN,
-                                                      double *dofs, double *F);
+                                                           double *dofs,
+                                                           double *F);
 
 /**
  * \deprecated use H1_EdgeGradientOfDeformation_hierarchical
@@ -276,11 +279,10 @@ PetscErrorCode H1_EdgeShapeFunctions_MBQUAD(
     int *sense, int *p, double *N, double *diffN, double *edgeN[4],
     double *diff_edgeN[4], int GDIM,
     PetscErrorCode (*base_polynomials)(int p, double s, double *diff_s,
-                                       double *L, double *diffL, const int dim));
+                                       double *L, double *diffL,
+                                       const int dim));
 
 // Hdiv and Hcurl are implemented and declared in other files
-
-
 
 #ifdef __cplusplus
 }

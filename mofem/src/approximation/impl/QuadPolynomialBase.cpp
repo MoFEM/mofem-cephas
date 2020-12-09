@@ -281,8 +281,8 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
 
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
                                                         3 * nb_dofs, false);
-      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(3 * 2 * nb_dofs,
-                                                            false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
+          nb_gauss_pts, 3 * 2 * nb_dofs, false);
 
       hcurl_edge_n[ee] =
           &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
@@ -305,16 +305,16 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
 
     int p = data.dataOnEntities[MBQUAD][0].getDataOrder();
     int order[2] = {p, p};
-    int nb_dofs = NBFACE_QUAD_HCURL(p);
+    int nb_dofs = NBFACEQUAD_DEMKOWICZ_HCURL(p);
     auto &face_n = data.dataOnEntities[MBQUAD][0].getN(base);
     auto &diff_face_n = data.dataOnEntities[MBQUAD][0].getDiffN(base);
     face_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
     diff_face_n.resize(nb_gauss_pts, 3 * 2 * nb_dofs, false);
 
-    MatrixDouble face_family(2,
-                             3 * NBFACE_FAMILY_QUAD_HCURL(p, p) * nb_gauss_pts);
-    MatrixDouble diff_face_family(2, 3 * 2 * NBFACE_FAMILY_QUAD_HCURL(p, p) *
-                                         nb_gauss_pts);
+    MatrixDouble face_family(
+        2, 3 * NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HCURL(p, p) * nb_gauss_pts);
+    MatrixDouble diff_face_family(
+        2, 3 * 2 * NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HCURL(p, p) * nb_gauss_pts);
 
     double *face_family_ptr[] = {&face_family(0, 0), &face_family(1, 0)};
     double *diff_face_family_ptr[] = {&diff_face_family(0, 0),
@@ -377,7 +377,6 @@ MoFEMErrorCode
 QuadPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  
   MoFEMFunctionReturn(0);
 }
 
