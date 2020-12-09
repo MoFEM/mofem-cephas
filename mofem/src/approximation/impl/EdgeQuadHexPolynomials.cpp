@@ -555,34 +555,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
       diff_mu[3][d] = diff_ksi30;
     }
 
-    // int shift = 4 * q;
-    // double ksi = 0.0;
-    // double eta = 0.0;
-    // for (int vv = 0; vv != 4; vv++) {
-    //   ksi += coord[vv][0] * N[shift + vv];
-    //   eta += coords[vv][1] * N[shift + vv];
-    // }
-
-    // // Affine coordinates of each eadge mu0 and mu1
-    // double mu_ksi[2] = {1.0 - ksi, ksi};
-    // double mu_eta[2] = {1.0 - eta, eta};
-
-    // double diff_mu_ksi[2][2] = {{-1.0, 0.0}, {1.0, 0.0}};
-    // double diff_mu_eta[2][2] = {{0.0, -1.0}, {0.0, 1.0}};
-
-    // // constant affine coordinates of edges per cannonical numbering
-    // double mu_const[4] = {mu_eta[0], mu_ksi[1], mu_eta[1], mu_ksi[0]};
-    // double *diff_mu_const[4] = {diff_mu_eta[0], diff_mu_ksi[1],
-    // diff_mu_eta[1],
-    //                             diff_mu_ksi[0]};
-
-    // // parametrization of each edge per cannonical numbering
-    // double *mu[4] = {mu_ksi, mu_eta, mu_ksi, mu_eta};
-    // double *diff_mu[4][2] = {{&*diff_mu_ksi[0], &*diff_mu_ksi[1]},
-    //                          {&*diff_mu_eta[0], &*diff_mu_eta[1]},
-    //                          {&*diff_mu_ksi[0], &*diff_mu_ksi[1]},
-    //                          {&*diff_mu_eta[0], &*diff_mu_eta[1]}};
-
     int pp[4] = {p[0], p[1], p[0], p[1]};
     for (int e = 0; e != 4; e++) {
 
@@ -597,11 +569,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
       auto t_n = getFTensor1FromPtr<3>(t_n_ptr);
       auto t_diff_n = getFTensor2FromPtr<3, 2>(t_diff_n_ptr);
 
-      // int index = (sense[e] + 1) / 2;
-      // double L[pp[e]];
-      // double ss = mu[e][index];
-      // CHKERR Legendre_polynomials01(pp[e] - 1, ss, L);
-      // int qd_shift = pp[e] * q;
       for (int n = 0; n != pp[e]; ++n) {
         for (int d = 0; d != 2; ++d) {
           t_n(d) = mu_const[e] * L[n] * diff_mu[e][d] / 2;
@@ -617,15 +584,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
         ++t_n;
         ++t_diff_n;
 
-        // edgeN[e][2 * (qd_shift + n) + 0] =
-        //     mu_const[e] * L[n] * diff_mu[e][index][0];
-        // edgeN[e][2 * (qd_shift + n) + 1] =
-        //     mu_const[e] * L[n] * diff_mu[e][index][1];
-
-        // double E1[2] = {diff_mu_const[e][0], diff_mu_const[e][1]};
-        // double E2[2] = {L[n] * diff_mu[e][index][0],
-        //                 L[n] * diff_mu[e][index][1]};
-        // curl_edgeN[e][qd_shift + n] = E1[0] * E2[1] - E1[1] * E2[0];
       }
     }
   }
@@ -672,57 +630,17 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
     double *diff_mu_ksi_eta[2] = {diff_ksi01, diff_ksi12};
     double *diff_mu_eta_ksi[2] = {diff_ksi12, diff_ksi01};
 
-    // double L01[p[0] + 2];
-    // double diffL01[2 * (p[0] + 2)];
-    // CHKERR Lobatto_polynomials(p[0] + 1, ksi01, diff_ksi01, L01, diffL01, 2);
-    // double L12[p[1] + 2];
-    // double diffL12[2 * (p[1] + 2)];
-    // CHKERR Lobatto_polynomials(p[1] + 1, ksi12, diff_ksi12, L12, diffL12, 2);
-
-    // double Phi01[p[0]];
-    // double diffL01[2 * p[0]];
-    // CHKERR Legendre_polynomials(p[0], mu, &diff_mu, L, diffL, 1);
-    // double Phi12[p[1] + 2];
-    // double diffL12[2 * (p[1] + 2)];
-    // CHKERR Legendre_polynomials(p[0], mu, &diff_mu, L, diffL, 1);
-    // CHKERR Lobatto_polynomials(p[1] + 1, ksi12, diff_ksi12, L12, diffL12, 2);
-
-    // int shift = 4 * q;
-    // double ksi = 0.0;
-    // double eta = 0.0;
-    // for (int vv = 0; vv != 4; vv++) {
-    //   ksi += coords[vv][0] * N[shift + vv];
-    //   eta += coords[vv][1] * N[shift + vv];
-    // }
-
-    // // Affine coordinates of each eadge mu0 and mu1
-    // double mu_ksi[2] = {1.0 - ksi, ksi};
-    // double mu_eta[2] = {1.0 - eta, eta};
-
-    // double diff_mu_ksi[2][2] = {{-1.0, 0.0}, {1.0, 0.0}};
-    // double diff_mu_eta[2][2] = {{0.0, -1.0}, {0.0, 1.0}};
-
-    // int pq[2] = {p[0], p[1]};
-    // int qp[2] = {p[1], p[0]};
-    // double mu_ksi_eta[2] = {mu_ksi[1], mu_eta[1]};
-    // double mu_eta_ksi[2] = {mu_eta[1], mu_ksi[1]};
-
-    // double *diff_mu_ksi_eta[2] = {diff_mu_ksi[1], diff_mu_eta[1]};
-    // double *diff_mu_eta_ksi[2] = {diff_mu_eta[1], diff_mu_ksi[1]};
-    // double sgn[2] = {-1.0, 1.0};
     for (int family = 0; family != 2; family++) {
       const int pp = pq[family];
       const int qq = qp[family];
 
       double Phi[pp + 2];
       double diffPhi[2 * (pp + 2)];
-      // CHKERR Integrated_Legendre01(pp, mu_ksi_eta[family], Phi, diffPhi);
       CHKERR Lobatto_polynomials(pp + 1, mu_ksi_eta[family],
                                  diff_mu_ksi_eta[family], Phi, diffPhi, 2);
 
       double E[qq];
       double diffE[2 * qq];
-      // CHKERR Legendre_polynomials01(qq - 1, mu_eta_ksi[family], E);
       CHKERR Legendre_polynomials(qq - 1, mu_eta_ksi[family],
                                   diff_mu_eta_ksi[family], E, diffE, 2);
 
@@ -754,11 +672,13 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
   MoFEMFunctionReturnHot(0);
 }
 
-
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONQUAD(
     int *p, double *N, double *faceN[], double *div_faceN[],
     int nb_integration_pts) {
   MoFEMFunctionBeginHot;
+
+  // Here should be trace of H-div space from Hex
+
   MoFEMFunctionReturnHot(0);
 }
 
