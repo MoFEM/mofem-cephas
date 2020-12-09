@@ -329,12 +329,13 @@ OpMakeHdivFromHcurl::doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (type != MBEDGE && type != MBTRI)
+  if (type != MBEDGE && type != MBTRI && type != MBQUAD)
     MoFEMFunctionReturnHot(0);
 
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI)
+  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&
+      getNumeredEntFiniteElementPtr()->getEntType() != MBQUAD)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "This operator can be used only with element which is triangle");
+            "This operator can be used only with element which is face");
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
 

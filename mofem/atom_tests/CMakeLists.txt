@@ -1880,19 +1880,23 @@ target_link_libraries(continuity_check_on_skeleton_with_simple_2d_for_hdiv
   ${PROJECT_LIBS}
 )
 
-add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_ainsworth
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_ainsworth_on_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
   -file_name rectangle_tri.h5m -base ainsworth
-  -log_no_color
-)
+  -log_no_color)
 
-add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_demkowicz
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_demkowicz_on_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
   -file_name rectangle_tri.h5m -base demkowicz
-  -log_no_color
-)
+  -log_no_color)
+
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_demkowicz_on_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
+  -file_name rectangle_quad.h5m -base demkowicz
+  -log_no_color)
 
 # continuity check for h1 2d
 
