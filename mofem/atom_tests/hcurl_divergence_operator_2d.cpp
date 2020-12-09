@@ -102,8 +102,16 @@ int main(int argc, char *argv[]) {
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
 
+    PetscBool flg_file = PETSC_TRUE;
+    char mesh_file_name[255];
+    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+                                 255, &flg_file);
+    if (flg_file != PETSC_TRUE)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+              "*** ERROR -my_file (MESH FILE NEEDED)");
+
     // Read mesh to MOAB
-    CHKERR moab.load_file("rectangle_tri.h5m", 0, "");
+    CHKERR moab.load_file(mesh_file_name, 0, "");
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
