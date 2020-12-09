@@ -1844,14 +1844,14 @@ target_link_libraries(
   ${PROJECT_LIBS})
   
 add_test(
-  continuity_check_on_skeleton_with_simple_2d_for_hcurl_ainsworth
+  continuity_check_on_skeleton_with_simple_2d_for_hcurl_ainsworth_on_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hcurl 
   -file_name rectangle_tri.h5m -base ainsworth
   -log_no_color
 )
 
-add_test(continuity_check_on_skeleton_with_simple_2d_for_hcurl_demkowicz
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hcurl_demkowicz_on_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hcurl 
   -file_name rectangle_tri.h5m -base demkowicz
