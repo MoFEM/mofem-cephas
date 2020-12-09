@@ -949,6 +949,13 @@ add_test(hcurl_divergence_operator_2d_demkowicz_on_tri
   -my_file rectangle_tri.h5m
   -base demkowicz -odrer 5
   -log_no_color)
+add_test(hcurl_divergence_operator_2d_demkowicz_on_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
+  -my_file rectangle_quad.h5m
+  -base demkowicz -odrer 5
+  -log_no_color)
+
 
 # add test for recording series
 my_add_executable(record_series_atom record_series_atom.cpp)
