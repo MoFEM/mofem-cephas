@@ -1,7 +1,7 @@
 /**
- * \file continuity_check_on_skeleton_with_simple_2d_for_hdiv.cpp
+ * \file continuity_check_on_skeleton_with_simple_2d_for_h1.cpp
  * \ingroup mofem_simple_interface
- * \example continuity_check_on_skeleton_with_simple_2d_for_hdiv.cpp
+  \example continuity_check_on_skeleton_with_simple_2d_for_h1.cpp
  *
  * \brief Integration on skeleton for 2d
  *
@@ -29,11 +29,10 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSideSwitch<
-    FaceElementForcesAndSourcesCore::NO_CONTRAVARIANT_TRANSFORM_HDIV |
-    FaceElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+    FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY>;
 
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
-    EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+    EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY>;
 
 using FaceEleOnSideOp = FaceEleOnSide::UserDataOperator;
 using EdgeEleOp = EdgeEle::UserDataOperator;
@@ -50,7 +49,8 @@ struct SkeletonFE : public EdgeEleOp {
 
     CommonData &elemData;
     OpFaceSide(CommonData &elem_data)
-        : FaceEleOnSideOp("FIELD", UserDataOperator::OPROW), elemData(elem_data) {}
+        : FaceEleOnSideOp("FIELD", UserDataOperator::OPROW),
+          elemData(elem_data) {}
 
     MoFEMErrorCode doWork(int side, EntityType type,
                           DataForcesAndSourcesCore::EntData &data) {
@@ -65,13 +65,10 @@ struct SkeletonFE : public EdgeEleOp {
           SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
                   "coordinates at integration pts are different");
 
-        const size_t nb_dofs = data.getN().size2() / 3;
+        const size_t nb_dofs = data.getN().size2();
         const size_t nb_integration_pts = data.getN().size1();
 
-        auto &dir = getDirection();
-        FTensor::Tensor1<double, 2> t_normal{-dir(1), dir(0)};
-        auto t_hdiv_base = data.getFTensor1N<3>();
-        FTensor::Index<'i', 2> i;
+        auto t_base = data.getFTensor0N();
         MatrixDouble *ptr_dot_elem_data = nullptr;
         if (getFEMethod()->nInTheLoop == 0)
           ptr_dot_elem_data = &elemData.dotEleLeft;
@@ -82,8 +79,8 @@ struct SkeletonFE : public EdgeEleOp {
 
         for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
           for (size_t bb = 0; bb != nb_dofs; ++bb) {
-            dot_elem_data(gg, bb) = t_normal(i) * t_hdiv_base(i);
-            ++t_hdiv_base;
+            dot_elem_data(gg, bb) = t_base;
+            ++t_base;
           }
         }
       }
@@ -93,19 +90,11 @@ struct SkeletonFE : public EdgeEleOp {
 
   CommonData &elemData;
   FaceEleOnSide faceSideFe;
-  MatrixDouble jac;
 
   SkeletonFE(MoFEM::Interface &m_field, CommonData &elem_data)
       : EdgeEle::UserDataOperator("FIELD", UserDataOperator::OPROW),
         faceSideFe(m_field), elemData(elem_data) {
-
-      faceSideFe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
-      faceSideFe.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
-      faceSideFe.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformFace(jac));
-      faceSideFe.getOpPtrVector().push_back(
-          new SkeletonFE::OpFaceSide(elemData));
-
+    faceSideFe.getOpPtrVector().push_back(new SkeletonFE::OpFaceSide(elemData));
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -114,21 +103,18 @@ struct SkeletonFE : public EdgeEleOp {
     MoFEMFunctionBeginHot;
     if (type == MBEDGE) {
 
-      const size_t nb_dofs = data.getN().size2() / 3;
+      const size_t nb_dofs = data.getN().size2();
       const size_t nb_integration_pts = data.getN().size1();
 
-      auto &dir = getDirection();
-      FTensor::Tensor1<double, 2> t_normal{-dir(1), dir(0)};
-      auto t_hdiv_base = data.getFTensor1N<3>();
-      FTensor::Index<'i', 2> i;
+      auto t_base = data.getFTensor0N();
       elemData.dotEdge.resize(nb_integration_pts, nb_dofs, false);
       elemData.dotEleLeft.resize(nb_integration_pts, 0, false);
       elemData.dotEleRight.resize(nb_integration_pts, 0, false);
 
       for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
         for (size_t bb = 0; bb != nb_dofs; ++bb) {
-          elemData.dotEdge(gg, bb) = t_normal(i) * t_hdiv_base(i);
-          ++t_hdiv_base;
+          elemData.dotEdge(gg, bb) = t_base;
+          ++t_base;
         }
       }
 
@@ -153,6 +139,8 @@ struct SkeletonFE : public EdgeEleOp {
               SETERRQ4(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                        "Inconsistency (%d, %d) %3.4e != %3.4e", gg, bb,
                        vol_dot_data(gg, bb), elemData.dotEdge(gg, bb));
+            else
+              MOFEM_LOG("ATOM", Sev::noisy) << "Ok";
           }
         MoFEMFunctionReturn(0);
       };
@@ -161,7 +149,6 @@ struct SkeletonFE : public EdgeEleOp {
         CHKERR check_continuity_of_base(elemData.dotEleLeft);
       else if (elemData.dotEleRight.size2() != 0)
         CHKERR check_continuity_of_base(elemData.dotEleRight);
-
     }
     MoFEMFunctionReturnHot(0);
   }
@@ -181,6 +168,11 @@ int main(int argc, char *argv[]) {
     // Create MoFEM database and link it to MoAB
     MoFEM::Core mofem_core(moab);
     MoFEM::Interface &m_field = mofem_core;
+
+    auto core_log = logging::core::get();
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSelf(), "ATOM"));
+    LogManager::setLog("ATOM");
 
     // Register DM Manager
     DMType dm_name = "DMMOFEM";
@@ -215,10 +207,13 @@ int main(int argc, char *argv[]) {
 
       // add fields
       auto base = get_base();
-      CHKERR simple_interface->addDomainField("FIELD", HCURL, base, 1);
-      CHKERR simple_interface->addSkeletonField("FIELD", HCURL, base, 1);
+      CHKERR simple_interface->addDomainField("FIELD", H1, base, 1);
+      // CHKERR simple_interface->addDomainField("TEST_FIELD", L2,
+      //                                         AINSWORTH_LEGENDRE_BASE, 1);
+      CHKERR simple_interface->addSkeletonField("FIELD", H1, base, 1);
       // set fields order
       CHKERR simple_interface->setFieldOrder("FIELD", 2);
+      // CHKERR simple_interface->setFieldOrder("TEST_FIELD", 1);
       // setup problem
       CHKERR simple_interface->setUp();
       // get dm
@@ -228,9 +223,6 @@ int main(int argc, char *argv[]) {
       CommonData elem_data;
       boost::shared_ptr<EdgeEle> skeleton_fe =
           boost::shared_ptr<EdgeEle>(new EdgeEle(m_field));
-
-      skeleton_fe->getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformOnEdge());
       skeleton_fe->getOpPtrVector().push_back(
           new SkeletonFE(m_field, elem_data));
 

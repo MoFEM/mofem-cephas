@@ -1985,15 +1985,21 @@ private:
 
 /**@{*/
 
-struct OpSetContrariantPiolaTransformOnEdge
+struct OpSetContravariantPiolaTransformOnEdge
     : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetContrariantPiolaTransformOnEdge()
+  OpSetContravariantPiolaTransformOnEdge()
       : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(HCURL) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 };
+
+/**
+ * @deprecated Name is deprecated and this is added for back compatibility
+ */
+using OpSetContrariantPiolaTransformOnEdge =
+    OpSetContravariantPiolaTransformOnEdge;
 
 /**@}*/
 

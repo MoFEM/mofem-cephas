@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
       EdgeEle fe_edge(m_field);
       fe_edge.getRuleHook = rule;
       fe_edge.getOpPtrVector().push_back(
-          new OpSetContrariantPiolaTransformOnEdge());
+          new OpSetContravariantPiolaTransformOnEdge());
       fe_edge.getOpPtrVector().push_back(new OpFlux(flux));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE_FE", fe_edge);
       return flux;

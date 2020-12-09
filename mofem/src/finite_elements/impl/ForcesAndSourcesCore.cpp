@@ -657,24 +657,28 @@ ForcesAndSourcesCore::getNodesFieldData(DataForcesAndSourcesCore &data,
               if (auto e = it->lock()) {
                 const auto &sn = e->getSideNumberPtr();
                 const int side_number = sn->side_number;
-                const int brother_side_number = sn->brother_side_number;
+                // Some field entities on skeleton can have negative side
+                // numbeer
+                if (side_number >= 0) {
+                  const int brother_side_number = sn->brother_side_number;
 
-                field_entities[side_number] = e.get();
-                if (brother_side_number != -1) {
-                  brother_ents_vec.emplace_back(e);
-                  field_entities[side_number] = field_entities[side_number];
-                }
+                  field_entities[side_number] = e.get();
+                  if (brother_side_number != -1) {
+                    brother_ents_vec.emplace_back(e);
+                    field_entities[side_number] = field_entities[side_number];
+                  }
 
-                bb_node_order[side_number] = e->getMaxOrder();
-                int pos = side_number * nb_dofs_on_vert;
-                auto ent_filed_data_vec = e->getEntFieldData();
-                if (auto cache = e->entityCacheDataDofs.lock()) {
-                  for (auto dit = cache->loHi[0]; dit != cache->loHi[1];
-                       ++dit) {
-                    const auto dof_idx = (*dit)->getEntDofIdx();
-                    nodes_data[pos + dof_idx] = ent_filed_data_vec[dof_idx];
-                    nodes_dofs[pos + dof_idx] =
-                        reinterpret_cast<FEDofEntity *>((*dit).get());
+                  bb_node_order[side_number] = e->getMaxOrder();
+                  int pos = side_number * nb_dofs_on_vert;
+                  auto ent_filed_data_vec = e->getEntFieldData();
+                  if (auto cache = e->entityCacheDataDofs.lock()) {
+                    for (auto dit = cache->loHi[0]; dit != cache->loHi[1];
+                         ++dit) {
+                      const auto dof_idx = (*dit)->getEntDofIdx();
+                      nodes_data[pos + dof_idx] = ent_filed_data_vec[dof_idx];
+                      nodes_dofs[pos + dof_idx] =
+                          reinterpret_cast<FEDofEntity *>((*dit).get());
+                    }
                   }
                 }
               }

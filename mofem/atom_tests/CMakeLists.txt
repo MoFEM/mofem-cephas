@@ -1804,11 +1804,14 @@ add_test(add_blockset
   -log_no_color
 )
 
+#test integration on contact prism side element
 my_add_executable(
-  continuity_check_on_skeleton_with_simple_2d
-  continuity_check_on_skeleton_with_simple_2d.cpp
+  continuity_check_on_contact_prism_side_ele
+  continuity_check_on_contact_prism_side_ele.cpp
 )
-target_link_libraries(continuity_check_on_skeleton_with_simple_2d
+
+target_link_libraries(
+  continuity_check_on_contact_prism_side_ele
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -1816,42 +1819,51 @@ target_link_libraries(continuity_check_on_skeleton_with_simple_2d
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS}
-)
-add_test(continuity_check_on_skeleton_with_simple_2d_ainsworth
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
-  -file_name rectangle_tri.h5m -base ainsworth
-  -log_no_color
-)
+  ${PROJECT_LIBS})
 
-add_test(continuity_check_on_skeleton_with_simple_2d_demkowicz
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
-  -file_name rectangle_tri.h5m -base demkowicz
-  -log_no_color
-)
+  add_test(
+  continuity_check_on_contact_prism_side_ele_h1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_contact_prism_side_ele
+  -my_file 2_tets_contact.cub -base ainsworth -space h1)
 
-#test integration on contact prism side element
+# continuity check for hcurl 2d
+
 my_add_executable(
-  continuity_check_on_contact_prism_side_ele
-  continuity_check_on_contact_prism_side_ele.cpp
-)
-target_link_libraries(continuity_check_on_contact_prism_side_ele
-mofem_finite_elements
+  continuity_check_on_skeleton_with_simple_2d_for_hcurl
+  continuity_check_on_skeleton_with_simple_2d_for_hcurl.cpp)
+target_link_libraries(
+  continuity_check_on_skeleton_with_simple_2d_for_hcurl
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS}
+  ${PROJECT_LIBS})
+  
+add_test(
+  continuity_check_on_skeleton_with_simple_2d_for_hcurl_ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hcurl 
+  -file_name rectangle_tri.h5m -base ainsworth
+  -log_no_color
 )
+
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hcurl_demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hcurl 
+  -file_name rectangle_tri.h5m -base demkowicz
+  -log_no_color
+)
+
+# continuity check for hdiv 2d
 
 my_add_executable(
   continuity_check_on_skeleton_with_simple_2d_for_hdiv
-  continuity_check_on_skeleton_with_simple_2d_for_hdiv.cpp
-)
+  continuity_check_on_skeleton_with_simple_2d_for_hdiv.cpp)
+  
 target_link_libraries(continuity_check_on_skeleton_with_simple_2d_for_hdiv
   mofem_finite_elements
   mofem_interfaces
@@ -1861,13 +1873,6 @@ target_link_libraries(continuity_check_on_skeleton_with_simple_2d_for_hdiv
   mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS}
-)
-
-add_test(
-  continuity_check_on_contact_prism_side_ele_h1
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_contact_prism_side_ele
-  -my_file 2_tets_contact.cub -base ainsworth -space h1
 )
 
 add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_ainsworth
@@ -1883,6 +1888,31 @@ add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_demkowicz
   -file_name rectangle_tri.h5m -base demkowicz
   -log_no_color
 )
+
+# continuity check for h1 2d
+
+my_add_executable(
+  continuity_check_on_skeleton_with_simple_2d_for_h1
+  continuity_check_on_skeleton_with_simple_2d_for_h1.cpp)
+  
+target_link_libraries(continuity_check_on_skeleton_with_simple_2d_for_h1
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
+add_test(continuity_check_on_skeleton_with_simple_2d_for_h1_ainsworth
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_h1 
+  -file_name rectangle_tri.h5m -base ainsworth
+  -log_no_color
+)
+
 
 cm_export_file("../meshes/reference_triangle_mesh.h5m" export_atom_tests)
 my_add_executable(prism_elements_from_surface prism_elements_from_surface.cpp)

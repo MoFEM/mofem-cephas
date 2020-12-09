@@ -124,11 +124,6 @@ MoFEMErrorCode Hcurl_FaceShapeFunctions_ONQUAD(int *face_nodes, int *p,
                                                double *diff_faceN[],
                                                int nb_integration_pts);
 
-MoFEMErrorCode Hdiv_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
-                                              double *edgeN[],
-                                              double *div_edgeN[],
-                                              int nb_integration_pts);
-
 MoFEMErrorCode Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
                                               double *faceN[],
                                               double *div_faceN[],

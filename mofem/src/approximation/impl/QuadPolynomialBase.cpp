@@ -377,76 +377,7 @@ MoFEMErrorCode
 QuadPolynomialBase::getValueHdivDemkowiczBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  // DataForcesAndSourcesCore &data = cTx->dAta;
-  // const FieldApproximationBase base = cTx->bAse;
-
-  // int nb_gauss_pts = pts.size2();
-
-  // // Calculation H-curl on quad edges
-  // if (data.spacesOnEntities[MBEDGE].test(HCURL)) {
-
-  //   if (data.dataOnEntities[MBEDGE].size() != 4)
-  //     SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-  //              "wrong number of edges on quad, should be 4 but is %d",
-  //              data.dataOnEntities[MBEDGE].size());
-
-  //   int sense[4], order[4];
-  //   double *hdiv_edge_n[4];
-  //   double *div_edge_n[4];
-
-  //   for (int ee = 0; ee != 4; ++ee) {
-
-  //     if (data.dataOnEntities[MBEDGE][ee].getSense() == 0)
-  //       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-  //               "orientation (sense) of edge is not set");
-
-  //     sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-  //     order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-  //     int nb_dofs = NBEDGE_DEMKOWICZ_HCURL(
-  //         data.dataOnEntities[MBEDGE][ee].getDataOrder());
-
-  //     data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,
-  //                                                       2 * nb_dofs, false);
-  //     data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_dofs, false);
-
-  //     hdiv_edge_n[ee] =
-  //         &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
-  //     div_edge_n[ee] =
-  //         &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
-  //   }
-  //   int pp[2] = {order[0], order[1]};
-  //   CHKERR DemkowiczHexAndQuad::Hdiv_EdgeShapeFunctions_ONQUAD(
-  //       sense, pp, &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-  //       hdiv_edge_n, div_edge_n, nb_gauss_pts);
-  // }
-
-  // if (data.spacesOnEntities[MBQUAD].test(HCURL)) {
-
-  //   // face
-  //   if (data.dataOnEntities[MBQUAD].size() != 1)
-  //     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-  //             "No data struture to keep base functions on face");
-
-  //   double *hdiv_val_face_n[2];
-  //   double *hdiv_div_face_n[2];
-  //   int p = data.dataOnEntities[MBQUAD][0].getDataOrder();
-  //   int order[2] = {p, p};
-  //   for (int typ = 0; typ != 2; typ++) {
-  //     int nb_dofs = NBFACE_FAMILY_QUAD_HCURL(p, p);
-  //     data.dataOnEntities[MBQUAD][typ].getN(base).resize(nb_gauss_pts,
-  //                                                        2 * nb_dofs, false);
-  //     data.dataOnEntities[MBQUAD][typ].getDiffN(base).resize(nb_gauss_pts,
-  //                                                            nb_dofs, false);
-  //     hdiv_val_face_n[typ] =
-  //         &*data.dataOnEntities[MBQUAD][typ].getN(base).data().begin();
-  //     hdiv_div_face_n[typ] =
-  //         &*data.dataOnEntities[MBQUAD][typ].getDiffN(base).data().begin();
-  //   }
-
-  //   CHKERR DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONQUAD(
-  //       order, &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
-  //       hdiv_val_face_n, hdiv_div_face_n, nb_gauss_pts);
-  // }
+  
   MoFEMFunctionReturn(0);
 }
 

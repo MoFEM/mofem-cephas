@@ -468,7 +468,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpSetContrariantPiolaTransformOnEdge::doWork(
+MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 

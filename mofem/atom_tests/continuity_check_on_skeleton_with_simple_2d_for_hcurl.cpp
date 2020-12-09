@@ -1,7 +1,7 @@
 /**
- * \file continuity_check_on_skeleton_with_simple_2d.cpp
+ * \file continuity_check_on_skeleton_with_simple_2d_for_hcurl.cpp
  * \ingroup mofem_simple_interface
- * \example continuity_check_on_skeleton_with_simple_2d.cpp
+ * \example continuity_check_on_skeleton_with_simple_2d_for_hcurl.cpp
  *
  * \brief Integration on skeleton for 2d
  * 

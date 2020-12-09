@@ -754,133 +754,14 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_EdgeShapeFunctions_ONQUAD(
-    int *sense, int *p, double *N, double *edgeN[], double *div_edgeN[],
-    int nb_integration_pts) {
-  MoFEMFunctionBeginHot;
-  double coords[4][2] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}};
-  for (int q = 0; q != nb_integration_pts; q++) {
-    int shift = 4 * q;
-    double ksi = 0.0;
-    double eta = 0.0;
-    for (int vv = 0; vv != 4; vv++) {
-      ksi += coords[vv][0] * N[shift + vv];
-      eta += coords[vv][1] * N[shift + vv];
-    }
-
-    // Affine coordinates of each eadge mu0 and mu1
-    double mu_ksi[2] = {1.0 - ksi, ksi};
-    double mu_eta[2] = {1.0 - eta, eta};
-
-    double diff_mu_ksi[2][2] = {{-1.0, 0.0}, {1.0, 0.0}};
-    double diff_mu_eta[2][2] = {{0.0, -1.0}, {0.0, 1.0}};
-
-    // constant affine coordinates of edges per cannonical numbering
-    double mu_const[4] = {mu_eta[0], mu_ksi[1], mu_eta[1], mu_ksi[0]};
-    double *diff_mu_const[4] = {diff_mu_eta[0], diff_mu_ksi[1], diff_mu_eta[1],
-                                diff_mu_ksi[0]};
-
-    // parametrization of each edge per cannonical numbering
-    double *mu[4] = {mu_ksi, mu_eta, mu_ksi, mu_eta};
-    double *diff_mu[4][2] = {{&*diff_mu_ksi[0], &*diff_mu_ksi[1]},
-                             {&*diff_mu_eta[0], &*diff_mu_eta[1]},
-                             {&*diff_mu_ksi[0], &*diff_mu_ksi[1]},
-                             {&*diff_mu_eta[0], &*diff_mu_eta[1]}};
-
-    int pp[4] = {p[0], p[1], p[0], p[1]};
-    for (int e = 0; e != 4; e++) {
-      int index = (sense[e] + 1) / 2;
-      double L[pp[e]];
-      double ss = mu[e][index];
-      CHKERR Legendre_polynomials01(pp[e] - 1, ss, L);
-      int qd_shift = pp[e] * q;
-      for (int n = 0; n != pp[e]; n++) {
-        edgeN[e][2 * (qd_shift + n) + 0] =
-            mu_const[e] * L[n] * diff_mu[e][index][1];
-        edgeN[e][2 * (qd_shift + n) + 1] =
-            -mu_const[e] * L[n] * diff_mu[e][index][0];
-
-        double E1[2] = {diff_mu_const[e][0], diff_mu_const[e][1]};
-        double E2[2] = {L[n] * diff_mu[e][index][0],
-                        L[n] * diff_mu[e][index][1]};
-        div_edgeN[e][qd_shift + n] = E1[0] * E2[1] - E1[1] * E2[0];
-      }
-    }
-  }
-  MoFEMFunctionReturnHot(0);
-}
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONQUAD(
     int *p, double *N, double *faceN[], double *div_faceN[],
     int nb_integration_pts) {
   MoFEMFunctionBeginHot;
-  double coords[4][2] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}};
-  for (int q = 0; q != nb_integration_pts; q++) {
-    int shift = 4 * q;
-    double ksi = 0.0;
-    double eta = 0.0;
-    for (int vv = 0; vv != 4; vv++) {
-      ksi += coords[vv][0] * N[shift + vv];
-      eta += coords[vv][1] * N[shift + vv];
-    }
-
-    // Affine coordinates of each eadge mu0 and mu1
-    double mu_ksi[2] = {1.0 - ksi, ksi};
-    double mu_eta[2] = {1.0 - eta, eta};
-
-    double diff_mu_ksi[2][2] = {{-1.0, 0.0}, {1.0, 0.0}};
-    double diff_mu_eta[2][2] = {{0.0, -1.0}, {0.0, 1.0}};
-
-    int pq[2] = {p[0], p[1]};
-    int qp[2] = {p[1], p[0]};
-    double mu_ksi_eta[2] = {mu_ksi[1], mu_eta[1]};
-    double mu_eta_ksi[2] = {mu_eta[1], mu_ksi[1]};
-
-    double *diff_mu_ksi_eta[2] = {diff_mu_ksi[1], diff_mu_eta[1]};
-    double *diff_mu_eta_ksi[2] = {diff_mu_eta[1], diff_mu_ksi[1]};
-    double sgn[2] = {-1.0, 1.0};
-    for (int typ = 0; typ != 2; typ++) {
-      int pp = pq[typ];
-
-      double Phi[pp - 1];
-      double diffPhi[pp - 1];
-      CHKERR Integrated_Legendre01(pp, mu_ksi_eta[typ], Phi, diffPhi);
-
-      int qq = qp[typ];
-      double E[qq];
-      CHKERR Legendre_polynomials01(qq - 1, mu_eta_ksi[typ], E);
-
-      int permute[qq * (pp - 1)][3];
-      CHKERR MonomOrdering(permute, qq - 1, pp - 2);
-
-      int qd_shift = (pp - 1) * qq * q;
-      int n = 0;
-      for (; n != (pp - 1) * qq; n++) {
-        int i = permute[n][0];
-        int j = permute[n][1];
-        faceN[typ][2 * (qd_shift + n) + 0] =
-            Phi[j] * E[i] * diff_mu_eta_ksi[typ][1];
-        faceN[typ][2 * (qd_shift + n) + 1] =
-            -Phi[j] * E[i] * diff_mu_eta_ksi[typ][0];
-
-        div_faceN[typ][qd_shift + n] = sgn[typ] * diffPhi[j] * E[i];
-      }
-
-      // for (int i = 0; i != qq; i++) {
-      //   for (int j = 0; j != pp - 1; j++) {
-      //     faceN[typ][2 * (qd_shift + n) + 0] =
-      //         Phi[j] * E[i] * diff_mu_eta_ksi[typ][1];
-      //     faceN[typ][2 * (qd_shift + n) + 1] =
-      //         -Phi[j] * E[i] * diff_mu_eta_ksi[typ][0];
-
-      //     div_faceN[typ][qd_shift + n] = sgn[typ] * diffPhi[j] * E[i];
-      //     ++n;
-      //   }
-      // }
-    }
-  }
   MoFEMFunctionReturnHot(0);
 }
+
 /* Reference Hex and its cannonical vertex and edge numbering
                7 ---------10--------- 6
               /|                    /|
