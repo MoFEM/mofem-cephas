@@ -48,16 +48,13 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   edgeSideNumber = (*sit)->side_number;
   fill(faceConnMap.begin(), faceConnMap.end(), -1);
   for (int nn = 0; nn != 2; ++nn) {
-    edgeConnMap[nn] =
-        std::distance(conn, find(conn, &conn[2], edge_ptr_fe->cOnn[nn]));
+    edgeConnMap[nn] = std::distance(
+        conn, find(conn, &conn[num_nodes], edge_ptr_fe->cOnn[nn]));
     faceConnMap[edgeConnMap[nn]] = nn;
-    if (faceConnMap[nn] > 2)
+    if (faceConnMap[nn] >= num_nodes)
       SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
               "No common node on face and element can not be found");
   }
-
-  oppositeNode = std::distance(
-      faceConnMap.begin(), find(faceConnMap.begin(), faceConnMap.end(), -1));
 
   const int nb_gauss_pts = sidePtrFE->gaussPts.size2();
   gaussPts.resize(3, nb_gauss_pts, false);
@@ -65,15 +62,52 @@ FaceElementForcesAndSourcesCoreOnSideBase::setGaussPts(int order) {
   DataForcesAndSourcesCore &data_h1_on_edge = *edge_ptr_fe->dataOnElement[H1];
   const MatrixDouble &edge_shape_funtions =
       data_h1_on_edge.dataOnEntities[MBVERTEX][0].getN(NOBASE);
-  constexpr double face_coords[] = {0, 0, 1, 0, 0, 1};
-  for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-    gaussPts(0, gg) =
-        edge_shape_funtions(gg, 0) * face_coords[2 * edgeConnMap[0] + 0] +
-        edge_shape_funtions(gg, 1) * face_coords[2 * edgeConnMap[1] + 0];
-    gaussPts(1, gg) =
-        edge_shape_funtions(gg, 0) * face_coords[2 * edgeConnMap[0] + 1] +
-        edge_shape_funtions(gg, 1) * face_coords[2 * edgeConnMap[1] + 1];
-    gaussPts(2, gg) = edge_ptr_fe->gaussPts(1, gg);
+
+  auto set_integration_pts_for_tri = [&]() {
+    MoFEMFunctionBegin;
+    oppositeNode = std::distance(
+        faceConnMap.begin(), find(faceConnMap.begin(), faceConnMap.end(), -1));
+    constexpr double face_coords[] = {0, 0, 1, 0, 0, 1};
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      gaussPts(0, gg) =
+          edge_shape_funtions(gg, 0) * face_coords[2 * edgeConnMap[0] + 0] +
+          edge_shape_funtions(gg, 1) * face_coords[2 * edgeConnMap[1] + 0];
+      gaussPts(1, gg) =
+          edge_shape_funtions(gg, 0) * face_coords[2 * edgeConnMap[0] + 1] +
+          edge_shape_funtions(gg, 1) * face_coords[2 * edgeConnMap[1] + 1];
+      gaussPts(2, gg) = edge_ptr_fe->gaussPts(1, gg);
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  auto set_integration_pts_for_quad = [&]() {
+    MoFEMFunctionBegin;
+    oppositeNode = -1;
+    constexpr double face_coords[] = {0, 0, 1, 0, 1, 1, 0, 1};
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      gaussPts(0, gg) =
+          edge_shape_funtions(gg, 0) * face_coords[2 * edgeConnMap[0] + 0] +
+          edge_shape_funtions(gg, 1) * face_coords[2 * edgeConnMap[1] + 0];
+      gaussPts(1, gg) =
+          edge_shape_funtions(gg, 0) * face_coords[2 * edgeConnMap[0] + 1] +
+          edge_shape_funtions(gg, 1) * face_coords[2 * edgeConnMap[1] + 1];
+      gaussPts(2, gg) = edge_ptr_fe->gaussPts(1, gg);
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+
+  switch (type) {
+  case MBTRI:
+    CHKERR set_integration_pts_for_tri();
+    break;
+  case MBQUAD:
+    CHKERR set_integration_pts_for_quad();
+    break;
+  default:
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+             "Element type not implemented: %d", type);
   }
 
   MoFEMFunctionReturn(0);

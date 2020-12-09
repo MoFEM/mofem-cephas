@@ -1906,12 +1906,17 @@ target_link_libraries(continuity_check_on_skeleton_with_simple_2d_for_h1
   ${PROJECT_LIBS}
 )
 
-add_test(continuity_check_on_skeleton_with_simple_2d_for_h1_ainsworth
+add_test(continuity_check_on_skeleton_with_simple_2d_for_h1_ainsworth_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_h1 
   -file_name rectangle_tri.h5m -base ainsworth
-  -log_no_color
-)
+  -log_no_color)
+
+add_test(continuity_check_on_skeleton_with_simple_2d_for_h1_debkowicz_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_h1 
+  -file_name rectangle_quad.h5m -base demkowicz
+  -log_no_color)
 
 
 cm_export_file("../meshes/reference_triangle_mesh.h5m" export_atom_tests)

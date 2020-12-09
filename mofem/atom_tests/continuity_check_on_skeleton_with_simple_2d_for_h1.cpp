@@ -61,9 +61,18 @@ struct SkeletonFE : public EdgeEleOp {
         MatrixDouble diff = getCoordsAtGaussPts() - getEdgeCoordsAtGaussPts();
 
         const double eps = 1e-12;
-        if (norm_inf(diff) > eps)
+        if (norm_inf(diff) > eps) {
+          MOFEM_LOG_ATTRIBUTES("ATOM",
+                               LogManager::BitLineID | LogManager::BitScope);
+          MOFEM_LOG_FUNCTION();
+          MOFEM_LOG("ATOM", Sev::error)
+              << "Quad coords: " << getCoordsAtGaussPts();
+          MOFEM_LOG("ATOM", Sev::error)
+              << "Edge coords: " << getEdgeCoordsAtGaussPts();
+          MOFEM_LOG("ATOM", Sev::error) << "Difference: " << diff;
           SETERRQ(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
-                  "coordinates at integration pts are different");
+                  "Coordinates at integration pts are different");
+        }
 
         const size_t nb_dofs = data.getN().size2();
         const size_t nb_integration_pts = data.getN().size1();
@@ -105,6 +114,9 @@ struct SkeletonFE : public EdgeEleOp {
 
       const size_t nb_dofs = data.getN().size2();
       const size_t nb_integration_pts = data.getN().size1();
+
+      MOFEM_LOG("ATOM", Sev::noisy)
+          << "Cords at integration points" << getCoordsAtGaussPts();
 
       auto t_base = data.getFTensor0N();
       elemData.dotEdge.resize(nb_integration_pts, nb_dofs, false);
