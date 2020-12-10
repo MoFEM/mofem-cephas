@@ -187,6 +187,8 @@ MoFEMErrorCode QuadPolynomialBase::getValueL2(MatrixDouble &pts) {
 
   switch (cTx->bAse) {
   case AINSWORTH_LEGENDRE_BASE:
+    CHKERR getValueL2DemkowiczBase(pts);
+    break;
   case AINSWORTH_LOBATTO_BASE:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Ainsworth not implemented on quad for L2 base");
