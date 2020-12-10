@@ -278,21 +278,23 @@ MoFEMErrorCode ForcesAndSourcesCore::getNodesIndices(
         if (auto e = it->lock()) {
           auto side_ptr = e->getSideNumberPtr();
           const auto side_number = side_ptr->side_number;
-          const auto brother_side_number = side_ptr->brother_side_number;
-          if (auto cache = extractor(e).lock()) {
-            for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
-              auto &dof = **dit;
-              const int idx = dof.getPetscGlobalDofIdx();
-              const int local_idx = dof.getPetscLocalDofIdx();
-              const int pos =
-                  side_number * nb_dofs_on_vert + dof.getDofCoeffIdx();
-              nodes_indices[pos] = idx;
-              local_nodes_indices[pos] = local_idx;
-              if (brother_side_number != -1) {
-                const int elem_idx = brother_side_number * nb_dofs_on_vert +
-                                     (*dit)->getDofCoeffIdx();
-                nodes_indices[elem_idx] = idx;
-                local_nodes_indices[elem_idx] = local_idx;
+          if (side_number >= 0) {
+            const auto brother_side_number = side_ptr->brother_side_number;
+            if (auto cache = extractor(e).lock()) {
+              for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
+                auto &dof = **dit;
+                const int idx = dof.getPetscGlobalDofIdx();
+                const int local_idx = dof.getPetscLocalDofIdx();
+                const int pos =
+                    side_number * nb_dofs_on_vert + dof.getDofCoeffIdx();
+                nodes_indices[pos] = idx;
+                local_nodes_indices[pos] = local_idx;
+                if (brother_side_number != -1) {
+                  const int elem_idx = brother_side_number * nb_dofs_on_vert +
+                                       (*dit)->getDofCoeffIdx();
+                  nodes_indices[elem_idx] = idx;
+                  local_nodes_indices[elem_idx] = local_idx;
+                }
               }
             }
           }
@@ -576,8 +578,8 @@ MoFEMErrorCode
 ForcesAndSourcesCore::getProblemTypeRowIndices(const std::string &field_name,
                                                EntityType type, int side_number,
                                                VectorInt &indices) const {
-  return getProblemTypeIndices(field_name, *(problemPtr->numeredRowDofsPtr), type,
-                               side_number, indices);
+  return getProblemTypeIndices(field_name, *(problemPtr->numeredRowDofsPtr),
+                               type, side_number, indices);
 }
 
 MoFEMErrorCode ForcesAndSourcesCore::getProblemNodesColIndices(
@@ -590,8 +592,8 @@ MoFEMErrorCode
 ForcesAndSourcesCore::getProblemTypeColIndices(const std::string &field_name,
                                                EntityType type, int side_number,
                                                VectorInt &indices) const {
-  return getProblemTypeIndices(field_name, *(problemPtr->numeredColDofsPtr), type,
-                               side_number, indices);
+  return getProblemTypeIndices(field_name, *(problemPtr->numeredColDofsPtr),
+                               type, side_number, indices);
 }
 
 // ** Data **
@@ -842,7 +844,6 @@ MoFEMErrorCode ForcesAndSourcesCore::getNoFieldFieldData(
           ent_field[side] = e.get();
           noalias(ent_field_data) = e->getEntFieldData();
 
-
           if (auto cache = e->entityCacheDataDofs.lock()) {
             for (auto dit = cache->loHi[0]; dit != cache->loHi[1]; ++dit) {
               ent_field_dofs[(*dit)->getEntDofIdx()] =
@@ -966,7 +967,6 @@ ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &data) const {
 }
 
 // ** Space and Base **
-
 
 MoFEMErrorCode ForcesAndSourcesCore::getSpacesAndBaseOnEntities(
     DataForcesAndSourcesCore &data) const {
@@ -1557,8 +1557,8 @@ MoFEMErrorCode ForcesAndSourcesCore::UserDataOperator::loopSide(
       ent, side_dim, adjacent_ents);
   typedef NumeredEntFiniteElement_multiIndex::index<
       Composite_Name_And_Ent_mi_tag>::type FEByComposite;
-  FEByComposite &numered_fe =
-      problem_ptr->numeredFiniteElementsPtr->get<Composite_Name_And_Ent_mi_tag>();
+  FEByComposite &numered_fe = problem_ptr->numeredFiniteElementsPtr
+                                  ->get<Composite_Name_And_Ent_mi_tag>();
 
   side_fe->feName = fe_name;
 
@@ -1660,4 +1660,4 @@ ForcesAndSourcesCore::UserDataOperator::setPtrFE(ForcesAndSourcesCore *ptr) {
   MoFEMFunctionReturnHot(0);
 }
 
-  } // namespace MoFEM
+} // namespace MoFEM
