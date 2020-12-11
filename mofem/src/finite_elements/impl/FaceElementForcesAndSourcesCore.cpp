@@ -325,6 +325,11 @@ FaceElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
     CHKERR getEntityDataOrder<MBTRI>(dataL2, L2);
     dataL2.spacesOnEntities[MBTRI].set(L2);
   }
+  if (dataH1.spacesOnEntities[MBQUAD].test(L2)) {
+    CHKERR getEntitySense<MBQUAD>(dataL2);
+    CHKERR getEntityDataOrder<MBQUAD>(dataL2, L2);
+    dataL2.spacesOnEntities[MBQUAD].set(L2);
+  }
 
   MoFEMFunctionReturn(0);
 }

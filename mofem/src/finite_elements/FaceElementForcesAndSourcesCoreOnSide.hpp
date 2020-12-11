@@ -48,9 +48,9 @@ struct FaceElementForcesAndSourcesCoreOnSideBase
   /**
    * @brief Get face nodes maped on volume
    *
-   * @return const sdt::array<int, 3>&
+   * @return const sdt::array<int, 4>&
    */
-  inline const std::array<int, 3> &getFaceConnMap() const;
+  inline const std::array<int, 4> &getFaceConnMap() const;
 
   /**
    * @brief Get node on volume opposite to volume element
@@ -138,7 +138,7 @@ private:
   int edgeSense;      ///< Sense of edge, could be 1 or -1
   int edgeSideNumber; ///< Edge side number
   std::array<int, 2> edgeConnMap;
-  std::array<int, 3> faceConnMap;
+  std::array<int, 4> faceConnMap;
   int oppositeNode;
 };
 
@@ -167,7 +167,7 @@ FaceElementForcesAndSourcesCoreOnSideBase::getEdgeConnMap() const {
   return edgeConnMap;
 }
 
-const std::array<int, 3> &
+const std::array<int, 4> &
 FaceElementForcesAndSourcesCoreOnSideBase::getFaceConnMap() const {
   return faceConnMap;
 }

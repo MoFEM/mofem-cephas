@@ -31,6 +31,7 @@ const EntityHandle no_handle = 0;
 #include <Exceptions.hpp>
 #include <Types.hpp>
 #include <Templates.hpp>
+#include <PetscSmartObj.hpp>
 
 #endif //__COMMON_HPP__
 

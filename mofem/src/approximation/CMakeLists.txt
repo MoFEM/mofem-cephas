@@ -47,6 +47,7 @@ if(PRECOMPILED_HEADRES)
     PROPERTIES
     COMPILE_FLAGS "-DGENERATE_VTK_WITH_CURL_BASE -include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
   )
+  
 else(PRECOMPILED_HEADRES)
   set_source_files_properties(
     impl/Hcurl.cpp

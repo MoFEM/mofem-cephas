@@ -11,38 +11,37 @@ void test_T4ddg_006(const Tensor2_symmetric<double, 3> &t2s_2,
   Index<'k', 3> k;
   Index<'l', 3> l;
 
-{
+  {
     Ddg<double, 3, 3> t4ddg_3_1, t4ddg_3_2, t4ddg_3_3;
     t4ddg_3_1(i, j, k, l) = t2s_2(i, j) * t2s_3(k, l);
     t4ddg_3_2(i, j, k, l) = t2s_3(i, j) * t2s_2(k, l);
     t4ddg_3_3(i, j, k, l) = t4ddg_3_1(i, j, k, l);
     t4ddg_3_3(i, j, k, l) += t4ddg_3_2(i, j, k, l);
 
-    for (int ii = 0; ii != 3;++ii)
-      for (int jj = 0; jj != 3;++jj)
-        for (int kk = 0; kk != 3;++kk)
+    for (int ii = 0; ii != 3; ++ii)
+      for (int jj = 0; jj != 3; ++jj)
+        for (int kk = 0; kk != 3; ++kk)
           for (int ll = 0; ll != 3; ++ll) {
             test_for_zero(t4ddg_3_3(ii, jj, kk, ll) -
                               t4ddg_3_1(ii, jj, kk, ll) -
                               t4ddg_3_2(ii, jj, kk, ll),
-                          "T4ddg(i,j,k,l)+=T4ddg(i,j,k,l)(" + to_string(ii) + "," +
-                              to_string(jj) + "," + to_string(kk) + "," +
+                          "T4ddg(i,j,k,l)+=T4ddg(i,j,k,l)(" + to_string(ii) +
+                              "," + to_string(jj) + "," + to_string(kk) + "," +
                               to_string(ll) + ")");
           }
 
-    Ddg<double, 3, 3>  t4ddg_3_4;
+    Ddg<double, 3, 3> t4ddg_3_4;
     t4ddg_3_4(i, j, k, l) = t4ddg_3_3(i, j, k, l);
     t4ddg_3_4(i, j, k, l) -= t4ddg_3_3(i, j, k, l);
     for (int ii = 0; ii != 3; ++ii)
-      for (int jj = 0; jj != 3;++jj)
-        for (int kk = 0; kk != 3;++kk)
+      for (int jj = 0; jj != 3; ++jj)
+        for (int kk = 0; kk != 3; ++kk)
           for (int ll = 0; ll != 3; ++ll) {
             test_for_zero(t4ddg_3_4(ii, jj, kk, ll),
                           "T4ddg(i,j,k,l)-=T4ddg(i,j,k,l)(" + to_string(ii) +
                               "," + to_string(jj) + "," + to_string(kk) + "," +
                               to_string(ll) + ")");
           }
-
   }
 
   {
@@ -51,13 +50,13 @@ void test_T4ddg_006(const Tensor2_symmetric<double, 3> &t2s_2,
     t4ddg_3_2(i, j, k, l) = t4ddg_3_1(i, j, k, l);
     t4ddg_3_1(i, j, k, l) *= 2.;
     for (int ii = 0; ii != 3; ++ii)
-      for (int jj = 0; jj != 3;++jj)
-        for (int kk = 0; kk != 3;++kk)
+      for (int jj = 0; jj != 3; ++jj)
+        for (int kk = 0; kk != 3; ++kk)
           for (int ll = 0; ll != 3; ++ll) {
             test_for_zero(
                 t4ddg_3_1(ii, jj, kk, ll) - 2 * t4ddg_3_2(ii, jj, kk, ll),
-                "T4ddg(i,j,k,l)*=2(" + to_string(ii) + "," + to_string(jj) + "," +
-                    to_string(kk) + "," + to_string(ll) + ")");
+                "T4ddg(i,j,k,l)*=2(" + to_string(ii) + "," + to_string(jj) +
+                    "," + to_string(kk) + "," + to_string(ll) + ")");
           }
   }
 
@@ -66,8 +65,8 @@ void test_T4ddg_006(const Tensor2_symmetric<double, 3> &t2s_2,
     t4ddg_3_1(i, j, k, l) = t2s_2(i, j) * t2s_3(k, l);
 
     Tensor2<double, 3, 3> t2;
-    for (int ii = 0; ii != 3;++ii)
-      for (int jj = 0; jj != 3;++jj)
+    for (int ii = 0; ii != 3; ++ii)
+      for (int jj = 0; jj != 3; ++jj)
         t2(ii, jj) = 1 + ii + 10 * jj;
 
     Tensor2<double, 3, 3> t2_1, t2_2;
@@ -82,4 +81,30 @@ void test_T4ddg_006(const Tensor2_symmetric<double, 3> &t2s_2,
       }
   }
 
+  {
+    Ddg<double, 3, 3> t4ddg_3_1;
+    t4ddg_3_1(i, j, k, l) = t2s_2(i, j) * t2s_3(k, l);
+
+    Tensor2<double, 3, 3> t2;
+    for (int ii = 0; ii != 3; ++ii)
+      for (int jj = 0; jj != 3; ++jj)
+        t2(ii, jj) = 1 + ii + 10 * jj;
+
+    Tensor2_symmetric<double, 3> t2s_1, t2s_4;
+    t2s_1(k, l) = t4ddg_3_1(i, j, k, l) * t2(i, j);
+
+    t2s_4(k, l) = 0;
+    for (int kk = 0; kk != 3; ++kk)
+      for (int ll = kk; ll != 3; ++ll)
+        for (int ii = 0; ii != 3; ++ii)
+          for (int jj = 0; jj != 3; ++jj)
+            t2s_4(kk, ll) += t2s_3(kk, ll) * (t2s_2(ii, jj) * t2(ii, jj));
+
+    for (int ii = 0; ii != 3; ++ii)
+      for (int jj = 0; jj != 3; ++jj) {
+        test_for_zero(t2s_1(ii, jj) - t2s_4(ii, jj), "T4ddg(i,j,k,l)*T2(i,j)(" +
+                                                         to_string(ii) + "," +
+                                                         to_string(jj) + ")");
+      }
+  }
 }

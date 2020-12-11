@@ -102,8 +102,16 @@ int main(int argc, char *argv[]) {
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
 
+    PetscBool flg_file = PETSC_TRUE;
+    char mesh_file_name[255];
+    CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
+                                 255, &flg_file);
+    if (flg_file != PETSC_TRUE)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+              "*** ERROR -my_file (MESH FILE NEEDED)");
+
     // Read mesh to MOAB
-    CHKERR moab.load_file("rectangle.h5m", 0, "");
+    CHKERR moab.load_file(mesh_file_name, 0, "");
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
     if (pcomm == NULL)
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
@@ -158,17 +166,20 @@ int main(int argc, char *argv[]) {
     // Add entities
 
     CHKERR m_field.add_ents_to_field_by_type(0, MBTRI, "FIELD1");
+    CHKERR m_field.add_ents_to_field_by_type(0, MBQUAD, "FIELD1");
     // Set order
     CHKERR m_field.set_field_order(0, MBTRI, "FIELD1", order);
+    CHKERR m_field.set_field_order(0, MBQUAD, "FIELD1", order);
     CHKERR m_field.set_field_order(0, MBEDGE, "FIELD1", order);
 
     // Add entities to elements
     CHKERR m_field.add_ents_to_finite_element_by_type(0, MBTRI, "FACE_FE");
+    CHKERR m_field.add_ents_to_finite_element_by_type(0, MBQUAD, "FACE_FE");
 
     auto set_edge_elements_entities_on_mesh_skin = [&]() {
       MoFEMFunctionBegin;
       Range faces;
-      CHKERR moab.get_entities_by_type(0, MBTRI, faces, false);
+      CHKERR moab.get_entities_by_dimension(0, 2, faces, false);
       Skinner skin(&m_field.get_moab());
       Range faces_skin;
       CHKERR skin.find_skin(0, faces, false, faces_skin);
@@ -208,6 +219,8 @@ int main(int argc, char *argv[]) {
       fe_face.getOpPtrVector().push_back(
           new OpSetContravariantPiolaTransformFace(jac));
       fe_face.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
+      fe_face.getOpPtrVector().push_back(
+          new OpMakeHighOrderGeometryWeightsOnFace());
       fe_face.getOpPtrVector().push_back(new OpDivergence(div));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "FACE_FE", fe_face);
       return div;
@@ -218,7 +231,7 @@ int main(int argc, char *argv[]) {
       EdgeEle fe_edge(m_field);
       fe_edge.getRuleHook = rule;
       fe_edge.getOpPtrVector().push_back(
-          new OpSetContrariantPiolaTransformOnEdge());
+          new OpSetContravariantPiolaTransformOnEdge());
       fe_edge.getOpPtrVector().push_back(new OpFlux(flux));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE_FE", fe_edge);
       return flux;

@@ -336,6 +336,8 @@ struct ForcesAndSourcesCore : public FEMethod {
 
     inline double getTSa() const;
 
+    inline double getTSaa() const;
+
     /**@}*/
 
     /**@{*/
@@ -1005,6 +1007,10 @@ double ForcesAndSourcesCore::UserDataOperator::getTStime() const {
 
 double ForcesAndSourcesCore::UserDataOperator::getTSa() const {
   return getFEMethod()->ts_a;
+}
+
+double ForcesAndSourcesCore::UserDataOperator::getTSaa() const {
+  return getFEMethod()->ts_aa;
 }
 
 MatrixDouble &ForcesAndSourcesCore::UserDataOperator::getGaussPts() {

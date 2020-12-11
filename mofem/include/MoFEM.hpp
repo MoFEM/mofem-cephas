@@ -47,6 +47,7 @@
 #include <TetPolynomialBase.hpp>
 #include <FatPrismPolynomialBase.hpp>
 #include <FlatPrismPolynomialBase.hpp>
+#include <EdgeQuadHexPolynomials.hpp>
 
 //SRC/MULTI-INDICES
 #include <MaterialBlocks.hpp>

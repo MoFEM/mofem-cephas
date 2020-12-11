@@ -1438,15 +1438,15 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
       AO ao;
       CHKERR AOCreateMappingIS(is, PETSC_NULL, &ao);
       if (ss == 0) {
-        CHKERR ISDuplicate(is, &(out_problem_it->getSubData()->rowIs));
-        // CHKERR ISSort(out_problem_it->getSubData()->rowIs);
-        out_problem_it->getSubData()->rowMap = ao;
-        CHKERR PetscObjectReference((PetscObject)ao);
+        IS is_dup;
+        CHKERR ISDuplicate(is, &is_dup);
+        out_problem_it->getSubData()->rowIs = SmartPetscObj<IS>(is_dup, false);
+        out_problem_it->getSubData()->rowMap = SmartPetscObj<AO>(ao, true);
       } else {
-        CHKERR ISDuplicate(is, &(out_problem_it->getSubData()->colIs));
-        // CHKERR ISSort(out_problem_it->getSubData()->colIs);
-        out_problem_it->getSubData()->colMap = ao;
-        CHKERR PetscObjectReference((PetscObject)ao);
+        IS is_dup;
+        CHKERR ISDuplicate(is, &is_dup);
+        out_problem_it->getSubData()->colIs = SmartPetscObj<IS>(is_dup,false);
+        out_problem_it->getSubData()->colMap = SmartPetscObj<AO>(ao, true);
       }
       CHKERR AOApplicationToPetscIS(ao, is);
       // set global number of DOFs
@@ -1510,8 +1510,6 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
     out_problem_it->getSubData()->colMap = out_problem_it->getSubData()->rowMap;
     CHKERR PetscObjectReference(
         (PetscObject)out_problem_it->getSubData()->rowIs);
-    CHKERR PetscObjectReference(
-        (PetscObject)out_problem_it->getSubData()->rowMap);
   }
 
   CHKERR printPartitionedProblem(&*out_problem_it, verb);

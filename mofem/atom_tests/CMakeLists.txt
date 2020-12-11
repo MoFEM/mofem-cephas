@@ -47,11 +47,13 @@ cm_export_file("../meshes/mat_elastic.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_elastic_transiso.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_interf.h5m" export_atom_tests)
 cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
-cm_export_file("../meshes/rectangle.h5m" export_atom_tests)
+cm_export_file("../meshes/rectangle_tri.h5m" export_atom_tests)
+cm_export_file("../meshes/rectangle_quad.h5m" export_atom_tests)
 cm_export_file("../meshes/quad_mesh.h5m" export_atom_tests)
 cm_export_file("../meshes/2_tets_contact.cub" export_atom_tests)
 
-set(PERCOMPILED_MOFEM_HEADER "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
+set(PERCOMPILED_MOFEM_HEADER 
+  "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
 
 # add_executable(cubit_bc_test cubit_bc_test.cpp)
 my_add_executable(cubit_bc_test cubit_bc_test.cpp)
@@ -827,7 +829,8 @@ add_test(forces_and_sources_h1_continuity_check_atom
 )
 
 # Check approxination on H1 space in 2d
-my_add_executable(scalar_check_approximation_2d scalar_check_approximation_2d.cpp)
+my_add_executable(
+  scalar_check_approximation_2d scalar_check_approximation_2d.cpp)
 target_link_libraries(scalar_check_approximation_2d
   mofem_finite_elements
   mofem_interfaces
@@ -838,31 +841,67 @@ target_link_libraries(scalar_check_approximation_2d
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(h1_check_approx_2d_ainsworth
+add_test(h1_check_approx_2d_ainsworth_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_tri.h5m
   -base ainsworth -space h1 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
-add_test(h1_check_approx_2d_bernstein
+add_test(h1_check_approx_2d_ainsworth_lobatto_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_tri.h5m
+  -base ainsworth_labatto -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(h1_check_approx_2d_bernstein_tri
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_tri.h5m
   -base bernstein -space h1 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
-add_test(l2_check_approx_2d_ainsworth
+add_test(l2_check_approx_2d_ainsworth_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_tri.h5m
   -base ainsworth -space l2 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
-add_test(l2_check_approx_2d_bernstein
+add_test(l2_check_approx_2d_bernstein_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_tri.h5m
   -base bernstein -space l2 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(h1_check_approx_2d_ainsworth_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_quad.h5m
+  -base ainsworth -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(h1_check_approx_2d_demkowicz_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_quad.h5m
+  -base demkowicz -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(l2_check_approx_2d_demkowicz_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
+  -file_name rectangle_quad.h5m
+  -base demkowicz -space l2
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )
@@ -898,18 +937,25 @@ target_link_libraries(hcurl_divergence_operator_2d
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(hcurl_divergence_operator_2d_ainsworth
+add_test(hcurl_divergence_operator_2d_ainsworth_on_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
+  -my_file rectangle_tri.h5m
   -base ainsworth -odrer 5
-  -log_no_color
-)
-add_test(hcurl_divergence_operator_2d_demkowicz
+  -log_no_color)
+add_test(hcurl_divergence_operator_2d_demkowicz_on_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
+  -my_file rectangle_tri.h5m
   -base demkowicz -odrer 5
-  -log_no_color
-)
+  -log_no_color)
+add_test(hcurl_divergence_operator_2d_demkowicz_on_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
+  -my_file rectangle_quad.h5m
+  -base demkowicz -odrer 5
+  -log_no_color)
+
 
 # add test for recording series
 my_add_executable(record_series_atom record_series_atom.cpp)
@@ -1744,7 +1790,8 @@ target_link_libraries(boundary_marker
 )
 add_test(boundary_marker
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/boundary_marker -file_name rectangle.h5m
+  ${CMAKE_CURRENT_BINARY_DIR}/boundary_marker 
+  -file_name rectangle_tri.h5m
   -log_no_color
 )
 
@@ -1764,11 +1811,14 @@ add_test(add_blockset
   -log_no_color
 )
 
+#test integration on contact prism side element
 my_add_executable(
-  continuity_check_on_skeleton_with_simple_2d
-  continuity_check_on_skeleton_with_simple_2d.cpp
+  continuity_check_on_contact_prism_side_ele
+  continuity_check_on_contact_prism_side_ele.cpp
 )
-target_link_libraries(continuity_check_on_skeleton_with_simple_2d
+
+target_link_libraries(
+  continuity_check_on_contact_prism_side_ele
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -1776,42 +1826,56 @@ target_link_libraries(continuity_check_on_skeleton_with_simple_2d
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS}
-)
-add_test(continuity_check_on_skeleton_with_simple_2d_ainsworth
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
-  -file_name rectangle.h5m -base ainsworth
-  -log_no_color
-)
+  ${PROJECT_LIBS})
 
-add_test(continuity_check_on_skeleton_with_simple_2d_demkowicz
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d 
-  -file_name rectangle.h5m -base demkowicz
-  -log_no_color
-)
+  add_test(
+  continuity_check_on_contact_prism_side_ele_h1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_contact_prism_side_ele
+  -my_file 2_tets_contact.cub -base ainsworth -space h1)
 
-#test integration on contact prism side element
+# continuity check for hcurl 2d
+
 my_add_executable(
-  continuity_check_on_contact_prism_side_ele
-  continuity_check_on_contact_prism_side_ele.cpp
-)
-target_link_libraries(continuity_check_on_contact_prism_side_ele
-mofem_finite_elements
+  continuity_check_on_skeleton_with_simple_2d_for_hcurl
+  continuity_check_on_skeleton_with_simple_2d_for_hcurl.cpp)
+target_link_libraries(
+  continuity_check_on_skeleton_with_simple_2d_for_hcurl
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS}
-)
+  ${PROJECT_LIBS})
+  
+add_test(
+  continuity_check_on_skeleton_with_simple_2d_for_hcurl_ainsworth_on_tri
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hcurl 
+  -file_name rectangle_tri.h5m -base ainsworth
+  -log_no_color)
+
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hcurl_demkowicz_on_tri
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hcurl 
+  -file_name rectangle_tri.h5m -base demkowicz
+  -log_no_color)
+
+add_test(
+  continuity_check_on_skeleton_with_simple_2d_for_hcurl_demkowicz_on_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hcurl 
+  -file_name rectangle_quad.h5m -base demkowicz
+  -log_no_color)
+
+# continuity check for hdiv 2d
 
 my_add_executable(
   continuity_check_on_skeleton_with_simple_2d_for_hdiv
-  continuity_check_on_skeleton_with_simple_2d_for_hdiv.cpp
-)
+  continuity_check_on_skeleton_with_simple_2d_for_hdiv.cpp)
+  
 target_link_libraries(continuity_check_on_skeleton_with_simple_2d_for_hdiv
   mofem_finite_elements
   mofem_interfaces
@@ -1823,26 +1887,53 @@ target_link_libraries(continuity_check_on_skeleton_with_simple_2d_for_hdiv
   ${PROJECT_LIBS}
 )
 
-add_test(
-  continuity_check_on_contact_prism_side_ele_h1
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_contact_prism_side_ele
-  -my_file 2_tets_contact.cub -base ainsworth -space h1
-)
-
-add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_ainsworth
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_ainsworth_on_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
-  -file_name rectangle.h5m -base ainsworth
-  -log_no_color
-)
+  -file_name rectangle_tri.h5m -base ainsworth
+  -log_no_color)
 
-add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_demkowicz
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_demkowicz_on_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
-  -file_name rectangle.h5m -base demkowicz
-  -log_no_color
+  -file_name rectangle_tri.h5m -base demkowicz
+  -log_no_color)
+
+add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_demkowicz_on_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
+  -file_name rectangle_quad.h5m -base demkowicz
+  -log_no_color)
+
+# continuity check for h1 2d
+
+my_add_executable(
+  continuity_check_on_skeleton_with_simple_2d_for_h1
+  continuity_check_on_skeleton_with_simple_2d_for_h1.cpp)
+  
+target_link_libraries(continuity_check_on_skeleton_with_simple_2d_for_h1
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
 )
+
+add_test(continuity_check_on_skeleton_with_simple_2d_for_h1_ainsworth_tri
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_h1 
+  -file_name rectangle_tri.h5m -base ainsworth
+  -log_no_color)
+
+add_test(continuity_check_on_skeleton_with_simple_2d_for_h1_debkowicz_quad
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_h1 
+  -file_name rectangle_quad.h5m -base demkowicz
+  -log_no_color)
+
 
 cm_export_file("../meshes/reference_triangle_mesh.h5m" export_atom_tests)
 my_add_executable(prism_elements_from_surface prism_elements_from_surface.cpp)
@@ -1890,11 +1981,42 @@ target_link_libraries(quad_polynomial_approximation
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(quad_polynomial_approximation
+
+add_test(
+  quad_polynomial_approximation_h1_ainsworth
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation -pc_type lu
-  -log_no_color
-)
+  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
+  -pc_type lu
+  -base ainsworth
+  -space h1
+  -log_no_color)
+
+add_test(
+  quad_polynomial_approximation_h1_ainsworth_lobatto
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
+  -pc_type lu
+  -base ainsworth_labatto
+  -space h1
+  -log_no_color)
+
+add_test(
+  quad_polynomial_approximation_h1_demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
+  -pc_type lu
+  -base demkowicz
+  -space h1
+  -log_no_color)
+
+add_test(
+  quad_polynomial_approximation_l2_demkowicz
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
+  -pc_type lu
+  -base demkowicz
+  -space l2
+  -log_no_color)
 
 my_add_executable(
   bernstein_bezier_generate_base

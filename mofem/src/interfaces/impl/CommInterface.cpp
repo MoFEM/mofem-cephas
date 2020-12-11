@@ -236,9 +236,13 @@ MoFEMErrorCode CommInterface::resolveSharedFiniteElements(
   Range ents;
   Tag th_gid;
   const int zero = 0;
-  CHKERR m_field.get_moab().tag_get_handle(GLOBAL_ID_TAG_NAME, 1,
-                                           MB_TYPE_INTEGER, th_gid,
-                                           MB_TAG_DENSE | MB_TAG_CREAT, &zero);
+  rval = m_field.get_moab().tag_get_handle(GLOBAL_ID_TAG_NAME, th_gid);
+  if (rval != MB_SUCCESS) {
+    const int zero = 0;
+    CHKERR m_field.get_moab().tag_get_handle(
+        GLOBAL_ID_TAG_NAME, 1, MB_TYPE_INTEGER, th_gid,
+        MB_TAG_DENSE | MB_TAG_CREAT, &zero);
+  }
   PetscLayout layout;
   CHKERR problem_ptr->getNumberOfElementsByNameAndPart(m_field.get_comm(),
                                                        fe_name, &layout);
@@ -332,9 +336,13 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
     auto get_tag = [&]() {
       Tag th_gid;
       const int zero = 0;
-      CHKERR m_field.get_moab().tag_get_handle(
-          "TMP_GLOBAL_ID_TAG_NAME", 1, MB_TYPE_INTEGER, th_gid,
-          MB_TAG_SPARSE | MB_TAG_CREAT, &zero);
+      rval = m_field.get_moab().tag_get_handle(GLOBAL_ID_TAG_NAME, th_gid);
+      if (rval != MB_SUCCESS) {
+        const int zero = 0;
+        CHKERR m_field.get_moab().tag_get_handle(
+            GLOBAL_ID_TAG_NAME, 1, MB_TYPE_INTEGER, th_gid,
+            MB_TAG_DENSE | MB_TAG_CREAT, &zero);
+      }
       return th_gid;
     };
 

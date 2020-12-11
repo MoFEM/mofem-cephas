@@ -93,17 +93,13 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
   // determine number of points
   int nb_charts = 0;
   {
-    NumeredDofEntity_multiIndex::iterator dit, hi_dit;
-    dit = dofs->begin();
-    hi_dit = dofs->end();
+    auto dit = dofs->begin();
+    auto hi_dit = dofs->end();
     for (; dit != hi_dit;) {
-      EntityHandle ent = dit->get()->getEnt();
-      if (static_cast<int>(dit->get()->getPart()) == proc &&
-          dit->get()->getEntDofIdx() == 0) {
-        while (dit != hi_dit && ent == dit->get()->getEnt()) {
-          const int nb_of_dofs_on_ent = dit->get()->getNbDofsOnEnt();
-          for (int dd = 0; dd != nb_of_dofs_on_ent; dd++, dit++) {
-          }
+      if (static_cast<int>(dit->get()->getPart()) == proc) {
+        const auto &ent_uid = dit->get()->getEntLocalUniqueId();
+        while (dit != hi_dit && dit->get()->getEntLocalUniqueId() == ent_uid) {
+          ++dit;
         }
         ++nb_charts;
       } else {
@@ -121,48 +117,39 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
   CHKERR PetscLayoutGetRange(layout, &rstart, &rend);
   CHKERR PetscLayoutDestroy(&layout);
   CHKERR PetscSectionSetChart(*s, rstart, rend);
-  // cerr << rstart << " " << rend << " " << proc << endl;
+
   // loop of all dofs
   {
-    NumeredDofEntity_multiIndex::iterator dit, hi_dit;
-    dit = dofs->begin();
-    hi_dit = dofs->end();
+    auto dit = dofs->begin();
+    auto hi_dit = dofs->end();
     int point = rstart;
     for (; dit != hi_dit;) {
-      EntityHandle ent = dit->get()->getEnt();
-      if (static_cast<int>(dit->get()->getPart()) == proc &&
-          dit->get()->getEntDofIdx() == 0) {
-        // exploit that does are continuously stored on entity
-        // that includes fields
-        while (dit != hi_dit && ent == dit->get()->getEnt()) {
-          const int nb_of_dofs_on_ent = dit->get()->getNbDofsOnEnt();
-          std::string field_name = dit->get()->getName();
-          if (fields_map.find(field_name) == fields_map.end()) {
-            PetscPrintf(PETSC_COMM_WORLD, "Warning: Field %s not found\n",
-                        dit->get()->getName().c_str());
-          } else {
-            if (dit->get()->getEntDofIdx() != 0) {
-              cerr << **dit << endl;
-              SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-                      "data inconsistency");
-            }
-            CHKERR PetscSectionAddDof(*s, point, nb_of_dofs_on_ent);
-            int field = fields_map.at(field_name).first;
-            CHKERR PetscSectionSetFieldDof(*s, point, field, nb_of_dofs_on_ent);
-          }
-          for (int dd = 0; dd != nb_of_dofs_on_ent; dd++, dit++) {
-            if (field_name != dit->get()->getName()) {
-              SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-                       "field name inconsistency %s!=%s", field_name.c_str(),
-                       dit->get()->getName().c_str());
-            }
-          }
-          // cerr << point << endl;
+      if (static_cast<int>(dit->get()->getPart()) == proc) {
+
+        const auto &field_name = dit->get()->getName();
+
+        int dd = 0;
+        const auto &ent_uid = dit->get()->getEntLocalUniqueId();
+        while (dit != hi_dit && dit->get()->getEntLocalUniqueId() == ent_uid) {
+          ++dd;
+          ++dit;
         }
+
+        if (fields_map.find(field_name) == fields_map.end()) {
+          MOFEM_LOG_C("SELF", Sev::warning, "Warning: Field %s not found",
+                      dit->get()->getName().c_str());
+        } else {
+          CHKERR PetscSectionAddDof(*s, point, dd);
+          int field = fields_map.at(field_name).first;
+          CHKERR PetscSectionSetFieldDof(*s, point, field, dd);
+        }
+
         ++point;
+
       } else {
         ++dit;
       }
+
     }
   }
   // cerr << "done " << proc << endl;

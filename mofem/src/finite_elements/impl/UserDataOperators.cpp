@@ -70,22 +70,22 @@ OpCalculateJacForFace::doWork(int side, EntityType type,
            ++gg, ++t_jac, ++ksi_ptr, ++zeta_ptr) {
         const double &ksi = *ksi_ptr;
         const double &zeta = *zeta_ptr;
-        jac(0, 0) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0x(zeta) +
-                    coords_ptr[3 * 1 + 0] * diffN_MBQUAD1x(zeta) +
-                    coords_ptr[3 * 2 + 0] * diffN_MBQUAD2x(zeta) +
-                    coords_ptr[3 * 3 + 0] * diffN_MBQUAD3x(zeta);
-        jac(0, 1) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0y(ksi) +
-                    coords_ptr[3 * 1 + 0] * diffN_MBQUAD1y(ksi) +
-                    coords_ptr[3 * 2 + 0] * diffN_MBQUAD2y(ksi) +
-                    coords_ptr[3 * 3 + 0] * diffN_MBQUAD3y(ksi);
-        jac(1, 0) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0x(zeta) +
-                    coords_ptr[3 * 1 + 1] * diffN_MBQUAD1x(zeta) +
-                    coords_ptr[3 * 2 + 1] * diffN_MBQUAD2x(zeta) +
-                    coords_ptr[3 * 3 + 1] * diffN_MBQUAD3x(zeta);
-        jac(1, 1) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0y(ksi) +
-                    coords_ptr[3 * 1 + 1] * diffN_MBQUAD1y(ksi) +
-                    coords_ptr[3 * 2 + 1] * diffN_MBQUAD2y(ksi) +
-                    coords_ptr[3 * 3 + 1] * diffN_MBQUAD3y(ksi);
+        t_jac(0, 0) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0x(zeta) +
+                      coords_ptr[3 * 1 + 0] * diffN_MBQUAD1x(zeta) +
+                      coords_ptr[3 * 2 + 0] * diffN_MBQUAD2x(zeta) +
+                      coords_ptr[3 * 3 + 0] * diffN_MBQUAD3x(zeta);
+        t_jac(0, 1) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0y(ksi) +
+                      coords_ptr[3 * 1 + 0] * diffN_MBQUAD1y(ksi) +
+                      coords_ptr[3 * 2 + 0] * diffN_MBQUAD2y(ksi) +
+                      coords_ptr[3 * 3 + 0] * diffN_MBQUAD3y(ksi);
+        t_jac(1, 0) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0x(zeta) +
+                      coords_ptr[3 * 1 + 1] * diffN_MBQUAD1x(zeta) +
+                      coords_ptr[3 * 2 + 1] * diffN_MBQUAD2x(zeta) +
+                      coords_ptr[3 * 3 + 1] * diffN_MBQUAD3x(zeta);
+        t_jac(1, 1) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0y(ksi) +
+                      coords_ptr[3 * 1 + 1] * diffN_MBQUAD1y(ksi) +
+                      coords_ptr[3 * 2 + 1] * diffN_MBQUAD2y(ksi) +
+                      coords_ptr[3 * 3 + 1] * diffN_MBQUAD3y(ksi);
       }
     }
     MoFEMFunctionReturnHot(0);
@@ -206,8 +206,8 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode
-OpSetInvJacH1ForFace::doWork(int side, EntityType type,
-                             DataForcesAndSourcesCore::EntData &data) {
+OpSetInvJacSpaceForFace::doWork(int side, EntityType type,
+                                DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
   if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&
@@ -276,10 +276,11 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (type != MBEDGE && type != MBTRI)
+  if (type != MBEDGE && type != MBTRI && type != MBQUAD)
     MoFEMFunctionReturnHot(0);
 
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI)
+  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&
+      getNumeredEntFiniteElementPtr()->getEntType() != MBQUAD)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "This operator can be used only with element which is triangle");
 
@@ -329,12 +330,13 @@ OpMakeHdivFromHcurl::doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (type != MBEDGE && type != MBTRI)
+  if (type != MBEDGE && type != MBTRI && type != MBQUAD)
     MoFEMFunctionReturnHot(0);
 
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI)
+  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&
+      getNumeredEntFiniteElementPtr()->getEntType() != MBQUAD)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "This operator can be used only with element which is triangle");
+            "This operator can be used only with element which is face");
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
 
@@ -367,6 +369,31 @@ OpMakeHdivFromHcurl::doWork(int side, EntityType type,
     }
   }
 
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode OpMakeHighOrderGeometryWeightsOnFace::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+  const size_t nb_int_pts = getGaussPts().size2();
+  if (getNormalsAtGaussPts().size1()) {
+    if (getNormalsAtGaussPts().size1() == nb_int_pts) {
+      const double a = getMeasure();
+      auto t_w = getFTensor0IntegrationWeight();
+      auto t_normal = getFTensor1NormalsAtGaussPts();
+      FTensor::Index<'i', 3> i;
+      for (size_t gg = 0; gg != nb_int_pts; ++gg) {
+        t_w *= sqrt(t_normal(i) * t_normal(i)) / a;
+        ++t_w;
+        ++t_normal;
+      }
+    } else {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+               "Number of rows in getNormalsAtGaussPts should be equal to "
+               "number of integration points, but is not, i.e. %d != %d",
+               getNormalsAtGaussPts().size1(), nb_int_pts);
+    }
+  }
   MoFEMFunctionReturn(0);
 }
 
@@ -443,7 +470,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpSetContrariantPiolaTransformOnEdge::doWork(
+MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 

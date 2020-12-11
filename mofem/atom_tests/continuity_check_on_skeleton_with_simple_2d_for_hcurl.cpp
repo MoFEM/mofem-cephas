@@ -1,7 +1,7 @@
 /**
- * \file continuity_check_on_skeleton_with_simple_2d.cpp
+ * \file continuity_check_on_skeleton_with_simple_2d_for_hcurl.cpp
  * \ingroup mofem_simple_interface
- * \example continuity_check_on_skeleton_with_simple_2d.cpp
+ * \example continuity_check_on_skeleton_with_simple_2d_for_hcurl.cpp
  *
  * \brief Integration on skeleton for 2d
  * 
@@ -142,6 +142,9 @@ struct SkeletonFE : public EdgeEleOp {
               SETERRQ4(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                        "Inconsistency (%d, %d) %3.4e != %3.4e", gg, bb,
                        vol_dot_data(gg, bb), elemData.dotEdge(gg, bb));
+            else
+              MOFEM_LOG("ATOM", Sev::noisy) << "Ok";
+
           }
         MoFEMFunctionReturn(0);
       };
@@ -170,6 +173,11 @@ int main(int argc, char *argv[]) {
     // Create MoFEM database and link it to MoAB
     MoFEM::Core mofem_core(moab);
     MoFEM::Interface &m_field = mofem_core;
+
+    auto core_log = logging::core::get();
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSelf(), "ATOM"));
+    LogManager::setLog("ATOM");
 
     // Register DM Manager
     DMType dm_name = "DMMOFEM";
@@ -205,12 +213,9 @@ int main(int argc, char *argv[]) {
       // add fields
       auto base = get_base();
       CHKERR simple_interface->addDomainField("FIELD", HCURL, base, 1);
-      CHKERR simple_interface->addDomainField("TEST_FIELD", L2,
-                                              AINSWORTH_LEGENDRE_BASE, 1);
       CHKERR simple_interface->addSkeletonField("FIELD", HCURL, base, 1);
       // set fields order
-      CHKERR simple_interface->setFieldOrder("FIELD", 2);
-      CHKERR simple_interface->setFieldOrder("TEST_FIELD", 1);
+      CHKERR simple_interface->setFieldOrder("FIELD", 3);
       // setup problem
       CHKERR simple_interface->setUp();
       // get dm

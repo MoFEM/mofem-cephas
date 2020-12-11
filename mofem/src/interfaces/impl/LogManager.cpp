@@ -145,7 +145,10 @@ MoFEMErrorCode LogManager::getOptions() {
   CHKERR PetscOptionsBegin(PETSC_COMM_WORLD, "log_",
                            "Logging interface options", "none");
 
-  CHKERR PetscOptionsEList("-severity_level", "Scope level", "",
+  CHKERR PetscOptionsEList("-severity_level", "Severity level", "",
+                           severityStrings.data(), SeverityLevel::error + 1,
+                           severityStrings[sev_level], &sev_level, PETSC_NULL);
+  CHKERR PetscOptionsEList("-sl", "Seeverity level", "",
                            severityStrings.data(), SeverityLevel::error + 1,
                            severityStrings[sev_level], &sev_level, PETSC_NULL);
 
@@ -157,6 +160,8 @@ MoFEMErrorCode LogManager::getOptions() {
 
   CHKERR PetscOptionsBool("-no_color", "Terminal with no colors", "",
                           log_no_colors, &log_no_colors, NULL);
+  CHKERR PetscOptionsBool("-nc", "Terminal with no colors", "", log_no_colors,
+                          &log_no_colors, NULL);
 
   CHKERR PetscOptionsBool("-time", "Log time", "",
                           log_time, &log_time, NULL);
