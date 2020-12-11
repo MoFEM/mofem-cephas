@@ -823,7 +823,7 @@ computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
  * @tparam DIM 
  * @param mat input tensor pointer of size DIM x DIM
  * @param eig output eigen values sorted
- * @param eigen_vec input / output DIM x DIM matrix of row eigen vectors
+ * @param eigen_vec output matrix of row eigen vectors
  * @return MoFEMErrorCode 
  */
 template <int DIM>
@@ -847,7 +847,7 @@ inline MoFEMErrorCode computeEigenValuesSymmetric(
  * @tparam DIM 
  * @param mat input tensor of size DIM x DIM
  * @param eig output eigen values sorted
- * @param eigen_vec input / output DIM x DIM matrix of row eigen vectors
+ * @param eigen_vec output matrix of row eigen vectors
  * @return MoFEMErrorCode 
  */
 template <int DIM>
