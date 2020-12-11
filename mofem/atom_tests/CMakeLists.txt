@@ -51,6 +51,7 @@ cm_export_file("../meshes/rectangle_tri.h5m" export_atom_tests)
 cm_export_file("../meshes/rectangle_quad.h5m" export_atom_tests)
 cm_export_file("../meshes/quad_mesh.h5m" export_atom_tests)
 cm_export_file("../meshes/2_tets_contact.cub" export_atom_tests)
+cm_export_file("../meshes/reference_rectangle.h5m" export_atom_tests)
 
 set(PERCOMPILED_MOFEM_HEADER 
   "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
@@ -2073,3 +2074,17 @@ add_test(matrix_function
   -log_severity_level inform
   -log_no_color
 )
+
+# Add base function
+my_add_executable(
+  bases_on_reference_rectangle bases_on_reference_rectangle.cpp)
+target_link_libraries(bases_on_reference_rectangle
+  mofem_matrix_function
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})

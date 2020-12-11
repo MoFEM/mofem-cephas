@@ -158,9 +158,9 @@ int main(int argc, char *argv[]) {
       CHKERRG(ierr);
       for (int ii = 0; ii != 11; ii++) {
         double s = pts_1d(0, ii);
-        std::cerr << "lobatto_plot " << s << " " << (*base_ptr)(ii, 3) << " "
-                  << (*diff_base_ptr)(ii, 3) << " " << (*kernel_base_ptr)(ii, 3)
-                  << " " << (*diff_kernel_base_ptr)(ii, 3) << " "
+        std::cerr << "lobatto_plot " << s << " " << (*base_ptr)(ii, 1) << " "
+                  << (*diff_base_ptr)(ii, 1) << " " << (*kernel_base_ptr)(ii, 1)
+                  << " " << (*diff_kernel_base_ptr)(ii, 1) << " "
                   << (*kernel_base_ptr)(ii, 1) * (1 - s * s) << " "
                   << (*kernel_base_ptr)(ii, 1) * (-2 * s) +
                          (*diff_kernel_base_ptr)(ii, 1) * (1 - s * s)
