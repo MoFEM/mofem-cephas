@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
       base = AINSWORTH_LEGENDRE_BASE;
     else if (choice_base_value == DEMKOWICZ)
       base = DEMKOWICZ_JACOBI_BASE;
-    int order = 1;
+    int order = 5;
     CHKERR PetscOptionsGetInt(PETSC_NULL, "", "-order", &order, PETSC_NULL);
 
     CHKERR m_field.add_field("FIELD1", HCURL, base, 1);
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
     // integration rule
-    auto rule = [&](int, int, int p) { return p; };
+    auto rule = [&](int, int, int p) { return 2 * p; };
 
     auto calculate_divergence = [&]() {
       double div = 0;

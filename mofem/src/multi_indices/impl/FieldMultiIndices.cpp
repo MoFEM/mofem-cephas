@@ -146,6 +146,7 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset,
         };
         forderTable[MBEDGE] = [](int P) -> int { return NBEDGE_L2(P); };
         forderTable[MBTRI] = [](int P) -> int { return NBFACETRI_L2(P); };
+        forderTable[MBQUAD] = [](int P) -> int { return NBFACEQUAD_L2(P); };
         forderTable[MBTET] = [](int P) -> int { return NBVOLUMETET_L2(P); };
         break;
       default:
