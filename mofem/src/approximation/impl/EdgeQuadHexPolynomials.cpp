@@ -452,8 +452,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_FaceShapeFunctions_ONQUAD(
     int *p, double *N, double *diffN, double *faceN, double *diff_faceN,
     int nb_integration_pts) {
   MoFEMFunctionBeginHot;
-  int permute[(p[0] - 0) * (p[1] - 0)][3];
-  CHKERR MonomOrdering(permute, p[0] - 1, p[1] - 1);
+  int permute[(p[0] + 1) * (p[1] + 1)][3];
+  CHKERR MonomOrdering(permute, p[0], p[1]);
 
   constexpr int n0 = 0;
   constexpr int n1 = 1;
@@ -480,22 +480,22 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_FaceShapeFunctions_ONQUAD(
       diff_ksi12[d] = (diff_shape2 + diff_shape3 - diff_shape1 - diff_shape0);
     }
 
-    double L01[p[0] + 1];
-    double diffL01[2 * (p[0] + 1)];
-    CHKERR Legendre_polynomials(p[0], ksi01, diff_ksi01, L01, diffL01, 2);
-    double L12[p[1] + 1];
-    double diffL12[2 * (p[1] + 1)];
-    CHKERR Legendre_polynomials(p[1], ksi12, diff_ksi12, L12, diffL12, 2);
+    double L01[p[0] + 2];
+    double diffL01[2 * (p[0] + 2)];
+    CHKERR Legendre_polynomials(p[0] + 1, ksi01, diff_ksi01, L01, diffL01, 2);
+    double L12[p[1] + 2];
+    double diffL12[2 * (p[1] + 2)];
+    CHKERR Legendre_polynomials(p[1] + 1, ksi12, diff_ksi12, L12, diffL12, 2);
 
-    int qd_shift = p[0] * p[1] * q;
-    for (int n = 0; n != p[0] * p[1]; ++n) {
+    int qd_shift = (p[0] + 1) * (p[1] + 1) * q;
+    for (int n = 0; n != (p[0] + 1) * (p[1] + 1); ++n) {
       int s1 = permute[n][0];
       int s2 = permute[n][1];
       faceN[qd_shift + n] = L01[s1] * L12[s2];
       for (int d = 0; d != 2; ++d) {
         diff_faceN[2 * (qd_shift + n) + d] =
-            diffL01[d * (p[0] + 1) + s1] * L12[s2] +
-            L01[s1] * diffL12[d * (p[1] + 1) + s2];
+            diffL01[d * (p[0] + 2) + s1] * L12[s2] +
+            L01[s1] * diffL12[d * (p[1] + 2) + s2];
       }
     }
   }
@@ -586,7 +586,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
         t_diff_n(2, 1) = 0;
         ++t_n;
         ++t_diff_n;
-
       }
     }
   }
