@@ -214,6 +214,17 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
+                                               RowColData rc, int min_order,
+                                               int max_order,
+                                               SmartPetscObj<IS> &is) const {
+  MoFEMFunctionBegin;
+  IS raw_is;
+  CHKERR isCreateProblemOrder(problem, rc, min_order, max_order, &raw_is);
+  is = SmartPetscObj<IS>(raw_is);
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
     const std::string &problem, RowColData rc, const std::string &field,
     int min_coeff_idx, int max_coeff_idx, IS *is, Range *ents_ptr) const {

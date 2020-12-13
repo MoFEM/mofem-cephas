@@ -82,6 +82,13 @@ struct ISManager : public UnknownInterface {
                                       IS *is) const;
 
   /**
+   * @copydoc MoFEM::ISManager::isCreateProblemOrder	
+   */
+  MoFEMErrorCode isCreateProblemOrder(const std::string &problem, RowColData rc,
+                                      int min_order, int max_order,
+                                      SmartPetscObj<IS> &is) const;
+
+  /**
     * \brief create IS for given problem, field and rank range (collective)
     * \ingroup mofem_is_managers
 
