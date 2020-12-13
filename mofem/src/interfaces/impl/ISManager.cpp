@@ -33,7 +33,6 @@ MoFEMErrorCode ISManager::query_interface(const MOFEMuuid &uuid,
 
 ISManager::ISManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
-ISManager::~ISManager() {}
 
 MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
                                         PetscSection *s,

@@ -46,7 +46,7 @@ struct ISManager : public UnknownInterface {
   /**
    * \brief Destructor
    */
-  ~ISManager();
+  virtual ~ISManager() = default;
 
   /**
    * \brief Create global selection
