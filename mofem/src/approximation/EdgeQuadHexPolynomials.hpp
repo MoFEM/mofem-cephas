@@ -133,21 +133,21 @@ MoFEMErrorCode Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
                                               int nb_integration_pts);
 
 /* Reference Hex and its canonical vertex and edge numbering
-               8 ---------11--------- 7
+               7---------10----------6
               /|                    /|
              / |                   / |
-           12  |                 10  |             x3
-           /   8                 /   |             |
-          /    |                /    7             |    x2
-        5 ----------9--------- 6     |             |   /
+           11  |                  9  |             x3
+           /   7                 /   |             |
+          /    |                /    6             |    x2
+         4----------8----------5     |             |   /
          |     |               |     |             |  /
-         |    4 ----------3---------- 3            | /
+         |     3----------2----------2            | /
          |    /                |    /              o -------- x1
-         5   /                 6   /
-         |  4                  |  2
+         4   /                 5   /
+         |  3                  |  1
          | /                   | /
          |/                    |/
-        1 ---------1---------- 2
+         0---------0-----------1
 
   Hex Face Canonical numbering
 
