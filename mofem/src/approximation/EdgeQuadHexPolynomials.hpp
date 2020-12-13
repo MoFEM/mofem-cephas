@@ -26,12 +26,13 @@ Segment (1d) basis functions
 
        0-----------1
 */
-MoFEMErrorCode H1_BubbleShapeFunctions_ONSEGMENT(int p, double *L,
-                                                 double *bubbleN,
+MoFEMErrorCode H1_BubbleShapeFunctions_ONSEGMENT(int p, double *N,
+                                                 double *diffN, double *bubbleN,
                                                  double *diff_bubbleN,
                                                  int nb_integration_pts);
 
-MoFEMErrorCode L2_ShapeFunctions_ONSEGMENT(int p, double *L, double *funN,
+MoFEMErrorCode L2_ShapeFunctions_ONSEGMENT(int p, double *N, double *diffN,
+                                           double *funN, double *funDiffN,
                                            int nb_integration_pts);
 
 /*
@@ -113,19 +114,15 @@ MoFEMErrorCode L2_FaceShapeFunctions_ONQUAD(int *p, double *N, double *diffN,
                                             int nb_integration_pts);
 
 MoFEMErrorCode Hcurl_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
-                                               double *edgeN[4],
+                                               double *diffN, double *edgeN[4],
                                                double *curl_edgeN[4],
                                                int nb_integration_pts);
 
-MoFEMErrorCode Hcurl_FaceShapeFunctions_ONQUAD(int *p, double *N,
-                                               double *faceN[2],
-                                               double *curl_faceN[2],
+MoFEMErrorCode Hcurl_FaceShapeFunctions_ONQUAD(int *face_nodes, int *p,
+                                               double *N, double *diffN,
+                                               double *faceN[],
+                                               double *diff_faceN[],
                                                int nb_integration_pts);
-
-MoFEMErrorCode Hdiv_EdgeShapeFunctions_ONQUAD(int *sense, int *p, double *N,
-                                              double *edgeN[],
-                                              double *div_edgeN[],
-                                              int nb_integration_pts);
 
 MoFEMErrorCode Hdiv_FaceShapeFunctions_ONQUAD(int *p, double *N,
                                               double *faceN[],

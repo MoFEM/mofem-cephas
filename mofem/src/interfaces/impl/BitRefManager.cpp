@@ -34,9 +34,7 @@ MoFEMErrorCode BitRefManager::query_interface(const MOFEMuuid &uuid,
 BitRefManager::BitRefManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {
 
-  try {
-    MoFEM::LogManager::getLog("BitRefSelf");
-  } catch (...) {
+  if (!LogManager::checkIfChannelExist("BitRefSelf")) {
     auto core_log = logging::core::get();
     core_log->add_sink(
         LogManager::createSink(LogManager::getStrmSelf(), "BitRefSelf"));

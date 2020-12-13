@@ -175,10 +175,10 @@ int main(int argc, char *argv[]) {
         double diff_sum = sum_matrix(*diff_base_ptr);
         std::cout << sum << std::endl;
         std::cout << diff_sum << std::endl;
-        if (fabs(9.38201 - sum) > eps) {
+        if (fabs(9.39466 - sum) > eps) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
         }
-        if (fabs(12.0516 - diff_sum) > eps) {
+        if (fabs(14.0774 - diff_sum) > eps) {
           SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong result");
         }
       }
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
       pts_1d.resize(1, n, false);
       MatrixDouble pts_1d_t(1, n);
       for (int ii = 0; ii != n; ii++) {
-        pts_1d(0, ii) = (double)ii / 20.;
+        pts_1d(0, ii) = (double)ii / (n - 1);
         pts_1d_t(0, ii) = 1;
       }
 
@@ -220,7 +220,14 @@ int main(int argc, char *argv[]) {
       for (int ii = 0; ii != n; ii++) {
         double s = pts_1d(0, ii);
         std::cerr << "jacobi_plot " << s << " " << (*base_ptr)(ii, 4) << " "
-                  << (*diff_base_ptr)(ii, 4) << std::endl;
+                  << (*diff_base_ptr)(ii, 4) << std::endl;                  
+      }
+      for (int ii = 0; ii != n - 1; ii++) {
+        double s = (pts_1d(0, ii) + pts_1d(0, ii + 1)) / 2;
+        std::cerr << "jacobi_diff_plot_fd " << s << " "
+                  << ((*base_ptr)(ii + 1, 4) - (*base_ptr)(ii, 4)) /
+                         (1. / (n - 1))
+                  << std::endl;
       }
       std::cout << "JacobiPolynomial\n";
       std::cout << pts_1d << std::endl;

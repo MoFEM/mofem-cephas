@@ -33,7 +33,6 @@ MoFEMErrorCode ISManager::query_interface(const MOFEMuuid &uuid,
 
 ISManager::ISManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
-ISManager::~ISManager() {}
 
 MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
                                         PetscSection *s,
@@ -212,6 +211,17 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
 
   CHKERR ISCreateGeneral(PETSC_COMM_WORLD, size, id, PETSC_OWN_POINTER, is);
 
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
+                                               RowColData rc, int min_order,
+                                               int max_order,
+                                               SmartPetscObj<IS> &is) const {
+  MoFEMFunctionBegin;
+  IS raw_is;
+  CHKERR isCreateProblemOrder(problem, rc, min_order, max_order, &raw_is);
+  is = SmartPetscObj<IS>(raw_is);
   MoFEMFunctionReturn(0);
 }
 

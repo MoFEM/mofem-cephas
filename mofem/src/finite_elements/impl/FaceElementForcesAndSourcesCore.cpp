@@ -311,12 +311,22 @@ FaceElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
     CHKERR getEntityDataOrder<MBTRI>(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
   }
+  if (dataH1.spacesOnEntities[MBQUAD].test(HCURL)) {
+    CHKERR getEntitySense<MBQUAD>(dataHcurl);
+    CHKERR getEntityDataOrder<MBQUAD>(dataHcurl, HCURL);
+    dataHcurl.spacesOnEntities[MBQUAD].set(HCURL);
+  }
 
   // Hdiv
   if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
     CHKERR getEntitySense<MBTRI>(dataHdiv);
     CHKERR getEntityDataOrder<MBTRI>(dataHdiv, HDIV);
     dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
+  }
+  if (dataH1.spacesOnEntities[MBQUAD].test(HDIV)) {
+    CHKERR getEntitySense<MBQUAD>(dataHdiv);
+    CHKERR getEntityDataOrder<MBQUAD>(dataHdiv, HDIV);
+    dataHdiv.spacesOnEntities[MBQUAD].set(HDIV);
   }
 
   // L2

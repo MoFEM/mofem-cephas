@@ -115,6 +115,15 @@ struct LogManager : public UnknownInterface {
   static LoggerType &getLog(const std::string channel);
 
   /**
+   * @brief Check if channel exist
+   * 
+   * @param channel 
+   * @return true 
+   * @return false 
+   */
+  static bool checkIfChannelExist(const std::string channel);
+
+  /**
    * @brief Add tag to logger
    * \ingroup mofem_log_manager
    * 
