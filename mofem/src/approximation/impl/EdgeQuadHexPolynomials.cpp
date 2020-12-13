@@ -940,7 +940,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
     int shift = 8 * q;
     double quad_coords[3];
     double Nq[8];
-    double Nq[8][3];
+    double Nq_diff[8][3];
     for (int vv = 0; vv < 8; vv++){
       Nq[vv] = N[shift + vv];
       Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
@@ -986,7 +986,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
 }
 // TODO
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
-    int *face_nodes[6], int *p, double *N, double *N, double *faceN[6],
+    int *face_nodes[6], int *p, double *N, double *N_diff, double *faceN[6],
     double *diff_faceN[6], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
 
@@ -1029,7 +1029,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
       double diff_ksi1[3] = { diff_ksi[face][1][0], diff_ksi[face][1][1], diff_ksi[face][1][2]};
 
       double L0[pq[0] + 1];
-      double diffL0[3 (pq[0] + 2)];
+      double diffL0[3 * (pq[0] + 2)];
       CHKERR Lobatto_polynomials(pq[0] + 1, ksi0, diff_ksi0, L0, diffL0, 3);
       double L1[pq[1] + 2];
       double diffL1[3 * (pq[1] + 2)];
@@ -1237,7 +1237,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONHEX(
   for (int qq = 0; qq != nb_integration_pts; qq++) {
     // general ******************************
     int shift = 8 * qq;
-    double quad_coords[3];
     double Nq[8];
     double Nq_diff[8][3];
     for (int vv = 0; vv < 8; vv++) {
@@ -1255,7 +1254,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONHEX(
     ref_hex.get_edge_diff_affines(Nq_diff, diff_mu);
 
     double ksi[12];
-    ref_hex.get_edge_coords(sense, Nq, quad_coords, ksi);
+    ref_hex.get_edge_coords(sense, Nq, ksi);
     double diff_ksi[12][3];
     ref_hex.get_edge_diff_coords(sense, Nq_diff, diff_ksi);
 
