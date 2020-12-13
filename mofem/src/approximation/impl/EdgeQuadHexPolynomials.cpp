@@ -1043,9 +1043,9 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
       for (; n != (pq[0] - 1) * (pq[1] - 1); n++) {
         int s1 = permute[n][0];
         int s2 = permute[n][1];
-        faceN[face][qd_shift + n] = mu[face] * L0[s1] * L1[s2];
+        faceN[face][qd_shift + n] = mu[face] * L0[s1 + 2] * L1[s2 + 2];
         for (int d = 0; d != 3; ++d) {
-          diff_faceN[face][3 * (qd_shift + n) + 0] =
+          diff_faceN[face][3 * (qd_shift + n) + d] =
               diff_mu[face][0] * L0[s1 + 2] * L1[s2 + 2] +
               mu[face] * diffL0[d * (pq[0] + 2) + s1 + 2] * L1[s2] +
               mu[face] * L0[s1 + 2] * diffL1[d * (pq[1] + 2) + s2 + 2];
@@ -1109,16 +1109,17 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
 
     ref_hex.get_volume_diff_coords(Nq_diff, diff_ksi);
 
-    double L0[p[0] - 1];
-    double diffL0[p[0] - 1];
-    double L1[p[1] - 1];
-    double diffL1[p[1] - 1];
-    double L2[p[2] - 1];
-    double diffL2[p[2] - 1];
+    double L0[p[0] + 2];
+    double diffL0[3 * (p[0] + 2)];
+    double L1[p[1] + 2];
+    double diffL1[3 * (p[1] + 2)];
+    double L2[p[2] + 2];
+    double diffL2[3 * (p[2] + 2)];
 
-    CHKERR Integrated_Legendre01(p[0], ksi[0], L0, diffL0);
-    CHKERR Integrated_Legendre01(p[1], ksi[1], L1, diffL1);
-    CHKERR Integrated_Legendre01(p[2], ksi[2], L2, diffL2);
+    CHKERR Lobatto_polynomials(p[0] + 1, ksi[0], diff_ksi[0], L0, diffL0, 3);
+    CHKERR Lobatto_polynomials(p[1] + 1, ksi[1], diff_ksi[1], L1, diffL1, 3);
+    CHKERR Lobatto_polynomials(p[2] + 1, ksi[2], diff_ksi[2], L2, diffL2, 3);
+
 
     // cout << "In Face H1" << endl;
 
@@ -1130,46 +1131,13 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
       int s3 = permute[n][2];
 
       faceN[qd_shift + n] = L0[s1] * L1[s2] * L2[s3];
-
-      diff_faceN[3 * (qd_shift + n) + 0] =
-          diffL0[s1] * diff_ksi[0][0] * L1[s2] * L2[s3] +
-          L0[s1] * diffL1[s2] * diff_ksi[1][0] * L2[s3] +
-          L0[s1] * L1[s2] * diffL2[s3] * diff_ksi[2][0];
-
-      diff_faceN[3 * (qd_shift + n) + 1] =
-          diffL0[s1] * diff_ksi[0][1] * L1[s2] * L2[s3] +
-          L0[s1] * diffL1[s2] * diff_ksi[1][1] * L2[s3] +
-          L0[s1] * L1[s2] * diffL2[s3] * diff_ksi[2][1];
-
-      diff_faceN[3 * (qd_shift + n) + 2] =
-          diffL0[s1] * diff_ksi[0][2] * L1[s2] * L2[s3] +
-          L0[s1] * diffL1[s2] * diff_ksi[1][2] * L2[s3] +
-          L0[s1] * L1[s2] * diffL2[s3] * diff_ksi[2][2];
+      for (int d = 0; d != 3; ++d) {
+        diff_faceN[3 * (qd_shift + n) + 0] =
+            diffL0[d * (p[0] + 2) + s1] * L1[s2 + 2] * L2[s3 + 2] +
+            L0[s1 + 2] * diffL1[d * (p[1] + 2) + s2 + 2] * L2[s3 + 2] +
+            L0[s1 + 2] * L1[s2 + 2] * diffL2[d * (p[2] + 2) + s3 + 2];
+      }
     }
-    // for (int s1 = 0; s1 != p[0] - 1; s1++) {
-    //   for (int s2 = 0; s2 != p[1] - 1; s2++) {
-    //     for (int s3 = 0; s3 < p[2] - 1; s3++) {
-    //       faceN[qd_shift + n] = L0[s1] * L1[s2] * L2[s3];
-
-    //       diff_faceN[3 * (qd_shift + n) + 0] =
-    //           diffL0[s1] * diff_ksi[0][0] * L1[s2] * L2[s3] +
-    //           L0[s1] * diffL1[s2] * diff_ksi[1][0] * L2[s3] +
-    //           L0[s1] * L1[s2] * diffL2[s3] * diff_ksi[2][0];
-
-    //       diff_faceN[3 * (qd_shift + n) + 1] =
-    //           diffL0[s1] * diff_ksi[0][1] * L1[s2] * L2[s3] +
-    //           L0[s1] * diffL1[s2] * diff_ksi[1][1] * L2[s3] +
-    //           L0[s1] * L1[s2] * diffL2[s3] * diff_ksi[2][1];
-
-    //       diff_faceN[3 * (qd_shift + n) + 2] =
-    //           diffL0[s1] * diff_ksi[0][2] * L1[s2] * L2[s3] +
-    //           L0[s1] * diffL1[s2] * diff_ksi[1][2] * L2[s3] +
-    //           L0[s1] * L1[s2] * diffL2[s3] * diff_ksi[2][2];
-
-    //       ++n;
-    //     }
-    //   }
-    // }
   }
   MoFEMFunctionReturnHot(0);
 }
