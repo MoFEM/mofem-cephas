@@ -2079,7 +2079,6 @@ add_test(matrix_function
 my_add_executable(
   bases_on_reference_rectangle bases_on_reference_rectangle.cpp)
 target_link_libraries(bases_on_reference_rectangle
-  mofem_matrix_function
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
