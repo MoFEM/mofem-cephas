@@ -840,9 +840,8 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
             for (auto cc = 0; cc != Dim; ++cc) {
               for (auto dd = 0; dd != Dim; ++dd) {
                 if (cc != dd) {
-                  V r;
                   if ((bb != dd) && (aa != dd && bb != cc)) {
-                    r = ddfVal(cc) / 4;
+                    const double r = ddfVal(cc) / 4;
                     d2MType1[aa][cc][dd](i, j, k, l) +=
                         r * aS[aa][bb](i, j, k, l);
                   }
