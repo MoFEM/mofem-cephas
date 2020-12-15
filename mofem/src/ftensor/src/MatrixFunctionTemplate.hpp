@@ -148,20 +148,36 @@ template <typename E, typename C> struct Fdd4MImpl {
     return e.d2MType1[A][a][b](i, j, k, l);
   }
 
-  template <int a, int b, int A, int B>
-  inline auto fd2G(const int i, const int j, const int k, const int l,
-                   const int m, const int n) const {
-    return fd2M<A, a, b>(i, k, n, m) * e.aM[B](j, l) +
-           e.aM[A](i, k) * fd2M<B, a, b>(j, l, m, n) +
-           fd2M<A, a, b>(i, l, m, n) * e.aM[B](j, k) +
-           e.aM[A](i, l) * fd2M<B, a, b>(j, k, m, n);
-  }
-
   template <int a, int b>
   inline auto fd2S(const int i, const int j, const int k, const int l,
                    const int m, const int n) const {
-    return fd2G<a, b, a, b>(i, j, k, l, m, n) +
-           fd2G<a, b, b, a>(i, j, k, l, m, n);
+
+    if(i == j && k == l)
+      return 4 * (fd2M<a, a, b>(i, k, m, n) * e.aM[b](j, l) +
+                  fd2M<b, a, b>(j, l, m, n) * e.aM[a](i, k));
+    else if (i == j)
+      return 2 * (fd2M<a, a, b>(i, k, m, n) * e.aM[b](j, l) +
+                  fd2M<a, a, b>(i, l, m, n) * e.aM[b](j, k) +
+                  fd2M<b, a, b>(j, l, m, n) * e.aM[a](i, k) +
+                  fd2M<b, a, b>(j, k, m, n) * e.aM[a](i, l));
+    else if (k == l)
+      return 2 * (fd2M<a, a, b>(i, k, m, n) * e.aM[b](j, l) +
+                  fd2M<a, a, b>(j, l, m, n) * e.aM[b](i, k) +
+                  fd2M<b, a, b>(j, l, m, n) * e.aM[a](i, k) +
+                  fd2M<b, a, b>(i, k, m, n) * e.aM[a](j, l));
+
+    return
+
+        fd2M<a, a, b>(i, k, m, n) * e.aM[b](j, l) +
+        fd2M<a, a, b>(i, l, m, n) * e.aM[b](j, k) +
+        fd2M<a, a, b>(j, l, m, n) * e.aM[b](i, k) +
+        fd2M<a, a, b>(j, k, m, n) * e.aM[b](i, l) +
+
+        fd2M<b, a, b>(j, l, m, n) * e.aM[a](i, k) +
+        fd2M<b, a, b>(j, k, m, n) * e.aM[a](i, l) +
+        fd2M<b, a, b>(i, k, m, n) * e.aM[a](j, l) +
+        fd2M<b, a, b>(i, l, m, n) * e.aM[a](j, k);
+
   }
 
   template <int a, int b>
@@ -671,8 +687,10 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto mm = 0; mm != Dim; ++mm) {
         for (auto nn = mm; nn != Dim; ++nn) {
-          d2MType1[aa][nn][mm](i, j, k, l) = 0;
-          d2MType1[aa][mm][nn](i, j, k, l) = 0;
+          if (mm != nn) {
+            d2MType1[aa][nn][mm](i, j, k, l) = 0;
+            d2MType1[aa][mm][nn](i, j, k, l) = 0;
+          }
         }
       }
     }
