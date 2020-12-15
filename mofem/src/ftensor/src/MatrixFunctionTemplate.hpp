@@ -334,9 +334,9 @@ template <typename E, typename C, typename T> struct GetMatImpl {
   ReconstructMatImpl<E, C> r;
   T &tA;
 
-  template <int Dim> inline void set(const Number<Dim> &) {
-    for (int ii = 0; ii != Dim; ++ii)
-      for (int jj = ii; jj != Dim; ++jj)
+  inline void set() {
+    for (int ii = 0; ii != typename E::NumberDim(); ++ii)
+      for (int jj = ii; jj != typename E::NumberDim(); ++jj)
         tA(ii, jj) = r.eval(typename E::NumberDim(), ii, jj);
   }
 };
@@ -544,8 +544,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     using T3 =
         FTensor::Tensor2_symmetric<typename std::remove_const<V>::type, Dim>;
     T3 t_A;
-    GetMatImpl<EigenMatrixImp<T1, T2, NB, Dim>, V, T3>(*this, t_A)
-        .set(Number<Dim>());
+    GetMatImpl<EigenMatrixImp<T1, T2, NB, Dim>, V, T3>(*this, t_A).set();
     return t_A;
   }
 
