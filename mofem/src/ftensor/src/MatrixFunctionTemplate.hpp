@@ -210,13 +210,39 @@ template <typename E, typename C> struct Fdd4MImpl {
 
             fd2S<a, b, i, j, k, l, m, n>();
 
+      } else if (e.nB == 2) {
+        return
+
+            fd2S<a, b, i, j, k, l, m, n>()
+
+            +
+
+            ((a == 1 || b == 1)
+                 ? (
+
+                       2 * (e.fVal(a) * e.aF2(a, b)) *
+                       (((n < m) ? (e.aSM[b][a][n][m](i, j, k, l) -
+                                    e.aSM[a][b][n][m](i, j, k, l))
+                                 : (e.aSM[b][a][m][n](i, j, k, l) -
+                                    e.aSM[a][b][m][n](i, j, k, l)))
+
+                            ))
+                 : 0);
+
       } else {
         return
 
             fd2S<a, b, i, j, k, l, m, n>()
 
-            + ((n < m) ? e.d2MType2[a][b][n][m](i, j, k, l)
-                       : e.d2MType2[a][b][m][n](i, j, k, l));
+            +
+
+            2 * (e.fVal(a) * e.aF2(a, b)) *
+                (((n < m) ? (e.aSM[b][a][n][m](i, j, k, l) -
+                             e.aSM[a][b][n][m](i, j, k, l))
+                          : (e.aSM[b][a][m][n](i, j, k, l) -
+                             e.aSM[a][b][m][n](i, j, k, l)))
+
+                );
       }
     }
 
@@ -827,42 +853,6 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
         }
       }
 
-    if (NB == 3)
-      for (auto aa = 0; aa != Dim; ++aa) {
-        for (auto bb = 0; bb != Dim; ++bb) {
-          if (aa != bb) {
-            const double r = 2 * (fVal(aa) * aF2(aa, bb));
-            for (auto mm = 0; mm != Dim; ++mm) {
-              for (auto nn = mm; nn != Dim; ++nn) {
-                d2MType2[aa][bb][mm][nn](i, j, k, l) =
-                    r * (aSM[bb][aa][mm][nn](i, j, k, l) -
-                         aSM[aa][bb][mm][nn](i, j, k, l));
-              }
-            }
-          }
-        }
-      }
-
-    if (NB == 2)
-      for (auto aa = 0; aa != Dim; ++aa) {
-        for (auto bb = 0; bb != Dim; ++bb) {
-          if (aa != bb) {
-            const double r = 2 * (fVal(aa) * aF2(aa, bb));
-            for (auto mm = 0; mm != Dim; ++mm) {
-              for (auto nn = mm; nn != Dim; ++nn) {
-                if (aa == 1 || bb == 1) {
-                  d2MType2[aa][bb][mm][nn](i, j, k, l) =
-                      r * (aSM[bb][aa][mm][nn](i, j, k, l) -
-                           aSM[aa][bb][mm][nn](i, j, k, l));
-                } else {
-                  d2MType2[aa][bb][mm][nn](i, j, k, l) = 0;
-                }
-              }
-            }
-          }
-        }
-      }
-
     using THIS = EigenMatrixImp<T1, T2, NB, Dim>;
     using T3 = FTensor::Ddg<V, Dim, Dim>;
 
@@ -880,7 +870,6 @@ private:
   FTensor::Ddg<V, Dim, Dim> aG[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aS[Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> aSM[Dim][Dim][Dim][Dim];
-  FTensor::Ddg<V, Dim, Dim> d2MType2[Dim][Dim][Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> d2MType0[Dim][Dim][Dim];
   FTensor::Ddg<V, Dim, Dim> d2MType1[Dim][Dim][Dim];
   FTensor::Tensor2<V, Dim, Dim> aF;
