@@ -352,37 +352,14 @@ template <typename E, typename C, typename T> struct GetDiffMatImpl {
   FirstMatrixDirectiveImpl<E, C> r;
   T &tA;
 
-  template <int I, int J, int K, int L>
-  inline void set(const Number<I> &, const Number<J> &, const Number<K> &,
-                  const Number<L> &) {
-    set(Number<I>(), Number<J>(), Number<K>(), Number<L - 1>());
-    tA(I - 1, J - 1, K - 1, L - 1) =
-        r.eval(typename E::NumberDim(), Number<I - 1>(), Number<J - 1>(),
-               Number<K - 1>(), Number<L - 1>());
+  inline void set() {
+    for(int ii = 0; ii != typename E::NumberDim(); ++ii)
+      for (int jj = ii; jj != typename E::NumberDim(); ++jj)
+        for (int kk = 0; kk != typename E::NumberDim(); ++kk)
+          for (int ll = 0; ll != typename E::NumberDim(); ++ll)
+            tA(ii, jj, kk, ll) =
+                r.eval(typename E::NumberDim(), ii, jj, kk, ll);
   }
-
-  template <int I, int J, int K>
-  inline void set(const Number<I> &, const Number<J> &, const Number<K> &,
-                  const Number<0> &) {
-    set(Number<I>(), Number<J>(), Number<K - 1>(), Number<K - 1>());
-  }
-
-  template <int I, int J>
-  inline void set(const Number<I> &, const Number<J> &, const Number<0> &,
-                  const Number<0> &) {
-    set(Number<I>(), Number<J - 1>(), typename E::NumberDim(),
-        typename E::NumberDim());
-  }
-
-  template <int I, int K, int L>
-  inline void set(const Number<I> &, const Number<0> &, const Number<K> &,
-                  const Number<L> &) {
-    set(Number<I - 1>(), Number<I - 1>(), Number<K>(), Number<L>());
-  }
-
-  template <int K, int L>
-  inline void set(const Number<0> &, const Number<0> &, const Number<K> &,
-                  const Number<L> &) {}
 };
 
 template <typename E, typename C, typename T1, typename T2>
@@ -603,7 +580,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     using T3 = FTensor::Ddg<V, Dim, Dim>;
     T3 t_diff_A;
     GetDiffMatImpl<EigenMatrixImp<T1, T2, NB, Dim>, V, T3>(*this, t_diff_A)
-        .set(Number<Dim>(), Number<Dim>(), Number<Dim>(), Number<Dim>());
+        .set();
     return t_diff_A;
   }
 
