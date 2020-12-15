@@ -665,14 +665,12 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto bb = 0; bb != Dim; ++bb) {
         if (aa != bb) {
-          auto &S = aS[aa][bb];
-          auto &M = aM[aa];
+          const auto &S = aS[aa][bb];
+          const auto &M = aM[aa];
           for (auto mm = 0; mm != Dim; ++mm) {
             for (auto nn = mm; nn != Dim; ++nn) {
               auto &SMmn = aSM[aa][bb][mm][nn];
-              auto &SMnm = aSM[aa][bb][nn][mm];
-              SMmn(i, j, k, l) = aS[aa][bb](i, j, k, l) * M(mm, nn);
-              SMnm(i, j, k, l) = SMmn(i, j, k, l);
+              SMmn(i, j, k, l) = S(i, j, k, l) * M(mm, nn);
             }
           }
         }
@@ -833,12 +831,12 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
           if (aa != bb) {
+            const double r = 2 * (fVal(aa) * aF2(aa, bb));
             for (auto mm = 0; mm != Dim; ++mm) {
               for (auto nn = mm; nn != Dim; ++nn) {
                 d2MType2[aa][bb][mm][nn](i, j, k, l) =
-                    2 * (fVal(aa) * aF2(aa, bb)) *
-                    (-aSM[aa][bb][mm][nn](i, j, k, l) +
-                     aSM[bb][aa][mm][nn](i, j, k, l));
+                    r * (-aSM[aa][bb][mm][nn](i, j, k, l) +
+                         aSM[bb][aa][mm][nn](i, j, k, l));
               }
             }
           }
@@ -849,13 +847,13 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
       for (auto aa = 0; aa != Dim; ++aa) {
         for (auto bb = 0; bb != Dim; ++bb) {
           if (aa != bb) {
+            const double r = 2 * (fVal(aa) * aF2(aa, bb));
             for (auto mm = 0; mm != Dim; ++mm) {
               for (auto nn = mm; nn != Dim; ++nn) {
                 if (aa == 1 || bb == 1) {
                   d2MType2[aa][bb][mm][nn](i, j, k, l) =
-                      2 * (fVal(aa) * aF2(aa, bb)) *
-                      (-aSM[aa][bb][mm][nn](i, j, k, l) +
-                       aSM[bb][aa][mm][nn](i, j, k, l));
+                      r * (-aSM[aa][bb][mm][nn](i, j, k, l) +
+                           aSM[bb][aa][mm][nn](i, j, k, l));
                 } else {
                   d2MType2[aa][bb][mm][nn](i, j, k, l) = 0;
                 }
