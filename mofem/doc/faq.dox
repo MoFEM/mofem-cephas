@@ -263,15 +263,15 @@ In order to debug a multiprocessing program, one can still use a serial debugger
 \code
 mpirun -np 4 xterm -e gdb ./program
 \endcode
-The command above will open 4 \em xterm windows, each running one process of the program. If the program requires arguments, they will need to be passed manually to each process by typing:
+The command above will open 4 \em xterm windows, each running one process of the program in \em gdb. If the program requires arguments, they can be passed manually to each process by typing:
 \code
 run [arg1] [arg2] [arg3]
 \endcode
 in each window. Alternatively, the following command can be used to automatically pass arguments to all processes:
 \code
-mpirun -np 4 xterm -e gdb -ex run --args ../program [arg1] [arg2] [arg3]
+mpirun -np 4 xterm -e gdb -ex run --args ./program [arg1] [arg2] [arg3]
 \endcode
-See OpenMPI<a href=https://www.open-mpi.org/faq/?category=debugging#debug-tools>documentation</a> for more details.
+See OpenMPI <a href=https://www.open-mpi.org/faq/?category=debugging#debug-tools>documentation</a> for more details.
 
 \subsection faq_memory_profiling_valgrind How to profile memory usage?
 
