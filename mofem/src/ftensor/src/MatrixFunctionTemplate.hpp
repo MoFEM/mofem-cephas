@@ -200,21 +200,20 @@ template <typename E, typename C> struct Fdd4MImpl {
              fd2M<a, a, b, J, K, M, N>() * e.aM[b](I, L);
   }
 
-  template <int a, int b>
-  inline C term(const int i, const int j, const int k, const int l, const int m,
-                const int n) const {
+  template <int a, int b, int i, int j, int k, int l, int m, int n>
+  inline C term() const {
 
     if (a != b) {
 
       if (e.nB == 1) {
         return
 
-            fd2S<a, b>(i, j, k, l, m, n);
+            fd2S<a, b, i, j, k, l, m, n>();
 
       } else {
         return
 
-            fd2S<a, b>(i, j, k, l, m, n)
+            fd2S<a, b, i, j, k, l, m, n>()
 
             +
 
@@ -225,17 +224,20 @@ template <typename E, typename C> struct Fdd4MImpl {
     return 0;
   }
 
-  template <int nb, int a>
-  inline C eval(const Number<nb> &, const Number<a> &, const int i, const int j,
-                const int k, const int l, const int m, const int n) const {
-    return term<a, nb - 1>(i, j, k, l, m, n) +
-           eval(Number<nb - 1>(), Number<a>(), i, j, k, l, m, n);
+  template <int nb, int a, int i, int j, int k, int l, int m, int n>
+  inline C eval(const Number<nb> &, const Number<a> &, const Number<i> &,
+                const Number<j> &, const Number<k> &, const Number<l> &,
+                const Number<m> &, const Number<n> &) const {
+    return term<a, nb - 1, i, j, k, l, m, n>() +
+           eval(Number<nb - 1>(), Number<a>(), Number<i>(), Number<j>(),
+                Number<k>(), Number<l>(), Number<m>(), Number<n>());
   }
 
-  template <int a>
-  inline C eval(const Number<1> &, const Number<a> &, const int i, const int j,
-                const int k, const int l, const int m, const int n) const {
-    return term<a, 0>(i, j, k, l, m, n);
+  template <int a, int i, int j, int k, int l, int m, int n>
+  inline C eval(const Number<1> &, const Number<a> &, const Number<i> &,
+                const Number<j> &, const Number<k> &, const Number<l> &,
+                const Number<m> &, const Number<n> &) const {
+    return term<a, 0, i, j, k, l, m, n>();
   }
 };
 
@@ -309,9 +311,8 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
   Fdd4MImpl<E, C> r;
   E &e;
 
-  template <int a>
-  inline C term(const int i, const int j, const int k, const int l, const int m,
-                const int n) const {
+  template <int a, int i, int j, int k, int l, int m, int n>
+  inline C term() const {
 
     return
 
@@ -334,23 +335,28 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
         +
 
-        r.eval(typename E::NumberDim(), Number<a>(), i, j, k, l, m, n) /
+        r.eval(typename E::NumberDim(), Number<a>(), Number<i>(), Number<j>(),
+               Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
             static_cast<C>(4);
   }
 
-  template <int nb>
-  inline C eval(const Number<nb> &, const int i, const int j, const int k,
-                const int l, const int m, const int n) const {
-    return term<nb - 1>(i, j, k, l, m, n)
+  template <int nb, int i, int j, int k, int l, int m, int n>
+  inline C eval(const Number<nb> &, const Number<i> &, const Number<j> &,
+                const Number<k> &, const Number<l> &, const Number<m> &,
+                const Number<n> &) const {
+    return term<nb - 1, i, j, k, l, m, n>()
 
            +
 
-           eval(Number<nb - 1>(), i, j, k, l, m, n);
+           eval(Number<nb - 1>(), Number<i>(), Number<j>(), Number<k>(),
+                Number<l>(), Number<m>(), Number<n>());
   }
 
-  inline C eval(const Number<1> &, const int i, const int j, const int k,
-                const int l, const int m, const int n) const {
-    return term<0>(i, j, k, l, m, n);
+  template <int i, int j, int k, int l, int m, int n>
+  inline C eval(const Number<1> &, const Number<i> &, const Number<j> &,
+                const Number<k> &, const Number<l> &, const Number<m> &,
+                const Number<n>) const {
+    return term<0, i, j, k, l, m, n>();
   }
 };
 
@@ -387,7 +393,7 @@ template <typename E, typename C, typename T> struct GetDiffMatImpl {
     for (int ii = 0; ii != typename E::NumberDim(); ++ii)
       for (int jj = ii; jj != typename E::NumberDim(); ++jj)
         for (int kk = 0; kk != typename E::NumberDim(); ++kk)
-          for (int ll = kk; ll != typename E::NumberDim(); ++ll)
+          for (int ll = 0; ll != typename E::NumberDim(); ++ll)
             tA(ii, jj, kk, ll) =
                 r.eval(typename E::NumberDim(), ii, jj, kk, ll);
   }
@@ -407,40 +413,50 @@ struct GetDiffDiffMatImpl {
   T1 &tA;
   T2 &tS;
 
-  template <int M, int N>
-  inline auto add(const int i, const int j, const int k, const int l,
-                  const Number<M> &, const Number<N> &) {
+  template <int I, int J, int K, int L, int M, int N>
+  inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
+                  const Number<L> &, const Number<M> &, const Number<N> &) {
     if (N != M)
       return (tS(M - 1, N - 1) + tS(N - 1, M - 1)) *
                  r.eval(typename E::NumberDim(), Number<M - 1>(),
-                        Number<N - 1>(), i, j, k, l)
+                        Number<N - 1>(), Number<I - 1>(), Number<J - 1>(),
+                        Number<K - 1>(), Number<L - 1>())
 
              +
 
-             add(i, j, k, l, Number<M>(), Number<N - 1>());
+             add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+                 Number<M>(), Number<N - 1>());
     else
       return tS(M - 1, N - 1) * r.eval(typename E::NumberDim(), Number<M - 1>(),
-                                       Number<N - 1>(), i, j, k, l)
+                                       Number<N - 1>(), Number<I - 1>(),
+                                       Number<J - 1>(), Number<K - 1>(),
+                                       Number<L - 1>())
 
              +
 
-             add(i, j, k, l, Number<M>(), Number<N - 1>());
+             add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+                 Number<M>(), Number<N - 1>());
   }
 
-  template <int M>
-  inline auto add(const int i, const int j, const int k, const int l,
-                  const Number<M> &, const Number<1> &) {
-    return (tS(M - 1, 0) + tS(0, M - 1)) * r.eval(typename E::NumberDim(),
-                                                  Number<M - 1>(), Number<0>(),
-                                                  i, j, k, l)
+  template <int I, int J, int K, int L, int M>
+  inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
+                  const Number<L> &, const Number<M> &, const Number<1> &) {
+    return (tS(M - 1, 0) + tS(0, M - 1)) *
+               r.eval(typename E::NumberDim(), Number<M - 1>(), Number<0>(),
+                      Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
+                      Number<L - 1>())
 
            +
 
-           add(i, j, k, l, Number<M - 1>(), Number<M - 1>());
+           add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
+               Number<M - 1>(), Number<M - 1>());
+
+    ;
   }
 
-  inline auto add(const int i, const int j, const int k, const int l,
-                  const Number<1> &, const Number<1> &) {
+  template <int I, int J, int K, int L>
+  inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
+                  const Number<L> &, const Number<1> &, const Number<1> &) {
     return tS(0, 0) * r.eval(typename E::NumberDim(), Number<0>(), Number<0>(),
                              Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
                              Number<L - 1>());
@@ -469,17 +485,15 @@ struct GetDiffDiffMatImpl {
     set(Number<I>(), Number<J - 1>(), Number<I>(), Number<J>());
   }
 
-  inline void set() {
-    for (int ii = 0; ii != typename E::NumberDim(); ++ii)
-      for (int jj = ii; jj != typename E::NumberDim(); ++jj)
-        for (int kk = ii; kk != typename E::NumberDim(); ++kk)
-          for (int ll = kk; ll != typename E::NumberDim(); ++ll) {
-            tA(ii, jj, kk, ll) = add(ii, jj, kk, ll, typename E::NumberDim(),
-                                     typename E::NumberDim());
-            if (kk != ii || ll != jj)
-              tA(kk, ll, ii, jj) = tA(ii, jj, kk, ll);
-          }
+  template <int I, int K, int L>
+  inline void set(const Number<I> &, const Number<0> &, const Number<K> &,
+                  const Number<L> &) {
+    set(Number<I - 1>(), Number<I - 1>(), Number<K>(), Number<L>());
   }
+
+  template <int K, int L>
+  inline void set(const Number<0> &, const Number<0> &, const Number<K> &,
+                  const Number<L> &) {}
 };
 
 template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
@@ -731,10 +745,8 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto mm = 0; mm != Dim; ++mm) {
         for (auto nn = mm; nn != Dim; ++nn) {
-          if (mm != nn) {
-            d2MType1[aa][nn][mm](i, j, k, l) = 0;
-            d2MType1[aa][mm][nn](i, j, k, l) = 0;
-          }
+          d2MType1[aa][nn][mm](i, j, k, l) = 0;
+          d2MType1[aa][mm][nn](i, j, k, l) = 0;
         }
       }
     }
@@ -868,7 +880,8 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     using T3 = FTensor::Ddg<V, Dim, Dim>;
 
     T3 t_diff_A;
-    GetDiffDiffMatImpl<THIS, V, T3, T>(*this, t_diff_A, t_S).set();
+    GetDiffDiffMatImpl<THIS, V, T3, T>(*this, t_diff_A, t_S)
+        .set(Number<Dim>(), Number<Dim>(), Number<Dim>(), Number<Dim>());
     return t_diff_A;
   }
 
