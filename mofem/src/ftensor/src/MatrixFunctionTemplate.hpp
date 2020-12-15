@@ -317,15 +317,18 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
         (
 
-            e.d2MType0[a][k][l](i, j, m, n)
+            ((l < k) ? e.d2MType0[a][l][k](i, j, m, n)
+                     : e.d2MType0[a][k][l](i, j, m, n))
 
             +
 
-            e.d2MType0[a][i][j](k, l, m, n)
+            ((j < i) ? e.d2MType0[a][j][i](k, l, m, n)
+                     : e.d2MType0[a][i][j](k, l, m, n))
 
             +
 
-            e.d2MType0[a][m][n](i, j, k, l)
+            ((n < m) ? e.d2MType0[a][n][m](i, j, k, l)
+                     : e.d2MType0[a][m][n](i, j, k, l))
 
                 ) /
             static_cast<C>(2) +
@@ -679,7 +682,6 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     for (auto aa = 0; aa != Dim; ++aa) {
       for (auto mm = 0; mm != Dim; ++mm) {
         for (auto nn = mm; nn != Dim; ++nn) {
-          d2MType0[aa][nn][mm](i, j, k, l) = 0;
           d2MType0[aa][mm][nn](i, j, k, l) = 0;
         }
       }
@@ -694,8 +696,6 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
               for (auto nn = mm; nn != Dim; ++nn) {
                 d2MType0[aa][mm][nn](i, j, k, l) +=
                     v * aSM[aa][bb][mm][nn](i, j, k, l);
-                d2MType0[aa][nn][mm](i, j, k, l) =
-                    d2MType0[aa][mm][nn](i, j, k, l);
               }
             }
           }
@@ -715,8 +715,6 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
               for (auto nn = mm; nn != Dim; ++nn) {
                 d2MType0[aa][mm][nn](i, j, k, l) +=
                     v * aSM[aa][bb][mm][nn](i, j, k, l);
-                d2MType0[aa][nn][mm](i, j, k, l) =
-                    d2MType0[aa][mm][nn](i, j, k, l);
               }
             }
           }
@@ -732,8 +730,6 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
               for (auto nn = mm; nn != Dim; ++nn) {
                 d2MType0[aa][mm][nn](i, j, k, l) +=
                     v * aSM[aa][bb][mm][nn](i, j, k, l);
-                d2MType0[aa][nn][mm](i, j, k, l) =
-                    d2MType0[aa][mm][nn](i, j, k, l);
               }
             }
           }
