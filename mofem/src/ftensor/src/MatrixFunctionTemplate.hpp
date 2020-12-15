@@ -215,9 +215,8 @@ template <typename E, typename C> struct Fdd4MImpl {
 
             fd2S<a, b, i, j, k, l, m, n>()
 
-            +
-
-            e.d2MType2[a][b][m][n](i, j, k, l);
+            + ((n < m) ? e.d2MType2[a][b][n][m](i, j, k, l)
+                       : e.d2MType2[a][b][m][n](i, j, k, l));
       }
     }
 
@@ -844,8 +843,6 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
                     2 * (fVal(aa) * aF2(aa, bb)) *
                     (-aSM[aa][bb][mm][nn](i, j, k, l) +
                      aSM[bb][aa][mm][nn](i, j, k, l));
-                d2MType2[aa][bb][nn][mm](i, j, k, l) =
-                    d2MType2[aa][bb][mm][nn](i, j, k, l);
               }
             }
           }
@@ -863,11 +860,8 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
                       2 * (fVal(aa) * aF2(aa, bb)) *
                       (-aSM[aa][bb][mm][nn](i, j, k, l) +
                        aSM[bb][aa][mm][nn](i, j, k, l));
-                  d2MType2[aa][bb][nn][mm](i, j, k, l) =
-                      d2MType2[aa][bb][mm][nn](i, j, k, l);
                 } else {
                   d2MType2[aa][bb][mm][nn](i, j, k, l) = 0;
-                  d2MType2[aa][bb][nn][mm](i, j, k, l) = 0;
                 }
               }
             }
