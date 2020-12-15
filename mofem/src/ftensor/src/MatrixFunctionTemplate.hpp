@@ -143,40 +143,42 @@ template <typename E, typename C> struct Fdd4MImpl {
 
   template <int N> using Number = FTensor::Number<N>;
 
-  template <int A, int a, int b, int I, int J, int K, int L, int M, int N>
-  inline auto fd2M() const {
-    return e.d2MType1[A][a][b](I, J, K, L);
+  template <int A, int a, int b>
+  inline auto fd2M(const int i, const int j, const int k, const int l) const {
+    return e.d2MType1[A][a][b](i, j, k, l);
   }
 
-  template <int a, int b, int A, int B, int I, int J, int K, int L, int M,
-            int N>
-  inline auto fd2G() const {
-    return fd2M<A, a, b, I, K, N, M, J, L>() * e.aM[B](J, L) +
-           e.aM[A](I, K) * fd2M<B, a, b, J, L, M, N, I, K>() +
-           fd2M<A, a, b, I, L, M, N, J, K>() * e.aM[B](J, K) +
-           e.aM[A](I, L) * fd2M<B, a, b, J, K, M, N, I, L>();
+  template <int a, int b, int A, int B>
+  inline auto fd2G(const int i, const int j, const int k, const int l,
+                   const int m, const int n) const {
+    return fd2M<A, a, b>(i, k, n, m) * e.aM[B](j, l) +
+           e.aM[A](i, k) * fd2M<B, a, b>(j, l, m, n) +
+           fd2M<A, a, b>(i, l, m, n) * e.aM[B](j, k) +
+           e.aM[A](i, l) * fd2M<B, a, b>(j, k, m, n);
   }
 
-  template <int a, int b, int I, int J, int K, int L, int M, int N>
-  inline auto fd2S() const {
-    return fd2G<a, b, a, b, I, J, K, L, M, N>() +
-           fd2G<a, b, b, a, I, J, K, L, M, N>();
+  template <int a, int b>
+  inline auto fd2S(const int i, const int j, const int k, const int l,
+                   const int m, const int n) const {
+    return fd2G<a, b, a, b>(i, j, k, l, m, n) +
+           fd2G<a, b, b, a>(i, j, k, l, m, n);
   }
 
-  template <int a, int b, int i, int j, int k, int l, int m, int n>
-  inline C term() const {
+  template <int a, int b>
+  inline C term(const int i, const int j, const int k, const int l, const int m,
+                const int n) const {
 
     if (a != b) {
 
       if (e.nB == 1) {
         return
 
-            fd2S<a, b, i, j, k, l, m, n>();
+            fd2S<a, b>(i, j, k, l, m, n);
 
       } else {
         return
 
-            fd2S<a, b, i, j, k, l, m, n>()
+            fd2S<a, b>(i, j, k, l, m, n)
 
             +
 
@@ -187,20 +189,17 @@ template <typename E, typename C> struct Fdd4MImpl {
     return 0;
   }
 
-  template <int nb, int a, int i, int j, int k, int l, int m, int n>
-  inline C eval(const Number<nb> &, const Number<a> &, const Number<i> &,
-                const Number<j> &, const Number<k> &, const Number<l> &,
-                const Number<m> &, const Number<n> &) const {
-    return term<a, nb - 1, i, j, k, l, m, n>() +
-           eval(Number<nb - 1>(), Number<a>(), Number<i>(), Number<j>(),
-                Number<k>(), Number<l>(), Number<m>(), Number<n>());
+  template <int nb, int a>
+  inline C eval(const Number<nb> &, const Number<a> &, const int i, const int j,
+                const int k, const int l, const int m, const int n) const {
+    return term<a, nb - 1>(i, j, k, l, m, n) +
+           eval(Number<nb - 1>(), Number<a>(), i, j, k, l, m, n);
   }
 
-  template <int a, int i, int j, int k, int l, int m, int n>
-  inline C eval(const Number<1> &, const Number<a> &, const Number<i> &,
-                const Number<j> &, const Number<k> &, const Number<l> &,
-                const Number<m> &, const Number<n> &) const {
-    return term<a, 0, i, j, k, l, m, n>();
+  template <int a>
+  inline C eval(const Number<1> &, const Number<a> &, const int i, const int j,
+                const int k, const int l, const int m, const int n) const {
+    return term<a, 0>(i, j, k, l, m, n);
   }
 };
 
@@ -274,8 +273,9 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
   Fdd4MImpl<E, C> r;
   E &e;
 
-  template <int a, int i, int j, int k, int l, int m, int n>
-  inline C term() const {
+  template <int a>
+  inline C term(const int i, const int j, const int k, const int l, const int m,
+                const int n) const {
 
     return
 
@@ -298,28 +298,23 @@ template <typename E, typename C> struct SecondMatrixDirectiveImpl {
 
         +
 
-        r.eval(typename E::NumberDim(), Number<a>(), Number<i>(), Number<j>(),
-               Number<k>(), Number<l>(), Number<m>(), Number<n>()) /
+        r.eval(typename E::NumberDim(), Number<a>(), i, j, k, l, m, n) /
             static_cast<C>(4);
   }
 
-  template <int nb, int i, int j, int k, int l, int m, int n>
-  inline C eval(const Number<nb> &, const Number<i> &, const Number<j> &,
-                const Number<k> &, const Number<l> &, const Number<m> &,
-                const Number<n> &) const {
-    return term<nb - 1, i, j, k, l, m, n>()
+  template <int nb>
+  inline C eval(const Number<nb> &, const int i, const int j, const int k,
+                const int l, const int m, const int n) const {
+    return term<nb - 1>(i, j, k, l, m, n)
 
            +
 
-           eval(Number<nb - 1>(), Number<i>(), Number<j>(), Number<k>(),
-                Number<l>(), Number<m>(), Number<n>());
+           eval(Number<nb - 1>(), i, j, k, l, m, n);
   }
 
-  template <int i, int j, int k, int l, int m, int n>
-  inline C eval(const Number<1> &, const Number<i> &, const Number<j> &,
-                const Number<k> &, const Number<l> &, const Number<m> &,
-                const Number<n>) const {
-    return term<0, i, j, k, l, m, n>();
+  inline C eval(const Number<1> &, const int i, const int j, const int k,
+                const int l, const int m, const int n) const {
+    return term<0>(i, j, k, l, m, n);
   }
 };
 
