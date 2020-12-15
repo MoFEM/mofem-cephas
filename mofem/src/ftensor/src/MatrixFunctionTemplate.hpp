@@ -482,18 +482,17 @@ struct GetDiffDiffMatImpl {
   template <int I, int J>
   inline void set(const Number<I> &, const Number<J> &, const Number<0> &,
                   const Number<0> &) {
-    set(Number<I>(), Number<J - 1>(), Number<I>(), Number<J>());
+    set(Number<I>(), Number<J - 1>(), Number<I>(), Number<J - 1>());
   }
 
-  template <int I, int K, int L>
+  template <int I, int K>
   inline void set(const Number<I> &, const Number<0> &, const Number<K> &,
-                  const Number<L> &) {
-    set(Number<I - 1>(), Number<I - 1>(), Number<K>(), Number<L>());
+                  const Number<0> &) {
+    set(Number<I - 1>(), Number<I - 1>(), Number<I - 1>(), Number<I - 1>());
   }
 
-  template <int K, int L>
-  inline void set(const Number<0> &, const Number<0> &, const Number<K> &,
-                  const Number<L> &) {}
+  inline void set(const Number<0> &, const Number<0> &, const Number<0> &,
+                  const Number<0> &) {}
 };
 
 template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
