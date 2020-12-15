@@ -141,7 +141,7 @@ endif(STAND_ALLONE_USERS_MODULES)
 
 add_library(
   mofem_matrix_function
-  src/impl/MatrixFunction.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/impl/MatrixFunction.cpp)
 if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_matrix_function Includes.hpp.pch_copy)
 endif(PRECOMPILED_HEADRES)
