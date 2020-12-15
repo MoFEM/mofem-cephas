@@ -835,8 +835,8 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
             for (auto mm = 0; mm != Dim; ++mm) {
               for (auto nn = mm; nn != Dim; ++nn) {
                 d2MType2[aa][bb][mm][nn](i, j, k, l) =
-                    r * (-aSM[aa][bb][mm][nn](i, j, k, l) +
-                         aSM[bb][aa][mm][nn](i, j, k, l));
+                    r * (aSM[bb][aa][mm][nn](i, j, k, l) -
+                         aSM[aa][bb][mm][nn](i, j, k, l));
               }
             }
           }
@@ -852,8 +852,8 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
               for (auto nn = mm; nn != Dim; ++nn) {
                 if (aa == 1 || bb == 1) {
                   d2MType2[aa][bb][mm][nn](i, j, k, l) =
-                      r * (-aSM[aa][bb][mm][nn](i, j, k, l) +
-                           aSM[bb][aa][mm][nn](i, j, k, l));
+                      r * (aSM[bb][aa][mm][nn](i, j, k, l) -
+                           aSM[aa][bb][mm][nn](i, j, k, l));
                 } else {
                   d2MType2[aa][bb][mm][nn](i, j, k, l) = 0;
                 }
