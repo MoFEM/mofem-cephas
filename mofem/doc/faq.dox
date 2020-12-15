@@ -271,7 +271,7 @@ in each window. Alternatively, the following command can be used to automaticall
 \code
 mpirun -np 4 xterm -e gdb -ex run --args ./program [arg1] [arg2] [arg3]
 \endcode
-See OpenMPI <a href=https://www.open-mpi.org/faq/?category=debugging#debug-tools>documentation</a> for more details.
+See OpenMPI <a href=https://www.open-mpi.org/faq/?category=debugging>documentation</a> for more details.
 
 \subsection faq_memory_profiling_valgrind How to profile memory usage?
 
