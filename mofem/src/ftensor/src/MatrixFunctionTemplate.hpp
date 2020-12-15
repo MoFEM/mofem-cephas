@@ -351,7 +351,7 @@ template <typename E, typename C, typename T> struct GetDiffMatImpl {
     for(int ii = 0; ii != typename E::NumberDim(); ++ii)
       for (int jj = ii; jj != typename E::NumberDim(); ++jj)
         for (int kk = 0; kk != typename E::NumberDim(); ++kk)
-          for (int ll = 0; ll != typename E::NumberDim(); ++ll)
+          for (int ll = kk; ll != typename E::NumberDim(); ++ll)
             tA(ii, jj, kk, ll) =
                 r.eval(typename E::NumberDim(), ii, jj, kk, ll);
   }
@@ -371,87 +371,55 @@ struct GetDiffDiffMatImpl {
   T1 &tA;
   T2 &tS;
 
-  template <int I, int J, int K, int L, int M, int N>
-  inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
-                  const Number<L> &, const Number<M> &, const Number<N> &) {
+  template <int M, int N>
+  inline auto add(const int i, const int j, const int k, const int l,
+                  const Number<M> &, const Number<N> &) {
     if (N != M)
       return (tS(M - 1, N - 1) + tS(N - 1, M - 1)) *
                  r.eval(typename E::NumberDim(), Number<M - 1>(),
-                        Number<N - 1>(), Number<I - 1>(), Number<J - 1>(),
-                        Number<K - 1>(), Number<L - 1>())
+                        Number<N - 1>(), i, j, k, l)
 
              +
 
-             add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-                 Number<M>(), Number<N - 1>());
+             add(i, j, k, l, Number<M>(), Number<N - 1>());
     else
       return tS(M - 1, N - 1) * r.eval(typename E::NumberDim(), Number<M - 1>(),
-                                       Number<N - 1>(), Number<I - 1>(),
-                                       Number<J - 1>(), Number<K - 1>(),
-                                       Number<L - 1>())
+                                       Number<N - 1>(), i, j, k, l)
 
              +
 
-             add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-                 Number<M>(), Number<N - 1>());
+             add(i, j, k, l, Number<M>(), Number<N - 1>());
   }
 
-  template <int I, int J, int K, int L, int M>
-  inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
-                  const Number<L> &, const Number<M> &, const Number<1> &) {
-    return (tS(M - 1, 0) + tS(0, M - 1)) *
-               r.eval(typename E::NumberDim(), Number<M - 1>(), Number<0>(),
-                      Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
-                      Number<L - 1>())
+  template <int M>
+  inline auto add(const int i, const int j, const int k, const int l,
+                  const Number<M> &, const Number<1> &) {
+    return (tS(M - 1, 0) + tS(0, M - 1)) * r.eval(typename E::NumberDim(),
+                                                  Number<M - 1>(), Number<0>(),
+                                                  i, j, k, l)
 
            +
 
-           add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-               Number<M - 1>(), Number<M - 1>());
-
-    ;
+           add(i, j, k, l, Number<M - 1>(), Number<M - 1>());
   }
 
-  template <int I, int J, int K, int L>
-  inline auto add(const Number<I> &, const Number<J> &, const Number<K> &,
-                  const Number<L> &, const Number<1> &, const Number<1> &) {
+  inline auto add(const int i, const int j, const int k, const int l,
+                  const Number<1> &, const Number<1> &) {
     return tS(0, 0) * r.eval(typename E::NumberDim(), Number<0>(), Number<0>(),
-                             Number<I - 1>(), Number<J - 1>(), Number<K - 1>(),
-                             Number<L - 1>());
+                             i, j, k, l);
   }
 
-  template <int I, int J, int K, int L>
-  inline void set(const Number<I> &, const Number<J> &, const Number<K> &,
-                  const Number<L> &) {
-            set(Number<I>(), Number<J>(), Number<K>(), Number<L - 1>());
-    tA(I - 1, J - 1, K - 1, L - 1) =
-        add(Number<I>(), Number<J>(), Number<K>(), Number<L>(),
-            typename E::NumberDim(), typename E::NumberDim());
-    if (K != I || L != J)
-      tA(K - 1, L - 1, I - 1, J - 1) = tA(I - 1, J - 1, K - 1, L - 1);
+  inline void set() {
+    for (int ii = 0; ii != typename E::NumberDim(); ++ii)
+      for (int jj = ii; jj != typename E::NumberDim(); ++jj)
+        for (int kk = ii; kk != typename E::NumberDim(); ++kk)
+          for (int ll = kk; ll != typename E::NumberDim(); ++ll) {
+            tA(ii, jj, kk, ll) = add(ii, jj, kk, ll, typename E::NumberDim(),
+                                     typename E::NumberDim());
+            if (kk != ii || ll != jj)
+              tA(kk, ll, ii, jj) = tA(ii, jj, kk, ll);
+          }
   }
-
-  template <int I, int J, int K>
-  inline void set(const Number<I> &, const Number<J> &, const Number<K> &,
-                  const Number<0> &) {
-    set(Number<I>(), Number<J>(), Number<K - 1>(), Number<K - 1>());
-  }
-
-  template <int I, int J>
-  inline void set(const Number<I> &, const Number<J> &, const Number<0> &,
-                  const Number<0> &) {
-    set(Number<I>(), Number<J - 1>(), Number<I>(), Number<J>());
-  }
-
-  template <int I, int K, int L>
-  inline void set(const Number<I> &, const Number<0> &, const Number<K> &,
-                  const Number<L> &) {
-    set(Number<I - 1>(), Number<I - 1>(), Number<K>(), Number<L>());
-  }
-
-  template <int K, int L>
-  inline void set(const Number<0> &, const Number<0> &, const Number<K> &,
-                  const Number<L> &) {}
 };
 
 template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
@@ -839,8 +807,7 @@ template <typename T1, typename T2, int NB, int Dim> struct EigenMatrixImp {
     using T3 = FTensor::Ddg<V, Dim, Dim>;
 
     T3 t_diff_A;
-    GetDiffDiffMatImpl<THIS, V, T3, T>(*this, t_diff_A, t_S)
-        .set(Number<Dim>(), Number<Dim>(), Number<Dim>(), Number<Dim>());
+    GetDiffDiffMatImpl<THIS, V, T3, T>(*this, t_diff_A, t_S).set();
     return t_diff_A;
   }
 
