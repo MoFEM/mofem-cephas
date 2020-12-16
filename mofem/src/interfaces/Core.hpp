@@ -911,7 +911,7 @@ protected:
   const EntFiniteElement_multiIndex *get_ents_finite_elements() const;
   const FieldEntity_multiIndex *get_field_ents() const;
   const DofEntity_multiIndex *get_dofs() const;
-  const Problem *get_problem(const std::string &problem_name) const;
+  const Problem *get_problem(const std::string problem_name) const;
   const Problem_multiIndex *get_problems() const;
   const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
   get_ents_elements_adjacency() const;

@@ -901,7 +901,7 @@ const FieldEntity_multiIndex *Core::get_field_ents() const {
   return &entsFields;
 }
 const DofEntity_multiIndex *Core::get_dofs() const { return &dofsField; }
-const Problem *Core::get_problem(const std::string &problem_name) const {
+const Problem *Core::get_problem(const std::string problem_name) const {
   const Problem *prb;
   CHKERR get_problem(problem_name, &prb);
   return prb;
