@@ -187,6 +187,8 @@ MoFEMErrorCode QuadPolynomialBase::getValueL2(MatrixDouble &pts) {
 
   switch (cTx->bAse) {
   case AINSWORTH_LEGENDRE_BASE:
+    CHKERR getValueL2DemkowiczBase(pts);
+    break;
   case AINSWORTH_LOBATTO_BASE:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Ainsworth not implemented on quad for L2 base");
@@ -289,9 +291,9 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
       diff_hcurl_edge_n[ee] =
           &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
-    int pp[2] = {order[0], order[1]};
     CHKERR DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
-        sense, pp, &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+        sense, order,
+        &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
         &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
         hcurl_edge_n, diff_hcurl_edge_n, nb_gauss_pts);
   }
@@ -304,18 +306,13 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
               "No data struture to keep base functions on face");
 
     int p = data.dataOnEntities[MBQUAD][0].getDataOrder();
-    int order[2] = {p, p};
-    int nb_dofs = NBFACEQUAD_DEMKOWICZ_HCURL(p);
-    auto &face_n = data.dataOnEntities[MBQUAD][0].getN(base);
-    auto &diff_face_n = data.dataOnEntities[MBQUAD][0].getDiffN(base);
-    face_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
-    diff_face_n.resize(nb_gauss_pts, 3 * 2 * nb_dofs, false);
 
     MatrixDouble face_family(
         2, 3 * NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HCURL(p, p) * nb_gauss_pts);
     MatrixDouble diff_face_family(
         2, 3 * 2 * NBFACEQUAD_DEMKOWICZ_FAMILY_QUAD_HCURL(p, p) * nb_gauss_pts);
 
+    int order[2] = {p, p};
     double *face_family_ptr[] = {&face_family(0, 0), &face_family(1, 0)};
     double *diff_face_family_ptr[] = {&diff_face_family(0, 0),
                                       &diff_face_family(1, 0)};
@@ -327,27 +324,43 @@ QuadPolynomialBase::getValueHcurlDemkowiczBase(MatrixDouble &pts) {
         face_family_ptr, diff_face_family_ptr, nb_gauss_pts);
 
     // put family back
+
+    int nb_dofs = NBFACEQUAD_DEMKOWICZ_HCURL(p);
+    auto &face_n = data.dataOnEntities[MBQUAD][0].getN(base);
+    auto &diff_face_n = data.dataOnEntities[MBQUAD][0].getDiffN(base);
+    face_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
+    diff_face_n.resize(nb_gauss_pts, 3 * 2 * nb_dofs, false);
+    
     double *ptr_f0 = &face_family(0, 0);
     double *ptr_f1 = &face_family(1, 0);
     double *ptr = &face_n(0, 0);
-    for (int n = 0; n != face_family.size2(); ++n) {
-      *ptr = *ptr_f0;
-      ++ptr;
-      ++ptr_f0;
-      *ptr = *ptr_f1;
-      ++ptr;
-      ++ptr_f1;
+    for (int n = 0; n != face_family.size2() / 3; ++n) {
+      for (int j = 0; j != 3; ++j) {
+        *ptr = *ptr_f0;
+        ++ptr;
+        ++ptr_f0;
+      }
+      for (int j = 0; j != 3; ++j) {
+        *ptr = *ptr_f1;
+        ++ptr;
+        ++ptr_f1;
+      }
     }
-    double *diff_ptr_f0 = &face_family(0, 0);
-    double *diff_ptr_f1 = &face_family(1, 0);
-    double *diff_ptr = &face_n(0, 0);
-    for (int n = 0; n != diff_face_family.size2(); ++n) {
-      *diff_ptr = *diff_ptr_f0;
-      ++diff_ptr;
-      ++diff_ptr_f0;
-      *diff_ptr = *diff_ptr_f1;
-      ++diff_ptr;
-      ++diff_ptr_f1;
+
+    double *diff_ptr_f0 = &diff_face_family(0, 0);
+    double *diff_ptr_f1 = &diff_face_family(1, 0);
+    double *diff_ptr = &diff_face_n(0, 0);
+    for (int n = 0; n != diff_face_family.size2() / 6; ++n) {
+      for (int j = 0; j != 6; ++j) {
+        *diff_ptr = *diff_ptr_f0;
+        ++diff_ptr;
+        ++diff_ptr_f0;
+      }
+      for (int j = 0; j != 6; ++j) {
+        *diff_ptr = *diff_ptr_f1;
+        ++diff_ptr;
+        ++diff_ptr_f1;
+      }
     }
   }
   MoFEMFunctionReturn(0);

@@ -51,6 +51,7 @@ cm_export_file("../meshes/rectangle_tri.h5m" export_atom_tests)
 cm_export_file("../meshes/rectangle_quad.h5m" export_atom_tests)
 cm_export_file("../meshes/quad_mesh.h5m" export_atom_tests)
 cm_export_file("../meshes/2_tets_contact.cub" export_atom_tests)
+cm_export_file("../meshes/reference_rectangle.h5m" export_atom_tests)
 
 set(PERCOMPILED_MOFEM_HEADER 
   "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
@@ -941,19 +942,19 @@ add_test(hcurl_divergence_operator_2d_ainsworth_on_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
   -my_file rectangle_tri.h5m
-  -base ainsworth -odrer 5
+  -base ainsworth -order 5
   -log_no_color)
 add_test(hcurl_divergence_operator_2d_demkowicz_on_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
   -my_file rectangle_tri.h5m
-  -base demkowicz -odrer 5
+  -base demkowicz -order 5
   -log_no_color)
 add_test(hcurl_divergence_operator_2d_demkowicz_on_quad
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
   -my_file rectangle_quad.h5m
-  -base demkowicz -odrer 5
+  -base demkowicz -order 5
   -log_no_color)
 
 
@@ -999,7 +1000,8 @@ add_test(
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_approximation_functions
   -log_no_color
 )
-add_test(forces_and_sources_hcurl_approximation_functions_atom_compare ${CMAKE_COMMAND} -E compare_files
+add_test(forces_and_sources_hcurl_approximation_functions_atom_compare 
+  ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hcurl_approximation_functions.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hcurl_approximation_functions.txt
 )
@@ -1046,8 +1048,7 @@ add_test(
   forces_and_sources_hdiv_approximation_functions_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions
-  -log_no_color
-)
+  -log_no_color)
 add_test(forces_and_sources_hdiv_approximation_functions_atom_compare 
   ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_approximation_functions.txt
@@ -1063,8 +1064,7 @@ target_link_libraries(hdiv_continuity_check
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS}
-)
+  ${PROJECT_LIBS})
 add_test(hdiv_continuity_check_ainsworth_base
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_continuity_check
@@ -1088,32 +1088,27 @@ target_link_libraries(hdiv_divergence_operator
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS}
-)
+  ${PROJECT_LIBS})
 add_test(hdiv_divergence_operator_ainsworth_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base ainsworth
-  -log_no_color
-)
+  -log_no_color)
 add_test(hdiv_divergence_operator_demkowicz_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base demkowicz
-  -log_no_color
-)
+  -log_no_color)
 add_test(hdiv_divergence_operator_ainsworth_ho_geometry_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base ainsworth -ho_geometry
-  -log_no_color
-)
+  -log_no_color)
 add_test(hdiv_divergence_operator_demkowicz_ho_geometry_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base demkowicz -ho_geometry
-  -log_no_color
-)
+  -log_no_color)
 
 # add test for hcurl curl operator
 my_add_executable(hcurl_curl_operator hcurl_curl_operator.cpp)
@@ -1125,32 +1120,27 @@ target_link_libraries(hcurl_curl_operator
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS}
-)
+  ${PROJECT_LIBS})
 add_test(hcurl_curl_operator_ainsworth_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base ainsworth
-  -log_no_color
-)
+  -log_no_color)
 add_test(hcurl_curl_operator_demkowicz_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base demkowicz
-  -log_no_color
-)
+  -log_no_color)
 add_test(hcurl_curl_operator_ainsworth_ho_geometry_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base ainsworth -ho_geometry
-  -log_no_color
-)
+  -log_no_color)
 add_test(hcurl_curl_operator_demkowicz_ho_geometry_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base demkowicz -ho_geometry
-  -log_no_color
-)
+  -log_no_color)
 
 #test integration on skeleton
 my_add_executable(
@@ -2068,7 +2058,6 @@ my_add_executable(
   matrix_function.cpp
 )
 target_link_libraries(matrix_function
-  mofem_matrix_function
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -2076,6 +2065,7 @@ target_link_libraries(matrix_function
   mofem_approx
   mofem_cblas
   mofem_third_party
+  mofem_matrix_function
   ${PROJECT_LIBS}
 )
 add_test(matrix_function
@@ -2084,3 +2074,16 @@ add_test(matrix_function
   -log_severity_level inform
   -log_no_color
 )
+
+# Add base function
+my_add_executable(
+  bases_on_reference_rectangle bases_on_reference_rectangle.cpp)
+target_link_libraries(bases_on_reference_rectangle
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})

@@ -34,6 +34,7 @@ pipelines:
             -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR
             $MOFEM_SRC_DIR/mofem
           - echo "Build"
+          - make -k
           - ctest --output-on-failure -D Experimental
           - make install
           - make clean

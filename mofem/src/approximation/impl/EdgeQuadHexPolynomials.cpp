@@ -8,9 +8,9 @@ using namespace MoFEM;
 
 struct RefHex {
   RefHex()
-      : vertices{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0},
-                 {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0},
-                 {1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
+      : vertices{{-1.0, -1.0, -1.0}, {1.0, -1.0, -1.0}, {1.0, 1.0, -1.0},
+                 {-1.0, 1.0, -1.0},  {-1.0, -1.0, 1.0}, {1.0, -1.0, 1.0},
+                 {1.0, 1.0, 1.0},    {-1.0, 1.0, 1.0}},
         faces{{0, 1, 2, 3}, {0, 1, 5, 4}, {1, 2, 6, 5},
               {3, 2, 6, 7}, {0, 3, 7, 4}, {4, 5, 6, 7}} {}
 
@@ -25,179 +25,386 @@ struct RefHex {
     }
   }
 
-  void get_volume_diff_coords(double (&volume_diff_coords)[3][3]) {
-    double diff_coords[3][3] = {
-        {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+  void get_volume_diff_coords(double (&Nq_diff)[8][3],
+                              double (&volume_diff_coords)[3][3]) {
     for (int c1 = 0; c1 < 3; c1++)
       for (int c2 = 0; c2 < 3; c2++)
-        volume_diff_coords[c1][c2] = diff_coords[c1][c2];
+        volume_diff_coords[c1][c2] = 0.0;
+
+    for (int cc = 0; cc < 3; cc++) {
+      for (int vv = 0; vv < 8; vv++) {
+        volume_diff_coords[cc][0] += Nq_diff[vv][0] * vertices[vv][cc];
+        volume_diff_coords[cc][1] += Nq_diff[vv][1] * vertices[vv][cc];
+        volume_diff_coords[cc][2] += Nq_diff[vv][2] * vertices[vv][cc];
+      }
+    }
   }
 
-  void get_edge_affines(double (&volume_coords)[3],
-                        double (&edge_affines)[12][2]) {
+  void get_edge_affines(double (&Nq)[8], double (&edge_affines)[12][2]) {
 
-    double ksi = volume_coords[0];
-    double eta = volume_coords[1];
-    double gma = volume_coords[2];
+    double face0 = Nq[faces[0][0]] + Nq[faces[0][1]] + Nq[faces[0][2]] +
+                   Nq[faces[0][3]]; // gmma_0
+    double face1 = Nq[faces[1][0]] + Nq[faces[1][1]] + Nq[faces[1][2]] +
+                   Nq[faces[1][3]]; // eta_0
+    double face2 = Nq[faces[2][0]] + Nq[faces[2][1]] + Nq[faces[2][2]] +
+                   Nq[faces[2][3]]; // ksi_1
+    double face3 = Nq[faces[3][0]] + Nq[faces[3][1]] + Nq[faces[3][2]] +
+                   Nq[faces[3][3]]; // eta_1
+    double face4 = Nq[faces[4][0]] + Nq[faces[4][1]] + Nq[faces[4][2]] +
+                   Nq[faces[4][3]]; // ksi_0
+    double face5 = Nq[faces[5][0]] + Nq[faces[5][1]] + Nq[faces[5][2]] +
+                   Nq[faces[5][3]]; // gmma_1
 
-    double affines[12][2] = {
-        {1.0 - eta, 1.0 - gma}, {0.0 + ksi, 1.0 - gma}, {0.0 + eta, 1.0 - gma},
-        {1.0 - ksi, 1.0 - gma}, {1.0 - ksi, 1.0 - eta}, {0.0 + ksi, 1.0 - eta},
-        {0.0 + ksi, 0.0 + eta}, {1.0 - ksi, 0.0 + eta}, {1.0 - eta, 0.0 + gma},
-        {0.0 + ksi, 0.0 + gma}, {0.0 + eta, 0.0 + gma}, {1.0 - ksi, 0.0 + gma}};
+    double affines[12][2] = {{face1, face0}, {face2, face0}, {face3, face0},
+                             {face4, face0}, {face1, face4}, {face1, face2},
+                             {face3, face2}, {face3, face4}, {face1, face5},
+                             {face2, face5}, {face3, face5}, {face4, face5}};
 
     for (int ee = 0; ee < 12; ee++)
       for (int comp = 0; comp < 3; comp++)
         edge_affines[ee][comp] = affines[ee][comp];
   }
 
-  void get_edge_diff_affines(double (&edge_diff_affines)[12][2][3]) {
+  void get_edge_diff_affines(double (&Nq_diff)[8][3], double (&edge_diff_affines)[12][2][3]) {
 
-    double diff_affines[3][2][3] = {{{-1.0, 0.0, 0.0}, {1.0, 0.0, 0.0}},
-                                    {{0.0, -1.0, 0.0}, {0.0, 1.0, 0.0}},
-                                    {{0.0, 0.0, -1.0}, {0.0, 0.0, 1.0}}};
-    int II[12][2][2] = {{{1, 0}, {2, 0}}, {{0, 1}, {2, 0}}, {{1, 1}, {2, 0}},
-                        {{0, 0}, {2, 0}}, {{0, 0}, {1, 0}}, {{0, 1}, {1, 0}},
-                        {{0, 1}, {1, 1}}, {{0, 0}, {1, 1}}, {{1, 0}, {2, 1}},
-                        {{0, 1}, {2, 1}}, {{1, 1}, {2, 1}}, {{0, 0}, {2, 1}}};
+    double face0_diff[3] = {
+        Nq_diff[faces[0][0]][0] + Nq_diff[faces[0][1]][0] +
+            Nq_diff[faces[0][2]][0] + Nq_diff[faces[0][3]][0],
+        Nq_diff[faces[0][0]][1] + Nq_diff[faces[0][1]][1] +
+            Nq_diff[faces[0][2]][1] + Nq_diff[faces[0][3]][1],
+        Nq_diff[faces[0][0]][2] + Nq_diff[faces[0][1]][2] +
+            Nq_diff[faces[0][2]][2] + Nq_diff[faces[0][3]][2]}; // gma_0_diff
+
+    double face1_diff[3] = {
+        Nq_diff[faces[1][0]][0] + Nq_diff[faces[1][1]][0] +
+            Nq_diff[faces[1][2]][0] + Nq_diff[faces[1][3]][0],
+        Nq_diff[faces[1][0]][1] + Nq_diff[faces[1][1]][1] +
+            Nq_diff[faces[1][2]][1] + Nq_diff[faces[1][3]][1],
+        Nq_diff[faces[1][0]][2] + Nq_diff[faces[1][1]][2] +
+            Nq_diff[faces[1][2]][2] + Nq_diff[faces[1][3]][2]};
+    ; // eta_0_diff
+
+    double face2_diff[3] = {
+        Nq_diff[faces[2][0]][0] + Nq_diff[faces[2][1]][0] +
+            Nq_diff[faces[2][2]][0] + Nq_diff[faces[2][3]][0],
+        Nq_diff[faces[2][0]][1] + Nq_diff[faces[2][1]][1] +
+            Nq_diff[faces[2][2]][1] + Nq_diff[faces[2][3]][1],
+        Nq_diff[faces[2][0]][2] + Nq_diff[faces[2][1]][2] +
+            Nq_diff[faces[2][2]][2] + Nq_diff[faces[2][3]][2]}; // ksi_1_diff
+
+    double face3_diff[3] = {
+        Nq_diff[faces[3][0]][0] + Nq_diff[faces[3][1]][0] +
+            Nq_diff[faces[3][2]][0] + Nq_diff[faces[3][3]][0],
+        Nq_diff[faces[3][0]][1] + Nq_diff[faces[3][1]][1] +
+            Nq_diff[faces[3][2]][1] + Nq_diff[faces[3][3]][1],
+        Nq_diff[faces[3][0]][2] + Nq_diff[faces[3][1]][2] +
+            Nq_diff[faces[3][2]][2] + Nq_diff[faces[3][3]][2]}; // eta_1_diff
+
+    double face4_diff[3] = {
+        Nq_diff[faces[4][0]][0] + Nq_diff[faces[4][1]][0] +
+            Nq_diff[faces[4][2]][0] + Nq_diff[faces[4][3]][0],
+        Nq_diff[faces[4][0]][1] + Nq_diff[faces[4][1]][1] +
+            Nq_diff[faces[4][2]][1] + Nq_diff[faces[4][3]][1],
+        Nq_diff[faces[4][0]][2] + Nq_diff[faces[4][1]][2] +
+            Nq_diff[faces[4][2]][2] + Nq_diff[faces[4][3]][2]}; // ksi_0_diff
+
+    double face5_diff[3] = {
+        Nq_diff[faces[5][0]][0] + Nq_diff[faces[5][1]][0] +
+            Nq_diff[faces[5][2]][0] + Nq_diff[faces[5][3]][0],
+        Nq_diff[faces[5][0]][1] + Nq_diff[faces[5][1]][1] +
+            Nq_diff[faces[5][2]][1] + Nq_diff[faces[5][3]][1],
+        Nq_diff[faces[5][0]][2] + Nq_diff[faces[5][1]][2] +
+            Nq_diff[faces[5][2]][2] + Nq_diff[faces[5][3]][2]}; // gmma_1_diff
+
+    double *affines_diff[12][2] = {
+        {face1_diff, face0_diff}, {face2_diff, face0_diff},
+        {face3_diff, face0_diff}, {face4_diff, face0_diff},
+        {face1_diff, face4_diff}, {face1_diff, face2_diff},
+        {face3_diff, face2_diff}, {face3_diff, face4_diff},
+        {face1_diff, face5_diff}, {face2_diff, face5_diff},
+        {face3_diff, face5_diff}, {face4_diff, face5_diff}};
+
     for (int ee = 0; ee < 12; ee++) {
-      int comp11 = II[ee][0][0];
-      int comp12 = II[ee][0][1];
-      int comp21 = II[ee][1][0];
-      int comp22 = II[ee][1][1];
       for (int c = 0; c < 3; c++) {
-        edge_diff_affines[ee][0][c] = diff_affines[comp11][comp12][c];
-        edge_diff_affines[ee][1][c] = diff_affines[comp21][comp22][c];
+        edge_diff_affines[ee][0][c] = affines_diff[ee][0][c];
+        edge_diff_affines[ee][1][c] = affines_diff[ee][1][c];
       }
     }
   }
-  void get_edge_coords(int *sense, double (&volume_coords)[3],
-                       double (&edge_coords)[12]) {
 
-    int free_edge_coords[12] = {0, 1, 0, 1, 2, 2, 2, 2, 0, 1, 0, 1};
+  void get_edge_coords(int *sense, double (&Nq)[8], double (&edge_coords)[12]) {
+
+    double face0 = Nq[faces[0][0]] + Nq[faces[0][1]] + Nq[faces[0][2]] +
+                   Nq[faces[0][3]]; // gmma_0
+    double face1 = Nq[faces[1][0]] + Nq[faces[1][1]] + Nq[faces[1][2]] +
+                   Nq[faces[1][3]]; // eta_0
+    double face2 = Nq[faces[2][0]] + Nq[faces[2][1]] + Nq[faces[2][2]] +
+                   Nq[faces[2][3]]; // ksi_1
+    double face3 = Nq[faces[3][0]] + Nq[faces[3][1]] + Nq[faces[3][2]] +
+                   Nq[faces[3][3]]; // eta_1
+    double face4 = Nq[faces[4][0]] + Nq[faces[4][1]] + Nq[faces[4][2]] +
+                   Nq[faces[4][3]]; // ksi_0
+    double face5 = Nq[faces[5][0]] + Nq[faces[5][1]] + Nq[faces[5][2]] +
+                   Nq[faces[5][3]]; // gmma_1
+
+    double free_edge_coords[12] = {face2 - face4, face3 - face1, face4 - face2,
+                                   face1 - face3, face5 - face0, face5 - face0,
+                                   face5 - face0, face5 - face0, face2 - face4,
+                                   face3 - face1, face4 - face2, face1 - face3};
 
     for (int ee = 0; ee < 12; ee++) {
-      int cc = free_edge_coords[ee];
-      edge_coords[ee] = (double)sense[ee] * volume_coords[cc] +
-                        0.5 * (1.0 - (double)sense[ee]);
+      edge_coords[ee] = free_edge_coords[ee] * (double)sense[ee];
     }
   }
-  void get_edge_diff_coords(int *sense, double (&edge_diff_coords)[12][3]) {
 
-    double diff_coords[3][3] = {
-        {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
-    int free_edge_coords[12] = {0, 1, 0, 1, 2, 2, 2, 2, 0, 1, 0, 1};
+  void get_edge_diff_coords(int *sense, double (&Nq_diff)[8][3], double (&edge_diff_coords)[12][3]) {
+
+    double face0_diff[3] = {
+        Nq_diff[faces[0][0]][0] + Nq_diff[faces[0][1]][0] +
+            Nq_diff[faces[0][2]][0] + Nq_diff[faces[0][3]][0],
+        Nq_diff[faces[0][0]][1] + Nq_diff[faces[0][1]][1] +
+            Nq_diff[faces[0][2]][1] + Nq_diff[faces[0][3]][1],
+        Nq_diff[faces[0][0]][2] + Nq_diff[faces[0][1]][2] +
+            Nq_diff[faces[0][2]][2] + Nq_diff[faces[0][3]][2]}; // gma_0_diff
+
+    double face1_diff[3] = {
+        Nq_diff[faces[1][0]][0] + Nq_diff[faces[1][1]][0] +
+            Nq_diff[faces[1][2]][0] + Nq_diff[faces[1][3]][0],
+        Nq_diff[faces[1][0]][1] + Nq_diff[faces[1][1]][1] +
+            Nq_diff[faces[1][2]][1] + Nq_diff[faces[1][3]][1],
+        Nq_diff[faces[1][0]][2] + Nq_diff[faces[1][1]][2] +
+            Nq_diff[faces[1][2]][2] + Nq_diff[faces[1][3]][2]};
+    ; // eta_0_diff
+
+    double face2_diff[3] = {
+        Nq_diff[faces[2][0]][0] + Nq_diff[faces[2][1]][0] +
+            Nq_diff[faces[2][2]][0] + Nq_diff[faces[2][3]][0],
+        Nq_diff[faces[2][0]][1] + Nq_diff[faces[2][1]][1] +
+            Nq_diff[faces[2][2]][1] + Nq_diff[faces[2][3]][1],
+        Nq_diff[faces[2][0]][2] + Nq_diff[faces[2][1]][2] +
+            Nq_diff[faces[2][2]][2] + Nq_diff[faces[2][3]][2]}; // ksi_1_diff
+
+    double face3_diff[3] = {
+        Nq_diff[faces[3][0]][0] + Nq_diff[faces[3][1]][0] +
+            Nq_diff[faces[3][2]][0] + Nq_diff[faces[3][3]][0],
+        Nq_diff[faces[3][0]][1] + Nq_diff[faces[3][1]][1] +
+            Nq_diff[faces[3][2]][1] + Nq_diff[faces[3][3]][1],
+        Nq_diff[faces[3][0]][2] + Nq_diff[faces[3][1]][2] +
+            Nq_diff[faces[3][2]][2] + Nq_diff[faces[3][3]][2]}; // eta_1_diff
+
+    double face4_diff[3] = {
+        Nq_diff[faces[4][0]][0] + Nq_diff[faces[4][1]][0] +
+            Nq_diff[faces[4][2]][0] + Nq_diff[faces[4][3]][0],
+        Nq_diff[faces[4][0]][1] + Nq_diff[faces[4][1]][1] +
+            Nq_diff[faces[4][2]][1] + Nq_diff[faces[4][3]][1],
+        Nq_diff[faces[4][0]][2] + Nq_diff[faces[4][1]][2] +
+            Nq_diff[faces[4][2]][2] + Nq_diff[faces[4][3]][2]}; // ksi_0_diff
+
+    double face5_diff[3] = {
+        Nq_diff[faces[5][0]][0] + Nq_diff[faces[5][1]][0] +
+            Nq_diff[faces[5][2]][0] + Nq_diff[faces[5][3]][0],
+        Nq_diff[faces[5][0]][1] + Nq_diff[faces[5][1]][1] +
+            Nq_diff[faces[5][2]][1] + Nq_diff[faces[5][3]][1],
+        Nq_diff[faces[5][0]][2] + Nq_diff[faces[5][1]][2] +
+            Nq_diff[faces[5][2]][2] + Nq_diff[faces[5][3]][2]}; // gmma_1_diff
+
+    double f0_diff[3] = {face2_diff[0] - face4_diff[0],
+                         face2_diff[1] - face4_diff[1],
+                         face2_diff[2] - face4_diff[2]};
+    double f1_diff[3] = {face3_diff[0] - face1_diff[0],
+                         face3_diff[1] - face1_diff[1],
+                         face3_diff[2] - face1_diff[2]};
+    double f2_diff[3] = {face4_diff[0] - face2_diff[0],
+                         face4_diff[1] - face2_diff[1],
+                         face4_diff[2] - face2_diff[2]};
+    double f3_diff[3] = {face1_diff[0] - face3_diff[0],
+                         face1_diff[1] - face3_diff[1],
+                         face1_diff[2] - face3_diff[2]};
+    double f4_diff[3] = {face5_diff[0] - face0_diff[0],
+                         face5_diff[1] - face0_diff[1],
+                         face5_diff[2] - face0_diff[2]};
+
+    double *free_edge_coords[12] = {f0_diff, f1_diff, f2_diff, f3_diff,
+                                    f4_diff, f4_diff, f4_diff, f4_diff,
+                                    f0_diff, f1_diff, f2_diff, f3_diff};
+
     for (int ee = 0; ee < 12; ee++) {
       for (int cc = 0; cc < 3; cc++) {
-        int n = free_edge_coords[ee];
-        edge_diff_coords[ee][cc] = (double)sense[ee] * diff_coords[n][cc];
+        edge_diff_coords[ee][cc] = free_edge_coords[ee][cc] * (double)sense[ee];
       }
     }
   }
-  void get_face_affines(double (&volume_coords)[3], double (&face_affines)[6]) {
 
-    double ksi = volume_coords[0];
-    double eta = volume_coords[1];
-    double gma = volume_coords[2];
+  void get_face_affines(double (&Nq)[8], double (&face_affines)[6]) {
 
-    double faceAffine[6] = {1.0 - gma, 1.0 - eta, 0.0 + ksi,
-                            0.0 + eta, 1.0 - ksi, 0.0 + gma};
+    double face0 = Nq[faces[0][0]] + Nq[faces[0][1]] + Nq[faces[0][2]] +
+                   Nq[faces[0][3]]; // gmma_0
+    double face1 = Nq[faces[1][0]] + Nq[faces[1][1]] + Nq[faces[1][2]] +
+                   Nq[faces[1][3]]; // eta_0
+    double face2 = Nq[faces[2][0]] + Nq[faces[2][1]] + Nq[faces[2][2]] +
+                   Nq[faces[2][3]]; // ksi_1
+    double face3 = Nq[faces[3][0]] + Nq[faces[3][1]] + Nq[faces[3][2]] +
+                   Nq[faces[3][3]]; // eta_1
+    double face4 = Nq[faces[4][0]] + Nq[faces[4][1]] + Nq[faces[4][2]] +
+                   Nq[faces[4][3]]; // ksi_0
+    double face5 = Nq[faces[5][0]] + Nq[faces[5][1]] + Nq[faces[5][2]] +
+                   Nq[faces[5][3]]; // gmma_1
+
+    double faceAffine[6] = {face0, face1, face2, face3, face4, face5};
     for (int ff = 0; ff != 6; ff++)
       face_affines[ff] = faceAffine[ff];
   }
 
-  void get_face_diff_affines(double (&face_diff_affines)[6][3]) {
+  void get_face_diff_affines(double (&Nq_diff)[8][3], double (&face_diff_affines)[6][3]) {
 
-    int free_face[6][2] = {{2, 0}, {1, 0}, {0, 1}, {1, 1}, {0, 0}, {2, 1}};
+    double face0_diff[3] = {
+        Nq_diff[faces[0][0]][0] + Nq_diff[faces[0][1]][0] +
+            Nq_diff[faces[0][2]][0] + Nq_diff[faces[0][3]][0],
+        Nq_diff[faces[0][0]][1] + Nq_diff[faces[0][1]][1] +
+            Nq_diff[faces[0][2]][1] + Nq_diff[faces[0][3]][1],
+        Nq_diff[faces[0][0]][2] + Nq_diff[faces[0][1]][2] +
+            Nq_diff[faces[0][2]][2] + Nq_diff[faces[0][3]][2]}; // gma_0_diff
 
-    double diff_affines[3][2][3] = {{{-1.0, 0.0, 0.0}, {1.0, 0.0, 0.0}},
-                                    {{0.0, -1.0, 0.0}, {0.0, 1.0, 0.0}},
-                                    {{0.0, 0.0, -1.0}, {0.0, 0.0, 1.0}}};
+    double face1_diff[3] = {
+        Nq_diff[faces[1][0]][0] + Nq_diff[faces[1][1]][0] +
+            Nq_diff[faces[1][2]][0] + Nq_diff[faces[1][3]][0],
+        Nq_diff[faces[1][0]][1] + Nq_diff[faces[1][1]][1] +
+            Nq_diff[faces[1][2]][1] + Nq_diff[faces[1][3]][1],
+        Nq_diff[faces[1][0]][2] + Nq_diff[faces[1][1]][2] +
+            Nq_diff[faces[1][2]][2] + Nq_diff[faces[1][3]][2]};
+    ; // eta_0_diff
+
+    double face2_diff[3] = {
+        Nq_diff[faces[2][0]][0] + Nq_diff[faces[2][1]][0] +
+            Nq_diff[faces[2][2]][0] + Nq_diff[faces[2][3]][0],
+        Nq_diff[faces[2][0]][1] + Nq_diff[faces[2][1]][1] +
+            Nq_diff[faces[2][2]][1] + Nq_diff[faces[2][3]][1],
+        Nq_diff[faces[2][0]][2] + Nq_diff[faces[2][1]][2] +
+            Nq_diff[faces[2][2]][2] + Nq_diff[faces[2][3]][2]}; // ksi_1_diff
+
+    double face3_diff[3] = {
+        Nq_diff[faces[3][0]][0] + Nq_diff[faces[3][1]][0] +
+            Nq_diff[faces[3][2]][0] + Nq_diff[faces[3][3]][0],
+        Nq_diff[faces[3][0]][1] + Nq_diff[faces[3][1]][1] +
+            Nq_diff[faces[3][2]][1] + Nq_diff[faces[3][3]][1],
+        Nq_diff[faces[3][0]][2] + Nq_diff[faces[3][1]][2] +
+            Nq_diff[faces[3][2]][2] + Nq_diff[faces[3][3]][2]}; // eta_1_diff
+
+    double face4_diff[3] = {
+        Nq_diff[faces[4][0]][0] + Nq_diff[faces[4][1]][0] +
+            Nq_diff[faces[4][2]][0] + Nq_diff[faces[4][3]][0],
+        Nq_diff[faces[4][0]][1] + Nq_diff[faces[4][1]][1] +
+            Nq_diff[faces[4][2]][1] + Nq_diff[faces[4][3]][1],
+        Nq_diff[faces[4][0]][2] + Nq_diff[faces[4][1]][2] +
+            Nq_diff[faces[4][2]][2] + Nq_diff[faces[4][3]][2]}; // ksi_0_diff
+
+    double face5_diff[3] = {
+        Nq_diff[faces[5][0]][0] + Nq_diff[faces[5][1]][0] +
+            Nq_diff[faces[5][2]][0] + Nq_diff[faces[5][3]][0],
+        Nq_diff[faces[5][0]][1] + Nq_diff[faces[5][1]][1] +
+            Nq_diff[faces[5][2]][1] + Nq_diff[faces[5][3]][1],
+        Nq_diff[faces[5][0]][2] + Nq_diff[faces[5][1]][2] +
+            Nq_diff[faces[5][2]][2] + Nq_diff[faces[5][3]][2]}; // gmma_1_diff
+
+    double *free_face[6] = {face0_diff, face1_diff, face2_diff,
+                            face3_diff, face4_diff, face5_diff};
+
     for (int ff = 0; ff < 6; ff++) {
-      int var_i = free_face[ff][0];
-      int var_j = free_face[ff][1];
       for (int cc = 0; cc < 3; cc++) {
-        face_diff_affines[ff][cc] = diff_affines[var_i][var_j][cc];
+        face_diff_affines[ff][cc] = free_face[ff][cc];
       }
     }
   }
 
-  void get_face_coords(int *face_nodes[6], double (&Nq)[8],
-                       double (&face_coords)[6][2]) {
+  void get_face_coords(int *face_nodes[6], double (&Nq)[8], double (&face_coords)[6][2]) {
 
     int par_face_nodes[6][8] = {
         {4, 5, 6, 7, 0, 1, 2, 3}, {3, 2, 1, 0, 7, 6, 5, 4},
         {1, 0, 3, 2, 5, 4, 7, 6}, {3, 2, 1, 0, 7, 6, 5, 4},
         {1, 0, 3, 2, 5, 4, 7, 6}, {4, 5, 6, 7, 0, 1, 2, 3}};
 
-    int free_coords[6][2] = {{0, 1}, {0, 2}, {1, 2}, {0, 2}, {1, 2}, {0, 1}};
+    double face_vertices[4][2] = {
+        {-1.0, -1.0}, {1.0, -1.0}, {1.0, 1.0}, {-1.0, 1.0}};
 
     for (int ff = 0; ff != 6; ff++) {
-      int v0 = free_coords[ff][0];
-      int v1 = free_coords[ff][1];
-      face_coords[ff][0] = 0.0;
-      face_coords[ff][1] = 0.0;
-      for (int fv = 0; fv != 4; fv++) {
-        int n0 = face_nodes[ff][fv];
-        int n1 = par_face_nodes[ff][n0];
-        int index = faces[ff][fv];
-        double N = Nq[n0] + Nq[n1];
-        face_coords[ff][0] += vertices[index][v0] * N;
-        face_coords[ff][1] += vertices[index][v1] * N;
+      int n00 = par_face_nodes[ff][0];
+      int n01 = par_face_nodes[ff][4];
+
+      int n10 = par_face_nodes[ff][1];
+      int n11 = par_face_nodes[ff][5];
+
+      int n20 = par_face_nodes[ff][2];
+      int n21 = par_face_nodes[ff][6];
+
+      int n30 = par_face_nodes[ff][3];
+      int n31 = par_face_nodes[ff][7];
+
+      double N0 = Nq[n00] + Nq[n01];
+      double N1 = Nq[n10] + Nq[n11];
+      double N2 = Nq[n20] + Nq[n21];
+      double N3 = Nq[n30] + Nq[n31];
+
+      int n0 = face_nodes[ff][0];
+      int n1 = face_nodes[ff][1];
+      int n2 = face_nodes[ff][2];
+      int n3 = face_nodes[ff][3];
+
+      for (int cc = 0; cc < 2; cc++) {
+        face_coords[ff][cc] =
+            N0 * face_vertices[n0][cc] + N1 * face_vertices[n1][cc] +
+            N2 * face_vertices[n2][cc] + N3 * face_vertices[n3][cc];
       }
     }
   }
 
-  void get_face_diff_coords(int *face_nodes[6],
-                            double (&face_diff_coords)[6][2][3]) {
-
-    int I1[8] = {0, 1, 1, 0, 0, 1, 1, 0};
-    int I2[8] = {0, 0, 1, 1, 0, 0, 1, 1};
-    int I3[8] = {0, 0, 0, 0, 1, 1, 1, 1};
-
-    double n1[8] = {-1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0};
-    double n2[8] = {-1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0};
-    double n3[8] = {-1.0, -1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0};
-
-    double diff_N[8][3];
-
-    for (int n = 0; n < 8; n++) {
-      diff_N[n][0] = n1[n] * 0.25;
-      diff_N[n][1] = n2[n] * 0.25;
-      diff_N[n][2] = n3[n] * 0.25;
-    }
+  void get_face_diff_coords(int *face_nodes[6], double (&Nq_diff)[8][3], double (&face_diff_coords)[6][2][3]) {
 
     int par_face_nodes[6][8] = {
         {4, 5, 6, 7, 0, 1, 2, 3}, {3, 2, 1, 0, 7, 6, 5, 4},
         {1, 0, 3, 2, 5, 4, 7, 6}, {3, 2, 1, 0, 7, 6, 5, 4},
         {1, 0, 3, 2, 5, 4, 7, 6}, {4, 5, 6, 7, 0, 1, 2, 3}};
 
-    int free_coords[6][2] = {{0, 1}, {0, 2}, {1, 2}, {0, 2}, {1, 2}, {0, 1}};
+    double face_vertices[4][2] = {
+        {-1.0, -1.0}, {1.0, -1.0}, {1.0, 1.0}, {-1.0, 1.0}};
 
     for (int ff = 0; ff != 6; ff++) {
-      int v0 = free_coords[ff][0];
-      int v1 = free_coords[ff][1];
-      face_diff_coords[ff][0][0] = 0.0;
-      face_diff_coords[ff][0][1] = 0.0;
-      face_diff_coords[ff][0][2] = 0.0;
+      int n00 = par_face_nodes[ff][0];
+      int n01 = par_face_nodes[ff][4];
 
-      face_diff_coords[ff][1][0] = 0.0;
-      face_diff_coords[ff][1][1] = 0.0;
-      face_diff_coords[ff][1][2] = 0.0;
-      for (int fv = 0; fv != 4; fv++) {
-        int n0 = face_nodes[ff][fv];
-        int n1 = par_face_nodes[ff][n0];
-        int index = faces[ff][fv];
-        double Nx = diff_N[n0][0] + diff_N[n1][0];
-        double Ny = diff_N[n0][1] + diff_N[n1][1];
-        double Nz = diff_N[n0][2] + diff_N[n1][2];
-        face_diff_coords[ff][0][0] += vertices[index][v0] * Nx;
-        face_diff_coords[ff][0][1] += vertices[index][v0] * Ny;
-        face_diff_coords[ff][0][2] += vertices[index][v0] * Nz;
+      int n10 = par_face_nodes[ff][1];
+      int n11 = par_face_nodes[ff][5];
 
-        face_diff_coords[ff][1][0] += vertices[index][v1] * Nx;
-        face_diff_coords[ff][1][1] += vertices[index][v1] * Ny;
-        face_diff_coords[ff][1][2] += vertices[index][v1] * Nz;
+      int n20 = par_face_nodes[ff][2];
+      int n21 = par_face_nodes[ff][6];
+
+      int n30 = par_face_nodes[ff][3];
+      int n31 = par_face_nodes[ff][7];
+
+      double N0_diff[3] = {Nq_diff[n00][0] + Nq_diff[n01][0],
+                           Nq_diff[n00][1] + Nq_diff[n01][1],
+                           Nq_diff[n00][2] + Nq_diff[n01][2]};
+      double N1_diff[3] = {Nq_diff[n10][0] + Nq_diff[n11][0],
+                           Nq_diff[n10][1] + Nq_diff[n11][1],
+                           Nq_diff[n10][2] + Nq_diff[n11][2]};
+      double N2_diff[3] = {Nq_diff[n20][0] + Nq_diff[n21][0],
+                           Nq_diff[n20][1] + Nq_diff[n21][1],
+                           Nq_diff[n20][2] + Nq_diff[n21][2]};
+      double N3_diff[3] = {Nq_diff[n30][0] + Nq_diff[n31][0],
+                           Nq_diff[n30][1] + Nq_diff[n31][1],
+                           Nq_diff[n30][2] + Nq_diff[n31][2]};
+
+      int n0 = face_nodes[ff][0];
+      int n1 = face_nodes[ff][1];
+      int n2 = face_nodes[ff][2];
+      int n3 = face_nodes[ff][3];
+
+      for (int cc = 0; cc < 2; cc++) {
+        for (int dd = 0; dd < 3; dd++) {
+          face_diff_coords[ff][cc][dd] = N0_diff[dd] * face_vertices[n0][cc] +
+                                         N1_diff[dd] * face_vertices[n1][cc] +
+                                         N2_diff[dd] * face_vertices[n2][cc] +
+                                         N3_diff[dd] * face_vertices[n3][cc];
+        }
       }
     }
   }
@@ -237,7 +444,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::MonomOrdering(int perm[][3], int p,
 }
 // Auxilary functions
 
-MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Legendre_polynomials01(int p,
+MoFEMErrorCode 
+MoFEM::DemkowiczHexAndQuad::Legendre_polynomials01(int p,
                                                                   double s01,
                                                                   double *L) {
 
@@ -253,19 +461,19 @@ MoFEM::DemkowiczHexAndQuad::Integrated_Legendre01(int p, double s01, double *L,
   MoFEMFunctionBeginHot;
   double l[p + 3];
   CHKERR Legendre_polynomials01(p, s01, l);
-  if (p >= 2) {
-    for (int i = 0; i != p - 1; i++) {
-      double factor = 1.0 / (2 * (2.0 * (i + 1) + 1.0));
-      L[i] = factor * (l[i + 2] - l[i]);
-      diffL[i] = l[i + 1];
+  if(p >= 2){
+    for (int i = 2; i != p + 1; i++) {
+      double factor = 1.0 / (2.0 * (2.0 * (double)i - 1.0));
+      L[i - 2] = factor * (l[i] - l[i - 2]);
+      diffL[i-2]  = l[i-1];
     }
   }
+  
   MoFEMFunctionReturnHot(0);
 }
+
 /*
-
-    0--------------1
-
+    0 *------------* 1
 */
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_BubbleShapeFunctions_ONSEGMENT(
     int p, double *N, double *diffN, double *bubbleN, double *diff_bubbleN,
@@ -452,8 +660,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_FaceShapeFunctions_ONQUAD(
     int *p, double *N, double *diffN, double *faceN, double *diff_faceN,
     int nb_integration_pts) {
   MoFEMFunctionBeginHot;
-  int permute[(p[0] - 0) * (p[1] - 0)][3];
-  CHKERR MonomOrdering(permute, p[0] - 1, p[1] - 1);
+  int permute[(p[0] + 1) * (p[1] + 1)][3];
+  CHKERR MonomOrdering(permute, p[0], p[1]);
 
   constexpr int n0 = 0;
   constexpr int n1 = 1;
@@ -480,22 +688,22 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_FaceShapeFunctions_ONQUAD(
       diff_ksi12[d] = (diff_shape2 + diff_shape3 - diff_shape1 - diff_shape0);
     }
 
-    double L01[p[0] + 1];
-    double diffL01[2 * (p[0] + 1)];
-    CHKERR Legendre_polynomials(p[0], ksi01, diff_ksi01, L01, diffL01, 2);
-    double L12[p[1] + 1];
-    double diffL12[2 * (p[1] + 1)];
-    CHKERR Legendre_polynomials(p[1], ksi12, diff_ksi12, L12, diffL12, 2);
+    double L01[p[0] + 2];
+    double diffL01[2 * (p[0] + 2)];
+    CHKERR Legendre_polynomials(p[0] + 1, ksi01, diff_ksi01, L01, diffL01, 2);
+    double L12[p[1] + 2];
+    double diffL12[2 * (p[1] + 2)];
+    CHKERR Legendre_polynomials(p[1] + 1, ksi12, diff_ksi12, L12, diffL12, 2);
 
-    int qd_shift = p[0] * p[1] * q;
-    for (int n = 0; n != p[0] * p[1]; ++n) {
+    int qd_shift = (p[0] + 1) * (p[1] + 1) * q;
+    for (int n = 0; n != (p[0] + 1) * (p[1] + 1); ++n) {
       int s1 = permute[n][0];
       int s2 = permute[n][1];
       faceN[qd_shift + n] = L01[s1] * L12[s2];
       for (int d = 0; d != 2; ++d) {
         diff_faceN[2 * (qd_shift + n) + d] =
-            diffL01[d * (p[0] + 1) + s1] * L12[s2] +
-            L01[s1] * diffL12[d * (p[1] + 1) + s2];
+            diffL01[d * (p[0] + 2) + s1] * L12[s2] +
+            L01[s1] * diffL12[d * (p[1] + 2) + s2];
       }
     }
   }
@@ -555,7 +763,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
       diff_mu[3][d] = diff_ksi30;
     }
 
-    int pp[4] = {p[0], p[1], p[0], p[1]};
+    int pp[4] = {p[0], p[1], p[2], p[3]};
     for (int e = 0; e != 4; e++) {
 
       double L[pp[e]];
@@ -570,12 +778,15 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
       auto t_diff_n = getFTensor2FromPtr<3, 2>(t_diff_n_ptr);
 
       for (int n = 0; n != pp[e]; ++n) {
+        const double a = mu_const[e] * L[n];
+        const double d_a[] = {
+            diff_mu_const[e][0] * L[n] + mu_const[e] * diffL[0 * pp[e] + n],
+            diff_mu_const[e][1] * L[n] + mu_const[e] * diffL[1 * pp[e] + n]};
+
         for (int d = 0; d != 2; ++d) {
-          t_n(d) = mu_const[e] * L[n] * diff_mu[e][d] / 2;
+          t_n(d) = (a / 2) * diff_mu[e][d];
           for (int j = 0; j != 2; ++j) {
-            t_diff_n(d, j) =
-                (diff_mu_const[e][j] * L[n] + mu_const[e] * diffL[2 * n + j]) *
-                diff_mu[e][d] / 2;
+            t_diff_n(d, j) = (d_a[j] / 2) * diff_mu[e][d];
           }
         }
         t_n(2) = 0;
@@ -583,7 +794,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONQUAD(
         t_diff_n(2, 1) = 0;
         ++t_n;
         ++t_diff_n;
-
       }
     }
   }
@@ -600,7 +810,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
   const int n2 = face_nodes[2];
   const int n3 = face_nodes[3];
 
-  double coords[4][2] = {{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}};
   for (int q = 0; q != nb_integration_pts; q++) {
 
     const int shift = 4 * q;
@@ -636,12 +845,12 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
 
       double Phi[pp + 2];
       double diffPhi[2 * (pp + 2)];
-      CHKERR Lobatto_polynomials(pp + 1, mu_ksi_eta[family],
+      CHKERR Lobatto_polynomials(qq + 1, mu_ksi_eta[family],
                                  diff_mu_ksi_eta[family], Phi, diffPhi, 2);
 
       double E[qq];
       double diffE[2 * qq];
-      CHKERR Legendre_polynomials(qq - 1, mu_eta_ksi[family],
+      CHKERR Legendre_polynomials(pp - 1, mu_eta_ksi[family],
                                   diff_mu_eta_ksi[family], E, diffE, 2);
 
       int permute[qq * (pp - 1)][3];
@@ -656,14 +865,25 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONQUAD(
       for (int n = 0; n != (pp - 1) * qq; n++) {
         int i = permute[n][0];
         int j = permute[n][1];
+
+        const double phi = Phi[j + 2];
+        const double e = E[i];
+        const double a = phi * e;
+        const double d_a[] = {
+
+            diffPhi[0 * (pp + 2) + j + 2] * e + phi * diffE[0 * qq + i],
+
+            diffPhi[1 * (pp + 2) + j + 2] * e + phi * diffE[1 * qq + i]};
+
         for (int d = 0; d != 2; ++d) {
-          t_n(d) = Phi[j + 2] * E[i] * diff_mu_eta_ksi[family][d];
+          t_n(d) = a * diff_mu_eta_ksi[family][d];
           for (int m = 0; m != 2; ++m) {
-            t_diff_n(d, m) = (diffPhi[m * (pp + 2) + j + 2] * E[i] +
-                              Phi[j + 2] * diffE[m * qq + i]) *
-                             diff_mu_eta_ksi[family][d];
+            t_diff_n(d, m) = d_a[m] * diff_mu_eta_ksi[family][d];
           }
         }
+        t_n(2) = 0;
+        t_diff_n(2, 0) = 0;
+        t_diff_n(2, 1) = 0;
         ++t_n;
         ++t_diff_n;
       }
@@ -710,7 +930,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONQUAD(
 */
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
-    int *sense, int *p, double *N, double *edgeN[12], double *diff_edgeN[12],
+    int *sense, int *p, double *N, double *N_diff, double *edgeN[12], double *diff_edgeN[12],
     int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
@@ -720,47 +940,45 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
     int shift = 8 * q;
     double quad_coords[3];
     double Nq[8];
-    for (int vv = 0; vv < 8; vv++)
+    double Nq_diff[8][3];
+    for (int vv = 0; vv < 8; vv++){
       Nq[vv] = N[shift + vv];
+      Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
+      Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
+      Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
+    }
 
-    ref_hex.get_volume_coords(Nq, quad_coords);
-    // ***************************************
 
     double mu[12][2];
-    ref_hex.get_edge_affines(quad_coords, mu);
+    ref_hex.get_edge_affines(Nq, mu);
 
     double diff_mu[12][2][3];
-    ref_hex.get_edge_diff_affines(diff_mu);
+    ref_hex.get_edge_diff_affines(Nq_diff, diff_mu);
 
     double ksi[12];
-    ref_hex.get_edge_coords(sense, quad_coords, ksi);
+    ref_hex.get_edge_coords(sense, Nq, ksi);
     double diff_ksi[12][3];
-    ref_hex.get_edge_diff_coords(sense, diff_ksi);
+    ref_hex.get_edge_diff_coords(sense, Nq_diff, diff_ksi);
 
     int pp[12] = {p[0], p[1], p[0], p[1], p[2], p[2],
                   p[2], p[2], p[0], p[1], p[0], p[1]};
 
     for (int e = 0; e != 12; e++) {
-      double L[pp[e] - 1];
-      double diffL[pp[e] - 1];
+      double L[pp[e] + 2];
+      double diffL[3 * (pp[e] + 2)];
 
-      CHKERR Integrated_Legendre01(pp[e], ksi[e], L, diffL);
+      CHKERR Lobatto_polynomials(pp[e] + 1, ksi[e], diff_ksi[e], L, diffL, 3);
+
       int qd_shift = (pp[e] - 1) * q;
 
       for (int n = 0; n != pp[e] - 1; n++) {
-        edgeN[e][qd_shift + n] = mu[e][0] * mu[e][1] * L[n];
-
-        diff_edgeN[e][3 * (qd_shift + n) + 0] =
-            mu[e][0] * mu[e][1] * diffL[n] * diff_ksi[e][0] +
-            (mu[e][0] * diff_mu[e][0][0] + mu[e][1] * diff_mu[e][1][0]) * L[n];
-
-        diff_edgeN[e][3 * (qd_shift + n) + 1] =
-            mu[e][0] * mu[e][1] * diffL[n] * diff_ksi[e][1] +
-            (mu[e][0] * diff_mu[e][0][1] + mu[e][1] * diff_mu[e][1][1]) * L[n];
-
-        diff_edgeN[e][3 * (qd_shift + n) + 0] =
-            mu[e][0] * mu[e][1] * diffL[n] * diff_ksi[e][2] +
-            (mu[e][0] * diff_mu[e][0][2] + mu[e][1] * diff_mu[e][1][2]) * L[n];
+        edgeN[e][qd_shift + n] = mu[e][0] * mu[e][1] * L[n + 2];
+        for (int d = 0; d != 3; ++d) {
+          diff_edgeN[e][3 * (qd_shift + n) + d] =
+              diff_mu[e][0][d] * mu[e][1] * L[n + 2] +
+              mu[e][0] + diff_mu[e][1][d] + L[n + 2] +
+              mu[e][0] * mu[e][1] * diffL[d * (p[e] + 2) + n + 2];
+        }
       }
     }
   }
@@ -768,7 +986,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
 }
 // TODO
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
-    int *face_nodes[6], int *p, double *N, double *faceN[6],
+    int *face_nodes[6], int *p, double *N, double *N_diff, double *faceN[6],
     double *diff_faceN[6], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
 
@@ -779,21 +997,24 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
     int shift = 8 * q;
     double quad_coords[3];
     double Nq[8];
-    for (int vv = 0; vv < 8; vv++)
+    double Nq_diff[8][3];
+    for (int vv = 0; vv < 8; vv++){
       Nq[vv] = N[shift + vv];
+      Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
+      Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
+      Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
+    }
 
-    ref_hex.get_volume_coords(Nq, quad_coords);
-    // ****************************************
 
     double mu[6];
-    ref_hex.get_face_affines(quad_coords, mu);
+    ref_hex.get_face_affines(Nq, mu);
     double diff_mu[6][3];
-    ref_hex.get_face_diff_affines(diff_mu);
+    ref_hex.get_face_diff_affines(Nq_diff, diff_mu);
 
     double ksi[6][2];
     ref_hex.get_face_coords(face_nodes, Nq, ksi);
     double diff_ksi[6][2][3];
-    ref_hex.get_face_diff_coords(face_nodes, diff_ksi);
+    ref_hex.get_face_diff_coords(face_nodes, Nq_diff, diff_ksi);
 
     int pp[6][2] = {{p[0], p[1]}, {p[0], p[2]}, {p[1], p[2]},
                     {p[0], p[2]}, {p[1], p[2]}, {p[0], p[1]}};
@@ -801,16 +1022,18 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
     for (int face = 0; face != 6; face++) {
       int pq[2] = {pp[face][0], pp[face][1]};
 
-      double L0[pq[0] - 1];
-      double diffL0[pq[0] - 1];
-      double L1[pq[1] - 1];
-      double diffL1[pq[1] - 1];
+      double ksi0 = ksi[face][0];
+      double ksi1 = ksi[face][1];
 
-      double ss0 = ksi[face][0];
-      double ss1 = ksi[face][1];
+      double diff_ksi0[3] = {diff_ksi[face][0][0], diff_ksi[face][0][1], diff_ksi[face][0][2]};
+      double diff_ksi1[3] = { diff_ksi[face][1][0], diff_ksi[face][1][1], diff_ksi[face][1][2]};
 
-      CHKERR Integrated_Legendre01(pq[0], ss0, L0, diffL0);
-      CHKERR Integrated_Legendre01(pq[1], ss1, L1, diffL1);
+      double L0[pq[0] + 1];
+      double diffL0[3 * (pq[0] + 2)];
+      CHKERR Lobatto_polynomials(pq[0] + 1, ksi0, diff_ksi0, L0, diffL0, 3);
+      double L1[pq[1] + 2];
+      double diffL1[3 * (pq[1] + 2)];
+      CHKERR Lobatto_polynomials(pq[1] + 1, ksi1, diff_ksi1, L1, diffL1, 3);
 
       int permute[(pq[0] - 1) * (pq[1] - 1)][3];
       CHKERR MonomOrdering(permute, pq[0] - 2, pq[1] - 2);
@@ -820,22 +1043,14 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
       for (; n != (pq[0] - 1) * (pq[1] - 1); n++) {
         int s1 = permute[n][0];
         int s2 = permute[n][1];
-        faceN[face][qd_shift + n] = mu[face] * L0[s1] * L1[s2];
+        faceN[face][qd_shift + n] = mu[face] * L0[s1 + 2] * L1[s2 + 2];
+        for (int d = 0; d != 3; ++d) {
+          diff_faceN[face][3 * (qd_shift + n) + d] =
+              diff_mu[face][0] * L0[s1 + 2] * L1[s2 + 2] +
+              mu[face] * diffL0[d * (pq[0] + 2) + s1 + 2] * L1[s2] +
+              mu[face] * L0[s1 + 2] * diffL1[d * (pq[1] + 2) + s2 + 2];
+        }
 
-        diff_faceN[face][3 * (qd_shift + n) + 0] =
-            diff_mu[face][0] * L0[s1] * L1[s2] +
-            mu[face] * diffL0[s1] * diff_ksi[face][0][0] * L1[s2] +
-            mu[face] * L0[s1] * diffL1[s1] * diff_ksi[face][1][0];
-
-        diff_faceN[face][3 * (qd_shift + n) + 1] =
-            diff_mu[face][1] * L0[s1] * L1[s2] +
-            mu[face] * diffL0[s1] * diff_ksi[face][0][1] * L1[s2] +
-            mu[face] * L0[s1] * diffL1[s1] * diff_ksi[face][1][1];
-
-        diff_faceN[face][3 * (qd_shift + n) + 2] =
-            diff_mu[face][2] * L0[s1] * L1[s2] +
-            mu[face] * diffL0[s1] * diff_ksi[face][0][2] * L1[s2] +
-            mu[face] * L0[s1] * diffL1[s1] * diff_ksi[face][1][2];
       }
 
       // for (int s1 = 0; s1 != pq[0] - 1; s1++) {
@@ -866,7 +1081,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
 }
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
-    int *p, double *N, double *faceN, double *diff_faceN,
+    int *p, double *N, double *N_diff, double *faceN, double *diff_faceN,
     int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
@@ -880,26 +1095,31 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
     int shift = 8 * q;
     double ksi[3];
     double Nq[8];
-    for (int vv = 0; vv < 8; vv++)
+    double Nq_diff[8][3];
+    for (int vv = 0; vv < 8; vv++) {
       Nq[vv] = N[shift + vv];
-
+      Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
+      Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
+      Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
+    }
     ref_hex.get_volume_coords(Nq, ksi);
     // ****************************************
 
     double diff_ksi[3][3];
 
-    ref_hex.get_volume_diff_coords(diff_ksi);
+    ref_hex.get_volume_diff_coords(Nq_diff, diff_ksi);
 
-    double L0[p[0] - 1];
-    double diffL0[p[0] - 1];
-    double L1[p[1] - 1];
-    double diffL1[p[1] - 1];
-    double L2[p[2] - 1];
-    double diffL2[p[2] - 1];
+    double L0[p[0] + 2];
+    double diffL0[3 * (p[0] + 2)];
+    double L1[p[1] + 2];
+    double diffL1[3 * (p[1] + 2)];
+    double L2[p[2] + 2];
+    double diffL2[3 * (p[2] + 2)];
 
-    CHKERR Integrated_Legendre01(p[0], ksi[0], L0, diffL0);
-    CHKERR Integrated_Legendre01(p[1], ksi[1], L1, diffL1);
-    CHKERR Integrated_Legendre01(p[2], ksi[2], L2, diffL2);
+    CHKERR Lobatto_polynomials(p[0] + 1, ksi[0], diff_ksi[0], L0, diffL0, 3);
+    CHKERR Lobatto_polynomials(p[1] + 1, ksi[1], diff_ksi[1], L1, diffL1, 3);
+    CHKERR Lobatto_polynomials(p[2] + 1, ksi[2], diff_ksi[2], L2, diffL2, 3);
+
 
     // cout << "In Face H1" << endl;
 
@@ -911,52 +1131,19 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
       int s3 = permute[n][2];
 
       faceN[qd_shift + n] = L0[s1] * L1[s2] * L2[s3];
-
-      diff_faceN[3 * (qd_shift + n) + 0] =
-          diffL0[s1] * diff_ksi[0][0] * L1[s2] * L2[s3] +
-          L0[s1] * diffL1[s2] * diff_ksi[1][0] * L2[s3] +
-          L0[s1] * L1[s2] * diffL2[s3] * diff_ksi[2][0];
-
-      diff_faceN[3 * (qd_shift + n) + 1] =
-          diffL0[s1] * diff_ksi[0][1] * L1[s2] * L2[s3] +
-          L0[s1] * diffL1[s2] * diff_ksi[1][1] * L2[s3] +
-          L0[s1] * L1[s2] * diffL2[s3] * diff_ksi[2][1];
-
-      diff_faceN[3 * (qd_shift + n) + 2] =
-          diffL0[s1] * diff_ksi[0][2] * L1[s2] * L2[s3] +
-          L0[s1] * diffL1[s2] * diff_ksi[1][2] * L2[s3] +
-          L0[s1] * L1[s2] * diffL2[s3] * diff_ksi[2][2];
+      for (int d = 0; d != 3; ++d) {
+        diff_faceN[3 * (qd_shift + n) + 0] =
+            diffL0[d * (p[0] + 2) + s1] * L1[s2 + 2] * L2[s3 + 2] +
+            L0[s1 + 2] * diffL1[d * (p[1] + 2) + s2 + 2] * L2[s3 + 2] +
+            L0[s1 + 2] * L1[s2 + 2] * diffL2[d * (p[2] + 2) + s3 + 2];
+      }
     }
-    // for (int s1 = 0; s1 != p[0] - 1; s1++) {
-    //   for (int s2 = 0; s2 != p[1] - 1; s2++) {
-    //     for (int s3 = 0; s3 < p[2] - 1; s3++) {
-    //       faceN[qd_shift + n] = L0[s1] * L1[s2] * L2[s3];
-
-    //       diff_faceN[3 * (qd_shift + n) + 0] =
-    //           diffL0[s1] * diff_ksi[0][0] * L1[s2] * L2[s3] +
-    //           L0[s1] * diffL1[s2] * diff_ksi[1][0] * L2[s3] +
-    //           L0[s1] * L1[s2] * diffL2[s3] * diff_ksi[2][0];
-
-    //       diff_faceN[3 * (qd_shift + n) + 1] =
-    //           diffL0[s1] * diff_ksi[0][1] * L1[s2] * L2[s3] +
-    //           L0[s1] * diffL1[s2] * diff_ksi[1][1] * L2[s3] +
-    //           L0[s1] * L1[s2] * diffL2[s3] * diff_ksi[2][1];
-
-    //       diff_faceN[3 * (qd_shift + n) + 2] =
-    //           diffL0[s1] * diff_ksi[0][2] * L1[s2] * L2[s3] +
-    //           L0[s1] * diffL1[s2] * diff_ksi[1][2] * L2[s3] +
-    //           L0[s1] * L1[s2] * diffL2[s3] * diff_ksi[2][2];
-
-    //       ++n;
-    //     }
-    //   }
-    // }
   }
   MoFEMFunctionReturnHot(0);
 }
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
-    int *p, double *N, double *volN, int nb_integration_pts) {
+    int *p, double *N, double *N_diff, double *volN, int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
   int permute[p[0] * p[1] * p[2]][3];
@@ -967,10 +1154,16 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
     int shift = 8 * qq;
     double ksi[3];
     double Nq[8];
-    for (int vv = 0; vv < 8; vv++)
+    double Nq_diff[8][3];
+    for (int vv = 0; vv < 8; vv++) {
       Nq[vv] = N[shift + vv];
-
+      Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
+      Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
+      Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
+    }
     ref_hex.get_volume_coords(Nq, ksi);
+    double diff_ksi[3][3];
+    ref_hex.get_volume_diff_coords(Nq_diff, diff_ksi);
     // ****************************************
 
     double P0[p[0]];
@@ -1004,32 +1197,34 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
 }
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONHEX(
-    int *sense, int *p, double *N, double *edgeN[12], double *curl_edgeN[12],
-    int nb_integration_pts) {
+    int *sense, int *p, double *N, double *N_diff, double *edgeN[12],
+    double *curl_edgeN[12], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
 
   for (int qq = 0; qq != nb_integration_pts; qq++) {
     // general ******************************
     int shift = 8 * qq;
-    double quad_coords[3];
     double Nq[8];
-    for (int vv = 0; vv < 8; vv++)
+    double Nq_diff[8][3];
+    for (int vv = 0; vv < 8; vv++) {
       Nq[vv] = N[shift + vv];
+      Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
+      Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
+      Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
+    }
 
-    ref_hex.get_volume_coords(Nq, quad_coords);
-    // ****************************************
 
     double mu[12][2];
-    ref_hex.get_edge_affines(quad_coords, mu);
+    ref_hex.get_edge_affines(Nq, mu);
 
     double diff_mu[12][2][3];
-    ref_hex.get_edge_diff_affines(diff_mu);
+    ref_hex.get_edge_diff_affines(Nq_diff, diff_mu);
 
     double ksi[12];
-    ref_hex.get_edge_coords(sense, quad_coords, ksi);
+    ref_hex.get_edge_coords(sense, Nq, ksi);
     double diff_ksi[12][3];
-    ref_hex.get_edge_diff_coords(sense, diff_ksi);
+    ref_hex.get_edge_diff_coords(sense, Nq_diff, diff_ksi);
 
     int pp[12] = {p[0], p[1], p[0], p[1], p[2], p[2],
                   p[2], p[2], p[0], p[1], p[0], p[1]};
@@ -1068,7 +1263,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONHEX(
 }
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONHEX(
-    int *face_nodes[6], int *p, double *N, double *faceN[6][2],
+    int *face_nodes[6], int *p, double *N, double *N_diff, double *faceN[6][2],
     double *curl_faceN[6][2], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
@@ -1079,21 +1274,23 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONHEX(
       int shift = 8 * qq;
       double quad_coords[3];
       double Nq[8];
-      for (int vv = 0; vv < 8; vv++)
+      double Nq_diff[8][3];
+      for (int vv = 0; vv < 8; vv++) {
         Nq[vv] = N[shift + vv];
-
-      ref_hex.get_volume_coords(Nq, quad_coords);
-      // ****************************************
+        Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
+        Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
+        Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
+      }
 
       double mu[6];
-      ref_hex.get_face_affines(quad_coords, mu);
+      ref_hex.get_face_affines(Nq, mu);
       double diff_mu[6][3];
-      ref_hex.get_face_diff_affines(diff_mu);
+      ref_hex.get_face_diff_affines(Nq_diff, diff_mu);
 
       double ksi[6][2];
       ref_hex.get_face_coords(face_nodes, Nq, ksi);
       double diff_ksi[6][2][3];
-      ref_hex.get_face_diff_coords(face_nodes, diff_ksi);
+      ref_hex.get_face_diff_coords(face_nodes, Nq_diff, diff_ksi);
 
       int px[6][2] = {{p[0], p[1]}, {p[0], p[2]}, {p[1], p[2]},
                       {p[0], p[2]}, {p[1], p[2]}, {p[0], p[1]}};
@@ -1201,7 +1398,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONHEX(
 }
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_InteriorShapeFunctions_ONHEX(
-    int *p, double *N, double *volN[3], double *curl_volN[3],
+    int *p, double *N, double *N_diff, double *volN[3], double *curl_volN[3],
     int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
@@ -1211,15 +1408,20 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_InteriorShapeFunctions_ONHEX(
     int shift = 8 * qq;
     double quad_coords[3];
     double Nq[8];
-    for (int vv = 0; vv < 8; vv++)
+    double Nq_diff[8][3];
+    for (int vv = 0; vv < 8; vv++) {
       Nq[vv] = N[shift + vv];
+      Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
+      Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
+      Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
+    }
 
     ref_hex.get_volume_coords(Nq, quad_coords);
     // ****************************************
     double *ksi = quad_coords;
 
     double diff_ksi[3][3];
-    ref_hex.get_volume_diff_coords(diff_ksi);
+    ref_hex.get_volume_diff_coords(Nq_diff, diff_ksi);
 
     double ksi_eta_gma[3] = {ksi[0], ksi[1], ksi[2]};
     double eta_gma_ksi[3] = {ksi[1], ksi[2], ksi[0]};
@@ -1342,7 +1544,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_InteriorShapeFunctions_ONHEX(
 }
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONHEX(
-    int *face_nodes[6], int *p, double *N, double *faceN[6],
+    int *face_nodes[6], int *p, double *N, double *N_diff, double *faceN[6],
     double *div_faceN[6], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
@@ -1355,21 +1557,23 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONHEX(
     int shift = 8 * qq;
     double quad_coords[3];
     double Nq[8];
-    for (int vv = 0; vv < 8; vv++)
+    double Nq_diff[8][3];
+    for (int vv = 0; vv < 8; vv++) {
       Nq[vv] = N[shift + vv];
-
-    ref_hex.get_volume_coords(Nq, quad_coords);
-    // ****************************************
+      Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
+      Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
+      Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
+    }
 
     double mu[6];
-    ref_hex.get_face_affines(quad_coords, mu);
+    ref_hex.get_face_affines(Nq, mu);
     double diff_mu[6][3];
-    ref_hex.get_face_diff_affines(diff_mu);
+    ref_hex.get_face_diff_affines(Nq_diff, diff_mu);
 
     double ksi[6][2];
     ref_hex.get_face_coords(face_nodes, Nq, ksi);
     double diff_ksi[6][2][3];
-    ref_hex.get_face_diff_coords(face_nodes, diff_ksi);
+    ref_hex.get_face_diff_coords(face_nodes, Nq_diff, diff_ksi);
 
     for (int ff = 0; ff < 6; ff++) {
       double EI[pp[ff][0]];
@@ -1434,7 +1638,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONHEX(
 }
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_InteriorShapeFunctions_ONHEX(
-    int *p, double *N, double *bubbleN[3], double *div_bubbleN[3],
+    int *p, double *N, double *N_diff, double *bubbleN[3], double *div_bubbleN[3],
     int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
@@ -1444,15 +1648,20 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_InteriorShapeFunctions_ONHEX(
     int shift = 8 * qq;
     double quad_coords[3];
     double Nq[8];
-    for (int vv = 0; vv < 8; vv++)
+    double Nq_diff[8][3];
+    for (int vv = 0; vv < 8; vv++) {
       Nq[vv] = N[shift + vv];
+      Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
+      Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
+      Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
+    }
 
     ref_hex.get_volume_coords(Nq, quad_coords);
     // ****************************************
     double *ksi = quad_coords;
     double diff_ksi[3][3];
 
-    ref_hex.get_volume_diff_coords(diff_ksi);
+    ref_hex.get_volume_diff_coords(Nq_diff, diff_ksi);
 
     double ksi_eta_gma[3] = {ksi[0], ksi[1], ksi[2]};
     double eta_gma_ksi[3] = {ksi[1], ksi[2], ksi[0]};

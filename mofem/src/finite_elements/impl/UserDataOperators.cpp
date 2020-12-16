@@ -402,7 +402,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
 
   MoFEMFunctionBegin;
 
-  if (type != MBEDGE && type != MBTRI)
+  if (type != MBEDGE && type != MBTRI && type != MBQUAD)
     MoFEMFunctionReturnHot(0);
 
   FTensor::Index<'i', 2> i;

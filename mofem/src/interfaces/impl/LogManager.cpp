@@ -375,6 +375,11 @@ LogManager::LoggerType &LogManager::getLog(const std::string channel) {
   return InternalData::logChannels.at(channel);
 }
 
+bool LogManager::checkIfChannelExist(const std::string channel) {
+  return InternalData::logChannels.find(channel) !=
+         InternalData::logChannels.end();
+}
+
 std::string LogManager::petscStringCache = std::string();
 
 PetscErrorCode LogManager::logPetscFPrintf(FILE *fd, const char format[],

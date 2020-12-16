@@ -67,7 +67,7 @@ extern "C" {
 /**
  * @brief Number of base functions on quad for L2 space
  */
-#define NBFACEQUAD_L2(P) (((P) > 0) ? P * P : 0)
+#define NBFACEQUAD_L2(P) (((P) >= 0) ? (P + 1) * (P + 1) : 0)
 
 /**
  * @brief Number of base functions on tetrahedron for H1 space
