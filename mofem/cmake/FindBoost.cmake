@@ -4,9 +4,17 @@ if(NOT BOOST_DIR)
   set(BOOST_DIR $ENV{BOOST_DIR})
 endif(NOT BOOST_DIR)
 
+set(BOOST_ROOT ${BOOST_DIR})
+
 find_package(
-  Boost COMPONENTS 
-  program_options log log_setup thread system filesystem REQUIRED)
+  Boost 
+  REQUIRED COMPONENTS
+  program_options log log_setup thread system filesystem 
+)
+
+message(STATUS ${Boost_LIBRARIES})
+message(STATUS ${Boost_LIBRARY_DIRS})
+message(STATUS ${Boost_INCLUDE_DIRS})
 
 if(NOT Boost_LIBRARIES)
   message(FATAL_ERROR "boost libraries not found")
@@ -16,6 +24,7 @@ find_path(
   BOOST_INCLUDE_DIR
   NAMES boost/multi_index_container.hpp
   HINTS
+  ${Boost_INCLUDE_DIRS}
   ${BOOST_DIR}/include
   ${PETSC_DIR}/${PETSC_ARCH}/include
 )
