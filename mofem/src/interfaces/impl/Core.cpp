@@ -921,7 +921,7 @@ void set_ref_ent_basic_data_ptr_impl(boost::shared_ptr<BasicEntityData> &ptr) {
 void Core::setRefEntBasicDataPtr(MoFEM::Interface &m_field,
                                       boost::shared_ptr<BasicEntityData> &ptr) {
 
-  switch (mField.getValue()) {
+  switch (m_field.getValue()) {
   case -1:
     set_ref_ent_basic_data_ptr_impl<-1>(ptr);
     break;
@@ -932,8 +932,7 @@ void Core::setRefEntBasicDataPtr(MoFEM::Interface &m_field,
     set_ref_ent_basic_data_ptr_impl<1>(ptr);
     break;
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-            "Core index can vary from -1 to %d", MAX_CORE_TMP);
+    THROW_MESSAGE("Core index can vary from -1 to MAX_CORE_TMP");
   }
 
   // boost::hana::for_each(
@@ -954,7 +953,7 @@ Core::makeSharedRefEntity(MoFEM::Interface &m_field, const EntityHandle ent) {
 
   boost::shared_ptr<RefEntityTmp<0>> ref_ent_ptr;
 
-  switch (mField.getValue()) {
+  switch (m_field.getValue()) {
   case -1:
     ref_ent_ptr = boost::shared_ptr<RefEntityTmp<0>>(
 
@@ -977,8 +976,7 @@ Core::makeSharedRefEntity(MoFEM::Interface &m_field, const EntityHandle ent) {
     );
     break;
   default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-            "Core index can vary from -1 to %d", MAX_CORE_TMP);
+    THROW_MESSAGE("Core index can vary from -1 to MAX_CORE_TMP");
   }
 
   // boost::hana::for_each(

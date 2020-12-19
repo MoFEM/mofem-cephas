@@ -167,8 +167,8 @@ struct SetBitRefLevelTool {
       case 1:
         return addEntsToDatabaseImpl<1>(seed_ents_range);
       default:
-        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                "Core index can vary from -1 to %d", MAX_CORE_TMP);
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                 "Core index can vary from -1 to %d", MAX_CORE_TMP);
     }
 
     // boost::hana::for_each(
