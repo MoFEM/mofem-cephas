@@ -935,17 +935,6 @@ void Core::setRefEntBasicDataPtr(MoFEM::Interface &m_field,
     THROW_MESSAGE("Core index can vary from -1 to MAX_CORE_TMP");
   }
 
-  // boost::hana::for_each(
-
-  //     boost::hana::make_range(boost::hana::int_c<-1>,
-  //                             boost::hana::int_c<MAX_CORE_TMP>),
-
-  //     [&](auto r) {
-  //       if (m_field.getValue() == r)
-  //         set_ref_ent_basic_data_ptr_impl<r>(ptr);
-  //     }
-
-  // );
 };
 
 boost::shared_ptr<RefEntityTmp<0>>
@@ -978,22 +967,6 @@ Core::makeSharedRefEntity(MoFEM::Interface &m_field, const EntityHandle ent) {
   default:
     THROW_MESSAGE("Core index can vary from -1 to MAX_CORE_TMP");
   }
-
-  // boost::hana::for_each(
-
-  //     boost::hana::make_range(boost::hana::int_c<-1>,
-  //                             boost::hana::int_c<MAX_CORE_TMP>),
-
-  //     [&](auto r) {
-  //       if (m_field.getValue() == r)
-  //         ref_ent_ptr = boost::shared_ptr<RefEntityTmp<0>>(
-
-  //             new RefEntityTmp<r>(m_field.get_basic_entity_data_ptr(), ent)
-
-  //         );
-  //     }
-
-  // );
 
   return ref_ent_ptr;
 }

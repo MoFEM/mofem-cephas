@@ -171,18 +171,6 @@ struct SetBitRefLevelTool {
                  "Core index can vary from -1 to %d", MAX_CORE_TMP);
     }
 
-    // boost::hana::for_each(
-
-    //     boost::hana::make_range(boost::hana::int_c<-1>,
-    //                             boost::hana::int_c<MAX_CORE_TMP>),
-
-    //     [&](auto r) {
-    //       if (mField.getValue() == r)
-    //         CHKERR addEntsToDatabaseImpl<r>(seed_ents_range);
-    //     }
-
-    // );
-
     MoFEMFunctionReturnHot(0);
   }
 
