@@ -159,17 +159,29 @@ struct SetBitRefLevelTool {
   MoFEMErrorCode addEntsToDatabase(const Range &seed_ents_range) const {
     MoFEMFunctionBeginHot;
 
-    boost::hana::for_each(
+    switch (mField.getValue()) {
+      case -1:
+        return addEntsToDatabaseImpl<-1>(seed_ents_range);
+      case 0:
+        return addEntsToDatabaseImpl<0>(seed_ents_range);
+      case 1:
+        return addEntsToDatabaseImpl<1>(seed_ents_range);
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                "Core index can vary from -1 to %d", MAX_CORE_TMP);
+    }
 
-        boost::hana::make_range(boost::hana::int_c<-1>,
-                                boost::hana::int_c<MAX_CORE_TMP>),
+    // boost::hana::for_each(
 
-        [&](auto r) {
-          if (mField.getValue() == r)
-            CHKERR addEntsToDatabaseImpl<r>(seed_ents_range);
-        }
+    //     boost::hana::make_range(boost::hana::int_c<-1>,
+    //                             boost::hana::int_c<MAX_CORE_TMP>),
 
-    );
+    //     [&](auto r) {
+    //       if (mField.getValue() == r)
+    //         CHKERR addEntsToDatabaseImpl<r>(seed_ents_range);
+    //     }
+
+    // );
 
     MoFEMFunctionReturnHot(0);
   }
