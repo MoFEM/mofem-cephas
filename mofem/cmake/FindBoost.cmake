@@ -1,16 +1,11 @@
-
 # Add BOOST directory
-if(NOT BOOST_DIR)
-  set(BOOST_DIR $ENV{BOOST_DIR})
-endif(NOT BOOST_DIR)
-
-set(BOOST_ROOT ${BOOST_DIR})
+set(Boost_NO_BOOST_CMAKE ON) 
+set(BOOST_ROOT "${BOOST_DIR}")
 
 find_package(
   Boost 
   REQUIRED COMPONENTS
-  program_options log log_setup thread system filesystem 
-)
+  program_options log log_setup thread system filesystem)
 
 message(STATUS ${Boost_LIBRARIES})
 message(STATUS ${Boost_LIBRARY_DIRS})
