@@ -228,8 +228,6 @@ if(MOFEM_BUILD_TESTS)
   enable_testing()
   include(CTest)
 endif(MOFEM_BUILD_TESTS)
-# Add check for verbose testing
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
 # Precompiled headers
 include(cmake/PrecompiledHeaders.cmake)
