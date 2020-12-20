@@ -402,31 +402,25 @@ target_link_libraries(mesh_insert_interface_atom
   ${PROJECT_LIBS}
 )
 
-add_test(mesh_insert_interface_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file templar.h5m
-  -log_no_color
+list(INSERT testing_insert_interface_list
+  0
+  templar.h5m
+  Tinterface.h5m
+  4seasons.h5m
 )
-add_test(mesh_insert_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt
-)
-add_test(mesh_insert_T_interface_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file Tinterface.h5m
-  -log_no_color
-)
-add_test(mesh_insert_T_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_T_interface.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt
-)
-add_test(mesh_insert_T_4seasons_interface_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file 4seasons.h5m
-  -log_no_color
-)
-add_test(mesh_insert_T_4seasons_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_T_4seasons_interface.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt
-)
+foreach(test_file ${testing_insert_interface_list})
+  add_test(mesh_insert_interface_${test_file} ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file ${test_file}
+    -log_no_color
+  )
+  add_test(mesh_insert_interface_${test_file}_compare 
+    ${CMAKE_COMMAND} -E compare_files
+    ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/${test_file}_log
+    ${CMAKE_BINARY_DIR}/atom_tests/${test_file}_log
+  )
+endforeach(test_file IN testing_insert_interface_list)
 
-#foces and sources functions Test
+# foces and sources functions Test
 my_add_executable(forces_and_sources_getting_orders_indices_atom_test forces_and_sources_getting_orders_indices_atom_test.cpp)
 target_link_libraries(forces_and_sources_getting_orders_indices_atom_test
   mofem_finite_elements
