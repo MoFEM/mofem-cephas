@@ -100,7 +100,7 @@ foreach(test_file ${cubit_bc_test_list})
     -DLOG1=${test_file}.txt
     -DLOG2=${test_file}.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 endforeach(test_file IN cubit_bc_test_list)
 
@@ -153,7 +153,7 @@ add_test(
     -DLOG1=loop_atom.h5m.txt
     -DLOG2=loop_atom.h5m.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 #field axpy
@@ -244,7 +244,7 @@ add_test(
     -DLOG1=mesh_refine.txt
     -DLOG2=mesh_refine.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 # add_test(
@@ -295,7 +295,7 @@ foreach(test_file ${testing_insert_interface_list})
     -DLOG1=${test_file}_log
     -DLOG2=${test_file}_log
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 endforeach(test_file IN testing_insert_interface_list)
 
@@ -323,7 +323,7 @@ add_test(
     -DLOG1=forces_and_sources_getting_orders_indices_atom_test.txt
     -DLOG2=forces_and_sources_getting_orders_indices_atom_test.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 my_add_executable(forces_and_sources_getting_mult_H1_H1_atom_test forces_and_sources_getting_mult_H1_H1_atom_test.cpp)
@@ -350,7 +350,7 @@ add_test(
     -DLOG1=forces_and_sources_getting_mult_H1_H1_atom_test.txt
     -DLOG2=forces_and_sources_getting_mult_H1_H1_atom_test.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 my_add_executable(forces_and_sources_calculate_jacobian forces_and_sources_calculate_jacobian.cpp)
@@ -377,7 +377,7 @@ add_test(
     -DLOG1=forces_and_sources_calculate_jacobian.txt
     -DLOG2=forces_and_sources_calculate_jacobian.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 my_add_executable(forces_and_sources_testing_volume_element forces_and_sources_testing_volume_element.cpp)
@@ -404,7 +404,7 @@ add_test(
     -DLOG1=forces_and_sources_testing_volume_element.txt
     -DLOG2=forces_and_sources_testing_volume_element.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 my_add_executable(forces_and_sources_testing_ftensor forces_and_sources_testing_ftensor.cpp)
@@ -448,7 +448,7 @@ add_test(
     -DLOG1=forces_and_sources_testing_users_base.txt
     -DLOG2=forces_and_sources_testing_users_base.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 my_add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
@@ -477,7 +477,7 @@ add_test(
     -DLOG1=forces_and_sources_getting_higher_order_skin_normals_atom.txt
     -DLOG2=forces_and_sources_getting_higher_order_skin_normals_atom.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 #triangle element
@@ -505,7 +505,7 @@ add_test(
     -DLOG1=forces_and_sources_testing_triangle_element.txt
     -DLOG2=forces_and_sources_testing_triangle_element.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 #edge element
@@ -536,7 +536,7 @@ add_test(
     -DLOG1=forces_and_sources_testing_edge_element_AINSWORTH_LEGENDRE_BASE.txt
     -DLOG2=forces_and_sources_testing_edge_element_AINSWORTH_LEGENDRE_BASE.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 add_test(
     forces_and_sources_testing_edge_element_bernstein_bezier
@@ -551,7 +551,7 @@ add_test(
     -DLOG1=forces_and_sources_testing_edge_element_AINSWORTH_BERNSTEIN_BEZIER_BASE.txt
     -DLOG2=forces_and_sources_testing_edge_element_AINSWORTH_BERNSTEIN_BEZIER_BASE.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 #vertex element
@@ -579,7 +579,7 @@ add_test(
     -DLOG1=forces_and_sources_testing_vertex_element.txt
     -DLOG2=forces_and_sources_testing_vertex_element.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 #flat prism element
@@ -607,7 +607,7 @@ add_test(
     -DLOG1=forces_and_sources_testing_flat_prism_element.txt
     -DLOG2=forces_and_sources_testing_flat_prism_element.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 #contact prism element
@@ -636,7 +636,7 @@ add_test(
     -DLOG1=forces_and_sources_testing_contact_prism_element.txt
     -DLOG2=forces_and_sources_testing_contact_prism_element.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 add_test(
@@ -652,7 +652,7 @@ add_test(
     -DLOG1=forces_and_sources_testing_contact_prism_element_HDIV.txt
     -DLOG2=forces_and_sources_testing_contact_prism_element_HDIV.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 # Checking direvatives
@@ -907,7 +907,7 @@ add_test(
     -DLOG1=record_series_atom.txt
     -DLOG2=record_series_atom.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 # add test for hcurl space
@@ -935,7 +935,7 @@ add_test(
     -DLOG1=forces_and_sources_hcurl_approximation_functions.txt
     -DLOG2=forces_and_sources_hcurl_approximation_functions.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 my_add_executable(hcurl_continuity_check hcurl_continuity_check.cpp)
@@ -987,7 +987,7 @@ add_test(
     -DLOG1=forces_and_sources_hdiv_approximation_functions.txt
     -DLOG2=forces_and_sources_hdiv_approximation_functions.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 # add test for hdiv space - check approximation continuity
@@ -1146,7 +1146,7 @@ add_test(
     -DLOG1=dm_mofem.txt
     -DLOG2=dm_mofem.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 cm_export_file("disp01_2parts.h5m" export_atom_tests)
@@ -1173,7 +1173,7 @@ add_test(
     -DLOG1=dm_build_partitioned_mesh.txt
     -DLOG2=dm_build_partitioned_mesh.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 cm_export_file("disp01_3parts.h5m" export_atom_tests)
@@ -1242,7 +1242,7 @@ add_test(
     -DLOG1=serial_matrix.txt
     -DLOG2=serial_matrix.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 #test for build problems
@@ -1383,7 +1383,7 @@ add_test(
     -DLOG1=10node_sphere.txt
     -DLOG2=10node_sphere.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
 if(TETGEN_LIBRARY)

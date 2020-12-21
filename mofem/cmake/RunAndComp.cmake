@@ -73,7 +73,7 @@ endif()
 
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E compare_files 
-    ${SOURCE_DIR}/atom_tests/blessed_files/${LOG1}
+    ${SOURCE_DIR}/${LOG1}
     ${BINARY_DIR}/${LOG2}
     WORKING_DIRECTORY ${BINARY_DIR}
     RESULT_VARIABLE CMD_RESULT)
