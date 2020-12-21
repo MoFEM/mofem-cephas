@@ -102,18 +102,6 @@ foreach(test_file ${cubit_bc_test_list})
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-  # add_test(
-  #   cubit_bc_atom_test_${test_file}
-  #   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test 
-  #   -my_file ${test_file}
-  #   -log_no_color
-  # )
-  # add_test(
-  #   cubit_bc_atom_test_${test_file}_compare
-  #   ${CMAKE_COMMAND} -E compare_files
-  #   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/${test_file}.txt
-  #   ${CMAKE_BINARY_DIR}/atom_tests/${test_file}.txt
-  # )
 endforeach(test_file IN cubit_bc_test_list)
 
 # testing adding cubit meshset
@@ -167,17 +155,6 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-
-# add_test(cubit_meshset_loop_test 
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/loops_atom_test 
-#   -my_file loop_atom.h5m
-#   -log_no_color
-# )
-
-# add_test(cubit_meshset_loop_test_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/loop_atom.cub.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/loop_atom.h5m.txt
-# )
 
 #field axpy
 cm_export_file("../meshes/elasticity_atom_test_01X_pressure.h5m" export_atom_tests)
@@ -1198,16 +1175,6 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-# add_test(dm_build_partitioned_mesh_atom
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
-#   ${CMAKE_CURRENT_BINARY_DIR}/dm_build_partitioned_mesh -my_file disp01_2parts.h5m 
-#   -dm_is_partitioned
-#   -log_no_color
-# )
-# add_test(dm_build_partitioned_mesh_atom_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_BINARY_DIR}/atom_tests/dm_build_partitioned_mesh.txt
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_build_partitioned_mesh.txt
-# )
 
 cm_export_file("disp01_3parts.h5m" export_atom_tests)
 my_add_executable(dm_partitioned_no_field dm_partitioned_no_field.cpp)
@@ -1277,15 +1244,6 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-# add_test(serial_matrix ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
-#   ${CMAKE_CURRENT_BINARY_DIR}/serial_matrix 
-#   -my_file disp01.h5m
-#   -log_no_color
-# )
-# add_test(serial_matrix_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_BINARY_DIR}/atom_tests/serial_matrix.txt
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/serial_matrix.txt
-# )
 
 #test for build problems
 my_add_executable(build_problems build_problems.cpp)
