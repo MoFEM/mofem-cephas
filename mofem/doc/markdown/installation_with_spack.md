@@ -62,8 +62,6 @@ and then you can install MoFEM
 
 The installation of MoFEM requires
 [git](https://www.atlassian.com/git/tutorials/what-is-git),
-[curl](https://en.wikipedia.org/wiki/CURL) and C++ and Fortran compilers (GCC
-and/or clang). They must also be available in your `PATH`.
 
 System requirements: Minimum 8GB RAM. On Linux ensure this RAM is free.
 
@@ -73,17 +71,16 @@ Install the following packages:
 ~~~~~
 apt-get update \
 && apt-get install -y --no-install-recommends \
-autoconf \
 build-essential \
 ca-certificates \
 coreutils \
-curl \
 environment-modules \
-git \
 python \
-unzip \
-vim \
-gfortran
+gfortran \
+curl \
+git \
+cmake \
+vim 
 ~~~~~
 
 ## macOS
@@ -104,17 +101,12 @@ sudo xcodebuild -license accept
 Additional packages are required - install [homebrew](https://brew.sh) package
 manager:
 ~~~~~
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ~~~~~
 
 Install packages through `homebrew`:
 ~~~~~
-brew install curl git gcc
-~~~~~
-
-Check the path of the Fortran compiler (shipped with `gcc`):
-~~~~~
-which gfortran
+brew install git python gcc@9 cmake autoconf automake libtool
 ~~~~~
 
 If it is not already in the `PATH`, you should add it there.
@@ -128,7 +120,7 @@ The installing of gfortran through homebrew is another way of solvingr this.
 
 Retrieve Spack for MoFEM:
 ~~~~~~
-git clone --single-branch -b mofem https://github.com/likask/spack.git
+git clone --single-branch -b develop_v16 https://github.com/likask/spack.git
 ~~~~~~
 
 Initialise Spack's environment variables:
@@ -139,7 +131,7 @@ Initialise Spack's environment variables:
 Download spack packages in the mirror necessary to install MoFEM
 ~~~~~~
 mkdir -p mofem_mirror &&
-curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.9.2.tar.gz \
+curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v16.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 spack mirror add mofem_mirror $PWD/mofem_mirror
 ~~~~~~
@@ -153,11 +145,49 @@ Consider adding the previous command to your `.bash_profile` or `.bashrc`, e.g.:
 ~~~~~~
 echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
 ~~~~~~
+If you using Big Sur or Catalina, or newer Mac OX, you have to add config to `.zshrc`, e.g.:
+~~~~~~
+echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.zshrc
+~~~~~~
 
 Finally, install packages required by Spack:
 ~~~~~~
-spack bootstrap
+spack compiler find
+spack external find
 ~~~~~~
+
+If you using system where gfortant v10 is installed, some packages like openmpi will not compile on Mac OSX. You can
+check this running code 
+~~~~~
+gfortran -v
+~~~~~
+as reusult if you get
+~~~~~
+gcc version 10.2.0 (GCC) 
+~~~~~
+it means that you have version 10. This is temporary problem and will be fixed over the time, once various patches 
+and fixes will be applied to those libraries. In mean time you can fix that problem by editind `packages.yaml` in 
+Mac OSX located in `~/.spack/darwin/packages.yaml` to set version 9 of gfortran compiler,
+~~~~~~~
+- compiler:
+    spec: apple-clang@12.0.0
+    paths:
+      cc: /usr/bin/clang
+      cxx: /usr/bin/clang++
+      f77: /usr/local/bin/gfortran-9
+      fc: /usr/local/bin/gfortran-9
+    flags: {}
+    operating_system: macos
+    target: x86_64
+    modules: []
+    environment: {}
+    extra_rpaths: []
+~~~~~~~
+Note that fortran compiler is set to version `9`, as follows
+~~~~~~~
+      f77: /usr/local/bin/gfortran-9
+      fc: /usr/local/bin/gfortran-9
+~~~~~~~
 
 Note that there are further instructions on [Spack usage and configuration](#spack_usage_config).
 
@@ -191,8 +221,7 @@ The extensions can be installed using `spack install <extension>`.
 To access the installed users modules, create an `um_view` directory. This
 should be created in an appropriate directory:
 ~~~~~~
-spack view --verbose symlink -i um_view mofem-cephas
-spack activate -v um_view mofem-users-modules
+spack view --verbose symlink -i um_view mofem-users-modules
 ~~~~~~
 
 This filesystem view is a single directory tree that is the union of the
@@ -207,7 +236,7 @@ visible from any directory, add its `bin` directory to your `PATH`, e.g.:
 export PATH=$PWD/um_view/bin:$PATH 
 ~~~~~~ 
 
-Consider also adding this command to your `.bash_profile` or `.bashrc`, e.g.: 
+Consider also adding this command to your `.bash_profile` or `.bashrc`, or `.zshrc`, e.g.: 
 ~~~~~~ 
 echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bash_profile
 ~~~~~~
@@ -223,7 +252,7 @@ mpirun -np 2 ./elasticity \
 -ksp_type gmres \
 -pc_type lu -pc_factor_mat_solver_package mumps \
 -ksp_monitor
-mbconvert out.h5m out.vtk
+mbconvert out_skin.h5m out_skin.vtk
 ~~~~~~
 
 Open the output VTK file in [ParaView](https://www.paraview.org). You can
@@ -261,11 +290,10 @@ can install manually by cloning the appropriate users module.
 
 You can install package and run tests, for example:
 ~~~~~~
-spack install --test=root -j 4 mofem-cephas
-spack install --test=root -j 4 mofem-users-modules
-spack install --test=root -j 4 mofem-fracture-module
+spack install --test=root -j 1 mofem-cephas
+spack install --test=root -j 1 mofem-users-modules
+spack install --test=root -j 1 mofem-fracture-module
 ~~~~~~
-
 
 # Developers {#spack_developers}
 
@@ -298,122 +326,108 @@ Create mofem_install folder in the home directory and clone MoFEM repository:
 ~~~~~
 mkdir $HOME/mofem_install
 cd $HOME/mofem_install
-git clone -b develop --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+git clone \
+  -b develop \
+  --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git \
+  mofem-cephas
 ~~~~~
-and kick-start installation of the core library:
+and kick-start installation of the core library. First install all dependecies,
 ~~~~~
-cd $HOME/mofem_install
-mkdir lib
-cd lib/
-spack install --only dependencies mofem-cephas+slepc ^petsc+X
-spack setup mofem-cephas@develop+slepc copy_user_modules=False build_type=RelWithDebInfo ^petsc+X
-./spconfig.py -DMOFEM_BUILD_TESTS=ON $HOME/mofem_install/mofem-cephas/mofem/
-make -j4
-ctest
-make install
+spack install -j 4 --only dependencies mofem-cephas ^petsc+X
+~~~~~
+and then core MoFEM library
+~~~~~
+spack dev-build -j 1 \
+  --source-path $HOME/mofem_install/mofem-cephas \
+  --keep-prefix \
+  --test root mofem-cephas@develop~copy_user_modules ^petsc+X
 ~~~~~
 Note that in addition to `build_type` another specification of the build configuration (*spec*) was used: `copy_user_modules=False `. 
+
+If installation is successfully, by executing, 
+~~~~~
+spack find -lv mofem-cephas
+~~~~~
+you should see
+~~~~~
+==> 1 installed package
+-- darwin-macos-haswell / apple-clang@12.0.0-gfortran9 ----------
+vhv7opa mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=RelWithDebInfo dev_path=/Users/lukaszkaczmarczyk/mofem_install/mofem-cephas install_id=0
+==> 1 installed package
+-- darwin-macos-haswell / apple-clang@12.0.0 ----------
+~~~~~
+
+Also in directory `$HOME/mofem_install/mofem-cephas` you will find
+build directory `$HOME/mofem_install/mofem-cephas/spack-build-vhv7opa`. Note 
+that suffix is matching first column when executed column `spack find -lv mofem-cephas`.
+
+You can now start develop code, if you `cd $HOME/mofem_install/mofem-cephas/spack-build-vhv7opa`, and
+can run 
+~~~~
+make -j4
+ctest -D Experimental
+make install
+~~~~
+and do typical developer work.
+
+You can install simultaneously debugging version of code, as follows
+~~~~~
+spack dev-build -j 1 \
+  --source-path $HOME/mofem_install/mofem-cephas \
+  --keep-prefix \
+  --test root mofem-cephas@develop~copy_user_modules build_type=Debug ^petsc+X
+~~~~~
+that will create 
+
 
 ## 2. Install users modules {#spack_users_modules}
 
 Install users modules
 ~~~~~
-cd $HOME/mofem_install
-mkdir um
-cd um/
-spack view --verbose symlink -i um_view mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
-export PATH=$PWD/um_view/bin:$PATH
-mkdir build 
-cd build/
-spack setup mofem-users-modules@develop copy_user_modules=False build_type=RelWithDebInfo ^mofem-cephas@develop copy_user_modules=False build_type=RelWithDebInfo
-./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
-make -j4
-ctest
-make install
+spack dev-build \
+-j1 --test root  \
+--source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
+mofem-users-modules@develop build_type=RelWithDebInfo \
+^mofem-cephas@develop build_type=RelWithDebInfo
 ~~~~~
+Once installation is successfully, you can execute `spack find -lv mofem-users-modules`, and
+as result you will get
+~~~~~
+==> 1 installed package
+-- darwin-macos-haswell / apple-clang@12.0.0-gfortran9 ----------
+c6ts56b mofem-users-modules@develop+copy_user_modules~ipo build_type=Debug dev_path=/Users/lukaszkaczmarczyk/mofem_install/mofem-cephas/mofem/users_modules install_id=0
+~~~~~
+Also, you will find director
+`$HONE/mofem_install/mofem-cephas/mofem/users_modules/spack-build-c6ts56b`.
+In that directory is build directory particular versions of
+mofem-users-modules. In it you can do typical devloper work, `make`, `ctest`,
+and `make install`. You can add other modules to that directory if needed.
 
-In the `spack setup` command of the snippet above `^` is a *dependency spec*, i.e. a descriptor defining the dependency of the package that we are currently installing on another package (in this case, on the core library). Note that `^` is
-followed by the package name and its own *specs* for a particular
-version, i.e. *specs* are defined recursively, see
-[Spack manual page](https://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies)
-for more details. For example, if the *Debug* configuration is needed for both the core library and for user modules, then
-`build_type=Debug` must be specified for both packages in `spack setup` command above. Note that in the considered case *specs* for `mofem-cephas@develop` package must coincide with the ones provided during the installation of the core library discussed above.
-Alternatively, a particular version of an already installed library can be
-defined by its unique ID, which can be determined using the instructions
-given below in [MoFEM package versions](#spack_mofem_package_versions). This unique ID
-is to be provided after the *dependency spec* `^` with a `/` (*slash*)
-preceding, e.g.:
+In the `spack dev-build` command of the snippet above `^` is a *dependency
+spec*, i.e. a descriptor defining the dependency of the package that we are
+currently installing on another package (in this case, on the core library).
+Note that `^` is followed by the package name and its own *specs* for a
+particular version, i.e. *specs* are defined recursively, see [Spack manual
+page](https://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies)
+for more details. For example, if the *Debug* configuration is needed for
+both the core library and for user modules, then `build_type=Debug` must be
+specified for both packages in `spack dev-build` command above. Note that in the
+considered case *specs* for `mofem-cephas@develop` package must coincide with
+the ones provided during the installation of the core library discussed
+above. Alternatively, a particular version of an already installed library
+can be defined by its unique ID, which can be determined using the
+instructions given below in [MoFEM package
+versions](#spack_mofem_package_versions). This unique ID is to be provided
+after the *dependency spec* `^` with a `/` (*slash*) preceding, e.g.:
 ~~~~~ 
-spack setup mofem-users-modules@develop copy_user_modules=False build_type=Debug ^/yk45ivx 
-~~~~~
-
-Alternatively, you can add your users modules to an independent folder and run
-the snippet below
-~~~~~
-./spconfig.py \
--DEXTERNAL_MODULE_SOURCE_DIRS=$PATH_TO_MY_SECRET_MODULE \
--DMOFEM_UM_BUILD_TESTS=ON \
--DMOFEM_DIR=../um_view \
-$HOME/mofem_install/mofem-cephas/mofem/users_modules
-make -j4
-ctest
-make install
+spack spack dev-build \
+-j1 --test root  \
+--source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
+mofem-users-modules@develop build_type=Debug \
+^/vhv7opa
 ~~~~~
 
 # Installation on specific servers {#spack_servers}
-
-## RDB development server {#spack_rdb}
-
-On RDB server we are running Ubuntu 12.04.5 LTS, which is very old and does
-not have compilers which can compile the C++14 code required by MoFEM and
-some dependent packages. There are also problems with
-[curl](https://en.wikipedia.org/wiki/CURL) version on Ubuntu 12.04.5 LTS is
-compiled with old
-[SSL](https://en.wikipedia.org/wiki/Transport_Layer_Security) protocol and
-fetching files from some servers does not work. In order to solve those problems,
-we will use a local mirror, which has previously downloaded packages and install
-a new version of GCC.
-
-First step is to get Spack
-~~~~~
-git clone -b mofem https://github.com/likask/spack.git
-. spack/share/spack/setup-env.sh
-~~~~~
-Next, we add local mirror to Spack,
-~~~~~
-spack mirror add mofem_mirror /opt/mofem-mirror-v0.9.0
-~~~~~
-and compile all prerequisites
-~~~~~
-spack bootstrap
-. ${SPACK_ROOT}/share/spack/setup-env.sh
-~~~~~
-
-Now we install GCC package, load and add compiler, install newest version of
-curl, if we need fetch something from external source, and finally build
-MoFEM with all dependencies
-~~~~~
-spack install -j 8 gcc
-spack load gcc
-spack compiler find
-spack install -j 8 mofem-users-modules%gcc@8.1.0
-~~~~~
-All this take some time, so you can run this on
-[screen](https://www.youtube.com/watch?v=3txYaF_IVZQ) terminal. You can
-easily go for a walk to Kelvingrove Park and come back.
-
-Now you can create a symlink to install directory including dependent
-libraries, using commands below
-~~~~
-spack view symlink -i um_view mofem-cephas
-spack activate -v um_view mofem-users-modules
-~~~~
-
-If needs you can add more users modules or compile them by yourself.
-Installation can take some time since everything is installed from scratch.
-You can consider to run it in
-[screen](https://www.youtube.com/watch?v=3txYaF_IVZQ) terminal, and go for a
-coffee. 
 
 ## Server Buckethead {#spack_buckethead}
 
@@ -448,17 +462,21 @@ Set spack environment and mirror
 ~~~~~
 . spack/share/spack/setup-env.sh
 spack mirror add mofem_mirror $PWD/mofem_mirror
+spack extensions find
+spack compiler find
 ~~~~~
 
 ##### Setup packages and compiler
 
-Edit file `.spack/packages.yaml`
+
+Check if you have folloing in `.spack/packages.yaml`
 ~~~~~
 packages:
   openmpi:
     paths:
       openmpi@3.1.4%gcc@9.2.0 arch=linux-x86_64-debian7: /software/mpi/openmpi/3.1.4
 ~~~~~
+if not add above entry.
 
 Edit file `.spack/linux/compilers.yaml`
 ~~~~~
@@ -574,37 +592,7 @@ qsub job_spack
 ~~~~~
 Results of the analysis are located in $HOME/um_view/elasticity. 
 
-
-
 # Spack usage and configuration {#spack_usage_config}
-
-## Spack configuration setup {#spack_config_setup}
-
-The `spack setup` command generates a `spconfig.py` configuration file. This
-script calls CMake and can be edited to change dependencie paths and options.
-Instructions on how to build with Spack can be found
-[here](https://spack.readthedocs.io/en/latest/workflows.html?highlight=spconfig.py#build-with-spack).
-
-## Enabling tests
-
-MoFEM comes with built-in tests but by default they are off. To enable the tests
-modify `spconfig.py` before building.
-
-For `mofem-cephas` or core libraries change `OFF` to `ON`:
-~~~~~~
-DMOFEM_BUILD_TESTS=OFF
-~~~~~~
-And the same change for `users_modules`:
-~~~~~~
-DMOFEM_UM_BUILD_TESTS=OFF
-~~~~~~
-
-The following command will do this. Note this is for `GNU sed` and macOS
-uses `BSD sed`. To use `GNU sed` install it via `homebrew install gnu-sed`
-and call it with `gsed` instead of `sed`. Linux defaults to `GNU sed`.
-~~~~~~
--sed -i 's/DMOFEM_UM_BUILD_TESTS=OFF/DMOFEM_UM_BUILD_TESTS=ON/ ; s/DMOFEM_BUILD_TESTS=OFF/DMOFEM_BUILD_TESTS=ON/' spconfig.py
-~~~~~~
 
 ## Setting build type and compiler flags {#spack_build_type}
 
@@ -632,6 +620,7 @@ An example compiler flag:
 ~~~~~~
 spack install mofem-cephas cppflags="-march=native -O3"
 ~~~~~~
+
 ## MoFEM package versions {#spack_mofem_package_versions}
 
 Spack is capable of managing multiple versions of MoFEM. It stores each version
@@ -693,7 +682,7 @@ You can download mirror with all necessary packages from MoFEM repository and
 untar and unzip to director
 ~~~~~
 mkdir -p mofem_mirror &&
-curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.9.2.tar.gz \
+curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_spack12.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 ~~~~~
 Note that packages are expanded to directory `mofem_mirror`, and mirror is
@@ -750,5 +739,4 @@ ls -lhd `spack find -lp  | grep mofem | awk '\''{print $3}'\''`
 # Contact {#spack_contact}
 
 Any problems with this installation, please contact us by
-[mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group)
-or on Slack [MoFEM Slack](https://mofem.slack.com/).
+[mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
