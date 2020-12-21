@@ -320,15 +320,6 @@ foreach(test_file ${testing_insert_interface_list})
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-  # add_test(mesh_insert_interface_${test_file} ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  #   ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file ${test_file}
-  #   -log_no_color
-  # )
-  # add_test(mesh_insert_interface_${test_file}_compare 
-  #   ${CMAKE_COMMAND} -E compare_files
-  #   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/${test_file}_log
-  #   ${CMAKE_BINARY_DIR}/atom_tests/${test_file}_log
-  # )
 endforeach(test_file IN testing_insert_interface_list)
 
 # foces and sources functions Test
@@ -358,18 +349,6 @@ add_test(
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
-
-# add_test(forces_and_sources_getting_orders_indices_test
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_orders_indices_atom_test 
-#   -my_file elasticity_atom_test_01X_pressure.h5m
-#   -log_no_color
-# )
-# add_test(forces_and_sources_getting_orders_indices_test_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_orders_indices_atom_test.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_orders_indices_atom_test.txt
-# )
-
 my_add_executable(forces_and_sources_getting_mult_H1_H1_atom_test forces_and_sources_getting_mult_H1_H1_atom_test.cpp)
 target_link_libraries(forces_and_sources_getting_mult_H1_H1_atom_test
   mofem_finite_elements
@@ -396,17 +375,6 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-
-# add_test(forces_and_sources_getting_mult_H1_H1_test
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_mult_H1_H1_atom_test 
-#   -my_file elasticity_atom_test_01X_pressure.h5m
-#   -log_no_color
-# )
-# add_test(forces_and_sources_getting_mult_H1_H1_test_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_mult_H1_H1_atom_test.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_mult_H1_H1_atom_test.txt
-# )
 
 my_add_executable(forces_and_sources_calculate_jacobian forces_and_sources_calculate_jacobian.cpp)
 target_link_libraries(forces_and_sources_calculate_jacobian
@@ -435,17 +403,6 @@ add_test(
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
-# add_test(forces_and_sources_calculate_jacobian_test
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_calculate_jacobian 
-#   -my_file elasticity_atom_test_01X_pressure.h5m
-#   -log_no_color
-# )
-# add_test(forces_and_sources_calculate_jacobian_test_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_calculate_jacobian.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_calculate_jacobian.txt
-# )
-
 my_add_executable(forces_and_sources_testing_volume_element forces_and_sources_testing_volume_element.cpp)
 target_link_libraries(forces_and_sources_testing_volume_element
   mofem_finite_elements
@@ -472,17 +429,6 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-
-# add_test(
-#   forces_and_sources_testing_volume_element_test
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_volume_element
-#   -my_file elasticity_atom_test_01X_pressure.h5m
-#   -log_no_color
-# )
-# add_test(forces_and_sources_testing_volume_element_test_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_volume_element.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_volume_element.txt
-# )
 
 my_add_executable(forces_and_sources_testing_ftensor forces_and_sources_testing_ftensor.cpp)
 target_link_libraries(forces_and_sources_testing_ftensor
@@ -528,17 +474,6 @@ add_test(
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
-# add_test(
-#   forces_and_sources_testing_users_base
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_users_base
-#   -my_file elasticity_atom_test_01X_pressure.h5m
-#   -log_no_color
-# )
-# add_test(forces_and_sources_testing_users_base_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_users_base.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_users_base.txt
-# )
-
 my_add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
 target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom
   mofem_finite_elements
@@ -568,17 +503,6 @@ add_test(
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
-# add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_higher_order_skin_normals_atom 
-#   -my_file sphere.h5m
-#   -log_no_color
-# )
-# add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_higher_order_skin_normals_atom.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_higher_order_skin_normals_atom.txt
-# )
-
 #triangle element
 my_add_executable(forces_and_sources_testing_triangle_element forces_and_sources_testing_triangle_element.cpp)
 target_link_libraries(forces_and_sources_testing_triangle_element
@@ -606,17 +530,6 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-
-
-# add_test(forces_and_sources_testing_triangle_element_test
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_triangle_element
-#   -my_file elasticity_atom_test_01X_pressure.h5m
-#   -log_no_color
-# )
-# add_test(forces_and_sources_testing_triangle_element_test_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_triangle_element.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_triangle_element.txt
-# )
 
 #edge element
 my_add_executable(
@@ -664,29 +577,6 @@ add_test(
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
-# add_test(forces_and_sources_testing_edge_element_ainsworth_test
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element
-#   -my_file elasticity_atom_test_01X_pressure.h5m -base ainsworth
-#   -log_no_color
-# )
-# add_test(forces_and_sources_testing_edge_element_ainsworth_test_compare 
-# ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_edge_element_AINSWORTH_LEGENDRE_BASE.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_edge_element_AINSWORTH_LEGENDRE_BASE.txt
-# )
-# add_test(forces_and_sources_testing_edge_element_bernstein_bezier_test
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element
-#   -my_file elasticity_atom_test_01X_pressure.h5m -base bernstein_bezier
-#   -log_no_color
-# )
-# add_test(forces_and_sources_testing_edge_element_bernstein_bezier_test_compare 
-# ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_edge_element_AINSWORTH_BERNSTEIN_BEZIER_BASE.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_edge_element_AINSWORTH_BERNSTEIN_BEZIER_BASE.txt
-# )
-
 #vertex element
 my_add_executable(forces_and_sources_testing_vertex_element forces_and_sources_testing_vertex_element.cpp)
 target_link_libraries(forces_and_sources_testing_vertex_element
@@ -715,16 +605,6 @@ add_test(
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
-# add_test(forces_and_sources_testing_vertex_element_test
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_vertex_element
-#   -my_file elasticity_atom_test_01X_pressure.h5m
-#   -log_no_color
-# )
-# add_test(forces_and_sources_testing_vertex_element_test_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_vertex_element.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_vertex_element.txt
-# )
-
 #flat prism element
 my_add_executable(forces_and_sources_testing_flat_prism_element forces_and_sources_testing_flat_prism_element.cpp)
 target_link_libraries(forces_and_sources_testing_flat_prism_element
@@ -752,17 +632,6 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-
-# add_test(forces_and_sources_testing_flat_prism_element_test
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_flat_prism_element
-#   -my_file templar.h5m
-#   -log_no_color
-# )
-# add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_flat_prism_element.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_flat_prism_element.txt
-# )
 
 #contact prism element
 my_add_executable(forces_and_sources_testing_contact_prism_element forces_and_sources_testing_contact_prism_element.cpp)
@@ -793,19 +662,6 @@ add_test(
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
-# add_test(forces_and_sources_testing_contact_prism_element_test
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_contact_prism_element
-#   -my_file templar.h5m
-#   -log_no_color
-# )
-# add_test(forces_and_sources_testing_contact_prism_element_test_compare 
-#   ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_contact_prism_element.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_contact_prism_element.txt
-# )
-
-
 add_test(
     forces_and_sources_testing_contact_prism_element_hdiv
     COMMAND 
@@ -821,19 +677,6 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-
-
-# add_test(forces_and_sources_testing_contact_prism_element_test_hdiv
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_contact_prism_element
-#   -my_file templar.h5m
-#   -is_hdiv 1
-#   -log_no_color)
-# add_test(forces_and_sources_testing_contact_prism_element_test_hdiv_compare 
-#   ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_contact_prism_element_HDIV.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_contact_prism_element_HDIV.txt
-# )
 
 # Checking direvatives
 my_add_executable(
@@ -1090,16 +933,6 @@ add_test(
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
-# add_test(record_series_atom_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-#   ${CMAKE_CURRENT_BINARY_DIR}/record_series_atom
-#   -my_file elasticity_atom_test_01X_pressure.h5m
-#   -log_no_color
-# )
-# add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/record_series_atom.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/record_series_atom.txt
-# )
-
 # add test for hcurl space
 my_add_executable(forces_and_sources_hcurl_approximation_functions 
   forces_and_sources_hcurl_approximation_functions.cpp)
@@ -1127,18 +960,6 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-
-# add_test(
-#   forces_and_sources_hcurl_approximation_functions_atom
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_approximation_functions
-#   -log_no_color
-# )
-# add_test(forces_and_sources_hcurl_approximation_functions_atom_compare 
-#   ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hcurl_approximation_functions.txt
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hcurl_approximation_functions.txt
-# )
 
 my_add_executable(hcurl_continuity_check hcurl_continuity_check.cpp)
 target_link_libraries(hcurl_continuity_check
@@ -1191,15 +1012,6 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-# add_test(
-#   forces_and_sources_hdiv_approximation_functions_atom
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-#   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions
-#   -log_no_color)
-# add_test(forces_and_sources_hdiv_approximation_functions_atom_compare 
-#   ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_approximation_functions.txt
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_approximation_functions.txt)
 
 # add test for hdiv space - check approximation continuity
 my_add_executable(hdiv_continuity_check hdiv_continuity_check.cpp)
@@ -1359,15 +1171,6 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-# add_test(dm_mofem_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
-#   ${CMAKE_CURRENT_BINARY_DIR}/dm_mofem 
-#   -my_file disp01.h5m
-#   -log_no_color
-# )
-# add_test(dm_mofem_atom_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_BINARY_DIR}/atom_tests/dm_mofem.txt
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_mofem.txt
-# )
 
 cm_export_file("disp01_2parts.h5m" export_atom_tests)
 my_add_executable(dm_build_partitioned_mesh dm_build_partitioned_mesh.cpp)
@@ -1618,22 +1421,12 @@ add_test(
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom
-    -DFILE=disp01.h5m
+    -DFILE=sphere.h5m
     -DLOG1=10node_sphere.txt
     -DLOG2=10node_sphere.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-# add_test(
-#   projection_from_10node_tet_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
-#    ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom 
-#    -my_file sphere.h5m
-#    -log_no_color
-# )
-# add_test(projection_from_10node_tet_atom_compare ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/10node_sphere.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/10node_sphere.txt
-# )
 
 if(TETGEN_LIBRARY)
 
@@ -1887,16 +1680,6 @@ add_test(
   -tol 1e-4,3.3e-1,3.3e-1 -test
   -log_no_color
 )
-# add_test(
-#   mesh_cut_cylinder ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-#   ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test 
-#   -my_file cylinder_cut.h5m 
-#   -side_set 204
-#   -shift -0.0,0.0,0.
-#   -tol 1e-2,3.3e-1,3.3e-1
-#   -test
-#   -log_no_color
-# )
 
 my_add_executable(segments_distance segments_distance.cpp)
 target_link_libraries(segments_distance
