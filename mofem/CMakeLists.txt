@@ -235,7 +235,7 @@ include(cmake/PrecompiledHeaders.cmake)
 add_subdirectory(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_BINARY_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include)
-
+add_subdirectory(${PROJECT_SOURCE_DIR}/cmake)
 add_subdirectory(${PROJECT_SOURCE_DIR}/scripts)
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
