@@ -341,7 +341,8 @@ and then core MoFEM library
 spack dev-build \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
-  --test root mofem-cephas@develop~copy_user_modules ^petsc+X
+  --test root \
+  mofem-cephas@develop~copy_user_modules ^petsc+X
 ~~~~~
 Note that in addition to `build_type` another specification of the build configuration (*spec*) was used: `copy_user_modules=False `. 
 
@@ -376,7 +377,8 @@ You can install simultaneously debugging version of code, as follows
 spack dev-build \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
-  --test root mofem-cephas@develop~copy_user_modules build_type=Debug ^petsc+X
+  --test root \
+  mofem-cephas@develop~copy_user_modules build_type=Debug ^petsc+X
 ~~~~~
 that will create 
 
@@ -424,8 +426,8 @@ after the *dependency spec* `^` with a `/` (*slash*) preceding, e.g.:
 spack spack dev-build \
   --test root  \
   --source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
-  mofem-users-modules@develop build_type=Debug \
-  ^/vhv7opa
+  mofem-users-modules@develop~copy_user_modules build_type=Debug \
+  ^mofem-cephas@develop~copy_user_modules build_type=Debug ^petsc+X
 ~~~~~
 
 # Installation on specific servers {#spack_servers}
