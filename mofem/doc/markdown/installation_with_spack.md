@@ -386,13 +386,21 @@ that will create
 
 ## 2. Install users modules {#spack_users_modules}
 
-Install users modules
+Run first `spack find -lv mofem-cephas`, and pick core library
+~~~~~
+==> 2 installed packages
+-- linux-ubuntu18.04-zen / gcc@7.5.0 ----------------------------
+nnnvprd mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=Debug dev_path=/home/lukasz/mofem_install/mofem-cephas install_id=0
+pa3httg mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=RelWithDebInfo dev_path=/home/lukasz/mofem_install/mofem-cephas install_id=0
+~~~~~
+For example, if you like to intall users modules against build `RelWithDebInfo` pick
+second row, and build `pa3httg`. Next, install users modules
 ~~~~~
 spack dev-build \
   --test root  \
   --source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
-  ^mofem-cephas@develop~copy_user_modules build_type=RelWithDebInfo ^petsc+X
+  ^/pa3httg
 ~~~~~
 Once installation is successfully, you can execute `spack find -lv mofem-users-modules`, and
 as result you will get
@@ -428,7 +436,7 @@ spack spack dev-build \
   --test root  \
   --source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop~copy_user_modules build_type=Debug \
-  ^mofem-cephas@develop~copy_user_modules build_type=Debug ^petsc+X
+  ^/nnnvprd
 ~~~~~
 
 # Installation on specific servers {#spack_servers}
