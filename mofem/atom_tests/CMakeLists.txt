@@ -308,7 +308,8 @@ add_test(
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
-my_add_executable(forces_and_sources_getting_mult_H1_H1_atom_test forces_and_sources_getting_mult_H1_H1_atom_test.cpp)
+my_add_executable(forces_and_sources_getting_mult_H1_H1_atom_test 
+  forces_and_sources_getting_mult_H1_H1_atom_test.cpp)
 target_link_libraries(forces_and_sources_getting_mult_H1_H1_atom_test
   mofem_finite_elements
   mofem_interfaces
@@ -317,8 +318,7 @@ target_link_libraries(forces_and_sources_getting_mult_H1_H1_atom_test
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS}
-)
+  ${PROJECT_LIBS})
 
 add_test(
     forces_and_sources_getting_mult_H1_H1

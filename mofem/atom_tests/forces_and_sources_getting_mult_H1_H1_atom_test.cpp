@@ -177,7 +177,8 @@ int main(int argc, char *argv[]) {
                    << nb_col_dofs << std::endl;
           NN.resize(nb_row_dofs, nb_col_dofs);
 
-          my_split.precision(2);
+          my_split << std::setprecision(3);
+          my_split << std::fixed;
           my_split << row_data.getN() << std::endl;
           my_split << col_data.getN() << std::endl;
 
@@ -191,7 +192,8 @@ int main(int argc, char *argv[]) {
                        &*NN.data().begin(), nb_col_dofs);
 
             my_split << "gg " << gg << " : ";
-            my_split.precision(2);
+            my_split << std::setprecision(3);
+            my_split << std::fixed;
             // my_split << NN << std::endl;
             my_split << NN - outer_prod(row_data.getN(gg), col_data.getN(gg))
                      << std::endl;
