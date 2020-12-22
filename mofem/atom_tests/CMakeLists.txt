@@ -90,7 +90,6 @@ list(INSERT cubit_bc_test_list
 foreach(test_file ${cubit_bc_test_list})
   add_test(
     cubit_bc_atom_test_${test_file}
-    COMMAND 
     ${CMAKE_COMMAND}
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test
     -DMPI_RUN=${MPI_RUN}
@@ -143,7 +142,6 @@ target_link_libraries(loops_atom_test
 
 add_test(
     cubit_meshset_loop_test 
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -234,31 +232,17 @@ target_link_libraries(mesh_refine_atom
 
 add_test(
     mesh_refine 
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
     -DMPI_NP=1
-    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/loops_atom_test
+    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom
     -DFILE=templar.h5m
     -DLOG1=mesh_refine.txt
     -DLOG2=mesh_refine.txt
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
-
-# add_test(
-#   mesh_refine_atom
-#   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-#   ${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom -my_file templar.h5m
-#   -log_no_color
-# )
-# add_test(
-#   mesh_refine_atom_test_compare
-#   ${CMAKE_COMMAND} -E compare_files
-#   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_refine.txt
-#   ${CMAKE_BINARY_DIR}/atom_tests/mesh_refine.txt
-# )
 
 #mesh_insert_interface_atom
 cm_export_file("../meshes/Tinterface.h5m" export_atom_tests)
@@ -285,7 +269,6 @@ list(INSERT testing_insert_interface_list
 foreach(test_file ${testing_insert_interface_list})
   add_test(
     mesh_insert_interface_${test_file}
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -313,12 +296,11 @@ target_link_libraries(forces_and_sources_getting_orders_indices_atom_test
 )
 add_test(
     forces_and_sources_getting_orders_indices ${test_file}
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
     -DMPI_NP=1
-    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/loops_atom_test
+    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_orders_indices_atom_test
     -DFILE=elasticity_atom_test_01X_pressure.h5m
     -DLOG1=forces_and_sources_getting_orders_indices_atom_test.txt
     -DLOG2=forces_and_sources_getting_orders_indices_atom_test.txt
@@ -340,12 +322,11 @@ target_link_libraries(forces_and_sources_getting_mult_H1_H1_atom_test
 
 add_test(
     forces_and_sources_getting_mult_H1_H1
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
     -DMPI_NP=1
-    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/loops_atom_test
+    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_mult_H1_H1_atom_test
     -DFILE=elasticity_atom_test_01X_pressure.h5m
     -DLOG1=forces_and_sources_getting_mult_H1_H1_atom_test.txt
     -DLOG2=forces_and_sources_getting_mult_H1_H1_atom_test.txt
@@ -367,7 +348,6 @@ target_link_libraries(forces_and_sources_calculate_jacobian
 
 add_test(
     forces_and_sources_calculate_jacobian
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -394,7 +374,6 @@ target_link_libraries(forces_and_sources_testing_volume_element
 
 add_test(
     forces_and_sources_testing_volume_element
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -438,7 +417,6 @@ target_link_libraries(forces_and_sources_testing_users_base
 )
 add_test(
     forces_and_sources_testing_users_base
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -467,7 +445,6 @@ cm_export_file("../meshes/sphere.h5m" export_atom_tests)
 
 add_test(
     forces_and_sources_getting_higher_order_skin_normals
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -495,7 +472,6 @@ target_link_libraries(forces_and_sources_testing_triangle_element
 
 add_test(
     forces_and_sources_testing_triangle_element
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -525,7 +501,6 @@ target_link_libraries(forces_and_sources_testing_edge_element
 
 add_test(
     forces_and_sources_testing_edge_element_ainsworth
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -540,7 +515,6 @@ add_test(
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 add_test(
     forces_and_sources_testing_edge_element_bernstein_bezier
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -569,12 +543,11 @@ target_link_libraries(forces_and_sources_testing_vertex_element
 
 add_test(
     forces_and_sources_testing_vertex_element
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
     -DMPI_NP=1
-    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/loops_atom_test
+    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_vertex_element
     -DFILE=elasticity_atom_test_01X_pressure.h5m
     -DLOG1=forces_and_sources_testing_vertex_element.txt
     -DLOG2=forces_and_sources_testing_vertex_element.txt
@@ -597,12 +570,11 @@ target_link_libraries(forces_and_sources_testing_flat_prism_element
 
 add_test(
     forces_and_sources_testing_flat_prism_element
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
     -DMPI_NP=1
-    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/loops_atom_test
+    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_flat_prism_element
     -DFILE=templar.h5m
     -DLOG1=forces_and_sources_testing_flat_prism_element.txt
     -DLOG2=forces_and_sources_testing_flat_prism_element.txt
@@ -625,7 +597,6 @@ target_link_libraries(forces_and_sources_testing_contact_prism_element
 
 add_test(
     forces_and_sources_testing_contact_prism_element_h1
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -641,7 +612,6 @@ add_test(
 
 add_test(
     forces_and_sources_testing_contact_prism_element_hdiv
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -897,7 +867,6 @@ target_link_libraries(record_series_atom
 
 add_test(
     record_series_atom
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -925,7 +894,6 @@ target_link_libraries(forces_and_sources_hcurl_approximation_functions
 )
 add_test(
     forces_and_sources_hcurl_approximation_functions
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -977,7 +945,6 @@ target_link_libraries(forces_and_sources_hdiv_approximation_functions
 )
 add_test(
     forces_and_sources_hdiv_approximation_functions
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -1136,7 +1103,6 @@ target_link_libraries(dm_mofem
 )
 add_test(
     dm_mofem
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -1163,7 +1129,6 @@ target_link_libraries(dm_build_partitioned_mesh
 )
 add_test(
     dm_build_partitioned_mesh
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -1232,7 +1197,6 @@ target_link_libraries(serial_matrix
 )
 add_test(
     serial_matrix
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}
@@ -1373,7 +1337,6 @@ target_link_libraries(projection_from_10node_tet_atom
   ${PROJECT_LIBS})
 add_test(
     projection_from_10node_tet_atom
-    COMMAND 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
     -DMPI_FLAGS=${MPI_RUN_FLAGS}

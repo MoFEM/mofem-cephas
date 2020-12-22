@@ -16,59 +16,38 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-macro(EXEC_CHECK 
-    mpi_run  np 
-    cmd arg base space log1 log2 source_dir binary_dir)
-    if(base AND space)
-        execute_process(
-           COMMAND 
-           ${mpi_run} ${mpi_flg} -np ${np}
-           ${cmd} -my_file ${arg} -base ${base} -space ${space} -log_no_color
-           WORKING_DIRECTORY ${binary_dir}
-           RESULT_VARIABLE CMD_RESULT)
-    elseif(base) 
-        execute_process(
-           COMMAND 
-           ${mpi_run} ${mpi_flg} -np ${np}
-           ${cmd} -my_file ${arg} -base ${base} -log_no_color
-           WORKING_DIRECTORY ${binary_dir}
-           RESULT_VARIABLE CMD_RESULT)
-    elseif(space)
-        execute_process(
-           COMMAND 
-           ${mpi_run} ${mpi_flg} -np ${np}
-           ${cmd} -my_file ${arg} -space ${space} -log_no_color
-           WORKING_DIRECTORY ${binary_dir}
-           RESULT_VARIABLE CMD_RESULT)
-    else()
-        execute_process(
-           COMMAND            
-           ${mpi_run} ${mpi_flg} -np ${np} 
-           ${cmd} -my_file ${arg} -log_no_color
-           WORKING_DIRECTORY ${binary_dir}
-           RESULT_VARIABLE CMD_RESULT)
-    endif()
-    if(CMD_RESULT)
-        message(FATAL_ERROR "Error running ${CMD} for file ${ARG}")
-    endif()
-endmacro()
-
 if(BASE AND SPACE)
-    exec_check(
-        ${MPI_RUN} ${MPI_RUN_FLAGS} ${MPI_NP} 
-        ${PROG} ${FILE} ${BASE} ${SPACE} ${LOG1} ${LOG2} ${SOURCE_DIR} ${BINARY_DIR})
+  execute_process(
+    COMMAND 
+    ${MPI_RUN} ${MPI_FLAGS} -np ${MPI_NP}
+    ${PROG} -my_file ${FILE} -base ${BASE} -space ${SPACE} -log_no_color
+    WORKING_DIRECTORY ${BINARY_DIR}
+    RESULT_VARIABLE CMD_RESULT)
 elseif(BASE)
-    exec_check(
-        ${MPI_RUN} ${MPI_RUN_FLAGS} ${MPI_NP} 
-        ${PROG} ${FILE} ${BASE} NO ${LOG1} ${LOG2} ${SOURCE_DIR} ${BINARY_DIR})
+  execute_process(
+    COMMAND 
+    ${MPI_RUN} ${MPI_FLAGS} -np ${MPI_NP}
+    ${PROG} -my_file ${FILE} -base ${BASE} -log_no_color
+    WORKING_DIRECTORY ${BINARY_DIR}
+    RESULT_VARIABLE CMD_RESULT)
 elseif(SPACE)
-    exec_check(
-        ${MPI_RUN} ${MPI_RUN_FLAGS} ${MPI_NP} 
-        ${PROG} ${FILE} NO ${SPACE} ${LOG1} ${LOG2} ${SOURCE_DIR} ${BINARY_DIR}) 
+  execute_process(
+    COMMAND 
+    ${MPI_RUN} ${MPI_FLAGS} -np ${MPI_NP}
+    ${PROG} -my_file ${FILE} -space ${SPACE} -log_no_color
+    WORKING_DIRECTORY ${BINARY_DIR}
+    RESULT_VARIABLE CMD_RESULT)
 else()
-    exec_check(
-        ${MPI_RUN} ${MPI_RUN_FLAGS} ${MPI_NP} 
-        ${PROG} ${FILE} NO NO ${LOG1} ${LOG2} ${SOURCE_DIR} ${BINARY_DIR}) 
+  execute_process(
+    COMMAND 
+    ${MPI_RUN} ${MPI_FLAGS} -np ${MPI_NP}
+    ${PROG} -my_file ${FILE} -log_no_color
+    WORKING_DIRECTORY ${BINARY_DIR}
+    RESULT_VARIABLE CMD_RESULT)
+endif()
+
+if(CMD_RESULT)
+  message(FATAL_ERROR "Error running ${PROG} for file ${FILE}")
 endif()
 
 execute_process(
@@ -78,5 +57,5 @@ execute_process(
     WORKING_DIRECTORY ${BINARY_DIR}
     RESULT_VARIABLE CMD_RESULT)
 if(CMD_RESULT)
-    message(FATAL_ERROR "Error comparison for ${CMD} for file ${ARG}")
+    message(FATAL_ERROR "Error comparison for ${PROG} for file ${FILE}")
 endif()
