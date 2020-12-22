@@ -50,7 +50,7 @@ curl -L https://api.github.com/repos/likask/spack/tarball/mofem \
 ~~~~~~
 and download mirror
 ~~~~~~
-curl -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.9.2.tar.gz \
+curl -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
 --output mirror.tgz
 ~~~~~~
 and then you can install MoFEM
@@ -81,6 +81,7 @@ gfortran \
 curl \
 git \
 cmake \
+doxygen \
 vim 
 ~~~~~
 
@@ -107,7 +108,7 @@ manager:
 
 Install packages through `homebrew`:
 ~~~~~
-brew install curl git python gcc@9 cmake autoconf automake libtool
+brew install curl git python gcc@9 cmake autoconf automake libtool doxygen
 ~~~~~
 
 If it is not already in the `PATH`, you should add it there.
@@ -132,7 +133,7 @@ Initialise Spack's environment variables:
 Download spack packages in the mirror necessary to install MoFEM
 ~~~~~~
 mkdir -p mofem_mirror &&
-curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v16.tar.gz \
+curl -s -L  http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
 | tar xzC $PWD/mofem_mirror  --strip 1
 spack mirror add mofem_mirror $PWD/mofem_mirror
 ~~~~~~
