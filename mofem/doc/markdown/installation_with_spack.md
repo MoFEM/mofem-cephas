@@ -76,6 +76,7 @@ ca-certificates \
 coreutils \
 environment-modules \
 python \
+python3-distutils \
 gfortran \
 curl \
 git \
@@ -106,7 +107,7 @@ manager:
 
 Install packages through `homebrew`:
 ~~~~~
-brew install git python gcc@9 cmake autoconf automake libtool
+brew install curl git python gcc@9 cmake autoconf automake libtool
 ~~~~~
 
 If it is not already in the `PATH`, you should add it there.
@@ -331,13 +332,13 @@ git clone \
   --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git \
   mofem-cephas
 ~~~~~
-and kick-start installation of the core library. First install all dependecies,
+and kick-start installation of the core library. First install all dependencies,
 ~~~~~
-spack install -j 4 --only dependencies mofem-cephas ^petsc+X
+spack install --only dependencies mofem-cephas ^petsc+X
 ~~~~~
 and then core MoFEM library
 ~~~~~
-spack dev-build -j 1 \
+spack dev-build \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
   --test root mofem-cephas@develop~copy_user_modules ^petsc+X
@@ -372,7 +373,7 @@ and do typical developer work.
 
 You can install simultaneously debugging version of code, as follows
 ~~~~~
-spack dev-build -j 1 \
+spack dev-build \
   --source-path $HOME/mofem_install/mofem-cephas \
   --keep-prefix \
   --test root mofem-cephas@develop~copy_user_modules build_type=Debug ^petsc+X
@@ -385,10 +386,10 @@ that will create
 Install users modules
 ~~~~~
 spack dev-build \
--j1 --test root  \
---source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
-mofem-users-modules@develop build_type=RelWithDebInfo \
-^mofem-cephas@develop build_type=RelWithDebInfo
+  --test root  \
+  --source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
+  mofem-users-modules@develop build_type=RelWithDebInfo \
+  ^mofem-cephas@develop~copy_user_modules build_type=RelWithDebInfo ^petsc+X
 ~~~~~
 Once installation is successfully, you can execute `spack find -lv mofem-users-modules`, and
 as result you will get
@@ -421,10 +422,10 @@ versions](#spack_mofem_package_versions). This unique ID is to be provided
 after the *dependency spec* `^` with a `/` (*slash*) preceding, e.g.:
 ~~~~~ 
 spack spack dev-build \
--j1 --test root  \
---source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
-mofem-users-modules@develop build_type=Debug \
-^/vhv7opa
+  --test root  \
+  --source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
+  mofem-users-modules@develop build_type=Debug \
+  ^/vhv7opa
 ~~~~~
 
 # Installation on specific servers {#spack_servers}
