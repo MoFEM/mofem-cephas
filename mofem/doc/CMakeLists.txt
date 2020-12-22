@@ -122,10 +122,10 @@ if(DOXYGEN_FOUND)
 
     configure_file(
       ${PROJECT_SOURCE_DIR}/scripts/publish_doc_likask.sh.in
-      ${PROJECT_SOURCE_DIR}/scripts/publish_doc_likask.sh
+      ${PROJECT_BINARY_DIR}/scripts/tmp/publish_doc_likask.sh
       @ONLY
     )
-    file(COPY ${PROJECT_SOURCE_DIR}/scripts/publish_doc_likask.sh
+    file(COPY ${PROJECT_BINARY_DIR}/scripts/tmp/publish_doc_likask.sh
       DESTINATION ${PROJECT_BINARY_DIR}/scripts/
       FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
     )
@@ -137,10 +137,10 @@ if(DOXYGEN_FOUND)
 
     configure_file(
       ${PROJECT_SOURCE_DIR}/scripts/publish_doc_cdash.sh.in
-      ${PROJECT_SOURCE_DIR}/scripts/publish_doc_cdash.sh
+      ${PROJECT_BINARY_DIR}/scripts/tmp/publish_doc_cdash.sh
       @ONLY
     )
-    file(COPY ${PROJECT_SOURCE_DIR}/scripts/publish_doc_cdash.sh
+    file(COPY ${PROJECT_BINARY_DIR}/scripts/tmp/publish_doc_cdash.sh
       DESTINATION ${PROJECT_BINARY_DIR}/scripts/
       FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
     )
