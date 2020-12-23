@@ -221,8 +221,8 @@ echo "mofem-cephas id for release: $MOFEM_CEPHAS_HASH"
 ln -s \
   $MOFEM_INSTALL_DIR/mofem-cephas/spack-build-$MOFEM_CEPHAS_HASH \
   $MOFEM_INSTALL_DIR/lib_release
-cd $MOFEM_INSTALL_DIR/lib_release
-make clean
+# cd $MOFEM_INSTALL_DIR/lib_release
+# make clean
 
 spack dev-build \
   --test root  \
@@ -238,8 +238,8 @@ echo "mofem-users-modules id for release: $MOFEM_UN_HASH"
 ln -s \
   $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules/spack-build-$MOFEM_UM_HASH \
   $MOFEM_INSTALL_DIR/um_debug
-cd $MOFEM_INSTALL_DIR/um_debug
-make clean
+# cd $MOFEM_INSTALL_DIR/um_debug
+# make clean
 
 # ************************************************************************
 # DEBUG VERSION
@@ -277,8 +277,8 @@ echo "mofem-cephas id for debug: $MOFEM_CEPHAS_HASH"
 ln -s \
   $MOFEM_INSTALL_DIR/mofem-cephas/spack-build-$MOFEM_CEPHAS_HASH \
   $MOFEM_INSTALL_DIR/lib_debug
-cd $MOFEM_INSTALL_DIR/lib_debug
-make clean
+# cd $MOFEM_INSTALL_DIR/lib_debug
+# make clean
 
 echo -e "\n----------------------------\n"
 echo -e "USER MODULE - Debug version ..."
@@ -298,8 +298,8 @@ echo "mofem-users-modules id for release: $MOFEM_UN_HASH"
 ln -s \
   $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules/spack-build-$MOFEM_UM_HASH \
   $MOFEM_INSTALL_DIR/um_debug
-cd $MOFEM_INSTALL_DIR/um_debug
-make clean
+# cd $MOFEM_INSTALL_DIR/um_debug
+# make clean
 
 echo -e "\nFinished installing and testing the User Module - Debug version.\n"
 cd $MOFEM_INSTALL_DIR
