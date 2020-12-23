@@ -27,6 +27,13 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
+constexpr double eps = 1e-6;
+template <typename T> void zero_entries(T &t) {
+  for (auto &v : t)
+    if (std::abs(v) < eps)
+      v = 0;
+}
+
 int main(int argc, char *argv[]) {
 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
@@ -177,6 +184,9 @@ int main(int argc, char *argv[]) {
                    << nb_col_dofs << std::endl;
           NN.resize(nb_row_dofs, nb_col_dofs);
 
+          zero_entries(row_data.getN().data());
+          zero_entries(row_data.getDiffN().data());
+
           my_split << std::setprecision(3);
           my_split << std::fixed;
           my_split << row_data.getN() << std::endl;
@@ -194,9 +204,12 @@ int main(int argc, char *argv[]) {
             my_split << "gg " << gg << " : ";
             my_split << std::setprecision(3);
             my_split << std::fixed;
-            // my_split << NN << std::endl;
-            my_split << NN - outer_prod(row_data.getN(gg), col_data.getN(gg))
-                     << std::endl;
+
+            MatrixDouble difference =
+                NN - outer_prod(row_data.getN(gg), col_data.getN(gg));
+            zero_entries(difference.data());
+
+            my_split << difference << std::endl;
             if (row_type != MBVERTEX) {
               my_split << row_data.getDiffN(gg) << std::endl;
             }
