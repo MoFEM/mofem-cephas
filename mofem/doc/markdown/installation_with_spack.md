@@ -120,9 +120,15 @@ The installing of gfortran through homebrew is another way of solvingr this.
 
 # Spack setup {#spack_setup}
 
+Make `mofem_install` director
+~~~~~~
+mdkir -p $HOME/mofem_install
+cd $HOME/mofem_install
+~~~~~~
+
 Retrieve Spack for MoFEM:
 ~~~~~~
-git clone --single-branch -b develop_v16 https://github.com/likask/spack.git
+git clone --single-branch -b develop_spack_v0.16 https://github.com/likask/spack.git
 ~~~~~~
 
 Initialise Spack's environment variables:
@@ -147,7 +153,9 @@ Consider adding the previous command to your `.bash_profile` or `.bashrc`, e.g.:
 ~~~~~~
 echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.bash_profile
 ~~~~~~
-If you using Big Sur or Catalina, or newer Mac OX, you have to add config to `.zshrc`, e.g.:
+
+If you using Big Sur or Catalina, or newer Mac OX, you have to add config to
+`.zshrc`, e.g.:
 ~~~~~~
 echo ". $HOME/spack/share/spack/setup-env.sh" >> ~/.zshrc
 ~~~~~~
@@ -158,8 +166,8 @@ spack compiler find
 spack external find
 ~~~~~~
 
-If you using system where gfortant v10 is installed, some packages like openmpi will not compile on Mac OSX. You can
-check this running code 
+If you using system where gfortant v10 is installed, some packages like
+openmpi will not compile on Mac OSX. You can check this running code
 ~~~~~
 gfortran -v
 ~~~~~
@@ -167,9 +175,11 @@ as reusult if you get
 ~~~~~
 gcc version 10.2.0 (GCC) 
 ~~~~~
-it means that you have version 10. This is temporary problem and will be fixed over the time, once various patches 
-and fixes will be applied to those libraries. In mean time you can fix that problem by editind `packages.yaml` in 
-Mac OSX located in `~/.spack/darwin/packages.yaml` to set version 9 of gfortran compiler,
+t means that you have version 10. This is temporary problem and will be
+fixed over the time, once various patches and fixes will be applied to those
+libraries. In mean time you can fix that problem by editind `packages.yaml`
+in Mac OSX located in `~/.spack/darwin/packages.yaml` to set version 9 of
+gfortran compiler,
 ~~~~~~~
 - compiler:
     spec: apple-clang@12.0.0
@@ -347,6 +357,21 @@ spack dev-build \
 ~~~~~
 Note that in addition to `build_type` another specification of the build configuration (*spec*) was used: `copy_user_modules=False `. 
 
+You can do partial install, if before of after some installation phase
+using command line option `-b BEFORE` or `-u UNTIL`, for example if you like
+to investigate build issues, you can do,
+~~~~~
+spack dev-build \
+  -b build \
+  --source-path $HOME/mofem_install/mofem-cephas \
+  --keep-prefix \
+  --test root \
+  mofem-cephas@develop~copy_user_modules ^petsc+X
+~~~~~
+You can find build director in `$HOME/mofem_install/mofem-cephas`, its name
+will start as `spack-build-`, for example `spack-build-vhv7opa`. Note that 
+installation at that point is partial
+
 If installation is successfully, by executing, 
 ~~~~~
 spack find -lv mofem-cephas
@@ -366,11 +391,11 @@ that suffix is matching first column when executed column `spack find -lv mofem-
 
 You can now start develop code, if you `cd $HOME/mofem_install/mofem-cephas/spack-build-vhv7opa`, and
 can run 
-~~~~
+~~~~~
 make -j4
 ctest -D Experimental
 make install
-~~~~
+~~~~~
 and do typical developer work.
 
 You can install simultaneously debugging version of code, as follows
@@ -402,6 +427,26 @@ spack dev-build \
   mofem-users-modules@develop build_type=RelWithDebInfo \
   ^/pa3httg
 ~~~~~
+You can do partial install, if before of after some installation phase
+using command line option `-b BEFORE` or `-u UNTIL`, for example if you like
+to investigate build issues, you can do,
+~~~~~
+spack dev-build \
+  -u configure \
+  --test root  \
+  --source-pat $HOME/mofem_install/mofem-cephas/mofem/users_modules \
+  mofem-users-modules@develop build_type=RelWithDebInfo \
+  ^/pa3httg
+~~~~~
+After that point, `spack` will configure environment and `cmake`, and beyond that
+point you can run build and install
+~~~~~
+cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/spack-build-c6ts56b
+make -j4
+make install
+~~~~~
+and use code.
+
 Once installation is successfully, you can execute `spack find -lv mofem-users-modules`, and
 as result you will get
 ~~~~~
