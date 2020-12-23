@@ -18,7 +18,6 @@ echo "Start time: $(date +"%T")"
 ##############################
 # INITIALISATION
 ##############################
-  
 
 # Setup installation directory
 pwd
@@ -54,9 +53,13 @@ then
     coreutils \
     curl \
     environment-modules \
+    pkgconf \
+    cmake \
     git \
     python \
+    python3-distutils \
     unzip \
+    ssh \
     vim \
     gfortran
   
@@ -78,9 +81,9 @@ then
     # Install XQuartz
     if ! which 'xquartz' &>/dev/null
     then
-        echo -e "\nXQuartz is not installed yet. Installing XQuartz ...\n"
-        brew install caskroom/cask/brew-cask 2> /dev/null
-        brew cask install xquartz
+      xcode-select --install
+      sudo xcodebuild -license accept
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebreinstall/HEAD/install.sh)" 
     else
         echo -e "\nXQuartz is already installed.\n"
     fi
@@ -91,7 +94,6 @@ echo -e "\nFinished installing Prerequisites.\n"
 echo -e "\nNo user password will be asked from now on.\n"
   
 echo "Current directory: $PWD"
-  
   
 ##############################
 ### SPACK
@@ -106,16 +108,16 @@ echo "$PWD"
 SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
 SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 
-# Remove .spack directory in $HOME from previous installation (if any)
-if [ -d "$HOME/.spack" ]; then
-  mv $HOME/.spack $HOME/.spack_old
-fi
-
 # Retrieve Spack for MoFEM
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
 
+  # Remove .spack directory in $HOME from previous installation (if any)
+  if [ -d "$HOME/.spack" ]; then
+    mv $HOME/.spack $HOME/.spack_old
+  fi
+
   echo "Cloning spack ..."
-  git clone -b develop https://github.com/likask/spack.git
+  git clone -b develop_spack_v0.16 https://github.com/likask/spack.git
   echo -e "Done.\n"
 
   # Initialise Spack environment variables:
@@ -127,6 +129,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   elif [ ${machine} = "Mac" ]
   then
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bash_profile
+    echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.zshrc
   fi
 
   # Download mirror
@@ -134,7 +137,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
     if [ ! -f "$PWD/mirror.tgz" ]; then
       echo "Downloading mirror of spack packages for MoFEM..."
       mkdir -p $SPACK_MIRROR_DIR && \
-      curl -s -L http://mofem.eng.gla.ac.uk/downloads/mirror_v0.9.2.tar.gz \
+      curl -s -L http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
       | tar xzC $SPACK_MIRROR_DIR --strip 1
       echo -e "Done.\n"
     else 
@@ -148,8 +151,20 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   spack mirror add mofem_mirror $SPACK_MIRROR_DIR
 
   # Install packages required by Spack
-  spack bootstrap
+  spack compiler find
+  spack external find
+
+  # Set fortran compiler to version 9
+  if [ ${machine} = "Mac" ]
+  then
+    sed 's/gfortran$/gfortran-9/g' $HOME/.spack/darwin/compilers.yaml
+  fi
+
+else
+  spack external find  
 fi
+
+
  
 echo -e "\nFinished installing Spack.\n"
   
@@ -169,58 +184,29 @@ echo "Current directory: $PWD"
   
 # Clone MoFEM core library
 if [ ! -d "$PWD/mofem-cephas" ]; then
-  git clone -b develop --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
-  
-  # Checkout develop branch in user modules repo (sub-module)
-  cd mofem-cephas/mofem/users_modules
-  git fetch && git checkout develop && git pull
-
-else 
+  git clone -b test_install --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+lse 
   echo -e "\nMoFEM source directory is found"
 fi
 
-# Clone MoFEM Fracture Module and Mortar Contact Module
-cd $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
-git clone -b develop https://bitbucket.org/likask/mofem_um_fracture_mechanics.git
-git clone -b develop https://bitbucket.org/mofem/mortar_contact.git
-
 # Installation of core library
 cd $MOFEM_INSTALL_DIR
-mkdir -p lib_release
-cd lib_release
-
-spack install --only dependencies mofem-cephas+slepc ^petsc+X
-spack setup mofem-cephas@develop+slepc copy_user_modules=False \
-  build_type=Release ^petsc+X
 
 echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY - Release version: spconfig ..."
+echo -e "CORE LIBRARY - Install depenencies ..."
 echo -e "\n----------------------------\n"
 
-./spconfig.py -DMOFEM_BUILD_TESTS=ON $MOFEM_INSTALL_DIR/mofem-cephas/mofem
+spack install --only dependencies mofem-cephas ^petsc+X
 
 echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY - Release version: make -j 2 ..."
+echo -e "CORE LIBRARY - Release version ..."
 echo -e "\n----------------------------\n"
 
-make -j 2
-
-# Run the tests on core library
-echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY - Release version: ctest ..."
-echo -e "\n----------------------------\n"
-
-spack load cmake
-ctest -D Experimental
-
-# Install the library
-echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY - Release version: make install ..."
-echo -e "\n----------------------------\n"
-
-make install
-
-echo -e "\nFinished installing and testing the Core Library.\n"
+spack dev-build \
+  --source-path $MOFEM_INSTALL_DIR/mofem-cephas \
+  --keep-prefix \
+  --test root \
+  mofem-cephas@develop~copy_user_modules build_type=RelWithDebInfo ^petsc+X
 
 echo -e "\n********************************************************\n"
 echo -e "Installing USER MODULES - Release version ..."
@@ -228,61 +214,32 @@ echo -e "\n********************************************************\n"
 
 # Get mofem-cephas spack hash for release version
 TODAY=`date +%F` 
-MOFEM_CEPHAS_HASH=`spack find -lv --start-date $TODAY | grep mofem-cephas@develop | grep Release | awk '{print $1}'` 
+MOFEM_CEPHAS_HASH=`spack find -lv --start-date $TODAY | grep mofem-cephas@develop | grep RelWithDebInfo | awk '{print $1}'` 
 echo "mofem-cephas id for release: $MOFEM_CEPHAS_HASH"
 
-# Installation of user modules
-cd $MOFEM_INSTALL_DIR
+# Make link to lib release
+ln -s \
+  $MOFEM_INSTALL_DIR/mofem-cephas/spack-build-$MOFEM_CEPHAS_HASH \
+  $MOFEM_INSTALL_DIR/lib_release
+cd $MOFEM_INSTALL_DIR/lib_release
+make clean
 
-mkdir -p um
-cd um/
-spack view --verbose symlink -i um_view /$MOFEM_CEPHAS_HASH 
-export PATH=$PWD/um_view/bin:$PATH
-# Add PATH to .bashrc on Ubuntu or .bash_profile on Mac
-if [ ${machine} = "Linux" ]
-then
-  echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bashrc
-elif [ ${machine} = "Mac" ]
-then
-  echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bash_profile
-fi
+spack dev-build \
+  --test root  \
+  --source-pat $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
+  mofem-users-modules@develop build_type=RelWithDebInfo \
+  ^/$MOFEM_CEPHAS_HASH
 
-mkdir -p build_release
-cd build_release/
+TODAY=`date +%F` 
+MOFEM_UN_HASH=`spack find -lv --start-date $TODAY | grep mofem-users-modulesdevelop | grep RelWithDebInfo | awk '{print $1}'` 
+echo "mofem-users-modules id for release: $MOFEM_UN_HASH"
 
-spack setup mofem-users-modules@develop \
-    copy_user_modules=False build_type=Release \
-    ^/$MOFEM_CEPHAS_HASH
-
-echo -e "\n----------------------------\n"
-echo -e "USER MODULE - Release version: spconfig ..."
-echo -e "\n----------------------------\n"
-
-./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DFM_VERSION_MAJOR=0 -DFM_VERSION_MINOR=0 -DFM_VERSION_BUILD=0 -DMOFEM_DIR=../um_view \
-    $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
-
-echo -e "\n----------------------------\n"
-echo -e "USER MODULE - Release version: make -j 2 ..."
-echo -e "\n----------------------------\n"
-
-make -j 2
-
-# Run the tests on user modules
-echo -e "\n----------------------------\n"
-echo -e "USER MODULE - Release version: ctest ..."
-echo -e "\n----------------------------\n"
-
-ctest -D Experimental
-
-# Install the user module
-echo -e "\n----------------------------\n"
-echo -e "USER MODULE - Release version: make install ..."
-echo -e "\n----------------------------\n"
-
-make install
-
-echo -e "\nFinished installing and testing the User Module - Release version.\n"
-
+# Make link to un release
+ln -s \
+  $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules/spack-build-$MOFEM_UM_HASH \
+  $MOFEM_INSTALL_DIR/um_debug
+cd $MOFEM_INSTALL_DIR/um_debug
+make clean
 
 # ************************************************************************
 # DEBUG VERSION
@@ -297,44 +254,15 @@ echo -e "\n********************************************************\n"
 ### MoFEM CORE LIBRARY & USER MODULES
 ########################################
 
-# Locate MoFEM installation directory
-cd $MOFEM_INSTALL_DIR
-
-# Installation of core library
-mkdir -p lib_debug
-cd lib_debug
-
-spack setup mofem-cephas@develop copy_user_modules=False \
-build_type=Debug ^petsc+X
-
 echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY - Debug version: spconfig ..."
+echo -e "CORE LIBRARY - Debug version ..."
 echo -e "\n----------------------------\n"
 
-./spconfig.py -DMOFEM_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1 $MOFEM_INSTALL_DIR/mofem-cephas/mofem
-
-
-echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY - Debug version: make -j 2 ..."
-echo -e "\n----------------------------\n"
-
-make -j 2
-
-# Run the tests on core library
-echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY - Debug version: ctest ..."
-echo -e "\n----------------------------\n"
-
-ctest -D Experimental
-
-# Install the library
-echo -e "\n----------------------------\n"
-echo -e "CORE LIBRARY - Debug version: make install ..."
-echo -e "\n----------------------------\n"
-
-make install
-
-echo -e "\nFinished installing and testing the Core Library - Debug version.\n"
+spack dev-build \
+  --source-path $MOFEM_INSTALL_DIR/mofem-cephas \
+  --keep-prefix \
+  --test root \
+  mofem-cephas@develop~copy_user_modules build_type=Debug ^petsc+X
 
 echo -e "\n********************************************************\n"
 echo -e "Installing USER MODULES - Debug version ..."
@@ -345,49 +273,35 @@ TODAY=`date +%F`
 MOFEM_CEPHAS_HASH=`spack find -lv --start-date $TODAY | grep mofem-cephas@develop | grep Debug | awk '{print $1}'` 
 echo "mofem-cephas id for debug: $MOFEM_CEPHAS_HASH"
 
-# Installation of user modules
-cd $MOFEM_INSTALL_DIR
-
-# mkdir um
-cd um/
-
-spack view --verbose symlink -i um_view_debug /$MOFEM_CEPHAS_HASH
-
-mkdir -p build_debug
-cd build_debug/
-
-
-spack setup mofem-users-modules@develop \
-    copy_user_modules=False build_type=Debug \
-    ^/$MOFEM_CEPHAS_HASH
+# Make link to lib debug
+ln -s \
+  $MOFEM_INSTALL_DIR/mofem-cephas/spack-build-$MOFEM_CEPHAS_HASH \
+  $MOFEM_INSTALL_DIR/lib_debug
+cd $MOFEM_INSTALL_DIR/lib_debug
+make clean
 
 echo -e "\n----------------------------\n"
-echo -e "USER MODULE: spconfig - Debug version ..."
+echo -e "USER MODULE - Debug version ..."
 echo -e "\n----------------------------\n"
 
-./spconfig.py -DMOFEM_UM_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1  -DFM_VERSION_MAJOR=0 -DFM_VERSION_MINOR=0 -DFM_VERSION_BUILD=0 -DMOFEM_DIR=../um_view_debug \
-    $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules
+spack dev-build \
+  --test root  \
+  --source-pat $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
+  mofem-users-modules@develop build_type=RelWithDebInfo \
+  ^/$MOFEM_CEPHAS_HASH
 
-echo -e "\n----------------------------\n"
-echo -e "USER MODULE - Debug version: make -j 2 ..."
-echo -e "\n----------------------------\n"
+TODAY=`date +%F` 
+MOFEM_UN_HASH=`spack find -lv --start-date $TODAY | grep mofem-users-modulesdevelop | grep RelWithDebInfo | awk '{print $1}'` 
+echo "mofem-users-modules id for release: $MOFEM_UN_HASH"
 
-make -j 2
-
-# Run the tests on user modules
-echo -e "\n----------------------------\n"
-echo -e "USER MODULE - Debug version: ctest ..."
-echo -e "\n----------------------------\n"
-
-ctest -D Experimental
-
-# Install the user module
-echo -e "\n----------------------------\n"
-echo -e "USER MODULE - Debug version: make install ..."
-echo -e "\n----------------------------\n"
-
-make install
+# Make link to un release
+ln -s \
+  $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules/spack-build-$MOFEM_UM_HASH \
+  $MOFEM_INSTALL_DIR/um_debug
+cd $MOFEM_INSTALL_DIR/um_debug
+make clean
 
 echo -e "\nFinished installing and testing the User Module - Debug version.\n"
+cd $MOFEM_INSTALL_DIR
 
 echo "End time: $(date +"%T")"

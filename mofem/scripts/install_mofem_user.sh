@@ -64,6 +64,7 @@ then
     python \
     python3-distutils \
     unzip \
+    ssh \
     vim \
     gfortran
   
@@ -111,13 +112,13 @@ echo "$PWD"
 SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
 SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 
-# Remove .spack directory in $HOME from previous installation (if any)
-if [ -d "$HOME/.spack" ]; then
-  mv $HOME/.spack $HOME/.spack_old
-fi
-
 # Retrieve Spack for MoFEM
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
+
+  # Remove .spack directory in $HOME from previous installation (if any)
+  if [ -d "$HOME/.spack" ]; then
+    mv $HOME/.spack $HOME/.spack_old
+  fi
 
   if [ ! -f "$PWD/spack.tgz" ]; then
     echo "Downloading spack ..."
@@ -165,9 +166,10 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   spack external find
 
   # Set fortran compiler to version 9
-  if [ ${machine} = "Linux" ]
+  # Set fortran compiler to version 9
+  if [ ${machine} = "Mac" ]
   then
-    sed 's/gfortran$/gfortran-9/g' compilers.yaml
+    sed 's/gfortran$/gfortran-9/g' $HOME/.spack/darwin/compilers.yaml
   fi
 
 fi
