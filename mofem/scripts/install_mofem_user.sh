@@ -191,30 +191,12 @@ cd $MOFEM_INSTALL_DIR
 echo "Current directory: $PWD"
   
 # Install MoFEM packages
-spack install  -j 2 mofem-fracture-module build_type=Release ^petsc+X
+spack install --only dependencies mofem-cephas ^petsc+X
+spack install --test all mofem-fracture-module build_type=Release ^petsc+X
 
 # Activate fracture module
 spack view --verbose symlink -i um_view mofem-fracture-module
  
-# Test elasticity
-cd $MOFEM_INSTALL_DIR/um_view/elasticity
-echo "Current directory: $PWD"
-./elasticity \
--my_file LShape.h5m \
--my_order 2 2>&1 | tee log
-  
-echo -e "\nFinished testing elasticity.\n"
- 
-# Test fracture crack propagation
-cd $MOFEM_INSTALL_DIR/um_view/fracture_mechanics
-echo "Current directory: $PWD"
-./crack_propagation \
--my_file examples/analytical_bc/out_10.h5m \
--my_order 2 \
--my_ref 0 2>&1 | tee log
-
-echo -e "\nFinished testing fracture module.\n"
-
 # Check the output message and finalise the installation
 if tail -n 1 log | grep -q "Crack surface area"
 then
