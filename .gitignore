@@ -42,3 +42,4 @@ doxygen_warnlogfile
 
 spack-build*
 .DS_Store
+spack-configure-args.txt
