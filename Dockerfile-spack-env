@@ -1,5 +1,6 @@
 FROM       ubuntu
-MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
+
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
 # general environment for docker
 ENV        DEBIAN_FRONTEND=noninteractive \

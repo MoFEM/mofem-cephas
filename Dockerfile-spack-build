@@ -1,6 +1,6 @@
 FROM likask/mofem-spack-env:latest
 
-MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
 ENV MOFEM_SRC_DIR=$MOFEM_INSTALL_DIR/mofem-cephas
 ENV MOFEM_UM_SRC_DIR=$MOFEM_SRC_DIR/mofem/users_modules
@@ -25,10 +25,12 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
     mofem-users-modules@develop build_type=RelWithDebInfo \
     ^/$MOFEM_CEPHAS_HASH && \
     MOFEM_UM_HASH=`spack find -lv mofem-users-modules | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
+    cd $MOFEM_UM_SRC_DIR/spack-build-$MOFEM_UM_HASH && make clean && \
+    spack view symlink -i $MOFEM_INSTALL_DIR/um_view /$MOFEM_UM_HASH && \
     echo "export MOFEM_UM_HASH=$MOFEM_UM_HASH" >> ~/.bashrc && \
-    cd $MOFEM_UM_SRC_DIR/spack-build-$MOFEM_UM_HASH && make clean
+    echo "export PATH=$MOFEM_INSTALL_DIR/um_view:$PATH" >> ~/.bashrc
 
-VOLUME $MOFEM_SRC_DIR
+VOLUME $MOFEM_INSTALL_DIR
 WORKDIR $MOFEM_INSTALL_DIR
 
 # image run hook: the -l will make sure /etc/profile environments are loaded
