@@ -25,6 +25,6 @@ find_path(
 )
 message(STATUS "Boost include found: " ${BOOST_INCLUDE_DIR})
 if(NOT BOOST_INCLUDE_DIR)
-  message(FATAL_ERROR "boost program include dir not found")
+  message(FATAL_ERROR "Boost include dir not found")
 endif(NOT BOOST_INCLUDE_DIR)
 include_directories(${BOOST_INCLUDE_DIR})
