@@ -43,6 +43,9 @@
 #include <petscdm.h>
 #include <petscao.h>
 #include <petscis.h>
+#if PETSC_VERSION_GE(3, 14 , 0)
+#include <petscsection.h>
+#endif
 
 //STL
 #include <string>
