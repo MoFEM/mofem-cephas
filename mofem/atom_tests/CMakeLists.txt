@@ -1127,7 +1127,8 @@ target_link_libraries(dm_build_partitioned_mesh
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(
+if(PETSc_VERSION VERSION_GREATER_EQUAL 3.14.0)
+ add_test(
     dm_build_partitioned_mesh
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
@@ -1140,6 +1141,21 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
+else()
+ add_test(
+    dm_build_partitioned_mesh
+    ${CMAKE_COMMAND}
+    -DMPI_RUN=${MPI_RUN}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_NP=2
+    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/dm_build_partitioned_mesh
+    -DFILE=disp01_2parts.h5m 
+    -DLOG1=dm_build_partitioned_mesh_petc3.11.txt
+    -DLOG2=dm_build_partitioned_mesh.txt
+    -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
+    -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
+endif()
 
 cm_export_file("disp01_3parts.h5m" export_atom_tests)
 my_add_executable(dm_partitioned_no_field dm_partitioned_no_field.cpp)
@@ -1195,7 +1211,8 @@ target_link_libraries(serial_matrix
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(
+if(PETSc_VERSION VERSION_GREATER_EQUAL 3.14.0)
+  add_test(
     serial_matrix
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
@@ -1208,6 +1225,22 @@ add_test(
     -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
+else()
+  add_test(
+    serial_matrix
+    ${CMAKE_COMMAND}
+    -DMPI_RUN=${MPI_RUN}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_NP=1
+    -DPROG=${CMAKE_CURRENT_BINARY_DIR}/serial_matrix
+    -DFILE=disp01.h5m
+    -DLOG1=serial_matrix_petc3.11.txt
+    -DLOG2=serial_matrix.txt
+    -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+    -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
+    -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
+endif()
+
 
 #test for build problems
 my_add_executable(build_problems build_problems.cpp)
