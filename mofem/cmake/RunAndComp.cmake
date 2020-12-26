@@ -57,5 +57,8 @@ execute_process(
     WORKING_DIRECTORY ${BINARY_DIR}
     RESULT_VARIABLE CMD_RESULT)
 if(CMD_RESULT)
-    message(FATAL_ERROR "Error comparison for ${PROG} for file ${FILE}")
+    message(
+      FATAL_ERROR 
+      "Difftent files computed/blessed 
+      ${SOURCE_DIR}/${LOG1} ${BINARY_DIR}/${LOG2}")
 endif()
