@@ -16,8 +16,9 @@ cmake_minimum_required (VERSION 3.1.3)
 # Serch inlude directories before system directories
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
-# Petsc and moab configuration are used to confiugre mofem
+# Petsc (parse config files)
 include(cmake/FindPETSC.cmake)
+# MoAB (parse config files)
 include(cmake/FindMOAB.cmake)
 
 # Test compilers like it is set by PETSc
@@ -100,16 +101,37 @@ add_custom_target(
   # COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${PROJECT_BINARY_DIR}/CMakeCache.txt
   COMMENT "Install prerequisites compiled with MoFEM")
 
-# Find boost
-include(cmake/FindBoost.cmake)
+include(FindPkgConfig)
+set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH TRUE)
+set(
+  CMAKE_PREFIX_PATH
+  ${PETSC_DIR}/${PETSC_ARCH} 
+  ${SLEPC_DIR}/${PETSC_ARCH} 
+  ${CMAKE_PREFIX_PATH})  
+
+#Find PETSc
+pkg_check_modules(PETSc REQUIRED petsc)
+message(STATUS "PETSc version " ${PETSc_VERSION})
+message(STATUS "PETSc lib dirs " ${PETSc_LIBRARY_DIRS})
+message(STATUS "PETSc includ " ${PETSc_INCLUDE_DIRS})
+
+# PETSC tools
+pkg_check_modules(SLEPC slepc)
+message(STATUS "SLEPc version " ${SLEPC_VERSION})
+message(STATUS "SLEPc lib dirs " ${SLEPC_LIBRARY_DIRS})
+message(STATUS "SLEPc include " ${SLEPC_INCLUDE_DIRS})
+if(SLEPC_FOUND)
+  add_definitions(-DWITH_SLEPC)
+  include_directories(${SLEPC_INCLUDE_DIRS})
+endif(SLEPC_FOUND)
+
 
 # SIGMA tools
 include(cmake/FindCGM.cmake)
 include(cmake/FindMESHKIT.cmake)
 
-# PETSC tools
-include(cmake/FindTAO.cmake)
-include(cmake/FindSLEPC.cmake)
+# Find boost
+include(cmake/FindBoost.cmake)
 
 # Other tools
 include(cmake/FindADOL-C.cmake)
@@ -147,8 +169,9 @@ if(WITHCOVERAGE)
   set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
 endif(WITHCOVERAGE)
 
-resolve_includes(PROJECT_INCLUDE_DIRECTORIES "${PETSCVAR_PACKAGES_INCLUDES}
- ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}")
+resolve_includes(PROJECT_INCLUDE_DIRECTORIES 
+  "${PETSCVAR_PACKAGES_INCLUDES}
+  ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}")
 
 # Finding Blas and CBlas 
 find_package(BLAS)
@@ -175,15 +198,11 @@ endif(CBLAS_INCLUDE_DIR AND CBLAS_LIBIBRARY)
 
 include_directories(
   ${PROJECT_INCLUDE_DIRECTORIES}
+  ${MOAB_INCLUDE_DIR}
   ${PETSC_DIR}/include
   ${PETSC_DIR}/${PETSC_ARCH}/include
   ${PETSCVAR_DIR}/include
   ${BOOST_INCLUDE_DIR})
-
-if(TAO_LIBRARY)
-  include_directories(${TAO_DIR}/include)
-  add_definitions(-DTAO)
-endif(TAO_LIBRARY)
 
 # Check Metis install with PETSc
 if(PETSCVAR_METIS_INCLUDE)
@@ -203,23 +222,26 @@ endif(PETSCVAR_PARMETIS_INCLUDE)
 
 # System project liblairoes
 resolve_libraries(SYSTEM_PROJECT_LIBS "
-  ${SLEPC_LIBRARY}
-  ${TAO_LIBRARY}
+# PETSc
+  ${SLEPC_LINK_LIBRARIES}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
+# MoAB
   ${MESHKIT_LIBS_LINK}
   ${MOAB_LIBS_LINK}
+# Boost
+  ${Boost_LIBRARIES} 
+# Other
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}
-  ${Boost_LIBRARIES} 
   ${BLAS_LINKER_FLAGS}
   ${CBLAS_LIBIBRARY}")
+
 # Set project libs compiled with the MoFEM as external libs
 set(OPTIONAL_PROJECT_LIBS
   ${TETGEN_LIBRARY}
   ${MED_LIBRARY}
-  ${ADOL-C_LIBRARY}
-)
+  ${ADOL-C_LIBRARY})
 set(PROJECT_LIBS ${OPTIONAL_PROJECT_LIBS} ${SYSTEM_PROJECT_LIBS})
 message(STATUS ${PROJECT_LIBS})
 
