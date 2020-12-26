@@ -103,20 +103,24 @@ add_custom_target(
 
 include(FindPkgConfig)
 set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH TRUE)
+include(FindPkgConfig)
+set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH TRUE)
 set(
   CMAKE_PREFIX_PATH
+  ${PETSC_DIR}
   ${PETSC_DIR}/${PETSC_ARCH} 
+  ${SLEPC_DIR}
   ${SLEPC_DIR}/${PETSC_ARCH} 
   ${CMAKE_PREFIX_PATH})  
 
 #Find PETSc
-pkg_check_modules(PETSc REQUIRED petsc)
+pkg_check_modules(PETSc REQUIRED PETSc)
 message(STATUS "PETSc version " ${PETSc_VERSION})
 message(STATUS "PETSc lib dirs " ${PETSc_LIBRARY_DIRS})
 message(STATUS "PETSc includ " ${PETSc_INCLUDE_DIRS})
 
 # PETSC tools
-pkg_check_modules(SLEPC slepc)
+pkg_check_modules(SLEPC SLEPc)
 message(STATUS "SLEPc version " ${SLEPC_VERSION})
 message(STATUS "SLEPc lib dirs " ${SLEPC_LIBRARY_DIRS})
 message(STATUS "SLEPc include " ${SLEPC_INCLUDE_DIRS})
@@ -124,7 +128,6 @@ if(SLEPC_FOUND)
   add_definitions(-DWITH_SLEPC)
   include_directories(${SLEPC_INCLUDE_DIRS})
 endif(SLEPC_FOUND)
-
 
 # SIGMA tools
 include(cmake/FindCGM.cmake)
