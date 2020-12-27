@@ -30,7 +30,7 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
   cd $MOFEM_INSTALL_DIR/um-build-RelWithDebInfo-$MOFEM_UM_HASH && make clean && \
   spack view symlink -i $MOFEM_INSTALL_DIR/um_view /$MOFEM_UM_HASH && \
   echo "export MOFEM_UM_HASH=$MOFEM_UM_HASH" >> ~/.bashrc && \
-  echo "export PATH=$MOFEM_INSTALL_DIR/um_view:$PATH" >> ~/.bashrc 
+  echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> ~/.bashrc 
 
 VOLUME $MOFEM_INSTALL_DIR
 WORKDIR $MOFEM_INSTALL_DIR
