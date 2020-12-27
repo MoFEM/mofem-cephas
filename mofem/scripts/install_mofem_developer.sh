@@ -217,13 +217,6 @@ TODAY=`date +%F`
 MOFEM_CEPHAS_HASH=`spack find -lv --start-date $TODAY | grep mofem-cephas@develop | grep RelWithDebInfo | awk '{print $1}'` 
 echo "mofem-cephas id for release: $MOFEM_CEPHAS_HASH"
 
-# Make link to lib release
-ln -s \
-  $MOFEM_INSTALL_DIR/mofem-cephas/spack-build-$MOFEM_CEPHAS_HASH \
-  $MOFEM_INSTALL_DIR/lib_release
-# cd $MOFEM_INSTALL_DIR/lib_release
-# make clean
-
 spack dev-build \
   --test root  \
   --source-pat $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
@@ -233,13 +226,6 @@ spack dev-build \
 TODAY=`date +%F` 
 MOFEM_UN_HASH=`spack find -lv --start-date $TODAY | grep mofem-users-modulesdevelop | grep RelWithDebInfo | awk '{print $1}'` 
 echo "mofem-users-modules id for release: $MOFEM_UN_HASH"
-
-# Make link to un release
-ln -s \
-  $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules/spack-build-$MOFEM_UM_HASH \
-  $MOFEM_INSTALL_DIR/um_debug
-# cd $MOFEM_INSTALL_DIR/um_debug
-# make clean
 
 # ************************************************************************
 # DEBUG VERSION
@@ -273,13 +259,6 @@ TODAY=`date +%F`
 MOFEM_CEPHAS_HASH=`spack find -lv --start-date $TODAY | grep mofem-cephas@develop | grep Debug | awk '{print $1}'` 
 echo "mofem-cephas id for debug: $MOFEM_CEPHAS_HASH"
 
-# Make link to lib debug
-ln -s \
-  $MOFEM_INSTALL_DIR/mofem-cephas/spack-build-$MOFEM_CEPHAS_HASH \
-  $MOFEM_INSTALL_DIR/lib_debug
-# cd $MOFEM_INSTALL_DIR/lib_debug
-# make clean
-
 echo -e "\n----------------------------\n"
 echo -e "USER MODULE - Debug version ..."
 echo -e "\n----------------------------\n"
@@ -293,13 +272,6 @@ spack dev-build \
 TODAY=`date +%F` 
 MOFEM_UN_HASH=`spack find -lv --start-date $TODAY | grep mofem-users-modulesdevelop | grep RelWithDebInfo | awk '{print $1}'` 
 echo "mofem-users-modules id for release: $MOFEM_UN_HASH"
-
-# Make link to un release
-ln -s \
-  $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules/spack-build-$MOFEM_UM_HASH \
-  $MOFEM_INSTALL_DIR/um_debug
-# cd $MOFEM_INSTALL_DIR/um_debug
-# make clean
 
 echo -e "\nFinished installing and testing the User Module - Debug version.\n"
 cd $MOFEM_INSTALL_DIR
