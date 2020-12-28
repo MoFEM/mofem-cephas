@@ -13,10 +13,10 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
   --source-path $MOFEM_SRC_DIR \
   --keep-prefix \
   --test root \
-  mofem-cephas@develop~copy_user_modules+docker build_type=RelWithDebInfo ^petsc+X && \
+  mofem-cephas@develop~copy_user_modules+docker build_type=Release ^petsc+X && \
   MOFEM_CEPHAS_HASH=`spack find -lv mofem-cephas | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
   echo "export MOFEM_CEPHAS_HASH=$MOFEM_CEPHAS_HASH" >> ~/.bashrc && \
-  cd $MOFEM_INSTALL_DIR/core-build-RelWithDebInfo-$MOFEM_CEPHAS_HASH && make clean 
+  cd $MOFEM_INSTALL_DIR/core-build-Release-$MOFEM_CEPHAS_HASH && make clean 
   
 # Install users mdoules
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
@@ -24,10 +24,10 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
   spack dev-build \
   --test root  \
   --source-pat $MOFEM_UM_SRC_DIR \
-  mofem-users-modules@develop+docker build_type=RelWithDebInfo \
+  mofem-users-modules@develop+docker build_type=Release \
   ^/$MOFEM_CEPHAS_HASH && \
   MOFEM_UM_HASH=`spack find -lv mofem-users-modules | awk '/mofem-users-modules/ {print $1}' | head -n 1` && \
-  cd $MOFEM_INSTALL_DIR/um-build-RelWithDebInfo-$MOFEM_UM_HASH && make clean && \
+  cd $MOFEM_INSTALL_DIR/um-build-Release-$MOFEM_UM_HASH && make clean && \
   spack view symlink -i $MOFEM_INSTALL_DIR/um_view /$MOFEM_UM_HASH && \
   echo "export MOFEM_UM_HASH=$MOFEM_UM_HASH" >> ~/.bashrc && \
   echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> ~/.bashrc 
