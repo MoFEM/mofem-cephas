@@ -151,7 +151,7 @@ git clone -b lukasz/develop --recurse-submodules https://bitbucket.org/likask/mo
 Now you can docker container with source from your host system as follows
 ~~~~~~
 docker run \
-  --name mofem_vscode \
+  --name mofem_develp \
   -v $HOME:/host_home \
   -v $HOME/mofem_install/mofem-cephas:/mofem-cephas \
   --volumes-from mofem_volume \
