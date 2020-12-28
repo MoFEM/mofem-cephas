@@ -522,18 +522,7 @@ spack mirror add mofem_mirror $PWD/mofem_mirror
 spack extensions find
 spack compiler find
 ~~~~~
-
 ##### Setup packages and compiler
-
-
-Check if you have folloing in `.spack/packages.yaml`
-~~~~~
-packages:
-  openmpi:
-    paths:
-      openmpi@3.1.4%gcc@9.2.0 arch=linux-x86_64-debian7: /software/mpi/openmpi/3.1.4
-~~~~~
-if not add above entry.
 
 Edit file `.spack/linux/compilers.yaml`
 ~~~~~

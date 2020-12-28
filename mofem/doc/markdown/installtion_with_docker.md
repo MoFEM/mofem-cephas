@@ -14,25 +14,16 @@ containers in.
 
 [TOC]
 
+# Watch Docker & Spack installation tutorial
+
+Flow link [https://youtu.be/Mk6ZPWWffDs](https://youtu.be/Mk6ZPWWffDs). In 
+tutorial we briefly explain what is following bellow. 
 # Download and Install Docker {#docker_install}
 
-First install docker as per the instructions here: [https://docs.docker.com/installation/#installation](https://docs.docker.com/installation/#installation)
+First install docker as per the instructions here: 
+[https://docs.docker.com/installation/#installation](https://docs.docker.com/installation/#installation)
 
-# Clone mofem repository {#docker_clone}
-To build MoFEM the source code need to be downloaded. The best method to do it is
-to clone repository
-~~~~~~
-cd $HOME
-mkdir -p mofem_install
-git clone --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git
-~~~~~~
-You can clone specific branch, for example development branch with most up to
-date bug fixes, new features, efficiency and functionality improvements
-~~~~~~
-cd $HOME
-mkdir -p mofem_install
-git clone -b lukasz/develop --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git
-~~~~~~
+
 # Running docker container {#docker_run_container}
 
 Installation is at that point done, now you can run docker container and
@@ -46,8 +37,7 @@ volume* from container which has been created in the previous step
 ~~~~~~
 docker run \
   -v $HOME:/host_home \
-  -v $HOME/mofem_install/mofem-cephas:/mofem-cephas \
-  --rm=true -it likask/mofem-spack-build /bin/bash
+  --rm=true -it likask/mofem-spack-build 
 ~~~~~~
 
 MoFEM docker container mount volumes as follows as follows:
@@ -70,13 +60,37 @@ the docker container. For propose of this documentation program is executed in
 containers however is not visible from host file system. The last command which creates
 VTK output file save results to HOME directory of your host system.
 
+# Making changes permanent
+
+Changes which you do in Docker container are temporary. If you restart computer,
+or container concent of the container is reset to initial state. If you like to 
+keep changes in container, or share volume of container between other container
+you can do as follows:
+~~~~~~~
+docker run --name mofem_volume likask/mofem-spack-build
+~~~~~~~
+
+Now we can run Docker container and attach previously created volume to it
+~~~~~~~
+docker run \
+  --name mofem_develop \
+  -v $HOME:/host_home \
+  --volumes-from mofem_volume \
+  --rm=true -it likask/mofem-spack-build /bin/bash
+~~~~~~~
+
+You can run several container and link the to same volume. All changes in the 
+volume are permanent, unless you delete volume. You can also create several
+volumes and attach different names to it. 
+
 # Developing with VScode {#docker_vscode}
 
 Run docker container in terminal,
 ~~~~~~
 docker run \
+  --name mofem_vscode \
   -v $HOME:/host_home \
-  -v $HOME/mofem_install/mofem-cephas:/mofem-cephas \
+  --volumes-from mofem_volume \
   --rm=true -it likask/mofem-spack-build /bin/bash
 ~~~~~~
 and follow tutorial in 
@@ -90,14 +104,15 @@ modules with debugging information as follows,
 spack dev-build \
   --b build \
   --test root \
-  --source-pat $MOFEM_UM_SRC_DIR \
+  --source-path $MOFEM_UM_SRC_DIR \
   mofem-users-modules@develop+docker \
   build_type=Debug   \
   ^/$MOFEM_CEPHAS_HASH
 ~~~~~~
 Have above done, we can find directory `/mofem_install/um-build-Debug-fifofez`. 
-Now for example we can look into tutorial SCL-1: Poisson's equation, and follow
-instruction, cd directory, make code, partition mesh, and run example.
+Now for example we can look into tutorial 
+@ref basic_tutorials_poisson_homogeneous "SLC-1" oisson's equation, 
+and follow instruction, cd directory, make code, partition mesh, and run example.
 ~~~~~~
 cd /mofem_install/um-build-Debug-fifofez/tutorials/scl-1
 make
@@ -110,9 +125,36 @@ mpirun -np 2 --allow-run-as-root \
 ~~~~~~
 Next, create VTK file in your home directory 
 ~~~~~~~
-mbconvert out_result.h5m /host_home/out_result.h5m
+mbconvert out_result.h5m /host_home/out_result.vtk
 ~~~~~~~ 
 and finally open it in ParaView [ParaView](https://www.paraview.org/download/).
+
+# Clone mofem repository {#docker_clone}
+
+To build MoFEM the source code need to be downloaded. The best method to do it is
+to clone repository
+~~~~~~
+mkdir -p $HOME/mofem_install
+cd $HOME/mofem_install
+git clone --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git
+~~~~~~
+You can clone specific branch, for example development branch with most up to
+date bug fixes, new features, efficiency and functionality improvements
+~~~~~~
+cd $HOME
+mkdir -p mofem_install
+git clone -b lukasz/develop --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git
+~~~~~~
+
+Now you can docker container with source from your host system as follows
+~~~~~~
+docker run \
+  --name mofem_vscode \
+  -v $HOME:/host_home \
+  -v $HOME/mofem_install/mofem-cephas:/mofem-cephas \
+  --volumes-from mofem_volume \
+  --rm=true -it likask/mofem-spack-build /bin/bash
+~~~~~~
 
 # Build docker image {#docker_image}
 
@@ -137,6 +179,7 @@ If you do not exactly understand what is *docker image*, *docker container* and
 code in docker, how to do it is explained in below. However if you like to fully explore
 features available by running MoFEM in docker and utilize its full potential pleas look into
 documentation in [Docker User Guide](https://docs.docker.com/engine/userguide/)
+
 
 # What you will need on host system {#docker_prerequisites}
 
