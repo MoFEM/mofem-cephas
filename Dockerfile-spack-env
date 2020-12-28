@@ -78,5 +78,11 @@ RUN mkdir root/.ssh
 # Allow to trace child procsses needed for debuging
 RUN sed  -i 's/kernel.yama.ptrace_scope = 1/kernel.yama.ptrace_scope = 0/' /etc/sysctl.d/10-ptrace.conf
 
+# Create the PrivSep empty dir if necessary
+RUN if [ ! -d /var/run/sshd ]; then \
+   mkdir /var/run/sshd; \
+   chmod 0755 /var/run/sshd; \
+   fi
+
 EXPOSE 22
 CMD ["/usr/sbin/sshd", "-D"]
