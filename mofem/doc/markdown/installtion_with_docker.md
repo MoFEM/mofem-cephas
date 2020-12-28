@@ -83,7 +83,7 @@ You can run several container and link the to same volume. All changes in the
 volume are permanent, unless you delete volume. You can also create several
 volumes and attach different names to it. 
 
-# Developing with VScode {#docker_vscode}
+# Developing with VSCode {#docker_vscode}
 
 Run docker container in terminal,
 ~~~~~~
@@ -94,7 +94,9 @@ docker run \
   --rm=true -it likask/mofem-spack-build /bin/bash
 ~~~~~~
 and follow tutorial in 
-[Attach to a running container](https://code.visualstudio.com/docs/remote/attach-container)
+[Attach to a running container](htstps://code.visualstudio.com/docs/remote/attach-container)
+Source code in VSCode, in Docker running docer container is located in root 
+directory in `/mofem-cephas`. Open this folder in VSCode to edit source.
 
 We already build created Release version of users modules, which you can modify,
 compile and develop. However for development purposes is usefully to have
