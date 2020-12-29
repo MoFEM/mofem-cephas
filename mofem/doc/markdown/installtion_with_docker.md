@@ -94,7 +94,7 @@ docker run \
   --rm=true -it likask/mofem-spack-build /bin/bash
 ~~~~~~
 and follow tutorial in 
-[Attach to a running container](htstps://code.visualstudio.com/docs/remote/attach-container)
+[Attach to a running container](https://code.visualstudio.com/docs/remote/attach-container)
 Source code in VSCode, in Docker running docer container is located in root 
 directory in `/mofem-cephas`. Open this folder in VSCode to edit source.
 
@@ -151,7 +151,7 @@ git clone -b lukasz/develop --recurse-submodules https://bitbucket.org/likask/mo
 Now you can docker container with source from your host system as follows
 ~~~~~~
 docker run \
-  --name mofem_develp \
+  --name mofem_develop \
   -v $HOME:/host_home \
   -v $HOME/mofem_install/mofem-cephas:/mofem-cephas \
   --volumes-from mofem_volume \
@@ -170,7 +170,7 @@ You can build MoFEM docker environment image as follows
 cd $HOME/mofem_install
 docker build -t likask/mofem-spack-env -f Dockerfile-spack-env ,
 ~~~~~~
-Once docer image is build you build image can be created
+Once docker image is build you build image can be created
 ~~~~~~
 cd $HOME/mofem_install
 docker build -t likask/mofem-spack-build -f Dockerfile-spack-build .
