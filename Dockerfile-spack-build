@@ -5,7 +5,7 @@ LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 ENV MOFEM_SRC_DIR=$MOFEM_INSTALL_DIR/mofem-cephas
 ENV MOFEM_UM_SRC_DIR=$MOFEM_SRC_DIR/mofem/users_modules
 
-ADD . $MOFEM_SRC_lsDIR/
+ADD . $MOFEM_SRC_DIR/
 
 # Install core library
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
