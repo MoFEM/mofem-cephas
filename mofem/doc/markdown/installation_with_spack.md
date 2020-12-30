@@ -369,8 +369,8 @@ spack dev-build \
   mofem-cephas@develop~copy_user_modules ^petsc+X
 ~~~~~
 You can find build director in `$HOME/mofem_install/mofem-cephas`, its name
-will start as `spack-build-`, for example `spack-build-vhv7opa`. Note that 
-installation at that point is partial
+will start as `core-build-WithDebugInfo-`, for example `core-build-WithDebugInfo-vhv7opa`. 
+Note that installation at that point is partial
 
 If installation is successfully, by executing, 
 ~~~~~
@@ -386,10 +386,11 @@ vhv7opa mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build
 ~~~~~
 
 Also in directory `$HOME/mofem_install/mofem-cephas` you will find
-build directory `$HOME/mofem_install/mofem-cephas/spack-build-vhv7opa`. Note 
+build directory `$HOME/mofem_install/mofem-cephas/core-build-WithDebugInfo-vhv7opa`. Note 
 that suffix is matching first column when executed column `spack find -lv mofem-cephas`.
 
-You can now start develop code, if you `cd $HOME/mofem_install/mofem-cephas/spack-build-vhv7opa`, and
+You can now start develop code, if you 
+`cd $HOME/mofem_install/mofem-cephas/core-build-WithDebugInfo-vhv7opa`, and
 can run 
 ~~~~~
 make -j4
@@ -405,10 +406,7 @@ spack dev-build \
   --keep-prefix \
   --test root \
   mofem-cephas@develop~copy_user_modules build_type=Debug ^petsc+X
-~~~~~
-that will create 
-
-
+~~~~~ 
 ## 2. Install users modules {#spack_users_modules}
 
 Run first `spack find -lv mofem-cephas`, and pick core library
@@ -441,7 +439,7 @@ spack dev-build \
 After that point, `spack` will configure environment and `cmake`, and beyond that
 point you can run build and install
 ~~~~~
-cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/spack-build-c6ts56b
+cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-WithDebugInfo-c6ts56b
 make -j4
 make install
 ~~~~~
@@ -455,9 +453,9 @@ as result you will get
 c6ts56b mofem-users-modules@develop+copy_user_modules~ipo build_type=Debug dev_path=/Users/lukaszkaczmarczyk/mofem_install/mofem-cephas/mofem/users_modules install_id=0
 ~~~~~
 Also, you will find director
-`$HONE/mofem_install/mofem-cephas/mofem/users_modules/spack-build-c6ts56b`.
+`$HONE/mofem_install/mofem-cephas/mofem/users_modules/um-build-WithDebugInfo-c6ts56b`.
 In that directory is build directory particular versions of
-mofem-users-modules. In it you can do typical devloper work, `make`, `ctest`,
+mofem-users-modules. In it you can do typical developer work, `make`, `ctest`,
 and `make install`. You can add other modules to that directory if needed.
 
 In the `spack dev-build` command of the snippet above `^` is a *dependency
