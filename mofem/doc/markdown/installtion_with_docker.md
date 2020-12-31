@@ -84,17 +84,12 @@ volumes and attach different names to it.
 
 # Developing with VSCode {#docker_vscode}
 
-Run docker container in terminal,
-~~~~~~
-docker run \
-  --name mofem_vscode \
-  -v $HOME:/host_home \
-  --volumes-from mofem_volume \
-  --rm=true -it likask/mofem-spack-build /bin/bash
-~~~~~~
-and follow the tutorial in 
-[Attach to a running container](https://code.visualstudio.com/docs/remote/attach-container)
-Source code in VSCode, in Docker running docker container, is located in the root directory in `/mofem-cephas`. Open this folder in VSCode to edit source.
+Run docker container in terminal, as above, and follow the tutorial in
+[Attach to a running
+container](https://code.visualstudio.com/docs/remote/attach-container) Source
+code in VSCode, in Docker running docker container, is located in the root
+directory in `/mofem_install/mofem-cephas`. Open this folder in VSCode to
+edit source.
 
 We already build created Release version of users modules, which you can modify,
 compile and develop. However, for development purposes is useful to have
@@ -151,7 +146,7 @@ Now you can use docker container with the source from your host system as follow
 docker run \
   --name mofem_develop \
   -v $HOME:/host_home \
-  -v $HOME/mofem_install/mofem-cephas:/mofem-cephas \
+  -v $HOME/mofem_install/mofem-cephas:/mofem_install/mofem-cephas \
   --volumes-from mofem_volume \
   --rm=true -it likask/mofem-spack-build /bin/bash
 ~~~~~~
