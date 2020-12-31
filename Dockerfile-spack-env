@@ -84,5 +84,9 @@ RUN if [ ! -d /var/run/sshd ]; then \
    chmod 0755 /var/run/sshd; \
    fi
 
+ENV MOFEM_SRC_DIR=$MOFEM_INSTALL_DIR/mofem-cephas
+ENV MOFEM_UM_SRC_DIR=$MOFEM_SRC_DIR/mofem/users_modules
+
+
 EXPOSE 22
 CMD ["/usr/sbin/sshd", "-D"]
