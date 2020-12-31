@@ -77,12 +77,15 @@ struct OpGradTimesTensorImpl<1, 1, SPACE_DIM, 1, GAUSS, OpBase>
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
 
   OpGradTimesTensorImpl(const std::string field_name,
-                        boost::shared_ptr<MatrixDouble> mat_vals)
-      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
+                        boost::shared_ptr<MatrixDouble> mat_vals,
+                        ScalarFun beta_coeff)
+      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
+        betaCoeff(beta_coeff) {}
 
 protected:
   boost::shared_ptr<MatrixDouble> matVals;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
+  ScalarFun betaCoeff;
 };
 
 template <int SPACE_DIM, typename OpBase>
@@ -397,10 +400,13 @@ OpGradTimesTensorImpl<1, 1, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
   auto t_row_grad = row_data.getFTensor1DiffN<SPACE_DIM>();
   // get filed gradient values
   auto t_val_grad = getFTensor1FromMat<SPACE_DIM>(*(matVals));
+  // get coordinate at integration points
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
+    const double beta = vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
     // take into account Jacobean
-    const double alpha = t_w * vol;
+    const double alpha = t_w * beta;
     // loop over rows base functions
     int rr = 0;
     for (; rr != OpBase::nbRows; rr++) {
@@ -412,6 +418,7 @@ OpGradTimesTensorImpl<1, 1, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
     for (; rr < OpBase::nbRowBaseFunctions; ++rr)
       ++t_row_grad;
 
+    ++t_coords;
     ++t_val_grad;
     ++t_w; // move to another integration weight
   }
