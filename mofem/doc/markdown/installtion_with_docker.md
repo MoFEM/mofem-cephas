@@ -124,6 +124,35 @@ mbconvert out_result.h5m /host_home/out_result.vtk
 ~~~~~~~ 
 and finally, open it in ParaView [ParaView](https://www.paraview.org/download/).
 
+# Running Jupyetr notebook {#docker_jupyetr}
+
+
+Pull MoFEM image with Jupyter
+~~~~~~
+docker pull likask/mofem-spack-jupyter
+~~~~~~
+and run container as follows
+~~~~~~
+docker run \
+  -p 8888:8888  \
+  --name mofem_develop \
+  -v $HOME:/host_home  \
+  --volumes-from mofem_volume \
+  --rm=true -ti \
+  likask/mofem-spack-jupyter
+~~~~~~
+As results in terminal window you will see something similar to following:
+~~~~~~
+[I 20:33:35.653 NotebookApp] Jupyter Notebook 6.1.6 is running at:
+[I 20:33:35.653 NotebookApp] http://localhost:8888/?token=bed64e1d532ab00f402d56432193a80f6aace612d4ffbec2
+[I 20:33:35.653 NotebookApp]  or http://127.0.0.1:8888/?token=bed64e1d532ab00f402d56432193a80f6aace612d4ffbec2
+[I 20:33:35.653 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+~~~~~~
+Copy address into web-browser:
+~~~~~~
+http://127.0.0.1:8888/?token=bed64e1d532ab00f402d56432193a80f6aace612d4ffbec2
+~~~~~~
+
 # Clone MoFEM repository {#docker_clone}
 
 To build MoFEM the source code need to be downloaded. The best method to do it is
