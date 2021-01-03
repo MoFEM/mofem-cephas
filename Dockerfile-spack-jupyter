@@ -1,4 +1,4 @@
-FROM likask/mofem-spack-env
+FROM likask/mofem-spack-build
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
@@ -14,11 +14,15 @@ RUN apt-get update && \
 
 RUN pip3 -q install pip --upgrade && \
   pip3 install \
+  pandas \
   pyvista \
   jupyter \
+  jupyter_contrib_nbextensions \
   itkwidgets \
   ipywidgets \
-  ipyvtk-simple==0.1.2
+  ipyvtk-simple==0.1.2 && \
+  jupyter contrib nbextension install --user && \
+  jupyter nbextension enable spellchecker/main
 
 #RUN useradd -ms /bin/bash mofem
 #USER mofem
