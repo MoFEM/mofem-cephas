@@ -10,6 +10,9 @@ RUN apt-get update && \
   xvfb \
   build-essential \
   python3-dev \
+  npm \
+  nodejs \
+  libnode64 \
   && apt-get clean && rm -rf /var/lib/apt/lists/*  
 
 RUN pip3 -q install pip --upgrade && \
@@ -17,12 +20,14 @@ RUN pip3 -q install pip --upgrade && \
   pandas \
   pyvista \
   jupyter \
+  jupyterhub \
   jupyter_contrib_nbextensions \
   itkwidgets \
   ipywidgets \
   ipyvtk-simple==0.1.2 && \
   jupyter contrib nbextension install --user && \
-  jupyter nbextension enable spellchecker/main
+  jupyter nbextension enable spellchecker/main && \
+  npm install -g configurable-http-proxy
 
 #RUN useradd -ms /bin/bash mofem
 #USER mofem
