@@ -124,12 +124,14 @@ mbconvert out_result.h5m /host_home/out_result.vtk
 ~~~~~~~ 
 and finally, open it in ParaView [ParaView](https://www.paraview.org/download/).
 
-# Running Jupyetr notebook {#docker_jupyetr}
+# Running Jupyter notebook {#docker_jupyter}
 
 
-Pull MoFEM image with Jupyter
+Pull MoFEM images and create mofem_volume
 ~~~~~~
+docker pull likask/mofem-spack-build
 docker pull likask/mofem-spack-jupyter
+docker run --name mofem_volume likask/mofem-spack-build
 ~~~~~~
 and run container as follows
 ~~~~~~
@@ -196,6 +198,11 @@ Once docker image is built, you build image can be created
 ~~~~~~
 cd $HOME/mofem_install
 docker build -t likask/mofem-spack-build -f Dockerfile-spack-build .
+~~~~~~
+and Jupyter notebook image
+~~~~~~
+cd $HOME/mofem_install
+docker build -t likask/mofem-spack-jupyter -f Dockerfile-spack-jupyter .
 ~~~~~~
 
 If you do not exactly understand what is *docker image*, *docker container* and
