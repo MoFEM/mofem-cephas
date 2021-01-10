@@ -72,6 +72,20 @@ namespace FTensor
       return equals(rhs);
     }
 
+    template <class B, class U, int Dim, char i_1, char j_1>
+    auto &equals(const Tensor2_symmetric_Expr<B, U, Dim, i_1, j_1> &rhs) {
+      for (int ii = 0; ii != Dim; ++ii)
+        for (int jj = 0; jj != Dim; ++jj) {
+          iter(ii, jj) = rhs(ii, jj);
+        }
+      return *this;
+    }
+
+    template <class B, class U, int Dim, char i_1, char j_1>
+    auto &operator=(const Tensor2_symmetric_Expr<B, U, Dim, i_1, j_1> &rhs) {
+      return equals(rhs);
+    }
+    
     template <class B, class U, int Dim1_0, int Dim1_1, char i_1, char j_1>
     auto &operator+=(const Tensor2_Expr<B, U, Dim1_0, Dim1_1, i_1, j_1> &rhs)
     {
@@ -91,6 +105,24 @@ namespace FTensor
           {
             iter(ii, jj) -= permute(*this, rhs, ii, jj);
           }
+      return *this;
+    }
+
+    template <class B, class U, int Dim, char i_1, char j_1>
+    auto &operator+=(const Tensor2_symmetric_Expr<B, U, Dim, i_1, j_1> &rhs) {
+      for (int ii = 0; ii != Dim; ++ii)
+        for (int jj = 0; jj != Dim; ++jj) {
+          iter(ii, jj) += rhs(ii, jj);
+        }
+      return *this;
+    }
+
+    template <class B, class U, int Dim, char i_1, char j_1>
+    auto &operator-=(const Tensor2_symmetric_Expr<B, U, Dim, i_1, j_1> &rhs) {
+      for (int ii = 0; ii != Dim; ++ii)
+        for (int jj = 0; jj != Dim; ++jj) {
+          iter(ii, jj) -= rhs(ii, jj);
+        }
       return *this;
     }
 
