@@ -125,6 +125,9 @@ message(STATUS "SLEPc version " ${SLEPC_VERSION})
 message(STATUS "SLEPc lib dirs " ${SLEPC_LIBRARY_DIRS})
 message(STATUS "SLEPc include " ${SLEPC_INCLUDE_DIRS})
 if(SLEPC_FOUND)
+
+  # For some unknown reason pkg-confifig reeturning empty SLEPC_LINK_LIBRARIES,
+  # following config force to find SLEPc lib 
   if(NOT SLEPC_LINK_LIBRARIES)
     find_library(
       SLEPC_LINK_LIBRARIES 
@@ -133,8 +136,12 @@ if(SLEPC_FOUND)
       ${SLEPC_LIBRARY_DIRS}
       NO_DEFAULT_PATH)
   endif(SLEPC_LINK_LIBRARIES)
-  add_definitions(-DWITH_SLEPC)
-  include_directories(${SLEPC_INCLUDE_DIRS})
+
+  if(SLEPC_LINK_LIBRARIES)
+    add_definitions(-DWITH_SLEPC)
+    include_directories(${SLEPC_INCLUDE_DIRS})
+  endif(SLEPC_LINK_LIBRARIES)
+  
 endif(SLEPC_FOUND)
 
 # SIGMA tools
