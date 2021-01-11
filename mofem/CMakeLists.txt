@@ -125,6 +125,14 @@ message(STATUS "SLEPc version " ${SLEPC_VERSION})
 message(STATUS "SLEPc lib dirs " ${SLEPC_LIBRARY_DIRS})
 message(STATUS "SLEPc include " ${SLEPC_INCLUDE_DIRS})
 if(SLEPC_FOUND)
+  if(NOT SLEPC_LINK_LIBRARIES)
+    find_library(
+      SLEPC_LINK_LIBRARIES 
+      NAMES slepc 
+      PATHS 
+      ${SLEPC_LIBRARY_DIRS}
+      NO_DEFAULT_PATH)
+  endif(SLEPC_LINK_LIBRARIES)
   add_definitions(-DWITH_SLEPC)
   include_directories(${SLEPC_INCLUDE_DIRS})
 endif(SLEPC_FOUND)
