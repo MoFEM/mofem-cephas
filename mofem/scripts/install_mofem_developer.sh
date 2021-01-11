@@ -76,7 +76,18 @@ then
     else 
         echo -e "\nHomebrew is already installed."
     fi
-    brew install curl git gcc
+
+    brew install \
+      curl \
+      git \
+      python \
+      gcc@9 \
+      cmake \
+      autoconf \
+      automake \
+      libtool \
+      doxygen \
+      pkg-config
  
     # Install XQuartz
     if ! which 'xquartz' &>/dev/null
