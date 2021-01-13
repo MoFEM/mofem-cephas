@@ -222,7 +222,8 @@ int main(int argc, char *argv[]) {
               << ii + 1 << " " << jj + 1 << " : " << t(ii, jj);
     };
 
-    auto run_lapack = [](auto &a) {
+    enum swap { swap12, swap01 };
+    auto run_lapack = [](auto &a, swap s = swap12) {
       int info;
       double wkopt;
       double w[3];
@@ -247,17 +248,32 @@ int main(int argc, char *argv[]) {
       if (info > 0)
         THROW_MESSAGE("The algorithm failed to compute eigenvalues.");
 
+      if (s == swap12) {
+        FTensor::Tensor2<double, 3, 3> t_eig_vec{
+
+            a[0 * 3 + 0], a[0 * 3 + 1], a[0 * 3 + 2],
+
+            a[2 * 3 + 0], a[2 * 3 + 1], a[2 * 3 + 2],
+
+            a[1 * 3 + 0], a[1 * 3 + 1], a[1 * 3 + 2]};
+
+        FTensor::Tensor1<double, 3> t_eig_vals{w[0], w[2], w[1]};
+        return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
+      }
+
       FTensor::Tensor2<double, 3, 3> t_eig_vec{
+
+          a[1 * 3 + 0], a[1 * 3 + 1], a[1 * 3 + 2],
 
           a[0 * 3 + 0], a[0 * 3 + 1], a[0 * 3 + 2],
 
           a[2 * 3 + 0], a[2 * 3 + 1], a[2 * 3 + 2],
 
-          a[1 * 3 + 0], a[1 * 3 + 1], a[1 * 3 + 2]};
+      };
 
-      FTensor::Tensor1<double, 3> t_eig_vals{w[0], w[2], w[1]};
-
+      FTensor::Tensor1<double, 3> t_eig_vals{w[1], w[0], w[2]};
       return std::make_tuple(t_a, t_eig_vec, t_eig_vals);
+
     };
 
     // Test matrix againsst mathematica results
@@ -503,16 +519,16 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    // Testing two same eigen values
+    // Testing two same eigen values 
     {
 
-      std::array<double, 9> a{0.1, 0.,  0,
+      std::array<double, 9> a{5.,   4., 0,
 
-                              0.,  0.1, 0.,
+                              4.,  5,  0.,
 
-                              0.0, 0.,  4.};
+                              0.0, 0., 9};
 
-      auto tuple = run_lapack(a);
+      auto tuple = run_lapack(a, swap01);
       auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
@@ -717,16 +733,16 @@ int main(int argc, char *argv[]) {
                 "This norm should be zero");
     }
 
-    // check second directive
+    // check second directive two reapeating eiegn values
     {
 
-      std::array<double, 9> a{0.2, 0.,  0.,
+      std::array<double, 9> a{5., 4.,  0.,
 
-                              0.,  0.2, 0.,
+                              4.,  5., 0.,
 
-                              0.,  0.,  2};
+                              0.,  0.,  9};
 
-      auto tuple = run_lapack(a);
+      auto tuple = run_lapack(a, swap01);
       auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
@@ -828,16 +844,16 @@ int main(int argc, char *argv[]) {
                 "This norm should be zero");
     }
 
-    // check second directive exponent
+    // check second directive exponent agains perturned
     {
 
-      std::array<double, 9> a{0.5, 0.,  0.,
+      std::array<double, 9> a{5., 4.,  0.,
 
-                              0.,  0.5, 0.,
+                              4.,  5., 0.,
 
-                              0.,  0.,  2};
+                              0.,  0.,  9};
 
-      auto tuple = run_lapack(a);
+      auto tuple = run_lapack(a, swap01);
       auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);
@@ -901,13 +917,13 @@ int main(int argc, char *argv[]) {
     // check second directive exponent
     {
 
-      std::array<double, 9> a{0.5, 0., 0.,
+      std::array<double, 9> a{5., 4., 0.,
 
-                              0.,  2., 0.,
+                              4., 5., 0.,
 
-                              0.,  0., 0.5};
+                              0., 0., 9};
 
-      auto tuple = run_lapack(a);
+      auto tuple = run_lapack(a, swap01);
       auto &t_a = std::get<0>(tuple);
       auto &t_eig_vecs = std::get<1>(tuple);
       auto &t_eig_vals = std::get<2>(tuple);

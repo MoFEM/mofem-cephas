@@ -40,10 +40,6 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
     fe.data_ctx = PetscData::CtxSetNone;
   };
 
-  auto cache_ptr = boost::make_shared<CacheTuple>();
-  CHKERR ksp_ctx->mField.cache_problem_entities(ksp_ctx->problemName,
-                                                cache_ptr);
-
   // pre-process
   for (auto &bit : ksp_ctx->preProcess_Rhs) {
     bit->vecAssembleSwitch = boost::move(ksp_ctx->vecAssembleSwitch);
@@ -53,6 +49,10 @@ PetscErrorCode KspRhs(KSP ksp, Vec f, void *ctx) {
     unset(*bit);
     ksp_ctx->vecAssembleSwitch = boost::move(bit->vecAssembleSwitch);
   }
+
+  auto cache_ptr = boost::make_shared<CacheTuple>();
+  CHKERR ksp_ctx->mField.cache_problem_entities(ksp_ctx->problemName,
+                                                cache_ptr);
 
   // operators
   for (auto &lit : ksp_ctx->loops_to_do_Rhs) {

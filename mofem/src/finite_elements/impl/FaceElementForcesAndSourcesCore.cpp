@@ -311,6 +311,11 @@ FaceElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
     CHKERR getEntityDataOrder<MBTRI>(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
   }
+  if (dataH1.spacesOnEntities[MBQUAD].test(HCURL)) {
+    CHKERR getEntitySense<MBQUAD>(dataHcurl);
+    CHKERR getEntityDataOrder<MBQUAD>(dataHcurl, HCURL);
+    dataHcurl.spacesOnEntities[MBQUAD].set(HCURL);
+  }
 
   // Hdiv
   if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
@@ -318,12 +323,22 @@ FaceElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
     CHKERR getEntityDataOrder<MBTRI>(dataHdiv, HDIV);
     dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
   }
+  if (dataH1.spacesOnEntities[MBQUAD].test(HDIV)) {
+    CHKERR getEntitySense<MBQUAD>(dataHdiv);
+    CHKERR getEntityDataOrder<MBQUAD>(dataHdiv, HDIV);
+    dataHdiv.spacesOnEntities[MBQUAD].set(HDIV);
+  }
 
   // L2
   if (dataH1.spacesOnEntities[MBTRI].test(L2)) {
     CHKERR getEntitySense<MBTRI>(dataL2);
     CHKERR getEntityDataOrder<MBTRI>(dataL2, L2);
     dataL2.spacesOnEntities[MBTRI].set(L2);
+  }
+  if (dataH1.spacesOnEntities[MBQUAD].test(L2)) {
+    CHKERR getEntitySense<MBQUAD>(dataL2);
+    CHKERR getEntityDataOrder<MBQUAD>(dataL2, L2);
+    dataL2.spacesOnEntities[MBQUAD].set(L2);
   }
 
   MoFEMFunctionReturn(0);

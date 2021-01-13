@@ -14,6 +14,9 @@
 # Note: Installation script changes .bashrc on Ubuntu or .bash_profile on Mac.
 # Please inspect the file after installation.
 
+# Only for debugging
+#set -x 
+
 echo "Start time: $(date +"%T")"
 
 ##############################
@@ -55,9 +58,13 @@ then
     coreutils \
     curl \
     environment-modules \
+    pkgconf \
+    cmake \
     git \
     python \
+    python3-distutils \
     unzip \
+    ssh \
     vim \
     gfortran
   
@@ -70,19 +77,28 @@ then
     then
         xcode-select --install
         sudo xcodebuild -license accept
-        /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     else 
         echo -e "\nHomebrew installed"
     fi
 
-    brew install curl git gcc
+    brew install \
+      curl \
+      git \
+      python \
+      gcc@9 \
+      cmake \
+      autoconf \
+      automake \
+      libtool \
+      doxygen \
+      pkg-config
 
     # Install XQuartz
     if ! which 'xquartz' &>/dev/null
     then
         echo -e "\nXQuartz is not installed yet. Installing XQuartz ...\n"
-        brew install caskroom/cask/brew-cask 2> /dev/null
-        brew cask install xquartz
+        brew install --cask xquartz
     else
         echo -e "\nXQuartz is already installed.\n"
     fi
@@ -106,18 +122,18 @@ echo "$PWD"
 SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
 SPACK_MIRROR_DIR=$MOFEM_INSTALL_DIR/mofem_mirror
 
-# Remove .spack directory in $HOME from previous installation (if any)
-if [ -d "$HOME/.spack" ]; then
-  mv $HOME/.spack $HOME/.spack_old
-fi
-
 # Retrieve Spack for MoFEM
 if [ ! -d "$SPACK_ROOT_DIR" ]; then
+
+  # Remove .spack directory in $HOME from previous installation (if any)
+  if [ -d "$HOME/.spack" ]; then
+    mv $HOME/.spack $HOME/.spack_old
+  fi
 
   if [ ! -f "$PWD/spack.tgz" ]; then
     echo "Downloading spack ..."
     mkdir -p $SPACK_ROOT_DIR &&\
-    curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
+    curl -s -L https://api.github.com/repos/likask/spack/tarball/develop_spack_v0.16 \
     | tar xzC $SPACK_ROOT_DIR --strip 1
     echo -e "Done.\n"
   else 
@@ -134,6 +150,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   elif [ ${machine} = "Mac" ]
   then
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bash_profile
+    echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.zshrc
   fi
   
   # Download mirror
@@ -141,7 +158,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
     if [ ! -f "$PWD/mirror.tgz" ]; then
       echo "Downloading mirror of spack packages for MoFEM..."
       mkdir -p $SPACK_MIRROR_DIR && \
-      curl -s -L http://mofem.eng.gla.ac.uk/downloads/mirror_v0.9.2.tar.gz \
+      curl -s -L http://mofem.eng.gla.ac.uk/downloads/mirror_v0.16.tar.gz \
       | tar xzC $SPACK_MIRROR_DIR --strip 1
       echo -e "Done.\n"
     else 
@@ -155,7 +172,16 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   spack mirror add mofem_mirror $SPACK_MIRROR_DIR
 
   # Install packages required by Spack
-  spack bootstrap
+  spack compiler find
+  spack external find
+
+  # Set fortran compiler to version 9
+  # Set fortran compiler to version 9
+  if [ ${machine} = "Mac" ]
+  then
+    sed 's/gfortran$/gfortran-9/g' $HOME/.spack/darwin/compilers.yaml
+  fi
+
 fi
  
 echo -e "\nFinished installing Spack.\n"
@@ -175,30 +201,12 @@ cd $MOFEM_INSTALL_DIR
 echo "Current directory: $PWD"
   
 # Install MoFEM packages
-spack install  -j 2 mofem-fracture-module build_type=Release ^petsc+X
+spack install --only dependencies mofem-cephas ^petsc+X
+spack install --test all mofem-fracture-module build_type=Release ^petsc+X
 
 # Activate fracture module
 spack view --verbose symlink -i um_view mofem-fracture-module
  
-# Test elasticity
-cd $MOFEM_INSTALL_DIR/um_view/elasticity
-echo "Current directory: $PWD"
-./elasticity \
--my_file LShape.h5m \
--my_order 2 2>&1 | tee log
-  
-echo -e "\nFinished testing elasticity.\n"
- 
-# Test fracture crack propagation
-cd $MOFEM_INSTALL_DIR/um_view/fracture_mechanics
-echo "Current directory: $PWD"
-./crack_propagation \
--my_file examples/analytical_bc/out_10.h5m \
--my_order 2 \
--my_ref 0 2>&1 | tee log
-
-echo -e "\nFinished testing fracture module.\n"
-
 # Check the output message and finalise the installation
 if tail -n 1 log | grep -q "Crack surface area"
 then
@@ -213,6 +221,7 @@ then
   elif [ ${machine} = "Mac" ]
   then
     echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bash_profile
+    echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.zshrc
   fi
 
   echo "Please check PATH in .bashrc (Ubuntu) or .bash_profile (macOS) and remove the old ones."

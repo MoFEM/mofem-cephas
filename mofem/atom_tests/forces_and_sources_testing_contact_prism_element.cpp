@@ -196,22 +196,18 @@ int main(int argc, char *argv[]) {
       pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
     PetscBool flg = PETSC_TRUE;
-    PetscBool is_hdiv = PETSC_FALSE;
     char mesh_file_name[255];
-#if PETSC_VERSION_GE(3, 6, 4)
     CHKERR PetscOptionsGetString(PETSC_NULL, "", "-my_file", mesh_file_name,
                                  255, &flg);
-    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-is_hdiv", &is_hdiv,
-                               PETSC_NULL);
-#else
-    CHKERR PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-my_file",
-                                 mesh_file_name, 255, &flg);
-    CHKERR PetscOptionsGetBool(PETSC_NULL, PETSC_NULL, "-is_hdiv", &is_hdiv,
-                              PETSC_NULL);
-#endif
-
     if (flg != PETSC_TRUE)
-      SETERRQ(PETSC_COMM_SELF, 1, "error -my_file (mesh file not given");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "error -my_file (mesh file not given");
+
+    enum spaces { MYH1, MYHDIV, MYLASTSPACEOP };
+    const char *list_spaces[] = {"h1", "hdiv"};
+    PetscInt choice_space_value = H1;
+    CHKERR PetscOptionsGetEList(PETSC_NULL, NULL, "-space", list_spaces,
+                                MYLASTSPACEOP, &choice_space_value, &flg);
+    bool is_hdiv = (choice_space_value == MYHDIV) ? true : false;
 
     const char *option;
     option = "";

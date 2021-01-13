@@ -1,10 +1,10 @@
 /**
- * \file continuity_check_on_skeleton_with_simple_2d.cpp
+ * \file continuity_check_on_skeleton_with_simple_2d_for_hdiv.cpp
  * \ingroup mofem_simple_interface
- * \example continuity_check_on_skeleton_with_simple_2d.cpp
+ * \example continuity_check_on_skeleton_with_simple_2d_for_hdiv.cpp
  *
  * \brief Integration on skeleton for 2d
- * 
+ *
  * Teting integration on skeleton and checking of continuity of hcurl space on
  * edges.
  */
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
           boost::shared_ptr<EdgeEle>(new EdgeEle(m_field));
 
       skeleton_fe->getOpPtrVector().push_back(
-          new OpSetContrariantPiolaTransformOnEdge());
+          new OpSetContravariantPiolaTransformOnEdge());
       skeleton_fe->getOpPtrVector().push_back(
           new SkeletonFE(m_field, elem_data));
 

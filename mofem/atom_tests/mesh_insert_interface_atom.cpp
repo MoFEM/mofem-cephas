@@ -24,6 +24,8 @@ using namespace MoFEM;
 
 static char help[] = "teting interface inserting algorithm\n\n";
 
+constexpr bool debug = false;
+
 int main(int argc, char *argv[]) {
 
   MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
@@ -40,7 +42,8 @@ int main(int argc, char *argv[]) {
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+              "*** ERROR -my_file (MESH FILE NEEDED)");
     }
 
     moab::Core mb_instance;
@@ -223,7 +226,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::ofstream myfile;
-    myfile.open("mesh_insert_interface.txt");
+    myfile.open((mesh_file_name + std::string("_log")).c_str());
 
     EntityHandle out_meshset_tet;
     CHKERR moab.create_meshset(MESHSET_SET, out_meshset_tet);
@@ -264,23 +267,26 @@ int main(int argc, char *argv[]) {
     }
     myfile.close();
 
-    CHKERR moab.write_file("out_tet.vtk", "VTK", "", &out_meshset_tet, 1);
-    CHKERR moab.write_file("out_prism.vtk", "VTK", "", &out_meshset_prism, 1);
+    if (debug) {
+      CHKERR moab.write_file("out_tet.vtk", "VTK", "", &out_meshset_tet, 1);
+      CHKERR moab.write_file("out_prism.vtk", "VTK", "", &out_meshset_prism, 1);
 
-    EntityHandle out_meshset_tets_and_prism;
-    CHKERR moab.create_meshset(MESHSET_SET, out_meshset_tets_and_prism);
-    CHKERR moab.add_entities(out_meshset_tets_and_prism, tets);
-    CHKERR moab.add_entities(out_meshset_tets_and_prism, prisms);
-    CHKERR moab.write_file("out_tets_and_prisms.vtk", "VTK", "",
-                           &out_meshset_tets_and_prism, 1);
+      EntityHandle out_meshset_tets_and_prism;
+      CHKERR moab.create_meshset(MESHSET_SET, out_meshset_tets_and_prism);
+      CHKERR moab.add_entities(out_meshset_tets_and_prism, tets);
+      CHKERR moab.add_entities(out_meshset_tets_and_prism, prisms);
+      CHKERR moab.write_file("out_tets_and_prisms.vtk", "VTK", "",
+                             &out_meshset_tets_and_prism, 1);
 
-    EntityHandle out_meshset_tris;
-    CHKERR moab.create_meshset(MESHSET_SET, out_meshset_tris);
-    Range tris;
-    CHKERR moab.get_adjacencies(prisms, 2, false, tris, moab::Interface::UNION);
-    std::cerr << tris.size() << " : " << prisms.size() << std::endl;
-    CHKERR moab.add_entities(out_meshset_tris, tris);
-    CHKERR moab.write_file("out_tris.vtk", "VTK", "", &out_meshset_tris, 1);
+      EntityHandle out_meshset_tris;
+      CHKERR moab.create_meshset(MESHSET_SET, out_meshset_tris);
+      Range tris;
+      CHKERR moab.get_adjacencies(prisms, 2, false, tris,
+                                  moab::Interface::UNION);
+      std::cerr << tris.size() << " : " << prisms.size() << std::endl;
+      CHKERR moab.add_entities(out_meshset_tris, tris);
+      CHKERR moab.write_file("out_tris.vtk", "VTK", "", &out_meshset_tris, 1);
+    }
   }
   CATCH_ERRORS;
 

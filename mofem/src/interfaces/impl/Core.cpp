@@ -901,7 +901,7 @@ const FieldEntity_multiIndex *Core::get_field_ents() const {
   return &entsFields;
 }
 const DofEntity_multiIndex *Core::get_dofs() const { return &dofsField; }
-const Problem *Core::get_problem(const std::string &problem_name) const {
+const Problem *Core::get_problem(const std::string problem_name) const {
   const Problem *prb;
   CHKERR get_problem(problem_name, &prb);
   return prb;
@@ -921,17 +921,20 @@ void set_ref_ent_basic_data_ptr_impl(boost::shared_ptr<BasicEntityData> &ptr) {
 void Core::setRefEntBasicDataPtr(MoFEM::Interface &m_field,
                                       boost::shared_ptr<BasicEntityData> &ptr) {
 
-  boost::hana::for_each(
+  switch (m_field.getValue()) {
+  case -1:
+    set_ref_ent_basic_data_ptr_impl<-1>(ptr);
+    break;
+  case 0:
+    set_ref_ent_basic_data_ptr_impl<0>(ptr);
+    break;
+  case 1:
+    set_ref_ent_basic_data_ptr_impl<1>(ptr);
+    break;
+  default:
+    THROW_MESSAGE("Core index can vary from -1 to MAX_CORE_TMP");
+  }
 
-      boost::hana::make_range(boost::hana::int_c<-1>,
-                              boost::hana::int_c<MAX_CORE_TMP>),
-
-      [&](auto r) {
-        if (m_field.getValue() == r)
-          set_ref_ent_basic_data_ptr_impl<r>(ptr);
-      }
-
-  );
 };
 
 boost::shared_ptr<RefEntityTmp<0>>
@@ -939,21 +942,31 @@ Core::makeSharedRefEntity(MoFEM::Interface &m_field, const EntityHandle ent) {
 
   boost::shared_ptr<RefEntityTmp<0>> ref_ent_ptr;
 
-  boost::hana::for_each(
+  switch (m_field.getValue()) {
+  case -1:
+    ref_ent_ptr = boost::shared_ptr<RefEntityTmp<0>>(
 
-      boost::hana::make_range(boost::hana::int_c<-1>,
-                              boost::hana::int_c<MAX_CORE_TMP>),
+        new RefEntityTmp<-1>(m_field.get_basic_entity_data_ptr(), ent)
 
-      [&](auto r) {
-        if (m_field.getValue() == r)
-          ref_ent_ptr = boost::shared_ptr<RefEntityTmp<0>>(
+    );
+    break;
+  case 0:
+    ref_ent_ptr = boost::shared_ptr<RefEntityTmp<0>>(
 
-              new RefEntityTmp<r>(m_field.get_basic_entity_data_ptr(), ent)
+        new RefEntityTmp<0>(m_field.get_basic_entity_data_ptr(), ent)
 
-          );
-      }
+    );
+    break;
+  case 1:
+    ref_ent_ptr = boost::shared_ptr<RefEntityTmp<0>>(
 
-  );
+        new RefEntityTmp<1>(m_field.get_basic_entity_data_ptr(), ent)
+
+    );
+    break;
+  default:
+    THROW_MESSAGE("Core index can vary from -1 to MAX_CORE_TMP");
+  }
 
   return ref_ent_ptr;
 }

@@ -36,9 +36,7 @@ MoFEMErrorCode PrismInterface::query_interface(const MOFEMuuid &uuid,
 PrismInterface::PrismInterface(const Core &core)
     : cOre(const_cast<Core &>(core)) {
 
-  try {
-    MoFEM::LogManager::getLog("PRISM_INTERFACE");
-  } catch (...) {
+  if (!LogManager::checkIfChannelExist("PRISM_INTERFACE")) {
     auto core_log = logging::core::get();
     core_log->add_sink(
         LogManager::createSink(LogManager::getStrmWorld(), "PRISM_INTERFACE"));

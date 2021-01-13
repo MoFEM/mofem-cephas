@@ -43,6 +43,9 @@
 #include <petscdm.h>
 #include <petscao.h>
 #include <petscis.h>
+#if PETSC_VERSION_GE(3, 14 , 0)
+#include <petscsection.h>
+#endif
 
 //STL
 #include <string>
@@ -137,8 +140,8 @@
 #include <boost/ref.hpp>
 
 // Metaprogramming
-#include <boost/hana.hpp>
-#include <boost/hana/for_each.hpp>
+// #include <boost/hana.hpp>
+// #include <boost/hana/for_each.hpp>
 
 //MOAB
 #include <moab/MOABConfig.h>

@@ -40,5 +40,8 @@ Dockerfile-build-um-obsolete
 doxygen_warnlogfile
 .vscode
 
+core-build*
 spack-build*
+um-build*
 .DS_Store
+spack-configure-args.txt

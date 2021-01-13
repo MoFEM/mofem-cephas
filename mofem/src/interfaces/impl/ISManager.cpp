@@ -33,7 +33,6 @@ MoFEMErrorCode ISManager::query_interface(const MOFEMuuid &uuid,
 
 ISManager::ISManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
-ISManager::~ISManager() {}
 
 MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
                                         PetscSection *s,
@@ -93,17 +92,13 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
   // determine number of points
   int nb_charts = 0;
   {
-    NumeredDofEntity_multiIndex::iterator dit, hi_dit;
-    dit = dofs->begin();
-    hi_dit = dofs->end();
+    auto dit = dofs->begin();
+    auto hi_dit = dofs->end();
     for (; dit != hi_dit;) {
-      EntityHandle ent = dit->get()->getEnt();
-      if (static_cast<int>(dit->get()->getPart()) == proc &&
-          dit->get()->getEntDofIdx() == 0) {
-        while (dit != hi_dit && ent == dit->get()->getEnt()) {
-          const int nb_of_dofs_on_ent = dit->get()->getNbDofsOnEnt();
-          for (int dd = 0; dd != nb_of_dofs_on_ent; dd++, dit++) {
-          }
+      if (static_cast<int>(dit->get()->getPart()) == proc) {
+        const auto &ent_uid = dit->get()->getEntLocalUniqueId();
+        while (dit != hi_dit && dit->get()->getEntLocalUniqueId() == ent_uid) {
+          ++dit;
         }
         ++nb_charts;
       } else {
@@ -121,45 +116,35 @@ MoFEMErrorCode ISManager::sectionCreate(const std::string &problem_name,
   CHKERR PetscLayoutGetRange(layout, &rstart, &rend);
   CHKERR PetscLayoutDestroy(&layout);
   CHKERR PetscSectionSetChart(*s, rstart, rend);
-  // cerr << rstart << " " << rend << " " << proc << endl;
+
   // loop of all dofs
   {
-    NumeredDofEntity_multiIndex::iterator dit, hi_dit;
-    dit = dofs->begin();
-    hi_dit = dofs->end();
+    auto dit = dofs->begin();
+    auto hi_dit = dofs->end();
     int point = rstart;
     for (; dit != hi_dit;) {
-      EntityHandle ent = dit->get()->getEnt();
-      if (static_cast<int>(dit->get()->getPart()) == proc &&
-          dit->get()->getEntDofIdx() == 0) {
-        // exploit that does are continuously stored on entity
-        // that includes fields
-        while (dit != hi_dit && ent == dit->get()->getEnt()) {
-          const int nb_of_dofs_on_ent = dit->get()->getNbDofsOnEnt();
-          std::string field_name = dit->get()->getName();
-          if (fields_map.find(field_name) == fields_map.end()) {
-            PetscPrintf(PETSC_COMM_WORLD, "Warning: Field %s not found\n",
-                        dit->get()->getName().c_str());
-          } else {
-            if (dit->get()->getEntDofIdx() != 0) {
-              cerr << **dit << endl;
-              SETERRQ(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-                      "data inconsistency");
-            }
-            CHKERR PetscSectionAddDof(*s, point, nb_of_dofs_on_ent);
-            int field = fields_map.at(field_name).first;
-            CHKERR PetscSectionSetFieldDof(*s, point, field, nb_of_dofs_on_ent);
-          }
-          for (int dd = 0; dd != nb_of_dofs_on_ent; dd++, dit++) {
-            if (field_name != dit->get()->getName()) {
-              SETERRQ2(PETSC_COMM_WORLD, MOFEM_DATA_INCONSISTENCY,
-                       "field name inconsistency %s!=%s", field_name.c_str(),
-                       dit->get()->getName().c_str());
-            }
-          }
-          // cerr << point << endl;
+      if (static_cast<int>(dit->get()->getPart()) == proc) {
+
+        const auto &field_name = dit->get()->getName();
+
+        int dd = 0;
+        const auto &ent_uid = dit->get()->getEntLocalUniqueId();
+        while (dit != hi_dit && dit->get()->getEntLocalUniqueId() == ent_uid) {
+          ++dd;
+          ++dit;
         }
+
+        if (fields_map.find(field_name) == fields_map.end()) {
+          MOFEM_LOG_C("SELF", Sev::warning, "Warning: Field %s not found",
+                      dit->get()->getName().c_str());
+        } else {
+          CHKERR PetscSectionAddDof(*s, point, dd);
+          int field = fields_map.at(field_name).first;
+          CHKERR PetscSectionSetFieldDof(*s, point, field, dd);
+        }
+
         ++point;
+
       } else {
         ++dit;
       }
@@ -196,10 +181,10 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
 
   const int rank = m_field.get_comm_rank();
 
-  NumeredDofEntity_order_view_multiIndex dofs_part_view;
-  auto insert_part_range = [&dofs_part_view, rank](auto &dofs) {
-    dofs_part_view.insert(dofs_part_view.end(), dofs.lower_bound(rank),
-                          dofs.upper_bound(rank));
+  NumeredDofEntity_order_view_multiIndex dofs_by_order;
+  auto insert_part_range = [&dofs_by_order, rank](auto &dofs) {
+    dofs_by_order.insert(dofs_by_order.end(), dofs.lower_bound(rank),
+                         dofs.upper_bound(rank));
   };
 
   switch (rc) {
@@ -213,8 +198,8 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
   }
 
-  auto lo = dofs_part_view.get<Order_mi_tag>().lower_bound(min_order);
-  auto hi = dofs_part_view.get<Order_mi_tag>().upper_bound(max_order);
+  auto lo = dofs_by_order.get<Order_mi_tag>().lower_bound(min_order);
+  auto hi = dofs_by_order.get<Order_mi_tag>().upper_bound(max_order);
   const int size = std::distance(lo, hi);
   int *id;
   CHKERR PetscMalloc(size * sizeof(int), &id);
@@ -225,6 +210,17 @@ MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
 
   CHKERR ISCreateGeneral(PETSC_COMM_WORLD, size, id, PETSC_OWN_POINTER, is);
 
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ISManager::isCreateProblemOrder(const std::string &problem,
+                                               RowColData rc, int min_order,
+                                               int max_order,
+                                               SmartPetscObj<IS> &is) const {
+  MoFEMFunctionBegin;
+  IS raw_is;
+  CHKERR isCreateProblemOrder(problem, rc, min_order, max_order, &raw_is);
+  is = SmartPetscObj<IS>(raw_is);
   MoFEMFunctionReturn(0);
 }
 
@@ -258,8 +254,6 @@ MoFEMErrorCode ISManager::isCreateProblemFieldAndRank(
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
   }
-
-
 
   std::vector<int> idx_vec;
   idx_vec.reserve(std::distance(it, hi_it));
@@ -371,18 +365,20 @@ MoFEMErrorCode ISManager::isCreateFromProblemFieldToOtherProblemField(
 
   switch (x_rc) {
   case ROW:
-    dofs_view.insert(dofs_view.end(),
-                     px_ptr->numeredRowDofsPtr->get<Unique_mi_tag>().lower_bound(
-                         FieldEntity::getLoBitNumberUId(x_bit_number)),
-                     px_ptr->numeredRowDofsPtr->get<Unique_mi_tag>().upper_bound(
-                         FieldEntity::getHiBitNumberUId(x_bit_number)));
+    dofs_view.insert(
+        dofs_view.end(),
+        px_ptr->numeredRowDofsPtr->get<Unique_mi_tag>().lower_bound(
+            FieldEntity::getLoBitNumberUId(x_bit_number)),
+        px_ptr->numeredRowDofsPtr->get<Unique_mi_tag>().upper_bound(
+            FieldEntity::getHiBitNumberUId(x_bit_number)));
     break;
   case COL:
-    dofs_view.insert(dofs_view.end(),
-                     px_ptr->numeredColDofsPtr->get<Unique_mi_tag>().lower_bound(
-                         FieldEntity::getLoBitNumberUId(x_bit_number)),
-                     px_ptr->numeredColDofsPtr->get<Unique_mi_tag>().upper_bound(
-                         FieldEntity::getHiBitNumberUId(x_bit_number)));
+    dofs_view.insert(
+        dofs_view.end(),
+        px_ptr->numeredColDofsPtr->get<Unique_mi_tag>().lower_bound(
+            FieldEntity::getLoBitNumberUId(x_bit_number)),
+        px_ptr->numeredColDofsPtr->get<Unique_mi_tag>().upper_bound(
+            FieldEntity::getHiBitNumberUId(x_bit_number)));
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -467,14 +463,18 @@ MoFEMErrorCode ISManager::isCreateFromProblemToOtherProblem(
   NumeredDofEntityByLocalIdx::iterator y_dit, hi_y_dit;
   switch (y_rc) {
   case ROW:
-    y_dit = py_ptr->numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-    hi_y_dit = py_ptr->numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(
-        py_ptr->getNbLocalDofsRow()); // should be lower
+    y_dit =
+        py_ptr->numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(0);
+    hi_y_dit =
+        py_ptr->numeredRowDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(
+            py_ptr->getNbLocalDofsRow()); // should be lower
     break;
   case COL:
-    y_dit = py_ptr->numeredColDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-    hi_y_dit = py_ptr->numeredColDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(
-        py_ptr->getNbLocalDofsCol()); // should be lower
+    y_dit =
+        py_ptr->numeredColDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(0);
+    hi_y_dit =
+        py_ptr->numeredColDofsPtr->get<PetscLocalIdx_mi_tag>().lower_bound(
+            py_ptr->getNbLocalDofsCol()); // should be lower
     break;
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");

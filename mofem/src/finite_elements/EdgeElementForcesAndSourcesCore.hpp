@@ -44,7 +44,6 @@ struct FaceElementForcesAndSourcesCoreOnSideBase;
 struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
 
   std::string meshPositionsFieldName;
-  EdgeElementForcesAndSourcesCoreBase(Interface &m_field);
 
   /** \brief default operator for EDGE element
     \ingroup mofem_forces_and_sources_edge_element
@@ -152,6 +151,8 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   template <int SWITCH> MoFEMErrorCode OpSwitch();
 
 protected:
+  EdgeElementForcesAndSourcesCoreBase(Interface &m_field);
+
   MatrixDouble tangentAtGaussPts;
   OpGetHoTangentOnEdge opGetHoTangentOnEdge;
   OpSetCovariantPiolaTransformOnEdge opCovariantTransform;
@@ -185,8 +186,8 @@ template <int SWITCH>
 struct EdgeElementForcesAndSourcesCoreSwitch
     : public EdgeElementForcesAndSourcesCoreBase {
 
-  using EdgeElementForcesAndSourcesCoreBase::
-      EdgeElementForcesAndSourcesCoreBase;
+  EdgeElementForcesAndSourcesCoreSwitch(Interface &m_field)
+      : EdgeElementForcesAndSourcesCoreBase(m_field) {}
 
   MoFEMErrorCode operator()();
 };

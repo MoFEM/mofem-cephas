@@ -88,10 +88,4 @@ would like to read about different ways to install MoFEM, you can have a look he
 
   - \subpage install_docker
 
-- Ubuntu and macOS (reference only, no longer maintained and supported)
-
-  - \subpage install_ubuntu
-
-  - \subpage install_macosx
-
 */

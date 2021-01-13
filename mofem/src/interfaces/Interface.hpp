@@ -1653,7 +1653,7 @@ struct CoreInterface : public UnknownInterface {
    * @param problem_name
    * @return const Problem*
    */
-  virtual const Problem *get_problem(const std::string &problem_name) const = 0;
+  virtual const Problem *get_problem(const std::string problem_name) const = 0;
 
   /**
    * @brief Get the problems object
