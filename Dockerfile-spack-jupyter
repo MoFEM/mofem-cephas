@@ -36,9 +36,11 @@ RUN pip3 -q install pip --upgrade && \
 ENV DISPLAY=:99.0
 ENV JUPYTER_ENABLE_LAB=yes
 ENV PYVISTA_USE_IPYVTK=true
+ENV JUPYTER_TOKEN=mofem
 
 WORKDIR $MOFEM_INSTALL_DIR
 
+EXPOSE 8888
 CMD /bin/bash -c "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &" && \
   jupyter notebook --port=8888 --no-browser --ip=0.0.0.0 --allow-root
 

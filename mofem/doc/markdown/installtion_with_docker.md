@@ -129,15 +129,13 @@ and finally, open it in ParaView [ParaView](https://www.paraview.org/download/).
 
 Pull MoFEM images and create mofem_volume
 ~~~~~~
-docker pull likask/mofem-spack-build
-docker pull likask/mofem-spack-jupyter
 docker run --name mofem_volume likask/mofem-spack-build
 ~~~~~~
 and run container as follows
 ~~~~~~
 docker run \
   -p 8888:8888  \
-  --name mofem_develop \
+  --name mofem_jupyetr \
   -v $HOME:/host_home  \
   --volumes-from mofem_volume \
   --rm=true -ti \
@@ -155,6 +153,14 @@ Copy address into web-browser:
 http://127.0.0.1:8888/?token=bed64e1d532ab00f402d56432193a80f6aace612d4ffbec2
 ~~~~~~
 
+You can start docker without starting volume, as a isolated system, as follows,
+~~~~~~
+docker run \
+  -p 8888:8888  \
+  --name mofem_jupyter \
+  --rm=true -ti \
+  likask/mofem-spack-jupyter
+~~~~~~
 # Clone MoFEM repository {#docker_clone}
 
 To build MoFEM the source code need to be downloaded. The best method to do it is
