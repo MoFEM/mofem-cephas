@@ -126,6 +126,8 @@ and finally, open it in ParaView [ParaView](https://www.paraview.org/download/).
 
 # Running Jupyter notebook {#docker_jupyter}
 
+See video explaing this part of the installation: 
+[https://youtu.be/-54eMMRTqsQ](https://youtu.be/-54eMMRTqsQ)
 
 Pull MoFEM images and create mofem_volume
 ~~~~~~
