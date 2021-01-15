@@ -682,12 +682,15 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
   CHKERR meshsets_manager_ptr->getCubitMeshsetPtr(meshName, &cubit_meshset_ptr);
   EntityHandle meshset = cubit_meshset_ptr->getMeshset();
 
+  // Paraview can only plot field which have 1, 3, or 9 components. If field has
+  // more that 9 comonents, it is stored on MOAB mesh but not viable in
+  // ParaView.
   int num_comp_msh = (num_comp <= 1)
                          ? 1
                          : (num_comp <= 3) ? 3 : (num_comp <= 9) ? 9 : num_comp;
 
   // Create tag to store nodal or cell values read form med file. Note that tag
-  // has prefix MED to avoid collison with other tags.
+  // has prefix MED to avoid collision with other tags.
   Tag th;
   std::string tag_name = "MED_" + field_name;
   {
