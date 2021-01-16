@@ -6,7 +6,7 @@ ADD . $MOFEM_SRC_DIR/
 
 # Install core library
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
-  spack dev-build \
+  spack dev-build -j 4 \
   --source-path $MOFEM_SRC_DIR \
   --keep-prefix \
   --test root \
@@ -18,7 +18,7 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
 # Install users mdoules
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
   MOFEM_CEPHAS_HASH=`spack find -lv mofem-cephas | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
-  spack dev-build \
+  spack dev-build -j 4 \
   --test root  \
   --source-pat $MOFEM_UM_SRC_DIR \
   mofem-users-modules@develop+docker build_type=Release \
