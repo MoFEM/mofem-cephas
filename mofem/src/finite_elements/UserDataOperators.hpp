@@ -1840,6 +1840,8 @@ private:
 
 /**@{*/
 
+template <int SPACE_DIM> struct OpCalculateJacForFaceImpl;
+
 /** \brief Calculate jacobian for face element
 
   It is assumed that face element is XY plane. Applied
@@ -1850,17 +1852,22 @@ private:
   \ingroup mofem_forces_and_sources_tri_element
 
 */
-struct OpCalculateJacForFace
+template <>
+struct OpCalculateJacForFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
   MatrixDouble &jac;
 
-  OpCalculateJacForFace(MatrixDouble &jac)
+  OpCalculateJacForFaceImpl(MatrixDouble &jac)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
         jac(jac) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 };
+
+using OpCalculateJacForFace = OpCalculateJacForFaceImpl<2>;
+
+template <int SPACE_DIM> struct OpCalculateInvJacForFaceImpl;
 
 /** \brief Calculate inverse of jacobian for face element
 
@@ -1872,17 +1879,20 @@ struct OpCalculateJacForFace
   \ingroup mofem_forces_and_sources_tri_element
 
 */
-struct OpCalculateInvJacForFace
+template <>
+struct OpCalculateInvJacForFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
   MatrixDouble &invJac;
 
-  OpCalculateInvJacForFace(MatrixDouble &inv_jac)
+  OpCalculateInvJacForFaceImpl(MatrixDouble &inv_jac)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
         invJac(inv_jac) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 };
+
+using OpCalculateInvJacForFace = OpCalculateInvJacForFaceImpl<2>;
 
 /** \brief Transform local reference derivatives of shape functions to global
 derivatives

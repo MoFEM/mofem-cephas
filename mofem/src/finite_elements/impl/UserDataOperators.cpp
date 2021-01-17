@@ -22,8 +22,8 @@ purposes.
 namespace MoFEM {
 
 MoFEMErrorCode
-OpCalculateJacForFace::doWork(int side, EntityType type,
-                              DataForcesAndSourcesCore::EntData &data) {
+OpCalculateJacForFaceImpl<2>::doWork(int side, EntityType type,
+                                 DataForcesAndSourcesCore::EntData &data) {
 
   MoFEMFunctionBegin;
 
@@ -99,15 +99,12 @@ OpCalculateJacForFace::doWork(int side, EntityType type,
             "Operator not implemented for this entity type");
   };
 
-  doEntities[MBVERTEX] = true;
-  std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
-
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
-OpCalculateInvJacForFace::doWork(int side, EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data) {
+OpCalculateInvJacForFaceImpl<2>::doWork(int side, EntityType type,
+                                    DataForcesAndSourcesCore::EntData &data) {
 
   MoFEMFunctionBegin;
 
