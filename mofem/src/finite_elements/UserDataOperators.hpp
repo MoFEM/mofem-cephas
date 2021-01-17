@@ -1855,7 +1855,8 @@ struct OpCalculateJacForFace
   MatrixDouble &jac;
 
   OpCalculateJacForFace(MatrixDouble &jac)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(H1), jac(jac) {}
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
+        jac(jac) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
@@ -1876,7 +1877,7 @@ struct OpCalculateInvJacForFace
   MatrixDouble &invJac;
 
   OpCalculateInvJacForFace(MatrixDouble &inv_jac)
-      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(H1),
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
         invJac(inv_jac) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,

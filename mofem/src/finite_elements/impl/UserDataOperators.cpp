@@ -29,64 +29,60 @@ OpCalculateJacForFace::doWork(int side, EntityType type,
 
   auto cal_jac_on_tri = [&]() {
     MoFEMFunctionBeginHot;
-    if (type == MBVERTEX) {
-      VectorDouble &coords = getCoords();
-      double *coords_ptr = &*coords.data().begin();
-      double j00 = 0, j01 = 0, j10 = 0, j11 = 0;
-      // this is triangle, derivative of nodal shape functions is constant.
-      // So only need to do one node.
-      for (auto n : {0, 1, 2}) {
-        j00 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 0];
-        j01 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 1];
-        j10 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 0];
-        j11 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 1];
-      }
-      size_t nb_gauss_pts = getGaussPts().size2();
-      jac.resize(4, nb_gauss_pts, false);
-      FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_jac(
-          &jac(0, 0), &jac(1, 0), &jac(2, 0), &jac(3, 0));
-      for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
-        t_jac(0, 0) = j00;
-        t_jac(0, 1) = j01;
-        t_jac(1, 0) = j10;
-        t_jac(1, 1) = j11;
-      }
+    VectorDouble &coords = getCoords();
+    double *coords_ptr = &*coords.data().begin();
+    double j00 = 0, j01 = 0, j10 = 0, j11 = 0;
+    // this is triangle, derivative of nodal shape functions is constant.
+    // So only need to do one node.
+    for (auto n : {0, 1, 2}) {
+      j00 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 0];
+      j01 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 1];
+      j10 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 0];
+      j11 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 1];
+    }
+    size_t nb_gauss_pts = getGaussPts().size2();
+    jac.resize(4, nb_gauss_pts, false);
+    FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_jac(
+        &jac(0, 0), &jac(1, 0), &jac(2, 0), &jac(3, 0));
+    for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
+      t_jac(0, 0) = j00;
+      t_jac(0, 1) = j01;
+      t_jac(1, 0) = j10;
+      t_jac(1, 1) = j11;
     }
     MoFEMFunctionReturnHot(0);
   };
 
   auto cal_jac_on_quad = [&]() {
     MoFEMFunctionBeginHot;
-    if (type == MBVERTEX) {
-      VectorDouble &coords = getCoords();
-      double *coords_ptr = &*coords.data().begin();
-      const size_t nb_integration_pts = getGaussPts().size2();
-      jac.resize(4, nb_integration_pts, false);
-      FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_jac(
-          &jac(0, 0), &jac(1, 0), &jac(2, 0), &jac(3, 0));
-      double *ksi_ptr = &getGaussPts()(0, 0);
-      double *zeta_ptr = &getGaussPts()(1, 0);
-      for (size_t gg = 0; gg != nb_integration_pts;
-           ++gg, ++t_jac, ++ksi_ptr, ++zeta_ptr) {
-        const double &ksi = *ksi_ptr;
-        const double &zeta = *zeta_ptr;
-        t_jac(0, 0) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0x(zeta) +
-                      coords_ptr[3 * 1 + 0] * diffN_MBQUAD1x(zeta) +
-                      coords_ptr[3 * 2 + 0] * diffN_MBQUAD2x(zeta) +
-                      coords_ptr[3 * 3 + 0] * diffN_MBQUAD3x(zeta);
-        t_jac(0, 1) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0y(ksi) +
-                      coords_ptr[3 * 1 + 0] * diffN_MBQUAD1y(ksi) +
-                      coords_ptr[3 * 2 + 0] * diffN_MBQUAD2y(ksi) +
-                      coords_ptr[3 * 3 + 0] * diffN_MBQUAD3y(ksi);
-        t_jac(1, 0) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0x(zeta) +
-                      coords_ptr[3 * 1 + 1] * diffN_MBQUAD1x(zeta) +
-                      coords_ptr[3 * 2 + 1] * diffN_MBQUAD2x(zeta) +
-                      coords_ptr[3 * 3 + 1] * diffN_MBQUAD3x(zeta);
-        t_jac(1, 1) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0y(ksi) +
-                      coords_ptr[3 * 1 + 1] * diffN_MBQUAD1y(ksi) +
-                      coords_ptr[3 * 2 + 1] * diffN_MBQUAD2y(ksi) +
-                      coords_ptr[3 * 3 + 1] * diffN_MBQUAD3y(ksi);
-      }
+    VectorDouble &coords = getCoords();
+    double *coords_ptr = &*coords.data().begin();
+    const size_t nb_integration_pts = getGaussPts().size2();
+    jac.resize(4, nb_integration_pts, false);
+    FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_jac(
+        &jac(0, 0), &jac(1, 0), &jac(2, 0), &jac(3, 0));
+    double *ksi_ptr = &getGaussPts()(0, 0);
+    double *zeta_ptr = &getGaussPts()(1, 0);
+    for (size_t gg = 0; gg != nb_integration_pts;
+         ++gg, ++t_jac, ++ksi_ptr, ++zeta_ptr) {
+      const double &ksi = *ksi_ptr;
+      const double &zeta = *zeta_ptr;
+      t_jac(0, 0) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0x(zeta) +
+                    coords_ptr[3 * 1 + 0] * diffN_MBQUAD1x(zeta) +
+                    coords_ptr[3 * 2 + 0] * diffN_MBQUAD2x(zeta) +
+                    coords_ptr[3 * 3 + 0] * diffN_MBQUAD3x(zeta);
+      t_jac(0, 1) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0y(ksi) +
+                    coords_ptr[3 * 1 + 0] * diffN_MBQUAD1y(ksi) +
+                    coords_ptr[3 * 2 + 0] * diffN_MBQUAD2y(ksi) +
+                    coords_ptr[3 * 3 + 0] * diffN_MBQUAD3y(ksi);
+      t_jac(1, 0) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0x(zeta) +
+                    coords_ptr[3 * 1 + 1] * diffN_MBQUAD1x(zeta) +
+                    coords_ptr[3 * 2 + 1] * diffN_MBQUAD2x(zeta) +
+                    coords_ptr[3 * 3 + 1] * diffN_MBQUAD3x(zeta);
+      t_jac(1, 1) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0y(ksi) +
+                    coords_ptr[3 * 1 + 1] * diffN_MBQUAD1y(ksi) +
+                    coords_ptr[3 * 2 + 1] * diffN_MBQUAD2y(ksi) +
+                    coords_ptr[3 * 3 + 1] * diffN_MBQUAD3y(ksi);
     }
     MoFEMFunctionReturnHot(0);
   };
@@ -117,72 +113,68 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
 
   auto cal_inv_jac_on_tri = [&]() {
     MoFEMFunctionBeginHot;
-    if (type == MBVERTEX) {
-      VectorDouble &coords = getCoords();
-      double *coords_ptr = &*coords.data().begin();
-      double j00 = 0, j01 = 0, j10 = 0, j11 = 0;
+    VectorDouble &coords = getCoords();
+    double *coords_ptr = &*coords.data().begin();
+    double j00 = 0, j01 = 0, j10 = 0, j11 = 0;
 
-      // this is triangle, derivative of nodal shape functions is constant.
-      // So only need to do one node.
-      for (auto n : {0, 1, 2}) {
-        j00 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 0];
-        j01 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 1];
-        j10 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 0];
-        j11 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 1];
-      }
-      const double det = j00 * j11 - j01 * j10;
+    // this is triangle, derivative of nodal shape functions is constant.
+    // So only need to do one node.
+    for (auto n : {0, 1, 2}) {
+      j00 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 0];
+      j01 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 1];
+      j10 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 0];
+      j11 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 1];
+    }
+    const double det = j00 * j11 - j01 * j10;
 
-      size_t nb_gauss_pts = getGaussPts().size2();
-      invJac.resize(4, nb_gauss_pts, false);
-      FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_inv_jac(
-          &invJac(0, 0), &invJac(1, 0), &invJac(2, 0), &invJac(3, 0));
-      for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
-        t_inv_jac(0, 0) = j11 / det;
-        t_inv_jac(0, 1) = -j01 / det;
-        t_inv_jac(1, 0) = -j10 / det;
-        t_inv_jac(1, 1) = j00 / det;
-      }
+    size_t nb_gauss_pts = getGaussPts().size2();
+    invJac.resize(4, nb_gauss_pts, false);
+    FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_inv_jac(
+        &invJac(0, 0), &invJac(1, 0), &invJac(2, 0), &invJac(3, 0));
+    for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
+      t_inv_jac(0, 0) = j11 / det;
+      t_inv_jac(0, 1) = -j01 / det;
+      t_inv_jac(1, 0) = -j10 / det;
+      t_inv_jac(1, 1) = j00 / det;
     }
     MoFEMFunctionReturnHot(0);
   };
 
   auto cal_inv_jac_on_quad = [&]() {
     MoFEMFunctionBeginHot;
-    if (type == MBVERTEX) {
-      VectorDouble &coords = getCoords();
-      double *coords_ptr = &*coords.data().begin();
-      size_t nb_integration_pts = getGaussPts().size2();
-      invJac.resize(4, nb_integration_pts, false);
-      FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_inv_jac(
-          &invJac(0, 0), &invJac(1, 0), &invJac(2, 0), &invJac(3, 0));
-      double *ksi_ptr = &getGaussPts()(0, 0);
-      double *zeta_ptr = &getGaussPts()(1, 0);
-      for (size_t gg = 0; gg != nb_integration_pts;
-           ++gg, ++t_inv_jac, ++ksi_ptr, ++zeta_ptr) {
-        const double &ksi = *ksi_ptr;
-        const double &zeta = *zeta_ptr;
-        double j00 = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0x(zeta) +
-                     coords_ptr[3 * 1 + 0] * diffN_MBQUAD1x(zeta) +
-                     coords_ptr[3 * 2 + 0] * diffN_MBQUAD2x(zeta) +
-                     coords_ptr[3 * 3 + 0] * diffN_MBQUAD3x(zeta);
-        double j01 = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0y(ksi) +
-                     coords_ptr[3 * 1 + 0] * diffN_MBQUAD1y(ksi) +
-                     coords_ptr[3 * 2 + 0] * diffN_MBQUAD2y(ksi) +
-                     coords_ptr[3 * 3 + 0] * diffN_MBQUAD3y(ksi);
-        double j10 = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0x(zeta) +
-                     coords_ptr[3 * 1 + 1] * diffN_MBQUAD1x(zeta) +
-                     coords_ptr[3 * 2 + 1] * diffN_MBQUAD2x(zeta) +
-                     coords_ptr[3 * 3 + 1] * diffN_MBQUAD3x(zeta);
-        double j11 = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0y(ksi) +
-                     coords_ptr[3 * 1 + 1] * diffN_MBQUAD1y(ksi) +
-                     coords_ptr[3 * 2 + 1] * diffN_MBQUAD2y(ksi) +
-                     coords_ptr[3 * 3 + 1] * diffN_MBQUAD3y(ksi);
-        double det = j00 * j11 - j01 * j10;
-        t_inv_jac(0, 0) = j11 / det;
-        t_inv_jac(0, 1) = -j01 / det;
-        t_inv_jac(1, 0) = -j10 / det;
-        t_inv_jac(1, 1) = j00 / det;
-      }
+    VectorDouble &coords = getCoords();
+    double *coords_ptr = &*coords.data().begin();
+    size_t nb_integration_pts = getGaussPts().size2();
+    invJac.resize(4, nb_integration_pts, false);
+    FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_inv_jac(
+        &invJac(0, 0), &invJac(1, 0), &invJac(2, 0), &invJac(3, 0));
+    double *ksi_ptr = &getGaussPts()(0, 0);
+    double *zeta_ptr = &getGaussPts()(1, 0);
+    for (size_t gg = 0; gg != nb_integration_pts;
+         ++gg, ++t_inv_jac, ++ksi_ptr, ++zeta_ptr) {
+      const double &ksi = *ksi_ptr;
+      const double &zeta = *zeta_ptr;
+      double j00 = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0x(zeta) +
+                   coords_ptr[3 * 1 + 0] * diffN_MBQUAD1x(zeta) +
+                   coords_ptr[3 * 2 + 0] * diffN_MBQUAD2x(zeta) +
+                   coords_ptr[3 * 3 + 0] * diffN_MBQUAD3x(zeta);
+      double j01 = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0y(ksi) +
+                   coords_ptr[3 * 1 + 0] * diffN_MBQUAD1y(ksi) +
+                   coords_ptr[3 * 2 + 0] * diffN_MBQUAD2y(ksi) +
+                   coords_ptr[3 * 3 + 0] * diffN_MBQUAD3y(ksi);
+      double j10 = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0x(zeta) +
+                   coords_ptr[3 * 1 + 1] * diffN_MBQUAD1x(zeta) +
+                   coords_ptr[3 * 2 + 1] * diffN_MBQUAD2x(zeta) +
+                   coords_ptr[3 * 3 + 1] * diffN_MBQUAD3x(zeta);
+      double j11 = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0y(ksi) +
+                   coords_ptr[3 * 1 + 1] * diffN_MBQUAD1y(ksi) +
+                   coords_ptr[3 * 2 + 1] * diffN_MBQUAD2y(ksi) +
+                   coords_ptr[3 * 3 + 1] * diffN_MBQUAD3y(ksi);
+      double det = j00 * j11 - j01 * j10;
+      t_inv_jac(0, 0) = j11 / det;
+      t_inv_jac(0, 1) = -j01 / det;
+      t_inv_jac(1, 0) = -j10 / det;
+      t_inv_jac(1, 1) = j00 / det;
     }
     MoFEMFunctionReturnHot(0);
   };
@@ -198,9 +190,6 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Operator not implemented for this entity type");
   };
-
-  doEntities[MBVERTEX] = true;
-  std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
 
   MoFEMFunctionReturn(0);
 }
