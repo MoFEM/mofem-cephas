@@ -1836,11 +1836,20 @@ private:
 
 /**@}*/
 
+inline auto getFaceJac(MatrixDouble jac, const FTensor::Number<2> &) {
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2>{
+      &jac(0, 0), &jac(1, 0), &jac(2, 0), &jac(3, 0)};
+}
+
+inline auto getFaceJac(MatrixDouble jac, const FTensor::Number<3> &) {
+  return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>{
+      &jac(0, 0), &jac(1, 0), &jac(4, 0), &jac(2, 0), &jac(3, 0),
+      &jac(5, 0), &jac(6, 0), &jac(7, 0), &jac(8, 0)};
+}
+
 /** \name Operators for faces */
 
 /**@{*/
-
-template <int SPACE_DIM> struct OpCalculateJacForFaceImpl;
 
 /** \brief Calculate jacobian for face element
 
@@ -1852,22 +1861,19 @@ template <int SPACE_DIM> struct OpCalculateJacForFaceImpl;
   \ingroup mofem_forces_and_sources_tri_element
 
 */
-template <>
-struct OpCalculateJacForFaceImpl<2>
+struct OpCalculateJacForFace
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
-  MatrixDouble &jac;
 
-  OpCalculateJacForFaceImpl(MatrixDouble &jac)
+  OpCalculateJacForFace(MatrixDouble &jac)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
         jac(jac) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
+
+private:
+  MatrixDouble &jac;
 };
-
-using OpCalculateJacForFace = OpCalculateJacForFaceImpl<2>;
-
-template <int SPACE_DIM> struct OpCalculateInvJacForFaceImpl;
 
 /** \brief Calculate inverse of jacobian for face element
 
@@ -1879,12 +1885,11 @@ template <int SPACE_DIM> struct OpCalculateInvJacForFaceImpl;
   \ingroup mofem_forces_and_sources_tri_element
 
 */
-template <>
-struct OpCalculateInvJacForFaceImpl<2>
+struct OpCalculateInvJacForFace
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
   MatrixDouble &invJac;
 
-  OpCalculateInvJacForFaceImpl(MatrixDouble &inv_jac)
+  OpCalculateInvJacForFace(MatrixDouble &inv_jac)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
         invJac(inv_jac) {}
 
@@ -1892,7 +1897,6 @@ struct OpCalculateInvJacForFaceImpl<2>
                         DataForcesAndSourcesCore::EntData &data);
 };
 
-using OpCalculateInvJacForFace = OpCalculateInvJacForFaceImpl<2>;
 
 /** \brief Transform local reference derivatives of shape functions to global
 derivatives
