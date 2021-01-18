@@ -1836,12 +1836,12 @@ private:
 
 /**@}*/
 
-inline auto getFaceJac(MatrixDouble jac, const FTensor::Number<2> &) {
+inline auto getFaceJac(MatrixDouble &jac, const FTensor::Number<2> &) {
   return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2>{
       &jac(0, 0), &jac(1, 0), &jac(2, 0), &jac(3, 0)};
 }
 
-inline auto getFaceJac(MatrixDouble jac, const FTensor::Number<3> &) {
+inline auto getFaceJac(MatrixDouble &jac, const FTensor::Number<3> &) {
   return FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 3, 3>{
       &jac(0, 0), &jac(1, 0), &jac(4, 0), &jac(2, 0), &jac(3, 0),
       &jac(5, 0), &jac(6, 0), &jac(7, 0), &jac(8, 0)};

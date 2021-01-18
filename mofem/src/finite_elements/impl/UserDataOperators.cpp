@@ -59,8 +59,9 @@ OpCalculateJacForFace::doWork(int side, EntityType type,
 
     double normal_ptr[3];
     CHKERR Tools::getTriNormal(coords_ptr, normal_ptr);
-    const double l = sqrt(normal_ptr[0] * normal_ptr[0] + normal_ptr[1] +
-                          normal_ptr[1] + normal_ptr[2] * normal_ptr[2]);
+    const double l =
+        sqrt(normal_ptr[0] * normal_ptr[0] + normal_ptr[1] * normal_ptr[1] +
+             normal_ptr[2] * normal_ptr[2]);
     for (auto d : {0, 1, 2})
       normal_ptr[d] /= l;
 
@@ -181,8 +182,9 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
 
     double normal_ptr[3];
     CHKERR Tools::getTriNormal(coords_ptr, normal_ptr);
-    const double l = sqrt(normal_ptr[0] * normal_ptr[0] + normal_ptr[1] +
-                          normal_ptr[1] + normal_ptr[2] * normal_ptr[2]);
+    const double l =
+        sqrt(normal_ptr[0] * normal_ptr[0] + normal_ptr[1] * normal_ptr[1] +
+             normal_ptr[2] * normal_ptr[2]);
     for (auto d : {0, 1, 2})
       normal_ptr[d] /= l;
 
@@ -191,18 +193,17 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
     t_jac(0, 1) = j01;
     t_jac(1, 0) = j10;
     t_jac(1, 1) = j11;
-    // 3d
-    t_jac(2, 0) = j20;
-    t_jac(2, 1) = j21;
-    for (auto d : {0, 1, 2})
-      t_jac(d, d) = normal_ptr[d];
+    // // 3d
+    // t_jac(2, 0) = j20;
+    // t_jac(2, 1) = j21;
+    // for (auto d : {0, 1, 2})
+    //   t_jac(d, d) += normal_ptr[d];
 
-    double det;
-    CHKERR determinantTensor3by3(t_jac, det);
-    CHKERR invertTensor3by3(t_jac, det, t_inv_jac);
+    // double det;
+    // CHKERR determinantTensor3by3(t_jac, det);
+    // CHKERR invertTensor3by3(t_jac, det, t_inv_jac);
 
-    size_t nb_gauss_pts = getGaussPts().size2();
-    auto t_inv_jac_at_pts = getFaceJac(invJac, FTensor::Number<3>());
+    auto t_inv_jac_at_pts = getFaceJac(invJac, FTensor::Number<2>());
 
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac_at_pts) {
       t_inv_jac_at_pts(i, j) = t_inv_jac(i, j);
