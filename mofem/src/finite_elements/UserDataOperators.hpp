@@ -1861,19 +1861,34 @@ inline auto getFaceJac(MatrixDouble &jac, const FTensor::Number<3> &) {
   \ingroup mofem_forces_and_sources_tri_element
 
 */
-struct OpCalculateJacForFace
+template <int DIM> struct OpCalculateJacForFaceImpl;
+
+template <>
+struct OpCalculateJacForFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpCalculateJacForFace(MatrixDouble &jac)
+  OpCalculateJacForFaceImpl(MatrixDouble &jac)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
         jac(jac) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
-private:
+protected:
   MatrixDouble &jac;
 };
+
+template <> struct OpCalculateJacForFaceImpl<3> : public OpCalculateJacForFaceImpl<2> {
+
+  using OpCalculateJacForFaceImpl<2>::OpCalculateJacForFaceImpl;
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+using OpCalculateJacForFace = OpCalculateJacForFaceImpl<2>;
+
+using OpCalculateJacForFaceEmbeddedIn3DSpace = OpCalculateJacForFaceImpl<3>;
 
 /** \brief Calculate inverse of jacobian for face element
 
@@ -1885,18 +1900,38 @@ private:
   \ingroup mofem_forces_and_sources_tri_element
 
 */
-struct OpCalculateInvJacForFace
-    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
-  MatrixDouble &invJac;
+template <int DIM> struct OpCalculateInvJacForFaceImpl;
 
-  OpCalculateInvJacForFace(MatrixDouble &inv_jac)
+template <>
+struct OpCalculateInvJacForFaceImpl<2>
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpCalculateInvJacForFaceImpl(MatrixDouble &inv_jac)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE),
         invJac(inv_jac) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
+
+protected:
+  MatrixDouble &invJac;
+
 };
 
+template <>
+struct OpCalculateInvJacForFaceImpl<3>
+    : public  OpCalculateInvJacForFaceImpl<2>{
+
+  using OpCalculateInvJacForFaceImpl<2>::OpCalculateInvJacForFaceImpl;
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+using OpCalculateInvJacForFace = OpCalculateInvJacForFaceImpl<2>;
+
+using OpCalculateInvJacForFaceEmbeddedIn3DSpace =
+    OpCalculateInvJacForFaceImpl<3>;
 
 /** \brief Transform local reference derivatives of shape functions to global
 derivatives

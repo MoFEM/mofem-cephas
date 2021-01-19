@@ -22,8 +22,92 @@ purposes.
 namespace MoFEM {
 
 MoFEMErrorCode
-OpCalculateJacForFace::doWork(int side, EntityType type,
-                              DataForcesAndSourcesCore::EntData &data) {
+OpCalculateJacForFaceImpl<2>::doWork(int side, EntityType type,
+                                     DataForcesAndSourcesCore::EntData &data) {
+
+  MoFEMFunctionBegin;
+
+  size_t nb_gauss_pts = getGaussPts().size2();
+  auto &coords = getCoords();
+  double *coords_ptr = &*coords.data().begin();
+  jac.resize(4, nb_gauss_pts, false);
+  jac.clear();
+
+  auto cal_jac_on_tri = [&]() {
+    MoFEMFunctionBeginHot;
+
+    double *coords_ptr = &*coords.data().begin();
+
+    double j00 = 0, j01 = 0, j10 = 0, j11 = 0;
+    // this is triangle, derivative of nodal shape functions is constant.
+    // So only need to do one node.
+    for (auto n : {0, 1, 2}) {
+
+      j00 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 0];
+      j01 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 1];
+      j10 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 0];
+      j11 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 1];
+    }
+
+    auto t_jac = getFaceJac(jac, FTensor::Number<2>());
+    for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
+
+      t_jac(0, 0) = j00;
+      t_jac(0, 1) = j01;
+      t_jac(1, 0) = j10;
+      t_jac(1, 1) = j11;
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  auto cal_jac_on_quad = [&]() {
+    MoFEMFunctionBeginHot;
+
+    auto t_jac = getFaceJac(jac, FTensor::Number<2>());
+    double *ksi_ptr = &getGaussPts()(0, 0);
+    double *zeta_ptr = &getGaussPts()(1, 0);
+    for (size_t gg = 0; gg != nb_gauss_pts;
+         ++gg, ++t_jac, ++ksi_ptr, ++zeta_ptr) {
+      const double &ksi = *ksi_ptr;
+      const double &zeta = *zeta_ptr;
+      t_jac(0, 0) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0x(zeta) +
+                    coords_ptr[3 * 1 + 0] * diffN_MBQUAD1x(zeta) +
+                    coords_ptr[3 * 2 + 0] * diffN_MBQUAD2x(zeta) +
+                    coords_ptr[3 * 3 + 0] * diffN_MBQUAD3x(zeta);
+      t_jac(0, 1) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0y(ksi) +
+                    coords_ptr[3 * 1 + 0] * diffN_MBQUAD1y(ksi) +
+                    coords_ptr[3 * 2 + 0] * diffN_MBQUAD2y(ksi) +
+                    coords_ptr[3 * 3 + 0] * diffN_MBQUAD3y(ksi);
+      t_jac(1, 0) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0x(zeta) +
+                    coords_ptr[3 * 1 + 1] * diffN_MBQUAD1x(zeta) +
+                    coords_ptr[3 * 2 + 1] * diffN_MBQUAD2x(zeta) +
+                    coords_ptr[3 * 3 + 1] * diffN_MBQUAD3x(zeta);
+      t_jac(1, 1) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0y(ksi) +
+                    coords_ptr[3 * 1 + 1] * diffN_MBQUAD1y(ksi) +
+                    coords_ptr[3 * 2 + 1] * diffN_MBQUAD2y(ksi) +
+                    coords_ptr[3 * 3 + 1] * diffN_MBQUAD3y(ksi);
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  switch (getNumeredEntFiniteElementPtr()->getEntType()) {
+  case MBTRI:
+    CHKERR cal_jac_on_tri();
+    break;
+  case MBQUAD:
+    CHKERR cal_jac_on_quad();
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Operator not implemented for this entity type");
+  };
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+OpCalculateJacForFaceImpl<3>::doWork(int side, EntityType type,
+                                     DataForcesAndSourcesCore::EntData &data) {
 
   MoFEMFunctionBegin;
 
@@ -145,9 +229,107 @@ OpCalculateJacForFace::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-OpCalculateInvJacForFace::doWork(int side, EntityType type,
-                                 DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode OpCalculateInvJacForFaceImpl<2>::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+
+  MoFEMFunctionBegin;
+
+  FTensor::Index<'i', 2> i;
+  FTensor::Index<'j', 2> j;
+
+  size_t nb_gauss_pts = getGaussPts().size2();
+  auto &coords = getCoords();
+  double *coords_ptr = &*coords.data().begin();
+  invJac.resize(4, nb_gauss_pts, false);
+  invJac.clear();
+
+  auto cal_inv_jac_on_tri = [&]() {
+    MoFEMFunctionBeginHot;
+    VectorDouble &coords = getCoords();
+    double *coords_ptr = &*coords.data().begin();
+    double j00 = 0, j01 = 0, j10 = 0, j11 = 0;
+
+    // this is triangle, derivative of nodal shape functions is constant.
+    // So only need to do one node.
+    for (auto n : {0, 1, 2}) {
+      j00 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 0];
+      j01 += coords_ptr[3 * n + 0] * Tools::diffShapeFunMBTRI[2 * n + 1];
+      j10 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 0];
+      j11 += coords_ptr[3 * n + 1] * Tools::diffShapeFunMBTRI[2 * n + 1];
+    }
+
+    FTensor::Tensor2<double, 2, 2> t_jac, t_inv_jac;
+    t_jac(0, 0) = j00;
+    t_jac(0, 1) = j01;
+    t_jac(1, 0) = j10;
+    t_jac(1, 1) = j11;
+
+    double det;
+    CHKERR determinantTensor2by2(t_jac, det);
+    CHKERR invertTensor2by2(t_jac, det, t_inv_jac);
+
+    auto t_inv_jac_at_pts = getFaceJac(invJac, FTensor::Number<2>());
+
+    for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac_at_pts) {
+      t_inv_jac_at_pts(i, j) = t_inv_jac(i, j);
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  auto cal_inv_jac_on_quad = [&]() {
+    MoFEMFunctionBeginHot;
+    VectorDouble &coords = getCoords();
+    double *coords_ptr = &*coords.data().begin();
+    double *ksi_ptr = &getGaussPts()(0, 0);
+    double *zeta_ptr = &getGaussPts()(1, 0);
+    FTensor::Tensor2<double, 2, 2> t_jac;
+    auto t_inv_jac = getFaceJac(invJac, FTensor::Number<2>());
+    for (size_t gg = 0; gg != nb_gauss_pts;
+         ++gg, ++t_inv_jac, ++ksi_ptr, ++zeta_ptr) {
+      const double &ksi = *ksi_ptr;
+      const double &zeta = *zeta_ptr;
+
+      t_jac(0, 0) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0x(zeta) +
+                    coords_ptr[3 * 1 + 0] * diffN_MBQUAD1x(zeta) +
+                    coords_ptr[3 * 2 + 0] * diffN_MBQUAD2x(zeta) +
+                    coords_ptr[3 * 3 + 0] * diffN_MBQUAD3x(zeta);
+      t_jac(0, 1) = coords_ptr[3 * 0 + 0] * diffN_MBQUAD0y(ksi) +
+                    coords_ptr[3 * 1 + 0] * diffN_MBQUAD1y(ksi) +
+                    coords_ptr[3 * 2 + 0] * diffN_MBQUAD2y(ksi) +
+                    coords_ptr[3 * 3 + 0] * diffN_MBQUAD3y(ksi);
+      t_jac(1, 0) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0x(zeta) +
+                    coords_ptr[3 * 1 + 1] * diffN_MBQUAD1x(zeta) +
+                    coords_ptr[3 * 2 + 1] * diffN_MBQUAD2x(zeta) +
+                    coords_ptr[3 * 3 + 1] * diffN_MBQUAD3x(zeta);
+      t_jac(1, 1) = coords_ptr[3 * 0 + 1] * diffN_MBQUAD0y(ksi) +
+                    coords_ptr[3 * 1 + 1] * diffN_MBQUAD1y(ksi) +
+                    coords_ptr[3 * 2 + 1] * diffN_MBQUAD2y(ksi) +
+                    coords_ptr[3 * 3 + 1] * diffN_MBQUAD3y(ksi);
+
+      double det;
+      CHKERR determinantTensor2by2(t_jac, det);
+      CHKERR invertTensor2by2(t_jac, det, t_inv_jac);
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  switch (getNumeredEntFiniteElementPtr()->getEntType()) {
+  case MBTRI:
+    CHKERR cal_inv_jac_on_tri();
+    break;
+  case MBQUAD:
+    CHKERR cal_inv_jac_on_quad();
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Operator not implemented for this entity type");
+  };
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode OpCalculateInvJacForFaceImpl<3>::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
 
   MoFEMFunctionBegin;
 
@@ -263,7 +445,6 @@ OpCalculateInvJacForFace::doWork(int side, EntityType type,
       double det;
       CHKERR determinantTensor3by3(t_jac, det);
       CHKERR invertTensor3by3(t_jac, det, t_inv_jac);
-   
     }
     MoFEMFunctionReturnHot(0);
   };
