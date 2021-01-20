@@ -45,4 +45,17 @@ namespace FTensor
       data[3] = d3;
     }
   };
+  template <class T> class Tensor1_constructor<T, 6>
+  {
+  public:
+    Tensor1_constructor(T data[], T d0, T d1, T d2, T d3, T d4, T d5)
+    {
+      data[0] = d0;
+      data[1] = d1;
+      data[2] = d2;
+      data[3] = d3;
+      data[4] = d4;
+      data[5] = d5;
+    }
+  };
 }
