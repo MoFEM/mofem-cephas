@@ -1970,20 +1970,34 @@ struct OpSetInvJacL2ForFace : public OpSetInvJacSpaceForFace {
 
  * \ingroup mofem_forces_and_sources_tri_element
  */
-struct OpSetInvJacHcurlFace
+template<int DIM>
+struct OpSetInvJacHcurlFaceImpl;
+
+template<>
+struct OpSetInvJacHcurlFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetInvJacHcurlFace(MatrixDouble &inv_jac)
+  OpSetInvJacHcurlFaceImpl(MatrixDouble &inv_jac)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL),
         invJac(inv_jac) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
-private:
+protected:
   MatrixDouble &invJac;
   MatrixDouble diffHcurlInvJac;
 };
+
+template<>
+struct OpSetInvJacHcurlFaceImpl<3>: public OpSetInvJacHcurlFaceImpl<2> {
+  using OpSetInvJacHcurlFaceImpl<2>::OpSetInvJacHcurlFaceImpl;
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+using OpSetInvJacHcurlFace = OpSetInvJacHcurlFaceImpl<2>;
+using OpSetInvJacHcurlFaceEmbeddedIn3DSpace = OpSetInvJacHcurlFaceImpl<3>;
 
 /**
  * @brief Make Hdiv space from Hcurl space in 2d
@@ -2022,21 +2036,40 @@ struct OpMakeHighOrderGeometryWeightsOnFace
  * \ingroup mofem_forces_and_sources
  *
  */
-struct OpSetContravariantPiolaTransformFace
+template<int DIM>
+struct OpSetContravariantPiolaTransformFaceImpl;
+
+template <>
+struct OpSetContravariantPiolaTransformFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetContravariantPiolaTransformFace(MatrixDouble &jac)
+  OpSetContravariantPiolaTransformFaceImpl(MatrixDouble &jac)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(HCURL), jAc(jac) {
   }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
-private:
+protected:
   MatrixDouble &jAc;
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
 };
+
+template <>
+struct OpSetContravariantPiolaTransformFaceImpl<3>
+    : public OpSetContravariantPiolaTransformFaceImpl<2> {
+  using OpSetContravariantPiolaTransformFaceImpl<
+      2>::OpSetContravariantPiolaTransformFaceImpl;
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+using OpSetContravariantPiolaTransformFace =
+    OpSetContravariantPiolaTransformFaceImpl<2>;
+using OpSetContravariantPiolaTransformFaceEmbeddedIn3DSpace =
+    OpSetContravariantPiolaTransformFaceImpl<3>;
 
 /**@*/
 

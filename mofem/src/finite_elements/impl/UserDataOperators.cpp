@@ -141,13 +141,12 @@ OpCalculateJacForFaceImpl<3>::doWork(int side, EntityType type,
       j21 += coords_ptr[3 * n + 2] * Tools::diffShapeFunMBTRI[2 * n + 1];
     }
 
-    double normal_ptr[3];
-    CHKERR Tools::getTriNormal(coords_ptr, normal_ptr);
-    const double l =
-        sqrt(normal_ptr[0] * normal_ptr[0] + normal_ptr[1] * normal_ptr[1] +
-             normal_ptr[2] * normal_ptr[2]);
-    for (auto d : {0, 1, 2})
-      normal_ptr[d] /= l;
+    FTensor::Tensor1<double, 3> t_t1{j00, j10, j20};
+    FTensor::Tensor1<double, 3> t_t2{j01, j11, j21};
+
+    FTensor::Tensor1<double, 3> t_normal;
+    t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
+    t_normal(i) /= sqrt(t_normal(j) * t_normal(j));
 
     auto t_jac = getFaceJac(jac, FTensor::Number<3>());
     for (size_t gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
@@ -161,7 +160,7 @@ OpCalculateJacForFaceImpl<3>::doWork(int side, EntityType type,
       t_jac(2, 0) = j20;
       t_jac(2, 1) = j21;
       for (auto d : {0, 1, 2})
-        t_jac(d, d) += normal_ptr[d];
+        t_jac(d, 2) = t_normal(d);
     }
     MoFEMFunctionReturnHot(0);
   };
@@ -209,7 +208,7 @@ OpCalculateJacForFaceImpl<3>::doWork(int side, EntityType type,
       t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
       t_normal(i) /= sqrt(t_normal(j) * t_normal(j));
       for (auto d : {0, 1, 2})
-        t_jac(d, d) += t_normal(d);
+        t_jac(d, 2) = t_normal(d);
     }
     MoFEMFunctionReturnHot(0);
   };
@@ -362,13 +361,12 @@ MoFEMErrorCode OpCalculateInvJacForFaceImpl<3>::doWork(
       j21 += coords_ptr[3 * n + 2] * Tools::diffShapeFunMBTRI[2 * n + 1];
     }
 
-    double normal_ptr[3];
-    CHKERR Tools::getTriNormal(coords_ptr, normal_ptr);
-    const double l =
-        sqrt(normal_ptr[0] * normal_ptr[0] + normal_ptr[1] * normal_ptr[1] +
-             normal_ptr[2] * normal_ptr[2]);
-    for (auto d : {0, 1, 2})
-      normal_ptr[d] /= l;
+    FTensor::Tensor1<double, 3> t_t1{j00, j10, j20};
+    FTensor::Tensor1<double, 3> t_t2{j01, j11, j21};
+
+    FTensor::Tensor1<double, 3> t_normal;
+    t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
+    t_normal(i) /= sqrt(t_normal(j) * t_normal(j));
 
     FTensor::Tensor2<double, 3, 3> t_jac, t_inv_jac;
     t_jac(0, 0) = j00;
@@ -379,7 +377,7 @@ MoFEMErrorCode OpCalculateInvJacForFaceImpl<3>::doWork(
     t_jac(2, 0) = j20;
     t_jac(2, 1) = j21;
     for (auto d : {0, 1, 2})
-      t_jac(d, d) += normal_ptr[d];
+      t_jac(d, 2) = t_normal(d);
 
     double det;
     CHKERR determinantTensor3by3(t_jac, det);
@@ -440,7 +438,7 @@ MoFEMErrorCode OpCalculateInvJacForFaceImpl<3>::doWork(
       t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
       t_normal(i) /= sqrt(t_normal(j) * t_normal(j));
       for (auto d : {0, 1, 2})
-        t_jac(d, d) += t_normal(d);
+        t_jac(d, 2) = t_normal(d);
 
       double det;
       CHKERR determinantTensor3by3(t_jac, det);
@@ -531,7 +529,7 @@ OpSetInvJacSpaceForFace::doWork(int side, EntityType type,
 }
 
 MoFEMErrorCode
-OpSetInvJacHcurlFace::doWork(int side, EntityType type,
+OpSetInvJacHcurlFaceImpl<2>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
@@ -566,9 +564,7 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
 
           &t_inv_diff_n_ptr[HVEC2_0], &t_inv_diff_n_ptr[HVEC2_1]);
 
-      FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_inv_jac(
-          &invJac(0, 0), &invJac(1, 0), &invJac(2, 0), &invJac(3, 0));
-
+      auto t_inv_jac = getFaceJac(invJac, FTensor::Number<2>());
       for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
         for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
           t_inv_diff_n(i, j) = t_diff_n(i, k) * t_inv_jac(k, j);
@@ -578,6 +574,61 @@ OpSetInvJacHcurlFace::doWork(int side, EntityType type,
       }
 
       data.getDiffN(base).data().swap(diffHcurlInvJac.data());
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+OpSetInvJacHcurlFaceImpl<3>::doWork(int side, EntityType type,
+                                    DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  if (type != MBEDGE && type != MBTRI && type != MBQUAD)
+    MoFEMFunctionReturnHot(0);
+
+  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&
+      getNumeredEntFiniteElementPtr()->getEntType() != MBQUAD)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "This operator can be used only with element which is triangle");
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'K', 2> K;
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+
+    const unsigned int nb_base_functions = data.getDiffN(base).size2() / 6;
+    if (nb_base_functions) {
+      const unsigned int nb_gauss_pts = data.getDiffN(base).size1();
+
+      diffHcurlInvJac.resize(nb_gauss_pts, nb_base_functions * 9, false);
+
+      auto t_diff_n = data.getFTensor2DiffN<3, 2>(base);
+      double *t_inv_diff_n_ptr = &*diffHcurlInvJac.data().begin();
+      FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_inv_diff_n(
+          t_inv_diff_n_ptr, &t_inv_diff_n_ptr[HVEC0_1],
+          &t_inv_diff_n_ptr[HVEC0_2],
+
+          &t_inv_diff_n_ptr[HVEC1_0], &t_inv_diff_n_ptr[HVEC1_1],
+          &t_inv_diff_n_ptr[HVEC1_2],
+
+          &t_inv_diff_n_ptr[HVEC2_0], &t_inv_diff_n_ptr[HVEC2_1],
+          &t_inv_diff_n_ptr[HVEC2_2]);
+
+      auto t_inv_jac = getFaceJac(invJac, FTensor::Number<3>());
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_inv_jac) {
+        for (unsigned int bb = 0; bb != nb_base_functions; bb++) {
+          t_inv_diff_n(i, j) = t_diff_n(i, K) * t_inv_jac(K, j);
+          ++t_diff_n;
+          ++t_inv_diff_n;
+        }
+      }
+
+      data.getDiffN(base).swap(diffHcurlInvJac);
     }
   }
 
@@ -656,7 +707,7 @@ MoFEMErrorCode OpMakeHighOrderGeometryWeightsOnFace::doWork(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
+MoFEMErrorCode OpSetContravariantPiolaTransformFaceImpl<2>::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
 
   MoFEMFunctionBegin;
@@ -683,8 +734,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
         FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
             t_transformed_n_ptr, // HVEC0
             &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
-        FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_jac(
-            &jAc(0, 0), &jAc(1, 0), &jAc(2, 0), &jAc(3, 0));
+        auto t_jac = getFaceJac(jAc, FTensor::Number<2>());
         for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
           double det;
           CHKERR determinantTensor2by2(t_jac, det);
@@ -710,8 +760,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
 
                                  &t_transformed_diff_n_ptr[HVEC2_0],
                                  &t_transformed_diff_n_ptr[HVEC2_1]);
-        FTensor::Tensor2<FTensor::PackPtr<double *, 1>, 2, 2> t_jac(
-            &jAc(0, 0), &jAc(1, 0), &jAc(2, 0), &jAc(3, 0));
+        auto t_jac = getFaceJac(jAc, FTensor::Number<2>());
         for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
           double det;
           CHKERR determinantTensor2by2(t_jac, det);
@@ -722,6 +771,86 @@ MoFEMErrorCode OpSetContravariantPiolaTransformFace ::doWork(
           }
         }
         data.getDiffN(base).data().swap(piolaDiffN.data());
+      }
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode OpSetContravariantPiolaTransformFaceImpl<3>::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+
+  MoFEMFunctionBegin;
+
+  if (type != MBEDGE && type != MBTRI && type != MBQUAD)
+    MoFEMFunctionReturnHot(0);
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'K', 2> K;
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+
+    const size_t nb_base_functions = data.getN(base).size2() / 3;
+    if (nb_base_functions) {
+
+      const size_t nb_gauss_pts = data.getN(base).size1();
+      piolaN.resize(nb_gauss_pts, data.getN(base).size2(), false);
+      if (data.getN(base).size2() > 0) {
+        auto t_n = data.getFTensor1N<3>(base);
+        double *t_transformed_n_ptr = &*piolaN.data().begin();
+        FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
+            t_transformed_n_ptr, // HVEC0
+            &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
+        auto t_jac = getFaceJac(jAc, FTensor::Number<3>());
+        for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
+          double det;
+          CHKERR determinantTensor3by3(t_jac, det);
+          for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+            t_transformed_n(i) = t_jac(i, j) * t_n(j) / det;
+
+            // // Check
+            // {
+            //   auto t_normal = getFTensor1Normal();
+            //   auto dot = t_normal(i) * t_transformed_n(i);
+            //   cerr << dot << endl;
+            // }
+
+            ++t_n;
+            ++t_transformed_n;
+          }
+        }
+        data.getN(base).swap(piolaN);
+      }
+
+      piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
+      if (data.getDiffN(base).size2() > 0) {
+        auto t_diff_n = data.getFTensor2DiffN<3, 2>(base);
+        double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+        FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
+            t_transformed_diff_n(t_transformed_diff_n_ptr,
+                                 &t_transformed_diff_n_ptr[HVEC0_1],
+
+                                 &t_transformed_diff_n_ptr[HVEC1_0],
+                                 &t_transformed_diff_n_ptr[HVEC1_1],
+
+                                 &t_transformed_diff_n_ptr[HVEC2_0],
+                                 &t_transformed_diff_n_ptr[HVEC2_1]);
+
+        auto t_jac = getFaceJac(jAc, FTensor::Number<3>());
+        for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg, ++t_jac) {
+          double det;
+          CHKERR determinantTensor3by3(t_jac, det);
+          for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+            t_transformed_diff_n(i, K) = t_jac(i, j) * t_diff_n(j, K) / det;
+            ++t_diff_n;
+            ++t_transformed_diff_n;
+          }
+        }
+        data.getDiffN(base).swap(piolaDiffN);
       }
     }
   }
