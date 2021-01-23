@@ -1939,29 +1939,55 @@ derivatives
 \ingroup mofem_forces_and_sources_tri_element
 
 */
-struct OpSetInvJacSpaceForFace
+template <int DIM> struct OpSetInvJacSpaceForFaceImpl;
+
+template <>
+struct OpSetInvJacSpaceForFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetInvJacSpaceForFace(MatrixDouble &inv_jac, FieldSpace space)
+  OpSetInvJacSpaceForFaceImpl(MatrixDouble &inv_jac, FieldSpace space)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space),
         invJac(inv_jac) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
-private:
+protected:
   MatrixDouble &invJac;
   MatrixDouble diffNinvJac;
 };
 
-struct OpSetInvJacH1ForFace : public OpSetInvJacSpaceForFace {
-  OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
-      : OpSetInvJacSpaceForFace(inv_jac, H1) {}
+template <>
+struct OpSetInvJacSpaceForFaceImpl<3>
+    : public OpSetInvJacSpaceForFaceImpl<2> {
+
+  using OpSetInvJacSpaceForFaceImpl<2>::OpSetInvJacSpaceForFaceImpl;
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
 };
 
-struct OpSetInvJacL2ForFace : public OpSetInvJacSpaceForFace {
+struct OpSetInvJacH1ForFace : public OpSetInvJacSpaceForFaceImpl<2> {
+  OpSetInvJacH1ForFace(MatrixDouble &inv_jac)
+      : OpSetInvJacSpaceForFaceImpl(inv_jac, H1) {}
+};
+
+struct OpSetInvJacL2ForFace : public OpSetInvJacSpaceForFaceImpl<2> {
   OpSetInvJacL2ForFace(MatrixDouble &inv_jac)
-      : OpSetInvJacSpaceForFace(inv_jac, L2) {}
+      : OpSetInvJacSpaceForFaceImpl(inv_jac, L2) {}
+};
+
+struct OpSetInvJacH1ForFaceEmbeddedIn3DSpace
+    : public OpSetInvJacSpaceForFaceImpl<3> {
+  OpSetInvJacH1ForFaceEmbeddedIn3DSpace(MatrixDouble &inv_jac)
+      : OpSetInvJacSpaceForFaceImpl(inv_jac, H1) {}
+};
+
+struct OpSetInvJacL2ForFaceEmbeddedIn3DSpace
+    : public OpSetInvJacSpaceForFaceImpl<3> {
+  OpSetInvJacL2ForFaceEmbeddedIn3DSpace(MatrixDouble &inv_jac)
+      : OpSetInvJacSpaceForFaceImpl(inv_jac, L2) {}
 };
 
 /**
