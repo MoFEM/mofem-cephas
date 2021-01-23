@@ -154,6 +154,21 @@ protected:
 };
 
 template <int SPACE_DIM, IntegrationType I, typename OpBase>
+struct OpMixVectorTimesGradUImpl {};
+
+template <int SPACE_DIM, typename OpBase>
+struct OpMixVectorTimesGradUImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
+  OpMixVectorTimesGradUImpl(const std::string field_name,
+                            boost::shared_ptr<MatrixDouble> &mat_vals)
+      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
+
+protected:
+  boost::shared_ptr<MatrixDouble> matVals;
+  FTensor::Index<'i', SPACE_DIM> i;
+  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
+};
+
+template <int SPACE_DIM, IntegrationType I, typename OpBase>
 struct OpMixTensorTimesGradUImpl {};
 
 template <int SPACE_DIM, typename OpBase>
@@ -261,6 +276,18 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
   template <int SPACE_DIM>
   struct OpMixDivTimesU : public OpMixDivTimesUImpl<SPACE_DIM, I, OpBase> {
     using OpMixDivTimesUImpl<SPACE_DIM, I, OpBase>::OpMixDivTimesUImpl;
+  };
+
+  /**
+   * @brief Integrate \f$(\lambda_{i},u_{,j})_\Omega\f$
+   *
+   * @tparam SPACE_DIM
+   */
+  template <int SPACE_DIM>
+  struct OpMixVectorTimesGradU
+      : public OpMixVectorTimesGradUImpl<SPACE_DIM, I, OpBase> {
+    using OpMixVectorTimesGradUImpl<SPACE_DIM, I,
+                                    OpBase>::OpMixVectorTimesGradUImpl;
   };
 
   /**
@@ -524,6 +551,37 @@ MoFEMErrorCode OpMixDivTimesUImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
       ++t_diff_base;
 
     ++t_u;
+    ++t_w;
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+template <int SPACE_DIM, typename OpBase>
+MoFEMErrorCode OpMixVectorTimesGradUImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
+    DataForcesAndSourcesCore::EntData &row_data) {
+  MoFEMFunctionBegin;
+
+  const size_t nb_base_functions = row_data.getN().size2() / 3;
+  auto t_w = this->getFTensor0IntegrationWeight();
+  auto t_base = row_data.getFTensor1N<3>();
+  auto t_grad = getFTensor1FromMat<SPACE_DIM>(*(matVals));
+
+  for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
+
+    const double alpha = this->getMeasure() * t_w;
+    auto t_nf = OpBase::template getNf<SPACE_DIM>();
+
+    size_t bb = 0;
+    for (; bb != this->nbRows; ++bb) {
+      t_nf(i) += alpha * t_base(i) * t_grad(i);
+      ++t_nf;
+      ++t_base;
+    }
+    for (; bb < nb_base_functions; ++bb)
+      ++t_base;
+
+    ++t_grad;
     ++t_w;
   }
 
