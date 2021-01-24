@@ -159,14 +159,14 @@ struct OpCalculateScalarFieldValuesDot
     const size_t nb_dofs = local_indices.size();
     if (nb_dofs) {
 
-      dotVector.resize(nb_dofs, false);
+      std::array<double, MAX_DOFS_ON_ENTITY> dot_dofs_vector;
       const double *array;
       CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
       for (size_t i = 0; i != local_indices.size(); ++i)
         if (local_indices[i] != -1)
-          dotVector[i] = array[local_indices[i]];
+          dot_dofs_vector[i] = array[local_indices[i]];
         else
-          dotVector[i] = 0;
+          dot_dofs_vector[i] = 0;
       CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
 
       const size_t nb_base_functions = data.getN().size2();
@@ -174,11 +174,9 @@ struct OpCalculateScalarFieldValuesDot
       auto values_at_gauss_pts = getFTensor0FromVec(vec);
 
       for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
-        auto field_data = getFTensor0FromVec(dotVector);
         size_t bb = 0;
         for (; bb != nb_dofs; ++bb) {
-          values_at_gauss_pts += field_data * base_function;
-          ++field_data;
+          values_at_gauss_pts += dot_dofs_vector[bb] * base_function;
           ++base_function;
         }
         // Number of dofs can be smaller than number of Tensor_Dim x base
@@ -194,7 +192,6 @@ struct OpCalculateScalarFieldValuesDot
 private:
   boost::shared_ptr<VectorDouble> dataPtr;
   const EntityHandle zeroAtType;
-  VectorDouble dotVector;
 };
 
 /**
@@ -1647,7 +1644,6 @@ struct OpCalculateHdivVectorDivergenceDot
       auto t_n_diff_hdiv = data.getFTensor2DiffN<Tensor_Dim1, Tensor_Dim2>();
       auto t_data = getFTensor0FromVec(*dataPtr);
       for (size_t gg = 0; gg != nb_integration_points; ++gg) {
-        auto t_dof = data.getFTensor0FieldData();
         int bb = 0;
         for (; bb != nb_dofs; ++bb) {
           double div = 0;
@@ -1655,7 +1651,6 @@ struct OpCalculateHdivVectorDivergenceDot
             div += t_n_diff_hdiv(ii, ii);
           t_data += dot_dofs_vector[bb] * div;
           ++t_n_diff_hdiv;
-          ++t_dof;
         }
         for (; bb != nb_base_functions; ++bb)
           ++t_n_diff_hdiv;
