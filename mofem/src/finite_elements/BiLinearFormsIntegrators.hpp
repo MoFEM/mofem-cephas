@@ -140,18 +140,18 @@ template <int SPACE_DIM, typename OpBase>
 struct OpMixDivTimesScalarImpl<SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpMixDivTimesScalarImpl(const std::string row_field_name,
                           const std::string col_field_name,
-                          const double alpha = 1,
+                          ConstantFun alpha_fun,
                           const bool assemble_transpose = false,
                           const bool only_transpose = false)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        alphaConstant(alpha) {
+        alphaConstant(alpha_fun) {
     this->assembleTranspose = assemble_transpose;
     this->onlyTranspose = only_transpose;
   }
 
 protected:
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
-  const double alphaConstant;
+  ConstantFun alphaConstant;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
 };
@@ -690,8 +690,10 @@ MoFEMErrorCode OpMixDivTimesScalarImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   size_t nb_base_functions = row_data.getN().size2() / 3;
   auto t_row_diff_base = row_data.getFTensor2DiffN<3, SPACE_DIM>();
 
+  const double alpha_constant = alphaConstant();
+
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
-    const double alpha = alphaConstant * this->getMeasure() * t_w;
+    const double alpha = alpha_constant * this->getMeasure() * t_w;
 
     size_t rr = 0;
     for (; rr != OpBase::nbRows; ++rr) {

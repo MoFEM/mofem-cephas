@@ -1457,15 +1457,86 @@ template <int Tensor_Dim>
 struct OpCalculateHdivVectorField
     : public OpCalculateHdivVectorField_General<
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
-
-  OpCalculateHdivVectorField(const std::string field_name,
-                             boost::shared_ptr<MatrixDouble> data_ptr,
-                             const EntityType zero_type = MBEDGE,
-                             const int zero_side = 0)
-      : OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
-                                           DoubleAllocator>(
-            field_name, data_ptr, zero_type, zero_side) {}
+  using OpCalculateHdivVectorField_General<
+      Tensor_Dim, double, ublas::row_major,
+      DoubleAllocator>::OpCalculateHdivVectorField_General;
 };
+
+/** \brief Get vector field for H-div approximation
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim>
+struct OpCalculateHdivVectorFieldDot
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateHdivVectorFieldDot(const std::string field_name,
+                                boost::shared_ptr<MatrixDouble> data_ptr,
+                                const EntityType zero_type = MBEDGE,
+                                const int zero_side = 0)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  /**
+   * \brief Calculate values of vector field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  boost::shared_ptr<MatrixDouble> dataPtr;
+  const EntityHandle zeroType;
+  const int zeroSide;
+};
+
+template <int Tensor_Dim>
+MoFEMErrorCode OpCalculateHdivVectorFieldDot<Tensor_Dim>::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+  const size_t nb_integration_points = this->getGaussPts().size2();
+  if (type == zeroType && side == zeroSide) {
+    dataPtr->resize(Tensor_Dim, nb_integration_points, false);
+    dataPtr->clear();
+  }
+
+  auto &local_indices = data.getIndices();
+  const size_t nb_dofs = local_indices.size();
+  if (nb_dofs) {
+
+    std::array<double, MAX_DOFS_ON_ENTITY> dot_dofs_vector;
+    const double *array;
+    CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
+    for (size_t i = 0; i != nb_dofs; ++i)
+      if (local_indices[i] != -1)
+        dot_dofs_vector[i] = array[local_indices[i]];
+      else
+        dot_dofs_vector[i] = 0;
+    CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
+
+    const size_t nb_base_functions = data.getN().size2() / 3;
+    FTensor::Index<'i', Tensor_Dim> i;
+    auto t_n_hdiv = data.getFTensor1N<Tensor_Dim>();
+    auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);
+    for (size_t gg = 0; gg != nb_integration_points; ++gg) {
+      int bb = 0;
+      for (; bb != nb_dofs; ++bb) {
+        t_data(i) += t_n_hdiv(i) * dot_dofs_vector[bb];
+        ++t_n_hdiv;
+      }
+      for (; bb != nb_base_functions; ++bb)
+        ++t_n_hdiv;
+      ++t_data;
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
 
 /**
  * @brief Calculate divergence of vector field
@@ -1517,6 +1588,79 @@ struct OpCalculateHdivVectorDivergence
       for (; bb != nb_base_functions; ++bb)
         ++t_n_diff_hdiv;
       ++t_data;
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<VectorDouble> dataPtr;
+  const EntityHandle zeroType;
+  const int zeroSide;
+};
+
+/**
+ * @brief Calculate divergence of vector field dot
+ * @ingroup mofem_forces_and_sources_user_data_operators
+ *
+ * @tparam Tensor_Dim dimension of space
+ */
+template <int Tensor_Dim1, int Tensor_Dim2>
+struct OpCalculateHdivVectorDivergenceDot
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateHdivVectorDivergenceDot(const std::string field_name,
+                                     boost::shared_ptr<VectorDouble> data_ptr,
+                                     const EntityType zero_type = MBEDGE,
+                                     const int zero_side = 0)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+    const size_t nb_integration_points = getGaussPts().size2();
+    if (type == zeroType && side == zeroSide) {
+      dataPtr->resize(nb_integration_points, false);
+      dataPtr->clear();
+    }
+
+    const auto &local_indices = data.getLocalIndices();
+    const int nb_dofs = local_indices.size();
+    if (nb_dofs) {
+
+      std::array<double, MAX_DOFS_ON_ENTITY> dot_dofs_vector;
+      const double *array;
+      CHKERR VecGetArrayRead(getFEMethod()->ts_u_t, &array);
+      for (size_t i = 0; i != local_indices.size(); ++i)
+        if (local_indices[i] != -1)
+          dot_dofs_vector[i] = array[local_indices[i]];
+        else
+          dot_dofs_vector[i] = 0;
+      CHKERR VecRestoreArrayRead(getFEMethod()->ts_u_t, &array);
+
+      const size_t nb_base_functions = data.getN().size2() / Tensor_Dim1;
+      FTensor::Index<'i', Tensor_Dim1> i;
+      auto t_n_diff_hdiv = data.getFTensor2DiffN<Tensor_Dim1, Tensor_Dim2>();
+      auto t_data = getFTensor0FromVec(*dataPtr);
+      for (size_t gg = 0; gg != nb_integration_points; ++gg) {
+        auto t_dof = data.getFTensor0FieldData();
+        int bb = 0;
+        for (; bb != nb_dofs; ++bb) {
+          double div = 0;
+          for (auto ii = 0; ii != Tensor_Dim2; ++ii)
+            div += t_n_diff_hdiv(ii, ii);
+          t_data += dot_dofs_vector[bb] * div;
+          ++t_n_diff_hdiv;
+          ++t_dof;
+        }
+        for (; bb != nb_base_functions; ++bb)
+          ++t_n_diff_hdiv;
+        ++t_data;
+      }
     }
     MoFEMFunctionReturn(0);
   }
