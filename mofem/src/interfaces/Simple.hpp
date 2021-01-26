@@ -270,7 +270,14 @@ struct Simple : public UnknownInterface {
    *
    * @return int
    */
-  inline int &getDim() { return dIm; }
+  inline int getDim() const { return dIm; }
+
+  /**
+   * @brief Set the problem dimension
+   *
+   * @return int
+   */
+  MoFEMErrorCode setDim(int dim) {dIm = dim;};
 
   /**
    * @brief Get the MeshSet object
