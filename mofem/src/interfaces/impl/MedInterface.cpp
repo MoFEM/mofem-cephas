@@ -133,9 +133,8 @@ MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
     fieldNames[field_name].dtUnit = std::string(&dt_unit[0]);
     fieldNames[field_name].ncSteps = num_steps;
 
-    if (verb > 0) 
+    if (verb > 0)
       MOFEM_LOG("WORLD", Sev::inform) << fieldNames[name];
-    
   }
   if (MEDfileClose(fid) < 0) {
     SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
@@ -167,11 +166,11 @@ MoFEMErrorCode MedInterface::readMed(const string &file, int verb) {
   MEDlibraryNumVersion(&v[0], &v[1], &v[2]);
   MEDfileNumVersionRd(fid, &vf[0], &vf[1], &vf[2]);
 
-  if (verb > 0) 
+  if (verb > 0)
     MOFEM_LOG_C("WORLD", Sev::inform,
-                "Reading MED file V%d.%d.%d using MED library V%d.%d.%d",
-                vf[0], vf[1], vf[2], v[0], v[1], v[2]);
-  
+                "Reading MED file V%d.%d.%d using MED library V%d.%d.%d", vf[0],
+                vf[1], vf[2], v[0], v[1], v[2]);
+
   if (vf[0] < 2 || (vf[0] == 2 && vf[1] < 2)) {
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
             "Cannot read MED file older than V2.2");
@@ -260,7 +259,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
     MOFEM_LOG_C("WORLD", Sev::noisy,
                 "Reading MED file V%d.%d.%d using MED library V%d.%d.%d", vf[0],
                 vf[1], vf[2], v[0], v[1], v[2]);
-  
+
   if (vf[0] < 2 || (vf[0] == 2 && vf[1] < 2)) {
     SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
             "Cannot read MED file older than V2.2");
@@ -512,7 +511,7 @@ MedInterface::readFamily(const string &file, const int index,
   MEDlibraryNumVersion(&v[0], &v[1], &v[2]);
   MEDfileNumVersionRd(fid, &vf[0], &vf[1], &vf[2]);
 
-  if(verb>1) {
+  if (verb > 1) {
     MOFEM_LOG_C("WORLD", Sev::noisy,
                 "Reading MED file V%d.%d.%d using MED library V%d.%d.%d", vf[0],
                 vf[1], vf[2], v[0], v[1], v[2]);
@@ -857,7 +856,21 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
         // );
       } break;
       case MED_NODE:
-      case MED_NODE_ELEMENT:
+      case MED_NODE_ELEMENT: {
+        EntityType ent_type = MBVERTEX;
+        Range ents;
+        CHKERR m_field.get_moab().get_entities_by_type(meshset, ent_type, ents,
+                                                       true);
+        double e_vals[num_comp_msh];
+        bzero(e_vals, sizeof(double) * num_comp_msh);
+        std::vector<double>::iterator vit = val.begin();
+        for (Range::iterator eit = ents.begin(); eit != ents.end(); eit++) {
+          for (int ii = 0; ii != num_comp; ii++, vit++) {
+            e_vals[ii] = *vit;
+          }
+          CHKERR m_field.get_moab().tag_set_data(th, &*eit, 1, e_vals);
+        }
+      } break;
       default:
         MOFEM_LOG_C("WORLD", Sev::inform, "Entity type %d not implemented",
                     ent);
