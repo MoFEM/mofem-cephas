@@ -277,7 +277,7 @@ struct Simple : public UnknownInterface {
    *
    * @return int
    */
-  MoFEMErrorCode setDim(int dim) {dIm = dim;};
+  void setDim(int dim) {dIm = dim;};
 
   /**
    * @brief Get the MeshSet object
