@@ -277,7 +277,7 @@ struct Simple : public UnknownInterface {
    *
    * @return int
    */
-  void setDim(int dim) {dIm = dim;};
+  void setDim(int dim) { dIm = dim; };
 
   /**
    * @brief Get the MeshSet object
@@ -292,7 +292,7 @@ struct Simple : public UnknownInterface {
    * @return EntityHandle&
    */
   inline EntityHandle &getBoundaryMeshSet() { return boundaryMeshset; }
-  
+
   /**
    * @brief Get the BitRefLevel
    *
