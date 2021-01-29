@@ -76,7 +76,7 @@ protected:
 };
 
 template <int BASE_DIM, typename OpBase>
-struct OpMassImpl<BASE_DIM, 1, GAUSS, OpBase> : public OpBase {
+struct OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase> : public OpBase {
 
   OpMassImpl(const std::string row_field_name, const std::string col_field_name,
              ScalarFun beta)
@@ -481,7 +481,7 @@ MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
 };
 
 template <int BASE_DIM, typename OpBase>
-MoFEMErrorCode OpMassImpl<BASE_DIM, 1, GAUSS, OpBase>::iNtegrate(
+MoFEMErrorCode OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data) {
   FTensor::Index<'i', BASE_DIM> i;

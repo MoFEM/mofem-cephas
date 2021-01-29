@@ -4,6 +4,9 @@ LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
 ADD . $MOFEM_SRC_DIR/
 
+ARG MOFEM_CEPHAS_HASH="not set
+ARG MOFEM_UM_SRC_DIR="not set"
+
 # Install core library
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
   spack dev-build -j 4 \
@@ -12,9 +15,10 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
   --test root \
   mofem-cephas@develop~copy_user_modules+docker build_type=Release ^petsc+X && \
   MOFEM_CEPHAS_HASH=`spack find -lv mofem-cephas | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
-  echo "export MOFEM_CEPHAS_HASH=$MOFEM_CEPHAS_HASH" >> ~/.bashrc && \
   cd $MOFEM_INSTALL_DIR/core-build-Release-$MOFEM_CEPHAS_HASH && make clean 
-  
+
+ENV MOFEM_CEPHAS_HASH=$MOFEM_CEPHAS_HASH
+
 # Install users mdoules
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
   MOFEM_CEPHAS_HASH=`spack find -lv mofem-cephas | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
@@ -26,10 +30,10 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
   MOFEM_UM_HASH=`spack find -lv mofem-users-modules | awk '/mofem-users-modules/ {print $1}' | head -n 1` && \
   cd $MOFEM_INSTALL_DIR/um-build-Release-$MOFEM_UM_HASH && make clean && \
   spack view symlink -i $MOFEM_INSTALL_DIR/um_view /$MOFEM_UM_HASH && \
-  echo "export MOFEM_UM_HASH=$MOFEM_UM_HASH" >> ~/.bashrc && \
   echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> ~/.bashrc 
 
-VOLUME $MOFEM_INSTALL_DIR
+ENV MOFEM_UM_HASH=$MOFEM_UM_HASH
+
 WORKDIR $MOFEM_INSTALL_DIR
 
 # image run hook: the -l will make sure /etc/profile environments are loaded

@@ -1427,7 +1427,7 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
   const size_t nb_dofs = data.getFieldData().size();
   if (!nb_dofs)
     MoFEMFunctionReturnHot(0);
-  const size_t nb_base_functions = data.getN().size2() / 3;
+  const size_t nb_base_functions = data.getN().size2() / Tensor_Dim;
   FTensor::Index<'i', Tensor_Dim> i;
   auto t_n_hdiv = data.getFTensor1N<Tensor_Dim>();
   auto t_data = getFTensor1FromMat<Tensor_Dim>(*dataPtr);

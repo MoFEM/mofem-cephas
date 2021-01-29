@@ -46,6 +46,16 @@ protected:
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
 
+template <int BASE_DIM, typename OpBase>
+struct OpSourceImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase> : public OpBase {
+  OpSourceImpl(const std::string field_name, VectorFun<BASE_DIM> source_fun)
+      : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun) {}
+
+protected:
+  VectorFun<BASE_DIM> sourceFun;
+  MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
+};
+
 template <int BASE_DIM, IntegrationType I, typename OpBase>
 struct OpBaseTimesScalarFieldImpl;
 
@@ -422,6 +432,40 @@ MoFEMErrorCode OpSourceImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
+template <int BASE_DIM, typename OpBase>
+MoFEMErrorCode OpSourceImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
+    DataForcesAndSourcesCore::EntData &row_data) {
+  FTensor::Index<'i', BASE_DIM> i;
+  MoFEMFunctionBegin;
+  const size_t nb_base_functions = row_data.getN().size2() / BASE_DIM;
+  // get element volume
+  const double vol = OpBase::getMeasure();
+  // get integration weights
+  auto t_w = OpBase::getFTensor0IntegrationWeight();
+  // get base function gradient on rows
+  auto t_row_base = row_data.getFTensor1N<BASE_DIM>();
+  // get coordinate at integration points
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
+  // loop over integration points
+  for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
+    // source file
+    auto t_source = sourceFun(t_coords(0), t_coords(1), t_coords(2));
+    // take into account Jacobean
+    const double alpha = t_w * vol;
+    // loop over rows base functions
+    int rr = 0;
+    for (; rr != OpBase::nbRows; ++rr) {
+      OpBase::locF[rr] += alpha * t_row_base(i) * t_source(i);
+      ++t_row_base;
+    }
+    for (; rr < nb_base_functions; ++rr)
+      ++t_row_base;
+    ++t_coords;
+    ++t_w; // move to another integration weight
+  }
+  MoFEMFunctionReturn(0);
+}
+
 template <typename OpBase>
 MoFEMErrorCode OpBaseTimesScalarFieldImpl<1, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
@@ -490,7 +534,7 @@ MoFEMErrorCode
 OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
-  const size_t nb_base_functions = row_data.getN().size2() / 3;
+  const size_t nb_base_functions = row_data.getN().size2() / BASE_DIM;
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights

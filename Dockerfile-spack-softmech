@@ -1,0 +1,13 @@
+FROM likask/mofem-spack-build
+
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
+
+RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
+  spack install mofem-softmech ^/flu2xb5 && \
+  spack view symlink -i $MOFEM_INSTALL_DIR/um_view mofem-softmech
+
+WORKDIR $MOFEM_INSTALL_DIR
+
+# image run hook: the -l will make sure /etc/profile environments are loaded
+CMD        /bin/bash -l
+
