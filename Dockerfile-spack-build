@@ -4,8 +4,7 @@ LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
 ADD . $MOFEM_SRC_DIR/
 
-ARG MOFEM_CEPHAS_HASH="not set
-ARG MOFEM_UM_SRC_DIR="not set"
+ENV MOFEM_ENV_FILE=/etc/profile.d/mofem.sh
 
 # Install core library
 RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
@@ -14,25 +13,24 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
   --keep-prefix \
   --test root \
   mofem-cephas@develop~copy_user_modules+docker build_type=Release ^petsc+X && \
-  MOFEM_CEPHAS_HASH=`spack find -lv mofem-cephas | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
-  cd $MOFEM_INSTALL_DIR/core-build-Release-$MOFEM_CEPHAS_HASH && make clean 
-
-ENV MOFEM_CEPHAS_HASH=$MOFEM_CEPHAS_HASH
+  export MOFEM_CEPHAS_HASH=`spack find -lv mofem-cephas | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
+  cd $MOFEM_INSTALL_DIR/core-build-Release-$MOFEM_CEPHAS_HASH && make clean && \
+  touch $MOFEM_ENV_FILE && \
+  echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> $MOFEM_ENV_FILE && \
+  echo "export MOFEM_CEPHAS_HASH=$MOFEM_CEPHAS_HASH" >> $MOFEM_ENV_FILE
 
 # Install users mdoules
-RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
-  MOFEM_CEPHAS_HASH=`spack find -lv mofem-cephas | awk '/mofem-cephas/ {print $1}' | head -n 1` && \
+RUN . $MOFEM_ENV_FILE && \
   spack dev-build -j 4 \
   --test root  \
   --source-pat $MOFEM_UM_SRC_DIR \
   mofem-users-modules@develop+docker build_type=Release \
   ^/$MOFEM_CEPHAS_HASH && \
-  MOFEM_UM_HASH=`spack find -lv mofem-users-modules | awk '/mofem-users-modules/ {print $1}' | head -n 1` && \
+  export MOFEM_UM_HASH=`spack find -lv mofem-users-modules | awk '/mofem-users-modules/ {print $1}' | head -n 1` && \
   cd $MOFEM_INSTALL_DIR/um-build-Release-$MOFEM_UM_HASH && make clean && \
   spack view symlink -i $MOFEM_INSTALL_DIR/um_view /$MOFEM_UM_HASH && \
-  echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> ~/.bashrc 
-
-ENV MOFEM_UM_HASH=$MOFEM_UM_HASH
+  echo "export MOFEM_UM_HASH=$MOFEM_UM_HASH" >> $MOFEM_ENV_FILE && \
+  echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> $MOFEM_ENV_FILE
 
 WORKDIR $MOFEM_INSTALL_DIR
 
