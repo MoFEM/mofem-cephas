@@ -1,4 +1,4 @@
-FROM likask/mofem-spack-build
+FROM likask/mofem-spack-um
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
