@@ -1,7 +1,8 @@
-FROM likask/mofem-spack-build
+FROM likask/mofem-spack-intermidiet
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
+VOLUME $MOFEM_INSTALL_DIR
 WORKDIR $MOFEM_INSTALL_DIR
 
 # image run hook: the -l will make sure /etc/profile environments are loaded

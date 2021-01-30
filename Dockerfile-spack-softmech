@@ -2,8 +2,8 @@ FROM likask/mofem-spack-build
 
 LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
 
-RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
-  spack install mofem-softmech ^/flu2xb5 && \
+RUN . $MOFEM_ENV_FILE && \
+  spack install mofem-softmech ^/$MOFEM_UM_HASH && \
   spack view symlink -i $MOFEM_INSTALL_DIR/um_view mofem-softmech
 
 WORKDIR $MOFEM_INSTALL_DIR
