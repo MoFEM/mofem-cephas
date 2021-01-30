@@ -851,6 +851,25 @@ add_test(hcurl_divergence_operator_2d_demkowicz_on_quad
   -base demkowicz -order 5
   -log_no_color)
 
+  my_add_executable(hcurl_divergence_operator_2d_embaded_in_3d 
+    hcurl_divergence_operator_2d_embaded_in_3d.cpp)
+  target_link_libraries(hcurl_divergence_operator_2d_embaded_in_3d
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_cblas
+    mofem_third_party
+    ${PROJECT_LIBS}
+  )
+
+  add_test(hcurl_divergence_operator_2d_ainsworth_on_tri_embaded_in_3d
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d_embaded_in_3d
+  -my_file half_of_sphere.h5m
+  -base ainsworth -order 5
+  -log_no_color)
 
 # add test for recording series
 my_add_executable(record_series_atom record_series_atom.cpp)

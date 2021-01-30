@@ -50,11 +50,12 @@ struct OpDivergence : public FaceEleOp {
     if (nb_dofs == 0)
       MoFEMFunctionReturnHot(0);
     const int nb_gauss_pts = data.getN().size1();
-    auto t_diff_base_fun = data.getFTensor2DiffN<3, 2>();
+    auto t_diff_base_fun = data.getFTensor2DiffN<3, 3>();
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       const double val = getArea() * getGaussPts()(2, gg);
       for (int bb = 0; bb != nb_dofs; bb++) {
-        dIv += val * (t_diff_base_fun(0, 0) + t_diff_base_fun(1, 1));
+        dIv += val * (t_diff_base_fun(0, 0) + t_diff_base_fun(1, 1) +
+                      t_diff_base_fun(2, 2));
         ++t_diff_base_fun;
       }
     }
@@ -76,15 +77,13 @@ struct OpFlux : public EdgeEleOp {
     if (nb_dofs == 0)
       MoFEMFunctionReturnHot(0);
     const int nb_gauss_pts = data.getN().size1();
-    FTensor::Tensor1<double, 3> t_normal(-getDirection()[1], getDirection()[0],
-                                         0.);
 
     auto t_base_fun = data.getFTensor1N<3>();
     FTensor::Index<'i', 2> i;
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       const double val = getGaussPts()(1, gg);
       for (int bb = 0; bb != nb_dofs; bb++) {
-        fLux += val * t_normal(i) * t_base_fun(i);
+        fLux += val * t_base_fun(0);
         ++t_base_fun;
       }
     }
@@ -213,12 +212,16 @@ int main(int argc, char *argv[]) {
       FaceEle fe_face(m_field);
       fe_face.getRuleHook = rule;
       MatrixDouble inv_jac(2, 2), jac(2, 2);
-      fe_face.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
-      fe_face.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
+
+      fe_face.getOpPtrVector().push_back(
+          new OpCalculateJacForFaceEmbeddedIn3DSpace(jac));
+      fe_face.getOpPtrVector().push_back(
+          new OpCalculateInvJacForFaceEmbeddedIn3DSpace(inv_jac));
       fe_face.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
       fe_face.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformFace(jac));
-      fe_face.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
+          new OpSetContravariantPiolaTransformFaceEmbeddedIn3DSpace(jac));
+      fe_face.getOpPtrVector().push_back(
+          new OpSetInvJacHcurlFaceEmbeddedIn3DSpace(inv_jac));
       fe_face.getOpPtrVector().push_back(
           new OpMakeHighOrderGeometryWeightsOnFace());
       fe_face.getOpPtrVector().push_back(new OpDivergence(div));
@@ -230,8 +233,8 @@ int main(int argc, char *argv[]) {
       double flux = 0;
       EdgeEle fe_edge(m_field);
       fe_edge.getRuleHook = rule;
-      fe_edge.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformOnEdge());
+      // fe_edge.getOpPtrVector().push_back(
+      //     new OpSetContravariantPiolaTransformOnEdge());
       fe_edge.getOpPtrVector().push_back(new OpFlux(flux));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE_FE", fe_edge);
       return flux;
