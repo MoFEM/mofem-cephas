@@ -147,28 +147,27 @@ struct Simple : public UnknownInterface {
                               const enum MoFEMTypes bh = MF_ZERO,
                               int verb = -1);
 
-
   /**
-   * @brief Remove field form domain 
-   * 
-   * @param name 
-   * @return MoFEMErrorCode 
+   * @brief Remove field form domain
+   *
+   * @param name
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode removeDomainField(const std::string &name);
 
   /**
-   * @brief Remove field form boundary 
-   * 
-   * @param name 
-   * @return MoFEMErrorCode 
+   * @brief Remove field form boundary
+   *
+   * @param name
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode removeBoundaryField(const std::string &name);
 
   /**
    * @brief Remove field form skeleton
-   * 
-   * @param name 
-   * @return MoFEMErrorCode 
+   *
+   * @param name
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode removeSkeletonField(const std::string &name);
 
@@ -209,9 +208,9 @@ struct Simple : public UnknownInterface {
 
   /**
    * @brief Set the skeleton adjacency object
-   * 
-   * @param dim 
-   * @return MoFEMErrorCode 
+   *
+   * @param dim
+   * @return MoFEMErrorCode
    */
   MoFEMErrorCode setSkeletonAdjacency(int dim = -1);
 
@@ -229,7 +228,7 @@ struct Simple : public UnknownInterface {
 
   /**
    * @brief Rebuild internal MoFEM data structures
-   * 
+   *
    * Call this function after you add field or remove it.
    *
    * \note If you add field, or remove it, finite element and problem needs to
@@ -264,7 +263,7 @@ struct Simple : public UnknownInterface {
   inline SmartPetscObj<DM> getDM() { return dM; }
 
   /**
-   * @brief Get the problem dimensio
+   * @brief Get the problem dimension
    *
    * Problem dimension is determined by highest dimension of entities on the
    * mesh.
@@ -272,6 +271,34 @@ struct Simple : public UnknownInterface {
    * @return int
    */
   inline int getDim() const { return dIm; }
+
+  /**
+   * @brief Set the problem dimension
+   *
+   * @return int
+   */
+  void setDim(int dim) {dIm = dim;};
+
+  /**
+   * @brief Get the MeshSet object
+   *
+   * @return EntityHandle&
+   */
+  inline EntityHandle &getMeshSet() { return meshSet; }
+
+  /**
+   * @brief Get the BoundaryMeshSet object
+   *
+   * @return EntityHandle&
+   */
+  inline EntityHandle &getBoundaryMeshSet() { return boundaryMeshset; }
+  
+  /**
+   * @brief Get the BitRefLevel
+   *
+   * @return BitRefLevel
+   */
+  inline BitRefLevel getBitRefLevel() const { return bitLevel; }
 
   /**
    * @brief Get the Domain FE Name
@@ -359,7 +386,8 @@ private:
   std::vector<std::string> noFieldFields;     ///< NOFIELD field name
   std::vector<std::string> noFieldDataFields; ///< NOFIELD field name
 
-  std::multimap<std::string, std::pair<int, Range>> fieldsOrder; ///< fields order
+  std::multimap<std::string, std::pair<int, Range>>
+      fieldsOrder; ///< fields order
 
   std::string nameOfProblem; ///< problem name
   std::string domainFE;      ///< domain finite element
@@ -374,9 +402,7 @@ private:
   SmartPetscObj<DM>
       dM; ///< Discrete manager (interface to PETSc/MoFEM functions)
 
-  template<int DIM = -1>
-  MoFEMErrorCode setSkeletonAdjacency();
-
+  template <int DIM = -1> MoFEMErrorCode setSkeletonAdjacency();
 };
 
 } // namespace MoFEM
