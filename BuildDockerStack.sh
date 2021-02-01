@@ -11,15 +11,14 @@ docker tag likask/mofem-spack-env:latest likask/mofem-spack-env:$VERSION
 # Build core and users modules
 docker build -t likask/mofem-spack-mofem -f Dockerfile-spack-mofem . 
 docker tag likask/mofem-spack-mofem:latest ikask/mofem-spack-mofem:$VERSION
+docker tag likask/mofem-spack-mofem:latest likask/mofem-intermidiate:latest
 
 # Install softmech module
-docker build -t likask/mofem-jupyter-softmech -f Dockerfile-spack-softmech empty/ 
-docker tag likask/mofem-softmech:latest likask/mofem-softmech:$VERSION 
+docker build -t likask/mofem-spack-softmech -f Dockerfile-spack-softmech empty/ 
+docker tag likask/mofem-spack-softmech:latest likask/mofem-spack-softmech:$VERSION 
+docker tag likask/mofem-spack-softmech:latest likask/mofem-intermidiate:latest
+
 # Install other modules ...
-
-
-# Tag last module
-docker tag likask/mofem-jupyter-softmech:latest likask/mofem-intermidiate:latest
 
 # Volume
 docker build -t likask/mofem-spack-build -f Dockerfile-spack-volume empty
