@@ -52,6 +52,7 @@ cm_export_file("../meshes/rectangle_quad.h5m" export_atom_tests)
 cm_export_file("../meshes/quad_mesh.h5m" export_atom_tests)
 cm_export_file("../meshes/2_tets_contact.cub" export_atom_tests)
 cm_export_file("../meshes/reference_rectangle.h5m" export_atom_tests)
+cm_export_file("../meshes/half_of_sphere.h5m" export_atom_tests)
 
 set(PERCOMPILED_MOFEM_HEADER 
   "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
@@ -864,7 +865,7 @@ add_test(hcurl_divergence_operator_2d_demkowicz_on_quad
     ${PROJECT_LIBS}
   )
 
-  add_test(hcurl_divergence_operator_2d_ainsworth_on_tri_embaded_in_3d
+add_test(hcurl_divergence_operator_2d_ainsworth_on_tri_embaded_in_3d
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d_embaded_in_3d
   -my_file half_of_sphere.h5m
