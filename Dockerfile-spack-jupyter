@@ -29,9 +29,6 @@ RUN pip3 -q install pip --upgrade && \
   jupyter nbextension enable spellchecker/main && \
   npm install -g configurable-http-proxy
 
-#RUN useradd -ms /bin/bash mofem
-#USER mofem
-
 # allow jupyterlab for ipyvtk
 ENV DISPLAY=:99.0
 ENV JUPYTER_ENABLE_LAB=yes
