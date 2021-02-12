@@ -1539,9 +1539,10 @@ MoFEMErrorCode OpCalculateHdivVectorFieldDot<Tensor_Dim>::doWork(
  * @brief Calculate divergence of vector field
  * @ingroup mofem_forces_and_sources_user_data_operators
  *
- * @tparam Tensor_Dim dimension of space
+ * @tparam BASE_DIM 
+ * @tparam SPACE_DIM 
  */
-template <int Tensor_Dim1, int Tensor_Dim2>
+template <int BASE_DIM, int SPACE_DIM>
 struct OpCalculateHdivVectorDivergence
     : public ForcesAndSourcesCore::UserDataOperator {
 
@@ -1567,18 +1568,16 @@ struct OpCalculateHdivVectorDivergence
     const size_t nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
-    const size_t nb_base_functions = data.getN().size2() / Tensor_Dim1;
-    FTensor::Index<'i', Tensor_Dim1> i;
-    auto t_n_diff_hdiv = data.getFTensor2DiffN<Tensor_Dim1, Tensor_Dim2>();
+    const size_t nb_base_functions = data.getN().size2() / BASE_DIM;
+    FTensor::Index<'i', BASE_DIM> i;
+    FTensor::Index<'j', SPACE_DIM> j;
+    auto t_n_diff_hdiv = data.getFTensor2DiffN<BASE_DIM, SPACE_DIM>();
     auto t_data = getFTensor0FromVec(*dataPtr);
     for (size_t gg = 0; gg != nb_integration_points; ++gg) {
       auto t_dof = data.getFTensor0FieldData();
       int bb = 0;
       for (; bb != nb_dofs; ++bb) {
-        double div = 0;
-        for (auto ii = 0; ii != Tensor_Dim2; ++ii)
-          div += t_n_diff_hdiv(ii, ii);
-        t_data += t_dof * div;
+        t_data += t_dof * t_n_diff_hdiv(j, j);
         ++t_n_diff_hdiv;
         ++t_dof;
       }
@@ -1591,6 +1590,65 @@ struct OpCalculateHdivVectorDivergence
 
 private:
   boost::shared_ptr<VectorDouble> dataPtr;
+  const EntityHandle zeroType;
+  const int zeroSide;
+};
+
+/**
+ * @brief Calculate gradient of vector field
+ * @ingroup mofem_forces_and_sources_user_data_operators
+ *
+ * @tparam BASE_DIM
+ * @tparam SPACE_DIM
+ */
+template <int BASE_DIM, int SPACE_DIM>
+struct OpCalculateHVecVectorGradient
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateHVecVectorGradient(const std::string field_name,
+                                boost::shared_ptr<MatrixDouble> data_ptr,
+                                const EntityType zero_type = MBEDGE,
+                                const int zero_side = 0)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+    const size_t nb_integration_points = getGaussPts().size2();
+    if (type == zeroType && side == zeroSide) {
+      dataPtr->resize(BASE_DIM * SPACE_DIM, nb_integration_points, false);
+      dataPtr->clear();
+    }
+    const size_t nb_dofs = data.getFieldData().size();
+    if (!nb_dofs)
+      MoFEMFunctionReturnHot(0);
+    const size_t nb_base_functions = data.getN().size2() / BASE_DIM;
+    FTensor::Index<'i', BASE_DIM> i;
+    FTensor::Index<'j', SPACE_DIM> j;
+    auto t_base_diff = data.getFTensor2DiffN<BASE_DIM, SPACE_DIM>();
+    auto t_data = getFTensor2FromMat<BASE_DIM, SPACE_DIM>(*dataPtr);
+    for (size_t gg = 0; gg != nb_integration_points; ++gg) {
+      auto t_dof = data.getFTensor0FieldData();
+      int bb = 0;
+      for (; bb != nb_dofs; ++bb) {
+        t_data(i, j) += t_dof * t_base_diff(i, j);
+        ++t_base_diff;
+        ++t_dof;
+      }
+      for (; bb != nb_base_functions; ++bb)
+        ++t_base_diff;
+      ++t_data;
+    }
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> dataPtr;
   const EntityHandle zeroType;
   const int zeroSide;
 };
