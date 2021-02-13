@@ -135,7 +135,7 @@ if(SLEPC_FOUND)
       PATHS 
       ${SLEPC_LIBRARY_DIRS}
       NO_DEFAULT_PATH)
-  endif(SLEPC_LINK_LIBRARIES)
+  endif(NOT SLEPC_LINK_LIBRARIES)
 
   if(SLEPC_LINK_LIBRARIES)
     add_definitions(-DWITH_SLEPC)
@@ -237,6 +237,10 @@ if(PETSCVAR_PARMETIS_INCLUDE)
   include_directories(${PARMETIS_INCLUDE_DIRECTORIES})
   add_definitions(-DPARMETIS)
 endif(PETSCVAR_PARMETIS_INCLUDE)
+
+# Find jupytext
+find_file(JUPYTEXT jupytext)
+message(STATUS ${JUPYTEXT})
 
 # System project liblairoes
 resolve_libraries(SYSTEM_PROJECT_LIBS "
