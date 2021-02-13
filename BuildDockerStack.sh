@@ -26,7 +26,7 @@ docker tag likask/mofem-spack-build:latest likask/mofem-spack-build:$VERSION
 
 # Jupyter
 docker build -t likask/mofem-spack-jupyter -f Dockerfile-spack-jupyter empty
-docker tag likask/likask/mofem-spack-jupyter:latest likask/likask/mofem-spack-jupyter:$VERSION 
+docker tag likask/mofem-spack-jupyter:latest likask/likask/mofem-spack-jupyter:$VERSION 
 
 # Hub
 docker build -t likask/mofem-spack-jupyterhub -f Dockerfile-spack-jupyterhub jupyter
