@@ -103,7 +103,6 @@
    fun:orterun
    fun:(below main)
 }
- (Core.cpp:65)
 {
    <insert_a_suppression_name_here>
    Memcheck:Leak
