@@ -870,7 +870,9 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = third_party/kiss_fft130 \
-                         third_party/local
+                         third_party/local \
+                         spack-build-* \
+                         um-build-Debug-*
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

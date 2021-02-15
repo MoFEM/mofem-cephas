@@ -39,7 +39,7 @@ project(MoFEM C CXX)
 # Set fallback version. Fallback version is version of MoFEM which is used
 # as default version if version from the git tags can not be extracted. For exammple 
 # that is a keys when somone install mofem from tarball.
-set(MoFEM_FALLBACK_VERSION "0.10.1" CACHE STRING "Fallback version" FORCE)
+set(MoFEM_FALLBACK_VERSION "0.10.2" CACHE STRING "Fallback version" FORCE)
 message(STATUS "Falback vecrsion v${MoFEM_FALLBACK_VERSION}")
 
 # Options
@@ -135,7 +135,7 @@ if(SLEPC_FOUND)
       PATHS 
       ${SLEPC_LIBRARY_DIRS}
       NO_DEFAULT_PATH)
-  endif(SLEPC_LINK_LIBRARIES)
+  endif(NOT SLEPC_LINK_LIBRARIES)
 
   if(SLEPC_LINK_LIBRARIES)
     add_definitions(-DWITH_SLEPC)
@@ -237,6 +237,10 @@ if(PETSCVAR_PARMETIS_INCLUDE)
   include_directories(${PARMETIS_INCLUDE_DIRECTORIES})
   add_definitions(-DPARMETIS)
 endif(PETSCVAR_PARMETIS_INCLUDE)
+
+# Find jupytext
+find_file(JUPYTEXT jupytext)
+message(STATUS ${JUPYTEXT})
 
 # System project liblairoes
 resolve_libraries(SYSTEM_PROJECT_LIBS "

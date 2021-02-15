@@ -103,12 +103,18 @@ enum AssemblyType { PETSC, USER_ASSEMBLE, LAST_ASSEMBLE };
 enum IntegrationType { GAUSS, USER_INTEGRATION, LAST_INTEGRATION };
 
 /**
- * @brief Sacalr function type
+ * @brief Scalar function type
  * @ingroup mofem_forms
  *
  */
 using ScalarFun =
     boost::function<double(const double, const double, const double)>;
+
+/**
+ * @brief Constant function type
+ *
+ */
+using ConstantFun = boost::function<double()>;
 
 /**
  * @brief Vector function type

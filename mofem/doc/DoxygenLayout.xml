@@ -7,7 +7,8 @@
     <tab type="user" url="@ref news" title="News" intro=""/>
 
     <tab type="user" visible="yes" title="Getting started" url="@ref installation" intro="">
-      <tab type="user" url="@ref installation" title="Installation" intro=""/>
+      <tab type="user" url="@ref installation" title="Installation with Spack" intro=""/>
+      <tab type="user" url="@ref install_docker" title="Installation with Docker" intro=""/>
       <tab type="user" url="@ref running_code" title="Running code"/>
       <tab type="user" url="@ref motivation" title="Features" intro=""/>
       <tab type="user" url="https://youtube.com/playlist?list=PLIn4vQz21UsW_H0-B0n699w46l-3WcJBT" title="Video guides"/>

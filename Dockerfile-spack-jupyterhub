@@ -1,0 +1,24 @@
+FROM likask/mofem-spack-jupyter 
+
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
+
+ENV MOFEM_JUPYTER_HOME_DIR=/jupyter
+
+ADD . $MOFEM_JUPYTER_HOME_DIR
+
+# Install packages
+RUN apt-get update && \
+  apt-get install -y \
+  sudo && \
+  rm -rf /var/lib/apt/lists/*
+
+RUN useradd mofem \
+  -m -d /jupyter/mofem \
+  -k /jupyter/skel/ \
+  -p paN8aiEIonqJE && \
+  usermod -aG sudo mofem
+
+WORKDIR $MOFEM_INSTALL_DIR
+
+EXPOSE 8000
+CMD ["/bin/bash", "-c", ". ${MOFEM_ENV_FILE}; jupyterhub -f ${MOFEM_JUPYTER_HOME_DIR}/jupyterhub_config.py"]

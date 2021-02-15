@@ -108,7 +108,7 @@ manager:
 
 Install packages through `homebrew`:
 ~~~~~
-brew install curl git python gcc@9 cmake autoconf automake libtool doxygen
+brew install curl git python gcc@9 cmake autoconf automake libtool doxygen pkg-config
 ~~~~~
 
 If it is not already in the `PATH`, you should add it there.
@@ -177,8 +177,8 @@ gcc version 10.2.0 (GCC)
 ~~~~~
 t means that you have version 10. This is temporary problem and will be
 fixed over the time, once various patches and fixes will be applied to those
-libraries. In mean time you can fix that problem by editind `packages.yaml`
-in Mac OSX located in `~/.spack/darwin/packages.yaml` to set version 9 of
+libraries. In mean time you can fix that problem by editind `compilers.yaml`
+in Mac OSX located in `~/.spack/darwin/compilers.yaml` to set version 9 of
 gfortran compiler,
 ~~~~~~~
 - compiler:

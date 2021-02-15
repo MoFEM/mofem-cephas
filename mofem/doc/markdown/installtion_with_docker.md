@@ -126,18 +126,18 @@ and finally, open it in ParaView [ParaView](https://www.paraview.org/download/).
 
 # Running Jupyter notebook {#docker_jupyter}
 
+See video explaing this part of the installation: 
+[https://youtu.be/-54eMMRTqsQ](https://youtu.be/-54eMMRTqsQ)
 
 Pull MoFEM images and create mofem_volume
 ~~~~~~
-docker pull likask/mofem-spack-build
-docker pull likask/mofem-spack-jupyter
 docker run --name mofem_volume likask/mofem-spack-build
 ~~~~~~
 and run container as follows
 ~~~~~~
 docker run \
   -p 8888:8888  \
-  --name mofem_develop \
+  --name mofem_jupyetr \
   -v $HOME:/host_home  \
   --volumes-from mofem_volume \
   --rm=true -ti \
@@ -155,6 +155,30 @@ Copy address into web-browser:
 http://127.0.0.1:8888/?token=bed64e1d532ab00f402d56432193a80f6aace612d4ffbec2
 ~~~~~~
 
+You can start docker without starting volume, as a isolated system, as follows,
+~~~~~~
+docker run \
+  -p 8888:8888  \
+  --name mofem_jupyter \
+  --rm=true -ti \
+  likask/mofem-spack-jupyter
+~~~~~~
+
+# Running Jupyter hub {#docker_jupyterhub}
+
+Pull MoFEM images and create mofem_volume
+~~~~~~
+docker run --name mofem_volume likask/mofem-spack-build
+~~~~~~
+
+Run JupyterHub [JupterHyb](https://jupyterhub.readthedocs.io/en/stable/)
+~~~~~~
+docker run \
+  -p 8000:8000 \
+  --name mofem_jupyter_hub \
+  --volumes-from mofem_volume \
+  -d likask/mofem-spack-jupyterhub 
+~~~~~~
 # Clone MoFEM repository {#docker_clone}
 
 To build MoFEM the source code need to be downloaded. The best method to do it is
@@ -181,36 +205,6 @@ docker run \
   --volumes-from mofem_volume \
   --rm=true -it likask/mofem-spack-build /bin/bash
 ~~~~~~
-
-# Build docker image {#docker_image}
-
-Sometimes you like to build MoFEM environment, or build MoFEM from scratch, instead
-downloading preinstalled code from Docker Hub. If you familiar with Docker, you
-can modify `Dockerfile-spack-env` to build MoFEM dependent libraries. Or edit
-`Dockerfile-spack-build` to build and test installation.
-
-You can build MoFEM docker environment image as follows
-~~~~~~
-cd $HOME/mofem_install
-docker build -t likask/mofem-spack-env -f Dockerfile-spack-env ,
-~~~~~~
-Once docker image is built, you build image can be created
-~~~~~~
-cd $HOME/mofem_install
-docker build -t likask/mofem-spack-build -f Dockerfile-spack-build .
-~~~~~~
-and Jupyter notebook image
-~~~~~~
-cd $HOME/mofem_install
-docker build -t likask/mofem-spack-jupyter -f Dockerfile-spack-jupyter .
-~~~~~~
-
-If you do not exactly understand what is *docker image*, *docker container* and
-*docker volume* do not worry. You do need to only know how to run and develop
-code in docker, how to do it is explained in below. If you like to fully explore
-features available by running MoFEM in docker and utilize its full potential pleas look into documentation in [Docker User Guide](https://docs.docker.com/engine/userguide/)
-
-
 # What you will need on host system {#docker_prerequisites}
 
 - Postprocessor to visualise results. We using [ParaView](http://www.paraview.org)

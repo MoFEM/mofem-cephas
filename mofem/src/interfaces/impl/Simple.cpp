@@ -513,7 +513,8 @@ MoFEMErrorCode Simple::buildFields() {
     MoFEMFunctionBeginHot;
     // create boundary meshset
     if (boundaryMeshset != 0) {
-      CHKERR m_field.get_moab().delete_entities(&boundaryMeshset, 1);
+      MoFEMFunctionReturnHot(0);
+      // CHKERR m_field.get_moab().delete_entities(&boundaryMeshset, 1);
     }
     CHKERR m_field.get_moab().create_meshset(MESHSET_SET, boundaryMeshset);
     CHKERR m_field.get_moab().add_entities(boundaryMeshset, proc_domain_skin);
