@@ -11,11 +11,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../vec-0/src)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../vec-3/src)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../adv-0/src)
-
 set(permissions_default 
   OWNER_WRITE 
   OWNER_READ
@@ -38,20 +33,10 @@ tutorials_copy_and_install("*.sh" "${permissions_execute}")
 tutorials_copy_and_install("*.geo" "${permissions_execute}")
 
 tutorials_build_and_install(
-  contact_2d ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
-tutorials_build_and_install(
-  contact_3d ${CMAKE_CURRENT_SOURCE_DIR}/contact.cpp)
-
-set_target_properties(
-  contact_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")
-set_target_properties(
-  contact_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")  
+  mix_poisson ${CMAKE_CURRENT_SOURCE_DIR}/mix_poisson.cpp)
 
 add_test(
-  contact_2d
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  contact_2d
-  -file_name ${CMAKE_CURRENT_BINARY_DIR}/sphere_2d.h5m
-  -ts_type beuler
-  -ts_max_time 1 -ts_dt 0.2 -log_no_color)
-  
+  mix_poisson
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/mix_poisson
+  -file_name ${CMAKE_CURRENT_BINARY_DIR}/mesh2d.h5m -log_no_color)
