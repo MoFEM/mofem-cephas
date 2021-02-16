@@ -462,9 +462,8 @@ MoFEMErrorCode OpCalculateInvJacForFaceImpl<3>::doWork(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-OpSetInvJacSpaceForFaceImpl<2>::doWork(int side, EntityType type,
-                                DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<2>::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
   if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&
@@ -561,7 +560,7 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<3>::doWork(
             ++t_diff_n_ref;
           }
         }
-        diff_n.data().swap(diffNinvJac.data());
+        diff_n.swap(diffNinvJac);
       } break;
       default:
         SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
@@ -591,7 +590,7 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<3>::doWork(
 
 MoFEMErrorCode
 OpSetInvJacHcurlFaceImpl<2>::doWork(int side, EntityType type,
-                             DataForcesAndSourcesCore::EntData &data) {
+                                    DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
   if (type != MBEDGE && type != MBTRI && type != MBQUAD)
