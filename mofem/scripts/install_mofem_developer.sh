@@ -195,7 +195,7 @@ echo "Current directory: $PWD"
   
 # Clone MoFEM core library
 if [ ! -d "$PWD/mofem-cephas" ]; then
-  git clone -b test_install --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+  git clone -b develop --recurse-submodules https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
 lse 
   echo -e "\nMoFEM source directory is found"
 fi
