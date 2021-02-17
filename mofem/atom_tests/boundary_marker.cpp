@@ -32,9 +32,9 @@ using FaceEleOp = FaceEle::UserDataOperator;
 
 struct OpFace : public FaceEleOp {
   const Range &skinEnts;
-  const std::vector<bool> &mArker;
+  const std::vector<unsigned char> &mArker;
 
-  OpFace(const Range &skin_ents, const std::vector<bool> &marker)
+  OpFace(const Range &skin_ents, const std::vector<unsigned char> &marker)
       : FaceEleOp("FIELD1", OPROW), skinEnts(skin_ents), mArker(marker) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -49,7 +49,7 @@ struct OpFace : public FaceEleOp {
     // contained in the range. Note it is local element vector, which is used
     // to validate of global local vector.
     auto get_boundary_marker_directly_from_range = [&]() {
-      std::vector<bool> ents_marker_used_for_testing;
+      std::vector<unsigned char> ents_marker_used_for_testing;
       ents_marker_used_for_testing.resize(data.getLocalIndices().size());
       switch (type) {
       case MBVERTEX: {
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
 
     auto mark_boundary_dofs = [&](Range &skin_edges) {
       auto problem_manager = m_field.getInterface<ProblemsManager>();
-      std::vector<bool> marker;
+      std::vector<unsigned char> marker;
       problem_manager->markDofs(simple_interface->getProblemName(), ROW,
                                 skin_edges, marker);
       return marker;
