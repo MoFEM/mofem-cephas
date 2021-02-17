@@ -335,7 +335,7 @@ struct ProblemsManager : public UnknownInterface {
    * @return MoFEMErrorCode 
    */
   MoFEMErrorCode markDofs(const std::string problem_name, RowColData rc,
-                          const Range ents, std::vector<bool> &marker);
+                          const Range ents, std::vector<unsigned char> &marker);
 
 private:
   PetscLogEvent MOFEM_EVENT_ProblemsManager;

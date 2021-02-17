@@ -39,13 +39,13 @@ struct EssentialBcStorage;
  */
 struct OpSetBc : public ForcesAndSourcesCore::UserDataOperator {
   OpSetBc(std::string field_name, bool yes_set,
-          boost::shared_ptr<std::vector<bool>> boundary_marker);
+          boost::shared_ptr<std::vector<unsigned char>> boundary_marker);
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
 public:
   bool yesSet;
-  boost::shared_ptr<std::vector<bool>> boundaryMarker;
+  boost::shared_ptr<std::vector<unsigned char>> boundaryMarker;
 };
 
 struct OpUnSetBc : public ForcesAndSourcesCore::UserDataOperator {

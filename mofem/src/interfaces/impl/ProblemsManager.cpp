@@ -3077,7 +3077,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
 
 MoFEMErrorCode ProblemsManager::markDofs(const std::string problem_name,
                                          RowColData rc, const Range ents,
-                                         std::vector<bool> &marker) {
+                                         std::vector<unsigned char> &marker) {
 
   Interface &m_field = cOre;
   const Problem *problem_ptr;
@@ -3094,12 +3094,12 @@ MoFEMErrorCode ProblemsManager::markDofs(const std::string problem_name,
     SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
   }
   marker.resize(dofs->size());
-  std::fill(marker.begin(), marker.end(), false);
+  std::fill(marker.begin(), marker.end(), 0);
   for (auto p = ents.pair_begin(); p != ents.pair_end(); ++p) {
     auto lo = dofs->get<Ent_mi_tag>().lower_bound(p->first);
     auto hi = dofs->get<Ent_mi_tag>().upper_bound(p->second);
     for (; lo != hi; ++lo)
-      marker[(*lo)->getPetscLocalDofIdx()] = true;
+      marker[(*lo)->getPetscLocalDofIdx()] = 1;
   }
   MoFEMFunctionReturn(0);
 }

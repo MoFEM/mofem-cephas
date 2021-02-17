@@ -33,7 +33,7 @@ struct EssentialBcStorage : public EntityStorage {
 EssentialBcStorage::HashVectorStorage EssentialBcStorage::feStorage;
 
 OpSetBc::OpSetBc(std::string field_name, bool yes_set,
-                 boost::shared_ptr<std::vector<bool>> boundary_marker)
+                 boost::shared_ptr<std::vector<unsigned char>> boundary_marker)
     : ForcesAndSourcesCore::UserDataOperator(
           field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
       yesSet(yes_set), boundaryMarker(boundary_marker) {}
