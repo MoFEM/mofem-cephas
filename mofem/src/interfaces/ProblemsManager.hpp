@@ -322,6 +322,8 @@ struct ProblemsManager : public UnknownInterface {
                                       int verb = VERBOSE,
                                       const bool debug = false);
 
+  enum MarkOP { SET, NOT_SET };
+
   /**
    * @brief Create vector with marked indices 
    * 
@@ -334,11 +336,29 @@ struct ProblemsManager : public UnknownInterface {
    * @param marker 
    * @return MoFEMErrorCode 
    */
-  MoFEMErrorCode markDofs(const std::string problem_name, RowColData rc,
-                          const Range ents, std::vector<unsigned char> &marker);
+   MoFEMErrorCode markDofs(const std::string problem_name, RowColData rc,
+                           const Range ents,
+                           std::vector<unsigned char> &marker) const;
 
-private:
-  PetscLogEvent MOFEM_EVENT_ProblemsManager;
+   /**
+    * @brief Mark DOFs
+    *
+    * @param problem_name
+    * @param rc
+    * @param field_name
+    * @param lo
+    * @param hi
+    * @param op
+    * @param marker
+    * @return MoFEMErrorCode
+    */
+   MoFEMErrorCode markDofs(const std::string problem_name, RowColData rc,
+                           const std::string field_name, const int lo,
+                           const int hi, const enum MarkOP op,
+                           std::vector<unsigned char> &marker) const;
+
+ private:
+   PetscLogEvent MOFEM_EVENT_ProblemsManager;
 };
 } // namespace MoFEM
 
