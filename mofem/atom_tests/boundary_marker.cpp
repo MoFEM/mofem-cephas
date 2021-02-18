@@ -133,9 +133,9 @@ int main(int argc, char *argv[]) {
       problem_manager->markDofs(simple_interface->getProblemName(), ROW,
                                 skin_edges, marker);
       // Unset coefficient 1, e.g. u_y
-      problem_manager->markDofs(simple_interface->getProblemName(), ROW,
-                                "FIELD1", 1, 1, ProblemsManager::NOT_SET,
-                                marker);
+      problem_manager->modifyMarkDofs(simple_interface->getProblemName(), ROW,
+                                      "FIELD1", 1, 1, ProblemsManager::AND, 0,
+                                      marker);
       return marker;
     };
 

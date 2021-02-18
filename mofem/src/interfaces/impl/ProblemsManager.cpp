@@ -3104,11 +3104,10 @@ ProblemsManager::markDofs(const std::string problem_name, RowColData rc,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-ProblemsManager::markDofs(const std::string problem_name, RowColData rc,
-                          const std::string field_name, const int lo,
-                          const int hi, const enum ProblemsManager::MarkOP op,
-                          std::vector<unsigned char> &marker) const {
+MoFEMErrorCode ProblemsManager::modifyMarkDofs(
+    const std::string problem_name, RowColData rc, const std::string field_name,
+    const int lo, const int hi, const enum ProblemsManager::MarkOP op,
+    const unsigned char c, std::vector<unsigned char> &marker) const {
 
   Interface &m_field = cOre;
   const Problem *problem_ptr;
@@ -3136,17 +3135,17 @@ ProblemsManager::markDofs(const std::string problem_name, RowColData rc,
   };
 
   switch (op) {
-  case MarkOP::SET:
+  case MarkOP::OR:
     for (; dof_lo != dof_hi; ++dof_lo)
       if ((*dof_lo)->getDofCoeffIdx() >= lo &&
           (*dof_lo)->getDofCoeffIdx() <= hi)
-        marker[(*dof_lo)->getPetscLocalDofIdx()] = 1;
+        marker[(*dof_lo)->getPetscLocalDofIdx()] |= c;
     break;
-  case MarkOP::NOT_SET:
+  case MarkOP::AND:
     for (; dof_lo != dof_hi; ++dof_lo)
       if ((*dof_lo)->getDofCoeffIdx() >= lo &&
           (*dof_lo)->getDofCoeffIdx() <= hi)
-        marker[(*dof_lo)->getPetscLocalDofIdx()] = 0;
+        marker[(*dof_lo)->getPetscLocalDofIdx()] &= c;
     break;
   }
 
