@@ -83,12 +83,12 @@ struct OpBaseTimesVectorImpl<1, FIELD_DIM, S, GAUSS, OpBase> : public OpBase {
 
   OpBaseTimesVectorImpl(const std::string field_name,
                         boost::shared_ptr<MatrixDouble> vec,
-                        const double beta_coeff = 1)
+                        ScalarFun beta_coeff)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
         betaCoeff(beta_coeff) {}
 
 protected:
-  const double betaCoeff;
+  ScalarFun betaCoeff;
   boost::shared_ptr<MatrixDouble> sourceVec;
   FTensor::Index<'i', FIELD_DIM> i;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
@@ -100,12 +100,12 @@ struct OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>
 
   OpBaseTimesVectorImpl(const std::string field_name,
                         boost::shared_ptr<MatrixDouble> vec,
-                        const double beta_coeff = 1)
+                        ScalarFun beta_coeff)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
         betaCoeff(beta_coeff) {}
 
 protected:
-  const double betaCoeff;
+  ScalarFun betaCoeff;
   boost::shared_ptr<MatrixDouble> sourceVec;
   FTensor::Index<'i', BASE_DIM> i;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
@@ -506,12 +506,15 @@ MoFEMErrorCode OpBaseTimesVectorImpl<1, FIELD_DIM, S, GAUSS, OpBase>::iNtegrate(
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
   auto t_row_base = row_data.getFTensor0N();
+  // get coords
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // get vector values
   auto t_vec = getFTensor1FromMat<FIELD_DIM, S>(*sourceVec);
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobean
-    const double alpha = t_w * vol * betaCoeff;
+    const double alpha =
+        t_w * vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
     // get loc vector tensor
     auto t_nf = OpBase::template getNf<FIELD_DIM>();
     // loop over rows base functions
@@ -525,6 +528,7 @@ MoFEMErrorCode OpBaseTimesVectorImpl<1, FIELD_DIM, S, GAUSS, OpBase>::iNtegrate(
       ++t_row_base;
     ++t_w; // move to another integration weight
     ++t_vec;
+    ++t_coords;
   }
   MoFEMFunctionReturn(0);
 }
@@ -541,12 +545,15 @@ OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>::iNtegrate(
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
   auto t_row_base = row_data.getFTensor1N<BASE_DIM>();
+  // get coords
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // get vector values
   auto t_vec = getFTensor1FromMat<BASE_DIM, S>(*sourceVec);
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobean
-    const double alpha = t_w * vol * betaCoeff;
+    const double alpha =
+        t_w * vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
     // loop over rows base functions
     int rr = 0;
     for (; rr != OpBase::nbRows; ++rr) {
@@ -557,6 +564,7 @@ OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>::iNtegrate(
       ++t_row_base;
     ++t_w; // move to another integration weight
     ++t_vec;
+    ++t_coords;
   }
   MoFEMFunctionReturn(0);
 }
