@@ -51,15 +51,16 @@ template <typename OpBase>
 struct OpMassImpl<1, 1, GAUSS, OpBase> : public OpBase {
 
   OpMassImpl(const std::string row_field_name, const std::string col_field_name,
-             ScalarFun beta)
+             ScalarFun beta, boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        betaCoeff(beta) {
+        betaCoeff(beta), entsPtr(ents_ptr) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   ScalarFun betaCoeff;
+  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
 };
@@ -71,6 +72,7 @@ struct OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>
 
 protected:
   using OpMassImpl<1, 1, GAUSS, OpBase>::betaCoeff;
+  using OpMassImpl<1, 1, GAUSS, OpBase>::entsPtr;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
 };
@@ -79,15 +81,16 @@ template <int BASE_DIM, typename OpBase>
 struct OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase> : public OpBase {
 
   OpMassImpl(const std::string row_field_name, const std::string col_field_name,
-             ScalarFun beta)
+             ScalarFun beta, boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(row_field_name, col_field_name, OpBase::OPROWCOL),
-        betaCoeff(beta) {
+        betaCoeff(beta), entsPtr(ents_ptr) {
     if (row_field_name == col_field_name)
       this->sYmm = true;
   }
 
 protected:
   ScalarFun betaCoeff;
+  boost::shared_ptr<Range> entsPtr;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &row_data,
                            DataForcesAndSourcesCore::EntData &col_data);
 };
@@ -393,6 +396,10 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data) {
   MoFEMFunctionBegin;
+  if(entsPtr) {
+    if(entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
@@ -432,6 +439,10 @@ MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data,
     DataForcesAndSourcesCore::EntData &col_data) {
   MoFEMFunctionBegin;
+  if(entsPtr) {
+    if(entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
@@ -486,6 +497,10 @@ MoFEMErrorCode OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &col_data) {
   FTensor::Index<'i', BASE_DIM> i;
   MoFEMFunctionBegin;
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
   size_t nb_base_functions = row_data.getN().size2() / BASE_DIM;
   // // get element volume
   const double vol = OpBase::getMeasure();

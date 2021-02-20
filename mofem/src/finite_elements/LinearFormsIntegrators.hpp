@@ -83,12 +83,14 @@ struct OpBaseTimesVectorImpl<1, FIELD_DIM, S, GAUSS, OpBase> : public OpBase {
 
   OpBaseTimesVectorImpl(const std::string field_name,
                         boost::shared_ptr<MatrixDouble> vec,
-                        ScalarFun beta_coeff)
+                        ScalarFun beta_coeff,
+                        boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
-        betaCoeff(beta_coeff) {}
+        betaCoeff(beta_coeff), entsPtr(ents_ptr) {}
 
 protected:
   ScalarFun betaCoeff;
+  boost::shared_ptr<Range> entsPtr;
   boost::shared_ptr<MatrixDouble> sourceVec;
   FTensor::Index<'i', FIELD_DIM> i;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
@@ -100,12 +102,14 @@ struct OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>
 
   OpBaseTimesVectorImpl(const std::string field_name,
                         boost::shared_ptr<MatrixDouble> vec,
-                        ScalarFun beta_coeff)
+                        ScalarFun beta_coeff,
+                        boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
-        betaCoeff(beta_coeff) {}
+        betaCoeff(beta_coeff), entsPtr(ents_ptr) {}
 
 protected:
   ScalarFun betaCoeff;
+  boost::shared_ptr<Range> entsPtr;
   boost::shared_ptr<MatrixDouble> sourceVec;
   FTensor::Index<'i', BASE_DIM> i;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
@@ -500,6 +504,10 @@ template <int FIELD_DIM, int S, typename OpBase>
 MoFEMErrorCode OpBaseTimesVectorImpl<1, FIELD_DIM, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
+  if (entsPtr) {
+    if(entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
@@ -538,6 +546,10 @@ MoFEMErrorCode
 OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
+  if (entsPtr) {
+    if(entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
   const size_t nb_base_functions = row_data.getN().size2() / BASE_DIM;
   // get element volume
   const double vol = OpBase::getMeasure();
