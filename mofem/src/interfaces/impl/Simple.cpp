@@ -546,7 +546,7 @@ MoFEMErrorCode Simple::buildFields() {
     MoFEMFunctionBeginHot;
     for (auto &field : fields) {
       std::array<double, 6> coords = {0, 0, 0, 0, 0, 0};
-      CHKERR m_field.create_vertices_and_add_to_field(field, coords.data(), 2);
+      CHKERR m_field.create_vertices_and_add_to_field(field, coords.data(), 1);
       CHKERR comm_interface_ptr->makeFieldEntitiesMultishared(field, 0);
       CHKERR bit_ref_ptr->setFieldEntitiesBitRefLevel(field, bitLevel);
     }
@@ -557,8 +557,14 @@ MoFEMErrorCode Simple::buildFields() {
   CHKERR add_ents_to_field(meshSet, dIm, dataFields);
   CHKERR add_ents_to_field(boundaryMeshset, dIm - 1, boundaryFields);
   CHKERR add_ents_to_field(meshSet, dIm - 1, skeletonFields);
-  CHKERR make_no_field_ents(noFieldFields);
-  CHKERR make_no_field_ents(noFieldDataFields);
+
+  std::set<std::string> nofield_fields;
+  for(auto &f : noFieldFields)
+    nofield_fields.insert(f);
+  for(auto &f : noFieldDataFields)
+    nofield_fields.insert(f);
+
+  CHKERR make_no_field_ents(nofield_fields);
 
   // Set order
   auto set_order = [&](auto meshset, auto dim, auto &fields) {

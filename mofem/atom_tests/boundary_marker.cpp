@@ -50,13 +50,15 @@ struct OpFace : public FaceEleOp {
     // to validate of global local vector.
     auto get_boundary_marker_directly_from_range = [&]() {
       std::vector<unsigned char> ents_marker_used_for_testing;
-      ents_marker_used_for_testing.resize(data.getLocalIndices().size());
+      ents_marker_used_for_testing.resize(data.getLocalIndices().size(),0);
       switch (type) {
       case MBVERTEX: {
         for (size_t side = 0; side != getNumberOfNodesOnElement(); ++side) {
           EntityHandle ent = getSideEntity(side, MBVERTEX);
-          ents_marker_used_for_testing[side] =
-              skinEnts.find(ent) != skinEnts.end();
+          ents_marker_used_for_testing[3 * side + 0] =
+              skinEnts.find(ent) != skinEnts.end() ? 1 : 0;
+          ents_marker_used_for_testing[3 * side + 2] =
+              ents_marker_used_for_testing[3 * side + 0];
         }
         break;
       }
@@ -64,7 +66,8 @@ struct OpFace : public FaceEleOp {
         EntityHandle ent = getSideEntity(side, type);
         bool is_on_boundary = skinEnts.find(ent) != skinEnts.end();
         for (size_t dof = 0; dof != nb_dofs; ++dof)
-          ents_marker_used_for_testing[dof] = is_on_boundary;
+          if ((dof % 3) != 1)
+            ents_marker_used_for_testing[dof] = is_on_boundary ? 1 : 0;
       }
       };
       return ents_marker_used_for_testing;
@@ -108,7 +111,7 @@ int main(int argc, char *argv[]) {
     CHKERR simple_interface->getOptions();
     CHKERR simple_interface->loadFile("");
     CHKERR simple_interface->addDomainField("FIELD1", H1,
-                                            AINSWORTH_LEGENDRE_BASE, 1);
+                                            AINSWORTH_LEGENDRE_BASE, 3);
     CHKERR simple_interface->setFieldOrder("FIELD1", order);
     CHKERR simple_interface->setUp();
 
@@ -129,6 +132,10 @@ int main(int argc, char *argv[]) {
       std::vector<unsigned char> marker;
       problem_manager->markDofs(simple_interface->getProblemName(), ROW,
                                 skin_edges, marker);
+      // Unset coefficient 1, e.g. u_y
+      problem_manager->modifyMarkDofs(simple_interface->getProblemName(), ROW,
+                                      "FIELD1", 1, 1, ProblemsManager::AND, 0,
+                                      marker);
       return marker;
     };
 

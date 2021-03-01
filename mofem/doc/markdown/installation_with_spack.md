@@ -108,7 +108,7 @@ manager:
 
 Install packages through `homebrew`:
 ~~~~~
-brew install curl git python gcc@9 cmake autoconf automake libtool doxygen pkg-config
+brew install curl git python gcc@9 cmake autoconf automake libtool doxygen graphviz pkg-config
 ~~~~~
 
 If it is not already in the `PATH`, you should add it there.

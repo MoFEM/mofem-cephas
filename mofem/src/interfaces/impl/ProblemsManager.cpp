@@ -3075,9 +3075,10 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ProblemsManager::markDofs(const std::string problem_name,
-                                         RowColData rc, const Range ents,
-                                         std::vector<unsigned char> &marker) {
+MoFEMErrorCode
+ProblemsManager::markDofs(const std::string problem_name, RowColData rc,
+                          const Range ents,
+                          std::vector<unsigned char> &marker) const {
 
   Interface &m_field = cOre;
   const Problem *problem_ptr;
@@ -3093,14 +3094,61 @@ MoFEMErrorCode ProblemsManager::markDofs(const std::string problem_name,
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
   }
-  marker.resize(dofs->size());
-  std::fill(marker.begin(), marker.end(), 0);
+  marker.resize(dofs->size(), 0);
   for (auto p = ents.pair_begin(); p != ents.pair_end(); ++p) {
     auto lo = dofs->get<Ent_mi_tag>().lower_bound(p->first);
     auto hi = dofs->get<Ent_mi_tag>().upper_bound(p->second);
     for (; lo != hi; ++lo)
       marker[(*lo)->getPetscLocalDofIdx()] = 1;
   }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ProblemsManager::modifyMarkDofs(
+    const std::string problem_name, RowColData rc, const std::string field_name,
+    const int lo, const int hi, const enum ProblemsManager::MarkOP op,
+    const unsigned char c, std::vector<unsigned char> &marker) const {
+
+  Interface &m_field = cOre;
+  const Problem *problem_ptr;
+  ProblemManagerFunctionBegin;
+  CHKERR m_field.get_problem(problem_name, &problem_ptr);
+  boost::shared_ptr<NumeredDofEntity_multiIndex> dofs;
+  switch (rc) {
+  case ROW:
+    dofs = problem_ptr->getNumeredRowDofsPtr();
+    break;
+  case COL:
+    dofs = problem_ptr->getNumeredColDofsPtr();
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
+  }
+  marker.resize(dofs->size(), 0);
+
+  auto dof_lo = dofs->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(m_field.get_field_bit_number(field_name)));
+  auto dof_hi = dofs->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(m_field.get_field_bit_number(field_name)));
+
+  auto marker_ref = [marker](auto &it) -> unsigned int & {
+    return marker[(*it)->getPetscLocalDofIdx()];
+  };
+
+  switch (op) {
+  case MarkOP::OR:
+    for (; dof_lo != dof_hi; ++dof_lo)
+      if ((*dof_lo)->getDofCoeffIdx() >= lo &&
+          (*dof_lo)->getDofCoeffIdx() <= hi)
+        marker[(*dof_lo)->getPetscLocalDofIdx()] |= c;
+    break;
+  case MarkOP::AND:
+    for (; dof_lo != dof_hi; ++dof_lo)
+      if ((*dof_lo)->getDofCoeffIdx() >= lo &&
+          (*dof_lo)->getDofCoeffIdx() <= hi)
+        marker[(*dof_lo)->getPetscLocalDofIdx()] &= c;
+    break;
+  }
+
   MoFEMFunctionReturn(0);
 }
 

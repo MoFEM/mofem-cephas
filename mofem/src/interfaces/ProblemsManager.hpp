@@ -322,6 +322,8 @@ struct ProblemsManager : public UnknownInterface {
                                       int verb = VERBOSE,
                                       const bool debug = false);
 
+  enum MarkOP { OR, AND };
+
   /**
    * @brief Create vector with marked indices 
    * 
@@ -335,7 +337,26 @@ struct ProblemsManager : public UnknownInterface {
    * @return MoFEMErrorCode 
    */
   MoFEMErrorCode markDofs(const std::string problem_name, RowColData rc,
-                          const Range ents, std::vector<unsigned char> &marker);
+                                const Range ents,
+                                std::vector<unsigned char> &marker) const;
+
+  /**
+   * @brief Mark DOFs
+   *
+   * @param problem_name
+   * @param rc
+   * @param field_name
+   * @param lo
+   * @param hi
+   * @param op
+   * @param marker
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode modifyMarkDofs(const std::string problem_name, RowColData rc,
+                                const std::string field_name, const int lo,
+                                const int hi, const enum MarkOP op,
+                                const unsigned char c,
+                                std::vector<unsigned char> &marker) const;
 
 private:
   PetscLogEvent MOFEM_EVENT_ProblemsManager;
