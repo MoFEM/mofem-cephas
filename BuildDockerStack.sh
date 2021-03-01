@@ -2,15 +2,15 @@
 
 mkdir -p empty
 
-export VERSION=0.10.2
+export VERSION=0.10.3
 
 # Create environment
-docker build -t likask/mofem-spack-env -f Dockerfile-spack-env empty/
-docker tag likask/mofem-spack-env:latest likask/mofem-spack-env:$VERSION
+#docker build -t likask/mofem-spack-env -f Dockerfile-spack-env empty/
+#docker tag likask/mofem-spack-env:latest likask/mofem-spack-env:$VERSION
 
 # Build core and users modules
 docker build -t likask/mofem-spack-mofem -f Dockerfile-spack-mofem . 
-docker tag likask/mofem-spack-mofem:latest ikask/mofem-spack-mofem:$VERSION
+docker tag likask/mofem-spack-mofem:latest likask/mofem-spack-mofem:$VERSION
 docker tag likask/mofem-spack-mofem:latest likask/mofem-intermidiate:latest
 
 # Install softmech module
@@ -26,7 +26,7 @@ docker tag likask/mofem-spack-build:latest likask/mofem-spack-build:$VERSION
 
 # Jupyter
 docker build -t likask/mofem-spack-jupyter -f Dockerfile-spack-jupyter empty
-docker tag likask/mofem-spack-jupyter:latest likask/likask/mofem-spack-jupyter:$VERSION 
+docker tag likask/mofem-spack-jupyter:latest likask/mofem-spack-jupyter:$VERSION 
 
 # Hub
 docker build -t likask/mofem-spack-jupyterhub -f Dockerfile-spack-jupyterhub jupyter
