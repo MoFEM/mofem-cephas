@@ -2,11 +2,11 @@
 
 mkdir -p empty
 
-export VERSION=0.10.3
+export VERSION=0.11.0
 
-# Create environment
-#docker build -t likask/mofem-spack-env -f Dockerfile-spack-env empty/
-#docker tag likask/mofem-spack-env:latest likask/mofem-spack-env:$VERSION
+Create environment
+docker build -t likask/mofem-spack-env -f Dockerfile-spack-env empty/
+docker tag likask/mofem-spack-env:latest likask/mofem-spack-env:$VERSION
 
 # Build core and users modules
 docker build -t likask/mofem-spack-mofem -f Dockerfile-spack-mofem . 

@@ -62,7 +62,7 @@ ENV SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
 
 # clone spack
 RUN mkdir -p $SPACK_ROOT_DIR && \
-    curl -s -L https://api.github.com/repos/likask/spack/tarball/develop_spack_v0.16 \
+    curl -s -L https://api.github.com/repos/likask/spack/tarball/develop_spack_v0.16.1 \
     | tar xzC $SPACK_ROOT_DIR --strip 1 && \
     . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
