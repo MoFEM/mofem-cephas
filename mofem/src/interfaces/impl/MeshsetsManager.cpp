@@ -540,7 +540,9 @@ struct BlockData {
   HeatFluxCubitBcData heatFluxBc;
   CfgCubitBcData cfgBc;
 
+  int numberOfAttributes;
   std::vector<double> aTtr;
+
   BlockData() : aTtr(10, 0) {
     std::memcpy(dispBc.data.name, "Displacement", 12);
     std::memcpy(forceBc.data.name, "Force", 5);
@@ -562,6 +564,24 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
         boost::shared_ptr<boost::program_options::options_description>(
             new po::options_description());
   }
+
+  auto add_block_attributes = [&](auto &prefix, auto &block_lists, auto &it) {
+    configFileOptionsPtr->add_options()(
+        (prefix + ".number_of_attributes").c_str(),
+        po::value<int>(&block_lists[it->getMeshsetId()].numberOfAttributes)
+            ->default_value(-1),
+        "Number of blockset attribute");
+    for (int ii = 1; ii <= 10; ii++) {
+      std::string surfix = ".user" + boost::lexical_cast<std::string>(ii);
+      configFileOptionsPtr->add_options()(
+          (prefix + surfix).c_str(),
+          po::value<double>(&block_lists[it->getMeshsetId()].aTtr[ii - 1])
+              ->default_value(0.0),
+          "Add block attribute");
+    }
+  };
+
+  // Add blocks
   map<int, BlockData> block_lists;
   for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
     block_lists[it->getMeshsetId()].cubitMeshset = it->getMeshset();
@@ -579,15 +599,10 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
         po::value<string>(&block_lists[it->getMeshsetId()].nAme)
             ->default_value(""),
         "Name of the meshset");
+
     // Block attributes
-    for (int ii = 1; ii <= 10; ii++) {
-      std::string surfix = ".user" + boost::lexical_cast<std::string>(ii);
-      configFileOptionsPtr->add_options()(
-          (prefix + surfix).c_str(),
-          po::value<double>(&block_lists[it->getMeshsetId()].aTtr[ii - 1])
-              ->default_value(0.0),
-          "Add block attribute");
-    }
+    add_block_attributes(prefix, block_lists, it);
+
     // Mat elastic
     {
       // double Young; 			///< Young's modulus
@@ -882,10 +897,25 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
           "type");
     }
   }
+
+  map<int, BlockData> block_set_attributes;
+  for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
+    block_lists[it->getMeshsetId()].cubitMeshset = it->getMeshset();
+    const auto block_name = it->getName();
+    // Only blocks which have name
+    if (block_name.compare("NoNameSet") != 0) {
+      std::string prefix = "SET_ATTR_" + it->getName();
+      // Block attributes
+      add_block_attributes(prefix, block_set_attributes, it);
+    }
+  }
+  
   po::parsed_options parsed =
       parse_config_file(ini_file, *configFileOptionsPtr, true);
   store(parsed, vm);
   po::notify(vm);
+
+  // Set type from name
   for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
 
     CubitBCType bc_type;
@@ -893,7 +923,6 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
     while (1 << jj != LASTSET_BC) {
       if (string(CubitBCNames[jj + 1]) ==
           block_lists[it->getMeshsetId()].addType) {
-        // cerr << CubitBCNames[jj+1] << " ";
         bc_type = 1 << jj;
       }
       ++jj;
@@ -920,6 +949,7 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
                "Unset iD number %d\n", block_lists[it->getMeshsetId()].iD);
     }
   }
+
   std::vector<std::string> additional_parameters;
   additional_parameters =
       collect_unrecognized(parsed.options, po::include_positional);
@@ -1082,6 +1112,15 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
     default:
       SETERRQ(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
               "Not yet implemented type\n");
+    }
+  }
+
+  for (auto set_attr : block_set_attributes) {
+    // Add attributes
+    if (set_attr.second.numberOfAttributes > 0) {
+      set_attr.second.aTtr.resize(set_attr.second.numberOfAttributes);
+      CHKERR setAtributes(set_attr.second.bcType, set_attr.second.iD,
+                          set_attr.second.aTtr);
     }
   }
 

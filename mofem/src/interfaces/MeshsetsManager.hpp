@@ -436,6 +436,7 @@ struct MeshsetsManager : public UnknownInterface {
    * NODESET, SIDESET
    * @param  ms_id         id of meshset
    * @param  attributes    attributes
+   * @param  name          set name to blockset
    * @return               error code
    */
   MoFEMErrorCode setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
@@ -715,6 +716,14 @@ struct MeshsetsManager : public UnknownInterface {
    Poissonp=3
    Poissonpz=4
    Shearzp=5
+
+   [SET_ATTR_SET_foo]
+
+   # Example set atttributes to block name "foo"
+   number_of_attributes=3
+   user1=1
+   user2=2
+   user3=3
 
    \endcode
 

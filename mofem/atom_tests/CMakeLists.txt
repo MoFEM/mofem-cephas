@@ -123,7 +123,7 @@ add_test(
   add_cubit_meshsets
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/add_cubit_meshsets
-  -meshsets_config add_cubit_meshsets.in
+  -meshsets_config add_cubit_meshsets.in -log_quiet
 )
 
 #Loop over Cubit Meshset Test
