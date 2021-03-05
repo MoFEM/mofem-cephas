@@ -1195,6 +1195,127 @@ inline auto OpCalculateVectorFieldGradientDot<2, 2>::getFTensorDotData<2>() {
                                                             &dotVector[1]);
 }
 
+/**
+ * \brief Evaluate field gradient values for symmetric 2nd order tensor field,
+ * i.e. gradient is tensor rank 3
+ *
+ */
+template <int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
+struct OpCalculateTensor2SymmetricFieldGradient_General
+    : public OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, T,
+                                                   L, A> {
+
+  OpCalculateTensor2SymmetricFieldGradient_General(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+      const EntityType zero_type = MBVERTEX)
+      : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, T, L,
+                                              A>(field_name, data_ptr,
+                                                 zero_type) {}
+};
+
+template <int Tensor_Dim0, int Tensor_Dim1>
+struct OpCalculateTensor2SymmetricFieldGradient_General<
+    Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator>
+    : public OpCalculateTensor2FieldValues_General<
+          Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
+
+  OpCalculateTensor2SymmetricFieldGradient_General(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+      const EntityType zero_type = MBVERTEX)
+      : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
+                                              ublas::row_major,
+                                              DoubleAllocator>(
+            field_name, data_ptr, zero_type) {}
+
+  /**
+   * \brief calculate values of vector field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
+/**
+ * \brief Member function specialization calculating tensor field gradients for
+ * symmetric tensor field rank 2
+ *
+ */
+template <int Tensor_Dim0, int Tensor_Dim1>
+MoFEMErrorCode OpCalculateTensor2SymmetricFieldGradient_General<
+    Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
+    DoubleAllocator>::doWork(int side, EntityType type,
+                             DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+  if (!this->dataPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Data pointer not allocated");
+
+  const size_t nb_gauss_pts = this->getGaussPts().size2();
+  constexpr size_t msize = (Tensor_Dim0 * (Tensor_Dim0 + 1)) / 2;
+  auto &mat = *this->dataPtr;
+  if (type == this->zeroType) {
+    mat.resize(msize * Tensor_Dim1, nb_gauss_pts, false);
+    mat.clear();
+  }
+
+  if (nb_gauss_pts) {
+    const size_t nb_dofs = data.getFieldData().size();
+
+    if (nb_dofs) {
+
+      const int nb_base_functions = data.getN().size2();
+      auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
+      auto gradients_at_gauss_pts =
+          getFTensor3DgFromMat<Tensor_Dim0, Tensor_Dim1>(mat);
+      FTensor::Index<'I', Tensor_Dim0> I;
+      FTensor::Index<'J', Tensor_Dim0> J;
+      FTensor::Index<'K', Tensor_Dim1> K;
+      int size = nb_dofs / msize;
+      if (nb_dofs % msize) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency");
+      }
+      for (int gg = 0; gg < nb_gauss_pts; ++gg) {
+        auto field_data = data.getFTensor2SymmetricFieldData<Tensor_Dim0>();
+        int bb = 0;
+        for (; bb < size; ++bb) {
+          gradients_at_gauss_pts(I, J, K) +=
+              field_data(I, J) * diff_base_function(K);
+          ++field_data;
+          ++diff_base_function;
+        }
+        // Number of dofs can be smaller than number of Tensor_Dim0 x base
+        // functions
+        for (; bb != nb_base_functions; ++bb)
+          ++diff_base_function;
+        ++gradients_at_gauss_pts;
+      }
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
+/** \brief Get field gradients at integration pts for symmetric tensorial field
+ * rank 2
+ *
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim0, int Tensor_Dim1>
+struct OpCalculateTensor2SymmetricFieldGradient
+    : public OpCalculateTensor2SymmetricFieldGradient_General<
+          Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
+
+  OpCalculateTensor2SymmetricFieldGradient(const std::string field_name,
+                                 boost::shared_ptr<MatrixDouble> data_ptr,
+                                 const EntityType zero_type = MBVERTEX)
+      : OpCalculateTensor2SymmetricFieldGradient_General<
+            Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
+            DoubleAllocator>(field_name, data_ptr, zero_type) {}
+};
+
 /**@}*/
 
 /** \name Transform tensors and vectors */
@@ -2162,7 +2283,6 @@ struct OpSetInvJacSpaceForFaceImpl<3>
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
-
 };
 
 struct OpSetInvJacH1ForFace : public OpSetInvJacSpaceForFaceImpl<2> {
