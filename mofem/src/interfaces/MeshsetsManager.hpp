@@ -707,7 +707,7 @@ struct MeshsetsManager : public UnknownInterface {
    [block_1009]
 
    # Example applying material block (isotropic trans iso material)
-   
+
    id=2011
    add=BLOCKSET
    name=MAT_ELASTIC_TRANS_ISO
@@ -717,7 +717,7 @@ struct MeshsetsManager : public UnknownInterface {
    Poissonpz=4
    Shearzp=5
 
-   [SET_ATTR_SET_foo]
+   [SET_ATTR_foo]
 
    # Example set atttributes to block name "foo"
    number_of_attributes=3

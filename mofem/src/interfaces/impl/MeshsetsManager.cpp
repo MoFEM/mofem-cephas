@@ -42,7 +42,22 @@ MeshsetsManager::query_interface(const MOFEMuuid &uuid,
 }
 
 MeshsetsManager::MeshsetsManager(const Core &core)
-    : cOre(const_cast<Core &>(core)) {}
+    : cOre(const_cast<Core &>(core)) {
+
+  if (!LogManager::checkIfChannelExist("MeshsetMngWorld")) {
+    auto core_log = logging::core::get();
+    core_log->add_sink(LogManager::createSink(LogManager::getStrmWorld(),
+                                              "MeshsetMngWorld"));
+    LogManager::setLog("MeshsetMngWorld");
+    MOFEM_LOG_TAG("MeshsetMngWorld", "MeshsetMng");
+    core_log->add_sink(LogManager::createSink(LogManager::getStrmSelf(),
+                                              "MeshsetMngSelf"));
+    LogManager::setLog("MeshsetMngSelf");
+    MOFEM_LOG_TAG("MeshsetMngSelf", "MeshsetMng");
+  }
+
+  MOFEM_LOG("MeshsetMngWorld", Sev::noisy) << "Mashset manager created";
+}
 
 MoFEMErrorCode MeshsetsManager::clearMap() {
   MoFEMFunctionBeginHot;
@@ -68,7 +83,8 @@ MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
                 "meshset not inserted");
 
       if (verb > QUIET)
-        MOFEM_LOG("WORLD", Sev::inform) << "read cubit " << base_meshset;
+        MOFEM_LOG("MeshsetMngWorld", Sev::inform)
+            << "read cubit " << base_meshset;
     }
   }
   MoFEMFunctionReturn(0);
@@ -160,28 +176,29 @@ MoFEMErrorCode MeshsetsManager::printMaterialsSet() const {
            (*this), BLOCKSET | MAT_ELASTICSET, it)) {
     Mat_Elastic data;
     CHKERR it->getAttributeDataStructure(data);
-    MOFEM_LOG("WORLD", Sev::inform) << *it;
-    MOFEM_LOG("WORLD", Sev::inform) << data;
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << *it;
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << data;
     Range tets;
     CHKERR moab.get_entities_by_type(it->meshset, MBTET, tets, true);
-    MOFEM_LOG("WORLD", Sev::inform) << "MAT_ELATIC msId " << it->getMeshsetId()
-                                    << " nb. tets " << tets.size();
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
+        << "MAT_ELATIC msId " << it->getMeshsetId() << " nb. tets "
+        << tets.size();
   }
 
   for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
            m_field, BLOCKSET | MAT_THERMALSET, it)) {
     Mat_Thermal data;
     CHKERR it->getAttributeDataStructure(data);
-    MOFEM_LOG("WORLD", Sev::inform) << *it;
-    MOFEM_LOG("WORLD", Sev::inform) << data;
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << *it;
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << data;
   }
 
   for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(
            m_field, BLOCKSET | MAT_MOISTURESET, it)) {
     Mat_Moisture data;
     CHKERR it->getAttributeDataStructure(data);
-    MOFEM_LOG("WORLD", Sev::inform) << *it;
-    MOFEM_LOG("WORLD", Sev::inform) << data;
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << *it;
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << data;
   }
   MoFEMFunctionReturn(0);
 }
@@ -567,8 +584,6 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
 
   auto add_block_attributes = [&](auto prefix, auto &block_lists, auto &it) {
     // remove spacec from blockset name
-    prefix.erase(std::remove_if(prefix.begin(), prefix.end(), ::isspace),
-                 prefix.end());
     configFileOptionsPtr->add_options()(
         (prefix + ".number_of_attributes").c_str(),
         po::value<int>(&block_lists[it->getMeshsetId()].numberOfAttributes)
@@ -906,10 +921,14 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
     block_set_attributes[it->getMeshsetId()].cubitMeshset = it->getMeshset();
     block_set_attributes[it->getMeshsetId()].iD = it->getMeshsetId();
     block_set_attributes[it->getMeshsetId()].bcType = BLOCKSET;
-    const auto block_name = it->getName();
+    std::string block_name = it->getName();
+    block_name.erase(
+        std::remove_if(block_name.begin(), block_name.end(), ::isspace),
+        block_name.end());
+    block_set_attributes[it->getMeshsetId()].nAme = block_name;
     // Only blocks which have name
     if (block_name.compare("NoNameSet") != 0) {
-      std::string prefix = "SET_ATTR_" + it->getName();
+      std::string prefix = "SET_ATTR_" + block_name;
       // Block attributes
       add_block_attributes(prefix, block_set_attributes, it);
     }
@@ -960,7 +979,8 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
       collect_unrecognized(parsed.options, po::include_positional);
   for (std::vector<std::string>::iterator vit = additional_parameters.begin();
        vit != additional_parameters.end(); vit++) {
-    MOFEM_LOG_C("WORLD", Sev::warning, "Unrecognized option %s", vit->c_str());
+    MOFEM_LOG_C("MeshsetMngSelf", Sev::warning, "Unrecognized option %s",
+                vit->c_str());
   }
   for (map<int, BlockData>::iterator mit = block_lists.begin();
        mit != block_lists.end(); mit++) {
@@ -1123,6 +1143,8 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
   for (auto set_attr : block_set_attributes) {
     // Add attributes
     if (set_attr.second.numberOfAttributes > 0) {
+      MOFEM_LOG("MeshsetMngSelf", Sev::verbose)
+          << "Set attributes to blockset " << set_attr.second.nAme;
       set_attr.second.aTtr.resize(set_attr.second.numberOfAttributes);
       CHKERR setAtributes(set_attr.second.bcType, set_attr.second.iD,
                           set_attr.second.aTtr);
