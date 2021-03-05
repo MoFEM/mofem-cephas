@@ -330,6 +330,15 @@ MeshsetsManager::setAtributes(const CubitBCType cubit_bc_type, const int ms_id,
   if (!success)
     SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
             "modification unsuccessful");
+
+  std::ostringstream ss;
+  ss << "Block " << cit->getName();
+  ss << " Add attr: ";
+  for (unsigned int ii = 0; ii != attributes.size(); ii++) {
+    ss << attributes[ii] << " ";
+  }
+  MOFEM_LOG("MeshsetMngSelf", Sev::noisy) << ss.str();
+
   MoFEMFunctionReturn(0);
 }
 
