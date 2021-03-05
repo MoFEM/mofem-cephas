@@ -1,3 +1,18 @@
+### MoFEM v0.11.0
+
+- Added functionality for matrix functions and their derivatives
+- Fixes of form integrators
+- Added new tensor operators
+- Novel functionality of marking DOFs for boundary conditions
+- Extended handling of node data from `med` and `rmed` files
+- Implementation of quad elements
+- Extension of Docker functionality
+- Installation with new version of `spack`
+- Support for `Jupyter` notebooks with `Docker`
+- Various minor fixes and improvements
+
+----
+
 ### MoFEM v0.10.0
 
 - Improved memory and run-time efficiency
