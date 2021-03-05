@@ -565,7 +565,10 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
             new po::options_description());
   }
 
-  auto add_block_attributes = [&](auto &prefix, auto &block_lists, auto &it) {
+  auto add_block_attributes = [&](auto prefix, auto &block_lists, auto &it) {
+    // remove spacec from blockset name
+    prefix.erase(std::remove_if(prefix.begin(), prefix.end(), ::isspace),
+                 prefix.end());
     configFileOptionsPtr->add_options()(
         (prefix + ".number_of_attributes").c_str(),
         po::value<int>(&block_lists[it->getMeshsetId()].numberOfAttributes)
@@ -900,7 +903,9 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
 
   map<int, BlockData> block_set_attributes;
   for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
-    block_lists[it->getMeshsetId()].cubitMeshset = it->getMeshset();
+    block_set_attributes[it->getMeshsetId()].cubitMeshset = it->getMeshset();
+    block_set_attributes[it->getMeshsetId()].iD = it->getMeshsetId();
+    block_set_attributes[it->getMeshsetId()].bcType = BLOCKSET;
     const auto block_name = it->getName();
     // Only blocks which have name
     if (block_name.compare("NoNameSet") != 0) {
