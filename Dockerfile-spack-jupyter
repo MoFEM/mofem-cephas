@@ -39,7 +39,7 @@ ENV DISPLAY=:99.0
 ENV JUPYTER_ENABLE_LAB=yes
 ENV PYVISTA_USE_IPYVTK=true
 ENV JUPYTER_TOKEN=mofem
-ENV PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3.8/site-packages/gmsh-4.7.1-Linux64-sdk/lib/
+ENV PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3.8/site-packages/gmsh-4.8.0-Linux64-sdk/lib
 
 WORKDIR $MOFEM_INSTALL_DIR
 
