@@ -41,8 +41,6 @@ ENV PYVISTA_USE_IPYVTK=true
 ENV JUPYTER_TOKEN=mofem
 ENV PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3.8/site-packages/gmsh-4.8.0-Linux64-sdk/lib
 
-RUN chmod -R aug+rX `spack find -p mofem-users-modules | grep mofem-users-modules@develop | awk '{print $2}'`
-
 WORKDIR $MOFEM_INSTALL_DIR
 
 EXPOSE 8888
