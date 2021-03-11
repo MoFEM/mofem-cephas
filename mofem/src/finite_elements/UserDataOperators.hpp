@@ -2356,6 +2356,12 @@ struct OpMakeHdivFromHcurl
                         DataForcesAndSourcesCore::EntData &data);
 };
 
+/**
+ * @brief Modify integration weights on face to take in account higher-order
+ * geometry
+ * @ingroup mofem_forces_and_sources_tri_element
+ *
+ */
 struct OpMakeHighOrderGeometryWeightsOnFace
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
   OpMakeHighOrderGeometryWeightsOnFace()
