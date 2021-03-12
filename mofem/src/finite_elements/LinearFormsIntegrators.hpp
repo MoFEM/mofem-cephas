@@ -415,7 +415,7 @@ MoFEMErrorCode OpSourceImpl<1, 1, GAUSS, OpBase>::iNtegrate(
   auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha =
         t_w * vol * sourceFun(t_coords(0), t_coords(1), t_coords(2));
     // loop over rows base functions
@@ -449,7 +449,7 @@ MoFEMErrorCode OpSourceImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // source file
     auto t_source = sourceFun(t_coords(0), t_coords(1), t_coords(2));
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha = t_w * vol;
     // loop over rows base functions
     auto t_nf = getFTensor1FromArray<FIELD_DIM, FIELD_DIM>(OpBase::locF);
@@ -485,7 +485,7 @@ MoFEMErrorCode OpSourceImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // source file
     auto t_source = sourceFun(t_coords(0), t_coords(1), t_coords(2));
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha = t_w * vol;
     // loop over rows base functions
     int rr = 0;
@@ -515,7 +515,7 @@ MoFEMErrorCode OpBaseTimesScalarFieldImpl<1, GAUSS, OpBase>::iNtegrate(
   auto t_vec = getFTensor0FromVec(*sourceVec);
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha = t_w * vol * betaCoeff;
     // loop over rows base functions
     int rr = 0;
@@ -546,7 +546,7 @@ MoFEMErrorCode OpGradTimesScalarFieldImpl<FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   auto t_vec = getFTensor0FromVec(*sourceVec);
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha = t_w * vol * betaCoeff;
     auto t_nf = getFTensor1FromArray<FIELD_DIM, FIELD_DIM>(OpBase::locF);
     // loop over rows base functions
@@ -584,7 +584,7 @@ MoFEMErrorCode OpBaseTimesVectorImpl<1, FIELD_DIM, S, GAUSS, OpBase>::iNtegrate(
   auto t_vec = getFTensor1FromMat<FIELD_DIM, S>(*sourceVec);
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha =
         t_w * vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
     // get loc vector tensor
@@ -627,7 +627,7 @@ OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>::iNtegrate(
   auto t_vec = getFTensor1FromMat<BASE_DIM, S>(*sourceVec);
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha =
         t_w * vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
     // loop over rows base functions
@@ -663,7 +663,7 @@ OpGradTimesTensorImpl<1, 1, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     const double beta = vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha = t_w * beta;
     // loop over rows base functions
     int rr = 0;
@@ -698,7 +698,7 @@ OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
   auto t_val_grad = getFTensor2FromMat<SPACE_DIM, SPACE_DIM>(*(matVals));
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha = t_w * vol;
     // get rhs vector
     auto t_nf = OpBase::template getNf<SPACE_DIM>();
@@ -735,7 +735,7 @@ OpGradTimesSymTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
   auto t_val_mat = getFTensor2SymmetricFromMat<SPACE_DIM, S>(*(matVals));
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha = t_w * vol;
     // get rhs vector
     auto t_nf = OpBase::template getNf<SPACE_DIM>();

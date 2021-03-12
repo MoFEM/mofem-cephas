@@ -401,7 +401,7 @@ MoFEMErrorCode OpGradGradImpl<1, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     const double beta = vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha = t_w * beta;
     // loop over ros base functions
     int rr = 0;
@@ -447,7 +447,7 @@ MoFEMErrorCode OpMassImpl<1, 1, GAUSS, OpBase>::iNtegrate(
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     const double beta = vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha = t_w * beta;
     // loop over rows base functions
     int rr = 0;
@@ -501,7 +501,7 @@ MoFEMErrorCode OpMassImpl<1, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     const double beta = vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha = t_w * beta;
     // loop over rows base functions
     int rr = 0;
@@ -549,7 +549,7 @@ MoFEMErrorCode OpMassImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     const double beta = vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
-    // take into account Jacobean
+    // take into account Jacobian
     const double alpha = t_w * beta;
     // loop over rows base functions
     int rr = 0;
