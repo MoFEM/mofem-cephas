@@ -2584,26 +2584,6 @@ private:
 
 /**@}*/
 
-/**
- * @brief Swap vector
- * 
- * Swap vectors set by solvers, e.g. KSP, SNES, TS, with user vector.
- * 
- */
-struct OpSwapVector : public ForcesAndSourcesCore::UserDataOperator {
-  enum Swap {
-    U, U_t, U_tt
-  };
-  OpSwapVector(enum Swap what, SmartPetscObj<Vec> swap)
-      : ForcesAndSourcesCore::UserDataOperator(NOSPACE), whatToSwap(what),
-        swapVec(swap) {}
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-  private:
-    SmartPetscObj<Vec> swapVec;
-    enum Swap whatToSwap;
-};
-
 } // namespace MoFEM
 
 #endif // __USER_DATA_OPERATORS_HPP__

@@ -1213,27 +1213,4 @@ OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpSwapVector::doWork(int side, EntityType type,
-                                    DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBegin;
-  double norm;
-  switch (whatToSwap) {
-  case U:
-    CHKERR VecSwap(getFEMethod()->x, swapVec);
-    VecNorm(getFEMethod()->x,NORM_2,&norm);
-    cerr << norm << " ";
-    VecNorm(swapVec, NORM_2, &norm);
-    cerr << norm << endl;
-
-    break;
-  case U_t:
-    CHKERR VecSwap(getFEMethod()->x_t, swapVec);
-    break;
-  case U_tt:
-    CHKERR VecSwap(getFEMethod()->x_tt, swapVec);
-    break;
-  }
-  MoFEMFunctionReturn(0);
-}
-
 } // namespace MoFEM
