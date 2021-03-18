@@ -31,6 +31,8 @@ Think about different kinds of users:
 - Yourself; you might forget and documentation helps to remind you what
   you have done
 
+Follow <https://www.doxygen.nl/manual/docblocks.html>
+
 \section genaral_about_writting About writing a manual
 
 - If possible, make it instructive, step by step
@@ -63,8 +65,12 @@ $MOFEM_DIR/html/index.html
 
 \section writing_documentaion Writing documents, technical aspect
 
-Use Doxygen or Markdown to write your documentation. Before you
+Follow Doxygen <https://www.doxygen.nl/index.html> to
+write your documentation files. Another option is Markdown which is
+supported by Doxygen <https://www.doxygen.nl/manual/markdown.html>. Before you
 start, you can look at how existing documentation is written and follow that example.
+
+- A useful list of commands in Doxygen <https://www.doxygen.nl/manual/commands.html>
 
 - If you write general documentation about MoFEM, locate your files in \em /doc/user_guide.
 
@@ -115,6 +121,8 @@ Including figure in case of Doxygen document:
 \image html application.jpg width=600px
 \endcode
 
+More details about including images are here <https://www.doxygen.nl/manual/commands.html#cmdimage>
+
 Including figure in case of Markdown documentation:
 
 \code
@@ -134,5 +142,7 @@ you also can use \@ref to link an image:
 
 [img def]: @ref image.png "Caption text"
 \endcode
+
+More details about linking images in Markdown are here <https://www.doxygen.nl/manual/markdown.html#md_images>
 
 */
