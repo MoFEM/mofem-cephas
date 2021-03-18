@@ -107,6 +107,8 @@ where \em MY_USER_MODULE is substituted by the name of the module. This cmake
 script copies files from module doc/figures directory to the main documentation
 directory. Look into existing modules for examples.
 
+\todo Each module can copy figures to a directory with the unique name for USER_MODULE_figures.
+
 - It is critical that name of your figure file is unique. All figures (or any
   other linked files) are copied to the same directory \em
   ${PROJECT_BINARY_DIR}/html while Doxygen creates documentation. 
