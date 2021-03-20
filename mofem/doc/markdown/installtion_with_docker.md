@@ -131,7 +131,7 @@ See video explaing this part of the installation:
 
 Pull MoFEM images and create mofem_volume
 ~~~~~~
-docker run --name mofem_volume likask/mofem-spack-build
+docker run --name mofem_volume likask/mofem-spack-softmech
 ~~~~~~
 and run container as follows
 ~~~~~~
@@ -168,7 +168,7 @@ docker run \
 
 Pull MoFEM images and create mofem_volume
 ~~~~~~
-docker run --name mofem_volume likask/mofem-spack-build
+docker run --name mofem_volume likask/mofem-spack-softmech
 ~~~~~~
 
 Run JupyterHub [JupterHyb](https://jupyterhub.readthedocs.io/en/stable/)
