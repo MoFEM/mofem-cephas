@@ -144,6 +144,13 @@ library.
     Eshelbian plasticity module. 
     - <a href="https://bitbucket.org/mofem/um_eshelbian_plasticity/src/master/">Bitbucket repository </a></td>
   </tr>
+  <tr style="height:85px;">
+    <th> Data-driven elements </th> 
+     <td> \image html data-driven_smiley.png "" width = 80px </td>
+    <td> 
+    Data-driven elements module. 
+    - <a href="https://bitbucket.org/AdrianaKul/mofem_data_driven_finite_elements.git">Bitbucket repository </a></td>
+  </tr>
   <tr style="height:20px;">
     <th colspan="3"> No longer supported </th>
   </tr>

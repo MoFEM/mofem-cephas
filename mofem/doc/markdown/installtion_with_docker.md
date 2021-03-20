@@ -214,5 +214,4 @@ however, you can find good alternatives like [VisIt](https://wci.llnl.gov/simula
 a text editor. We recommend [VSCode](https://code.visualstudio.com).
 # Contact {#docker_contact}
 
-Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group)
-or on Slack [MoFEM Slack](https://mofem.slack.com/).
+Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
