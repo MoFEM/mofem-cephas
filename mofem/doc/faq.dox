@@ -182,23 +182,6 @@ make doc
 \endcode
 This create directory \em html. Open file \em html/index.html to see results in your browser.
 
-\subsection slack_message_send Use webhook to send message to Slack e.g. to report program crash
-To send a message to your Slack (in mofem.slack.com workspace) 
-from command line or a script on a server, use the following command:
-\code
-curl -X POST "https://slack.com/api/chat.postMessage" -H  "accept: application/json" \
--d token=TOKEN \
--d channel=CHANNEL -d text="My analysis crashed!"
-\endcode
-
-Where \e TOKEN is our app authentication token and can be found 
-<a href=https://drive.google.com/uc?export=download&id=11tsc-ePGrsMQ0BDkLKVZxZQkuqRDZB5m> here</a>.
-
-
-As \e CHANNEL one can use desired channel name, user name or user id. User id can be found e.g. by going to
-<https://mofem.slack.com/messages> and searching for \e user_id in the page source.
-On Chrome, right-click and choose \e View \e Page \e Source.
-
 \subsection msteam_message_send Use webhook to send message to Microsoft Teams
 
 Similar process to send message to MS Teams can be done using their APIs
