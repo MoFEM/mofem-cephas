@@ -196,26 +196,6 @@ add_test(field_blas_set_vertex_dofs
   -log_no_color
 )
 
-#test coord sys
-my_add_executable(test_setting_coordinate_sys test_setting_coordinate_sys.cpp)
-target_link_libraries(test_setting_coordinate_sys
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
-add_test(
-  test_setting_coordinate_sys
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/test_setting_coordinate_sys
-  -my_file elasticity_atom_test_01X_pressure.h5m
-  -log_no_color
-)
-
 #mesh refine
 cm_export_file("../meshes/templar.h5m" export_atom_tests)
 
