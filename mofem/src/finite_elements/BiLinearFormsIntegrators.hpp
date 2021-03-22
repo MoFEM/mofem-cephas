@@ -820,7 +820,8 @@ MoFEMErrorCode OpMixScalarTimesGradImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
     size_t rr = 0;
     for (; rr != OpBase::nbRows; ++rr) {
-      auto t_m = OpBase::template getLocMat<SPACE_DIM>(rr);
+              auto t_m = getFTensor1FromMat<SPACE_DIM, 1>(OpBase::locMat);
+      // auto t_m = OpBase::template getLocMat<SPACE_DIM>(rr);
       auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
       for (size_t cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
         t_m(i) += alpha * t_row_base * t_col_diff_base(i);
