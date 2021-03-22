@@ -207,26 +207,7 @@ spack install --test all mofem-fracture-module build_type=Release ^petsc+X
 # Activate fracture module
 spack view --verbose symlink -i um_view mofem-fracture-module
  
-# Check the output message and finalise the installation
-if tail -n 1 log | grep -q "Crack surface area"
-then
-  echo -e "\nInstallation SUCCESSFUL!\n"
-  
-  # Export view and make view visible from any directory
-  export PATH=$PWD/um_view/bin:$PATH 
-  # Add PATH to .bashrc on Ubuntu or .bash_profile on Mac
-  if [ ${machine} = "Linux" ]
-  then
-    echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bashrc
-  elif [ ${machine} = "Mac" ]
-  then
-    echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.bash_profile
-    echo "export PATH=$PWD/um_view/bin:\$PATH" >> ~/.zshrc
-  fi
-
-  echo "Please check PATH in .bashrc (Ubuntu) or .bash_profile (macOS) and remove the old ones."
-else
-   echo -e "\nInstallation FAILED!\n"
-fi
+# Export view and make view visible from any directory
+export PATH=$PWD/um_view/bin:$PATH 
 
 echo "End time: $(date +"%T")"
