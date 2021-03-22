@@ -10,14 +10,14 @@ Core Library and the Basic User Module as follows
 
 - Core Library
   - Source code: *$HOME/mofem_install/mofem-cephas/*
-  - Binary files (build directory): *$HOME/mofem_install/lib_release/*
+  - Binary files (build directory): *$HOME/mofem_install/mofem-cephas/core-build-RelWithDebInfo-abcd1234*
 - Basic User Module
   - Source code: *$HOME/mofem_install/mofem-cephas/mofem/users_modules/*
-  - Binary files (build directory): *$HOME/mofem_install/um/build_release/*
+  - Binary files (build directory): *$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234*
 
 # How to add a new module
 
-## Module developed by someone else
+## An existing module
 
 To add a new MoFEM module that already developed, for example [Solid Shell
 Module](https://bitbucket.org/likask/mofem_um_solid_shell_prism_element/src/master/), you may wish to follow these steps
@@ -32,24 +32,13 @@ cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/
 git clone https://bitbucket.org/likask/mofem_um_solid_shell_prism_element.git
 ```
 
-- Reconfigure build directory
-```
-cd $HOME/mofem_install/um/build_release/
-./spconfig.py \
--DMOFEM_UM_BUILD_TESTS=ON \
--DFM_VERSION_MAJOR=0 \
--DFM_VERSION_MINOR=0 \
--DFM_VERSION_BUILD=0 \
--DMOFEM_DIR=../um_view $HOME/mofem_install/mofem-cephas/mofem/users_modules
-```
-
 - Compile codes for all modules
 ```
-cd $HOME/mofem_install/um/build_release/
+cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234
 make -j4
 ```
 
-- By now you should see all the executables generated
+- By now you should see all the executables generated in the folder within `um-build-RelWithDebInfo-abcd1234`
 ```
 cd mofem_um_solid_shell_prism_element
 ```
@@ -65,12 +54,13 @@ Solid Shell Module are as follows
 
 - MoFEM Solid Shell Module
   - Source code: *$HOME/mofem_install/mofem-cephas/mofem/users_modules/mofem_um_solid_shell_prism_element*
-  - Binary files (build directory): *$HOME/mofem_install/um/build_release/mofem_um_solid_shell_prism_element*
+  - Binary files (build directory): *$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234/mofem_um_solid_shell_prism_element*
 
 ## New module for your own purpose
 
 The quickest way to create your own module is to replicate a module that already
-available in MoFEM. For example, you can replicate MoFEM Solid Shell Module
+available in MoFEM and then replace the existing source codes with your own. For
+example, you can replicate MoFEM Solid Shell Module 
 following general steps as follows
 
 - Clone the module to somewhere outside of MoFEM installation directory
@@ -81,7 +71,8 @@ following general steps as follows
 - Once everything done, create a new repository of your own on
   [Github](https://github.com) or [Bitbucket](https://bitbucket.org)
 - Upload your new files to the remote repository
-- Follow steps in the previous section to clone and setup your new module in MoFEM
+- Follow steps in the previous section to clone and setup your new module in
+  MoFEM (How to add a new module - An existing module).
 
 \note If you have issues creating new module of your own, please contact us at [MoFEM
 Q&A](https://groups.google.com/forum/#!categories/mofem-group). We are happy to help.
@@ -102,7 +93,7 @@ program in MoFEM Basic User Module following general steps as follows
 - Delete unnecessary source code files
 - Once everything done, compile source code by
 ```
-cd $HOME/mofem_install/um/build_release/basic_finite_elements/
+cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234/basic_finite_elements
 make -j4
 ```
 - You will see a new directory containing your new program
