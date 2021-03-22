@@ -1175,7 +1175,7 @@ add_test(dm_partitioned_no_field_2parts
   -dm_is_partitioned
   -log_no_color)
 add_test(dm_partitioned_no_field_3parts
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 3
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 3
   ${CMAKE_CURRENT_BINARY_DIR}/dm_partitioned_no_field -my_file disp01_3parts.h5m 
   -dm_is_partitioned
   -log_no_color)
