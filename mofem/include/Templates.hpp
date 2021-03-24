@@ -828,6 +828,13 @@ inline MoFEMErrorCode solveLinearSystem(MatrixDouble &mat, VectorDouble &f) {
   MoFEMFunctionReturn(0);
 }
 
+/**
+ * @brief Solve linear system of equations using Lapack
+ * 
+ * @param mat 
+ * @param f 
+ * @return MoFEMErrorCode 
+ */
 inline MoFEMErrorCode solveLinearSystem(const MatrixDouble &mat,
                                         VectorDouble &f) {
   MoFEMFunctionBegin;
