@@ -424,6 +424,17 @@ protected:
             const TagType tag_type = MB_TAG_SPARSE,
             const enum MoFEMTypes bh = MF_EXCL, int verb = DEFAULT_VERBOSITY);
 
+
+  /**
+   * @brief Delete field
+   * 
+   * @param name field name
+   * @param verb verbosity level
+   * @return error code
+   */
+  MoFEMErrorCode delete_field(const std::string name,
+                              int verb = DEFAULT_VERBOSITY);
+
   /**
    * @brief Template for add_field
    *

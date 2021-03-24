@@ -282,6 +282,16 @@ struct CoreInterface : public UnknownInterface {
             int verb = DEFAULT_VERBOSITY) = 0;
 
   /**
+   * @brief  Delete field
+   * 
+   * @param name field name
+   * @param verb verbosity level
+   * @return MoFEMErrorCode 
+   */
+  virtual MoFEMErrorCode delete_field(const std::string name,
+                                      int verb = DEFAULT_VERBOSITY) = 0;
+
+  /**
    * \brief Add entities to field meshset
    * \ingroup mofem_field
    *
