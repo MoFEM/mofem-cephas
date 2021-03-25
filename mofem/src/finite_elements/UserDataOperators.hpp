@@ -343,6 +343,151 @@ struct OpCalculateVectorFieldValues
       DoubleAllocator>::OpCalculateVectorFieldValues_General;
 };
 
+
+/**@}*/
+
+/** \name Vector field values at integration points */
+
+/**@{*/
+
+/** \brief Calculate divergence of vector field values for tenor field rank 1, i.e. vector field
+ *
+ */
+template <int Tensor_Dim, class T, class L, class A>
+struct OpCalculateDivergenceVectorFieldValues_General
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateDivergenceVectorFieldValues_General(
+      const std::string field_name,
+      boost::shared_ptr<ublas::matrix<T, L, A>> data_ptr,
+      const EntityType zero_type = MBVERTEX)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  /**
+   * \brief calculate divergence values of vector field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+protected:
+  boost::shared_ptr<ublas::matrix<T, L, A>> dataPtr;
+  const EntityHandle zeroType;
+};
+
+template <int Tensor_Dim, class T, class L, class A>
+MoFEMErrorCode
+OpCalculateDivergenceVectorFieldValues_General<Tensor_Dim, T, L, A>::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBeginHot;
+  SETERRQ2(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+           "Not implemented for T = %s and dim = %d",
+           typeid(T).name(), // boost::core::demangle(typeid(T).name()),
+           Tensor_Dim);
+  MoFEMFunctionReturnHot(0);
+}
+
+/** \brief Calculate field values (template specialization) for tensor field
+ * rank 1, i.e. vector field
+ *
+ */
+template <int Tensor_Dim>
+struct OpCalculateDivergenceVectorFieldValues_General<Tensor_Dim, double,
+                                            ublas::row_major, DoubleAllocator>
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateDivergenceVectorFieldValues_General(const std::string field_name,
+                                       boost::shared_ptr<VectorDouble> data_ptr,
+                                       const EntityType zero_type = MBVERTEX)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+protected:
+  boost::shared_ptr<VectorDouble> dataPtr;
+  const EntityHandle zeroType;
+};
+
+/**
+ * \brief Member function specialization calculating values for tenor field rank
+ *
+ */
+template <int Tensor_Dim>
+MoFEMErrorCode OpCalculateDivergenceVectorFieldValues_General<
+    Tensor_Dim, double, ublas::row_major,
+    DoubleAllocator>::doWork(int side, EntityType type,
+                             DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  const size_t nb_gauss_pts = getGaussPts().size2();
+  auto &vec = *dataPtr;
+  if (type == zeroType) {
+    vec.resize(nb_gauss_pts, false);
+    vec.clear();
+  }
+
+  const size_t nb_dofs = data.getFieldData().size();
+  if (nb_dofs) {
+
+    if (nb_gauss_pts) {
+      const size_t nb_base_functions = data.getN().size2();
+      auto base_function = data.getFTensor0N();
+      auto values_at_gauss_pts = getFTensor0FromVec(vec);
+      FTensor::Index<'I', Tensor_Dim> I;
+      const size_t size = nb_dofs / Tensor_Dim;
+      if (nb_dofs % Tensor_Dim) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency");
+      }
+      for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+        auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
+        auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
+        size_t bb = 0;
+        for (; bb != size; ++bb) {
+          values_at_gauss_pts += field_data(I) * diff_base_function(I);
+          ++field_data;
+          ++base_function;
+        }
+        // Number of dofs can be smaller than number of Tensor_Dim x base
+        // functions
+        for (; bb != nb_base_functions; ++bb)
+          ++diff_base_function;
+        ++values_at_gauss_pts;
+      }
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
+/** \brief Get values at integration pts for tensor filed rank 1, i.e. vector
+ * field
+ *
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim>
+struct OpCalculateDivergenceVectorFieldValues
+    : public OpCalculateDivergenceVectorFieldValues_General<
+          Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
+
+  using OpCalculateDivergenceVectorFieldValues_General<
+      Tensor_Dim, double, ublas::row_major,
+      DoubleAllocator>::OpCalculateDivergenceVectorFieldValues_General;
+};
+
 /** \brief Approximate field valuse for given petsc vector
  *
  * \note Look at PetscData to see what vectors could be extarcted with that user
