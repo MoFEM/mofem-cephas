@@ -61,8 +61,8 @@ private:
   boost::shared_ptr<BasicMethod> bmPtr;
 };
 
-typedef std::vector<PairNameFEMethodPtr> FEMethodsSequence;
-typedef std::vector<BasicMethodPtr> BasicMethodsSequence;
+typedef std::deque<PairNameFEMethodPtr> FEMethodsSequence;
+typedef std::deque<BasicMethodPtr> BasicMethodsSequence;
 
 } // namespace MoFEM
 

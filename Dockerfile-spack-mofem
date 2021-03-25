@@ -30,7 +30,8 @@ RUN . $MOFEM_ENV_FILE && \
   cd $MOFEM_INSTALL_DIR/um-build-Release-$MOFEM_UM_HASH && make clean && \
   spack view symlink -i $MOFEM_INSTALL_DIR/um_view /$MOFEM_UM_HASH && \
   echo "export MOFEM_UM_HASH=$MOFEM_UM_HASH" >> $MOFEM_ENV_FILE && \
-  echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> $MOFEM_ENV_FILE
+  echo "export PATH=$MOFEM_INSTALL_DIR/um_view/bin:$PATH" >> $MOFEM_ENV_FILE && \
+  chmod -R aug+rX `spack find -p mofem-users-modules | grep mofem-users-modules@develop | awk '{print $2}'`
 
 WORKDIR $MOFEM_INSTALL_DIR
 
