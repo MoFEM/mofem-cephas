@@ -337,6 +337,10 @@ struct interface_Field : public interface_FieldImpl<FIELD, REFENT> {
     return getFieldRawPtr()->getMeshset();
   }
 
+  inline int getCoordSysDim(const int d = 0) const {
+    return getFieldRawPtr()->getCoordSysDim(d);
+  }
+
   inline MoFEMErrorCode get_E_Base(const double m[]) const {
     MoFEMFunctionBeginHot;
     MoFEMFunctionReturnHot(getFieldRawPtr()->get_E_Base(m));
