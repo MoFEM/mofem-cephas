@@ -53,7 +53,6 @@
 #include <MaterialBlocks.hpp>
 #include <BCData.hpp>
 #include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
 #include <RefEntsMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
 #include <FieldEntsMultiIndices.hpp>
