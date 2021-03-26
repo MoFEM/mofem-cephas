@@ -819,9 +819,12 @@ MoFEMErrorCode OpMixScalarTimesGradImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     const double alpha = alphaConstant * this->getMeasure() * t_w;
 
     size_t rr = 0;
+    auto t_m = getFTensor1FromArray<SPACE_DIM, SPACE_DIM>(OpBase::locMat);
     for (; rr != OpBase::nbRows; ++rr) {
-              auto t_m = getFTensor1FromMat<SPACE_DIM, 1>(OpBase::locMat);
+      // auto t_m = getFTensor1FromArray<FIELD_DIM, FIELD_DIM>(OpBase::locF);
+              // auto t_m = getFTensor1FromMat<SPACE_DIM, 1>(OpBase::locMat);
       // auto t_m = OpBase::template getLocMat<SPACE_DIM>(rr);
+      
       auto t_col_diff_base = col_data.getFTensor1DiffN<SPACE_DIM>(gg, 0);
       for (size_t cc = 0; cc != OpBase::nbCols / SPACE_DIM; ++cc) {
         t_m(i) += alpha * t_row_base * t_col_diff_base(i);
