@@ -68,7 +68,8 @@ struct Field {
    *
    * \param meshset which keeps entities for this field
    */
-  Field(const moab::Interface &moab, const EntityHandle meshset);
+  Field(const moab::Interface &moab, const EntityHandle meshset,
+           const boost::shared_ptr<CoordSys> coord_sys_ptr);
 
   virtual ~Field() = default;
 
@@ -84,6 +85,8 @@ struct Field {
   moab::Interface &moab;
 
   EntityHandle meshSet; ///< keeps entities for this meshset
+  boost::shared_ptr<CoordSys>
+      coordSysPtr; ///< Pointer to field coordinate system data structure
 
   TagType th_FieldDataVertsType; // Tag type for storing data on vertices
   Tag th_FieldDataVerts; ///< Tag storing field values on vertices in the field
@@ -162,6 +165,79 @@ struct Field {
    * @return EntityHandle
    */
   inline EntityHandle getMeshset() const { return meshSet; }
+
+  /**
+    * \brief Get dimension of general two-point tensor \ref
+    MoFEM::CoordSys::getDim
+
+    See details here \ref MoFEM::CoordSys::getDim
+
+    */
+  inline int getCoordSysDim(const int d = 0) const {
+    return coordSysPtr->getDim(d);
+  }
+
+  /**
+   * \brief   Get reference base vectors
+   * @param   Array where coefficients (covariant) are returned
+   * @return  Error code
+   */
+  inline MoFEMErrorCode get_E_Base(const double m[]) const {
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(coordSysPtr->get_E_Base(m));
+  }
+
+  /**
+   * \brief   Get reference dual base vectors
+   * @param   Array where coefficients (contravariant) are returned
+   * @return  Error code
+   */
+  inline MoFEMErrorCode get_E_DualBase(const double m[]) const {
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(coordSysPtr->get_E_DualBase(m));
+  }
+
+  /**
+   * \brief   Get current dual base vectors
+   * @param   Array where coefficients (covariant) are returned
+   * @return  Error code
+   */
+  inline MoFEMErrorCode get_e_Base(const double m[]) const {
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(coordSysPtr->get_e_Base(m));
+  }
+
+  /**
+   * \brief   Get current dual base vectors
+   * @param   Array where coefficients (covariant) are returned
+   * @return  Error code
+   */
+  inline MoFEMErrorCode get_e_DualBase(const double m[]) const {
+    MoFEMFunctionBeginHot;
+    MoFEMFunctionReturnHot(coordSysPtr->get_e_DualBase(m));
+  }
+
+  /**
+   * \brief Returns meshset on which Tags defining coordinate system are stored
+   * @return Coordinate system EntityHandle
+   */
+  inline EntityHandle getCoordSysMeshSet() const {
+    return coordSysPtr->getMeshset();
+  }
+
+  /**
+   * \brief   Get coordinate system name
+   * @return  Coordinate system name
+   */
+  inline std::string getCoordSysName() const { return coordSysPtr->getName(); }
+
+  /**
+   * \brief   Get coordinate system name
+   * @return Return string_ref with name.
+   */
+  inline boost::string_ref getCoordSysNameRef() const {
+    return coordSysPtr->getNameRef();
+  }
 
   /**
    * \brief Get unique field id.
@@ -559,6 +635,16 @@ typedef multi_index_container<
                        const_mem_fun<Field, const BitFieldId &, &Field::getId>,
                        LtBit<BitFieldId>>>>
     Field_multiIndex_view;
+
+/** \brief Set field coordinate system
+ * \ingroup ent_multi_indices
+ */
+struct FieldChangeCoordinateSystem {
+  boost::shared_ptr<CoordSys> csPtr;
+  FieldChangeCoordinateSystem(const boost::shared_ptr<CoordSys> &cs_ptr)
+      : csPtr(cs_ptr) {}
+  void operator()(boost::shared_ptr<Field> &e) { e->coordSysPtr = csPtr; }
+};
 
 } // namespace MoFEM
 

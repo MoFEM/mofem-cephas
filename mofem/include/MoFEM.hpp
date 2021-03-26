@@ -88,6 +88,7 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <SeriesRecorder.hpp>
 #include <PrismInterface.hpp>
 #include <MeshsetsManager.hpp>
+#include <CoordSystemsManager.hpp>
 #ifdef WITH_TETGEN
   #include <TetGenInterface.hpp>
 #endif //WITH_TETGEN

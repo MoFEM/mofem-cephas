@@ -26,9 +26,11 @@ const bool PetscGlobalIdx_mi_tag::IamNotPartitioned = false;
 const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 
 // fields
-Field::Field(const moab::Interface &moab, const EntityHandle meshset)
-    : moab(const_cast<moab::Interface &>(moab)), meshSet(meshset), tagId(NULL),
-      tagSpaceData(NULL), tagNbCoeffData(NULL), tagName(NULL), tagNameSize(0) {
+Field::Field(const moab::Interface &moab, const EntityHandle meshset,
+             const boost::shared_ptr<CoordSys> coord_sys_ptr)
+    : moab(const_cast<moab::Interface &>(moab)), meshSet(meshset),
+      coordSysPtr(coord_sys_ptr), tagId(NULL), tagSpaceData(NULL),
+      tagNbCoeffData(NULL), tagName(NULL), tagNameSize(0) {
 
   auto get_tag_data_ptr = [&](const auto name, auto &tag_data) {
     MoFEMFunctionBegin;

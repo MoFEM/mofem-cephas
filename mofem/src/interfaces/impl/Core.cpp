@@ -257,6 +257,12 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   if (verb == -1)
     verb = verbose;
 
+  CoordSystemsManager *cs_manger_ptr;
+  CHKERR getInterface(cs_manger_ptr);
+
+  // Initialize coordinate systems
+  CHKERR cs_manger_ptr->initialiseDatabaseFromMesh(verb);
+
   Range ref_elems_to_add;
 
   auto m_moab = &get_moab();
@@ -271,7 +277,19 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
     CHKERR get_moab().tag_get_data(th_FieldId, &mit, 1, &field_id);
     // Check if meshset if field meshset
     if (field_id != 0) {
-      auto p = fIelds.insert(boost::make_shared<Field>(moab, mit));
+      const char *cs_name;
+      int cs_name_size;
+      boost::shared_ptr<CoordSys> cs_ptr;
+      rval =
+          get_moab().tag_get_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &mit,
+                                    1, (const void **)&cs_name, &cs_name_size);
+      if (rval == MB_SUCCESS && cs_name_size)
+        CHKERR cs_manger_ptr->getCoordSysPtr(std::string(cs_name, cs_name_size),
+                                             cs_ptr);
+      else
+        CHKERR cs_manger_ptr->getCoordSysPtr("UNDEFINED", cs_ptr);
+
+      auto p = fIelds.insert(boost::make_shared<Field>(moab, mit, cs_ptr));
 
       if (verb > QUIET)
         MOFEM_LOG("WORLD", Sev::verbose) << "Read field " << **p.first;
@@ -432,6 +450,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   CHKERR regSubInterface<Tools>(IDD_MOFEMTools);
   CHKERR regSubInterface<CommInterface>(IDD_MOFEMComm);
   CHKERR regSubInterface<MeshsetsManager>(IDD_MOFEMMeshsetsManager);
+  CHKERR regSubInterface<CoordSystemsManager>(IDD_MOFEMCoordsSystemsManager);
   CHKERR regSubInterface<NodeMergerInterface>(IDD_MOFEMNodeMerger);
   CHKERR regSubInterface<BitLevelCoupler>(IDD_MOFEMBitLevelCoupler);
   CHKERR regSubInterface<PrismsFromSurfaceInterface>(
@@ -473,6 +492,8 @@ MoFEMErrorCode Core::clearMap() {
   // Cleaning databases in interfaces
   CHKERR getInterface<SeriesRecorder>()->clearMap();
   CHKERR getInterface<MeshsetsManager>()->clearMap();
+  CHKERR getInterface<CoordSystemsManager>()->clearMap();
+  CHKERR getInterface<CutMeshInterface>()->clearMap();
   // Cleaning databases
   refinedEntities.clear();
   refinedFiniteElements.clear();
@@ -708,6 +729,11 @@ MoFEMErrorCode Core::getTags(int verb) {
   SeriesRecorder *series_recorder_ptr;
   CHKERR getInterface(series_recorder_ptr);
   CHKERR series_recorder_ptr->getTags(verb);
+
+  // Coordinate systems
+  CoordSystemsManager *cs_manger_ptr;
+  CHKERR getInterface(cs_manger_ptr);
+  CHKERR cs_manger_ptr->getTags(verb);
 
   MoFEMFunctionReturn(0);
 }

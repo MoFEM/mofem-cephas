@@ -206,9 +206,36 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
       MoFEMFunctionReturn(0);
     };
 
-    CHKERR create_tags();
+    auto create_undefined_cs = [&](auto &undefined_cs_ptr) {
+      MoFEMFunctionBegin;
+      const int unidefined_cs_dim[] = {-1, 0, 0, 0};
+      CHKERR getInterface<CoordSystemsManager>()->addCoordinateSystem(
+          unidefined_cs_dim, "UNDEFINED", MF_ZERO);
+      CHKERR getInterface<CoordSystemsManager>()->getCoordSysPtr(
+          "UNDEFINED", undefined_cs_ptr);
+      MoFEMFunctionReturn(0);
+    };
 
-    auto p = fIelds.insert(boost::make_shared<Field>(moab, meshset));
+    auto add_field_meshset_to_cs = [&](auto &undefined_cs_ptr) {
+      MoFEMFunctionBegin;
+      int cs_name_size[1];
+      cs_name_size[0] = undefined_cs_ptr->getName().size();
+      void const *cs_name[] = {&*undefined_cs_ptr->getNameRef().begin()};
+      CHKERR get_moab().tag_set_by_ptr(
+          getInterface<CoordSystemsManager>()->get_th_CoordSysName(), &meshset,
+          1, cs_name, cs_name_size);
+      EntityHandle coord_sys_meshset = undefined_cs_ptr->getMeshset();
+      CHKERR get_moab().add_entities(coord_sys_meshset, &meshset, 1);
+      MoFEMFunctionReturn(0);
+    };
+
+    CHKERR create_tags();
+    boost::shared_ptr<CoordSys> undefined_cs_ptr;
+    CHKERR create_undefined_cs(undefined_cs_ptr);
+    CHKERR add_field_meshset_to_cs(undefined_cs_ptr);
+
+    auto p = fIelds.insert(
+        boost::make_shared<Field>(moab, meshset, undefined_cs_ptr));
     if (verb > QUIET) {
       MOFEM_LOG("WORLD", Sev::inform) << "Add field " << **p.first;
       MOFEM_LOG("WORLD", Sev::noisy)
@@ -221,7 +248,7 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
                "field not inserted %s (top tip, it could be already "
                "there)",
-               Field(moab, meshset).getName().c_str());
+               Field(moab, meshset, undefined_cs_ptr).getName().c_str());
   }
 
   MoFEMFunctionReturn(0);
