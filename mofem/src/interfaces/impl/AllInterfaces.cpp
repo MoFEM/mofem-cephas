@@ -6,6 +6,7 @@ const static int debug = 0;
 #include "impl/Simple.cpp"
 #include "impl/PipelineManager.cpp"
 #include "impl/MeshsetsManager.cpp"
+// #include "impl/CoordSystemsManager.cpp"
 #include "impl/MeshRefinement.cpp"
 #include "impl/PrismInterface.cpp"
 #include "impl/SeriesRecorder.cpp"

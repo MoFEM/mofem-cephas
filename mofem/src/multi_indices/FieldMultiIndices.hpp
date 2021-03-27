@@ -341,39 +341,6 @@ struct interface_Field : public interface_FieldImpl<FIELD, REFENT> {
     return getFieldRawPtr()->getCoordSysDim(d);
   }
 
-  inline MoFEMErrorCode get_E_Base(const double m[]) const {
-    MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(getFieldRawPtr()->get_E_Base(m));
-  }
-  inline MoFEMErrorCode get_E_DualBase(const double m[]) const {
-    MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(getFieldRawPtr()->get_E_DualBase(m));
-  }
-  inline MoFEMErrorCode get_e_Base(const double m[]) const {
-    MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(getFieldRawPtr()->get_e_Base(m));
-  }
-
-  inline MoFEMErrorCode get_e_DualBase(const double m[]) const {
-    MoFEMFunctionBeginHot;
-    MoFEMFunctionReturnHot(getFieldRawPtr()->get_e_DualBase(m));
-  }
-
-  /// @return return meshset for coordinate system
-  inline EntityHandle getCoordSysMeshSet() const {
-    return getFieldRawPtr()->getCoordSysMeshSet();
-  }
-
-  /// @return return coordinate system name for field
-  inline std::string getCoordSysName() const {
-    return getFieldRawPtr()->getCoordSysName();
-  }
-
-  /// @return return coordinate system name for field
-  inline boost::string_ref getCoordSysNameRef() const {
-    return getFieldRawPtr()->getCoordSysNameRef();
-  }
-
   /// @return get field Id
   inline const BitFieldId &getId() const {
     return getFieldRawPtr()->getId();
