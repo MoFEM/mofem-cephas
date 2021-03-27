@@ -17,8 +17,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  */
 
-// #include <CoordSysMultiIndices.hpp>
-// #include <CoordSystemsManager.hpp>
 #include <LogManager.hpp>
 #include <BitRefManager.hpp>
 #include <MeshsetsManager.hpp>
