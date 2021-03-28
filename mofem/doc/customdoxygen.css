@@ -1777,7 +1777,7 @@ u {
 
 .main {
   width: 75%;
-  height: 150vh;
+  height: 100vh;
   flex-direction: column;
   max-width: 800px;
 }
