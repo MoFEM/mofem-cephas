@@ -46,13 +46,20 @@ MeshsetsManager::MeshsetsManager(const Core &core)
 
   if (!LogManager::checkIfChannelExist("MeshsetMngWorld")) {
     auto core_log = logging::core::get();
+    
     core_log->add_sink(LogManager::createSink(LogManager::getStrmWorld(),
                                               "MeshsetMngWorld"));
-    LogManager::setLog("MeshsetMngWorld");
-    MOFEM_LOG_TAG("MeshsetMngWorld", "MeshsetMng");
+    core_log->add_sink(LogManager::createSink(LogManager::getStrmSync(),
+                                              "MeshsetMngSync"));
     core_log->add_sink(LogManager::createSink(LogManager::getStrmSelf(),
                                               "MeshsetMngSelf"));
+    
+    LogManager::setLog("MeshsetMngWorld");
+    LogManager::setLog("MeshsetMngSync");
     LogManager::setLog("MeshsetMngSelf");
+
+    MOFEM_LOG_TAG("MeshsetMngWorld", "MeshsetMng");
+    MOFEM_LOG_TAG("MeshsetMngSync", "MeshsetMng");
     MOFEM_LOG_TAG("MeshsetMngSelf", "MeshsetMng");
   }
 
@@ -82,11 +89,18 @@ MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "meshset not inserted");
 
-      if (verb > QUIET)
+      if (verb > QUIET) {
         MOFEM_LOG("MeshsetMngWorld", Sev::inform)
             << "read cubit " << base_meshset;
+        if (m_field.get_comm_rank() != 0)
+          MOFEM_LOG("MeshsetMngSync", Sev::verbose)
+              << "read cubit " << base_meshset;
+      }
     }
   }
+  
+  MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+
   MoFEMFunctionReturn(0);
 }
 
