@@ -3,21 +3,33 @@
 \htmlinclude doc/search_tags.html
 
 \htmlonly
+<div class="wrapper">
+  <div class="main">
+    
+
 <html>
 <head>
 	<title>MoFEM</title>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<meta name="description" content="MoFEM - An open source, parallel finite
 	element library" />
-
 </head>
-\endhtmlonly
 
-\image html mofem_logo.png " " width = 500px
+
+<p class="aligncenter">
+    <img src="mofem_logo.png" alt="MoFEM logo" style="width:500px;height:110px;" />
+</p>
+
+<style>
+.aligncenter {
+    text-align: center;
+}
+</style>
+
 
 <h1 style="font-weight:200;font-size:150%"><center>An open source, parallel finite element library</center></h1>
 
-\htmlonly
+
 <style>
     .table-spacing td {
         padding: 10px;
@@ -74,10 +86,8 @@
         </td>
     </tr>
 </table>
-\endhtmlonly
 
 
-\htmlonly
 
 <head>
     <link rel="stylesheet" type="text/css" href="engine1/style.css" />
@@ -160,6 +170,31 @@
 
 </body>
 
+  </div>
+  <div class="sidebar">
+
+  Version updates here: ...
+
+  <dev align=center>
+  <div class="twitter-feed">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <!-- Twitter Embed Code -->
+          <a class="twitter-timeline" data-lang="en" data-width="650" data-height="850" data-dnt="true" data-chrome="transparent"
+            href="https://twitter.com/mofemjoseph?ref_src=twsrc%5Etfw">Tweets by
+            mofemjoseph</a>
+          <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+          <!-- / Twitter Embed Code -->
+        </div>
+      </div>
+    </div>
+  </div>
+</dev>
+
+  </div>
+</div>
 \endhtmlonly
 
 */
+\
