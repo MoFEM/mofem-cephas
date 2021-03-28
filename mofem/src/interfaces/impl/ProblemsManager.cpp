@@ -424,7 +424,7 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
         MOFEM_LOG("WORLD", Sev::inform) << *cit;
         auto it_meshset = cit->getMeshset();
         for (auto s : tagged_sets) {
-          CHKERR m_field.get_moab().add_child_meshset(s, it_meshset);
+          CHKERR m_field.get_moab().add_child_meshset(it_meshset, s);
         }
       }
     }
@@ -3096,7 +3096,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
 
 MoFEMErrorCode
 ProblemsManager::markDofs(const std::string problem_name, RowColData rc,
-                          const Range ents,
+                          const enum MarkOP op, const Range ents,
                           std::vector<unsigned char> &marker) const {
 
   Interface &m_field = cOre;
@@ -3114,11 +3114,22 @@ ProblemsManager::markDofs(const std::string problem_name, RowColData rc,
     SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
   }
   marker.resize(dofs->size(), 0);
+
   for (auto p = ents.pair_begin(); p != ents.pair_end(); ++p) {
     auto lo = dofs->get<Ent_mi_tag>().lower_bound(p->first);
     auto hi = dofs->get<Ent_mi_tag>().upper_bound(p->second);
-    for (; lo != hi; ++lo)
-      marker[(*lo)->getPetscLocalDofIdx()] = 1;
+
+    switch (op) {
+    case MarkOP::OR:
+      for (; lo != hi; ++lo)
+        marker[(*lo)->getPetscLocalDofIdx()] |= 1;
+      break;
+    case MarkOP::AND:
+      for (; lo != hi; ++lo)
+        marker[(*lo)->getPetscLocalDofIdx()] &= 1;
+      break;
+    }
+       
   }
   MoFEMFunctionReturn(0);
 }

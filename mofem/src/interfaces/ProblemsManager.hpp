@@ -337,8 +337,17 @@ struct ProblemsManager : public UnknownInterface {
    * @return MoFEMErrorCode 
    */
   MoFEMErrorCode markDofs(const std::string problem_name, RowColData rc,
-                                const Range ents,
-                                std::vector<unsigned char> &marker) const;
+                          const enum MarkOP op, const Range ents,
+                          std::vector<unsigned char> &marker) const;
+
+  /**
+   * @deprecated use function with MarkOP
+   */
+  inline DEPRECATED MoFEMErrorCode
+  markDofs(const std::string problem_name, RowColData rc, const Range ents,
+           std::vector<unsigned char> &marker) const {
+    return markDofs(problem_name, rc, MarkOP::OR, ents, marker);
+  }
 
   /**
    * @brief Mark DOFs
