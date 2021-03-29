@@ -410,25 +410,6 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       }
     }
 
-    // Make partitions children of cubit meshsets. That will prevent meshesets
-    // to be deleted when are empty on given partition
-    {
-      Tag part_tag = pcomm->part_tag();
-      Range tagged_sets;
-      CHKERR m_field.get_moab().get_entities_by_type_and_tag(
-          0, MBENTITYSET, &part_tag, NULL, 1, tagged_sets,
-          moab::Interface::UNION);
-      auto meshsets_interface_ptr = m_field.getInterface<MeshsetsManager>();
-      for (auto cit = meshsets_interface_ptr->getBegin();
-           cit != meshsets_interface_ptr->getEnd(); cit++) {
-        MOFEM_LOG("WORLD", Sev::inform) << *cit;
-        auto it_meshset = cit->getMeshset();
-        for (auto s : tagged_sets) {
-          CHKERR m_field.get_moab().add_child_meshset(it_meshset, s);
-        }
-      }
-    }
-
     CHKERR ISRestoreIndices(is_gather, &part_number);
     CHKERR ISRestoreIndices(is_gather_num, &gids);
     CHKERR ISDestroy(&is_num);
