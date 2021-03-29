@@ -4,7 +4,7 @@
  <navindex>
     <tab type="user" visible="yes" url="@ref mainpage" title="" intro=""/>
 
-    <tab type="user" url="@ref news" title="News" intro=""/>
+    <!-- <tab type="user" url="@ref news" title="News" intro=""/> -->
 
     <tab type="user" visible="yes" title="Getting started" url="@ref installation" intro="">
       <tab type="user" url="@ref installation" title="Installation with Spack" intro=""/>
