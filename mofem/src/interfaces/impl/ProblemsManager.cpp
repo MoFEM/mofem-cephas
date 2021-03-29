@@ -1445,7 +1445,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
       } else {
         IS is_dup;
         CHKERR ISDuplicate(is, &is_dup);
-        out_problem_it->getSubData()->colIs = SmartPetscObj<IS>(is_dup,false);
+        out_problem_it->getSubData()->colIs = SmartPetscObj<IS>(is_dup, false);
         out_problem_it->getSubData()->colMap = SmartPetscObj<AO>(ao, true);
       }
       CHKERR AOApplicationToPetscIS(ao, is);
@@ -1596,12 +1596,14 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
         // row
         *nb_dofs[ss] += add_prb_ptr[ss]->back()->getNbDofsRow();
         *nb_local_dofs[ss] += add_prb_ptr[ss]->back()->getNbLocalDofsRow();
-        nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numeredRowDofsPtr->size();
+        nb_dofs_reserve[ss] +=
+            add_prb_ptr[ss]->back()->numeredRowDofsPtr->size();
       } else {
         // column
         *nb_dofs[ss] += add_prb_ptr[ss]->back()->getNbDofsCol();
         *nb_local_dofs[ss] += add_prb_ptr[ss]->back()->getNbLocalDofsCol();
-        nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numeredColDofsPtr->size();
+        nb_dofs_reserve[ss] +=
+            add_prb_ptr[ss]->back()->numeredColDofsPtr->size();
       }
     }
   }
@@ -2030,7 +2032,8 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
       square_matrix = true;
 
     // if (!square_matrix) {
-    //   // FIXME: This is for back compatibility, if deprecate interface function
+    //   // FIXME: This is for back compatibility, if deprecate interface
+    //   function
     //   // build interfaces is removed, this part of the code will be obsolete
     //   auto mit_row = p_miit->numeredRowDofsPtr->get<Idx_mi_tag>().begin();
     //   auto hi_mit_row = p_miit->numeredRowDofsPtr->get<Idx_mi_tag>().end();
@@ -2117,8 +2120,8 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
 
     auto number_dofs = [&](auto &dof_idx, auto &counter) {
       MoFEMFunctionBeginHot;
-      for (auto miit_dofs_row = dof_idx.begin();
-           miit_dofs_row != dof_idx.end(); miit_dofs_row++) {
+      for (auto miit_dofs_row = dof_idx.begin(); miit_dofs_row != dof_idx.end();
+           miit_dofs_row++) {
         const bool success = dof_idx.modify(
             miit_dofs_row,
             NumeredDofEntity_part_and_indices_change(0, counter, counter));
@@ -2133,7 +2136,7 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
 
     auto &dofs_row_by_idx_no_const = const_cast<NumeredDofEntitysByIdx &>(
         p_miit->numeredRowDofsPtr->get<Idx_mi_tag>());
-   int &nb_row_local_dofs = p_miit->nbLocDofsRow;
+    int &nb_row_local_dofs = p_miit->nbLocDofsRow;
     int &nb_row_ghost_dofs = p_miit->nbGhostDofsRow;
     nb_row_local_dofs = 0;
     nb_row_ghost_dofs = 0;
@@ -2668,9 +2671,9 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
       for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
 
         fe_vec_view.clear();
-        CHKERR EntFiniteElement::getDofView(
-            (*fe_ptr)->getColFieldEnts(), *(p_miit->getNumeredColDofsPtr()),
-            fe_vec_view, Inserter());
+        CHKERR EntFiniteElement::getDofView((*fe_ptr)->getColFieldEnts(),
+                                            *(p_miit->getNumeredColDofsPtr()),
+                                            fe_vec_view, Inserter());
 
         for (auto &dof_ptr : fe_vec_view) {
           if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
@@ -2864,8 +2867,8 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
   const Problem *prb_ptr;
   CHKERR m_field.get_problem(problem_name, &prb_ptr);
 
-  decltype(prb_ptr->numeredRowDofsPtr) numered_dofs[2] = {prb_ptr->numeredRowDofsPtr,
-                                                       nullptr};
+  decltype(prb_ptr->numeredRowDofsPtr) numered_dofs[2] = {
+      prb_ptr->numeredRowDofsPtr, nullptr};
   if (prb_ptr->numeredRowDofsPtr != prb_ptr->numeredColDofsPtr)
     numered_dofs[1] = prb_ptr->numeredColDofsPtr;
 
@@ -3095,23 +3098,31 @@ ProblemsManager::markDofs(const std::string problem_name, RowColData rc,
     SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
   }
   marker.resize(dofs->size(), 0);
+  std::vector<unsigned char> marker_tmp;
 
-  for (auto p = ents.pair_begin(); p != ents.pair_end(); ++p) {
-    auto lo = dofs->get<Ent_mi_tag>().lower_bound(p->first);
-    auto hi = dofs->get<Ent_mi_tag>().upper_bound(p->second);
-
-    switch (op) {
-    case MarkOP::OR:
+  switch (op) {
+  case MarkOP::OR:
+    for (auto p = ents.pair_begin(); p != ents.pair_end(); ++p) {
+      auto lo = dofs->get<Ent_mi_tag>().lower_bound(p->first);
+      auto hi = dofs->get<Ent_mi_tag>().upper_bound(p->second);
       for (; lo != hi; ++lo)
         marker[(*lo)->getPetscLocalDofIdx()] |= 1;
-      break;
-    case MarkOP::AND:
-      for (; lo != hi; ++lo)
-        marker[(*lo)->getPetscLocalDofIdx()] &= 1;
-      break;
     }
-       
+    break;
+  case MarkOP::AND:
+    marker_tmp.resize(dofs->size(), 0);
+    for (auto p = ents.pair_begin(); p != ents.pair_end(); ++p) {
+      auto lo = dofs->get<Ent_mi_tag>().lower_bound(p->first);
+      auto hi = dofs->get<Ent_mi_tag>().upper_bound(p->second);
+      for (; lo != hi; ++lo)
+        marker_tmp[(*lo)->getPetscLocalDofIdx()] = 1;
+    }
+    for (int i = 0; i != marker.size(); ++i) {
+      marker[i] &= marker_tmp[i];
+    }
+    break;
   }
+
   MoFEMFunctionReturn(0);
 }
 
