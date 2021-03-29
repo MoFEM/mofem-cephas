@@ -7,7 +7,7 @@
 /**
  * The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
  * It can be freely used for educational and research purposes
- * by other institutions. If you use this softwre pleas cite my work.
+ * by other institutions. If you use this software pleas cite my work.
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -46,14 +46,14 @@ MeshsetsManager::MeshsetsManager(const Core &core)
 
   if (!LogManager::checkIfChannelExist("MeshsetMngWorld")) {
     auto core_log = logging::core::get();
-    
-    core_log->add_sink(LogManager::createSink(LogManager::getStrmWorld(),
-                                              "MeshsetMngWorld"));
-    core_log->add_sink(LogManager::createSink(LogManager::getStrmSync(),
-                                              "MeshsetMngSync"));
-    core_log->add_sink(LogManager::createSink(LogManager::getStrmSelf(),
-                                              "MeshsetMngSelf"));
-    
+
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmWorld(), "MeshsetMngWorld"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSync(), "MeshsetMngSync"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSelf(), "MeshsetMngSelf"));
+
     LogManager::setLog("MeshsetMngWorld");
     LogManager::setLog("MeshsetMngSync");
     LogManager::setLog("MeshsetMngSelf");
@@ -74,32 +74,116 @@ MoFEMErrorCode MeshsetsManager::clearMap() {
 
 MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
   Interface &m_field = cOre;
+  MoFEMFunctionBegin;
+  CHKERR readMeshsets(VERBOSE);
+  CHKERR broadcastMeshsets(VERBOSE);
+
+  for (auto &m : cubitMeshsets) {
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << m;
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode MeshsetsManager::readMeshsets(int verb) {
+  Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
-  MeshsetsManagerFunctionBegin;
+  MoFEMFunctionBegin;
+
   Range meshsets;
   CHKERR moab.get_entities_by_type(0, MBENTITYSET, meshsets, false);
-  for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
+  for (auto m : meshsets) {
     // check if meshset is cubit meshset
-    CubitMeshSets base_meshset(moab, *mit);
-    if ((base_meshset.cubitBcType & CubitBCType(NODESET | SIDESET | BLOCKSET))
-            .any()) {
-      std::pair<CubitMeshSet_multiIndex::iterator, bool> p =
-          cubitMeshsets.insert(base_meshset);
+    CubitMeshSets block(moab, m);
+    if ((block.cubitBcType & CubitBCType(NODESET | SIDESET | BLOCKSET)).any()) {
+      auto p = cubitMeshsets.insert(block);
       if (!p.second)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "meshset not inserted");
 
       if (verb > QUIET) {
-        MOFEM_LOG("MeshsetMngWorld", Sev::inform)
-            << "read cubit " << base_meshset;
-        if (m_field.get_comm_rank() != 0)
-          MOFEM_LOG("MeshsetMngSync", Sev::verbose)
-              << "read cubit " << base_meshset;
+        MOFEM_LOG("MeshsetMngSync", Sev::verbose) << "read " << block;
       }
     }
   }
-  
-  MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+
+  if (verb > QUIET) {
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
+  Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  MoFEMFunctionBegin;
+
+ ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+  if (pcomm == NULL)
+    pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+
+  const double coords[] = {0, 0, 0};
+
+  auto set_tags_dummy_node = [&](const EntityHandle dummy_node,
+                                 const EntityHandle meshset) {
+    MoFEMFunctionBegin;
+    std::vector<Tag> tag_handles;
+    CHKERR moab.tag_get_tags_on_entity(meshset, tag_handles);
+    for (auto th : tag_handles) {
+      void *data[1];
+      int tag_size;
+      CHKERR moab.tag_get_by_ptr(th, &meshset, 1, (const void **)data,
+                                 &tag_size);
+      CHKERR moab.tag_set_by_ptr(th, &dummy_node, 1, data, &tag_size);
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  for (int from_proc = 0; from_proc < pcomm->size(); ++from_proc) {
+
+    Range r_dummy_nodes;
+
+    if (from_proc == pcomm->rank()) {
+      std::vector<EntityHandle> dummy_nodes(cubitMeshsets.size(), 0);
+      int i = 0;
+      for (auto &m : cubitMeshsets) {
+        CHKERR moab.create_vertex(coords, dummy_nodes[i]);
+        CHKERR set_tags_dummy_node(dummy_nodes[i], m.getMeshset());
+        ++i;
+      }
+      r_dummy_nodes.insert_list(dummy_nodes.begin(), dummy_nodes.end());
+    }
+
+    CHKERR pcomm->broadcast_entities(from_proc, r_dummy_nodes, false, true);
+
+    for (auto dummy_node : r_dummy_nodes) {
+      EntityHandle m;
+      CHKERR moab.create_meshset(MESHSET_SET, m);
+      CHKERR set_tags_dummy_node(m, dummy_node);
+
+      CubitMeshSets broadcast_block(moab, m);
+      if ((broadcast_block.cubitBcType &
+           CubitBCType(NODESET | SIDESET | BLOCKSET))
+              .any()) {
+        auto p = cubitMeshsets.insert(broadcast_block);
+        if (!p.second) {
+          CHKERR moab.delete_entities(&m, 1);
+        } else {
+          if (verb > QUIET) {
+            MOFEM_LOG("MeshsetMngSync", Sev::verbose)
+                << "broadcast " << broadcast_block;
+          }
+        }
+      }
+    }
+
+    CHKERR moab.delete_entities(r_dummy_nodes);
+  }
+
+  if (verb > QUIET) {
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -596,7 +680,7 @@ struct BlockData {
 MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
                                                    bool clean_file_options) {
   Interface &m_field = cOre;
-  MeshsetsManagerFunctionBegin;
+  MoFEMFunctionBegin;
   std::ifstream ini_file(file_name.c_str(), std::ifstream::in);
   po::variables_map vm;
   if (clean_file_options) {
@@ -956,7 +1040,7 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
       add_block_attributes(prefix, block_set_attributes, it);
     }
   }
-  
+
   po::parsed_options parsed =
       parse_config_file(ini_file, *configFileOptionsPtr, true);
   store(parsed, vm);
