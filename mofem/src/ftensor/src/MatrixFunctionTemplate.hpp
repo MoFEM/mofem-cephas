@@ -18,10 +18,9 @@
  \code
  auto  t_A = EigenMatrixImp<double, double, 3, 3>::getMat(t_L, t_N, f);
  \endcode
- where <3> means that are three unique eigen values. Return t_A is symmetric
- tensor rank two.
+ Return t_A is symmetric tensor rank two.
 
- Calculate directive
+ Calculate derivarive
  \code
  auto t_P = EigenMatrixImp<double, double, 3, 3>::getDiffMat(t_L, t_N, f, d_f);
  \endcode
