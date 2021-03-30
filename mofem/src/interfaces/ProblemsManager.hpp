@@ -221,6 +221,13 @@ struct ProblemsManager : public UnknownInterface {
    * In addition it sets information about local row and cols dofs at given
    * element on partition.
    *
+   * @param name 
+   * @param part_from_moab 
+   * @param low_proc 
+   * @param hi_proc 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   *
    * \param name problem name
    */
   MoFEMErrorCode partitionFiniteElements(const std::string name,
@@ -321,6 +328,17 @@ struct ProblemsManager : public UnknownInterface {
                                       const int hi_coeff = MAX_DOFS_ON_ENTITY,
                                       int verb = VERBOSE,
                                       const bool debug = false);
+
+  /**
+   * @copydoc removeDofsOnEntities
+   *
+   * \note Use this function for nondistributed meshes
+   */
+  MoFEMErrorCode removeDofsOnEntitiesNotDistributed(
+      const std::string problem_name, const std::string field_name,
+      const Range ents, const int lo_coeff = 0,
+      const int hi_coeff = MAX_DOFS_ON_ENTITY, int verb = VERBOSE,
+      const bool debug = false);
 
   enum MarkOP { OR, AND };
 
