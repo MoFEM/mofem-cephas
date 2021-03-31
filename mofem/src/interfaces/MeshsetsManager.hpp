@@ -19,14 +19,6 @@
 #ifndef __MESHSETSMANAGER_HPP__
 #define __MESHSETSMANAGER_HPP__
 
-#define MeshsetsManagerFunctionBegin                                           \
-  MoFEMFunctionBegin;                                                          \
-  MOFEM_LOG_CHANNEL("WORLD");                                                  \
-  MOFEM_LOG_CHANNEL("SYNC");                                                   \
-  MOFEM_LOG_FUNCTION();                                                        \
-  MOFEM_LOG_TAG("WORLD", "MeshsetsManager");                                   \
-  MOFEM_LOG_TAG("SYNC", "MeshsetsManager");
-
 namespace MoFEM {
 
 using Sev = MoFEM::LogManager::SeverityLevel;
@@ -196,7 +188,23 @@ struct MeshsetsManager : public UnknownInterface {
    * \brier initialize container form data on mesh
    * @return [description]
    */
-  MoFEMErrorCode initialiseDatabaseFromMesh(int verb = 0);
+  MoFEMErrorCode initialiseDatabaseFromMesh(int verb = DEFAULT_VERBOSITY);
+
+  /**
+   * @brief Boradcats meshsets
+   * 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode readMeshsets(int verb = DEFAULT_VERBOSITY);
+
+  /**
+   * @brief Boradcats meshsets
+   * 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   */
+  MoFEMErrorCode broadcastMeshsets(int verb = DEFAULT_VERBOSITY);
 
   template <class CUBIT_BC_DATA_TYPE>
   MoFEMErrorCode printBcSet(CUBIT_BC_DATA_TYPE &data,
@@ -804,13 +812,13 @@ protected:
 template <class CUBIT_BC_DATA_TYPE>
 MoFEMErrorCode MeshsetsManager::printBcSet(CUBIT_BC_DATA_TYPE &data,
                                            unsigned long int type) const {
-  MeshsetsManagerFunctionBegin;
+  MoFEMFunctionBegin;
   const MoFEM::Interface &m_field = cOre;
   const moab::Interface &moab = m_field.get_moab();
   for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_((*this), type, it)) {
     CHKERR it->getBcDataStructure(data);
-    MOFEM_LOG("WORLD", Sev::inform) << *it;
-    MOFEM_LOG("WORLD", Sev::inform) << data;
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << *it;
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << data;
     int tets, tris, edges, nodes, prisms, quads;
     CHKERR moab.get_number_entities_by_type(it->meshset, MBTET, tets, true);
     CHKERR moab.get_number_entities_by_type(it->meshset, MBTRI, tris, true);
@@ -818,18 +826,18 @@ MoFEMErrorCode MeshsetsManager::printBcSet(CUBIT_BC_DATA_TYPE &data,
     CHKERR moab.get_number_entities_by_type(it->meshset, MBVERTEX, nodes, true);
     CHKERR moab.get_number_entities_by_type(it->meshset, MBPRISM, prisms, true);
     CHKERR moab.get_number_entities_by_type(it->meshset, MBQUAD, quads, true);
-    MOFEM_LOG("WORLD", Sev::inform) << "name " << it->getName();
-    MOFEM_LOG("WORLD", Sev::inform)
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform) << "name " << it->getName();
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
         << "msId " << it->getMeshsetId() << " nb. tets " << tets;
-    MOFEM_LOG("WORLD", Sev::inform)
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
         << "msId " << it->getMeshsetId() << " nb. prisms " << prisms;
-    MOFEM_LOG("WORLD", Sev::inform)
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
         << "msId " << it->getMeshsetId() << " nb. quads " << quads;
-    MOFEM_LOG("WORLD", Sev::inform)
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
         << "msId " << it->getMeshsetId() << " nb. tris " << tris;
-    MOFEM_LOG("WORLD", Sev::inform)
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
         << "msId " << it->getMeshsetId() << " nb. edges " << edges;
-    MOFEM_LOG("WORLD", Sev::inform)
+    MOFEM_LOG("MeshsetMngWorld", Sev::inform)
         << "msId " << it->getMeshsetId() << " nb. nodes " << nodes;
   }
   MoFEMFunctionReturn(0);

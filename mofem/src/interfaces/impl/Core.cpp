@@ -271,6 +271,7 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
     CHKERR get_moab().tag_get_data(th_FieldId, &mit, 1, &field_id);
     // Check if meshset if field meshset
     if (field_id != 0) {
+
       auto p = fIelds.insert(boost::make_shared<Field>(moab, mit));
 
       if (verb > QUIET)
@@ -473,6 +474,7 @@ MoFEMErrorCode Core::clearMap() {
   // Cleaning databases in interfaces
   CHKERR getInterface<SeriesRecorder>()->clearMap();
   CHKERR getInterface<MeshsetsManager>()->clearMap();
+  CHKERR getInterface<CutMeshInterface>()->clearMap();
   // Cleaning databases
   refinedEntities.clear();
   refinedFiniteElements.clear();

@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
       auto problem_manager = m_field.getInterface<ProblemsManager>();
       std::vector<unsigned char> marker;
       problem_manager->markDofs(simple_interface->getProblemName(), ROW,
-                                skin_edges, marker);
+                                ProblemsManager::OR, skin_edges, marker);
       // Unset coefficient 1, e.g. u_y
       problem_manager->modifyMarkDofs(simple_interface->getProblemName(), ROW,
                                       "FIELD1", 1, 1, ProblemsManager::AND, 0,
