@@ -1762,3 +1762,39 @@ u {
 	text-decoration: underline;
 }
 
+
+.wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+
+.main,
+.sidebar {
+  border: 3px solid rgb(255, 255, 255);
+  padding: 15px;
+  background-color: #fff;
+}
+
+.main {
+  width: 75%;
+  height: 100vh;
+  flex-direction: column;
+  max-width: 800px;
+}
+
+.sidebar {
+  width: 25%;
+  height: 50%;
+}
+
+/* body {
+  background-color: #ccc;
+  font-family: sans-serif;
+  padding: 10px;
+} */
+
+.sidebar {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+}
