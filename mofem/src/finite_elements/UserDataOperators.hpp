@@ -445,7 +445,6 @@ MoFEMErrorCode OpCalculateDivergenceVectorFieldValues_General<
 
     if (nb_gauss_pts) {
       const size_t nb_base_functions = data.getN().size2();
-      auto base_function = data.getFTensor0N();
       auto values_at_gauss_pts = getFTensor0FromVec(vec);
       FTensor::Index<'I', Tensor_Dim> I;
       const size_t size = nb_dofs / Tensor_Dim;
@@ -453,14 +452,13 @@ MoFEMErrorCode OpCalculateDivergenceVectorFieldValues_General<
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "Data inconsistency");
       }
+      auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
       for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
         auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
-        auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
         size_t bb = 0;
         for (; bb != size; ++bb) {
           values_at_gauss_pts += field_data(I) * diff_base_function(I);
           ++field_data;
-          ++base_function;
         }
         // Number of dofs can be smaller than number of Tensor_Dim x base
         // functions
