@@ -459,6 +459,7 @@ MoFEMErrorCode OpCalculateDivergenceVectorFieldValues_General<
         for (; bb != size; ++bb) {
           values_at_gauss_pts += field_data(I) * diff_base_function(I);
           ++field_data;
+          ++diff_base_function;
         }
         // Number of dofs can be smaller than number of Tensor_Dim x base
         // functions
