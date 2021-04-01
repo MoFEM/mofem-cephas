@@ -1300,6 +1300,26 @@ add_test(remove_entities_from_problem
   -log_no_color 
 )
 
+my_add_executable(remove_entities_from_problem_not_partitioned 
+  remove_entities_from_problem_not_partitioned.cpp
+)
+target_link_libraries(remove_entities_from_problem_not_partitioned
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(remove_entities_from_problem_not_partitioned
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${CMAKE_CURRENT_BINARY_DIR}/remove_entities_from_problem_not_partitioned 
+  -my_file disp01_2parts.h5m 
+  -log_no_color 
+)
+
 # teting build mesh on partinoned (not distributed) mesh and composite problems
 #test for build problems
 my_add_executable(build_composite_problem build_composite_problem.cpp)
