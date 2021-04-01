@@ -258,7 +258,7 @@ CHKERR fun();
 
 - Memory allocation
 
-  - USE VALGRIND. Valgring is a powerful tool to find execution errors, use it
+  - USE VALGRIND. Valgrind is a powerful tool to find execution errors, use it
     if your code behaves differently on two different computers, or you get
     segmentation fault, ect. Valgrind can be used as follows
 \code
