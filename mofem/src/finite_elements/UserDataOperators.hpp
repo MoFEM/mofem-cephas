@@ -2524,7 +2524,7 @@ using OpSetContravariantPiolaTransformFace =
 using OpSetContravariantPiolaTransformFaceEmbeddedIn3DSpace =
     OpSetContravariantPiolaTransformFaceImpl<3>;
 
-/**@*/
+/**@}*/
 
 /** \name Operators for edges */
 
