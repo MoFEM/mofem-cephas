@@ -113,7 +113,7 @@ struct Tools : public UnknownInterface {
    */
   template <int LDB = 1>
   static MoFEMErrorCode shapeFunMBTRI(double *shape, const double *ksi,
-                                      const double *eta, const double nb);
+                                      const double *eta, const int nb);
 
   static constexpr double diffShapeFunMBQUADAtCenter0x =
       diffN_MBQUAD0x(0.5); ///< derivative of quad shape function
@@ -465,7 +465,7 @@ double Tools::shapeFunMBTRI2(const double x, const double y) {
 
 template <int LDB>
 MoFEMErrorCode Tools::shapeFunMBTRI(double *shape, const double *ksi,
-                                    const double *eta, const double nb) {
+                                    const double *eta, const int nb) {
   MoFEMFunctionBeginHot;
   for (int n = 0; n != nb; ++n) {
     shape[0] = shapeFunMBTRI0(*ksi, *eta);
