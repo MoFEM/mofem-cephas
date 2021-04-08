@@ -1,43 +1,43 @@
 /*! \page coding_practice Coding practice
 \brief Naming conventions and coding policies and principles in MoFEM.
 
-\section mofam_and_user_modules MoFEM and User Modules
+\section mofem_and_user_modules MoFEM and User Modules
 
-All new finite elements or modification or finite elements are implemented in
-users modules (UM). In future it will be always single version of MoFEM library but
-many UM forks. UM are developed independently from MoFEM library
+All new finite elements or modifications or finite elements are implemented in
+users modules (UM). In the future it will be always a single version of MoFEM library but
+many UM forks. UMs are developed independently from MoFEM library
 repository. How to add user modules see \ref adding_user_module
 
 \section Making Repository Commits
 
 As a general rule, developers should update frequently, and commit changes
-often. However, the repository should always remain in a state where the code
-can be compiled. Most of the time, the code should also successfully execute
+often. However, the repository should always remain in a state which allows the code
+to be compiled. Most of the time, the code should also successfully execute
 "ctest" run from the top-level directory. If you commit code that violates this
-principal, it should be your first priority to return the repository code to a
-compilable state and next to make sure that all tests (ctest) runs without
+principle, it should be your first priority to return the repository code to a
+compilable state and next to make sure that all tests (ctest) run without
 errors.
 
 Intermediate development stages should be committed by pull-request to
-develop branch. The committed code has to compile, and committer should
+develop branch. The committed code has to compile, and the committer should
 verify if tests are running successfully.
 
-Finished portion of work should be committed by pull-request to CDashTesting
+The finished portion of work should be committed by pull-request to CDashTesting
 branch. Commits to the CDashTesting branch should also come with a
-non-trivial, useful, non-verbose log message. It is required that before pull
-request user merge current CDashTesting branch and verify if all tests run
+non-trivial, useful, non-verbose log message. It is required that before the pull
+request user merges the current CDashTesting branch and verify if all tests run
 without fails. If pull request is accepted it is user responsibility to
 verify results on CDash server <http://cdash.eng.gla.ac.uk/cdash/>. The first
 priority will be to eliminate compilation errors, completion warnings, failed
-tests and memory leaks.
+tests, and memory leaks.
 
 Some guidance about branches:
 - Make often updates (git pull)
-- Do not commits to other people branch. You can commit only to branches created by yourself.
-- If you like to commit to other (not own created) branch you have to do pull request.
-- Before marking pull request, pull from branch to which you like to commit.
+- Do not commit to other people's branch. You can commit only to branches created by yourself.
+- If you like to commit to other (not own created) branch you have to do a pull request.
+- Before marking a pull request, pull from the branch to which you like to commit.
 - Pull regularly form CDashTesting branch.
-- If you working on two different tasks make two different branches. This simplifies code revision.
+- If you are working on two different tasks make two different branches. This simplifies code revision.
 - We have use three major branches, i.e. \e major  branch, \e CDashTesting branch and \e develop  branch.
 - User branches should have name as follows \e john/branch_name, for example \e lukas/work_on_new_aprox_base. 
 
@@ -67,7 +67,7 @@ if (...) {
 ...
 }
 \endcode
-Can you follow this ? This is much better 
+Can you follow this? This is much better 
 \code
 if (...) {
   if (...) {
@@ -102,7 +102,7 @@ if (...) {
 \code 
   std::vector<PetscLocalDofIdx> on_boundary;
 \endcode
-  In above one can see that you will be going to have local indices, and the
+  In the above one can see that you will be going to have local indices, and the
   vector will store indices on indices on boundary only. 
 
   An alternative to the example above you can see less informative, but
@@ -177,7 +177,7 @@ void f() {
 }
 \endcode
 
-  - All FTensor variables should be name as follows
+  - All FTensor variables should be named as follows
 \code
 class A {
   FTensor::Tensor1<double,3> tForce; ///< class member variable
@@ -202,8 +202,8 @@ mofem/src/interfaces/Interface.hpp:1300:107: warning: 'MoFEMErrorCode MoFEM::Int
 
   - Constants and Macros
     - Don't use a pre-processor macro where a const variable or an inline or
-      template function will suffice. There is absolutely benefit to the former
-      over the later with modern compilers. Further, using macros bypasses
+      template function will suffice. There is absolutely beneficial to the former
+      over the later with modern compilers. Furthermore, using macros bypasses
       type checking that the compiler would otherwise do for you and if used in
       headers, introduce names into the global rather than MoFEM namespace.
 
@@ -258,8 +258,8 @@ CHKERR fun();
 
 - Memory allocation
 
-  - USE VALGRIND. Valging is powerful tool to find execution errors, use it
-    if your code behave differently on two different computers, or you get
+  - USE VALGRIND. Valgrind is a powerful tool to find execution errors, use it
+    if your code behaves differently on two different computers, or you get
     segmentation fault, ect. Valgrind can be used as follows
 \code
   valgrind --track-origins=yes ./program_name -my_file mesh.cub
@@ -308,10 +308,10 @@ Star Forest Bipartite Graph     5              5         4136     0
 \endcode
 
 - Make member functions of class constant always when possible. Try to code that
-  you can create such class members. Constant member function does not a changea
-  state of the class. So it does not influence results or actions of another
+  you can create such class members. Constant member function does not change the
+  state of the class. So it does not influence the results or actions of another
   member of that class. That simplifies searching for the bug, testing and
-  overall limits likelihood of the error. Example of constant class member
+  overall limits the likelihood of the error. Example of constant class member
 \code
 struct {
   MoFEMErrorCode someFunction(const int some_argument,const double &some_return_value) const {
