@@ -20,6 +20,31 @@
 
 namespace MoFEM {
 
+FieldEvaluatorInterface::FieldEvaluatorInterface(const MoFEM::Core &core)
+    : cOre(const_cast<MoFEM::Core &>(core)) {
+
+  if (!LogManager::checkIfChannelExist("FieldEvaluatorWorld")) {
+    auto core_log = logging::core::get();
+
+    core_log->add_sink(LogManager::createSink(LogManager::getStrmWorld(),
+                                              "FieldEvaluatorWorld"));
+    core_log->add_sink(LogManager::createSink(LogManager::getStrmSync(),
+                                              "FieldEvaluatorSync"));
+    core_log->add_sink(LogManager::createSink(LogManager::getStrmSelf(),
+                                              "FieldEvaluatorSelf"));
+
+    LogManager::setLog("FieldEvaluatorWorld");
+    LogManager::setLog("FieldEvaluatorSync");
+    LogManager::setLog("FieldEvaluatorSelf");
+
+    MOFEM_LOG_TAG("FieldEvaluatorWorld", "FieldEvaluator");
+    MOFEM_LOG_TAG("FieldEvaluatorSync", "FieldEvaluator");
+    MOFEM_LOG_TAG("FieldEvaluatorSelf", "FieldEvaluator");
+  }
+
+  MOFEM_LOG("FieldEvaluatorWorld", Sev::noisy) << "Field evaluator intreface";
+}
+
 MoFEMErrorCode
 FieldEvaluatorInterface::query_interface(const MOFEMuuid &uuid,
                                          UnknownInterface **iface) const {
@@ -113,7 +138,8 @@ operator()(int order_row, int order_col, int order_data) {
 MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
     const double *const point, const double distance, const std::string problem,
     const std::string finite_element, boost::shared_ptr<SetPtsData> data_ptr,
-    int lower_rank, int upper_rank, MoFEMTypes bh, VERBOSITY_LEVELS verb) {
+    int lower_rank, int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
+    MoFEMTypes bh, VERBOSITY_LEVELS verb) {
   CoreInterface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -198,16 +224,21 @@ MoFEMErrorCode FieldEvaluatorInterface::evalFEAtThePoint3D(
     std::cout << std::endl;
 
   if (auto fe_ptr = data_ptr->feMethodPtr.lock()) {
-    
-    if(verb >= VERBOSE) {
-      CHKERR PetscSynchronizedPrintf(
-          m_field.get_comm(), "Number elements %d to evaluate at proc %d\n",
-          numered_fes->size(), m_field.get_comm_rank());
-      PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);
+
+    MOFEM_LOG_C("FieldEvaluatorSync", Sev::verbose,
+                "Number elements %d to evaluate at proc %d",
+                numered_fes->size(), m_field.get_comm_rank());
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+
+    if(!cache_ptr) {
+      cache_ptr = boost::make_shared<CacheTuple>();
+      CHKERR m_field.cache_problem_entities(prb_ptr->getName(), cache_ptr);
+
+      MOFEM_LOG("FieldEvaluatorSync", Sev::noisy)
+          << "If you call that function many times in the loop consider to set "
+             "cache_ptr outside of the loop. Otherwise code can be slow.";
     }
 
-    auto cache_ptr = boost::make_shared<CacheTuple>();
-    CHKERR m_field.cache_problem_entities(prb_ptr->getName(), cache_ptr);
     CHKERR m_field.loop_finite_elements(prb_ptr, finite_element, *fe_ptr,
                                         lower_rank, upper_rank, numered_fes, bh,
                                         cache_ptr, verb);
