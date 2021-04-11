@@ -122,7 +122,7 @@ The installing of gfortran through homebrew is another way of solvingr this.
 
 Make `mofem_install` director
 ~~~~~~
-mdkir -p $HOME/mofem_install
+mkdir -p $HOME/mofem_install
 cd $HOME/mofem_install
 ~~~~~~
 
@@ -246,7 +246,7 @@ visible from any directory, add its `bin` directory to your `PATH`, e.g.:
 
 ~~~~~~
 export PATH=$PWD/um_view/bin:$PATH 
-~~~~~~ 
+~~~~~~  
 
 Consider also adding this command to your `.bash_profile` or `.bashrc`, or `.zshrc`, e.g.: 
 ~~~~~~ 
