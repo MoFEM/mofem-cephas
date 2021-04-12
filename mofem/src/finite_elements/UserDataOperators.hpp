@@ -2556,7 +2556,7 @@ struct OpSetInvJacL2ForFaceEmbeddedIn3DSpace
 };
 
 /**
- * \brief brief Transform local reference derivatives of shape function to
+ * \brief Transform local reference derivatives of shape function to
  global derivatives for face
 
  * \ingroup mofem_forces_and_sources_tri_element
