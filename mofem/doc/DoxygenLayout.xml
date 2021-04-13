@@ -17,7 +17,6 @@
     </tab>
     
     <tab type="user" visible="yes" title="Developer" url="@ref general_data_structure" intro="">
-      <tab type="user" url="@ref authors" title="Authors" intro=""/>
       <tab type="user" url="@ref general_data_structure" title="Basic design" intro=""/>
       <tab type="user" url="@ref tutorials" title="Tutorials"/>
       <tab type="user" url="@ref other_tutorials" title="Other tutorials"/>
@@ -25,6 +24,7 @@
       <tab type="user" url="@ref a_guide_to_writing_documentation" title="Writing documentation" intro=""/>
       <tab type="user" url="@ref coding_practice" title="Coding practice" intro=""/>
     </tab>
+
 
     <tab type="user" visible="yes" title="Source Code" url="@ref tutorials" intro="">
       <tab type="files" visible="yes" title="Source files" intro=""/>
@@ -39,7 +39,15 @@
     <tab type="user" url="https://groups.google.com/forum/#!categories/mofem-group" title="Q&amp;A"/>
     <tab type="user" url="https://bitbucket.org/likask/mofem-cephas" title="Repository"/>
     <tab type="user" url="https://zenodo.org/communities/mofem/" title="Library"/>
-    <tab type="user" title="About"url="@ref about_us" intro=""/>
+
+    <tab type="user" visible="yes" title="About" url="@ref about_us" intro="">
+      <tab type="user" url="@ref authors" title="Authors" intro=""/>
+      <tab type="user" url="@ref contact" title="Contact" intro=""/>
+      <tab type="user" url="@ref mofem_openhub" title="Stats" intro=""/>
+      <tab type="user" url="@ref thrid_party" title="Third party libraries" intro=""/>
+      <tab type="user" url="@ref Acknowledgments" title="Acknowledgments" intro=""/>
+      <tab type="user" url="@ref legal_stuff" title="Legal stuff" intro=""/>
+    </tab>
 
     <tab type="namespaces" visible="no" title="">
       <tab type="namespacelist" visible="yes" title="" intro=""/>
