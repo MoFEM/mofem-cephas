@@ -47,6 +47,16 @@ struct OpCalculateScalarFieldValues_General
       THROW_MESSAGE("Pointer is not set");
   }
 
+  OpCalculateScalarFieldValues_General(
+      const std::string field_name,
+      boost::shared_ptr<ublas::vector<T, A>> data_ptr,
+      SmartPetscObj<Vec> data_vec, const EntityType zero_type = MBVERTEX)
+      : ForcesAndSourcesCore::UserDataOperator(field_name, OPROW),
+        dataPtr(data_ptr), zeroType(zero_type), dataVec(data_vec) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
   /**
    * \brief calculate values of scalar field at integration points
    * @param  side side entity number
@@ -60,6 +70,8 @@ struct OpCalculateScalarFieldValues_General
 protected:
   boost::shared_ptr<ublas::vector<T, A>> dataPtr;
   const EntityHandle zeroType;
+  SmartPetscObj<Vec> dataVec;
+  VectorDouble dotVector;
 };
 
 /**
@@ -103,8 +115,25 @@ struct OpCalculateScalarFieldValues
       vec.resize(nb_gauss_pts, false);
       vec.clear();
     }
+
     const size_t nb_dofs = data.getFieldData().size();
+
     if (nb_dofs) {
+
+      if (dataVec.use_count()) {
+        dotVector.resize(nb_dofs, false);
+        const double *array;
+        CHKERR VecGetArrayRead(dataVec, &array);
+        const auto &local_indices = data.getLocalIndices();
+        for (int i = 0; i != local_indices.size(); ++i)
+          if (local_indices[i] != -1)
+            dotVector[i] = array[local_indices[i]];
+          else
+            dotVector[i] = 0;
+        CHKERR VecRestoreArrayRead(dataVec, &array);
+        data.getFieldData().swap(dotVector);
+      }
+
       const size_t nb_base_functions = data.getN().size2();
       auto base_function = data.getFTensor0N();
       auto values_at_gauss_pts = getFTensor0FromVec(vec);
@@ -121,7 +150,12 @@ struct OpCalculateScalarFieldValues
           ++base_function;
         ++values_at_gauss_pts;
       }
+
+      if (dataVec.use_count()) {
+        data.getFieldData().swap(dotVector);
+      }
     }
+
     MoFEMFunctionReturn(0);
   }
 };
@@ -343,6 +377,150 @@ struct OpCalculateVectorFieldValues
       DoubleAllocator>::OpCalculateVectorFieldValues_General;
 };
 
+
+/**@}*/
+
+/** \name Vector field values at integration points */
+
+/**@{*/
+
+/** \brief Calculate divergence of vector field values for tenor field rank 1, i.e. vector field
+ *
+ */
+template <int Tensor_Dim, class T, class L, class A>
+struct OpCalculateDivergenceVectorFieldValues_General
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateDivergenceVectorFieldValues_General(
+      const std::string field_name,
+      boost::shared_ptr<ublas::matrix<T, L, A>> data_ptr,
+      const EntityType zero_type = MBVERTEX)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  /**
+   * \brief calculate divergence values of vector field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+protected:
+  boost::shared_ptr<ublas::matrix<T, L, A>> dataPtr;
+  const EntityHandle zeroType;
+};
+
+template <int Tensor_Dim, class T, class L, class A>
+MoFEMErrorCode
+OpCalculateDivergenceVectorFieldValues_General<Tensor_Dim, T, L, A>::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBeginHot;
+  SETERRQ2(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+           "Not implemented for T = %s and dim = %d",
+           typeid(T).name(), // boost::core::demangle(typeid(T).name()),
+           Tensor_Dim);
+  MoFEMFunctionReturnHot(0);
+}
+
+/** \brief Calculate field values (template specialization) for tensor field
+ * rank 1, i.e. vector field
+ *
+ */
+template <int Tensor_Dim>
+struct OpCalculateDivergenceVectorFieldValues_General<Tensor_Dim, double,
+                                            ublas::row_major, DoubleAllocator>
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateDivergenceVectorFieldValues_General(const std::string field_name,
+                                       boost::shared_ptr<VectorDouble> data_ptr,
+                                       const EntityType zero_type = MBVERTEX)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+protected:
+  boost::shared_ptr<VectorDouble> dataPtr;
+  const EntityHandle zeroType;
+};
+
+/**
+ * \brief Member function specialization calculating values for tenor field rank
+ *
+ */
+template <int Tensor_Dim>
+MoFEMErrorCode OpCalculateDivergenceVectorFieldValues_General<
+    Tensor_Dim, double, ublas::row_major,
+    DoubleAllocator>::doWork(int side, EntityType type,
+                             DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  const size_t nb_gauss_pts = getGaussPts().size2();
+  auto &vec = *dataPtr;
+  if (type == zeroType) {
+    vec.resize(nb_gauss_pts, false);
+    vec.clear();
+  }
+
+  const size_t nb_dofs = data.getFieldData().size();
+  if (nb_dofs) {
+
+    if (nb_gauss_pts) {
+      const size_t nb_base_functions = data.getN().size2();
+      auto values_at_gauss_pts = getFTensor0FromVec(vec);
+      FTensor::Index<'I', Tensor_Dim> I;
+      const size_t size = nb_dofs / Tensor_Dim;
+      if (nb_dofs % Tensor_Dim) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency");
+      }
+      auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
+      for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+        auto field_data = data.getFTensor1FieldData<Tensor_Dim>();
+        size_t bb = 0;
+        for (; bb != size; ++bb) {
+          values_at_gauss_pts += field_data(I) * diff_base_function(I);
+          ++field_data;
+          ++diff_base_function;
+        }
+        // Number of dofs can be smaller than number of Tensor_Dim x base
+        // functions
+        for (; bb != nb_base_functions; ++bb)
+          ++diff_base_function;
+        ++values_at_gauss_pts;
+      }
+    }
+  }
+  MoFEMFunctionReturn(0);
+}
+
+/** \brief Get values at integration pts for tensor filed rank 1, i.e. vector
+ * field
+ *
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template <int Tensor_Dim>
+struct OpCalculateDivergenceVectorFieldValues
+    : public OpCalculateDivergenceVectorFieldValues_General<
+          Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
+
+  using OpCalculateDivergenceVectorFieldValues_General<
+      Tensor_Dim, double, ublas::row_major,
+      DoubleAllocator>::OpCalculateDivergenceVectorFieldValues_General;
+};
+
 /** \brief Approximate field valuse for given petsc vector
  *
  * \note Look at PetscData to see what vectors could be extarcted with that user
@@ -536,11 +714,23 @@ struct OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
   OpCalculateTensor2FieldValues_General(
       const std::string field_name,
       boost::shared_ptr<
-          ublas::matrix<double, ublas::row_major, DoubleAllocator>> &data_ptr,
+          ublas::matrix<double, ublas::row_major, DoubleAllocator>> data_ptr,
       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
+  OpCalculateTensor2FieldValues_General(
+      const std::string field_name,
+      boost::shared_ptr<
+          ublas::matrix<double, ublas::row_major, DoubleAllocator>> data_ptr,
+      SmartPetscObj<Vec> data_vec, const EntityType zero_type = MBVERTEX)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type), dataVec(data_vec) {
     if (!dataPtr)
       THROW_MESSAGE("Pointer is not set");
   }
@@ -552,6 +742,8 @@ protected:
   boost::shared_ptr<ublas::matrix<double, ublas::row_major, DoubleAllocator>>
       dataPtr;
   const EntityHandle zeroType;
+  SmartPetscObj<Vec> dataVec;
+  VectorDouble dotVector;
 };
 
 template <int Tensor_Dim0, int Tensor_Dim1>
@@ -569,6 +761,21 @@ MoFEMErrorCode OpCalculateTensor2FieldValues_General<
   }
 
   const size_t nb_dofs = data.getFieldData().size();
+
+  if (dataVec.use_count()) {
+    dotVector.resize(nb_dofs, false);
+    const double *array;
+    CHKERR VecGetArrayRead(dataVec, &array);
+    const auto &local_indices = data.getLocalIndices();
+    for (int i = 0; i != local_indices.size(); ++i)
+      if (local_indices[i] != -1)
+        dotVector[i] = array[local_indices[i]];
+      else
+        dotVector[i] = 0;
+    CHKERR VecRestoreArrayRead(dataVec, &array);
+    data.getFieldData().swap(dotVector);
+  }
+
   if (nb_dofs) {
     const size_t nb_base_functions = data.getN().size2();
     auto base_function = data.getFTensor0N();
@@ -589,6 +796,10 @@ MoFEMErrorCode OpCalculateTensor2FieldValues_General<
         ++base_function;
       ++values_at_gauss_pts;
     }
+
+    if (dataVec.use_count()) {
+      data.getFieldData().swap(dotVector);
+    }
   }
   MoFEMFunctionReturn(0);
 }
@@ -603,13 +814,10 @@ struct OpCalculateTensor2FieldValues
     : public OpCalculateTensor2FieldValues_General<
           Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
 
-  OpCalculateTensor2FieldValues(const std::string field_name,
-                                boost::shared_ptr<MatrixDouble> data_ptr,
-                                const EntityType zero_type = MBVERTEX)
-      : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
-                                              ublas::row_major,
-                                              DoubleAllocator>(
-            field_name, data_ptr, zero_type) {}
+  using OpCalculateTensor2FieldValues_General<
+      Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
+      DoubleAllocator>::OpCalculateTensor2FieldValues_General;
+
 };
 
 /** \brief Get time direvarive values at integration pts for tensor filed rank
@@ -720,6 +928,18 @@ struct OpCalculateTensor2SymmetricFieldValues
       THROW_MESSAGE("Pointer is not set");
   }
 
+  OpCalculateTensor2SymmetricFieldValues(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+      SmartPetscObj<Vec> data_vec, const EntityType zero_type = MBEDGE,
+      const int zero_side = 0)
+      : ForcesAndSourcesCore::UserDataOperator(
+            field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
+        dataPtr(data_ptr), zeroType(zero_type), zeroSide(zero_side),
+        dataVec(data_vec) {
+    if (!dataPtr)
+      THROW_MESSAGE("Pointer is not set");
+  }
+
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
@@ -732,6 +952,20 @@ struct OpCalculateTensor2SymmetricFieldValues
     const int nb_dofs = data.getFieldData().size();
     if (!nb_dofs)
       MoFEMFunctionReturnHot(0);
+
+    if (dataVec.use_count()) {
+      dotVector.resize(nb_dofs, false);
+      const double *array;
+      CHKERR VecGetArrayRead(dataVec, &array);
+      const auto &local_indices = data.getLocalIndices();
+      for (int i = 0; i != local_indices.size(); ++i)
+        if (local_indices[i] != -1)
+          dotVector[i] = array[local_indices[i]];
+        else
+          dotVector[i] = 0;
+      CHKERR VecRestoreArrayRead(dataVec, &array);
+      data.getFieldData().swap(dotVector);
+    }
 
     const int nb_base_functions = data.getN().size2();
     auto base_function = data.getFTensor0N();
@@ -752,6 +986,10 @@ struct OpCalculateTensor2SymmetricFieldValues
       ++values_at_gauss_pts;
     }
 
+    if (dataVec.use_count()) {
+      data.getFieldData().swap(dotVector);
+    }
+
     MoFEMFunctionReturn(0);
   }
 
@@ -759,6 +997,8 @@ protected:
   boost::shared_ptr<MatrixDouble> dataPtr;
   const EntityHandle zeroType;
   const int zeroSide;
+  SmartPetscObj<Vec> dataVec;
+  VectorDouble dotVector;
 };
 
 /**
@@ -987,12 +1227,9 @@ struct OpCalculateVectorFieldGradient_General
     : public OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, T,
                                                    L, A> {
 
-  OpCalculateVectorFieldGradient_General(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
-      const EntityType zero_type = MBVERTEX)
-      : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, T, L,
-                                              A>(field_name, data_ptr,
-                                                 zero_type) {}
+  using OpCalculateTensor2FieldValues_General<
+      Tensor_Dim0, Tensor_Dim1, T, L, A>::OpCalculateTensor2FieldValues_General;
+
 };
 
 template <int Tensor_Dim0, int Tensor_Dim1>
@@ -1001,13 +1238,9 @@ struct OpCalculateVectorFieldGradient_General<Tensor_Dim0, Tensor_Dim1, double,
     : public OpCalculateTensor2FieldValues_General<
           Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
 
-  OpCalculateVectorFieldGradient_General(
-      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
-      const EntityType zero_type = MBVERTEX)
-      : OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
-                                              ublas::row_major,
-                                              DoubleAllocator>(
-            field_name, data_ptr, zero_type) {}
+  using OpCalculateTensor2FieldValues_General<
+      Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
+      DoubleAllocator>::OpCalculateTensor2FieldValues_General;
 
   /**
    * \brief calculate values of vector field at integration points
@@ -1018,6 +1251,7 @@ struct OpCalculateVectorFieldGradient_General<Tensor_Dim0, Tensor_Dim1, double,
    */
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
+
 };
 
 /**
@@ -1047,6 +1281,20 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
 
     if (nb_dofs) {
 
+      if (this->dataVec.use_count()) {
+        this->dotVector.resize(nb_dofs, false);
+        const double *array;
+        CHKERR VecGetArrayRead(this->dataVec, &array);
+        const auto &local_indices = data.getLocalIndices();
+        for (int i = 0; i != local_indices.size(); ++i)
+          if (local_indices[i] != -1)
+            this->dotVector[i] = array[local_indices[i]];
+          else
+            this->dotVector[i] = 0;
+        CHKERR VecRestoreArrayRead(this->dataVec, &array);
+        data.getFieldData().swap(this->dotVector);
+      }
+
       const int nb_base_functions = data.getN().size2();
       auto diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
       auto gradients_at_gauss_pts =
@@ -1072,6 +1320,10 @@ MoFEMErrorCode OpCalculateVectorFieldGradient_General<
           ++diff_base_function;
         ++gradients_at_gauss_pts;
       }
+
+      if (this->dataVec.use_count()) {
+        data.getFieldData().swap(this->dotVector);
+      }
     }
   }
   MoFEMFunctionReturn(0);
@@ -1087,13 +1339,9 @@ struct OpCalculateVectorFieldGradient
     : public OpCalculateVectorFieldGradient_General<
           Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
 
-  OpCalculateVectorFieldGradient(const std::string field_name,
-                                 boost::shared_ptr<MatrixDouble> data_ptr,
-                                 const EntityType zero_type = MBVERTEX)
-      : OpCalculateVectorFieldGradient_General<Tensor_Dim0, Tensor_Dim1, double,
-                                               ublas::row_major,
-                                               DoubleAllocator>(
-            field_name, data_ptr, zero_type) {}
+  using OpCalculateVectorFieldGradient_General<
+          Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator>::OpCalculateVectorFieldGradient_General;
+
 };
 
 /** \brief Get field gradients time derivative at integration pts for scalar
@@ -2356,6 +2604,12 @@ struct OpMakeHdivFromHcurl
                         DataForcesAndSourcesCore::EntData &data);
 };
 
+/**
+ * @brief Modify integration weights on face to take in account higher-order
+ * geometry
+ * @ingroup mofem_forces_and_sources_tri_element
+ *
+ */
 struct OpMakeHighOrderGeometryWeightsOnFace
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
   OpMakeHighOrderGeometryWeightsOnFace()

@@ -1,5 +1,5 @@
 /*! \page  a_guide_to_writing_documentation Writing documentation
-\brief A guide why and how to write documentation.
+\brief A guide to why and how to write documentation.
 
 \tableofcontents
 
@@ -7,86 +7,92 @@
 
 Code documentation is essential for its future. MoFEM will live only if
 others know how to use it. It is believed that not necessarily the best code
-will survive but that one with the best documentation. Therefore, you should
-always document always document what you are doing in MoFEM.
+will survive but the one with the best documentation. Therefore, you should
+always document what you are doing in MoFEM.
 
-- Good documentation helps to revise your code
+Good documentation helps to:
 
-- Help others to understand what you are doing
+- Revise your code
+
+- Make others understand what you are doing
 
 - Report assumptions, limitations and bugs in your code
 
-- Think about different kinds of users, f.e. end-user who only executess code,
-  beginner programmers and advanced developers
-
 - Link different parts of your work in \em modules
 
-- Follow <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html>
+Think about different kinds of users: 
 
-- Think about yourself; you might forget. Documentation helps to remind what
+- End-users who only execute the code
+
+- Beginner programmers 
+
+- Advanced developers
+
+- Yourself; you might forget and documentation helps to remind you what
   you have done
 
-\section genaral_about_writting About writing manual
+Follow <https://www.doxygen.nl/manual/docblocks.html>
+
+\section genaral_about_writting About writing a manual
 
 - If possible, make it instructive, step by step
 
 - Try to use examples which others can follow
 
-- First, you need to ask yourself who you’re writing for. At first, you
-generally need to appeal to two audiences: Developers or Users.
+- In the first paragraph indicate to whom you write this documentation 
+  and what the purpose of it is
 
-- In the first paragraph indicate to whom you write this documentation what is proposed if it
+- Try to indicate a level of difficulty
 
-- Try to indicate a level of difficulty.
+- Use references to another part of documentation if applicable
 
-- User references to another part of documentation if applicable
+- Use latex formulas to place your equations
 
-- Use latex formulas to place your equations.
+- Use links to other sources on the internet, 
+  e.g. <a href="https://en.wikipedia.org/">Wikipedia</a>
 
-- Use links to other sources on the internet, f.e. Wikipedia
+\section building_documentation Building manuals
 
-\section building_documentation Building manual
-
-It is simple; you execute command in your shell,
+It is simple; you execute the following command in your shell
 \code
 make doc
 \endcode
 
-Now you can see documentation in web-browser, by opening file
+Now you can see documentation in web-browser, by opening the file
 \code
-$MOFEM_DIR/htm/index.html
+$MOFEM_DIR/html/index.html
 \endcode
 
 \section writing_documentaion Writing documents, technical aspect
 
-Follow Doxygen <http://www.stack.nl/~dimitri/doxygen/index.html> to
+Follow Doxygen <https://www.doxygen.nl/index.html> to
 write your documentation files. Another option is Markdown which is
-supported by Doxygen <http://www.stack.nl/~dimitri/doxygen/manual/markdown.html>. Before you
-start, you can look how existing documentation is written and follow that example.
+supported by Doxygen <https://www.doxygen.nl/manual/markdown.html>. Before you
+start, you can look at how existing documentation is written and follow that example.
 
-- A useful list of command in Doxygen <http://www.stack.nl/~dimitri/doxygen/manual/commands.html>
+- A useful list of commands in Doxygen <https://www.doxygen.nl/manual/commands.html>
 
-- If you write general documentation about MoFEM, you locate your files in \em /doc/user_guide.
+- If you write general documentation about MoFEM, locate your files in \em /doc/user_guide.
 
 - If your documentation is about MoFEM and written in Markdown, locate it in \em /doc/markdown
 
 - If documentation is about some \em user \em module, then place documentation
-  files in user module directory, f.e. \em users_modules/nonlinear_elasticity/doc
+  files in user module directory, e.g. \em users_modules/nonlinear_elasticity/doc
 
 
 \section documentation_linked_figures Figures
 
-Publishing figures with documentation need additional effort. All figures linked
+Publishing documentation with figures needs additional effort. All figures linked
 in your documentation have to be copied into documentation directory created by
 Doxygen.
 
-- If you write documentation about the use of MoFEM library, this is
-  straightforward, you simply copy your figures to \em doc/figures. CMake will
-  do a job for you, and copy files with figures to appropriate directory.
+- If you write documentation about the use of MoFEM library, it is
+  straightforward. Simply copy your figures to \em doc/figures. CMake will
+  do the job for you, and copy files with figures to the appropriate directory.
 
-- If you write user module documentation, you do it like above, only difference,
-  you place you figure in directory user_modules/my_user_module/doc/figures.
-  Note that each documentation directory should consist file \em
+- If you write user module documentation, it is similar. The figures are just 
+  placed in the directory user_modules/my_user_module/doc/figures.
+  Note that each documentation directory should contain the file \em
   AddDocumentation.cmake:
 
 \code
@@ -95,30 +101,31 @@ add_custom_target(doxygen_copy_MY_USER_MODULE_figures
   ${CMAKE_COMMAND} -E copy_directory
   ${PROJECT_SOURCE_DIR}/users_modules/homogenisation/doc/figures ${PROJECT_BINARY_DIR}/html
 )
-add_dependencies(doc doxygen_copy_MY_USER_MODUL_figures)
+add_dependencies(doc doxygen_copy_MY_USER_MODULE_figures)
 \endcode
-where \em MY_USER_MODUL is substituted by the name of the module. This cmake
-script copies files from module doc/figures directory to main documentation
-directory. Look to existing modules for examples.
+where \em MY_USER_MODULE is substituted by the name of the module. This cmake
+script copies files from module doc/figures directory to the main documentation
+directory. Look into existing modules for examples.
 
 \todo Each module can copy figures to a directory with the unique name for USER_MODULE_figures.
 
 - It is critical that name of your figure file is unique. All figures (or any
   other linked files) are copied to the same directory \em
-  ${PROJECT_BINARY_DIR}/html while Doxygen creates documentation. It is advised
-  to use convention \em name_figure1.png, where \em name is the name of the
+  ${PROJECT_BINARY_DIR}/html while Doxygen creates documentation. 
+
+- It is advised to use convention \em name_figure1.png, where \em name is the name of the
   module.
 
 
-- Including figure in case of Doxygen document:
+Including figure in case of Doxygen document:
 
 \code
 \image html application.jpg width=600px
 \endcode
 
-More details about including images are here <http://www.stack.nl/~dimitri/doxygen/manual/commands.html#cmdimage>
+More details about including images are here <https://www.doxygen.nl/manual/commands.html#cmdimage>
 
-- Including figure in case of Markdown documentation
+Including figure in case of Markdown documentation:
 
 \code
 ![Caption text](img.jpg)
@@ -129,7 +136,7 @@ More details about including images are here <http://www.stack.nl/~dimitri/doxyg
 [img def]: img.jpg "Optional Title"
 \endcode
 
-you can use also @ref link an image
+you also can use \@ref to link an image:
 
 \code
 ![Caption text](@ref image.png)
@@ -138,6 +145,6 @@ you can use also @ref link an image
 [img def]: @ref image.png "Caption text"
 \endcode
 
-More details about linking images in Markdown are here <http://www.stack.nl/~dimitri/doxygen/manual/markdown.html#md_images>
+More details about linking images in Markdown are here <https://www.doxygen.nl/manual/markdown.html#md_images>
 
 */

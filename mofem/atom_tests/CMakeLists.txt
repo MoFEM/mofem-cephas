@@ -196,26 +196,6 @@ add_test(field_blas_set_vertex_dofs
   -log_no_color
 )
 
-#test coord sys
-my_add_executable(test_setting_coordinate_sys test_setting_coordinate_sys.cpp)
-target_link_libraries(test_setting_coordinate_sys
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
-add_test(
-  test_setting_coordinate_sys
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/test_setting_coordinate_sys
-  -my_file elasticity_atom_test_01X_pressure.h5m
-  -log_no_color
-)
-
 #mesh refine
 cm_export_file("../meshes/templar.h5m" export_atom_tests)
 
@@ -1195,7 +1175,7 @@ add_test(dm_partitioned_no_field_2parts
   -dm_is_partitioned
   -log_no_color)
 add_test(dm_partitioned_no_field_3parts
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 3
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 3
   ${CMAKE_CURRENT_BINARY_DIR}/dm_partitioned_no_field -my_file disp01_3parts.h5m 
   -dm_is_partitioned
   -log_no_color)
@@ -1316,6 +1296,26 @@ target_link_libraries(remove_entities_from_problem
 add_test(remove_entities_from_problem
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
   ${CMAKE_CURRENT_BINARY_DIR}/remove_entities_from_problem 
+  -my_file disp01_2parts.h5m 
+  -log_no_color 
+)
+
+my_add_executable(remove_entities_from_problem_not_partitioned 
+  remove_entities_from_problem_not_partitioned.cpp
+)
+target_link_libraries(remove_entities_from_problem_not_partitioned
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(remove_entities_from_problem_not_partitioned
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${CMAKE_CURRENT_BINARY_DIR}/remove_entities_from_problem_not_partitioned 
   -my_file disp01_2parts.h5m 
   -log_no_color 
 )

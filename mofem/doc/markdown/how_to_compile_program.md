@@ -5,15 +5,16 @@ How to compile a program {#how_to_compile_program}
 
 This tutorial assumes that you have installed MoFEM with developer version using
 the script provided in \ref installation. And therefore, you probably have paths
-for the source code and the binary files (e.g. for `release` build type) of the
+for the source code and the binary files (e.g. for `RelWithDebInfo` -- Release
+with Debug info -- build type) of the
 Core Library and the Basic User Module as follows
 
 - Core Library
   - Source code: *$HOME/mofem_install/mofem-cephas/*
-  - Binary files (build directory): *$HOME/mofem_install/lib_release/*
+  - Binary files (build directory): *$HOME/mofem_install/mofem-cephas/core-build-RelWithDebInfo-abcd1234*
 - Basic User Module
   - Source code: *$HOME/mofem_install/mofem-cephas/mofem/users_modules/*
-  - Binary files (build directory): *$HOME/mofem_install/um/build_release/*
+  - Binary files (build directory): *$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234*
 
 # Compile the Core Library
 
@@ -26,7 +27,7 @@ You will need to compile the Core Library if you change any file related to C++ 
 You compile the Core Library by running the following command lines 
 
 ```
-  cd $HOME/mofem_install/lib_release/
+  cd $HOME/mofem_install/mofem-cephas/core-build-RelWithDebInfo-abcd1234
   make -j4
   make -j4 install
 ```
@@ -50,7 +51,7 @@ You can compile both the Basic User Module and your own module (if any) by
 running the following command lines
 
 ```
-  cd $HOME/mofem_install/um/build_release/
+  cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234
   make -j4
 ```
 

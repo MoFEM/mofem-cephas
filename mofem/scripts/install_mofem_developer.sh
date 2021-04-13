@@ -230,7 +230,7 @@ echo "mofem-cephas id for release: $MOFEM_CEPHAS_HASH"
 
 spack dev-build \
   --test root  \
-  --source-pat $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
+  --source-path $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
   mofem-users-modules@develop build_type=RelWithDebInfo \
   ^/$MOFEM_CEPHAS_HASH
 
@@ -276,13 +276,13 @@ echo -e "\n----------------------------\n"
 
 spack dev-build \
   --test root  \
-  --source-pat $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
-  mofem-users-modules@develop build_type=RelWithDebInfo \
+  --source-path $MOFEM_INSTALL_DIR/mofem-cephas/mofem/users_modules \
+  mofem-users-modules@develop build_type=Debug \
   ^/$MOFEM_CEPHAS_HASH
 
 TODAY=`date +%F` 
-MOFEM_UN_HASH=`spack find -lv --start-date $TODAY | grep mofem-users-modulesdevelop | grep RelWithDebInfo | awk '{print $1}'` 
-echo "mofem-users-modules id for release: $MOFEM_UN_HASH"
+MOFEM_UN_HASH=`spack find -lv --start-date $TODAY | grep mofem-users-modulesdevelop | grep Debug | awk '{print $1}'` 
+echo "mofem-users-modules id for debug: $MOFEM_UN_HASH"
 
 echo -e "\nFinished installing and testing the User Module - Debug version.\n"
 cd $MOFEM_INSTALL_DIR

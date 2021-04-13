@@ -131,7 +131,7 @@ See video explaing this part of the installation:
 
 Pull MoFEM images and create mofem_volume
 ~~~~~~
-docker run --name mofem_volume likask/mofem-spack-build
+docker run --name mofem_volume likask/mofem-spack-softmech
 ~~~~~~
 and run container as follows
 ~~~~~~
@@ -168,7 +168,7 @@ docker run \
 
 Pull MoFEM images and create mofem_volume
 ~~~~~~
-docker run --name mofem_volume likask/mofem-spack-build
+docker run --name mofem_volume likask/mofem-spack-softmech
 ~~~~~~
 
 Run JupyterHub [JupterHyb](https://jupyterhub.readthedocs.io/en/stable/)
@@ -214,5 +214,4 @@ however, you can find good alternatives like [VisIt](https://wci.llnl.gov/simula
 a text editor. We recommend [VSCode](https://code.visualstudio.com).
 # Contact {#docker_contact}
 
-Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group)
-or on Slack [MoFEM Slack](https://mofem.slack.com/).
+Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
