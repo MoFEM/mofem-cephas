@@ -17,7 +17,7 @@
     </tab>
     
     <tab type="user" visible="yes" title="Developer" url="@ref general_data_structure" intro="">
-      <tab type="user" url="@ref general_data_structure" title="Basic design" intro=""/>
+      <tab type="user" url="@ref general_data_structure" title="MoFEM Architecture" intro=""/>
       <tab type="user" url="@ref tutorials" title="Tutorials"/>
       <tab type="user" url="@ref user_data_operators_table" title="Operators"/>
       <tab type="user" url="@ref faqs" title="Frequently Asked Questions" intro=""/>
