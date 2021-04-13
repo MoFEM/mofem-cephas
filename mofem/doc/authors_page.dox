@@ -1,0 +1,37 @@
+/*! \page  authors MoFEM Authors
+\brief List of authors.
+
+\tableofcontents
+
+\section mofem_principal_authors Principal Athors
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/chrispearce/">Chris Pearce</a>, The University of Glasgow, Scotland, UK 
+    
+\section mofem_core_developers Core Developers
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/lukaszkaczmarczyk/">Łukasz Kaczmarczyk</a>, The University of Glasgow, Scotland, UK
+  - <a href="https://pure.qub.ac.uk/en/persons/zahur-ullah">Zahur Ullah</a>, Queen's University, North Ireland, UK
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/karollewandowski/">Karol Lewandowski</a>, The University of Glasgow, Scotland, UK
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/ignatiosathanasiadis/">Ignatios Athanasiadis</a>, The University of Glasgow, Scotland, UK
+  - <a href="https://www.northumbria.ac.uk/about-us/our-staff/n/hoang-nguyen/">Hoang Nguyen</a>, Northumbria University, England, UK
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/andreishvarts/">Andrei Shvarts</a>, The University of Glasgow, Scotland, UK
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/mebratuwakeni/">Mebratu Wekani</a>, The University of Glasgow, Scotland, UK
+    
+\section mofem_users_modules_developers Users Modules Contributors
+
+  - <a href="https://www.gla.ac.uk/schools/cca/staff/danielebarbera/">Daniele Barbera</a>, The University of Glasgow, Scotland, UK
+  - Adriana Kuliková, The University of Glasgow, Scotland, UK
+  - Richard Olley, The University of Glasgow, Scotland, UK
+  - Joshua Gorham, The University of Glasgow, Scotland, UK
+  
+  
+\section mofem_users_modules_past_contributors Past Contributors
+
+- Ross Mackenzie
+- Euan Muir
+- Euan Richardson
+- Michael Cortis
+- Dimitrios Kourepinis
+- Xuan Meng
+
+
+*/
