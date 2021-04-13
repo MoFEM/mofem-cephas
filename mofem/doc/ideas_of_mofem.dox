@@ -1,4 +1,4 @@
-/*! \page general_data_structure Basic design
+/*! \page general_data_structure MoFEM Architecture
 
 \section mofem_idea Idea behind MoFEM
 
@@ -35,7 +35,7 @@ writing, testing and validation, making the code resilient to bugs.
 
 \tableofcontents
 
-\section before_finite_element_tut Before you start to look into examples and tutorials
+\section before_finite_element_tut Basic design description
 
 \subsection mofem_eccosystem MoFEM software eccosystem
 
@@ -244,7 +244,7 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
 };
 \endcode
 
-\subsection mofem_data_flow Core library and application code
+\subsection mofem_data_flow Advanced design of Core library and application code
 
 Typically, internal data structures are hidden from the user and there is no need to
 access them directly. In core library, no single problem or finite element in
