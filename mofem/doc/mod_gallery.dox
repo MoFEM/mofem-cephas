@@ -134,6 +134,13 @@ library.
     Tribological applications: contact between solids with rough surfaces and associated multi-physical problems
     - <a href="https://bitbucket.org/mofem/tribology">Bitbucket repository </a></td>
   </tr>
+  <tr style="height:85px;">
+    <th> Softmech </th> 
+     <td> \image html um_softmech_logo.png "" width = 80px </td>
+    <td> 
+    User module for chemo_mech and Unsaturated flow in 2D
+    - <a href="https://bitbucket.org/mebratu/um_softmech">Bitbucket repository </a></td>
+  </tr>
   <tr style="height:20px;">
     <th colspan="3"> Under developement </th>
   </tr>
