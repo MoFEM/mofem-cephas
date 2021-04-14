@@ -1,5 +1,4 @@
 /*! \page  authors MoFEM Authors
-List of authors.
 
 \tableofcontents
 
@@ -14,7 +13,7 @@ List of authors.
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/ignatiosathanasiadis/">Ignatios Athanasiadis</a>, The University of Glasgow, Scotland, UK
   - <a href="https://www.northumbria.ac.uk/about-us/our-staff/n/hoang-nguyen/">Hoang Nguyen</a>, Northumbria University, England, UK
   - <a href="https://www.gla.ac.uk/schools/engineering/staff/andreishvarts/">Andrei Shvarts</a>, The University of Glasgow, Scotland, UK
-  - <a href="https://www.gla.ac.uk/schools/engineering/staff/mebratuwakeni/">Mebratu Wekani</a>, The University of Glasgow, Scotland, UK
+  - <a href="https://www.gla.ac.uk/schools/engineering/staff/mebratuwakeni/">Mebratu Wakeni</a>, The University of Glasgow, Scotland, UK
     
 \section mofem_users_modules_developers Users Modules Contributors
 
@@ -32,6 +31,6 @@ List of authors.
 - Michael Cortis
 - Dimitrios Kourepinis
 - Xuan Meng
-
+- Xiao-Yi
 
 */

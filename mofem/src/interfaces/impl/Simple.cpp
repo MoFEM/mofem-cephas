@@ -670,7 +670,7 @@ MoFEMErrorCode Simple::buildProblem() {
   // Set problem by the DOFs on the fields rather that by adding DOFs on the
   // elements
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
-  CHKERR DMSetUp(dM);
+  CHKERR DMSetUp_MoFEM(dM);
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_FALSE;
   PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);
