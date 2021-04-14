@@ -121,21 +121,21 @@ library.
     - <a href="https://bitbucket.org/likask/mofem_um_small_strain_plasticity">Bitbucket repository </a></td>
   </tr>
   <tr style="height:85px;">
-    <th> Von Mises plasticity </th> 
-    <td> \image html plasti_christop_ava.png "" width = 80px </td>
+    <th> Contact mechanics </th> 
+    <td> \image html contact_ava.png "" width = 80px </td>
     <td> 
-    Von Mises plasticity using return mapping algorithm. 
-    - <a href="https://bitbucket.org/Christophe97233/linear_isotropic_hardening">Bitbucket repository </a></td>
+    User module for mortar contact approach. 
+    - <a href="https://bitbucket.org/mofem/mortar_contact/src/master/">Bitbucket repository </a></td>
   </tr>
   <tr style="height:20px;">
     <th colspan="3"> Under developement </th>
   </tr>
   <tr style="height:85px;">
-    <th> Contact mechanics </th> 
-    <td> \image html contact_ava.png "" width = 80px </td>
+    <th> Von Mises plasticity </th> 
+    <td> \image html plasti_christop_ava.png "" width = 80px </td>
     <td> 
-    User module for mortar contact approach. 
-    - <a href="https://bitbucket.org/IgnatiosAthanasiadis/mofem_um_contact_mechanics_ignatios">Bitbucket repository </a></td>
+    Von Mises plasticity using return mapping algorithm. 
+    - <a href="https://bitbucket.org/Christophe97233/linear_isotropic_hardening">Bitbucket repository </a></td>
   </tr>
   <tr style="height:85px;">
     <th> Eshelbian plasticity </th> 
