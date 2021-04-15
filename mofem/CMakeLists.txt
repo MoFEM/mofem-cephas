@@ -107,6 +107,7 @@ include(FindPkgConfig)
 set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH TRUE)
 set(
   CMAKE_PREFIX_PATH
+  ${BLAS_DIR}
   ${PETSC_DIR}
   ${PETSC_DIR}/${PETSC_ARCH} 
   ${SLEPC_DIR}
@@ -203,16 +204,22 @@ message(STATUS "BLAS found: " ${BLAS_LIBRARIES})
 # Check CBlas
 find_library(
   CBLAS_LIBIBRARY NAMES cblas
-  HINTS ${CBLAS_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib)
+  HINTS 
+  ${BLAS_DIR}/lib
+  ${CBLAS_DIR}/lib 
+  ${PETSC_DIR}/${PETSC_ARCH}/lib)
 message(STATUS "CBLAS found: " ${CBLAS_LIBIBRARY})
 find_path(
   CBLAS_INCLUDE_DIR cblas.h 
-  HINTS ${CBLAS_DIR}/include ${PETSC_DIR}/${PETSC_ARCH}/include)
+  HINTS 
+  ${BLAS_DIR}/include
+  ${CBLAS_DIR}/include 
+  ${PETSC_DIR}/${PETSC_ARCH}/include)
 message(STATUS "CBLAS include found: " ${CBLAS_INCLUDE_DIR})
-if(CBLAS_INCLUDE_DIR AND CBLAS_LIBIBRARY)
+if(CBLAS_INCLUDE_DIR)
   include_directories(${CBLAS_INCLUDE_DIR})
   add_definitions(-DCBLAS_FOUND)
-endif(CBLAS_INCLUDE_DIR AND CBLAS_LIBIBRARY)
+endif(CBLAS_INCLUDE_DIR)
 
 include_directories(
   ${PROJECT_INCLUDE_DIRECTORIES}
