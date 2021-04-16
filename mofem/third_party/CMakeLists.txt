@@ -13,7 +13,6 @@
 
 #include subdirectory
 include_directories(${PROJECT_SOURCE_DIR}/third_party)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/cblas)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
 
 add_library(mofem_third_party
@@ -24,8 +23,6 @@ add_library(mofem_third_party
   tetcircumcenter.c
   tricircumcenter.c
   phg-quadrule/quad.c)
-
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/cblas)
 
 install(TARGETS mofem_third_party DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 

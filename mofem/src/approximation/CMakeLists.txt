@@ -65,7 +65,6 @@ target_link_libraries(vtk_curl_base_on_tet
   mofem_multi_indices
   mofem_petsc
   mofem_approx
-  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS}
 )
