@@ -46,8 +46,9 @@ RUN mkdir -p $SPACK_ROOT_DIR && \
     spack external find && \
     spack install mofem-users-modules@lukasz target=x86_64 
 
+#GNUPGHOME=
 #spack gpg create lukasz lukasz.kaczmarczyk@glasgow.ac.uk
-#spack mirror create -d /hosthome/Google\ Drive/colab_mirror mofem-users-modules@lukasz 
+#spack mirror create -d /hosthome/Google\ Drive/colab_mirror -D mofem-users-modules@lukasz 
 #spack buildcache create -d /hosthome/Google\ Drive/colab_mirror -a -r -f mofem-users-modules@lukasz
 
 # image run hook: the -l will make sure /etc/profile environments are loaded
