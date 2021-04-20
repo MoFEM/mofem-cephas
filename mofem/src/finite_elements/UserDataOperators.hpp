@@ -2400,6 +2400,31 @@ private:
 
 /**@}*/
 
+/** \name Other operators */
+
+/**@{*/
+
+/**
+ * @brief Scale base functions by inverses of measure of element
+ * 
+ * @tparam OP 
+ */
+template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
+
+  OpScaleBaseBySpaceInverseOfMeasure(const FieldSpace space) : OP(space) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+    for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+      data.getN(base) /= this->getMeasure();
+      data.getDiffN(base) /= this->getMeasure();
+    }
+    MoFEMFunctionReturn(0);
+  }
+};
+
 /**@}*/
 
 inline auto getFaceJac(MatrixDouble &jac, const FTensor::Number<2> &) {
