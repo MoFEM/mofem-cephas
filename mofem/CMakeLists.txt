@@ -107,6 +107,8 @@ include(FindPkgConfig)
 set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH TRUE)
 set(
   CMAKE_PREFIX_PATH
+  ${BLAS_DIR}
+  ${CBLAS_DIR}
   ${PETSC_DIR}
   ${PETSC_DIR}/${PETSC_ARCH} 
   ${SLEPC_DIR}
@@ -191,28 +193,16 @@ resolve_includes(PROJECT_INCLUDE_DIRECTORIES
   "${PETSCVAR_PACKAGES_INCLUDES}
   ${MOAB_INCLUDES0} ${MOAB_INCLUDES1} ${MOAB_CPPFLAGS}")
 
-# Finding Blas and CBlas 
-find_package(BLAS)
-if(BLAS_FOUND)
-  if(APPLE)
-    set(CMAKE_EXE_LINKER_FLAGS "-framework Accelerate")
-  endif(APPLE)
-  add_definitions(-DBLAS_FOUND)
-endif(BLAS_FOUND)
-message(STATUS "BLAS found: " ${BLAS_LIBRARIES})
 # Check CBlas
-find_library(
-  CBLAS_LIBIBRARY NAMES cblas
-  HINTS ${CBLAS_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib)
-message(STATUS "CBLAS found: " ${CBLAS_LIBIBRARY})
 find_path(
-  CBLAS_INCLUDE_DIR cblas.h 
-  HINTS ${CBLAS_DIR}/include ${PETSC_DIR}/${PETSC_ARCH}/include)
+  CBLAS_INCLUDE_DIR 
+  cblas.h 
+  HINTS 
+  ${BLAS_DIR}/include
+  ${CBLAS_DIR}/include 
+  ${PETSC_DIR}/${PETSC_ARCH}/include)
 message(STATUS "CBLAS include found: " ${CBLAS_INCLUDE_DIR})
-if(CBLAS_INCLUDE_DIR AND CBLAS_LIBIBRARY)
-  include_directories(${CBLAS_INCLUDE_DIR})
-  add_definitions(-DCBLAS_FOUND)
-endif(CBLAS_INCLUDE_DIR AND CBLAS_LIBIBRARY)
+include_directories(${CBLAS_INCLUDE_DIR})
 
 include_directories(
   ${PROJECT_INCLUDE_DIRECTORIES}
@@ -255,9 +245,7 @@ resolve_libraries(SYSTEM_PROJECT_LIBS "
   ${Boost_LIBRARIES} 
 # Other
   ${MPI_F90_LIB}
-  ${MPI_F77_LIB}
-  ${BLAS_LINKER_FLAGS}
-  ${CBLAS_LIBIBRARY}")
+  ${MPI_F77_LIB}")
 
 # Set project libs compiled with the MoFEM as external libs
 set(OPTIONAL_PROJECT_LIBS

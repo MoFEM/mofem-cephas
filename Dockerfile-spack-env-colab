@@ -1,0 +1,73 @@
+FROM       ubuntu:18.04
+
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
+
+# general environment for docker
+ENV        DEBIAN_FRONTEND=noninteractive \
+           SPACK_ROOT=/usr/local \
+           FORCE_UNSAFE_CONFIGURE=1
+
+# timezone env with default
+ENV TZ Europe/London
+
+# Confif apt-get
+RUN echo 'APT::Install-Recommends "0";' > /etc/apt/apt.conf.d/99local
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install packages
+RUN apt-get update && \
+apt-get install -y \
+curl \
+git \
+g++ \
+gfortran \
+python \
+automake \
+build-essential \
+libtool \
+cmake \
+ca-certificates \
+gpg \
+gpg-agent \
+&& rm -rf /var/lib/apt/lists/*
+
+ENV MOFEM_INSTALL_DIR=/content
+ENV SPACK_ROOT_DIR=$MOFEM_INSTALL_DIR/spack
+
+ADD . $MOFEM_INSTALL_DIR
+
+# clone spack
+RUN mkdir -p $SPACK_ROOT_DIR && \
+    curl -s -L https://api.github.com/repos/likask/spack/tarball/ \
+    | tar xzC $SPACK_ROOT_DIR --strip 1 && \
+    . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
+    echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
+    spack external find && \
+    spack install mofem-users-modules@lukasz target=x86_64 
+
+#GNUPGHOME=
+#spack gpg create lukasz lukasz.kaczmarczyk@glasgow.ac.uk
+#spack mirror create -d /hosthome/Google\ Drive/colab_mirror -D mofem-users-modules@lukasz 
+#spack buildcache create -d /hosthome/Google\ Drive/colab_mirror -a -r -f mofem-users-modules@lukasz
+
+# image run hook: the -l will make sure /etc/profile environments are loaded
+CMD        /bin/bash -l
+
+# SSH .ssh dir
+RUN mkdir root/.ssh
+
+# Allow to trace child procsses needed for debuging
+RUN sed  -i 's/kernel.yama.ptrace_scope = 1/kernel.yama.ptrace_scope = 0/' /etc/sysctl.d/10-ptrace.conf
+
+# Create the PrivSep empty dir if necessary
+RUN if [ ! -d /var/run/sshd ]; then \
+   mkdir /var/run/sshd; \
+   chmod 0755 /var/run/sshd; \
+   fi
+
+ENV MOFEM_SRC_DIR=$MOFEM_INSTALL_DIR/mofem-cephas
+ENV MOFEM_UM_SRC_DIR=$MOFEM_SRC_DIR/mofem/users_modules
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
