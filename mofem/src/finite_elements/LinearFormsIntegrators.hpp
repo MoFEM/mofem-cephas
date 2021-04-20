@@ -793,10 +793,14 @@ MoFEMErrorCode OpMixDivTimesUImpl<3, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
  * @brief div U times vector
  * 
  * \f[
- * (\textrm{tr}[\phi_{,k}], v_j) =
- * (\phi_{,k} \delta_{kj}, v_j) =
- * (\phi_{,k}, \delta_{kj} v_j) =
- * (\phi_{,k}, v_k)
+ * \delta u_j = \phi^m\delta\overline{u}^m_j\\
+ * \delta u_{j,i} = \phi^m_{,i}\delta\overline{u}^m_j\\
+ * \textrm{tr}[\delta u_{j,i}] = \delta u_{j,i}\delta_{ji}\\
+ * (\textrm{tr}[\delta u_{j,i}], v) =\\
+ * (\delta u_{j,i} \delta_{ij}, v) =\\
+ * (\delta u_{j,i}, \delta_{ij} v) =\\
+ * (\phi^m_{,i}\delta\overline{u}^m_j, \delta_{ij} v) \\
+ * f_i^m=(\phi^m_{,i}, v)
  * \f]
  * 
  * @tparam FIELD_DIM 
