@@ -144,15 +144,9 @@ struct OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, 1, GAUSS, OpBase>
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
   FTensor::Index<'j', SPACE_DIM> j; ///< summit Index
 
-  OpGradTimesTensorImpl(const std::string field_name,
-                        boost::shared_ptr<MatrixDouble> mat_vals)
-      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {
-    betaCoeff = [](double, double, double) { return 1; };
-  }
-
-  OpGradTimesTensorImpl(const std::string field_name,
-                        boost::shared_ptr<MatrixDouble> mat_vals,
-                        ScalarFun beta_coeff)
+  OpGradTimesTensorImpl(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> mat_vals,
+      ScalarFun beta_coeff = [](double, double, double) { return 1; })
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
         betaCoeff(beta_coeff) {}
 
@@ -170,15 +164,9 @@ template <int SPACE_DIM, int S, typename OpBase>
 struct OpGradTimesSymTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
     : public OpBase {
 
-  OpGradTimesSymTensorImpl(const std::string field_name,
-                           boost::shared_ptr<MatrixDouble> &mat_vals)
-      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {
-    betaCoeff = [](double, double, double) { return 1; };
-  }
-
-  OpGradTimesSymTensorImpl(const std::string field_name,
-                           boost::shared_ptr<MatrixDouble> &mat_vals,
-                           ScalarFun beta_coeff)
+  OpGradTimesSymTensorImpl(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> &mat_vals,
+      ScalarFun beta_coeff = [](double, double, double) { return 1; })
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
         betaCoeff(beta_coeff) {}
 
