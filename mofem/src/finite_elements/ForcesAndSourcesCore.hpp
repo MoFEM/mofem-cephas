@@ -136,6 +136,13 @@ struct ForcesAndSourcesCore : public FEMethod {
     inline EntityHandle getFEEntityHandle() const;
 
     /**
+     * @brief Get dimension of finite element
+     * 
+     * @return int 
+     */
+    inline int getFEDim() const;
+
+    /**
      * @brief Get the side number pointer
      *
      * \note For vertex is expection. Side basses in argument of function doWork
@@ -870,6 +877,10 @@ ForcesAndSourcesCore::UserDataOperator::getNumeredEntFiniteElementPtr() const {
 EntityHandle ForcesAndSourcesCore::UserDataOperator::getFEEntityHandle() const {
   return getNumeredEntFiniteElementPtr()->getEnt();
 }
+
+int ForcesAndSourcesCore::UserDataOperator::getFEDim() const {
+  return ptrFE->mField.get_moab().dimension_from_handle(getFEEntityHandle());
+};
 
 boost::weak_ptr<SideNumber>
 ForcesAndSourcesCore::UserDataOperator::getSideNumberPtr(
