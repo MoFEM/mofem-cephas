@@ -2411,7 +2411,7 @@ private:
  */
 template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
 
-  OpScaleBaseBySpaceInverseOfMeasure(const FieldSpace space) : OP(space) {}
+  OpScaleBaseBySpaceInverseOfMeasure(const FieldSpace space = L2) : OP(space) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
