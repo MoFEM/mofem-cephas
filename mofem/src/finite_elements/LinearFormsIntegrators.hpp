@@ -172,13 +172,22 @@ struct OpGradTimesSymTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
 
   OpGradTimesSymTensorImpl(const std::string field_name,
                            boost::shared_ptr<MatrixDouble> &mat_vals)
-      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {}
+      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals) {
+    betaCoeff = [](double, double, double) { return 1; };
+  }
+
+  OpGradTimesSymTensorImpl(const std::string field_name,
+                           boost::shared_ptr<MatrixDouble> &mat_vals,
+                           ScalarFun beta_coeff)
+      : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
+        betaCoeff(beta_coeff) {}
 
 protected:
   boost::shared_ptr<MatrixDouble> matVals;
   FTensor::Index<'i', SPACE_DIM> i;
   FTensor::Index<'j', SPACE_DIM> j;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
+  ScalarFun betaCoeff;
 };
 
 template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, IntegrationType I,
@@ -697,6 +706,8 @@ OpGradTimesSymTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionBegin;
   // get element volume
   const double vol = OpBase::getMeasure();
+  // get coords
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
   // get base function gradient on rows
@@ -706,7 +717,7 @@ OpGradTimesSymTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobian
-    const double alpha = t_w * vol;
+    const double alpha = t_w * vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
     // get rhs vector
     auto t_nf = OpBase::template getNf<SPACE_DIM>();
     // loop over rows base functions
@@ -721,6 +732,7 @@ OpGradTimesSymTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     for (; rr < OpBase::nbRowBaseFunctions; ++rr)
       ++t_row_grad;
     ++t_val_mat;
+    ++t_coords;
     ++t_w; // move to another integration weight
   }
   MoFEMFunctionReturn(0);
