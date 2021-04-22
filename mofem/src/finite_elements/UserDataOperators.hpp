@@ -2454,9 +2454,7 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
         if (type >= MBEDGE)
           scale();
         break;
-        if (type >= MBTRI)
-          scale();
-        break;
+      case HDIV:
       case L2:
         if (type >= MBTRI)
           scale();
@@ -2470,9 +2468,6 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
         scale();
         break;
       case HCURL:
-        if (type >= MBEDGE)
-          scale();
-        break;
       case L2:
         if (type >= MBEDGE)
           scale();
