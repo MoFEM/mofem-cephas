@@ -1,5 +1,5 @@
 /** \file FieldEvaluator.cpp
- * \brief TetGen interface for meshing/re-meshing and on the fly mesh creation
+ * \brief Field evaluator
  *
  */
 
