@@ -36,9 +36,12 @@ struct ForcesAndSourcesCore : public FEMethod {
   Interface &mField;
 
   ForcesAndSourcesCore(Interface &m_field);
-
   typedef boost::function<int(int order_row, int order_col, int order_data)>
       RuleHookFun;
+
+  typedef boost::function<MoFEMErrorCode(int order_row, int order_col,
+                                         int order_data)>
+      GaussHookFun;
 
   /**
    * \brief Hook to get rule
@@ -53,7 +56,7 @@ struct ForcesAndSourcesCore : public FEMethod {
    * @brief Set function to calculate integration rule
    *
    */
-  RuleHookFun setRuleHook;
+  GaussHookFun setRuleHook;
 
   /** \brief Data operator to do calculations at integration points.
     * \ingroup mofem_forces_and_sources
