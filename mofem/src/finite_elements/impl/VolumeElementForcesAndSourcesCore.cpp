@@ -149,10 +149,6 @@ VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
 
   CHKERR getSpacesAndBaseOnEntities(dataH1);
-
-  cerr << "BBB"
-       << this->numeredEntFiniteElementPtr->getSideNumberTable().size();
-
   CHKERR getFaceTriNodes(dataH1);
   // H1
   if ((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
