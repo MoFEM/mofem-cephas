@@ -127,6 +127,11 @@ MoFEMErrorCode MatSetValues<EssentialBcStorage>(
     Mat M, const DataForcesAndSourcesCore::EntData &row_data,
     const DataForcesAndSourcesCore::EntData &col_data, const double *ptr,
     InsertMode iora) {
+
+  if(!M)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+            "Pointer to PETSc matrix is null");
+
   if (!row_data.getFieldEntities().empty()) {
     if (auto e_ptr = row_data.getFieldEntities()[0]) {
       if (auto stored_data_ptr =
