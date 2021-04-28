@@ -26,13 +26,23 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-using FaceEle = MoFEM::FaceElementForcesAndSourcesCoreSwitch<
-    FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY |
-    FaceElementForcesAndSourcesCore::NO_CONTRAVARIANT_TRANSFORM_HDIV |
-    FaceElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
-
-using FaceEleOp = FaceEle::UserDataOperator;
+template <int DIM> struct ElementsAndOps {};
+ 
+template <> struct ElementsAndOps<2> {
+  using DomainEle = PipelineManager::FaceEle2D;
+  using DomainEleOp = DomainEle::UserDataOperator;
+};
+ 
+template <> struct ElementsAndOps<3> {
+  using DomainEle = VolumeElementForcesAndSourcesCore;
+  using DomainEleOp = DomainEle::UserDataOperator;
+};
+ 
+constexpr int SPACE_DIM = 2; //< Space dimension of problem, mesh
+ 
 using EntData = DataForcesAndSourcesCore::EntData;
+using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
+using DomainEleOp = ElementsAndOps<SPACE_DIM>::DomainEleOp;
 
 static constexpr int approx_order = 5;
 
@@ -63,12 +73,12 @@ struct ApproxFunctions {
     return r;
   }
 };
-struct OpValsDiffVals : public FaceEleOp {
+struct OpValsDiffVals : public DomainEleOp {
   VectorDouble &vAls;
   MatrixDouble &diffVals;
   const bool checkGradients;
   OpValsDiffVals(VectorDouble &vals, MatrixDouble &diff_vals, bool check_grads)
-      : FaceEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals),
+      : DomainEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals),
         checkGradients(check_grads) {}
 
   FTensor::Index<'i', 2> i;
@@ -115,7 +125,7 @@ struct OpValsDiffVals : public FaceEleOp {
   }
 };
 
-struct OpCheckValsDiffVals : public FaceEleOp {
+struct OpCheckValsDiffVals : public DomainEleOp {
   VectorDouble &vAls;
   MatrixDouble &diffVals;
   boost::shared_ptr<VectorDouble> ptrVals;
@@ -126,7 +136,7 @@ struct OpCheckValsDiffVals : public FaceEleOp {
                       boost::shared_ptr<VectorDouble> &ptr_vals,
                       boost::shared_ptr<MatrixDouble> &ptr_diff_vals,
                       bool check_grads)
-      : FaceEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals),
+      : DomainEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals),
         ptrVals(ptr_vals), ptrDiffVals(ptr_diff_vals),
         checkGradients(check_grads) {
     std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
@@ -288,7 +298,7 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpMakeHighOrderGeometryWeightsOnFace());
 
-      using OpSource = FormsIntegrators<FaceEleOp>::Assembly<PETSC>::LinearForm<
+      using OpSource = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::LinearForm<
           GAUSS>::OpSource<1, 1>;
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSource("FIELD1", ApproxFunctions::fUn));
@@ -298,7 +308,7 @@ int main(int argc, char *argv[]) {
           new OpCalculateInvJacForFace(inv_jac));
       pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpMakeHighOrderGeometryWeightsOnFace());
-      using OpMass = FormsIntegrators<FaceEleOp>::Assembly<PETSC>::BiLinearForm<
+      using OpMass = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::BiLinearForm<
           GAUSS>::OpMass<1, 1>;
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpMass(
           "FIELD1", "FIELD1", [](double, double, double) { return 1.; }));
