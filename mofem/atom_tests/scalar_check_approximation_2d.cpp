@@ -37,7 +37,7 @@ using EntData = DataForcesAndSourcesCore::EntData;
 static constexpr int approx_order = 5;
 
 struct ApproxFunctions {
-  static double fUn(const double x, const double y) {
+  static double fUn(const double x, const double y, double z) {
     double r = 1;
     for (int o = 1; o <= approx_order; ++o) {
       for (int i = 0; i <= o; ++i) {
@@ -63,75 +63,6 @@ struct ApproxFunctions {
     return r;
   }
 };
-
-struct OpAssembleMat : public FaceEleOp {
-  OpAssembleMat() : FaceEleOp("FIELD1", "FIELD1", OPROWCOL) {
-    sYmm = false; // FIXME problem is symmetric, should use that
-  }
-
-  MatrixDouble nA;
-  MoFEMErrorCode doWork(int row_side, int col_side, EntityType row_type,
-                        EntityType col_type, EntData &row_data,
-                        EntData &col_data) {
-
-    MoFEMFunctionBegin;
-    const int nb_dofs_row = row_data.getIndices().size();
-    if (nb_dofs_row == 0)
-      MoFEMFunctionReturnHot(0);
-    const int nb_dofs_col = col_data.getIndices().size();
-    if (nb_dofs_col == 0)
-      MoFEMFunctionReturnHot(0);
-    nA.resize(nb_dofs_row, nb_dofs_col, false);
-    nA.clear();
-    const int nb_gauss_pts = row_data.getN().size1();
-    auto t_base_row = row_data.getFTensor0N();
-    for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      const double val = getArea() * getGaussPts()(2, gg);
-      for (int rr = 0; rr != nb_dofs_row; rr++) {
-        auto t_base_col = col_data.getFTensor0N(gg, 0);
-        for (int cc = 0; cc != nb_dofs_col; cc++) {
-          nA(rr, cc) += val * t_base_row * t_base_col;
-          ++t_base_col;
-        }
-        ++t_base_row;
-      }
-    }
-    CHKERR MatSetValues(getFEMethod()->ksp_B, row_data, col_data,
-                        &*nA.data().begin(), ADD_VALUES);
-    MoFEMFunctionReturn(0);
-  }
-};
-
-struct OpAssembleVec : public FaceEleOp {
-  OpAssembleVec() : FaceEleOp("FIELD1", "FIELD1", OPROW) {}
-
-  VectorDouble nF;
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data) {
-
-    MoFEMFunctionBegin;
-    const int nb_dofs = data.getIndices().size();
-    if (nb_dofs == 0)
-      MoFEMFunctionReturnHot(0);
-    const int nb_gauss_pts = data.getN().size1();
-    nF.resize(nb_dofs, false);
-    nF.clear();
-    auto t_base_fun = data.getFTensor0N();
-    for (int gg = 0; gg != nb_gauss_pts; gg++) {
-      const double val = getArea() * getGaussPts()(2, gg);
-      for (int bb = 0; bb != nb_dofs; bb++) {
-        const double x = getCoordsAtGaussPts()(gg, 0);
-        const double y = getCoordsAtGaussPts()(gg, 1);
-        nF(bb) += val * t_base_fun * ApproxFunctions::fUn(x, y);
-        ++t_base_fun;
-      }
-    }
-    CHKERR VecSetValues(getFEMethod()->ksp_f, data, &*nF.data().begin(),
-                        ADD_VALUES);
-    MoFEMFunctionReturn(0);
-  }
-};
-
 struct OpValsDiffVals : public FaceEleOp {
   VectorDouble &vAls;
   MatrixDouble &diffVals;
@@ -216,9 +147,10 @@ struct OpCheckValsDiffVals : public FaceEleOp {
     for (int gg = 0; gg != nb_gauss_pts; gg++) {
       const double x = getCoordsAtGaussPts()(gg, 0);
       const double y = getCoordsAtGaussPts()(gg, 1);
+      const double z = getCoordsAtGaussPts()(gg, 2);
 
       // Check approximation
-      const double delta_val = t_vals - ApproxFunctions::fUn(x, y);
+      const double delta_val = t_vals - ApproxFunctions::fUn(x, y, z);
 
       double err_val = std::fabs(delta_val * delta_val);
       MOFEM_LOG("AT", Sev::verbose) << err_val << " : " << t_vals;
@@ -355,13 +287,21 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpMakeHighOrderGeometryWeightsOnFace());
-      pipeline_mng->getOpDomainRhsPipeline().push_back(new OpAssembleVec());
+
+      using OpSource = FormsIntegrators<FaceEleOp>::Assembly<PETSC>::LinearForm<
+          GAUSS>::OpSource<1, 1>;
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpSource("FIELD1", ApproxFunctions::fUn));
+      // pipeline_mng->getOpDomainRhsPipeline().push_back(new OpAssembleVec());
 
       pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpCalculateInvJacForFace(inv_jac));
-      pipeline_mng->getOpDomainRhsPipeline().push_back(
+      pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpMakeHighOrderGeometryWeightsOnFace());
-      pipeline_mng->getOpDomainLhsPipeline().push_back(new OpAssembleMat());
+      using OpMass = FormsIntegrators<FaceEleOp>::Assembly<PETSC>::BiLinearForm<
+          GAUSS>::OpMass<1, 1>;
+      pipeline_mng->getOpDomainLhsPipeline().push_back(new OpMass(
+          "FIELD1", "FIELD1", [](double, double, double) { return 1.; }));
 
       auto integration_rule = [](int, int, int p_data) {
         return 2 * p_data + 1;
@@ -378,6 +318,7 @@ int main(int argc, char *argv[]) {
       CHKERR KSPSetFromOptions(solver);
       CHKERR KSPSetUp(solver);
 
+      auto dm = simple_interface->getDM();
       auto D = smartCreateDMVector(dm);
       auto F = smartVectorDuplicate(D);
 
@@ -385,6 +326,7 @@ int main(int argc, char *argv[]) {
       CHKERR VecGhostUpdateBegin(D, INSERT_VALUES, SCATTER_FORWARD);
       CHKERR VecGhostUpdateEnd(D, INSERT_VALUES, SCATTER_FORWARD);
       CHKERR DMoFEMMeshToLocalVector(dm, D, INSERT_VALUES, SCATTER_REVERSE);
+
       MoFEMFunctionReturn(0);
     };
 
