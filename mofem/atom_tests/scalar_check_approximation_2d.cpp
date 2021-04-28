@@ -30,25 +30,24 @@ static constexpr int approx_order = 5;
 template <int DIM> struct ApproxFunctionsImpl {};
 
 template <int DIM> struct ElementsAndOps {};
- 
+
 template <> struct ElementsAndOps<2> {
   using DomainEle = PipelineManager::FaceEle2D;
   using DomainEleOp = DomainEle::UserDataOperator;
 };
- 
+
 template <> struct ElementsAndOps<3> {
   using DomainEle = VolumeElementForcesAndSourcesCore;
   using DomainEleOp = DomainEle::UserDataOperator;
 };
- 
+
 constexpr int SPACE_DIM = 2; //< Space dimension of problem, mesh
- 
+
 using EntData = DataForcesAndSourcesCore::EntData;
 using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainEleOp = ElementsAndOps<SPACE_DIM>::DomainEleOp;
 
-template<>
-struct ApproxFunctionsImpl<2> {
+template <> struct ApproxFunctionsImpl<2> {
   static double fUn(const double x, const double y, double z) {
     double r = 1;
     for (int o = 1; o <= approx_order; ++o) {
@@ -61,7 +60,8 @@ struct ApproxFunctionsImpl<2> {
     return r;
   }
 
-  static FTensor::Tensor1<double, 2> diffFun(const double x, const double y) {
+  static FTensor::Tensor1<double, 2> diffFun(const double x, const double y,
+                                             double z) {
     FTensor::Tensor1<double, 2> r{0., 0.};
     for (int o = 1; o <= approx_order; ++o) {
       for (int i = 0; i <= o; ++i) {
@@ -69,6 +69,41 @@ struct ApproxFunctionsImpl<2> {
         if (j >= 0) {
           r(0) += i > 0 ? i * pow(x, i - 1) * pow(y, j) : 0;
           r(1) += j > 0 ? j * pow(x, i) * pow(y, j - 1) : 0;
+        }
+      }
+    }
+    return r;
+  }
+};
+
+template <> struct ApproxFunctionsImpl<3> {
+  static double fUn(const double x, const double y, double z) {
+    double r = 1;
+    for (int o = 1; o <= approx_order; ++o) {
+      for (int i = 0; i <= o; ++i) {
+        for (int j = 0; j <= o - i; j++) {
+          int k = o - i - j;
+          if (k >= 0) {
+            r += pow(x, i) * pow(y, j) * pow(z, k);
+          }
+        }
+      }
+    }
+    return r;
+  }
+
+  static FTensor::Tensor1<double, 3> diffFun(const double x, const double y,
+                                             double z) {
+    FTensor::Tensor1<double, 3> r{0., 0., 0.};
+    for (int o = 1; o <= approx_order; ++o) {
+      for (int i = 0; i <= o; ++i) {
+        for (int j = 0; j <= o - i; j++) {
+          int k = o - i - j;
+          if (k >= 0) {
+            r(0) += i > 0 ? i * pow(x, i - 1) * pow(y, j) * pow(z, k) : 0;
+            r(1) += j > 0 ? j * pow(x, i) * pow(y, j - 1) * pow(z, k) : 0;
+            r(2) += k > 0 ? k * pow(x, i) * pow(y, j) * pow(z, k - 1) : 0;
+          }
         }
       }
     }
@@ -86,7 +121,7 @@ struct OpValsDiffVals : public DomainEleOp {
       : DomainEleOp("FIELD1", OPROW), vAls(vals), diffVals(diff_vals),
         checkGradients(check_grads) {}
 
-  FTensor::Index<'i', 2> i;
+  FTensor::Index<'i', SPACE_DIM> i;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
@@ -94,7 +129,7 @@ struct OpValsDiffVals : public DomainEleOp {
     const int nb_gauss_pts = getGaussPts().size2();
     if (type == MBVERTEX) {
       vAls.resize(nb_gauss_pts, false);
-      diffVals.resize(2, nb_gauss_pts, false);
+      diffVals.resize(SPACE_DIM, nb_gauss_pts, false);
       vAls.clear();
       diffVals.clear();
     }
@@ -113,8 +148,8 @@ struct OpValsDiffVals : public DomainEleOp {
       }
 
       if (checkGradients) {
-        auto t_diff_vals = getFTensor1FromMat<2>(diffVals);
-        auto t_diff_base_fun = data.getFTensor1DiffN<2>();
+        auto t_diff_vals = getFTensor1FromMat<SPACE_DIM>(diffVals);
+        auto t_diff_base_fun = data.getFTensor1DiffN<SPACE_DIM>();
         for (int gg = 0; gg != nb_gauss_pts; gg++) {
           auto t_data = data.getFTensor0FieldData();
           for (int bb = 0; bb != nb_dofs; bb++) {
@@ -147,7 +182,7 @@ struct OpCheckValsDiffVals : public DomainEleOp {
     std::fill(&doEntities[MBEDGE], &doEntities[MBMAXTYPE], false);
   }
 
-  FTensor::Index<'i', 2> i;
+  FTensor::Index<'i', SPACE_DIM> i;
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data) {
@@ -186,23 +221,25 @@ struct OpCheckValsDiffVals : public DomainEleOp {
 
     if (checkGradients) {
 
-      auto t_diff_vals = getFTensor1FromMat<2>(diffVals);
-      auto t_ptr_diff_vals = getFTensor1FromMat<2>(*ptrDiffVals);
+      auto t_diff_vals = getFTensor1FromMat<SPACE_DIM>(diffVals);
+      auto t_ptr_diff_vals = getFTensor1FromMat<SPACE_DIM>(*ptrDiffVals);
 
       for (int gg = 0; gg != nb_gauss_pts; gg++) {
         const double x = getCoordsAtGaussPts()(gg, 0);
         const double y = getCoordsAtGaussPts()(gg, 1);
+        const double z = getCoordsAtGaussPts()(gg, 2);
 
         // Check approximation
-        FTensor::Tensor1<double, 2> t_delta_diff_val;
-        auto t_diff_anal = ApproxFunctions::diffFun(x, y);
+        FTensor::Tensor1<double, SPACE_DIM> t_delta_diff_val;
+        auto t_diff_anal = ApproxFunctions::diffFun(x, y, z);
         t_delta_diff_val(i) = t_diff_vals(i) - t_diff_anal(i);
 
         double err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
         MOFEM_LOG("AT", Sev::verbose)
             << err_diff_val << " : " << sqrt(t_diff_vals(i) * t_diff_vals(i))
             << " :  " << t_diff_vals(0) / t_diff_anal(0) << " "
-            << t_diff_vals(1) / t_diff_anal(1);
+            << t_diff_vals(1) / t_diff_anal(1) << "  "
+            << t_diff_vals(2) / t_diff_anal(2);
         if (err_diff_val > eps)
           SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong derivative of value %4.3e", err_diff_val);
@@ -236,8 +273,7 @@ int main(int argc, char *argv[]) {
 
     // Add logging channel for example
     auto core_log = logging::core::get();
-    core_log->add_sink(
-        LogManager::createSink(LogManager::getStrmSelf(), "AT"));
+    core_log->add_sink(LogManager::createSink(LogManager::getStrmSelf(), "AT"));
     LogManager::setLog("AT");
     MOFEM_LOG_TAG("AT", "atom_test");
 
@@ -303,8 +339,8 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpMakeHighOrderGeometryWeightsOnFace());
 
-      using OpSource = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::LinearForm<
-          GAUSS>::OpSource<1, 1>;
+      using OpSource = FormsIntegrators<DomainEleOp>::Assembly<
+          PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSource("FIELD1", ApproxFunctions::fUn));
       // pipeline_mng->getOpDomainRhsPipeline().push_back(new OpAssembleVec());
@@ -313,8 +349,8 @@ int main(int argc, char *argv[]) {
           new OpCalculateInvJacForFace(inv_jac));
       pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpMakeHighOrderGeometryWeightsOnFace());
-      using OpMass = FormsIntegrators<DomainEleOp>::Assembly<PETSC>::BiLinearForm<
-          GAUSS>::OpMass<1, 1>;
+      using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
+          PETSC>::BiLinearForm<GAUSS>::OpMass<1, 1>;
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpMass(
           "FIELD1", "FIELD1", [](double, double, double) { return 1.; }));
 
@@ -364,7 +400,8 @@ int main(int argc, char *argv[]) {
           new OpCalculateScalarFieldValues("FIELD1", ptr_values));
       if (choice_space_value == H1SPACE) {
         pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpCalculateScalarFieldGradient<2>("FIELD1", ptr_diff_vals));
+            new OpCalculateScalarFieldGradient<SPACE_DIM>("FIELD1",
+                                                          ptr_diff_vals));
       }
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCheckValsDiffVals(vals, diff_vals, ptr_values, ptr_diff_vals,
