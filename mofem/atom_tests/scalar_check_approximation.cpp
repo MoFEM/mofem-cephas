@@ -41,7 +41,8 @@ template <> struct ElementsAndOps<3> {
   using DomainEleOp = DomainEle::UserDataOperator;
 };
 
-constexpr int SPACE_DIM = 2; //< Space dimension of problem, mesh
+constexpr int SPACE_DIM =
+    EXECUTABLE_DIMENSION; //< Space dimension of problem, mesh
 
 using EntData = DataForcesAndSourcesCore::EntData;
 using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
@@ -235,11 +236,19 @@ struct OpCheckValsDiffVals : public DomainEleOp {
         t_delta_diff_val(i) = t_diff_vals(i) - t_diff_anal(i);
 
         double err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
-        MOFEM_LOG("AT", Sev::verbose)
-            << err_diff_val << " : " << sqrt(t_diff_vals(i) * t_diff_vals(i))
-            << " :  " << t_diff_vals(0) / t_diff_anal(0) << " "
-            << t_diff_vals(1) / t_diff_anal(1) << "  "
-            << t_diff_vals(2) / t_diff_anal(2);
+        if(SPACE_DIM == 3)
+          MOFEM_LOG("AT", Sev::verbose)
+              << err_diff_val << " : " << sqrt(t_diff_vals(i) * t_diff_vals(i))
+              << " :  " << t_diff_vals(0) / t_diff_anal(0) << " "
+              << t_diff_vals(1) / t_diff_anal(1) << "  "
+              << t_diff_vals(2) /
+                     (t_diff_anal(2) + std::numeric_limits<double>::epsilon());
+        else
+          MOFEM_LOG("AT", Sev::verbose)
+              << err_diff_val << " : " << sqrt(t_diff_vals(i) * t_diff_vals(i))
+              << " :  " << t_diff_vals(0) / t_diff_anal(0) << " "
+              << t_diff_vals(1) / t_diff_anal(1);
+
         if (err_diff_val > eps)
           SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong derivative of value %4.3e", err_diff_val);
