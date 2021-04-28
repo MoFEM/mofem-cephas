@@ -345,19 +345,21 @@ int main(int argc, char *argv[]) {
 
     auto assemble_matrices_and_vectors = [&]() {
       MoFEMFunctionBegin;
-      pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpMakeHighOrderGeometryWeightsOnFace());
+      if (SPACE_DIM == 2)
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpMakeHighOrderGeometryWeightsOnFace());
 
       using OpSource = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSource("FIELD1", ApproxFunctions::fUn));
-      // pipeline_mng->getOpDomainRhsPipeline().push_back(new OpAssembleVec());
 
-      pipeline_mng->getOpDomainLhsPipeline().push_back(
-          new OpCalculateInvJacForFace(inv_jac));
-      pipeline_mng->getOpDomainLhsPipeline().push_back(
-          new OpMakeHighOrderGeometryWeightsOnFace());
+      if (SPACE_DIM == 2) {
+        pipeline_mng->getOpDomainLhsPipeline().push_back(
+            new OpCalculateInvJacForFace(inv_jac));
+        pipeline_mng->getOpDomainLhsPipeline().push_back(
+            new OpMakeHighOrderGeometryWeightsOnFace());
+      }
       using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::BiLinearForm<GAUSS>::OpMass<1, 1>;
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpMass(
@@ -399,10 +401,12 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getDomainLhsFE().reset();
       pipeline_mng->getOpDomainRhsPipeline().clear();
 
-      pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCalculateInvJacForFace(inv_jac));
-      pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpSetInvJacH1ForFace(inv_jac));
+      if (SPACE_DIM == 2) {
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpCalculateInvJacForFace(inv_jac));
+        pipeline_mng->getOpDomainRhsPipeline().push_back(
+            new OpSetInvJacH1ForFace(inv_jac));
+      }
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpValsDiffVals(vals, diff_vals, choice_space_value == H1SPACE));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
