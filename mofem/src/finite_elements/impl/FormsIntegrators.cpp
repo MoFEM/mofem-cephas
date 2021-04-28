@@ -96,6 +96,11 @@ VecSetValues<EssentialBcStorage>(Vec V,
                                  const DataForcesAndSourcesCore::EntData &data,
                                  const double *ptr, InsertMode iora) {
   MoFEMFunctionBegin;
+
+  if(!V)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+            "Pointer to PETSc vector is null");
+
   CHKERR VecSetOption(V, VEC_IGNORE_NEGATIVE_INDICES, PETSC_TRUE);
   if (!data.getFieldEntities().empty()) {
     if (auto e_ptr = data.getFieldEntities()[0]) {
