@@ -255,7 +255,8 @@ MoFEMErrorCode OpSetInvJacH1::doWork(int side, EntityType type,
   switch (type) {
   case MBVERTEX:
     for (auto &m : data.getBBDiffNMap())
-      CHKERR transform_base(*(m.second), true);
+      if (m.second)
+        CHKERR transform_base(*(m.second), true);
     break;
   default:
     for (auto &ptr : data.getBBDiffNByOrderArray())

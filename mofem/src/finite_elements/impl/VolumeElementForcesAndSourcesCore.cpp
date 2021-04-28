@@ -149,6 +149,10 @@ VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
   MoFEMFunctionBegin;
 
   CHKERR getSpacesAndBaseOnEntities(dataH1);
+
+  cerr << "BBB"
+       << this->numeredEntFiniteElementPtr->getSideNumberTable().size();
+
   CHKERR getFaceTriNodes(dataH1);
   // H1
   if ((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
@@ -169,8 +173,8 @@ VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
     dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
   }
   if ((dataH1.spacesOnEntities[MBTRI]).test(HCURL)) {
+    dataHcurl.facesNodes = dataH1.facesNodes;
     CHKERR getEntitySense<MBTRI>(dataHcurl);
-    CHKERR getFaceTriNodes(dataHcurl);
     CHKERR getEntityDataOrder<MBTRI>(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
   }
@@ -180,8 +184,8 @@ VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
   }
   // Hdiv
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
+    dataHdiv.facesNodes = dataH1.facesNodes;
     CHKERR getEntitySense<MBTRI>(dataHdiv);
-    CHKERR getFaceTriNodes(dataHdiv);
     CHKERR getEntityDataOrder<MBTRI>(dataHdiv, HDIV);
     dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
   }

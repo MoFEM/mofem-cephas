@@ -363,7 +363,7 @@ TetPolynomialBase::getValueH1BernsteinBezierBase(MatrixDouble &pts) {
           get_n.resize(nb_gauss_pts, nb_dofs, false);
           get_diff_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
 
-          auto &face_alpha = get_alpha(ent_data );
+          auto &face_alpha = get_alpha(ent_data);
           face_alpha.resize(nb_dofs, 4, false);
 
           CHKERR BernsteinBezier::generateIndicesTriTet(ff, order,
@@ -504,8 +504,176 @@ MoFEMErrorCode
 TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
-  SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-          "L2 space for Bezier Base not yet implemented.");
+  DataForcesAndSourcesCore &data = cTx->dAta;
+  const std::string field_name = cTx->fieldName;
+  const int nb_gauss_pts = pts.size2();
+
+  if (data.dataOnEntities[MBVERTEX][0].getN(NOBASE).size1() !=
+      (unsigned int)nb_gauss_pts)
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "Base functions or nodes has wrong number of integration points "
+             "for base %s",
+             ApproximationBaseNames[NOBASE]);
+  auto &lambda = data.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+
+  auto get_alpha = [field_name](auto &data) -> MatrixInt & {
+    auto &ptr = data.getBBAlphaIndicesSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixInt());
+    return *ptr;
+  };
+
+  auto get_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto get_diff_base = [field_name](auto &data) -> MatrixDouble & {
+    auto &ptr = data.getBBDiffNSharedPtr(field_name);
+    if (!ptr)
+      ptr.reset(new MatrixDouble());
+    return *ptr;
+  };
+
+  auto get_alpha_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixInt> & {
+    return data.getBBAlphaIndicesSharedPtr(field_name);
+  };
+
+  auto get_base_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBNSharedPtr(field_name);
+  };
+
+  auto get_diff_base_by_name_ptr =
+      [](auto &data,
+         const std::string &field_name) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBDiffNSharedPtr(field_name);
+  };
+
+  auto get_alpha_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixInt> & {
+    return data.getBBAlphaIndicesByOrderSharedPtr(o);
+  };
+
+  auto get_base_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBNByOrderSharedPtr(o);
+  };
+
+  auto get_diff_base_by_order_ptr =
+      [](auto &data, const size_t o) -> boost::shared_ptr<MatrixDouble> & {
+    return data.getBBDiffNByOrderSharedPtr(o);
+  };
+
+  if (data.spacesOnEntities[MBTET].test(L2)) {
+    if (data.dataOnEntities[MBTET].size() != 1)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong size ent of ent data");
+
+    auto &ent_data = data.dataOnEntities[MBTET][0];
+    const int order = ent_data.getDataOrder();
+    const int nb_dofs = NBVOLUMETET_L2(order);
+
+    if (get_alpha_by_order_ptr(ent_data, order)) {
+      get_alpha_by_name_ptr(ent_data, field_name) =
+          get_alpha_by_order_ptr(ent_data, order);
+      get_base_by_name_ptr(ent_data, field_name) =
+          get_base_by_order_ptr(ent_data, order);
+      get_diff_base_by_name_ptr(ent_data, field_name) =
+          get_diff_base_by_order_ptr(ent_data, order);
+    } else {
+
+      auto &get_n = get_base(ent_data);
+      auto &get_diff_n = get_diff_base(ent_data);
+      get_n.resize(nb_gauss_pts, nb_dofs, false);
+      get_diff_n.resize(nb_gauss_pts, 3 * nb_dofs, false);
+
+      if (nb_dofs) {
+
+        if (order == 0) {
+
+          if (nb_dofs != 1)
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Inconsistent number of DOFs");
+
+          auto &tri_alpha = get_alpha(ent_data);
+          tri_alpha.clear();
+          get_n(0, 0) = 1;
+          get_diff_n.clear();
+
+        } else {
+
+          if (nb_dofs != 4 + 6 * NBEDGE_H1(order) + 4 * NBFACETRI_H1(order) +
+                             NBVOLUMETET_H1(order) ||
+              nb_dofs != NBVOLUMETET_L2(order))
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Inconsistent number of DOFs");
+
+
+          auto &tet_alpha = get_alpha(ent_data);
+          tet_alpha.resize(nb_dofs, 4, false);
+
+          CHKERR BernsteinBezier::generateIndicesVertexTet(order,
+                                                           &tet_alpha(0, 0));
+          if(order > 1) {
+            std::array<int, 6> edge_n{order, order, order, order, order, order};
+            std::array<int *, 6> tet_edge_ptr{
+                &tet_alpha(4, 0),
+                &tet_alpha(4 + 1 * NBEDGE_H1(order), 0),
+                &tet_alpha(4 + 2 * NBEDGE_H1(order), 0),
+                &tet_alpha(4 + 3 * NBEDGE_H1(order), 0),
+                &tet_alpha(4 + 4 * NBEDGE_H1(order), 0),
+                &tet_alpha(4 + 5 * NBEDGE_H1(order), 0)};
+            CHKERR BernsteinBezier::generateIndicesEdgeTri(
+                edge_n.data(), tet_edge_ptr.data());
+            if (order > 2) {
+              std::array<int, 6> face_n{order, order, order, order};
+              std::array<int *, 6> tet_face_ptr{
+                  &tet_alpha(4 + 6 * NBEDGE_H1(order), 0),
+                  &tet_alpha(4 + 6 * NBEDGE_H1(order) + 1 * NBFACETRI_H1(order),
+                             0),
+                  &tet_alpha(4 + 6 * NBEDGE_H1(order) + 2 * NBFACETRI_H1(order),
+                             0),
+                  &tet_alpha(4 + 6 * NBEDGE_H1(order) + 3 * NBFACETRI_H1(order),
+                             0),
+              };
+              CHKERR BernsteinBezier::generateIndicesTriTet(
+                  face_n.data(), tet_face_ptr.data());
+              if(order > 3)
+                CHKERR BernsteinBezier::generateIndicesTetTet(
+                    order,
+                    &tet_alpha(
+                        4 + 6 * NBEDGE_H1(order) + 4 * NBFACETRI_H1(order), 0));
+            }
+          }
+
+          CHKERR BernsteinBezier::baseFunctionsTet(
+              order, lambda.size1(), tet_alpha.size1(), &tet_alpha(0, 0),
+              &lambda(0, 0), Tools::diffShapeFunMBTET.data(), &get_n(0, 0),
+              &get_diff_n(0, 0));
+
+          get_alpha_by_order_ptr(ent_data, order) =
+              get_alpha_by_name_ptr(ent_data, field_name);
+          get_base_by_order_ptr(ent_data, order) =
+              get_base_by_name_ptr(ent_data, field_name);
+          get_diff_base_by_order_ptr(ent_data, order) =
+              get_diff_base_by_name_ptr(ent_data, field_name);
+        }
+      }
+    }
+  } else {
+    auto &ent_data = data.dataOnEntities[MBTET][0];
+    ent_data.getBBAlphaIndicesSharedPtr(field_name).reset();
+    auto &get_n = get_base(ent_data);
+    auto &get_diff_n = get_diff_base(ent_data);
+    get_n.resize(nb_gauss_pts, 0, false);
+    get_diff_n.resize(nb_gauss_pts, 0, false);
+  }
 
   MoFEMFunctionReturn(0);
 }
@@ -1212,10 +1380,10 @@ TetPolynomialBase::getValue(MatrixDouble &pts,
   cTx = reinterpret_cast<EntPolynomialBaseCtx *>(iface);
 
   int nb_gauss_pts = pts.size2();
-  if (!nb_gauss_pts) 
+  if (!nb_gauss_pts)
     MoFEMFunctionReturnHot(0);
 
-  if (pts.size1() < 3) 
+  if (pts.size1() < 3)
     SETERRQ(
         PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
         "Wrong dimension of pts, should be at least 3 rows with coordinates");
