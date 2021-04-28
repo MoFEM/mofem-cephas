@@ -26,6 +26,9 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
+static constexpr int approx_order = 5;
+template <int DIM> struct ApproxFunctionsImpl {};
+
 template <int DIM> struct ElementsAndOps {};
  
 template <> struct ElementsAndOps<2> {
@@ -44,9 +47,8 @@ using EntData = DataForcesAndSourcesCore::EntData;
 using DomainEle = ElementsAndOps<SPACE_DIM>::DomainEle;
 using DomainEleOp = ElementsAndOps<SPACE_DIM>::DomainEleOp;
 
-static constexpr int approx_order = 5;
-
-struct ApproxFunctions {
+template<>
+struct ApproxFunctionsImpl<2> {
   static double fUn(const double x, const double y, double z) {
     double r = 1;
     for (int o = 1; o <= approx_order; ++o) {
@@ -73,6 +75,9 @@ struct ApproxFunctions {
     return r;
   }
 };
+
+using ApproxFunctions = ApproxFunctionsImpl<SPACE_DIM>;
+
 struct OpValsDiffVals : public DomainEleOp {
   VectorDouble &vAls;
   MatrixDouble &diffVals;
