@@ -221,7 +221,7 @@ struct OpCheckValsDiffVals : public FaceEleOp {
       const double delta_val = t_vals - ApproxFunctions::fUn(x, y);
 
       double err_val = std::fabs(delta_val * delta_val);
-      cerr << err_val << " : " << t_vals << endl;
+      MOFEM_LOG("AT", Sev::verbose) << err_val << " : " << t_vals;
       if (err_val > eps)
         SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID, "Wrong value %4.3e",
                  err_val);
@@ -252,9 +252,10 @@ struct OpCheckValsDiffVals : public FaceEleOp {
         t_delta_diff_val(i) = t_diff_vals(i) - t_diff_anal(i);
 
         double err_diff_val = sqrt(t_delta_diff_val(i) * t_delta_diff_val(i));
-        cerr << err_diff_val << " : " << sqrt(t_diff_vals(i) * t_diff_vals(i))
-             << " :  " << t_diff_vals(0) / t_diff_anal(0) << " "
-             << t_diff_vals(1) / t_diff_anal(1) << endl;
+        MOFEM_LOG("AT", Sev::verbose)
+            << err_diff_val << " : " << sqrt(t_diff_vals(i) * t_diff_vals(i))
+            << " :  " << t_diff_vals(0) / t_diff_anal(0) << " "
+            << t_diff_vals(1) / t_diff_anal(1);
         if (err_diff_val > eps)
           SETERRQ1(PETSC_COMM_SELF, MOFEM_ATOM_TEST_INVALID,
                    "Wrong derivative of value %4.3e", err_diff_val);
@@ -285,6 +286,13 @@ int main(int argc, char *argv[]) {
 
     moab::Core mb_instance;
     moab::Interface &moab = mb_instance;
+
+    // Add logging channel for example
+    auto core_log = logging::core::get();
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSelf(), "AT"));
+    LogManager::setLog("AT");
+    MOFEM_LOG_TAG("AT", "atom_test");
 
     // Create MoFEM instance
     MoFEM::Core core(moab);
