@@ -614,13 +614,12 @@ TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                     "Inconsistent number of DOFs");
 
-
           auto &tet_alpha = get_alpha(ent_data);
           tet_alpha.resize(nb_dofs, 4, false);
 
           CHKERR BernsteinBezier::generateIndicesVertexTet(order,
                                                            &tet_alpha(0, 0));
-          if(order > 1) {
+          if (order > 1) {
             std::array<int, 6> edge_n{order, order, order, order, order, order};
             std::array<int *, 6> tet_edge_ptr{
                 &tet_alpha(4, 0),
@@ -629,8 +628,8 @@ TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
                 &tet_alpha(4 + 3 * NBEDGE_H1(order), 0),
                 &tet_alpha(4 + 4 * NBEDGE_H1(order), 0),
                 &tet_alpha(4 + 5 * NBEDGE_H1(order), 0)};
-            CHKERR BernsteinBezier::generateIndicesEdgeTri(
-                edge_n.data(), tet_edge_ptr.data());
+            CHKERR BernsteinBezier::generateIndicesEdgeTet(edge_n.data(),
+                                                           tet_edge_ptr.data());
             if (order > 2) {
               std::array<int, 6> face_n{order, order, order, order};
               std::array<int *, 6> tet_face_ptr{
@@ -644,7 +643,7 @@ TetPolynomialBase::getValueL2BernsteinBezierBase(MatrixDouble &pts) {
               };
               CHKERR BernsteinBezier::generateIndicesTriTet(
                   face_n.data(), tet_face_ptr.data());
-              if(order > 3)
+              if (order > 3)
                 CHKERR BernsteinBezier::generateIndicesTetTet(
                     order,
                     &tet_alpha(
