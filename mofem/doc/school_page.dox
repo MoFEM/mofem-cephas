@@ -1,0 +1,96 @@
+/*! \page mofem_school_page School 
+
+ 
+\section mofem_school MoFEM UKACM 2021 School: "Weak form" in many flavours.
+Design and sustainable code development
+
+
+\subsection school_intro Introduction
+ 
+In this course we will go through the theory of finite elements, approximation methods, and implementation techniques, to solve spectrum of linear/nonlinear partial differential equations (PDEs). 
+The first part of the school contains introduction about MoFEM's code design, overview of heterogeneous and hierarchical basis and explains concept behind pipelines. We show, step by step how by stacking together UDOs starting with simple problems, finite element solver can be extended. We start with a classical Poisson's equation, where basics are introduced. The following linear acoustics example demonstrates solving problems with multiple fields. Subsequently, we explain implementation of vector valued problems on an example of linear elasticity, further extended to the nonlinear case. Finally, a mixed problem is built by composition of simple blocks. Moreover, we exploit the MoFEM's advanced capabilities of using various spaces, heterogeneous and adaptive approximation basis. These examples, demonstrate how each component can be implemented independently, simultaneously (in parallel), by group of researchers or developers, tested independently, and then composed together into one single pipeline of operators. 
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/7NxivjAnO3Y" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+\subsection school_poisson Poisson problem
+ 
+Talk on the Poisson problem in MoFEM explains:
+- general structure of a program developed using MoFEM
+- idea of Simple Interface in MoFEM and how to use it
+- idea of Domain element in MoFEM and how to use it
+- process of implementing User Data Operators (UDOs) to calculate and assemble stiffness matrix and force vector
+- how to push the developed UDOs to the Pipeline
+- a way to handle homogeneous boundary condition in MoFEM
+- utilisation of tools to convert outputs (MOAB) and visualise them (Paraview)
+
+For more details see tutorial SCL-1: \ref basic_tutorials_poisson_homogeneous.
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/vKEje6k89z0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+\subsection school_acoustic Linear acoustics
+ 
+Talk on the linear acoustics implementation in MoFEM at the UKACM School 2021.
+In this tutorial you will learn how to:
+- Solve complex fields problems
+- Deal with two fields in MoFEM
+- Push Forms Integrators into the pipelines
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/5aZuwbAUUkY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+For more details, see tutorial CLX-0: \ref tutorial_hemholtz_problem.
+
+\subsection school_elastic Elastic problem
+ 
+Talk on the elasticity problem in MoFEM finite element library at the UKACM School 2021 includes:
+- Presentation of the weak form for elasticity
+- Implementation of vector valued problems in MoFEM
+- Introduction to nonlinear problems based on Hencky material
+- Methods for verifying tangent stiffness matrix
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Hoz2Mqql25A" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+The full tutorials for linear and nonlinear case with source code dissections can be found in tutorial VEC-0: \ref tutorial_elastic_problem and VEC-2: \ref tutorial_nonlinear_elastic.
+
+\subsection school_mixed Mixed Finite Elements
+ 
+Talk on the mixed finite element formulation at the UKACM School 2021 includes:
+- Motivation for using mixed problem formulation
+- Preliminaries for function spaces: \f$L^2\f$, \f$H^1\f$, \f$H(\textrm{div})\f$ and \f$H(\textrm{curl})\f$
+- Derivation of the mixed weak form for the Poisson equation
+- Implementation of the mixed weak form and error indicators
+- Convergence analysis for p-adaptive refinement
+- Conclusions and further reading
+
+\htmlonly
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/T40n76UwKo0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</center>
+\endhtmlonly
+
+
+
+For more details, see tutorial MIX-0: \ref tut_mix_poisson.
+
+
+\subsection mofem_additional_materials Additional materials
+
+PDF files of the presentations can be found <a href=https://gla-my.sharepoint.com/:f:/g/personal/lukasz_kaczmarczyk_glasgow_ac_uk/EtyH9FL3-ApCqRcBaxDwI1cBcmT6bVglaFfJ1X0SY4l6BA?e=SmUfgW> here</a>. 
+
+
+*/
