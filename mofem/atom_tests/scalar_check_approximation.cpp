@@ -14,7 +14,7 @@
  *
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Publicrule
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -134,6 +134,11 @@ struct OpValsDiffVals : public DomainEleOp {
       vAls.clear();
       diffVals.clear();
     }
+
+    MOFEM_LOG("AT", Sev::noisy) << "Type  " << moab::CN::EntityTypeName(type)
+                                << " side " << side;
+    MOFEM_LOG("AT", Sev::noisy) << data.getN();
+
     const int nb_dofs = data.getIndices().size();
     if (nb_dofs) {
       auto t_vals = getFTensor0FromVec(vAls);
@@ -282,7 +287,8 @@ int main(int argc, char *argv[]) {
 
     // Add logging channel for example
     auto core_log = logging::core::get();
-    core_log->add_sink(LogManager::createSink(LogManager::getStrmSelf(), "AT"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmWorld(), "AT"));
     LogManager::setLog("AT");
     MOFEM_LOG_TAG("AT", "atom_test");
 
