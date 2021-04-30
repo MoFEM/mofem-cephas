@@ -12,7 +12,11 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-// #define BOOST_DISABLE_ASSERTS
+#ifndef NDEBUG
+#define BOOST_DISABLE_ASSERTS
+#define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
+#define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
+#endif
 
 #ifndef __MOFEM_HPP__
 #define __MOFEM_HPP__

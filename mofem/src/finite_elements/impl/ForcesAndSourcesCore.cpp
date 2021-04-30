@@ -883,84 +883,86 @@ ForcesAndSourcesCore::getFaceTriNodes(DataForcesAndSourcesCore &data) const {
       numeredEntFiniteElementPtr->getSideNumberTable());
   auto siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI, 0));
   auto hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI, 4));
-  if (std::distance(siit, hi_siit) != 4) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Should be 4 triangles on tet, side_table not initialized");
-  }
-  const int canonical_face_sense_p1[4][3] = {
-      {0, 1, 3},
-      {1, 2, 3},
-      {0, 3, 2} /**/,
-      {0, 2, 1} /**/}; // second index is offset (positive sense)
-  const int canonical_face_sense_m1[4][3] = {
-      {0, 3, 1},
-      {1, 3, 2},
-      {0, 2, 3},
-      {0, 1, 2}}; // second index is offset (negative sense
-  for (; siit != hi_siit; siit++) {
-    const boost::shared_ptr<SideNumber> side = *siit;
-    int face_conn[3] = {-1, -1, -1};
-    if (side->offset == 0) {
-      face_conn[0] = side->sense == 1
-                         ? canonical_face_sense_p1[(int)side->side_number][0]
-                         : canonical_face_sense_m1[(int)side->side_number][0];
-      face_conn[1] = side->sense == 1
-                         ? canonical_face_sense_p1[(int)side->side_number][1]
-                         : canonical_face_sense_m1[(int)side->side_number][1];
-      face_conn[2] = side->sense == 1
-                         ? canonical_face_sense_p1[(int)side->side_number][2]
-                         : canonical_face_sense_m1[(int)side->side_number][2];
+  if (auto nb_faces = std::distance(siit, hi_siit)) {
+    if (nb_faces != 4) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Should be 4 triangles on tet, side_table not initialized");
     }
-    if (side->offset == 1) {
-      face_conn[0] =
-          side->sense == 1
-              ? canonical_face_sense_p1[(int)side->side_number][1]
-              : canonical_face_sense_m1[(int)side->side_number][2] /**/;
-      face_conn[1] = side->sense == 1
-                         ? canonical_face_sense_p1[(int)side->side_number][2]
-                         : canonical_face_sense_m1[(int)side->side_number][0];
-      face_conn[2] = side->sense == 1
-                         ? canonical_face_sense_p1[(int)side->side_number][0]
-                         : canonical_face_sense_m1[(int)side->side_number][1];
-    }
-    if (side->offset == 2) {
-      face_conn[0] =
-          side->sense == 1
-              ? canonical_face_sense_p1[(int)side->side_number][2]
-              : canonical_face_sense_m1[(int)side->side_number][1] /**/;
-      face_conn[1] = side->sense == 1
-                         ? canonical_face_sense_p1[(int)side->side_number][0]
-                         : canonical_face_sense_m1[(int)side->side_number][2];
-      face_conn[2] = side->sense == 1
-                         ? canonical_face_sense_p1[(int)side->side_number][1]
-                         : canonical_face_sense_m1[(int)side->side_number][0];
-    }
-    for (int nn = 0; nn < 3; nn++)
-      data.facesNodes(side->side_number, nn) = face_conn[nn];
-    {
-      const EntityHandle *conn_tet;
-      int num_nodes_tet;
-      EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-      CHKERR mField.get_moab().get_connectivity(ent, conn_tet, num_nodes_tet,
-                                                true);
-      if (num_nodes_tet != 4)
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "data inconsistency");
-      int num_nodes_face;
-      const EntityHandle *conn_face;
-      CHKERR mField.get_moab().get_connectivity(side->ent, conn_face,
-                                                num_nodes_face, true);
-      if (num_nodes_face != 3)
-        SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
-      if (conn_face[0] != conn_tet[data.facesNodes(side->side_number, 0)])
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "data inconsistency");
-      if (conn_face[1] != conn_tet[data.facesNodes(side->side_number, 1)])
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "data inconsistency");
-      if (conn_face[2] != conn_tet[data.facesNodes(side->side_number, 2)])
-        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                "data inconsistency");
+    const int canonical_face_sense_p1[4][3] = {
+        {0, 1, 3},
+        {1, 2, 3},
+        {0, 3, 2} /**/,
+        {0, 2, 1} /**/}; // second index is offset (positive sense)
+    const int canonical_face_sense_m1[4][3] = {
+        {0, 3, 1},
+        {1, 3, 2},
+        {0, 2, 3},
+        {0, 1, 2}}; // second index is offset (negative sense
+    for (; siit != hi_siit; siit++) {
+      const boost::shared_ptr<SideNumber> side = *siit;
+      int face_conn[3] = {-1, -1, -1};
+      if (side->offset == 0) {
+        face_conn[0] = side->sense == 1
+                           ? canonical_face_sense_p1[(int)side->side_number][0]
+                           : canonical_face_sense_m1[(int)side->side_number][0];
+        face_conn[1] = side->sense == 1
+                           ? canonical_face_sense_p1[(int)side->side_number][1]
+                           : canonical_face_sense_m1[(int)side->side_number][1];
+        face_conn[2] = side->sense == 1
+                           ? canonical_face_sense_p1[(int)side->side_number][2]
+                           : canonical_face_sense_m1[(int)side->side_number][2];
+      }
+      if (side->offset == 1) {
+        face_conn[0] =
+            side->sense == 1
+                ? canonical_face_sense_p1[(int)side->side_number][1]
+                : canonical_face_sense_m1[(int)side->side_number][2] /**/;
+        face_conn[1] = side->sense == 1
+                           ? canonical_face_sense_p1[(int)side->side_number][2]
+                           : canonical_face_sense_m1[(int)side->side_number][0];
+        face_conn[2] = side->sense == 1
+                           ? canonical_face_sense_p1[(int)side->side_number][0]
+                           : canonical_face_sense_m1[(int)side->side_number][1];
+      }
+      if (side->offset == 2) {
+        face_conn[0] =
+            side->sense == 1
+                ? canonical_face_sense_p1[(int)side->side_number][2]
+                : canonical_face_sense_m1[(int)side->side_number][1] /**/;
+        face_conn[1] = side->sense == 1
+                           ? canonical_face_sense_p1[(int)side->side_number][0]
+                           : canonical_face_sense_m1[(int)side->side_number][2];
+        face_conn[2] = side->sense == 1
+                           ? canonical_face_sense_p1[(int)side->side_number][1]
+                           : canonical_face_sense_m1[(int)side->side_number][0];
+      }
+      for (int nn = 0; nn < 3; nn++)
+        data.facesNodes(side->side_number, nn) = face_conn[nn];
+      {
+        const EntityHandle *conn_tet;
+        int num_nodes_tet;
+        EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
+        CHKERR mField.get_moab().get_connectivity(ent, conn_tet, num_nodes_tet,
+                                                  true);
+        if (num_nodes_tet != 4)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "data inconsistency");
+        int num_nodes_face;
+        const EntityHandle *conn_face;
+        CHKERR mField.get_moab().get_connectivity(side->ent, conn_face,
+                                                  num_nodes_face, true);
+        if (num_nodes_face != 3)
+          SETERRQ(PETSC_COMM_SELF, 1, "data inconsistency");
+        if (conn_face[0] != conn_tet[data.facesNodes(side->side_number, 0)])
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "data inconsistency");
+        if (conn_face[1] != conn_tet[data.facesNodes(side->side_number, 1)])
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "data inconsistency");
+        if (conn_face[2] != conn_tet[data.facesNodes(side->side_number, 2)])
+          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                  "data inconsistency");
+      }
     }
   }
   MoFEMFunctionReturn(0);
