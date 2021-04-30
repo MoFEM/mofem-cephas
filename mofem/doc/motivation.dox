@@ -23,7 +23,7 @@ Support for handling boundary conditions and material sets
 - Cubit/Trelis
 - Gmsh
 
-Also using <a style="font-weight:bold" href=https://ftp.mcs.anl.gov/pub/fathom/moab-docs/index.html>MOAB</a> liberay MoFEM can read/wrire from file formats
+Moreover, using the <a style="font-weight:bold" href=https://ftp.mcs.anl.gov/pub/fathom/moab-docs/index.html>MOAB</a> library, MoFEM can read/write from file formats
 \verbatim
 Format               Name     Read    Write   File name description
 ------------------  ------  -------- -------  ----------------
@@ -83,7 +83,7 @@ quads, bricks and more.
 
 - Readers and writers for many file formats (MOAB)
 
-- Meshing and re-meshing on the flay
+- Meshing and re-meshing on the fly
 
 - Ability to capture evolving topologies, e.g. implicit crack propagation analysis
 

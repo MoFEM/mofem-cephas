@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
     const int nb_ref_cut = 1;
     const int nb_ref_trim = 1;
     CHKERR cut_mesh->refineMesh(0, nb_ref_cut, nb_ref_trim, &fixed_edges,
-                                VERBOSE, true);
+                                VERBOSE, false);
     auto shift_after_ref = [&]() {
       MoFEMFunctionBegin;
       BitRefLevel mask;
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     // Cut mesh, trim surface and merge bad edges
     int first_bit = 1;
     CHKERR cut_mesh->cutTrimAndMerge(first_bit, 5, th, tol[0], tol[1], tol[2],
-                                     fixed_edges, corner_nodes, true, true);
+                                     fixed_edges, corner_nodes, true, false);
 
     // Split faces
     CHKERR cut_mesh->splitSides(BitRefLevel().set(first_bit),

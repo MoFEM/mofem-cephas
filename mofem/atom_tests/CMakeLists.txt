@@ -503,9 +503,15 @@ add_test(forces_and_sources_h1_continuity_check_atom
   -log_no_color
 )
 
-# Check approxination on H1 space in 2d
+# Check approxination on H1 space in 2d and 3d
 build_test(
-  scalar_check_approximation_2d scalar_check_approximation_2d.cpp)
+  scalar_check_approximation_2d scalar_check_approximation.cpp)
+set_target_properties(
+  scalar_check_approximation_2d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=2")
+build_test(
+  scalar_check_approximation_3d scalar_check_approximation.cpp)
+set_target_properties(
+  scalar_check_approximation_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")    
 
 add_test(h1_check_approx_2d_ainsworth_tri
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
@@ -568,6 +574,47 @@ add_test(l2_check_approx_2d_demkowicz_quad
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
   -file_name rectangle_quad.h5m
   -base demkowicz -space l2
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+
+add_test(h1_check_approx_3d_ainsworth_tet
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
+  -file_name sphere.h5m
+  -base ainsworth -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(h1_check_approx_3d_ainsworth_lobatto_tet
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
+  -file_name sphere.h5m
+  -base ainsworth_labatto -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(h1_check_approx_3d_bernstein_tet
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
+  -file_name sphere.h5m
+  -base bernstein -space h1 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(l2_check_approx_3d_ainsworth_tet
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
+  -file_name sphere.h5m
+  -base ainsworth -space l2 
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
+  -log_no_color
+)
+add_test(l2_check_approx_3d_bernstein_tet
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
+  -file_name sphere.h5m
+  -base bernstein -space l2 
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
 )

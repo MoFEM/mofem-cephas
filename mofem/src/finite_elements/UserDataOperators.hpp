@@ -377,14 +377,14 @@ struct OpCalculateVectorFieldValues
       DoubleAllocator>::OpCalculateVectorFieldValues_General;
 };
 
-
 /**@}*/
 
 /** \name Vector field values at integration points */
 
 /**@{*/
 
-/** \brief Calculate divergence of vector field values for tenor field rank 1, i.e. vector field
+/** \brief Calculate divergence of vector field values for tenor field rank 1,
+ * i.e. vector field
  *
  */
 template <int Tensor_Dim, class T, class L, class A>
@@ -434,13 +434,13 @@ OpCalculateDivergenceVectorFieldValues_General<Tensor_Dim, T, L, A>::doWork(
  *
  */
 template <int Tensor_Dim>
-struct OpCalculateDivergenceVectorFieldValues_General<Tensor_Dim, double,
-                                            ublas::row_major, DoubleAllocator>
+struct OpCalculateDivergenceVectorFieldValues_General<
+    Tensor_Dim, double, ublas::row_major, DoubleAllocator>
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateDivergenceVectorFieldValues_General(const std::string field_name,
-                                       boost::shared_ptr<VectorDouble> data_ptr,
-                                       const EntityType zero_type = MBVERTEX)
+  OpCalculateDivergenceVectorFieldValues_General(
+      const std::string field_name, boost::shared_ptr<VectorDouble> data_ptr,
+      const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
         dataPtr(data_ptr), zeroType(zero_type) {
@@ -714,7 +714,8 @@ struct OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
   OpCalculateTensor2FieldValues_General(
       const std::string field_name,
       boost::shared_ptr<
-          ublas::matrix<double, ublas::row_major, DoubleAllocator>> data_ptr,
+          ublas::matrix<double, ublas::row_major, DoubleAllocator>>
+          data_ptr,
       const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -726,7 +727,8 @@ struct OpCalculateTensor2FieldValues_General<Tensor_Dim0, Tensor_Dim1, double,
   OpCalculateTensor2FieldValues_General(
       const std::string field_name,
       boost::shared_ptr<
-          ublas::matrix<double, ublas::row_major, DoubleAllocator>> data_ptr,
+          ublas::matrix<double, ublas::row_major, DoubleAllocator>>
+          data_ptr,
       SmartPetscObj<Vec> data_vec, const EntityType zero_type = MBVERTEX)
       : ForcesAndSourcesCore::UserDataOperator(
             field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
@@ -817,7 +819,6 @@ struct OpCalculateTensor2FieldValues
   using OpCalculateTensor2FieldValues_General<
       Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
       DoubleAllocator>::OpCalculateTensor2FieldValues_General;
-
 };
 
 /** \brief Get time direvarive values at integration pts for tensor filed rank
@@ -1229,7 +1230,6 @@ struct OpCalculateVectorFieldGradient_General
 
   using OpCalculateTensor2FieldValues_General<
       Tensor_Dim0, Tensor_Dim1, T, L, A>::OpCalculateTensor2FieldValues_General;
-
 };
 
 template <int Tensor_Dim0, int Tensor_Dim1>
@@ -1251,7 +1251,6 @@ struct OpCalculateVectorFieldGradient_General<Tensor_Dim0, Tensor_Dim1, double,
    */
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
-
 };
 
 /**
@@ -1340,8 +1339,8 @@ struct OpCalculateVectorFieldGradient
           Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
 
   using OpCalculateVectorFieldGradient_General<
-          Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator>::OpCalculateVectorFieldGradient_General;
-
+      Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
+      DoubleAllocator>::OpCalculateVectorFieldGradient_General;
 };
 
 /** \brief Get field gradients time derivative at integration pts for scalar
@@ -1556,9 +1555,9 @@ struct OpCalculateTensor2SymmetricFieldGradient
     : public OpCalculateTensor2SymmetricFieldGradient_General<
           Tensor_Dim0, Tensor_Dim1, double, ublas::row_major, DoubleAllocator> {
 
-  OpCalculateTensor2SymmetricFieldGradient(const std::string field_name,
-                                 boost::shared_ptr<MatrixDouble> data_ptr,
-                                 const EntityType zero_type = MBVERTEX)
+  OpCalculateTensor2SymmetricFieldGradient(
+      const std::string field_name, boost::shared_ptr<MatrixDouble> data_ptr,
+      const EntityType zero_type = MBVERTEX)
       : OpCalculateTensor2SymmetricFieldGradient_General<
             Tensor_Dim0, Tensor_Dim1, double, ublas::row_major,
             DoubleAllocator>(field_name, data_ptr, zero_type) {}
@@ -1908,8 +1907,8 @@ MoFEMErrorCode OpCalculateHdivVectorFieldDot<Tensor_Dim>::doWork(
  * @brief Calculate divergence of vector field
  * @ingroup mofem_forces_and_sources_user_data_operators
  *
- * @tparam BASE_DIM 
- * @tparam SPACE_DIM 
+ * @tparam BASE_DIM
+ * @tparam SPACE_DIM
  */
 template <int BASE_DIM, int SPACE_DIM>
 struct OpCalculateHdivVectorDivergence
@@ -2400,6 +2399,93 @@ private:
 
 /**@}*/
 
+/** \name Other operators */
+
+/**@{*/
+
+/**
+ * @brief Scale base functions by inverses of measure of element
+ *
+ * @tparam OP
+ */
+template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
+
+  OpScaleBaseBySpaceInverseOfMeasure(const FieldSpace space = L2)
+      : OP(space), fieldSpace(space) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+
+    auto scale = [&]() {
+      for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+        FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+        data.getN(base) /= this->getMeasure();
+        data.getDiffN(base) /= this->getMeasure();
+      }
+    };
+
+    if (this->getFEDim() == 3) {
+      switch (fieldSpace) {
+      case H1:
+        scale();
+        break;
+      case HCURL:
+        if (type >= MBEDGE)
+          scale();
+        break;
+      case HDIV:
+        if (type >= MBTRI)
+          scale();
+        break;
+      case L2:
+        if (type >= MBTET)
+          scale();
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+      }
+    } else if (this->getFEDim() == 2) {
+      switch (fieldSpace) {
+      case H1:
+        scale();
+        break;
+      case HCURL:
+        if (type >= MBEDGE)
+          scale();
+        break;
+      case HDIV:
+      case L2:
+        if (type >= MBTRI)
+          scale();
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+      }
+    } else if (this->getFEDim() == 1) {
+      switch (fieldSpace) {
+      case H1:
+        scale();
+        break;
+      case HCURL:
+      case L2:
+        if (type >= MBEDGE)
+          scale();
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+      }
+    } else {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  FieldSpace fieldSpace;
+};
+
 /**@}*/
 
 inline auto getFaceJac(MatrixDouble &jac, const FTensor::Number<2> &) {
@@ -2444,7 +2530,8 @@ protected:
   MatrixDouble &jac;
 };
 
-template <> struct OpCalculateJacForFaceImpl<3> : public OpCalculateJacForFaceImpl<2> {
+template <>
+struct OpCalculateJacForFaceImpl<3> : public OpCalculateJacForFaceImpl<2> {
 
   using OpCalculateJacForFaceImpl<2>::OpCalculateJacForFaceImpl;
 
@@ -2481,12 +2568,11 @@ struct OpCalculateInvJacForFaceImpl<2>
 
 protected:
   MatrixDouble &invJac;
-
 };
 
 template <>
 struct OpCalculateInvJacForFaceImpl<3>
-    : public  OpCalculateInvJacForFaceImpl<2>{
+    : public OpCalculateInvJacForFaceImpl<2> {
 
   using OpCalculateInvJacForFaceImpl<2>::OpCalculateInvJacForFaceImpl;
 
@@ -2524,8 +2610,7 @@ protected:
 };
 
 template <>
-struct OpSetInvJacSpaceForFaceImpl<3>
-    : public OpSetInvJacSpaceForFaceImpl<2> {
+struct OpSetInvJacSpaceForFaceImpl<3> : public OpSetInvJacSpaceForFaceImpl<2> {
 
   using OpSetInvJacSpaceForFaceImpl<2>::OpSetInvJacSpaceForFaceImpl;
 
@@ -2561,10 +2646,9 @@ struct OpSetInvJacL2ForFaceEmbeddedIn3DSpace
 
  * \ingroup mofem_forces_and_sources_tri_element
  */
-template<int DIM>
-struct OpSetInvJacHcurlFaceImpl;
+template <int DIM> struct OpSetInvJacHcurlFaceImpl;
 
-template<>
+template <>
 struct OpSetInvJacHcurlFaceImpl<2>
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
@@ -2580,8 +2664,8 @@ protected:
   MatrixDouble diffHcurlInvJac;
 };
 
-template<>
-struct OpSetInvJacHcurlFaceImpl<3>: public OpSetInvJacHcurlFaceImpl<2> {
+template <>
+struct OpSetInvJacHcurlFaceImpl<3> : public OpSetInvJacHcurlFaceImpl<2> {
   using OpSetInvJacHcurlFaceImpl<2>::OpSetInvJacHcurlFaceImpl;
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
@@ -2633,8 +2717,7 @@ struct OpMakeHighOrderGeometryWeightsOnFace
  * \ingroup mofem_forces_and_sources
  *
  */
-template<int DIM>
-struct OpSetContravariantPiolaTransformFaceImpl;
+template <int DIM> struct OpSetContravariantPiolaTransformFaceImpl;
 
 template <>
 struct OpSetContravariantPiolaTransformFaceImpl<2>
