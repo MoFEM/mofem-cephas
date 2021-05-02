@@ -73,8 +73,10 @@ FieldEvaluatorInterface::buildTree3D(boost::shared_ptr<SetPtsData> spd_ptr,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode FieldEvaluatorInterface::SetPts::
-operator()(int order_row, int order_col, int order_data) {
+MoFEMErrorCode
+FieldEvaluatorInterface::SetPts::operator()(ForcesAndSourcesCore *fe_raw_ptr,
+                                            int order_row, int order_col,
+                                            int order_data) {
   MoFEMFunctionBegin;
 
   if (auto data_ptr = dataPtr.lock()) {
@@ -91,6 +93,9 @@ operator()(int order_row, int order_col, int order_data) {
 
       VolumeElementForcesAndSourcesCore &fe =
           static_cast<VolumeElementForcesAndSourcesCore &>(*fe_ptr);
+
+      if (fe_ptr.get() != fe_raw_ptr)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong FE ptr");
 
       MatrixDouble &gauss_pts = fe.gaussPts;
       gauss_pts.resize(4, nbEvalPoints, false);

@@ -1598,7 +1598,7 @@ int ForcesAndSourcesCore::getRule(int order_row, int order_col,
 
 MoFEMErrorCode ForcesAndSourcesCore::setGaussPts(int order_row, int order_col,
                                                  int order_data) {
-  return setRuleHook ? setRuleHook(order_row, order_col, order_data)
+  return setRuleHook ? setRuleHook(this, order_row, order_col, order_data)
                      : setGaussPts(order_data);
 }
 

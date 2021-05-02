@@ -39,7 +39,8 @@ struct ForcesAndSourcesCore : public FEMethod {
   typedef boost::function<int(int order_row, int order_col, int order_data)>
       RuleHookFun;
 
-  typedef boost::function<MoFEMErrorCode(int order_row, int order_col,
+  typedef boost::function<MoFEMErrorCode(ForcesAndSourcesCore *fe_raw_ptr,
+                                         int order_row, int order_col,
                                          int order_data)>
       GaussHookFun;
 
