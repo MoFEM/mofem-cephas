@@ -1,4 +1,5 @@
-# include "tetrahedron_ncc_rule.h"
+
+# include "tetrahedron_nco_rule.h"
 
 /******************************************************************************/
 
@@ -12,8 +13,8 @@ double r8mat_det_4d ( double a[] )
 
   Discussion:
 
-    An R8MAT is a doubly dimensioned array of R8 values, stored as a vector
-    in column-major order.
+    An R8MAT is a doubly dimensioned array of double precision values, which
+    may be stored as a vector in column-major order.
 
   Licensing:
 
@@ -21,7 +22,7 @@ double r8mat_det_4d ( double a[] )
 
   Modified:
 
-    15 May 2010
+    10 September 2003
 
   Author:
 
@@ -123,13 +124,13 @@ void reference_to_physical_t4 ( double t[], int n, double ref[], double phy[] )
 }
 /******************************************************************************/
 
-int tetrahedron_ncc_degree ( int rule )
+int tetrahedron_nco_degree ( int rule )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_DEGREE: degree of an NCC rule for the tetrahedron.
+    TETRAHEDRON_NCO_DEGREE: degree of an NCO rule for the tetrahedron.
 
   Licensing:
 
@@ -154,7 +155,7 @@ int tetrahedron_ncc_degree ( int rule )
 
     Input, int RULE, the index of the rule.
 
-    Output, int TETRAHEDRON_NCC_DEGREE, the polynomial degree of exactness of
+    Output, int TETRAHEDRON_NCO_DEGREE, the polynomial degree of exactness of
     the rule.
 */
 {
@@ -168,7 +169,7 @@ int tetrahedron_ncc_degree ( int rule )
   {
     degree = -1;
     fprintf ( stderr, "\n" );
-    fprintf ( stderr, "TETRAHEDRON_NCC_DEGREE - Fatal error!\n" );
+    fprintf ( stderr, "TETRAHEDRON_NCO_DEGREE - Fatal error!\n" );
     fprintf ( stderr, "  Illegal RULE = %d\n", rule );
     exit ( 1 );
   }
@@ -177,13 +178,13 @@ int tetrahedron_ncc_degree ( int rule )
 }
 /******************************************************************************/
 
-int tetrahedron_ncc_order_num ( int rule )
+int tetrahedron_nco_order_num ( int rule )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_ORDER_NUM: order of an NCC rule for the tetrahedron.
+    TETRAHEDRON_NCO_ORDER_NUM: order of an NCO rule for the tetrahedron.
 
   Licensing:
 
@@ -208,7 +209,7 @@ int tetrahedron_ncc_order_num ( int rule )
 
     Input, int RULE, the index of the rule.
 
-    Output, int TETRAHEDRON_NCC_ORDER_NUM, the order (number of points)
+    Output, int TETRAHEDRON_NCO_ORDER_NUM, the order (number of points)
     of the rule.
 */
 {
@@ -217,9 +218,9 @@ int tetrahedron_ncc_order_num ( int rule )
   int *suborder;
   int suborder_num;
 
-  suborder_num = tetrahedron_ncc_suborder_num ( rule );
+  suborder_num = tetrahedron_nco_suborder_num ( rule );
 
-  suborder = tetrahedron_ncc_suborder ( rule, suborder_num );
+  suborder = tetrahedron_nco_suborder ( rule, suborder_num );
 
   order_num = 0;
   for ( order = 0; order < suborder_num; order++ )
@@ -233,13 +234,13 @@ int tetrahedron_ncc_order_num ( int rule )
 }
 /******************************************************************************/
 
-void tetrahedron_ncc_rule ( int rule, int order_num, double xyz[], double w[] )
+void tetrahedron_nco_rule ( int rule, int order_num, double xyz[], double w[] )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_RULE returns the points and weights of an NCC rule.
+    TETRAHEDRON_NCO_RULE returns the points and weights of an NCO rule.
 
   Licensing:
 
@@ -280,14 +281,14 @@ void tetrahedron_ncc_rule ( int rule, int order_num, double xyz[], double w[] )
 /*
   Get the suborder information.
 */
-  suborder_num = tetrahedron_ncc_suborder_num ( rule );
+  suborder_num = tetrahedron_nco_suborder_num ( rule );
 
   suborder_xyz = ( double * ) malloc ( 4 * suborder_num * sizeof ( double ) );
   suborder_w = ( double * ) malloc ( suborder_num * sizeof ( double ) );
 
-  suborder = tetrahedron_ncc_suborder ( rule, suborder_num );
+  suborder = tetrahedron_nco_suborder ( rule, suborder_num );
 
-  tetrahedron_ncc_subrule ( rule, suborder_num, suborder_xyz, suborder_w );
+  tetrahedron_nco_subrule ( rule, suborder_num, suborder_xyz, suborder_w );
 /*
   Expand the suborder information to a full order rule.
 */
@@ -652,7 +653,7 @@ void tetrahedron_ncc_rule ( int rule, int order_num, double xyz[], double w[] )
     else
     {
       fprintf ( stderr, "\n" );
-      fprintf ( stderr, "TETRAHEDRON_NCC_RULE - Fatal error!\n" );
+      fprintf ( stderr, "TETRAHEDRON_NCO_RULE - Fatal error!\n" );
       fprintf ( stderr, "  Illegal SUBORDER(%d) = %d\n", s, suborder[s] );
       exit ( 1 );
     }
@@ -666,13 +667,13 @@ void tetrahedron_ncc_rule ( int rule, int order_num, double xyz[], double w[] )
 }
 /******************************************************************************/
 
-int tetrahedron_ncc_rule_num ( )
+int tetrahedron_nco_rule_num ( )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_RULE_NUM returns the number of NCC rules available.
+    TETRAHEDRON_NCO_RULE_NUM returns the number of NCO rules available.
 
   Licensing:
 
@@ -695,7 +696,7 @@ int tetrahedron_ncc_rule_num ( )
 
   Parameters:
 
-    Output, int TETRAHEDRON_NCC_RULE_NUM, the number of rules available.
+    Output, int TETRAHEDRON_NCO_RULE_NUM, the number of rules available.
 */
 {
   int rule_num;
@@ -706,13 +707,13 @@ int tetrahedron_ncc_rule_num ( )
 }
 /******************************************************************************/
 
-int *tetrahedron_ncc_suborder ( int rule, int suborder_num )
+int *tetrahedron_nco_suborder ( int rule, int suborder_num )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_SUBORDER returns the suborders for an NCC rule.
+    TETRAHEDRON_NCO_SUBORDER returns the suborders for an NCO rule.
 
   Licensing:
 
@@ -739,7 +740,7 @@ int *tetrahedron_ncc_suborder ( int rule, int suborder_num )
 
     Input, int SUBORDER_NUM, the number of suborders of the rule.
 
-    Output, int TETRAHEDRON_NCC_SUBORDER[SUBORDER_NUM],
+    Output, int TETRAHEDRON_NCO_SUBORDER[SUBORDER_NUM],
     the suborders of the rule.
 */
 {
@@ -798,7 +799,7 @@ int *tetrahedron_ncc_suborder ( int rule, int suborder_num )
   else
   {
     fprintf ( stderr, "\n" );
-    fprintf ( stderr, "TETRAHEDRON_NCC_SUBORDER - Fatal error!\n" );
+    fprintf ( stderr, "TETRAHEDRON_NCO_SUBORDER - Fatal error!\n" );
     fprintf ( stderr, "  Illegal RULE = %d\n", rule );
     exit ( 1 );
   }
@@ -807,13 +808,13 @@ int *tetrahedron_ncc_suborder ( int rule, int suborder_num )
 }
 /******************************************************************************/
 
-int tetrahedron_ncc_suborder_num ( int rule )
+int tetrahedron_nco_suborder_num ( int rule )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_SUBORDER_NUM returns the number of suborders for an NCC rule.
+    TETRAHEDRON_NCO_SUBORDER_NUM returns the number of suborders for an NCO rule.
 
   Licensing:
 
@@ -838,7 +839,7 @@ int tetrahedron_ncc_suborder_num ( int rule )
 
     Input, int RULE, the index of the rule.
 
-    Output, int TETRAHEDRON_NCC_SUBORDER_NUM, the number of suborders
+    Output, int TETRAHEDRON_NCO_SUBORDER_NUM, the number of suborders
     of the rule.
 */
 {
@@ -876,7 +877,7 @@ int tetrahedron_ncc_suborder_num ( int rule )
   {
     suborder_num = -1;
     fprintf ( stderr, "\n" );
-    fprintf ( stderr, "TETRAHEDRON_NCC_SUBORDER_NUM - Fatal error!\n" );
+    fprintf ( stderr, "TETRAHEDRON_NCO_SUBORDER_NUM - Fatal error!\n" );
     fprintf ( stderr, "  Illegal RULE = %d\n", rule );
     exit ( 1 );
   }
@@ -885,14 +886,14 @@ int tetrahedron_ncc_suborder_num ( int rule )
 }
 /******************************************************************************/
 
-void tetrahedron_ncc_subrule ( int rule, int suborder_num,
+void tetrahedron_nco_subrule ( int rule, int suborder_num,
   double suborder_xyz[], double suborder_w[] )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_SUBRULE returns a compressed NCC rule.
+    TETRAHEDRON_NCO_SUBRULE returns a compressed NCO rule.
 
   Licensing:
 
@@ -937,43 +938,43 @@ void tetrahedron_ncc_subrule ( int rule, int suborder_num,
 
   if ( rule == 1 )
   {
-    tetrahedron_ncc_subrule_01 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
+    tetrahedron_nco_subrule_01 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
     suborder_w_n, &suborder_w_d );
   }
   else if ( rule == 2 )
   {
-    tetrahedron_ncc_subrule_02 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
+    tetrahedron_nco_subrule_02 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
     suborder_w_n, &suborder_w_d );
   }
   else if ( rule == 3 )
   {
-    tetrahedron_ncc_subrule_03 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
+    tetrahedron_nco_subrule_03 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
     suborder_w_n, &suborder_w_d );
   }
   else if ( rule == 4 )
   {
-    tetrahedron_ncc_subrule_04 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
+    tetrahedron_nco_subrule_04 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
     suborder_w_n, &suborder_w_d );
   }
   else if ( rule == 5 )
   {
-    tetrahedron_ncc_subrule_05 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
+    tetrahedron_nco_subrule_05 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
     suborder_w_n, &suborder_w_d );
   }
   else if ( rule == 6 )
   {
-    tetrahedron_ncc_subrule_06 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
+    tetrahedron_nco_subrule_06 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
     suborder_w_n, &suborder_w_d );
   }
   else if ( rule == 7 )
   {
-    tetrahedron_ncc_subrule_07 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
+    tetrahedron_nco_subrule_07 ( suborder_num, suborder_xyz_n, &suborder_xyz_d,
     suborder_w_n, &suborder_w_d );
   }
   else
   {
     fprintf ( stderr, "\n" );
-    fprintf ( stderr, "TETRAHEDRON_NCC_SUBRULE - Fatal error!\n" );
+    fprintf ( stderr, "TETRAHEDRON_NCO_SUBRULE - Fatal error!\n" );
     fprintf ( stderr, "  Illegal RULE = %d\n", rule );
     exit ( 1 );
   }
@@ -983,8 +984,8 @@ void tetrahedron_ncc_subrule ( int rule, int suborder_num,
     for ( i = 0; i < 4; i++ )
     {
       suborder_xyz[i+s*4] =
-          ( double ) ( suborder_xyz_n[i+s*4] )
-        / ( double ) ( suborder_xyz_d );
+          ( double ) ( 1 + suborder_xyz_n[i+s*4] )
+        / ( double ) ( 4 + suborder_xyz_d );
     }
   }
   for ( s = 0; s < suborder_num; s++ )
@@ -999,14 +1000,14 @@ void tetrahedron_ncc_subrule ( int rule, int suborder_num,
 }
 /******************************************************************************/
 
-void tetrahedron_ncc_subrule_01 ( int suborder_num, int suborder_xyz_n[],
+void tetrahedron_nco_subrule_01 ( int suborder_num, int suborder_xyz_n[],
   int *suborder_xyz_d, int suborder_w_n[], int *suborder_w_d )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_SUBRULE_01 returns a compressed NCC rule 1.
+    TETRAHEDRON_NCO_SUBRULE_01 returns a compressed NCO rule 1.
 
   Licensing:
 
@@ -1047,9 +1048,9 @@ void tetrahedron_ncc_subrule_01 ( int suborder_num, int suborder_xyz_n[],
   int i;
   int s;
   int suborder_xyz_n_01[4*1] = {
-      1, 1, 1, 1
+      0, 0, 0, 0
   };
-  int suborder_xyz_d_01 = 4;
+  int suborder_xyz_d_01 = 0;
   int suborder_w_n_01[1] = { 1 };
   int suborder_w_d_01 = 1;
 
@@ -1072,14 +1073,14 @@ void tetrahedron_ncc_subrule_01 ( int suborder_num, int suborder_xyz_n[],
 }
 /******************************************************************************/
 
-void tetrahedron_ncc_subrule_02 ( int suborder_num, int suborder_xyz_n[],
+void tetrahedron_nco_subrule_02 ( int suborder_num, int suborder_xyz_n[],
   int *suborder_xyz_d, int suborder_w_n[], int *suborder_w_d )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_SUBRULE_02 returns a compressed NCC rule 2.
+    TETRAHEDRON_NCO_SUBRULE_02 returns a compressed NCO rule 2.
 
   Licensing:
 
@@ -1145,14 +1146,14 @@ void tetrahedron_ncc_subrule_02 ( int suborder_num, int suborder_xyz_n[],
 }
 /******************************************************************************/
 
-void tetrahedron_ncc_subrule_03 ( int suborder_num, int suborder_xyz_n[],
+void tetrahedron_nco_subrule_03 ( int suborder_num, int suborder_xyz_n[],
   int *suborder_xyz_d, int suborder_w_n[], int *suborder_w_d )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_SUBRULE_03 returns a compressed NCC rule 3.
+    TETRAHEDRON_NCO_SUBRULE_03 returns a compressed NCO rule 3.
 
   Licensing:
 
@@ -1197,7 +1198,7 @@ void tetrahedron_ncc_subrule_03 ( int suborder_num, int suborder_xyz_n[],
       1, 1, 0, 0
   };
   int suborder_xyz_d_03 = 2;
-  int suborder_w_n_03[2] = { -1, 4 };
+  int suborder_w_n_03[2] = { 11, -4 };
   int suborder_w_d_03 = 20;
 
   for ( s = 0; s < suborder_num; s++ )
@@ -1219,14 +1220,14 @@ void tetrahedron_ncc_subrule_03 ( int suborder_num, int suborder_xyz_n[],
 }
 /******************************************************************************/
 
-void tetrahedron_ncc_subrule_04 ( int suborder_num, int suborder_xyz_n[],
+void tetrahedron_nco_subrule_04 ( int suborder_num, int suborder_xyz_n[],
   int *suborder_xyz_d, int suborder_w_n[], int *suborder_w_d )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_SUBRULE_04 returns a compressed NCC rule 4.
+    TETRAHEDRON_NCO_SUBRULE_04 returns a compressed NCO rule 4.
 
   Licensing:
 
@@ -1272,8 +1273,8 @@ void tetrahedron_ncc_subrule_04 ( int suborder_num, int suborder_xyz_n[],
       1, 1, 1, 0
   };
   int suborder_xyz_d_04 = 3;
-  int suborder_w_n_04[3] = { 1, 0, 9 };
-  int suborder_w_d_04 = 40;
+  int suborder_w_n_04[3] = { 20, 13, -29 };
+  int suborder_w_d_04 = 120;
 
   for ( s = 0; s < suborder_num; s++ )
   {
@@ -1294,14 +1295,14 @@ void tetrahedron_ncc_subrule_04 ( int suborder_num, int suborder_xyz_n[],
 }
 /******************************************************************************/
 
-void tetrahedron_ncc_subrule_05 ( int suborder_num, int suborder_xyz_n[],
+void tetrahedron_nco_subrule_05 ( int suborder_num, int suborder_xyz_n[],
   int *suborder_xyz_d, int suborder_w_n[], int *suborder_w_d )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_SUBRULE_05 returns a compressed NCC rule 5.
+    TETRAHEDRON_NCO_SUBRULE_05 returns a compressed NCO rule 5.
 
   Licensing:
 
@@ -1349,8 +1350,8 @@ void tetrahedron_ncc_subrule_05 ( int suborder_num, int suborder_xyz_n[],
       1, 1, 1, 1
   };
   int suborder_xyz_d_05 = 4;
-  int suborder_w_n_05[5] = { -5, 16, -12, 16, 128 };
-  int suborder_w_d_05 = 420;
+  int suborder_w_n_05[5] = { 79, -68, 142, -12, 2 };
+  int suborder_w_d_05 = 210;
 
   for ( s = 0; s < suborder_num; s++ )
   {
@@ -1371,14 +1372,14 @@ void tetrahedron_ncc_subrule_05 ( int suborder_num, int suborder_xyz_n[],
 }
 /******************************************************************************/
 
-void tetrahedron_ncc_subrule_06 ( int suborder_num, int suborder_xyz_n[],
+void tetrahedron_nco_subrule_06 ( int suborder_num, int suborder_xyz_n[],
   int *suborder_xyz_d, int suborder_w_n[], int *suborder_w_d )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_SUBRULE_06 returns a compressed NCC rule 6.
+    TETRAHEDRON_NCO_SUBRULE_06 returns a compressed NCO rule 6.
 
   Licensing:
 
@@ -1427,8 +1428,8 @@ void tetrahedron_ncc_subrule_06 ( int suborder_num, int suborder_xyz_n[],
       1, 1, 1, 2
   };
   int suborder_xyz_d_06 = 5;
-  int suborder_w_n_06[6] = { 33, -35, 35, 275, -75, 375 };
-  int suborder_w_d_06 = 4032;
+  int suborder_w_n_06[6] = { 277, 97, 223, -713, 505, -53 };
+  int suborder_w_d_06 = 2240;
 
   for ( s = 0; s < suborder_num; s++ )
   {
@@ -1449,14 +1450,14 @@ void tetrahedron_ncc_subrule_06 ( int suborder_num, int suborder_xyz_n[],
 }
 /******************************************************************************/
 
-void tetrahedron_ncc_subrule_07 ( int suborder_num, int suborder_xyz_n[],
+void tetrahedron_nco_subrule_07 ( int suborder_num, int suborder_xyz_n[],
   int *suborder_xyz_d, int suborder_w_n[], int *suborder_w_d )
 
 /******************************************************************************/
 /*
   Purpose:
 
-    TETRAHEDRON_NCC_SUBRULE_07 returns a compressed NCC rule 7.
+    TETRAHEDRON_NCO_SUBRULE_07 returns a compressed NCO rule 7.
 
   Licensing:
 
@@ -1508,8 +1509,8 @@ void tetrahedron_ncc_subrule_07 ( int suborder_num, int suborder_xyz_n[],
       2, 2, 1, 1
   };
   int suborder_xyz_d_07 = 6;
-  int suborder_w_n_07[9] = { -7, 24, -30, 0, 40, 30, 180, -45, 0 };
-  int suborder_w_d_07 = 1400;
+  int suborder_w_n_07[9] = { 430, -587, 1327, 187, -1298, -398, 22, 1537, -38 };
+  int suborder_w_d_07 = 1512;
 
   for ( s = 0; s < suborder_num; s++ )
   {
@@ -1596,7 +1597,7 @@ double tetrahedron_volume ( double tetra[3*4] )
 
 //   Licensing:
 
-//     This code is distributed under the GNU LGPL license.
+//     This code is distributed under the GNU LGPL license. 
 
 //   Modified:
 
@@ -1622,9 +1623,8 @@ double tetrahedron_volume ( double tetra[3*4] )
 
 //   strftime ( time_buffer, TIME_SIZE, "%d %B %Y %I:%M:%S %p", tm );
 
-//   fprintf ( stdout, "%s\n", time_buffer );
+//   printf ( "%s\n", time_buffer );
 
 //   return;
 // # undef TIME_SIZE
 // }
-
