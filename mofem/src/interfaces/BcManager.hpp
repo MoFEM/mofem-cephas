@@ -94,6 +94,12 @@ struct BcManager : public UnknownInterface {
                                         int hi, bool get_low_dim_ents = true);
 
 
+  /**
+   * @brief Get bc data and remove element
+   * 
+   * @param block_name 
+   * @return boost::shared_ptr<BCs> 
+   */
   boost::shared_ptr<BCs> popMarkDOFsOnEntities(const std::string block_name);
 
   /** \todo Add markers for standard BCs from cubit on Nodests and Sidesets used
