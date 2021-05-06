@@ -162,31 +162,29 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities(const std::string problem_name,
     for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, it)) {
       if (it->getName().compare(0, block_name.length(), block_name) == 0) {
 
-        const std::string bc_id = it->getName();
+        const std::string bc_id =
+            problem_name + "_" + field_name + "_" + it->getName();
 
-        bcMapByBlockName[bc_id] = boost::make_shared<BCs>();
-        CHKERR m_field.get_moab().get_entities_by_handle(
-            it->meshset, bcMapByBlockName[bc_id]->bcEdges, true);
-        CHKERR it->getAttributes(bcMapByBlockName[bc_id]->bcAttributes);
+        auto bc = boost::make_shared<BCs>();
+        CHKERR m_field.get_moab().get_entities_by_handle(it->meshset,
+                                                         bc->bcEdges, true);
+        CHKERR it->getAttributes(bc->bcAttributes);
 
         MOFEM_LOG("BcMngWorld", Sev::verbose)
             << "Found block " << block_name << " number of entities "
-            << bcMapByBlockName[bc_id]->bcEdges.size()
-            << " number of attributes "
-            << bcMapByBlockName[bc_id]->bcAttributes.size()
-            << " highest dim of entities "
-            << get_dim(bcMapByBlockName[bc_id]->bcEdges);
+            << bc->bcEdges.size() << " number of attributes "
+            << bc->bcAttributes.size() << " highest dim of entities "
+            << get_dim(bc->bcEdges);
 
-        CHKERR mark_fix_dofs(bcMapByBlockName[bc_id]->bcMarkers, lo, hi);
+        CHKERR mark_fix_dofs(bc->bcMarkers, lo, hi);
         if (get_low_dim_ents)
-          CHKERR prb_mng->markDofs(
-              problem_name, ROW, ProblemsManager::AND,
-              get_adj_ents(bcMapByBlockName[bc_id]->bcEdges),
-              bcMapByBlockName[bc_id]->bcMarkers);
+          CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
+                                   get_adj_ents(bc->bcEdges), bc->bcMarkers);
         else
           CHKERR prb_mng->markDofs(problem_name, ROW, ProblemsManager::AND,
-                                   bcMapByBlockName[bc_id]->bcEdges,
-                                   bcMapByBlockName[bc_id]->bcMarkers);
+                                   bc->bcEdges, bc->bcMarkers);
+
+        bcMapByBlockName[bc_id] = bc;
       }
     }
     MoFEMFunctionReturn(0);
