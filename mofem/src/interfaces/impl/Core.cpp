@@ -448,6 +448,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   CHKERR regSubInterface<MedInterface>(IDD_MOFEMMedInterface);
 #endif
   CHKERR regSubInterface<FieldEvaluatorInterface>(IDD_MOFEMFieldEvaluator);
+  CHKERR regSubInterface<BcManager>(IDD_MOFEMBcManager);
 
   MoFEMFunctionReturn(0);
 };
