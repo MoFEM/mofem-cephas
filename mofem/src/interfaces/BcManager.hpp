@@ -120,7 +120,7 @@ struct BcManager : public UnknownInterface {
   }
 
   /**
-   * @brief Get the bc nap
+   * @brief Get the bc map
    *
    * @return auto
    */
