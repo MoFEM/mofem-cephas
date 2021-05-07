@@ -1,5 +1,5 @@
 /** \file LinearFormsIntegrators.hpp
-  * \brief Linear forms inteegrators
+  * \brief Linear forms integrators
   * \ingroup mofem_form
 
 */
