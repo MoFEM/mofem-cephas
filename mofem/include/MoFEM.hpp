@@ -101,7 +101,6 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <BitLevelCoupler.hpp>
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
-#include <BcManager.hpp>
 
 //SRC/PETSC
 #include <KspCtx.hpp>
@@ -139,5 +138,6 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 
 #include <PipelineManager.hpp>
 #include <FieldEvaluator.hpp>
+#include <BcManager.hpp>
 
 #endif //MOFEM_HPP__
