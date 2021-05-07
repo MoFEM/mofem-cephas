@@ -106,7 +106,7 @@ MoFEMErrorCode BcManager::removeBlockDOFsOnEntities(
                                                          remove_ents, true);
         MOFEM_LOG("BcMngWorld", Sev::verbose)
             << "Found block to remove " << block_name << " number of entities "
-            << remove_ents << " highest dim of entities "
+            << remove_ents.size() << " highest dim of entities "
             << get_dim(remove_ents);
       }
     }
