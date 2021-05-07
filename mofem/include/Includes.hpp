@@ -61,6 +61,7 @@
 #include <exception>
 #include <complex>
 #include <cmath>
+#include <regex>
 
 //BOOST
 #define BOOST_LOG_DYN_LINK
