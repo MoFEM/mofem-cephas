@@ -124,7 +124,7 @@ using ConstantFun = boost::function<double()>;
  */
 template <int DIM>
 using VectorFun = boost::function<FTensor::Tensor1<double, DIM>(
-    const double, const double, const double)>;
+    const OpBase *op_raw_ptr, const double, const double, const double)>;
 
 template <AssemblyType A, typename EleOp> struct OpBaseImpl : public EleOp {
   using OpType = typename EleOp::OpType;
