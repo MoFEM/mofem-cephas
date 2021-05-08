@@ -2,7 +2,7 @@
  \brief Get function from matrix
  \ingroup ftensor
 
-  For reference see \cite miehe2001algorithms
+ For reference see \cite miehe2001algorithms
 
  Usage:
 
@@ -18,10 +18,9 @@
  \code
  auto  t_A = EigenMatrix::getMat(t_L, t_N, f);
  \endcode
- where <3> means that are three unique eigen values. Return t_A is symmetric
- tensor rank two.
+ Return t_A is symmetric tensor rank two.
 
- Calculate directive
+ Calculate derivative
  \code
  auto t_P = EigenMatrix::getDiffMat(t_L, t_N, f, d_f ,nb);
  \endcode
@@ -44,6 +43,15 @@
  second to indices, i.e. minor symmetrise)
 
  You can calculate eigen values using lapack.
+
+ Eiegn values should be sorted such that unique values are first, and last eiegn
+ value is reapitting. For example if eiegn values are \f[ \lambda = \{1,1,2} \f]
+ should be sorted such that
+ \f[
+ \lambda = \{1,2,1}
+ \f]
+ Eigen vectors should be updated, such that order of eigen vectors follow order
+ of eigen values.
 
  *
  */
@@ -72,7 +80,7 @@ template <typename T> using Fun = boost::function<T(const T)>;
 
 /**
  * @brief Get the Mat object
- * 
+ *
  * \f[
  * \mathbf{B} = f(\mathbf{A})
  * \f]
@@ -99,13 +107,13 @@ getMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
 
 /**
  * @brief Get the Diff Mat object
- * 
+ *
  * \f[
  * P_{ijkl} = \frac{\partial B_{ij}}{\partial A_{kl}}
  * \f]
  *
  * \note Eiegn vetore are in rows.
- * 
+ *
  * @param t_val eigen values
  * @param t_vec eigen vector
  * @param f function
@@ -126,14 +134,14 @@ getDiffMat(Val<FTensor::PackPtr<double *, 1>, 3> &t_val,
 
 /**
  * @brief Get the Diff Diff Mat object
- * 
+ *
  * \f[
  * LS_{klmn} =
  * S_{ij} \frac{\partial^2 B_{ij}}{\partial A_{kl} \partial A_{mn} }
  * \f]
  *
  * \note Eiegn vetore are in rows.
- * 
+ *
  * @param t_val eiegn values
  * @param t_vec eigen vectors
  * @param f function
@@ -168,9 +176,8 @@ getDiffDiffMat(Val<double, 3> &t_val, Vec<double, 3> &t_vec, Fun<double> f,
 /**
  * @copydoc EigenMatrix::getMat
  */
-FTensor::Tensor2_symmetric<double, 2> getMat(Val<double, 2> &t_val,
-                                             Vec<double, 2> &t_vec,
-                                             Fun<double> f);
+FTensor::Tensor2_symmetric<double, 2>
+getMat(Val<double, 2> &t_val, Vec<double, 2> &t_vec, Fun<double> f);
 
 /**
  * @copydoc EigenMatrix::getDiffMat

@@ -2,5 +2,5 @@ Mat Object: 2 MPI processes
   type: mpiaij
   rows=1371, cols=1371
   total: nonzeros=293823, allocated nonzeros=293823
-  total number of mallocs used during MatSetValues calls =0
+  total number of mallocs used during MatSetValues calls=0
     using I-node (on process 0) routines: found 217 nodes, limit used is 5

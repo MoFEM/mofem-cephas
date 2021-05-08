@@ -420,6 +420,18 @@ LOOKUP_CACHE_SIZE      = 1
 
 TOC_INCLUDE_HEADINGS   = 2
 
+# The NUM_PROC_THREADS specifies the number threads doxygen is allowed to use
+# during processing. When set to 0 doxygen will based this on the number of
+# cores available in the system. You can set it explicitly to a value larger
+# than 0 to get more control over the balance between CPU load and processing
+# speed. At this moment only the input processing can be done using multiple
+# threads. Since this is still an experimental feature the default is set to 1,
+# which efficively disables parallel processing. Please report any issues you
+# encounter. Generating dot graphs in parallel is controlled by the
+# DOT_NUM_THREADS setting.
+
+NUM_PROC_THREADS = 1
+
 #---------------------------------------------------------------------------
 # Build related configuration options
 #---------------------------------------------------------------------------
@@ -858,7 +870,9 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = third_party/kiss_fft130 \
-                         third_party/local
+                         third_party/local \
+                         spack-build-* \
+                         um-build-Debug-*
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -2177,7 +2191,7 @@ HAVE_DOT               = YES
 # Minimum value: 0, maximum value: 32, default value: 0.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-DOT_NUM_THREADS        = 0
+DOT_NUM_THREADS        = 4
 
 # When you want a differently looking font in the dot files that doxygen
 # generates you can specify the font name using DOT_FONTNAME. You need to make
@@ -2432,3 +2446,4 @@ GENERATE_LEGEND        = YES
 # This tag requires that the tag HAVE_DOT is set to YES.
 
 DOT_CLEANUP            = YES
+

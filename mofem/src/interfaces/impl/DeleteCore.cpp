@@ -605,10 +605,8 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
 
 MoFEMErrorCode Core::delete_finite_element(const std::string name, int verb) {
   MoFEMFunctionBegin;
-  typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
-      FiniteElementsByName;
-  FiniteElementsByName &fe = finiteElements.get<FiniteElement_name_mi_tag>();
-  FiniteElementsByName::iterator mit = fe.find(name);
+  auto &fe = finiteElements.get<FiniteElement_name_mi_tag>();
+  auto mit = fe.find(name);
   if (mit == fe.end()) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
              "Finite element <%s> not found", name.c_str());
@@ -618,6 +616,26 @@ MoFEMErrorCode Core::delete_finite_element(const std::string name, int verb) {
   CHKERR get_moab().get_entities_by_handle(meshset, ents, false);
   CHKERR remove_ents_from_finite_element(name, ents, verb);
   fe.erase(mit);
+  CHKERR get_moab().delete_entities(&meshset, 1);
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode Core::delete_field(const std::string name, int verb) {
+  MoFEMFunctionBegin;
+  auto &f = fIelds.get<FieldName_mi_tag>();
+  auto mit = f.find(name);
+  if (mit == f.end()) {
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+             "Finite element <%s> not found", name.c_str());
+  }
+  EntityHandle meshset = mit->get()->getMeshset();
+  Range ents;
+  CHKERR get_moab().get_entities_by_handle(meshset, ents, false);
+  CHKERR remove_ents_from_field(name, ents, verb);
+  CHKERR get_moab().tag_delete((*mit)->th_FieldDataVerts);
+  CHKERR get_moab().tag_delete((*mit)->th_FieldData);
+  CHKERR get_moab().tag_delete((*mit)->th_AppOrder);
+  f.erase(mit);
   CHKERR get_moab().delete_entities(&meshset, 1);
   MoFEMFunctionReturn(0);
 }

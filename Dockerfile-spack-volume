@@ -1,0 +1,10 @@
+FROM likask/mofem-intermidiate
+
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
+
+VOLUME $MOFEM_INSTALL_DIR
+WORKDIR $MOFEM_INSTALL_DIR
+
+# image run hook: the -l will make sure /etc/profile environments are loaded
+CMD        /bin/bash -l
+

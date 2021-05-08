@@ -23,6 +23,7 @@
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
+constexpr bool debug = false;
 
 int main(int argc, char *argv[]) {
   // initialize petsc
@@ -173,7 +174,8 @@ int main(int argc, char *argv[]) {
     CHKERR MatDestroy(&m);
 
     // check if file can be saved
-    CHKERR moab.write_file("test_out.h5m", "MOAB", "PARALLEL=WRITE_PART");
+    if (debug)
+      CHKERR moab.write_file("test_out.h5m", "MOAB", "PARALLEL=WRITE_PART");
 
     // destry dm
     CHKERR DMDestroy(&dm);

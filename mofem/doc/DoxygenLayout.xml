@@ -4,24 +4,30 @@
  <navindex>
     <tab type="user" visible="yes" url="@ref mainpage" title="" intro=""/>
 
-    <tab type="user" url="@ref news" title="News" intro=""/>
+    <!-- <tab type="user" url="@ref news" title="News" intro=""/> -->
 
     <tab type="user" visible="yes" title="Getting started" url="@ref installation" intro="">
-      <tab type="user" url="@ref installation" title="Installation" intro=""/>
+      <tab type="user" url="@ref installation" title="Installation with Spack" intro=""/>
+      <tab type="user" url="@ref install_docker" title="Installation with Docker" intro=""/>
       <tab type="user" url="@ref running_code" title="Running code"/>
       <tab type="user" url="@ref motivation" title="Features" intro=""/>
-      <tab type="user" url="https://www.youtube.com/playlist?list=PLW49at2nN39gsTI1vWxvHBOjFK0q_h83s" title="Video guides"/>
-      <tab type="user" url="@ref citelist" title="Bibliography"/>
-      <tab type="user" url="@ref google_search" title="Search" intro=""/>
+    </tab>
+
+    <tab type="user" visible="yes" url="https://www.youtube.com/channel/UCxdPe3nK1n9cB1XPAvl7btQ/playlists" title="Videos" intro="">
+      <tab type="user" url="@ref mofem_school_page" title="School" intro=""/>
+      <tab type="user" url="https://www.youtube.com/playlist?list=PLbqyPFhdeLn9r9n4Bphs1HFc-qGyaj1Vu" title="Video guides"/>   
+      <tab type="user" url="https://www.youtube.com/playlist?list=PLbqyPFhdeLn86KomC9uG9IyF8vDyxIHfY" title="Conference talks"/>   
+      <tab type="user" url="https://www.youtube.com/playlist?list=PLbqyPFhdeLn8fSQP7_L5G93eFYueEqK1d" title="Simulation examples"/>   
     </tab>
     
     <tab type="user" visible="yes" title="Developer" url="@ref general_data_structure" intro="">
-      <tab type="user" url="@ref general_data_structure" title="Basic design" intro=""/>
       <tab type="user" url="@ref tutorials" title="Tutorials"/>
-      <tab type="user" url="@ref other_tutorials" title="Other tutorials"/>
+      <tab type="user" url="@ref user_data_operators_table" title="Operators"/>
+      <tab type="user" url="@ref general_data_structure" title="Architecture" intro=""/>
       <tab type="user" url="@ref faqs" title="Frequently Asked Questions" intro=""/>
       <tab type="user" url="@ref a_guide_to_writing_documentation" title="Writing documentation" intro=""/>
       <tab type="user" url="@ref coding_practice" title="Coding practice" intro=""/>
+      <tab type="user" url="@ref google_search" title="Search" intro=""/>
     </tab>
 
     <tab type="user" visible="yes" title="Source Code" url="@ref tutorials" intro="">
@@ -37,7 +43,16 @@
     <tab type="user" url="https://groups.google.com/forum/#!categories/mofem-group" title="Q&amp;A"/>
     <tab type="user" url="https://bitbucket.org/likask/mofem-cephas" title="Repository"/>
     <tab type="user" url="https://zenodo.org/communities/mofem/" title="Library"/>
-    <tab type="user" title="About"url="@ref about_us" intro=""/>
+
+    <tab type="user" visible="yes" title="About" url="@ref about_us" intro="">
+      <tab type="user" url="@ref authors" title="Authors" intro=""/>
+      <tab type="user" url="@ref contact" title="Contact" intro=""/>
+      <tab type="user" url="@ref mofem_openhub" title="Stats" intro=""/>
+      <tab type="user" url="@ref thrid_party" title="Third party libraries" intro=""/>
+      <tab type="user" url="@ref Acknowledgments" title="Acknowledgments" intro=""/>
+      <tab type="user" url="@ref legal_stuff" title="Legal stuff" intro=""/>
+      <tab type="user" url="@ref citelist" title="Bibliography"/>
+    </tab>
 
     <tab type="namespaces" visible="no" title="">
       <tab type="namespacelist" visible="yes" title="" intro=""/>

@@ -43,6 +43,9 @@
 #include <petscdm.h>
 #include <petscao.h>
 #include <petscis.h>
+#if PETSC_VERSION_GE(3, 14 , 0)
+#include <petscsection.h>
+#endif
 
 //STL
 #include <string>
@@ -58,6 +61,7 @@
 #include <exception>
 #include <complex>
 #include <cmath>
+#include <regex>
 
 //BOOST
 #define BOOST_LOG_DYN_LINK
@@ -92,6 +96,7 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/utility/string_ref.hpp>
 #include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <boost/math/special_functions/binomial.hpp>
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/math/constants/constants.hpp>
@@ -137,8 +142,8 @@
 #include <boost/ref.hpp>
 
 // Metaprogramming
-#include <boost/hana.hpp>
-#include <boost/hana/for_each.hpp>
+// #include <boost/hana.hpp>
+// #include <boost/hana/for_each.hpp>
 
 //MOAB
 #include <moab/MOABConfig.h>

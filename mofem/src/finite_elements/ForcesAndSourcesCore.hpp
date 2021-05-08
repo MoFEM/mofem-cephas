@@ -36,9 +36,13 @@ struct ForcesAndSourcesCore : public FEMethod {
   Interface &mField;
 
   ForcesAndSourcesCore(Interface &m_field);
-
   typedef boost::function<int(int order_row, int order_col, int order_data)>
       RuleHookFun;
+
+  typedef boost::function<MoFEMErrorCode(ForcesAndSourcesCore *fe_raw_ptr,
+                                         int order_row, int order_col,
+                                         int order_data)>
+      GaussHookFun;
 
   /**
    * \brief Hook to get rule
@@ -53,7 +57,7 @@ struct ForcesAndSourcesCore : public FEMethod {
    * @brief Set function to calculate integration rule
    *
    */
-  RuleHookFun setRuleHook;
+  GaussHookFun setRuleHook;
 
   /** \brief Data operator to do calculations at integration points.
     * \ingroup mofem_forces_and_sources
@@ -134,6 +138,13 @@ struct ForcesAndSourcesCore : public FEMethod {
      * @return Finite element entity handle
      */
     inline EntityHandle getFEEntityHandle() const;
+
+    /**
+     * @brief Get dimension of finite element
+     * 
+     * @return int 
+     */
+    inline int getFEDim() const;
 
     /**
      * @brief Get the side number pointer
@@ -870,6 +881,10 @@ ForcesAndSourcesCore::UserDataOperator::getNumeredEntFiniteElementPtr() const {
 EntityHandle ForcesAndSourcesCore::UserDataOperator::getFEEntityHandle() const {
   return getNumeredEntFiniteElementPtr()->getEnt();
 }
+
+int ForcesAndSourcesCore::UserDataOperator::getFEDim() const {
+  return ptrFE->mField.get_moab().dimension_from_handle(getFEEntityHandle());
+};
 
 boost::weak_ptr<SideNumber>
 ForcesAndSourcesCore::UserDataOperator::getSideNumberPtr(

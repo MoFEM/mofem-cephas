@@ -31,14 +31,12 @@ MoFEMErrorCode Simple::query_interface(const MOFEMuuid &uuid,
   MoFEMFunctionReturnHot(0);
 }
 
-template<int DIM>
-MoFEMErrorCode Simple::setSkeletonAdjacency() {
+template <int DIM> MoFEMErrorCode Simple::setSkeletonAdjacency() {
   static_assert(DIM == 2 || DIM == 3, "not implemented");
   return MOFEM_NOT_IMPLEMENTED;
 }
 
-template<>
-MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
+template <> MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -49,8 +47,8 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
 
     CHKERR DefaultElementAdjacency::defaultEdge(moab, field, fe, adjacency);
 
-    if (std::find(domainFields.begin(), domainFields.end(),
-                  field.getName()) != domainFields.end()) {
+    if (std::find(domainFields.begin(), domainFields.end(), field.getName()) !=
+        domainFields.end()) {
 
       const EntityHandle fe_ent = fe.getEnt();
       Range bride_adjacency_edge, bride_adjacency;
@@ -92,8 +90,7 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<2>() {
   MoFEMFunctionReturn(0);
 }
 
-template<>
-MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
+template <> MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
 
@@ -104,8 +101,8 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
 
     CHKERR DefaultElementAdjacency::defaultFace(moab, field, fe, adjacency);
 
-    if (std::find(domainFields.begin(), domainFields.end(),
-                  field.getName()) != domainFields.end()) {
+    if (std::find(domainFields.begin(), domainFields.end(), field.getName()) !=
+        domainFields.end()) {
 
       const EntityHandle fe_ent = fe.getEnt();
       Range bride_adjacency_face, bride_adjacency;
@@ -151,8 +148,7 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<3>() {
   MoFEMFunctionReturn(0);
 }
 
-template<>
-MoFEMErrorCode Simple::setSkeletonAdjacency<-1>() {
+template <> MoFEMErrorCode Simple::setSkeletonAdjacency<-1>() {
   MoFEMFunctionBegin;
   switch (getDim()) {
   case 1:
@@ -160,7 +156,7 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<-1>() {
   case 2:
     return setSkeletonAdjacency<2>();
   case 3:
-    return setSkeletonAdjacency<3>(); 
+    return setSkeletonAdjacency<3>();
   default:
     THROW_MESSAGE("Not implemented");
   }
@@ -169,9 +165,9 @@ MoFEMErrorCode Simple::setSkeletonAdjacency<-1>() {
 
 MoFEMErrorCode Simple::setSkeletonAdjacency(int dim) {
   MoFEMFunctionBegin;
-  if(dim == -1)
+  if (dim == -1)
     dim = getDim();
-  switch(dim) {
+  switch (dim) {
   case 2:
     return setSkeletonAdjacency<2>();
   case 3:
@@ -396,11 +392,11 @@ MoFEMErrorCode Simple::defineFiniteElements() {
     auto it_fe = fe_by_name.find(fe_name);
     if (it_fe != fe_by_name.end()) {
 
-      if(!fe_by_name.modify(it_fe, FiniteElement_row_change_bit_reset()))
+      if (!fe_by_name.modify(it_fe, FiniteElement_row_change_bit_reset()))
         SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
                 "modification unsuccessful");
 
-      if(!fe_by_name.modify(it_fe, FiniteElement_col_change_bit_reset()))
+      if (!fe_by_name.modify(it_fe, FiniteElement_col_change_bit_reset()))
         SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
                 "modification unsuccessful");
     }
@@ -513,7 +509,8 @@ MoFEMErrorCode Simple::buildFields() {
     MoFEMFunctionBeginHot;
     // create boundary meshset
     if (boundaryMeshset != 0) {
-      CHKERR m_field.get_moab().delete_entities(&boundaryMeshset, 1);
+      MoFEMFunctionReturnHot(0);
+      // CHKERR m_field.get_moab().delete_entities(&boundaryMeshset, 1);
     }
     CHKERR m_field.get_moab().create_meshset(MESHSET_SET, boundaryMeshset);
     CHKERR m_field.get_moab().add_entities(boundaryMeshset, proc_domain_skin);
@@ -545,7 +542,7 @@ MoFEMErrorCode Simple::buildFields() {
     MoFEMFunctionBeginHot;
     for (auto &field : fields) {
       std::array<double, 6> coords = {0, 0, 0, 0, 0, 0};
-      CHKERR m_field.create_vertices_and_add_to_field(field, coords.data(), 2);
+      CHKERR m_field.create_vertices_and_add_to_field(field, coords.data(), 1);
       CHKERR comm_interface_ptr->makeFieldEntitiesMultishared(field, 0);
       CHKERR bit_ref_ptr->setFieldEntitiesBitRefLevel(field, bitLevel);
     }
@@ -556,8 +553,14 @@ MoFEMErrorCode Simple::buildFields() {
   CHKERR add_ents_to_field(meshSet, dIm, dataFields);
   CHKERR add_ents_to_field(boundaryMeshset, dIm - 1, boundaryFields);
   CHKERR add_ents_to_field(meshSet, dIm - 1, skeletonFields);
-  CHKERR make_no_field_ents(noFieldFields);
-  CHKERR make_no_field_ents(noFieldDataFields);
+
+  std::set<std::string> nofield_fields;
+  for (auto &f : noFieldFields)
+    nofield_fields.insert(f);
+  for (auto &f : noFieldDataFields)
+    nofield_fields.insert(f);
+
+  CHKERR make_no_field_ents(nofield_fields);
 
   // Set order
   auto set_order = [&](auto meshset, auto dim, auto &fields) {
@@ -663,7 +666,7 @@ MoFEMErrorCode Simple::buildProblem() {
   // Set problem by the DOFs on the fields rather that by adding DOFs on the
   // elements
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_TRUE;
-  CHKERR DMSetUp(dM);
+  CHKERR DMSetUp_MoFEM(dM);
   m_field.getInterface<ProblemsManager>()->buildProblemFromFields = PETSC_FALSE;
   PetscLogEventEnd(MOFEM_EVENT_SimpleBuildProblem, 0, 0, 0, 0);
   MoFEMFunctionReturn(0);

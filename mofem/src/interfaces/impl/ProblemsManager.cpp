@@ -1445,7 +1445,7 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
       } else {
         IS is_dup;
         CHKERR ISDuplicate(is, &is_dup);
-        out_problem_it->getSubData()->colIs = SmartPetscObj<IS>(is_dup,false);
+        out_problem_it->getSubData()->colIs = SmartPetscObj<IS>(is_dup, false);
         out_problem_it->getSubData()->colMap = SmartPetscObj<AO>(ao, true);
       }
       CHKERR AOApplicationToPetscIS(ao, is);
@@ -1596,12 +1596,14 @@ MoFEMErrorCode ProblemsManager::buildCompsedProblem(
         // row
         *nb_dofs[ss] += add_prb_ptr[ss]->back()->getNbDofsRow();
         *nb_local_dofs[ss] += add_prb_ptr[ss]->back()->getNbLocalDofsRow();
-        nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numeredRowDofsPtr->size();
+        nb_dofs_reserve[ss] +=
+            add_prb_ptr[ss]->back()->numeredRowDofsPtr->size();
       } else {
         // column
         *nb_dofs[ss] += add_prb_ptr[ss]->back()->getNbDofsCol();
         *nb_local_dofs[ss] += add_prb_ptr[ss]->back()->getNbLocalDofsCol();
-        nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numeredColDofsPtr->size();
+        nb_dofs_reserve[ss] +=
+            add_prb_ptr[ss]->back()->numeredColDofsPtr->size();
       }
     }
   }
@@ -2030,7 +2032,8 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
       square_matrix = true;
 
     // if (!square_matrix) {
-    //   // FIXME: This is for back compatibility, if deprecate interface function
+    //   // FIXME: This is for back compatibility, if deprecate interface
+    //   function
     //   // build interfaces is removed, this part of the code will be obsolete
     //   auto mit_row = p_miit->numeredRowDofsPtr->get<Idx_mi_tag>().begin();
     //   auto hi_mit_row = p_miit->numeredRowDofsPtr->get<Idx_mi_tag>().end();
@@ -2117,8 +2120,8 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
 
     auto number_dofs = [&](auto &dof_idx, auto &counter) {
       MoFEMFunctionBeginHot;
-      for (auto miit_dofs_row = dof_idx.begin();
-           miit_dofs_row != dof_idx.end(); miit_dofs_row++) {
+      for (auto miit_dofs_row = dof_idx.begin(); miit_dofs_row != dof_idx.end();
+           miit_dofs_row++) {
         const bool success = dof_idx.modify(
             miit_dofs_row,
             NumeredDofEntity_part_and_indices_change(0, counter, counter));
@@ -2133,7 +2136,7 @@ MoFEMErrorCode ProblemsManager::partitionProblem(const std::string name,
 
     auto &dofs_row_by_idx_no_const = const_cast<NumeredDofEntitysByIdx &>(
         p_miit->numeredRowDofsPtr->get<Idx_mi_tag>());
-   int &nb_row_local_dofs = p_miit->nbLocDofsRow;
+    int &nb_row_local_dofs = p_miit->nbLocDofsRow;
     int &nb_row_ghost_dofs = p_miit->nbGhostDofsRow;
     nb_row_local_dofs = 0;
     nb_row_ghost_dofs = 0;
@@ -2668,9 +2671,9 @@ MoFEMErrorCode ProblemsManager::partitionGhostDofs(const std::string name,
       for (auto fe_ptr = fe_range.first; fe_ptr != fe_range.second; ++fe_ptr) {
 
         fe_vec_view.clear();
-        CHKERR EntFiniteElement::getDofView(
-            (*fe_ptr)->getColFieldEnts(), *(p_miit->getNumeredColDofsPtr()),
-            fe_vec_view, Inserter());
+        CHKERR EntFiniteElement::getDofView((*fe_ptr)->getColFieldEnts(),
+                                            *(p_miit->getNumeredColDofsPtr()),
+                                            fe_vec_view, Inserter());
 
         for (auto &dof_ptr : fe_vec_view) {
           if (dof_ptr->getPart() != (unsigned int)m_field.get_comm_rank()) {
@@ -2864,8 +2867,8 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
   const Problem *prb_ptr;
   CHKERR m_field.get_problem(problem_name, &prb_ptr);
 
-  decltype(prb_ptr->numeredRowDofsPtr) numered_dofs[2] = {prb_ptr->numeredRowDofsPtr,
-                                                       nullptr};
+  decltype(prb_ptr->numeredRowDofsPtr) numered_dofs[2] = {
+      prb_ptr->numeredRowDofsPtr, nullptr};
   if (prb_ptr->numeredRowDofsPtr != prb_ptr->numeredColDofsPtr)
     numered_dofs[1] = prb_ptr->numeredColDofsPtr;
 
@@ -2956,9 +2959,10 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
         else if ((*dit)->getPetscLocalDofIdx() >= *(local_nbdof_ptr[s]))
           ++nb_ghost_dofs;
         else
-          SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                  "Imposible case. You could run problem on no distributed "
-                  "mesh. That is not implemented.");
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                   "Imposible case. You could run problem on no distributed "
+                   "mesh. That is not implemented. Dof local index is %d",
+                   (*dit)->getPetscLocalDofIdx());
       }
 
       // get indices
@@ -3057,7 +3061,7 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
     }
 
   if (verb > QUIET) {
-    MOFEM_LOG_C("SYNC", Sev::inform,
+    MOFEM_LOG_C("SYNC", Sev::verbose,
                 "removed ents on rank %d from problem %s dofs [ %d / %d  "
                 "(before %d / "
                 "%d) local, %d / %d (before %d / %d) "
@@ -3075,9 +3079,208 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode ProblemsManager::markDofs(const std::string problem_name,
-                                         RowColData rc, const Range ents,
-                                         std::vector<bool> &marker) {
+MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
+    const std::string problem_name, const std::string field_name,
+    const Range ents, const int lo_coeff, const int hi_coeff, int verb,
+    const bool debug) {
+
+  MoFEM::Interface &m_field = cOre;
+  ProblemManagerFunctionBegin;
+
+  const Problem *prb_ptr;
+  CHKERR m_field.get_problem(problem_name, &prb_ptr);
+
+  decltype(prb_ptr->numeredRowDofsPtr) numered_dofs[2] = {
+      prb_ptr->numeredRowDofsPtr, nullptr};
+  if (prb_ptr->numeredRowDofsPtr != prb_ptr->numeredColDofsPtr)
+    numered_dofs[1] = prb_ptr->numeredColDofsPtr;
+
+  int *nbdof_ptr[] = {&prb_ptr->nbDofsRow, &prb_ptr->nbDofsCol};
+  int *local_nbdof_ptr[] = {&prb_ptr->nbLocDofsRow, &prb_ptr->nbLocDofsCol};
+  int *ghost_nbdof_ptr[] = {&prb_ptr->nbGhostDofsRow, &prb_ptr->nbGhostDofsCol};
+
+  const int nb_init_row_dofs = prb_ptr->getNbDofsRow();
+  const int nb_init_col_dofs = prb_ptr->getNbDofsCol();
+  const int nb_init_loc_row_dofs = prb_ptr->getNbLocalDofsRow();
+  const int nb_init_loc_col_dofs = prb_ptr->getNbLocalDofsCol();
+  const int nb_init_ghost_row_dofs = prb_ptr->getNbGhostDofsRow();
+  const int nb_init_ghost_col_dofs = prb_ptr->getNbGhostDofsCol();
+
+  for (int s = 0; s != 2; ++s)
+    if (numered_dofs[s]) {
+
+      typedef multi_index_container<
+
+          NumeredDofEntity_multiIndex::iterator, indexed_by<sequenced<>>
+
+          >
+          NumeredDofEntity_it_view_multiIndex;
+
+      const auto bit_number = m_field.get_field_bit_number(field_name);
+      NumeredDofEntity_it_view_multiIndex dofs_it_view;
+
+      // Set -1 to global and local dofs indices
+      for (auto pit = ents.const_pair_begin(); pit != ents.const_pair_end();
+           ++pit) {
+        auto lo = numered_dofs[s]->get<Unique_mi_tag>().lower_bound(
+            DofEntity::getLoFieldEntityUId(bit_number, pit->first));
+        auto hi = numered_dofs[s]->get<Unique_mi_tag>().upper_bound(
+            DofEntity::getHiFieldEntityUId(bit_number, pit->second));
+
+        for (; lo != hi; ++lo)
+          if ((*lo)->getDofCoeffIdx() >= lo_coeff &&
+              (*lo)->getDofCoeffIdx() <= hi_coeff)
+            dofs_it_view.emplace_back(numered_dofs[s]->project<0>(lo));
+      }
+
+      if (verb > QUIET) {
+        for (auto &dof : dofs_it_view)
+          MOFEM_LOG("SYNC", Sev::noisy) << **dof;
+      }
+
+      // set negative index
+      auto mod = NumeredDofEntity_part_and_all_indices_change(-1, -1, -1, -1);
+      for (auto dit : dofs_it_view) {
+        bool success = numered_dofs[s]->modify(dit, mod);
+        if (!success)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                  "can not set negative indices");
+      }
+
+      // create weak view
+      std::vector<boost::weak_ptr<NumeredDofEntity>> dosf_weak_view;
+      dosf_weak_view.reserve(dofs_it_view.size());
+      for (auto dit : dofs_it_view)
+        dosf_weak_view.push_back(*dit);
+
+      if (verb >= NOISY)
+        MOFEM_LOG_C("SYNC", Sev::noisy,
+                    "Number of DOFs in multi-index %d and to delete %d\n",
+                    numered_dofs[s]->size(), dofs_it_view.size());
+
+      // erase dofs from problem
+      for (auto weak_dit : dosf_weak_view)
+        if (auto dit = weak_dit.lock()) {
+          numered_dofs[s]->erase(dit->getLocalUniqueId());
+        }
+
+      if (verb >= NOISY)
+        MOFEM_LOG_C("SYNC", Sev::noisy,
+                    "Number of DOFs in multi-index after delete %d\n",
+                    numered_dofs[s]->size());
+
+      // get current number of ghost dofs
+      int nb_global_dof = 0;
+      int nb_local_dofs = 0;
+      int nb_ghost_dofs = 0;
+
+      for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
+           ++dit) {
+
+        if ((*dit)->getDofIdx() >= 0) {
+
+          if ((*dit)->getPetscLocalDofIdx() >= 0 &&
+              (*dit)->getPetscLocalDofIdx() < *(local_nbdof_ptr[s]))
+            ++nb_local_dofs;
+          else if ((*dit)->getPetscLocalDofIdx() >= *(local_nbdof_ptr[s]))
+            ++nb_ghost_dofs;
+
+          ++nb_global_dof;
+        }
+      }
+
+      if (debug) {
+        MPI_Allreduce(&nb_local_dofs, nbdof_ptr[s], 1, MPI_INT, MPI_SUM,
+                      m_field.get_comm());
+        if (*(nbdof_ptr[s]) != nb_global_dof)
+          SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                   "Number of local DOFs do not add up %d != %d",
+                   *(nbdof_ptr[s]), nb_global_dof);
+      }
+
+      *(nbdof_ptr[s]) = nb_global_dof;
+      *(local_nbdof_ptr[s]) = nb_local_dofs;
+      *(ghost_nbdof_ptr[s]) = nb_ghost_dofs;
+
+      // get indices
+      auto get_indices_by_tag = [&](auto tag) {
+        std::vector<int> indices;
+        const int nb_dofs = numered_dofs[s]->size();
+        indices.resize(nb_dofs, -1);
+        int i = 0;
+        for (auto dit = numered_dofs[s]->get<decltype(tag)>().begin();
+             dit != numered_dofs[s]->get<decltype(tag)>().end(); ++dit) {
+          int idx = std::distance(numered_dofs[s]->begin(),
+                                  numered_dofs[s]->project<0>(dit));
+          int current_idx = decltype(tag)::get_index(dit);
+          if (current_idx >= 0)
+            indices[idx] = i++;
+        }
+        return indices;
+      };
+
+      auto global_indices = get_indices_by_tag(PetscGlobalIdx_mi_tag());
+      auto local_indices = get_indices_by_tag(PetscLocalIdx_mi_tag());
+
+      int idx = 0;
+      for (auto dit = numered_dofs[s]->begin(); dit != numered_dofs[s]->end();
+           ++dit, ++idx) {
+
+        auto mod = NumeredDofEntity_part_and_all_indices_change(
+            (*dit)->getPart(), (*dit)->getDofIdx(), global_indices[idx],
+            local_indices[idx]);
+        bool success = numered_dofs[s]->modify(dit, mod);
+        if (!success)
+          SETERRQ(PETSC_COMM_SELF, MOFEM_OPERATION_UNSUCCESSFUL,
+                  "can not set negative indices");
+      };
+
+      if (debug)
+        for (auto dof : (*numered_dofs[s])) {
+          if (dof->getDofIdx() >= 0 && dof->getPetscGlobalDofIdx() < 0) {
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Negative global idx");
+          }
+        }
+    } else {
+
+      *(nbdof_ptr[1]) = *(nbdof_ptr[0]);
+      *(local_nbdof_ptr[1]) = *(local_nbdof_ptr[0]);
+      *(ghost_nbdof_ptr[1]) = *(ghost_nbdof_ptr[0]);
+    }
+
+  if (verb >= NOISY)
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+
+  if (verb > QUIET) {
+    auto log = [&](auto str, auto level) {
+      MOFEM_LOG_C(str, level,
+                  "removed ents on rank %d from problem %s dofs [ %d / %d  "
+                  "(before %d / "
+                  "%d) local, %d / %d (before %d / %d) "
+                  "ghost, %d / %d (before %d / %d) global]",
+                  m_field.get_comm_rank(), prb_ptr->getName().c_str(),
+                  prb_ptr->getNbLocalDofsRow(), prb_ptr->getNbLocalDofsCol(),
+                  nb_init_row_dofs, nb_init_col_dofs,
+                  prb_ptr->getNbGhostDofsRow(), prb_ptr->getNbGhostDofsCol(),
+                  nb_init_ghost_row_dofs, nb_init_ghost_col_dofs,
+                  prb_ptr->getNbDofsRow(), prb_ptr->getNbDofsCol(),
+                  nb_init_loc_row_dofs, nb_init_loc_col_dofs);
+    };
+
+    log("WORLD", Sev::verbose);
+    if (m_field.get_comm_rank() > 0)
+      log("SYNC", Sev::noisy);
+
+    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
+  }
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode
+ProblemsManager::markDofs(const std::string problem_name, RowColData rc,
+                          const enum MarkOP op, const Range ents,
+                          std::vector<unsigned char> &marker) const {
 
   Interface &m_field = cOre;
   const Problem *problem_ptr;
@@ -3093,14 +3296,80 @@ MoFEMErrorCode ProblemsManager::markDofs(const std::string problem_name,
   default:
     SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
   }
-  marker.resize(dofs->size());
-  std::fill(marker.begin(), marker.end(), false);
-  for (auto p = ents.pair_begin(); p != ents.pair_end(); ++p) {
-    auto lo = dofs->get<Ent_mi_tag>().lower_bound(p->first);
-    auto hi = dofs->get<Ent_mi_tag>().upper_bound(p->second);
-    for (; lo != hi; ++lo)
-      marker[(*lo)->getPetscLocalDofIdx()] = true;
+  marker.resize(dofs->size(), 0);
+  std::vector<unsigned char> marker_tmp;
+
+  switch (op) {
+  case MarkOP::OR:
+    for (auto p = ents.pair_begin(); p != ents.pair_end(); ++p) {
+      auto lo = dofs->get<Ent_mi_tag>().lower_bound(p->first);
+      auto hi = dofs->get<Ent_mi_tag>().upper_bound(p->second);
+      for (; lo != hi; ++lo)
+        marker[(*lo)->getPetscLocalDofIdx()] |= 1;
+    }
+    break;
+  case MarkOP::AND:
+    marker_tmp.resize(dofs->size(), 0);
+    for (auto p = ents.pair_begin(); p != ents.pair_end(); ++p) {
+      auto lo = dofs->get<Ent_mi_tag>().lower_bound(p->first);
+      auto hi = dofs->get<Ent_mi_tag>().upper_bound(p->second);
+      for (; lo != hi; ++lo)
+        marker_tmp[(*lo)->getPetscLocalDofIdx()] = 1;
+    }
+    for (int i = 0; i != marker.size(); ++i) {
+      marker[i] &= marker_tmp[i];
+    }
+    break;
   }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode ProblemsManager::modifyMarkDofs(
+    const std::string problem_name, RowColData rc, const std::string field_name,
+    const int lo, const int hi, const enum ProblemsManager::MarkOP op,
+    const unsigned char c, std::vector<unsigned char> &marker) const {
+
+  Interface &m_field = cOre;
+  const Problem *problem_ptr;
+  ProblemManagerFunctionBegin;
+  CHKERR m_field.get_problem(problem_name, &problem_ptr);
+  boost::shared_ptr<NumeredDofEntity_multiIndex> dofs;
+  switch (rc) {
+  case ROW:
+    dofs = problem_ptr->getNumeredRowDofsPtr();
+    break;
+  case COL:
+    dofs = problem_ptr->getNumeredColDofsPtr();
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Should be row or column");
+  }
+  marker.resize(dofs->size(), 0);
+
+  auto dof_lo = dofs->get<Unique_mi_tag>().lower_bound(
+      FieldEntity::getLoBitNumberUId(m_field.get_field_bit_number(field_name)));
+  auto dof_hi = dofs->get<Unique_mi_tag>().upper_bound(
+      FieldEntity::getHiBitNumberUId(m_field.get_field_bit_number(field_name)));
+
+  auto marker_ref = [marker](auto &it) -> unsigned int & {
+    return marker[(*it)->getPetscLocalDofIdx()];
+  };
+
+  switch (op) {
+  case MarkOP::OR:
+    for (; dof_lo != dof_hi; ++dof_lo)
+      if ((*dof_lo)->getDofCoeffIdx() >= lo &&
+          (*dof_lo)->getDofCoeffIdx() <= hi)
+        marker[(*dof_lo)->getPetscLocalDofIdx()] |= c;
+    break;
+  case MarkOP::AND:
+    for (; dof_lo != dof_hi; ++dof_lo)
+      if ((*dof_lo)->getDofCoeffIdx() >= lo &&
+          (*dof_lo)->getDofCoeffIdx() <= hi)
+        marker[(*dof_lo)->getPetscLocalDofIdx()] &= c;
+    break;
+  }
+
   MoFEMFunctionReturn(0);
 }
 

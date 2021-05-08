@@ -41,8 +41,7 @@ CubitMeshSets::CubitMeshSets(moab::Interface &moab, const EntityHandle _meshset)
 
   CHKERR getTagsHandlers(moab);
   CHKERR moab.tag_get_tags_on_entity(meshset, tag_handles);
-  std::vector<Tag>::iterator tit = tag_handles.begin();
-  for (; tit != tag_handles.end(); tit++) {
+  for (auto tit = tag_handles.begin(); tit != tag_handles.end(); tit++) {
     if (*tit == nsTag || *tit == ssTag || *tit == bhTag) {
       CHKERR moab.tag_get_by_ptr(*tit, &meshset, 1, (const void **)&msId);
     }

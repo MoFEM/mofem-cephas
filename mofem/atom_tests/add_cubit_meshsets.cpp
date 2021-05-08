@@ -164,6 +164,7 @@ int main(int argc, char *argv[]) {
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1007, "ADD_BLOCK_SET");
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1008, "ADD_BLOCK_SET");
     CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1009, "ADD_BLOCK_SET");
+    CHKERR meshsets_manager_ptr->addMeshset(BLOCKSET, 1010, "foo");
 
     CHKERR meshsets_manager_ptr->setMeshsetFromFile(
         /*"add_cubit_meshsets.in"*/);

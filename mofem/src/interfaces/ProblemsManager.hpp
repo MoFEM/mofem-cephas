@@ -221,6 +221,13 @@ struct ProblemsManager : public UnknownInterface {
    * In addition it sets information about local row and cols dofs at given
    * element on partition.
    *
+   * @param name 
+   * @param part_from_moab 
+   * @param low_proc 
+   * @param hi_proc 
+   * @param verb 
+   * @return MoFEMErrorCode 
+   *
    * \param name problem name
    */
   MoFEMErrorCode partitionFiniteElements(const std::string name,
@@ -323,6 +330,19 @@ struct ProblemsManager : public UnknownInterface {
                                       const bool debug = false);
 
   /**
+   * @copydoc removeDofsOnEntities
+   *
+   * \note Use this function for nondistributed meshes
+   */
+  MoFEMErrorCode removeDofsOnEntitiesNotDistributed(
+      const std::string problem_name, const std::string field_name,
+      const Range ents, const int lo_coeff = 0,
+      const int hi_coeff = MAX_DOFS_ON_ENTITY, int verb = VERBOSE,
+      const bool debug = false);
+
+  enum MarkOP { OR, AND };
+
+  /**
    * @brief Create vector with marked indices 
    * 
    * Vector with local DOFs marked by entities 
@@ -335,7 +355,35 @@ struct ProblemsManager : public UnknownInterface {
    * @return MoFEMErrorCode 
    */
   MoFEMErrorCode markDofs(const std::string problem_name, RowColData rc,
-                          const Range ents, std::vector<bool> &marker);
+                          const enum MarkOP op, const Range ents,
+                          std::vector<unsigned char> &marker) const;
+
+  /**
+   * @deprecated use function with MarkOP
+   */
+  inline DEPRECATED MoFEMErrorCode
+  markDofs(const std::string problem_name, RowColData rc, const Range ents,
+           std::vector<unsigned char> &marker) const {
+    return markDofs(problem_name, rc, MarkOP::OR, ents, marker);
+  }
+
+  /**
+   * @brief Mark DOFs
+   *
+   * @param problem_name
+   * @param rc
+   * @param field_name
+   * @param lo
+   * @param hi
+   * @param op
+   * @param marker
+   * @return MoFEMErrorCode
+   */
+  MoFEMErrorCode modifyMarkDofs(const std::string problem_name, RowColData rc,
+                                const std::string field_name, const int lo,
+                                const int hi, const enum MarkOP op,
+                                const unsigned char c,
+                                std::vector<unsigned char> &marker) const;
 
 private:
   PetscLogEvent MOFEM_EVENT_ProblemsManager;

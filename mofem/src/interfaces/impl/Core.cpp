@@ -257,12 +257,6 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
   if (verb == -1)
     verb = verbose;
 
-  CoordSystemsManager *cs_manger_ptr;
-  CHKERR getInterface(cs_manger_ptr);
-
-  // Initialize coordinate systems
-  CHKERR cs_manger_ptr->initialiseDatabaseFromMesh(verb);
-
   Range ref_elems_to_add;
 
   auto m_moab = &get_moab();
@@ -277,19 +271,8 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
     CHKERR get_moab().tag_get_data(th_FieldId, &mit, 1, &field_id);
     // Check if meshset if field meshset
     if (field_id != 0) {
-      const char *cs_name;
-      int cs_name_size;
-      boost::shared_ptr<CoordSys> cs_ptr;
-      rval =
-          get_moab().tag_get_by_ptr(cs_manger_ptr->get_th_CoordSysName(), &mit,
-                                    1, (const void **)&cs_name, &cs_name_size);
-      if (rval == MB_SUCCESS && cs_name_size)
-        CHKERR cs_manger_ptr->getCoordSysPtr(std::string(cs_name, cs_name_size),
-                                             cs_ptr);
-      else
-        CHKERR cs_manger_ptr->getCoordSysPtr("UNDEFINED", cs_ptr);
 
-      auto p = fIelds.insert(boost::make_shared<Field>(moab, mit, cs_ptr));
+      auto p = fIelds.insert(boost::make_shared<Field>(moab, mit));
 
       if (verb > QUIET)
         MOFEM_LOG("WORLD", Sev::verbose) << "Read field " << **p.first;
@@ -450,7 +433,6 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   CHKERR regSubInterface<Tools>(IDD_MOFEMTools);
   CHKERR regSubInterface<CommInterface>(IDD_MOFEMComm);
   CHKERR regSubInterface<MeshsetsManager>(IDD_MOFEMMeshsetsManager);
-  CHKERR regSubInterface<CoordSystemsManager>(IDD_MOFEMCoordsSystemsManager);
   CHKERR regSubInterface<NodeMergerInterface>(IDD_MOFEMNodeMerger);
   CHKERR regSubInterface<BitLevelCoupler>(IDD_MOFEMBitLevelCoupler);
   CHKERR regSubInterface<PrismsFromSurfaceInterface>(
@@ -466,6 +448,7 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   CHKERR regSubInterface<MedInterface>(IDD_MOFEMMedInterface);
 #endif
   CHKERR regSubInterface<FieldEvaluatorInterface>(IDD_MOFEMFieldEvaluator);
+  CHKERR regSubInterface<BcManager>(IDD_MOFEMBcManager);
 
   MoFEMFunctionReturn(0);
 };
@@ -492,7 +475,6 @@ MoFEMErrorCode Core::clearMap() {
   // Cleaning databases in interfaces
   CHKERR getInterface<SeriesRecorder>()->clearMap();
   CHKERR getInterface<MeshsetsManager>()->clearMap();
-  CHKERR getInterface<CoordSystemsManager>()->clearMap();
   CHKERR getInterface<CutMeshInterface>()->clearMap();
   // Cleaning databases
   refinedEntities.clear();
@@ -730,11 +712,6 @@ MoFEMErrorCode Core::getTags(int verb) {
   CHKERR getInterface(series_recorder_ptr);
   CHKERR series_recorder_ptr->getTags(verb);
 
-  // Coordinate systems
-  CoordSystemsManager *cs_manger_ptr;
-  CHKERR getInterface(cs_manger_ptr);
-  CHKERR cs_manger_ptr->getTags(verb);
-
   MoFEMFunctionReturn(0);
 }
 
@@ -901,7 +878,7 @@ const FieldEntity_multiIndex *Core::get_field_ents() const {
   return &entsFields;
 }
 const DofEntity_multiIndex *Core::get_dofs() const { return &dofsField; }
-const Problem *Core::get_problem(const std::string &problem_name) const {
+const Problem *Core::get_problem(const std::string problem_name) const {
   const Problem *prb;
   CHKERR get_problem(problem_name, &prb);
   return prb;
@@ -921,17 +898,20 @@ void set_ref_ent_basic_data_ptr_impl(boost::shared_ptr<BasicEntityData> &ptr) {
 void Core::setRefEntBasicDataPtr(MoFEM::Interface &m_field,
                                       boost::shared_ptr<BasicEntityData> &ptr) {
 
-  boost::hana::for_each(
+  switch (m_field.getValue()) {
+  case -1:
+    set_ref_ent_basic_data_ptr_impl<-1>(ptr);
+    break;
+  case 0:
+    set_ref_ent_basic_data_ptr_impl<0>(ptr);
+    break;
+  case 1:
+    set_ref_ent_basic_data_ptr_impl<1>(ptr);
+    break;
+  default:
+    THROW_MESSAGE("Core index can vary from -1 to MAX_CORE_TMP");
+  }
 
-      boost::hana::make_range(boost::hana::int_c<-1>,
-                              boost::hana::int_c<MAX_CORE_TMP>),
-
-      [&](auto r) {
-        if (m_field.getValue() == r)
-          set_ref_ent_basic_data_ptr_impl<r>(ptr);
-      }
-
-  );
 };
 
 boost::shared_ptr<RefEntityTmp<0>>
@@ -939,21 +919,31 @@ Core::makeSharedRefEntity(MoFEM::Interface &m_field, const EntityHandle ent) {
 
   boost::shared_ptr<RefEntityTmp<0>> ref_ent_ptr;
 
-  boost::hana::for_each(
+  switch (m_field.getValue()) {
+  case -1:
+    ref_ent_ptr = boost::shared_ptr<RefEntityTmp<0>>(
 
-      boost::hana::make_range(boost::hana::int_c<-1>,
-                              boost::hana::int_c<MAX_CORE_TMP>),
+        new RefEntityTmp<-1>(m_field.get_basic_entity_data_ptr(), ent)
 
-      [&](auto r) {
-        if (m_field.getValue() == r)
-          ref_ent_ptr = boost::shared_ptr<RefEntityTmp<0>>(
+    );
+    break;
+  case 0:
+    ref_ent_ptr = boost::shared_ptr<RefEntityTmp<0>>(
 
-              new RefEntityTmp<r>(m_field.get_basic_entity_data_ptr(), ent)
+        new RefEntityTmp<0>(m_field.get_basic_entity_data_ptr(), ent)
 
-          );
-      }
+    );
+    break;
+  case 1:
+    ref_ent_ptr = boost::shared_ptr<RefEntityTmp<0>>(
 
-  );
+        new RefEntityTmp<1>(m_field.get_basic_entity_data_ptr(), ent)
+
+    );
+    break;
+  default:
+    THROW_MESSAGE("Core index can vary from -1 to MAX_CORE_TMP");
+  }
 
   return ref_ent_ptr;
 }

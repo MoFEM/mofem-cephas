@@ -37,8 +37,7 @@ struct FieldEvaluatorInterface : public UnknownInterface {
                                  UnknownInterface **iface) const;
 
   MoFEM::Core &cOre;
-  FieldEvaluatorInterface(const MoFEM::Core &core)
-      : cOre(const_cast<MoFEM::Core &>(core)) {}
+  FieldEvaluatorInterface(const MoFEM::Core &core);
 
   struct SetPtsData {
 
@@ -88,7 +87,8 @@ struct FieldEvaluatorInterface : public UnknownInterface {
   struct SetPts {
     SetPts() = delete;
     SetPts(boost::shared_ptr<SetPtsData> data_ptr) : dataPtr(data_ptr) {}
-    MoFEMErrorCode operator()(int order_row, int order_col, int order_data);
+    MoFEMErrorCode operator()(ForcesAndSourcesCore *fe_raw_ptr, int order_row,
+                              int order_col, int order_data);
 
   private:
     boost::weak_ptr<SetPtsData> dataPtr;
@@ -162,11 +162,13 @@ struct FieldEvaluatorInterface : public UnknownInterface {
       // push operators to finite element instance, e.g.
       vol_ele->getOpPtrVector().push_back(new MyOp());
       // iterate over elemnts with evaluated points
+      auto cache_ptr = boost::make_shared<CacheTuple>();
+      CHKERR m_field.cache_problem_entities(prb_ptr->getName(), cache_ptr);
       CHKERR m_field.getInterface<FieldEvaluatorInterface>()
         ->evalFEAtThePoint3D(point.data(), dist, prb_ptr->getName(),
                              "FINITE_ELEMENT_NAME",
                              data_ptr, m_field.get_comm_rank(),
-                             m_field.get_comm_rank(), MF_EXIST, QUIET);
+                             m_field.get_comm_rank(), cache_ptr);
     }
 
    * \endcode
@@ -178,17 +180,19 @@ struct FieldEvaluatorInterface : public UnknownInterface {
    * @param data_ptr pointer to data abut gauss points
    * @param lower_rank lower processor
    * @param upper_rank upper process
+   * @param cache_ptr cache or problem entities
    * @param bh control looping over entities, e.g. throwing error if element not
    found
    * @param verb verbosity level
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode evalFEAtThePoint3D(
-      const double *const point, const double distance,
-      const std::string problem, const std::string finite_element,
-      boost::shared_ptr<SetPtsData> data_ptr, int lower_rank, int upper_rank,
-      MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
-
+  MoFEMErrorCode
+  evalFEAtThePoint3D(const double *const point, const double distance,
+                     const std::string problem,
+                     const std::string finite_element,
+                     boost::shared_ptr<SetPtsData> data_ptr, int lower_rank,
+                     int upper_rank, boost::shared_ptr<CacheTuple> cache_ptr,
+                     MoFEMTypes bh = MF_EXIST, VERBOSITY_LEVELS verb = QUIET);
 };
 
 } // namespace MoFEM

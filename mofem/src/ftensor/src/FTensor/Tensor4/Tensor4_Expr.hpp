@@ -83,6 +83,26 @@ namespace FTensor
       return equals(rhs);
     }
 
+    template <class B, class U, int Dim01, int Dim23, char i_1, char j_1,
+              char k_1, char l_1>
+    auto &
+    equals(const Ddg_Expr<B, U, Dim01, Dim23, i_1, j_1, k_1, l_1> &rhs) {
+      for(int ii = 0; ii != Dim01; ++ii)
+        for(int jj = 0; jj != Dim01; ++jj)
+          for(int kk = 0; kk != Dim23; ++kk)
+            for (int ll = 0; ll != Dim23; ++ll) {
+              iter(ii, jj, kk, ll) = rhs(ii, jj, kk, ll);
+            }
+      return *this;
+    }
+
+    template <class B, class U, int Dim01, int Dim23, char i_1, char j_1,
+              char k_1, char l_1>
+    auto &
+    operator=(const Ddg_Expr<B, U, Dim01, Dim23, i_1, j_1, k_1, l_1> &rhs) {
+      return equals(rhs);
+    }
+
     template <class B, class U, int Dim1_0, int Dim1_1, int Dim1_2, int Dim1_3,
               char i_1, char j_1, char k_1, char l_1>
     auto &operator+=(const Tensor4_Expr<B, U, Dim1_0, Dim1_1, Dim1_2, Dim1_3,
@@ -110,6 +130,32 @@ namespace FTensor
               {
                 iter(ii, jj, kk, ll) += permute(*this, rhs, ii, jj, kk, ll);
               }
+      return *this;
+    }
+
+    template <class B, class U, int Dim01, int Dim23, char i_1, char j_1,
+              char k_1, char l_1>
+    auto &
+    operator+=(const Ddg_Expr<B, U, Dim01, Dim23, i_1, j_1, k_1, l_1> &rhs) {
+      for (int ii = 0; ii != Dim01; ++ii)
+        for (int jj = 0; jj != Dim01; ++jj)
+          for (int kk = 0; kk != Dim23; ++kk)
+            for (int ll = 0; ll != Dim23; ++ll) {
+              iter(ii, jj, kk, ll) += rhs(ii, jj, kk, ll);
+            }
+      return *this;
+    }
+
+    template <class B, class U, int Dim01, int Dim23, char i_1, char j_1,
+              char k_1, char l_1>
+    auto &
+    operator-=(const Ddg_Expr<B, U, Dim01, Dim23, i_1, j_1, k_1, l_1> &rhs) {
+      for (int ii = 0; ii != Dim01; ++ii)
+        for (int jj = 0; jj != Dim01; ++jj)
+          for (int kk = 0; kk != Dim23; ++kk)
+            for (int ll = 0; ll != Dim23; ++ll) {
+              iter(ii, jj, kk, ll) -= rhs(ii, jj, kk, ll);
+            }
       return *this;
     }
 

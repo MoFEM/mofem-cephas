@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
 
       auto get_mark_skin_dofs = [&](Range &&skin) {
         auto problem_manager = m_field.getInterface<ProblemsManager>();
-        auto marker_ptr = boost::make_shared<std::vector<bool>>();
+        auto marker_ptr = boost::make_shared<std::vector<unsigned char>>();
         problem_manager->markDofs(simple_interface->getProblemName(), ROW, skin,
                                   *marker_ptr);
         return marker_ptr;

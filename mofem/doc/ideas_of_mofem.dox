@@ -1,4 +1,4 @@
-/*! \page general_data_structure Basic design
+/*! \page general_data_structure MoFEM Architecture
 
 \section mofem_idea Idea behind MoFEM
 
@@ -7,25 +7,25 @@ approximation space and base) and therefore cannot exploit the potential of
 emerging approximation methods. MoFEM software utilises recent advances
 in finite element technology and modern data structures, enabling the efficient
 solution of difficult, multi-domain, multi-scale and multi-physics problems. In
-this code, design of data structures for approximation of field variables
+this code, the design of data structures for approximation of field variables
 are independent of the specific finite element (e.g. Lagrangian, Nedelec,
 Rivart-Thomas) being used, such that finite element is constructed by a set of
 lower dimension entities on which the approximation fields are defined.
 
 Therefore, different approximation spaces (H1, H-curl, H-div, L2) can be
-arbitrarily mixed in finite element to create new capability for solving
+arbitrarily mixed in finite elements to create a new capability for solving
 complex problems efficiently. Approximation space defines adjacency of DOFs on
-entities, the number of DOFs on entity is independent on approximation base (at
-least for polynomials). The base on entity is a trace of the base on element, and
-opposite relation works, base on entity is extruded into element.
+entities, the number of DOFs on an entity is independent on approximation base (at
+least for polynomials). The base on the entity is a trace of the base on the element, and
+opposite relation works, base on the entity is propagated to the element.
 
 MoFEM data structures allow easily to enrich approximation fields or modify
 base functions, e.g. to resolve singularity at crack front. Applying this
 technology, it is effortless to construct transition elements between domain
 with different problem formulation and physics (e.g. from two-field
 mix-formulation to single-field formulation), or elements with anisotropic
-approximation order (e.g. in solid-shells with arbitrary high-order on shell
-surface and arbitrary low-order through thickness). 
+approximation order (e.g. in solid-shells with arbitrary high-order on the shell
+surface and arbitrary low-order through-thickness). 
 
 This approach also sets the benchmark in terms of how finite element codes
 are implemented, introducing a concept of user-defined data operators acting
@@ -35,45 +35,40 @@ writing, testing and validation, making the code resilient to bugs.
 
 \tableofcontents
 
-\section before_finite_element_tut Before you start to look into examples and tutorials
+\section before_finite_element_tut Basic design description
 
-\subsection mofem_eccosystem MoFEM software eccosystem
+\subsection mofem_eccosystem MoFEM software ecosystem
 
-MoFEM has not developed and will not develop all capabilities from scratch. Instead, MoFEM
-integrates advanced scientific computing tools for Algebra (PETSc and associated
-tools), Topology (MOAB and associated tools) and data structures from Boost.
-Resilience of this ecosystem is ensured because the underpinning components have
-sustainable funding, dynamic and established group of developers and significant
-user base. MoFEM focuses attention on complexities related to finite element
-technology and uses abstractions like field entity, DOF (degree of freedom),
-finite element and problem.
+MoFEM has not developed and will not develop all capabilities from scratch. 
+Instead, it integrates advanced scientific computing tools for Algebra (PETSc and associated tools), 
+Topology (MOAB and associated tools) and data structures from Boost. The resilience of this ecosystem 
+is ensured by solid fundation of its components and by a dynamic and established group of developers 
+backed by a constantly growing user base. MoFEM focuses its attention on complexities related to finite 
+element technology and uses abstractions like field entity, DOF (degree of freedom), finite element and problem.
 
 \image html Ecosystem.png "Ecosystem" width=600px
 
-Finite element software is a complex ecosystem managing mesh and topology
-related complexities, sparse algebra and complications related to approximation,
-integration or dense tensor algebra at integration point level. Each element by
-itself is a standalone complicated problem. MoFEM ecosystem is composed of
-three parts, MoAB managing complexities related to topology, PETSc
-managing complexities related to sparse algebra and solvers and finally MoFEM 
-core library managing complexities directly related to finite element method.
-Each part has its own design objectives and appropriate programming tools from
-a spectrum of solutions can be selected \cite knepley2012programming. MoFEM makes
-PETSc integral part of code by extending PETSc by DMMOFEM interface (several
-other functions work directly on PETSc objects). MoAB from other hand is
-internal data storage. PETSc is designed to be fast, whereas MoAB aims to be
-memory efficient.
+Finite element software is a complex ecosystem managing mesh and topology related complexities, 
+sparse algebra and complications related to approximation, integration or dense tensor algebra 
+at the integration point level. Each element by itself is a standalone complicated problem. 
+MoFEM ecosystem is composed of three parts, MoAB managing complexities related to topology, 
+PETSc managing complexities related to sparse algebra with solvers and finally MoFEM core library 
+managing complexities directly related to the finite element method. Each part has its design objectives 
+and appropriate programming tools from a spectrum of solutions can be selected \cite knepley2012programming. 
+MoFEM makes PETSc an integral part of the code by extending PETSc via DMMOFEM interface (several other functions 
+work directly on PETSc objects). MoAB on the other hand is adopted for internal data storage. PETSc is designed 
+to be fast, whereas MoAB aims to be memory efficient.
 \image html data_strutures_1.png "MoFEM code parts" width=800px
 
-Code development, with no different from engineering, is a compromise of different
+Code development, with no difference from engineering, is a compromise of different
 goals. The first primary design objective of MoFEM is to develop flexible and
-extendable code that is easy to test and bug search. Very often, we spend more time to
-implement finite element than the time needed to run analysis itself,
-flexibility and extensibility allow for rapid development of finite elements
+extendable code that is easy to test and bug search. Very often, we spend more time
+implementing finite elements than the time needed to run the analysis itself.
+Flexibility and extensibility allow for rapid development of finite elements
 for non-standard and complex problems. Utilising PETSc and MoAB scalability
 is the second important design objective. Nowadays, we can have easy access to
 the computing clusters through cloud computing or local/regional
-supercomputers. Third, core library cannot compromise runtime efficiency and
+supercomputers. Third, the core library cannot compromise runtime efficiency and
 use of computer memory with care.
 
 \subsection finite_element_tut Finite element implementation and UserDataOperator
@@ -81,12 +76,12 @@ use of computer memory with care.
 The finite element entity is composed of subentities, like nodes, edges, faces
 (triangle, quad, etc.) and volumes (tetrahedron, hex, prism, etc). The element
 is implemented by evaluating base functions, indices, data on each entity in the
-domain of the element. The developer does not directly implement finite element
-for a given predefined type, but UserDataOperators operate on finite element
-entities.  In such method order of approximation, the shape of the finite
-element does not influence how user implements problem.
+domain of the element. The developer does not directly implement finite elements
+for a given predefined type, but UserDataOperators operate on the finite element
+entities.  In such a method, the order of approximation and the shape of the finite
+element does not influence how the user implements a problem.
 
-Moreover, unlike in common finite element code, the choice of field space and base
+Moreover, unlike in common finite element codes, the choice of field space and base
 space is independent of the type of element, it happens before we select the
 domain of integration and finite elements on it. Concepts like the periodic
 table of finite elements, or zoo of finite elements are obsolete.
@@ -116,16 +111,16 @@ intrinsically linked to operations on particular fields, the last one is
 abstract and should not be used to assemble vectors and matrices. Type of
 operator is set by overloading function \c doWork. Operators are run in
 sequence as they are added to finite element and executed for each entity on that
-element. If for given field number of DOFs or base functions on given entity
+element. If for a given field number of DOFs or base functions on an assigned entity
 is zero, such entity is not evaluated.
 \image html fe_struture_2.png "Types of UserDataOperator" width=800px
 
 Note that the data and the algorithm operating on that data are localised and grouped by
-both element and entity. Elements and entities share data structure avoiding
-unnecessary memory allocation and deallocation. However, the motivation for this
+both elements and entities. Elements and entities share data structures avoiding
+unnecessary memory allocation and de-allocation. However, the motivation for this
 development is code elasticity (resilience to change and openness for new finite
-element technologies), reusability, which with relatively small code, large group
-of problems can be implemented and last but not least enables modularisation and
+element technologies) and reusability. With relatively small code changes, large group
+of problems can be implemented and last but not least this approach enables modularisation and
 testing of each element independently.
 \image html fe_struture_3.png "Example of implementation" width=800px
 
@@ -244,13 +239,13 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
 };
 \endcode
 
-\subsection mofem_data_flow Core library and application code
+\subsection mofem_data_flow Advanced design of Core library and application code
 
 Typically, internal data structures are hidden from the user and there is no need to
-access them directly. In core library, no single problem or finite element in
+access them directly. In the core library, no single problem or finite element in
 the classical sense is implemented. Core library only provides functionality for
 finite element implementation and application code development. For that reason,
-repositories of core library and user modules are in separate independent
+repositories of the core library and user modules are in separate independent
 locations.
 \image html data_strutures_2.png "MoFEM code parts" width=800px
 
@@ -277,30 +272,29 @@ CHKERR m_field.build_fields();
 \endcode
 Similarly, defining finite element set implement integration domain and build
 internal data structures. Note, finite element structure is separated from
-implementation. The same element can have several implementations which work on
-some set of user data operators. Moreover, the same problem, defined on the
-same field and data structures can be implemented in separate modules. Also,
-several users modules exchange data by common MoFEM database, without knowledge
+implementation. The same element can have several implementations, which work on
+some set of user data operators. Moreover, the same problem defined on the
+same field and data structures, can be implemented in separate modules. Also,
+several user modules exchange data by common MoFEM database, without knowing
 how other modules have been implemented, that enables simplified cooperation
 between developers.
 
 \subsection mofem_field_data_structure Internal field structure
 
 You don't have to know how internal data structures work, like the driver of
-the car, does not necessarily know how a spark plug works. So if you get bored,
+a car, does not necessarily knows how a spark plug works. So if you get bored,
 you can skip this part.
 \image html data_strutures_3.png "Fields data structures" width=800px
 
 However, sometimes it is useful to know details when something goes wrong. The
-objective is to have an extendable and flexible data structure which can manage
+objective is to have an extendable and flexible data structure, which can manage
 a wide range of approximations. At the same time, it should be easy and fast access to
-data structures, short set-up time and memory efficiency without redundancies.
+data structures, have short set-up time and exhibit memory efficiency without redundancies.
 This aim is realised by use boost multi-indices, aliased shared pointers and
 vector sequences. See for example \ref MoFEM::NumeredDofEntity or \ref
 MoFEM::DofEntity. Data are accessed by multi-indices, for example, defined in
 \ref DofsMultiIndices.hpp, \ref FieldEntsMultiIndices.hpp or \ref FieldMultiIndices.hpp.
-The similar data structures are created for finite
-elements and problems.
+Similar data structures are created for finite elements and problems.
 
 
 */

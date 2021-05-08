@@ -48,7 +48,8 @@ int main(int argc, char *argv[]) {
                                  mesh_file_name, 255, &flg);
 #endif
     if (flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF, 1, "*** ERROR -my_file (MESH FILE NEEDED)");
+      SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+              "*** ERROR -my_file (MESH FILE NEEDED)");
     }
 
     // Read mesh to MOAB

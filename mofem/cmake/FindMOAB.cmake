@@ -14,7 +14,7 @@ if(NOT MOAB_VARIABLES_FILE)
   message(FATAL_ERROR ${MOAB_VARIABLES_FILE})
 endif(NOT MOAB_VARIABLES_FILE)
 
-find_file (MBCONVERT mbconvert HINTS ${MOAB_DIR}/bin)
+find_file (MBCONVERT NAMES mbconvert mbconvert.exe HINTS ${MOAB_DIR}/bin)
 if(NOT MBCONVERT)
   message(FATAL_ERROR ${MBCONVERT})
 endif(NOT MBCONVERT)

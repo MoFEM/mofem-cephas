@@ -33,7 +33,7 @@ struct EssentialBcStorage : public EntityStorage {
 EssentialBcStorage::HashVectorStorage EssentialBcStorage::feStorage;
 
 OpSetBc::OpSetBc(std::string field_name, bool yes_set,
-                 boost::shared_ptr<std::vector<bool>> boundary_marker)
+                 boost::shared_ptr<std::vector<unsigned char>> boundary_marker)
     : ForcesAndSourcesCore::UserDataOperator(
           field_name, ForcesAndSourcesCore::UserDataOperator::OPROW),
       yesSet(yes_set), boundaryMarker(boundary_marker) {}
@@ -96,6 +96,11 @@ VecSetValues<EssentialBcStorage>(Vec V,
                                  const DataForcesAndSourcesCore::EntData &data,
                                  const double *ptr, InsertMode iora) {
   MoFEMFunctionBegin;
+
+  if(!V)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+            "Pointer to PETSc vector is null");
+
   CHKERR VecSetOption(V, VEC_IGNORE_NEGATIVE_INDICES, PETSC_TRUE);
   if (!data.getFieldEntities().empty()) {
     if (auto e_ptr = data.getFieldEntities()[0]) {
@@ -127,6 +132,11 @@ MoFEMErrorCode MatSetValues<EssentialBcStorage>(
     Mat M, const DataForcesAndSourcesCore::EntData &row_data,
     const DataForcesAndSourcesCore::EntData &col_data, const double *ptr,
     InsertMode iora) {
+
+  if(!M)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+            "Pointer to PETSc matrix is null");
+
   if (!row_data.getFieldEntities().empty()) {
     if (auto e_ptr = row_data.getFieldEntities()[0]) {
       if (auto stored_data_ptr =

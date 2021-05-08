@@ -1,0 +1,49 @@
+FROM likask/mofem-spack-build
+
+LABEL maintainer="Lukasz.Kaczmarczyk@glasgow.ac.uk"
+
+RUN apt-get update && \
+  apt-get install -y \
+  python3-pip \
+  libgl1-mesa-glx \
+  libglu1-mesa \
+  xvfb \
+  build-essential \
+  python3-dev \
+  npm \
+  nodejs \
+  libnode64 \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*  
+
+RUN pip3 -q install pip --upgrade && \
+  pip3 install \
+  pandas \
+  scipy \
+  gmsh \
+  jupytext \
+  pyvista \
+  jupyter \
+  jupyterhub \
+  jupyter_contrib_nbextensions \
+  itkwidgets \
+  ipywidgets \
+  ipyvtk-simple==0.1.2 && \
+  jupyter contrib nbextension install && \
+  jupyter nbextension enable spellchecker/main && \
+  jupyter nbextension install --py jupytext && \
+  jupyter nbextension enable --py jupytext && \
+  npm install -g configurable-http-proxy
+
+# allow jupyterlab for ipyvtk
+ENV DISPLAY=:99.0
+ENV JUPYTER_ENABLE_LAB=yes
+ENV PYVISTA_USE_IPYVTK=true
+ENV JUPYTER_TOKEN=mofem
+ENV PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3.8/site-packages/gmsh-4.8.3-Linux64-sdk/lib
+
+WORKDIR $MOFEM_INSTALL_DIR
+
+EXPOSE 8888
+CMD /bin/bash -c "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &" && \
+  jupyter notebook --port=8888 --no-browser --ip=0.0.0.0 --allow-root
+

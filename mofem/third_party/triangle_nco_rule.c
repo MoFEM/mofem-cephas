@@ -1,7 +1,3 @@
-# include <stdlib.h>
-# include <stdio.h>
-# include <math.h>
-# include <time.h>
 
 # include "triangle_nco_rule.h"
 

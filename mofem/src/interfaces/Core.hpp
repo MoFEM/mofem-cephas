@@ -424,6 +424,17 @@ protected:
             const TagType tag_type = MB_TAG_SPARSE,
             const enum MoFEMTypes bh = MF_EXCL, int verb = DEFAULT_VERBOSITY);
 
+
+  /**
+   * @brief Delete field
+   * 
+   * @param name field name
+   * @param verb verbosity level
+   * @return error code
+   */
+  MoFEMErrorCode delete_field(const std::string name,
+                              int verb = DEFAULT_VERBOSITY);
+
   /**
    * @brief Template for add_field
    *
@@ -911,7 +922,7 @@ protected:
   const EntFiniteElement_multiIndex *get_ents_finite_elements() const;
   const FieldEntity_multiIndex *get_field_ents() const;
   const DofEntity_multiIndex *get_dofs() const;
-  const Problem *get_problem(const std::string &problem_name) const;
+  const Problem *get_problem(const std::string problem_name) const;
   const Problem_multiIndex *get_problems() const;
   const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *
   get_ents_elements_adjacency() const;

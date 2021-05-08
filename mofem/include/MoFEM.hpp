@@ -12,7 +12,11 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-// #define BOOST_DISABLE_ASSERTS
+#ifndef NDEBUG
+#define BOOST_DISABLE_ASSERTS
+#define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
+#define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
+#endif
 
 #ifndef __MOFEM_HPP__
 #define __MOFEM_HPP__
@@ -53,7 +57,6 @@
 #include <MaterialBlocks.hpp>
 #include <BCData.hpp>
 #include <TagMultiIndices.hpp>
-#include <CoordSysMultiIndices.hpp>
 #include <RefEntsMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
 #include <FieldEntsMultiIndices.hpp>
@@ -88,7 +91,6 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <SeriesRecorder.hpp>
 #include <PrismInterface.hpp>
 #include <MeshsetsManager.hpp>
-#include <CoordSystemsManager.hpp>
 #ifdef WITH_TETGEN
   #include <TetGenInterface.hpp>
 #endif //WITH_TETGEN
@@ -136,5 +138,6 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 
 #include <PipelineManager.hpp>
 #include <FieldEvaluator.hpp>
+#include <BcManager.hpp>
 
 #endif //MOFEM_HPP__

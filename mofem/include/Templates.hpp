@@ -332,8 +332,8 @@ struct GetFTensor4DdgFromMatImpl<1, 1, S, double, ublas::row_major,
   get(MatrixDouble &data) {
     if (data.size1() != 1)
       THROW_MESSAGE(
-          "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
-          "of rows should be 36 but is " +
+          "getFTensor4DdgFromMat<1, 1>: wrong size of data matrix, number "
+          "of rows should be 1 but is " +
           boost::lexical_cast<std::string>(data.size1()));
 
     return FTensor::Ddg<FTensor::PackPtr<double *, S>, 1, 1>{&data(0, 0)};
@@ -347,7 +347,7 @@ struct GetFTensor4DdgFromMatImpl<2, 2, S, double, ublas::row_major,
   get(MatrixDouble &data) {
     if (data.size1() != 9) {
       THROW_MESSAGE(
-          "getFTensor4DdgFromMat<3, 3>: wrong size of data matrix, number "
+          "getFTensor4DdgFromMat<2, 2>: wrong size of data matrix, number "
           "of rows should be 9 but is " +
           boost::lexical_cast<std::string>(data.size1()));
     }
@@ -385,7 +385,7 @@ struct GetFTensor4DdgFromMatImpl<3, 3, S, double, ublas::row_major,
  * @brief Get symmetric tensor rank 4  on first two and last indices from
  * form data matrix
  *
- * @tparam Tensor_Dim01 dimension of frirst two indicies
+ * @tparam Tensor_Dim01 dimension of first two indicies
  * @tparam Tensor_Dim23 dimension of second two indicies
  * @tparam T the type of object stored
  * @tparam L the storage organization
@@ -406,6 +406,90 @@ static inline FTensor::Ddg<FTensor::PackPtr<double *, S>, Tensor_Dim01,
                            Tensor_Dim23>
 getFTensor4DdgFromMat(MatrixDouble &data) {
   return GetFTensor4DdgFromMatImpl<Tensor_Dim01, Tensor_Dim23, S, double,
+                                   ublas::row_major,
+                                   DoubleAllocator>::get(data);
+}
+
+template <int Tensor_Dim01, int Tensor_Dim2, int S, class T, class L, class A>
+struct GetFTensor3DgFromMatImpl {};
+
+template <int S>
+struct GetFTensor3DgFromMatImpl<1, 1, S, double, ublas::row_major,
+                                 DoubleAllocator> {
+  static inline FTensor::Dg<FTensor::PackPtr<double *, S>, 1, 1>
+  get(MatrixDouble &data) {
+    if (data.size1() != 1)
+      THROW_MESSAGE(
+          "getFTensor3DgFromMat<1, 1>: wrong size of data matrix, number "
+          "of rows should be 1 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+
+    return FTensor::Dg<FTensor::PackPtr<double *, S>, 1, 1>{&data(0, 0)};
+  }
+};
+
+template <int S>
+struct GetFTensor3DgFromMatImpl<2, 2, S, double, ublas::row_major,
+                                 DoubleAllocator> {
+  static inline FTensor::Dg<FTensor::PackPtr<double *, S>, 2, 2>
+  get(MatrixDouble &data) {
+    if (data.size1() != 9) {
+      THROW_MESSAGE(
+          "getFTensor4DdgFromMat<2, 2>: wrong size of data matrix, number "
+          "of rows should be 6 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+    }
+    return FTensor::Dg<FTensor::PackPtr<double *, S>, 2, 2>{
+        &data(0, 0), &data(1, 0), &data(2, 0), &data(3, 0), &data(4, 0),
+        &data(5, 0), &data(6, 0)};
+  }
+};
+
+template <int S>
+struct GetFTensor3DgFromMatImpl<3, 3, S, double, ublas::row_major,
+                                 DoubleAllocator> {
+  static inline FTensor::Dg<FTensor::PackPtr<double *, S>, 3, 3>
+  get(MatrixDouble &data) {
+    if (data.size1() != 18) {
+      cerr << data.size1() << endl;
+      THROW_MESSAGE(
+          "getFTensor3DgFromMat<3, 3>: wrong size of data matrix, number "
+          "of rows should be 18 but is " +
+          boost::lexical_cast<std::string>(data.size1()));
+    }
+    return FTensor::Dg<FTensor::PackPtr<double *, S>, 3, 3>{
+        &data(0, 0),  &data(1, 0),  &data(2, 0),  &data(3, 0),  &data(4, 0),
+        &data(5, 0),  &data(6, 0),  &data(7, 0),  &data(8, 0),  &data(9, 0),
+        &data(10, 0), &data(11, 0), &data(12, 0), &data(13, 0), &data(14, 0),
+        &data(15, 0), &data(16, 0), &data(17, 0)};
+  }
+};
+
+/**
+ * @brief Get symmetric tensor rank 3  on the first two indices from
+ * form data matrix
+ *
+ * @tparam Tensor_Dim01 dimension of first two indicies
+ * @tparam Tensor_Dim2 dimension of last index
+ * @tparam T the type of object stored
+ * @tparam L the storage organization
+ * @tparam A 	the type of Storage array
+ * @param data data container
+ * @return FTensor::Dg<FTensor::PackPtr<T *, 1>, Tensor_Dim01, TensorDim23>
+ */
+template <int Tensor_Dim01, int Tensor_Dim2, int S = 1, class T, class L,
+          class A>
+static inline FTensor::Dg<FTensor::PackPtr<T *, 1>, Tensor_Dim01, Tensor_Dim2>
+getFTensor3DgFromMat(ublas::matrix<T, L, A> &data) {
+  static_assert(!std::is_same<T, T>::value,
+                "Such getFTensor3DgFromMat specialisation is not implemented");
+}
+
+template <int Tensor_Dim01, int Tensor_Dim2, int S = 1>
+static inline FTensor::Dg<FTensor::PackPtr<double *, S>, Tensor_Dim01,
+                           Tensor_Dim2>
+getFTensor3DgFromMat(MatrixDouble &data) {
+  return GetFTensor3DgFromMatImpl<Tensor_Dim01, Tensor_Dim2, S, double,
                                    ublas::row_major,
                                    DoubleAllocator>::get(data);
 }
@@ -532,8 +616,8 @@ getFTensor1FromPtr(double *ptr) {
 template <>
 inline FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
 getFTensor1FromPtr<2>(double *ptr) {
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(
-      &ptr[HVEC0], &ptr[HVEC1]);
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(&ptr[HVEC0],
+                                                            &ptr[HVEC1]);
 };
 
 template <>
@@ -672,6 +756,204 @@ getFTensor2FromArray(MatrixDouble &data, const size_t rr) {
       &data(rr + 0, 0), &data(rr + 0, 1), &data(rr + 0, 2),
       &data(rr + 1, 0), &data(rr + 1, 1), &data(rr + 1, 2),
       &data(rr + 2, 0), &data(rr + 2, 1), &data(rr + 2, 2)};
+}
+
+// list of lapack wrappers
+/**
+ * @brief compute matrix inverse with lapack dgetri
+ *
+ * @param mat input square matrix / output inverse matrix
+ * @return MoFEMErrorCode
+ */
+inline MoFEMErrorCode computeMatrixInverse(MatrixDouble &mat) {
+  MoFEMFunctionBegin;
+
+  const size_t M = mat.size1();
+  const size_t N = mat.size2();
+
+  if (M != N)
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "The input matrix for inverse computation is not square %d != %d",
+             M, N);
+
+  int *ipv = new int[N];
+  int lwork = N * N;
+  double *work = new double[lwork];
+  int info;
+  info = lapack_dgetrf(N, N, &*mat.data().begin(), N, ipv);
+  if (info != 0)
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "lapack error info = %d", info);
+  info = lapack_dgetri(N, &*mat.data().begin(), N, ipv, work, lwork);
+  if (info != 0)
+    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "lapack error info = %d", info);
+
+  delete[] ipv;
+  delete[] work;
+
+  MoFEMFunctionReturn(0);
+}
+/**
+ * @brief solve linear system with lapack dgesv
+ *
+ * @param mat input lhs square matrix / output L and U from the factorization
+ * @param f input rhs vector / output solution vector
+ * @return MoFEMErrorCode
+ */
+inline MoFEMErrorCode solveLinearSystem(MatrixDouble &mat, VectorDouble &f) {
+  MoFEMFunctionBegin;
+
+  const size_t M = mat.size1();
+  const size_t N = mat.size2();
+
+  if (M == 0 || M != N)
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "The input matrix for inverse computation is not square %d != %d",
+             M, N);
+  if (f.size() != M)
+    f.resize(M, false);
+
+  const int nrhs = 1;
+  int info;
+  int *ipiv = new int[M];
+  info = lapack_dgesv(M, nrhs, &*mat.data().begin(), M, ipiv,
+                      &*f.data().begin(), nrhs);
+
+  if (info != 0) {
+    SETERRQ1(PETSC_COMM_SELF, 1, "error lapack solve dgesv info = %d", info);
+  }
+
+  delete[] ipiv;
+  MoFEMFunctionReturn(0);
+}
+
+/**
+ * @brief Solve linear system of equations using Lapack
+ * 
+ * @param mat 
+ * @param f 
+ * @return MoFEMErrorCode 
+ */
+inline MoFEMErrorCode solveLinearSystem(const MatrixDouble &mat,
+                                        VectorDouble &f) {
+  MoFEMFunctionBegin;
+  // copy matrix since on output lapack returns factorisation
+  auto mat_copy = mat;
+  CHKERR solveLinearSystem(mat_copy, f);
+  MoFEMFunctionReturn(0);
+}
+
+/**
+ * @brief compute eigenvalues of a symmetric matrix using lapack dsyev
+ *
+ * @param mat input symmetric matrix
+ * @param eig output eigen values sorted
+ * @param eigen_vec output matrix of row eigen vectors
+ * @return MoFEMErrorCode
+ */
+inline MoFEMErrorCode computeEigenValuesSymmetric(const MatrixDouble &mat,
+                                                  VectorDouble &eig,
+                                                  MatrixDouble &eigen_vec) {
+  MoFEMFunctionBegin;
+
+  const size_t M = mat.size1();
+  const size_t N = mat.size2();
+
+  if (M == 0 || M != N)
+    SETERRQ2(
+        PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+        "The input matrix for eigen value computation is not square %d != %d",
+        M, N);
+  if (eig.size() != M)
+    eig.resize(M, false);
+
+  eigen_vec = mat;
+  const int n = M;
+  const int lda = M;
+  const int size = (M + 2) * M;
+  int lwork = size;
+  double *work = new double[size];
+
+  if (lapack_dsyev('V', 'U', n, &*eigen_vec.data().begin(), lda,
+                   &*eig.data().begin(), work, lwork) > 0)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+            "The algorithm failed to compute eigenvalues.");
+
+  delete[] work;
+  MoFEMFunctionReturn(0);
+}
+/**
+ * @brief compute eigenvalues of a symmetric matrix using lapack dsyev
+ *
+ * @tparam DIM
+ * @param eigen_vec input / output DIM x DIM matrix of row eigen vectors
+ * @param eig output eigen values sorted
+ * @return MoFEMErrorCode
+ */
+template <int DIM>
+inline MoFEMErrorCode
+computeEigenValuesSymmetric(FTensor::Tensor2<double, DIM, DIM> &eigen_vec,
+                            FTensor::Tensor1<double, DIM> &eig) {
+  MoFEMFunctionBegin;
+
+  const int n = DIM;
+  const int lda = DIM;
+  const int lwork = (DIM + 2) * DIM;
+  std::array<double, (DIM + 2) * DIM> work;
+
+  if (lapack_dsyev('V', 'U', n, &eigen_vec(0, 0), lda, &eig(0), work.data(),
+                   lwork) > 0)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA,
+            "The algorithm failed to compute eigenvalues.");
+  MoFEMFunctionReturn(0);
+}
+/**
+ * @brief compute eigenvalues of a symmetric tensor using lapack dsyev
+ * 
+ * @tparam DIM 
+ * @param mat input tensor pointer of size DIM x DIM
+ * @param eig output eigen values sorted
+ * @param eigen_vec output matrix of row eigen vectors
+ * @return MoFEMErrorCode 
+ */
+template <int DIM>
+inline MoFEMErrorCode computeEigenValuesSymmetric(
+    const FTensor::Tensor2_symmetric<FTensor::PackPtr<double *, 1>, DIM> &mat,
+    FTensor::Tensor1<double, DIM> &eig,
+    FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
+  MoFEMFunctionBegin;
+  for (int ii = 0; ii != DIM; ii++)
+    for (int jj = 0; jj != DIM; jj++)
+      eigen_vec(ii, jj) = mat(ii, jj);
+
+  CHKERR computeEigenValuesSymmetric<DIM>(eigen_vec, eig);
+
+  MoFEMFunctionReturn(0);
+}
+
+/**
+ * @brief compute eigenvalues of a symmetric tensor using lapack dsyev
+ * 
+ * @tparam DIM 
+ * @param mat input tensor of size DIM x DIM
+ * @param eig output eigen values sorted
+ * @param eigen_vec output matrix of row eigen vectors
+ * @return MoFEMErrorCode 
+ */
+template <int DIM>
+inline MoFEMErrorCode
+computeEigenValuesSymmetric(const FTensor::Tensor2_symmetric<double, DIM> &mat,
+                            FTensor::Tensor1<double, DIM> &eig,
+                            FTensor::Tensor2<double, DIM, DIM> &eigen_vec) {
+  MoFEMFunctionBegin;
+  for (int ii = 0; ii != DIM; ii++)
+    for (int jj = 0; jj != DIM; jj++)
+      eigen_vec(ii, jj) = mat(ii, jj);
+
+  CHKERR computeEigenValuesSymmetric<DIM>(eigen_vec, eig);
+
+  MoFEMFunctionReturn(0);
 }
 
 /**

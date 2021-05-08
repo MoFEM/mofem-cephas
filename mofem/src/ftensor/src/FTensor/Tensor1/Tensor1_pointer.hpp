@@ -30,6 +30,9 @@ public:
   Tensor1(T *d0, T *d1, T *d2, T *d3, const int i = 1) : inc(i) {
     Tensor1_constructor<T * restrict, Tensor_Dim>(data, d0, d1, d2, d3);
   }
+  Tensor1(T *d0, T *d1, T *d2, T *d3, T *d4, T *d5, const int i = 1) : inc(i) {
+    Tensor1_constructor<T * restrict, Tensor_Dim>(data, d0, d1, d2, d3, d4, d5);
+  }
   /* Initializations for varying numbers of elements. */
   template <class... U> Tensor1(U *... d) : data(d...), inc(1) {}
 

@@ -172,20 +172,21 @@ int main(int argc, char *argv[]) {
 
         mySplit << std::endl
                 << "type " << type << " side " << side << std::endl;
-        mySplit.precision(5);
 
-        const double eps = 1e-6;
+        const double eps = 1e-4;
         for (unsigned int dd = 0; dd < data.getN().data().size(); dd++) {
-          if (fabs(data.getN().data()[dd]) < eps)
+          if (std::abs(data.getN().data()[dd]) < eps)
             data.getN().data()[dd] = 0;
         }
         for (unsigned int dd = 0; dd < data.getDiffN().data().size(); dd++) {
-          if (fabs(data.getDiffN().data()[dd]) < eps)
+          if (std::abs(data.getDiffN().data()[dd]) < eps)
             data.getDiffN().data()[dd] = 0;
         }
 
-        mySplit << std::fixed << data.getN() << std::endl;
-        mySplit << std::fixed << data.getDiffN() << std::endl;
+        mySplit << std::fixed << std::setprecision(5) << data.getN()
+                << std::endl;
+        mySplit << std::fixed << std::setprecision(5) << data.getDiffN()
+                << std::endl;
 
         MoFEMFunctionReturnHot(0);
       }
@@ -218,14 +219,20 @@ int main(int argc, char *argv[]) {
                 << "type " << type << " side " << side << std::endl;
         mySplit.precision(5);
 
-        const double eps = 1e-6;
+        const double eps = 1e-4;
         for (unsigned int dd = 0; dd < data.getN().data().size(); dd++) {
-          if (fabs(data.getN().data()[dd]) < eps)
+          if (std::abs(data.getN().data()[dd]) < eps)
             data.getN().data()[dd] = 0;
         }
+        for (unsigned int dd = 0; dd < data.getDiffN().data().size(); dd++) {
+          if (std::abs(data.getDiffN().data()[dd]) < eps)
+            data.getDiffN().data()[dd] = 0;
+        }
 
-        mySplit << std::fixed << data.getN() << std::endl;
-        mySplit << std::fixed << data.getDiffN() << std::endl;
+        mySplit << std::fixed << std::setprecision(5) << data.getN()
+                << std::endl;
+        mySplit << std::fixed << std::setprecision(5) << data.getDiffN()
+                << std::endl;
 
         MoFEMFunctionReturnHot(0);
       }
@@ -258,13 +265,14 @@ int main(int argc, char *argv[]) {
                 << "type " << type << " side " << side << std::endl;
         mySplit.precision(5);
 
-        const double eps = 1e-6;
+        const double eps = 1e-4;
         for (unsigned int dd = 0; dd < data.getN().data().size(); dd++) {
-          if (fabs(data.getN().data()[dd]) < eps)
+          if (std::abs(data.getN().data()[dd]) < eps)
             data.getN().data()[dd] = 0;
         }
 
-        mySplit << std::fixed << data.getN() << std::endl;
+        mySplit << std::fixed << std::setprecision(5) << data.getN()
+                << std::endl;
 
         MoFEMFunctionReturnHot(0);
       }

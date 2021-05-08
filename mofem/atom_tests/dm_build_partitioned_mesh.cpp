@@ -156,6 +156,7 @@ int main(int argc, char *argv[]) {
 
     // set dm data structure which created mofem data structures
     CHKERR DMMoFEMCreateMoFEM(dm, &m_field, "TEST_PROBLEM", bit_level0);
+    CHKERR DMMoFEMSetIsPartitioned(dm, PETSC_TRUE);
     CHKERR DMMoFEMSetSquareProblem(
         dm, PETSC_FALSE); // this is for testing (this problem has the same rows
                           // and cols)

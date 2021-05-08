@@ -33,6 +33,13 @@ installation that will include binary (executable) files of *Basic User Module* 
   ./elasticity -my_file LShape.h5m -my_order 2
   ~~~~~~ 
 
+- Test run `fracture_mechanics` program
+  ~~~~~~
+  cd YOUR_INSTALLATION_DIRECTORY
+  cd mofem_install/um_view/fracture_mechanics
+  ./crack_propagation -my_file examples/analytical_bc/out_10.h5m -my_order 2 -my_ref 0
+  ~~~~~~
+
 \section installation_developer_version Developer version
 
 Developer version of MoFEM installation provides you with highest flexibility
@@ -60,10 +67,19 @@ debug build types
 - Test run `elasticity` program
   ~~~~~~
   cd YOUR_INSTALLATION_DIRECTORY
-  cd mofem_install/um/build_release/basic_finite_elements/elasticity
+  cd mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234/basic_finite_elements/elasticity
   ./elasticity -my_file LShape.h5m -my_order 2
   ~~~~~~ 
+  where `abcd1234` in `um-build-RelWithDebInfo-abcd1234` is the
+  package hash and can different every time you install MoFEM.
 
+- Test run `fracture_mechanics` program
+  ~~~~~~
+  cd YOUR_INSTALLATION_DIRECTORY
+  cd mofem_install/mofem-cephas/mofem/users_modules/um-build-RelWithDebInfo-abcd1234/mofem_um_fracture_mechanics
+  ./crack_propagation -my_file examples/analytical_bc/out_10.h5m -my_order 2 -my_ref 0
+  ~~~~~~ 
+ 
 \subsection installation_developer_version_add_new_module Compile codes and add new module in MoFEM
 
 For developer, you may wish to have a look at these two tutorials to compile
@@ -77,21 +93,11 @@ codes and add new module in MoFEM
 Q&A](https://groups.google.com/forum/#!categories/mofem-group). Enjoy MoFEM!
 
 
-\subsection installation_reference Other documents
+\section installation_reference Advanced install instructions
 
 We do recommend you to use the scripts above for installation; however, if you
 would like to read about different ways to install MoFEM, you can have a look here
 
-- Spack and Docker
-
-  - \subpage install_spack
-
-  - \subpage install_docker
-
-- Ubuntu and macOS (reference only, no longer maintained and supported)
-
-  - \subpage install_ubuntu
-
-  - \subpage install_macosx
+- \subpage install_spack
 
 */
