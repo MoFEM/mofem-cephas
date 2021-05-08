@@ -1227,12 +1227,15 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONHEX(
         const double d_a[] = {diff_mu[ee][0][0] * mu[ee][1] * L[ii] + 
                               mu[ee][0] * diff_mu[ee][1][0] * L[ii] +
                               mu[ee][0] * mu[ee][1] * diffL[0 * pp[ee] + ii],
+
                               diff_mu[ee][0][1] * mu[ee][1] * L[ii] + 
                               mu[ee][0] * diff_mu[ee][1][1] * L[ii] +
                               mu[ee][0] * mu[ee][1] * diffL[1 * pp[ee] + ii],
+
                               diff_mu[ee][0][2] * mu[ee][1] * L[ii] + 
                               mu[ee][0] * diff_mu[ee][1][2] * L[ii] +
                               mu[ee][0] * mu[ee][1] * diffL[2 * pp[ee] + ii]}; 
+                              
         for (int d = 0; d != 3; ++d) {
             t_n(d) = 0.5 * a * diff_ksi[ee][d];
             for (int j = 0; j != 2; ++j) { 
