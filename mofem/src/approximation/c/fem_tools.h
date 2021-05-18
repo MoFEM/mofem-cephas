@@ -254,7 +254,7 @@ PetscErrorCode ShapeMBTETQ_inverse(double *N, double *diffN,
 // complex part
 void ShapeDiffMBTETinvJ_complex(double *diffN, __CLPK_doublecomplex *invJac,
                                 __CLPK_doublecomplex *diffNinvJac,
-                                const enum CBLAS_TRANSPOSE Trans);
+                                const CBLAS_TRANSPOSE Trans);
 PetscErrorCode ShapeFaceNormalMBTRI_complex(double *diffN,
                                             __CLPK_doublecomplex *xcoords,
                                             __CLPK_doublecomplex *xnormal);
