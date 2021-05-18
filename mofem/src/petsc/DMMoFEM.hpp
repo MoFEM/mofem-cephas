@@ -948,7 +948,7 @@ auto smartCreateDMVector = [](DM dm) {
  * 
  */
 auto smartGetDMSnesCtx = [](DM dm) {
-  const boost::shared_ptr<MoFEM::SnesCtx> snes_ctx;
+  boost::shared_ptr<MoFEM::SnesCtx> snes_ctx;
   ierr = DMMoFEMGetSnesCtx(dm, snes_ctx);
   CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
   return snes_ctx;
