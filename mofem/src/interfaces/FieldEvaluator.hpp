@@ -87,7 +87,8 @@ struct FieldEvaluatorInterface : public UnknownInterface {
   struct SetPts {
     SetPts() = delete;
     SetPts(boost::shared_ptr<SetPtsData> data_ptr) : dataPtr(data_ptr) {}
-    MoFEMErrorCode operator()(int order_row, int order_col, int order_data);
+    MoFEMErrorCode operator()(ForcesAndSourcesCore *fe_raw_ptr, int order_row,
+                              int order_col, int order_data);
 
   private:
     boost::weak_ptr<SetPtsData> dataPtr;

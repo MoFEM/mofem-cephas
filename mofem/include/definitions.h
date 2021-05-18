@@ -48,6 +48,7 @@ enum Interfaces {
   BASIC_INTERFACE = 1 << 0 | 1 << 6,
   COMM_INTERFACE = 1 << 0 | 1 << 7,
   LOGMANAGER_INTERFACE = 1 << 0 | 1 << 8,
+  BC_MANAGER = 1 << 0 | 1 << 9,
 
   MESH_REFINE = 1 << 1 | 1 << 2,
   PRISM_INTEFACE = 1 << 1 | 1 << 3,

@@ -44,7 +44,7 @@ RUN mkdir -p $SPACK_ROOT_DIR && \
     . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
     spack external find && \
-    spack install mofem-users-modules@lukasz target=x86_64 
+    spack install --only dependencies mofem-users-modules@lukasz target=x86_64 
 
 #GNUPGHOME=
 #spack gpg create lukasz lukasz.kaczmarczyk@glasgow.ac.uk

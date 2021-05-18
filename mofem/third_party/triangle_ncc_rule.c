@@ -1,10 +1,5 @@
 /*  Output from c_comment */
 
-# include <stdlib.h>
-# include <stdio.h>
-# include <math.h>
-# include <time.h>
-
 # include "triangle_ncc_rule.h"
 
 /******************************************************************************/

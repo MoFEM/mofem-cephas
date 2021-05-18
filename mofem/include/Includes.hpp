@@ -61,6 +61,7 @@
 #include <exception>
 #include <complex>
 #include <cmath>
+#include <regex>
 
 //BOOST
 #define BOOST_LOG_DYN_LINK
@@ -95,6 +96,7 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/utility/string_ref.hpp>
 #include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <boost/math/special_functions/binomial.hpp>
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/math/constants/constants.hpp>

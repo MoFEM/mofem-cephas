@@ -14,6 +14,7 @@ const static int debug = 0;
 #include "impl/PrismsFromSurfaceInterface.cpp"
 #include "impl/FieldEvaluator.cpp"
 #include "impl/Tools.cpp"
+#include "impl/BcManager.cpp"
 
 #ifdef WITH_TETGEN
   #include "impl/TetGenInterface.cpp"

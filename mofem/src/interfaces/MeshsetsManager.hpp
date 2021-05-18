@@ -123,7 +123,7 @@ struct MeshsetsManager : public UnknownInterface {
 
   MoFEM::Core &cOre;
   MeshsetsManager(const MoFEM::Core &core);
-  ~MeshsetsManager() {}
+  virtual ~MeshsetsManager() = default;
 
   /**
    * \brief get tags handlers used on meshsets

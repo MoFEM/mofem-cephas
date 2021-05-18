@@ -128,7 +128,7 @@ cd $HOME/mofem_install
 
 Retrieve Spack for MoFEM:
 ~~~~~~
-git clone --single-branch -b develop_spack_v0.16 https://github.com/likask/spack.git
+git clone --single-branch -b develop_spack_v0.16.1 https://github.com/likask/spack.git
 ~~~~~~
 
 Initialise Spack's environment variables:

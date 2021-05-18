@@ -138,5 +138,6 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 
 #include <PipelineManager.hpp>
 #include <FieldEvaluator.hpp>
+#include <BcManager.hpp>
 
 #endif //MOFEM_HPP__
