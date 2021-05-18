@@ -123,7 +123,7 @@ struct PrismsFromSurfaceInterface : public UnknownInterface {
   /**
    * @brief Add prism to bockset
    *
-   * If quad is adjacent to extruded triangle, is added to given blockset
+   * If prism is adjacent to extruded triangle, is added to given blockset
    *
    * @param prisms
    * @return MoFEMErrorCode
