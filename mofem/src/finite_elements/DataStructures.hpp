@@ -1688,6 +1688,10 @@ FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>
 DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>();
 
 template <>
+FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1>
+DataForcesAndSourcesCore::EntData::getFTensor1FieldData<1>();
+
+template <>
 FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
 DataForcesAndSourcesCore::EntData::getFTensor2FieldData<3, 3>();
 
