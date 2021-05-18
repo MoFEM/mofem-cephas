@@ -21,6 +21,9 @@ public:
      defined for a particular Tensor_Dim.  To initialize a different
      dimension, just add the appropriate constructor and call to
      the Tensor1_constructor constructor. */
+  Tensor1(T *d0, const int i = 1) : inc(i) {
+    Tensor1_constructor<T * restrict, Tensor_Dim>(data, d0);
+  }
   Tensor1(T *d0, T *d1, const int i = 1) : inc(i) {
     Tensor1_constructor<T * restrict, Tensor_Dim>(data, d0, d1);
   }

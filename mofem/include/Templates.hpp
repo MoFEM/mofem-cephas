@@ -184,6 +184,19 @@ struct GetFTensor1FromMatImpl<2, S, double, ublas::row_major, DoubleAllocator> {
   }
 };
 
+template <int S>
+struct GetFTensor1FromMatImpl<1, S, double, ublas::row_major, DoubleAllocator> {
+  static inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, 1>
+  get(MatrixDouble &data) {
+    if (data.size1() != 1)
+      THROW_MESSAGE(
+          "getFTensor1FromMat<1>: wrong size of data matrix, number of "
+          "rows should be 1 but is %d" +
+          boost::lexical_cast<std::string>(data.size1()));
+    return FTensor::Tensor1<FTensor::PackPtr<double *, S>, 1>(&data(0, 0));
+  }
+};
+
 /**
  * \brief Get tensor rank 1 (vector) form data matrix
  */

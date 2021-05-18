@@ -343,11 +343,24 @@ DataForcesAndSourcesCore::EntData::getFTensor1FieldData<2>() {
   if (dOfs[0]->getNbOfCoeffs() != 2) {
     std::stringstream s;
     s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
-    s << " but you ask for tensor rank 1 dimension 3";
+    s << " but you ask for tensor rank 1 dimension 2";
     THROW_MESSAGE(s.str());
   }
   double *ptr = &*fieldData.data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 2>, 2>(ptr, &ptr[1]);
+}
+
+template <>
+FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1>
+DataForcesAndSourcesCore::EntData::getFTensor1FieldData<1>() {
+  if (dOfs[0]->getNbOfCoeffs() != 1) {
+    std::stringstream s;
+    s << "Wrong number of coefficients is " << dOfs[0]->getNbOfCoeffs();
+    s << " but you ask for tensor rank 1 dimension 1";
+    THROW_MESSAGE(s.str());
+  }
+  double *ptr = &*fieldData.data().begin();
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 1>(ptr);
 }
 
 template <>
