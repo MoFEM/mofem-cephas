@@ -2858,7 +2858,8 @@ ProblemsManager::getProblemElementsLayout(const std::string name,
 
 MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
     const std::string problem_name, const std::string field_name,
-    const Range ents, const int lo_coeff, const int hi_coeff, int verb,
+    const Range ents, const int lo_coeff, const int hi_coeff,
+    const int lo_order, const int hi_order, int verb,
     const bool debug) {
 
   MoFEM::Interface &m_field = cOre;
@@ -2906,7 +2907,9 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
 
         for (; lo != hi; ++lo)
           if ((*lo)->getDofCoeffIdx() >= lo_coeff &&
-              (*lo)->getDofCoeffIdx() <= hi_coeff)
+              (*lo)->getDofCoeffIdx() <= hi_coeff &&
+              (*lo)->getDofOrder() >= lo_order &&
+              (*lo)->getDofOrder() <= hi_order)
             dofs_it_view.emplace_back(numered_dofs[s]->project<0>(lo));
       }
 
@@ -3081,8 +3084,8 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntities(
 
 MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
     const std::string problem_name, const std::string field_name,
-    const Range ents, const int lo_coeff, const int hi_coeff, int verb,
-    const bool debug) {
+    const Range ents, const int lo_coeff, const int hi_coeff,
+    const int lo_order, const int hi_order, int verb, const bool debug) {
 
   MoFEM::Interface &m_field = cOre;
   ProblemManagerFunctionBegin;
@@ -3129,7 +3132,9 @@ MoFEMErrorCode ProblemsManager::removeDofsOnEntitiesNotDistributed(
 
         for (; lo != hi; ++lo)
           if ((*lo)->getDofCoeffIdx() >= lo_coeff &&
-              (*lo)->getDofCoeffIdx() <= hi_coeff)
+              (*lo)->getDofCoeffIdx() <= hi_coeff &&
+              (*lo)->getDofOrder() >= lo_order &&
+              (*lo)->getDofOrder() <= hi_order)
             dofs_it_view.emplace_back(numered_dofs[s]->project<0>(lo));
       }
 
