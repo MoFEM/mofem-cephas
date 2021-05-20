@@ -1508,8 +1508,6 @@ MoFEMErrorCode ProblemsManager::buildSubProblem(
     out_problem_it->nbDofsCol = out_problem_it->nbDofsRow;
     out_problem_it->getSubData()->colIs = out_problem_it->getSubData()->rowIs;
     out_problem_it->getSubData()->colMap = out_problem_it->getSubData()->rowMap;
-    CHKERR PetscObjectReference(
-        (PetscObject)out_problem_it->getSubData()->rowIs);
   }
 
   CHKERR printPartitionedProblem(&*out_problem_it, verb);
