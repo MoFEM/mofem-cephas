@@ -944,6 +944,17 @@ auto smartCreateDMVector = [](DM dm) {
 };
 
 /**
+ * @brief Get SNES context data structure used by DM
+ * 
+ */
+auto smartGetDMSnesCtx = [](DM dm) {
+  boost::shared_ptr<MoFEM::SnesCtx> snes_ctx;
+  ierr = DMMoFEMGetSnesCtx(dm, snes_ctx);
+  CHKERRABORT(getCommFromPetscObject(reinterpret_cast<PetscObject>(dm)), ierr);
+  return snes_ctx;
+};
+
+/**
  * @deprecated Use smartCreateDMVector
  * 
  * @param dm 
