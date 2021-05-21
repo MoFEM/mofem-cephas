@@ -55,7 +55,7 @@ struct VecManager : public UnknownInterface {
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
    */
-  MoFEMErrorCode vecCreateSeq(const std::string &name, RowColData rc,
+  MoFEMErrorCode vecCreateSeq(const std::string name, RowColData rc,
                               Vec *V) const;
 
   /**
@@ -68,12 +68,12 @@ struct VecManager : public UnknownInterface {
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
    */
-  MoFEMErrorCode vecCreateGhost(const std::string &name, RowColData rc,
+  MoFEMErrorCode vecCreateGhost(const std::string name, RowColData rc,
                                 Vec *V) const;
 
   /** @copydoc MoFEM::VecManager::vecCreateGhost
    */
-  MoFEMErrorCode vecCreateGhost(const std::string &name, RowColData rc,
+  MoFEMErrorCode vecCreateGhost(const std::string name, RowColData rc,
                                 SmartPetscObj<Vec> &v_ptr) const;
 
   /**
@@ -93,20 +93,20 @@ struct VecManager : public UnknownInterface {
     * \retval newctx scatter
 
     */
-  MoFEMErrorCode vecScatterCreate(Vec xin, const std::string &x_problem,
-                                  const std::string &x_field_name,
+  MoFEMErrorCode vecScatterCreate(Vec xin, const std::string x_problem,
+                                  const std::string x_field_name,
                                   RowColData x_rc, Vec yin,
-                                  const std::string &y_problem,
-                                  const std::string &y_field_name,
+                                  const std::string y_problem,
+                                  const std::string y_field_name,
                                   RowColData y_rc, VecScatter *newctx) const;
 
   /** @copydoc MoFEM::VecManager::vecScatterCreate
-    */
+   */
   MoFEMErrorCode
-  vecScatterCreate(Vec xin, const std::string &x_problem,
-                   const std::string &x_field_name, RowColData x_rc, Vec yin,
-                   const std::string &y_problem,
-                   const std::string &y_field_name, RowColData y_rc,
+  vecScatterCreate(Vec xin, const std::string x_problem,
+                   const std::string x_field_name, RowColData x_rc, Vec yin,
+                   const std::string y_problem, const std::string y_field_name,
+                   RowColData y_rc,
                    SmartPetscObj<VecScatter> &smart_newctx) const;
 
   /**
@@ -120,16 +120,16 @@ struct VecManager : public UnknownInterface {
     * \retval newctx scatter
 
     */
-  MoFEMErrorCode vecScatterCreate(Vec xin, const std::string &x_problem,
+  MoFEMErrorCode vecScatterCreate(Vec xin, const std::string x_problem,
                                   RowColData x_rc, Vec yin,
-                                  const std::string &y_problem, RowColData y_rc,
+                                  const std::string y_problem, RowColData y_rc,
                                   VecScatter *newctx) const;
 
   /** @copydoc MoFEM::VecManager::vecScatterCreate
-    */
+   */
   MoFEMErrorCode
-  vecScatterCreate(Vec xin, const std::string &x_problem, RowColData x_rc,
-                   Vec yin, const std::string &y_problem, RowColData y_rc,
+  vecScatterCreate(Vec xin, const std::string x_problem, RowColData x_rc,
+                   Vec yin, const std::string y_problem, RowColData y_rc,
                    SmartPetscObj<VecScatter> &smart_newctx) const;
 
   /**
@@ -168,7 +168,7 @@ struct VecManager : public UnknownInterface {
    * SCATTER_FORWARD set vector V from data field entities
    *
    */
-  MoFEMErrorCode setLocalGhostVector(const std::string &name, RowColData rc,
+  MoFEMErrorCode setLocalGhostVector(const std::string name, RowColData rc,
                                      Vec V, InsertMode mode,
                                      ScatterMode scatter_mode) const;
 
@@ -208,7 +208,7 @@ struct VecManager : public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  MoFEMErrorCode setGlobalGhostVector(const std::string &name, RowColData rc,
+  MoFEMErrorCode setGlobalGhostVector(const std::string name, RowColData rc,
                                       Vec V, InsertMode mode,
                                       ScatterMode scatter_mode) const;
 
@@ -229,8 +229,8 @@ struct VecManager : public UnknownInterface {
    *
    */
   MoFEMErrorCode setOtherLocalGhostVector(const Problem *problem_ptr,
-                                          const std::string &field_name,
-                                          const std::string &cpy_field_name,
+                                          const std::string field_name,
+                                          const std::string cpy_field_name,
                                           RowColData rc, Vec V, InsertMode mode,
                                           ScatterMode scatter_mode) const;
 
@@ -250,9 +250,9 @@ struct VecManager : public UnknownInterface {
    * SCATTER_REVERSE set data to field entities form V vector.
    *
    */
-  MoFEMErrorCode setOtherLocalGhostVector(const std::string &name,
-                                          const std::string &field_name,
-                                          const std::string &cpy_field_name,
+  MoFEMErrorCode setOtherLocalGhostVector(const std::string name,
+                                          const std::string field_name,
+                                          const std::string cpy_field_name,
                                           RowColData rc, Vec V, InsertMode mode,
                                           ScatterMode scatter_mode) const;
 
@@ -275,8 +275,8 @@ struct VecManager : public UnknownInterface {
     *
     */
   MoFEMErrorCode setOtherGlobalGhostVector(const Problem *problem_ptr,
-                                           const std::string &field_name,
-                                           const std::string &cpy_field_name,
+                                           const std::string field_name,
+                                           const std::string cpy_field_name,
                                            RowColData rc, Vec V,
                                            InsertMode mode,
                                            ScatterMode scatter_mode) const;
@@ -300,9 +300,9 @@ struct VecManager : public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  MoFEMErrorCode setOtherGlobalGhostVector(const std::string &name,
-                                           const std::string &field_name,
-                                           const std::string &cpy_field_name,
+  MoFEMErrorCode setOtherGlobalGhostVector(const std::string name,
+                                           const std::string field_name,
+                                           const std::string cpy_field_name,
                                            RowColData rc, Vec V,
                                            InsertMode mode,
                                            ScatterMode scatter_mode) const;
