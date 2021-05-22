@@ -31,7 +31,29 @@ MoFEMErrorCode VecManager::query_interface(const MOFEMuuid &uuid,
 
 VecManager::VecManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
-VecManager::~VecManager() {}
+VecManager::~VecManager() {
+
+  if (!LogManager::checkIfChannelExist("VECWORLD")) {
+    auto core_log = logging::core::get();
+
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmWorld(), "VECWORLD"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSync(), "VECSYNC"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSelf(), "VECSELF"));
+
+    LogManager::setLog("VECWORLD");
+    LogManager::setLog("VECSYNC");
+    LogManager::setLog("VECSELF");
+
+    MOFEM_LOG_TAG("VECWORLD", "VecMng");
+    MOFEM_LOG_TAG("VECSYNC", "VecMng");
+    MOFEM_LOG_TAG("VECSELF", "VecMng");
+  }
+
+  MOFEM_LOG("VECWORLD", Sev::noisy) << "Vector manager created";
+}
 
 MoFEMErrorCode VecManager::vecCreateSeq(const std::string name, RowColData rc,
                                         Vec *V) const {
@@ -358,7 +380,8 @@ VecManager::setGlobalGhostVector(const std::string name, RowColData rc, Vec V,
 template <int MODE> struct SetOtherLocalGhostVector {
   template <typename A0, typename A1, typename A2, typename A3, typename A4>
   inline MoFEMErrorCode operator()(A0 dofs_ptr, A1 array, A2 miit, A3 hi_miit,
-                                   A4 &cpy_bit_number) {
+                                   A4 &cpy_bit_number,
+                                   const std::string cpy_field_name) {
     MoFEMFunctionBegin;
     for (; miit != hi_miit; miit++) {
       if (miit->get()->getHasLocalIndex()) {
@@ -367,6 +390,14 @@ template <int MODE> struct SetOtherLocalGhostVector {
                                          cpy_bit_number, (*miit)->getEnt()));
         auto diiiit = dofs_ptr->template get<Unique_mi_tag>().find(uid);
         if (diiiit == dofs_ptr->template get<Unique_mi_tag>().end()) {
+          MOFEM_LOG_FUNCTION();
+          MOFEM_LOG_ATTRIBUTES("VECSELF",
+                               LogManager::BitLineID | LogManager::BitScope);
+          MOFEM_LOG("VECSELF", Sev::error)
+              << "Problem finding DOFs in the copy field";
+          MOFEM_LOG("VECSELF", Sev::error) << "Field DOF: "<< (**miit);
+          MOFEM_LOG("VECSELF", Sev::error)
+              << "Copy field name: " << cpy_field_name;
           SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                   "Automatic creation of entity and dof not implemented");
         }
@@ -438,11 +469,11 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
     PetscScalar *array;
     CHKERR VecGetArray(V, &array);
     if (mode == INSERT_VALUES)
-      CHKERR SetOtherLocalGhostVector<INSERT_VALUES>()(dofs_ptr, array, miit,
-                                                       hi_miit, cpy_bit_number);
+      CHKERR SetOtherLocalGhostVector<INSERT_VALUES>()(
+          dofs_ptr, array, miit, hi_miit, cpy_bit_number, cpy_field_name);
     else if (mode == ADD_VALUES)
-      CHKERR SetOtherLocalGhostVector<ADD_VALUES>()(dofs_ptr, array, miit,
-                                                    hi_miit, cpy_bit_number);
+      CHKERR SetOtherLocalGhostVector<ADD_VALUES>()(
+          dofs_ptr, array, miit, hi_miit, cpy_bit_number, cpy_field_name);
     else
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
               "Operation mode not implemented");
