@@ -98,7 +98,7 @@ foreach(test_file ${cubit_bc_test_list})
     ${CMAKE_COMMAND}
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DFILE=${test_file}
     -DLOG1=${test_file}.txt
@@ -115,7 +115,7 @@ cm_export_file("add_cubit_meshsets.in" export_atom_tests)
 
 add_test(
   add_cubit_meshsets
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/add_cubit_meshsets
   -meshsets_config add_cubit_meshsets.in -log_quiet
 )
@@ -129,7 +129,7 @@ add_test(
     cubit_meshset_loop_test 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/loops_atom_test
     -DFILE=loop_atom.h5m
@@ -145,7 +145,7 @@ cm_export_file("../meshes/elasticity_atom_test_01X_pressure.h5m" export_atom_tes
 build_test(field_axpy_atom_test field_axpy_atom_test.cpp)
 
 add_test(field_axpy 
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test 
   -my_file elasticity_atom_test_01X_pressure.h5m
   -log_no_color
@@ -154,7 +154,7 @@ add_test(field_axpy
 build_test(field_blas_set_vertex_dofs field_blas_set_vertex_dofs.cpp)
   
 add_test(field_blas_set_vertex_dofs
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/field_blas_set_vertex_dofs 
   -file_name elasticity_atom_test_01X_pressure.h5m
   -log_no_color
@@ -169,7 +169,7 @@ add_test(
     mesh_refine 
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom
     -DFILE=templar.h5m
@@ -196,7 +196,7 @@ foreach(test_file ${testing_insert_interface_list})
     mesh_insert_interface_${test_file}
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom
     -DFILE=${test_file}
@@ -214,7 +214,7 @@ add_test(
     forces_and_sources_getting_orders_indices ${test_file}
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_orders_indices_atom_test
     -DFILE=elasticity_atom_test_01X_pressure.h5m
@@ -231,7 +231,7 @@ add_test(
     forces_and_sources_getting_mult_H1_H1
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_mult_H1_H1_atom_test
     -DFILE=elasticity_atom_test_01X_pressure.h5m
@@ -247,7 +247,7 @@ add_test(
     forces_and_sources_calculate_jacobian
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_calculate_jacobian
     -DFILE=elasticity_atom_test_01X_pressure.h5m
@@ -263,7 +263,7 @@ add_test(
     forces_and_sources_testing_volume_element
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_volume_element
     -DFILE=elasticity_atom_test_01X_pressure.h5m
@@ -276,7 +276,7 @@ add_test(
 build_test(forces_and_sources_testing_ftensor forces_and_sources_testing_ftensor.cpp)
 add_test(
   forces_and_sources_testing_ftensor
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_ftensor
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_ftensor
   -my_file elasticity_atom_test_01X_pressure.h5m
   -log_no_color
 )
@@ -286,7 +286,7 @@ add_test(
     forces_and_sources_testing_users_base
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_users_base
     -DFILE=elasticity_atom_test_01X_pressure.h5m
@@ -304,7 +304,7 @@ add_test(
     forces_and_sources_getting_higher_order_skin_normals
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_higher_order_skin_normals_atom
     -DFILE=sphere.h5m
@@ -321,7 +321,7 @@ add_test(
     forces_and_sources_testing_triangle_element
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_triangle_element
     -DFILE=elasticity_atom_test_01X_pressure.h5m
@@ -340,7 +340,7 @@ add_test(
     forces_and_sources_testing_edge_element_ainsworth
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element
     -DFILE=elasticity_atom_test_01X_pressure.h5m
@@ -354,7 +354,7 @@ add_test(
     forces_and_sources_testing_edge_element_bernstein_bezier
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element
     -DFILE=elasticity_atom_test_01X_pressure.h5m
@@ -372,7 +372,7 @@ add_test(
     forces_and_sources_testing_vertex_element
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_vertex_element
     -DFILE=elasticity_atom_test_01X_pressure.h5m
@@ -389,7 +389,7 @@ add_test(
     forces_and_sources_testing_flat_prism_element
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_flat_prism_element
     -DFILE=templar.h5m
@@ -406,7 +406,7 @@ add_test(
     forces_and_sources_testing_contact_prism_element_h1
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_contact_prism_element
     -DFILE=templar.h5m
@@ -421,7 +421,7 @@ add_test(
     forces_and_sources_testing_contact_prism_element_hdiv
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_contact_prism_element
     -DFILE=templar.h5m
@@ -439,31 +439,31 @@ build_test(
 )
 
 add_test(check_h1_ainsworth_base_functions_direvatives_on_tet
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
   -space H1TET -base ainsworth
   -log_no_color
 )
 add_test(check_hdiv_ainsworth_base_functions_direvatives_on_tet
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
   -space HDIVTET -base ainsworth
   -log_no_color
 )
 add_test(check_hdiv_demkowicz_base_functions_direvatives_on_tet
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
   -space HDIVTET -base demkowicz
   -log_no_color
 )
 add_test(check_hcurl_ainsworth_base_functions_direvatives_on_tet
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
   -space HCURLTET -base ainsworth
   -log_no_color
 )
 add_test(check_hcurl_demkowicz_base_functions_direvatives_on_tet
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
   -space HCURLTET -base demkowicz
   -log_no_color
@@ -475,19 +475,19 @@ build_test(
 )
 
 add_test(check_h1_ainsworth_base_functions_direvatives_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri 
   -space h1tri -base ainsworth
   -log_no_color
 )
 add_test(check_hcurl_ainsworth_base_functions_direvatives_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri -space hcurltri 
   -base ainsworth
   -log_no_color
 )
 add_test(check_hcurl_demkowicz_base_functions_direvatives_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_tri -space hcurltri 
   -base demkowicz
   -log_no_color
@@ -497,7 +497,7 @@ add_test(check_hcurl_demkowicz_base_functions_direvatives_tri
 build_test(forces_and_sources_h1_continuity_check forces_and_sources_h1_continuity_check.cpp)
 
 add_test(forces_and_sources_h1_continuity_check_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_h1_continuity_check 
   -my_file sphere.h5m
   -log_no_color
@@ -514,7 +514,7 @@ set_target_properties(
   scalar_check_approximation_3d PROPERTIES COMPILE_FLAGS "-DEXECUTABLE_DIMENSION=3")    
 
 add_test(h1_check_approx_2d_ainsworth_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
   -file_name rectangle_tri.h5m
   -base ainsworth -space h1 
@@ -522,7 +522,7 @@ add_test(h1_check_approx_2d_ainsworth_tri
   -log_no_color
 )
 add_test(h1_check_approx_2d_ainsworth_lobatto_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
   -file_name rectangle_tri.h5m
   -base ainsworth_labatto -space h1 
@@ -530,7 +530,7 @@ add_test(h1_check_approx_2d_ainsworth_lobatto_tri
   -log_no_color
 )
 add_test(h1_check_approx_2d_bernstein_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
   -file_name rectangle_tri.h5m
   -base bernstein -space h1 
@@ -538,7 +538,7 @@ add_test(h1_check_approx_2d_bernstein_tri
   -log_no_color
 )
 add_test(l2_check_approx_2d_ainsworth_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
   -file_name rectangle_tri.h5m
   -base ainsworth -space l2 
@@ -546,7 +546,7 @@ add_test(l2_check_approx_2d_ainsworth_tri
   -log_no_color
 )
 add_test(l2_check_approx_2d_bernstein_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
   -file_name rectangle_tri.h5m
   -base bernstein -space l2 
@@ -554,7 +554,7 @@ add_test(l2_check_approx_2d_bernstein_tri
   -log_no_color
 )
 add_test(h1_check_approx_2d_ainsworth_quad
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
   -file_name rectangle_quad.h5m
   -base ainsworth -space h1 
@@ -562,7 +562,7 @@ add_test(h1_check_approx_2d_ainsworth_quad
   -log_no_color
 )
 add_test(h1_check_approx_2d_demkowicz_quad
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
   -file_name rectangle_quad.h5m
   -base demkowicz -space h1 
@@ -570,7 +570,7 @@ add_test(h1_check_approx_2d_demkowicz_quad
   -log_no_color
 )
 add_test(l2_check_approx_2d_demkowicz_quad
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_2d
   -file_name rectangle_quad.h5m
   -base demkowicz -space l2
@@ -579,7 +579,7 @@ add_test(l2_check_approx_2d_demkowicz_quad
 )
 
 add_test(h1_check_approx_3d_ainsworth_tet
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base ainsworth -space h1 
@@ -587,7 +587,7 @@ add_test(h1_check_approx_3d_ainsworth_tet
   -log_no_color
 )
 add_test(h1_check_approx_3d_ainsworth_lobatto_tet
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base ainsworth_labatto -space h1 
@@ -595,7 +595,7 @@ add_test(h1_check_approx_3d_ainsworth_lobatto_tet
   -log_no_color
 )
 add_test(h1_check_approx_3d_bernstein_tet
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base bernstein -space h1 
@@ -603,7 +603,7 @@ add_test(h1_check_approx_3d_bernstein_tet
   -log_no_color
 )
 add_test(l2_check_approx_3d_ainsworth_tet
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base ainsworth -space l2 
@@ -611,7 +611,7 @@ add_test(l2_check_approx_3d_ainsworth_tet
   -log_no_color
 )
 add_test(l2_check_approx_3d_bernstein_tet
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/scalar_check_approximation_3d
   -file_name sphere.h5m
   -base bernstein -space l2 
@@ -624,7 +624,7 @@ build_test(hcurl_check_approx_in_2d
   hcurl_check_approx_in_2d.cpp)
 
 add_test(hcurl_check_approx_in_2d_ainsworth
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_check_approx_in_2d
   -base ainsworth -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0
   -log_no_color
@@ -633,19 +633,19 @@ add_test(hcurl_check_approx_in_2d_ainsworth
 build_test(hcurl_divergence_operator_2d hcurl_divergence_operator_2d.cpp)
 
 add_test(hcurl_divergence_operator_2d_ainsworth_on_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
   -my_file rectangle_tri.h5m
   -base ainsworth -order 5
   -log_no_color)
 add_test(hcurl_divergence_operator_2d_demkowicz_on_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
   -my_file rectangle_tri.h5m
   -base demkowicz -order 5
   -log_no_color)
 add_test(hcurl_divergence_operator_2d_demkowicz_on_quad
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d
   -my_file rectangle_quad.h5m
   -base demkowicz -order 5
@@ -655,7 +655,7 @@ build_test(hcurl_divergence_operator_2d_embaded_in_3d
     hcurl_divergence_operator_2d_embaded_in_3d.cpp)
 
 add_test(hcurl_divergence_operator_2d_ainsworth_on_tri_embaded_in_3d
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_divergence_operator_2d_embaded_in_3d
   -my_file half_of_sphere.h5m
   -base ainsworth -order 5
@@ -668,7 +668,7 @@ add_test(
     record_series_atom
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/record_series_atom
     -DMPI_NP=1
     -DFILE=elasticity_atom_test_01X_pressure.h5m
@@ -686,7 +686,7 @@ add_test(
     forces_and_sources_hcurl_approximation_functions
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_approximation_functions
     -DFILE=empty
@@ -699,13 +699,13 @@ add_test(
 build_test(hcurl_continuity_check hcurl_continuity_check.cpp)
 
 add_test(hcurl_ainsworth_continuity_check
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_continuity_check 
   -my_file sphere.h5m -base ainsworth
   -log_no_color
 )
 add_test(hcurl_demkowicz_continuity_check
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_continuity_check 
   -my_file sphere.h5m -base demkowicz
   -log_no_color
@@ -719,7 +719,7 @@ add_test(
     forces_and_sources_hdiv_approximation_functions
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions
     -DFILE=empty.h5m
@@ -733,13 +733,13 @@ add_test(
 build_test(hdiv_continuity_check hdiv_continuity_check.cpp)
 
 add_test(hdiv_continuity_check_ainsworth_base
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_continuity_check
   -my_file sphere.h5m -base hdiv_ainsworth
   -log_no_color
 )
 add_test(hdiv_continuity_check_demkowicz_base
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_continuity_check
   -my_file sphere.h5m -base hdiv_demkowicz
   -log_no_color
@@ -749,22 +749,22 @@ add_test(hdiv_continuity_check_demkowicz_base
 build_test(hdiv_divergence_operator hdiv_divergence_operator.cpp)
 
 add_test(hdiv_divergence_operator_ainsworth_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base ainsworth
   -log_no_color)
 add_test(hdiv_divergence_operator_demkowicz_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base demkowicz
   -log_no_color)
 add_test(hdiv_divergence_operator_ainsworth_ho_geometry_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base ainsworth -ho_geometry
   -log_no_color)
 add_test(hdiv_divergence_operator_demkowicz_ho_geometry_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
   -file_name sphere.h5m -base demkowicz -ho_geometry
   -log_no_color)
@@ -773,22 +773,22 @@ add_test(hdiv_divergence_operator_demkowicz_ho_geometry_atom
 build_test(hcurl_curl_operator hcurl_curl_operator.cpp)
 
 add_test(hcurl_curl_operator_ainsworth_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base ainsworth
   -log_no_color)
 add_test(hcurl_curl_operator_demkowicz_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base demkowicz
   -log_no_color)
 add_test(hcurl_curl_operator_ainsworth_ho_geometry_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base ainsworth -ho_geometry
   -log_no_color)
 add_test(hcurl_curl_operator_demkowicz_ho_geometry_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/hcurl_curl_operator 
   -file_name sphere.h5m -base demkowicz -ho_geometry
   -log_no_color)
@@ -801,28 +801,28 @@ build_test(
 
 add_test(
   continuity_check_on_skeleton_3d_ainsworth_hdiv
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file sphere.h5m -base ainsworth -space hdiv
   -log_no_color
 )
 add_test(
   continuity_check_on_skeleton_3d_demkowicz_hdiv
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file sphere.h5m -base demkowicz -space hdiv
   -log_no_color
 )
 add_test(
   continuity_check_on_skeleton_3d_ainsworth_hcurl
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file sphere.h5m -base ainsworth -space hcurl
   -log_no_color
 )
 add_test(
   continuity_check_on_skeleton_3d_demkowicz_hcurl
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_3d
   -my_file sphere.h5m -base demkowicz -space hcurl
   -log_no_color
@@ -835,7 +835,7 @@ add_test(
     dm_mofem
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=2
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/dm_mofem
     -DFILE=disp01.h5m
@@ -853,7 +853,7 @@ if(PETSc_VERSION VERSION_GREATER_EQUAL 3.14.0)
     dm_build_partitioned_mesh
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=2
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/dm_build_partitioned_mesh
     -DFILE=disp01_2parts.h5m 
@@ -867,7 +867,7 @@ else()
     dm_build_partitioned_mesh
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=2
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/dm_build_partitioned_mesh
     -DFILE=disp01_2parts.h5m 
@@ -882,7 +882,7 @@ cm_export_file("disp01_3parts.h5m" export_atom_tests)
 build_test(dm_partitioned_no_field dm_partitioned_no_field.cpp)
 
 add_test(dm_partitioned_no_field_2parts
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2 
   ${CMAKE_CURRENT_BINARY_DIR}/dm_partitioned_no_field -my_file disp01_2parts.h5m 
   -dm_is_partitioned
   -log_no_color)
@@ -895,7 +895,7 @@ add_test(dm_partitioned_no_field_3parts
 build_test(dm_create_subdm dm_create_subdm.cpp)
 add_test(
   dm_create_subdm
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/dm_create_subdm -my_file disp01_2parts.h5m 
   -dm_is_partitioned
   -log_no_color
@@ -909,7 +909,7 @@ if(PETSc_VERSION VERSION_GREATER_EQUAL 3.14.0)
     serial_matrix
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/serial_matrix
     -DFILE=disp01.h5m
@@ -923,7 +923,7 @@ else()
     serial_matrix
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/serial_matrix
     -DFILE=disp01.h5m
@@ -939,7 +939,7 @@ endif()
 build_test(build_problems build_problems.cpp)
 add_test(
   build_problems_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m
   -log_no_color
 )
@@ -949,7 +949,7 @@ build_test(build_large_problem build_large_problem.cpp)
 
 add_test(
   build_large_problem
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/build_large_problem -my_file disp01.h5m
   -log_no_color 
 )
@@ -961,7 +961,7 @@ build_test(remove_entities_from_problem
 )
 
 add_test(remove_entities_from_problem
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2 
   ${CMAKE_CURRENT_BINARY_DIR}/remove_entities_from_problem 
   -my_file disp01_2parts.h5m 
   -log_no_color 
@@ -972,7 +972,7 @@ build_test(remove_entities_from_problem_not_partitioned
 )
 
 add_test(remove_entities_from_problem_not_partitioned
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2 
   ${CMAKE_CURRENT_BINARY_DIR}/remove_entities_from_problem_not_partitioned 
   -my_file disp01_2parts.h5m 
   -log_no_color 
@@ -984,7 +984,7 @@ build_test(build_composite_problem build_composite_problem.cpp)
 
 add_test(
   build_composite_problem_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/build_composite_problem -my_file disp01.h5m
   -log_no_color
 )
@@ -993,7 +993,7 @@ add_test(
 build_test(activate_deactivate_dofs activate_deactivate_dofs.cpp)
 add_test(
   activate_deactivate_dofs
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/activate_deactivate_dofs -my_file disp01.h5m
   -log_no_color
 )
@@ -1002,7 +1002,7 @@ add_test(
 build_test(loop_entities loop_entities.cpp)
 
 add_test(loop_entities
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2 
   ${CMAKE_CURRENT_BINARY_DIR}/loop_entities -file_name disp01_2parts.h5m 
   -dm_is_partitioned
   -log_no_color
@@ -1014,7 +1014,7 @@ add_test(
     projection_from_10node_tet_atom
     ${CMAKE_COMMAND}
     -DMPI_RUN=${MPI_RUN}
-    -DMPI_FLAGS=${MPI_RUN_FLAGS}
+    -DMPI_FLAGS=${MPI_RUN_FLAGS} --oversubscribe
     -DMPI_NP=1
     -DPROG=${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom
     -DFILE=sphere.h5m
@@ -1034,7 +1034,7 @@ if(TETGEN_LIBRARY)
     add_dependencies(tetgen_interface tetgen)
   endif(WITH_TETGEN)
 
-  add_test(tetgen_interface_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  add_test(tetgen_interface_atom ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/tetgen_interface 
     -my_file Tinterface.h5m
     -log_no_color
@@ -1051,7 +1051,7 @@ endif(NETGEN_LIBRARY)
 build_test(node_merge node_merge.cpp)
 
 cm_export_file("../meshes/node_merge_test.h5m" export_atom_tests)
-add_test(node_merge ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+add_test(node_merge ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/node_merge 
   -my_file node_merge_test.h5m
   -log_no_color
@@ -1059,7 +1059,7 @@ add_test(node_merge ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
 
 build_test(edge_and_bubble_shape_functions_on_quad edge_and_bubble_shape_functions_on_quad.cpp)
 
-add_test(edge_and_bubble_shape_functions_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+add_test(edge_and_bubble_shape_functions_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/edge_and_bubble_shape_functions_on_quad 
   -my_file quad_mesh.h5m
   -log_no_color
@@ -1067,12 +1067,12 @@ add_test(edge_and_bubble_shape_functions_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np
 
 build_test(gauss_points_on_quad gauss_points_on_quad.cpp)
 
-add_test(gauss_points_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+add_test(gauss_points_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/gauss_points_on_quad
 )
 
 build_test(partition_mesh partition_mesh.cpp)
-add_test(partition_mesh ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+add_test(partition_mesh ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/partition_mesh -my_file disp01.h5m
   -log_no_color
 )
@@ -1107,7 +1107,7 @@ list(INSERT testing_base_list
 )
 foreach(test_base ${testing_base_list})
   add_test(testing_base_functions_${test_base}
-    ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+    ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/testing_base_functions 
     -base ${test_base}
     -log_no_color
@@ -1120,7 +1120,7 @@ if(ADOL-C_LIBRARY)
     add_dependencies(adol-c_atom adolc)
   endif(WITH_ADOL-C)
   add_test(
-    adol-c_atom_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+    adol-c_atom_test ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom
     -log_no_color
   )
@@ -1130,7 +1130,7 @@ if(MED_LIBRARY)
   cm_export_file("../meshes/Mesh_1.med" export_atom_tests)
   build_test(reading_med_file reading_med_file.cpp)
   add_test(
-    reading_med_file_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+    reading_med_file_test ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/reading_med_file -med_file Mesh_1.med
     -log_no_color
   )
@@ -1139,7 +1139,7 @@ endif(MED_LIBRARY)
 # Simple interface
 build_test(simple_interface simple_interface.cpp)
 add_test(
-  simple_interface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  simple_interface ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/simple_interface -file_name disp01_2parts.h5m 
   -log_summary
   -log_no_color
@@ -1148,7 +1148,7 @@ add_test(
 build_test(test_cache_on_entities test_cache_on_entities.cpp)
 
 add_test(
-  test_cache_on_entities ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  test_cache_on_entities ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/test_cache_on_entities 
   -file_name disp01_2parts.h5m 
   -log_no_color
@@ -1162,7 +1162,7 @@ cm_export_file("../meshes/cylinder_cut.h5m" export_atom_tests)
 
 build_test(mesh_cut_test mesh_cut_test.cpp)
 add_test(
-  mesh_cut_circle ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  mesh_cut_circle ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/mesh_cut_test 
   -my_file circle_cut.h5m 
   -side_set 200 
@@ -1173,20 +1173,20 @@ add_test(
 
 build_test(segments_distance segments_distance.cpp)
 add_test(
-  segments_distance ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  segments_distance ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/segments_distance 
 )
 
 build_test(find_local_coordinates_on_tet find_local_coordinates_on_tet.cpp)
 add_test(
-  find_local_coordinates_on_tet ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  find_local_coordinates_on_tet ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/find_local_coordinates_on_tet 
 )
 
 cm_export_file("disp01_1parts.h5m" export_atom_tests)
 build_test(field_evaluator field_evaluator.cpp)
 add_test(field_evaluator
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/field_evaluator -file_name disp01_1parts.h5m 
   -dm_is_partitioned
   -log_no_color
@@ -1195,7 +1195,7 @@ add_test(field_evaluator
 build_test(petsc_smart_ptr_objects petsc_smart_ptr_objects.cpp)
 
 add_test(petsc_smart_ptr_objects
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/petsc_smart_ptr_objects
   -log_no_color
 )
@@ -1203,7 +1203,7 @@ add_test(petsc_smart_ptr_objects
 build_test(boundary_marker boundary_marker.cpp)
 
 add_test(boundary_marker
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/boundary_marker 
   -file_name rectangle_tri.h5m
   -log_no_color
@@ -1212,7 +1212,7 @@ add_test(boundary_marker
 build_test(add_blockset add_blockset.cpp)
 
 add_test(add_blockset
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/add_blockset 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 ${CMAKE_CURRENT_BINARY_DIR}/add_blockset 
   -log_no_color
 )
 
@@ -1224,7 +1224,7 @@ build_test(
 
 add_test(
   continuity_check_on_contact_prism_side_ele_h1
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_contact_prism_side_ele
   -my_file 2_tets_contact.cub -base ainsworth -space h1)
 
@@ -1236,20 +1236,20 @@ build_test(
   
 add_test(
   continuity_check_on_skeleton_with_simple_2d_for_hcurl_ainsworth_on_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hcurl 
   -file_name rectangle_tri.h5m -base ainsworth
   -log_no_color)
 
 add_test(continuity_check_on_skeleton_with_simple_2d_for_hcurl_demkowicz_on_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hcurl 
   -file_name rectangle_tri.h5m -base demkowicz
   -log_no_color)
 
 add_test(
   continuity_check_on_skeleton_with_simple_2d_for_hcurl_demkowicz_on_quad
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hcurl 
   -file_name rectangle_quad.h5m -base demkowicz
   -log_no_color)
@@ -1261,19 +1261,19 @@ build_test(
   continuity_check_on_skeleton_with_simple_2d_for_hdiv.cpp)
   
 add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_ainsworth_on_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
   -file_name rectangle_tri.h5m -base ainsworth
   -log_no_color)
 
 add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_demkowicz_on_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
   -file_name rectangle_tri.h5m -base demkowicz
   -log_no_color)
 
 add_test(continuity_check_on_skeleton_with_simple_2d_for_hdiv_demkowicz_on_quad
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_hdiv 
   -file_name rectangle_quad.h5m -base demkowicz
   -log_no_color)
@@ -1285,13 +1285,13 @@ build_test(
   continuity_check_on_skeleton_with_simple_2d_for_h1.cpp)
   
 add_test(continuity_check_on_skeleton_with_simple_2d_for_h1_ainsworth_tri
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_h1 
   -file_name rectangle_tri.h5m -base ainsworth
   -log_no_color)
 
 add_test(continuity_check_on_skeleton_with_simple_2d_for_h1_debkowicz_quad
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/continuity_check_on_skeleton_with_simple_2d_for_h1 
   -file_name rectangle_quad.h5m -base demkowicz
   -log_no_color)
@@ -1300,7 +1300,7 @@ add_test(continuity_check_on_skeleton_with_simple_2d_for_h1_debkowicz_quad
 cm_export_file("../meshes/reference_triangle_mesh.h5m" export_atom_tests)
 build_test(prism_elements_from_surface prism_elements_from_surface.cpp)
 
-add_test(prism_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+add_test(prism_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/prism_elements_from_surface 
   -my_file reference_triangle_mesh.h5m
   -log_no_color
@@ -1310,7 +1310,7 @@ build_test(
   prism_polynomial_approximation prism_polynomial_approximation.cpp)
 
 add_test(prism_polynomial_approximation
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/prism_polynomial_approximation -pc_type lu)
 
 build_test(
@@ -1318,7 +1318,7 @@ build_test(
 
 add_test(
   quad_polynomial_approximation_h1_ainsworth
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
   -pc_type lu
   -base ainsworth
@@ -1327,7 +1327,7 @@ add_test(
 
 add_test(
   quad_polynomial_approximation_h1_ainsworth_lobatto
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
   -pc_type lu
   -base ainsworth_labatto
@@ -1336,7 +1336,7 @@ add_test(
 
 add_test(
   quad_polynomial_approximation_h1_demkowicz
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
   -pc_type lu
   -base demkowicz
@@ -1345,7 +1345,7 @@ add_test(
 
 add_test(
   quad_polynomial_approximation_l2_demkowicz
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/quad_polynomial_approximation 
   -pc_type lu
   -base demkowicz
@@ -1357,7 +1357,7 @@ build_test(
   bernstein_bezier_generate_base.cpp
 )
 add_test(bernstein_bezier_generate_base
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/bernstein_bezier_generate_base 
   -log_no_color
 )
@@ -1368,7 +1368,7 @@ build_test(
 )
 
 add_test(log
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/log
   -log_severity_level noisy
   -log_scope
@@ -1384,7 +1384,7 @@ build_test(
 )
 
 add_test(matrix_function
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 
+  ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1 
   ${CMAKE_CURRENT_BINARY_DIR}/matrix_function
   -log_severity_level inform
   -log_no_color
