@@ -25,12 +25,14 @@ static PetscErrorCode ierr;
 PetscErrorCode Legendre_polynomials(int p, double s, double *diff_s, double *L,
                                     double *diffL, const int dim) {
   MoFEMFunctionBeginHot;
+#ifndef NDEBUG
   if (dim < 1)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "dim < 1");
   if (dim > 3)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "dim > 3");
   if (p < 0)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "p < 0");
+#endif // NDEBUG
   L[0] = 1;
   if (diffL != NULL) {
     diffL[0 * (p + 1) + 0] = 0;
@@ -45,9 +47,11 @@ PetscErrorCode Legendre_polynomials(int p, double s, double *diff_s, double *L,
     MoFEMFunctionReturnHot(0);
   L[1] = s;
   if (diffL != NULL) {
+#ifndef NDEBUG
     if (diff_s == NULL) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
     }
+#endif // NDEBUG
     diffL[0 * (p + 1) + 1] = diff_s[0];
     if (dim >= 2) {
       diffL[1 * (p + 1) + 1] = diff_s[1];
@@ -86,12 +90,14 @@ PetscErrorCode Jacobi_polynomials(int p, double alpha, double x, double t,
                                   double *diff_x, double *diff_t, double *L,
                                   double *diffL, const int dim) {
   MoFEMFunctionBeginHot;
+#ifndef NDEBUG
   if (dim < 1)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "dim < 1");
   if (dim > 3)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "dim > 3");
   if (p < 0)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "p < 0");
+#endif // NDEBUG
   L[0] = 1;
   if (diffL != NULL) {
     diffL[0 * (p + 1) + 0] = 0;
@@ -106,9 +112,11 @@ PetscErrorCode Jacobi_polynomials(int p, double alpha, double x, double t,
     MoFEMFunctionReturnHot(0);
   L[1] = 2 * x - t + alpha * x;
   if (diffL != NULL) {
+#ifndef NDEBUG
     if (diff_x == NULL) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
     }
+#endif // NDEBUG
     double d_t = (diff_t) ? diff_t[0] : 0;
     diffL[0 * (p + 1) + 1] = (2 + alpha) * diff_x[0] - d_t;
     if (dim >= 2) {
@@ -167,12 +175,14 @@ PetscErrorCode IntegratedJacobi_polynomials(int p, double alpha, double x,
                                             double *diff_t, double *L,
                                             double *diffL, const int dim) {
   MoFEMFunctionBeginHot;
+#ifndef NDEBUG
   if (dim < 1)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "dim < 1");
   if (dim > 3)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "dim > 3");
   if (p < 1)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "p < 1");
+#endif // NDEBUG
   L[0] = x;
   if (diffL != NULL) {
     int d = 0;
@@ -212,14 +222,14 @@ PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,
                                    double *diffL, const int dim) {
 
   MoFEMFunctionBeginHot;
-
+#ifndef NDEBUG
   if (dim < 1)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "dim < 1");
   if (dim > 3)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "dim > 3");
   if (p < 2)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "p < 2");
-
+#endif // NDEBUG
   double l[p + 5];
   ierr = Legendre_polynomials(p + 4, s, NULL, l, NULL, 1);
   CHKERRQ(ierr);
@@ -236,9 +246,11 @@ PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,
   }
   L[1] = s;
   if (diffL != NULL) {
+#ifndef NDEBUG
     if (diff_s == NULL) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
     }
+#endif // NDEBUG
     diffL[0 * (p + 1) + 1] = diff_s[0];
     if (dim >= 2) {
       diffL[1 * (p + 1) + 1] = diff_s[1];
@@ -247,7 +259,7 @@ PetscErrorCode Lobatto_polynomials(int p, double s, double *diff_s, double *L,
       }
     }
   }
-  
+
   // Integrated Legendre
   for (int k = 2; k <= p; k++) {
     const double factor = 2 * (2 * k - 1);
@@ -369,6 +381,7 @@ PetscErrorCode LobattoKernel_polynomials(int p, double s, double *diff_s,
                                          double *L, double *diffL,
                                          const int dim) {
   MoFEMFunctionBeginHot;
+#ifndef NDEBUG
   if (dim < 1)
     SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "dim < 1");
   if (dim > 3)
@@ -378,6 +391,7 @@ PetscErrorCode LobattoKernel_polynomials(int p, double s, double *diff_s,
   if (p > 9)
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Polynomial beyond order 9 is not implemented");
+#endif // NDEBUG
   if (L) {
     int l = 0;
     for (; l != p + 1; l++) {
@@ -385,9 +399,11 @@ PetscErrorCode LobattoKernel_polynomials(int p, double s, double *diff_s,
     }
   }
   if (diffL != NULL) {
+#ifndef NDEBUG
     if (diff_s == NULL) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_INVALID_DATA, "diff_s == NULL");
     }
+#endif // NDEBUG
     int l = 0;
     for (; l != p + 1; l++) {
       double a = f_phix[l](s);
