@@ -706,6 +706,27 @@ getFTensor1FromArray(VectorDouble &data) {
                                                             &data[2]};
 }
 
+template <int DIM, int S>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>
+getFTensor1FromMat(MatrixDouble &data, const size_t rr) {
+  static_assert(DIM != DIM, "not implemented");
+  return FTensor::Tensor1<FTensor::PackPtr<double *, S>, DIM>();
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2>
+getFTensor1FromMat(MatrixDouble &data, const size_t rr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 2>{&data(rr + 0, 0),
+                                                            &data(rr + 1, 0)};
+}
+
+template <>
+inline FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>
+getFTensor1FromMat(MatrixDouble &data, const size_t rr) {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 1>, 3>{
+      &data(rr + 0, 0), &data(rr + 1, 0), &data(rr + 2, 0)};
+}
+
 /**
  * @brief Get FTensor1 from array
  *
