@@ -73,8 +73,21 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
                                    tag_sizes);
   // create entry
   auto p = pRoblems.insert(Problem(moab, meshset));
-  if (!p.second)
+  if (!p.second) {
+    MOFEM_LOG_FUNCTION();
+    MOFEM_LOG_ATTRIBUTES("SELF", LogManager::BitScope);
+    MOFEM_LOG("SELF", Sev::error) << "Following problem can not be added:";
+    MOFEM_LOG("SELF", Sev::error)
+        << "Problem " << name << " id(" << id.to_ulong() << ") " << id
+        << " added meshset " << meshset;
+    MOFEM_LOG("SELF", Sev::error) << "List of problems already in databse:";
+    for(auto &p : pRoblems) {
+      MOFEM_LOG("SELF", Sev::error)
+          << p.getName() << " id(" << p.getId().to_ulong() << ") " << id
+          << " on meshset " << p.meshset;
+    }
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Problem not added");
+  }
 
   MOFEM_LOG("WORLD", Sev::inform) << "Add problem " << name;
 
