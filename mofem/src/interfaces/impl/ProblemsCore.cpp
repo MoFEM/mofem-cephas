@@ -81,7 +81,7 @@ MoFEMErrorCode Core::addProblem(const BitProblemId id, const std::string &name,
         << "Problem " << name << " id(" << id.to_ulong() << ") " << id
         << " added meshset " << meshset;
     MOFEM_LOG("SELF", Sev::error) << "List of problems already in databse:";
-    for(auto &p : pRoblems) {
+    for (auto &p : pRoblems) {
       MOFEM_LOG("SELF", Sev::error)
           << p.getName() << " id(" << p.getId().to_ulong() << ") " << id
           << " on meshset " << p.meshset;
@@ -139,7 +139,7 @@ MoFEMErrorCode Core::list_problem() const {
   for (; miit != set_id.end(); miit++) {
     std::ostringstream ss;
     ss << *miit << std::endl;
-    PetscPrintf(cOmm, ss.str().c_str());
+    PetscPrintf(mofemComm, ss.str().c_str());
   }
   MoFEMFunctionReturnHot(0);
 }
@@ -421,7 +421,8 @@ Core::problem_basic_method_postProcess(const std::string &problem_name,
   ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = pRoblems_set.find(problem_name);
   if (p_miit == pRoblems_set.end())
-    SETERRQ1(cOmm, 1, "problem is not in database %s", problem_name.c_str());
+    SETERRQ1(mofemComm, 1, "problem is not in database %s",
+             problem_name.c_str());
 
   CHKERR problem_basic_method_postProcess(&*p_miit, method, verb);
 
@@ -438,7 +439,7 @@ MoFEMErrorCode Core::loop_finite_elements(
     verb = verbose;
 
   CacheTupleSharedPtr tmp_cache_ptr;
-  if(!cache_ptr.use_count()) {
+  if (!cache_ptr.use_count()) {
     tmp_cache_ptr = boost::make_shared<CacheTuple>();
     CHKERR cache_problem_entities(problem_ptr->getName(), tmp_cache_ptr);
   }
@@ -459,7 +460,7 @@ MoFEMErrorCode Core::loop_finite_elements(
 
   if (miit == hi_miit && (bh & MF_EXIST)) {
     if (!check_finite_element(fe_name)) {
-      SETERRQ1(cOmm, MOFEM_NOT_FOUND, "finite element < %s > not found",
+      SETERRQ1(mofemComm, MOFEM_NOT_FOUND, "finite element < %s > not found",
                fe_name.c_str());
     }
   }
@@ -501,8 +502,7 @@ MoFEMErrorCode Core::loop_finite_elements(
     const std::string &problem_name, const std::string &fe_name,
     FEMethod &method, int lower_rank, int upper_rank,
     boost::shared_ptr<NumeredEntFiniteElement_multiIndex> fe_ptr, MoFEMTypes bh,
-    CacheTupleWeakPtr cache_ptr,
-    int verb) {
+    CacheTupleWeakPtr cache_ptr, int verb) {
   MoFEMFunctionBegin;
   if (verb == DEFAULT_VERBOSITY)
     verb = verbose;
@@ -510,7 +510,7 @@ MoFEMErrorCode Core::loop_finite_elements(
   auto &prb_by_name = pRoblems.get<Problem_mi_tag>();
   auto p_miit = prb_by_name.find(problem_name);
   if (p_miit == prb_by_name.end())
-    SETERRQ1(cOmm, MOFEM_INVALID_DATA, "Problem <%s> is not in database",
+    SETERRQ1(mofemComm, MOFEM_INVALID_DATA, "Problem <%s> is not in database",
              problem_name.c_str());
 
   CHKERR loop_finite_elements(&*p_miit, fe_name, method, lower_rank, upper_rank,
@@ -536,14 +536,15 @@ MoFEMErrorCode Core::loop_dofs(const Problem *problem_ptr,
     dofs = &problem_ptr->numeredColDofsPtr->get<Unique_mi_tag>();
     break;
   default:
-    SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Not implemented");
+    SETERRQ(mofemComm, MOFEM_DATA_INCONSISTENCY, "Not implemented");
   }
 
   auto field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
   if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
     method.fieldPtr = *field_it;
   } else {
-    SETERRQ(cOmm, MOFEM_NOT_FOUND, ("Field not found " + field_name).c_str());
+    SETERRQ(mofemComm, MOFEM_NOT_FOUND,
+            ("Field not found " + field_name).c_str());
   }
 
   auto miit = dofs->lower_bound(
@@ -608,7 +609,8 @@ MoFEMErrorCode Core::loop_dofs(const std::string &field_name, DofMethod &method,
   if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
     method.fieldPtr = *field_it;
   } else {
-    SETERRQ(cOmm, MOFEM_NOT_FOUND, ("Field not found " + field_name).c_str());
+    SETERRQ(mofemComm, MOFEM_NOT_FOUND,
+            ("Field not found " + field_name).c_str());
   }
 
   auto miit = dofsField.get<Unique_mi_tag>().lower_bound(
@@ -643,7 +645,7 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
     dofs = problem_ptr->numeredColDofsPtr;
     break;
   default:
-    SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY,
+    SETERRQ(mofemComm, MOFEM_DATA_INCONSISTENCY,
             "It works only with rows or columns");
   }
 
@@ -651,7 +653,8 @@ MoFEMErrorCode Core::loop_entities(const Problem *problem_ptr,
   if (field_it != fIelds.get<FieldName_mi_tag>().end()) {
     method.fieldPtr = *field_it;
   } else {
-    SETERRQ(cOmm, MOFEM_NOT_FOUND, ("Field not found " + field_name).c_str());
+    SETERRQ(mofemComm, MOFEM_NOT_FOUND,
+            ("Field not found " + field_name).c_str());
   }
 
   auto miit = dofs->lower_bound(
