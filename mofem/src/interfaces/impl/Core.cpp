@@ -26,6 +26,16 @@ void macro_is_deprecated_using_deprecated_function() {}
 
 namespace MoFEM {
 
+Core::WrapMPIComm::WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm)
+    : comm(comm), duplicatedComm(duplicated_comm) {
+  ierr = PetscCommDuplicate(comm, &duplicated_comm, NULL);
+  CHKERRABORT(comm, ierr);
+}
+Core::WrapMPIComm::~WrapMPIComm() {
+  ierr = PetscCommDestroy(&duplicatedComm);
+  CHKERRABORT(comm, ierr);
+}
+
 constexpr const int CoreTmp<0>::value;
 constexpr const int CoreTmp<-1>::value;
 

@@ -998,15 +998,8 @@ protected:
 
 protected:
   struct WrapMPIComm {
-    WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm)
-        : comm(comm), duplicatedComm(duplicated_comm) {
-      ierr = PetscCommDuplicate(comm, &duplicated_comm, NULL);
-      CHKERRABORT(comm, ierr);
-    }
-    ~WrapMPIComm() {
-      ierr = PetscCommDestroy(&duplicatedComm);
-      CHKERRABORT(comm, ierr);
-    }
+    WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm);
+    ~WrapMPIComm();
 
   private:
     MPI_Comm &comm;
