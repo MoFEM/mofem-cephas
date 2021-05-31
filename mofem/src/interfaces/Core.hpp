@@ -1007,7 +1007,8 @@ protected:
     MPI_Comm &duplicatedComm;
     bool isPetscComm;
   };
-  boost::shared_ptr<WrapMPIComm> wrapMPIMOABComm;
+  boost::shared_ptr<WrapMPIComm>
+      wrapMPIMOABComm; ///< manage creation and destruction of MOAB communicator
 
   int verbose; ///< Verbosity level
 
