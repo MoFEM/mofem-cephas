@@ -193,13 +193,14 @@ MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
 
   // Create duplicate communicator
   wrapMPIComm = boost::make_shared<WrapMPIComm>(comm, cOmm, true);
+  wrapMPIMOABComm = boost::make_shared<WrapMPIComm>(comm, moabComm, false);
   MPI_Comm_size(cOmm, &sIze);
   MPI_Comm_rank(cOmm, &rAnk);
 
   // CHeck if moab has set communicator if not set communicator interbally
   ParallelComm *pComm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
   if (pComm == NULL)
-    pComm = new ParallelComm(&moab, cOmm);
+    pComm = new ParallelComm(&moab, moabComm);
 
   // Register interfaces for this implementation
   CHKERR registerInterface<UnknownInterface>(IDD_MOFEMUnknown);

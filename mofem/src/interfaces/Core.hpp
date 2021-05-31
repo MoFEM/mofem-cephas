@@ -974,6 +974,7 @@ protected:
   /**@{*/
 
   mutable MPI_Comm cOmm;       ///< MoFEM communicator
+  mutable MPI_Comm moabComm;   ///< MPI Communicator used by moab
   mutable ParallelComm *pComm; ///< MOAB communicator structure
 
   int sIze; ///< MoFEM communicator size
@@ -1007,6 +1008,7 @@ protected:
     bool isPetscComm;
   };
   boost::shared_ptr<WrapMPIComm> wrapMPIComm;
+  boost::shared_ptr<WrapMPIComm> wrapMPIMOABComm;
 
   int verbose; ///< Verbosity level
 
