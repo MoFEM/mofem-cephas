@@ -95,11 +95,6 @@ int main(int argc, char *argv[]) {
     Range adj;
     CHKERR moab.get_adjacencies(&tri, 1, 1, true, adj);
     
-
-    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-    if (pcomm == NULL)
-      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
-
     // Create MoFEM database
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;

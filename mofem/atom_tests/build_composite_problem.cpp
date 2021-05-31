@@ -49,9 +49,7 @@ int main(int argc, char *argv[]) {
     const char *option;
     option = "";
     CHKERR moab.load_file(mesh_file_name, 0, option);
-    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-    if (pcomm == NULL)
-      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+
 
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
@@ -67,6 +65,12 @@ int main(int argc, char *argv[]) {
 
     EntityHandle part_set;
     CHKERR moab.create_meshset(MESHSET_SET, part_set);
+
+    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+    if (pcomm == NULL)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Communicator should be allocated");
+
     Tag part_tag = pcomm->part_tag();
     Range proc_ents;
     Range tagged_sets;
