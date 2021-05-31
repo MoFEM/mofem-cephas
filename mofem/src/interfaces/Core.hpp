@@ -998,12 +998,13 @@ protected:
 
 protected:
   struct WrapMPIComm {
-    WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm);
+    WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm, bool petsc);
     ~WrapMPIComm();
 
   private:
     MPI_Comm &comm;
     MPI_Comm &duplicatedComm;
+    bool isPetscComm;
   };
   boost::shared_ptr<WrapMPIComm> wrapMPIComm;
 

@@ -26,14 +26,29 @@ void macro_is_deprecated_using_deprecated_function() {}
 
 namespace MoFEM {
 
-Core::WrapMPIComm::WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm)
-    : comm(comm), duplicatedComm(duplicated_comm) {
-  ierr = PetscCommDuplicate(comm, &duplicated_comm, NULL);
-  CHKERRABORT(comm, ierr);
+Core::WrapMPIComm::WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm,
+                               bool petsc)
+    : comm(comm), duplicatedComm(duplicated_comm), isPetscComm(petsc) {
+  if (isPetscComm) {
+    ierr = PetscCommDuplicate(comm, &duplicated_comm, NULL);
+    CHKERRABORT(comm, ierr);
+  } else {
+    int ierr = MPI_Comm_dup(comm, &duplicated_comm);
+    if(ierr) {
+      THROW_MESSAGE("MPI_Comm_dup not working");
+    }
+  }
 }
 Core::WrapMPIComm::~WrapMPIComm() {
-  ierr = PetscCommDestroy(&duplicatedComm);
-  CHKERRABORT(comm, ierr);
+  if (isPetscComm) {
+    ierr = PetscCommDestroy(&duplicatedComm);
+    CHKERRABORT(comm, ierr);
+  } else {
+    int ierr = MPI_Comm_free(&duplicatedComm);
+    if (ierr) {
+      THROW_MESSAGE("MPI_Comm_free not working");
+    }
+  }
 }
 
 constexpr const int CoreTmp<0>::value;
@@ -177,7 +192,7 @@ MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
             "MoFEM globally is not initialised, call MoFEM::Core::Initialize");
 
   // Create duplicate communicator
-  wrapMPIComm = boost::make_shared<WrapMPIComm>(comm, cOmm);
+  wrapMPIComm = boost::make_shared<WrapMPIComm>(comm, cOmm, true);
   MPI_Comm_size(cOmm, &sIze);
   MPI_Comm_rank(cOmm, &rAnk);
 
