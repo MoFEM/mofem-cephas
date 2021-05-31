@@ -192,7 +192,6 @@ MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
             "MoFEM globally is not initialised, call MoFEM::Core::Initialize");
 
   // Create duplicate communicator
-  wrapMPIComm = boost::make_shared<WrapMPIComm>(comm, mofemComm, true);
   wrapMPIMOABComm = boost::make_shared<WrapMPIComm>(comm, moabComm, false);
   MPI_Comm_size(mofemComm, &sIze);
   MPI_Comm_rank(mofemComm, &rAnk);
@@ -425,7 +424,7 @@ MoFEMErrorCode Core::setMoabInterface(moab::Interface &new_moab, int verb) {
   // check if moab has set communicator if not set communicator internally
   ParallelComm *pComm = ParallelComm::get_pcomm(&new_moab, MYPCOMM_INDEX);
   if (pComm == NULL) {
-    pComm = new ParallelComm(&new_moab, mofemComm);
+    pComm = new ParallelComm(&new_moab, moabComm);
   }
 
   // create MoFEM tags

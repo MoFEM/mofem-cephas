@@ -1007,7 +1007,6 @@ protected:
     MPI_Comm &duplicatedComm;
     bool isPetscComm;
   };
-  boost::shared_ptr<WrapMPIComm> wrapMPIComm;
   boost::shared_ptr<WrapMPIComm> wrapMPIMOABComm;
 
   int verbose; ///< Verbosity level

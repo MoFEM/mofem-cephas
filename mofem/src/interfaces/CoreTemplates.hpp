@@ -41,7 +41,7 @@ CoreTmp<N>::make_shared_ref_entity(const EntityHandle ent) {
 template <int V>
 CoreTmp<0>::CoreTmp(moab::Interface &moab, MPI_Comm comm, const int verbose,
                     CoreValue<V>)
-    : moab(moab), mofemComm(0), moabComm(0), verbose(verbose),
+    : moab(moab), mofemComm(comm), moabComm(0), verbose(verbose),
       initaliseAndBuildField(PETSC_FALSE),
       initaliseAndBuildFiniteElements(PETSC_FALSE) {
 
