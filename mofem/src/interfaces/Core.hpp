@@ -973,7 +973,7 @@ protected:
 
   /**@{*/
 
-  mutable MPI_Comm cOmm;       ///< MoFEM communicator
+  mutable MPI_Comm mofemComm;       ///< MoFEM communicator
   mutable MPI_Comm moabComm;   ///< MPI Communicator used by moab
   mutable ParallelComm *pComm; ///< MOAB communicator structure
 
@@ -983,7 +983,7 @@ protected:
   /**
    * @return return communicator
    */
-  inline MPI_Comm &get_comm() const { return cOmm; }
+  inline MPI_Comm &get_comm() const { return mofemComm; }
 
   /**
    * @return return communicator size

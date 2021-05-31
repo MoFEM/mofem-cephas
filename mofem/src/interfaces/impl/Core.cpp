@@ -192,10 +192,10 @@ MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
             "MoFEM globally is not initialised, call MoFEM::Core::Initialize");
 
   // Create duplicate communicator
-  wrapMPIComm = boost::make_shared<WrapMPIComm>(comm, cOmm, true);
+  wrapMPIComm = boost::make_shared<WrapMPIComm>(comm, mofemComm, true);
   wrapMPIMOABComm = boost::make_shared<WrapMPIComm>(comm, moabComm, false);
-  MPI_Comm_size(cOmm, &sIze);
-  MPI_Comm_rank(cOmm, &rAnk);
+  MPI_Comm_size(mofemComm, &sIze);
+  MPI_Comm_rank(mofemComm, &rAnk);
 
   // CHeck if moab has set communicator if not set communicator interbally
   ParallelComm *pComm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
@@ -425,7 +425,7 @@ MoFEMErrorCode Core::setMoabInterface(moab::Interface &new_moab, int verb) {
   // check if moab has set communicator if not set communicator internally
   ParallelComm *pComm = ParallelComm::get_pcomm(&new_moab, MYPCOMM_INDEX);
   if (pComm == NULL) {
-    pComm = new ParallelComm(&new_moab, cOmm);
+    pComm = new ParallelComm(&new_moab, mofemComm);
   }
 
   // create MoFEM tags
@@ -773,7 +773,7 @@ MoFEMErrorCode Core::getOptions(int verb) {
   if (verb == -1)
     verb = verbose;
 
-  CHKERR PetscOptionsBegin(cOmm, optionsPrefix.c_str(), "Mesh cut options",
+  CHKERR PetscOptionsBegin(mofemComm, optionsPrefix.c_str(), "Mesh cut options",
                            "See MoFEM documentation");
 
   CHKERR PetscOptionsBool(
