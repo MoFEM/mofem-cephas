@@ -199,7 +199,7 @@ MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
   // CHeck if moab has set communicator if not set communicator interbally
   ParallelComm *pComm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
   if (pComm == NULL)
-    pComm = new ParallelComm(&moab, wrapMPIMOABComm->get_comm());
+    pComm = new ParallelComm(&moab, wrapMPIMOABComm->get_comm(), MYPCOMM_INDEX);
 
   // Register interfaces for this implementation
   CHKERR registerInterface<UnknownInterface>(IDD_MOFEMUnknown);
@@ -423,7 +423,8 @@ MoFEMErrorCode Core::setMoabInterface(moab::Interface &new_moab, int verb) {
   // check if moab has set communicator if not set communicator internally
   ParallelComm *pComm = ParallelComm::get_pcomm(&new_moab, MYPCOMM_INDEX);
   if (pComm == NULL) {
-    pComm = new ParallelComm(&new_moab, wrapMPIMOABComm->get_comm());
+    pComm =
+        new ParallelComm(&new_moab, wrapMPIMOABComm->get_comm(), MYPCOMM_INDEX);
   }
 
   // create MoFEM tags

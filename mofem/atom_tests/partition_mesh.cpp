@@ -73,13 +73,8 @@ int main(int argc, char *argv[]) {
     EntityHandle meshset;
     CHKERR moab.create_meshset(MESHSET_SET, meshset);
     CHKERR moab.add_entities(meshset, tets);
-    // resolve shared entities
-    // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if (!m_field.get_comm_rank()) {
-      // CHKERR moab.write_file("partitioned_mesh.h5m","MOAB","",&meshset,1);
-      // CHKERRG(rval);
       CHKERR moab.write_file("partitioned_mesh.h5m");
-      // CHKERR moab.write_file("partitioned_mesh.h5m"); CHKERRG(rval);
     }
   }
   CATCH_ERRORS;
