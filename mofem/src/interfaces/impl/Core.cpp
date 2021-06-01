@@ -45,7 +45,7 @@ WrapMPIComm::~WrapMPIComm() {
   } else {
     int ierr = MPI_Comm_free(&duplicatedComm);
     if (ierr) {
-      THROW_MESSAGE("MPI_Comm_free not working");
+      CHKERRABORT(comm, MOFEM_DATA_INCONSISTENCY);
     }
   }
 }
