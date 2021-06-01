@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
     DMType dm_name = "MOFEM";
     CHKERR DMRegister_MoFEM(dm_name);
     // create dm instance
-    auto dm = createSmartDM(PETSC_COMM_WORLD, dm_name);
+    auto dm = createSmartDM(m_field.get_comm(), dm_name);
 
     CHKERR DMMoFEMCreateMoFEM(dm, &m_field, "COMP", bit_level0);
     CHKERR DMSetFromOptions(dm);
