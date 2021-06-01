@@ -26,20 +26,19 @@ void macro_is_deprecated_using_deprecated_function() {}
 
 namespace MoFEM {
 
-Core::WrapMPIComm::WrapMPIComm(MPI_Comm comm, MPI_Comm &duplicated_comm,
-                               bool petsc)
-    : comm(comm), duplicatedComm(duplicated_comm), isPetscComm(petsc) {
+WrapMPIComm::WrapMPIComm(MPI_Comm comm, bool petsc)
+    : comm(comm), isPetscComm(petsc) {
   if (isPetscComm) {
-    ierr = PetscCommDuplicate(comm, &duplicated_comm, NULL);
+    ierr = PetscCommDuplicate(comm, &duplicatedComm, NULL);
     CHKERRABORT(comm, ierr);
   } else {
-    int ierr = MPI_Comm_dup(comm, &duplicated_comm);
-    if(ierr) {
+    int ierr = MPI_Comm_dup(comm, &duplicatedComm);
+    if (ierr) {
       THROW_MESSAGE("MPI_Comm_dup not working");
     }
   }
 }
-Core::WrapMPIComm::~WrapMPIComm() {
+WrapMPIComm::~WrapMPIComm() {
   if (isPetscComm) {
     ierr = PetscCommDestroy(&duplicatedComm);
     CHKERRABORT(comm, ierr);
@@ -192,14 +191,15 @@ MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
             "MoFEM globally is not initialised, call MoFEM::Core::Initialize");
 
   // Create duplicate communicator
-  wrapMPIMOABComm = boost::make_shared<WrapMPIComm>(comm, moabComm, false);
+  wrapMPIMOABComm = boost::make_shared<WrapMPIComm>(comm, false);
+
   MPI_Comm_size(mofemComm, &sIze);
   MPI_Comm_rank(mofemComm, &rAnk);
 
   // CHeck if moab has set communicator if not set communicator interbally
   ParallelComm *pComm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
   if (pComm == NULL)
-    pComm = new ParallelComm(&moab, moabComm);
+    pComm = new ParallelComm(&moab, wrapMPIMOABComm->get_comm());
 
   // Register interfaces for this implementation
   CHKERR registerInterface<UnknownInterface>(IDD_MOFEMUnknown);
@@ -240,12 +240,11 @@ Core::CoreTmp(moab::Interface &moab, ///< MoAB interface
   CHKERRABORT(comm, ierr);
 }
 
-CoreTmp<-1>::CoreTmp(
-    moab::Interface &moab,      ///< MoAB interface
-    MPI_Comm comm,              ///< MPI communicator
-    const int verbose          ///< Verbosity level
+CoreTmp<-1>::CoreTmp(moab::Interface &moab, ///< MoAB interface
+                     MPI_Comm comm,         ///< MPI communicator
+                     const int verbose      ///< Verbosity level
 
-    )
+                     )
     : CoreTmp<0>(moab, comm, verbose, CoreValue<-1>()) {
 
   // Register sub-interfaces
@@ -424,7 +423,7 @@ MoFEMErrorCode Core::setMoabInterface(moab::Interface &new_moab, int verb) {
   // check if moab has set communicator if not set communicator internally
   ParallelComm *pComm = ParallelComm::get_pcomm(&new_moab, MYPCOMM_INDEX);
   if (pComm == NULL) {
-    pComm = new ParallelComm(&new_moab, moabComm);
+    pComm = new ParallelComm(&new_moab, wrapMPIMOABComm->get_comm());
   }
 
   // create MoFEM tags
@@ -921,7 +920,7 @@ void set_ref_ent_basic_data_ptr_impl(boost::shared_ptr<BasicEntityData> &ptr) {
 };
 
 void Core::setRefEntBasicDataPtr(MoFEM::Interface &m_field,
-                                      boost::shared_ptr<BasicEntityData> &ptr) {
+                                 boost::shared_ptr<BasicEntityData> &ptr) {
 
   switch (m_field.getValue()) {
   case -1:
@@ -936,7 +935,6 @@ void Core::setRefEntBasicDataPtr(MoFEM::Interface &m_field,
   default:
     THROW_MESSAGE("Core index can vary from -1 to MAX_CORE_TMP");
   }
-
 };
 
 boost::shared_ptr<RefEntityTmp<0>>
