@@ -999,11 +999,11 @@ protected:
 
 protected:
   struct WrapMPIComm {
-    WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm, bool petsc);
+    WrapMPIComm(MPI_Comm comm, MPI_Comm &duplicated_comm, bool petsc);
     ~WrapMPIComm();
 
   private:
-    MPI_Comm &comm;
+    MPI_Comm comm;
     MPI_Comm &duplicatedComm;
     bool isPetscComm;
   };

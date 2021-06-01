@@ -26,7 +26,7 @@ void macro_is_deprecated_using_deprecated_function() {}
 
 namespace MoFEM {
 
-Core::WrapMPIComm::WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm,
+Core::WrapMPIComm::WrapMPIComm(MPI_Comm comm, MPI_Comm &duplicated_comm,
                                bool petsc)
     : comm(comm), duplicatedComm(duplicated_comm), isPetscComm(petsc) {
   if (isPetscComm) {
