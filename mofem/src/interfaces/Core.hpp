@@ -24,7 +24,7 @@ namespace MoFEM {
 
 /**
  * @brief Wrap MPI comminitactor such that is destroyed when is out of scope
- * 
+ *
  */
 struct WrapMPIComm {
   WrapMPIComm(MPI_Comm comm, bool petsc);

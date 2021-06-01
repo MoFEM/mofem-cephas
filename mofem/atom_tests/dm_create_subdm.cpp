@@ -69,9 +69,8 @@ int main(int argc, char *argv[]) {
     auto moab_comm_wrap =
         boost::make_shared<WrapMPIComm>(PETSC_COMM_WORLD, false);
     if (pcomm == NULL)
-      pcomm =
-          new ParallelComm(&moab, moab_comm_wrap->get_comm(), MYPCOMM_INDEX);
-          
+      pcomm = new ParallelComm(&moab, moab_comm_wrap->get_comm());
+
     const char *option;
     option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION="
              "PARALLEL_PARTITION;";
