@@ -1213,4 +1213,29 @@ OpSetInvJacH1ForFlatPrism::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode OpMakeHighOrderGeometryWeightsOnVolume::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+  const size_t nb_int_pts = getGaussPts().size2();
+
+  if (getHoGaussPtsDetJac().size() == nb_int_pts) {
+    const double a = getMeasure();
+    auto t_w = getFTensor0IntegrationWeight();
+    auto t_w_ho = getFTensor0FromVec(getHoGaussPtsDetJac());
+    
+    for (size_t gg = 0; gg != nb_int_pts; ++gg) {
+      t_w *= t_w_ho;
+      ++t_w;
+      ++t_w_ho;
+    }
+  } else {
+    SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+             "Number of rows in getHoGaussPtsDetJac should be equal to "
+             "number of integration points, but is not, i.e. %d != %d",
+             getHoGaussPtsDetJac().size(), nb_int_pts);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM
