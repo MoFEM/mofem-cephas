@@ -1054,7 +1054,7 @@ PetscErrorCode DMMoFEMGetTsCtx(DM dm,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMoFEMSetTsCtx(DM dm, boost::shared_ptr<MoFEM::TsCtx> &ts_ctx) {
+PetscErrorCode DMMoFEMSetTsCtx(DM dm, boost::shared_ptr<MoFEM::TsCtx> ts_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
