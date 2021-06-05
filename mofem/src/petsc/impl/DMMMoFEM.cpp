@@ -1068,9 +1068,7 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, Vec *g) {
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
       dm_field->problemName, COL, g);
-#if PETSC_VERSION_GE(3, 12, 0)
   CHKERR VecSetDM(*g, dm);
-#endif
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1080,9 +1078,7 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, SmartPetscObj<Vec> &g_ptr) {
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
       dm_field->problemName, COL, g_ptr);
-#if PETSC_VERSION_GE(3, 12, 0)
   CHKERR VecSetDM(g_ptr, dm);
-#endif
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1092,9 +1088,7 @@ PetscErrorCode DMCreateLocalVector_MoFEM(DM dm, Vec *l) {
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateSeq(
       dm_field->problemName, COL, l);
-#if PETSC_VERSION_GE(3, 12, 0)
   CHKERR VecSetDM(*l, dm);
-#endif
   MoFEMFunctionReturn(0);
 }
 
@@ -1114,9 +1108,7 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Matrix type not implemented");
   }
-#if PETSC_VERSION_GE(3, 12, 0)
   CHKERR MatSetDM(*M, dm);
-#endif  
   MoFEMFunctionReturn(0);
 }
 
@@ -1136,9 +1128,7 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, SmartPetscObj<Mat> &M) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Matrix type not implemented");
   }
-#if PETSC_VERSION_GE(3, 12, 0)  
   CHKERR MatSetDM(M, dm);
-#endif
   MoFEMFunctionReturn(0);
 }
 
