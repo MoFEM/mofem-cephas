@@ -108,29 +108,29 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
     }
   }
 
-  // Make sure it is a PETSc m_field.get_comm()
-  CHKERR PetscCommDuplicate(m_field.get_comm(), &m_field.get_comm(), NULL);
+  // // Make sure it is a PETSc m_field.get_comm()
+  MPI_Comm comm;
+  CHKERR PetscCommDuplicate(m_field.get_comm(), &comm, NULL);
 
   std::vector<MPI_Status> status(m_field.get_comm_size());
 
   // Computes the number of messages a node expects to receive
   int nrecvs; // number of messages received
-  CHKERR PetscGatherNumberOfMessages(m_field.get_comm(), NULL,
-                                     &sbuffer_lengths[0], &nrecvs);
+  CHKERR PetscGatherNumberOfMessages(comm, NULL, &sbuffer_lengths[0], &nrecvs);
 
   // Computes info about messages that a MPI-node will receive, including
   // (from-id,length) pairs for each message.
   int *onodes;   // list of node-ids from which messages are expected
   int *olengths; // corresponding message lengths
-  CHKERR PetscGatherMessageLengths(m_field.get_comm(), nsends, nrecvs,
-                                   &sbuffer_lengths[0], &onodes, &olengths);
+  CHKERR PetscGatherMessageLengths(comm, nsends, nrecvs, &sbuffer_lengths[0],
+                                   &onodes, &olengths);
 
   // Gets a unique new tag from a PETSc communicator. All processors that share
   // the communicator MUST call this routine EXACTLY the same number of times.
   // This tag should only be used with the current objects communicator; do NOT
   // use it with any other MPI communicator.
   int tag;
-  CHKERR PetscCommGetNewTag(m_field.get_comm(), &tag);
+  CHKERR PetscCommGetNewTag(comm, &tag);
 
   // Allocate a buffer sufficient to hold messages of size specified in
   // olengths. And post Irecvs on these buffers using node info from onodes
@@ -139,8 +139,8 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
   // rbuf has a pointers to messages. It has size of of nrecvs (number of
   // messages) +1. In the first index a block is allocated,
   // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
-  CHKERR PetscPostIrecvInt(m_field.get_comm(), tag, nrecvs, onodes, olengths,
-                           &rbuf, &r_waits);
+  CHKERR PetscPostIrecvInt(comm, tag, nrecvs, onodes, olengths, &rbuf,
+                           &r_waits);
 
   MPI_Request *s_waits; // status of sens messages
   CHKERR PetscMalloc1(nsends, &s_waits);
@@ -152,7 +152,7 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
     CHKERR MPI_Isend(&(sbuffer[proc])[0],   // buffer to send
                      sbuffer_lengths[proc], // message length
                      MPIU_INT, proc,        // to proc
-                     tag, m_field.get_comm(), s_waits + kk);
+                     tag, comm, s_waits + kk);
     kk++;
   }
 
@@ -206,6 +206,7 @@ MoFEMErrorCode CommInterface::synchroniseEntities(Range &ents, int verb) {
   CHKERR PetscFree(r_waits);
   CHKERR PetscFree(onodes);
   CHKERR PetscFree(olengths);
+  CHKERR PetscCommDestroy(&comm);
 
   if (verb >= VERBOSE)
     PetscSynchronizedFlush(m_field.get_comm(), PETSC_STDOUT);

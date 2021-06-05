@@ -1035,30 +1035,32 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   int *olengths_rows; // corresponding message lengths
   int **rbuf_row;     // must bee freed by user
 
+  // make sure it is a PETSc comm
+  MPI_Comm comm;
+  CHKERR PetscCommDuplicate(m_field.get_comm(), &comm, NULL);
+
   {
 
-    // make sure it is a PETSc comm
-    CHKERR PetscCommDuplicate(m_field.get_comm(), &m_field.get_comm(), NULL);
 
     // rows
 
     // Computes the number of messages a node expects to receive
-    CHKERR PetscGatherNumberOfMessages(m_field.get_comm(), NULL,
-                                       &lengths_rows[0], &nrecvs_rows);
+    CHKERR PetscGatherNumberOfMessages(comm, NULL, &lengths_rows[0],
+                                       &nrecvs_rows);
     // std::cerr << nrecvs_rows << std::endl;
 
     // Computes info about messages that a MPI-node will receive, including
     // (from-id,length) pairs for each message.
-    CHKERR PetscGatherMessageLengths(m_field.get_comm(), nsends_rows,
-                                     nrecvs_rows, &lengths_rows[0],
-                                     &onodes_rows, &olengths_rows);
+    CHKERR PetscGatherMessageLengths(comm, nsends_rows, nrecvs_rows,
+                                     &lengths_rows[0], &onodes_rows,
+                                     &olengths_rows);
 
     // Gets a unique new tag from a PETSc communicator. All processors that
     // share the communicator MUST call this routine EXACTLY the same number
     // of times. This tag should only be used with the current objects
     // communicator; do NOT use it with any other MPI communicator.
     int tag_row;
-    CHKERR PetscCommGetNewTag(m_field.get_comm(), &tag_row);
+    CHKERR PetscCommGetNewTag(comm, &tag_row);
 
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
@@ -1067,9 +1069,8 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     // messages) +1. In the first index a block is allocated,
     // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
 
-    CHKERR PetscPostIrecvInt(m_field.get_comm(), tag_row, nrecvs_rows,
-                             onodes_rows, olengths_rows, &rbuf_row,
-                             &r_waits_row);
+    CHKERR PetscPostIrecvInt(comm, tag_row, nrecvs_rows, onodes_rows,
+                             olengths_rows, &rbuf_row, &r_waits_row);
     CHKERR PetscFree(onodes_rows);
 
     MPI_Request *s_waits_row; // status of sens messages
@@ -1082,7 +1083,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       CHKERR MPI_Isend(&(ids_data_packed_rows[proc])[0], // buffer to send
                        lengths_rows[proc],               // message length
                        MPIU_INT, proc,                   // to proc
-                       tag_row, m_field.get_comm(), s_waits_row + kk);
+                       tag_row, comm, s_waits_row + kk);
       kk++;
     }
 
@@ -1104,24 +1105,24 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
   if (!square_matrix) {
 
     // Computes the number of messages a node expects to receive
-    CHKERR PetscGatherNumberOfMessages(m_field.get_comm(), NULL,
+    CHKERR PetscGatherNumberOfMessages(comm, NULL,
                                        &lengths_cols[0], &nrecvs_cols);
 
     // Computes info about messages that a MPI-node will receive, including
     // (from-id,length) pairs for each message.
     int *onodes_cols;
-    CHKERR PetscGatherMessageLengths(m_field.get_comm(), nsends_cols,
+    CHKERR PetscGatherMessageLengths(comm, nsends_cols,
                                      nrecvs_cols, &lengths_cols[0],
                                      &onodes_cols, &olengths_cols);
 
     // Gets a unique new tag from a PETSc communicator.
     int tag_col;
-    CHKERR PetscCommGetNewTag(m_field.get_comm(), &tag_col);
+    CHKERR PetscCommGetNewTag(comm, &tag_col);
 
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
     MPI_Request *r_waits_col; // must bee freed by user
-    CHKERR PetscPostIrecvInt(m_field.get_comm(), tag_col, nrecvs_cols,
+    CHKERR PetscPostIrecvInt(comm, tag_col, nrecvs_cols,
                              onodes_cols, olengths_cols, &rbuf_col,
                              &r_waits_col);
     CHKERR PetscFree(onodes_cols);
@@ -1136,7 +1137,7 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
       CHKERR MPI_Isend(&(ids_data_packed_cols[proc])[0], // buffer to send
                        lengths_cols[proc],               // message length
                        MPIU_INT, proc,                   // to proc
-                       tag_col, m_field.get_comm(), s_waits_col + kk);
+                       tag_col, comm, s_waits_col + kk);
       kk++;
     }
 
@@ -1151,8 +1152,9 @@ MoFEMErrorCode ProblemsManager::buildProblemOnDistributedMesh(
     CHKERR PetscFree(s_waits_col);
   }
 
+  CHKERR PetscCommDestroy(&comm);
   CHKERR PetscFree(status);
-
+ 
   DofEntity_multiIndex_global_uid_view dofs_glob_uid_view;
   auto hint = dofs_glob_uid_view.begin();
   for (auto dof : *m_field.get_dofs())

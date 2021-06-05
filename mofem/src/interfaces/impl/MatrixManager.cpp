@@ -243,8 +243,9 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
   } else {
 
-    // Make sure it is a PETSc mofemComm
-    CHKERR PetscCommDuplicate(mofemComm, &mofemComm, NULL);
+    MPI_Comm comm;
+    // // Make sure it is a PETSc mofemComm
+    CHKERR PetscCommDuplicate(get_comm(), &comm, NULL);
 
     // get adjacent nodes on other partitions
     std::vector<std::vector<int>> dofs_vec(sIze);
@@ -323,19 +324,19 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // Computes the number of messages a node expects to receive
     int nrecvs; // number of messages received
-    CHKERR PetscGatherNumberOfMessages(mofemComm, NULL, &dofs_vec_length[0],
+    CHKERR PetscGatherNumberOfMessages(comm, NULL, &dofs_vec_length[0],
                                        &nrecvs);
 
     // Computes info about messages that a MPI-node will receive, including
     // (from-id,length) pairs for each message.
     int *onodes;   // list of node-ids from which messages are expected
     int *olengths; // corresponding message lengths
-    CHKERR PetscGatherMessageLengths(mofemComm, nsends, nrecvs,
+    CHKERR PetscGatherMessageLengths(comm, nsends, nrecvs,
                                      &dofs_vec_length[0], &onodes, &olengths);
 
     // Gets a unique new tag from a PETSc communicator.
     int tag;
-    CHKERR PetscCommGetNewTag(mofemComm, &tag);
+    CHKERR PetscCommGetNewTag(comm, &tag);
 
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
@@ -345,7 +346,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // rbuf has a pointers to messages. It has size of of nrecvs (number of
     // messages) +1. In the first index a block is allocated,
     // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
-    CHKERR PetscPostIrecvInt(mofemComm, tag, nrecvs, onodes, olengths, &rbuf,
+    CHKERR PetscPostIrecvInt(comm, tag, nrecvs, onodes, olengths, &rbuf,
                              &r_waits);
 
     MPI_Request *s_waits; // status of sens messages
@@ -358,7 +359,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
       CHKERR MPI_Isend(&(dofs_vec[proc])[0],  // buffer to send
                        dofs_vec_length[proc], // message length
                        MPIU_INT, proc,        // to proc
-                       tag, mofemComm, s_waits + kk);
+                       tag, comm, s_waits + kk);
       kk++;
     }
 
@@ -388,7 +389,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
               row_idx);
           if (dit ==
               p_miit->numeredRowDofsPtr->get<PetscGlobalIdx_mi_tag>().end()) {
-            SETERRQ1(mofemComm, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ1(get_comm(), MOFEM_DATA_INCONSISTENCY,
                      "dof %d can not be found in problem", row_idx);
           }
         }
@@ -409,6 +410,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     miit_row = dofs_row_by_idx.begin();
     hi_miit_row = dofs_row_by_idx.end();
+
+    CHKERR PetscCommDestroy(&comm);
   }
 
   boost::shared_ptr<FieldEntity> mofem_ent_ptr;
@@ -459,7 +462,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
         if (mit == adjacent_dofs_on_other_parts.end()) {
           // NOTE: Dof can adjacent to other part but no elements are there
           // which use that dof std::cerr << *miit_row << std::endl; SETERRQ1(
-          //   mofemComm,MOFEM_DATA_INCONSISTENCY,
+          //   get_comm(),MOFEM_DATA_INCONSISTENCY,
           //   "data inconsistency row_last_evaluated_idx = %d",
           //   row_last_evaluated_idx
           // );
@@ -505,34 +508,34 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // Adjacency matrix used to partition problems, f.e. METIS
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ(mofemComm, PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
     }
 
   } else if (strcmp(type, MATMPIAIJ) == 0) {
 
     // Compressed MPIADJ matrix
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ(mofemComm, PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
     }
     PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     if ((unsigned int)nb_local_dofs_row != i.size() - 1) {
-      SETERRQ(mofemComm, PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
     }
 
   } else if (strcmp(type, MATAIJ) == 0) {
 
     // Sequential compressed ADJ matrix
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ(mofemComm, PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
     }
     PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     if ((unsigned int)nb_local_dofs_row != i.size() - 1) {
-      SETERRQ(mofemComm, PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
     }
 
   } else {
 
-    SETERRQ(mofemComm, PETSC_ERR_ARG_NULL, "not implemented");
+    SETERRQ(get_comm(), PETSC_ERR_ARG_NULL, "not implemented");
   }
 
   PetscLogEventEnd(MOFEM_EVENT_createMat, 0, 0, 0, 0);
