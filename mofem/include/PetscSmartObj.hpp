@@ -53,17 +53,25 @@ template <typename OBJ> void intrusive_ptr_release(OBJ obj) {
       PetscObjectGetReference(MoFEM::getPetscObject(obj), &cnt);
   if (!ierr) {
     if (cnt) {
-      auto comm = PetscObjectComm(MoFEM::getPetscObject(obj));
       if (cnt > 1) {
         ierr = PetscObjectDereference(MoFEM::getPetscObject(obj));
-        CHKERRABORT(comm, ierr);
       } else {
         ierr = PetscObjectDestroy(reinterpret_cast<PetscObject *>(&obj));
-        CHKERRABORT(comm, ierr);
       }
     }
+    auto comm = PetscObjectComm(MoFEM::getPetscObject(obj));
+    CHKERRABORT(comm, ierr);
   }
 }
+
+template <> void intrusive_ptr_release<Vec>(Vec obj);
+template <> void intrusive_ptr_release<Mat>(Mat obj);
+template <> void intrusive_ptr_release<DM>(DM obj);
+template <> void intrusive_ptr_release<IS>(IS obj);
+template <> void intrusive_ptr_release<AO>(AO obj);
+template <> void intrusive_ptr_release<KSP>(KSP obj);
+template <> void intrusive_ptr_release<SNES>(SNES obj);
+template <> void intrusive_ptr_release<TS>(TS obj);
 
 namespace MoFEM {
 /**
