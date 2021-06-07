@@ -31,7 +31,24 @@ DMCtx::DMCtx()
     : mField_ptr(PETSC_NULL), isProblemBuild(PETSC_FALSE),
       isPartitioned(PETSC_FALSE), isSquareMatrix(PETSC_TRUE),
       isSubDM(PETSC_FALSE), isCompDM(PETSC_FALSE), destroyProblem(PETSC_FALSE),
-      verbosity(VERBOSE), referenceNumber(0) {}
+      verbosity(VERBOSE), referenceNumber(0) {
+
+  if (!LogManager::checkIfChannelExist("DMWORLD")) {
+    auto core_log = logging::core::get();
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmWorld(), "DMWORLD"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSync(), "DMSYNC"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSelf(), "DMSELF"));
+    LogManager::setLog("DMWORLD");
+    LogManager::setLog("DMSYNC");
+    LogManager::setLog("DMSELF");
+    MOFEM_LOG_TAG("DMWORLD", "DM");
+    MOFEM_LOG_TAG("DMSYNC", "DM");
+    MOFEM_LOG_TAG("DMSELF", "DM");
+  }
+}
 
 MoFEMErrorCode DMCtx::query_interface(const MOFEMuuid &uuid,
                                       UnknownInterface **iface) const {
@@ -85,20 +102,34 @@ PetscErrorCode DMDestroy_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   MoFEMFunctionBeginHot;
-  if (static_cast<DMCtx *>(dm->data)->referenceNumber == 0) {
+
+  MPI_Comm comm;
+  CHKERR PetscObjectGetComm((PetscObject)dm, &comm);
+
+  int result;
+  MPI_Comm_compare(comm, PETSC_COMM_SELF, &result);
+  if (result == MPI_IDENT)
+    MOFEM_LOG("DMSELF", Sev::noisy)
+        << "MoFEM DM destroy for problem " << dm_field->problemName
+        << " referenceNumber " << dm_field->referenceNumber;
+  else
+    MOFEM_LOG("DMWORLD", Sev::noisy)
+        << "MoFEM DM destroy for problem " << dm_field->problemName
+        << " referenceNumber " << dm_field->referenceNumber;
+
+  if (dm_field->referenceNumber == 0) {
     if (dm_field->destroyProblem) {
 
       if (dm_field->mField_ptr->check_problem(dm_field->problemName)) {
         dm_field->mField_ptr->delete_problem(dm_field->problemName);
       } // else problem has to be deleted by the user
-
     }
 
     delete static_cast<DMCtx *>(dm->data);
 
-  } else 
-    --static_cast<DMCtx *>(dm->data)->referenceNumber;
-  
+  } else
+    --dm_field->referenceNumber;
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -153,6 +184,14 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm, MoFEM::Interface *m_field_ptr,
   // problem structure
   CHKERR dm_field->mField_ptr->get_problem(dm_field->problemName,
                                            &dm_field->problemPtr);
+
+  MPI_Comm_compare(comm, PETSC_COMM_SELF, &result);
+  if (result == MPI_IDENT)
+    MOFEM_LOG("DMSELF", Sev::noisy)
+        << "MoFEM DM created for problem " << dm_field->problemName;
+  else
+    MOFEM_LOG("DMWORLD", Sev::noisy)
+        << "MoFEM DM created for problem " << dm_field->problemName;
 
   MoFEMFunctionReturn(0);
 }
@@ -942,7 +981,7 @@ DMMoFEMGetKspCtx(DM dm, const boost::shared_ptr<MoFEM::KspCtx> &ksp_ctx) {
 }
 
 PetscErrorCode DMMoFEMSetKspCtx(DM dm,
-                                boost::shared_ptr<MoFEM::KspCtx> &ksp_ctx) {
+                                boost::shared_ptr<MoFEM::KspCtx> ksp_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -968,7 +1007,7 @@ DMMoFEMGetSnesCtx(DM dm, const boost::shared_ptr<MoFEM::SnesCtx> &snes_ctx) {
 }
 
 PetscErrorCode DMMoFEMSetSnesCtx(DM dm,
-                                 boost::shared_ptr<MoFEM::SnesCtx> &snes_ctx) {
+                                 boost::shared_ptr<MoFEM::SnesCtx> snes_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -1015,7 +1054,7 @@ PetscErrorCode DMMoFEMGetTsCtx(DM dm,
   MoFEMFunctionReturnHot(0);
 }
 
-PetscErrorCode DMMoFEMSetTsCtx(DM dm, boost::shared_ptr<MoFEM::TsCtx> &ts_ctx) {
+PetscErrorCode DMMoFEMSetTsCtx(DM dm, boost::shared_ptr<MoFEM::TsCtx> ts_ctx) {
   PetscValidHeaderSpecific(dm, DM_CLASSID, 1);
   MoFEMFunctionBeginHot;
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
@@ -1029,6 +1068,7 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, Vec *g) {
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
       dm_field->problemName, COL, g);
+  CHKERR VecSetDM(*g, dm);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1038,6 +1078,7 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm, SmartPetscObj<Vec> &g_ptr) {
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateGhost(
       dm_field->problemName, COL, g_ptr);
+  CHKERR VecSetDM(g_ptr, dm);
   MoFEMFunctionReturnHot(0);
 }
 
@@ -1047,6 +1088,7 @@ PetscErrorCode DMCreateLocalVector_MoFEM(DM dm, Vec *l) {
   DMCtx *dm_field = static_cast<DMCtx *>(dm->data);
   CHKERR dm_field->mField_ptr->getInterface<VecManager>()->vecCreateSeq(
       dm_field->problemName, COL, l);
+  CHKERR VecSetDM(*l, dm);
   MoFEMFunctionReturn(0);
 }
 
@@ -1066,6 +1108,7 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, Mat *M) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Matrix type not implemented");
   }
+  CHKERR MatSetDM(*M, dm);
   MoFEMFunctionReturn(0);
 }
 
@@ -1085,6 +1128,7 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm, SmartPetscObj<Mat> &M) {
     SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
             "Matrix type not implemented");
   }
+  CHKERR MatSetDM(M, dm);
   MoFEMFunctionReturn(0);
 }
 

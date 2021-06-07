@@ -22,6 +22,22 @@
 
 namespace MoFEM {
 
+/**
+ * @brief Wrap MPI comminitactor such that is destroyed when is out of scope
+ *
+ */
+struct WrapMPIComm {
+  WrapMPIComm(MPI_Comm comm, bool petsc);
+  ~WrapMPIComm();
+
+  inline auto get_comm() { return duplicatedComm; }
+
+private:
+  MPI_Comm comm;
+  MPI_Comm duplicatedComm;
+  bool isPetscComm;
+};
+
 // This is to have obsolete back compatibility
 struct MeshsetsManager;
 
@@ -973,7 +989,7 @@ protected:
 
   /**@{*/
 
-  mutable MPI_Comm cOmm;       ///< MoFEM communicator
+  mutable MPI_Comm mofemComm;       ///< MoFEM communicator
   mutable ParallelComm *pComm; ///< MOAB communicator structure
 
   int sIze; ///< MoFEM communicator size
@@ -982,7 +998,7 @@ protected:
   /**
    * @return return communicator
    */
-  inline MPI_Comm &get_comm() const { return cOmm; }
+  inline MPI_Comm &get_comm() const { return mofemComm; }
 
   /**
    * @return return communicator size
@@ -997,22 +1013,9 @@ protected:
   /**@}*/
 
 protected:
-  struct WrapMPIComm {
-    WrapMPIComm(MPI_Comm &comm, MPI_Comm &duplicated_comm)
-        : comm(comm), duplicatedComm(duplicated_comm) {
-      ierr = PetscCommDuplicate(comm, &duplicated_comm, NULL);
-      CHKERRABORT(comm, ierr);
-    }
-    ~WrapMPIComm() {
-      ierr = PetscCommDestroy(&duplicatedComm);
-      CHKERRABORT(comm, ierr);
-    }
 
-  private:
-    MPI_Comm &comm;
-    MPI_Comm &duplicatedComm;
-  };
-  boost::shared_ptr<WrapMPIComm> wrapMPIComm;
+  boost::shared_ptr<WrapMPIComm>
+      wrapMPIMOABComm; ///< manage creation and destruction of MOAB communicator
 
   int verbose; ///< Verbosity level
 

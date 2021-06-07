@@ -262,7 +262,7 @@ mpirun -np 2 ./elasticity \
 -my_file LShape.h5m \
 -my_order 2 \
 -ksp_type gmres \
--pc_type lu -pc_factor_mat_solver_package mumps \
+-pc_type lu -pc_factor_mat_solver_type mumps \
 -ksp_monitor
 mbconvert out_skin.h5m out_skin.vtk
 ~~~~~~
@@ -626,7 +626,7 @@ mpirun -np $NSLOTS \
 ./elasticity \
 -my_file LShape.h5m \
 -ksp_type gmres -pc_type lu \
--pc_factor_mat_solver_package mumps \
+-pc_factor_mat_solver_type mumps \
 -ksp_monitor \
 -my_order 2 2>&1 | tee log
 ~~~~~

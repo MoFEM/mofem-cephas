@@ -290,8 +290,6 @@ enum VERBOSITY_LEVELS {
 #define BITPROBLEMID_SIZE 32 ///< max number of problems
 #define BITINTERFACEUID_SIZE 32
 
-#define MYPCOMM_INDEX 0 ///< default communicator number PCOMM
-
 // This Is form MOAB
 #define MB_TYPE_WIDTH 4
 #define MB_ID_WIDTH (8 * sizeof(EntityHandle) - MB_TYPE_WIDTH)

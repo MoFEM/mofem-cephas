@@ -110,7 +110,7 @@ struct VecManager : public UnknownInterface {
                    SmartPetscObj<VecScatter> &smart_newctx) const;
 
   /**
-    * \brief create scatter for vectors form one to another problem (collective)
+    * \brief create scatter for vectors from one to another problem (collective)
     * \ingroup mofem_vectors
     *
     * \param xin vector

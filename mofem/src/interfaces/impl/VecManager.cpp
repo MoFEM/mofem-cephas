@@ -228,10 +228,10 @@ MoFEMErrorCode VecManager::setLocalGhostVector(const Problem *problem_ptr,
   int size;
   CHKERR VecGetLocalSize(V, &size);
   if (size != nb_local_dofs) {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "data inconsistency: check ghost vector, problem with nb. of "
+    SETERRQ3(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+             "data inconsistency: check ghost vector, problem <%s> with nb. of "
              "local nodes %d != %d",
-             size, nb_local_dofs);
+             problem_ptr->getName().c_str(), size, nb_local_dofs);
   }
   CHKERR VecGetLocalSize(Vlocal, &size);
   if (size != nb_local_dofs + nb_ghost_dofs) {

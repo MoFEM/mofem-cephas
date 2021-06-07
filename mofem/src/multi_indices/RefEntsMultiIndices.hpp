@@ -124,7 +124,7 @@ struct BasicEntityData {
   Tag th_RefBitLevel;
   Tag th_MeshsetPart;
   BasicEntityData(const moab::Interface &mfield,
-                  const int pcomm_id = MYPCOMM_INDEX);
+                  const int pcomm_id = MoFEM::MYPCOMM_INDEX);
   virtual ~BasicEntityData() = default;
 };
 

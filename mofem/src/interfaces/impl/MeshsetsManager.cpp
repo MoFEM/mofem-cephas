@@ -1263,9 +1263,8 @@ MoFEMErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,
 
 MoFEMErrorCode MeshsetsManager::setMeshsetFromFile() {
   Interface &m_field = cOre;
-  // moab::Interface &moab = m_field.get_moab();
   PetscBool flg_file;
-  char meshset_file_name[255];
+  char meshset_file_name[255] = "config_file.cfg";
   MoFEMFunctionBegin;
   CHKERR PetscOptionsBegin(m_field.get_comm(), "", "Set meshsets form file",
                            "none");

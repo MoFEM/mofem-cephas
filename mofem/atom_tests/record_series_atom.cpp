@@ -58,10 +58,6 @@ int main(int argc, char *argv[]) {
     const char *option;
     option = ""; //"PARALLEL=BCAST;";//;DEBUG_IO";
     CHKERR moab.load_file(mesh_file_name, 0, option);
-    CHKERRG(rval);
-    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-    if (pcomm == NULL)
-      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
     // Create MoFEM 
     // Starting from one  MoFEM::CoreTmp<1> for testing purposes

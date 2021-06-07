@@ -256,7 +256,7 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
       ss << "add entities to field " << name;
       ss << " nb. add ents " << ents.size();
       ss << std::endl;
-      PetscSynchronizedPrintf(cOmm, ss.str().c_str());
+      PetscSynchronizedPrintf(mofemComm, ss.str().c_str());
     }
     break;
   case H1:
@@ -309,8 +309,8 @@ MoFEMErrorCode Core::addEntsToFieldByDim(const Range &ents, const int dim,
     ss << " nb. add edges " << nb_ents_on_dim[1];
     ss << " nb. add nodes " << nb_ents_on_dim[0];
     ss << std::endl;
-    PetscSynchronizedPrintf(cOmm, ss.str().c_str());
-    PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+    PetscSynchronizedPrintf(mofemComm, ss.str().c_str());
+    PetscSynchronizedFlush(mofemComm, PETSC_STDOUT);
   }
   MoFEMFunctionReturn(0);
 }
@@ -793,7 +793,7 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
         "SYNC", Sev::noisy,
         "nb. of entities in field <%s> for which order set %d (order %d)",
         field_ptr->getName().c_str(), nb_ents_set_order_new, order);
-    MOFEM_LOG_SYNCHRONISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(mofemComm);
   }
 
   if (verb > QUIET) {
@@ -841,12 +841,12 @@ MoFEMErrorCode Core::set_field_order(const EntityHandle meshset,
   Range ents;
   CHKERR get_moab().get_entities_by_type(meshset, type, ents);
   if (verb > VERBOSE) {
-    PetscSynchronizedPrintf(cOmm, "nb. of ents for order change %d\n",
+    PetscSynchronizedPrintf(mofemComm, "nb. of ents for order change %d\n",
                             ents.size());
   }
   CHKERR this->set_field_order(ents, id, order, verb);
   if (verb > VERBOSE) {
-    PetscSynchronizedFlush(cOmm, PETSC_STDOUT);
+    PetscSynchronizedFlush(mofemComm, PETSC_STDOUT);
   }
   MoFEMFunctionReturn(0);
 }
@@ -997,7 +997,7 @@ Core::buildFieldForNoFieldImpl(boost::shared_ptr<Field> field_ptr,
         FieldEntity::getHiBitNumberUId(field_ptr->getBitNumber()));
     for (; lo_dof != hi_dof; lo_dof++)
       MOFEM_LOG("SYNC", Sev::noisy) << **lo_dof;
-    MOFEM_LOG_SYNCHRONISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(mofemComm);
   }
 
   MoFEMFunctionReturn(0);
@@ -1236,7 +1236,7 @@ MoFEMErrorCode Core::build_field(const std::string field_name, int verb) {
 
   CHKERR this->buildField(*field_it, verb);
   if (verb > QUIET)
-    MOFEM_LOG_SYNCHRONISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(mofemComm);
   MoFEMFunctionReturn(0);
 }
 
@@ -1251,7 +1251,7 @@ MoFEMErrorCode Core::build_fields(int verb) {
   *buildMoFEM = 1 << 0;
   if (verb > QUIET) {
     MOFEM_LOG("SYNC", Sev::inform) << "Number of dofs " << dofsField.size();
-    MOFEM_LOG_SYNCHRONISE(cOmm);
+    MOFEM_LOG_SYNCHRONISE(mofemComm);
   }
 
   MoFEMFunctionReturn(0);
@@ -1268,7 +1268,7 @@ Core::list_dofs_by_field_name(const std::string &field_name) const {
   for (; dit != hi_dit; dit++)
     MOFEM_LOG("SYNC", Sev::inform) << *dit;
 
-  MOFEM_LOG_SYNCHRONISE(cOmm);
+  MOFEM_LOG_SYNCHRONISE(mofemComm);
   MoFEMFunctionReturn(0);
 }
 
@@ -1278,7 +1278,7 @@ MoFEMErrorCode Core::list_fields() const {
   for (auto &miit : fIelds.get<BitFieldId_mi_tag>())
     MOFEM_LOG("SYNC", Sev::inform) << *miit;
 
-  MOFEM_LOG_SYNCHRONISE(cOmm);
+  MOFEM_LOG_SYNCHRONISE(mofemComm);
   MoFEMFunctionReturn(0);
 }
 

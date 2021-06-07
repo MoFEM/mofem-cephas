@@ -536,7 +536,7 @@ DMMoFEMGetKspCtx(DM dm, const boost::shared_ptr<MoFEM::KspCtx> &ksp_ctx);
  * \ingroup dm
  */
 PetscErrorCode DMMoFEMSetKspCtx(DM dm,
-                                boost::shared_ptr<MoFEM::KspCtx> &ksp_ctx);
+                                boost::shared_ptr<MoFEM::KspCtx> ksp_ctx);
 
 /**
  * \brief get MoFEM::SnesCtx data structure
@@ -557,7 +557,7 @@ DMMoFEMGetSnesCtx(DM dm, const boost::shared_ptr<MoFEM::SnesCtx> &snes_ctx);
 
   */
 PetscErrorCode DMMoFEMSetSnesCtx(DM dm,
-                                 boost::shared_ptr<MoFEM::SnesCtx> &snes_ctx);
+                                 boost::shared_ptr<MoFEM::SnesCtx> snes_ctx);
 
 /**
  * \brief get MoFEM::TsCtx data structure
@@ -580,7 +580,7 @@ PetscErrorCode DMMoFEMGetTsCtx(DM dm,
   when is destroyed.
 
   */
-PetscErrorCode DMMoFEMSetTsCtx(DM dm, boost::shared_ptr<MoFEM::TsCtx> &ts_ctx);
+PetscErrorCode DMMoFEMSetTsCtx(DM dm, boost::shared_ptr<MoFEM::TsCtx> ts_ctx);
 
 /** sets if read mesh is partitioned
  * \ingroup dm
