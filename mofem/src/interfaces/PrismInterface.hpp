@@ -65,6 +65,28 @@ struct PrismInterface : public UnknownInterface {
                           const BitRefLevel mesh_bit_level,
                           const bool recursive, int verb = QUIET);
 
+  /** 
+   * \brief Store tetrahedra from each side of the interface 
+   * separately in two child meshsets of the parent meshset
+   *
+   * Additional third child meshset contains nodes which can be split
+   * and skin edges
+   *
+   * \param msId Id of meshset
+   * \param cubit_bc_type type of meshset (NODESET, SIDESET or BLOCKSET and
+   * more)
+   * \param mesh_bit_level interface is added on this bit level
+   * \param seed_side use seed to decide which side to choose first
+   * \param recursive if true parent meshset is searched recursively
+   * \param  verb verbosity level
+   * 
+   * \note if bit_level == BitRefLevel.set() then interface will be added 
+   * on all bit levels
+   */
+  MoFEMErrorCode getSides(const int msId, const CubitBCType cubit_bc_type,
+                          const BitRefLevel mesh_bit_level, Range seed_side,
+                          const bool recursive, int verb = QUIET);
+
   /**
    * \brief Store tetrahedra from each side of the interface
    * in two child meshsets of the parent meshset
@@ -90,6 +112,34 @@ struct PrismInterface : public UnknownInterface {
    */
   MoFEMErrorCode getSides(const EntityHandle sideset,
                           const BitRefLevel mesh_bit_level,
+                          const bool recursive, int verb = QUIET);
+
+/**
+   * \brief Store tetrahedra from each side of the interface
+   * in two child meshsets of the parent meshset
+   *
+   * Additional third child meshset contains nodes which can be split
+   * and skin edges
+   *
+   * \param sideset parent meshset with the surface
+   * \param mesh_bit_level interface is added on this bit level
+   * \param seed_side use seed to decide which side to choose first
+   * \param recursive if true parent meshset is searched recursively
+   * \param  verb verbosity level
+   *
+   * \note if bit_level == BitRefLevel.set() then interface will be added
+   * on all bit levels
+   *
+   * 1. Get tets adjacent to nodes of the interface meshset.
+   * 2. Take skin faces from these tets and get edges from that skin.
+   * 3. Take skin from triangles of the interface.
+   * 4. Subtract edges of skin faces from skin of triangles in order to get
+   * edges in the volume of the body, and not on the interface boundary.
+   * 5. Iterate between all triangles of the interface and find adjacent tets
+   * on each side of the interface
+   */
+  MoFEMErrorCode getSides(const EntityHandle sideset,
+                          const BitRefLevel mesh_bit_level, Range seed_side,
                           const bool recursive, int verb = QUIET);
 
   /**

@@ -50,7 +50,8 @@ PrismInterface::PrismInterface(const Core &core)
 MoFEMErrorCode PrismInterface::getSides(const int msId,
                                         const CubitBCType cubit_bc_type,
                                         const BitRefLevel mesh_bit_level,
-                                        const bool recursive, int verb) {
+                                        Range seed_side, const bool recursive,
+                                        int verb) {
 
   Interface &m_field = cOre;
   MeshsetsManager *meshsets_manager_ptr;
@@ -71,9 +72,18 @@ MoFEMErrorCode PrismInterface::getSides(const int msId,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
+MoFEMErrorCode PrismInterface::getSides(const int msId,
+                                        const CubitBCType cubit_bc_type,
                                         const BitRefLevel mesh_bit_level,
                                         const bool recursive, int verb) {
+  return getSides(msId, cubit_bc_type, mesh_bit_level, Range(), recursive,
+                  verb);
+}
+
+MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
+                                        const BitRefLevel mesh_bit_level,
+                                        Range seed_side, const bool recursive,
+                                        int verb) {
   Interface &m_field = cOre;
   moab::Interface &moab = m_field.get_moab();
   Skinner skin(&moab);
@@ -252,6 +262,8 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
 
   auto find_tetrahedrons_on_the_side = [&]() {
     auto seed = intersect(get_adj(triangles, 3), ents3d);
+    if(!seed_side.empty())
+      seed = intersect(seed, seed_side);
     Range side_ents3d;
     if (!seed.empty())
       side_ents3d.insert(seed[0]);
@@ -389,6 +401,12 @@ MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
   }
 
   MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode PrismInterface::getSides(const EntityHandle sideset,
+                                        const BitRefLevel mesh_bit_level,
+                                        const bool recursive, int verb) {
+  return getSides(sideset, mesh_bit_level, Range(), recursive, verb);
 }
 
 MoFEMErrorCode PrismInterface::findFacesWithThreeNodesOnInternalSurfaceSkin(
