@@ -75,9 +75,12 @@ int main(int argc, char *argv[]) {
     const char *option;
     option = ""; //"PARALLEL=BCAST;";//;DEBUG_IO";
     CHKERR moab.load_file(mesh_file_name, 0, option);
-    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-    if (pcomm == NULL)
-      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+
+    // ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+    // auto moab_comm_wrap =
+    //     boost::make_shared<WrapMPIComm>(PETSC_COMM_WORLD, false);
+    // if (pcomm == NULL)
+    //   pcomm = new ParallelComm(&moab, moab_comm_wrap->get_comm());
 
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
