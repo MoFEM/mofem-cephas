@@ -1,3 +1,21 @@
+### MoFEM v0.12.0
+
+- Higher order geometry operator for volume
+- New FTensor functions and operators
+- Extensions of Form integrators
+- Newton-Cotes integration rule for tets
+- MoFEM webpage major update
+- Fixes for installation pages and installations scripts
+- Add L2 base for AINSWORTH_BERNSTEIN_BEZIER_BASE on tets
+- Generalise approximation test to work on faces and volumes
+- Add series of tests for approximation on tets for H1 and L2 spaces
+- Improvements in MPI communicators
+- Fixes for PETSc 3.14.0
+- Improvements in error messaging
+- Other fixes
+
+----
+
 ### MoFEM v0.11.0
 
 - Added functionality for matrix functions and their derivatives
