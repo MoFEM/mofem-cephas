@@ -282,6 +282,8 @@ enum VERBOSITY_LEVELS {
   VERY_NOISY
 };
 
+#define MYPCOMM_INDEX 0 ///< default communicator number PCOMM
+
 #define MAX_CORE_TMP 1       ///< maximal number of cores
 #define BITREFEDGES_SIZE 6   ///< number of edges on tetrahedral
 #define BITREFLEVEL_SIZE 128 ///< max number of refinements

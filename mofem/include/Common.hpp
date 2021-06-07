@@ -20,10 +20,8 @@
 
 namespace MoFEM {
 
-inline constexpr EntityHandle no_handle =
+const EntityHandle no_handle =
     0; ///< No entity handle is indicated by zero handle, i.e. root meshset
-
-inline constexpr int MYPCOMM_INDEX = 0; ///< default communicator number PCOMM
 
 } // namespace MoFEM
 
