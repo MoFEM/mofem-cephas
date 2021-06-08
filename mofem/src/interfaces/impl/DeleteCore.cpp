@@ -27,7 +27,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-*/
+ */
 
 #include <MoFEM.hpp>
 
@@ -56,7 +56,8 @@ MoFEMErrorCode Core::clear_inactive_dofs(int verb) {
 }
 
 MoFEMErrorCode Core::clear_dofs_fields_by_bit_ref(const BitRefLevel bit,
-                                       const BitRefLevel mask, int verb) {
+                                                  const BitRefLevel mask,
+                                                  int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
     verb = verbose;
@@ -73,7 +74,7 @@ MoFEMErrorCode Core::clear_dofs_fields(const Range ents, int verb) {
 
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
-    EntityHandle first  = p_eit->first;
+    EntityHandle first = p_eit->first;
     EntityHandle second = p_eit->second;
     // get dofs range
     DofEntityByEnt::iterator dit, hi_dit;
@@ -82,13 +83,13 @@ MoFEMErrorCode Core::clear_dofs_fields(const Range ents, int verb) {
       continue;
     hi_dit = dofsField.get<Ent_mi_tag>().upper_bound(second);
     // finally clear dofs
-    dofsField.get<Ent_mi_tag>().erase(dit,hi_dit);
+    dofsField.get<Ent_mi_tag>().erase(dit, hi_dit);
   }
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode Core::clear_dofs_fields(const std::string name,
-                                       const Range ents, int verb) {
+MoFEMErrorCode Core::clear_dofs_fields(const std::string name, const Range ents,
+                                       int verb) {
   MoFEMFunctionBeginHot;
   if (verb == -1)
     verb = verbose;
@@ -97,12 +98,10 @@ MoFEMErrorCode Core::clear_dofs_fields(const std::string name,
 
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
-    const auto first  = p_eit->first;
+    const auto first = p_eit->first;
     const auto second = p_eit->second;
-    const auto lo_uid =
-        DofEntity::getLoFieldEntityUId(bit_number, first);
-    const auto hi_uid =
-        DofEntity::getHiFieldEntityUId(bit_number, second);
+    const auto lo_uid = DofEntity::getLoFieldEntityUId(bit_number, first);
+    const auto hi_uid = DofEntity::getHiFieldEntityUId(bit_number, second);
     auto dit = dofsField.get<Unique_mi_tag>().lower_bound(lo_uid);
     auto hi_dit = dofsField.get<Unique_mi_tag>().upper_bound(hi_uid);
     dofsField.get<Unique_mi_tag>().erase(dit, hi_dit);
@@ -111,7 +110,8 @@ MoFEMErrorCode Core::clear_dofs_fields(const std::string name,
 }
 
 MoFEMErrorCode Core::clear_ents_fields_by_bit_ref(const BitRefLevel bit,
-                                       const BitRefLevel mask, int verb) {
+                                                  const BitRefLevel mask,
+                                                  int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -131,7 +131,7 @@ MoFEMErrorCode Core::clear_ents_fields(const Range ents, int verb) {
   CHKERR clear_adjacencies_entities(ents, verb);
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
-    EntityHandle first  = p_eit->first;
+    EntityHandle first = p_eit->first;
     EntityHandle second = p_eit->second;
     FieldEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit, hi_dit;
     dit = entsFields.get<Ent_mi_tag>().lower_bound(first);
@@ -141,8 +141,8 @@ MoFEMErrorCode Core::clear_ents_fields(const Range ents, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode Core::clear_ents_fields(const std::string name,
-                                       const Range ents, int verb) {
+MoFEMErrorCode Core::clear_ents_fields(const std::string name, const Range ents,
+                                       int verb) {
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -229,7 +229,7 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const Range ents, int verb) {
     verb = verbose;
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); ++p_eit) {
-    const EntityHandle first  = p_eit->first;
+    const EntityHandle first = p_eit->first;
     const EntityHandle second = p_eit->second;
     FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<
         Ent_mi_tag>::type::iterator ait,
@@ -247,8 +247,8 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string name,
   if (verb == -1)
     verb = verbose;
 
-  const Field *field_ptr   = get_field_structure(name);
-  int field_bit_number     = field_ptr->getBitNumber();
+  const Field *field_ptr = get_field_structure(name);
+  int field_bit_number = field_ptr->getBitNumber();
   ParallelComm *pcomm =
       ParallelComm::get_pcomm(&get_moab(), basicEntityDataPtr->pcommID);
 
@@ -256,7 +256,7 @@ MoFEMErrorCode Core::clear_adjacencies_entities(const std::string name,
        p_eit != ents.pair_end(); p_eit++) {
 
     // First and last handle
-    const EntityHandle first  = p_eit->first;
+    const EntityHandle first = p_eit->first;
     const EntityHandle second = p_eit->second;
 
     // Get UId
@@ -310,7 +310,7 @@ MoFEMErrorCode Core::clear_finite_elements(const std::string name,
   CHKERR clear_adjacencies_finite_elements(name, ents, verb);
   for (Range::const_pair_iterator p_eit = ents.pair_begin();
        p_eit != ents.pair_end(); p_eit++) {
-    EntityHandle first  = p_eit->first;
+    EntityHandle first = p_eit->first;
     EntityHandle second = p_eit->second;
     EntFiniteElement_multiIndex::index<
         Composite_Name_And_Ent_mi_tag>::type::iterator fit,
@@ -330,9 +330,9 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const BitRefLevel bit,
                                                        const BitRefLevel mask,
                                                        int verb) {
   MoFEMFunctionBegin;
-  Range ents;                                                       
+  Range ents;
   CHKERR BitRefManager(*this).getEntitiesByRefLevel(bit, mask, ents, verb);
-  CHKERR clear_adjacencies_finite_elements(ents,verb);
+  CHKERR clear_adjacencies_finite_elements(ents, verb);
   MoFEMFunctionReturn(0);
 }
 
@@ -372,7 +372,7 @@ MoFEMErrorCode Core::clear_adjacencies_finite_elements(const std::string name,
          p_eit != ents.pair_end(); p_eit++) {
 
       // First and last handle
-      const EntityHandle first  = p_eit->first;
+      const EntityHandle first = p_eit->first;
       const EntityHandle second = p_eit->second;
 
       // Get UId
@@ -437,14 +437,14 @@ MoFEMErrorCode Core::remove_ents_from_finite_element_by_bit_ref(
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  Range ents;                                                       
+  Range ents;
   CHKERR BitRefManager(*this).getEntitiesByRefLevel(bit, mask, ents, verb);
-  CHKERR remove_ents_from_finite_element(ents,verb);
+  CHKERR remove_ents_from_finite_element(ents, verb);
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::remove_ents(const Range ents, int verb) {
-   MoFEMFunctionBegin;
+  MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
   CHKERR remove_ents_from_finite_element(ents, verb);
@@ -463,10 +463,9 @@ MoFEMErrorCode Core::remove_ents(const Range ents, int verb) {
     rit = refinedEntities.get<Ent_mi_tag>().lower_bound(p_eit->first);
     hi_rit = refinedEntities.get<Ent_mi_tag>().upper_bound(p_eit->second);
     refinedEntities.get<Ent_mi_tag>().erase(rit, hi_rit);
-
   }
 
-  MoFEMFunctionReturn(0); 
+  MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel bit,
@@ -474,7 +473,7 @@ MoFEMErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel bit,
   MoFEMFunctionBegin;
   if (verb == -1)
     verb = verbose;
-  Range ents;                                                       
+  Range ents;
   CHKERR BitRefManager(*this).getEntitiesByRefLevel(bit, mask, ents, verb);
   CHKERR remove_ents(ents, verb);
   MoFEMFunctionReturn(0);
@@ -494,7 +493,7 @@ MoFEMErrorCode Core::remove_parents_by_bit_ref(const BitRefLevel bit,
 
 MoFEMErrorCode Core::remove_parents_by_ents(const Range &ents, int verb) {
   MoFEMFunctionBegin;
-  
+
   std::vector<EntityHandle> leftovers_ents;
   leftovers_ents.reserve(ents.size());
 
@@ -558,10 +557,18 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
   if (verb == -1)
     verb = verbose;
 
-  Range ents;                                                       
+  Range ents;
   CHKERR BitRefManager(*this).getEntitiesByRefLevel(bit, mask, ents, verb);
   Range ents_meshsets = ents.subset_by_type(MBENTITYSET);
-  ents = subtract(ents,ents_meshsets);
+  ents = subtract(ents, ents_meshsets);
+  if(ents.empty()) {
+    if (verb >= VERBOSE)
+      MOFEM_LOG("WORLD", Sev::verbose) << "Nb. of deleted entities 0";
+    MoFEMFunctionReturnHot(0);
+  }
+
+  if (verb >= VERBOSE)
+    MOFEM_LOG("WORLD", Sev::noisy) << "Deleted ents:\n" << ents;
 
   CHKERR remove_ents(ents, verb);
 
@@ -577,8 +584,8 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
   }
 
   rval = get_moab().delete_entities(ents);
-  if(rval != MB_SUCCESS) {
-    if(verb >= VERY_VERBOSE) {
+  if (rval != MB_SUCCESS) {
+    if (verb >= VERY_VERBOSE) {
       for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
         try {
           RefEntity ref_ent(basicEntityDataPtr, *eit);
@@ -591,7 +598,7 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
     }
     EntityHandle out_meshset;
     CHKERR get_moab().create_meshset(MESHSET_SET, out_meshset);
-    CHKERR get_moab().add_entities(out_meshset,ents);
+    CHKERR get_moab().add_entities(out_meshset, ents);
     CHKERR get_moab().write_file("error.vtk", "VTK", "", &out_meshset, 1);
     THROW_MESSAGE("Can not delete entities from MoAB database (see error.vtk)");
   }
@@ -639,4 +646,4 @@ MoFEMErrorCode Core::delete_field(const std::string name, int verb) {
   CHKERR get_moab().delete_entities(&meshset, 1);
   MoFEMFunctionReturn(0);
 }
-}
+} // namespace MoFEM
