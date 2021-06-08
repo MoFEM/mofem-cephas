@@ -639,6 +639,16 @@ struct BitRefManager : public UnknownInterface {
                                                  const char *options);
 
   /**@}*/
+
+
+  /** \name Get tag handles to data on the mesh */
+
+  /**@{*/
+
+  inline Tag get_th_RefBitLevel() const { return cOre.get_th_RefBitLevel(); }
+
+  /**@}*/
+
 };
 } // namespace MoFEM
 
