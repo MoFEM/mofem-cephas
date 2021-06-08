@@ -1249,6 +1249,27 @@ inline MoFEMErrorCode reconstructMultiIndex(const MI &mi,
   MoFEMFunctionReturn(0);
 }
 
+struct TempMeshset {
+  TempMeshset(moab::Interface &moab) : moab(moab) {
+    rval = moab.create_meshset(MESHSET_SET, meshset);
+    MOAB_THROW(rval);
+  }
+  virtual ~TempMeshset() { delete_meshset(); }
+  operator EntityHandle() { return meshset; }
+
+private:
+  void delete_meshset() {
+    rval = moab.delete_entities(&meshset, 1);
+    MOAB_THROW(rval);
+  }
+  EntityHandle meshset;
+  moab::Interface &moab;
+};
+
+auto get_temp_meshset_ptr = [](moab::Interface &moab) {
+  return boost::make_shared<TempMeshset>(moab);
+};
+
 } // namespace MoFEM
 
 #endif //__TEMPLATES_HPP__
