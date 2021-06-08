@@ -308,10 +308,10 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
       Tag gid_tag;
       rval = m_field.get_moab().tag_get_handle(GLOBAL_ID_TAG_NAME, gid_tag);
       if (rval != MB_SUCCESS) {
-        const int zero = 0;
+        const int negone = -1;
         CHKERR m_field.get_moab().tag_get_handle(
             GLOBAL_ID_TAG_NAME, 1, MB_TYPE_INTEGER, gid_tag,
-            MB_TAG_DENSE | MB_TAG_CREAT, &zero);
+            MB_TAG_DENSE | MB_TAG_CREAT, &negone);
       }
       return gid_tag;
     };
