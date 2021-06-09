@@ -79,7 +79,7 @@ void FieldEntity_change_order::operator()(FieldEntity *e) {
   int tag_field_data_size = 0;
 
   auto set_verts = [&]() {
-    if (e->getFieldRawPtr()->th_FieldDataVertsType == MB_TAG_SPARSE) {
+    if (e->getFieldRawPtr()->tagFieldDataVertsType == MB_TAG_SPARSE) {
       // Get pointer and size of field values tag
       rval = moab.tag_get_by_ptr(e->getFieldRawPtr()->th_FieldDataVerts, &ent,
                                  1, (const void **)&tag_field_data,

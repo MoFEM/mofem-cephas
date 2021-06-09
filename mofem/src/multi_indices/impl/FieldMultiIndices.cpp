@@ -69,7 +69,7 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset)
     CHKERR moab.tag_get_handle(tag_data_name.c_str(), th_FieldData);
     std::string tag_data_name_verts = name_data_prefix + getName() + "V";
     CHKERR moab.tag_get_handle(tag_data_name_verts.c_str(), th_FieldDataVerts);
-    CHKERR moab.tag_get_type(th_FieldDataVerts, th_FieldDataVertsType);
+    CHKERR moab.tag_get_type(th_FieldDataVerts, tagFieldDataVertsType);
     // order
     std::string tag_approximation_order_name = "_App_Order_" + getName();
     CHKERR moab.tag_get_handle(tag_approximation_order_name.c_str(),
