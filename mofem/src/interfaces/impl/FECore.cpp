@@ -64,7 +64,13 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
   CHKERR get_moab().create_meshset(MESHSET_SET, meshset);
 
   // id
-  BitFEId id = getFEShift();
+  int fe_shift = 0;
+  for (; finiteElements.get<BitFEId_mi_tag>().find(BitFEId().set(fe_shift)) !=
+         finiteElements.get<BitFEId_mi_tag>().end();
+       ++fe_shift) {
+  }
+
+  auto id = BitFEId().set(fe_shift);
   CHKERR get_moab().tag_set_data(th_FEId, &meshset, 1, &id);
 
   // Add finite element meshset to partion meshset. In case of no elements

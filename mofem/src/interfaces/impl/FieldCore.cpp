@@ -152,7 +152,18 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
     CHKERR add_meshset_to_partition(meshset);
 
     // id
-    BitFieldId id = getFieldShift();
+    int field_shift = 0;
+    for (;
+         fIelds.get<BitFieldId_mi_tag>().find(BitFieldId().set(field_shift)) !=
+         fIelds.get<BitFieldId_mi_tag>().end();
+         ++field_shift) {
+      if (field_shift == BITFEID_SIZE)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+                "Maximal number of fields exceeded");
+    }
+
+
+    auto id = BitFieldId().set(field_shift);
 
     auto create_tags = [&]() {
       MoFEMFunctionBegin;
