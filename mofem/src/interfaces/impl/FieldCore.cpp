@@ -170,6 +170,8 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
       CHKERR get_moab().tag_set_by_ptr(th_FieldName, &meshset, 1, tag_data,
                                        tag_sizes);
       // name data prefix
+      // FIXME: Should be "_App_Data_". That change will make older restart
+      // files incompatible
       const std::string name_data_prefix("_App_Data");
       void const *tag_prefix_data[] = {name_data_prefix.c_str()};
       int tag_prefix_sizes[1];
