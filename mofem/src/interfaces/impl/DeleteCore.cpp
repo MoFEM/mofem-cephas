@@ -593,14 +593,17 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
               << "Error: " << RefEntity(basicEntityDataPtr, *eit) << " "
               << ref_ent.getBitRefLevel();
         } catch (std::exception const &ex) {
+          MOFEM_LOG("WORLD", Sev::error) << "Can not print ref entity";
         }
       };
     }
-    EntityHandle out_meshset;
-    CHKERR get_moab().create_meshset(MESHSET_SET, out_meshset);
-    CHKERR get_moab().add_entities(out_meshset, ents);
-    CHKERR get_moab().write_file("error.vtk", "VTK", "", &out_meshset, 1);
-    THROW_MESSAGE("Can not delete entities from MoAB database (see error.vtk)");
+    if (verb >= VERY_NOISY) {
+      auto tmp_meshset_ptr = get_temp_meshset_ptr(get_moab());
+      CHKERR get_moab().add_entities(*tmp_meshset_ptr, ents);
+      CHKERR get_moab().write_file("error.vtk", "VTK", "",
+                                   tmp_meshset_ptr->get_ptr(), 1);
+    }
+    MOAB_THROW(rval);
   }
 
   if (verb >= VERBOSE)
