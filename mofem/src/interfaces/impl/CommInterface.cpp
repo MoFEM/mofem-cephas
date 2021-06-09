@@ -235,14 +235,7 @@ MoFEMErrorCode CommInterface::resolveSharedFiniteElements(
   std::vector<int> shprocs(MAX_SHARING_PROCS, 0);
   std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, 0);
   Range ents;
-  Tag th_gid;
-  rval = m_field.get_moab().tag_get_handle(GLOBAL_ID_TAG_NAME, th_gid);
-  if (rval != MB_SUCCESS) {
-    const int negone = -1;
-    CHKERR m_field.get_moab().tag_get_handle(
-        GLOBAL_ID_TAG_NAME, 1, MB_TYPE_INTEGER, th_gid,
-        MB_TAG_DENSE | MB_TAG_CREAT, &negone);
-  }
+  Tag th_gid = m_field.get_moab().globalId_tag();
   PetscLayout layout;
   CHKERR problem_ptr->getNumberOfElementsByNameAndPart(m_field.get_comm(),
                                                        fe_name, &layout);
@@ -334,15 +327,7 @@ CommInterface::makeEntitiesMultishared(const EntityHandle *entities,
     all_ents_range.insert_list(entities, entities + num_entities);
 
     auto get_tag = [&]() {
-      Tag th_gid;
-      rval = m_field.get_moab().tag_get_handle(GLOBAL_ID_TAG_NAME, th_gid);
-      if (rval != MB_SUCCESS) {
-        const int negone = -1;
-        CHKERR m_field.get_moab().tag_get_handle(
-            GLOBAL_ID_TAG_NAME, 1, MB_TYPE_INTEGER, th_gid,
-            MB_TAG_DENSE | MB_TAG_CREAT, &negone);
-      }
-      return th_gid;
+      return m_field.get_moab().globalId_tag();;
     };
 
     auto delete_tag = [&](auto &&th_gid) {

@@ -304,18 +304,7 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
         &m_field.get_moab(), m_field.get_basic_entity_data_ptr()->pcommID);
     Tag part_tag = pcomm->part_tag();
     CHKERR m_field.get_moab().tag_set_data(part_tag, ents, part_number);
-    auto get_gid_tag = [&]() {
-      Tag gid_tag;
-      rval = m_field.get_moab().tag_get_handle(GLOBAL_ID_TAG_NAME, gid_tag);
-      if (rval != MB_SUCCESS) {
-        const int negone = -1;
-        CHKERR m_field.get_moab().tag_get_handle(
-            GLOBAL_ID_TAG_NAME, 1, MB_TYPE_INTEGER, gid_tag,
-            MB_TAG_DENSE | MB_TAG_CREAT, &negone);
-      }
-      return gid_tag;
-    };
-    Tag gid_tag = get_gid_tag();
+    Tag gid_tag = m_field.get_moab().globalId_tag();
 
     std::map<int, Range> parts_ents;
     {
