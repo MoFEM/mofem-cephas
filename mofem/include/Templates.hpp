@@ -1256,6 +1256,7 @@ struct TempMeshset {
   }
   virtual ~TempMeshset() { delete_meshset(); }
   operator EntityHandle() { return meshset; }
+  auto get_ptr() { return &meshset; }
 
 private:
   void delete_meshset() {
