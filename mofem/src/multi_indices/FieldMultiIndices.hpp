@@ -68,7 +68,7 @@ struct Field {
    *
    * \param meshset which keeps entities for this field
    */
-  Field(const moab::Interface &moab, const EntityHandle meshset);
+  Field(moab::Interface &moab, const EntityHandle meshset);
 
   virtual ~Field() = default;
 

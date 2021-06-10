@@ -26,9 +26,9 @@ const bool PetscGlobalIdx_mi_tag::IamNotPartitioned = false;
 const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 
 // fields
-Field::Field(const moab::Interface &moab, const EntityHandle meshset)
-    : moab(const_cast<moab::Interface &>(moab)), meshSet(meshset), tagId(NULL),
-      tagSpaceData(NULL), tagNbCoeffData(NULL), tagName(NULL), tagNameSize(0) {
+Field::Field(moab::Interface &moab, const EntityHandle meshset)
+    : moab(moab), meshSet(meshset), tagId(NULL), tagSpaceData(NULL),
+      tagNbCoeffData(NULL), tagName(NULL), tagNameSize(0) {
 
   auto get_tag_data_ptr = [&](const auto name, auto &tag_data) {
     MoFEMFunctionBegin;
@@ -64,22 +64,54 @@ Field::Field(const moab::Interface &moab, const EntityHandle meshset)
                                (const void **)&tagNamePrefixData,
                                &tagNamePrefixSize);
     std::string name_data_prefix((char *)tagNamePrefixData, tagNamePrefixSize);
-    // data
-    std::string tag_data_name = name_data_prefix + getName();
-    CHKERR moab.tag_get_handle(tag_data_name.c_str(), th_FieldData);
-    std::string tag_data_name_verts = name_data_prefix + getName() + "V";
-    CHKERR moab.tag_get_handle(tag_data_name_verts.c_str(), th_FieldDataVerts);
-    CHKERR moab.tag_get_type(th_FieldDataVerts, tagFieldDataVertsType);
-    // order
-    std::string tag_approximation_order_name = "_App_Order_" + getName();
-    CHKERR moab.tag_get_handle(tag_approximation_order_name.c_str(),
-                               th_AppOrder);
+
     // rank
     Tag th_rank;
     std::string Tag_rank_name = "_Field_Rank_" + getName();
     CHKERR moab.tag_get_handle(Tag_rank_name.c_str(), th_rank);
     CHKERR moab.tag_get_by_ptr(th_rank, &meshSet, 1,
                                (const void **)&tagNbCoeffData);
+
+    // order
+    ApproximationOrder def_approx_order = -1;
+    std::string tag_approximation_order_name = "_App_Order_" + getName();
+    rval = moab.tag_get_handle(tag_approximation_order_name.c_str(), 1,
+                               MB_TYPE_INTEGER, th_AppOrder,
+                               MB_TAG_CREAT | MB_TAG_SPARSE, &def_approx_order);
+    if (rval == MB_ALREADY_ALLOCATED)
+      rval = MB_SUCCESS;
+    MOAB_THROW(rval);
+
+    // data
+    std::string tag_data_name = name_data_prefix + getName();
+    const int def_len = 0;
+    rval = moab.tag_get_handle(
+        tag_data_name.c_str(), def_len, MB_TYPE_DOUBLE, th_FieldData,
+        MB_TAG_CREAT | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
+    if (rval == MB_ALREADY_ALLOCATED)
+      rval = MB_SUCCESS;
+    MOAB_THROW(rval);	
+
+    std::string tag_data_name_verts = name_data_prefix + getName() + "V";
+    rval = moab.tag_get_handle(tag_data_name_verts.c_str(), th_FieldDataVerts);
+    if (rval == MB_SUCCESS)
+      CHKERR moab.tag_get_type(th_FieldDataVerts, tagFieldDataVertsType);
+    else {
+      // Since vertex tag is not it mesh that tag is not dense, it is sparse,
+      // sinc it is set to all vertices on the mesh. Is unlikely that mesh has
+      // no vertices, then above assumption does not hold.
+      tagFieldDataVertsType = MB_TAG_SPARSE;
+      VectorDouble def_vert_data(*tagNbCoeffData);
+      def_vert_data.clear();
+      rval = moab.tag_get_handle(tag_data_name_verts.c_str(), *tagNbCoeffData,
+                                 MB_TYPE_DOUBLE, th_FieldDataVerts,
+                                 MB_TAG_CREAT | tagFieldDataVertsType,
+                                 &*def_vert_data.begin());
+      if (rval == MB_ALREADY_ALLOCATED)
+        rval = MB_SUCCESS;
+      MOAB_THROW(rval);
+    }
+
     MoFEMFunctionReturn(0);
   };
 
