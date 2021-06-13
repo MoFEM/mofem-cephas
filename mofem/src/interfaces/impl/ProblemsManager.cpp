@@ -386,7 +386,6 @@ MoFEMErrorCode ProblemsManager::partitionMesh(
         int gid = 1; // moab indexing from 1
         for (int pp = 0; pp != n_parts; pp++) {
           Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
-          // std::endl;
           for (Range::iterator eit = dim_ents.begin(); eit != dim_ents.end();
                eit++) {
             if (dd > 0) {
