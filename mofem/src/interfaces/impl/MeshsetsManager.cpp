@@ -28,6 +28,8 @@ namespace po = boost::program_options;
 
 namespace MoFEM {
 
+bool MeshsetsManager::brodcastMeshsets = true;
+
 MoFEMErrorCode
 MeshsetsManager::query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const {
@@ -76,7 +78,8 @@ MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
   CHKERR readMeshsets(VERBOSE);
-  CHKERR broadcastMeshsets(VERBOSE);
+  if (brodcastMeshsets)
+    CHKERR broadcastMeshsets(VERBOSE);
 
   for (auto &m : cubitMeshsets) {
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << m;
@@ -121,7 +124,8 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
 
  ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
   if (pcomm == NULL)
-    pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "MOAB communicator not set");
 
   const double coords[] = {0, 0, 0};
 
