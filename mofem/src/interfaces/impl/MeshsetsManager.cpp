@@ -77,9 +77,9 @@ MoFEMErrorCode MeshsetsManager::clearMap() {
 MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
-  CHKERR readMeshsets(VERBOSE);
+  CHKERR readMeshsets(verb);
   if (brodcastMeshsets)
-    CHKERR broadcastMeshsets(VERBOSE);
+    CHKERR broadcastMeshsets(verb);
 
   for (auto &m : cubitMeshsets) {
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << m;
@@ -103,15 +103,8 @@ MoFEMErrorCode MeshsetsManager::readMeshsets(int verb) {
       if (!p.second)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "meshset not inserted");
-
-      if (verb > QUIET) {
-        MOFEM_LOG("MeshsetMngSync", Sev::verbose) << "read " << block;
-      }
+      MOFEM_LOG("MeshsetMngSelf", Sev::noisy) << "read " << block;
     }
-  }
-
-  if (verb > QUIET) {
-    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
   }
 
   MoFEMFunctionReturn(0);
@@ -174,19 +167,13 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
         if (!p.second) {
           CHKERR moab.delete_entities(&m, 1);
         } else {
-          if (verb > QUIET) {
-            MOFEM_LOG("MeshsetMngSync", Sev::verbose)
-                << "broadcast " << broadcast_block;
-          }
+          MOFEM_LOG("MeshsetMngSelf", Sev::noisy)
+              << "broadcast " << broadcast_block;
         }
       }
     }
 
     CHKERR moab.delete_entities(r_dummy_nodes);
-  }
-
-  if (verb > QUIET) {
-    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
   }
 
   MoFEMFunctionReturn(0);
