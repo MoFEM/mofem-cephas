@@ -407,7 +407,7 @@ MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByType(
   MoFEMFunctionBegin;
   Range ents;
   CHKERR getEntitiesByTypeAndRefLevel(bit, mask, type, ents);
-  CHKERR setBitRefLevel(ents, BitRefLevel());
+  CHKERR setBitRefLevel(ents, BitRefLevel(), false);
   MoFEMFunctionReturn(0);
 }
 
@@ -417,7 +417,7 @@ MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByDim(
   MoFEMFunctionBegin;
   Range ents;
   CHKERR getEntitiesByDimAndRefLevel(bit, mask, dim, ents);
-  CHKERR setBitRefLevel(ents, BitRefLevel());
+  CHKERR setBitRefLevel(ents, BitRefLevel(), false);
   MoFEMFunctionReturn(0);
 }
 
