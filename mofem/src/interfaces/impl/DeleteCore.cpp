@@ -579,36 +579,20 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
 
   Range meshsets;
   CHKERR get_moab().get_entities_by_type(0, MBENTITYSET, meshsets, true);
-  for (Range::iterator mit = meshsets.begin(); mit != meshsets.end(); mit++) {
-    CHKERR get_moab().remove_entities(*mit, ents);
-  }
+  for (auto m : meshsets) 
+    CHKERR get_moab().remove_entities(m, ents);
 
   rval = get_moab().delete_entities(ents);
   if (rval != MB_SUCCESS) {
-    if (verb >= VERY_VERBOSE) {
-      for (Range::iterator eit = ents.begin(); eit != ents.end(); ++eit) {
-        try {
-          RefEntity ref_ent(basicEntityDataPtr, *eit);
-          MOFEM_LOG("WORLD", Sev::error)
-              << "Error: " << RefEntity(basicEntityDataPtr, *eit) << " "
-              << ref_ent.getBitRefLevel();
-        } catch (std::exception const &ex) {
-          MOFEM_LOG("WORLD", Sev::error) << "Can not print ref entity";
-        }
-      };
-    }
-    if (verb >= VERY_NOISY) {
-      auto tmp_meshset_ptr = get_temp_meshset_ptr(get_moab());
-      CHKERR get_moab().add_entities(*tmp_meshset_ptr, ents);
-      CHKERR get_moab().write_file("error.vtk", "VTK", "",
-                                   tmp_meshset_ptr->get_ptr(), 1);
-    }
-    MOAB_THROW(rval);
+    MOFEM_LOG_FUNCTION();
+    MOFEM_LOG_ATTRIBUTES("SELF", LogManager::BitScope);
+    MOFEM_LOG("SELF", Sev::warning) << "Problem deleting: " << ents;
+    MOFEM_LOG_CHANNEL("WORLD");
+    MOFEM_LOG_TAG("WORLD", "DeleteCore");
+    rval = MB_SUCCESS;
   }
 
-  if (verb >= VERBOSE)
-    MOFEM_LOG_C("WORLD", Sev::verbose, "Nb. of deleted entities %d",
-                ents.size());
+  MOFEM_LOG_C("SELF", Sev::noisy, "Nb. of deleted entities %d", ents.size());
 
   MoFEMFunctionReturn(0);
 }
