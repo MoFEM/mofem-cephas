@@ -423,8 +423,6 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
     verb = verbose;
   *buildMoFEM = 0;
 
-  MOFEM_LOG("WORLD", Sev::noisy) << "Test field " << *field_ptr;
-
   const auto field_meshset = field_ptr->getMeshset();
   const auto bit_number = field_ptr->getBitNumber();
 
@@ -807,7 +805,6 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
         "SYNC", Sev::noisy,
         "nb. of entities in field <%s> for which order set %d (order %d)",
         field_ptr->getName().c_str(), nb_ents_set_order_new, order);
-    MOFEM_LOG_SYNCHRONISE(mofemComm);
   }
 
   if (verb > QUIET) {
@@ -819,6 +816,9 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
                 "nb. of ents in the multi index field <%s> %d",
                 field_ptr->getName().c_str(), std::distance(eiit, hi_eiit));
   }
+
+  if (verb > QUIET)
+    MOFEM_LOG_SYNCHRONISE(mofemComm);
 
   MoFEMFunctionReturn(0);
 }

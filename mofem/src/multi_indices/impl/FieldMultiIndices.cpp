@@ -66,10 +66,9 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
     std::string name_data_prefix((char *)tagNamePrefixData, tagNamePrefixSize);
 
     // rank
-    Tag th_rank;
     std::string Tag_rank_name = "_Field_Rank_" + getName();
-    CHKERR moab.tag_get_handle(Tag_rank_name.c_str(), th_rank);
-    CHKERR moab.tag_get_by_ptr(th_rank, &meshSet, 1,
+    CHKERR moab.tag_get_handle(Tag_rank_name.c_str(), th_FieldRank);
+    CHKERR moab.tag_get_by_ptr(th_FieldRank, &meshSet, 1,
                                (const void **)&tagNbCoeffData);
 
     // order

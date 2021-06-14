@@ -89,6 +89,7 @@ struct Field {
   Tag th_FieldDataVerts; ///< Tag storing field values on vertices in the field
   Tag th_FieldData;      ///< Tag storing field values on entity in the field
   Tag th_AppOrder;       ///< Tag storing approximation order on entity
+  Tag th_FieldRank;      /// Tag field rank
 
   BitFieldId *tagId;                   ///< tag keeps field id
   FieldSpace *tagSpaceData;            ///< tag keeps field space
