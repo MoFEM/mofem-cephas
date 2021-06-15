@@ -748,7 +748,9 @@ MoFEMErrorCode OpMakeHighOrderGeometryWeightsOnFace::doWork(
   const size_t nb_int_pts = getGaussPts().size2();
   if (getNormalsAtGaussPts().size1()) {
     if (getNormalsAtGaussPts().size1() == nb_int_pts) {
-      const double a = getMeasure();
+      double a = getMeasure();
+      if (getNumeredEntFiniteElementPtr()->getEntType() == MBTRI)
+        a *= 2;
       auto t_w = getFTensor0IntegrationWeight();
       auto t_normal = getFTensor1NormalsAtGaussPts();
       FTensor::Index<'i', 3> i;
