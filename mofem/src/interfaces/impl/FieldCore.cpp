@@ -151,18 +151,9 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
     tag_sizes[0] = name.size();
     CHKERR get_moab().tag_set_by_ptr(th_FieldName, &meshset, 1, tag_data,
                                      tag_sizes);
-    // name data prefix
-    // FIXME: Should be "_App_Data_". That change will make older restart
-    // files incompatible
-    const std::string name_data_prefix("_App_Data");
-    void const *tag_prefix_data[] = {name_data_prefix.c_str()};
-    int tag_prefix_sizes[1];
-    tag_prefix_sizes[0] = name_data_prefix.size();
-    CHKERR get_moab().tag_set_by_ptr(th_FieldName_DataNamePrefix, &meshset, 1,
-                                     tag_prefix_data, tag_prefix_sizes);
-    Tag th_app_order, th_field_data, th_field_data_vert, th_rank;
 
     // rank
+		Tag th_rank;
     int def_rank = 1;
     const std::string tag_rank_name = "_Field_Rank_" + name;
     CHKERR get_moab().tag_get_handle(tag_rank_name.c_str(), 1, MB_TYPE_INTEGER,
@@ -170,25 +161,68 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
                                      &def_rank);
     CHKERR get_moab().tag_set_data(th_rank, &meshset, 1, &nb_of_coefficients);
 
-    // order
-    ApproximationOrder def_approx_order = -1;
-    const std::string tag_approx_order_name = "_App_Order_" + name;
-    CHKERR get_moab().tag_get_handle(
-        tag_approx_order_name.c_str(), 1, MB_TYPE_INTEGER, th_app_order,
-        MB_TAG_CREAT | MB_TAG_SPARSE, &def_approx_order);
+    Version file_ver;
+    ierr = UnknownInterface::getFileVersion(moab, file_ver);
+    CHK_THROW_MESSAGE(ierr, "Not known file version");
+    if (file_ver.majorVersion >= 0 && file_ver.minorVersion >= 12 &&
+        file_ver.buildVersion >= 1) {
+      const std::string name_data_prefix("__App_Data_");
+      void const *tag_prefix_data[] = {name_data_prefix.c_str()};
+      int tag_prefix_sizes[1];
+      tag_prefix_sizes[0] = name_data_prefix.size();
+      CHKERR get_moab().tag_set_by_ptr(th_FieldName_DataNamePrefix, &meshset, 1,
+                                       tag_prefix_data, tag_prefix_sizes);
+      Tag th_app_order, th_field_data, th_field_data_vert;
 
-    // data
-    std::string tag_data_name = name_data_prefix + name;
-    const int def_len = 0;
-    CHKERR get_moab().tag_get_handle(
-        tag_data_name.c_str(), def_len, MB_TYPE_DOUBLE, th_field_data,
-        MB_TAG_CREAT | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
-    std::string tag_data_name_verts = name_data_prefix + name + "V";
-    VectorDouble def_vert_data(nb_of_coefficients);
-    def_vert_data.clear();
-    CHKERR get_moab().tag_get_handle(
-        tag_data_name_verts.c_str(), nb_of_coefficients, MB_TYPE_DOUBLE,
-        th_field_data_vert, MB_TAG_CREAT | tag_type, &*def_vert_data.begin());	
+      // order
+      ApproximationOrder def_approx_order = -1;
+      const std::string tag_approx_order_name = "__App_Order_" + name;
+      CHKERR get_moab().tag_get_handle(
+          tag_approx_order_name.c_str(), 1, MB_TYPE_INTEGER, th_app_order,
+          MB_TAG_CREAT | MB_TAG_SPARSE, &def_approx_order);
+
+      // data
+      std::string tag_data_name = name_data_prefix + name;
+      const int def_len = 0;
+      CHKERR get_moab().tag_get_handle(
+          tag_data_name.c_str(), def_len, MB_TYPE_DOUBLE, th_field_data,
+          MB_TAG_CREAT | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
+      std::string tag_data_name_verts = name_data_prefix + name + "_V";
+      VectorDouble def_vert_data(nb_of_coefficients);
+      def_vert_data.clear();
+      CHKERR get_moab().tag_get_handle(
+          tag_data_name_verts.c_str(), nb_of_coefficients, MB_TYPE_DOUBLE,
+          th_field_data_vert, MB_TAG_CREAT | tag_type, &*def_vert_data.begin());
+    } else {
+      // Deprecated names
+      const std::string name_data_prefix("_App_Data");
+      void const *tag_prefix_data[] = {name_data_prefix.c_str()};
+      int tag_prefix_sizes[1];
+      tag_prefix_sizes[0] = name_data_prefix.size();
+      CHKERR get_moab().tag_set_by_ptr(th_FieldName_DataNamePrefix, &meshset, 1,
+                                       tag_prefix_data, tag_prefix_sizes);
+      Tag th_app_order, th_field_data, th_field_data_vert, th_rank;
+
+      // order
+      ApproximationOrder def_approx_order = -1;
+      const std::string tag_approx_order_name = "__App_Order_" + name;
+      CHKERR get_moab().tag_get_handle(
+          tag_approx_order_name.c_str(), 1, MB_TYPE_INTEGER, th_app_order,
+          MB_TAG_CREAT | MB_TAG_SPARSE, &def_approx_order);
+
+      // data
+      std::string tag_data_name = name_data_prefix + name;
+      const int def_len = 0;
+      CHKERR get_moab().tag_get_handle(
+          tag_data_name.c_str(), def_len, MB_TYPE_DOUBLE, th_field_data,
+          MB_TAG_CREAT | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
+      std::string tag_data_name_verts = name_data_prefix + name + "V";
+      VectorDouble def_vert_data(nb_of_coefficients);
+      def_vert_data.clear();
+      CHKERR get_moab().tag_get_handle(
+          tag_data_name_verts.c_str(), nb_of_coefficients, MB_TYPE_DOUBLE,
+          th_field_data_vert, MB_TAG_CREAT | tag_type, &*def_vert_data.begin());
+    }
 
     MoFEMFunctionReturn(0);
   };
