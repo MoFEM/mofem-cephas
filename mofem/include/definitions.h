@@ -187,7 +187,12 @@ const static char *const FieldSpaceNames[] = {
 
 /// \brief Those types control how functions respond on arguments, f.e. error
 /// handling
-enum MoFEMTypes { MF_ZERO = 0, MF_EXCL = 1 << 0, MF_EXIST = 1 << 1 };
+enum MoFEMTypes {
+  MF_ZERO = 0,
+  MF_EXCL = 1 << 0,
+  MF_EXIST = 1 << 1,
+  MF_NOT_THROW = 1 << 2
+};
 
 /// \brief RowColData
 enum RowColData { ROW = 0, COL, DATA, LASTROWCOLDATA };

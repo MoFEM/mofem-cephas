@@ -232,7 +232,8 @@ struct CoreInterface : public UnknownInterface {
   virtual MoFEMErrorCode
   delete_ents_by_bit_ref(const BitRefLevel bit, const BitRefLevel mask,
                          const bool remove_parent = false,
-                         int verb = DEFAULT_VERBOSITY) = 0;
+                         int verb = DEFAULT_VERBOSITY,
+                         MoFEMTypes mf = MF_ZERO) = 0;
 
   /** \brief remove entities form mofem database
    */

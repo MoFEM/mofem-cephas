@@ -257,7 +257,7 @@ struct BitRefManager : public UnknownInterface {
    * @return      error code
    */
   MoFEMErrorCode setNthBitRefLevel(const Range &ents, const int n, const bool b,
-                                   int verb = 0) const;
+                                   int verb = QUIET) const;
 
   /**
    * \brief Set nth bit ref level
@@ -267,7 +267,7 @@ struct BitRefManager : public UnknownInterface {
    * @return      error code
    */
   MoFEMErrorCode setNthBitRefLevel(const int n, const bool b,
-                                   int verb = 0) const;
+                                   int verb = QUIET) const;
 
   /** \brief left shift bit ref level
    * \ingroup mofem_bit_ref
@@ -277,14 +277,15 @@ struct BitRefManager : public UnknownInterface {
    */
   MoFEMErrorCode shiftLeftBitRef(const int shift,
                                  const BitRefLevel mask = BitRefLevel().set(),
-                                 int verb = -1) const;
+                                 int verb = DEFAULT_VERBOSITY) const;
 
   /** \brief right shift bit ref level
    * \ingroup mofem_bit_ref
    */
   MoFEMErrorCode shiftRightBitRef(const int shift,
                                   const BitRefLevel mask = BitRefLevel().set(),
-                                  int verb = -1) const;
+                                  int verb = DEFAULT_VERBOSITY,
+                                  MoFEMTypes mf = MF_ZERO) const;
 
   /**@}*/
 

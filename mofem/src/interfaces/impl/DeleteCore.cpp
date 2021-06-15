@@ -551,8 +551,8 @@ MoFEMErrorCode Core::remove_parents_by_parents(const Range &ents, int verb) {
 
 MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
                                             const BitRefLevel mask,
-                                            const bool remove_parent,
-                                            int verb) {
+                                            const bool remove_parent, int verb,
+                                            MoFEMTypes mf) {
   DeleteCoreFunctionBegin;
   if (verb == -1)
     verb = verbose;
@@ -579,17 +579,25 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
 
   Range meshsets;
   CHKERR get_moab().get_entities_by_type(0, MBENTITYSET, meshsets, true);
-  for (auto m : meshsets) 
+  for (auto m : meshsets) {
     CHKERR get_moab().remove_entities(m, ents);
+
+	}
 
   rval = get_moab().delete_entities(ents);
   if (rval != MB_SUCCESS) {
-    MOFEM_LOG_FUNCTION();
     MOFEM_LOG_ATTRIBUTES("SELF", LogManager::BitScope);
-    MOFEM_LOG("SELF", Sev::warning) << "Problem deleting: " << ents;
+    if (verb == QUIET) {
+      MOFEM_LOG("SELF", Sev::noisy) << "Problem deleting:\n" << ents;
+    } else {
+      MOFEM_LOG("SELF", Sev::warning) << "Problem deleting:\n" << ents;
+    }
     MOFEM_LOG_CHANNEL("WORLD");
     MOFEM_LOG_TAG("WORLD", "DeleteCore");
-    rval = MB_SUCCESS;
+    if (!(mf & MF_NOT_THROW))
+      rval = MB_SUCCESS;
+    else
+      CHK_MOAB_THROW(rval, "Can not delete entities");
   }
 
   MOFEM_LOG_C("SELF", Sev::noisy, "Nb. of deleted entities %d", ents.size());
