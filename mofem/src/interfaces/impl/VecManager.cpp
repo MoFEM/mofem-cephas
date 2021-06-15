@@ -31,9 +31,31 @@ MoFEMErrorCode VecManager::query_interface(const MOFEMuuid &uuid,
 
 VecManager::VecManager(const MoFEM::Core &core)
     : cOre(const_cast<MoFEM::Core &>(core)), dEbug(false) {}
-VecManager::~VecManager() {}
+VecManager::~VecManager() {
 
-MoFEMErrorCode VecManager::vecCreateSeq(const std::string &name, RowColData rc,
+  if (!LogManager::checkIfChannelExist("VECWORLD")) {
+    auto core_log = logging::core::get();
+
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmWorld(), "VECWORLD"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSync(), "VECSYNC"));
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmSelf(), "VECSELF"));
+
+    LogManager::setLog("VECWORLD");
+    LogManager::setLog("VECSYNC");
+    LogManager::setLog("VECSELF");
+
+    MOFEM_LOG_TAG("VECWORLD", "VecMng");
+    MOFEM_LOG_TAG("VECSYNC", "VecMng");
+    MOFEM_LOG_TAG("VECSELF", "VecMng");
+  }
+
+  MOFEM_LOG("VECWORLD", Sev::noisy) << "Vector manager created";
+}
+
+MoFEMErrorCode VecManager::vecCreateSeq(const std::string name, RowColData rc,
                                         Vec *V) const {
   const MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
@@ -56,8 +78,8 @@ MoFEMErrorCode VecManager::vecCreateSeq(const std::string &name, RowColData rc,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VecManager::vecCreateGhost(const std::string &name,
-                                          RowColData rc, Vec *V) const {
+MoFEMErrorCode VecManager::vecCreateGhost(const std::string name, RowColData rc,
+                                          Vec *V) const {
   const MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
   MoFEMFunctionBegin;
@@ -98,8 +120,7 @@ MoFEMErrorCode VecManager::vecCreateGhost(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VecManager::vecCreateGhost(const std::string &name,
-                                          RowColData rc,
+MoFEMErrorCode VecManager::vecCreateGhost(const std::string name, RowColData rc,
                                           SmartPetscObj<Vec> &v_ptr) const {
   MoFEMFunctionBegin;
   Vec vec;
@@ -108,12 +129,10 @@ MoFEMErrorCode VecManager::vecCreateGhost(const std::string &name,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode
-VecManager::vecScatterCreate(Vec xin, const std::string &x_problem,
-                             const std::string &x_field_name, RowColData x_rc,
-                             Vec yin, const std::string &y_problem,
-                             const std::string &y_field_name, RowColData y_rc,
-                             VecScatter *newctx) const {
+MoFEMErrorCode VecManager::vecScatterCreate(
+    Vec xin, const std::string x_problem, const std::string x_field_name,
+    RowColData x_rc, Vec yin, const std::string y_problem,
+    const std::string y_field_name, RowColData y_rc, VecScatter *newctx) const {
   const MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
   std::vector<int> idx(0), idy(0);
@@ -133,8 +152,8 @@ VecManager::vecScatterCreate(Vec xin, const std::string &x_problem,
 }
 
 MoFEMErrorCode VecManager::vecScatterCreate(
-    Vec xin, const std::string &x_problem, RowColData x_rc, Vec yin,
-    const std::string &y_problem, RowColData y_rc, VecScatter *newctx) const {
+    Vec xin, const std::string x_problem, RowColData x_rc, Vec yin,
+    const std::string y_problem, RowColData y_rc, VecScatter *newctx) const {
   const MoFEM::Interface &m_field = cOre;
   MoFEMFunctionBegin;
   std::vector<int> idx(0), idy(0);
@@ -156,10 +175,10 @@ MoFEMErrorCode VecManager::vecScatterCreate(
 }
 
 MoFEMErrorCode
-VecManager::vecScatterCreate(Vec xin, const std::string &x_problem,
-                             const std::string &x_field_name, RowColData x_rc,
-                             Vec yin, const std::string &y_problem,
-                             const std::string &y_field_name, RowColData y_rc,
+VecManager::vecScatterCreate(Vec xin, const std::string x_problem,
+                             const std::string x_field_name, RowColData x_rc,
+                             Vec yin, const std::string y_problem,
+                             const std::string y_field_name, RowColData y_rc,
                              SmartPetscObj<VecScatter> &smart_newctx) const {
   MoFEMFunctionBegin;
   VecScatter newctx;
@@ -170,12 +189,12 @@ VecManager::vecScatterCreate(Vec xin, const std::string &x_problem,
 }
 
 MoFEMErrorCode
-VecManager::vecScatterCreate(Vec xin, const std::string &x_problem,
+VecManager::vecScatterCreate(Vec xin, const std::string x_problem,
                              RowColData x_rc, Vec yin,
-                             const std::string &y_problem, RowColData y_rc,
+                             const std::string y_problem, RowColData y_rc,
                              SmartPetscObj<VecScatter> &smart_newctx) const {
   MoFEMFunctionBegin;
-  VecScatter newctx; 
+  VecScatter newctx;
   CHKERR vecScatterCreate(xin, x_problem, x_rc, yin, y_problem, y_rc, &newctx);
   smart_newctx = newctx;
   MoFEMFunctionReturn(0);
@@ -270,7 +289,7 @@ MoFEMErrorCode VecManager::setLocalGhostVector(const Problem *problem_ptr,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VecManager::setLocalGhostVector(const std::string &name,
+MoFEMErrorCode VecManager::setLocalGhostVector(const std::string name,
                                                RowColData rc, Vec V,
                                                InsertMode mode,
                                                ScatterMode scatter_mode) const {
@@ -347,7 +366,7 @@ VecManager::setGlobalGhostVector(const Problem *problem_ptr, RowColData rc,
 }
 
 MoFEMErrorCode
-VecManager::setGlobalGhostVector(const std::string &name, RowColData rc, Vec V,
+VecManager::setGlobalGhostVector(const std::string name, RowColData rc, Vec V,
                                  InsertMode mode,
                                  ScatterMode scatter_mode) const {
   const MoFEM::Interface &m_field = cOre;
@@ -361,7 +380,8 @@ VecManager::setGlobalGhostVector(const std::string &name, RowColData rc, Vec V,
 template <int MODE> struct SetOtherLocalGhostVector {
   template <typename A0, typename A1, typename A2, typename A3, typename A4>
   inline MoFEMErrorCode operator()(A0 dofs_ptr, A1 array, A2 miit, A3 hi_miit,
-                                   A4 &cpy_bit_number) {
+                                   A4 &cpy_bit_number,
+                                   const std::string cpy_field_name) {
     MoFEMFunctionBegin;
     for (; miit != hi_miit; miit++) {
       if (miit->get()->getHasLocalIndex()) {
@@ -369,10 +389,15 @@ template <int MODE> struct SetOtherLocalGhostVector {
             (*miit)->getEntDofIdx(), FieldEntity::getLocalUniqueIdCalculate(
                                          cpy_bit_number, (*miit)->getEnt()));
         auto diiiit = dofs_ptr->template get<Unique_mi_tag>().find(uid);
-        if (diiiit ==
-            dofs_ptr
-                ->template get<Unique_mi_tag>()
-                .end()) {
+        if (diiiit == dofs_ptr->template get<Unique_mi_tag>().end()) {
+          MOFEM_LOG_FUNCTION();
+          MOFEM_LOG_ATTRIBUTES("VECSELF",
+                               LogManager::BitLineID | LogManager::BitScope);
+          MOFEM_LOG("VECSELF", Sev::error)
+              << "Problem finding DOFs in the copy field";
+          MOFEM_LOG("VECSELF", Sev::error) << "Field DOF: "<< (**miit);
+          MOFEM_LOG("VECSELF", Sev::error)
+              << "Copy field name: " << cpy_field_name;
           SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
                   "Automatic creation of entity and dof not implemented");
         }
@@ -387,8 +412,8 @@ template <int MODE> struct SetOtherLocalGhostVector {
 };
 
 MoFEMErrorCode VecManager::setOtherLocalGhostVector(
-    const Problem *problem_ptr, const std::string &field_name,
-    const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
+    const Problem *problem_ptr, const std::string field_name,
+    const std::string cpy_field_name, RowColData rc, Vec V, InsertMode mode,
     ScatterMode scatter_mode) const {
   const MoFEM::Interface &m_field = cOre;
   auto fields_ptr = m_field.get_fields();
@@ -411,12 +436,12 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
   }
 
   auto cpy_fit = fields_ptr->get<FieldName_mi_tag>().find(cpy_field_name);
-  if (cpy_fit == fields_ptr->get<FieldName_mi_tag>().end()) 
+  if (cpy_fit == fields_ptr->get<FieldName_mi_tag>().end())
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND,
              "cpy field < %s > not found, (top tip: check spelling)",
              cpy_field_name.c_str());
   const auto cpy_bit_number = (*cpy_fit)->getBitNumber();
-  
+
   auto miit = dofs->lower_bound(
       FieldEntity::getLoBitNumberUId(m_field.get_field_bit_number(field_name)));
   if (miit == dofs->end()) {
@@ -437,18 +462,18 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "fields have to have same rank");
   }
-  
+
   switch (scatter_mode) {
   case SCATTER_REVERSE: {
 
     PetscScalar *array;
     CHKERR VecGetArray(V, &array);
     if (mode == INSERT_VALUES)
-      CHKERR SetOtherLocalGhostVector<INSERT_VALUES>()(dofs_ptr, array, miit,
-                                                       hi_miit, cpy_bit_number);
+      CHKERR SetOtherLocalGhostVector<INSERT_VALUES>()(
+          dofs_ptr, array, miit, hi_miit, cpy_bit_number, cpy_field_name);
     else if (mode == ADD_VALUES)
-      CHKERR SetOtherLocalGhostVector<ADD_VALUES>()(dofs_ptr, array, miit,
-                                                    hi_miit, cpy_bit_number);
+      CHKERR SetOtherLocalGhostVector<ADD_VALUES>()(
+          dofs_ptr, array, miit, hi_miit, cpy_bit_number, cpy_field_name);
     else
       SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
               "Operation mode not implemented");
@@ -480,8 +505,8 @@ MoFEMErrorCode VecManager::setOtherLocalGhostVector(
 }
 
 MoFEMErrorCode VecManager::setOtherLocalGhostVector(
-    const std::string &name, const std::string &field_name,
-    const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
+    const std::string name, const std::string field_name,
+    const std::string cpy_field_name, RowColData rc, Vec V, InsertMode mode,
     ScatterMode scatter_mode) const {
   const MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;
@@ -516,8 +541,8 @@ template <int MODE> struct SetOtherGlobalGhostVector {
 };
 
 MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
-    const Problem *problem_ptr, const std::string &field_name,
-    const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
+    const Problem *problem_ptr, const std::string field_name,
+    const std::string cpy_field_name, RowColData rc, Vec V, InsertMode mode,
     ScatterMode scatter_mode) const {
   const MoFEM::Interface &m_field = cOre;
   auto fields_ptr = m_field.get_fields();
@@ -601,8 +626,7 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
           (*miit)->getEntDofIdx(), FieldEntity::getLocalUniqueIdCalculate(
                                        cpy_bit_number, (*miit)->getEnt()));
       auto diiiit = dofs_ptr->get<Unique_mi_tag>().find(uid);
-      if (diiiit ==
-          dofs_ptr->get<Unique_mi_tag>().end()) {
+      if (diiiit == dofs_ptr->get<Unique_mi_tag>().end()) {
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "No data to fill the vector (top tip: you want scatter forward "
                 "or scatter reverse?)");
@@ -620,8 +644,8 @@ MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
 }
 
 MoFEMErrorCode VecManager::setOtherGlobalGhostVector(
-    const std::string &name, const std::string &field_name,
-    const std::string &cpy_field_name, RowColData rc, Vec V, InsertMode mode,
+    const std::string name, const std::string field_name,
+    const std::string cpy_field_name, RowColData rc, Vec V, InsertMode mode,
     ScatterMode scatter_mode) const {
   const MoFEM::Interface &m_field = cOre;
   const Problem *problem_ptr;

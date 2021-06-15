@@ -322,12 +322,11 @@ struct ProblemsManager : public UnknownInterface {
    * @param debug to debug and seek for inconsistencies set to true
    * @return MoFEMErrorCode
    */
-  MoFEMErrorCode removeDofsOnEntities(const std::string problem_name,
-                                      const std::string field_name,
-                                      const Range ents, const int lo_coeff = 0,
-                                      const int hi_coeff = MAX_DOFS_ON_ENTITY,
-                                      int verb = VERBOSE,
-                                      const bool debug = false);
+  MoFEMErrorCode removeDofsOnEntities(
+      const std::string problem_name, const std::string field_name,
+      const Range ents, const int lo_coeff = 0,
+      const int hi_coeff = MAX_DOFS_ON_ENTITY, const int lo_order = 0,
+      const int hi_order = 100, int verb = VERBOSE, const bool debug = false);
 
   /**
    * @copydoc removeDofsOnEntities
@@ -337,8 +336,8 @@ struct ProblemsManager : public UnknownInterface {
   MoFEMErrorCode removeDofsOnEntitiesNotDistributed(
       const std::string problem_name, const std::string field_name,
       const Range ents, const int lo_coeff = 0,
-      const int hi_coeff = MAX_DOFS_ON_ENTITY, int verb = VERBOSE,
-      const bool debug = false);
+      const int hi_coeff = MAX_DOFS_ON_ENTITY, const int lo_order = 0,
+      const int hi_order = 100, int verb = VERBOSE, const bool debug = false);
 
   enum MarkOP { OR, AND };
 

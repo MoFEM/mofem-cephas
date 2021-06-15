@@ -823,8 +823,8 @@ MoFEMErrorCode Core::set_field_order(const Range &ents, const BitFieldId id,
 
   MOFEM_LOG("WORLD", Sev::noisy)
       << "Field " << (*field_it)->getName() << " core value < "
-      << this->getValue() << " > field value ( " << (*field_it)->getBitNumber()
-      << " )";
+      << this->getValue() << " > field value ( "
+      << static_cast<int>((*field_it)->getBitNumber()) << " )";
 
   CHKERR this->setFieldOrderImpl(*field_it, ents, order, verb);
 
