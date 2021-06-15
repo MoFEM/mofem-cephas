@@ -303,7 +303,7 @@ enum VERBOSITY_LEVELS {
   ((EntityID)MB_ID_MASK) ///< Last id is the complement of the MASK
 #define MB_ID_MASK (~MB_TYPE_MASK)
 
-#define MAX_DOFS_ON_ENTITY 512 ///< Maximal number of DOFs on entity
+#define MAX_DOFS_ON_ENTITY 512     ///< Maximal number of DOFs on entity
 #define MAX_PROCESSORS_NUMBER 1024 ///< Maximal number of processors
 #define DOF_UID_MASK                                                           \
   (MAX_DOFS_ON_ENTITY - 1) ///< Mask for DOF number on entity form UId
@@ -606,34 +606,66 @@ DEPRECATED void macro_is_deprecated_using_deprecated_function();
 
 /**
  * \brief Check error code of MoAB function and throw MoFEM exception
- * @param  a MoABErrorCode
+ * @param  err MoABErrorCode
  */
-#define MOAB_THROW(a)                                                          \
+#define MOAB_THROW(err)                                                        \
   {                                                                            \
-    if (PetscUnlikely(MB_SUCCESS != (a))) {                                    \
-      std::string error_str = (unsigned)(a) <= (unsigned)MB_FAILURE            \
-                                  ? moab::ErrorCodeStr[a]                      \
+    if (PetscUnlikely(MB_SUCCESS != (err))) {                                  \
+      std::string error_str = (unsigned)(err) <= (unsigned)MB_FAILURE          \
+                                  ? moab::ErrorCodeStr[err]                    \
                                   : "INVALID ERROR CODE";                      \
-      std::string str("MOAB error (" + boost::lexical_cast<std::string>((a)) + \
-                      ") " + error_str + " at line " +                         \
-                      boost::lexical_cast<std::string>(__LINE__) + " : " +     \
-                      std::string(__FILE__));                                  \
-      throw MoFEMException(MOFEM_MOAB_ERROR, str.c_str());                     \
+      throw MoFEMException(MOFEM_MOAB_ERROR,                                   \
+                           ("MOAB error (" +                                   \
+                            boost::lexical_cast<std::string>((err)) + ") " +   \
+                            error_str + " at line " +                          \
+                            boost::lexical_cast<std::string>(__LINE__) +       \
+                            " : " + std::string(__FILE__))                     \
+                               .c_str());                                      \
     }                                                                          \
   }
 
 /**
  * \brief Throw MoFEM exception
- * @param  a message
+ * @param  msg message
  */
-#define THROW_MESSAGE(a)                                                       \
+#define THROW_MESSAGE(msg)                                                     \
   {                                                                            \
     throw MoFEM::MoFEMException(                                               \
         MOFEM_MOFEMEXCEPTION_THROW,                                            \
-        ("MoFEM error " + boost::lexical_cast<std::string>((a)) +              \
+        ("MoFEM error " + boost::lexical_cast<std::string>((msg)) +            \
          " at line " + boost::lexical_cast<std::string>(__LINE__) + " : " +    \
          std::string(__FILE__))                                                \
             .c_str());                                                         \
+  }
+
+/**
+ * \brief Check error code of MoAB function and throw MoFEM exception
+ * @param  err MoABErrorCode
+ * @param  msg error message
+ */
+#define CHK_MOAB_THROW(err, msg)                                               \
+  {                                                                            \
+    if (PetscUnlikely(MB_SUCCESS != (err))) {                                  \
+      std::string str;                                                         \
+      throw MoFEMException(                                                    \
+          MOFEM_MOAB_ERROR,                                                    \
+          ("MOAB error (" + boost::lexical_cast<std::string>((err)) + ") " +   \
+           boost::lexical_cast<std::string>((msg)) + " at line " +             \
+           boost::lexical_cast<std::string>(__LINE__) + " : " +                \
+           std::string(__FILE__))                                              \
+              .c_str());                                                       \
+    }                                                                          \
+  }
+
+/**
+ * \brief Check and throw MoFEM exception
+ * @param  err error code
+ * @param  msg message
+ */
+#define CHK_THROW_MESSAGE(err, msg)                                            \
+  {                                                                            \
+    if (PetscUnlikely((err) != MOFEM_SUCCESS))                                 \
+      THROW_MESSAGE(msg);                                                      \
   }
 
 /**
