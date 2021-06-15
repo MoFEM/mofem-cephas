@@ -645,6 +645,9 @@ struct BitRefManager : public UnknownInterface {
 
   /**@{*/
 
+  inline Tag get_th_RefParentHandle() const {
+    return cOre.get_th_RefParentHandle();
+  }
   inline Tag get_th_RefBitLevel() const { return cOre.get_th_RefBitLevel(); }
 
   /**@}*/
