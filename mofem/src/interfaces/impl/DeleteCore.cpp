@@ -594,10 +594,11 @@ MoFEMErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel bit,
     }
     MOFEM_LOG_CHANNEL("WORLD");
     MOFEM_LOG_TAG("WORLD", "DeleteCore");
-    if (!(mf & MF_NOT_THROW))
-      rval = MB_SUCCESS;
-    else
+    if (!(mf & MF_NOT_THROW)) {
       CHK_MOAB_THROW(rval, "Can not delete entities");
+    } else {
+      rval = MB_SUCCESS;
+    }
   }
 
   MOFEM_LOG_C("SELF", Sev::noisy, "Nb. of deleted entities %d", ents.size());
