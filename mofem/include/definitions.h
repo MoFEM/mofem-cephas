@@ -282,6 +282,8 @@ enum VERBOSITY_LEVELS {
   VERY_NOISY
 };
 
+#define MYPCOMM_INDEX 0 ///< default communicator number PCOMM
+
 #define MAX_CORE_TMP 1       ///< maximal number of cores
 #define BITREFEDGES_SIZE 6   ///< number of edges on tetrahedral
 #define BITREFLEVEL_SIZE 128 ///< max number of refinements
@@ -289,8 +291,6 @@ enum VERBOSITY_LEVELS {
 #define BITFEID_SIZE 32      ///< max number of finite elements
 #define BITPROBLEMID_SIZE 32 ///< max number of problems
 #define BITINTERFACEUID_SIZE 32
-
-#define MYPCOMM_INDEX 0 ///< default communicator number PCOMM
 
 // This Is form MOAB
 #define MB_TYPE_WIDTH 4

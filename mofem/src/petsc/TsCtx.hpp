@@ -77,6 +77,8 @@ struct TsCtx {
     PetscLogEventRegister("LoopTsI2Jacobian", 0, &MOFEM_EVENT_TsCtxI2Jacobian);
   }
 
+  virtual ~TsCtx() = default;
+
   /**
    * @brief Get the loops to do IFunction object
    *

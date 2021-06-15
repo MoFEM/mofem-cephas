@@ -65,10 +65,11 @@ int main(int argc, char *argv[]) {
     const char *option;
     option = ""; //"PARALLEL=BCAST;";//;DEBUG_IO";
     CHKERR moab.load_file(mesh_file_name, 0, option);
-    CHKERRG(rval);
     ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
+    auto moab_comm_wrap =
+        boost::make_shared<WrapMPIComm>(PETSC_COMM_WORLD, false);
     if (pcomm == NULL)
-      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+      pcomm = new ParallelComm(&moab, moab_comm_wrap->get_comm());
 
     int do_for_rank = 0;
     if (pcomm->rank() ==

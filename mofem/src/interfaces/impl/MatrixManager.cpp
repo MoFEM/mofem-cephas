@@ -126,11 +126,11 @@ MoFEMErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
                   std::ostringstream zz;
                   zz << "rank " << rAnk << " ";
                   zz << *(*vit) << std::endl;
-                  SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, zz.str().c_str());
+                  SETERRQ(mofemComm, PETSC_ERR_ARG_SIZ, zz.str().c_str());
                 }
               }
             } else
-              SETERRQ(cOmm, MOFEM_DATA_INCONSISTENCY, "Cache not set");
+              SETERRQ(mofemComm, MOFEM_DATA_INCONSISTENCY, "Cache not set");
           }
         }
       }
@@ -198,7 +198,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
       p_miit->numeredRowDofsPtr->get<TAG>();
   int nb_dofs_row = p_miit->getNbDofsRow();
   if (nb_dofs_row == 0) {
-    SETERRQ1(cOmm, MOFEM_DATA_INCONSISTENCY, "problem <%s> has zero rows",
+    SETERRQ1(mofemComm, MOFEM_DATA_INCONSISTENCY, "problem <%s> has zero rows",
              p_miit->getName().c_str());
   }
 
@@ -217,7 +217,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // Get range of local indices
     PetscLayout layout;
-    CHKERR PetscLayoutCreate(cOmm, &layout);
+    CHKERR PetscLayoutCreate(mofemComm, &layout);
     CHKERR PetscLayoutSetBlockSize(layout, 1);
     CHKERR PetscLayoutSetSize(layout, nb_dofs_row);
     CHKERR PetscLayoutSetUp(layout);
@@ -228,14 +228,14 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     if (verb >= VERBOSE) {
       MOFEM_LOG("SYNC", Sev::noisy)
           << "row lower " << rstart << " row upper " << rend;
-      MOFEM_LOG_SYNCHRONISE(cOmm)
+      MOFEM_LOG_SYNCHRONISE(mofemComm)
     }
 
     miit_row = dofs_row_by_idx.lower_bound(rstart);
     hi_miit_row = dofs_row_by_idx.lower_bound(rend);
     if (std::distance(miit_row, hi_miit_row) != rend - rstart) {
       SETERRQ4(
-          cOmm, PETSC_ERR_ARG_SIZ,
+          mofemComm, PETSC_ERR_ARG_SIZ,
           "data inconsistency, std::distance(miit_row,hi_miit_row) != rend - "
           "rstart (%d != %d - %d = %d) ",
           std::distance(miit_row, hi_miit_row), rend, rstart, rend - rstart);
@@ -243,8 +243,9 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
   } else {
 
-    // Make sure it is a PETSc cOmm
-    CHKERR PetscCommDuplicate(cOmm, &cOmm, NULL);
+    MPI_Comm comm;
+    // // Make sure it is a PETSc mofemComm
+    CHKERR PetscCommDuplicate(get_comm(), &comm, NULL);
 
     // get adjacent nodes on other partitions
     std::vector<std::vector<int>> dofs_vec(sIze);
@@ -323,19 +324,19 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // Computes the number of messages a node expects to receive
     int nrecvs; // number of messages received
-    CHKERR PetscGatherNumberOfMessages(cOmm, NULL, &dofs_vec_length[0],
+    CHKERR PetscGatherNumberOfMessages(comm, NULL, &dofs_vec_length[0],
                                        &nrecvs);
 
     // Computes info about messages that a MPI-node will receive, including
     // (from-id,length) pairs for each message.
     int *onodes;   // list of node-ids from which messages are expected
     int *olengths; // corresponding message lengths
-    CHKERR PetscGatherMessageLengths(cOmm, nsends, nrecvs, &dofs_vec_length[0],
-                                     &onodes, &olengths);
+    CHKERR PetscGatherMessageLengths(comm, nsends, nrecvs,
+                                     &dofs_vec_length[0], &onodes, &olengths);
 
     // Gets a unique new tag from a PETSc communicator.
     int tag;
-    CHKERR PetscCommGetNewTag(cOmm, &tag);
+    CHKERR PetscCommGetNewTag(comm, &tag);
 
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
@@ -345,7 +346,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // rbuf has a pointers to messages. It has size of of nrecvs (number of
     // messages) +1. In the first index a block is allocated,
     // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
-    CHKERR PetscPostIrecvInt(cOmm, tag, nrecvs, onodes, olengths, &rbuf,
+    CHKERR PetscPostIrecvInt(comm, tag, nrecvs, onodes, olengths, &rbuf,
                              &r_waits);
 
     MPI_Request *s_waits; // status of sens messages
@@ -358,7 +359,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
       CHKERR MPI_Isend(&(dofs_vec[proc])[0],  // buffer to send
                        dofs_vec_length[proc], // message length
                        MPIU_INT, proc,        // to proc
-                       tag, cOmm, s_waits + kk);
+                       tag, comm, s_waits + kk);
       kk++;
     }
 
@@ -388,7 +389,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
               row_idx);
           if (dit ==
               p_miit->numeredRowDofsPtr->get<PetscGlobalIdx_mi_tag>().end()) {
-            SETERRQ1(cOmm, MOFEM_DATA_INCONSISTENCY,
+            SETERRQ1(get_comm(), MOFEM_DATA_INCONSISTENCY,
                      "dof %d can not be found in problem", row_idx);
           }
         }
@@ -409,6 +410,8 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     miit_row = dofs_row_by_idx.begin();
     hi_miit_row = dofs_row_by_idx.end();
+
+    CHKERR PetscCommDestroy(&comm);
   }
 
   boost::shared_ptr<FieldEntity> mofem_ent_ptr;
@@ -459,7 +462,7 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
         if (mit == adjacent_dofs_on_other_parts.end()) {
           // NOTE: Dof can adjacent to other part but no elements are there
           // which use that dof std::cerr << *miit_row << std::endl; SETERRQ1(
-          //   cOmm,MOFEM_DATA_INCONSISTENCY,
+          //   get_comm(),MOFEM_DATA_INCONSISTENCY,
           //   "data inconsistency row_last_evaluated_idx = %d",
           //   row_last_evaluated_idx
           // );
@@ -505,34 +508,34 @@ MoFEMErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // Adjacency matrix used to partition problems, f.e. METIS
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
     }
 
   } else if (strcmp(type, MATMPIAIJ) == 0) {
 
     // Compressed MPIADJ matrix
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
     }
     PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     if ((unsigned int)nb_local_dofs_row != i.size() - 1) {
-      SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
     }
 
   } else if (strcmp(type, MATAIJ) == 0) {
 
     // Sequential compressed ADJ matrix
     if (i.size() - 1 != (unsigned int)nb_loc_row_from_iterators) {
-      SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
     }
     PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     if ((unsigned int)nb_local_dofs_row != i.size() - 1) {
-      SETERRQ(cOmm, PETSC_ERR_ARG_SIZ, "data inconsistency");
+      SETERRQ(get_comm(), PETSC_ERR_ARG_SIZ, "data inconsistency");
     }
 
   } else {
 
-    SETERRQ(cOmm, PETSC_ERR_ARG_NULL, "not implemented");
+    SETERRQ(get_comm(), PETSC_ERR_ARG_NULL, "not implemented");
   }
 
   PetscLogEventEnd(MOFEM_EVENT_createMat, 0, 0, 0, 0);
@@ -602,8 +605,9 @@ MoFEMErrorCode MatrixManager::createMPIAIJWithArrays<PetscGlobalIdx_mi_tag>(
 }
 
 template <>
-MoFEMErrorCode MatrixManager::createMPIAIJ<PetscGlobalIdx_mi_tag>(
-    const std::string name, Mat *Aij, int verb) {
+MoFEMErrorCode
+MatrixManager::createMPIAIJ<PetscGlobalIdx_mi_tag>(const std::string name,
+                                                   Mat *Aij, int verb) {
   MoFEM::CoreInterface &m_field = cOre;
   CreateRowComressedADJMatrix *core_ptr =
       static_cast<CreateRowComressedADJMatrix *>(&cOre);
@@ -658,7 +662,6 @@ MoFEMErrorCode MatrixManager::createMPIAIJ<PetscGlobalIdx_mi_tag>(
 
   std::vector<int> d_nnz(nb_local_dofs_row, 0), o_nnz(nb_local_dofs_row, 0);
   CHKERR get_nnz(d_nnz, o_nnz);
-
 
   CHKERR MatCreate(m_field.get_comm(), Aij);
   CHKERR MatSetSizes(*Aij, nb_local_dofs_row, nb_local_dofs_col, nb_row_dofs,
@@ -838,7 +841,6 @@ MoFEMErrorCode MatrixManager::checkMatrixFillIn(const std::string problem_name,
           }
         }
       }
-
 
       for (auto rit = row_dofs->begin(); rit != row_dofs->end(); rit++) {
 

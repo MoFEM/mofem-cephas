@@ -48,9 +48,6 @@ int main(int argc, char *argv[]) {
       SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "file not found -my_file %s",
                mesh_file_name);
 
-    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-    if (pcomm == NULL)
-      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
     CHKERR moab.load_file(mesh_file_name, 0, "");
 
     // Create MoFEM database

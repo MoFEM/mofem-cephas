@@ -20,11 +20,8 @@
 
 namespace MoFEM {
 
-/**
- * @brief No entity handle is indicated by zero handle, i.e. root meshset
- *
- */
-const EntityHandle no_handle = 0;
+const EntityHandle no_handle =
+    0; ///< No entity handle is indicated by zero handle, i.e. root meshset
 
 } // namespace MoFEM
 

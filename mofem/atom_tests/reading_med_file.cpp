@@ -18,7 +18,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
@@ -26,76 +25,65 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  
-  
-
-  MoFEM::Core::Initialize(&argc,&argv,(char *)0,help);
+  MoFEM::Core::Initialize(&argc, &argv, (char *)0, help);
 
   try {
 
     moab::Core mb_instance;
-    moab::Interface& moab = mb_instance;
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-    if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+    moab::Interface &moab = mb_instance;
 
-    //Create MoFEM (Joseph) database
+    // Create MoFEM (Joseph) database
     MoFEM::Core core(moab);
-    MoFEM::Interface& m_field = core;
+    MoFEM::Interface &m_field = core;
 
     MedInterface *med_interface_ptr;
-    ierr = m_field.getInterface(med_interface_ptr); CHKERRG(ierr);
+    CHKERR m_field.getInterface(med_interface_ptr);
 
-    ierr = med_interface_ptr->readMed(); CHKERRG(ierr);
-    ierr = med_interface_ptr->medGetFieldNames(); CHKERRG(ierr);
+    CHKERR med_interface_ptr->readMed();
+    CHKERR med_interface_ptr->medGetFieldNames();
 
     // read field tags
-    for(
-      std::map<std::string,MedInterface::FieldData>::iterator fit =
-      med_interface_ptr->fieldNames.begin();
-      fit!=med_interface_ptr->fieldNames.end();
-      fit++
-    ) {
-      ierr = med_interface_ptr->readFields(
-        med_interface_ptr->medFileName,fit->first,false,1
-      ); CHKERRG(ierr);
+    for (std::map<std::string, MedInterface::FieldData>::iterator fit =
+             med_interface_ptr->fieldNames.begin();
+         fit != med_interface_ptr->fieldNames.end(); fit++) {
+      CHKERR med_interface_ptr->readFields(med_interface_ptr->medFileName,
+                                           fit->first, false, 1);
     }
 
-
     PetscBool check = PETSC_TRUE;
-    ierr = PetscOptionsGetBool(PETSC_NULL,"","-check",&check,PETSC_NULL); CHKERRG(ierr);
+    CHKERR PetscOptionsGetBool(PETSC_NULL, "", "-check", &check, PETSC_NULL);
 
     int ii = 0;
-    const int check_list[] = { 2163, 624, 65, 104};
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
+    const int check_list[] = {2163, 624, 65, 104};
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, cit)) {
       EntityHandle meshset = cit->getMeshset();
       int nb_ents;
-      rval = moab.get_number_entities_by_handle(meshset,nb_ents,true); CHKERRG(rval);
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Nb of ents in %s %d\n",cit->getName().c_str(),nb_ents); CHKERRG(ierr);
-      if(check && nb_ents!=check_list[ii]) {
-        SETERRQ2(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Wrong numbers of entities in meshset %d != %d",nb_ents,check_list[ii]);
+      CHKERR moab.get_number_entities_by_handle(meshset, nb_ents, true);
+      CHKERR PetscPrintf(PETSC_COMM_WORLD, "Nb of ents in %s %d\n",
+                         cit->getName().c_str(), nb_ents);
+      CHKERRG(ierr);
+      if (check && nb_ents != check_list[ii]) {
+        SETERRQ2(PETSC_COMM_WORLD, MOFEM_ATOM_TEST_INVALID,
+                 "Wrong numbers of entities in meshset %d != %d", nb_ents,
+                 check_list[ii]);
       }
       ii++;
     }
 
     MeshsetsManager *meshset_manager_ptr;
-    ierr = m_field.getInterface(meshset_manager_ptr); CHKERRG(ierr);
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_((*meshset_manager_ptr),BLOCKSET,mit)) {
+    CHKERR m_field.getInterface(meshset_manager_ptr);
+    for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_((*meshset_manager_ptr),
+                                                 BLOCKSET, mit)) {
       EntityHandle meshset = mit->getMeshset();
       std::string name = mit->getName();
-      PetscPrintf(m_field.get_comm(),"Write mesh %s\n",name.c_str());
-      rval = moab.write_file(
-        ("out_"+mit->getName()+".vtk").c_str(),
-        NULL,
-        NULL,
-        &meshset,1
-      ); CHKERRG(rval);
+      PetscPrintf(m_field.get_comm(), "Write mesh %s\n", name.c_str());
+      CHKERR moab.write_file(("out_" + mit->getName() + ".vtk").c_str(), NULL,
+                             NULL, &meshset, 1);
     }
-
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
+  CATCH_ERRORS;
 
-  ierr = MoFEM::Core::Finalize(); CHKERRG(ierr);
+  MoFEM::Core::Finalize();
 
   return 0;
 }

@@ -256,6 +256,11 @@ mpirun -np 4 xterm -e gdb -ex run --args ./program [arg1] [arg2] [arg3]
 \endcode
 See OpenMPI <a href=https://www.open-mpi.org/faq/?category=debugging>documentation</a> for more details.
 
+If you using \em lldb, that is usally a case of Mac OSX, you run debugging as follows:
+\code
+mpirun -np 4 xterm -e lldb ./program [arg1] [arg2] [arg3]
+\endcode 
+
 \subsection faq_memory_profiling_valgrind How to profile memory usage?
 
 Valgrind comes with a tool for measuring memory usage: 
@@ -547,7 +552,7 @@ fracture module is presented below.
       "args": [
         "-my_file",
         "LShape.h5m",
-        "-pc_factor_mat_solver_package",
+        "-pc_factor_mat_solver_type",
         "mumps",
         "-ksp_monitor"
       ],

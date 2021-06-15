@@ -128,7 +128,8 @@ MoFEMErrorCode BcManager::pushMarkDOFsOnEntities(const std::string problem_name,
                                                  int lo, int hi,
                                                  bool get_low_dim_ents) {
   Interface &m_field = cOre;
-  auto prb_mng = m_field.getInterface<ProblemsManager>() MoFEMFunctionBegin;
+  auto prb_mng = m_field.getInterface<ProblemsManager>();
+  MoFEMFunctionBegin;
 
   auto get_dim = [&](const Range &ents) {
     for (auto d : {3, 2, 1})

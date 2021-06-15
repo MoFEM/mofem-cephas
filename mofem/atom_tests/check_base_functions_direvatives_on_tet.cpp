@@ -88,10 +88,6 @@ int main(int argc, char *argv[]) {
     EntityHandle tet;
     CHKERR moab.create_element(MBTET, nodes, 4, tet);
 
-    ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
-    if (pcomm == NULL)
-      pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
-
     // Create MoFEM database
     MoFEM::Core core(moab);
     MoFEM::Interface &m_field = core;
