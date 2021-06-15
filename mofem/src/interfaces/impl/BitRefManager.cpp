@@ -582,13 +582,13 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
     }
     for (RefEntity_multiIndex::iterator ent_it = ref_ents_ptr->begin();
          ent_it != ref_ents_ptr->end(); ent_it++) {
-      if (verb > NOISY) {
+      if (verb >= NOISY) {
         MOFEM_LOG_FUNCTION();
         MOFEM_LOG("BitRefSelf", Sev::noisy)
             << (*ent_it)->getBitRefLevel() << " : ";
       }
       right_shift(const_cast<boost::shared_ptr<RefEntity> &>(*ent_it));
-      if (verb >= VERY_NOISY) {
+      if (verb == VERY_NOISY) {
         MOFEM_LOG_FUNCTION();
         MOFEM_LOG("BitRefSelf", Sev::noisy) << (*ent_it)->getBitRefLevel();
       }
