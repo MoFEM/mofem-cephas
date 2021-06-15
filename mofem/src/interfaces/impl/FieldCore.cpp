@@ -166,7 +166,7 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
     CHK_THROW_MESSAGE(ierr, "Not known file version");
     if (file_ver.majorVersion >= 0 && file_ver.minorVersion >= 12 &&
         file_ver.buildVersion >= 1) {
-      const std::string name_data_prefix("__App_Data_");
+      const std::string name_data_prefix("_App_Data_");
       void const *tag_prefix_data[] = {name_data_prefix.c_str()};
       int tag_prefix_sizes[1];
       tag_prefix_sizes[0] = name_data_prefix.size();
@@ -176,7 +176,7 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
 
       // order
       ApproximationOrder def_approx_order = -1;
-      const std::string tag_approx_order_name = "__App_Order_" + name;
+      const std::string tag_approx_order_name = "_App_Order_" + name;
       CHKERR get_moab().tag_get_handle(
           tag_approx_order_name.c_str(), 1, MB_TYPE_INTEGER, th_app_order,
           MB_TAG_CREAT | MB_TAG_SPARSE, &def_approx_order);
