@@ -118,24 +118,6 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
       if (P[0] > 0) {
         // edge01
         shift = ii * (P[0]);
-        /*bzero(&diff_edgeN01[2 * shift], sizeof(double) * 2 * (P[0]));
-        // diffX
-        cblas_daxpy(P[0], N[node_shift + 0] * N[node_shift + 1],
-                    &diffL01[0 * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 0],
-                    2);
-        cblas_daxpy(P[0],
-                    diffN[2 * 0 + 0] * N[node_shift + 1] +
-                        N[node_shift + 0] * diffN[2 * 1 + 0],
-                    L01, 1, &diff_edgeN01[2 * shift + 0], 2);
-        // diff  Y
-        cblas_daxpy(P[0], N[node_shift + 0] * N[node_shift + 1],
-                    &diffL01[1 * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 1],
-                    2);
-        cblas_daxpy(P[0],
-                    diffN[2 * 0 + 1] * N[node_shift + 1] +
-                        N[node_shift + 0] * diffN[2 * 1 + 1],
-                    L01, 1, &diff_edgeN01[2 * shift + 1], 2);*/
-
         {
           double *diff_edge_n_ptr = &diff_edgeN01[2 * shift];
           double *diff_l_x = &diffL01[0 * (p[0] + 1)];
@@ -162,24 +144,6 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
       if (P[1] > 0) {
         // edge12
         shift = ii * (P[1]);
-        /*bzero(&diff_edgeN12[2 * shift], sizeof(double) * 2 * (P[1]));
-        // diffX
-        cblas_daxpy(P[1], N[node_shift + 1] * N[node_shift + 2],
-                    &diffL12[0 * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 0],
-                    2);
-        cblas_daxpy(P[1],
-                    diffN[2 * 1 + 0] * N[node_shift + 2] +
-                        N[node_shift + 1] * diffN[2 * 2 + 0],
-                    L12, 1, &diff_edgeN12[2 * shift + 0], 2);
-        // diffY
-        cblas_daxpy(P[1], N[node_shift + 1] * N[node_shift + 2],
-                    &diffL12[1 * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 1],
-                    2);
-        cblas_daxpy(P[1],
-                    diffN[2 * 1 + 1] * N[node_shift + 2] +
-                        N[node_shift + 1] * diffN[2 * 2 + 1],
-                    L12, 1, &diff_edgeN12[2 * shift + 1], 2);*/
-
         {
           double *diff_edge_n_ptr = &diff_edgeN12[2 * shift];
           double *diff_l_x = &diffL12[0 * (p[1] + 1)];
@@ -206,23 +170,6 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
       if (P[2] > 0) {
         // edge20
         shift = ii * (P[2]);
-        /*bzero(&diff_edgeN20[2 * shift], sizeof(double) * 2 * (P[2]));
-        // diffX
-        cblas_daxpy(P[2], N[node_shift + 0] * N[node_shift + 2],
-                    &diffL20[0 * (p[2] + 1)], 1, &diff_edgeN20[2 * shift + 0],
-                    2);
-        cblas_daxpy(P[2],
-                    diffN[2 * 0 + 0] * N[node_shift + 2] +
-                        N[node_shift + 0] * diffN[2 * 2 + 0],
-                    L20, 1, &diff_edgeN20[2 * shift + 0], 2);
-        // diffY
-        cblas_daxpy(P[2], N[node_shift + 0] * N[node_shift + 2],
-                    &diffL20[1 * (p[2] + 1)], 1, &diff_edgeN20[2 * shift + 1],
-                    2);
-        cblas_daxpy(P[2],
-                    diffN[2 * 0 + 1] * N[node_shift + 2] +
-                        N[node_shift + 0] * diffN[2 * 2 + 1],
-                    L20, 1, &diff_edgeN20[2 * shift + 1], 2);*/
 
         {
           double *diff_edge_n_ptr = &diff_edgeN20[2 * shift];
