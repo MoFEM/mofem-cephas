@@ -151,7 +151,6 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
     tag_sizes[0] = name.size();
     CHKERR get_moab().tag_set_by_ptr(th_FieldName, &meshset, 1, tag_data,
                                      tag_sizes);
-
     // rank
 		Tag th_rank;
     int def_rank = 1;
@@ -201,7 +200,7 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
       tag_prefix_sizes[0] = name_data_prefix.size();
       CHKERR get_moab().tag_set_by_ptr(th_FieldName_DataNamePrefix, &meshset, 1,
                                        tag_prefix_data, tag_prefix_sizes);
-      Tag th_app_order, th_field_data, th_field_data_vert, th_rank;
+      Tag th_app_order, th_field_data, th_field_data_vert;
 
       // order
       ApproximationOrder def_approx_order = -1;

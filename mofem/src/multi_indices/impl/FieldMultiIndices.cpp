@@ -71,10 +71,9 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
 
   auto get_all_tags= [&]() {
     MoFEMFunctionBegin;
-
     // order
     ApproximationOrder def_approx_order = -1;
-    std::string tag_approximation_order_name = "__App_Order_" + getName();
+    std::string tag_approximation_order_name = "_App_Order_" + getName();
     rval = moab.tag_get_handle(tag_approximation_order_name.c_str(), 1,
                                MB_TYPE_INTEGER, th_AppOrder,
                                MB_TAG_CREAT | MB_TAG_SPARSE, &def_approx_order);
@@ -90,7 +89,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
         MB_TAG_CREAT | MB_TAG_VARLEN | MB_TAG_SPARSE, NULL);
     if (rval == MB_ALREADY_ALLOCATED)
       rval = MB_SUCCESS;
-    MOAB_THROW(rval);
+    MOAB_THROW(rval);	
 
     std::string tag_data_name_verts = name_data_prefix + getName() + "_V";
     rval = moab.tag_get_handle(tag_data_name_verts.c_str(), th_FieldDataVerts);
@@ -117,29 +116,9 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
 
   auto get_all_tags_deprecated = [&]() {
     MoFEMFunctionBegin;
-    // name
-    Tag th_field_name;
-    CHKERR moab.tag_get_handle("_FieldName", th_field_name);
-    CHKERR moab.tag_get_by_ptr(th_field_name, &meshSet, 1,
-                               (const void **)&tagName, &tagNameSize);
-    // name prefix
-    Tag th_field_name_data_name_prefix;
-    CHKERR moab.tag_get_handle("_FieldName_DataNamePrefix",
-                               th_field_name_data_name_prefix);
-    CHKERR moab.tag_get_by_ptr(th_field_name_data_name_prefix, &meshSet, 1,
-                               (const void **)&tagNamePrefixData,
-                               &tagNamePrefixSize);
-    std::string name_data_prefix((char *)tagNamePrefixData, tagNamePrefixSize);
-
-    // rank
-    std::string Tag_rank_name = "_Field_Rank_" + getName();
-    CHKERR moab.tag_get_handle(Tag_rank_name.c_str(), th_FieldRank);
-    CHKERR moab.tag_get_by_ptr(th_FieldRank, &meshSet, 1,
-                               (const void **)&tagNbCoeffData);
-
     // order
     ApproximationOrder def_approx_order = -1;
-    std::string tag_approximation_order_name = "_App_Order_" + getName();
+    std::string tag_approximation_order_name = "__App_Order_" + getName();
     rval = moab.tag_get_handle(tag_approximation_order_name.c_str(), 1,
                                MB_TYPE_INTEGER, th_AppOrder,
                                MB_TAG_CREAT | MB_TAG_SPARSE, &def_approx_order);
