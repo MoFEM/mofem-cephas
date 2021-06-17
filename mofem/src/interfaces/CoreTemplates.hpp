@@ -48,8 +48,8 @@ CoreTmp<0>::CoreTmp(moab::Interface &moab, MPI_Comm comm, const int verbose,
   ierr = coreGenericConstructor(moab, comm, verbose);
   CHKERRABORT(comm, ierr);
 
+  MOFEM_LOG_CHANNEL("WORLD");
   if (verbose > QUIET) {
-    MOFEM_LOG_CHANNEL("WORLD");
     MOFEM_LOG_C("WORLD", Sev::verbose, "Core number < %d >", V);
   }
 }
@@ -76,6 +76,8 @@ CoreTmp<N>::CoreTmp(moab::Interface &moab, ///< MoAB interface
 
   ierr = this->initialiseDatabaseFromMesh(verbose);
   CHKERRABORT(comm, ierr);
+
+  MOFEM_LOG_CHANNEL("WORLD");
 }
 
 } // namespace MoFEM

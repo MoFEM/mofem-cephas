@@ -213,6 +213,10 @@ MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
   PetscLogEventRegister("FE_postProcess", 0, &MOFEM_EVENT_postProcess);
   PetscLogEventRegister("MoFEMCreateMat", 0, &MOFEM_EVENT_createMat);
 
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_CHANNEL("SELF");
+  MOFEM_LOG_CHANNEL("SYNC");
+
   MoFEMFunctionReturn(0);
 }
 
