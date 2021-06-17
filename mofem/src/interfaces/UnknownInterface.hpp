@@ -329,6 +329,20 @@ struct UnknownInterface {
   /**
    * \brief Get database major version
    *
+   * This is database version. MoFEM can read DataBase from file created by
+   * older version. Then library version and database version could be
+   * different.
+   *
+   * @return error code
+   */
+  static MoFEMErrorCode setFileVersion(
+      moab::Interface &moab,
+      Version version = Version(MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR,
+                                MoFEM_VERSION_BUILD));
+
+  /**
+   * \brief Get database major version
+   *
    * Implementation of particular interface could be different than main lib.
    * For example user could use older interface, to keep back compatibility.
    *
