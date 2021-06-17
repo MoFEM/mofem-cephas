@@ -204,7 +204,7 @@ MoFEMErrorCode Core::addField(const std::string &name, const FieldSpace space,
 
       // order
       ApproximationOrder def_approx_order = -1;
-      const std::string tag_approx_order_name = "__App_Order_" + name;
+      const std::string tag_approx_order_name = "_App_Order_" + name;
       CHKERR get_moab().tag_get_handle(
           tag_approx_order_name.c_str(), 1, MB_TYPE_INTEGER, th_app_order,
           MB_TAG_CREAT | MB_TAG_SPARSE, &def_approx_order);

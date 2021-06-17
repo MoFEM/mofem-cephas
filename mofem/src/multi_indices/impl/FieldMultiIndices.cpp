@@ -118,7 +118,7 @@ Field::Field(moab::Interface &moab, const EntityHandle meshset)
     MoFEMFunctionBegin;
     // order
     ApproximationOrder def_approx_order = -1;
-    std::string tag_approximation_order_name = "__App_Order_" + getName();
+    std::string tag_approximation_order_name = "_App_Order_" + getName();
     rval = moab.tag_get_handle(tag_approximation_order_name.c_str(), 1,
                                MB_TYPE_INTEGER, th_AppOrder,
                                MB_TAG_CREAT | MB_TAG_SPARSE, &def_approx_order);
