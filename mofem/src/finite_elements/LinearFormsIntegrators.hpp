@@ -28,10 +28,13 @@ struct OpSourceImpl;
 
 template <typename OpBase>
 struct OpSourceImpl<1, 1, GAUSS, OpBase> : public OpBase {
-  OpSourceImpl(const std::string field_name, ScalarFun source_fun)
-      : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun) {}
+  OpSourceImpl(const std::string field_name, ScalarFun source_fun,
+               boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun),
+        entsPtr(ents_ptr) {}
 
 protected:
+  boost::shared_ptr<Range> entsPtr;
   ScalarFun sourceFun;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
@@ -400,6 +403,12 @@ template <typename OpBase>
 MoFEMErrorCode OpSourceImpl<1, 1, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
+
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
+  
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
