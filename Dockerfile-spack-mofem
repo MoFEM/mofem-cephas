@@ -23,7 +23,7 @@ RUN . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
 RUN . $MOFEM_ENV_FILE && \
   spack dev-build -j 4 \
   --test root  \
-  --source-pat $MOFEM_UM_SRC_DIR \
+  --source-path $MOFEM_UM_SRC_DIR \
   mofem-users-modules@develop+docker build_type=Release \
   ^/$MOFEM_CEPHAS_HASH && \
   export MOFEM_UM_HASH=`spack find -lv mofem-users-modules | awk '/mofem-users-modules/ {print $1}' | head -n 1` && \
