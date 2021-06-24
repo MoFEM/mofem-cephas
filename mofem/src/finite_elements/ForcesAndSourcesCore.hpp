@@ -141,8 +141,8 @@ struct ForcesAndSourcesCore : public FEMethod {
 
     /**
      * @brief Get dimension of finite element
-     * 
-     * @return int 
+     *
+     * @return int
      */
     inline int getFEDim() const;
 
@@ -382,6 +382,20 @@ struct ForcesAndSourcesCore : public FEMethod {
      * @return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>
      */
     inline auto getFTensor0IntegrationWeight();
+
+    /**@}*/
+
+    /** \name Coordinates and access to internal data */
+
+    /**@{*/
+
+    /** \brief Gauss points and weight, matrix (nb. of points x 3)
+
+      Column 0-2 integration points coordinate x, y and z, respectively. At rows
+      are integration points.
+
+    */
+    inline MatrixDouble &getCoordsAtGaussPts();
 
     /**@}*/
 
@@ -867,11 +881,13 @@ private:
   friend class VolumeElementForcesAndSourcesCoreOnSideBase;
   friend class FaceElementForcesAndSourcesCoreOnSideBase;
   friend class VolumeElementForcesAndSourcesCoreOnContactPrismSideBase;
+
+protected:
+  MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
 };
 
 /// \deprecated Used ForcesAndSourcesCore instead
 DEPRECATED typedef ForcesAndSourcesCore ForcesAndSurcesCore;
-
 
 boost::shared_ptr<const NumeredEntFiniteElement>
 ForcesAndSourcesCore::UserDataOperator::getNumeredEntFiniteElementPtr() const {
@@ -1050,6 +1066,10 @@ ForcesAndSourcesCore *ForcesAndSourcesCore::UserDataOperator::getPtrFE() const {
 ForcesAndSourcesCore *
 ForcesAndSourcesCore::UserDataOperator::getSidePtrFE() const {
   return ptrFE->sidePtrFE;
+}
+
+MatrixDouble &ForcesAndSourcesCore::UserDataOperator::getCoordsAtGaussPts() {
+  return static_cast<ForcesAndSourcesCore *>(ptrFE)->coordsAtGaussPts;
 }
 
 } // namespace MoFEM

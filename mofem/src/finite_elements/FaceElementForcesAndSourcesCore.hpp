@@ -111,14 +111,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
      */
     inline auto getFTensor1Coords();
 
-    /** \brief Gauss points and weight, matrix (nb. of points x 3)
-
-    Column 0-2 integration points coordinate x and y, respectively. At rows are
-    integration points.
-
-    */
-    inline MatrixDouble &getCoordsAtGaussPts();
-
     /** \brief get coordinates at Gauss pts.
      */
     inline auto getFTensor1CoordsAtGaussPts();
@@ -298,7 +290,6 @@ protected:
   const EntityHandle *conn;
   VectorDouble nOrmal, tangentOne, tangentTwo;
   VectorDouble coords;
-  MatrixDouble coordsAtGaussPts;
 
   MatrixDouble hoCoordsAtGaussPts;
   MatrixDouble normalsAtGaussPts;
@@ -472,12 +463,6 @@ auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
   double *ptr = &*getCoords().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
-}
-
-MatrixDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getCoordsAtGaussPts() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
-      ->coordsAtGaussPts;
 }
 
 auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::

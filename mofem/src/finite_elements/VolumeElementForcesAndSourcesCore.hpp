@@ -88,14 +88,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
      */
     inline VectorDouble &getCoords();
 
-    /** \brief Gauss points and weight, matrix (nb. of points x 3)
-
-    Column 0-2 integration points coordinate x, y and z, respectively. At rows
-    are integration points.
-
-    */
-    inline MatrixDouble &getCoordsAtGaussPts();
-
     /** \brief coordinate at Gauss points (if hierarchical approximation of
      * element geometry)
      */
@@ -253,8 +245,6 @@ protected:
   FTensor::Tensor2<double *, 3, 3> tJac;
   FTensor::Tensor2<double *, 3, 3> tInvJac;
 
-  MatrixDouble coordsAtGaussPts;
-
   friend class UserDataOperator;
 };
 
@@ -362,12 +352,6 @@ double &VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getMeasure() {
 VectorDouble &
 VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getCoords() {
   return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->coords;
-}
-
-MatrixDouble &
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getCoordsAtGaussPts() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
-      ->coordsAtGaussPts;
 }
 
 MatrixDouble &VolumeElementForcesAndSourcesCoreBase::UserDataOperator::

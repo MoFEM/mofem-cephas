@@ -91,11 +91,6 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
      */
     inline VectorDouble &getCoords();
 
-    /**
-     * \brief get coordinate at integration point
-     */
-    inline MatrixDouble &getCoordsAtGaussPts();
-
     /** \brief get coordinates at Gauss pts.
      */
     inline auto getFTensor1CoordsAtGaussPts();
@@ -163,7 +158,6 @@ protected:
   const EntityHandle *cOnn;
   VectorDouble dIrection;
   VectorDouble cOords;
-  MatrixDouble coordsAtGaussPts;
 
   MoFEMErrorCode calculateEdgeDirection();
   MoFEMErrorCode setIntegrationPts();
@@ -267,12 +261,6 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getDirection() {
 VectorDouble &
 EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getCoords() {
   return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->cOords;
-}
-
-MatrixDouble &
-EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getCoordsAtGaussPts() {
-  return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)
-      ->coordsAtGaussPts;
 }
 
 auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
