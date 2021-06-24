@@ -147,9 +147,7 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     inline VolumeElementForcesAndSourcesCoreBase *getVolumeFE() const;
 
   protected:
-
     MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-
   };
 
   enum Switches {
@@ -161,7 +159,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   template <int SWITCH> MoFEMErrorCode OpSwitch();
 
 protected:
-
   VolumeElementForcesAndSourcesCoreBase(Interface &m_field,
                                         const EntityType type = MBTET);
 
@@ -273,7 +270,8 @@ struct VolumeElementForcesAndSourcesCoreSwitch
     : public VolumeElementForcesAndSourcesCoreBase {
 
   VolumeElementForcesAndSourcesCoreSwitch(Interface &m_field,
-                                        const EntityType type = MBTET): VolumeElementForcesAndSourcesCoreBase(m_field, MBTET) {}
+                                          const EntityType type = MBTET)
+      : VolumeElementForcesAndSourcesCoreBase(m_field, MBTET) {}
   using UserDataOperator =
       VolumeElementForcesAndSourcesCoreBase::UserDataOperator;
 
