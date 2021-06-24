@@ -176,17 +176,17 @@ OpTetDivergence::doWork(int side, EntityType type,
   VectorDouble div_vec;
   div_vec.resize(nb_dofs, 0);
 
-  int gg = 0;
-  for (; gg < nb_gauss_pts; gg++) {
-    CHKERR getDivergenceOfHDivBaseFunctions(side, type, data, gg, div_vec);
-    // cout << std::fixed << div_vec << std::endl;
-    unsigned int dd = 0;
-    for (; dd < div_vec.size(); dd++) {
+  FTensor::Index<'i', 3> i;
+  auto t_base_diff_hdiv = data.getFTensor2DiffN<3, 3>();
+
+  for (size_t gg = 0; gg < nb_gauss_pts; gg++) {
+    for (size_t dd = 0; dd != div_vec.size(); dd++) {
       double w = getGaussPts()(3, gg) * getVolume();
       if (getHoGaussPtsDetJac().size() > 0) {
         w *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
       }
-      dIv += div_vec[dd] * w;
+      dIv += t_base_diff_hdiv(i, i) * w;
+      ++t_base_diff_hdiv;
     }
   }
 

@@ -173,6 +173,10 @@ MoFEMErrorCode OpTetCurl::doWork(int side, EntityType type,
 
   MatrixDouble curl_mat;
   FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+
+  auto t_curl_base = data.getFTensor2DiffN<3, 3>();
 
   unsigned int gg = 0;
   for (; gg < nb_gauss_pts; gg++) {
@@ -181,12 +185,11 @@ MoFEMErrorCode OpTetCurl::doWork(int side, EntityType type,
       // if ho geometry is given
       w *= getHoGaussPtsDetJac()(gg);
     }
-    CHKERR getCurlOfHCurlBaseFunctions(side, type, data, gg, curl_mat);
-    FTensor::Tensor1<double *, 3> t_curl(&curl_mat(0, 0), &curl_mat(0, 1),
-                                         &curl_mat(0, 2), 3);
+    FTensor::Tensor1<double, 3> t_curl;
     for (unsigned int dd = 0; dd != nb_dofs; dd++) {
+      t_curl(i) = levi_civita(j, i, k) * t_curl_base(j, k);
       tCurl(i) += w * t_curl(i);
-      ++t_curl;
+      ++t_curl_base;
     }
   }
 
