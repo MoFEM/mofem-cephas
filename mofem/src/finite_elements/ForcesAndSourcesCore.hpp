@@ -397,6 +397,20 @@ struct ForcesAndSourcesCore : public FEMethod {
     */
     inline MatrixDouble &getCoordsAtGaussPts();
 
+    /**
+     * \brief Get coordinates at integration points assuming linear geometry
+     *
+     * \code
+     * auto t_coords = getFTensor1CoordsAtGaussPts();
+     * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
+     *   // do something
+     *   ++t_coords;
+     * }
+     * \endcode
+     *
+     */
+    inline auto getFTensor1CoordsAtGaussPts();
+
     /**@}*/
 
     /**@{*/
@@ -1070,6 +1084,12 @@ ForcesAndSourcesCore::UserDataOperator::getSidePtrFE() const {
 
 MatrixDouble &ForcesAndSourcesCore::UserDataOperator::getCoordsAtGaussPts() {
   return static_cast<ForcesAndSourcesCore *>(ptrFE)->coordsAtGaussPts;
+}
+
+auto ForcesAndSourcesCore::UserDataOperator::getFTensor1CoordsAtGaussPts() {
+  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+      &getCoordsAtGaussPts()(0, 0), &getCoordsAtGaussPts()(0, 1),
+      &getCoordsAtGaussPts()(0, 2));
 }
 
 } // namespace MoFEM

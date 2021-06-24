@@ -102,20 +102,6 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     inline auto getFTenosr0HoMeasure();
 
     /**
-     * \brief Get coordinates at integration points assuming linear geometry
-     *
-     * \code
-     * auto t_coords = getFTensor1CoordsAtGaussPts();
-     * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
-     *   // do something
-     *   ++t_coords;
-     * }
-     * \endcode
-     *
-     */
-    inline auto getFTensor1CoordsAtGaussPts();
-
-    /**
      * \brief Get coordinates at integration points taking geometry from field
      *
      * This is HO geometry given by arbitrary order polynomial
@@ -382,13 +368,6 @@ auto VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
     getFTenosr0HoMeasure() {
   return FTensor::Tensor0<FTensor::PackPtr<double *, 1>>(
       &*getHoGaussPtsDetJac().data().begin());
-}
-
-auto VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1CoordsAtGaussPts() {
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-      &getCoordsAtGaussPts()(0, 0), &getCoordsAtGaussPts()(0, 1),
-      &getCoordsAtGaussPts()(0, 2));
 }
 
 auto VolumeElementForcesAndSourcesCoreBase::UserDataOperator::

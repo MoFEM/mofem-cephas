@@ -91,10 +91,6 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
      */
     inline VectorDouble &getCoords();
 
-    /** \brief get coordinates at Gauss pts.
-     */
-    inline auto getFTensor1CoordsAtGaussPts();
-
     /**
      * \brief get tangent vector to edge curve at integration points
      */
@@ -261,13 +257,6 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getDirection() {
 VectorDouble &
 EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getCoords() {
   return static_cast<EdgeElementForcesAndSourcesCoreBase *>(ptrFE)->cOords;
-}
-
-auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1CoordsAtGaussPts() {
-  double *ptr = &*getCoordsAtGaussPts().data().begin();
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
-                                                            &ptr[2]);
 }
 
 MatrixDouble &

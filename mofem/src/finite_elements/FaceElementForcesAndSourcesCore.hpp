@@ -111,10 +111,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
      */
     inline auto getFTensor1Coords();
 
-    /** \brief get coordinates at Gauss pts.
-     */
-    inline auto getFTensor1CoordsAtGaussPts();
-
     /** \brief coordinate at Gauss points (if hierarchical approximation of
     element geometry)
 
@@ -461,13 +457,6 @@ FaceElementForcesAndSourcesCoreBase::UserDataOperator::getCoords() {
 auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
     getFTensor1Coords() {
   double *ptr = &*getCoords().data().begin();
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
-                                                            &ptr[2]);
-}
-
-auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1CoordsAtGaussPts() {
-  double *ptr = &*getCoordsAtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
 }
