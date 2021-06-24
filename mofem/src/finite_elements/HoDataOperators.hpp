@@ -23,6 +23,21 @@
 namespace MoFEM {
 
 /**
+ * @brief Calculate HO coordinates at gauss points
+ * 
+ */
+struct OpCalculateHoCoords : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateHoCoords(const std::string field_name)
+      : ForcesAndSourcesCore::UserDataOperator(field_name, OPROW) {}
+
+
+ MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+};
+
+/**
  * @brief Modify integration weights on volume to take in account higher-order
  * geometry
  * @ingroup mofem_forces_and_sources_user_data_operators

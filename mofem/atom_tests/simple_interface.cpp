@@ -77,7 +77,7 @@ struct OpFace : public FaceElementForcesAndSourcesCore::UserDataOperator {
     const int nb_int_pts = getGaussPts().size2();
     auto t_normal = getFTensor1NormalsAtGaussPts();
     auto t_w = getFTensor0IntegrationWeight();
-    auto t_coords = getFTensor1HoCoordsAtGaussPts();
+    auto t_coords = getFTensor1CoordsAtGaussPts();
     FTensor::Index<'i', 3> i;
     double vol = 0;
     for (int gg = 0; gg != nb_int_pts; gg++) {
@@ -168,8 +168,12 @@ int main(int argc, char *argv[]) {
 
       // set operator to the volume element
       domain_fe->getOpPtrVector().push_back(
+          new OpCalculateHoCoords("MESH_NODE_POSITIONS"));
+      domain_fe->getOpPtrVector().push_back(
           new OpVolume("MESH_NODE_POSITIONS", vol));
       // set operator to the face element
+      boundary_fe->getOpPtrVector().push_back(
+          new OpCalculateHoCoords("MESH_NODE_POSITIONS"));
       boundary_fe->getOpPtrVector().push_back(
           new OpFace("MESH_NODE_POSITIONS", surf_vol));
       // make integration in volume (here real calculations starts)

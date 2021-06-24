@@ -21,6 +21,34 @@ purposes.
 
 namespace MoFEM {
 
+MoFEMErrorCode
+OpCalculateHoCoords::doWork(int side, EntityType type,
+                            DataForcesAndSourcesCore::EntData &data) {
+  FTensor::Index<'i', 3> i;
+  MoFEMFunctionBegin;
+  const auto nb_dofs = data.getFieldData().size() / 3;
+  if (nb_dofs) {
+    if (type == MBVERTEX)
+      getCoordsAtGaussPts().clear();
+    auto t_base = data.getFTensor0N();
+    auto t_coords = getFTensor1CoordsAtGaussPts();
+    const auto nb_integration_pts = data.getN().size1();
+    const auto nb_base_functions = data.getN().size2();
+    for (auto gg = 0; gg != nb_integration_pts; ++gg) {
+      auto t_dof = data.getFTensor1FieldData<3>();
+      size_t bb = 0;
+      for (; bb != nb_dofs; ++bb) {
+        t_coords(i) += t_base * t_dof(i);
+        ++t_base;
+      }
+      for (; bb != nb_base_functions; ++bb)
+        ++t_base;
+      ++t_coords;
+    }
+  }
+  MoFEMFunctionReturn(0);
+};
+
 MoFEMErrorCode OpMakeHighOrderGeometryWeightsOnVolume::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
