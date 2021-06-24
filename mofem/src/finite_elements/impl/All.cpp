@@ -15,6 +15,7 @@ extern "C" {
 #include "impl/DataOperators.cpp"
 #include "impl/ForcesAndSourcesCore.cpp"
 #include "impl/UserDataOperators.cpp"
+#include "impl/HoDataOperators.cpp"
 #include "impl/FormsIntegrators.cpp"
 #include "impl/VolumeElementForcesAndSourcesCore.cpp"
 #include "impl/FaceElementForcesAndSourcesCore.cpp"

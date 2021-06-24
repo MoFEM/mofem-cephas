@@ -2913,19 +2913,7 @@ private:
   MatrixDouble diffNinvJac;
 };
 
-/**
- * @brief Modify integration weights on volume to take in account higher-order
- * geometry
- * @ingroup mofem_forces_and_sources_user_data_operators
- *
- */
-struct OpMakeHighOrderGeometryWeightsOnVolume
-    : public VolumeElementForcesAndSourcesCoreBase::UserDataOperator {
-  OpMakeHighOrderGeometryWeightsOnVolume()
-      : VolumeElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
+
 
 /**@}*/
 
