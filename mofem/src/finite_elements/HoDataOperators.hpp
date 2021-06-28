@@ -37,6 +37,37 @@ struct OpCalculateHoCoords : public ForcesAndSourcesCore::UserDataOperator {
 
 };
 
+// /**
+//  * \brief Set inverse jacobian to base functions
+//  *
+//  */
+// struct OpSetHoInvJacScalarBase : public ForcesAndSourcesCore::UserDataOperator {
+
+//   OpSetHoInvJacScalarBase(const FieldSpace space)
+//       : ForcesAndSourcesCore::UserDataOperator(space) {}
+
+//   MoFEMErrorCode doWork(int side, EntityType type,
+//                         DataForcesAndSourcesCore::EntData &data);
+
+//   private:
+
+
+// }
+
+/**
+ * @brief Modify integration weights on face to take in account higher-order
+ * geometry
+ * @ingroup mofem_forces_and_sources_tri_element
+ *
+ */
+struct OpMakeHighOrderGeometryWeightsOnFace
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+  OpMakeHighOrderGeometryWeightsOnFace()
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
 /**
  * @brief Modify integration weights on volume to take in account higher-order
  * geometry
