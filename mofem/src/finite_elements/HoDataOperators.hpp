@@ -37,22 +37,23 @@ struct OpCalculateHoCoords : public ForcesAndSourcesCore::UserDataOperator {
 
 };
 
-// /**
-//  * \brief Set inverse jacobian to base functions
-//  *
-//  */
-// struct OpSetHoInvJacScalarBase : public ForcesAndSourcesCore::UserDataOperator {
+/**
+ * \brief Set inverse jacobian to base functions
+ *
+ */
+struct OpSetHoInvJacScalarBase : public ForcesAndSourcesCore::UserDataOperator {
 
-//   OpSetHoInvJacScalarBase(const FieldSpace space)
-//       : ForcesAndSourcesCore::UserDataOperator(space) {}
+  OpSetHoInvJacScalarBase(const FieldSpace space)
+      : ForcesAndSourcesCore::UserDataOperator(space) {}
 
-//   MoFEMErrorCode doWork(int side, EntityType type,
-//                         DataForcesAndSourcesCore::EntData &data);
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
 
-//   private:
+  private:
 
-
-// }
+    boost::shared_ptr<MatrixDouble> invJac;
+    MatrixDouble diffNinvJac;
+};
 
 /**
  * @brief Modify integration weights on face to take in account higher-order
