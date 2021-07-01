@@ -45,14 +45,6 @@ extern "C" {
 
 #include <MedInterface.hpp>
 
-#define MedFunctionBegin                                                       \
-  MoFEMFunctionBegin;                                                          \
-  MOFEM_LOG_CHANNEL("WORLD");                                                  \
-  MOFEM_LOG_CHANNEL("SYNC");                                                   \
-  MOFEM_LOG_FUNCTION();                                                        \
-  MOFEM_LOG_TAG("SYNC", "MedInterface");                                       \
-  MOFEM_LOG_TAG("WORLD", "MedInterface")
-
 namespace MoFEM {
 
 MoFEMErrorCode MedInterface::query_interface(const MOFEMuuid &uuid,
@@ -68,7 +60,18 @@ MoFEMErrorCode MedInterface::query_interface(const MOFEMuuid &uuid,
 }
 
 MedInterface::MedInterface(const Core &core)
-    : cOre(const_cast<Core &>(core)), flgFile(PETSC_FALSE) {}
+    : cOre(const_cast<Core &>(core)), flgFile(PETSC_FALSE) {
+
+  if (!LogManager::checkIfChannelExist("MEDWORLD")) {
+    auto core_log = logging::core::get();
+    core_log->add_sink(
+        LogManager::createSink(LogManager::getStrmWorld(), "MEDWORLD"));
+    LogManager::setLog("MEDWORLD");
+    MOFEM_LOG_TAG("MEDWORLD", "MED");
+  }
+
+  MOFEM_LOG("MEDWORLD", Sev::noisy) << "Mashset manager created";
+}
 
 MoFEMErrorCode MedInterface::getFileNameFromCommandLine(int verb) {
   Interface &m_field = cOre;
@@ -91,7 +94,7 @@ MoFEMErrorCode MedInterface::getFileNameFromCommandLine(int verb) {
 
 MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
   Interface &m_field = cOre;
-  MedFunctionBegin;
+  MoFEMFunctionBegin;
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
     SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
@@ -134,7 +137,7 @@ MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
     fieldNames[field_name].ncSteps = num_steps;
 
     if (verb > 0)
-      MOFEM_LOG("WORLD", Sev::inform) << fieldNames[name];
+      MOFEM_LOG("MEDWORLD", Sev::inform) << fieldNames[name];
   }
   if (MEDfileClose(fid) < 0) {
     SETERRQ1(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
@@ -144,7 +147,7 @@ MoFEMErrorCode MedInterface::medGetFieldNames(const string &file, int verb) {
 }
 
 MoFEMErrorCode MedInterface::medGetFieldNames(int verb) {
-  MedFunctionBegin;
+  MoFEMFunctionBegin;
   if (medFileName.empty()) {
     CHKERR getFileNameFromCommandLine(verb);
   }
@@ -154,7 +157,7 @@ MoFEMErrorCode MedInterface::medGetFieldNames(int verb) {
 
 MoFEMErrorCode MedInterface::readMed(const string &file, int verb) {
   Interface &m_field = cOre;
-  MedFunctionBegin;
+  MoFEMFunctionBegin;
 
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
@@ -167,7 +170,7 @@ MoFEMErrorCode MedInterface::readMed(const string &file, int verb) {
   MEDfileNumVersionRd(fid, &vf[0], &vf[1], &vf[2]);
 
   if (verb > 0)
-    MOFEM_LOG_C("WORLD", Sev::inform,
+    MOFEM_LOG_C("MEDWORLD", Sev::inform,
                 "Reading MED file V%d.%d.%d using MED library V%d.%d.%d", vf[0],
                 vf[1], vf[2], v[0], v[1], v[2]);
 
@@ -195,7 +198,7 @@ MoFEMErrorCode MedInterface::readMed(const string &file, int verb) {
     }
     meshNames.push_back(std::string(mesh_name));
     if (verb > 0) {
-      MOFEM_LOG_C("WORLD", Sev::inform, "Check mesh %s nsteps %d", mesh_name,
+      MOFEM_LOG_C("MEDWORLD", Sev::inform, "Check mesh %s nsteps %d", mesh_name,
                   n_step);
     }
   }
@@ -217,8 +220,9 @@ MoFEMErrorCode MedInterface::readMed(const string &file, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-static std::vector<med_geometrie_element> moab2med_element_type(const EntityType type) {
-  
+static std::vector<med_geometrie_element>
+moab2med_element_type(const EntityType type) {
+
   std::vector<med_geometrie_element> types;
 
   switch (type) {
@@ -260,7 +264,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
                                       int verb) {
 
   Interface &m_field = cOre;
-  MedFunctionBegin;
+  MoFEMFunctionBegin;
 
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
@@ -271,7 +275,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
   MEDlibraryNumVersion(&v[0], &v[1], &v[2]);
   MEDfileNumVersionRd(fid, &vf[0], &vf[1], &vf[2]);
   if (verb > 1)
-    MOFEM_LOG_C("WORLD", Sev::noisy,
+    MOFEM_LOG_C("MEDWORLD", Sev::noisy,
                 "Reading MED file V%d.%d.%d using MED library V%d.%d.%d", vf[0],
                 vf[1], vf[2], v[0], v[1], v[2]);
 
@@ -297,7 +301,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
             "Unable to read mesh information");
   }
   if (verb > 0)
-    MOFEM_LOG_C("WORLD", Sev::inform, "Reading mesh %s nsteps %d", mesh_name,
+    MOFEM_LOG_C("MEDWORLD", Sev::inform, "Reading mesh %s nsteps %d", mesh_name,
                 n_step);
 
   switch (axis_type) {
@@ -349,7 +353,7 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
             "No nodes in MED mesh");
   }
   if (verb > 0)
-    MOFEM_LOG_C("WORLD", Sev::inform, "Read number of nodes %d", num_nodes);
+    MOFEM_LOG_C("MEDWORLD", Sev::inform, "Read number of nodes %d", num_nodes);
 
   std::vector<med_float> coord_med(space_dim * num_nodes);
   if (MEDmeshNodeCoordinateRd(fid, mesh_name, MED_NO_DT, MED_NO_IT,
@@ -417,6 +421,12 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
         continue;
 
       int num_nod_per_ele = type % 100;
+      if (verb > 0)
+        MOFEM_LOG("MEDWORLD", Sev::inform)
+            << "Reading elements " << num_ele << " of type "
+            << moab::CN::EntityTypeName(ent_type) << " number of nodes "
+            << num_nod_per_ele;
+
       std::vector<med_int> conn_med(num_ele * num_nod_per_ele);
       if (MEDmeshElementConnectivityRd(fid, mesh_name, MED_NO_DT, MED_NO_IT,
                                        MED_CELL, type, MED_NODAL,
@@ -448,10 +458,10 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
 
             std::array<int, 10> nodes_map{
 
-                1, 0, 2, 3, 
-                
-                
-                4, 6, 5, 8, 7, 9
+                1, 0, 2, 3,
+
+                4, 6, 5, 8,
+                7, 9
 
             };
 
@@ -508,7 +518,6 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
         }
       }
     }
-
   }
 
   if (MEDfileClose(fid) < 0) {
@@ -525,7 +534,7 @@ MedInterface::readFamily(const string &file, const int index,
                          std::map<string, Range> &group_elem_map, int verb) {
   //
   Interface &m_field = cOre;
-  MedFunctionBegin;
+  MoFEMFunctionBegin;
 
   med_idt fid = MEDfileOpen(file.c_str(), MED_ACC_RDONLY);
   if (fid < 0) {
@@ -537,7 +546,7 @@ MedInterface::readFamily(const string &file, const int index,
   MEDfileNumVersionRd(fid, &vf[0], &vf[1], &vf[2]);
 
   if (verb > 1) {
-    MOFEM_LOG_C("WORLD", Sev::noisy,
+    MOFEM_LOG_C("MEDWORLD", Sev::noisy,
                 "Reading MED file V%d.%d.%d using MED library V%d.%d.%d", vf[0],
                 vf[1], vf[2], v[0], v[1], v[2]);
   }
@@ -594,7 +603,7 @@ MedInterface::readFamily(const string &file, const int index,
       name.resize(NAME_TAG_SIZE - 1);
       if (family_elem_map.find(family_num) == family_elem_map.end()) {
         MOFEM_LOG_C(
-            "WORLD", Sev::warning,
+            "MEDWORLD", Sev::warning,
             "Family %d not read, likely type of element is not added "
             "to moab database. Currently only triangle, quad, tetrahedral and "
             "hexahedral elements are read to moab database",
@@ -619,7 +628,7 @@ MedInterface::makeBlockSets(const std::map<string, Range> &group_elem_map,
                             int verb) {
 
   Interface &m_field = cOre;
-  MedFunctionBegin;
+  MoFEMFunctionBegin;
   MeshsetsManager *meshsets_manager_ptr;
   CHKERR m_field.getInterface(meshsets_manager_ptr);
 
@@ -646,13 +655,13 @@ MedInterface::makeBlockSets(const std::map<string, Range> &group_elem_map,
   }
 
   for (_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field, BLOCKSET, cit))
-    MOFEM_LOG("WORLD", Sev::verbose) << *cit;
+    MOFEM_LOG("MEDWORLD", Sev::verbose) << *cit;
 
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode MedInterface::readMed(int verb) {
-  MedFunctionBegin;
+  MoFEMFunctionBegin;
   if (medFileName.empty()) {
     CHKERR getFileNameFromCommandLine(verb);
   }
@@ -709,9 +718,10 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
   // Paraview can only plot field which have 1, 3, or 9 components. If field has
   // more that 9 comonents, it is stored on MOAB mesh but not viable in
   // ParaView.
-  int num_comp_msh = (num_comp <= 1)
-                         ? 1
-                         : (num_comp <= 3) ? 3 : (num_comp <= 9) ? 9 : num_comp;
+  int num_comp_msh = (num_comp <= 1)   ? 1
+                     : (num_comp <= 3) ? 3
+                     : (num_comp <= 9) ? 9
+                                       : num_comp;
 
   // Create tag to store nodal or cell values read form med file. Note that tag
   // has prefix MED to avoid collision with other tags.
@@ -837,7 +847,7 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
           ent_type = MBHEX;
           break;
         default:
-          MOFEM_LOG_C("WORLD", Sev::warning,
+          MOFEM_LOG_C("MEDWORLD", Sev::warning,
                       "Not yet implemented for this cell %d", ele);
         }
         if (ent_type != MBMAXTYPE) {
@@ -900,7 +910,7 @@ MoFEMErrorCode MedInterface::readFields(const std::string &file_name,
         }
       } break;
       default:
-        MOFEM_LOG_C("WORLD", Sev::inform, "Entity type %d not implemented",
+        MOFEM_LOG_C("MEDWORLD", Sev::inform, "Entity type %d not implemented",
                     ent);
       }
     }
