@@ -217,27 +217,42 @@ MoFEMErrorCode MedInterface::readMed(const string &file, int verb) {
   MoFEMFunctionReturn(0);
 }
 
-static med_geometrie_element moab2med_element_type(const EntityType type) {
+static std::vector<med_geometrie_element> moab2med_element_type(const EntityType type) {
+  
+  std::vector<med_geometrie_element> types;
+
   switch (type) {
   case MBEDGE:
-    return MED_SEG2;
+    types.push_back(MED_SEG2);
+    types.push_back(MED_SEG3);
+    break;
   case MBTRI:
-    return MED_TRIA3;
+    types.push_back(MED_TRIA3);
+    types.push_back(MED_TRIA6);
+    break;
   case MBQUAD:
-    return MED_QUAD4;
+    types.push_back(MED_QUAD4);
+    break;
   case MBTET:
-    return MED_TETRA4;
+    types.push_back(MED_TETRA4);
+    types.push_back(MED_TETRA10);
+    break;
   case MBHEX:
-    return MED_HEXA8;
+    types.push_back(MED_HEXA8);
+    break;
   case MBPRISM:
-    return MED_PENTA6;
+    types.push_back(MED_PENTA6);
+    break;
   case MBPYRAMID:
-    return MED_PYRA5;
+    types.push_back(MED_PYRA5);
+    break;
   case MBVERTEX:
-    return MED_POINT1;
+    types.push_back(MED_POINT1);
   default:
-    return MED_NONE;
+    break;
   }
+
+  return types;
 }
 
 MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
@@ -386,104 +401,114 @@ MoFEMErrorCode MedInterface::readMesh(const string &file, const int index,
   // read elements (loop over all possible MSH element types)
   for (EntityType ent_type = MBVERTEX; ent_type < MBMAXTYPE; ent_type++) {
 
-    med_geometrie_element type = moab2med_element_type(ent_type);
-    if (type == MED_NONE)
-      continue;
+    auto types = moab2med_element_type(ent_type);
 
-    // get number of cells
-    med_bool change_of_coord;
-    med_bool geo_transform;
-    med_int num_ele = MEDmeshnEntity(
-        fid, mesh_name, MED_NO_DT, MED_NO_IT, MED_CELL, type, MED_CONNECTIVITY,
-        MED_NODAL, &change_of_coord, &geo_transform);
+    for (auto type : types) {
 
-    // get connectivity
-    if (num_ele <= 0)
-      continue;
-    int num_nod_per_ele = type % 100;
-    std::vector<med_int> conn_med(num_ele * num_nod_per_ele);
-    if (MEDmeshElementConnectivityRd(fid, mesh_name, MED_NO_DT, MED_NO_IT,
-                                     MED_CELL, type, MED_NODAL,
-                                     MED_FULL_INTERLACE, &conn_med[0]) < 0) {
-      SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
-              "Could not read MED elements");
-    }
+      // get number of cells
+      med_bool change_of_coord;
+      med_bool geo_transform;
+      med_int num_ele = MEDmeshnEntity(
+          fid, mesh_name, MED_NO_DT, MED_NO_IT, MED_CELL, type,
+          MED_CONNECTIVITY, MED_NODAL, &change_of_coord, &geo_transform);
 
-    // cerr << "type " << ent_type << " ";
-    // cerr << "num_ele " << num_ele << " " << num_nod_per_ele << endl;;
+      // get connectivity
+      if (num_ele <= 0)
+        continue;
 
-    Range ents;
+      int num_nod_per_ele = type % 100;
+      std::vector<med_int> conn_med(num_ele * num_nod_per_ele);
+      if (MEDmeshElementConnectivityRd(fid, mesh_name, MED_NO_DT, MED_NO_IT,
+                                       MED_CELL, type, MED_NODAL,
+                                       MED_FULL_INTERLACE, &conn_med[0]) < 0) {
+        SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+                "Could not read MED elements");
+      }
 
-    if (ent_type != MBVERTEX) {
-      EntityHandle *conn_moab;
-      EntityHandle starte;
-      CHKERR iface->get_element_connect(num_ele, num_nod_per_ele, ent_type, 0,
-                                        starte, conn_moab);
-      switch (ent_type) {
-      // FIXME: Some connectivity could not work, need to run and test
-      case MBTET: {
-        int ii = 0;
-        for (int ee = 0; ee != num_ele; ee++) {
-          EntityHandle n[4];
-          for (int nn = 0; nn != num_nod_per_ele; nn++) {
-            // conn_moab[ii] = verts[conn_med[ii]-1];
-            n[nn] = verts[conn_med[ii + nn] - 1];
+      // cerr << "type " << ent_type << " ";
+      // cerr << "num_ele " << num_ele << " " << num_nod_per_ele << endl;;
+
+      Range ents;
+
+      if (ent_type != MBVERTEX) {
+        EntityHandle *conn_moab;
+        EntityHandle starte;
+        CHKERR iface->get_element_connect(num_ele, num_nod_per_ele, ent_type, 0,
+                                          starte, conn_moab);
+        switch (ent_type) {
+        // FIXME: Some connectivity could not work, need to run and test
+        case MBTET: {
+          int ii = 0;
+          for (int ee = 0; ee != num_ele; ee++) {
+            EntityHandle n[4];
+            for (int nn = 0; nn != num_nod_per_ele; nn++) {
+              // conn_moab[ii] = verts[conn_med[ii]-1];
+              n[nn] = verts[conn_med[ii + nn] - 1];
+            }
+
+            std::array<int, 10> nodes_map{
+
+                1, 0, 2, 3, 
+                
+                
+                4, 6, 5, 8, 7, 9
+
+            };
+
+            for (int nn = 0; nn != num_nod_per_ele; nn++, ii++) {
+              conn_moab[ii] = n[nodes_map[nn]];
+            }
           }
-          EntityHandle n0 = n[0];
-          n[0] = n[1];
-          n[1] = n0;
-          for (int nn = 0; nn != num_nod_per_ele; nn++, ii++) {
-            conn_moab[ii] = n[nn];
+        } break;
+        default: {
+          int ii = 0;
+          for (int ee = 0; ee != num_ele; ee++) {
+            for (int nn = 0; nn != num_nod_per_ele; nn++, ii++) {
+              // cerr << conn_med[ii] << " ";
+              conn_moab[ii] = verts[conn_med[ii] - 1];
+            }
+            // cerr << endl;
           }
         }
-      } break;
-      default: {
+        }
+        CHKERR iface->update_adjacencies(starte, num_ele, num_nod_per_ele,
+                                         conn_moab);
+        ents = Range(starte, starte + num_ele - 1);
+      } else {
+        // This is special case when in med vertices are defined as elements
         int ii = 0;
-        for (int ee = 0; ee != num_ele; ee++) {
-          for (int nn = 0; nn != num_nod_per_ele; nn++, ii++) {
-            // cerr << conn_med[ii] << " ";
+        std::vector<EntityHandle> conn_moab(num_ele * num_nod_per_ele);
+        for (int ee = 0; ee != num_ele; ++ee)
+          for (int nn = 0; nn != num_nod_per_ele; ++nn, ++ii)
             conn_moab[ii] = verts[conn_med[ii] - 1];
-          }
-          // cerr << endl;
+        ents.insert_list(conn_moab.begin(), conn_moab.end());
+      }
+
+      // Add elements to family meshset
+      CHKERR m_field.get_moab().add_entities(mesh_meshset, ents);
+
+      // get family for cells
+      {
+        std::vector<med_int> fam(num_ele, 0);
+        if (MEDmeshEntityFamilyNumberRd(fid, mesh_name, MED_NO_DT, MED_NO_IT,
+                                        MED_CELL, type, &fam[0]) < 0) {
+          SETERRQ(m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
+                  "No family number for elements: using 0 as default family "
+                  "number");
+        }
+        // std::vector<med_int> ele_tags(num_ele);
+        // if(MEDmeshEntityNumberRd(
+        //   fid, mesh_name,MED_NO_DT,MED_NO_IT,MED_CELL,type,&ele_tags[0]) < 0
+        // ) {
+        //   ele_tags.clear();
+        // }
+        for (int j = 0; j < num_ele; j++) {
+          // cerr << ents[j] << " " /*<< ele_tags[j] << " "*/ << fam[j] << endl;
+          family_elem_map[fam[j]].insert(ents[j]);
         }
       }
-      }
-      CHKERR iface->update_adjacencies(starte, num_ele, num_nod_per_ele,
-                                       conn_moab);
-      ents = Range(starte, starte + num_ele - 1);
-    } else {
-      // This is special case when in med vertices are defined as elements
-      int ii = 0;
-      std::vector<EntityHandle> conn_moab(num_ele * num_nod_per_ele);
-      for (int ee = 0; ee != num_ele; ++ee)
-        for (int nn = 0; nn != num_nod_per_ele; ++nn, ++ii)
-          conn_moab[ii] = verts[conn_med[ii] - 1];
-      ents.insert_list(conn_moab.begin(), conn_moab.end());
     }
 
-    // Add elements to family meshset
-    CHKERR m_field.get_moab().add_entities(mesh_meshset, ents);
-
-    // get family for cells
-    {
-      std::vector<med_int> fam(num_ele, 0);
-      if (MEDmeshEntityFamilyNumberRd(fid, mesh_name, MED_NO_DT, MED_NO_IT,
-                                      MED_CELL, type, &fam[0]) < 0) {
-        SETERRQ(
-            m_field.get_comm(), MOFEM_OPERATION_UNSUCCESSFUL,
-            "No family number for elements: using 0 as default family number");
-      }
-      // std::vector<med_int> ele_tags(num_ele);
-      // if(MEDmeshEntityNumberRd(
-      //   fid, mesh_name,MED_NO_DT,MED_NO_IT,MED_CELL,type,&ele_tags[0]) < 0
-      // ) {
-      //   ele_tags.clear();
-      // }
-      for (int j = 0; j < num_ele; j++) {
-        // cerr << ents[j] << " " /*<< ele_tags[j] << " "*/ << fam[j] << endl;
-        family_elem_map[fam[j]].insert(ents[j]);
-      }
-    }
   }
 
   if (MEDfileClose(fid) < 0) {
