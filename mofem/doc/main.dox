@@ -4,195 +4,153 @@
 
 \htmlonly
 <div class="wrapper">
-  <div class="main">
-    
+    <div class="main">
 
-<html>
-<head>
-	<title>MoFEM</title>
-	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-	<meta name="description" content="MoFEM - An open source, parallel finite
+
+        <html>
+
+        <head>
+            <title>MoFEM</title>
+            <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+            <meta name="description" content="MoFEM - An open source, parallel finite
 	element library" />
-</head>
+        </head>
 
 
-<p class="aligncenter">
-    <img src="mofem_logo.png" alt="MoFEM logo" style="width:500px;height:110px;" />
-</p>
+        <p class="aligncenter">
+            <img src="mofem_logo.png" alt="MoFEM logo" style="width:500px;height:110px;" />
+        </p>
 
-<style>
-.aligncenter {
-    text-align: center;
-}
-</style>
-
-
-<h1 style="font-weight:200;font-size:150%"><center>An open source, parallel finite element library</center></h1>
+        <style>
+            .aligncenter {
+                text-align: center;
+            }
+        </style>
 
 
-<style>
-    .table-spacing td {
-        padding: 10px;
-    }
-</style>
-
-<table class="table-spacing">
-
-    <tr>
-        <td style="text-align:center">
-            <h2 style="font-weight:200;">The library</h2>
-        </td>
-        <td style="text-align:center">
-            <h2 style="font-weight:200;">Scalability</h2>
-        </td>
-        <td style="text-align:center">
-            <h2 style="font-weight:200;">Getting started</h2>
-        </td>
-    </tr>
-    <tr>
-        <td class="tg"><a style="font-weight:bold"
-                href="namespace_mo_f_e_m.html">MoFEM</a> is an open source (<a
-                href=https://www.gnu.org/licenses/lgpl.html>GNU LGPL</a>) C++
-                finite element library. It is capable of dealing with complex
-                multi-physics problems with arbitrary levels of approximation
-                and refinement. <a style="font-weight:bold"
-                href="namespace_mo_f_e_m.html">MoFEM</a> can read various input
-            file formats, and work with
-            preprocessors like Gmsh, Salome, Cubit, and many more.
-        </td>
-
-        <td class="tg"><a style="font-weight:bold"
-                href="namespace_mo_f_e_m.html">MoFEM</a> can be used for
-            parallel processing on desktop
-            computers and high-performance clusters. Its modular toolkit-like
-            structure
-            allows for development of open modules and private industrial
-            sensitive
-            projects. At the same time, it is designed to suit both researchers
-            developing
-            computer methods and engineers solving real practical problems.
-        </td>
-
-        <td class="tg"><a style="font-weight:bold"
-                href="usersmain.html">Getting started</a> offers a wide range of
-            information including guides on installation, basic tutorials,
-            instructive videos. <a style="font-weight:bold"
-                href="developersmain.html">Developer</a> section contains <a
-                style="font-weight:bold"
-                href="namespace_mo_f_e_m.html">MoFEM</a> design
-            philosophy and tutorials on how to implement problems from solid
-            mechanics to fluid
-            mechanics.
-        </td>
-    </tr>
-</table>
+        <h1 style="font-weight:200;font-size:150%">
+            <center>An open source, parallel finite element library</center>
+        </h1>
 
 
+        <style>
+            .table-spacing td {
+                padding: 10px;
+            }
+        </style>
 
-<head>
-    <link rel="stylesheet" type="text/css" href="engine1/style.css" />
-</head>
+        <table class="table-spacing">
 
-<body style="background-color:#ffffff;margin:auto">
+            <tr>
+                <td style="text-align:center">
+                    <h2 style="font-weight:200;">The library</h2>
+                </td>
+                <td style="text-align:center">
+                    <h2 style="font-weight:200;">Scalability</h2>
+                </td>
+                <td style="text-align:center">
+                    <h2 style="font-weight:200;">Getting started</h2>
+                </td>
+            </tr>
+            <tr>
+                <td class="tg"><a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> is an open source
+                    (<a href=https://www.gnu.org/licenses/lgpl.html>GNU LGPL</a>) C++
+                    finite element library. It is capable of dealing with complex
+                    multi-physics problems with arbitrary levels of approximation
+                    and refinement. <a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> can read
+                    various input file formats, and work with preprocessors like Gmsh, Salome, Cubit, and many more.
+                </td>
 
-    <div id="wowslider-container1">
-        <div class="ws_images">
-            <ul>
-                <li><a href="benchmarks_edf_tets.html"><img
-                            src="slider_configurational_fracture.png" alt="Configurational
+                <td class="tg"><a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> can be used for
+                    parallel processing on desktop computers and high-performance clusters. Its modular toolkit-like
+                    structure allows for development of open modules and private industrial
+                    sensitive projects. At the same time, it is designed to suit both researchers
+                    developing computer methods and engineers solving real practical problems.
+                </td>
+
+                <td class="tg"><a style="font-weight:bold" href="running_code.html">Getting started</a> offers a wide
+                    range of information including guides on installation, basic tutorials,
+                    instructive videos. <a style="font-weight:bold" href="tutorials.html">Developer</a> section
+                    contains <a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> design
+                    philosophy and tutorials on how to implement problems from solid
+                    mechanics to fluid
+                    mechanics.
+                </td>
+            </tr>
+        </table>
+
+        <head>
+            <link rel="stylesheet" type="text/css" href="engine1/style.css" />
+        </head>
+
+        <body style="background-color:#ffffff;margin:auto">
+
+            <div id="wowslider-container1">
+                <div class="ws_images">
+                    <ul>
+                        <li><a href="benchmarks_edf_tets.html"><img src="slider_configurational_fracture.png" alt="Configurational
                 Fracture" title="Configurational Fracture" /></a></li>
-                <li><a
-                        href="https://bitbucket.org/karol41/mofem_um_phase_field_fracture/src/master/"><img
-                            src="slider_phase_field_fracture.png"
-                            alt="Phase-field Fracture"
-                            title="Phase-field Fracture" /></a></li>
+                        <li><a href="https://bitbucket.org/karol41/mofem_um_phase_field_fracture/src/master/"><img
+                                    src="slider_phase_field_fracture.png" alt="Phase-field Fracture"
+                                    title="Phase-field Fracture" /></a></li>
 
-                <li><a
-                        href="https://bitbucket.org/IgnatiosAthanasiadis/mofem_um_contact_mechanics_ignatios/src/master/"><img
-                            src="slider_mortar_contact.png" alt="Mortar Contact"
-                            title="Mortar Contact" /></a></li>
+                        <li><a
+                                href="https://bitbucket.org/IgnatiosAthanasiadis/mofem_um_contact_mechanics_ignatios/src/master/"><img
+                                    src="slider_mortar_contact.png" alt="Mortar Contact" title="Mortar Contact" /></a>
+                        </li>
 
-                <li><a
-                        href="https://bitbucket.org/likask/mofem_um_solid_shell_prism_element/src/master/"><img
-                            src="slider_solid_shell.png" alt="Solid Shell"
-                            title="Solid Shell" /></a></li>
+                        <li><a href="https://bitbucket.org/likask/mofem_um_solid_shell_prism_element/src/master/"><img
+                                    src="slider_solid_shell.png" alt="Solid Shell" title="Solid Shell" /></a></li>
 
-                <li><a
-                        href="https://bitbucket.org/likask/mofem_um_bone_remodelling/src/master/"><img
-                            src="slider_bone_remodelling.png"
-                            alt="Bone Remodelling"
-                            title="Bone Remodelling" /></a></li>
-                
-                <li><a
-                        href="http://mofem.eng.gla.ac.uk/mofem/html/"><img
-                            src="slider_navier_stokes.png"
-                            alt="Navier-Stokes Equations"
-                            title="Navier-Stokes Equations" /></a></li>
+                        <li><a href="https://bitbucket.org/likask/mofem_um_bone_remodelling/src/master/"><img
+                                    src="slider_bone_remodelling.png" alt="Bone Remodelling"
+                                    title="Bone Remodelling" /></a></li>
 
-                <li><a
-                        href="https://bitbucket.org/karol41/mofem_um_topology_optimization/src/master/"><img
-                            src="slider_topology_optimisation.png"
-                            alt="Topology Optimisation"
-                            title="Topology Optimisation" /></a></li>
+                        <li><a href="http://mofem.eng.gla.ac.uk/mofem/html/"><img src="slider_navier_stokes.png"
+                                    alt="Navier-Stokes Equations" title="Navier-Stokes Equations" /></a></li>
 
-                <li><a
-                        href="https://bitbucket.org/mofem/um_eshelbian_plasticity/src/master/"><img
-                            src="slider_plasticity.png" alt="Plasticity"
-                            title="Plasticity" /></a></li>
+                        <li><a href="https://bitbucket.org/karol41/mofem_um_topology_optimization/src/master/"><img
+                                    src="slider_topology_optimisation.png" alt="Topology Optimisation"
+                                    title="Topology Optimisation" /></a></li>
 
-                <li><a href=""><img src="slider_magnetostatics.png"
-                            alt="Magnetostatics" title="Magnetostatics" /></a>
-                </li>
+                        <li><a href="https://bitbucket.org/mofem/um_eshelbian_plasticity/src/master/"><img
+                                    src="slider_plasticity.png" alt="Plasticity" title="Plasticity" /></a></li>
 
-                <li><a
-                        href="https://bitbucket.org/karol41/mofem_um_cell_engineering/src/master/"><img
-                            src="slider_cell_traction_microscopy.png"
-                            alt="Cell Traction Microscopy"
-                            title="Cell Traction Microscopy" /></a></li>
+                        <li><a href=""><img src="slider_magnetostatics.png" alt="Magnetostatics"
+                                    title="Magnetostatics" /></a>
+                        </li>
 
-                <li><a href="mix_transport.html"><img
-                            src="slider_mix_transport_element.png"
-                            alt="Mixed Transport Element"
-                            title="Mixed Transport Element" /></a></li>
+                        <li><a href="https://bitbucket.org/karol41/mofem_um_cell_engineering/src/master/"><img
+                                    src="slider_cell_traction_microscopy.png" alt="Cell Traction Microscopy"
+                                    title="Cell Traction Microscopy" /></a></li>
 
-                <li><a href="sope_film.html"><img src="slider_soap_film.png"
-                            alt="Soap Film" title="Soap Film" /></a></li>
+                        <li><a href="mix_transport.html"><img src="slider_mix_transport_element.png"
+                                    alt="Mixed Transport Element" title="Mixed Transport Element" /></a></li>
 
-                <li><a href="https://bitbucket.org/likask/mofem_um_helmholtz"><img
-                            src="slider_acoustic_wave.png" alt="Acoustic Wave"
-                            title="Acoustic Wave" /></a></li>
+                        <li><a href="sope_film.html"><img src="slider_soap_film.png" alt="Soap Film"
+                                    title="Soap Film" /></a></li>
 
-            </ul>
-        </div>
+                        <li><a href="https://bitbucket.org/likask/mofem_um_helmholtz"><img
+                                    src="slider_acoustic_wave.png" alt="Acoustic Wave" title="Acoustic Wave" /></a></li>
+
+                    </ul>
+                </div>
+            </div>
+            <script type="text/javascript" src="engine1/wowslider.js"></script>
+            <script type="text/javascript" src="engine1/script.js"></script>
+
+            <div class="fixed">
+                <!-- Twitter Embed Code -->
+                <a class="twitter-timeline" data-lang="en" data-width="400" data-height="600" data-dnt="true"
+                    data-chrome="transparent" href="https://twitter.com/mofemjoseph?ref_src=twsrc%5Etfw">News</a>
+                <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                <!-- / Twitter Embed Code -->
+            </div>
+
+        </body>
+
     </div>
-    <script type="text/javascript" src="engine1/wowslider.js"></script>
-    <script type="text/javascript" src="engine1/script.js"></script>
 
-</body>
-
-  </div>
-  <div class="sidebar">
-
-    <!--    Version updates here: ... -->
-
-  <dev align=center>
-  <div class="twitter-feed">
-    <div class="container">
-      <div class="row">
-        <div class="col-md-12">
-          <!-- Twitter Embed Code -->
-          <a class="twitter-timeline" data-lang="en" data-width="650" data-height="850" data-dnt="true" data-chrome="transparent"
-            href="https://twitter.com/mofemjoseph?ref_src=twsrc%5Etfw">Tweets by
-            mofemjoseph</a>
-          <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-          <!-- / Twitter Embed Code -->
-        </div>
-      </div>
-    </div>
-  </div>
-</dev>
-
-  </div>
 </div>
 \endhtmlonly
 
