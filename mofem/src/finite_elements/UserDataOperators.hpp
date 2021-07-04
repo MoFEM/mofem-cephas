@@ -2958,6 +2958,77 @@ private:
 
 /**@}*/
 
+/** \name Operation on matrices at integration points */
+
+/**@{*/
+
+template <int DIM>
+struct OpInvertMatrix : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpInvertMatrix(boost::shared_ptr<MatrixDouble> in_ptr,
+                 boost::shared_ptr<MatrixDouble> out_ptr,
+                 boost::shared_ptr<VectorDouble> det_ptr)
+      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST), inPtr(in_ptr),
+        outPtr(out_ptr), detPtr(det_ptr) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    return doWorkImpl(side, type, data, FTensor::Number<DIM>());
+  }
+
+private:
+  boost::shared_ptr<MatrixDouble> inPtr;
+  boost::shared_ptr<MatrixDouble> outPtr;
+  boost::shared_ptr<VectorDouble> detPtr;
+
+  MoFEMErrorCode doWorkImpl(int side, EntityType type,
+                            DataForcesAndSourcesCore::EntData &data,
+                            const FTensor::Number<3> &);
+};
+
+template <int DIM>
+MoFEMErrorCode
+OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
+                                DataForcesAndSourcesCore::EntData &data,
+                                const FTensor::Number<3> &) {
+  MoFEMFunctionBegin;
+
+  if (!inPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer for inPtr matrix not allocated");
+  if (!outPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer for outPtr matrix not allocated");
+  if (!detPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer for detPtr matrix not allocated");
+
+  const auto nb_rows = inPtr->size1();
+  const auto nb_integration_pts = inPtr->size2();
+
+  outPtr->resize(nb_rows, nb_integration_pts, false);
+  detPtr->resize(nb_integration_pts, false);
+  auto t_in = getFTensor2<3, 3>(*inPtr);
+  auto t_out = getFTensor2<3, 3>(*outPtr);
+  auto t_det = getFTensor0(*detPtr);
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+
+  for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+    t_out(i, j) = t_in(i, j);
+    determinantTensor3by3(t_out, t_det);
+    invertTensor3by3(t_in, t_det, t_out);
+    ++t_in;
+    ++t_out;
+    ++t_det;
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+/**@}*/
+
 } // namespace MoFEM
 
 #endif // __USER_DATA_OPERATORS_HPP__
