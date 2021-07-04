@@ -273,6 +273,10 @@ MoFEMErrorCode OpSetHOContravariantPiolaTransform::doWork(
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer for detPtr not allocated");
 
+  if (jacPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer for jacPtr not allocated");
+
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
     FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
@@ -311,6 +315,62 @@ MoFEMErrorCode OpSetHOContravariantPiolaTransform::doWork(
       }
       ++t_det;
       ++t_jac;
+    }
+
+    data.getN(base).data().swap(piolaN.data());
+    data.getDiffN(base).data().swap(piolaDiffN.data());
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode OpSetHOCovariantPiolaTransform::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+
+  if (jacInvPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer for jacPtr not allocated");
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+
+    unsigned int nb_gauss_pts = data.getN(base).size1();
+    unsigned int nb_base_functions = data.getN(base).size2() / 3;
+    piolaN.resize(nb_gauss_pts, data.getN(base).size2(), false);
+    piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
+
+    auto t_n = data.getFTensor1N<3>(base);
+    double *t_transformed_n_ptr = &*piolaN.data().begin();
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
+        t_transformed_n_ptr, // HVEC0
+        &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
+    auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
+    double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_transformed_diff_n(
+        t_transformed_diff_n_ptr, &t_transformed_diff_n_ptr[HVEC0_1],
+        &t_transformed_diff_n_ptr[HVEC0_2], &t_transformed_diff_n_ptr[HVEC1_0],
+        &t_transformed_diff_n_ptr[HVEC1_1], &t_transformed_diff_n_ptr[HVEC1_2],
+        &t_transformed_diff_n_ptr[HVEC2_0], &t_transformed_diff_n_ptr[HVEC2_1],
+        &t_transformed_diff_n_ptr[HVEC2_2]);
+
+    auto t_inv_jac = getFTensor2FromMat<3,3>(*jacInvPtr);
+
+    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+      for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+        t_transformed_n(i) = t_inv_jac(k, i) * t_n(k);
+        t_transformed_diff_n(i, k) = t_inv_jac(j, i) * t_diff_n(j, k);
+        ++t_n;
+        ++t_transformed_n;
+        ++t_diff_n;
+        ++t_transformed_diff_n;
+      }
+      ++t_inv_jac;
     }
 
     data.getN(base).data().swap(piolaN.data());

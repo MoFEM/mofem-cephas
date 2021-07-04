@@ -140,7 +140,23 @@ private:
 
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
+};
 
+/** \brief Apply covariant (Piola) transfer to Hcurl space for HO geometry
+ */
+struct OpSetHOCovariantPiolaTransform : public DataOperator {
+
+  OpSetHOCovariantPiolaTransform(boost::shared_ptr<MatrixDouble> jac_inv_ptr)
+      : jacInvPtr(jac_inv_ptr) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  boost::shared_ptr<MatrixDouble> jacInvPtr;
+
+  MatrixDouble piolaN;
+  MatrixDouble piolaDiffN;
 };
 
 }; // namespace MoFEM
