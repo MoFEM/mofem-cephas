@@ -1,7 +1,6 @@
-/** \file UserDataOperators.cpp
+/** \file HoDataOperators.cpp
 
-\brief Generic user data operators for evaluate fields, and other common
-purposes.
+\brief Set of operators for high-order geometry approximation.
 
 */
 
@@ -50,8 +49,8 @@ OpCalculateHoCoords::doWork(int side, EntityType type,
 };
 
 MoFEMErrorCode
-OpSetHoInvJacScalarBase::doWork(int side, EntityType type,
-                                DataForcesAndSourcesCore::EntData &data) {
+OpSetHoInvJacToScalarBases::doWork(int side, EntityType type,
+                                   DataForcesAndSourcesCore::EntData &data) {
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
   MoFEMFunctionBegin;

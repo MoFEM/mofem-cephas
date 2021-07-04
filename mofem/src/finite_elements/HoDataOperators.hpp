@@ -24,35 +24,33 @@ namespace MoFEM {
 
 /**
  * @brief Calculate HO coordinates at gauss points
- * 
+ *
  */
 struct OpCalculateHoCoords : public ForcesAndSourcesCore::UserDataOperator {
 
   OpCalculateHoCoords(const std::string field_name)
       : ForcesAndSourcesCore::UserDataOperator(field_name, OPROW) {}
 
-
- MoFEMErrorCode doWork(int side, EntityType type,
+  MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
-
 };
 
 /**
  * \brief Set inverse jacobian to base functions
  *
  */
-struct OpSetHoInvJacScalarBase : public ForcesAndSourcesCore::UserDataOperator {
+struct OpSetHoInvJacToScalarBases
+    : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpSetHoInvJacScalarBase(const FieldSpace space)
+  OpSetHoInvJacToScalarBases(const FieldSpace space)
       : ForcesAndSourcesCore::UserDataOperator(space) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
-  private:
-
-    boost::shared_ptr<MatrixDouble> invJac;
-    MatrixDouble diffNinvJac;
+private:
+  boost::shared_ptr<MatrixDouble> invJac;
+  MatrixDouble diffNinvJac;
 };
 
 /**
@@ -83,7 +81,6 @@ struct OpMakeHighOrderGeometryWeightsOnVolume
                         DataForcesAndSourcesCore::EntData &data);
 };
 
-
-};
+}; // namespace MoFEM
 
 #endif
