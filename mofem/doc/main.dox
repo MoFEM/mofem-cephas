@@ -141,15 +141,7 @@
             <script type="text/javascript" src="engine1/script.js"></script>
 
             <style>
-                @media screen and (min-width: 0px) and (max-width: 800px) {
-                    #twitter-small-screen {
-                        display: none;
-                    }
-
-                    /* show it on smaller screen */
-                }
-
-                @media screen and (min-width: 801px) and (max-width: 1024px) {
+                @media screen and (max-width: 1200px) {
                     #twitter-small-screen {
                         display: none;
                     }
@@ -162,7 +154,7 @@
 
                 <div class="fixed">
                     <!-- Twitter Embed Code -->
-                    <a class="twitter-timeline" data-lang="en" data-width="400" data-height="720" data-dnt="true"
+                    <a class="twitter-timeline" data-lang="en" data-width="350" data-height="720" data-dnt="true"
                         data-border-color="#D8D8D8" data-chrome="transparent"
                         href="https://twitter.com/mofemjoseph?ref_src=twsrc%5Etfw">News</a>
                     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
