@@ -2966,8 +2966,8 @@ template <int DIM>
 struct OpInvertMatrix : public ForcesAndSourcesCore::UserDataOperator {
 
   OpInvertMatrix(boost::shared_ptr<MatrixDouble> in_ptr,
-                 boost::shared_ptr<MatrixDouble> out_ptr,
-                 boost::shared_ptr<VectorDouble> det_ptr)
+                 boost::shared_ptr<VectorDouble> det_ptr,
+                 boost::shared_ptr<MatrixDouble> out_ptr)
       : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST), inPtr(in_ptr),
         outPtr(out_ptr), detPtr(det_ptr) {}
 
@@ -2996,9 +2996,6 @@ OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
   if (!inPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer for inPtr matrix not allocated");
-  if (!outPtr)
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Pointer for outPtr matrix not allocated");
   if (!detPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer for detPtr matrix not allocated");
@@ -3008,20 +3005,31 @@ OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
 
   outPtr->resize(nb_rows, nb_integration_pts, false);
   detPtr->resize(nb_integration_pts, false);
-  auto t_in = getFTensor2<3, 3>(*inPtr);
-  auto t_out = getFTensor2<3, 3>(*outPtr);
-  auto t_det = getFTensor0(*detPtr);
 
-  FTensor::Index<'i', 3> i;
-  FTensor::Index<'j', 3> j;
+  // Calculate determinant
+  {
+    detPtr->resize(nb_integration_pts, false);
+    auto t_in = getFTensor2<3, 3>(*inPtr);
+    auto t_det = getFTensor0(*detPtr);
+    for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+      determinantTensor3by3(t_in, t_det);
+      ++t_in;
+      ++t_det;
+    }
+  }
 
-  for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
-    t_out(i, j) = t_in(i, j);
-    determinantTensor3by3(t_out, t_det);
-    invertTensor3by3(t_in, t_det, t_out);
-    ++t_in;
-    ++t_out;
-    ++t_det;
+  // Invert jacobian
+  if (outPtr) {
+    outPtr->resize(nb_rows, nb_integration_pts, false);
+    auto t_in = getFTensor2<3, 3>(*inPtr);
+    auto t_out = getFTensor2<3, 3>(*outPtr);
+    auto t_det = getFTensor0(*detPtr);
+    for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+      invertTensor3by3(t_in, t_det, t_out);
+      ++t_in;
+      ++t_out;
+      ++t_det;
+    }
   }
 
   MoFEMFunctionReturn(0);
