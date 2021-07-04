@@ -42,91 +42,7 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   /** \brief default operator for TET element
    * \ingroup mofem_forces_and_sources_volume_element
    */
-  struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
-
-    using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
-
-    /** \brief get element number of nodes
-     */
-    inline int getNumNodes();
-
-    /** \brief get element connectivity
-     */
-    inline const EntityHandle *getConn();
-
-    /** \brief element volume (linear geometry)
-     */
-    inline double getVolume() const;
-
-    /** \brief element volume (linear geometry)
-     */
-    inline double &getVolume();
-
-    /**
-     * \brief get element Jacobian
-     */
-    inline FTensor::Tensor2<double *, 3, 3> &getJac();
-
-    /**
-     * \brief get element inverse Jacobian
-     */
-    inline FTensor::Tensor2<double *, 3, 3> &getInvJac();
-
-    /**
-     * \brief get measure of element
-     * @return volume
-     */
-    inline double getMeasure() const;
-
-    /**
-     * \brief get measure of element
-     * @return volume
-     */
-    inline double &getMeasure();
-
-    /** \brief nodal coordinates
-     */
-    inline VectorDouble &getCoords();
-
-    /** \brief coordinate at Gauss points (if hierarchical approximation of
-     * element geometry)
-     */
-    inline MatrixDouble &getHoCoordsAtGaussPts();
-
-    inline MatrixDouble &getHoGaussPtsJac();
-
-    inline MatrixDouble &getHoGaussPtsInvJac();
-
-    inline VectorDouble &getHoGaussPtsDetJac();
-
-    inline auto getFTenosr0HoMeasure();
-
-    /**
-     * \brief Get coordinates at integration points taking geometry from field
-     *
-     * This is HO geometry given by arbitrary order polynomial
-     * \code
-     * auto t_coords = getFTensor1HoCoordsAtGaussPts();
-     * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
-     *   // do something
-     *   ++t_coords;
-     * }
-     * \endcode
-     *
-     */
-    inline auto getFTensor1HoCoordsAtGaussPts();
-
-    inline auto getFTensor2HoGaussPtsJac();
-
-    inline auto getFTensor2HoGaussPtsInvJac();
-
-    /** \brief return pointer to Generic Volume Finite Element object
-     */
-    inline VolumeElementForcesAndSourcesCoreBase *getVolumeFE() const;
-
-  protected:
-    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-  };
+  struct UserDataOperator;
 
   enum Switches {
     NO_HO_GEOMETRY = 1 << 0 | 1 << 2,
@@ -224,7 +140,7 @@ protected:
   OpSetHoCovariantPiolaTransform opHoCovariantTransform;
   OpSetHoInvJacHdivAndHcurl opSetHoInvJacHdivAndHcurl;
 
-  double vOlume;
+  double &vOlume;
 
   int num_nodes;
   const EntityHandle *conn;
@@ -232,6 +148,81 @@ protected:
   FTensor::Tensor2<double *, 3, 3> tInvJac;
 
   friend class UserDataOperator;
+};
+
+struct VolumeElementForcesAndSourcesCoreBase::UserDataOperator
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
+
+  /** \brief get element number of nodes
+   */
+  inline int getNumNodes();
+
+  /** \brief get element connectivity
+   */
+  inline const EntityHandle *getConn();
+
+  /** \brief element volume (linear geometry)
+   */
+  inline double getVolume() const;
+
+  /** \brief element volume (linear geometry)
+   */
+  inline double &getVolume();
+
+  /**
+   * \brief get element Jacobian
+   */
+  inline FTensor::Tensor2<double *, 3, 3> &getJac();
+
+  /**
+   * \brief get element inverse Jacobian
+   */
+  inline FTensor::Tensor2<double *, 3, 3> &getInvJac();
+
+  /** \brief nodal coordinates
+   */
+  inline VectorDouble &getCoords();
+
+  /** \brief coordinate at Gauss points (if hierarchical approximation of
+   * element geometry)
+   */
+  inline MatrixDouble &getHoCoordsAtGaussPts();
+
+  inline MatrixDouble &getHoGaussPtsJac();
+
+  inline MatrixDouble &getHoGaussPtsInvJac();
+
+  inline VectorDouble &getHoGaussPtsDetJac();
+
+  inline auto getFTenosr0HoMeasure();
+
+  /**
+   * \brief Get coordinates at integration points taking geometry from field
+   *
+   * This is HO geometry given by arbitrary order polynomial
+   * \code
+   * auto t_coords = getFTensor1HoCoordsAtGaussPts();
+   * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
+   *   // do something
+   *   ++t_coords;
+   * }
+   * \endcode
+   *
+   */
+  inline auto getFTensor1HoCoordsAtGaussPts();
+
+  inline auto getFTensor2HoGaussPtsJac();
+
+  inline auto getFTensor2HoGaussPtsInvJac();
+
+  /** \brief return pointer to Generic Volume Finite Element object
+   */
+  inline VolumeElementForcesAndSourcesCoreBase *getVolumeFE() const;
+
+protected:
+  MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
 /**
@@ -324,15 +315,6 @@ VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getJac() {
 FTensor::Tensor2<double *, 3, 3> &
 VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getInvJac() {
   return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->tInvJac;
-}
-
-double
-VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getMeasure() const {
-  return getVolume();
-}
-
-double &VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getMeasure() {
-  return getVolume();
 }
 
 VectorDouble &

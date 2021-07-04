@@ -22,10 +22,10 @@ namespace MoFEM {
 
 VolumeElementForcesAndSourcesCoreBase::VolumeElementForcesAndSourcesCoreBase(
     Interface &m_field, const EntityType type)
-    : ForcesAndSourcesCore(m_field),
+    : ForcesAndSourcesCore(m_field), vOlume(elementMeasure),
       meshPositionsFieldName("MESH_NODE_POSITIONS"), coords(12), jAc(3, 3),
       invJac(3, 3), opSetInvJacH1(invJac),
-      opContravariantPiolaTransform(vOlume, jAc),
+      opContravariantPiolaTransform(elementMeasure, jAc),
       opCovariantPiolaTransform(invJac), opSetInvJacHdivAndHcurl(invJac),
       opHOatGaussPoints(hoCoordsAtGaussPts, hoGaussPtsJac),
       opSetHoInvJacH1(hoGaussPtsInvJac),

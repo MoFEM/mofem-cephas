@@ -529,6 +529,8 @@ private:
 
 protected:
   MatrixDouble coordsAtGaussPts; ///< coordinated at gauss points
+  double elementMeasure; ///< Depending on dimension of elements, stores length,
+                         ///< area or volume of element.
 };
 
 struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
@@ -861,6 +863,24 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /**@{*/
 
+  /** \name Deprecated (do not use) *
+
+  /**
+   * \brief get measure of element
+   * @return volume
+   */
+  inline double getMeasure() const;
+
+  /**
+   * \brief get measure of element
+   * @return volume
+   */
+  inline double &getMeasure();
+
+  /**}*/
+
+  /**@{*/
+
   /** \name Deprecated (do not use) */
 
   // \deprecated Deprecated function with spelling mistake
@@ -1092,6 +1112,14 @@ auto ForcesAndSourcesCore::UserDataOperator::getFTensor1CoordsAtGaussPts() {
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
       &getCoordsAtGaussPts()(0, 0), &getCoordsAtGaussPts()(0, 1),
       &getCoordsAtGaussPts()(0, 2));
+}
+
+double ForcesAndSourcesCore::UserDataOperator::getMeasure() const {
+  return static_cast<ForcesAndSourcesCore *>(ptrFE)->elementMeasure;
+}
+
+double &ForcesAndSourcesCore::UserDataOperator::getMeasure() {
+  return static_cast<ForcesAndSourcesCore *>(ptrFE)->elementMeasure;
 }
 
 } // namespace MoFEM
