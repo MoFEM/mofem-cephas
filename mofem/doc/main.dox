@@ -39,21 +39,21 @@
             }
         </style>
 
-        <table class="table-spacing">
+        <table id="table_main">
 
             <tr>
-                <td style="text-align:center">
+                <td style="text-align:center" width="33%" valign="bottom">
                     <h2 style="font-weight:200;">The library</h2>
                 </td>
-                <td style="text-align:center">
+                <td style="text-align:center" width="33%" valign="bottom">
                     <h2 style="font-weight:200;">Scalability</h2>
                 </td>
-                <td style="text-align:center">
+                <td style="text-align:center" width="33%" valign="bottom">
                     <h2 style="font-weight:200;">Getting started</h2>
                 </td>
             </tr>
             <tr>
-                <td class="tg"><a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> is an open source
+                <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> is an open source
                     (<a href=https://www.gnu.org/licenses/lgpl.html>GNU LGPL</a>) C++
                     finite element library. It is capable of dealing with complex
                     multi-physics problems with arbitrary levels of approximation
@@ -61,14 +61,14 @@
                     various input file formats, and work with preprocessors like Gmsh, Salome, Cubit, and many more.
                 </td>
 
-                <td class="tg"><a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> can be used for
+                <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> can be used for
                     parallel processing on desktop computers and high-performance clusters. Its modular toolkit-like
                     structure allows for development of open modules and private industrial
                     sensitive projects. At the same time, it is designed to suit both researchers
                     developing computer methods and engineers solving real practical problems.
                 </td>
 
-                <td class="tg"><a style="font-weight:bold" href="running_code.html">Getting started</a> offers a wide
+                <td style="text-align:left;background-color:#FAFAFA;padding:12px" valign="top"><a style="font-weight:bold" href="running_code.html">Getting started</a> offers a wide
                     range of information including guides on installation, basic tutorials,
                     instructive videos. <a style="font-weight:bold" href="tutorials.html">Developer</a> section
                     contains <a style="font-weight:bold" href="namespace_mo_f_e_m.html">MoFEM</a> design
@@ -77,7 +77,7 @@
                     mechanics.
                 </td>
             </tr>
-        </table>
+        </table
 
         <head>
             <link rel="stylesheet" type="text/css" href="engine1/style.css" />
@@ -141,8 +141,14 @@
 
             <div class="fixed">
                 <!-- Twitter Embed Code -->
-                <a class="twitter-timeline" data-lang="en" data-width="400" data-height="600" data-dnt="true"
-                    data-chrome="transparent" href="https://twitter.com/mofemjoseph?ref_src=twsrc%5Etfw">News</a>
+                <a class="twitter-timeline" 
+                    data-lang="en" 
+                    data-width="400" 
+                    data-height="720" 
+                    data-dnt="true"
+                    data-border-color="#D8D8D8"
+                    data-chrome="transparent"
+                    href="https://twitter.com/mofemjoseph?ref_src=twsrc%5Etfw">News</a>
                 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                 <!-- / Twitter Embed Code -->
             </div>
