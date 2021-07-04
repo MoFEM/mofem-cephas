@@ -1770,7 +1770,7 @@ u {
 
 .main {
   width: 75%;
-  height: 105vh;
+  height: 900px;
   flex-direction: column;
   max-width: 800px;
 }
@@ -1781,8 +1781,8 @@ u {
 }
 
 .fixed {
-        position: fixed;
-        background: #FAFAFA;
-        top: 140px;
-        right: 20px;
-      }    
+  position: fixed;
+  background: #FAFAFA;
+  top: 140px;
+  right: 20px;
+}    
