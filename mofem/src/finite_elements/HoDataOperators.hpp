@@ -42,14 +42,37 @@ struct OpCalculateHoCoords : public ForcesAndSourcesCore::UserDataOperator {
 struct OpSetHOInvJacToScalarBases
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpSetHOInvJacToScalarBases(const FieldSpace space)
-      : ForcesAndSourcesCore::UserDataOperator(space) {}
+  OpSetHOInvJacToScalarBases(const FieldSpace space,
+                             boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+      : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 
 private:
-  boost::shared_ptr<MatrixDouble> invJac;
+  boost::shared_ptr<MatrixDouble> invJacPtr;
+  MatrixDouble diffNinvJac;
+};
+
+/**
+ * \brief transform local reference derivatives of shape function to global
+ derivatives if higher order geometry is given
+ *
+
+ * \ingroup mofem_forces_and_sources
+*/
+struct OpSetHOInvJacVectorBase : public DataOperator {
+
+  OpSetHOInvJacVectorBase(const FieldSpace space,
+                          boost::shared_ptr<MatrixDouble> inv_jac_ptr)
+      : invJacPtr(inv_jac_ptr) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  boost::shared_ptr<MatrixDouble> invJacPtr;
+  MatrixDouble diffHdivInvJac;
   MatrixDouble diffNinvJac;
 };
 
@@ -85,8 +108,7 @@ struct OpMakeHighOrderGeometryWeightsOnVolume
  * \brief Set inverse jacobian to base functions
  *
  */
-struct OpSetHOWeights
-    : public ForcesAndSourcesCore::UserDataOperator {
+struct OpSetHOWeights : public ForcesAndSourcesCore::UserDataOperator {
 
   OpSetHOWeights(boost::shared_ptr<VectorDouble> det_ptr)
       : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST),
@@ -97,6 +119,27 @@ struct OpSetHOWeights
 
 private:
   boost::shared_ptr<VectorDouble> detPtr;
+};
+
+/** \brief Apply contravariant (Piola) transfer to Hdiv space for HO geometr
+
+* \ingroup mofem_forces_and_sources
+*/
+struct OpSetHOContravariantPiolaTransform : public DataOperator {
+
+  OpSetHOContravariantPiolaTransform(boost::shared_ptr<VectorDouble> det_ptr,
+                                     boost::shared_ptr<MatrixDouble> jac_ptr)
+      : detPtr(det_ptr), jacPtr(jac_ptr) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  boost::shared_ptr<VectorDouble> detPtr;
+  boost::shared_ptr<MatrixDouble> jacPtr;
+
+  MatrixDouble piolaN;
+  MatrixDouble piolaDiffN;
 
 };
 
