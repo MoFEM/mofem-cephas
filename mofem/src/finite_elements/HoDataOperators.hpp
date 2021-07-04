@@ -39,10 +39,10 @@ struct OpCalculateHoCoords : public ForcesAndSourcesCore::UserDataOperator {
  * \brief Set inverse jacobian to base functions
  *
  */
-struct OpSetHoInvJacToScalarBases
+struct OpSetHOInvJacToScalarBases
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpSetHoInvJacToScalarBases(const FieldSpace space)
+  OpSetHOInvJacToScalarBases(const FieldSpace space)
       : ForcesAndSourcesCore::UserDataOperator(space) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
@@ -79,6 +79,25 @@ struct OpMakeHighOrderGeometryWeightsOnVolume
       : VolumeElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
+};
+
+/**
+ * \brief Set inverse jacobian to base functions
+ *
+ */
+struct OpSetHOWeights
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpSetHOWeights(boost::shared_ptr<VectorDouble> det_ptr)
+      : ForcesAndSourcesCore::UserDataOperator(NOSPACE, OPLAST),
+        detPtr(det_ptr) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  boost::shared_ptr<VectorDouble> detPtr;
+
 };
 
 }; // namespace MoFEM

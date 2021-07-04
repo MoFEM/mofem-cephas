@@ -49,7 +49,7 @@ OpCalculateHoCoords::doWork(int side, EntityType type,
 };
 
 MoFEMErrorCode
-OpSetHoInvJacToScalarBases::doWork(int side, EntityType type,
+OpSetHOInvJacToScalarBases::doWork(int side, EntityType type,
                                    DataForcesAndSourcesCore::EntData &data) {
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
@@ -183,6 +183,31 @@ MoFEMErrorCode OpMakeHighOrderGeometryWeightsOnVolume::doWork(
              "Number of rows in getHoGaussPtsDetJac should be equal to "
              "number of integration points, but is not, i.e. %d != %d",
              getHoGaussPtsDetJac().size(), nb_int_pts);
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode OpSetHOWeights::doWork(int side, EntityType type,
+                                      DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  if (!detPtr)
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Pointer for detPtr matrix not allocated");
+
+  const auto nb_integration_pts = detPtr->size();
+  if (nb_integration_pts != getGaussPts().size2())
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "Inconsistent number of data points");
+
+  auto t_w = getFTensor0IntegrationWeight();
+  auto t_det = getFTensor0FromVec(*detPtr);
+  const auto measure = getMeasure();
+  for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
+    t_w *= t_det / measure;
+    ++t_w;
+    ++t_det;
   }
 
   MoFEMFunctionReturn(0);
