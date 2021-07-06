@@ -41,14 +41,11 @@ struct OpVolume : public VolumeElementForcesAndSourcesCore::UserDataOperator {
     const int nb_int_pts = getGaussPts().size2();
     // cerr << nb_int_pts << endl;
     auto t_w = getFTensor0IntegrationWeight();
-    // auto t_ho_det = getFTenosr0HoMeasure();
     double v = getMeasure();
     double vol = 0;
     for (int gg = 0; gg != nb_int_pts; gg++) {
-      vol += t_w * /*t_ho_det **/ v;
-      // cerr << t_ho_det << endl;
+      vol += t_w *  v;
       ++t_w;
-      // ++t_ho_det;
     }
     CHKERR VecSetValue(vOl, 0, vol, ADD_VALUES);
     MoFEMFunctionReturn(0);
@@ -169,8 +166,8 @@ int main(int argc, char *argv[]) {
       auto material_grad_mat = boost::make_shared<MatrixDouble>();
       auto material_det_vec = boost::make_shared<VectorDouble>();
       auto material_inv_grad_mat = boost::make_shared<MatrixDouble>();
-      domain_fe->meshPositionsFieldName = "none";
 
+      domain_fe->meshPositionsFieldName = "none";
       domain_fe->getOpPtrVector().push_back(
           new OpCalculateVectorFieldGradient<3, 3>("MESH_NODE_POSITIONS",
                                                    material_grad_mat));
