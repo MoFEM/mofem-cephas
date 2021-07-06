@@ -3003,9 +3003,6 @@ OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
   const auto nb_rows = inPtr->size1();
   const auto nb_integration_pts = inPtr->size2();
 
-  outPtr->resize(nb_rows, nb_integration_pts, false);
-  detPtr->resize(nb_integration_pts, false);
-
   // Calculate determinant
   {
     detPtr->resize(nb_integration_pts, false);

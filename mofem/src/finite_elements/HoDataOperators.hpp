@@ -61,11 +61,11 @@ private:
 
  * \ingroup mofem_forces_and_sources
 */
-struct OpSetHOInvJacVectorBase : public DataOperator {
+struct OpSetHOInvJacVectorBase : public ForcesAndSourcesCore::UserDataOperator {
 
   OpSetHOInvJacVectorBase(const FieldSpace space,
                           boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : invJacPtr(inv_jac_ptr) {}
+      : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
@@ -125,11 +125,14 @@ private:
 
 * \ingroup mofem_forces_and_sources
 */
-struct OpSetHOContravariantPiolaTransform : public DataOperator {
+struct OpSetHOContravariantPiolaTransform
+    : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpSetHOContravariantPiolaTransform(boost::shared_ptr<VectorDouble> det_ptr,
+  OpSetHOContravariantPiolaTransform(const FieldSpace space,
+                                     boost::shared_ptr<VectorDouble> det_ptr,
                                      boost::shared_ptr<MatrixDouble> jac_ptr)
-      : detPtr(det_ptr), jacPtr(jac_ptr) {}
+      : ForcesAndSourcesCore::UserDataOperator(space, OPLAST), detPtr(det_ptr),
+        jacPtr(jac_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
@@ -144,10 +147,13 @@ private:
 
 /** \brief Apply covariant (Piola) transfer to Hcurl space for HO geometry
  */
-struct OpSetHOCovariantPiolaTransform : public DataOperator {
+struct OpSetHOCovariantPiolaTransform
+    : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpSetHOCovariantPiolaTransform(boost::shared_ptr<MatrixDouble> jac_inv_ptr)
-      : jacInvPtr(jac_inv_ptr) {}
+  OpSetHOCovariantPiolaTransform(const FieldSpace space,
+                                 boost::shared_ptr<MatrixDouble> jac_inv_ptr)
+      : ForcesAndSourcesCore::UserDataOperator(space, OPLAST),
+        jacInvPtr(jac_inv_ptr) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
