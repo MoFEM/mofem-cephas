@@ -251,9 +251,8 @@ MoFEMErrorCode OpSetHOWeights::doWork(int side, EntityType type,
 
   auto t_w = getFTensor0IntegrationWeight();
   auto t_det = getFTensor0FromVec(*detPtr);
-  const auto measure = getMeasure();
   for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
-    t_w *= t_det / measure;
+    t_w *= t_det;
     ++t_w;
     ++t_det;
   }

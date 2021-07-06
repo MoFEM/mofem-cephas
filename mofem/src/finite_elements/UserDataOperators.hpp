@@ -3009,8 +3009,8 @@ OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
   // Calculate determinant
   {
     detPtr->resize(nb_integration_pts, false);
-    auto t_in = getFTensor2<3, 3>(*inPtr);
-    auto t_det = getFTensor0(*detPtr);
+    auto t_in = getFTensor2FromMat<3, 3>(*inPtr);
+    auto t_det = getFTensor0FromVec(*detPtr);
     for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
       determinantTensor3by3(t_in, t_det);
       ++t_in;
@@ -3021,9 +3021,9 @@ OpInvertMatrix<DIM>::doWorkImpl(int side, EntityType type,
   // Invert jacobian
   if (outPtr) {
     outPtr->resize(nb_rows, nb_integration_pts, false);
-    auto t_in = getFTensor2<3, 3>(*inPtr);
-    auto t_out = getFTensor2<3, 3>(*outPtr);
-    auto t_det = getFTensor0(*detPtr);
+    auto t_in = getFTensor2FromMat<3, 3>(*inPtr);
+    auto t_out = getFTensor2FromMat<3, 3>(*outPtr);
+    auto t_det = getFTensor0FromVec(*detPtr);
     for (size_t gg = 0; gg != nb_integration_pts; ++gg) {
       invertTensor3by3(t_in, t_det, t_out);
       ++t_in;
