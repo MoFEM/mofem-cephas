@@ -44,7 +44,11 @@ struct OpSetHOInvJacToScalarBases
 
   OpSetHOInvJacToScalarBases(const FieldSpace space,
                              boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {}
+      : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {
+    if (space == L2) {
+      doVertices = false;
+    }
+  }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
@@ -162,6 +166,32 @@ private:
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
 };
+
+template <typename E> MoFEMErrorCode addHOOps(E &e) {
+  MoFEMFunctionBegin;
+  auto material_grad_mat = boost::make_shared<MatrixDouble>();
+  auto material_det_vec = boost::make_shared<VectorDouble>();
+  auto material_inv_grad_mat = boost::make_shared<MatrixDouble>();
+  e.meshPositionsFieldName = "none";
+  e.getOpPtrVector().push_back(new OpCalculateVectorFieldGradient<3, 3>(
+      "MESH_NODE_POSITIONS", material_grad_mat));
+  e.getOpPtrVector().push_back(new OpInvertMatrix<3>(
+      material_grad_mat, material_det_vec, material_inv_grad_mat));
+  e.getOpPtrVector().push_back(new OpSetHOWeights(material_det_vec));
+  e.getOpPtrVector().push_back(
+      new OpSetHOInvJacToScalarBases(H1, material_inv_grad_mat));
+  e.getOpPtrVector().push_back(
+      new OpSetHOInvJacToScalarBases(L2, material_inv_grad_mat));
+  e.getOpPtrVector().push_back(new OpSetHOContravariantPiolaTransform(
+      HDIV, material_det_vec, material_grad_mat));
+  e.getOpPtrVector().push_back(
+      new OpSetHOCovariantPiolaTransform(HDIV, material_inv_grad_mat));
+  e.getOpPtrVector().push_back(
+      new OpSetHOInvJacVectorBase(HDIV, material_inv_grad_mat));
+  e.getOpPtrVector().push_back(
+      new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
+  MoFEMFunctionReturn(0);
+}
 
 }; // namespace MoFEM
 

@@ -55,14 +55,9 @@ OpSetHOInvJacToScalarBases::doWork(int side, EntityType type,
   FTensor::Index<'j', 3> j;
   MoFEMFunctionBegin;
 
-  if (invJacPtr)
+  if (!invJacPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "invJacPtr not allocated");
-
-  if (invJacPtr->size2() != 9)
-    SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-             "It looks that ho inverse of Jacobian is not calculated %d != 9",
-             invJacPtr->size2());
 
   auto transform_base = [&](MatrixDouble &diff_n) {
     MoFEMFunctionBeginHot;
@@ -71,7 +66,7 @@ OpSetHOInvJacToScalarBases::doWork(int side, EntityType type,
     if (nb_gauss_pts == 0)
       MoFEMFunctionReturnHot(0);
 
-    if (invJacPtr->size1() == nb_gauss_pts) {
+    if (invJacPtr->size2() == nb_gauss_pts) {
 
       unsigned int nb_base_functions = diff_n.size2() / 3;
       if (nb_base_functions == 0)
