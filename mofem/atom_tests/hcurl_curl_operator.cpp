@@ -3,10 +3,10 @@
  * \brief Testich curl-curl operator by applying Stokes theorem
  * \example hcurl_curl_operator.cpp
  *
- * Using PipelineManager interface calculate the curl of base functions, and integral of
- * the vector tangent vector with normal on the boundary. Since the h-curl space
- * is used, volume integral and boundary integral should give the same result,
- * as a result, as we are applying Stokes theorem on h-curl space.
+ * Using PipelineManager interface calculate the curl of base functions, and
+ * integral of the vector tangent vector with normal on the boundary. Since the
+ * h-curl space is used, volume integral and boundary integral should give the
+ * same result, as a result, as we are applying Stokes theorem on h-curl space.
  *
  */
 
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
 
     if (ho_geometry == PETSC_TRUE)
       CHKERR simple_interface->addDataField("MESH_NODE_POSITIONS", H1,
-                                           AINSWORTH_LEGENDRE_BASE, 3);
+                                            AINSWORTH_LEGENDRE_BASE, 3);
 
     constexpr int order = 5;
     CHKERR simple_interface->setFieldOrder("HCURL", order);
@@ -125,8 +125,29 @@ int main(int argc, char *argv[]) {
     FTensor::Tensor1<double, 3> t_curl_vol;
     FTensor::Tensor1<double, 3> t_curl_skin;
 
-    pipeline_mng->getOpDomainRhsPipeline().push_back(
-        new OpTetCurl(t_curl_vol));
+    auto material_grad_mat = boost::make_shared<MatrixDouble>();
+    auto material_det_vec = boost::make_shared<VectorDouble>();
+    auto material_inv_grad_mat = boost::make_shared<MatrixDouble>();
+
+    boost::dynamic_pointer_cast<VolumeElementForcesAndSourcesCoreBase>(
+        pipeline_mng->getDomainRhsFE())
+        ->meshPositionsFieldName = "none";
+
+    if (ho_geometry) {
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpCalculateVectorFieldGradient<3, 3>("MESH_NODE_POSITIONS",
+                                                   material_grad_mat));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(new OpInvertMatrix<3>(
+          material_grad_mat, material_det_vec, material_inv_grad_mat));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpSetHOWeights(material_det_vec));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpSetHOCovariantPiolaTransform(HCURL, material_inv_grad_mat));
+      pipeline_mng->getOpDomainRhsPipeline().push_back(
+          new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
+    }
+    pipeline_mng->getOpDomainRhsPipeline().push_back(new OpTetCurl(t_curl_vol));
+
     pipeline_mng->getOpBoundaryRhsPipeline().push_back(
         new OpFacesRot(t_curl_skin));
 

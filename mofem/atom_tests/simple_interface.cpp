@@ -165,14 +165,13 @@ int main(int argc, char *argv[]) {
       // set operator to the volume element
       auto material_grad_mat = boost::make_shared<MatrixDouble>();
       auto material_det_vec = boost::make_shared<VectorDouble>();
-      auto material_inv_grad_mat = boost::make_shared<MatrixDouble>();
 
       domain_fe->meshPositionsFieldName = "none";
       domain_fe->getOpPtrVector().push_back(
           new OpCalculateVectorFieldGradient<3, 3>("MESH_NODE_POSITIONS",
                                                    material_grad_mat));
       domain_fe->getOpPtrVector().push_back(new OpInvertMatrix<3>(
-          material_grad_mat, material_det_vec, material_inv_grad_mat));
+          material_grad_mat, material_det_vec, nullptr));
       domain_fe->getOpPtrVector().push_back(
           new OpSetHOWeights(material_det_vec));
       domain_fe->getOpPtrVector().push_back(

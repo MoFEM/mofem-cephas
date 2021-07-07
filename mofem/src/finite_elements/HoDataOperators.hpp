@@ -65,7 +65,11 @@ struct OpSetHOInvJacVectorBase : public ForcesAndSourcesCore::UserDataOperator {
 
   OpSetHOInvJacVectorBase(const FieldSpace space,
                           boost::shared_ptr<MatrixDouble> inv_jac_ptr)
-      : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {}
+      : ForcesAndSourcesCore::UserDataOperator(space), invJacPtr(inv_jac_ptr) {
+    doVertices = false;
+    if (space == HDIV)
+      doEdges = false;
+  }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
@@ -86,20 +90,6 @@ struct OpMakeHighOrderGeometryWeightsOnFace
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
   OpMakeHighOrderGeometryWeightsOnFace()
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
-  MoFEMErrorCode doWork(int side, EntityType type,
-                        DataForcesAndSourcesCore::EntData &data);
-};
-
-/**
- * @brief Modify integration weights on volume to take in account higher-order
- * geometry
- * @ingroup mofem_forces_and_sources_user_data_operators
- *
- */
-struct OpMakeHighOrderGeometryWeightsOnVolume
-    : public VolumeElementForcesAndSourcesCoreBase::UserDataOperator {
-  OpMakeHighOrderGeometryWeightsOnVolume()
-      : VolumeElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
 };
@@ -132,7 +122,11 @@ struct OpSetHOContravariantPiolaTransform
                                      boost::shared_ptr<VectorDouble> det_ptr,
                                      boost::shared_ptr<MatrixDouble> jac_ptr)
       : ForcesAndSourcesCore::UserDataOperator(space, OPLAST), detPtr(det_ptr),
-        jacPtr(jac_ptr) {}
+        jacPtr(jac_ptr) {
+    doVertices = false;
+    if (space == HDIV)
+      doEdges = false;
+  }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
@@ -153,7 +147,11 @@ struct OpSetHOCovariantPiolaTransform
   OpSetHOCovariantPiolaTransform(const FieldSpace space,
                                  boost::shared_ptr<MatrixDouble> jac_inv_ptr)
       : ForcesAndSourcesCore::UserDataOperator(space, OPLAST),
-        jacInvPtr(jac_inv_ptr) {}
+        jacInvPtr(jac_inv_ptr) {
+    doVertices = false;
+    if (space == HDIV)
+      doEdges = false;
+  }
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);

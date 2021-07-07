@@ -140,8 +140,14 @@ int main(int argc, char *argv[]) {
 
     auto fe_ptr =
         boost::make_shared<VolumeElementForcesAndSourcesCore>(m_field);
+    auto material_grad_mat = boost::make_shared<MatrixDouble>();
+    auto material_det_vec = boost::make_shared<VectorDouble>();
+    fe_ptr->meshPositionsFieldName = "none";
+    fe_ptr->getOpPtrVector().push_back(new OpCalculateVectorFieldGradient<3, 3>(
+        "MESH_NODE_POSITIONS", material_grad_mat));
     fe_ptr->getOpPtrVector().push_back(
-        new OpMakeHighOrderGeometryWeightsOnVolume());
+        new OpInvertMatrix<3>(material_grad_mat, material_det_vec, nullptr));
+    fe_ptr->getOpPtrVector().push_back(new OpSetHOWeights(material_det_vec));
     fe_ptr->getOpPtrVector().push_back(new OpVolumeCalculation(vol_vec));
 
     CHKERR DMoFEMLoopFiniteElements(dM, "TET_ELEM", fe_ptr);

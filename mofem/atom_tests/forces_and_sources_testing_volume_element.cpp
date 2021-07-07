@@ -300,6 +300,8 @@ int main(int argc, char *argv[]) {
     };
 
     VolumeElementForcesAndSourcesCore fe1(m_field);
+    fe1.meshPositionsFieldName = "none";
+
     fe1.getOpPtrVector().push_back(
         new MyOp1(my_split, ForcesAndSourcesCore::UserDataOperator::OPROW));
     fe1.getOpPtrVector().push_back(

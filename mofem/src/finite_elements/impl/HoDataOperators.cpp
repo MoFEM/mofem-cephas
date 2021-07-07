@@ -144,9 +144,9 @@ OpSetHOInvJacVectorBase::doWork(int side, EntityType type,
   FTensor::Index<'j', 3> j;
   FTensor::Index<'k', 3> k;
 
-  if (invJacPtr)
+  if (!invJacPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "Pointer for jacPtr not allocated");
+            "Pointer for invJacPtr not allocated");
 
   for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
 
@@ -211,31 +211,6 @@ MoFEMErrorCode OpMakeHighOrderGeometryWeightsOnFace::doWork(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpMakeHighOrderGeometryWeightsOnVolume::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
-  MoFEMFunctionBegin;
-  const size_t nb_int_pts = getGaussPts().size2();
-
-  if (getHoGaussPtsDetJac().size() == nb_int_pts) {
-    const double a = getMeasure();
-    auto t_w = getFTensor0IntegrationWeight();
-    auto t_w_ho = getFTensor0FromVec(getHoGaussPtsDetJac());
-
-    for (size_t gg = 0; gg != nb_int_pts; ++gg) {
-      t_w *= t_w_ho;
-      ++t_w;
-      ++t_w_ho;
-    }
-  } else {
-    SETERRQ2(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
-             "Number of rows in getHoGaussPtsDetJac should be equal to "
-             "number of integration points, but is not, i.e. %d != %d",
-             getHoGaussPtsDetJac().size(), nb_int_pts);
-  }
-
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode OpSetHOWeights::doWork(int side, EntityType type,
                                       DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
@@ -268,56 +243,73 @@ MoFEMErrorCode OpSetHOContravariantPiolaTransform::doWork(
   FTensor::Index<'j', 3> j;
   FTensor::Index<'k', 3> k;
 
-  if (detPtr)
+  if (!detPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer for detPtr not allocated");
 
-  if (jacPtr)
+  if (!jacPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer for jacPtr not allocated");
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; ++b) {
 
     FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
 
-    unsigned int nb_gauss_pts = data.getN(base).size1();
-    unsigned int nb_base_functions = data.getN(base).size2() / 3;
-    piolaN.resize(nb_gauss_pts, data.getN(base).size2(), false);
-    piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
+    auto nb_gauss_pts = data.getN(base).size1();
+    auto nb_base_functions = data.getN(base).size2() / 3;
 
-    auto t_n = data.getFTensor1N<3>(base);
-    double *t_transformed_n_ptr = &*piolaN.data().begin();
-    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
-        t_transformed_n_ptr, // HVEC0
-        &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
-    auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
-    double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
-    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> t_transformed_diff_n(
-        t_transformed_diff_n_ptr, &t_transformed_diff_n_ptr[HVEC0_1],
-        &t_transformed_diff_n_ptr[HVEC0_2], &t_transformed_diff_n_ptr[HVEC1_0],
-        &t_transformed_diff_n_ptr[HVEC1_1], &t_transformed_diff_n_ptr[HVEC1_2],
-        &t_transformed_diff_n_ptr[HVEC2_0], &t_transformed_diff_n_ptr[HVEC2_1],
-        &t_transformed_diff_n_ptr[HVEC2_2]);
+    if (data.getDiffN(base).size1() != nb_gauss_pts)
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+              "Wrong number integration points");
 
-    auto t_det = getFTensor0FromVec(*detPtr);
-    auto t_jac = getFTensor2FromMat<3, 3>(*jacPtr);
+    if (data.getDiffN(base).size2() / 9 != nb_base_functions)
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Wrong number base functions %d != %d",
+               data.getDiffN(base).size2(), nb_base_functions);
 
-    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
-      for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
-        const double a = 1. / t_det;
-        t_transformed_n(i) = a * t_jac(i, k) * t_n(k);
-        t_transformed_diff_n(i, k) = a * t_jac(i, j) * t_diff_n(j, k);
-        ++t_n;
-        ++t_transformed_n;
-        ++t_diff_n;
-        ++t_transformed_diff_n;
+    if (nb_gauss_pts && nb_base_functions) {
+
+      piolaN.resize(nb_gauss_pts, data.getN(base).size2(), false);
+      piolaDiffN.resize(nb_gauss_pts, data.getDiffN(base).size2(), false);
+
+      auto t_n = data.getFTensor1N<3>(base);
+      double *t_transformed_n_ptr = &*piolaN.data().begin();
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_n(
+          t_transformed_n_ptr, // HVEC0
+          &t_transformed_n_ptr[HVEC1], &t_transformed_n_ptr[HVEC2]);
+      auto t_diff_n = data.getFTensor2DiffN<3, 3>(base);
+      double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+      FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3>
+          t_transformed_diff_n(t_transformed_diff_n_ptr,
+                               &t_transformed_diff_n_ptr[HVEC0_1],
+                               &t_transformed_diff_n_ptr[HVEC0_2],
+                               &t_transformed_diff_n_ptr[HVEC1_0],
+                               &t_transformed_diff_n_ptr[HVEC1_1],
+                               &t_transformed_diff_n_ptr[HVEC1_2],
+                               &t_transformed_diff_n_ptr[HVEC2_0],
+                               &t_transformed_diff_n_ptr[HVEC2_1],
+                               &t_transformed_diff_n_ptr[HVEC2_2]);
+
+      auto t_det = getFTensor0FromVec(*detPtr);
+      auto t_jac = getFTensor2FromMat<3, 3>(*jacPtr);
+
+      for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+        for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {
+          const double a = 1. / t_det;
+          t_transformed_n(i) = a * t_jac(i, k) * t_n(k);
+          t_transformed_diff_n(i, k) = a * t_jac(i, j) * t_diff_n(j, k);
+          ++t_n;
+          ++t_transformed_n;
+          ++t_diff_n;
+          ++t_transformed_diff_n;
+        }
+        ++t_det;
+        ++t_jac;
       }
-      ++t_det;
-      ++t_jac;
-    }
 
-    data.getN(base).data().swap(piolaN.data());
-    data.getDiffN(base).data().swap(piolaDiffN.data());
+      data.getN(base).data().swap(piolaN.data());
+      data.getDiffN(base).data().swap(piolaDiffN.data());
+    }
   }
 
   MoFEMFunctionReturn(0);
@@ -331,7 +323,7 @@ MoFEMErrorCode OpSetHOCovariantPiolaTransform::doWork(
   FTensor::Index<'j', 3> j;
   FTensor::Index<'k', 3> k;
 
-  if (jacInvPtr)
+  if (!jacInvPtr)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "Pointer for jacPtr not allocated");
 
@@ -358,7 +350,7 @@ MoFEMErrorCode OpSetHOCovariantPiolaTransform::doWork(
         &t_transformed_diff_n_ptr[HVEC2_0], &t_transformed_diff_n_ptr[HVEC2_1],
         &t_transformed_diff_n_ptr[HVEC2_2]);
 
-    auto t_inv_jac = getFTensor2FromMat<3,3>(*jacInvPtr);
+    auto t_inv_jac = getFTensor2FromMat<3, 3>(*jacInvPtr);
 
     for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
       for (unsigned int bb = 0; bb != nb_base_functions; ++bb) {

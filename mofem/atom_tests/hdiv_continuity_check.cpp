@@ -405,6 +405,20 @@ int main(int argc, char *argv[]) {
     double def_val[] = {0, 0, 0};
     CHKERR moab.tag_get_handle("T", 3, MB_TYPE_DOUBLE, th1,
                                MB_TAG_CREAT | MB_TAG_SPARSE, &def_val);
+
+    auto material_grad_mat = boost::make_shared<MatrixDouble>();
+    auto material_det_vec = boost::make_shared<VectorDouble>();
+    auto material_inv_grad_mat = boost::make_shared<MatrixDouble>();
+
+    tet_fe.getOpPtrVector().push_back(new OpCalculateVectorFieldGradient<3, 3>(
+        "MESH_NODE_POSITIONS", material_grad_mat));
+    tet_fe.getOpPtrVector().push_back(new OpInvertMatrix<3>(
+        material_grad_mat, material_det_vec, material_inv_grad_mat));
+    tet_fe.getOpPtrVector().push_back(new OpSetHOWeights(material_det_vec));
+    tet_fe.getOpPtrVector().push_back(new OpSetHOContravariantPiolaTransform(
+        HDIV, material_det_vec, material_grad_mat));
+    tet_fe.getOpPtrVector().push_back(
+        new OpSetHOInvJacVectorBase(HDIV, material_inv_grad_mat));
     tet_fe.getOpPtrVector().push_back(new OpTetFluxes(m_field, th1));
 
     Tag th2;
