@@ -167,29 +167,37 @@ private:
   MatrixDouble piolaDiffN;
 };
 
-template <typename E> MoFEMErrorCode addHOOps(E &e) {
+template <typename E>
+MoFEMErrorCode addHOOps(const std::string field, E &e, bool h1, bool hcurl,
+                        bool hdiv, bool l2) {
   MoFEMFunctionBegin;
   auto material_grad_mat = boost::make_shared<MatrixDouble>();
   auto material_det_vec = boost::make_shared<VectorDouble>();
   auto material_inv_grad_mat = boost::make_shared<MatrixDouble>();
   e.meshPositionsFieldName = "none";
-  e.getOpPtrVector().push_back(new OpCalculateVectorFieldGradient<3, 3>(
-      "MESH_NODE_POSITIONS", material_grad_mat));
+  e.getOpPtrVector().push_back(
+      new OpCalculateVectorFieldGradient<3, 3>(field, material_grad_mat));
   e.getOpPtrVector().push_back(new OpInvertMatrix<3>(
       material_grad_mat, material_det_vec, material_inv_grad_mat));
   e.getOpPtrVector().push_back(new OpSetHOWeights(material_det_vec));
-  e.getOpPtrVector().push_back(
-      new OpSetHOInvJacToScalarBases(H1, material_inv_grad_mat));
-  e.getOpPtrVector().push_back(
-      new OpSetHOInvJacToScalarBases(L2, material_inv_grad_mat));
-  e.getOpPtrVector().push_back(new OpSetHOContravariantPiolaTransform(
-      HDIV, material_det_vec, material_grad_mat));
-  e.getOpPtrVector().push_back(
-      new OpSetHOCovariantPiolaTransform(HDIV, material_inv_grad_mat));
-  e.getOpPtrVector().push_back(
-      new OpSetHOInvJacVectorBase(HDIV, material_inv_grad_mat));
-  e.getOpPtrVector().push_back(
-      new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
+  if (h1)
+    e.getOpPtrVector().push_back(
+        new OpSetHOInvJacToScalarBases(H1, material_inv_grad_mat));
+  if (l2)
+    e.getOpPtrVector().push_back(
+        new OpSetHOInvJacToScalarBases(L2, material_inv_grad_mat));
+  if (hdiv) {
+    e.getOpPtrVector().push_back(new OpSetHOContravariantPiolaTransform(
+        HDIV, material_det_vec, material_grad_mat));
+    e.getOpPtrVector().push_back(
+        new OpSetHOCovariantPiolaTransform(HDIV, material_inv_grad_mat));
+  }
+  if (hcurl) {
+    e.getOpPtrVector().push_back(
+        new OpSetHOInvJacVectorBase(HDIV, material_inv_grad_mat));
+    e.getOpPtrVector().push_back(
+        new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
+  }
   MoFEMFunctionReturn(0);
 }
 
