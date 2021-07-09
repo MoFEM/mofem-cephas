@@ -28,6 +28,8 @@ namespace po = boost::program_options;
 
 namespace MoFEM {
 
+bool MeshsetsManager::brodcastMeshsets = true;
+
 MoFEMErrorCode
 MeshsetsManager::query_interface(const MOFEMuuid &uuid,
                                  UnknownInterface **iface) const {
@@ -75,8 +77,9 @@ MoFEMErrorCode MeshsetsManager::clearMap() {
 MoFEMErrorCode MeshsetsManager::initialiseDatabaseFromMesh(int verb) {
   Interface &m_field = cOre;
   MoFEMFunctionBegin;
-  CHKERR readMeshsets(VERBOSE);
-  CHKERR broadcastMeshsets(VERBOSE);
+  CHKERR readMeshsets(verb);
+  if (brodcastMeshsets)
+    CHKERR broadcastMeshsets(verb);
 
   for (auto &m : cubitMeshsets) {
     MOFEM_LOG("MeshsetMngWorld", Sev::inform) << m;
@@ -100,15 +103,8 @@ MoFEMErrorCode MeshsetsManager::readMeshsets(int verb) {
       if (!p.second)
         SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                 "meshset not inserted");
-
-      if (verb > QUIET) {
-        MOFEM_LOG("MeshsetMngSync", Sev::verbose) << "read " << block;
-      }
+      MOFEM_LOG("MeshsetMngSelf", Sev::noisy) << "read " << block;
     }
-  }
-
-  if (verb > QUIET) {
-    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
   }
 
   MoFEMFunctionReturn(0);
@@ -121,7 +117,8 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
 
  ParallelComm *pcomm = ParallelComm::get_pcomm(&moab, MYPCOMM_INDEX);
   if (pcomm == NULL)
-    pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+            "MOAB communicator not set");
 
   const double coords[] = {0, 0, 0};
 
@@ -170,19 +167,13 @@ MoFEMErrorCode MeshsetsManager::broadcastMeshsets(int verb) {
         if (!p.second) {
           CHKERR moab.delete_entities(&m, 1);
         } else {
-          if (verb > QUIET) {
-            MOFEM_LOG("MeshsetMngSync", Sev::verbose)
-                << "broadcast " << broadcast_block;
-          }
+          MOFEM_LOG("MeshsetMngSelf", Sev::noisy)
+              << "broadcast " << broadcast_block;
         }
       }
     }
 
     CHKERR moab.delete_entities(r_dummy_nodes);
-  }
-
-  if (verb > QUIET) {
-    MOFEM_LOG_SYNCHRONISE(m_field.get_comm());
   }
 
   MoFEMFunctionReturn(0);

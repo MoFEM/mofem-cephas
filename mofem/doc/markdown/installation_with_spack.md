@@ -746,7 +746,7 @@ mirrors. Look to Spack documentation to learn more about mirrors, see
 [here](https://spack.readthedocs.io/en/latest/mirrors.html?highlight=mirror).
 
 ~~~~~
-spack mirror create -D mofem-fracture-module
+spack mirror create  --directory mofem-fracture-module --dependencies mofem-fracture-module
 ~~~~~
 as a result, a directory is created with are prerequisites need to Spack
 installation of mofem-fracture-module. You can now move that directory to 

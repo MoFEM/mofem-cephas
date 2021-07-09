@@ -101,8 +101,16 @@ MoFEMErrorCode Core::add_problem(const std::string &name, enum MoFEMTypes bh,
     verb = verbose;
   auto miit = pRoblems.get<Problem_mi_tag>().find(name);
   if (miit == pRoblems.get<Problem_mi_tag>().end()) {
-    BitProblemId id = getProblemShift();
+
+    int p_shift = 0;
+    for (; pRoblems.get<BitProblemId_mi_tag>().find(BitProblemId().set(
+               p_shift)) != pRoblems.get<BitProblemId_mi_tag>().end();
+         ++p_shift) {
+    }
+
+    auto id = BitProblemId().set(p_shift);
     CHKERR addProblem(id, name, verb);
+    
   } else if (bh == MF_EXCL) {
     SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_FOUND, "problem is in database %s",
              name.c_str());

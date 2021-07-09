@@ -133,7 +133,7 @@ if [ ! -d "$SPACK_ROOT_DIR" ]; then
   if [ ! -f "$PWD/spack.tgz" ]; then
     echo "Downloading spack ..."
     mkdir -p $SPACK_ROOT_DIR &&\
-    curl -s -L https://api.github.com/repos/likask/spack/tarball/develop_spack_v0.16.1 \
+    curl -s -L https://api.github.com/repos/likask/spack/tarball/master \
     | tar xzC $SPACK_ROOT_DIR --strip 1
     echo -e "Done.\n"
   else 

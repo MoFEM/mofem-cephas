@@ -308,8 +308,27 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
       if (!dim_ents.empty()) {
         for (int dd = 0; dd < d; ++dd) {
           Range adj_ents;
-          CHKERR m_field.get_moab().get_adjacencies(
+          rval = m_field.get_moab().get_adjacencies(
               dim_ents, dd, true, adj_ents, moab::Interface::UNION);
+          if (rval == MB_MULTIPLE_ENTITIES_FOUND) {
+            auto log_message = [&](const auto sev) {
+              MOFEM_LOG_FUNCTION();
+              MOFEM_LOG_ATTRIBUTES("BitRefSelf", LogManager::BitScope);
+              MOFEM_LOG("BitRefSelf", sev)
+                  << "When get adjacencies moab return MB_MULTIPLE_ENTITIES_ "
+                     "FOUND for dim = "
+                  << dd << " and dim of entities " << d;
+              MOFEM_LOG_CHANNEL("BitRefSelf"); // reset channel
+            };
+       
+			      if (verb <= QUIET)
+              log_message(Sev::noisy);
+            else
+              log_message(Sev::warning);
+
+            rval = MB_SUCCESS;
+          }
+          MOAB_THROW(rval);
           for (Range::pair_iterator pit = adj_ents.pair_begin();
                pit != adj_ents.pair_end(); ++pit) {
             Range seed_ents_range;
@@ -407,7 +426,7 @@ MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByType(
   MoFEMFunctionBegin;
   Range ents;
   CHKERR getEntitiesByTypeAndRefLevel(bit, mask, type, ents);
-  CHKERR setBitRefLevel(ents, BitRefLevel());
+  CHKERR setBitRefLevel(ents, BitRefLevel(), false, verb);
   MoFEMFunctionReturn(0);
 }
 
@@ -417,7 +436,7 @@ MoFEMErrorCode BitRefManager::addToDatabaseBitRefLevelByDim(
   MoFEMFunctionBegin;
   Range ents;
   CHKERR getEntitiesByDimAndRefLevel(bit, mask, dim, ents);
-  CHKERR setBitRefLevel(ents, BitRefLevel());
+  CHKERR setBitRefLevel(ents, BitRefLevel(), false, verb);
   MoFEMFunctionReturn(0);
 }
 
@@ -548,8 +567,8 @@ MoFEMErrorCode BitRefManager::shiftLeftBitRef(const int shift,
 }
 
 MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
-                                               const BitRefLevel mask,
-                                               int verb) const {
+                                               const BitRefLevel mask, int verb,
+                                               MoFEMTypes mf) const {
   MoFEM::Interface &m_field = cOre;
   auto ref_ents_ptr = m_field.get_ref_ents();
   MoFEMFunctionBegin;
@@ -559,17 +578,17 @@ MoFEMErrorCode BitRefManager::shiftRightBitRef(const int shift,
     BitRefLevel delete_bits = BitRefLevel().set(0) & mask;
     if (delete_bits.any()) {
       CHKERR m_field.delete_ents_by_bit_ref(delete_bits, delete_bits, true,
-                                            verb);
+                                            verb, mf);
     }
     for (RefEntity_multiIndex::iterator ent_it = ref_ents_ptr->begin();
          ent_it != ref_ents_ptr->end(); ent_it++) {
-      if (verb > NOISY) {
+      if (verb >= NOISY) {
         MOFEM_LOG_FUNCTION();
         MOFEM_LOG("BitRefSelf", Sev::noisy)
             << (*ent_it)->getBitRefLevel() << " : ";
       }
       right_shift(const_cast<boost::shared_ptr<RefEntity> &>(*ent_it));
-      if (verb >= VERY_NOISY) {
+      if (verb == VERY_NOISY) {
         MOFEM_LOG_FUNCTION();
         MOFEM_LOG("BitRefSelf", Sev::noisy) << (*ent_it)->getBitRefLevel();
       }

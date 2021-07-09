@@ -45,27 +45,6 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
   if (verb == -1) {
     verb = verbose;
   }
-  typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type
-      FiniteElements_by_name;
-  FiniteElements_by_name &finite_element_name_set =
-      finiteElements.get<FiniteElement_name_mi_tag>();
-  FiniteElements_by_name::iterator it_fe =
-      finite_element_name_set.find(fe_name);
-  if (bh == MF_EXCL) {
-    if (it_fe != finite_element_name_set.end()) {
-      SETERRQ1(mofemComm, MOFEM_NOT_FOUND, "this < %s > is there",
-               fe_name.c_str());
-    }
-  } else {
-    if (it_fe != finite_element_name_set.end())
-      MoFEMFunctionReturnHot(0);
-  }
-  EntityHandle meshset;
-  CHKERR get_moab().create_meshset(MESHSET_SET, meshset);
-
-  // id
-  BitFEId id = getFEShift();
-  CHKERR get_moab().tag_set_data(th_FEId, &meshset, 1, &id);
 
   // Add finite element meshset to partion meshset. In case of no elements
   // on processor part, when mesh file is read, finite element meshset is
@@ -84,7 +63,34 @@ MoFEMErrorCode Core::add_finite_element(const std::string &fe_name,
       CHKERR get_moab().add_entities(s, &meshset, 1);
     MoFEMFunctionReturn(0);
   };
+
+  auto &finite_element_name_set =
+      finiteElements.get<FiniteElement_name_mi_tag>();
+  auto it_fe = finite_element_name_set.find(fe_name);
+
+  if (bh == MF_EXCL) {
+    if (it_fe != finite_element_name_set.end()) {
+      SETERRQ1(mofemComm, MOFEM_NOT_FOUND, "this < %s > is there",
+               fe_name.c_str());
+    }
+
+  } else {
+    if (it_fe != finite_element_name_set.end())
+      MoFEMFunctionReturnHot(0);
+  }
+  EntityHandle meshset;
+  CHKERR get_moab().create_meshset(MESHSET_SET, meshset);
   CHKERR add_meshset_to_partition(meshset);
+
+  // id
+  int fe_shift = 0;
+  for (; finiteElements.get<BitFEId_mi_tag>().find(BitFEId().set(fe_shift)) !=
+         finiteElements.get<BitFEId_mi_tag>().end();
+       ++fe_shift) {
+  }
+
+  auto id = BitFEId().set(fe_shift);
+  CHKERR get_moab().tag_set_data(th_FEId, &meshset, 1, &id);
 
   // id name
   void const *tag_data[] = {fe_name.c_str()};

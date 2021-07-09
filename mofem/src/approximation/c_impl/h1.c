@@ -75,85 +75,124 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
     CHKERRQ(ierr);
     int shift;
     if (edgeN != NULL) {
-      // edge01
+      // edge 01
       shift = ii * (P[0]);
-      cblas_dcopy(P[0], L01, 1, &edgeN01[shift], 1);
-      cblas_dscal(P[0], N[node_shift + 0] * N[node_shift + 1], &edgeN01[shift],
-                  1);
-      // edge12
+      {
+        double *edge_n_ptr = &edgeN01[shift];
+        double *l_ptr = L01;
+        double scalar = N[node_shift + 0] * N[node_shift + 1];
+        int size = P[0];
+        for (size_t jj = 0; jj != size; ++jj, ++l_ptr) {
+          *edge_n_ptr = (*l_ptr) * scalar;
+          ++edge_n_ptr;
+        }
+      }
+
+      // edge 12
       shift = ii * (P[1]);
-      cblas_dcopy(P[1], L12, 1, &edgeN12[shift], 1);
-      cblas_dscal(P[1], N[node_shift + 1] * N[node_shift + 2], &edgeN12[shift],
-                  1);
-      // edge20
+      {
+        double *edge_n_ptr = &edgeN12[shift];
+        double *l_ptr = L12;
+        double scalar = N[node_shift + 1] * N[node_shift + 2];
+        int size = P[1];
+        for (size_t jj = 0; jj != size; ++jj, ++l_ptr) {
+          *edge_n_ptr = (*l_ptr) * scalar;
+          ++edge_n_ptr;
+        }
+      }
+
+      // edge 20
       shift = ii * (P[2]);
-      cblas_dcopy(P[2], L20, 1, &edgeN20[shift], 1);
-      cblas_dscal(P[2], N[node_shift + 0] * N[node_shift + 2], &edgeN20[shift],
-                  1);
-    }
+      {
+        double *edge_n_ptr = &edgeN20[shift];
+        double *l_ptr = L20;
+        double scalar = N[node_shift + 2] * N[node_shift + 0];
+        int size = P[2];
+        for (size_t jj = 0; jj != size; ++jj, ++l_ptr) {
+          *edge_n_ptr = (*l_ptr) * scalar;
+          ++edge_n_ptr;
+        }
+      }
+   }
     if (diff_edgeN != NULL) {
       if (P[0] > 0) {
         // edge01
         shift = ii * (P[0]);
-        bzero(&diff_edgeN01[2 * shift], sizeof(double) * 2 * (P[0]));
-        // diffX
-        cblas_daxpy(P[0], N[node_shift + 0] * N[node_shift + 1],
-                    &diffL01[0 * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 0],
-                    2);
-        cblas_daxpy(P[0],
-                    diffN[2 * 0 + 0] * N[node_shift + 1] +
-                        N[node_shift + 0] * diffN[2 * 1 + 0],
-                    L01, 1, &diff_edgeN01[2 * shift + 0], 2);
-        // diff  Y
-        cblas_daxpy(P[0], N[node_shift + 0] * N[node_shift + 1],
-                    &diffL01[1 * (p[0] + 1)], 1, &diff_edgeN01[2 * shift + 1],
-                    2);
-        cblas_daxpy(P[0],
-                    diffN[2 * 0 + 1] * N[node_shift + 1] +
-                        N[node_shift + 0] * diffN[2 * 1 + 1],
-                    L01, 1, &diff_edgeN01[2 * shift + 1], 2);
+        {
+          double *diff_edge_n_ptr = &diff_edgeN01[2 * shift];
+          double *diff_l_x = &diffL01[0 * (p[0] + 1)];
+          double *diff_l_y = &diffL01[1 * (p[0] + 1)];
+          double scalar_x = diffN[2 * 0 + 0] * N[node_shift + 1] +
+                            N[node_shift + 0] * diffN[2 * 1 + 0];
+          double scalar_y = diffN[2 * 0 + 1] * N[node_shift + 1] +
+                            N[node_shift + 0] * diffN[2 * 1 + 1];
+          double v = N[node_shift + 0] * N[node_shift + 1];
+          double *l_ptr = L01;
+
+          int size = P[0];
+          for (size_t jj = 0; jj != size;
+               ++jj, ++diff_l_x, ++diff_l_y, ++l_ptr) {
+
+            *diff_edge_n_ptr = v * (*diff_l_x) + scalar_x * (*l_ptr);
+            ++diff_edge_n_ptr;
+            *diff_edge_n_ptr = v * (*diff_l_y) + scalar_y * (*l_ptr);
+            ++diff_edge_n_ptr;
+          }
+        }
+
       }
       if (P[1] > 0) {
         // edge12
         shift = ii * (P[1]);
-        bzero(&diff_edgeN12[2 * shift], sizeof(double) * 2 * (P[1]));
-        // diffX
-        cblas_daxpy(P[1], N[node_shift + 1] * N[node_shift + 2],
-                    &diffL12[0 * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 0],
-                    2);
-        cblas_daxpy(P[1],
-                    diffN[2 * 1 + 0] * N[node_shift + 2] +
-                        N[node_shift + 1] * diffN[2 * 2 + 0],
-                    L12, 1, &diff_edgeN12[2 * shift + 0], 2);
-        // diffY
-        cblas_daxpy(P[1], N[node_shift + 1] * N[node_shift + 2],
-                    &diffL12[1 * (p[1] + 1)], 1, &diff_edgeN12[2 * shift + 1],
-                    2);
-        cblas_daxpy(P[1],
-                    diffN[2 * 1 + 1] * N[node_shift + 2] +
-                        N[node_shift + 1] * diffN[2 * 2 + 1],
-                    L12, 1, &diff_edgeN12[2 * shift + 1], 2);
+        {
+          double *diff_edge_n_ptr = &diff_edgeN12[2 * shift];
+          double *diff_l_x = &diffL12[0 * (p[1] + 1)];
+          double *diff_l_y = &diffL12[1 * (p[1] + 1)];
+          double scalar_x = diffN[2 * 1 + 0] * N[node_shift + 2] +
+                            N[node_shift + 1] * diffN[2 * 2 + 0];
+          double scalar_y = diffN[2 * 1 + 1] * N[node_shift + 2] +
+                            N[node_shift + 1] * diffN[2 * 2 + 1];
+          double v = N[node_shift + 1] * N[node_shift + 2];
+          double *l_ptr = L12;
+
+          int size = P[1];
+          for (size_t jj = 0; jj != size;
+               ++jj, ++diff_l_x, ++diff_l_y, ++l_ptr) {
+
+            *diff_edge_n_ptr = v * (*diff_l_x) + scalar_x * (*l_ptr);
+            ++diff_edge_n_ptr;
+            *diff_edge_n_ptr = v * (*diff_l_y) + scalar_y * (*l_ptr);
+            ++diff_edge_n_ptr;
+          }
+        }
+
       }
       if (P[2] > 0) {
         // edge20
         shift = ii * (P[2]);
-        bzero(&diff_edgeN20[2 * shift], sizeof(double) * 2 * (P[2]));
-        // diffX
-        cblas_daxpy(P[2], N[node_shift + 0] * N[node_shift + 2],
-                    &diffL20[0 * (p[2] + 1)], 1, &diff_edgeN20[2 * shift + 0],
-                    2);
-        cblas_daxpy(P[2],
-                    diffN[2 * 0 + 0] * N[node_shift + 2] +
-                        N[node_shift + 0] * diffN[2 * 2 + 0],
-                    L20, 1, &diff_edgeN20[2 * shift + 0], 2);
-        // diffY
-        cblas_daxpy(P[2], N[node_shift + 0] * N[node_shift + 2],
-                    &diffL20[1 * (p[2] + 1)], 1, &diff_edgeN20[2 * shift + 1],
-                    2);
-        cblas_daxpy(P[2],
-                    diffN[2 * 0 + 1] * N[node_shift + 2] +
-                        N[node_shift + 0] * diffN[2 * 2 + 1],
-                    L20, 1, &diff_edgeN20[2 * shift + 1], 2);
+
+        {
+          double *diff_edge_n_ptr = &diff_edgeN20[2 * shift];
+          double *diff_l_x = &diffL20[0 * (p[2] + 1)];
+          double *diff_l_y = &diffL20[1 * (p[2] + 1)];
+          double scalar_x = diffN[2 * 2 + 0] * N[node_shift + 0] +
+                            N[node_shift + 2] * diffN[2 * 0 + 0];
+          double scalar_y = diffN[2 * 2 + 1] * N[node_shift + 0] +
+                            N[node_shift + 2] * diffN[2 * 0 + 1];
+          double v = N[node_shift + 2] * N[node_shift + 0];
+          double *l_ptr = L20;
+
+          int size = P[2];
+          for (size_t jj = 0; jj != size;
+               ++jj, ++diff_l_x, ++diff_l_y, ++l_ptr) {
+
+            *diff_edge_n_ptr = v * (*diff_l_x) + scalar_x * (*l_ptr);
+            ++diff_edge_n_ptr;
+            *diff_edge_n_ptr = v * (*diff_l_y) + scalar_y * (*l_ptr);
+            ++diff_edge_n_ptr;
+          }
+        }
+
       }
     }
   }
@@ -288,27 +327,54 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(
       if (edgeN != NULL)
         if (edgeN[ee] != NULL) {
           int shift = ii * P[ee];
-          cblas_dcopy(P[ee], L, 1, &edgeN[ee][shift], 1);
-          cblas_dscal(P[ee],
-                      N[node_shift + edges_nodes[2 * ee + 0]] *
-                          N[node_shift + edges_nodes[2 * ee + 1]],
-                      &edgeN[ee][shift], 1);
+          {
+            double *edge_n_ptr = &edgeN[ee][shift];
+            double *l_ptr = L;
+            double scalar = N[node_shift + edges_nodes[2 * ee + 0]] *
+                                  N[node_shift + edges_nodes[2 * ee + 1]];
+            int size = P[ee];
+            for (size_t jj = 0; jj != size; ++jj, ++l_ptr) {
+              *edge_n_ptr = (*l_ptr) * scalar;
+              ++edge_n_ptr;
+            }
+          }
         }
       if (diff_edgeN != NULL)
         if (diff_edgeN[ee] != NULL) {
           int shift = ii * P[ee];
-          bzero(&diff_edgeN[ee][3 * shift], sizeof(double) * 3 * P[ee]);
-          int dd = 0;
-          for (; dd < 3; dd++) {
-            cblas_daxpy(P[ee], v, &diffL[dd * (p[ee] + 1)], 1,
-                        &diff_edgeN[ee][3 * shift + dd], 3);
-            cblas_daxpy(P[ee],
-                        diffN[3 * edges_nodes[2 * ee + 0] + dd] *
+          {
+            double *diff_edge_n_ptr = &diff_edgeN[ee][3 * shift];
+            double *diff_l_x = &diffL[0 * (p[ee] + 1)];
+            double *diff_l_y = &diffL[1 * (p[ee] + 1)];
+            double *diff_l_z = &diffL[2 * (p[ee] + 1)];
+            double *l_ptr = L;
+            double scalar_x = diffN[3 * edges_nodes[2 * ee + 0] + 0] *
                                 N[node_shift + edges_nodes[2 * ee + 1]] +
                             N[node_shift + edges_nodes[2 * ee + 0]] *
-                                diffN[3 * edges_nodes[2 * ee + 1] + dd],
-                        L, 1, &diff_edgeN[ee][3 * shift + dd], 3);
+                                diffN[3 * edges_nodes[2 * ee + 1] + 0];
+            double scalar_y = diffN[3 * edges_nodes[2 * ee + 0] + 1] *
+                                N[node_shift + edges_nodes[2 * ee + 1]] +
+                            N[node_shift + edges_nodes[2 * ee + 0]] *
+                                diffN[3 * edges_nodes[2 * ee + 1] + 1];
+            double scalar_z = diffN[3 * edges_nodes[2 * ee + 0] + 2] *
+                                N[node_shift + edges_nodes[2 * ee + 1]] +
+                            N[node_shift + edges_nodes[2 * ee + 0]] *
+                                diffN[3 * edges_nodes[2 * ee + 1] + 2];
+
+            int size = P[ee];
+            for (size_t jj = 0; jj != size;
+                 ++jj, ++diff_l_x, ++diff_l_y, ++diff_l_z, ++l_ptr) {
+
+              *diff_edge_n_ptr = v * (*diff_l_x) + scalar_x * (*l_ptr);
+              ++diff_edge_n_ptr;
+              *diff_edge_n_ptr = v * (*diff_l_y) + scalar_y * (*l_ptr);
+              ++diff_edge_n_ptr;
+              *diff_edge_n_ptr = v * (*diff_l_z) + scalar_z * (*l_ptr);
+              ++diff_edge_n_ptr; 
+
+            }
           }
+
         }
     }
   }

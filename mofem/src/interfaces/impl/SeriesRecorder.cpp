@@ -98,6 +98,9 @@ MoFEMErrorCode SeriesRecorder::initialiseDatabaseFromMesh(int verb) {
         MOFEM_LOG("SYNC", Sev::inform) << "add series step " << *p.first;
     }
   }
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_CHANNEL("SYNC");
+  MOFEM_LOG_CHANNEL("SELF");
   MoFEMFunctionReturn(0);
 }
 
@@ -307,6 +310,9 @@ MoFEMErrorCode SeriesRecorder::print_series_steps() {
   for (auto &ssit : seriesSteps.get<SeriesName_mi_tag>())
     MOFEM_LOG("SYNC", Sev::inform) << "series steps " << ssit;
 
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_CHANNEL("SYNC");
+  MOFEM_LOG_CHANNEL("SELF");
   MoFEMFunctionReturn(0);
 }
 
