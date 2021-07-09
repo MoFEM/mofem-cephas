@@ -194,7 +194,7 @@ MoFEMErrorCode addHOOps(const std::string field, E &e, bool h1, bool hcurl,
   }
   if (hcurl) {
     e.getOpPtrVector().push_back(
-        new OpSetHOInvJacVectorBase(HDIV, material_inv_grad_mat));
+        new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
     e.getOpPtrVector().push_back(
         new OpSetHOInvJacVectorBase(HCURL, material_inv_grad_mat));
   }
