@@ -90,9 +90,9 @@ private:
  * @ingroup mofem_forces_and_sources_tri_element
  *
  */
-struct OpMakeHighOrderGeometryWeightsOnFace
+struct OpSetHOWeigthsOnFace
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
-  OpMakeHighOrderGeometryWeightsOnFace()
+  OpSetHOWeigthsOnFace()
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(NOSPACE) {}
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);

@@ -353,7 +353,7 @@ int main(int argc, char *argv[]) {
       MoFEMFunctionBegin;
       if (SPACE_DIM == 2)
         pipeline_mng->getOpDomainRhsPipeline().push_back(
-            new OpMakeHighOrderGeometryWeightsOnFace());
+            new OpSetHOWeigthsOnFace());
 
       using OpSource = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::LinearForm<GAUSS>::OpSource<1, 1>;
@@ -364,7 +364,7 @@ int main(int argc, char *argv[]) {
         pipeline_mng->getOpDomainLhsPipeline().push_back(
             new OpCalculateInvJacForFace(inv_jac));
         pipeline_mng->getOpDomainLhsPipeline().push_back(
-            new OpMakeHighOrderGeometryWeightsOnFace());
+            new OpSetHOWeigthsOnFace());
       }
       using OpMass = FormsIntegrators<DomainEleOp>::Assembly<
           PETSC>::BiLinearForm<GAUSS>::OpMass<1, 1>;

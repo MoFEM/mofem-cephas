@@ -175,7 +175,7 @@ struct FaceElementForcesAndSourcesCoreBase::UserDataOperator
   inline VectorDouble &getCoords();
 
   /**
-   * \brief get get coords at gauss points
+ * \brief get get coords at gauss points
 
    \code
    FTensor::Index<'i',3> i;

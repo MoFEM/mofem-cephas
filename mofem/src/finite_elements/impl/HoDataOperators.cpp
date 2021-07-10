@@ -179,7 +179,7 @@ OpSetHOInvJacVectorBase::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpMakeHighOrderGeometryWeightsOnFace::doWork(
+MoFEMErrorCode OpSetHOWeigthsOnFace::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
   const size_t nb_int_pts = getGaussPts().size2();

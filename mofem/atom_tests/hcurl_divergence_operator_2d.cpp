@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
           new OpSetContravariantPiolaTransformFace(jac));
       fe_face.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
       fe_face.getOpPtrVector().push_back(
-          new OpMakeHighOrderGeometryWeightsOnFace());
+          new OpSetHOWeigthsOnFace());
       fe_face.getOpPtrVector().push_back(new OpDivergence(div));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "FACE_FE", fe_face);
       return div;
