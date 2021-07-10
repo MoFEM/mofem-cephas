@@ -106,9 +106,6 @@ protected:
   OpSetCovariantPiolaTransform opCovariantPiolaTransform;
   OpSetInvJacHdivAndHcurl opSetInvJacHdivAndHcurl;
 
-  MatrixDouble hoCoordsAtGaussPts; ///< Store matrix of HO gauss point
-                                   ///< coordinates at integration points
-
   double &vOlume;
 
   int num_nodes;
@@ -153,26 +150,6 @@ struct VolumeElementForcesAndSourcesCoreBase::UserDataOperator
   /** \brief nodal coordinates
    */
   inline VectorDouble &getCoords();
-
-  /** \brief coordinate at Gauss points (if hierarchical approximation of
-   * element geometry)
-   */
-  inline MatrixDouble &getHOCoordsAtGaussPts();
-
-  /**
-   * \brief Get coordinates at integration points taking geometry from field
-   *
-   * This is HO geometry given by arbitrary order polynomial
-   * \code
-   * auto t_coords = getFTensor1HOCoordsAtGaussPts();
-   * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
-   *   // do something
-   *   ++t_coords;
-   * }
-   * \endcode
-   *
-   */
-  inline auto getFTensor1HOCoordsAtGaussPts();
 
   /** \brief return pointer to Generic Volume Finite Element object
    */
@@ -271,19 +248,6 @@ VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getInvJac() {
 VectorDouble &
 VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getCoords() {
   return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)->coords;
-}
-
-MatrixDouble &VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getHOCoordsAtGaussPts() {
-  return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
-      ->hoCoordsAtGaussPts;
-}
-
-auto VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1HOCoordsAtGaussPts() {
-  double *ptr = &*getHOCoordsAtGaussPts().data().begin();
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, ptr + 1,
-                                                            ptr + 2);
 }
 
 VolumeElementForcesAndSourcesCoreBase *
