@@ -41,189 +41,8 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   /** \brief default operator for TRI element
    * \ingroup mofem_forces_and_sources_tri_element
    */
-  struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
-
-    using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
-
-    /**
-     * \brief get area of face
-     * @return area of face
-     */
-    inline double getArea();
-
-    /**
-     * \brief get measure of element
-     * @return area of face
-     */
-    inline double getMeasure();
-
-    /** \brief get triangle normal
-     */
-    inline VectorDouble &getNormal();
-
-    /** \brief get triangle tangent 1
-     */
-    inline VectorDouble &getTangent1();
-
-    /** \brief get triangle tangent 2
-     */
-    inline VectorDouble &getTangent2();
-
-    /** \brief get normal as tensor
-     */
-    inline auto getFTensor1Normal();
-
-    /** \brief get tangentOne as tensor
-     */
-    inline auto getFTensor1Tangent1();
-
-    /** \brief get tangentTwo as tensor
-     */
-    inline auto getFTensor1Tangent2();
-
-    /** \brief get element number of nodes
-     */
-    inline int getNumNodes();
-
-    /** \brief get element connectivity
-     */
-    inline const EntityHandle *getConn();
-
-    /** \brief get triangle coordinates
-     */
-    inline VectorDouble &getCoords();
-
-    /**
-     * \brief get get coords at gauss points
-
-     \code
-     FTensor::Index<'i',3> i;
-     FTensor::Tensor1<double,3> t_center;
-     auto t_coords = getFTensor1Coords();
-     t_center(i) = 0;
-     for(int nn = 0;nn!=3;nn++) {
-        t_center(i) += t_coords(i);
-        ++t_coords;
-      }
-      t_center(i) /= 3;
-    \endcode
-
-     */
-    inline auto getFTensor1Coords();
-
-    /** \brief coordinate at Gauss points (if hierarchical approximation of
-    element geometry)
-
-    Note: returned matrix has size 0 in rows and columns if no HO approximation
-    of geometry is available.
-
-      */
-    inline MatrixDouble &getHOCoordsAtGaussPts();
-
-    /** \brief get coordinates at Gauss pts (takes in account ho approx. of
-     * geometry)
-     */
-    inline auto getFTensor1HOCoordsAtGaussPts();
-
-    /** \brief if higher order geometry return normals at Gauss pts.
-
-    Note: returned matrix has size 0 in rows and columns if no HO approximation
-    of geometry is available.
-
-     */
-    inline MatrixDouble &getNormalsAtGaussPts();
-
-    /**
-     * @deprecated Use getNormalsAtGaussPts
-     */
-    DEPRECATED inline MatrixDouble &getNormalsAtGaussPt();
-
-    /** \brief if higher order geometry return normals at Gauss pts.
-     *
-     * \param gg gauss point number
-     */
-    inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPts(const int gg);
-
-    /**
-     * @deprecated Cotrect name is getNormalsAtGaussPts
-     */
-    DEPRECATED inline ublas::matrix_row<MatrixDouble>
-    getNormalsAtGaussPt(const int gg);
-
-    /** \brief if higher order geometry return tangent vector to triangle at
-    Gauss pts.
-
-    Note: returned matrix has size 0 in rows and columns if no HO approximation
-    of geometry is avaliable.
-
-     */
-    inline MatrixDouble &getTangent1AtGaussPts();
-
-    /** \brief if higher order geometry return tangent vector to triangle at
-    Gauss pts.
-
-    Note: returned matrix has size 0 in rows and columns if no HO approximation
-    of geometry is avaliable.
-
-     */
-    inline MatrixDouble &getTangent2AtGaussPts();
-
-    /** \brief get normal at integration points
-
-      Example:
-      \code
-      double nrm2;
-      FTensor::Index<'i',3> i;
-      auto t_normal = getFTensor1NormalsAtGaussPts();
-      for(int gg = gg!=data.getN().size1();gg++) {
-        nrm2 = sqrt(t_normal(i)*t_normal(i));
-        ++t_normal;
-      }
-      \endcode
-
-    */
-    inline auto getFTensor1NormalsAtGaussPts();
-
-    /** \brief get tangent 1 at integration points
-
-    */
-    inline auto getFTensor1Tangent1AtGaussPts();
-
-    /** \brief get tangent 2 at integration points
-
-    */
-    inline auto getFTensor1Tangent2AtGaussPts();
-
-    /** \brief return pointer to Generic Triangle Finite Element object
-     */
-    inline const FaceElementForcesAndSourcesCoreBase *getFaceFE();
-
-    /**
-     * @deprecated Use getFaceFE
-     */
-    DEPRECATED inline const FaceElementForcesAndSourcesCoreBase *
-    getFaceElementForcesAndSourcesCore();
-
-    /**
-     *
-     * User call this function to loop over elements on the side of face. This
-     * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnSide with is
-     * operator to do calculations.
-     *
-     * @param  fe_name Name of the element
-     * @param  method  Finite element object
-     * @return         error code
-     */
-    template <int SWITCH>
-    MoFEMErrorCode loopSideVolumes(
-        const string &fe_name,
-        VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method);
-
-  private:
-    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-
-  };
-
+  struct UserDataOperator;
+  
   enum Switches {
     NO_HO_GEOMETRY = 1 << 0,
     NO_CONTRAVARIANT_TRANSFORM_HDIV = 1 << 1,
@@ -297,6 +116,192 @@ protected:
 
   friend class UserDataOperator;
   friend class VolumeElementForcesAndSourcesCoreOnSideBase;
+};
+
+/** \brief default operator for TRI element
+ * \ingroup mofem_forces_and_sources_tri_element
+ */
+struct FaceElementForcesAndSourcesCoreBase::UserDataOperator
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
+
+  /**
+   * \brief get area of face
+   * @return area of face
+   */
+  inline double getArea();
+
+  /**
+   * \brief get measure of element
+   * @return area of face
+   */
+  inline double getMeasure();
+
+  /** \brief get triangle normal
+   */
+  inline VectorDouble &getNormal();
+
+  /** \brief get triangle tangent 1
+   */
+  inline VectorDouble &getTangent1();
+
+  /** \brief get triangle tangent 2
+   */
+  inline VectorDouble &getTangent2();
+
+  /** \brief get normal as tensor
+   */
+  inline auto getFTensor1Normal();
+
+  /** \brief get tangentOne as tensor
+   */
+  inline auto getFTensor1Tangent1();
+
+  /** \brief get tangentTwo as tensor
+   */
+  inline auto getFTensor1Tangent2();
+
+  /** \brief get element number of nodes
+   */
+  inline int getNumNodes();
+
+  /** \brief get element connectivity
+   */
+  inline const EntityHandle *getConn();
+
+  /** \brief get triangle coordinates
+   */
+  inline VectorDouble &getCoords();
+
+  /**
+   * \brief get get coords at gauss points
+
+   \code
+   FTensor::Index<'i',3> i;
+   FTensor::Tensor1<double,3> t_center;
+   auto t_coords = getFTensor1Coords();
+   t_center(i) = 0;
+   for(int nn = 0;nn!=3;nn++) {
+      t_center(i) += t_coords(i);
+      ++t_coords;
+    }
+    t_center(i) /= 3;
+  \endcode
+
+   */
+  inline auto getFTensor1Coords();
+
+  /** \brief coordinate at Gauss points (if hierarchical approximation of
+  element geometry)
+
+  Note: returned matrix has size 0 in rows and columns if no HO approximation
+  of geometry is available.
+
+    */
+  inline MatrixDouble &getHOCoordsAtGaussPts();
+
+  /** \brief get coordinates at Gauss pts (takes in account ho approx. of
+   * geometry)
+   */
+  inline auto getFTensor1HOCoordsAtGaussPts();
+
+  /** \brief if higher order geometry return normals at Gauss pts.
+
+  Note: returned matrix has size 0 in rows and columns if no HO approximation
+  of geometry is available.
+
+   */
+  inline MatrixDouble &getNormalsAtGaussPts();
+
+  /**
+   * @deprecated Use getNormalsAtGaussPts
+   */
+  DEPRECATED inline MatrixDouble &getNormalsAtGaussPt();
+
+  /** \brief if higher order geometry return normals at Gauss pts.
+   *
+   * \param gg gauss point number
+   */
+  inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPts(const int gg);
+
+  /**
+   * @deprecated Cotrect name is getNormalsAtGaussPts
+   */
+  DEPRECATED inline ublas::matrix_row<MatrixDouble>
+  getNormalsAtGaussPt(const int gg);
+
+  /** \brief if higher order geometry return tangent vector to triangle at
+  Gauss pts.
+
+  Note: returned matrix has size 0 in rows and columns if no HO approximation
+  of geometry is avaliable.
+
+   */
+  inline MatrixDouble &getTangent1AtGaussPts();
+
+  /** \brief if higher order geometry return tangent vector to triangle at
+  Gauss pts.
+
+  Note: returned matrix has size 0 in rows and columns if no HO approximation
+  of geometry is avaliable.
+
+   */
+  inline MatrixDouble &getTangent2AtGaussPts();
+
+  /** \brief get normal at integration points
+
+    Example:
+    \code
+    double nrm2;
+    FTensor::Index<'i',3> i;
+    auto t_normal = getFTensor1NormalsAtGaussPts();
+    for(int gg = gg!=data.getN().size1();gg++) {
+      nrm2 = sqrt(t_normal(i)*t_normal(i));
+      ++t_normal;
+    }
+    \endcode
+
+  */
+  inline auto getFTensor1NormalsAtGaussPts();
+
+  /** \brief get tangent 1 at integration points
+
+  */
+  inline auto getFTensor1Tangent1AtGaussPts();
+
+  /** \brief get tangent 2 at integration points
+
+  */
+  inline auto getFTensor1Tangent2AtGaussPts();
+
+  /** \brief return pointer to Generic Triangle Finite Element object
+   */
+  inline const FaceElementForcesAndSourcesCoreBase *getFaceFE();
+
+  /**
+   * @deprecated Use getFaceFE
+   */
+  DEPRECATED inline const FaceElementForcesAndSourcesCoreBase *
+  getFaceElementForcesAndSourcesCore();
+
+  /**
+   *
+   * User call this function to loop over elements on the side of face. This
+   * function calls MoFEM::VolumeElementForcesAndSourcesCoreOnSide with is
+   * operator to do calculations.
+   *
+   * @param  fe_name Name of the element
+   * @param  method  Finite element object
+   * @return         error code
+   */
+  template <int SWITCH>
+  MoFEMErrorCode loopSideVolumes(
+      const string &fe_name,
+      VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_method);
+
+private:
+  MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
 /** \brief Face finite element switched
