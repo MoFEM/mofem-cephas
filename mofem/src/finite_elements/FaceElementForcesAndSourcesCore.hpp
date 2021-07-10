@@ -118,12 +118,12 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     of geometry is available.
 
       */
-    inline MatrixDouble &getHoCoordsAtGaussPts();
+    inline MatrixDouble &getHOCoordsAtGaussPts();
 
     /** \brief get coordinates at Gauss pts (takes in account ho approx. of
      * geometry)
      */
-    inline auto getFTensor1HoCoordsAtGaussPts();
+    inline auto getFTensor1HOCoordsAtGaussPts();
 
     /** \brief if higher order geometry return normals at Gauss pts.
 
@@ -462,18 +462,18 @@ auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
 }
 
 MatrixDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getHoCoordsAtGaussPts() {
+FaceElementForcesAndSourcesCoreBase::UserDataOperator::getHOCoordsAtGaussPts() {
   return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
       ->hoCoordsAtGaussPts;
 }
 
 auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1HoCoordsAtGaussPts() {
-  if (getHoCoordsAtGaussPts().size1() == 0 &&
-      getHoCoordsAtGaussPts().size2() != 3) {
+    getFTensor1HOCoordsAtGaussPts() {
+  if (getHOCoordsAtGaussPts().size1() == 0 &&
+      getHOCoordsAtGaussPts().size2() != 3) {
     return getFTensor1Coords();
   }
-  double *ptr = &*getHoCoordsAtGaussPts().data().begin();
+  double *ptr = &*getHOCoordsAtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
 }

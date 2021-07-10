@@ -157,14 +157,14 @@ struct VolumeElementForcesAndSourcesCoreBase::UserDataOperator
   /** \brief coordinate at Gauss points (if hierarchical approximation of
    * element geometry)
    */
-  inline MatrixDouble &getHoCoordsAtGaussPts();
+  inline MatrixDouble &getHOCoordsAtGaussPts();
 
   /**
    * \brief Get coordinates at integration points taking geometry from field
    *
    * This is HO geometry given by arbitrary order polynomial
    * \code
-   * auto t_coords = getFTensor1HoCoordsAtGaussPts();
+   * auto t_coords = getFTensor1HOCoordsAtGaussPts();
    * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
    *   // do something
    *   ++t_coords;
@@ -172,7 +172,7 @@ struct VolumeElementForcesAndSourcesCoreBase::UserDataOperator
    * \endcode
    *
    */
-  inline auto getFTensor1HoCoordsAtGaussPts();
+  inline auto getFTensor1HOCoordsAtGaussPts();
 
   /** \brief return pointer to Generic Volume Finite Element object
    */
@@ -274,14 +274,14 @@ VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getCoords() {
 }
 
 MatrixDouble &VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getHoCoordsAtGaussPts() {
+    getHOCoordsAtGaussPts() {
   return static_cast<VolumeElementForcesAndSourcesCoreBase *>(ptrFE)
       ->hoCoordsAtGaussPts;
 }
 
 auto VolumeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1HoCoordsAtGaussPts() {
-  double *ptr = &*getHoCoordsAtGaussPts().data().begin();
+    getFTensor1HOCoordsAtGaussPts() {
+  double *ptr = &*getHOCoordsAtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, ptr + 1,
                                                             ptr + 2);
 }

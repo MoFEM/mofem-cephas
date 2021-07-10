@@ -118,12 +118,12 @@ struct FatPrismElementForcesAndSourcesCore
     /** \brief coordinate at Gauss points on face 3 (if hierarchical
      * approximation of element geometry)
      */
-    inline MatrixDouble &getHoCoordsAtGaussPtsF3();
+    inline MatrixDouble &getHOCoordsAtGaussPtsF3();
 
     /** \brief coordinate at Gauss points on face 4 (if hierarchical
      * approximation of element geometry)
      */
-    inline MatrixDouble &getHoCoordsAtGaussPtsF4();
+    inline MatrixDouble &getHOCoordsAtGaussPtsF4();
 
     /** \brief if higher order geometry return normals at face F3 at Gauss pts.
      *
@@ -281,13 +281,13 @@ inline MatrixDouble &FatPrismElementForcesAndSourcesCore::UserDataOperator::
 }
 
 inline MatrixDouble &FatPrismElementForcesAndSourcesCore::UserDataOperator::
-    getHoCoordsAtGaussPtsF3() {
+    getHOCoordsAtGaussPtsF3() {
   return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE)
       ->hoCoordsAtGaussPtsF3;
 }
 
 inline MatrixDouble &FatPrismElementForcesAndSourcesCore::UserDataOperator::
-    getHoCoordsAtGaussPtsF4() {
+    getHOCoordsAtGaussPtsF4() {
   return static_cast<FatPrismElementForcesAndSourcesCore *>(ptrFE)
       ->hoCoordsAtGaussPtsF4;
 }
