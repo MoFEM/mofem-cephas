@@ -27,11 +27,6 @@ VolumeElementForcesAndSourcesCoreBase::VolumeElementForcesAndSourcesCoreBase(
       invJac(3, 3), opSetInvJacH1(invJac),
       opContravariantPiolaTransform(elementMeasure, jAc),
       opCovariantPiolaTransform(invJac), opSetInvJacHdivAndHcurl(invJac),
-      opHOatGaussPoints(hoCoordsAtGaussPts, hoGaussPtsJac),
-      opSetHoInvJacH1(hoGaussPtsInvJac),
-      opHoContravariantTransform(hoGaussPtsDetJac, hoGaussPtsJac),
-      opHoCovariantTransform(hoGaussPtsInvJac),
-      opSetHoInvJacHdivAndHcurl(hoGaussPtsInvJac),
       tJac(&jAc(0, 0), &jAc(0, 1), &jAc(0, 2), &jAc(1, 0), &jAc(1, 1),
            &jAc(1, 2), &jAc(2, 0), &jAc(2, 1), &jAc(2, 2)),
       tInvJac(&invJac(0, 0), &invJac(0, 1), &invJac(0, 2), &invJac(1, 0),
@@ -245,98 +240,6 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformBaseFunctions() {
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::calculateHoJacobian() {
-  MoFEMFunctionBegin;
-
-  auto check_field = [&]() {
-    auto field_it =
-        fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
-    if (field_it != fieldsPtr->get<FieldName_mi_tag>().end())
-      if ((numeredEntFiniteElementPtr->getBitFieldIdData() &
-           (*field_it)->getId())
-              .any())
-        return true;
-    return false;
-  };
-
-  // Check if field meshPositionsFieldName exist
-  if (check_field()) {
-    const Field *field_struture =
-        mField.get_field_structure(meshPositionsFieldName);
-    BitFieldId id = field_struture->getId();
-    if ((numeredEntFiniteElementPtr->getBitFieldIdData() & id).none()) {
-      SETERRQ(mField.get_comm(), MOFEM_NOT_FOUND,
-              "no MESH_NODE_POSITIONS in element data");
-    }
-
-    CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
-    if (dataH1.dataOnEntities[MBVERTEX][0].getFieldData().size() != 12) {
-      SETERRQ(mField.get_comm(), MOFEM_NOT_FOUND,
-              "no MESH_NODE_POSITIONS in element data or field has wrong "
-              "number of coefficients");
-    }
-    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
-    CHKERR opHOatGaussPoints.opRhs(dataH1);
-    hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(), hoGaussPtsJac.size2(),
-                            false);
-    // Express Jacobian as tensor
-    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> jac(
-        &hoGaussPtsJac(0, 0), &hoGaussPtsJac(0, 1), &hoGaussPtsJac(0, 2),
-        &hoGaussPtsJac(0, 3), &hoGaussPtsJac(0, 4), &hoGaussPtsJac(0, 5),
-        &hoGaussPtsJac(0, 6), &hoGaussPtsJac(0, 7), &hoGaussPtsJac(0, 8));
-    FTensor::Tensor2<FTensor::PackPtr<double *, 9>, 3, 3> inv_jac(
-        &hoGaussPtsInvJac(0, 0), &hoGaussPtsInvJac(0, 1),
-        &hoGaussPtsInvJac(0, 2), &hoGaussPtsInvJac(0, 3),
-        &hoGaussPtsInvJac(0, 4), &hoGaussPtsInvJac(0, 5),
-        &hoGaussPtsInvJac(0, 6), &hoGaussPtsInvJac(0, 7),
-        &hoGaussPtsInvJac(0, 8));
-
-    const size_t nb_gauss_pts = gaussPts.size2();
-    hoGaussPtsDetJac.resize(nb_gauss_pts, false);
-    FTensor::Tensor0<double *> det(&hoGaussPtsDetJac[0]);
-    // Calculate inverse and determinant
-    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
-      CHKERR determinantTensor3by3(jac, det);
-      // if(det<0) {
-      //   SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"Negative
-      //   volume");
-      // }
-      CHKERR invertTensor3by3(jac, det, inv_jac);
-      ++jac;
-      ++inv_jac;
-      ++det;
-    }
-  } else {
-    hoCoordsAtGaussPts.resize(0, 0, false);
-    hoGaussPtsInvJac.resize(0, 0, false);
-    hoGaussPtsDetJac.resize(0, false);
-  }
-  MoFEMFunctionReturn(0);
-}
-
-MoFEMErrorCode
-VolumeElementForcesAndSourcesCoreBase::transformHoBaseFunctions() {
-  MoFEMFunctionBegin;
-  if (hoCoordsAtGaussPts.size1() > 0) {
-    // Transform derivatives of base functions and apply Piola transformation
-    // if needed.
-
-    CHKERR opSetHoInvJacH1.opRhs(dataH1);
-    if (dataH1.spacesOnEntities[MBTET].test(L2)) {
-      CHKERR opSetHoInvJacH1.opRhs(dataL2);
-    }
-    if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-      CHKERR opHoContravariantTransform.opRhs(dataHdiv);
-      CHKERR opSetHoInvJacHdivAndHcurl.opRhs(dataHdiv);
-    }
-    if (dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-      CHKERR opHoCovariantTransform.opRhs(dataHcurl);
-      CHKERR opSetHoInvJacHdivAndHcurl.opRhs(dataHcurl);
-    }
-  }
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode
 VolumeElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
@@ -346,6 +249,5 @@ VolumeElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);
 }
-
 
 } // namespace MoFEM

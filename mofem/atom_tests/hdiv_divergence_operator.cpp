@@ -182,9 +182,6 @@ OpTetDivergence::doWork(int side, EntityType type,
   for (size_t gg = 0; gg < nb_gauss_pts; gg++) {
     for (size_t dd = 0; dd != div_vec.size(); dd++) {
       double w = getGaussPts()(3, gg) * getVolume();
-      if (getHoGaussPtsDetJac().size() > 0) {
-        w *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-      }
       dIv += t_base_diff_hdiv(i, i) * w;
       ++t_base_diff_hdiv;
     }

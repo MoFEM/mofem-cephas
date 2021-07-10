@@ -174,7 +174,6 @@ MoFEMErrorCode addHOOps(const std::string field, E &e, bool h1, bool hcurl,
   auto material_grad_mat = boost::make_shared<MatrixDouble>();
   auto material_det_vec = boost::make_shared<VectorDouble>();
   auto material_inv_grad_mat = boost::make_shared<MatrixDouble>();
-  e.meshPositionsFieldName = "none";
   e.getOpPtrVector().push_back(
       new OpCalculateVectorFieldGradient<3, 3>(field, material_grad_mat));
   e.getOpPtrVector().push_back(new OpInvertMatrix<3>(

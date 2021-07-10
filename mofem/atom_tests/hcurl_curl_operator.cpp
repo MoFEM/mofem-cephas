@@ -202,10 +202,6 @@ MoFEMErrorCode OpTetCurl::doWork(int side, EntityType type,
   unsigned int gg = 0;
   for (; gg < nb_gauss_pts; gg++) {
     double w = getGaussPts()(3, gg) * getVolume();
-    if (getHoGaussPtsDetJac().size() == nb_gauss_pts) {
-      // if ho geometry is given
-      w *= getHoGaussPtsDetJac()(gg);
-    }
     FTensor::Tensor1<double, 3> t_curl;
     for (unsigned int dd = 0; dd != nb_dofs; dd++) {
       t_curl(i) = levi_civita(j, i, k) * t_curl_base(j, k);
