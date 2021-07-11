@@ -24,7 +24,7 @@ FaceElementForcesAndSourcesCoreBase::FaceElementForcesAndSourcesCoreBase(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
       meshPositionsFieldName("MESH_NODE_POSITIONS"),
-      opHOCoordsAndNormals(hoCoordsAtGaussPts, normalsAtGaussPts,
+      opHOCoordsAndNormals(coordsAtGaussPts, normalsAtGaussPts,
                            tangentOneAtGaussPts, tangentTwoAtGaussPts),
       opContravariantTransform(nOrmal, normalsAtGaussPts),
       opCovariantTransform(nOrmal, normalsAtGaussPts, tangentOne,
@@ -37,7 +37,54 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
 
   auto type = numeredEntFiniteElementPtr->getEntType();
 
-  if (type == MBQUAD) {
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+
+  auto get_ftensor_from_vec_3d = [](VectorDouble &v) {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(&v[0], &v[1],
+                                                              &v[2]);
+  };
+
+  auto get_ftensor_n_diff = [&]() {
+    const auto &m = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+    return FTensor::Tensor1<FTensor::PackPtr<const double *, 2>, 2>(&m(0, 0),
+                                                                    &m(0, 1));
+  };
+
+  auto get_ftensor_from_mat_3d = [](MatrixDouble &m) {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+        &m(0, 0), &m(0, 1), &m(0, 2));
+  };
+
+  if(type == MBTRI) {
+
+    const size_t nb_gauss_pts = gaussPts.size2();
+    normalsAtGaussPts.resize(nb_gauss_pts, 3);
+    tangentOneAtGaussPts.resize(nb_gauss_pts, 3);
+    tangentTwoAtGaussPts.resize(nb_gauss_pts, 3);
+
+    auto t_tan1 = get_ftensor_from_mat_3d(tangentOneAtGaussPts);
+    auto t_tan2 = get_ftensor_from_mat_3d(tangentTwoAtGaussPts);
+    auto t_normal = get_ftensor_from_mat_3d(normalsAtGaussPts);
+
+    auto t_n =
+        FTensor::Tensor1<double *, 3>(&nOrmal[0], &nOrmal[1], &nOrmal[2]);
+    auto t_t1 = FTensor::Tensor1<double *, 3>(&tangentOne[0], &tangentOne[1],
+                                              &tangentOne[2]);
+    auto t_t2 = FTensor::Tensor1<double *, 3>(&tangentTwo[0], &tangentTwo[1],
+                                              &tangentTwo[2]);
+
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      t_normal(i) = t_n(i);
+      t_tan1(i) = t_t1(i);
+      t_tan2(i) = t_t2(i);
+      ++t_tan1;
+      ++t_tan2;
+      ++t_normal;
+    }
+
+  } else if (type == MBQUAD) {
 
     EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
     CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
@@ -53,28 +100,9 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
     tangentOneAtGaussPts.clear();
     tangentTwoAtGaussPts.clear();
 
-    auto get_ftensor_from_mat_3d = [](MatrixDouble &m) {
-      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
-          &m(0, 0), &m(0, 1), &m(0, 2));
-    };
-    auto get_ftensor_from_vec_3d = [](VectorDouble &v) {
-      return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(&v[0], &v[1],
-                                                                &v[2]);
-    };
-
-    auto get_ftensor_n_diff = [&]() {
-      const auto &m = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
-      return FTensor::Tensor1<FTensor::PackPtr<const double *, 2>, 2>(&m(0, 0),
-                                                                      &m(0, 1));
-    };
-
     auto t_t1 = get_ftensor_from_mat_3d(tangentOneAtGaussPts);
     auto t_t2 = get_ftensor_from_mat_3d(tangentTwoAtGaussPts);
     auto t_normal = get_ftensor_from_mat_3d(normalsAtGaussPts);
-
-    FTensor::Index<'i', 3> i;
-    FTensor::Index<'j', 3> j;
-    FTensor::Index<'k', 3> k;
 
     FTensor::Number<0> N0;
     FTensor::Number<1> N1;
@@ -82,7 +110,6 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
     auto t_diff = get_ftensor_n_diff();
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
       auto t_coords = get_ftensor_from_vec_3d(coords);
-
       for (int nn = 0; nn != num_nodes; ++nn) {
         t_t1(i) += t_coords(i) * t_diff(N0);
         t_t2(i) += t_coords(i) * t_diff(N1);
@@ -95,6 +122,9 @@ FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {
       ++t_t2;
       ++t_normal;
     }
+  } else {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+            "Element type not implemented");
   }
 
   MoFEMFunctionReturn(0);
