@@ -167,6 +167,19 @@ private:
   MatrixDouble piolaDiffN;
 };
 
+/** \brief Calculate normals at Gauss points of triangle element
+ * \ingroup mofem_forces_and_source
+ */
+struct OpGetHONormalsOnFace
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpGetHONormalsOnFace(std::string field_name)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(field_name,
+                                                              OPROW) {}
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+};
+
 template <typename E>
 MoFEMErrorCode addHOOps(const std::string field, E &e, bool h1, bool hcurl,
                         bool hdiv, bool l2) {

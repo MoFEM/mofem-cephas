@@ -367,4 +367,114 @@ MoFEMErrorCode OpSetHOCovariantPiolaTransform::doWork(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode
+OpGetHONormalsOnFace::doWork(int side, EntityType type,
+                             DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBeginHot;
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
+
+  FTensor::Number<0> N0;
+  FTensor::Number<1> N1;
+
+  auto get_ftensor1 = [](MatrixDouble &m) {
+    return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+        &m(0, 0), &m(0, 1), &m(0, 2));
+  };
+
+  unsigned int nb_dofs = data.getFieldData().size();
+  if (nb_dofs != 0) {
+
+    int nb_gauss_pts = data.getN().size1();
+    auto &tangent1_at_gauss_pts = getTangent1AtGaussPts();
+    auto &tangent2_at_gauss_pts = getTangent2AtGaussPts();
+    tangent1_at_gauss_pts.resize(nb_gauss_pts, 3, false);
+    tangent2_at_gauss_pts.resize(nb_gauss_pts, 3, false);
+
+    switch (type) {
+    case MBVERTEX: {
+      tangent1_at_gauss_pts.clear();
+      tangent2_at_gauss_pts.clear();
+    }
+    case MBEDGE:
+    case MBTRI:
+    case MBQUAD: {
+      if (2 * data.getN().size2() != data.getDiffN().size2()) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "data inconsistency");
+      }
+      if (nb_dofs % 3 != 0) {
+        SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                "data inconsistency");
+      }
+      if (nb_dofs > 3 * data.getN().size2()) {
+        unsigned int nn = 0;
+        for (; nn != nb_dofs; nn++) {
+          if (!data.getFieldDofs()[nn]->getActive())
+            break;
+        }
+        if (nn > 3 * data.getN().size2()) {
+          SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                   "data inconsistency for base %s",
+                   ApproximationBaseNames[data.getBase()]);
+        } else {
+          nb_dofs = nn;
+          if (!nb_dofs)
+            MoFEMFunctionReturnHot(0);
+        }
+      }
+      const int nb_base_functions = data.getN().size2();
+      auto t_base = data.getFTensor0N();
+      auto t_diff_base = data.getFTensor1DiffN<2>();
+      auto t_t1 = get_ftensor1(tangent1_at_gauss_pts);
+      auto t_t2 = get_ftensor1(tangent2_at_gauss_pts);
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        auto t_data = data.getFTensor1FieldData<3>();
+        int bb = 0;
+        for (; bb != nb_dofs / 3; ++bb) {
+          t_t1(i) += t_data(i) * t_diff_base(N0);
+          t_t2(i) += t_data(i) * t_diff_base(N1);
+          ++t_data;
+          ++t_base;
+          ++t_diff_base;
+        }
+        for (; bb != nb_base_functions; ++bb) {
+          ++t_base;
+          ++t_diff_base;
+        }
+        ++t_t1;
+        ++t_t2;
+      }
+    } break;
+    default:
+      SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED, "not implemented");
+    }
+  }
+
+  // if (moab::CN::Dimension(type) == 2) {
+  if(type == MBTRI) {
+
+    auto &normal_at_gauss_pts = getNormalsAtGaussPts();
+    auto &tangent1_at_gauss_pts = getTangent1AtGaussPts();
+    auto &tangent2_at_gauss_pts = getTangent2AtGaussPts();
+
+    const auto nb_gauss_pts = tangent1_at_gauss_pts.size1();
+    normal_at_gauss_pts.resize(nb_gauss_pts, 3, false);
+
+    auto t_normal = get_ftensor1(normal_at_gauss_pts);
+    auto t_t1 = get_ftensor1(tangent1_at_gauss_pts);
+    auto t_t2 = get_ftensor1(tangent2_at_gauss_pts);
+    for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
+      t_normal(j) = FTensor::levi_civita(i, j, k) * t_t1(k) * t_t2(i);
+      ++t_normal;
+      ++t_t1;
+      ++t_t2;
+    }
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
 } // namespace MoFEM
