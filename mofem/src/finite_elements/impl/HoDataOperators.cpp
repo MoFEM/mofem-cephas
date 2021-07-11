@@ -38,6 +38,7 @@ OpCalculateHOCoords::doWork(int side, EntityType type,
       size_t bb = 0;
       for (; bb != nb_dofs; ++bb) {
         t_coords(i) += t_base * t_dof(i);
+        ++t_dof;
         ++t_base;
       }
       for (; bb < nb_base_functions; ++bb)
