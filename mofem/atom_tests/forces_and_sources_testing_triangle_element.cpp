@@ -184,8 +184,6 @@ int main(int argc, char *argv[]) {
         my_split << std::setprecision(3) << getCoordsAtGaussPts() << std::endl;
         my_split << std::setprecision(3) << getArea() << std::endl;
         my_split << std::setprecision(3) << getNormal() << std::endl;
-        my_split << std::setprecision(3) << getHOCoordsAtGaussPts()
-                 << std::endl;
         my_split << std::setprecision(3) << getNormalsAtGaussPts() << std::endl;
         my_split << std::setprecision(3) << getTangent1AtGaussPts()
                  << std::endl;
