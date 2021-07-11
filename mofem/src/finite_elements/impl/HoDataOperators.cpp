@@ -179,8 +179,9 @@ OpSetHOInvJacVectorBase::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpSetHOWeigthsOnFace::doWork(
-    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+MoFEMErrorCode
+OpSetHOWeigthsOnFace::doWork(int side, EntityType type,
+                             DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
   const size_t nb_int_pts = getGaussPts().size2();
   if (getNormalsAtGaussPts().size1()) {
