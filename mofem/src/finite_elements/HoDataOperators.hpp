@@ -26,9 +26,9 @@ namespace MoFEM {
  * @brief Calculate HO coordinates at gauss points
  *
  */
-struct OpCalculateHoCoords : public ForcesAndSourcesCore::UserDataOperator {
+struct OpCalculateHOCoords : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateHoCoords(const std::string field_name)
+  OpCalculateHOCoords(const std::string field_name)
       : ForcesAndSourcesCore::UserDataOperator(field_name, OPROW) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,

@@ -21,7 +21,7 @@
 namespace MoFEM {
 
 MoFEMErrorCode
-OpCalculateHoCoords::doWork(int side, EntityType type,
+OpCalculateHOCoords::doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
@@ -40,7 +40,7 @@ OpCalculateHoCoords::doWork(int side, EntityType type,
         t_coords(i) += t_base * t_dof(i);
         ++t_base;
       }
-      for (; bb != nb_base_functions; ++bb)
+      for (; bb < nb_base_functions; ++bb)
         ++t_base;
       ++t_coords;
     }

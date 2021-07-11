@@ -175,12 +175,12 @@ int main(int argc, char *argv[]) {
       domain_fe->getOpPtrVector().push_back(
           new OpSetHOWeights(material_det_vec));
       domain_fe->getOpPtrVector().push_back(
-          new OpCalculateHoCoords("MESH_NODE_POSITIONS"));
+          new OpCalculateHOCoords("MESH_NODE_POSITIONS"));
       domain_fe->getOpPtrVector().push_back(
           new OpVolume("MESH_NODE_POSITIONS", vol));
       // set operator to the face element
       boundary_fe->getOpPtrVector().push_back(
-          new OpCalculateHoCoords("MESH_NODE_POSITIONS"));
+          new OpCalculateHOCoords("MESH_NODE_POSITIONS"));
       boundary_fe->getOpPtrVector().push_back(
           new OpFace("MESH_NODE_POSITIONS", surf_vol));
       // make integration in volume (here real calculations starts)
