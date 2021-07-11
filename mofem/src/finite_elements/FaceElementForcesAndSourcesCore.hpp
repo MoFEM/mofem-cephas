@@ -277,13 +277,8 @@ struct FaceElementForcesAndSourcesCoreBase::UserDataOperator
 
   /** \brief return pointer to Generic Triangle Finite Element object
    */
-  inline const FaceElementForcesAndSourcesCoreBase *getFaceFE();
+  inline FaceElementForcesAndSourcesCoreBase *getFaceFE();
 
-  /**
-   * @deprecated Use getFaceFE
-   */
-  DEPRECATED inline const FaceElementForcesAndSourcesCoreBase *
-  getFaceElementForcesAndSourcesCore();
 
   /**
    *
@@ -542,15 +537,12 @@ auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
                                                             &ptr[2]);
 }
 
-const FaceElementForcesAndSourcesCoreBase *
+FaceElementForcesAndSourcesCoreBase *
 FaceElementForcesAndSourcesCoreBase::UserDataOperator::getFaceFE() {
   return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE);
 }
 
-const FaceElementForcesAndSourcesCoreBase *FaceElementForcesAndSourcesCoreBase::
-    UserDataOperator::getFaceElementForcesAndSourcesCore() {
-  return getFaceFE();
-}
+
 
 template <int SWITCH>
 MoFEMErrorCode
