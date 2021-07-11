@@ -214,22 +214,11 @@ struct FaceElementForcesAndSourcesCoreBase::UserDataOperator
    */
   inline MatrixDouble &getNormalsAtGaussPts();
 
-  /**
-   * @deprecated Use getNormalsAtGaussPts
-   */
-  DEPRECATED inline MatrixDouble &getNormalsAtGaussPt();
-
   /** \brief if higher order geometry return normals at Gauss pts.
    *
    * \param gg gauss point number
    */
   inline ublas::matrix_row<MatrixDouble> getNormalsAtGaussPts(const int gg);
-
-  /**
-   * @deprecated Cotrect name is getNormalsAtGaussPts
-   */
-  DEPRECATED inline ublas::matrix_row<MatrixDouble>
-  getNormalsAtGaussPt(const int gg);
 
   /** \brief if higher order geometry return tangent vector to triangle at
   Gauss pts.
@@ -484,11 +473,6 @@ FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNormalsAtGaussPts() {
       ->normalsAtGaussPts;
 }
 
-MatrixDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNormalsAtGaussPt() {
-  return getNormalsAtGaussPts();
-}
-
 ublas::matrix_row<MatrixDouble>
 FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNormalsAtGaussPts(
     const int gg) {
@@ -496,12 +480,6 @@ FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNormalsAtGaussPts(
       static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
           ->normalsAtGaussPts,
       gg);
-}
-
-ublas::matrix_row<MatrixDouble>
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getNormalsAtGaussPt(
-    const int gg) {
-  return getNormalsAtGaussPts(gg);
 }
 
 MatrixDouble &
