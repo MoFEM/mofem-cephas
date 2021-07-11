@@ -165,41 +165,7 @@ int main(int argc, char *argv[]) {
       MoFEMErrorCode operator()() {
         MoFEMFunctionBegin;
 
-        CHKERR getSpacesAndBaseOnEntities(data);
-
-        CHKERR getEntitySense<MBEDGE>(data);
-        CHKERR getEntityDataOrder<MBEDGE>(data, H1);
-        CHKERR getEntityDataOrder<MBTRI>(data, H1);
-        CHKERR getRowNodesIndices(data, "FIELD1");
-        CHKERR getEntityRowIndices(data, "FIELD1", MBEDGE);
-        CHKERR getNodesFieldData(data, "FIELD1");
-        CHKERR getEntityFieldData(data, "FIELD1", MBEDGE);
-
-        data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(4, 3, false);
-        CHKERR ShapeMBTRI(
-            &*data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
-            G_TRI_X4, G_TRI_Y4, 4);
-        data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3, 2, false);
-        CHKERR ShapeDiffMBTRI(
-            &*data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin());
-
-        MatrixDouble gauss_pts(2, 4, false);
-        for (int gg = 0; gg < 4; gg++) {
-          gauss_pts(0, gg) = G_TRI_X4[gg];
-          gauss_pts(1, gg) = G_TRI_Y4[gg];
-        }
-
-        CHKERR TriPolynomialBase().getValue(
-            gauss_pts,
-            boost::shared_ptr<BaseFunctionCtx>(new EntPolynomialBaseCtx(
-                data, H1, AINSWORTH_LEGENDRE_BASE, NOBASE)));
-
-        nOrmals_at_GaussPt.resize(4, 3);
-        tAngent1_at_GaussPt.resize(4, 3);
-        tAngent2_at_GaussPt.resize(4, 3);
-
-        CHKERR op.opRhs(data);
-        CHKERR op.calculateNormals();
+        CHKERR opSwitch<0>();        
 
         my_split.precision(3);
         my_split << "coords: " << hoCoords_at_GaussPt << std::endl;

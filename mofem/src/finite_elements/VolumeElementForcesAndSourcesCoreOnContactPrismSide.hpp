@@ -223,7 +223,7 @@ int VolumeElementForcesAndSourcesCoreOnContactPrismSideBase::UserDataOperator::
 template <int SWITCH>
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnContactPrismSideSwitch<SWITCH>::
 operator()() {
-  return OpSwitch<SWITCH>();
+  return opSwitch<SWITCH>();
 }
 
 } // namespace MoFEM

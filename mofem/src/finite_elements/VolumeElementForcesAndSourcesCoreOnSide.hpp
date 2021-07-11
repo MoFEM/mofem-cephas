@@ -327,7 +327,7 @@ ublas::matrix_row<MatrixDouble> VolumeElementForcesAndSourcesCoreOnSideBase::
 template <int SWITCH>
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreOnSideSwitch<SWITCH>::
 operator()() {
-  return OpSwitch<SWITCH>();
+  return opSwitch<SWITCH>();
 }
 
 } // namespace MoFEM

@@ -48,7 +48,7 @@ struct VolumeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     NO_TRANSFORM = 1 << 1 | 1 << 2,
   };
 
-  template <int SWITCH> MoFEMErrorCode OpSwitch();
+  template <int SWITCH> MoFEMErrorCode opSwitch();
 
 protected:
   VolumeElementForcesAndSourcesCoreBase(Interface &m_field,
@@ -187,7 +187,7 @@ using VolumeElementForcesAndSourcesCore =
     VolumeElementForcesAndSourcesCoreSwitch<0>;
 
 template <int SWITCH>
-MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::OpSwitch() {
+MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::opSwitch() {
   MoFEMFunctionBegin;
 
   if (numeredEntFiniteElementPtr->getEntType() != MBTET)
@@ -214,7 +214,7 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::OpSwitch() {
 
 template <int SWITCH>
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreSwitch<SWITCH>::operator()() {
-  return OpSwitch<SWITCH>();
+  return opSwitch<SWITCH>();
 }
 
 int VolumeElementForcesAndSourcesCoreBase::UserDataOperator::getNumNodes() {

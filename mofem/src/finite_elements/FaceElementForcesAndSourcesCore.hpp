@@ -49,7 +49,7 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     NO_COVARIANT_TRANSFORM_HCURL = 1 << 2,
   };
 
-  template <int SWITCH> MoFEMErrorCode OpSwitch();
+  template <int SWITCH> MoFEMErrorCode opSwitch();
 
 protected:
   FaceElementForcesAndSourcesCoreBase(Interface &m_field);
@@ -329,7 +329,7 @@ using FaceElementForcesAndSourcesCore =
     FaceElementForcesAndSourcesCoreSwitch<0>;
 
 template <int SWITCH>
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::OpSwitch() {
+MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::opSwitch() {
   MoFEMFunctionBegin;
 
   const EntityType type = numeredEntFiniteElementPtr->getEntType();
@@ -401,7 +401,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::OpSwitch() {
 
 template <int SWITCH>
 MoFEMErrorCode FaceElementForcesAndSourcesCoreSwitch<SWITCH>::operator()() {
-  return OpSwitch<SWITCH>();
+  return opSwitch<SWITCH>();
 }
 
 double FaceElementForcesAndSourcesCoreBase::UserDataOperator::getArea() {

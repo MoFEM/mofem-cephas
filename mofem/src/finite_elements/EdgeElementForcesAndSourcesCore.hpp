@@ -139,7 +139,7 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     NO_COVARIANT_TRANSFORM_HCURL = 1 << 2
   };
 
-  template <int SWITCH> MoFEMErrorCode OpSwitch();
+  template <int SWITCH> MoFEMErrorCode opSwitch();
 
 protected:
   EdgeElementForcesAndSourcesCoreBase(Interface &m_field);
@@ -190,7 +190,7 @@ using EdgeElementForcesAndSourcesCore =
     EdgeElementForcesAndSourcesCoreSwitch<0>;
 
 template <int SWITCH>
-MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::OpSwitch() {
+MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::opSwitch() {
   MoFEMFunctionBegin;
 
   if (numeredEntFiniteElementPtr->getEntType() != MBEDGE)
@@ -233,7 +233,7 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::OpSwitch() {
 
 template <int SWITCH>
 MoFEMErrorCode EdgeElementForcesAndSourcesCoreSwitch<SWITCH>::operator()() {
-  return OpSwitch<SWITCH>();
+  return opSwitch<SWITCH>();
 }
 
 const EntityHandle *
