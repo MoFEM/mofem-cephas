@@ -134,14 +134,8 @@ int main(int argc, char *argv[]) {
     // what are ghost nodes, see Petsc Manual
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
 
-    struct ForcesAndSourcesCore_TestFE : public ForcesAndSourcesCore {
-
-      MatrixDouble hoCoords_at_GaussPt;
-      MatrixDouble nOrmals_at_GaussPt;
-      MatrixDouble tAngent1_at_GaussPt;
-      MatrixDouble tAngent2_at_GaussPt;
-      DataForcesAndSourcesCore data;
-      OpGetCoordsAndNormalsOnFace op;
+    struct ForcesAndSourcesCore_TestFE
+        : public FaceElementForcesAndSourcesCoreBase {
 
       typedef tee_device<std::ostream, std::ofstream> TeeDevice;
       typedef stream<TeeDevice> TeeStream;
@@ -149,10 +143,8 @@ int main(int argc, char *argv[]) {
       TeeDevice my_tee;
       TeeStream my_split;
 
-      ForcesAndSourcesCore_TestFE(MoFEM::Interface &_m_field)
-          : ForcesAndSourcesCore(_m_field), data(MBTRI),
-            op(hoCoords_at_GaussPt, nOrmals_at_GaussPt, tAngent1_at_GaussPt,
-               tAngent2_at_GaussPt),
+      ForcesAndSourcesCore_TestFE(MoFEM::Interface &m_field)
+          : FaceElementForcesAndSourcesCoreBase(m_field),
             ofs("forces_and_sources_getting_higher_order_skin_normals_atom."
                 "txt"),
             my_tee(std::cout, ofs), my_split(my_tee){};
@@ -168,10 +160,10 @@ int main(int argc, char *argv[]) {
         CHKERR opSwitch<0>();        
 
         my_split.precision(3);
-        my_split << "coords: " << hoCoords_at_GaussPt << std::endl;
-        my_split << "normals: " << nOrmals_at_GaussPt << std::endl;
-        my_split << "tangent1: " << tAngent1_at_GaussPt << std::endl;
-        my_split << "tangent2: " << tAngent2_at_GaussPt << std::endl;
+        my_split << "coords: " << coordsAtGaussPts << std::endl;
+        my_split << "normals: " << normalsAtGaussPts << std::endl;
+        my_split << "tangent1: " << tangentOneAtGaussPts << std::endl;
+        my_split << "tangent2: " << tangentTwoAtGaussPts << std::endl;
 
         MoFEMFunctionReturn(0);
       }
@@ -183,6 +175,24 @@ int main(int argc, char *argv[]) {
     };
 
     ForcesAndSourcesCore_TestFE fe1(m_field);
+    fe1.meshPositionsFieldName = "FIELD1";
+
+    fe1.getRuleHook = [](int, int, int approx_order) { return -1; };
+    fe1.setRuleHook = [](ForcesAndSourcesCore *fe_ptr, int ro, int co, int ao) {
+      MoFEMFunctionBegin;
+      auto &gauss_pts = fe_ptr->gaussPts;
+      gauss_pts.resize(3, 4, false);
+      for (int gg = 0; gg < 4; gg++) {
+        gauss_pts(0, gg) = G_TRI_X4[gg];
+        gauss_pts(1, gg) = G_TRI_Y4[gg];
+        gauss_pts(2, gg) = 0;
+      }
+      MoFEMFunctionReturn(0);
+    };
+
+    fe1.getOpPtrVector().push_back(new OpCalculateHOCoords("FIELD1"));
+    fe1.getOpPtrVector().push_back(new OpGetHONormalsOnFace("FIELD1"));
+
     CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "TEST_FE", fe1);
   }
   CATCH_ERRORS;
