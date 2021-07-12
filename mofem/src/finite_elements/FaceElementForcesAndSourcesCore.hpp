@@ -106,7 +106,6 @@ protected:
   VectorDouble nOrmal, tangentOne, tangentTwo;
   VectorDouble coords;
 
-  MatrixDouble hoCoordsAtGaussPts;
   MatrixDouble normalsAtGaussPts;
   MatrixDouble tangentOneAtGaussPts;
   MatrixDouble tangentTwoAtGaussPts;
@@ -191,20 +190,6 @@ struct FaceElementForcesAndSourcesCoreBase::UserDataOperator
 
    */
   inline auto getFTensor1Coords();
-
-  /** \brief coordinate at Gauss points (if hierarchical approximation of
-  element geometry)
-
-  Note: returned matrix has size 0 in rows and columns if no HO approximation
-  of geometry is available.
-
-    */
-  inline MatrixDouble &getHOCoordsAtGaussPts();
-
-  /** \brief get coordinates at Gauss pts (takes in account ho approx. of
-   * geometry)
-   */
-  inline auto getFTensor1HOCoordsAtGaussPts();
 
   /** \brief if higher order geometry return normals at Gauss pts.
 
@@ -446,23 +431,6 @@ FaceElementForcesAndSourcesCoreBase::UserDataOperator::getCoords() {
 auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
     getFTensor1Coords() {
   double *ptr = &*getCoords().data().begin();
-  return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
-                                                            &ptr[2]);
-}
-
-MatrixDouble &
-FaceElementForcesAndSourcesCoreBase::UserDataOperator::getHOCoordsAtGaussPts() {
-  return static_cast<FaceElementForcesAndSourcesCoreBase *>(ptrFE)
-      ->hoCoordsAtGaussPts;
-}
-
-auto FaceElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1HOCoordsAtGaussPts() {
-  if (getHOCoordsAtGaussPts().size1() == 0 &&
-      getHOCoordsAtGaussPts().size2() != 3) {
-    return getFTensor1Coords();
-  }
-  double *ptr = &*getHOCoordsAtGaussPts().data().begin();
   return FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(ptr, &ptr[1],
                                                             &ptr[2]);
 }
