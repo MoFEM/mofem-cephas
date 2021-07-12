@@ -408,23 +408,13 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
 
   // Check if field meshPositionsFieldName exist
   if (check_field()) {
-
     // Calculate normal for high-order geometry
     CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
     CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
     CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
     CHKERR opHOCoordsAndNormals.opRhs(dataH1);
     CHKERR opHOCoordsAndNormals.calculateNormals();
-  } else if (numeredEntFiniteElementPtr->getEntType() == MBTRI) {
-    hoCoordsAtGaussPts.resize(0, 0, false);
-    normalsAtGaussPts.resize(0, 0, false);
-    tangentOneAtGaussPts.resize(0, 0, false);
-    tangentTwoAtGaussPts.resize(0, 0, false);
-  } else {
-    hoCoordsAtGaussPts.resize(coordsAtGaussPts.size1(),
-                              coordsAtGaussPts.size2(), false);
-    noalias(hoCoordsAtGaussPts) = coordsAtGaussPts;
-  }
+  } 
 
   MoFEMFunctionReturn(0);
 }

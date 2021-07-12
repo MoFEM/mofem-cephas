@@ -332,17 +332,7 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::opSwitch() {
   CHKERR calculateCoordinatesAtGaussPts();
   CHKERR calHierarchicalBaseFunctionsOnElement();
   CHKERR calBernsteinBezierBaseFunctionsOnElement();
-
-  switch (numeredEntFiniteElementPtr->getEntType()) {
-  case MBTRI:
-    break;
-  case MBQUAD:
-    CHKERR calculateAreaAndNormalAtIntegrationPts();
-    break;
-  default:
-    SETERRQ(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-            "Element type not implemented");
-  }
+  CHKERR calculateAreaAndNormalAtIntegrationPts();
 
   if (!(NO_HO_GEOMETRY & SWITCH)) {
     CHKERR calculateHoNormal();
