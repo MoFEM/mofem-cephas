@@ -830,6 +830,8 @@ MoFEMErrorCode OpMixScalarTimesGradImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
       }
       ++t_row_base;
     }
+    for (; rr < OpBase::nbRows; ++rr)
+      ++t_row_base;
 
     ++t_w;
   }
