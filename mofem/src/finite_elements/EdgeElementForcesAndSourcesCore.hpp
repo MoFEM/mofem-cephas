@@ -145,7 +145,7 @@ protected:
   EdgeElementForcesAndSourcesCoreBase(Interface &m_field);
 
   MatrixDouble tangentAtGaussPts;
-  OpGetHoTangentOnEdge opGetHoTangentOnEdge;
+  OpGetHOTangentOnEdge opGetHoTangentOnEdge;
   OpSetCovariantPiolaTransformOnEdge opCovariantTransform;
 
   double lEngth;

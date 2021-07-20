@@ -180,6 +180,61 @@ struct OpGetHONormalsOnFace
                         DataForcesAndSourcesCore::EntData &data);
 };
 
+/** \brief transform Hdiv base fluxes from reference element to physical
+ * triangle \ingroup mofem_forces_and_sources
+ *
+ * \note Matrix which keeps normal is assumed to have three columns, and number
+ * of rows should be equal to number of integration points.
+ *
+ */
+struct OpHOSetContravariantPiolaTransformOnFace
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpHOSetContravariantPiolaTransformOnFace(
+      const FieldSpace space,
+      boost::shared_ptr<MatrixDouble> normals_at_gauss_pts = nullptr)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPLAST),
+        normalsAtGaussPts(normals_at_gauss_pts) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  boost::shared_ptr<MatrixDouble> normalsAtGaussPts;
+};
+
+/** \brief transform Hcurl base fluxes from reference element to physical
+ * triangle \ingroup mofem_forces_and_sources
+ */
+struct OpHOSetCovariantPiolaTransformOnFace
+    : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpHOSetCovariantPiolaTransformOnFace(
+      const FieldSpace space,
+      boost::shared_ptr<MatrixDouble> normals_at_pts = nullptr,
+      boost::shared_ptr<MatrixDouble> tangent1_at_pts = nullptr,
+      boost::shared_ptr<MatrixDouble> tangent2_at_pts = nullptr)
+      : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPLAST),
+        normalsAtPts(normals_at_pts), tangent1AtPts(tangent1_at_pts),
+        tangent2AtPts(tangent2_at_pts) {
+    if (normals_at_pts || tangent1_at_pts || tangent2_at_pts)
+      if (normals_at_pts && tangent1_at_pts && tangent2_at_pts)
+        CHK_THROW_MESSAGE(MOFEM_DATA_INCONSISTENCY,
+                          "All elements in constructor have to set pointer");
+  }
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  boost::shared_ptr<MatrixDouble> normalsAtPts;
+  boost::shared_ptr<MatrixDouble> tangent1AtPts;
+  boost::shared_ptr<MatrixDouble> tangent2AtPts;
+
+  MatrixDouble piolaN;
+  MatrixDouble diffPiolaN;
+};
+
 template <typename E>
 MoFEMErrorCode addHOOps(const std::string field, E &e, bool h1, bool hcurl,
                         bool hdiv, bool l2) {

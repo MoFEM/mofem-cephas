@@ -629,7 +629,11 @@ int main(int argc, char *argv[]) {
                                MB_TAG_CREAT | MB_TAG_SPARSE, &def_val);
 
     tri_fe.getOpPtrVector().push_back(
+        new OpHOSetCovariantPiolaTransformOnFace(HCURL));
+    tri_fe.getOpPtrVector().push_back(
         new OpFacesFluxes(m_field, th1, th2, my_split));
+    skin_fe.getOpPtrVector().push_back(
+        new OpHOSetCovariantPiolaTransformOnFace(HCURL));
     skin_fe.getOpPtrVector().push_back(
         new OpFacesSkinFluxes(m_field, th1, th2, my_split));
     edge_fe.getOpPtrVector().push_back(

@@ -454,8 +454,7 @@ OpGetHONormalsOnFace::doWork(int side, EntityType type,
     }
   }
 
-  // if (moab::CN::Dimension(type) == 2) {
-  if(type == MBTRI) {
+  if (moab::CN::Dimension(type) == 2) {
 
     auto &normal_at_gauss_pts = getNormalsAtGaussPts();
     auto &tangent1_at_gauss_pts = getTangent1AtGaussPts();
@@ -476,6 +475,154 @@ OpGetHONormalsOnFace::doWork(int side, EntityType type,
   }
 
   MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode OpHOSetContravariantPiolaTransformOnFace::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+  FTensor::Index<'i', 3> i;
+  MoFEMFunctionBegin;
+
+  if (moab::CN::Dimension(type) != 2)
+    MoFEMFunctionReturnHot(0);
+
+  auto get_normals_ptr = [&]() {
+    if (normalsAtGaussPts)
+      return &*normalsAtGaussPts->data().begin();
+    else
+      return &*getNormalsAtGaussPts().data().begin();
+  };
+
+  auto apply_transform_nonlinear_geometry = [&](auto base, auto nb_gauss_pts,
+                                                auto nb_base_functions) {
+    MoFEMFunctionBegin;
+
+    auto ptr = get_normals_ptr();
+    auto t_normal = FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>(
+        &ptr[0], &ptr[1], &ptr[2]);
+
+    auto t_base = data.getFTensor1N<3>(base);
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      const auto l2 = t_normal(i) * t_normal(i);
+      for (int bb = 0; bb != nb_base_functions; ++bb) {
+        const auto v = t_base(0);
+        t_base(i) = (v / l2) * t_normal(i);
+        ++t_base;
+      }
+      ++t_normal;
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+    const auto &base_functions = data.getN(base);
+    const auto nb_gauss_pts = base_functions.size1();
+
+    if (nb_gauss_pts) {
+
+      const auto nb_base_functions = base_functions.size2() / 3;
+      CHKERR apply_transform_nonlinear_geometry(base, nb_gauss_pts,
+                                                nb_base_functions);
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
+MoFEMErrorCode OpHOSetCovariantPiolaTransformOnFace::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  const auto type_dim = moab::CN::Dimension(type);
+  if (type_dim != 1 && type_dim != 2)
+    MoFEMFunctionReturnHot(0);
+
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 2> k;
+
+  auto get_jac = [&]() {
+    if (normalsAtPts && tangent1AtPts && tangent2AtPts) {
+      double *ptr_n = &*normalsAtPts->data().begin();
+      double *ptr_t1 = &*tangent1AtPts->data().begin();
+      double *ptr_t2 = &*tangent2AtPts->data().begin();
+      return FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>(
+          &ptr_t1[0], &ptr_t2[0], &ptr_n[0],
+
+          &ptr_t1[1], &ptr_t2[1], &ptr_n[1],
+
+          &ptr_t1[2], &ptr_t2[2], &ptr_n[2]);
+    } else {
+      double *ptr_n = &*getNormalsAtGaussPts().data().begin();
+      double *ptr_t1 = &*getTangent1AtGaussPts().data().begin();
+      double *ptr_t2 = &*getTangent2AtGaussPts().data().begin();
+      return FTensor::Tensor2<FTensor::PackPtr<double *, 3>, 3, 3>(
+          &ptr_t1[0], &ptr_t2[0], &ptr_n[0],
+
+          &ptr_t1[1], &ptr_t2[1], &ptr_n[1],
+
+          &ptr_t1[2], &ptr_t2[2], &ptr_n[2]);
+    }
+  };
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; ++b) {
+
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+
+    auto &baseN = data.getN(base);
+    auto &diffBaseN = data.getDiffN(base);
+
+    int nb_dofs = baseN.size2() / 3;
+    int nb_gauss_pts = baseN.size1();
+
+    piolaN.resize(baseN.size1(), baseN.size2());
+    diffPiolaN.resize(diffBaseN.size1(), diffBaseN.size2());
+
+    if (nb_dofs > 0 && nb_gauss_pts > 0) {
+
+      auto t_h_curl = data.getFTensor1N<3>(base);
+      auto t_diff_h_curl = data.getFTensor2DiffN<3, 2>(base);
+
+      FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_transformed_h_curl(
+          &piolaN(0, HVEC0), &piolaN(0, HVEC1), &piolaN(0, HVEC2));
+
+      FTensor::Tensor2<FTensor::PackPtr<double *, 6>, 3, 2>
+          t_transformed_diff_h_curl(
+              &diffPiolaN(0, HVEC0_0), &diffPiolaN(0, HVEC0_1),
+              &diffPiolaN(0, HVEC1_0), &diffPiolaN(0, HVEC1_1),
+              &diffPiolaN(0, HVEC2_0), &diffPiolaN(0, HVEC2_1));
+
+      int cc = 0;
+      double det;
+      FTensor::Tensor2<double, 3, 3> t_inv_m;
+
+      // HO geometry is set, so jacobian is different at each gauss point
+      auto t_m_at_pts = get_jac();
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        CHKERR determinantTensor3by3(t_m_at_pts, det);
+        CHKERR invertTensor3by3(t_m_at_pts, det, t_inv_m);
+        for (int ll = 0; ll != nb_dofs; ll++) {
+          t_transformed_h_curl(i) = t_inv_m(j, i) * t_h_curl(j);
+          t_transformed_diff_h_curl(i, k) = t_inv_m(j, i) * t_diff_h_curl(j, k);
+          ++t_h_curl;
+          ++t_transformed_h_curl;
+          ++t_diff_h_curl;
+          ++t_transformed_diff_h_curl;
+          ++cc;
+        }
+        ++t_m_at_pts;
+      }
+
+      if (cc != nb_gauss_pts * nb_dofs)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
+
+      baseN.data().swap(piolaN.data());
+      diffBaseN.data().swap(diffPiolaN.data());
+    }
+  }
+
+  MoFEMFunctionReturn(0);
 }
 
 } // namespace MoFEM

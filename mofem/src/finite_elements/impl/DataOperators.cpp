@@ -658,7 +658,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace::doWork(
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
 
-  if (type != MBTRI)
+  if (moab::CN::Dimension(type) != 2)
     MoFEMFunctionReturnHot(0);
 
   if (normalRawPtr == nullptr && normalsAtGaussPtsRawPtr == nullptr)
@@ -694,11 +694,12 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace::doWork(
     const MatrixDouble &normals_at_pts = *normalsAtGaussPtsRawPtr;
     auto t_normal = FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3>(
         &normals_at_pts(0, 0), &normals_at_pts(0, 1), &normals_at_pts(0, 2));
+
     auto t_base = data.getFTensor1N<3>(base);
     for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      const auto l2 = t_normal(i) * t_normal(i);
       for (int bb = 0; bb != nb_base_functions; ++bb) {
         const auto v = t_base(0);
-        const auto l2 = t_normal(i) * t_normal(i);
         t_base(i) = (v / l2) * t_normal(i);
         ++t_base;
       }
@@ -749,21 +750,20 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (type != MBEDGE && type != MBTRI)
+  const auto type_dim = moab::CN::Dimension(type);
+  if (type_dim != 1 && type_dim != 2)
     MoFEMFunctionReturnHot(0);
 
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
   FTensor::Index<'k', 2> k;
 
-  FTensor::Tensor2<const double *, 3, 3> t_m(
+  FTensor::Tensor2<FTensor::PackPtr<const double *, 3>, 3, 3> t_m(
       &tAngent0[0], &tAngent1[0], &nOrmal[0],
 
       &tAngent0[1], &tAngent1[1], &nOrmal[1],
 
-      &tAngent0[2], &tAngent1[2], &nOrmal[2],
-
-      3);
+      &tAngent0[2], &tAngent1[2], &nOrmal[2]);
   double det;
   FTensor::Tensor2<double, 3, 3> t_inv_m;
   CHKERR determinantTensor3by3(t_m, det);
@@ -801,12 +801,12 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
       int cc = 0;
       if (normalsAtGaussPts.size1() == (unsigned int)nb_gauss_pts) {
         // HO geometry is set, so jacobian is different at each gauss point
-        FTensor::Tensor2<const double *, 3, 3> t_m_at_pts(
+        FTensor::Tensor2<FTensor::PackPtr<const double *, 3>, 3, 3> t_m_at_pts(
             &tangent0AtGaussPt(0, 0), &tangent1AtGaussPt(0, 0),
             &normalsAtGaussPts(0, 0), &tangent0AtGaussPt(0, 1),
             &tangent1AtGaussPt(0, 1), &normalsAtGaussPts(0, 1),
             &tangent0AtGaussPt(0, 2), &tangent1AtGaussPt(0, 2),
-            &normalsAtGaussPts(0, 2), 3);
+            &normalsAtGaussPts(0, 2));
         for (int gg = 0; gg < nb_gauss_pts; ++gg) {
           CHKERR determinantTensor3by3(t_m_at_pts, det);
           CHKERR invertTensor3by3(t_m_at_pts, det, t_inv_m);
@@ -848,7 +848,7 @@ MoFEMErrorCode OpSetCovariantPiolaTransformOnFace::doWork(
 }
 
 MoFEMErrorCode
-OpGetHoTangentOnEdge::doWork(int side, EntityType type,
+OpGetHOTangentOnEdge::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 

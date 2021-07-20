@@ -347,10 +347,10 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::opSwitch() {
       CHKERR opContravariantTransform.opRhs(data_div);
   }
 
-  if (!(NO_COVARIANT_TRANSFORM_HCURL & SWITCH)) {
-    if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))
-      CHKERR opCovariantTransform.opRhs(data_curl);
-  }
+  // if (!(NO_COVARIANT_TRANSFORM_HCURL & SWITCH)) {
+  //   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))
+  //     CHKERR opCovariantTransform.opRhs(data_curl);
+  // }
 
   // Iterate over operators
   CHKERR loopOverOperators();

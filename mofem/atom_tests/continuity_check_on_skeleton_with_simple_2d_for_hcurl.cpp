@@ -95,6 +95,8 @@ struct SkeletonFE : public EdgeEleOp {
   SkeletonFE(MoFEM::Interface &m_field, CommonData &elem_data)
       : EdgeEle::UserDataOperator("FIELD", UserDataOperator::OPROW),
         faceSideFe(m_field), elemData(elem_data) {
+    faceSideFe.getOpPtrVector().push_back(
+        new OpHOSetCovariantPiolaTransformOnFace(HCURL));
     faceSideFe.getOpPtrVector().push_back(new SkeletonFE::OpFaceSide(elemData));
   }
 

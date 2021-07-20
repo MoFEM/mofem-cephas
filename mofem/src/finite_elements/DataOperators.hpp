@@ -490,11 +490,11 @@ struct OpSetCovariantPiolaTransformOnFace : public DataOperator {
 /** \brief Calculate tangent vector on edge form HO geometry approximation
  * \ingroup mofem_forces_and_sources
  */
-struct OpGetHoTangentOnEdge : public DataOperator {
+struct OpGetHOTangentOnEdge : public DataOperator {
 
   MatrixDouble &tAngent;
 
-  OpGetHoTangentOnEdge(MatrixDouble &tangent) : tAngent(tangent) {}
+  OpGetHOTangentOnEdge(MatrixDouble &tangent) : tAngent(tangent) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
