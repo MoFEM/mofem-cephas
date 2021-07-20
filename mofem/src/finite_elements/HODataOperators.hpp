@@ -1,4 +1,4 @@
-/** \file HoDataOperators.hpp
+/** \file HODataOperators.hpp
   * \brief Operators managing HO geometry
 
 */

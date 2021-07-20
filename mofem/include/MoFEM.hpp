@@ -130,7 +130,7 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 #include <FaceElementForcesAndSourcesCoreOnSide.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <UserDataOperators.hpp>
-#include <HoDataOperators.hpp> // Manage HO order geometry
+#include <HODataOperators.hpp> // Manage HO order geometry
 #include <FormsIntegrators.hpp>
 #include <LinearFormsIntegrators.hpp>
 #include <BiLinearFormsIntegrators.hpp>

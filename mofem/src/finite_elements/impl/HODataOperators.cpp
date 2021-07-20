@@ -1,4 +1,4 @@
-/** \file HoDataOperators.cpp
+/** \file HODataOperators.cpp
 
 \brief Set of operators for high-order geometry approximation.
 
