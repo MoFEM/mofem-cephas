@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     pipeline_mng->getOpDomainRhsPipeline().push_back(new OpTetCurl(t_curl_vol));
 
     pipeline_mng->getOpBoundaryRhsPipeline().push_back(
-        new OpHOSetCovariantPiolaTransformOnFace(HCURL));
+        new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
     pipeline_mng->getOpBoundaryRhsPipeline().push_back(
         new OpFacesRot(t_curl_skin));
 

@@ -187,10 +187,10 @@ struct OpGetHONormalsOnFace
  * of rows should be equal to number of integration points.
  *
  */
-struct OpHOSetContravariantPiolaTransformOnFace
+struct OpHOSetContravariantPiolaTransformOnFace3D
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpHOSetContravariantPiolaTransformOnFace(
+  OpHOSetContravariantPiolaTransformOnFace3D(
       const FieldSpace space,
       boost::shared_ptr<MatrixDouble> normals_at_gauss_pts = nullptr)
       : FaceElementForcesAndSourcesCoreBase::UserDataOperator(space, OPLAST),
@@ -206,10 +206,10 @@ private:
 /** \brief transform Hcurl base fluxes from reference element to physical
  * triangle \ingroup mofem_forces_and_sources
  */
-struct OpHOSetCovariantPiolaTransformOnFace
+struct OpHOSetCovariantPiolaTransformOnFace3D
     : public FaceElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpHOSetCovariantPiolaTransformOnFace(
+  OpHOSetCovariantPiolaTransformOnFace3D(
       const FieldSpace space,
       boost::shared_ptr<MatrixDouble> normals_at_pts = nullptr,
       boost::shared_ptr<MatrixDouble> tangent1_at_pts = nullptr,

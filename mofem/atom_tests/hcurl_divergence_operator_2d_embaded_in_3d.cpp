@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
           new OpCalculateInvJacForFaceEmbeddedIn3DSpace(inv_jac));
       fe_face.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
       fe_face.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformFaceEmbeddedIn3DSpace(jac));
+          new OpSetContravariantPiolaTransformOnFace2DEmbeddedIn3DSpace(jac));
       fe_face.getOpPtrVector().push_back(
           new OpSetInvJacHcurlFaceEmbeddedIn3DSpace(inv_jac));
       fe_face.getOpPtrVector().push_back(

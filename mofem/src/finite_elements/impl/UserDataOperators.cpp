@@ -694,7 +694,7 @@ OpMakeHdivFromHcurl::doWork(int side, EntityType type,
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpSetContravariantPiolaTransformFaceImpl<2>::doWork(
+MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<2>::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
 
   MoFEMFunctionBegin;
@@ -765,7 +765,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformFaceImpl<2>::doWork(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpSetContravariantPiolaTransformFaceImpl<3>::doWork(
+MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<3>::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
 
   MoFEMFunctionBegin;

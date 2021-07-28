@@ -425,11 +425,11 @@ int main(int argc, char *argv[]) {
     CHKERR moab.tag_get_handle("TN", 1, MB_TYPE_DOUBLE, th2,
                                MB_TAG_CREAT | MB_TAG_SPARSE, &def_val);
     tri_fe.getOpPtrVector().push_back(
-        new OpHOSetContravariantPiolaTransformOnFace(HDIV));
+        new OpHOSetContravariantPiolaTransformOnFace3D(HDIV));
     tri_fe.getOpPtrVector().push_back(
         new OpFacesFluxes(m_field, th1, th2, my_split));
     skin_fe.getOpPtrVector().push_back(
-        new OpHOSetContravariantPiolaTransformOnFace(HDIV));
+        new OpHOSetContravariantPiolaTransformOnFace3D(HDIV));
     skin_fe.getOpPtrVector().push_back(
         new OpFacesSkinFluxes(m_field, th1, th2, my_split));
 

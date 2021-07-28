@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpMakeHdivFromHcurl());
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpSetContravariantPiolaTransformFace(jac));
+          new OpSetContravariantPiolaTransformOnFace2D(jac));
       pipeline_mng->getOpDomainRhsPipeline().push_back(new OpAssembleVec());
 
       pipeline_mng->getOpDomainLhsPipeline().push_back(
@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getOpDomainLhsPipeline().push_back(
           new OpMakeHdivFromHcurl());
       pipeline_mng->getOpDomainLhsPipeline().push_back(
-          new OpSetContravariantPiolaTransformFace(jac));
+          new OpSetContravariantPiolaTransformOnFace2D(jac));
       pipeline_mng->getOpDomainLhsPipeline().push_back(new OpAssembleMat());
 
       auto integration_rule = [](int, int, int p_data) { return 2 * p_data; };
@@ -376,7 +376,7 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpMakeHdivFromHcurl());
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpSetContravariantPiolaTransformFace(jac));
+          new OpSetContravariantPiolaTransformOnFace2D(jac));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpSetInvJacHcurlFace(inv_jac));
       pipeline_mng->getOpDomainRhsPipeline().push_back(

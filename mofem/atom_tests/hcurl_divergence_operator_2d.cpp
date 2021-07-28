@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
       fe_face.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
       fe_face.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
       fe_face.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformFace(jac));
+          new OpSetContravariantPiolaTransformOnFace2D(jac));
       fe_face.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
       fe_face.getOpPtrVector().push_back(
           new OpSetHOWeigthsOnFace());

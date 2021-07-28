@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
     pipeline_mng->getOpDomainRhsPipeline().push_back(
         new OpTetDivergence(divergence_vol));
     pipeline_mng->getOpBoundaryRhsPipeline().push_back(
-        new OpHOSetContravariantPiolaTransformOnFace(HDIV));
+        new OpHOSetContravariantPiolaTransformOnFace3D(HDIV));
     pipeline_mng->getOpBoundaryRhsPipeline().push_back(
         new OpFacesFluxes(divergence_skin));
 

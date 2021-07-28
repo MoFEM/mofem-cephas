@@ -102,7 +102,7 @@ struct SkeletonFE : public EdgeEleOp {
       faceSideFe.getOpPtrVector().push_back(new OpCalculateJacForFace(jac));
       faceSideFe.getOpPtrVector().push_back(new OpMakeHdivFromHcurl());
       faceSideFe.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformFace(jac));
+          new OpSetContravariantPiolaTransformOnFace2D(jac));
       faceSideFe.getOpPtrVector().push_back(
           new SkeletonFE::OpFaceSide(elemData));
 

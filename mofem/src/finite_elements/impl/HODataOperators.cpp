@@ -477,7 +477,7 @@ OpGetHONormalsOnFace::doWork(int side, EntityType type,
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode OpHOSetContravariantPiolaTransformOnFace::doWork(
+MoFEMErrorCode OpHOSetContravariantPiolaTransformOnFace3D::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   FTensor::Index<'i', 3> i;
   MoFEMFunctionBegin;
@@ -530,7 +530,7 @@ MoFEMErrorCode OpHOSetContravariantPiolaTransformOnFace::doWork(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpHOSetCovariantPiolaTransformOnFace::doWork(
+MoFEMErrorCode OpHOSetCovariantPiolaTransformOnFace3D::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
