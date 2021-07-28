@@ -2803,7 +2803,7 @@ using OpSetContravariantPiolaTransformFaceEmbeddedIn3DSpace =
 struct OpSetContravariantPiolaTransformOnEdge
     : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetContravariantPiolaTransformOnEdge(const FieldSpace space = HDIV)
+  OpSetContravariantPiolaTransformOnEdge(const FieldSpace space = HCURL)
       : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(space) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
