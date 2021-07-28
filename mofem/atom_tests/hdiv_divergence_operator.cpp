@@ -134,6 +134,8 @@ int main(int argc, char *argv[]) {
     pipeline_mng->getOpDomainRhsPipeline().push_back(
         new OpTetDivergence(divergence_vol));
     pipeline_mng->getOpBoundaryRhsPipeline().push_back(
+        new OpHOSetContravariantPiolaTransformOnFace(HDIV));
+    pipeline_mng->getOpBoundaryRhsPipeline().push_back(
         new OpFacesFluxes(divergence_skin));
 
     // project geometry form 10 node tets on higher order approx. functions

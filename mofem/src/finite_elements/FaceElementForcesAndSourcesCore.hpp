@@ -340,12 +340,12 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::opSwitch() {
 
   // Apply Piola transform to HDiv and HCurl spaces, uses previously
   // calculated faces normal and tangent vectors.
-  if (!(NO_CONTRAVARIANT_TRANSFORM_HDIV & SWITCH)) {
-    if (dataH1.spacesOnEntities[MBTRI].test(HDIV))
-      CHKERR opContravariantTransform.opRhs(data_div);
-    if (dataH1.spacesOnEntities[MBQUAD].test(HDIV))
-      CHKERR opContravariantTransform.opRhs(data_div);
-  }
+  // if (!(NO_CONTRAVARIANT_TRANSFORM_HDIV & SWITCH)) {
+  //   if (dataH1.spacesOnEntities[MBTRI].test(HDIV))
+  //     CHKERR opContravariantTransform.opRhs(data_div);
+  //   if (dataH1.spacesOnEntities[MBQUAD].test(HDIV))
+  //     CHKERR opContravariantTransform.opRhs(data_div);
+  // }
 
   // if (!(NO_COVARIANT_TRANSFORM_HCURL & SWITCH)) {
   //   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))

@@ -288,6 +288,8 @@ int main(int argc, char *argv[]) {
     CommonData elem_data;
     FaceElementForcesAndSourcesCore face_fe(m_field);
     face_fe.getOpPtrVector().push_back(
+        new OpHOSetContravariantPiolaTransformOnFace(HDIV));
+    face_fe.getOpPtrVector().push_back(
         new OpHOSetCovariantPiolaTransformOnFace(HCURL));
     face_fe.getOpPtrVector().push_back(new SkeletonFE(m_field, elem_data));
     CHKERR m_field.loop_finite_elements("P1", "S2", face_fe);
