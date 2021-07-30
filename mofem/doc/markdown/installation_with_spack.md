@@ -566,7 +566,12 @@ spack view symlink -i um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~
 
-Alternatively, you may want to follow the [Developer installation](#spack_developers).
+Alternatively, you may want to follow the [Developer installation](#spack_developers). 
+In this case, note that by default `spack dev-build` will try to use all available 
+processor slots to run `make` in parallel, which may result in performance degradation 
+of Buckethead. To set a desired number of parallel jobs (e.g. 2), you can add 
+parameter `-j 2`. Alternatively, you can edit Spack settings 
+as discussed below in the section [Basic settings in config.yaml](#spack_config).
 
 ### Job file {#spack_buckedhead_job}
 
