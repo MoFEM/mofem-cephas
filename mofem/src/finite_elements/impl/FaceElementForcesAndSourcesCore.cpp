@@ -25,11 +25,7 @@ FaceElementForcesAndSourcesCoreBase::FaceElementForcesAndSourcesCoreBase(
     : ForcesAndSourcesCore(m_field),
       meshPositionsFieldName("MESH_NODE_POSITIONS"),
       opHOCoordsAndNormals(coordsAtGaussPts, normalsAtGaussPts,
-                           tangentOneAtGaussPts, tangentTwoAtGaussPts),
-      opContravariantTransform(nOrmal, normalsAtGaussPts),
-      opCovariantTransform(nOrmal, normalsAtGaussPts, tangentOne,
-                           tangentOneAtGaussPts, tangentTwo,
-                           tangentTwoAtGaussPts) {}
+                           tangentOneAtGaussPts, tangentTwoAtGaussPts) {}
 
 MoFEMErrorCode
 FaceElementForcesAndSourcesCoreBase::calculateAreaAndNormalAtIntegrationPts() {

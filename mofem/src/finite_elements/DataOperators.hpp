@@ -425,6 +425,9 @@ struct OpGetCoordsAndNormalsOnPrism : public DataOperator {
 
 /** \brief transform Hdiv base fluxes from reference element to physical
  * triangle \ingroup mofem_forces_and_sources
+ *
+ * \deprecated It is used in contact elements. Contact elements should be
+ * minified to work as face element,
  */
 struct OpSetContravariantPiolaTransformOnFace : public DataOperator {
 
@@ -463,6 +466,9 @@ struct OpSetContravariantPiolaTransformOnFace : public DataOperator {
 
 /** \brief transform Hcurl base fluxes from reference element to physical
  * triangle \ingroup mofem_forces_and_sources
+ * 
+ * \deprecated It is used in contact elements. Contact elements should be
+ * minified to work as face element,
  */
 struct OpSetCovariantPiolaTransformOnFace : public DataOperator {
 

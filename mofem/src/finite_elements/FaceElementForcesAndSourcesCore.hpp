@@ -108,8 +108,6 @@ protected:
   MatrixDouble tangentOneAtGaussPts;
   MatrixDouble tangentTwoAtGaussPts;
   OpGetCoordsAndNormalsOnFace opHOCoordsAndNormals;
-  OpSetContravariantPiolaTransformOnFace opContravariantTransform;
-  OpSetCovariantPiolaTransformOnFace opCovariantTransform;
 
   friend class UserDataOperator;
   friend class VolumeElementForcesAndSourcesCoreOnSideBase;
