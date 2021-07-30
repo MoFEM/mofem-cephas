@@ -43,7 +43,8 @@ struct PipelineManager : public UnknownInterface {
   using UserDataOperator = MoFEM::ForcesAndSourcesCore::UserDataOperator;
   using RuleHookFun = MoFEM::ForcesAndSourcesCore::RuleHookFun;
 
-  using FaceEle2D = MoFEM::FaceElementForcesAndSourcesCoreSwitch<0>;
+  using VolEle = MoFEM::VolumeElementForcesAndSourcesCore;
+  using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
   using EdgeEle2D = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
       EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
   using EdgeEle1D = EdgeEle2D;
@@ -224,7 +225,7 @@ template <>
 inline boost::shared_ptr<FEMethod> &
 PipelineManager::createDomainFEPipeline<3>(boost::shared_ptr<FEMethod> &fe) {
   if (!fe)
-    fe = boost::make_shared<VolumeElementForcesAndSourcesCore>(cOre);
+    fe = boost::make_shared<VolEle>(cOre);
   return fe;
 }
 
@@ -232,7 +233,7 @@ template <>
 inline boost::shared_ptr<FEMethod> &
 PipelineManager::createDomainFEPipeline<2>(boost::shared_ptr<FEMethod> &fe) {
   if (!fe)
-    fe = boost::make_shared<FaceEle2D>(cOre);
+    fe = boost::make_shared<FaceEle>(cOre);
   return fe;
 }
 
