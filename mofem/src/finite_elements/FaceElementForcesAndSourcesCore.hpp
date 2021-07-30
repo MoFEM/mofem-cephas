@@ -44,9 +44,7 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   struct UserDataOperator;
   
   enum Switches {
-    NO_HO_GEOMETRY = 1 << 0,
-    NO_CONTRAVARIANT_TRANSFORM_HDIV = 1 << 1,
-    NO_COVARIANT_TRANSFORM_HCURL = 1 << 2,
+    NO_HO_GEOMETRY = 1 << 0
   };
 
   template <int SWITCH> MoFEMErrorCode opSwitch();
@@ -337,20 +335,6 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::opSwitch() {
   if (!(NO_HO_GEOMETRY & SWITCH)) {
     CHKERR calculateHoNormal();
   }
-
-  // Apply Piola transform to HDiv and HCurl spaces, uses previously
-  // calculated faces normal and tangent vectors.
-  // if (!(NO_CONTRAVARIANT_TRANSFORM_HDIV & SWITCH)) {
-  //   if (dataH1.spacesOnEntities[MBTRI].test(HDIV))
-  //     CHKERR opContravariantTransform.opRhs(data_div);
-  //   if (dataH1.spacesOnEntities[MBQUAD].test(HDIV))
-  //     CHKERR opContravariantTransform.opRhs(data_div);
-  // }
-
-  // if (!(NO_COVARIANT_TRANSFORM_HCURL & SWITCH)) {
-  //   if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))
-  //     CHKERR opCovariantTransform.opRhs(data_curl);
-  // }
 
   // Iterate over operators
   CHKERR loopOverOperators();

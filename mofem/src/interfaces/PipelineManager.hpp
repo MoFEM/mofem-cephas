@@ -43,9 +43,7 @@ struct PipelineManager : public UnknownInterface {
   using UserDataOperator = MoFEM::ForcesAndSourcesCore::UserDataOperator;
   using RuleHookFun = MoFEM::ForcesAndSourcesCore::RuleHookFun;
 
-  using FaceEle2D = MoFEM::FaceElementForcesAndSourcesCoreSwitch<
-      FaceElementForcesAndSourcesCore::NO_CONTRAVARIANT_TRANSFORM_HDIV |
-      FaceElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+  using FaceEle2D = MoFEM::FaceElementForcesAndSourcesCoreSwitch<0>;
   using EdgeEle2D = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
       EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
   using EdgeEle1D = EdgeEle2D;

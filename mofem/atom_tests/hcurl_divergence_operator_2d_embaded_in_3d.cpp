@@ -27,9 +27,7 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 using FaceEle = MoFEM::FaceElementForcesAndSourcesCoreSwitch<
-    FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY |
-    FaceElementForcesAndSourcesCore::NO_CONTRAVARIANT_TRANSFORM_HDIV |
-    FaceElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+    FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY>;
 
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
     EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY |
