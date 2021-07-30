@@ -85,7 +85,7 @@ vim
 ## macOS
 
 Xcode contains required compilers for macOS. The last known working version of
-Xcode is 10.2 with clang 10.0.1; there may be issues with future/different
+Xcode is 12.3 with clang 12.0.0; there may be issues with future/different
 versions.
 
 To install the latest Xcode for your release of macOS, follow the commands
