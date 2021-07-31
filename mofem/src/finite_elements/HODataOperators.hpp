@@ -236,7 +236,7 @@ private:
 };
 
 template <typename E>
-MoFEMErrorCode addHOOps(const std::string field, E &e, bool h1, bool hcurl,
+MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1, bool hcurl,
                         bool hdiv, bool l2) {
   MoFEMFunctionBegin;
   auto material_grad_mat = boost::make_shared<MatrixDouble>();
@@ -267,6 +267,9 @@ MoFEMErrorCode addHOOps(const std::string field, E &e, bool h1, bool hcurl,
   }
   MoFEMFunctionReturn(0);
 }
+
+
+
 
 }; // namespace MoFEM
 
