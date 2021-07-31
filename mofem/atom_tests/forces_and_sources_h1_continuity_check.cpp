@@ -456,10 +456,12 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    struct MyTriFE : public FaceElementForcesAndSourcesCore {
+    struct MyTriFE : public FaceElementForcesAndSourcesCoreSwitch<
+                         FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY> {
 
       MyTriFE(MoFEM::Interface &m_field)
-          : FaceElementForcesAndSourcesCore(m_field) {}
+          : FaceElementForcesAndSourcesCoreSwitch<
+                FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY>(m_field) {}
       int getRule(int order) { return -1; };
 
       MoFEMErrorCode setGaussPts(int order) {

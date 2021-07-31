@@ -132,7 +132,10 @@ int main(int argc, char *argv[]) {
     boost::dynamic_pointer_cast<VolumeElementForcesAndSourcesCoreBase>(
         pipeline_mng->getDomainRhsFE())
         ->meshPositionsFieldName = "none";
-
+    boost::dynamic_pointer_cast<PipelineManager::FaceEle>(
+        pipeline_mng->getBoundaryRhsFE())
+        ->meshPositionsFieldName = "none";
+        
     if (ho_geometry) {
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateVectorFieldGradient<3, 3>("MESH_NODE_POSITIONS",
@@ -148,6 +151,10 @@ int main(int argc, char *argv[]) {
     }
     pipeline_mng->getOpDomainRhsPipeline().push_back(new OpTetCurl(t_curl_vol));
 
+
+    if (m_field.check_field("MESH_NODE_POSITIONS"))
+      pipeline_mng->getOpBoundaryRhsPipeline().push_back(
+          new OpGetHONormalsOnFace("MESH_NODE_POSITIONS"));
     pipeline_mng->getOpBoundaryRhsPipeline().push_back(
         new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
     pipeline_mng->getOpBoundaryRhsPipeline().push_back(

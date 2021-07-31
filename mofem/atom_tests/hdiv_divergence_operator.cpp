@@ -133,6 +133,14 @@ int main(int argc, char *argv[]) {
     double divergence_skin = 0;
     pipeline_mng->getOpDomainRhsPipeline().push_back(
         new OpTetDivergence(divergence_vol));
+
+    boost::dynamic_pointer_cast<PipelineManager::FaceEle>(
+        pipeline_mng->getBoundaryRhsFE())
+        ->meshPositionsFieldName = "none";
+
+    if (m_field.check_field("MESH_NODE_POSITIONS"))
+      pipeline_mng->getOpBoundaryRhsPipeline().push_back(
+          new OpGetHONormalsOnFace("MESH_NODE_POSITIONS"));
     pipeline_mng->getOpBoundaryRhsPipeline().push_back(
         new OpHOSetContravariantPiolaTransformOnFace3D(HDIV));
     pipeline_mng->getOpBoundaryRhsPipeline().push_back(

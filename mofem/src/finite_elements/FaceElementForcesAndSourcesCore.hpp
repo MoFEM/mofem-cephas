@@ -331,6 +331,19 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::opSwitch() {
   CHKERR calculateAreaAndNormalAtIntegrationPts();
 
   if (!(NO_HO_GEOMETRY & SWITCH)) {
+
+    auto check_field = [&]() {
+      auto field_it =
+          fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
+      if (field_it != fieldsPtr->get<FieldName_mi_tag>().end())
+        if ((numeredEntFiniteElementPtr->getBitFieldIdData() &
+             (*field_it)->getId())
+                .any())
+          return true;
+      return false;
+    };
+    if (check_field())
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "AAA");
     CHKERR calculateHoNormal();
   }
 

@@ -490,10 +490,12 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    struct MyTriFE : public FaceElementForcesAndSourcesCore {
+    struct MyTriFE : public FaceElementForcesAndSourcesCoreSwitch<
+                         FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY> {
 
       MyTriFE(MoFEM::Interface &m_field)
-          : FaceElementForcesAndSourcesCore(m_field) {}
+          : FaceElementForcesAndSourcesCoreSwitch<
+                FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY>(m_field) {}
       int getRule(int order) { return -1; };
 
       MoFEMErrorCode setGaussPts(int order) {
@@ -629,9 +631,17 @@ int main(int argc, char *argv[]) {
                                MB_TAG_CREAT | MB_TAG_SPARSE, &def_val);
 
     tri_fe.getOpPtrVector().push_back(
+        new OpGetHONormalsOnFace("MESH_NODE_POSITIONS"));
+    tri_fe.getOpPtrVector().push_back(
+        new OpCalculateHOCoords("MESH_NODE_POSITIONS"));
+
+    tri_fe.getOpPtrVector().push_back(
         new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
     tri_fe.getOpPtrVector().push_back(
         new OpFacesFluxes(m_field, th1, th2, my_split));
+
+    skin_fe.getOpPtrVector().push_back(
+        new OpGetHONormalsOnFace("MESH_NODE_POSITIONS"));
     skin_fe.getOpPtrVector().push_back(
         new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
     skin_fe.getOpPtrVector().push_back(

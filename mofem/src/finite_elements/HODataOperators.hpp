@@ -268,8 +268,23 @@ MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1, bool hcurl,
   MoFEMFunctionReturn(0);
 }
 
-
-
+template <typename E>
+MoFEMErrorCode addHOOpsFace3D(const std::string field, E &e, bool hcurl,
+                              bool hdiv) {
+  MoFEMFunctionBegin;
+  e.meshPositionsFieldName = "none";
+  e.getOpPtrVector().push_back(new OpGetHONormalsOnFace(field));
+  e.getOpPtrVector().push_back(new OpCalculateHOCoords(field));
+  if (hcurl) {
+    e.getOpPtrVector().push_back(
+        new OpHOSetContravariantPiolaTransformOnFace3D(HDIV));
+  }
+  if (hdiv) {
+    e.getOpPtrVector().push_back(
+        new OpHOSetCovariantPiolaTransformOnFace3D(HDIV));
+  }
+  MoFEMFunctionReturn(0);
+}
 
 }; // namespace MoFEM
 
