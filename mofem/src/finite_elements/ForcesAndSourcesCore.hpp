@@ -863,7 +863,7 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
 
   /**@{*/
 
-  /** \name Deprecated (do not use) *
+  /** \name Deprecated (do not use) */
 
   /**
    * \brief get measure of element
