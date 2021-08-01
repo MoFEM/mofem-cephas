@@ -44,7 +44,6 @@ struct FaceElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   struct UserDataOperator;
   
   enum Switches {
-    NO_HO_GEOMETRY = 1 << 0
   };
 
   template <int SWITCH> MoFEMErrorCode opSwitch();
@@ -297,7 +296,7 @@ template <int SWITCH>
 MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::opSwitch() {
   MoFEMFunctionBegin;
 
-  const EntityType type = numeredEntFiniteElementPtr->getEntType();
+  const auto type = numeredEntFiniteElementPtr->getEntType();
   if (type != lastEvaluatedElementEntityType) {
     switch (type) {
     case MBTRI:
@@ -322,30 +321,10 @@ MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::opSwitch() {
   if (gaussPts.size2() == 0)
     MoFEMFunctionReturnHot(0);
 
-  DataForcesAndSourcesCore &data_curl = *dataOnElement[HCURL];
-  DataForcesAndSourcesCore &data_div = *dataOnElement[HDIV];
-
   CHKERR calculateCoordinatesAtGaussPts();
   CHKERR calHierarchicalBaseFunctionsOnElement();
   CHKERR calBernsteinBezierBaseFunctionsOnElement();
   CHKERR calculateAreaAndNormalAtIntegrationPts();
-
-  if (!(NO_HO_GEOMETRY & SWITCH)) {
-
-    auto check_field = [&]() {
-      auto field_it =
-          fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
-      if (field_it != fieldsPtr->get<FieldName_mi_tag>().end())
-        if ((numeredEntFiniteElementPtr->getBitFieldIdData() &
-             (*field_it)->getId())
-                .any())
-          return true;
-      return false;
-    };
-    if (check_field())
-      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "AAA");
-    CHKERR calculateHoNormal();
-  }
 
   // Iterate over operators
   CHKERR loopOverOperators();
