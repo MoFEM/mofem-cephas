@@ -50,10 +50,7 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
     */
   struct UserDataOperator;
 
-  enum Switches {
-    NO_HO_GEOMETRY = 1 << 0,
-    NO_COVARIANT_TRANSFORM_HCURL = 1 << 2
-  };
+  enum Switches {};
 
   template <int SWITCH> MoFEMErrorCode opSwitch();
 
@@ -61,8 +58,6 @@ protected:
   EdgeElementForcesAndSourcesCoreBase(Interface &m_field);
 
   MatrixDouble tangentAtGaussPts;
-  OpGetHOTangentOnEdge opGetHoTangentOnEdge;
-  OpSetCovariantPiolaTransformOnEdge opCovariantTransform;
 
   double lEngth;
 
@@ -74,7 +69,6 @@ protected:
   MoFEMErrorCode calculateEdgeDirection();
   MoFEMErrorCode setIntegrationPts();
   MoFEMErrorCode calculateCoordsAtIntegrationPts();
-  MoFEMErrorCode calculateHoCoordsAtIntegrationPts();
 
   friend class FaceElementForcesAndSourcesCoreOnSideBase;
 };
@@ -223,15 +217,6 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::opSwitch() {
   CHKERR calculateCoordsAtIntegrationPts();
   CHKERR calHierarchicalBaseFunctionsOnElement();
   CHKERR calBernsteinBezierBaseFunctionsOnElement();
-  if (!(SWITCH & NO_HO_GEOMETRY))
-    CHKERR calculateHoCoordsAtIntegrationPts();
-
-  if (!(SWITCH & NO_COVARIANT_TRANSFORM_HCURL)) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "AAA");
-    if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))
-      CHKERR opCovariantTransform.opRhs(data_curl);
-
-  }
 
   // Iterate over operators
   CHKERR loopOverOperators();

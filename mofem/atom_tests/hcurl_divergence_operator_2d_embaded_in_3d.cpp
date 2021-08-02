@@ -28,9 +28,7 @@ static char help[] = "...\n\n";
 
 using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
 
-using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
-    EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY |
-    EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCore;
 
 using FaceEleOp = FaceEle::UserDataOperator;
 using EdgeEleOp = EdgeEle::UserDataOperator;

@@ -274,14 +274,10 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    struct MyEdgeFE : public EdgeElementForcesAndSourcesCoreSwitch<
-                          EdgeElementForcesAndSourcesCoreBase::
-                              NO_COVARIANT_TRANSFORM_HCURL> {
+    struct MyEdgeFE : public EdgeElementForcesAndSourcesCore {
 
       MyEdgeFE(MoFEM::Interface &m_field)
-          : EdgeElementForcesAndSourcesCoreSwitch<
-                EdgeElementForcesAndSourcesCoreBase::
-                    NO_COVARIANT_TRANSFORM_HCURL>(m_field) {}
+          : EdgeElementForcesAndSourcesCore(m_field) {}
       int getRule(int order) { return 1; };
     };
 

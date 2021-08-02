@@ -141,37 +141,6 @@ EdgeElementForcesAndSourcesCoreBase::calculateCoordsAtIntegrationPts() {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode
-EdgeElementForcesAndSourcesCoreBase::calculateHoCoordsAtIntegrationPts() {
-  MoFEMFunctionBegin;
-
-  auto check_field = [&]() {
-    auto field_it =
-        fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
-    if (field_it != fieldsPtr->get<FieldName_mi_tag>().end()) {
-      if (
-
-          (numeredEntFiniteElementPtr->getBitFieldIdData() &
-           (*field_it)->getId())
-              .any()
-
-      )
-        return true;
-    }
-    return false;
-  };
-
-  if (check_field()) {
-    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "AAAAA");
-    CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
-    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
-    CHKERR opGetHoTangentOnEdge.opRhs(dataH1);
-  } else {
-    tangentAtGaussPts.resize(0, 3, false);
-  }
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;

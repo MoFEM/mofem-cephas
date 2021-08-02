@@ -32,8 +32,7 @@ static constexpr double delta =
 static constexpr std::array<double, 3> d3 = {0, 0, 0};
 static constexpr std::array<double, 3> d4 = {0, 0, delta};
 
-using EdgeEle = EdgeElementForcesAndSourcesCoreSwitch<
-    EdgeElementForcesAndSourcesCoreBase::NO_COVARIANT_TRANSFORM_HCURL>;
+using EdgeEle = EdgeElementForcesAndSourcesCore;
 
 struct CoordsAndHandle {
 

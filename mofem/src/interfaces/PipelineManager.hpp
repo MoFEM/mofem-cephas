@@ -45,9 +45,7 @@ struct PipelineManager : public UnknownInterface {
 
   using VolEle = MoFEM::VolumeElementForcesAndSourcesCore;
   using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
-  using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
-      EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY |
-      EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
+  using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCore;
 
   inline boost::shared_ptr<FEMethod> &getDomainLhsFE();
 
