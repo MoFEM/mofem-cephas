@@ -490,12 +490,10 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    struct MyTriFE : public FaceElementForcesAndSourcesCoreSwitch<
-                         FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY> {
+    struct MyTriFE : public FaceElementForcesAndSourcesCore {
 
       MyTriFE(MoFEM::Interface &m_field)
-          : FaceElementForcesAndSourcesCoreSwitch<
-                FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY>(m_field) {}
+          : FaceElementForcesAndSourcesCore(m_field) {}
       int getRule(int order) { return -1; };
 
       MoFEMErrorCode setGaussPts(int order) {
@@ -584,10 +582,16 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    struct MyEdgeFE : public EdgeElementForcesAndSourcesCore {
+    struct MyEdgeFE : public EdgeElementForcesAndSourcesCoreSwitch<
+                          EdgeElementForcesAndSourcesCoreBase::NO_HO_GEOMETRY |
+                          EdgeElementForcesAndSourcesCoreBase::
+                              NO_COVARIANT_TRANSFORM_HCURL> {
 
       MyEdgeFE(MoFEM::Interface &m_field)
-          : EdgeElementForcesAndSourcesCore(m_field) {}
+          : EdgeElementForcesAndSourcesCoreSwitch<
+                EdgeElementForcesAndSourcesCoreBase::NO_HO_GEOMETRY |
+                EdgeElementForcesAndSourcesCoreBase::
+                    NO_COVARIANT_TRANSFORM_HCURL>(m_field) {}
       int getRule(int order) { return -1; };
 
       MoFEMErrorCode setGaussPts(int order) {
@@ -646,6 +650,11 @@ int main(int argc, char *argv[]) {
         new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
     skin_fe.getOpPtrVector().push_back(
         new OpFacesSkinFluxes(m_field, th1, th2, my_split));
+
+    edge_fe.getOpPtrVector().push_back(
+        new OpGetHOTangentsOnEdge("MESH_NODE_POSITIONS"));
+    edge_fe.getOpPtrVector().push_back(
+        new OpHOSetContravariantPiolaTransformOnEdge3D(HCURL));
     edge_fe.getOpPtrVector().push_back(
         new OpEdgesFluxes(m_field, th1, th2, my_split));
 

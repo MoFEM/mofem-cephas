@@ -845,21 +845,15 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnFace2DImpl<3>::doWork(
   MoFEMFunctionReturn(0);
 }
 
-MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge::doWork(
+MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge2D::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
 
   if (type != MBEDGE)
     MoFEMFunctionReturnHot(0);
 
-  const auto &edge_direction = getDirection();
-
   FTensor::Index<'i', 3> i;
-  FTensor::Tensor1<double, 3> t_m(-edge_direction[1], edge_direction[0],
-                                  edge_direction[2]);
-  const double l0 = t_m(i) * t_m(i);
 
-  std::vector<double> l1;
   {
     int nb_gauss_pts = getTangetAtGaussPts().size1();
     if (nb_gauss_pts) {
@@ -879,7 +873,7 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge::doWork(
     FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
     size_t nb_gauss_pts = data.getN(base).size1();
     size_t nb_dofs = data.getN(base).size2() / 3;
-    if (nb_gauss_pts > 0 && nb_dofs > 0) {
+    if (nb_dofs > 0) {
 
       auto t_h_div = data.getFTensor1N<3>(base);
 
@@ -903,18 +897,6 @@ MoFEMErrorCode OpSetContravariantPiolaTransformOnEdge::doWork(
             ++cc;
           }
           ++t_m_at_pts;
-        }
-
-      } else {
-
-        for (int gg = 0; gg != nb_gauss_pts; ++gg) {
-          for (int ll = 0; ll != nb_dofs; ll++) {
-            const double val = t_h_div(0);
-            const double a = val / l0;
-            t_h_div(i) = t_m(i) * a;
-            ++t_h_div;
-            ++cc;
-          }
         }
       }
 

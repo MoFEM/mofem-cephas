@@ -456,12 +456,10 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    struct MyTriFE : public FaceElementForcesAndSourcesCoreSwitch<
-                         FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY> {
+    struct MyTriFE : public FaceElementForcesAndSourcesCore {
 
       MyTriFE(MoFEM::Interface &m_field)
-          : FaceElementForcesAndSourcesCoreSwitch<
-                FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY>(m_field) {}
+          : FaceElementForcesAndSourcesCore(m_field) {}
       int getRule(int order) { return -1; };
 
       MoFEMErrorCode setGaussPts(int order) {
@@ -542,10 +540,16 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    struct MyEdgeFE : public EdgeElementForcesAndSourcesCore {
+    struct MyEdgeFE : public EdgeElementForcesAndSourcesCoreSwitch<
+                          EdgeElementForcesAndSourcesCoreBase::NO_HO_GEOMETRY |
+                          EdgeElementForcesAndSourcesCoreBase::
+                              NO_COVARIANT_TRANSFORM_HCURL> {
 
       MyEdgeFE(MoFEM::Interface &m_field)
-          : EdgeElementForcesAndSourcesCore(m_field) {}
+          : EdgeElementForcesAndSourcesCoreSwitch<
+                EdgeElementForcesAndSourcesCoreBase::NO_HO_GEOMETRY |
+                EdgeElementForcesAndSourcesCoreBase::
+                    NO_COVARIANT_TRANSFORM_HCURL>(m_field) {}
       int getRule(int order) { return -1; };
 
       MoFEMErrorCode setGaussPts(int order) {
@@ -568,17 +572,28 @@ int main(int argc, char *argv[]) {
     double def_val[] = {0, 0, 0};
     CHKERR moab.tag_get_handle("T", 3, MB_TYPE_DOUBLE, th1,
                                MB_TAG_CREAT | MB_TAG_SPARSE, &def_val);
-    
+
+    tet_fe.getOpPtrVector().push_back(
+        new OpCalculateHOCoords("MESH_NODE_POSITIONS"));
     tet_fe.getOpPtrVector().push_back(new OpTetFluxes(m_field, th1));
 
     Tag th2;
     CHKERR moab.tag_get_handle("TN", 1, MB_TYPE_DOUBLE, th2,
                                MB_TAG_CREAT | MB_TAG_SPARSE, &def_val);
-    
+
+    tri_fe.getOpPtrVector().push_back(
+        new OpCalculateHOCoords("MESH_NODE_POSITIONS"));
+    tri_fe.getOpPtrVector().push_back(
+        new OpGetHONormalsOnFace("MESH_NODE_POSITIONS"));
     tri_fe.getOpPtrVector().push_back(
         new OpFacesFluxes(m_field, th1, th2, my_split));
     skin_fe.getOpPtrVector().push_back(
         new OpFacesSkinFluxes(m_field, th1, th2, my_split));
+
+    edge_fe.getOpPtrVector().push_back(
+        new OpGetHOTangentsOnEdge("MESH_NODE_POSITIONS"));
+    edge_fe.getOpPtrVector().push_back(
+        new OpCalculateHOCoords("MESH_NODE_POSITIONS"));
     edge_fe.getOpPtrVector().push_back(
         new OpEdgesFluxes(m_field, th1, th2, my_split));
 

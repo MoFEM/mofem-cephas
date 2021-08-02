@@ -31,6 +31,7 @@ static char help[] = "...\n\n";
 using FaceEleOnSide = MoFEM::FaceElementForcesAndSourcesCoreOnSideSwitch<0>;
 
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
+    EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY |
     EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
 
 using FaceEleOnSideOp = FaceEleOnSide::UserDataOperator;
@@ -228,7 +229,7 @@ int main(int argc, char *argv[]) {
           boost::shared_ptr<EdgeEle>(new EdgeEle(m_field));
 
       skeleton_fe->getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformOnEdge());
+          new OpSetContravariantPiolaTransformOnEdge2D());
       skeleton_fe->getOpPtrVector().push_back(
           new SkeletonFE(m_field, elem_data));
 

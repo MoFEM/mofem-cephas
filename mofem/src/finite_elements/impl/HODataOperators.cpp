@@ -625,4 +625,143 @@ MoFEMErrorCode OpHOSetCovariantPiolaTransformOnFace3D::doWork(
   MoFEMFunctionReturn(0);
 }
 
+MoFEMErrorCode OpHOSetContravariantPiolaTransformOnEdge3D::doWork(
+    int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
+  FTensor::Index<'i', 3> i;
+  MoFEMFunctionBeginHot;
+
+  if (type != MBEDGE)
+    MoFEMFunctionReturnHot(0);
+
+  const auto nb_gauss_pts = getGaussPts().size2();
+
+  if (tangentAtGaussPts)
+    if (tangentAtGaussPts->size1() != nb_gauss_pts)
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Wrong number of integration points %d!=%d",
+               tangentAtGaussPts->size1(), nb_gauss_pts);
+
+  auto get_base_at_pts = [&](auto base) {
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_h_curl(
+        &data.getN(base)(0, HVEC0), &data.getN(base)(0, HVEC1),
+        &data.getN(base)(0, HVEC2));
+    return t_h_curl;
+  };
+
+  auto get_tangent_ptr = [&]() {
+    if (tangentAtGaussPts) {
+      return &*tangentAtGaussPts->data().begin();
+    } else {
+      return &*getTangetAtGaussPts().data().begin();
+    }
+  };
+
+  auto get_tangent_at_pts = [&]() {
+    auto ptr = get_tangent_ptr();
+    FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_m_at_pts(
+        &ptr[0], &ptr[1], &ptr[2]);
+    return t_m_at_pts;
+  };
+
+  auto calculate_squared_edge_length = [&]() {
+    std::vector<double> l1;
+    if (nb_gauss_pts) {
+      l1.resize(nb_gauss_pts);
+      auto t_m_at_pts = get_tangent_at_pts();
+      for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+        l1[gg] = t_m_at_pts(i) * t_m_at_pts(i);
+        ++t_m_at_pts;
+      }
+    }
+    return l1;
+  };
+
+  auto l1 = calculate_squared_edge_length();
+
+  for (int b = AINSWORTH_LEGENDRE_BASE; b != LASTBASE; b++) {
+
+    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+    const auto nb_dofs = data.getN(base).size2() / 3;
+
+    if (nb_gauss_pts && nb_dofs) {
+      auto t_h_curl = get_base_at_pts(base);
+      int cc = 0;
+      auto t_m_at_pts = get_tangent_at_pts();
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        const double l0 = l1[gg];
+        for (int ll = 0; ll != nb_dofs; ++ll) {
+          const double val = t_h_curl(0);
+          const double a = val / l0;
+          t_h_curl(i) = t_m_at_pts(i) * a;
+          ++t_h_curl;
+          ++cc;
+        }
+        ++t_m_at_pts;
+      }
+
+      if (cc != nb_gauss_pts * nb_dofs)
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "Data inconsistency");
+    }
+  }
+
+  MoFEMFunctionReturnHot(0);
+}
+
+MoFEMErrorCode
+OpGetHOTangentsOnEdge::doWork(int side, EntityType type,
+                              DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  int nb_dofs = data.getFieldData().size();
+  if (nb_dofs == 0)
+    MoFEMFunctionReturnHot(0);
+
+  auto get_tangent = [&]() -> MatrixDouble & {
+    if (tangentsAtPts)
+      return *tangentsAtPts;
+    else
+      return getTangetAtGaussPts();
+  };
+
+  auto &tangent = get_tangent();
+
+  int nb_gauss_pts = data.getN().size1();
+  tangent.resize(nb_gauss_pts, 3, false);
+
+  int nb_approx_fun = data.getN().size2();
+  double *diff = &*data.getDiffN().data().begin();
+  double *dofs[] = {&data.getFieldData()[0], &data.getFieldData()[1],
+                    &data.getFieldData()[2]};
+
+
+  tangent.resize(nb_gauss_pts, 3, false);
+
+  switch (type) {
+  case MBVERTEX:
+    for (int dd = 0; dd != 3; dd++) {
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        tangent(gg, dd) = cblas_ddot(2, diff, 1, dofs[dd], 3);
+      }
+    }
+    break;
+  case MBEDGE:
+    if (nb_dofs % 3) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+              "Approximated field should be rank 3, i.e. vector in 3d space");
+    }
+    for (int dd = 0; dd != 3; dd++) {
+      for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+        tangent(gg, dd) +=
+            cblas_ddot(nb_dofs / 3, &diff[gg * nb_approx_fun], 1, dofs[dd], 3);
+      }
+    }
+    break;
+  default:
+    SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE,
+            "This operator can calculate tangent vector only on edge");
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 } // namespace MoFEM

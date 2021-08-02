@@ -26,8 +26,7 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-using FaceEle = MoFEM::FaceElementForcesAndSourcesCoreSwitch<
-    FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY>;
+using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
 
 using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
     EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY |
@@ -226,7 +225,7 @@ int main(int argc, char *argv[]) {
       EdgeEle fe_edge(m_field);
       fe_edge.getRuleHook = rule;
       fe_edge.getOpPtrVector().push_back(
-          new OpSetContravariantPiolaTransformOnEdge());
+          new OpSetContravariantPiolaTransformOnEdge2D());
       fe_edge.getOpPtrVector().push_back(new OpFlux(flux));
       CHKERR m_field.loop_finite_elements("TEST_PROBLEM", "EDGE_FE", fe_edge);
       return flux;

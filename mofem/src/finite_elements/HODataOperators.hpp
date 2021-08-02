@@ -203,6 +203,25 @@ private:
   boost::shared_ptr<MatrixDouble> normalsAtGaussPts;
 };
 
+/** \brief transform Hcurl base fluxes from reference element to physical edge
+ * \ingroup mofem_forces_and_sources
+ */
+struct OpHOSetContravariantPiolaTransformOnEdge3D
+    : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpHOSetContravariantPiolaTransformOnEdge3D(
+      const FieldSpace space = HCURL,
+      boost::shared_ptr<MatrixDouble> tangent_at_pts = nullptr)
+      : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(space),
+        tangentAtGaussPts(tangent_at_pts) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  boost::shared_ptr<MatrixDouble> tangentAtGaussPts;
+};
+
 /** \brief transform Hcurl base fluxes from reference element to physical
  * triangle \ingroup mofem_forces_and_sources
  */
@@ -233,6 +252,27 @@ private:
 
   MatrixDouble piolaN;
   MatrixDouble diffPiolaN;
+};
+
+/** \brief Calculate tangent vector on edge form HO geometry approximation
+ * \ingroup mofem_forces_and_sources
+ */
+struct OpGetHOTangentsOnEdge
+    : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
+
+  OpGetHOTangentsOnEdge(
+      std::string field_name,
+      boost::shared_ptr<MatrixDouble> tangents_at_pts = nullptr)
+      : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(field_name,
+                                                              OPROW),
+        tangentsAtPts(tangents_at_pts) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+private:
+  boost::shared_ptr<MatrixDouble> tangentsAtPts;  
+
 };
 
 template <typename E>

@@ -2800,21 +2800,24 @@ using OpSetContravariantPiolaTransformOnFace2DEmbeddedIn3DSpace =
 
 /**@{*/
 
-struct OpSetContravariantPiolaTransformOnEdge
+struct OpSetContravariantPiolaTransformOnEdge2D
     : public EdgeElementForcesAndSourcesCoreBase::UserDataOperator {
 
-  OpSetContravariantPiolaTransformOnEdge(const FieldSpace space = HCURL)
+  OpSetContravariantPiolaTransformOnEdge2D(const FieldSpace space = HCURL)
       : EdgeElementForcesAndSourcesCoreBase::UserDataOperator(space) {}
 
   MoFEMErrorCode doWork(int side, EntityType type,
                         DataForcesAndSourcesCore::EntData &data);
+
+private:
+  std::vector<double> l1;
 };
 
 /**
  * @deprecated Name is deprecated and this is added for back compatibility
  */
 using OpSetContrariantPiolaTransformOnEdge =
-    OpSetContravariantPiolaTransformOnEdge;
+    OpSetContravariantPiolaTransformOnEdge2D;
 
 /**@}*/
 

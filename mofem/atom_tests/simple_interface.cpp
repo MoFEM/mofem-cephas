@@ -149,8 +149,7 @@ int main(int argc, char *argv[]) {
       auto domain_fe =
           boost::make_shared<VolumeElementForcesAndSourcesCore>(m_field);
       auto boundary_fe =
-          boost::make_shared<FaceElementForcesAndSourcesCoreSwitch<
-              FaceElementForcesAndSourcesCore::NO_HO_GEOMETRY>>(m_field);
+          boost::make_shared<FaceElementForcesAndSourcesCore>(m_field);
 
       // set integration rule
       domain_fe->getRuleHook = VolRule();

@@ -45,9 +45,9 @@ struct PipelineManager : public UnknownInterface {
 
   using VolEle = MoFEM::VolumeElementForcesAndSourcesCore;
   using FaceEle = MoFEM::FaceElementForcesAndSourcesCore;
-  using EdgeEle2D = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
+  using EdgeEle = MoFEM::EdgeElementForcesAndSourcesCoreSwitch<
+      EdgeElementForcesAndSourcesCore::NO_HO_GEOMETRY |
       EdgeElementForcesAndSourcesCore::NO_COVARIANT_TRANSFORM_HCURL>;
-  using EdgeEle1D = EdgeEle2D;
 
   inline boost::shared_ptr<FEMethod> &getDomainLhsFE();
 
@@ -241,7 +241,7 @@ template <>
 inline boost::shared_ptr<FEMethod> &
 PipelineManager::createDomainFEPipeline<1>(boost::shared_ptr<FEMethod> &fe) {
   if (!fe)
-    fe = boost::make_shared<EdgeEle1D>(cOre);
+    fe = boost::make_shared<EdgeEle>(cOre);
   return fe;
 }
 
@@ -265,7 +265,7 @@ template <>
 inline boost::shared_ptr<FEMethod> &
 PipelineManager::createBoundaryFEPipeline<2>(boost::shared_ptr<FEMethod> &fe) {
   if (!fe)
-    fe = boost::make_shared<EdgeEle2D>(cOre);
+    fe = boost::make_shared<EdgeEle>(cOre);
   return fe;
 }
 

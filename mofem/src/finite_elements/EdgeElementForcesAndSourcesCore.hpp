@@ -48,91 +48,7 @@ struct EdgeElementForcesAndSourcesCoreBase : public ForcesAndSourcesCore {
   /** \brief default operator for EDGE element
     \ingroup mofem_forces_and_sources_edge_element
     */
-  struct UserDataOperator : public ForcesAndSourcesCore::UserDataOperator {
-
-    using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
-
-    /** \brief get element connectivity
-     */
-    inline const EntityHandle *getConn();
-
-    /**
-     * \brief get edge length
-     */
-    inline double getLength();
-
-    /**
-     * \brief get measure of element
-     * @return length of face
-     */
-    inline double getMeasure();
-
-    /**
-     * \brief get edge direction
-     */
-    inline VectorDouble &getDirection();
-
-    /**
-     * \brief get edge normal 
-     * NOTE: it should be used only in 2D analysis
-     */
-    inline auto getFTensor1Normal();
-
-    /**
-     * @brief get ftensor1 edge normal
-     *
-     * @param vec vector in third direction
-     * @return auto
-     */
-    inline auto getFTensor1Normal(const FTensor::Tensor1<double, 3> &vec);
-
-    /**
-     * \brief get edge node coordinates
-     */
-    inline VectorDouble &getCoords();
-
-    /**
-     * \brief get tangent vector to edge curve at integration points
-     */
-    inline MatrixDouble &getTangetAtGaussPts();
-
-    /**
-     * \brief get pointer to this finite element
-     */
-    inline const EdgeElementForcesAndSourcesCoreBase *getEdgeFE();
-
-    inline FTensor::Tensor1<double, 3> getFTensor1Direction();
-
-    /**
-     * \brief get get coords at gauss points
-
-     \code
-     FTensor::Index<'i',3> i;
-     auto t_center;
-     auto t_coords = getTensor1Coords();
-     t_center(i) = 0;
-     for(int nn = 0;nn!=2;nn++) {
-        t_center(i) += t_coords(i);
-        ++t_coords;
-      }
-      t_center(i) /= 2;
-    \endcode
-
-     */
-    inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-    getTensor1Coords();
-
-    inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
-    getFTensor1TangentAtGaussPts();
-
-    template <int SWITCH>
-    MoFEMErrorCode
-    loopSideFaces(const string &fe_name,
-                  FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side);
-
-  protected:
-    MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
-  };
+  struct UserDataOperator;
 
   enum Switches {
     NO_HO_GEOMETRY = 1 << 0,
@@ -161,6 +77,95 @@ protected:
   MoFEMErrorCode calculateHoCoordsAtIntegrationPts();
 
   friend class FaceElementForcesAndSourcesCoreOnSideBase;
+};
+
+/** \brief default operator for EDGE element
+  \ingroup mofem_forces_and_sources_edge_element
+  */
+struct EdgeElementForcesAndSourcesCoreBase::UserDataOperator
+    : public ForcesAndSourcesCore::UserDataOperator {
+
+  using ForcesAndSourcesCore::UserDataOperator::UserDataOperator;
+
+  /** \brief get element connectivity
+   */
+  inline const EntityHandle *getConn();
+
+  /**
+   * \brief get edge length
+   */
+  inline double getLength();
+
+  /**
+   * \brief get measure of element
+   * @return length of face
+   */
+  inline double getMeasure();
+
+  /**
+   * \brief get edge direction
+   */
+  inline VectorDouble &getDirection();
+
+  /**
+   * \brief get edge normal
+   * NOTE: it should be used only in 2D analysis
+   */
+  inline auto getFTensor1Normal();
+
+  /**
+   * @brief get ftensor1 edge normal
+   *
+   * @param vec vector in third direction
+   * @return auto
+   */
+  inline auto getFTensor1Normal(const FTensor::Tensor1<double, 3> &vec);
+
+  /**
+   * \brief get edge node coordinates
+   */
+  inline VectorDouble &getCoords();
+
+  /**
+   * \brief get tangent vector to edge curve at integration points
+   */
+  inline MatrixDouble &getTangetAtGaussPts();
+
+  /**
+   * \brief get pointer to this finite element
+   */
+  inline const EdgeElementForcesAndSourcesCoreBase *getEdgeFE();
+
+  inline FTensor::Tensor1<double, 3> getFTensor1Direction();
+
+  /**
+   * \brief get get coords at gauss points
+
+   \code
+   FTensor::Index<'i',3> i;
+   auto t_center;
+   auto t_coords = getTensor1Coords();
+   t_center(i) = 0;
+   for(int nn = 0;nn!=2;nn++) {
+      t_center(i) += t_coords(i);
+      ++t_coords;
+    }
+    t_center(i) /= 2;
+  \endcode
+
+   */
+  inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> getTensor1Coords();
+
+  inline FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>
+  getFTensor1TangentAtGaussPts();
+
+  template <int SWITCH>
+  MoFEMErrorCode
+  loopSideFaces(const string &fe_name,
+                FaceElementForcesAndSourcesCoreOnSideSwitch<SWITCH> &fe_side);
+
+protected:
+  MoFEMErrorCode setPtrFE(ForcesAndSourcesCore *ptr);
 };
 
 /** \brief Edge finite element
@@ -221,9 +226,12 @@ MoFEMErrorCode EdgeElementForcesAndSourcesCoreBase::opSwitch() {
   if (!(SWITCH & NO_HO_GEOMETRY))
     CHKERR calculateHoCoordsAtIntegrationPts();
 
-  if (!(SWITCH & NO_COVARIANT_TRANSFORM_HCURL))
+  if (!(SWITCH & NO_COVARIANT_TRANSFORM_HCURL)) {
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "AAA");
     if (dataH1.spacesOnEntities[MBEDGE].test(HCURL))
       CHKERR opCovariantTransform.opRhs(data_curl);
+
+  }
 
   // Iterate over operators
   CHKERR loopOverOperators();
@@ -291,12 +299,12 @@ EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
                                                             &ptr[2]);
 }
 
-auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::
-    getFTensor1Normal(const FTensor::Tensor1<double, 3> &vec) {
+auto EdgeElementForcesAndSourcesCoreBase::UserDataOperator::getFTensor1Normal(
+    const FTensor::Tensor1<double, 3> &vec) {
   FTensor::Tensor1<double, 3> t_normal;
-  FTensor::Index<'i',3> i;
-  FTensor::Index<'j',3> j;
-  FTensor::Index<'k',3> k;
+  FTensor::Index<'i', 3> i;
+  FTensor::Index<'j', 3> j;
+  FTensor::Index<'k', 3> k;
   auto t_dir = getFTensor1Direction();
   t_normal(i) = FTensor::levi_civita(i, j, k) * t_dir(j) * vec(k);
   return t_normal;

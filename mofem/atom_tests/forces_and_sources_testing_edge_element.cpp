@@ -179,8 +179,11 @@ int main(int argc, char *argv[]) {
     
     // what are ghost nodes, see Petsc Manual
     CHKERR prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM");
-    
-    EdgeElementForcesAndSourcesCore fe1(m_field);
+
+    EdgeElementForcesAndSourcesCoreSwitch<
+        EdgeElementForcesAndSourcesCoreBase::NO_HO_GEOMETRY |
+        EdgeElementForcesAndSourcesCoreBase::NO_COVARIANT_TRANSFORM_HCURL>
+        fe1(m_field);
 
     typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
@@ -242,6 +245,8 @@ int main(int argc, char *argv[]) {
       }
     };
 
+    fe1.getOpPtrVector().push_back(
+        new OpGetHOTangentsOnEdge("MESH_NODE_POSITIONS"));
     fe1.getOpPtrVector().push_back(
         new MyOp(my_split, ForcesAndSourcesCore::UserDataOperator::OPROW));
     fe1.getOpPtrVector().push_back(

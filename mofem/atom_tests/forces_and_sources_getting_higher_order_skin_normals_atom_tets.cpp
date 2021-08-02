@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
       MoFEMErrorCode operator()() {
         MoFEMFunctionBegin;
 
-        CHKERR opSwitch<NO_HO_GEOMETRY>();
+        CHKERR opSwitch<0>();
 
         my_split.precision(3);
         my_split << "coords: " << coordsAtGaussPts << std::endl;

@@ -274,10 +274,14 @@ int main(int argc, char *argv[]) {
       }
     };
 
-    struct MyEdgeFE : public EdgeElementForcesAndSourcesCore {
+    struct MyEdgeFE : public EdgeElementForcesAndSourcesCoreSwitch<
+                          EdgeElementForcesAndSourcesCoreBase::
+                              NO_COVARIANT_TRANSFORM_HCURL> {
 
       MyEdgeFE(MoFEM::Interface &m_field)
-          : EdgeElementForcesAndSourcesCore(m_field) {}
+          : EdgeElementForcesAndSourcesCoreSwitch<
+                EdgeElementForcesAndSourcesCoreBase::
+                    NO_COVARIANT_TRANSFORM_HCURL>(m_field) {}
       int getRule(int order) { return 1; };
     };
 
@@ -291,6 +295,8 @@ int main(int argc, char *argv[]) {
         new OpHOSetCovariantPiolaTransformOnFace3D(HCURL));
     tri_fe.getOpPtrVector().push_back(
         new OpFacePrintingHdivApproximationFunctions(my_split));
+    edge_fe.getOpPtrVector().push_back(
+        new OpHOSetContravariantPiolaTransformOnEdge3D(HCURL));
     edge_fe.getOpPtrVector().push_back(
         new OpEdgePrintingHdivApproximationFunctions(my_split));
 
