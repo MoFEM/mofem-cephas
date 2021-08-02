@@ -34,9 +34,7 @@ namespace MoFEM {
 EdgeElementForcesAndSourcesCoreBase::EdgeElementForcesAndSourcesCoreBase(
     Interface &m_field)
     : ForcesAndSourcesCore(m_field),
-      meshPositionsFieldName("MESH_NODE_POSITIONS"),
-      opGetHoTangentOnEdge(tangentAtGaussPts),
-      opCovariantTransform(dIrection, tangentAtGaussPts) {
+      meshPositionsFieldName("MESH_NODE_POSITIONS") {
   getElementPolynomialBase() =
       boost::shared_ptr<BaseFunction>(new EdgePolynomialBase());
 }
