@@ -174,23 +174,24 @@ MoFEMErrorCode H1_InteriorShapeFunctions_ONHEX(int *p, double *N,
 
 MoFEMErrorCode L2_InteriorShapeFunctions_ONHEX(int *p, double *N,
                                                double *N_diff, double *volN,
+                                               double *diff_volN,
                                                int nb_integration_pts);
 
 MoFEMErrorCode Hcurl_EdgeShapeFunctions_ONHEX(int *sense, int *p, double *N,
                                               double *N_diff, double *edgeN[12],
-                                              double *curl_edgeN[12],
+                                              double *diff_edgeN[12],
                                               int nb_integration_pts);
 
 MoFEMErrorCode Hcurl_FaceShapeFunctions_ONHEX(int *face_nodes[6], int *p,
                                               double *N, double *N_diff,
                                               double *faceN[6][2],
-                                              double *curl_faceN[6][2],
+                                              double *diff_faceN[6][2],
                                               int nb_integration_pts);
 
 MoFEMErrorCode Hcurl_InteriorShapeFunctions_ONHEX(int *p, double *N,
                                                   double *N_diff,
                                                   double *volN[3],
-                                                  double *curl_volN[3],
+                                                  double *diff_volN[3],
                                                   int nb_integration_pts);
 
 MoFEMErrorCode Hdiv_FaceShapeFunctions_ONHEX(int *sense[6], int *p, double *N,
