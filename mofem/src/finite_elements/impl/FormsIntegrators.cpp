@@ -22,13 +22,6 @@ namespace MoFEM {
 
 //! [Storage and set boundary conditions]
 
-struct EssentialBcStorage : public EntityStorage {
-  EssentialBcStorage(VectorInt &indices) : entityIndices(indices) {}
-  VectorInt entityIndices;
-  using HashVectorStorage =
-      map<std::string, std::vector<boost::shared_ptr<EssentialBcStorage>>>;
-  static HashVectorStorage feStorage;
-};
 
 EssentialBcStorage::HashVectorStorage EssentialBcStorage::feStorage;
 
