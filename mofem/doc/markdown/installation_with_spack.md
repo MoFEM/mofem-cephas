@@ -125,7 +125,7 @@ cd $HOME/mofem_install
 
 Retrieve Spack for MoFEM:
 ~~~~~~
-git clone --single-branch -b develop_spack_v0.16.1 https://github.com/likask/spack.git
+git clone -b develop https://github.com/likask/spack.git
 ~~~~~~
 
 Initialise Spack's environment variables:
@@ -491,8 +491,8 @@ Set spack environment and mirror:
 ~~~~~
 . spack/share/spack/setup-env.sh
 spack mirror add mofem_mirror $PWD/mofem_mirror
-spack extensions find
 spack compiler find
+spack external find
 ~~~~~
 ##### Setup packages and compiler
 
@@ -553,7 +553,7 @@ packages:
 At this point, we can follow the standard installation procedure:
 ~~~~~
 spack bootstrap
-spack install -j 2 -v --only dependencies mofem-cephas%gcc@9.3.0 ^openmpi@3.1.6%gcc@9.3.0
+spack install -j 2 --only dependencies mofem-cephas%gcc@9.3.0 ^petsc+X ^openmpi@3.1.6%gcc@9.3.0
 spack install mofem-users-modules
 ~~~~~
 
@@ -566,8 +566,9 @@ spack view symlink -i um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~
 
-Alternatively, you may want to follow the [Developer installation](#spack_developers). 
-In this case, note that by default `spack dev-build` will try to use all available 
+Alternatively, you may want to follow the [Developer installation](#spack_developers), 
+skipping the command `spack install --only dependencies mofem-cephas ^petsc+X` described there.
+Note also that by default `spack dev-build` will try to use all available 
 processor slots to run `make` in parallel, which may result in performance degradation 
 of Buckethead. To set a desired number of parallel jobs (e.g. 2), you can add 
 parameter `-j 2`. Alternatively, you can edit Spack settings 
