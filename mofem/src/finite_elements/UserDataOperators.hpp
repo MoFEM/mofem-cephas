@@ -2396,7 +2396,6 @@ private:
 };
 
 template <>
-template <>
 struct OpCalculateHVecTensorTrace<
     3, FaceElementForcesAndSourcesCore::UserDataOperator>
     : public FaceElementForcesAndSourcesCore::UserDataOperator {
