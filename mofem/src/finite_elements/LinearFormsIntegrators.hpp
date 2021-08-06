@@ -122,7 +122,7 @@ template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S, IntegrationType I,
           typename OpBase>
 struct OpGradTimesTensorImpl;
 
-template <int SPACE_DIM, typename OpBase, int S>
+template <int SPACE_DIM, int S, typename OpBase>
 struct OpGradTimesTensorImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>
     : public OpBase {
 
@@ -140,8 +140,8 @@ protected:
   ScalarFun betaCoeff;
 };
 
-template <int SPACE_DIM, typename OpBase>
-struct OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, 1, GAUSS, OpBase>
+template <int SPACE_DIM, int S, typename OpBase>
+struct OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
     : public OpBase {
 
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
@@ -617,7 +617,7 @@ OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
-template <int SPACE_DIM, typename OpBase, int S>
+template <int SPACE_DIM, int S, typename OpBase>
 MoFEMErrorCode
 OpGradTimesTensorImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
@@ -655,9 +655,9 @@ OpGradTimesTensorImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
-template <int SPACE_DIM, typename OpBase>
+template <int SPACE_DIM, int S, typename OpBase>
 MoFEMErrorCode
-OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
+OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
   // get element volume
