@@ -28,10 +28,13 @@ struct OpSourceImpl;
 
 template <typename OpBase>
 struct OpSourceImpl<1, 1, GAUSS, OpBase> : public OpBase {
-  OpSourceImpl(const std::string field_name, ScalarFun source_fun)
-      : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun) {}
+  OpSourceImpl(const std::string field_name, ScalarFun source_fun,
+               boost::shared_ptr<Range> ents_ptr = nullptr)
+      : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun),
+        entsPtr(ents_ptr) {}
 
 protected:
+  boost::shared_ptr<Range> entsPtr;
   ScalarFun sourceFun;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
@@ -119,8 +122,8 @@ template <int BASE_DIM, int FIELD_DIM, int SPACE_DIM, int S, IntegrationType I,
           typename OpBase>
 struct OpGradTimesTensorImpl;
 
-template <int SPACE_DIM, typename OpBase>
-struct OpGradTimesTensorImpl<1, 1, SPACE_DIM, 1, GAUSS, OpBase>
+template <int SPACE_DIM, int S, typename OpBase>
+struct OpGradTimesTensorImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>
     : public OpBase {
 
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
@@ -137,8 +140,8 @@ protected:
   ScalarFun betaCoeff;
 };
 
-template <int SPACE_DIM, typename OpBase>
-struct OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, 1, GAUSS, OpBase>
+template <int SPACE_DIM, int S, typename OpBase>
+struct OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>
     : public OpBase {
 
   FTensor::Index<'i', SPACE_DIM> i; ///< summit Index
@@ -400,6 +403,12 @@ template <typename OpBase>
 MoFEMErrorCode OpSourceImpl<1, 1, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
+
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
+  
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
@@ -608,9 +617,9 @@ OpBaseTimesVectorImpl<BASE_DIM, BASE_DIM, S, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
-template <int SPACE_DIM, typename OpBase>
+template <int SPACE_DIM, int S, typename OpBase>
 MoFEMErrorCode
-OpGradTimesTensorImpl<1, 1, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
+OpGradTimesTensorImpl<1, 1, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
   // get element volume
@@ -620,7 +629,7 @@ OpGradTimesTensorImpl<1, 1, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
   // get base function gradient on rows
   auto t_row_grad = row_data.getFTensor1DiffN<SPACE_DIM>();
   // get filed gradient values
-  auto t_val_grad = getFTensor1FromMat<SPACE_DIM>(*(matVals));
+  auto t_val_grad = getFTensor1FromMat<SPACE_DIM, S>(*(matVals));
   // get coordinate at integration points
   auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // loop over integration points
@@ -646,9 +655,9 @@ OpGradTimesTensorImpl<1, 1, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
-template <int SPACE_DIM, typename OpBase>
+template <int SPACE_DIM, int S, typename OpBase>
 MoFEMErrorCode
-OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, 1, GAUSS, OpBase>::iNtegrate(
+OpGradTimesTensorImpl<1, SPACE_DIM, SPACE_DIM, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
   // get element volume
