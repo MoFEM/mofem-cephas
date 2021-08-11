@@ -1,4 +1,4 @@
-image: likask/ubuntu_mofem:latest
+image: likask/mofem-spack-build:latest
 
 pipelines:
   default:
@@ -6,49 +6,15 @@ pipelines:
         script:
           - echo PWD $PWD
           - git submodule update --init mofem/users_modules
-          - export PETSC_DIR=/opt/petsc
-          - export PETSC_ARCH=arch-linux2-c-opt
           - export MOFEM_SRC_DIR=$PWD
-          - export MOFEM_INSTALL_DIR=$PWD/um
-          - export MOFEM_BUILD_DIR=$PWD/lib
           - echo MOFEM_SRC_DIR $MOFEM_SRC_DIR
-          - echo MOFEM_INSTALL_DIR $MOFEM_INSTALL_DIR
-          - echo MOFEM_BUILD_DIR $MOFEM_BUILD_DIR
-          - mkdir $MOFEM_BUILD_DIR
-          - cd $MOFEM_BUILD_DIR
           - echo "Configure"
           -
           >
-            /opt/local/bin/cmake
-            -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_CXX_FLAGS="-Wall -Wno-sign-compare"
-            -DMPI_RUN_FLAGS="--allow-run-as-root"
-            -DPETSC_DIR=$PETSC_DIR
-            -DPETSC_ARCH=$PETSC_ARCH
-            -DMESHKIT_DIR=$PETSC_DIR/$PETSC_ARCH
-            -DMOAB_DIR=$PETSC_DIR/$PETSC_ARCH
-            -DMED_DIR=/opt/med
-            -DADOL-C_DIR=$PETSC_DIR/$PETSC_ARCH
-            -DTETGEN_DIR=/opt/tetgen1.5.0
-            -DBUILD_SHARED_LIBS=yes
-            -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR
-            $MOFEM_SRC_DIR/mofem
-          - echo "Build"
-          - make -k
-          - ctest --output-on-failure -D Experimental
-          - make install
-          - make clean
-          - echo "Configure users modules"
-          - cd $MOFEM_INSTALL_DIR
-          -
-          >
-            /opt/local/bin/cmake
-            -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_CXX_FLAGS="-Wall -Wno-sign-compare"
-            -DMPI_RUN_FLAGS="--allow-run-as-root"
-            -DBUILD_SHARED_LIBS=yes
-            users_modules
-          - echo "Build users modules"
-          - ctest --output-on-failure -D Experimental -R basic_
-          - make clean
+          . $SPACK_ROOT_DIR/share/spack/setup-env.sh &&
+          spack dev-build -j 4 
+          --source-path $MOFEM_SRC_DIR 
+          --keep-prefix 
+          --test root 
+          mofem-cephas@develop~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X 
           - echo "All done"
