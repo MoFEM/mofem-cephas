@@ -10,7 +10,7 @@ pipelines:
           - echo MOFEM_SRC_DIR $MOFEM_SRC_DIR
           - echo "Install with spack"
           >
-            . $SPACK_ROOT_DIR/share/spack/setup-env.sh &&
+            . $SPACK_ROOT_DIR/share/spack/setup-env.sh
             spack dev-build -j 4 
             --source-path $MOFEM_SRC_DIR 
             --keep-prefix 
