@@ -8,13 +8,13 @@ pipelines:
           - git submodule update --init mofem/users_modules
           - export MOFEM_SRC_DIR=$PWD
           - echo MOFEM_SRC_DIR $MOFEM_SRC_DIR
-          - echo "Configure"
-          -
+          - echo "Install with spack"
           >
-          . $SPACK_ROOT_DIR/share/spack/setup-env.sh &&
-          spack dev-build -j 4 
-          --source-path $MOFEM_SRC_DIR 
-          --keep-prefix 
-          --test root 
-          mofem-cephas@develop~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X 
+            . $SPACK_ROOT_DIR/share/spack/setup-env.sh &&
+            spack dev-build -j 4 
+            --source-path $MOFEM_SRC_DIR 
+            --keep-prefix 
+            --test root 
+            mofem-cephas@develop~copy_user_modules+docker  build_type=Release ^petsc+X 
           - echo "All done"
+
