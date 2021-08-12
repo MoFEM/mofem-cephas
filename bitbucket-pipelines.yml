@@ -1,4 +1,4 @@
-image: likask/mofem-spack-build:latest
+image: likask/mofem-spack-env:latest
 
 pipelines:
   default:
@@ -10,4 +10,4 @@ pipelines:
           - echo MOFEM_SRC_DIR $MOFEM_SRC_DIR
           - echo "Install with spack"
           - . $SPACK_ROOT_DIR/share/spack/setup-env.sh
-          - spack dev-build -j 4 --source-path $MOFEM_SRC_DIR --test root mofem-cephas@develop~copy_user_modules+docker build_type=Release ^petsc+X 
+          - spack dev-build -j 2 --source-path $MOFEM_SRC_DIR --test root mofem-cephas@develop~copy_user_modules+docker target=x86_64 build_type=Release ^petsc+X 
