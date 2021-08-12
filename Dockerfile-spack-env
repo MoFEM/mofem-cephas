@@ -67,7 +67,7 @@ RUN mkdir -p $SPACK_ROOT_DIR && \
     . $SPACK_ROOT_DIR/share/spack/setup-env.sh && \
     echo ". $SPACK_ROOT_DIR/share/spack/setup-env.sh" >> ~/.bashrc && \
     spack external find && \
-    spack install --only dependencies mofem-cephas ^petsc+X 
+    spack install --only dependencies mofem-cephas target=x86_64 ^petsc+X 
 
 # image run hook: the -l will make sure /etc/profile environments are loaded
 CMD        /bin/bash -l
