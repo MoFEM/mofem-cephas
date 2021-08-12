@@ -84,36 +84,34 @@ vim
 
 ## macOS
 
-Xcode contains required compilers for macOS. The last known working version of
-Xcode is 12.3 with clang 12.0.0; there may be issues with future/different
+Xcode contains required compilers for macOS. Latest known working version of
+Xcode is 12.5.1 with clang 12.0.5; there may be issues with future/different
 versions.
 
-To install the latest Xcode for your release of macOS, follow the commands
-below, or see Apple's Xcode
+You can install the latest version of Xcode for your macOS through AppStore, or, alternatively, you can see Apple's Xcode
 [download page](https://developer.apple.com/download/) (Apple login
-required) for older versions.
+required) for other versions.
+
+Ensure that Xcode command-line tools are installed by running:
 ~~~~~
 xcode-select --install
 sudo xcodebuild -license accept
 ~~~~~
 
-Additional packages are required - install [homebrew](https://brew.sh) package
+Additional packages may be required - install [homebrew](https://brew.sh) package
 manager:
 ~~~~~
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ~~~~~
 
-Install packages through `homebrew`:
-~~~~~
-brew install curl git python gcc@9 cmake autoconf automake libtool doxygen graphviz pkg-config
-~~~~~
-
-If it is not already in the `PATH`, you should add it there.
-
-\note Recent releases of macOS stopped shipping a Fortran compiler and therefore
+Recent releases of macOS stopped shipping a Fortran compiler and therefore
 require [Mixed
 Toolchains](http://spack.readthedocs.io/en/latest/getting_started.html#mixed-toolchains).
-The installing of `gfortran` through `homebrew` is another way of solving this.
+The installing of `gfortran` through `homebrew` is one way of solving this:
+~~~~~
+brew install gcc@9 
+~~~~~
+Note that `gfortran` if part of `GCC`.
 
 # Spack setup {#spack_setup}
 
@@ -163,8 +161,8 @@ spack compiler find
 spack external find
 ~~~~~~
 
-If you are using a system where `gfortran` v10 is installed, some packages like
-`openmpi` will not compile on macOS. You can check this by running
+If you are using a system where `gfortran` 10 or 11 is installed, some packages like
+`openblas` and `mumps` may not compile, especially on macOS. You can check this by running:
 ~~~~~
 gfortran -v
 ~~~~~
@@ -369,7 +367,7 @@ vhv7opa mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build
 ~~~~~
 
 Furthermore, in the directory `$HOME/mofem_install/mofem-cephas` you will find
-build directory `$HOME/mofem_install/mofem-cephas/core-build-WithDebugInfo-vhv7opa`. Note 
+build directory `core-build-WithDebugInfo-vhv7opa`. Note 
 that the suffix here is matching the first column in the list printed by executing `spack find -lv mofem-cephas`.
 
 You can now start to develop code in the MoFEM core library. If you change directory to
@@ -396,17 +394,21 @@ spack dev-build \
 
 \note By default `spack dev-build` will try to use all available processor slots to run `make` in parallel. To set a desired number of parallel jobs, you can add parameter `-j NP`, where `NP` is number of parallel processes to be used. Alternatively, you can edit Spack settings 
 as discussed below in the section [Basic settings in config.yaml](#spack_config)
+
 ## 2. Install users modules {#spack_users_modules}
 
-First, run `spack find -lv mofem-cephas`, and pick core library:
+First, run: 
+~~~~~
+spack find -lv mofem-cephas
+~~~~~ 
+and check installed versions of the core library (`mofem-cephas@develop`):
 ~~~~~
 ==> 2 installed packages
 -- linux-ubuntu18.04-zen / gcc@7.5.0 ----------------------------
 nnnvprd mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=Debug dev_path=/home/lukasz/mofem_install/mofem-cephas install_id=0
 pa3httg mofem-cephas@develop+adol-c~copy_user_modules~ipo+med+slepc+tetgen build_type=RelWithDebInfo dev_path=/home/lukasz/mofem_install/mofem-cephas install_id=0
 ~~~~~
-For example, if you want to install users modules against build `RelWithDebInfo`, pick the
-second row, and copy to clipboard `pa3httg` . Next, change the directory to
+For example, if you want to install users modules against core library built with the specification `build_type=RelWithDebInfo`, pick the second row, and copy to clipboard `pa3httg` . Next, change the directory:
 ~~~~~
 cd $HOME/mofem_install/mofem-cephas/mofem/users_modules
 ~~~~~
@@ -446,8 +448,7 @@ as result you will get something similar to:
 c6ts56b mofem-users-modules@develop+copy_user_modules~ipo build_type=Debug dev_path=/Users/lukaszkaczmarczyk/mofem_install/mofem-cephas/mofem/users_modules install_id=0
 ~~~~~
 Also, you will find new directory
-`$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-WithDebugInfo-c6ts56b`.
-This directory is the build directory for a particular version of
+`$HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-WithDebugInfo-c6ts56b`, which is the build directory for a particular version of
 `mofem-users-modules`. There you can do typical developer work:
 ~~~~~
 cd $HOME/mofem_install/mofem-cephas/mofem/users_modules/um-build-WithDebugInfo-c6ts56b
@@ -462,7 +463,7 @@ Later you can add other modules to that directory if needed.
 
 ### Installation {#spack_buckedhead_installation}
 
-Buckethead is a Linux cluster running Centos7. More information about
+Buckethead is a Linux cluster running CentOS 7. More information about
 Buckethead you will find 
 [here](http://malmsteen.eng.gla.ac.uk/wiki/hpc-wiki/index.php/Resources#Buckethead). 
 
@@ -473,11 +474,9 @@ module load mpi/openmpi/3.1.6/gcc-9.3.0
 module load gridengine
 ~~~~~
 
-Download spack:
+Clone spack:
 ~~~~~
-mkdir -p spack &&\
-curl -s -L https://api.github.com/repos/likask/spack/tarball/mofem \
-| tar xzC $PWD/spack --strip 1
+git clone -b develop https://github.com/likask/spack.git
 ~~~~~
 
 Download packages mirror:
@@ -528,7 +527,7 @@ compilers:
     spec: gcc@4.8.5
 ~~~~~
 
-Note that most of the file can be created by the command
+Note that most of the file was created by the command
 ~~~~~
 spack compiler find
 ~~~~~
@@ -548,11 +547,10 @@ packages:
       spec: openmpi@3.1.6%gcc@9.3.0 arch=linux-x86_64-debian7
 ~~~~~      
 
-#### Running job to compile code
+#### Installing dependencies and compiling the code
 
 At this point, we can follow the standard installation procedure:
 ~~~~~
-spack bootstrap
 spack install -j 2 --only dependencies mofem-cephas%gcc@9.3.0 ^petsc+X ^openmpi@3.1.6%gcc@9.3.0
 spack install mofem-users-modules
 ~~~~~
@@ -567,11 +565,10 @@ spack activate -v um_view mofem-users-modules
 ~~~~
 
 Alternatively, you may want to follow the [Developer installation](#spack_developers), 
-skipping the command `spack install --only dependencies mofem-cephas ^petsc+X` described there.
-Note also that by default `spack dev-build` will try to use all available 
+skipping the command `spack install --only dependencies mofem-cephas ^petsc+X` described there. Note also that by default `spack dev-build` will try to use all available 
 processor slots to run `make` in parallel, which may result in performance degradation 
 of Buckethead. To set a desired number of parallel jobs (e.g. 2), you can add 
-parameter `-j 2`. Alternatively, you can edit Spack settings 
+parameter `-j 2` to `spack dev-build`. Alternatively, you can edit Spack settings 
 as discussed below in the section [Basic settings in config.yaml](#spack_config).
 
 ### Job file {#spack_buckedhead_job}
