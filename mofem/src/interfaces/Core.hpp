@@ -278,7 +278,7 @@ protected:
   Tag th_ProblemNbDofsRow, th_ProblemNbDofsCol;
   Tag th_ProblemLocalNbDofRow, th_ProblemGhostNbDofRow;
   Tag th_ProblemLocalNbDofCol, th_ProblemGhostNbDofCol;
-  Tag th_ProblemShift, th_FieldShift, th_FEShift;
+  Tag th_ProblemShift;
   Tag th_ElemType;   ///< Needed for VTK files
   Tag th_MoFEMBuild; ///< Internal use storing state, used to detect error and
                      ///< inconsistencies
@@ -402,7 +402,8 @@ protected:
   MoFEMErrorCode delete_ents_by_bit_ref(const BitRefLevel bit,
                                         const BitRefLevel mask,
                                         const bool remove_parent = false,
-                                        int verb = DEFAULT_VERBOSITY);
+                                        int verb = DEFAULT_VERBOSITY,
+                                        MoFEMTypes mf = MF_ZERO);
   /**@}*/
 
   /** \name Fields */
@@ -1019,10 +1020,6 @@ protected:
 
   int verbose; ///< Verbosity level
 
-  int *fShift;  ///< Ptr to tag handle storing last set bit in field ID
-  int *feShift; ///< Ptr to tag handle storing last set bit in finite element ID
-  int *pShift;  ///< Ptr to tag handle storing last set bit in problem ID
-
   /**
    * \brief Hash map of pointers to interfaces
    */
@@ -1071,22 +1068,6 @@ protected:
    * @return MoFEMErrorCode
    */
   MoFEMErrorCode registerSubInterfaces();
-
-  /**
-   * \brief Return unique field Id.
-   *
-   * Each time this function is called, it gives new unit field Id for bit.
-   *
-   */
-  BitFieldId getFieldShift();
-
-  /**
-   * \brief Return unique finite element Id
-   *
-   * Each time this function is called, it gives new unit finite Id for bit.
-   *
-   */
-  BitFEId getFEShift();
 
   /**
    * \brief Return unique problem Id

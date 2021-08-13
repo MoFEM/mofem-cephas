@@ -313,12 +313,7 @@ struct UnknownInterface {
    *
    * @return error code
    */
-  virtual MoFEMErrorCode getLibVersion(Version &version) const {
-    MoFEMFunctionBeginHot;
-    version =
-        Version(MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD);
-    MoFEMFunctionReturnHot(0);
-  }
+  static MoFEMErrorCode getLibVersion(Version &version);
 
   /**
    * \brief Get database major version
@@ -329,30 +324,21 @@ struct UnknownInterface {
    *
    * @return error code
    */
-  virtual const MoFEMErrorCode getFileVersion(moab::Interface &moab,
-                                              Version &version) const {
-    MoFEMFunctionBegin;
-    const EntityHandle root_meshset = 0;
-    const int def_version[] = {-1, -1, -1};
-    Tag th;
-    rval = moab.tag_get_handle("MOFEM_VERSION", 3, MB_TYPE_INTEGER, th,
-                               MB_TAG_CREAT | MB_TAG_MESH, &def_version);
-    int *version_ptr;
-    if (rval == MB_ALREADY_ALLOCATED) {
-      const void *tag_data[1];
-      CHKERR moab.tag_get_by_ptr(th, &root_meshset, 1, tag_data);
-      version_ptr = (int *)tag_data[0];
-    } else {
-      const void *tag_data[1];
-      CHKERR moab.tag_get_by_ptr(th, &root_meshset, 1, tag_data);
-      version_ptr = (int *)tag_data[0];
-      version_ptr[0] = MoFEM_VERSION_MAJOR;
-      version_ptr[1] = MoFEM_VERSION_MINOR;
-      version_ptr[2] = MoFEM_VERSION_BUILD;
-    }
-    version = Version(version_ptr);
-    MoFEMFunctionReturn(0);
-  }
+  static MoFEMErrorCode getFileVersion(moab::Interface &moab, Version &version);
+
+  /**
+   * \brief Get database major version
+   *
+   * This is database version. MoFEM can read DataBase from file created by
+   * older version. Then library version and database version could be
+   * different.
+   *
+   * @return error code
+   */
+  static MoFEMErrorCode setFileVersion(
+      moab::Interface &moab,
+      Version version = Version(MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR,
+                                MoFEM_VERSION_BUILD));
 
   /**
    * \brief Get database major version
@@ -362,12 +348,7 @@ struct UnknownInterface {
    *
    * @return error code
    */
-  virtual MoFEMErrorCode getInterfaceVersion(Version &version) const {
-    MoFEMFunctionBeginHot;
-    version =
-        Version(MoFEM_VERSION_MAJOR, MoFEM_VERSION_MINOR, MoFEM_VERSION_BUILD);
-    MoFEMFunctionReturnHot(0);
-  }
+  static MoFEMErrorCode getInterfaceVersion(Version &version);
 
 protected:
   struct NotKnownClass {};

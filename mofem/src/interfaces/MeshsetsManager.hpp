@@ -795,6 +795,9 @@ struct MeshsetsManager : public UnknownInterface {
 
   MoFEMErrorCode updateAllMeshsetsByEntitiesChildren(const BitRefLevel &bit);
 
+  static bool brodcastMeshsets; ///< if true meshsets are synchrinised between
+                                ///< processors
+
 protected:
   Tag nsTag;
   Tag ssTag;
@@ -807,6 +810,7 @@ protected:
   CubitMeshSet_multiIndex cubitMeshsets; ///< cubit meshsets
   boost::shared_ptr<boost::program_options::options_description>
       configFileOptionsPtr; ///< config file options
+		
 };
 
 template <class CUBIT_BC_DATA_TYPE>

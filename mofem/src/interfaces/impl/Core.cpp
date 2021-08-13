@@ -213,6 +213,10 @@ MoFEMErrorCode Core::coreGenericConstructor(moab::Interface &moab,
   PetscLogEventRegister("FE_postProcess", 0, &MOFEM_EVENT_postProcess);
   PetscLogEventRegister("MoFEMCreateMat", 0, &MOFEM_EVENT_createMat);
 
+  MOFEM_LOG_CHANNEL("WORLD");
+  MOFEM_LOG_CHANNEL("SELF");
+  MOFEM_LOG_CHANNEL("SYNC");
+
   MoFEMFunctionReturn(0);
 }
 
@@ -296,10 +300,17 @@ MoFEMErrorCode Core::initialiseDatabaseFromMesh(int verb) {
     // Check if meshset if field meshset
     if (field_id != 0) {
 
-      auto p = fIelds.insert(boost::make_shared<Field>(moab, mit));
+      const void *tag_name;
+      int tag_name_size;
+      CHKERR get_moab().tag_get_by_ptr(
+          th_FieldName, &mit, 1, (const void **)&tag_name, &tag_name_size);
 
       if (verb > QUIET)
-        MOFEM_LOG("WORLD", Sev::verbose) << "Read field " << **p.first;
+        MOFEM_LOG("WORLD", Sev::verbose)
+            << "Read field "
+            << boost::string_ref((char *)tag_name, tag_name_size);
+
+      auto p = fIelds.insert(boost::make_shared<Field>(moab, mit));
 
       if (!p.second) {
         // Field meshset exists, remove duplicate meshsets from other
@@ -477,23 +488,6 @@ MoFEMErrorCode Core::registerSubInterfaces() {
   MoFEMFunctionReturn(0);
 };
 
-BitFieldId Core::getFieldShift() {
-  if (*fShift >= BITFIELDID_SIZE)
-    THROW_MESSAGE("Number of field elements exceeded");
-  return BitFieldId().set(((*fShift)++) - 1);
-}
-BitFEId Core::getFEShift() {
-  if (*feShift >= BitFEId().set().to_ulong())
-    THROW_MESSAGE("Number of finite elements exceeded");
-  return BitFEId(1 << (((*feShift)++) - 1));
-}
-
-BitProblemId Core::getProblemShift() {
-  if (*pShift >= BitProblemId().set().to_ulong())
-    THROW_MESSAGE("Number of problems exceeded");
-  return BitProblemId(1 << (((*pShift)++) - 1));
-}
-
 MoFEMErrorCode Core::clearMap() {
   MoFEMFunctionBegin;
   // Cleaning databases in interfaces
@@ -569,32 +563,6 @@ MoFEMErrorCode Core::getTags(int verb) {
       MoFEMFunctionReturnHot(0);
     };
 
-    // Fields
-    int def_shift = 1;
-    rval = get_moab().tag_get_handle("_FieldShift", 1, MB_TYPE_INTEGER,
-                                     th_FieldShift, MB_TAG_CREAT | MB_TAG_MESH,
-                                     &def_shift);
-    CHKERR check_tag_allocated(rval);
-
-    const void *tag_data[1];
-    CHKERR get_moab().tag_get_by_ptr(th_FieldShift, &root_meshset, 1, tag_data);
-    fShift = (int *)tag_data[0];
-    // FE
-    rval = get_moab().tag_get_handle("_FEShift", 1, MB_TYPE_INTEGER, th_FEShift,
-                                     MB_TAG_CREAT | MB_TAG_MESH, &def_shift);
-    CHKERR check_tag_allocated(rval);
-
-    CHKERR get_moab().tag_get_by_ptr(th_FEShift, &root_meshset, 1, tag_data);
-    feShift = (int *)tag_data[0];
-    // Problem
-    rval = get_moab().tag_get_handle("_ProblemShift", 1, MB_TYPE_INTEGER,
-                                     th_ProblemShift,
-                                     MB_TAG_CREAT | MB_TAG_MESH, &def_shift);
-    CHKERR check_tag_allocated(rval);
-
-    CHKERR get_moab().tag_get_by_ptr(th_ProblemShift, &root_meshset, 1,
-                                     tag_data);
-    pShift = (int *)tag_data[0];
     // Safety nets
     int def_bool = 0;
     rval = get_moab().tag_get_handle("_MoFEMBuild", 1, MB_TYPE_INTEGER,

@@ -68,7 +68,7 @@ struct Field {
    *
    * \param meshset which keeps entities for this field
    */
-  Field(const moab::Interface &moab, const EntityHandle meshset);
+  Field(moab::Interface &moab, const EntityHandle meshset);
 
   virtual ~Field() = default;
 
@@ -85,10 +85,11 @@ struct Field {
 
   EntityHandle meshSet; ///< keeps entities for this meshset
 
-  TagType th_FieldDataVertsType; // Tag type for storing data on vertices
+  TagType tagFieldDataVertsType; // Tag type for storing data on vertices
   Tag th_FieldDataVerts; ///< Tag storing field values on vertices in the field
   Tag th_FieldData;      ///< Tag storing field values on entity in the field
   Tag th_AppOrder;       ///< Tag storing approximation order on entity
+  Tag th_FieldRank;      /// Tag field rank
 
   BitFieldId *tagId;                   ///< tag keeps field id
   FieldSpace *tagSpaceData;            ///< tag keeps field space
