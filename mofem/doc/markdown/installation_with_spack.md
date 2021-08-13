@@ -88,7 +88,7 @@ Xcode contains required compilers for macOS. Latest known working version of
 Xcode is 12.5.1 with clang 12.0.5; there may be issues with future/different
 versions.
 
-You can install the latest version of Xcode for your macOS through AppStore, or, alternatively, you can see Apple's Xcode
+You can install the latest version of Xcode for your macOS through App Store, or, alternatively, you can see Apple's Xcode
 [download page](https://developer.apple.com/download/) (Apple login
 required) for other versions.
 
@@ -491,9 +491,8 @@ Set spack environment and mirror:
 . spack/share/spack/setup-env.sh
 spack mirror add mofem_mirror $PWD/mofem_mirror
 spack compiler find
-spack external find
 ~~~~~
-##### Setup packages and compiler
+#### Setup packages and compiler
 
 Edit file `$HOME/.spack/linux/compilers.yaml`:
 ~~~~~
@@ -538,7 +537,7 @@ however you have to put the line
 ~~~~~
 which enables linking std lib c++ libraries.
 
-Finally, ensure that you have the following in the file `$HOME/.spack/packages.yaml`:
+Finally, ensure that you have only the following lines in the file `$HOME/.spack/packages.yaml`:
 ~~~~~
 packages:
   openmpi:
@@ -547,28 +546,36 @@ packages:
       spec: openmpi@3.1.6%gcc@9.3.0 arch=linux-x86_64-debian7
 ~~~~~      
 
-#### Installing dependencies and compiling the code
+#### Installing dependencies 
 
-At this point, we can follow the standard installation procedure:
+At this point, we can follow the standard installation procedure. To install dependencies run the following:
 ~~~~~
-spack install -j 2 --only dependencies mofem-cephas%gcc@9.3.0 ^petsc+X ^openmpi@3.1.6%gcc@9.3.0
+spack install -j2 --only dependencies mofem-cephas%gcc@9.3.0 ^petsc+X ^openmpi@3.1.6%gcc@9.3.0 ^slepc~arpack
+~~~~~
+
+#### User installation
+
+If you would like to have user installation, run the following command:
+~~~~~
 spack install mofem-users-modules
 ~~~~~
 
-##### Creating view to compiled MoFEM modules
-
-Now you can create a symlink to install directory including dependent
+Now you can create a symlink to the install directory including dependent
 libraries, using commands below:
 ~~~~
 spack view symlink -i um_view mofem-cephas
 spack activate -v um_view mofem-users-modules
 ~~~~
 
+#### Developer installation
+
 Alternatively, you may want to follow the [Developer installation](#spack_developers), 
-skipping the command `spack install --only dependencies mofem-cephas ^petsc+X` described there. Note also that by default `spack dev-build` will try to use all available 
+skipping the command `spack install --only dependencies mofem-cephas ^petsc+X` described there. 
+
+Note also that by default `spack dev-build` will try to use all available 
 processor slots to run `make` in parallel, which may result in performance degradation 
 of Buckethead. To set a desired number of parallel jobs (e.g. 2), you can add 
-parameter `-j 2` to `spack dev-build`. Alternatively, you can edit Spack settings 
+parameter `-j2` to `spack dev-build`. Alternatively, you can edit Spack settings 
 as discussed below in the section [Basic settings in config.yaml](#spack_config).
 
 ### Job file {#spack_buckedhead_job}
