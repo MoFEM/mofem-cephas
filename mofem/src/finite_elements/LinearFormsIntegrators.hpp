@@ -26,8 +26,21 @@ namespace MoFEM {
 template <int BASE_DIM, int FIELD_DIM, IntegrationType I, typename OpBase>
 struct OpSourceImpl;
 
+/**
+ * @brief Integrate source  
+ * 
+ * @tparam OpBase 
+ */
 template <typename OpBase>
 struct OpSourceImpl<1, 1, GAUSS, OpBase> : public OpBase {
+
+  /**
+   * @brief Construct a new Op Source Impl object
+   * 
+   * @param field_name 
+   * @param source_fun 
+   * @param ents_ptr 
+   */
   OpSourceImpl(const std::string field_name, ScalarFun source_fun,
                boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceFun(source_fun),
@@ -59,11 +72,11 @@ protected:
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
 
-template <int BASE_DIM, IntegrationType I, typename OpBase>
+template <int BASE_DIM, int S, IntegrationType I, typename OpBase>
 struct OpBaseTimesScalarFieldImpl;
 
-template <typename OpBase>
-struct OpBaseTimesScalarFieldImpl<1, GAUSS, OpBase> : public OpBase {
+template <int S, typename OpBase>
+struct OpBaseTimesScalarFieldImpl<1, S, GAUSS, OpBase> : public OpBase {
 
   OpBaseTimesScalarFieldImpl(const std::string field_name,
                              boost::shared_ptr<VectorDouble> vec,
@@ -297,10 +310,10 @@ struct FormsIntegrators<EleOp>::Assembly<A>::LinearForm {
    *
    * @tparam BASE_DIM
    */
-  template <int BASE_DIM>
+  template <int BASE_DIM, int S = 1>
   struct OpBaseTimesScalarField
-      : public OpBaseTimesScalarFieldImpl<BASE_DIM, I, OpBase> {
-    using OpBaseTimesScalarFieldImpl<BASE_DIM, I,
+      : public OpBaseTimesScalarFieldImpl<BASE_DIM, S, I, OpBase> {
+    using OpBaseTimesScalarFieldImpl<BASE_DIM, S, I,
                                      OpBase>::OpBaseTimesScalarFieldImpl;
   };
 
@@ -505,8 +518,8 @@ MoFEMErrorCode OpSourceImpl<BASE_DIM, BASE_DIM, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionReturn(0);
 }
 
-template <typename OpBase>
-MoFEMErrorCode OpBaseTimesScalarFieldImpl<1, GAUSS, OpBase>::iNtegrate(
+template <int S, typename OpBase>
+MoFEMErrorCode OpBaseTimesScalarFieldImpl<1, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
   // get element volume
@@ -516,7 +529,7 @@ MoFEMErrorCode OpBaseTimesScalarFieldImpl<1, GAUSS, OpBase>::iNtegrate(
   // get base function gradient on rows
   auto t_row_base = row_data.getFTensor0N();
   // get vector values
-  auto t_vec = getFTensor0FromVec(*sourceVec);
+  auto t_vec = getFTensor0FromVec<S>(*sourceVec);
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobian
@@ -534,7 +547,6 @@ MoFEMErrorCode OpBaseTimesScalarFieldImpl<1, GAUSS, OpBase>::iNtegrate(
   }
   MoFEMFunctionReturn(0);
 }
-
 
 template <int FIELD_DIM, int S, typename OpBase>
 MoFEMErrorCode OpBaseTimesVectorImpl<1, FIELD_DIM, S, GAUSS, OpBase>::iNtegrate(
