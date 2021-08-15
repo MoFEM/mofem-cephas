@@ -1705,10 +1705,10 @@ private:
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim0, class T, class L, class A>
-struct OpCalculateHdivVectorField_General
+struct OpCalculateHVecVectorField_General
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateHdivVectorField_General(
+  OpCalculateHVecVectorField_General(
       const std::string field_name,
       boost::shared_ptr<ublas::matrix<T, L, A>> data_ptr,
       const EntityType zero_type = MBEDGE, const int zero_side = 0)
@@ -1736,7 +1736,7 @@ private:
 };
 
 template <int Tensor_Dim, class T, class L, class A>
-MoFEMErrorCode OpCalculateHdivVectorField_General<Tensor_Dim, T, L, A>::doWork(
+MoFEMErrorCode OpCalculateHVecVectorField_General<Tensor_Dim, T, L, A>::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBeginHot;
   SETERRQ2(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
@@ -1750,11 +1750,11 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<Tensor_Dim, T, L, A>::doWork(
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
-struct OpCalculateHdivVectorField_General<Tensor_Dim, double, ublas::row_major,
+struct OpCalculateHVecVectorField_General<Tensor_Dim, double, ublas::row_major,
                                           DoubleAllocator>
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateHdivVectorField_General(const std::string field_name,
+  OpCalculateHVecVectorField_General(const std::string field_name,
                                      boost::shared_ptr<MatrixDouble> data_ptr,
                                      const EntityType zero_type = MBEDGE,
                                      const int zero_side = 0)
@@ -1782,7 +1782,7 @@ private:
 };
 
 template <int Tensor_Dim>
-MoFEMErrorCode OpCalculateHdivVectorField_General<
+MoFEMErrorCode OpCalculateHVecVectorField_General<
     Tensor_Dim, double, ublas::row_major,
     DoubleAllocator>::doWork(int side, EntityType type,
                              DataForcesAndSourcesCore::EntData &data) {
@@ -1819,22 +1819,22 @@ MoFEMErrorCode OpCalculateHdivVectorField_General<
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
-struct OpCalculateHdivVectorField
-    : public OpCalculateHdivVectorField_General<
+struct OpCalculateHVecVectorField
+    : public OpCalculateHVecVectorField_General<
           Tensor_Dim, double, ublas::row_major, DoubleAllocator> {
-  using OpCalculateHdivVectorField_General<
+  using OpCalculateHVecVectorField_General<
       Tensor_Dim, double, ublas::row_major,
-      DoubleAllocator>::OpCalculateHdivVectorField_General;
+      DoubleAllocator>::OpCalculateHVecVectorField_General;
 };
 
 /** \brief Get vector field for H-div approximation
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template <int Tensor_Dim>
-struct OpCalculateHdivVectorFieldDot
+struct OpCalculateHVecVectorFieldDot
     : public ForcesAndSourcesCore::UserDataOperator {
 
-  OpCalculateHdivVectorFieldDot(const std::string field_name,
+  OpCalculateHVecVectorFieldDot(const std::string field_name,
                                 boost::shared_ptr<MatrixDouble> data_ptr,
                                 const EntityType zero_type = MBEDGE,
                                 const int zero_side = 0)
@@ -1862,7 +1862,7 @@ private:
 };
 
 template <int Tensor_Dim>
-MoFEMErrorCode OpCalculateHdivVectorFieldDot<Tensor_Dim>::doWork(
+MoFEMErrorCode OpCalculateHVecVectorFieldDot<Tensor_Dim>::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
   const size_t nb_integration_points = this->getGaussPts().size2();
