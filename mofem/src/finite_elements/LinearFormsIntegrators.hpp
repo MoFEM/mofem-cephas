@@ -80,12 +80,14 @@ struct OpBaseTimesScalarFieldImpl<1, S, GAUSS, OpBase> : public OpBase {
 
   OpBaseTimesScalarFieldImpl(const std::string field_name,
                              boost::shared_ptr<VectorDouble> vec,
-                             const double beta_coeff)
+                             ScalarFun beta_coeff,
+                             boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
-        betaCoeff(beta_coeff) {}
+        betaCoeff(beta_coeff), entsPtr(ents_ptr) {}
 
 protected:
-  const double betaCoeff;
+  ScalarFun betaCoeff;
+  boost::shared_ptr<Range> entsPtr;
   boost::shared_ptr<VectorDouble> sourceVec;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
@@ -522,6 +524,10 @@ template <int S, typename OpBase>
 MoFEMErrorCode OpBaseTimesScalarFieldImpl<1, S, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
@@ -530,10 +536,13 @@ MoFEMErrorCode OpBaseTimesScalarFieldImpl<1, S, GAUSS, OpBase>::iNtegrate(
   auto t_row_base = row_data.getFTensor0N();
   // get vector values
   auto t_vec = getFTensor0FromVec<S>(*sourceVec);
+  // get coords
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobian
-    const double alpha = t_w * vol * betaCoeff;
+    const double alpha =
+        t_w * vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
     // loop over rows base functions
     int rr = 0;
     for (; rr != OpBase::nbRows; ++rr) {
@@ -544,6 +553,7 @@ MoFEMErrorCode OpBaseTimesScalarFieldImpl<1, S, GAUSS, OpBase>::iNtegrate(
       ++t_row_base;
     ++t_w; // move to another integration weight
     ++t_vec;
+    ++t_coords;
   }
   MoFEMFunctionReturn(0);
 }
