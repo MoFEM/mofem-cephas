@@ -25,16 +25,22 @@ namespace MoFEM {
 
 //! [Storage and set boundary conditions]
 
-struct EssentialBcStorage;
+struct EssentialBcStorage : public EntityStorage {
+  EssentialBcStorage(VectorInt &indices) : entityIndices(indices) {}
+  VectorInt entityIndices;
+  using HashVectorStorage =
+      map<std::string, std::vector<boost::shared_ptr<EssentialBcStorage>>>;
+  static HashVectorStorage feStorage;
+};
 
 /**
  * @brief Set indices on entities on finite element
  * @ingroup mofem_forms
  *
- * If indices is marked, set its value to -1. DOF which such indice is not
- * assembled into system.
+ * If index is marked, its value is set to -1. DOF with such index is not
+ * assembled into the system.
  *
- * Indices are strored on on entity.
+ * Indices are stored on the entity.
  *
  */
 struct OpSetBc : public ForcesAndSourcesCore::UserDataOperator {
@@ -71,7 +77,7 @@ VecSetValues<EssentialBcStorage>(Vec V,
                                  const double *ptr, InsertMode iora);
 
 /**
- * @brief Set valyes to matrix in operator
+ * @brief Set values to matrix in operator
  *
  * @param M
  * @param row_data
@@ -89,14 +95,14 @@ MoFEMErrorCode MatSetValues<EssentialBcStorage>(
 //! [Storage and set boundary conditions]
 
 /**
- * @brief Form integrator assembly tpes
+ * @brief Form integrator assembly types
  * @ingroup mofem_forms
  *
  */
 enum AssemblyType { PETSC, USER_ASSEMBLE, LAST_ASSEMBLE };
 
 /**
- * @brief Fom integrayors inegrator types
+ * @brief Form integrator integration types
  * @ingroup mofem_forms
  *
  */
