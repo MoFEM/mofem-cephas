@@ -205,12 +205,14 @@ struct OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>
     : public OpBase {
   OpMixDivTimesUImpl(const std::string field_name,
                      boost::shared_ptr<MatrixDouble> mat_vals,
-                     const double beta)
+                     ScalarFun beta,
+                     boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), matVals(mat_vals),
-        betaConst(beta) {}
+        betaConst(beta), entsPtr(ents_ptr)  {}
 
 protected:
-  const double betaConst;
+  ScalarFun betaConst;
+  boost::shared_ptr<Range> entsPtr;
   boost::shared_ptr<MatrixDouble> matVals;
   FTensor::Index<'i', FIELD_DIM> i;
   FTensor::Index<'j', SPACE_DIM> j;
@@ -220,13 +222,14 @@ protected:
 template <int SPACE_DIM, typename OpBase>
 struct OpMixDivTimesUImpl<3, 1, SPACE_DIM, GAUSS, OpBase> : public OpBase {
   OpMixDivTimesUImpl(const std::string field_name,
-                     boost::shared_ptr<VectorDouble> vec_vals,
-                     const double beta)
+                     boost::shared_ptr<VectorDouble> vec_vals, ScalarFun beta,
+                     boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), vecVals(vec_vals),
-        betaConst(beta) {}
+        betaConst(beta), entsPtr(ents_ptr) {}
 
 protected:
-  const double betaConst;
+  ScalarFun betaConst;
+  boost::shared_ptr<Range> entsPtr;
   boost::shared_ptr<VectorDouble> vecVals;
   FTensor::Index<'j', SPACE_DIM> j;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
@@ -237,13 +240,14 @@ struct OpMixDivTimesUImpl<1, FIELD_DIM, FIELD_DIM, GAUSS, OpBase>
     : public OpBase {
 
   OpMixDivTimesUImpl(const std::string field_name,
-                             boost::shared_ptr<VectorDouble> vec,
-                             const double beta_coeff)
+                     boost::shared_ptr<VectorDouble> vec, ScalarFun beta,
+                     boost::shared_ptr<Range> ents_ptr = nullptr)
       : OpBase(field_name, field_name, OpBase::OPROW), sourceVec(vec),
-        betaCoeff(beta_coeff) {}
+        betaCoeff(beta), entsPtr(ents_ptr) {}
 
 protected:
-  const double betaCoeff;
+  ScalarFun betaCoeff;
+  boost::shared_ptr<Range> entsPtr;
   boost::shared_ptr<VectorDouble> sourceVec;
   MoFEMErrorCode iNtegrate(DataForcesAndSourcesCore::EntData &data);
 };
@@ -763,14 +767,22 @@ OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
 
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
+
   const size_t nb_base_functions = row_data.getN().size2() / 3;
   auto t_w = this->getFTensor0IntegrationWeight();
+  // get coordinate at integration points
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   auto t_diff_base = row_data.getFTensor2DiffN<3, SPACE_DIM>();
   auto t_u = getFTensor1FromMat<FIELD_DIM>(*(matVals));
 
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
-    const double alpha = this->getMeasure() * t_w * betaConst;
+    const double alpha = this->getMeasure() * t_w *
+                         betaConst(t_coords(0), t_coords(1), t_coords(2));
     auto t_nf = OpBase::template getNf<FIELD_DIM>();
 
     size_t bb = 0;
@@ -785,6 +797,7 @@ OpMixDivTimesUImpl<3, FIELD_DIM, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
     ++t_u;
     ++t_w;
+    ++t_coords;
   }
 
   MoFEMFunctionReturn(0);
@@ -795,14 +808,23 @@ MoFEMErrorCode OpMixDivTimesUImpl<3, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   MoFEMFunctionBegin;
 
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
+
   const size_t nb_base_functions = row_data.getN().size2() / 3;
   auto t_w = this->getFTensor0IntegrationWeight();
+  // get coordinate at integration points
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   auto t_diff_base = row_data.getFTensor2DiffN<3, SPACE_DIM>();
   auto t_u = getFTensor0FromVec(*(vecVals));
 
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
 
-    const double alpha = this->getMeasure() * t_w * betaConst;
+    const double alpha = this->getMeasure() * t_w *
+                         betaConst(t_coords(0), t_coords(1), t_coords(2));
+    ;
 
     size_t bb = 0;
     for (; bb != this->nbRows; ++bb) {
@@ -815,6 +837,7 @@ MoFEMErrorCode OpMixDivTimesUImpl<3, 1, SPACE_DIM, GAUSS, OpBase>::iNtegrate(
 
     ++t_u;
     ++t_w;
+    ++t_coords;
   }
 
   MoFEMFunctionReturn(0);
@@ -846,10 +869,18 @@ OpMixDivTimesUImpl<1, FIELD_DIM, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
     DataForcesAndSourcesCore::EntData &row_data) {
   FTensor::Index<'i', FIELD_DIM> i;
   MoFEMFunctionBegin;
+
+  if (entsPtr) {
+    if (entsPtr->find(OpBase::getFEEntityHandle()) == entsPtr->end())
+      MoFEMFunctionReturnHot(0);
+  }
+
   // get element volume
   const double vol = OpBase::getMeasure();
   // get integration weights
   auto t_w = OpBase::getFTensor0IntegrationWeight();
+  // get coordinate at integration points
+  auto t_coords = OpBase::getFTensor1CoordsAtGaussPts();
   // get base function gradient on rows
   auto t_row_grad = row_data.getFTensor1DiffN<FIELD_DIM>();
   // get vector values
@@ -857,7 +888,8 @@ OpMixDivTimesUImpl<1, FIELD_DIM, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
   // loop over integration points
   for (int gg = 0; gg != OpBase::nbIntegrationPts; gg++) {
     // take into account Jacobian
-    const double alpha = t_w * vol * betaCoeff;
+    const double alpha =
+        t_w * vol * betaCoeff(t_coords(0), t_coords(1), t_coords(2));
     auto t_nf = getFTensor1FromArray<FIELD_DIM, FIELD_DIM>(OpBase::locF);
     // loop over rows base functions
     int rr = 0;
@@ -870,6 +902,7 @@ OpMixDivTimesUImpl<1, FIELD_DIM, FIELD_DIM, GAUSS, OpBase>::iNtegrate(
       ++t_row_grad;
     ++t_w; // move to another integration weight
     ++t_vec;
+    ++t_coords;
   }
   MoFEMFunctionReturn(0);
 }
