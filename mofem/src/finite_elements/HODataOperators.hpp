@@ -275,6 +275,118 @@ private:
 
 };
 
+/**
+ * @brief Scale base functions by inverses of measure of element
+ *
+ * @tparam OP
+ */
+template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
+
+  OpScaleBaseBySpaceInverseOfMeasure(
+      boost::shared_ptr<VectorDouble> det_jac_ptr, const FieldSpace space = L2)
+      : OP(space), fieldSpace(space), detJacPtr(det_jac_ptr) {}
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data) {
+    MoFEMFunctionBegin;
+
+    if(!detJacPtr) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "detJacPtr not set");
+    }
+
+    auto scale = [&]() {
+      for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+        FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+        auto &base_fun = data.getN(base);
+        auto &diff_base_fun = data.getDiffN(base);
+        if (detJacPtr) {
+
+          auto &det_vec = *detJacPtr;
+          const auto nb_base_fun = base_fun.size2();
+          const auto nb_int_pts = base_fun.size1();
+          
+          if (nb_int_pts != det_vec.size())
+            SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                    "Number of integration pts in detJacPtr does not mush "
+                    "number of integration pts in base function");
+
+          auto get_row = [](auto &m, auto gg) {
+            return ublas::matrix_row<decltype(m)>(m, gg);
+          };
+
+          for (auto gg = 0; gg != nb_int_pts; ++gg)
+            get_row(base_fun) /= det_vec[gg];
+
+          if (diff_base_fun.size1() == nb_int_pts) {
+            for (auto gg = 0; gg != nb_int_pts; ++gg)
+              get_row(diff_base_fun) /= det_vec[gg];
+          }
+        }
+      } 
+    };
+
+    if (this->getFEDim() == 3) {
+      switch (fieldSpace) {
+      case H1:
+        scale();
+        break;
+      case HCURL:
+        if (type >= MBEDGE)
+          scale();
+        break;
+      case HDIV:
+        if (type >= MBTRI)
+          scale();
+        break;
+      case L2:
+        if (type >= MBTET)
+          scale();
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+      }
+    } else if (this->getFEDim() == 2) {
+      switch (fieldSpace) {
+      case H1:
+        scale();
+        break;
+      case HCURL:
+        if (type >= MBEDGE)
+          scale();
+        break;
+      case HDIV:
+      case L2:
+        if (type >= MBTRI)
+          scale();
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+      }
+    } else if (this->getFEDim() == 1) {
+      switch (fieldSpace) {
+      case H1:
+        scale();
+        break;
+      case HCURL:
+      case L2:
+        if (type >= MBEDGE)
+          scale();
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+      }
+    } else {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_IMPOSIBLE_CASE, "impossible case");
+    }
+
+    MoFEMFunctionReturn(0);
+  }
+
+private:
+  FieldSpace fieldSpace;
+  boost::shared_ptr<VectorDouble> detJacPtr;
+};
+
 template <typename E>
 MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1, bool hcurl,
                         bool hdiv, bool l2) {
