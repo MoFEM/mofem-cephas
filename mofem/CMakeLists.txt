@@ -37,7 +37,6 @@ include(cmake/ResolveCompilerPaths.cmake)
 project(MoFEM 
   VERSION 0.12.1 
   DESCRIPTION "Finite element framework" 
-  HOMEPAGE_URL "http://mofem.eng.gla.ac.uk" 
   LANGUAGES C CXX)
 
 # Set fallback version. Fallback version is version of MoFEM which is used
