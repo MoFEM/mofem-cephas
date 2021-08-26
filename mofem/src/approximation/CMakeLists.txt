@@ -33,6 +33,8 @@ add_library(
   c_impl/h1.c
   c_impl/l2.c
 )
+target_link_libraries(mofem_approx PUBLIC ${MoFEM_PROJECT_LIBS})
+set_target_properties(mofem_approx PROPERTIES VERSION ${PROJECT_VERSION})
 add_dependencies(mofem_approx install_prerequisites)
 if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_approx Includes.hpp.pch_copy)

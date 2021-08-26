@@ -23,9 +23,11 @@ if(PRECOMPILED_HEADRES)
   )
 endif(PRECOMPILED_HEADRES)
 add_library(
-  mofem_finite_elements
+  mofem_finite_elements 
   impl/All.cpp
 )
+target_link_libraries(mofem_finite_elements PUBLIC ${MoFEM_PROJECT_LIBS})
+set_target_properties(mofem_finite_elements PROPERTIES VERSION ${PROJECT_VERSION})
 add_dependencies(mofem_finite_elements install_prerequisites)
 if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_finite_elements Includes.hpp.pch_copy)

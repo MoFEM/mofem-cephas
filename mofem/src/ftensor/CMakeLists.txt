@@ -142,6 +142,8 @@ endif(STAND_ALLONE_USERS_MODULES)
 add_library(
   mofem_matrix_function
   ${CMAKE_CURRENT_SOURCE_DIR}/src/impl/MatrixFunction.cpp)
+target_link_libraries(mofem_matrix_function PUBLIC ${MoFEM_PROJECT_LIBS})
+set_target_properties(mofem_matrix_function PROPERTIES VERSION ${PROJECT_VERSION})
 if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_matrix_function Includes.hpp.pch_copy)
 endif(PRECOMPILED_HEADRES)
