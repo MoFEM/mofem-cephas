@@ -35,8 +35,8 @@ struct QuadPolynomialBase : public BaseFunction {
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  BaseFunctionUnknownInterface **iface) const;
 
-  QuadPolynomialBase();
-  ~QuadPolynomialBase();
+  QuadPolynomialBase() = default;
+  ~QuadPolynomialBase() = default;
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);

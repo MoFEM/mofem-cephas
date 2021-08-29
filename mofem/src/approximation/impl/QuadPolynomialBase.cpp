@@ -19,8 +19,6 @@
 
 using namespace MoFEM;
 
-QuadPolynomialBase::QuadPolynomialBase() {}
-QuadPolynomialBase::~QuadPolynomialBase() {}
 
 MoFEMErrorCode QuadPolynomialBase::query_interface(
     const MOFEMuuid &uuid, BaseFunctionUnknownInterface **iface) const {

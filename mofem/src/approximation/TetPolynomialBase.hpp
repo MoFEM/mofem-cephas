@@ -33,8 +33,8 @@ struct TetPolynomialBase : public BaseFunction {
   MoFEMErrorCode query_interface(const MOFEMuuid &uuid,
                                  BaseFunctionUnknownInterface **iface) const;
 
-  TetPolynomialBase();
-  ~TetPolynomialBase();
+  TetPolynomialBase() = default;
+  ~TetPolynomialBase() = default;
 
   MoFEMErrorCode getValue(MatrixDouble &pts,
                           boost::shared_ptr<BaseFunctionCtx> ctx_ptr);

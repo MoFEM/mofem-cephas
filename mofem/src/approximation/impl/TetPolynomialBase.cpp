@@ -38,9 +38,6 @@ TetPolynomialBase::query_interface(const MOFEMuuid &uuid,
   MoFEMFunctionReturnHot(0);
 }
 
-TetPolynomialBase::~TetPolynomialBase() {}
-TetPolynomialBase::TetPolynomialBase() {}
-
 MoFEMErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
   MoFEMFunctionBegin;
 
