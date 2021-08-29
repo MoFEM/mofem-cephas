@@ -27,6 +27,8 @@ struct FEMethod;
 
 static const MOFEMuuid IDD_TET_BASE_FUNCTION =
     MOFEMuuid(BitIntefaceId(TET_BASE_FUNCTION_INTERFACE));
+static const MOFEMuuid IDD_HEX_BASE_FUNCTION =
+    MOFEMuuid(BitIntefaceId(HEX_BASE_FUNCTION_INTERFACE));
 static const MOFEMuuid IDD_TRI_BASE_FUNCTION =
     MOFEMuuid(BitIntefaceId(TRI_BASE_FUNCTION_INTERFACE));
 static const MOFEMuuid IDD_EDGE_BASE_FUNCTION =

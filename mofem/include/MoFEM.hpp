@@ -46,9 +46,11 @@
 #include <LobattoPolynomial.hpp>
 #include <JacobiPolynomial.hpp>
 #include <EntPolynomialBaseCtx.hpp>
+#include <QuadPolynomialBase.hpp>      // Base functions on quad
 #include <EdgePolynomialBase.hpp>
 #include <TriPolynomialBase.hpp>
 #include <TetPolynomialBase.hpp>
+#include <HexPolynomialBase.hpp>
 #include <FatPrismPolynomialBase.hpp>
 #include <FlatPrismPolynomialBase.hpp>
 #include <EdgeQuadHexPolynomials.hpp>
@@ -110,12 +112,6 @@ using Sev = MoFEM::LogManager::SeverityLevel;
 
 // SRC/FINITE_ELEMENTS
 #include <DataStructures.hpp>
-#include <EntPolynomialBaseCtx.hpp>
-#include <TetPolynomialBase.hpp>       // Base functions on tet
-#include <TriPolynomialBase.hpp>       // Base functions on tri
-#include <QuadPolynomialBase.hpp>      // Base functions on quad
-#include <EdgePolynomialBase.hpp>      // Base functions on edge
-#include <FlatPrismPolynomialBase.hpp> // Base functions on prism
 #include <DataOperators.hpp>
 #include <ForcesAndSourcesCore.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
