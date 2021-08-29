@@ -37,6 +37,11 @@ extern "C" {
 #define NBVOLUMETET_L2(P) ((P + 1) * (P + 2) * (P + 3) / 6)
 
 /**
+ * @brief Number of base functions on hexahedron for L2 space
+ */
+#define NBVOLUMEHEX_L2(P) ((P + 1) * (P + 1) * (P + 1))
+
+/**
  * @brief Number of base functions on triangle for L2 space
  */
 #define NBFACETRI_L2(P) ((P + 1) * (P + 2) / 2)
