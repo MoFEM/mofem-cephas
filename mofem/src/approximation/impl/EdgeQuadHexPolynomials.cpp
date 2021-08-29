@@ -65,7 +65,8 @@ struct RefHex {
         edge_affines[ee][comp] = affines[ee][comp];
   }
 
-  void get_edge_diff_affines(double (&Nq_diff)[8][3], double (&edge_diff_affines)[12][2][3]) {
+  void get_edge_diff_affines(double (&Nq_diff)[8][3],
+                             double (&edge_diff_affines)[12][2][3]) {
 
     double face0_diff[3] = {
         Nq_diff[faces[0][0]][0] + Nq_diff[faces[0][1]][0] +
@@ -81,7 +82,7 @@ struct RefHex {
         Nq_diff[faces[1][0]][1] + Nq_diff[faces[1][1]][1] +
             Nq_diff[faces[1][2]][1] + Nq_diff[faces[1][3]][1],
         Nq_diff[faces[1][0]][2] + Nq_diff[faces[1][1]][2] +
-            Nq_diff[faces[1][2]][2] + Nq_diff[faces[1][3]][2]};// eta_0_diff
+            Nq_diff[faces[1][2]][2] + Nq_diff[faces[1][3]][2]}; // eta_0_diff
 
     double face2_diff[3] = {
         Nq_diff[faces[2][0]][0] + Nq_diff[faces[2][1]][0] +
@@ -156,7 +157,8 @@ struct RefHex {
     }
   }
 
-  void get_edge_diff_coords(int *sense, double (&Nq_diff)[8][3], double (&edge_diff_coords)[12][3]) {
+  void get_edge_diff_coords(int *sense, double (&Nq_diff)[8][3],
+                            double (&edge_diff_coords)[12][3]) {
 
     double face0_diff[3] = {
         Nq_diff[faces[0][0]][0] + Nq_diff[faces[0][1]][0] +
@@ -254,7 +256,8 @@ struct RefHex {
       face_affines[ff] = faceAffine[ff];
   }
 
-  void get_face_diff_affines(double (&Nq_diff)[8][3], double (&face_diff_affines)[6][3]) {
+  void get_face_diff_affines(double (&Nq_diff)[8][3],
+                             double (&face_diff_affines)[6][3]) {
 
     double face0_diff[3] = {
         Nq_diff[faces[0][0]][0] + Nq_diff[faces[0][1]][0] +
@@ -315,7 +318,8 @@ struct RefHex {
     }
   }
 
-  void get_face_coords(int *face_nodes[6], double (&Nq)[8], double (&face_coords)[6][2]) {
+  void get_face_coords(int *face_nodes[6], double (&Nq)[8],
+                       double (&face_coords)[6][2]) {
 
     int par_face_nodes[6][8] = {
         {4, 5, 6, 7, 0, 1, 2, 3}, {3, 2, 1, 0, 7, 6, 5, 4},
@@ -356,7 +360,8 @@ struct RefHex {
     }
   }
 
-  void get_face_diff_coords(int *face_nodes[6], double (&Nq_diff)[8][3], double (&face_diff_coords)[6][2][3]) {
+  void get_face_diff_coords(int *face_nodes[6], double (&Nq_diff)[8][3],
+                            double (&face_diff_coords)[6][2][3]) {
 
     int par_face_nodes[6][8] = {
         {4, 5, 6, 7, 0, 1, 2, 3}, {3, 2, 1, 0, 7, 6, 5, 4},
@@ -433,8 +438,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::MonomOrdering(int perm[][3], int p,
             perm[n][1] = j;
             perm[n][2] = k;
             n++;
-          } else
-            continue;
+          }
         }
       }
     }
@@ -443,8 +447,7 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::MonomOrdering(int perm[][3], int p,
 }
 // Auxilary functions
 
-MoFEMErrorCode 
-MoFEM::DemkowiczHexAndQuad::Legendre_polynomials01(int p,
+MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Legendre_polynomials01(int p,
                                                                   double s01,
                                                                   double *L) {
 
@@ -460,14 +463,14 @@ MoFEM::DemkowiczHexAndQuad::Integrated_Legendre01(int p, double s01, double *L,
   MoFEMFunctionBeginHot;
   double l[p + 3];
   CHKERR Legendre_polynomials01(p, s01, l);
-  if(p >= 2){
+  if (p >= 2) {
     for (int i = 2; i != p + 1; i++) {
       double factor = 1.0 / (2.0 * (2.0 * (double)i - 1.0));
       L[i - 2] = factor * (l[i] - l[i - 2]);
-      diffL[i-2]  = l[i-1];
+      diffL[i - 2] = l[i - 1];
     }
   }
-  
+
   MoFEMFunctionReturnHot(0);
 }
 
@@ -929,8 +932,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONQUAD(
 */
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
-    int *sense, int *p, double *N, double *N_diff, double *edgeN[12], double *diff_edgeN[12],
-    int nb_integration_pts) {
+    int *sense, int *p, double *N, double *N_diff, double *edgeN[12],
+    double *diff_edgeN[12], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
 
@@ -940,13 +943,12 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
     double quad_coords[3];
     double Nq[8];
     double Nq_diff[8][3];
-    for (int vv = 0; vv < 8; vv++){
+    for (int vv = 0; vv < 8; vv++) {
       Nq[vv] = N[shift + vv];
       Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
       Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
       Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
     }
-
 
     double mu[12][2];
     ref_hex.get_edge_affines(Nq, mu);
@@ -974,8 +976,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
         edgeN[e][qd_shift + n] = mu[e][0] * mu[e][1] * L[n + 2];
         for (int d = 0; d != 3; ++d) {
           diff_edgeN[e][3 * (qd_shift + n) + d] =
-              diff_mu[e][0][d] * mu[e][1] * L[n + 2] +
-              mu[e][0] + diff_mu[e][1][d] + L[n + 2] +
+              diff_mu[e][0][d] * mu[e][1] * L[n + 2] + mu[e][0] +
+              diff_mu[e][1][d] + L[n + 2] +
               mu[e][0] * mu[e][1] * diffL[d * (p[e] + 2) + n + 2];
         }
       }
@@ -997,13 +999,12 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
     double quad_coords[3];
     double Nq[8];
     double Nq_diff[8][3];
-    for (int vv = 0; vv < 8; vv++){
+    for (int vv = 0; vv < 8; vv++) {
       Nq[vv] = N[shift + vv];
       Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
       Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
       Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
     }
-
 
     double mu[6];
     ref_hex.get_face_affines(Nq, mu);
@@ -1024,8 +1025,10 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
       double ksi0 = ksi[face][0];
       double ksi1 = ksi[face][1];
 
-      double diff_ksi0[3] = {diff_ksi[face][0][0], diff_ksi[face][0][1], diff_ksi[face][0][2]};
-      double diff_ksi1[3] = { diff_ksi[face][1][0], diff_ksi[face][1][1], diff_ksi[face][1][2]};
+      double diff_ksi0[3] = {diff_ksi[face][0][0], diff_ksi[face][0][1],
+                             diff_ksi[face][0][2]};
+      double diff_ksi1[3] = {diff_ksi[face][1][0], diff_ksi[face][1][1],
+                             diff_ksi[face][1][2]};
 
       double L0[pq[0] + 1];
       double diffL0[3 * (pq[0] + 2)];
@@ -1049,7 +1052,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_FaceShapeFunctions_ONHEX(
               mu[face] * diffL0[d * (pq[0] + 2) + s1 + 2] * L1[s2] +
               mu[face] * L0[s1 + 2] * diffL1[d * (pq[1] + 2) + s2 + 2];
         }
-
       }
     }
   }
@@ -1096,7 +1098,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
     CHKERR Lobatto_polynomials(p[1] + 1, ksi[1], diff_ksi[1], L1, diffL1, 3);
     CHKERR Lobatto_polynomials(p[2] + 1, ksi[2], diff_ksi[2], L2, diffL2, 3);
 
-
     // cout << "In Face H1" << endl;
 
     int qd_shift = (p[0] - 1) * (p[1] - 1) * (p[2] - 1) * q;
@@ -1119,7 +1120,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_InteriorShapeFunctions_ONHEX(
 }
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
-    int *p, double *N, double *N_diff, double *volN, double *diff_volN, int nb_integration_pts) {
+    const int *p, double *N, double *N_diff, double *volN, double *diff_volN,
+    int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
   int permute[p[0] * p[1] * p[2]][3];
@@ -1157,7 +1159,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
 
     CHKERR Legendre_polynomials(p[2] + 1, ksi[2], diff_ksi[2], P2, diffL2, 3);
 
-  
     int n = 0;
     for (; n != p[0] * p[1] * p[2]; n++) {
       int ii = permute[n][0];
@@ -1166,9 +1167,10 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
 
       volN[qd_shift + n] = P0[ii] * P1[jj] * P2[kk];
       for (int d = 0; d != 3; ++d) {
-        diff_volN[3 * (qd_shift + n) + d] = diffL0[d * (p[0] + 2) + ii] * P1[jj] * P2[kk] +
-                                            P0[ii] * diffL1[d * (p[1] + 2) + jj] * P2[kk] +
-                                            P0[ii] * P1[jj] * diffL2[d * (p[2] + 2) + kk];
+        diff_volN[3 * (qd_shift + n) + d] =
+            diffL0[d * (p[0] + 2) + ii] * P1[jj] * P2[kk] +
+            P0[ii] * diffL1[d * (p[1] + 2) + jj] * P2[kk] +
+            P0[ii] * P1[jj] * diffL2[d * (p[2] + 2) + kk];
       }
     }
   }
@@ -1194,7 +1196,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONHEX(
       Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
     }
 
-
     double mu[12][2];
     ref_hex.get_edge_affines(Nq, mu);
 
@@ -1212,35 +1213,37 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_EdgeShapeFunctions_ONHEX(
 
       double L[pp[ee]];
       double diffL[3 * (pp[ee] + 2)];
-      CHKERR Legendre_polynomials(pp[ee] - 1, ksi[ee], diff_ksi[ee], L, diffL, 3);
+      CHKERR Legendre_polynomials(pp[ee] - 1, ksi[ee], diff_ksi[ee], L, diffL,
+                                  3);
 
       // CHKERR Legendre_polynomials01(pp[ee] - 1, ksi[ee], L);
       int qd_shift = pp[ee] * qq;
-      double * t_n_ptr = &edgeN[ee][3 * qd_shift];
-      double * t_diff_n_ptr = &diff_edgeN[ee][3 * 3 * qd_shift];
+      double *t_n_ptr = &edgeN[ee][3 * qd_shift];
+      double *t_diff_n_ptr = &diff_edgeN[ee][3 * 3 * qd_shift];
       auto t_n = getFTensor1FromPtr<3>(t_n_ptr);
       auto t_diff_n = getFTensor2FromPtr<3, 3>(t_diff_n_ptr);
 
       for (int ii = 0; ii != pp[ee]; ii++) {
         const double a = mu[ee][0] * mu[ee][1] * L[ii];
 
-        const double d_a[] = {diff_mu[ee][0][0] * mu[ee][1] * L[ii] + 
-                              mu[ee][0] * diff_mu[ee][1][0] * L[ii] +
-                              mu[ee][0] * mu[ee][1] * diffL[0 * pp[ee] + ii],
+        const double d_a[] = {
+            diff_mu[ee][0][0] * mu[ee][1] * L[ii] +
+                mu[ee][0] * diff_mu[ee][1][0] * L[ii] +
+                mu[ee][0] * mu[ee][1] * diffL[0 * pp[ee] + ii],
 
-                              diff_mu[ee][0][1] * mu[ee][1] * L[ii] + 
-                              mu[ee][0] * diff_mu[ee][1][1] * L[ii] +
-                              mu[ee][0] * mu[ee][1] * diffL[1 * pp[ee] + ii],
+            diff_mu[ee][0][1] * mu[ee][1] * L[ii] +
+                mu[ee][0] * diff_mu[ee][1][1] * L[ii] +
+                mu[ee][0] * mu[ee][1] * diffL[1 * pp[ee] + ii],
 
-                              diff_mu[ee][0][2] * mu[ee][1] * L[ii] + 
-                              mu[ee][0] * diff_mu[ee][1][2] * L[ii] +
-                              mu[ee][0] * mu[ee][1] * diffL[2 * pp[ee] + ii]}; 
-                              
+            diff_mu[ee][0][2] * mu[ee][1] * L[ii] +
+                mu[ee][0] * diff_mu[ee][1][2] * L[ii] +
+                mu[ee][0] * mu[ee][1] * diffL[2 * pp[ee] + ii]};
+
         for (int d = 0; d != 3; ++d) {
-            t_n(d) = 0.5 * a * diff_ksi[ee][d];
-            for (int j = 0; j != 2; ++j) { 
-              t_diff_n(d, j) = 0.5 * d_a[j] * diff_ksi[ee][d];
-            }
+          t_n(d) = 0.5 * a * diff_ksi[ee][d];
+          for (int j = 0; j != 2; ++j) {
+            t_diff_n(d, j) = 0.5 * d_a[j] * diff_ksi[ee][d];
+          }
         }
         ++t_n;
         ++t_diff_n;
@@ -1296,8 +1299,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONHEX(
         double Phi[pq[fam] + 2];
         double diffPhi[pq[fam] + 2];
 
-        CHKERR Lobatto_polynomials(pq[fam] + 1, ksi_eta[fam],
-                                    diff_ksi_eta[fam], Phi, diffPhi, 3);
+        CHKERR Lobatto_polynomials(pq[fam] + 1, ksi_eta[fam], diff_ksi_eta[fam],
+                                   Phi, diffPhi, 3);
 
         double E[qp[fam]];
         double diffE[2 * qp[fam]];
@@ -1313,7 +1316,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONHEX(
         auto t_n = getFTensor1FromPtr<3>(t_n_ptr);
         auto t_diff_n = getFTensor2FromPtr<3, 3>(t_diff_n_ptr);
 
-
         int n = 0;
         for (; n != (pq[fam] - 1) * qp[fam]; n++) {
           int i = permute[n][0];
@@ -1322,20 +1324,23 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_FaceShapeFunctions_ONHEX(
           const double phi = Phi[j + 2];
           const double e = E[i];
           const double a = phi * e;
-          const double d_a[] = {diffPhi[0 * (pq[fam] + 2) + j + 2] * e + phi * diffE[0 * qp[fam] + i],
+          const double d_a[] = {diffPhi[0 * (pq[fam] + 2) + j + 2] * e +
+                                    phi * diffE[0 * qp[fam] + i],
 
-                                diffPhi[1 * (pq[fam] + 2) + j + 2] * e + phi * diffE[1 * qp[fam] + i],
+                                diffPhi[1 * (pq[fam] + 2) + j + 2] * e +
+                                    phi * diffE[1 * qp[fam] + i],
 
-                                diffPhi[2 * (pq[fam] + 2) + j + 2] * e + phi * diffE[2 * qp[fam] + i]};
+                                diffPhi[2 * (pq[fam] + 2) + j + 2] * e +
+                                    phi * diffE[2 * qp[fam] + i]};
 
-          for (int d = 0; d != 3; ++d) { 
+          for (int d = 0; d != 3; ++d) {
             t_n(d) = a * diff_eta_ksi[fam][d];
             for (int m = 0; m != 2; ++m) {
               t_diff_n(d, m) = d_a[m] * diff_eta_ksi[fam][d];
             }
-          } 
+          }
           ++t_n;
-          ++t_diff_n;                    
+          ++t_diff_n;
         }
       }
     }
@@ -1424,18 +1429,17 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hcurl_InteriorShapeFunctions_ONHEX(
         const double e = EI[ii];
         const double a = phiJ * phiK * e;
 
-        const double d_a[] = {
-                              diffPhiK[0 * (ppp + 2) + kk + 2] * phiJ * e +
-                              phiK * diffPhiJ[0 * (rrr + 2) + jj + 2] * e +
-                              phiK * phiJ * diffEI[0 * qqq + ii],
-                              
+        const double d_a[] = {diffPhiK[0 * (ppp + 2) + kk + 2] * phiJ * e +
+                                  phiK * diffPhiJ[0 * (rrr + 2) + jj + 2] * e +
+                                  phiK * phiJ * diffEI[0 * qqq + ii],
+
                               diffPhiK[1 * (ppp + 2) + kk + 2] * phiJ * e +
-                              phiK * diffPhiJ[1 * (rrr + 2) + jj + 2] * e +
-                              phiK * phiJ * diffEI[1 * qqq + ii],
-                              
+                                  phiK * diffPhiJ[1 * (rrr + 2) + jj + 2] * e +
+                                  phiK * phiJ * diffEI[1 * qqq + ii],
+
                               diffPhiK[2 * (ppp + 2) + kk + 2] * phiJ * e +
-                              phiK * diffPhiJ[2 * (rrr + 2) + jj + 2] * e +
-                              phiK * phiJ * diffEI[2 * qqq + ii]};
+                                  phiK * diffPhiJ[2 * (rrr + 2) + jj + 2] * e +
+                                  phiK * phiJ * diffEI[2 * qqq + ii]};
 
         for (int d = 0; d != 3; ++d) {
           t_n(d) = a * diff_eta_gma_ksi[fam][d];
@@ -1547,8 +1551,8 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONHEX(
 }
 
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_InteriorShapeFunctions_ONHEX(
-    int *p, double *N, double *N_diff, double *bubbleN[3], double *div_bubbleN[3],
-    int nb_integration_pts) {
+    int *p, double *N, double *N_diff, double *bubbleN[3],
+    double *div_bubbleN[3], int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
 
@@ -1654,4 +1658,3 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_InteriorShapeFunctions_ONHEX(
 
   MoFEMFunctionReturnHot(0);
 }
-
