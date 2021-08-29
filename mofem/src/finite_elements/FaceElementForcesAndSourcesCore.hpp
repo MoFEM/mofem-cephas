@@ -88,15 +88,6 @@ protected:
    */
   virtual MoFEMErrorCode calculateCoordinatesAtGaussPts();
 
-  /**
-   * \brief Calculate normal on curved elements
-   *
-   *  Geometry is given by other field.
-   *
-   * @return error code
-   */
-  virtual MoFEMErrorCode calculateHoNormal();
-
   double aRea;
   int num_nodes;
   const EntityHandle *conn;

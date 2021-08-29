@@ -931,6 +931,40 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::Hdiv_FaceShapeFunctions_ONQUAD(
         6. 4 5 6 7
 */
 
+namespace DemkowiczHexAndQuad {
+static inline void get_ksi_hex(int shift, double *N, double *N_diff,
+                               double ksi[3], double diff_ksi[3][2]) {
+
+  constexpr std::array<size_t, 4> ksi_nodes[2][3] = {
+
+      {{1, 2, 6, 5}, {3, 2, 6, 7}, {4, 5, 6, 7}},
+
+      {{0, 3, 7, 4}, {0, 1, 5, 4}, {0, 1, 2, 3}}
+
+  };
+
+  for (size_t i = 0; i != 3; ++i) {
+    for (auto n : ksi_nodes[0][i])
+      ksi[i] += N[shift + n];
+    for (auto n : ksi_nodes[1][i])
+      ksi[i] -= N[shift + n];
+  }
+
+  for (size_t i = 0; i != 3; ++i) {
+    for (auto n : ksi_nodes[0][i]) {
+      for (auto d = 0; d != 3; ++d) {
+        diff_ksi[i][d] += N_diff[3 * shift + 3 * n + d];
+      }
+    }
+    for (auto n : ksi_nodes[1][i]) {
+      for (auto d = 0; d != 3; ++d) {
+        diff_ksi[i][d] -= N_diff[3 * shift + 3 * n + d];
+      }
+    }
+  }
+};
+} // namespace DemkowiczHexAndQuad
+
 MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::H1_EdgeShapeFunctions_ONHEX(
     int *sense, int *p, double *N, double *N_diff, double *edgeN[12],
     double *diff_edgeN[12], int nb_integration_pts) {
@@ -1126,23 +1160,13 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
   RefHex ref_hex;
   int permute[p[0] * p[1] * p[2]][3];
   CHKERR MonomOrdering(permute, p[0] - 1, p[1] - 1, p[2] - 1);
+
   for (int qq = 0; qq != nb_integration_pts; qq++) {
 
-    // general ******************************
     int shift = 8 * qq;
-    double ksi[3];
-    double Nq[8];
-    double Nq_diff[8][3];
-    for (int vv = 0; vv < 8; vv++) {
-      Nq[vv] = N[shift + vv];
-      Nq_diff[vv][0] = N_diff[3 * (shift + vv) + 0];
-      Nq_diff[vv][1] = N_diff[3 * (shift + vv) + 1];
-      Nq_diff[vv][2] = N_diff[3 * (shift + vv) + 2];
-    }
-    ref_hex.get_volume_coords(Nq, ksi);
-    double diff_ksi[3][3];
-    ref_hex.get_volume_diff_coords(Nq_diff, diff_ksi);
-    // ****************************************
+    double ksi[3] = {0, 0, 0};
+    double diff_ksi[3][2] = {{0, 0}, {0, 0}, {0, 0}};
+    ::DemkowiczHexAndQuad::get_ksi_hex(shift, N, N_diff, ksi, diff_ksi);
 
     double P0[p[0]];
     double diffL0[3 * (p[0] + 2)];
@@ -1152,7 +1176,6 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
     double diffL2[3 * (p[2] + 2)];
 
     int qd_shift = qq * p[0] * p[1] * p[2];
-
     CHKERR Legendre_polynomials(p[0] + 1, ksi[0], diff_ksi[0], P0, diffL0, 3);
 
     CHKERR Legendre_polynomials(p[1] + 1, ksi[1], diff_ksi[1], P1, diffL1, 3);
@@ -1161,10 +1184,9 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
 
     int n = 0;
     for (; n != p[0] * p[1] * p[2]; n++) {
-      int ii = permute[n][0];
-      int jj = permute[n][1];
-      int kk = permute[n][2];
-
+      const int ii = permute[n][0];
+      const int jj = permute[n][1];
+      const int kk = permute[n][2];
       volN[qd_shift + n] = P0[ii] * P1[jj] * P2[kk];
       for (int d = 0; d != 3; ++d) {
         diff_volN[3 * (qd_shift + n) + d] =

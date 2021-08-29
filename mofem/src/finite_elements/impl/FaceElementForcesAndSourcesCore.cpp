@@ -388,33 +388,6 @@ FaceElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
   MoFEMFunctionReturnHot(0);
 }
 
-MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::calculateHoNormal() {
-  MoFEMFunctionBegin;
-
-  auto check_field = [&]() {
-    auto field_it =
-        fieldsPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName);
-    if (field_it != fieldsPtr->get<FieldName_mi_tag>().end())
-      if ((numeredEntFiniteElementPtr->getBitFieldIdData() &
-           (*field_it)->getId())
-              .any())
-        return true;
-    return false;
-  };
-
-  // Check if field meshPositionsFieldName exist
-  if (check_field()) {
-    // Calculate normal for high-order geometry
-    CHKERR getNodesFieldData(dataH1, meshPositionsFieldName);
-    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
-    CHKERR getEntityFieldData(dataH1, meshPositionsFieldName, MBEDGE);
-    CHKERR opHOCoordsAndNormals.opRhs(dataH1);
-    CHKERR opHOCoordsAndNormals.calculateNormals();
-  } 
-
-  MoFEMFunctionReturn(0);
-}
-
 MoFEMErrorCode FaceElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;

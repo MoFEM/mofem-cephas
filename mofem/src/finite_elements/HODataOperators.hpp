@@ -23,6 +23,26 @@
 namespace MoFEM {
 
 /**
+ * @brief Calculate jacobian on Hex or other volume which is not simplex.
+ *
+ * Using not a field data, but geometrical coordinates of element.
+ *
+ * \note Use OpCalculateVectorFieldGradient to calculate Jacobian from field
+ * data.
+ *
+ */
+struct OpCalculateHOJacVolume : public ForcesAndSourcesCore::UserDataOperator {
+
+  OpCalculateHOJacVolume(boost::shared_ptr<MatrixDouble> jac_ptr);
+
+  MoFEMErrorCode doWork(int side, EntityType type,
+                        DataForcesAndSourcesCore::EntData &data);
+
+  private:
+    boost::shared_ptr<MatrixDouble> jacPtr;
+};
+
+/**
  * @brief Calculate HO coordinates at gauss points
  *
  */
@@ -271,8 +291,7 @@ struct OpGetHOTangentsOnEdge
                         DataForcesAndSourcesCore::EntData &data);
 
 private:
-  boost::shared_ptr<MatrixDouble> tangentsAtPts;  
-
+  boost::shared_ptr<MatrixDouble> tangentsAtPts;
 };
 
 /**
@@ -290,7 +309,7 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
                         DataForcesAndSourcesCore::EntData &data) {
     MoFEMFunctionBegin;
 
-    if(!detJacPtr) {
+    if (!detJacPtr) {
       SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "detJacPtr not set");
     }
 
@@ -304,7 +323,7 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
           auto &det_vec = *detJacPtr;
           const auto nb_base_fun = base_fun.size2();
           const auto nb_int_pts = base_fun.size1();
-          
+
           if (nb_int_pts != det_vec.size())
             SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
                     "Number of integration pts in detJacPtr does not mush "
@@ -322,7 +341,7 @@ template <typename OP> struct OpScaleBaseBySpaceInverseOfMeasure : public OP {
               get_row(diff_base_fun) /= det_vec[gg];
           }
         }
-      } 
+      }
     };
 
     if (this->getFEDim() == 3) {
@@ -389,7 +408,7 @@ private:
 
 template <typename E>
 MoFEMErrorCode addHOOpsVol(const std::string field, E &e, bool h1, bool hcurl,
-                        bool hdiv, bool l2) {
+                           bool hdiv, bool l2) {
   MoFEMFunctionBegin;
   auto material_grad_mat = boost::make_shared<MatrixDouble>();
   auto material_det_vec = boost::make_shared<VectorDouble>();

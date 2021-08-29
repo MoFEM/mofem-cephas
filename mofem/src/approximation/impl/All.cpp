@@ -12,6 +12,7 @@
 #include "impl/TriPolynomialBase.cpp"
 #include "impl/QuadPolynomialBase.cpp"
 #include "impl/TetPolynomialBase.cpp"
+#include "impl/HexPolynomialBase.cpp"
 #include "impl/EdgePolynomialBase.cpp"
 #include "impl/FlatPrismPolynomialBase.cpp"
 #include "impl/FatPrismPolynomialBase.cpp"

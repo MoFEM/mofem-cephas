@@ -1,6 +1,6 @@
 /** \file EdgeQuadHexPolynomials.hpp
 
-  \brief Implementation of base functions on 1D segment (Edge), .
+  \brief Implementation of base Demkowicz functions on quad and hex
 
   Based on Hierarchic Finite Element Bases on Unstructured QUADS (2D)
   and HEXES (3D) Meshes

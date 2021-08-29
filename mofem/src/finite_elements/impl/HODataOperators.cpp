@@ -20,6 +20,51 @@
 
 namespace MoFEM {
 
+OpCalculateHOJacVolume::OpCalculateHOJacVolume(
+    boost::shared_ptr<MatrixDouble> jac_ptr)
+    : ForcesAndSourcesCore::UserDataOperator(H1, OPLAST), jacPtr(jac_ptr) {
+
+  for (auto t = MBEDGE; t != MBMAXTYPE; ++t)
+    doEntities[t] = false;
+
+  if (!jacPtr)
+    THROW_MESSAGE("Jac pointer not allocated");
+}
+
+MoFEMErrorCode
+OpCalculateHOJacVolume::doWork(int side, EntityType type,
+                               DataForcesAndSourcesCore::EntData &data) {
+  MoFEMFunctionBegin;
+
+  auto &diff_base = data.getDiffN(NOBASE);
+  const auto nb_base_functions = diff_base.size2() / 3;
+  if (nb_base_functions) {
+
+    const auto nb_gauss_pts = diff_base.size1();
+    auto t_diff_base = FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3>{
+        &diff_base(0, 0), &diff_base(0, 1), &diff_base(0, 2)};
+
+    jacPtr->resize(9, nb_gauss_pts, false);
+    jacPtr->clear();
+    auto t_jac = getFTensor2FromMat<3, 3>(*jacPtr);
+
+    FTensor::Index<'i', 3> i;
+    FTensor::Index<'j', 3> j;
+
+    auto t_coord = getFTensor1CoordsAtGaussPts();
+    for (size_t gg = 0; gg != nb_gauss_pts; ++gg) {
+      for (size_t bb = 0; bb != nb_base_functions; ++bb) {
+        t_jac(i, j) += t_coord(i) * t_diff_base(j);
+        ++t_diff_base;
+      }
+      ++t_jac;
+      ++t_coord;
+    }
+  }
+
+  MoFEMFunctionReturn(0);
+}
+
 MoFEMErrorCode
 OpCalculateHOCoords::doWork(int side, EntityType type,
                             DataForcesAndSourcesCore::EntData &data) {

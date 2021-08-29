@@ -93,6 +93,7 @@ constexpr std::array<double, 6> Tools::diffShapeFunMBTRI;
 constexpr std::array<double, 12> Tools::diffShapeFunMBTET;
 constexpr std::array<double, 4> Tools::shapeFunMBTETAt000;
 constexpr std::array<double, 8> Tools::diffShapeFunMBQUADAtCenter;
+constexpr std::array<double, 24> Tools::diffShapeFunMBHEXAtCenter;
 
 MoFEMErrorCode Tools::getLocalCoordinatesOnReferenceFourNodeTet(
     const double *elem_coords, const double *global_coords, const int nb_nodes,

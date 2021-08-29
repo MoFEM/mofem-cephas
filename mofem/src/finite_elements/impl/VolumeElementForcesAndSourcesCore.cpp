@@ -38,12 +38,67 @@ VolumeElementForcesAndSourcesCoreBase::VolumeElementForcesAndSourcesCoreBase(
 
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::setIntegrationPts() {
   MoFEMFunctionBegin;
+
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
   int order_col = getMaxColOrder();
   int rule = getRule(order_row, order_col, order_data);
+  const auto type = numeredEntFiniteElementPtr->getEntType();
 
-  if (rule >= 0) {
+  auto calc_base_for_hex = [&]() {
+    MoFEMFunctionBegin;
+    const size_t nb_gauss_pts = gaussPts.size2();
+    auto &base = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+    auto &diff_base = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+    base.resize(nb_gauss_pts, 8, false);
+    diff_base.resize(nb_gauss_pts, 24, false);
+    for (int gg = 0; gg != nb_gauss_pts; ++gg) {
+      const double ksi = gaussPts(0, gg);
+      const double zeta = gaussPts(1, gg);
+      const double eta = gaussPts(2, gg);
+      base(gg, 0) = N_MBHEX0(ksi, zeta, eta);
+      base(gg, 1) = N_MBHEX1(ksi, zeta, eta);
+      base(gg, 2) = N_MBHEX2(ksi, zeta, eta);
+      base(gg, 3) = N_MBHEX3(ksi, zeta, eta);
+      base(gg, 4) = N_MBHEX4(ksi, zeta, eta);
+      base(gg, 5) = N_MBHEX5(ksi, zeta, eta);
+      base(gg, 6) = N_MBHEX6(ksi, zeta, eta);
+      base(gg, 7) = N_MBHEX7(ksi, zeta, eta);
+      diff_base(gg, 0) = diffN_MBHEX0x(zeta, eta);
+      diff_base(gg, 1) = diffN_MBHEX0y(ksi, eta);
+      diff_base(gg, 2) = diffN_MBHEX0z(zeta, ksi);
+      diff_base(gg, 3) = diffN_MBHEX1x(zeta, eta);
+      diff_base(gg, 4) = diffN_MBHEX1y(ksi, eta);
+      diff_base(gg, 5) = diffN_MBHEX1z(zeta, ksi);
+      diff_base(gg, 6) = diffN_MBHEX2x(zeta, eta);
+      diff_base(gg, 7) = diffN_MBHEX2y(ksi, eta);
+      diff_base(gg, 8) = diffN_MBHEX2z(zeta, ksi);
+      diff_base(gg, 9) = diffN_MBHEX3x(zeta, eta);
+      diff_base(gg, 10) = diffN_MBHEX3y(ksi, eta);
+      diff_base(gg, 11) = diffN_MBHEX3z(zeta, ksi);
+      diff_base(gg, 12) = diffN_MBHEX4x(zeta, eta);
+      diff_base(gg, 13) = diffN_MBHEX4y(ksi, eta);
+      diff_base(gg, 14) = diffN_MBHEX4z(zeta, ksi);
+      diff_base(gg, 15) = diffN_MBHEX5x(zeta, eta);
+      diff_base(gg, 16) = diffN_MBHEX5y(ksi, eta);
+      diff_base(gg, 17) = diffN_MBHEX5z(zeta, ksi);
+      diff_base(gg, 18) = diffN_MBHEX6x(zeta, eta);
+      diff_base(gg, 19) = diffN_MBHEX6y(ksi, eta);
+      diff_base(gg, 20) = diffN_MBHEX6z(zeta, ksi);
+      diff_base(gg, 21) = diffN_MBHEX7x(zeta, eta);
+      diff_base(gg, 22) = diffN_MBHEX7y(ksi, eta);
+      diff_base(gg, 23) = diffN_MBHEX7z(zeta, ksi);
+    }
+    MoFEMFunctionReturn(0);
+  };
+
+  auto set_integration_pts_for_hex = [&]() {
+    MoFEMFunctionBegin;
+    MoFEMFunctionReturn(0);
+  };
+
+  auto set_integration_pts_for_tet = [&]() {
+    MoFEMFunctionBegin;
     if (rule < QUAD_3D_TABLE_SIZE) {
       if (QUAD_3D_TABLE[rule]->dim != 3) {
         SETERRQ(mField.get_comm(), MOFEM_DATA_INCONSISTENCY, "wrong dimension");
@@ -60,53 +115,109 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::setIntegrationPts() {
                   &gaussPts(1, 0), 1);
       cblas_dcopy(nb_gauss_pts, &QUAD_3D_TABLE[rule]->points[3], 4,
                   &gaussPts(2, 0), 1);
-      cblas_dcopy(nb_gauss_pts, QUAD_3D_TABLE[rule]->weights, 1, &gaussPts(3, 0),
-                  1);
+      cblas_dcopy(nb_gauss_pts, QUAD_3D_TABLE[rule]->weights, 1,
+                  &gaussPts(3, 0), 1);
       dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
                                                              false);
       double *shape_ptr =
           &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-      cblas_dcopy(4 * nb_gauss_pts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr, 1);
+      cblas_dcopy(4 * nb_gauss_pts, QUAD_3D_TABLE[rule]->points, 1, shape_ptr,
+                  1);
     } else {
       SETERRQ2(mField.get_comm(), MOFEM_DATA_INCONSISTENCY,
                "rule > quadrature order %d < %d", rule, QUAD_3D_TABLE_SIZE);
     }
+    MoFEMFunctionReturn(0);
+  };
+
+  if (rule >= 0) {
+    switch (type) {
+    case MBTET:
+      CHKERR set_integration_pts_for_tet();
+      break;
+    case MBHEX:
+      CHKERR set_integration_pts_for_hex();
+      CHKERR calc_base_for_hex();
+      break;
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Element type not implemented: %d", type);
+    }
   } else {
+    // If rule is negative, set user defined integration points
     CHKERR setGaussPts(order_row, order_col, order_data);
     const size_t nb_gauss_pts = gaussPts.size2();
-    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
-                                                           false);
-    if (nb_gauss_pts > 0) {
-      CHKERR Tools::shapeFunMBTET(
-          &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
-          &gaussPts(0, 0), &gaussPts(1, 0), &gaussPts(2, 0), nb_gauss_pts);
+    if (nb_gauss_pts) {
+      switch (type) {
+      case MBTET:
+        dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts, 4,
+                                                               false);
+        CHKERR Tools::shapeFunMBTET(
+            &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
+            &gaussPts(0, 0), &gaussPts(1, 0), &gaussPts(2, 0), nb_gauss_pts);
+        break;
+      case MBHEX:
+        CHKERR calc_base_for_hex();
+        break;
+      default:
+        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+                 "Element type not implemented: %d", type);
+      }
     }
   }
+
   MoFEMFunctionReturn(0);
 }
 
 MoFEMErrorCode
 VolumeElementForcesAndSourcesCoreBase::calculateVolumeAndJacobian() {
   MoFEMFunctionBegin;
-  EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
+  const auto ent = numeredEntFiniteElementPtr->getEnt();
+  const auto type = numeredEntFiniteElementPtr->getEntType();
   CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
   CHKERR mField.get_moab().get_coords(conn, num_nodes, &*coords.data().begin());
-  FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3> t_diff_n(
-      &Tools::diffShapeFunMBTET[0], &Tools::diffShapeFunMBTET[1],
-      &Tools::diffShapeFunMBTET[2]);
+
+  auto get_tet_t_diff_n = [&]() {
+    return FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3>(
+        &Tools::diffShapeFunMBTET[0], &Tools::diffShapeFunMBTET[1],
+        &Tools::diffShapeFunMBTET[2]);
+  };
+
+  auto get_hex_t_diff_n = [&]() {
+    return FTensor::Tensor1<FTensor::PackPtr<const double *, 3>, 3>(
+        &Tools::diffShapeFunMBHEXAtCenter[0],
+        &Tools::diffShapeFunMBHEXAtCenter[1],
+        &Tools::diffShapeFunMBHEXAtCenter[2]);
+  };
+
+  auto get_t_diff_n = [&]() {
+    if (type == MBTET)
+      return get_tet_t_diff_n();
+    return get_hex_t_diff_n();
+  };
+
+  auto t_diff_n = get_t_diff_n();
+
   FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
       &coords[0], &coords[1], &coords[2]);
   FTensor::Index<'i', 3> i;
   FTensor::Index<'j', 3> j;
   jAc.clear();
-  for (auto n : {0, 1, 2, 3}) {
+
+  
+
+
+  for (size_t n = 0; n != num_nodes; ++n) {
     tJac(i, j) += t_coords(i) * t_diff_n(j);
     ++t_coords;
     ++t_diff_n;
   }
   CHKERR determinantTensor3by3(tJac, vOlume);
   CHKERR invertTensor3by3(tJac, vOlume, tInvJac);
-  vOlume *= G_TET_W1[0] / 6.;
+
+  if (type == MBTET)
+    vOlume *= G_TET_W1[0] / 6.;
+
   MoFEMFunctionReturn(0);
 }
 
@@ -116,8 +227,9 @@ VolumeElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
   // Get coords at Gauss points
   FTensor::Index<'i', 3> i;
 
-  double *shape_functions_ptr =
-      &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+  auto &shape_functions = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+  double *shape_functions_ptr = &*shape_functions.data().begin();
+  const size_t nb_base_functions = shape_functions.size2();
   const size_t nb_gauss_pts = gaussPts.size2();
   coordsAtGaussPts.resize(nb_gauss_pts, 3, false);
   coordsAtGaussPts.clear();
@@ -129,7 +241,7 @@ VolumeElementForcesAndSourcesCoreBase::calculateCoordinatesAtGaussPts() {
   for (unsigned int gg = 0; gg != nb_gauss_pts; ++gg) {
     FTensor::Tensor1<FTensor::PackPtr<double *, 3>, 3> t_coords(
         &coords[0], &coords[1], &coords[2]);
-    for (int bb = 0; bb != 4; ++bb) {
+    for (int bb = 0; bb != nb_base_functions; ++bb) {
       t_coords_at_gauss_ptr(i) += t_coords(i) * t_shape_functions;
       ++t_coords;
       ++t_shape_functions;
@@ -157,6 +269,13 @@ VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
   if ((dataH1.spacesOnEntities[MBTET]).test(H1)) {
     CHKERR getEntityDataOrder<MBTET>(dataH1, H1);
   }
+  if ((dataH1.spacesOnEntities[MBQUAD]).test(H1)) {
+    CHKERR getEntitySense<MBQUAD>(dataH1);
+    CHKERR getEntityDataOrder<MBQUAD>(dataH1, H1);
+  }
+  if ((dataH1.spacesOnEntities[MBHEX]).test(H1)) {
+    CHKERR getEntityDataOrder<MBHEX>(dataH1, H1);
+  }
   // Hcurl
   if ((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
     CHKERR getEntitySense<MBEDGE>(dataHcurl);
@@ -173,6 +292,16 @@ VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
     CHKERR getEntityDataOrder<MBTET>(dataHcurl, HCURL);
     dataHcurl.spacesOnEntities[MBTET].set(HCURL);
   }
+  if ((dataH1.spacesOnEntities[MBQUAD]).test(HCURL)) {
+    dataHcurl.facesNodes = dataH1.facesNodes;
+    CHKERR getEntitySense<MBQUAD>(dataHcurl);
+    CHKERR getEntityDataOrder<MBQUAD>(dataHcurl, HCURL);
+    dataHcurl.spacesOnEntities[MBQUAD].set(HCURL);
+  }
+  if ((dataH1.spacesOnEntities[MBHEX]).test(HCURL)) {
+    CHKERR getEntityDataOrder<MBHEX>(dataHcurl, HCURL);
+    dataHcurl.spacesOnEntities[MBHEX].set(HCURL);
+  }
   // Hdiv
   if ((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
     dataHdiv.facesNodes = dataH1.facesNodes;
@@ -184,10 +313,24 @@ VolumeElementForcesAndSourcesCoreBase::getSpaceBaseAndOrderOnElement() {
     CHKERR getEntityDataOrder<MBTET>(dataHdiv, HDIV);
     dataHdiv.spacesOnEntities[MBTET].set(HDIV);
   }
+  if ((dataH1.spacesOnEntities[MBQUAD]).test(HDIV)) {
+    dataHdiv.facesNodes = dataH1.facesNodes;
+    CHKERR getEntitySense<MBQUAD>(dataHdiv);
+    CHKERR getEntityDataOrder<MBQUAD>(dataHdiv, HDIV);
+    dataHdiv.spacesOnEntities[MBQUAD].set(HDIV);
+  }
+  if ((dataH1.spacesOnEntities[MBHEX]).test(HDIV)) {
+    CHKERR getEntityDataOrder<MBHEX>(dataHdiv, HDIV);
+    dataHdiv.spacesOnEntities[MBHEX].set(HDIV);
+  }
   // L2
   if ((dataH1.spacesOnEntities[MBTET]).test(L2)) {
     CHKERR getEntityDataOrder<MBTET>(dataL2, L2);
     dataL2.spacesOnEntities[MBTET].set(L2);
+  }
+  if ((dataH1.spacesOnEntities[MBHEX]).test(L2)) {
+    CHKERR getEntityDataOrder<MBHEX>(dataL2, L2);
+    dataL2.spacesOnEntities[MBHEX].set(L2);
   }
   MoFEMFunctionReturn(0);
 }
@@ -200,11 +343,13 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::transformBaseFunctions() {
     CHKERR opCovariantPiolaTransform.opRhs(dataHcurl);
     CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHcurl);
   }
-  if (dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+  if (dataH1.spacesOnEntities[MBTRI].test(HDIV) ||
+      dataH1.spacesOnEntities[MBQUAD].test(HDIV)) {
     CHKERR opContravariantPiolaTransform.opRhs(dataHdiv);
     CHKERR opSetInvJacHdivAndHcurl.opRhs(dataHdiv);
   }
-  if (dataH1.spacesOnEntities[MBTET].test(L2)) {
+  if (dataH1.spacesOnEntities[MBTET].test(L2) ||
+      dataH1.spacesOnEntities[MBHEX].test(L2)) {
     CHKERR opSetInvJacH1.opRhs(dataL2);
   }
 
@@ -244,7 +389,7 @@ MoFEMErrorCode
 VolumeElementForcesAndSourcesCoreBase::UserDataOperator::setPtrFE(
     ForcesAndSourcesCore *ptr) {
   MoFEMFunctionBeginHot;
-  if(!(ptrFE = dynamic_cast<VolumeElementForcesAndSourcesCoreBase *>(ptr))) 
+  if (!(ptrFE = dynamic_cast<VolumeElementForcesAndSourcesCoreBase *>(ptr)))
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "User operator and finite element do not work together");
   MoFEMFunctionReturnHot(0);
