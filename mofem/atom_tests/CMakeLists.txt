@@ -1073,10 +1073,10 @@ add_test(edge_and_bubble_shape_functions_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} --o
   -log_no_color
 )
 
-build_test(gauss_points_on_quad gauss_points_on_quad.cpp)
+build_test(gauss_points_on_outer_product gauss_points_on_outer_product.cpp)
 
-add_test(gauss_points_on_quad ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/gauss_points_on_quad
+add_test(gauss_points_on_outer_product ${MPI_RUN} ${MPI_RUN_FLAGS} --oversubscribe -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/gauss_points_on_outer_product
 )
 
 build_test(partition_mesh partition_mesh.cpp)

@@ -446,9 +446,13 @@ struct Tools : public UnknownInterface {
 
   /**@}*/
 
-  static MoFEMErrorCode outerProductOfEdgeIntegrationPtsForQuad(MatrixDouble &pts,
-                                                              const int edge0,
-                                                              const int edge1);
+  static MoFEMErrorCode
+  outerProductOfEdgeIntegrationPtsForQuad(MatrixDouble &pts, const int edge0,
+                                          const int edge1);
+
+  static MoFEMErrorCode
+  outerProductOfEdgeIntegrationPtsForHex(MatrixDouble &pts, const int edge0,
+                                         const int edge1, const int edge2);
 };
 
 double Tools::shapeFunMBTRI0(const double x, const double y) {

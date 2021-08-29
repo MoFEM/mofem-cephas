@@ -466,7 +466,7 @@ MoFEMErrorCode Tools::findMinDistanceFromTheEdges(
           t_min_dist = dist_n;
           if (o_ptr)
             t_min_coords(i) = t_p(i);
-           if (o_segments)
+          if (o_segments)
             *colsest_segment_it = e;
         }
       }
@@ -513,24 +513,75 @@ MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForQuad(
   int nb_gauss_pts_ksi = QUAD_1D_TABLE[rule_ksi]->npoints;
   int nb_gauss_pts_eta = QUAD_1D_TABLE[rule_eta]->npoints;
   gauss_pts.resize(3, nb_gauss_pts_ksi * nb_gauss_pts_eta, false);
-  gauss_pts.clear();
 
-  VectorDouble ones;
-  ones.resize(max(nb_gauss_pts_ksi, nb_gauss_pts_eta), false);
-  fill(ones.begin(), ones.end(), 1.0);
+  int gg = 0;
+  for (size_t i = 0; i != nb_gauss_pts_ksi; ++i) {
+    const double wi = QUAD_1D_TABLE[rule_ksi]->weights[i];
+    const double ksi = (QUAD_1D_TABLE[rule_ksi]->points[2 * i + 1]);
+    for (size_t j = 0; j != nb_gauss_pts_eta; ++j, ++gg) {
+      const double wk = wi * QUAD_1D_TABLE[rule_eta]->weights[j];
+      const double eta = QUAD_1D_TABLE[rule_eta]->points[2 * j + 1];
+      gauss_pts(0, gg) = ksi;
+      gauss_pts(1, gg) = eta;
+      gauss_pts(2, gg) = wk;
+    }
+  }
 
-  cblas_dger(CblasRowMajor, nb_gauss_pts_eta, nb_gauss_pts_ksi, 1, &ones(0), 1,
-             &QUAD_1D_TABLE[rule_ksi]->points[1], 2, &gauss_pts(0, 0),
-             nb_gauss_pts_ksi);
+  MoFEMFunctionReturn(0);
+}
 
-  cblas_dger(CblasRowMajor, nb_gauss_pts_eta, nb_gauss_pts_ksi, 1,
-             &QUAD_1D_TABLE[rule_eta]->points[1], 2, &ones(0), 1,
-             &gauss_pts(1, 0), nb_gauss_pts_ksi);
+MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForHex(
+    MatrixDouble &gauss_pts, const int rule_ksi, const int rule_eta,
+    const int rule_zeta) {
+  MoFEMFunctionBegin;
 
-  cblas_dger(CblasRowMajor, nb_gauss_pts_eta, nb_gauss_pts_ksi, 1,
-             QUAD_1D_TABLE[rule_eta]->weights, 1,
-             QUAD_1D_TABLE[rule_ksi]->weights, 1, &gauss_pts(2, 0),
-             nb_gauss_pts_ksi);
+  auto check_rule_edge = [](int rule) {
+    MoFEMFunctionBeginHot;
+    if (rule < 0) {
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "Wrong integration rule: %d", rule);
+    }
+    if (rule > QUAD_1D_TABLE_SIZE) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "rule > quadrature order %d < %d", rule, QUAD_1D_TABLE_SIZE);
+    }
+    if (QUAD_1D_TABLE[rule]->dim != 1) {
+      SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "wrong dimension");
+    }
+    if (QUAD_1D_TABLE[rule]->order < rule) {
+      SETERRQ2(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+               "wrong order %d != %d", QUAD_1D_TABLE[rule]->order, rule);
+    }
+    MoFEMFunctionReturnHot(0);
+  };
+
+  CHKERR check_rule_edge(rule_ksi);
+  CHKERR check_rule_edge(rule_eta);
+  CHKERR check_rule_edge(rule_zeta);
+
+  int nb_gauss_pts_ksi = QUAD_1D_TABLE[rule_ksi]->npoints;
+  int nb_gauss_pts_eta = QUAD_1D_TABLE[rule_eta]->npoints;
+  int nb_gauss_pts_zeta = QUAD_1D_TABLE[rule_zeta]->npoints;
+  gauss_pts.resize(4, nb_gauss_pts_ksi * nb_gauss_pts_eta * nb_gauss_pts_zeta,
+                   false);
+
+  int gg = 0;
+  for (size_t i = 0; i != nb_gauss_pts_ksi; ++i) {
+    const double wi = QUAD_1D_TABLE[rule_ksi]->weights[i];
+    const double ksi = QUAD_1D_TABLE[rule_ksi]->points[2 * i + 1];
+    for (size_t j = 0; j != nb_gauss_pts_eta; ++j) {
+      const double wj = wi * QUAD_1D_TABLE[rule_eta]->weights[j];
+      const double eta = QUAD_1D_TABLE[rule_eta]->points[2 * j + 1];
+      for (size_t k = 0; k != nb_gauss_pts_zeta; ++k, ++gg) {
+        const double wk = wj * QUAD_1D_TABLE[rule_zeta]->weights[k];
+        const double zeta = QUAD_1D_TABLE[rule_eta]->points[2 * k + 1];
+        gauss_pts(0, gg) = ksi;
+        gauss_pts(1, gg) = eta;
+        gauss_pts(2, gg) = zeta;
+        gauss_pts(3, gg) = wk;
+      }
+    }
+  }
 
   MoFEMFunctionReturn(0);
 }
