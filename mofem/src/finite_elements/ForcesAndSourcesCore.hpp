@@ -594,6 +594,13 @@ struct ForcesAndSourcesCore::UserDataOperator : public DataOperator {
    */
   inline int getFEDim() const;
 
+   /**
+   * @brief Get dimension of finite element
+   *
+   * @return int
+   */
+  inline EntityType getFEType() const;
+
   /**
    * @brief Get the side number pointer
    *
@@ -936,6 +943,10 @@ EntityHandle ForcesAndSourcesCore::UserDataOperator::getFEEntityHandle() const {
 
 int ForcesAndSourcesCore::UserDataOperator::getFEDim() const {
   return ptrFE->mField.get_moab().dimension_from_handle(getFEEntityHandle());
+};
+
+EntityType ForcesAndSourcesCore::UserDataOperator::getFEType() const {
+  return ptrFE->mField.get_moab().type_from_handle(getFEEntityHandle());
 };
 
 boost::weak_ptr<SideNumber>

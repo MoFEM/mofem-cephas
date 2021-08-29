@@ -811,7 +811,7 @@ MoFEMErrorCode OpMixScalarTimesGradImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
   MoFEMFunctionBegin;
 
   auto t_w = this->getFTensor0IntegrationWeight();
-
+  size_t nb_base_functions_row = row_data.getN().size2();
   auto t_row_base = row_data.getFTensor0N();
 
   for (size_t gg = 0; gg != OpBase::nbIntegrationPts; ++gg) {
@@ -830,6 +830,8 @@ MoFEMErrorCode OpMixScalarTimesGradImpl<SPACE_DIM, GAUSS, OpBase>::iNtegrate(
       }
       ++t_row_base;
     }
+    for (; rr < nb_base_functions_row; ++rr)
+      ++t_row_base;
 
     ++t_w;
   }

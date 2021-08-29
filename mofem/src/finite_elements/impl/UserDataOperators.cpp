@@ -418,10 +418,9 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<2>::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&
-      getNumeredEntFiniteElementPtr()->getEntType() != MBQUAD)
+  if (getFEDim() != 2)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "This operator can be used only with element which is triangle");
+            "This operator can be used only with element which faces");
 
   auto apply_transform = [&](MatrixDouble &diff_n) {
     MoFEMFunctionBegin;
@@ -458,20 +457,23 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<2>::doWork(
     MoFEMFunctionReturn(0);
   };
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-    CHKERR apply_transform(data.getDiffN(base));
-  }
+  if (!(type == MBVERTEX && sPace == L2)) {
 
-  switch (type) {
-  case MBVERTEX:
-    for (auto &m : data.getBBDiffNMap())
-      CHKERR apply_transform(*(m.second));
-    break;
-  default:
-    for (auto &ptr : data.getBBDiffNByOrderArray())
-      if (ptr)
-        CHKERR apply_transform(*ptr);
+    for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+      CHKERR apply_transform(data.getDiffN(base));
+    }
+
+    switch (type) {
+    case MBVERTEX:
+      for (auto &m : data.getBBDiffNMap())
+        CHKERR apply_transform(*(m.second));
+      break;
+    default:
+      for (auto &ptr : data.getBBDiffNByOrderArray())
+        if (ptr)
+          CHKERR apply_transform(*ptr);
+    }
   }
 
   MoFEMFunctionReturn(0);
@@ -481,18 +483,16 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<3>::doWork(
     int side, EntityType type, DataForcesAndSourcesCore::EntData &data) {
   MoFEMFunctionBegin;
 
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&
-      getNumeredEntFiniteElementPtr()->getEntType() != MBQUAD)
+  if (getFEDim() != 2)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-            "This operator can be used only with element which is triangle");
-
+            "This operator can be used only with element which face");
+    
   auto apply_transform = [&](MatrixDouble &diff_n) {
     MoFEMFunctionBegin;
     size_t nb_functions = diff_n.size2() / 2;
     if (nb_functions) {
       size_t nb_gauss_pts = diff_n.size1();
       diffNinvJac.resize(nb_gauss_pts, 3 * nb_functions, false);
-
       switch (type) {
       case MBVERTEX:
       case MBEDGE:
@@ -521,20 +521,22 @@ MoFEMErrorCode OpSetInvJacSpaceForFaceImpl<3>::doWork(
     MoFEMFunctionReturn(0);
   };
 
-  for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
-    FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
-    CHKERR apply_transform(data.getDiffN(base));
-  }
+  if (!(type == MBVERTEX && sPace == L2)) {
+    for (int b = AINSWORTH_LEGENDRE_BASE; b != USER_BASE; b++) {
+      FieldApproximationBase base = static_cast<FieldApproximationBase>(b);
+      CHKERR apply_transform(data.getDiffN(base));
+    }
 
-  switch (type) {
-  case MBVERTEX:
-    for (auto &m : data.getBBDiffNMap())
-      CHKERR apply_transform(*(m.second));
-    break;
-  default:
-    for (auto &ptr : data.getBBDiffNByOrderArray())
-      if (ptr)
-        CHKERR apply_transform(*ptr);
+    switch (type) {
+    case MBVERTEX:
+      for (auto &m : data.getBBDiffNMap())
+        CHKERR apply_transform(*(m.second));
+      break;
+    default:
+      for (auto &ptr : data.getBBDiffNByOrderArray())
+        if (ptr)
+          CHKERR apply_transform(*ptr);
+    }
   }
 
   MoFEMFunctionReturn(0);
@@ -548,8 +550,7 @@ OpSetInvJacHcurlFaceImpl<2>::doWork(int side, EntityType type,
   if (type != MBEDGE && type != MBTRI && type != MBQUAD)
     MoFEMFunctionReturnHot(0);
 
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&
-      getNumeredEntFiniteElementPtr()->getEntType() != MBQUAD)
+  if (getFEDim() != 2)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "This operator can be used only with element which is triangle");
 
@@ -600,8 +601,7 @@ OpSetInvJacHcurlFaceImpl<3>::doWork(int side, EntityType type,
   if (type != MBEDGE && type != MBTRI && type != MBQUAD)
     MoFEMFunctionReturnHot(0);
 
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&
-      getNumeredEntFiniteElementPtr()->getEntType() != MBQUAD)
+  if (getFEDim() != 2)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "This operator can be used only with element which is triangle");
 
@@ -655,8 +655,7 @@ OpMakeHdivFromHcurl::doWork(int side, EntityType type,
   if (type != MBEDGE && type != MBTRI && type != MBQUAD)
     MoFEMFunctionReturnHot(0);
 
-  if (getNumeredEntFiniteElementPtr()->getEntType() != MBTRI &&
-      getNumeredEntFiniteElementPtr()->getEntType() != MBQUAD)
+  if (getFEDim() != 2)
     SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
             "This operator can be used only with element which is face");
 

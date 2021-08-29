@@ -536,11 +536,11 @@ MoFEMErrorCode MeshsetsManager::getCubitMeshsetPtr(
   auto hi_miit = cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
   if (std::distance(miit, hi_miit) == 0) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "meshset name = %s is not there", name.c_str());
+             "meshset name <%s> is not there", name.c_str());
   }
   if (std::distance(miit, hi_miit) > 1) {
     SETERRQ1(m_field.get_comm(), MOFEM_DATA_INCONSISTENCY,
-             "meshset name = %s is not there", name.c_str());
+             "more that one meshser of that name <%s>", name.c_str());
   }
   *cubit_meshset_ptr = &*miit;
   MoFEMFunctionReturn(0);

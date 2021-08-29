@@ -24,6 +24,8 @@ endif(PRECOMPILED_HEADRES)
 add_library(mofem_petsc
   impl/All.cpp
 )
+target_link_libraries(mofem_petsc PUBLIC ${MoFEM_PROJECT_LIBS})
+set_target_properties(mofem_petsc PROPERTIES VERSION ${PROJECT_VERSION})
 add_dependencies(mofem_petsc install_prerequisites)
 if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_petsc Includes.hpp.pch_copy)

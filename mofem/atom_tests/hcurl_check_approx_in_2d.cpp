@@ -379,7 +379,7 @@ int main(int argc, char *argv[]) {
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpValsDiffVals(vals, diff_vals));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
-          new OpCalculateHdivVectorField<3>("FIELD1", ptr_values));
+          new OpCalculateHVecVectorField<3>("FIELD1", ptr_values));
       pipeline_mng->getOpDomainRhsPipeline().push_back(
           new OpCalculateHdivVectorDivergence<3, 2>("FIELD1", ptr_divergence));
       pipeline_mng->getOpDomainRhsPipeline().push_back(

@@ -34,15 +34,19 @@ string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
 find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
-project(MoFEM C CXX)
+project(MoFEM 
+  VERSION 0.12.1 
+  DESCRIPTION "Finite element framework" 
+  LANGUAGES C CXX)
 
 # Set fallback version. Fallback version is version of MoFEM which is used
 # as default version if version from the git tags can not be extracted. For exammple 
 # that is a keys when somone install mofem from tarball.
-set(MoFEM_FALLBACK_VERSION "0.12.1" CACHE STRING "Fallback version" FORCE)
+set(MoFEM_FALLBACK_VERSION "0.12.1 " CACHE STRING "Fallback version" FORCE)
 message(STATUS "Falback vecrsion v${MoFEM_FALLBACK_VERSION}")
 
 # Options
+option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 option(STAND_ALLONE_USERS_MODULES 
   "If if ON copy files, othrewise make link" OFF)
 option(WITHCOVERAGE "Add gcc coverage compile tags" OFF)
@@ -171,11 +175,10 @@ get_git_tag(${PROJECT_SOURCE_DIR} "v${MoFEM_FALLBACK_VERSION}" VERSION)
 message(STATUS "MoFEM GIT_TAG ${VERSION}")
 get_git_version(
   ${VERSION} MoFEM_VERSION_MAJOR MoFEM_VERSION_MINOR MoFEM_VERSION_BUILD)
-set(MoFEM_VERSON 
-  ${MoFEM_VERSION_MAJOR}.${MoFEM_VERSION_MINOR}.${MoFEM_VERSION_BUILD} 
-  CACHE STRING "MoFEM version" FORCE)
+set(CMAKE_PROJECT_VERSION 
+  ${MoFEM_VERSION_MAJOR}.${MoFEM_VERSION_MINOR}.${MoFEM_VERSION_BUILD})
 
-message(STATUS "MoFEM Version v${MoFEM_VERSON}")
+message(STATUS "MoFEM Version v${CMAKE_PROJECT_VERSION}")
 add_definitions(
   -DMoFEM_VERSION_MAJOR=${MoFEM_VERSION_MAJOR} 
   -DMoFEM_VERSION_MINOR=${MoFEM_VERSION_MINOR} 
@@ -252,7 +255,8 @@ set(OPTIONAL_PROJECT_LIBS
   ${TETGEN_LIBRARY}
   ${MED_LIBRARY}
   ${ADOL-C_LIBRARY})
-set(PROJECT_LIBS ${OPTIONAL_PROJECT_LIBS} ${SYSTEM_PROJECT_LIBS})
+set(PROJECT_LIBS 
+  ${OPTIONAL_PROJECT_LIBS} ${SYSTEM_PROJECT_LIBS} ${PETSCVAR_BLASLAPACK_LIB})
 message(STATUS ${PROJECT_LIBS})
 
 # Add executable library form subdirectory
