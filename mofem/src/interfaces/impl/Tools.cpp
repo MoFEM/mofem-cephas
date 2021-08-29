@@ -510,8 +510,8 @@ MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForQuad(
   CHKERR check_rule_edge(rule_ksi);
   CHKERR check_rule_edge(rule_eta);
 
-  int nb_gauss_pts_ksi = QUAD_1D_TABLE[rule_ksi]->npoints;
-  int nb_gauss_pts_eta = QUAD_1D_TABLE[rule_eta]->npoints;
+  const int nb_gauss_pts_ksi = QUAD_1D_TABLE[rule_ksi]->npoints;
+  const int nb_gauss_pts_eta = QUAD_1D_TABLE[rule_eta]->npoints;
   gauss_pts.resize(3, nb_gauss_pts_ksi * nb_gauss_pts_eta, false);
 
   int gg = 0;
@@ -559,9 +559,9 @@ MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForHex(
   CHKERR check_rule_edge(rule_eta);
   CHKERR check_rule_edge(rule_zeta);
 
-  int nb_gauss_pts_ksi = QUAD_1D_TABLE[rule_ksi]->npoints;
-  int nb_gauss_pts_eta = QUAD_1D_TABLE[rule_eta]->npoints;
-  int nb_gauss_pts_zeta = QUAD_1D_TABLE[rule_zeta]->npoints;
+  const int nb_gauss_pts_ksi = QUAD_1D_TABLE[rule_ksi]->npoints;
+  const int nb_gauss_pts_eta = QUAD_1D_TABLE[rule_eta]->npoints;
+  const int nb_gauss_pts_zeta = QUAD_1D_TABLE[rule_zeta]->npoints;
   gauss_pts.resize(4, nb_gauss_pts_ksi * nb_gauss_pts_eta * nb_gauss_pts_zeta,
                    false);
 
