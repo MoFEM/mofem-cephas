@@ -53,6 +53,7 @@ cm_export_file("../meshes/2_tets_contact.cub" export_atom_tests)
 cm_export_file("../meshes/reference_rectangle.h5m" export_atom_tests)
 cm_export_file("../meshes/half_of_sphere.h5m" export_atom_tests)
 cm_export_file("../meshes/unit_volume_sphere.cub" export_atom_tests)
+cm_export_file("../meshes/hex_cub.h5m" export_atom_tests)
 
 set(PERCOMPILED_MOFEM_HEADER 
   "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
@@ -1025,7 +1026,6 @@ add_test(
     -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/atom_tests/blessed_files
     -P ${PROJECT_SOURCE_DIR}/cmake/RunAndComp.cmake)
 
-cm_export_file("../meshes/unit_volume_sphere.cub" export_atom_tests)
 build_test(projection_from_10node_tet_vol_atom projection_from_10node_op_volume.cpp)
 add_test(
     projection_from_10node_tet_vol_atom

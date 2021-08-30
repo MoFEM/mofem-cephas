@@ -190,9 +190,22 @@ template <int SWITCH>
 MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::opSwitch() {
   MoFEMFunctionBegin;
 
-  if (numeredEntFiniteElementPtr->getEntType() != MBTET)
-    MoFEMFunctionReturnHot(0);
-  CHKERR createDataOnElement();
+  const auto type = numeredEntFiniteElementPtr->getEntType();
+  if (type != lastEvaluatedElementEntityType) {
+    switch (type) {
+    case MBTET:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new TetPolynomialBase());
+      break;
+    case MBHEX:
+      getElementPolynomialBase() =
+          boost::shared_ptr<BaseFunction>(new HexPolynomialBase());
+      break;
+    default:
+      MoFEMFunctionReturnHot(0);
+    }
+    CHKERR createDataOnElement();
+  }
 
   CHKERR calculateVolumeAndJacobian();
   CHKERR getSpaceBaseAndOrderOnElement();
