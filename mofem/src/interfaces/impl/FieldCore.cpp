@@ -582,9 +582,19 @@ MoFEMErrorCode Core::setFieldOrderImpl(boost::shared_ptr<Field> field_ptr,
     Range new_ents = subtract(Range(first, second), ents_in_database);
     for (Range::const_pair_iterator pit = new_ents.const_pair_begin();
          pit != new_ents.const_pair_end(); ++pit) {
-      EntityHandle first = pit->first;
-      EntityHandle second = pit->second;
-      const EntityType ent_type = get_moab().type_from_handle(first);
+      const auto first = pit->first;
+      const auto second = pit->second;
+      const auto ent_type = get_moab().type_from_handle(first);
+      
+      if (!field_ptr->getFieldOrderTable()[ent_type])
+        SETERRQ3(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
+                 "Number of degrees of freedom for entity %s for %s space on "
+                 "base %s can "
+                 "not be deduced",
+                 moab::CN::EntityTypeName(ent_type),
+                 field_ptr->getSpaceName().c_str(),
+                 field_ptr->getApproxBaseName().c_str());
+
       auto get_nb_dofs_on_order = [&](const int order) {
         return order >= 0 ? (field_ptr->getFieldOrderTable()[ent_type])(order)
                           : 0;
