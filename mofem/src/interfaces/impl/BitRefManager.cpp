@@ -160,15 +160,15 @@ struct SetBitRefLevelTool {
     MoFEMFunctionBeginHot;
 
     switch (mField.getValue()) {
-      case -1:
-        return addEntsToDatabaseImpl<-1>(seed_ents_range);
-      case 0:
-        return addEntsToDatabaseImpl<0>(seed_ents_range);
-      case 1:
-        return addEntsToDatabaseImpl<1>(seed_ents_range);
-      default:
-        SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
-                 "Core index can vary from -1 to %d", MAX_CORE_TMP);
+    case -1:
+      return addEntsToDatabaseImpl<-1>(seed_ents_range);
+    case 0:
+      return addEntsToDatabaseImpl<0>(seed_ents_range);
+    case 1:
+      return addEntsToDatabaseImpl<1>(seed_ents_range);
+    default:
+      SETERRQ1(PETSC_COMM_SELF, MOFEM_NOT_IMPLEMENTED,
+               "Core index can vary from -1 to %d", MAX_CORE_TMP);
     }
 
     MoFEMFunctionReturnHot(0);
@@ -252,6 +252,16 @@ struct SetBitRefLevelTool {
               boost::shared_ptr<RefElement>(ref_fe_vec, &ref_fe_vec->back()));
         }
       } break;
+      case MBHEX: {
+        boost::shared_ptr<std::vector<RefElement_HEX>> ref_fe_vec =
+            boost::make_shared<std::vector<RefElement_HEX>>();
+        ref_fe_vec->reserve(pit->second - pit->first + 1);
+        for (; rit != hi_rit; ++rit) {
+          ref_fe_vec->push_back(RefElement_HEX(*rit));
+          shared_ref_fe_vec.push_back(
+              boost::shared_ptr<RefElement>(ref_fe_vec, &ref_fe_vec->back()));
+        }
+      } break;
       case MBPRISM: {
         boost::shared_ptr<std::vector<RefElement_PRISM>> ref_fe_vec =
             boost::make_shared<std::vector<RefElement_PRISM>>();
@@ -320,8 +330,8 @@ MoFEMErrorCode BitRefManager::setBitRefLevel(const Range &ents,
                   << dd << " and dim of entities " << d;
               MOFEM_LOG_CHANNEL("BitRefSelf"); // reset channel
             };
-       
-			      if (verb <= QUIET)
+
+            if (verb <= QUIET)
               log_message(Sev::noisy);
             else
               log_message(Sev::warning);
