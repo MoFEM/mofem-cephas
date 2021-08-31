@@ -380,6 +380,12 @@ MoFEMErrorCode BitRefManager::setElementsBitRefLevel(const Range &ents,
     }
   }
 
+  MOFEM_LOG_FUNCTION();
+  MOFEM_LOG("BitRefSelf", Sev::noisy)
+      << "Number of entities in databse " << ref_ents_ptr->size();
+  MOFEM_LOG("BitRefSelf", Sev::noisy)
+      << "Number of finite element entities in databse " << ref_fe_ptr->size();
+
   MoFEMFunctionReturn(0);
 }
 
