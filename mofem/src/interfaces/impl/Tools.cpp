@@ -527,6 +527,8 @@ MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForQuad(
       gauss_pts(2, gg) = wk;
     }
   }
+  if (gg != gauss_pts.size2())
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size of matrix");
 
   MoFEMFunctionReturn(0);
 }
@@ -575,7 +577,7 @@ MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForHex(
       const double eta = QUAD_1D_TABLE[rule_eta]->points[2 * j + 1];
       for (size_t k = 0; k != nb_gauss_pts_zeta; ++k, ++gg) {
         const double wk = wj * QUAD_1D_TABLE[rule_zeta]->weights[k];
-        const double zeta = QUAD_1D_TABLE[rule_eta]->points[2 * k + 1];
+        const double zeta = QUAD_1D_TABLE[rule_zeta]->points[2 * k + 1];
         gauss_pts(0, gg) = ksi;
         gauss_pts(1, gg) = eta;
         gauss_pts(2, gg) = zeta;
@@ -583,6 +585,9 @@ MoFEMErrorCode Tools::outerProductOfEdgeIntegrationPtsForHex(
       }
     }
   }
+
+  if (gg != gauss_pts.size2())
+    SETERRQ(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY, "Wrong size of matrix");
 
   MoFEMFunctionReturn(0);
 }

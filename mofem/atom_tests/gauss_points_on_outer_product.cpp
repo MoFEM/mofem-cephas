@@ -47,11 +47,11 @@ int main(int argc, char *argv[]) {
       double eps = 1e-8;
       if (fabs(20.0 - sum_coords) > eps) {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "wrong result %3.4e", 20.0 - sum_coords);
+                 "wrong result %3.4e", sum_coords);
       }
       if (fabs(1.0 - sum_gauss_pts) > eps) {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "wrong result %3.4e", 1.0 - sum_gauss_pts);
+                 "wrong result %3.4e", sum_gauss_pts);
       }
       MoFEMFunctionReturn(0);
     };
@@ -71,13 +71,13 @@ int main(int argc, char *argv[]) {
         sum_gauss_pts += pts_quad(3, i);
       }
       double eps = 1e-8;
-      if (fabs(52.0 - sum_coords) > eps) {
+      if (fabs(54.0 - sum_coords) > eps) {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "wrong result %3.4e", 52 - sum_coords);
+                 "wrong result %3.4e", sum_coords);
       }
       if (fabs(1.0 - sum_gauss_pts) > eps) {
         SETERRQ1(PETSC_COMM_SELF, MOFEM_DATA_INCONSISTENCY,
-                 "wrong result %3.4e", 1 - sum_gauss_pts);
+                 "wrong result %3.4e", sum_gauss_pts);
       }
       MoFEMFunctionReturn(0);
     };
