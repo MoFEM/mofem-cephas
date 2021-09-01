@@ -185,22 +185,26 @@ MoFEMErrorCode HexPolynomialBase::getValueL2DemkowiczBase(MatrixDouble &pts) {
 
   int nb_gauss_pts = pts.size2();
 
-  data.dataOnEntities[MBTET][0].getN(base).resize(
-      nb_gauss_pts,
-      NBVOLUMEHEX_L2(data.dataOnEntities[MBHEX][0].getDataOrder()), false);
-  data.dataOnEntities[MBTET][0].getDiffN(base).resize(
+  auto &copy_base_fun = data.dataOnEntities[MBVERTEX][0].getN(copy_base);
+  auto &copy_diff_base_fun =
+      data.dataOnEntities[MBVERTEX][0].getDiffN(copy_base);
+
+  auto &base_fun = data.dataOnEntities[MBHEX][0].getN(base);
+  auto &diff_base_fun = data.dataOnEntities[MBHEX][0].getDiffN(base);
+
+  base_fun.resize(nb_gauss_pts,
+                  NBVOLUMEHEX_L2(data.dataOnEntities[MBHEX][0].getDataOrder()),
+                  false);
+  diff_base_fun.resize(
       nb_gauss_pts,
       3 * NBVOLUMEHEX_L2(data.dataOnEntities[MBHEX][0].getDataOrder()), false);
 
-  const int vol_order = data.dataOnEntities[MBTET][0].getDataOrder();
+  const int vol_order = data.dataOnEntities[MBHEX][0].getDataOrder();
   const std::array<int, 3> p{vol_order, vol_order, vol_order};
   CHKERR DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
-      p.data(),
-      &*data.dataOnEntities[MBVERTEX][0].getN(copy_base).data().begin(),
-      &*data.dataOnEntities[MBVERTEX][0].getDiffN(copy_base).data().begin(),
-      &*data.dataOnEntities[MBHEX][0].getN(base).data().begin(),
-      &*data.dataOnEntities[MBHEX][0].getDiffN(base).data().begin(),
-      nb_gauss_pts);
+      p.data(), &*copy_base_fun.data().begin(),
+      &*copy_diff_base_fun.data().begin(), &*base_fun.data().begin(),
+      &*diff_base_fun.data().begin(), nb_gauss_pts);
 
   MoFEMFunctionReturn(0);
 }

@@ -23,7 +23,7 @@ namespace MoFEM {
 VolumeElementForcesAndSourcesCoreBase::VolumeElementForcesAndSourcesCoreBase(
     Interface &m_field, const EntityType type)
     : ForcesAndSourcesCore(m_field), vOlume(elementMeasure),
-      meshPositionsFieldName("MESH_NODE_POSITIONS"), coords(12), jAc(3, 3),
+      meshPositionsFieldName("MESH_NODE_POSITIONS"), coords(24), jAc(3, 3),
       invJac(3, 3), opSetInvJacH1(invJac),
       opContravariantPiolaTransform(elementMeasure, jAc),
       opCovariantPiolaTransform(invJac), opSetInvJacHdivAndHcurl(invJac),
@@ -91,6 +91,8 @@ MoFEMErrorCode VolumeElementForcesAndSourcesCoreBase::setIntegrationPts() {
 
   auto set_integration_pts_for_hex = [&]() {
     MoFEMFunctionBegin;
+    CHKERR Tools::outerProductOfEdgeIntegrationPtsForHex(gaussPts, rule, rule,
+                                                         rule);
     MoFEMFunctionReturn(0);
   };
 
@@ -172,6 +174,7 @@ VolumeElementForcesAndSourcesCoreBase::calculateVolumeAndJacobian() {
   const auto ent = numeredEntFiniteElementPtr->getEnt();
   const auto type = numeredEntFiniteElementPtr->getEntType();
   CHKERR mField.get_moab().get_connectivity(ent, conn, num_nodes, true);
+  coords.resize(3 * num_nodes, false);
   CHKERR mField.get_moab().get_coords(conn, num_nodes, &*coords.data().begin());
 
   auto get_tet_t_diff_n = [&]() {

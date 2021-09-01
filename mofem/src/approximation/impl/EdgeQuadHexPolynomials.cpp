@@ -1158,8 +1158,15 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
     int nb_integration_pts) {
   MoFEMFunctionBeginHot;
   RefHex ref_hex;
-  int permute[p[0] * p[1] * p[2]][3];
+
+  const int nb_bases = p[0] * p[1] * p[2];
+  int permute[nb_bases][3];
   CHKERR MonomOrdering(permute, p[0] - 1, p[1] - 1, p[2] - 1);
+  for (int n = 0; n != nb_bases; ++n) {
+    const int ii = permute[n][0];
+    const int jj = permute[n][1];
+    const int kk = permute[n][2];
+  }
 
   for (int qq = 0; qq != nb_integration_pts; qq++) {
 
@@ -1168,25 +1175,24 @@ MoFEMErrorCode MoFEM::DemkowiczHexAndQuad::L2_InteriorShapeFunctions_ONHEX(
     double diff_ksi[3][2] = {{0, 0}, {0, 0}, {0, 0}};
     ::DemkowiczHexAndQuad::get_ksi_hex(shift, N, N_diff, ksi, diff_ksi);
 
-    double P0[p[0]];
+    double P0[p[0] + 2];
     double diffL0[3 * (p[0] + 2)];
-    double P1[p[1]];
+    double P1[p[1] + 2];
     double diffL1[3 * (p[1] + 2)];
-    double P2[p[2]];
+    double P2[p[2] + 2];
     double diffL2[3 * (p[2] + 2)];
 
-    int qd_shift = qq * p[0] * p[1] * p[2];
+    int qd_shift = qq * nb_bases;
     CHKERR Legendre_polynomials(p[0] + 1, ksi[0], diff_ksi[0], P0, diffL0, 3);
-
     CHKERR Legendre_polynomials(p[1] + 1, ksi[1], diff_ksi[1], P1, diffL1, 3);
-
     CHKERR Legendre_polynomials(p[2] + 1, ksi[2], diff_ksi[2], P2, diffL2, 3);
 
     int n = 0;
-    for (; n != p[0] * p[1] * p[2]; n++) {
+    for (; n != nb_bases; ++n) {
       const int ii = permute[n][0];
       const int jj = permute[n][1];
       const int kk = permute[n][2];
+
       volN[qd_shift + n] = P0[ii] * P1[jj] * P2[kk];
       for (int d = 0; d != 3; ++d) {
         diff_volN[3 * (qd_shift + n) + d] =
